@@ -1,0 +1,880 @@
+{
+ "n_battles": 20079,
+ "n_by_class": {
+  "aggressive": 1518,
+  "aggressive_v2": 1716,
+  "heuristic": 1573,
+  "heuristic2": 1725,
+  "random": 817,
+  "model": 6484,
+  "setup_sweep": 1611,
+  "setup_sweep_v2": 1653,
+  "staller": 1480,
+  "staller_v2": 1502
+ },
+ "n_sentinel_elo_labeled": 6464,
+ "feature_names": [
+  "vol_switch_rate",
+  "n_species_revealed",
+  "status_move_rate",
+  "heal_rate",
+  "repeat_rate",
+  "distinct_move_frac",
+  "mean_dmg_to_us",
+  "max_dmg_to_us",
+  "zero_dmg_attack_rate",
+  "stay_low_hp_rate",
+  "switch_low_hp_rate",
+  "tank_stay_rate",
+  "priority_move_rate",
+  "mean_hp_at_vol_switch",
+  "faint_repl_per_turn",
+  "mean_move_bp",
+  "mean_move_acc"
+ ],
+ "prefixes": {
+  "t1": {
+   "binary_acc": 0.8691374249974555,
+   "binary_acc_sd": 0.005701369786252556,
+   "binary_auc": 0.8867130124286697,
+   "tenway_balanced_acc": 0.1832522186777729,
+   "sentinel_elo": {
+    "r2": 0.03178968073450816,
+    "spearman": 0.08195581368058275,
+    "mae": 98.08411550456493,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "t2": {
+   "binary_acc": 0.9036320063218239,
+   "binary_acc_sd": 0.005489828382929551,
+   "binary_auc": 0.9400592353843249,
+   "tenway_balanced_acc": 0.2712018717663205,
+   "sentinel_elo": {
+    "r2": 0.1464235004703761,
+    "spearman": 0.2922975251011576,
+    "mae": 90.26477135203015,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "t3": {
+   "binary_acc": 0.9130206911007063,
+   "binary_acc_sd": 0.0036130771955877267,
+   "binary_auc": 0.9564814656755424,
+   "tenway_balanced_acc": 0.30179048920472873,
+   "sentinel_elo": {
+    "r2": 0.20776730535917975,
+    "spearman": 0.35935646386071285,
+    "mae": 86.58844406080185,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   },
+   "confusion_labels": [
+    "aggressive",
+    "aggressive_v2",
+    "heuristic",
+    "heuristic2",
+    "model",
+    "random",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "staller",
+    "staller_v2"
+   ],
+   "confusion": [
+    [
+     372,
+     211,
+     130,
+     129,
+     24,
+     2,
+     214,
+     234,
+     112,
+     90
+    ],
+    [
+     223,
+     342,
+     152,
+     148,
+     81,
+     4,
+     270,
+     301,
+     104,
+     91
+    ],
+    [
+     153,
+     197,
+     328,
+     141,
+     104,
+     3,
+     233,
+     196,
+     165,
+     53
+    ],
+    [
+     169,
+     221,
+     152,
+     283,
+     114,
+     4,
+     240,
+     268,
+     152,
+     122
+    ],
+    [
+     48,
+     60,
+     74,
+     58,
+     5850,
+     85,
+     52,
+     60,
+     88,
+     109
+    ],
+    [
+     1,
+     4,
+     9,
+     8,
+     655,
+     96,
+     5,
+     4,
+     12,
+     23
+    ],
+    [
+     133,
+     188,
+     176,
+     162,
+     77,
+     0,
+     358,
+     332,
+     125,
+     60
+    ],
+    [
+     196,
+     232,
+     147,
+     153,
+     69,
+     2,
+     323,
+     368,
+     102,
+     61
+    ],
+    [
+     80,
+     118,
+     120,
+     103,
+     38,
+     1,
+     132,
+     136,
+     610,
+     142
+    ],
+    [
+     112,
+     122,
+     75,
+     136,
+     132,
+     5,
+     105,
+     120,
+     208,
+     487
+    ]
+   ]
+  },
+  "t4": {
+   "binary_acc": 0.9214180916113062,
+   "binary_acc_sd": 0.0017176535095130253,
+   "binary_auc": 0.9651177889065659,
+   "tenway_balanced_acc": 0.34732587860166025,
+   "sentinel_elo": {
+    "r2": 0.20491541107663203,
+    "spearman": 0.3400668321008615,
+    "mae": 87.29290706273255,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "t5": {
+   "binary_acc": 0.9261283432582056,
+   "binary_acc_sd": 0.003598479634567524,
+   "binary_auc": 0.968909110472081,
+   "tenway_balanced_acc": 0.359174964973425,
+   "sentinel_elo": {
+    "r2": 0.1664600348710984,
+    "spearman": 0.30129855398130606,
+    "mae": 89.78741771076407,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "t7": {
+   "binary_acc": 0.9339255237553022,
+   "binary_acc_sd": 0.003182921537025088,
+   "binary_auc": 0.9736720114652359,
+   "tenway_balanced_acc": 0.3820623906075243,
+   "sentinel_elo": {
+    "r2": 0.16204505680177017,
+    "spearman": 0.308225920935774,
+    "mae": 89.79179061890405,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "t10": {
+   "binary_acc": 0.935216046414023,
+   "binary_acc_sd": 0.004863662304709688,
+   "binary_auc": 0.976979427987497,
+   "tenway_balanced_acc": 0.38879508669588836,
+   "sentinel_elo": {
+    "r2": 0.1427154816057089,
+    "spearman": 0.29322758145653754,
+    "mae": 91.54018374211975,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   },
+   "confusion_labels": [
+    "aggressive",
+    "aggressive_v2",
+    "heuristic",
+    "heuristic2",
+    "model",
+    "random",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "staller",
+    "staller_v2"
+   ],
+   "confusion": [
+    [
+     654,
+     153,
+     126,
+     73,
+     2,
+     0,
+     144,
+     217,
+     119,
+     30
+    ],
+    [
+     280,
+     365,
+     198,
+     122,
+     123,
+     0,
+     176,
+     263,
+     142,
+     47
+    ],
+    [
+     242,
+     176,
+     355,
+     69,
+     97,
+     1,
+     212,
+     209,
+     170,
+     42
+    ],
+    [
+     190,
+     180,
+     135,
+     257,
+     144,
+     2,
+     154,
+     247,
+     146,
+     270
+    ],
+    [
+     24,
+     59,
+     32,
+     45,
+     6020,
+     128,
+     26,
+     24,
+     41,
+     85
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     351,
+     457,
+     0,
+     0,
+     1,
+     8
+    ],
+    [
+     260,
+     176,
+     220,
+     82,
+     112,
+     1,
+     285,
+     290,
+     162,
+     23
+    ],
+    [
+     265,
+     198,
+     174,
+     128,
+     59,
+     1,
+     203,
+     413,
+     175,
+     37
+    ],
+    [
+     181,
+     94,
+     143,
+     46,
+     10,
+     0,
+     164,
+     159,
+     652,
+     31
+    ],
+    [
+     103,
+     71,
+     60,
+     158,
+     84,
+     5,
+     45,
+     78,
+     125,
+     773
+    ]
+   ]
+  },
+  "t15": {
+   "binary_acc": 0.9420860564540126,
+   "binary_acc_sd": 0.003671852656577021,
+   "binary_auc": 0.9820282891757565,
+   "tenway_balanced_acc": 0.41360409665016834,
+   "sentinel_elo": {
+    "r2": 0.14342463813225115,
+    "spearman": 0.2981992683008463,
+    "mae": 91.80762407340026,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "t20": {
+   "binary_acc": 0.9424357013299092,
+   "binary_acc_sd": 0.002246840624210613,
+   "binary_auc": 0.9831370617256351,
+   "tenway_balanced_acc": 0.4214599057354995,
+   "sentinel_elo": {
+    "r2": 0.13027719448024244,
+    "spearman": 0.28937486534253865,
+    "mae": 92.75526058365959,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  },
+  "full": {
+   "binary_acc": 0.9416371755251338,
+   "binary_acc_sd": 0.0031735532813895566,
+   "binary_auc": 0.9828526462031517,
+   "tenway_balanced_acc": 0.42733265194198894,
+   "sentinel_elo": {
+    "r2": 0.13244456224060674,
+    "spearman": 0.2879463245918374,
+    "mae": 92.32431687069732,
+    "n": 6464,
+    "label_sd": 125.27622959583044
+   }
+  }
+ },
+ "cross_run": {
+  "t3": {
+   "binary_acc": 0.9060004532200578,
+   "binary_auc": 0.9515629900770378,
+   "sentinel_elo": {
+    "r2": 0.09615537695675391,
+    "spearman": 0.27013904610968753,
+    "mae": 93.49420812315154
+   }
+  },
+  "t10": {
+   "binary_acc": 0.9326354147907076,
+   "binary_auc": 0.9759790154173563,
+   "sentinel_elo": {
+    "r2": 0.04065457632978964,
+    "spearman": 0.18665686688979496,
+    "mae": 97.6080872361896
+   }
+  },
+  "full": {
+   "binary_acc": 0.9376355978967036,
+   "binary_auc": 0.9815917596055931,
+   "sentinel_elo": {
+    "r2": 0.07073388931558122,
+    "spearman": 0.22964661063677005,
+    "mae": 95.7722309319135
+   }
+  }
+ },
+ "attribution": {
+  "binary_t3": [
+   {
+    "feature": "vol_switch_rate",
+    "importance": 0.27542713567839194,
+    "sd": 0.0046503458497525
+   },
+   {
+    "feature": "mean_hp_at_vol_switch",
+    "importance": 0.022763819095477356,
+    "sd": 0.0011078094314094897
+   },
+   {
+    "feature": "mean_move_bp",
+    "importance": 0.018643216080402,
+    "sd": 0.001022461806501291
+   },
+   {
+    "feature": "n_species_revealed",
+    "importance": 0.012110552763819093,
+    "sd": 0.0024380923559212298
+   },
+   {
+    "feature": "repeat_rate",
+    "importance": 0.011256281407035162,
+    "sd": 0.0016080402010050301
+   },
+   {
+    "feature": "faint_repl_per_turn",
+    "importance": 0.009195979899497497,
+    "sd": 0.0015779214540811663
+   },
+   {
+    "feature": "mean_move_acc",
+    "importance": 0.009195979899497475,
+    "sd": 0.0021823166583526117
+   },
+   {
+    "feature": "mean_dmg_to_us",
+    "importance": 0.009045226130653238,
+    "sd": 0.0008257123982489957
+   },
+   {
+    "feature": "tank_stay_rate",
+    "importance": 0.00798994974874372,
+    "sd": 0.0009045226130653357
+   },
+   {
+    "feature": "max_dmg_to_us",
+    "importance": 0.007537688442211055,
+    "sd": 0.0010777693763581542
+   },
+   {
+    "feature": "zero_dmg_attack_rate",
+    "importance": 0.005929648241206032,
+    "sd": 0.0008790379740972742
+   },
+   {
+    "feature": "status_move_rate",
+    "importance": 0.0037688442211055275,
+    "sd": 0.0013853315328733774
+   },
+   {
+    "feature": "distinct_move_frac",
+    "importance": 0.002814070351758802,
+    "sd": 0.0008318062993591305
+   },
+   {
+    "feature": "stay_low_hp_rate",
+    "importance": 0.0006030150753768782,
+    "sd": 0.00034082060216709807
+   },
+   {
+    "feature": "heal_rate",
+    "importance": 5.025125628139726e-05,
+    "sd": 0.00010050251256279452
+   },
+   {
+    "feature": "priority_move_rate",
+    "importance": 0.0,
+    "sd": 0.0
+   },
+   {
+    "feature": "switch_low_hp_rate",
+    "importance": -0.0004020100502512891,
+    "sd": 0.00012308993682325135
+   }
+  ],
+  "tenway_full": [
+   {
+    "feature": "vol_switch_rate",
+    "importance": 0.19839195979899493,
+    "sd": 0.006039774565001629
+   },
+   {
+    "feature": "mean_hp_at_vol_switch",
+    "importance": 0.08090452261306527,
+    "sd": 0.001825718806490955
+   },
+   {
+    "feature": "repeat_rate",
+    "importance": 0.04035175879396981,
+    "sd": 0.0037725275133916603
+   },
+   {
+    "feature": "status_move_rate",
+    "importance": 0.03497487437185927,
+    "sd": 0.004232456620953881
+   },
+   {
+    "feature": "faint_repl_per_turn",
+    "importance": 0.03140703517587935,
+    "sd": 0.0018257188064909554
+   },
+   {
+    "feature": "tank_stay_rate",
+    "importance": 0.02688442211055273,
+    "sd": 0.0030150753768844077
+   },
+   {
+    "feature": "mean_move_bp",
+    "importance": 0.025678391959798975,
+    "sd": 0.0033043783362359047
+   },
+   {
+    "feature": "mean_move_acc",
+    "importance": 0.024723618090452225,
+    "sd": 0.003443586271158153
+   },
+   {
+    "feature": "heal_rate",
+    "importance": 0.017286432160803965,
+    "sd": 0.0018626887430000817
+   },
+   {
+    "feature": "mean_dmg_to_us",
+    "importance": 0.014422110552763767,
+    "sd": 0.003519740906097997
+   },
+   {
+    "feature": "distinct_move_frac",
+    "importance": 0.012814070351758767,
+    "sd": 0.0035426244687466564
+   },
+   {
+    "feature": "zero_dmg_attack_rate",
+    "importance": 0.007437185929648193,
+    "sd": 0.0031001400633541894
+   },
+   {
+    "feature": "max_dmg_to_us",
+    "importance": 0.007085427135678346,
+    "sd": 0.0015521050463799283
+   },
+   {
+    "feature": "n_species_revealed",
+    "importance": 0.004271356783919567,
+    "sd": 0.001783742648170745
+   },
+   {
+    "feature": "stay_low_hp_rate",
+    "importance": 0.0021608040201004596,
+    "sd": 0.0013446319759055168
+   },
+   {
+    "feature": "switch_low_hp_rate",
+    "importance": 0.001758793969849215,
+    "sd": 0.001348382699999884
+   },
+   {
+    "feature": "priority_move_rate",
+    "importance": -5.0251256281419464e-05,
+    "sd": 0.00024617987364654347
+   }
+  ]
+ },
+ "confusion_full": {
+  "labels": [
+   "aggressive",
+   "aggressive_v2",
+   "heuristic",
+   "heuristic2",
+   "model",
+   "random",
+   "setup_sweep",
+   "setup_sweep_v2",
+   "staller",
+   "staller_v2"
+  ],
+  "matrix": [
+   [
+    627,
+    153,
+    166,
+    19,
+    2,
+    0,
+    100,
+    258,
+    183,
+    10
+   ],
+   [
+    266,
+    433,
+    192,
+    124,
+    114,
+    0,
+    170,
+    272,
+    117,
+    28
+   ],
+   [
+    244,
+    185,
+    378,
+    85,
+    68,
+    0,
+    197,
+    223,
+    176,
+    17
+   ],
+   [
+    153,
+    186,
+    104,
+    442,
+    148,
+    4,
+    92,
+    150,
+    135,
+    311
+   ],
+   [
+    10,
+    39,
+    28,
+    50,
+    6095,
+    118,
+    33,
+    22,
+    19,
+    70
+   ],
+   [
+    0,
+    1,
+    0,
+    1,
+    311,
+    495,
+    0,
+    1,
+    1,
+    7
+   ],
+   [
+    292,
+    210,
+    214,
+    112,
+    95,
+    0,
+    268,
+    267,
+    141,
+    12
+   ],
+   [
+    324,
+    241,
+    188,
+    92,
+    51,
+    2,
+    188,
+    400,
+    156,
+    11
+   ],
+   [
+    251,
+    100,
+    103,
+    24,
+    6,
+    0,
+    75,
+    158,
+    747,
+    16
+   ],
+   [
+    33,
+    31,
+    8,
+    234,
+    89,
+    4,
+    12,
+    28,
+    83,
+    980
+   ]
+  ]
+ },
+ "per_class_recall_full": {
+  "aggressive": 0.41304347826086957,
+  "aggressive_v2": 0.2523310023310023,
+  "heuristic": 0.2403051493960585,
+  "heuristic2": 0.25623188405797104,
+  "model": 0.9400061690314621,
+  "random": 0.605875152998776,
+  "setup_sweep": 0.16635630043451272,
+  "setup_sweep_v2": 0.24198427102238354,
+  "staller": 0.5047297297297297,
+  "staller_v2": 0.6524633821571239
+ },
+ "class_feature_means_full": {
+  "aggressive": {
+   "vol_switch_rate": 4.574732835602401e-06,
+   "zero_dmg_attack_rate": 0.17792282813775057,
+   "status_move_rate": 0.3303900474219461,
+   "repeat_rate": 0.45775362631493877,
+   "stay_low_hp_rate": 0.9064558629776021,
+   "mean_dmg_to_us": 0.29126833088717075,
+   "mean_move_acc": 0.9797789544872789
+  },
+  "aggressive_v2": {
+   "vol_switch_rate": 0.02786309511556077,
+   "zero_dmg_attack_rate": 0.16822919071476786,
+   "status_move_rate": 0.3117549572028016,
+   "repeat_rate": 0.41235965289186133,
+   "stay_low_hp_rate": 0.8905409952940797,
+   "mean_dmg_to_us": 0.3018217921127975,
+   "mean_move_acc": 0.9802289431916148
+  },
+  "heuristic": {
+   "vol_switch_rate": 0.021445458204235008,
+   "zero_dmg_attack_rate": 0.18705567279370727,
+   "status_move_rate": 0.3270856861066917,
+   "repeat_rate": 0.4354260077306565,
+   "stay_low_hp_rate": 0.8959906643473078,
+   "mean_dmg_to_us": 0.2833781132835984,
+   "mean_move_acc": 0.9826515554291981
+  },
+  "heuristic2": {
+   "vol_switch_rate": 0.05078716412144122,
+   "zero_dmg_attack_rate": 0.17081812855322448,
+   "status_move_rate": 0.35313232408352396,
+   "repeat_rate": 0.3927829756690572,
+   "stay_low_hp_rate": 0.7895514206222425,
+   "mean_dmg_to_us": 0.30588219997011956,
+   "mean_move_acc": 0.9765196605662203
+  },
+  "model": {
+   "vol_switch_rate": 0.22862790925585474,
+   "zero_dmg_attack_rate": 0.17596723018541383,
+   "status_move_rate": 0.44761997652745755,
+   "repeat_rate": 0.21292629678030736,
+   "stay_low_hp_rate": 0.76110559985331,
+   "mean_dmg_to_us": 0.2834401747468147,
+   "mean_move_acc": 0.9792075690771278
+  },
+  "random": {
+   "vol_switch_rate": 0.3065631113082855,
+   "zero_dmg_attack_rate": 0.20821465103352144,
+   "status_move_rate": 0.6148372972206418,
+   "repeat_rate": 0.1412256776934225,
+   "stay_low_hp_rate": 0.7375139441546201,
+   "mean_dmg_to_us": 0.23344374904555315,
+   "mean_move_acc": 0.9800041932765164
+  },
+  "setup_sweep": {
+   "vol_switch_rate": 0.023638822256419854,
+   "zero_dmg_attack_rate": 0.1634709350353148,
+   "status_move_rate": 0.3302501591716043,
+   "repeat_rate": 0.42108322723323083,
+   "stay_low_hp_rate": 0.9147295648692295,
+   "mean_dmg_to_us": 0.3012828181809676,
+   "mean_move_acc": 0.9788862318073207
+  },
+  "setup_sweep_v2": {
+   "vol_switch_rate": 0.01442140602976462,
+   "zero_dmg_attack_rate": 0.16040681764804712,
+   "status_move_rate": 0.32961516268920954,
+   "repeat_rate": 0.4125938666074722,
+   "stay_low_hp_rate": 0.9037844965847529,
+   "mean_dmg_to_us": 0.31098242603709225,
+   "mean_move_acc": 0.9759492649510533
+  },
+  "staller": {
+   "vol_switch_rate": 6.211163975199518e-05,
+   "zero_dmg_attack_rate": 0.18698168020219602,
+   "status_move_rate": 0.41990325933963035,
+   "repeat_rate": 0.431510668777348,
+   "stay_low_hp_rate": 0.9235421785421787,
+   "mean_dmg_to_us": 0.27514300532791747,
+   "mean_move_acc": 0.9744411670220898
+  },
+  "staller_v2": {
+   "vol_switch_rate": 0.10490841246263612,
+   "zero_dmg_attack_rate": 0.17561694574672101,
+   "status_move_rate": 0.41344012946519115,
+   "repeat_rate": 0.3768001628836842,
+   "stay_low_hp_rate": 0.5773398408480876,
+   "mean_dmg_to_us": 0.283454015779371,
+   "mean_move_acc": 0.9751022542171227
+  }
+ }
+}

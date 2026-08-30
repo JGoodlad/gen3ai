@@ -7419,3 +7419,29 @@ label ALLOCATOR, and q-labels' --q-top-n sweep selection is a contribution-weigh
 decision. Candidate (era-gated, post-capstone): closeness-weighted label allocation as the
 default harvest policy; the meta-gradient weight-learning version stays on the shelf until
 an interest-function hand rule measurably underperforms.
+
+### 🟢 SI-1 CLOSED: class is GLARING in ≤2 turns, skill among kin is NOT — both registered predictions CORRECT (2026-08-31)
+
+**`measurements/opponent_skill_inferability_2026-08-31.{md,json}` + probe script beside.**
+20,079 trace battles / 13 ai_v9 runs (gen11–17 era), opponent-observable features ONLY (17
+category rates; no move/species identity, no our-side internals, no result/length), simple
+HistGradientBoosting, GroupKFold by (run,step). **Bot-vs-model: 86.9% at ONE turn, 90.4% at
+two, 91.3%/AUC 0.956 at three, 94.2% saturated — crosses the registered 90% bar at t=2 and
+holds unchanged under strict cross-RUN folds (90.6%/93.8%).** One feature carries it:
+`vol_switch_rate` (permutation importance 0.275, 10× the runner-up) — **rigidity, not
+stupidity, identifies scripted play**; the blunder-shaped features built for the "horrible
+play" intuition (attacking into immunity, staying at low HP) measure ≈nothing (≤0.006).
+**Sentinel-ELO regression: registered WEAK, measured WEAKER — R² 0.13 full-game within-run,
+and 0.07–0.10 under cross-run folds (Spearman 0.23–0.27); the within-run 0.21 was partly
+policy-fingerprint memorization** (the same snapshot recurs as sentinel across cycles). The
+ELO curve is NON-monotonic — peaks at t3–4, DECAYS with more observation (endgame forced
+play dilutes the discriminative opening behaviour). Honest negatives: the max-damage bot
+cluster (heuristic/heuristic2/aggressive_v2/setup_sweep×2) stays mutually confused at
+0.15–0.25 recall even at t10; **Random reads as "model", not as a bot** (t3 recall 0.12,
+80% → model — switch-willingness and status-usage are shared surfaces; takes ~10 turns of
+move-quality accumulation to reach 0.56). Consequence for the candidate (8c1c2e8): menu (b)
+in-context latent is half-viable — build it as a CLASS posterior (labels free, separable in
+2–3 turns, run-transferable), NOT a rating regressor; menu (a)'s train-time scalar is
+untouched (exact labels); read R²≈0.1 as a hand-feature FLOOR but inherit the two data
+properties (signal concentrated t≤4; kin-collapse). Next gate unchanged: the ORACLE A/B
+(SI-2) — inferability without value-of-knowing is still not a build licence.
