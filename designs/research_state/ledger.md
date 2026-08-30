@@ -7009,3 +7009,32 @@ ABORTS rather than condemning 693 teams. ⚠️ Launch-day footgun banked in `to
 would silently DROP promoted entries — do not re-sync sample teams after promotion without
 re-promoting. 24 tests (incl. the hashes-stripped-text convention pin), suites + gates green.
 NOT promoted — the real draw happens at fleet launch, training session watching.
+
+### 🚀 R2 LANDED — the clean-world launch runbook: four argvs SMOKED FOR REAL, the ladder's unit error corrected (2026-08-30)
+
+**`84c15d4` on main — `designs/ai_v12/launch_runbook.md`.** All four arms live as ONE shared
+`$ARCH/$TRAIN/$CLEAN/$SHAPED` block + one-line tails ("the arms differ in one thing" is the
+experiment; a hand-retyped 110-flag command cannot be audited for that), derived from the live
+gen-15 run's own recorded command at v107, all four `checkargs` exit 0, and — per the
+validate-by-EXECUTING rule — all four smoked as real `--debug --steps 8000` runs: SPARSE's
+banner reads `1 TERMINAL + 0 PBRS + 0 BIAS`, zero pbrs/popart scalars in its tfevents;
+SELF-φ's `episode_dose 0.187→0.104→0.087` tracks `0.3·phi_mean` — **the telescoping identity
+confirmed on real episodes**; FROZEN-φ's dose sits FLAT (0.231/0.234/0.228) against SELF-φ's
+collapse — §2.4's "exact per rollout, approximate across" as a measurement — and its first
+attempt with a RELATIVE path exited FATAL_CONFIG (G0: `$PHI_SRC` absolute, evidence recorded).
+**PopArt retirement is OMISSION** (BoolFlag default→False; production has it only because
+every production command types it); tripwire = raw-units `train/value_loss` ≳ 1 not falling.
+**Companion metric BUILT**: `train/pbrs_episode_dose` (+`_n`, `pbrs_terminal_share`), the
+ladder's own unit (coef·E[φ(s₀)]/V), 19.9 ms/rollout, 13 tests — `reward_share` measured
+2.1–3.1× off from the true dose where defined (R1's F3 NaN fix taken upstream). **THE LADDER,
+units fixed: at V=1 the dose ladder is `--win-prob-pbrs-coef ∈ {0, 0.1, 0.3}`** — the first
+draft's digits return because they were always fractions of the terminal and the terminal
+changed; 🚨 the ledger's `<2c>` line is a SPELLING rule ([0,1]→[−1,1]), not "double it" —
+misread, it launches at 2× dose; §7.2's "coef = V is textbook" is off by 2 (V*-matched at ±1
+= coef 2.0 on φ=p). φ-arm coef **0.3 recommended, DECIDED AT REGISTRATION** (owner sign-off).
+R1's F1 launch rule carried BY REGISTRATION at §"THIS IS R1's F1" and baked into `$CLEAN`
+itself (`--value-dist-vmin -2 -vmax 2`). Gap ledger §9: G1 HIGH = `--compile-trainer` ×
+frozen-φ unverified on real CUDA → 20k-step GPU pre-flight before the 25M command; G2 =
+frozen-φ × restart, check the 🧊 line after restart 1; G3/G4 = vf-coef (resume-immutable!) and
+ent-coef sizing open. `launch_runbook_test.py` parses the argvs OUT OF the runbook through the
+live parser — a deleted flag fails a test naming the document. Suites 7973 green + gates.
