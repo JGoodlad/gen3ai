@@ -645,6 +645,15 @@ decision count swinging by hundreds). Reproducibility needs every randomness sou
 fixed teams, a per-player RNG, a fixed sim seed. Where a test needs a *qualifying* battle
 (cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED sequence of keys.
 
+**The "per-player RNG" half is now a set of five OPT-IN seeds**, one per drawer that used to reach
+into a process-wide RNG — `$GEN3AI_{PLAYER,TEAM,POLICY,POOL,STALLER}_SEED`, or the matching ctor
+kwargs. Every default is unchanged (unseeded, the RNG *is* the shared module), and any paired-arm
+design over battles should set all five. Measured: under the **same fixed sim seed**, unseeded arms
+played different games (84/145 turns vs 212/233, different winners); seeded they were identical.
+The table, the four seams, and the census that found them are in
+`src/agents/training/CLAUDE.md` → *GLOBAL-RANDOM COUPLING* and
+`designs/research_state/measurements/global_random_sweep_2026-08-30.md`.
+
 ---
 
 ## Smoke Test

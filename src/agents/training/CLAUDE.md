@@ -838,30 +838,70 @@ because eval is non-blocking and **skips a cycle while the previous one is still
 (below): a heavier roster self-throttles to a sparser cadence instead of needing tuned
 ceilings.
 
-### ⚠️ The two STALLERS are the roster's only source of randomness — `protect_seed` / `$GEN3AI_STALLER_SEED`
+### ⚠️ GLOBAL-RANDOM COUPLING — the five seeds a paired-arm design must set
 
-`Gen3StallerPlayer` and `Gen3StallerV2Player` flip a coin for Protect
-(`_PROTECT_PROBABILITY = 0.6`); **every other bot in the roster is deterministic.** By default that
-coin comes from the process-wide `random` module — the project's documented "two players share the
-global `random`" trap, seen from the opponent side.
+A drawer that reaches into a **process-wide** RNG couples itself to every other drawer in the
+process. Two players interleave their `choose_move` calls inside one battle; two paired **arms**
+interleave them *differently* (the searched arm awaits an executor, the control runs inline). So a
+decision that consumed the shared stream lands differently in the two arms **with no treatment
+involved**, which is precisely what a paired design claims cannot happen.
 
-**It is measured, not hypothetical.** The transfer-coefficient cell
+**It is measured, not hypothetical**, and it was found by a FAILED INTEGRITY CHECK rather than by
+review. The transfer-coefficient cell
 (`designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md` §4) ran a paired-arm
 falsifier whose zero-overrule units MUST be the same battle in both arms. It passed **exactly** on
-the seven deterministic bots (2,693 pairs, A−B = 0.0000, **zero** divergences) and failed on
-**exactly these two** (755 pairs, 4 divergences) — the searched arm awaits an executor while the
-control runs inline, so the shared coin lands differently with no treatment involved. Unbiased noise
-(3 favoured A, 1 favoured B), but it widens every paired interval for free.
+the deterministic bots (2,693 pairs, A−B = 0.0000, **zero** divergences) and failed on **exactly the
+two stallers** (755 pairs, 4 divergences), whose Protect coin (`_PROTECT_PROBABILITY = 0.6`) came
+off the global module. Unbiased noise (3 favoured A, 1 favoured B), but it widens every paired
+interval for free.
 
-**The fix is OPT-IN and the default is unchanged.** Pass `protect_seed=<int>` at construction, or set
-**`$GEN3AI_STALLER_SEED`** to seed every staller in the process (the hook a harness needs when it
-does not own the construction site — the bots are built deep inside `env_factory` / `eval_worker`).
-Either gives the instance its own `random.Random`, so its flip sequence depends only on how many
-times *that player* has rolled. With no seed by either route the coin is the `random` module itself,
-byte-identically. An unparseable `$GEN3AI_STALLER_SEED` **raises** rather than falling back — a seed
-that was meant to be set and silently was not would make an arm look reproducible while it is not.
-**Any paired-arm eval design should set it**; `opponents_test.py::TestStallerProtectRng` carries both
-the seeded-arms-agree test and its revert arm (unseeded, the same interleaving pulls them apart).
+⚠️ **"The two stallers are the roster's only source of randomness" was WRONG, and this doc said it.**
+The follow-up census (`designs/research_state/measurements/global_random_sweep_2026-08-30.md`) found
+**four more** and the stallers were the *smallest*. The falsifier above could not have caught the
+biggest one: it conditions on zero-overrule units, and the overrule rate against `random` is 1.00,
+so that bot contributed **no units at all** — a subject a falsifier gets zero units from has not
+been exonerated by it.
+
+| what draws | when | seed kwarg | env hook |
+|---|---|---|---|
+| **every player's** `choose_random_move` + `DEFAULT_CHOICE_CHANCE` (`poke_env.Player`) | per decision | `rng_seed=` | **`$GEN3AI_PLAYER_SEED`** |
+| the **team draw** (`Gen3Teambuilder`) | per battle | `rng_seed=` | **`$GEN3AI_TEAM_SEED`** |
+| the **policy's action sample** (`RLPlayer`, torch's default generator) | per decision, when `stochastic` | `policy_seed=` | **`$GEN3AI_POLICY_SEED`** |
+| the **self-play pool draw** (`SnapshotPool.sample`) | per episode | `rng_seed=` | **`$GEN3AI_POOL_SEED`** |
+| the two stallers' **Protect coin** (`agents/opponents.py`) | conditional | `protect_seed=` | **`$GEN3AI_STALLER_SEED`** |
+
+The first is the widest: `choose_random_move` is `RandomPlayer`'s *entire policy*, the fallback of
+all sixteen scripted bots, and `DEFAULT_CHOICE_CHANCE` fires inside the RL players too — so even an
+all-deterministic-bot roster has a shared-stream consumer in it. The third is the one a
+`random`-only grep never finds: torch has its own process-wide generator, and `stochastic=True` is
+the **default** for the pool and stable cross-run opponents.
+
+**Every fix is OPT-IN and every default is unchanged, byte-for-byte.** With no seed by either route
+the RNG *is* the `random` module (or torch's default generator), so the call site makes the same
+call on the same stream in the same order; an unseeded instance does not even carry the attribute.
+An unparseable env seed **raises** rather than falling back — a seed that was meant to be set and
+silently was not would make an arm look reproducible while it is not.
+
+**Any paired-arm design over battles should set all five:**
+
+```bash
+GEN3AI_PLAYER_SEED=1 GEN3AI_TEAM_SEED=2 GEN3AI_POLICY_SEED=3 GEN3AI_POOL_SEED=4 \
+GEN3AI_STALLER_SEED=5   <harness>
+```
+
+Measured stake — 2 real bridge battles per arm under the **same fixed sim seed**, arm B burning
+1234 unrelated global draws first: **unseeded the arms played different games** (84/145 turns vs
+212/233, different winners); **seeded they were identical battle for battle.** A fixed sim seed
+bought nothing on its own.
+
+Caveat: a flat seed makes two instances draw the same *sequence* — reproducibility, not
+independence (their decisions still differ, because their legal-order lists do). Pass distinct
+`rng_seed=` values where the two sides must be independent as well.
+
+Tests: `global_random_coupling_test.py` (47, all four new seams) and
+`opponents_test.py::TestStallerProtectRng`. Each seam carries a **revert arm** — unseeded, the same
+interleaving pulls the two apart — so if that ever passes, the per-instance RNG has stopped being
+the difference and the rest of the suite is asserting nothing.
 
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`

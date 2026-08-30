@@ -251,7 +251,9 @@ class _BenchmarkPlayer(Player):
                 battle, tr, self.obs_enc, reps=self._reps, top=self._top)
 
         valid = [i for i, v in enumerate(mask) if v]
-        idx = random.choice(valid) if valid else 0
+        # `self._choice_rng` (not the `random` module) so this player's action picks depend only
+        # on how many times IT has drawn — the bridge interleaves it with the opponent's draws.
+        idx = self._choice_rng.choice(valid) if valid else 0
         tr.advance(idx)
         try:
             return Gen3ActionMapper.action_to_order(idx, battle, mask=mask)
@@ -260,6 +262,12 @@ class _BenchmarkPlayer(Player):
 
 
 async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: int) -> int:
+    # `random.seed(seed)` alone was NOT enough: four drawers shared the global stream (two
+    # teambuilders, this player's action pick, and `RandomPlayer`'s entire policy) and the bridge
+    # interleaves the two players' `choose_move` calls, so the draw ORDER — and therefore the
+    # battle the benchmark profiles — was not reproducible from the seed. Each drawer now gets
+    # its own stream off a distinct derived seed; p1 and p2 must differ or the two sides draw in
+    # lockstep. The module seed stays for any other global consumer in the import graph.
     random.seed(seed)
     ts = int(time.time()) % 100000
     pool = TeamLoader().get_sample_teams() or TeamLoader().get_all_teams()
@@ -269,12 +277,14 @@ async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: in
 
     bench = _BenchmarkPlayer(
         profile_at_turn=profile_at_turn, reps=reps, top=top,
-        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 0),
+        rng_seed=seed * 4 + 1,
         account_configuration=AccountConfiguration(f"OBz{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False,
         battle_class=Gen3Battle)
     opp = RandomPlayer(
-        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 2),
+        rng_seed=seed * 4 + 3,
         account_configuration=AccountConfiguration(f"OBo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False)
 

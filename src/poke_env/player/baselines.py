@@ -18,7 +18,12 @@ from poke_env.player.battle_order import (
     PassBattleOrder,
     SingleBattleOrder,
 )
-from poke_env.player.player import Player
+from poke_env.player.player import (
+    Player,
+    _random_doubles_order,
+    _random_singles_order,
+    _rng_aware_static,
+)
 
 
 class RandomPlayer(Player):
@@ -33,12 +38,19 @@ class MaxBasePowerPlayer(Player):
         else:
             return self.choose_singles_move(battle)
 
-    @staticmethod
-    def choose_singles_move(battle: AbstractBattle):
+    # `_rng_aware_static`, not `@staticmethod`: the fallback below is a real decision-path draw,
+    # so `self.choose_singles_move(battle)` has to be able to reach this player's own
+    # `_choice_rng`. See `gen3_player_choice_rng_v1` in `player.py`; unseeded this is the shared
+    # `random` module exactly as before.
+    @_rng_aware_static
+    def choose_singles_move(battle: AbstractBattle, *, rng=random):
         if battle.available_moves:
             best_move = max(battle.available_moves, key=lambda move: move.base_power)
             return Player.create_order(best_move)
-        return Player.choose_random_move(battle)
+        # The isinstance dispatch `Player.choose_random_move` would have done, inlined so the
+        # per-instance `rng` survives (the class-form call cannot carry one).
+        return (_random_doubles_order(battle, rng) if isinstance(battle, DoubleBattle)
+                else _random_singles_order(battle, rng))
 
     @staticmethod
     def choose_doubles_move(battle: DoubleBattle):
@@ -255,14 +267,20 @@ class SimpleHeuristicsPlayer(Player):
             boost = 2 / (2 - mon.boosts[stat])
         return ((2 * mon.base_stats[stat] + 31) + 5) * boost
 
-    @staticmethod
-    def choose_singles_move(battle: Battle) -> Tuple[SingleBattleOrder, float]:
+    # `_rng_aware_static`, not `@staticmethod`. This bot IS in the eval and training rosters and
+    # BOTH of its fallbacks below are on the real decision path, so `self.choose_singles_move(
+    # battle)` has to reach this player's own `_choice_rng`. See `gen3_player_choice_rng_v1` in
+    # `player.py`; unseeded it is the shared `random` module exactly as before. (The transfer cell
+    # measured this bot at delta 0.0000 over 2693 pairs, so the fallbacks are rare in practice —
+    # rare is not never, and a latent coupling in a roster bot is worth the six lines.)
+    @_rng_aware_static
+    def choose_singles_move(battle: Battle, *, rng=random) -> Tuple[SingleBattleOrder, float]:
         # Main mons shortcuts
         active = battle.active_pokemon
         opponent = battle.opponent_active_pokemon
 
         if active is None or opponent is None:
-            return Player.choose_random_singles_move(battle), 0
+            return _random_singles_order(battle, rng), 0
 
         # Rough estimation of damage ratio
         physical_ratio = SimpleHeuristicsPlayer._stat_estimation(
@@ -365,7 +383,7 @@ class SimpleHeuristicsPlayer(Player):
                 0,
             )
 
-        return Player.choose_random_singles_move(battle), 0
+        return _random_singles_order(battle, rng), 0
 
     @staticmethod
     def get_double_target_multiplier(battle: DoubleBattle, order: SingleBattleOrder):

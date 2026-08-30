@@ -7,6 +7,7 @@ Reconstructs on every __init__ so launcher restarts are transparent.
 
 from __future__ import annotations
 
+import os
 import random
 import shutil
 from collections import OrderedDict
@@ -19,6 +20,35 @@ from agents.model.compile_opponents import maybe_compile_extractor
 from agents.model.snapshot import load_model_snapshot
 from agents.model.model_version import ModelVersion
 from main.launcher.ipc import emit
+
+
+_POOL_SEED_ENV = "GEN3AI_POOL_SEED"
+
+
+def _resolve_pool_rng(rng_seed):
+    """The RNG `SnapshotPool.sample` draws from — the `random` MODULE when unseeded (today's
+    shared global stream, hence byte-identical), a private :class:`random.Random` when seeded.
+    An unparseable ``$GEN3AI_POOL_SEED`` raises rather than silently falling back: a seed that was
+    meant to be set and silently was not would make a paired arm look reproducible while it is
+    not. See `gen3_pool_sample_rng_v1` in ``__init__``."""
+    if rng_seed is None:
+        env = os.environ.get(_POOL_SEED_ENV)
+        if env is None or env == "":
+            return random
+        try:
+            rng_seed = int(env)
+        except ValueError as exc:
+            raise ValueError(f"${_POOL_SEED_ENV}={env!r} is not an integer seed") from exc
+    return random.Random(rng_seed)
+
+
+def _install_pool_rng(obj, rng_seed):
+    """Give ``obj`` its private sampling RNG — or leave the class default (the shared `random`
+    module) in place when there is no seed. The ONE writer of ``_rng``, so ``__init__`` and any
+    harness that bypasses it cannot drift apart on the condition."""
+    rng = _resolve_pool_rng(rng_seed)
+    if rng is not random:
+        obj._rng = rng
 
 
 @dataclass
@@ -99,6 +129,11 @@ class SnapshotPool:
     _WIN_RATE_FILE = "win_rate_vs_bots.txt"
     _SUMMARY_FILE = "summary.json"
 
+    #: Sampling stream (`gen3_pool_sample_rng_v1`). The CLASS attribute is the `random` MODULE —
+    #: the shared global stream `sample()` has always used — so a pool built by bypassing
+    #: ``__init__`` still behaves exactly as before.
+    _rng = random
+
     def __init__(
         self,
         pool_dir: Path,
@@ -112,7 +147,20 @@ class SnapshotPool:
         compile_extractor: bool = False,
         compile_hide_cuda: bool = True,
         compile_strict: bool = False,
+        rng_seed: int | None = None,
     ):
+        # ── The pool draw — per-instance RNG (OPT-IN)  [gen3_pool_sample_rng_v1] ──
+        # GLOBAL-RANDOM COUPLING, and an INTERNAL INCONSISTENCY besides: the only caller of
+        # `sample()` is `MaskableAgentWrapper`, which already owns a per-env `random.Random(
+        # rng_seed)` for *which bucket* it picks ("per-env seed → envs don't pick in lockstep") —
+        # and then reached into the process-wide `random` module for *which snapshot*. So a
+        # wrapper that looks seeded is not reproducible, and two paired arms that interleave
+        # anything differently face different selves.
+        #
+        # DEFAULT IS UNCHANGED, byte-for-byte: unseeded, `_rng` IS the `random` module, so
+        # `sample()` is the same `random.choices` call on the same shared stream. $GEN3AI_POOL_SEED
+        # seeds every pool in the process; `rng_seed=` seeds one.
+        _install_pool_rng(self, rng_seed)
         self.pool_dir = Path(pool_dir)
         self._current_version = current_version
         self._device = device
@@ -253,7 +301,7 @@ class SnapshotPool:
             raise RuntimeError("Pool is empty — call seed() first")
         default_p = self._pfsp_default_p(self._entries) if self.pfsp_scale > 0.0 else None
         weights = [self._entry_weight_with(e, self._entries, default_p) for e in self._entries]
-        return random.choices(self._entries, weights=weights, k=1)[0]
+        return self._rng.choices(self._entries, weights=weights, k=1)[0]
 
     def entry_weight(self, entry: SnapshotEntry) -> float:
         """Sampling weight for a specific entry (same formula used in sample())."""

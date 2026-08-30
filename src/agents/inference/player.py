@@ -1,4 +1,5 @@
 import asyncio
+import os
 import numpy as np
 import torch
 from typing import Dict, Any, Optional
@@ -30,6 +31,28 @@ from utils import race_trace  # debug ring buffer (GEN3_RACE_TRACE); no-op when 
 # opponent re-decides on the now-current request instead of raising — the server is waiting on
 # our move, so the battle settles within a couple of re-decides. See choose_move().
 _OPP_REDECIDE_MAX = 8
+
+# The policy's action sample — per-instance torch generator (OPT-IN). See
+# `gen3_policy_sample_rng_v1` in `RLPlayer.__init__` for the coupling this closes.
+_POLICY_SEED_ENV = "GEN3AI_POLICY_SEED"
+
+
+def _resolve_policy_seed(policy_seed: Optional[int]) -> Optional[int]:
+    """The seed for a player's private sampling generator, or ``None`` for "use torch's shared
+    default generator" — which is what keeps the default byte-identical.
+
+    An unparseable ``$GEN3AI_POLICY_SEED`` raises rather than silently falling back: a seed that
+    was meant to be set and silently was not would make a paired arm look reproducible while it
+    is not."""
+    if policy_seed is not None:
+        return int(policy_seed)
+    env = os.environ.get(_POLICY_SEED_ENV)
+    if env is None or env == "":
+        return None
+    try:
+        return int(env)
+    except ValueError as exc:
+        raise ValueError(f"${_POLICY_SEED_ENV}={env!r} is not an integer seed") from exc
 
 
 class Gen3Player(Player):
@@ -209,11 +232,18 @@ class Gen3Player(Player):
 class RLPlayer(Gen3Player):
     """Runs a trained SB3 model to choose moves during evaluation."""
 
+    #: Sampling-stream state (`gen3_policy_sample_rng_v1`). The CLASS defaults say "unseeded" —
+    #: i.e. use torch's shared default generator, which is what this has always done — so a player
+    #: built by bypassing ``__init__`` behaves exactly as before instead of raising.
+    _policy_seed = None
+    _policy_gens: dict = {}
+
     def __init__(self, model, team, battle_format, server_configuration,
                  mappings=None, account_configuration=None,
                  stall_config: Optional[StallConfig] = None,
                  max_concurrent_battles=10,
-                 stochastic: bool = True, temperature: float = 1.0, **kwargs):
+                 stochastic: bool = True, temperature: float = 1.0,
+                 policy_seed: Optional[int] = None, **kwargs):
         super().__init__(
             observation_encoder=None,
             mappings=mappings,
@@ -241,6 +271,39 @@ class RLPlayer(Gen3Player):
         self._n_decisions = 0
         self._n_defaults = 0
         self._n_redecides = 0
+        # ── The action sample — per-instance torch generator (OPT-IN) [gen3_policy_sample_rng_v1] ──
+        # GLOBAL-RANDOM COUPLING, in torch rather than in `random`. `Categorical.sample()` draws
+        # from torch's process-wide DEFAULT generator, which every RLPlayer in the process shares
+        # — and self-play puts TWO of them in one battle, interleaved by the bridge, while a
+        # paired eval puts two ARMS in one process. Same genre as the staller's Protect coin
+        # (`agents/opponents.py`, 4437c85) and it bites harder: this is not a conditional coin,
+        # it is EVERY stochastic decision, and `stochastic=True` is the default for the pool
+        # opponents and the stable cross-run opponents.
+        # DEFAULT IS UNCHANGED: with no seed, `_policy_generator` returns None and the sampling
+        # call is the same `Categorical.sample()` on the same shared stream.
+        self._policy_seed = _resolve_policy_seed(policy_seed)
+        self._policy_gens: dict = {}     # torch device → that device's private generator
+
+    def _policy_generator(self, device):
+        """This player's private sampling generator for `device`, or None when unseeded (which
+        means "use torch's shared default generator", i.e. today's behaviour).
+
+        Per-device because the generator must live on the tensor's device and an opponent may be
+        constructed on cpu while a trainee samples on cuda; built lazily so an unseeded player
+        allocates nothing. See `gen3_policy_sample_rng_v1` in ``__init__``."""
+        if self._policy_seed is None:
+            return None
+        # `setdefault` on the INSTANCE dict, so the class-level empty default above can never be
+        # mutated into shared state — the usual mutable-class-attribute footgun, closed here
+        # rather than argued about.
+        gens = self.__dict__.setdefault("_policy_gens", {})
+        key = str(device)
+        gen = gens.get(key)
+        if gen is None:
+            gen = torch.Generator(device=device)
+            gen.manual_seed(int(self._policy_seed))
+            gens[key] = gen
+        return gen
 
     def _predict_best_action(self, battle, stochastic=False, need_aux=True, temperature=1.0):
         """Pick the best legal action for `battle`.
@@ -284,7 +347,16 @@ class RLPlayer(Gen3Player):
                 # negative after dividing by any positive temperature, so illegal
                 # actions remain masked regardless of T.
                 sample_logits = masked_logits / temperature if temperature != 1.0 else masked_logits
-                idx = torch.distributions.Categorical(logits=sample_logits).sample().item()
+                cat = torch.distributions.Categorical(logits=sample_logits)
+                gen = self._policy_generator(sample_logits.device)
+                if gen is None:
+                    # DEFAULT — the shared torch global generator, exactly as before.
+                    idx = cat.sample().item()
+                else:
+                    # `cat.probs` is the SAME tensor `cat.sample()` would feed to
+                    # `torch.multinomial`, so the only difference between the branches is which
+                    # generator is drawn from — no re-derived softmax, no last-bit drift.
+                    idx = torch.multinomial(cat.probs, 1, True, generator=gen).item()
             else:
                 idx = torch.argmax(masked_logits, dim=1).item()
 

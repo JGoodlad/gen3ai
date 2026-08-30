@@ -173,14 +173,24 @@ class _Capture(Player):
 
 
 async def _capture(turn: int, seed: int) -> None:
+    # `random.seed(seed)` alone was NOT enough, and this benchmark is the one that most needed it
+    # to be: its whole design is "capture ONE seeded board, freeze it, A/B two implementations
+    # against it", which is worth nothing if the board moves between runs. Four drawers shared the
+    # global stream here (two teambuilders, `_Capture`'s fallback, and `RandomPlayer`'s ENTIRE
+    # policy) and the bridge interleaves the two players' `choose_move` calls, so the draw ORDER
+    # was not reproducible. Each drawer now gets its own stream off a distinct derived seed —
+    # p1 and p2 must differ, or the two sides draw in lockstep. The module seed stays for any
+    # other global consumer in the import graph.
     random.seed(seed)
     pool = ttb._team_pool()
     ts = int(time.time()) % 100000
-    p1 = _Capture(turn=turn, battle_format=ttb.BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+    p1 = _Capture(turn=turn, battle_format=ttb.BATTLE_FORMAT,
+                  team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 0), rng_seed=seed * 4 + 1,
                   account_configuration=AccountConfiguration(f"LVz{ts}", "pw"),
                   server_configuration=LocalhostServerConfiguration, start_listening=False,
                   battle_class=Gen3Battle)
-    p2 = RandomPlayer(battle_format=ttb.BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+    p2 = RandomPlayer(battle_format=ttb.BATTLE_FORMAT,
+                      team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 2), rng_seed=seed * 4 + 3,
                       account_configuration=AccountConfiguration(f"LVo{ts}", "pw"),
                       server_configuration=LocalhostServerConfiguration, start_listening=False)
     tries = 0

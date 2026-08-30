@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import functools
+import os
 import random
 from abc import ABC, abstractmethod
 from asyncio import Condition, Event, Queue, Semaphore
@@ -42,6 +44,113 @@ from poke_env.teambuilder.constant_teambuilder import ConstantTeambuilder
 from poke_env.teambuilder.teambuilder import Teambuilder
 
 
+# ---------------------------------------------------------------------------
+# The player choice coin — per-instance RNG (OPT-IN)   [gen3_player_choice_rng_v1]
+# ---------------------------------------------------------------------------
+# GLOBAL-RANDOM COUPLING. `choose_random_move` and the `DEFAULT_CHOICE_CHANCE` fallback draw from
+# the process-wide `random` module, which EVERY player in the process shares. Two players
+# interleave their `choose_move` calls inside one battle, and two paired ARMS interleave them
+# differently (one awaits an executor, the other runs inline), so a decision that consumed the
+# global stream lands differently in the two arms with no treatment involved. That is the same
+# defect `agents/opponents.py`'s Protect coin had — see
+# `designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md` §4, where a paired
+# falsifier came back exactly 0.0000 on the deterministic bots and non-zero on the two stallers.
+#
+# This seam is WIDER than the staller's: `choose_random_move` is `RandomPlayer`'s ENTIRE policy
+# (one draw per decision, not a conditional one), it is the fallback of all sixteen scripted bots
+# in `agents/opponents.py`, and `DEFAULT_CHOICE_CHANCE` fires inside the RL players too. The
+# transfer cell could not have caught it: its falsifier conditions on zero-overrule units, and
+# against `random` the overrule rate is 1.00, so that bot contributed no units at all.
+#
+# DEFAULT IS UNCHANGED, byte-for-byte: with no seed the RNG *is* the `random` module, so every
+# draw is the same call on the same shared stream it always was, and an unseeded player does not
+# even carry the attribute (the class default answers). Pass `rng_seed=` — or set
+# $GEN3AI_PLAYER_SEED for every player in the process, the hook a paired-arm harness that does not
+# own the construction site needs — to give each instance its OWN `random.Random`, whose sequence
+# then depends only on how many times THAT player has drawn.
+#
+# NOTE on a flat seed: two players built with the SAME seed get identical draw *sequences* (not
+# identical decisions — their legal-order lists differ). Pass distinct `rng_seed=` values when the
+# two sides must be independent as well as reproducible.
+_PLAYER_SEED_ENV = "GEN3AI_PLAYER_SEED"
+
+
+def _resolve_player_rng(rng_seed: Optional[int]):
+    """The RNG a player draws its choice coins from.
+
+    Returns the `random` MODULE (today's shared global stream) when no seed arrives by either
+    route — that is what keeps the default byte-identical — and a private :class:`random.Random`
+    when one does. An unparseable ``$GEN3AI_PLAYER_SEED`` raises rather than silently falling
+    back: a seed that was meant to be set and silently was not would make a paired arm look
+    reproducible while it is not.
+    """
+    if rng_seed is None:
+        env = os.environ.get(_PLAYER_SEED_ENV)
+        if env is None or env == "":
+            return random
+        try:
+            rng_seed = int(env)
+        except ValueError as exc:
+            raise ValueError(f"${_PLAYER_SEED_ENV}={env!r} is not an integer seed") from exc
+    return random.Random(rng_seed)
+
+
+def _install_player_rng(obj, rng_seed: Optional[int]) -> None:
+    """Give ``obj`` its private choice RNG — or leave the class default (the shared `random`
+    module) in place when there is no seed.
+
+    Writing the instance attribute ONLY when a seed really arrived is what keeps an unseeded
+    player's ``__dict__`` byte-identical to the pre-fix one, and keeps a module object (which does
+    not pickle) out of it. This is the ONE writer of ``_choice_rng``, so ``Player.__init__`` and
+    any harness that bypasses it cannot drift apart on the condition.
+    """
+    rng = _resolve_player_rng(rng_seed)
+    if rng is not random:
+        obj._choice_rng = rng
+
+
+def _random_singles_order(battle: Battle, rng) -> SingleBattleOrder:
+    orders = battle.valid_orders
+    if orders:
+        return orders[int(rng.random() * len(orders))]
+    return Player.choose_default_move()
+
+
+def _random_doubles_order(battle: DoubleBattle, rng) -> DoubleBattleOrder:
+    orders = DoubleBattleOrder.join_orders(*battle.valid_orders)
+    if orders:
+        return orders[int(rng.random() * len(orders))]
+    return DoubleBattleOrder(DefaultBattleOrder(), DefaultBattleOrder())
+
+
+class _rng_aware_static:
+    """A method callable BOTH as ``Player.f(battle)`` and as ``self.f(battle)``.
+
+    The three ``choose_random_*`` methods are ``@staticmethod`` upstream and are called both ways
+    across this tree — ~50 ``self.choose_random_move(battle)`` sites in the scripted bots and the
+    fuzz harnesses, plus a handful of ``Player.choose_random_singles_move(battle)`` calls in
+    ``singles_env`` / ``doubles_env`` / ``baselines``. Converting them to ordinary methods would
+    break the second form; leaving them static would make the first form unable to reach the
+    instance's RNG. This descriptor keeps both spellings and supplies the right stream to each:
+    the instance's ``_choice_rng`` when there is an instance, the shared global module when the
+    call goes through the class (which has no player to be per-instance about).
+
+    It is a NON-data descriptor, so ``player.choose_random_move = MagicMock()`` still shadows it —
+    the pattern `opponents_test.py` relies on.
+    """
+
+    def __init__(self, func):
+        self._func = func
+        functools.update_wrapper(self, func)
+
+    def __get__(self, obj, objtype=None):
+        rng = random if obj is None else getattr(obj, "_choice_rng", random)
+        return functools.partial(self._func, rng=rng)
+
+    def __call__(self, *args, **kwargs):
+        return self._func(*args, **kwargs)
+
+
 class Player(ABC):
     """
     Base class for players.
@@ -52,6 +161,14 @@ class Player(ABC):
     # When an error resulting from an invalid choice is made, the next order has this
     # chance of being showdown's default order to prevent infinite loops
     DEFAULT_CHOICE_CHANCE = 1 / 1000
+
+    #: The stream every choice coin is drawn from. The CLASS attribute is the `random` MODULE,
+    #: i.e. the shared global stream this has always used — so an unseeded player is unchanged,
+    #: and (deliberately) so is a player built by bypassing ``__init__`` with ``cls.__new__``,
+    #: which several unit suites do. ``__init__`` overrides it per instance only when a seed is
+    #: actually supplied (see `_resolve_player_rng`); an unseeded instance does not carry the
+    #: attribute at all, so its ``__dict__`` is byte-identical to the pre-fix one.
+    _choice_rng = random
 
     def __init__(
         self,
@@ -74,6 +191,7 @@ class Player(ABC):
         team: Optional[Union[str, Teambuilder]] = None,
         strict_battle_tracking: bool = False,
         battle_class: type[AbstractBattle] = Battle,
+        rng_seed: Optional[int] = None,
     ):
         """
         :param account_configuration: Player configuration. If empty, defaults to an
@@ -123,7 +241,15 @@ class Player(ABC):
             team string, a showdown packed team string, or a Teambuilder object.
             Defaults to None.
         :type team: str or Teambuilder, optional
+        :param rng_seed: OPT-IN. Seed for this player's PRIVATE choice RNG (the
+            ``choose_random_*`` draw and the ``DEFAULT_CHOICE_CHANCE`` coin). ``None`` (the
+            default) keeps the process-wide ``random`` module, i.e. today's behaviour exactly;
+            ``$GEN3AI_PLAYER_SEED`` seeds every player in the process. See
+            `gen3_player_choice_rng_v1` above the class.
+        :type rng_seed: int, optional
         """
+        _install_player_rng(self, rng_seed)
+
         self._format: str = battle_format
         self._max_concurrent_battles: int = max_concurrent_battles
         self._save_replays = save_replays
@@ -381,7 +507,7 @@ class Player(ABC):
                 "HANDLE-REQ -> WAIT branch: set _waiting + return (NO dispatch to choose_move)",
             )
             return
-        if maybe_default_order and random.random() < self.DEFAULT_CHOICE_CHANCE:
+        if maybe_default_order and self._choice_rng.random() < self.DEFAULT_CHOICE_CHANCE:
             message = self.choose_default_move().message
         elif battle.teampreview:
             m = self.teampreview(battle)
@@ -508,24 +634,21 @@ class Player(ABC):
         """
         return DefaultBattleOrder()
 
-    @staticmethod
-    def choose_random_doubles_move(battle: DoubleBattle) -> DoubleBattleOrder:
-        orders = DoubleBattleOrder.join_orders(*battle.valid_orders)
-        if orders:
-            return orders[int(random.random() * len(orders))]
-        else:
-            return DoubleBattleOrder(DefaultBattleOrder(), DefaultBattleOrder())
+    # The three below are `_rng_aware_static`, not `@staticmethod`: `Player.f(battle)` still
+    # works and still draws from the shared global stream, while `self.f(battle)` draws from that
+    # player's own `_choice_rng`. Unseeded both are the `random` module, so this is a no-op by
+    # default. See `gen3_player_choice_rng_v1` above the class.
 
-    @staticmethod
-    def choose_random_singles_move(battle: Battle) -> SingleBattleOrder:
-        orders = battle.valid_orders
-        if orders:
-            return orders[int(random.random() * len(orders))]
-        else:
-            return Player.choose_default_move()
+    @_rng_aware_static
+    def choose_random_doubles_move(battle: DoubleBattle, *, rng=random) -> DoubleBattleOrder:
+        return _random_doubles_order(battle, rng)
 
-    @staticmethod
-    def choose_random_move(battle: AbstractBattle) -> BattleOrder:
+    @_rng_aware_static
+    def choose_random_singles_move(battle: Battle, *, rng=random) -> SingleBattleOrder:
+        return _random_singles_order(battle, rng)
+
+    @_rng_aware_static
+    def choose_random_move(battle: AbstractBattle, *, rng=random) -> BattleOrder:
         """Returns a random legal move from battle.
 
         :param battle: The battle in which to move.
@@ -534,9 +657,9 @@ class Player(ABC):
         :rtype: str
         """
         if isinstance(battle, DoubleBattle):
-            return Player.choose_random_doubles_move(battle)
+            return _random_doubles_order(battle, rng)
         elif isinstance(battle, Battle):
-            return Player.choose_random_singles_move(battle)
+            return _random_singles_order(battle, rng)
         else:
             raise ValueError(
                 f"battle should be Battle or DoubleBattle. Received {type(battle)}"
@@ -651,7 +774,7 @@ class Player(ABC):
         :rtype: str
         """
         members = list(range(1, len(battle.team) + 1))
-        random.shuffle(members)
+        self._choice_rng.shuffle(members)
         if battle.format is not None and "vgc" in battle.format:
             members = members[:4]
         for i in members:

@@ -200,7 +200,9 @@ class _TrainerTurnPlayer(Player):
 
         # --- action map (Gen3Env.action_to_order) + bookkeeping (Gen3Env.step) ---
         valid = [i for i, v in enumerate(np.asarray(mask)) if v]
-        idx = random.choice(valid) if valid else 0
+        # `self._choice_rng` (not the `random` module) so this player's action picks depend only
+        # on how many times IT has drawn — the bridge interleaves it with the opponent's draws.
+        idx = self._choice_rng.choice(valid) if valid else 0
         order = timed("action map", lambda: Gen3ActionMapper.action_to_order(
             idx, battle, legal=legal, mask=mask))
 
@@ -308,17 +310,25 @@ def _report(player: _TrainerTurnPlayer, battles: int) -> None:
 
 async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
                use_assembler: bool = True) -> int:
+    # `random.seed(seed)` alone was NOT enough: four drawers shared the global stream (two
+    # teambuilders, this player's action pick, and `RandomPlayer`'s entire policy) and the bridge
+    # interleaves the two players' `choose_move` calls, so the draw ORDER — and therefore the
+    # battle whose per-stage CPU is reported — was not reproducible from the seed. Each drawer now
+    # gets its own stream off a distinct derived seed; p1 and p2 must differ or the two sides draw
+    # in lockstep. The module seed stays for any other global consumer in the import graph.
     random.seed(seed)
     ts = int(time.time()) % 100000
     pool = _team_pool()
     player = _TrainerTurnPlayer(
         warmup=warmup, use_assembler=use_assembler,
-        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 0),
+        rng_seed=seed * 4 + 1,
         account_configuration=AccountConfiguration(f"TTz{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False,
         battle_class=_TimedGen3Battle)
     opp = RandomPlayer(
-        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 2),
+        rng_seed=seed * 4 + 3,
         account_configuration=AccountConfiguration(f"TTo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False)
 

@@ -1,7 +1,60 @@
 from poke_env.teambuilder import Teambuilder
 from utils.gen3_utils import fix_gen3_hp_ivs
 import hashlib
+import os
 import random
+
+# ---------------------------------------------------------------------------
+# The team draw — per-instance RNG (OPT-IN)   [gen3_team_draw_rng_v1]
+# ---------------------------------------------------------------------------
+# GLOBAL-RANDOM COUPLING, and the one with the widest blast radius in the tree: `yield_team` runs
+# once per player per battle and drew from the process-wide `random` module, which BOTH players
+# and every other drawer in the process share. Two paired arms that interleave anything
+# differently therefore get DIFFERENT TEAMS, which is not noise on a decision — it is a different
+# game. This is the `golden_obs_capture` lesson (the decision count swung by hundreds) seen at its
+# source, and the reason the project's fuzz rule says a reproducible battle needs "fixed teams, a
+# per-player RNG, a fixed sim seed" rather than a `random.seed(k)`.
+#
+# DEFAULT IS UNCHANGED, byte-for-byte: unseeded, the RNG *is* the `random` module, so every branch
+# consumes exactly the calls it always did, in the same order, off the same stream — and an
+# unseeded builder does not carry the attribute at all (the class default answers), which also
+# keeps it picklable, and env workers each unpickle their own builder copy.
+#
+# Seeded via `rng_seed=` (or $GEN3AI_TEAM_SEED for every builder in the process), the draw sequence
+# depends only on how many times THAT builder has drawn. Note that a run gives its two sides
+# separate builder objects: pass distinct `rng_seed=` values if the two sides must draw
+# independently as well as reproducibly.
+_TEAM_SEED_ENV = "GEN3AI_TEAM_SEED"
+
+
+def _resolve_team_rng(rng_seed):
+    """The RNG a teambuilder draws from — the `random` module when unseeded (today's shared global
+    stream, hence byte-identical), a private :class:`random.Random` when seeded. An unparseable
+    ``$GEN3AI_TEAM_SEED`` raises rather than silently falling back: a seed that was meant to be set
+    and silently was not would make a paired arm look reproducible while it is not."""
+    if rng_seed is None:
+        env = os.environ.get(_TEAM_SEED_ENV)
+        if env is None or env == "":
+            return random
+        try:
+            rng_seed = int(env)
+        except ValueError as exc:
+            raise ValueError(f"${_TEAM_SEED_ENV}={env!r} is not an integer seed") from exc
+    return random.Random(rng_seed)
+
+
+def _install_team_rng(obj, rng_seed):
+    """Give ``obj`` its private draw RNG — or leave the class default (the shared `random` module)
+    in place when there is no seed.
+
+    Writing the instance attribute ONLY when a seed really arrived is what keeps an unseeded
+    builder's ``__dict__`` byte-identical to the pre-fix one, and keeps a module object (which
+    does not pickle — every env worker unpickles its own builder copy) out of it. This is the ONE
+    writer of ``_rng``, so ``__init__`` and any harness that bypasses it cannot drift apart."""
+    rng = _resolve_team_rng(rng_seed)
+    if rng is not random:
+        obj._rng = rng
+
 
 class Gen3Teambuilder(Teambuilder):
     """
@@ -9,8 +62,15 @@ class Gen3Teambuilder(Teambuilder):
     validation nuances like Hidden Power IV mappings.
     """
 
+    #: The stream every team draw comes from. The CLASS attribute is the `random` MODULE — the
+    #: shared global stream this has always used — so an unseeded builder is unchanged and one
+    #: restored from an old pickle (no instance attribute) still works. See
+    #: `gen3_team_draw_rng_v1` above.
+    _rng = random
+
     def __init__(self, teams, bias_teams=None, bias_prob=0.0,
-                 team_pfsp="off", team_pfsp_cap=3.0, team_pfsp_floor=0.05):
+                 team_pfsp="off", team_pfsp_cap=3.0, team_pfsp_floor=0.05,
+                 rng_seed=None):
         """
         Initialize with a single team string or a list of team strings.
 
@@ -120,6 +180,7 @@ class Gen3Teambuilder(Teambuilder):
         self._block_cached = None       # packed team held for the current block
         self._block_cached_idx = None   # its pool index (None = untracked bias draw)
         self._block_left = 0            # remaining yields before redraw
+        _install_team_rng(self, rng_seed)
 
     def set_block_episodes(self, k: int) -> None:
         """Set the team-block length (K consecutive episodes per draw; 1 = off). Resets any
@@ -151,18 +212,18 @@ class Gen3Teambuilder(Teambuilder):
         yielded index is tracked so the battle outcome can be recorded. A bias-team battle is
         never tracked (it uses a pinned distill/bias team, not a pool team). "off" is the exact
         legacy uniform ``random.choice`` — no extra RNG draws, no tracking (byte-identical)."""
-        if self.bias_packed_teams and random.random() < self.bias_prob:
+        if self.bias_packed_teams and self._rng.random() < self.bias_prob:
             self._last_pool_idx = None
-            return random.choice(self.bias_packed_teams)
+            return self._rng.choice(self.bias_packed_teams)
         if self._team_pfsp == "off":
-            team = random.choice(self.packed_teams)
+            team = self._rng.choice(self.packed_teams)
             # Recover the index by LOOKUP, never by re-drawing — the legacy uniform draw is the
             # byte-identity baseline, so this branch must consume exactly one RNG call.
             self._last_pool_idx = self._pool_index_by_packed.get(team)
             return team
         n = len(self.packed_teams)
         w = self._tp_weights if self._tp_weights is not None else [1.0] * n
-        idx = random.choices(range(n), weights=w, k=1)[0]
+        idx = self._rng.choices(range(n), weights=w, k=1)[0]
         self._last_pool_idx = idx
         return self.packed_teams[idx]
 
