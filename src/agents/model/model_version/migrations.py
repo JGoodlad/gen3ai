@@ -378,4 +378,12 @@ def _migrate_config(data: dict) -> dict:
         for _k, _v in _v105:
             data.setdefault(_k, _v)
         data["config_version"] = 105
+    # v106 (gen3_progress_clock_intent_v1) — the no-progress clock's two OPT-IN fixes ⇒ v97's
+    # shape: no gate, no refusal, just a default. False is the only possible past (the flags did
+    # not exist), and it is also the reading every run through gen-15 trained under, so a resume of
+    # an archived run keeps charging exactly what it charged. A recorded value migrates untouched.
+    if version < 106:
+        data.setdefault("progress_decision_tense", False)
+        data.setdefault("progress_switch_freeze", False)
+        data["config_version"] = 106
     return data

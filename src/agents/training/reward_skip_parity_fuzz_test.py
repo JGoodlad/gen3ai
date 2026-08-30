@@ -209,7 +209,11 @@ class RewardSkipParityPlayer(Player):
         # (obs-side, before the reward reads `last_penalty`).
         if legal is not None:
             try:
-                state.clock.update(delta, battle.strict_view().live, legal)
+                # `legal_prev` = the OPENING decision's legality, threaded exactly as the
+                # tracker does (inert unless --progress-decision-tense; passing it keeps the
+                # comment above true rather than approximately true).
+                state.clock.update(delta, battle.strict_view().live, legal,
+                                   legal_prev=getattr(state.prev_ctx, "legal", None))
             except Exception as e:            # pragma: no cover - diagnostic only
                 print(f"  [NOTICE] clock update skipped: {e}", flush=True)
         self.turns_compared += 1

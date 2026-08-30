@@ -86,6 +86,12 @@ class ModelVersionFields:
     pbrs_material: bool = True
     pbrs_belief: bool = True
     victory_value: float = 30.0
+    # v105: the no-progress clock's two intent-restoring fixes (probe M/N, 2026-08-29). Both default
+    # OFF = the behaviour every run through gen-15 trained. Resume-immutable VALUE-meaning
+    # (check_reward_config), excluded from the weight-shape check: they change what the clock counts
+    # (and hence the `turns_since_progress` obs scalar) but no dim and no weight.
+    progress_decision_tense: bool = False   # gates read decision t, not t+1
+    progress_switch_freeze: bool = False    # a voluntary switch freezes rather than charges
 
     # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
     # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.

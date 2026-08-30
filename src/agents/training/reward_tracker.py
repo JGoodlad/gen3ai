@@ -43,6 +43,10 @@ class RewardTracker:
             cfg = getattr(self._reward_fn, "config", None)
             penalty = getattr(cfg, "no_progress_penalty", 0.15)
             self._progress_clock = ProgressClock(no_progress_penalty=penalty)
+            # …and the two clock-behaviour switches from the SAME config, through the one helper the
+            # env also uses. Threading them by hand here is exactly how a reward field once went
+            # missing on the eval path (see RewardConfig's note), so there is one call, not three.
+            self._progress_clock.apply_reward_config(cfg)
             self._reward_fn.progress_clock = self._progress_clock
 
     @property
@@ -80,7 +84,12 @@ class RewardTracker:
         if self._progress_clock is None:
             return
         view = battle.strict_view()
-        self._progress_clock.update(delta, view.live, view.legal)
+        # The OPENING decision's legality (see ProgressClock._gates / --progress-decision-tense).
+        # `BattleRecorder` — the eval-trace path this class exists for — snapshots `legal` onto
+        # every context, so it is present there. `RewardTrackingMixin` builds its contexts without
+        # one; the clock then falls back to `view.legal`, the pre-fix reading.
+        legal_prev = getattr(self._pending_ctx, "legal", None)
+        self._progress_clock.update(delta, view.live, view.legal, legal_prev=legal_prev)
 
     def complete_pending(self, curr_ctx: BattleContext, battle) -> tuple[TurnDelta, float]:
         """

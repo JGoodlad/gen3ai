@@ -86,8 +86,10 @@ def _instrument_clock(env, windows: list):
     clock = env._tracker._progress_clock
     orig = clock.update
 
-    def wrapped(delta, live, legal):
-        orig(delta, live, legal)   # run the REAL logic (sets last_penalty / n / _heal_streak)
+    def wrapped(delta, live, legal, **kw):
+        # **kw passes `legal_prev` through untouched — the OPENING decision's legality, read only
+        # under --progress-decision-tense. Swallowing it here would silently fuzz a different clock.
+        orig(delta, live, legal, **kw)   # run the REAL logic (sets last_penalty / n / _heal_streak)
         opp_mon = getattr(getattr(live, "opp", None), "active", None) if live is not None else None
         status = getattr(opp_mon, "status", None) if opp_mon is not None else None
         vols = (getattr(opp_mon, "volatiles", None) or ()) if opp_mon is not None else ()

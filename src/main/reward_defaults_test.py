@@ -98,6 +98,11 @@ def test_stall_pbrs_stays_default_off():
     ("switch_bias_weight", 0.0), ("self_ko_hp_penalty", 0.0),
     ("drop_redundant_bias", False), ("drop_switch_bias", False),
     ("no_progress_penalty", 0.15),
+    # gen3_progress_clock_intent_v1 (probes M/N, 2026-08-29): the no-progress clock's two
+    # intent-restoring fixes ship OFF. They are retrain-class when ON (the clock's `n` is the obs
+    # scalar as well as the charge basis), so a default flip here would silently change what a
+    # flagless launch trains — the exact class this file exists for.
+    ("progress_decision_tense", False), ("progress_switch_freeze", False),
 ])
 def test_every_other_reward_default_is_unchanged(dest, expected):
     """The flip is exactly two fields wide. This is the guard against it growing by accident."""
@@ -166,6 +171,15 @@ def test_no_all_shaping_pbrs_composition_is_the_v9_shape():
     # on `bias_redesign OR all_shaping_pbrs`, so turning the flag off also disarms the stall tilt.
     assert "no_progress_tax" not in comp["bias_terms"]
     assert {"stall_tax", "matchup_penalty", "switch_base", "status"} <= set(comp["bias_terms"])
+
+
+@pytest.mark.parametrize("field", ["progress_decision_tense", "progress_switch_freeze"])
+def test_the_clock_fixes_change_no_reward_TERM(field):
+    """They change what the no-progress clock COUNTS, never which terms exist — so the census must
+    read identically with either on. A census that moved would mean a clock knob had quietly become
+    a composition change, and `format_reward_composition` is what a launch line reports."""
+    assert (reward_class_composition(RewardConfig(**{field: True}))
+            == reward_class_composition(RewardConfig()))
 
 
 def test_the_two_regimes_are_the_whole_point_of_the_census():

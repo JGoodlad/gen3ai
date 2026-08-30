@@ -147,7 +147,13 @@ from typing import Any, Dict
 #   The fifth, `win_prob_pbrs_source`, is TRAINING-only provenance: the frozen checkpoint whose
 #   win-prob head supplies φ. Every default IS the pre-v105 behaviour, so the migration is a plain
 #   setdefault and a flagless run is byte-identical. No ARCH_SIGNATURE bump — no weight shape moves.
-MODEL_CONFIG_VERSION = 105
+# v106 (gen3_progress_clock_intent_v1): `progress_decision_tense` + `progress_switch_freeze` — the
+#   two OPT-IN intent-restoring fixes to the no-progress clock (probes M/N, 2026-08-29). Same
+#   provenance class as v14/v15's reward switches: resume-immutable VALUE-meaning, checked by
+#   `check_reward_config`, excluded from the weight-shape check, no ARCH_SIGNATURE bump. A pre-v106
+#   config defaults BOTH to False — not a guess: the flags did not exist, so no run can have used
+#   them, and False reproduces the behaviour every generation through gen-15 trained under.
+MODEL_CONFIG_VERSION = 106
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -195,6 +201,8 @@ _REWARD_IMMUTABLE_FIELDS: Dict[str, Any] = {
     "pbrs_material": True,
     "pbrs_belief": True,
     "victory_value": 30.0,
+    "progress_decision_tense": False,
+    "progress_switch_freeze": False,
 }
 
 # field -> the CLI flag that sets it. Bools use the BoolFlag `--no-` negation (the documented
@@ -215,6 +223,8 @@ _REWARD_FIELD_FLAGS: Dict[str, str] = {
     "pbrs_material": "--pbrs-material",
     "pbrs_belief": "--pbrs-belief",
     "victory_value": "--victory-value",
+    "progress_decision_tense": "--progress-decision-tense",
+    "progress_switch_freeze": "--progress-switch-freeze",
 }
 
 

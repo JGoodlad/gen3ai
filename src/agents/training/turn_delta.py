@@ -194,6 +194,24 @@ class TurnDelta:
     # move in a forced-switch slot looks like "opp voluntarily passed."
     phase_is_forced_switch: bool = False
 
+    # The SAME question in the OTHER TENSE: was the decision that OPENED this window a forced
+    # switch (``prev_ctx.phase``)? `phase_is_forced_switch` above reads `curr_ctx.phase`, i.e. the
+    # phase of the request that CLOSES the window — the natural read for the obs history slot it
+    # was minted for (`045e8b8`), and the wrong one for "did the agent have agency when it chose".
+    #
+    # `adc0fe4` reused the closing-tense flag for the opening-tense question in `ProgressClock`, and
+    # no test could catch it because both readings are true statements about the same delta. The
+    # consequence was measured twice: probe M found the clock sits out on 19,503 full-agency windows
+    # (the costliest class in its corpus at −5.1pp) while charging 12,432 zero-agency post-faint
+    # replacements 63.9% of the time; probe N reproduced it from source
+    # (`no_progress_tax_review_2026-08-29.md` §3.2). This field is that question asked correctly.
+    #
+    # It is ALWAYS computed and read by ONE consumer — `ProgressClock`, and only under
+    # `--progress-decision-tense`. `phase_is_forced_switch` is deliberately left alone: the obs
+    # encoder's decoder, `opp_intent_labels` and `reward_manager` all want the closing tense, and
+    # re-pointing it would silently change what they mean. NOTHING encodes this field into the obs.
+    decision_was_forced_switch: bool = False
+
     # Per-slot HP levels AT THE END OF THE TURN (i.e. from curr_ctx). Carried
     # alongside the deltas so the encoder can expose the full HP trajectory
     # to the model across the history window without forcing the transformer
@@ -403,6 +421,7 @@ class TurnDelta:
                 our_effectiveness=None, opp_effectiveness=None,
                 we_moved_first=None,
                 phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
+                decision_was_forced_switch=(prev_ctx.phase == "forced_switch"),
                 our_hp_after=curr_ctx.our_hp.copy(),
                 opp_hp_after=curr_ctx.opp_hp.copy(),
                 our_faint_count=int(we_fainted),
@@ -529,6 +548,7 @@ class TurnDelta:
             our_damaging_event=our_damaging_event,
             opp_damaging_event=opp_damaging_event,
             phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
+            decision_was_forced_switch=(prev_ctx.phase == "forced_switch"),
             our_hp_after=curr_ctx.our_hp.copy(),
             opp_hp_after=curr_ctx.opp_hp.copy(),
             our_target_hp_delta=our_target_hp_delta,
@@ -571,6 +591,7 @@ class TurnDelta:
             our_damaging_event=None,
             opp_damaging_event=None,
             phase_is_forced_switch=False,
+            decision_was_forced_switch=False,
             our_hp_after=np.zeros(6, dtype=np.float32),
             opp_hp_after=np.zeros(6, dtype=np.float32),
             our_target_hp_delta=None,

@@ -369,6 +369,8 @@ def test_a_pre_v104_config_migrates_to_the_off_default_rather_than_refusing():
     from agents.model.model_version.migrations import _migrate_config
     # The migration chain must carry a pre-v104 config all the way to HEAD, not merely to 104 —
     # pinning the live constant here would make every later bump a false failure in this file.
+    # `>=` because later versions keep landing above this one; what this test owns is that the
+    # v104 STEP still injects the off default and stamps at least v104, not that v104 is the tip.
     assert MODEL_CONFIG_VERSION >= 104
     out = _migrate_config({"config_version": 103})
     assert out["win_prob_pbrs_coef"] == 0.0

@@ -1,11 +1,16 @@
+import os
+import random
+
 import pytest
 from unittest.mock import MagicMock, patch
 
 from poke_env.battle.status import Status
 from poke_env.player.battle_order import BattleOrder
 
+from agents import opponents as _opponents
 from agents.opponents import (
     Gen3StallerPlayer,
+    Gen3StallerV2Player,
     Gen3AggressivePlayer,
     Gen3SetupSweepPlayer,
 )
@@ -61,6 +66,13 @@ def _make_player(cls):
     with patch.object(cls, "__init__", lambda self, **kw: None):
         p = cls.__new__(cls)
     p.choose_random_move = MagicMock(return_value=MagicMock(spec=BattleOrder))
+    return p
+
+
+def _seeded_player(cls, seed):
+    """…the same, but with the staller's own Protect RNG installed (what `protect_seed=` does)."""
+    p = _make_player(cls)
+    p._protect_rng = random.Random(seed)
     return p
 
 
@@ -387,6 +399,119 @@ class TestGen3SetupSweepPlayer:
 
         order = self.player.choose_move(battle)
         assert order.order is switch_target
+
+
+# ---------------------------------------------------------------------------
+# The staller Protect coin — per-instance RNG (gen3_staller_protect_rng_v1)
+# ---------------------------------------------------------------------------
+# Motivation is a MEASUREMENT, not tidiness. The transfer-coefficient cell
+# (`designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md` §4) ran a paired
+# falsifier whose zero-overrule units MUST be the same battle in both arms: it passed EXACTLY on
+# the seven deterministic bots (2693 pairs, delta 0.0000, zero divergences) and failed on exactly
+# these two stallers (755 pairs, 4 divergences). The two arms interleave `choose_move` differently,
+# so a coin drawn from the process-wide `random` module lands differently with no treatment
+# involved. Unbiased noise — but it widens every paired interval for free.
+
+class TestStallerProtectRng:
+    """Two claims: the DEFAULT is the shared global stream (byte-identical), and a SEEDED staller
+    is decision-identical across arms whose interleaving differs."""
+
+    @staticmethod
+    def _toxic_battle():
+        protect = _make_move("protect", base_power=0)
+        attack = _make_move("earthquake", base_power=100)
+        return _make_battle(moves=[protect, attack], opponent=_make_mon(status=Status.TOX))
+
+    def _flips(self, player, n=40):
+        """The bot's Protect/attack decision sequence — the observable the paired design compares."""
+        battle = self._toxic_battle()
+        out = []
+        for _ in range(n):
+            order = player.choose_move(battle)
+            out.append(getattr(order.order, "id", None))
+        return out
+
+    def test_default_is_the_shared_global_stream(self):
+        """No seed anywhere ⇒ the coin is `random.random` itself, so a default run is unchanged.
+        (The three tests above already patch `agents.opponents.random.random` and pass — this states
+        the property those inherit rather than leaving it implicit.)"""
+        p = _make_player(Gen3StallerPlayer)
+        assert p._protect_rng is _opponents.random
+
+    def test_an_env_hook_seeds_every_staller_in_the_process(self):
+        """The hook a paired-arm harness needs when it does not own the construction site (the bots
+        are built deep inside `env_factory` / `eval_worker`)."""
+        with patch.dict(os.environ, {"GEN3AI_STALLER_SEED": "7"}):
+            rng = _opponents._resolve_protect_rng(None)
+        assert isinstance(rng, random.Random)
+        assert rng.random() == random.Random(7).random()
+
+    def test_an_unparseable_env_seed_raises_rather_than_falling_back(self):
+        """A seed that was meant to be set and silently was not would make an arm LOOK reproducible
+        while it is not — the failure mode this whole fix exists to remove."""
+        with patch.dict(os.environ, {"GEN3AI_STALLER_SEED": "not-an-int"}):
+            with pytest.raises(ValueError, match="GEN3AI_STALLER_SEED"):
+                _opponents._resolve_protect_rng(None)
+
+    def test_no_seed_and_no_env_returns_the_module_itself(self):
+        with patch.dict(os.environ, {}, clear=True):
+            assert _opponents._resolve_protect_rng(None) is _opponents.random
+
+    def test_two_paired_arms_with_seeded_stallers_are_decision_identical(self):
+        """THE regression test. Arm A and arm B share a seed but are INTERLEAVED with unrelated
+        global-`random` traffic between decisions — the exact asymmetry the searched arm introduces
+        (it awaits an executor; the control runs inline). Seeded, the two decision sequences are
+        identical; the arms differ only in what the global stream did around them."""
+        arm_a = _seeded_player(Gen3StallerPlayer, 1234)
+        arm_b = _seeded_player(Gen3StallerPlayer, 1234)
+
+        random.seed(0)
+        flips_a = self._flips(arm_a)
+        # Arm B burns a DIFFERENT, unpredictable amount of the global stream between its decisions.
+        random.seed(999)
+        battle, flips_b = self._toxic_battle(), []
+        for _ in range(40):
+            for _ in range(random.randint(1, 5)):
+                random.random()
+            flips_b.append(getattr(arm_b.choose_move(battle).order, "id", None))
+
+        assert flips_a == flips_b
+        assert {"protect", "earthquake"} <= set(flips_a)   # the coin really did both
+
+    @pytest.mark.parametrize("cls", [Gen3StallerPlayer, Gen3StallerV2Player])
+    def test_the_coin_itself_is_per_instance_for_BOTH_stallers(self, cls):
+        """The two bots reach the coin through different priority ladders (V2 heals and checks
+        status-immunity first), so the decision-sequence test above is driven through V1's simpler
+        mocks. This one asserts the property at the shared seam both call — and includes its own
+        revert arm: unseeded, the same interleaving pulls the two apart."""
+        seeded_a, seeded_b = _seeded_player(cls, 42), _seeded_player(cls, 42)
+        bare_a, bare_b = _make_player(cls), _make_player(cls)
+
+        def draws(player, jitter_seed):
+            random.seed(jitter_seed)
+            out = []
+            for _ in range(30):
+                for _ in range(random.randint(1, 5)):
+                    random.random()      # the other arm's unrelated global traffic
+                out.append(player._protect_roll())
+            return out
+
+        assert draws(seeded_a, 0) == draws(seeded_b, 999)
+        assert draws(bare_a, 0) != draws(bare_b, 999)
+
+    def test_the_unseeded_default_is_the_one_that_couples(self):
+        """REVERT-VERIFICATION for the fix: run the same interleaving WITHOUT seeds and the two
+        arms diverge. If this ever passes, the per-instance RNG has stopped being the difference."""
+        arm_a, arm_b = _make_player(Gen3StallerPlayer), _make_player(Gen3StallerPlayer)
+        random.seed(0)
+        flips_a = self._flips(arm_a)
+        random.seed(999)
+        battle, flips_b = self._toxic_battle(), []
+        for _ in range(40):
+            for _ in range(random.randint(1, 5)):
+                random.random()
+            flips_b.append(getattr(arm_b.choose_move(battle).order, "id", None))
+        assert flips_a != flips_b
 
 
 if __name__ == "__main__":

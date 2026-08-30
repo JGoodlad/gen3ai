@@ -6437,3 +6437,176 @@ drifts the live weights and requires the frozen φ not to move while the live φ
 Revert-verified: re-inlining a fold's `all_shaping_pbrs` condition, restoring the pre-cap tie's
 `-VICTORY_VALUE` literal, dropping the source from `phi_model`, and letting the bootstrap fall back
 to the live head each fail a named test.
+---
+
+## v106 — `gen3_progress_clock_intent_v1` + `gen3_staller_protect_rng_v1` (2026-08-29): three OPT-IN fixes to the no-progress tax and the eval roster's one coin
+
+**Grouped as one entry because all three are the same kind of change and land together: a defect
+found by measurement, repaired behind a flag whose default is the shipped behaviour, so the fix is
+a decision someone takes rather than one that happens to a live run.** Nothing here alters a
+flagless run — the committed obs golden's 991 per-decision hashes are unchanged, and
+`progress_clock_test.py` pins the clock's default `(n, last_penalty)` trace against a capture taken
+from the pre-fix implementation.
+
+### What was measured, and by whom
+
+Two probes ran on 2026-08-29 and disagreed with the code in the same place from opposite
+directions.
+
+**Probe M — the CENSUS** (`designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md`):
+over 2,677 battles / 147,204 decisions, **23.3% of every decision the model makes carries the
+`no_progress_tax` charge** — 6.80 charges/battle × −0.15 = **−1.02 reward units per battle, 3.4% of
+a win**. It then classified where those charges land.
+
+**Probe N — the INTENT ARCHAEOLOGY** (`.../no_progress_tax_review_2026-08-29.md`): the design
+document, the originating commit, and every line of `ProgressClock.update`, read against each
+other. Its headline is that the owner's recollection — "I wrote it to punish only obviously
+irrefutably poor choices" — is *half* right, and the wrong half is the interesting one.
+
+**Together they found that 79% of all charges land on two paths, and neither is what the design
+specified.**
+
+### F1 — `--progress-decision-tense`: both gates now describe the decision being charged
+
+`TurnDelta.phase_is_forced_switch` reads `curr_ctx.phase`. `curr_ctx` is built at embed time, from
+the **upcoming** request — so the flag on the window of action `a_t` carries the phase of decision
+`t+1`. `ProgressClock` has read it as "was this decision forced" since the term's originating
+commit (`adc0fe4`), and the same call additionally hands the **upcoming** request's `legal` to the
+trapped-vs-wall helplessness gate, which the design specified as "a switch being legal **this
+decision**".
+
+Both halves, measured:
+
+* the clock **sits out on 19,503 full-agency decisions** — probe M's SITOUT class, 13.2% of the
+  corpus and its **costliest arm at −5.1pp** — because our mon happened to be KO'd on them;
+* the **zero-agency post-faint replacement**, which no action can rescue, is **charged 63.9% of the
+  time (12,432 charges, 36.3% of all charges)** — and the design forbids exactly this in one
+  sentence.
+
+Probe M reached the alignment by measurement rather than assumption, and the intuitive answer was
+wrong: testing both candidates against the clock's documented sit-out gave **0 / 10,442** violations
+under the `t+1` reading against **8,710 / 10,424** under `t`. `progress_clock_test.py` runs that
+same discriminator over a synthetic decision sequence and asserts the 0 moves to the other column
+when the flag is on — the fix restated as the measurement that found it.
+
+**The root cause is instructive and is why no test caught it for a year.**
+`phase_is_forced_switch` was minted eleven days before the clock (`045e8b8`) **for the obs history
+slot**, where "what phase did this window END in" is the natural and correct read. `adc0fe4` reused
+the attribute for a question it does not answer. Same name, different tense — and **both readings
+are true statements about the same delta**, so there is no assertion that could have failed.
+
+So the fix does not re-point it. It adds a NEW field, **`TurnDelta.decision_was_forced_switch`**
+(`prev_ctx.phase == "forced_switch"`), set at all four construction sites including the legacy
+snapshot-diff builder, and threads **`legal_prev`** alongside `legal` into `ProgressClock.update`.
+`phase_is_forced_switch` is left alone: the obs decoder, `opp_intent_labels.py` and
+`reward_manager.py` all want the closing tense. `decision_was_forced_switch` has exactly one
+consumer — the clock — and nothing encodes it into the observation (the TurnDelta lag frames were
+deleted by `gen3_frame_deletion_v1`; the test asserts `TurnDeltaEncoder` emits a byte-identical
+vector with the field flipped).
+
+`legal_prev` is threaded unconditionally and CONSUMED only under the flag; where a caller cannot
+capture it (`RewardTrackingMixin`, which builds contexts without a legality snapshot) it degrades to
+`legal` — the pre-fix reading — rather than to "trapped", because a fix that silently zeroes a term
+is worse than the off-by-one it replaces.
+
+### F2b — `--progress-switch-freeze`: a voluntary pivot freezes instead of paying
+
+**Charging a voluntary switch that lands nothing was DESIGNED, in writing, deliberately**
+(`design_markovian_reward_and_features.md:714-718`), inheriting the job from the collapsed
+`switch_bouncing_tax`. That is not drift. **The drift is what was around it.** In the design's
+composition the same pivot also collected `switch_base +0.5`, `se_switch +0.2`,
+`escape_threat_switch +0.25` and `pivot_* +0.10..0.15`; the net incentive on a tempo pivot was
+POSITIVE. `928a00b` zeroed **every one of those credits and explicitly kept the tax** ("zero every
+BIAS term except the no_progress_tax tilt"), and `43673ed` made that composition the default. **The
+sign of the switch incentive flipped and nobody re-derived the term's meaning.** It is a COMPOSITION
+drift, not a code drift — which is exactly why no test caught it either. The reward manager still
+carries the comment that states the original intent as a quantity: *"the flat no-progress charge
+(−0.15) does not out-weigh the per-switch reframes"*.
+
+The empirical half, from probe M: **−0.101** expected charge per voluntary switch against **−0.010**
+per move, a **10:1 differential**; and *within* the switch branch the tax's discrimination is
+**INVERTED** — Δ mean `d_out` **+0.0103 [+0.0076, +0.0131]**, i.e. the charged switches are worth
+*more* win probability than the exempt ones. The mechanism is structural: `_is_progress` has eight
+clauses and **not one of them can be caused by a switch** (the ~27% of pivots that escape do so
+because the opponent also committed, a contact ability fired, or a residual was already ticking).
+The predicate asks "did OUR ACTION advance the board", and a pivot's whole value — position, tempo,
+damage avoided — is a *state* fact it never looks at. So the tax prices an action KIND rather than
+discriminating within it. **42.7% of all charges.**
+
+Under the flag such a window FREEZES (no increment, no charge) rather than being classified NO_OP.
+The freeze sits AFTER the classification, so the pivots that legitimately reset the clock still
+reset it.
+
+**Probe N offered two spellings and this is the one that ships.** The alternative (F2a — give
+`_is_progress` a switch clause keyed on the incoming-KO belief falling, or on the switch-in's best
+multiplier beating the outgoing mon's) would reintroduce precisely the hand-tuned switch heuristic
+`928a00b` deleted on the argument that switching value is **learnable** from Φ_mat + `pbrs_belief` +
+the terminal. Probe N recommends against it on the record of that commit, and so do we.
+
+**The honest cost, stated rather than buried: a pure A↔B switch-loop becomes free.** The anti-stall
+job is not lost — a pivot-loop still pays on every MOVE turn between the pivots, and `--draw-penalty`
+plus the 250-turn forfeit remain the hard backstop — but **stall rate and mean game length are the
+canary** on any arm that enables this.
+
+### The config surface, and what "OFF by default" is worth
+
+`progress_decision_tense` / `progress_switch_freeze` are `RewardConfig` fields: resume-immutable,
+value-checked by `check_reward_config`, recorded in `model_config.json`, `MODEL_CONFIG_VERSION`
+**105**, **no `ARCH_SIGNATURE` bump** (they change what the clock counts, not any weight shape). The
+v105 migration defaults both to `False` for every archived config — not a guess, since the flags did
+not exist, and `False` reproduces what every generation through gen-15 trained under.
+
+They reach the clock through ONE call, **`ProgressClock.apply_reward_config(cfg)`**, used by both
+`gen3_env.py` and `reward_tracker.py`. That is deliberate: a hand-threaded reward field was once
+silently missed on the eval path and eval then measured a different reward than training, and the
+`RewardConfig` docstring says so. One call means training and eval cannot drift on what the clock
+does.
+
+**Both are RETRAIN-CLASS when ON, and the blast radius is measured rather than asserted.** `n` is
+the obs scalar *and* the charge basis — that identity is the Markovian design's whole premise, so a
+fix that moved only the reward would break the thing the clock exists to provide. The confinement
+test captures the deterministic golden 6-battle set under each arm and names every differing cell:
+**`--progress-decision-tense` moves 49/991 decisions, `--progress-switch-freeze` 153/991, and in
+both cases the ONLY column that ever differs is 1602** — `turns_since_progress` itself. No other
+block moves, no dim moves, the decision count is unchanged (the trajectory does not branch).
+
+**The control arm needs no code, and this is worth knowing before building one:** `--no-progress-penalty 0.0`
+already zeroes every charge while leaving the obs counter ticking. (One cosmetic caveat probe N
+raises: `_bias_term_active` does not read the magnitude, so `reward_class_composition` will still
+announce `1 BIAS (no_progress_tax)` on such a run.)
+
+### `gen3_staller_protect_rng_v1` — the eval roster's only coin becomes per-instance
+
+`Gen3StallerPlayer` and `Gen3StallerV2Player` flip a 60% coin for Protect. **Every other bot in the
+roster is deterministic**, and until now that coin came from the process-wide `random` module.
+
+This surfaced as a **failed integrity check, not a code review**. The transfer-coefficient cell
+(`.../transfer_coefficient_cell_2026-08-29.md` §4) ran the design's own falsifier: in a unit where
+the treatment never fired, the two arms must be the *same battle*, so the paired difference must be
+exactly 0. It came back **exactly 0.0000 over 2,693 pairs on the seven deterministic bots, with zero
+divergences — and failed on exactly these two** (755 pairs, 4 divergences). That confinement is what
+identified the cause: the searched arm awaits an executor while the control runs inline, so the
+shared global coin lands differently with no treatment involved. Unbiased noise (3 divergences
+favoured A, 1 favoured B) that inflates the discordant count in both directions and widens the
+interval; the cell reported it and deliberately left the repair to whoever owns the shared eval
+opponents.
+
+The repair is opt-in: `protect_seed=<int>` at construction, or **`$GEN3AI_STALLER_SEED`** for every
+staller in the process — the hook a paired-arm harness needs when it does not own the construction
+site, since the bots are built deep inside `env_factory` / `eval_worker`. Either installs a private
+`random.Random`; with neither, the coin is the `random` module itself and the default is
+byte-identical. An unparseable `$GEN3AI_STALLER_SEED` **raises** rather than falling back, because a
+seed that was meant to be set and silently was not would make an arm look reproducible while it is
+not — the exact failure this fix exists to remove.
+
+### Tests
+
+`progress_clock_test.py` (24) — the default-path trace captured against the pre-fix implementation;
+every fix assertion runs the same window through an OFF clock and an ON clock, so a revert collapses
+the two and the test fails; probe M's alignment discriminator on a synthetic sequence.
+`progress_clock_obs_confinement_integration_test.py` (6, `sim`) — the one-column confinement
+measurement above. `turn_delta_event_fold_test.py` (+5) — the two tenses pinned apart across all
+four `(prev_phase, curr_phase)` combinations, and the encoder's byte-identity with the new field
+flipped. `opponents_test.py::TestStallerProtectRng` (7) — seeded arms agree under adversarial
+interleaving, with its own revert arm showing unseeded arms diverge. `reward_defaults_test.py` (+3)
+— both new defaults pinned OFF, and the census proven unchanged with either on.

@@ -137,6 +137,25 @@ class RewardConfig:
     #   reward (TERMINAL + PBRS only, zero bias); run --all-shaping-pbrs WITHOUT it to keep the no_progress
     #   stall tilt as the single acknowledged BIAS (insurance against stall-regression — watch stall-rate).
     stall_pbrs: bool = False
+    # --- The no-progress clock's two intent-restoring fixes (both default OFF = byte-identical) ---
+    # Motivation is measured: probe M (`bias_tax_head_alignment_2026-08-29.md`) censused what the tax
+    # actually charges, probe N (`no_progress_tax_review_2026-08-29.md`) traced the intent against the
+    # implementation. The mechanism lives on `ProgressClock`; these fields exist HERE because the
+    # clock's behaviour is part of the reward a run trained under — resume-immutable, value-checked,
+    # recorded in model_config.json, and read by BOTH the training env and the eval-side
+    # RewardTracker so eval measures the same clock training used. Turning either ON changes the
+    # `turns_since_progress` OBS scalar as well as the charge (they key on ONE value by design), so
+    # both are retrain-class — no dim moves and no ARCH_SIGNATURE bump, but not a mid-run toggle.
+    #
+    # `progress_decision_tense` (F1) — point BOTH window gates at the decision being charged rather
+    #   than the one after it. Fixes the sit-out landing on 13.2% of FULL-agency decisions AND the
+    #   zero-agency post-faint replacement being charged 63.9% of the time (36.3% of all charges).
+    # `progress_switch_freeze` (F2b) — a voluntary switch that fails the (offense-only) progress
+    #   predicate FREEZES instead of charging. 42.7% of all charges; that charge was designed inside
+    #   a composition that also paid `switch_base +0.5` for the same pivot, and `928a00b` zeroed
+    #   every such credit while keeping the tax.
+    progress_decision_tense: bool = False
+    progress_switch_freeze: bool = False
 
     # --- gen3_clean_world_config_v1 (ai_v12 build wave A). The three switches the CLEAN-WORLD arm
     # needs and the flag surface could not express. EVERY default below is today's behaviour, so a

@@ -126,8 +126,8 @@ None, byte-identical default). It adds **no** resume-immutable field — it ride
 `turns_since_progress` counter **owned by `EpisodeTracker`** (NOT LiveView — it is cross-turn state;
 precedent = `HiddenPowerTracker`). It is updated at `record()`/`embed_battle` time (so the obs is fresh
 — poke-env runs `embed_battle` before `calc_reward`), and read by BOTH the obs encoder (`value()` →
-the `vec[14]` scalar) and the reward (`last_penalty` → `no_progress_tax`), so **obs and reward key on
-one value**. The ternary predicate per decision window: PROGRESS (our-attributed damage ≥3% / status
+`reactive_layout["turns_since_progress"]`, absolute obs column **1602**) and the reward
+(`last_penalty` → `no_progress_tax`), so **obs and reward key on one value**. The ternary predicate per decision window: PROGRESS (our-attributed damage ≥3% / status
 landed / hazard layer / forced opp commit / **an our-owned residual — Toxic/poison/burn or Leech
 Seed/Curse/Nightmare — chipping the opp NET-down** → reset), DENIED (freeze), NO_OP (deliberate
 wheel-spin → increment + charge, gated off on forced-switch windows and when no switch is legal).
@@ -175,6 +175,57 @@ the opp NET-down (which clause (v) would otherwise credit as progress), killing 
 Refresh-spam-while-seeded stall (a Refresh that ACTUALLY cures a status sets `our_status_cured` → not wasted →
 normal path). The first two target the self-play Spikes/RapidSpin wheel-spin loops the flat anti-spam taxes
 missed; the third targets degenerate self-cure spam during a passive residual stall.
+
+### The clock's two intent-restoring fixes — `--progress-decision-tense` / `--progress-switch-freeze`
+
+**Both default OFF; a flagless run is byte-identical to what every generation through gen-15
+trained** (proved by `gen3_data_obs_parity_integration_test`'s committed golden and by
+`progress_clock_test.py`'s recorded default trace, captured against the pre-fix implementation).
+They are `RewardConfig` fields — resume-immutable, value-checked, recorded in `model_config.json`,
+`MODEL_CONFIG_VERSION` 105, **no `ARCH_SIGNATURE` bump** — and are threaded onto the clock by ONE
+call, `ProgressClock.apply_reward_config(cfg)`, used by both `gen3_env.py` and `reward_tracker.py`
+so training and eval cannot drift on what the clock does.
+
+**Why they exist, in one line each.** Probe M censused what the tax actually charges
+(`designs/research_state/measurements/bias_tax_head_alignment_2026-08-29.md`) and probe N traced the
+term's intent against its implementation (`.../no_progress_tax_review_2026-08-29.md`). Between them
+they found that **79% of all charges land on the two paths below**, and that neither is what the
+design specified.
+
+| flag | what it changes | measured motivation |
+|---|---|---|
+| `--progress-decision-tense` | both window GATES (the forced-switch sit-out **and** the trapped-vs-wall charge suppression) read the decision that OPENED the window instead of the one after it | the sit-out lands on **19,503 full-agency decisions** (13.2%, the costliest class at −5.1pp) while the **zero-agency post-faint replacement is charged 63.9%** of the time — **36.3% of all charges** |
+| `--progress-switch-freeze` | a VOLUNTARY switch that fails `_is_progress` FREEZES the window (no increment, no charge) rather than being taxed | `_is_progress` is offense-only, so no switch can satisfy it by its own doing: **−0.101** expected charge per voluntary switch vs **−0.010** per move, and within the switch branch the discrimination is **INVERTED** (Δ mean `d_out` **+0.0103** [+0.0076, +0.0131] — the charged switches are worth *more* win probability). **42.7% of all charges** |
+
+**The tense fix is ONE off-by-one in ONE call, and it has two halves that must move together.**
+`phase_is_forced_switch` reads `curr_ctx.phase` — the phase of the request that CLOSES the window —
+because it was minted eleven days earlier for the obs history slot, where that is the correct read.
+`ProgressClock` reused it for "was the decision that opened this window forced", and no test could
+catch it: **both readings are true statements about the same delta**. The same call also passed the
+upcoming request's `legal` to the helplessness gate, so a mon genuinely trapped at `t` is charged
+whenever its successor could switch. The fix adds a NEW field, `TurnDelta.decision_was_forced_switch`
+(`prev_ctx.phase == "forced_switch"`), and threads `legal_prev` alongside `legal`;
+**`phase_is_forced_switch` is deliberately untouched** — the obs decoder, `opp_intent_labels` and
+`reward_manager` all want the closing tense, and re-pointing it would silently change what they mean.
+
+**F2b, not F2a.** Probe N specified two spellings and this is the one that ships: the alternative
+(give `_is_progress` a switch clause keyed on belief-delta or type-matchup) would reintroduce exactly
+the hand-coded switch heuristic `928a00b` deleted on the argument that switching value is LEARNABLE
+from Φ_mat + `pbrs_belief` + the terminal. The freeze is instead the **composition-corrected reading
+of the original intent**: the design's "a pure tempo-pivot pays the toll once" was written for a
+reward that also paid the same pivot `switch_base +0.5` / `se_switch +0.2` / `escape_threat +0.25`;
+`928a00b` zeroed every one of those and explicitly kept the tax, so the sign of the net switch
+incentive flipped with nobody re-deriving the term. The **honest cost** is that a pure A↔B
+switch-loop becomes free — anti-stall survives via the move turns between pivots, `--draw-penalty`
+and the 250-turn forfeit, and **stall rate / mean game length is the canary** on any arm that runs it.
+
+**Both are RETRAIN-CLASS when ON, and the blast radius is measured rather than argued.** `n` is the
+obs scalar as well as the charge basis (that identity is the Markovian design's whole premise — a
+fix that moved only the reward would break it), so turning either on changes the observation stream.
+`progress_clock_obs_confinement_integration_test.py` captures the golden 6-battle set under each arm
+and reports every differing cell: **`--progress-decision-tense` 49/991 decisions, `--progress-switch-freeze`
+153/991, and in both cases the ONLY column that ever differs is 1602** — `turns_since_progress`
+itself. No other block moves, no dim moves, the trajectory does not branch.
 
 **Server-free reward parity (`reward_tracker.py`).** The offline reward path (`RewardTracker`, used by
 `BattleRecorder` + the eval `RewardTrackingMixin`) has no `Gen3Env` to own the clock, so it OWNS a
@@ -767,6 +818,31 @@ differently and the playstyle diversity is the point. The flat numbers are safe 
 because eval is non-blocking and **skips a cycle while the previous one is still running**
 (below): a heavier roster self-throttles to a sparser cadence instead of needing tuned
 ceilings.
+
+### ⚠️ The two STALLERS are the roster's only source of randomness — `protect_seed` / `$GEN3AI_STALLER_SEED`
+
+`Gen3StallerPlayer` and `Gen3StallerV2Player` flip a coin for Protect
+(`_PROTECT_PROBABILITY = 0.6`); **every other bot in the roster is deterministic.** By default that
+coin comes from the process-wide `random` module — the project's documented "two players share the
+global `random`" trap, seen from the opponent side.
+
+**It is measured, not hypothetical.** The transfer-coefficient cell
+(`designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md` §4) ran a paired-arm
+falsifier whose zero-overrule units MUST be the same battle in both arms. It passed **exactly** on
+the seven deterministic bots (2,693 pairs, A−B = 0.0000, **zero** divergences) and failed on
+**exactly these two** (755 pairs, 4 divergences) — the searched arm awaits an executor while the
+control runs inline, so the shared coin lands differently with no treatment involved. Unbiased noise
+(3 favoured A, 1 favoured B), but it widens every paired interval for free.
+
+**The fix is OPT-IN and the default is unchanged.** Pass `protect_seed=<int>` at construction, or set
+**`$GEN3AI_STALLER_SEED`** to seed every staller in the process (the hook a harness needs when it
+does not own the construction site — the bots are built deep inside `env_factory` / `eval_worker`).
+Either gives the instance its own `random.Random`, so its flip sequence depends only on how many
+times *that player* has rolled. With no seed by either route the coin is the `random` module itself,
+byte-identically. An unparseable `$GEN3AI_STALLER_SEED` **raises** rather than falling back — a seed
+that was meant to be set and silently was not would make an arm look reproducible while it is not.
+**Any paired-arm eval design should set it**; `opponents_test.py::TestStallerProtectRng` carries both
+the seeded-arms-agree test and its revert arm (unseeded, the same interleaving pulls them apart).
 
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`

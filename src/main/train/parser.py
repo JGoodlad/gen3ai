@@ -365,6 +365,26 @@ def build_parser() -> argparse.ArgumentParser:
                         "MAT_ALIVE_WEIGHT are calibrated against the 30 scale, so a +-1 terminal "
                         "wants Phi_mat off (--no-hand-shaping does that). Resume-immutable, "
                         "value-checked.")
+    parser.add_argument("--progress-decision-tense", "--progress_decision_tense",
+                        dest="progress_decision_tense", action=BoolFlag, default=False,
+                        help="No-progress clock: read BOTH window gates (the forced-switch sit-out "
+                        "and the trapped-vs-wall charge suppression) off the decision BEING CHARGED "
+                        "instead of the one after it. Today's off-by-one exempts 13.2%% of decisions "
+                        "that had full agency and charges the zero-agency post-faint replacement "
+                        "63.9%% of the time (36.3%% of all charges). Default OFF = the shipped "
+                        "behaviour. ON changes the turns_since_progress OBS scalar too, so it is "
+                        "retrain-class. Resume-immutable, value-checked.")
+    parser.add_argument("--progress-switch-freeze", "--progress_switch_freeze",
+                        dest="progress_switch_freeze", action=BoolFlag, default=False,
+                        help="No-progress clock: a VOLUNTARY switch that fails the progress "
+                        "predicate FREEZES the window (no increment, no charge) instead of being "
+                        "taxed. The predicate is offense-only, so no switch can satisfy it by its "
+                        "own doing — the tax prices the action KIND (-0.101 per voluntary switch vs "
+                        "-0.010 per move) and within the branch its discrimination is INVERTED. "
+                        "42.7%% of all charges. Anti-stall survives via the move turns between "
+                        "pivots + --draw-penalty + the 250-turn forfeit; a pure A-B switch-loop "
+                        "becomes free, so watch the stall-rate canary. Default OFF = the shipped "
+                        "behaviour. Retrain-class. Resume-immutable, value-checked.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
     parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=None,

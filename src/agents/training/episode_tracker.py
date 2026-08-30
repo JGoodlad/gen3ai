@@ -918,7 +918,13 @@ class EpisodeTracker:
         """
         delta = self.build_delta(battle=battle)
         live = battle.strict_view().live
-        self._progress_clock.update(delta, live, legal)
+        # `legal` is the legality of the request the caller is about to answer — decision t+1 for
+        # the window being folded. The clock's trapped-vs-wall gate was specified against "a switch
+        # being legal THIS decision", so hand it the OPENING decision's snapshot too; which of the
+        # two it reads is `--progress-decision-tense`'s business (ProgressClock._gates). The
+        # context that opened the window is the same `_history[-2]` `build_delta` just folded from.
+        legal_prev = self._history[-2].legal if len(self._history) >= 2 else None
+        self._progress_clock.update(delta, live, legal, legal_prev=legal_prev)
         # E9 recency: the SAME per-decision window the newest TurnDelta slot folds
         # ([cursors[-1], now)), plus the live actives for the seen reset.
         if isinstance(live.turn, int):        # a mocked/partial battle (tests) skips recency

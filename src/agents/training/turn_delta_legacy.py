@@ -315,6 +315,7 @@ def build_legacy(prev_ctx: "BattleContext", curr_ctx: "BattleContext", action: i
         our_damaging_event=our_damaging_event,
         opp_damaging_event=opp_damaging_event,
         phase_is_forced_switch=(curr_ctx.phase == "forced_switch"),
+        decision_was_forced_switch=(prev_ctx.phase == "forced_switch"),
         our_hp_after=curr_ctx.our_hp.copy(),
         opp_hp_after=curr_ctx.opp_hp.copy(),
         our_target_hp_delta=our_target_hp_delta,

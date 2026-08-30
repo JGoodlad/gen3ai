@@ -20,6 +20,7 @@ rotation (OPPONENT_CLASSES / eval lists in train_rl_agent.py). Their display nam
 are registered in eval_callback._OPPONENT_NAMES so the TUI/TensorBoard label them
 correctly once they are added.
 """
+import os
 import random
 
 from poke_env.battle.battle import Battle
@@ -75,6 +76,68 @@ def _best_switch(battle: Battle):
 
 _RECOVERY_HP_THRESHOLD = 0.50
 _PROTECT_PROBABILITY = 0.6  # use protect ~60% of turns when opponent is toxiced
+
+# ---------------------------------------------------------------------------
+# The staller Protect coin — per-instance RNG (OPT-IN)
+# ---------------------------------------------------------------------------
+# The two staller bots are the ONLY scripted opponents in the roster that draw a random number,
+# and until 2026-08-29 they drew it from the process-wide `random` module. That is the project's
+# documented "two players share the global `random`" trap seen from the opponent side, and it has
+# a measured cost: `designs/research_state/measurements/transfer_coefficient_cell_2026-08-29.md`
+# §4 ran a paired-arm falsifier whose zero-overrule units MUST be the same battle in both arms.
+# It passed EXACTLY on the seven deterministic bots (2693 pairs, delta 0.0000, zero divergences)
+# and failed on exactly these two (755 pairs, 4 divergences) — the arms interleave `choose_move`
+# differently, so the shared global coin lands differently with no treatment involved. Unbiased
+# noise, but it widens every paired interval for free.
+#
+# DEFAULT IS UNCHANGED: with no seed the players use the `random` module itself, so a default
+# run/eval is byte-identical. Pass `protect_seed=` (or set $GEN3AI_STALLER_SEED for every staller
+# in the process — the hook a paired-arm harness that does not own the construction site needs)
+# to give each instance its OWN `random.Random`, whose flip sequence then depends only on how many
+# times THAT player has rolled.
+_STALLER_SEED_ENV = "GEN3AI_STALLER_SEED"
+
+
+def _resolve_protect_rng(protect_seed):
+    """The RNG a staller draws its Protect coin from.
+
+    Returns the `random` MODULE (i.e. today's shared global stream) when no seed is given by
+    either route — that is what keeps the default byte-identical — and a private
+    :class:`random.Random` when one is. An unparseable ``$GEN3AI_STALLER_SEED`` raises rather than
+    silently falling back: a seed that was meant to be set and silently was not would make a
+    paired arm look reproducible while it is not.
+    """
+    if protect_seed is None:
+        env = os.environ.get(_STALLER_SEED_ENV)
+        if env is None or env == "":
+            return random
+        try:
+            protect_seed = int(env)
+        except ValueError as exc:
+            raise ValueError(
+                f"${_STALLER_SEED_ENV}={env!r} is not an integer seed") from exc
+    return random.Random(protect_seed)
+
+
+class _SeededProtectMixin:
+    """Gives a staller its own Protect coin. Mixed in BEFORE ``Player`` so ``protect_seed`` is
+    consumed here and every other kwarg reaches poke-env untouched.
+
+    The CLASS attribute is the `random` module, i.e. the shared global stream. That is not
+    belt-and-braces: the unit suite instantiates these bots by bypassing ``__init__``
+    (``cls.__new__``), so without a class-level default an unseeded, un-inited player would raise
+    instead of behaving exactly as it always has.
+    """
+
+    _protect_rng = random
+
+    def __init__(self, *args, protect_seed=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._protect_rng = _resolve_protect_rng(protect_seed)
+
+    def _protect_roll(self) -> float:
+        """One draw of the Protect coin. The ONE place either staller consumes randomness."""
+        return self._protect_rng.random()
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +301,7 @@ def _best_switch_v2(battle: Battle):
     return max(switches, key=score)
 
 
-class Gen3StallerPlayer(Player):
+class Gen3StallerPlayer(_SeededProtectMixin, Player):
     """
     Status-oriented stall player.
 
@@ -268,7 +331,7 @@ class Gen3StallerPlayer(Player):
                     # prefer a dedicated status move.
 
             # 2. Protect to rack up toxic damage
-            if opponent.status == Status.TOX and random.random() < _PROTECT_PROBABILITY:
+            if opponent.status == Status.TOX and self._protect_roll() < _PROTECT_PROBABILITY:
                 for move in battle.available_moves:
                     if move.id in _PROTECT_MOVES:
                         return Player.create_order(move)
@@ -415,7 +478,7 @@ class Gen3SetupSweepPlayer(Player):
 # ===========================================================================
 
 
-class Gen3StallerV2Player(Player):
+class Gen3StallerV2Player(_SeededProtectMixin, Player):
     """
     Staller V2 — same status/stall identity, three fixes over V1:
 
@@ -465,7 +528,7 @@ class Gen3StallerV2Player(Player):
             # 3. Protect to rack up toxic damage — but not two turns running.
             if (
                 opponent.status == Status.TOX
-                and random.random() < _PROTECT_PROBABILITY
+                and self._protect_roll() < _PROTECT_PROBABILITY
                 and not _used_protect_last_turn(active)
             ):
                 for move in battle.available_moves:

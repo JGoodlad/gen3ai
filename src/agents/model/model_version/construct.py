@@ -105,6 +105,8 @@ class ModelVersionConstruction(ModelVersionFields):
             pbrs_material=bool(getattr(reward_config, "pbrs_material", True)),
             pbrs_belief=bool(getattr(reward_config, "pbrs_belief", True)),
             victory_value=float(getattr(reward_config, "victory_value", 30.0)),
+            progress_decision_tense=bool(getattr(reward_config, "progress_decision_tense", False)),
+            progress_switch_freeze=bool(getattr(reward_config, "progress_switch_freeze", False)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
