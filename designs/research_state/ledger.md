@@ -6738,3 +6738,27 @@ Process notes banked: the slice↔recorded VERIFIED guard caught its second woul
 defect; the conservative-direction selection-confound reasoning; two self-retractions (ratchet
 completion; the √2 CI double-count); gate on final_model.zip never exit code; --grad-accum-steps
 left alone to preserve comparability (registered as a future-fold question).
+
+### 🔭 PROBE P DISPATCHED — did v8 ALSO redistribute? and was team-PFSP the treadmill-killer? (owner directive, 2026-08-30)
+
+The reconciliation candidate, stated before the data: **our folds concentrate a FIXED
+team-bias 0.4 on the taught slices — actively manufacturing redistribution away from everyone
+else — while v8's fold ran ADAPTIVE one-sided team-PFSP across its whole 23-team span**
+(pfsp_scale 2.5, team_pfsp onesided, stable opponents 0.35, pool_spread, 10 sentinels): a
+mechanism that re-weights team draws toward whatever is WEAKENING, i.e. an automatic
+repair-the-damage loop. If true, v8's ecology wasn't decoration — it was the anti-treadmill,
+and rev-2/3's fixed bias is the single most-obvious unreplicated ingredient. **Registered
+predictions: (P1)** v8_14-vs-parent per-team piloting on UNTAUGHT pool teams: the ecology
+account predicts NO regression (or far less than our −5.9pp analogue); redistribution-is-
+intrinsic predicts a comparable loss. **(P2)** v8's TB/artifacts show team-PFSP draw mass
+concentrating on weakening teams during the fold (the adaptive-repair signature). **(P3,
+exploratory)** the per-untaught-team pull-down across rev-2 (9 covered) / rev-3 (12) / v8 (23)
+scales roughly with the training-share taken from untaught teams (≈ linear in share — the
+owner's 1/√N intuition is registered as the alternative; three points fit either badly, so
+this row is exploratory, never a verdict). Probe is era-pinned (v8 arch drift; the
+forensics/probe-E worktree recipe), CPU battles via the era bridge, per-team eval on a sampled
+set of untaught teams at the parent and post-fold checkpoints, sized by pilot. Decision rule:
+P1-no-regression + P2-signature ⇒ rev-4/40-team designs ADD adaptive team-PFSP (or a
+repair-aware bias) to the fold — the missing ingredient named; P1-regression ⇒ redistribution
+is intrinsic and COVERAGE alone is the lever (the owner's "most obvious lever" reading
+confirmed).
