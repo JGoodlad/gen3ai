@@ -7305,3 +7305,24 @@ STEEPEST (risk-correct by construction — the clean world is a risk-correctness
 not only credit assignment), shaped world shallowest; **a flat sparse slope FALSIFIES
 "P(win) buys risk modulation for free" and is to be reported as loudly as a pass.** The
 trace-only instruments get a gen-15 baseline now, pre-drift.
+
+### ⚖️ ADJUDICATED: "was material reward a mistake?" — decomposed into three decisions, two convicted, one on trial (2026-08-30)
+
+Owner's question scored against the record. "Material reward" bundled THREE choices:
+**(1) DENSITY** (dense shaping vs sparse ±1) — **OPEN, deliberately**: the famine was never
+measured (the owner's own 4d22ae4 correction); literature leans sparse-works (AlphaZero/
+TD-Gammon pure outcome; self-play manufactures curriculum — early opponents are beatable so
+the gradient never starves; the shaping-dependent games have 10× our horizon). The registered
+5M pre-test + cw1_sparse ARE this question. **(2) INVARIANCE DISCIPLINE** (PBRS-form vs bias
+terms) — **CONVICTED**: material PBRS is advantage-invariant (could not bias behavior); the
+BIAS terms did the measured damage (probe M's de-facto switch tax 48.5%/73%, probe N's
+composition drift, the whole unaudited-accretion genre). The owner's anneal instinct sorts
+here: PBRS needs no anneal by construction; biases needed an exit plan and never had one.
+**(3) UNITS** (V=30 vs ±1) — **CONVICTED by accumulation**: ±12 support mis-sizing, the
+{0,3,9} ladder unit error, MAT ±30 entanglement, PopArt-as-scale-tamer, an unreadable
+critic, and risk-neutrality exactly where the threshold objective demands curvature.
+**Sharpest formulation: the mistake was not "material" but shipping shaping WITHOUT
+invariance discipline and WITHOUT an exit plan.** PBRS-form density at ±1 units under the
+registry = what material was ever buying at none of the measured costs = the ai_v12 φ arms.
+The three-arm design is the adjudication, not an argument; sparse-stalls ⇒ self-φ is the
+boost and, being PBRS, needs no anneal to retire.
