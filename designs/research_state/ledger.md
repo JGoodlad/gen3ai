@@ -7326,3 +7326,27 @@ invariance discipline and WITHOUT an exit plan.** PBRS-form density at ±1 units
 registry = what material was ever buying at none of the measured costs = the ai_v12 φ arms.
 The three-arm design is the adjudication, not an argument; sparse-stalls ⇒ self-φ is the
 boost and, being PBRS, needs no anneal to retire.
+
+### 🎚️ DESIGN CANDIDATE: opponent-SKILL conditioning — de-mixing the marginal opponent model (2026-08-30, VoI-gated)
+
+Owner's thought experiment (humans condition on opponent ELO — expect naive vs nuanced lines,
+e.g. the preemptive double-switch, by rating) formalized: **the α/β intent heads are trained
+on the opponent MIX with no who-is-it input, so they predict the MARGINAL opponent** —
+systematically wrong against both ends. Same disease that forced stratifying the opp_intent
+METRICS ("the axis numbers were a moving mix"), one level down: the model's predictions are
+the moving mix. Skill info = adaptation-layer fuel (worthless at equilibrium, valuable
+against deviators; a ladder is a rating-stratified deviator distribution). **Menu, cheapest
+first:** (a) opponent-skill SCALAR in the global obs block — perfectly labelable at train
+time (anchored BT ELO of every pool member/bot) + unknown-flag for ladder cold-start;
+deliberately skill NOT identity (identity = pool-memorization shortcut); α/β condition
+automatically through the trunk. (b) in-context skill LATENT — aux head predicting opponent
+class/rating from the trajectory, labels free; the dynamic posterior to (a)'s prior; catches
+sandbaggers. (c) rating-band Smogon priors (chaos ships per-cutoff 0/1500/1630/1760+; we
+consume one band) — the set-inference version; acquisition work, queues behind evidence.
+**GATE (the L3/VoI lesson — the opp-ACTION aux head was falsified at VoI ~0.03):** before
+building, (1) read the de-mixing gap from EXISTING stratified metrics (if per-class α
+distributions barely separate, the scalar is a no-op — free), (2) the ORACLE A/B (true class
+as oracle input; ceiling on any latent; if the oracle moves nothing the menu is dead).
+Prior is better than the falsified head's (type-prediction concentrates value where the
+ladder lives, vs action-prediction which equilibrium devalues) — but it buys in with the
+gate, not the story. Era: gen-16+ candidate, post-flywheel-verdicts.
