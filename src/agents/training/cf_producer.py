@@ -29,6 +29,13 @@ Each cycle:
    action at that turn, then both sides live to termination on fresh post-divergence dice. A
    continuation that reaches the 250-turn stall-forfeit cap is a **DRAW AT CAP** and scores 0.5 —
    see :meth:`CfProducer._play_arm`; the per-label count rides out as ``n_capped``.
+4b. **Optionally sweep the SIBLING actions** (``--q-labels``, `gen3_cf_q_labels_v1`, OFF by
+   default and byte-identical when off) — the same rollout, once per LEGAL action, on the SAME
+   dice, producing the row's ``q_labels`` block. That is the supply side of the v107 Q win-prob
+   head, which shipped as a trained consumer of a stream nothing wrote. The arithmetic — the
+   common-random-number pairing, the declared ``cf_q_sweep_v1`` selection rule, and why the
+   recorded action's arm is free — lives in `cf_q_labels.py`; the cost is in § *Where the time
+   goes* and multiplies by the ARM COUNT, so it is metered per row and on the heartbeat.
 5. **Write** the shared v1 label schema to
    ``<run_dir>/cf_labels/labels_cf_producer_<step>_<seq>.jsonl`` — one NEW file per batch (never a
    rewrite, so the buffer's ``(name, inode)`` offset map can never be wrong about it).
@@ -200,6 +207,9 @@ import numpy as np
 from agents.action.constants import MOVE_START
 from agents.observation.constants import MAX_TURNS
 from agents.training.cf_audit import LabelRow, obs_b64, obs_digest, wilson_ci
+from agents.training.cf_q_labels import (
+    Q_SWEEP_VERSION, assert_paired_dice, q_arm_seeds, q_labels_block, q_provenance,
+    recorded_arm_is_reusable, select_q_actions)
 from agents.training.obs_materializer import RecordDecision, scan_record
 from utils.bridge.counterfactual import replay_counterfactual as _run_one
 from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord, replay_battle
@@ -565,6 +575,21 @@ class ProducerState:
     #: before this process could read them. A benign, EXPECTED race between two processes that
     #: share only a directory — never an error path, and never invisible. See `_note_vanished`.
     records_vanished: int = 0
+    #: `gen3_cf_q_labels_v1` — the PER-ACTION sweep's cost meter, and it is a meter rather than a
+    #: statistic because the sweep multiplies a label's cost by its ARM COUNT. `q_arms_rolled /
+    #: q_rows` IS the measured ~n_legal multiplier an operator sizing this producer needs, and
+    #: `q_arms_reused` is how many of those arms the recorded-action identity bought for free.
+    q_rows: int = 0
+    q_entries_total: int = 0
+    q_arms_rolled: int = 0
+    q_arms_reused: int = 0
+    q_rollouts_total: int = 0
+    q_rollouts_capped: int = 0
+    q_wall_seconds: float = 0.0
+    #: Per-DECISION q failures, kept apart from `skip_reasons` because that one counts RECORDS: a
+    #: swept decision that lost an arm has not cost the record its label, and folding the two would
+    #: make `records_skipped` unreadable.
+    q_skip_reasons: dict = dataclasses.field(default_factory=dict)
     cycles: int = 0
     started_unix: float = dataclasses.field(default_factory=time.time)
     updated_unix: float = 0.0
@@ -605,6 +630,10 @@ class ProducerState:
         self.records_skipped += 1
         self.skip_reasons[reason] = self.skip_reasons.get(reason, 0) + 1
 
+    def note_q_skip(self, reason: str) -> None:
+        """A per-DECISION q-sweep loss. Never touches ``records_skipped`` — see the field."""
+        self.q_skip_reasons[reason] = self.q_skip_reasons.get(reason, 0) + 1
+
     def save(self) -> None:
         self.updated_unix = time.time()
         body = {k: v for k, v in dataclasses.asdict(self).items() if k != "path"}
@@ -644,7 +673,9 @@ def label_row(*, record_path: str, decision: RecordDecision, wins: float, n: int
               win_prob: Optional[float], n_capped: int = 0,
               outcome_label: Optional[float] = None,
               mc_return: Optional[float] = None, mc_return_n: int = 0,
-              reward_sha1: str = "", reward_composition: str = "") -> dict:
+              reward_sha1: str = "", reward_composition: str = "",
+              q_labels: "Optional[Sequence[dict]]" = None,
+              q_sweep: "Optional[dict]" = None) -> dict:
     """The shared v1 schema, plus additive provenance the buffer ignores by design.
 
     The extra keys (`sampler_version`, `priority`, `label_regime`, `n_capped`) are NOT schema
@@ -672,6 +703,15 @@ def label_row(*, record_path: str, decision: RecordDecision, wins: float, n: int
     ``reward_composition`` is the human line beside the digest, for the same reason `format_reward_
     composition` is printed at launch: a hex digest tells a reader that two rewards DIFFER, and
     nothing about how.
+
+    ``q_labels`` is the PER-ACTION stream (`gen3_cf_q_labels_v1`, ``--q-labels``) — additive-optional
+    at schema v1 like the two above, and riding the SAME row for the same reason: the buffer dedups
+    on the obs digest, so a second row for one state would collide with the first and one of them
+    would vanish. Passing it also writes ``taken_action``, the consumer-facing name for the index
+    this row has always carried under the provenance key ``recorded_action``; the WEAK on-policy
+    fallback term (``--q-winprob-onpolicy-coef``) reads that name beside ``outcome_label``. The two
+    travel together deliberately — the free field arrives with the expensive one rather than
+    offering a run the on-policy-only regime this whole stream exists to escape.
     """
     lo, hi = wilson_ci(float(wins), int(n))
     row = LabelRow(
@@ -704,6 +744,14 @@ def label_row(*, record_path: str, decision: RecordDecision, wins: float, n: int
         # unconditionally would imply a measurement that was not taken.
         row.update(mc_return=round(float(mc_return), 6), mc_return_n=int(mc_return_n),
                    reward_sha1=reward_sha1, reward_composition=reward_composition)
+    if q_labels is not None:
+        # Written only when the sweep RAN. An absent key and an empty list mean different things
+        # here: absent = this producer does not do per-action labels, `[]` = it swept this decision
+        # and every arm failed. Both leave the Q head unsupervised on this row; only the second is
+        # a fact about the sweep, and `cf/q_label_coverage` should be able to tell them apart.
+        row.update(q_labels=list(q_labels), taken_action=int(decision.action))
+        if q_sweep is not None:
+            row["q_sweep"] = q_sweep
     return row
 
 
@@ -866,6 +914,16 @@ class CfProducer:
         self._warned_no_return = False
         self._said_capped = False
         self._said_no_return_path = False
+        self._said_q_sweep = False
+        # gen3_cf_q_labels_v1: the PER-ACTION stream. Resolved ONCE here, with `getattr` defaults,
+        # so a caller holding an older args namespace (a test double, a saved argv) keeps the OFF
+        # path rather than raising — and OFF is byte-identical output.
+        self._q_on = bool(getattr(args, "q_labels", False))
+        self._q_top_n = max(0, int(getattr(args, "q_top_n", 1) or 0))
+        #: R per sibling arm. 0 means "follow --rollouts", which is also the setting that makes the
+        #: recorded action's arm FREE (`recorded_arm_is_reusable`) — a default worth having.
+        self._q_rollouts = int(getattr(args, "q_rollouts", 0) or 0) or int(args.rollouts)
+        self._q_max_actions = max(0, int(getattr(args, "q_max_actions", 0) or 0))
         self.anchor_failed = False
         #: Set by :meth:`run_anchor` when the anchor RAISED instead of returning a verdict — the
         #: exception text, so :func:`main` can say which of the two failures happened instead of
@@ -1179,7 +1237,12 @@ class CfProducer:
         chunks = rep.p1_chunks if side == "p1" else rep.p2_chunks
         outcome = _outcome_scalar(record, side, rep.outcome)
         decisions = scan_record(record, side, chunks=chunks,
-                               mappings=self.snapshot.mappings, impl=self.args.impl)
+                               mappings=self.snapshot.mappings, impl=self.args.impl,
+                               # The per-action sweep needs every legal action's choice STRING, and
+                               # this replay is already standing at each decision. Asking here costs
+                               # ~n_legal pure mapper calls per decision; asking later costs a
+                               # prefix replay per labelled decision.
+                               capture_choices=self._q_on)
 
         seen_turns: set = set()
         candidates: "List[RecordDecision]" = []
@@ -1212,20 +1275,29 @@ class CfProducer:
         scored.sort(key=lambda t: (-t[0], t[4].index))
 
         rows: "List[dict]" = []
-        for score, s, e, wp, d in scored[: self.args.top_n]:
+        for rank, (score, s, e, wp, d) in enumerate(scored[: self.args.top_n]):
             if self._throttled():
                 self._log(f"throttle: {self._rate_per_hour():.0f} labels in the last hour "
                           f"(--max-labels-per-hour {self.args.max_labels_per_hour}) — "
                           f"stopping this record early")
                 break
-            wins, n, n_capped, returns = self._rollout(
-                record, side, d, tag=os.path.basename(path))
+            tag = os.path.basename(path)
+            wins, n, n_capped, returns, base_seeds = self._rollout(record, side, d, tag=tag)
             if n == 0:
                 self.state.note_skip("rollouts_all_failed")
                 continue
             self.label_times.append(time.time())
             self.state.rollouts_total += n
             self.state.rollouts_capped += n_capped
+            # `gen3_cf_q_labels_v1`: the per-action sweep, on the TOP `--q-top-n` of this record's
+            # labelled decisions. It is ranked-prefix rather than a sampling rate because the
+            # ranking is the producer's declared priority — spending the multiplied budget on the
+            # decisions the sampler already judged most informative, not on a random subset of them.
+            q_labels = q_sweep = None
+            if self._q_on and rank < self._q_top_n:
+                q_labels, q_sweep = self._q_labels(
+                    record, side, d, tag=tag,
+                    base=(wins, n, n_capped, base_seeds))
             rows.append(label_row(
                 record_path=path, decision=d, wins=wins, n=n, n_capped=n_capped,
                 step=self.snapshot.step, surprise=s, entropy=e,
@@ -1237,15 +1309,122 @@ class CfProducer:
                 outcome_label=outcome,
                 mc_return=(float(np.mean(returns)) if returns else None),
                 mc_return_n=len(returns),
-                reward_sha1=self._reward_sha1, reward_composition=self._reward_composition))
+                reward_sha1=self._reward_sha1, reward_composition=self._reward_composition,
+                q_labels=q_labels, q_sweep=q_sweep))
         return rows
 
+    def _q_labels(self, record: ReconstructionRecord, side: str, d: RecordDecision, *,
+                  tag: str, base: "tuple") -> "tuple[List[dict], dict]":
+        """The PER-ACTION sweep for one already-labelled decision (`gen3_cf_q_labels_v1`).
+
+        ``base`` is the per-state label's own ``(wins, n, n_capped, seeds)`` — passed in rather
+        than recomputed, because it IS the recorded action's q-label whenever ``--q-rollouts``
+        matches ``--rollouts`` (:func:`cf_q_labels.recorded_arm_is_reusable`), and because its
+        OBSERVED seed list is what the pairing check adjudicates against. Re-deriving the seeds
+        here would make the check prove only that one function is deterministic.
+
+        Returns ``(entries, provenance)`` — the wire list and the additive audit block.
+
+        **THIS IS WHERE THE COST MULTIPLIES.** The per-state path pays R rollouts per label; this
+        pays R per LEGAL ACTION, so a decision offering 9 of them costs ~9x, minus the one arm the
+        reuse above buys for free. Every arm is metered into the state file, and
+        ``q_arms_rolled / q_rows`` is the measured multiplier rather than an estimate of it.
+        """
+        t0 = time.perf_counter()
+        base_wins, base_n, base_capped, base_seeds = base
+        choices = d.choices or {}
+        if not choices:
+            # A record scanned WITHOUT `capture_choices` — the sweep cannot name a sibling action's
+            # choice string, and inventing one is a second mapping implementation. Counted, never
+            # silently degraded into a one-entry (on-policy) block.
+            self.state.note_q_skip("no_choice_map")
+            return [], q_provenance(actions=(), rollouts=0, capped=0, reused_recorded=False,
+                                    max_actions=self._q_max_actions, wall_seconds=0.0)
+        R = self._q_rollouts
+        reuse = recorded_arm_is_reusable(q_rollouts=R, rollouts=int(self.args.rollouts))
+        actions = select_q_actions(
+            d.mask, d.action, max_actions=self._q_max_actions,
+            tag=tag, decision_index=int(d.index), producer_seed=int(self.args.seed))
+        seeds = q_arm_seeds(tag=tag, decision_index=int(d.index),
+                            producer_seed=int(self.args.seed), n=R)
+
+        results: "List[tuple]" = []
+        per_action_seeds: "dict[int, tuple]" = {}
+        capped = 0
+        for a in actions:
+            if a == int(d.action) and reuse:
+                results.append((a, float(base_wins), int(base_n)))
+                # The seeds the base arm REPORTED, not the ones this method just derived — that is
+                # what makes the pairing assertion below a measurement.
+                per_action_seeds[a] = tuple(base_seeds)
+                capped += int(base_capped)
+                self.state.q_arms_reused += 1
+                continue
+            choice = choices.get(a)
+            if choice is None:
+                self.state.note_q_skip("unmapped_action")
+                continue
+            if self._throttled():
+                # The throttle counts per-action labels too (see `--max-labels-per-hour`), so a
+                # sweep can exhaust it mid-decision. Stopping here ships a PARTIAL sweep, which is
+                # honest: every entry in it is a real measurement and the consumer masks the rest.
+                self.state.note_q_skip("throttled")
+                break
+            wins, n, arm_capped, _returns, used = self._rollout(
+                record, side, d, tag=tag, substitute_choice=choice,
+                rollouts=R, seeds=seeds, with_return=False)
+            self.state.q_arms_rolled += 1
+            self.state.q_rollouts_total += n
+            self.state.q_rollouts_capped += arm_capped
+            if n == 0:
+                self.state.note_q_skip("arm_all_failed")
+                continue
+            per_action_seeds[a] = tuple(used)
+            capped += arm_capped
+            results.append((a, wins, n))
+            self.label_times.append(time.time())
+
+        # THE SEAM. Every sibling arm must have run on one seed list; see `cf_q_labels`.
+        assert_paired_dice(per_action_seeds)
+
+        entries = q_labels_block(results)
+        wall = time.perf_counter() - t0
+        self.state.q_wall_seconds += wall
+        self.state.q_entries_total += len(entries)
+        if entries:
+            self.state.q_rows += 1
+        if not self._said_q_sweep:
+            self._said_q_sweep = True
+            self._log(f"q-sweep ON ({Q_SWEEP_VERSION}): first decision covered {len(entries)} of "
+                      f"{int(np.asarray(d.mask).sum())} legal actions at R={R} in {wall:.1f}s"
+                      f"{' (recorded arm reused free)' if reuse else ''}. Cost multiplies by the "
+                      f"ARM COUNT — watch `q_arms_rolled` on the heartbeat.")
+        return entries, q_provenance(
+            actions=actions, rollouts=R, capped=capped, reused_recorded=reuse,
+            max_actions=self._q_max_actions, wall_seconds=wall)
+
     def _rollout(self, record: ReconstructionRecord, side: str, d: RecordDecision,
-                 *, tag: str) -> "tuple[float, int, int, List[float]]":
+                 *, tag: str, substitute_choice: "Optional[str]" = None,
+                 rollouts: "Optional[int]" = None, seeds: "Optional[Sequence[str]]" = None,
+                 with_return: bool = True) -> "tuple[float, int, int, List[float], List[str]]":
         """R continuations from ``d``: the RECORDED action, then both sides live on fresh dice.
 
-        Returns ``(wins, n, n_capped, returns)``. ``wins`` is a FRACTIONAL success total — a draw
-        scores 0.5 and a turn-cap forfeit is a draw (`gen3_cf_draw_at_cap_v1`, see
+        ``substitute_choice`` overrides which action is played at the divergence turn — ``None``
+        (the default, and the whole per-state path) plays the RECORDED one. `gen3_cf_q_labels_v1`'s
+        per-action sweep passes a SIBLING action's choice string here, which is the only difference
+        between the row's own label and one of its q-labels. ``rollouts`` overrides R
+        (``--q-rollouts``), ``with_return=False`` skips the shaped-return recorder (a q-label
+        carries no ``mc_return``, so measuring one would be work nothing reads), and ``seeds``
+        supplies the post-divergence dice explicitly.
+
+        ⚠️ **``seeds`` is how sibling actions are PAIRED, and the returned seed list is how that is
+        CHECKED.** The default derivation (:func:`cf_q_labels.q_arm_seeds`) has no action term, so
+        passing nothing already pairs — but a sweep must not depend on remembering that, so every
+        call reports the dice it actually used and :func:`cf_q_labels.assert_paired_dice` adjudicates
+        at the seam. See that module for why an unpaired sweep at R=8 is noise.
+
+        Returns ``(wins, n, n_capped, returns, seeds_used)``. ``wins`` is a FRACTIONAL success
+        total — a draw scores 0.5 and a turn-cap forfeit is a draw (`gen3_cf_draw_at_cap_v1`, see
         :meth:`_play_arm`) — and ``n_capped`` is how many of the ``n`` finished arms hit the cap.
         ``returns`` is the per-rollout DISCOUNTED SHAPED RETURN from
         the labelled decision (`gen3_cf_twin_heads_v1`, the shadow critic's stream) and is EMPTY
@@ -1264,23 +1443,27 @@ class CfProducer:
         order-free counts and `returns` is reduced by a mean. ``--rollout-concurrency`` picks how
         many overlap; 1 is the byte-identical sequential path.
         """
-        from main.prober.falsifier import fresh_seeds
-
         rec = dataclasses.replace(record, trainee_username=record.username(side))
         seed = record.start_options().get("seed")
-        seeds = fresh_seeds(self.args.rollouts, salt=f"{tag}:{d.index}:cfp{self.args.seed}")
+        n_arms = int(self.args.rollouts if rollouts is None else rollouts)
+        # The DEFAULT derivation is the per-state path's, unchanged: `q_arm_salt` is verbatim the
+        # salt this line has always used, so a run without `--q-labels` draws the same dice it
+        # always did.
+        seeds = list(seeds) if seeds is not None else q_arm_seeds(
+            tag=tag, decision_index=d.index, producer_seed=int(self.args.seed), n=n_arms)
+        choice = d.choice if substitute_choice is None else substitute_choice
         # Built up front, on THIS thread: `make_player` hands out account names off a shared
         # counter and the mc_return hook patches the player, so neither belongs in a worker.
-        arms = [self._prepare_arm(rec, side, d, ps) for ps in seeds]
+        arms = [self._prepare_arm(rec, side, d, ps, with_return=with_return) for ps in seeds]
 
         conc = max(1, min(int(getattr(self.args, "rollout_concurrency", 1) or 1), len(arms)))
         if conc == 1:
-            results = [self._play_arm(a, rec, side, d, seed, tag) for a in arms]
+            results = [self._play_arm(a, rec, side, d, seed, tag, choice) for a in arms]
         else:
             from concurrent.futures import ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=conc, thread_name_prefix="cf-roll") as ex:
                 results = list(ex.map(
-                    lambda a: self._play_arm(a, rec, side, d, seed, tag), arms))
+                    lambda a: self._play_arm(a, rec, side, d, seed, tag, choice), arms))
 
         wins = 0.0
         n = n_capped = 0
@@ -1293,17 +1476,22 @@ class CfProducer:
             n_capped += int(capped)
             if g is not None:
                 returns.append(g)
-        return wins, n, n_capped, returns
+        return wins, n, n_capped, returns, seeds
 
-    def _prepare_arm(self, rec: ReconstructionRecord, side: str, d: RecordDecision, ps) -> dict:
-        """One rollout arm's players + its mc_return hook. Main-thread only — see :meth:`_rollout`."""
+    def _prepare_arm(self, rec: ReconstructionRecord, side: str, d: RecordDecision, ps,
+                     *, with_return: bool = True) -> dict:
+        """One rollout arm's players + its mc_return hook. Main-thread only — see :meth:`_rollout`.
+
+        ``with_return=False`` builds the arm with no shaped-return recorder at all: a per-action
+        q-label has nowhere to carry an ``mc_return`` (the wire object is action/label/n_rollouts),
+        so measuring one would be work no consumer reads."""
         from agents.training.cf_mc_return import attach_return_recording
 
         trainee = self.snapshot.make_player(rec, side, role="T")
         opponent = self.snapshot.make_player(rec, _other(side), role="O")
         recorder = None
         hook = None
-        if self._mc_return_on:
+        if self._mc_return_on and with_return:
             recorder = attach_return_recording(
                 trainee, reward_fn_factory=self._reward_factory)
             if recorder is None and not self._said_no_return_path:
@@ -1341,7 +1529,9 @@ class CfProducer:
                 "hook": hook, "post_t_seed": ps}
 
     def _play_arm(self, arm: dict, rec: ReconstructionRecord, side: str, d: RecordDecision,
-                  seed, tag: str) -> "tuple[bool, float, bool, Optional[float]]":
+                  seed, tag: str,
+                  substitute_choice: "Optional[str]" = None,
+                  ) -> "tuple[bool, float, bool, Optional[float]]":
         """Play ONE prepared arm to a terminal. ``(ok, outcome_score, capped, shaped_return|None)``.
 
         Runs on a worker thread when ``--rollout-concurrency`` > 1. It touches nothing shared: the
@@ -1371,7 +1561,8 @@ class CfProducer:
                 rec,
                 trainee=arm["trainee"],
                 opponent=arm["opponent"],
-                divergence_turn=int(d.turn), substitute_choice=d.choice,
+                divergence_turn=int(d.turn),
+                substitute_choice=(d.choice if substitute_choice is None else substitute_choice),
                 seed=seed, post_t_seed=arm["post_t_seed"], impl=self.args.impl,
                 trainee_decision_hook=arm["hook"])
         except Exception as exc:                                        # noqa: BLE001
@@ -1467,6 +1658,11 @@ class CfProducer:
             self._log(f"⚠️  the snapshot in hand is {lag:,} steps behind the newest checkpoint "
                       f"(> --lag-warn-steps {self.args.lag_warn_steps:,}) — labels stamped at this "
                       f"step may EXPIRE at the consumer's --cf-label-lag-steps bound.")
+        # The sweep's two derived readings, named here so the heartbeat f-string stays legible:
+        # the measured ~n_legal MULTIPLIER, and the per-entry wall it implies.
+        q_mult = ((self.state.q_arms_rolled + self.state.q_arms_reused)
+                  / max(1, self.state.q_rows))
+        q_per_entry = self.state.q_wall_seconds / max(1.0, float(self.state.q_entries_total))
         anchors = f"{self.state.anchors_reproduced}/{self.state.anchors_run}"
         if self.state.anchors_errored:
             # NEVER folded into the reproduced/run ratio: an anchor that could not run is not an
@@ -1486,7 +1682,15 @@ class CfProducer:
               # part of the label mix on stall-shaped positions, and a reader stratifying the
               # corpus needs to see the rate here rather than reconstruct it from the rows.
               + (f"capped {self.state.rollouts_capped}/{self.state.rollouts_total} | "
-                 if self.state.rollouts_capped else "") +
+                 if self.state.rollouts_capped else "")
+              # The per-action sweep's COST, on the same line as the labels it multiplies. `x` is
+              # the measured ~n_legal multiplier — the number that sizes this producer — and it is
+              # reported rather than assumed because it depends on how many actions are legal at
+              # the decisions the sampler happens to pick.
+              + (f"q {self.state.q_entries_total} entries / {self.state.q_rows} rows "
+                 f"({self.state.q_arms_rolled} arms rolled, {self.state.q_arms_reused} free, "
+                 f"{q_mult:.1f}x, {q_per_entry:.1f}s/entry) | "
+                 if self._q_on else "") +
               f"anchor {anchors} | "
               f"{'PRODUCING' if self._producing else 'PAUSED'} | "
               f"load {os.getloadavg()[0]:.1f} | {time.perf_counter() - t0:.1f}s"
@@ -1531,7 +1735,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="how many new records one cycle consumes (default 4)")
     p.add_argument("--max-labels-per-hour", type=int, default=2000,
                    help="throughput cap (default 2000). The producer shares the box with a "
-                        "trainer; this is the knob that keeps it a sidecar")
+                        "trainer; this is the knob that keeps it a sidecar. Under --q-labels "
+                        "every per-action ARM IT ACTUALLY ROLLS counts too (the reused recorded arm "
+                        "costs nothing, so it does not), which keeps the cap a COST cap instead of "
+                        "silently letting a sweep multiply the box load by its arm count")
     p.add_argument("--cycle-seconds", type=float, default=30.0,
                    help="sleep between cycles (default 30)")
     p.add_argument("--anchor-every", type=int, default=50,
@@ -1586,6 +1793,37 @@ def build_parser() -> argparse.ArgumentParser:
                         "as the reward itself. Passing this puts the discount OUTSIDE that guard: "
                         "a wrong value ships returns folded against a different value function "
                         "with every liveness counter reading healthy.")
+    # -- gen3_cf_q_labels_v1: the PER-ACTION stream -----------------------------------
+    p.add_argument("--q-labels", "--q_labels", dest="q_labels",
+                   action=argparse.BooleanOptionalAction, default=False,
+                   help="also emit the PER-ACTION counterfactual stream `q_labels` (plus "
+                        "`taken_action`) on each swept row — the labels the v107 Q win-prob head "
+                        "(--q-winprob-mode/--q-winprob-coef) is trained on. Additive-optional at "
+                        "schema v1, so an older trainer reads the new rows unchanged. DEFAULT OFF "
+                        "and byte-identical when off. 🚨 ON, a labelled decision costs R rollouts "
+                        "PER LEGAL ACTION instead of R total — roughly 9x at a typical move round, "
+                        "minus one arm the recorded action gets free. Size it with --q-top-n / "
+                        "--q-rollouts / --q-max-actions and watch the `q ...` heartbeat field")
+    p.add_argument("--q-top-n", "--q_top_n", dest="q_top_n", type=int, default=1,
+                   help="how many of a record's --top-n labelled decisions get the per-action "
+                        "sweep (default 1). THE budget knob: total cost scales with this times the "
+                        "arm count. The prefix is taken in the sampler's own priority order, so "
+                        "the multiplied budget lands on the decisions already judged most "
+                        "informative rather than on a random subset of them")
+    p.add_argument("--q-rollouts", "--q_rollouts", dest="q_rollouts", type=int, default=0,
+                   help="R per SIBLING arm (default 0 = follow --rollouts). Matching --rollouts is "
+                        "worth a default: the recorded action's arm is then the row's own label "
+                        "measured on the same dice, so it is reused free and `q_labels[recorded] "
+                        "== label` exactly. A smaller value buys arms at lower per-arm evidence — "
+                        "usually the better trade, since the sweep's product is a RANKING and the "
+                        "shared dice already cancel in the differences")
+    p.add_argument("--q-max-actions", "--q_max_actions", dest="q_max_actions", type=int, default=0,
+                   help="cap the arms per swept decision (default 0 = every legal action). The "
+                        "recorded action is always kept; the rest are ordered by a deterministic "
+                        "decision-keyed SHUFFLE, never by policy probability (that would rebuild "
+                        "the on-policy starvation this stream exists to escape) and never by "
+                        "action index (a prefix of [switch x6, move x4, struggle] is a systematic "
+                        "preference for switching). Declared as `cf_q_sweep_v1` on every row")
     p.add_argument("--cycles", type=int, default=0,
                    help="stop after N cycles (default 0 = run forever). --cycles 1 is the smoke")
     return p
@@ -1625,6 +1863,18 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
               f"three knobs are the whole cost model")
     prod._log("OPPONENT ECOLOGY: rollouts play the CURRENT snapshot on BOTH sides, stochastic — "
               "a training record names no opponent. Every label says opponent=self_current.")
+    if prod._q_on:
+        prod._log(
+            f"PER-ACTION labels ON ({Q_SWEEP_VERSION}): top-{prod._q_top_n} decision(s) per record "
+            f"swept at R={prod._q_rollouts}"
+            f"{f', max {prod._q_max_actions} arms' if prod._q_max_actions else ', all legal arms'}"
+            f". Sibling arms share ONE dice list (paired, asserted at the seam); the recorded "
+            f"action's arm is reused free when --q-rollouts == --rollouts. Expect ~n_legal times "
+            f"the wall per swept decision.")
+    else:
+        prod._log("PER-ACTION labels OFF — rows carry no `q_labels`, so a trainer with "
+                  "--q-winprob-coef > 0 would train that head on nothing "
+                  "(cf/q_label_coverage 0.0). --q-labels turns the stream on.")
 
     n = 0
     try:

@@ -897,7 +897,8 @@ class TestRolloutArms:
         monkeypatch.setattr(P, "_run_one", lambda record, **kw: {
             "outcome": "win" if _seed_is_even(kw["post_t_seed"]) else "loss"})
         prod = self._prod(tmp_path, rollout_concurrency=conc)
-        wins, n, n_capped, returns = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        wins, n, n_capped, returns, _seeds = prod._rollout(
+            _rollout_record(), "p1", _decision(), tag="t")
         assert n == 6 and n_capped == 0 and returns == []
         assert wins == self._expected_wins(prod)
 
@@ -923,7 +924,7 @@ class TestRolloutArms:
 
         monkeypatch.setattr(P, "_run_one", _boom)
         prod = self._prod(tmp_path, rollout_concurrency=conc)
-        wins, n, _capped, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        wins, n, _capped, _, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
         assert calls["n"] == 6, "a dead arm must not stop the arms after it"
         assert (wins, n) == (5, 5), "the label is over the arms that FINISHED"
         assert "rollout failed" in capsys.readouterr().out
@@ -944,7 +945,8 @@ class TestRolloutArms:
         monkeypatch.setattr(P, "_run_one", lambda record, **kw: (_ for _ in ()).throw(
             RuntimeError("dead")))
         prod = self._prod(tmp_path, rollout_concurrency=4)
-        assert prod._rollout(_rollout_record(), "p1", _decision(), tag="t") == (0, 0, 0, [])
+        assert prod._rollout(
+            _rollout_record(), "p1", _decision(), tag="t")[:4] == (0, 0, 0, [])
 
 
 class TestDrawAtCap:
@@ -983,7 +985,7 @@ class TestDrawAtCap:
         for raced in ("win", "loss"):
             monkeypatch.setattr(P, "_run_one", lambda record, _o=raced, **kw: {
                 "outcome": _o, "ended": True, "turns": 250, "capped": True})
-            wins, n, n_capped, _ = prod._rollout(
+            wins, n, n_capped, _, _ = prod._rollout(
                 _rollout_record(), "p1", _decision(), tag="t")
             assert (n, n_capped) == (8, 8)
             assert wins == pytest.approx(4.0), (
@@ -1000,7 +1002,7 @@ class TestDrawAtCap:
         monkeypatch.setattr(P, "_run_one", lambda record, **kw: {
             "outcome": "tie", "ended": True, "turns": 90, "capped": False})
         prod = self._prod(tmp_path)
-        wins, n, n_capped, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        wins, n, n_capped, _, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
         assert (wins, n, n_capped) == (4.0, 8, 0), "a tie is 0.5 and is NOT a cap"
 
     def test_a_mixed_batch_counts_only_the_capped_arms(self, tmp_path, monkeypatch):
@@ -1016,7 +1018,7 @@ class TestDrawAtCap:
 
         monkeypatch.setattr(P, "_run_one", _mixed)
         prod = self._prod(tmp_path)
-        wins, n, n_capped, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
+        wins, n, n_capped, _, _ = prod._rollout(_rollout_record(), "p1", _decision(), tag="t")
         assert (n, n_capped) == (8, 3)
         assert wins == pytest.approx(3 * 0.5 + 5 * 1.0)
 
@@ -1091,3 +1093,429 @@ class TestCli:
     def test_the_lag_warning_default_tracks_the_buffers_bound(self):
         from agents.training.cf_label_buffer import DEFAULT_LAG_BOUND
         assert P.build_parser().parse_args(["/tmp/x"]).lag_warn_steps == DEFAULT_LAG_BOUND
+
+
+# ---------------------------------------------------------------------------
+# The PER-ACTION sweep (`--q-labels`, gen3_cf_q_labels_v1)
+# ---------------------------------------------------------------------------
+
+def _q_decision(**over):
+    """A labelable decision carrying the full legal-action → choice-string map the sweep needs."""
+    from agents.training.obs_materializer import RecordDecision
+    base = dict(index=4, turn=6, action=7, choice="move icebeam",
+                mask=np.zeros(11, dtype=np.int8), obs=np.zeros(4, dtype=np.float32),
+                choices={0: "switch zapdos", 1: "switch skarmory",
+                         6: "move rockslide", 7: "move icebeam", 8: "move earthquake"})
+    base.update(over)
+    base["mask"][list(base["choices"] or {0, 1, 6, 7, 8})] = 1
+    return RecordDecision(**base)
+
+
+class TestQLabelsOffIsByteIdentical:
+    """The flag defaults OFF, and OFF must be the file the producer has always written."""
+
+    def test_the_default_is_off(self):
+        assert P.build_parser().parse_args(["/tmp/x"]).q_labels is False
+
+    def test_a_row_without_a_sweep_carries_no_q_KEYS_AT_ALL(self):
+        """Not `null`, not `[]` — ABSENT. A consumer distinguishes "this producer does not do
+        per-action labels" from "it swept and every arm failed", and only absence says the first."""
+        row = P.label_row(record_path="b.json", decision=_decision(), wins=1.0, n=2, step=5,
+                          surprise=0.1, entropy=0.2, score=0.3, win_prob=0.4)
+        for k in ("q_labels", "taken_action", "q_sweep"):
+            assert k not in row
+
+    def test_the_off_row_key_set_is_unchanged(self):
+        """A frozen census, so an additive field can never quietly become a mandatory one."""
+        row = P.label_row(record_path="b.json", decision=_decision(), wins=1.0, n=2, step=5,
+                          surprise=0.1, entropy=0.2, score=0.3, win_prob=0.4,
+                          outcome_label=1.0, mc_return=0.5, mc_return_n=2, reward_sha1="abc")
+        assert set(row) == {
+            "schema", "kind", "battle", "decision_idx", "obs_sha1", "obs_npz", "obs_inline",
+            "label", "n_rollouts", "wilson_lo", "wilson_hi", "policy_step", "opponent",
+            "sampler_version", "label_regime", "turn", "recorded_action", "n_capped", "priority",
+            "outcome_label", "mc_return", "mc_return_n", "reward_sha1", "reward_composition",
+            "created_unix"}
+
+    def test_the_DICE_derivation_is_byte_identical_to_the_pre_sweep_one(self, tmp_path,
+                                                                       monkeypatch):
+        """`_rollout` now routes its salt through `cf_q_labels`; a run with the flag off must
+        still draw the seeds it always drew, or every existing label file becomes incomparable."""
+        from main.prober.falsifier import fresh_seeds
+        seen = []
+        monkeypatch.setattr(P, "_run_one", lambda record, **kw: (
+            seen.append(kw["post_t_seed"]) or {"outcome": "win"}))
+        run = _mk_run(tmp_path)
+        prod = P.CfProducer(_args(run, rollouts=5, seed=20260822, mc_return=False),
+                            snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.refresh_snapshot()
+        d = _decision()
+        prod._rollout(_rollout_record(), "p1", d, tag="tag.json")
+        assert seen == fresh_seeds(5, salt=f"tag.json:{d.index}:cfp20260822")
+
+
+class _QProd:
+    """Builds a producer with the sweep on and every bridge call stubbed."""
+
+    @staticmethod
+    def make(tmp_path, monkeypatch, *, outcome_of=None, **over):
+        calls = []
+
+        def _one(record, **kw):
+            calls.append({"post_t_seed": kw["post_t_seed"],
+                          "substitute_choice": kw["substitute_choice"]})
+            if outcome_of is not None:
+                return outcome_of(kw)
+            return {"outcome": "win", "ended": True, "turns": 20, "capped": False}
+
+        monkeypatch.setattr(P, "_run_one", _one)
+        run = _mk_run(tmp_path)
+        opts = dict(rollouts=4, mc_return=False, q_labels=True, q_top_n=1,
+                    q_rollouts=0, q_max_actions=0)
+        opts.update(over)
+        args = _args(run, **opts)
+        prod = P.CfProducer(args, snapshot_loader=lambda p, s: _StubSnapshot(p, s))
+        prod.refresh_snapshot()
+        return prod, calls
+
+
+class TestQSweepPairing:
+    """THE property: sibling actions must be rolled out on the SAME dice."""
+
+    def test_every_sibling_action_actually_received_the_same_seeds(self, tmp_path, monkeypatch):
+        prod, calls = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision()
+        prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                       base=(2.0, 4, 0, Q_SEEDS(d)))
+        by_choice = {}
+        for c in calls:
+            by_choice.setdefault(c["substitute_choice"], []).append(c["post_t_seed"])
+        assert len(by_choice) == 4, "four sibling arms (the recorded one was reused free)"
+        assert len({tuple(v) for v in by_choice.values()}) == 1, \
+            "sibling actions drew DIFFERENT dice — the sweep's ranking would be noise"
+
+    def test_a_producer_that_DERIVES_SEEDS_PER_ACTION_fails_loudly(self, tmp_path, monkeypatch):
+        """The regression guard, expressed as the bug: perturb the dice per action and the seam
+        must refuse rather than ship a sweep whose ranking is noise."""
+        prod, _calls = _QProd.make(tmp_path, monkeypatch)
+        real = prod._rollout
+        bad = {"n": 0}
+
+        def _drifting(*a, **kw):
+            bad["n"] += 1
+            kw["seeds"] = [f"{s}-{bad['n']}" for s in kw["seeds"]]     # a per-action salt
+            return real(*a, **kw)
+
+        prod._rollout = _drifting
+        d = _q_decision()
+        with pytest.raises(RuntimeError, match="DICE ARE NOT PAIRED"):
+            prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                           base=(2.0, 4, 0, Q_SEEDS(d)))
+
+    def test_the_check_reads_the_BASE_arms_OBSERVED_seeds(self, tmp_path, monkeypatch):
+        """The reused recorded arm is adjudicated on the seeds the per-state rollout REPORTED, not
+        on seeds this method re-derives — a check that recomputes its own input proves nothing."""
+        prod, _ = _QProd.make(tmp_path, monkeypatch)
+        with pytest.raises(RuntimeError, match="DICE ARE NOT PAIRED"):
+            prod._q_labels(_rollout_record(), "p1", _q_decision(), tag="t.json",
+                           base=(2.0, 4, 0, ["not", "the", "sweeps", "dice"]))
+
+
+def Q_SEEDS(d, *, tag="t.json", seed=1, n=4):
+    from agents.training.cf_q_labels import q_arm_seeds
+    return q_arm_seeds(tag=tag, decision_index=int(d.index), producer_seed=seed, n=n)
+
+
+class TestQSweepContent:
+    def test_the_recorded_actions_q_label_IS_the_rows_own_label(self, tmp_path, monkeypatch):
+        """Free, and an identity rather than an approximation: same salt, same R, same substituted
+        choice, so re-rolling it would buy a second sample of a number already in hand."""
+        prod, calls = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision()
+        entries, prov = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                       base=(3.0, 4, 0, Q_SEEDS(d)))
+        rec = [e for e in entries if e["action"] == d.action]
+        assert rec == [{"action": 7, "label": 0.75, "n_rollouts": 4}]
+        assert prov["recorded_arm_reused"] is True
+        assert d.choice not in [c["substitute_choice"] for c in calls], \
+            "the recorded action must not be rolled out a second time"
+
+    def test_a_DIFFERENT_q_rollouts_re_rolls_the_recorded_arm(self, tmp_path, monkeypatch):
+        """An anchor measured over more arms than the siblings it anchors would make
+        `q_labels[recorded] - q_labels[other]` a comparison between two sample sizes."""
+        prod, calls = _QProd.make(tmp_path, monkeypatch, q_rollouts=2)
+        d = _q_decision()
+        entries, prov = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                       base=(3.0, 4, 0, Q_SEEDS(d)))
+        assert prov["recorded_arm_reused"] is False
+        assert all(e["n_rollouts"] == 2 for e in entries)
+        assert d.choice in [c["substitute_choice"] for c in calls]
+
+    def test_one_entry_per_legal_action_each_naming_its_own_index(self, tmp_path, monkeypatch):
+        prod, _ = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision()
+        entries, prov = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                       base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert sorted(e["action"] for e in entries) == [0, 1, 6, 7, 8]
+        assert prov["arms"] == 5 and prov["version"] == "cf_q_sweep_v1"
+
+    def test_an_arm_whose_rollouts_ALL_FAIL_is_omitted_and_counted(self, tmp_path, monkeypatch):
+        def _die(kw):
+            if kw["substitute_choice"] == "move earthquake":
+                raise RuntimeError("bridge died")
+            return {"outcome": "win"}
+        prod, _ = _QProd.make(tmp_path, monkeypatch, outcome_of=_die)
+        d = _q_decision()
+        entries, _ = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                    base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert 8 not in [e["action"] for e in entries], "a zero-evidence arm must not be shipped"
+        assert prod.state.q_skip_reasons.get("arm_all_failed") == 1
+        assert prod.state.records_skipped == 0, "a lost ARM is not a lost RECORD"
+
+    def test_a_record_scanned_without_the_choice_map_is_a_counted_skip(self, tmp_path,
+                                                                      monkeypatch):
+        prod, calls = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision(choices=None)
+        entries, _ = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                    base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert entries == [] and calls == []
+        assert prod.state.q_skip_reasons.get("no_choice_map") == 1
+
+
+class TestQBudgetKnobs:
+    def test_q_max_actions_caps_the_arms(self, tmp_path, monkeypatch):
+        prod, calls = _QProd.make(tmp_path, monkeypatch, q_max_actions=3)
+        d = _q_decision()
+        entries, prov = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                       base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert prov["arms"] == 3 and len(entries) == 3
+        assert len(calls) == 2 * 4, "3 arms minus the free recorded one, at R=4"
+
+    def test_q_max_actions_always_keeps_the_recorded_action(self, tmp_path, monkeypatch):
+        prod, _ = _QProd.make(tmp_path, monkeypatch, q_max_actions=1)
+        d = _q_decision()
+        entries, _ = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                    base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert [e["action"] for e in entries] == [7]
+
+    def test_q_rollouts_sets_the_arms_evidence(self, tmp_path, monkeypatch):
+        prod, calls = _QProd.make(tmp_path, monkeypatch, q_rollouts=2)
+        d = _q_decision()
+        entries, prov = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                       base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert prov["rollouts_per_arm"] == 2
+        assert len(calls) == 5 * 2, "5 arms (nothing reused at a different R) at R=2"
+
+    def test_q_top_n_bounds_the_SWEPT_decisions_per_record(self, tmp_path, monkeypatch):
+        """The multiplied budget rides the sampler's own ranking, so it lands on the decisions
+        already judged most informative rather than on a random subset of them."""
+        swept = []
+        prod, _ = _QProd.make(tmp_path, monkeypatch, top_n=3, q_top_n=2)
+        prod._q_labels = lambda *a, **kw: (swept.append(kw["tag"]) or ([], {}))
+        decisions = [_q_decision(index=i, turn=i + 2) for i in range(3)]
+        monkeypatch.setattr(P, "scan_record", lambda *a, **kw: decisions)
+        monkeypatch.setattr(P, "replay_battle", lambda rec, **kw: SimpleNamespace(
+            p1_chunks=[], p2_chunks=[], outcome={"winner": "Ann"}))
+        prod._preloaded["rec.json"] = _rollout_record()
+        prod.process_record("rec.json")
+        assert len(swept) == 2, "--q-top-n 2 of --top-n 3"
+
+    def test_q_top_n_zero_sweeps_nothing_while_the_flag_is_on(self, tmp_path, monkeypatch):
+        prod, _ = _QProd.make(tmp_path, monkeypatch, q_top_n=0)
+        assert prod._q_top_n == 0
+
+
+class TestQCostMeter:
+    def test_the_state_file_carries_the_measured_multiplier(self, tmp_path, monkeypatch):
+        """`(arms rolled + free) / rows` IS the ~n_legal multiplier — reported, not assumed, since
+        it depends on how many actions are legal where the sampler happens to look."""
+        prod, _ = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision()
+        prod._q_labels(_rollout_record(), "p1", d, tag="t.json", base=(2.0, 4, 0, Q_SEEDS(d)))
+        st = prod.state
+        assert st.q_rows == 1 and st.q_entries_total == 5
+        assert st.q_arms_rolled == 4 and st.q_arms_reused == 1
+        assert (st.q_arms_rolled + st.q_arms_reused) / st.q_rows == 5.0
+        assert st.q_rollouts_total == 16          # 4 arms x R=4
+        assert st.q_wall_seconds >= 0.0
+
+    def test_the_counters_round_trip_through_the_state_file(self, tmp_path, monkeypatch):
+        prod, _ = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision()
+        prod._q_labels(_rollout_record(), "p1", d, tag="t.json", base=(2.0, 4, 0, Q_SEEDS(d)))
+        prod.state.save()
+        st = P.ProducerState.load(str(tmp_path / "run"))
+        assert st.q_entries_total == 5 and st.q_arms_rolled == 4
+
+    def test_each_per_action_label_counts_against_max_labels_per_hour(self, tmp_path,
+                                                                     monkeypatch):
+        """Otherwise `--q-labels` silently multiplies the box load by the arm count against a cap
+        the operator set — and this producer's whole premise is that it is a sidecar."""
+        prod, _ = _QProd.make(tmp_path, monkeypatch)
+        d = _q_decision()
+        before = len(prod.label_times)
+        prod._q_labels(_rollout_record(), "p1", d, tag="t.json", base=(2.0, 4, 0, Q_SEEDS(d)))
+        assert len(prod.label_times) - before == 4, "one per ROLLED arm"
+
+    def test_the_HEARTBEAT_shows_the_multiplier_and_vanishes_when_the_flag_is_off(
+            self, tmp_path, monkeypatch, capsys):
+        """The producer has no TensorBoard, so the heartbeat and the state file ARE the operator
+        surface — a cost that multiplies by ~9 must not be invisible on it."""
+        prod, _ = _QProd.make(tmp_path, monkeypatch)
+        prod.state.q_rows, prod.state.q_entries_total = 5, 40
+        prod.state.q_arms_rolled, prod.state.q_arms_reused = 35, 5
+        prod.state.q_wall_seconds = 50.0
+        prod._emit_heartbeat(time.perf_counter(), new=1, produced=1)
+        assert "q 40 entries / 5 rows (35 arms rolled, 5 free, 8.0x, 1.2s/entry)" in prod.heartbeat
+        prod._q_on = False
+        prod._emit_heartbeat(time.perf_counter(), new=1, produced=1)
+        assert " q " not in prod.heartbeat, "the field must not appear on a run without the sweep"
+        capsys.readouterr()
+
+    def test_an_exhausted_throttle_ships_a_PARTIAL_sweep_not_a_broken_one(self, tmp_path,
+                                                                         monkeypatch):
+        prod, _ = _QProd.make(tmp_path, monkeypatch, max_labels_per_hour=1)
+        d = _q_decision()
+        entries, _ = prod._q_labels(_rollout_record(), "p1", d, tag="t.json",
+                                    base=(2.0, 4, 0, Q_SEEDS(d)))
+        # The free recorded arm always lands; the throttle then bites part-way through the
+        # siblings, so the sweep is SHORT rather than absent or broken.
+        assert 7 in [e["action"] for e in entries]
+        assert 1 <= len(entries) < 5
+        assert prod.state.q_skip_reasons.get("throttled") == 1
+
+
+# ---------------------------------------------------------------------------
+# The schema, round-tripped through BOTH sides
+# ---------------------------------------------------------------------------
+
+class TestQSchemaRoundTrip:
+    """Producer writes → the REAL `CfLabelBuffer` reads. The end the mission calls mating."""
+
+    def _write(self, tmp_path, rows, *, step=1000):
+        return P.write_label_batch(str(tmp_path / "labels"), rows, step=step, seq=1)
+
+    def _row(self, **over):
+        kw = dict(record_path="b.json", decision=_q_decision(), wins=3.0, n=4, step=1000,
+                  surprise=0.1, entropy=0.2, score=0.3, win_prob=0.4, outcome_label=1.0,
+                  q_labels=[{"action": 7, "label": 0.75, "n_rollouts": 4},
+                            {"action": 0, "label": 0.25, "n_rollouts": 4},
+                            {"action": 6, "label": 0.5, "n_rollouts": 4}],
+                  q_sweep={"version": "cf_q_sweep_v1", "arms": 3})
+        kw.update(over)
+        return P.label_row(**kw)
+
+    def _buffer(self, tmp_path):
+        from agents.training.cf_label_buffer import CfLabelBuffer
+        return CfLabelBuffer(str(tmp_path / "labels"), obs_dim=4, lag_bound=0)
+
+    def test_the_written_row_parses_into_the_consumers_per_action_stream(self, tmp_path):
+        self._write(tmp_path, [self._row()])
+        buf = self._buffer(tmp_path)
+        assert buf.poll(1000) == 1
+        row = buf.sample(1)[0]
+        assert row.q_labels == ((7, 0.75, 4), (0, 0.25, 4), (6, 0.5, 4))
+        assert row.taken_action == 7
+
+    def test_the_liveness_counters_the_head_launches_on(self, tmp_path):
+        self._write(tmp_path, [self._row()])
+        buf = self._buffer(tmp_path)
+        buf.poll(1000)
+        stats = buf.stats(1000)
+        assert stats["cf/q_label_coverage"] == 1.0
+        assert stats["cf/q_labels_per_row"] == 3.0
+
+    def test_a_SHUFFLED_list_reads_identically(self, tmp_path):
+        """The object-not-arrays property, demonstrated rather than asserted: each entry names its
+        own action index, so the wire ORDER carries no meaning and cannot be got wrong. Three
+        parallel arrays written in the wrong order would read as valid and be silently wrong."""
+        import random
+        entries = [{"action": 7, "label": 0.75, "n_rollouts": 4},
+                   {"action": 0, "label": 0.25, "n_rollouts": 2},
+                   {"action": 6, "label": 0.5, "n_rollouts": 8}]
+        rng = random.Random(0)
+        seen = set()
+        for i in range(6):
+            shuffled = list(entries)
+            rng.shuffle(shuffled)
+            d = tmp_path / f"t{i}"
+            (d / "labels").mkdir(parents=True)
+            self._write(d, [self._row(q_labels=shuffled)])
+            buf = self._buffer(d)
+            buf.poll(1000)
+            seen.add(tuple(sorted(buf.sample(1)[0].q_labels)))
+        assert len(seen) == 1 and seen == {((0, 0.25, 2), (6, 0.5, 8), (7, 0.75, 4))}
+
+    def test_the_consumer_scatters_each_entry_into_ITS_OWN_column(self, tmp_path):
+        from agents.training.cf_label_buffer import batch_tensors
+        self._write(tmp_path, [self._row()])
+        buf = self._buffer(tmp_path)
+        buf.poll(1000)
+        b = batch_tensors(buf.sample(1), "cpu")
+        assert b.q_mask[0].tolist() == [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0]
+        assert b.q_label[0, 7].item() == pytest.approx(0.75)
+        assert b.q_label[0, 0].item() == pytest.approx(0.25)
+        assert b.q_label[0, 6].item() == pytest.approx(0.5)
+        assert b.q_label[0, 8].item() == 0.0, "an unswept action stays masked-off at zero"
+        assert b.taken_mask[0].item() == 1.0 and int(b.taken_action[0]) == 7
+
+    def test_a_MALFORMED_entry_is_a_field_skip_that_keeps_the_rows_other_streams(self, tmp_path):
+        """The consumer's declared contract, exercised from the producer's own writer."""
+        self._write(tmp_path, [self._row(q_labels=[
+            {"action": 7, "label": 0.75, "n_rollouts": 4},
+            {"action": 99, "label": 0.5, "n_rollouts": 4},          # out of range
+            {"action": 6, "label": 3.0, "n_rollouts": 4},           # out of [0,1]
+            ["not", "an", "object"]])]) 
+        buf = self._buffer(tmp_path)
+        assert buf.poll(1000) == 1, "the ROW survives a bad ENTRY"
+        row = buf.sample(1)[0]
+        assert row.q_labels == ((7, 0.75, 4),)
+        assert row.label == pytest.approx(0.75) and row.outcome_label == 1.0
+        assert buf.field_skipped_total == 3
+
+    def test_an_OLD_row_still_reads_on_the_NEW_consumer(self, tmp_path):
+        """Additive-optional in the other direction: `schema` is a REFUSAL gate, so the sweep may
+        never bump it — a v2 row would be unreadable by every existing trainer."""
+        row = P.label_row(record_path="b.json", decision=_q_decision(), wins=1.0, n=2, step=1000,
+                          surprise=0.1, entropy=0.2, score=0.3, win_prob=0.4)
+        assert row["schema"] == 1
+        self._write(tmp_path, [row])
+        buf = self._buffer(tmp_path)
+        buf.poll(1000)
+        r = buf.sample(1)[0]
+        assert r.q_labels == () and r.taken_action is None
+        assert buf.stats(1000)["cf/q_label_coverage"] == 0.0
+
+    def test_a_RE_LABELLED_state_replaces_its_per_action_block_keep_NEWEST(self, tmp_path):
+        """The #28 dedup rule, inherited rather than reimplemented. `q_labels` rides the SAME row as
+        the per-state label precisely so it dedups on the same obs digest — a second row for one
+        state would collide and one of them would vanish, and a per-action stream that appended
+        instead would give that state N x the weight of every other."""
+        old = self._row(q_labels=[{"action": 7, "label": 0.0, "n_rollouts": 2}])
+        new = self._row(q_labels=[{"action": 7, "label": 1.0, "n_rollouts": 8},
+                                  {"action": 0, "label": 0.5, "n_rollouts": 8}])
+        assert old["obs_sha1"] == new["obs_sha1"], "same state, or this tests nothing"
+        P.write_label_batch(str(tmp_path / "labels"), [old], step=1000, seq=1)
+        P.write_label_batch(str(tmp_path / "labels"), [new], step=1000, seq=2)
+        buf = self._buffer(tmp_path)
+        buf.poll(1000)
+        assert len(buf) == 1 and buf.replaced_total == 1
+        assert buf.sample(1)[0].q_labels == ((7, 1.0, 8), (0, 0.5, 8))
+
+    def test_an_EXPIRED_row_takes_its_per_action_block_with_it(self, tmp_path):
+        """Expiry is a whole-row property too: a per-action label measured under a policy the
+        trainer has moved past is exactly as stale as the per-state one beside it."""
+        from agents.training.cf_label_buffer import CfLabelBuffer
+        self._write(tmp_path, [self._row()], step=1000)
+        buf = CfLabelBuffer(str(tmp_path / "labels"), obs_dim=4, lag_bound=10)
+        assert buf.poll(5000) == 0 and len(buf) == 0
+        assert buf.expired_total == 1
+        assert buf.stats(5000)["cf/q_label_coverage"] == 0.0
+
+    def test_a_swept_row_that_lost_every_arm_is_distinguishable_from_an_old_row(self, tmp_path):
+        self._write(tmp_path, [self._row(q_labels=[])])
+        buf = self._buffer(tmp_path)
+        buf.poll(1000)
+        r = buf.sample(1)[0]
+        assert r.q_labels == () and r.taken_action == 7, \
+            "`taken_action` present says the sweep RAN; its absence says the producer is older"

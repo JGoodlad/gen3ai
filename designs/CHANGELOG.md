@@ -6987,3 +6987,128 @@ A committed demo draw at seed 20260830 — 40 teams, 0 replacements, balance 11 
 offense 8 / semi_stall 7 / stall 4 — lives at `designs/ai_v12/promotion_dry_run_demo.{md,json}` and
 is re-derived by the test suite on every run. Gates: `src/main/promote_teams_test.py` (22 tests,
 ~0.2 s, no node, no models).
+## The PER-ACTION LABEL FACTORY — `cf_producer --q-labels` (`gen3_cf_q_labels_v1`, 2026-08-29)
+
+v107 shipped `QWinProbHead` as a **trained consumer of a stream nobody wrote**. Its own entry said
+so — "the producer does not yet emit `q_labels` — that is the next piece and the one that decides
+whether any of this measures anything". This is that piece: the same tight-MC rollout the producer
+already runs, once per **legal action**, on the **same dice**.
+
+Nothing about it is on by default. `--no-q-labels` is byte-identical — the row's key set is a frozen
+census in a test, and the DICE are too: the salt now routes through `cf_q_labels.q_arm_salt` but is
+verbatim the string `_rollout` has always used, because a change there would make every existing
+label file incomparable with every new one.
+
+### The pairing, and why it is asserted rather than remembered
+
+A sweep's product is a RANKING — *is Rock Slide better than Earthquake here?* — and at the
+producer's R the per-arm standard error is ~0.18, so two siblings rolled out on independent dice
+differ by noise before they differ by the action. Every arm therefore draws
+`cf_q_labels.q_arm_seeds`, whose salt is a function of the BATTLE and the DECISION and `--seed` and
+carries **no action term**. That is a property nobody should have to remember, so
+`assert_paired_dice` adjudicates at the seam, on the seed lists the arms ACTUALLY received rather
+than on seeds it re-derives — a check that recomputes its own input proves only that one function is
+deterministic. The regression test expresses the bug: perturb the seeds per action and the sweep
+refuses.
+
+⚠️ **The pairing is over the SIM DICE and that is not the only randomness in a rollout.** Both sides
+are a stochastic snapshot at temperature 1.0 and `torch.distributions.Categorical.sample` draws from
+torch's global RNG, which no seed here reaches. The policy draws are an unpaired residual: it biases
+nothing (both arms draw the same policy) and it cannot be closed by seeding, because the arms
+diverge immediately and stop drawing even the same NUMBER of samples. Stated rather than hidden.
+
+### The recorded action's arm is free, and its label is an identity
+
+The row's per-state `label` IS the recorded action's counterfactual label — same salt, same R, same
+substituted choice — so at `--q-rollouts == --rollouts` it is lifted verbatim and
+`q_labels[recorded] == label` **exactly**, which is both a saved arm and the cheapest possible check
+that the sweep is anchored to the measurement the row's own label came from. At a DIFFERENT R it is
+re-rolled instead: an anchor with more evidence than the actions it anchors turns
+`q[recorded] − q[other]` into a comparison between two sample sizes.
+
+### The selection rule is declared, because a budget knob is a distribution decision
+
+Cost multiplies by the arm count, so `--q-max-actions` is unavoidable; WHICH arms it drops gets a
+version string (`cf_q_sweep_v1`, stamped on every row) for the same reason `SAMPLER_VERSION` does.
+Recorded action first, then a **deterministic decision-keyed shuffle**. Both obvious orders are
+wrong here and the wrongness is the point: **descending policy probability** rebuilds the on-policy
+starvation this head exists to escape (probe L measured the policy sampling its own better-ranked
+alternative at a median p = 0.002, so a probability-ordered cap spends the budget where the head is
+already trained), and **action index** is a systematic preference for SWITCHES, since the space is
+`[switch x6, move x4, struggle]` and a prefix of it is all switches — a capped sweep would teach the
+head about switching and almost nothing about attacking, on exactly the move rounds where attacking
+is the question. Pinned by a 400-decision statistical test with the index-ordered rule kept beside
+it as the counterfactual it fails.
+
+### Cost is METERED, not estimated — and the throttle counts it
+
+A swept decision costs R rollouts **per legal action** instead of R total. `--max-labels-per-hour`
+therefore counts every per-action arm the sweep actually ROLLS — the reused recorded arm costs
+nothing, so it does not count — which keeps the cap a COST cap instead of silently letting a sidecar
+multiply the box load by its arm count. `q_rows` / `q_entries_total` / `q_arms_rolled` /
+`q_arms_reused` / `q_rollouts_total` / `q_wall_seconds` ride the state file and the heartbeat, and
+`(q_arms_rolled + q_arms_reused) / q_rows` **is** the measured multiplier rather than an estimate of
+it. Per-decision failures land in their own `q_skip_reasons`: a lost ARM is not a lost RECORD, and
+folding the two would make `records_skipped` unreadable.
+
+### PILOT — measured, both halves
+
+**MEASURED 2026-08-29** over the newest 90 `cf_records` of `ai_v9_72_R3SELF_0828` against **that
+run's own v107 checkpoint** — config version matched exactly, and of the 37 archived runs carrying
+`cf_records` it is the only one current code can still load — copied read-only to a scratch dir.
+CPU, `--impl rust`, `--torch-threads 1`, `nice -n 15`, compiled extractor (**35.67 → 3.83 ms,
+9.3×**), beside a live trainer at load ~27-33. Flags: `--rollouts 4 --top-n 1 --q-labels --q-top-n 1
+--q-rollouts 4 --q-max-actions 0`.
+
+| producer | |
+|---|---|
+| records processed / skipped | **90 / 0** (anchor 1/1, `q_skip_reasons` empty) |
+| rows written / rows swept | 90 / **90** |
+| per-action entries | **693** |
+| **arms per row — the ~n_legal MULTIPLIER** | **7.70** (min 3, max 9) |
+| arms rolled / reused free | 603 / **90** — 13% of the sweep cost nothing |
+| sweep rollouts / sweep wall | 2 412 / **1 375 s** of a 1 619 s cycle |
+| **throughput** | **0.504 per-action labels/sec = 1.98 s/entry** (0.438 arms/sec) |
+
+| through the REAL `CfLabelBuffer`, same step | |
+|---|---|
+| ingested / resident | **90 / 90** — **0 skipped rows, 0 field skips** |
+| `cf/q_label_coverage` | **1.0000** |
+| `cf/q_labels_per_row` | **7.70** — the number that separates a live factory from an on-policy trickle |
+| labelled (s, a) cells | **693 of 990 = 70.0%** of the `[B, 11]` matrix |
+| `taken_action` / `outcome_label` / `mc_return` coverage | 1.0000 / 1.0000 / 1.0000 |
+| `q_labels[recorded] == label` | **90 / 90**, exactly |
+
+And through the **real loss kernel** (`q_winprob_terms.q_masked_binomial_nll`) on that same batch:
+at a zero-init head the NLL is **0.693147 — log 2 to six places**, which is the P = 0.5 prior it
+must be; fitting the labels takes it to **0.4218**; and the gradient on every UNSWEPT cell is
+**exactly 0.0** while the swept cells carry a live one. That last pair is the whole safety property
+of the masked form — an unlabelled action must contribute nothing, never a zero target.
+
+Read the throughput as a per-ARM cost, not a per-label one: a swept decision costs **~7.7×** a plain
+one, i.e. ~15 s of sweep per row against ~2 s for the row's own label on this box. The heartbeat's
+`labels 90 (+90 total, 693/h)` is the throttle doing its job — 693 is the ARM count in the window,
+not the row count, which is precisely why `--max-labels-per-hour` had to start counting them.
+
+### Contracts
+
+`q_labels` is a **LIST OF OBJECTS**, each naming its own action index — never parallel arrays, for
+the order-mismatch reason `cf_label_buffer`'s docstring gives, and demonstrated rather than asserted
+by a test that shuffles the list and reads it back identically. It rides the SAME row as the
+per-state label (the buffer dedups on the obs digest, so a second row for one state would collide
+and one of them would vanish), and it is **additive-optional at schema v1**: `schema` is a REFUSAL
+gate, so the sweep may never bump it. An arm whose rollouts all failed is OMITTED rather than
+shipped at `n_rollouts: 0`, because the consumer builds its mask from PRESENCE and a zero-evidence
+entry would mask ON a cell whose target is the `0.0` fallback — a confident loss for an action
+nobody measured. `taken_action` travels with `q_labels` rather than taking a flag of its own: it is
+free, but a flag for it alone would offer a run the on-policy-only regime the whole stream exists to
+escape.
+
+The arithmetic lives in a new pure module, `agents/training/cf_q_labels.py` — no model, no bridge,
+no record — so the pairing rule, the selection rule and the wire shape are testable without a
+simulator, and the 1 649-line producer does not grow toward the file-size bound.
+`obs_materializer.scan_record` gained `capture_choices=True`, which fills each decision's full legal
+action → sim-choice-string map inside the ONE replay it already runs; asking afterwards would cost a
+`materialize_from_record` prefix replay per labelled decision. `_ReplayObsPlayer._choice_map` is now
+the single definition shared with `map_actions_at`, so the two callers — one feeding the sim, one
+feeding a label — cannot disagree about what "the choice string for action a" is.

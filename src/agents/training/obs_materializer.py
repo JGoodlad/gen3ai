@@ -164,6 +164,29 @@ class _ReplayObsPlayer(Gen3Player):
     def done(self) -> bool:
         return self._actions_exhausted or self._stopped
 
+    def _choice_map(self, battle, mask) -> dict:
+        """``{legal action index: sim choice string}`` at THIS decision, via the REAL mapper.
+
+        The one definition, shared by ``map_actions_at`` (one decision, for a counterfactual
+        re-roll) and by :class:`_InvertingReplayPlayer`'s ``capture_choices`` (every decision, for
+        `cf_q_labels`' per-action sweep) — two callers that must never disagree about what "the
+        choice string for action a" is, since one of them feeds the sim and the other feeds a
+        label.
+
+        Read-only: the mapper is pure. A candidate that RAISES is skipped rather than propagated,
+        the same tolerance :meth:`_InvertingReplayPlayer._invert` has always applied — a stale or
+        unmappable index is not a legal alternative, and a consumer that needs a specific index
+        checks for its presence (`falsifier.falsify_decision` does exactly that).
+        """
+        out = {}
+        for idx in np.flatnonzero(np.asarray(mask)):
+            try:
+                out[int(idx)] = self.action_to_order(
+                    int(idx), battle).message[len("/choose "):]
+            except Exception:  # noqa: BLE001 — an unmappable candidate is not an alternative
+                continue
+        return out
+
     def _encode_or_track(self, battle, i: int):
         """``(obs, mask)`` for decision ``i``, or ``None`` when this call is NOT a decision.
 
@@ -205,10 +228,7 @@ class _ReplayObsPlayer(Gen3Player):
             # Map every legal action through the REAL mapper at this exact
             # decision state — the choice strings a counterfactual re-roll
             # feeds back to the sim. Read-only (the mapper is pure).
-            self.action_choices = {
-                int(idx): self.action_to_order(int(idx), battle).message[len("/choose "):]
-                for idx in np.flatnonzero(mask)
-            }
+            self.action_choices = self._choice_map(battle, mask)
         if i < len(self._replay_actions):
             self._get_tracker(battle).advance(self._replay_actions[i])
         else:
@@ -709,9 +729,17 @@ class _InvertingReplayPlayer(_ReplayObsPlayer):
     (the trace records only the trainee's actions), and :func:`scan_record`'s read of a TRAINING
     record, which has no recorded actions for either side."""
 
-    def __init__(self, *, recorded_choices: Sequence[str], **kwargs):
+    def __init__(self, *, recorded_choices: Sequence[str],
+                 capture_choices: bool = False, **kwargs):
         super().__init__(replay_actions=(), **kwargs)
         self._queue = list(recorded_choices)
+        # `gen3_cf_q_labels_v1`: capture the FULL legal action → choice-string map at EVERY
+        # decision, not just one. `map_actions_at` answers that question for a single decision and
+        # costs a whole prefix replay per question; the per-action label sweep asks it for every
+        # decision it might label, and this replay is already visiting all of them. OFF by default
+        # — it is ~n_legal extra pure mapper calls per decision and nobody else wants them.
+        self._capture_choices = bool(capture_choices)
+        self.decision_choices: List[dict] = []
         self.inverted_actions: List[int] = []
         # The recorded sim-choice STRING that was accepted at each decision — the same list
         # `inverted_actions` holds the index form of. A counterfactual that wants to replay "the
@@ -735,6 +763,17 @@ class _InvertingReplayPlayer(_ReplayObsPlayer):
         obs, mask = step
         self._materialized.append(MaterializedDecision(
             obs=obs, mask=np.asarray(mask), turn=battle.strict_view().turn))
+        if self._capture_choices:
+            # BEFORE the tracker advances, like `map_actions_at` — the mapper reads the battle as
+            # it stands at the decision, which is the state the choice strings must be legal in.
+            #
+            # `_invert` below maps the same indices again rather than reading this dict, and the
+            # duplication is deliberate: it leaves the map and the recovered action index two
+            # INDEPENDENT computations, so `choices[action] == choice` is a real cross-check
+            # (`cf_producer_integration_test` asserts exactly that) instead of a tautology. The
+            # cost is ~n_legal pure mapper calls on a path measured at ~0.3% of the producer's
+            # wall, against a wrong map being a silently MISLABELLED action.
+            self.decision_choices.append(self._choice_map(battle, mask))
         # Pop recorded choices until one INVERTS to a legal index (a refused maybe-trapped probe
         # inverts to None — consume it and try the correction, mirroring the sim's queue semantics).
         idx, accepted = None, None
@@ -773,6 +812,7 @@ def _run_inverting_replay(
     chunks: "Optional[Sequence[str]]" = None,
     impl: str = "node",
     encode: bool = False,
+    capture_choices: bool = False,
 ) -> "_InvertingReplayPlayer":
     """Replay ``side``'s recorded battle through an :class:`_InvertingReplayPlayer` and return it.
 
@@ -790,6 +830,7 @@ def _run_inverting_replay(
     recorded = [c for (s, c) in record.commands if s == side]
     player = _InvertingReplayPlayer(
         recorded_choices=recorded, stop_after_decision=stop_after_decision, mappings=mappings,
+        capture_choices=capture_choices,
         # `None` encodes EVERY decision, the empty set encodes NONE — the two callers' two modes.
         encode_only_at=None if encode else set(),
         stall_config=stall_config,
@@ -875,6 +916,12 @@ class RecordDecision:
     choice: str                      # the recorded sim-choice string, e.g. "move icebeam"
     mask: np.ndarray
     obs: Optional[np.ndarray] = None
+    # `gen3_cf_q_labels_v1`, only under ``scan_record(capture_choices=True)``: EVERY legal action
+    # index at this decision → the sim-choice string the real mapper emits for it. ``choice`` is
+    # the one entry the recorded policy took; this is the whole row, which is what a per-action
+    # counterfactual sweep substitutes. ``None`` when the caller did not ask — an empty dict would
+    # be indistinguishable from "asked, and nothing was legal".
+    choices: Optional[dict] = None
 
 
 def scan_record(
@@ -886,6 +933,7 @@ def scan_record(
     chunks: "Optional[Sequence[str]]" = None,
     impl: str = "node",
     encode: bool = True,
+    capture_choices: bool = False,
 ) -> "list[RecordDecision]":
     """Every decision ``side`` made in ``record``, with its obs, mask, action index and choice string.
 
@@ -899,15 +947,24 @@ def scan_record(
     ``env.agent1`` (the trainee) on p1. ``chunks`` skips the internal :func:`replay_battle` when the
     caller has already run one. ``encode=False`` returns masks/actions/choices with ``obs=None``
     (cheap: it skips the ~80%-of-cost obs encode at every decision).
+
+    ``capture_choices=True`` additionally fills each row's ``.choices`` with the FULL legal action
+    → sim-choice-string map at that decision (`gen3_cf_q_labels_v1`). That is what a per-action
+    counterfactual sweep substitutes, and asking for it here — inside the ONE replay this function
+    already runs — is what keeps `cf_producer`'s q-sweep from paying a `materialize_from_record`
+    prefix replay per labelled decision. It costs ~n_legal extra pure mapper calls per decision and
+    is OFF by default, so every existing caller is byte-identical.
     """
     if side is None:
         side = (record.side_of(record.trainee_username) if record.trainee_username else "p1")
     player = _run_inverting_replay(
         record, side, who="scan_record", mappings=mappings, stall_config=stall_config,
-        chunks=chunks, impl=impl, encode=encode)
+        chunks=chunks, impl=impl, encode=encode, capture_choices=capture_choices)
+    maps = player.decision_choices if capture_choices else []
     return [
         RecordDecision(index=i, turn=int(d.turn), action=int(a), choice=str(c),
-                       mask=np.asarray(d.mask), obs=d.obs)
+                       mask=np.asarray(d.mask), obs=d.obs,
+                       choices=(maps[i] if i < len(maps) else None))
         for i, (d, a, c) in enumerate(
             zip(player._materialized, player.inverted_actions, player.accepted_choices))
     ]

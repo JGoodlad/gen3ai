@@ -518,3 +518,105 @@ def test_a_record_the_replay_cannot_reproduce_refuses_to_produce(tmp_path):
     state = json.loads(open(os.path.join(run, P.STATE_FILENAME)).read())
     assert state["anchors_run"] == 1 and state["anchors_reproduced"] == 0
     assert state["records_processed"] == 0
+
+
+# ---------------------------------------------------------------------------
+# The PER-ACTION stream, composed the same way (gen3_cf_q_labels_v1)
+# ---------------------------------------------------------------------------
+
+def test_the_PER_ACTION_stream_composes_ring_to_buffer(tmp_path):
+    """`--q-labels` end to end: real record → real choice map → real paired rollouts → the REAL
+    `CfLabelBuffer`'s per-action columns.
+
+    The v107 Q head landed as a trained consumer of a stream nothing wrote, so the failure this
+    guards against is the one that already happened once in this gap: two halves each green on
+    their own, neither ever run against the other's real output. Everything here is real except the
+    policy — the choice strings come from the live mapper at a replayed decision, the sibling arms
+    are real bridge battles, and the pairing assertion is live inside the sweep.
+    """
+    run = _mk_run(tmp_path)
+    _ring_path, _prefix = _play_and_ring(run)
+
+    rc = P.main([run, "--rollouts", "2", "--top-n", "1", "--records-per-cycle", "1",
+                 "--cycles", "1", "--cycle-seconds", "0", "--impl", IMPL,
+                 "--q-labels", "--q-top-n", "1", "--q-max-actions", "3"],
+                snapshot_loader=lambda path, step: _RandomPolicySnapshot(path, step or STEP))
+    assert rc == 0
+
+    rows = []
+    for name in sorted(os.listdir(os.path.join(run, P.LABELS_DIRNAME))):
+        with open(os.path.join(run, P.LABELS_DIRNAME, name)) as f:
+            rows += [json.loads(ln) for ln in f if ln.strip()]
+    assert rows, "the producer wrote no labels at all"
+    swept = [r for r in rows if r.get("q_labels")]
+    assert swept, "no row carried a per-action block — the supply side did not run"
+
+    # -- the wire shape, as written by the REAL producer ---------------------------
+    for r in swept:
+        assert r["schema"] == 1, "the sweep must never bump the schema — it is a REFUSAL gate"
+        assert r["taken_action"] == r["recorded_action"]
+        assert r["q_sweep"]["version"] == "cf_q_sweep_v1"
+        assert 1 <= len(r["q_labels"]) <= 3, "--q-max-actions 3 must bound the arms"
+        seen = set()
+        for e in r["q_labels"]:
+            assert set(e) == {"action", "label", "n_rollouts"}
+            assert 0 <= e["action"] < 11 and 0.0 <= e["label"] <= 1.0 and e["n_rollouts"] > 0
+            assert e["action"] not in seen, "one entry per action"
+            seen.add(e["action"])
+        assert r["taken_action"] in seen, "the recorded action anchors every sweep"
+        # THE FREE-ARM IDENTITY: at --q-rollouts == --rollouts the recorded action's q-label is
+        # the row's own tight-MC label, on the same dice. Not an approximation.
+        rec = next(e for e in r["q_labels"] if e["action"] == r["taken_action"])
+        assert rec["label"] == pytest.approx(r["label"]), (
+            "the recorded arm was reused, so its q-label must EQUAL the row's own label")
+        assert rec["n_rollouts"] == r["n_rollouts"]
+
+    # -- and the REAL consumer reads it -------------------------------------------
+    buf = CfLabelBuffer(os.path.join(run, P.LABELS_DIRNAME), obs_dim=_obs_dim(), lag_bound=0)
+    assert buf.poll(STEP) == len(rows)
+    assert buf.skipped_total == 0 and buf.field_skipped_total == 0
+    stats = buf.stats(STEP)
+    assert stats["cf/q_label_coverage"] > 0.0, (
+        "the launch-window counter that separates a live factory from a dead one")
+    assert stats["cf/q_labels_per_row"] > 1.0, (
+        "at most one label per row is the ON-POLICY TRICKLE the Q head exists to escape")
+
+    from agents.training.cf_label_buffer import batch_tensors
+    resident = [r for r in buf.sample(len(buf)) if r.q_labels]
+    b = batch_tensors(resident, "cpu")
+    for i, row in enumerate(resident):
+        for action, value, n in row.q_labels:
+            assert b.q_mask[i, action].item() == 1.0
+            assert b.q_label[i, action].item() == pytest.approx(value, abs=1e-6)
+            assert b.q_n[i, action].item() == n
+        assert int(b.q_mask[i].sum().item()) == len(row.q_labels), \
+            "an action nobody swept must stay masked OFF, not inherit a neighbour's column"
+
+
+def test_scan_record_recovers_the_FULL_choice_map_at_every_decision(tmp_path):
+    """`capture_choices=True` must agree with the recorded choice it already inverts.
+
+    The sweep substitutes a sibling action's choice STRING into the sim, so a wrong map is a
+    silently mislabelled action rather than an error. The check that cannot be fooled is the
+    overlap with the one entry already known independently: the map's value at the RECOVERED action
+    index must be the string the side actually committed.
+    """
+    from agents.training.obs_materializer import scan_record
+
+    run = _mk_run(tmp_path)
+    ring_path, _prefix = _play_and_ring(run)
+    record = ReconstructionRecord.load(ring_path)
+
+    plain = scan_record(record, "p1", impl=IMPL, encode=False)
+    mapped = scan_record(record, "p1", impl=IMPL, encode=False, capture_choices=True)
+
+    assert [d.action for d in plain] == [d.action for d in mapped], \
+        "capturing the map must not change the replay it rides on"
+    assert all(d.choices is None for d in plain), "OFF must leave the field absent"
+    assert mapped and all(d.choices for d in mapped)
+    for d in mapped:
+        assert d.choices[d.action] == d.choice, (
+            f"decision {d.index}: the map's entry for the recovered action "
+            f"{d.choices.get(d.action)!r} disagrees with the committed choice {d.choice!r}")
+        assert set(d.choices) <= set(int(i) for i in np.flatnonzero(np.asarray(d.mask))), \
+            "the map must offer nothing the mask does not"
