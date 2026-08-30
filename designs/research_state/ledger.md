@@ -7038,3 +7038,27 @@ frozen-φ unverified on real CUDA → 20k-step GPU pre-flight before the 25M com
 frozen-φ × restart, check the 🧊 line after restart 1; G3/G4 = vf-coef (resume-immutable!) and
 ent-coef sizing open. `launch_runbook_test.py` parses the argvs OUT OF the runbook through the
 live parser — a deleted flag fails a test naming the document. Suites 7973 green + gates.
+
+### 🏁 R3 LANDED — the q_labels producer; the ai_v12 READINESS TRIAD IS CLOSED (2026-08-30)
+
+**On main (rebased from `ad83ab4`).** Wave C's named gap closed: the v107 Q head has a
+producer (`agents.training.cf_producer --q-labels`, OFF byte-identical INCLUDING the dice —
+the arm salt is verbatim the `_rollout` string the scalar label always used, pinned so a
+change would make every existing label file incomparable). **Cost MEASURED: 7.70 arms/row,
+1.98 s/per-action label** — the counterfactual cost model's sampler economics now have their
+per-action row; `--max-labels-per-hour` counts arms actually rolled so the cap stays a cost
+cap; 13% of arms come free (the recorded action's arm IS the row's label on the same dice,
+90/90 exact). **Piloted through the REAL consumer, not just parsed**: 90 records →
+`CfLabelBuffer` 90/90, coverage 1.0000, 70.0% of the [B,11] matrix — and the batch folded
+through the real `q_masked_binomial_nll`: log 2 at zero-init, and the gradient on every
+UNSWEPT cell is exactly 0.0 — the masked form's safety property PROVED on the pilot's own
+data (this moots R1's F7: the weight-1 fold is no longer latent-with-no-producer). Two
+judgement calls surfaced honestly: the pairing is over SIM dice only (`Categorical.sample`
+draws torch's global RNG — biases nothing, cannot be closed by seeding, documented not
+papered); `--q-max-actions` truncation order is a DISTRIBUTION decision, versioned
+`cf_q_sweep_v1` — policy-prob order rebuilds on-policy starvation, index order prefers
+switches, so it is a decision-keyed shuffle with a 400-decision statistical pin and the index
+rule kept beside it as the failing counterfactual. 51 new tests; routine 8124 green.
+**With R1 (adversarial review) + R2 (runbook, four arms smoked) + R3, ai_v12 is READY TO
+LAUNCH** pending: owner registration sign-off (φ-arm coef 0.3 recommended), the R3-SELF /
+probe-P / probe-Q verdicts, and R2's G1 20k-step GPU pre-flight at first CUDA launch.
