@@ -6864,3 +6864,31 @@ substrate-before-flywheel sequencing discharged (shipped, ran); (5) decision-tim
 de-amortization's "RESOLVED at N≤10" amended — N=2 sat below the tested range, the shape call
 is rev-4's. Deliberately NOT done: backfilling ~44 older measurement index rows — the index
 says partial instead of lying complete.
+
+### 🚨 S1 LANDED (52831e5) — TWO WALLS in front of the 40-team revolution, found by audit not by launch failure (2026-08-30)
+
+**Wall 1 — the curated-32 constraint BINDS**: `validate_exploiter_trainee_is_sample` exits
+FATAL_CONFIG on any exploiter trainee outside `data/teams/sample/` (32 files); 12 already
+taught + 12 in rev-4's frozen argvs ⇒ **8 untaught curated remain — 40 is unreachable
+unconditionally**. Widening options costed: promote ~32 vetted pool teams (the refusal
+message's own advice — but NO VETTING CRITERION EXISTS in the tree, the named gap);
+`--allow-nonsample-trainee` (exists, but its own comment excludes distill-teacher use); or cut
+to ≤32 (4×8). **Wall 2 — budget dilution arithmetic**: at fixed fleet compute, 40 teams =
+0.75M/team — BELOW every budget ever measured (the old curve's rising region: 0.75M→+0.0825,
+teachers land under the ceiling); shape changes breadth, never per-team budget. A
+ceiling-reaching 40-team fleet needs ~1.5M/team ⇒ ~60M total = 2× rev-3's fleet compute — an
+owner-scale cost decision. **The slate itself**: 44/719 teams carry fixed-reference estimates
+(two calibrations MEASURED not assumed — incl. a finding: the current generation pilots the
+18 gen-15-direct teams NO better than rev-1, offset −0.0100); CORE 20 ranked by headroom
+(top: a05a190b 0.335), 8 legal today / 12 needing widening; PROVISIONAL 20 from an n=40
+screen with the fresh-games discipline spelled out (disjoint seed families; the withdrawn
+seniority split's lesson institutionalized); both paste-ready 5×8 and 20×2 drafts committed;
+task-#18's team_win_rates tested as a predictor and DEMOTED to nominator (ρ 0.36–0.53, never
+ranks, never pools). **Sixth derived-key specimen**: `coverage_sample.py` fingerprints on
+UNSTRIPPED text — 23 silent `"?"` archetype rows, identities recovered under both
+conventions; and its screen/confirm blocks are byte-identical (the two-stage structure
+collapsed to one measurement — usable as n=200, never as confirmation). A headroom screen is
+mid-flight (6/20 rows at build time) — `designs/ai_v12/team_slate_build.py` regenerates the
+slate in ~5s when it lands. **The decision this queues for the owner (with rev-4's shape
+verdict): widen the curated set (a vetting criterion must be authored) + fund ~2× fleet
+compute, or scope the revolution to ≤32 ceiling-fed teams.**
