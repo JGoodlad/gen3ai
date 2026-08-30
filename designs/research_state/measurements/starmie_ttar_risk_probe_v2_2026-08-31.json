@@ -1,0 +1,1398 @@
+{
+ "meta": {
+  "date": "2026-08-31",
+  "format": "gen3customgame",
+  "impl": "node",
+  "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v9_70_R3ACTION_0828/final_model.zip",
+  "checkpoint_lineage": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+  "capture_seed": [
+   7,
+   11,
+   13,
+   17
+  ],
+  "v1_artifact": "starmie_ttar_risk_probe_2026-08-30.json",
+  "reveal_plans": {
+   "hidden": [
+    "earthquake",
+    "earthquake",
+    "earthquake"
+   ],
+   "revealed": [
+    "rockslide",
+    "focuspunch",
+    "doubleedge"
+   ]
+  },
+  "ttar_moves": [
+   "earthquake",
+   "rockslide",
+   "focuspunch",
+   "doubleedge"
+  ],
+  "git_head": "ce3cec65581bf5d75e3aa948e3d5dde07a84a32b"
+ },
+ "ext1": {
+  "hidden": {
+   "board": {
+    "our_hp": 262,
+    "our_maxhp": 262,
+    "opp_hp_display": 295,
+    "turn": 22
+   },
+   "mask": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0
+   ],
+   "probs": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.790139,
+    0.209828,
+    3.3e-05,
+    1e-06,
+    0.0
+   ],
+   "logits_masked_legal": {
+    "6": -0.2356,
+    "7": -1.5615,
+    "8": -10.3302,
+    "9": -13.7861
+   },
+   "move_slots": [
+    "surf",
+    "hydropump",
+    "icebeam",
+    "recover"
+   ],
+   "argmax_action": 6,
+   "value": 20.8195,
+   "win_prob": 0.8976582288742065,
+   "value_dist": [
+    1.7739829445417854e-06,
+    7.008334250713233e-06,
+    3.4136583053623326e-06,
+    3.7906702345935628e-06,
+    3.482424290268682e-06,
+    2.5508350063319085e-06,
+    4.824528900826408e-07,
+    1.3618368939205538e-06,
+    5.8265709412808064e-06,
+    1.6394241129091824e-06,
+    3.889844720106339e-06,
+    6.962501174712088e-06,
+    5.081807557871798e-06,
+    2.591766133264173e-06,
+    2.522886097722221e-05,
+    0.00018890760838985443,
+    0.0008582599693909287,
+    0.0015220348723232746,
+    0.005526447203010321,
+    0.019822243601083755,
+    0.032555386424064636,
+    0.024863172322511673,
+    0.009441345930099487,
+    0.003629486309364438,
+    0.0009701926610432565,
+    0.0017522458219900727,
+    0.017910629510879517,
+    0.2022852897644043,
+    0.46517518162727356,
+    0.19560621678829193,
+    0.01727222464978695,
+    0.00045111612416803837,
+    1.60156541824108e-05,
+    8.583122507843655e-06,
+    4.433669801073847e-06,
+    1.3260239484225167e-06,
+    1.0836568435479421e-05,
+    2.836789576576848e-07,
+    1.1565323347895173e-06,
+    2.6702048216975527e-06,
+    2.2835661184217315e-06,
+    7.657345690859074e-07,
+    1.3214137197792297e-06,
+    3.5681914596352726e-06,
+    8.217180948122405e-06,
+    7.875851224525832e-06,
+    1.9947044620494125e-06,
+    1.0356757229601499e-05,
+    5.173642875888618e-06,
+    2.1180892417760333e-06,
+    5.603657427855069e-06
+   ],
+   "opp_intent": {
+    "alpha": [
+     {
+      "name": "Rock Slide",
+      "p": 0.3087
+     },
+     {
+      "name": "Dragon Dance",
+      "p": 0.3008
+     },
+     {
+      "name": "Earthquake",
+      "p": 0.1821
+     },
+     {
+      "name": "Double-Edge",
+      "p": 0.0901
+     },
+     {
+      "name": "Leer",
+      "p": 0.0871
+     }
+    ],
+    "beta": [
+     {
+      "slot": 0,
+      "p": 0.1667,
+      "species": "tyranitar",
+      "revealed": true
+     },
+     {
+      "slot": 1,
+      "p": 0.1667,
+      "species": "koffing",
+      "revealed": true
+     },
+     {
+      "slot": 2,
+      "p": 0.1667,
+      "species": "weezing",
+      "revealed": true
+     },
+     {
+      "slot": 3,
+      "p": 0.1667,
+      "species": "graveler",
+      "revealed": true
+     }
+    ]
+   },
+   "obs_sha": "0abe16254d90ff52",
+   "opp_revealed_moves": [
+    "earthquake"
+   ],
+   "battle_won": true,
+   "final_turn": 22
+  },
+  "revealed": {
+   "board": {
+    "our_hp": 262,
+    "our_maxhp": 262,
+    "opp_hp_display": 295,
+    "turn": 22
+   },
+   "mask": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0
+   ],
+   "probs": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.804926,
+    0.195056,
+    1.8e-05,
+    0.0,
+    0.0
+   ],
+   "logits_masked_legal": {
+    "6": -0.2171,
+    "7": -1.6345,
+    "8": -10.9024,
+    "9": -16.0821
+   },
+   "move_slots": [
+    "surf",
+    "hydropump",
+    "icebeam",
+    "recover"
+   ],
+   "argmax_action": 6,
+   "value": 19.4866,
+   "win_prob": 0.8822111487388611,
+   "value_dist": [
+    1.1558837513803155e-06,
+    4.484956662054174e-06,
+    1.8669638848223258e-06,
+    2.6097402496816358e-06,
+    2.2029303181625437e-06,
+    1.6918713754421333e-06,
+    3.2065545951809327e-07,
+    8.110645239867154e-07,
+    3.297680677860626e-06,
+    1.1944500784011325e-06,
+    2.7722128379537025e-06,
+    3.8883567867742386e-06,
+    3.4155691537307575e-06,
+    1.6086962659755955e-06,
+    1.639740730752237e-05,
+    9.121889161178842e-05,
+    0.0004910562420263886,
+    0.0011549857445061207,
+    0.003919124603271484,
+    0.018453439697623253,
+    0.035464800894260406,
+    0.03366769850254059,
+    0.01530958991497755,
+    0.0071236733347177505,
+    0.002669151872396469,
+    0.004325801972299814,
+    0.030551539734005928,
+    0.22863128781318665,
+    0.41950029134750366,
+    0.18255160748958588,
+    0.015546509996056557,
+    0.0004359611193649471,
+    1.1372306289558765e-05,
+    4.746871582028689e-06,
+    2.833237886079587e-06,
+    1.0446115084050689e-06,
+    6.7197083808423486e-06,
+    2.6141950115743384e-07,
+    7.74852253471181e-07,
+    1.4565272294930764e-06,
+    1.588575059940922e-06,
+    6.616068048970192e-07,
+    1.1107568980150972e-06,
+    2.1189193830650765e-06,
+    5.802725354442373e-06,
+    5.486097961693304e-06,
+    1.7480876977060689e-06,
+    6.7623691393237095e-06,
+    3.712079660544987e-06,
+    1.518861949989514e-06,
+    4.73769978270866e-06
+   ],
+   "opp_intent": {
+    "alpha": [
+     {
+      "name": "Rock Slide",
+      "p": 0.3428
+     },
+     {
+      "name": "Dragon Dance",
+      "p": 0.1867
+     },
+     {
+      "name": "Thunderbolt",
+      "p": 0.1799
+     },
+     {
+      "name": "Earthquake",
+      "p": 0.1456
+     },
+     {
+      "name": "Double-Edge",
+      "p": 0.1023
+     }
+    ],
+    "beta": [
+     {
+      "slot": 0,
+      "p": 0.1667,
+      "species": "tyranitar",
+      "revealed": true
+     },
+     {
+      "slot": 1,
+      "p": 0.1667,
+      "species": "koffing",
+      "revealed": true
+     },
+     {
+      "slot": 2,
+      "p": 0.1667,
+      "species": "weezing",
+      "revealed": true
+     },
+     {
+      "slot": 3,
+      "p": 0.1667,
+      "species": "graveler",
+      "revealed": true
+     }
+    ]
+   },
+   "obs_sha": "efcee691570c7a51",
+   "opp_revealed_moves": [
+    "doubleedge",
+    "earthquake",
+    "focuspunch",
+    "rockslide"
+   ],
+   "battle_won": true,
+   "final_turn": 22
+  },
+  "rev1": {
+   "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "hidden": {
+    "board": {
+     "our_hp": 262,
+     "our_maxhp": 262,
+     "opp_hp_display": 295,
+     "turn": 22
+    },
+    "mask": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     1,
+     1,
+     1,
+     0
+    ],
+    "probs": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.98098,
+     0.018953,
+     4.1e-05,
+     2.6e-05,
+     0.0
+    ],
+    "logits_masked_legal": {
+     "6": -0.0197,
+     "7": -3.9662,
+     "8": -10.1026,
+     "9": -10.5613
+    },
+    "move_slots": [
+     "surf",
+     "hydropump",
+     "icebeam",
+     "recover"
+    ],
+    "argmax_action": 6,
+    "value": 15.7646,
+    "win_prob": 0.8698387145996094,
+    "value_dist": [
+     3.481997509879875e-06,
+     6.911682248755824e-06,
+     2.659739948285278e-06,
+     4.547122898657108e-06,
+     5.033820798416855e-06,
+     4.24122299591545e-06,
+     1.7624898873691563e-06,
+     2.5654937871877337e-06,
+     5.823851552122505e-06,
+     1.350469119643094e-06,
+     1.9165995581715833e-06,
+     4.505322067416273e-06,
+     3.761520247280714e-06,
+     1.3878128584110527e-06,
+     3.370845297467895e-05,
+     0.0003622709773480892,
+     0.0013050900306552649,
+     0.002470677252858877,
+     0.010530342347919941,
+     0.044380560517311096,
+     0.056627970188856125,
+     0.03727652505040169,
+     0.012952121905982494,
+     0.008391342125833035,
+     0.0032569579780101776,
+     0.0036468133330345154,
+     0.015299662947654724,
+     0.12304146587848663,
+     0.39271265268325806,
+     0.2517632246017456,
+     0.034547533839941025,
+     0.0012230651918798685,
+     3.318908056826331e-05,
+     1.3602235412690789e-05,
+     8.33661852084333e-06,
+     1.916731207529665e-06,
+     1.1112751963082701e-05,
+     5.939800757914782e-07,
+     7.289578434210853e-07,
+     4.07683501180145e-06,
+     2.6384907414467307e-06,
+     1.3416181445791153e-06,
+     2.308216608071234e-06,
+     5.61314845981542e-06,
+     5.769047675130423e-06,
+     6.663236490567215e-06,
+     3.1108145321923075e-06,
+     1.2093164514226373e-05,
+     8.198640898626763e-06,
+     2.4767848572082585e-06,
+     4.25445796281565e-06
+    ],
+    "opp_intent": {
+     "alpha": [
+      {
+       "name": "Earthquake",
+       "p": 0.2733
+      },
+      {
+       "name": "Dragon Dance",
+       "p": 0.2502
+      },
+      {
+       "name": "Rock Slide",
+       "p": 0.1723
+      },
+      {
+       "name": "SWITCH",
+       "p": 0.142
+      },
+      {
+       "name": "Leer",
+       "p": 0.0772
+      }
+     ],
+     "beta": [
+      {
+       "slot": 0,
+       "p": 0.1667,
+       "species": "tyranitar",
+       "revealed": true
+      },
+      {
+       "slot": 1,
+       "p": 0.1667,
+       "species": "koffing",
+       "revealed": true
+      },
+      {
+       "slot": 2,
+       "p": 0.1667,
+       "species": "weezing",
+       "revealed": true
+      },
+      {
+       "slot": 3,
+       "p": 0.1667,
+       "species": "graveler",
+       "revealed": true
+      }
+     ]
+    },
+    "obs_sha": "0abe16254d90ff52",
+    "opp_revealed_moves": [
+     "earthquake"
+    ],
+    "battle_won": true,
+    "final_turn": 22
+   },
+   "revealed": {
+    "board": {
+     "our_hp": 262,
+     "our_maxhp": 262,
+     "opp_hp_display": 295,
+     "turn": 22
+    },
+    "mask": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     1,
+     1,
+     1,
+     0
+    ],
+    "probs": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.981322,
+     0.018675,
+     2e-06,
+     1e-06,
+     0.0
+    ],
+    "logits_masked_legal": {
+     "6": -0.0189,
+     "7": -3.9806,
+     "8": -12.9223,
+     "9": -14.0553
+    },
+    "move_slots": [
+     "surf",
+     "hydropump",
+     "icebeam",
+     "recover"
+    ],
+    "argmax_action": 6,
+    "value": 20.2739,
+    "win_prob": 0.9281044602394104,
+    "value_dist": [
+     1.469730818826065e-06,
+     4.404450010042638e-06,
+     1.6187620985874673e-06,
+     2.95451036436134e-06,
+     2.473675976943923e-06,
+     2.360249709454365e-06,
+     9.197340773425822e-07,
+     1.5015141343610594e-06,
+     2.3919988052512053e-06,
+     7.45733871099219e-07,
+     7.889035487096407e-07,
+     1.7205687754540122e-06,
+     1.4264736591940164e-06,
+     3.7863995316911314e-07,
+     1.1625602382991929e-05,
+     7.414577703457326e-05,
+     0.00025650463066995144,
+     0.0005867293220944703,
+     0.0030155139975249767,
+     0.016482029110193253,
+     0.026916921138763428,
+     0.020549941807985306,
+     0.011824598535895348,
+     0.008947386406362057,
+     0.004957970697432756,
+     0.005381590221077204,
+     0.01997564546763897,
+     0.15840990841388702,
+     0.42585650086402893,
+     0.26392537355422974,
+     0.031651660799980164,
+     0.0010726683540269732,
+     2.6874262402998284e-05,
+     8.153426279022824e-06,
+     4.144841113884468e-06,
+     7.86371458616486e-07,
+     5.58533929506666e-06,
+     3.215434389858274e-07,
+     3.8791199585830327e-07,
+     1.4823264109509182e-06,
+     1.5210981700874981e-06,
+     8.014324635041703e-07,
+     1.2620284906006418e-06,
+     2.355900505790487e-06,
+     2.9415832614176907e-06,
+     3.50571826857049e-06,
+     1.570456447552715e-06,
+     7.026112598396139e-06,
+     4.725609414890641e-06,
+     1.263514491256501e-06,
+     3.400124342078925e-06
+    ],
+    "opp_intent": {
+     "alpha": [
+      {
+       "name": "SWITCH",
+       "p": 0.2585
+      },
+      {
+       "name": "Rock Slide",
+       "p": 0.2291
+      },
+      {
+       "name": "Earthquake",
+       "p": 0.1695
+      },
+      {
+       "name": "Dragon Dance",
+       "p": 0.1302
+      },
+      {
+       "name": "Thunderbolt",
+       "p": 0.1047
+      }
+     ],
+     "beta": [
+      {
+       "slot": 0,
+       "p": 0.1667,
+       "species": "tyranitar",
+       "revealed": true
+      },
+      {
+       "slot": 1,
+       "p": 0.1667,
+       "species": "koffing",
+       "revealed": true
+      },
+      {
+       "slot": 2,
+       "p": 0.1667,
+       "species": "weezing",
+       "revealed": true
+      },
+      {
+       "slot": 3,
+       "p": 0.1667,
+       "species": "graveler",
+       "revealed": true
+      }
+     ]
+    },
+    "obs_sha": "efcee691570c7a51",
+    "opp_revealed_moves": [
+     "doubleedge",
+     "earthquake",
+     "focuspunch",
+     "rockslide"
+    ],
+    "battle_won": true,
+    "final_turn": 22
+   }
+  }
+ },
+ "sweep": {
+  "hidden": [
+   {
+    "H": 284,
+    "hp_frac": 0.8304,
+    "opp_hp_display": 284,
+    "surf_ko_rolls": 16,
+    "e_ko_surf": 1.0,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.853521,
+    "p_pump": 0.146444,
+    "argmax": "surf",
+    "value": 21.0472,
+    "win_prob": 0.9027,
+    "alpha_eq": 0.1848
+   },
+   {
+    "H": 286,
+    "hp_frac": 0.8363,
+    "opp_hp_display": 286,
+    "surf_ko_rolls": 15,
+    "e_ko_surf": 0.9414,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.843832,
+    "p_pump": 0.156133,
+    "argmax": "surf",
+    "value": 21.0035,
+    "win_prob": 0.9017,
+    "alpha_eq": 0.1844
+   },
+   {
+    "H": 289,
+    "hp_frac": 0.845,
+    "opp_hp_display": 289,
+    "surf_ko_rolls": 14,
+    "e_ko_surf": 0.8828,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.827918,
+    "p_pump": 0.172048,
+    "argmax": "surf",
+    "value": 20.9401,
+    "win_prob": 0.9004,
+    "alpha_eq": 0.1837
+   },
+   {
+    "H": 293,
+    "hp_frac": 0.8567,
+    "opp_hp_display": 293,
+    "surf_ko_rolls": 13,
+    "e_ko_surf": 0.8242,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.803661,
+    "p_pump": 0.196305,
+    "argmax": "surf",
+    "value": 20.8572,
+    "win_prob": 0.8985,
+    "alpha_eq": 0.1826
+   },
+   {
+    "H": 294,
+    "hp_frac": 0.8596,
+    "opp_hp_display": 294,
+    "surf_ko_rolls": 13,
+    "e_ko_surf": 0.8242,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.797005,
+    "p_pump": 0.202961,
+    "argmax": "surf",
+    "value": 20.8385,
+    "win_prob": 0.8981,
+    "alpha_eq": 0.1824
+   },
+   {
+    "H": 295,
+    "hp_frac": 0.8626,
+    "opp_hp_display": 295,
+    "surf_ko_rolls": 13,
+    "e_ko_surf": 0.8242,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.790139,
+    "p_pump": 0.209828,
+    "argmax": "surf",
+    "value": 20.8195,
+    "win_prob": 0.8977,
+    "alpha_eq": 0.1821
+   },
+   {
+    "H": 296,
+    "hp_frac": 0.8655,
+    "opp_hp_display": 296,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.783051,
+    "p_pump": 0.216915,
+    "argmax": "surf",
+    "value": 20.7982,
+    "win_prob": 0.8972,
+    "alpha_eq": 0.182
+   },
+   {
+    "H": 297,
+    "hp_frac": 0.8684,
+    "opp_hp_display": 297,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.775742,
+    "p_pump": 0.224224,
+    "argmax": "surf",
+    "value": 20.7751,
+    "win_prob": 0.8968,
+    "alpha_eq": 0.1819
+   },
+   {
+    "H": 298,
+    "hp_frac": 0.8713,
+    "opp_hp_display": 298,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.768251,
+    "p_pump": 0.231716,
+    "argmax": "surf",
+    "value": 20.7518,
+    "win_prob": 0.8963,
+    "alpha_eq": 0.1818
+   },
+   {
+    "H": 299,
+    "hp_frac": 0.8743,
+    "opp_hp_display": 299,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.76051,
+    "p_pump": 0.239457,
+    "argmax": "surf",
+    "value": 20.7284,
+    "win_prob": 0.8958,
+    "alpha_eq": 0.1817
+   },
+   {
+    "H": 300,
+    "hp_frac": 0.8772,
+    "opp_hp_display": 300,
+    "surf_ko_rolls": 11,
+    "e_ko_surf": 0.707,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.75252,
+    "p_pump": 0.247447,
+    "argmax": "surf",
+    "value": 20.7049,
+    "win_prob": 0.8954,
+    "alpha_eq": 0.1817
+   },
+   {
+    "H": 303,
+    "hp_frac": 0.886,
+    "opp_hp_display": 303,
+    "surf_ko_rolls": 10,
+    "e_ko_surf": 0.6484,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.726783,
+    "p_pump": 0.273184,
+    "argmax": "surf",
+    "value": 20.6347,
+    "win_prob": 0.894,
+    "alpha_eq": 0.1815
+   },
+   {
+    "H": 306,
+    "hp_frac": 0.8947,
+    "opp_hp_display": 306,
+    "surf_ko_rolls": 9,
+    "e_ko_surf": 0.5898,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.696799,
+    "p_pump": 0.303169,
+    "argmax": "surf",
+    "value": 20.5631,
+    "win_prob": 0.8926,
+    "alpha_eq": 0.1814
+   },
+   {
+    "H": 310,
+    "hp_frac": 0.9064,
+    "opp_hp_display": 310,
+    "surf_ko_rolls": 8,
+    "e_ko_surf": 0.5312,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.650431,
+    "p_pump": 0.349537,
+    "argmax": "surf",
+    "value": 20.4644,
+    "win_prob": 0.8907,
+    "alpha_eq": 0.1814
+   },
+   {
+    "H": 313,
+    "hp_frac": 0.9152,
+    "opp_hp_display": 313,
+    "surf_ko_rolls": 7,
+    "e_ko_surf": 0.4727,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.610125,
+    "p_pump": 0.389843,
+    "argmax": "surf",
+    "value": 20.3887,
+    "win_prob": 0.8893,
+    "alpha_eq": 0.1815
+   },
+   {
+    "H": 316,
+    "hp_frac": 0.924,
+    "opp_hp_display": 316,
+    "surf_ko_rolls": 6,
+    "e_ko_surf": 0.4141,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.570907,
+    "p_pump": 0.429061,
+    "argmax": "surf",
+    "value": 20.3163,
+    "win_prob": 0.8879,
+    "alpha_eq": 0.1815
+   },
+   {
+    "H": 320,
+    "hp_frac": 0.9357,
+    "opp_hp_display": 320,
+    "surf_ko_rolls": 5,
+    "e_ko_surf": 0.3555,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.565689,
+    "p_pump": 0.434281,
+    "argmax": "surf",
+    "value": 20.2853,
+    "win_prob": 0.8846,
+    "alpha_eq": 0.177
+   },
+   {
+    "H": 323,
+    "hp_frac": 0.9444,
+    "opp_hp_display": 323,
+    "surf_ko_rolls": 4,
+    "e_ko_surf": 0.2969,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.559086,
+    "p_pump": 0.440886,
+    "argmax": "surf",
+    "value": 20.2324,
+    "win_prob": 0.8835,
+    "alpha_eq": 0.1772
+   },
+   {
+    "H": 326,
+    "hp_frac": 0.9532,
+    "opp_hp_display": 326,
+    "surf_ko_rolls": 3,
+    "e_ko_surf": 0.2383,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.553037,
+    "p_pump": 0.446937,
+    "argmax": "surf",
+    "value": 20.1882,
+    "win_prob": 0.8824,
+    "alpha_eq": 0.1774
+   },
+   {
+    "H": 330,
+    "hp_frac": 0.9649,
+    "opp_hp_display": 330,
+    "surf_ko_rolls": 2,
+    "e_ko_surf": 0.1797,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.543963,
+    "p_pump": 0.456013,
+    "argmax": "surf",
+    "value": 20.1343,
+    "win_prob": 0.8808,
+    "alpha_eq": 0.1776
+   },
+   {
+    "H": 333,
+    "hp_frac": 0.9737,
+    "opp_hp_display": 333,
+    "surf_ko_rolls": 1,
+    "e_ko_surf": 0.1211,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.537189,
+    "p_pump": 0.462789,
+    "argmax": "surf",
+    "value": 20.0957,
+    "win_prob": 0.8797,
+    "alpha_eq": 0.1779
+   },
+   {
+    "H": 337,
+    "hp_frac": 0.9854,
+    "opp_hp_display": 337,
+    "surf_ko_rolls": 0,
+    "e_ko_surf": 0.0625,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.528197,
+    "p_pump": 0.471783,
+    "argmax": "surf",
+    "value": 20.0448,
+    "win_prob": 0.8783,
+    "alpha_eq": 0.1782
+   }
+  ],
+  "revealed": [
+   {
+    "H": 284,
+    "hp_frac": 0.8304,
+    "opp_hp_display": 284,
+    "surf_ko_rolls": 16,
+    "e_ko_surf": 1.0,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.845628,
+    "p_pump": 0.154355,
+    "argmax": "surf",
+    "value": 19.7264,
+    "win_prob": 0.8867,
+    "alpha_eq": 0.1444
+   },
+   {
+    "H": 286,
+    "hp_frac": 0.8363,
+    "opp_hp_display": 286,
+    "surf_ko_rolls": 15,
+    "e_ko_surf": 0.9414,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.839222,
+    "p_pump": 0.160761,
+    "argmax": "surf",
+    "value": 19.6839,
+    "win_prob": 0.8859,
+    "alpha_eq": 0.1445
+   },
+   {
+    "H": 289,
+    "hp_frac": 0.845,
+    "opp_hp_display": 289,
+    "surf_ko_rolls": 14,
+    "e_ko_surf": 0.8828,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.828893,
+    "p_pump": 0.171089,
+    "argmax": "surf",
+    "value": 19.6198,
+    "win_prob": 0.8847,
+    "alpha_eq": 0.1449
+   },
+   {
+    "H": 293,
+    "hp_frac": 0.8567,
+    "opp_hp_display": 293,
+    "surf_ko_rolls": 13,
+    "e_ko_surf": 0.8242,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.813396,
+    "p_pump": 0.186586,
+    "argmax": "surf",
+    "value": 19.5314,
+    "win_prob": 0.883,
+    "alpha_eq": 0.1454
+   },
+   {
+    "H": 294,
+    "hp_frac": 0.8596,
+    "opp_hp_display": 294,
+    "surf_ko_rolls": 13,
+    "e_ko_surf": 0.8242,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.809216,
+    "p_pump": 0.190765,
+    "argmax": "surf",
+    "value": 19.5092,
+    "win_prob": 0.8826,
+    "alpha_eq": 0.1455
+   },
+   {
+    "H": 295,
+    "hp_frac": 0.8626,
+    "opp_hp_display": 295,
+    "surf_ko_rolls": 13,
+    "e_ko_surf": 0.8242,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.804926,
+    "p_pump": 0.195056,
+    "argmax": "surf",
+    "value": 19.4866,
+    "win_prob": 0.8822,
+    "alpha_eq": 0.1456
+   },
+   {
+    "H": 296,
+    "hp_frac": 0.8655,
+    "opp_hp_display": 296,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.800545,
+    "p_pump": 0.199436,
+    "argmax": "surf",
+    "value": 19.4637,
+    "win_prob": 0.8818,
+    "alpha_eq": 0.1457
+   },
+   {
+    "H": 297,
+    "hp_frac": 0.8684,
+    "opp_hp_display": 297,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.796031,
+    "p_pump": 0.203951,
+    "argmax": "surf",
+    "value": 19.441,
+    "win_prob": 0.8814,
+    "alpha_eq": 0.1458
+   },
+   {
+    "H": 298,
+    "hp_frac": 0.8713,
+    "opp_hp_display": 298,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.79138,
+    "p_pump": 0.208601,
+    "argmax": "surf",
+    "value": 19.4183,
+    "win_prob": 0.881,
+    "alpha_eq": 0.1459
+   },
+   {
+    "H": 299,
+    "hp_frac": 0.8743,
+    "opp_hp_display": 299,
+    "surf_ko_rolls": 12,
+    "e_ko_surf": 0.7656,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.786628,
+    "p_pump": 0.213353,
+    "argmax": "surf",
+    "value": 19.3955,
+    "win_prob": 0.8805,
+    "alpha_eq": 0.146
+   },
+   {
+    "H": 300,
+    "hp_frac": 0.8772,
+    "opp_hp_display": 300,
+    "surf_ko_rolls": 11,
+    "e_ko_surf": 0.707,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.781749,
+    "p_pump": 0.218232,
+    "argmax": "surf",
+    "value": 19.3724,
+    "win_prob": 0.8801,
+    "alpha_eq": 0.146
+   },
+   {
+    "H": 303,
+    "hp_frac": 0.886,
+    "opp_hp_display": 303,
+    "surf_ko_rolls": 10,
+    "e_ko_surf": 0.6484,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.766554,
+    "p_pump": 0.233426,
+    "argmax": "surf",
+    "value": 19.301,
+    "win_prob": 0.8787,
+    "alpha_eq": 0.1462
+   },
+   {
+    "H": 306,
+    "hp_frac": 0.8947,
+    "opp_hp_display": 306,
+    "surf_ko_rolls": 9,
+    "e_ko_surf": 0.5898,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.748593,
+    "p_pump": 0.251387,
+    "argmax": "surf",
+    "value": 19.2315,
+    "win_prob": 0.8774,
+    "alpha_eq": 0.1464
+   },
+   {
+    "H": 310,
+    "hp_frac": 0.9064,
+    "opp_hp_display": 310,
+    "surf_ko_rolls": 8,
+    "e_ko_surf": 0.5312,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.722722,
+    "p_pump": 0.277258,
+    "argmax": "surf",
+    "value": 19.1376,
+    "win_prob": 0.8757,
+    "alpha_eq": 0.1467
+   },
+   {
+    "H": 313,
+    "hp_frac": 0.9152,
+    "opp_hp_display": 313,
+    "surf_ko_rolls": 7,
+    "e_ko_surf": 0.4727,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.700862,
+    "p_pump": 0.299117,
+    "argmax": "surf",
+    "value": 19.0658,
+    "win_prob": 0.8743,
+    "alpha_eq": 0.147
+   },
+   {
+    "H": 316,
+    "hp_frac": 0.924,
+    "opp_hp_display": 316,
+    "surf_ko_rolls": 6,
+    "e_ko_surf": 0.4141,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.684609,
+    "p_pump": 0.31537,
+    "argmax": "surf",
+    "value": 19.0112,
+    "win_prob": 0.8733,
+    "alpha_eq": 0.1472
+   },
+   {
+    "H": 320,
+    "hp_frac": 0.9357,
+    "opp_hp_display": 320,
+    "surf_ko_rolls": 5,
+    "e_ko_surf": 0.3555,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.700963,
+    "p_pump": 0.299018,
+    "argmax": "surf",
+    "value": 18.9301,
+    "win_prob": 0.8717,
+    "alpha_eq": 0.1487
+   },
+   {
+    "H": 323,
+    "hp_frac": 0.9444,
+    "opp_hp_display": 323,
+    "surf_ko_rolls": 4,
+    "e_ko_surf": 0.2969,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.699824,
+    "p_pump": 0.300158,
+    "argmax": "surf",
+    "value": 18.9025,
+    "win_prob": 0.8712,
+    "alpha_eq": 0.1489
+   },
+   {
+    "H": 326,
+    "hp_frac": 0.9532,
+    "opp_hp_display": 326,
+    "surf_ko_rolls": 3,
+    "e_ko_surf": 0.2383,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.698653,
+    "p_pump": 0.301329,
+    "argmax": "surf",
+    "value": 18.8769,
+    "win_prob": 0.8707,
+    "alpha_eq": 0.1491
+   },
+   {
+    "H": 330,
+    "hp_frac": 0.9649,
+    "opp_hp_display": 330,
+    "surf_ko_rolls": 2,
+    "e_ko_surf": 0.1797,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.696991,
+    "p_pump": 0.302992,
+    "argmax": "surf",
+    "value": 18.8441,
+    "win_prob": 0.87,
+    "alpha_eq": 0.1494
+   },
+   {
+    "H": 333,
+    "hp_frac": 0.9737,
+    "opp_hp_display": 333,
+    "surf_ko_rolls": 1,
+    "e_ko_surf": 0.1211,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.695604,
+    "p_pump": 0.30438,
+    "argmax": "surf",
+    "value": 18.8229,
+    "win_prob": 0.8696,
+    "alpha_eq": 0.1495
+   },
+   {
+    "H": 337,
+    "hp_frac": 0.9854,
+    "opp_hp_display": 337,
+    "surf_ko_rolls": 0,
+    "e_ko_surf": 0.0625,
+    "e_ko_pump": 0.8,
+    "p_surf": 0.693745,
+    "p_pump": 0.30624,
+    "argmax": "surf",
+    "value": 18.7948,
+    "win_prob": 0.8691,
+    "alpha_eq": 0.1497
+   }
+  ]
+ },
+ "mc": {
+  "h295_surf": {
+   "n": 250,
+   "wins": 206,
+   "p_win": 0.824,
+   "wilson95": [
+    0.772,
+    0.8662
+   ],
+   "analytic": 0.8242
+  },
+  "h295_pump": {
+   "n": 250,
+   "wins": 204,
+   "p_win": 0.816,
+   "wilson95": [
+    0.7633,
+    0.8591
+   ],
+   "analytic": 0.8
+  },
+  "h299_surf": {
+   "n": 250,
+   "wins": 187,
+   "p_win": 0.748,
+   "wilson95": [
+    0.6907,
+    0.7978
+   ],
+   "analytic": 0.7656
+  },
+  "h299_pump": {
+   "n": 250,
+   "wins": 194,
+   "p_win": 0.776,
+   "wilson95": [
+    0.7204,
+    0.8233
+   ],
+   "analytic": 0.8
+  }
+ },
+ "bias": {
+  "hidden": {
+   "p_surf_at_true_equality": 0.7872,
+   "equality_bracket": {
+    "H_below": 295,
+    "p_surf_below": 0.790139,
+    "H_above": 296,
+    "p_surf_above": 0.783051
+   },
+   "argmax_flip": {
+    "flipped": false,
+    "censored_lower_bound_wp": 0.7375,
+    "note": "argmax stays Surf at every point; the flip threshold exceeds a true Surf deficit of 0.7375 win prob"
+   },
+   "slope_global": 0.4026,
+   "slope_local_pm016": 0.4097,
+   "span_ratio": 0.347,
+   "in_band_p_surf_spread": {
+    "12": 0.0225,
+    "13": 0.0135
+   }
+  },
+  "revealed": {
+   "p_surf_at_true_equality": 0.8031,
+   "equality_bracket": {
+    "H_below": 295,
+    "p_surf_below": 0.804926,
+    "H_above": 296,
+    "p_surf_above": 0.800545
+   },
+   "argmax_flip": {
+    "flipped": false,
+    "censored_lower_bound_wp": 0.7375,
+    "note": "argmax stays Surf at every point; the flip threshold exceeds a true Surf deficit of 0.7375 win prob"
+   },
+   "slope_global": 0.187,
+   "slope_local_pm016": 0.2549,
+   "span_ratio": 0.1718,
+   "in_band_p_surf_spread": {
+    "12": 0.0139,
+    "13": 0.0085
+   }
+  },
+  "revealed_minus_hidden": {
+   "p_surf_at_true_equality": 0.0159,
+   "slope_global": -0.2156,
+   "slope_local_pm016": -0.1548,
+   "flip": "both censored"
+  },
+  "value_stack_delta_mean": {
+   "d_p_surf": 0.064,
+   "d_value": -1.3203,
+   "d_win_prob": -0.0142,
+   "n_pairs": 22
+  }
+ }
+}

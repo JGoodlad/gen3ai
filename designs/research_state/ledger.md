@@ -7467,3 +7467,30 @@ run (~275 CRN-paired games/arm to see half-gap closure; 9–27h on ≤2 cores + 
 banked: oracle gains at craters come from action-choice under the known reply while BEHIND
 (wp_chosen 0.31), not variance-shaving while ahead — the risk-defect costume check came back
 clean.
+
+### 🔬 STARMIE/TTAR RISK PROBE v2 — revealing the threat HALVES the mask's truth-tracking amplitude, and the mask prices the HP BAR, not the roll table (2026-08-31)
+
+**`measurements/starmie_ttar_risk_probe_v2_2026-08-31.{md,json}` + `starmie_ttar_risk_probe_v2.py`
+(v1 artifacts untouched).** Owner-ordered v1 rerun with two extensions on the same engineered 1v1
+(R3ACTION; matched 22-turn choreography — a 4-move CB Ttar + three Protect-blocked reveal stints in
+BOTH conditions, only the clicked move ids differ; decision state + reveal set asserted per battle;
+4/4 MC arms inside Wilson 95% of analytic). **THE BIAS AS NUMBERS (hidden | revealed):** P(Surf) at
+interpolated true equality **0.787 | 0.803** (unbiased = 0.5 — a ~+0.29 safe-move mass bias, and
+revealing makes it slightly WORSE); argmax flip **NEVER, either condition** — censored bound
+> **0.7375 wp** true deficit; amplitude dP(Surf)/d(truth) **0.403 | 0.187** global OLS (local ±0.16:
+0.410 | 0.255) — **revealing all four moves roughly HALVES the truth-tracking amplitude** (low-truth
+Surf floor 0.53 → 0.69) while the value stack takes a coherent level shift (paired over 22 H:
+ΔV −1.32, Δwp −1.4pp, ΔP(Surf) +0.06). **Threat VISIBILITY is not the missing input** — the same
+shape as SI-2's credit-binds verdict, with the information hand-delivered this time. **NEW MECHANISM
+FINDING (the crossover micro-steps):** the per-HP mask response is perfectly smooth through the
+boundary (hidden −0.67…−0.77pp/HP; the 295→296 step, where TRUTH drops 5.9pp, is indistinguishable
+from its no-truth-change neighbours) — **zero excess response at the KO boundary**; v1's "reads the
+boundary at ⅓ amplitude" sharpens to "prices displayed HP smoothly — the roll structure that decides
+the gamble is invisible", so the slope numbers are HP-mediated descriptions, not evidence of KO-
+fraction computation. Incidentals banked: at 4/4 revealed the α read keeps 0.37 on unrevealed moves
+(DD .19 + Tbolt .18), puts .146 on the choice-locked EQ, and its five seats OMIT the revealed Focus
+Punch — reveal-completeness never collapses the move posterior; rev-1's action split is byte-flat
+across conditions (0.981 both) while its value stack moves OPPOSITE R3ACTION's (+4.5 V / +5.8pp vs
+−1.3 / −1.6pp) on the same information. Caveats carried: one scenario, one checkpoint family;
+discrete rolls make "equality" an interpolation across a 5.9pp step (achieved fractions 12/16 and
+13/16 reported wherever used).
