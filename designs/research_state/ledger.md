@@ -7445,3 +7445,25 @@ in-context latent is half-viable — build it as a CLASS posterior (labels free,
 untouched (exact labels); read R²≈0.1 as a hand-feature FLOOR but inherit the two data
 properties (signal concentrated t≤4; kin-collapse). Next gate unchanged: the ORACLE A/B
 (SI-2) — inferability without value-of-knowing is still not a build licence.
+
+### 🎚️ SI-2 SCORED: the bot gap is CREDIT, not conditioning — the oracle A/B prices de-mixing at ~0.6pp of 7.4pp (2026-08-31)
+
+**`measurements/bot_gap_oracle_voi_2026-08-31.{md,json}` + probe scripts.** rev-1's last-3-step
+bot gap = 7.4% (199/2700). Three-way attribution: **DICE** — 7.0% CI [3.5,11.1] of losses are
+pure-luck battles (prediction ">2%" TRUE), 23% of crater-decision mass is bad-tail luck;
+**CONDITIONING** — the full |A|×|B| one-ply CRN grid over 384 decisions (recorded bot action =
+the oracle; machinery validated bit-exact against the recorded next obs): argmax flips at ~51%
+of decisions but flips are CHEAP — VoI +0.082 wp [0.063,0.101] at loss craters, +0.027 at
+typical loss decisions ⇒ ~0.6pp of the gap (~92.2%-equiv; prediction "≤ half" TRUE with room);
+**CREDIT** — the tell: one-ply search under the model's OWN marginal already recovers 0.196 of
+the 0.278 crater improvement — 70% of the available gain needs no oracle, and the calibration
+split shows the calibrated-critic signature (no V-level fantasy vs bots). The de-mixing DISEASE
+is meanwhile CONFIRMED exactly as diagnosed: α is pool-shaped against everyone (switch mass
+0.566 predicted vs 0.292 actual vs bots; info gain 0.048 nats vs bots vs 0.278 vs pool;
+label_bot_frac 0.07) — real misprediction, tiny bot-axis value. **Licence: the bot-gap
+motivation for the skill scalar is DEAD; the candidate lives only on the ladder axis (SI-1's
+class posterior + a ladder-side VoI nobody has measured).** Live oracle-wrapper arm SIZED not
+run (~275 CRN-paired games/arm to see half-gap closure; 9–27h on ≤2 cores + 0.5d build). Also
+banked: oracle gains at craters come from action-choice under the known reply while BEHIND
+(wp_chosen 0.31), not variance-shaving while ahead — the risk-defect costume check came back
+clean.
