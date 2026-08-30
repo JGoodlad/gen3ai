@@ -7149,3 +7149,17 @@ knob is a SEPARATE later cell. Knowingly unmatched and recorded as such: student
 revolution scales it. Miss ⇒ the unmatched rows (maturity, differentiation) become the next
 controlled variable — a finding, not a failure. Either way the scorecard is scored row by
 row, in public, like `91d5125`.
+
+### 🧭 OWNER CLARIFICATION on the reproduction scorecard: OUTCOME over implementation (2026-08-30)
+
+"Happy with any reasonable decision that helps us repro the OUTCOME which may or may not
+require repro-ing the impl. We should be data driven at all times." — the fidelity
+constraints in `1a77edf` are therefore the DEFAULT, not dogma: implementation fidelity is
+instrumentally valuable (it maximizes attribution when a bar misses), but where EVIDENCE says
+a detail was incidental and a deviation raises the odds of reproducing the outcome, the
+deviation is taken. Discipline unchanged in two respects: (1) any deviation is decided and
+RECORDED before launch, with the datum that licensed it — never mid-run; (2) an untested
+prediction is not a datum — e.g. the distill lr-1e-4 Pareto claim stays out of rev-4 unless
+it first earns real-fold evidence (the micro-distill instrument is CPU-cheap if we want that
+evidence pre-launch). The five bars themselves are untouched — outcome-defined, so they
+survive any implementation choice.
