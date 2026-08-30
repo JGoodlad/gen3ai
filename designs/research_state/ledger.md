@@ -6639,3 +6639,23 @@ scaffolding-gauge offline probe + TB scalar, the `main.exploitability` curve CLI
 admission artifacts, the V_shaped-constancy sanity row for the frozen-φ arm. Landing order on
 completion: D → A → E → C → B (smallest blast radius first); parser/config append-zone
 conflicts expected and owned by the landing step. All ≤2 cores nice-15 beside rev-3's GPU work.
+
+### 🟢 WAVE E LANDED (2b86f03+2c4b746) — the gauge + the exploitability curve exist; and the curve's FIRST READING is flat (2026-08-30)
+
+Three instruments shipped, 83 new tests + gates green. **`python -m main.exploitability`
+reproduces the ledger's published rev-2/rev-3 tables from the artifacts (identity-checked) and
+its first cross-generation row reads: rev-2 → rev-3 delta mean net exploitability +0.0185
+[−0.0100, +0.0470] ⇒ NO DETECTABLE CHANGE** — consistent with the ceiling reframe (extraction
+= headroom; rev-3's target ≈ rev-1-level) and now the standing meter the flywheel must
+eventually bend. Per-class headroom made explicit: meter teams 0.0856 vs coverage teams
+0.2575. **The scaffolding gauge** ships in two honest forms (rank-based: unit-free,
+ordering-only, ambiguous exactly at the constancy endpoint; calibrated-affine: probability
+units, per-checkpoint fit that does not transport, with `readout_penalty` separating
+family-inadequacy from head-disagreement), every CI a battle-cluster bootstrap, the units
+statement in the JSON and the footer; live TB scalar `train/scaffolding_gauge` (rank form,
+flagless, epoch-0). **Constancy sanity row** built (db9bb5c's prediction as a one-liner).
+**Test footgun banked with a pin:** `_train_from_init` snapshots are deterministic ONLY if
+taken BEFORE learn() — afterwards deepcopy+load_state_dict aliases Adam state and the next
+train() mutates the restored snapshot (~1e-3 drift); any byte-identity test taking it after is
+vacuous. Wave status: E landed; A/B/C/D in flight; landing order adapts to arrival with
+conflicts owned at the landing step.
