@@ -7185,3 +7185,25 @@ link broken; floor discriminator owed to rev-4) · R3-SELF PENDING (trainer) · 
 PENDING.** The surviving recipe hypothesis: BREADTH-PER-TEACHER changes what a fold's
 content does outside its coverage — gift at ~7.3 teams/teacher, redistribution at 2 — with
 drift-anchoring still live as the mechanism carrier until R3-SELF rules.
+
+### 🧩 NAMED HYPOTHESIS: the TEAMS-PER-TEACHER SWEET SPOT (owner synthesis, 2026-08-30 — banked as hypothesis, not belief)
+
+**The model (owner):** too FEW teams per exploiter ⇒ the fold robs the generalist outside its
+coverage (+ possibly noisier tails); too MANY ⇒ the exploiter cannot learn team-specific
+strategy and dilutes back toward generalist six-1v1 play; v8's ~10/teacher landed on the
+sweet spot BY SIDE-EFFECT of a sweep optimizing exploiter efficiency, not fold externality.
+**Scored against the record:** HIGH END SUPPORTED (count 20→10 +0.077 SIG vs conditioning
++0.027 n.s.; piloting 0.438→0.710; N=10 generalizes; LUT null killed the conditioning
+rescue). LOW END HALF-SUPPORTED (rev-2 −7.1 replicated, but rev-3 at the SAME narrowness
+robbed nothing — the broken link; floor discriminator arbitrates). "Noisier tails" at the low
+end: UNMEASURED, held as narrative. **Caveat 1 — the number 10 does double duty:** piloting
+(the exploiter's own teams) and externality (the fold's gift/rob) are different axes that
+both land near 10; the unified reading (coherent content ⇒ coherent donation) is attractive
+and UNMEASURED as one curve. **Caveat 2 — rev-4 changes COUNT and FORK LENGTH together**
+(rev-2/3 teachers 3M forks; rev-4 12M; v8 7.4–18.7M; probe A: breadth FLAT for extraction,
+length DIRECTIONAL z=2.4). Reproduction does not need the separation; attribution does.
+**Distinguishing predictions registered:** (i) rev-4 at 8/teacher gifts (scorecard REPRO-1);
+(ii) the post-rev-4 separating cell is a LONG-NARROW fold (K=2 at ~12M) — if THAT gifts,
+length is the ingredient and the sweet spot is a length story in a count costume; (iii) the
+low end resolves on rev-4's floor stratum (REPRO-2). The K=2-long cell is queued BEHIND the
+scorecard, not into it — no new knobs in the reproduction arm.
