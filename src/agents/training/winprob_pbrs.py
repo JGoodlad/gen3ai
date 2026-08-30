@@ -318,5 +318,14 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
         "shaping_absmean": shaping_absmean,
         "phi_mean": float(phi.mean()),
         # Against the UNSHAPED stream, so the ratio does not flatter itself as the coefficient rises.
-        "reward_share": float(shaping_absmean / raw_absmean) if raw_absmean > 0.0 else 0.0,
+        #
+        # ⚠️ NaN, NEVER 0.0, when the unshaped stream is empty. `raw_absmean == 0` means the
+        # shaping is 100% of this rollout's reward, and 0.0 is the reading an operator scans past
+        # — "the shaping is negligible" — for the one case where it is everything. That case is
+        # not hypothetical: under `--no-hand-shaping` (gen3_clean_world_config_v1) the unshaped
+        # stream is TERMINAL-ONLY, so any rollout that ends no episode has exactly zero unshaped
+        # reward, and the clean-world arm is precisely where this metric is meant to be watched.
+        # Same rule the Q head's `train/q_winprob_loss` follows one wave later: a defaulted zero is
+        # a perfect score for a measurement that was never taken.
+        "reward_share": float(shaping_absmean / raw_absmean) if raw_absmean > 0.0 else float("nan"),
     }

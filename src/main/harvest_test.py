@@ -418,6 +418,37 @@ def test_a_timed_out_rollout_is_its_own_bucket_and_never_a_loss():
     assert r["k"] / r["n"] == pytest.approx(0.25)            # not 5/32
 
 
+def test_a_TIE_is_an_adjudicated_NON_WIN_not_a_timeout():
+    """R1 adversarial review. ``counterfactual._battle_outcome`` emits FOUR outcomes — win / loss /
+    tie / unfinished — and this bucket was ``n = win + loss``, ``n_timeout = everything else``. A
+    TIE is a semantic outcome (both last mons faint together); it is none of the three things the
+    module header says ``n_timeout`` counts ("a transport error, a bridge timeout, a horizon
+    overrun"), so the implementation contradicted its own contract.
+
+    Dropping it BIASES the label UP: the excluded rollouts are all non-wins, so ``k/n`` overstates
+    P(win) on exactly the states where a game can end even. The owner's clean-world ruling is
+    explicit that a draw scores as a loss (``--draw-penalty -victory_value``), which is the same
+    statement in the reward's language."""
+    sess = _FakeSession({"win": 5, "loss": 15, "tie": 4}, 32)     # 8 genuinely unadjudicated
+    r = H.label_one(sess, "/tmp/b", 12, 3, 32)
+    assert r["n"] == 24 and r["k"] == 5                          # the tie is in the DENOMINATOR
+    assert r["n_timeout"] == 8                                   # ...and NOT in the timeout bucket
+    assert r["n_tie"] == 4                                       # ...and it is counted, not merged
+    assert r["k"] / r["n"] == pytest.approx(5 / 24)
+
+
+def test_the_tie_count_reaches_provenance(tmp_path):
+    """A label whose denominator silently includes ties is unauditable a month later, so the count
+    travels with the row like ``n_timeout`` does."""
+    np.savez(tmp_path / "b_states.npz", obs=np.zeros((3, OBS_DIM), dtype=np.float32))
+    c = _cand(abs_prefix=str(tmp_path / "b"), decision_idx=1)
+    row = H.build_row(c, {"ok": True, "n": 24, "k": 5, "n_timeout": 8, "n_tie": 4, "outcomes": {}},
+                      subject_ckpt="s", sampler_version="v1", seed=3, inline_obs=True,
+                      models_root=str(tmp_path))
+    assert row is not None and row.provenance["n_tie"] == 4
+    validate_row(row.to_json())
+
+
 def test_label_one_passes_the_recorded_action_at_the_recorded_decision():
     """CRN pairing at the seam: the label is 'this state, the action actually taken, re-diced'.
     Passing a different inv or action would silently label a different state."""

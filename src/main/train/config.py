@@ -44,6 +44,81 @@ class ResolvedRunConfig:
     log_level: LogLevel
 
 
+#: A TIMEOUT this many times a clean loss stops being a tie-breaker and starts being the objective.
+#: The validated composition is 35/30 = 1.17x; the clean-world ruling is 1/1 = 1.0x. 3.0 is loose
+#: enough that no composition anyone has actually launched trips it.
+_DRAW_SCALE_RATIO = 3.0
+#: How many value-dist ATOMS the achievable raw-return range must span before the critic can be
+#: said to resolve it. HL-Gauss smooths each target with sigma = 0.75*delta, so one target already
+#: occupies ~3 atoms; below ~8 the whole return range holds fewer than three distinguishable
+#: levels, and under `--value-from-dist` that quantized E[Z] IS the critic feeding GAE.
+_MIN_SUPPORT_ATOMS = 8.0
+
+
+def _terminal_scale_guards(args) -> None:
+    """The two SCALE questions `gen3_clean_world_config_v1` opened by making the terminal a flag.
+
+    `--victory-value` (v105) is the first flag that can change the RETURN SCALE, and two other,
+    older flags are quietly denominated in that same scale. Neither pairing had a check, because
+    each half was validated on its own — the `value_from_dist` (M2) shape exactly.
+
+    1. **`--draw-penalty` vs `--victory-value`.** The v105 guard above tests the ORDERING (a draw
+       must not beat a loss) and passes the far more likely mistake: typing `--victory-value 1.0`
+       and inheriting the -35.0 default, i.e. a timeout 35x a clean loss. The composition is then
+       not "1 TERMINAL" at all — it is a stall-avoidance objective with a win bonus, and no metric
+       downstream distinguishes the two.
+
+    2. **`--value-dist-{vmin,vmax,bins}` vs the terminal.** With PopArt ON the HL-Gauss target is
+       `popart.normalize(returns)`, so the support is in units of standard deviations and the raw
+       terminal says nothing about it — the guard is skipped, which is every run ever launched.
+       With PopArt OFF (the registered clean/sparse arms, ledger 2d38a4a) the target is the RAW
+       return and the two ARE in the same units, so the support either brackets the reachable
+       returns with resolution to spare or it silently destroys the critic: too WIDE quantizes the
+       whole range into a handful of atoms, too NARROW saturates the edge atoms that absorb the
+       out-of-support tails.
+
+    Warnings, never refusals: a wide support may be a deliberate choice ahead of a reward change,
+    and a launch that works today must not become a `FATAL_CONFIG`. But they are stated at launch,
+    because both defects train correctly toward the wrong thing.
+    """
+    victory = getattr(args, "victory_value", None)
+    if victory is None or float(victory) <= 0.0:
+        return                                   # refused above; nothing to say about a bad scale
+    victory = float(victory)
+    draw = float(args.draw_penalty) if getattr(args, "draw_penalty", None) is not None else -victory
+    if abs(draw) > _DRAW_SCALE_RATIO * victory:
+        print(f"[Reward] ⚠️ TERMINAL SCALE: --draw-penalty {draw:g} is {abs(draw) / victory:.0f}x a "
+              f"clean loss (-{victory:g}). The ordering is right, but the MAGNITUDE makes the "
+              f"250-turn timeout — not the win — the dominant term in the reward stream, so a run "
+              f"advertised as '1 TERMINAL' is really a stall-avoidance objective. The validated "
+              f"pairing is 30/-35 (1.2x) and the clean-world ruling is draw = loss: pass "
+              f"--draw-penalty {-victory:g} with --victory-value {victory:g}.")
+    if str(getattr(args, "value_dist_mode", "none")) == "none" or getattr(args, "use_popart", False):
+        return
+    bins = int(getattr(args, "value_dist_bins", 0) or 0)
+    vmin, vmax = float(args.value_dist_vmin), float(args.value_dist_vmax)
+    if bins < 2 or not (vmax > vmin):
+        return                                   # already a parser.error above
+    reach = max(victory, abs(draw))              # the largest |return| the terminal can produce
+    delta = (vmax - vmin) / (bins - 1)
+    atoms = (2.0 * reach) / delta
+    outside = (reach > vmax) or (-reach < vmin)
+    if not outside and atoms >= _MIN_SUPPORT_ATOMS:
+        return
+    why = ("the support does NOT BRACKET them — HL-Gauss absorbs the out-of-support mass into the "
+           "EDGE atoms, so the critic cannot represent that outcome at all"
+           if outside else
+           f"they span only {atoms:.1f} of {bins} atoms (bin width {delta:.3g}), so the critic is "
+           f"quantized to ~{delta:.3g} on a +-{reach:g} scale")
+    print(f"[Reward] ⚠️ VALUE-DIST SUPPORT vs TERMINAL SCALE: PopArt is OFF, so the HL-Gauss target "
+          f"is the RAW return and the atom support is in the SAME units. Returns reach +-{reach:g} "
+          f"(--victory-value {victory:g}, --draw-penalty {draw:g}) and {why}. Size "
+          f"--value-dist-vmin/--value-dist-vmax to the terminal (a few times +-{reach:g}), or turn "
+          f"PopArt on. This matters most under --value-from-dist, where E[Z] IS the critic feeding "
+          f"GAE and nothing downstream distinguishes a resolution-starved critic from a fitted one "
+          f"(value_dist/mean_abs_err looks BETTER as the support widens).")
+
+
 def _announce_cf_duty_cycle(args) -> None:
     """PRINT the counterfactual label DUTY CYCLE, and REFUSE a starved one.
 
@@ -489,6 +564,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
               f"non-winning outcome and a losing agent's optimal play is to stall. The validated "
               f"composition keeps draw_penalty <= -victory_value. If this is deliberate, make "
               f"stall rate + mean game length a PRIMARY endpoint.")
+    _terminal_scale_guards(args)
     if args.policy_grad_coef is not None and args.policy_grad_coef < 0.0:
         # A negative coef would ASCEND the PPO surrogate — train the policy to be maximally wrong.
         # 0.0 (arm F's pure-distill/aux phase) is the intended floor. policy_grad_coef is training-only

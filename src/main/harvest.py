@@ -63,12 +63,18 @@ made unrepresentable instead of forbidden.
 
 Adjudication and the timeout bucket
 -----------------------------------
-A rollout is scored only if it reached a terminal (a win or a loss; the 250-turn cap forfeit is
-recorded as a LOSS, so cap endings adjudicate correctly and need no special case). Anything else —
-a transport error, a bridge timeout, a horizon overrun — lands in ``provenance["n_timeout"]`` and is
-excluded from BOTH ``n_wins`` and ``n_rollouts``. A timeout is never a semantic outcome: folding one
-into the denominator would make a busy box read as a losing position, which is the exact error that
-once let a starved parity run report 39/40 timeouts as a clean pass.
+A rollout is scored only if it reached a terminal — a win, a loss, or a TIE (the 250-turn cap
+forfeit is recorded as a LOSS, so cap endings adjudicate correctly and need no special case).
+Anything else — a transport error, a bridge timeout, a horizon overrun — lands in
+``provenance["n_timeout"]`` and is excluded from BOTH ``n_wins`` and ``n_rollouts``. A timeout is
+never a semantic outcome: folding one into the denominator would make a busy box read as a losing
+position, which is the exact error that once let a starved parity run report 39/40 timeouts as a
+clean pass.
+
+⚠️ A TIE, by contrast, IS a semantic outcome and belongs in the denominator as a non-win — it went
+into the timeout bucket until the R1 adversarial review, which biased ``k/n`` upward on every state
+where a game can end even. It is also counted on its own in ``provenance["n_tie"]``, because a
+denominator that silently absorbed a second outcome class is a denominator nobody can audit.
 """
 
 from __future__ import annotations
@@ -744,9 +750,19 @@ def _session_for(abs_prefix: str):
 def label_one(sess, abs_prefix: str, decision_idx: int, action: int, n_rollouts: int) -> dict:
     """One re-seeded multi-rollout label: replay the recorded action, roll to a terminal ``R`` times.
 
-    Returns ``{n, k, n_timeout, outcomes, opponent_source, seconds}``. ``n`` counts ADJUDICATED
-    rollouts only (win + loss); everything else is ``n_timeout``. See the module header on why a
-    timeout is its own bucket rather than a loss.
+    Returns ``{n, k, n_tie, n_timeout, outcomes, opponent_source, seconds}``. ``n`` counts
+    ADJUDICATED rollouts — a rollout that reached a terminal, which is win, loss OR TIE; everything
+    else (``unfinished``: a transport error, a bridge timeout, a horizon overrun) is ``n_timeout``.
+    See the module header on why a timeout is its own bucket rather than a loss.
+
+    ⚠️ THE TIE IS IN THE DENOMINATOR, and it was not until the R1 adversarial review.
+    ``counterfactual._battle_outcome`` emits four values — ``win`` / ``loss`` / ``tie`` /
+    ``unfinished`` — and ``n = win + loss`` with ``n_timeout = total - n`` filed a tie as a
+    timeout, which is none of the three things the module header says that bucket counts. The cost
+    is a biased label, not just a mislabelled counter: every dropped rollout is a NON-win, so
+    ``k/n`` overstates P(win) on exactly the states where a game can end even. The owner's
+    clean-world ruling says the same thing in the reward's language — a draw scores ``-victory``,
+    i.e. as a loss. ``n_tie`` is carried separately so a label's composition stays auditable.
     """
     t0 = time.time()
     out = sess.replay_counterfactual(abs_prefix + "_summary.json", decision_idx, action,
@@ -754,10 +770,11 @@ def label_one(sess, abs_prefix: str, decision_idx: int, action: int, n_rollouts:
     outcomes = out.get("outcomes") or {}
     k = int(outcomes.get("win", 0))
     losses = int(outcomes.get("loss", 0))
-    n = k + losses
+    ties = int(outcomes.get("tie", 0))
+    n = k + losses + ties
     total = int(out.get("n_rollouts") or sum(outcomes.values()))
     return {
-        "n": n, "k": k, "n_timeout": max(0, total - n),
+        "n": n, "k": k, "n_tie": ties, "n_timeout": max(0, total - n),
         "outcomes": {str(a): int(b) for a, b in outcomes.items()},
         "opponent_source": out.get("opponent_source"),
         "seconds": round(time.time() - t0, 2),
@@ -813,6 +830,9 @@ def build_row(c: Candidate, res: dict, *, subject_ckpt: str, sampler_version: st
             "sampler_version": sampler_version,
             "seed": seed,
             "n_timeout": int(res.get("n_timeout", 0)),
+            # Adjudicated but not a win — inside `n_rollouts`, unlike `n_timeout`. Recorded so a
+            # label's composition is auditable without re-running it (see `label_one`).
+            "n_tie": int(res.get("n_tie", 0)),
             "outcomes": res.get("outcomes", {}),
             "label_seconds": res.get("seconds"),
         },

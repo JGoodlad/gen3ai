@@ -404,6 +404,25 @@ ruling is **draw = loss**. `resolve_config` prints a loud `[Reward] ⚠️ ORDER
 `--victory-value <= 0` is refused outright. **Register stall rate + mean game length as a PRIMARY
 safety endpoint on this arm, not a secondary one.**
 
+🚨 **THE ORDERING GUARD IS ONE OF THREE, and the other two are about SCALE** (`_terminal_scale_guards`
+in `main/train/config.py`, added by the R1 adversarial review). `--victory-value` is the first flag
+that can move the RETURN SCALE, and two older flags are quietly denominated in that same scale:
+
+| `[Reward] ⚠️` line | fires when | why it is not just style |
+|---|---|---|
+| `ORDERING` | `draw_penalty > -victory_value` | a draw beats a loss ⇒ stalling is optimal for a losing agent |
+| `TERMINAL SCALE` | `\|draw_penalty\| > 3 × victory_value` | `--victory-value 1.0` alone INHERITS the −35.0 default: a timeout 35× a clean loss, so the composition advertised as "1 TERMINAL" is really a stall-avoidance objective |
+| `VALUE-DIST SUPPORT` | a value-dist head, PopArt OFF, and the achievable returns either fall outside `[vmin, vmax]` or span < 8 atoms | with PopArt off the HL-Gauss target is the RAW return, so the atom support and the terminal are in the SAME units — and under `--value-from-dist` that quantized `E[Z]` **is** the critic feeding GAE |
+
+The third is the one that matters for the registered arm, because the clean/sparse arms run
+**without PopArt** (ledger `2d38a4a`) while production carries `value_from_dist=True` over a
+support of `[−12, +12]` / 51 atoms. A ±1 terminal there lands inside ~4 atoms — a critic quantized
+to ~0.5 on a ±1 scale — and nothing downstream tells that apart from a well-fitted one
+(`value_dist/mean_abs_err` looks *better* as the support widens). All three are warnings, never
+refusals: a launch that works today must not become a `FATAL_CONFIG`. Under PopArt the target is
+`popart.normalize(returns)`, the support lives in units of standard deviations, and the guard is
+skipped — which is every run ever launched. Pinned by `ai_v12_intersection_test.py` §1-§2.
+
 **The clean-world reward flag set, verbatim** (`CLEAN_WORLD_REWARD_FLAGS` in
 `clean_world_config_test.py`; the dense signal is `--win-prob-pbrs-*`, below):
 
@@ -3706,6 +3725,11 @@ target does — see the design doc's §2.1.
   is fitting, not of the head. **`pbrs_reward_share` is the one to watch**: mean |shaping| over mean
   |UNSHAPED reward|, i.e. how much of the return signal the coefficient has replaced. Quoted against the
   unshaped stream on purpose, so the ratio does not flatter itself as the coefficient rises.
+  ⚠️ **It reads `NaN`, never `0.0`, when the unshaped stream is empty** (R1 adversarial review). Under
+  `--no-hand-shaping` the unshaped stream is TERMINAL-ONLY, so any rollout that ends no episode has
+  `mean|r| == 0` exactly — and the shaping is then 100% of the reward. The old `0.0` sentinel was the
+  reading an operator scans past ("negligible") for the one case where it is everything, in precisely
+  the arm the metric exists to watch. Same ABSENT-never-zero rule as `train/q_winprob_loss`.
 - **Versioning.** Training-only, the `td_aux_coef` class exactly: config **v104**, recorded on
   `ModelVersion` for provenance + flagless-resume read-back, never in `check_compatible`, no
   `ARCH_SIGNATURE` bump. Forwarded on both build paths by the one `_TRAINING_HPARAMS` row.
@@ -5065,11 +5089,20 @@ one arm of the meter loses the class the exercise is about.
 
 ### A timeout is its own bucket
 
-`n_rollouts` counts ADJUDICATED rollouts (win + loss) only; everything else lands in
-`provenance.n_timeout` and is excluded from both numerator and denominator. Folding one in would
-make a busy box read as a losing position — the error that once let a starved parity run report
-39/40 timeouts as a clean PASS. The cap forfeit itself adjudicates normally (it is recorded as a
-LOSS), so it needs no special case.
+`n_rollouts` counts ADJUDICATED rollouts — one that reached a terminal, i.e. win, loss **or TIE**;
+everything else (`unfinished`) lands in `provenance.n_timeout` and is excluded from both numerator
+and denominator. Folding a timeout in would make a busy box read as a losing position — the error
+that once let a starved parity run report 39/40 timeouts as a clean PASS. The cap forfeit itself
+adjudicates normally (it is recorded as a LOSS), so it needs no special case.
+
+⚠️ **A TIE is a semantic outcome and belongs in the DENOMINATOR — it went into the timeout bucket
+until the R1 adversarial review.** `counterfactual._battle_outcome` emits four values (win / loss /
+tie / unfinished) and `label_one` computed `n = win + loss`, so a tie was filed as a timeout, which
+is none of the three things this section says that bucket counts. Every dropped rollout is a
+NON-win, so `k/n` overstated P(win) on exactly the states where a game can end even — and the
+owner's clean-world ruling says the same thing in the reward's language (a draw scores `-victory`,
+i.e. as a loss). Ties are now adjudicated and counted separately in `provenance.n_tie`, because a
+denominator that silently absorbed a second outcome class is one nobody can audit.
 
 ### ⚠️ TWO different `--holdout-frac` flags, and conflating them would look like leakage
 
