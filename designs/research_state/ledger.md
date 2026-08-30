@@ -6892,3 +6892,30 @@ mid-flight (6/20 rows at build time) — `designs/ai_v12/team_slate_build.py` re
 slate in ~5s when it lands. **The decision this queues for the owner (with rev-4's shape
 verdict): widen the curated set (a vetting criterion must be authored) + fund ~2× fleet
 compute, or scope the revolution to ≤32 ceiling-fed teams.**
+
+### 🟢 R1 LANDED (0a5948d) — the adversarial review: 7 findings, 5 litigated, 2 escalated; the M2 genre caught PRE-launch this time (2026-08-30)
+
+Report `designs/research_state/measurements/ai_v12_adversarial_review_2026-08-30.md`; 17 new
+tests each verified failing pre-fix; 6806 passed post. **F1 (HIGH, the value_from_dist
+intersection striking again — but caught by audit, not by four lost generations):
+clean-world's ±1 terminals × `--value-from-dist` (production True!) × no-PopArt quantizes the
+critic to ~4 atoms of the [−12,+12]/51 support — and under value_from_dist that E[Z] IS the
+critic feeding GAE; invisible because `value_dist/mean_abs_err` looks BETTER as support
+widens.** Litigated as a startup WARNING (never a refusal; skipped under PopArt and at the
+historical pairing ⇒ every run ever launched byte-identical). 🔴 **LAUNCH RULE FOR THE
+RUNBOOK: clean-world + value_from_dist + no-PopArt requires the dist support resized to ±1 —
+the guard warns, nothing stops the run** (R2's runbook must carry this; verified at its
+landing). F2 (composition drift: --victory-value 1.0 alone inherits draw −35 ⇒ timeout 35× a
+clean loss — the ordering guard passed it; warned now). F3 (silent-inert: pbrs_reward_share
+read 0.0 exactly when shaping was 100% of the reward — now NaN). F4 (wave B filed TIES into
+n_timeout ⇒ k/n overstated P(win) — tie adjudication + n_tie provenance). F5 (wave C's
+cf_any_on runs the cf forward where it never ran, clobbering the FitNets stash — correct only
+by statement order, now pinned). F6/F7 escalated honestly (frozen-φ × real-CUDA compile:
+one 30s launch read recommended; the weight-1 no-n_rollouts fold: latent until the producer
+exists). **Clean bill worth as much as the findings:** stacked v105+106+107 migrations run
+against EVERY real archived config of the generation (8 versions, 97→107) and pinned
+permanently; all ten new flags' recorded≠effective paths sound (the DRY from_args/from_dict +
+single apply_reward_config did their job); PopArt σ-collapse does NOT reproduce (floor 1e-2
+vs σ≈0.5–1.0) — the retirement's guard concern measured away. 5/5 revert-verifications
+re-verified; method nugget banked: **a revert that doesn't change the output proves nothing**
+(a non-discriminating revert briefly read as "untested").
