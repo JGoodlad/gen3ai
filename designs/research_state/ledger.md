@@ -7163,3 +7163,25 @@ prediction is not a datum — e.g. the distill lr-1e-4 Pareto claim stays out of
 it first earns real-fold evidence (the micro-distill instrument is CPU-cheap if we want that
 evidence pre-launch). The five bars themselves are untouched — outcome-defined, so they
 survive any implementation choice.
+
+### 🟢 PROBE P FINAL SCORED — v8's fold GIFTED the pool: +5.42pp on untaught (z=4.8); the frozen table stands 1 PASS / 1 FAIL / 2 PENDING (2026-08-30)
+
+**On main — `measurements/v8_redistribution_pfsp_2026-08-30.{md,json,_cells.jsonl.gz}`,
+10,560 battles / 352 cells / 0 errors.** Scored by the parent session (the night's SECOND
+dead completion watcher — data sat finished ~10 h; same repair as iter-3). **P1: untaught
++5.42pp [+3.44, +7.42], z=+4.83 — the frozen table's "P-final v8-untaught ≥ 0" row PASSES
+decisively**; taught +26.18pp [+20.28, +32.85] — transfer still ~4.8:1 local, but breadth
+flipped the SIGN of the externality (rev-2 robbed −7.1 on the same instrument family). 14/16
+untaught teams positive; every archetype cut positive; semi_stall — the taught archetype,
+where robbery should bite hardest — is the MOST positive untaught cut (+8.33pp). Probe Q's
+floor confound does NOT apply in reverse (parent untaught WR 0.383 — headroom both ways).
+The +10.4 interim probe Q's P3 table cited is superseded by the measured +5.42. **P2 (the
+PFSP-was-the-treadmill-killer reconciliation): the premise is FALSE by archaeology** — v8_14
+ran the SAME fixed bias 0.4 AND onesided team-PFSP on top; the bias branch short-circuits
+first in the era teambuilder (40% pinned uniform over 22 taught / 60% PFSP over pool), and
+the PFSP layer measures near-inert — so the fixed-bias-vs-adaptive-ecology contrast never
+existed. **FROZEN TABLE (`91d5125`) standing: P-final PASS · probe Q FAIL (narrow⇒robbery
+link broken; floor discriminator owed to rev-4) · R3-SELF PENDING (trainer) · rev-4 3×8
+PENDING.** The surviving recipe hypothesis: BREADTH-PER-TEACHER changes what a fold's
+content does outside its coverage — gift at ~7.3 teams/teacher, redistribution at 2 — with
+drift-anchoring still live as the mechanism carrier until R3-SELF rules.
