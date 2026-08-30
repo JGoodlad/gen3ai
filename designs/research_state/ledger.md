@@ -7062,3 +7062,27 @@ rule kept beside it as the failing counterfactual. 51 new tests; routine 8124 gr
 **With R1 (adversarial review) + R2 (runbook, four arms smoked) + R3, ai_v12 is READY TO
 LAUNCH** pending: owner registration sign-off (φ-arm coef 0.3 recommended), the R3-SELF /
 probe-P / probe-Q verdicts, and R2's G1 20k-step GPU pre-flight at first CUDA launch.
+
+### 🎲 S2 LANDED — the global-random coupling GENRE swept: four more seams, and the staller was the SMALLEST (2026-08-30)
+
+**On main (from `b1f63c9`) — record `measurements/global_random_sweep_2026-08-30.md`.** Census:
+4 class-(a) cross-arm couplers · 6 class-(b) irreproducibility · ~45 checked-benign. **The
+worst member: `poke_env.Player.choose_random_*` + the `DEFAULT_CHOICE_CHANCE` coin** — wider
+than the founding staller on three counts: it is RandomPlayer's ENTIRE policy plus the
+fallback of all 16 scripted bots plus a shared-stream consumer inside the RL players; **the
+transfer-cell falsifier that caught the staller was STRUCTURALLY BLIND to it** (it conditions
+on zero-overrule units; random's overrule rate is 1.00, so the biggest coupler contributed no
+units while the "7 deterministic bots · delta 0.0000" row read as coverage); and
+`SimpleHeuristicsPlayer` reaches the fallback via the CLASS form inside a `@staticmethod`, so
+a per-instance seed would have HALF-worked while reporting success. Method nugget for the
+genre index: **a falsifier's conditioning variable can exclude exactly the units that carry
+the effect — audit what a null EXCLUDED, not just what it covered.** Fixes all opt-in,
+defaults byte-identical (incl. dice): `$GEN3AI_PLAYER_SEED` / `$GEN3AI_TEAM_SEED` /
+`$GEN3AI_POLICY_SEED` (TORCH's default generator — invisible to a `random`-only grep) /
+`$GEN3AI_POOL_SEED`. Stake MEASURED, not asserted: same fixed sim seed `[1,2,3,4]`, arm B
+burning 1234 unrelated global draws first ⇒ pre-fix DIFFERENT GAMES, DIFFERENT WINNERS
+(84/145 vs 212/233 turns); seeded ⇒ battle-for-battle identical — **a fixed sim seed alone
+buys nothing**, confirming the fuzz rule's "random.seed(k) is NOT enough" at the eval seam.
+Three benchmarks were seeding ONE stream across four drawers (now four derived seeds); two
+documented-not-fixed (`aux_terms`, teacher buffer). 47 tests incl. a revert arm on the real
+pre-fix path; routine 8160 green; obs-golden hashes unchanged.
