@@ -6659,3 +6659,28 @@ taken BEFORE learn() — afterwards deepcopy+load_state_dict aliases Adam state 
 train() mutates the restored snapshot (~1e-3 drift); any byte-identity test taking it after is
 vacuous. Wave status: E landed; A/B/C/D in flight; landing order adapts to arrival with
 conflicts owned at the landing step.
+
+### 🟢 WAVES A + D LANDED (d80db46, 4437c85) — the clean world is flag-reachable; the fixes are one-flag-enable-able; a version collision resolved at the landing step (2026-08-30)
+
+**Wave A (config v105, `gen3_clean_world_config_v1` + frozen-φ):** the clean composition is now
+LAUNCHABLE — `--no-hand-shaping --victory-value 1.0 --draw-penalty -1.0 --win-prob-mode
+read_only --win-prob-pbrs-coef <2c> --win-prob-pbrs-source <ckpt>` verified end-to-end through
+the real parser to `[Reward] composition: 1 TERMINAL + 0 PBRS + 0 BIAS`; checkargs exit 0.
+Deviation honestly reported and accepted: B1's individual gates ALONE cannot reach zero (six
+potentials die only via the anti-correlated asp flag), so probe N's `hand_shaping` MASTER was
+required — the gap is pinned by a test so nobody deletes the master later. Two latent hazards
+fixed en route: the folds and the census were two hand-maintained copies of one predicate set
+(unified); the frozen-φ needed a SECOND bootstrap forward (frozen φ on buffer rows + live
+critic for GAE bootstrap — sharing one forward would break telescoping at truncations). The
+frozen-φ identity test does the real thing (real extractor through the real loader,
+np.array_equal, plus an anti-vacuity drift twin). UNEXERCISED, documented: a real CUDA compile
+with a frozen source attached. **Wave D (config v106, `gen3_progress_clock_intent_v1` +
+staller RNG):** all three fixes flag-gated OFF; obs-parity honesty — the F1/F2b flags are
+retrain-class BECAUSE the clock scalar (col 1602) IS the charge basis (change confined to that
+one column, proven by a per-column integration test; defaults byte-identical vs a
+`git show`-loaded old clock on all 15 reference windows); probe M's discriminator reproduced
+as a unit test (0/3 vs 3/3 moving columns under the flag). **LANDING NOTE — the coordination
+lesson: waves A and D both took config v105 in parallel; resolved at the landing step (A=105,
+D promoted to 106, migrations stacked, 149 targeted + 2115 training tests green post-merge).
+Future parallel waves get version numbers PRE-ASSIGNED in their briefs.** Remaining in
+flight: B (harvest backbone) + C (Q-head).
