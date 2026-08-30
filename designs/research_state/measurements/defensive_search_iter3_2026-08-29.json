@@ -1,0 +1,101 @@
+{
+  "cell": "defensive_1s_contested3s_confirm6",
+  "date": "2026-08-29",
+  "games": 1275,
+  "pairs": 637,
+  "checkpoint": "models/ai_v9_29_rev1_0823/checkpoints/checkpoint_9995088_steps.zip",
+  "games_seed": 7,
+  "shards": [
+    [
+      0,
+      267
+    ],
+    [
+      267,
+      534
+    ],
+    [
+      534,
+      800
+    ]
+  ],
+  "flags_delta_vs_iter2": {
+    "defensive_confirm": 6,
+    "defensive_confirm_deadline_s": 30.0
+  },
+  "paired_wr": 0.4976,
+  "paired_ci": [
+    0.4702,
+    0.5251
+  ],
+  "raw_wr": 0.4973,
+  "tied": 5,
+  "decisions": 55958,
+  "provenance_pct": {
+    "forced_wp": 66.18,
+    "raced": 22.02,
+    "separated": 7.83,
+    "futility": 14.19,
+    "futility_deadline_pct_of_futility": 100.0,
+    "kept": 7.73,
+    "overruled_acted": 0.098
+  },
+  "confirm": {
+    "attempted": 2226,
+    "confirmed": 55,
+    "reversed": 52,
+    "inconclusive": 2031,
+    "no_budget": 0,
+    "error": 88,
+    "error_all_r0": true,
+    "median_se_at_stop": 0.167,
+    "two_se_bar": 0.333,
+    "mean_abs_paired_mean_inconclusive": 0.097,
+    "mean_wall_s_per_event": 19.78,
+    "played_by_leaf_margin": {
+      "[0,0.02)": [
+        3,
+        9
+      ],
+      "[0.02,0.05)": [
+        13,
+        11
+      ],
+      "[0.05,0.1)": [
+        18,
+        21
+      ],
+      "[0.1,1)": [
+        21,
+        11
+      ]
+    }
+  },
+  "proposed_overrule_rate_pct": 3.98,
+  "acted_overrule_rate_pct": 0.098,
+  "iter2_refs": {
+    "overrule_rate_pct": 5.82,
+    "paired_wr": 0.5003,
+    "k_worlds": 14.0,
+    "separated_of_raced": 0.4542,
+    "elapsed_per_raced_s": 2.278
+  },
+  "iter3_width": {
+    "k_worlds": 9.28,
+    "m_opp": 5.227,
+    "elapsed_per_raced_s": 2.212,
+    "separated_of_raced": 0.3554
+  },
+  "contention_note": "cell ran beside probe P's 352-shard eval fleet; width (k_worlds 9.28 vs 14.0) and thus proposed-rate/separation comparisons vs iter-2 are load-confounded; within-cell verdict split and the mirror are load-robust",
+  "cost": {
+    "mean_wall_s_per_game": 63.4,
+    "mean_confirm_s_per_game": 34.54,
+    "mean_banked_s_per_game": 31.98
+  },
+  "predictions_scored": {
+    "proposed_rate_continues_iter2_5.82pct": "MISSED (3.98%) \u2014 attributed to contention-degraded width, not a race change",
+    "acted_rate_band_1.5_3.5pct": "MISSED LOW (0.098%) \u2014 91.2% of confirms inconclusive at r<=6",
+    "no_regression_vs_iter2": "HELD (0.4976 vs 0.5003, CIs overlap fully)"
+  },
+  "headline": "Terminal adjudication of race-certified overrules: 91.2% cannot be distinguished from the policy's action at r<=6 pairs (median 2SE bar 0.333 vs typical |paired mean| 0.097 -> ~12x more pairs ~180s/confirm to resolve); among the 107 that separate, 55 confirmed vs 52 reversed - a coin flip. The depth-1 win-prob leaf's overrules carry no terminal-adjudicable content."
+}

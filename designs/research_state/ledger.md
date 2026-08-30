@@ -6939,3 +6939,27 @@ compute, ~2× rev-3's fleet — approved**. Shape (5×8 vs 20×2 vs 4×10-family
 rev-4's discriminator, per the standing sequence. **S5 dispatched:** the promotion tooling —
 a seed-recorded random-draw script (exclusions → validate → promote into sample/ →
 manifest), so launch day is a copy and a commit.
+
+### 🔴 SEARCH ITER-3 SCORED: rollout-confirmed overrules — the confirm rung CLOSES the R-ladder (2026-08-30)
+
+**Record `measurements/defensive_search_iter3_2026-08-29.{md,json,_rows.jsonl.gz}`** — 1,275
+games / 637 pairs / 55,958 decisions, iteration 2's cell verbatim + `--defensive-confirm 6
+--defensive-confirm-deadline-s 30`. Scored by the parent session: the agent's completion
+watcher died (last wake 14:08, cut landed 14:24 as scheduled; the data sat finished ~7 h — the
+dead-watcher SOP case, repaired by direct scoring since SendMessage is unavailable this
+session). **Verdict — terminal adjudication says the leaf's certified overrules are COIN
+FLIPS: of 2,226 confirms, 91.2% inconclusive at r≤6 (median 2·SE bar 0.333 vs typical
+|paired mean| 0.097 → ~12× more pairs ≈ 180 s/confirm to resolve — infeasible live); among
+the 107 that separate, 55 confirmed vs 52 reversed** (paired diffs +0.585/−0.587 —
+symmetric, sign-balanced). Predictions: no-regression HELD (paired 0.4976 [0.4702, 0.5251],
+the null); acted-rate band 1.5–3.5% MISSED LOW (0.098% — the band assumed confirms resolve);
+proposed-rate continuity NOT SCOREABLE (3.98% vs 5.82% — k_worlds collapsed 14.0→9.28 under
+probe P's concurrent 352-shard fleet; per the contention rules a load-confounded
+cross-iteration row is reported, never scored). With iter-2 (13× overrule volume → exactly
+null) and the playoff leaf-BIAS screen, **live overrule filtering at depth 1 on the shaped v9
+head is now dead by three independent meters.** Bearing on ai_v12 route 3: prior LOW, scope
+caveat honest — every cell used the shaped head in the shaped world; the clean-world
+±1-terminal Q head is exactly the surviving hypothesis, and the ai_v12 cell is its test. Side
+finds: 88/2,226 confirm stages errored at r=0 (driver/clock, 4.0% — kept out of leaf evidence
+by the verdict-keyed counters, defect-fix #3 earning its build), weak leaf-margin gradient
+(≥0.10: 21–11; <0.02: 3–9, n too small to act on).
