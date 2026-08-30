@@ -180,9 +180,10 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
 def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     """Apply every training-only hparam to `model`. Called from BOTH build paths, identically.
 
-    The table above covers the passthroughs. The three things that follow it are NOT
+    The table above covers the passthroughs. The things that follow it are NOT
     passthroughs and so are deliberately not table rows: two DERIVED booleans (a different arg
-    name, and a predicate over a coefficient), and the distill-teacher load, which does I/O and
+    name, and a predicate over a coefficient), one DERIVED float (a diagnostic denominator read
+    off a different flag), and the distill-teacher load, which does I/O and
     can FATAL. Keeping the derived ones in code rather than inventing a table dialect to hold
     them is the point — the table stays a list of names, which is the thing that has to be
     reviewable at a glance for completeness.
@@ -205,6 +206,12 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
 
     # DERIVED, not passthrough: the arg is the flag, the attribute is the predicate.
     model._search_teacher_on = bool(args.search_teacher)
+    # DERIVED likewise — the PBRS sizing meter's denominator is the TERMINAL magnitude, not a knob
+    # of its own. `train/pbrs_reward_share` prices the shaping against the unshaped reward stream,
+    # which the clean-world composition makes terminal-only (so: 0 on a rollout with no episode end,
+    # and episode-length-driven otherwise — probe N §7.5). `train/pbrs_episode_dose` prices it
+    # against THIS constant instead and reads "X% of a win" on any stream.
+    model.win_prob_pbrs_terminal_scale = abs(float(getattr(args, "victory_value", 0.0) or 0.0))
     model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
 
     # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).

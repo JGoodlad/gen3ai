@@ -320,6 +320,7 @@ def test_the_clean_flag_set_itself_does_NOT_warn(capsys):
     assert "ORDERING" not in capsys.readouterr().out
 
 
+
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 # 6. THE VERSION RECORD — resume-immutable, migrated, and agreeing with RewardConfig
 # ──────────────────────────────────────────────────────────────────────────────────────────────

@@ -168,6 +168,45 @@ def episode_shaping_sum(
     return out
 
 
+def episode_dose(shaping: np.ndarray, episode_starts: np.ndarray, gamma: float) -> tuple:
+    """THE SIZING COMPANION: mean ``|Σ γ^k·shaping|`` over every COMPLETE episode in the buffer.
+
+    Returns ``(mean_abs_discounted_sum, n_complete_episodes)``; ``(0.0, 0)`` when the buffer holds
+    no complete episode.
+
+    WHY IT EXISTS — `reward_share`'s denominator dies on the stream this lever was designed for.
+    `reward_share` divides by the UNSHAPED stream's mean |reward|, and in the clean-world
+    composition (`--no-hand-shaping`) that stream is **terminal-only**: exactly zero on every
+    non-terminal step. A rollout with no episode end therefore has a denominator of exactly 0, and
+    one with a handful of ends has a denominator that is really "±V ÷ episode length" — so the
+    ratio moves with the EPISODE LENGTH rather than with the coefficient, which is the one thing a
+    sizing meter must not do. Probe N §7.5 flagged this before the arm was buildable.
+
+    This quantity has no denominator drawn from the data. By the invariance identity the per-episode
+    discounted shaping sum is exactly ``−coef·φ(s_0)`` (the telescoping unit test asserts it), so
+    this reads ``coef·E[φ(s_0)]`` — the shaping's whole per-episode budget, in raw reward units,
+    directly comparable to the terminal magnitude the run is actually optimizing. Divided by
+    ``victory_value`` (see `apply_winprob_pbrs`) it is the number the coefficient ladder is sized in:
+    "this run's shaping is worth X% of a win".
+
+    It is also a live check that the telescoping holds in production rather than only in the test:
+    a value that drifts away from ``coef·φ_mean`` means the terminal/truncation convention is not
+    doing what it claims on real episodes.
+
+    Cost: O(rows). Measured **19.9 ms** at the production shape (2048 x 48, 2951 complete episodes),
+    once per rollout — against a rollout that takes tens of seconds.
+    """
+    shaping = np.asarray(shaping, dtype=np.float64)
+    n_envs = shaping.shape[1] if shaping.ndim == 2 else 1
+    sums = []
+    for env_index in range(n_envs):
+        for _s, _e, val in episode_shaping_sum(shaping, episode_starts, gamma, env_index):
+            sums.append(abs(val))
+    if not sums:
+        return 0.0, 0
+    return float(np.mean(sums)), len(sums)
+
+
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 # THE φ READ — one batched no_grad forward over the buffer, transport-agnostic.
 # ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -274,9 +313,25 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
        PopArt has not run; it reads `returns` at the top of `train()`);
     5. recompute returns and advantages from the shaped rewards.
 
-    The metrics are quoted against the reward stream they perturb: `reward_share` is the mean absolute
-    shaping over the mean absolute unshaped reward, which is the number that says whether a coefficient
-    is sane — a raw magnitude alone does not.
+    THE SIZING METERS, and WHICH ONE TO READ ON WHICH STREAM. `reward_share` is the mean absolute
+    shaping over the mean absolute UNSHAPED reward — the right question on a DENSE stream, and
+    structurally the wrong one on a sparse one, because its denominator is drawn from the data. In
+    the clean-world composition (`--no-hand-shaping`) the unshaped stream is terminal-only, so that
+    denominator is exactly 0 on a rollout with no episode end (the ratio is then not "0" — it is
+    undefined, and is OMITTED rather than reported as a rounding-error zero) and is really
+    "±V ÷ episode length" otherwise, which moves the meter with the EPISODE LENGTH rather than with
+    the coefficient. Probe N §7.5.
+
+    So two companions are emitted whose denominator is the run's own TERMINAL magnitude
+    (`model.win_prob_pbrs_terminal_scale` = `--victory-value`), a constant, and which therefore
+    survive sparsity:
+
+    * ``terminal_share`` — per-step |shaping| as a fraction of one win. Always defined.
+    * ``episode_dose`` — the mean |discounted shaping sum| of a COMPLETE episode, as a fraction of
+      one win: by the telescoping identity this is ``coef·E[φ(s_0)]/V``, i.e. the shaping's entire
+      per-episode budget priced against the outcome it is meant to assist. **This is the number the
+      coefficient ladder is sized in** ("the shaping is worth X% of a win"), and it is the one to
+      read before believing an arm. ``episode_dose_n`` reports how many episodes it averaged.
     """
     coef = float(getattr(model, "win_prob_pbrs_coef", 0.0) or 0.0)
     if coef == 0.0:                       # defensive: the caller gates on this too
@@ -313,7 +368,8 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
     rollout_buffer.compute_returns_and_advantage(last_values=last_values, dones=dones)
 
     shaping_absmean = float(np.abs(shaping).mean())
-    return {
+    dose_abs, dose_n = episode_dose(shaping, rollout_buffer.episode_starts, gamma)
+    out = {
         "shaping_mean": float(shaping.mean()),
         "shaping_absmean": shaping_absmean,
         "phi_mean": float(phi.mean()),
@@ -328,4 +384,12 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
         # Same rule the Q head's `train/q_winprob_loss` follows one wave later: a defaulted zero is
         # a perfect score for a measurement that was never taken.
         "reward_share": float(shaping_absmean / raw_absmean) if raw_absmean > 0.0 else float("nan"),
+        "episode_dose_n": float(dose_n),
     }
+    # The sparsity-proof companions — denominator = the run's terminal magnitude, a constant.
+    scale = abs(float(getattr(model, "win_prob_pbrs_terminal_scale", 0.0) or 0.0))
+    if scale > 0.0:
+        out["terminal_share"] = shaping_absmean / scale
+        if dose_n:
+            out["episode_dose"] = dose_abs / scale
+    return out

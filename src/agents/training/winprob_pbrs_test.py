@@ -293,7 +293,10 @@ def test_the_shaping_lands_in_RAW_rewards_and_the_returns_are_recomputed_from_th
     # and the interior rows match the pure arithmetic exactly (the last row uses the bootstrap)
     expected = pbrs_shaping(phi, phi_next, GAMMA, COEF)
     assert np.allclose(delta[:-1], expected[:-1], atol=1e-5)
-    assert set(metrics) == {"shaping_mean", "shaping_absmean", "phi_mean", "reward_share"}
+    # `_FakeModel` sets no terminal scale, so the two sparsity-proof companions stay absent — a
+    # denominator that was never supplied must not be invented.
+    assert set(metrics) == {"shaping_mean", "shaping_absmean", "phi_mean", "reward_share",
+                            "episode_dose_n"}
     assert metrics["reward_share"] > 0.0
 
 
@@ -697,3 +700,127 @@ def test_the_source_is_INHERITED_on_a_flagless_resume():
     from main.train import config as _cfg
     src = inspect.getsource(_cfg)
     assert '_resolve("win_prob_pbrs_source"' in src
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+# 9. THE SIZING COMPANION — a meter that survives a SPARSE reward stream (probe N §7.5)
+#
+# `reward_share`'s denominator is the unshaped stream's own mean |reward|. That is the right
+# question on a dense stream and a broken one on the stream this lever was built for: under
+# `--no-hand-shaping` the unshaped reward is TERMINAL-ONLY, so the denominator is exactly 0 on a
+# rollout with no episode end and is "±V ÷ episode length" otherwise — a meter that moves with the
+# episode length rather than with the coefficient. The companions divide by the run's terminal
+# magnitude instead, which is a constant.
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+
+def _sparse_case(coef=COEF, scale=1.0, n_steps=6, n_envs=2, seed=11, terminal_rows=(2, 5)):
+    """A CLEAN-WORLD-shaped rollout: every reward zero except a ±`scale` terminal on episode ends."""
+    model, buf = _live_case(coef=coef, n_steps=n_steps, n_envs=n_envs, seed=seed)
+    buf.rewards[:] = 0.0
+    for r in terminal_rows:
+        if r < n_steps:
+            buf.rewards[r, :] = scale         # the ±1 terminal, on the row whose episode ended
+    model.win_prob_pbrs_terminal_scale = scale
+    return model, buf
+
+
+def test_the_companion_reports_a_SIZE_where_reward_share_can_only_report_NaN():
+    """The failure this companion exists for. A terminal-only stream with no episode end inside the
+    rollout has NO unshaped magnitude to divide by: `reward_share` is NaN there (R1's F3 fixed the
+    old, worse `0.0`), which is honest but is not a SIZE. `terminal_share` still reports one."""
+    model, buf = _sparse_case(terminal_rows=())        # no terminal lands inside this rollout
+    m = apply_winprob_pbrs(model, buf)
+    assert np.isnan(m["reward_share"]), "undefined must read undefined, never 0.0"
+    assert m["shaping_absmean"] > 0.0, "the shaping itself is very much non-zero"
+    assert m["terminal_share"] > 0.0, "and the companion still reports its size"
+
+
+def test_the_companions_are_present_whenever_a_terminal_scale_is_known():
+    model, buf = _sparse_case()
+    m = apply_winprob_pbrs(model, buf)
+    assert {"terminal_share", "episode_dose", "episode_dose_n"} <= set(m)
+    assert m["episode_dose_n"] == 2.0        # rows 0-2 and 3-5 complete in each of 2 env columns
+
+
+def test_no_terminal_scale_means_no_companion_rather_than_a_made_up_denominator():
+    model, buf = _live_case()
+    assert not hasattr(model, "win_prob_pbrs_terminal_scale")
+    m = apply_winprob_pbrs(model, buf)
+    assert "terminal_share" not in m and "episode_dose" not in m
+
+
+def test_terminal_share_is_INDEPENDENT_of_episode_length_where_reward_share_is_not():
+    """The defect, as a measurement. Same coefficient, same φ, two rollouts differing only in how
+    many terminals land inside them: `reward_share` moves by a factor of ~2 (its denominator is the
+    terminal mass spread over the rows), `terminal_share` does not move at all."""
+    m_dense = apply_winprob_pbrs(*_sparse_case(terminal_rows=(2, 5)))
+    m_rare = apply_winprob_pbrs(*_sparse_case(terminal_rows=(5,)))
+    assert m_dense["terminal_share"] == pytest.approx(m_rare["terminal_share"], rel=1e-9)
+    assert m_dense["reward_share"] < 0.75 * m_rare["reward_share"]
+
+
+def test_episode_dose_is_the_TELESCOPED_budget_and_equals_coef_times_phi_of_the_start():
+    """The identity is what makes this a *sizing* number rather than a summary statistic: a complete
+    episode's discounted shaping sum is exactly −coef·φ(s_0), so the meter reads the shaping's whole
+    per-episode budget priced against one win."""
+    coef, scale = 0.3, 1.0
+    model, buf = _sparse_case(coef=coef, scale=scale)
+    phi = buffer_potentials(model, buf)
+    m = apply_winprob_pbrs(model, buf)
+    # Only the episode starting at row 0 both STARTS and ENDS inside this buffer (the row-3 one is
+    # still running at the boundary and is deliberately not counted — its sum is not yet its budget).
+    assert m["episode_dose"] == pytest.approx(coef * float(np.mean(phi[0, :])) / scale, rel=1e-6)
+
+
+def test_episode_dose_scales_with_the_coefficient_which_is_the_whole_point_of_a_ladder():
+    m1 = apply_winprob_pbrs(*_sparse_case(coef=0.1))
+    m3 = apply_winprob_pbrs(*_sparse_case(coef=0.3))
+    assert m3["episode_dose"] == pytest.approx(3.0 * m1["episode_dose"], rel=1e-6)
+
+
+def test_a_bigger_terminal_makes_the_SAME_shaping_a_smaller_share_of_a_win():
+    """±30 vs ±1 is exactly the re-sizing the clean world performs, and the meter has to see it —
+    otherwise a coefficient carried over from the ±30 era reads 'fine' at 1/30th of its dose."""
+    m1 = apply_winprob_pbrs(*_sparse_case(coef=0.3, scale=1.0))
+    m30 = apply_winprob_pbrs(*_sparse_case(coef=0.3, scale=30.0))
+    assert m30["episode_dose"] == pytest.approx(m1["episode_dose"] / 30.0, rel=1e-6)
+
+
+def test_episode_dose_reports_its_SAMPLE_and_is_absent_when_there_is_none():
+    """A dose averaged over zero episodes is not a dose. `episode_dose_n` is always emitted so a
+    reader can tell 'this rollout had no complete episode' from 'the dose is small'."""
+    model, buf = _sparse_case(n_steps=6, terminal_rows=())
+    buf.episode_starts[:] = 0.0                        # one long episode, complete in neither end
+    buf.episode_starts[0, :] = 1.0
+    m = apply_winprob_pbrs(model, buf)
+    assert m["episode_dose_n"] == 0.0
+    assert "episode_dose" not in m
+    assert "terminal_share" in m, "the per-step companion needs no episodes at all"
+
+
+def test_the_denominator_is_derived_from_victory_value_on_BOTH_build_paths():
+    """It is a DERIVED attribute, not a `_TRAINING_HPARAMS` row (the arg has a different name), so
+    the guard has to be that the one function both build paths call sets it."""
+    from main.train import model_build
+    src = inspect.getsource(model_build.apply_training_hparams)
+    assert "model.win_prob_pbrs_terminal_scale" in src
+    assert 'getattr(args, "victory_value"' in src
+    assert model_build.apply_training_hparams.__name__ in inspect.getsource(model_build)
+
+
+def test_the_class_default_terminal_scale_is_a_no_op():
+    """A smoke, a unit test or a frozen opponent that never sets it must emit no companion at all
+    rather than divide by a fictitious 30."""
+    from agents.training.instrumented_ppo.hparams import PpoHyperparameters
+    assert PpoHyperparameters.win_prob_pbrs_terminal_scale == 0.0
+
+
+def test_episode_dose_pools_every_env_column():
+    """`episode_shaping_sum` is per-column by design; the dose is a property of the ROLLOUT."""
+    from agents.training.winprob_pbrs import episode_dose as _dose
+    shaping = np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0], [1.0, 2.0]])
+    es = np.zeros((4, 2)); es[0, :] = 1.0; es[2, :] = 1.0
+    mean_abs, n = _dose(shaping, es, gamma=1.0)
+    # One COMPLETE episode per column (rows 0-1); the row-2 one is still running at the boundary.
+    assert n == 2, "both columns contribute — a per-column reading would say 1"
+    assert mean_abs == pytest.approx((2.0 + 4.0) / 2.0)

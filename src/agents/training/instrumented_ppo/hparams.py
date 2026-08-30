@@ -199,6 +199,14 @@ class PpoHyperparameters:
     # pass) -> NOT version-locked / NOT in check_compatible; recorded on ModelVersion for provenance +
     # flagless-resume read-back, like td_aux_coef.
     win_prob_pbrs_coef: float = 0.0
+    # DIAGNOSTIC DENOMINATOR, not a knob: the run's TERMINAL magnitude (`--victory-value`), set
+    # alongside the coefficient by `main.train.model_build`. It is what makes the PBRS sizing meter
+    # survive a sparse reward stream — `train/pbrs_reward_share` divides by the unshaped stream's
+    # own mean |reward|, which in the clean-world composition is terminal-only and therefore ZERO
+    # on a rollout with no episode end (probe N §7.5). `train/pbrs_episode_dose` divides the
+    # per-episode discounted shaping sum by THIS constant instead, giving "the shaping is worth X%
+    # of a win" on any stream. Never enters the loss; changing it cannot change a gradient.
+    win_prob_pbrs_terminal_scale: float = 0.0
     # Set by `collect_rollouts` when the shaping ran; drained into `train/pbrs_*` by train()'s
     # logging block. Not a knob — and NOT a mutable class default (one dict shared by every
     # instance is the classic version of this bug); `collect_rollouts` always rebinds a fresh dict.

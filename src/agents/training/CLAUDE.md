@@ -3756,9 +3756,35 @@ target does — see the design doc's §2.1.
   `mean|r| == 0` exactly — and the shaping is then 100% of the reward. The old `0.0` sentinel was the
   reading an operator scans past ("negligible") for the one case where it is everything, in precisely
   the arm the metric exists to watch. Same ABSENT-never-zero rule as `train/q_winprob_loss`.
+  **`pbrs_reward_share` is still the WRONG meter for sizing on that stream, and NaN only fixes the
+  worst reading.** Where it IS defined its denominator is "±V ÷ episode length", so it moves with the
+  EPISODE LENGTH rather than with the coefficient — measured at 2.1-3.1x the true dose across the
+  clean-world launch smokes. Hence three companions whose denominator is a CONSTANT — the run's own
+  terminal magnitude: **`train/pbrs_episode_dose`, `train/pbrs_episode_dose_n`,
+  `train/pbrs_terminal_share`.**
+  **`pbrs_episode_dose` is the meter the coefficient ladder is sized in**: the mean |discounted
+  shaping sum| of a COMPLETE episode ÷ the terminal magnitude. By the telescoping identity that is
+  `coef·E[φ(s_0)]/V` — the shaping's entire per-episode budget priced against one win, i.e. *"this
+  run's shaping is worth X% of a win"*. It also checks the telescoping in production rather than only
+  in the test: a value that drifts from `coef·phi_mean` means the terminal/truncation convention is
+  not doing what it claims on real episodes — and it separates a FROZEN φ from a live one at a glance
+  (measured over three launch-smoke iterations: frozen `0.231/0.234/0.228`, live `0.187/0.104/0.087`).
+  `pbrs_episode_dose_n` reports the episodes it averaged, so "no complete episode this rollout" never
+  reads as "the dose is small". `pbrs_terminal_share` is the per-step companion, always defined.
+  The denominator is `model.win_prob_pbrs_terminal_scale`, DERIVED from `--victory-value` in
+  `apply_training_hparams` (both build paths) — not a knob, never in the loss. The class default is
+  `0.0`, and at `0.0` the two companions are **omitted** rather than divided by a fictitious 30, so a
+  smoke/unit test/frozen opponent that never sets it invents no denominator.
 - **Versioning.** Training-only, the `td_aux_coef` class exactly: config **v104**, recorded on
   `ModelVersion` for provenance + flagless-resume read-back, never in `check_compatible`, no
   `ARCH_SIGNATURE` bump. Forwarded on both build paths by the one `_TRAINING_HPARAMS` row.
+- 🚨 **THE OTHER CONSTANT `--victory-value` SILENTLY INVALIDATES: the distributional critic's
+  SUPPORT** — guarded by `_terminal_scale_guards` (R1's F1), which prints
+  `[Reward] ⚠️ VALUE-DIST SUPPORT vs TERMINAL SCALE` when the dist head is on, PopArt is OFF and the
+  raw-return support either fails to bracket `max(victory, |draw|)` or quantizes it into too few
+  atoms. Same genre as the coefficient re-sizing — a constant calibrated against a scale, carried
+  across a change of scale. The LAUNCH RULE it implies is carried by
+  `designs/ai_v12/launch_runbook.md` §6.3: the guard warns, nothing stops the run.
 - **Tests.** `agents/training/winprob_pbrs_test.py` (22): the telescoping identity on a hand case and
   over 40 random episode layouts; the truncation-vs-terminal split; an off-by-one revert-catcher on the
   `episode_starts[t+1]` test; grad-disabled + detached-to-numpy (fails if the `no_grad` is deleted);
