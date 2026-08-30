@@ -7265,3 +7265,24 @@ probe P (era-pinned load, logit r 0.982; launcher worktree-pinning). Caveats ban
 do NOT come forward (recipe knowledge ports, the artifact does not); era-side training
 telemetry is primitive. Ablating down from a working point beats building up toward one that
 may not work — guaranteed signal per cell.
+
+### 🖐️ NAMED INSTRUMENT: the BEHAVIORAL FINGERPRINT of a fold — the arch-portable attribution path (2026-08-30)
+
+Owner's insight, sharpened: if push came to shove on cross-era attribution, trace WHERE the
+distillation lands — and the right space matters. **Parameter/representation-space traces do
+NOT port across an architecture rewrite** (v8's trunk-heavy teacher deltas, 0.47 vs gen 0.28,
+name nothing in the new arch; every structural analogy is an argument). **Behavior-space
+traces port with zero translation**: "which decisions changed, on which boards" is
+architecture-free. The instrument: diff parent-vs-fold decision distributions on the SAME
+boards (probe P's 10,560 paired battles already contain v8's fold delta at battle
+resolution), characterize what the gift CONSISTS of behaviorally (switch rates by archetype,
+lead choices, immunity re-clicks, long-game handling — the prober's scan/loops/turns + the
+bait census are the existing tooling), then ask the portable question: do gen-era folds
+produce the SAME fingerprint on taught teams but a corrupted one off-slice? This is also the
+missing instrument for category #4 (content generalizability — the least instrumented row of
+the mechanism map). The cheap half (fingerprint v8's fold from existing traces) needs no new
+battles and no push-comes-to-shove; queued as the natural next probe after the R3-SELF/rev-4
+verdicts land. Meta-lesson banked with it: engineering trains FAILURE debugging (localized,
+reproducible, binary-searchable); this program is SUCCESS debugging (distributed, interactive,
+regional) — the replacement skillset is experimental science, and the week's discipline
+(frozen tables, registered priors, honest kills) IS that skillset practiced.
