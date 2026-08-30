@@ -7112,3 +7112,40 @@ its parent R2-ACTION (param L2 51.8) than from grandparent rev-1 (47.1), while R
 rejected coverage picks and the 2 held-out teams are UNRECORDED anywhere in the tree
 (held-out risk accepted, untaught either way); hyper_offense unrepresentable (all 4 taught);
 8 teams not 10 (budget at load ~31). Pairing efficacy measured: r=0.142.
+
+### 📋 PRE-REGISTERED: the V8-REPRODUCTION SCORECARD for rev-4 (2026-08-30, owner-approved: "reproduction will be a massive win")
+
+**The strategic frame (owner):** the v8 program's deliverable is a REPRODUCIBLE RECIPE — the
+best known path for raising ELO once self-play goes stale — not a narrative. Rev-4's 3×8
+fleet is the reproduction attempt, run inside the gen era with everything else held. Banked
+BEFORE any rev-4 number exists; edit only with new evidence, never with rev-4's own data.
+
+**Fidelity constraints (the recipe, no new knobs):** 3 teachers × 8 teams · 1.5M/team = 12M
+per teacher fork (inside v8's 7.4–18.7M range) · action-form, topk 1, `--distill-team-bias
+0.4` · teachers promoted into the pool · **lr UNCHANGED (3e-4)** — the distillability index's
+lr-1e-4 Pareto prediction is deliberately NOT folded in; reproduction purity first, the lr
+knob is a SEPARATE later cell. Knowingly unmatched and recorded as such: student maturity
+(rev-4's parent ~30M vs v8's 277M; absorption rises with age) and teacher differentiation
+(v8's six directions vs gen-era weak selectivity).
+
+**The five bars:**
+1. **REPRO-1 — the gift sign.** Rev-4's own untaught pull-down ≥ 0, by the probe-Q instrument
+   (paired, ≥8 untaught teams × 200, n fixed pre-data). The sign flip from rev-2's −7.1 is
+   the reproduction signature. FAIL if the CI upper bound < 0.
+2. **REPRO-2 — the floor discriminator (probe Q's demand).** The untaught set MUST include a
+   stratum where the parent's WR > 0.55 (competence exists to rob); the gift/rob read on THAT
+   stratum is the binding one. A null on floor-level teams proves nothing.
+3. **REPRO-3 — ELO.** Rev-4 final vs rev-3 final from `snapshot_ladder/ladder.json` at run
+   END, matched snapshot count. (a) Wheel motion = CIs-disjoint positive delta; (b) v8-CLASS
+   = ≥ +35 (half of v8's +69, granting era differences). Read (b) against (a), never alone.
+4. **REPRO-4 — exploitability.** Rev-4's admission artifact through `main.exploitability` vs
+   rev-3: delta ≤ 0 (the wheel-turns-twice direction; rev-2→rev-3 read FLAT +0.0185 n.s., so
+   ANY significant fall is new information).
+5. **REPRO-5 — conditional validity.** R3-SELF must stay null (the SELF fold must not
+   reproduce the +6pp). If it reproduces, the scorecard is SUSPENDED — the drift-anchor
+   account absorbs the content reading and the recipe hypothesis needs re-derivation first.
+
+**Decision rule:** clear 1–4 (with 5 holding) ⇒ recipe confirmed, the 40-team random-draw
+revolution scales it. Miss ⇒ the unmatched rows (maturity, differentiation) become the next
+controlled variable — a finding, not a failure. Either way the scorecard is scored row by
+row, in public, like `91d5125`.
