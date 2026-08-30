@@ -6828,3 +6828,21 @@ unproven — the reconstruction targets the EXTERNALITY, the transferable part; 
 flat-differentiation tension is the reconciliation bet rev-4 adjudicates. If all four rows
 land: the 40-team revolution launches with a mechanism (broad teachers × headroom-selected
 teams × dividend externality); any failure names its broken link.
+
+### 🏗️ SECOND DISPATCH WAVE (owner quota release, 2026-08-30) — four more: the 40-team slate, the global-random sweep, research_state sync, task #38
+
+**(S1) THE 40-TEAM SLATE:** mine the per-team win-rate tracking (built at #18, live in
+recent runs' TB) + archetype labels + the exploitability headroom map into a ranked,
+archetype-spread candidate slate for the 40-team revolution, with a draft 5×8 assignment and
+the standing exclusions applied — so the shape-discriminator's winner can launch same-day.
+**(S2) THE GLOBAL-RANDOM SWEEP:** the staller Protect defect is a GENRE (the fuzz rules'
+"two players share the global random" class) — audit every module-level `random.` use in
+opponents/eval/teambuilder surfaces, classify coupling risk, fix flag-gated where warranted
+(defaults = current behavior, campaign-safe). **(S3) RESEARCH_STATE SYNC (owed maintenance
+per the standing rule):** the week's ~40 ledger entries changed the belief state massively —
+update the levers/frontier files + README to match (eliminated accounts marked dead with
+their entry refs; the new programs and instruments indexed); append-only discipline respected
+(ledger untouched; the sync files are the mutable views). **(S4) TASK #38:** the depth-2
+search-replay chunk-transport double-encode (active-mismatch warnings + the mojibake KeyError
+on non-ASCII nicknames) — a queued real defect in the replay path, now load-bearing again
+since the search program leans on reconstruction. Nine agents live total; all ≤2 cores niced.
