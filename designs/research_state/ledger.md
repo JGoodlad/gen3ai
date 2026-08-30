@@ -7378,3 +7378,23 @@ poke-env cannot track duplicate species per side (killed the Shedinja prelude); 
 fail-loud save (the first pump MC arms silently played Surf via default-order fallback —
 asserted, rerun). Cross-refs the risk capstone; the capstone's population curves should be
 read expecting this shape (right sign, compressed amplitude, no flip).
+
+### 🚦 DISPATCHED: probes SI-1 (skill inferability) + SI-2 (oracle bot-knowledge VoI) — predictions registered pre-data (2026-08-31)
+
+The two VoI gates of the opponent-skill candidate (8c1c2e8), owner-ordered. **SI-1**: from
+observable opponent behavior alone, the inferability curve — prediction quality vs turns
+observed, for opponent CLASS and anchored ELO. Registered: bot-vs-model discrimination >90%
+within ≤3 turns; snapshot-ELO regression WEAK (kin policies, R²<0.3). **SI-2**: attribute
+the generalist's ~10% bot-loss gap (exploiters ~100% vs generalist ~90%) three ways —
+conditioning / credit-mistakes / dice — using the rare advantage that scripted bots give a
+PERFECT oracle opponent model (deterministic bots: exact next action; Random: exactly
+uniform-over-legal), so the value of "knowing it's a bot" is measurable offline with no
+retraining: falsify-attribution of recorded losses, decision-level one-ply value under
+α-marginal vs oracle (flip fraction + win-prob delta = the CEILING of skill-conditioning at
+those states), and if budget allows a live oracle-wrapper arm vs each bot at matched seeds.
+Registered: the oracle closes NO MORE THAN HALF the gap (≤95% equiv — the floor-leak
+evidence says credit, not opponent-model, carries much of it); dice share >2%
+(unwinnable-at-any-model hax exists). Risk-note tie: vs Random the correct style is
+variance-MINIMIZATION (you are ahead — the sigmoid's concave side); if the oracle arm wins
+by playing safer rather than by predicting better, that is the risk defect wearing a
+conditioning costume — the probe is told to distinguish.
