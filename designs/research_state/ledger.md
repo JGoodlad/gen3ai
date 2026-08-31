@@ -7494,3 +7494,37 @@ across conditions (0.981 both) while its value stack moves OPPOSITE R3ACTION's (
 −1.3 / −1.6pp) on the same information. Caveats carried: one scenario, one checkpoint family;
 discrete rolls make "equality" an interpolation across a 5.9pp step (achieved fractions 12/16 and
 13/16 reported wherever used).
+
+### 🏛️ CAMPAIGN RELAY SCORED — R3-SELF PASSES (anchor DEAD, content REAL), the fold has a HARM CHANNEL, the wheel is FLAT (2026-08-30)
+
+**Training relay 16:50.** (1) **Factory PROVEN: 14/14 exploiters admitted across three
+generations, zero rejections, fully unattended** — thesis half one demonstrated. (2) **The
+frozen table's R3-SELF row PASSES decisively**: identical steps/dose/teams/bias with only
+teacher content removed ⇒ SELF−FOLD = −11.4pp coverage (z=−4.96) / −9.4pp taught (z=−6.93).
+~10pp of the fold is GENUINE teacher content; the drift-anchoring account is DEAD.
+**Table now: P-final PASS · Q FAIL · R3-SELF PASS · rev-4 fold in flight (~19:05).**
+(3) **UNREGISTERED BONUS: self-distillation is ACTIVELY DESTRUCTIVE (−9pp on teams the base
+was good at)** — the fold operator has a real harm channel normally masked by teacher
+content. This is the distillability index's zero-content control (~79% Adam-overshoot
+collateral) REPRODUCED AT PRODUCTION SCALE, and it upgrades the registered lr prediction
+("the fold runs above the damage threshold") from micro-probe to live-fold evidence: every
+fold's net = content − overshoot, so halving overshoot may beat any shape choice.
+**Licensing probe DISPATCHED per the banked plan (38fa4eb): distillability instrument on the
+ACTUAL rev-3 base × rev-4 teachers at lr 3e-4 vs 1e-4.** (4) **Exploitability FLAT three
+revolutions** (~0.12 level; deltas n.s.; team-overlap caveat carried) — the wheel is not
+compounding; the LEVEL never trending down is the solid part. (5) **Shape: narrow 6×2 beat
+wide 3×8 by 2.75pp (z=−2.88) — but CONFOUNDED BY CONSTRUCTION** (fixed compute ⇒ 1.25M/team
+wide, below the plateau edge now pinned between 1.25M and 1.5M). The sweet-spot hypothesis'
+count-vs-length confound (9aacd2c) bit exactly as registered.
+
+**RULING (relayed): the 40-team revolution is HELD pending two gates.** (a) APPROVED — the
+~5 GPU-h starvation deconfound (same teams, 1.25M vs 2.5M/team): it separates breadth-hurts
+from starvation-hurts AND re-prices the 60M budget, whose 1.5M/team assumption now sits
+exactly at the disputed plateau edge. (b) The why-is-extraction-flat question gets a NAMED
+HYPOTHESIS: **the exploitable surface is the CREDIT/RISK defect, not knowledge** — four
+instruments this week (Starmie v1/v2, SI-2, bait) localize a policy-objective-level
+miscalibration (boundary credit) that any best response can farm and NO fold can repair
+(folds transfer knowledge, not calibration); flat exploitability is its predicted signature,
+and ai_v12 is the lever aimed at it. Testable now: fingerprint WHAT the admitted exploiters
+actually farm — if their wins concentrate at boundary/guess/gamble states, the hypothesis
+stands and the wheel's compounding is gated on the clean world, not on coverage.
