@@ -1,0 +1,1763 @@
+{
+  "meta": {
+    "generated": "2026-08-31",
+    "git_head": "153de08e77279e1e6d9184631c1bc1616a9e2f73",
+    "models_dir": "/home/goodlad/dev/gen3ai/models",
+    "runs": [
+      "ai_v9_70_R3ACTION_0828",
+      "ai_v9_72_R3SELF_0828",
+      "ai_v9_75_R4S3c_0829",
+      "ai_v9_76_R4ACTION_0830",
+      "ai_v9_77_G1LEAN_0830"
+    ],
+    "obs_dim": 2501,
+    "n_runs": 5,
+    "n_battles": 2512,
+    "n_decisions": 90202,
+    "per_run": {
+      "ai_v9_70_R3ACTION_0828": {
+        "battles": 475,
+        "decisions": 12974,
+        "steps": {
+          "step_30000000": 235,
+          "step_32000016": 240
+        },
+        "n_55": 585,
+        "frac_55": 0.04509,
+        "diagonal_counts": [
+          2395,
+          907,
+          553,
+          499,
+          459,
+          585
+        ],
+        "diagonal_frac": [
+          0.1846,
+          0.069909,
+          0.042624,
+          0.038462,
+          0.035378,
+          0.04509
+        ],
+        "acc_race_evaluable": 12974,
+        "acc_race_frac": 0.181209
+      },
+      "ai_v9_72_R3SELF_0828": {
+        "battles": 514,
+        "decisions": 14987,
+        "steps": {
+          "step_30000000": 258,
+          "step_32000016": 256
+        },
+        "n_55": 550,
+        "frac_55": 0.036698,
+        "diagonal_counts": [
+          2325,
+          979,
+          733,
+          567,
+          609,
+          550
+        ],
+        "diagonal_frac": [
+          0.155134,
+          0.065323,
+          0.048909,
+          0.037833,
+          0.040635,
+          0.036698
+        ],
+        "acc_race_evaluable": 14987,
+        "acc_race_frac": 0.168813
+      },
+      "ai_v9_75_R4S3c_0829": {
+        "battles": 727,
+        "decisions": 29814,
+        "steps": {
+          "step_26000016": 135,
+          "step_28000032": 155,
+          "step_30000000": 146,
+          "step_32000016": 144,
+          "step_34000032": 147
+        },
+        "n_55": 726,
+        "frac_55": 0.024351,
+        "diagonal_counts": [
+          4636,
+          1768,
+          1328,
+          1065,
+          704,
+          726
+        ],
+        "diagonal_frac": [
+          0.155497,
+          0.059301,
+          0.044543,
+          0.035721,
+          0.023613,
+          0.024351
+        ],
+        "acc_race_evaluable": 29814,
+        "acc_race_frac": 0.096632
+      },
+      "ai_v9_76_R4ACTION_0830": {
+        "battles": 486,
+        "decisions": 20165,
+        "steps": {
+          "step_30000000": 241,
+          "step_32000016": 245
+        },
+        "n_55": 380,
+        "frac_55": 0.018845,
+        "diagonal_counts": [
+          3281,
+          1590,
+          1077,
+          741,
+          557,
+          380
+        ],
+        "diagonal_frac": [
+          0.162708,
+          0.078849,
+          0.053409,
+          0.036747,
+          0.027622,
+          0.018845
+        ],
+        "acc_race_evaluable": 20165,
+        "acc_race_frac": 0.084453
+      },
+      "ai_v9_77_G1LEAN_0830": {
+        "battles": 310,
+        "decisions": 12262,
+        "steps": {
+          "step_26000016": 151,
+          "step_28000032": 159
+        },
+        "n_55": 327,
+        "frac_55": 0.026668,
+        "diagonal_counts": [
+          2528,
+          844,
+          513,
+          517,
+          347,
+          327
+        ],
+        "diagonal_frac": [
+          0.206165,
+          0.068831,
+          0.041837,
+          0.042163,
+          0.028299,
+          0.026668
+        ],
+        "acc_race_evaluable": 12262,
+        "acc_race_frac": 0.052275
+      }
+    },
+    "per_opponent": {
+      "aggressive": {
+        "decisions": 6181,
+        "battles": 200,
+        "n_55": 176,
+        "n_1v1": 176,
+        "class": "bot",
+        "frac_55": 0.028474
+      },
+      "aggressive_v2": {
+        "decisions": 6766,
+        "battles": 222,
+        "n_55": 144,
+        "n_1v1": 144,
+        "class": "bot",
+        "frac_55": 0.021283
+      },
+      "ext_ai_v9_59_R2ACTION_0827": {
+        "decisions": 9647,
+        "battles": 140,
+        "n_55": 126,
+        "n_1v1": 126,
+        "class": "ext_snapshot",
+        "frac_55": 0.013061
+      },
+      "heuristic": {
+        "decisions": 6215,
+        "battles": 211,
+        "n_55": 228,
+        "n_1v1": 228,
+        "class": "bot",
+        "frac_55": 0.036685
+      },
+      "heuristic2": {
+        "decisions": 7678,
+        "battles": 227,
+        "n_55": 155,
+        "n_1v1": 155,
+        "class": "bot",
+        "frac_55": 0.020188
+      },
+      "random": {
+        "decisions": 3319,
+        "battles": 108,
+        "n_55": 43,
+        "n_1v1": 43,
+        "class": "bot",
+        "frac_55": 0.012956
+      },
+      "sentinel_0": {
+        "decisions": 5053,
+        "battles": 120,
+        "n_55": 186,
+        "n_1v1": 186,
+        "class": "sentinel",
+        "frac_55": 0.03681
+      },
+      "sentinel_1": {
+        "decisions": 4817,
+        "battles": 120,
+        "n_55": 124,
+        "n_1v1": 124,
+        "class": "sentinel",
+        "frac_55": 0.025742
+      },
+      "sentinel_2": {
+        "decisions": 4058,
+        "battles": 120,
+        "n_55": 94,
+        "n_1v1": 94,
+        "class": "sentinel",
+        "frac_55": 0.023164
+      },
+      "sentinel_3": {
+        "decisions": 4386,
+        "battles": 120,
+        "n_55": 71,
+        "n_1v1": 71,
+        "class": "sentinel",
+        "frac_55": 0.016188
+      },
+      "sentinel_4": {
+        "decisions": 3003,
+        "battles": 96,
+        "n_55": 68,
+        "n_1v1": 68,
+        "class": "sentinel",
+        "frac_55": 0.022644
+      },
+      "setup_sweep": {
+        "decisions": 6230,
+        "battles": 208,
+        "n_55": 178,
+        "n_1v1": 178,
+        "class": "bot",
+        "frac_55": 0.028571
+      },
+      "setup_sweep_v2": {
+        "decisions": 5842,
+        "battles": 211,
+        "n_55": 159,
+        "n_1v1": 159,
+        "class": "bot",
+        "frac_55": 0.027217
+      },
+      "staller": {
+        "decisions": 7733,
+        "battles": 202,
+        "n_55": 537,
+        "n_1v1": 537,
+        "class": "bot",
+        "frac_55": 0.069443
+      },
+      "staller_v2": {
+        "decisions": 9274,
+        "battles": 207,
+        "n_55": 279,
+        "n_1v1": 279,
+        "class": "bot",
+        "frac_55": 0.030084
+      }
+    },
+    "seed": 0,
+    "companion_npz": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/starmie_ood_control_traces_stats.npz",
+    "decoding": {
+      "POKEMON_FULL_DIM": 122,
+      "hp_offset": 67,
+      "species_known_offset": 68,
+      "moves_offset": 23,
+      "move_slot_dim": 11,
+      "active_offset": 121,
+      "move_slot_fields_used": {
+        "id": 0,
+        "base_power_norm200": 1,
+        "category": 5,
+        "known": 6,
+        "accuracy_norm100": 9,
+        "never_miss": 10
+      },
+      "source_of_bp_and_accuracy": "OBS (raw = obs*200 / obs*100); spot-checked against agents.gen3_data.moves",
+      "spot_check_mismatches": 0,
+      "spot_check_rows": [
+        {
+          "num": 7,
+          "id": "firepunch",
+          "obs_bp": 75.0,
+          "dex_bp": 75,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 34,
+          "id": "bodyslam",
+          "obs_bp": 85.0,
+          "dex_bp": 85,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 38,
+          "id": "doubleedge",
+          "obs_bp": 120.0,
+          "dex_bp": 120,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 46,
+          "id": "roar",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 56,
+          "id": "hydropump",
+          "obs_bp": 120.0,
+          "dex_bp": 120,
+          "obs_acc": 80.0,
+          "dex_acc": 80,
+          "match": true
+        },
+        {
+          "num": 57,
+          "id": "surf",
+          "obs_bp": 95.0,
+          "dex_bp": 95,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 58,
+          "id": "icebeam",
+          "obs_bp": 95.0,
+          "dex_bp": 95,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 65,
+          "id": "drillpeck",
+          "obs_bp": 80.0,
+          "dex_bp": 80,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 85,
+          "id": "thunderbolt",
+          "obs_bp": 95.0,
+          "dex_bp": 95,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 86,
+          "id": "thunderwave",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 89,
+          "id": "earthquake",
+          "obs_bp": 100.0,
+          "dex_bp": 100,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 94,
+          "id": "psychic",
+          "obs_bp": 90.0,
+          "dex_bp": 90,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 120,
+          "id": "selfdestruct",
+          "obs_bp": 200.0,
+          "dex_bp": 200,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 126,
+          "id": "fireblast",
+          "obs_bp": 120.0,
+          "dex_bp": 120,
+          "obs_acc": 85.0,
+          "dex_acc": 85,
+          "match": true
+        },
+        {
+          "num": 147,
+          "id": "spore",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 153,
+          "id": "explosion",
+          "obs_bp": 250.0,
+          "dex_bp": 250,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 156,
+          "id": "rest",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 157,
+          "id": "rockslide",
+          "obs_bp": 75.0,
+          "dex_bp": 75,
+          "obs_acc": 90.0,
+          "dex_acc": 90,
+          "match": true
+        },
+        {
+          "num": 164,
+          "id": "substitute",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 191,
+          "id": "spikes",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 202,
+          "id": "gigadrain",
+          "obs_bp": 60.0,
+          "dex_bp": 60,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 214,
+          "id": "sleeptalk",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 226,
+          "id": "batonpass",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 228,
+          "id": "pursuit",
+          "obs_bp": 40.0,
+          "dex_bp": 40,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 229,
+          "id": "rapidspin",
+          "obs_bp": 20.0,
+          "dex_bp": 20,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 242,
+          "id": "crunch",
+          "obs_bp": 80.0,
+          "dex_bp": 80,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 251,
+          "id": "beatup",
+          "obs_bp": 10.0,
+          "dex_bp": 10,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 261,
+          "id": "willowisp",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 75.0,
+          "dex_acc": 75,
+          "match": true
+        },
+        {
+          "num": 264,
+          "id": "focuspunch",
+          "obs_bp": 150.0,
+          "dex_bp": 150,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 280,
+          "id": "brickbreak",
+          "obs_bp": 75.0,
+          "dex_bp": 75,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 283,
+          "id": "endeavor",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 309,
+          "id": "meteormash",
+          "obs_bp": 100.0,
+          "dex_bp": 100,
+          "obs_acc": 85.0,
+          "dex_acc": 85,
+          "match": true
+        },
+        {
+          "num": 332,
+          "id": "aerialace",
+          "obs_bp": 60.0,
+          "dex_bp": 60,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 347,
+          "id": "calmmind",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 349,
+          "id": "dragondance",
+          "obs_bp": 0.0,
+          "dex_bp": 0,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 355,
+          "id": "hiddenpowerbug",
+          "obs_bp": 70.0,
+          "dex_bp": 70,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 360,
+          "id": "hiddenpowerfire",
+          "obs_bp": 70.0,
+          "dex_bp": 70,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 361,
+          "id": "hiddenpowerflying",
+          "obs_bp": 70.0,
+          "dex_bp": 70,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 363,
+          "id": "hiddenpowergrass",
+          "obs_bp": 70.0,
+          "dex_bp": 70,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        },
+        {
+          "num": 365,
+          "id": "hiddenpowerice",
+          "obs_bp": 70.0,
+          "dex_bp": 70,
+          "obs_acc": 100.0,
+          "dex_acc": 100,
+          "match": true
+        }
+      ]
+    }
+  },
+  "self_check": {
+    "our_faints_monotone_violations": 0,
+    "our_faints_monotone_violation_examples": [],
+    "opp_faints_monotone_violation_battles": 0,
+    "decisions_with_no_active_our_slot": 0
+  },
+  "base_rate": {
+    "n_decisions": 90202,
+    "joint_counts_our_by_opp": [
+      [
+        15165,
+        6340,
+        2670,
+        1572,
+        717,
+        368
+      ],
+      [
+        4252,
+        6088,
+        4288,
+        2578,
+        1334,
+        751
+      ],
+      [
+        1051,
+        3359,
+        4204,
+        3194,
+        2292,
+        1241
+      ],
+      [
+        131,
+        1230,
+        2778,
+        3389,
+        3107,
+        2047
+      ],
+      [
+        57,
+        417,
+        1363,
+        2389,
+        2676,
+        2106
+      ],
+      [
+        36,
+        202,
+        594,
+        1429,
+        2219,
+        2568
+      ]
+    ],
+    "joint_fractions_our_by_opp": [
+      [
+        0.1681227,
+        0.0702867,
+        0.0296002,
+        0.0174276,
+        0.0079488,
+        0.0040797
+      ],
+      [
+        0.0471386,
+        0.067493,
+        0.0475377,
+        0.0285803,
+        0.014789,
+        0.0083258
+      ],
+      [
+        0.0116516,
+        0.0372386,
+        0.0466065,
+        0.0354094,
+        0.0254096,
+        0.013758
+      ],
+      [
+        0.0014523,
+        0.0136361,
+        0.0307975,
+        0.0375712,
+        0.0344449,
+        0.0226935
+      ],
+      [
+        0.0006319,
+        0.004623,
+        0.0151105,
+        0.026485,
+        0.0296667,
+        0.0233476
+      ],
+      [
+        0.0003991,
+        0.0022394,
+        0.0065852,
+        0.0158422,
+        0.0246003,
+        0.0284694
+      ]
+    ],
+    "joint_readable": {
+      "our0_opp0": {
+        "count": 15165,
+        "frac": 0.1681227
+      },
+      "our0_opp1": {
+        "count": 6340,
+        "frac": 0.0702867
+      },
+      "our0_opp2": {
+        "count": 2670,
+        "frac": 0.0296002
+      },
+      "our0_opp3": {
+        "count": 1572,
+        "frac": 0.0174276
+      },
+      "our0_opp4": {
+        "count": 717,
+        "frac": 0.0079488
+      },
+      "our0_opp5": {
+        "count": 368,
+        "frac": 0.0040797
+      },
+      "our1_opp0": {
+        "count": 4252,
+        "frac": 0.0471386
+      },
+      "our1_opp1": {
+        "count": 6088,
+        "frac": 0.067493
+      },
+      "our1_opp2": {
+        "count": 4288,
+        "frac": 0.0475377
+      },
+      "our1_opp3": {
+        "count": 2578,
+        "frac": 0.0285803
+      },
+      "our1_opp4": {
+        "count": 1334,
+        "frac": 0.014789
+      },
+      "our1_opp5": {
+        "count": 751,
+        "frac": 0.0083258
+      },
+      "our2_opp0": {
+        "count": 1051,
+        "frac": 0.0116516
+      },
+      "our2_opp1": {
+        "count": 3359,
+        "frac": 0.0372386
+      },
+      "our2_opp2": {
+        "count": 4204,
+        "frac": 0.0466065
+      },
+      "our2_opp3": {
+        "count": 3194,
+        "frac": 0.0354094
+      },
+      "our2_opp4": {
+        "count": 2292,
+        "frac": 0.0254096
+      },
+      "our2_opp5": {
+        "count": 1241,
+        "frac": 0.013758
+      },
+      "our3_opp0": {
+        "count": 131,
+        "frac": 0.0014523
+      },
+      "our3_opp1": {
+        "count": 1230,
+        "frac": 0.0136361
+      },
+      "our3_opp2": {
+        "count": 2778,
+        "frac": 0.0307975
+      },
+      "our3_opp3": {
+        "count": 3389,
+        "frac": 0.0375712
+      },
+      "our3_opp4": {
+        "count": 3107,
+        "frac": 0.0344449
+      },
+      "our3_opp5": {
+        "count": 2047,
+        "frac": 0.0226935
+      },
+      "our4_opp0": {
+        "count": 57,
+        "frac": 0.0006319
+      },
+      "our4_opp1": {
+        "count": 417,
+        "frac": 0.004623
+      },
+      "our4_opp2": {
+        "count": 1363,
+        "frac": 0.0151105
+      },
+      "our4_opp3": {
+        "count": 2389,
+        "frac": 0.026485
+      },
+      "our4_opp4": {
+        "count": 2676,
+        "frac": 0.0296667
+      },
+      "our4_opp5": {
+        "count": 2106,
+        "frac": 0.0233476
+      },
+      "our5_opp0": {
+        "count": 36,
+        "frac": 0.0003991
+      },
+      "our5_opp1": {
+        "count": 202,
+        "frac": 0.0022394
+      },
+      "our5_opp2": {
+        "count": 594,
+        "frac": 0.0065852
+      },
+      "our5_opp3": {
+        "count": 1429,
+        "frac": 0.0158422
+      },
+      "our5_opp4": {
+        "count": 2219,
+        "frac": 0.0246003
+      },
+      "our5_opp5": {
+        "count": 2568,
+        "frac": 0.0284694
+      }
+    },
+    "joint_by_opponent_class": {
+      "bot": {
+        "n_decisions": 59238,
+        "counts": [
+          [
+            9714,
+            4306,
+            2101,
+            1182,
+            655,
+            319
+          ],
+          [
+            2636,
+            3609,
+            3008,
+            1857,
+            1151,
+            693
+          ],
+          [
+            646,
+            1984,
+            2363,
+            2045,
+            1677,
+            1046
+          ],
+          [
+            56,
+            690,
+            1517,
+            1952,
+            2216,
+            1661
+          ],
+          [
+            21,
+            174,
+            845,
+            1407,
+            1780,
+            1445
+          ],
+          [
+            3,
+            96,
+            295,
+            853,
+            1336,
+            1899
+          ]
+        ],
+        "frac_55": 0.0320571,
+        "diagonal_frac": [
+          0.163983,
+          0.060924,
+          0.03989,
+          0.032952,
+          0.030048,
+          0.032057
+        ]
+      },
+      "sentinel": {
+        "n_decisions": 21317,
+        "counts": [
+          [
+            4028,
+            1291,
+            236,
+            46,
+            24,
+            13
+          ],
+          [
+            1196,
+            1833,
+            844,
+            351,
+            110,
+            43
+          ],
+          [
+            319,
+            1109,
+            1142,
+            728,
+            263,
+            142
+          ],
+          [
+            65,
+            476,
+            841,
+            889,
+            611,
+            223
+          ],
+          [
+            20,
+            172,
+            427,
+            712,
+            676,
+            499
+          ],
+          [
+            13,
+            94,
+            246,
+            449,
+            643,
+            543
+          ]
+        ],
+        "frac_55": 0.0254726,
+        "diagonal_frac": [
+          0.188957,
+          0.085988,
+          0.053572,
+          0.041704,
+          0.031712,
+          0.025473
+        ]
+      },
+      "ext_snapshot": {
+        "n_decisions": 9647,
+        "counts": [
+          [
+            1423,
+            743,
+            333,
+            344,
+            38,
+            36
+          ],
+          [
+            420,
+            646,
+            436,
+            370,
+            73,
+            15
+          ],
+          [
+            86,
+            266,
+            699,
+            421,
+            352,
+            53
+          ],
+          [
+            10,
+            64,
+            420,
+            548,
+            280,
+            163
+          ],
+          [
+            16,
+            71,
+            91,
+            270,
+            220,
+            162
+          ],
+          [
+            20,
+            12,
+            53,
+            127,
+            240,
+            126
+          ]
+        ],
+        "frac_55": 0.0130611,
+        "diagonal_frac": [
+          0.147507,
+          0.066964,
+          0.072458,
+          0.056805,
+          0.022805,
+          0.013061
+        ]
+      }
+    },
+    "bot_vs_model_opponent": {
+      "bot": {
+        "n_decisions": 59238,
+        "frac_55": 0.0320571
+      },
+      "model_opponent_sentinel_plus_ext": {
+        "n_decisions": 30964,
+        "frac_55": 0.0216057
+      }
+    },
+    "total_faints_marginal": {
+      "0": {
+        "count": 15165,
+        "frac": 0.1681227
+      },
+      "1": {
+        "count": 10592,
+        "frac": 0.1174253
+      },
+      "2": {
+        "count": 9809,
+        "frac": 0.1087448
+      },
+      "3": {
+        "count": 9350,
+        "frac": 0.1036562
+      },
+      "4": {
+        "count": 8786,
+        "frac": 0.0974036
+      },
+      "5": {
+        "count": 8127,
+        "frac": 0.0900978
+      },
+      "6": {
+        "count": 7997,
+        "frac": 0.0886566
+      },
+      "7": {
+        "count": 7331,
+        "frac": 0.0812731
+      },
+      "8": {
+        "count": 6152,
+        "frac": 0.0682025
+      },
+      "9": {
+        "count": 4325,
+        "frac": 0.0479479
+      },
+      "10": {
+        "count": 2568,
+        "frac": 0.0284694
+      }
+    },
+    "min_faints_marginal": {
+      "0": {
+        "count": 32359,
+        "frac": 0.3587393
+      },
+      "1": {
+        "count": 20247,
+        "frac": 0.2244629
+      },
+      "2": {
+        "count": 15666,
+        "frac": 0.1736769
+      },
+      "3": {
+        "count": 12361,
+        "frac": 0.1370369
+      },
+      "4": {
+        "count": 7001,
+        "frac": 0.0776147
+      },
+      "5": {
+        "count": 2568,
+        "frac": 0.0284694
+      }
+    },
+    "headline": {
+      "P_our5_opp5": 0.0284694,
+      "P_our5_opp5_and_1v1_endgame": 0.0284694,
+      "P_1v1_endgame": 0.0284694,
+      "note_5_5_is_identically_1v1": "our_alive = 6-our_faints, opp_alive = 6-opp_faints, so (5,5) IS the 1v1 endgame; the three numbers coincide by construction",
+      "P_diagonal_F": {
+        "0": 0.1681227,
+        "1": 0.067493,
+        "2": 0.0466065,
+        "3": 0.0375712,
+        "4": 0.0296667,
+        "5": 0.0284694
+      },
+      "P_total_faints_ge_10": 0.0284694,
+      "percentile_of_5_5_cell": {
+        "frac_decisions_with_total_faints_ge_10": 0.0284694,
+        "percentile": 97.1531
+      }
+    }
+  },
+  "acc_race_class": {
+    "definition": "the active mon's KNOWN move slots contain two damaging moves (category in {physical,special} and base power > 0) with one at accuracy >= 95.0 and another at accuracy <= 85.0 carrying strictly higher base power (the Surf-vs-Hydro-Pump shape). Type effectiveness ignored.",
+    "overall": {
+      "evaluable_decisions": 90202,
+      "with_acc_race_pair": 10106,
+      "frac": 0.11204
+    },
+    "diagonal": {
+      "F0": {
+        "decisions": 15165,
+        "evaluable": 15165,
+        "with_acc_race_pair": 1709,
+        "frac": 0.11269
+      },
+      "F1": {
+        "decisions": 6088,
+        "evaluable": 6088,
+        "with_acc_race_pair": 759,
+        "frac": 0.12467
+      },
+      "F2": {
+        "decisions": 4204,
+        "evaluable": 4204,
+        "with_acc_race_pair": 531,
+        "frac": 0.12631
+      },
+      "F3": {
+        "decisions": 3389,
+        "evaluable": 3389,
+        "with_acc_race_pair": 441,
+        "frac": 0.13013
+      },
+      "F4": {
+        "decisions": 2676,
+        "evaluable": 2676,
+        "with_acc_race_pair": 378,
+        "frac": 0.14126
+      },
+      "F5": {
+        "decisions": 2568,
+        "evaluable": 2568,
+        "with_acc_race_pair": 227,
+        "frac": 0.0884
+      }
+    },
+    "top5_cells": [
+      {
+        "our_faints": 0,
+        "opp_faints": 0,
+        "decisions": 15165,
+        "evaluable": 15165,
+        "with_acc_race_pair": 1709,
+        "frac": 0.11269
+      },
+      {
+        "our_faints": 0,
+        "opp_faints": 1,
+        "decisions": 6340,
+        "evaluable": 6340,
+        "with_acc_race_pair": 589,
+        "frac": 0.0929
+      },
+      {
+        "our_faints": 1,
+        "opp_faints": 1,
+        "decisions": 6088,
+        "evaluable": 6088,
+        "with_acc_race_pair": 759,
+        "frac": 0.12467
+      },
+      {
+        "our_faints": 1,
+        "opp_faints": 2,
+        "decisions": 4288,
+        "evaluable": 4288,
+        "with_acc_race_pair": 471,
+        "frac": 0.10984
+      },
+      {
+        "our_faints": 1,
+        "opp_faints": 0,
+        "decisions": 4252,
+        "evaluable": 4252,
+        "with_acc_race_pair": 426,
+        "frac": 0.10019
+      }
+    ],
+    "witnessing_pairs": {
+      "pooled": [
+        {
+          "accurate": "icebeam",
+          "risky": "hydropump",
+          "count": 2413,
+          "frac_of_class": 0.2388
+        },
+        {
+          "accurate": "pursuit",
+          "risky": "fireblast",
+          "count": 2104,
+          "frac_of_class": 0.2082
+        },
+        {
+          "accurate": "hiddenpowerfire",
+          "risky": "meteormash",
+          "count": 1758,
+          "frac_of_class": 0.174
+        },
+        {
+          "accurate": "hiddenpowergrass",
+          "risky": "hydropump",
+          "count": 1524,
+          "frac_of_class": 0.1508
+        },
+        {
+          "accurate": "hiddenpowergrass",
+          "risky": "fireblast",
+          "count": 1207,
+          "frac_of_class": 0.1194
+        },
+        {
+          "accurate": "icebeam",
+          "risky": "fireblast",
+          "count": 595,
+          "frac_of_class": 0.0589
+        },
+        {
+          "accurate": "rapidspin",
+          "risky": "hydropump",
+          "count": 355,
+          "frac_of_class": 0.0351
+        },
+        {
+          "accurate": "brickbreak",
+          "risky": "fireblast",
+          "count": 150,
+          "frac_of_class": 0.0148
+        }
+      ],
+      "diagonal_F5": [
+        {
+          "accurate": "icebeam",
+          "risky": "hydropump",
+          "count": 54,
+          "frac_of_class": 0.2379
+        },
+        {
+          "accurate": "pursuit",
+          "risky": "fireblast",
+          "count": 52,
+          "frac_of_class": 0.2291
+        },
+        {
+          "accurate": "hiddenpowergrass",
+          "risky": "hydropump",
+          "count": 41,
+          "frac_of_class": 0.1806
+        },
+        {
+          "accurate": "hiddenpowerfire",
+          "risky": "meteormash",
+          "count": 30,
+          "frac_of_class": 0.1322
+        },
+        {
+          "accurate": "icebeam",
+          "risky": "fireblast",
+          "count": 23,
+          "frac_of_class": 0.1013
+        },
+        {
+          "accurate": "hiddenpowergrass",
+          "risky": "fireblast",
+          "count": 16,
+          "frac_of_class": 0.0705
+        },
+        {
+          "accurate": "brickbreak",
+          "risky": "fireblast",
+          "count": 6,
+          "frac_of_class": 0.0264
+        },
+        {
+          "accurate": "rapidspin",
+          "risky": "hydropump",
+          "count": 5,
+          "frac_of_class": 0.022
+        }
+      ],
+      "diagonal_F2_F3": [
+        {
+          "accurate": "hiddenpowerfire",
+          "risky": "meteormash",
+          "count": 250,
+          "frac_of_class": 0.2572
+        },
+        {
+          "accurate": "icebeam",
+          "risky": "hydropump",
+          "count": 216,
+          "frac_of_class": 0.2222
+        },
+        {
+          "accurate": "hiddenpowergrass",
+          "risky": "hydropump",
+          "count": 198,
+          "frac_of_class": 0.2037
+        },
+        {
+          "accurate": "pursuit",
+          "risky": "fireblast",
+          "count": 166,
+          "frac_of_class": 0.1708
+        },
+        {
+          "accurate": "hiddenpowergrass",
+          "risky": "fireblast",
+          "count": 70,
+          "frac_of_class": 0.072
+        },
+        {
+          "accurate": "icebeam",
+          "risky": "fireblast",
+          "count": 34,
+          "frac_of_class": 0.035
+        },
+        {
+          "accurate": "rapidspin",
+          "risky": "hydropump",
+          "count": 29,
+          "frac_of_class": 0.0298
+        },
+        {
+          "accurate": "brickbreak",
+          "risky": "fireblast",
+          "count": 9,
+          "frac_of_class": 0.0093
+        }
+      ]
+    },
+    "availability": {
+      "note": "Is the class rare because the PAIRING is rare, or because the risky move itself is absent from the eval team pool? These are the moves present on our active mon at all.",
+      "decisions_with_any_risky_damaging_move": 14665,
+      "frac_of_evaluable": 0.16258,
+      "risky_moves_present_acc_le_85": [
+        {
+          "move": "hydropump",
+          "count": 6262
+        },
+        {
+          "move": "meteormash",
+          "count": 4216
+        },
+        {
+          "move": "fireblast",
+          "count": 4056
+        },
+        {
+          "move": "megahorn",
+          "count": 131
+        }
+      ],
+      "dead_band_moves_present_85_lt_acc_lt_95": [
+        {
+          "move": "rockslide",
+          "count": 12548
+        }
+      ]
+    },
+    "witnessing_risky_move": {
+      "pooled": [
+        {
+          "risky": "hydropump",
+          "count": 4292,
+          "frac_of_class": 0.4247
+        },
+        {
+          "risky": "fireblast",
+          "count": 4056,
+          "frac_of_class": 0.4013
+        },
+        {
+          "risky": "meteormash",
+          "count": 1758,
+          "frac_of_class": 0.174
+        }
+      ],
+      "diagonal_F5": [
+        {
+          "risky": "hydropump",
+          "count": 100,
+          "frac_of_class": 0.4405
+        },
+        {
+          "risky": "fireblast",
+          "count": 97,
+          "frac_of_class": 0.4273
+        },
+        {
+          "risky": "meteormash",
+          "count": 30,
+          "frac_of_class": 0.1322
+        }
+      ],
+      "diagonal_F2_F3": [
+        {
+          "risky": "hydropump",
+          "count": 443,
+          "frac_of_class": 0.4558
+        },
+        {
+          "risky": "fireblast",
+          "count": 279,
+          "frac_of_class": 0.287
+        },
+        {
+          "risky": "meteormash",
+          "count": 250,
+          "frac_of_class": 0.2572
+        }
+      ]
+    },
+    "full_grid_frac": [
+      [
+        0.11269,
+        0.0929,
+        0.08989,
+        0.06616,
+        0.0781,
+        0.11957
+      ],
+      [
+        0.10019,
+        0.12467,
+        0.10984,
+        0.11055,
+        0.10945,
+        0.09987
+      ],
+      [
+        0.08754,
+        0.10122,
+        0.12631,
+        0.14934,
+        0.10864,
+        0.13376
+      ],
+      [
+        0.17557,
+        0.1439,
+        0.13319,
+        0.13013,
+        0.13389,
+        0.0938
+      ],
+      [
+        0.10526,
+        0.07914,
+        0.11519,
+        0.10967,
+        0.14126,
+        0.11633
+      ],
+      [
+        0.0,
+        0.0297,
+        0.10101,
+        0.09727,
+        0.09689,
+        0.0884
+      ]
+    ]
+  },
+  "obs_blocks": {
+    "block_offsets": {
+      "our_team": [
+        0,
+        732
+      ],
+      "opp_team": [
+        732,
+        1464
+      ],
+      "active_ctx": [
+        1464,
+        1580
+      ],
+      "global_env": [
+        1580,
+        1600
+      ],
+      "board": [
+        1600,
+        1617
+      ],
+      "pair_history": [
+        1617,
+        1797
+      ],
+      "event_window": [
+        1797,
+        2501
+      ]
+    },
+    "pooled": {
+      "n": 90202,
+      "blocks": {
+        "our_team": {
+          "mean_l2_norm": 1309.2369,
+          "mean_zero_fraction": 0.45394
+        },
+        "opp_team": {
+          "mean_l2_norm": 734.2429,
+          "mean_zero_fraction": 0.83096
+        },
+        "active_ctx": {
+          "mean_l2_norm": 0.1506,
+          "mean_zero_fraction": 0.99569
+        },
+        "global_env": {
+          "mean_l2_norm": 1.9722,
+          "mean_zero_fraction": 0.74167
+        },
+        "board": {
+          "mean_l2_norm": 340.2729,
+          "mean_zero_fraction": 0.27016
+        },
+        "pair_history": {
+          "mean_l2_norm": 6.2001,
+          "mean_zero_fraction": 0.69963
+        },
+        "event_window": {
+          "mean_l2_norm": 1747.1385,
+          "mean_zero_fraction": 0.69239
+        }
+      }
+    },
+    "diagonal_F5": {
+      "n": 2568,
+      "blocks": {
+        "our_team": {
+          "mean_l2_norm": 1317.7622,
+          "mean_zero_fraction": 0.45716
+        },
+        "opp_team": {
+          "mean_l2_norm": 950.389,
+          "mean_zero_fraction": 0.73318
+        },
+        "active_ctx": {
+          "mean_l2_norm": 0.4111,
+          "mean_zero_fraction": 0.99124
+        },
+        "global_env": {
+          "mean_l2_norm": 1.9456,
+          "mean_zero_fraction": 0.74359
+        },
+        "board": {
+          "mean_l2_norm": 266.6207,
+          "mean_zero_fraction": 0.35871
+        },
+        "pair_history": {
+          "mean_l2_norm": 6.4897,
+          "mean_zero_fraction": 0.63155
+        },
+        "event_window": {
+          "mean_l2_norm": 1992.221,
+          "mean_zero_fraction": 0.60782
+        }
+      }
+    },
+    "diagonal_F2_F3": {
+      "n": 7593,
+      "blocks": {
+        "our_team": {
+          "mean_l2_norm": 1312.8188,
+          "mean_zero_fraction": 0.45486
+        },
+        "opp_team": {
+          "mean_l2_norm": 819.6112,
+          "mean_zero_fraction": 0.80169
+        },
+        "active_ctx": {
+          "mean_l2_norm": 0.0758,
+          "mean_zero_fraction": 0.99723
+        },
+        "global_env": {
+          "mean_l2_norm": 1.9877,
+          "mean_zero_fraction": 0.7357
+        },
+        "board": {
+          "mean_l2_norm": 328.8569,
+          "mean_zero_fraction": 0.27226
+        },
+        "pair_history": {
+          "mean_l2_norm": 6.2469,
+          "mean_zero_fraction": 0.67482
+        },
+        "event_window": {
+          "mean_l2_norm": 1948.9252,
+          "mean_zero_fraction": 0.6375
+        }
+      }
+    }
+  },
+  "npz_companion": {
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/starmie_ood_control_traces_stats.npz",
+    "arrays": {
+      "mean": [
+        2501
+      ],
+      "std": [
+        2501
+      ],
+      "n": 90202,
+      "sample": [
+        4000,
+        2501
+      ],
+      "sample_our_faints": [
+        4000
+      ],
+      "sample_opp_faints": [
+        4000
+      ],
+      "sample_lowfaint": [
+        2000,
+        2501
+      ],
+      "sample_lowfaint_our_faints": [
+        2000
+      ],
+      "sample_lowfaint_opp_faints": [
+        2000
+      ]
+    },
+    "lowfaint_pool_size": 7593,
+    "lowfaint_sample_truncated": false,
+    "committed": false,
+    "note": "scratch artifact (~tens of MB); left on disk, NOT to be committed"
+  },
+  "caveats": [
+    "Eval traces are a SELECTED sample of play: they come from the periodic eval callback (fixed bot opponents + self-play sentinels + frozen cross-run snapshots), not from the training rollout distribution. Base rates here are 'what the model does in eval', not 'what it does in training'.",
+    "A trace file records only the TRAINEE's decision points, so the per-decision faint counts are sampled at OUR decision times \u2014 a faint that happens and is immediately followed by the battle ending may never appear as a decision row.",
+    "(our_faints==5, opp_faints==5) and 'exactly 1 alive each side' are the SAME predicate given opp_alive = 6 - opp_faints, so those two headline numbers are identical by construction rather than by measurement.",
+    "opp_faints undercounts a side whose mons are unrevealed only in the sense that an unrevealed mon cannot be fainted in gen3 singles as recorded here; a REVIVED mon (not a gen3 OU mechanic) would break the monotonicity self-check.",
+    "The accuracy/KO-race class is computed from the OBS move slots, which for OUR own team are always known. Fixed-damage moves (Seismic Toss, Endeavor) carry base_power 0 in the dex and are therefore NOT counted as damaging here.",
+    "Never-miss moves encode accuracy 100 and so land on the ACCURATE side of the pair; that is intended (they are the safe option in a KO race).",
+    "The pair test does NOT require the accurate move to be a serious attacking alternative \u2014 a low-power utility move that happens to be damaging (Rapid Spin, 20 bp / 100 acc) satisfies the accurate side. See acc_race_class.witnessing_pairs for what actually carries the class before treating the frequency as a count of genuine KO races.",
+    "The acc >= 95 / acc <= 85 thresholds leave a DEAD BAND at 85 < acc < 95 that excludes Rock Slide (90) and Overheat (90) outright \u2014 a move in the band can neither open nor close a pair. That is the spec's definition, not an accident, but it is why the measured class is narrower than 'any accuracy trade-off'.",
+    "Base power / accuracy are read from the obs (obs*200 / obs*100) rather than re-resolved per move id, then ROUNDED to integers before thresholding: float32 makes 0.85*100 == 85.0000024, so an un-rounded 'accuracy <= 85' drops Fire Blast, Megahorn and Meteor Mash entirely. A 40-move spot check against agents.gen3_data.moves asserts EXACT equality after rounding and is reported in meta.decoding.",
+    "Block L2 norms mix raw-scalar channels (species nums, move nums, type ids) with normalized ones, so they are a reference fingerprint for an OOD distance, not a calibrated magnitude.",
+    "Runs differ in eval opponent SET (the 0828 runs carry sentinel_0..4; the 0829/0830 runs carry an ext_ frozen snapshot instead), so the pooled opponent mix is not balanced across runs."
+  ]
+}
