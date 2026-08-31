@@ -7675,3 +7675,64 @@ B references rev-3's 0.5793 fold which was also 3e-4 — so **keeping 3e-4 for t
 is REQUIRED for its internal validity**, notwithstanding the 1e-4 licensing verdict. The lr
 question belongs to the REVOLUTION fold, is owner-gated (Tue PM), and a 1e-4 re-fold is a
 cheap add-on cell AFTER the ladder answers, never inside it.
+
+### 🟡 EXPLOITABILITY DECOMPOSED taught-vs-untaught: the flat curve is a COMPOSITION artifact, and rev-4 is not a curve point (2026-08-31)
+
+Pure re-analysis of the three `fleet_admission`-schema artifacts + recorded run metadata — no
+battles, no models. Artifact: `measurements/exploitability_taught_untaught_2026-08-31.{md,json}` +
+script. Taught sets DERIVED (target's `distill_teacher` → each teacher's recorded `trainee_teams`),
+never hand-copied; name→team-file recovered by Hall-elimination constraint propagation, **all 46
+cells classified from metadata alone**; the published aggregate reproduced exactly.
+
+**Four findings.** (1) **rev-3 and rev-4 best-respond to the SAME target** (`ai_v9_59_R2ACTION_0827`,
+from every arm's recorded `--exploiter`) — the ledger records the shared fork PARENT at `7609`; the
+shared TARGET is the consequential half. There are **two** curve points, not three, and rev-4 is a
+fleet-shape re-measurement of rev-3's subgame. (2) **The taught/untaught level gap is real at rev-3
+(−0.1100, z=−4.90) and is entirely HEADROOM**: with headroom in the model the partial effect of
+`taught` is **−0.0201 [−0.0701,+0.0299], z=−0.79** (pooled, n=36), and that coefficient is EXACTLY
+invariant to the ceiling constant (verified at C∈{0.60,0.6881,0.80,1.00}, identical to 6dp — C enters
+only the intercept), so the verdict does not rest on 0.6881 being right. (3) **The flat curve is
+COMPOSITION.** Over each generation's own slate raw extraction RISES (`ordered` 0.1187→0.1285→0.1386);
+on the 9 teams every fleet shares it FALLS (0.1200→0.0856→0.0875). Same battles, opposite sign; each
+slate grew toward lower-target, higher-headroom teams and extraction tracks headroom at β≈0.55.
+(4) **On matched teams the wheel may be turning — suggestive, NOT established**: rev-2→rev-3 on the 9
+newly-taught teams, `ordered` −0.0344, binomial [−0.0656,−0.0033] but **cluster [−0.0725,+0.0078],
+7/9 teams negative**; the independent rev-4 fleet reproduces −0.0325 (6/9). Residual dispersion is
+**2.52× binomial**, so the team-clustered interval is the honest one and it does not clear zero.
+
+**Verdict.** COVERAGE is supported on its FIRST clause only (taught cells fall) and its second
+("untaught flat") is **UNTESTABLE from these artifacts** — rev-2's slate is 9 meter teams that the
+very next fold taught, so no team is untaught on both sides of the only curve step. HEADROOM explains
+the within-generation LEVEL GAP and is REJECTED as the explanation of the flat curve. The bad case is
+not triggered (taught cells sit AT or PAST their nominal headroom, capture 1.04–1.22). **The 40-team
+revolution's premise is intact; the meter it would be judged by is not.**
+
+**Two scope corrections to standing claims.** The teacher ceiling is **NOT team-invariant** — 0.69–0.70
+on meter teams but **0.5742** on rev-4's coverage teams — so the dispatch's "~7.7pp headroom vs ~12pp
+extraction" is internally inconsistent and the ceiling RISES with the target rather than capping it.
+And **the budget invariance (`+0.0019 z=0.16`, 1.5 vs 2.5M/team) does not hold on the coverage class**:
+rev-3 (2.50M/team, 6×2) → rev-4 (1.25M/team, 3×8) cost **−0.1217 `ordered` on the shared COV teams**
+with the teacher's absolute falling 0.6650→0.5742, while taught/meter cells moved +0.0019. Budget and
+teams-per-teacher are confounded (no third fleet breaks it), but **the 40-team revolution is
+provisioned at 1.5M/team, nearer the losing arm than the winning one, on a deliberately coverage-like
+slate.** Do not carry the invariance onto the new slate.
+
+**Three actions.** (a) Report the curve on the **COMMON-TEAM restriction** and print `ordered` beside
+`net` — `net`'s fixed anchor differs from `ordered` by exactly the target's gain, i.e. by what a fold
+buys, so **`net` systematically hides the wheel turning** (0.7pp vs 3.4pp on the same teams).
+(b) `main.exploitability`'s `meter`/`coverage` prefix split is NOT the taught/untaught split — they
+coincide at rev-3 by accident, and at rev-4 it files 12 never-taught `N_` teams under "meter".
+(c) **`designs/ai_v12/promotion_exclusions.json`'s `rev4_pending` block is STALE on all three arms**
+(union names 4 teams rev-4 never pinned, misses 4 it did) — it is the standing exclusion list for the
+40-team draw, so it both wastes eligible teams and lets pinned ones back into a "fresh random draw".
+`taught_F5`/`taught_F6` verified correct.
+
+**For BAR C** (whose interpretation was orphaned at `7659`): its one irreplaceable contribution is a
+**matched untaught arm across a curve step** — this probe's central gap. It also removes the
+fleet-shape confound (worth ~12pp on coverage cells, larger than the effect being hunted) and unifies
+the seed convention. ⚠️ **On the `net` meter over a growing slate, C fails by construction** — a C run
+must pre-register the common-team restriction and the `ordered` readout or it will re-derive this
+artifact rather than test anything. Method nuggets: *a mean over a set that grows toward easier
+members measures the set, not the agent — restrict to the intersection before reading a sign*; and
+*when a control variable is itself the thing the treatment moves, the partial effect is the verdict
+and its invariance to the control's calibration is what makes it trustworthy*.
