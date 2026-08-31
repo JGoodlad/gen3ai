@@ -64,6 +64,16 @@ in `design_winprob_behavior_coupling.md`). Instruments 1–2 can be BASELINED NO
 traces (the shaped-world row costs nothing and pins the pre-clean-world slope); doing so
 before the arms finish keeps the comparison honest against drift in the trace format.
 
+**Baseline RUN 2026-08-31:**
+[`research_state/measurements/risk_capstone_baseline_gen15_2026-08-31.md`](../research_state/measurements/risk_capstone_baseline_gen15_2026-08-31.md)
+— instrument 1 is UNSCOREABLE on pool-drawn traces (0 pair-legal decisions in 224,995; 9 of
+4,566 pool mons carry any pair ⇒ the arm rows need a constructed-scenario or slate-augmented
+carrier); the accuracy-class companion reads near-flat (−0.036, FE −0.052) as predicted;
+explosion timing FIRES the surprise condition (−0.085 [−0.106, −0.063]) but only on the
+behind side — the ahead-side plateau (~0.17, rising to 0.21 at wp>0.9) is the consolidation
+failure the theory predicts. Rerun on the arms with the same script
+(`risk_capstone_curves.py`, `--runs` parametrized).
+
 ## 4. Cross-references
 
 Theory: `designs/learning/temperature_mixing_and_risk.md` §3. Registration: ledger
