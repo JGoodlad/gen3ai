@@ -295,6 +295,34 @@ def test_the_committed_exclusion_artifact_is_coherent_with_the_real_pool():
     assert len(pool) - len(excl.union) == 693
 
 
+def test_the_committed_exclusions_agree_with_recorded_run_provenance():
+    """THE DRIFT GATE. The artifact was first built from FROZEN ARGV FILES in a session-scoped job
+    directory, before the runs existed; the launched runs dealt different teams. On 2026-08-31 its
+    ``rev4_pending`` block was stale on all three arms — 4 teams it named were never pinned, 4 it
+    missed were — and the union SIZE stayed 26 throughout, so the coherence test above passed the
+    whole time. The only authority is each run's own ``metadata.json``.
+
+    Repair: ``python -m main.promote_teams --regenerate-exclusions``.
+    """
+    from utils.paths import main_models_dir, repo_path
+    md = main_models_dir()
+    if not md:
+        pytest.skip("no models/ archive on this box — recorded provenance cannot be read")
+    excl = pt.load_exclusions(str(repo_path("designs", "ai_v12", "promotion_exclusions.json")))
+    prov = pt.recorded_provenance(excl, str(md), str(repo_path()))
+    assert prov, "the artifact names no runs at all — the derivation seam is broken, not clean"
+    assert any(a.present for a in prov), (
+        "every run named by the exclusion artifact is missing from models/ — this test would "
+        "pass vacuously; it is asserting nothing")
+    drift = pt.exclusion_drift(excl, prov)
+    assert not drift, "\n".join(
+        [f"{len(drift)} exclusion arm(s) disagree with recorded run provenance — repair with "
+         "`python -m main.promote_teams --regenerate-exclusions`:"]
+        + [f"  {d['category']}/{d['arm']} vs {d['run']}/metadata.json: "
+           f"named but NEVER PINNED {d['in_artifact_never_pinned']}; "
+           f"PINNED but missing {d['pinned_but_missing']}" for d in drift])
+
+
 def test_the_real_draw_never_returns_a_taught_team():
     from utils.paths import repo_path
     excl = pt.load_exclusions(str(repo_path("designs", "ai_v12", "promotion_exclusions.json")))
@@ -325,6 +353,8 @@ def test_the_cli_parser_accepts_the_documented_surface():
     assert p.parse_args([]).n == pt.DEFAULT_N and p.parse_args([]).seed is None
     assert p.parse_args(["--draw-only"]).draw_only
     assert p.parse_args(["--verify-exclusions"]).verify_exclusions
+    assert p.parse_args(["--regenerate-exclusions"]).regenerate_exclusions
+    assert not p.parse_args([]).regenerate_exclusions
 
 
 def test_dry_run_and_draw_only_are_mutually_exclusive():

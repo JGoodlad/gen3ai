@@ -14,6 +14,7 @@ Usage:
   python -m main.promote_teams --draw-only --seed 1234   # manifest only, no promotion
   python -m main.promote_teams --seed 1234               # the real thing
   python -m main.promote_teams --verify-exclusions       # re-derive exclusions from run metadata
+  python -m main.promote_teams --regenerate-exclusions   # REWRITE them from run metadata
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 
@@ -31,6 +32,14 @@ THREE things here are load-bearing and easy to get wrong:
 * **A validator that is broken reports every team as invalid**, which is indistinguishable from a
   pool of 693 bad teams. A known-good positive control rides in every batch; if it fails, this
   aborts instead of "replacing" the entire draw.
+
+A FOURTH thing, learned the expensive way (2026-08-31): **the exclusion artifact ROTS.** It was
+built from FROZEN ARGV FILES in a session-scoped job directory, before the runs they describe had
+launched — and the launched runs did not deal the same teams those argvs did. Its ``rev4_pending``
+block was stale on all three arms: it named 4 teams rev-4 never pinned and missed 4 it did, while
+the union SIZE stayed 26, so no count-shaped check could see it. ``--verify-exclusions`` detects
+that; ``--regenerate-exclusions`` REPAIRS it, from each named run's own ``metadata.json`` and
+nothing else. A frozen argv is a plan; ``metadata.json`` is what ran.
 """
 from __future__ import annotations
 
@@ -174,40 +183,136 @@ def load_exclusions(path: str) -> Exclusions:
                       path=path, raw=raw)
 
 
-def verify_exclusions(excl: Exclusions, models_dir: Optional[str]) -> int:
+@dataclass(frozen=True)
+class ArmProvenance:
+    """What ONE named run actually recorded — the authority a category block is checked against."""
+    category: str
+    tag: str
+    run: str
+    present: bool                       # is there a run dir with metadata to read?
+    files: List[str] = field(default_factory=list)   # recorded --trainee-teams, verbatim
+    shas: List[str] = field(default_factory=list)    # team_sha of each, sorted
+
+
+def recorded_provenance(excl: Exclusions, models_dir: Optional[str],
+                        root: Optional[str] = None) -> List[ArmProvenance]:
+    """Read every RUN named by the artifact and return what its ``metadata.json`` actually says.
+
+    THE one derivation. ``verify_exclusions`` (report), ``regenerate_exclusions`` (repair) and the
+    drift test all consume this, so a check and a repair can never disagree about what "recorded"
+    means. Recorded team paths are repo-relative, so the read happens with cwd at the repo root.
+
+    A run that has no run dir (an argv frozen before launch) yields ``present=False`` and no shas —
+    UNVERIFIABLE, never a mismatch and never an empty-set "repair".
+    """
+    from agents.training.matchup_spec import read_recorded_trainee_teams
+    out: List[ArmProvenance] = []
+    if not models_dir:
+        return out
+    with _chdir(root or str(repo_root())):
+        for cat, blob in excl.raw["categories"].items():
+            for tag, rec in sorted((blob.get("runs") or {}).items()):
+                run_dir = os.path.join(models_dir, rec["run"])
+                if not os.path.isdir(run_dir):
+                    out.append(ArmProvenance(cat, tag, rec["run"], present=False))
+                    continue
+                files = read_recorded_trainee_teams(run_dir)
+                out.append(ArmProvenance(
+                    cat, tag, rec["run"], present=True, files=list(files),
+                    shas=sorted(team_sha(open(f).read()) for f in files if os.path.exists(f))))
+    return out
+
+
+def exclusion_drift(excl: Exclusions, prov: Sequence[ArmProvenance]) -> List[Dict[str, Any]]:
+    """The per-arm disagreements between the committed artifact and recorded provenance.
+
+    Each row NAMES the offending team ids in both directions — a count-shaped answer would have
+    missed the 2026-08-31 defect outright, where 4 teams went out and 4 came in and the union
+    stayed 26.
+    """
+    rows: List[Dict[str, Any]] = []
+    for a in prov:
+        if not a.present:
+            continue
+        want = sorted(excl.raw["categories"][a.category]["runs"][a.tag]["shas"])
+        if want == a.shas:
+            continue
+        rows.append({"category": a.category, "arm": a.tag, "run": a.run,
+                     "artifact": want, "metadata": a.shas,
+                     "in_artifact_never_pinned": sorted(set(want) - set(a.shas)),
+                     "pinned_but_missing": sorted(set(a.shas) - set(want))})
+    return rows
+
+
+def verify_exclusions(excl: Exclusions, models_dir: Optional[str],
+                      root: Optional[str] = None) -> int:
     """Re-derive every category that names a RUN from that run's own ``metadata.json``.
 
     The artifact was built from frozen argv files in a session-scoped job directory; this is the
     durable cross-check against the only copy that outlives it. A run that has not been launched
-    yet (rev-4) has no metadata and is reported as UNVERIFIABLE, never as a mismatch.
+    yet has no metadata and is reported as UNVERIFIABLE, never as a mismatch.
     """
-    from agents.training.matchup_spec import read_recorded_trainee_teams
     if not models_dir:
         print("⚠️  no models/ archive on this box (utils.paths.main_models_dir() is None) — "
               "the run-metadata cross-check cannot run here. The artifact is unchanged.")
         return 0
-    bad = 0
+    prov = recorded_provenance(excl, models_dir, root)
+    drift = {(d["category"], d["arm"]): d for d in exclusion_drift(excl, prov)}
     for cat, blob in excl.raw["categories"].items():
-        runs = blob.get("runs") or {}
-        if not runs:
+        if not (blob.get("runs") or {}):
             print(f"  {cat:24s} {len(blob['shas']):3d} shas — no run to verify against "
                   f"({blob['reason'].split('—')[0].strip()})")
-            continue
-        for tag, rec in sorted(runs.items()):
-            run_dir = os.path.join(models_dir, rec["run"])
-            if not os.path.isdir(run_dir):
-                print(f"  {cat:24s} {tag:6s} UNVERIFIABLE — {rec['run']} has not been launched")
-                continue
-            files = read_recorded_trainee_teams(run_dir)
-            got = sorted(team_sha(open(f).read()) for f in files if os.path.exists(f))
-            want = sorted(rec["shas"])
-            if got == want:
-                print(f"  {cat:24s} {tag:6s} ✓ {len(want)} teams match {rec['run']}/metadata.json")
-            else:
-                bad += 1
-                print(f"  {cat:24s} {tag:6s} ✗ MISMATCH vs {rec['run']}/metadata.json\n"
-                      f"      artifact: {want}\n      metadata: {got}")
-    return bad
+    for a in prov:
+        if not a.present:
+            print(f"  {a.category:24s} {a.tag:6s} UNVERIFIABLE — {a.run} has not been launched")
+        elif (a.category, a.tag) not in drift:
+            print(f"  {a.category:24s} {a.tag:6s} ✓ {len(a.shas)} teams match {a.run}/metadata.json")
+        else:
+            d = drift[(a.category, a.tag)]
+            print(f"  {a.category:24s} {a.tag:6s} ✗ MISMATCH vs {a.run}/metadata.json\n"
+                  f"      artifact: {d['artifact']}\n      metadata: {d['metadata']}\n"
+                  f"      never pinned: {d['in_artifact_never_pinned']}   "
+                  f"missing: {d['pinned_but_missing']}")
+    return len(drift)
+
+
+def regenerate_exclusions(excl: Exclusions, models_dir: Optional[str], pool_total: int,
+                          stamp: str, root: Optional[str] = None) -> Dict[str, Any]:
+    """Rebuild the artifact from recorded run provenance. Returns the NEW blob (does not write).
+
+    Only the run-derived halves are rebuilt. A category with no ``runs`` (``held_out_instruments``
+    — held out by DESIGN, not by having been trained) is carried verbatim, because no metadata
+    exists that could confirm or deny it; regenerating it from nothing would silently empty it.
+    An unlaunched run keeps its recorded block for the same reason.
+    """
+    if not models_dir:
+        raise RuntimeError(
+            "no models/ archive on this box (utils.paths.main_models_dir() is None) — the exclusion "
+            "artifact is DERIVED from run metadata and cannot be regenerated without it. "
+            "Set $GEN3AI_MODELS_DIR, or run this on the box that holds the runs.")
+    prov = {(a.category, a.tag): a for a in recorded_provenance(excl, models_dir, root)}
+    new = json.loads(json.dumps(excl.raw))          # deep copy; never mutate the loaded artifact
+    for cat, blob in new["categories"].items():
+        for tag, rec in (blob.get("runs") or {}).items():
+            a = prov[(cat, tag)]
+            rec["run_dir_present"] = a.present
+            rec["metadata_verified"] = a.present
+            if a.present:
+                rec["teams"], rec["shas"] = a.files, a.shas
+        if blob.get("runs"):
+            blob["shas"] = sorted({s for r in blob["runs"].values() for s in r["shas"]})
+    union = sorted({s for c in new["categories"].values() for s in c["shas"]})
+    new["union"] = union
+    from utils.git import get_git_hash
+    new["_meta"] = dict(new["_meta"], generated_at=stamp, git_hash=get_git_hash(),
+                        pool_total=pool_total, union_total=len(union),
+                        eligible_after_exclusions=pool_total - len(union),
+                        argv_source="DERIVED from models/<run>/metadata.json cli_args.trainee_teams "
+                                    "by `python -m main.promote_teams --regenerate-exclusions`. The "
+                                    "frozen argvs this file was FIRST built from are a plan, not a "
+                                    "record — they disagreed with what ran (see the rev4_pending "
+                                    "repair, 2026-08-31).")
+    return new
 
 
 # ── the draw ────────────────────────────────────────────────────────────────────────────────────
@@ -523,6 +628,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="overwrite an existing manifest that records a different seed")
     p.add_argument("--verify-exclusions", action="store_true",
                    help="re-derive the exclusion artifact from run metadata and exit")
+    p.add_argument("--regenerate-exclusions", action="store_true",
+                   help="REWRITE the exclusion artifact from run metadata (the repair for the "
+                        "check above) and exit. Prints the before/after team ids.")
     p.add_argument("--root", default=None,
                    help="operate on a COPY of the tree instead of this checkout — a full rehearsal "
                         "of the real promotion (copies, manifest surgery, invariant check) with "
@@ -536,15 +644,31 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     excl_path = args.exclusions or repo_path(*DEFAULT_EXCLUSIONS.split(os.sep))
     excl = load_exclusions(str(excl_path))
 
-    if args.verify_exclusions:
+    if args.verify_exclusions or args.regenerate_exclusions:
         from utils.paths import main_models_dir
         md = main_models_dir()
         print(f"Re-deriving {excl.path} from run metadata"
               f"{f' under {md}' if md else ''}:\n")
-        bad = verify_exclusions(excl, str(md) if md else None)
+        bad = verify_exclusions(excl, str(md) if md else None, root)
         print(f"\n{'✗ ' + str(bad) + ' MISMATCH(ES)' if bad else '✓ no mismatches'}"
               f" — union {len(excl.union)} teams: {excl.counts}")
-        return 1 if bad else 0
+        if not args.regenerate_exclusions:
+            return 1 if bad else 0
+
+        stamp = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+        pool = load_pool(root)
+        _cross_check_pool(root, pool)
+        new = regenerate_exclusions(excl, str(md) if md else None, len(pool), stamp, root)
+        before, after = set(excl.union), set(new["union"])
+        print(f"\nREGENERATED — union {len(before)} → {len(after)} teams, "
+              f"eligible {len(pool) - len(before)} → {len(pool) - len(after)} of {len(pool)}")
+        print(f"  now excluded (were eligible): {sorted(after - before) or 'none'}")
+        print(f"  now eligible (were excluded): {sorted(before - after) or 'none'}")
+        if before == after and not bad:
+            print("  (byte-identical membership — the artifact was already correct)")
+        _write_json(excl.path, new)
+        print(f"wrote {excl.path}")
+        return 0
 
     if args.dry_run and args.draw_only:
         print("--dry-run and --draw-only are mutually exclusive (dry-run writes nothing).")

@@ -2,9 +2,9 @@
   "_meta": {
     "purpose": "the STANDING exclusion union for `python -m main.promote_teams` \u2014 teams that must never enter a fresh random draw for the 40-team fleet.",
     "key_convention": "sha1(team_text.strip())[:10] \u2014 agents.training.team_archetypes.team_sha",
-    "generated_at": "2026-08-30T04:01:01+00:00",
-    "git_hash": "56bfd48661419ce958e99461f0add1cc9551aebc",
-    "argv_source": "/home/goodlad/.claude/jobs/1046b1d6/tmp/probes (session-scoped; this artifact is the durable copy)",
+    "generated_at": "2026-08-31T04:33:22+00:00",
+    "git_hash": "153de08e77279e1e6d9184631c1bc1616a9e2f73",
+    "argv_source": "DERIVED from models/<run>/metadata.json cli_args.trainee_teams by `python -m main.promote_teams --regenerate-exclusions`. The frozen argvs this file was FIRST built from are a plan, not a record \u2014 they disagreed with what ran (see the rev4_pending repair, 2026-08-31).",
     "verified_against": "models/<run>/metadata.json cli_args.trainee_teams via agents.training.matchup_spec.read_recorded_trainee_teams",
     "pool_total": 719,
     "union_total": 26,
@@ -194,75 +194,75 @@
       "runs": {
         "R4S3a": {
           "run": "ai_v9_73_R4S3a_0829",
-          "run_dir_present": false,
-          "metadata_verified": false,
+          "run_dir_present": true,
+          "metadata_verified": true,
           "teams": [
             "data/teams/sample/eccfe630ec08de27.txt",
             "data/teams/sample/023a2d47648b85e6.txt",
             "data/teams/sample/8e768980fc8f3b5f.txt",
             "data/teams/sample/710d8d529538ff90.txt",
+            "data/teams/sample/53f215cb45b7d729.txt",
             "data/teams/sample/a3ca232f030ef625.txt",
-            "data/teams/sample/d4e74946b54f1a4b.txt",
-            "data/teams/sample/9d5f845869e899ee.txt",
-            "data/teams/sample/f6229d2c867e21d6.txt"
+            "data/teams/sample/8cdc78b2d46f0515.txt",
+            "data/teams/sample/e11829f0561ef5a9.txt"
           ],
           "shas": [
-            "1c4e182530",
+            "3495ef83ef",
             "41357610f2",
-            "564b9be3ae",
             "69af2f1507",
+            "6a49f096f0",
             "8aa51ef85c",
-            "bcd4d09ee9",
+            "a7bb29d48c",
             "bd4af7191a",
             "fffd943e9e"
           ]
         },
         "R4S3b": {
           "run": "ai_v9_74_R4S3b_0829",
-          "run_dir_present": false,
-          "metadata_verified": false,
+          "run_dir_present": true,
+          "metadata_verified": true,
           "teams": [
             "data/teams/sample/63eda9d8d491d6a4.txt",
             "data/teams/sample/f5a4f4f0f5dc49ce.txt",
             "data/teams/sample/e541f7be8713393c.txt",
             "data/teams/sample/9eb3abdc52876a63.txt",
-            "data/teams/sample/53f215cb45b7d729.txt",
-            "data/teams/sample/61590463ee85d456.txt",
-            "data/teams/sample/90b94599967c6b77.txt",
-            "data/teams/sample/9283210847f806ee.txt"
+            "data/teams/sample/9f27f5d3e34021a7.txt",
+            "data/teams/sample/a04c29cf769e9a11.txt",
+            "data/teams/sample/0fa105ae42dc85ec.txt",
+            "data/teams/sample/b89e1e37caa40e6a.txt"
           ],
           "shas": [
             "01cb64e16c",
-            "55ff6899a2",
+            "21022d30fb",
+            "78b3b6f4a6",
             "95e69273f8",
-            "a7bb29d48c",
-            "c90e782cad",
+            "a7406f6c97",
+            "c84f2b64a2",
             "e050d23078",
-            "f36747ae7e",
-            "fed4eee838"
+            "f36747ae7e"
           ]
         },
         "R4S3c": {
           "run": "ai_v9_75_R4S3c_0829",
-          "run_dir_present": false,
-          "metadata_verified": false,
+          "run_dir_present": true,
+          "metadata_verified": true,
           "teams": [
             "data/teams/sample/e0d97b0ed592889d.txt",
             "data/teams/sample/82e97fe2bfbb6f69.txt",
             "data/teams/sample/460b8c99ee366f6c.txt",
             "data/teams/sample/7036a0a1dcb59a19.txt",
             "data/teams/sample/0972146213a667c9.txt",
-            "data/teams/sample/0fa105ae42dc85ec.txt",
+            "data/teams/sample/d4e74946b54f1a4b.txt",
             "data/teams/sample/6d56d06b9fca508e.txt",
-            "data/teams/sample/8cdc78b2d46f0515.txt"
+            "data/teams/sample/f6229d2c867e21d6.txt"
           ],
           "shas": [
+            "1c4e182530",
             "45995e432f",
-            "6a49f096f0",
-            "78b3b6f4a6",
             "a12e56dca3",
             "a2d1246e4b",
             "b08909ab04",
+            "bcd4d09ee9",
             "c6e5e12614",
             "f23f64a6b2"
           ]
@@ -271,10 +271,10 @@
       "shas": [
         "01cb64e16c",
         "1c4e182530",
+        "21022d30fb",
+        "3495ef83ef",
         "41357610f2",
         "45995e432f",
-        "55ff6899a2",
-        "564b9be3ae",
         "69af2f1507",
         "6a49f096f0",
         "78b3b6f4a6",
@@ -282,16 +282,16 @@
         "95e69273f8",
         "a12e56dca3",
         "a2d1246e4b",
+        "a7406f6c97",
         "a7bb29d48c",
         "b08909ab04",
         "bcd4d09ee9",
         "bd4af7191a",
         "c6e5e12614",
-        "c90e782cad",
+        "c84f2b64a2",
         "e050d23078",
         "f23f64a6b2",
         "f36747ae7e",
-        "fed4eee838",
         "fffd943e9e"
       ]
     },
@@ -307,10 +307,10 @@
   "union": [
     "01cb64e16c",
     "1c4e182530",
+    "21022d30fb",
+    "3495ef83ef",
     "41357610f2",
     "45995e432f",
-    "55ff6899a2",
-    "564b9be3ae",
     "591321332b",
     "637cbb13a2",
     "69af2f1507",
@@ -320,16 +320,16 @@
     "95e69273f8",
     "a12e56dca3",
     "a2d1246e4b",
+    "a7406f6c97",
     "a7bb29d48c",
     "b08909ab04",
     "bcd4d09ee9",
     "bd4af7191a",
     "c6e5e12614",
-    "c90e782cad",
+    "c84f2b64a2",
     "e050d23078",
     "f23f64a6b2",
     "f36747ae7e",
-    "fed4eee838",
     "fffd943e9e"
   ]
 }

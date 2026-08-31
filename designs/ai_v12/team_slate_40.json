@@ -73,10 +73,10 @@
    "rev4_pending": [
     "01cb64e16c",
     "1c4e182530",
+    "21022d30fb",
+    "3495ef83ef",
     "41357610f2",
     "45995e432f",
-    "55ff6899a2",
-    "564b9be3ae",
     "69af2f1507",
     "6a49f096f0",
     "78b3b6f4a6",
@@ -84,27 +84,27 @@
     "95e69273f8",
     "a12e56dca3",
     "a2d1246e4b",
+    "a7406f6c97",
     "a7bb29d48c",
     "b08909ab04",
     "bcd4d09ee9",
     "bd4af7191a",
     "c6e5e12614",
-    "c90e782cad",
+    "c84f2b64a2",
     "e050d23078",
     "f23f64a6b2",
     "f36747ae7e",
-    "fed4eee838",
     "fffd943e9e"
    ],
    "curated_untaught_after_rev4": [
     "01cd428c76",
-    "21022d30fb",
     "324235812b",
-    "3495ef83ef",
     "4771662cf7",
+    "55ff6899a2",
+    "564b9be3ae",
     "569ebae46d",
-    "a7406f6c97",
-    "c84f2b64a2"
+    "c90e782cad",
+    "fed4eee838"
    ]
   },
   "sources": {
@@ -123,7 +123,40 @@
    "core_20": "eligible teams with a fixed-reference estimate at n>=150",
    "provisional_20": "n=40 screen only \u2014 MUST be re-screened on FRESH games before selection",
    "archetype_cap": "<= 40% of the 40-team slate per class"
-  }
+  },
+  "corrections": [
+   {
+    "at": "2026-08-31",
+    "what": "rev4_pending re-derived from run metadata (it was built from FROZEN ARGVS)",
+    "source": "designs/ai_v12/promotion_exclusions.json, rebuilt by `python -m main.promote_teams --regenerate-exclusions`",
+    "rev4_pending_added": [
+     "21022d30fb",
+     "3495ef83ef",
+     "a7406f6c97",
+     "c84f2b64a2"
+    ],
+    "rev4_pending_removed": [
+     "55ff6899a2",
+     "564b9be3ae",
+     "c90e782cad",
+     "fed4eee838"
+    ],
+    "curated_untaught_added": [
+     "55ff6899a2",
+     "564b9be3ae",
+     "c90e782cad",
+     "fed4eee838"
+    ],
+    "curated_untaught_removed": [
+     "21022d30fb",
+     "3495ef83ef",
+     "a7406f6c97",
+     "c84f2b64a2"
+    ],
+    "per_team_excluded_rows_changed": 13,
+    "note": "exclusion-derived fields ONLY. Every MEASURED number in this file is untouched; a full re-cut (which the completed headroom_screen would move) is a separate, deliberate change."
+   }
+  ]
  },
  "slate_40": [
   "a05a190b50",
@@ -511,7 +544,7 @@
    "train_wr_pool": 0.6568,
    "train_n_pool": 169,
    "excluded": [
-    "rev4_pending:R4S3a"
+    "rev4_pending:R4S3c"
    ]
   },
   {
@@ -557,7 +590,9 @@
    "headroom": 0.1296,
    "train_wr_pool": 0.4856,
    "train_n_pool": 451,
-   "excluded": []
+   "excluded": [
+    "rev4_pending:R4S3b"
+   ]
   },
   {
    "sha": "c6e5e12614",
@@ -621,8 +656,8 @@
    "train_wr_pool": 0.631,
    "train_n_pool": 84,
    "excluded": [
-    "taught:F6e",
-    "rev4_pending:R4S3c"
+    "rev4_pending:R4S3c",
+    "taught:F6e"
    ]
   },
   {
@@ -664,7 +699,9 @@
    "headroom": 0.3196,
    "train_wr_pool": 0.7281,
    "train_n_pool": 114,
-   "excluded": []
+   "excluded": [
+    "rev4_pending:R4S3b"
+   ]
   },
   {
    "sha": "21022d30fb",
@@ -704,7 +741,9 @@
    "headroom": 0.0396,
    "train_wr_pool": 0.849,
    "train_n_pool": 245,
-   "excluded": []
+   "excluded": [
+    "rev4_pending:R4S3b"
+   ]
   },
   {
    "sha": "3495ef83ef",
@@ -744,7 +783,9 @@
    "headroom": 0.1446,
    "train_wr_pool": 0.8022,
    "train_n_pool": 445,
-   "excluded": []
+   "excluded": [
+    "rev4_pending:R4S3a"
+   ]
   },
   {
    "sha": "324235812b",
@@ -826,9 +867,7 @@
    "headroom": 0.1146,
    "train_wr_pool": 0.6667,
    "train_n_pool": 99,
-   "excluded": [
-    "rev4_pending:R4S3b"
-   ]
+   "excluded": []
   },
   {
    "sha": "569ebae46d",
@@ -917,7 +956,7 @@
    "train_wr_pool": 0.6748,
    "train_n_pool": 409,
    "excluded": [
-    "rev4_pending:R4S3a"
+    "rev4_pending:R4S3c"
    ]
   },
   {
@@ -981,8 +1020,8 @@
    "train_n_pool": 46,
    "excluded": [
     "meter9",
-    "taught:F5d/F6d",
-    "rev4_pending:R4S3b"
+    "rev4_pending:R4S3b",
+    "taught:F5d/F6d"
    ]
   },
   {
@@ -1069,9 +1108,7 @@
    "headroom": 0.1096,
    "train_wr_pool": 0.7212,
    "train_n_pool": 520,
-   "excluded": [
-    "rev4_pending:R4S3b"
-   ]
+   "excluded": []
   },
   {
    "sha": "a12e56dca3",
@@ -1196,7 +1233,7 @@
    "train_wr_pool": 0.8536,
    "train_n_pool": 239,
    "excluded": [
-    "rev4_pending:R4S3c"
+    "rev4_pending:R4S3b"
    ]
   },
   {
@@ -1238,7 +1275,7 @@
    "train_wr_pool": 0.7473,
    "train_n_pool": 455,
    "excluded": [
-    "rev4_pending:R4S3c"
+    "rev4_pending:R4S3a"
    ]
   },
   {
@@ -1345,8 +1382,8 @@
    "train_wr_pool": null,
    "train_n_pool": 26,
    "excluded": [
-    "taught:F6f",
-    "rev4_pending:R4S3c"
+    "rev4_pending:R4S3c",
+    "taught:F6f"
    ]
   },
   {
@@ -1411,8 +1448,8 @@
    "train_n_pool": 242,
    "excluded": [
     "meter9",
-    "taught:F5c/F6c",
-    "rev4_pending:R4S3b"
+    "rev4_pending:R4S3b",
+    "taught:F5c/F6c"
    ]
   },
   {
@@ -1476,8 +1513,8 @@
    "train_n_pool": 121,
    "excluded": [
     "meter9",
-    "taught:F5c/F6c",
-    "rev4_pending:R4S3b"
+    "rev4_pending:R4S3b",
+    "taught:F5c/F6c"
    ]
   },
   {
@@ -1523,7 +1560,7 @@
    "train_wr_pool": 0.7351,
    "train_n_pool": 453,
    "excluded": [
-    "rev4_pending:R4S3b"
+    "rev4_pending:R4S3a"
    ]
   },
   {
@@ -1587,8 +1624,8 @@
    "train_n_pool": 363,
    "excluded": [
     "meter9",
-    "taught:F5a/F5e/F6a/F6CURR",
-    "rev4_pending:R4S3a"
+    "rev4_pending:R4S3a",
+    "taught:F5a/F5e/F6a/F6CURR"
    ]
   },
   {
@@ -1654,8 +1691,8 @@
    "train_n_pool": 45,
    "excluded": [
     "meter9",
-    "taught:F5a/F6a/F6CURR",
-    "rev4_pending:R4S3a"
+    "rev4_pending:R4S3a",
+    "taught:F5a/F6a/F6CURR"
    ]
   },
   {
@@ -1702,9 +1739,7 @@
    "headroom": 0.1429,
    "train_wr_pool": null,
    "train_n_pool": 1,
-   "excluded": [
-    "rev4_pending:R4S3b"
-   ]
+   "excluded": []
   },
   {
    "sha": "b08909ab04",
@@ -1768,8 +1803,8 @@
    "train_wr_pool": 0.8276,
    "train_n_pool": 609,
    "excluded": [
-    "taught:F6f",
-    "rev4_pending:R4S3c"
+    "rev4_pending:R4S3c",
+    "taught:F6f"
    ]
   },
   {
@@ -1880,8 +1915,8 @@
    "train_n_pool": 503,
    "excluded": [
     "meter9",
-    "taught:F5d/F6d",
-    "rev4_pending:R4S3b"
+    "rev4_pending:R4S3b",
+    "taught:F5d/F6d"
    ]
   },
   {
@@ -1944,8 +1979,8 @@
    "train_n_pool": 40,
    "excluded": [
     "meter9",
-    "taught:F5b/F6b",
-    "rev4_pending:R4S3a"
+    "rev4_pending:R4S3a",
+    "taught:F5b/F6b"
    ]
   },
   {
@@ -2009,8 +2044,8 @@
    "train_n_pool": 461,
    "excluded": [
     "meter9",
-    "taught:F5e/F6e",
-    "rev4_pending:R4S3c"
+    "rev4_pending:R4S3c",
+    "taught:F5e/F6e"
    ]
   },
   {
@@ -2073,8 +2108,8 @@
    "train_n_pool": 92,
    "excluded": [
     "meter9",
-    "taught:F5b/F6b",
-    "rev4_pending:R4S3a"
+    "rev4_pending:R4S3a",
+    "taught:F5b/F6b"
    ]
   },
   {
@@ -2121,9 +2156,7 @@
    "headroom": 0.1096,
    "train_wr_pool": 0.7604,
    "train_n_pool": 96,
-   "excluded": [
-    "rev4_pending:R4S3a"
-   ]
+   "excluded": []
   },
   {
    "sha": "b820d7ac43",

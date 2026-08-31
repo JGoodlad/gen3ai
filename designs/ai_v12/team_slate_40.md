@@ -7,6 +7,18 @@ trained; no battles were played to produce it.
 Sources are existing artifacts only. Every number carries the scale it was measured on and the
 n behind it; an unmeasured team is listed as UNMEASURED with n=0 and is **never imputed**.
 
+> 🩹 **PARTIAL CORRECTION, 2026-08-31 — the rev-4 taught set, and nothing else.** This file was
+> generated on 2026-08-30 from the rev-4 arms' **frozen argv files**, which turned out to be a plan
+> rather than a record: the launched runs pinned 4 teams the argvs never named and dropped 4 they
+> did (`promotion_exclusions.json` repaired against run metadata — see
+> `../research_state/measurements/exclusions_and_artifacts_repair_2026-08-31.md`). Only the
+> exclusion-derived facts below (§1's arithmetic, and the §5a curated rows called out there) have
+> been corrected **in place**; every measured number is untouched and still carries its original
+> provenance. The builder now derives these sets from that artifact, so the next full re-cut needs
+> no hand edit — but a re-cut is a *different* change, because the `headroom_screen` this file's
+> §7 is waiting on has since completed and would move every baseline. Do that deliberately, not as
+> a side effect of this repair.
+
 ### The four things a reader needs before anything else
 
 1. **The curated-32 gate BINDS, and 40 > 32.** After rev-4 only **8** curated teams are
@@ -43,8 +55,8 @@ are still pool teams; the teams actually trained are the three curated `COV_*`.
 |---|---|---|
 | curated teams | 32 | the whole legal exploiter-trainee universe |
 | taught by F5a–e + F6a–f (incl. the 9 meter) | 12 | rev-2 and rev-3 fleets |
-| newly taught by rev-4 R4S3a/b/c (frozen argvs) | 12 | 24 distinct once rev-4 lands |
-| **curated and still untaught after rev-4** | **8** | `ce35b736 · b89e1e37 · 9909f2e9 · e11829f0 · f7ba5702 · dbf81d8e · a04c29cf · 9f27f5d3` |
+| newly taught by rev-4 R4S3a/b/c | 12 | 24 distinct |
+| **curated and still untaught after rev-4** | **8** | `61590463 · 90b94599 · 92832108 · 9909f2e9 · 9d5f8458 · ce35b736 · dbf81d8e · f7ba5702` |
 | held out (`probes/offpin_{0,1}.txt`) | 2 | pool teams, not curated — the off-slice transfer instrument |
 
 > **A 40-team revolution cannot be built from the curated set.** Even ignoring the exclusions
@@ -158,6 +170,16 @@ measurement.
 | 20 | `569ebae46d` | `sample/dbf81d8ecae51c39.txt` | curated | balance | 0.655 | 200 | [0.587, 0.717] | **0.035** | B |
 
 Of these, **8** are curated (legal today); **12** are pool teams requiring §1's widening.
+
+> 🩹 **CORRECTED 2026-08-31.** Those 8 curated rows were selected as "curated and untaught" from the
+> frozen rev-4 argvs. Against the launched runs, **4 of them are rev-4-taught** and are now
+> conditionally excluded — rows 3 (`sample/9f27f5d3e34021a7.txt`), 13
+> (`sample/e11829f0561ef5a9.txt`), 15 (`sample/a04c29cf769e9a11.txt`) and 19
+> (`sample/b89e1e37caa40e6a.txt`). The 4 that replace them in §1's untaught list
+> (`9d5f845869e899ee`, `61590463ee85d456`, `90b94599967c6b77`, `9283210847f806ee`) carry no
+> fixed-reference row here, so they cannot simply be swapped into this table; they enter on the
+> completed `headroom_screen` at the re-cut §7 calls for. **The measured numbers in the rows above
+> are unaffected** — what changed is which of them are still legal picks.
 
 ### 5b. PROVISIONAL 20 — nominated, **must be re-screened**
 
@@ -370,8 +392,8 @@ there was **+0.061** — larger than most of the differences this slate ranks on
 
 | artifact | what it contributed |
 |---|---|
-| `/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/r3_admission.json` | the rev-3 admission battery — the `target` baseline (12 teams, n=400) AND the 12 teacher ABSOLUTE cells the ~0.69 ceiling is the mean of |
-| `/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/fleet_admission.json` | the rev-2 battery — the `rev1final` pilot row on the 9 meter teams (n=400) |
+| `designs/research_state/measurements/admission_artifacts/r3_admission.json` | the rev-3 admission battery — the `target` baseline (12 teams, n=400) AND the 12 teacher ABSOLUTE cells the ~0.69 ceiling is the mean of |
+| `designs/research_state/measurements/admission_artifacts/fleet_admission.json` | the rev-2 battery — the `rev1final` pilot row on the 9 meter teams (n=400) |
 | `/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/pilot_R2ACTION_n300.json` | current-generation piloting of the 9 meter teams (n=300) |
 | `/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/cov_R2ACTION.json` | current-generation piloting of the 3 coverage teams (n=300) |
 | `/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/cov_rev1fin.json` | the rev-1-final companion of the row above — the generation-offset anchor |
@@ -383,9 +405,11 @@ there was **+0.061** — larger than most of the differences this slate ranks on
 
 **Freshness of the live source:** 6 of 20 `headroom_screen` rows had landed when this was built.
 
-The two admission artifacts and the piloting/coverage probes live in a **session-scoped job
-directory** (`~/.claude/jobs/1046b1d6/tmp/probes`), not in the repo. Every number that this slate
-depends on is copied into `team_slate_40.json` so the slate survives that directory's deletion.
+**The two admission artifacts are COMMITTED** (2026-08-31) at
+`designs/research_state/measurements/admission_artifacts/`, byte-identically. The
+piloting/coverage probes still live only in a **session-scoped job directory**
+(`~/.claude/jobs/1046b1d6/tmp/probes`); every number this slate depends on is copied into
+`team_slate_40.json` so the slate survives that directory's deletion.
 
 **Re-running this slate.** `designs/ai_v12/team_slate_build.py` regenerates both files from the
 artifacts above in ~5 s (read-only; no models, no battles). Run it after the in-flight headroom

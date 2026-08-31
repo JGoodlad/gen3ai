@@ -84,12 +84,32 @@ def argv_teams(tag):
     files = line[i:].split()[0].split(",")
     return [sha(open(f).read()) for f in files], files
 
-TAUGHT = {}   # sha -> [run tags]
-for tag in ["F5a","F5b","F5c","F5d","F5e","F6a","F6b","F6c","F6d","F6e","F6f","F6CURR"]:
-    for s in argv_teams(tag)[0]: TAUGHT.setdefault(s, []).append(tag)
-REV4 = {}
-for tag in ["R4S3a","R4S3b","R4S3c"]:
-    for s in argv_teams(tag)[0]: REV4.setdefault(s, []).append(tag)
+# A FROZEN ARGV IS A PLAN, NOT A RECORD. This block read `{P}/<tag>.argv` for every fleet until
+# 2026-08-31, and the launched rev-4 runs did not deal the teams their frozen argvs did: 4 teams the
+# argvs named were never pinned, 4 that were pinned were missing, and the union SIZE stayed 24 the
+# whole time. So the run-derived sets now come from designs/ai_v12/promotion_exclusions.json, which
+# `python -m main.promote_teams --regenerate-exclusions` builds from each run's own metadata.json
+# and `promote_teams_test.py` gates against it. The argv fallback survives only for a fleet whose
+# runs do not exist yet — the case the artifact itself marks `metadata_verified: false`.
+_EXCL = json.load(open(os.path.join(OUT, "promotion_exclusions.json")))["categories"]
+
+def _recorded(cat, tags):
+    """sha -> [arm tags], from the metadata-derived exclusion artifact; argv only if unlaunched."""
+    out = {}
+    runs = _EXCL[cat]["runs"]
+    for tag in tags:
+        rec = runs.get(tag)
+        shas = rec["shas"] if rec else argv_teams(tag)[0]
+        for s in shas:
+            out.setdefault(s, []).append(tag)
+    return out
+
+TAUGHT = _recorded("taught_F5", ["F5a","F5b","F5c","F5d","F5e"])
+for s, tags in _recorded("taught_F6", ["F6a","F6b","F6c","F6d","F6e","F6f"]).items():
+    TAUGHT.setdefault(s, []).extend(tags)
+for s in argv_teams("F6CURR")[0]:   # a curriculum arm, never admitted — no run block to read
+    TAUGHT.setdefault(s, []).append("F6CURR")
+REV4 = _recorded("rev4_pending", ["R4S3a","R4S3b","R4S3c"])
 
 # ─── evidence sources ────────────────────────────────────────────────────────
 # Each row: (sha, wins, games, scale, source). scale "gen15" = pilot is the CURRENT
@@ -100,10 +120,15 @@ ev = defaultdict(list)
 def add(s, w, n, scale, src, opp):
     if n: ev[s].append({"wins": int(w), "games": int(n), "scale": scale, "source": src, "opponent": opp})
 
-r3 = json.load(open(f"{P}/r3_admission.json"))
+# The two ADMISSION artifacts are committed (2026-08-31); the piloting/coverage probes are not, and
+# still live under P. Read the committed copies — they are byte-identical and they survive the job
+# directory's deletion, which the numbers derived from them otherwise would not.
+ADM = os.path.join(repo_root(), "designs", "research_state", "measurements", "admission_artifacts")
+
+r3 = json.load(open(f"{ADM}/r3_admission.json"))
 for nm, c in r3["target"].items():
     add(name2sha[nm], c["wins"], c["games"], "gen15", "r3_admission.target", "R2ACTION-final")
-fa = json.load(open(f"{P}/fleet_admission.json"))
+fa = json.load(open(f"{ADM}/fleet_admission.json"))
 for nm, c in fa["rev1final"].items():
     add(name2sha[nm], c["wins"], c["games"], "rev1f", "fleet_admission.rev1final", "rev1@24M")
 for tag, path, scale in [("R2ACTION", "pilot_R2ACTION_n300.json", "gen15"),
@@ -327,7 +352,7 @@ meta = {
         "curated_untaught_after_rev4": sorted(CURATED - set(TAUGHT) - set(REV4) - set(HELDOUT)),
     },
     "sources": {
-        "r3_admission": f"{P}/r3_admission.json", "fleet_admission": f"{P}/fleet_admission.json",
+        "r3_admission": f"{ADM}/r3_admission.json", "fleet_admission": f"{ADM}/fleet_admission.json",
         "pilot_R2ACTION_n300": f"{P}/pilot_R2ACTION_n300.json",
         "cov_R2ACTION": f"{P}/cov_R2ACTION.json", "cov_rev1fin": f"{P}/cov_rev1fin.json",
         "headroom_screen": f"{P}/headroom_screen.json (IN FLIGHT at build time)",
@@ -426,10 +451,17 @@ w("are still pool teams; the teams actually trained are the three curated `COV_*
 w("### The arithmetic that caps the ambition\n")
 w("| set | n | note |")
 w("|---|---|---|")
+_f56 = sorted(s for s in CURATED if s in TAUGHT)
+_r4new = sorted(s for s in CURATED if s in REV4 and s not in TAUGHT)
+_untaught = sorted(s for s in CURATED if s not in TAUGHT and s not in REV4 and s not in HELDOUT)
 w("| curated teams | 32 | the whole legal exploiter-trainee universe |")
-w("| taught by F5a–e + F6a–f (incl. the 9 meter) | 12 | rev-2 and rev-3 fleets |")
-w("| newly taught by rev-4 R4S3a/b/c (frozen argvs) | 12 | 24 distinct once rev-4 lands |")
-w("| **curated and still untaught after rev-4** | **8** | `ce35b736 · b89e1e37 · 9909f2e9 · e11829f0 · f7ba5702 · dbf81d8e · a04c29cf · 9f27f5d3` |")
+w(f"| taught by F5a–e + F6a–f (incl. the 9 meter) | {len(_f56)} | rev-2 and rev-3 fleets |")
+w(f"| newly taught by rev-4 R4S3a/b/c | {len(_r4new)} | {len(_f56) + len(_r4new)} distinct |")
+# DERIVED, never hand-listed: this row was a hardcoded literal until 2026-08-31 and it named 4 teams
+# rev-4 never pinned while missing 4 it did — the count 8 was right the whole time, which is exactly
+# why nothing caught it. The sets now come from promotion_exclusions.json (run metadata).
+w(f"| **curated and still untaught after rev-4** | **{len(_untaught)}** | "
+  f"`{' · '.join(sorted(stem(s)[:8] for s in _untaught))}` |")
 w("| held out (`probes/offpin_{0,1}.txt`) | 2 | pool teams, not curated — the off-slice transfer instrument |\n")
 w("> **A 40-team revolution cannot be built from the curated set.** Even ignoring the exclusions")
 w("> entirely, 32 < 40; honoring them leaves **8**. Three ways forward, none of them free, and this")
@@ -648,9 +680,11 @@ for k, v in meta["sources"].items():
 w("")
 w(f"**Freshness of the live source:** {len([x for x in hs if x not in ('_meta', 'POOLED')])} of 20 "
   "`headroom_screen` rows had landed when this was built.\n")
-w("The two admission artifacts and the piloting/coverage probes live in a **session-scoped job")
-w("directory** (`~/.claude/jobs/1046b1d6/tmp/probes`), not in the repo. Every number that this slate")
-w("depends on is copied into `team_slate_40.json` so the slate survives that directory's deletion.\n")
+w("**The two admission artifacts are COMMITTED** (2026-08-31) at")
+w("`designs/research_state/measurements/admission_artifacts/`, byte-identically. The")
+w("piloting/coverage probes still live only in a **session-scoped job directory**")
+w("(`~/.claude/jobs/1046b1d6/tmp/probes`); every number this slate depends on is copied into")
+w("`team_slate_40.json` so the slate survives that directory's deletion.\n")
 w("**Re-running this slate.** `designs/ai_v12/team_slate_build.py` regenerates both files from the")
 w("artifacts above in ~5 s (read-only; no models, no battles). Run it after the in-flight headroom")
 w("screen finishes — it promotes the 8 untaught curated teams from tier B to tier A and re-fits the")
