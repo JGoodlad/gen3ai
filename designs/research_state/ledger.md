@@ -7559,3 +7559,31 @@ predicts**, and consistent with the stall-while-ahead history. Rhyme with the co
 probe holds on every axis: right sign, weak amplitude, no crossing, safe-bias at equality
 (0.569 here vs the probe's 0.79 at engineered equality). **Refines the capstone's frozen
 prediction table without editing it: the arms' discriminating half is the AHEAD side.**
+
+### 🔴 CREDIT-SURFACE HYPOTHESIS REFUTED ON ITS OWN NAMED EVIDENCE — exploiters do NOT farm boundary states; the INVERSION is the invariant (2026-08-31)
+
+**`741d9e3` on main — `measurements/exploiter_fingerprint_2026-08-31.{md,json}` +
+`exploiter_fingerprint_probe.py`.** 560 exploiter-vs-target battles across all 14 admitted
+teachers (rev-2/3/4), 112-battle falsify overlay, every state RE-SCORED under the victim's
+own head. The hypothesis registered ~18 h earlier (ac40230) predicted exploiter wins would
+concentrate at boundary/gamble states at ≥2× the target's rate. **P1 FAILS with the SIGN
+INVERTED, significantly, in all three generations** — boundary share of exploiter-win swings
+vs target-win swings: rev-2 0.757 [0.562,0.984] · rev-3 0.429 [0.302,0.573] · rev-4 0.614
+[0.409,0.857]. Robust to band choice ([0.40,0.60], [0.30,0.70]), top-1, terminal exclusion,
+and to re-scoring under the VICTIM's head (0.73/0.46/0.69). **P2 moot: what is invariant
+across three generations is the inversion itself.** What exploiter wins actually are: EARLY
+(median swing turn 13–19 of 36–46), modest-|δ|, dice-fair, launched from ALREADY-AHEAD
+positions (median pre-swing w 0.66–0.78 ≈ the realized admission win rates) that BOTH heads
+price, with the victim reading the exploiter's seat slightly HIGHER. That is knowledge /
+line-prep against a static victim on pinned teams — not boundary-gamble farming. **The
+boundary+dice profile belongs to the TARGET's wins** (LUCK verdicts 14/40, 12/47, 4/24 in
+exploiter losses vs 2/38, 0/47, 0/23 in wins). **Flat exploitability therefore needs another
+account** (coverage / fold-harm offset are the live candidates). **NOT refuted: the credit
+defect itself** — Starmie v1/v2 and SI-2 stand; what fell is the claim that it is the surface
+exploiters farm. **Named escape hatch, and it is serious: shared-lineage HEAD BLINDNESS** —
+"boundary" was defined by the heads' own win-prob, and Starmie v2 measured those heads
+pricing the HP bar smoothly while blind to roll structure, so a true 50/50 KO race can read
+0.75 to BOTH sides and be misclassified as non-boundary. Decisive follow-up DISPATCHED:
+tight-MC ground-truth labels at the exploiter-win swing anchors. Method nugget: *when a
+hypothesis's classifier is the very quantity another probe convicted as miscalibrated, the
+refutation is provisional until ground truth replaces the classifier.*
