@@ -7616,3 +7616,42 @@ the named unrun next cell and is the knob that does not touch the PPO half; the
 content/overshoot split assumes KL additivity, which teacher b strains. **ADOPTION IS NOT
 TAKEN HERE** — the verdict is staged for owner decision (Tue PM per the standing
 no-design-decisions window); the revolution-fold argv is unchanged until then.
+
+### 🟢 HEAD-BLINDNESS ESCAPE HATCH CLOSED — the refutation STANDS and the inversion gets 5.8× STRONGER under ground truth (2026-08-31)
+
+**`measurements/exploiter_fingerprint_truthcheck_2026-08-31.{md,json}` +
+`exploiter_fingerprint_truthcheck_probe.py`.** The `2826c32` refutation classified "boundary state"
+with the model's own win-prob head; Starmie v2 had convicted that head of pricing the HP bar and not
+the roll table, so the refutation was provisional until ground truth replaced the classifier. Done:
+**333 tight-MC anchors / 175 battles / 13,320 rollouts at R=40** (recorded action, rolled to
+terminal, trainee GREEDY at its exact eval snapshot vs the reloaded target STOCHASTIC — the recorded
+regime, so MC and head estimate the same quantity). Replay gate 8/8 on the deterministic-opponent
+subset of the same runs. **P2 PASSES and STRENGTHENS: pooled boundary-share ratio 0.585
+[0.404,0.788] under the head → 0.101 [0.000,0.248] under the truth**, significantly inverted in all
+three generations and ≤0.27 in every registered sensitivity — exploiter-win swings are essentially
+NEVER at true boundary (share 0.027) while target-win swings are (0.265). **P1 FAILS WITH THE SIGN
+REVERSED**: the head reads exploiter-win anchors **−0.249 [−0.286,−0.214] TOO LOW**, not ≥0.05 too
+high; their true value is **0.908** where the head says 0.658. **The hatch's own scenario is real and
+runs the OTHER WAY:** of head-0.65–0.85 states, those in exploiter-win battles are true **0.935**
+with **0 of 63** at true boundary, while those in target-win battles are true **0.488** with **46.4%**
+at true boundary — the "reads 0.75, is really 50/50" state exists in bulk, but it is where the TARGET
+claws back, never where the exploiter wins. **ONE-NUMBER SUMMARY: at identical anchors the truth
+separates the outcome classes +0.595 (AUC 0.970); the exploiter's head +0.112 (0.679), the victim's
++0.090 (0.638)** — the shared blind spot, measured. **New conviction, not a subtraction:** the head is
+**aggregate-calibrated and resolution-blind at population scale** (mean bias +0.036 CI-straddling-zero
+vs per-state |err| 0.278; `sd_true_excess` 0.25–0.43 in EVERY predicted bin; head sd 0.196 vs truth
+0.369) — `cf_audit` G0's "the disease is RESOLUTION" replicated on a disjoint slice, and the
+strongest file argument for R1/R2: **the labels this probe manufactured are the supervision the head
+lacks.** Selection control (the anchors are head-δ-selected, which displaces `w_pre` oppositely per
+cell): bias survives in the LOWEST |δ| tercile (−0.117, mean |δ| 0.073) and barely moves rank1→rank2,
+true MC is FLAT at ~0.91 across |δ| terciles while the head slides 0.802→0.512, and structurally a
+*calibrated* head would show the SAME displacement as truth — so selection cannot make head and truth
+separate the classes by different amounts. Honest power: **31% of the fingerprint's 560 battles**,
+stratified-interleaved so the cut stayed proportional; the subsample REPRODUCES the published head
+inversion (0.585) which is what licenses it; pooled is the powered row, per-gen is continuity only.
+Coverage gap counted, never silent: 17/350 `forced_switch` anchors unopenable. **Flat exploitability
+now needs another account on two independent classifiers AND on ground truth** — coverage and the
+fold's harm channel remain live. Method nuggets: *a classifier convicted of miscalibration must be
+replaced by ground truth before its verdict is final — and the replacement can strengthen the verdict
+rather than overturn it*; and *when an escape hatch names a mechanism, measure the mechanism's SIGN,
+not just its size — this one was real, large, and pointed the opposite way.*
