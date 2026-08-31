@@ -7655,3 +7655,23 @@ fold's harm channel remain live. Method nuggets: *a classifier convicted of misc
 replaced by ground truth before its verdict is final — and the replacement can strengthen the verdict
 rather than overturn it*; and *when an escape hatch names a mechanism, measure the mechanism's SIGN,
 not just its size — this one was real, large, and pointed the opposite way.*
+
+### ⚠️ CONSEQUENCE FOR THE LIVE BUDGET LADDER: bar C's INTERPRETATION is now orphaned (2026-08-31)
+
+The training session's budget ladder (rungs 1.75/2.25/2.75M per team, forks-not-resumes,
+bars A/B/C pre-registered) was launched with bar C framed as: "A and B pass while C fails is
+exactly the credit-surface prediction, report as confirmation, not failure." **That framing
+is no longer available — the credit-surface hypothesis was refuted (2826c32) and the
+refutation STRENGTHENED 5.8× under ground truth (3856cda).** C failing now means only what it
+literally says: the fold did not reduce measured extraction — an OPEN account, with coverage
+and the fold-harm/overshoot channel as the live candidates (the latter now priced: 438475c).
+Report C's outcome descriptively; do NOT bank it as confirmation of a dead hypothesis.
+**The ladder's DESIGN is unaffected and endorsed** — forking rather than resuming is
+correct (it preserves the shape-verdict artifacts), the terminal condition at 2.75M is
+correct (above the narrow fleet's known-good 2.5M ⇒ a negative answer is a real answer), and
+per-rung WR accumulation brackets exactly the 1.5M/team number the 60M approval rests on.
+**One interaction flagged, no action:** the ladder's re-folds run at distill lr 3e-4, and bar
+B references rev-3's 0.5793 fold which was also 3e-4 — so **keeping 3e-4 for the whole ladder
+is REQUIRED for its internal validity**, notwithstanding the 1e-4 licensing verdict. The lr
+question belongs to the REVOLUTION fold, is owner-gated (Tue PM), and a 1e-4 re-fold is a
+cheap add-on cell AFTER the ladder answers, never inside it.
