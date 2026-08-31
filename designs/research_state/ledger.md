@@ -7775,3 +7775,104 @@ teams and lets pinned ones into a "fresh random draw". `taught_F5`/`taught_F6` v
 correct. ⚠️ Reproducibility: the three admission artifacts live ONLY in
 `~/.claude/jobs/1046b1d6/tmp/probes/` and are committed nowhere — re-runnable only while that
 job dir survives.
+
+### 🛠️ BOTH EXPLOITABILITY-DECOMPOSITION DEFECTS REPAIRED — a plan is not a record, and a count is not a set (2026-08-31)
+
+**`designs/research_state/measurements/exclusions_and_artifacts_repair_2026-08-31.md`.** Discharges
+action item (iii) above and the ⚠️ reproducibility note, both as CORRECTNESS repairs — no policy
+touched, no battle played, nothing under `data/teams/` moved.
+
+**FIX 1 — `promotion_exclusions.json`'s `rev4_pending` was built from FROZEN ARGVS.** It was
+generated the day before the rev-4 runs launched and the launched runs dealt different teams; all
+three arms mismatched their own `metadata.json`. Repaired from run metadata. **The union stayed 26
+and eligible stayed 693 — 4 out, 4 in — which is exactly why it survived: `promote_teams_test.py`
+already asserted the union size, the per-category counts AND `719−26=693`, and every one of those
+passed the whole time the list was wrong.** *A count-shaped check cannot see a membership error.*
+NOW EXCLUDED (rev-4 had pinned them, and they were sitting eligible for a "fresh" draw):
+`3495ef83ef` e11829f0 (R4S3a) · `21022d30fb` b89e1e37 · `a7406f6c97` a04c29cf · `c84f2b64a2`
+9f27f5d3 (R4S3b). NOW ELIGIBLE (no rev-4 arm ever trained them): `564b9be3ae` 9d5f8458 ·
+`55ff6899a2` 92832108 · `c90e782cad` 90b94599 · `fed4eee838` 61590463. `taught_F5`/`taught_F6`
+re-verified CORRECT on 11/11 arms, so the taught/untaught verdict is unaffected. Repair path
+**`python -m main.promote_teams --regenerate-exclusions`** (verify/repair/gate share ONE derivation,
+`recorded_provenance`, so a check and a repair cannot disagree); gate
+`promote_teams_test.py::test_the_committed_exclusions_agree_with_recorded_run_provenance`, which
+NAMES the offending ids in both directions and refuses to pass vacuously when no run is present —
+**verified failing on revert.** ⚠️ **The eligible COUNT is unchanged but the DRAW is not**: the
+committed demo re-drawn at its own seed moves **21 of 40** positions, because a seeded shuffle of a
+*sorted* eligible list is reproducible against a FIXED set and not stable across a change to it.
+Downstream: `team_slate_build.py` had the same root defect (it read the argvs) and now sources the
+sets from the gated artifact with its §1 untaught row DERIVED, not the hardcoded literal that named
+the right count and the wrong set; `team_slate_40.{md,json}` corrected in place on the
+exclusion-derived fields ONLY — a full re-cut was tried and reverted because the `headroom_screen`
+has since completed and would move tier A 18→32 and the generation offset −0.0100→−0.0239, which is
+a research re-cut, not a repair.
+
+**FIX 2 — the three admission artifacts are COMMITTED**, byte-identically, at
+`measurements/admission_artifacts/` with a provenance README; `exploitability_taught_untaught.py`'s
+default `--probe-dir` now points there. Verified: `main.exploitability` from the committed copies is
+**byte-identical output** to the job-directory run (rev-2 +0.1165 / rev-3 +0.1350 / rev-4 +0.1252
+reproduce exactly, no schema refusal), and the decomposition rebuilds its published JSON exactly —
+the only difference in the whole document being the three recorded `artifact` path strings. Gate:
+`exploitability_test.py::test_the_committed_admission_artifact_reproduces_its_published_row` (×3).
+The piloting/coverage probes stay uncommitted on purpose — already distilled into
+`team_slate_40.json`; these three are the ones a live TOOL reads.
+
+### 🟢 KO-BOUNDARY DECODABILITY — expressiveness ACQUITTED; the head is beaten by a LINEAR map of its own input (2026-08-31)
+
+**`designs/research_state/measurements/ko_boundary_decodability_2026-08-31.md`.** The owner's
+question — *"is the win-prob head's blindness to knockout-roll structure evidence that we need GLU
+to produce those sharp changes?"* — answered NO, on a three-way discriminator, on the frozen
+`ai_v9_59_R2ACTION_0827`.
+
+**The DamageOperator fact, asked for by name.** There is no roll distribution, no variance channel
+and no second moment anywhere in the block — **but** `ko = acc·clamp((dmg−cur_hp)/(0.15·dmg),0,1)`
+(`damage_op.py:484`) **is the closed form of the 16-roll KO fraction**, shipped as its own channel
+in both directions. Measured against exact ground truth on the Starmie/Tyranitar sweep it reads
+Hydro Pump's **0.8000 at all 22 points** and tracks Surf's KO fraction at **slope +1.166, r=0.995**
+— while the win-prob head, on the SAME forward, moves at **slope +0.0218**. *The variance is
+absent; the functional of the variance we need is present, and only the second question decides.*
+
+**Population arm** — 9,119 real decisions over all 474 R2ACTION eval-trace battles, ground truth
+from **64 fresh-dice re-rolls each** (664,256 rollouts, 15 min on 2 niced cores, zero errors),
+9 taps × 3 probe classes, grouped 5-fold CV over BATTLES:
+
+| | raw 2501-dim obs | op `pko` (ONE scalar) | `value_pooled` (the head's INPUT) | the win-prob head |
+|---|---|---|---|---|
+| linear R² | **+0.066** | +0.398 | +0.314 | — |
+| AUC | 0.704 | 0.843 | **0.845** (0.798 open-race) | **0.588** (**0.517 = chance** open-race) |
+
+**`WinProbHead` is a 2-layer MLP — strictly MORE expressive than the linear map that beats it by
+0.28 AUC on its own 128 inputs.** A gated probe buys **+0.10 R² on RAW PHYSICS scalars** (`op_flat`)
+and **≤ +0.05, NEGATIVE in 5 of 12 cells, on the learned tensors a GLU would be inserted into** —
+and **±0.003 on `op_pko`**, the scalar that already is the ratio. **The GLU program is not
+supported by this evidence.** The raw obs failing (+0.066) while the op tap succeeds (+0.450) is
+the DamageOperator earning its existence, not a coverage failure.
+
+**What binds instead, two separable halves.** (a) SUPERVISION: the head's label is *"the MC episode
+OUTCOME (win=1/loss=0) propagated to every step"* (`aux_value_heads.py:22`) — one Bernoulli draw per
+game copied onto every decision, which teaches LEVEL and cannot teach RESOLUTION. This is the
+missing half of `exploiter_fingerprint_truthcheck`'s "aggregate-calibrated, resolution-blind"
+verdict: **the resolution the head lacks is available to it.** (b) DELIVERY, for our own knockouts:
+`_value_pooled_routes` hands `UnifiedValueReadout` only `incoming_rows`
+(`extractor_forward.py:786`), so the OUTGOING KO channel has **no route into the critic at all** —
+corroborated by the head's own direction split (**AUC 0.653 incoming vs 0.588/0.517 outgoing**).
+Cheapest next test, no training run: **route the outgoing rows in as a sixth source and re-run the
+`value_pooled` column.**
+
+**Predictions scored 1 half / 1 fail / 1 partial, and the verdict came from a comparison none of
+them named.** P1 half-right and wrong where it mattered. P2 fails its `R²≥0.5` bar (best trunk tap
+0.375) while its conclusion stands on the fairer head-vs-linear-probe test. P3 (pre-registered as
+git blob `5ea97e01`) PARTIAL — passes on `op_flat` in both subsets (0.082/0.178 vs 0.046/0.033),
+reverses on `op_move_cell` because v96 deleted `intent_threshold`'s p_KO **vf** route while the
+policy cell kept it; the registration did not name its comparator. *A low dV meant the critic was
+not LEANING on that route — exactly what a head ignoring what it has produces. dV measures
+dependence, not coverage.*
+
+⚠️ **Two shipped operator calibration defects found on the way, both arithmetic, neither a missing
+capability:** `ko` carries **no crit term** (`_DMG_CRIT_P` is documentation, never multiplied in) so
+it cannot express gen3's 1/16 floor — measured reading exactly 0.0000 at six sweep points whose true
+KO probability runs 0.355→0.062; and the outgoing block's **neutral-0-EV defender bulk** measures
+**5.8% low** on the max roll (0.925 of max HP against a true 0.982), which is what zeroes the top
+third of the sweep. **NOT claimed:** that better labels *will* fix the head (decodability is not
+use), nor that the representation is clean — **40–54% of the KO variance is undecodable from EVERY
+tap**, part genuine hidden-information floor, and this probe cannot split those two.
