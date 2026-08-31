@@ -7528,3 +7528,34 @@ miscalibration (boundary credit) that any best response can farm and NO fold can
 and ai_v12 is the lever aimed at it. Testable now: fingerprint WHAT the admitted exploiters
 actually farm — if their wins concentrate at boundary/guess/gamble states, the hypothesis
 stands and the wheel's compounding is gated on the clean world, not on coverage.
+
+### 🎲 RISK CAPSTONE BASELINE SCORED — the PRIMARY instrument has ZERO population support; explosion FIRES the surprise, but only behind (2026-08-31)
+
+**`419facd` on main — `measurements/risk_capstone_baseline_gen15_2026-08-31.{md,json,png}` +
+the reusable `risk_capstone_curves.py` (`--runs` parametrized: the ai_v12 arm rows are the
+SAME invocation).** 17 current-era runs · 8,405 battles · 224,995 move decisions, trace-only.
+
+**(1) THE REGISTERED PRIMARY INSTRUMENT IS UNSCOREABLE, and it is STRUCTURAL, not sampling:
+0 pair-legal decisions out of 224,995 — every canonical pair (Surf/HydroPump,
+IceBeam/Blizzard, Tbolt/Thunder) reads n=0, and only 9 of 4,566 pool mons carry ANY same-type
+power/accuracy pair** (real teams don't spend the slot). The ai_v12 arms draw the same pool ⇒
+the arm rows will ALSO read n=0. **The capstone's primary endpoint therefore REQUIRES a
+constructed carrier** (the Starmie/Ttar pattern) or a slate-augmented team set — banked in
+the capstone doc §3. Method nugget: *a pre-registered instrument can be unmeasurable in the
+population it was registered against; check the carrier's base rate at registration time.*
+This retroactively vindicates the owner's constructed-scenario instinct — the hand-built
+probe was not a complement to the population curve, it was the ONLY way to measure this axis.
+Confounded companion (same-type control dropped, moveset FE): pooled −0.036 [−0.061,−0.011],
+FE −0.052 — near-flat, CONSISTENT with the shaped-world prediction.
+
+**(2) EXPLOSION TIMING FIRES THE REGISTERED SURPRISE CONDITION — clearly falling, −0.085
+[−0.106,−0.063]** (n=35,324 boom-legal; FE −0.088 ⇒ within-moveset, not composition;
+Selfdestruct −0.178 / Explosion −0.055). **But the fall is ENTIRELY the behind side**: P(boom)
+0.330 at the lowest wp decile → plateau ~0.17 from wp 0.5 → **RISES to 0.208 at wp>0.9**. So
+the shaped policy DOES gamble more when behind (the convex half is present — weakening the
+strong form of "material shaping ⇒ risk-blind") while **failing to consolidate when ahead —
+the concave half is absent, exactly the consolidation failure the clean-world theory
+predicts**, and consistent with the stall-while-ahead history. Rhyme with the constructed
+probe holds on every axis: right sign, weak amplitude, no crossing, safe-bias at equality
+(0.569 here vs the probe's 0.79 at engineered equality). **Refines the capstone's frozen
+prediction table without editing it: the arms' discriminating half is the AHEAD side.**
