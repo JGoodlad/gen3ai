@@ -7736,3 +7736,42 @@ artifact rather than test anything. Method nuggets: *a mean over a set that grow
 members measures the set, not the agent — restrict to the intersection before reading a sign*; and
 *when a control variable is itself the thing the treatment moves, the partial effect is the verdict
 and its invariance to the control's calibration is what makes it trustworthy*.
+
+### 🚨 THE FLAT EXPLOITABILITY CURVE IS A COMPOSITION ARTIFACT — the METER is broken, not (necessarily) the wheel (2026-08-31)
+
+**`91e9a68` on main — `measurements/exploitability_taught_untaught_2026-08-31.{md,json}`.**
+Pure re-analysis, 46 cells classified from recorded provenance alone (Hall-elimination on
+name→team-file; straddlers reported UNRESOLVED, never guessed). **THE HEADLINE: over each
+generation's OWN slate raw extraction RISES (0.1187 → 0.1285 → 0.1386); on the 9 teams every
+fleet shares it FALLS (0.1200 → 0.0856). Same battles, opposite sign** — the flat/rising
+published curve is a slate-composition artifact, i.e. the Simpson trap this project already
+banked at the correlation level, now at the campaign level. Neither registered account
+explains flatness: COVERAGE gets its first clause only (taught cells DID fall on the one real
+curve step, `ordered` −0.0344, 7/9 teams, independently replicated at −0.0325 by the rev-4
+fleet — but dispersion is 2.52× binomial and the team-clustered CI [−0.0725,+0.0078] does not
+clear zero ⇒ SUGGESTIVE, not established; its "untaught flat" clause is UNTESTABLE here since
+rev-2's slate is the 9 meter teams the next fold taught). HEADROOM explains the LEVEL gap
+(taught −0.1100 vs untaught, z=−4.90 at rev-3) but is REJECTED as the explanation of
+flatness: at matched headroom the taught coefficient is −0.0201 [−0.0701,+0.0299] z=−0.79,
+and that verdict is EXACTLY invariant to the ceiling constant (identical to 6dp at
+C∈{0.60,0.6881,0.80,1.00}) — so it does not rest on 0.6881. Bad case NOT triggered.
+**`net` SYSTEMATICALLY HIDES THE WHEEL: it differs from `ordered` by exactly the target's
+gain — i.e. by what a fold BUYS (0.7pp vs 3.4pp on the same teams).** Report the curve on the
+common-team restriction with `ordered` beside `net`, always. **Prediction 2's conclusion held
+but its MECHANISM was wrong — the taught trend is not underpowered, it is UNDEFINED: rev-3
+and rev-4 best-respond to the SAME target (per every arm's recorded `--exploiter`), so rev-4
+is not a curve point.** Three action items banked: (i) 🚨 **BAR C FAILS BY CONSTRUCTION on
+the `net` meter over a growing slate** — the live ladder must pre-register the common-team
+restriction + `ordered` or it will merely re-derive this artifact (relayed); (ii) the budget
+invariance does NOT hold on the coverage class — rev-3 2.50M/team → rev-4 1.25M/team cost
+**−0.1217 `ordered`** on shared COV teams (teacher absolute 0.6650→0.5742) while taught cells
+moved +0.0019, and **the 40-team revolution is provisioned at 1.5M/team, nearer the losing
+arm** (budget × teams-per-teacher confounded; the live ladder is the right instrument); also
+the ceiling is NOT team-invariant (0.5742 coverage vs 0.69–0.70 meter), so any "X pp of
+headroom left" claim must name its team class; (iii) **`designs/ai_v12/promotion_exclusions.json`'s
+`rev4_pending` block is STALE on all three arms** — names 4 teams rev-4 never pinned, misses
+4 it did; it is the standing exclusion list for the 40-team draw, so it both wastes eligible
+teams and lets pinned ones into a "fresh random draw". `taught_F5`/`taught_F6` verified
+correct. ⚠️ Reproducibility: the three admission artifacts live ONLY in
+`~/.claude/jobs/1046b1d6/tmp/probes/` and are committed nowhere — re-runnable only while that
+job dir survives.
