@@ -7587,3 +7587,32 @@ pricing the HP bar smoothly while blind to roll structure, so a true 50/50 KO ra
 tight-MC ground-truth labels at the exploiter-win swing anchors. Method nugget: *when a
 hypothesis's classifier is the very quantity another probe convicted as miscalibrated, the
 refutation is provisional until ground truth replaces the classifier.*
+
+### 🟢 LR LICENSING PROBE — LICENSED: 1e-4 Pareto-dominates on the REAL ingredients, 6/6 arms (2026-08-31)
+
+**`438475c` on main — `measurements/lr_licensing_probe_2026-08-31.{md,json}` +
+`lr_licensing_probe.py`.** 18 cells, 2.62 CPU-h, zero failures. The datum the
+outcome-over-impl ruling (38fa4eb) required before any deviation from v8 fidelity: **on the
+actual rev-4 fold ingredients, distill-term lr 1e-4 Pareto-dominates 3e-4 on 6/6 arms** —
+collateral KL@400 **−39.1%** (30–47% per arm), off-slice self-agreement 0.632→0.709, |ΔV|
+halved, and the absorption ceiling strictly HIGHER everywhere (mean +0.027). Cheaper at
+MATCHED absorption too (crossings at steps 1–49), so not a 400-step endpoint artifact.
+**The number the argv turns on: net teacher content is UNCHANGED (0.385 vs 0.357) while
+absorption rises 31% — the entire saving is the content-free overshoot half; per unit of
+total damage 1e-4 buys 2.15× the absorbed behaviour.** Predictions: P1 PASS 6/6 (honest
+caveat: the smallest ceiling gain equals the largest seed spread, so the ceiling half rests
+on 6/6 consistency, not one margin; the collateral half is 16–26× seed noise). P2 PASS both
+clauses, first NARROWLY — overshoot share 60.1/62.4% against a pre-declared ≥60% bar (79% on
+the rev-1 lineage): **a WEAKER overshoot account here, and a 65% bar would have failed it** —
+recorded because the near-miss is the honest part. Controls (student onto own argmax) shrink
+59.4%. **LOAD-BEARING CORRECTION to the dispatch: the fold parent is
+`ai_v9_59_R2ACTION_0827`, NOT ai_v9_70 — rev-2, rev-3 AND rev-4 all fork the SAME common
+base, which is what keeps the frozen arm table matched** (ai_v9_70 is a sibling arm's
+output); a spot-check on the other candidate parent passes in the same direction, so the
+verdict is parent-invariant. **CARRY THESE LIMITS:** not a fold simulation (no PPO loss
+beside the distill term); **the step size is NOT `--distill-coef`** — Adam's first step is
+lr·sign(g), substantially invariant to a uniform gradient rescale, so a coefficient arm is
+the named unrun next cell and is the knob that does not touch the PPO half; the
+content/overshoot split assumes KL additivity, which teacher b strains. **ADOPTION IS NOT
+TAKEN HERE** — the verdict is staged for owner decision (Tue PM per the standing
+no-design-decisions window); the revolution-fold argv is unchanged until then.
