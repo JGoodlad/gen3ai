@@ -1,0 +1,506 @@
+{
+ "_meta": {
+  "games_per_arm": 800,
+  "per_team": 400,
+  "pool": 719,
+  "seed_convention": "41000 + TEAM_ORDER.index(team)",
+  "offslice_refs": "REUSED from transfer_gate.json",
+  "team_source": "each run's RECORDED --trainee-teams",
+  "resumed_names": [
+   "BlueOffense",
+   "CBMetaCroCune",
+   "COV_460b8c99",
+   "COV_7036a0a1",
+   "COV_82e97fe2",
+   "JynxSO",
+   "MedichamCune",
+   "MixZap",
+   "N_09721462",
+   "N_0fa105ae",
+   "N_53f215cb",
+   "N_6d56d06b",
+   "N_8cdc78b2",
+   "N_9f27f5d3",
+   "N_a04c29cf",
+   "N_a3ca232f",
+   "N_b89e1e37",
+   "N_d4e74946",
+   "N_e11829f0",
+   "N_f6229d2c",
+   "Q6a",
+   "Q6b",
+   "RaikouCelebi",
+   "ZapDug"
+  ]
+ },
+ "target": {
+  "ZapDug": {
+   "wins": 257,
+   "games": 400,
+   "wr": 0.6425
+  },
+  "JynxSO": {
+   "wins": 227,
+   "games": 400,
+   "wr": 0.5675
+  },
+  "RaikouCelebi": {
+   "wins": 241,
+   "games": 400,
+   "wr": 0.6025
+  },
+  "MixZap": {
+   "wins": 221,
+   "games": 400,
+   "wr": 0.5525
+  },
+  "N_53f215cb": {
+   "wins": 143,
+   "games": 400,
+   "wr": 0.3575
+  },
+  "N_a3ca232f": {
+   "wins": 194,
+   "games": 400,
+   "wr": 0.485
+  },
+  "N_8cdc78b2": {
+   "wins": 178,
+   "games": 400,
+   "wr": 0.445
+  },
+  "N_e11829f0": {
+   "wins": 234,
+   "games": 400,
+   "wr": 0.585
+  },
+  "BlueOffense": {
+   "wins": 250,
+   "games": 400,
+   "wr": 0.625
+  },
+  "MedichamCune": {
+   "wins": 264,
+   "games": 400,
+   "wr": 0.66
+  },
+  "CBMetaCroCune": {
+   "wins": 260,
+   "games": 400,
+   "wr": 0.65
+  },
+  "Q6a": {
+   "wins": 223,
+   "games": 400,
+   "wr": 0.5575
+  },
+  "N_9f27f5d3": {
+   "wins": 149,
+   "games": 400,
+   "wr": 0.3725
+  },
+  "N_a04c29cf": {
+   "wins": 163,
+   "games": 400,
+   "wr": 0.4075
+  },
+  "N_0fa105ae": {
+   "wins": 238,
+   "games": 400,
+   "wr": 0.595
+  },
+  "N_b89e1e37": {
+   "wins": 219,
+   "games": 400,
+   "wr": 0.5475
+  },
+  "Q6b": {
+   "wins": 231,
+   "games": 400,
+   "wr": 0.5775
+  },
+  "COV_82e97fe2": {
+   "wins": 166,
+   "games": 400,
+   "wr": 0.415
+  },
+  "COV_460b8c99": {
+   "wins": 140,
+   "games": 400,
+   "wr": 0.35
+  },
+  "N_09721462": {
+   "wins": 170,
+   "games": 400,
+   "wr": 0.425
+  },
+  "N_d4e74946": {
+   "wins": 207,
+   "games": 400,
+   "wr": 0.5175
+  },
+  "N_6d56d06b": {
+   "wins": 223,
+   "games": 400,
+   "wr": 0.5575
+  },
+  "COV_7036a0a1": {
+   "wins": 220,
+   "games": 400,
+   "wr": 0.55
+  },
+  "N_f6229d2c": {
+   "wins": 224,
+   "games": 400,
+   "wr": 0.56
+  }
+ },
+ "rev1final": {
+  "ZapDug": {
+   "wins": 250,
+   "games": 400,
+   "wr": 0.625
+  },
+  "N_53f215cb": {
+   "wins": 129,
+   "games": 400,
+   "wr": 0.3225
+  },
+  "BlueOffense": {
+   "wins": 208,
+   "games": 400,
+   "wr": 0.52
+  },
+  "N_9f27f5d3": {
+   "wins": 144,
+   "games": 400,
+   "wr": 0.36
+  },
+  "Q6b": {
+   "wins": 235,
+   "games": 400,
+   "wr": 0.5875
+  },
+  "N_09721462": {
+   "wins": 210,
+   "games": 400,
+   "wr": 0.525
+  },
+  "JynxSO": {
+   "wins": 224,
+   "games": 400,
+   "wr": 0.56
+  },
+  "N_a3ca232f": {
+   "wins": 214,
+   "games": 400,
+   "wr": 0.535
+  },
+  "MedichamCune": {
+   "wins": 251,
+   "games": 400,
+   "wr": 0.6275
+  },
+  "N_a04c29cf": {
+   "wins": 213,
+   "games": 400,
+   "wr": 0.5325
+  },
+  "COV_82e97fe2": {
+   "wins": 141,
+   "games": 400,
+   "wr": 0.3525
+  },
+  "N_d4e74946": {
+   "wins": 230,
+   "games": 400,
+   "wr": 0.575
+  },
+  "RaikouCelebi": {
+   "wins": 225,
+   "games": 400,
+   "wr": 0.5625
+  },
+  "N_8cdc78b2": {
+   "wins": 196,
+   "games": 400,
+   "wr": 0.49
+  },
+  "CBMetaCroCune": {
+   "wins": 251,
+   "games": 400,
+   "wr": 0.6275
+  },
+  "N_0fa105ae": {
+   "wins": 233,
+   "games": 400,
+   "wr": 0.5825
+  },
+  "COV_460b8c99": {
+   "wins": 155,
+   "games": 400,
+   "wr": 0.3875
+  },
+  "N_6d56d06b": {
+   "wins": 218,
+   "games": 400,
+   "wr": 0.545
+  },
+  "MixZap": {
+   "wins": 199,
+   "games": 400,
+   "wr": 0.4975
+  },
+  "N_e11829f0": {
+   "wins": 250,
+   "games": 400,
+   "wr": 0.625
+  },
+  "Q6a": {
+   "wins": 244,
+   "games": 400,
+   "wr": 0.61
+  },
+  "N_b89e1e37": {
+   "wins": 267,
+   "games": 400,
+   "wr": 0.6675
+  },
+  "COV_7036a0a1": {
+   "wins": 237,
+   "games": 400,
+   "wr": 0.5925
+  },
+  "N_f6229d2c": {
+   "wins": 247,
+   "games": 400,
+   "wr": 0.6175
+  }
+ },
+ "R4S3a": {
+  "ZapDug": {
+   "wins": 283,
+   "games": 400,
+   "wr": 0.7075
+  },
+  "N_53f215cb": {
+   "wins": 217,
+   "games": 400,
+   "wr": 0.5425
+  },
+  "JynxSO": {
+   "wins": 282,
+   "games": 400,
+   "wr": 0.705
+  },
+  "N_a3ca232f": {
+   "wins": 240,
+   "games": 400,
+   "wr": 0.6
+  },
+  "RaikouCelebi": {
+   "wins": 271,
+   "games": 400,
+   "wr": 0.6775
+  },
+  "N_8cdc78b2": {
+   "wins": 244,
+   "games": 400,
+   "wr": 0.61
+  },
+  "MixZap": {
+   "wins": 244,
+   "games": 400,
+   "wr": 0.61
+  },
+  "N_e11829f0": {
+   "wins": 270,
+   "games": 400,
+   "wr": 0.675
+  }
+ },
+ "R4S3b": {
+  "BlueOffense": {
+   "wins": 240,
+   "games": 400,
+   "wr": 0.6
+  },
+  "N_9f27f5d3": {
+   "wins": 242,
+   "games": 400,
+   "wr": 0.605
+  },
+  "MedichamCune": {
+   "wins": 309,
+   "games": 400,
+   "wr": 0.7725
+  },
+  "N_a04c29cf": {
+   "wins": 279,
+   "games": 400,
+   "wr": 0.6975
+  },
+  "CBMetaCroCune": {
+   "wins": 271,
+   "games": 400,
+   "wr": 0.6775
+  },
+  "N_0fa105ae": {
+   "wins": 283,
+   "games": 400,
+   "wr": 0.7075
+  },
+  "Q6a": {
+   "wins": 298,
+   "games": 400,
+   "wr": 0.745
+  },
+  "N_b89e1e37": {
+   "wins": 278,
+   "games": 400,
+   "wr": 0.695
+  }
+ },
+ "R4S3c": {
+  "COV_460b8c99": {
+   "wins": 216,
+   "games": 400,
+   "wr": 0.54
+  },
+  "COV_7036a0a1": {
+   "wins": 259,
+   "games": 400,
+   "wr": 0.6475
+  },
+  "N_09721462": {
+   "wins": 296,
+   "games": 400,
+   "wr": 0.74
+  },
+  "N_d4e74946": {
+   "wins": 279,
+   "games": 400,
+   "wr": 0.6975
+  },
+  "Q6b": {
+   "wins": 291,
+   "games": 400,
+   "wr": 0.7275
+  },
+  "N_6d56d06b": {
+   "wins": 260,
+   "games": 400,
+   "wr": 0.65
+  },
+  "COV_82e97fe2": {
+   "wins": 214,
+   "games": 400,
+   "wr": 0.535
+  },
+  "N_f6229d2c": {
+   "wins": 307,
+   "games": 400,
+   "wr": 0.7675
+  }
+ },
+ "ADMISSION": {
+  "R4S3a": {
+   "slice": [
+    "ZapDug",
+    "JynxSO",
+    "RaikouCelebi",
+    "MixZap",
+    "N_53f215cb",
+    "N_a3ca232f",
+    "N_8cdc78b2",
+    "N_e11829f0"
+   ],
+   "net": {
+    "d": 0.11375000000000002,
+    "lo": 0.08976007186639635,
+    "hi": 0.1377399281336037,
+    "z": 9.293483446818039
+   },
+   "ordered": {
+    "d": 0.11125000000000007,
+    "lo": 0.0872636297918648,
+    "hi": 0.13523637020813534,
+    "z": 9.090579279312795
+   },
+   "seniority": {
+    "d": -0.0024999999999999467,
+    "lo": -0.02696026533729941,
+    "hi": 0.021960265337299518,
+    "z": -0.20032489150998228
+   },
+   "admitted": true,
+   "teacher_abs": 0.6409375
+  },
+  "R4S3b": {
+   "slice": [
+    "BlueOffense",
+    "MedichamCune",
+    "CBMetaCroCune",
+    "Q6a",
+    "N_9f27f5d3",
+    "N_a04c29cf",
+    "N_0fa105ae",
+    "N_b89e1e37"
+   ],
+   "net": {
+    "d": 0.12156250000000002,
+    "lo": 0.0980502597130655,
+    "hi": 0.14507474028693454,
+    "z": 10.133551592376321
+   },
+   "ordered": {
+    "d": 0.135625,
+    "lo": 0.11207050239089808,
+    "hi": 0.1591794976091019,
+    "z": 11.285530449916289
+   },
+   "seniority": {
+    "d": 0.014062499999999978,
+    "lo": -0.010264438919184538,
+    "hi": 0.03838943891918449,
+    "z": 1.1330032147309679
+   },
+   "admitted": true,
+   "teacher_abs": 0.6875
+  },
+  "R4S3c": {
+   "slice": [
+    "Q6b",
+    "COV_82e97fe2",
+    "COV_460b8c99",
+    "COV_7036a0a1",
+    "N_09721462",
+    "N_d4e74946",
+    "N_6d56d06b",
+    "N_f6229d2c"
+   ],
+   "net": {
+    "d": 0.14031249999999995,
+    "lo": 0.11648645912085662,
+    "hi": 0.16413854087914329,
+    "z": 11.542517760084023
+   },
+   "ordered": {
+    "d": 0.16906249999999995,
+    "lo": 0.14522423970163223,
+    "hi": 0.19290076029836767,
+    "z": 13.900448096990091
+   },
+   "seniority": {
+    "d": 0.028749999999999998,
+    "lo": 0.004263617553975665,
+    "hi": 0.05323638244602433,
+    "z": 2.3012790935620266
+   },
+   "admitted": true,
+   "teacher_abs": 0.663125
+  }
+ },
+ "N_FAILED": 0,
+ "R2CTRL_RULE": "bias mismatch STANDS (named caveat)"
+}

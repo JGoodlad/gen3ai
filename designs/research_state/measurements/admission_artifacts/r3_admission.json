@@ -1,0 +1,386 @@
+{
+ "_meta": {
+  "games_per_arm": 800,
+  "per_team": 400,
+  "pool": 719,
+  "seed_convention": "41000 + TEAM_ORDER.index(team)",
+  "offslice_refs": "REUSED from transfer_gate.json",
+  "team_source": "each run's RECORDED --trainee-teams",
+  "resumed_names": [
+   "BlueOffense",
+   "CBMetaCroCune",
+   "JynxSO",
+   "MedichamCune",
+   "MixZap",
+   "Q6a",
+   "Q6b",
+   "RaikouCelebi",
+   "ZapDug"
+  ]
+ },
+ "target": {
+  "ZapDug": {
+   "wins": 254,
+   "games": 400,
+   "wr": 0.635
+  },
+  "JynxSO": {
+   "wins": 240,
+   "games": 400,
+   "wr": 0.6
+  },
+  "RaikouCelebi": {
+   "wins": 261,
+   "games": 400,
+   "wr": 0.6525
+  },
+  "MixZap": {
+   "wins": 231,
+   "games": 400,
+   "wr": 0.5775
+  },
+  "BlueOffense": {
+   "wins": 236,
+   "games": 400,
+   "wr": 0.59
+  },
+  "MedichamCune": {
+   "wins": 268,
+   "games": 400,
+   "wr": 0.67
+  },
+  "CBMetaCroCune": {
+   "wins": 249,
+   "games": 400,
+   "wr": 0.6225
+  },
+  "Q6a": {
+   "wins": 216,
+   "games": 400,
+   "wr": 0.54
+  },
+  "Q6b": {
+   "wins": 249,
+   "games": 400,
+   "wr": 0.6225
+  },
+  "COV_82e97fe2": {
+   "wins": 139,
+   "games": 400,
+   "wr": 0.3475
+  },
+  "COV_460b8c99": {
+   "wins": 130,
+   "games": 400,
+   "wr": 0.325
+  },
+  "COV_7036a0a1": {
+   "wins": 220,
+   "games": 400,
+   "wr": 0.55
+  }
+ },
+ "rev1final": {
+  "ZapDug": {
+   "wins": 249,
+   "games": 400,
+   "wr": 0.6225
+  },
+  "JynxSO": {
+   "wins": 233,
+   "games": 400,
+   "wr": 0.5825
+  },
+  "RaikouCelebi": {
+   "wins": 238,
+   "games": 400,
+   "wr": 0.595
+  },
+  "MixZap": {
+   "wins": 222,
+   "games": 400,
+   "wr": 0.555
+  },
+  "BlueOffense": {
+   "wins": 211,
+   "games": 400,
+   "wr": 0.5275
+  },
+  "MedichamCune": {
+   "wins": 249,
+   "games": 400,
+   "wr": 0.6225
+  },
+  "CBMetaCroCune": {
+   "wins": 246,
+   "games": 400,
+   "wr": 0.615
+  },
+  "Q6a": {
+   "wins": 237,
+   "games": 400,
+   "wr": 0.5925
+  },
+  "Q6b": {
+   "wins": 240,
+   "games": 400,
+   "wr": 0.6
+  },
+  "COV_82e97fe2": {
+   "wins": 150,
+   "games": 400,
+   "wr": 0.375
+  },
+  "COV_460b8c99": {
+   "wins": 151,
+   "games": 400,
+   "wr": 0.3775
+  },
+  "COV_7036a0a1": {
+   "wins": 236,
+   "games": 400,
+   "wr": 0.59
+  }
+ },
+ "F6a": {
+  "ZapDug": {
+   "wins": 272,
+   "games": 400,
+   "wr": 0.68
+  },
+  "JynxSO": {
+   "wins": 289,
+   "games": 400,
+   "wr": 0.7225
+  }
+ },
+ "F6b": {
+  "RaikouCelebi": {
+   "wins": 267,
+   "games": 400,
+   "wr": 0.6675
+  },
+  "MixZap": {
+   "wins": 262,
+   "games": 400,
+   "wr": 0.655
+  }
+ },
+ "F6c": {
+  "BlueOffense": {
+   "wins": 270,
+   "games": 400,
+   "wr": 0.675
+  },
+  "MedichamCune": {
+   "wins": 303,
+   "games": 400,
+   "wr": 0.7575
+  }
+ },
+ "F6d": {
+  "CBMetaCroCune": {
+   "wins": 273,
+   "games": 400,
+   "wr": 0.6825
+  },
+  "Q6a": {
+   "wins": 266,
+   "games": 400,
+   "wr": 0.665
+  }
+ },
+ "F6e": {
+  "Q6b": {
+   "wins": 310,
+   "games": 400,
+   "wr": 0.775
+  },
+  "COV_82e97fe2": {
+   "wins": 237,
+   "games": 400,
+   "wr": 0.5925
+  }
+ },
+ "F6f": {
+  "COV_460b8c99": {
+   "wins": 262,
+   "games": 400,
+   "wr": 0.655
+  },
+  "COV_7036a0a1": {
+   "wins": 299,
+   "games": 400,
+   "wr": 0.7475
+  }
+ },
+ "ADMISSION": {
+  "F6a": {
+   "slice": [
+    "ZapDug",
+    "JynxSO"
+   ],
+   "net": {
+    "d": 0.09875,
+    "lo": 0.052316601627976876,
+    "hi": 0.14518339837202313,
+    "z": 4.168335869997769
+   },
+   "ordered": {
+    "d": 0.08374999999999999,
+    "lo": 0.037487554275903216,
+    "hi": 0.13001244572409676,
+    "z": 3.5482343708970614
+   },
+   "seniority": {
+    "d": -0.015000000000000013,
+    "lo": -0.0627938424381217,
+    "hi": 0.03279384243812166,
+    "z": -0.6151420036600737
+   },
+   "admitted": true
+  },
+  "F6b": {
+   "slice": [
+    "RaikouCelebi",
+    "MixZap"
+   ],
+   "net": {
+    "d": 0.08625000000000005,
+    "lo": 0.03882501452952257,
+    "hi": 0.13367498547047751,
+    "z": 3.564576737830218
+   },
+   "ordered": {
+    "d": 0.04625000000000001,
+    "lo": -0.0007886441861901308,
+    "hi": 0.09328864418619015,
+    "z": 1.9271388784333527
+   },
+   "seniority": {
+    "d": -0.040000000000000036,
+    "lo": -0.08806747653039426,
+    "hi": 0.008067476530394191,
+    "z": -1.6310404801555551
+   },
+   "admitted": true
+  },
+  "F6c": {
+   "slice": [
+    "BlueOffense",
+    "MedichamCune"
+   ],
+   "net": {
+    "d": 0.1412500000000001,
+    "lo": 0.09488807896694756,
+    "hi": 0.18761192103305263,
+    "z": 5.971495439169294
+   },
+   "ordered": {
+    "d": 0.08625000000000005,
+    "lo": 0.04047571494960303,
+    "hi": 0.13202428505039707,
+    "z": 3.693121581557807
+   },
+   "seniority": {
+    "d": -0.05500000000000005,
+    "lo": -0.10288355615448799,
+    "hi": -0.007116443845512105,
+    "z": -2.2512947796149936
+   },
+   "admitted": true
+  },
+  "F6d": {
+   "slice": [
+    "CBMetaCroCune",
+    "Q6a"
+   ],
+   "net": {
+    "d": 0.06999999999999995,
+    "lo": 0.02304956769368354,
+    "hi": 0.11695043230631635,
+    "z": 2.9222308136562543
+   },
+   "ordered": {
+    "d": 0.09249999999999992,
+    "lo": 0.045337181819255036,
+    "hi": 0.1396628181807448,
+    "z": 3.8441299098199146
+   },
+   "seniority": {
+    "d": 0.022499999999999964,
+    "lo": -0.02564156487641426,
+    "hi": 0.07064156487641418,
+    "z": 0.9160483277436134
+   },
+   "admitted": true
+  },
+  "F6e": {
+   "slice": [
+    "Q6b",
+    "COV_82e97fe2"
+   ],
+   "net": {
+    "d": 0.19624999999999998,
+    "lo": 0.14894128347360286,
+    "hi": 0.2435587165263971,
+    "z": 8.130636978607834
+   },
+   "ordered": {
+    "d": 0.19874999999999998,
+    "lo": 0.15144477278487078,
+    "hi": 0.24605522721512918,
+    "z": 8.234819340967329
+   },
+   "seniority": {
+    "d": 0.0025000000000000022,
+    "lo": -0.04648131518752839,
+    "hi": 0.051481315187528395,
+    "z": 0.10003814681659755
+   },
+   "admitted": true
+  },
+  "F6f": {
+   "slice": [
+    "COV_460b8c99",
+    "COV_7036a0a1"
+   ],
+   "net": {
+    "d": 0.21750000000000003,
+    "lo": 0.17053998010275126,
+    "hi": 0.26446001989724877,
+    "z": 9.077934824831187
+   },
+   "ordered": {
+    "d": 0.26375000000000004,
+    "lo": 0.21697657074390422,
+    "hi": 0.3105234292560959,
+    "z": 11.052215076418152
+   },
+   "seniority": {
+    "d": 0.04625000000000001,
+    "lo": -0.0025452268093406755,
+    "hi": 0.0950452268093407,
+    "z": 1.857763677463781
+   },
+   "admitted": true
+  }
+ },
+ "REUSED_CELLS": [
+  "target/ZapDug",
+  "target/JynxSO",
+  "target/RaikouCelebi",
+  "target/MixZap",
+  "target/BlueOffense",
+  "target/MedichamCune",
+  "target/CBMetaCroCune",
+  "target/Q6a",
+  "target/Q6b",
+  "rev1final/ZapDug",
+  "rev1final/JynxSO",
+  "rev1final/RaikouCelebi",
+  "rev1final/MixZap"
+ ],
+ "N_FAILED": 0,
+ "R2CTRL_RULE": "bias mismatch STANDS (named caveat)"
+}
