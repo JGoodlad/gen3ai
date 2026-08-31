@@ -7876,3 +7876,45 @@ KO probability runs 0.355→0.062; and the outgoing block's **neutral-0-EV defen
 third of the sweep. **NOT claimed:** that better labels *will* fix the head (decodability is not
 use), nor that the representation is clean — **40–54% of the KO variance is undecodable from EVERY
 tap**, part genuine hidden-information floor, and this probe cannot split those two.
+
+### 🧪 OOD CONTROL on the constructed risk probe — the bias HOLDS and is LARGER at common faint counts; the objection named the wrong blocks (2026-08-31)
+
+**`ba4b2c4` on main — `measurements/starmie_ood_control_2026-08-31.{md,json}`.** Owner
+objection: the probe's 5-5-faint 1v1 board is the attrition tail and its engineered prelude
+writes unnatural history blocks. **Base rate: P(5-5) = 0.0285, the 97.15th percentile** (my
+"<2%" prediction MISSED narrowly; direction right). **Bias table: P(Surf) at true
+KO-indifference = 0.787 (v2, 5-5) · 0.827 (5-5, new prelude) · 0.919 (4-4) · 0.929 (3-3) ·
+0.914 (2-2) · 0.494 (1-1)** — my registered "persists but SMALLER, 0.60–0.78" is **REFUTED IN
+THE OPPOSITE DIRECTION**: at common faint counts the bias is LARGER, so the constructed
+numbers were conservative. Prelude effect at matched board only +0.040; seed noise 0.001.
+**THE OBJECTION NAMED THE WRONG BLOCKS: event_window and pair_history sit INSIDE the traces'
+own p99 in every arm** (event window at 2-2 is below the trace MEDIAN); what is massively OOD
+is **our own roster block (3.6× p99)** — five fainted mons on our side, not the history.
+**SURPRISE, unexplained: at 1-1 (a 5v5 board) the policy is essentially UNBIASED (0.494), the
+argmax FLIPS, and it orders 22/22 sweep points correctly vs 6/22 at every other faint count.**
+The pattern is NON-MONOTONIC (correct at 1-1, worst at 2-2..4-4, intermediate at 5-5) and no
+account is offered. **The record's own caveat, carried: at F<5 the KO-equal anchor is NOT the
+win-equal anchor** (a failed Surf leaves Tyranitar chipped and a bench survives to punish it),
+so part of the 0.91–0.93 may be CORRECT option-value play — only F=5 is exactly anchored, i.e.
+the owner's original spec remains the cleanest cell. **Untouched: the no-kink result replicates
+in ALL SIX arms** (including 1-1), so the decodability/GLU question is unaffected. Practical
+win: the risk capstone's constructed carrier can be built at 2-2/3-3 instead of in the tail.
+Flagged for later: switch mass was EXACTLY 0.000000 at all 88 points where switching was legal.
+
+### 🧰 METHOD NUGGETS from the exclusions repair (2026-08-31, `32f347c`)
+
+**"A count is not a set."** `promotion_exclusions.json` was wrong on all three rev-4 arms
+while every committed test PASSED — because the tests asserted union SIZE, per-category
+counts, and 719−26=693. Four teams were wrong in each direction and the count was unchanged,
+so a count-shaped check could not see it. Membership errors need membership assertions.
+**"A plan is not a record."** Root cause: the artifact was generated from FROZEN ARGVS the day
+before the rev-4 arms launched (its own blocks said `run_dir_present: false`), and the arms
+were re-dealt round-robin by headroom before launch — another **recorded≠effective** specimen,
+now with a gate that re-derives from run metadata and names offending ids in both directions
+(verified failing on revert). **A stable count does NOT mean a stable draw:** re-running the
+committed demo at its OWN seed moved 21 of 40 positions — a seeded shuffle of a SORTED
+eligible list is reproducible against a fixed set, not stable across a change to that set.
+**Independent confirmation:** the main checkout carried an uncommitted repair of the same file
+made independently (diagnosis: "the arms were re-dealt ROUND-ROBIN by headroom before
+launch"); it agrees with the committed repair EXACTLY — same union, same per-arm lists, zero
+differences — and was discarded as redundant after verification (backup `/tmp/main_working_exclusions_backup.json`).
