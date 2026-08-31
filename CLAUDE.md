@@ -1213,8 +1213,15 @@ best-response computations and the fleet admission table IS an exploitability me
 curve is pure bookkeeping over artifacts that already exist:
 
 ```bash
-python -m main.exploitability rev-2=fleet_admission.json rev-3=r3_admission.json --md
+python -m main.exploitability \
+  rev-2=designs/research_state/measurements/admission_artifacts/fleet_admission.json \
+  rev-3=designs/research_state/measurements/admission_artifacts/r3_admission.json --md
 ```
+
+The three admission artifacts are **committed** (2026-08-31) at
+`designs/research_state/measurements/admission_artifacts/` with a provenance README — they lived
+only in a session-scoped job directory until then, which made every exploitability claim in the
+ledger un-reproducible the moment it was cleaned.
 
 No battles, no models, no traces. Per generation it emits the best-response **net extraction**
 (mean + max over teachers, CIs carried through from the artifact's own per-arm intervals), the
@@ -1593,7 +1600,10 @@ src/
                      #   pool into the curated data/teams/sample/ set (the only legal exploiter
                      #   trainees). exclusions -> seeded shuffle -> validate -> copy -> manifest.
                      #   MOVES a team between teams.json manifests (a team listed in both is drawn
-                     #   twice); --dry-run / --draw-only / --root <copy> / --verify-exclusions.
+                     #   twice); --dry-run / --draw-only / --root <copy> / --verify-exclusions /
+                     #   --regenerate-exclusions (REBUILD the exclusions from run metadata — the
+                     #   file was first built from FROZEN ARGVS and went stale on all 3 rev-4 arms
+                     #   with its union SIZE unchanged, so no count-shaped check saw it).
                      #   Exclusions: designs/ai_v12/promotion_exclusions.json
   poke_env/          # Forked poke-env library
   utils/

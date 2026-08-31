@@ -1582,7 +1582,24 @@ at the target and it's the only opponent.
   that fails validation is REPLACED by the next candidate in the same shuffle and recorded — never
   silently dropped, which would shrink the fleet. `--dry-run` plans, `--draw-only` emits the manifest
   for review, `--root <copy>` rehearses the whole promotion on a tree copy, `--verify-exclusions`
-  re-derives the exclusions from each run's `metadata.json` (`read_recorded_trainee_teams`).
+  re-derives the exclusions from each run's `metadata.json` (`read_recorded_trainee_teams`) and
+  `--regenerate-exclusions` REWRITES them from it.
+
+  🚨 **The exclusion artifact ROTS, and its own committed tests could not see it.** It was first
+  built from **frozen argv files** in a session-scoped job directory, before the runs they describe
+  had launched — and the launched rev-4 runs dealt different teams: all three arms disagreed with
+  their `metadata.json`, naming 4 teams rev-4 never pinned and missing 4 it did. *A frozen argv is a
+  plan; `metadata.json` is the record.* **The union stayed 26 and eligible stayed 693 throughout**,
+  so the pre-existing assertions (union size, per-category counts, `719−26=693`) all passed while
+  the list was wrong — **a count-shaped check cannot see a membership error**. The gate is now
+  `::test_the_committed_exclusions_agree_with_recorded_run_provenance`, which names the offending
+  team ids in BOTH directions and refuses to pass vacuously when no run dir is present; verify,
+  repair and gate share one derivation (`recorded_provenance`) so a check and a repair cannot
+  disagree. Repaired 2026-08-31 —
+  `designs/research_state/measurements/exclusions_and_artifacts_repair_2026-08-31.md`. ⚠️ The
+  eligible COUNT was unchanged but the DRAW was not: re-running the committed demo at its own seed
+  moved 21 of 40 positions, because a seeded shuffle of the *sorted* eligible list is reproducible
+  against a FIXED set and not stable across a change to it.
 
   ⚠️ **Promotion MOVES a team between manifests; it must not list it in both.** `TeamLoader`'s
   universe is the `teams.json` files, deduped by resolved *path* rather than by text — so a team in
@@ -1595,7 +1612,7 @@ at the target and it's the only opponent.
   as for an illegal team, so a known-good **positive control** rides in every batch and a failure
   aborts instead of "replacing" the whole pool; and the manifest is **write-once** (a second draw
   under a different seed is refused without `--force`, so the seed cannot be re-rolled until the
-  composition looks good). Gates: `src/main/promote_teams_test.py` (22 tests, ~0.2 s, no node).
+  composition looks good). Gates: `src/main/promote_teams_test.py` (24 tests, ~0.3 s, no node).
 - **Mutually exclusive with `--self-play`** (arg-parse error — the exploiter needs no pool). Because
   it's not self-play, `_opp_version` (the arch gate for the foreign load) is set explicitly for this
   path before the factories are built. Training-only; not version-locked.
