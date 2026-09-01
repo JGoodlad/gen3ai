@@ -8348,3 +8348,34 @@ replicates INVERT that ordering) — magnitude overlaps the noise, **shape does 
 **NAMED, UNRESOLVED:** the opponent-checkpoint axis is folded into the composition column and NOT
 separately identified; a greedy/set-Q/24M cell would isolate it and was not run. Read that 3.62pp
 as *composition + opponent checkpoint*.
+
+### 🔗 FUNDING-SPLIT CHAIN ARMED on fleet completion — the GPU does not idle overnight (2026-09-01 16:05)
+
+**Owner: "keep the GPU running."** The training session armed a waiter (pid 532711) that
+launches the 8-arm funding split the moment the 40-team fleet finishes. Fork order
+**R5FUND00,02,04,06,08,10,12,14**, each forking the matching R5F arm from 28,067,760 →
+30,067,760 (+2M = +1.0M/team on 2 teams, i.e. the 2.5M/team level against the fleet's 1.5M).
+Fleet at R5F13 of 20 at arming, 0 failed arms; fleet ETA Wed ~02:30–04:00.
+
+**Two deliberate deviations from the relayed spec, both accepted as strictly better:**
+1. **The gate is the fleet chain's own "40-TEAM FLEET COMPLETE" line, not R5F19's
+   `final_model.zip`.** A failed arm does not stop the fleet by design, so R5F19 may
+   legitimately end with no artifact — a waiter gated on that zip would hang forever on
+   exactly the case the fleet was built to survive. If the fleet chain DISAPPEARS without the
+   COMPLETE line (died rather than finished) the waiter exits 3 and launches nothing.
+2. **Verification moved per-arm, where it binds.** Each fork re-verifies its OWN parent right
+   before launch: `final_model.zip` present, a checkpoint ≥ 27,817,760 (target actually
+   reached), `arch_signature == gen3_critic_route_wave_v1`. A failing parent is SKIPPED and
+   recorded as `PARENT_UNVERIFIED` in `r5fund_failed_arms.txt`; the chain continues. Same
+   record-and-continue semantics and the same interrupted-save promotion floor (29,817,760).
+
+Validated by executing, not reading: all 8 argvs pass `main.checkargs`; the parent verifier was
+exercised against a landed arm (PASS), an unfinished arm (SKIP), and a wrong-span run (SKIP)
+before arming. Main is at `8a3d05d5` (contention-scaled bridge teardown reap; idle-box
+behaviour identical) and the arms carry `--sync-to-main`.
+
+**Method note — cross-session relay is now direct.** From today the orchestration session
+sends the training session its instructions over the session channel instead of an md block
+the owner pastes; the training session correctly treated the budget decision as the OWNER's
+standing instruction and asked for confirmation of the owner's words before keeping the
+waiter armed. That is the right protocol: a peer relays, it does not authorise.
