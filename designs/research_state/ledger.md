@@ -8073,3 +8073,63 @@ ACTIONS was substituted by its ranking over STATES (within battle) plus the TD s
 true action ranking needs one-ply successor materialisation that does not exist on the era tree — if
 a fold re-orders action preferences without re-ordering state preferences, this probe is blind to
 it. `lookahead` on the gen era is the instrument that closes it.
+
+### 🔻 M1 AXIS SPLIT — the taught and untaught axes ORDER IDENTICALLY; the v8 gift is NOT a shape effect (2026-08-31)
+
+**`measurements/axis_split_taught_untaught_2026-08-31.{md,json}` + `axis_split_untaught_arm.py`,
+3,200 new battles (COMPFOLD + R3ACTION on the 8-team untaught meter, 0 dropped), assembled with
+the 5 folds' existing 9-slice and coverage rows on ONE instrument.** The dispatch's reconciliation
+candidate — *our shape metrics are TAUGHT-side, v8's surprise is UNTAUGHT, nobody has measured
+shape → untaught externality* — is **REFUTED. The two axes rank shapes the same way**: rev-3 (6×2)
+→ COMPFOLD (3×4) → rev-4 (3×8) on TAUGHT-9 (+0.41 / −2.48 / −3.67pp), on TAUGHT-COV3 (+6.00 /
++2.56 / +1.78) and on **UNTAUGHT-8 (−2.50 [−4.62,+0.19] / −3.88 [−6.94,−1.31] / −6.50
+[−9.75,−3.06])** — Spearman **+1.00** against both taught cuts (n=3, so read the ordering, not the
+coefficient). **Every fold in the era ROBS untaught teams, 6–7 of 8 teams negative in each arm**,
+on a set where the shared parent sits at **0.5825** (0.51–0.66 per team) so there is competence to
+remove in both directions. **The v8 gift does not reproduce at any shape, including shapes broader
+than v8's: rev-4 taught 24 distinct teams — MORE than v8's 22 — and robbed hardest.** Registered
+prediction 2 (total taught teams is the best predictor, v8's 22 the largest and only positive)
+fails on both halves; among shape variables only **teams-per-teacher** (2/4/8) separates all three
+points (ρ = −1.00 on both axes), and it is confounded with total teams by construction.
+
+**What DOES dissociate is which variable separates, and it flips.** Teacher count carries the
+taught axis (rev-3 − COMPFOLD **+2.89pp z=+2.15**) and vanishes on the untaught one (+1.38 z=+0.79);
+distilled team count is null on the taught axis (**+1.19 z=+0.88** — reproducing the ledger's
+`+0.0119 z=+0.87` to the decimal) and is the larger effect on the untaught one (+2.63 z=+1.50).
+**Neither untaught contrast clears z=2 — SUGGESTIVE, not established.**
+
+🚨 **The number the 40-team shape was chosen on is CONFOUNDED THREE WAYS, derived here from run
+metadata: COMPFOLD reuses rev-4's IDENTICAL teacher checkpoints and merely distils 4 of each
+teacher's 8 teams**, so COMPFOLD-vs-rev-4 is the only single-variable contrast in the table (team
+count, teachers and budget fixed) — while **COMPFOLD-vs-rev-3, the contrast that separated, moves
+teacher count (3 vs 6) AND teacher training breadth (8 vs 2) AND per-team budget (1.26 vs 2.53M)
+at once**, and `91e9a68` already priced that same halving at −0.1217 `ordered` on coverage cells.
+The separating cells named: **3×4 at 2.53M/team** (teachers vs budget), **6×4 = 24 teams** (total
+vs per-teacher), and **REFOLD1's untaught row** (budget at identical 3×8 shape — its taught side is
+already null at +40% budget; the untaught arm was CUT for time and is the cheapest of the three).
+
+**PROBE Q's §3 FLOOR ALTERNATIVE IS THE ONE SUPPORTED.** Probe Q read rev-3's own untaught hop as a
+null (−0.75 [−4.56,+3.00]) on a set where the parent sat at **0.4975** — no edge left to take — and
+named the discriminator as *a fold whose untaught set is not already depressed*. This is that set:
+same fold, parent at **0.5825**, hop **−2.50pp**, same sign and 1.75pp more negative. The intervals
+overlap, so it is a consistency result, not a contradiction — but the `narrow-fleet ⇒ robbery` link
+probe Q recorded as BROKEN should be reinstated as **unresolved-leaning-intact**, and the treadmill
+is not refuted at rev-3.
+
+🚨 **THE 40-TEAM FLEET'S OWN METER DOES NOT EXIST, and the standing one will silently answer the
+wrong question.** Verified from the 20 recorded launch argvs (banked as
+`axis_split_inputs/r5_fleet_teams.json`): **rev-5's 40 teams are DISJOINT from every existing
+cut** — zero overlap with the 9-slice, the 3 coverage teams, rev-4's extra 12, or the untaught-8.
+So **the 9-slice is an UNTAUGHT cut for rev-5**, and comparing rev-5's 9-slice number to rev-3's
+0.5793 compares an externality reading to a fold-quality one — this mission's own error class,
+arriving in the next measurement instead of the last. **Load-bearing cut: a NEW taught meter on a
+stratified 9–12 of rev-5's own 40 teams**, same fixed rev-1 @24M target, sized NOW while the fleet
+trains. The untaught-8 stays valid and is where the coverage claim is scored; the 9-slice and
+coverage cuts become a 20-team externality panel (more power than this probe had). And do not
+carry the taught-axis shape verdict across: the variable that separated it is the one that
+vanished.
+
+**Left standing for the v8 anomaly, all outside fleet shape:** student maturity (277M vs ~30M
+parent), fork length, target form, and one asymmetry stated rather than resolved — v8's parent sat
+at **0.383** on its untaught set and ours at **0.5825**, so the two arms are not equally protected
+from mean reversion, and this probe cannot separate that from a real sign difference.

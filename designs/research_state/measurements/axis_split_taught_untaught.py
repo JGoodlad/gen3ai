@@ -290,6 +290,29 @@ def main() -> None:
             "NOT the fixed-rev-1-target meter used for rev-2/3/4/COMPFOLD.",
         }
 
+    # ---- the SHAPE contrasts, arm vs arm on each cut.
+    # These are the numbers the fleet-shape decision actually rests on, and only the first is
+    # a single-variable contrast: COMPFOLD reuses rev-4's own teacher checkpoints, so teachers,
+    # teacher training and per-team budget are held EXACTLY fixed and only the distilled team
+    # list moves. rev-3 vs COMPFOLD moves three things at once.
+    shape_contrasts = {
+        "team_count_12_vs_24 (COMPFOLD - rev-4) [CLEAN: same teachers, same budget]": ("COMPFOLD", "R4ACTION"),
+        "teacher_count_6_vs_3 (rev-3 - COMPFOLD) [CONFOUNDED: teachers x breadth x budget]": ("R3ACTION", "COMPFOLD"),
+        "budget_1.76_vs_1.26 (REFOLD1 - rev-4) [CLEAN: identical 3x8 shape]": ("REFOLD1", "R4ACTION"),
+    }
+    out["shape_contrasts"] = {}
+    for name, (a_tag, b_tag) in shape_contrasts.items():
+        row = {}
+        for cut, pat in cuts.items():
+            a = load(pat % a_tag) or load(pat.replace("_n300", "") % a_tag)
+            b = load(pat % b_tag) or load(pat.replace("_n300", "") % b_tag)
+            if a is None or b is None:
+                row[cut] = "MISSING"
+                continue
+            c = contrast(a, b)
+            row[cut] = {k: c[k] for k in ("teams", "delta_pp", "ci_pp_cluster", "z_battle", "n_negative")}
+        out["shape_contrasts"][name] = row
+
     # ---- what the RUNNING 40-team fleet can and cannot be scored on
     r5p = P / "r5_fleet_teams.json"
     if r5p.exists():

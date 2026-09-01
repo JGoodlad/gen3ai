@@ -1,0 +1,1590 @@
+{
+ "probe": "M1 axis split \u2014 taught vs untaught fold externality",
+ "date": "2026-08-31",
+ "shape": {
+  "rev-2": {
+   "fold_run": "ai_v9_59_R2ACTION_0827",
+   "teachers": [
+    "ai_v9_53_R2F5a_0826",
+    "ai_v9_54_R2F5b_0826",
+    "ai_v9_55_R2F5c_0826",
+    "ai_v9_56_R2F5d_0826",
+    "ai_v9_57_R2F5e_0826"
+   ],
+   "n_teachers": 5,
+   "distilled_teams": [
+    "023a2d47648b85e6",
+    "63eda9d8d491d6a4",
+    "710d8d529538ff90",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_distinct_taught": 9,
+   "teams_per_teacher_distilled": 2.0,
+   "teams_per_teacher_trained": 2.0,
+   "trained_union": [
+    "023a2d47648b85e6",
+    "63eda9d8d491d6a4",
+    "710d8d529538ff90",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "budget_per_trained_team_M": 1.534,
+   "budget_last_leg_per_team_M": 1.534,
+   "fork_parent": "models/ai_v9_29_rev1_0823/final_model.zip",
+   "target": null
+  },
+  "rev-3": {
+   "fold_run": "ai_v9_70_R3ACTION_0828",
+   "teachers": [
+    "ai_v9_63_R3F6a_0828",
+    "ai_v9_64_R3F6b_0828",
+    "ai_v9_65_R3F6c_0828",
+    "ai_v9_66_R3F6d_0828",
+    "ai_v9_67_R3F6e_0828",
+    "ai_v9_68_R3F6f_0828"
+   ],
+   "n_teachers": 6,
+   "distilled_teams": [
+    "023a2d47648b85e6",
+    "460b8c99ee366f6c",
+    "63eda9d8d491d6a4",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_distinct_taught": 12,
+   "teams_per_teacher_distilled": 2.0,
+   "teams_per_teacher_trained": 2.0,
+   "trained_union": [
+    "023a2d47648b85e6",
+    "460b8c99ee366f6c",
+    "63eda9d8d491d6a4",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "budget_per_trained_team_M": 2.534,
+   "budget_last_leg_per_team_M": 2.534,
+   "fork_parent": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "target": null
+  },
+  "COMPFOLD": {
+   "fold_run": "ai_v9_91_COMPFOLD_0831",
+   "teachers": [
+    "ai_v9_73_R4S3a_0829",
+    "ai_v9_74_R4S3b_0829",
+    "ai_v9_75_R4S3c_0829"
+   ],
+   "n_teachers": 3,
+   "distilled_teams": [
+    "023a2d47648b85e6",
+    "460b8c99ee366f6c",
+    "63eda9d8d491d6a4",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_distinct_taught": 12,
+   "teams_per_teacher_distilled": 4.0,
+   "teams_per_teacher_trained": 8.0,
+   "trained_union": [
+    "023a2d47648b85e6",
+    "0972146213a667c9",
+    "0fa105ae42dc85ec",
+    "460b8c99ee366f6c",
+    "53f215cb45b7d729",
+    "63eda9d8d491d6a4",
+    "6d56d06b9fca508e",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8cdc78b2d46f0515",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "a3ca232f030ef625",
+    "b89e1e37caa40e6a",
+    "d4e74946b54f1a4b",
+    "e0d97b0ed592889d",
+    "e11829f0561ef5a9",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce",
+    "f6229d2c867e21d6"
+   ],
+   "budget_per_trained_team_M": 1.258,
+   "budget_last_leg_per_team_M": 1.258,
+   "fork_parent": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "target": null
+  },
+  "rev-4": {
+   "fold_run": "ai_v9_76_R4ACTION_0830",
+   "teachers": [
+    "ai_v9_73_R4S3a_0829",
+    "ai_v9_74_R4S3b_0829",
+    "ai_v9_75_R4S3c_0829"
+   ],
+   "n_teachers": 3,
+   "distilled_teams": [
+    "023a2d47648b85e6",
+    "0972146213a667c9",
+    "0fa105ae42dc85ec",
+    "460b8c99ee366f6c",
+    "53f215cb45b7d729",
+    "63eda9d8d491d6a4",
+    "6d56d06b9fca508e",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8cdc78b2d46f0515",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "a3ca232f030ef625",
+    "b89e1e37caa40e6a",
+    "d4e74946b54f1a4b",
+    "e0d97b0ed592889d",
+    "e11829f0561ef5a9",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce",
+    "f6229d2c867e21d6"
+   ],
+   "n_distinct_taught": 24,
+   "teams_per_teacher_distilled": 8.0,
+   "teams_per_teacher_trained": 8.0,
+   "trained_union": [
+    "023a2d47648b85e6",
+    "0972146213a667c9",
+    "0fa105ae42dc85ec",
+    "460b8c99ee366f6c",
+    "53f215cb45b7d729",
+    "63eda9d8d491d6a4",
+    "6d56d06b9fca508e",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8cdc78b2d46f0515",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "a3ca232f030ef625",
+    "b89e1e37caa40e6a",
+    "d4e74946b54f1a4b",
+    "e0d97b0ed592889d",
+    "e11829f0561ef5a9",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce",
+    "f6229d2c867e21d6"
+   ],
+   "budget_per_trained_team_M": 1.258,
+   "budget_last_leg_per_team_M": 1.258,
+   "fork_parent": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "target": null
+  },
+  "REFOLD1": {
+   "fold_run": "ai_v9_82_REFOLD1_0830",
+   "teachers": [
+    "ai_v9_79_REVIVE1a_0830",
+    "ai_v9_80_REVIVE1b_0830",
+    "ai_v9_81_REVIVE1c_0830"
+   ],
+   "n_teachers": 3,
+   "distilled_teams": [
+    "023a2d47648b85e6",
+    "0972146213a667c9",
+    "0fa105ae42dc85ec",
+    "460b8c99ee366f6c",
+    "53f215cb45b7d729",
+    "63eda9d8d491d6a4",
+    "6d56d06b9fca508e",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8cdc78b2d46f0515",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "a3ca232f030ef625",
+    "b89e1e37caa40e6a",
+    "d4e74946b54f1a4b",
+    "e0d97b0ed592889d",
+    "e11829f0561ef5a9",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce",
+    "f6229d2c867e21d6"
+   ],
+   "n_distinct_taught": 24,
+   "teams_per_teacher_distilled": 8.0,
+   "teams_per_teacher_trained": 8.0,
+   "trained_union": [
+    "023a2d47648b85e6",
+    "0972146213a667c9",
+    "0fa105ae42dc85ec",
+    "460b8c99ee366f6c",
+    "53f215cb45b7d729",
+    "63eda9d8d491d6a4",
+    "6d56d06b9fca508e",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8cdc78b2d46f0515",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "a3ca232f030ef625",
+    "b89e1e37caa40e6a",
+    "d4e74946b54f1a4b",
+    "e0d97b0ed592889d",
+    "e11829f0561ef5a9",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce",
+    "f6229d2c867e21d6"
+   ],
+   "budget_per_trained_team_M": 1.758,
+   "budget_last_leg_per_team_M": 0.5,
+   "fork_parent": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "target": null
+  }
+ },
+ "untaught_set": {
+  "teams": [
+   "61590463ee85d456",
+   "9283210847f806ee",
+   "ce35b7368c3d692e",
+   "9909f2e98e981ccc",
+   "9d5f845869e899ee",
+   "f7ba5702fe856292",
+   "90b94599967c6b77",
+   "dbf81d8ecae51c39"
+  ],
+  "leak_check": {
+   "rev-2": [],
+   "rev-3": [],
+   "COMPFOLD": [],
+   "rev-4": [],
+   "REFOLD1": []
+  }
+ },
+ "cut_membership": {
+  "meter9": [
+   "023a2d47648b85e6",
+   "63eda9d8d491d6a4",
+   "710d8d529538ff90",
+   "8e768980fc8f3b5f",
+   "9eb3abdc52876a63",
+   "e0d97b0ed592889d",
+   "e541f7be8713393c",
+   "eccfe630ec08de27",
+   "f5a4f4f0f5dc49ce"
+  ],
+  "cov3": [
+   "460b8c99ee366f6c",
+   "7036a0a1dcb59a19",
+   "82e97fe2bfbb6f69"
+  ],
+  "per_fold": {
+   "rev-2": {
+    "meter9_taught": true,
+    "cov3_taught": false,
+    "untaught8_taught": false
+   },
+   "rev-3": {
+    "meter9_taught": true,
+    "cov3_taught": true,
+    "untaught8_taught": false
+   },
+   "COMPFOLD": {
+    "meter9_taught": true,
+    "cov3_taught": true,
+    "untaught8_taught": false
+   },
+   "rev-4": {
+    "meter9_taught": true,
+    "cov3_taught": true,
+    "untaught8_taught": false
+   },
+   "REFOLD1": {
+    "meter9_taught": true,
+    "cov3_taught": true,
+    "untaught8_taught": false
+   }
+  },
+  "note": "cov3 is TAUGHT for rev-3/COMPFOLD/rev-4 and UNTAUGHT for rev-2 \u2014 rev-2's cov row is an externality reading (the original -5.9pp treadmill), not a fold-quality one."
+ },
+ "cuts": {
+  "taught_9slice": {
+   "rev-2": {
+    "teams": 9,
+    "delta_pp": 1.333,
+    "ci_pp_cluster": [
+     -1.815,
+     4.667
+    ],
+    "z_battle": 0.993,
+    "n_negative": 4,
+    "arm_wr": 0.5752,
+    "base_wr": 0.5619,
+    "per_team": {
+     "BlueOffense": {
+      "arm_wr": 0.53,
+      "base_wr": 0.5033,
+      "delta_pp": 2.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "CBMetaCroCune": {
+      "arm_wr": 0.66,
+      "base_wr": 0.61,
+      "delta_pp": 5.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "JynxSO": {
+      "arm_wr": 0.53,
+      "base_wr": 0.5767,
+      "delta_pp": -4.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MedichamCune": {
+      "arm_wr": 0.63,
+      "base_wr": 0.5267,
+      "delta_pp": 10.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MixZap": {
+      "arm_wr": 0.5467,
+      "base_wr": 0.5733,
+      "delta_pp": -2.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6a": {
+      "arm_wr": 0.53,
+      "base_wr": 0.55,
+      "delta_pp": -2.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6b": {
+      "arm_wr": 0.5633,
+      "base_wr": 0.6167,
+      "delta_pp": -5.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "RaikouCelebi": {
+      "arm_wr": 0.5533,
+      "base_wr": 0.52,
+      "delta_pp": 3.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "ZapDug": {
+      "arm_wr": 0.6333,
+      "base_wr": 0.58,
+      "delta_pp": 5.33,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "rev-3": {
+    "teams": 9,
+    "delta_pp": 0.407,
+    "ci_pp_cluster": [
+     -2.37,
+     3.37
+    ],
+    "z_battle": 0.304,
+    "n_negative": 4,
+    "arm_wr": 0.5793,
+    "base_wr": 0.5752,
+    "per_team": {
+     "BlueOffense": {
+      "arm_wr": 0.4767,
+      "base_wr": 0.53,
+      "delta_pp": -5.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "CBMetaCroCune": {
+      "arm_wr": 0.62,
+      "base_wr": 0.66,
+      "delta_pp": -4.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "JynxSO": {
+      "arm_wr": 0.6067,
+      "base_wr": 0.53,
+      "delta_pp": 7.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MedichamCune": {
+      "arm_wr": 0.61,
+      "base_wr": 0.63,
+      "delta_pp": -2.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MixZap": {
+      "arm_wr": 0.5467,
+      "base_wr": 0.5467,
+      "delta_pp": 0.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6a": {
+      "arm_wr": 0.5333,
+      "base_wr": 0.53,
+      "delta_pp": 0.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6b": {
+      "arm_wr": 0.6167,
+      "base_wr": 0.5633,
+      "delta_pp": 5.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "RaikouCelebi": {
+      "arm_wr": 0.6067,
+      "base_wr": 0.5533,
+      "delta_pp": 5.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "ZapDug": {
+      "arm_wr": 0.5967,
+      "base_wr": 0.6333,
+      "delta_pp": -3.67,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "COMPFOLD": {
+    "teams": 9,
+    "delta_pp": -2.481,
+    "ci_pp_cluster": [
+     -4.185,
+     -0.852
+    ],
+    "z_battle": -1.847,
+    "n_negative": 7,
+    "arm_wr": 0.5504,
+    "base_wr": 0.5752,
+    "per_team": {
+     "BlueOffense": {
+      "arm_wr": 0.5067,
+      "base_wr": 0.53,
+      "delta_pp": -2.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "CBMetaCroCune": {
+      "arm_wr": 0.59,
+      "base_wr": 0.66,
+      "delta_pp": -7.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "JynxSO": {
+      "arm_wr": 0.5167,
+      "base_wr": 0.53,
+      "delta_pp": -1.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MedichamCune": {
+      "arm_wr": 0.5967,
+      "base_wr": 0.63,
+      "delta_pp": -3.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MixZap": {
+      "arm_wr": 0.4867,
+      "base_wr": 0.5467,
+      "delta_pp": -6.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6a": {
+      "arm_wr": 0.5433,
+      "base_wr": 0.53,
+      "delta_pp": 1.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6b": {
+      "arm_wr": 0.5667,
+      "base_wr": 0.5633,
+      "delta_pp": 0.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "RaikouCelebi": {
+      "arm_wr": 0.5267,
+      "base_wr": 0.5533,
+      "delta_pp": -2.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "ZapDug": {
+      "arm_wr": 0.62,
+      "base_wr": 0.6333,
+      "delta_pp": -1.33,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "rev-4": {
+    "teams": 9,
+    "delta_pp": -3.667,
+    "ci_pp_cluster": [
+     -5.926,
+     -1.259
+    ],
+    "z_battle": -2.724,
+    "n_negative": 6,
+    "arm_wr": 0.5385,
+    "base_wr": 0.5752,
+    "per_team": {
+     "BlueOffense": {
+      "arm_wr": 0.4667,
+      "base_wr": 0.53,
+      "delta_pp": -6.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "CBMetaCroCune": {
+      "arm_wr": 0.5933,
+      "base_wr": 0.66,
+      "delta_pp": -6.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "JynxSO": {
+      "arm_wr": 0.5333,
+      "base_wr": 0.53,
+      "delta_pp": 0.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MedichamCune": {
+      "arm_wr": 0.5533,
+      "base_wr": 0.63,
+      "delta_pp": -7.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MixZap": {
+      "arm_wr": 0.5133,
+      "base_wr": 0.5467,
+      "delta_pp": -3.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6a": {
+      "arm_wr": 0.5533,
+      "base_wr": 0.53,
+      "delta_pp": 2.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6b": {
+      "arm_wr": 0.57,
+      "base_wr": 0.5633,
+      "delta_pp": 0.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "RaikouCelebi": {
+      "arm_wr": 0.5033,
+      "base_wr": 0.5533,
+      "delta_pp": -5.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "ZapDug": {
+      "arm_wr": 0.56,
+      "base_wr": 0.6333,
+      "delta_pp": -7.33,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "REFOLD1": {
+    "teams": 9,
+    "delta_pp": -4.259,
+    "ci_pp_cluster": [
+     -7.407,
+     -1.074
+    ],
+    "z_battle": -3.164,
+    "n_negative": 7,
+    "arm_wr": 0.5326,
+    "base_wr": 0.5752,
+    "per_team": {
+     "BlueOffense": {
+      "arm_wr": 0.5067,
+      "base_wr": 0.53,
+      "delta_pp": -2.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "CBMetaCroCune": {
+      "arm_wr": 0.5733,
+      "base_wr": 0.66,
+      "delta_pp": -8.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "JynxSO": {
+      "arm_wr": 0.5133,
+      "base_wr": 0.53,
+      "delta_pp": -1.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MedichamCune": {
+      "arm_wr": 0.5133,
+      "base_wr": 0.63,
+      "delta_pp": -11.67,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "MixZap": {
+      "arm_wr": 0.5067,
+      "base_wr": 0.5467,
+      "delta_pp": -4.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6a": {
+      "arm_wr": 0.5633,
+      "base_wr": 0.53,
+      "delta_pp": 3.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "Q6b": {
+      "arm_wr": 0.5867,
+      "base_wr": 0.5633,
+      "delta_pp": 2.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "RaikouCelebi": {
+      "arm_wr": 0.46,
+      "base_wr": 0.5533,
+      "delta_pp": -9.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "ZapDug": {
+      "arm_wr": 0.57,
+      "base_wr": 0.6333,
+      "delta_pp": -6.33,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   }
+  },
+  "taught_cov3": {
+   "rev-2": {
+    "teams": 3,
+    "delta_pp": -5.889,
+    "ci_pp_cluster": [
+     -12.333,
+     0.667
+    ],
+    "z_battle": -2.597,
+    "n_negative": 2,
+    "arm_wr": 0.41,
+    "base_wr": 0.4689,
+    "per_team": {
+     "COV_460b8c99": {
+      "arm_wr": 0.31,
+      "base_wr": 0.37,
+      "delta_pp": -6.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_7036a0a1": {
+      "arm_wr": 0.54,
+      "base_wr": 0.6633,
+      "delta_pp": -12.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_82e97fe2": {
+      "arm_wr": 0.38,
+      "base_wr": 0.3733,
+      "delta_pp": 0.67,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "rev-3": {
+    "teams": 3,
+    "delta_pp": 6.0,
+    "ci_pp_cluster": [
+     2.0,
+     12.333
+    ],
+    "z_battle": 2.604,
+    "n_negative": 0,
+    "arm_wr": 0.47,
+    "base_wr": 0.41,
+    "per_team": {
+     "COV_460b8c99": {
+      "arm_wr": 0.4333,
+      "base_wr": 0.31,
+      "delta_pp": 12.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_7036a0a1": {
+      "arm_wr": 0.56,
+      "base_wr": 0.54,
+      "delta_pp": 2.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_82e97fe2": {
+      "arm_wr": 0.4167,
+      "base_wr": 0.38,
+      "delta_pp": 3.67,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "COMPFOLD": {
+    "teams": 3,
+    "delta_pp": 2.556,
+    "ci_pp_cluster": [
+     -1.333,
+     9.0
+    ],
+    "z_battle": 1.113,
+    "n_negative": 1,
+    "arm_wr": 0.4356,
+    "base_wr": 0.41,
+    "per_team": {
+     "COV_460b8c99": {
+      "arm_wr": 0.4,
+      "base_wr": 0.31,
+      "delta_pp": 9.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_7036a0a1": {
+      "arm_wr": 0.5267,
+      "base_wr": 0.54,
+      "delta_pp": -1.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_82e97fe2": {
+      "arm_wr": 0.38,
+      "base_wr": 0.38,
+      "delta_pp": 0.0,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "rev-4": {
+    "teams": 3,
+    "delta_pp": 1.778,
+    "ci_pp_cluster": [
+     -3.667,
+     11.333
+    ],
+    "z_battle": 0.776,
+    "n_negative": 2,
+    "arm_wr": 0.4278,
+    "base_wr": 0.41,
+    "per_team": {
+     "COV_460b8c99": {
+      "arm_wr": 0.4233,
+      "base_wr": 0.31,
+      "delta_pp": 11.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_7036a0a1": {
+      "arm_wr": 0.5167,
+      "base_wr": 0.54,
+      "delta_pp": -2.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_82e97fe2": {
+      "arm_wr": 0.3433,
+      "base_wr": 0.38,
+      "delta_pp": -3.67,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   },
+   "REFOLD1": {
+    "teams": 3,
+    "delta_pp": 3.0,
+    "ci_pp_cluster": [
+     -0.333,
+     9.333
+    ],
+    "z_battle": 1.307,
+    "n_negative": 1,
+    "arm_wr": 0.44,
+    "base_wr": 0.41,
+    "per_team": {
+     "COV_460b8c99": {
+      "arm_wr": 0.4033,
+      "base_wr": 0.31,
+      "delta_pp": 9.33,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_7036a0a1": {
+      "arm_wr": 0.54,
+      "base_wr": 0.54,
+      "delta_pp": 0.0,
+      "n": [
+       300,
+       300
+      ]
+     },
+     "COV_82e97fe2": {
+      "arm_wr": 0.3767,
+      "base_wr": 0.38,
+      "delta_pp": -0.33,
+      "n": [
+       300,
+       300
+      ]
+     }
+    }
+   }
+  },
+  "untaught_8": {
+   "rev-2": {
+    "status": "MISSING",
+    "arm": true,
+    "base": false
+   },
+   "rev-3": {
+    "teams": 8,
+    "delta_pp": -2.5,
+    "ci_pp_cluster": [
+     -4.625,
+     0.188
+    ],
+    "z_battle": -1.436,
+    "n_negative": 7,
+    "arm_wr": 0.5575,
+    "base_wr": 0.5825,
+    "per_team": {
+     "U_61590463": {
+      "arm_wr": 0.515,
+      "base_wr": 0.555,
+      "delta_pp": -4.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_90b94599": {
+      "arm_wr": 0.64,
+      "base_wr": 0.585,
+      "delta_pp": 5.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_92832108": {
+      "arm_wr": 0.49,
+      "base_wr": 0.51,
+      "delta_pp": -2.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_9909f2e9": {
+      "arm_wr": 0.62,
+      "base_wr": 0.64,
+      "delta_pp": -2.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_9d5f8458": {
+      "arm_wr": 0.53,
+      "base_wr": 0.545,
+      "delta_pp": -1.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_ce35b736": {
+      "arm_wr": 0.495,
+      "base_wr": 0.565,
+      "delta_pp": -7.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_dbf81d8e": {
+      "arm_wr": 0.61,
+      "base_wr": 0.66,
+      "delta_pp": -5.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_f7ba5702": {
+      "arm_wr": 0.56,
+      "base_wr": 0.6,
+      "delta_pp": -4.0,
+      "n": [
+       200,
+       200
+      ]
+     }
+    }
+   },
+   "COMPFOLD": {
+    "teams": 8,
+    "delta_pp": -3.875,
+    "ci_pp_cluster": [
+     -6.938,
+     -1.313
+    ],
+    "z_battle": -2.23,
+    "n_negative": 6,
+    "arm_wr": 0.5437,
+    "base_wr": 0.5825,
+    "per_team": {
+     "U_61590463": {
+      "arm_wr": 0.5,
+      "base_wr": 0.555,
+      "delta_pp": -5.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_90b94599": {
+      "arm_wr": 0.545,
+      "base_wr": 0.585,
+      "delta_pp": -4.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_92832108": {
+      "arm_wr": 0.5,
+      "base_wr": 0.51,
+      "delta_pp": -1.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_9909f2e9": {
+      "arm_wr": 0.645,
+      "base_wr": 0.64,
+      "delta_pp": 0.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_9d5f8458": {
+      "arm_wr": 0.415,
+      "base_wr": 0.545,
+      "delta_pp": -13.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_ce35b736": {
+      "arm_wr": 0.505,
+      "base_wr": 0.565,
+      "delta_pp": -6.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_dbf81d8e": {
+      "arm_wr": 0.66,
+      "base_wr": 0.66,
+      "delta_pp": 0.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_f7ba5702": {
+      "arm_wr": 0.58,
+      "base_wr": 0.6,
+      "delta_pp": -2.0,
+      "n": [
+       200,
+       200
+      ]
+     }
+    }
+   },
+   "rev-4": {
+    "teams": 8,
+    "delta_pp": -6.5,
+    "ci_pp_cluster": [
+     -9.75,
+     -3.063
+    ],
+    "z_battle": -3.727,
+    "n_negative": 7,
+    "arm_wr": 0.5175,
+    "base_wr": 0.5825,
+    "per_team": {
+     "U_61590463": {
+      "arm_wr": 0.55,
+      "base_wr": 0.555,
+      "delta_pp": -0.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_90b94599": {
+      "arm_wr": 0.505,
+      "base_wr": 0.585,
+      "delta_pp": -8.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_92832108": {
+      "arm_wr": 0.515,
+      "base_wr": 0.51,
+      "delta_pp": 0.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_9909f2e9": {
+      "arm_wr": 0.56,
+      "base_wr": 0.64,
+      "delta_pp": -8.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_9d5f8458": {
+      "arm_wr": 0.435,
+      "base_wr": 0.545,
+      "delta_pp": -11.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_ce35b736": {
+      "arm_wr": 0.445,
+      "base_wr": 0.565,
+      "delta_pp": -12.0,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_dbf81d8e": {
+      "arm_wr": 0.645,
+      "base_wr": 0.66,
+      "delta_pp": -1.5,
+      "n": [
+       200,
+       200
+      ]
+     },
+     "U_f7ba5702": {
+      "arm_wr": 0.485,
+      "base_wr": 0.6,
+      "delta_pp": -11.5,
+      "n": [
+       200,
+       200
+      ]
+     }
+    }
+   },
+   "REFOLD1": {
+    "status": "MISSING",
+    "arm": false,
+    "base": true
+   }
+  }
+ },
+ "v8_cross_instrument": {
+  "untaught": {
+   "teams": 16,
+   "parent_wr": 0.3828,
+   "fold_wr": 0.437,
+   "delta_pp": 5.42,
+   "ci_pp": [
+    3.44,
+    7.42
+   ],
+   "z": 4.83
+  },
+  "taught": {
+   "teams": 6,
+   "parent_wr": 0.4306,
+   "fold_wr": 0.6924,
+   "delta_pp": 26.18,
+   "ci_pp": [
+    20.28,
+    32.85
+   ],
+   "z": 14.68
+  },
+  "shape": {
+   "n_teachers": 3,
+   "n_distinct_taught": 22,
+   "teams_per_teacher_distilled": 7.333,
+   "note": "probe P archaeology: 3 teachers, 23 team paths (2 identical) = 22 distinct"
+  },
+  "instrument": "probe P \u2014 parent-vs-fold, fixed ancestor opponent, CRN-paired, greedy. NOT the fixed-rev-1-target meter used for rev-2/3/4/COMPFOLD."
+ },
+ "shape_contrasts": {
+  "team_count_12_vs_24 (COMPFOLD - rev-4) [CLEAN: same teachers, same budget]": {
+   "taught_9slice": {
+    "teams": 9,
+    "delta_pp": 1.185,
+    "ci_pp_cluster": [
+     -0.667,
+     3.111
+    ],
+    "z_battle": 0.877,
+    "n_negative": 5
+   },
+   "taught_cov3": {
+    "teams": 3,
+    "delta_pp": 0.778,
+    "ci_pp_cluster": [
+     -2.333,
+     3.667
+    ],
+    "z_battle": 0.336,
+    "n_negative": 1
+   },
+   "untaught_8": {
+    "teams": 8,
+    "delta_pp": 2.625,
+    "ci_pp_cluster": [
+     -0.75,
+     5.938
+    ],
+    "z_battle": 1.503,
+    "n_negative": 3
+   }
+  },
+  "teacher_count_6_vs_3 (rev-3 - COMPFOLD) [CONFOUNDED: teachers x breadth x budget]": {
+   "taught_9slice": {
+    "teams": 9,
+    "delta_pp": 2.889,
+    "ci_pp_cluster": [
+     0.185,
+     5.593
+    ],
+    "z_battle": 2.151,
+    "n_negative": 3
+   },
+   "taught_cov3": {
+    "teams": 3,
+    "delta_pp": 3.444,
+    "ci_pp_cluster": [
+     3.333,
+     3.667
+    ],
+    "z_battle": 1.481,
+    "n_negative": 0
+   },
+   "untaught_8": {
+    "teams": 8,
+    "delta_pp": 1.375,
+    "ci_pp_cluster": [
+     -2.125,
+     5.562
+    ],
+    "z_battle": 0.789,
+    "n_negative": 5
+   }
+  },
+  "budget_1.76_vs_1.26 (REFOLD1 - rev-4) [CLEAN: identical 3x8 shape]": {
+   "taught_9slice": {
+    "teams": 9,
+    "delta_pp": -0.593,
+    "ci_pp_cluster": [
+     -2.259,
+     1.111
+    ],
+    "z_battle": -0.438,
+    "n_negative": 5
+   },
+   "taught_cov3": {
+    "teams": 3,
+    "delta_pp": 1.222,
+    "ci_pp_cluster": [
+     -2.0,
+     3.333
+    ],
+    "z_battle": 0.529,
+    "n_negative": 1
+   },
+   "untaught_8": "MISSING"
+  }
+ },
+ "rev5_scoring": {
+  "n_arms": 20,
+  "n_distinct_teams": 40,
+  "overlap_with_existing_cuts": {
+   "meter9": [],
+   "cov3": [],
+   "untaught8": [],
+   "rev4_extra12": []
+  },
+  "verdict": {
+   "meter9_is_taught_for_rev5": false,
+   "cov3_is_taught_for_rev5": false,
+   "untaught8_still_untaught": true
+  }
+ },
+ "rows": [
+  {
+   "fold": "rev-2",
+   "teachers": 5,
+   "teams_per_teacher_distilled": 2.0,
+   "teams_per_teacher_trained": 2.0,
+   "n_distinct_taught": 9,
+   "budget_per_trained_team_M": 1.534,
+   "budget_last_leg_per_team_M": 1.534,
+   "taught_9slice_delta_pp": 1.333,
+   "taught_9slice_ci": [
+    -1.815,
+    4.667
+   ],
+   "taught_cov3_delta_pp": -5.889,
+   "taught_cov3_ci": [
+    -12.333,
+    0.667
+   ],
+   "untaught_delta_pp": null,
+   "untaught_ci": null,
+   "untaught_z": null
+  },
+  {
+   "fold": "rev-3",
+   "teachers": 6,
+   "teams_per_teacher_distilled": 2.0,
+   "teams_per_teacher_trained": 2.0,
+   "n_distinct_taught": 12,
+   "budget_per_trained_team_M": 2.534,
+   "budget_last_leg_per_team_M": 2.534,
+   "taught_9slice_delta_pp": 0.407,
+   "taught_9slice_ci": [
+    -2.37,
+    3.37
+   ],
+   "taught_cov3_delta_pp": 6.0,
+   "taught_cov3_ci": [
+    2.0,
+    12.333
+   ],
+   "untaught_delta_pp": -2.5,
+   "untaught_ci": [
+    -4.625,
+    0.188
+   ],
+   "untaught_z": -1.436
+  },
+  {
+   "fold": "COMPFOLD",
+   "teachers": 3,
+   "teams_per_teacher_distilled": 4.0,
+   "teams_per_teacher_trained": 8.0,
+   "n_distinct_taught": 12,
+   "budget_per_trained_team_M": 1.258,
+   "budget_last_leg_per_team_M": 1.258,
+   "taught_9slice_delta_pp": -2.481,
+   "taught_9slice_ci": [
+    -4.185,
+    -0.852
+   ],
+   "taught_cov3_delta_pp": 2.556,
+   "taught_cov3_ci": [
+    -1.333,
+    9.0
+   ],
+   "untaught_delta_pp": -3.875,
+   "untaught_ci": [
+    -6.938,
+    -1.313
+   ],
+   "untaught_z": -2.23
+  },
+  {
+   "fold": "rev-4",
+   "teachers": 3,
+   "teams_per_teacher_distilled": 8.0,
+   "teams_per_teacher_trained": 8.0,
+   "n_distinct_taught": 24,
+   "budget_per_trained_team_M": 1.258,
+   "budget_last_leg_per_team_M": 1.258,
+   "taught_9slice_delta_pp": -3.667,
+   "taught_9slice_ci": [
+    -5.926,
+    -1.259
+   ],
+   "taught_cov3_delta_pp": 1.778,
+   "taught_cov3_ci": [
+    -3.667,
+    11.333
+   ],
+   "untaught_delta_pp": -6.5,
+   "untaught_ci": [
+    -9.75,
+    -3.063
+   ],
+   "untaught_z": -3.727
+  },
+  {
+   "fold": "REFOLD1",
+   "teachers": 3,
+   "teams_per_teacher_distilled": 8.0,
+   "teams_per_teacher_trained": 8.0,
+   "n_distinct_taught": 24,
+   "budget_per_trained_team_M": 1.758,
+   "budget_last_leg_per_team_M": 0.5,
+   "taught_9slice_delta_pp": -4.259,
+   "taught_9slice_ci": [
+    -7.407,
+    -1.074
+   ],
+   "taught_cov3_delta_pp": 3.0,
+   "taught_cov3_ci": [
+    -0.333,
+    9.333
+   ],
+   "untaught_delta_pp": null,
+   "untaught_ci": null,
+   "untaught_z": null
+  }
+ ],
+ "ordering": {
+  "n_points": 3,
+  "taught_9slice_order": [
+   "rev-3",
+   "COMPFOLD",
+   "rev-4"
+  ],
+  "taught_cov3_order": [
+   "rev-3",
+   "COMPFOLD",
+   "rev-4"
+  ],
+  "untaught_order": [
+   "rev-3",
+   "COMPFOLD",
+   "rev-4"
+  ],
+  "spearman_taught9_vs_untaught": 1.0,
+  "spearman_cov3_vs_untaught": 1.0,
+  "spearman_teachers_vs_untaught": 0.866,
+  "spearman_teachers_vs_taught9": 0.866,
+  "spearman_teams_per_teacher_distilled_vs_untaught": -1.0,
+  "spearman_teams_per_teacher_distilled_vs_taught9": -1.0,
+  "spearman_n_distinct_taught_vs_untaught": -0.866,
+  "spearman_n_distinct_taught_vs_taught9": -0.866,
+  "spearman_budget_per_trained_team_M_vs_untaught": 0.866,
+  "spearman_budget_per_trained_team_M_vs_taught9": 0.866
+ }
+}
