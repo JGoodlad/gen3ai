@@ -8379,3 +8379,17 @@ sends the training session its instructions over the session channel instead of 
 the owner pastes; the training session correctly treated the budget decision as the OWNER's
 standing instruction and asked for confirmation of the owner's words before keeping the
 waiter armed. That is the right protocol: a peer relays, it does not authorise.
+
+### 🟢 OPPONENT-CHECKPOINT AXIS ISOLATED: ~0.3pp — the "composition" column is TEAM SET (2026-09-01)
+
+`measurements/oppckpt_isolation_2026-09-01.md` + inputs · 3,200 new battles · pre-registered
+13:48, scored unadjusted. The greedy / set M contrast `R2ACTION − REV1FIN` against rev-1's **25M
+final** reads **−3.75pp [−7.2, −0.3] z=−2.13**, versus **−3.44pp** against the 24M snapshot ⇒
+**opponent-checkpoint delta −0.31pp**, five times inside the pre-registered ~1.5pp bar. The
+3.62pp "composition + opponent ckpt" column of the 2026-09-01 resolution is therefore team-set
+composition; the checkpoint part of the meter stamp is inert between adjacent snapshots of one
+run. Side result: the greedy / set M hop **replicates** (−3.44 / −3.75 on independent draws) —
+a real, small, negative rev-2 effect under greedy play, still inside M9's 4.19pp replicate floor.
+Per-team reads at n=200 are noise-dominated (one team swung 13pp between the two snapshots);
+quote only the pooled number. Unresolved list shrinks to: `R4PLAIN`, R3SELF's untaught cell, the
+selectivity-axis test on the fleet's folds.
