@@ -95,7 +95,7 @@ def test_advance_clock_charges_a_noop():
     the same eval window scored 0 (clock absent)."""
     import functools
     from agents.training.reward_manager import Gen3RewardManager, RewardConfig
-    from agents.training.reward_redesign_test import _delta, _Legal, _full_team_live
+    from agents.training.reward_test_fakes import _delta, _Legal, _full_team_live
 
     factory = functools.partial(Gen3RewardManager, config=RewardConfig(all_shaping_pbrs=True))
     tracker = RewardTracker(factory, SlotRegistry(), SlotRegistry())

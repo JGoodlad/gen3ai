@@ -253,7 +253,8 @@ SUBSUMES the escalating anti-spam family (repetition/bouncing/dead-matchup/strug
 clock charge is active. The `turns_since_progress` OBS scalar is present EITHER way (the clock always
 tracks it), so both arms share one architecture and can A/B by resume. `--bias-additivity` /
 `--mat-alive-weight` / `--bias-redesign` are resume-immutable, value-checked by
-`ModelVersion.check_reward_config` (the same machinery as `--vf-coef`). Tests: `reward_redesign_test.py`
+`ModelVersion.check_reward_config` (the same machinery as `--vf-coef`). Tests: the `reward_*_test.py`
+per-term spec family over `reward_test_fakes.py`
 (registry coverage, Φ_mat telescoping + terminal-zeroing, **Φ_status non-damaging-only + gated-off-default
 + telescopes-to-zero**, bias no-op + parameterized blend, the bias_redesign reframes, the full
 ProgressClock predicate), plus the updated `reward_manager_test.py`.
@@ -271,7 +272,7 @@ bench mon with raw P(KO) ≤ `SAFE_PIVOT_PKO_MAX`=0.35 must exist; the escape bo
 are decision-time (set end of last turn / in `record_action`), read before `_fold_belief_pbrs` overwrites
 them. **Reward-only — no obs/arch change** (ARCH unchanged; `MODEL_CONFIG_VERSION 4→5`), resume-immutable
 (`check_reward_config`). Being BIAS-class it rides `--bias-additivity`, so a fixed weight at **λ=1 vs λ=0**
-is the causal A/B for "is it the objective tilt that helps." Tests: `reward_redesign_test.py::TestSwitchBias`.
+is the causal A/B for "is it the objective tilt that helps." Tests: `reward_bias_terms_test.py::TestSwitchBias`.
 
 **HP-scaled self-KO penalty (`--self-ko-hp-penalty`, default 0.0 = OFF).** A grounded floor-leak fix
 (2026-06-12 forensics on ai_v5_11): the policy confidently (median P≈0.5) explodes **healthy** mons —
@@ -289,7 +290,7 @@ the `_our_active_hp_before` snapshot from `record_action`. Scaling by HP **spare
 advantage negative; in a retrain the critic's over-valuation also drops as the TD target sharpens.
 Reward-only — no obs/arch change (no `ARCH_SIGNATURE` bump; `MODEL_CONFIG_VERSION 11→12`),
 resume-immutable (`check_reward_config`). **Validate by watching `win_rate_vs_bots` (82%→~95% target)
-and the healthy-explosion rate fall.** Tests: `reward_redesign_test.py::TestSelfKoPenalty` (unit) +
+and the healthy-explosion rate fall.** Tests: `reward_end_state_test.py::TestSelfKoPenalty` (unit) +
 `self_ko_penalty_fuzz_test.py` (bridge — real Explosion turns net exactly `−w·hp`, 0 elsewhere, OFF
 byte-unchanged).
 
@@ -312,7 +313,7 @@ Two flags (not one) so the low-risk redundant removes can be attributed separate
 behaviorally-uncertain switch family (which may have been doing real exploration-acceleration work).
 The historical worst distorter — `finishing_blow` rewarding a self-KO Explosion — is already fixed
 (guarded + the `+2.0` literal deleted), so it is not in scope. Tests:
-`reward_redesign_test.py::TestBiasDrops` + `snapshot_test.py` (resume-immutability + v12→v13 migration).
+`reward_bias_terms_test.py::TestBiasDrops` + `snapshot_test.py` (resume-immutability + v12→v13 migration).
 
 **End-state PBRS — TWO switches (`--all-shaping-pbrs`, DEFAULT ON; `--stall-pbrs`, default OFF;
 v14/v15).** The FINAL stage of the staged PBRS rollout: convert the last BIAS shaping to
@@ -346,8 +347,9 @@ Composes with the v13 drops (orthogonal,
 run after). `--no-all-shaping-pbrs` is the fallback and restores the additive objective in full.
 Resume-immutable + value-checked alongside the **now-recorded `no_progress_penalty`**
 (Φ_progress's weight) — `MODEL_CONFIG_VERSION` v14/v15, `check_reward_config`, no `ARCH_SIGNATURE` bump.
-Tests: `reward_redesign_test.py::{TestProgressPBRS, TestHazardPBRS, TestBoostPBRS, TestOppBoostsPBRS,
-TestEndStateDrops, TestAllShapingPbrsNoOpDefault}` + `snapshot_test.py` (resume-immutability + v13→v14 +
+Tests: `reward_pbrs_progress_hazard_test.py::{TestProgressPBRS, TestHazardPBRS}`,
+`reward_pbrs_boosts_roar_test.py::{TestBoostPBRS, TestOppBoostsPBRS}`,
+`reward_end_state_test.py::{TestEndStateDrops, TestAllShapingPbrsNoOpDefault}` + `snapshot_test.py` (resume-immutability + v13→v14 +
 v14→v15 migration).
 
 ### The reward COMPOSITION — stated at launch, recorded in `metadata.json`

@@ -849,7 +849,7 @@ class Gen3RewardManager:
         # assumption the no-progress clock subsumed switch-spam — it does NOT. The clock's flat −0.15
         # is dwarfed by the per-switch reframes [se_switch+escape+pivot ≈ +0.5–0.95/switch], so a
         # bounce-farm policy collected them every turn, never attacked, timed out, and lost even to
-        # random. See `progress_clock_fuzz_test` / the switch-farm guard in reward_redesign_test.)
+        # random. See `progress_clock_fuzz_test` / the switch-farm guard in reward_bias_terms_test.)
         spam_mult = 1.0 if (decision_turn - self.last_switch_turn) > 1 else 0.0
         bd.switch_base = SWITCH_BASE_BONUS * spam_mult
 

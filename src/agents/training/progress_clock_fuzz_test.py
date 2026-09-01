@@ -1,7 +1,7 @@
 """Bridge fuzz test for the ProgressClock anti-stall predicate — the heal-war charge + the
 winning-residual guard (the two behaviours added with the --bias-redesign no-progress charge).
 
-Unit tests (`reward_redesign_test.TestProgressClock`) pin the PROGRESS / DENIED / NO_OP logic on
+Unit tests (`reward_progress_clock_test.TestProgressClock`) pin the PROGRESS / DENIED / NO_OP logic on
 hand-built deltas. This drives the REAL pipeline end-to-end —
 ``Gen3Env → EpisodeTracker → event-sourced TurnDelta fold → ProgressClock`` — over real Showdown
 battles via the in-process BattleStream bridge (no server), instrumenting the LIVE clock at every

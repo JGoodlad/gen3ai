@@ -174,7 +174,7 @@ def _emitted(cfg, n_turns=4):
     """
     from agents.training.progress_clock import ProgressClock
     from agents.training.reward_manager import Gen3RewardManager
-    from agents.training.reward_redesign_test import _Battle, _delta, _full_team_live
+    from agents.training.reward_test_fakes import _Battle, _delta, _full_team_live
     clock = ProgressClock()
     mgr = Gen3RewardManager(config=cfg, progress_clock=clock)
     seen = set()
@@ -237,11 +237,11 @@ def test_the_default_keeps_the_one_tilt_that_no_hand_shaping_removes():
 def _win_loss(cfg, *, turn, **outcome) -> float:
     """Run the REAL `process_turn_reward` and read `win_loss` off the breakdown it produced.
 
-    Reuses `reward_redesign_test`'s battle/live fixtures rather than re-implementing the branch —
+    Reuses `reward_test_fakes`'s battle/live fixtures rather than re-implementing the branch —
     a test that recomputes the expression it is checking proves only that it can copy it.
     """
     from agents.training.reward_manager import Gen3RewardManager
-    from agents.training.reward_redesign_test import _Battle, _delta, _full_team_live
+    from agents.training.reward_test_fakes import _Battle, _delta, _full_team_live
     mgr = Gen3RewardManager(config=cfg)
     mgr.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())   # seed _prev_phi_mat
     mgr.process_turn_reward(_Battle(_full_team_live(**outcome), turn=turn), _delta())

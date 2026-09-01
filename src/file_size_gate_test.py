@@ -372,11 +372,11 @@ def test_meta_fuzz_tests_are_exempt():
 def test_meta_a_name_sibling_exempts_and_its_absence_does_not():
     tree = {"src/agents/training/reward_manager.py",
             "src/agents/training/reward_manager_test.py",
-            "src/agents/training/reward_redesign_test.py"}
+            "src/agents/training/reward_end_state_test.py"}
     exists = tree.__contains__
     assert is_exempt_test("src/agents/training/reward_manager_test.py", exists)
-    assert not is_exempt_test("src/agents/training/reward_redesign_test.py", exists), (
-        "no `reward_redesign.py` exists, so the file is cross-cutting by the name heuristic"
+    assert not is_exempt_test("src/agents/training/reward_end_state_test.py", exists), (
+        "no `reward_end_state.py` exists, so the file is cross-cutting by the name heuristic"
     )
 
 
