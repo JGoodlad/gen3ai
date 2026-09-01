@@ -7918,3 +7918,36 @@ eligible list is reproducible against a fixed set, not stable across a change to
 made independently (diagnosis: "the arms were re-dealt ROUND-ROBIN by headroom before
 launch"); it agrees with the committed repair EXACTLY — same union, same per-arm lists, zero
 differences — and was discarded as redundant after verification (backup `/tmp/main_working_exclusions_backup.json`).
+
+### 🚀 THE 40-TEAM FLEET LAUNCHED — 20 teachers × 2 teams × 1.5M = 60M (2026-08-31 16:03)
+
+**Promotion executed and audited: seed 1383414976 recorded, uniform over 693 eligible
+(719 − 26), 40 distinct teams, ZERO overlap with the exclusions union (verified against the
+artifact repaired the day before), sample set 32 → 72, TeamLoader sees 719 with no
+duplicates.** Archetypes REPORTED not corrected, per the randomness ruling: offense 12 ·
+semi_stall 9 · balance 7 · hyper_offense 7 · stall 5. **SHAPE chosen on measurement, not the
+original spec:** fold quality tracks DISTINCT TEACHER COUNT (COMPFOLD vs rev-3 −0.0289
+z=−2.14) and is INDIFFERENT to team count (vs rev-4 +0.0119 z=+0.87, null) ⇒ maximise
+teachers inside the approved 60M ⇒ 20×2, double rev-3's teacher count and the largest teacher
+pool the campaign has built.
+
+**Caveats recorded AT LAUNCH (training session's own, plus this session's sharpening):**
+(1) **THE DELIBERATE TRADE — 1.5M/team is the UNDER-FUNDED level** (known-good 2.5M); budget
+spent on teachers because rung 1 found teacher quality does not drive fold quality (z=−0.44).
+Sharpened by `91e9a68`: rev-3 (2.50M) → rev-4 (1.25M) cost **−0.1217 `ordered`** on shared
+coverage teams (teacher absolute 0.6650→0.5742), so under-funding demonstrably weakens
+TEACHERS. Both can hold — funding affects EXTRACTION, not TRANSFER — but **the coverage
+question's own meter IS extraction, so a weak-teacher fleet measures coverage with a blunter
+instrument even if its folds land**. State this in the analysis rather than discovering it.
+(2) **TARGET = R2ACTION final** (same as rev-3/rev-4) ⇒ deliberately NOT a new exploitability
+curve point; the same criticism that applied to rev-4, accepted here to hold the target
+constant for a clean coverage comparison. (3) **THIS FLEET IS NOT THE v8 REPRODUCTION** —
+20×2 is maximally unlike v8's 3 × ~7.7, so scorecard `1a77edf` remains open and **rev-4's fold
+table (REPRO-1/4/5) is still OWED and unrelayed**. (4) At 2 teams/teacher this is the NARROW
+end — rev-2's breadth, which robbed −7.1pp untaught, and rev-3's, which robbed nothing ⇒ **the
+UNTAUGHT cut is the load-bearing measurement**, scored on the common-team restriction with
+`ordered` beside `net` and team-clustered CIs (dispersion 2.5× binomial). (5) 20-arm
+robustness: a failed arm records to `r5_failed_arms.txt` and the fleet continues; the battery
+reports an absent arm as UNCOVERED rather than silently pooling 19 — correct, and the right
+call at this arm count. ETA ~30 GPU-h, complete ~Tue 22:00. ⚠️ Main left DIRTY by the
+promotion (5 modified teams.json + 42 untracked); ship authorization is the owner's alone.
