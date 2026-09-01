@@ -19,9 +19,28 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.training.teacher.buffer import Correction
+from utils.contention import describe_contention, scale_timeout
 
 _CYCLE_TIMEOUT_SEC = 3600.0     # a search cycle can be long (Node searches + confirm games); watchdog
 _RESPAWN_BACKOFF_STEPS = 5000   # persistent mode: don't tight-loop respawning a worker that keeps dying
+
+# gen3_contention_robust_timeouts_v1 — the two child-REAP bounds. Both are wall-clock waits on a
+# subprocess, so on a loaded box they measure the box rather than the worker, and these run inside
+# training by construction (the box is busy whenever they fire). Read at CALL time, and via
+# ``scale_timeout`` rather than a ``ProgressDeadline`` because a ``wait()`` exposes no incremental
+# progress to bound.
+_SHUTDOWN_REAP_TIMEOUT = 10.0   # persistent workers, after the cooperative ``shutdown`` control file
+_ABORT_REAP_TIMEOUT = 5.0       # a cycle worker already sent SIGKILL — just collecting the corpse
+
+
+def _shutdown_reap_timeout() -> float:
+    """The post-``shutdown`` worker-reap bound, stretched to the CPU share actually available."""
+    return scale_timeout(_SHUTDOWN_REAP_TIMEOUT)
+
+
+def _abort_reap_timeout() -> float:
+    """The post-kill worker-reap bound, stretched to the CPU share actually available."""
+    return scale_timeout(_ABORT_REAP_TIMEOUT)
 
 
 def _version_key(path: str) -> int:
@@ -295,9 +314,20 @@ class SearchTeacherCallback(BaseCallback):
                 self._write_control(getattr(self, "_latest_snap", ""), shutdown=True)
             except Exception:  # noqa: BLE001
                 pass
+            reap_budget = _shutdown_reap_timeout()
             for w in self._workers:
                 try:
-                    w["proc"].wait(timeout=10)
+                    w["proc"].wait(timeout=reap_budget)
+                except subprocess.TimeoutExpired:
+                    # Self-diagnosing, per the project timeout rule: this kill used to be silent,
+                    # so a STARVED reap read exactly like a worker that ignored ``shutdown``.
+                    print(
+                        f"⚠️  [SearchTeacher] worker did not exit within {reap_budget:.1f}s of "
+                        f"shutdown (base {_SHUTDOWN_REAP_TIMEOUT:.1f}s x contention scale) — "
+                        f"killing it. {describe_contention()}",
+                        file=sys.stderr, flush=True,
+                    )
+                    w["proc"].kill()
                 except Exception:  # noqa: BLE001
                     w["proc"].kill()
                 try:
@@ -429,8 +459,21 @@ class SearchTeacherCallback(BaseCallback):
         for w in self._pending["workers"]:
             if w["proc"].poll() is None:
                 w["proc"].kill()
+            reap_budget = _abort_reap_timeout()
             try:
-                w["proc"].wait(timeout=5)
+                try:
+                    w["proc"].wait(timeout=reap_budget)
+                except subprocess.TimeoutExpired:
+                    # Self-diagnosing, per the project timeout rule. Re-raised so the surrounding
+                    # handler keeps its exact behaviour (``log.close()`` stays skipped on a
+                    # timeout) — this adds a message, never a semantic change.
+                    print(
+                        f"⚠️  [SearchTeacher] killed worker did not reap within "
+                        f"{reap_budget:.1f}s (base {_ABORT_REAP_TIMEOUT:.1f}s x contention "
+                        f"scale). {describe_contention()}",
+                        file=sys.stderr, flush=True,
+                    )
+                    raise
                 w["log"].close()
             except Exception:  # noqa: BLE001
                 pass

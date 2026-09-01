@@ -73,6 +73,22 @@ _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 # (see ``project_bridge_unique_battle_tags``). One counter, never reset.
 _BATTLE_SEQ = itertools.count(1)
 
+# gen3_contention_robust_timeouts_v1 — how long to wait for a bridge child to REAP after it has
+# been told to exit (``END``). A cooperative exit is milliseconds of work, so 5 s is already huge
+# headroom on an idle box — but it is still a wall-clock bound on a subprocess, and THIS one runs
+# inside training, where the box is busy by definition (the same reasoning that scaled
+# ``_BATTLE_END_TIMEOUT`` a few lines below, and the same defect that killed a measurement arm on
+# the ``local_battle_runner`` twin at load ~50 on 2026-08-31). Read at CALL time: a session
+# constructed on an idle box and torn down beside a full trainer must see the load it is ACTUALLY
+# running under. ``scale_timeout`` rather than a ``ProgressDeadline`` because a ``wait()`` exposes
+# no incremental progress to bound.
+_TEARDOWN_REAP_TIMEOUT = 5.0
+
+
+def _teardown_reap_timeout() -> float:
+    """The post-``END`` child-reap bound, stretched to the CPU share actually available."""
+    return scale_timeout(_TEARDOWN_REAP_TIMEOUT)
+
 
 def attach_bridge_transport(
     env, *, battle_format: str, seed: Optional[List[int]] = None, persistent: bool = True,
@@ -580,9 +596,19 @@ class BridgeSession:
                     await proc.stdin.drain()
             except (BrokenPipeError, ConnectionResetError):
                 pass
+            reap_budget = _teardown_reap_timeout()
             try:
-                await asyncio.wait_for(proc.wait(), timeout=5.0)
+                await asyncio.wait_for(proc.wait(), timeout=reap_budget)
             except asyncio.TimeoutError:  # pragma: no cover
+                # Self-diagnosing, per the project timeout rule: a bare kill here is invisible, so
+                # a STARVED reap looked exactly like a WEDGED one. Name the budget and the box.
+                print(
+                    f"⚠️  [bridge impl={self._impl}] child did not exit within "
+                    f"{reap_budget:.1f}s of END (base {_TEARDOWN_REAP_TIMEOUT:.1f}s x contention "
+                    f"scale) — killing it. {describe_contention()}",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 proc.kill()
                 await proc.wait()
 

@@ -12,6 +12,7 @@ from poke_env import AccountConfiguration
 from agents.observation.state_encoder import load_mappings
 from agents.training.gen3_env import Gen3Env
 from utils.bridge.battle_stream_client import BattleStreamClient
+from utils.bridge import bridge_session as bs_mod
 from utils.bridge.bridge_session import BridgeSession, attach_bridge_transport
 from utils.team_loader.loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
@@ -125,3 +126,26 @@ def test_child_error_wakes_a_blocked_queue_get_instead_of_hanging():
         session._signal_transport_dead()  # idempotent — a second fatal path must not throw
     finally:
         env.close()
+
+
+# --- the TEARDOWN reap bound: scaled, not hardcoded ------------------------------------------
+#
+# gen3_contention_robust_timeouts_v1. ``_teardown`` waits for the bridge child to exit after
+# ``END``. That wait was a hardcoded ``timeout=5.0`` until 2026-09-01 — a wall-clock bound on a
+# subprocess, so it measures the box as much as the code, and this one runs INSIDE training where
+# the box is busy by construction (its ``local_battle_runner`` twin fired at load ~50 on 16 cores
+# and killed a measurement arm outright, 2026-08-31). These two pin that the bound is read at CALL
+# time through ``scale_timeout``, and that an idle box is unchanged.
+
+
+def test_teardown_reap_timeout_is_the_base_value_on_an_idle_box(monkeypatch):
+    """Factor 1.0 => still exactly 5.0 s. The fix must be a no-op when the box is quiet."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+    assert bs_mod._TEARDOWN_REAP_TIMEOUT == 5.0
+    assert bs_mod._teardown_reap_timeout() == 5.0
+
+
+def test_teardown_reap_timeout_stretches_with_contention(monkeypatch):
+    """The whole point: a loaded box gets proportionally longer to reap the child."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
+    assert bs_mod._teardown_reap_timeout() == 30.0

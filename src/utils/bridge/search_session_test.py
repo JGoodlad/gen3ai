@@ -130,3 +130,26 @@ def test_child_errors_name_the_impl_and_the_binary(spawned):
         assert "search_driver.js" in who
     finally:
         s.close()
+
+
+# --- the CLOSE reap bound: scaled, not hardcoded -----------------------------------------------
+#
+# gen3_contention_robust_timeouts_v1. ``close()`` waits for the search-driver child to exit after
+# the cooperative ``close`` command. That wait was a hardcoded ``timeout=5`` until 2026-09-01 — a
+# wall-clock bound on a subprocess, so on a loaded box it measured the box rather than the child
+# (the same defect that killed a measurement arm on ``local_battle_runner`` at load ~50 on 16
+# cores, 2026-08-31). These two pin that the bound is read at CALL time through ``scale_timeout``,
+# and that an idle box is unchanged.
+
+
+def test_close_reap_timeout_is_the_base_value_on_an_idle_box(monkeypatch):
+    """Factor 1.0 => still exactly 5.0 s. The fix must be a no-op when the box is quiet."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+    assert ss_mod._CLOSE_REAP_TIMEOUT == 5.0
+    assert ss_mod._close_reap_timeout() == 5.0
+
+
+def test_close_reap_timeout_stretches_with_contention(monkeypatch):
+    """The whole point: a loaded box gets proportionally longer to reap the child."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
+    assert ss_mod._close_reap_timeout() == 30.0

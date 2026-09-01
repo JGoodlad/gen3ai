@@ -54,12 +54,27 @@ import collections
 import json
 import queue
 import subprocess
+import sys
 import threading
 from dataclasses import dataclass
 from typing import List, Optional, Sequence
 
 from utils.bridge.reconstruction import ReconstructionRecord
 from utils.bridge.sim_bridge_bin import search_driver_spawn_argv
+from utils.contention import describe_contention, scale_timeout
+
+# gen3_contention_robust_timeouts_v1 — how long to wait for the search-driver child to REAP after
+# it has been sent ``close``. A cooperative exit is milliseconds of work, so 5 s is enormous
+# headroom on an idle box; it is still a wall-clock bound on a subprocess, so on a loaded box it
+# measures the box rather than the child. Read at CALL time (a session opened idle can easily be
+# closed beside a trainer), and ``scale_timeout`` rather than a ``ProgressDeadline`` because a
+# ``wait()`` exposes no incremental progress to bound.
+_CLOSE_REAP_TIMEOUT = 5.0
+
+
+def _close_reap_timeout() -> float:
+    """The post-``close`` child-reap bound, stretched to the CPU share actually available."""
+    return scale_timeout(_CLOSE_REAP_TIMEOUT)
 
 
 @dataclass(frozen=True)
@@ -240,8 +255,20 @@ class SearchSession:
                 self._proc.stdin.flush()                                                # type: ignore[union-attr]
         except Exception:
             pass
+        reap_budget = _close_reap_timeout()
         try:
-            self._proc.wait(timeout=5)
+            self._proc.wait(timeout=reap_budget)
+        except subprocess.TimeoutExpired:
+            # Self-diagnosing, per the project timeout rule: this kill used to be silent, so a
+            # STARVED reap was indistinguishable from a WEDGED child.
+            print(
+                f"⚠️  [{self._who()}] did not exit within {reap_budget:.1f}s of close "
+                f"(base {_CLOSE_REAP_TIMEOUT:.1f}s x contention scale) — killing it. "
+                f"{describe_contention()}",
+                file=sys.stderr,
+                flush=True,
+            )
+            self._proc.kill()
         except Exception:
             self._proc.kill()
         for s in (self._proc.stdin, self._proc.stdout, self._proc.stderr):

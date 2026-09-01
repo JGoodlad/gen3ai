@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 
 from agents.training.teacher.buffer import CorrectionBuffer
+from agents.training.teacher import callback as cb_mod
 from agents.training.teacher.callback import SearchTeacherCallback
 
 _OBS_DIM, _N_ACT = 8, 11
@@ -210,3 +211,30 @@ def test_persistent_ingest_drops_shard_when_delete_fails_no_dup(tmp_path, monkey
     cb._ingest()
     cb._ingest()                                        # a 2nd pass must NOT re-ingest (no duplicate)
     assert len(cb.model._correction_buffer) == 0
+
+
+# --- the two worker-REAP bounds: scaled, not hardcoded -----------------------------------------
+#
+# gen3_contention_robust_timeouts_v1. ``_on_training_end`` reaps persistent workers after the
+# cooperative ``shutdown`` control file; ``_abort`` collects a worker it has already SIGKILLed.
+# Both were hardcoded wall-clock waits (10 s / 5 s) until 2026-09-01 — bounds on a subprocess, so
+# on a loaded box they measure the box rather than the worker, and both fire INSIDE training where
+# the box is busy by construction (its ``local_battle_runner`` twin fired at load ~50 on 16 cores
+# and killed a measurement arm outright, 2026-08-31). These pin that both are read at CALL time
+# through ``scale_timeout``, and that an idle box is unchanged.
+
+
+def test_worker_reap_timeouts_are_the_base_values_on_an_idle_box(monkeypatch):
+    """Factor 1.0 => still exactly 10.0 s / 5.0 s. The fix must be a no-op when the box is quiet."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+    assert cb_mod._SHUTDOWN_REAP_TIMEOUT == 10.0
+    assert cb_mod._ABORT_REAP_TIMEOUT == 5.0
+    assert cb_mod._shutdown_reap_timeout() == 10.0
+    assert cb_mod._abort_reap_timeout() == 5.0
+
+
+def test_worker_reap_timeouts_stretch_with_contention(monkeypatch):
+    """The whole point: a loaded box gets proportionally longer to reap each worker."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
+    assert cb_mod._shutdown_reap_timeout() == 60.0
+    assert cb_mod._abort_reap_timeout() == 30.0
