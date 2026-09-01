@@ -8133,3 +8133,42 @@ vanished.
 parent), fork length, target form, and one asymmetry stated rather than resolved — v8's parent sat
 at **0.383** on its untaught set and ours at **0.5825**, so the two arms are not equally protected
 from mean reversion, and this probe cannot separate that from a real sign difference.
+
+### ⚠️ CORRECTION (M9 interim, 2026-08-31): M5's "fold below its own no-fold floor" has NO measured floor — and the REPLICATE noise floor equals the effects we have been calling significant
+
+**Two machine-checked audits, landing before M9's own arms finish. Both are corrections to
+LIVE claims, so they are banked immediately rather than waiting.**
+
+**(1) M5's unregistered headline is RETRACTED. Neither of its "matched no-fold controls" is
+fold-free.** Gen era: M5's control file is BYTE-IDENTICAL (md5 `df3d5620…`) to rev-1's own
+snapshot — a resume re-publishes the parent's self-play pool, so the "control span" CONTAINS
+the entire rev-2 fold. v8 era: the control run `ai_v8_04_distill_4teacher_0722` carries
+`distill_coef = 1.0` for its whole life. **M5's ratios are fold÷fold.** The sentence they
+licensed — "rev-3's fold is behaviourally smaller than its own no-fold control, so a fold
+below its own noise floor has nothing to radiate" — has no measured floor behind it and is
+WITHDRAWN. (It was relayed to the owner as the probe's most useful finding; the retraction
+was relayed with equal prominence. M9's real fold-free control is
+`ai_v9_62_R2PLAIN_0827` — same parent, same `--steps 28067760`, same seed, argv differing on
+seven keys ALL in the distillation family.)
+
+**(2) 🚨 THE RUN-TO-RUN NOISE FLOOR EQUALS THE TAUGHT-SIDE EFFECTS WE HAVE BEEN SCORING.**
+`R2CTRL` is not an ecology control — at its own commit `--distill-teacher` is INERT at coef 0
+and `git diff` shows `src/` byte-identical between the two runs' hashes, so it is a REPLICATE
+of `R2PLAIN`. On the already-banked TAUGHT-9 meter the two replicates differ by **−3.70pp
+[−6.07, −1.26], z = −2.73** — **equal to rev-4's taught-side fold effect (−3.67pp) to 0.03pp.**
+Consequence, stated plainly: **our binomial/battle-clustered CIs measure BATTLE sampling
+variance and do NOT contain run-to-run TRAINING variance**, so a ~3pp taught-side difference
+between two separately-trained runs is not distinguishable from seed noise on this meter.
+**This reaches the composition verdict the running 20×2 fleet was shaped on** (teacher-count
+contrast COMPFOLD−rev-3 = −2.89pp, called SEPARATED at z=−2.14) — that effect is BELOW this
+replicate floor. It does not overturn the shape choice (the fleet is unbiased either way) but
+it means the shape evidence is weaker than its z implied, and every future single-run-vs-
+single-run fold comparison needs either replicates or a floor stated beside it. **The untaught
+side is NOT automatically implicated** — its effects are larger (−6.5 to −8.7pp) and paired at
+the battle level against a fixed reference — but no untaught replicate floor has been measured,
+and that is now a named gap.
+
+**Side find, reported not fixed (correct call — shared path, fails loud):**
+`local_battle_runner._teardown` uses a hardcoded, CONTENTION-UNSCALED `timeout=5.0` on the
+bridge-child reap; it killed one M9 arm outright at load ~50. Contradicts the project's
+contention-scaling rule (`scale_timeout` at call time) and belongs in the next cleanup batch.
