@@ -1,0 +1,87 @@
+{
+ "_meta": {
+  "source": "the 20 R5F*.argv launch commands recorded by the training session at ~/.claude/jobs/1046b1d6/tmp/probes (session-scoped; banked here so this analysis reproduces without them). Cross-checkable against models/ai_v9_*_R5F*/metadata.json as each arm's run dir appears.",
+  "launched": "2026-08-31 16:03",
+  "fleet": "20 teachers x 2 teams x 1.5M = 60M"
+ },
+ "ai_v9_92_R5F00_0831": [
+  "8bdb5796b9",
+  "436335607f"
+ ],
+ "ai_v9_93_R5F01_0831": [
+  "11fb5d2fc2",
+  "c6b830a3f0"
+ ],
+ "ai_v9_94_R5F02_0831": [
+  "6916e13879",
+  "e702a104eb"
+ ],
+ "ai_v9_95_R5F03_0831": [
+  "ac17a9dde5",
+  "d1ed25a242"
+ ],
+ "ai_v9_96_R5F04_0831": [
+  "64a691c473",
+  "e28069562f"
+ ],
+ "ai_v9_97_R5F05_0831": [
+  "4bb434f8ba",
+  "3650f09b2f"
+ ],
+ "ai_v9_98_R5F06_0831": [
+  "9e95fb59d7",
+  "9d8391d864"
+ ],
+ "ai_v9_99_R5F07_0831": [
+  "a185b2d193",
+  "dbbfac7bd5"
+ ],
+ "ai_v9_100_R5F08_0831": [
+  "750d056194",
+  "a9831a5f5e"
+ ],
+ "ai_v9_101_R5F09_0831": [
+  "c9a2cef359",
+  "3a83154c2a"
+ ],
+ "ai_v9_102_R5F10_0831": [
+  "6ebe9ebc4d",
+  "9b454d9ea7"
+ ],
+ "ai_v9_103_R5F11_0831": [
+  "422a4745c5",
+  "8b81c129de"
+ ],
+ "ai_v9_104_R5F12_0831": [
+  "009e3d0244",
+  "b904dbe059"
+ ],
+ "ai_v9_105_R5F13_0831": [
+  "9ba039ba8a",
+  "63f81c5c58"
+ ],
+ "ai_v9_106_R5F14_0831": [
+  "aea50f207e",
+  "37d717a93a"
+ ],
+ "ai_v9_107_R5F15_0831": [
+  "4239fc5ba2",
+  "713403f9e9"
+ ],
+ "ai_v9_108_R5F16_0831": [
+  "7d0337af97",
+  "6a634b6281"
+ ],
+ "ai_v9_109_R5F17_0831": [
+  "fda8ad353a",
+  "a5d6b3f271"
+ ],
+ "ai_v9_110_R5F18_0831": [
+  "af923978cf",
+  "9c44a67be3"
+ ],
+ "ai_v9_111_R5F19_0831": [
+  "a6252f809d",
+  "46d3021c99"
+ ]
+}

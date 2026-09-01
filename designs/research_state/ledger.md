@@ -7990,3 +7990,37 @@ both artifact gates green, and the FUNDING SPLIT armed — 8 arms forked to 2.5M
 1.5M, ALTERNATING across the whole draw order (better than my first-8 suggestion: same team
 distribution in both halves), 25M ≈ 12.4 GPU-h, converting the z=−0.44 teacher-quality null
 into a powered within-fleet test.**
+
+### 🔄 ITER-3 RECORD SUPERSEDED BY ITS OWN AGENT — better statistics, a null with teeth, and the code fix (2026-08-31)
+
+**The iter-3 agent woke 61 h after its data completed** (my `e71866d` emergency scoring assumed
+a dead watcher — the watcher was not dead, only very slow; the repair was right, the diagnosis
+was wrong). Its analysis is STRICTLY BETTER and its record now replaces mine at the same path,
+with its code fix cherry-picked (`3c8eb97f`): **corrections to my entry, append-only —**
+(1) my paired CI **0.4976 [0.4702, 0.5251] was a naive Wilson on 2×pairs**; the correct paired
+statistic is **0.4996 [0.4891, 0.5101]** — far tighter because **92.6% of side-swapped pairs
+SPLIT** (sd 0.1348 vs ~0.29), the arm now playing the policy on all but 0.11% of decisions so
+the mirror resolves by team draw. (2) I could not compute the comparison that decides the
+PRIMARY bar: **against iteration 2 on the 637 SHARED game indices, −0.0055 [−0.0296, +0.0186]
+— no regression, bar HELD** at a width that would have caught 3pp. (3) Rejection rate stated
+properly: **97.53%** of 2,226 attempts, **97.19%** on the 1,956 that carried evidence (the 88
+raises and 182 clock-truncated counted apart — a floor on the sample is not a finding about
+the leaf). **Probe H's 0.074 was the right prior all along; the registered 1.5–3.5% band
+assumed a 40–75% rejection rate.** (4) **A NULL WITH TEETH I never computed: the race's own
+leaf margin does NOT separate upheld from rejected overrules (+0.0054 [−0.0095, +0.0201]),
+nor does root P(win) distance, nor legal-action count — the leaf's CONFIDENCE is not
+calibrated to the leaf's CORRECTNESS.** Only turn separates (12.3 vs 20.2), post-hoc, 1 of 5,
+reported as a lead. (5) **On 60.5% of attempts the substituted action changed NOTHING in every
+paired line**, and the sign split 429 for the overrule vs 450 for the policy. Two honesty
+items it volunteered: the cut was a wall-clock rule fixed 5 min after launch **with no outcome
+computed** (monitoring read counts/errors/pace only — not optional stopping), and **the
+confirm's own load weakened the race** (13.17 → 8.89 rounds at the same 3 s), so the cell is
+ceteris paribus on the FLAGS but not on the RACE. Three built-in defects it found and fixed
+(no reachable clock — every confirm would have declined for want of a second and the headline
+meter would have read 100% for a reason unrelated to the leaf; rollout wall billed to
+`elapsed_s` via the subtraction that derives `arm_s`; the confirmed-counter keying on the
+playoff STAGE so a conclusive REVERSAL counted as a confirmation). Tests 357 passing in
+`search_dividend` on current main; new gates pin all three defects as measurements plus a CLI
+gate that fails if any `DefensiveConfig` field is fed by no flag. **Surviving candidates: a
+CONTRASTIVE critic objective (probe G sized ≤5.7pp; this cell says the current head has ~none
+of it) and DEPTH (needs the per-decision offset solved first).**

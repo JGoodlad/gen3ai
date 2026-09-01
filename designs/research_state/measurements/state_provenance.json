@@ -1,0 +1,74 @@
+{
+  "teacher_A": {
+    "run": "ai_v9_53_R2F5a_0826",
+    "pinned_teams": [
+      [
+        "celebi",
+        "claydol",
+        "dugtrio",
+        "metagross",
+        "suicune",
+        "zapdos"
+      ],
+      [
+        "claydol",
+        "dugtrio",
+        "gengar",
+        "jirachi",
+        "jynx",
+        "suicune"
+      ]
+    ],
+    "trace_files": 258,
+    "usable_rows": 6305,
+    "train_files": 194,
+    "held_files": 64,
+    "n_on_train": 3000,
+    "n_on_held": 1200
+  },
+  "teacher_B": {
+    "run": "ai_v9_54_R2F5b_0826",
+    "pinned_teams": [
+      [
+        "celebi",
+        "raikou",
+        "registeel",
+        "salamence",
+        "swampert",
+        "tyranitar"
+      ],
+      [
+        "jirachi",
+        "metagross",
+        "salamence",
+        "swampert",
+        "tyranitar",
+        "zapdos"
+      ]
+    ],
+    "trace_files": 262,
+    "n_on_train": 3000,
+    "n_on_held": 1200
+  },
+  "off_slice": {
+    "run": "ai_v9_29_rev1_0823",
+    "files_after_exclusion": 2451,
+    "n": 1500,
+    "distinct_teams": 233,
+    "eval_steps": [
+      "step_10000032",
+      "step_12000000",
+      "step_14000016",
+      "step_16000032",
+      "step_18000000",
+      "step_20000016",
+      "step_2000016",
+      "step_22000032",
+      "step_24000000",
+      "step_4000032",
+      "step_6000000",
+      "step_8000016"
+    ]
+  },
+  "filters": "action_mask.sum(1) >= 2; obs dim 2501; ON split by BATTLE FILE (75/25)"
+}

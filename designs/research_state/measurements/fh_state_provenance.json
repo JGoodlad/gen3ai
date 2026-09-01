@@ -1,0 +1,81 @@
+{
+  "off_run": "ai_v9_29_rev1_0823",
+  "teachers": {
+    "a": {
+      "run": "ai_v9_63_R3F6a_0828",
+      "pinned_teams": [
+        [
+          "celebi",
+          "claydol",
+          "dugtrio",
+          "metagross",
+          "suicune",
+          "zapdos"
+        ],
+        [
+          "claydol",
+          "dugtrio",
+          "gengar",
+          "jirachi",
+          "jynx",
+          "suicune"
+        ]
+      ],
+      "trace_files": 400,
+      "train_files": 300,
+      "held_files": 100,
+      "n_on_train": 3000,
+      "n_on_held": 1200,
+      "off": {
+        "n": 1500,
+        "distinct_teams": 233,
+        "eval_steps": 12,
+        "files_after_exclusion": 2451
+      }
+    },
+    "f": {
+      "run": "ai_v9_68_R3F6f_0828",
+      "pinned_teams": [
+        [
+          "aerodactyl",
+          "gengar",
+          "metagross",
+          "smeargle",
+          "swampert",
+          "tyranitar"
+        ],
+        [
+          "blissey",
+          "claydol",
+          "magneton",
+          "metagross",
+          "salamence",
+          "suicune"
+        ]
+      ],
+      "trace_files": 451,
+      "train_files": 339,
+      "held_files": 112,
+      "n_on_train": 3000,
+      "n_on_held": 1200,
+      "off": {
+        "n": 1500,
+        "distinct_teams": 245,
+        "eval_steps": 12,
+        "files_after_exclusion": 2225
+      }
+    }
+  },
+  "students": {
+    "root": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+    "plain0": "/home/goodlad/dev/gen3ai/models/ai_v9_62_R2PLAIN_0827/final_model.zip",
+    "ecol0": "/home/goodlad/dev/gen3ai/models/ai_v9_58_R2CTRL_0827/final_model.zip",
+    "fold1": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "fold2": "/home/goodlad/dev/gen3ai/models/ai_v9_76_R4ACTION_0830/final_model.zip",
+    "fold2self": "/home/goodlad/dev/gen3ai/models/ai_v9_72_R3SELF_0828/final_model.zip",
+    "tick1": "/home/goodlad/dev/gen3ai/models/ai_v9_34_tick1_0824/final_model.zip",
+    "tick1x2": "/home/goodlad/dev/gen3ai/models/ai_v9_37_tick1_dosext_0825/final_model.zip",
+    "gen17": "/home/goodlad/dev/gen3ai/models/ai_v9_21_gen17_pfspoff_0820/final_model.zip"
+  },
+  "filters": "action_mask.sum(1) >= 2; obs dim 2501; ON split by BATTLE FILE (75/25)"
+}

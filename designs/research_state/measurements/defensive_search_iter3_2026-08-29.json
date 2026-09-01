@@ -1,101 +1,738 @@
 {
-  "cell": "defensive_1s_contested3s_confirm6",
-  "date": "2026-08-29",
-  "games": 1275,
-  "pairs": 637,
-  "checkpoint": "models/ai_v9_29_rev1_0823/checkpoints/checkpoint_9995088_steps.zip",
-  "games_seed": 7,
-  "shards": [
-    [
-      0,
-      267
-    ],
-    [
-      267,
-      534
-    ],
-    [
-      534,
-      800
-    ]
-  ],
-  "flags_delta_vs_iter2": {
-    "defensive_confirm": 6,
-    "defensive_confirm_deadline_s": 30.0
+ "date": "2026-08-29",
+ "iteration": 3,
+ "one_change": "--defensive-confirm 6 --defensive-confirm-deadline-s 30 \u2014 before acting on an overrule, the race's winner and the policy's own action are settled by up to 6 PAIRED rollouts to a terminal, and the policy's action stands unless the paired difference clears 2*SE over >= 4 pairs. Contested deadline 3 s, gate 0.15, seq floor 5, win-prob leaf, depth 1: ALL UNCHANGED from iteration 2.",
+ "checkpoint": "models/ai_v9_29_rev1_0823/checkpoints/checkpoint_9995088_steps.zip (the SAME checkpoint iterations 1-2 and the historical mirror arms played)",
+ "invocation": "python -m main.search_dividend <ckpt> --arm honest --budget 1 --root-strategy defensive --defensive-leaf winprob --defensive-wp-margin 0.15 --defensive-confirm 6 --defensive-confirm-deadline-s 30 --defensive-contested-deadline-s 3.0 --games-start <lo> --games <n> --games-seed 7 --opponents self --battle-timeout-s 1800 --battle-idle-s 120",
+ "shards": {
+  "shardA.jsonl": {
+   "orientation_games": 434,
+   "game_index_range": [
+    0,
+    216
+   ]
   },
-  "paired_wr": 0.4976,
-  "paired_ci": [
-    0.4702,
-    0.5251
+  "shardB.jsonl": {
+   "orientation_games": 426,
+   "game_index_range": [
+    267,
+    479
+   ]
+  },
+  "shardC.jsonl": {
+   "orientation_games": 415,
+   "game_index_range": [
+    534,
+    741
+   ]
+  }
+ },
+ "null": 0.5,
+ "arm": {
+  "label": "defensive_1s_contested3s_confirm6",
+  "arm": "honest",
+  "budget_s": 1.0,
+  "contested_deadline_s": 3.0,
+  "root_strategy": "defensive",
+  "score_mode": "win_prob",
+  "orientation_games": 1275,
+  "finished": 1275,
+  "decisive": 1270,
+  "won": 634,
+  "ties": 5,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.4992,
+  "ci95": [
+   0.4718,
+   0.5267
   ],
-  "raw_wr": 0.4973,
-  "tied": 5,
+  "paired_win_rate": 0.4996,
+  "paired_ci95": [
+   0.4891,
+   0.5101
+  ],
+  "paired_ci_halfwidth": 0.0105,
+  "n_pairs": 637,
   "decisions": 55958,
-  "provenance_pct": {
-    "forced_wp": 66.18,
-    "raced": 22.02,
-    "separated": 7.83,
-    "futility": 14.19,
-    "futility_deadline_pct_of_futility": 100.0,
-    "kept": 7.73,
-    "overruled_acted": 0.098
+  "searched": 12320,
+  "changed": 55,
+  "searched_frac": 0.2202,
+  "change_rate": 0.0045,
+  "fallbacks": {
+   "defensive_forced": 37031,
+   "not_move_selection": 5500,
+   "search_error": 89,
+   "prefix_gate_failed": 481,
+   "root_failed": 537
+  },
+  "rates": {
+   "forced": 0.7504,
+   "forced_wp": 0.7504,
+   "forced_n_legal": 0.0,
+   "raced": 0.2496,
+   "separated_of_raced": 0.3554,
+   "futility_of_raced": 0.6446,
+   "kept_of_raced": 0.351,
+   "overrule_of_all": 0.0011,
+   "overrule_of_raced": 0.0045,
+   "futility_deadline_frac": 1.0
+  },
+  "counts": {
+   "n_defensive": 49351,
+   "n_defensive_confirm_attempted": 2226,
+   "n_defensive_confirm_declined": 2171,
+   "n_defensive_confirm_error": 88,
+   "n_defensive_confirm_inconclusive": 2031,
+   "n_defensive_confirm_no_budget": 0,
+   "n_defensive_confirm_reversed": 52,
+   "n_defensive_confirmed": 55,
+   "n_defensive_forced": 37031,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 37031,
+   "n_defensive_futility": 7941,
+   "n_defensive_futility_deadline": 7941,
+   "n_defensive_kept": 4324,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_overruled": 55,
+   "n_defensive_raced": 12320,
+   "n_defensive_separated": 4379,
+   "defensive_banked_s": 40774.91
+  },
+  "futility_split": {
+   "total": 7941,
+   "deadline_truncated": 7941,
+   "genuine_non_separation": 0,
+   "note": "iteration-1 rows predate the counter, so `deadline_truncated` is None there rather than 0 \u2014 the record states it was 100% by the exact identity futility == deadline_truncated over its 3,301 stops"
+  },
+  "race": {
+   "raced": 12320,
+   "rounds_total": 109558,
+   "rounds_per_race": 8.893,
+   "seq_floor": 5,
+   "max_rounds_supply": 64,
+   "eliminated_per_race": 4.777,
+   "arms_saved_total": 261967,
+   "rounds_incomplete": 0,
+   "deadline_truncated_decisions": 7941,
+   "mean_search_s_per_raced_decision": 2.5179
+  },
+  "envelope": {
+   "mean_wall_s_per_game": 63.38,
+   "total_wall_h": 22.45,
+   "search_s_per_game": 24.33,
+   "contested_decisions_per_game": 9.66,
+   "uniform_notional_s_per_game": 38.71,
+   "inside_uniform_notional": true,
+   "banked_vs_uniform_s_per_game": 14.38,
+   "banked_frac_of_uniform": 0.3714
+  },
+  "banked": {
+   "total_s": 40774.91,
+   "per_decision_s": 0.8262,
+   "per_game_s": 31.98,
+   "of_notional_budget": 0.8262,
+   "caveat": "the RAW counter, mixing scales once the contested deadline differs from --budget: a forced decision banks --budget while a raced one banks the residual of its own (larger) deadline. Quote envelope.banked_frac_of_uniform instead, which is derived from measured SPEND on one scale."
   },
   "confirm": {
-    "attempted": 2226,
-    "confirmed": 55,
+   "attempted": 2226,
+   "proposed_overrule_of_all": 0.0451,
+   "proposed_overrule_of_raced": 0.1807,
+   "kept_on_own_action": 2153,
+   "kept_on_own_action_of_raced": 0.1748,
+   "confirmed": 55,
+   "declined": 2171,
+   "reversed": 52,
+   "inconclusive": 2031,
+   "no_budget": 0,
+   "error": 88,
+   "reject_rate": 0.9753,
+   "uphold_rate": 0.0247,
+   "no_pairs_the_rollouts_raised": 88,
+   "clock_truncated_below_floor": 182,
+   "evidence_backed": 1956,
+   "min_pairs_floor": 4,
+   "reject_rate_evidence_backed": 0.9719,
+   "uphold_rate_evidence_backed": 0.0281,
+   "conclusive_total": 107,
+   "conclusive_uphold_share": 0.514,
+   "rollout_pairs_total": 11670,
+   "realized_pairs_per_attempt": 5.243,
+   "pair_cap": 6,
+   "pairs_truncated_below_cap": 633,
+   "s_total": 44034.7,
+   "s_per_attempt": 19.78,
+   "s_per_pair": 3.773,
+   "s_per_game": 34.54,
+   "attempts_per_game": 1.746,
+   "playoff_ran": 2138,
+   "rollouts_capped": 27,
+   "rollout_pairs_failed": 529,
+   "min_detectable_paired_difference": {
+    "n_pairs": 6,
+    "min_pairs_that_must_flip": 3,
+    "as_mean_difference": 0.5,
+    "note": "k of n paired rollouts must flip the GAME OUTCOME in the same direction; below that the confirm declines"
+   }
+  }
+ },
+ "iteration2": {
+  "label": "defensive_1s_contested3s (iteration 2)",
+  "arm": "honest",
+  "budget_s": 1.0,
+  "contested_deadline_s": 3.0,
+  "root_strategy": "defensive",
+  "score_mode": "win_prob",
+  "orientation_games": 1600,
+  "finished": 1600,
+  "decisive": 1591,
+  "won": 796,
+  "ties": 9,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.5003,
+  "ci95": [
+   0.4758,
+   0.5249
+  ],
+  "paired_win_rate": 0.5003,
+  "paired_ci95": [
+   0.4803,
+   0.5203
+  ],
+  "paired_ci_halfwidth": 0.02,
+  "n_pairs": 800,
+  "decisions": 68585,
+  "searched": 15076,
+  "changed": 3531,
+  "searched_frac": 0.2198,
+  "change_rate": 0.2342,
+  "fallbacks": {
+   "defensive_forced": 45586,
+   "not_move_selection": 6812,
+   "search_error": 81,
+   "root_failed": 473,
+   "prefix_gate_failed": 556,
+   "no_scored_arm": 1
+  },
+  "rates": {
+   "forced": 0.7515,
+   "forced_wp": 0.7515,
+   "forced_n_legal": 0.0,
+   "raced": 0.2485,
+   "separated_of_raced": 0.4542,
+   "futility_of_raced": 0.5458,
+   "kept_of_raced": 0.22,
+   "overrule_of_all": 0.0582,
+   "overrule_of_raced": 0.2342,
+   "futility_deadline_frac": 0.9993
+  },
+  "counts": {
+   "n_defensive": 60662,
+   "n_defensive_confirm_declined": 0,
+   "n_defensive_confirmed": 0,
+   "n_defensive_forced": 45586,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 45586,
+   "n_defensive_futility": 8229,
+   "n_defensive_futility_deadline": 8223,
+   "n_defensive_kept": 3316,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_overruled": 3531,
+   "n_defensive_raced": 15076,
+   "n_defensive_separated": 6847,
+   "defensive_banked_s": 56715.56
+  },
+  "futility_split": {
+   "total": 8229,
+   "deadline_truncated": 8223,
+   "genuine_non_separation": 6,
+   "note": "iteration-1 rows predate the counter, so `deadline_truncated` is None there rather than 0 \u2014 the record states it was 100% by the exact identity futility == deadline_truncated over its 3,301 stops"
+  },
+  "race": {
+   "raced": 15076,
+   "rounds_total": 198615,
+   "rounds_per_race": 13.174,
+   "seq_floor": 5,
+   "max_rounds_supply": 64,
+   "eliminated_per_race": 5.347,
+   "arms_saved_total": 630394,
+   "rounds_incomplete": 0,
+   "deadline_truncated_decisions": 8223,
+   "mean_search_s_per_raced_decision": 2.2776
+  },
+  "envelope": {
+   "mean_wall_s_per_game": 24.44,
+   "total_wall_h": 10.86,
+   "search_s_per_game": 21.46,
+   "contested_decisions_per_game": 9.42,
+   "uniform_notional_s_per_game": 37.91,
+   "inside_uniform_notional": true,
+   "banked_vs_uniform_s_per_game": 16.45,
+   "banked_frac_of_uniform": 0.434
+  },
+  "banked": {
+   "total_s": 56715.56,
+   "per_decision_s": 0.9349,
+   "per_game_s": 35.447,
+   "of_notional_budget": 0.9349,
+   "caveat": "the RAW counter, mixing scales once the contested deadline differs from --budget: a forced decision banks --budget while a raced one banks the residual of its own (larger) deadline. Quote envelope.banked_frac_of_uniform instead, which is derived from measured SPEND on one scale."
+  }
+ },
+ "iteration1": {
+  "label": "defensive_1s (iteration 1)",
+  "arm": "honest",
+  "budget_s": 1.0,
+  "contested_deadline_s": null,
+  "root_strategy": "defensive",
+  "score_mode": "win_prob",
+  "orientation_games": 400,
+  "finished": 400,
+  "decisive": 397,
+  "won": 196,
+  "ties": 3,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.4937,
+  "ci95": [
+   0.4448,
+   0.5427
+  ],
+  "paired_win_rate": 0.4938,
+  "paired_ci95": [
+   0.4586,
+   0.5289
+  ],
+  "paired_ci_halfwidth": 0.0352,
+  "n_pairs": 200,
+  "decisions": 16942,
+  "searched": 3915,
+  "changed": 270,
+  "searched_frac": 0.2311,
+  "change_rate": 0.069,
+  "fallbacks": {
+   "defensive_forced": 11059,
+   "not_move_selection": 1711,
+   "search_error": 25,
+   "root_failed": 148,
+   "prefix_gate_failed": 84
+  },
+  "rates": {
+   "forced": 0.7385,
+   "forced_wp": 0.7385,
+   "forced_n_legal": 0.0,
+   "raced": 0.2615,
+   "separated_of_raced": 0.1568,
+   "futility_of_raced": 0.8432,
+   "kept_of_raced": 0.0879,
+   "overrule_of_all": 0.018,
+   "overrule_of_raced": 0.069,
+   "futility_deadline_frac": null
+  },
+  "counts": {
+   "n_defensive": 14974,
+   "n_defensive_confirm_declined": 0,
+   "n_defensive_confirmed": 0,
+   "n_defensive_forced": 11059,
+   "n_defensive_forced_n_legal": 0,
+   "n_defensive_forced_wp": 11059,
+   "n_defensive_futility": 3301,
+   "n_defensive_kept": 344,
+   "n_defensive_no_win_prob": 0,
+   "n_defensive_overruled": 270,
+   "n_defensive_raced": 3915,
+   "n_defensive_separated": 614,
+   "defensive_banked_s": 11536.88
+  },
+  "futility_split": {
+   "total": 3301,
+   "deadline_truncated": null,
+   "genuine_non_separation": null,
+   "note": "iteration-1 rows predate the counter, so `deadline_truncated` is None there rather than 0 \u2014 the record states it was 100% by the exact identity futility == deadline_truncated over its 3,301 stops"
+  },
+  "race": {
+   "raced": 3915,
+   "rounds_total": 18027,
+   "rounds_per_race": 4.605,
+   "seq_floor": 5,
+   "max_rounds_supply": 64,
+   "eliminated_per_race": 2.527,
+   "arms_saved_total": 6973,
+   "rounds_incomplete": 0,
+   "deadline_truncated_decisions": 3301,
+   "mean_search_s_per_raced_decision": 0.8969
+  },
+  "envelope": {
+   "mean_wall_s_per_game": 10.73,
+   "total_wall_h": 1.19,
+   "search_s_per_game": 8.78,
+   "contested_decisions_per_game": 9.79,
+   "uniform_notional_s_per_game": 37.44,
+   "inside_uniform_notional": true,
+   "banked_vs_uniform_s_per_game": 28.66,
+   "banked_frac_of_uniform": 0.7655
+  },
+  "banked": {
+   "total_s": 11536.88,
+   "per_decision_s": 0.7705,
+   "per_game_s": 28.842,
+   "of_notional_budget": 0.7705,
+   "caveat": "the RAW counter, mixing scales once the contested deadline differs from --budget: a forced decision banks --budget while a raced one banks the residual of its own (larger) deadline. Quote envelope.banked_frac_of_uniform instead, which is derived from measured SPEND on one scale."
+  }
+ },
+ "historical": {
+  "mirror_base": {
+   "what": "the policy alone \u2014 the control; 0.500 by construction",
+   "path": "tmp/search_dividend/mirror_base.jsonl",
+   "budget_s": 0.0,
+   "orientation_games": 60,
+   "finished": 60,
+   "decisive": 60,
+   "won": 30,
+   "ties": 0,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.5,
+   "ci95": [
+    0.3773,
+    0.6227
+   ],
+   "paired_win_rate": 0.5,
+   "paired_ci95": [
+    0.5,
+    0.5
+   ],
+   "n_pairs": 30
+  },
+  "mirror_honest_1s": {
+   "what": "THE HISTORICAL BAR: plain depth-1 grid search, belief-determinized, 1 s/decision",
+   "path": "tmp/search_dividend/mirror_honest_1s.jsonl",
+   "budget_s": 1.0,
+   "orientation_games": 240,
+   "finished": 240,
+   "decisive": 239,
+   "won": 70,
+   "ties": 1,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.2929,
+   "ci95": [
+    0.2388,
+    0.3535
+   ],
+   "paired_win_rate": 0.2938,
+   "paired_ci95": [
+    0.2353,
+    0.3522
+   ],
+   "n_pairs": 120
+  },
+  "mirror_honest_3s": {
+   "what": "the same at a UNIFORM 3 s \u2014 the arm that says the deadline alone is not the mechanism",
+   "path": "tmp/search_dividend/mirror_honest_3s.jsonl",
+   "budget_s": 3.0,
+   "orientation_games": 80,
+   "finished": 79,
+   "decisive": 78,
+   "won": 21,
+   "ties": 1,
+   "errors": 1,
+   "unfinished": 1,
+   "win_rate": 0.2692,
+   "ci95": [
+    0.1834,
+    0.3768
+   ],
+   "paired_win_rate": 0.2756,
+   "paired_ci95": [
+    0.1825,
+    0.3688
+   ],
+   "n_pairs": 39
+  },
+  "mirror_oracle_1s": {
+   "what": "grid search on the TRUE hidden team, 1 s",
+   "path": "tmp/search_dividend/mirror_oracle_1s.jsonl",
+   "budget_s": 1.0,
+   "orientation_games": 120,
+   "finished": 120,
+   "decisive": 118,
+   "won": 38,
+   "ties": 2,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.322,
+   "ci95": [
+    0.2445,
+    0.4108
+   ],
+   "paired_win_rate": 0.325,
+   "paired_ci95": [
+    0.2346,
+    0.4154
+   ],
+   "n_pairs": 60
+  },
+  "mirror_oracle_3s": {
+   "what": "...at 3 s",
+   "path": "tmp/search_dividend/mirror_oracle_3s.jsonl",
+   "budget_s": 3.0,
+   "orientation_games": 80,
+   "finished": 78,
+   "decisive": 78,
+   "won": 34,
+   "ties": 0,
+   "errors": 2,
+   "unfinished": 2,
+   "win_rate": 0.4359,
+   "ci95": [
+    0.3314,
+    0.5464
+   ],
+   "paired_win_rate": 0.4342,
+   "paired_ci95": [
+    0.3223,
+    0.5461
+   ],
+   "n_pairs": 38
+  },
+  "playoff_10s": {
+   "what": "the screen + paired terminal rollouts at 20 s \u2014 the best prior arm",
+   "path": "tmp/search_dividend/playoff_10s.jsonl",
+   "budget_s": 20.0,
+   "orientation_games": 80,
+   "finished": 80,
+   "decisive": 80,
+   "won": 36,
+   "ties": 0,
+   "errors": 0,
+   "unfinished": 0,
+   "win_rate": 0.45,
+   "ci95": [
+    0.3458,
+    0.5588
+   ],
+   "paired_win_rate": 0.45,
+   "paired_ci95": [
+    0.3731,
+    0.5269
+   ],
+   "n_pairs": 40
+  }
+ },
+ "comparisons": {
+  "vs_iteration2_unpaired": {
+   "delta": -0.0011,
+   "ci95": [
+    -0.0379,
+    0.0357
+   ],
+   "excludes_zero": false
+  },
+  "vs_iteration2_paired_on_game": {
+   "n_shared_games": 637,
+   "delta": -0.0055,
+   "ci95": [
+    -0.0296,
+    0.0186
+   ],
+   "excludes_zero": false,
+   "note": "THE REGISTERED NO-REGRESSION ROW: the two cells differ in exactly one flag (--defensive-confirm), and on the shared indices they are the same pinned dice and the same team draw"
+  },
+  "vs_iteration1_paired_on_game": {
+   "n_shared_games": 200,
+   "delta": 0.0063,
+   "ci95": [
+    -0.0316,
+    0.0441
+   ],
+   "excludes_zero": false,
+   "note": "the three-way shared-seed row \u2014 iteration 1's whole cell is game indices 0-199"
+  },
+  "vs_honest_1s_unpaired": {
+   "delta": 0.2063,
+   "ci95": [
+    0.1398,
+    0.267
+   ],
+   "excludes_zero": true
+  },
+  "vs_honest_1s_paired_on_game": {
+   "n_shared_games": 120,
+   "delta": 0.2021,
+   "ci95": [
+    0.1398,
+    0.2643
+   ],
+   "excludes_zero": true,
+   "note": "the historical bar \u2014 plain depth-1 search at the same budget"
+  }
+ },
+ "bars": {
+  "prediction_overrule_rate_falls": {
+   "registered": [
+    0.015,
+    0.035
+   ],
+   "iteration2": 0.0582,
+   "iteration3": 0.0011,
+   "in_range": false,
+   "fell": true,
+   "iteration3_PROPOSED_overrule_rate": 0.0451,
+   "race_unchanged": true,
+   "note": "the registered band was built as iteration 2's 5.82% times a 40-75% rejection rate. Probe H had already measured the same filter from the other side \u2014 the playoff arm's action-change rate collapsed to 0.074 of searched decisions under paired rollouts \u2014 which implies a much LOWER post-confirm rate than the band. Scored as registered either way."
+  },
+  "primary_no_regression": {
+   "registered": "win rate >= 0.50, and no regression vs iteration 2 on shared seeds",
+   "iteration3_paired": 0.4996,
+   "iteration3_paired_ci95": [
+    0.4891,
+    0.5101
+   ],
+   "reaches_null": true,
+   "point_at_or_above_null": false,
+   "iteration2_paired": 0.5003,
+   "paired_delta_on_shared_games": -0.0055,
+   "regression_excluded": true
+  },
+  "stretch_ci_above_null": {
+   "registered": "paired CI above 0.50 \u2014 resolves only if the true rate is >= ~0.525; a 0.51-ish point estimate is 'real but unresolved', PRE-STATED",
+   "paired_win_rate": 0.4996,
+   "paired_ci95": [
+    0.4891,
+    0.5101
+   ],
+   "paired_ci_above_null": false,
+   "resolvable_at_this_n": "a true rate >= 0.5105 would have cleared 0.50 at this n"
+  },
+  "confirmation_rejection_rate": {
+   "registered": "report it directly \u2014 it is the leaf-bias meter in vivo",
+   "attempted": 2226,
+   "confirmed": 55,
+   "reject_rate": 0.9753,
+   "split": {
     "reversed": 52,
     "inconclusive": 2031,
     "no_budget": 0,
-    "error": 88,
-    "error_all_r0": true,
-    "median_se_at_stop": 0.167,
-    "two_se_bar": 0.333,
-    "mean_abs_paired_mean_inconclusive": 0.097,
-    "mean_wall_s_per_event": 19.78,
-    "played_by_leaf_margin": {
-      "[0,0.02)": [
-        3,
-        9
-      ],
-      "[0.02,0.05)": [
-        13,
-        11
-      ],
-      "[0.05,0.1)": [
-        18,
-        21
-      ],
-      "[0.1,1)": [
-        21,
-        11
-      ]
-    }
+    "error": 88
+   },
+   "reject_rate_evidence_backed": 0.9719,
+   "evidence_backed_attempts": 1956,
+   "excluded_no_pairs": 88,
+   "excluded_clock_truncated_below_floor": 182,
+   "conclusive_uphold_share": 0.514,
+   "conclusive_total": 107,
+   "min_detectable_paired_difference": {
+    "n_pairs": 6,
+    "min_pairs_that_must_flip": 3,
+    "as_mean_difference": 0.5,
+    "note": "k of n paired rollouts must flip the GAME OUTCOME in the same direction; below that the confirm declines"
+   }
   },
-  "proposed_overrule_rate_pct": 3.98,
-  "acted_overrule_rate_pct": 0.098,
-  "iter2_refs": {
-    "overrule_rate_pct": 5.82,
-    "paired_wr": 0.5003,
-    "k_worlds": 14.0,
-    "separated_of_raced": 0.4542,
-    "elapsed_per_raced_s": 2.278
+  "cost_envelope": {
+   "registered": "report the projected and realized s/game",
+   "projected_s_per_game": "25.1 base + 2.2 attempts x 12.2 s = 51.9 (pilot: 12 orientation-games at N=8, 2.03 s per PAIR)",
+   "realized_wall_s_per_game": 63.38,
+   "realized_confirm_s_per_game": 34.54,
+   "realized_search_s_per_game": 24.33,
+   "iteration2_wall_s_per_game": 24.44,
+   "uniform_notional_s_per_game": 38.71,
+   "banked_frac_of_uniform_SEARCH_only": 0.3714,
+   "confirm_inside_the_bank": false,
+   "note": "the SEARCH still banks most of the uniform notional; the CONFIRM does not fit inside that bank and is not claimed to \u2014 one pair of terminal rollouts costs more than the whole 1 s notional of the decision it settles. This configuration is an INSTRUMENT for reading the leaf, not a deployable ladder setting (iteration 1's uniform 1 s remains that)."
+  }
+ },
+ "confirmed_vs_rejected": {
+  "n_events": 2226,
+  "leaf_margin": {
+   "upheld_n": 55,
+   "rejected_n": 2171,
+   "upheld_median": 0.0783,
+   "rejected_median": 0.0667,
+   "upheld_mean": 0.0893,
+   "rejected_mean": 0.0839,
+   "welch_ci95_on_difference": [
+    -0.0095,
+    0.0201
+   ],
+   "excludes_zero": false
   },
-  "iter3_width": {
-    "k_worlds": 9.28,
-    "m_opp": 5.227,
-    "elapsed_per_raced_s": 2.212,
-    "separated_of_raced": 0.3554
+  "root_win_prob_distance_from_half": {
+   "upheld_n": 55,
+   "rejected_n": 2171,
+   "upheld_median": 0.0641,
+   "rejected_median": 0.071,
+   "upheld_mean": 0.0734,
+   "rejected_mean": 0.0724,
+   "welch_ci95_on_difference": [
+    -0.011,
+    0.013
+   ],
+   "excludes_zero": false
   },
-  "contention_note": "cell ran beside probe P's 352-shard eval fleet; width (k_worlds 9.28 vs 14.0) and thus proposed-rate/separation comparisons vs iter-2 are load-confounded; within-cell verdict split and the mirror are load-robust",
-  "cost": {
-    "mean_wall_s_per_game": 63.4,
-    "mean_confirm_s_per_game": 34.54,
-    "mean_banked_s_per_game": 31.98
+  "n_legal": {
+   "upheld_n": 55,
+   "rejected_n": 2171,
+   "upheld_median": 8.0,
+   "rejected_median": 8.0,
+   "upheld_mean": 7.8727,
+   "rejected_mean": 7.5523,
+   "welch_ci95_on_difference": [
+    -0.0483,
+    0.6892
+   ],
+   "excludes_zero": false
   },
-  "predictions_scored": {
-    "proposed_rate_continues_iter2_5.82pct": "MISSED (3.98%) \u2014 attributed to contention-degraded width, not a race change",
-    "acted_rate_band_1.5_3.5pct": "MISSED LOW (0.098%) \u2014 91.2% of confirms inconclusive at r<=6",
-    "no_regression_vs_iter2": "HELD (0.4976 vs 0.5003, CIs overlap fully)"
+  "turn": {
+   "upheld_n": 55,
+   "rejected_n": 2171,
+   "upheld_median": 13.0,
+   "rejected_median": 16.0,
+   "upheld_mean": 12.3091,
+   "rejected_mean": 20.1985,
+   "welch_ci95_on_difference": [
+    -10.1974,
+    -5.5814
+   ],
+   "excludes_zero": true
   },
-  "headline": "Terminal adjudication of race-certified overrules: 91.2% cannot be distinguished from the policy's action at r<=6 pairs (median 2SE bar 0.333 vs typical |paired mean| 0.097 -> ~12x more pairs ~180s/confirm to resolve); among the 107 that separate, 55 confirmed vs 52 reversed - a coin flip. The depth-1 win-prob leaf's overrules carry no terminal-adjudicable content."
+  "abs_paired_mean": {
+   "upheld_n": 55,
+   "rejected_n": 2171,
+   "upheld_median": 0.5,
+   "rejected_median": 0.0,
+   "upheld_mean": 0.5852,
+   "rejected_mean": 0.1052,
+   "welch_ci95_on_difference": [
+    0.4466,
+    0.5134
+   ],
+   "excludes_zero": true
+  },
+  "stage_counts": {
+   "error": 88,
+   "inconclusive": 2031,
+   "played": 107
+  },
+  "paired_difference": {
+   "exactly_zero_mean": 1347,
+   "exactly_zero_frac": 0.6051,
+   "favoured_the_overrule": 429,
+   "favoured_the_policy": 450,
+   "mean_of_paired_means": -0.0055,
+   "median_abs_paired_mean": 0.0,
+   "note": "`favoured_*` counts SIGN only and includes differences far too small to clear the confirm's own bar; the verdict counters are the decision, this is the raw evidence behind them"
+  }
+ },
+ "pair_score_distribution": {
+  "n_pairs": 637,
+  "counts": {
+   "0.0": 23,
+   "0.25": 1,
+   "0.5": 590,
+   "1.0": 23
+  },
+  "split_frac": 0.9262,
+  "sd": 0.1348
+ }
 }

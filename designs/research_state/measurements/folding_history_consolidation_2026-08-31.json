@@ -1,0 +1,1122 @@
+{
+  "generated": "folding_history_probe.py aggregate",
+  "cells": {
+    "plain0_f1e4_s1": {
+      "cell": "plain0_f1e4_s1",
+      "student_key": "plain0",
+      "student_run": "ai_v9_62_R2PLAIN_0827",
+      "arm": "A",
+      "roster_folds": 0,
+      "teacher_set": "f",
+      "self_target": false,
+      "seed": 1,
+      "lr": 0.0001,
+      "a0": 0.675,
+      "a_max": 0.8083333333333333,
+      "gain_max": 0.1333333333333333,
+      "step1_shock_kl": 0.15600315083636687,
+      "final_off_kl": 0.5149219316712143,
+      "final_off_agree": 0.6873333333333334,
+      "final_off_value_mad": 8.09323200571537,
+      "final_off_value_corr": 0.9132695078279871,
+      "idx_gain_0.03": {
+        "step": 1.5384615384615423,
+        "exact": false,
+        "off_kl": 0.21057294785774008,
+        "off_agree": 0.7987179487179485,
+        "off_value_mad": 1.8071917549188337
+      },
+      "idx_gain_0.05": {
+        "step": 3.8000000000000043,
+        "exact": false,
+        "off_kl": 0.2413790924674659,
+        "off_agree": 0.7711333333333333,
+        "off_value_mad": 2.5210016607999814
+      },
+      "idx_gain_0.10": {
+        "step": 27.200000000000042,
+        "exact": false,
+        "off_kl": 0.24987171390487817,
+        "off_agree": 0.7796,
+        "off_value_mad": 4.000673534552255
+      },
+      "idx_abs_0.70": {
+        "step": 1.076923076923069,
+        "exact": false,
+        "off_kl": 0.16379883612513363,
+        "off_agree": 0.8221025641025644,
+        "off_value_mad": 1.6173013957372044
+      },
+      "idx_abs_0.78": {
+        "step": 30.080000000000023,
+        "exact": false,
+        "off_kl": 0.2553044854462477,
+        "off_agree": 0.77704,
+        "off_value_mad": 3.873605869690576
+      },
+      "idx_abs_0.80": {
+        "step": 50.18181818181826,
+        "exact": false,
+        "off_kl": 0.3123596194775847,
+        "off_agree": 0.7492727272727272,
+        "off_value_mad": 4.862595113414711
+      },
+      "at_32": {
+        "gain": 0.10833333333333328,
+        "off_kl": 0.258926333140494,
+        "off_agree": 0.7753333333333333,
+        "off_value_mad": 3.7888940931161246,
+        "on_held": 0.7833333333333333,
+        "eff": 0.41839442137602656
+      },
+      "at_135": {
+        "gain": 0.1333333333333333,
+        "off_kl": 0.37877657110096047,
+        "off_agree": 0.7213333333333334,
+        "off_value_mad": 6.753300742030143,
+        "on_held": 0.8083333333333333,
+        "eff": 0.35201050832099684
+      },
+      "at_400": {
+        "gain": 0.12416666666666665,
+        "off_kl": 0.5149219316712143,
+        "off_agree": 0.6873333333333334,
+        "off_value_mad": 8.09323200571537,
+        "on_held": 0.7991666666666667,
+        "eff": 0.24113687731978178
+      }
+    }
+  },
+  "curves": {
+    "plain0_f1e4_s1": [
+      {
+        "step": 0,
+        "on_held_agree": 0.675,
+        "on_train_agree": 0.6791666666666667,
+        "on_held_teacher_ce": 0.9437074174822814,
+        "on_held_tv": 0.2948206716874022,
+        "off_kl": 0.0,
+        "off_kl_median": 0.0,
+        "off_agree": 1.0,
+        "off_value_mad": 0.0,
+        "off_value_corr": 1.0,
+        "elapsed_s": 31.6
+      },
+      {
+        "step": 1,
+        "on_held_agree": 0.6991666666666667,
+        "on_train_agree": 0.6883333333333334,
+        "on_held_teacher_ce": 0.8198739232244653,
+        "on_held_tv": 0.2729463324942133,
+        "off_kl": 0.15600315083636687,
+        "off_kl_median": 0.03755988368840449,
+        "off_agree": 0.826,
+        "off_value_mad": 1.5856530025402704,
+        "off_value_corr": 0.9959469801055144,
+        "elapsed_s": 43.8
+      },
+      {
+        "step": 2,
+        "on_held_agree": 0.71,
+        "on_train_agree": 0.7125,
+        "on_held_teacher_ce": 0.8274779587232672,
+        "on_held_tv": 0.2659161550725472,
+        "off_kl": 0.257347059590345,
+        "off_kl_median": 0.07129226538288111,
+        "off_agree": 0.7753333333333333,
+        "off_value_mad": 1.9970821141004562,
+        "off_value_corr": 0.9913859289625028,
+        "elapsed_s": 56.4
+      },
+      {
+        "step": 4,
+        "on_held_agree": 0.7266666666666667,
+        "on_train_agree": 0.7425,
+        "on_held_teacher_ce": 0.7668285589533435,
+        "on_held_tv": 0.24997626013864008,
+        "off_kl": 0.23960487389825713,
+        "off_kl_median": 0.07928283756014334,
+        "off_agree": 0.7706666666666667,
+        "off_value_mad": 2.579214943766594,
+        "off_value_corr": 0.9838149940469538,
+        "elapsed_s": 70.7
+      },
+      {
+        "step": 7,
+        "on_held_agree": 0.7433333333333333,
+        "on_train_agree": 0.7541666666666667,
+        "on_held_teacher_ce": 0.7369640948475005,
+        "on_held_tv": 0.2380644716924229,
+        "off_kl": 0.25459684691489665,
+        "off_kl_median": 0.08789758674543158,
+        "off_agree": 0.7793333333333333,
+        "off_value_mad": 2.8843781356016795,
+        "off_value_corr": 0.9792908632611959,
+        "elapsed_s": 86.4
+      },
+      {
+        "step": 12,
+        "on_held_agree": 0.76,
+        "on_train_agree": 0.8033333333333333,
+        "on_held_teacher_ce": 0.6551545135845663,
+        "on_held_tv": 0.23144257119014483,
+        "off_kl": 0.28800473745856714,
+        "off_kl_median": 0.10606002102087535,
+        "off_agree": 0.7586666666666667,
+        "off_value_mad": 4.3194308440287905,
+        "off_value_corr": 0.9729521078224722,
+        "elapsed_s": 102.4
+      },
+      {
+        "step": 20,
+        "on_held_agree": 0.7625,
+        "on_train_agree": 0.8408333333333333,
+        "on_held_teacher_ce": 0.622887451377419,
+        "on_held_tv": 0.22883333646581464,
+        "off_kl": 0.23628978505145423,
+        "off_kl_median": 0.0892186893037697,
+        "off_agree": 0.786,
+        "off_value_mad": 4.318342696706454,
+        "off_value_corr": 0.9688872792093637,
+        "elapsed_s": 116.4
+      },
+      {
+        "step": 32,
+        "on_held_agree": 0.7833333333333333,
+        "on_train_agree": 0.8841666666666667,
+        "on_held_teacher_ce": 0.5843656039333678,
+        "on_held_tv": 0.22219845258882978,
+        "off_kl": 0.258926333140494,
+        "off_kl_median": 0.10604210095768767,
+        "off_agree": 0.7753333333333333,
+        "off_value_mad": 3.7888940931161246,
+        "off_value_corr": 0.9639467573066172,
+        "elapsed_s": 132.5
+      },
+      {
+        "step": 52,
+        "on_held_agree": 0.8016666666666666,
+        "on_train_agree": 0.9383333333333334,
+        "on_held_teacher_ce": 0.5639079710874447,
+        "on_held_tv": 0.2189295548209419,
+        "off_kl": 0.31770294811129357,
+        "off_kl_median": 0.13595486306913396,
+        "off_agree": 0.7466666666666667,
+        "off_value_mad": 4.969965215444565,
+        "off_value_corr": 0.9566474603277196,
+        "elapsed_s": 157.2
+      },
+      {
+        "step": 84,
+        "on_held_agree": 0.8058333333333333,
+        "on_train_agree": 0.9658333333333333,
+        "on_held_teacher_ce": 0.5599857624651774,
+        "on_held_tv": 0.22732668608404652,
+        "off_kl": 0.3378561356745959,
+        "off_kl_median": 0.15055725779416895,
+        "off_agree": 0.7433333333333333,
+        "off_value_mad": 4.91918883395195,
+        "off_value_corr": 0.957537648785868,
+        "elapsed_s": 213.5
+      },
+      {
+        "step": 135,
+        "on_held_agree": 0.8083333333333333,
+        "on_train_agree": 0.9925,
+        "on_held_teacher_ce": 0.5686276220986916,
+        "on_held_tv": 0.23407120316970226,
+        "off_kl": 0.37877657110096047,
+        "off_kl_median": 0.1667167059387429,
+        "off_agree": 0.7213333333333334,
+        "off_value_mad": 6.753300742030143,
+        "off_value_corr": 0.9363062547522892,
+        "elapsed_s": 297.0
+      },
+      {
+        "step": 216,
+        "on_held_agree": 0.8041666666666667,
+        "on_train_agree": 0.9941666666666666,
+        "on_held_teacher_ce": 0.6171316842121174,
+        "on_held_tv": 0.24282810315945938,
+        "off_kl": 0.43980469089006313,
+        "off_kl_median": 0.1966298770280533,
+        "off_agree": 0.7013333333333334,
+        "off_value_mad": 7.085782989501953,
+        "off_value_corr": 0.923406936821244,
+        "elapsed_s": 408.7
+      },
+      {
+        "step": 346,
+        "on_held_agree": 0.8041666666666667,
+        "on_train_agree": 0.9966666666666667,
+        "on_held_teacher_ce": 0.7093564494940328,
+        "on_held_tv": 0.253245238337068,
+        "off_kl": 0.4852337834975915,
+        "off_kl_median": 0.225255109750707,
+        "off_agree": 0.694,
+        "off_value_mad": 6.882920961141586,
+        "off_value_corr": 0.9261608172759285,
+        "elapsed_s": 604.6
+      },
+      {
+        "step": 400,
+        "on_held_agree": 0.7991666666666667,
+        "on_train_agree": 1.0,
+        "on_held_teacher_ce": 0.7178114370688655,
+        "on_held_tv": 0.26237783640669243,
+        "off_kl": 0.5149219316712143,
+        "off_kl_median": 0.23943037560883387,
+        "off_agree": 0.6873333333333334,
+        "off_value_mad": 8.09323200571537,
+        "off_value_corr": 0.9132695078279871,
+        "elapsed_s": 678.9
+      }
+    ]
+  },
+  "lineage": {
+    "students": {
+      "root": {
+        "run": "ai_v9_29_rev1_0823",
+        "arm": "A",
+        "roster_folds": 0,
+        "derived_folds": 0,
+        "final_steps": 24988992,
+        "own_steps": null,
+        "parent": null,
+        "chain": [
+          "ai_v9_29_rev1_0823"
+        ],
+        "fold_runs": [],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "plain0": {
+        "run": "ai_v9_62_R2PLAIN_0827",
+        "arm": "A",
+        "roster_folds": 0,
+        "derived_folds": 0,
+        "final_steps": 28067760,
+        "own_steps": 3078768,
+        "parent": "ai_v9_29_rev1_0823",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_62_R2PLAIN_0827"
+        ],
+        "fold_runs": [],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "ecol0": {
+        "run": "ai_v9_58_R2CTRL_0827",
+        "arm": "A",
+        "roster_folds": 0,
+        "derived_folds": 0,
+        "final_steps": 28067760,
+        "own_steps": 3078768,
+        "parent": "ai_v9_29_rev1_0823",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_58_R2CTRL_0827"
+        ],
+        "fold_runs": [],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "fold1": {
+        "run": "ai_v9_59_R2ACTION_0827",
+        "arm": "A",
+        "roster_folds": 1,
+        "derived_folds": 1,
+        "final_steps": 28067760,
+        "own_steps": 3078768,
+        "parent": "ai_v9_29_rev1_0823",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_59_R2ACTION_0827"
+        ],
+        "fold_runs": [
+          "ai_v9_59_R2ACTION_0827"
+        ],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "fold2": {
+        "run": "ai_v9_76_R4ACTION_0830",
+        "arm": "B",
+        "roster_folds": 2,
+        "derived_folds": 2,
+        "final_steps": 32595648,
+        "own_steps": 4527888,
+        "parent": "ai_v9_59_R2ACTION_0827",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_59_R2ACTION_0827",
+          "ai_v9_76_R4ACTION_0830"
+        ],
+        "fold_runs": [
+          "ai_v9_59_R2ACTION_0827",
+          "ai_v9_76_R4ACTION_0830"
+        ],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "fold2self": {
+        "run": "ai_v9_72_R3SELF_0828",
+        "arm": "B",
+        "roster_folds": 2,
+        "derived_folds": 2,
+        "final_steps": 32615184,
+        "own_steps": 4547424,
+        "parent": "ai_v9_59_R2ACTION_0827",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_59_R2ACTION_0827",
+          "ai_v9_72_R3SELF_0828"
+        ],
+        "fold_runs": [
+          "ai_v9_59_R2ACTION_0827",
+          "ai_v9_72_R3SELF_0828"
+        ],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "tick1": {
+        "run": "ai_v9_34_tick1_0824",
+        "arm": "C",
+        "roster_folds": 1,
+        "derived_folds": 1,
+        "final_steps": 35068512,
+        "own_steps": 10079520,
+        "parent": "ai_v9_29_rev1_0823",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_34_tick1_0824"
+        ],
+        "fold_runs": [
+          "ai_v9_34_tick1_0824"
+        ],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "tick1x2": {
+        "run": "ai_v9_37_tick1_dosext_0825",
+        "arm": "C",
+        "roster_folds": 2,
+        "derived_folds": 2,
+        "final_steps": 40066752,
+        "own_steps": 4998240,
+        "parent": "ai_v9_34_tick1_0824",
+        "chain": [
+          "ai_v9_29_rev1_0823",
+          "ai_v9_34_tick1_0824",
+          "ai_v9_37_tick1_dosext_0825"
+        ],
+        "fold_runs": [
+          "ai_v9_34_tick1_0824",
+          "ai_v9_37_tick1_dosext_0825"
+        ],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      },
+      "gen17": {
+        "run": "ai_v9_21_gen17_pfspoff_0820",
+        "arm": "D",
+        "roster_folds": 0,
+        "derived_folds": 0,
+        "final_steps": 22887936,
+        "own_steps": null,
+        "parent": null,
+        "chain": [
+          "ai_v9_21_gen17_pfspoff_0820"
+        ],
+        "fold_runs": [],
+        "ancestry_complete": true,
+        "lr": 0.0003
+      }
+    },
+    "consolidation": [
+      {
+        "fold_run": "ai_v8_14_distill3_0725",
+        "label": "v8",
+        "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+        "parent": "ai_v8_04_distill_4teacher_0722",
+        "parent_steps": 277178472,
+        "fold_end_steps": 292100648,
+        "steps_under_distill": 14922176,
+        "distill_coef": 1.0,
+        "lr": 7e-05,
+        "n_teachers": 3,
+        "prior_folds": 1,
+        "descendants": [
+          "ai_v8_15_retention_A_frozen_0726"
+        ],
+        "untaught_pp": 5.42,
+        "ci": [
+          3.44,
+          7.42
+        ],
+        "z": 4.83,
+        "outcome_source": "v8_redistribution_pfsp_2026-08-30.md \u00a74 (16 untaught teams, 7,680 battles)"
+      },
+      {
+        "fold_run": "ai_v9_70_R3ACTION_0828",
+        "label": "rev-3",
+        "arch_signature": "gen3_critic_route_wave_v1",
+        "parent": "ai_v9_59_R2ACTION_0827",
+        "parent_steps": 28067760,
+        "fold_end_steps": 32621088,
+        "steps_under_distill": 4553328,
+        "distill_coef": 0.1761,
+        "lr": 0.0003,
+        "n_teachers": 6,
+        "prior_folds": 1,
+        "descendants": [],
+        "untaught_pp": -0.75,
+        "ci": [
+          -4.56,
+          3.0
+        ],
+        "z": -0.39,
+        "outcome_source": "rev3_untaught_pulldown_2026-08-30.md row A-B"
+      },
+      {
+        "fold_run": "ai_v9_59_R2ACTION_0827",
+        "label": "rev-2",
+        "arch_signature": "gen3_critic_route_wave_v1",
+        "parent": "ai_v9_29_rev1_0823",
+        "parent_steps": 24988992,
+        "fold_end_steps": 28067760,
+        "steps_under_distill": 3078768,
+        "distill_coef": 0.181,
+        "lr": 0.0003,
+        "n_teachers": 5,
+        "prior_folds": 0,
+        "descendants": [
+          "ai_v9_70_R3ACTION_0828",
+          "ai_v9_71_R3ACTIONHI_0828",
+          "ai_v9_72_R3SELF_0828",
+          "ai_v9_76_R4ACTION_0830",
+          "ai_v9_82_REFOLD1_0830",
+          "ai_v9_91_COMPFOLD_0831"
+        ],
+        "untaught_pp": -7.06,
+        "ci": [
+          -10.56,
+          -3.5
+        ],
+        "z": -3.86,
+        "outcome_source": "rev3_untaught_pulldown_2026-08-30.md row B-C (8 sample teams, this instrument)"
+      }
+    ],
+    "slice_exposure": {
+      "root": {
+        "n_taught_teams": 0,
+        "taught_teams": [],
+        "n_ecology_teams": 0,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          }
+        }
+      },
+      "plain0": {
+        "n_taught_teams": 0,
+        "taught_teams": [],
+        "n_ecology_teams": 0,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          }
+        }
+      },
+      "ecol0": {
+        "n_taught_teams": 0,
+        "taught_teams": [],
+        "n_ecology_teams": 0,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          }
+        }
+      },
+      "fold1": {
+        "n_taught_teams": 9,
+        "taught_teams": [
+          "023a2d47648b85e6",
+          "63eda9d8d491d6a4",
+          "710d8d529538ff90",
+          "8e768980fc8f3b5f",
+          "9eb3abdc52876a63",
+          "e0d97b0ed592889d",
+          "e541f7be8713393c",
+          "eccfe630ec08de27",
+          "f5a4f4f0f5dc49ce"
+        ],
+        "n_ecology_teams": 9,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "slice_taught": true,
+            "slice_in_ecology": true
+          }
+        }
+      },
+      "fold2": {
+        "n_taught_teams": 24,
+        "taught_teams": [
+          "023a2d47648b85e6",
+          "0972146213a667c9",
+          "0fa105ae42dc85ec",
+          "460b8c99ee366f6c",
+          "53f215cb45b7d729",
+          "63eda9d8d491d6a4",
+          "6d56d06b9fca508e",
+          "7036a0a1dcb59a19",
+          "710d8d529538ff90",
+          "82e97fe2bfbb6f69",
+          "8cdc78b2d46f0515",
+          "8e768980fc8f3b5f",
+          "9eb3abdc52876a63",
+          "9f27f5d3e34021a7",
+          "a04c29cf769e9a11",
+          "a3ca232f030ef625",
+          "b89e1e37caa40e6a",
+          "d4e74946b54f1a4b",
+          "e0d97b0ed592889d",
+          "e11829f0561ef5a9",
+          "e541f7be8713393c",
+          "eccfe630ec08de27",
+          "f5a4f4f0f5dc49ce",
+          "f6229d2c867e21d6"
+        ],
+        "n_ecology_teams": 24,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "slice_taught": true,
+            "slice_in_ecology": true
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "slice_taught": true,
+            "slice_in_ecology": true
+          }
+        }
+      },
+      "fold2self": {
+        "n_taught_teams": 9,
+        "taught_teams": [
+          "023a2d47648b85e6",
+          "63eda9d8d491d6a4",
+          "710d8d529538ff90",
+          "8e768980fc8f3b5f",
+          "9eb3abdc52876a63",
+          "e0d97b0ed592889d",
+          "e541f7be8713393c",
+          "eccfe630ec08de27",
+          "f5a4f4f0f5dc49ce"
+        ],
+        "n_ecology_teams": 12,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": true
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "slice_taught": true,
+            "slice_in_ecology": true
+          }
+        }
+      },
+      "tick1": {
+        "n_taught_teams": 7,
+        "taught_teams": [
+          "023a2d47648b85e6",
+          "63eda9d8d491d6a4",
+          "710d8d529538ff90",
+          "8e768980fc8f3b5f",
+          "e541f7be8713393c",
+          "eccfe630ec08de27",
+          "f5a4f4f0f5dc49ce"
+        ],
+        "n_ecology_teams": 7,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "slice_taught": true,
+            "slice_in_ecology": true
+          }
+        }
+      },
+      "tick1x2": {
+        "n_taught_teams": 7,
+        "taught_teams": [
+          "023a2d47648b85e6",
+          "63eda9d8d491d6a4",
+          "710d8d529538ff90",
+          "8e768980fc8f3b5f",
+          "e541f7be8713393c",
+          "eccfe630ec08de27",
+          "f5a4f4f0f5dc49ce"
+        ],
+        "n_ecology_teams": 7,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "slice_taught": true,
+            "slice_in_ecology": true
+          }
+        }
+      },
+      "gen17": {
+        "n_taught_teams": 0,
+        "taught_teams": [],
+        "n_ecology_teams": 0,
+        "per_teacher": {
+          "f": {
+            "teacher_run": "ai_v9_68_R3F6f_0828",
+            "teacher_teams": [
+              "460b8c99ee366f6c",
+              "7036a0a1dcb59a19"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          },
+          "a": {
+            "teacher_run": "ai_v9_63_R3F6a_0828",
+            "teacher_teams": [
+              "023a2d47648b85e6",
+              "eccfe630ec08de27"
+            ],
+            "overlap": [],
+            "slice_taught": false,
+            "slice_in_ecology": false
+          }
+        }
+      }
+    },
+    "roster_mismatches": {},
+    "matched_step_fold_contrasts": [
+      {
+        "total_steps": 28067760,
+        "fold_counts": [
+          0,
+          1
+        ],
+        "runs": {
+          "ai_v9_38_fdA_coef03_0825": 1,
+          "ai_v9_39_fdB_lossonly_0825": 1,
+          "ai_v9_40_fdC_ecology_0825": 0,
+          "ai_v9_42_fdE_single_0825": 1,
+          "ai_v9_48_G1_action_0826": 1,
+          "ai_v9_49_G2_advgate_0826": 1,
+          "ai_v9_52_G1p_matched_0826": 1,
+          "ai_v9_58_R2CTRL_0827": 0,
+          "ai_v9_59_R2ACTION_0827": 1,
+          "ai_v9_60_R2TOPK_0827": 1,
+          "ai_v9_61_R2KL_0827": 1,
+          "ai_v9_62_R2PLAIN_0827": 0
+        }
+      }
+    ],
+    "unresolved_lineages": []
+  },
+  "predictions": {
+    "M1": {
+      "statement": "prior-fold count is CONFOUNDED with age in every cell the archive supports",
+      "matched_step_contrasts_in_archive": [
+        {
+          "total_steps": 28067760,
+          "fold_counts": [
+            0,
+            1
+          ],
+          "runs": {
+            "ai_v9_38_fdA_coef03_0825": 1,
+            "ai_v9_39_fdB_lossonly_0825": 1,
+            "ai_v9_40_fdC_ecology_0825": 0,
+            "ai_v9_42_fdE_single_0825": 1,
+            "ai_v9_48_G1_action_0826": 1,
+            "ai_v9_49_G2_advgate_0826": 1,
+            "ai_v9_52_G1p_matched_0826": 1,
+            "ai_v9_58_R2CTRL_0827": 0,
+            "ai_v9_59_R2ACTION_0827": 1,
+            "ai_v9_60_R2TOPK_0827": 1,
+            "ai_v9_61_R2KL_0827": 1,
+            "ai_v9_62_R2PLAIN_0827": 0
+          }
+        }
+      ],
+      "matched_step_contrasts_actually_probed": [
+        {
+          "total_steps": 28067760,
+          "fold_counts": [
+            0,
+            1
+          ],
+          "runs": {
+            "ai_v9_38_fdA_coef03_0825": 1,
+            "ai_v9_39_fdB_lossonly_0825": 1,
+            "ai_v9_40_fdC_ecology_0825": 0,
+            "ai_v9_42_fdE_single_0825": 1,
+            "ai_v9_48_G1_action_0826": 1,
+            "ai_v9_49_G2_advgate_0826": 1,
+            "ai_v9_52_G1p_matched_0826": 1,
+            "ai_v9_58_R2CTRL_0827": 0,
+            "ai_v9_59_R2ACTION_0827": 1,
+            "ai_v9_60_R2TOPK_0827": 1,
+            "ai_v9_61_R2KL_0827": 1,
+            "ai_v9_62_R2PLAIN_0827": 0
+          }
+        }
+      ],
+      "passed": false,
+      "note": "M1 FAILS when a matched-total-step fold-count contrast exists AND was measured; the archive is searched over non-exploiter runs only"
+    },
+    "M2": {
+      "statement": "post-fold consolidation does NOT order with the measured untaught outcome",
+      "table": [
+        {
+          "fold_run": "ai_v8_14_distill3_0725",
+          "label": "v8",
+          "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+          "parent": "ai_v8_04_distill_4teacher_0722",
+          "parent_steps": 277178472,
+          "fold_end_steps": 292100648,
+          "steps_under_distill": 14922176,
+          "distill_coef": 1.0,
+          "lr": 7e-05,
+          "n_teachers": 3,
+          "prior_folds": 1,
+          "descendants": [
+            "ai_v8_15_retention_A_frozen_0726"
+          ],
+          "untaught_pp": 5.42,
+          "ci": [
+            3.44,
+            7.42
+          ],
+          "z": 4.83,
+          "outcome_source": "v8_redistribution_pfsp_2026-08-30.md \u00a74 (16 untaught teams, 7,680 battles)"
+        },
+        {
+          "fold_run": "ai_v9_70_R3ACTION_0828",
+          "label": "rev-3",
+          "arch_signature": "gen3_critic_route_wave_v1",
+          "parent": "ai_v9_59_R2ACTION_0827",
+          "parent_steps": 28067760,
+          "fold_end_steps": 32621088,
+          "steps_under_distill": 4553328,
+          "distill_coef": 0.1761,
+          "lr": 0.0003,
+          "n_teachers": 6,
+          "prior_folds": 1,
+          "descendants": [],
+          "untaught_pp": -0.75,
+          "ci": [
+            -4.56,
+            3.0
+          ],
+          "z": -0.39,
+          "outcome_source": "rev3_untaught_pulldown_2026-08-30.md row A-B"
+        },
+        {
+          "fold_run": "ai_v9_59_R2ACTION_0827",
+          "label": "rev-2",
+          "arch_signature": "gen3_critic_route_wave_v1",
+          "parent": "ai_v9_29_rev1_0823",
+          "parent_steps": 24988992,
+          "fold_end_steps": 28067760,
+          "steps_under_distill": 3078768,
+          "distill_coef": 0.181,
+          "lr": 0.0003,
+          "n_teachers": 5,
+          "prior_folds": 0,
+          "descendants": [
+            "ai_v9_70_R3ACTION_0828",
+            "ai_v9_71_R3ACTIONHI_0828",
+            "ai_v9_72_R3SELF_0828",
+            "ai_v9_76_R4ACTION_0830",
+            "ai_v9_82_REFOLD1_0830",
+            "ai_v9_91_COMPFOLD_0831"
+          ],
+          "untaught_pp": -7.06,
+          "ci": [
+            -10.56,
+            -3.5
+          ],
+          "z": -3.86,
+          "outcome_source": "rev3_untaught_pulldown_2026-08-30.md row B-C (8 sample teams, this instrument)"
+        }
+      ],
+      "steps_under_distill": [
+        14922176,
+        4553328,
+        3078768
+      ],
+      "untaught_pp": [
+        5.42,
+        -0.75,
+        -7.06
+      ],
+      "spearman_rho": 1.0,
+      "prior_folds": [
+        1,
+        1,
+        0
+      ],
+      "spearman_rho_prior_folds": 0.5,
+      "n": 3,
+      "passed": false,
+      "refuse_coefficient": "n=3: an ORDERING is reported, never a fitted coefficient. A perfect ordering arises by chance with probability 1/6 under the null.",
+      "confound": "the distill term is ACTIVE FOR THE WHOLE fold run, so `steps_under_distill` is simultaneously the DOSE and the consolidation window -- this axis cannot separate them, and the v8 fold additionally differs in lr (7e-5 vs 3e-4), coef (1.0 vs 0.176) and absolute age (292M vs ~29-33M)"
+    },
+    "A1": {
+      "statement": "at 28,067,760 steps the 1-fold student's a_max exceeds BOTH 0-fold arms by > 0.018 on both seeds",
+      "per_seed": {},
+      "passed": null
+    },
+    "A2": {
+      "statement": "a_max monotone non-decreasing in fold count",
+      "per_lineage": {},
+      "passed": null
+    }
+  },
+  "absorption_per_step": {},
+  "verdict": "(a) ACCUMULATED FOLDING: INSUFFICIENT CELLS; (b) POST-FOLD CONSOLIDATION: ORDERS PERFECTLY with outcome (rho=1.0), n=3, dose-confounded",
+  "meta": {
+    "plain0_f1e4_s1": {
+      "student": "/home/goodlad/dev/gen3ai/models/ai_v9_62_R2PLAIN_0827/final_model.zip",
+      "student_run": "ai_v9_62_R2PLAIN_0827",
+      "teacher": "/home/goodlad/dev/gen3ai/models/ai_v9_68_R3F6f_0828/final_model.zip",
+      "teacher_set": "f",
+      "probe_seed": 1,
+      "lr": 0.0001,
+      "batch": 256,
+      "n_steps": 400,
+      "n_on_train": 3000,
+      "n_on_held": 1200,
+      "n_off": 1500,
+      "dropped_kwargs": [],
+      "wall_s": 678.9
+    }
+  },
+  "state_provenance": {
+    "off_run": "ai_v9_29_rev1_0823",
+    "teachers": {
+      "a": {
+        "run": "ai_v9_63_R3F6a_0828",
+        "pinned_teams": [
+          [
+            "celebi",
+            "claydol",
+            "dugtrio",
+            "metagross",
+            "suicune",
+            "zapdos"
+          ],
+          [
+            "claydol",
+            "dugtrio",
+            "gengar",
+            "jirachi",
+            "jynx",
+            "suicune"
+          ]
+        ],
+        "trace_files": 400,
+        "train_files": 300,
+        "held_files": 100,
+        "n_on_train": 3000,
+        "n_on_held": 1200,
+        "off": {
+          "n": 1500,
+          "distinct_teams": 233,
+          "eval_steps": 12,
+          "files_after_exclusion": 2451
+        }
+      },
+      "f": {
+        "run": "ai_v9_68_R3F6f_0828",
+        "pinned_teams": [
+          [
+            "aerodactyl",
+            "gengar",
+            "metagross",
+            "smeargle",
+            "swampert",
+            "tyranitar"
+          ],
+          [
+            "blissey",
+            "claydol",
+            "magneton",
+            "metagross",
+            "salamence",
+            "suicune"
+          ]
+        ],
+        "trace_files": 451,
+        "train_files": 339,
+        "held_files": 112,
+        "n_on_train": 3000,
+        "n_on_held": 1200,
+        "off": {
+          "n": 1500,
+          "distinct_teams": 245,
+          "eval_steps": 12,
+          "files_after_exclusion": 2225
+        }
+      }
+    },
+    "students": {
+      "root": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+      "plain0": "/home/goodlad/dev/gen3ai/models/ai_v9_62_R2PLAIN_0827/final_model.zip",
+      "ecol0": "/home/goodlad/dev/gen3ai/models/ai_v9_58_R2CTRL_0827/final_model.zip",
+      "fold1": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+      "fold2": "/home/goodlad/dev/gen3ai/models/ai_v9_76_R4ACTION_0830/final_model.zip",
+      "fold2self": "/home/goodlad/dev/gen3ai/models/ai_v9_72_R3SELF_0828/final_model.zip",
+      "tick1": "/home/goodlad/dev/gen3ai/models/ai_v9_34_tick1_0824/final_model.zip",
+      "tick1x2": "/home/goodlad/dev/gen3ai/models/ai_v9_37_tick1_dosext_0825/final_model.zip",
+      "gen17": "/home/goodlad/dev/gen3ai/models/ai_v9_21_gen17_pfspoff_0820/final_model.zip"
+    },
+    "filters": "action_mask.sum(1) >= 2; obs dim 2501; ON split by BATTLE FILE (75/25)"
+  }
+}

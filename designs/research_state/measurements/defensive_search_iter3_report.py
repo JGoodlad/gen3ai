@@ -50,6 +50,30 @@ CONFIRM_N = 6
 CONFIRM_DEADLINE_S = 30.0
 
 
+def _strata(events: Sequence[dict], confirmed: int) -> dict:
+    """Split the attempts by WHY they could conclude, before splitting them by WHAT they concluded.
+
+    ``MIN_PAIRS = 4`` is a floor on the SAMPLE, not on the evidence: an attempt the clock cut to
+    three pairs is declined without any rollout outcome being consulted. Reporting one pooled
+    rejection rate over all attempts would therefore hand the clock's refusals to the leaf's
+    account — the same conflation the futility split fixed one level up in iteration 2, and the
+    same one the confirm's own missing clock would have produced wholesale.
+    """
+    from main.search_dividend.playoff import MIN_PAIRS
+
+    no_pairs = sum(1 for e in events if int(e.get("r", 0)) == 0)
+    short = sum(1 for e in events if 0 < int(e.get("r", 0)) < MIN_PAIRS)
+    backed = sum(1 for e in events if int(e.get("r", 0)) >= MIN_PAIRS)
+    return {
+        "no_pairs_the_rollouts_raised": no_pairs,
+        "clock_truncated_below_floor": short,
+        "evidence_backed": backed,
+        "min_pairs_floor": MIN_PAIRS,
+        "reject_rate_evidence_backed": (round(1.0 - confirmed / backed, 4) if backed else None),
+        "uphold_rate_evidence_backed": (round(confirmed / backed, 4) if backed else None),
+    }
+
+
 def confirm_block(cell: Sequence[dict]) -> dict:
     """Everything the CONFIRM stage reports about itself, over one cell.
 
@@ -94,6 +118,20 @@ def confirm_block(cell: Sequence[dict]) -> dict:
         # THE LEAF-BIAS METER IN VIVO — the registered reading.
         "reject_rate": round(1.0 - conf / att, 4) if att else None,
         "uphold_rate": round(conf / att, 4) if att else None,
+        # ...and the SAME meter restricted to the attempts that actually carried evidence. An
+        # attempt whose clock bought fewer than MIN_PAIRS=4 pairs is declined by the FLOOR before
+        # any rollout outcome is consulted, so pooling it with a genuine non-separation credits the
+        # CLOCK to the leaf. Three strata, never summed.
+        **_strata(events, conf),
+        # THE SHARPEST NUMBER THIS INSTRUMENT PRODUCES. Among the confirms the rollouts could
+        # RESOLVE at all (stage `played` — the paired difference cleared 2·SE in one direction or
+        # the other), how often the resolution went the LEAF's way. 0.5 is the coin flip, and it
+        # says a race-certified overrule is right exactly as often as it is wrong on the subset
+        # where "right" is measurable at all.
+        "conclusive_total": sum(1 for e in events if e.get("stage") == "played"),
+        "conclusive_uphold_share": (
+            round(conf / max(1, sum(1 for e in events if e.get("stage") == "played")), 4)
+            if any(e.get("stage") == "played" for e in events) else None),
         "rollout_pairs_total": pairs,
         "realized_pairs_per_attempt": round(pairs / att, 3) if att else None,
         "pair_cap": CONFIRM_N,
@@ -183,7 +221,52 @@ def diagnostic(events: Sequence[dict]) -> dict:
         "abs_paired_mean": _split([{**e, "am": abs(float(e["mean"]))} for e in events], "am"),
         "stage_counts": {k: sum(1 for e in events if e.get("stage") == k)
                          for k in sorted({e.get("stage") for e in events})},
+        # THE SHARPEST SINGLE NUMBER this instrument produces, and it is not a rate: how often the
+        # substituted action changed NOTHING about the outcome in EVERY paired line it was tried
+        # in. Under CRN the two candidates share the dice and both players' sampling, so a mean of
+        # exactly 0 over n pairs says the overrule the leaf certified was outcome-IRRELEVANT here
+        # — a different statement from "we could not resolve it", and the two are separated only
+        # by looking at the difference itself rather than at the verdict.
+        "paired_difference": {
+            "exactly_zero_mean": sum(1 for e in events if float(e["mean"]) == 0.0),
+            "exactly_zero_frac": (round(sum(1 for e in events if float(e["mean"]) == 0.0)
+                                        / len(events), 4) if events else None),
+            "favoured_the_overrule": sum(1 for e in events if float(e["mean"]) > 0),
+            "favoured_the_policy": sum(1 for e in events if float(e["mean"]) < 0),
+            "mean_of_paired_means": (round(st.fmean([float(e["mean"]) for e in events]), 4)
+                                     if events else None),
+            "median_abs_paired_mean": (round(st.median([abs(float(e["mean"])) for e in events]), 4)
+                                       if events else None),
+            "note": ("`favoured_*` counts SIGN only and includes differences far too small to "
+                     "clear the confirm's own bar; the verdict counters are the decision, this is "
+                     "the raw evidence behind them"),
+        },
     }
+
+
+def _pair_scores(cell: Sequence[dict]) -> dict:
+    """The side-swapped PAIR score histogram — why an interval is as wide as it is.
+
+    A pair scores 0.5 whenever the two orientations agree, i.e. whenever the game turned on the
+    team draw rather than on which side searched. The more nearly an arm plays the policy, the
+    more pairs split, the smaller the spread, and the tighter the paired CI — so a sharper
+    interval on FEWER pairs is a structural fact about the arm rather than a lucky draw, and it
+    should be read beside the interval instead of behind it.
+    """
+    from collections import Counter, defaultdict
+
+    by: Dict[int, Dict[int, float]] = defaultdict(dict)
+    for r in cell:
+        if not int(r.get("finished", 0)):
+            continue
+        by[int(r["game"])][int(r.get("orientation", 0) or 0)] = (
+            0.5 if int(r.get("tied", 0) or 0) else float(int(r.get("won", 0))))
+    ps = [sum(o.values()) / 2.0 for o in by.values() if len(o) == 2]
+    counts = Counter(ps)
+    return {"n_pairs": len(ps),
+            "counts": {str(k): v for k, v in sorted(counts.items())},
+            "split_frac": round(counts.get(0.5, 0) / len(ps), 4) if ps else None,
+            "sd": round(st.stdev(ps), 4) if len(ps) > 1 else None}
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -322,9 +405,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             "attempted": c["attempted"], "confirmed": c["confirmed"],
             "reject_rate": c["reject_rate"],
             "split": {k: c[k] for k in ("reversed", "inconclusive", "no_budget", "error")},
-            "leaf_findings_only_reject_rate": (
-                round((c["reversed"] + c["inconclusive"]) / c["attempted"], 4)
-                if c["attempted"] else None),
+            "reject_rate_evidence_backed": c["reject_rate_evidence_backed"],
+            "evidence_backed_attempts": c["evidence_backed"],
+            "excluded_no_pairs": c["no_pairs_the_rollouts_raised"],
+            "excluded_clock_truncated_below_floor": c["clock_truncated_below_floor"],
+            "conclusive_uphold_share": c["conclusive_uphold_share"],
+            "conclusive_total": c["conclusive_total"],
             "min_detectable_paired_difference": c["min_detectable_paired_difference"],
         },
         "cost_envelope": {
@@ -377,6 +463,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         "comparisons": comparisons,
         "bars": bars,
         "confirmed_vs_rejected": diagnostic(c["_events"]),
+        # WHY THE PAIRED INTERVAL IS SHARPER THAN ITERATION 2's ON FEWER PAIRS — a structural fact
+        # about the arm, not a lucky draw. A side-swapped pair scores 0.5 whenever the two
+        # orientations agree, i.e. whenever the game turns on the team draw rather than on which
+        # side searched; the more nearly the arm plays the policy, the more pairs split and the
+        # smaller the spread the CI is built from.
+        "pair_score_distribution": _pair_scores(cell),
     }
     out["arm"]["confirm"] = {k: v for k, v in c.items() if k != "_events"}
     if out_path:

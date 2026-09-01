@@ -1,0 +1,252 @@
+{
+  "student": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "parent_run": "ai_v9_59_R2ACTION_0827",
+  "off_run": "ai_v9_29_rev1_0823",
+  "teachers": {
+    "a": {
+      "run": "ai_v9_73_R4S3a_0829",
+      "pinned_teams": [
+        [
+          "aerodactyl",
+          "celebi",
+          "magneton",
+          "metagross",
+          "swampert",
+          "tyranitar"
+        ],
+        [
+          "blissey",
+          "claydol",
+          "dugtrio",
+          "milotic",
+          "skarmory",
+          "suicune"
+        ],
+        [
+          "blissey",
+          "claydol",
+          "metagross",
+          "salamence",
+          "skarmory",
+          "tyranitar"
+        ],
+        [
+          "celebi",
+          "charizard",
+          "metagross",
+          "swampert",
+          "tyranitar",
+          "zapdos"
+        ],
+        [
+          "celebi",
+          "claydol",
+          "dugtrio",
+          "metagross",
+          "suicune",
+          "zapdos"
+        ],
+        [
+          "celebi",
+          "raikou",
+          "registeel",
+          "salamence",
+          "swampert",
+          "tyranitar"
+        ],
+        [
+          "claydol",
+          "dugtrio",
+          "gengar",
+          "jirachi",
+          "jynx",
+          "suicune"
+        ],
+        [
+          "jirachi",
+          "metagross",
+          "salamence",
+          "swampert",
+          "tyranitar",
+          "zapdos"
+        ]
+      ],
+      "trace_files": 746,
+      "usable_rows": 21358,
+      "train_files": 560,
+      "held_files": 186,
+      "n_on_train": 3000,
+      "n_on_held": 1200,
+      "off": {
+        "files_after_exclusion": 2375,
+        "n": 1500,
+        "distinct_teams": 222,
+        "eval_steps": 12
+      }
+    },
+    "b": {
+      "run": "ai_v9_74_R4S3b_0829",
+      "pinned_teams": [
+        [
+          "aerodactyl",
+          "blissey",
+          "celebi",
+          "magneton",
+          "skarmory",
+          "swampert"
+        ],
+        [
+          "blissey",
+          "celebi",
+          "metagross",
+          "salamence",
+          "skarmory",
+          "starmie"
+        ],
+        [
+          "blissey",
+          "dugtrio",
+          "forretress",
+          "gengar",
+          "swampert",
+          "tyranitar"
+        ],
+        [
+          "celebi",
+          "metagross",
+          "salamence",
+          "skarmory",
+          "starmie",
+          "tyranitar"
+        ],
+        [
+          "claydol",
+          "metagross",
+          "salamence",
+          "snorlax",
+          "suicune",
+          "tyranitar"
+        ],
+        [
+          "flygon",
+          "gengar",
+          "jirachi",
+          "moltres",
+          "skarmory",
+          "tyranitar"
+        ],
+        [
+          "heracross",
+          "magneton",
+          "metagross",
+          "salamence",
+          "snorlax",
+          "suicune"
+        ],
+        [
+          "magneton",
+          "medicham",
+          "metagross",
+          "salamence",
+          "snorlax",
+          "suicune"
+        ]
+      ],
+      "trace_files": 722,
+      "usable_rows": 24767,
+      "train_files": 542,
+      "held_files": 180,
+      "n_on_train": 3000,
+      "n_on_held": 1200,
+      "off": {
+        "files_after_exclusion": 2394,
+        "n": 1500,
+        "distinct_teams": 231,
+        "eval_steps": 12
+      }
+    },
+    "c": {
+      "run": "ai_v9_75_R4S3c_0829",
+      "pinned_teams": [
+        [
+          "aerodactyl",
+          "celebi",
+          "skarmory",
+          "swampert",
+          "tyranitar",
+          "zapdos"
+        ],
+        [
+          "aerodactyl",
+          "gengar",
+          "metagross",
+          "smeargle",
+          "swampert",
+          "tyranitar"
+        ],
+        [
+          "blissey",
+          "claydol",
+          "dugtrio",
+          "forretress",
+          "snorlax",
+          "suicune"
+        ],
+        [
+          "blissey",
+          "claydol",
+          "dugtrio",
+          "milotic",
+          "skarmory",
+          "tyranitar"
+        ],
+        [
+          "blissey",
+          "claydol",
+          "magneton",
+          "metagross",
+          "salamence",
+          "suicune"
+        ],
+        [
+          "blissey",
+          "gengar",
+          "skarmory",
+          "starmie",
+          "swampert",
+          "tyranitar"
+        ],
+        [
+          "claydol",
+          "jirachi",
+          "salamence",
+          "snorlax",
+          "suicune",
+          "tyranitar"
+        ],
+        [
+          "flygon",
+          "gengar",
+          "jirachi",
+          "skarmory",
+          "tyranitar",
+          "zapdos"
+        ]
+      ],
+      "trace_files": 727,
+      "usable_rows": 29242,
+      "train_files": 546,
+      "held_files": 181,
+      "n_on_train": 3000,
+      "n_on_held": 1200,
+      "off": {
+        "files_after_exclusion": 2191,
+        "n": 1500,
+        "distinct_teams": 220,
+        "eval_steps": 12
+      }
+    }
+  },
+  "off_source_note": "parent's own traces measured too narrow (9 teams / 2 eval steps); rev-1 lineage traces used instead (281 teams / 12 steps)",
+  "filters": "action_mask.sum(1) >= 2; obs dim 2501; ON split by BATTLE FILE (75/25)"
+}

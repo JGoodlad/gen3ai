@@ -1,0 +1,77 @@
+  step     0  on_held 0.6017  on_train 0.6008  offKL 0.0000  offAgree 1.0000  Vmad 0.0000  [9.6s]
+  step     1  on_held 0.6325  on_train 0.6233  offKL 0.2639  offAgree 0.8253  Vmad 0.5892  [15.4s]
+  step     2  on_held 0.6142  on_train 0.6108  offKL 0.5944  offAgree 0.7213  Vmad 0.8514  [21.1s]
+  step     4  on_held 0.6350  on_train 0.6392  offKL 0.7559  offAgree 0.7040  Vmad 1.4730  [27.5s]
+  step     7  on_held 0.6675  on_train 0.6892  offKL 0.5412  offAgree 0.7560  Vmad 2.0956  [34.7s]
+  step    12  on_held 0.6917  on_train 0.7250  offKL 0.7023  offAgree 0.7267  Vmad 2.2360  [43.4s]
+  step    20  on_held 0.7083  on_train 0.7858  offKL 0.5307  offAgree 0.7553  Vmad 2.1562  [55.0s]
+  step    32  on_held 0.7200  on_train 0.8475  offKL 0.5464  offAgree 0.7360  Vmad 2.4043  [75.0s]
+  step    52  on_held 0.7283  on_train 0.9008  offKL 0.5474  offAgree 0.7213  Vmad 2.3689  [104.4s]
+  step    84  on_held 0.7433  on_train 0.9575  offKL 0.5673  offAgree 0.7107  Vmad 2.4646  [145.7s]
+  step   135  on_held 0.7333  on_train 0.9858  offKL 0.6084  offAgree 0.7047  Vmad 2.2290  [199.2s]
+  step   216  on_held 0.7392  on_train 0.9975  offKL 0.6354  offAgree 0.7060  Vmad 2.3503  [267.8s]
+  step   346  on_held 0.7417  on_train 0.9975  offKL 0.6641  offAgree 0.6900  Vmad 2.3847  [366.6s]
+  step   400  on_held 0.7342  on_train 0.9975  offKL 0.6515  offAgree 0.6987  Vmad 2.3130  [426.8s]
+[done] a_1e4_s1 -> /home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_results/a_1e4_s1.json  (427s)
+  step     0  on_held 0.6808  on_train 0.6742  offKL 0.0000  offAgree 1.0000  Vmad 0.0000  [15.1s]
+  step     1  on_held 0.6700  on_train 0.6800  offKL 0.0824  offAgree 0.9027  Vmad 0.4886  [23.9s]
+  step     2  on_held 0.6567  on_train 0.6783  offKL 0.2362  offAgree 0.8213  Vmad 0.8455  [32.6s]
+  step     4  on_held 0.6825  on_train 0.6942  offKL 0.3399  offAgree 0.7847  Vmad 1.2422  [42.4s]
+  step     7  on_held 0.7225  on_train 0.7442  offKL 0.2306  offAgree 0.8187  Vmad 1.4286  [53.5s]
+  step    12  on_held 0.7208  on_train 0.7467  offKL 0.3565  offAgree 0.7900  Vmad 1.7819  [66.6s]
+  step    20  on_held 0.7317  on_train 0.7933  offKL 0.2972  offAgree 0.7873  Vmad 2.3660  [83.2s]
+  step    32  on_held 0.7442  on_train 0.8525  offKL 0.2903  offAgree 0.7973  Vmad 2.0604  [101.6s]
+  step    52  on_held 0.7617  on_train 0.9250  offKL 0.3631  offAgree 0.7733  Vmad 2.2244  [121.2s]
+  step    84  on_held 0.7717  on_train 0.9642  offKL 0.3705  offAgree 0.7680  Vmad 1.8466  [150.4s]
+  step   135  on_held 0.7617  on_train 0.9825  offKL 0.4405  offAgree 0.7507  Vmad 2.4709  [193.6s]
+  step   216  on_held 0.7558  on_train 0.9933  offKL 0.5070  offAgree 0.7253  Vmad 2.1160  [263.9s]
+  step   346  on_held 0.7750  on_train 0.9983  offKL 0.5368  offAgree 0.7300  Vmad 2.2866  [411.6s]
+  step   400  on_held 0.7533  on_train 0.9975  offKL 0.5566  offAgree 0.7247  Vmad 2.8355  [455.6s]
+[done] b_1e4_s1 -> /home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_results/b_1e4_s1.json  (456s)
+  step     0  on_held 0.5850  on_train 0.5900  offKL 0.0000  offAgree 1.0000  Vmad 0.0000  [9.7s]
+  step     1  on_held 0.6033  on_train 0.6158  offKL 0.2236  offAgree 0.8027  Vmad 0.5337  [15.5s]
+  step     2  on_held 0.6075  on_train 0.6342  offKL 0.4550  offAgree 0.7553  Vmad 1.4036  [21.3s]
+  step     4  on_held 0.6275  on_train 0.6492  offKL 0.5574  offAgree 0.7220  Vmad 2.8339  [27.8s]
+  step     7  on_held 0.6458  on_train 0.6700  offKL 0.6293  offAgree 0.7020  Vmad 3.7392  [35.0s]
+  step    12  on_held 0.6550  on_train 0.7192  offKL 0.5826  offAgree 0.7120  Vmad 2.7608  [43.8s]
+  step    20  on_held 0.6900  on_train 0.7617  offKL 0.4765  offAgree 0.7260  Vmad 1.9566  [54.5s]
+  step    32  on_held 0.7042  on_train 0.8417  offKL 0.4802  offAgree 0.7233  Vmad 2.7973  [68.2s]
+  step    52  on_held 0.7425  on_train 0.8842  offKL 0.5333  offAgree 0.7107  Vmad 2.3446  [87.8s]
+  step    84  on_held 0.7517  on_train 0.9392  offKL 0.5175  offAgree 0.7120  Vmad 1.9884  [122.2s]
+  step   135  on_held 0.7425  on_train 0.9725  offKL 0.5290  offAgree 0.7207  Vmad 2.2145  [187.2s]
+  step   216  on_held 0.7508  on_train 0.9900  offKL 0.5450  offAgree 0.7293  Vmad 2.3434  [273.8s]
+  step   346  on_held 0.7442  on_train 0.9950  offKL 0.6234  offAgree 0.7027  Vmad 2.6092  [372.8s]
+  step   400  on_held 0.7375  on_train 0.9967  offKL 0.6340  offAgree 0.7027  Vmad 2.4537  [416.6s]
+[done] c_1e4_s1 -> /home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_results/c_1e4_s1.json  (417s)
+Traceback (most recent call last):
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_licensing_probe.py", line 511, in <module>
+    probe(sys.argv[2:])
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_licensing_probe.py", line 258, in probe
+    cell, tset, seed, nsteps, LR = argv[0], argv[1], int(argv[2]), int(argv[3]), float(argv[4])
+                                                     ^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'ai_v9_14_gen12_h_entitypool_shaping_0816_endofrun.json'
+FAIL: ctrl_a_1e4_s1 a* 1 400 1e-4
+  step     0  on_held 0.6017  on_train 0.6008  offKL 0.0000  offAgree 1.0000  Vmad 0.0000  [10.1s]
+  step     1  on_held 0.5692  on_train 0.5958  offKL 0.2791  offAgree 0.8233  Vmad 0.8129  [16.5s]
+  step     2  on_held 0.5892  on_train 0.6075  offKL 0.4599  offAgree 0.7700  Vmad 1.0689  [23.1s]
+  step     4  on_held 0.6117  on_train 0.6183  offKL 0.7960  offAgree 0.6833  Vmad 1.4313  [30.8s]
+  step     7  on_held 0.6425  on_train 0.6842  offKL 0.6024  offAgree 0.7407  Vmad 4.1169  [38.9s]
+  step    12  on_held 0.6408  on_train 0.7075  offKL 0.8613  offAgree 0.7013  Vmad 4.5669  [48.6s]
+  step    20  on_held 0.6833  on_train 0.7608  offKL 0.6364  offAgree 0.7133  Vmad 4.1153  [61.0s]
+  step    32  on_held 0.7042  on_train 0.8158  offKL 0.5879  offAgree 0.7133  Vmad 2.6156  [76.0s]
+  step    52  on_held 0.7167  on_train 0.8842  offKL 0.5593  offAgree 0.7113  Vmad 2.5235  [97.6s]
+  step    84  on_held 0.7383  on_train 0.9550  offKL 0.5527  offAgree 0.7033  Vmad 2.2106  [130.4s]
+  step   135  on_held 0.7392  on_train 0.9917  offKL 0.5569  offAgree 0.6960  Vmad 2.5317  [179.9s]
+  step   216  on_held 0.7367  on_train 0.9958  offKL 0.5853  offAgree 0.6980  Vmad 2.4789  [252.6s]
+  step   346  on_held 0.7317  on_train 0.9975  offKL 0.6677  offAgree 0.6833  Vmad 2.5735  [368.4s]
+  step   400  on_held 0.7367  on_train 0.9942  offKL 0.6637  offAgree 0.6873  Vmad 2.5353  [441.8s]
+[done] a_1e4_s2 -> /home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_results/a_1e4_s2.json  (442s)
+Traceback (most recent call last):
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_licensing_probe.py", line 511, in <module>
+    probe(sys.argv[2:])
+  File "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/lr_licensing_probe.py", line 258, in probe
+    cell, tset, seed, nsteps, LR = argv[0], argv[1], int(argv[2]), int(argv[3]), float(argv[4])
+                                                     ^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'ai_v9_14_gen12_h_entitypool_shaping_0816_endofrun.json'
+FAIL: ctrl_a_1e4_s2 a* 2 400 1e-4
+WORKER2_DONE

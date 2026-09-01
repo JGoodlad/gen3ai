@@ -1,0 +1,6177 @@
+{
+ "generated": "folding_history_probe.py lineage",
+ "n_runs": 160,
+ "roster_mismatches": {},
+ "students": {
+  "root": {
+   "run": "ai_v9_29_rev1_0823",
+   "arm": "A",
+   "roster_folds": 0,
+   "derived_folds": 0,
+   "final_steps": 24988992,
+   "own_steps": null,
+   "parent": null,
+   "chain": [
+    "ai_v9_29_rev1_0823"
+   ],
+   "fold_runs": [],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "plain0": {
+   "run": "ai_v9_62_R2PLAIN_0827",
+   "arm": "A",
+   "roster_folds": 0,
+   "derived_folds": 0,
+   "final_steps": 28067760,
+   "own_steps": 3078768,
+   "parent": "ai_v9_29_rev1_0823",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_62_R2PLAIN_0827"
+   ],
+   "fold_runs": [],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "ecol0": {
+   "run": "ai_v9_58_R2CTRL_0827",
+   "arm": "A",
+   "roster_folds": 0,
+   "derived_folds": 0,
+   "final_steps": 28067760,
+   "own_steps": 3078768,
+   "parent": "ai_v9_29_rev1_0823",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_58_R2CTRL_0827"
+   ],
+   "fold_runs": [],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "fold1": {
+   "run": "ai_v9_59_R2ACTION_0827",
+   "arm": "A",
+   "roster_folds": 1,
+   "derived_folds": 1,
+   "final_steps": 28067760,
+   "own_steps": 3078768,
+   "parent": "ai_v9_29_rev1_0823",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827"
+   ],
+   "fold_runs": [
+    "ai_v9_59_R2ACTION_0827"
+   ],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "fold2": {
+   "run": "ai_v9_76_R4ACTION_0830",
+   "arm": "B",
+   "roster_folds": 2,
+   "derived_folds": 2,
+   "final_steps": 32595648,
+   "own_steps": 4527888,
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_76_R4ACTION_0830"
+   ],
+   "fold_runs": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_76_R4ACTION_0830"
+   ],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "fold2self": {
+   "run": "ai_v9_72_R3SELF_0828",
+   "arm": "B",
+   "roster_folds": 2,
+   "derived_folds": 2,
+   "final_steps": 32615184,
+   "own_steps": 4547424,
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_72_R3SELF_0828"
+   ],
+   "fold_runs": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_72_R3SELF_0828"
+   ],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "tick1": {
+   "run": "ai_v9_34_tick1_0824",
+   "arm": "C",
+   "roster_folds": 1,
+   "derived_folds": 1,
+   "final_steps": 35068512,
+   "own_steps": 10079520,
+   "parent": "ai_v9_29_rev1_0823",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_34_tick1_0824"
+   ],
+   "fold_runs": [
+    "ai_v9_34_tick1_0824"
+   ],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "tick1x2": {
+   "run": "ai_v9_37_tick1_dosext_0825",
+   "arm": "C",
+   "roster_folds": 2,
+   "derived_folds": 2,
+   "final_steps": 40066752,
+   "own_steps": 4998240,
+   "parent": "ai_v9_34_tick1_0824",
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_34_tick1_0824",
+    "ai_v9_37_tick1_dosext_0825"
+   ],
+   "fold_runs": [
+    "ai_v9_34_tick1_0824",
+    "ai_v9_37_tick1_dosext_0825"
+   ],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  },
+  "gen17": {
+   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "arm": "D",
+   "roster_folds": 0,
+   "derived_folds": 0,
+   "final_steps": 22887936,
+   "own_steps": null,
+   "parent": null,
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820"
+   ],
+   "fold_runs": [],
+   "ancestry_complete": true,
+   "lr": 0.0003
+  }
+ },
+ "consolidation": [
+  {
+   "fold_run": "ai_v8_14_distill3_0725",
+   "label": "v8",
+   "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_steps": 277178472,
+   "fold_end_steps": 292100648,
+   "steps_under_distill": 14922176,
+   "distill_coef": 1.0,
+   "lr": 7e-05,
+   "n_teachers": 3,
+   "prior_folds": 1,
+   "descendants": [
+    "ai_v8_15_retention_A_frozen_0726"
+   ],
+   "untaught_pp": 5.42,
+   "ci": [
+    3.44,
+    7.42
+   ],
+   "z": 4.83,
+   "outcome_source": "v8_redistribution_pfsp_2026-08-30.md \u00a74 (16 untaught teams, 7,680 battles)"
+  },
+  {
+   "fold_run": "ai_v9_70_R3ACTION_0828",
+   "label": "rev-3",
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_steps": 28067760,
+   "fold_end_steps": 32621088,
+   "steps_under_distill": 4553328,
+   "distill_coef": 0.1761,
+   "lr": 0.0003,
+   "n_teachers": 6,
+   "prior_folds": 1,
+   "descendants": [],
+   "untaught_pp": -0.75,
+   "ci": [
+    -4.56,
+    3.0
+   ],
+   "z": -0.39,
+   "outcome_source": "rev3_untaught_pulldown_2026-08-30.md row A-B"
+  },
+  {
+   "fold_run": "ai_v9_59_R2ACTION_0827",
+   "label": "rev-2",
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_steps": 24988992,
+   "fold_end_steps": 28067760,
+   "steps_under_distill": 3078768,
+   "distill_coef": 0.181,
+   "lr": 0.0003,
+   "n_teachers": 5,
+   "prior_folds": 0,
+   "descendants": [
+    "ai_v9_70_R3ACTION_0828",
+    "ai_v9_71_R3ACTIONHI_0828",
+    "ai_v9_72_R3SELF_0828",
+    "ai_v9_76_R4ACTION_0830",
+    "ai_v9_82_REFOLD1_0830",
+    "ai_v9_91_COMPFOLD_0831"
+   ],
+   "untaught_pp": -7.06,
+   "ci": [
+    -10.56,
+    -3.5
+   ],
+   "z": -3.86,
+   "outcome_source": "rev3_untaught_pulldown_2026-08-30.md row B-C (8 sample teams, this instrument)"
+  }
+ ],
+ "slice_exposure": {
+  "root": {
+   "n_taught_teams": 0,
+   "taught_teams": [],
+   "n_ecology_teams": 0,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    }
+   }
+  },
+  "plain0": {
+   "n_taught_teams": 0,
+   "taught_teams": [],
+   "n_ecology_teams": 0,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    }
+   }
+  },
+  "ecol0": {
+   "n_taught_teams": 0,
+   "taught_teams": [],
+   "n_ecology_teams": 0,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    }
+   }
+  },
+  "fold1": {
+   "n_taught_teams": 9,
+   "taught_teams": [
+    "023a2d47648b85e6",
+    "63eda9d8d491d6a4",
+    "710d8d529538ff90",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_ecology_teams": 9,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "slice_taught": true,
+     "slice_in_ecology": true
+    }
+   }
+  },
+  "fold2": {
+   "n_taught_teams": 24,
+   "taught_teams": [
+    "023a2d47648b85e6",
+    "0972146213a667c9",
+    "0fa105ae42dc85ec",
+    "460b8c99ee366f6c",
+    "53f215cb45b7d729",
+    "63eda9d8d491d6a4",
+    "6d56d06b9fca508e",
+    "7036a0a1dcb59a19",
+    "710d8d529538ff90",
+    "82e97fe2bfbb6f69",
+    "8cdc78b2d46f0515",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "a3ca232f030ef625",
+    "b89e1e37caa40e6a",
+    "d4e74946b54f1a4b",
+    "e0d97b0ed592889d",
+    "e11829f0561ef5a9",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce",
+    "f6229d2c867e21d6"
+   ],
+   "n_ecology_teams": 24,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "slice_taught": true,
+     "slice_in_ecology": true
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "slice_taught": true,
+     "slice_in_ecology": true
+    }
+   }
+  },
+  "fold2self": {
+   "n_taught_teams": 9,
+   "taught_teams": [
+    "023a2d47648b85e6",
+    "63eda9d8d491d6a4",
+    "710d8d529538ff90",
+    "8e768980fc8f3b5f",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_ecology_teams": 12,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": true
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "slice_taught": true,
+     "slice_in_ecology": true
+    }
+   }
+  },
+  "tick1": {
+   "n_taught_teams": 7,
+   "taught_teams": [
+    "023a2d47648b85e6",
+    "63eda9d8d491d6a4",
+    "710d8d529538ff90",
+    "8e768980fc8f3b5f",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_ecology_teams": 7,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "slice_taught": true,
+     "slice_in_ecology": true
+    }
+   }
+  },
+  "tick1x2": {
+   "n_taught_teams": 7,
+   "taught_teams": [
+    "023a2d47648b85e6",
+    "63eda9d8d491d6a4",
+    "710d8d529538ff90",
+    "8e768980fc8f3b5f",
+    "e541f7be8713393c",
+    "eccfe630ec08de27",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "n_ecology_teams": 7,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "slice_taught": true,
+     "slice_in_ecology": true
+    }
+   }
+  },
+  "gen17": {
+   "n_taught_teams": 0,
+   "taught_teams": [],
+   "n_ecology_teams": 0,
+   "per_teacher": {
+    "f": {
+     "teacher_run": "ai_v9_68_R3F6f_0828",
+     "teacher_teams": [
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    },
+    "a": {
+     "teacher_run": "ai_v9_63_R3F6a_0828",
+     "teacher_teams": [
+      "023a2d47648b85e6",
+      "eccfe630ec08de27"
+     ],
+     "overlap": [],
+     "slice_taught": false,
+     "slice_in_ecology": false
+    }
+   }
+  }
+ },
+ "m1_matched_step_fold_contrasts": [
+  {
+   "total_steps": 28067760,
+   "fold_counts": [
+    0,
+    1
+   ],
+   "runs": {
+    "ai_v9_38_fdA_coef03_0825": 1,
+    "ai_v9_39_fdB_lossonly_0825": 1,
+    "ai_v9_40_fdC_ecology_0825": 0,
+    "ai_v9_42_fdE_single_0825": 1,
+    "ai_v9_48_G1_action_0826": 1,
+    "ai_v9_49_G2_advgate_0826": 1,
+    "ai_v9_52_G1p_matched_0826": 1,
+    "ai_v9_58_R2CTRL_0827": 0,
+    "ai_v9_59_R2ACTION_0827": 1,
+    "ai_v9_60_R2TOPK_0827": 1,
+    "ai_v9_61_R2KL_0827": 1,
+    "ai_v9_62_R2PLAIN_0827": 0
+   }
+  }
+ ],
+ "unresolved_lineages": [
+  "ai_v5_10_tail1_23_0611",
+  "ai_v5_11_tail2_53m_0611",
+  "ai_v5_12_bias_05_N_0612",
+  "ai_v5_13_shape_pbrs_43m_0612",
+  "ai_v5_2_native_selfplay_50m_0606",
+  "ai_v5_3_vf_coef_clip_50m_0606",
+  "ai_v5_4_pbrs_opp_threat_50m_0607",
+  "ai_v5_5_popart_50m_0607",
+  "ai_v5_6_stable_70m_0608",
+  "ai_v5_7_switch_bias_41m_0609",
+  "ai_v5_8_split_inc_dmg_38m_0610",
+  "ai_v5_9_attend_unrevealed_56m_0610",
+  "ai_v6_01_belief_53m_0613",
+  "ai_v6_02_belief_lat_16m_0614",
+  "ai_v6_03_win_pred_N_0614",
+  "ai_v6_04_unified_all_half_batch_N_0616",
+  "ai_v6_04_unified_inc_N_0615",
+  "ai_v6_06_unified_all_N_0616",
+  "ai_v6_07_unified_topk_N_0616",
+  "ai_v6_08_unmasked_floor_N_0617",
+  "ai_v6_09_dmg_reattend_N_0617"
+ ],
+ "no_original_command": [
+  "ai_v5_10_tail1_23_0611",
+  "ai_v5_11_tail2_53m_0611",
+  "ai_v5_12_bias_05_N_0612",
+  "ai_v5_13_shape_pbrs_43m_0612",
+  "ai_v5_2_native_selfplay_50m_0606",
+  "ai_v5_3_vf_coef_clip_50m_0606",
+  "ai_v5_4_pbrs_opp_threat_50m_0607",
+  "ai_v5_5_popart_50m_0607",
+  "ai_v5_6_stable_70m_0608",
+  "ai_v5_7_switch_bias_41m_0609",
+  "ai_v5_8_split_inc_dmg_38m_0610",
+  "ai_v5_9_attend_unrevealed_56m_0610",
+  "ai_v6_01_belief_53m_0613",
+  "ai_v6_02_belief_lat_16m_0614",
+  "ai_v6_03_win_pred_N_0614",
+  "ai_v6_04_unified_all_half_batch_N_0616",
+  "ai_v6_04_unified_inc_N_0615",
+  "ai_v6_06_unified_all_N_0616",
+  "ai_v6_07_unified_topk_N_0616",
+  "ai_v6_08_unmasked_floor_N_0617",
+  "ai_v6_09_dmg_reattend_N_0617"
+ ],
+ "runs": {
+  "DISCARDED_tdaux_control_n16_0818": {
+   "run": "DISCARDED_tdaux_control_n16_0818",
+   "parent": "ai_v9_16_gen14_framedel_v91_0817",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 26667520,
+   "git_hash": "28eaef2903279590863c0461d40f340530732ebe",
+   "trace_files": 131,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_16_gen14_framedel_v91_0817",
+    "DISCARDED_tdaux_control_n16_0818"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 1854208,
+   "ancestry_complete": true
+  },
+  "RETIRED_c5fork_control_gen13base_0817": {
+   "run": "RETIRED_c5fork_control_gen13base_0817",
+   "parent": "ai_v9_15_gen13_hb_events_stack_0817",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 27100000,
+   "final_steps": null,
+   "git_hash": "e80db475503bdce92287279467c120a7d050a711",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_15_gen13_hb_events_stack_0817",
+    "RETIRED_c5fork_control_gen13base_0817"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "RETIRED_gen14_framedel_v90_0817": {
+   "run": "RETIRED_gen14_framedel_v90_0817",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": null,
+   "git_hash": "fe910eec2b7697ec735c64f0057e52808806a00c",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "RETIRED_gen14_framedel_v90_0817"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v5_10_tail1_23_0611": {
+   "run": "ai_v5_10_tail1_23_0611",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 23530799,
+   "git_hash": "0f30c2eb59eb962f400997f351d01eddf0073bf1",
+   "trace_files": 897,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_10_tail1_23_0611"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_11_tail2_53m_0611": {
+   "run": "ai_v5_11_tail2_53m_0611",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 52056146,
+   "git_hash": "2236b769583a128d83207e523db5adc80fa96481",
+   "trace_files": 897,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_11_tail2_53m_0611"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_12_bias_05_N_0612": {
+   "run": "ai_v5_12_bias_05_N_0612",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 23309510,
+   "git_hash": "437dadd05d55b2aa4fd7d8f7f7760663db4a87f6",
+   "trace_files": 909,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_12_bias_05_N_0612"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_13_shape_pbrs_43m_0612": {
+   "run": "ai_v5_13_shape_pbrs_43m_0612",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 43434034,
+   "git_hash": "928a00b933d4f7012051118e6ed68b639c1217eb",
+   "trace_files": 899,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_13_shape_pbrs_43m_0612"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_2_native_selfplay_50m_0606": {
+   "run": "ai_v5_2_native_selfplay_50m_0606",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": null,
+   "steps_flag": null,
+   "final_steps": 29865854,
+   "git_hash": "74373eaf8f341c344755296a788c9dbb0924cc34",
+   "trace_files": 442,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_2_native_selfplay_50m_0606"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_3_vf_coef_clip_50m_0606": {
+   "run": "ai_v5_3_vf_coef_clip_50m_0606",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": null,
+   "steps_flag": null,
+   "final_steps": 50056021,
+   "git_hash": "5afc9a730d68a5ba03969d5a9f47dd227592e2dd",
+   "trace_files": 603,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_3_vf_coef_clip_50m_0606"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_4_pbrs_opp_threat_50m_0607": {
+   "run": "ai_v5_4_pbrs_opp_threat_50m_0607",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": null,
+   "steps_flag": null,
+   "final_steps": 35315608,
+   "git_hash": "2b7db02de6d0fbfb61edad5d408298f2cc38cace",
+   "trace_files": 604,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_4_pbrs_opp_threat_50m_0607"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_5_popart_50m_0607": {
+   "run": "ai_v5_5_popart_50m_0607",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 52052399,
+   "git_hash": "8c11bd7db05d891072de6d638d7646f106485e84",
+   "trace_files": 602,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_5_popart_50m_0607"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_6_stable_70m_0608": {
+   "run": "ai_v5_6_stable_70m_0608",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 70001818,
+   "git_hash": "cf043dc7852c020007176b91eba3f3124dec2dd1",
+   "trace_files": 638,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_6_stable_70m_0608"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_7_switch_bias_41m_0609": {
+   "run": "ai_v5_7_switch_bias_41m_0609",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 40992544,
+   "git_hash": "3cd2305976c5726ed771cbf45b5cca993f05f66c",
+   "trace_files": 893,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_7_switch_bias_41m_0609"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_8_split_inc_dmg_38m_0610": {
+   "run": "ai_v5_8_split_inc_dmg_38m_0610",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 37392713,
+   "git_hash": "9c078a0453dfe3cd1de8650cae25f8fdbf7eba91",
+   "trace_files": 721,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_8_split_inc_dmg_38m_0610"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v5_9_attend_unrevealed_56m_0610": {
+   "run": "ai_v5_9_attend_unrevealed_56m_0610",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 56555334,
+   "git_hash": "4da00d9973af09076a5c5b4588529594fc1619c2",
+   "trace_files": 833,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v5_9_attend_unrevealed_56m_0610"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_01_belief_53m_0613": {
+   "run": "ai_v6_01_belief_53m_0613",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 52910114,
+   "git_hash": "bf896e490183c4a05cba43683ef8dd6e7f40a662",
+   "trace_files": 968,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_01_belief_53m_0613"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_02_belief_lat_16m_0614": {
+   "run": "ai_v6_02_belief_lat_16m_0614",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 16510131,
+   "git_hash": "66549b2a8674e576f9e750ad1f985921ad2299bd",
+   "trace_files": 621,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_02_belief_lat_16m_0614"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_03_win_pred_N_0614": {
+   "run": "ai_v6_03_win_pred_N_0614",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 58917105,
+   "git_hash": "a98638dda88087e4fa09f51e92926bf8d904c046",
+   "trace_files": 758,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_03_win_pred_N_0614"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_04_unified_all_half_batch_N_0616": {
+   "run": "ai_v6_04_unified_all_half_batch_N_0616",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 13838366,
+   "git_hash": "0987a00aee79effd219d222f7ad1672fab9b0fdc",
+   "trace_files": 561,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_04_unified_all_half_batch_N_0616"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_04_unified_inc_N_0615": {
+   "run": "ai_v6_04_unified_inc_N_0615",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 38937343,
+   "git_hash": "69137a154d72b00e2ba9aaf66d1d1f7c6c20269c",
+   "trace_files": 768,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_04_unified_inc_N_0615"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_06_unified_all_N_0616": {
+   "run": "ai_v6_06_unified_all_N_0616",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 26107495,
+   "git_hash": "bb6b683582b33c8c9a954cc344594a7043cb90e3",
+   "trace_files": 711,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_06_unified_all_N_0616"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_07_unified_topk_N_0616": {
+   "run": "ai_v6_07_unified_topk_N_0616",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 31634159,
+   "git_hash": "2b6cc19eafa28c025a3332aaeb121db2dab0dd37",
+   "trace_files": 797,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_07_unified_topk_N_0616"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_08_unmasked_floor_N_0617": {
+   "run": "ai_v6_08_unmasked_floor_N_0617",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 22002567,
+   "git_hash": "f35e6f9b8c07a61e8fa86394a232540576ae8c04",
+   "trace_files": 797,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_08_unmasked_floor_N_0617"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_09_dmg_reattend_N_0617": {
+   "run": "ai_v6_09_dmg_reattend_N_0617",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": false,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 42458933,
+   "git_hash": "bbe321a1930fc3e1a045a1f5437a407631b453e0",
+   "trace_files": 775,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_09_dmg_reattend_N_0617"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": false
+  },
+  "ai_v6_10_unified_obs_0618": {
+   "run": "ai_v6_10_unified_obs_0618",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 9572669,
+   "git_hash": "d5723c8565f724f8e07eb8bb5212b3df5c23016a",
+   "trace_files": 529,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_10_unified_obs_0618"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v6_11_typed_hp_0619": {
+   "run": "ai_v6_11_typed_hp_0619",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 45793883,
+   "git_hash": "8c35e708167a90667432c4b69b9e6b8c44199f38",
+   "trace_files": 772,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_11_typed_hp_0619"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v6_11_unified_obs_fixed_0618": {
+   "run": "ai_v6_11_unified_obs_fixed_0618",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 33633775,
+   "git_hash": "33f564f76a226d2e98d56d124d22b851d4d8e7d6",
+   "trace_files": 780,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_11_unified_obs_fixed_0618"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v6_13_outgoing_dmg_0620": {
+   "run": "ai_v6_13_outgoing_dmg_0620",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 103698064,
+   "git_hash": "379ac5e48e43869c25120eef2752d5c6ae48c00b",
+   "trace_files": 1030,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_13_outgoing_dmg_0620"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v6_13_outgoing_dmg_0620_exp_v1": {
+   "run": "ai_v6_13_outgoing_dmg_0620_exp_v1",
+   "parent": "ai_v6_13_outgoing_dmg_0620",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 124697151,
+   "git_hash": "e5aca5f599b925f8dc5d9d186d415009b810f000",
+   "trace_files": 1020,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_13_outgoing_dmg_0620",
+    "ai_v6_13_outgoing_dmg_0620_exp_v1"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 20999087,
+   "ancestry_complete": true
+  },
+  "ai_v6_13_outgoing_dmg_0620_exploiter_v1": {
+   "run": "ai_v6_13_outgoing_dmg_0620_exploiter_v1",
+   "parent": "ai_v6_13_outgoing_dmg_0620",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v6_13_outgoing_dmg_0620",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 127523438,
+   "git_hash": "e5aca5f599b925f8dc5d9d186d415009b810f000",
+   "trace_files": 522,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_13_outgoing_dmg_0620",
+    "ai_v6_13_outgoing_dmg_0620_exploiter_v1"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 23825374,
+   "ancestry_complete": true
+  },
+  "ai_v6_13_outgoing_dmg_0620_exploiter_v2": {
+   "run": "ai_v6_13_outgoing_dmg_0620_exploiter_v2",
+   "parent": "ai_v6_13_outgoing_dmg_0620",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v6_13_outgoing_dmg_0620",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 35605573,
+   "git_hash": "e5aca5f599b925f8dc5d9d186d415009b810f000",
+   "trace_files": 559,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v6_13_outgoing_dmg_0620",
+    "ai_v6_13_outgoing_dmg_0620_exploiter_v2"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": -68092491,
+   "ancestry_complete": true
+  },
+  "ai_v7_01_teacher_0626": {
+   "run": "ai_v7_01_teacher_0626",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 33392145,
+   "git_hash": "96c0ea0b1d0153aeec2b4660de6a4b1c9da81991",
+   "trace_files": 1030,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_01_teacher_0626"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_01_teacher_0626_oom1": {
+   "run": "ai_v7_01_teacher_0626_oom1",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 1197011,
+   "git_hash": "96c0ea0b1d0153aeec2b4660de6a4b1c9da81991",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_01_teacher_0626_oom1"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_02_critic_shape_0627": {
+   "run": "ai_v7_02_critic_shape_0627",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 106685764,
+   "git_hash": "6cfb023f2601d5bd970c008ef98495102cfb9772",
+   "trace_files": 1028,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_03_belief_shape_0630": {
+   "run": "ai_v7_03_belief_shape_0630",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 59697301,
+   "git_hash": "2f5238eb46f5831d1bf4b0f1d66a71d035343c80",
+   "trace_files": 1047,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_03_belief_shape_0630"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_04_opd_selfdistill_0702": {
+   "run": "ai_v7_04_opd_selfdistill_0702",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 135694065,
+   "git_hash": "4fed4bd1b3a5b1426dcc405a6e6761eb89c5eaed",
+   "trace_files": 1018,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_04_opd_selfdistill_0702"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_05_tss_specialist_0703": {
+   "run": "ai_v7_05_tss_specialist_0703",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 111279963,
+   "git_hash": "49aeb1e465df5d6bad702283c19b4662daf4dff1",
+   "trace_files": 555,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_05_tss_specialist_0703"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_05_tss_specialist_0703_aborted_noeval": {
+   "run": "ai_v7_05_tss_specialist_0703_aborted_noeval",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": null,
+   "git_hash": "49aeb1e465df5d6bad702283c19b4662daf4dff1",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_05_tss_specialist_0703_aborted_noeval"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_06_tss_temp_anneal_0706": {
+   "run": "ai_v7_06_tss_temp_anneal_0706",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 32470224,
+   "git_hash": "787f996d974281f7632126717b24ffd480ec5bbf",
+   "trace_files": 565,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_06_tss_temp_anneal_0706"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_07_tss_temp_ratchet_0707": {
+   "run": "ai_v7_07_tss_temp_ratchet_0707",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 18609109,
+   "git_hash": "04f7409068a42b3579f70a379bf5bdd9d27d7e2d",
+   "trace_files": 547,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_07_tss_temp_ratchet_0707"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_08_tss_bots_0707": {
+   "run": "ai_v7_08_tss_bots_0707",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 56813073,
+   "git_hash": "04f7409068a42b3579f70a379bf5bdd9d27d7e2d",
+   "trace_files": 533,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_08_tss_bots_0707"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_09_tss_bots_pubval_0708": {
+   "run": "ai_v7_09_tss_bots_pubval_0708",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 57421191,
+   "git_hash": "182bb4ded519937a108792449251cd6171b6035c",
+   "trace_files": 556,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_09_tss_bots_pubval_0708"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_10_tss_exploiter_fixed_0709": {
+   "run": "ai_v7_10_tss_exploiter_fixed_0709",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 23350277,
+   "git_hash": "59837aa43a6bfdad84bf72d8e7d53e9f1e8a98b1",
+   "trace_files": 293,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_11_tss_exploiter_nopubval": {
+   "run": "ai_v7_11_tss_exploiter_nopubval",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 25491946,
+   "git_hash": "d072d9d5f77edaf38dcb66d81ef71c71e2a17bfc",
+   "trace_files": 291,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_11_tss_exploiter_nopubval"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_12_trap_exploiter_0711": {
+   "run": "ai_v7_12_trap_exploiter_0711",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 15546865,
+   "git_hash": "1453ff4ed870bf4b786fecad1219e136961c28f8",
+   "trace_files": 296,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_12_trap_exploiter_0711"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_13_cmpass_exploiter_0711": {
+   "run": "ai_v7_13_cmpass_exploiter_0711",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_02_critic_shape_0627",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 25536809,
+   "git_hash": "3d3227e052fe9bf3baa6d0aa76cf1b47c0f225cb",
+   "trace_files": 319,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_13_cmpass_exploiter_0711"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_14_league_capstone_0712": {
+   "run": "ai_v7_14_league_capstone_0712",
+   "parent": "ai_v7_02_critic_shape_0627",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 148223095,
+   "git_hash": "c27d843fd1d01540dd33a6ea6c135a719875d5d3",
+   "trace_files": 707,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 41537331,
+   "ancestry_complete": true
+  },
+  "ai_v7_15_tss_exploiter_vs14_0713": {
+   "run": "ai_v7_15_tss_exploiter_vs14_0713",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_14_league_capstone_0712",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": null,
+   "distill_target": null,
+   "distill_team_bias": null,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 74729364,
+   "git_hash": "b2c045fac19af9c57b295e4e75ce5c001bed438f",
+   "trace_files": 291,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_15_tss_exploiter_vs14_0713"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_16_distill_tss_mvp_0715": {
+   "run": "ai_v7_16_distill_tss_mvp_0715",
+   "parent": "ai_v7_14_league_capstone_0712",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_10_tss_exploiter_fixed_0709",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.1,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 154637567,
+   "git_hash": "c256f73c1a4f27fe2d0d360ac17fee18bbf99fb1",
+   "trace_files": 428,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712",
+    "ai_v7_16_distill_tss_mvp_0715"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v7_16_distill_tss_mvp_0715"
+   ],
+   "own_steps": 6414472,
+   "ancestry_complete": true
+  },
+  "ai_v7_17_stall_exploiter_0715": {
+   "run": "ai_v7_17_stall_exploiter_0715",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v7_14_league_capstone_0712",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 27246773,
+   "git_hash": "b5bbdf40488537eeb0120d26ece088a5a87e2037",
+   "trace_files": 306,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_17_stall_exploiter_0715"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_18_distill_4teacher_0716": {
+   "run": "ai_v7_18_distill_4teacher_0716",
+   "parent": "ai_v7_14_league_capstone_0712",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_10_tss_exploiter_fixed_0709",
+     "teams": [
+      "tss_starmie",
+      "trap_magneton",
+      "cm_pass_celebi",
+      "8cdc78b2d46f0515"
+     ]
+    }
+   ],
+   "distill_coef": 0.1,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 158302045,
+   "git_hash": "41c1d4442668d599da5641e4c26f25de7f214c15",
+   "trace_files": 473,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712",
+    "ai_v7_18_distill_4teacher_0716"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v7_18_distill_4teacher_0716"
+   ],
+   "own_steps": 10078950,
+   "ancestry_complete": true
+  },
+  "ai_v7_19_combined_0716": {
+   "run": "ai_v7_19_combined_0716",
+   "parent": "ai_v7_18_distill_4teacher_0716",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_10_tss_exploiter_fixed_0709",
+     "teams": [
+      "tss_starmie",
+      "trap_magneton",
+      "cm_pass_celebi",
+      "8cdc78b2d46f0515"
+     ]
+    }
+   ],
+   "distill_coef": 0.1,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 175523633,
+   "git_hash": "c7f81efdb9daa8039b6c8b0051549adf70eafa29",
+   "trace_files": 768,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712",
+    "ai_v7_18_distill_4teacher_0716",
+    "ai_v7_19_combined_0716"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v7_18_distill_4teacher_0716",
+    "ai_v7_19_combined_0716"
+   ],
+   "own_steps": 17221588,
+   "ancestry_complete": true
+  },
+  "ai_v7_20_valuedistill_SMOKE": {
+   "run": "ai_v7_20_valuedistill_SMOKE",
+   "parent": "ai_v7_14_league_capstone_0712",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_10_tss_exploiter_fixed_0709",
+     "teams": [
+      "tss_starmie",
+      "trap_magneton",
+      "cm_pass_celebi",
+      "8cdc78b2d46f0515"
+     ]
+    }
+   ],
+   "distill_coef": 0.1,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 148407000,
+   "final_steps": null,
+   "git_hash": "66ed734d85ef2bb02f80e021703f6293e6023010",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712",
+    "ai_v7_20_valuedistill_SMOKE"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v7_20_valuedistill_SMOKE"
+   ],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v7_20_valuedistill_ab_0717": {
+   "run": "ai_v7_20_valuedistill_ab_0717",
+   "parent": "ai_v7_14_league_capstone_0712",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_10_tss_exploiter_fixed_0709",
+     "teams": [
+      "tss_starmie",
+      "trap_magneton",
+      "cm_pass_celebi",
+      "8cdc78b2d46f0515"
+     ]
+    }
+   ],
+   "distill_coef": 0.1,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 152670073,
+   "git_hash": "66ed734d85ef2bb02f80e021703f6293e6023010",
+   "trace_files": 273,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712",
+    "ai_v7_20_valuedistill_ab_0717"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v7_20_valuedistill_ab_0717"
+   ],
+   "own_steps": 4446978,
+   "ancestry_complete": true
+  },
+  "ai_v7_21_fitnet_valuefeat_ab_0717": {
+   "run": "ai_v7_21_fitnet_valuefeat_ab_0717",
+   "parent": "ai_v7_14_league_capstone_0712",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_10_tss_exploiter_fixed_0709"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_10_tss_exploiter_fixed_0709",
+     "teams": [
+      "tss_starmie",
+      "trap_magneton",
+      "cm_pass_celebi",
+      "8cdc78b2d46f0515"
+     ]
+    }
+   ],
+   "distill_coef": 0.1,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 159925420,
+   "git_hash": "a6ae04fd328731f5bdb9416b726556894a7eb0ae",
+   "trace_files": 490,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v7_02_critic_shape_0627",
+    "ai_v7_14_league_capstone_0712",
+    "ai_v7_21_fitnet_valuefeat_ab_0717"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v7_21_fitnet_valuefeat_ab_0717"
+   ],
+   "own_steps": 11702325,
+   "ancestry_complete": true
+  },
+  "ai_v8_01_zarch_film_0717": {
+   "run": "ai_v8_01_zarch_film_0717",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 170604749,
+   "git_hash": "a2cc409fcb02226cd5b21bc81d6cfdb6eeb77504",
+   "trace_files": 2560,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v8_02_zarch_teampfsp_0718": {
+   "run": "ai_v8_02_zarch_teampfsp_0718",
+   "parent": "ai_v8_01_zarch_film_0717",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 173989527,
+   "git_hash": "ab8dcd0c819281742fb343bf49471a877e6d6345",
+   "trace_files": 290,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_02_zarch_teampfsp_0718"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3384778,
+   "ancestry_complete": true
+  },
+  "ai_v8_03_zarch_control_0718": {
+   "run": "ai_v8_03_zarch_control_0718",
+   "parent": "ai_v8_01_zarch_film_0717",
+   "parent_is_init": true,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 267612744,
+   "git_hash": "e07f7522c92e04375a11201a43758d369c996ef1",
+   "trace_files": 7527,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 267612744,
+   "ancestry_complete": true
+  },
+  "ai_v8_04_distill_4teacher_0722": {
+   "run": "ai_v8_04_distill_4teacher_0722",
+   "parent": "ai_v8_03_zarch_control_0718",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v7_15_tss_exploiter_vs14_0713"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v7_15_tss_exploiter_vs14_0713",
+     "teams": [
+      "tss_starmie",
+      "trap_magneton",
+      "cm_pass_celebi",
+      "8cdc78b2d46f0515"
+     ]
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 300000000,
+   "final_steps": 277178472,
+   "git_hash": "ce8bbc954b42fceac0df773eab4040723bd2ffd3",
+   "trace_files": 754,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 9565728,
+   "ancestry_complete": true
+  },
+  "ai_v8_05_semistall564_exploiter_0722": {
+   "run": "ai_v8_05_semistall564_exploiter_0722",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 280757412,
+   "git_hash": "5bbf52cb97e94763063f74c39a19e87059da9530",
+   "trace_files": 218,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_05_semistall564_exploiter_0722"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 3578940,
+   "ancestry_complete": true
+  },
+  "ai_v8_06_semistall_3team_exploiter_0722": {
+   "run": "ai_v8_06_semistall_3team_exploiter_0722",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 284951488,
+   "git_hash": "722e2fb9a2f74d1911e1468422e607ac70f79455",
+   "trace_files": 429,
+   "trainee_teams": [
+    "9d5f845869e899ee",
+    "f7ba5702fe856292",
+    "0972146213a667c9"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_06_semistall_3team_exploiter_0722"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 7773016,
+   "ancestry_complete": true
+  },
+  "ai_v8_07_semistall564_scratch_0722": {
+   "run": "ai_v8_07_semistall564_scratch_0722",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 21112628,
+   "git_hash": "0d73d0661c4a81e2992d8a1109fb9f8d2cd06590",
+   "trace_files": 1571,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_07_semistall564_scratch_0722"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v8_08_defensive_6team_exploiter_0723": {
+   "run": "ai_v8_08_defensive_6team_exploiter_0723",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 280753159,
+   "git_hash": "722e2fb9a2f74d1911e1468422e607ac70f79455",
+   "trace_files": 234,
+   "trainee_teams": [
+    "9d5f845869e899ee",
+    "f7ba5702fe856292",
+    "0972146213a667c9",
+    "7036a0a1dcb59a19",
+    "9909f2e98e981ccc",
+    "0fa105ae42dc85ec"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_08_defensive_6team_exploiter_0723"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 3574687,
+   "ancestry_complete": true
+  },
+  "ai_v8_09_pool10_exploiter_0723": {
+   "run": "ai_v8_09_pool10_exploiter_0723",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 295343200,
+   "git_hash": "f9175eaaec9a122d91a6e313e5248ad4e611e8c1",
+   "trace_files": 1088,
+   "trainee_teams": [
+    "t00_564b9be3ae",
+    "t01_d3c1cd0952",
+    "t02_7594a34f82",
+    "t03_47dc388b25",
+    "t04_4c9552cd01",
+    "t05_552d5857a3",
+    "t06_f5d46ca0fc",
+    "t07_3a83154c2a",
+    "t08_9b454d9ea7",
+    "t09_24db4aacdd"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_09_pool10_exploiter_0723"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 18164728,
+   "ancestry_complete": true
+  },
+  "ai_v8_10_offense20_exploiter_0724": {
+   "run": "ai_v8_10_offense20_exploiter_0724",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 291684967,
+   "git_hash": "43b8b4386cdd831b0e4a96a435d8c4723563398f",
+   "trace_files": 1107,
+   "trainee_teams": [
+    "t00_41357610f2",
+    "t01_e897031fa0",
+    "t02_2439039083",
+    "t03_47e956d497",
+    "t04_0d42c60d9f",
+    "t05_54ae6472fd",
+    "t06_97677c4b34",
+    "t07_ad2876f90f",
+    "t08_8312887467",
+    "t09_6ef6e77850",
+    "t10_f75c5fef49",
+    "t11_24e0e3ade7",
+    "t12_2142e9a80b",
+    "t13_dfc45b9ca6",
+    "t14_16cb54accf",
+    "t15_8569905725",
+    "t16_f3b89f89d5",
+    "t17_169ed55259",
+    "t18_b20135805c",
+    "t19_715845ed34"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_10_offense20_exploiter_0724"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 14506495,
+   "ancestry_complete": true
+  },
+  "ai_v8_11_offense10_exploiter_0724": {
+   "run": "ai_v8_11_offense10_exploiter_0724",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 282840653,
+   "git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+   "trace_files": 407,
+   "trainee_teams": [
+    "t00_41357610f2",
+    "t01_e897031fa0",
+    "t02_2439039083",
+    "t03_47e956d497",
+    "t04_0d42c60d9f",
+    "t05_54ae6472fd",
+    "t06_97677c4b34",
+    "t07_ad2876f90f",
+    "t08_8312887467",
+    "t09_6ef6e77850"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_11_offense10_exploiter_0724"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 5662181,
+   "ancestry_complete": true
+  },
+  "ai_v8_12_defensive20_exploiter_0724": {
+   "run": "ai_v8_12_defensive20_exploiter_0724",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 300470594,
+   "git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+   "trace_files": 1730,
+   "trainee_teams": [
+    "t00_9278913bce",
+    "t01_fc908f1bf4",
+    "t02_83aee9db7e",
+    "t03_044da80d78",
+    "t04_bef089d2cf",
+    "t05_3f95b25e9a",
+    "t06_8b6b8c8f52",
+    "t07_5c88ff9ca5",
+    "t08_3e9bdcee48",
+    "t09_65bfb2e8b4",
+    "t10_1f2724ad08",
+    "t11_6e6f2786a8",
+    "t12_c72e9e7277",
+    "t13_2452541c34",
+    "t14_ee6422f1c6",
+    "t15_0fb4c2c372",
+    "t16_e3550d3cc5",
+    "t17_21022d30fb",
+    "t18_14a29827d3",
+    "t19_b2144660b9"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_12_defensive20_exploiter_0724"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 23292122,
+   "ancestry_complete": true
+  },
+  "ai_v8_13_defensive10_exploiter_0725": {
+   "run": "ai_v8_13_defensive10_exploiter_0725",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 290381348,
+   "git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+   "trace_files": 964,
+   "trainee_teams": [
+    "t00_9278913bce",
+    "t01_fc908f1bf4",
+    "t02_83aee9db7e",
+    "t03_044da80d78",
+    "t04_bef089d2cf",
+    "t05_3f95b25e9a",
+    "t06_8b6b8c8f52",
+    "t07_5c88ff9ca5",
+    "t08_3e9bdcee48",
+    "t09_65bfb2e8b4"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_13_defensive10_exploiter_0725"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 13202876,
+   "ancestry_complete": true
+  },
+  "ai_v8_14_distill3_0725": {
+   "run": "ai_v8_14_distill3_0725",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v8_09_pool10_exploiter_0723",
+    "ai_v8_06_semistall_3team_exploiter_0722",
+    "ai_v8_13_defensive10_exploiter_0725"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v8_09_pool10_exploiter_0723",
+     "teams": null
+    },
+    {
+     "run": "ai_v8_06_semistall_3team_exploiter_0722",
+     "teams": null
+    },
+    {
+     "run": "ai_v8_13_defensive10_exploiter_0725",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 292100648,
+   "git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+   "trace_files": 2055,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_14_distill3_0725"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_14_distill3_0725"
+   ],
+   "own_steps": 14922176,
+   "ancestry_complete": true
+  },
+  "ai_v8_15_retention_A_frozen_0726": {
+   "run": "ai_v8_15_retention_A_frozen_0726",
+   "parent": "ai_v8_14_distill3_0725",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 308372456,
+   "git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+   "trace_files": 1703,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_14_distill3_0725",
+    "ai_v8_15_retention_A_frozen_0726"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_14_distill3_0725"
+   ],
+   "own_steps": 16271808,
+   "ancestry_complete": true
+  },
+  "ai_v8_16_def20_lut_0726": {
+   "run": "ai_v8_16_def20_lut_0726",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 291642709,
+   "git_hash": "dd01baec4de8045c058ac023982cb3092c8d842c",
+   "trace_files": 1150,
+   "trainee_teams": [
+    "t00_9278913bce",
+    "t01_fc908f1bf4",
+    "t02_83aee9db7e",
+    "t03_044da80d78",
+    "t04_bef089d2cf",
+    "t05_3f95b25e9a",
+    "t06_8b6b8c8f52",
+    "t07_5c88ff9ca5",
+    "t08_3e9bdcee48",
+    "t09_65bfb2e8b4",
+    "t10_1f2724ad08",
+    "t11_6e6f2786a8",
+    "t12_c72e9e7277",
+    "t13_2452541c34",
+    "t14_ee6422f1c6",
+    "t15_0fb4c2c372",
+    "t16_e3550d3cc5",
+    "t17_21022d30fb",
+    "t18_14a29827d3",
+    "t19_b2144660b9"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_16_def20_lut_0726"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 14464237,
+   "ancestry_complete": true
+  },
+  "ai_v8_17_rand20_nolut_0726": {
+   "run": "ai_v8_17_rand20_nolut_0726",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 291540051,
+   "git_hash": "a6791c86bf51c04b70b24eb898a722a5ab807097",
+   "trace_files": 1252,
+   "trainee_teams": [
+    "t00_04c4890255",
+    "t01_25264b98ec",
+    "t02_2534832821",
+    "t03_2d58357f00",
+    "t04_442147a7b1",
+    "t05_61ab86a356",
+    "t06_63f81c5c58",
+    "t07_69d17b0d82",
+    "t08_6e12f4e836",
+    "t09_776957eb66",
+    "t10_80365d55bc",
+    "t11_8660539a24",
+    "t12_a6680f8517",
+    "t13_a7406f6c97",
+    "t14_b556092817",
+    "t15_bf68a0a21a",
+    "t16_c90e782cad",
+    "t17_ce61c549f7",
+    "t18_dbba4f32fa",
+    "t19_e5bf5b83b5"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_17_rand20_nolut_0726"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 14361579,
+   "ancestry_complete": true
+  },
+  "ai_v8_18_rand20_lut_0726": {
+   "run": "ai_v8_18_rand20_lut_0726",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 291654679,
+   "git_hash": "77f69155b0c6edff0fba4f73ca77e2e07b698b5d",
+   "trace_files": 1201,
+   "trainee_teams": [
+    "t00_04c4890255",
+    "t01_25264b98ec",
+    "t02_2534832821",
+    "t03_2d58357f00",
+    "t04_442147a7b1",
+    "t05_61ab86a356",
+    "t06_63f81c5c58",
+    "t07_69d17b0d82",
+    "t08_6e12f4e836",
+    "t09_776957eb66",
+    "t10_80365d55bc",
+    "t11_8660539a24",
+    "t12_a6680f8517",
+    "t13_a7406f6c97",
+    "t14_b556092817",
+    "t15_bf68a0a21a",
+    "t16_c90e782cad",
+    "t17_ce61c549f7",
+    "t18_dbba4f32fa",
+    "t19_e5bf5b83b5"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_18_rand20_lut_0726"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 14476207,
+   "ancestry_complete": true
+  },
+  "ai_v8_19_def20_lut_zeroinit_0727": {
+   "run": "ai_v8_19_def20_lut_zeroinit_0727",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 292189835,
+   "git_hash": "74b32f1eaab408cff569cf3ba9ebeae5926c0fad",
+   "trace_files": 1104,
+   "trainee_teams": [
+    "t00_9278913bce",
+    "t01_fc908f1bf4",
+    "t02_83aee9db7e",
+    "t03_044da80d78",
+    "t04_bef089d2cf",
+    "t05_3f95b25e9a",
+    "t06_8b6b8c8f52",
+    "t07_5c88ff9ca5",
+    "t08_3e9bdcee48",
+    "t09_65bfb2e8b4",
+    "t10_1f2724ad08",
+    "t11_6e6f2786a8",
+    "t12_c72e9e7277",
+    "t13_2452541c34",
+    "t14_ee6422f1c6",
+    "t15_0fb4c2c372",
+    "t16_e3550d3cc5",
+    "t17_21022d30fb",
+    "t18_14a29827d3",
+    "t19_b2144660b9"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_19_def20_lut_zeroinit_0727"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 15011363,
+   "ancestry_complete": true
+  },
+  "ai_v8_20_rand10_nolut_0727": {
+   "run": "ai_v8_20_rand10_nolut_0727",
+   "parent": "ai_v8_04_distill_4teacher_0722",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v8_04_distill_4teacher_0722",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 7e-05,
+   "steps_flag": 400000000,
+   "final_steps": 291624819,
+   "git_hash": "74b32f1eaab408cff569cf3ba9ebeae5926c0fad",
+   "trace_files": 1171,
+   "trainee_teams": [
+    "t00_04c4890255",
+    "t01_2534832821",
+    "t02_442147a7b1",
+    "t03_63f81c5c58",
+    "t04_6e12f4e836",
+    "t05_80365d55bc",
+    "t06_a6680f8517",
+    "t07_b556092817",
+    "t08_c90e782cad",
+    "t09_dbba4f32fa"
+   ],
+   "chain": [
+    "ai_v8_01_zarch_film_0717",
+    "ai_v8_03_zarch_control_0718",
+    "ai_v8_04_distill_4teacher_0722",
+    "ai_v8_20_rand10_nolut_0727"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v8_04_distill_4teacher_0722"
+   ],
+   "own_steps": 14446347,
+   "ancestry_complete": true
+  },
+  "ai_v9_01_gen1_edges6_40m_0804": {
+   "run": "ai_v9_01_gen1_edges6_40m_0804",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 40000000,
+   "final_steps": 38400000,
+   "git_hash": "1d1e7ef5850cbf5616cc0c7675296086e2208ab4",
+   "trace_files": 4424,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_01_gen1_edges6_40m_0804"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_02_gen2_full11_40m_0805": {
+   "run": "ai_v9_02_gen2_full11_40m_0805",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 40000000,
+   "final_steps": 38400000,
+   "git_hash": "ffa851e480fc4d8bc432a9bc2c2887e6a5605397",
+   "trace_files": 4328,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_02_gen2_full11_40m_0805"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_03_gen25_consequence_25m_0806": {
+   "run": "ai_v9_03_gen25_consequence_25m_0806",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 24000000,
+   "git_hash": "5db973121c62069119b6fa669fb3a1b05534bd73",
+   "trace_files": 2609,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_03_gen25_consequence_25m_0806"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_04_gen3_k6_recency_40m_0807": {
+   "run": "ai_v9_04_gen3_k6_recency_40m_0807",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 40000000,
+   "final_steps": 38400000,
+   "git_hash": "e60a1e14a6e75979e9759cb5a3de8a15d173ea27",
+   "trace_files": 4423,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_04_gen3_k6_recency_40m_0807"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_05_gen4_rehome_25m_0808": {
+   "run": "ai_v9_05_gen4_rehome_25m_0808",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 24000000,
+   "git_hash": "d9af909bfdceac4a22b1664dfe17a140379ae0e6",
+   "trace_files": 2476,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_05_gen4_rehome_25m_0808"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_06_gen5_no_concat_0809": {
+   "run": "ai_v9_06_gen5_no_concat_0809",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 24000000,
+   "git_hash": "6aac795ac53b8a206748edb418188bfafc45b1ab",
+   "trace_files": 2540,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_06_gen5_no_concat_0809"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_07_gen6_seed_vicreg_0810": {
+   "run": "ai_v9_07_gen6_seed_vicreg_0810",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 19200000,
+   "git_hash": "22cf5779a6aab8d232ce1ed1b197751ed91860df",
+   "trace_files": 1870,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_07_gen6_seed_vicreg_0810"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_08_gen7_seed_quantile_0811": {
+   "run": "ai_v9_08_gen7_seed_quantile_0811",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 14400000,
+   "git_hash": "ec32c93bc36a1eb9dd6f8511afbabbcde1532ab1",
+   "trace_files": 1388,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_08_gen7_seed_quantile_0811"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_09_gen8_beliefs_threat_inject_0811": {
+   "run": "ai_v9_09_gen8_beliefs_threat_inject_0811",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 25599744,
+   "git_hash": "4b503f13d0ae01e7860b501a4f2d01bafb240fb2",
+   "trace_files": 2826,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_09_gen8_beliefs_threat_inject_0811"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_10_gen9_intent_distcritic_0813": {
+   "run": "ai_v9_10_gen9_intent_distcritic_0813",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 26386176,
+   "git_hash": "b52bc4e76c3c772b7a46331e9726940012d431d5",
+   "trace_files": 2760,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_10_gen9_intent_distcritic_0813"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_11_gen10_intentfull_compiled_0814": {
+   "run": "ai_v9_11_gen10_intentfull_compiled_0814",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 2400000,
+   "git_hash": "3d41364194c12a452445a600380e1b8e43a7035b",
+   "trace_files": 168,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_11_gen10_intentfull_compiled_0814"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_12_gen10_t0prior_0814": {
+   "run": "ai_v9_12_gen10_t0prior_0814",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 23182848,
+   "git_hash": "04379ed966397ba98a65d41e7e7be1e515edd98d",
+   "trace_files": 2732,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_12_gen10_t0prior_0814"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_13_gen11_labelonly_winprob_0815": {
+   "run": "ai_v9_13_gen11_labelonly_winprob_0815",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 23379456,
+   "git_hash": "3a9edca0a194e3b02f671689d0ea4871fe2517e1",
+   "trace_files": 2516,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_13_gen11_labelonly_winprob_0815"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_14_gen12_h_entitypool_shaping_0816": {
+   "run": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 24715008,
+   "git_hash": "ede5a887ea056b6f3d2f56719baeecdccc5b1634",
+   "trace_files": 2582,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_14_gen12_h_entitypool_shaping_0816"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_15_gen13_hb_events_stack_0817": {
+   "run": "ai_v9_15_gen13_hb_events_stack_0817",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 21765888,
+   "git_hash": "1fa47332deb87e0515702da15d7b2ee138396e34",
+   "trace_files": 2573,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_15_gen13_hb_events_stack_0817"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_16_gen14_framedel_v91_0817": {
+   "run": "ai_v9_16_gen14_framedel_v91_0817",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 24813312,
+   "git_hash": "3d211aa180923966acd62932c591d89d51853147",
+   "trace_files": 2590,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_16_gen14_framedel_v91_0817"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_17_tdaux_control_0818": {
+   "run": "ai_v9_17_tdaux_control_0818",
+   "parent": "ai_v9_16_gen14_framedel_v91_0817",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 27467520,
+   "git_hash": "28eaef2903279590863c0461d40f340530732ebe",
+   "trace_files": 295,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_16_gen14_framedel_v91_0817",
+    "ai_v9_17_tdaux_control_0818"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 2654208,
+   "ancestry_complete": true
+  },
+  "ai_v9_17_tdaux_lam1_0818": {
+   "run": "ai_v9_17_tdaux_lam1_0818",
+   "parent": "ai_v9_16_gen14_framedel_v91_0817",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 27467520,
+   "git_hash": "99750f383180edda1aff5c498de4fb1a862f6148",
+   "trace_files": 292,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_16_gen14_framedel_v91_0817",
+    "ai_v9_17_tdaux_lam1_0818"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 2654208,
+   "ancestry_complete": true
+  },
+  "ai_v9_17_tdaux_lam3_0818": {
+   "run": "ai_v9_17_tdaux_lam3_0818",
+   "parent": "ai_v9_16_gen14_framedel_v91_0817",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 27467520,
+   "git_hash": "1dc59654169735171f19b1078a664f1ac2b8b7be",
+   "trace_files": 287,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_16_gen14_framedel_v91_0817",
+    "ai_v9_17_tdaux_lam3_0818"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 2654208,
+   "ancestry_complete": true
+  },
+  "ai_v9_18_gen15_v8rewards_0818": {
+   "run": "ai_v9_18_gen15_v8rewards_0818",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 22101504,
+   "git_hash": "ff1daaef52c3e01fa12f3a46d6b4f50b03551e28",
+   "trace_files": 2494,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_18_gen15_v8rewards_0818"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_19_gen16_mechanics_0819": {
+   "run": "ai_v9_19_gen16_mechanics_0819",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 22396416,
+   "git_hash": "d43312a9f7e3f27675b337fcf08ace80199f4f76",
+   "trace_files": 2597,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_19_gen16_mechanics_0819"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_20_tdaux_rung2_lam00_0820": {
+   "run": "ai_v9_20_tdaux_rung2_lam00_0820",
+   "parent": "ai_v9_19_gen16_mechanics_0819",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 27467520,
+   "git_hash": "d43312a9f7e3f27675b337fcf08ace80199f4f76",
+   "trace_files": 453,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_19_gen16_mechanics_0819",
+    "ai_v9_20_tdaux_rung2_lam00_0820"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5071104,
+   "ancestry_complete": true
+  },
+  "ai_v9_20_tdaux_rung2_lam10_0820": {
+   "run": "ai_v9_20_tdaux_rung2_lam10_0820",
+   "parent": "ai_v9_19_gen16_mechanics_0819",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 27467520,
+   "git_hash": "d43312a9f7e3f27675b337fcf08ace80199f4f76",
+   "trace_files": 458,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_19_gen16_mechanics_0819",
+    "ai_v9_20_tdaux_rung2_lam10_0820"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5071104,
+   "ancestry_complete": true
+  },
+  "ai_v9_20_tdaux_rung2_lam30_0820": {
+   "run": "ai_v9_20_tdaux_rung2_lam30_0820",
+   "parent": "ai_v9_19_gen16_mechanics_0819",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067520,
+   "final_steps": 27467520,
+   "git_hash": "d43312a9f7e3f27675b337fcf08ace80199f4f76",
+   "trace_files": 464,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_19_gen16_mechanics_0819",
+    "ai_v9_20_tdaux_rung2_lam30_0820"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5071104,
+   "ancestry_complete": true
+  },
+  "ai_v9_21_gen17_pfspoff_0820": {
+   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 22887936,
+   "git_hash": "4b031887ebc7926a6730f4c501023168f8960819",
+   "trace_files": 2478,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_22_E1_substrate_on_0821": {
+   "run": "ai_v9_22_E1_substrate_on_0821",
+   "parent": "ai_v9_21_gen17_pfspoff_0820",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 34067520,
+   "final_steps": 32914944,
+   "git_hash": "d3efbc185d6167f0df7c0b9711c4e215acc5d395",
+   "trace_files": 1163,
+   "trainee_teams": [
+    "f6229d2c867e21d6",
+    "6d56d06b9fca508e",
+    "a3ca232f030ef625"
+   ],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820",
+    "ai_v9_22_E1_substrate_on_0821"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 10027008,
+   "ancestry_complete": true
+  },
+  "ai_v9_23_E2_substrate_on_0822": {
+   "run": "ai_v9_23_E2_substrate_on_0822",
+   "parent": "ai_v9_21_gen17_pfspoff_0820",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 34067520,
+   "final_steps": 32874240,
+   "git_hash": "8d12c25bc6e41a6c01dfdd8694ae73a23b848d37",
+   "trace_files": 1231,
+   "trainee_teams": [
+    "9f27f5d3e34021a7",
+    "dbf81d8ecae51c39",
+    "f7ba5702fe856292"
+   ],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820",
+    "ai_v9_23_E2_substrate_on_0822"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 9986304,
+   "ancestry_complete": true
+  },
+  "ai_v9_24_E3_substrate_on_0822": {
+   "run": "ai_v9_24_E3_substrate_on_0822",
+   "parent": "ai_v9_21_gen17_pfspoff_0820",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 34067520,
+   "final_steps": 32775936,
+   "git_hash": "2a6752232b38d6513c34aa13b76b8186e4a54d42",
+   "trace_files": 1215,
+   "trainee_teams": [
+    "0fa105ae42dc85ec",
+    "82e97fe2bfbb6f69",
+    "f6229d2c867e21d6"
+   ],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820",
+    "ai_v9_24_E3_substrate_on_0822"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 9888000,
+   "ancestry_complete": true
+  },
+  "ai_v9_25_E4_baitbot_0822": {
+   "run": "ai_v9_25_E4_baitbot_0822",
+   "parent": "ai_v9_22_E1_substrate_on_0821",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 43111488,
+   "final_steps": 41721600,
+   "git_hash": "be8a88e97d52a72b392541058efb5692ee9a4a5d",
+   "trace_files": 1181,
+   "trainee_teams": [
+    "f6229d2c867e21d6",
+    "6d56d06b9fca508e",
+    "a3ca232f030ef625"
+   ],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820",
+    "ai_v9_22_E1_substrate_on_0821",
+    "ai_v9_25_E4_baitbot_0822"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 8806656,
+   "ancestry_complete": true
+  },
+  "ai_v9_26_baitent_probe_0823": {
+   "run": "ai_v9_26_baitent_probe_0823",
+   "parent": "ai_v9_22_E1_substrate_on_0821",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 36275872,
+   "final_steps": null,
+   "git_hash": "fceef656c06b32863bd33f73aaa8a081b9e0d710",
+   "trace_files": 986,
+   "trainee_teams": [
+    "f6229d2c867e21d6",
+    "6d56d06b9fca508e",
+    "a3ca232f030ef625"
+   ],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820",
+    "ai_v9_22_E1_substrate_on_0821",
+    "ai_v9_26_baitent_probe_0823"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_27_extremedial_probe_0823": {
+   "run": "ai_v9_27_extremedial_probe_0823",
+   "parent": "ai_v9_25_E4_baitbot_0822",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 45155456,
+   "final_steps": null,
+   "git_hash": "e6ec7e13a369c0b28d5049ce85929cece4d6d03e",
+   "trace_files": 407,
+   "trainee_teams": [
+    "f6229d2c867e21d6",
+    "6d56d06b9fca508e",
+    "a3ca232f030ef625"
+   ],
+   "chain": [
+    "ai_v9_21_gen17_pfspoff_0820",
+    "ai_v9_22_E1_substrate_on_0821",
+    "ai_v9_25_E4_baitbot_0822",
+    "ai_v9_27_extremedial_probe_0823"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_29_rev1_0823": {
+   "run": "ai_v9_29_rev1_0823",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 25000000,
+   "final_steps": 24988992,
+   "git_hash": "d78aa810c6fadf23562afff4416123419c90659e",
+   "trace_files": 2456,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "ai_v9_30_rev1_exploit_0824": {
+   "run": "ai_v9_30_rev1_exploit_0824",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 27067760,
+   "final_steps": 27017760,
+   "git_hash": "d008188118de8066ae84d60985f2d8a87290b71e",
+   "trace_files": 155,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_30_rev1_exploit_0824"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 2028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_31_tock1_k4_0824": {
+   "run": "ai_v9_31_tock1_k4_0824",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "2638e077b1f56594652446a96d2d4a5d95cfe213",
+   "trace_files": 261,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6",
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_31_tock1_k4_0824"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_32_tock1b_rain_0824": {
+   "run": "ai_v9_32_tock1b_rain_0824",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "5e63ecb5b0db294e2d6c6e09ffb10f4e6db9e0e5",
+   "trace_files": 267,
+   "trainee_teams": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce",
+    "e541f7be8713393c"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_34_tick1_0824": {
+   "run": "ai_v9_34_tick1_0824",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 35067760,
+   "final_steps": 35068512,
+   "git_hash": "5e63ecb5b0db294e2d6c6e09ffb10f4e6db9e0e5",
+   "trace_files": 1066,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_34_tick1_0824"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_34_tick1_0824"
+   ],
+   "own_steps": 10079520,
+   "ancestry_complete": true
+  },
+  "ai_v9_35_tick1_exploit_0824": {
+   "run": "ai_v9_35_tick1_exploit_0824",
+   "parent": "ai_v9_34_tick1_0824",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_34_tick1_0824",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 37094768,
+   "final_steps": 37044768,
+   "git_hash": "530db5439b5d648a34158ae032a130515f527dbb",
+   "trace_files": 151,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_34_tick1_0824",
+    "ai_v9_35_tick1_exploit_0824"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_34_tick1_0824"
+   ],
+   "own_steps": 1976256,
+   "ancestry_complete": true
+  },
+  "ai_v9_36_tock1c_q6_0824": {
+   "run": "ai_v9_36_tock1c_q6_0824",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "530db5439b5d648a34158ae032a130515f527dbb",
+   "trace_files": 268,
+   "trainee_teams": [
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_36_tock1c_q6_0824"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_37_tick1_dosext_0825": {
+   "run": "ai_v9_37_tick1_dosext_0825",
+   "parent": "ai_v9_34_tick1_0824",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 40094768,
+   "final_steps": 40066752,
+   "git_hash": "530db5439b5d648a34158ae032a130515f527dbb",
+   "trace_files": 553,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_34_tick1_0824",
+    "ai_v9_37_tick1_dosext_0825"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_34_tick1_0824",
+    "ai_v9_37_tick1_dosext_0825"
+   ],
+   "own_steps": 4998240,
+   "ancestry_complete": true
+  },
+  "ai_v9_38_fdA_coef03_0825": {
+   "run": "ai_v9_38_fdA_coef03_0825",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.3,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "3d639cc46b0ba58f86c52fd4baf4edd7d5fd40e5",
+   "trace_files": 545,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_38_fdA_coef03_0825"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_38_fdA_coef03_0825"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_39_fdB_lossonly_0825": {
+   "run": "ai_v9_39_fdB_lossonly_0825",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "3d639cc46b0ba58f86c52fd4baf4edd7d5fd40e5",
+   "trace_files": 442,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_39_fdB_lossonly_0825"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_39_fdB_lossonly_0825"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_40_fdC_ecology_0825": {
+   "run": "ai_v9_40_fdC_ecology_0825",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "3d639cc46b0ba58f86c52fd4baf4edd7d5fd40e5",
+   "trace_files": 551,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_40_fdC_ecology_0825"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_42_fdE_single_0825": {
+   "run": "ai_v9_42_fdE_single_0825",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_36_tock1c_q6_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_36_tock1c_q6_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "b4f77661b269da7841c44782247f2693c4ff1da9",
+   "trace_files": 444,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_42_fdE_single_0825"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_42_fdE_single_0825"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_44_tock2_v8shape_0825": {
+   "run": "ai_v9_44_tock2_v8shape_0825",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 34067760,
+   "final_steps": 34007520,
+   "git_hash": "409563aa41e2fa88360d3ce9bb4bca3dc9d579a4",
+   "trace_files": 716,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6",
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90",
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce",
+    "e541f7be8713393c",
+    "9eb3abdc52876a63",
+    "e0d97b0ed592889d"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_44_tock2_v8shape_0825"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 9018528,
+   "ancestry_complete": true
+  },
+  "ai_v9_45_fdF_p1_0826": {
+   "run": "ai_v9_45_fdF_p1_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": null,
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 26567760,
+   "final_steps": 26567760,
+   "git_hash": "ba473d76f60494987a528e0184ac130691968092",
+   "trace_files": 225,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_45_fdF_p1_0826"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_45_fdF_p1_0826"
+   ],
+   "own_steps": 1578768,
+   "ancestry_complete": true
+  },
+  "ai_v9_48_G1_action_0826": {
+   "run": "ai_v9_48_G1_action_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.3845,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "cf0c83a2927d81c121db70e531a6948babdfda7e",
+   "trace_files": 468,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_48_G1_action_0826"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_48_G1_action_0826"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_49_G2_advgate_0826": {
+   "run": "ai_v9_49_G2_advgate_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.0441,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "cf0c83a2927d81c121db70e531a6948babdfda7e",
+   "trace_files": 467,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_49_G2_advgate_0826"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_49_G2_advgate_0826"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_50_fdF_p1c_0826": {
+   "run": "ai_v9_50_fdF_p1c_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 26567760,
+   "final_steps": 26567760,
+   "git_hash": "cf0c83a2927d81c121db70e531a6948babdfda7e",
+   "trace_files": 230,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_50_fdF_p1c_0826"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_50_fdF_p1c_0826"
+   ],
+   "own_steps": 1578768,
+   "ancestry_complete": true
+  },
+  "ai_v9_51_fdF_p2c_0826": {
+   "run": "ai_v9_51_fdF_p2c_0826",
+   "parent": "ai_v9_50_fdF_p1c_0826",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 27990624,
+   "git_hash": "6415ea119860cc0ac49b09a33ec2352eb5c40ea3",
+   "trace_files": 243,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_50_fdF_p1c_0826",
+    "ai_v9_51_fdF_p2c_0826"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_50_fdF_p1c_0826"
+   ],
+   "own_steps": 1422864,
+   "ancestry_complete": true
+  },
+  "ai_v9_52_G1p_matched_0826": {
+   "run": "ai_v9_52_G1p_matched_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_31_tock1_k4_0824",
+    "ai_v9_32_tock1b_rain_0824"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_31_tock1_k4_0824",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_32_tock1b_rain_0824",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.1629,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "f24afe75b209a619958eab1db3317f58a704f669",
+   "trace_files": 452,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_52_G1p_matched_0826"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_52_G1p_matched_0826"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_53_R2F5a_0826": {
+   "run": "ai_v9_53_R2F5a_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 258,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_53_R2F5a_0826"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_54_R2F5b_0826": {
+   "run": "ai_v9_54_R2F5b_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 262,
+   "trainee_teams": [
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_54_R2F5b_0826"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_55_R2F5c_0826": {
+   "run": "ai_v9_55_R2F5c_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 283,
+   "trainee_teams": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_55_R2F5c_0826"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_56_R2F5d_0826": {
+   "run": "ai_v9_56_R2F5d_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 269,
+   "trainee_teams": [
+    "e541f7be8713393c",
+    "9eb3abdc52876a63"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_56_R2F5d_0826"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_57_R2F5e_0826": {
+   "run": "ai_v9_57_R2F5e_0826",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_29_rev1_0823",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 269,
+   "trainee_teams": [
+    "e0d97b0ed592889d",
+    "eccfe630ec08de27"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_57_R2F5e_0826"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_58_R2CTRL_0827": {
+   "run": "ai_v9_58_R2CTRL_0827",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_53_R2F5a_0826",
+    "ai_v9_54_R2F5b_0826",
+    "ai_v9_55_R2F5c_0826",
+    "ai_v9_56_R2F5d_0826",
+    "ai_v9_57_R2F5e_0826"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_53_R2F5a_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_54_R2F5b_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_55_R2F5c_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_56_R2F5d_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_57_R2F5e_0826",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 277,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_58_R2CTRL_0827"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_59_R2ACTION_0827": {
+   "run": "ai_v9_59_R2ACTION_0827",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_53_R2F5a_0826",
+    "ai_v9_54_R2F5b_0826",
+    "ai_v9_55_R2F5c_0826",
+    "ai_v9_56_R2F5d_0826",
+    "ai_v9_57_R2F5e_0826"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_53_R2F5a_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_54_R2F5b_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_55_R2F5c_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_56_R2F5d_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_57_R2F5e_0826",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.181,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 474,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_60_R2TOPK_0827": {
+   "run": "ai_v9_60_R2TOPK_0827",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_53_R2F5a_0826",
+    "ai_v9_54_R2F5b_0826",
+    "ai_v9_55_R2F5c_0826",
+    "ai_v9_56_R2F5d_0826",
+    "ai_v9_57_R2F5e_0826"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_53_R2F5a_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_54_R2F5b_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_55_R2F5c_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_56_R2F5d_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_57_R2F5e_0826",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.181,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 450,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_60_R2TOPK_0827"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_60_R2TOPK_0827"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_61_R2KL_0827": {
+   "run": "ai_v9_61_R2KL_0827",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_53_R2F5a_0826",
+    "ai_v9_54_R2F5b_0826",
+    "ai_v9_55_R2F5c_0826",
+    "ai_v9_56_R2F5d_0826",
+    "ai_v9_57_R2F5e_0826"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_53_R2F5a_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_54_R2F5b_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_55_R2F5c_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_56_R2F5d_0826",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_57_R2F5e_0826",
+     "teams": null
+    }
+   ],
+   "distill_coef": 1.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "trace_files": 442,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_61_R2KL_0827"
+   ],
+   "folds_in_ancestry": 1,
+   "fold_runs_in_ancestry": [
+    "ai_v9_61_R2KL_0827"
+   ],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_62_R2PLAIN_0827": {
+   "run": "ai_v9_62_R2PLAIN_0827",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "4714e0f817afae839771c4c62a07627605d8a340",
+   "trace_files": 461,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_62_R2PLAIN_0827"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_63_R3F6a_0828": {
+   "run": "ai_v9_63_R3F6a_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "18c2f86fb4412ab7af88705eb5f02c876143ae0b",
+   "trace_files": 400,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_63_R3F6a_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_64_R3F6b_0828": {
+   "run": "ai_v9_64_R3F6b_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "18c2f86fb4412ab7af88705eb5f02c876143ae0b",
+   "trace_files": 400,
+   "trainee_teams": [
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_64_R3F6b_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_65_R3F6c_0828": {
+   "run": "ai_v9_65_R3F6c_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "18c2f86fb4412ab7af88705eb5f02c876143ae0b",
+   "trace_files": 414,
+   "trainee_teams": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_65_R3F6c_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_66_R3F6d_0828": {
+   "run": "ai_v9_66_R3F6d_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "b097c960bfd61c18e908db72375b9348caec87e6",
+   "trace_files": 412,
+   "trainee_teams": [
+    "e541f7be8713393c",
+    "9eb3abdc52876a63"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_66_R3F6d_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_67_R3F6e_0828": {
+   "run": "ai_v9_67_R3F6e_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "b097c960bfd61c18e908db72375b9348caec87e6",
+   "trace_files": 468,
+   "trainee_teams": [
+    "e0d97b0ed592889d",
+    "82e97fe2bfbb6f69"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_67_R3F6e_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_68_R3F6f_0828": {
+   "run": "ai_v9_68_R3F6f_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "5d5a68fead4315169a0fcf3084f440054759594c",
+   "trace_files": 451,
+   "trainee_teams": [
+    "460b8c99ee366f6c",
+    "7036a0a1dcb59a19"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_68_R3F6f_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_69_R3F6CURR_0828": {
+   "run": "ai_v9_69_R3F6CURR_0828",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 30067760,
+   "final_steps": 30017760,
+   "git_hash": "b097c960bfd61c18e908db72375b9348caec87e6",
+   "trace_files": 358,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_69_R3F6CURR_0828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 5028768,
+   "ancestry_complete": true
+  },
+  "ai_v9_70_R3ACTION_0828": {
+   "run": "ai_v9_70_R3ACTION_0828",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_63_R3F6a_0828",
+    "ai_v9_64_R3F6b_0828",
+    "ai_v9_65_R3F6c_0828",
+    "ai_v9_66_R3F6d_0828",
+    "ai_v9_67_R3F6e_0828",
+    "ai_v9_68_R3F6f_0828"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_63_R3F6a_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_64_R3F6b_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_65_R3F6c_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_66_R3F6d_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_67_R3F6e_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_68_R3F6f_0828",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.1761,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 32567760,
+   "final_steps": 32621088,
+   "git_hash": "61608ac4346dec46f7740147e3735c0bb984c0c9",
+   "trace_files": 475,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_70_R3ACTION_0828"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_70_R3ACTION_0828"
+   ],
+   "own_steps": 4553328,
+   "ancestry_complete": true
+  },
+  "ai_v9_71_R3ACTIONHI_0828": {
+   "run": "ai_v9_71_R3ACTIONHI_0828",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_63_R3F6a_0828",
+    "ai_v9_64_R3F6b_0828",
+    "ai_v9_65_R3F6c_0828",
+    "ai_v9_66_R3F6d_0828",
+    "ai_v9_67_R3F6e_0828",
+    "ai_v9_68_R3F6f_0828"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_63_R3F6a_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_64_R3F6b_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_65_R3F6c_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_66_R3F6d_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_67_R3F6e_0828",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_68_R3F6f_0828",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.3039,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 32567760,
+   "final_steps": 32564304,
+   "git_hash": "bcec45cc33ac3192a0a6bcbccfabea6b09ebdc6f",
+   "trace_files": 479,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_71_R3ACTIONHI_0828"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_71_R3ACTIONHI_0828"
+   ],
+   "own_steps": 4496544,
+   "ancestry_complete": true
+  },
+  "ai_v9_72_R3SELF_0828": {
+   "run": "ai_v9_72_R3SELF_0828",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_59_R2ACTION_0827"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_59_R2ACTION_0827",
+     "teams": [
+      "eccfe630ec08de27",
+      "023a2d47648b85e6",
+      "8e768980fc8f3b5f",
+      "710d8d529538ff90",
+      "63eda9d8d491d6a4",
+      "f5a4f4f0f5dc49ce",
+      "e541f7be8713393c",
+      "9eb3abdc52876a63",
+      "e0d97b0ed592889d",
+      "82e97fe2bfbb6f69",
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ]
+    }
+   ],
+   "distill_coef": 0.1761,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": true,
+   "lr": 0.0003,
+   "steps_flag": 32567760,
+   "final_steps": 32615184,
+   "git_hash": "ade5a1188a3a9d95607f6f8a3ce6977d5218b22b",
+   "trace_files": 514,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_72_R3SELF_0828"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_72_R3SELF_0828"
+   ],
+   "own_steps": 4547424,
+   "ancestry_complete": true
+  },
+  "ai_v9_73_R4S3a_0829": {
+   "run": "ai_v9_73_R4S3a_0829",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 35067760,
+   "final_steps": 34959216,
+   "git_hash": "7c5e9a3ff50785c8da6678cbae6e78136ea690f2",
+   "trace_files": 746,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6",
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90",
+    "53f215cb45b7d729",
+    "a3ca232f030ef625",
+    "8cdc78b2d46f0515",
+    "e11829f0561ef5a9"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_73_R4S3a_0829"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 9970224,
+   "ancestry_complete": true
+  },
+  "ai_v9_74_R4S3b_0829": {
+   "run": "ai_v9_74_R4S3b_0829",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 35067760,
+   "final_steps": 35062608,
+   "git_hash": "a2d10cf538d18cf7ec07277f6a84563cb9347744",
+   "trace_files": 722,
+   "trainee_teams": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce",
+    "e541f7be8713393c",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "0fa105ae42dc85ec",
+    "b89e1e37caa40e6a"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_74_R4S3b_0829"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 10073616,
+   "ancestry_complete": true
+  },
+  "ai_v9_75_R4S3c_0829": {
+   "run": "ai_v9_75_R4S3c_0829",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 35067760,
+   "final_steps": 34974480,
+   "git_hash": "38fa4ebe91db974d0ac552606a4f9865015c856e",
+   "trace_files": 727,
+   "trainee_teams": [
+    "e0d97b0ed592889d",
+    "82e97fe2bfbb6f69",
+    "460b8c99ee366f6c",
+    "7036a0a1dcb59a19",
+    "0972146213a667c9",
+    "d4e74946b54f1a4b",
+    "6d56d06b9fca508e",
+    "f6229d2c867e21d6"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_75_R4S3c_0829"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 9985488,
+   "ancestry_complete": true
+  },
+  "ai_v9_76_R4ACTION_0830": {
+   "run": "ai_v9_76_R4ACTION_0830",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_73_R4S3a_0829",
+    "ai_v9_74_R4S3b_0829",
+    "ai_v9_75_R4S3c_0829"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_73_R4S3a_0829",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_74_R4S3b_0829",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_75_R4S3c_0829",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.1761,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 32567760,
+   "final_steps": 32595648,
+   "git_hash": "d392e80a0a5bb61e2732ef85f23dfecacf485fec",
+   "trace_files": 486,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_76_R4ACTION_0830"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_76_R4ACTION_0830"
+   ],
+   "own_steps": 4527888,
+   "ancestry_complete": true
+  },
+  "ai_v9_77_G1LEAN_0830": {
+   "run": "ai_v9_77_G1LEAN_0830",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28817760,
+   "final_steps": 28817760,
+   "git_hash": "2826c322a808f3f8fee9507d56731055914119aa",
+   "trace_files": 310,
+   "trainee_teams": [
+    "53f215cb45b7d729",
+    "9f27f5d3e34021a7",
+    "0972146213a667c9"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_77_G1LEAN_0830"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3828768,
+   "ancestry_complete": true
+  },
+  "ai_v9_79_REVIVE1a_0830": {
+   "run": "ai_v9_79_REVIVE1a_0830",
+   "parent": "ai_v9_73_R4S3a_0829",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 39067760,
+   "final_steps": 38994768,
+   "git_hash": "e8c0e2488d8c04a839a5978a9ef0d34143869d1f",
+   "trace_files": 287,
+   "trainee_teams": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6",
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90",
+    "53f215cb45b7d729",
+    "a3ca232f030ef625",
+    "8cdc78b2d46f0515",
+    "e11829f0561ef5a9"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_73_R4S3a_0829",
+    "ai_v9_79_REVIVE1a_0830"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 4035552,
+   "ancestry_complete": true
+  },
+  "ai_v9_80_REVIVE1b_0830": {
+   "run": "ai_v9_80_REVIVE1b_0830",
+   "parent": "ai_v9_74_R4S3b_0829",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 39067760,
+   "final_steps": 38994768,
+   "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+   "trace_files": 282,
+   "trainee_teams": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce",
+    "e541f7be8713393c",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "0fa105ae42dc85ec",
+    "b89e1e37caa40e6a"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_74_R4S3b_0829",
+    "ai_v9_80_REVIVE1b_0830"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3932160,
+   "ancestry_complete": true
+  },
+  "ai_v9_81_REVIVE1c_0830": {
+   "run": "ai_v9_81_REVIVE1c_0830",
+   "parent": "ai_v9_75_R4S3c_0829",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 39067760,
+   "final_steps": 38994768,
+   "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+   "trace_files": 284,
+   "trainee_teams": [
+    "e0d97b0ed592889d",
+    "82e97fe2bfbb6f69",
+    "460b8c99ee366f6c",
+    "7036a0a1dcb59a19",
+    "0972146213a667c9",
+    "d4e74946b54f1a4b",
+    "6d56d06b9fca508e",
+    "f6229d2c867e21d6"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_75_R4S3c_0829",
+    "ai_v9_81_REVIVE1c_0830"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 4020288,
+   "ancestry_complete": true
+  },
+  "ai_v9_82_REFOLD1_0830": {
+   "run": "ai_v9_82_REFOLD1_0830",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_79_REVIVE1a_0830",
+    "ai_v9_80_REVIVE1b_0830",
+    "ai_v9_81_REVIVE1c_0830"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_79_REVIVE1a_0830",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_80_REVIVE1b_0830",
+     "teams": null
+    },
+    {
+     "run": "ai_v9_81_REVIVE1c_0830",
+     "teams": null
+    }
+   ],
+   "distill_coef": 0.1761,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 32567760,
+   "final_steps": 32465184,
+   "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+   "trace_files": 308,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_82_REFOLD1_0830"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_82_REFOLD1_0830"
+   ],
+   "own_steps": 4397424,
+   "ancestry_complete": true
+  },
+  "ai_v9_91_COMPFOLD_0831": {
+   "run": "ai_v9_91_COMPFOLD_0831",
+   "parent": "ai_v9_59_R2ACTION_0827",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [
+    "ai_v9_73_R4S3a_0829",
+    "ai_v9_74_R4S3b_0829",
+    "ai_v9_75_R4S3c_0829"
+   ],
+   "teacher_specs": [
+    {
+     "run": "ai_v9_73_R4S3a_0829",
+     "teams": [
+      "eccfe630ec08de27",
+      "023a2d47648b85e6",
+      "8e768980fc8f3b5f",
+      "710d8d529538ff90"
+     ]
+    },
+    {
+     "run": "ai_v9_74_R4S3b_0829",
+     "teams": [
+      "63eda9d8d491d6a4",
+      "f5a4f4f0f5dc49ce",
+      "e541f7be8713393c",
+      "9eb3abdc52876a63"
+     ]
+    },
+    {
+     "run": "ai_v9_75_R4S3c_0829",
+     "teams": [
+      "e0d97b0ed592889d",
+      "82e97fe2bfbb6f69",
+      "460b8c99ee366f6c",
+      "7036a0a1dcb59a19"
+     ]
+    }
+   ],
+   "distill_coef": 0.1761,
+   "distill_target": "action",
+   "distill_team_bias": 0.4,
+   "is_fold": true,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 32567760,
+   "final_steps": 32497344,
+   "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+   "trace_files": 477,
+   "trainee_teams": [],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_91_COMPFOLD_0831"
+   ],
+   "folds_in_ancestry": 2,
+   "fold_runs_in_ancestry": [
+    "ai_v9_59_R2ACTION_0827",
+    "ai_v9_91_COMPFOLD_0831"
+   ],
+   "own_steps": 4429584,
+   "ancestry_complete": true
+  },
+  "ai_v9_92_R5F00_0831": {
+   "run": "ai_v9_92_R5F00_0831",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 28067760,
+   "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+   "trace_files": 306,
+   "trainee_teams": [
+    "8bdb5796b9",
+    "436335607f"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_92_R5F00_0831"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_93_R5F01_0831": {
+   "run": "ai_v9_93_R5F01_0831",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 27467760,
+   "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+   "trace_files": 127,
+   "trainee_teams": [
+    "11fb5d2fc2",
+    "c6b830a3f0"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_93_R5F01_0831"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 2478768,
+   "ancestry_complete": true
+  },
+  "run_20260830_180409": {
+   "run": "run_20260830_180409",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 20000,
+   "final_steps": null,
+   "git_hash": "2826c322a808f3f8fee9507d56731055914119aa",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "run_20260830_180409"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "run_20260830_183828": {
+   "run": "run_20260830_183828",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 20000,
+   "final_steps": null,
+   "git_hash": "2826c322a808f3f8fee9507d56731055914119aa",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "run_20260830_183828"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  },
+  "run_20260830_184043": {
+   "run": "run_20260830_184043",
+   "parent": null,
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": null,
+   "is_exploiter": false,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.4,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 20000,
+   "final_steps": null,
+   "git_hash": "2826c322a808f3f8fee9507d56731055914119aa",
+   "trace_files": 0,
+   "trainee_teams": [],
+   "chain": [
+    "run_20260830_184043"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": null,
+   "ancestry_complete": true
+  }
+ }
+}
