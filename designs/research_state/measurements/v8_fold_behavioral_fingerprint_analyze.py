@@ -151,6 +151,16 @@ def load_rows(patterns: list[str]) -> list[dict]:
     return rows
 
 
+def battle_key(r) -> tuple:
+    """The identity of the battle a row belongs to.
+
+    NOT ``r["tag"]`` alone. The bridge numbers battles ``battle-gen3ou-N`` from 1 **per
+    process**, so two shards produce the same tag strings for different battles — a tag-keyed
+    join silently mislabels roughly half the rows. ``(team, opp, arm)`` is unique to one shard by
+    construction (shards partition the team list), so prefixing it makes the tag unique again."""
+    return (r["team"], r["opp"], r["arm"], r["tag"])
+
+
 def fold_parent(r) -> tuple[int, int]:
     """(fold_action, parent_action) for this row, whichever arm was acting."""
     if r["arm"] == "fold":
@@ -259,11 +269,14 @@ def divergence(rows: list[dict]) -> dict:
         if fi != pi:
             dis += 1
             flips[(r["cls"][pi] or "?", r["cls"][fi] or "?")] += 1
-        p = np.asarray(r["act_p"] if r["arm"] == "fold" else r["oth_p"])
-        q = np.asarray(r["act_p"] if r["arm"] == "parent" else r["oth_p"])
-        m = (p > 0) & (q > 0)
-        if m.any():
-            kl.append(float((p[m] * np.log(p[m] / q[m])).sum()))
+        # The banked row set drops the two 11-float probability vectors (they are ~2/3 of the
+        # bytes and no axis reads them), so the KL diagnostic is optional by construction.
+        if "act_p" in r and "oth_p" in r:
+            p = np.asarray(r["act_p"] if r["arm"] == "fold" else r["oth_p"])
+            q = np.asarray(r["act_p"] if r["arm"] == "parent" else r["oth_p"])
+            m = (p > 0) & (q > 0)
+            if m.any():
+                kl.append(float((p[m] * np.log(p[m] / q[m])).sum()))
         dv.append(abs(r["act_v"] - r["oth_v"]))
     tot_flip = sum(flips.values()) or 1
     sw_involved = sum(v for (a, b), v in flips.items() if "SWITCH" in (a, b))
@@ -296,10 +309,11 @@ def divergence(rows: list[dict]) -> dict:
     # GAME LENGTH — a realized (not identical-board) signature, and the cheapest read on whether
     # the fold shifted the tempo/attrition balance at all.
     per_tag: Counter = Counter()
-    tag_arm: dict[str, str] = {}
+    tag_arm: dict[tuple, str] = {}
     for r in rows:
-        per_tag[r["tag"]] += 1
-        tag_arm[r["tag"]] = r["arm"]
+        k = battle_key(r)
+        per_tag[k] += 1
+        tag_arm[k] = r["arm"]
     length = {}
     for arm in ("parent", "fold"):
         v = [c for t, c in per_tag.items() if tag_arm[t] == arm]
@@ -635,7 +649,7 @@ def battle_attribution(rows: list[dict], cells: list[dict], kind: str) -> dict:
     if len(keys) < 40:
         return {"unavailable": "per-game outcomes not recorded for this slice "
                                f"({len(keys)} paired games)"}
-    tag_class: dict[str, str] = {}
+    tag_class: dict[tuple, str] = {}
     counts: Counter = Counter()
     for k in keys:
         p, f = by_game[k]["parent"][0], by_game[k]["fold"][0]
@@ -645,13 +659,13 @@ def battle_attribution(rows: list[dict], cells: list[dict], kind: str) -> dict:
         for arm in ("parent", "fold"):
             t = by_game[k][arm][1]
             if t:
-                tag_class[t] = cl
+                tag_class[(k[0], k[1], arm, t)] = cl
     n = len(keys)
     out = {"n_paired_games": n,
            "counts": dict(counts),
            "net_wr_delta_identity": round((counts["FLIP_WIN"] - counts["FLIP_LOSS"]) / n, 4),
            "axes": []}
-    groups = {c: [r for r in rows if tag_class.get(r.get("tag")) == c]
+    groups = {c: [r for r in rows if tag_class.get(battle_key(r)) == c]
               for c in ("FLIP_WIN", "FLIP_LOSS", "BOTH_WIN", "BOTH_LOSS")}
     for name, filt, ind, group in AXES:
         rec = {"axis": name}
@@ -715,6 +729,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rows", nargs="+", required=True, help="glob(s) of decision-row jsonl.gz")
     ap.add_argument("--cells", nargs="*", default=[], help="glob(s) of per-cell jsonl")
+    ap.add_argument("--fam", default="", help="when the cell file mixes families (the banked "
+                                              "artifact does), keep only rows whose `fam` matches; "
+                                              "defaults to --label")
     ap.add_argument("--probe-p", default="designs/research_state/measurements/"
                                          "v8_redistribution_pfsp_2026-08-30.json")
     ap.add_argument("--out", default="designs/research_state/measurements/"
@@ -729,10 +746,10 @@ def main(argv=None) -> int:
     un = [r for r in rows if r["kind"] == "untaught"]
     tg = [r for r in rows if r["kind"] == "taught"]
     print(f"[m4] {len(rows)} rows  untaught={len(un)}  taught={len(tg)}  "
-          f"battles={len({r['tag'] for r in rows})}", flush=True)
+          f"battles={len({battle_key(r) for r in rows})}", flush=True)
 
     res = {"family": a.label, "n_rows": len(rows),
-           "n_battles": len({r["tag"] for r in rows}),
+           "n_battles": len({battle_key(r) for r in rows}),
            "n_rows_untaught": len(un), "n_rows_taught": len(tg),
            "untaught": {"axes": axis_table(un), "divergence": divergence(un),
                         "n_teams": len({r["team"] for r in un})},
@@ -761,6 +778,12 @@ def main(argv=None) -> int:
     res["attribution"] = per_team_attribution(un, a.probe_p)
     if a.cells:
         cells, determinism = _read_cells(a.cells)
+        fam = a.fam or a.label
+        # A cell record carrying a `fam` that is not this family's is a DIFFERENT experiment; the
+        # banked artifact concatenates both, and pooling them silently reads as a plausible but
+        # wrong win rate (measured: untaught +3.65pp instead of +5.66pp).
+        if any("fam" in c for c in cells):
+            cells = [c for c in cells if c.get("fam", fam) == fam]
         res["replay_determinism"] = determinism
         res["winrate_check"] = winrate_check(cells)
         print("[m4] winrate check " + json.dumps(res["winrate_check"]), flush=True)
@@ -777,6 +800,39 @@ def main(argv=None) -> int:
         except Exception:
             payload = {}
     payload[a.label] = res
+    # CROSS-FAMILY: once two families are in one payload, compare their UNTAUGHT vectors. This is
+    # the question the architecture-free axis basis exists to answer — "what did the fold that
+    # gifted change that the fold that did not change?" — and it is a comparison of DIRECTIONS
+    # only: the team sets, reference opponents and architectures all differ by construction.
+    fams = [k for k in payload if isinstance(payload[k], dict) and "untaught" in payload[k]]
+    if len(fams) == 2:
+        a_, b_ = fams
+        va = {x["axis"]: x["delta"] for x in payload[a_]["untaught"]["axes"] if "delta" in x}
+        vb = {x["axis"]: x["delta"] for x in payload[b_]["untaught"]["axes"] if "delta" in x}
+        nm = [k for k in AXIS_NAMES if k in va and k in vb]
+        ua = np.array([va[k] for k in nm])
+        ub = np.array([vb[k] for k in nm])
+        na, nb = np.linalg.norm(ua), np.linalg.norm(ub)
+        cos = float(ua @ ub / (na * nb)) if na > 0 and nb > 0 else float("nan")
+        rng = np.random.default_rng(31)
+        null = np.array([float(rng.permutation(ua) @ ub / (na * nb)) for _ in range(4000)])
+        ra = payload[a_]["shape"]["all_axes"]["split_half_reliability_untaught"] \
+            if "shape" in payload[a_] else None
+        rb = payload[b_]["shape"]["all_axes"]["split_half_reliability_untaught"] \
+            if "shape" in payload[b_] else None
+        payload["cross_family_untaught"] = {
+            "families": [a_, b_], "n_axes": len(nm), "cosine": round(cos, 4),
+            "perm_null_p_ge": round(float((null >= cos).mean()), 4),
+            "sign_agreement": f"{sum(1 for x, y in zip(ua, ub) if x * y > 0)}/{len(nm)}",
+            "norms": {a_: round(float(na), 5), b_: round(float(nb), 5)},
+            "reliabilities": {a_: ra, b_: rb},
+            "disattenuated_cosine": (round(cos / math.sqrt(ra * rb), 4)
+                                     if ra and rb and ra > 0 and rb > 0 else None),
+            "per_axis": [{"axis": k, a_: va[k], b_: vb[k]} for k in nm],
+        }
+        print("[m4] cross-family untaught " + json.dumps(
+            {k: v for k, v in payload["cross_family_untaught"].items() if k != "per_axis"}),
+            flush=True)
     with open(a.out + ".json", "w") as f:
         json.dump(payload, f, indent=1)
     print(f"[m4] wrote {a.out}.json", flush=True)

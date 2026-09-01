@@ -1,0 +1,59 @@
+{
+ "probe_untaught": [
+  "a7406f6c97",
+  "55ff6899a2",
+  "3495ef83ef",
+  "1c4e182530",
+  "564b9be3ae",
+  "21022d30fb",
+  "6a49f096f0",
+  "324235812b"
+ ],
+ "control_taught": [
+  "fffd943e9e",
+  "69af2f1507",
+  "01cb64e16c",
+  "95e69273f8",
+  "f23f64a6b2",
+  "a2d1246e4b"
+ ],
+ "opponents": [
+  "c1fc379c85",
+  "8a29df031e",
+  "6c129cb50c",
+  "511c359e2e",
+  "0af19b638a",
+  "c0e60903e8",
+  "2c5b1d6abb",
+  "f7e46432b9"
+ ],
+ "labels": {
+  "a7406f6c97": "balance",
+  "55ff6899a2": "balance",
+  "3495ef83ef": "balance",
+  "1c4e182530": "offense",
+  "564b9be3ae": "semi_stall",
+  "21022d30fb": "stall",
+  "6a49f096f0": "stall",
+  "324235812b": "stall",
+  "fffd943e9e": "hyper_offense",
+  "69af2f1507": "hyper_offense",
+  "01cb64e16c": "offense",
+  "95e69273f8": "offense",
+  "f23f64a6b2": "offense",
+  "a2d1246e4b": "balance",
+  "c1fc379c85": "balance",
+  "8a29df031e": "balance",
+  "6c129cb50c": "hyper_offense",
+  "511c359e2e": "hyper_offense",
+  "0af19b638a": "offense",
+  "c0e60903e8": "offense",
+  "2c5b1d6abb": "semi_stall",
+  "f7e46432b9": "semi_stall"
+ },
+ "provenance": {
+  "untaught": "probe Q rev3_untaught_pulldown_selection.json (curated-32, verified NOT in the rev-2+rev-3 taught union)",
+  "taught": "one team per rev-3 F6a-f teacher, read from each run metadata --trainee-teams",
+  "opponents": "probe P s 8 fixed opponent teams \u2014 verified disjoint from the rev-3 taught union"
+ }
+}

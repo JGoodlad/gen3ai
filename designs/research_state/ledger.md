@@ -8172,3 +8172,85 @@ and that is now a named gap.
 `local_battle_runner._teardown` uses a hardcoded, CONTENTION-UNSCALED `timeout=5.0` on the
 bridge-child reap; it killed one M9 arm outright at load ~50. Contradicts the project's
 contention-scaling rule (`scale_timeout` at call time) and belongs in the next cleanup batch.
+
+### 🔬 M4 — v8's GIFT IS NOT DILUTED TAUGHT CONTENT, and the fold that gifted NOTHING changed MORE (2026-08-31)
+
+**The behavioural fingerprint of the gift, measured on IDENTICAL BOARDS** — probe P's exact cells
+re-played with per-decision dual scoring (at every decision the *other* arm is scored on the same
+`(obs, mask)`), 25 model-free behavioural axes classified from `LegalActions` + `gen3_data`, never
+from the obs vector, so the instrument ports across the ai_v9 rewrite by construction (the ledger
+`d392e80` requirement). **v8: 1,408 battles / 54,859 dual-scored decisions. Gen-era control arm:
+896 / 39,194.** Artifacts, including all 94,053 decision rows:
+`measurements/v8_fold_behavioral_fingerprint_2026-08-31.{md,json,_rows_*.jsonl.gz,_cells.jsonl}`.
+
+**P1 (registered: the untaught fingerprint is a WEAKER VERSION of the taught one) — FAIL,
+decisively.** cosine(untaught, taught) = **0.14** over 25 axes (permutation p = 0.19, sign
+agreement 12/25 = chance, R² 0.020) against a **0.60 noise ceiling** set by the vectors' own
+split-half reliabilities (0.72 / 0.50). Amplitude is not the difference either — ‖untaught‖ /
+‖taught‖ = **0.71**, a big vector pointing elsewhere, not a small one pointing the same way. The
+**archetype-matched control makes it worse, not better** (untaught stall/semi_stall vs the
+all-stall taught set: cosine **−0.119**), so archetype is not the confound. On taught teams the
+fold stops attacking and pivots (`attack_at_all` −6.4pp z=−8.6, `switch_to_resist` +2.4pp on a
+7.7% base z=+3.3); on untaught teams it cuts the *reactive* pivot (`switch|losing_matchup` −3.9,
+`switch|early` −3.8, `switch|behind_on_mons` −2.7 z=−5.3) and its attack rate does not move.
+**Exactly one axis behaves as P1 required** (`take_SE_attack` falls on both at u/t = 0.71).
+
+**P2 (SWITCH carries the largest share of the untaught change) — PASS**, with a qualification the
+prediction did not anticipate: 6 of the 7 axes at |z|>2.8 are switch axes, 51.0% of all argmax
+flips involve a SWITCH, SWITCH has the largest class net flow — but **the single biggest flip
+bucket is `SWITCH→SWITCH` at 21.6%**, i.e. a change of switch TARGET that no rate-based
+behavioural metric in this programme can see. Standing instrument gap.
+
+**THE GEN-ERA ARM RAN, and it is the sharper half.** rev-3 fold vs its own parent, rev-1 as
+reference, probe Q's untaught teams: **−0.39pp** (probe Q: −0.75pp — no gift) yet its untaught
+behavioural vector is **1.9× LARGER than v8's** (norm 0.177 vs 0.093). ⇒ **"the fold changed how
+it plays off-slice" is not what a gift is; amount is not the signal, direction is.** Same lesson
+inside v8 alone: per-team argmax disagreement does NOT predict per-team gain (ρ = −0.13), while
+per-team *direction* does (`switch|winning_matchup` ρ=+0.565 [+0.214,+0.818]; `switch|early`
+ρ=−0.518 [−0.801,−0.055]). The two untaught vectors are orthogonal (cosine 0.113, permutation
+p = **0.50**, ceiling 0.733) and split cleanly:
+- **SHARED, therefore discriminating NOTHING:** both folds cut switching in the bad/neutral spots
+  — `switch|losing_matchup` −3.85 (v8) vs −4.20 (gen) is nearly the same number.
+- **OPPOSED, the candidate:** everything about *winning positions and available precision*. The
+  non-gifting fold got GREEDIER (`take_SE_attack` **+5.1**, `take_best_damage` +5.7,
+  `attack_at_all` +7.5, `switch|ahead_on_mons` **−5.5**, `switch|winning_matchup` −4.6); the
+  gifting fold got SELECTIVE (**−4.5**, −0.8, +0.7, **+1.5**, +0.7).
+
+**⇒ The registered next test changes.** "Reduce reactive pivoting" is REFUTED as the lever — a
+fold that did it and gained nothing exists. What survives is the *selectivity* contrast: measure
+`switch|ahead_on_mons`, `switch|winning_matchup`, `switch|low_hp`, `take_SE_attack`,
+`take_best_damage` against win rate across the running fleet's folds. Architecture-free, no v8
+code, no new battles beyond the fleet's own.
+
+**Attribution (all three levels agree the content is BROAD, not a few saved games).** 512 paired
+untaught games recovered the +5.66pp by identity (FLIP_WIN 126 / FLIP_LOSS 97) after replaying
+every cell in `--outcomes-only` mode — **256/256 replays reported identical win counts, 0
+disagreeing**, so the determinism the join rests on is measured, not assumed. The untaught axes
+then look **the same in flipped-to-win and both-lost battles** (`switch|losing_matchup` −5.0 vs
+−4.2), whereas the TAUGHT slice's flips are sharply localisable (+0.03..+0.07, uniformly
+switch-directional). Untaught content = a global re-weighting of when to pivot; taught content =
+winning the games you out-pivot in.
+
+**This is evidence for branch (ii) of the `(i)/(ii)` fork** — the taught-side fold metrics do not
+measure what produced the untaught externality, because it is not made of taught-side content. It
+does **not** contradict M1 (`axis_split_taught_untaught`), whose "axes" are two *scoreboards*
+ordering fleet shapes (ρ=+1.00) where these are behavioural *coordinates*; together they say the
+same shape ordering scores two different kinds of change, which raises rather than lowers the value
+of a content-side account.
+
+**Two defect specimens, both recorded in the doc's caveats.** (a) The bridge numbers battles
+`battle-gen3ou-N` **per process**, so every tag-keyed join across two shards was silently
+mislabelling ~half its rows — battle counts read 512 instead of 1,024, mean game length read
+exactly double, and the taught battle-attribution table was wrong until the key became
+`(team, opp, arm, tag)`. The axis tables and the shape verdict never join on a tag and are
+untouched. (b) The era-pin trace check inherits the known **phantom-legality** defect
+(`mask = recorded_logits > −1e8` returns all 11 actions legal), so its argmax-agreement figure is
+looser than reality; the logit/V correlations and every axis table are unaffected, since the axes
+read the live mask.
+
+**Limits, stated:** n=1 gifting fold against n=1 non-gifting control; the cross-family comparison
+holds only the axis basis fixed (team sets, reference opponents and architectures all differ);
+greedy play, not the stochastic regime v8 trained and was admitted under; the aggregate
+`switch_rate` reduction is state-conditional (−0.2pp on the parent's boards, −2.8pp on the fold's)
+and only the *conditional* axes survive both distributions; and the gen family's own taught vector
+has split-half reliability **0.077** and must not be quoted for shape.

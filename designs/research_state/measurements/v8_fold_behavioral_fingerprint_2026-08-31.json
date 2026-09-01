@@ -1,0 +1,7533 @@
+{
+ "v8": {
+  "family": "v8",
+  "n_rows": 54859,
+  "n_battles": 1408,
+  "n_rows_untaught": 37217,
+  "n_rows_taught": 17642,
+  "untaught": {
+   "axes": [
+    {
+     "axis": "switch_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.23331,
+     "delta": -0.01464,
+     "ci": [
+      -0.02468,
+      -0.00484
+     ],
+     "z": -2.89,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": -0.00205
+      },
+      "fold": {
+       "n": 14698,
+       "delta": -0.0281
+      }
+     },
+     "realized_delta": -0.01469
+    },
+    {
+     "axis": "attack_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.47382,
+     "delta": 0.00258,
+     "ci": [
+      -0.00765,
+      0.01251
+     ],
+     "z": 0.501,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": 0.0
+      },
+      "fold": {
+       "n": 14698,
+       "delta": 0.00953
+      }
+     },
+     "realized_delta": 0.02467
+    },
+    {
+     "axis": "setup_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.02957,
+     "delta": -0.00054,
+     "ci": [
+      -0.00373,
+      0.00229
+     ],
+     "z": -0.346,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": 0.0
+      },
+      "fold": {
+       "n": 14698,
+       "delta": -0.00041
+      }
+     },
+     "realized_delta": -0.00668
+    },
+    {
+     "axis": "recover_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.02936,
+     "delta": -0.00443,
+     "ci": [
+      -0.01498,
+      0.00546
+     ],
+     "z": -0.851,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": -0.00713
+      },
+      "fold": {
+       "n": 14698,
+       "delta": -0.00619
+      }
+     },
+     "realized_delta": -0.00185
+    },
+    {
+     "axis": "status_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.06021,
+     "delta": 0.00412,
+     "ci": [
+      -0.00267,
+      0.01143
+     ],
+     "z": 1.139,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": 0.00417
+      },
+      "fold": {
+       "n": 14698,
+       "delta": 0.00524
+      }
+     },
+     "realized_delta": 0.00183
+    },
+    {
+     "axis": "protect_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.01706,
+     "delta": -0.00063,
+     "ci": [
+      -0.00557,
+      0.00409
+     ],
+     "z": -0.252,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": -0.00238
+      },
+      "fold": {
+       "n": 14698,
+       "delta": 0.00082
+      }
+     },
+     "realized_delta": -0.00291
+    },
+    {
+     "axis": "phaze_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.00722,
+     "delta": 0.00307,
+     "ci": [
+      0.0003,
+      0.00674
+     ],
+     "z": 1.86,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": 0.00392
+      },
+      "fold": {
+       "n": 14698,
+       "delta": 0.00347
+      }
+     },
+     "realized_delta": -0.0025
+    },
+    {
+     "axis": "hazard_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.03879,
+     "delta": -0.00522,
+     "ci": [
+      -0.00897,
+      -0.0018
+     ],
+     "z": -2.874,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": -0.01124
+      },
+      "fold": {
+       "n": 14698,
+       "delta": -0.00041
+      }
+     },
+     "realized_delta": -0.00891
+    },
+    {
+     "axis": "other_status_rate",
+     "group": "A",
+     "n": 30274,
+     "n_teams": 16,
+     "parent_rate": 0.11066,
+     "delta": 0.01569,
+     "ci": [
+      0.0083,
+      0.02374
+     ],
+     "z": 4.047,
+     "arm_split": {
+      "parent": {
+       "n": 15576,
+       "delta": 0.0147
+      },
+      "fold": {
+       "n": 14698,
+       "delta": 0.01606
+      }
+     },
+     "realized_delta": 0.01105
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "group": "B",
+     "n": 6984,
+     "n_teams": 16,
+     "parent_rate": 0.3662,
+     "delta": -0.03849,
+     "ci": [
+      -0.06406,
+      -0.01402
+     ],
+     "z": -3.012,
+     "arm_split": {
+      "parent": {
+       "n": 3505,
+       "delta": -0.0291
+      },
+      "fold": {
+       "n": 3479,
+       "delta": -0.04915
+      }
+     },
+     "realized_delta": -0.03266
+    },
+    {
+     "axis": "switch|even_matchup",
+     "group": "B",
+     "n": 13243,
+     "n_teams": 16,
+     "parent_rate": 0.21394,
+     "delta": -0.02004,
+     "ci": [
+      -0.03702,
+      -0.0035
+     ],
+     "z": -2.291,
+     "arm_split": {
+      "parent": {
+       "n": 6885,
+       "delta": -0.00523
+      },
+      "fold": {
+       "n": 6358,
+       "delta": -0.03051
+      }
+     },
+     "realized_delta": -0.01838
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "group": "B",
+     "n": 10047,
+     "n_teams": 16,
+     "parent_rate": 0.16572,
+     "delta": 0.00707,
+     "ci": [
+      -0.00791,
+      0.02176
+     ],
+     "z": 0.935,
+     "arm_split": {
+      "parent": {
+       "n": 5186,
+       "delta": 0.02044
+      },
+      "fold": {
+       "n": 4861,
+       "delta": -0.00987
+      }
+     },
+     "realized_delta": -0.00285
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "group": "B",
+     "n": 4046,
+     "n_teams": 16,
+     "parent_rate": 0.18243,
+     "delta": 0.01712,
+     "ci": [
+      -0.00467,
+      0.04336
+     ],
+     "z": 1.381,
+     "arm_split": {
+      "parent": {
+       "n": 2077,
+       "delta": 0.02407
+      },
+      "fold": {
+       "n": 1969,
+       "delta": 0.00152
+      }
+     },
+     "realized_delta": 0.008
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "group": "B",
+     "n": 19173,
+     "n_teams": 16,
+     "parent_rate": 0.2536,
+     "delta": -0.02471,
+     "ci": [
+      -0.03523,
+      -0.01457
+     ],
+     "z": -4.627,
+     "arm_split": {
+      "parent": {
+       "n": 9988,
+       "delta": -0.00881
+      },
+      "fold": {
+       "n": 9185,
+       "delta": -0.0405
+      }
+     },
+     "realized_delta": -0.02407
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "group": "B",
+     "n": 8192,
+     "n_teams": 16,
+     "parent_rate": 0.30432,
+     "delta": -0.03784,
+     "ci": [
+      -0.06067,
+      -0.01477
+     ],
+     "z": -3.222,
+     "arm_split": {
+      "parent": {
+       "n": 4096,
+       "delta": -0.02539
+      },
+      "fold": {
+       "n": 4096,
+       "delta": -0.05029
+      }
+     },
+     "realized_delta": -0.02368
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "group": "B",
+     "n": 11430,
+     "n_teams": 16,
+     "parent_rate": 0.15767,
+     "delta": -0.00326,
+     "ci": [
+      -0.01652,
+      0.00967
+     ],
+     "z": -0.49,
+     "arm_split": {
+      "parent": {
+       "n": 6180,
+       "delta": 0.00712
+      },
+      "fold": {
+       "n": 5250,
+       "delta": -0.02133
+      }
+     },
+     "realized_delta": -0.024
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "group": "B",
+     "n": 3301,
+     "n_teams": 16,
+     "parent_rate": 0.13013,
+     "delta": 0.00916,
+     "ci": [
+      -0.00372,
+      0.02153
+     ],
+     "z": 1.395,
+     "arm_split": {
+      "parent": {
+       "n": 1580,
+       "delta": 0.01582
+      },
+      "fold": {
+       "n": 1721,
+       "delta": -0.00407
+      }
+     },
+     "realized_delta": 0.00718
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "group": "B",
+     "n": 2101,
+     "n_teams": 12,
+     "parent_rate": 0.0685,
+     "delta": 0.00967,
+     "ci": [
+      -0.00448,
+      0.02406
+     ],
+     "z": 1.321,
+     "arm_split": {
+      "parent": {
+       "n": 1194,
+       "delta": 0.01256
+      },
+      "fold": {
+       "n": 907,
+       "delta": 0.00331
+      }
+     },
+     "realized_delta": 0.03305
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "group": "B",
+     "n": 8892,
+     "n_teams": 16,
+     "parent_rate": 0.21445,
+     "delta": -0.02706,
+     "ci": [
+      -0.03613,
+      -0.01617
+     ],
+     "z": -5.294,
+     "arm_split": {
+      "parent": {
+       "n": 4820,
+       "delta": -0.01826
+      },
+      "fold": {
+       "n": 4072,
+       "delta": -0.03414
+      }
+     },
+     "realized_delta": -0.02322
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "group": "B",
+     "n": 8082,
+     "n_teams": 16,
+     "parent_rate": 0.21331,
+     "delta": 0.01479,
+     "ci": [
+      0.00101,
+      0.02791
+     ],
+     "z": 2.166,
+     "arm_split": {
+      "parent": {
+       "n": 3902,
+       "delta": 0.02768
+      },
+      "fold": {
+       "n": 4180,
+       "delta": -0.00407
+      }
+     },
+     "realized_delta": 0.00099
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "group": "C",
+     "n": 7913,
+     "n_teams": 16,
+     "parent_rate": 0.6431,
+     "delta": -0.0452,
+     "ci": [
+      -0.06878,
+      -0.02169
+     ],
+     "z": -3.777,
+     "arm_split": {
+      "parent": {
+       "n": 3980,
+       "delta": -0.04774
+      },
+      "fold": {
+       "n": 3933,
+       "delta": -0.03509
+      }
+     },
+     "realized_delta": -0.05516
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "group": "C",
+     "n": 17198,
+     "n_teams": 15,
+     "parent_rate": 0.39733,
+     "delta": -0.00802,
+     "ci": [
+      -0.02341,
+      0.00699
+     ],
+     "z": -1.013,
+     "arm_split": {
+      "parent": {
+       "n": 8879,
+       "delta": -0.01453
+      },
+      "fold": {
+       "n": 8319,
+       "delta": 0.00421
+      }
+     },
+     "realized_delta": 0.00234
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "group": "C",
+     "n": 17198,
+     "n_teams": 15,
+     "parent_rate": 0.58472,
+     "delta": 0.00652,
+     "ci": [
+      -0.00659,
+      0.0205
+     ],
+     "z": 0.954,
+     "arm_split": {
+      "parent": {
+       "n": 8879,
+       "delta": -0.00158
+      },
+      "fold": {
+       "n": 8319,
+       "delta": 0.01262
+      }
+     },
+     "realized_delta": 0.02735
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "group": "D",
+     "n": 15195,
+     "n_teams": 16,
+     "parent_rate": 0.15761,
+     "delta": -0.01544,
+     "ci": [
+      -0.03105,
+      -0.00102
+     ],
+     "z": -2.053,
+     "arm_split": {
+      "parent": {
+       "n": 7650,
+       "delta": -0.00549
+      },
+      "fold": {
+       "n": 7545,
+       "delta": -0.02439
+      }
+     },
+     "realized_delta": 0.00202
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "group": "E",
+     "n": 2003,
+     "n_teams": 16,
+     "parent_rate": 0.4603,
+     "delta": -0.01974,
+     "ci": [
+      -0.05103,
+      0.00911
+     ],
+     "z": -1.288,
+     "arm_split": {
+      "parent": {
+       "n": 981,
+       "delta": -0.02243
+      },
+      "fold": {
+       "n": 1022,
+       "delta": -0.03327
+      }
+     },
+     "realized_delta": 0.00761
+    }
+   ],
+   "divergence": {
+    "n_decisions": 37217,
+    "argmax_disagreement": 0.30301,
+    "battle_length": {
+     "parent": {
+      "battles": 512,
+      "mean_decisions": 37.31
+     },
+     "fold": {
+      "battles": 512,
+      "mean_decisions": 35.38
+     }
+    },
+    "mean_KL_fold_parent": null,
+    "mean_abs_dV": 3.87884,
+    "flip_mass_involving_SWITCH": 0.50953,
+    "both_switch_n": 9689,
+    "same_switch_target_rate": 0.7483,
+    "both_move_n": 24203,
+    "same_move_slot_rate": 0.7715,
+    "per_class_flow": {
+     "SWITCH": {
+      "parent_n": 11565,
+      "fold_n": 11120,
+      "net": -445,
+      "flip_out_rate": 0.3731
+     },
+     "ATTACK": {
+      "parent_n": 14910,
+      "fold_n": 15175,
+      "net": 265,
+      "flip_out_rate": 0.2559
+     },
+     "SETUP": {
+      "parent_n": 957,
+      "fold_n": 946,
+      "net": -11,
+      "flip_out_rate": 0.2989
+     },
+     "RECOVER": {
+      "parent_n": 1313,
+      "fold_n": 1087,
+      "net": -226,
+      "flip_out_rate": 0.4128
+     },
+     "STATUS": {
+      "parent_n": 2044,
+      "fold_n": 2182,
+      "net": 138,
+      "flip_out_rate": 0.2412
+     },
+     "PROTECT": {
+      "parent_n": 864,
+      "fold_n": 807,
+      "net": -57,
+      "flip_out_rate": 0.441
+     },
+     "PHAZE": {
+      "parent_n": 324,
+      "fold_n": 467,
+      "net": 143,
+      "flip_out_rate": 0.1327
+     },
+     "HAZARD": {
+      "parent_n": 1273,
+      "fold_n": 1097,
+      "net": -176,
+      "flip_out_rate": 0.2718
+     },
+     "OTHER_STATUS": {
+      "parent_n": 3949,
+      "fold_n": 4318,
+      "net": 369,
+      "flip_out_rate": 0.2672
+     },
+     "STRUGGLE": {
+      "parent_n": 18,
+      "fold_n": 18,
+      "net": 0,
+      "flip_out_rate": 0.0
+     }
+    },
+    "top_flip_transitions": [
+     {
+      "transition": "SWITCH->SWITCH",
+      "n": 2439,
+      "share": 0.2163
+     },
+     {
+      "transition": "ATTACK->ATTACK",
+      "n": 1477,
+      "share": 0.131
+     },
+     {
+      "transition": "SWITCH->ATTACK",
+      "n": 1108,
+      "share": 0.0983
+     },
+     {
+      "transition": "ATTACK->SWITCH",
+      "n": 914,
+      "share": 0.081
+     },
+     {
+      "transition": "ATTACK->OTHER_STATUS",
+      "n": 712,
+      "share": 0.0631
+     },
+     {
+      "transition": "OTHER_STATUS->ATTACK",
+      "n": 552,
+      "share": 0.0489
+     },
+     {
+      "transition": "SWITCH->OTHER_STATUS",
+      "n": 362,
+      "share": 0.0321
+     },
+     {
+      "transition": "RECOVER->ATTACK",
+      "n": 218,
+      "share": 0.0193
+     },
+     {
+      "transition": "SETUP->ATTACK",
+      "n": 214,
+      "share": 0.019
+     },
+     {
+      "transition": "STATUS->ATTACK",
+      "n": 208,
+      "share": 0.0184
+     },
+     {
+      "transition": "PROTECT->ATTACK",
+      "n": 182,
+      "share": 0.0161
+     },
+     {
+      "transition": "ATTACK->STATUS",
+      "n": 175,
+      "share": 0.0155
+     }
+    ]
+   },
+   "n_teams": 16
+  },
+  "n_rows_untaught_defensive": 17306,
+  "untaught_defensive": {
+   "axes": [
+    {
+     "axis": "switch_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.2338,
+     "delta": -0.02003,
+     "ci": [
+      -0.03922,
+      -0.00245
+     ],
+     "z": -2.134,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": -0.00344
+      },
+      "fold": {
+       "n": 6896,
+       "delta": -0.03611
+      }
+     },
+     "realized_delta": -0.00877
+    },
+    {
+     "axis": "attack_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.35545,
+     "delta": 0.01437,
+     "ci": [
+      -0.00284,
+      0.02767
+     ],
+     "z": 1.811,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": 0.01747
+      },
+      "fold": {
+       "n": 6896,
+       "delta": 0.01363
+      }
+     },
+     "realized_delta": 0.04667
+    },
+    {
+     "axis": "setup_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.02069,
+     "delta": 0.00172,
+     "ci": [
+      0.00022,
+      0.00326
+     ],
+     "z": 2.088,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": 0.00212
+      },
+      "fold": {
+       "n": 6896,
+       "delta": 0.00116
+      }
+     },
+     "realized_delta": -0.0149
+    },
+    {
+     "axis": "recover_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.06927,
+     "delta": -0.00874,
+     "ci": [
+      -0.03583,
+      0.01757
+     ],
+     "z": -0.652,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": -0.01416
+      },
+      "fold": {
+       "n": 6896,
+       "delta": -0.00812
+      }
+     },
+     "realized_delta": -0.00446
+    },
+    {
+     "axis": "status_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.09106,
+     "delta": 0.0051,
+     "ci": [
+      -0.00466,
+      0.0159
+     ],
+     "z": 0.95,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": 0.00582
+      },
+      "fold": {
+       "n": 6896,
+       "delta": 0.00406
+      }
+     },
+     "realized_delta": 0.00555
+    },
+    {
+     "axis": "protect_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.03941,
+     "delta": -0.00412,
+     "ci": [
+      -0.01541,
+      0.00675
+     ],
+     "z": -0.716,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": -0.00596
+      },
+      "fold": {
+       "n": 6896,
+       "delta": -0.00174
+      }
+     },
+     "realized_delta": -0.01088
+    },
+    {
+     "axis": "phaze_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.01558,
+     "delta": 0.00508,
+     "ci": [
+      0.00101,
+      0.01058
+     ],
+     "z": 1.91,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": 0.00529
+      },
+      "fold": {
+       "n": 6896,
+       "delta": 0.00624
+      }
+     },
+     "realized_delta": -0.00707
+    },
+    {
+     "axis": "hazard_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.051,
+     "delta": -0.01109,
+     "ci": [
+      -0.01559,
+      -0.00612
+     ],
+     "z": -4.518,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": -0.01932
+      },
+      "fold": {
+       "n": 6896,
+       "delta": -0.00102
+      }
+     },
+     "realized_delta": -0.01911
+    },
+    {
+     "axis": "other_status_rate",
+     "group": "A",
+     "n": 14452,
+     "n_teams": 6,
+     "parent_rate": 0.12373,
+     "delta": 0.01771,
+     "ci": [
+      0.00115,
+      0.03538
+     ],
+     "z": 2.021,
+     "arm_split": {
+      "parent": {
+       "n": 7556,
+       "delta": 0.01218
+      },
+      "fold": {
+       "n": 6896,
+       "delta": 0.0219
+      }
+     },
+     "realized_delta": 0.01297
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "group": "B",
+     "n": 3149,
+     "n_teams": 6,
+     "parent_rate": 0.38926,
+     "delta": -0.06081,
+     "ci": [
+      -0.10623,
+      -0.00865
+     ],
+     "z": -2.408,
+     "arm_split": {
+      "parent": {
+       "n": 1562,
+       "delta": -0.03713
+      },
+      "fold": {
+       "n": 1587,
+       "delta": -0.07687
+      }
+     },
+     "realized_delta": -0.04935
+    },
+    {
+     "axis": "switch|even_matchup",
+     "group": "B",
+     "n": 6634,
+     "n_teams": 6,
+     "parent_rate": 0.20965,
+     "delta": -0.01524,
+     "ci": [
+      -0.04432,
+      0.01104
+     ],
+     "z": -1.062,
+     "arm_split": {
+      "parent": {
+       "n": 3535,
+       "delta": -0.00057
+      },
+      "fold": {
+       "n": 3099,
+       "delta": -0.02259
+      }
+     },
+     "realized_delta": -0.00799
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "group": "B",
+     "n": 4669,
+     "n_teams": 6,
+     "parent_rate": 0.16689,
+     "delta": -0.00572,
+     "ci": [
+      -0.02625,
+      0.01014
+     ],
+     "z": -0.61,
+     "arm_split": {
+      "parent": {
+       "n": 2459,
+       "delta": 0.01383
+      },
+      "fold": {
+       "n": 2210,
+       "delta": -0.02579
+      }
+     },
+     "realized_delta": 0.00542
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "group": "B",
+     "n": 1901,
+     "n_teams": 6,
+     "parent_rate": 0.19892,
+     "delta": -0.00249,
+     "ci": [
+      -0.02111,
+      0.01402
+     ],
+     "z": -0.277,
+     "arm_split": {
+      "parent": {
+       "n": 976,
+       "delta": 0.00922
+      },
+      "fold": {
+       "n": 925,
+       "delta": -0.01297
+      }
+     },
+     "realized_delta": -0.00765
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "group": "B",
+     "n": 9142,
+     "n_teams": 6,
+     "parent_rate": 0.25509,
+     "delta": -0.03085,
+     "ci": [
+      -0.05106,
+      -0.01219
+     ],
+     "z": -3.01,
+     "arm_split": {
+      "parent": {
+       "n": 4883,
+       "delta": -0.01065
+      },
+      "fold": {
+       "n": 4259,
+       "delta": -0.04954
+      }
+     },
+     "realized_delta": -0.01104
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "group": "B",
+     "n": 3072,
+     "n_teams": 6,
+     "parent_rate": 0.32096,
+     "delta": -0.05859,
+     "ci": [
+      -0.09798,
+      -0.00977
+     ],
+     "z": -2.576,
+     "arm_split": {
+      "parent": {
+       "n": 1536,
+       "delta": -0.04297
+      },
+      "fold": {
+       "n": 1536,
+       "delta": -0.07422
+      }
+     },
+     "realized_delta": -0.03516
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "group": "B",
+     "n": 7192,
+     "n_teams": 6,
+     "parent_rate": 0.18247,
+     "delta": -0.00838,
+     "ci": [
+      -0.0361,
+      0.01871
+     ],
+     "z": -0.603,
+     "arm_split": {
+      "parent": {
+       "n": 3928,
+       "delta": 0.00509
+      },
+      "fold": {
+       "n": 3264,
+       "delta": -0.02359
+      }
+     },
+     "realized_delta": -0.01824
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "group": "B",
+     "n": 1499,
+     "n_teams": 6,
+     "parent_rate": 0.16828,
+     "delta": -0.0084,
+     "ci": [
+      -0.02461,
+      0.00665
+     ],
+     "z": -1.082,
+     "arm_split": {
+      "parent": {
+       "n": 753,
+       "delta": 0.00266
+      },
+      "fold": {
+       "n": 746,
+       "delta": -0.01877
+      }
+     },
+     "realized_delta": 0.0015
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "group": "B",
+     "n": 840,
+     "n_teams": 4,
+     "parent_rate": 0.06792,
+     "delta": -0.00097,
+     "ci": [
+      -0.01783,
+      0.01726
+     ],
+     "z": -0.109,
+     "arm_split": {
+      "parent": {
+       "n": 532,
+       "delta": 0.00752
+      },
+      "fold": {
+       "n": 308,
+       "delta": -0.00325
+      }
+     },
+     "realized_delta": 0.01828
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "group": "B",
+     "n": 4518,
+     "n_teams": 6,
+     "parent_rate": 0.20973,
+     "delta": -0.02154,
+     "ci": [
+      -0.03682,
+      -0.00189
+     ],
+     "z": -2.41,
+     "arm_split": {
+      "parent": {
+       "n": 2507,
+       "delta": -0.01396
+      },
+      "fold": {
+       "n": 2011,
+       "delta": -0.03381
+      }
+     },
+     "realized_delta": -0.01298
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "group": "B",
+     "n": 3864,
+     "n_teams": 6,
+     "parent_rate": 0.22955,
+     "delta": 0.00093,
+     "ci": [
+      -0.02196,
+      0.0203
+     ],
+     "z": 0.086,
+     "arm_split": {
+      "parent": {
+       "n": 1818,
+       "delta": 0.02035
+      },
+      "fold": {
+       "n": 2046,
+       "delta": -0.01417
+      }
+     },
+     "realized_delta": -0.01261
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "group": "C",
+     "n": 2544,
+     "n_teams": 6,
+     "parent_rate": 0.66259,
+     "delta": -0.04573,
+     "ci": [
+      -0.09633,
+      0.00542
+     ],
+     "z": -1.755,
+     "arm_split": {
+      "parent": {
+       "n": 1281,
+       "delta": -0.02108
+      },
+      "fold": {
+       "n": 1263,
+       "delta": -0.04592
+      }
+     },
+     "realized_delta": -0.03698
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "group": "C",
+     "n": 5053,
+     "n_teams": 5,
+     "parent_rate": 0.38976,
+     "delta": -0.00533,
+     "ci": [
+      -0.04368,
+      0.03363
+     ],
+     "z": -0.274,
+     "arm_split": {
+      "parent": {
+       "n": 2735,
+       "delta": 0.00731
+      },
+      "fold": {
+       "n": 2318,
+       "delta": 0.00086
+      }
+     },
+     "realized_delta": 0.03741
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "group": "C",
+     "n": 5053,
+     "n_teams": 5,
+     "parent_rate": 0.5154,
+     "delta": 0.03121,
+     "ci": [
+      0.01185,
+      0.05063
+     ],
+     "z": 3.05,
+     "arm_split": {
+      "parent": {
+       "n": 2735,
+       "delta": 0.0362
+      },
+      "fold": {
+       "n": 2318,
+       "delta": 0.02934
+      }
+     },
+     "realized_delta": 0.08347
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "group": "D",
+     "n": 7687,
+     "n_teams": 6,
+     "parent_rate": 0.15145,
+     "delta": -0.02403,
+     "ci": [
+      -0.04052,
+      -0.0077
+     ],
+     "z": -2.73,
+     "arm_split": {
+      "parent": {
+       "n": 3812,
+       "delta": -0.01548
+      },
+      "fold": {
+       "n": 3875,
+       "delta": -0.0289
+      }
+     },
+     "realized_delta": -0.00879
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "group": "E",
+     "n": 787,
+     "n_teams": 6,
+     "parent_rate": 0.43946,
+     "delta": -0.01166,
+     "ci": [
+      -0.06805,
+      0.04161
+     ],
+     "z": -0.41,
+     "arm_split": {
+      "parent": {
+       "n": 386,
+       "delta": -0.01036
+      },
+      "fold": {
+       "n": 401,
+       "delta": -0.03491
+      }
+     },
+     "realized_delta": 0.01164
+    }
+   ],
+   "divergence": {
+    "n_decisions": 17306,
+    "argmax_disagreement": 0.30804,
+    "battle_length": {
+     "parent": {
+      "battles": 192,
+      "mean_decisions": 47.26
+     },
+     "fold": {
+      "battles": 192,
+      "mean_decisions": 42.88
+     }
+    },
+    "mean_KL_fold_parent": null,
+    "mean_abs_dV": 3.78209,
+    "flip_mass_involving_SWITCH": 0.50328,
+    "both_switch_n": 4075,
+    "same_switch_target_rate": 0.7521,
+    "both_move_n": 11542,
+    "same_move_slot_rate": 0.7706,
+    "per_class_flow": {
+     "SWITCH": {
+      "parent_n": 5049,
+      "fold_n": 4774,
+      "net": -275,
+      "flip_out_rate": 0.3929
+     },
+     "ATTACK": {
+      "parent_n": 5572,
+      "fold_n": 5878,
+      "net": 306,
+      "flip_out_rate": 0.2471
+     },
+     "SETUP": {
+      "parent_n": 361,
+      "fold_n": 386,
+      "net": 25,
+      "flip_out_rate": 0.2632
+     },
+     "RECOVER": {
+      "parent_n": 1188,
+      "fold_n": 1008,
+      "net": -180,
+      "flip_out_rate": 0.3923
+     },
+     "STATUS": {
+      "parent_n": 1338,
+      "fold_n": 1402,
+      "net": 64,
+      "flip_out_rate": 0.2347
+     },
+     "PROTECT": {
+      "parent_n": 732,
+      "fold_n": 667,
+      "net": -65,
+      "flip_out_rate": 0.4167
+     },
+     "PHAZE": {
+      "parent_n": 270,
+      "fold_n": 359,
+      "net": 89,
+      "flip_out_rate": 0.1074
+     },
+     "HAZARD": {
+      "parent_n": 701,
+      "fold_n": 545,
+      "net": -156,
+      "flip_out_rate": 0.3595
+     },
+     "OTHER_STATUS": {
+      "parent_n": 2079,
+      "fold_n": 2271,
+      "net": 192,
+      "flip_out_rate": 0.2448
+     },
+     "STRUGGLE": {
+      "parent_n": 16,
+      "fold_n": 16,
+      "net": 0,
+      "flip_out_rate": 0.0
+     }
+    },
+    "top_flip_transitions": [
+     {
+      "transition": "SWITCH->SWITCH",
+      "n": 1010,
+      "share": 0.1895
+     },
+     {
+      "transition": "SWITCH->ATTACK",
+      "n": 513,
+      "share": 0.0962
+     },
+     {
+      "transition": "ATTACK->ATTACK",
+      "n": 351,
+      "share": 0.0658
+     },
+     {
+      "transition": "ATTACK->SWITCH",
+      "n": 344,
+      "share": 0.0645
+     },
+     {
+      "transition": "ATTACK->OTHER_STATUS",
+      "n": 280,
+      "share": 0.0525
+     },
+     {
+      "transition": "OTHER_STATUS->ATTACK",
+      "n": 216,
+      "share": 0.0405
+     },
+     {
+      "transition": "SWITCH->OTHER_STATUS",
+      "n": 184,
+      "share": 0.0345
+     },
+     {
+      "transition": "RECOVER->ATTACK",
+      "n": 179,
+      "share": 0.0336
+     },
+     {
+      "transition": "PROTECT->ATTACK",
+      "n": 129,
+      "share": 0.0242
+     },
+     {
+      "transition": "STATUS->ATTACK",
+      "n": 126,
+      "share": 0.0236
+     },
+     {
+      "transition": "HAZARD->ATTACK",
+      "n": 93,
+      "share": 0.0174
+     },
+     {
+      "transition": "OTHER_STATUS->OTHER_STATUS",
+      "n": 92,
+      "share": 0.0173
+     }
+    ]
+   },
+   "n_teams": 6,
+   "matched_archetypes": [
+    "semi_stall",
+    "stall"
+   ],
+   "note": "untaught teams whose archetype MATCHES the taught set's own archetypes"
+  },
+  "taught": {
+   "axes": [
+    {
+     "axis": "switch_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.22409,
+     "delta": 0.01996,
+     "ci": [
+      -0.00824,
+      0.05434
+     ],
+     "z": 1.231,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": 0.04092
+      },
+      "fold": {
+       "n": 7200,
+       "delta": -0.00306
+      }
+     },
+     "realized_delta": 0.01388
+    },
+    {
+     "axis": "attack_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.3084,
+     "delta": -0.03356,
+     "ci": [
+      -0.04396,
+      -0.02181
+     ],
+     "z": -5.774,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": -0.04618
+      },
+      "fold": {
+       "n": 7200,
+       "delta": -0.01958
+      }
+     },
+     "realized_delta": -0.00442
+    },
+    {
+     "axis": "setup_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.06097,
+     "delta": -0.00281,
+     "ci": [
+      -0.01724,
+      0.01237
+     ],
+     "z": -0.363,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": -0.01039
+      },
+      "fold": {
+       "n": 7200,
+       "delta": 0.00514
+      }
+     },
+     "realized_delta": 0.01146
+    },
+    {
+     "axis": "recover_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.13506,
+     "delta": -0.02349,
+     "ci": [
+      -0.06112,
+      0.00926
+     ],
+     "z": -1.308,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": -0.02691
+      },
+      "fold": {
+       "n": 7200,
+       "delta": -0.01694
+      }
+     },
+     "realized_delta": -0.04572
+    },
+    {
+     "axis": "status_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.07659,
+     "delta": -0.00574,
+     "ci": [
+      -0.0131,
+      0.00146
+     ],
+     "z": -1.536,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": -0.00501
+      },
+      "fold": {
+       "n": 7200,
+       "delta": -0.00667
+      }
+     },
+     "realized_delta": 0.00477
+    },
+    {
+     "axis": "protect_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.01747,
+     "delta": 0.00156,
+     "ci": [
+      -0.00504,
+      0.01069
+     ],
+     "z": 0.374,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": 0.0
+      },
+      "fold": {
+       "n": 7200,
+       "delta": 0.00264
+      }
+     },
+     "realized_delta": -0.0063
+    },
+    {
+     "axis": "phaze_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.01253,
+     "delta": 0.01342,
+     "ci": [
+      0.00295,
+      0.03025
+     ],
+     "z": 1.784,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": 0.01702
+      },
+      "fold": {
+       "n": 7200,
+       "delta": 0.00847
+      }
+     },
+     "realized_delta": 0.00662
+    },
+    {
+     "axis": "hazard_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.02637,
+     "delta": 0.00244,
+     "ci": [
+      -0.00097,
+      0.00565
+     ],
+     "z": 1.436,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": 0.00175
+      },
+      "fold": {
+       "n": 7200,
+       "delta": 0.00347
+      }
+     },
+     "realized_delta": 0.00177
+    },
+    {
+     "axis": "other_status_rate",
+     "group": "A",
+     "n": 15191,
+     "n_teams": 6,
+     "parent_rate": 0.13853,
+     "delta": 0.02822,
+     "ci": [
+      0.00249,
+      0.06689
+     ],
+     "z": 1.599,
+     "arm_split": {
+      "parent": {
+       "n": 7991,
+       "delta": 0.02878
+      },
+      "fold": {
+       "n": 7200,
+       "delta": 0.02653
+      }
+     },
+     "realized_delta": 0.01793
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "group": "B",
+     "n": 3452,
+     "n_teams": 6,
+     "parent_rate": 0.38511,
+     "delta": -0.00519,
+     "ci": [
+      -0.05043,
+      0.03573
+     ],
+     "z": -0.233,
+     "arm_split": {
+      "parent": {
+       "n": 1804,
+       "delta": 0.01386
+      },
+      "fold": {
+       "n": 1648,
+       "delta": -0.01396
+      }
+     },
+     "realized_delta": -0.02077
+    },
+    {
+     "axis": "switch|even_matchup",
+     "group": "B",
+     "n": 8811,
+     "n_teams": 6,
+     "parent_rate": 0.17585,
+     "delta": 0.02573,
+     "ci": [
+      -0.00898,
+      0.06989
+     ],
+     "z": 1.269,
+     "arm_split": {
+      "parent": {
+       "n": 4619,
+       "delta": 0.05412
+      },
+      "fold": {
+       "n": 4192,
+       "delta": -0.00501
+      }
+     },
+     "realized_delta": 0.02716
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "group": "B",
+     "n": 2928,
+     "n_teams": 6,
+     "parent_rate": 0.18058,
+     "delta": 0.03045,
+     "ci": [
+      0.00473,
+      0.05935
+     ],
+     "z": 2.183,
+     "arm_split": {
+      "parent": {
+       "n": 1568,
+       "delta": 0.03316
+      },
+      "fold": {
+       "n": 1360,
+       "delta": 0.01618
+      }
+     },
+     "realized_delta": 0.01318
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "group": "B",
+     "n": 1630,
+     "n_teams": 6,
+     "parent_rate": 0.22004,
+     "delta": -0.00837,
+     "ci": [
+      -0.0558,
+      0.03349
+     ],
+     "z": -0.362,
+     "arm_split": {
+      "parent": {
+       "n": 898,
+       "delta": 0.00111
+      },
+      "fold": {
+       "n": 732,
+       "delta": -0.02322
+      }
+     },
+     "realized_delta": 0.0111
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "group": "B",
+     "n": 10019,
+     "n_teams": 6,
+     "parent_rate": 0.23886,
+     "delta": 0.02418,
+     "ci": [
+      -0.00564,
+      0.0603
+     ],
+     "z": 1.448,
+     "arm_split": {
+      "parent": {
+       "n": 5236,
+       "delta": 0.04851
+      },
+      "fold": {
+       "n": 4783,
+       "delta": -0.00021
+      }
+     },
+     "realized_delta": 0.02315
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "group": "B",
+     "n": 3072,
+     "n_teams": 6,
+     "parent_rate": 0.32357,
+     "delta": 0.01139,
+     "ci": [
+      -0.01986,
+      0.03092
+     ],
+     "z": 0.804,
+     "arm_split": {
+      "parent": {
+       "n": 1536,
+       "delta": 0.02474
+      },
+      "fold": {
+       "n": 1536,
+       "delta": -0.00195
+      }
+     },
+     "realized_delta": -0.02799
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "group": "B",
+     "n": 7928,
+     "n_teams": 6,
+     "parent_rate": 0.17904,
+     "delta": 0.02007,
+     "ci": [
+      -0.01762,
+      0.06653
+     ],
+     "z": 0.935,
+     "arm_split": {
+      "parent": {
+       "n": 4356,
+       "delta": 0.04752
+      },
+      "fold": {
+       "n": 3572,
+       "delta": -0.01372
+      }
+     },
+     "realized_delta": 0.02884
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "group": "B",
+     "n": 1219,
+     "n_teams": 6,
+     "parent_rate": 0.10863,
+     "delta": 0.01826,
+     "ci": [
+      0.00391,
+      0.03625
+     ],
+     "z": 2.126,
+     "arm_split": {
+      "parent": {
+       "n": 600,
+       "delta": 0.04667
+      },
+      "fold": {
+       "n": 619,
+       "delta": -0.00808
+      }
+     },
+     "realized_delta": 0.0098
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "group": "B",
+     "n": 2653,
+     "n_teams": 4,
+     "parent_rate": 0.05314,
+     "delta": 0.02547,
+     "ci": [
+      0.00183,
+      0.05338
+     ],
+     "z": 1.877,
+     "arm_split": {
+      "parent": {
+       "n": 1251,
+       "delta": 0.04157
+      },
+      "fold": {
+       "n": 1402,
+       "delta": 0.00999
+      }
+     },
+     "realized_delta": 0.03916
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "group": "B",
+     "n": 2920,
+     "n_teams": 6,
+     "parent_rate": 0.20142,
+     "delta": 0.01468,
+     "ci": [
+      -0.03353,
+      0.05805
+     ],
+     "z": 0.624,
+     "arm_split": {
+      "parent": {
+       "n": 1844,
+       "delta": 0.01356
+      },
+      "fold": {
+       "n": 1076,
+       "delta": -0.01952
+      }
+     },
+     "realized_delta": 0.01636
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "group": "B",
+     "n": 6746,
+     "n_teams": 6,
+     "parent_rate": 0.20828,
+     "delta": 0.02484,
+     "ci": [
+      -0.00071,
+      0.06159
+     ],
+     "z": 1.483,
+     "arm_split": {
+      "parent": {
+       "n": 3443,
+       "delta": 0.04879
+      },
+      "fold": {
+       "n": 3303,
+       "delta": 0.00817
+      }
+     },
+     "realized_delta": 0.00644
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "group": "C",
+     "n": 2695,
+     "n_teams": 6,
+     "parent_rate": 0.6833,
+     "delta": -0.06336,
+     "ci": [
+      -0.07398,
+      -0.05244
+     ],
+     "z": -11.336,
+     "arm_split": {
+      "parent": {
+       "n": 1407,
+       "delta": -0.06894
+      },
+      "fold": {
+       "n": 1288,
+       "delta": -0.05512
+      }
+     },
+     "realized_delta": -0.0261
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "group": "C",
+     "n": 4586,
+     "n_teams": 6,
+     "parent_rate": 0.45324,
+     "delta": -0.02952,
+     "ci": [
+      -0.042,
+      -0.01502
+     ],
+     "z": -4.195,
+     "arm_split": {
+      "parent": {
+       "n": 2548,
+       "delta": -0.04239
+      },
+      "fold": {
+       "n": 2038,
+       "delta": -0.01325
+      }
+     },
+     "realized_delta": 0.04218
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "group": "C",
+     "n": 4586,
+     "n_teams": 6,
+     "parent_rate": 0.6261,
+     "delta": -0.06436,
+     "ci": [
+      -0.07955,
+      -0.04961
+     ],
+     "z": -8.606,
+     "arm_split": {
+      "parent": {
+       "n": 2548,
+       "delta": -0.08281
+      },
+      "fold": {
+       "n": 2038,
+       "delta": -0.03042
+      }
+     },
+     "realized_delta": -0.01118
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "group": "D",
+     "n": 7361,
+     "n_teams": 6,
+     "parent_rate": 0.07654,
+     "delta": 0.02429,
+     "ci": [
+      0.01066,
+      0.0388
+     ],
+     "z": 3.301,
+     "arm_split": {
+      "parent": {
+       "n": 3850,
+       "delta": 0.02597
+      },
+      "fold": {
+       "n": 3511,
+       "delta": 0.02136
+      }
+     },
+     "realized_delta": 0.03314
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "group": "E",
+     "n": 663,
+     "n_teams": 6,
+     "parent_rate": 0.27884,
+     "delta": -0.01187,
+     "ci": [
+      -0.05542,
+      0.03133
+     ],
+     "z": -0.526,
+     "arm_split": {
+      "parent": {
+       "n": 362,
+       "delta": 0.0221
+      },
+      "fold": {
+       "n": 301,
+       "delta": -0.00664
+      }
+     },
+     "realized_delta": -0.04022
+    }
+   ],
+   "divergence": {
+    "n_decisions": 17642,
+    "argmax_disagreement": 0.35234,
+    "battle_length": {
+     "parent": {
+      "battles": 192,
+      "mean_decisions": 48.22
+     },
+     "fold": {
+      "battles": 192,
+      "mean_decisions": 43.67
+     }
+    },
+    "mean_KL_fold_parent": null,
+    "mean_abs_dV": 4.72898,
+    "flip_mass_involving_SWITCH": 0.51255,
+    "both_switch_n": 4016,
+    "same_switch_target_rate": 0.677,
+    "both_move_n": 11737,
+    "same_move_slot_rate": 0.7418,
+    "per_class_flow": {
+     "SWITCH": {
+      "parent_n": 4808,
+      "fold_n": 5113,
+      "net": 305,
+      "flip_out_rate": 0.4345
+     },
+     "ATTACK": {
+      "parent_n": 4916,
+      "fold_n": 4356,
+      "net": -560,
+      "flip_out_rate": 0.3122
+     },
+     "SETUP": {
+      "parent_n": 947,
+      "fold_n": 908,
+      "net": -39,
+      "flip_out_rate": 0.415
+     },
+     "RECOVER": {
+      "parent_n": 2404,
+      "fold_n": 2049,
+      "net": -355,
+      "flip_out_rate": 0.4359
+     },
+     "STATUS": {
+      "parent_n": 1232,
+      "fold_n": 1134,
+      "net": -98,
+      "flip_out_rate": 0.2086
+     },
+     "PROTECT": {
+      "parent_n": 310,
+      "fold_n": 388,
+      "net": 78,
+      "flip_out_rate": 0.3677
+     },
+     "PHAZE": {
+      "parent_n": 210,
+      "fold_n": 396,
+      "net": 186,
+      "flip_out_rate": 0.7667
+     },
+     "HAZARD": {
+      "parent_n": 416,
+      "fold_n": 457,
+      "net": 41,
+      "flip_out_rate": 0.2356
+     },
+     "OTHER_STATUS": {
+      "parent_n": 2399,
+      "fold_n": 2841,
+      "net": 442,
+      "flip_out_rate": 0.2172
+     }
+    },
+    "top_flip_transitions": [
+     {
+      "transition": "SWITCH->SWITCH",
+      "n": 1297,
+      "share": 0.2087
+     },
+     {
+      "transition": "ATTACK->SWITCH",
+      "n": 517,
+      "share": 0.0832
+     },
+     {
+      "transition": "RECOVER->OTHER_STATUS",
+      "n": 378,
+      "share": 0.0608
+     },
+     {
+      "transition": "SWITCH->ATTACK",
+      "n": 250,
+      "share": 0.0402
+     },
+     {
+      "transition": "ATTACK->ATTACK",
+      "n": 250,
+      "share": 0.0402
+     },
+     {
+      "transition": "ATTACK->OTHER_STATUS",
+      "n": 225,
+      "share": 0.0362
+     },
+     {
+      "transition": "SETUP->PHAZE",
+      "n": 220,
+      "share": 0.0354
+     },
+     {
+      "transition": "RECOVER->SWITCH",
+      "n": 206,
+      "share": 0.0331
+     },
+     {
+      "transition": "SWITCH->OTHER_STATUS",
+      "n": 182,
+      "share": 0.0293
+     },
+     {
+      "transition": "RECOVER->ATTACK",
+      "n": 178,
+      "share": 0.0286
+     },
+     {
+      "transition": "OTHER_STATUS->RECOVER",
+      "n": 160,
+      "share": 0.0257
+     },
+     {
+      "transition": "OTHER_STATUS->SWITCH",
+      "n": 154,
+      "share": 0.0248
+     }
+    ]
+   },
+   "n_teams": 6
+  },
+  "shape": {
+   "all_axes": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate",
+     "switch|losing_matchup",
+     "switch|even_matchup",
+     "switch|winning_matchup",
+     "switch|low_hp(<1/3)",
+     "switch|high_hp(>2/3)",
+     "switch|early(turn<=8)",
+     "switch|late(turn>=20)",
+     "switch|opp_low_hp(<1/3)",
+     "switch|we_are_boosted",
+     "switch|behind_on_mons",
+     "switch|ahead_on_mons",
+     "take_SE_attack|SE_available",
+     "take_best_damage|>=2_attacks",
+     "attack_at_all|>=2_attacks",
+     "switch_to_resist|resist_avail",
+     "forced_repl_resists|resist_avail"
+    ],
+    "n_axes": 25,
+    "cosine": 0.1425,
+    "slope_through_origin": 0.1007,
+    "r2_through_origin": 0.0203,
+    "sign_agreement": "12/25",
+    "norm_untaught": 0.09342,
+    "norm_taught": 0.13221,
+    "norm_ratio_u_over_t": 0.7066,
+    "cosine_perm_null_p": 0.1938,
+    "cosine_perm_null_mean": -0.0209,
+    "split_half_reliability_untaught": 0.7218,
+    "split_half_reliability_taught": 0.4996,
+    "disattenuated_cosine": 0.2372
+   },
+   "class_share_block_A": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate"
+    ],
+    "n_axes": 9,
+    "cosine": 0.1338,
+    "slope_through_origin": 0.0559,
+    "r2_through_origin": 0.0179,
+    "sign_agreement": "4/9",
+    "norm_untaught": 0.02326,
+    "norm_taught": 0.0557,
+    "norm_ratio_u_over_t": 0.4177,
+    "cosine_perm_null_p": 0.3837,
+    "cosine_perm_null_mean": 0.0072,
+    "split_half_reliability_untaught": 0.6594,
+    "split_half_reliability_taught": 0.4522,
+    "disattenuated_cosine": 0.2451
+   },
+   "per_axis": [
+    {
+     "axis": "switch_rate",
+     "untaught": -0.01464,
+     "taught": 0.01996,
+     "ratio_u_over_t": -0.733
+    },
+    {
+     "axis": "attack_rate",
+     "untaught": 0.00258,
+     "taught": -0.03356,
+     "ratio_u_over_t": -0.077
+    },
+    {
+     "axis": "setup_rate",
+     "untaught": -0.00054,
+     "taught": -0.00281,
+     "ratio_u_over_t": 0.192
+    },
+    {
+     "axis": "recover_rate",
+     "untaught": -0.00443,
+     "taught": -0.02349,
+     "ratio_u_over_t": 0.189
+    },
+    {
+     "axis": "status_rate",
+     "untaught": 0.00412,
+     "taught": -0.00574,
+     "ratio_u_over_t": -0.718
+    },
+    {
+     "axis": "protect_rate",
+     "untaught": -0.00063,
+     "taught": 0.00156,
+     "ratio_u_over_t": -0.404
+    },
+    {
+     "axis": "phaze_rate",
+     "untaught": 0.00307,
+     "taught": 0.01342,
+     "ratio_u_over_t": 0.229
+    },
+    {
+     "axis": "hazard_rate",
+     "untaught": -0.00522,
+     "taught": 0.00244,
+     "ratio_u_over_t": -2.139
+    },
+    {
+     "axis": "other_status_rate",
+     "untaught": 0.01569,
+     "taught": 0.02822,
+     "ratio_u_over_t": 0.556
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "untaught": -0.03849,
+     "taught": -0.00519,
+     "ratio_u_over_t": 7.416
+    },
+    {
+     "axis": "switch|even_matchup",
+     "untaught": -0.02004,
+     "taught": 0.02573,
+     "ratio_u_over_t": -0.779
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "untaught": 0.00707,
+     "taught": 0.03045,
+     "ratio_u_over_t": 0.232
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "untaught": 0.01712,
+     "taught": -0.00837,
+     "ratio_u_over_t": -2.045
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "untaught": -0.02471,
+     "taught": 0.02418,
+     "ratio_u_over_t": -1.022
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "untaught": -0.03784,
+     "taught": 0.01139,
+     "ratio_u_over_t": -3.322
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "untaught": -0.00326,
+     "taught": 0.02007,
+     "ratio_u_over_t": -0.162
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "untaught": 0.00916,
+     "taught": 0.01826,
+     "ratio_u_over_t": 0.502
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "untaught": 0.00967,
+     "taught": 0.02547,
+     "ratio_u_over_t": 0.38
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "untaught": -0.02706,
+     "taught": 0.01468,
+     "ratio_u_over_t": -1.843
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "untaught": 0.01479,
+     "taught": 0.02484,
+     "ratio_u_over_t": 0.595
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "untaught": -0.0452,
+     "taught": -0.06336,
+     "ratio_u_over_t": 0.713
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "untaught": -0.00802,
+     "taught": -0.02952,
+     "ratio_u_over_t": 0.272
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "untaught": 0.00652,
+     "taught": -0.06436,
+     "ratio_u_over_t": -0.101
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "untaught": -0.01544,
+     "taught": 0.02429,
+     "ratio_u_over_t": -0.636
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "untaught": -0.01974,
+     "taught": -0.01187,
+     "ratio_u_over_t": 1.663
+    }
+   ]
+  },
+  "shape_archetype_matched": {
+   "all_axes": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate",
+     "switch|losing_matchup",
+     "switch|even_matchup",
+     "switch|winning_matchup",
+     "switch|low_hp(<1/3)",
+     "switch|high_hp(>2/3)",
+     "switch|early(turn<=8)",
+     "switch|late(turn>=20)",
+     "switch|opp_low_hp(<1/3)",
+     "switch|we_are_boosted",
+     "switch|behind_on_mons",
+     "switch|ahead_on_mons",
+     "take_SE_attack|SE_available",
+     "take_best_damage|>=2_attacks",
+     "attack_at_all|>=2_attacks",
+     "switch_to_resist|resist_avail",
+     "forced_repl_resists|resist_avail"
+    ],
+    "n_axes": 25,
+    "cosine": -0.119,
+    "slope_through_origin": -0.1063,
+    "r2_through_origin": 0.0141,
+    "sign_agreement": "9/25",
+    "norm_untaught": 0.11815,
+    "norm_taught": 0.13221,
+    "norm_ratio_u_over_t": 0.8937,
+    "cosine_perm_null_p": 0.6787,
+    "cosine_perm_null_mean": -0.0281,
+    "split_half_reliability_untaught": 0.4921,
+    "split_half_reliability_taught": 0.4996,
+    "disattenuated_cosine": -0.2399
+   },
+   "class_share_block_A": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate"
+    ],
+    "n_axes": 9,
+    "cosine": -0.0917,
+    "slope_through_origin": -0.0569,
+    "r2_through_origin": 0.0084,
+    "sign_agreement": "3/9",
+    "norm_untaught": 0.03453,
+    "norm_taught": 0.0557,
+    "norm_ratio_u_over_t": 0.62,
+    "cosine_perm_null_p": 0.6058,
+    "cosine_perm_null_mean": 0.0068,
+    "split_half_reliability_untaught": 0.3881,
+    "split_half_reliability_taught": 0.4522,
+    "disattenuated_cosine": -0.2189
+   },
+   "per_axis": [
+    {
+     "axis": "switch_rate",
+     "untaught": -0.02003,
+     "taught": 0.01996,
+     "ratio_u_over_t": -1.004
+    },
+    {
+     "axis": "attack_rate",
+     "untaught": 0.01437,
+     "taught": -0.03356,
+     "ratio_u_over_t": -0.428
+    },
+    {
+     "axis": "setup_rate",
+     "untaught": 0.00172,
+     "taught": -0.00281,
+     "ratio_u_over_t": -0.612
+    },
+    {
+     "axis": "recover_rate",
+     "untaught": -0.00874,
+     "taught": -0.02349,
+     "ratio_u_over_t": 0.372
+    },
+    {
+     "axis": "status_rate",
+     "untaught": 0.0051,
+     "taught": -0.00574,
+     "ratio_u_over_t": -0.889
+    },
+    {
+     "axis": "protect_rate",
+     "untaught": -0.00412,
+     "taught": 0.00156,
+     "ratio_u_over_t": -2.641
+    },
+    {
+     "axis": "phaze_rate",
+     "untaught": 0.00508,
+     "taught": 0.01342,
+     "ratio_u_over_t": 0.379
+    },
+    {
+     "axis": "hazard_rate",
+     "untaught": -0.01109,
+     "taught": 0.00244,
+     "ratio_u_over_t": -4.545
+    },
+    {
+     "axis": "other_status_rate",
+     "untaught": 0.01771,
+     "taught": 0.02822,
+     "ratio_u_over_t": 0.628
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "untaught": -0.06081,
+     "taught": -0.00519,
+     "ratio_u_over_t": 11.717
+    },
+    {
+     "axis": "switch|even_matchup",
+     "untaught": -0.01524,
+     "taught": 0.02573,
+     "ratio_u_over_t": -0.592
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "untaught": -0.00572,
+     "taught": 0.03045,
+     "ratio_u_over_t": -0.188
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "untaught": -0.00249,
+     "taught": -0.00837,
+     "ratio_u_over_t": 0.297
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "untaught": -0.03085,
+     "taught": 0.02418,
+     "ratio_u_over_t": -1.276
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "untaught": -0.05859,
+     "taught": 0.01139,
+     "ratio_u_over_t": -5.144
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "untaught": -0.00838,
+     "taught": 0.02007,
+     "ratio_u_over_t": -0.418
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "untaught": -0.0084,
+     "taught": 0.01826,
+     "ratio_u_over_t": -0.46
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "untaught": -0.00097,
+     "taught": 0.02547,
+     "ratio_u_over_t": -0.038
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "untaught": -0.02154,
+     "taught": 0.01468,
+     "ratio_u_over_t": -1.467
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "untaught": 0.00093,
+     "taught": 0.02484,
+     "ratio_u_over_t": 0.037
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "untaught": -0.04573,
+     "taught": -0.06336,
+     "ratio_u_over_t": 0.722
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "untaught": -0.00533,
+     "taught": -0.02952,
+     "ratio_u_over_t": 0.181
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "untaught": 0.03121,
+     "taught": -0.06436,
+     "ratio_u_over_t": -0.485
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "untaught": -0.02403,
+     "taught": 0.02429,
+     "ratio_u_over_t": -0.989
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "untaught": -0.01166,
+     "taught": -0.01187,
+     "ratio_u_over_t": 0.982
+    }
+   ]
+  },
+  "attribution": {
+   "n_teams": 16,
+   "axes": [
+    {
+     "axis": "switch|winning_matchup",
+     "spearman_rho": 0.565,
+     "ci": [
+      0.214,
+      0.818
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "spearman_rho": -0.518,
+     "ci": [
+      -0.801,
+      -0.055
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "spearman_rho": -0.447,
+     "ci": [
+      -0.784,
+      0.042
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "spearman_rho": -0.444,
+     "ci": [
+      -0.777,
+      0.038
+     ],
+     "n": 16
+    },
+    {
+     "axis": "hazard_rate",
+     "spearman_rho": -0.421,
+     "ci": [
+      -0.757,
+      0.011
+     ],
+     "n": 16
+    },
+    {
+     "axis": "other_status_rate",
+     "spearman_rho": 0.4,
+     "ci": [
+      -0.153,
+      0.774
+     ],
+     "n": 16
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "spearman_rho": -0.382,
+     "ci": [
+      -0.748,
+      0.101
+     ],
+     "n": 15
+    },
+    {
+     "axis": "phaze_rate",
+     "spearman_rho": 0.259,
+     "ci": [
+      -0.288,
+      0.745
+     ],
+     "n": 16
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "spearman_rho": -0.247,
+     "ci": [
+      -0.718,
+      0.376
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "spearman_rho": 0.203,
+     "ci": [
+      -0.322,
+      0.67
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|even_matchup",
+     "spearman_rho": -0.2,
+     "ci": [
+      -0.662,
+      0.382
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "spearman_rho": 0.194,
+     "ci": [
+      -0.273,
+      0.66
+     ],
+     "n": 16
+    },
+    {
+     "axis": "setup_rate",
+     "spearman_rho": -0.176,
+     "ci": [
+      -0.693,
+      0.375
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch_rate",
+     "spearman_rho": -0.168,
+     "ci": [
+      -0.549,
+      0.311
+     ],
+     "n": 16
+    },
+    {
+     "axis": "attack_rate",
+     "spearman_rho": -0.124,
+     "ci": [
+      -0.53,
+      0.371
+     ],
+     "n": 16
+    },
+    {
+     "axis": "protect_rate",
+     "spearman_rho": -0.103,
+     "ci": [
+      -0.575,
+      0.421
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "spearman_rho": -0.1,
+     "ci": [
+      -0.502,
+      0.362
+     ],
+     "n": 16
+    },
+    {
+     "axis": "status_rate",
+     "spearman_rho": 0.088,
+     "ci": [
+      -0.503,
+      0.612
+     ],
+     "n": 16
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "spearman_rho": 0.085,
+     "ci": [
+      -0.354,
+      0.519
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "spearman_rho": 0.084,
+     "ci": [
+      -0.396,
+      0.572
+     ],
+     "n": 12
+    },
+    {
+     "axis": "recover_rate",
+     "spearman_rho": 0.079,
+     "ci": [
+      -0.449,
+      0.525
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "spearman_rho": 0.053,
+     "ci": [
+      -0.45,
+      0.515
+     ],
+     "n": 16
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "spearman_rho": 0.012,
+     "ci": [
+      -0.568,
+      0.532
+     ],
+     "n": 16
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "spearman_rho": 0.011,
+     "ci": [
+      -0.394,
+      0.387
+     ],
+     "n": 15
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "spearman_rho": -0.003,
+     "ci": [
+      -0.466,
+      0.434
+     ],
+     "n": 16
+    }
+   ],
+   "disagreement_vs_wr_gain": {
+    "spearman_rho": -0.132,
+    "n": 16
+   }
+  },
+  "replay_determinism": {
+   "duplicate_cells": 256,
+   "replays_agreeing": 256,
+   "replays_disagreeing": 0
+  },
+  "winrate_check": {
+   "untaught": {
+    "parent_wr": 0.377,
+    "fold_wr": 0.4336,
+    "delta_pp": 5.66,
+    "n_parent": 512,
+    "n_fold": 512,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "n_decisions": 37217
+   },
+   "taught": {
+    "parent_wr": 0.4479,
+    "fold_wr": 0.6771,
+    "delta_pp": 22.92,
+    "n_parent": 192,
+    "n_fold": 192,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "n_decisions": 17642
+   }
+  },
+  "cell_attribution_untaught": {
+   "n_cells": 128,
+   "n_teams": 16,
+   "net_wr_delta": 0.0566,
+   "axes": [
+    {
+     "axis": "switch|late(turn>=20)",
+     "spearman_rho": -0.195,
+     "ci": [
+      -0.356,
+      -0.029
+     ],
+     "n_cells": 107
+    },
+    {
+     "axis": "switch|even_matchup",
+     "spearman_rho": -0.192,
+     "ci": [
+      -0.313,
+      0.008
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "spearman_rho": -0.145,
+     "ci": [
+      -0.274,
+      0.101
+     ],
+     "n_cells": 112
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "spearman_rho": -0.125,
+     "ci": [
+      -0.381,
+      0.221
+     ],
+     "n_cells": 40
+    },
+    {
+     "axis": "protect_rate",
+     "spearman_rho": 0.121,
+     "ci": [
+      -0.136,
+      0.168
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "recover_rate",
+     "spearman_rho": 0.117,
+     "ci": [
+      -0.032,
+      0.285
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "spearman_rho": -0.115,
+     "ci": [
+      -0.251,
+      0.099
+     ],
+     "n_cells": 121
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "spearman_rho": -0.11,
+     "ci": [
+      -0.209,
+      0.113
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "spearman_rho": 0.099,
+     "ci": [
+      -0.126,
+      0.311
+     ],
+     "n_cells": 70
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "spearman_rho": -0.093,
+     "ci": [
+      -0.252,
+      0.065
+     ],
+     "n_cells": 118
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "spearman_rho": 0.079,
+     "ci": [
+      -0.116,
+      0.178
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "status_rate",
+     "spearman_rho": -0.066,
+     "ci": [
+      -0.224,
+      0.083
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "other_status_rate",
+     "spearman_rho": 0.062,
+     "ci": [
+      -0.163,
+      0.263
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "hazard_rate",
+     "spearman_rho": 0.052,
+     "ci": [
+      -0.171,
+      0.219
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "spearman_rho": 0.052,
+     "ci": [
+      -0.15,
+      0.259
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "spearman_rho": -0.048,
+     "ci": [
+      -0.219,
+      0.094
+     ],
+     "n_cells": 120
+    },
+    {
+     "axis": "switch_rate",
+     "spearman_rho": -0.042,
+     "ci": [
+      -0.217,
+      0.176
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "spearman_rho": 0.042,
+     "ci": [
+      -0.177,
+      0.259
+     ],
+     "n_cells": 102
+    },
+    {
+     "axis": "phaze_rate",
+     "spearman_rho": 0.04,
+     "ci": [
+      -0.192,
+      0.135
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "attack_rate",
+     "spearman_rho": -0.035,
+     "ci": [
+      -0.205,
+      0.184
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "spearman_rho": -0.03,
+     "ci": [
+      -0.183,
+      0.174
+     ],
+     "n_cells": 127
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "spearman_rho": -0.011,
+     "ci": [
+      -0.206,
+      0.194
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "spearman_rho": 0.005,
+     "ci": [
+      -0.158,
+      0.141
+     ],
+     "n_cells": 125
+    },
+    {
+     "axis": "setup_rate",
+     "spearman_rho": 0.004,
+     "ci": [
+      -0.171,
+      0.196
+     ],
+     "n_cells": 128
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "spearman_rho": 0.004,
+     "ci": [
+      -0.204,
+      0.214
+     ],
+     "n_cells": 120
+    }
+   ]
+  },
+  "battle_attribution_untaught": {
+   "n_paired_games": 512,
+   "counts": {
+    "FLIP_LOSS": 97,
+    "BOTH_LOSS": 193,
+    "BOTH_WIN": 96,
+    "FLIP_WIN": 126
+   },
+   "net_wr_delta_identity": 0.0566,
+   "axes": [
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "FLIP_WIN": 0.0164,
+     "FLIP_WIN_n": 489,
+     "FLIP_LOSS": -0.0875,
+     "FLIP_LOSS_n": 377,
+     "BOTH_WIN": -0.0218,
+     "BOTH_WIN_n": 367,
+     "BOTH_LOSS": -0.0299,
+     "BOTH_LOSS_n": 770,
+     "flipwin_minus_bothloss": 0.0463
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "FLIP_WIN": -0.0054,
+     "FLIP_WIN_n": 2212,
+     "FLIP_LOSS": 0.0189,
+     "FLIP_LOSS_n": 1742,
+     "BOTH_WIN": 0.0101,
+     "BOTH_WIN_n": 2574,
+     "BOTH_LOSS": 0.0283,
+     "BOTH_LOSS_n": 1554,
+     "flipwin_minus_bothloss": -0.0337
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "FLIP_WIN": -0.0278,
+     "FLIP_WIN_n": 2016,
+     "FLIP_LOSS": -0.0219,
+     "FLIP_LOSS_n": 1552,
+     "BOTH_WIN": -0.0384,
+     "BOTH_WIN_n": 1536,
+     "BOTH_LOSS": -0.0521,
+     "BOTH_LOSS_n": 3088,
+     "flipwin_minus_bothloss": 0.0243
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "FLIP_WIN": 0.0154,
+     "FLIP_WIN_n": 977,
+     "FLIP_LOSS": 0.0279,
+     "FLIP_LOSS_n": 789,
+     "BOTH_WIN": 0.032,
+     "BOTH_WIN_n": 750,
+     "BOTH_LOSS": -0.0052,
+     "BOTH_LOSS_n": 1530,
+     "flipwin_minus_bothloss": 0.0206
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "FLIP_WIN": -0.0304,
+     "FLIP_WIN_n": 2566,
+     "FLIP_LOSS": 0.0043,
+     "FLIP_LOSS_n": 2075,
+     "BOTH_WIN": 0.0137,
+     "BOTH_WIN_n": 2988,
+     "BOTH_LOSS": -0.0105,
+     "BOTH_LOSS_n": 3801,
+     "flipwin_minus_bothloss": -0.0199
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "FLIP_WIN": 0.0192,
+     "FLIP_WIN_n": 416,
+     "FLIP_LOSS": 0.0088,
+     "FLIP_LOSS_n": 681,
+     "BOTH_WIN": 0.005,
+     "BOTH_WIN_n": 605,
+     "BOTH_LOSS": 0.0025,
+     "BOTH_LOSS_n": 399,
+     "flipwin_minus_bothloss": 0.0167
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "FLIP_WIN": -0.0426,
+     "FLIP_WIN_n": 2042,
+     "FLIP_LOSS": -0.0621,
+     "FLIP_LOSS_n": 1611,
+     "BOTH_WIN": -0.0386,
+     "BOTH_WIN_n": 1606,
+     "BOTH_LOSS": -0.0298,
+     "BOTH_LOSS_n": 2654,
+     "flipwin_minus_bothloss": -0.0128
+    },
+    {
+     "axis": "recover_rate",
+     "FLIP_WIN": 0.0019,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": -0.0056,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": -0.0113,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": -0.0102,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": 0.0121
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "FLIP_WIN": -0.0105,
+     "FLIP_WIN_n": 4279,
+     "FLIP_LOSS": -0.0003,
+     "FLIP_LOSS_n": 3681,
+     "BOTH_WIN": -0.0134,
+     "BOTH_WIN_n": 3966,
+     "BOTH_LOSS": 0.0009,
+     "BOTH_LOSS_n": 5272,
+     "flipwin_minus_bothloss": -0.0114
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "FLIP_WIN": 0.0042,
+     "FLIP_WIN_n": 4279,
+     "FLIP_LOSS": -0.0024,
+     "FLIP_LOSS_n": 3681,
+     "BOTH_WIN": 0.0,
+     "BOTH_WIN_n": 3966,
+     "BOTH_LOSS": 0.0156,
+     "BOTH_LOSS_n": 5272,
+     "flipwin_minus_bothloss": -0.0114
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "FLIP_WIN": -0.0357,
+     "FLIP_WIN_n": 4485,
+     "FLIP_LOSS": -0.0181,
+     "FLIP_LOSS_n": 3585,
+     "BOTH_WIN": -0.0115,
+     "BOTH_WIN_n": 4264,
+     "BOTH_LOSS": -0.0272,
+     "BOTH_LOSS_n": 6839,
+     "flipwin_minus_bothloss": -0.0085
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "FLIP_WIN": -0.0502,
+     "FLIP_WIN_n": 1615,
+     "FLIP_LOSS": -0.0243,
+     "FLIP_LOSS_n": 1356,
+     "BOTH_WIN": -0.035,
+     "BOTH_WIN_n": 1487,
+     "BOTH_LOSS": -0.0424,
+     "BOTH_LOSS_n": 2526,
+     "flipwin_minus_bothloss": -0.0078
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "FLIP_WIN": 0.0095,
+     "FLIP_WIN_n": 842,
+     "FLIP_LOSS": 0.0016,
+     "FLIP_LOSS_n": 632,
+     "BOTH_WIN": -0.0097,
+     "BOTH_WIN_n": 828,
+     "BOTH_LOSS": 0.017,
+     "BOTH_LOSS_n": 999,
+     "flipwin_minus_bothloss": -0.0075
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "FLIP_WIN": 0.0049,
+     "FLIP_WIN_n": 2425,
+     "FLIP_LOSS": 0.0103,
+     "FLIP_LOSS_n": 1836,
+     "BOTH_WIN": 0.0145,
+     "BOTH_WIN_n": 2074,
+     "BOTH_LOSS": -0.0008,
+     "BOTH_LOSS_n": 3712,
+     "flipwin_minus_bothloss": 0.0057
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "FLIP_WIN": -0.0338,
+     "FLIP_WIN_n": 1836,
+     "FLIP_LOSS": -0.0233,
+     "FLIP_LOSS_n": 1375,
+     "BOTH_WIN": -0.0019,
+     "BOTH_WIN_n": 1074,
+     "BOTH_LOSS": -0.0284,
+     "BOTH_LOSS_n": 4607,
+     "flipwin_minus_bothloss": -0.0054
+    },
+    {
+     "axis": "phaze_rate",
+     "FLIP_WIN": 0.0004,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": 0.0016,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": 0.0066,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": 0.0053,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": -0.0049
+    },
+    {
+     "axis": "other_status_rate",
+     "FLIP_WIN": 0.0144,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": 0.0179,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": 0.0099,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": 0.0179,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": -0.0035
+    },
+    {
+     "axis": "hazard_rate",
+     "FLIP_WIN": -0.0086,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": -0.0058,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": -0.0034,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": -0.0059,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": -0.0027
+    },
+    {
+     "axis": "status_rate",
+     "FLIP_WIN": 0.0058,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": 0.0032,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": -0.0014,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": 0.0084,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": -0.0026
+    },
+    {
+     "axis": "attack_rate",
+     "FLIP_WIN": 0.0067,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": -0.0019,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": 0.0015,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": 0.0086,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": -0.0019
+    },
+    {
+     "axis": "setup_rate",
+     "FLIP_WIN": 0.0004,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": -0.0028,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": 0.0034,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": -0.0014,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": 0.0018
+    },
+    {
+     "axis": "protect_rate",
+     "FLIP_WIN": -0.0004,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": 0.0004,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": -0.0008,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": -0.0018,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": 0.0014
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "FLIP_WIN": -0.0237,
+     "FLIP_WIN_n": 3500,
+     "FLIP_LOSS": -0.0121,
+     "FLIP_LOSS_n": 2726,
+     "BOTH_WIN": 0.0028,
+     "BOTH_WIN_n": 3589,
+     "BOTH_LOSS": -0.0223,
+     "BOTH_LOSS_n": 5380,
+     "flipwin_minus_bothloss": -0.0014
+    },
+    {
+     "axis": "switch|even_matchup",
+     "FLIP_WIN": -0.0252,
+     "FLIP_WIN_n": 3170,
+     "FLIP_LOSS": -0.01,
+     "FLIP_LOSS_n": 2501,
+     "BOTH_WIN": -0.0027,
+     "BOTH_WIN_n": 3001,
+     "BOTH_LOSS": -0.0256,
+     "BOTH_LOSS_n": 4571,
+     "flipwin_minus_bothloss": 0.0004
+    },
+    {
+     "axis": "switch_rate",
+     "FLIP_WIN": -0.0207,
+     "FLIP_WIN_n": 7210,
+     "FLIP_LOSS": -0.0069,
+     "FLIP_LOSS_n": 5693,
+     "BOTH_WIN": -0.0046,
+     "BOTH_WIN_n": 6562,
+     "BOTH_LOSS": -0.021,
+     "BOTH_LOSS_n": 10809,
+     "flipwin_minus_bothloss": 0.0003
+    }
+   ]
+  },
+  "battle_attribution_taught": {
+   "n_paired_games": 192,
+   "counts": {
+    "FLIP_WIN": 63,
+    "BOTH_LOSS": 43,
+    "BOTH_WIN": 67,
+    "FLIP_LOSS": 19
+   },
+   "net_wr_delta_identity": 0.2292,
+   "axes": [
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "FLIP_WIN": 0.0327,
+     "FLIP_WIN_n": 397,
+     "FLIP_LOSS": 0.0093,
+     "FLIP_LOSS_n": 107,
+     "BOTH_WIN": 0.0356,
+     "BOTH_WIN_n": 477,
+     "BOTH_LOSS": -0.0336,
+     "BOTH_LOSS_n": 238,
+     "flipwin_minus_bothloss": 0.0663
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "FLIP_WIN": 0.0268,
+     "FLIP_WIN_n": 895,
+     "FLIP_LOSS": 0.0305,
+     "FLIP_LOSS_n": 393,
+     "BOTH_WIN": 0.0448,
+     "BOTH_WIN_n": 290,
+     "BOTH_LOSS": -0.0335,
+     "BOTH_LOSS_n": 1342,
+     "flipwin_minus_bothloss": 0.0603
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "FLIP_WIN": 0.0352,
+     "FLIP_WIN_n": 1081,
+     "FLIP_LOSS": 0.0202,
+     "FLIP_LOSS_n": 248,
+     "BOTH_WIN": 0.0397,
+     "BOTH_WIN_n": 831,
+     "BOTH_LOSS": -0.0026,
+     "BOTH_LOSS_n": 768,
+     "flipwin_minus_bothloss": 0.0378
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "FLIP_WIN": -0.046,
+     "FLIP_WIN_n": 913,
+     "FLIP_LOSS": -0.0312,
+     "FLIP_LOSS_n": 224,
+     "BOTH_WIN": -0.0722,
+     "BOTH_WIN_n": 983,
+     "BOTH_LOSS": -0.0835,
+     "BOTH_LOSS_n": 575,
+     "flipwin_minus_bothloss": 0.0375
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "FLIP_WIN": 0.0178,
+     "FLIP_WIN_n": 2919,
+     "FLIP_LOSS": 0.0464,
+     "FLIP_LOSS_n": 1100,
+     "BOTH_WIN": 0.0461,
+     "BOTH_WIN_n": 3903,
+     "BOTH_LOSS": -0.0143,
+     "BOTH_LOSS_n": 2097,
+     "flipwin_minus_bothloss": 0.0321
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "FLIP_WIN": 0.0222,
+     "FLIP_WIN_n": 2160,
+     "FLIP_LOSS": 0.0328,
+     "FLIP_LOSS_n": 885,
+     "BOTH_WIN": 0.0294,
+     "BOTH_WIN_n": 3264,
+     "BOTH_LOSS": -0.0093,
+     "BOTH_LOSS_n": 1619,
+     "flipwin_minus_bothloss": 0.0315
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "FLIP_WIN": -0.017,
+     "FLIP_WIN_n": 235,
+     "FLIP_LOSS": 0.0794,
+     "FLIP_LOSS_n": 63,
+     "BOTH_WIN": 0.013,
+     "BOTH_WIN_n": 154,
+     "BOTH_LOSS": 0.0142,
+     "BOTH_LOSS_n": 211,
+     "flipwin_minus_bothloss": -0.0312
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "FLIP_WIN": 0.0371,
+     "FLIP_WIN_n": 2291,
+     "FLIP_LOSS": 0.0393,
+     "FLIP_LOSS_n": 687,
+     "BOTH_WIN": 0.0169,
+     "BOTH_WIN_n": 2660,
+     "BOTH_LOSS": 0.0104,
+     "BOTH_LOSS_n": 1723,
+     "flipwin_minus_bothloss": 0.0267
+    },
+    {
+     "axis": "switch_rate",
+     "FLIP_WIN": 0.0158,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": 0.0343,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": 0.0367,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": -0.0108,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": 0.0266
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "FLIP_WIN": -0.0388,
+     "FLIP_WIN_n": 1445,
+     "FLIP_LOSS": -0.0176,
+     "FLIP_LOSS_n": 454,
+     "BOTH_WIN": -0.0347,
+     "BOTH_WIN_n": 1702,
+     "BOTH_LOSS": -0.0122,
+     "BOTH_LOSS_n": 985,
+     "flipwin_minus_bothloss": -0.0266
+    },
+    {
+     "axis": "switch|even_matchup",
+     "FLIP_WIN": 0.02,
+     "FLIP_WIN_n": 2495,
+     "FLIP_LOSS": 0.0274,
+     "FLIP_LOSS_n": 949,
+     "BOTH_WIN": 0.0455,
+     "BOTH_WIN_n": 3560,
+     "BOTH_LOSS": -0.005,
+     "BOTH_LOSS_n": 1807,
+     "flipwin_minus_bothloss": 0.025
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "FLIP_WIN": -0.0165,
+     "FLIP_WIN_n": 971,
+     "FLIP_LOSS": 0.0588,
+     "FLIP_LOSS_n": 408,
+     "BOTH_WIN": 0.0127,
+     "BOTH_WIN_n": 1412,
+     "BOTH_LOSS": -0.0363,
+     "BOTH_LOSS_n": 661,
+     "flipwin_minus_bothloss": 0.0198
+    },
+    {
+     "axis": "attack_rate",
+     "FLIP_WIN": -0.015,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.0187,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": -0.0531,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": -0.0321,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": 0.0171
+    },
+    {
+     "axis": "recover_rate",
+     "FLIP_WIN": -0.0286,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.015,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": -0.025,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": -0.0117,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": -0.0169
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "FLIP_WIN": -0.0533,
+     "FLIP_WIN_n": 1445,
+     "FLIP_LOSS": -0.0463,
+     "FLIP_LOSS_n": 454,
+     "BOTH_WIN": -0.0805,
+     "BOTH_WIN_n": 1702,
+     "BOTH_LOSS": -0.0386,
+     "BOTH_LOSS_n": 985,
+     "flipwin_minus_bothloss": -0.0147
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "FLIP_WIN": -0.003,
+     "FLIP_WIN_n": 1008,
+     "FLIP_LOSS": 0.0132,
+     "FLIP_LOSS_n": 304,
+     "BOTH_WIN": 0.042,
+     "BOTH_WIN_n": 1072,
+     "BOTH_LOSS": -0.016,
+     "BOTH_LOSS_n": 688,
+     "flipwin_minus_bothloss": 0.013
+    },
+    {
+     "axis": "protect_rate",
+     "FLIP_WIN": -0.0026,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.0044,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": 0.001,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": 0.0099,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": -0.0125
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "FLIP_WIN": 0.0263,
+     "FLIP_WIN_n": 646,
+     "FLIP_LOSS": 0.0922,
+     "FLIP_LOSS_n": 217,
+     "BOTH_WIN": 0.0162,
+     "BOTH_WIN_n": 1603,
+     "BOTH_LOSS": 0.016,
+     "BOTH_LOSS_n": 187,
+     "flipwin_minus_bothloss": 0.0103
+    },
+    {
+     "axis": "setup_rate",
+     "FLIP_WIN": -0.0022,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.005,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": -0.0084,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": 0.0065,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": -0.0087
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "FLIP_WIN": -0.0073,
+     "FLIP_WIN_n": 551,
+     "FLIP_LOSS": -0.034,
+     "FLIP_LOSS_n": 147,
+     "BOTH_WIN": -0.0019,
+     "BOTH_WIN_n": 523,
+     "BOTH_LOSS": -0.0147,
+     "BOTH_LOSS_n": 409,
+     "flipwin_minus_bothloss": 0.0074
+    },
+    {
+     "axis": "status_rate",
+     "FLIP_WIN": -0.0092,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.0125,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": -0.0029,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": -0.0028,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": -0.0064
+    },
+    {
+     "axis": "phaze_rate",
+     "FLIP_WIN": 0.0095,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.0019,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": 0.0253,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": 0.0031,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": 0.0064
+    },
+    {
+     "axis": "hazard_rate",
+     "FLIP_WIN": 0.0022,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": -0.0006,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": 0.0019,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": 0.0059,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": -0.0037
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "FLIP_WIN": 0.0093,
+     "FLIP_WIN_n": 1823,
+     "FLIP_LOSS": 0.0629,
+     "FLIP_LOSS_n": 525,
+     "BOTH_WIN": 0.0362,
+     "BOTH_WIN_n": 3812,
+     "BOTH_LOSS": 0.0119,
+     "BOTH_LOSS_n": 586,
+     "flipwin_minus_bothloss": -0.0026
+    },
+    {
+     "axis": "other_status_rate",
+     "FLIP_WIN": 0.0301,
+     "FLIP_WIN_n": 4547,
+     "FLIP_LOSS": 0.0237,
+     "FLIP_LOSS_n": 1605,
+     "BOTH_WIN": 0.0245,
+     "BOTH_WIN_n": 5803,
+     "BOTH_LOSS": 0.0321,
+     "BOTH_LOSS_n": 3236,
+     "flipwin_minus_bothloss": -0.002
+    }
+   ]
+  }
+ },
+ "gen": {
+  "family": "gen",
+  "n_rows": 39194,
+  "n_battles": 896,
+  "n_rows_untaught": 27452,
+  "n_rows_taught": 11742,
+  "untaught": {
+   "axes": [
+    {
+     "axis": "switch_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.26862,
+     "delta": -0.02929,
+     "ci": [
+      -0.04518,
+      -0.01505
+     ],
+     "z": -3.763,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": 0.00437
+      },
+      "fold": {
+       "n": 11515,
+       "delta": -0.0614
+      }
+     },
+     "realized_delta": -0.01859
+    },
+    {
+     "axis": "attack_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.34318,
+     "delta": 0.03387,
+     "ci": [
+      0.01343,
+      0.05611
+     ],
+     "z": 3.082,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": 0.01631
+      },
+      "fold": {
+       "n": 11515,
+       "delta": 0.0502
+      }
+     },
+     "realized_delta": 0.05828
+    },
+    {
+     "axis": "setup_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.0245,
+     "delta": 0.00518,
+     "ci": [
+      0.00187,
+      0.0089
+     ],
+     "z": 2.959,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": 0.00757
+      },
+      "fold": {
+       "n": 11515,
+       "delta": 0.00122
+      }
+     },
+     "realized_delta": -0.00041
+    },
+    {
+     "axis": "recover_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.09306,
+     "delta": -0.01361,
+     "ci": [
+      -0.02181,
+      -0.00598
+     ],
+     "z": -3.354,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": -0.02733
+      },
+      "fold": {
+       "n": 11515,
+       "delta": -0.00512
+      }
+     },
+     "realized_delta": -0.02073
+    },
+    {
+     "axis": "status_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.06244,
+     "delta": 0.00635,
+     "ci": [
+      0.00158,
+      0.01127
+     ],
+     "z": 2.523,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": 0.00917
+      },
+      "fold": {
+       "n": 11515,
+       "delta": 0.00573
+      }
+     },
+     "realized_delta": -0.00847
+    },
+    {
+     "axis": "protect_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.03801,
+     "delta": 0.00854,
+     "ci": [
+      -0.00336,
+      0.02253
+     ],
+     "z": 1.288,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": 0.00076
+      },
+      "fold": {
+       "n": 11515,
+       "delta": 0.01042
+      }
+     },
+     "realized_delta": 0.00964
+    },
+    {
+     "axis": "phaze_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.02883,
+     "delta": -0.00476,
+     "ci": [
+      -0.00811,
+      -0.00174
+     ],
+     "z": -2.947,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": -0.00597
+      },
+      "fold": {
+       "n": 11515,
+       "delta": -0.00096
+      }
+     },
+     "realized_delta": 0.00399
+    },
+    {
+     "axis": "hazard_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.03452,
+     "delta": -0.00331,
+     "ci": [
+      -0.01042,
+      0.00224
+     ],
+     "z": -1.006,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": 0.0
+      },
+      "fold": {
+       "n": 11515,
+       "delta": -0.00304
+      }
+     },
+     "realized_delta": 0.00218
+    },
+    {
+     "axis": "other_status_rate",
+     "group": "A",
+     "n": 23408,
+     "n_teams": 8,
+     "parent_rate": 0.10685,
+     "delta": -0.00297,
+     "ci": [
+      -0.01789,
+      0.00915
+     ],
+     "z": -0.43,
+     "arm_split": {
+      "parent": {
+       "n": 11893,
+       "delta": -0.00488
+      },
+      "fold": {
+       "n": 11515,
+       "delta": 0.00295
+      }
+     },
+     "realized_delta": -0.02589
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "group": "B",
+     "n": 5415,
+     "n_teams": 8,
+     "parent_rate": 0.39616,
+     "delta": -0.04198,
+     "ci": [
+      -0.07385,
+      -0.01467
+     ],
+     "z": -2.74,
+     "arm_split": {
+      "parent": {
+       "n": 2793,
+       "delta": -0.02041
+      },
+      "fold": {
+       "n": 2622,
+       "delta": -0.07094
+      }
+     },
+     "realized_delta": -0.00596
+    },
+    {
+     "axis": "switch|even_matchup",
+     "group": "B",
+     "n": 13194,
+     "n_teams": 8,
+     "parent_rate": 0.23835,
+     "delta": -0.01913,
+     "ci": [
+      -0.03639,
+      0.00091
+     ],
+     "z": -2.01,
+     "arm_split": {
+      "parent": {
+       "n": 6623,
+       "delta": 0.02763
+      },
+      "fold": {
+       "n": 6571,
+       "delta": -0.05692
+      }
+     },
+     "realized_delta": -0.0014
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "group": "B",
+     "n": 4799,
+     "n_teams": 8,
+     "parent_rate": 0.22756,
+     "delta": -0.04619,
+     "ci": [
+      -0.07103,
+      -0.02458
+     ],
+     "z": -3.9,
+     "arm_split": {
+      "parent": {
+       "n": 2477,
+       "delta": -0.02987
+      },
+      "fold": {
+       "n": 2322,
+       "delta": -0.06331
+      }
+     },
+     "realized_delta": -0.07481
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "group": "B",
+     "n": 2198,
+     "n_teams": 8,
+     "parent_rate": 0.23,
+     "delta": -0.04402,
+     "ci": [
+      -0.0695,
+      -0.01975
+     ],
+     "z": -3.438,
+     "arm_split": {
+      "parent": {
+       "n": 1121,
+       "delta": -0.0116
+      },
+      "fold": {
+       "n": 1077,
+       "delta": -0.07985
+      }
+     },
+     "realized_delta": -0.03768
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "group": "B",
+     "n": 15904,
+     "n_teams": 8,
+     "parent_rate": 0.2927,
+     "delta": -0.03044,
+     "ci": [
+      -0.04919,
+      -0.01079
+     ],
+     "z": -3.062,
+     "arm_split": {
+      "parent": {
+       "n": 8099,
+       "delta": 0.00679
+      },
+      "fold": {
+       "n": 7805,
+       "delta": -0.06445
+      }
+     },
+     "realized_delta": -0.01358
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "group": "B",
+     "n": 4096,
+     "n_teams": 8,
+     "parent_rate": 0.32202,
+     "delta": -0.02197,
+     "ci": [
+      -0.05615,
+      0.00732
+     ],
+     "z": -1.357,
+     "arm_split": {
+      "parent": {
+       "n": 2048,
+       "delta": -0.00391
+      },
+      "fold": {
+       "n": 2048,
+       "delta": -0.04004
+      }
+     },
+     "realized_delta": -0.01611
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "group": "B",
+     "n": 13798,
+     "n_teams": 8,
+     "parent_rate": 0.22543,
+     "delta": -0.02891,
+     "ci": [
+      -0.05199,
+      -0.00264
+     ],
+     "z": -2.29,
+     "arm_split": {
+      "parent": {
+       "n": 7100,
+       "delta": 0.01183
+      },
+      "fold": {
+       "n": 6698,
+       "delta": -0.06345
+      }
+     },
+     "realized_delta": -0.01751
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "group": "B",
+     "n": 2032,
+     "n_teams": 8,
+     "parent_rate": 0.13349,
+     "delta": -0.01366,
+     "ci": [
+      -0.03807,
+      0.00803
+     ],
+     "z": -1.144,
+     "arm_split": {
+      "parent": {
+       "n": 999,
+       "delta": 0.01001
+      },
+      "fold": {
+       "n": 1033,
+       "delta": -0.04937
+      }
+     },
+     "realized_delta": -0.00582
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "group": "B",
+     "n": 1766,
+     "n_teams": 6,
+     "parent_rate": 0.10733,
+     "delta": -0.0237,
+     "ci": [
+      -0.03973,
+      -0.0061
+     ],
+     "z": -2.765,
+     "arm_split": {
+      "parent": {
+       "n": 832,
+       "delta": 0.0
+      },
+      "fold": {
+       "n": 934,
+       "delta": -0.02034
+      }
+     },
+     "realized_delta": -0.02081
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "group": "B",
+     "n": 6715,
+     "n_teams": 8,
+     "parent_rate": 0.24702,
+     "delta": -0.01496,
+     "ci": [
+      -0.04085,
+      0.01483
+     ],
+     "z": -1.041,
+     "arm_split": {
+      "parent": {
+       "n": 3379,
+       "delta": 0.01983
+      },
+      "fold": {
+       "n": 3336,
+       "delta": -0.04826
+      }
+     },
+     "realized_delta": 0.01126
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "group": "B",
+     "n": 7014,
+     "n_teams": 8,
+     "parent_rate": 0.27803,
+     "delta": -0.0552,
+     "ci": [
+      -0.07172,
+      -0.03638
+     ],
+     "z": -6.01,
+     "arm_split": {
+      "parent": {
+       "n": 3625,
+       "delta": -0.02152
+      },
+      "fold": {
+       "n": 3389,
+       "delta": -0.108
+      }
+     },
+     "realized_delta": -0.06304
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "group": "C",
+     "n": 4270,
+     "n_teams": 8,
+     "parent_rate": 0.62031,
+     "delta": 0.05049,
+     "ci": [
+      0.01954,
+      0.0759
+     ],
+     "z": 3.475,
+     "arm_split": {
+      "parent": {
+       "n": 2105,
+       "delta": 0.05416
+      },
+      "fold": {
+       "n": 2165,
+       "delta": 0.05635
+      }
+     },
+     "realized_delta": 0.04552
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "group": "C",
+     "n": 8710,
+     "n_teams": 8,
+     "parent_rate": 0.40498,
+     "delta": 0.05728,
+     "ci": [
+      0.0238,
+      0.09394
+     ],
+     "z": 3.098,
+     "arm_split": {
+      "parent": {
+       "n": 4116,
+       "delta": 0.04835
+      },
+      "fold": {
+       "n": 4594,
+       "delta": 0.06465
+      }
+     },
+     "realized_delta": 0.02769
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "group": "C",
+     "n": 8710,
+     "n_teams": 8,
+     "parent_rate": 0.5391,
+     "delta": 0.07524,
+     "ci": [
+      0.04566,
+      0.11033
+     ],
+     "z": 4.469,
+     "arm_split": {
+      "parent": {
+       "n": 4116,
+       "delta": 0.05418
+      },
+      "fold": {
+       "n": 4594,
+       "delta": 0.08816
+      }
+     },
+     "realized_delta": 0.04934
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "group": "D",
+     "n": 10374,
+     "n_teams": 8,
+     "parent_rate": 0.17953,
+     "delta": -0.05605,
+     "ci": [
+      -0.08137,
+      -0.03287
+     ],
+     "z": -4.531,
+     "arm_split": {
+      "parent": {
+       "n": 5352,
+       "delta": -0.03849
+      },
+      "fold": {
+       "n": 5022,
+       "delta": -0.08005
+      }
+     },
+     "realized_delta": -0.04594
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "group": "E",
+     "n": 806,
+     "n_teams": 8,
+     "parent_rate": 0.47264,
+     "delta": -0.04433,
+     "ci": [
+      -0.1278,
+      0.04114
+     ],
+     "z": -1.038,
+     "arm_split": {
+      "parent": {
+       "n": 366,
+       "delta": -0.01913
+      },
+      "fold": {
+       "n": 440,
+       "delta": -0.05455
+      }
+     },
+     "realized_delta": -0.01083
+    }
+   ],
+   "divergence": {
+    "n_decisions": 27452,
+    "argmax_disagreement": 0.26843,
+    "battle_length": {
+     "parent": {
+      "battles": 256,
+      "mean_decisions": 53.61
+     },
+     "fold": {
+      "battles": 256,
+      "mean_decisions": 53.62
+     }
+    },
+    "mean_KL_fold_parent": null,
+    "mean_abs_dV": 3.43567,
+    "flip_mass_involving_SWITCH": 0.5766,
+    "both_switch_n": 6732,
+    "same_switch_target_rate": 0.8274,
+    "both_move_n": 17457,
+    "same_move_slot_rate": 0.8213,
+    "per_class_flow": {
+     "SWITCH": {
+      "parent_n": 8628,
+      "fold_n": 7923,
+      "net": -705,
+      "flip_out_rate": 0.3544
+     },
+     "ATTACK": {
+      "parent_n": 7938,
+      "fold_n": 8785,
+      "net": 847,
+      "flip_out_rate": 0.1619
+     },
+     "SETUP": {
+      "parent_n": 531,
+      "fold_n": 633,
+      "net": 102,
+      "flip_out_rate": 0.2185
+     },
+     "RECOVER": {
+      "parent_n": 3044,
+      "fold_n": 2595,
+      "net": -449,
+      "flip_out_rate": 0.3246
+     },
+     "STATUS": {
+      "parent_n": 1555,
+      "fold_n": 1754,
+      "net": 199,
+      "flip_out_rate": 0.1241
+     },
+     "PROTECT": {
+      "parent_n": 1025,
+      "fold_n": 1126,
+      "net": 101,
+      "flip_out_rate": 0.3171
+     },
+     "PHAZE": {
+      "parent_n": 804,
+      "fold_n": 718,
+      "net": -86,
+      "flip_out_rate": 0.4453
+     },
+     "HAZARD": {
+      "parent_n": 706,
+      "fold_n": 661,
+      "net": -45,
+      "flip_out_rate": 0.2195
+     },
+     "OTHER_STATUS": {
+      "parent_n": 3043,
+      "fold_n": 3029,
+      "net": -14,
+      "flip_out_rate": 0.2921
+     },
+     "STRUGGLE": {
+      "parent_n": 178,
+      "fold_n": 228,
+      "net": 50,
+      "flip_out_rate": 0.0112
+     }
+    },
+    "top_flip_transitions": [
+     {
+      "transition": "SWITCH->SWITCH",
+      "n": 1162,
+      "share": 0.1577
+     },
+     {
+      "transition": "SWITCH->ATTACK",
+      "n": 912,
+      "share": 0.1238
+     },
+     {
+      "transition": "ATTACK->ATTACK",
+      "n": 380,
+      "share": 0.0516
+     },
+     {
+      "transition": "SWITCH->OTHER_STATUS",
+      "n": 332,
+      "share": 0.0451
+     },
+     {
+      "transition": "OTHER_STATUS->SWITCH",
+      "n": 319,
+      "share": 0.0433
+     },
+     {
+      "transition": "ATTACK->SWITCH",
+      "n": 305,
+      "share": 0.0414
+     },
+     {
+      "transition": "RECOVER->ATTACK",
+      "n": 297,
+      "share": 0.0403
+     },
+     {
+      "transition": "RECOVER->SWITCH",
+      "n": 272,
+      "share": 0.0369
+     },
+     {
+      "transition": "RECOVER->OTHER_STATUS",
+      "n": 208,
+      "share": 0.0282
+     },
+     {
+      "transition": "SWITCH->RECOVER",
+      "n": 182,
+      "share": 0.0247
+     },
+     {
+      "transition": "OTHER_STATUS->RECOVER",
+      "n": 181,
+      "share": 0.0246
+     },
+     {
+      "transition": "PROTECT->ATTACK",
+      "n": 173,
+      "share": 0.0235
+     }
+    ]
+   },
+   "n_teams": 8
+  },
+  "n_rows_untaught_defensive": 9887,
+  "untaught_defensive": {
+   "axes": [
+    {
+     "axis": "switch_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.26357,
+     "delta": -0.03727,
+     "ci": [
+      -0.06089,
+      -0.02208
+     ],
+     "z": -3.56,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": -0.01888
+      },
+      "fold": {
+       "n": 4161,
+       "delta": -0.05287
+      }
+     },
+     "realized_delta": -0.0069
+    },
+    {
+     "axis": "attack_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.40671,
+     "delta": 0.03011,
+     "ci": [
+      0.00059,
+      0.0683
+     ],
+     "z": 1.646,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": 0.01516
+      },
+      "fold": {
+       "n": 4161,
+       "delta": 0.04326
+      }
+     },
+     "realized_delta": -0.00525
+    },
+    {
+     "axis": "setup_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.03365,
+     "delta": 0.00734,
+     "ci": [
+      0.00187,
+      0.01315
+     ],
+     "z": 2.677,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": 0.00877
+      },
+      "fold": {
+       "n": 4161,
+       "delta": 0.00505
+      }
+     },
+     "realized_delta": -0.00622
+    },
+    {
+     "axis": "recover_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.04714,
+     "delta": -0.00583,
+     "ci": [
+      -0.01167,
+      0.0
+     ],
+     "z": -1.813,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": -0.0101
+      },
+      "fold": {
+       "n": 4161,
+       "delta": -0.00216
+      }
+     },
+     "realized_delta": 0.01951
+    },
+    {
+     "axis": "status_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.0588,
+     "delta": 0.00329,
+     "ci": [
+      0.00081,
+      0.00583
+     ],
+     "z": 2.765,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": 0.00425
+      },
+      "fold": {
+       "n": 4161,
+       "delta": 0.00288
+      }
+     },
+     "realized_delta": -0.0014
+    },
+    {
+     "axis": "protect_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.0467,
+     "delta": 0.02016,
+     "ci": [
+      0.0044,
+      0.03673
+     ],
+     "z": 2.255,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": 0.01622
+      },
+      "fold": {
+       "n": 4161,
+       "delta": 0.02235
+      }
+     },
+     "realized_delta": 0.02833
+    },
+    {
+     "axis": "phaze_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.02251,
+     "delta": -0.00791,
+     "ci": [
+      -0.01176,
+      -0.00462
+     ],
+     "z": -4.085,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": -0.00798
+      },
+      "fold": {
+       "n": 4161,
+       "delta": -0.00721
+      }
+     },
+     "realized_delta": -0.00507
+    },
+    {
+     "axis": "hazard_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.04607,
+     "delta": -0.00863,
+     "ci": [
+      -0.01822,
+      0.00096
+     ],
+     "z": -1.682,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": -0.00372
+      },
+      "fold": {
+       "n": 4161,
+       "delta": -0.01178
+      }
+     },
+     "realized_delta": -0.01857
+    },
+    {
+     "axis": "other_status_rate",
+     "group": "A",
+     "n": 7922,
+     "n_teams": 4,
+     "parent_rate": 0.07486,
+     "delta": -0.00126,
+     "ci": [
+      -0.00471,
+      0.00418
+     ],
+     "z": -0.521,
+     "arm_split": {
+      "parent": {
+       "n": 3761,
+       "delta": -0.00372
+      },
+      "fold": {
+       "n": 4161,
+       "delta": 0.00048
+      }
+     },
+     "realized_delta": -0.00443
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "group": "B",
+     "n": 2300,
+     "n_teams": 4,
+     "parent_rate": 0.35372,
+     "delta": -0.03993,
+     "ci": [
+      -0.10383,
+      0.00292
+     ],
+     "z": -1.449,
+     "arm_split": {
+      "parent": {
+       "n": 1088,
+       "delta": -0.0193
+      },
+      "fold": {
+       "n": 1212,
+       "delta": -0.06353
+      }
+     },
+     "realized_delta": -0.01679
+    },
+    {
+     "axis": "switch|even_matchup",
+     "group": "B",
+     "n": 3624,
+     "n_teams": 4,
+     "parent_rate": 0.24321,
+     "delta": -0.0336,
+     "ci": [
+      -0.04499,
+      -0.01782
+     ],
+     "z": -4.591,
+     "arm_split": {
+      "parent": {
+       "n": 1715,
+       "delta": -0.01924
+      },
+      "fold": {
+       "n": 1909,
+       "delta": -0.04819
+      }
+     },
+     "realized_delta": 0.01004
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "group": "B",
+     "n": 1998,
+     "n_teams": 4,
+     "parent_rate": 0.20468,
+     "delta": -0.03483,
+     "ci": [
+      -0.05047,
+      -0.01278
+     ],
+     "z": -3.431,
+     "arm_split": {
+      "parent": {
+       "n": 958,
+       "delta": -0.01775
+      },
+      "fold": {
+       "n": 1040,
+       "delta": -0.04904
+      }
+     },
+     "realized_delta": -0.02773
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "group": "B",
+     "n": 943,
+     "n_teams": 4,
+     "parent_rate": 0.19525,
+     "delta": -0.02789,
+     "ci": [
+      -0.04807,
+      -0.00848
+     ],
+     "z": -2.578,
+     "arm_split": {
+      "parent": {
+       "n": 452,
+       "delta": 0.00221
+      },
+      "fold": {
+       "n": 491,
+       "delta": -0.04888
+      }
+     },
+     "realized_delta": 0.00719
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "group": "B",
+     "n": 5072,
+     "n_teams": 4,
+     "parent_rate": 0.29253,
+     "delta": -0.04398,
+     "ci": [
+      -0.06307,
+      -0.03207
+     ],
+     "z": -5.114,
+     "arm_split": {
+      "parent": {
+       "n": 2426,
+       "delta": -0.02927
+      },
+      "fold": {
+       "n": 2646,
+       "delta": -0.05782
+      }
+     },
+     "realized_delta": -0.0107
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "group": "B",
+     "n": 2048,
+     "n_teams": 4,
+     "parent_rate": 0.3125,
+     "delta": -0.02979,
+     "ci": [
+      -0.08203,
+      0.00732
+     ],
+     "z": -1.256,
+     "arm_split": {
+      "parent": {
+       "n": 1024,
+       "delta": -0.01367
+      },
+      "fold": {
+       "n": 1024,
+       "delta": -0.0459
+      }
+     },
+     "realized_delta": -0.0166
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "group": "B",
+     "n": 3161,
+     "n_teams": 4,
+     "parent_rate": 0.20346,
+     "delta": -0.0469,
+     "ci": [
+      -0.06775,
+      -0.02085
+     ],
+     "z": -3.668,
+     "arm_split": {
+      "parent": {
+       "n": 1391,
+       "delta": -0.02732
+      },
+      "fold": {
+       "n": 1770,
+       "delta": -0.06158
+      }
+     },
+     "realized_delta": 0.01513
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "group": "B",
+     "n": 773,
+     "n_teams": 4,
+     "parent_rate": 0.10529,
+     "delta": -0.0019,
+     "ci": [
+      -0.03006,
+      0.02303
+     ],
+     "z": -0.131,
+     "arm_split": {
+      "parent": {
+       "n": 363,
+       "delta": 0.02755
+      },
+      "fold": {
+       "n": 410,
+       "delta": -0.02927
+      }
+     },
+     "realized_delta": 0.02318
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "group": "B",
+     "n": 523,
+     "n_teams": 3,
+     "parent_rate": 0.10818,
+     "delta": -0.03216,
+     "ci": [
+      -0.03947,
+      -0.0229
+     ],
+     "z": -7.512,
+     "arm_split": {
+      "parent": {
+       "n": 257,
+       "delta": -0.02335
+      },
+      "fold": {
+       "n": 266,
+       "delta": -0.04511
+      }
+     },
+     "realized_delta": 0.00475
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "group": "B",
+     "n": 2464,
+     "n_teams": 4,
+     "parent_rate": 0.23554,
+     "delta": -0.02825,
+     "ci": [
+      -0.05395,
+      -0.00255
+     ],
+     "z": -2.139,
+     "arm_split": {
+      "parent": {
+       "n": 1093,
+       "delta": -0.00549
+      },
+      "fold": {
+       "n": 1371,
+       "delta": -0.04012
+      }
+     },
+     "realized_delta": 0.03562
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "group": "B",
+     "n": 1729,
+     "n_teams": 4,
+     "parent_rate": 0.25188,
+     "delta": -0.04883,
+     "ci": [
+      -0.0757,
+      -0.01549
+     ],
+     "z": -3.357,
+     "arm_split": {
+      "parent": {
+       "n": 833,
+       "delta": -0.02761
+      },
+      "fold": {
+       "n": 896,
+       "delta": -0.06808
+      }
+     },
+     "realized_delta": -0.02101
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "group": "C",
+     "n": 2005,
+     "n_teams": 4,
+     "parent_rate": 0.61157,
+     "delta": 0.03625,
+     "ci": [
+      -0.01273,
+      0.08179
+     ],
+     "z": 1.417,
+     "arm_split": {
+      "parent": {
+       "n": 983,
+       "delta": 0.03764
+      },
+      "fold": {
+       "n": 1022,
+       "delta": 0.04501
+      }
+     },
+     "realized_delta": 0.00254
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "group": "C",
+     "n": 4510,
+     "n_teams": 4,
+     "parent_rate": 0.38893,
+     "delta": 0.03653,
+     "ci": [
+      -0.00605,
+      0.0791
+     ],
+     "z": 1.583,
+     "arm_split": {
+      "parent": {
+       "n": 2143,
+       "delta": 0.04106
+      },
+      "fold": {
+       "n": 2367,
+       "delta": 0.04858
+      }
+     },
+     "realized_delta": 0.00967
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "group": "C",
+     "n": 4510,
+     "n_teams": 4,
+     "parent_rate": 0.54343,
+     "delta": 0.05105,
+     "ci": [
+      0.02255,
+      0.09156
+     ],
+     "z": 2.763,
+     "arm_split": {
+      "parent": {
+       "n": 2143,
+       "delta": 0.0406
+      },
+      "fold": {
+       "n": 2367,
+       "delta": 0.07351
+      }
+     },
+     "realized_delta": 0.01972
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "group": "D",
+     "n": 3212,
+     "n_teams": 4,
+     "parent_rate": 0.20245,
+     "delta": -0.06254,
+     "ci": [
+      -0.0781,
+      -0.0395
+     ],
+     "z": -6.246,
+     "arm_split": {
+      "parent": {
+       "n": 1526,
+       "delta": -0.04456
+      },
+      "fold": {
+       "n": 1686,
+       "delta": -0.09134
+      }
+     },
+     "realized_delta": -0.03381
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "group": "E",
+     "n": 414,
+     "n_teams": 4,
+     "parent_rate": 0.43505,
+     "delta": -0.05856,
+     "ci": [
+      -0.12108,
+      -0.01282
+     ],
+     "z": -2.069,
+     "arm_split": {
+      "parent": {
+       "n": 186,
+       "delta": -0.06452
+      },
+      "fold": {
+       "n": 228,
+       "delta": -0.07456
+      }
+     },
+     "realized_delta": -0.01542
+    }
+   ],
+   "divergence": {
+    "n_decisions": 9887,
+    "argmax_disagreement": 0.23394,
+    "battle_length": {
+     "parent": {
+      "battles": 128,
+      "mean_decisions": 35.96
+     },
+     "fold": {
+      "battles": 128,
+      "mean_decisions": 41.28
+     }
+    },
+    "mean_KL_fold_parent": null,
+    "mean_abs_dV": 3.04266,
+    "flip_mass_involving_SWITCH": 0.53178,
+    "both_switch_n": 2658,
+    "same_switch_target_rate": 0.8356,
+    "both_move_n": 6436,
+    "same_move_slot_rate": 0.8317,
+    "per_class_flow": {
+     "SWITCH": {
+      "parent_n": 3200,
+      "fold_n": 2909,
+      "net": -291,
+      "flip_out_rate": 0.3059
+     },
+     "ATTACK": {
+      "parent_n": 3462,
+      "fold_n": 3718,
+      "net": 256,
+      "flip_out_rate": 0.1563
+     },
+     "SETUP": {
+      "parent_n": 285,
+      "fold_n": 326,
+      "net": 41,
+      "flip_out_rate": 0.186
+     },
+     "RECOVER": {
+      "parent_n": 605,
+      "fold_n": 552,
+      "net": -53,
+      "flip_out_rate": 0.2942
+     },
+     "STATUS": {
+      "parent_n": 532,
+      "fold_n": 562,
+      "net": 30,
+      "flip_out_rate": 0.1353
+     },
+     "PROTECT": {
+      "parent_n": 530,
+      "fold_n": 685,
+      "net": 155,
+      "flip_out_rate": 0.2226
+     },
+     "PHAZE": {
+      "parent_n": 180,
+      "fold_n": 125,
+      "net": -55,
+      "flip_out_rate": 0.5056
+     },
+     "HAZARD": {
+      "parent_n": 371,
+      "fold_n": 300,
+      "net": -71,
+      "flip_out_rate": 0.3181
+     },
+     "OTHER_STATUS": {
+      "parent_n": 722,
+      "fold_n": 710,
+      "net": -12,
+      "flip_out_rate": 0.2258
+     }
+    },
+    "top_flip_transitions": [
+     {
+      "transition": "SWITCH->SWITCH",
+      "n": 437,
+      "share": 0.1889
+     },
+     {
+      "transition": "SWITCH->ATTACK",
+      "n": 343,
+      "share": 0.1483
+     },
+     {
+      "transition": "ATTACK->ATTACK",
+      "n": 195,
+      "share": 0.0843
+     },
+     {
+      "transition": "ATTACK->PROTECT",
+      "n": 105,
+      "share": 0.0454
+     },
+     {
+      "transition": "ATTACK->SWITCH",
+      "n": 82,
+      "share": 0.0355
+     },
+     {
+      "transition": "PROTECT->ATTACK",
+      "n": 66,
+      "share": 0.0285
+     },
+     {
+      "transition": "SETUP->ATTACK",
+      "n": 51,
+      "share": 0.022
+     },
+     {
+      "transition": "ATTACK->OTHER_STATUS",
+      "n": 50,
+      "share": 0.0216
+     },
+     {
+      "transition": "ATTACK->SETUP",
+      "n": 48,
+      "share": 0.0208
+     },
+     {
+      "transition": "RECOVER->RECOVER",
+      "n": 47,
+      "share": 0.0203
+     },
+     {
+      "transition": "HAZARD->PROTECT",
+      "n": 47,
+      "share": 0.0203
+     },
+     {
+      "transition": "SWITCH->PROTECT",
+      "n": 43,
+      "share": 0.0186
+     }
+    ]
+   },
+   "n_teams": 4,
+   "matched_archetypes": [
+    "balance",
+    "hyper_offense",
+    "offense"
+   ],
+   "note": "untaught teams whose archetype MATCHES the taught set's own archetypes"
+  },
+  "taught": {
+   "axes": [
+    {
+     "axis": "switch_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.17208,
+     "delta": 0.01396,
+     "ci": [
+      -0.01874,
+      0.04867
+     ],
+     "z": 0.801,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": 0.03983
+      },
+      "fold": {
+       "n": 4591,
+       "delta": -0.00392
+      }
+     },
+     "realized_delta": 0.0031
+    },
+    {
+     "axis": "attack_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.58468,
+     "delta": 0.00709,
+     "ci": [
+      -0.02343,
+      0.03295
+     ],
+     "z": 0.499,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": -0.0008
+      },
+      "fold": {
+       "n": 4591,
+       "delta": 0.00871
+      }
+     },
+     "realized_delta": 0.02679
+    },
+    {
+     "axis": "setup_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.06645,
+     "delta": -0.01606,
+     "ci": [
+      -0.02251,
+      -0.00618
+     ],
+     "z": -3.689,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": -0.02092
+      },
+      "fold": {
+       "n": 4591,
+       "delta": -0.01263
+      }
+     },
+     "realized_delta": -0.01867
+    },
+    {
+     "axis": "recover_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.02044,
+     "delta": -0.00867,
+     "ci": [
+      -0.01915,
+      0.0
+     ],
+     "z": -1.658,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": -0.01489
+      },
+      "fold": {
+       "n": 4591,
+       "delta": -0.00545
+      }
+     },
+     "realized_delta": -0.02986
+    },
+    {
+     "axis": "status_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.03966,
+     "delta": 0.00813,
+     "ci": [
+      -0.00523,
+      0.02686
+     ],
+     "z": 0.958,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": 0.00322
+      },
+      "fold": {
+       "n": 4591,
+       "delta": 0.00915
+      }
+     },
+     "realized_delta": 0.00673
+    },
+    {
+     "axis": "protect_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.0,
+     "delta": 0.0,
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "z": null,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": 0.0
+      },
+      "fold": {
+       "n": 4591,
+       "delta": 0.0
+      }
+     },
+     "realized_delta": 0.0
+    },
+    {
+     "axis": "phaze_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.0021,
+     "delta": 0.00027,
+     "ci": [
+      0.0,
+      0.00081
+     ],
+     "z": 1.073,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": 0.0002
+      },
+      "fold": {
+       "n": 4591,
+       "delta": 0.00022
+      }
+     },
+     "realized_delta": 0.00142
+    },
+    {
+     "axis": "hazard_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.01537,
+     "delta": -0.00998,
+     "ci": [
+      -0.02994,
+      0.0
+     ],
+     "z": -1.073,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": -0.00785
+      },
+      "fold": {
+       "n": 4591,
+       "delta": -0.00762
+      }
+     },
+     "realized_delta": -0.00374
+    },
+    {
+     "axis": "other_status_rate",
+     "group": "A",
+     "n": 9562,
+     "n_teams": 6,
+     "parent_rate": 0.09923,
+     "delta": 0.00526,
+     "ci": [
+      -0.00132,
+      0.01194
+     ],
+     "z": 1.5,
+     "arm_split": {
+      "parent": {
+       "n": 4971,
+       "delta": 0.00121
+      },
+      "fold": {
+       "n": 4591,
+       "delta": 0.01154
+      }
+     },
+     "realized_delta": 0.01423
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "group": "B",
+     "n": 2806,
+     "n_teams": 6,
+     "parent_rate": 0.2478,
+     "delta": -0.00183,
+     "ci": [
+      -0.03848,
+      0.03318
+     ],
+     "z": -0.099,
+     "arm_split": {
+      "parent": {
+       "n": 1357,
+       "delta": 0.01548
+      },
+      "fold": {
+       "n": 1449,
+       "delta": -0.01725
+      }
+     },
+     "realized_delta": -0.0612
+    },
+    {
+     "axis": "switch|even_matchup",
+     "group": "B",
+     "n": 4555,
+     "n_teams": 6,
+     "parent_rate": 0.13989,
+     "delta": 0.0172,
+     "ci": [
+      -0.02624,
+      0.07773
+     ],
+     "z": 0.633,
+     "arm_split": {
+      "parent": {
+       "n": 2469,
+       "delta": 0.06197
+      },
+      "fold": {
+       "n": 2086,
+       "delta": 0.00048
+      }
+     },
+     "realized_delta": 0.03599
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "group": "B",
+     "n": 2201,
+     "n_teams": 6,
+     "parent_rate": 0.15061,
+     "delta": 0.01316,
+     "ci": [
+      -0.01208,
+      0.03916
+     ],
+     "z": 1.003,
+     "arm_split": {
+      "parent": {
+       "n": 1145,
+       "delta": 0.02096
+      },
+      "fold": {
+       "n": 1056,
+       "delta": 0.00568
+      }
+     },
+     "realized_delta": -0.00103
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "group": "B",
+     "n": 973,
+     "n_teams": 6,
+     "parent_rate": 0.11775,
+     "delta": 0.01417,
+     "ci": [
+      -0.02532,
+      0.04691
+     ],
+     "z": 0.769,
+     "arm_split": {
+      "parent": {
+       "n": 474,
+       "delta": 0.03376
+      },
+      "fold": {
+       "n": 499,
+       "delta": 0.002
+      }
+     },
+     "realized_delta": -0.00402
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "group": "B",
+     "n": 6610,
+     "n_teams": 6,
+     "parent_rate": 0.18141,
+     "delta": 0.0183,
+     "ci": [
+      -0.01326,
+      0.05628
+     ],
+     "z": 1.009,
+     "arm_split": {
+      "parent": {
+       "n": 3463,
+       "delta": 0.04332
+      },
+      "fold": {
+       "n": 3147,
+       "delta": 0.00508
+      }
+     },
+     "realized_delta": 0.00651
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "group": "B",
+     "n": 3072,
+     "n_teams": 6,
+     "parent_rate": 0.2041,
+     "delta": 0.04688,
+     "ci": [
+      0.00358,
+      0.09994
+     ],
+     "z": 1.885,
+     "arm_split": {
+      "parent": {
+       "n": 1536,
+       "delta": 0.06836
+      },
+      "fold": {
+       "n": 1536,
+       "delta": 0.02539
+      }
+     },
+     "realized_delta": 0.02344
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "group": "B",
+     "n": 2659,
+     "n_teams": 6,
+     "parent_rate": 0.13314,
+     "delta": -0.00158,
+     "ci": [
+      -0.04566,
+      0.04443
+     ],
+     "z": -0.069,
+     "arm_split": {
+      "parent": {
+       "n": 1533,
+       "delta": 0.03849
+      },
+      "fold": {
+       "n": 1126,
+       "delta": -0.00622
+      }
+     },
+     "realized_delta": -0.00022
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "group": "B",
+     "n": 983,
+     "n_teams": 6,
+     "parent_rate": 0.08057,
+     "delta": -0.00787,
+     "ci": [
+      -0.03462,
+      0.01832
+     ],
+     "z": -0.551,
+     "arm_split": {
+      "parent": {
+       "n": 476,
+       "delta": 0.01261
+      },
+      "fold": {
+       "n": 507,
+       "delta": -0.02761
+      }
+     },
+     "realized_delta": 0.00588
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "group": "B",
+     "n": 1743,
+     "n_teams": 6,
+     "parent_rate": 0.13758,
+     "delta": 0.03193,
+     "ci": [
+      0.00985,
+      0.0531
+     ],
+     "z": 2.898,
+     "arm_split": {
+      "parent": {
+       "n": 948,
+       "delta": 0.06118
+      },
+      "fold": {
+       "n": 795,
+       "delta": 0.00377
+      }
+     },
+     "realized_delta": 0.01763
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "group": "B",
+     "n": 1905,
+     "n_teams": 6,
+     "parent_rate": 0.18123,
+     "delta": 0.01893,
+     "ci": [
+      -0.01766,
+      0.05782
+     ],
+     "z": 0.967,
+     "arm_split": {
+      "parent": {
+       "n": 1009,
+       "delta": 0.03766
+      },
+      "fold": {
+       "n": 896,
+       "delta": -0.01228
+      }
+     },
+     "realized_delta": 0.03946
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "group": "B",
+     "n": 3010,
+     "n_teams": 6,
+     "parent_rate": 0.17143,
+     "delta": -0.01555,
+     "ci": [
+      -0.05083,
+      0.02503
+     ],
+     "z": -0.789,
+     "arm_split": {
+      "parent": {
+       "n": 1481,
+       "delta": -0.02633
+      },
+      "fold": {
+       "n": 1529,
+       "delta": -0.00589
+      }
+     },
+     "realized_delta": -0.02209
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "group": "C",
+     "n": 2555,
+     "n_teams": 6,
+     "parent_rate": 0.65889,
+     "delta": 0.01915,
+     "ci": [
+      -0.02347,
+      0.06135
+     ],
+     "z": 0.884,
+     "arm_split": {
+      "parent": {
+       "n": 1276,
+       "delta": 0.01724
+      },
+      "fold": {
+       "n": 1279,
+       "delta": 0.02893
+      }
+     },
+     "realized_delta": 0.02036
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "group": "C",
+     "n": 6571,
+     "n_teams": 6,
+     "parent_rate": 0.4042,
+     "delta": 0.01522,
+     "ci": [
+      -0.01262,
+      0.03838
+     ],
+     "z": 1.176,
+     "arm_split": {
+      "parent": {
+       "n": 3254,
+       "delta": 0.01229
+      },
+      "fold": {
+       "n": 3317,
+       "delta": 0.01417
+      }
+     },
+     "realized_delta": 0.0268
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "group": "C",
+     "n": 6571,
+     "n_teams": 6,
+     "parent_rate": 0.65129,
+     "delta": 0.00545,
+     "ci": [
+      -0.03429,
+      0.03876
+     ],
+     "z": 0.3,
+     "arm_split": {
+      "parent": {
+       "n": 3254,
+       "delta": -0.0043
+      },
+      "fold": {
+       "n": 3317,
+       "delta": 0.00874
+      }
+     },
+     "realized_delta": 0.01526
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "group": "D",
+     "n": 4867,
+     "n_teams": 6,
+     "parent_rate": 0.1155,
+     "delta": -0.01097,
+     "ci": [
+      -0.02899,
+      0.01106
+     ],
+     "z": -1.055,
+     "arm_split": {
+      "parent": {
+       "n": 2529,
+       "delta": 0.00198
+      },
+      "fold": {
+       "n": 2338,
+       "delta": -0.01583
+      }
+     },
+     "realized_delta": 0.01259
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "group": "E",
+     "n": 793,
+     "n_teams": 6,
+     "parent_rate": 0.53402,
+     "delta": -0.04859,
+     "ci": [
+      -0.11477,
+      0.01551
+     ],
+     "z": -1.438,
+     "arm_split": {
+      "parent": {
+       "n": 401,
+       "delta": -0.05237
+      },
+      "fold": {
+       "n": 392,
+       "delta": -0.05102
+      }
+     },
+     "realized_delta": -0.00357
+    }
+   ],
+   "divergence": {
+    "n_decisions": 11742,
+    "argmax_disagreement": 0.22117,
+    "battle_length": {
+     "parent": {
+      "battles": 192,
+      "mean_decisions": 31.94
+     },
+     "fold": {
+      "battles": 192,
+      "mean_decisions": 29.22
+     }
+    },
+    "mean_KL_fold_parent": null,
+    "mean_abs_dV": 2.38188,
+    "flip_mass_involving_SWITCH": 0.57297,
+    "both_switch_n": 2930,
+    "same_switch_target_rate": 0.802,
+    "both_move_n": 7904,
+    "same_move_slot_rate": 0.8597,
+    "per_class_flow": {
+     "SWITCH": {
+      "parent_n": 3294,
+      "fold_n": 3474,
+      "net": 180,
+      "flip_out_rate": 0.2866
+     },
+     "ATTACK": {
+      "parent_n": 6000,
+      "fold_n": 6027,
+      "net": 27,
+      "flip_out_rate": 0.1523
+     },
+     "SETUP": {
+      "parent_n": 700,
+      "fold_n": 540,
+      "net": -160,
+      "flip_out_rate": 0.3386
+     },
+     "RECOVER": {
+      "parent_n": 251,
+      "fold_n": 144,
+      "net": -107,
+      "flip_out_rate": 0.4701
+     },
+     "STATUS": {
+      "parent_n": 347,
+      "fold_n": 404,
+      "net": 57,
+      "flip_out_rate": 0.1844
+     },
+     "PHAZE": {
+      "parent_n": 20,
+      "fold_n": 22,
+      "net": 2,
+      "flip_out_rate": 0.25
+     },
+     "HAZARD": {
+      "parent_n": 115,
+      "fold_n": 41,
+      "net": -74,
+      "flip_out_rate": 0.6783
+     },
+     "OTHER_STATUS": {
+      "parent_n": 1015,
+      "fold_n": 1090,
+      "net": 75,
+      "flip_out_rate": 0.2335
+     }
+    },
+    "top_flip_transitions": [
+     {
+      "transition": "SWITCH->SWITCH",
+      "n": 580,
+      "share": 0.2233
+     },
+     {
+      "transition": "ATTACK->ATTACK",
+      "n": 367,
+      "share": 0.1413
+     },
+     {
+      "transition": "ATTACK->SWITCH",
+      "n": 304,
+      "share": 0.1171
+     },
+     {
+      "transition": "SWITCH->ATTACK",
+      "n": 250,
+      "share": 0.0963
+     },
+     {
+      "transition": "ATTACK->OTHER_STATUS",
+      "n": 157,
+      "share": 0.0605
+     },
+     {
+      "transition": "SETUP->ATTACK",
+      "n": 136,
+      "share": 0.0524
+     },
+     {
+      "transition": "OTHER_STATUS->ATTACK",
+      "n": 111,
+      "share": 0.0427
+     },
+     {
+      "transition": "SWITCH->OTHER_STATUS",
+      "n": 84,
+      "share": 0.0323
+     },
+     {
+      "transition": "SETUP->SWITCH",
+      "n": 77,
+      "share": 0.0296
+     },
+     {
+      "transition": "OTHER_STATUS->SWITCH",
+      "n": 75,
+      "share": 0.0289
+     },
+     {
+      "transition": "HAZARD->STATUS",
+      "n": 56,
+      "share": 0.0216
+     },
+     {
+      "transition": "ATTACK->SETUP",
+      "n": 54,
+      "share": 0.0208
+     }
+    ]
+   },
+   "n_teams": 6
+  },
+  "shape": {
+   "all_axes": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate",
+     "switch|losing_matchup",
+     "switch|even_matchup",
+     "switch|winning_matchup",
+     "switch|low_hp(<1/3)",
+     "switch|high_hp(>2/3)",
+     "switch|early(turn<=8)",
+     "switch|late(turn>=20)",
+     "switch|opp_low_hp(<1/3)",
+     "switch|we_are_boosted",
+     "switch|behind_on_mons",
+     "switch|ahead_on_mons",
+     "take_SE_attack|SE_available",
+     "take_best_damage|>=2_attacks",
+     "attack_at_all|>=2_attacks",
+     "switch_to_resist|resist_avail",
+     "forced_repl_resists|resist_avail"
+    ],
+    "n_axes": 25,
+    "cosine": 0.1115,
+    "slope_through_origin": 0.2112,
+    "r2_through_origin": 0.0124,
+    "sign_agreement": "13/25",
+    "norm_untaught": 0.1773,
+    "norm_taught": 0.09365,
+    "norm_ratio_u_over_t": 1.8931,
+    "cosine_perm_null_p": 0.1745,
+    "cosine_perm_null_mean": -0.0707,
+    "split_half_reliability_untaught": 0.7445,
+    "split_half_reliability_taught": 0.0765,
+    "disattenuated_cosine": 0.4674
+   },
+   "class_share_block_A": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate"
+    ],
+    "n_axes": 9,
+    "cosine": -0.0489,
+    "slope_through_origin": -0.0858,
+    "r2_through_origin": 0.0024,
+    "sign_agreement": "4/9",
+    "norm_untaught": 0.04871,
+    "norm_taught": 0.02778,
+    "norm_ratio_u_over_t": 1.7535,
+    "cosine_perm_null_p": 0.5473,
+    "cosine_perm_null_mean": -0.0051,
+    "split_half_reliability_untaught": 0.8207,
+    "split_half_reliability_taught": 0.0802,
+    "disattenuated_cosine": -0.1906
+   },
+   "per_axis": [
+    {
+     "axis": "switch_rate",
+     "untaught": -0.02929,
+     "taught": 0.01396,
+     "ratio_u_over_t": -2.098
+    },
+    {
+     "axis": "attack_rate",
+     "untaught": 0.03387,
+     "taught": 0.00709,
+     "ratio_u_over_t": 4.777
+    },
+    {
+     "axis": "setup_rate",
+     "untaught": 0.00518,
+     "taught": -0.01606,
+     "ratio_u_over_t": -0.323
+    },
+    {
+     "axis": "recover_rate",
+     "untaught": -0.01361,
+     "taught": -0.00867,
+     "ratio_u_over_t": 1.57
+    },
+    {
+     "axis": "status_rate",
+     "untaught": 0.00635,
+     "taught": 0.00813,
+     "ratio_u_over_t": 0.781
+    },
+    {
+     "axis": "protect_rate",
+     "untaught": 0.00854,
+     "taught": 0.0,
+     "ratio_u_over_t": null
+    },
+    {
+     "axis": "phaze_rate",
+     "untaught": -0.00476,
+     "taught": 0.00027,
+     "ratio_u_over_t": -17.63
+    },
+    {
+     "axis": "hazard_rate",
+     "untaught": -0.00331,
+     "taught": -0.00998,
+     "ratio_u_over_t": 0.332
+    },
+    {
+     "axis": "other_status_rate",
+     "untaught": -0.00297,
+     "taught": 0.00526,
+     "ratio_u_over_t": -0.565
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "untaught": -0.04198,
+     "taught": -0.00183,
+     "ratio_u_over_t": 22.94
+    },
+    {
+     "axis": "switch|even_matchup",
+     "untaught": -0.01913,
+     "taught": 0.0172,
+     "ratio_u_over_t": -1.112
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "untaught": -0.04619,
+     "taught": 0.01316,
+     "ratio_u_over_t": -3.51
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "untaught": -0.04402,
+     "taught": 0.01417,
+     "ratio_u_over_t": -3.107
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "untaught": -0.03044,
+     "taught": 0.0183,
+     "ratio_u_over_t": -1.663
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "untaught": -0.02197,
+     "taught": 0.04688,
+     "ratio_u_over_t": -0.469
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "untaught": -0.02891,
+     "taught": -0.00158,
+     "ratio_u_over_t": 18.297
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "untaught": -0.01366,
+     "taught": -0.00787,
+     "ratio_u_over_t": 1.736
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "untaught": -0.0237,
+     "taught": 0.03193,
+     "ratio_u_over_t": -0.742
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "untaught": -0.01496,
+     "taught": 0.01893,
+     "ratio_u_over_t": -0.79
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "untaught": -0.0552,
+     "taught": -0.01555,
+     "ratio_u_over_t": 3.55
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "untaught": 0.05049,
+     "taught": 0.01915,
+     "ratio_u_over_t": 2.637
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "untaught": 0.05728,
+     "taught": 0.01522,
+     "ratio_u_over_t": 3.763
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "untaught": 0.07524,
+     "taught": 0.00545,
+     "ratio_u_over_t": 13.806
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "untaught": -0.05605,
+     "taught": -0.01097,
+     "ratio_u_over_t": 5.109
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "untaught": -0.04433,
+     "taught": -0.04859,
+     "ratio_u_over_t": 0.912
+    }
+   ]
+  },
+  "shape_archetype_matched": {
+   "all_axes": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate",
+     "switch|losing_matchup",
+     "switch|even_matchup",
+     "switch|winning_matchup",
+     "switch|low_hp(<1/3)",
+     "switch|high_hp(>2/3)",
+     "switch|early(turn<=8)",
+     "switch|late(turn>=20)",
+     "switch|opp_low_hp(<1/3)",
+     "switch|we_are_boosted",
+     "switch|behind_on_mons",
+     "switch|ahead_on_mons",
+     "take_SE_attack|SE_available",
+     "take_best_damage|>=2_attacks",
+     "attack_at_all|>=2_attacks",
+     "switch_to_resist|resist_avail",
+     "forced_repl_resists|resist_avail"
+    ],
+    "n_axes": 25,
+    "cosine": 0.0321,
+    "slope_through_origin": 0.0589,
+    "r2_through_origin": 0.001,
+    "sign_agreement": "13/25",
+    "norm_untaught": 0.17173,
+    "norm_taught": 0.09365,
+    "norm_ratio_u_over_t": 1.8337,
+    "cosine_perm_null_p": 0.237,
+    "cosine_perm_null_mean": -0.1031,
+    "split_half_reliability_untaught": 0.7121,
+    "split_half_reliability_taught": 0.0765,
+    "disattenuated_cosine": 0.1377
+   },
+   "class_share_block_A": {
+    "axes": [
+     "switch_rate",
+     "attack_rate",
+     "setup_rate",
+     "recover_rate",
+     "status_rate",
+     "protect_rate",
+     "phaze_rate",
+     "hazard_rate",
+     "other_status_rate"
+    ],
+    "n_axes": 9,
+    "cosine": -0.1793,
+    "slope_through_origin": -0.3499,
+    "r2_through_origin": 0.0321,
+    "sign_agreement": "4/9",
+    "norm_untaught": 0.05422,
+    "norm_taught": 0.02778,
+    "norm_ratio_u_over_t": 1.9517,
+    "cosine_perm_null_p": 0.663,
+    "cosine_perm_null_mean": -0.0055,
+    "split_half_reliability_untaught": 0.7603,
+    "split_half_reliability_taught": 0.0802,
+    "disattenuated_cosine": -0.726
+   },
+   "per_axis": [
+    {
+     "axis": "switch_rate",
+     "untaught": -0.03727,
+     "taught": 0.01396,
+     "ratio_u_over_t": -2.67
+    },
+    {
+     "axis": "attack_rate",
+     "untaught": 0.03011,
+     "taught": 0.00709,
+     "ratio_u_over_t": 4.247
+    },
+    {
+     "axis": "setup_rate",
+     "untaught": 0.00734,
+     "taught": -0.01606,
+     "ratio_u_over_t": -0.457
+    },
+    {
+     "axis": "recover_rate",
+     "untaught": -0.00583,
+     "taught": -0.00867,
+     "ratio_u_over_t": 0.672
+    },
+    {
+     "axis": "status_rate",
+     "untaught": 0.00329,
+     "taught": 0.00813,
+     "ratio_u_over_t": 0.405
+    },
+    {
+     "axis": "protect_rate",
+     "untaught": 0.02016,
+     "taught": 0.0,
+     "ratio_u_over_t": null
+    },
+    {
+     "axis": "phaze_rate",
+     "untaught": -0.00791,
+     "taught": 0.00027,
+     "ratio_u_over_t": -29.296
+    },
+    {
+     "axis": "hazard_rate",
+     "untaught": -0.00863,
+     "taught": -0.00998,
+     "ratio_u_over_t": 0.865
+    },
+    {
+     "axis": "other_status_rate",
+     "untaught": -0.00126,
+     "taught": 0.00526,
+     "ratio_u_over_t": -0.24
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "untaught": -0.03993,
+     "taught": -0.00183,
+     "ratio_u_over_t": 21.82
+    },
+    {
+     "axis": "switch|even_matchup",
+     "untaught": -0.0336,
+     "taught": 0.0172,
+     "ratio_u_over_t": -1.953
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "untaught": -0.03483,
+     "taught": 0.01316,
+     "ratio_u_over_t": -2.647
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "untaught": -0.02789,
+     "taught": 0.01417,
+     "ratio_u_over_t": -1.968
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "untaught": -0.04398,
+     "taught": 0.0183,
+     "ratio_u_over_t": -2.403
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "untaught": -0.02979,
+     "taught": 0.04688,
+     "ratio_u_over_t": -0.635
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "untaught": -0.0469,
+     "taught": -0.00158,
+     "ratio_u_over_t": 29.684
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "untaught": -0.0019,
+     "taught": -0.00787,
+     "ratio_u_over_t": 0.241
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "untaught": -0.03216,
+     "taught": 0.03193,
+     "ratio_u_over_t": -1.007
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "untaught": -0.02825,
+     "taught": 0.01893,
+     "ratio_u_over_t": -1.492
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "untaught": -0.04883,
+     "taught": -0.01555,
+     "ratio_u_over_t": 3.14
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "untaught": 0.03625,
+     "taught": 0.01915,
+     "ratio_u_over_t": 1.893
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "untaught": 0.03653,
+     "taught": 0.01522,
+     "ratio_u_over_t": 2.4
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "untaught": 0.05105,
+     "taught": 0.00545,
+     "ratio_u_over_t": 9.367
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "untaught": -0.06254,
+     "taught": -0.01097,
+     "ratio_u_over_t": 5.701
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "untaught": -0.05856,
+     "taught": -0.04859,
+     "ratio_u_over_t": 1.205
+    }
+   ]
+  },
+  "attribution": {
+   "unavailable": "only 0 teams overlap probe P's per-team table"
+  },
+  "replay_determinism": {
+   "duplicate_cells": 256,
+   "replays_agreeing": 256,
+   "replays_disagreeing": 0
+  },
+  "winrate_check": {
+   "untaught": {
+    "parent_wr": 0.5078,
+    "fold_wr": 0.5039,
+    "delta_pp": -0.39,
+    "n_parent": 256,
+    "n_fold": 256,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "n_decisions": 27452
+   },
+   "taught": {
+    "parent_wr": 0.5,
+    "fold_wr": 0.5469,
+    "delta_pp": 4.69,
+    "n_parent": 192,
+    "n_fold": 192,
+    "n_defaults": 0,
+    "n_redecides": 0,
+    "n_decisions": 11742
+   }
+  },
+  "cell_attribution_untaught": {
+   "n_cells": 64,
+   "n_teams": 8,
+   "net_wr_delta": -0.0039,
+   "axes": [
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "spearman_rho": 0.455,
+     "ci": [
+      0.021,
+      0.588
+     ],
+     "n_cells": 28
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "spearman_rho": -0.279,
+     "ci": [
+      -0.438,
+      -0.087
+     ],
+     "n_cells": 58
+    },
+    {
+     "axis": "other_status_rate",
+     "spearman_rho": 0.255,
+     "ci": [
+      0.031,
+      0.405
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "attack_rate",
+     "spearman_rho": -0.242,
+     "ci": [
+      -0.306,
+      -0.042
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "recover_rate",
+     "spearman_rho": -0.237,
+     "ci": [
+      -0.487,
+      0.053
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "spearman_rho": -0.217,
+     "ci": [
+      -0.395,
+      0.134
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "spearman_rho": 0.195,
+     "ci": [
+      0.062,
+      0.4
+     ],
+     "n_cells": 58
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "spearman_rho": 0.18,
+     "ci": [
+      -0.048,
+      0.369
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "status_rate",
+     "spearman_rho": 0.16,
+     "ci": [
+      -0.118,
+      0.292
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "phaze_rate",
+     "spearman_rho": -0.152,
+     "ci": [
+      -0.333,
+      0.041
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "protect_rate",
+     "spearman_rho": -0.116,
+     "ci": [
+      -0.255,
+      0.106
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "hazard_rate",
+     "spearman_rho": 0.107,
+     "ci": [
+      -0.074,
+      0.292
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "spearman_rho": 0.092,
+     "ci": [
+      -0.129,
+      0.219
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "spearman_rho": 0.09,
+     "ci": [
+      -0.275,
+      0.39
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "switch_rate",
+     "spearman_rho": 0.066,
+     "ci": [
+      -0.168,
+      0.285
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "spearman_rho": -0.046,
+     "ci": [
+      -0.286,
+      0.319
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "spearman_rho": -0.037,
+     "ci": [
+      -0.167,
+      0.12
+     ],
+     "n_cells": 58
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "spearman_rho": -0.033,
+     "ci": [
+      -0.202,
+      0.162
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "setup_rate",
+     "spearman_rho": 0.023,
+     "ci": [
+      -0.286,
+      0.303
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "spearman_rho": -0.018,
+     "ci": [
+      -0.316,
+      0.271
+     ],
+     "n_cells": 63
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "spearman_rho": 0.013,
+     "ci": [
+      -0.157,
+      0.295
+     ],
+     "n_cells": 61
+    },
+    {
+     "axis": "switch|even_matchup",
+     "spearman_rho": -0.012,
+     "ci": [
+      -0.241,
+      0.292
+     ],
+     "n_cells": 64
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "spearman_rho": 0.01,
+     "ci": [
+      -0.192,
+      0.187
+     ],
+     "n_cells": 63
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "spearman_rho": 0.004,
+     "ci": [
+      -0.253,
+      0.25
+     ],
+     "n_cells": 64
+    }
+   ]
+  },
+  "battle_attribution_untaught": {
+   "n_paired_games": 256,
+   "counts": {
+    "BOTH_WIN": 76,
+    "FLIP_WIN": 53,
+    "FLIP_LOSS": 54,
+    "BOTH_LOSS": 73
+   },
+   "net_wr_delta_identity": -0.0039,
+   "axes": [
+    {
+     "axis": "switch|we_are_boosted",
+     "FLIP_WIN": 0.0038,
+     "FLIP_WIN_n": 529,
+     "FLIP_LOSS": 0.0,
+     "FLIP_LOSS_n": 150,
+     "BOTH_WIN": -0.0078,
+     "BOTH_WIN_n": 769,
+     "BOTH_LOSS": -0.0472,
+     "BOTH_LOSS_n": 318,
+     "flipwin_minus_bothloss": 0.051
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "FLIP_WIN": 0.0083,
+     "FLIP_WIN_n": 1205,
+     "FLIP_LOSS": -0.0195,
+     "FLIP_LOSS_n": 1331,
+     "BOTH_WIN": 0.0551,
+     "BOTH_WIN_n": 944,
+     "BOTH_LOSS": -0.0402,
+     "BOTH_LOSS_n": 3235,
+     "flipwin_minus_bothloss": 0.0485
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "FLIP_WIN": -0.0794,
+     "FLIP_WIN_n": 2078,
+     "FLIP_LOSS": -0.0325,
+     "FLIP_LOSS_n": 1323,
+     "BOTH_WIN": -0.0768,
+     "BOTH_WIN_n": 2605,
+     "BOTH_LOSS": -0.0357,
+     "BOTH_LOSS_n": 1008,
+     "flipwin_minus_bothloss": -0.0437
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "FLIP_WIN": -0.0423,
+     "FLIP_WIN_n": 355,
+     "FLIP_LOSS": -0.0359,
+     "FLIP_LOSS_n": 473,
+     "BOTH_WIN": -0.0085,
+     "BOTH_WIN_n": 709,
+     "BOTH_LOSS": -0.0061,
+     "BOTH_LOSS_n": 495,
+     "flipwin_minus_bothloss": -0.0362
+    },
+    {
+     "axis": "switch|early(turn<=8)",
+     "FLIP_WIN": 0.0083,
+     "FLIP_WIN_n": 848,
+     "FLIP_LOSS": -0.0289,
+     "FLIP_LOSS_n": 864,
+     "BOTH_WIN": -0.037,
+     "BOTH_WIN_n": 1216,
+     "BOTH_LOSS": -0.0231,
+     "BOTH_LOSS_n": 1168,
+     "flipwin_minus_bothloss": 0.0314
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "FLIP_WIN": -0.0446,
+     "FLIP_WIN_n": 2757,
+     "FLIP_LOSS": -0.0568,
+     "FLIP_LOSS_n": 1724,
+     "BOTH_WIN": -0.0564,
+     "BOTH_WIN_n": 2959,
+     "BOTH_LOSS": -0.075,
+     "BOTH_LOSS_n": 2934,
+     "flipwin_minus_bothloss": 0.0304
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "FLIP_WIN": -0.0248,
+     "FLIP_WIN_n": 483,
+     "FLIP_LOSS": -0.0392,
+     "FLIP_LOSS_n": 434,
+     "BOTH_WIN": -0.059,
+     "BOTH_WIN_n": 559,
+     "BOTH_LOSS": -0.0512,
+     "BOTH_LOSS_n": 722,
+     "flipwin_minus_bothloss": 0.0264
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "FLIP_WIN": -0.0586,
+     "FLIP_WIN_n": 972,
+     "FLIP_LOSS": -0.0424,
+     "FLIP_LOSS_n": 966,
+     "BOTH_WIN": -0.0511,
+     "BOTH_WIN_n": 1486,
+     "BOTH_LOSS": -0.0342,
+     "BOTH_LOSS_n": 1375,
+     "flipwin_minus_bothloss": -0.0244
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "FLIP_WIN": -0.0553,
+     "FLIP_WIN_n": 1013,
+     "FLIP_LOSS": -0.0528,
+     "FLIP_LOSS_n": 1364,
+     "BOTH_WIN": -0.0429,
+     "BOTH_WIN_n": 1540,
+     "BOTH_LOSS": -0.0327,
+     "BOTH_LOSS_n": 1498,
+     "flipwin_minus_bothloss": -0.0226
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "FLIP_WIN": 0.0834,
+     "FLIP_WIN_n": 923,
+     "FLIP_LOSS": 0.0498,
+     "FLIP_LOSS_n": 983,
+     "BOTH_WIN": 0.0315,
+     "BOTH_WIN_n": 1240,
+     "BOTH_LOSS": 0.0632,
+     "BOTH_LOSS_n": 1124,
+     "flipwin_minus_bothloss": 0.0202
+    },
+    {
+     "axis": "recover_rate",
+     "FLIP_WIN": -0.0244,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": -0.014,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": -0.0219,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": -0.0067,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": -0.0177
+    },
+    {
+     "axis": "other_status_rate",
+     "FLIP_WIN": 0.0096,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": -0.015,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": 0.0014,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": -0.0017,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": 0.0113
+    },
+    {
+     "axis": "switch|even_matchup",
+     "FLIP_WIN": -0.0228,
+     "FLIP_WIN_n": 3338,
+     "FLIP_LOSS": -0.0053,
+     "FLIP_LOSS_n": 2463,
+     "BOTH_WIN": 0.0059,
+     "BOTH_WIN_n": 3407,
+     "BOTH_LOSS": -0.0306,
+     "BOTH_LOSS_n": 3986,
+     "flipwin_minus_bothloss": 0.0078
+    },
+    {
+     "axis": "status_rate",
+     "FLIP_WIN": 0.0148,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": 0.01,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": -0.0006,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": 0.0076,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": 0.0072
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "FLIP_WIN": -0.0409,
+     "FLIP_WIN_n": 3717,
+     "FLIP_LOSS": -0.023,
+     "FLIP_LOSS_n": 3132,
+     "BOTH_WIN": -0.0153,
+     "BOTH_WIN_n": 4452,
+     "BOTH_LOSS": -0.0339,
+     "BOTH_LOSS_n": 4603,
+     "flipwin_minus_bothloss": -0.007
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "FLIP_WIN": -0.0566,
+     "FLIP_WIN_n": 159,
+     "FLIP_LOSS": -0.026,
+     "FLIP_LOSS_n": 154,
+     "BOTH_WIN": -0.0214,
+     "BOTH_WIN_n": 234,
+     "BOTH_LOSS": -0.0502,
+     "BOTH_LOSS_n": 259,
+     "flipwin_minus_bothloss": -0.0064
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "FLIP_WIN": 0.0557,
+     "FLIP_WIN_n": 1723,
+     "FLIP_LOSS": 0.0597,
+     "FLIP_LOSS_n": 1959,
+     "BOTH_WIN": 0.0504,
+     "BOTH_WIN_n": 2459,
+     "BOTH_LOSS": 0.0619,
+     "BOTH_LOSS_n": 2569,
+     "flipwin_minus_bothloss": -0.0062
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "FLIP_WIN": -0.0377,
+     "FLIP_WIN_n": 3318,
+     "FLIP_LOSS": -0.0243,
+     "FLIP_LOSS_n": 2759,
+     "BOTH_WIN": -0.005,
+     "BOTH_WIN_n": 3595,
+     "BOTH_LOSS": -0.0317,
+     "BOTH_LOSS_n": 4126,
+     "flipwin_minus_bothloss": -0.006
+    },
+    {
+     "axis": "hazard_rate",
+     "FLIP_WIN": 0.0004,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": -0.0025,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": -0.0002,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": -0.0035,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": 0.0039
+    },
+    {
+     "axis": "phaze_rate",
+     "FLIP_WIN": -0.0039,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": -0.0017,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": 0.0,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": -0.0077,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": 0.0038
+    },
+    {
+     "axis": "switch_rate",
+     "FLIP_WIN": -0.0355,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": -0.0263,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": -0.019,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": -0.0318,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": -0.0037
+    },
+    {
+     "axis": "attack_rate",
+     "FLIP_WIN": 0.0304,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": 0.0428,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": 0.0272,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": 0.0335,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": -0.0031
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "FLIP_WIN": 0.0754,
+     "FLIP_WIN_n": 1723,
+     "FLIP_LOSS": 0.0653,
+     "FLIP_LOSS_n": 1959,
+     "BOTH_WIN": 0.0748,
+     "BOTH_WIN_n": 2459,
+     "BOTH_LOSS": 0.0724,
+     "BOTH_LOSS_n": 2569,
+     "flipwin_minus_bothloss": 0.003
+    },
+    {
+     "axis": "setup_rate",
+     "FLIP_WIN": 0.0054,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": 0.0,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": 0.0039,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": 0.0073,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": -0.0019
+    },
+    {
+     "axis": "protect_rate",
+     "FLIP_WIN": 0.0032,
+     "FLIP_WIN_n": 5323,
+     "FLIP_LOSS": 0.0067,
+     "FLIP_LOSS_n": 4793,
+     "BOTH_WIN": 0.0092,
+     "BOTH_WIN_n": 6433,
+     "BOTH_LOSS": 0.0031,
+     "BOTH_LOSS_n": 6859,
+     "flipwin_minus_bothloss": 0.0001
+    }
+   ]
+  },
+  "battle_attribution_taught": {
+   "n_paired_games": 192,
+   "counts": {
+    "BOTH_WIN": 52,
+    "BOTH_LOSS": 43,
+    "FLIP_LOSS": 44,
+    "FLIP_WIN": 53
+   },
+   "net_wr_delta_identity": 0.0469,
+   "axes": [
+    {
+     "axis": "switch|early(turn<=8)",
+     "FLIP_WIN": 0.0814,
+     "FLIP_WIN_n": 848,
+     "FLIP_LOSS": 0.044,
+     "FLIP_LOSS_n": 704,
+     "BOTH_WIN": 0.0337,
+     "BOTH_WIN_n": 832,
+     "BOTH_LOSS": 0.0233,
+     "BOTH_LOSS_n": 688,
+     "flipwin_minus_bothloss": 0.0581
+    },
+    {
+     "axis": "switch|even_matchup",
+     "FLIP_WIN": 0.043,
+     "FLIP_WIN_n": 1092,
+     "FLIP_LOSS": 0.053,
+     "FLIP_LOSS_n": 1133,
+     "BOTH_WIN": 0.0353,
+     "BOTH_WIN_n": 1586,
+     "BOTH_LOSS": -0.0121,
+     "BOTH_LOSS_n": 744,
+     "flipwin_minus_bothloss": 0.0551
+    },
+    {
+     "axis": "switch|ahead_on_mons",
+     "FLIP_WIN": -0.0143,
+     "FLIP_WIN_n": 770,
+     "FLIP_LOSS": 0.011,
+     "FLIP_LOSS_n": 730,
+     "BOTH_WIN": -0.0437,
+     "BOTH_WIN_n": 1214,
+     "BOTH_LOSS": 0.027,
+     "BOTH_LOSS_n": 296,
+     "flipwin_minus_bothloss": -0.0413
+    },
+    {
+     "axis": "switch|losing_matchup",
+     "FLIP_WIN": 0.0077,
+     "FLIP_WIN_n": 781,
+     "FLIP_LOSS": -0.0092,
+     "FLIP_LOSS_n": 652,
+     "BOTH_WIN": -0.0389,
+     "BOTH_WIN_n": 796,
+     "BOTH_LOSS": 0.0468,
+     "BOTH_LOSS_n": 577,
+     "flipwin_minus_bothloss": -0.0391
+    },
+    {
+     "axis": "switch|winning_matchup",
+     "FLIP_WIN": 0.0361,
+     "FLIP_WIN_n": 692,
+     "FLIP_LOSS": 0.0209,
+     "FLIP_LOSS_n": 527,
+     "BOTH_WIN": -0.0182,
+     "BOTH_WIN_n": 549,
+     "BOTH_LOSS": 0.0092,
+     "BOTH_LOSS_n": 433,
+     "flipwin_minus_bothloss": 0.0269
+    },
+    {
+     "axis": "switch|behind_on_mons",
+     "FLIP_WIN": 0.0402,
+     "FLIP_WIN_n": 497,
+     "FLIP_LOSS": 0.0095,
+     "FLIP_LOSS_n": 422,
+     "BOTH_WIN": -0.0178,
+     "BOTH_WIN_n": 338,
+     "BOTH_LOSS": 0.0139,
+     "BOTH_LOSS_n": 648,
+     "flipwin_minus_bothloss": 0.0263
+    },
+    {
+     "axis": "switch|late(turn>=20)",
+     "FLIP_WIN": 0.0165,
+     "FLIP_WIN_n": 667,
+     "FLIP_LOSS": 0.0421,
+     "FLIP_LOSS_n": 737,
+     "BOTH_WIN": 0.0118,
+     "BOTH_WIN_n": 1016,
+     "BOTH_LOSS": -0.0084,
+     "BOTH_LOSS_n": 239,
+     "flipwin_minus_bothloss": 0.0249
+    },
+    {
+     "axis": "attack_rate",
+     "FLIP_WIN": -0.0129,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": 0.0043,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": 0.0154,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": 0.008,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": -0.0209
+    },
+    {
+     "axis": "switch_rate",
+     "FLIP_WIN": 0.0304,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": 0.0281,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": 0.0051,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": 0.0125,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": 0.0179
+    },
+    {
+     "axis": "switch|high_hp(>2/3)",
+     "FLIP_WIN": 0.0315,
+     "FLIP_WIN_n": 1780,
+     "FLIP_LOSS": 0.0312,
+     "FLIP_LOSS_n": 1600,
+     "BOTH_WIN": 0.0207,
+     "BOTH_WIN_n": 2078,
+     "BOTH_LOSS": 0.0148,
+     "BOTH_LOSS_n": 1152,
+     "flipwin_minus_bothloss": 0.0167
+    },
+    {
+     "axis": "other_status_rate",
+     "FLIP_WIN": 0.007,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": 0.0017,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": 0.0157,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": -0.0051,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": 0.0121
+    },
+    {
+     "axis": "attack_at_all|>=2_attacks",
+     "FLIP_WIN": -0.0137,
+     "FLIP_WIN_n": 1826,
+     "FLIP_LOSS": 0.0131,
+     "FLIP_LOSS_n": 1527,
+     "BOTH_WIN": 0.0112,
+     "BOTH_WIN_n": 1969,
+     "BOTH_LOSS": -0.0016,
+     "BOTH_LOSS_n": 1249,
+     "flipwin_minus_bothloss": -0.0121
+    },
+    {
+     "axis": "switch|opp_low_hp(<1/3)",
+     "FLIP_WIN": 0.0105,
+     "FLIP_WIN_n": 286,
+     "FLIP_LOSS": -0.0042,
+     "FLIP_LOSS_n": 238,
+     "BOTH_WIN": -0.0515,
+     "BOTH_WIN_n": 272,
+     "BOTH_LOSS": 0.0214,
+     "BOTH_LOSS_n": 187,
+     "flipwin_minus_bothloss": -0.0109
+    },
+    {
+     "axis": "switch_to_resist|resist_avail",
+     "FLIP_WIN": -0.0033,
+     "FLIP_WIN_n": 1225,
+     "FLIP_LOSS": 0.0008,
+     "FLIP_LOSS_n": 1252,
+     "BOTH_WIN": -0.0126,
+     "BOTH_WIN_n": 1585,
+     "BOTH_LOSS": -0.0112,
+     "BOTH_LOSS_n": 805,
+     "flipwin_minus_bothloss": 0.0079
+    },
+    {
+     "axis": "switch|low_hp(<1/3)",
+     "FLIP_WIN": 0.0208,
+     "FLIP_WIN_n": 288,
+     "FLIP_LOSS": 0.0446,
+     "FLIP_LOSS_n": 224,
+     "BOTH_WIN": -0.0078,
+     "BOTH_WIN_n": 256,
+     "BOTH_LOSS": 0.0146,
+     "BOTH_LOSS_n": 205,
+     "flipwin_minus_bothloss": 0.0062
+    },
+    {
+     "axis": "take_SE_attack|SE_available",
+     "FLIP_WIN": 0.0055,
+     "FLIP_WIN_n": 724,
+     "FLIP_LOSS": 0.0371,
+     "FLIP_LOSS_n": 620,
+     "BOTH_WIN": 0.0382,
+     "BOTH_WIN_n": 680,
+     "BOTH_LOSS": 0.0113,
+     "BOTH_LOSS_n": 531,
+     "flipwin_minus_bothloss": -0.0058
+    },
+    {
+     "axis": "status_rate",
+     "FLIP_WIN": 0.0062,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": 0.0013,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": 0.0065,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": 0.0114,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": -0.0052
+    },
+    {
+     "axis": "recover_rate",
+     "FLIP_WIN": -0.0051,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": -0.0108,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": -0.0205,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": -0.0006,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": -0.0045
+    },
+    {
+     "axis": "take_best_damage|>=2_attacks",
+     "FLIP_WIN": 0.0164,
+     "FLIP_WIN_n": 1826,
+     "FLIP_LOSS": 0.0085,
+     "FLIP_LOSS_n": 1527,
+     "BOTH_WIN": 0.0147,
+     "BOTH_WIN_n": 1969,
+     "BOTH_LOSS": 0.012,
+     "BOTH_LOSS_n": 1249,
+     "flipwin_minus_bothloss": 0.0044
+    },
+    {
+     "axis": "hazard_rate",
+     "FLIP_WIN": -0.0117,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": -0.0022,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": -0.0038,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": -0.016,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": 0.0043
+    },
+    {
+     "axis": "setup_rate",
+     "FLIP_WIN": -0.0144,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": -0.0221,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": -0.0191,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": -0.0103,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": -0.0041
+    },
+    {
+     "axis": "forced_repl_resists|resist_avail",
+     "FLIP_WIN": -0.0335,
+     "FLIP_WIN_n": 209,
+     "FLIP_LOSS": -0.0366,
+     "FLIP_LOSS_n": 191,
+     "BOTH_WIN": -0.0938,
+     "BOTH_WIN_n": 224,
+     "BOTH_LOSS": -0.0355,
+     "BOTH_LOSS_n": 169,
+     "flipwin_minus_bothloss": 0.002
+    },
+    {
+     "axis": "phaze_rate",
+     "FLIP_WIN": 0.0004,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": -0.0004,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": 0.0007,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": 0.0,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": 0.0004
+    },
+    {
+     "axis": "switch|we_are_boosted",
+     "FLIP_WIN": 0.024,
+     "FLIP_WIN_n": 458,
+     "FLIP_LOSS": 0.052,
+     "FLIP_LOSS_n": 442,
+     "BOTH_WIN": 0.0353,
+     "BOTH_WIN_n": 595,
+     "BOTH_LOSS": 0.0242,
+     "BOTH_LOSS_n": 248,
+     "flipwin_minus_bothloss": -0.0002
+    },
+    {
+     "axis": "protect_rate",
+     "FLIP_WIN": 0.0,
+     "FLIP_WIN_n": 2565,
+     "FLIP_LOSS": 0.0,
+     "FLIP_LOSS_n": 2312,
+     "BOTH_WIN": 0.0,
+     "BOTH_WIN_n": 2931,
+     "BOTH_LOSS": 0.0,
+     "BOTH_LOSS_n": 1754,
+     "flipwin_minus_bothloss": 0.0
+    }
+   ]
+  }
+ },
+ "cross_family_untaught": {
+  "families": [
+   "v8",
+   "gen"
+  ],
+  "n_axes": 25,
+  "cosine": 0.113,
+  "perm_null_p_ge": 0.503,
+  "sign_agreement": "14/25",
+  "norms": {
+   "v8": 0.09342,
+   "gen": 0.1773
+  },
+  "reliabilities": {
+   "v8": 0.7218,
+   "gen": 0.7445
+  },
+  "disattenuated_cosine": 0.1541,
+  "per_axis": [
+   {
+    "axis": "switch_rate",
+    "v8": -0.01464,
+    "gen": -0.02929
+   },
+   {
+    "axis": "attack_rate",
+    "v8": 0.00258,
+    "gen": 0.03387
+   },
+   {
+    "axis": "setup_rate",
+    "v8": -0.00054,
+    "gen": 0.00518
+   },
+   {
+    "axis": "recover_rate",
+    "v8": -0.00443,
+    "gen": -0.01361
+   },
+   {
+    "axis": "status_rate",
+    "v8": 0.00412,
+    "gen": 0.00635
+   },
+   {
+    "axis": "protect_rate",
+    "v8": -0.00063,
+    "gen": 0.00854
+   },
+   {
+    "axis": "phaze_rate",
+    "v8": 0.00307,
+    "gen": -0.00476
+   },
+   {
+    "axis": "hazard_rate",
+    "v8": -0.00522,
+    "gen": -0.00331
+   },
+   {
+    "axis": "other_status_rate",
+    "v8": 0.01569,
+    "gen": -0.00297
+   },
+   {
+    "axis": "switch|losing_matchup",
+    "v8": -0.03849,
+    "gen": -0.04198
+   },
+   {
+    "axis": "switch|even_matchup",
+    "v8": -0.02004,
+    "gen": -0.01913
+   },
+   {
+    "axis": "switch|winning_matchup",
+    "v8": 0.00707,
+    "gen": -0.04619
+   },
+   {
+    "axis": "switch|low_hp(<1/3)",
+    "v8": 0.01712,
+    "gen": -0.04402
+   },
+   {
+    "axis": "switch|high_hp(>2/3)",
+    "v8": -0.02471,
+    "gen": -0.03044
+   },
+   {
+    "axis": "switch|early(turn<=8)",
+    "v8": -0.03784,
+    "gen": -0.02197
+   },
+   {
+    "axis": "switch|late(turn>=20)",
+    "v8": -0.00326,
+    "gen": -0.02891
+   },
+   {
+    "axis": "switch|opp_low_hp(<1/3)",
+    "v8": 0.00916,
+    "gen": -0.01366
+   },
+   {
+    "axis": "switch|we_are_boosted",
+    "v8": 0.00967,
+    "gen": -0.0237
+   },
+   {
+    "axis": "switch|behind_on_mons",
+    "v8": -0.02706,
+    "gen": -0.01496
+   },
+   {
+    "axis": "switch|ahead_on_mons",
+    "v8": 0.01479,
+    "gen": -0.0552
+   },
+   {
+    "axis": "take_SE_attack|SE_available",
+    "v8": -0.0452,
+    "gen": 0.05049
+   },
+   {
+    "axis": "take_best_damage|>=2_attacks",
+    "v8": -0.00802,
+    "gen": 0.05728
+   },
+   {
+    "axis": "attack_at_all|>=2_attacks",
+    "v8": 0.00652,
+    "gen": 0.07524
+   },
+   {
+    "axis": "switch_to_resist|resist_avail",
+    "v8": -0.01544,
+    "gen": -0.05605
+   },
+   {
+    "axis": "forced_repl_resists|resist_avail",
+    "v8": -0.01974,
+    "gen": -0.04433
+   }
+  ]
+ }
+}
