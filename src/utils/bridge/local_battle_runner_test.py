@@ -143,3 +143,25 @@ def test_ProgressTimeout_is_caught_by_existing_timeout_handlers():
     and the whole doctrine here is that a timeout never becomes a semantic outcome."""
     assert issubclass(ProgressTimeout, TimeoutError)
     assert issubclass(ProgressTimeout, asyncio.TimeoutError)
+
+
+# --- the TEARDOWN reap bound: scaled, not hardcoded ------------------------------------------
+#
+# gen3_contention_robust_timeouts_v1. `_teardown` waits for the bridge child to exit after `END`.
+# That wait was a hardcoded `timeout=5.0` until 2026-09-01, which is a wall-clock bound on a
+# subprocess and therefore measures the box as much as the code: at load ~50 on 16 cores it fired
+# and killed a measurement arm outright (ledger, M9 interim, 2026-08-31). These two pin that the
+# bound is read at CALL time through `scale_timeout`, and that an idle box is unchanged.
+
+
+def test_teardown_reap_timeout_is_the_base_value_on_an_idle_box(monkeypatch):
+    """Factor 1.0 => still exactly 5.0 s. The fix must be a no-op when the box is quiet."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+    assert lbr._TEARDOWN_REAP_TIMEOUT == 5.0
+    assert lbr._teardown_reap_timeout() == 5.0
+
+
+def test_teardown_reap_timeout_stretches_with_contention(monkeypatch):
+    """The whole point: a loaded box gets proportionally longer to reap the child."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
+    assert lbr._teardown_reap_timeout() == 30.0

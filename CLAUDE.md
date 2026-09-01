@@ -229,7 +229,8 @@ per-battle TIMEOUT as an "unmodeled move" SKIP, so a starved run reported 39/40 
 **clean pass** that blamed the Rust port for the load average.
 
 The bounds are now **scaled by measured CPU contention** (`src/utils/contention.py`): the
-per-battle bridge timeout, the bridge-session battle-end timeout, and the poke-env `race_get`
+per-battle bridge timeout, the bridge-session battle-end timeout, the local-battle-runner's
+post-`END` child-REAP timeout, and the poke-env `race_get`
 silent-stall watchdog all read `scale_timeout(...)` at CALL time, where the factor is
 `max(1, loadavg / len(sched_getaffinity))`, clamped to 12x. **On an idle box the factor is exactly
 1.0, so nothing changes** — this is a no-op until the box is actually busy.

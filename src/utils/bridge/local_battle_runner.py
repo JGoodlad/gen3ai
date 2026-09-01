@@ -24,6 +24,7 @@ import asyncio
 import base64
 import itertools
 import json
+import sys
 from pathlib import Path
 from typing import List, Optional
 
@@ -36,7 +37,7 @@ from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge import reconstruction
 from contextlib import suppress
 
-from utils.contention import ProgressDeadline, scale_timeout
+from utils.contention import ProgressDeadline, describe_contention, scale_timeout
 
 _BRIDGE_JS = str(Path(__file__).parent / "local_sim_bridge.js")
 _PER_BATTLE_TIMEOUT = 180.0  # TOTAL backstop (livelock only) — the real detector is the idle gap
@@ -48,6 +49,14 @@ _PER_BATTLE_TIMEOUT = 180.0  # TOTAL backstop (livelock only) — the real detec
 # and still catches a true wedge in half a minute.
 _BATTLE_IDLE_BUDGET = 30.0
 
+# gen3_contention_robust_timeouts_v1 — how long to wait for the bridge child to REAP after it has
+# been told to exit (`END`). A cooperative exit is milliseconds of work, so 5 s is already ~1000x
+# headroom on an idle box — but it is still a wall-clock bound on a subprocess, and at load ~50 on
+# 16 cores this one fired and killed a measurement arm outright (2026-08-31). Scaled at CALL time
+# like every other bound here; there is no incremental progress to observe on a `wait()`, so
+# `scale_timeout` is the right tool rather than a `ProgressDeadline`.
+_TEARDOWN_REAP_TIMEOUT = 5.0
+
 
 def _per_battle_timeout() -> float:
     """The per-battle TOTAL backstop, stretched to the CPU share actually available.
@@ -58,6 +67,16 @@ def _per_battle_timeout() -> float:
     ``_PER_BATTLE_TIMEOUT`` (the parity test) still get their value scaled.
     """
     return scale_timeout(_PER_BATTLE_TIMEOUT)
+
+
+def _teardown_reap_timeout() -> float:
+    """The post-``END`` child-reap bound, stretched to the CPU share actually available.
+
+    Read at CALL time for the same reason as :func:`_per_battle_timeout`: a runner constructed on
+    an idle box and torn down beside a trainer must see the load it is ACTUALLY running under, not
+    the one it started under.
+    """
+    return scale_timeout(_TEARDOWN_REAP_TIMEOUT)
 
 
 async def _await_battle(coro, clients, what: str) -> None:
@@ -409,9 +428,17 @@ class _LocalBattleRunner:
                     await proc.stdin.drain()
             except (BrokenPipeError, ConnectionResetError):
                 pass
+            reap_budget = _teardown_reap_timeout()
             try:
-                await asyncio.wait_for(proc.wait(), timeout=5.0)
+                await asyncio.wait_for(proc.wait(), timeout=reap_budget)
             except asyncio.TimeoutError:  # pragma: no cover
+                # Self-diagnosing, per the project timeout rule: a bare kill here is invisible, and
+                # a killed child loses whatever it was still flushing. Say WHY the wait expired.
+                sys.stderr.write(
+                    f"[bridge] child did not exit within {reap_budget:.1f}s of END "
+                    f"(base {_TEARDOWN_REAP_TIMEOUT:.1f}s x contention scale) — killing it. "
+                    f"{describe_contention()}\n"
+                )
                 proc.kill()
                 await proc.wait()
         stderr_task.cancel()
