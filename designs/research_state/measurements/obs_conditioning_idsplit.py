@@ -91,12 +91,20 @@ if "active_req_moves" in rl:
 
 # ---- event window: exactly the columns EventSeats casts with .long() -------------------------
 if "event_window_offset" in L:
-    C = K.EVENT_COL
     tok = int(L["event_token_dim"])
-    names = [("TYPE", "event_kind"), ("ACTOR_SPECIES", "species"),
-             ("TARGET_SPECIES", "species"), ("MOVE", "move"), ("STATUS", "status"),
-             ("CANT", "cant"), ("FAINT_CAUSE", "faint"), ("ITEM_TRANSITION", "itemtr")]
-    cols = [(int(getattr(C, n)), k) for n, k in names if hasattr(C, n)]
+    C = getattr(K, "EVENT_COL", None) or getattr(K, "EventCol", None)
+    if C is not None:
+        names = [("TYPE", "event_kind"), ("ACTOR_SPECIES", "species"),
+                 ("TARGET_SPECIES", "species"), ("MOVE", "move"), ("STATUS", "status"),
+                 ("CANT", "cant"), ("FAINT_CAUSE", "faint"), ("ITEM_TRANSITION", "itemtr")]
+        cols = [(int(getattr(C, n)), k) for n, k in names if hasattr(C, n)]
+    else:
+        # gen-13 predates `gen3_event_col_names_v1` — the columns were a documented block of
+        # literals in its own `constants.py` (lines 214-226 of that revision). Those five
+        # positions are the SAME five the named enum later froze, and the assert makes the
+        # fallback unusable against any other token layout.
+        assert tok == 19, f"unnamed event columns at token dim {tok}"
+        cols = [(0, "event_kind"), (1, "species"), (3, "species"), (4, "move"), (15, "status")]
     for t in range(int(L["event_window_n"])):
         b = int(L["event_window_offset"]) + t * tok
         for c, k in cols:
@@ -131,10 +139,28 @@ def dump_manifest(worktree):
 def main():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from obs_conditioning_probe import GENERATIONS as GENS
-    from obs_conditioning_probe import live_mask, load_states, pr_cov, zscore
+    from obs_conditioning_probe import blocks_of, column_names, live_mask, load_states
+    from obs_conditioning_probe import boot_ci, pr_cov, zscore
+    _LIVE = []
+
+    def live_layout():
+        if not _LIVE:
+            from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+            _LIVE.append(Gen3ObservationEncoder(load_mappings()).get_layout())
+        return _LIVE[0]
+
     os.makedirs("/tmp/m8obs", exist_ok=True)
-    WT = {"/tmp/m8_layout_gen12.json": "/tmp/m8_gen12",
-          "/tmp/m8_layout_gen13.json": "/tmp/m8_gen13", "live": None}
+    here = os.path.dirname(os.path.abspath(__file__))
+    WT = {f"{here}/obs_layout_gen12.json": "/tmp/m8_gen12",
+          f"{here}/obs_layout_gen13.json": "/tmp/m8_gen13", "live": None}
+    for wt in (v for v in WT.values() if v):
+        if not os.path.isdir(wt):
+            raise SystemExit(
+                f"missing era worktree {wt}. This script EXECUTES each era's own manifest "
+                "declarations, so a cached layout dump is not enough. Create them with:\n"
+                "  git -C <main checkout> worktree add --detach /tmp/m8_gen12 ede5a887ea05\n"
+                "  git -C <main checkout> worktree add --detach /tmp/m8_gen13 1fa47332deb8\n"
+                "(each hash is that run's own metadata.json git_hash; remove them afterwards)")
     res = {"probe": "M8 part 2 — embedding-index vs scalar columns", "generations": {}}
     for label, run, step, lsrc in GENS:
         if lsrc is None:            # v8: no era layout reconstructed, deliberately out of scope
@@ -166,8 +192,39 @@ def main():
                "pr_ids_only_raw": pr_cov(X[:, idm]),
                "pr_scalars_only_raw": pr_cov(X[:, scm]),
                "pr_scalars_only_z": pr_cov(zscore(X[:, scm], np.ones(int(scm.sum()), bool))),
-               "id_kinds": by_kind}
+               "id_kinds": by_kind,
+               # Cluster bootstrap over trace files. NOTE the estimator is biased DOWNWARD under
+               # resampling-with-replacement (a duplicated battle is a perfectly correlated row
+               # pair, which concentrates the covariance), so the point estimate can sit above the
+               # interval. Read the WIDTH as the sampling scale, not the location as a bound.
+               "pr_scalars_ci95": boot_ci(X[:, scm], S, np.random.default_rng(20260831))}
         row["pr_scalars_per_live_dim"] = row["pr_scalars_only_raw"] / max(1, int(scm.sum()))
+        # top variance columns, each labelled ID-or-scalar — the claim "the loudest columns are
+        # the ones the network never reads as numbers" is checkable row by row here.
+        order = np.argsort(np.where(m, v, -1.0))[::-1][:20]
+        row["top_variance_columns"] = [
+            {"col": int(c), "std": float(np.sqrt(v[c])),
+             "var_share": float(v[c] / tot),
+             "kind": idmap.get(int(c), "SCALAR")} for c in order]
+        row["top20_id_fraction"] = float(
+            sum(1 for c in order if int(c) in idmap) / len(order))
+        # ---- the conditioning question, asked of the SCALAR columns only -------------------
+        # If the network's real scalar inputs span a huge dynamic range, that IS an optimization
+        # liability regardless of what the ID columns do. If they do not, there is nothing here
+        # for a normalizer to fix.
+        L = live_layout() if lsrc == "live" else json.load(open(lsrc))
+        names = column_names(L, blocks_of(L), D)
+        sv = v[scm]
+        sidx = np.flatnonzero(scm)
+        o2 = np.argsort(sv)[::-1]
+        row["scalar_scale"] = {
+            "std_max": float(np.sqrt(sv[o2[0]])),
+            "std_p99": float(np.sqrt(np.percentile(sv, 99))),
+            "std_median": float(np.sqrt(np.median(sv))),
+            "std_min": float(np.sqrt(sv[o2[-1]])),
+            "max_over_median": float(np.sqrt(sv[o2[0]] / max(np.median(sv), 1e-300))),
+            "top10": [{"col": int(sidx[i]), "name": names[sidx[i]],
+                       "std": float(np.sqrt(sv[i]))} for i in o2[:10]]}
         res["generations"][label] = row
         print(f"{label:32s} D={D:5d} idcols={int(idm.sum()):4d} "
               f"idvar={row['id_var_share']:.4f} PRfull={row['pr_full_raw']:7.2f} "

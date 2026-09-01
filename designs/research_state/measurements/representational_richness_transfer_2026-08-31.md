@@ -124,6 +124,19 @@ construction — the eras are nonetheless disjoint by a wide margin):
 
 ## 3. 🔴 THE GAP IS INHERITED FROM THE INPUT
 
+> ⚠️ **SUPERSEDED 2026-08-31 by `obs_conditioning_2026-08-31.md` (probe M8), which ran §12's own
+> recommended next test.** The numbers below reproduce (M8 measures 36.22 / 38.39 / 23.39 / 16.11
+> against 36.19 / 37.76 / 22.88 / 16.20) — but **433 of the observation's 2023 live columns are raw
+> dex numbers the extractor casts with `.long()` into `nn.Embedding`, and they carry 99.993% of the
+> raw variance**, so `PR(full obs) ≈ PR(ID columns only)` to two decimals. On the 1,590 columns the
+> network reads as magnitudes the PR is **flat across the whole ladder** (45.14 gen-12 → 44.62
+> gen-14 → 45.70 rev-1) and *rises* per live dimension, with a total dynamic range of 5.6×.
+> **There was no input richness collapse.** The datable schedule in §3.1 is real and M8 §3
+> attributes it completely — the event window added 704 dims of repeated species/move dex numbers,
+> the frames removed 1113, and the six surviving blocks' PR never moved — but it is a fact about
+> Showdown's numbering, not about the state description. Read §3/§3.1 as the measurement that led
+> to the right question, not as a finding.
+
 The participation ratio of a representation is a property of *(model, state distribution)*. The two
 eras cannot share a state set, so the null that has to be ruled out is: **is the input itself half
 as rich?** It is. The observation matrix, with no model involved at all:

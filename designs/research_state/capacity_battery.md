@@ -31,6 +31,21 @@ Three rules follow, and they are non-negotiable:
 3. **Every alarm needs PAIRED BEHAVIOURAL evidence.** The `validity` block is shipped *inside*
    every artifact so a reader six months from now cannot get the number without the caveat.
 
+**A fourth rule, minted 2026-08-31 by `measurements/obs_conditioning_2026-08-31.md`:**
+
+> **A participation ratio treats every column as a MAGNITUDE. Before quoting one, check that every
+> column in the matrix is consumed as a magnitude.**
+
+The specimen: the observation's own PR was measured collapsing 37.76 (gen-12) → 16.20 (gen-14) and
+read as an input-richness collapse. **433 of the 2023 live columns are raw dex numbers the extractor
+casts with `.long()` into `nn.Embedding`** — species num 1..386, move num, item num — and they carry
+**99.993% of the raw variance**; `PR(full obs) ≈ PR(ID columns only)` to two decimals. On the 1,590
+columns that actually reach a weight matrix as numbers the PR is **flat** (45.14 → 44.62 → 45.70)
+and their whole dynamic range is 5.6×. The metric was measuring Showdown's dex numbering. This
+does **not** apply to the taps in this battery — those are post-Linear activations, magnitudes by
+construction — but it applies to any PR taken on a raw observation or on any vector carrying
+embedding indices.
+
 ---
 
 ## The four probes

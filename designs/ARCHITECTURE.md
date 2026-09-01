@@ -71,9 +71,9 @@ The event window is the LAST block: `total_dim == base_dim`, and the encoder's o
 observation. There is no appended tail — `Gen3Env.embed_battle` returns `encode(...)` unchanged.
 
 **The event window** (Tier H-B, `gen3_event_window_v1`): the last 32 decision-relevant EVENTS as
-typed 19-column records — type id · actor/target species + side · move id · attributed
+typed 22-column records — type id · actor/target species + side · move id · attributed
 `hp_delta` · outcome/crit/effectiveness · `we_first` · status id · log-saturated recency ·
-forced-window phase tag · valid — folded by `EpisodeTracker.EventWindowTracker` from PUBLIC
+forced-window phase tag · valid · cant-reason id · faint-cause id · item-transition id — folded by `EpisodeTracker.EventWindowTracker` from PUBLIC
 protocol events (seq-idempotent), most-recent LAST with zero-padding at the front. Ids are
 embedding ids; **no Linear reads the block raw** — its only consumer is the opt-in
 `history_events` event-seat encoder (§ flag table). The columns are documented at

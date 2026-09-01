@@ -38,8 +38,19 @@ States inside one battle are one correlated sample; a per-state bootstrap would 
 interval (this tree's own pooled-correlation Simpson lesson).
 
 ERA LAYOUTS — gen-12 (2921) and gen-13 (3529) cannot be described by current code. Their layouts
-are dumped from git-worktrees pinned to each run's own `metadata.json` git_hash and cached as
-/tmp/m8_layout_gen1{2,3}.json (see the report's Provenance table for the two hashes).
+are dumped from git worktrees pinned to each run's own `metadata.json` git_hash and are COMMITTED
+beside this script (`obs_layout_gen1{2,3}.json`) so a re-run needs no worktree. To regenerate:
+
+    git -C <main checkout> worktree add --detach /tmp/m8_gen12 ede5a887ea056b6f3d2f56719baeecdcc\
+c5b1634
+    git -C <main checkout> worktree add --detach /tmp/m8_gen13 1fa47332deb87e0515702da15d7b2ee13\
+8396e34
+    ( cd /tmp/m8_gen12 && PYTHONPATH=/tmp/m8_gen12/src python -c \
+      "import json;from agents.observation.state_encoder import *;\
+       print(json.dumps(Gen3ObservationEncoder(load_mappings()).get_layout(),default=str))" )
+
+(and `git worktree remove` both afterwards). `obs_conditioning_idsplit.py` needs the WORKTREES
+themselves, not just these dumps, because it executes each era's own manifest declarations.
 
 Run: nice -n 15 python designs/research_state/measurements/obs_conditioning_probe.py
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
@@ -52,6 +63,7 @@ import os
 
 import numpy as np
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.environ.get("GEN3AI_MODELS_DIR", "/home/goodlad/dev/gen3ai/models")
 OUT = "/tmp/m8obs/obs_conditioning.json"
 N = 3000
@@ -63,9 +75,9 @@ SEED = 20260831
 GENERATIONS = [
     ("v8_04 (v8 era)", "ai_v8_04_distill_4teacher_0722", "step_276000000", None),
     ("gen-12 (frames LIVE)", "ai_v9_14_gen12_h_entitypool_shaping_0816", "step_8000016",
-     "/tmp/m8_layout_gen12.json"),
+     f"{_HERE}/obs_layout_gen12.json"),
     ("gen-13 (frames LIVE, +events)", "ai_v9_15_gen13_hb_events_stack_0817", "step_8000016",
-     "/tmp/m8_layout_gen13.json"),
+     f"{_HERE}/obs_layout_gen13.json"),
     ("gen-14 (frames DELETED)", "ai_v9_16_gen14_framedel_v91_0817", "step_8000016", "live"),
     ("gen-15", "ai_v9_18_gen15_v8rewards_0818", "step_8000016", "live"),
     ("gen-17", "ai_v9_21_gen17_pfspoff_0820", "step_8000016", "live"),
@@ -277,7 +289,8 @@ def main():
         pr_raw_live = pr_cov(X[:, m])          # dead columns must not change PR
         Zz = zscore(X, m)
         pr_z = pr_cov(Zz)
-        pr_corr = pr_cov(Zz)                   # z-score PR IS correlation PR; asserted below
+        # z-score PR IS correlation PR — computed the second way and DIFFERENCED below, so the
+        # identity is a recorded value rather than an assumption the reader has to take on trust.
         C = np.corrcoef(np.asarray(X[:, m], np.float64), rowvar=False)
         C = np.nan_to_num(C)
         pr_corr_direct = float(np.trace(C) ** 2 / (C * C).sum())
