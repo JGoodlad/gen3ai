@@ -1,0 +1,174 @@
+{
+ "v8/parent": {
+  "kl": {
+   "rho": 0.512,
+   "ci": [
+    0.047,
+    0.815
+   ],
+   "partial_given_parent_wr": 0.508
+  },
+  "tv": {
+   "rho": 0.288,
+   "ci": [
+    -0.253,
+    0.738
+   ],
+   "partial_given_parent_wr": 0.281
+  },
+  "dv_std": {
+   "rho": -0.276,
+   "ci": [
+    -0.662,
+    0.265
+   ],
+   "partial_given_parent_wr": -0.393
+  },
+  "d_auc_wp": {
+   "rho": -0.175,
+   "ci": [
+    -0.829,
+    0.471
+   ],
+   "partial_given_parent_wr": -0.191
+  },
+  "d_resolution": {
+   "rho": -0.188,
+   "ci": [
+    -0.724,
+    0.365
+   ],
+   "partial_given_parent_wr": -0.181
+  },
+  "spearman_gift_vs_parent_wr": -0.071
+ },
+ "v8/fold": {
+  "kl": {
+   "rho": 0.435,
+   "ci": [
+    -0.109,
+    0.753
+   ],
+   "partial_given_parent_wr": 0.448
+  },
+  "tv": {
+   "rho": 0.203,
+   "ci": [
+    -0.344,
+    0.603
+   ],
+   "partial_given_parent_wr": 0.214
+  },
+  "dv_std": {
+   "rho": 0.082,
+   "ci": [
+    -0.429,
+    0.55
+   ],
+   "partial_given_parent_wr": 0.056
+  },
+  "d_auc_wp": {
+   "rho": 0.321,
+   "ci": [
+    -0.236,
+    0.692
+   ],
+   "partial_given_parent_wr": 0.257
+  },
+  "d_resolution": {
+   "rho": 0.374,
+   "ci": [
+    -0.221,
+    0.741
+   ],
+   "partial_given_parent_wr": 0.413
+  },
+  "spearman_gift_vs_parent_wr": -0.071
+ },
+ "gen/parent": {
+  "kl": {
+   "rho": 0.214,
+   "ci": [
+    -0.643,
+    0.857
+   ],
+   "partial_given_parent_wr": 0.804
+  },
+  "tv": {
+   "rho": 0.333,
+   "ci": [
+    -0.5,
+    0.929
+   ],
+   "partial_given_parent_wr": 0.942
+  },
+  "dv_std": {
+   "rho": 0.095,
+   "ci": [
+    -0.738,
+    0.929
+   ],
+   "partial_given_parent_wr": 0.284
+  },
+  "d_auc_wp": {
+   "rho": 0.333,
+   "ci": [
+    -0.452,
+    0.905
+   ],
+   "partial_given_parent_wr": 0.126
+  },
+  "d_resolution": {
+   "rho": 0.333,
+   "ci": [
+    -0.5,
+    1.0
+   ],
+   "partial_given_parent_wr": 0.279
+  },
+  "spearman_gift_vs_parent_wr": -0.595
+ },
+ "gen/fold": {
+  "kl": {
+   "rho": 0.071,
+   "ci": [
+    -0.643,
+    0.786
+   ],
+   "partial_given_parent_wr": 0.53
+  },
+  "tv": {
+   "rho": 0.143,
+   "ci": [
+    -0.619,
+    0.857
+   ],
+   "partial_given_parent_wr": 0.522
+  },
+  "dv_std": {
+   "rho": 0.214,
+   "ci": [
+    -0.548,
+    0.905
+   ],
+   "partial_given_parent_wr": 0.128
+  },
+  "d_auc_wp": {
+   "rho": 0.214,
+   "ci": [
+    -0.667,
+    0.833
+   ],
+   "partial_given_parent_wr": 0.376
+  },
+  "d_resolution": {
+   "rho": 0.286,
+   "ci": [
+    -0.524,
+    0.857
+   ],
+   "partial_given_parent_wr": 0.569
+  },
+  "spearman_gift_vs_parent_wr": -0.595
+ }
+}

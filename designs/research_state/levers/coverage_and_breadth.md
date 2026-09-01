@@ -81,6 +81,17 @@ The ledger's own count (`91d5125`): six settled with measurements, one interim.
 - Whether the ceiling itself can be lifted. **F6-CURR is the first ceiling manipulation and it
   already ran** (`61608ac` §9) — its absolute-vs-0.69 row is requested before any new ceiling
   experiment is designed.
+- **Whether the gift's carrier is breadth or MATURITY, given that it is now known to be POLICY-side.**
+  M5 (`measurements/critic_as_transfer_vehicle_2026-08-31.md`) removed the critic from the list: off
+  the taught slice neither era's fold moves the critic's ordering more than ordinary training does,
+  and neither improves its resolution — both only de-bias its LEVEL, which PPO's advantage is
+  invariant to. What separates the eras is that v8's fold cleared its own no-fold control on the
+  POLICY meter (KL 1.28-1.30x untaught) while rev-3's cleared nothing (0.91x) — and the per-team
+  `KL(fold||parent)` is the only meter that orders with the per-team gift (rho +0.512 [+0.047,
+  +0.815], n=16). **Breadth and maturity both predict a larger relative policy displacement, so M5
+  narrows the mechanism without choosing between them.** It also supplies a CHEAP pre-registerable
+  screen for any future fleet: measure the fold's KL against a matched same-run control BEFORE
+  paying for the untaught cut — a fold below its own noise floor has nothing to radiate.
 
 ## Pros
 

@@ -8024,3 +8024,52 @@ playoff STAGE so a conclusive REVERSAL counted as a confirmation). Tests 357 pas
 gate that fails if any `DefensiveConfig` field is fed by no flag. **Surviving candidates: a
 CONTRASTIVE critic objective (probe G sized ≤5.7pp; this cell says the current head has ~none
 of it) and DEPTH (needs the per-decision offset solved first).**
+
+### 🔬 M5 — THE CRITIC IS NOT THE OFF-SLICE VEHICLE; the fold's off-slice gift to the critic is LEVEL, and RESOLUTION is as LOCAL as the behaviour (2026-08-31)
+
+**`measurements/critic_as_transfer_vehicle_2026-08-31.{md,json}` + probe.** 720 battles, 30,108
+states, 60 team-cells, 0 dropped; both eras (v8_04→v8_14 the fold that GIFTED +5.42pp; R2ACTION→
+R3ACTION the fold that did not), both team classes, states GENERATED (the recorded traces carry no
+mask and their logits are already log-probs — the vacuous ALL-LEGAL trap), parent/fold/**control**
+scored on identical obs + identical mask in one process. The control — an earlier checkpoint of the
+parent's OWN run — is what makes "the policy moved more than the critic" a statement rather than a
+comparison of nats to rank correlations.
+
+**Both registered predictions fail, and they fail toward the policy.** (P1) v8's fold does NOT
+improve off-slice critic resolution — it DEGRADES it on parent-generated states (Murphy resolution
+0.0844→0.0734, −13%; early states 0.0440→0.0288, −35%; AUC 0.843→0.817) and leaves it flat on its
+own (0.0700→0.0716). The gen fold also does not improve it, so **the eras do not differ on the
+critic axis at all.** (P2) The larger mover is the policy — and it is also the ONLY meter with a
+detectable ordering against the per-team gift: `KL(fold‖parent)` vs gift **ρ = +0.512 [+0.047,
++0.815]** over v8's 16 untaught teams (partial +0.508 given parent WR; reproduces +0.435 on the
+independent fold-generated state set). **Every critic meter's CI straddles zero in all four cells,
+and the two v8 cells disagree in SIGN on Δresolution** — a meter whose sign depends on which arm
+generated the states is not measuring the gift.
+
+**What a fold does deliver to the critic off-slice is LEVEL:** reliability falls in 4/4 untaught
+cells (0.0028→0.0006 · 0.0117→0.0032 · 0.0265→0.0133 · 0.0145→0.0073) and the optimism bias moves
+toward zero every time, in v8's untaught case through it (+0.041→−0.015). PPO's advantage is
+invariant to a constant value offset, so a pure level shift is close to behaviourally inert by
+construction. **RESOLUTION moves only on the TAUGHT slice, in BOTH eras** (v8 0.0588→0.0633, early
++54%; gen 0.0501→0.0565, early +15%) — the critic's own version of `project_fold_transfer_is_local`,
+measured independently.
+
+**The unregistered finding that may be the most useful: rev-3's fold is behaviourally SMALLER than
+its own matched no-fold control.** Against a 4.07M-step control (its fold spans 4.55M — well
+matched), R3ACTION moved 0.91× on KL, 0.95× TV, 0.92× |Δz(V)|, 0.88× within-battle de-ranking on
+untaught teams, and 0.85/0.72/0.71/0.83× on taught. v8's fold clears its control on the policy meter
+(1.28×/1.30× untaught, 1.48× taught) and on nothing else. **A fold below its own noise floor has
+nothing to radiate** — a mechanism for "no gift" that needs no critic story, and one that is
+checkable on any future fleet BEFORE its untaught cut is measured. ⚠️ v8's control spans HALF its
+fold's interval, so v8's ratios are over-estimates; the clean half of the era contrast is the gen
+side.
+
+**Consequence for the (i)/(ii) fork: the critic comes OFF the list.** What survives is that v8's
+fold made a larger relative behavioural displacement off-slice and that its size tracks the gift
+across teams — consistent with BOTH the coverage/breadth account and the maturity account (a
+277M-step parent has a slower ordinary-training clock, so the same fold registers as a larger
+relative move). This probe cannot separate those two. **Named gap:** the critic's ranking over
+ACTIONS was substituted by its ranking over STATES (within battle) plus the TD sequence, because a
+true action ranking needs one-ply successor materialisation that does not exist on the era tree — if
+a fold re-orders action preferences without re-ordering state preferences, this probe is blind to
+it. `lookahead` on the gen era is the instrument that closes it.
