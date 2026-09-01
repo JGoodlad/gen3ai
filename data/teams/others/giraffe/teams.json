@@ -198,15 +198,6 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "104e2a85a6e9af88",
-    "name": "Cloy TauntTar RockGyara SDHera CursePert WishJira",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/104e2a85a6e9af88.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "bb3165c46a932902",
     "name": "CloyGar Aero ToxTWZap WishJira",
     "format": "gen3ou",
@@ -393,15 +384,6 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "afd2ab3e0dc315a3",
-    "name": "DDMence DDTar CursePert ToxTWZap Lax",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/afd2ab3e0dc315a3.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "75d88119ab48cf31",
     "name": "DDMence DDTar OffCune SDHera CursePert WishJira",
     "format": "gen3ou",
@@ -480,15 +462,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/636cdf6a4781792a.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "68e97dd10121a526",
-    "name": "DDMence Zard DDTar SubCune SubKou",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/68e97dd10121a526.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -844,30 +817,12 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "a8081883e8d8d252",
-    "name": "Dug RestCune CursePert Gar ToxTWZap",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/a8081883e8d8d252.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "779895ceb5ff549c",
     "name": "Dug SeedCMCele CMJira CursePert Gar ToxTWZap",
     "format": "gen3ou",
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/779895ceb5ff549c.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "e216c746abc4f927",
-    "name": "Dug Star SeedCMCele CursePert Gar ToxTWZap",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/e216c746abc4f927.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -1015,15 +970,6 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "080fced2dfdaff5b",
-    "name": "Forre SuitTar MixMence MixJira ToxBliss",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/080fced2dfdaff5b.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "d5a958a42f0930c5",
     "name": "Forre SuitTar MixMence Quag ToxBliss",
     "format": "gen3ou",
@@ -1075,15 +1021,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/465e8c03afcaad35.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "bd5ae06d4cffeac9",
-    "name": "Forre SuitTar MixMence SeedCMCele CounterBliss",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/bd5ae06d4cffeac9.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -1280,15 +1217,6 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "c14cedbf01022302",
-    "name": "ForreGar SuitTar Zard WishJira",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/c14cedbf01022302.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "b6ae9c587da61415",
     "name": "ForreGarDug SuitTar WishTWBliss",
     "format": "gen3ou",
@@ -1406,30 +1334,12 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "a1884ad6b1a6ab61",
-    "name": "Mag DDMence SeedCMCele RestCursePert Lax",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/a1884ad6b1a6ab61.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "66e705dbc452b046",
     "name": "Mag DDMence SeedCMCele RestCursePert ToxTWZap",
     "format": "gen3ou",
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/66e705dbc452b046.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "52d8bc6a0d1ee206",
-    "name": "Mag DDMence SubCune SeedCMCele Lax",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/52d8bc6a0d1ee206.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -1597,30 +1507,12 @@
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
-    "id": "f97360d9c85e71f4",
-    "name": "Mag SubBPJolt CBMence RestLax SDHera",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/f97360d9c85e71f4.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
     "id": "bbd3b6da43ede1c4",
     "name": "Mag SubBPJolt GhostGyara SubTectCune Lax",
     "format": "gen3ou",
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/bbd3b6da43ede1c4.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "37df8b9e53995bef",
-    "name": "Mag SubGyara DDTar SubCune AgiliMeta SeedCMCele",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/37df8b9e53995bef.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -1632,15 +1524,6 @@
       "Magneton has Hidden Power Fire, but its IVs are for Hidden Power Dragon."
     ],
     "file": "teams/others/giraffe/332fb5a52504259d.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "f6aa8e650d9ba54f",
-    "name": "Mag Zard SeedCMCele RestCursePert Lax",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/f6aa8e650d9ba54f.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -1659,15 +1542,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/b551cc362a5c1692.txt",
-    "source": "https://pokepast.es/aeb9b0463613fef0"
-  },
-  {
-    "id": "80adad21ff85f6d7",
-    "name": "MixMence CursePert MixJira Lax ToxTWZap",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/80adad21ff85f6d7.txt",
     "source": "https://pokepast.es/aeb9b0463613fef0"
   },
   {
@@ -2584,15 +2458,6 @@
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
-    "id": "79a7993acae83b22",
-    "name": "SkarmMag SuitTar Aero CursePert SeedCele",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/79a7993acae83b22.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
     "id": "17ff2d33b22de366",
     "name": "SkarmMag Zard CursePert SeedCele WishBliss",
     "format": "gen3ou",
@@ -2665,15 +2530,6 @@
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
-    "id": "02b35790c7ce6988",
-    "name": "Star MixMence DDTar RestCursePert WishJolt",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/02b35790c7ce6988.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
     "id": "4823b9dc9d31edd2",
     "name": "Star MixMence DDTar SeedCMCele CursePert",
     "format": "gen3ou",
@@ -2698,15 +2554,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/06b34b6cda46954d.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
-    "id": "a507d3d9bd806cad",
-    "name": "Star SubBPJolt Zard SeedCMCele MixJira",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/a507d3d9bd806cad.txt",
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
@@ -2826,15 +2673,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/33a26417ca883afc.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
-    "id": "90b6782cb9903abc",
-    "name": "Star Zard SubCune SeedCMCele ToxTWZap",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/90b6782cb9903abc.txt",
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
@@ -3004,30 +2842,12 @@
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
-    "id": "24c358539660af82",
-    "name": "SubBPJolt MixMence DDTar CMCele CursePert",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/24c358539660af82.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
     "id": "1d79552db0d49671",
     "name": "SubBPJolt MixMence DDTar CMJira CursePert",
     "format": "gen3ou",
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/1d79552db0d49671.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
-    "id": "995ccaf788125f1e",
-    "name": "SubBPJolt MixMence DDTar CursePert Gar",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/995ccaf788125f1e.txt",
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
@@ -3085,15 +2905,6 @@
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
-    "id": "10834006af554318",
-    "name": "SubBPJolt SubZard CursePert MixJira Gar Lax",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/10834006af554318.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
     "id": "c872b774d3ace5fb",
     "name": "SubBPJolt SubZard DDTar CursePert Ken",
     "format": "gen3ou",
@@ -3136,15 +2947,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/e81c37f726e5f3db.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
-    "id": "453ea4a360081557",
-    "name": "SubBPJolt TWGyara DDTarCursePert MixJira",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/453ea4a360081557.txt",
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {
@@ -3625,15 +3427,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/giraffe/3674ba5bb3f0001f.txt",
-    "source": "https://pokepast.es/d75f47ad30d08853"
-  },
-  {
-    "id": "d2280fadb659cad8",
-    "name": "Zard DDTar SubCune SeedCMCele MixJira",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/giraffe/d2280fadb659cad8.txt",
     "source": "https://pokepast.es/d75f47ad30d08853"
   },
   {

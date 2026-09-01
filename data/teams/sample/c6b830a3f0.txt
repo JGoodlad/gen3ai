@@ -1,0 +1,56 @@
+e (Swampert) (F) @ Leftovers  
+Ability: Torrent  
+EVs: 240 HP / 136 Def / 132 SpD  
+Relaxed Nature  
+- Protect  
+- Toxic  
+- Earthquake  
+- Ice Beam  
+
+r (Magneton) @ Salac Berry  
+Ability: Magnet Pull  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Endure  
+- Thunder Wave  
+- Thunderbolt  
+- Hidden Power [Grass]  
+
+y (Jolteon) (F) @ Leftovers  
+Ability: Volt Absorb  
+EVs: 4 HP / 252 SpA / 252 Spe  
+Timid Nature  
+IVs: 2 Atk / 30 SpA  
+- Substitute  
+- Thunderbolt  
+- Hidden Power [Grass]  
+- Baton Pass  
+
+t (Snorlax) (F) @ Leftovers  
+Ability: Thick Fat  
+EVs: 80 HP / 16 Atk / 252 Def / 160 SpD  
+Impish Nature  
+- Rest  
+- Curse  
+- Return  
+- Hidden Power [Bug]  
+
+q (Heracross) (F) @ Leftovers  
+Ability: Guts  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Swords Dance  
+- Megahorn  
+- Rock Slide  
+- Brick Break  
+
+w (Salamence) (F) @ Choice Band  
+Ability: Intimidate  
+EVs: 116 HP / 252 Atk / 140 Spe  
+Adamant Nature  
+IVs: 30 SpA / 30 SpD / 30 Spe  
+- Wish  
+- Earthquake  
+- Rock Slide  
+- Hidden Power [Flying]

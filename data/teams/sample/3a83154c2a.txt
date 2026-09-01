@@ -1,0 +1,56 @@
+Slaking @ Choice Band  
+Ability: Truant  
+EVs: 252 Atk / 4 Def / 252 Spe  
+Adamant Nature  
+- Double-Edge  
+- Earthquake  
+- Rain Dance  
+- Focus Punch  
+
+Jirachi @ Leftovers  
+Ability: Serene Grace  
+EVs: 252 HP / 236 Def / 20 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Wish  
+- Protect  
+- Fire Punch  
+- Toxic  
+
+Blissey (F) @ Leftovers  
+Ability: Natural Cure  
+EVs: 252 Def / 200 SpA / 56 Spe  
+Modest Nature  
+IVs: 0 Atk  
+- Aromatherapy  
+- Soft-Boiled  
+- Seismic Toss  
+- Ice Beam  
+
+Suicune @ Leftovers  
+Ability: Pressure  
+EVs: 248 HP / 176 Def / 84 Spe  
+Bold Nature  
+IVs: 0 Atk  
+- Surf  
+- Rest  
+- Roar  
+- Calm Mind  
+
+Claydol @ Choice Band  
+Ability: Levitate  
+EVs: 144 HP / 252 Atk / 112 Spe  
+Adamant Nature  
+- Earthquake  
+- Shadow Ball  
+- Explosion  
+- Rapid Spin  
+
+Salamence @ Choice Band  
+Ability: Intimidate  
+EVs: 252 Atk / 4 SpD / 252 Spe  
+Jolly Nature  
+- Hidden Power [Flying]  
+- Earthquake  
+- Rock Slide  
+- Brick Break

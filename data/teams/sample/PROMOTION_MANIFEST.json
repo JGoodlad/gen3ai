@@ -1,0 +1,679 @@
+{
+  "_meta": {
+    "tool": "python -m main.promote_teams",
+    "generated_at": "2026-08-31T23:02:35+00:00",
+    "git_hash": "17f127705693310a192314357696fe987b5e17aa",
+    "key_convention": "sha1(team_text.strip())[:10] \u2014 agents.training.team_archetypes.team_sha (STRIPPED; the unstripped variant is a recorded derived-key defect)",
+    "selection": "UNIFORM RANDOM over the eligible pool (owner ruling, ledger 2026-08-30) \u2014 not ranked, not curated. Archetype composition below is REPORTED, never corrected; correcting it would reintroduce the selection confound.",
+    "validated": true,
+    "format": "gen3ou"
+  },
+  "seed": 1383414976,
+  "n_requested": 40,
+  "pool_total": 719,
+  "eligible": 693,
+  "considered": 40,
+  "exclusions": {
+    "source": "/home/goodlad/dev/gen3ai/designs/ai_v12/promotion_exclusions.json",
+    "total": 26,
+    "by_category": {
+      "taught_F5": 9,
+      "taught_F6": 12,
+      "rev4_pending": 24,
+      "held_out_instruments": 2
+    },
+    "shas": [
+      "01cb64e16c",
+      "1c4e182530",
+      "21022d30fb",
+      "3495ef83ef",
+      "41357610f2",
+      "45995e432f",
+      "591321332b",
+      "637cbb13a2",
+      "69af2f1507",
+      "6a49f096f0",
+      "78b3b6f4a6",
+      "8aa51ef85c",
+      "95e69273f8",
+      "a12e56dca3",
+      "a2d1246e4b",
+      "a7406f6c97",
+      "a7bb29d48c",
+      "b08909ab04",
+      "bcd4d09ee9",
+      "bd4af7191a",
+      "c6e5e12614",
+      "c84f2b64a2",
+      "e050d23078",
+      "f23f64a6b2",
+      "f36747ae7e",
+      "fffd943e9e"
+    ]
+  },
+  "draw": [
+    {
+      "rank": 1,
+      "sha": "8bdb5796b9",
+      "source": "data/teams/others/yak_attack/c78460887076e254.txt",
+      "dest": "data/teams/sample/8bdb5796b9.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "balance",
+      "tags": [
+        "sand",
+        "wish",
+        "choice"
+      ]
+    },
+    {
+      "rank": 2,
+      "sha": "436335607f",
+      "source": "data/teams/others/giraffe/c14cedbf01022302.txt",
+      "dest": "data/teams/sample/436335607f.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "balance",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "spinblock",
+        "phaze",
+        "wish"
+      ]
+    },
+    {
+      "rank": 3,
+      "sha": "11fb5d2fc2",
+      "source": "data/teams/others/giraffe/52d8bc6a0d1ee206.txt",
+      "dest": "data/teams/sample/11fb5d2fc2.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "trap",
+        "status_heavy",
+        "boom",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 4,
+      "sha": "c6b830a3f0",
+      "source": "data/teams/others/giraffe/f97360d9c85e71f4.txt",
+      "dest": "data/teams/sample/c6b830a3f0.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "semi_stall",
+      "tags": [
+        "trap",
+        "status_heavy",
+        "wish",
+        "choice"
+      ]
+    },
+    {
+      "rank": 5,
+      "sha": "6916e13879",
+      "source": "data/teams/others/yak_attack/b31c35c13a26836a.txt",
+      "dest": "data/teams/sample/6916e13879.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "phaze",
+        "trap",
+        "status_heavy",
+        "wish"
+      ]
+    },
+    {
+      "rank": 6,
+      "sha": "e702a104eb",
+      "source": "data/teams/others/yak_attack/99baf306564b3096.txt",
+      "dest": "data/teams/sample/e702a104eb.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "spinblock",
+        "phaze",
+        "status_heavy"
+      ]
+    },
+    {
+      "rank": 7,
+      "sha": "ac17a9dde5",
+      "source": "data/teams/others/giraffe/24c358539660af82.txt",
+      "dest": "data/teams/sample/ac17a9dde5.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "hyper_offense",
+      "tags": [
+        "sand",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 8,
+      "sha": "d1ed25a242",
+      "source": "data/teams/others/mcmegan/2e37cac9b0ecf1ce.txt",
+      "dest": "data/teams/sample/d1ed25a242.txt",
+      "action": "copy",
+      "folder": "mcmegan",
+      "archetype": "semi_stall",
+      "tags": [
+        "spikes",
+        "spin",
+        "phaze",
+        "wish",
+        "boom"
+      ]
+    },
+    {
+      "rank": 9,
+      "sha": "64a691c473",
+      "source": "data/teams/others/giraffe/10834006af554318.txt",
+      "dest": "data/teams/sample/64a691c473.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "boom"
+      ]
+    },
+    {
+      "rank": 10,
+      "sha": "e28069562f",
+      "source": "data/teams/others/giraffe/79a7993acae83b22.txt",
+      "dest": "data/teams/sample/e28069562f.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "phaze",
+        "trap",
+        "status_heavy",
+        "choice"
+      ]
+    },
+    {
+      "rank": 11,
+      "sha": "4bb434f8ba",
+      "source": "data/teams/others/giraffe/e216c746abc4f927.txt",
+      "dest": "data/teams/sample/4bb434f8ba.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "hyper_offense",
+      "tags": [
+        "spin",
+        "trap",
+        "status_heavy",
+        "choice"
+      ]
+    },
+    {
+      "rank": 12,
+      "sha": "3650f09b2f",
+      "source": "data/teams/others/yak_attack/2bf18bb5d7af4c86.txt",
+      "dest": "data/teams/sample/3650f09b2f.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "spinblock",
+        "phaze",
+        "status_heavy"
+      ]
+    },
+    {
+      "rank": 13,
+      "sha": "9e95fb59d7",
+      "source": "data/teams/others/giraffe/a507d3d9bd806cad.txt",
+      "dest": "data/teams/sample/9e95fb59d7.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "spin"
+      ]
+    },
+    {
+      "rank": 14,
+      "sha": "9d8391d864",
+      "source": "data/teams/others/giraffe/bd5ae06d4cffeac9.txt",
+      "dest": "data/teams/sample/9d8391d864.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "phaze",
+        "wish"
+      ]
+    },
+    {
+      "rank": 15,
+      "sha": "a185b2d193",
+      "source": "data/teams/others/giraffe/37df8b9e53995bef.txt",
+      "dest": "data/teams/sample/a185b2d193.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "sand",
+        "trap",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 16,
+      "sha": "dbbfac7bd5",
+      "source": "data/teams/others/yak_attack/c475242590f295fd.txt",
+      "dest": "data/teams/sample/dbbfac7bd5.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "offense",
+      "tags": [
+        "rain",
+        "phaze",
+        "trap",
+        "boom",
+        "choice"
+      ]
+    },
+    {
+      "rank": 17,
+      "sha": "750d056194",
+      "source": "data/teams/others/giraffe/80adad21ff85f6d7.txt",
+      "dest": "data/teams/sample/750d056194.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "boom"
+      ]
+    },
+    {
+      "rank": 18,
+      "sha": "a9831a5f5e",
+      "source": "data/teams/others/mcmegan/2115a509c31e4bd3.txt",
+      "dest": "data/teams/sample/a9831a5f5e.txt",
+      "action": "copy",
+      "folder": "mcmegan",
+      "archetype": "stall",
+      "tags": [
+        "spikes",
+        "spin",
+        "phaze",
+        "trap",
+        "wish",
+        "choice"
+      ]
+    },
+    {
+      "rank": 19,
+      "sha": "c9a2cef359",
+      "source": "data/teams/others/giraffe/a1884ad6b1a6ab61.txt",
+      "dest": "data/teams/sample/c9a2cef359.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "trap",
+        "status_heavy",
+        "boom",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 20,
+      "sha": "3a83154c2a",
+      "source": "data/teams/others/johnnyg2/0b9935b06b8b8f2a.txt",
+      "dest": "data/teams/sample/3a83154c2a.txt",
+      "action": "copy",
+      "folder": "johnnyg2",
+      "archetype": "balance",
+      "tags": [
+        "rain",
+        "spin",
+        "phaze",
+        "wish",
+        "choice"
+      ]
+    },
+    {
+      "rank": 21,
+      "sha": "6ebe9ebc4d",
+      "source": "data/teams/others/johnnyg2/076bfb7655a30c00.txt",
+      "dest": "data/teams/sample/6ebe9ebc4d.txt",
+      "action": "copy",
+      "folder": "johnnyg2",
+      "archetype": "stall",
+      "tags": [
+        "spikes",
+        "spin",
+        "spinblock",
+        "phaze",
+        "trap",
+        "wish",
+        "choice"
+      ]
+    },
+    {
+      "rank": 22,
+      "sha": "9b454d9ea7",
+      "source": "data/teams/others/giraffe/080fced2dfdaff5b.txt",
+      "dest": "data/teams/sample/9b454d9ea7.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "phaze",
+        "wish"
+      ]
+    },
+    {
+      "rank": 23,
+      "sha": "422a4745c5",
+      "source": "data/teams/others/yak_attack/aac1c4b1f28264cb.txt",
+      "dest": "data/teams/sample/422a4745c5.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "balance",
+      "tags": [
+        "sand",
+        "spikes",
+        "spinblock",
+        "phaze",
+        "status_heavy",
+        "wish"
+      ]
+    },
+    {
+      "rank": 24,
+      "sha": "8b81c129de",
+      "source": "data/teams/others/giraffe/afd2ab3e0dc315a3.txt",
+      "dest": "data/teams/sample/8b81c129de.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "hyper_offense",
+      "tags": [
+        "sand",
+        "boom",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 25,
+      "sha": "009e3d0244",
+      "source": "data/teams/others/giraffe/995ccaf788125f1e.txt",
+      "dest": "data/teams/sample/009e3d0244.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "sand",
+        "status_heavy",
+        "boom"
+      ]
+    },
+    {
+      "rank": 26,
+      "sha": "b904dbe059",
+      "source": "data/teams/others/giraffe/104e2a85a6e9af88.txt",
+      "dest": "data/teams/sample/b904dbe059.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "balance",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "wish",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 27,
+      "sha": "9ba039ba8a",
+      "source": "data/teams/others/yak_attack/1e19b2e672d62153.txt",
+      "dest": "data/teams/sample/9ba039ba8a.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "offense",
+      "tags": [
+        "sand",
+        "phaze",
+        "boom",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 28,
+      "sha": "63f81c5c58",
+      "source": "data/teams/others/giraffe/f6aa8e650d9ba54f.txt",
+      "dest": "data/teams/sample/63f81c5c58.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "balance",
+      "tags": [
+        "trap",
+        "status_heavy",
+        "boom"
+      ]
+    },
+    {
+      "rank": 29,
+      "sha": "aea50f207e",
+      "source": "data/teams/others/yak_attack/b29c50a6215251fd.txt",
+      "dest": "data/teams/sample/aea50f207e.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "phaze",
+        "status_heavy"
+      ]
+    },
+    {
+      "rank": 30,
+      "sha": "37d717a93a",
+      "source": "data/teams/others/giraffe/90b6782cb9903abc.txt",
+      "dest": "data/teams/sample/37d717a93a.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "spin"
+      ]
+    },
+    {
+      "rank": 31,
+      "sha": "4239fc5ba2",
+      "source": "data/teams/others/johnnyg2/1fa6c3069c3a817d.txt",
+      "dest": "data/teams/sample/4239fc5ba2.txt",
+      "action": "copy",
+      "folder": "johnnyg2",
+      "archetype": "hyper_offense",
+      "tags": [
+        "spikes",
+        "spin",
+        "boom",
+        "choice"
+      ]
+    },
+    {
+      "rank": 32,
+      "sha": "713403f9e9",
+      "source": "data/teams/others/yak_attack/34dc90bd60429b0b.txt",
+      "dest": "data/teams/sample/713403f9e9.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "phaze",
+        "trap",
+        "status_heavy",
+        "choice"
+      ]
+    },
+    {
+      "rank": 33,
+      "sha": "7d0337af97",
+      "source": "data/teams/others/giraffe/453ea4a360081557.txt",
+      "dest": "data/teams/sample/7d0337af97.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "sand",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 34,
+      "sha": "6a634b6281",
+      "source": "data/teams/others/giraffe/68e97dd10121a526.txt",
+      "dest": "data/teams/sample/6a634b6281.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "hyper_offense",
+      "tags": [
+        "sand",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 35,
+      "sha": "fda8ad353a",
+      "source": "data/teams/others/johnnyg2/568544cc6219709c.txt",
+      "dest": "data/teams/sample/fda8ad353a.txt",
+      "action": "copy",
+      "folder": "johnnyg2",
+      "archetype": "hyper_offense",
+      "tags": [
+        "sand",
+        "spin",
+        "boom"
+      ]
+    },
+    {
+      "rank": 36,
+      "sha": "a5d6b3f271",
+      "source": "data/teams/others/giraffe/d2280fadb659cad8.txt",
+      "dest": "data/teams/sample/a5d6b3f271.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "hyper_offense",
+      "tags": [
+        "sand",
+        "setup_heavy"
+      ]
+    },
+    {
+      "rank": 37,
+      "sha": "af923978cf",
+      "source": "data/teams/others/yak_attack/274bdcb8345368b7.txt",
+      "dest": "data/teams/sample/af923978cf.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spinblock",
+        "phaze",
+        "status_heavy",
+        "wish"
+      ]
+    },
+    {
+      "rank": 38,
+      "sha": "9c44a67be3",
+      "source": "data/teams/others/giraffe/a8081883e8d8d252.txt",
+      "dest": "data/teams/sample/9c44a67be3.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "offense",
+      "tags": [
+        "trap",
+        "status_heavy",
+        "boom",
+        "choice"
+      ]
+    },
+    {
+      "rank": 39,
+      "sha": "a6252f809d",
+      "source": "data/teams/others/yak_attack/f6b832746dabb1c6.txt",
+      "dest": "data/teams/sample/a6252f809d.txt",
+      "action": "copy",
+      "folder": "yak_attack",
+      "archetype": "semi_stall",
+      "tags": [
+        "sand",
+        "spikes",
+        "spin",
+        "spinblock",
+        "phaze",
+        "status_heavy",
+        "wish",
+        "boom"
+      ]
+    },
+    {
+      "rank": 40,
+      "sha": "46d3021c99",
+      "source": "data/teams/others/giraffe/02b35790c7ce6988.txt",
+      "dest": "data/teams/sample/46d3021c99.txt",
+      "action": "copy",
+      "folder": "giraffe",
+      "archetype": "balance",
+      "tags": [
+        "sand",
+        "spin",
+        "wish"
+      ]
+    }
+  ],
+  "replacements": [],
+  "archetype_composition": {
+    "offense": 12,
+    "semi_stall": 9,
+    "balance": 7,
+    "hyper_offense": 7,
+    "stall": 5
+  },
+  "folder_composition": {
+    "giraffe": 23,
+    "yak_attack": 11,
+    "johnnyg2": 4,
+    "mcmegan": 2
+  },
+  "action_composition": {
+    "copy": 40
+  }
+}

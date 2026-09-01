@@ -57,15 +57,6 @@
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
-    "id": "34dc90bd60429b0b",
-    "name": "CloyMag VenuPert Aero",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/34dc90bd60429b0b.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
     "id": "5b14332612c5142b",
     "name": "Forre AdamantAero TimidSingBliss",
     "format": "gen3ou",
@@ -545,15 +536,6 @@
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
-    "id": "b29c50a6215251fd",
-    "name": "SkarmBliss CHARIZARD",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/b29c50a6215251fd.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
     "id": "487ba3937093dae0",
     "name": "SkarmBliss Dol Milo BulkyCele MaxModestGar",
     "format": "gen3ou",
@@ -648,15 +630,6 @@
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
-    "id": "99baf306564b3096",
-    "name": "SkarmBliss Star MixPert",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/99baf306564b3096.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
     "id": "5cee8d4c7b83fb9f",
     "name": "SkarmBliss Tarless Dug Cune BulkySuperJira Gar",
     "format": "gen3ou",
@@ -747,15 +720,6 @@
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
-    "id": "b31c35c13a26836a",
-    "name": "SkarmMag Donphan Cune WishBliss",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/b31c35c13a26836a.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
     "id": "a6a71ae92a8a958c",
     "name": "SkarmMag Gar",
     "format": "gen3ou",
@@ -783,15 +747,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/yak_attack/95a6284fec5c9763.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
-    "id": "2bf18bb5d7af4c86",
-    "name": "Starmie TSS submitted by UD",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/2bf18bb5d7af4c86.txt",
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
@@ -837,15 +792,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/yak_attack/cff48919dc228b3f.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
-    "id": "c78460887076e254",
-    "name": "Spikeless Zap MixPert SlowCBTar AstaJira CAMEL DDSpDefMence",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/c78460887076e254.txt",
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
@@ -1154,15 +1100,6 @@
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
-    "id": "f6b832746dabb1c6",
-    "name": "SkarmRachi Dol BoldCune",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/f6b832746dabb1c6.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
     "id": "fd90251eb6828821",
     "name": "SkarmRachi Dol TimidCune",
     "format": "gen3ou",
@@ -1343,30 +1280,12 @@
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
-    "id": "274bdcb8345368b7",
-    "name": "Moltres Superman by Golden Sun",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/274bdcb8345368b7.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
     "id": "cd5e8f4973dae6a9",
     "name": "SkarmMag MixTar CBGon BoomLax Gyara",
     "format": "gen3ou",
     "valid": true,
     "errors": [],
     "file": "teams/others/yak_attack/cd5e8f4973dae6a9.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
-    "id": "aac1c4b1f28264cb",
-    "name": "SkarmRachi SpecTar OffCune MixGon FPGar",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/aac1c4b1f28264cb.txt",
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {
@@ -1524,24 +1443,6 @@
     "valid": true,
     "errors": [],
     "file": "teams/others/yak_attack/54042468ba3152d3.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
-    "id": "1e19b2e672d62153",
-    "name": "Spikeless Zap Cune MixTar AgiliGross Gyara Lax",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/1e19b2e672d62153.txt",
-    "source": "https://pokepast.es/aed6c2ad0c5c2593"
-  },
-  {
-    "id": "c475242590f295fd",
-    "name": "Blue Offense by Noitulover",
-    "format": "gen3ou",
-    "valid": true,
-    "errors": [],
-    "file": "teams/others/yak_attack/c475242590f295fd.txt",
     "source": "https://pokepast.es/aed6c2ad0c5c2593"
   },
   {

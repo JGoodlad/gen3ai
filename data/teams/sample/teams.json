@@ -286,5 +286,645 @@
     "id": "9d5f845869e899ee",
     "file": "teams/sample/9d5f845869e899ee.txt",
     "source": "https://pokepast.es/9d5f845869e899ee"
+  },
+  {
+    "id": "8bdb5796b9",
+    "name": "Spikeless Zap MixPert SlowCBTar AstaJira CAMEL DDSpDefMence",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/8bdb5796b9.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/c78460887076e254.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "436335607f",
+    "name": "ForreGar SuitTar Zard WishJira",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/436335607f.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/c14cedbf01022302.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "11fb5d2fc2",
+    "name": "Mag DDMence SubCune SeedCMCele Lax",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/11fb5d2fc2.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/52d8bc6a0d1ee206.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "c6b830a3f0",
+    "name": "Mag SubBPJolt CBMence RestLax SDHera",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/c6b830a3f0.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/f97360d9c85e71f4.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "6916e13879",
+    "name": "SkarmMag Donphan Cune WishBliss",
+    "format": "gen3ou",
+    "category": "stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/6916e13879.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/b31c35c13a26836a.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "e702a104eb",
+    "name": "SkarmBliss Star MixPert",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/e702a104eb.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/99baf306564b3096.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "ac17a9dde5",
+    "name": "SubBPJolt MixMence DDTar CMCele CursePert",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/ac17a9dde5.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/24c358539660af82.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "d1ed25a242",
+    "name": "MaldoCune Fat",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/d1ed25a242.txt",
+    "source": "https://pokepast.es/fafdde1bde1b139b",
+    "promoted": {
+      "from": "data/teams/others/mcmegan/2e37cac9b0ecf1ce.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "64a691c473",
+    "name": "SubBPJolt SubZard CursePert MixJira Gar Lax",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/64a691c473.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/10834006af554318.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "e28069562f",
+    "name": "SkarmMag SuitTar Aero CursePert SeedCele",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/e28069562f.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/79a7993acae83b22.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "4bb434f8ba",
+    "name": "Dug Star SeedCMCele CursePert Gar ToxTWZap",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/4bb434f8ba.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/e216c746abc4f927.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "3650f09b2f",
+    "name": "Starmie TSS submitted by UD",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/3650f09b2f.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/2bf18bb5d7af4c86.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "9e95fb59d7",
+    "name": "Star SubBPJolt Zard SeedCMCele MixJira",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/9e95fb59d7.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/a507d3d9bd806cad.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "9d8391d864",
+    "name": "Forre SuitTar MixMence SeedCMCele CounterBliss",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/9d8391d864.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/bd5ae06d4cffeac9.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "a185b2d193",
+    "name": "Mag SubGyara DDTar SubCune AgiliMeta SeedCMCele",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/a185b2d193.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/37df8b9e53995bef.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "dbbfac7bd5",
+    "name": "Blue Offense by Noitulover",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/dbbfac7bd5.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/c475242590f295fd.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "750d056194",
+    "name": "MixMence CursePert MixJira Lax ToxTWZap",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/750d056194.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/80adad21ff85f6d7.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "a9831a5f5e",
+    "name": "WishCMJira FatDug",
+    "format": "gen3ou",
+    "category": "stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/a9831a5f5e.txt",
+    "source": "https://pokepast.es/fafdde1bde1b139b",
+    "promoted": {
+      "from": "data/teams/others/mcmegan/2115a509c31e4bd3.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "c9a2cef359",
+    "name": "Mag DDMence SeedCMCele RestCursePert Lax",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/c9a2cef359.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/a1884ad6b1a6ab61.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "3a83154c2a",
+    "name": "bestpt3/Cb Spam Balance",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/3a83154c2a.txt",
+    "source": "https://pokepast.es/c5929d2a3fc95749",
+    "promoted": {
+      "from": "data/teams/others/johnnyg2/0b9935b06b8b8f2a.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "6ebe9ebc4d",
+    "name": "bestpt3/MissyD AeroSpikes",
+    "format": "gen3ou",
+    "category": "stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/6ebe9ebc4d.txt",
+    "source": "https://pokepast.es/c5929d2a3fc95749",
+    "promoted": {
+      "from": "data/teams/others/johnnyg2/076bfb7655a30c00.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "9b454d9ea7",
+    "name": "Forre SuitTar MixMence MixJira ToxBliss",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/9b454d9ea7.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/080fced2dfdaff5b.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "422a4745c5",
+    "name": "SkarmRachi SpecTar OffCune MixGon FPGar",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/422a4745c5.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/aac1c4b1f28264cb.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "8b81c129de",
+    "name": "DDMence DDTar CursePert ToxTWZap Lax",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/8b81c129de.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/afd2ab3e0dc315a3.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "009e3d0244",
+    "name": "SubBPJolt MixMence DDTar CursePert Gar",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/009e3d0244.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/995ccaf788125f1e.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "b904dbe059",
+    "name": "Cloy TauntTar RockGyara SDHera CursePert WishJira",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/b904dbe059.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/104e2a85a6e9af88.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "9ba039ba8a",
+    "name": "Spikeless Zap Cune MixTar AgiliGross Gyara Lax",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/9ba039ba8a.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/1e19b2e672d62153.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "63f81c5c58",
+    "name": "Mag Zard SeedCMCele RestCursePert Lax",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/63f81c5c58.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/f6aa8e650d9ba54f.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "aea50f207e",
+    "name": "SkarmBliss CHARIZARD",
+    "format": "gen3ou",
+    "category": "stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/aea50f207e.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/b29c50a6215251fd.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "37d717a93a",
+    "name": "Star Zard SubCune SeedCMCele ToxTWZap",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/37d717a93a.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/90b6782cb9903abc.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "4239fc5ba2",
+    "name": "bestpt3/Cloy + Regi Physical Offense",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/4239fc5ba2.txt",
+    "source": "https://pokepast.es/c5929d2a3fc95749",
+    "promoted": {
+      "from": "data/teams/others/johnnyg2/1fa6c3069c3a817d.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "713403f9e9",
+    "name": "CloyMag VenuPert Aero",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/713403f9e9.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/34dc90bd60429b0b.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "7d0337af97",
+    "name": "SubBPJolt TWGyara DDTarCursePert MixJira",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/7d0337af97.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/453ea4a360081557.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "6a634b6281",
+    "name": "DDMence Zard DDTar SubCune SubKou",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/6a634b6281.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/68e97dd10121a526.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "fda8ad353a",
+    "name": "bestpt3/Weezing Mix Offense",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/fda8ad353a.txt",
+    "source": "https://pokepast.es/c5929d2a3fc95749",
+    "promoted": {
+      "from": "data/teams/others/johnnyg2/568544cc6219709c.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "a5d6b3f271",
+    "name": "Zard DDTar SubCune SeedCMCele MixJira",
+    "format": "gen3ou",
+    "category": "hyper_offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/a5d6b3f271.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/d2280fadb659cad8.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "af923978cf",
+    "name": "Moltres Superman by Golden Sun",
+    "format": "gen3ou",
+    "category": "stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/af923978cf.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/274bdcb8345368b7.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "9c44a67be3",
+    "name": "Dug RestCune CursePert Gar ToxTWZap",
+    "format": "gen3ou",
+    "category": "offense",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/9c44a67be3.txt",
+    "source": "https://pokepast.es/aeb9b0463613fef0",
+    "promoted": {
+      "from": "data/teams/others/giraffe/a8081883e8d8d252.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "a6252f809d",
+    "name": "SkarmRachi Dol BoldCune",
+    "format": "gen3ou",
+    "category": "semi_stall",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/a6252f809d.txt",
+    "source": "https://pokepast.es/aed6c2ad0c5c2593",
+    "promoted": {
+      "from": "data/teams/others/yak_attack/f6b832746dabb1c6.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
+  },
+  {
+    "id": "46d3021c99",
+    "name": "Star MixMence DDTar RestCursePert WishJolt",
+    "format": "gen3ou",
+    "category": "balance",
+    "valid": true,
+    "errors": [],
+    "file": "teams/sample/46d3021c99.txt",
+    "source": "https://pokepast.es/d75f47ad30d08853",
+    "promoted": {
+      "from": "data/teams/others/giraffe/02b35790c7ce6988.txt",
+      "seed": 1383414976,
+      "at": "2026-08-31T23:02:35+00:00",
+      "by": "python -m main.promote_teams"
+    }
   }
 ]
