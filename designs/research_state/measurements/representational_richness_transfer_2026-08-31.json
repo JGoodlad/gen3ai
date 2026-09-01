@@ -1,0 +1,3425 @@
+{
+ "probe": "M2 \u2014 representational richness as the transfer vehicle",
+ "date": "2026-08-31",
+ "head": "faa669e0a94320c0e838cefcd2565933b3b3bd6f",
+ "read_only": "models/ never written; no battles played; no training run touched",
+ "richness_and_representation": {
+  "estimator_agreement": {
+   "canonical_pr": 20.59278846974859,
+   "fast_pr": 20.59278846974858,
+   "abs_diff": 1.0658141036401503e-14
+  },
+  "n_states": 3000,
+  "boot_reps": 400,
+  "richness": {
+   "v8 PARENT ai_v8_04 @277.2M": {
+    "era": "v8",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 36.241996391317805,
+      "n99": 274,
+      "effrank": 79.37491422673214,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 42.623007433340156,
+      "n99": 414,
+      "effrank": 96.84262114664728,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 30.078608109412215,
+      "n99": 175,
+      "effrank": 55.76537219446647,
+      "dim": 512,
+      "ci95": [
+       24.14637706056731,
+       31.050723761292147
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 22.03262237801156,
+      "n99": 88,
+      "effrank": 37.50425814820281,
+      "dim": 128,
+      "ci95": [
+       16.78284169247817,
+       23.175130168874766
+      ]
+     },
+     "pi_features": {
+      "pr": 50.239741705278334,
+      "n99": 409,
+      "effrank": 116.45739180074989,
+      "dim": 512,
+      "ci95": [
+       41.140584617190335,
+       51.000979324244156
+      ]
+     },
+     "vf_features": {
+      "pr": 3.851165402714496,
+      "n99": 211,
+      "effrank": 13.583936949910507,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 26.878828894747578,
+      "n99": 372,
+      "effrank": 91.38624683402317,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 2.4963612486651323,
+      "n99": 132,
+      "effrank": 6.335171322264693,
+      "dim": 512
+     }
+    }
+   },
+   "v8 FOLD ai_v8_14 @292.1M": {
+    "era": "v8",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 36.98594409324068,
+      "n99": 277,
+      "effrank": 81.09131736293843,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 43.14605474010813,
+      "n99": 423,
+      "effrank": 99.27796283932165,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 30.145214025395596,
+      "n99": 177,
+      "effrank": 56.299118198094106,
+      "dim": 512,
+      "ci95": [
+       25.19997807606412,
+       30.927020557748143
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 20.796110720931512,
+      "n99": 89,
+      "effrank": 36.605993490204746,
+      "dim": 128,
+      "ci95": [
+       16.835446707596038,
+       22.0100328462257
+      ]
+     },
+     "pi_features": {
+      "pr": 45.63771759439438,
+      "n99": 404,
+      "effrank": 111.72033483416688,
+      "dim": 512,
+      "ci95": [
+       38.995006264497306,
+       47.00431381305571
+      ]
+     },
+     "vf_features": {
+      "pr": 4.049521325786625,
+      "n99": 210,
+      "effrank": 13.971454538053056,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 29.411883164166948,
+      "n99": 398,
+      "effrank": 96.38668385577213,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 2.9777329041374077,
+      "n99": 127,
+      "effrank": 7.326139286854243,
+      "dim": 512
+     }
+    }
+   },
+   "v8 fork semistall3 @matched": {
+    "era": "v8",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 36.72871256608513,
+      "n99": 277,
+      "effrank": 80.4223391113596,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 43.82650910373155,
+      "n99": 422,
+      "effrank": 99.45587003604597,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 30.500474085371486,
+      "n99": 177,
+      "effrank": 56.32877411817857,
+      "dim": 512
+     },
+     "features_extractor_cls_pool": {
+      "pr": 21.552490993431743,
+      "n99": 88,
+      "effrank": 37.10960373626898,
+      "dim": 128
+     },
+     "pi_features": {
+      "pr": 49.75718964180209,
+      "n99": 407,
+      "effrank": 114.55285334578008,
+      "dim": 512
+     },
+     "vf_features": {
+      "pr": 4.13477338384025,
+      "n99": 199,
+      "effrank": 13.72630095865424,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 29.386041739854463,
+      "n99": 389,
+      "effrank": 95.77072928742939,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 2.874188948049874,
+      "n99": 126,
+      "effrank": 6.840160720665324,
+      "dim": 512
+     }
+    }
+   },
+   "v8 fork pool10 @matched": {
+    "era": "v8",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 36.96170184888667,
+      "n99": 277,
+      "effrank": 80.55878063252388,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 42.9827718418714,
+      "n99": 418,
+      "effrank": 97.50191196920787,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 29.91144363568752,
+      "n99": 176,
+      "effrank": 55.43438178382882,
+      "dim": 512
+     },
+     "features_extractor_cls_pool": {
+      "pr": 21.362485674537538,
+      "n99": 88,
+      "effrank": 36.8176832298283,
+      "dim": 128
+     },
+     "pi_features": {
+      "pr": 49.43173569003819,
+      "n99": 407,
+      "effrank": 114.3238341068756,
+      "dim": 512
+     },
+     "vf_features": {
+      "pr": 4.047008587950529,
+      "n99": 209,
+      "effrank": 14.361468426225967,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 29.78878220090939,
+      "n99": 397,
+      "effrank": 97.11996999999748,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 2.5903370345176695,
+      "n99": 135,
+      "effrank": 6.731192196867867,
+      "dim": 512
+     }
+    }
+   },
+   "v8 fork defensive10 @matched": {
+    "era": "v8",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 36.308000161751494,
+      "n99": 277,
+      "effrank": 79.9502536603323,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 43.37393927227253,
+      "n99": 421,
+      "effrank": 98.72402618521886,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 30.18347157746965,
+      "n99": 176,
+      "effrank": 55.81729672180361,
+      "dim": 512
+     },
+     "features_extractor_cls_pool": {
+      "pr": 21.258688550527857,
+      "n99": 88,
+      "effrank": 36.80444448421653,
+      "dim": 128
+     },
+     "pi_features": {
+      "pr": 49.39107180802277,
+      "n99": 409,
+      "effrank": 114.73374957752665,
+      "dim": 512
+     },
+     "vf_features": {
+      "pr": 4.085489088326697,
+      "n99": 210,
+      "effrank": 14.621574363865156,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 28.570680637262605,
+      "n99": 396,
+      "effrank": 95.88421817115236,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 2.6047589304560876,
+      "n99": 132,
+      "effrank": 6.67605799058211,
+      "dim": 512
+     }
+    }
+   },
+   "gen PARENT rev-1 @25.1M": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.862154099564165,
+      "n99": 387,
+      "effrank": 90.18436844061374,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.261748318613655,
+      "n99": 394,
+      "effrank": 75.68090967731084,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.521688465372403,
+      "n99": 136,
+      "effrank": 27.590307128926028,
+      "dim": 512,
+      "ci95": [
+       12.487301675087938,
+       13.799735340070267
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 19.06631317438812,
+      "n99": 70,
+      "effrank": 31.23860804809424,
+      "dim": 128,
+      "ci95": [
+       15.859911221837383,
+       19.61068790503224
+      ]
+     },
+     "pi_features": {
+      "pr": 20.59278846974859,
+      "n99": 357,
+      "effrank": 55.98750444978589,
+      "dim": 512,
+      "ci95": [
+       18.952255143956545,
+       20.975735092693192
+      ]
+     },
+     "vf_features": {
+      "pr": 3.2403580845556132,
+      "n99": 84,
+      "effrank": 6.7616716658634965,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 29.70490914207046,
+      "n99": 444,
+      "effrank": 94.0953377235396,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 3.722778252881272,
+      "n99": 102,
+      "effrank": 8.117890013573414,
+      "dim": 512
+     }
+    }
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.40829627925831,
+      "n99": 379,
+      "effrank": 89.37445086720449,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.305364645633624,
+      "n99": 388,
+      "effrank": 75.41280047482503,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.701602553976729,
+      "n99": 141,
+      "effrank": 28.6084990998439,
+      "dim": 512,
+      "ci95": [
+       12.552683299069606,
+       14.066209463183332
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 17.610060513973604,
+      "n99": 70,
+      "effrank": 30.043171110975965,
+      "dim": 128,
+      "ci95": [
+       14.837844224548538,
+       18.034841230526578
+      ]
+     },
+     "pi_features": {
+      "pr": 19.591513092610683,
+      "n99": 352,
+      "effrank": 53.816514173166794,
+      "dim": 512,
+      "ci95": [
+       18.076203137105445,
+       20.008534821389105
+      ]
+     },
+     "vf_features": {
+      "pr": 3.68986394451929,
+      "n99": 87,
+      "effrank": 7.432165415573812,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 29.228209077960052,
+      "n99": 439,
+      "effrank": 93.2366182912255,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.141755688047099,
+      "n99": 104,
+      "effrank": 8.741837099551175,
+      "dim": 512
+     }
+    }
+   },
+   "gen FOLD rev-3 R3ACTION @32.6M": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.38773755052573,
+      "n99": 376,
+      "effrank": 89.30989809727717,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 31.147796503851644,
+      "n99": 387,
+      "effrank": 76.28939842937183,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.071990619321875,
+      "n99": 142,
+      "effrank": 28.124645481216504,
+      "dim": 512,
+      "ci95": [
+       11.971512628249823,
+       13.5472964122861
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 16.907074356979354,
+      "n99": 69,
+      "effrank": 29.307424311951028,
+      "dim": 128,
+      "ci95": [
+       15.292688767173457,
+       17.219201564862473
+      ]
+     },
+     "pi_features": {
+      "pr": 19.051648201177166,
+      "n99": 352,
+      "effrank": 53.706598473673985,
+      "dim": 512,
+      "ci95": [
+       17.32628437225222,
+       19.58053678856082
+      ]
+     },
+     "vf_features": {
+      "pr": 3.7619560078418943,
+      "n99": 95,
+      "effrank": 8.17015399499546,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 28.074195099838192,
+      "n99": 436,
+      "effrank": 90.64621207649753,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.253565574414848,
+      "n99": 114,
+      "effrank": 9.652249437097765,
+      "dim": 512
+     }
+    }
+   },
+   "gen FOLD rev-4 R4ACTION": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.60407786742636,
+      "n99": 375,
+      "effrank": 89.13979870097802,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.809318028858076,
+      "n99": 383,
+      "effrank": 75.37495133029586,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.49475505638634,
+      "n99": 143,
+      "effrank": 28.59120383759644,
+      "dim": 512,
+      "ci95": [
+       12.267582154548675,
+       13.880356444460293
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 16.790139992021373,
+      "n99": 69,
+      "effrank": 29.246215565351484,
+      "dim": 128,
+      "ci95": [
+       14.900182301068753,
+       17.119285672615355
+      ]
+     },
+     "pi_features": {
+      "pr": 18.899496728964994,
+      "n99": 344,
+      "effrank": 51.807942613760815,
+      "dim": 512,
+      "ci95": [
+       17.072704020979295,
+       19.276752582893913
+      ]
+     },
+     "vf_features": {
+      "pr": 3.432738770351341,
+      "n99": 86,
+      "effrank": 7.431785164114406,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 28.185923145488402,
+      "n99": 431,
+      "effrank": 88.83914316867292,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 3.870728520830541,
+      "n99": 105,
+      "effrank": 8.823803093251513,
+      "dim": 512
+     }
+    }
+   },
+   "gen FOLD COMPFOLD": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.24356354732892,
+      "n99": 375,
+      "effrank": 88.87758787906658,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.295906053183433,
+      "n99": 386,
+      "effrank": 75.5281420513813,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.48140454732882,
+      "n99": 146,
+      "effrank": 28.849873270478838,
+      "dim": 512,
+      "ci95": [
+       12.196978695667777,
+       13.915005661951772
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 17.063575071225273,
+      "n99": 69,
+      "effrank": 29.289970884672513,
+      "dim": 128,
+      "ci95": [
+       14.785751331413138,
+       17.519478764526934
+      ]
+     },
+     "pi_features": {
+      "pr": 19.03797403534374,
+      "n99": 349,
+      "effrank": 52.90675708163174,
+      "dim": 512,
+      "ci95": [
+       17.352774840352094,
+       19.48917010156136
+      ]
+     },
+     "vf_features": {
+      "pr": 3.8190685449227497,
+      "n99": 94,
+      "effrank": 8.322028244662793,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 28.27509841936653,
+      "n99": 433,
+      "effrank": 90.05446857356765,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.30951347556056,
+      "n99": 112,
+      "effrank": 9.822104553217475,
+      "dim": 512
+     }
+    }
+   },
+   "gen CTRL R2CTRL (no fork)": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.310329062760516,
+      "n99": 383,
+      "effrank": 89.58846170388034,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.66427296413875,
+      "n99": 396,
+      "effrank": 76.3045914602065,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 14.85447988953073,
+      "n99": 140,
+      "effrank": 29.574465819865125,
+      "dim": 512,
+      "ci95": [
+       13.796986031086776,
+       15.069592269049378
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 19.45128137437231,
+      "n99": 70,
+      "effrank": 31.18707112377562,
+      "dim": 128,
+      "ci95": [
+       16.24318767190561,
+       19.763445071466254
+      ]
+     },
+     "pi_features": {
+      "pr": 22.886527440733104,
+      "n99": 364,
+      "effrank": 60.75268059740974,
+      "dim": 512,
+      "ci95": [
+       20.992689160685178,
+       22.96308084163618
+      ]
+     },
+     "vf_features": {
+      "pr": 3.8450421702396587,
+      "n99": 98,
+      "effrank": 8.051523519555726,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 32.33082030383824,
+      "n99": 446,
+      "effrank": 100.32886022971338,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.379880406758727,
+      "n99": 119,
+      "effrank": 9.588496956209815,
+      "dim": 512
+     }
+    }
+   },
+   "gen CTRL R2PLAIN": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.53912773503126,
+      "n99": 380,
+      "effrank": 89.57623025054356,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.9030396522988,
+      "n99": 394,
+      "effrank": 76.72911144964894,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 14.004397976740163,
+      "n99": 139,
+      "effrank": 28.75367588156094,
+      "dim": 512,
+      "ci95": [
+       12.837184451837665,
+       14.303146255318941
+      ]
+     },
+     "features_extractor_cls_pool": {
+      "pr": 19.87873931612352,
+      "n99": 70,
+      "effrank": 31.839185207787263,
+      "dim": 128,
+      "ci95": [
+       16.83324808588088,
+       20.110049449382796
+      ]
+     },
+     "pi_features": {
+      "pr": 19.771409353707764,
+      "n99": 354,
+      "effrank": 54.24596846304072,
+      "dim": 512,
+      "ci95": [
+       18.102968093712825,
+       20.0438648070595
+      ]
+     },
+     "vf_features": {
+      "pr": 3.7176299675299544,
+      "n99": 104,
+      "effrank": 8.198714970592988,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 29.292195297238656,
+      "n99": 443,
+      "effrank": 94.0496810840904,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.298009090528815,
+      "n99": 125,
+      "effrank": 9.879581144431995,
+      "dim": 512
+     }
+    }
+   },
+   "gen fork F5a": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 38.806080228717,
+      "n99": 383,
+      "effrank": 89.79838379968136,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 29.173351948662507,
+      "n99": 392,
+      "effrank": 74.71513563419468,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.370822255637222,
+      "n99": 134,
+      "effrank": 27.036302345194276,
+      "dim": 512
+     },
+     "features_extractor_cls_pool": {
+      "pr": 18.715405055460646,
+      "n99": 69,
+      "effrank": 30.498142649860757,
+      "dim": 128
+     },
+     "pi_features": {
+      "pr": 19.837922698305537,
+      "n99": 355,
+      "effrank": 54.12500959057881,
+      "dim": 512
+     },
+     "vf_features": {
+      "pr": 3.5935732428942586,
+      "n99": 86,
+      "effrank": 7.363918443995022,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 26.946690669527047,
+      "n99": 442,
+      "effrank": 88.65602888617705,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.071227011536189,
+      "n99": 104,
+      "effrank": 8.72628586077637,
+      "dim": 512
+     }
+    }
+   },
+   "gen fork F5c": {
+    "era": "v9",
+    "taps": {
+     "features_extractor_pokemon_encoder": {
+      "pr": 39.06278561975703,
+      "n99": 383,
+      "effrank": 90.12403727723485,
+      "dim": 1536
+     },
+     "features_extractor_team_transformer": {
+      "pr": 30.4300959241274,
+      "n99": 398,
+      "effrank": 76.444087127316,
+      "dim": 768
+     },
+     "features_extractor_projection": {
+      "pr": 13.72844536445902,
+      "n99": 135,
+      "effrank": 27.367385849081007,
+      "dim": 512
+     },
+     "features_extractor_cls_pool": {
+      "pr": 18.80395808716964,
+      "n99": 70,
+      "effrank": 30.89924135862111,
+      "dim": 128
+     },
+     "pi_features": {
+      "pr": 20.61466998993173,
+      "n99": 357,
+      "effrank": 55.497232263021914,
+      "dim": 512
+     },
+     "vf_features": {
+      "pr": 3.7116232574963237,
+      "n99": 91,
+      "effrank": 7.608304114543351,
+      "dim": 512
+     },
+     "mlp_extractor_policy_net": {
+      "pr": 28.122632504560215,
+      "n99": 443,
+      "effrank": 91.44112252877572,
+      "dim": 512
+     },
+     "mlp_extractor_value_net": {
+      "pr": 4.164867092856444,
+      "n99": 110,
+      "effrank": 8.97966919225561,
+      "dim": 512
+     }
+    }
+   }
+  },
+  "dedupe_max_repeat_diff": {
+   "v8 PARENT ai_v8_04 @277.2M/features_extractor_pokemon_encoder": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/features_extractor_team_transformer": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/features_extractor_projection": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/features_extractor_cls_pool": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/pi_features": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/vf_features": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/mlp_extractor_policy_net": 0.0,
+   "v8 PARENT ai_v8_04 @277.2M/mlp_extractor_value_net": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/features_extractor_pokemon_encoder": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/features_extractor_team_transformer": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/features_extractor_projection": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/features_extractor_cls_pool": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/pi_features": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/vf_features": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/mlp_extractor_policy_net": 0.0,
+   "v8 FOLD ai_v8_14 @292.1M/mlp_extractor_value_net": 0.0,
+   "v8 fork semistall3 @matched/features_extractor_pokemon_encoder": 0.0,
+   "v8 fork semistall3 @matched/features_extractor_team_transformer": 0.0,
+   "v8 fork semistall3 @matched/features_extractor_projection": 0.0,
+   "v8 fork semistall3 @matched/features_extractor_cls_pool": 0.0,
+   "v8 fork semistall3 @matched/pi_features": 0.0,
+   "v8 fork semistall3 @matched/vf_features": 0.0,
+   "v8 fork semistall3 @matched/mlp_extractor_policy_net": 0.0,
+   "v8 fork semistall3 @matched/mlp_extractor_value_net": 0.0,
+   "v8 fork pool10 @matched/features_extractor_pokemon_encoder": 0.0,
+   "v8 fork pool10 @matched/features_extractor_team_transformer": 0.0,
+   "v8 fork pool10 @matched/features_extractor_projection": 0.0,
+   "v8 fork pool10 @matched/features_extractor_cls_pool": 0.0,
+   "v8 fork pool10 @matched/pi_features": 0.0,
+   "v8 fork pool10 @matched/vf_features": 0.0,
+   "v8 fork pool10 @matched/mlp_extractor_policy_net": 0.0,
+   "v8 fork pool10 @matched/mlp_extractor_value_net": 0.0,
+   "v8 fork defensive10 @matched/features_extractor_pokemon_encoder": 0.0,
+   "v8 fork defensive10 @matched/features_extractor_team_transformer": 0.0,
+   "v8 fork defensive10 @matched/features_extractor_projection": 0.0,
+   "v8 fork defensive10 @matched/features_extractor_cls_pool": 0.0,
+   "v8 fork defensive10 @matched/pi_features": 0.0,
+   "v8 fork defensive10 @matched/vf_features": 0.0,
+   "v8 fork defensive10 @matched/mlp_extractor_policy_net": 0.0,
+   "v8 fork defensive10 @matched/mlp_extractor_value_net": 0.0,
+   "gen PARENT rev-1 @25.1M/features_extractor_pokemon_encoder": 0.0,
+   "gen PARENT rev-1 @25.1M/features_extractor_team_transformer": 0.0,
+   "gen PARENT rev-1 @25.1M/features_extractor_projection": 0.0,
+   "gen PARENT rev-1 @25.1M/features_extractor_cls_pool": 0.0,
+   "gen PARENT rev-1 @25.1M/pi_features": 0.0,
+   "gen PARENT rev-1 @25.1M/vf_features": 0.0,
+   "gen PARENT rev-1 @25.1M/mlp_extractor_policy_net": 0.0,
+   "gen PARENT rev-1 @25.1M/mlp_extractor_value_net": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/features_extractor_pokemon_encoder": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/features_extractor_team_transformer": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/features_extractor_projection": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/features_extractor_cls_pool": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/pi_features": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/vf_features": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/mlp_extractor_policy_net": 0.0,
+   "gen FOLD rev-2 R2ACTION @28.1M/mlp_extractor_value_net": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/features_extractor_pokemon_encoder": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/features_extractor_team_transformer": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/features_extractor_projection": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/features_extractor_cls_pool": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/pi_features": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/vf_features": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/mlp_extractor_policy_net": 0.0,
+   "gen FOLD rev-3 R3ACTION @32.6M/mlp_extractor_value_net": 0.0,
+   "gen FOLD rev-4 R4ACTION/features_extractor_pokemon_encoder": 0.0,
+   "gen FOLD rev-4 R4ACTION/features_extractor_team_transformer": 0.0,
+   "gen FOLD rev-4 R4ACTION/features_extractor_projection": 0.0,
+   "gen FOLD rev-4 R4ACTION/features_extractor_cls_pool": 0.0,
+   "gen FOLD rev-4 R4ACTION/pi_features": 0.0,
+   "gen FOLD rev-4 R4ACTION/vf_features": 0.0,
+   "gen FOLD rev-4 R4ACTION/mlp_extractor_policy_net": 0.0,
+   "gen FOLD rev-4 R4ACTION/mlp_extractor_value_net": 0.0,
+   "gen FOLD COMPFOLD/features_extractor_pokemon_encoder": 0.0,
+   "gen FOLD COMPFOLD/features_extractor_team_transformer": 0.0,
+   "gen FOLD COMPFOLD/features_extractor_projection": 0.0,
+   "gen FOLD COMPFOLD/features_extractor_cls_pool": 0.0,
+   "gen FOLD COMPFOLD/pi_features": 0.0,
+   "gen FOLD COMPFOLD/vf_features": 0.0,
+   "gen FOLD COMPFOLD/mlp_extractor_policy_net": 0.0,
+   "gen FOLD COMPFOLD/mlp_extractor_value_net": 0.0,
+   "gen CTRL R2CTRL (no fork)/features_extractor_pokemon_encoder": 0.0,
+   "gen CTRL R2CTRL (no fork)/features_extractor_team_transformer": 0.0,
+   "gen CTRL R2CTRL (no fork)/features_extractor_projection": 0.0,
+   "gen CTRL R2CTRL (no fork)/features_extractor_cls_pool": 0.0,
+   "gen CTRL R2CTRL (no fork)/pi_features": 0.0,
+   "gen CTRL R2CTRL (no fork)/vf_features": 0.0,
+   "gen CTRL R2CTRL (no fork)/mlp_extractor_policy_net": 0.0,
+   "gen CTRL R2CTRL (no fork)/mlp_extractor_value_net": 0.0,
+   "gen CTRL R2PLAIN/features_extractor_pokemon_encoder": 0.0,
+   "gen CTRL R2PLAIN/features_extractor_team_transformer": 0.0,
+   "gen CTRL R2PLAIN/features_extractor_projection": 0.0,
+   "gen CTRL R2PLAIN/features_extractor_cls_pool": 0.0,
+   "gen CTRL R2PLAIN/pi_features": 0.0,
+   "gen CTRL R2PLAIN/vf_features": 0.0,
+   "gen CTRL R2PLAIN/mlp_extractor_policy_net": 0.0,
+   "gen CTRL R2PLAIN/mlp_extractor_value_net": 0.0,
+   "gen fork F5a/features_extractor_pokemon_encoder": 0.0,
+   "gen fork F5a/features_extractor_team_transformer": 0.0,
+   "gen fork F5a/features_extractor_projection": 0.0,
+   "gen fork F5a/features_extractor_cls_pool": 0.0,
+   "gen fork F5a/pi_features": 0.0,
+   "gen fork F5a/vf_features": 0.0,
+   "gen fork F5a/mlp_extractor_policy_net": 0.0,
+   "gen fork F5a/mlp_extractor_value_net": 0.0,
+   "gen fork F5c/features_extractor_pokemon_encoder": 0.0,
+   "gen fork F5c/features_extractor_team_transformer": 0.0,
+   "gen fork F5c/features_extractor_projection": 0.0,
+   "gen fork F5c/features_extractor_cls_pool": 0.0,
+   "gen fork F5c/pi_features": 0.0,
+   "gen fork F5c/vf_features": 0.0,
+   "gen fork F5c/mlp_extractor_policy_net": 0.0,
+   "gen fork F5c/mlp_extractor_value_net": 0.0
+  },
+  "ladder": {
+   "2400000": {
+    "features_extractor_pokemon_encoder": 38.57458691276868,
+    "features_extractor_team_transformer": 19.270107826084022,
+    "features_extractor_projection": 6.826009499281581,
+    "features_extractor_cls_pool": 8.588820121323769,
+    "pi_features": 11.172087968347638,
+    "vf_features": 3.870288531108858,
+    "mlp_extractor_policy_net": 13.7910244640459,
+    "mlp_extractor_value_net": 4.313851615416183
+   },
+   "4800000": {
+    "features_extractor_pokemon_encoder": 38.01504545299342,
+    "features_extractor_team_transformer": 24.02746187918681,
+    "features_extractor_projection": 9.570699978721084,
+    "features_extractor_cls_pool": 15.291129923798108,
+    "pi_features": 16.203038937855336,
+    "vf_features": 3.2574061401481607,
+    "mlp_extractor_policy_net": 20.70900131688708,
+    "mlp_extractor_value_net": 3.6408159481319267
+   },
+   "8045088": {
+    "features_extractor_pokemon_encoder": 38.48207455729704,
+    "features_extractor_team_transformer": 26.071429566812306,
+    "features_extractor_projection": 11.54903735621222,
+    "features_extractor_cls_pool": 17.844829243292708,
+    "pi_features": 18.832868941608726,
+    "vf_features": 3.329508627085861,
+    "mlp_extractor_policy_net": 25.78579451498548,
+    "mlp_extractor_value_net": 3.709122193200966
+   },
+   "12101808": {
+    "features_extractor_pokemon_encoder": 37.86856281530757,
+    "features_extractor_team_transformer": 28.749434022300754,
+    "features_extractor_projection": 13.611679802088142,
+    "features_extractor_cls_pool": 18.648083860131475,
+    "pi_features": 20.8229747870701,
+    "vf_features": 3.2229752817710113,
+    "mlp_extractor_policy_net": 28.536154656281173,
+    "mlp_extractor_value_net": 3.661614896756023
+   },
+   "16001808": {
+    "features_extractor_pokemon_encoder": 38.242011680655665,
+    "features_extractor_team_transformer": 29.971615543708634,
+    "features_extractor_projection": 13.668102587271763,
+    "features_extractor_cls_pool": 19.031564104674622,
+    "pi_features": 20.903789900072653,
+    "vf_features": 3.3389402995421245,
+    "mlp_extractor_policy_net": 29.142464476650797,
+    "mlp_extractor_value_net": 3.7928925794601964
+   },
+   "20073792": {
+    "features_extractor_pokemon_encoder": 38.72890334062754,
+    "features_extractor_team_transformer": 28.88177106904766,
+    "features_extractor_projection": 13.216540260249758,
+    "features_extractor_cls_pool": 19.209414973075543,
+    "pi_features": 19.253089372472303,
+    "vf_features": 3.251444780919491,
+    "mlp_extractor_policy_net": 28.45990012106868,
+    "mlp_extractor_value_net": 3.6725218104788895
+   },
+   "24988992": {
+    "features_extractor_pokemon_encoder": 38.781080372128955,
+    "features_extractor_team_transformer": 30.258346541049853,
+    "features_extractor_projection": 13.554111726120762,
+    "features_extractor_cls_pool": 19.102624107797315,
+    "pi_features": 20.69350728698487,
+    "vf_features": 3.259023728471925,
+    "mlp_extractor_policy_net": 29.59454135461778,
+    "mlp_extractor_value_net": 3.7522247133595807
+   }
+  },
+  "externality": {
+   "v8 FOLD ai_v8_14 @292.1M": {
+    "pp": 5.42,
+    "ci": "[+3.44,+7.42]",
+    "source": "v8_redistribution_pfsp_2026-08-30 (P1, 7680 untaught battles)"
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M": {
+    "pp": -7.06,
+    "ci": "[-10.56,-3.50]",
+    "source": "rev3_untaught_pulldown_2026-08-30 (B-C, 8 teams x 200)"
+   },
+   "gen FOLD rev-3 R3ACTION @32.6M": {
+    "pp": -0.75,
+    "ci": "[-4.56,+3.00]",
+    "source": "rev3_untaught_pulldown_2026-08-30 (A-B, 8 teams x 200)"
+   }
+  },
+  "ladder_v8": {
+   "v8_03_step149598621": {
+    "steps": 149598621,
+    "features_extractor_pokemon_encoder": 36.48487832257672,
+    "features_extractor_team_transformer": 42.609861122035184,
+    "features_extractor_projection": 30.653030529467255,
+    "features_extractor_cls_pool": 26.15813253761545,
+    "pi_features": 51.34298388098953,
+    "vf_features": 4.09391192795793,
+    "mlp_extractor_policy_net": 21.193195681592314,
+    "mlp_extractor_value_net": 3.2115322215860203
+   },
+   "v8_03_step200364858": {
+    "steps": 200364858,
+    "features_extractor_pokemon_encoder": 35.26683555183041,
+    "features_extractor_team_transformer": 41.734761680443185,
+    "features_extractor_projection": 29.601780734807825,
+    "features_extractor_cls_pool": 25.402803486525336,
+    "pi_features": 51.45078686052668,
+    "vf_features": 3.431504408548966,
+    "mlp_extractor_policy_net": 27.47423171912076,
+    "mlp_extractor_value_net": 2.670166992818391
+   },
+   "v8_03_step267612744": {
+    "steps": 267612744,
+    "features_extractor_pokemon_encoder": 37.42032178845758,
+    "features_extractor_team_transformer": 44.36722931614221,
+    "features_extractor_projection": 29.967490928313,
+    "features_extractor_cls_pool": 21.690345605165966,
+    "pi_features": 44.1038810892375,
+    "vf_features": 3.351417651390909,
+    "mlp_extractor_policy_net": 20.42452334654261,
+    "mlp_extractor_value_net": 2.401981979270377
+   },
+   "v8_04_step269716291": {
+    "steps": 269716291,
+    "features_extractor_pokemon_encoder": 36.79525622699241,
+    "features_extractor_team_transformer": 42.65242858587791,
+    "features_extractor_projection": 30.63187396997292,
+    "features_extractor_cls_pool": 22.575382928792845,
+    "pi_features": 48.10663423905539,
+    "vf_features": 3.8693115923022128,
+    "mlp_extractor_policy_net": 21.865564163596474,
+    "mlp_extractor_value_net": 2.602235255193247
+   }
+  },
+  "paired_pr_diff": {
+   "v8 FOLD ai_v8_14 @292.1M - v8 PARENT ai_v8_04 @277.2M": {
+    "features_extractor_projection": {
+     "delta_pr": 0.06660591598338428,
+     "ci95": [
+      -0.5083146688230329,
+      0.6511634996279687
+     ],
+     "frac_below_zero": 0.4075
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": -1.2365116570800616,
+     "ci95": [
+      -2.001028985529791,
+      0.06430476152665515
+     ],
+     "frac_below_zero": 0.9725
+    },
+    "pi_features": {
+     "delta_pr": -4.6020241108840025,
+     "ci95": [
+      -5.45133947052723,
+      -2.197489495536864
+     ],
+     "frac_below_zero": 1.0
+    }
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M - gen PARENT rev-1 @25.1M": {
+    "features_extractor_projection": {
+     "delta_pr": 0.17991408860434355,
+     "ci95": [
+      -0.04990042196617295,
+      0.4344603980129079
+     ],
+     "frac_below_zero": 0.0875
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": -1.4562526604145134,
+     "ci95": [
+      -2.063219034351521,
+      -0.4620998367019629
+     ],
+     "frac_below_zero": 1.0
+    },
+    "pi_features": {
+     "delta_pr": -1.0012753771379188,
+     "ci95": [
+      -1.2610114873815859,
+      -0.5518998828314385
+     ],
+     "frac_below_zero": 1.0
+    }
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M - gen CTRL R2CTRL (no fork)": {
+    "features_extractor_projection": {
+     "delta_pr": -1.1528773355539972,
+     "ci95": [
+      -1.4499853289898,
+      -0.7240555793856348
+     ],
+     "frac_below_zero": 1.0
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": -1.841220860398714,
+     "ci95": [
+      -2.1716555241951068,
+      -0.9044717671823166
+     ],
+     "frac_below_zero": 1.0
+    },
+    "pi_features": {
+     "delta_pr": -3.295014348122443,
+     "ci95": [
+      -3.6147747706847575,
+      -2.5384118374938267
+     ],
+     "frac_below_zero": 1.0
+    }
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M - gen CTRL R2PLAIN": {
+    "features_extractor_projection": {
+     "delta_pr": -0.30279542276344706,
+     "ci95": [
+      -0.5607279232702016,
+      0.06494546965733239
+     ],
+     "frac_below_zero": 0.9575
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": -2.268678802149914,
+     "ci95": [
+      -2.5353549915451628,
+      -1.3898804954168076
+     ],
+     "frac_below_zero": 1.0
+    },
+    "pi_features": {
+     "delta_pr": -0.179896261097106,
+     "ci95": [
+      -0.5719978705575504,
+      0.3289363614990458
+     ],
+     "frac_below_zero": 0.7275
+    }
+   },
+   "gen FOLD rev-3 R3ACTION @32.6M - gen CTRL R2PLAIN": {
+    "features_extractor_projection": {
+     "delta_pr": -0.9324073574183025,
+     "ci95": [
+      -1.1650605739017237,
+      -0.48608895836456373
+     ],
+     "frac_below_zero": 1.0
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": -2.9716649591441673,
+     "ci95": [
+      -3.3064879936556046,
+      -1.6756444066778078
+     ],
+     "frac_below_zero": 1.0
+    },
+    "pi_features": {
+     "delta_pr": -0.7197611525306087,
+     "ci95": [
+      -1.093948313796145,
+      -0.14953823164955263
+     ],
+     "frac_below_zero": 0.995
+    }
+   },
+   "gen FOLD COMPFOLD - gen CTRL R2PLAIN": {
+    "features_extractor_projection": {
+     "delta_pr": -0.5229934294113612,
+     "ci95": [
+      -0.8052352190232982,
+      -0.11135033627735781
+     ],
+     "frac_below_zero": 0.995
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": -2.815164244898238,
+     "ci95": [
+      -3.1976813372019217,
+      -1.653217918042815
+     ],
+     "frac_below_zero": 1.0
+    },
+    "pi_features": {
+     "delta_pr": -0.7334353183640374,
+     "ci95": [
+      -1.1414745551388048,
+      -0.18467604279211547
+     ],
+     "frac_below_zero": 0.9925
+    }
+   },
+   "gen CTRL R2CTRL (no fork) - gen PARENT rev-1 @25.1M": {
+    "features_extractor_projection": {
+     "delta_pr": 1.3327914241583407,
+     "ci95": [
+      0.9216882099078886,
+      1.6306846091591758
+     ],
+     "frac_below_zero": 0.0
+    },
+    "features_extractor_cls_pool": {
+     "delta_pr": 0.3849681999842005,
+     "ci95": [
+      -0.18589707753001422,
+      0.778518385251347
+     ],
+     "frac_below_zero": 0.17
+    },
+    "pi_features": {
+     "delta_pr": 2.293738970984524,
+     "ci95": [
+      1.6350635411943937,
+      2.665337623168255
+     ],
+     "frac_below_zero": 0.0
+    }
+   }
+  },
+  "representation": {
+   "v8 FOLD ai_v8_14 @292.1M": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.002643188307040245,
+     "k_parent_topk": 37,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.06467314369140355,
+     "isotropic_null": 0.024088541666666668,
+     "delta_pr": 41.30397682820738,
+     "parent_pr": 36.241996391317755,
+     "delta_pr_over_parent_pr": 1.1396716776370048,
+     "lift_over_null": 2.6848094245944822,
+     "energy_in_parent_top21": 0.04186907586911957,
+     "parent_var_in_top21": 0.5871786112359795,
+     "energy_in_parent_top51": 0.08300983388024145,
+     "parent_var_in_top51": 0.7947656921221063
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.017353600568114746,
+     "k_parent_topk": 43,
+     "dim": 768,
+     "energy_in_parent_topk": 0.16624710816342098,
+     "isotropic_null": 0.055989583333333336,
+     "delta_pr": 68.21830666372443,
+     "parent_pr": 42.623007433340135,
+     "delta_pr_over_parent_pr": 1.6005042997121646,
+     "lift_over_null": 2.9692506760350534,
+     "energy_in_parent_top21": 0.08861711827184451,
+     "parent_var_in_top21": 0.5611419787485684,
+     "energy_in_parent_top51": 0.1904381843413201,
+     "parent_var_in_top51": 0.7591730893128454
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.03379093504708808,
+     "k_parent_topk": 31,
+     "dim": 512,
+     "energy_in_parent_topk": 0.36599605408064206,
+     "isotropic_null": 0.060546875,
+     "delta_pr": 39.552259952541654,
+     "parent_pr": 30.078608109412226,
+     "delta_pr_over_parent_pr": 1.314963106293636,
+     "lift_over_null": 6.0448380544931855,
+     "energy_in_parent_top21": 0.2747193556497257,
+     "parent_var_in_top21": 0.6866005058474195,
+     "energy_in_parent_top51": 0.47806863691605556,
+     "parent_var_in_top51": 0.8811424764403271
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.1098308945554437,
+     "k_parent_topk": 23,
+     "dim": 128,
+     "energy_in_parent_topk": 0.540326244501884,
+     "isotropic_null": 0.1796875,
+     "delta_pr": 26.821797981200564,
+     "parent_pr": 22.032622378011574,
+     "delta_pr_over_parent_pr": 1.2173674799586525,
+     "lift_over_null": 3.00703301288005,
+     "energy_in_parent_top21": 0.5120678651324874,
+     "parent_var_in_top21": 0.7716645508035883,
+     "energy_in_parent_top51": 0.8045337207474682,
+     "parent_var_in_top51": 0.9461040855373983
+    },
+    "pi_features": {
+     "cka_distance": 0.1020509260370468,
+     "k_parent_topk": 51,
+     "dim": 512,
+     "energy_in_parent_topk": 0.4793514329792584,
+     "isotropic_null": 0.099609375,
+     "delta_pr": 67.71482653779555,
+     "parent_pr": 50.2397417052784,
+     "delta_pr_over_parent_pr": 1.3478338908474352,
+     "lift_over_null": 4.812312425203536,
+     "energy_in_parent_top21": 0.31797490166087017,
+     "parent_var_in_top21": 0.5316271337029919,
+     "energy_in_parent_top51": 0.4793514329792584,
+     "parent_var_in_top51": 0.7175445954153655
+    },
+    "vf_features": {
+     "cka_distance": 0.15221734944571974,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.604297340057681,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 4.27334472677059,
+     "parent_pr": 3.8511654027144906,
+     "delta_pr_over_parent_pr": 1.1096237839482372,
+     "lift_over_null": 77.35005952738317,
+     "energy_in_parent_top21": 0.7616360004277626,
+     "parent_var_in_top21": 0.8574268667571779,
+     "energy_in_parent_top51": 0.8349466506758277,
+     "parent_var_in_top51": 0.9234411706926492
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.13244945694944832,
+     "k_parent_topk": 27,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2311808798648259,
+     "isotropic_null": 0.052734375,
+     "delta_pr": 133.34624274851353,
+     "parent_pr": 26.87882889474755,
+     "delta_pr_over_parent_pr": 4.961013862273256,
+     "lift_over_null": 4.3838744626218835,
+     "energy_in_parent_top21": 0.20230187242248374,
+     "parent_var_in_top21": 0.5980284009681691,
+     "energy_in_parent_top51": 0.31714375343670576,
+     "parent_var_in_top51": 0.7244204635936035
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.12681103653684422,
+     "k_parent_topk": 3,
+     "dim": 512,
+     "energy_in_parent_topk": 0.4149823083220704,
+     "isotropic_null": 0.005859375,
+     "delta_pr": 9.237393855433238,
+     "parent_pr": 2.496361248665131,
+     "delta_pr_over_parent_pr": 3.700343393958992,
+     "lift_over_null": 70.82364728696668,
+     "energy_in_parent_top21": 0.6688678957464995,
+     "parent_var_in_top21": 0.9274040212435547,
+     "energy_in_parent_top51": 0.7781638903264594,
+     "parent_var_in_top51": 0.9612061128963229
+    }
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.0016450685684064048,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.040614349967768554,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 38.97293279356191,
+     "parent_pr": 38.86215409956412,
+     "delta_pr_over_parent_pr": 1.002850554647948,
+     "lift_over_null": 1.5995805525767308,
+     "energy_in_parent_top21": 0.023219278650942123,
+     "parent_var_in_top21": 0.5670660193921524,
+     "energy_in_parent_top51": 0.05274949035238804,
+     "parent_var_in_top51": 0.772869067556643
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.01623873944317089,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.13110430633151,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 52.95694224309652,
+     "parent_pr": 30.261748318613662,
+     "delta_pr_over_parent_pr": 1.749963078323644,
+     "lift_over_null": 3.24800346008386,
+     "energy_in_parent_top21": 0.0886821992775892,
+     "parent_var_in_top21": 0.6277852014859316,
+     "energy_in_parent_top51": 0.19394687406941802,
+     "parent_var_in_top51": 0.8067053603769762
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.06529697374589816,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3112245091317621,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 22.222237408369704,
+     "parent_pr": 13.521688465372396,
+     "delta_pr_over_parent_pr": 1.6434513681688856,
+     "lift_over_null": 11.381924905390155,
+     "energy_in_parent_top21": 0.39736717222702506,
+     "parent_var_in_top21": 0.8503159253273374,
+     "energy_in_parent_top51": 0.5593430312843123,
+     "parent_var_in_top51": 0.9509776266069688
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.11982141500443788,
+     "k_parent_topk": 20,
+     "dim": 128,
+     "energy_in_parent_topk": 0.5430762218337111,
+     "isotropic_null": 0.15625,
+     "delta_pr": 18.513168712529826,
+     "parent_pr": 19.066313174388124,
+     "delta_pr_over_parent_pr": 0.9709883889560075,
+     "lift_over_null": 3.475687819735751,
+     "energy_in_parent_top21": 0.5518154932170075,
+     "parent_var_in_top21": 0.823844241055125,
+     "energy_in_parent_top51": 0.8412192184904963,
+     "parent_var_in_top51": 0.9700047432314607
+    },
+    "pi_features": {
+     "cka_distance": 0.06677994828817702,
+     "k_parent_topk": 21,
+     "dim": 512,
+     "energy_in_parent_topk": 0.23913153781644111,
+     "isotropic_null": 0.041015625,
+     "delta_pr": 45.98763728838583,
+     "parent_pr": 20.59278846974857,
+     "delta_pr_over_parent_pr": 2.233191359972597,
+     "lift_over_null": 5.830254636286564,
+     "energy_in_parent_top21": 0.23913153781644111,
+     "parent_var_in_top21": 0.7123452841200115,
+     "energy_in_parent_top51": 0.36372216943953606,
+     "parent_var_in_top51": 0.8350265637039106
+    },
+    "vf_features": {
+     "cka_distance": 0.05758783598659589,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.4871505251809979,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 6.845883809127427,
+     "parent_pr": 3.240358084555612,
+     "delta_pr_over_parent_pr": 2.1126936068444677,
+     "lift_over_null": 62.35526722316773,
+     "energy_in_parent_top21": 0.6772968124686325,
+     "parent_var_in_top21": 0.9536793311392676,
+     "energy_in_parent_top51": 0.7884614205240306,
+     "parent_var_in_top51": 0.9811416052291205
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.11485162004593874,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.21819679450719917,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 99.60818420410139,
+     "parent_pr": 29.704909142070445,
+     "delta_pr_over_parent_pr": 3.3532566528886765,
+     "lift_over_null": 3.7238919595895323,
+     "energy_in_parent_top21": 0.18009633359433708,
+     "parent_var_in_top21": 0.6073174539510812,
+     "energy_in_parent_top51": 0.28193529086985225,
+     "parent_var_in_top51": 0.723300489581453
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.058326322279620424,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.4344014222473533,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 8.498051753451396,
+     "parent_pr": 3.7227782528812763,
+     "delta_pr_over_parent_pr": 2.282717684534193,
+     "lift_over_null": 55.60338204766122,
+     "energy_in_parent_top21": 0.6328925514338096,
+     "parent_var_in_top21": 0.9427381205632241,
+     "energy_in_parent_top51": 0.7579593855915941,
+     "parent_var_in_top51": 0.9758711976989044
+    }
+   },
+   "gen FOLD rev-3 R3ACTION @32.6M": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.001441117564357608,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.04514510959061619,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 37.773146762786254,
+     "parent_pr": 38.40829627925828,
+     "delta_pr_over_parent_pr": 0.9834632207621501,
+     "lift_over_null": 1.77802277772273,
+     "energy_in_parent_top21": 0.027489556439948784,
+     "parent_var_in_top21": 0.568115289981742,
+     "energy_in_parent_top51": 0.05833226569304775,
+     "parent_var_in_top51": 0.7737689671900473
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.011598051996335568,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.13348011900475526,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 48.811025588605546,
+     "parent_pr": 30.305364645633603,
+     "delta_pr_over_parent_pr": 1.6106397715177547,
+     "lift_over_null": 3.3068623030855493,
+     "energy_in_parent_top21": 0.09127590999424484,
+     "parent_var_in_top21": 0.6282573192958284,
+     "energy_in_parent_top51": 0.20629121080977422,
+     "parent_var_in_top51": 0.8062967592855332
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.05057752498977519,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.31172303345075153,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 20.666551615721893,
+     "parent_pr": 13.701602553976729,
+     "delta_pr_over_parent_pr": 1.5083309805774268,
+     "lift_over_null": 11.400156651913198,
+     "energy_in_parent_top21": 0.38739332249677716,
+     "parent_var_in_top21": 0.8430778058677104,
+     "energy_in_parent_top51": 0.5424124463749929,
+     "parent_var_in_top51": 0.9474437378751377
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.07507452834657058,
+     "k_parent_topk": 18,
+     "dim": 128,
+     "energy_in_parent_topk": 0.4650030032470467,
+     "isotropic_null": 0.140625,
+     "delta_pr": 16.841350114478768,
+     "parent_pr": 17.61006051397359,
+     "delta_pr_over_parent_pr": 0.956348224988503,
+     "lift_over_null": 3.3066880230901097,
+     "energy_in_parent_top21": 0.5130882406888165,
+     "parent_var_in_top21": 0.8263237053949682,
+     "energy_in_parent_top51": 0.8342240500224722,
+     "parent_var_in_top51": 0.9713505407972313
+    },
+    "pi_features": {
+     "cka_distance": 0.054571014662124884,
+     "k_parent_topk": 20,
+     "dim": 512,
+     "energy_in_parent_topk": 0.23281403649335328,
+     "isotropic_null": 0.0390625,
+     "delta_pr": 45.05092449331889,
+     "parent_pr": 19.59151309261067,
+     "delta_pr_over_parent_pr": 2.2995122571880753,
+     "lift_over_null": 5.960039334229844,
+     "energy_in_parent_top21": 0.23866353809511376,
+     "parent_var_in_top21": 0.7194826600890976,
+     "energy_in_parent_top51": 0.35548852829836725,
+     "parent_var_in_top51": 0.8414876321549382
+    },
+    "vf_features": {
+     "cka_distance": 0.0597919110400803,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3796136256956581,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 9.379448157234366,
+     "parent_pr": 3.689863944519293,
+     "delta_pr_over_parent_pr": 2.541949594419612,
+     "lift_over_null": 48.590544089044236,
+     "energy_in_parent_top21": 0.5715741825167666,
+     "parent_var_in_top21": 0.9523307150121673,
+     "energy_in_parent_top51": 0.7043168625072974,
+     "parent_var_in_top51": 0.9805116033718209
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.09303077871742371,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.19487327487956874,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 108.16157177953227,
+     "parent_pr": 29.228209077960067,
+     "delta_pr_over_parent_pr": 3.7005884107039932,
+     "lift_over_null": 3.3258372246113064,
+     "energy_in_parent_top21": 0.15931233465480696,
+     "parent_var_in_top21": 0.6073133048859842,
+     "energy_in_parent_top51": 0.25978288514084075,
+     "parent_var_in_top51": 0.7238826710543314
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.05867154927025098,
+     "k_parent_topk": 5,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3656788398151691,
+     "isotropic_null": 0.009765625,
+     "delta_pr": 11.513267849164368,
+     "parent_pr": 4.141755688047101,
+     "delta_pr_over_parent_pr": 2.779803715219389,
+     "lift_over_null": 37.44551319707331,
+     "energy_in_parent_top21": 0.5373971741994661,
+     "parent_var_in_top21": 0.9413847058147543,
+     "energy_in_parent_top51": 0.6720096078480378,
+     "parent_var_in_top51": 0.9750468985448678
+    }
+   },
+   "gen FOLD rev-4 R4ACTION": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.0017378766222690967,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.04508439249235111,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 37.72146802761637,
+     "parent_pr": 38.40829627925828,
+     "delta_pr_over_parent_pr": 0.9821177110630439,
+     "lift_over_null": 1.7756314581602899,
+     "energy_in_parent_top21": 0.027401247209492125,
+     "parent_var_in_top21": 0.568115289981742,
+     "energy_in_parent_top51": 0.05640162705134889,
+     "parent_var_in_top51": 0.7737689671900473
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.011839419371270976,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.13186625691140977,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 50.72791475288946,
+     "parent_pr": 30.305364645633603,
+     "delta_pr_over_parent_pr": 1.6738922413922626,
+     "lift_over_null": 3.266880171224603,
+     "energy_in_parent_top21": 0.09380363068763667,
+     "parent_var_in_top21": 0.6282573192958284,
+     "energy_in_parent_top51": 0.20593407800536148,
+     "parent_var_in_top51": 0.8062967592855332
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.05248648967643521,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.31578610476384217,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 23.095183545987986,
+     "parent_pr": 13.701602553976729,
+     "delta_pr_over_parent_pr": 1.6855826502780056,
+     "lift_over_null": 11.548748974220514,
+     "energy_in_parent_top21": 0.38788876949670675,
+     "parent_var_in_top21": 0.8430778058677104,
+     "energy_in_parent_top51": 0.5618583906421729,
+     "parent_var_in_top51": 0.9474437378751377
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.09147573920433838,
+     "k_parent_topk": 18,
+     "dim": 128,
+     "energy_in_parent_topk": 0.4793298324704538,
+     "isotropic_null": 0.140625,
+     "delta_pr": 18.282703517478193,
+     "parent_pr": 17.61006051397359,
+     "delta_pr_over_parent_pr": 1.0381965185736222,
+     "lift_over_null": 3.4085676975676713,
+     "energy_in_parent_top21": 0.5250389016277287,
+     "parent_var_in_top21": 0.8263237053949682,
+     "energy_in_parent_top51": 0.8319493203378909,
+     "parent_var_in_top51": 0.9713505407972313
+    },
+    "pi_features": {
+     "cka_distance": 0.05426137668725439,
+     "k_parent_topk": 20,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2292018781257637,
+     "isotropic_null": 0.0390625,
+     "delta_pr": 44.97961938352121,
+     "parent_pr": 19.59151309261067,
+     "delta_pr_over_parent_pr": 2.295872665418894,
+     "lift_over_null": 5.86756808001955,
+     "energy_in_parent_top21": 0.2378136395047803,
+     "parent_var_in_top21": 0.7194826600890976,
+     "energy_in_parent_top51": 0.36386757852682117,
+     "parent_var_in_top51": 0.8414876321549382
+    },
+    "vf_features": {
+     "cka_distance": 0.07152155955993489,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3929161038272971,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 8.550701020926601,
+     "parent_pr": 3.689863944519293,
+     "delta_pr_over_parent_pr": 2.317348593198757,
+     "lift_over_null": 50.293261289894026,
+     "energy_in_parent_top21": 0.5712197336821325,
+     "parent_var_in_top21": 0.9523307150121673,
+     "energy_in_parent_top51": 0.7035777724252391,
+     "parent_var_in_top51": 0.9805116033718209
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.10511714577971265,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2123876632338589,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 97.96933458450326,
+     "parent_pr": 29.228209077960067,
+     "delta_pr_over_parent_pr": 3.351876070244016,
+     "lift_over_null": 3.6247494525245254,
+     "energy_in_parent_top21": 0.17570553315064644,
+     "parent_var_in_top21": 0.6073133048859842,
+     "energy_in_parent_top51": 0.27958462072184936,
+     "parent_var_in_top51": 0.7238826710543314
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.07100815962932483,
+     "k_parent_topk": 5,
+     "dim": 512,
+     "energy_in_parent_topk": 0.37264812744466763,
+     "isotropic_null": 0.009765625,
+     "delta_pr": 10.427831342604954,
+     "parent_pr": 4.141755688047101,
+     "delta_pr_over_parent_pr": 2.517732123287511,
+     "lift_over_null": 38.15916825033396,
+     "energy_in_parent_top21": 0.5395892050099815,
+     "parent_var_in_top21": 0.9413847058147543,
+     "energy_in_parent_top51": 0.6717755920144455,
+     "parent_var_in_top51": 0.9750468985448678
+    }
+   },
+   "gen FOLD COMPFOLD": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.0014386489392222979,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.042247341008168106,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 37.85764747233236,
+     "parent_pr": 38.40829627925828,
+     "delta_pr_over_parent_pr": 0.9856632847517559,
+     "lift_over_null": 1.66389527662939,
+     "energy_in_parent_top21": 0.026056506150550756,
+     "parent_var_in_top21": 0.568115289981742,
+     "energy_in_parent_top51": 0.05436846290255466,
+     "parent_var_in_top51": 0.7737689671900473
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.011099708578751422,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.12911575308391543,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 52.73935053807083,
+     "parent_pr": 30.305364645633603,
+     "delta_pr_over_parent_pr": 1.7402645094280202,
+     "lift_over_null": 3.198738657046679,
+     "energy_in_parent_top21": 0.09042556020528328,
+     "parent_var_in_top21": 0.6282573192958284,
+     "energy_in_parent_top51": 0.19875931685382453,
+     "parent_var_in_top51": 0.8062967592855332
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.04641591145575841,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.28867883488232504,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 22.720462721850907,
+     "parent_pr": 13.701602553976729,
+     "delta_pr_over_parent_pr": 1.6582339644099924,
+     "lift_over_null": 10.557397389982173,
+     "energy_in_parent_top21": 0.37274472753901333,
+     "parent_var_in_top21": 0.8430778058677104,
+     "energy_in_parent_top51": 0.5394063433302201,
+     "parent_var_in_top51": 0.9474437378751377
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.08027410820036007,
+     "k_parent_topk": 18,
+     "dim": 128,
+     "energy_in_parent_topk": 0.4743814514249212,
+     "isotropic_null": 0.140625,
+     "delta_pr": 19.913796933773284,
+     "parent_pr": 17.61006051397359,
+     "delta_pr_over_parent_pr": 1.130819335797948,
+     "lift_over_null": 3.3733792101327733,
+     "energy_in_parent_top21": 0.523548222948073,
+     "parent_var_in_top21": 0.8263237053949682,
+     "energy_in_parent_top51": 0.829248678935713,
+     "parent_var_in_top51": 0.9713505407972313
+    },
+    "pi_features": {
+     "cka_distance": 0.05283480795532525,
+     "k_parent_topk": 20,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2215905553705994,
+     "isotropic_null": 0.0390625,
+     "delta_pr": 41.48431600691036,
+     "parent_pr": 19.59151309261067,
+     "delta_pr_over_parent_pr": 2.117463608390564,
+     "lift_over_null": 5.672718217487345,
+     "energy_in_parent_top21": 0.22928647652310277,
+     "parent_var_in_top21": 0.7194826600890976,
+     "energy_in_parent_top51": 0.34479082649542325,
+     "parent_var_in_top51": 0.8414876321549382
+    },
+    "vf_features": {
+     "cka_distance": 0.07421441323195377,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.368564325504158,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 8.346251605768945,
+     "parent_pr": 3.689863944519293,
+     "delta_pr_over_parent_pr": 2.261940204642498,
+     "lift_over_null": 47.176233664532226,
+     "energy_in_parent_top21": 0.5648057333861014,
+     "parent_var_in_top21": 0.9523307150121673,
+     "energy_in_parent_top51": 0.6955864143489408,
+     "parent_var_in_top51": 0.9805116033718209
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.09487508303836512,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.20177037010598295,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 97.34580129862101,
+     "parent_pr": 29.228209077960067,
+     "delta_pr_over_parent_pr": 3.3305427999016866,
+     "lift_over_null": 3.443547649808776,
+     "energy_in_parent_top21": 0.1654464789591196,
+     "parent_var_in_top21": 0.6073133048859842,
+     "energy_in_parent_top51": 0.2670731076727533,
+     "parent_var_in_top51": 0.7238826710543314
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.07308442208120924,
+     "k_parent_topk": 5,
+     "dim": 512,
+     "energy_in_parent_topk": 0.36280002174842274,
+     "isotropic_null": 0.009765625,
+     "delta_pr": 10.126095098528802,
+     "parent_pr": 4.141755688047101,
+     "delta_pr_over_parent_pr": 2.444879867673558,
+     "lift_over_null": 37.150722227038486,
+     "energy_in_parent_top21": 0.5341077079793332,
+     "parent_var_in_top21": 0.9413847058147543,
+     "energy_in_parent_top51": 0.6670926027773473,
+     "parent_var_in_top51": 0.9750468985448678
+    }
+   },
+   "gen CTRL R2CTRL (no fork)": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.001889491065143356,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.04246675662697974,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 38.11817776898519,
+     "parent_pr": 38.86215409956412,
+     "delta_pr_over_parent_pr": 0.9808560192347321,
+     "lift_over_null": 1.6725368763856636,
+     "energy_in_parent_top21": 0.022802913866636455,
+     "parent_var_in_top21": 0.5670660193921524,
+     "energy_in_parent_top51": 0.055278298086357126,
+     "parent_var_in_top51": 0.772869067556643
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.012137545011970396,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.11674367883199982,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 54.75826144073581,
+     "parent_pr": 30.261748318613662,
+     "delta_pr_over_parent_pr": 1.8094877025678855,
+     "lift_over_null": 2.892230494934705,
+     "energy_in_parent_top21": 0.07881885504826222,
+     "parent_var_in_top21": 0.6277852014859316,
+     "energy_in_parent_top51": 0.18208262869495545,
+     "parent_var_in_top51": 0.8067053603769762
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.06136469313400661,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.27857810224258317,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 22.305277403303354,
+     "parent_pr": 13.521688465372396,
+     "delta_pr_over_parent_pr": 1.6495926126699927,
+     "lift_over_null": 10.187999167728757,
+     "energy_in_parent_top21": 0.3589843728486295,
+     "parent_var_in_top21": 0.8503159253273374,
+     "energy_in_parent_top51": 0.5231266227004137,
+     "parent_var_in_top51": 0.9509776266069688
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.09175178807130757,
+     "k_parent_topk": 20,
+     "dim": 128,
+     "energy_in_parent_topk": 0.4803273377690332,
+     "isotropic_null": 0.15625,
+     "delta_pr": 21.656317743724493,
+     "parent_pr": 19.066313174388124,
+     "delta_pr_over_parent_pr": 1.1358419189723337,
+     "lift_over_null": 3.0740949617218125,
+     "energy_in_parent_top21": 0.4922917140236267,
+     "parent_var_in_top21": 0.823844241055125,
+     "energy_in_parent_top51": 0.8111480920318614,
+     "parent_var_in_top51": 0.9700047432314607
+    },
+    "pi_features": {
+     "cka_distance": 0.06258062341199233,
+     "k_parent_topk": 21,
+     "dim": 512,
+     "energy_in_parent_topk": 0.20981621309743229,
+     "isotropic_null": 0.041015625,
+     "delta_pr": 47.3998277869562,
+     "parent_pr": 20.59278846974857,
+     "delta_pr_over_parent_pr": 2.301768303820922,
+     "lift_over_null": 5.115519100280254,
+     "energy_in_parent_top21": 0.20981621309743229,
+     "parent_var_in_top21": 0.7123452841200115,
+     "energy_in_parent_top51": 0.3318192411286299,
+     "parent_var_in_top51": 0.8350265637039106
+    },
+    "vf_features": {
+     "cka_distance": 0.05890911907319285,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3690086119724417,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 10.556987622592175,
+     "parent_pr": 3.240358084555612,
+     "delta_pr_over_parent_pr": 3.257969442608679,
+     "lift_over_null": 47.23310233247254,
+     "energy_in_parent_top21": 0.5601192794902203,
+     "parent_var_in_top21": 0.9536793311392676,
+     "energy_in_parent_top51": 0.6900311695984129,
+     "parent_var_in_top51": 0.9811416052291205
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.10690232978719116,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.19694072217911807,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 102.12397489091688,
+     "parent_pr": 29.704909142070445,
+     "delta_pr_over_parent_pr": 3.437949411071614,
+     "lift_over_null": 3.361121658523615,
+     "energy_in_parent_top21": 0.15941090036321462,
+     "parent_var_in_top21": 0.6073174539510812,
+     "energy_in_parent_top51": 0.26239333153922806,
+     "parent_var_in_top51": 0.723300489581453
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.05963050523001656,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3263584545678164,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 12.610987430973172,
+     "parent_pr": 3.7227782528812763,
+     "delta_pr_over_parent_pr": 3.387520441544642,
+     "lift_over_null": 41.7738821846805,
+     "energy_in_parent_top21": 0.5269733643343149,
+     "parent_var_in_top21": 0.9427381205632241,
+     "energy_in_parent_top51": 0.6630432513415141,
+     "parent_var_in_top51": 0.9758711976989044
+    }
+   },
+   "gen CTRL R2PLAIN": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.0014910330216073575,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.03688823795338383,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 38.962715688859625,
+     "parent_pr": 38.86215409956412,
+     "delta_pr_over_parent_pr": 1.0025876483593232,
+     "lift_over_null": 1.4528290640101937,
+     "energy_in_parent_top21": 0.020457546504195578,
+     "parent_var_in_top21": 0.5670660193921524,
+     "energy_in_parent_top51": 0.047685776395417746,
+     "parent_var_in_top51": 0.772869067556643
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.010012945509483395,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.11468750897567079,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 57.14754953369298,
+     "parent_pr": 30.261748318613662,
+     "delta_pr_over_parent_pr": 1.8884417691935587,
+     "lift_over_null": 2.8412905449456503,
+     "energy_in_parent_top21": 0.07492569329887584,
+     "parent_var_in_top21": 0.6277852014859316,
+     "energy_in_parent_top51": 0.17442797805408622,
+     "parent_var_in_top51": 0.8067053603769762
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.05397723032419266,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.26681650382355454,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 22.81572153787639,
+     "parent_pr": 13.521688465372396,
+     "delta_pr_over_parent_pr": 1.6873426418827073,
+     "lift_over_null": 9.757860711261424,
+     "energy_in_parent_top21": 0.350260933506985,
+     "parent_var_in_top21": 0.8503159253273374,
+     "energy_in_parent_top51": 0.5147126640410786,
+     "parent_var_in_top51": 0.9509776266069688
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.07963338754930627,
+     "k_parent_topk": 20,
+     "dim": 128,
+     "energy_in_parent_topk": 0.4730695531864352,
+     "isotropic_null": 0.15625,
+     "delta_pr": 21.71987365361632,
+     "parent_pr": 19.066313174388124,
+     "delta_pr_over_parent_pr": 1.139175332690577,
+     "lift_over_null": 3.027645140393185,
+     "energy_in_parent_top21": 0.49939069137071695,
+     "parent_var_in_top21": 0.823844241055125,
+     "energy_in_parent_top51": 0.8168522991039158,
+     "parent_var_in_top51": 0.9700047432314607
+    },
+    "pi_features": {
+     "cka_distance": 0.05456198086571762,
+     "k_parent_topk": 21,
+     "dim": 512,
+     "energy_in_parent_topk": 0.20820760269893315,
+     "isotropic_null": 0.041015625,
+     "delta_pr": 46.67507002224397,
+     "parent_pr": 20.59278846974857,
+     "delta_pr_over_parent_pr": 2.2665735672859975,
+     "lift_over_null": 5.076299646754942,
+     "energy_in_parent_top21": 0.20820760269893315,
+     "parent_var_in_top21": 0.7123452841200115,
+     "energy_in_parent_top51": 0.3278727780678465,
+     "parent_var_in_top51": 0.8350265637039106
+    },
+    "vf_features": {
+     "cka_distance": 0.052785927959394296,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.36194349718234337,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 10.389075576469601,
+     "parent_pr": 3.240358084555612,
+     "delta_pr_over_parent_pr": 3.2061504640448946,
+     "lift_over_null": 46.32876763933995,
+     "energy_in_parent_top21": 0.555687166281232,
+     "parent_var_in_top21": 0.9536793311392676,
+     "energy_in_parent_top51": 0.6731181929757898,
+     "parent_var_in_top51": 0.9811416052291205
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.10007561942146492,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.19350578272350796,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 106.71005960259885,
+     "parent_pr": 29.704909142070445,
+     "delta_pr_over_parent_pr": 3.592337518766136,
+     "lift_over_null": 3.302498691814536,
+     "energy_in_parent_top21": 0.1555710805985605,
+     "parent_var_in_top21": 0.6073174539510812,
+     "energy_in_parent_top51": 0.2575629612636275,
+     "parent_var_in_top51": 0.723300489581453
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.05215935669090255,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.32579286594828444,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 12.906970479886047,
+     "parent_pr": 3.7227782528812763,
+     "delta_pr_over_parent_pr": 3.4670263988720214,
+     "lift_over_null": 41.70148684138041,
+     "energy_in_parent_top21": 0.5210901514992123,
+     "parent_var_in_top21": 0.9427381205632241,
+     "energy_in_parent_top51": 0.6458219453372914,
+     "parent_var_in_top51": 0.9758711976989044
+    }
+   },
+   "v8 fork pool10 @matched": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.0013087026991068784,
+     "k_parent_topk": 37,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.06464720601256847,
+     "isotropic_null": 0.024088541666666668,
+     "delta_pr": 36.905245386248176,
+     "parent_pr": 36.241996391317755,
+     "delta_pr_over_parent_pr": 1.0183005645651824,
+     "lift_over_null": 2.683732660413653,
+     "energy_in_parent_top21": 0.04145853569794254,
+     "parent_var_in_top21": 0.5871786112359795,
+     "energy_in_parent_top51": 0.08208404691569844,
+     "parent_var_in_top51": 0.7947656921221063
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.009315401882442953,
+     "k_parent_topk": 43,
+     "dim": 768,
+     "energy_in_parent_topk": 0.18377485473429533,
+     "isotropic_null": 0.055989583333333336,
+     "delta_pr": 56.978189055738206,
+     "parent_pr": 42.623007433340135,
+     "delta_pr_over_parent_pr": 1.3367941984114735,
+     "lift_over_null": 3.282304382231135,
+     "energy_in_parent_top21": 0.09600031320040674,
+     "parent_var_in_top21": 0.5611419787485684,
+     "energy_in_parent_top51": 0.2094532753620256,
+     "parent_var_in_top51": 0.7591730893128454
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.014000045979548958,
+     "k_parent_topk": 31,
+     "dim": 512,
+     "energy_in_parent_topk": 0.37129502374190054,
+     "isotropic_null": 0.060546875,
+     "delta_pr": 37.494306571437356,
+     "parent_pr": 30.078608109412226,
+     "delta_pr_over_parent_pr": 1.2465439369750824,
+     "lift_over_null": 6.1323565211565505,
+     "energy_in_parent_top21": 0.2727412576900753,
+     "parent_var_in_top21": 0.6866005058474195,
+     "energy_in_parent_top51": 0.4944447703917926,
+     "parent_var_in_top51": 0.8811424764403271
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.04444615850288791,
+     "k_parent_topk": 23,
+     "dim": 128,
+     "energy_in_parent_topk": 0.557764483587997,
+     "isotropic_null": 0.1796875,
+     "delta_pr": 25.025559773939115,
+     "parent_pr": 22.032622378011574,
+     "delta_pr_over_parent_pr": 1.1358411788019602,
+     "lift_over_null": 3.1040806043158096,
+     "energy_in_parent_top21": 0.5257127562138367,
+     "parent_var_in_top21": 0.7716645508035883,
+     "energy_in_parent_top51": 0.8153761136677993,
+     "parent_var_in_top51": 0.9461040855373983
+    },
+    "pi_features": {
+     "cka_distance": 0.024589168043977483,
+     "k_parent_topk": 51,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2971959819305571,
+     "isotropic_null": 0.099609375,
+     "delta_pr": 85.60430022440814,
+     "parent_pr": 50.2397417052784,
+     "delta_pr_over_parent_pr": 1.7039160098909145,
+     "lift_over_null": 2.983614563695004,
+     "energy_in_parent_top21": 0.170819823191251,
+     "parent_var_in_top21": 0.5316271337029919,
+     "energy_in_parent_top51": 0.2971959819305571,
+     "parent_var_in_top51": 0.7175445954153655
+    },
+    "vf_features": {
+     "cka_distance": 0.05704846541530373,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.5108833781618164,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 6.580298806299302,
+     "parent_pr": 3.8511654027144906,
+     "delta_pr_over_parent_pr": 1.7086513089417514,
+     "lift_over_null": 65.3930724047125,
+     "energy_in_parent_top21": 0.6784400112731547,
+     "parent_var_in_top21": 0.8574268667571779,
+     "energy_in_parent_top51": 0.7624008107763522,
+     "parent_var_in_top51": 0.9234411706926492
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.07860376474141195,
+     "k_parent_topk": 27,
+     "dim": 512,
+     "energy_in_parent_topk": 0.21269790379249467,
+     "isotropic_null": 0.052734375,
+     "delta_pr": 140.6278956934191,
+     "parent_pr": 26.87882889474755,
+     "delta_pr_over_parent_pr": 5.231920491926622,
+     "lift_over_null": 4.033382471916936,
+     "energy_in_parent_top21": 0.1855575895970399,
+     "parent_var_in_top21": 0.5980284009681691,
+     "energy_in_parent_top51": 0.29584346030596775,
+     "parent_var_in_top51": 0.7244204635936035
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.08463779520369275,
+     "k_parent_topk": 3,
+     "dim": 512,
+     "energy_in_parent_topk": 0.4036155141712656,
+     "isotropic_null": 0.005859375,
+     "delta_pr": 10.576308614476723,
+     "parent_pr": 2.496361248665131,
+     "delta_pr_over_parent_pr": 4.236689950275486,
+     "lift_over_null": 68.88371441856266,
+     "energy_in_parent_top21": 0.6466445717173663,
+     "parent_var_in_top21": 0.9274040212435547,
+     "energy_in_parent_top51": 0.7775008739795806,
+     "parent_var_in_top51": 0.9612061128963229
+    }
+   },
+   "gen fork F5a": {
+    "features_extractor_pokemon_encoder": {
+     "cka_distance": 0.00176540176947948,
+     "k_parent_topk": 39,
+     "dim": 1536,
+     "energy_in_parent_topk": 0.055273823592944055,
+     "isotropic_null": 0.025390625,
+     "delta_pr": 44.481719070047085,
+     "parent_pr": 38.86215409956412,
+     "delta_pr_over_parent_pr": 1.1446025085507545,
+     "lift_over_null": 2.1769382830451813,
+     "energy_in_parent_top21": 0.03233650418256458,
+     "parent_var_in_top21": 0.5670660193921524,
+     "energy_in_parent_top51": 0.07198734584213182,
+     "parent_var_in_top51": 0.772869067556643
+    },
+    "features_extractor_team_transformer": {
+     "cka_distance": 0.010328683428452501,
+     "k_parent_topk": 31,
+     "dim": 768,
+     "energy_in_parent_topk": 0.14539747708944945,
+     "isotropic_null": 0.040364583333333336,
+     "delta_pr": 61.35966163302958,
+     "parent_pr": 30.261748318613662,
+     "delta_pr_over_parent_pr": 2.0276310868426575,
+     "lift_over_null": 3.602105238861199,
+     "energy_in_parent_top21": 0.099404677057525,
+     "parent_var_in_top21": 0.6277852014859316,
+     "energy_in_parent_top51": 0.2174378583765946,
+     "parent_var_in_top51": 0.8067053603769762
+    },
+    "features_extractor_projection": {
+     "cka_distance": 0.05533000876341532,
+     "k_parent_topk": 14,
+     "dim": 512,
+     "energy_in_parent_topk": 0.3564495571137835,
+     "isotropic_null": 0.02734375,
+     "delta_pr": 22.050036788881805,
+     "parent_pr": 13.521688465372396,
+     "delta_pr_over_parent_pr": 1.6307162264054227,
+     "lift_over_null": 13.035869517304082,
+     "energy_in_parent_top21": 0.4504910556505672,
+     "parent_var_in_top21": 0.8503159253273374,
+     "energy_in_parent_top51": 0.632906004040976,
+     "parent_var_in_top51": 0.9509776266069688
+    },
+    "features_extractor_cls_pool": {
+     "cka_distance": 0.06106914575111677,
+     "k_parent_topk": 20,
+     "dim": 128,
+     "energy_in_parent_topk": 0.5264598356059254,
+     "isotropic_null": 0.15625,
+     "delta_pr": 22.974663111569235,
+     "parent_pr": 19.066313174388124,
+     "delta_pr_over_parent_pr": 1.204987188736164,
+     "lift_over_null": 3.3693429478779224,
+     "energy_in_parent_top21": 0.5432155335825424,
+     "parent_var_in_top21": 0.823844241055125,
+     "energy_in_parent_top51": 0.842172965053014,
+     "parent_var_in_top51": 0.9700047432314607
+    },
+    "pi_features": {
+     "cka_distance": 0.05289341395818814,
+     "k_parent_topk": 21,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2550075617122664,
+     "isotropic_null": 0.041015625,
+     "delta_pr": 46.810906832986994,
+     "parent_pr": 20.59278846974857,
+     "delta_pr_over_parent_pr": 2.2731698964301814,
+     "lift_over_null": 6.217327218889543,
+     "energy_in_parent_top21": 0.2550075617122664,
+     "parent_var_in_top21": 0.7123452841200115,
+     "energy_in_parent_top51": 0.3956939072769103,
+     "parent_var_in_top51": 0.8350265637039106
+    },
+    "vf_features": {
+     "cka_distance": 0.06284625575452141,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.47966111914477866,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 7.406014095164538,
+     "parent_pr": 3.240358084555612,
+     "delta_pr_over_parent_pr": 2.2855542202152055,
+     "lift_over_null": 61.39662325053167,
+     "energy_in_parent_top21": 0.6684625190693366,
+     "parent_var_in_top21": 0.9536793311392676,
+     "energy_in_parent_top51": 0.7763535902163429,
+     "parent_var_in_top51": 0.9811416052291205
+    },
+    "mlp_extractor_policy_net": {
+     "cka_distance": 0.09010791376205851,
+     "k_parent_topk": 30,
+     "dim": 512,
+     "energy_in_parent_topk": 0.2167145202817471,
+     "isotropic_null": 0.05859375,
+     "delta_pr": 116.52794828526837,
+     "parent_pr": 29.704909142070445,
+     "delta_pr_over_parent_pr": 3.9228515302957874,
+     "lift_over_null": 3.69859447947515,
+     "energy_in_parent_top21": 0.1791844167210685,
+     "parent_var_in_top21": 0.6073174539510812,
+     "energy_in_parent_top51": 0.2850519902826322,
+     "parent_var_in_top51": 0.723300489581453
+    },
+    "mlp_extractor_value_net": {
+     "cka_distance": 0.0649958983419362,
+     "k_parent_topk": 4,
+     "dim": 512,
+     "energy_in_parent_topk": 0.43593906485339995,
+     "isotropic_null": 0.0078125,
+     "delta_pr": 9.197739243741122,
+     "parent_pr": 3.7227782528812763,
+     "delta_pr_over_parent_pr": 2.4706653523138136,
+     "lift_over_null": 55.80020030123519,
+     "energy_in_parent_top21": 0.6298457651213195,
+     "parent_var_in_top21": 0.9427381205632241,
+     "energy_in_parent_top51": 0.7500268940079202,
+     "parent_var_in_top51": 0.9758711976989044
+    }
+   }
+  },
+  "joined": {
+   "v8 FOLD ai_v8_14 @292.1M": {
+    "parent": "v8 PARENT ai_v8_04 @277.2M",
+    "parent_pr_pi": 50.239741705278334,
+    "parent_pr_projection": 30.078608109412215,
+    "fold_pr_pi": 45.63771759439438,
+    "trunk_share": 0.3809368395874359,
+    "shared_share": 0.6577814435830397,
+    "head_share": 0.14906460894986567,
+    "global_rel_frob": 0.05927445772372427,
+    "untaught_externality_pp": 5.42,
+    "untaught_externality_ci": "[+3.44,+7.42]"
+   },
+   "gen FOLD rev-2 R2ACTION @28.1M": {
+    "parent": "gen PARENT rev-1 @25.1M",
+    "parent_pr_pi": 20.59278846974859,
+    "parent_pr_projection": 13.521688465372403,
+    "fold_pr_pi": 19.591513092610683,
+    "trunk_share": 0.3299502552832252,
+    "shared_share": 0.4930760766351377,
+    "head_share": 0.37239130126698494,
+    "global_rel_frob": 0.039366444356892634,
+    "untaught_externality_pp": -7.06,
+    "untaught_externality_ci": "[-10.56,-3.50]"
+   },
+   "gen FOLD rev-3 R3ACTION @32.6M": {
+    "parent": "gen FOLD rev-2 R2ACTION @28.1M",
+    "parent_pr_pi": 19.591513092610683,
+    "parent_pr_projection": 13.701602553976729,
+    "fold_pr_pi": 19.051648201177166,
+    "trunk_share": 0.3359172058511726,
+    "shared_share": 0.5111599450504108,
+    "head_share": 0.35523722606783414,
+    "global_rel_frob": 0.03216082176963165,
+    "untaught_externality_pp": -0.75,
+    "untaught_externality_ci": "[-4.56,+3.00]"
+   },
+   "gen FOLD rev-4 R4ACTION": {
+    "parent": "gen FOLD rev-2 R2ACTION @28.1M",
+    "parent_pr_pi": 19.591513092610683,
+    "parent_pr_projection": 13.701602553976729,
+    "fold_pr_pi": 18.899496728964994,
+    "trunk_share": 0.33788959306673955,
+    "shared_share": 0.5108240374371121,
+    "head_share": 0.3517846714012261,
+    "global_rel_frob": 0.03310157007452552,
+    "untaught_externality_pp": null,
+    "untaught_externality_ci": null
+   },
+   "gen FOLD COMPFOLD": {
+    "parent": "gen FOLD rev-2 R2ACTION @28.1M",
+    "parent_pr_pi": 19.591513092610683,
+    "parent_pr_projection": 13.701602553976729,
+    "fold_pr_pi": 19.03797403534374,
+    "trunk_share": 0.3386633037103867,
+    "shared_share": 0.5153546724875265,
+    "head_share": 0.34576382348278834,
+    "global_rel_frob": 0.03202388932437886,
+    "untaught_externality_pp": null,
+    "untaught_externality_ci": null
+   }
+  }
+ },
+ "delta_locus": {
+  "FOLD v8_14 (3 teachers / 22 taught teams)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.02951531147117809,
+     "share_of_total_d2": 0.1430462199215011,
+     "share_of_total_params": 0.05732922559722036,
+     "n_params": 201363
+    },
+    "G2_trunk": {
+     "rel_frob": 0.09151940387000941,
+     "share_of_total_d2": 0.3809368395874359,
+     "share_of_total_params": 0.3278393643998671,
+     "n_params": 1151502
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.044187876704988534,
+     "share_of_total_d2": 0.050107727545593485,
+     "share_of_total_params": 0.24522455747456795,
+     "n_params": 861326
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.08635199951831092,
+     "share_of_total_d2": 0.14774644802481599,
+     "share_of_total_params": 0.06873539636891843,
+     "n_params": 241426
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.09708728054200987,
+     "share_of_total_d2": 0.27684460399560384,
+     "share_of_total_params": 0.29911880690024506,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.12185075627123926,
+     "share_of_total_d2": 0.0013181609250496936,
+     "share_of_total_params": 0.0017526492591811234,
+     "n_params": 6156
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.3809368395874359,
+    "shared_share": 0.6577814435830397,
+    "head_share": 0.14906460894986567
+   },
+   "global_rel_frob": 0.05927445772372427,
+   "n_shared_keys": 169,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fold",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/final_model_interrupted.zip",
+   "parent_steps": 277583267,
+   "child_steps": 292623779,
+   "untaught_externality_pp": 5.42
+  },
+  "FOLD rev-2 R2ACTION (5 teachers / 9 taught)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.013617055985761056,
+     "share_of_total_d2": 0.0751220300474929,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.0666283989350827,
+     "share_of_total_d2": 0.3299502552832252,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.04601450136798299,
+     "share_of_total_d2": 0.05941059205038451,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.0643033586391919,
+     "share_of_total_d2": 0.344555001680283,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.05594552414958933,
+     "share_of_total_d2": 0.1631258213519125,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.10969630785784729,
+     "share_of_total_d2": 0.027836299586701908,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.3299502552832252,
+    "shared_share": 0.4930760766351377,
+    "head_share": 0.37239130126698494
+   },
+   "global_rel_frob": 0.039366444356892634,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fold",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": -7.06
+  },
+  "FOLD rev-3 R3ACTION (6 teachers / 12 taught)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.011044826455950799,
+     "share_of_total_d2": 0.07386387250509269,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.05486309676969573,
+     "share_of_total_d2": 0.3359172058511726,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.03770574643267777,
+     "share_of_total_d2": 0.05973895637666235,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.05127380483443838,
+     "share_of_total_d2": 0.33092876968241886,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.04734780409560297,
+     "share_of_total_d2": 0.1752427391992383,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.08157160930790165,
+     "share_of_total_d2": 0.024308456385415275,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.3359172058511726,
+    "shared_share": 0.5111599450504108,
+    "head_share": 0.35523722606783414
+   },
+   "global_rel_frob": 0.03216082176963165,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fold",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_70_R3ACTION_0828/final_model.zip",
+   "parent_steps": 28115184,
+   "child_steps": 32637168,
+   "untaught_externality_pp": -0.75
+  },
+  "FOLD rev-4 R4ACTION (3 teachers)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.011554529234016172,
+     "share_of_total_d2": 0.07630902046256956,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.05663345506584589,
+     "share_of_total_d2": 0.33788959306673955,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.03924259967944916,
+     "share_of_total_d2": 0.061082270699092084,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.05240438141732842,
+     "share_of_total_d2": 0.3263140080622222,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.04841077479987274,
+     "share_of_total_d2": 0.17293444437037264,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.08594130102414155,
+     "share_of_total_d2": 0.025470663339003885,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.33788959306673955,
+    "shared_share": 0.5108240374371121,
+    "head_share": 0.3517846714012261
+   },
+   "global_rel_frob": 0.03310157007452552,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fold",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_76_R4ACTION_0830/final_model.zip",
+   "parent_steps": 28115184,
+   "child_steps": 32637168,
+   "untaught_externality_pp": null
+  },
+  "FOLD COMPFOLD (composite)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.010961701841431025,
+     "share_of_total_d2": 0.07337977446917401,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.054852345459271264,
+     "share_of_total_d2": 0.3386633037103867,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.03931443599489349,
+     "share_of_total_d2": 0.06550172956051109,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.050344900897023745,
+     "share_of_total_d2": 0.32178110262971815,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.047340673477975326,
+     "share_of_total_d2": 0.17669136877713987,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.08067825660704762,
+     "share_of_total_d2": 0.0239827208530702,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.3386633037103867,
+    "shared_share": 0.5153546724875265,
+    "head_share": 0.34576382348278834
+   },
+   "global_rel_frob": 0.03202388932437886,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fold",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_91_COMPFOLD_0831/final_model.zip",
+   "parent_steps": 28115184,
+   "child_steps": 32637168,
+   "untaught_externality_pp": null
+  },
+  "CTRL R2CTRL (no fork, no distill, +3M)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.012738539592469145,
+     "share_of_total_d2": 0.07422429811067285,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.06242848155194385,
+     "share_of_total_d2": 0.3270402490940335,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.04503297806805234,
+     "share_of_total_d2": 0.06424535360668963,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.06055602043575556,
+     "share_of_total_d2": 0.3449942410604824,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.05255798850287016,
+     "share_of_total_d2": 0.16254568159501817,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.10158137633308814,
+     "share_of_total_d2": 0.026950176533103453,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.3270402490940335,
+    "shared_share": 0.48958593068905165,
+    "head_share": 0.3719444175935858
+   },
+   "global_rel_frob": 0.037048720724070894,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "control",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_58_R2CTRL_0827/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  },
+  "CTRL R2PLAIN (+3M)": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.0123300651477191,
+     "share_of_total_d2": 0.06945186466997577,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.06302130966449593,
+     "share_of_total_d2": 0.3328563607686421,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.04512945791106533,
+     "share_of_total_d2": 0.064438729937591,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.06074815164953502,
+     "share_of_total_d2": 0.34674457855390556,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.052481768994355395,
+     "share_of_total_d2": 0.1618680915152013,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.09719272593817349,
+     "share_of_total_d2": 0.024640374554684263,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.3328563607686421,
+    "shared_share": 0.4947244522838434,
+    "head_share": 0.3713849531085898
+   },
+   "global_rel_frob": 0.03707234355682237,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "control",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_62_R2PLAIN_0827/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  },
+  "FORK v8 semistall3 @matched": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.006783460597327186,
+     "share_of_total_d2": 0.06256402772558857,
+     "share_of_total_params": 0.05732922559722036,
+     "n_params": 201363
+    },
+    "G2_trunk": {
+     "rel_frob": 0.034577304889366944,
+     "share_of_total_d2": 0.4502454470683094,
+     "share_of_total_params": 0.3278393643998671,
+     "n_params": 1151502
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.018847637093076786,
+     "share_of_total_d2": 0.07548361728757992,
+     "share_of_total_params": 0.24522455747456795,
+     "n_params": 861326
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.026691245625197937,
+     "share_of_total_d2": 0.1168827383756764,
+     "share_of_total_params": 0.06873539636891843,
+     "n_params": 241426
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.03414646682805166,
+     "share_of_total_d2": 0.28355896261933783,
+     "share_of_total_params": 0.29911880690024506,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.12379222760660556,
+     "share_of_total_d2": 0.011265206923507852,
+     "share_of_total_params": 0.0017526492591811234,
+     "n_params": 6156
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.4502454470683094,
+    "shared_share": 0.7338044096876473,
+    "head_share": 0.12814794529918427
+   },
+   "global_rel_frob": 0.02059905838499319,
+   "n_shared_keys": 169,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722/checkpoints/checkpoint_280748576_steps.zip",
+   "parent_steps": 277583267,
+   "child_steps": 280748576,
+   "untaught_externality_pp": null
+  },
+  "FORK v8 pool10 @matched": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.006821473882430036,
+     "share_of_total_d2": 0.0605869281287057,
+     "share_of_total_params": 0.05732922559722036,
+     "n_params": 201363
+    },
+    "G2_trunk": {
+     "rel_frob": 0.03612089355186882,
+     "share_of_total_d2": 0.4705268677983602,
+     "share_of_total_params": 0.3278393643998671,
+     "n_params": 1151502
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.019106142143207827,
+     "share_of_total_d2": 0.07428229219693093,
+     "share_of_total_params": 0.24522455747456795,
+     "n_params": 861326
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.025038319208746634,
+     "share_of_total_d2": 0.09849709990310307,
+     "share_of_total_params": 0.06873539636891843,
+     "n_params": 241426
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.03528555392647907,
+     "share_of_total_d2": 0.28996535849079064,
+     "share_of_total_params": 0.29911880690024506,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.09340264433802471,
+     "share_of_total_d2": 0.006141453482109467,
+     "share_of_total_params": 0.0017526492591811234,
+     "n_params": 6156
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.4705268677983602,
+    "shared_share": 0.7604922262891508,
+    "head_share": 0.10463855338521254
+   },
+   "global_rel_frob": 0.02104976082996341,
+   "n_shared_keys": 169,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723/checkpoints/checkpoint_280728930_steps.zip",
+   "parent_steps": 277583267,
+   "child_steps": 280728930,
+   "untaught_externality_pp": null
+  },
+  "FORK v8 defensive10 @matched": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.006797393422128803,
+     "share_of_total_d2": 0.061255568865108384,
+     "share_of_total_params": 0.05732922559722036,
+     "n_params": 201363
+    },
+    "G2_trunk": {
+     "rel_frob": 0.035888719526669145,
+     "share_of_total_d2": 0.4729569972174312,
+     "share_of_total_params": 0.3278393643998671,
+     "n_params": 1151502
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.01818889747228519,
+     "share_of_total_d2": 0.06854729305671182,
+     "share_of_total_params": 0.24522455747456795,
+     "n_params": 861326
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.024582423528746775,
+     "share_of_total_d2": 0.09667201364497402,
+     "share_of_total_params": 0.06873539636891843,
+     "n_params": 241426
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.035292574254824044,
+     "share_of_total_d2": 0.2953637432876697,
+     "share_of_total_params": 0.29911880690024506,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.0852097156923575,
+     "share_of_total_d2": 0.005204383928104936,
+     "share_of_total_params": 0.0017526492591811234,
+     "n_params": 6156
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.4729569972174312,
+    "shared_share": 0.7683207405051008,
+    "head_share": 0.10187639757307895
+   },
+   "global_rel_frob": 0.020860659291260894,
+   "n_shared_keys": 169,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725/checkpoints/checkpoint_280716057_steps.zip",
+   "parent_steps": 277583267,
+   "child_steps": 280716057,
+   "untaught_externality_pp": null
+  },
+  "FORK gen F5a": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.008967229308472721,
+     "share_of_total_d2": 0.07866079431509365,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.03934396158754895,
+     "share_of_total_d2": 0.2777965166021239,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.02980815483994798,
+     "share_of_total_d2": 0.06019848116365667,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.04739074643229634,
+     "share_of_total_d2": 0.4518759726911865,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.029973201296649554,
+     "share_of_total_d2": 0.11305744978988112,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.057411905893535495,
+     "share_of_total_d2": 0.018410785438058196,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.2777965166021239,
+    "shared_share": 0.39085396639200504,
+    "head_share": 0.47028675812924464
+   },
+   "global_rel_frob": 0.025334114956182506,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_53_R2F5a_0826/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  },
+  "FORK gen F5b": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.008513821723504391,
+     "share_of_total_d2": 0.07085353057757877,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.039484129249836575,
+     "share_of_total_d2": 0.27956729606649566,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.028547486679581943,
+     "share_of_total_d2": 0.0551723801902087,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.04813917169753844,
+     "share_of_total_d2": 0.4659078129035929,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.029623671126457467,
+     "share_of_total_d2": 0.11035227601372964,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.057020284370083836,
+     "share_of_total_d2": 0.01814670424839446,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.27956729606649566,
+    "shared_share": 0.3899195720802253,
+    "head_share": 0.4840545171519874
+   },
+   "global_rel_frob": 0.025343723931677643,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_54_R2F5b_0826/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  },
+  "FORK gen F5c": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.008884161077002363,
+     "share_of_total_d2": 0.0691486379265048,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.04042331992072657,
+     "share_of_total_d2": 0.26262954652408005,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.029603958435082272,
+     "share_of_total_d2": 0.05317701114793938,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.05214179393226563,
+     "share_of_total_d2": 0.4899063791072381,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.03081836573224233,
+     "share_of_total_d2": 0.10704370664661697,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.060143295417130385,
+     "share_of_total_d2": 0.01809471864762068,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.26262954652408005,
+    "shared_share": 0.36967325317069705,
+    "head_share": 0.5080010977548588
+   },
+   "global_rel_frob": 0.026770176475506006,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_55_R2F5c_0826/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  },
+  "FORK gen F5d": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.008669886121838706,
+     "share_of_total_d2": 0.07022950824935781,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.04020192992205115,
+     "share_of_total_d2": 0.27702278444104067,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.028956869411618055,
+     "share_of_total_d2": 0.05425873033081853,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.04916506860614273,
+     "share_of_total_d2": 0.46451154788000837,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.031032818732875864,
+     "share_of_total_d2": 0.11575144956078122,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.05845016112526698,
+     "share_of_total_d2": 0.018225979537993393,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.27702278444104067,
+    "shared_share": 0.3927742340018219,
+    "head_share": 0.4827375274180018
+   },
+   "global_rel_frob": 0.025922698243412246,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_56_R2F5d_0826/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  },
+  "FORK gen F5e": {
+   "groups": {
+    "G1_input_encoders": {
+     "rel_frob": 0.008651580498572174,
+     "share_of_total_d2": 0.071803463725172,
+     "share_of_total_params": 0.07040627570176439,
+     "n_params": 221631
+    },
+    "G2_trunk": {
+     "rel_frob": 0.04069041133404399,
+     "share_of_total_d2": 0.29138520265417506,
+     "share_of_total_params": 0.28253682549595965,
+     "n_params": 889394
+    },
+    "G3_pools_value_trunk": {
+     "rel_frob": 0.029435513015367096,
+     "share_of_total_d2": 0.05756669249678091,
+     "share_of_total_params": 0.09846350901414187,
+     "n_params": 309952
+    },
+    "G4_aux_belief_heads": {
+     "rel_frob": 0.047172480533317455,
+     "share_of_total_d2": 0.43905840086654774,
+     "share_of_total_params": 0.19698610528268645,
+     "n_params": 620090
+    },
+    "G5_mlp_extractor": {
+     "rel_frob": 0.031373728013278764,
+     "share_of_total_d2": 0.12147247795461324,
+     "share_of_total_params": 0.3337553095139692,
+     "n_params": 1050624
+    },
+    "G6_action_value_head": {
+     "rel_frob": 0.058450738718690366,
+     "share_of_total_d2": 0.01871376230271097,
+     "share_of_total_params": 0.01785197499147841,
+     "n_params": 56196
+    }
+   },
+   "aggregate": {
+    "trunk_share": 0.29138520265417506,
+    "shared_share": 0.4128576806087883,
+    "head_share": 0.4577721631692587
+   },
+   "global_rel_frob": 0.025582876880153586,
+   "n_shared_keys": 284,
+   "n_parent_only_keys": 0,
+   "n_child_only_keys": 0,
+   "kind": "fork_anchor",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "child": "/home/goodlad/dev/gen3ai/models/ai_v9_57_R2F5e_0826/final_model.zip",
+   "parent_steps": 25067760,
+   "child_steps": 28115184,
+   "untaught_externality_pp": null
+  }
+ },
+ "input_pr_control": {
+  "v8": {
+   "dim": 2992,
+   "live_dims": 2249,
+   "pr_raw": 36.188497440731346,
+   "pr_live": 36.18849744073133,
+   "pr_signedlog": 23.395669971284242,
+   "n99_live": 113,
+   "n_teams_states": 95,
+   "n_clusters": 201
+  },
+  "v9": {
+   "dim": 2501,
+   "live_dims": 2039,
+   "pr_raw": 17.16801043495209,
+   "pr_live": 17.168010434952112,
+   "pr_signedlog": 12.187090512937033,
+   "n99_live": 157,
+   "n_teams_states": 81,
+   "n_clusters": 229
+  }
+ },
+ "obs_pr_by_arch": {
+  "v8_04 (v8 era)": {
+   "run": "ai_v8_04_distill_4teacher_0722",
+   "trace": "step_276000000",
+   "obs_dim": 2992,
+   "n": 3000,
+   "pr": 36.18849744073133,
+   "n99": 113
+  },
+  "gen-12 (frames LIVE)": {
+   "run": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+   "trace": "step_8000016",
+   "obs_dim": 2921,
+   "n": 3000,
+   "pr": 37.76178423023704,
+   "n99": 126
+  },
+  "gen-13 (frames LIVE)": {
+   "run": "ai_v9_15_gen13_hb_events_stack_0817",
+   "trace": "step_8000016",
+   "obs_dim": 3529,
+   "n": 3000,
+   "pr": 22.877952358686656,
+   "n99": 210
+  },
+  "gen-14 (frames DELETED)": {
+   "run": "ai_v9_16_gen14_framedel_v91_0817",
+   "trace": "step_8000016",
+   "obs_dim": 2501,
+   "n": 3000,
+   "pr": 16.20048310462491,
+   "n99": 156
+  },
+  "gen-15": {
+   "run": "ai_v9_18_gen15_v8rewards_0818",
+   "trace": "step_8000016",
+   "obs_dim": 2501,
+   "n": 3000,
+   "pr": 15.587713300575567,
+   "n99": 155
+  },
+  "gen-17": {
+   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "trace": "step_8000016",
+   "obs_dim": 2501,
+   "n": 3000,
+   "pr": 19.038292484341664,
+   "n99": 157
+  },
+  "rev-1": {
+   "run": "ai_v9_29_rev1_0823",
+   "trace": "step_8000016",
+   "obs_dim": 2501,
+   "n": 3000,
+   "pr": 17.056430994597132,
+   "n99": 155
+  }
+ },
+ "obs_pr_scale_invariant": {
+  "v8_04 (v8 era)": {
+   "run": "ai_v8_04_distill_4teacher_0722",
+   "dim": 2992,
+   "live": 2249,
+   "pr_cov": 36.18849744073132,
+   "pr_corr": 104.06441263560403,
+   "pr_signedlog": 23.395669971284217,
+   "pr_corr_over_live": 0.046271415133661196
+  },
+  "gen-12 (frames LIVE)": {
+   "run": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+   "dim": 2921,
+   "live": 2182,
+   "pr_cov": 37.761784230237026,
+   "pr_corr": 131.12819481189965,
+   "pr_signedlog": 26.00599139829652,
+   "pr_corr_over_live": 0.060095414670898094
+  },
+  "gen-13 (frames LIVE)": {
+   "run": "ai_v9_15_gen13_hb_events_stack_0817",
+   "dim": 3529,
+   "live": 2782,
+   "pr_cov": 22.87795235868668,
+   "pr_corr": 130.83720372689027,
+   "pr_signedlog": 17.801889760581705,
+   "pr_corr_over_live": 0.04702990788170031
+  },
+  "gen-14 (frames DELETED)": {
+   "run": "ai_v9_16_gen14_framedel_v91_0817",
+   "dim": 2501,
+   "live": 2023,
+   "pr_cov": 16.200483104624933,
+   "pr_corr": 94.45916124484343,
+   "pr_signedlog": 12.496459700293912,
+   "pr_corr_over_live": 0.04669261554366951
+  },
+  "gen-17": {
+   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "dim": 2501,
+   "live": 2020,
+   "pr_cov": 18.35409050131919,
+   "pr_corr": 98.9501354336307,
+   "pr_signedlog": 12.889074065206358,
+   "pr_corr_over_live": 0.04898521556120332
+  },
+  "rev-1": {
+   "run": "ai_v9_29_rev1_0823",
+   "dim": 2501,
+   "live": 2004,
+   "pr_cov": 17.413155314954324,
+   "pr_corr": 92.75630949403403,
+   "pr_signedlog": 11.951054208176611,
+   "pr_corr_over_live": 0.0462855835798573
+  }
+ }
+}
