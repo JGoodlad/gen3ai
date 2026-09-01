@@ -7951,3 +7951,42 @@ robustness: a failed arm records to `r5_failed_arms.txt` and the fleet continues
 reports an absent arm as UNCOVERED rather than silently pooling 19 — correct, and the right
 call at this arm count. ETA ~30 GPU-h, complete ~Tue 22:00. ⚠️ Main left DIRTY by the
 promotion (5 modified teams.json + 42 untracked); ship authorization is the owner's alone.
+
+### 🔴 SCORECARD VERDICT: REV-4 DID NOT REPRODUCE v8 — REPRO-1 FAILS, and the floor stratum RESOLVES probe Q's confound (2026-08-31)
+
+**Training relay 18:15, scored against the frozen reproduction scorecard `1a77edf`.**
+**REPRO-1 FAIL — the gift sign is ABSENT and the fold ROBBED**: untaught pull-down −0.0650
+[−0.0994,−0.0306] z=−3.70 over all 8; **−0.0867 [−0.1263,−0.0471] z=−4.29 on the BINDING
+floor stratum (parent >0.55)**; **+0.0000 [−0.0691,+0.0691] on the sub-0.55 teams**; every
+floor team negative (−0.12,−0.115,−0.11,−0.08,−0.08,−0.015). CI upper bound −0.031/−0.047 ⇒
+FAIL, not marginal. No sign flip from rev-2's −7.1: same sign, same magnitude.
+**REPRO-2 did exactly the job it was registered for and its payoff is RETROSPECTIVE: damage
+CONCENTRATES where competence existed and is EXACTLY ZERO on floor-level teams — which
+retroactively RESOLVES probe Q's named confound in favour of the floor account.** Rev-3's
+−0.75 n.s. was almost certainly floor exhaustion, not innocence. **Therefore: rev-2 robbed,
+rev-3 robbed-but-unmeasurable, rev-4 robbed. EVERY gen-era fold robs. v8 gifted (+5.42pp,
+z=4.8). The sign flip is total, on the same quantity, measured by the same instrument
+family.** REPRO-4 NO-RISE/NO-FALL (rev3→rev4 −0.0098 [−0.0334,+0.0138]); REPRO-5 HOLDS
+(R3-SELF null, z=−4.96); REPRO-3 correctly NOT QUOTED (run-end ladder only).
+
+**⇒ THE FALLBACK TREE (f326404) ACTIVATES at tier 2: match MATURITY / differentiation in-era
+before any v8 revival.** Maturity is now the prime suspect by elimination — it is the ONE
+ingredient no arm from rev-2..rev-5 varies, and the distillability index already measured
+absorption RISING with age in every lineage including ancestry-free. **Costing it: the fleet
+runs 3M steps ≈ 1.5 GPU-h, so v8's 277M parent ≈ 138 GPU-h ≈ 5.8 days — i.e. the owner's
+already-planned ONE-WEEK RUN reaches v8-class maturity.** The roadmap already contains the
+experiment; what it lacks is the pre-registration that it IS one.
+
+**The (i)/(ii) fork, carried explicitly per the training session's framing:** either (i) v8's
+win came from something no arm varies (maturity), or (ii) the 9-slice/coverage fold metrics do
+not measure what produced v8's ELO — in which case the shape ordering, and the 20×2 choice
+resting on it, is measuring the wrong thing. **Six probes are in flight aimed exactly at this
+fork**: M1 (taught-vs-untaught axis split — tests (ii) directly), M2 (representational
+richness / trunk-locus), M3 (substrate), M4 (behavioural fingerprint of the gift), M5 (critic
+as the off-slice vehicle), M6 (folding history + consolidation). Agreed with the training
+session that (ii) does NOT make restarting the fleet right: the draw is unbiased and the
+result informative under either branch. **Also landed: main SHIPPED clean (`31cd5e3a`) with
+both artifact gates green, and the FUNDING SPLIT armed — 8 arms forked to 2.5M vs 12 held at
+1.5M, ALTERNATING across the whole draw order (better than my first-8 suggestion: same team
+distribution in both halves), 25M ≈ 12.4 GPU-h, converting the z=−0.44 teacher-quality null
+into a powered within-fleet test.**
