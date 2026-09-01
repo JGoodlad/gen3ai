@@ -8393,3 +8393,24 @@ a real, small, negative rev-2 effect under greedy play, still inside M9's 4.19pp
 Per-team reads at n=200 are noise-dominated (one team swung 13pp between the two snapshots);
 quote only the pooled number. Unresolved list shrinks to: `R4PLAIN`, R3SELF's untaught cell, the
 selectivity-axis test on the fleet's folds.
+
+### ⚠️ CORRECTION: the opponent-checkpoint axis is UNDETECTED, not inert — an equivalence claim scored on a point estimate (2026-09-01 17:05)
+
+Supersedes the "INERT" reading of the entry above, caught by the training session BEFORE it was
+inherited into 20 arms of fleet scoring. The delta's own interval was never computed: unpaired
+**−0.31pp, 95% CI [−4.84, +4.22]**; paired over teams **[−5.26, +4.63]** (t₇) — 3.0–3.3× wider
+than the ±1.5pp bar. Equivalence requires the interval inside the bar; here the bar sits inside
+the interval, so a true ~4pp checkpoint effect (the size of the replicate floor) is not excluded.
+**Reading: no detectable effect at this n.** Consequences: the three-part meter stamp keeps the
+opponent checkpoint; the fleet's untaught cut is scored against ONE fixed checkpoint, never pooled
+across 24M/25M; the hop replication (−3.44 / −3.75) stands. To retire the axis: a PAIRED design
+reusing the same seeds across the two checkpoints (cheap; the trick that turned −0.020 into
++0.206 on the fleet-geometry control), or ~30k battles/arm.
+
+**METHOD SPECIMEN (vacuous-guard taxonomy, new member): a pre-registered bar written against a
+POINT ESTIMATE.** "|delta| < ~1.5pp ⇒ composition" was registered before the data, honoured
+exactly, and still licensed a false sentence — because at n=200/team a true-zero AND a true-3pp
+effect both land the point inside that bar most of the time. A bar must be written against the
+interval ("CI half-width < X AND CI inside ±X"), and an equivalence/no-effect verdict always
+quotes the delta's CI, never the arms'. Same family as `feedback_matched_noise_control` and the
+"read the per-arm spread before believing a delta" rule; this is its no-effect-direction twin.

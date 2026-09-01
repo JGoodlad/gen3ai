@@ -15,6 +15,24 @@ index`, rust bridge, greedy (`stochastic=False`), `GEN3AI_TIMEOUT_SCALE=12`, nic
 documented per-team resume — byte-equivalent). 3,200 new battles. Inputs and logs in
 `oppckpt_isolation_inputs/`.
 
+> ⚠️ **CORRECTION (2026-09-01 17:05, raised by the training session before the fleet was stamped
+> with it): reading 1 below is NOT supported as written.** The record quotes a CI on each ARM but
+> only a POINT ESTIMATE on the delta, and the delta is what the equivalence claim is about.
+> Unpaired: delta −0.31pp, SE 2.31pp → **95% CI [−4.84, +4.22]**. Paired over the 8 teams
+> (per-team hop differences +13.0, −5.0, −0.5, −2.0, −4.0, +0.5, −5.5, +1.0; sd 5.92, t₇):
+> **[−5.26, +4.63]**. The interval is 3.0–3.3× WIDER than the ±1.5pp bar — equivalence needs the
+> interval INSIDE the bar, and here the bar sits inside the interval. The data are equally
+> consistent with a true checkpoint effect of ~4pp, i.e. the size of M9's replicate floor.
+> **Correct reading: NO DETECTABLE opponent-checkpoint effect at this n — the axis is
+> UNDETECTED, not inert.** The meter stamp keeps all three parts; the fleet's untaught cut is
+> scored against ONE fixed opponent checkpoint, never pooled across 24M/25M. Retiring the axis
+> for real needs either ~9–10× the games (~30k/arm) or, far cheaper, a PAIRED design reusing the
+> same battle seeds across the two checkpoints so the draw differences out. Reading 2 (the hop
+> replicates) and reading 3 stand — and reading 3 is the tell: the per-team noise that makes a
+> single team unquotable is exactly what widens the pooled delta. **The pre-registration itself
+> was defective**: "|delta| < ~1.5pp" named a bar for a point estimate, which a noisy null
+> satisfies by luck — a bar must be written against the interval.
+
 ## Result
 
 | arm (vs rev-1 @25M, greedy, set M) | wins / games | WR |
@@ -45,4 +63,4 @@ zero); pooled magnitude agrees to 0.3pp. Direction negative on 6 of 8 teams.
 3. Per-team effects at n=200 are noise-dominated (one team flips sign by 13pp between two
    opponent snapshots that differ by 1M steps) — the pooled read is the only one to quote.
 
-**Meter stamp:** greedy · opponent rev-1 `final_model.zip` (25M) · team set M.
+**Meter stamp:** greedy · opponent rev-1 `final_model.zip` (25M) · team set M. (Stamp keeps the checkpoint part — see the correction at the top.)
