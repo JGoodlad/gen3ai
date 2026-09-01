@@ -23,7 +23,7 @@ import ast
 
 import pytest
 
-from main.train import entry_source, entry_source_files
+from main.train import entry_source, entry_source_files, entry_source_modules
 
 _PKG = "main.train"
 _HUB = "main.train_rl_agent"
@@ -86,10 +86,8 @@ def test_every_phase_module_imports_on_its_own():
     """
     import importlib
 
-    for path in entry_source_files():
-        if path.name == "train_rl_agent.py":
-            continue
-        importlib.import_module(f"{_PKG}.{path.stem}")
+    for name in entry_source_modules():
+        importlib.import_module(name)
 
 
 def test_entry_source_is_the_whole_entry_point():

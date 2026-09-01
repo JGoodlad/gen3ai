@@ -12,7 +12,8 @@ original kept as a hub.
 THE MODULE MAP (`main/train/`, and `main/train/__init__.py` repeats it):
 
     constants.py        BATTLE_FORMAT / the smoke-eval scale / the abort drain bound
-    parser.py           `build_parser()` + `BoolFlag` / `str2bool` / `optional_float`
+    parser/             `build_parser()` behind a hub, one module per FLAG FAMILY in `--help`
+                        order; `base.py` holds `BoolFlag` / `str2bool` / `optional_float`
     compile_flags.py    the `--compile-opponents` / `--compile-trainer` default resolvers
     checkpoint_state.py reading a checkpoint's saved arch; the by-NAME optimizer realign
     run_io.py           the run directory, latest.txt, the TB logger, the checkpoint callback

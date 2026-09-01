@@ -1563,7 +1563,10 @@ src/
                      #   budget.py · search.py · player.py · battery.py · summary.py
     exit_codes.py      # TrainExitCode enum (COMPLETE=0, INTERRUPTED=15, CRASH=1, FATAL_CONFIG=3)
     train/             # The training entry point's PHASES (train_rl_agent.py is the re-export hub)
-                     #   parser.py (build_parser) · config.py (desugar/_resolve/validate) ·
+                     #   parser/ (build_parser hub + one module per FLAG FAMILY, in --help order:
+                     #     base/operational/hyperparameters/reward/clean_world/teacher/
+                     #     cf_grounding/value_heads/capacity/distillation/eval_subprocess) ·
+                     #   config.py (desugar/_resolve/validate) ·
                      #   matchup_setup.py (teams + opponents) · env_factory.py (per-worker _init) ·
                      #   callbacks.py (everything during learn) · model_build.py (resume + fresh
                      #   paths + learn) · final_eval.py · run_io.py · lifecycle.py ·
