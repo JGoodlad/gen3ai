@@ -8303,3 +8303,48 @@ result until it is finished.* (4) The collector is now **resumable per team**
 (`gen3_untaught_arm_resume_v1`, index-derived seeds ⇒ byte-equivalent to an uninterrupted run) —
 three arm-runs were destroyed before it existed, by the documented total-duration cap that
 `concurrency>=2` selects and that scaling provably cannot rescue.
+
+---
+
+### 2026-09-01 — THE REV-2 CONTRADICTION RESOLVED: meter and composition each carry about half
+
+`measurements/greedy_meter_vs_composition_2026-09-01.md` · 3,200 new battles · pre-registered
+2026-08-31 ~23:20, scored unadjusted.
+
+Rev-2's untaught hop had two published values that looked contradictory — probe Q's **−7.06pp**
+[−10.56,−3.50] z=−3.86 and M9's **+0.88pp** n.s. They are the SAME contrast (`R2ACTION − REV1FIN`)
+on **three different axes at once**: greedy vs stochastic, rev-1 `final_model.zip` (25M) vs
+`snapshot_000024000000.zip` (24M) opponent, and team set Q vs M (**overlap 3 of 8**). Neither
+refuted the other; the campaign had been quoting the first while scoring rev-4's REPRO-1 failure
+on the second.
+
+The missing cell — **greedy on team set M** — reads **−3.44pp [−6.19, −0.31] z=−2.29**, which
+splits the 7.94pp gap almost evenly:
+
+| component | held fixed | contrast | size |
+|---|---|---|---|
+| **policy regime** | team set M | greedy −3.44 vs stochastic +0.88 | **4.32pp** |
+| **composition (+ opponent ckpt)** | greedy | set Q −7.06 vs set M −3.44 | **3.62pp** |
+
+**Neither confound may be dropped from any untaught-8 claim, and every such number now needs its
+meter stamped** (policy regime · opponent checkpoint · team set). A greedy result may not be quoted
+beside a stochastic one. The collector is a **verbatim copy** of the standing meter with ONE flag
+flipped (`stochastic=True→False`; diff = two code lines + the docstring describing them), banked at
+`greedy_meter_arm.py` with its inputs.
+
+**IT DOES NOT RESCUE THE ROBBERY.** −3.44pp sits INSIDE the replicate floor M9 measured the same
+night (**4.19pp** untaught between two byte-identical no-fold runs; 3.70pp taught). On the regime
+that MAXIMISES it, rev-2's hop still does not clear what two identical runs produce by themselves.
+Directionally negative on 7 of 8 teams — worth more than the pooled magnitude — but a one-run arm
+cannot separate the two. Per-team sign agreement across regimes is 5/8 (near chance) while both
+extremes agree (`U_dbf81d8e` +5.5/+6.5): the signature of a real but small effect read through two
+samplers.
+
+⇒ **"Every gen-era fold robs" fails on its anchor case under ANY meter-consistent reading**
+(rev-2 = +0.88 stochastic, or −3.44 greedy inside the noise floor). The only survivor is **rev-4's
+−6.50pp with its floor-concentration signature** (floor stratum −8.67 z=−4.32, while both no-fold
+replicates INVERT that ordering) — magnitude overlaps the noise, **shape does not**.
+
+**NAMED, UNRESOLVED:** the opponent-checkpoint axis is folded into the composition column and NOT
+separately identified; a greedy/set-Q/24M cell would isolate it and was not run. Read that 3.62pp
+as *composition + opponent checkpoint*.

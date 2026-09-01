@@ -1,6 +1,6 @@
 {
  "generated": "folding_history_probe.py lineage",
- "n_runs": 160,
+ "n_runs": 161,
  "roster_mismatches": {},
  "students": {
   "root": {
@@ -6073,9 +6073,9 @@
    "is_self_fold": false,
    "lr": 0.0003,
    "steps_flag": 28067760,
-   "final_steps": 27467760,
+   "final_steps": 28067760,
    "git_hash": "17f127705693310a192314357696fe987b5e17aa",
-   "trace_files": 127,
+   "trace_files": 264,
    "trainee_teams": [
     "11fb5d2fc2",
     "c6b830a3f0"
@@ -6086,7 +6086,39 @@
    ],
    "folds_in_ancestry": 0,
    "fold_runs_in_ancestry": [],
-   "own_steps": 2478768,
+   "own_steps": 3078768,
+   "ancestry_complete": true
+  },
+  "ai_v9_94_R5F02_0831": {
+   "run": "ai_v9_94_R5F02_0831",
+   "parent": "ai_v9_29_rev1_0823",
+   "parent_is_init": false,
+   "parent_resolved": true,
+   "exploiter_target": "ai_v9_59_R2ACTION_0827",
+   "is_exploiter": true,
+   "teachers": [],
+   "teacher_specs": [],
+   "distill_coef": 0.0,
+   "distill_target": "kl",
+   "distill_team_bias": 0.0,
+   "is_fold": false,
+   "is_self_fold": false,
+   "lr": 0.0003,
+   "steps_flag": 28067760,
+   "final_steps": 27617760,
+   "git_hash": "3e4e631faaa85b7fd4b83866fb074f57baaefec9",
+   "trace_files": 126,
+   "trainee_teams": [
+    "6916e13879",
+    "e702a104eb"
+   ],
+   "chain": [
+    "ai_v9_29_rev1_0823",
+    "ai_v9_94_R5F02_0831"
+   ],
+   "folds_in_ancestry": 0,
+   "fold_runs_in_ancestry": [],
+   "own_steps": 2628768,
    "ancestry_complete": true
   },
   "run_20260830_180409": {

@@ -125,6 +125,10 @@ def _rows(d: dict) -> dict[str, tuple[int, int]]:
     return {k: (v["wins"], v["games"]) for k, v in d.items() if isinstance(v, dict) and "wins" in v and k != "POOLED"}
 
 
+def _rows_full(d: dict) -> dict:
+    return {k: v for k, v in d.items() if isinstance(v, dict) and "wins" in v and k != "POOLED"}
+
+
 def contrast(arm: dict, base: dict) -> dict:
     """Equal-weight per-team mean difference, cluster-bootstrapped over TEAMS.
 
@@ -289,6 +293,28 @@ def main() -> None:
             "instrument": "probe P — parent-vs-fold, fixed ancestor opponent, CRN-paired, greedy. "
             "NOT the fixed-rev-1-target meter used for rev-2/3/4/COMPFOLD.",
         }
+
+    # ---- rev-2's untaught hop, which needs the rev-1 baseline arm.
+    # That arm is the slowest and may be PARTIAL. A partial arm is an unbiased estimate of the
+    # subset it covers and NOT of the 8-team mean, so it is never merged into the main table:
+    # instead every fold is re-restricted to exactly the teams the baseline reached, and the
+    # matched subset is reported as its own block with its own team count.
+    rev1 = load("untaught_REV1FIN")
+    if rev1 is not None:
+        sub = sorted(_rows(rev1))
+        block = {"teams_covered": sub, "complete": len(sub) == len(untaught_ids)}
+        r2 = load("untaught_R2ACTION")
+        block["rev-2"] = {k: v for k, v in contrast(r2, rev1).items() if k != "per_team"}
+        for lbl, (_, _, tag) in FOLDS.items():
+            if lbl == "rev-2":
+                continue
+            arm, base = load(f"untaught_{tag}"), load("untaught_R2ACTION")
+            if arm is None:
+                continue
+            arm = {**{"_meta": arm["_meta"]}, **{k: v for k, v in _rows_full(arm).items() if k in sub}}
+            base = {**{"_meta": base["_meta"]}, **{k: v for k, v in _rows_full(base).items() if k in sub}}
+            block[lbl] = {k: v for k, v in contrast(arm, base).items() if k != "per_team"}
+        out["untaught_matched_subset"] = block
 
     # ---- the SHAPE contrasts, arm vs arm on each cut.
     # These are the numbers the fleet-shape decision actually rests on, and only the first is

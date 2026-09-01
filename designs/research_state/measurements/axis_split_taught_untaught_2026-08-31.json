@@ -1334,6 +1334,65 @@
   },
   "instrument": "probe P \u2014 parent-vs-fold, fixed ancestor opponent, CRN-paired, greedy. NOT the fixed-rev-1-target meter used for rev-2/3/4/COMPFOLD."
  },
+ "untaught_matched_subset": {
+  "teams_covered": [
+   "U_61590463",
+   "U_92832108",
+   "U_9909f2e9",
+   "U_9d5f8458",
+   "U_ce35b736",
+   "U_f7ba5702"
+  ],
+  "complete": false,
+  "rev-2": {
+   "teams": 6,
+   "delta_pp": -0.083,
+   "ci_pp_cluster": [
+    -2.667,
+    2.917
+   ],
+   "z_battle": -0.041,
+   "n_negative": 3,
+   "arm_wr": 0.5692,
+   "base_wr": 0.57
+  },
+  "rev-3": {
+   "teams": 6,
+   "delta_pp": -3.417,
+   "ci_pp_cluster": [
+    -5.083,
+    -2.083
+   ],
+   "z_battle": -1.69,
+   "n_negative": 6,
+   "arm_wr": 0.535,
+   "base_wr": 0.5692
+  },
+  "COMPFOLD": {
+   "teams": 6,
+   "delta_pp": -4.5,
+   "ci_pp_cluster": [
+    -8.333,
+    -1.333
+   ],
+   "z_battle": -2.232,
+   "n_negative": 5,
+   "arm_wr": 0.5242,
+   "base_wr": 0.5692
+  },
+  "rev-4": {
+   "teams": 6,
+   "delta_pp": -7.083,
+   "ci_pp_cluster": [
+    -11.0,
+    -3.0
+   ],
+   "z_battle": -3.501,
+   "n_negative": 5,
+   "arm_wr": 0.4983,
+   "base_wr": 0.5692
+  }
+ },
  "shape_contrasts": {
   "team_count_12_vs_24 (COMPFOLD - rev-4) [CLEAN: same teachers, same budget]": {
    "taught_9slice": {
