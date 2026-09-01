@@ -1,7 +1,7 @@
 # M7 — DOES DISTILLATION HURT LESS AS THE PARENT MATURES?
 
 **Status: COMPLETE (free tier).** Re-analysis of the committed distillability-index artifact,
-plus 16 NEW micro-distill cells that fill the battery's two decisive gaps — **no new training
+plus 12 NEW micro-distill cells that fill the battery's three declared gaps — **no new training
 run, no battles, `models/` read-only.** Scripts: `maturity_harm_trend.py` (analysis) and
 `distillability_index_probe.py` (the unchanged 2026-08-28 producer, re-run for the new cells).
 Full numbers in the sibling `.json`.
@@ -13,17 +13,27 @@ lines? see if maturity decreases the amount distillation hurts?"*
 
 ## 0. Headline
 
-**Three findings, in descending order of how much they should change what happens next.**
+**Three findings and two corollaries, in descending order of how much they should change what
+happens next.**
 
-**(1) The harm that maturity moves is the OPTIMIZER's, not the CONTENT's — and the content's
-half does not fall at all.** Splitting total collateral into the part a zero-content self-distill
-also causes and the part only the teacher's content causes, the **content-attributable** half
-**rises or is flat with age at every informative matched step** (§3); the single step at which it
-falls is step 400, which the producer's own caveat identifies as the over-trained regime. The
-zero-content control accounts for **75–79%** of total collateral at every age. So the age trend
-that exists lives almost entirely in the control — i.e. in how far a fixed Adam step travels on a
-sharpened landscape, which is a property of the optimizer meeting the loss surface, not of a
-mature network accepting or rejecting external behaviour.
+**(1) The age trend belongs to the OPTIMIZER, not the CONTENT — proved by a self-distill that has
+nothing to learn.** Nine new control cells put the zero-content control at 6 ages × both step
+sizes (the committed battery had 3 ages × one). The result is unambiguous: **the control alone
+reproduces the entire step-size-dependent sign flip.** With no teacher content in the objective at
+all, its harm RISES with age at lr 3e-4 (ρ +0.94, p = 0.017 at step 32) and FALLS at lr 1e-4
+(ρ **−1.00, p = 0.003** at step 135) — the same reversal the *real* distillation shows. Meanwhile the content-attributable
+remainder has **no consistent trend**: its only two significant readings point in **opposite
+directions inside the same arm** (+0.94 at step 32, −0.89 at step 400, both lr 1e-4), and at
+lr 3e-4 nothing in it is significant at any step. The control is 75–79% of total collateral at
+every age. *What maturity changes is how far a fixed Adam step travels on a landscape that has
+sharpened — not whether a mature network accepts external behaviour.*
+
+**(1b) Extending the age axis to 42M finds NO turnover — harm keeps rising, and the evidence gets
+an order of magnitude stronger.** Three more cells put the ancestry-free arm (no shared weights
+with the teacher) at **n = 9 over 2M → 42M**: KL@135 ρ = **+0.967, p = 0.00016**; KL@400 ρ =
+**+0.967, p = 0.00018**, against +0.94 (p = 0.017) at n = 6. Seventeen million further steps of
+maturity bought **more** collateral, at the step size every gen-era fold's `--lr` flag names. This
+is the range in which a maturity benefit should have begun to appear, and it does the opposite.
 
 **(2) The v8-vs-gen maturity story is CONFOUNDED with dose rate, and the confound is invisible at
 the flag level.** Both eras' `--lr` flags differ 4.3× in the direction that says *gen is harsher*
@@ -56,22 +66,21 @@ bears on the decision.**
   ρ = −1.00, p = 0.003, reproduced on a second seed) and does **not** at **lr 3e-4** (flat, with
   the sign flipping between seeds; and *rising* on a second, ancestry-free lineage). That is the
   owner's hypothesis, and it is true at the lower step size only.
-* **But split that total into optimizer and content** (§3): the falling part is the optimizer's.
-  The content-attributable half rises or is flat with age at every informative matched step, and
-  the zero-content control alone is 75–79% of the total at every age.
+* **But split that total into optimizer and content** (§3.2), which the nine new control cells now
+  permit at both step sizes: **the falling part is the optimizer's.** A zero-content self-distill —
+  same states, same optimizer, same 400 steps, nothing new to learn — falls with age at lr 1e-4
+  (ρ −1.00, p = 0.003 at step 135) and rises at lr 3e-4 (ρ +0.94, p = 0.017 at step 32),
+  reproducing the whole reversal
+  by itself. The content-attributable remainder has no consistent direction at either step size.
 * **So the honest sentence is not "maturity reduces the harm distillation does."** It is
-  *"a smaller step reduces it, and a mature network needs a smaller step than a young one for
-  the same reason a sharper landscape amplifies a fixed displacement."* Maturity is the
-  condition; step size is the lever.
-
-⚠️ **One qualification on the split, stated because it is the load-bearing one.** The
-content-vs-optimizer decomposition is currently available only at **lr 3e-4** and at **n = 3
-ages**, because the committed battery ran the zero-content control at three ages and one step
-size. The 1e-4 control cells are §6.3's addition and are what would let the split be read at the
-step size where the total *does* fall. **Until they land, "the falling part is the optimizer's"
-is established at 3e-4 and INFERRED at 1e-4** — inferred from the fact that early harm rises with
-age in the control at 3e-4 and rises with age in the *with-content* cells at BOTH step sizes,
-which is the optimizer's signature, not content rejection.
+  *"a smaller step reduces it, and a mature network needs a smaller step than a young one, because
+  a sharpened landscape amplifies a fixed displacement."* Maturity is the condition; step size is
+  the lever.
+* **The one dissenting reading, named rather than buried:** at lr 1e-4 and step 400 the
+  content-attributable harm *does* fall significantly (ρ −0.89, p = 0.033; 0.154 → 0.104). It is
+  contradicted by its own arm at step 32 (+0.94, p = 0.017), it sits at the step the producer calls
+  over-trained, and it is one seed. Best evidence for the hypothesis in the battery; not enough to
+  carry it.
 
 **Consequence for the proposal.** A 50M/100M maturity ladder is buildable and priced below
 (§7, **42.8 GPU-h**), but this re-analysis gives it a **low registered prior** — and the same
@@ -147,22 +156,64 @@ forked off the same gen-17 base, at the **current** architecture.
 | 18M | 0.765 | 0.687 | 0.707 | 0.861 | 0.335 | 0.346 | 4.58 |
 | 24M | 0.903 | 0.702 | 0.776 | 0.916 | 0.350 | 0.385 | 4.97 |
 | 25M final | 0.949 | 0.641 | 0.788 | 0.923 | 0.360 | 0.385 | 5.02 |
-| *30M* | *NEW* | | | | | | |
-| *36M* | *NEW* | | | | | | |
-| *42M* | *NEW* | | | | | | |
+| **30M** | 0.996 | 0.763 | 0.835 | 0.956 | 0.363 | 0.390 | 5.13 |
+| **36M** | 0.864 | 0.859 | 0.939 | **1.063** | 0.405 | 0.407 | 11.18 |
+| **42M** | 0.569 | 0.759 | 0.879 | **1.043** | 0.397 | 0.419 | 6.17 |
+
+**The extension finds no turnover — it sharpens the opposite, by an order of magnitude in
+evidence.** Over the full **2M → 42M** span, on a lineage sharing no weights with the teacher, harm
+at lr 3e-4 rises with age at:
+
+| matched step | ρ (n = 9) | p | KL, 2M → 42M |
+|---|---|---|---|
+| 32 | **+0.900** | **0.0019** | 0.217 → 0.759 |
+| 135 | **+0.967** | **0.00016** | 0.526 → 0.879 |
+| 400 | **+0.967** | **0.00018** | 0.829 → **1.043** |
+
+against +0.94 (p = 0.017) on the un-extended n = 6. **Seventeen million further steps of maturity
+bought MORE collateral, not less**, at the step size every gen-era fold's `--lr` flag names — and
+top-1 disagreement@400 climbs with it from 24M on (0.385 → 0.419). If maturity reduced the harm of
+distillation, this is the arm and the range in which it should have started to show.
+
+*Two honesty notes.* The 42M step-1 value (0.569) breaks the otherwise monotone step-1 column — the
+step-1 shock is an **ordering, never a value** (producer's admission, §9). And 36M's `|ΔV|`@400 of
+**11.18** is the largest in the battery, on a ±12 value scale: a near-total critic wipe. It is one
+cell and one seed, flagged rather than interpreted.
+
+*p for n = 9 is a seeded 200,000-draw Monte-Carlo permutation test, not an enumeration
+(9! = 362,880 is affordable but the arms are re-scored many times); n ≤ 8 stays exact. Both use the
+identity that Spearman is Pearson on ranks, so a permutation is a dot product against a fixed
+centred rank vector. MC p is reported with the Davison-Hinkley +1/+1 correction so it is never
+exactly zero.*
 
 ### 2.4 ZERO-CONTENT CONTROL — targets are the student's OWN argmax, lr **3e-4** and **1e-4**
 
 Same optimizer, same states, same step count, **no new behavioural content**. This is the
 archive's direct analogue of the proposed self-fold ladder.
 
+Nine of these twelve rows are **NEW** (§6.3): the committed battery had three ages at one step
+size. Bold = a row this probe added.
+
 | age | lr | KL@1 | KL@32 | KL@135 | KL@400 | disagree@400 |
 |---|---|---|---|---|---|---|
 | 2M | 3e-4 | 0.148 | 0.304 | 0.440 | 0.584 | 0.267 |
+| **6M** | 3e-4 | 0.194 | 0.310 | 0.395 | 0.487 | 0.234 |
 | 12M | 3e-4 | 0.435 | 0.333 | 0.456 | 0.518 | 0.281 |
+| **18M** | 3e-4 | 0.448 | 0.393 | 0.507 | 0.611 | 0.284 |
+| **24M** | 3e-4 | 0.429 | 0.476 | 0.601 | 0.666 | 0.326 |
 | 25M final | 3e-4 | 0.522 | 0.443 | 0.468 | 0.595 | 0.305 |
-| 6M / 18M / 24M | 3e-4 | *NEW* | | | | |
-| 2M … 25M final | **1e-4** | *NEW — the battery's single largest gap* | | | | |
+| **2M** | **1e-4** | 0.029 | 0.213 | 0.357 | 0.508 | 0.249 |
+| **6M** | **1e-4** | 0.051 | 0.227 | 0.318 | 0.419 | 0.199 |
+| **12M** | **1e-4** | 0.096 | 0.172 | 0.280 | 0.344 | 0.211 |
+| **18M** | **1e-4** | 0.121 | 0.175 | 0.252 | 0.352 | 0.197 |
+| **24M** | **1e-4** | 0.117 | 0.163 | 0.246 | 0.358 | 0.229 |
+| **25M final** | **1e-4** | 0.126 | 0.155 | 0.237 | 0.332 | 0.196 |
+
+🚨 **Read the two halves against each other — this is the result the new cells exist for.** With
+**zero new content in the objective**, the control's harm **RISES** with age at lr 3e-4
+(KL@32 0.304 → 0.476, ρ +0.94, p = 0.017) and **FALLS** with age at lr 1e-4 (KL@135 0.357 → 0.237,
+ρ **−1.00, p = 0.003**). The step-size-dependent maturity trend that §2.5 finds in the real
+distillation is fully present in a self-distill that has nothing to learn. §3.2 quantifies it.
 
 ### 2.5 Trend vs age (Spearman ρ, exact permutation p, seed 1 / seed 2)
 
@@ -180,8 +231,12 @@ archive's direct analogue of the proposed self-fold ladder.
 | lr 3e-4 ancestry-free | KL@32 | +0.83 | 0.058 | +1.00 | 0 |
 | lr 3e-4 ancestry-free | KL@400 | **+0.94** | **0.017** | +1.00 | 0 |
 | lr 3e-4 ancestry-free | disagree@400 | −0.52 | 0.300 | −0.87 | 0 |
-| lr 3e-4 zero-content | KL@32 | +1.00 | *0.333 floor* | — | 0 |
-| lr 3e-4 zero-content | KL@400 | +0.50 | *1.000* | — | 0 |
+| **lr 3e-4 zero-content** | KL@32 | **+0.94** | **0.017** | *(1 seed)* | 0 |
+| **lr 3e-4 zero-content** | KL@135 | +0.77 | 0.103 | *(1 seed)* | 0 |
+| **lr 3e-4 zero-content** | KL@400 | +0.66 | 0.175 | *(1 seed)* | 0 |
+| **lr 1e-4 zero-content** | KL@32 | **−0.89** | **0.033** | *(1 seed)* | 0 |
+| **lr 1e-4 zero-content** | KL@135 | **−1.00** | **0.003** | *(1 seed)* | 0 |
+| **lr 1e-4 zero-content** | KL@400 | −0.77 | 0.103 | *(1 seed)* | 0 |
 
 **Reading — and the answer to the owner's question, stated plainly.**
 
@@ -195,6 +250,10 @@ archive's direct analogue of the proposed self-fold ladder.
    −0.89; disagree@400 ρ −0.94 / −0.94; 0.662 → 0.436 nats). At lr 3e-4 the same students give
    a flat KL whose **sign flips between seeds** (−0.26 / +0.26), and on the ancestry-free
    lineage it *rises* (+0.94 / +1.00).
+   ⚠️ **But the zero-content control does the same thing** (last six rows): +0.94 at 3e-4,
+   **−1.00 at 1e-4**. The step-size dependence of the age trend survives deleting the teacher
+   from the objective, so it cannot be read as a statement about absorbing external behaviour.
+   §3.2 is where that is separated.
 3. ⚠️ **The two harm meters DISAGREE at lr 3e-4 and must not be collapsed.** On the ancestor
    lineage KL@400 is flat while top-1 disagreement@400 falls (ρ −0.83, both seeds); on the
    ancestry-free lineage KL rises (+0.94) while disagreement falls (−0.52, n.s.) — outright
@@ -207,52 +266,74 @@ archive's direct analogue of the proposed self-fold ladder.
 ## 3. The number that actually answers the question: harm NET of the zero-content control
 
 Total collateral is the sum of what the optimizer does to any network and what the teacher's
-content does to *this* one. Only the second is what "distillation hurts" should mean. At matched
-steps, both are measured; **lr 3e-4, seed 1, n = 3 ages** (the control's committed coverage):
+content does to *this* one. Only the second is what "distillation hurts" should mean. The nine new
+control cells (§6.3) make both halves available at **n = 6 ages and BOTH step sizes**, where the
+committed battery had 3 ages at one.
 
-| age | step | total harm (KL) | zero-content harm | **CONTENT-attributable (net)** | control's share |
-|---|---|---|---|---|---|
-| 2M | 1 | 0.069 | 0.148 | **−0.078** | 2.13 |
-| 2M | 32 | 0.246 | 0.304 | **−0.057** | 1.23 |
-| 2M | 135 | 0.525 | 0.440 | +0.084 | 0.84 |
-| 2M | **400** | 0.775 | 0.584 | **+0.190** | 0.75 |
-| 12M | 1 | 0.567 | 0.435 | +0.131 | 0.77 |
-| 12M | 32 | 0.424 | 0.333 | +0.091 | 0.78 |
-| 12M | **400** | 0.668 | 0.518 | **+0.150** | 0.78 |
-| 25M | 1 | 1.116 | 0.522 | +0.594 | 0.47 |
-| 25M | 32 | 0.509 | 0.443 | +0.066 | 0.87 |
-| 25M | **400** | 0.750 | 0.595 | **+0.155** | 0.79 |
+### 3.1 The content-attributable half, matched steps, seed 1
 
-**Read down the step column, not across one row — the sign of the age trend depends on where
-you stop, and only one of the four steps is even weakly favourable to the hypothesis:**
+| lr | matched step | 2M | 6M | 12M | 18M | 24M | 25M |
+|---|---|---|---|---|---|---|---|
+| 3e-4 | 1 | −0.078 | −0.076 | +0.131 | +0.112 | +0.125 | +0.594 |
+| 3e-4 | 32 | −0.057 | +0.054 | +0.091 | +0.101 | +0.140 | +0.066 |
+| 3e-4 | 135 | +0.084 | +0.208 | +0.147 | +0.108 | +0.013 | +0.166 |
+| 3e-4 | 400 | +0.190 | +0.240 | +0.150 | +0.110 | +0.052 | +0.155 |
+| **1e-4** | 1 | −0.020 | −0.034 | −0.027 | −0.040 | −0.020 | +0.010 |
+| **1e-4** | 32 | −0.047 | +0.017 | +0.076 | +0.103 | +0.098 | +0.110 |
+| **1e-4** | 135 | +0.004 | +0.120 | +0.110 | +0.123 | +0.113 | +0.091 |
+| **1e-4** | 400 | +0.154 | +0.210 | +0.152 | +0.142 | +0.096 | +0.104 |
 
-| matched step | net at 2M | net at 12M | net at 25M | direction with age |
+### 3.2 THE decisive table — where does the age trend live?
+
+Spearman ρ vs age with exact permutation p (n = 6 ⇒ p floor 0.0028), for the same quantity
+measured three ways: **TOTAL** (the real distillation), **CONTROL** (identical optimizer, zero
+new content), **NET** (their difference — the content's own contribution).
+
+| lr | matched step | TOTAL (with content) | **CONTROL (zero content)** | NET (content only) |
 |---|---|---|---|---|
-| 1 | −0.078 | +0.131 | +0.594 | **RISES steeply** |
-| 32 | −0.057 | +0.091 | +0.066 | rises, then flat |
-| 135 | +0.084 | +0.147 | +0.166 | **RISES** |
-| 400 | +0.190 | +0.150 | +0.155 | falls 2M→12M, then flat |
+| 3e-4 | 1 | +0.77 (p=0.103) | +0.83 (p=0.058) | +0.83 (p=0.058) |
+| 3e-4 | 32 | **+0.94 (p=0.017)** | **+0.94 (p=0.017)** | +0.66 (p=0.175) |
+| 3e-4 | 135 | **+0.94 (p=0.017)** | +0.77 (p=0.103) | −0.03 (p=1.000) |
+| 3e-4 | 400 | −0.26 (p=0.658) | +0.66 (p=0.175) | −0.60 (p=0.242) |
+| **1e-4** | 1 | **+1.00 (p=0.003)** | **+0.94 (p=0.017)** | +0.49 (p=0.356) |
+| **1e-4** | 32 | +0.83 (p=0.058) | **−0.89 (p=0.033)** | **+0.94 (p=0.017)** |
+| **1e-4** | 135 | −0.66 (p=0.175) | **−1.00 (p=0.003)** | +0.14 (p=0.803) |
+| **1e-4** | 400 | **−1.00 (p=0.003)** | −0.77 (p=0.103) | **−0.89 (p=0.033)** |
 
-**The content-attributable harm does not fall with maturity at any informative step.** Three of
-the four rise; the only fall is at step 400, which the producer's own caveat 4 identifies as the
-**over-trained** regime ("400 steps at lr 3e-4 over-trains … the informative regime is the first
-~64 steps"). Picking step 400 and reporting "0.190 → 0.150 → 0.155, harm falls then flattens"
-would have been a defensible-looking sentence built on the one column the instrument says not to
-read as a fold outcome. It is stated here in full instead.
+**Three readings, in order of how much they should be believed.**
 
-With n = 3 the exact-permutation p floor is 0.333, so none of these rows can **ever** be
-significant, and they are reported as magnitudes rather than trends. But the magnitude is the
-point: across a 12× age span the content's own harm moves by 0.005–0.08 nats depending on the
-step, in inconsistent directions, while the *control* moves monotonically and by more.
+**(a) The zero-content control ALONE reproduces the entire step-size-dependent sign flip.** Look
+only at the CONTROL column: at lr 3e-4 it RISES with age (ρ +0.94, p = 0.017 at step 32); at
+lr 1e-4 it FALLS (−0.89 p = 0.033 at 32, **−1.00 p = 0.003** at 135). Same students, same states,
+same optimizer, same step count — **and no teacher content in the objective at all.** Whatever
+makes the maturity trend point one way at 3e-4 and the other at 1e-4, it is not the content being
+accepted or rejected. It is how far a fixed Adam step travels in function space on a landscape
+that sharpens with training. This is the single most important thing the new cells bought, and it
+could not be seen at n = 3.
 
-Two smaller things worth keeping:
+**(b) The content-attributable half has NO consistent maturity trend — and the proof is that its
+only two significant readings point in OPPOSITE directions inside the same arm.** At lr 1e-4 the
+NET rises significantly at step 32 (+0.94, p = 0.017) and falls significantly at step 400 (−0.89,
+p = 0.033). At lr 3e-4 nothing in the NET column is significant at any step. A quantity whose
+direction reverses with how long you optimize is not measuring a property of the parent.
 
-* **At 2M the net is NEGATIVE at steps 1 and 32** — distilling a young network toward its *own*
-  argmax damages it *more* than distilling it toward the teacher's. A young policy's argmax is
-  noisy, so fitting it hard is fitting noise. This is a real reading, not a sign error, and it
-  is why the control cannot simply be subtracted at every step and called "content".
-* **The control's share is 75–79% at step 400 at every age.** The 2026-08-28 doc reported ~79%
-  at 25M; it holds across the whole age range, which is stronger than the original claim.
+**(c) The one reading that DOES support the owner's hypothesis, named rather than buried:**
+lr 1e-4, step 400, NET ρ = **−0.89 (p = 0.033)**, magnitudes 0.154 → 0.104. That is a genuine
+content-attributable harm reduction with maturity. Three things bound it: it is contradicted by
+its own arm at step 32 (+0.94, p = 0.017); it sits at the step the producer's caveat 4 calls
+**over-trained** ("400 steps at lr 3e-4 over-trains … the informative regime is the first ~64
+steps"); and it is one probe seed. It is the best evidence in the battery for the hypothesis and
+it is not enough to carry it.
+
+### 3.3 Two smaller things worth keeping
+
+* **At 2M the net is NEGATIVE at the early steps, at both step sizes** — distilling a young
+  network toward its *own* argmax damages it *more* than distilling it toward the teacher's. A
+  young policy's argmax is noisy, so fitting it hard is fitting noise. A real reading, not a sign
+  error, and the reason the control cannot simply be subtracted everywhere and called "content".
+* **The control's share of total collateral is 75–79% at step 400 across the whole age range** at
+  lr 3e-4. The 2026-08-28 doc reported ~79% at 25M only; it holds at every age, which is a
+  stronger claim than the original.
 
 ---
 
@@ -602,7 +683,7 @@ BAR-4 the likely positive.** Recorded so that the opposite is a real result.
 
 | # | registered | outcome |
 |---|---|---|
-| 1 | *In the existing 2–25M data, harm does NOT fall with age at lr 3e-4 but DOES at 1e-4 — the owner's hypothesis is TRUE ONLY AT THE LOWER STEP SIZE, making step size a required arm of any maturity ladder.* | **PARTIALLY CONFIRMED — on one regime of three, and the conclusion survives.** ✅ At **matched steps, endpoint**: exactly as registered — 3e-4 flat with a seed sign flip (ρ −0.26/+0.26) and rising on the ancestry-free lineage (+0.94/+1.00); 1e-4 falls monotonically and significantly (−1.00, p = 0.003; disagree −0.94, p = 0.017). ❌ At **matched steps, early** (steps 1–32) harm RISES with age at **both** step sizes, including in the zero-content control. ❌ At **matched absorption**, scored against its own manufactured null (§4), there is no fall at either step size. ❌ At **matched gain**, harm rises *above* its null at lr 1e-4. **The prescription is confirmed regardless** — step size is a required arm — but for a stronger reason than the prediction gave: §3 shows the age trend is almost entirely the *optimizer's* harm, not the content's. |
+| 1 | *In the existing 2–25M data, harm does NOT fall with age at lr 3e-4 but DOES at 1e-4 — the owner's hypothesis is TRUE ONLY AT THE LOWER STEP SIZE, making step size a required arm of any maturity ladder.* | **CONFIRMED ON TOTAL HARM AT THE ENDPOINT, and then UNDERCUT at its own mechanism by the new control cells.** ✅ At **matched steps, endpoint** the prediction is exactly right: 3e-4 flat with a seed sign flip (ρ −0.26/+0.26), rising on the ancestry-free lineage (+0.94/+1.00); 1e-4 falls monotonically and significantly (−1.00, p = 0.003; disagree −0.94, p = 0.017). ❌ At **matched steps, early** (1–32) harm RISES with age at **both** step sizes. ❌ At **matched absorption**, scored against its own manufactured null (§4), no fall at either step size. ❌ At **matched gain**, harm rises *above* its null at lr 1e-4. 🚨 **And the decisive one, which the nine new cells bought and which the prediction did not anticipate: the ZERO-CONTENT control reproduces the whole step-size-dependent flip on its own** (+0.94 p=0.017 at 3e-4; **−1.00 p=0.003** at 1e-4), while the content-attributable remainder's only two significant readings point in **opposite directions inside one arm**. **The prescription survives and strengthens** — step size is a required arm of any maturity ladder — but the reason changes: not "maturity reduces content-harm only when steps are small", rather "the age trend is the optimizer's, and step size is what governs it." |
 | 2 | *v8's fold ran a distill configuration whose effective step on the distill term is NOT obviously gentler than ours (the confound does NOT materialise) — registered as the boring outcome.* | **REFUTED, and in a way the flags conceal.** v8's fold was **3.2× gentler than rev-3 and 6.6× gentler than rev-2** in displacement per unit of environment data — *not* via lr (where it ran 1.7–3.6× **harsher** per step, once the adaptive controller's operating value is read from TensorBoard instead of the `--lr` flag) but via **11.4× fewer optimizer steps per rollout** at an **8× larger effective batch**. Maturity and dose rate are therefore confounded inside the v8 story, and §7.2 crosses them rather than assuming. Bonus: the two folds' **total** displacement matches within 3% — only the rate differs. |
 
 **Broken link named** (standing rule): prediction 1's broken link is *"lower step size ⇒ the
@@ -615,15 +696,26 @@ taught.
 
 ## 9. Cuts and limits
 
-* **No new training run, no battles, `models/` read-only.** The 16 new cells are the *same*
+* **No new training run, no battles, `models/` read-only.** The 12 new cells are the *same*
   micro-distill probe on the *same* bit-identical state set; nothing about the instrument changed.
 * **A micro-probe is not a fold simulation** (producer's caveat 1, inherited in full): no PPO
   loss beside the distill term, no `--distill-team-bias` sampling, no environment interaction, no
   entropy pressure, no LR schedule. §7's ladder is the real-fold test; §2–4 measure the
   student-side term in isolation.
-* **n = 6 ages (9 on the extended ancestry-free arm), n = 3–6 on the control.** The exact
-  permutation p floor is 0.0028 at n = 6 and **0.333 at n = 3** — an n = 3 ordering can never be
-  significant, and §3's decisive table is one. It is reported as a magnitude.
+* **n = 6 ages per arm (up to 9 on the extended ancestry-free arm), n = 6 on each control.** The
+  exact permutation p floor is 0.0028 at n = 6 and **0.333 at n = 3** — which is why the committed
+  battery's 3-age control could never reach significance and why extending it to 6 was the
+  decisive addition rather than a tidying-up.
+* **Every new cell is SEED 1 only.** The committed arms carry two probe seeds and reproduce; the
+  twelve new ones do not, so §3.2's control and NET rows are single-draw. That is the largest
+  outstanding weakness in this probe: the strongest new claim (`−1.00, p = 0.003`) rests on one
+  seed, and the standing rule on this tree is that a single draw is not a distribution. A second
+  seed is ~2 h of one core and is the first thing to add.
+* **The re-derivation is GATED, not assumed.** The new cells' index fields are rebuilt by
+  `_derive_cell` rather than by the producer's `aggregate` (which would overwrite the committed
+  artifact). `--selftest` proves that path reproduces all 41 committed cells exactly — **410
+  scalar fields, 0 mismatches**, including agreement on which absorption levels are MISSES — and
+  `main()` refuses to emit an artifact if it ever stops doing so.
 * **Seed reproduction is the only replication.** Over 42 paired cells per arm, median absolute
   seed-to-seed difference: `off_kl` 0.017 (max 0.064) at lr 1e-4, 0.014 (max 0.143) on
   `off_disagree` at lr 3e-4. Every §2.5 ordering reproduces in sign across seeds except
@@ -643,11 +735,22 @@ taught.
 export PYTHONPATH=$PYTHONPATH:src
 export CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 cd designs/research_state/measurements
-nice -n 15 python distillability_index_probe.py build-states
+nice -n 15 python distillability_index_probe.py build-states     # reproduces the state set exactly
+
+# a zero-content control cell ('A*' = targets are the student's OWN argmax)
 nice -n 15 python distillability_index_probe.py probe ctrlself1e4_25M_final__s1 \
     /home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip 'A*' 1 400 1e-4
-nice -n 15 python maturity_harm_trend.py --print
+# an age-extension cell (teacher A, with content)
+nice -n 15 python distillability_index_probe.py probe ctrl17x_42M__s1 \
+    /home/goodlad/dev/gen3ai/models/ai_v9_25_E4_baitbot_0822/snapshots/snapshot_000042000000.zip A 1 400 3e-4
+
+nice -n 15 python maturity_harm_trend.py --selftest   # the re-derivation gate, alone
+nice -n 15 python maturity_harm_trend.py --print      # gate + artifact + every table above
 ```
 
-The analysis step is ~2 s on one core and touches nothing but the two JSON artifacts. Each new
-probe cell is ~9 min of one core on a quiet box (measured 15–25 min at load 31).
+`build-states` must be run first and is deterministic: its `state_provenance.json` reproduced the
+committed one **bit-identically**, which is what makes the new cells comparable to the 41 committed
+ones rather than a parallel battery. `maturity_harm_trend.py` runs the selftest before emitting and
+**refuses to write** if it fails; it reads `results/*.json` for new cells and never shadows a
+committed one. The analysis step is ~2 s on one core. Each probe cell is ~9 min of one core on a
+quiet box — **measured 16 min at load ~31** on this box, 12 cells over 2 workers in ~80 min.

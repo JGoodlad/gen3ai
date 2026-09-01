@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import random
 import math
 from pathlib import Path
 from typing import Any
@@ -115,12 +116,21 @@ def spearman(x: list[float], y: list[float]) -> float | None:
     return num / (dx * dy)
 
 
-def spearman_exact_p(x: list[float], y: list[float]) -> tuple[float | None, int]:
-    """Two-sided EXACT permutation p for Spearman (n <= 8 -> <= 40320 perms).
+_MC_DRAWS = 200_000
+_MC_SEED = 20260831
 
-    With n = 6 the smallest attainable two-sided p is 2/720 = 0.0028; with n = 3 it is
-    2/6 = 0.333, i.e. an n=3 ordering can never be significant. Reported so a small-n
-    rho is never mistaken for evidence.
+
+def spearman_exact_p(x: list[float], y: list[float]) -> tuple[float | None, int]:
+    """Two-sided permutation p for Spearman: EXACT for n <= 8, seeded Monte-Carlo above.
+
+    Spearman(x, y) is Pearson on RANKS, and permuting y permutes its rank vector without
+    changing the multiset — so the whole null is a dot product against a fixed centred rank
+    vector. That makes the exact enumeration cheap at n <= 8 (<= 40,320) and lets n = 9+ use a
+    seeded 200k-draw Monte-Carlo instead of returning nothing.
+
+    The p FLOOR is the honest small-n caveat and is why it is returned alongside the count:
+    2/720 = 0.0028 at n = 6, and **2/6 = 0.333 at n = 3**, i.e. an n = 3 ordering can never be
+    significant no matter how clean it looks.
     """
     pairs = [(a, b) for a, b in zip(x, y) if a is not None and b is not None]
     if len(pairs) < 3:
@@ -131,15 +141,36 @@ def spearman_exact_p(x: list[float], y: list[float]) -> tuple[float | None, int]
     if obs is None:
         return None, 0
     n = len(xs)
-    if n > 8:
+    rx = _rank(xs)
+    ry = _rank(ys)
+    mx = sum(rx) / n
+    my = sum(ry) / n
+    cx = [v - mx for v in rx]
+    cy = [v - my for v in ry]
+    dx = math.sqrt(sum(v * v for v in cx))
+    dy = math.sqrt(sum(v * v for v in cy))
+    if dx == 0 or dy == 0:
         return None, 0
-    hits = tot = 0
-    for perm in itertools.permutations(ys):
-        r = spearman(xs, list(perm))
-        tot += 1
-        if r is not None and abs(r) >= abs(obs) - 1e-12:
+    denom = dx * dy
+    target = abs(obs) - 1e-12
+
+    if n <= 8:
+        hits = tot = 0
+        for perm in itertools.permutations(cy):
+            tot += 1
+            if abs(sum(a * b for a, b in zip(cx, perm))) / denom >= target:
+                hits += 1
+        return hits / tot, tot
+
+    rng = random.Random(_MC_SEED)
+    buf = list(cy)
+    hits = 0
+    for _ in range(_MC_DRAWS):
+        rng.shuffle(buf)
+        if abs(sum(a * b for a, b in zip(cx, buf))) / denom >= target:
             hits += 1
-    return hits / tot, tot
+    # +1/+1 (Davison-Hinkley): an MC p is never reported as exactly 0.
+    return (hits + 1) / (_MC_DRAWS + 1), _MC_DRAWS
 
 
 def interp_curve(curve: list[dict], step: float, field: str) -> float | None:
@@ -577,6 +608,18 @@ def fmt(v, nd=3):
     return f"{v:.{nd}f}"
 
 
+def _rho_cell(pts: list[tuple[float, Any]]) -> str:
+    """`rho (p=…)` for an (age, value) series, or MISS below 3 points — never interpolated."""
+    pts = [(x, y) for x, y in pts if y is not None]
+    if len(pts) < 3:
+        return "MISS"
+    xs = [x for x, _ in pts]
+    ys = [y for _, y in pts]
+    rho = spearman(xs, ys)
+    p, _ = spearman_exact_p(xs, ys)
+    return "MISS" if rho is None else f"{rho:+.2f} (p={fmt(p)})"
+
+
 def render(res: dict) -> str:
     L = []
     A = L.append
@@ -627,6 +670,29 @@ def render(res: dict) -> str:
                 direction = "RISES" if clean[-1] > clean[0] else "falls"
             A(f"| {s} | " + " | ".join(fmt(v) for v in vals) + f" | {direction} |")
 
+    # --- THE decisive table: does the age trend live in the optimizer or the content? ---
+    A("\n## TOTAL vs CONTROL vs NET — Spearman rho vs age, exact p (doc table 3.2)\n")
+    A("| lr | matched step | TOTAL (with content) | CONTROL (zero content) | NET (content only) |")
+    A("|---|---|---|---|---|")
+    for lr, arm, ctrl in (
+        ("3e-4", "lr3e4_ancestor", "lr3e4_zerocontent"),
+        ("1e-4", "lr1e4_ancestor", "lr1e4_zerocontent"),
+    ):
+        for s in ("1", "32", "135", "400"):
+            cells = []
+            for which in (arm, ctrl):
+                ms = res["matched_steps"].get(which, {}).get("s1", {})
+                pts = [(n, ms[a][s]["off_kl"]) for a, n in arm_ages(which) if a in ms]
+                cells.append(_rho_cell(pts))
+            net = res["net_of_control"].get(arm, {}).get("s1", {})
+            pts = [
+                (n, net[a][s]["off_kl"])
+                for a, n in arm_ages(arm)
+                if a in net and net[a].get(s, {}).get("off_kl") is not None
+            ]
+            cells.append(_rho_cell(pts))
+            A(f"| {lr} | {s} | " + " | ".join(cells) + " |")
+
     A("\n## Trend vs age (Spearman rho, seed 1 / seed 2), harm meters\n")
     A("| arm | regime | rho s1 | p s1 | rho s2 | null |")
     A("|---|---|---|---|---|---|")
@@ -645,11 +711,53 @@ def render(res: dict) -> str:
     return "\n".join(L)
 
 
+def selftest() -> int:
+    """Prove `_derive_cell` reproduces the COMMITTED producer's cell fields exactly.
+
+    The NEW cells' index fields are re-derived here rather than by running the producer's own
+    `aggregate`, which would overwrite the committed 2026-08-28 artifact. That shortcut is only
+    legitimate if the re-derivation is equivalent wherever both exist — so it is CHECKED, not
+    assumed, including agreement on which absorption levels are MISSES (a level a cell never
+    reaches must be None on both sides, never interpolated).
+    """
+    with SRC.open() as fh:
+        raw = json.load(fh)
+    bad = checked = 0
+    for cell, curve in raw["curves"].items():
+        ref = raw["cells"].get(cell)
+        if not ref:
+            continue
+        got = _derive_cell(
+            cell, {"curve": curve, "probe_seed": ref.get("seed"), "lr": ref.get("lr")}
+        )
+        for k in ("a0", "a_max", "gain_max", "step1_shock_kl", "final_off_kl", "final_off_agree"):
+            a, b = got.get(k), ref.get(k)
+            if a is None and b is None:
+                continue
+            checked += 1
+            if a is None or b is None or abs(a - b) > 1e-9:
+                print(f"MISMATCH {cell}.{k}: derived={a} committed={b}")
+                bad += 1
+        for lvl in MATCH_ABS:
+            a, b = got.get(f"idx_abs_{lvl}"), ref.get(f"idx_abs_{lvl}")
+            checked += 1
+            if (a is None) != (b is None):
+                print(f"MISS-DISAGREE {cell}.idx_abs_{lvl}")
+                bad += 1
+    print(f"selftest: {checked} fields over {len(raw['curves'])} committed cells -> {bad} mismatches")
+    return 1 if bad else 0
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="maturity_harm_trend_2026-08-31")
     ap.add_argument("--print", action="store_true")
+    ap.add_argument("--selftest", action="store_true", help="run the re-derivation gate, then exit")
     args = ap.parse_args()
+    if args.selftest:
+        raise SystemExit(selftest())
+    if selftest():
+        raise SystemExit("re-derivation gate FAILED — refusing to emit an artifact")
     data = load()
     res = build(data)
     outp = Path(args.out).with_suffix(".json")
