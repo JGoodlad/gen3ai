@@ -802,7 +802,11 @@ def aggregate():
                 a0=[v["a0"] for v in vals], kl400=[v["final_off_kl"] for v in vals],
                 rho_folds=_spearman(folds, amax), rho_steps=_spearman(steps, amax),
                 monotone=bool(all(amax[i] <= amax[i + 1] + 1e-12 for i in range(len(amax) - 1))))
-    _rev = [v for k, v in a2.items() if k.startswith("rev_lineage_s")]
+    # ⚠️ EXACT lineage match, not a prefix: `"rev_lineage_self2_s1".startswith("rev_lineage_s")` is
+    # TRUE, so the obvious filter silently folded the ZERO-CONTENT self-fold ladder into A2 and
+    # scored the prediction FAIL when the ladder it was registered on PASSES. The self2 arm is a
+    # deliberate contrast (§4.4), not a member of the registered ladder.
+    _rev = [v for k, v in a2.items() if re.fullmatch(r"rev_lineage_s\d+", k)]
     a2_pass = (None if not _rev else all(v["monotone"] for v in _rev))
 
     # ---- item 4: absorption gained PER STEP, in a lineage with a fold vs one without ----
@@ -870,10 +874,18 @@ def aggregate():
                   "separate them, and the v8 fold additionally differs in lr (7e-5 vs 3e-4), "
                   "coef (1.0 vs 0.176) and absolute age (292M vs ~29-33M)"))
 
+    # The verdict string must not read as a DIRECTION claim when A1 is a MAGNITUDE test. A1 asks
+    # whether the effect clears 0.018; failing that is not the same as the effect being absent, and
+    # a reader who quotes only this line must not be misled about which was measured.
+    n_pos = sum(1 for v in a1.values()
+                for d in (v["delta_vs_plain"], v["delta_vs_ecol"]) if d > 0)
+    n_cmp = 2 * len(a1)
     verdict_bits = []
     verdict_bits.append("(a) ACCUMULATED FOLDING: " + (
         "INSUFFICIENT CELLS" if a1_pass is None else
-        "SUPPORTED at matched age" if a1_pass else "NOT SUPPORTED at matched age"))
+        f"A1 PASSES its registered 0.018 bar ({n_pos}/{n_cmp} comparisons positive)" if a1_pass else
+        f"A1 FAILS its registered 0.018 MAGNITUDE bar, but the DIRECTION is "
+        f"{n_pos}/{n_cmp} positive at matched age"))
     verdict_bits.append("(b) POST-FOLD CONSOLIDATION: " + (
         "does not order with outcome" if m2["passed"] else
         f"ORDERS PERFECTLY with outcome (rho={rho}), n=3, dose-confounded"))
