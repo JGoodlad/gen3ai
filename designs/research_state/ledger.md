@@ -8254,3 +8254,52 @@ greedy play, not the stochastic regime v8 trained and was admitted under; the ag
 `switch_rate` reduction is state-conditional (−0.2pp on the parent's boards, −2.8pp on the fold's)
 and only the *conditional* axes survive both distributions; and the gen family's own taught vector
 has split-half reliability **0.077** and must not be quoted for shape.
+
+### 🔴 M9 FINAL — PLAIN TRAINING IS NOT THE ROBBER, BUT A DISTILLATION-FREE ARM PRODUCED A "SIGNIFICANT" ROBBERY ANYWAY (2026-08-31)
+
+**Record: `measurements/plain_training_robbery_2026-08-31.{md,json}` + `_tables.md` + the script +
+`plain_training_robbery_inputs/` (every input banked). 6,400 new battles across four complete arms
+on the untaught-8 instrument, run unmodified.** This CLOSES the gap the M9 interim entry named
+("no untaught replicate floor has been measured").
+
+**THE UNTAUGHT REPLICATE FLOOR IS −4.19pp [−6.94, −1.37]** (R2CTRL − R2PLAIN, all 8 teams) —
+against **−3.70pp** on taught. Two cuts, different team sets, counts and game budgets, agreeing at
+~4pp. **The untaught side IS implicated after all**, contra the interim entry's cautious hedge.
+**The sharpest form: `R2CTRL` — no teacher, no distillation loss, no team bias, byte-identical
+source and effective config to `R2PLAIN` — robs untaught teams −4.56pp [−6.56, −2.31] z = −2.60.**
+A no-distillation arm presents as a fold that robbed.
+
+**PLAIN TRAINING, MEASURED TWICE: −0.37pp [−3.31,+2.31] and −4.56pp [−6.56,−2.31]; mean −2.47pp =
+38% of rev-4's fold.** Registered P1 ("plain training robs at >half the fold's magnitude") is scored
+**NOT ESTABLISHED, not refuted** — one draw clears the bar, the other misses, and scoring it on
+either alone would have been an artifact of which run was labelled the control. **P2 FAILS on both
+draws**: the fold's signature is concentration (rev-4 floor −8.67pp z=−4.32 / sub-floor +0.00pp);
+both plain draws INVERT it (−0.08/−1.25 and −3.42/−8.00). Whatever ordinary training does here, it
+is not the fold's pattern. ⇒ **the mission's proposed reframe ("narrow-distribution training robs,
+distillation is incidental") is NOT SUPPORTED as stated**; the weaker and more damaging version is.
+
+**⚠️ REV-2's FOLD DID NOT ROB on the very set rev-4's REPRO-1 was scored on: +0.88pp [−1.62,+3.56],
+floor +2.33pp.** The ledger's "rev-2 robbed −7.1pp untaught" is probe Q's DIFFERENT team set.
+**"EVERY gen-era fold robs" does not survive within a single instrument** — on this one rev-2 is
+null-positive and only rev-4 robs. The sign flip is not between eras; it is between two folds inside
+the gen era, one of which is null, against a floor nobody had measured. **Rev-4's −6.50pp is a
+~1.6× effect over the floor, not a ~6× one, and it has been measured once.**
+
+**Decomposition (exactly additive, one parent, one meter): rev-2 fold +0.88 = plain −0.37 +
+distillation-specific +1.25.** The robbery lives in rev-4's fold alone. **Named gap + price:** rev-4
+has NO matched plain control (no `R4PLAIN`), so its −6.50 is fold-minus-parent, not fold-minus-plain
+— one 4.3M-step `--distill-coef 0` fork off `R2ACTION/final_model.zip` (≈2 GPU-h) plus one 8×200
+untaught arm (~75–150 min, 1 niced core) makes it causal. **R3SELF's untaught cell also unrun**
+(taught −8.96pp z=−6.67 carried instead).
+
+**METHOD NUGGETS.** (1) **The 2.52× dispersion figure does NOT transfer** — measured here across 15
+cells at **0.62–1.31×, mean ≈0.98**: at n=200/team binomial noise swamps team heterogeneity, so
+cluster ≈ binomial intervals. Measure dispersion, never import it. (2) **The ledger's published fold
+intervals are BINOMIAL, not team-clustered** — discovered by reproducing rev-4's banked cell to the
+third decimal; both conventions are now printed side by side. (3) **A conclusion changed between
+5/8 and 8/8 teams of one arm**: at 5 teams R2CTRL read −3.60pp n.s. and the draft headline said
+"plain training does not rob"; the last three teams took it to −4.56pp z=−2.60. *An arm is not a
+result until it is finished.* (4) The collector is now **resumable per team**
+(`gen3_untaught_arm_resume_v1`, index-derived seeds ⇒ byte-equivalent to an uninterrupted run) —
+three arm-runs were destroyed before it existed, by the documented total-duration cap that
+`concurrency>=2` selects and that scaling provably cannot rescue.

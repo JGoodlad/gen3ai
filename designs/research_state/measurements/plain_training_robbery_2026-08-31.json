@@ -1,0 +1,2402 @@
+{
+ "probe": "M9",
+ "question": "does PLAIN TRAINING rob untaught teams, with no distillation at all?",
+ "instrument": {
+  "collector": "designs/research_state/measurements/axis_split_untaught_arm.py (unmodified)",
+  "teams": [
+   "U_61590463",
+   "U_92832108",
+   "U_ce35b736",
+   "U_9909f2e9",
+   "U_9d5f8458",
+   "U_f7ba5702",
+   "U_90b94599",
+   "U_dbf81d8e"
+  ],
+  "n_per_team": 200,
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "impl": "rust",
+  "stochastic": true
+ },
+ "floor_stratum": {
+  "variable": "headroom_screen.json -- R2ACTION piloting each team at n=150",
+  "cut": 0.55,
+  "registered_by": "scorecard REPRO-2 (ledger 2026-08-31)",
+  "floor_teams": [
+   "U_ce35b736",
+   "U_9909f2e9",
+   "U_9d5f8458",
+   "U_f7ba5702",
+   "U_90b94599",
+   "U_dbf81d8e"
+  ],
+  "sub_floor_teams": [
+   "U_61590463",
+   "U_92832108"
+  ],
+  "screen_wr": {
+   "U_61590463": 0.5466666666666666,
+   "U_92832108": 0.5466666666666666,
+   "U_ce35b736": 0.5533333333333333,
+   "U_9909f2e9": 0.5733333333333334,
+   "U_9d5f8458": 0.58,
+   "U_f7ba5702": 0.58,
+   "U_90b94599": 0.5933333333333334,
+   "U_dbf81d8e": 0.6133333333333333
+  },
+  "why_not_the_parent_wr": "Stratifying on an arm's OWN measured WR and then differencing that same arm induces regression to the mean. The screen is an independent measurement of a third model, so it cannot."
+ },
+ "arms": {
+  "REV1FIN": {
+   "run": "ai_v9_29_rev1_0823",
+   "role": "the common PARENT (rev-1 final)",
+   "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/untaught_REV1FIN.json",
+   "meta": {
+    "tag": "REV1FIN",
+    "model": "models/ai_v9_29_rev1_0823/final_model.zip",
+    "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "n_per_team": 200,
+    "seed_convention": "1000 + slice_index",
+    "pool": 719
+   }
+  },
+  "R2PLAIN": {
+   "run": "ai_v9_62_R2PLAIN_0827",
+   "role": "PLAIN training, no teacher of any kind",
+   "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/untaught_R2PLAIN.json",
+   "meta": {
+    "tag": "R2PLAIN",
+    "model": "models/ai_v9_62_R2PLAIN_0827/final_model.zip",
+    "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "n_per_team": 200,
+    "seed_convention": "1000 + slice_index",
+    "pool": 719
+   }
+  },
+  "R2CTRL": {
+   "run": "ai_v9_58_R2CTRL_0827",
+   "role": "teachers in the ECOLOGY, distill coef 0",
+   "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/untaught_R2CTRL.json",
+   "meta": {
+    "tag": "R2CTRL",
+    "model": "models/ai_v9_58_R2CTRL_0827/final_model.zip",
+    "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "n_per_team": 200,
+    "seed_convention": "1000 + slice_index",
+    "pool": 719
+   }
+  },
+  "R2ACTION": {
+   "run": "ai_v9_59_R2ACTION_0827",
+   "role": "the rev-2 FOLD (action target, coef 0.181)",
+   "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/untaught_R2ACTION.json",
+   "meta": {
+    "tag": "R2ACTION",
+    "model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "n_per_team": 200,
+    "seed_convention": "1000 + slice_index",
+    "pool": 719
+   }
+  },
+  "R4ACTION": {
+   "run": "ai_v9_76_R4ACTION_0830",
+   "role": "the rev-4 FOLD off R2ACTION",
+   "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/untaught_R4ACTION.json",
+   "meta": {
+    "tag": "R4ACTION",
+    "model": "models/ai_v9_76_R4ACTION_0830/final_model.zip",
+    "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+    "n_per_team": 200,
+    "seed_convention": "1000 + slice_index",
+    "pool": 719
+   }
+  }
+ },
+ "arms_missing": {
+  "R3SELF": "untaught_R3SELF.json not found in ['/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs', '/tmp/m9', '/tmp/axis_split', '/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/axis_split_inputs', '/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements']"
+ },
+ "argv_single_variable": {
+  "available": true,
+  "R2ACTION_vs_R2PLAIN": {
+   "diff_keys": [
+    "--distill-coef",
+    "--distill-gate",
+    "--distill-target",
+    "--distill-teacher",
+    "--distill-topk",
+    "--distill-value-feat-coef",
+    "--rank-tripwire"
+   ],
+   "non_distillation_diffs": [],
+   "single_variable": true,
+   "detail": {
+    "--distill-coef": {
+     "R2ACTION": "0.1810",
+     "R2PLAIN": "0.0"
+    },
+    "--distill-gate": {
+     "R2ACTION": "none",
+     "R2PLAIN": "None"
+    },
+    "--distill-target": {
+     "R2ACTION": "action",
+     "R2PLAIN": "None"
+    },
+    "--distill-teacher": {
+     "R2ACTION": "models/ai_v9_53_R2F5a_0826:*;models/ai_v9_54_R2F5b_0826:*;models/ai_v9_55_R2F5c_0826:*;mod",
+     "R2PLAIN": "None"
+    },
+    "--distill-topk": {
+     "R2ACTION": "1",
+     "R2PLAIN": "None"
+    },
+    "--distill-value-feat-coef": {
+     "R2ACTION": "0.5",
+     "R2PLAIN": "0.0"
+    },
+    "--rank-tripwire": {
+     "R2ACTION": "warn",
+     "R2PLAIN": "None"
+    }
+   }
+  },
+  "R2CTRL_vs_R2PLAIN": {
+   "diff_keys": [
+    "--distill-teacher"
+   ],
+   "non_distillation_diffs": [],
+   "single_variable": true,
+   "detail": {
+    "--distill-teacher": {
+     "R2CTRL": "models/ai_v9_53_R2F5a_0826:*;models/ai_v9_54_R2F5b_0826:*;models/ai_v9_55_R2F5c_0826:*;mod",
+     "R2PLAIN": "None"
+    }
+   }
+  },
+  "shared": {
+   "R2ACTION": {
+    "--model": "models/ai_v9_29_rev1_0823/final_model.zip",
+    "--steps": "28067760",
+    "--seed": "42"
+   },
+   "R2PLAIN": {
+    "--model": "models/ai_v9_29_rev1_0823/final_model.zip",
+    "--steps": "28067760",
+    "--seed": "42"
+   },
+   "R2CTRL": {
+    "--model": "models/ai_v9_29_rev1_0823/final_model.zip",
+    "--steps": "28067760",
+    "--seed": "42"
+   }
+  }
+ },
+ "screen_assertion": {
+  "available": true,
+  "source": "/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/headroom_screen.json",
+  "screen_meta": {
+   "tag": "R2ACTION",
+   "model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+   "n_per_team": 150,
+   "seed_convention": "1000 + slice_index",
+   "pool": 719
+  },
+  "drifted": [],
+  "missing": [],
+  "ok": true
+ },
+ "replicate_pair_audit": {
+  "git_hashes": {
+   "ai_v9_58_R2CTRL_0827": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "ai_v9_62_R2PLAIN_0827": "4714e0f817afae839771c4c62a07627605d8a340"
+  },
+  "src_diff_between_run_commits": "",
+  "src_identical": true,
+  "coef_gate_as_run": [
+   "args._distill_pairs = []",
+   "    if args.distill_coef and args.distill_coef > 0:"
+  ],
+  "pairs_are_coef_gated": true,
+  "live_tree_docstring_names_this_run": true,
+  "verdict": "R2CTRL == R2PLAIN in effective configuration \u21d2 REPLICATE PAIR of plain training"
+ },
+ "m5_control_audit": {
+  "available": true,
+  "gen": {
+   "m5_control": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/snapshots/snapshot_000024000000.zip",
+   "rev1_own_snapshot": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+   "md5_m5_control": "df3d56204404f871c3150a2628c294dd",
+   "md5_rev1_snapshot": "df3d56204404f871c3150a2628c294dd",
+   "byte_identical": true,
+   "fold_free": false,
+   "reading": "IDENTICAL -- the pool re-publish means M5's gen control is rev-1's snapshot; its 'control span' contains the whole rev-2 fold."
+  },
+  "v8": {
+   "control_run": "ai_v8_04_distill_4teacher_0722",
+   "control_checkpoint": "checkpoints/checkpoint_269716291_steps.zip",
+   "distill_coef_of_that_run": 1.0,
+   "distill_teacher": "models/ai_v7_15_tss_exploiter_vs14_0713:data/teams/specialist/tss_starmie.txt,models/ai_v7_12_trap_exploiter_0711:data/t",
+   "fold_free": false,
+   "reading": "NOT fold-free -- the run distils at coef 1.0 for its whole span, so M5's 'ordinary training' interval is 7.46M steps of distillation."
+  },
+  "verdict": "NEITHER M5 control is fold-free"
+ },
+ "cells": {
+  "plain_training_drift": {
+   "available": true,
+   "arm": "R2PLAIN",
+   "base": "REV1FIN",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": -0.0037499999999999756,
+    "ci95_cluster_bootstrap": [
+     -0.033125,
+     0.02312500000000002
+    ],
+    "se_binomial": 0.017453845385759552,
+    "ci95_binomial": [
+     -0.037959536956088696,
+     0.030459536956088745
+    ],
+    "z_binomial": -0.21485236732184929,
+    "sd_per_team_observed": 0.043895167322675906,
+    "sd_per_team_binomial": 0.049366929720208445,
+    "dispersion_ratio": 0.8891613793172018,
+    "pooled_arm_wr": 0.57,
+    "pooled_base_wr": 0.57375,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.59,
+      "base_wr": 0.585,
+      "delta": 0.0050000000000000044,
+      "var": 0.002423375
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.52,
+      "base_wr": 0.55,
+      "delta": -0.030000000000000027,
+      "var": 0.0024855
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.48,
+      "base_wr": 0.565,
+      "delta": -0.08499999999999996,
+      "var": 0.002476875
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.625,
+      "base_wr": 0.575,
+      "delta": 0.050000000000000044,
+      "var": 0.00239375
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.585,
+      "base_wr": 0.565,
+      "delta": 0.020000000000000018,
+      "var": 0.00244275
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.615,
+      "base_wr": 0.58,
+      "delta": 0.03500000000000003,
+      "var": 0.0024018750000000004
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.575,
+      "delta": 0.010000000000000009,
+      "var": 0.0024357500000000004
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.56,
+      "base_wr": 0.595,
+      "delta": -0.03499999999999992,
+      "var": 0.002436875
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": -0.0008333333333332971,
+    "ci95_cluster_bootstrap": [
+     -0.039999999999999945,
+     0.03250000000000003
+    ],
+    "se_binomial": 0.020130045951263997,
+    "ci95_binomial": [
+     -0.040288223397810734,
+     0.03862155673114414
+    ],
+    "z_binomial": -0.04139748788208657,
+    "sd_per_team_observed": 0.05034050721503177,
+    "sd_per_team_binomial": 0.049308341079375206,
+    "dispersion_ratio": 1.0209328911308335,
+    "pooled_arm_wr": 0.575,
+    "pooled_base_wr": 0.5758333333333333,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.48,
+      "base_wr": 0.565,
+      "delta": -0.08499999999999996,
+      "var": 0.002476875
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.625,
+      "base_wr": 0.575,
+      "delta": 0.050000000000000044,
+      "var": 0.00239375
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.585,
+      "base_wr": 0.565,
+      "delta": 0.020000000000000018,
+      "var": 0.00244275
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.615,
+      "base_wr": 0.58,
+      "delta": 0.03500000000000003,
+      "var": 0.0024018750000000004
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.575,
+      "delta": 0.010000000000000009,
+      "var": 0.0024357500000000004
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.56,
+      "base_wr": 0.595,
+      "delta": -0.03499999999999992,
+      "var": 0.002436875
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": -0.012500000000000011,
+    "ci95_cluster_bootstrap": [
+     -0.030000000000000027,
+     0.0050000000000000044
+    ],
+    "se_binomial": 0.03503168208921747,
+    "ci95_binomial": [
+     -0.08116209689486625,
+     0.05616209689486623
+    ],
+    "z_binomial": -0.35681986289340734,
+    "sd_per_team_observed": 0.024748737341529183,
+    "sd_per_team_binomial": 0.04954227992331398,
+    "dispersion_ratio": 0.49954780805077026,
+    "pooled_arm_wr": 0.555,
+    "pooled_base_wr": 0.5675,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.59,
+      "base_wr": 0.585,
+      "delta": 0.0050000000000000044,
+      "var": 0.002423375
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.52,
+      "base_wr": 0.55,
+      "delta": -0.030000000000000027,
+      "var": 0.0024855
+     }
+    ]
+   }
+  },
+  "ecology_only": {
+   "available": true,
+   "arm": "R2CTRL",
+   "base": "REV1FIN",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": -0.04562499999999996,
+    "ci95_cluster_bootstrap": [
+     -0.06562499999999999,
+     -0.023124999999999937
+    ],
+    "se_binomial": 0.01754252645359271,
+    "ci95_binomial": [
+     -0.08000835184904168,
+     -0.011241648150958246
+    ],
+    "z_binomial": -2.600822642091895,
+    "sd_per_team_observed": 0.03278038394266566,
+    "sd_per_team_binomial": 0.04961775765791921,
+    "dispersion_ratio": 0.6606583104513544,
+    "pooled_arm_wr": 0.528125,
+    "pooled_base_wr": 0.57375,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.505,
+      "base_wr": 0.585,
+      "delta": -0.07999999999999996,
+      "var": 0.0024637500000000002
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.47,
+      "base_wr": 0.55,
+      "delta": -0.08000000000000007,
+      "var": 0.002483
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.51,
+      "base_wr": 0.565,
+      "delta": -0.05499999999999994,
+      "var": 0.0024783749999999997
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.59,
+      "base_wr": 0.575,
+      "delta": 0.015000000000000013,
+      "var": 0.0024313750000000004
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.565,
+      "delta": -0.019999999999999907,
+      "var": 0.00246875
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.51,
+      "base_wr": 0.58,
+      "delta": -0.06999999999999995,
+      "var": 0.0024675
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.535,
+      "base_wr": 0.575,
+      "delta": -0.039999999999999925,
+      "var": 0.00246575
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.56,
+      "base_wr": 0.595,
+      "delta": -0.03499999999999992,
+      "var": 0.002436875
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": -0.0341666666666666,
+    "ci95_cluster_bootstrap": [
+     -0.054166666666666606,
+     -0.011666666666666603
+    ],
+    "se_binomial": 0.020240652849594,
+    "ci95_binomial": [
+     -0.07383834625187084,
+     0.005505012918537638
+    ],
+    "z_binomial": -1.688021968488627,
+    "sd_per_team_observed": 0.029566309655867876,
+    "sd_per_team_binomial": 0.04957927154231561,
+    "dispersion_ratio": 0.5963441723953772,
+    "pooled_arm_wr": 0.5416666666666666,
+    "pooled_base_wr": 0.5758333333333333,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.51,
+      "base_wr": 0.565,
+      "delta": -0.05499999999999994,
+      "var": 0.0024783749999999997
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.59,
+      "base_wr": 0.575,
+      "delta": 0.015000000000000013,
+      "var": 0.0024313750000000004
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.565,
+      "delta": -0.019999999999999907,
+      "var": 0.00246875
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.51,
+      "base_wr": 0.58,
+      "delta": -0.06999999999999995,
+      "var": 0.0024675
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.535,
+      "base_wr": 0.575,
+      "delta": -0.039999999999999925,
+      "var": 0.00246575
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.56,
+      "base_wr": 0.595,
+      "delta": -0.03499999999999992,
+      "var": 0.002436875
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": -0.08000000000000002,
+    "ci95_cluster_bootstrap": [
+     -0.08000000000000007,
+     -0.07999999999999996
+    ],
+    "se_binomial": 0.03516656793035112,
+    "ci95_binomial": [
+     -0.14892647314348822,
+     -0.01107352685651182
+    ],
+    "z_binomial": -2.274887903717059,
+    "sd_per_team_observed": 7.850462293418876e-17,
+    "sd_per_team_binomial": 0.0497330373092173,
+    "dispersion_ratio": 1.5785205807174593e-15,
+    "pooled_arm_wr": 0.4875,
+    "pooled_base_wr": 0.5675,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.505,
+      "base_wr": 0.585,
+      "delta": -0.07999999999999996,
+      "var": 0.0024637500000000002
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.47,
+      "base_wr": 0.55,
+      "delta": -0.08000000000000007,
+      "var": 0.002483
+     }
+    ]
+   }
+  },
+  "fold_rev2": {
+   "available": true,
+   "arm": "R2ACTION",
+   "base": "REV1FIN",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": 0.008750000000000036,
+    "ci95_cluster_bootstrap": [
+     -0.016249999999999973,
+     0.03562500000000003
+    ],
+    "se_binomial": 0.017417999849293833,
+    "ci95_binomial": [
+     -0.02538927970461588,
+     0.04288927970461595
+    ],
+    "z_binomial": 0.5023538911303171,
+    "sd_per_team_observed": 0.040066908326662085,
+    "sd_per_team_binomial": 0.04926554323256773,
+    "dispersion_ratio": 0.8132846143098094,
+    "pooled_arm_wr": 0.5825,
+    "pooled_base_wr": 0.57375,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.555,
+      "base_wr": 0.585,
+      "delta": -0.029999999999999916,
+      "var": 0.0024487500000000004
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.51,
+      "base_wr": 0.55,
+      "delta": -0.040000000000000036,
+      "var": 0.0024869999999999996
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.565,
+      "base_wr": 0.565,
+      "delta": 0.0,
+      "var": 0.00245775
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.64,
+      "base_wr": 0.575,
+      "delta": 0.06500000000000006,
+      "var": 0.002373875
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.565,
+      "delta": -0.019999999999999907,
+      "var": 0.00246875
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.6,
+      "base_wr": 0.58,
+      "delta": 0.020000000000000018,
+      "var": 0.002418
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.575,
+      "delta": 0.010000000000000009,
+      "var": 0.0024357500000000004
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.66,
+      "base_wr": 0.595,
+      "delta": 0.06500000000000006,
+      "var": 0.002326875
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": 0.023333333333333373,
+    "ci95_cluster_bootstrap": [
+     -0.0016666666666666312,
+     0.048333333333333374
+    ],
+    "se_binomial": 0.02005617112013158,
+    "ci95_binomial": [
+     -0.01597676206212452,
+     0.06264342872879126
+    ],
+    "z_binomial": 1.1633991948698676,
+    "sd_per_team_observed": 0.03488074922742725,
+    "sd_per_team_binomial": 0.04912738543826651,
+    "dispersion_ratio": 0.7100062198762525,
+    "pooled_arm_wr": 0.5991666666666666,
+    "pooled_base_wr": 0.5758333333333333,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.565,
+      "base_wr": 0.565,
+      "delta": 0.0,
+      "var": 0.00245775
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.64,
+      "base_wr": 0.575,
+      "delta": 0.06500000000000006,
+      "var": 0.002373875
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.565,
+      "delta": -0.019999999999999907,
+      "var": 0.00246875
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.6,
+      "base_wr": 0.58,
+      "delta": 0.020000000000000018,
+      "var": 0.002418
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.575,
+      "delta": 0.010000000000000009,
+      "var": 0.0024357500000000004
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.66,
+      "base_wr": 0.595,
+      "delta": 0.06500000000000006,
+      "var": 0.002326875
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": -0.034999999999999976,
+    "ci95_cluster_bootstrap": [
+     -0.040000000000000036,
+     -0.029999999999999916
+    ],
+    "se_binomial": 0.035127446534013826,
+    "ci95_binomial": [
+     -0.10384979520666707,
+     0.033849795206667116
+    ],
+    "z_binomial": -0.9963718816313493,
+    "sd_per_team_observed": 0.00707106781186556,
+    "sd_per_team_binomial": 0.04967771129993812,
+    "dispersion_ratio": 0.1423388402330517,
+    "pooled_arm_wr": 0.5325,
+    "pooled_base_wr": 0.5675,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.555,
+      "base_wr": 0.585,
+      "delta": -0.029999999999999916,
+      "var": 0.0024487500000000004
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.51,
+      "base_wr": 0.55,
+      "delta": -0.040000000000000036,
+      "var": 0.0024869999999999996
+     }
+    ]
+   }
+  },
+  "distillation_specific": {
+   "available": true,
+   "arm": "R2ACTION",
+   "base": "R2PLAIN",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": 0.012500000000000011,
+    "ci95_cluster_bootstrap": [
+     -0.018749999999999975,
+     0.04812499999999999
+    ],
+    "se_binomial": 0.017393425482060743,
+    "ci95_binomial": [
+     -0.021591113944839042,
+     0.046591113944839065
+    ],
+    "z_binomial": 0.7186623481896812,
+    "sd_per_team_observed": 0.05257647491307981,
+    "sd_per_team_binomial": 0.04919603642571218,
+    "dispersion_ratio": 1.0687136349382986,
+    "pooled_arm_wr": 0.5825,
+    "pooled_base_wr": 0.57,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.555,
+      "base_wr": 0.59,
+      "delta": -0.03499999999999992,
+      "var": 0.0024443750000000004
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.51,
+      "base_wr": 0.52,
+      "delta": -0.010000000000000009,
+      "var": 0.0024974999999999997
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.565,
+      "base_wr": 0.48,
+      "delta": 0.08499999999999996,
+      "var": 0.002476875
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.64,
+      "base_wr": 0.625,
+      "delta": 0.015000000000000013,
+      "var": 0.002323875
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.585,
+      "delta": -0.039999999999999925,
+      "var": 0.00245375
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.6,
+      "base_wr": 0.615,
+      "delta": -0.015000000000000013,
+      "var": 0.0023838749999999997
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.585,
+      "delta": 0.0,
+      "var": 0.0024277500000000002
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.66,
+      "base_wr": 0.56,
+      "delta": 0.09999999999999998,
+      "var": 0.0023539999999999998
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": 0.02416666666666667,
+    "ci95_cluster_bootstrap": [
+     -0.01416666666666666,
+     0.06416666666666665
+    ],
+    "se_binomial": 0.020013970814852754,
+    "ci95_binomial": [
+     -0.015060716130444726,
+     0.06339404946377807
+    ],
+    "z_binomial": 1.2074898524750581,
+    "sd_per_team_observed": 0.05616196815164746,
+    "sd_per_team_binomial": 0.04902401622334371,
+    "dispersion_ratio": 1.1456011252889737,
+    "pooled_arm_wr": 0.5991666666666666,
+    "pooled_base_wr": 0.575,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.565,
+      "base_wr": 0.48,
+      "delta": 0.08499999999999996,
+      "var": 0.002476875
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.64,
+      "base_wr": 0.625,
+      "delta": 0.015000000000000013,
+      "var": 0.002323875
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.585,
+      "delta": -0.039999999999999925,
+      "var": 0.00245375
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.6,
+      "base_wr": 0.615,
+      "delta": -0.015000000000000013,
+      "var": 0.0023838749999999997
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.585,
+      "delta": 0.0,
+      "var": 0.0024277500000000002
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.66,
+      "base_wr": 0.56,
+      "delta": 0.09999999999999998,
+      "var": 0.0023539999999999998
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": -0.022499999999999964,
+    "ci95_cluster_bootstrap": [
+     -0.03499999999999992,
+     -0.010000000000000009
+    ],
+    "se_binomial": 0.03514923541131443,
+    "ci95_binomial": [
+     -0.09139250140617625,
+     0.04639250140617632
+    ],
+    "z_binomial": -0.6401277221739305,
+    "sd_per_team_observed": 0.017677669529663625,
+    "sd_per_team_binomial": 0.049708525425725514,
+    "dispersion_ratio": 0.3556265123188497,
+    "pooled_arm_wr": 0.5325,
+    "pooled_base_wr": 0.555,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.555,
+      "base_wr": 0.59,
+      "delta": -0.03499999999999992,
+      "var": 0.0024443750000000004
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.51,
+      "base_wr": 0.52,
+      "delta": -0.010000000000000009,
+      "var": 0.0024974999999999997
+     }
+    ]
+   }
+  },
+  "distillation_beyond_ecology": {
+   "available": true,
+   "arm": "R2ACTION",
+   "base": "R2CTRL",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": 0.05437499999999999,
+    "ci95_cluster_bootstrap": [
+     0.03499999999999999,
+     0.07374999999999998
+    ],
+    "se_binomial": 0.01748241303782175,
+    "ci95_binomial": [
+     0.02010947044586936,
+     0.08864052955413063
+    ],
+    "z_binomial": 3.110268581480382,
+    "sd_per_team_observed": 0.03064048442362302,
+    "sd_per_team_binomial": 0.04944773124219148,
+    "dispersion_ratio": 0.61965399936244,
+    "pooled_arm_wr": 0.5825,
+    "pooled_base_wr": 0.528125,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.555,
+      "base_wr": 0.505,
+      "delta": 0.050000000000000044,
+      "var": 0.00248475
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.51,
+      "base_wr": 0.47,
+      "delta": 0.040000000000000036,
+      "var": 0.002495
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.565,
+      "base_wr": 0.51,
+      "delta": 0.05499999999999994,
+      "var": 0.0024783749999999997
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.64,
+      "base_wr": 0.59,
+      "delta": 0.050000000000000044,
+      "var": 0.0023615
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.545,
+      "delta": 0.0,
+      "var": 0.00247975
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.6,
+      "base_wr": 0.51,
+      "delta": 0.08999999999999997,
+      "var": 0.0024495
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.535,
+      "delta": 0.04999999999999993,
+      "var": 0.00245775
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.66,
+      "base_wr": 0.56,
+      "delta": 0.09999999999999998,
+      "var": 0.0023539999999999998
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": 0.057499999999999975,
+    "ci95_cluster_bootstrap": [
+     0.03249999999999997,
+     0.08166666666666662
+    ],
+    "se_binomial": 0.020125215664820974,
+    "ci95_binomial": [
+     0.01805457729695087,
+     0.09694542270304908
+    ],
+    "z_binomial": 2.857112239572687,
+    "sd_per_team_observed": 0.03546124645299428,
+    "sd_per_team_binomial": 0.04929650934227831,
+    "dispersion_ratio": 0.7193459927715723,
+    "pooled_arm_wr": 0.5991666666666666,
+    "pooled_base_wr": 0.5416666666666666,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.565,
+      "base_wr": 0.51,
+      "delta": 0.05499999999999994,
+      "var": 0.0024783749999999997
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.64,
+      "base_wr": 0.59,
+      "delta": 0.050000000000000044,
+      "var": 0.0023615
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.545,
+      "delta": 0.0,
+      "var": 0.00247975
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.6,
+      "base_wr": 0.51,
+      "delta": 0.08999999999999997,
+      "var": 0.0024495
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.585,
+      "base_wr": 0.535,
+      "delta": 0.04999999999999993,
+      "var": 0.00245775
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.66,
+      "base_wr": 0.56,
+      "delta": 0.09999999999999998,
+      "var": 0.0023539999999999998
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": 0.04500000000000004,
+    "ci95_cluster_bootstrap": [
+     0.040000000000000036,
+     0.050000000000000044
+    ],
+    "se_binomial": 0.03528367186107478,
+    "ci95_binomial": [
+     -0.024155996847706515,
+     0.1141559968477066
+    ],
+    "z_binomial": 1.2753774657349195,
+    "sd_per_team_observed": 0.007071067811865481,
+    "sd_per_team_binomial": 0.04989864727625389,
+    "dispersion_ratio": 0.14170860730387994,
+    "pooled_arm_wr": 0.5325,
+    "pooled_base_wr": 0.4875,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.555,
+      "base_wr": 0.505,
+      "delta": 0.050000000000000044,
+      "var": 0.00248475
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.51,
+      "base_wr": 0.47,
+      "delta": 0.040000000000000036,
+      "var": 0.002495
+     }
+    ]
+   }
+  },
+  "ecology_beyond_plain": {
+   "available": true,
+   "arm": "R2CTRL",
+   "base": "R2PLAIN",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": -0.04187499999999998,
+    "ci95_cluster_bootstrap": [
+     -0.06937499999999996,
+     -0.013749999999999984
+    ],
+    "se_binomial": 0.017518126772717454,
+    "ci95_binomial": [
+     -0.0762105284745262,
+     -0.007539471525473775
+    ],
+    "z_binomial": -2.3903811488118505,
+    "sd_per_team_observed": 0.04300643639536495,
+    "sd_per_team_binomial": 0.04954874493869648,
+    "dispersion_ratio": 0.8679621743915832,
+    "pooled_arm_wr": 0.528125,
+    "pooled_base_wr": 0.57,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.505,
+      "base_wr": 0.59,
+      "delta": -0.08499999999999996,
+      "var": 0.002459375
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.47,
+      "base_wr": 0.52,
+      "delta": -0.050000000000000044,
+      "var": 0.0024935
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.51,
+      "base_wr": 0.48,
+      "delta": 0.030000000000000027,
+      "var": 0.0024974999999999997
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.59,
+      "base_wr": 0.625,
+      "delta": -0.03500000000000003,
+      "var": 0.002381375
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.585,
+      "delta": -0.039999999999999925,
+      "var": 0.00245375
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.51,
+      "base_wr": 0.615,
+      "delta": -0.10499999999999998,
+      "var": 0.0024333749999999998
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.535,
+      "base_wr": 0.585,
+      "delta": -0.04999999999999993,
+      "var": 0.00245775
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.56,
+      "base_wr": 0.56,
+      "delta": 0.0,
+      "var": 0.0024639999999999996
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": -0.033333333333333305,
+    "ci95_cluster_bootstrap": [
+     -0.06666666666666665,
+     -0.0016666666666666312
+    ],
+    "se_binomial": 0.02019883797537758,
+    "ci95_binomial": [
+     -0.07292305576507337,
+     0.006256389098406756
+    ],
+    "z_binomial": -1.6502599493083066,
+    "sd_per_team_observed": 0.046007245806140865,
+    "sd_per_team_binomial": 0.049476846436826726,
+    "dispersion_ratio": 0.9298742567371198,
+    "pooled_arm_wr": 0.5416666666666666,
+    "pooled_base_wr": 0.575,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.51,
+      "base_wr": 0.48,
+      "delta": 0.030000000000000027,
+      "var": 0.0024974999999999997
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.59,
+      "base_wr": 0.625,
+      "delta": -0.03500000000000003,
+      "var": 0.002381375
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.545,
+      "base_wr": 0.585,
+      "delta": -0.039999999999999925,
+      "var": 0.00245375
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.51,
+      "base_wr": 0.615,
+      "delta": -0.10499999999999998,
+      "var": 0.0024333749999999998
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.535,
+      "base_wr": 0.585,
+      "delta": -0.04999999999999993,
+      "var": 0.00245775
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.56,
+      "base_wr": 0.56,
+      "delta": 0.0,
+      "var": 0.0024639999999999996
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": -0.0675,
+    "ci95_cluster_bootstrap": [
+     -0.08499999999999996,
+     -0.050000000000000044
+    ],
+    "se_binomial": 0.03518833258340043,
+    "ci95_binomial": [
+     -0.13646913186346485,
+     0.0014691318634648398
+    ],
+    "z_binomial": -1.9182494606704419,
+    "sd_per_team_observed": 0.024748737341529107,
+    "sd_per_team_binomial": 0.04976381717673997,
+    "dispersion_ratio": 0.4973239342478912,
+    "pooled_arm_wr": 0.4875,
+    "pooled_base_wr": 0.555,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.505,
+      "base_wr": 0.59,
+      "delta": -0.08499999999999996,
+      "var": 0.002459375
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.47,
+      "base_wr": 0.52,
+      "delta": -0.050000000000000044,
+      "var": 0.0024935
+     }
+    ]
+   }
+  },
+  "fold_rev4": {
+   "available": true,
+   "arm": "R4ACTION",
+   "base": "R2ACTION",
+   "restricted": false,
+   "restricted_to": [
+    "U_61590463",
+    "U_92832108",
+    "U_ce35b736",
+    "U_9909f2e9",
+    "U_9d5f8458",
+    "U_f7ba5702",
+    "U_90b94599",
+    "U_dbf81d8e"
+   ],
+   "missing_teams": [],
+   "all8": {
+    "n_teams": 8,
+    "mean_delta": -0.06499999999999999,
+    "ci95_cluster_bootstrap": [
+     -0.09749999999999998,
+     -0.030625
+    ],
+    "se_binomial": 0.017440411943242626,
+    "ci95_binomial": [
+     -0.09918320740875552,
+     -0.030816792591244445
+    ],
+    "z_binomial": -3.726976186774336,
+    "sd_per_team_observed": 0.052098807225172766,
+    "sd_per_team_binomial": 0.04932893420701485,
+    "dispersion_ratio": 1.056151081767423,
+    "pooled_arm_wr": 0.5175,
+    "pooled_base_wr": 0.5825,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.55,
+      "base_wr": 0.555,
+      "delta": -0.0050000000000000044,
+      "var": 0.0024723749999999997
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.515,
+      "base_wr": 0.51,
+      "delta": 0.0050000000000000044,
+      "var": 0.0024983749999999997
+     },
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.445,
+      "base_wr": 0.565,
+      "delta": -0.11999999999999994,
+      "var": 0.00246375
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.56,
+      "base_wr": 0.64,
+      "delta": -0.07999999999999996,
+      "var": 0.002384
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.435,
+      "base_wr": 0.545,
+      "delta": -0.11000000000000004,
+      "var": 0.00246875
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.485,
+      "base_wr": 0.6,
+      "delta": -0.11499999999999999,
+      "var": 0.0024488749999999997
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.505,
+      "base_wr": 0.585,
+      "delta": -0.07999999999999996,
+      "var": 0.0024637500000000002
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.645,
+      "base_wr": 0.66,
+      "delta": -0.015000000000000013,
+      "var": 0.002266875
+     }
+    ]
+   },
+   "floor": {
+    "n_teams": 6,
+    "mean_delta": -0.08666666666666666,
+    "ci95_cluster_bootstrap": [
+     -0.1108333333333333,
+     -0.05416666666666665
+    ],
+    "se_binomial": 0.02006655592438988,
+    "ci95_binomial": [
+     -0.12599711627847082,
+     -0.04733621705486249
+    ],
+    "z_binomial": -4.31896071220312,
+    "sd_per_team_observed": 0.03920034013457876,
+    "sd_per_team_binomial": 0.04915282290977803,
+    "dispersion_ratio": 0.7975196095356019,
+    "pooled_arm_wr": 0.5125,
+    "pooled_base_wr": 0.5991666666666666,
+    "rows": [
+     {
+      "team": "U_ce35b736",
+      "arm_wr": 0.445,
+      "base_wr": 0.565,
+      "delta": -0.11999999999999994,
+      "var": 0.00246375
+     },
+     {
+      "team": "U_9909f2e9",
+      "arm_wr": 0.56,
+      "base_wr": 0.64,
+      "delta": -0.07999999999999996,
+      "var": 0.002384
+     },
+     {
+      "team": "U_9d5f8458",
+      "arm_wr": 0.435,
+      "base_wr": 0.545,
+      "delta": -0.11000000000000004,
+      "var": 0.00246875
+     },
+     {
+      "team": "U_f7ba5702",
+      "arm_wr": 0.485,
+      "base_wr": 0.6,
+      "delta": -0.11499999999999999,
+      "var": 0.0024488749999999997
+     },
+     {
+      "team": "U_90b94599",
+      "arm_wr": 0.505,
+      "base_wr": 0.585,
+      "delta": -0.07999999999999996,
+      "var": 0.0024637500000000002
+     },
+     {
+      "team": "U_dbf81d8e",
+      "arm_wr": 0.645,
+      "base_wr": 0.66,
+      "delta": -0.015000000000000013,
+      "var": 0.002266875
+     }
+    ]
+   },
+   "sub_floor": {
+    "n_teams": 2,
+    "mean_delta": 0.0,
+    "ci95_cluster_bootstrap": [
+     -0.0050000000000000044,
+     0.0050000000000000044
+    ],
+    "se_binomial": 0.03525177300505607,
+    "ci95_binomial": [
+     -0.06909347508990989,
+     0.06909347508990989
+    ],
+    "z_binomial": 0.0,
+    "sd_per_team_observed": 0.007071067811865481,
+    "sd_per_team_binomial": 0.04985353548144805,
+    "dispersion_ratio": 0.14183683751971474,
+    "pooled_arm_wr": 0.5325,
+    "pooled_base_wr": 0.5325,
+    "rows": [
+     {
+      "team": "U_61590463",
+      "arm_wr": 0.55,
+      "base_wr": 0.555,
+      "delta": -0.0050000000000000044,
+      "var": 0.0024723749999999997
+     },
+     {
+      "team": "U_92832108",
+      "arm_wr": 0.515,
+      "base_wr": 0.51,
+      "delta": 0.0050000000000000044,
+      "var": 0.0024983749999999997
+     }
+    ]
+   }
+  },
+  "self_fold_zero_content": {
+   "available": false,
+   "needs": [
+    "R3SELF"
+   ]
+  }
+ },
+ "taught9_companion": {
+  "why": "The SAME contrast on the 9 teams rev-2's fold actually TAUGHT, from the training session's standing fold-quality meter (9 x 300, same fixed target). Already banked for every arm, so it costs no battles and it says whether the plain-training effect is specific to untaught teams or general.",
+  "teams": [
+   "ZapDug",
+   "JynxSO",
+   "RaikouCelebi",
+   "MixZap",
+   "BlueOffense",
+   "MedichamCune",
+   "CBMetaCroCune",
+   "Q6a",
+   "Q6b"
+  ],
+  "n_per_team": 300,
+  "arms": {
+   "REV1FIN": {
+    "run": "ai_v9_29_rev1_0823",
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/taught9_REV1FIN.json",
+    "meta": {
+     "tag": "R3",
+     "model": "models/ai_v9_29_rev1_0823/final_model.zip",
+     "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+     "n_per_team": 300,
+     "seed_convention": "1000 + slice_index",
+     "pool": 719
+    }
+   },
+   "R2PLAIN": {
+    "run": "ai_v9_62_R2PLAIN_0827",
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/taught9_R2PLAIN.json",
+    "meta": {
+     "tag": "R2PLAIN",
+     "model": "models/ai_v9_62_R2PLAIN_0827/final_model.zip",
+     "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+     "n_per_team": 300,
+     "seed_convention": "1000 + slice_index",
+     "pool": 719
+    }
+   },
+   "R2CTRL": {
+    "run": "ai_v9_58_R2CTRL_0827",
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/taught9_R2CTRL.json",
+    "meta": {
+     "tag": "R2CTRL",
+     "model": "models/ai_v9_58_R2CTRL_0827/final_model.zip",
+     "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+     "n_per_team": 300,
+     "seed_convention": "1000 + slice_index",
+     "pool": 719
+    }
+   },
+   "R2ACTION": {
+    "run": "ai_v9_59_R2ACTION_0827",
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/taught9_R2ACTION.json",
+    "meta": {
+     "tag": "R2ACTION",
+     "model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+     "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+     "n_per_team": 300,
+     "seed_convention": "1000 + slice_index",
+     "pool": 719
+    }
+   },
+   "R3SELF": {
+    "run": "ai_v9_72_R3SELF_0828",
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/taught9_R3SELF.json",
+    "meta": {
+     "tag": "R3SELF",
+     "model": "models/ai_v9_72_R3SELF_0828/final_model.zip",
+     "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+     "n_per_team": 300,
+     "seed_convention": "1000 + slice_index",
+     "pool": 719
+    }
+   },
+   "R4ACTION": {
+    "run": "ai_v9_76_R4ACTION_0830",
+    "path": "/home/goodlad/dev/gen3ai/.claude/worktrees/simplify-p0/designs/research_state/measurements/plain_training_robbery_inputs/taught9_R4ACTION.json",
+    "meta": {
+     "tag": "R4ACTION",
+     "model": "models/ai_v9_76_R4ACTION_0830/final_model.zip",
+     "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+     "n_per_team": 300,
+     "seed_convention": "1000 + slice_index",
+     "pool": 719
+    }
+   }
+  },
+  "arms_missing": {},
+  "cells": {
+   "plain_training_drift": {
+    "available": true,
+    "arm": "R2PLAIN",
+    "base": "REV1FIN",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": -0.02370370370370371,
+     "ci95_cluster_bootstrap": [
+      -0.05481481481481481,
+      0.00481481481481479
+     ],
+     "se_binomial": 0.013503610924557511,
+     "ci95_binomial": [
+      -0.050170781115836435,
+      0.002763373708429013
+     ],
+     "z_binomial": -1.755360387390637,
+     "sd_per_team_observed": 0.048115729827054705,
+     "sd_per_team_binomial": 0.04051083277367253,
+     "dispersion_ratio": 1.1877250239675274,
+     "pooled_arm_wr": 0.5381481481481482,
+     "pooled_base_wr": 0.5618518518518518,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.53,
+       "base_wr": 0.58,
+       "delta": -0.04999999999999993,
+       "var": 0.0016423333333333333
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.5,
+       "base_wr": 0.5766666666666667,
+       "delta": -0.07666666666666666,
+       "var": 0.0016470740740740742
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5433333333333333,
+       "base_wr": 0.52,
+       "delta": 0.023333333333333317,
+       "var": 0.001659074074074074
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.5466666666666666,
+       "base_wr": 0.5733333333333334,
+       "delta": -0.026666666666666727,
+       "var": 0.0016414814814814816
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.5033333333333333,
+       "base_wr": 0.5033333333333333,
+       "delta": 0.0,
+       "var": 0.0016665925925925926
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.5366666666666666,
+       "base_wr": 0.5266666666666666,
+       "delta": 0.010000000000000009,
+       "var": 0.0016598148148148147
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.59,
+       "base_wr": 0.61,
+       "delta": -0.020000000000000018,
+       "var": 0.0015993333333333332
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.5866666666666667,
+       "base_wr": 0.55,
+       "delta": 0.036666666666666625,
+       "var": 0.0016332962962962963
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.5066666666666667,
+       "base_wr": 0.6166666666666667,
+       "delta": -0.10999999999999999,
+       "var": 0.001621148148148148
+      }
+     ]
+    }
+   },
+   "ecology_only": {
+    "available": true,
+    "arm": "R2CTRL",
+    "base": "REV1FIN",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": -0.060740740740740734,
+     "ci95_cluster_bootstrap": [
+      -0.08925925925925927,
+      -0.03259259259259259
+     ],
+     "se_binomial": 0.013514949638836378,
+     "ci95_binomial": [
+      -0.08723004203286003,
+      -0.03425143944862143
+     ],
+     "z_binomial": -4.494337186887989,
+     "sd_per_team_observed": 0.04627147482754414,
+     "sd_per_team_binomial": 0.04054484891650913,
+     "dispersion_ratio": 1.1412417622477127,
+     "pooled_arm_wr": 0.5011111111111111,
+     "pooled_base_wr": 0.5618518518518518,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.56,
+       "base_wr": 0.58,
+       "delta": -0.019999999999999907,
+       "var": 0.0016333333333333334
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.49333333333333335,
+       "base_wr": 0.5766666666666667,
+       "delta": -0.08333333333333331,
+       "var": 0.0016469259259259258
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5333333333333333,
+       "base_wr": 0.52,
+       "delta": 0.013333333333333308,
+       "var": 0.0016616296296296297
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.4533333333333333,
+       "base_wr": 0.5733333333333334,
+       "delta": -0.12000000000000005,
+       "var": 0.0016414814814814814
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.44333333333333336,
+       "base_wr": 0.5033333333333333,
+       "delta": -0.05999999999999994,
+       "var": 0.001655925925925926
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.47333333333333333,
+       "base_wr": 0.5266666666666666,
+       "delta": -0.05333333333333329,
+       "var": 0.0016619259259259259
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.5566666666666666,
+       "base_wr": 0.61,
+       "delta": -0.053333333333333344,
+       "var": 0.0016156296296296296
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.5133333333333333,
+       "base_wr": 0.55,
+       "delta": -0.036666666666666736,
+       "var": 0.0016577407407407409
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.48333333333333334,
+       "base_wr": 0.6166666666666667,
+       "delta": -0.13333333333333336,
+       "var": 0.00162037037037037
+      }
+     ]
+    }
+   },
+   "fold_rev2": {
+    "available": true,
+    "arm": "R2ACTION",
+    "base": "REV1FIN",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": 0.013333333333333345,
+     "ci95_cluster_bootstrap": [
+      -0.018518518518518514,
+      0.04666666666666668
+     ],
+     "se_binomial": 0.01342713915335733,
+     "ci95_binomial": [
+      -0.01298385940724702,
+      0.03965052607391371
+     ],
+     "z_binomial": 0.993013715062264,
+     "sd_per_team_observed": 0.05288877217540812,
+     "sd_per_team_binomial": 0.040281417460071994,
+     "dispersion_ratio": 1.3129819035745915,
+     "pooled_arm_wr": 0.5751851851851851,
+     "pooled_base_wr": 0.5618518518518518,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.6333333333333333,
+       "base_wr": 0.58,
+       "delta": 0.053333333333333344,
+       "var": 0.001586074074074074
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.53,
+       "base_wr": 0.5766666666666667,
+       "delta": -0.046666666666666634,
+       "var": 0.001644074074074074
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5533333333333333,
+       "base_wr": 0.52,
+       "delta": 0.033333333333333326,
+       "var": 0.0016558518518518517
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.5466666666666666,
+       "base_wr": 0.5733333333333334,
+       "delta": -0.026666666666666727,
+       "var": 0.0016414814814814816
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.53,
+       "base_wr": 0.5033333333333333,
+       "delta": 0.026666666666666727,
+       "var": 0.0016636296296296295
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.63,
+       "base_wr": 0.5266666666666666,
+       "delta": 0.10333333333333339,
+       "var": 0.001607962962962963
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.66,
+       "base_wr": 0.61,
+       "delta": 0.050000000000000044,
+       "var": 0.0015409999999999998
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.53,
+       "base_wr": 0.55,
+       "delta": -0.020000000000000018,
+       "var": 0.0016553333333333333
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.5633333333333334,
+       "base_wr": 0.6166666666666667,
+       "delta": -0.053333333333333344,
+       "var": 0.0016079259259259258
+      }
+     ]
+    }
+   },
+   "distillation_specific": {
+    "available": true,
+    "arm": "R2ACTION",
+    "base": "R2PLAIN",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": 0.037037037037037056,
+     "ci95_cluster_bootstrap": [
+      0.005555555555555585,
+      0.06703703703703705
+     ],
+     "se_binomial": 0.013465429325599878,
+     "ci95_binomial": [
+      0.010644795558861296,
+      0.06342927851521282
+     ],
+     "z_binomial": 2.7505277508399884,
+     "sd_per_team_observed": 0.05009558764237193,
+     "sd_per_team_binomial": 0.04039628797679964,
+     "dispersion_ratio": 1.2401037360448264,
+     "pooled_arm_wr": 0.5751851851851851,
+     "pooled_base_wr": 0.5381481481481482,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.6333333333333333,
+       "base_wr": 0.53,
+       "delta": 0.10333333333333328,
+       "var": 0.0016044074074074073
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.53,
+       "base_wr": 0.5,
+       "delta": 0.030000000000000027,
+       "var": 0.0016636666666666666
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5533333333333333,
+       "base_wr": 0.5433333333333333,
+       "delta": 0.010000000000000009,
+       "var": 0.001650925925925926
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.5466666666666666,
+       "base_wr": 0.5466666666666666,
+       "delta": 0.0,
+       "var": 0.0016521481481481482
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.53,
+       "base_wr": 0.5033333333333333,
+       "delta": 0.026666666666666727,
+       "var": 0.0016636296296296295
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.63,
+       "base_wr": 0.5366666666666666,
+       "delta": 0.09333333333333338,
+       "var": 0.0016058518518518518
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.66,
+       "base_wr": 0.59,
+       "delta": 0.07000000000000006,
+       "var": 0.0015543333333333333
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.53,
+       "base_wr": 0.5866666666666667,
+       "delta": -0.05666666666666664,
+       "var": 0.0016386296296296296
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.5633333333333334,
+       "base_wr": 0.5066666666666667,
+       "delta": 0.05666666666666664,
+       "var": 0.0016531481481481482
+      }
+     ]
+    }
+   },
+   "distillation_beyond_ecology": {
+    "available": true,
+    "arm": "R2ACTION",
+    "base": "R2CTRL",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": 0.07407407407407408,
+     "ci95_cluster_bootstrap": [
+      0.04777777777777778,
+      0.10185185185185186
+     ],
+     "se_binomial": 0.013476800164029282,
+     "ci95_binomial": [
+      0.04765954575257669,
+      0.10048860239557147
+     ],
+     "z_binomial": 5.496414072517306,
+     "sd_per_team_observed": 0.04452769979891972,
+     "sd_per_team_binomial": 0.04043040049208785,
+     "dispersion_ratio": 1.1013420410622374,
+     "pooled_arm_wr": 0.5751851851851851,
+     "pooled_base_wr": 0.5011111111111111,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.6333333333333333,
+       "base_wr": 0.56,
+       "delta": 0.07333333333333325,
+       "var": 0.0015954074074074074
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.53,
+       "base_wr": 0.49333333333333335,
+       "delta": 0.03666666666666668,
+       "var": 0.0016635185185185186
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5533333333333333,
+       "base_wr": 0.5333333333333333,
+       "delta": 0.020000000000000018,
+       "var": 0.0016534814814814815
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.5466666666666666,
+       "base_wr": 0.4533333333333333,
+       "delta": 0.09333333333333332,
+       "var": 0.0016521481481481482
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.53,
+       "base_wr": 0.44333333333333336,
+       "delta": 0.08666666666666667,
+       "var": 0.0016529629629629628
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.63,
+       "base_wr": 0.47333333333333333,
+       "delta": 0.15666666666666668,
+       "var": 0.001607962962962963
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.66,
+       "base_wr": 0.5566666666666666,
+       "delta": 0.10333333333333339,
+       "var": 0.0015706296296296297
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.53,
+       "base_wr": 0.5133333333333333,
+       "delta": 0.01666666666666672,
+       "var": 0.0016630740740740742
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.5633333333333334,
+       "base_wr": 0.48333333333333334,
+       "delta": 0.08000000000000002,
+       "var": 0.0016523703703703705
+      }
+     ]
+    }
+   },
+   "ecology_beyond_plain": {
+    "available": true,
+    "arm": "R2CTRL",
+    "base": "R2PLAIN",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": -0.03703703703703703,
+     "ci95_cluster_bootstrap": [
+      -0.060740740740740734,
+      -0.012592592592592593
+     ],
+     "se_binomial": 0.013552991729481255,
+     "ci95_binomial": [
+      -0.0636009008268203,
+      -0.010473173247253768
+     ],
+     "z_binomial": -2.7327572964183187,
+     "sd_per_team_observed": 0.03881739459902983,
+     "sd_per_team_binomial": 0.04065897518844377,
+     "dispersion_ratio": 0.9547066648660304,
+     "pooled_arm_wr": 0.5011111111111111,
+     "pooled_base_wr": 0.5381481481481482,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.56,
+       "base_wr": 0.53,
+       "delta": 0.030000000000000027,
+       "var": 0.0016516666666666667
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.49333333333333335,
+       "base_wr": 0.5,
+       "delta": -0.006666666666666654,
+       "var": 0.0016665185185185186
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5333333333333333,
+       "base_wr": 0.5433333333333333,
+       "delta": -0.010000000000000009,
+       "var": 0.0016567037037037036
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.4533333333333333,
+       "base_wr": 0.5466666666666666,
+       "delta": -0.09333333333333332,
+       "var": 0.0016521481481481482
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.44333333333333336,
+       "base_wr": 0.5033333333333333,
+       "delta": -0.05999999999999994,
+       "var": 0.001655925925925926
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.47333333333333333,
+       "base_wr": 0.5366666666666666,
+       "delta": -0.0633333333333333,
+       "var": 0.0016598148148148147
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.5566666666666666,
+       "base_wr": 0.59,
+       "delta": -0.033333333333333326,
+       "var": 0.0016289629629629631
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.5133333333333333,
+       "base_wr": 0.5866666666666667,
+       "delta": -0.07333333333333336,
+       "var": 0.0016410370370370372
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.48333333333333334,
+       "base_wr": 0.5066666666666667,
+       "delta": -0.023333333333333373,
+       "var": 0.0016655925925925926
+      }
+     ]
+    }
+   },
+   "fold_rev4": {
+    "available": true,
+    "arm": "R4ACTION",
+    "base": "R2ACTION",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": -0.036666666666666674,
+     "ci95_cluster_bootstrap": [
+      -0.05925925925925925,
+      -0.012592592592592612
+     ],
+     "se_binomial": 0.013460317806950402,
+     "ci95_binomial": [
+      -0.06304888956828947,
+      -0.010284443765043887
+     ],
+     "z_binomial": -2.7240565336231057,
+     "sd_per_team_observed": 0.03844187531556929,
+     "sd_per_team_binomial": 0.040380953420851205,
+     "dispersion_ratio": 0.9519803783463754,
+     "pooled_arm_wr": 0.5385185185185185,
+     "pooled_base_wr": 0.5751851851851851,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.56,
+       "base_wr": 0.6333333333333333,
+       "delta": -0.07333333333333325,
+       "var": 0.0015954074074074074
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.5333333333333333,
+       "base_wr": 0.53,
+       "delta": 0.0033333333333332993,
+       "var": 0.001659962962962963
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.5033333333333333,
+       "base_wr": 0.5533333333333333,
+       "delta": -0.050000000000000044,
+       "var": 0.001657148148148148
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.5133333333333333,
+       "base_wr": 0.5466666666666666,
+       "delta": -0.033333333333333326,
+       "var": 0.0016588148148148148
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.4666666666666667,
+       "base_wr": 0.53,
+       "delta": -0.06333333333333335,
+       "var": 0.001659962962962963
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.5533333333333333,
+       "base_wr": 0.63,
+       "delta": -0.07666666666666666,
+       "var": 0.0016008518518518518
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.5933333333333334,
+       "base_wr": 0.66,
+       "delta": -0.06666666666666665,
+       "var": 0.0015522962962962964
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.5533333333333333,
+       "base_wr": 0.53,
+       "delta": 0.023333333333333317,
+       "var": 0.0016541851851851852
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.57,
+       "base_wr": 0.5633333333333334,
+       "delta": 0.006666666666666599,
+       "var": 0.001636962962962963
+      }
+     ]
+    }
+   },
+   "self_fold_zero_content": {
+    "available": true,
+    "arm": "R3SELF",
+    "base": "R2ACTION",
+    "all9": {
+     "n_teams": 9,
+     "mean_delta": -0.08962962962962963,
+     "ci95_cluster_bootstrap": [
+      -0.11148148148148149,
+      -0.06407407407407407
+     ],
+     "se_binomial": 0.01344503960863381,
+     "ci95_binomial": [
+      -0.11598190726255189,
+      -0.06327735199670736
+     ],
+     "z_binomial": -6.666371556992174,
+     "sd_per_team_observed": 0.03838563260027712,
+     "sd_per_team_binomial": 0.040335118825901434,
+     "dispersion_ratio": 0.9516677703606408,
+     "pooled_arm_wr": 0.4855555555555556,
+     "pooled_base_wr": 0.5751851851851851,
+     "rows": [
+      {
+       "team": "ZapDug",
+       "arm_wr": 0.56,
+       "base_wr": 0.6333333333333333,
+       "delta": -0.07333333333333325,
+       "var": 0.0015954074074074074
+      },
+      {
+       "team": "JynxSO",
+       "arm_wr": 0.43,
+       "base_wr": 0.53,
+       "delta": -0.10000000000000003,
+       "var": 0.0016473333333333333
+      },
+      {
+       "team": "RaikouCelebi",
+       "arm_wr": 0.4533333333333333,
+       "base_wr": 0.5533333333333333,
+       "delta": -0.10000000000000003,
+       "var": 0.0016499259259259258
+      },
+      {
+       "team": "MixZap",
+       "arm_wr": 0.43,
+       "base_wr": 0.5466666666666666,
+       "delta": -0.11666666666666664,
+       "var": 0.0016430740740740741
+      },
+      {
+       "team": "BlueOffense",
+       "arm_wr": 0.51,
+       "base_wr": 0.53,
+       "delta": -0.020000000000000018,
+       "var": 0.0016633333333333335
+      },
+      {
+       "team": "MedichamCune",
+       "arm_wr": 0.5933333333333334,
+       "base_wr": 0.63,
+       "delta": -0.036666666666666625,
+       "var": 0.0015812962962962964
+      },
+      {
+       "team": "CBMetaCroCune",
+       "arm_wr": 0.53,
+       "base_wr": 0.66,
+       "delta": -0.13,
+       "var": 0.0015783333333333333
+      },
+      {
+       "team": "Q6a",
+       "arm_wr": 0.41333333333333333,
+       "base_wr": 0.53,
+       "delta": -0.1166666666666667,
+       "var": 0.0016386296296296296
+      },
+      {
+       "team": "Q6b",
+       "arm_wr": 0.45,
+       "base_wr": 0.5633333333333334,
+       "delta": -0.11333333333333334,
+       "var": 0.001644962962962963
+      }
+     ]
+    }
+   }
+  }
+ }
+}

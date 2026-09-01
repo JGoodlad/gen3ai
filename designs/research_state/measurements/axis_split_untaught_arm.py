@@ -25,6 +25,7 @@ Run (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src):
 import asyncio
 import json
 import math
+import os
 import random
 import sys
 import time
@@ -112,9 +113,26 @@ def run(model_path, tag, out_path, n=200, conc=3):
             "pool": n_pool,
         }
     }
+    # RESUME (gen3_untaught_arm_resume_v1, 2026-08-31). Every team is INDEPENDENT — its opponent
+    # draw comes from `random.Random(1000 + _SEED_BASE + si)`, an index-derived seed, and the sim
+    # dice are minted per battle — so re-entering the loop with earlier teams already present
+    # reproduces exactly the run that would have happened uninterrupted. This is NOT an optimization:
+    # at `conc >= 2` the bridge runner takes its BOUNDED-CONCURRENCY path, whose per-battle bound is
+    # a deliberate TOTAL-DURATION cap, and CLAUDE.md is explicit that scaling does not rescue a cap.
+    # Beside a saturated box that cap fires, and without this an 8-team arm lost every completed team.
+    if os.path.exists(out_path):
+        prior = json.load(open(out_path))
+        done = {k: v for k, v in prior.items() if k not in ("_meta", "POOLED")}
+        if done:
+            res.update(done)
+            print(f"  [{tag}] RESUMING — {len(done)} team(s) already collected: "
+                  f"{', '.join(sorted(done))}", flush=True)
     print(f"  [{tag}] {model_path}  |  {len(SLICES)} teams x {n} games  |  pool {n_pool}", flush=True)
-    tw = tn = 0
+    tw = sum(v["wins"] for k, v in res.items() if k != "_meta")
+    tn = sum(v["games"] for k, v in res.items() if k != "_meta")
     for si, (sname, spath) in enumerate(SLICES):
+        if sname in res:
+            continue
         rng = random.Random(1000 + _SEED_BASE + si)
         seq = [rng.randrange(n_pool) for _ in range(n)]
         pilot = RLPlayer(
