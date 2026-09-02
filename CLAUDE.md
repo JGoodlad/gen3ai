@@ -843,7 +843,13 @@ alone** (`train/noise_scale{,_ratio,_share}_{policy,value,entropy,aux,distill}`,
 total is measured on the SUM of every loss term, and this tree's dozen dense supervised aux heads
 have far lower gradient noise than the clipped surrogate — so a total reading "over-batched" can be
 aux DEFLATION rather than a batch that is too big, and the advisor says so explicitly when the two
-disagree. Details: `src/agents/training/CLAUDE.md` → Gradient accumulation.
+disagree. **`--adaptive-batch {off,total,policy}`** (OFF by default, byte-identical off) closes that
+loop: it holds the chosen term's noise ratio near `--adaptive-batch-target` by doubling/halving K
+itself — never `--batch-size`, so every forward shape and the activation peak are unchanged and
+`--compile-trainer` never notices — with the moved K persisted in the checkpoint sidecar. It is the
+SLOW controller of the two; at fixed `target_kl` a bigger K makes the KL lr loop raise lr, so the
+dose is a product of both and `train/dose_rate` is what the operator watches. Details:
+`src/agents/training/CLAUDE.md` → Gradient accumulation, and → `--adaptive-batch`.
 
 Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (each `.zip`
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`

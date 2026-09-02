@@ -119,6 +119,37 @@ def _terminal_scale_guards(args) -> None:
           f"(value_dist/mean_abs_err looks BETTER as the support widens).")
 
 
+def _adaptive_batch_guards(args, parser) -> None:
+    """Validate the `--adaptive-batch` family — the ONLY gate on it (training-only, never recorded).
+
+    The one non-obvious refusal is the last: `--adaptive-batch policy` steers by
+    `train/noise_scale_ratio_policy`, which only the PER-TERM probe produces. With the probe
+    switched off by `$GEN3AI_NOISE_SCALE_PER_TERM=0` that series never exists, so the controller
+    would sit in its `unavailable` branch for the whole run — a loop that silently does nothing,
+    which is the failure mode hardest to notice and cheapest to refuse.
+    """
+    import os
+    mode = getattr(args, "adaptive_batch", "off")
+    if mode == "off":
+        return
+    if args.adaptive_batch_target <= 0.0:
+        parser.error("--adaptive-batch-target must be > 0 (it is a noise-scale RATIO setpoint)")
+    if args.adaptive_batch_band <= 1.0:
+        parser.error("--adaptive-batch-band must be > 1 — it is a MULTIPLICATIVE no-op band "
+                     "[target/band, target*band]; 1.0 would make every reading out of band")
+    if args.adaptive_batch_min_accum < 1:
+        parser.error("--adaptive-batch-min-accum must be >= 1")
+    if args.adaptive_batch_max_accum < args.adaptive_batch_min_accum:
+        parser.error("--adaptive-batch-max-accum must be >= --adaptive-batch-min-accum")
+    if args.adaptive_batch_every < 1:
+        parser.error("--adaptive-batch-every must be >= 1 (it counts ROLLOUTS between K moves)")
+    env = os.environ.get("GEN3AI_NOISE_SCALE_PER_TERM")
+    if mode == "policy" and env is not None and env.strip().lower() in ("", "0", "false", "off", "no"):
+        parser.error("--adaptive-batch policy steers by train/noise_scale_ratio_policy, which only "
+                     "the PER-TERM noise-scale probe emits — and $GEN3AI_NOISE_SCALE_PER_TERM is "
+                     f"set to {env!r}, which disables it. Unset it, or use --adaptive-batch total.")
+
+
 def _announce_cf_duty_cycle(args) -> None:
     """PRINT the counterfactual label DUTY CYCLE, and REFUSE a starved one.
 
@@ -593,6 +624,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # 0.0 (arm F's pure-distill/aux phase) is the intended floor. policy_grad_coef is training-only
         # (not version-locked), so guard it here — the only gate.
         parser.error("--policy-grad-coef must be >= 0 (1 = upstream PPO; 0 = no policy-gradient term)")
+    _adaptive_batch_guards(args, parser)
     if args.intent_label_bot_weight is not None and args.intent_label_bot_weight < 0.0:
         # A negative weight would train alpha/beta to be MAXIMALLY wrong about bots — the opposite
         # of "train on them less". 0.0 (ignore bot rows entirely) is the intended floor.

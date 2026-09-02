@@ -17,7 +17,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 |---|---|
 | `ppo.py` | `InstrumentedMaskablePPO` + `train()` — the vendored upstream override and **the whole fold sequence** |
 | `hparams.py` | every after-construction knob `train_rl_agent` sets (`value_tail_weight`, the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
-| `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor |
+| `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor + `noise_ratio_sample`, the read seam `--adaptive-batch` steers by |
 | `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the dense aux heads'? |
 | `distill_terms.py` | search-teacher AWR · OPD · the exploiter-distillation family (policy KL — or the top-K/action-CE form with the advantage gate, `_gated_action_distill_loss` — value MSE, the FitNets hint) |
 | `value_terms.py` | the win-prob BCE · the value-dist HL-Gauss CE · `_value_loss_from_se` |
@@ -3421,6 +3421,109 @@ clamp, the freeze holding across a KL excursion a control arm demonstrably moves
 config refusals), `src/agents/training/dose_test.py` (the arithmetic against v8's own recorded row,
 the block, the pickle-safety of the snapshot), `src/main/dose_test.py` (source precedence, step
 ordering, the shape-moved flag, the CLI, and that importing it pulls in no torch).
+
+### `--adaptive-batch` — CLOSING the loop on the noise scale (`gen3_adaptive_batch_v1`)
+
+Everything above is a **reading**. The NSR advisor printed *"raise `--grad-accum-steps` ~N×"* into
+the Events panel and a human typed it on the next relaunch. `--adaptive-batch {off,total,policy}`
+turns that into a controller — the second one this trainer runs, beside the KL-driven lr loop.
+**OFF by default; an `off` run registers no callback at all and is byte-identical** (pinned by
+`test_the_callback_cannot_change_the_ppo_update` + `test_the_flag_defaults_to_off_and_registers_no_callback`).
+
+**THE RULE, in one paragraph.** Every rollout the controller reads the smoothed noise-scale ratio
+of the chosen term and the number of EMA folds behind it. It does nothing until the EMA is warm
+(20 folds — the NSR advisor's own warm-up, because a single-sample `B_simple` can SIGN-FLIP) and at
+least `--adaptive-batch-every` rollouts (default 4) have passed since the last move. Then, if the
+ratio has left `[target/band, target·band]` (defaults 1.0 / 2.0), K is **DOUBLED** when it is ABOVE
+(noise-limited: each update is mostly sideways) and **HALVED** when BELOW (over-batched: buy update
+steps instead of averaging), clamped into `[max(2, --adaptive-batch-min-accum), --adaptive-batch-max-accum]`.
+An unreadable ratio, a cold EMA, a within-band reading or a clamp is a **named no-op**, reported
+ONCE (a silently idle loop is indistinguishable from a broken one; a loop that says so every
+rollout is noise).
+
+**Why K and never `--batch-size`** — three independent reasons and all three matter: (1) SHAPE —
+`--compile-trainer` keys graphs on shape against a `cache_size_limit` of 8, so a moving batch size
+is the unbounded shape set `check_shape_stability` exists to refuse, and dropping to eager is
+invisible (~1.75×); moving K leaves every forward shape byte-identical. (2) MEMORY — the activation
+peak is one micro-batch, so K is the one batch lever with no VRAM cost. (3) EXACTNESS — K
+micro-batches summed **is** the gradient of a `batch_size·K` batch. `check_shape_stability` takes
+`n_steps`/`n_envs`/`batch_size`/`async_rollout` and *not* K, which is the proof rather than the
+claim (`test_shape_stability_does_not_depend_on_k`), and a source scan fails any assignment to
+`batch_size` in the controller module.
+
+**🚨 THE FLOOR IS 2, NOT `--adaptive-batch-min-accum`.** The noise-scale estimator needs gradient
+norms at TWO batch sizes and gets the second from the accumulation group, so at K=1 it emits
+nothing — a loop allowed to reach K=1 would blind the signal it steers by and could never climb
+back out. The requested floor is raised to 2 and the raise is ANNOUNCED at startup.
+
+**`policy` is the mode to use.** It steers by `train/noise_scale_ratio_policy`; `total` steers by
+the legacy scalar. The section above is the whole argument: the total is ~100% the value term plus
+a dozen dense supervised aux heads and reads "over-batched" on runs whose policy term reads
+"noise-limited", so sizing on the total shrinks the batch the policy gradient needed. `policy`
+REQUIRES the per-term probe, and `$GEN3AI_NOISE_SCALE_PER_TERM=0` alongside it is a
+`parser.error` rather than a loop that silently never reads anything.
+
+**⚠️ WHY THE STEP IS 2× AND THE BAND MUST BE ≥ √2 — measured, and it corrected the design.** K is
+the ratio's denominator, so a move changes the reading INSTANTLY and exactly: doubling K halves the
+ratio. A correction therefore crosses to the *other* side of the band only when `target·band < ratio`
+and `ratio/2 < target/band` can both hold, i.e. iff **`band² < 2`**. The first draft of this
+documented the boundary as 2.0; running the test found `band=1.5` settling cleanly and the algebra
+put the real boundary at **√2 ≈ 1.4142** — pinned by a parametrized test straddling it (1.30 and
+1.41 chatter forever; 1.50 and 2.0 settle). The overshoot window `(target·band, 2·target/band)` is
+only 0.6% wide at 1.41, so the test starts *just* outside the band on purpose: a start further out
+takes several one-directional moves and lands in band, which is progress, not chatter, and would
+have passed for the wrong reason. Default 2.0 sits comfortably above; a narrower band is for a
+smoke that WANTS movement in a handful of rollouts.
+
+**THE TWO-CONTROLLER INTERACTION — read this before tuning either.** The KL lr controller and this
+one are COUPLED through the update: at a fixed `target_kl`, a larger K means each optimizer step
+consumes more data, so per-step KL falls, so the lr controller RAISES lr. **That is intended** —
+the batch loop fixes an update's signal-to-NOISE, the lr loop fixes its STEP SIZE — but it means
+the effective **dose is a product of two controllers**, and the scalar to watch is `train/dose_rate`,
+never either loop's own series. Two controllers chasing each other on one timescale is the classic
+oscillation, and they are separated by their SIGNALS rather than merely their cadences: the lr loop
+reads a KL EMA at `α=0.20` (half-life ~3 rollouts) and this one reads the noise-scale EMA at decay
+`0.99` (a several-hundred-call window) — ~30–100× slower-moving by construction. `--adaptive-batch-every`
+(4) is the second-order guard on top of that, and the lr loop's own 7-rollout post-move cooldown
+means the fast loop has re-settled before the slow one looks again.
+
+**PERSISTENCE is free and deliberately so.** `_model_hparams` already writes `grad_accum_steps`
+into every checkpoint sidecar, straight off the model attribute the callback owns — so a moved K is
+persisted by the EXISTING checkpointer with **no new key and no edit to the checkpoint path**.
+`build_callbacks` reads it back with `read_checkpoint_metadata` (the same sidecar `handoff_lr`
+rides in) and hands it to the callback as `resume_accum`, which installs it in
+`_on_training_start` — i.e. AFTER `model_build` applied the CLI `--grad-accum-steps`, so the
+controller's own history wins over the launch argv. A restart that TIGHTENS `--adaptive-batch-max-accum`
+re-clamps rather than reinstating the old K. **The noise-scale EMA itself is process-local and does
+NOT persist**, so after a restart the loop re-warms (20 folds) before it may move again — the right
+behaviour, not a gap: a cold EMA is not a reading.
+
+**The three series to read**: `train/grad_accum_steps` (K in force for the `train()` that follows),
+`train/effective_batch` (`batch_size·K`), `train/adaptive_batch_ratio_used` (the exact number each
+decision was made on). Every move also emits one Events line naming the ratio, the direction, the
+old and new effective batch, and that the dose moved.
+
+**⚠️ Like the two `--compile-*` flags, it is NOT inherited on a flagless resume** — a bare
+`--model … --steps …` gets `off`. The launcher forwards its own recorded argv verbatim, so a
+launcher-managed run keeps it across every periodic and crash restart; a hand-typed resume must
+re-type it.
+
+**SMOKE (2026-09-01, CPU `--debug --steps 34000 --n-steps 1024 --batch-size 128 --grad-accum-steps 2
+--adaptive-batch policy --adaptive-batch-every 1 --adaptive-batch-band 1.5`).** Read back from
+`tb/`: `train/grad_accum_steps` held at **2 for the first 20 rollouts** (the warm-up refusing to
+act — and `noise_scale_ratio_policy` read 0.09–0.99 through that window, so the guard is what kept
+a cold EMA from driving K DOWN), then **2 → 4 → 8 → 16 → 32** on readings of **432 → 24.1 → 6.76 →
+3.38**, every one above the band's 1.5, before parking at the `max_accum` clamp with the
+report-once line. Do not read those magnitudes as a production answer — a 128-row micro-batch on a
+toy is not the production shape — read them as the loop tracking the series it is supposed to.
+
+Tests: `adaptive_batch_callback_test.py` — the pure controller (planted ratio sequences → K
+trajectory, the walked-feedback hysteresis, the √2 boundary, cadence, both clamps, the floor,
+every unreadable-ratio form, constructor validation); the read seam returning exactly the recorded
+value under the same emit gate; the callback mutating `grad_accum_steps` and nothing else
+(behavioural + source scan + the `check_shape_stability` signature); report-once; the sidecar
+round-trip through real `record_checkpoint`/`read_checkpoint_metadata`; and the byte-identity gate
+(two identically-seeded fresh models, one with the callback attached and not moving K).
 
 ## The `signal/` group — advantage density × outcome entropy (`gen3_signal_rate_metrics_v1`)
 

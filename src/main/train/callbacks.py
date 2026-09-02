@@ -127,6 +127,36 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # are only readable together (see agents/training/CLAUDE.md → the `signal/` group).
     signal_callback = SignalMetricsCallback()
     callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), DoseLogCallback(), graceful_restart_callback, signal_callback]
+    # ADAPTIVE BATCH (gen3_adaptive_batch_v1): the second controller — it holds a gradient-noise-scale
+    # ratio near a target by moving `--grad-accum-steps` K, the one batch lever with no shape change
+    # and no memory cost. Registered only when the flag is on, so an `off` run adds no callback and
+    # records no series (byte-identical). K PERSISTS through the EXISTING checkpointer: `_model_hparams`
+    # already writes `grad_accum_steps` off the model attribute this callback owns, so a restart reads
+    # it back from the same sidecar `handoff_lr` rides in — no new key, no checkpoint-path edit.
+    if getattr(args, "adaptive_batch", "off") != "off":
+        from agents.training.adaptive_batch_callback import (
+            AdaptiveBatchCallback, AdaptiveBatchController,
+        )
+        _resumed_accum: int | None = None
+        if args.model and os.path.exists(args.model):
+            try:
+                _k = read_checkpoint_metadata(args.model).get("grad_accum_steps")
+                if isinstance(_k, int) and _k >= 1:
+                    _resumed_accum = int(_k)
+            except Exception as e:
+                print(f"[AdaptiveBatch] WARNING: failed to read grad_accum_steps from "
+                      f"{args.model}: {e} — starting from --grad-accum-steps instead.")
+        callbacks.append(AdaptiveBatchCallback(
+            AdaptiveBatchController(
+                mode=args.adaptive_batch,
+                target=args.adaptive_batch_target,
+                band=args.adaptive_batch_band,
+                min_accum=args.adaptive_batch_min_accum,
+                max_accum=args.adaptive_batch_max_accum,
+                every=args.adaptive_batch_every,
+            ),
+            resume_accum=_resumed_accum,
+        ))
     # RANK TRIPWIRE (gen3_distill_target_gate_v1, design_advantage_gated_distillation.md §4.1):
     # watchdog over the EXISTING rank/policy_pr probe — EMA vs the run's own early baseline, with
     # a persistence rule. Default "warn" (no fold runs blind again); pure diagnostic bookkeeping —

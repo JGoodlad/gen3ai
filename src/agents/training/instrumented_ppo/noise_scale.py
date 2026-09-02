@@ -202,3 +202,35 @@ class NoiseScaleDiagnostics:
         if not ema or not (ema[1] > 1e-12 and ema[0] > 0.0) or not b_big:
             return None
         return float((ema[0] / ema[1]) / b_big)
+
+    def _total_ratio(self, b_big):
+        """`B_simple / b_big` from the TOTAL gradient's smoothed EMAs, or None if not readable.
+
+        The same emit gate `train()` applies before recording `train/noise_scale_ratio` (both EMAs
+        positive), so this returns exactly the value TensorBoard carries — never a value the
+        series itself withheld."""
+        if self._noise_ema_s is None or self._noise_ema_g2 is None or not b_big:
+            return None
+        if not (self._noise_ema_g2 > 1e-12 and self._noise_ema_s > 0.0):
+            return None
+        return float((self._noise_ema_s / self._noise_ema_g2) / b_big)
+
+    def noise_ratio_sample(self, kind, b_big):
+        """`(ratio, n_samples)` for a CONSUMER of the noise scale — `'total'`, or a term group.
+
+        The read seam for `--adaptive-batch` (`agents.training.adaptive_batch_callback`), which
+        steers `grad_accum_steps` by one of these ratios. It exists so the controller reads the
+        EMA this class already maintains instead of estimating anything itself: a control loop and
+        the TensorBoard series it is judged by MUST be the same number, or a post-mortem compares
+        the controller against a quantity it never saw.
+
+        `n_samples` is the fold count behind the ratio — the warm-up gate. `_nsr_samples` counts
+        the calls on which the TOTAL was readable (it is incremented by
+        `_emit_noise_scale_warnings`, which fires only then); a per-term group carries its own
+        count in slot 2 of its EMA triple. Returns `(None, 0)` for an unknown kind rather than
+        raising, because a diagnostic read must never be able to take a run down."""
+        if kind == "total":
+            return self._total_ratio(b_big), int(self._nsr_samples)
+        ema = (self._noise_ema_terms or {}).get(kind)
+        n = int(ema[2]) if ema else 0
+        return self._per_term_ratio(kind, b_big), n

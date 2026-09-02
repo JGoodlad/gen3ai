@@ -20,7 +20,62 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "byte-identical to stock). Use it to keep a large effective batch when the "
                              "full minibatch OOMs: e.g. --batch-size 4096 --grad-accum-steps 4 ≈ "
                              "--batch-size 16384 at ¼ the activation peak. A train-loop knob (not "
-                             "version-locked); pass it on every resume like --batch-size.")
+                             "version-locked); pass it on every resume like --batch-size. With "
+                             "--adaptive-batch this value is the STARTING K only — the controller "
+                             "owns it afterwards and persists it in the checkpoint sidecar.")
+    parser.add_argument("--adaptive-batch", "--adaptive_batch", dest="adaptive_batch",
+                        choices=["off", "total", "policy"], default="off",
+                        help="FEEDBACK LOOP ON THE EFFECTIVE BATCH (gen3_adaptive_batch_v1): hold a "
+                             "gradient-noise-scale ratio near --adaptive-batch-target by moving "
+                             "--grad-accum-steps K (doubling/halving), never --batch-size — so every "
+                             "forward shape is unchanged (--compile-trainer sees nothing), the "
+                             "activation peak is unchanged, and the new effective batch is EXACT "
+                             "rather than approximated. off (default) = no controller, no callback, "
+                             "byte-identical. 'policy' steers by train/noise_scale_ratio_policy (the "
+                             "clipped surrogate's OWN noise scale) and is the one to use: on this tree "
+                             "the total gradient is ~100%% the value term plus a dozen dense "
+                             "supervised aux heads, so the total reads 'over-batched' (0.001-0.06 "
+                             "measured) on runs whose policy term reads 'noise-limited' (2.7-6.2 on "
+                             "the same calls) — sizing on the total there shrinks the batch the "
+                             "policy gradient needed. It REQUIRES the per-term probe "
+                             "($GEN3AI_NOISE_SCALE_PER_TERM, on by default). 'total' steers by the "
+                             "legacy scalar train/noise_scale_ratio. TRAINING-only (not "
+                             "version-locked); the loop's K survives a launcher restart via the "
+                             "checkpoint sidecar.")
+    parser.add_argument("--adaptive-batch-target", "--adaptive_batch_target",
+                        dest="adaptive_batch_target", type=float, default=1.0,
+                        help="The noise-scale ratio --adaptive-batch holds. 1.0 (default) = keep the "
+                             "critical batch equal to the effective batch, McCandlish's sweet spot. "
+                             ">1 deliberately runs noise-limited (more, cheaper update steps); <1 "
+                             "deliberately over-batches.")
+    parser.add_argument("--adaptive-batch-band", "--adaptive_batch_band",
+                        dest="adaptive_batch_band", type=float, default=2.0,
+                        help="MULTIPLICATIVE no-op band around the target: the loop acts only when the "
+                             "smoothed ratio leaves [target/band, target*band]. Default 2.0, mirroring "
+                             "the KL lr controller's kl_factor. A K move changes the ratio by exactly "
+                             "2x, so a correction can only overshoot to the OTHER side of the band "
+                             "when band^2 < 2 — at any band >= sqrt(2) (~1.414) one move can never "
+                             "cross the band and the loop settles. Measured: 1.41 chatters, 1.50 does "
+                             "not. Use a narrower band only to force movement in a short smoke.")
+    parser.add_argument("--adaptive-batch-min-accum", "--adaptive_batch_min_accum",
+                        dest="adaptive_batch_min_accum", type=int, default=1,
+                        help="Lower clamp on K. NOTE the loop raises an effective floor of 2 and says "
+                             "so: the noise-scale estimator needs gradient norms at TWO batch sizes "
+                             "and gets the second from the accumulation group, so at K=1 it emits "
+                             "nothing and the controller would be permanently blind.")
+    parser.add_argument("--adaptive-batch-max-accum", "--adaptive_batch_max_accum",
+                        dest="adaptive_batch_max_accum", type=int, default=32,
+                        help="Upper clamp on K. At --batch-size 2048 the default 32 tops out at an "
+                             "effective batch of 65536. The clamp is reported once when the ratio "
+                             "wants past it.")
+    parser.add_argument("--adaptive-batch-every", "--adaptive_batch_every",
+                        dest="adaptive_batch_every", type=int, default=4,
+                        help="Minimum rollouts between K moves (default 4). The batch loop must be the "
+                             "SLOWER of the two controllers so it and the KL lr loop do not fight, and "
+                             "the separation is really in the SIGNALS: the lr loop reads a KL EMA with "
+                             "alpha=0.20 (half-life ~3 rollouts) while this reads the noise-scale EMA "
+                             "at decay 0.99 (a several-hundred-call window), i.e. ~30-100x "
+                             "slower-moving. This cadence is the second-order guard on top of that.")
     parser.add_argument("--checkpoint-every-steps", "--checkpoint_every_steps",
                         dest="checkpoint_every_steps", type=int, default=None,
                         help="ENV-STEP interval between periodic checkpoints. Default None = the "
