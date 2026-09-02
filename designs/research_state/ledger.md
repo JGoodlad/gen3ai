@@ -8571,3 +8571,51 @@ stop, anneal its coefficient, or switch its target once on-slice absorption plat
 49954120) are the signals, and a dual-ascent coefficient on a collateral-KL budget is the
 mechanism to build. (d) The three-dose cell should keep EVERY checkpoint (`--checkpoint-every-steps
 500000`) and score the untaught meter at ≥3 points per arm, not the endpoint alone.
+
+### 🟢 WHAT v8's LAST 2.5M UNDID: nothing — the gift is 92% INTACT at the end; the decay is the TEACHERS' fingerprint LEAKING onto untaught boards (2026-09-01, late)
+
+`measurements/v8_gift_decay_fingerprint_2026-09-01.{md,json,_tables.md,_rows_*.jsonl.gz,_cells.jsonl.gz}`
++ probe/analyzer/bank + inputs · M4's dual-scoring fingerprint extended to THREE arms (parent · peak
+`checkpoint_290115536` · final) on identical boards · 2,112 battles · 80,882 dual-scored decisions ·
+528 cells · 0 errors · M4 reproduction cosine 0.985 untaught / 0.980 taught · era pin `b13b30b` ·
+stamp greedy · node bridge · reference `ai_v8_03` · 16 untaught + 6 taught teams × 8 opponents.
+
+| contrast | cosine | 95% CI | perm p | ceiling |
+|---|---:|---|---|---:|
+| untaught parent→peak vs untaught peak→final (H1: reversal) | −0.405 | [−0.62, −0.09] | 0.030 | 0.78 |
+| **taught parent→peak vs untaught peak→final (H2: teacher pull)** | **+0.559** | [+0.10, +0.68] | **0.0015** | 0.49 |
+| untaught parent→peak vs untaught parent→FINAL | **+0.864** | [+0.67, +0.95] | 0.000 | 0.75 |
+
+**H1 is arithmetic, not mechanism.** `peak→final` shares an endpoint with `parent→peak`, so a
+negative cosine is expected under a null of unrelated change: the shared-endpoint permutation null
+is −0.672 [−0.77, −0.56] and the observed −0.405 sits ABOVE it; only 16.4% of the decay's energy
+lies along the ascent, and the endpoint holds **92% of the ascent's magnitude at cosine 0.864**.
+(This null was written post-hoc after the untaught pass and is reported beside, not instead of,
+the registered verdict.) **NOTHING WAS WALKED BACK.**
+
+**H2 PASSES: the decay direction IS the teachers' own on-slice fingerprint arriving on untaught
+boards** — `take_SE_attack` −2.35pp (z −5.0), `switch|low_hp` +3.0 (+4.2), `take_best_damage` −1.2,
+`attack_rate` −1.6, `switch|ahead_on_mons` +1.1, `attack_at_all` −1.75: the taught vector at ~⅓
+amplitude (cos +0.644 with M4's published taught vector). On TAUGHT boards the same change
+CONTINUES the teachers' direction (cos +0.965 with parent→peak, 112% of the magnitude) at no
+win-rate cost (−1.56pp [−8.3, +5.2] n.s.); on UNTAUGHT boards it costs **−5.66pp [−12.1, −0.2]**
+and is 1.72× larger. H3's "greedier" prediction is INVERTED — v8 got LESS greedy, past where it paid.
+
+**⇒ THE UNIFYING PICTURE, stated once.** Two things happen in a fold, in two directions: (1) the
+GIFT — an early, fast, off-slice habit change ORTHOGONAL to the taught content (M4: cos 0.14),
+largely landed by +3M and INTACT at +15M; (2) the LEAK — the taught content itself continuing to
+arrive on untaught boards, PARALLEL to the teachers' fingerprint, harmless on taught teams and a
+robbery on untaught ones. v8's endpoint = gift − leak. Gen-era folds at 3–6× the dose = leak from
+the start, gift never separable. **The robbery mechanism is the leak, and the leak is the licensing
+probe's overshoot half in behavioural coordinates.**
+
+**Design consequences (the ones that change what we build):** (a) an anchor to the FIXED PARENT
+taxes the gift too — the gift is displacement from the parent — so the fixed reference is the
+wrong one for a fold expected to gift; (b) what preserves the gift and stops the leak is a
+reference set AFTER the gift lands: `--distill-anchor-ref periodic` with ONE refresh at the on-slice
+absorption plateau (~+3M here), or `ema` with a window of that order, or the SOURCE-SEPARATED
+anchor (project only the distill gradient) which taxes the leak by construction and leaves the gift's
+PPO-driven part free; (c) the stop rule's signal is the LEAK, now directly measurable live as
+`distill/collateral_kl_vs_parent` RISING after `distill/teacher_agreement_on_slice` has plateaued —
+that pattern is the "stop" condition. Caveats carried: `peak` is a selected arm (magnitudes
+upward-biased, shapes not); taught-side reliabilities 0.30/0.42 at six teams cap the taught cosines.
