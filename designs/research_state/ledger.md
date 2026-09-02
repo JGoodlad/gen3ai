@@ -8508,3 +8508,15 @@ over-batched ~16×. The two tags sit in OPPOSITE bands ~35–40× apart: the `to
 case the advisor exists for. **Nothing leans on either reading yet** — a range is quoted only after
 R5F15 completes and the funding forks add points. What is banked: the value tag is absent by
 construction in production; the deflator is `aux`; the policy term reads ~2, not ≪1 and not ≫1.
+
+**Addendum (2026-09-01 ~19:00) — convention SETTLED, and the policy band is a TRANSIENT at n=3.**
+The training session confirmed the ratio arithmetically from R5F15's own scalars
+(`noise_scale_policy` 43,672.8 / 16,384 = 2.6656 = the logged `ratio_policy`; total 1,030.5 /
+16,384 = 0.0629) — ratio = critical ÷ effective, and its earlier reading was inverted. **The two
+readings implied OPPOSITE actions from the same number** (lower the batch vs raise it), which is why
+the convention had to be settled on the source and is now written in this ledger. The advisor's
+`total_vs_policy_disagree` warning FIRED (18:42:10, twice so far) with the convention verbatim.
+**Series, not a figure:** policy **2.666 → 2.088 → 1.748** (now BELOW `_NSR_HIGH` = 2.0, "in band"),
+total 0.0629 → 0.0635 → 0.0642, gap 42× → 33× → 27× and narrowing. What is solid: large aux
+deflation, opposite bands at the start of an arm, a 27–42× gap. What is NOT: the policy term's band
+— re-read at R5F15 completion and across the 8 funding forks before quoting one.
