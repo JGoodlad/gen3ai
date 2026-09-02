@@ -8652,3 +8652,27 @@ gradients, and the weight-space separability question answered where it can be a
 (b) the fold STOP RULE — dual ascent on the anchor coefficient toward a `collateral_kl_vs_parent`
 budget, plus a plateau detector on `teacher_agreement_on_slice` — the mechanism the transient-hump
 finding motivates.
+
+### 🛑 THE FOLD STOP RULE + a DUAL-ASCENT ANCHOR COEFFICIENT are BUILT (`2c2fa08c`, 2026-09-02 early) — OFF by default until the dose cell sizes the window
+
+`--distill-stop {off,warn,anneal,abort}`: a PLATEAU detector on `distill/teacher_agreement_on_slice`
+(EMA level now vs W rollouts ago < eps 0.005, signed — a FALLING agreement is a plateau too) AND-gated
+with a RISE detector on `distill/collateral_kl_vs_parent` (OLS slope over the last W+1 RAW readings,
+one-sided t > 2.0), held for `persist` (3) consecutive rollouts. `warn` logs; `anneal` decays
+`--distill-coef` ×0.7/rollout, snapping to exactly 0 so the teacher forwards actually stop; `abort`
+ends `learn()` cleanly through `rank_tripwire`'s channel (checkpoint saved, exit COMPLETE, no restart
+loop). Detector state persists across launcher restarts. `--distill-anchor-target-kl` turns the
+anchor coefficient into a dual variable: `coef ← clip(coef·exp(0.1·(kl_ema/target − 1)))`, every
+rollout, clamped to [0, 10× start] — the anchor becomes a CONSTRAINT with a readable KL budget.
+49 + tests; byte-identical off; `ppo.py` untouched.
+
+**METHOD SPECIMEN (the agent's own catch, pinned by a test):** fitting a TREND through an EMA reads
+WHITE NOISE as a significant rise — the filter's residuals understate the series' noise (a zero-mean
+wobble, sd 0.004 around 0.01, passed t > 2 at a 6-rollout window). The rise detector therefore fits
+RAW readings; the plateau half keeps its EMA because it compares two LEVELS, which autocorrelation
+does not bias. Same family as the point-estimate bar: a smoothed series is not the series.
+
+Smoke (toy, n=1): the dual traces a V (0.020 → 0.0146 while under budget, turning exactly as the EMA
+crosses the 0.01 target, climbing to 0.057 as collateral rises); `stop_state` 0 → 3 at the first
+rollout the rise test can fire. Not a fold (the toy absorbed nothing). Window sizing = the three-dose
+cell's job; **default stays off.**
