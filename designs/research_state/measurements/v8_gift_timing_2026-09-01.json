@@ -1,0 +1,1946 @@
+{
+ "_meta": {
+  "cells_dir": "/tmp/claude-1000/-home-goodlad-dev-gen3ai/1bdd246b-96e2-4e73-8e09-1d9427eea286/scratchpad/v8t",
+  "n_boot": 8000,
+  "boot_seed": 20260901,
+  "mid_arm_registered": "c283636",
+  "sensitivity_arm": "c287136",
+  "arm_steps": {
+   "parent": 277583267,
+   "c278672": 278671945,
+   "c280656": 280656375,
+   "c283636": 283635665,
+   "c287136": 287136098,
+   "c290116": 290115536,
+   "c291106": 291106373,
+   "c292101": 292100648,
+   "foldfinal": 292623779
+  },
+  "fork_step": 277583267,
+  "unit_of_clustering": "team",
+  "headline_estimator": "equal-weight mean over teams (probe P's convention)",
+  "teams_scored": [
+   "048182d1e9",
+   "32f549483f",
+   "593d7fb8a8",
+   "7163ad9387",
+   "7c2cb5cec1",
+   "89fcef3b53",
+   "9292a21833",
+   "a577a735b7",
+   "a6b630e6b4",
+   "b26ed9c8e1",
+   "c84f2b64a2",
+   "c90e782cad",
+   "d0a4d2bcb8",
+   "dd460484fc",
+   "eaa88395e7",
+   "f593373169"
+  ],
+  "n_teams": 16
+ },
+ "arms": {
+  "parent": {
+   "step": 277583267,
+   "fold_delta": 0,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.3877,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.0,
+   "gain_cluster_ci95": [
+    0.0,
+    0.0
+   ],
+   "gain_pooled_binomial_ci95": [
+    -0.02984,
+    0.02984
+   ],
+   "pooled_z": 0.0,
+   "teams_positive": 0,
+   "n_teams": 16
+  },
+  "c278672": {
+   "step": 278671945,
+   "fold_delta": 1088678,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.43408,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.04639,
+   "gain_cluster_ci95": [
+    0.02197,
+    0.07471
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.01629,
+    0.07649
+   ],
+   "pooled_z": 3.02,
+   "teams_positive": 14,
+   "n_teams": 16
+  },
+  "c280656": {
+   "step": 280656375,
+   "fold_delta": 3073108,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.46826,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.08057,
+   "gain_cluster_ci95": [
+    0.04883,
+    0.11279
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.05036,
+    0.11077
+   ],
+   "pooled_z": 5.228,
+   "teams_positive": 14,
+   "n_teams": 16
+  },
+  "c283636": {
+   "step": 283635665,
+   "fold_delta": 6052398,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.47803,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.09033,
+   "gain_cluster_ci95": [
+    0.05615,
+    0.12598
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.06011,
+    0.12055
+   ],
+   "pooled_z": 5.858,
+   "teams_positive": 15,
+   "n_teams": 16
+  },
+  "c287136": {
+   "step": 287136098,
+   "fold_delta": 9552831,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.46826,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.08057,
+   "gain_cluster_ci95": [
+    0.04736,
+    0.11182
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.05036,
+    0.11077
+   ],
+   "pooled_z": 5.228,
+   "teams_positive": 14,
+   "n_teams": 16
+  },
+  "c290116": {
+   "step": 290115536,
+   "fold_delta": 12532269,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.48438,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.09668,
+   "gain_cluster_ci95": [
+    0.06787,
+    0.125
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.06645,
+    0.12691
+   ],
+   "pooled_z": 6.269,
+   "teams_positive": 15,
+   "n_teams": 16
+  },
+  "c291106": {
+   "step": 291106373,
+   "fold_delta": 13523106,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.47021,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.08252,
+   "gain_cluster_ci95": [
+    0.0415,
+    0.11816
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.05231,
+    0.11273
+   ],
+   "pooled_z": 5.354,
+   "teams_positive": 14,
+   "n_teams": 16
+  },
+  "c292101": {
+   "step": 292100648,
+   "fold_delta": 14517381,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.45801,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.07031,
+   "gain_cluster_ci95": [
+    0.03271,
+    0.10352
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.04013,
+    0.10049
+   ],
+   "pooled_z": 4.566,
+   "teams_positive": 13,
+   "n_teams": 16
+  },
+  "foldfinal": {
+   "step": 292623779,
+   "fold_delta": 15040512,
+   "battles": 2048,
+   "requested": 2048,
+   "short": 0,
+   "pooled_wr": 0.4375,
+   "parent_pooled_wr": 0.3877,
+   "gain_mean_over_teams": 0.0498,
+   "gain_cluster_ci95": [
+    0.02148,
+    0.07617
+   ],
+   "gain_pooled_binomial_ci95": [
+    0.01969,
+    0.07992
+   ],
+   "pooled_z": 3.241,
+   "teams_positive": 13,
+   "n_teams": 16
+  }
+ },
+ "per_team": {
+  "parent": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 26,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.20312,
+    "parent_wr": 0.20312,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 42,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.32812,
+    "parent_wr": 0.32812,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 54,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.42188,
+    "parent_wr": 0.42188,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 48,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.375,
+    "parent_wr": 0.375,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 53,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.41406,
+    "parent_wr": 0.41406,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 67,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.52344,
+    "parent_wr": 0.52344,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 67,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.52344,
+    "parent_wr": 0.52344,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 58,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.45312,
+    "parent_wr": 0.45312,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 42,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.32812,
+    "parent_wr": 0.32812,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 34,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.26562,
+    "parent_wr": 0.26562,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 38,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.29688,
+    "parent_wr": 0.29688,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 45,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35156,
+    "parent_wr": 0.35156,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 50,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.39062,
+    "parent_wr": 0.39062,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 61,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.47656,
+    "parent_wr": 0.47656,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 61,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.47656,
+    "parent_wr": 0.47656,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 48,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.375,
+    "parent_wr": 0.375,
+    "gain": 0.0,
+    "short": 0
+   }
+  ],
+  "c278672": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 30,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.23438,
+    "parent_wr": 0.20312,
+    "gain": 0.03125,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 36,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.28125,
+    "parent_wr": 0.32812,
+    "gain": -0.04688,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 60,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46875,
+    "parent_wr": 0.42188,
+    "gain": 0.04688,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 60,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46875,
+    "parent_wr": 0.375,
+    "gain": 0.09375,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 68,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53125,
+    "parent_wr": 0.41406,
+    "gain": 0.11719,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.52344,
+    "gain": 0.01562,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 70,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.54688,
+    "parent_wr": 0.52344,
+    "gain": 0.02344,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 67,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.52344,
+    "parent_wr": 0.45312,
+    "gain": 0.07031,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 46,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35938,
+    "parent_wr": 0.32812,
+    "gain": 0.03125,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 37,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.28906,
+    "parent_wr": 0.26562,
+    "gain": 0.02344,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 40,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.3125,
+    "parent_wr": 0.29688,
+    "gain": 0.01562,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 70,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.54688,
+    "parent_wr": 0.35156,
+    "gain": 0.19531,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 60,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46875,
+    "parent_wr": 0.39062,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.47656,
+    "gain": 0.02344,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.47656,
+    "gain": 0.02344,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 48,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.375,
+    "parent_wr": 0.375,
+    "gain": 0.0,
+    "short": 0
+   }
+  ],
+  "c280656": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 36,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.28125,
+    "parent_wr": 0.20312,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 51,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.39844,
+    "parent_wr": 0.32812,
+    "gain": 0.07031,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 73,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.57031,
+    "parent_wr": 0.42188,
+    "gain": 0.14844,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.375,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.41406,
+    "gain": 0.10156,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 94,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.73438,
+    "parent_wr": 0.52344,
+    "gain": 0.21094,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.52344,
+    "gain": -0.03906,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 57,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.44531,
+    "parent_wr": 0.45312,
+    "gain": -0.00781,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 49,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.38281,
+    "parent_wr": 0.32812,
+    "gain": 0.05469,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 52,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.40625,
+    "parent_wr": 0.26562,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 48,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.375,
+    "parent_wr": 0.29688,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 63,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.49219,
+    "parent_wr": 0.35156,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 61,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.47656,
+    "parent_wr": 0.39062,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.47656,
+    "gain": 0.02344,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.47656,
+    "gain": 0.00781,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 55,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.42969,
+    "parent_wr": 0.375,
+    "gain": 0.05469,
+    "short": 0
+   }
+  ],
+  "c283636": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 34,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.26562,
+    "parent_wr": 0.20312,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 50,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.39062,
+    "parent_wr": 0.32812,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.42188,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.375,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 63,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.49219,
+    "parent_wr": 0.41406,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 99,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.77344,
+    "parent_wr": 0.52344,
+    "gain": 0.25,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 58,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.45312,
+    "parent_wr": 0.52344,
+    "gain": -0.07031,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.45312,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 49,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.38281,
+    "parent_wr": 0.32812,
+    "gain": 0.05469,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 52,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.40625,
+    "parent_wr": 0.26562,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 45,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35156,
+    "parent_wr": 0.29688,
+    "gain": 0.05469,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.35156,
+    "gain": 0.1875,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.39062,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.47656,
+    "gain": 0.00781,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 77,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.60156,
+    "parent_wr": 0.47656,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 60,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46875,
+    "parent_wr": 0.375,
+    "gain": 0.09375,
+    "short": 0
+   }
+  ],
+  "c287136": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 36,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.28125,
+    "parent_wr": 0.20312,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 50,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.39062,
+    "parent_wr": 0.32812,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 75,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.58594,
+    "parent_wr": 0.42188,
+    "gain": 0.16406,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.375,
+    "gain": 0.10938,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 63,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.49219,
+    "parent_wr": 0.41406,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 91,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.71094,
+    "parent_wr": 0.52344,
+    "gain": 0.1875,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 58,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.45312,
+    "parent_wr": 0.52344,
+    "gain": -0.07031,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 68,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53125,
+    "parent_wr": 0.45312,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 47,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.36719,
+    "parent_wr": 0.32812,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 49,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.38281,
+    "parent_wr": 0.26562,
+    "gain": 0.11719,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 43,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.33594,
+    "parent_wr": 0.29688,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.35156,
+    "gain": 0.16406,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 55,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.42969,
+    "parent_wr": 0.39062,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 79,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.61719,
+    "parent_wr": 0.47656,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.47656,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 48,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.375,
+    "parent_wr": 0.375,
+    "gain": 0.0,
+    "short": 0
+   }
+  ],
+  "c290116": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 30,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.23438,
+    "parent_wr": 0.20312,
+    "gain": 0.03125,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 57,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.44531,
+    "parent_wr": 0.32812,
+    "gain": 0.11719,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 70,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.54688,
+    "parent_wr": 0.42188,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.375,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.41406,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 96,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.75,
+    "parent_wr": 0.52344,
+    "gain": 0.22656,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.52344,
+    "gain": -0.03906,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 74,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.57812,
+    "parent_wr": 0.45312,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 50,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.39062,
+    "parent_wr": 0.32812,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 52,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.40625,
+    "parent_wr": 0.26562,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 50,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.39062,
+    "parent_wr": 0.29688,
+    "gain": 0.09375,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 65,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.50781,
+    "parent_wr": 0.35156,
+    "gain": 0.15625,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 61,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.47656,
+    "parent_wr": 0.39062,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.47656,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 71,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.55469,
+    "parent_wr": 0.47656,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 58,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.45312,
+    "parent_wr": 0.375,
+    "gain": 0.07812,
+    "short": 0
+   }
+  ],
+  "c291106": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 46,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35938,
+    "parent_wr": 0.20312,
+    "gain": 0.15625,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 47,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.36719,
+    "parent_wr": 0.32812,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 60,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46875,
+    "parent_wr": 0.42188,
+    "gain": 0.04688,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.375,
+    "gain": 0.16406,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 62,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.48438,
+    "parent_wr": 0.41406,
+    "gain": 0.07031,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 83,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.64844,
+    "parent_wr": 0.52344,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 54,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.42188,
+    "parent_wr": 0.52344,
+    "gain": -0.10156,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.45312,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 61,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.47656,
+    "parent_wr": 0.32812,
+    "gain": 0.14844,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 56,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.4375,
+    "parent_wr": 0.26562,
+    "gain": 0.17188,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 45,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35156,
+    "parent_wr": 0.29688,
+    "gain": 0.05469,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.35156,
+    "gain": 0.1875,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 56,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.4375,
+    "parent_wr": 0.39062,
+    "gain": 0.04688,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 63,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.49219,
+    "parent_wr": 0.47656,
+    "gain": 0.01562,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 79,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.61719,
+    "parent_wr": 0.47656,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 44,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.34375,
+    "parent_wr": 0.375,
+    "gain": -0.03125,
+    "short": 0
+   }
+  ],
+  "c292101": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 39,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.30469,
+    "parent_wr": 0.20312,
+    "gain": 0.10156,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 54,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.42188,
+    "parent_wr": 0.32812,
+    "gain": 0.09375,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 68,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53125,
+    "parent_wr": 0.42188,
+    "gain": 0.10938,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 69,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.53906,
+    "parent_wr": 0.375,
+    "gain": 0.16406,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 72,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5625,
+    "parent_wr": 0.41406,
+    "gain": 0.14844,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 83,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.64844,
+    "parent_wr": 0.52344,
+    "gain": 0.125,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 55,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.42969,
+    "parent_wr": 0.52344,
+    "gain": -0.09375,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 58,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.45312,
+    "parent_wr": 0.45312,
+    "gain": 0.0,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 44,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.34375,
+    "parent_wr": 0.32812,
+    "gain": 0.01562,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 45,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35156,
+    "parent_wr": 0.26562,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 52,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.40625,
+    "parent_wr": 0.29688,
+    "gain": 0.10938,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 56,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.4375,
+    "parent_wr": 0.35156,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 61,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.47656,
+    "parent_wr": 0.39062,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 79,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.61719,
+    "parent_wr": 0.47656,
+    "gain": 0.14062,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 63,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.49219,
+    "parent_wr": 0.47656,
+    "gain": 0.01562,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 40,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.3125,
+    "parent_wr": 0.375,
+    "gain": -0.0625,
+    "short": 0
+   }
+  ],
+  "foldfinal": [
+   {
+    "team": "048182d1e9",
+    "arch": "stall",
+    "wins": 37,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.28906,
+    "parent_wr": 0.20312,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "32f549483f",
+    "arch": "offense",
+    "wins": 45,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.35156,
+    "parent_wr": 0.32812,
+    "gain": 0.02344,
+    "short": 0
+   },
+   {
+    "team": "593d7fb8a8",
+    "arch": "offense",
+    "wins": 63,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.49219,
+    "parent_wr": 0.42188,
+    "gain": 0.07031,
+    "short": 0
+   },
+   {
+    "team": "7163ad9387",
+    "arch": "semi_stall",
+    "wins": 65,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.50781,
+    "parent_wr": 0.375,
+    "gain": 0.13281,
+    "short": 0
+   },
+   {
+    "team": "7c2cb5cec1",
+    "arch": "hyper_offense",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.41406,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "89fcef3b53",
+    "arch": "offense",
+    "wins": 75,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.58594,
+    "parent_wr": 0.52344,
+    "gain": 0.0625,
+    "short": 0
+   },
+   {
+    "team": "9292a21833",
+    "arch": "hyper_offense",
+    "wins": 64,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.5,
+    "parent_wr": 0.52344,
+    "gain": -0.02344,
+    "short": 0
+   },
+   {
+    "team": "a577a735b7",
+    "arch": "balance",
+    "wins": 60,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46875,
+    "parent_wr": 0.45312,
+    "gain": 0.01562,
+    "short": 0
+   },
+   {
+    "team": "a6b630e6b4",
+    "arch": "balance",
+    "wins": 52,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.40625,
+    "parent_wr": 0.32812,
+    "gain": 0.07812,
+    "short": 0
+   },
+   {
+    "team": "b26ed9c8e1",
+    "arch": "semi_stall",
+    "wins": 39,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.30469,
+    "parent_wr": 0.26562,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "c84f2b64a2",
+    "arch": "stall",
+    "wins": 49,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.38281,
+    "parent_wr": 0.29688,
+    "gain": 0.08594,
+    "short": 0
+   },
+   {
+    "team": "c90e782cad",
+    "arch": "balance",
+    "wins": 59,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.46094,
+    "parent_wr": 0.35156,
+    "gain": 0.10938,
+    "short": 0
+   },
+   {
+    "team": "d0a4d2bcb8",
+    "arch": "balance",
+    "wins": 44,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.34375,
+    "parent_wr": 0.39062,
+    "gain": -0.04688,
+    "short": 0
+   },
+   {
+    "team": "dd460484fc",
+    "arch": "semi_stall",
+    "wins": 66,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.51562,
+    "parent_wr": 0.47656,
+    "gain": 0.03906,
+    "short": 0
+   },
+   {
+    "team": "eaa88395e7",
+    "arch": "hyper_offense",
+    "wins": 75,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.58594,
+    "parent_wr": 0.47656,
+    "gain": 0.10938,
+    "short": 0
+   },
+   {
+    "team": "f593373169",
+    "arch": "stall",
+    "wins": 39,
+    "finished": 128,
+    "requested": 128,
+    "wr": 0.30469,
+    "parent_wr": 0.375,
+    "gain": -0.07031,
+    "short": 0
+   }
+  ]
+ },
+ "bars": {
+  "P1": {
+   "statement": "at least half of the final untaught gain is ABSENT at the first retained checkpoint (+1.089M fold steps)",
+   "final_gain": 0.0498,
+   "half_gain_line": 0.0249,
+   "first_gain": 0.04639,
+   "first_gain_ci95": [
+    0.02197,
+    0.07471
+   ],
+   "verdict": "UNDECIDED",
+   "rule": "PASS iff the whole CI lies BELOW half the final gain; FAIL iff wholly above; UNDECIDED iff it straddles"
+  },
+  "P1_paired_supplementary": {
+   "statement": "gain(first) - 0.5*gain(final), paired over teams",
+   "diff": 0.02148,
+   "diff_paired_ci95": [
+    -0.00195,
+    0.04663
+   ],
+   "reads": "BELOW zero => at least half the final gain is absent early (P1's claim); ABOVE zero => more than half is already present",
+   "verdict": "UNDECIDED",
+   "note": "SUPPLEMENTARY \u2014 sharper than the registered rule, but not the registered rule"
+  },
+  "P2": {
+   "statement": "gain(final) - gain(c283636) > 0 -- the gift is still rising in the second half",
+   "mid_arm": "c283636",
+   "mid_fold_delta": 6052398,
+   "diff": -0.04053,
+   "diff_paired_ci95": [
+    -0.08008,
+    -0.00488
+   ],
+   "verdict": "FAIL",
+   "rule": "PASS iff the paired CI lies wholly ABOVE zero; FAIL iff wholly below",
+   "note": "REGISTERED bar"
+  },
+  "P2_sensitivity": {
+   "statement": "gain(final) - gain(c287136) > 0 -- the gift is still rising in the second half",
+   "mid_arm": "c287136",
+   "mid_fold_delta": 9552831,
+   "diff": -0.03076,
+   "diff_paired_ci95": [
+    -0.05859,
+    -0.00195
+   ],
+   "verdict": "FAIL",
+   "rule": "PASS iff the paired CI lies wholly ABOVE zero; FAIL iff wholly below",
+   "note": "SENSITIVITY only -- not the verdict"
+  },
+  "P1_vs_peak_posthoc": {
+   "statement": "gain(first) - 0.5*gain(c290116, the PEAK), paired over teams",
+   "diff": -0.00195,
+   "diff_paired_ci95": [
+    -0.02979,
+    0.02539
+   ],
+   "verdict": "UNDECIDED",
+   "note": "POST-HOC \u2014 the registered denominator is the ENDPOINT, not the peak; the peak arm is additionally selected, biasing this contrast toward 'supports'"
+  }
+ },
+ "shape": {
+  "curve": [
+   [
+    "c278672",
+    0.04639
+   ],
+   [
+    "c280656",
+    0.08057
+   ],
+   [
+    "c283636",
+    0.09033
+   ],
+   [
+    "c287136",
+    0.08057
+   ],
+   [
+    "c290116",
+    0.09668
+   ],
+   [
+    "c291106",
+    0.08252
+   ],
+   [
+    "c292101",
+    0.07031
+   ],
+   [
+    "foldfinal",
+    0.0498
+   ]
+  ],
+  "peak_arm": "c290116",
+  "peak_fold_delta": 12532269,
+  "endpoint_minus_peak": -0.04688,
+  "endpoint_minus_peak_paired_ci95": [
+   -0.08105,
+   -0.01514
+  ],
+  "caveat": "the peak arm is SELECTED as the maximum over the scored grid, so its own gain is upward-biased by selection; this contrast is paired but not selection-corrected and is DESCRIPTIVE, not a registered test",
+  "followup_arms": [
+   "c291106",
+   "c292101"
+  ]
+ }
+}

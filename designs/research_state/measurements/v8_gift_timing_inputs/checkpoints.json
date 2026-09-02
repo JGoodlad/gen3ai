@@ -1,0 +1,109 @@
+{
+ "fork_step": 277583267,
+ "fold_run": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725",
+ "parent_run": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722",
+ "reference_opponent": "/home/goodlad/dev/gen3ai/models/ai_v8_03_zarch_control_0718/final_model_interrupted.zip",
+ "era_pin": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+ "retained": [
+  {
+   "file": "checkpoints/checkpoint_278671945_steps.zip",
+   "num_timesteps": 278671945,
+   "fold_delta": 1088678,
+   "sha256_head": "5c6c6d2f6f5a448d"
+  },
+  {
+   "file": "checkpoints/checkpoint_279661705_steps.zip",
+   "num_timesteps": 279661705,
+   "fold_delta": 2078438,
+   "sha256_head": "d018dfdbfdfa35ef"
+  },
+  {
+   "file": "checkpoints/checkpoint_280656375_steps.zip",
+   "num_timesteps": 280656375,
+   "fold_delta": 3073108,
+   "sha256_head": "8bd54f78b90522c5"
+  },
+  {
+   "file": "checkpoints/checkpoint_281647070_steps.zip",
+   "num_timesteps": 281647070,
+   "fold_delta": 4063803,
+   "sha256_head": "250e7afc22b9b2e1"
+  },
+  {
+   "file": "checkpoints/checkpoint_282643683_steps.zip",
+   "num_timesteps": 282643683,
+   "fold_delta": 5060416,
+   "sha256_head": "fba45273f4d1700a"
+  },
+  {
+   "file": "checkpoints/checkpoint_283635665_steps.zip",
+   "num_timesteps": 283635665,
+   "fold_delta": 6052398,
+   "sha256_head": "56ddea706007bc77"
+  },
+  {
+   "file": "checkpoints/checkpoint_284632327_steps.zip",
+   "num_timesteps": 284632327,
+   "fold_delta": 7049060,
+   "sha256_head": "e59356aa8bae3522"
+  },
+  {
+   "file": "checkpoints/checkpoint_286146204_steps.zip",
+   "num_timesteps": 286146204,
+   "fold_delta": 8562937,
+   "sha256_head": "f7cf41fc7ef8699c"
+  },
+  {
+   "file": "checkpoints/checkpoint_287136098_steps.zip",
+   "num_timesteps": 287136098,
+   "fold_delta": 9552831,
+   "sha256_head": "054078c0ee1306be"
+  },
+  {
+   "file": "checkpoints/checkpoint_288129241_steps.zip",
+   "num_timesteps": 288129241,
+   "fold_delta": 10545974,
+   "sha256_head": "4b1a95ae31a8df5b"
+  },
+  {
+   "file": "checkpoints/checkpoint_289119292_steps.zip",
+   "num_timesteps": 289119292,
+   "fold_delta": 11536025,
+   "sha256_head": "2dd42c6fec05b476"
+  },
+  {
+   "file": "checkpoints/checkpoint_290115536_steps.zip",
+   "num_timesteps": 290115536,
+   "fold_delta": 12532269,
+   "sha256_head": "0d65b818a119b89c"
+  },
+  {
+   "file": "checkpoints/checkpoint_291106373_steps.zip",
+   "num_timesteps": 291106373,
+   "fold_delta": 13523106,
+   "sha256_head": "30b330d464302cff"
+  },
+  {
+   "file": "checkpoints/checkpoint_292100648_steps.zip",
+   "num_timesteps": 292100648,
+   "fold_delta": 14517381,
+   "sha256_head": "2de6e71d100cee5f"
+  },
+  {
+   "file": "final_model_interrupted.zip",
+   "num_timesteps": 292623779,
+   "fold_delta": 15040512,
+   "sha256_head": "0116a29305ede507"
+  }
+ ],
+ "scored_arms": [
+  "parent",
+  "c278672",
+  "c280656",
+  "c283636",
+  "c287136",
+  "c290116",
+  "foldfinal"
+ ],
+ "note": "14 retained checkpoints + the run's final_model_interrupted.zip. models/ retention thinned this closed generation (first+last+every 10th); the fold originally wrote 28. The endpoint arm is final_model_interrupted.zip (+15.041M), NOT checkpoint_292100648 (+14.517M) \u2014 they differ (param L2 17.15) and the final is probe P's own fold arm."
+}
