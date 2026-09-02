@@ -8619,3 +8619,36 @@ PPO-driven part free; (c) the stop rule's signal is the LEAK, now directly measu
 `distill/collateral_kl_vs_parent` RISING after `distill/teacher_agreement_on_slice` has plateaued —
 that pattern is the "stop" condition. Caveats carried: `peak` is a selected arm (magnitudes
 upward-biased, shapes not); taught-side reliabilities 0.30/0.42 at six teams cap the taught cosines.
+
+### 🧭 SOURCE-SEPARATED ANCHOR BUILT (`--distill-anchor-mode grad_project`, `2e99e6fe`) — and its smoke shows the LEAK AT THE UPDATE: ~80% of the distill gradient lies along off-slice-moving directions (2026-09-01, late)
+
+Projects the DISTILLATION gradient (the three teacher terms; the anchor term deliberately not) off
+the span of `∇log π(argmax)` at m=16 sampled off-slice states, per micro-batch, as a correction to
+`.grad` after the single backward — PPO's gradient provably untouched (`.grad == g_ppo + P⊥g_distill`
+recomputed independently; the first-order claim measured end to end: 100% of the fold's off-slice
+log-prob movement removed under SGD, 95.1% under the real Adam + clip path). OFF by default, byte-
+identical off; 34 tests; OGD/GPM precedent. Meters: `distill/proj_removed_frac`, `proj_rank`,
+`proj_ms`, and `collateral_kl_vs_parent` stays on.
+
+**Two honest findings from the CPU `--debug` smoke (n=1, toy config, NOT a result):**
+1. **`proj_removed_frac` = 0.75–0.89.** A random 16-dim subspace of a ~2M-dim space would keep
+   ~1e-5 of a random vector's energy; removing 80% means the distill gradient's DOMINANT directions
+   ARE off-slice-behaviour directions. That is the leak seen directly at the update — and this
+   method's ceiling: where a direction both teaches and leaks, a first-order projection cannot keep
+   the teaching. The projected arm absorbed LESS (`distill/kl` stayed higher) and its
+   `collateral_kl_vs_parent` read HIGHER than the monitor arm (0.034 vs 0.010 at 6k steps) — the
+   parsimonious reading is that with most of the distill pull removed, PPO's own off-slice motion
+   dominates and the parent-relative meter counts it (the meter's known limitation), but "the
+   projection removed the teaching too" is not excluded on a smoke. **Whether taught and untaught
+   are separable in WEIGHT space at first order is now the live question** — M4 found them
+   near-orthogonal in BEHAVIOUR space (cos 0.14), which is a different claim.
+2. **Cost: 55–70% of `train()`** at batch 128 on CPU (m=16 extra backwards per micro-batch,
+   dispatch-bound); expected to fall with batch size and on GPU — UNMEASURED, and the docs say so.
+
+**Dispatched:** (a) the OFFLINE version on the real rev-4 ingredients (the licensing probe's
+instrument: parent `ai_v9_59_R2ACTION_0827`, teachers R4S3a/b/c, 400 Adam steps) — absorption vs
+off-slice collateral WITH and WITHOUT the projection, `removed_frac` on production-shaped
+gradients, and the weight-space separability question answered where it can be answered cheaply;
+(b) the fold STOP RULE — dual ascent on the anchor coefficient toward a `collateral_kl_vs_parent`
+budget, plus a plateau detector on `teacher_agreement_on_slice` — the mechanism the transient-hump
+finding motivates.
