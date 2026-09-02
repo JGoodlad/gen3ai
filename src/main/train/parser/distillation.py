@@ -73,6 +73,76 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "record: every KL-collapse arm fell 38-43%%, every control 0%% — 20%% "
                              "fires on all five known-bad arms and no known-good control; 20-38%% is "
                              "the honest margin.")
+    # gen3_distill_stop_rule_v1 — THE FOLD STOP RULE. v8's fold peaked at +9.67pp on untaught teams
+    # around +12.5M and fell to +4.98pp by +15.04M while distillation kept running against teachers
+    # it had already absorbed (ledger 2026-09-01). The signal is the pair below, and the mechanism
+    # lives in agents/training/distill_stop_callback.py.
+    parser.add_argument("--distill-stop", "--distill_stop", dest="distill_stop",
+                        choices=["off", "warn", "anneal", "abort"], default=None,
+                        help="THE FOLD STOP RULE (default 'off'). Fire when "
+                             "distill/teacher_agreement_on_slice has PLATEAUED (its EMA's "
+                             "improvement over --distill-stop-window rollouts is below "
+                             "--distill-stop-eps) AND distill/collateral_kl_vs_parent is RISING "
+                             "(the OLS slope of its RAW readings over the same window exceeds "
+                             "--distill-stop-kl-slope of that slope's OWN standard errors), for "
+                             "--distill-stop-persist consecutive rollouts. That conjunction is the "
+                             "R3-SELF regime seen from the inside: displacement still accumulating "
+                             "with nothing left to absorb. 'warn' = a launcher event + "
+                             "distill/stop_signal, nothing changes. 'anneal' = also decay "
+                             "--distill-coef by --distill-stop-anneal-factor every subsequent "
+                             "rollout to 0, so the fold winds DOWN rather than stopping between two "
+                             "rollouts. 'abort' = also stop learn() cleanly (checkpoint saved, exit "
+                             "COMPLETE, no launcher restart loop). Requires the frozen parent to be "
+                             "attached (--distill-anchor-coef > 0, --distill-anchor-monitor, or "
+                             "--distill-anchor-mode grad_project) — nothing else emits "
+                             "collateral_kl_vs_parent, so without it the AND-gate could never "
+                             "close and the flag would be a silent no-op. RUN 'warn' FIRST: the window "
+                             "and eps are not yet sized by anything measured at this cadence. Every "
+                             "detector EMA, the hold count and the latch are persisted in the "
+                             "checkpoint sidecar, so a launcher restart continues the count.")
+    parser.add_argument("--distill-stop-window", "--distill_stop_window", dest="distill_stop_window",
+                        type=int, default=None,
+                        help="Rollouts the two detectors look back over (default 8; one rollout = "
+                             "one train() call). Must be >= 2 — the rise test is an OLS slope over "
+                             "window+1 points and needs a residual degree of freedom for its "
+                             "standard error to exist.")
+    parser.add_argument("--distill-stop-eps", "--distill_stop_eps", dest="distill_stop_eps",
+                        type=float, default=None,
+                        help="PLATEAU threshold (default 0.005): the improvement in the "
+                             "teacher_agreement_on_slice EMA over the window, below which absorption "
+                             "counts as stopped. ABSOLUTE, in top-1 agreement-rate units, because "
+                             "that is the unit the meter is in. The comparison is SIGNED, so a "
+                             "FALLING agreement is a plateau too — it is not absorbing either.")
+    parser.add_argument("--distill-stop-kl-slope", "--distill_stop_kl_slope",
+                        dest="distill_stop_kl_slope", type=float, default=None,
+                        help="RISE threshold (default 2.0) — IN UNITS OF THE SLOPE'S OWN STANDARD "
+                             "ERROR, not nats per rollout. The rule is 'slope > 0 AND slope > this "
+                             "x se(slope)', a one-sided t-test that the collateral trend is "
+                             "positive. It is scale-free on purpose: collateral KL's absolute scale "
+                             "moves by two orders of magnitude across configs, so no absolute slope "
+                             "could be quoted here and still be right on the next arm. The fit is on "
+                             "the RAW readings, NOT their EMA: a low-pass filter makes consecutive "
+                             "points autocorrelated, so an OLS fit through an EMA has residuals far "
+                             "smaller than the series' own noise and calls WHITE NOISE a significant "
+                             "trend (measured while building this). The PLATEAU half keeps its EMA, "
+                             "because it compares two LEVELS and autocorrelation does not bias a level.")
+    parser.add_argument("--distill-stop-persist", "--distill_stop_persist",
+                        dest="distill_stop_persist", type=int, default=None,
+                        help="Consecutive rollouts on which BOTH detectors must hold before the "
+                             "rule fires (default 3). Any rollout where either fails resets the "
+                             "count; a rollout where either meter does not read at all is silence — "
+                             "the count neither advances nor resets, as in --rank-tripwire.")
+    parser.add_argument("--distill-stop-anneal-factor", "--distill_stop_anneal_factor",
+                        dest="distill_stop_anneal_factor", type=float, default=None,
+                        help="Per-rollout geometric decay of --distill-coef under "
+                             "--distill-stop anneal (default 0.7, must be in (0,1)). It snaps to "
+                             "EXACTLY 0 once below 1e-6 of the coefficient in force when the rule "
+                             "fired (~39 rollouts at 0.7), because a coefficient of 1e-12 still "
+                             "pays a full teacher forward per minibatch for a term that changes "
+                             "nothing. At exactly 0 the teacher forwards stop and "
+                             "teacher_agreement_on_slice stops existing; the ANCHOR's meters keep "
+                             "reading. The annealed value is persisted and RE-APPLIED on restart "
+                             "over the argv's --distill-coef, which the launcher forwards verbatim.")
     parser.add_argument("--search-teacher-batch-size", "--search_teacher_batch_size",
                         dest="search_teacher_batch_size", type=int, default=None,
                         help="Corrections sampled per train() for the AWR forward (default 256).")

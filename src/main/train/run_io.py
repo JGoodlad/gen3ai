@@ -78,9 +78,19 @@ def _run_arch_toggles(args) -> dict:
 
 
 def _model_hparams(model) -> dict:
+    """The per-checkpoint hparam block, plus the two CONTROLLER states that are RUN STATE.
+
+    `distill_anchor_dual_state` and `distill_stop_state` (gen3_distill_stop_rule_v1) ride here for
+    exactly the reason `handoff_lr` and `grad_accum_steps` do: a launcher restart re-invokes the
+    ORIGINAL argv every few hours, so a controller that does not persist would reset to its flag's
+    value — a dual that had climbed 5x, a stop detector that had accumulated 7 of its 8-rollout
+    window, an annealed `--distill-coef` that the forwarded flag would re-install at full strength.
+    They are appended **only when the mechanism is live** (the attribute exists only while its
+    callback is registered), so an ordinary run's sidecar is byte-for-byte what it always was.
+    """
     clip_range_vf = float(model.clip_range_vf(1.0)) if model.clip_range_vf is not None else -1.0
     opt = model.policy.optimizer
-    return {
+    out = {
         "gamma": model.gamma,
         "gae_lambda": model.gae_lambda,
         "ent_coef": float(model.ent_coef),
@@ -132,6 +142,11 @@ def _model_hparams(model) -> dict:
         # `check_compatible` reads.
         "dose": dose_block(model),
     }
+    for _key in ("distill_anchor_dual_state", "distill_stop_state"):
+        _val = getattr(model, _key, None)
+        if isinstance(_val, dict):
+            out[_key] = _val
+    return out
 
 
 def _write_latest_txt(model_dir: str, name: str) -> None:

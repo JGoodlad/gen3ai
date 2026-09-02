@@ -253,7 +253,9 @@ class DistillAnchorCallback(BaseCallback):
                  load_parent: Callable[[str], object], ref: str = "parent", ema_tau: float = 0.99,
                  refresh_every: int = 8, run_dir: Optional[str] = None,
                  resume_model: Optional[str] = None, expect_restore: bool = False,
-                 proj_samples: int = 16, verbose: int = 0):
+                 proj_samples: int = 16, target_kl: float = 0.0, dual_lr: float = 0.1,
+                 coef_min: float = 0.0, coef_max: Optional[float] = None,
+                 resume_dual: Optional[dict] = None, verbose: int = 0):
         super().__init__(verbose)
         self.parent_path = parent_path
         self.route = route
@@ -284,6 +286,20 @@ class DistillAnchorCallback(BaseCallback):
         self._rollouts = 0               # rollouts since the reference was refreshed / initialised
         self._refreshes = 0              # `periodic` refresh count, for the record
         self._restore_note = ""          # what the startup line says about the restore
+        # gen3_distill_stop_rule_v1 — THE DUAL. `--distill-anchor-target-kl > 0` turns the
+        # coefficient above from a number somebody guessed into the Lagrange multiplier of a KL
+        # BUDGET, moved once per rollout by `AnchorDualAscent` (the pure controller, and the
+        # justification for every constant, live in `distill_stop_callback`). Off (target 0) the
+        # coefficient is the constant it always was and this attribute stays None, so an existing
+        # anchor arm is unchanged.
+        self._dual = None
+        self._dual_resume = resume_dual if isinstance(resume_dual, dict) else None
+        self._dual_restore_note = ""
+        if target_kl and target_kl > 0.0:
+            from agents.training.distill_stop_callback import AnchorDualAscent
+            self._dual = AnchorDualAscent(target_kl=float(target_kl), coef0=self.coef,
+                                          dual_lr=float(dual_lr), coef_min=float(coef_min),
+                                          coef_max=coef_max)
 
     # ---- the reference's life ----------------------------------------------------------------
     def _fatal(self, why: str) -> None:
@@ -401,6 +417,18 @@ class DistillAnchorCallback(BaseCallback):
         from main.launcher.ipc import emit
         # The hparams first: they are read by `train()` off the model, and a load failure below
         # exits the process, so there is no state in which they are set and the parent is not.
+        # gen3_distill_stop_rule_v1 — the DUAL restores BEFORE the coefficient is pushed, so a
+        # restart resumes at the multiplier it had annealed to rather than at the flag's value.
+        # (The launcher forwards the ORIGINAL argv every relaunch; without this, a controller that
+        # had climbed to 5x its starting coefficient over three hours would silently reset to 1x.)
+        if self._dual is not None:
+            if self._dual.load_state(self._dual_resume):
+                self._dual_restore_note = (
+                    f" | DUAL RESTORED coef={self._dual.coef:g} "
+                    f"kl_ema={self._dual.kl_ema if self._dual.kl_ema is None else round(self._dual.kl_ema, 6)}")
+            else:
+                self._dual_restore_note = " | DUAL from --distill-anchor-coef (fold start)"
+            self.coef = self._dual.coef
         self.model.distill_anchor_coef = self.coef
         self.model.distill_anchor_mode = self.mode
         self.model.distill_anchor_proj_samples = self.proj_samples
@@ -453,7 +481,12 @@ class DistillAnchorCallback(BaseCallback):
              f"reference: {_ref_desc}; {self._restore_note}. "
              f"The PARENT is re-loaded from the PARENT PATH on every restart, never from the "
              f"current checkpoint. Watch distill/collateral_kl_vs_parent (accumulated displacement, "
-             f"emitted in EVERY mode) against distill/teacher_agreement_on_slice (content).")
+             f"emitted in EVERY mode) against distill/teacher_agreement_on_slice (content)."
+             + (f" DUAL ASCENT: holding {self._dual_signal_name()} at "
+                f"{self._dual.target_kl:g} by moving the coefficient in "
+                f"[{self._dual.coef_min:g}, {self._dual.coef_max:g}] at eta="
+                f"{self._dual.dual_lr:g}{self._dual_restore_note}."
+                if self._dual is not None else ""))
 
     def _on_rollout_end(self) -> None:
         """Advance the reference — ONE update per rollout, i.e. one per `train()` call."""
@@ -469,6 +502,39 @@ class DistillAnchorCallback(BaseCallback):
         else:                                  # `parent`: nothing moves, but the age still rises
             self._rollouts += 1
         self._publish_age()
+        self._step_dual()
+
+    # ---- the DUAL ------------------------------------------------------------------------------
+    def _dual_signal_name(self) -> str:
+        """WHICH meter the dual budgets on — see `AnchorDualAscent`'s docstring for the argument.
+
+        Under the FIXED parent reference the anchor loss and the accumulated-displacement meter are
+        the same quantity, so the dual budgets the number that actually predicts the untaught
+        robbery. Under a MOVING reference the anchor is DESIGNED not to resist parent-displacement
+        (that is what lets v8's GIFT through), so a dual budgeted on it could never satisfy its
+        constraint and would sit at `coef_max` forever while reading as a live controller — it
+        budgets the anchor's OWN KL there instead.
+        """
+        from agents.training.distill_stop_callback import ANCHOR_KL_SIGNAL, COLLATERAL_SIGNAL
+        return COLLATERAL_SIGNAL if self.ref == "parent" else ANCHOR_KL_SIGNAL
+
+    def _step_dual(self) -> None:
+        """One dual-ascent update per rollout, then publish the coefficient.
+
+        `distill/anchor_coef` is recorded whenever this callback is attached — a FLAT series under a
+        static coefficient, on purpose: a reader comparing a dual arm with a static one needs the
+        series to exist in both, exactly as `anchor_loss` is recorded as a measured 0.0 under
+        monitor-only rather than left missing.
+        """
+        if self._dual is not None:
+            reading = self.model.logger.name_to_value.get(self._dual_signal_name())
+            self.coef = self._dual.update(reading)
+            self.model.distill_anchor_coef = self.coef
+            self.model.distill_anchor_dual_state = self._dual.state()
+            self.logger.record("distill/anchor_dual_kl_ema",
+                               float(self._dual.kl_ema) if self._dual.kl_ema is not None else 0.0)
+            self.logger.record("distill/anchor_dual_clamped", 1.0 if self._dual.clamped else 0.0)
+        self.logger.record("distill/anchor_coef", float(self.coef))
 
     def _on_step(self) -> bool:
         return True

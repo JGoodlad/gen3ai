@@ -194,6 +194,45 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
                              "idempotent fork's --model is swapped to the fork's OWN latest checkpoint "
                              "on every restart, and anchoring to that would let the trust region drift "
                              "along with the student. Pass this only to override that resolution.")
+    # gen3_distill_stop_rule_v1 — THE DUAL. Turn the coefficient above into a CONSTRAINT with a
+    # readable budget (PPO-penalty's adaptive beta / MPO's Lagrangian dual). Pure controller +
+    # every justification: agents/training/distill_stop_callback.py::AnchorDualAscent.
+    parser.add_argument("--distill-anchor-target-kl", "--distill_anchor_target_kl",
+                        dest="distill_anchor_target_kl", type=float, default=None,
+                        help="DUAL ASCENT on --distill-anchor-coef (default 0.0 = OFF, the "
+                             "coefficient is the constant it always was). Every rollout: "
+                             "coef <- coef * exp(eta * (kl_ema/target - 1)), clamped into "
+                             "[--distill-anchor-coef-min, --distill-anchor-coef-max], where kl_ema "
+                             "is an EMA (alpha 0.2, half-life ~3 rollouts) of "
+                             "distill/collateral_kl_vs_parent under --distill-anchor-ref parent, "
+                             "and of distill/anchor_kl under a MOVING reference (there the anchor "
+                             "is DESIGNED not to resist parent-displacement, so a dual budgeted on "
+                             "it could never satisfy its constraint and would sit at the max clamp "
+                             "forever). This makes the anchor a BUDGET you can read rather than a "
+                             "coefficient nobody can tune. Requires --distill-anchor-coef > 0: the "
+                             "update is multiplicative, so 0 is a fixed point. The coefficient is "
+                             "PERSISTED in the checkpoint sidecar and restored on a launcher "
+                             "restart. Watch distill/anchor_coef against distill/anchor_dual_kl_ema.")
+    parser.add_argument("--distill-anchor-dual-lr", "--distill_anchor_dual_lr",
+                        dest="distill_anchor_dual_lr", type=float, default=None,
+                        help="Dual-ascent step eta (default 0.1). The update is an INTEGRATOR, so "
+                             "eta alone sets the response timescale: a sustained 2x overshoot moves "
+                             "the coefficient +10.5%% per rollout, ~7 rollouts to double. There is "
+                             "deliberately NO cooldown (unlike the KL lr ladder, which is bang-bang "
+                             "and compounds) — adding one to an integrator inserts dead time, which "
+                             "is what causes the oscillation a cooldown is meant to prevent.")
+    parser.add_argument("--distill-anchor-coef-min", "--distill_anchor_coef_min",
+                        dest="distill_anchor_coef_min", type=float, default=None,
+                        help="Lower clamp on the dual-driven anchor coefficient (default 0.0). "
+                             "Under a MULTIPLICATIVE update 0.0 is unreachable from above, so the "
+                             "default means 'no floor'; set it to pin a minimum trust region.")
+    parser.add_argument("--distill-anchor-coef-max", "--distill_anchor_coef_max",
+                        dest="distill_anchor_coef_max", type=float, default=None,
+                        help="Upper clamp on the dual-driven anchor coefficient (default: 10x "
+                             "--distill-anchor-coef). The anchor is documented as a FRACTION of "
+                             "--distill-coef and a coefficient at distill scale is R3-SELF, which "
+                             "measured -9pp — so an unbounded dual could walk into exactly the "
+                             "misuse the feature warns about.")
     parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
                         type=float, default=None,
                         help="Fraction of trainee episodes biased to the teacher TEAMS (rest = pool "

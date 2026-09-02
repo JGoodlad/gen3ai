@@ -655,6 +655,12 @@ def _attach(model, loader, *, ref, tau=0.99, refresh_every=8, coef=0.5, run_dir=
                                refresh_every=refresh_every, run_dir=run_dir,
                                resume_model=resume_model, expect_restore=expect_restore)
     cb.model = model
+    # gen3_distill_stop_rule_v1: `_on_rollout_end` now records `distill/anchor_coef` every rollout
+    # (a FLAT series under a static coefficient, on purpose — see `_step_dual`), so these
+    # bare-model unit tests need a real Logger. A no-op logger here would make the one thing the
+    # dual-ascent arm is read on untestable at this seam.
+    from stable_baselines3.common.logger import Logger as _L
+    model.set_logger(_L(folder=None, output_formats=[]))
     cb._on_training_start()
     return cb
 

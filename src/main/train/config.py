@@ -445,6 +445,34 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # gradient under `--distill-anchor-mode grad_project`. Same class as the three above:
     # training-only, never gated, argparse default None so an unset flag lands on the one default.
     _resolve("distill_anchor_proj_samples", 16)
+    # gen3_distill_stop_rule_v1 — the DUAL-ASCENT budget on the anchor coefficient, and the FOLD
+    # STOP RULE. Same class as everything above: training-only, never gated, argparse default None
+    # so an unset flag lands on the byte-identical OFF default in one place and a flagless resume
+    # keeps the arm it was launched as. `_dual_knob_explicit` is captured BEFORE the resolve for
+    # the same reason `_anchor_ref_explicit` is: afterwards an unset flag is indistinguishable from
+    # a typed default, and the "you typed a knob that does nothing" refusal must only fire on a
+    # value the operator actually typed.
+    _dual_knob_explicit = (args.distill_anchor_dual_lr is not None
+                           or args.distill_anchor_coef_min is not None
+                           or args.distill_anchor_coef_max is not None)
+    _stop_knob_explicit = (args.distill_stop_window is not None
+                           or args.distill_stop_eps is not None
+                           or args.distill_stop_kl_slope is not None
+                           or args.distill_stop_persist is not None
+                           or args.distill_stop_anneal_factor is not None)
+    _resolve("distill_anchor_target_kl", 0.0)   # training-only dual budget (0.0 = off)
+    _resolve("distill_anchor_dual_lr", 0.1)     # training-only dual step eta
+    _resolve("distill_anchor_coef_min", 0.0)    # training-only lower clamp (0 = no floor)
+    # NOTE: `distill_anchor_coef_max` gets NO `_resolve` line, deliberately — its default is None,
+    # which MEANS "10x the starting coefficient" and is computed inside `AnchorDualAscent` where the
+    # starting coefficient is known. A `_resolve(..., None)` would be a line that does nothing and
+    # reads as if it did something.
+    _resolve("distill_stop", "off")             # training-only fold stop rule (off = no callback)
+    _resolve("distill_stop_window", 8)          # training-only detector look-back, in rollouts
+    _resolve("distill_stop_eps", 0.005)         # training-only PLATEAU threshold (absolute)
+    _resolve("distill_stop_kl_slope", 2.0)      # training-only RISE threshold, in slope-SEs
+    _resolve("distill_stop_persist", 3)         # training-only AND-gate persistence count
+    _resolve("distill_stop_anneal_factor", 0.7)  # training-only per-rollout decay of --distill-coef
     # gen3_distill_target_gate_v1 (config v103) — the action-form/top-K distill target, the
     # advantage gate, and the rank tripwire. The td_aux_coef class: recorded for provenance,
     # never gated, read back here so a flagless resume keeps the arm it was launched as.
@@ -818,6 +846,55 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.distill_anchor_refresh_every is not None and args.distill_anchor_refresh_every < 0:
         parser.error("--distill-anchor-refresh-every must be >= 0 (0 = never refreshed = "
                      "--distill-anchor-ref parent).")
+    # ---- gen3_distill_stop_rule_v1 refusals ----------------------------------------------------
+    # The DUAL is multiplicative, so a zero starting coefficient is a FIXED POINT: the controller
+    # would run every rollout and move nothing, while every startup line and every series said it
+    # was on. Refuse rather than ship a silent no-op — the same principle as the anchor's
+    # unresolvable-parent FATAL.
+    if args.distill_anchor_target_kl and args.distill_anchor_target_kl > 0:
+        if not (args.distill_anchor_coef and args.distill_anchor_coef > 0):
+            parser.error("--distill-anchor-target-kl requires --distill-anchor-coef > 0: the dual "
+                         "update is MULTIPLICATIVE (coef <- coef * exp(...)), so a coefficient of 0 "
+                         "is a fixed point and the controller could never move it. Give the dual a "
+                         "starting coefficient to scale.")
+        if args.distill_anchor_dual_lr is not None and args.distill_anchor_dual_lr <= 0:
+            parser.error("--distill-anchor-dual-lr must be > 0 (it is the dual's step size).")
+        _cmin = args.distill_anchor_coef_min or 0.0
+        if _cmin < 0:
+            parser.error("--distill-anchor-coef-min must be >= 0 (it clamps a KL weight).")
+        if args.distill_anchor_coef_max is not None and args.distill_anchor_coef_max < _cmin:
+            parser.error("--distill-anchor-coef-max must be >= --distill-anchor-coef-min.")
+    elif args.distill_anchor_target_kl is not None and args.distill_anchor_target_kl < 0:
+        parser.error("--distill-anchor-target-kl must be >= 0 (0 = off, a static coefficient).")
+    elif _dual_knob_explicit:
+        parser.error("--distill-anchor-dual-lr / --distill-anchor-coef-min / "
+                     "--distill-anchor-coef-max do nothing without --distill-anchor-target-kl > 0 "
+                     "— pass that, or drop these.")
+    # The STOP RULE's AND-gate reads `distill/collateral_kl_vs_parent`, which exists only when the
+    # frozen fold parent is attached. Without it the rise half is permanently silent and the rule
+    # would never fire, while reading as ON — the exact silent-no-op class the anchor's loud
+    # startup line was written against.
+    if args.distill_stop and args.distill_stop != "off":
+        if not _anchor_wanted:
+            parser.error("--distill-stop requires the anchor MONITOR: pass --distill-anchor-monitor "
+                         "(or --distill-anchor-coef > 0, or --distill-anchor-mode grad_project). "
+                         "The rule's RISE half reads distill/collateral_kl_vs_parent, which only "
+                         "exists when the frozen fold parent is attached — without it the AND-gate "
+                         "could never close and the flag would be a silent no-op.")
+        if args.distill_stop_window is not None and args.distill_stop_window < 2:
+            parser.error("--distill-stop-window must be >= 2: the rise test is an OLS slope over "
+                         "window+1 points and needs at least one residual degree of freedom for its "
+                         "standard error to exist.")
+        if args.distill_stop_persist is not None and args.distill_stop_persist < 1:
+            parser.error("--distill-stop-persist must be >= 1.")
+        if (args.distill_stop_anneal_factor is not None
+                and not (0.0 < args.distill_stop_anneal_factor < 1.0)):
+            parser.error("--distill-stop-anneal-factor must be in (0, 1) — it is the per-rollout "
+                         "geometric decay of --distill-coef after the rule fires.")
+    elif _stop_knob_explicit:
+        parser.error("--distill-stop-window / --distill-stop-eps / --distill-stop-kl-slope / "
+                     "--distill-stop-persist / --distill-stop-anneal-factor do nothing without "
+                     "--distill-stop {warn,anneal,abort} — pass one, or drop these.")
     # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, [team_files]) GROUPS once,
     # stored on args for the teambuilder + model-setup to reuse. Preferred form =
     # 'TEACHER:TEAM[,TEAM...][;TEACHER2:...]' — ';' separates TEACHERS, ',' separates that teacher's TEAMS,

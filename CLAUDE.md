@@ -1533,6 +1533,13 @@ src/
                      #   the off-slice behaviour subspace and leave PPO's gradient free — a fold's
                      #   GIFT and its LEAK are one displacement at the output and two SOURCES at
                      #   the update)
+                     #   distill_stop_callback.py — the FOLD STOP RULE (`--distill-stop
+                     #   warn|anneal|abort`: a PLATEAU on distill/teacher_agreement_on_slice
+                     #   AND-gated with a RISE on distill/collateral_kl_vs_parent, the pattern v8
+                     #   lost ~5pp of untaught win rate by running past) + the DUAL-ASCENT anchor
+                     #   coefficient (`--distill-anchor-target-kl`: hold the off-slice divergence
+                     #   at a readable BUDGET instead of guessing a coefficient). Both OFF by
+                     #   default; both persist through the checkpoint sidecar across restarts
                      #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
                      #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
                      #   bootstrap; shared by `train/scaffolding_gauge` and main.scaffolding_gauge)

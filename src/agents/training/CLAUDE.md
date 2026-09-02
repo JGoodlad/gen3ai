@@ -5940,7 +5940,7 @@ coefficient because the bias REPLACES the trainee teambuilder and would discard 
   `_cos` number quoted in any earlier note as a distance that may have been read as a similarity. Pin:
   `instrumented_ppo_test.py::test_value_feat_metric_is_published_under_the_distance_name_too`.
 
-### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent` / `--distill-anchor-ref` / `--distill-anchor-ema-tau` / `--distill-anchor-refresh-every` / `--distill-anchor-proj-samples`)
+### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent` / `--distill-anchor-ref` / `--distill-anchor-ema-tau` / `--distill-anchor-refresh-every` / `--distill-anchor-proj-samples` / `--distill-anchor-target-kl` / `--distill-stop`)
 
 `gen3_distill_offslice_anchor_v1` — **a fold's net is teacher content MINUS overshoot damage on the
 UNTAUGHT distribution**, and every number above measures only the first half. The 2026-08-31
@@ -6252,6 +6252,220 @@ and the first-order claim measured end to end: **100.0%** reduction of the fold'
 movement with the optimizer swapped for plain SGD, **95.1%** on the real Adam + `clip_grad_norm_`
 path — Adam rescales per coordinate, so a projection of the GRADIENT is not exactly a projection of
 the UPDATE).
+
+#### THE FOLD STOP RULE (`--distill-stop`) + the DUAL-ASCENT anchor coefficient (`--distill-anchor-target-kl`)
+
+`gen3_distill_stop_rule_v1` — **a fold has an OPTIMAL LENGTH, and the two meters above are what
+says when it has passed.** The 2026-09-01 pair (ledger: *"v8's GIFT IS A TRANSIENT HUMP"*, *"WHAT
+v8's LAST 2.5M UNDID"*) measured v8's untaught-team gain peaking at **+9.67pp [+6.79, +12.50]**
+around +12.5M and falling to **+4.98pp** by +15.04M, with distillation still running at
+`--distill-coef 1.0` against teachers it had already absorbed. Nothing was unlearned — the gift is
+**92% intact at cosine 0.864** — the decline is the LEAK: the taught content continuing to arrive on
+untaught boards, parallel to the teachers' own fingerprint (cos +0.559, perm p 0.0015), costing
+**−5.66pp [−12.1, −0.2]** there while costing nothing on taught teams. Design consequence (c) of
+that entry names the live signal, and this is the mechanism that acts on it.
+
+**THE TWO SIGNALS AND WHY BOTH.**
+
+| detector | reads | fires when |
+|---|---|---|
+| **PLATEAU** | `distill/teacher_agreement_on_slice`, EMA α=0.2 | `ema[t] − ema[t−W] < --distill-stop-eps` (default **0.005**, ABSOLUTE, in top-1 agreement-rate units). SIGNED, so a FALLING agreement is a plateau too — it is not absorbing either |
+| **RISE** | `distill/collateral_kl_vs_parent`, the **RAW** readings | OLS slope over the last `W+1` readings is `> 0` AND `> --distill-stop-kl-slope × se(slope)` (default **2.0** — a one-sided t-test) |
+
+`--distill-stop-window` (default **8** rollouts, minimum 2) is `W` for both.
+
+Rising collateral ALONE is an ordinary fold in progress — leak and teaching arrive together, and
+paying collateral for content is the trade the fold exists to make. A plateaued agreement ALONE is a
+fold that has merely finished absorbing. It is the **conjunction** — displacement still accumulating
+with nothing left to absorb — that is R3-SELF's content-free regime seen from the inside, and the
+AND-gate must hold for `--distill-stop-persist` consecutive rollouts (default **3**) before firing.
+A rollout that breaks either half resets the count; a rollout where either meter does not read is
+SILENCE — the count neither advances nor resets, `rank_tripwire`'s rule verbatim.
+
+🚨 **THE RISE THRESHOLD IS A t-MULTIPLE, NOT NATS PER ROLLOUT.** Collateral KL's absolute scale
+moves by two orders of magnitude across configs (the anchor's own build smoke read 0.00035 early and
+0.034 late), so no absolute slope could be quoted in a help string and still be right on the next
+arm. A t-statistic asks the only question that transfers: *is this rising by more than its own
+wobble?*
+
+🚨 **AND THE TREND IS FIT ON THE RAW SERIES, NOT ITS EMA — a measured correction, not a
+preference.** An EMA is a low-pass filter, so consecutive points are strongly autocorrelated and an
+OLS fit through it has residuals far smaller than the series' own noise; its standard error
+understates the uncertainty by a large factor. Fitting the EMA therefore reported a SIGNIFICANT
+positive trend on **white noise** — caught while building this: a zero-mean wobble (sd 0.004 around
+a level 0.01) passed `t > 2` at a 6-rollout window, i.e. the detector would have fired on a fold that
+was not drifting at all. The PLATEAU half keeps its EMA, because it compares two LEVELS and
+autocorrelation does not bias a level. Both halves are pinned, including a test that reproduces the
+EMA-fit false-positive rate so nobody tidies the fit back onto the smoothed series.
+
+**THE THREE ACTIONS**, in increasing order of what they take away — all after the same fire:
+
+| `--distill-stop` | does |
+|---|---|
+| `off` (**default**) | registers no callback at all; byte-identical |
+| `warn` | one launcher event + `distill/stop_signal` latched to 1. Nothing about the run changes |
+| `anneal` | plus `--distill-coef ×= --distill-stop-anneal-factor` (default **0.7**) every subsequent rollout, to a floor of 0. The fold winds DOWN over ~a dozen rollouts rather than vanishing between two, so nothing about the loss landscape moves discontinuously under an optimizer carrying momentum |
+| `abort` | plus stopping `learn()` at the next step — `_on_step` returns False, exactly `--rank-tripwire abort`'s channel, so the run's normal end-of-learn save happens and the process exits **COMPLETE**, not CRASH; the launcher does not restart-loop |
+
+**The anneal's floor is exactly 0, and it SNAPS.** A geometric decay never reaches zero, and a
+`distill_coef` of 1e-12 still pays a full teacher forward per minibatch per teacher for a term that
+changes nothing — so the decay snaps to exactly 0.0 once below `1e-6` of the coefficient in force at
+the fire (~39 rollouts at 0.7). At exactly 0 `train()`'s `distill_on` predicate goes False: the
+teacher forwards stop and `distill/teacher_agreement_on_slice` stops existing — the fold really is
+over. The ANCHOR's meters keep reading, because `collateral_kl_vs_parent` and `on_slice_kl` depend
+on the frozen parent and the `distill_mask` obs key, neither of which the coefficient gates. Pinned
+end to end through the real `train()`.
+
+**It REQUIRES the anchor monitor** (`--distill-anchor-coef > 0`, `--distill-anchor-monitor`, or
+`--distill-anchor-mode grad_project`) — the rise half reads `collateral_kl_vs_parent`, which exists
+only when the frozen parent is attached, and without it the AND-gate could never close while the
+flag still read as ON. `resolve_config` refuses rather than shipping that silent no-op.
+
+**THE DUAL — `--distill-anchor-target-kl` (default 0 = off).** The anchor's coefficient is a number
+nobody can tune; this turns it into a **constraint with a readable budget**. Once per rollout:
+
+```
+kl_ema <- alpha*kl + (1-alpha)*kl_ema                  (alpha = 0.2, half-life ~3 rollouts)
+coef   <- clip( coef * exp(eta * (kl_ema/target - 1)),  --distill-anchor-coef-{min,max} )
+```
+
+`eta` is `--distill-anchor-dual-lr` (default **0.1**), the clamps default to `0.0` and **10× the
+starting `--distill-anchor-coef`**. It is gradient ascent on the Lagrange multiplier of
+`minimize L(θ) s.t. KL ≤ target`, taken in LOG-coefficient space so the multiplier stays positive by
+construction and a correction is proportional to the RATIO of the violation — which matters because
+collateral KL spans two orders of magnitude and a fixed additive step would be a different
+controller at each of them. Precedent: PPO-penalty's adaptive β (Schulman et al. 2017 §4) and MPO's
+Lagrangian dual (Abdolmaleki et al. 2018). `distill/anchor_coef` is recorded **every rollout
+whenever the anchor is attached** — a flat line under a static coefficient, on purpose, so a dual
+arm and a static arm carry the same series (the `anchor_loss`-as-a-measured-zero rule);
+`distill/anchor_dual_kl_ema` and `distill/anchor_dual_clamped` ride beside it.
+
+**WHICH METER THE DUAL BUDGETS, and it depends on the reference.** A dual variable must be attached
+to a quantity its own lever can MOVE, or it winds up against a clamp and sits there while still
+reading as a live controller:
+
+| `--distill-anchor-ref` | the dual reads | because |
+|---|---|---|
+| **`parent`** (default) | `distill/collateral_kl_vs_parent` | the ACCUMULATED-DISPLACEMENT meter — the quantity the untaught robbery is made of, and under a fixed reference exactly what the anchor loss penalises |
+| `ema` / `periodic` | `distill/anchor_kl` | under a moving reference the anchor DELIBERATELY does not resist parent-displacement — that is what lets v8's +5.4pp GIFT through — so a dual budgeted on it could never satisfy its constraint |
+
+`collateral_kl_vs_parent` is still logged in every mode; the choice is only about which number the
+dual **acts** on.
+
+**EVERY ROLLOUT, NO COOLDOWN — and that is a difference in KIND from the LR ladder.** The KL-driven
+lr controller is bang-bang (a fixed multiplicative step whenever the EMA leaves a band), so it
+COMPOUNDS while the EMA lags and its 7-rollout cooldown is what stops the overshoot. This is an
+INTEGRATOR: the step shrinks to nothing as the constraint is met, and eta alone sets the response
+timescale (at 0.1 a sustained 2× overshoot moves the coefficient +10.5%/rollout, ~7 rollouts to
+double). Adding a cooldown to an integrator inserts DEAD TIME, which is the classic cause of the
+oscillation a cooldown is meant to prevent. The EMA is the only smoothing this loop needs.
+`--distill-anchor-coef 0` is **refused** with a target-kl: the update is multiplicative, so 0 is a
+fixed point and the controller would run forever without moving anything.
+
+🚨 **BOTH ARE RESTART STATE, and this is the mirror of the anchor's own restart rule.** A launcher
+run restarts every few hours and **forwards the ORIGINAL argv**, so without persistence: a dual that
+had climbed to 5× its starting coefficient would silently reset to 1× at every restart; a detector
+would need its whole 8-rollout window again each time and might never fire at a 3h cadence, while
+reading as ON throughout; and an explicit `--distill-coef 0.3` would re-install itself at full
+strength over a completed anneal. So the dual's `(coef, kl_ema, n)` and the detector's two EMAs,
+both histories, the hold count, the latch and the annealed coefficient are written into the
+**checkpoint sidecar** — the same place `handoff_lr` and `grad_accum_steps` ride, via
+`_model_hparams`, and written **only when the mechanism is live**, so an ordinary run's sidecar is
+byte-for-byte what it always was. `_on_training_start` restores them and **RE-APPLIES the annealed
+coefficient over the argv's** (only when the persisted value is LOWER — an operator who deliberately
+raised it between restarts is not overruled by a stale wind-down). A restart after an `abort` refuses
+at the first step rather than collecting one more rollout.
+
+| scalar | reads |
+|---|---|
+| `distill/anchor_coef` | the coefficient in force this rollout (flat under a static one) |
+| `distill/anchor_dual_kl_ema` · `distill/anchor_dual_clamped` | the dual's smoothed budget reading, and whether the last update hit a clamp |
+| `distill/stop_state` | 0 armed · 1 plateau · 2 plateau+rise · 3 FIRED |
+| `distill/stop_signal` | 0/1, latched at the fire |
+| `distill/stop_rollouts_since_fire` | how long the run has been past its own stop point |
+
+🚨 **THE DEFAULT STAYS `off` UNTIL THE THREE-DOSE CELL'S CURVES SIZE THE WINDOW.**
+`--distill-stop-window 8` and `--distill-stop-eps 0.005` are derived from nothing but the shape of
+the v8 curve at a cadence this tree has never run a fold at. **Run `warn` first** — what it buys is
+exactly the calibration data `anneal` and `abort` need, at zero risk, and a mis-sized rule that
+ABORTS is a new way to lose a training window.
+
+**Where it lives.** `agents/training/distill_stop_callback.py` holds both PURE controllers
+(`AnchorDualAscent`, `FoldStopDetector`, `ols_slope_and_se` — no SB3, no torch, no logging) and the
+`DistillStopCallback` wrapper; the dual is driven from `DistillAnchorCallback._on_rollout_end`,
+which already owns the coefficient and already runs once per `train()`. `ppo.py` is **untouched** —
+both mechanisms act on `model.distill_anchor_coef` / `model.distill_coef`, which `train()` already
+reads. Registration: `main/train/callbacks.py`. Gate:
+`src/agents/training/distill_stop_callback_test.py` (49 tests — the dual's sign, its convergence to
+the target against a closed-loop plant, both clamps, each detector on planted series, the EMA-fit
+false-positive reproduction, the AND-gate + persist + reset, all three actions, the sidecar
+round-trip, and the byte-identity/config-refusal set).
+
+**THE BUILD SMOKE (n = 1, A SMOKE, NOT A RESULT).** A 3k-step teacher and a separate 3k-step fold
+parent, then a fold at `--distill-coef 0.3 --distill-anchor-coef 0.02 --distill-anchor-target-kl 0.01
+--distill-stop warn --distill-stop-window 3 --distill-stop-persist 1` (CPU `--debug`,
+`--n-steps 512 --batch-size 128`, box carrying a live fleet), every series read back off `tb/`:
+
+| step | `anchor_coef` | `anchor_dual_kl_ema` | `teacher_agreement_on_slice` | `collateral_kl_vs_parent` | `stop_state` |
+|---:|---:|---:|---:|---:|---:|
+| 3584 | 0.020000 | 0.000000 | — | — | 0 |
+| 4096 | 0.018711 | 0.003335 | 0.5000 | 0.003335 | 0 |
+| 4608 | 0.017587 | 0.003809 | 0.4219 | 0.005704 | 0 |
+| 5120 | 0.016616 | 0.004318 | 0.4703 | 0.006356 | 0 |
+| 5632 | 0.015919 | 0.005715 | 0.4836 | 0.011300 | **3** |
+| 6144 | 0.015353 | 0.006380 | 0.4139 | 0.009041 | **3** |
+| 6656 | 0.014927 | 0.007185 | 0.4726 | 0.010406 | **3** |
+| 7168 | 0.014678 | 0.008321 | 0.5014 | 0.012863 | **3** |
+| 7680 | 0.014595 | 0.009429 | 0.5239 | 0.013860 | **3** |
+| 8192 | 0.014604 | 0.010065 | 0.4828 | 0.012608 | **3** |
+| 8704 | 0.014657 | 0.010360 | 0.5069 | 0.011541 | **3** |
+| 9216 | 0.014811 | 0.011044 | 0.4398 | 0.013782 | **3** |
+| 9728 | 0.015346 | 0.013549 | 0.4159 | 0.023570 | **3** |
+| 10240 | 0.015884 | 0.013447 | 0.4005 | 0.013037 | **3** |
+| 10752 | 0.016482 | 0.013699 | 0.4063 | 0.014705 | **3** |
+| 11264 | 0.017075 | 0.013532 | 0.4777 | 0.012868 | **3** |
+| 11776 | 0.017810 | 0.014212 | 0.7030 | 0.016929 | **3** |
+| 12288 | 0.019662 | 0.019897 | 0.7609 | 0.042639 | **3** |
+| 12800 | 0.022570 | 0.023791 | 0.6425 | 0.039367 | **3** |
+| 13312 | 0.026510 | 0.026090 | 0.5170 | 0.035285 | **3** |
+| 13824 | 0.032536 | 0.030482 | 0.4681 | 0.048049 | **3** |
+| 14336 | 0.039793 | 0.030135 | 0.5612 | 0.028749 | **3** |
+| 14848 | 0.047643 | 0.028005 | 0.4579 | 0.019482 | **3** |
+| 15360 | 0.056711 | 0.027424 | 0.5194 | 0.025100 | **3** |
+
+**Five things it shows, and one it does not.**
+
+1. **THE DUAL'S SIGN IS RIGHT, AND ITS TRAJECTORY IS V-SHAPED — the constraint tracking its budget
+   in both directions.** The collateral EMA opens far BELOW the 0.01 target, so the coefficient walks
+   DOWN (0.02000 → 0.01459 over six rollouts, ~−4%/rollout, which is what η = 0.1 at that ratio
+   predicts). It bottoms out at step 7680, exactly where the EMA is closing on the target, TURNS
+   AROUND as the EMA crosses 0.01 at step 8192, and then climbs for the rest of the run as the
+   collateral keeps rising — ending at 0.0567 against an EMA of 0.0274. An integrator settling on a
+   budget and then defending it, live; **`distill/anchor_dual_clamped` reads 0 on every rollout**, so
+   it did all of that in the interior and never against a clamp.
+2. **`anchor_kl` EQUALS `collateral_kl_vs_parent` TO EVERY DIGIT** — the documented identity under
+   `--distill-anchor-ref parent` + `--distill-anchor-mode off_slice`: one frozen forward, two names.
+3. **THE AND-GATE CLOSES AT EXACTLY THE ROLLOUT THE ARITHMETIC ALLOWS.** The rise test needs
+   `window + 1 = 4` readings, so 5632 is the first rollout on which it *can* fire; the agreement EMA
+   had not improved over the window (0.500002 → 0.481977, i.e. −0.018 against an eps of +0.005 — a
+   plateau under the SIGNED rule, which is what a FALLING agreement is), collateral had risen
+   monotonically, and at `persist 1` `stop_state` went straight to 3 with `stop_signal` latched.
+   `stop_rollouts_since_fire` then counts 1, 2, 3, … as it should, and the detector's frozen
+   histories confirm the latch stopped its EMAs advancing.
+4. **EVERY NEW SERIES EXISTS FROM THE FIRST ROLLOUT BOUNDARY** — `anchor_coef` is already present at
+   step 3584, before any `train()` has run, which is the "a series a reader can compare across arms"
+   rule the `anchor_loss`-as-a-measured-zero convention set.
+5. **BOTH CONTROLLERS REACHED THE SIDECAR**, read straight back out of the run's `metadata.json`:
+   `distill_anchor_dual_state = {"coef": 0.056711, "kl_ema": 0.027424, "n_readings": 23}` and
+   `distill_stop_state` carrying `fired: true`, `rollouts_since_fire: 19`, both 4-entry histories,
+   and `distill_coef_annealed: 0.3` — unchanged, correctly, because the mode was `warn`.
+
+What it does **not** show is a fold. `distill/kl` ROSE across the window the rule fired on (0.0446
+→ 0.0652), so this toy student was not absorbing its toy teacher at all — which makes the
+plateau half trivially satisfied. The run is therefore a WIRING check (every series exists, carries
+the right value, the state machine transitions where the arithmetic says it must, and the state
+survives to disk), not a reading on whether the rule fires at the right MOMENT of a real fold.
+**Sizing the window is the three-dose cell's job, and the default stays `off` until it has.**
 
 ### Advantage-gated / action-form distillation (`--distill-target` / `--distill-topk` / `--distill-gate` / `--distill-gate-tau` / `--distill-beta`) + the rank tripwire (`--rank-tripwire`)
 

@@ -235,6 +235,20 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         # RESTART, which SHOULD have written the sibling), so a missing sibling is reported as a
         # reset trust region on a restart and as an ordinary fold start on a fork's first launch.
         from main.train.fork_lr import is_same_run_checkpoint
+        # gen3_distill_stop_rule_v1: the DUAL-ASCENT coefficient is RUN STATE and rides the SAME
+        # sidecar `handoff_lr` and `grad_accum_steps` ride. The launcher forwards the ORIGINAL argv
+        # on every relaunch, so without this a controller that had climbed to 5x its starting
+        # coefficient over three hours would silently reset to 1x at each restart — the same class
+        # of failure the moving reference's sibling blob exists to prevent.
+        _resumed_dual: dict | None = None
+        if args.model and os.path.exists(args.model):
+            try:
+                _d = read_checkpoint_metadata(args.model).get("distill_anchor_dual_state")
+                if isinstance(_d, dict):
+                    _resumed_dual = _d
+            except Exception as e:
+                print(f"[DistillAnchor] WARNING: failed to read distill_anchor_dual_state from "
+                      f"{args.model}: {e} — the dual restarts from --distill-anchor-coef.")
         callbacks.append(DistillAnchorCallback(
             parent_path=_anchor_path, route=_anchor_route,
             coef=float(getattr(args, "distill_anchor_coef", 0.0) or 0.0),
@@ -248,7 +262,38 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             proj_samples=int(_arg_or(args, "distill_anchor_proj_samples", 16)),
             run_dir=model_dir, resume_model=args.model,
             expect_restore=bool(args.model and is_same_run_checkpoint(args.model, model_dir)),
+            target_kl=float(_arg_or(args, "distill_anchor_target_kl", 0.0)),
+            dual_lr=float(_arg_or(args, "distill_anchor_dual_lr", 0.1)),
+            coef_min=float(_arg_or(args, "distill_anchor_coef_min", 0.0)),
+            coef_max=getattr(args, "distill_anchor_coef_max", None),
+            resume_dual=_resumed_dual,
             load_parent=_load_anchor_parent))
+    # THE FOLD STOP RULE (gen3_distill_stop_rule_v1) — plateau on teacher_agreement_on_slice AND
+    # rise on collateral_kl_vs_parent, AND-gated with a persistence count, driving warn/anneal/
+    # abort. Registered only when the flag is on, so an ordinary fold adds no callback and writes
+    # no series. `resolve_config` refuses the flag without a live anchor MONITOR, because the rise
+    # half of the gate reads a meter only the frozen parent provides. Its detector state rides the
+    # sidecar for the reason above: a detector re-armed on every 3h restart would need its whole
+    # window again each time and might never fire, while reading as ON throughout.
+    if getattr(args, "distill_stop", "off") not in ("off", None):
+        from agents.training.distill_stop_callback import DistillStopCallback
+        _resumed_stop: dict | None = None
+        if args.model and os.path.exists(args.model):
+            try:
+                _s = read_checkpoint_metadata(args.model).get("distill_stop_state")
+                if isinstance(_s, dict):
+                    _resumed_stop = _s
+            except Exception as e:
+                print(f"[DistillStop] WARNING: failed to read distill_stop_state from "
+                      f"{args.model}: {e} — the detector re-arms from scratch.")
+        callbacks.append(DistillStopCallback(
+            mode=str(args.distill_stop),
+            window=int(_arg_or(args, "distill_stop_window", 8)),
+            eps=float(_arg_or(args, "distill_stop_eps", 0.005)),
+            kl_slope_t=float(_arg_or(args, "distill_stop_kl_slope", 2.0)),
+            persist=int(_arg_or(args, "distill_stop_persist", 3)),
+            anneal_factor=float(_arg_or(args, "distill_stop_anneal_factor", 0.7)),
+            resume_state=_resumed_stop))
     # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
     # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
     # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when
