@@ -8676,3 +8676,42 @@ Smoke (toy, n=1): the dual traces a V (0.020 → 0.0146 while under budget, turn
 crosses the 0.01 target, climbing to 0.057 as collateral rises); `stop_state` 0 → 3 at the first
 rollout the rise test can fire. Not a fold (the toy absorbed nothing). Window sizing = the three-dose
 cell's job; **default stays off.**
+
+### 🔴 KILL: `grad_project` is NOT LICENSED — on production gradients the projection removes 15% (not 80%) and buys NOTHING at matched absorption, at 2.3–2.5× the compute (2026-09-02 early)
+
+`measurements/grad_project_offline_2026-09-01.{md,json}` + probe + 21 per-cell curves · the licensing
+probe's instrument unmodified (parent `R2ACTION`, teachers R4S3a/b/c, 400 Adam steps, batch 256;
+the six unprojected cells reproduce the 2026-08-31 record to ~0.005) · constraint pool split from
+the evaluation pool · pre-registered P1–P3.
+
+| m | `removed_frac` (mean) | rank |
+|---:|---:|---:|
+| 8 | 0.091 | 8/8 |
+| 16 | **0.150** | 16/16 |
+| 32 | 0.223 | 32/32 |
+| 64 | 0.315 | 64/64 |
+
+**P1 PASS 6/6** — the smoke's 0.80 was a toy-config artefact; on production-shaped gradients m=16
+removes 15% (max 0.18). **Rank is FULL at every m** and growth is sublinear (`≈ 0.0275·m^0.595`:
+0.5 needs m≈131, 0.8 needs m≈288 at O(m²·|θ|)) ⇒ **there is no small set of shared directions
+where "the leak" lives — it is diffuse in weight space.** **P2 FAIL 0/6** — matched-absorption
+collateral at 0.70: mean **−2.3%**, range −15.4…+5.2% (bar −30%); KL@400 **+6.9% WORSE** on all six
+arms; the sign at matched absorption is a property of the TEACHER (b improves on both seeds, a and c
+worsen on both). **P3 PASS 6/6** — ceiling unchanged (|Δ| ≤ 0.0075). **Q3: neither the teaching nor
+the leak was removed**; m 8/16/32 identical in outcome at 11× cost spread — "remove more" is not the
+fix. lr 3e-4 (the live fold's rate, n=1): null holds, worse on both axes.
+
+**⇒ Disposition.** `--distill-anchor-mode grad_project` stays in the tree as a MEASURED NEGATIVE
+(34 tests, byte-identical off) and must not be used in a fold. The source-separation idea is not
+dead — the shadow-policy reference (exact, 2× train) and the adapter-scoped distillation (structural)
+remain — but the cheap first-order projection with sampled constraints is. **The leak's geometry is
+the durable finding: a diffuse, high-dimensional displacement that behaves in BEHAVIOUR space as one
+direction (the teachers' fingerprint, M4/decay probe) yet in WEIGHT space has no low-rank home.**
+That is exactly the case for an OUTPUT-level anchor (which taxes the effect whatever its direction)
+with a reference set AFTER the gift lands, plus the stop rule — the tools now on main.
+
+Two instrument defects the agent found and fixed before scoring (recorded in the .md): a degenerate
+crossing (a level already met at step 0 read as "−100% collateral") and the P1–P3 scorer gating on
+`m == 16` alone, which silently pooled the lr-3e-4 arm as a 7th at the wrong step size — verdicts
+unchanged, intervals were not. Unfinished (listed, not interpolated): projected m=64, seed-2 monitor
+cells, the m sweep on teachers b/c, seed 2 of the lr-3e-4 check.
