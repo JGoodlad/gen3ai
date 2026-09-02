@@ -8520,3 +8520,54 @@ the convention had to be settled on the source and is now written in this ledger
 total 0.0629 → 0.0635 → 0.0642, gap 42× → 33× → 27× and narrowing. What is solid: large aux
 deflation, opposite bands at the start of an arm, a 27–42× gap. What is NOT: the policy term's band
 — re-read at R5F15 completion and across the 8 funding forks before quoting one.
+
+### 🔴 v8's GIFT IS A TRANSIENT HUMP — it DOUBLES by +3M, plateaus +8–10pp for ~9M, then DECAYS over the last ~2.5M to the +5pp probe P banked (2026-09-01)
+
+`measurements/v8_gift_timing_2026-09-01.{md,json,_tables.md,_cells.jsonl.gz}` + probe + inputs ·
+18,432 battles, 1,152 cells, 0 errors · probe P's instrument REUSED (selection byte-asserted
+against the fingerprint probe's copy; same 16 untaught × 8 opponent teams; same fixed reference
+`ai_v8_03`; CRN prefix subsample of probe P's own battles; era pin `b13b30b`, private copy) ·
+stamp: greedy both sides · node bridge · 16 CRN games/cell = 128/team/arm. Registered before the
+first battle: P1 "≥ half the final gain absent at the first retained checkpoint (+1.09M)", P2
+"still rising in the second half" — the owner's hypothesis that the gift is the off-slice PPO
+signal RE-OPTIMISING the distillation leak, which needs PPO TIME.
+
+| fold Δ | gain vs parent | cluster-boot 95% | teams + |
+|---:|---:|---|---:|
+| +1.09M | **+4.64pp** | [+2.20, +7.47] | 14/16 |
+| +3.07M | +8.06 | [+4.88, +11.28] | 14/16 |
+| +6.05M | +9.03 | [+5.62, +12.60] | 15/16 |
+| +9.55M | +8.06 | [+4.74, +11.18] | 14/16 |
+| +12.53M | **+9.67 (peak)** | [+6.79, +12.50] | 15/16 |
+| +13.52M ⁺ | +8.25 | [+4.15, +11.82] | 14/16 |
+| +14.52M ⁺ | +7.03 | [+3.27, +10.35] | 13/16 |
+| +15.04M (final, probe P's arm) | **+4.98** | [+2.15, +7.62] | 13/16 |
+(⁺ unregistered follow-ups, added only to show the decline is progressive, not an interrupt-save artifact.)
+
+**P1 UNDECIDED** (first-checkpoint gain +4.64 vs the +2.49 half-gain line; paired form +2.15
+[−0.20, +4.66], nearly all on the "already present" side). **P2 FAIL**: final − midpoint = **−4.05pp
+[−8.01, −0.49]**, wholly below zero (sensitivity at +9.55M: −3.08 [−5.86, −0.20]). **Neither story
+survives:** not accrual-with-PPO-time (the second half DECLINES), not flat-from-the-start (it
+doubles between +1M and +3M). 14/16 teams peak at an interior arm.
+
+**Reading.** (1) About half the peak is present after ~1M steps and the rest arrives by ~3M — the
+teachers' content lands fast, with a modest accrual. (2) The gift then HOLDS for ~9M steps of
+continued distillation + PFSP play. (3) Over the last ~2.5M it is progressively UNDONE while the
+fold keeps running at `--distill-coef 1.0` against the same, by-then-absorbed teachers. The
+parsimonious account is the licensing probe's overshoot half seen in the wild: once absorption
+saturates, a dense distill term with nothing left to teach keeps pushing (R3-SELF's content-free
+regime), and the untaught teams pay. Alternatives not excluded: PFSP dynamics late in the fold;
+critic drift. **The M4 fingerprint at peak vs final on identical boards (dispatched) will say WHAT
+the last 2.5M undid.**
+
+**Consequences.** (a) **Probe P's +5.42pp is a reading on the DECAYED TAIL; the fold's peak
+untaught externality was +9.67 [+6.79, +12.50]** — every v8-vs-gen-era contrast scored on v8's
+endpoint under-states v8's gift by ~half (`endpoint − peak = −4.69 [−8.11, −1.51]`, descriptive,
+peak selected). (b) A fold has an OPTIMAL LENGTH, and running past it costs ~5pp untaught; the
+gen-era folds (4.3–4.5M) sat where v8 was still on the rise, so their robbery is not "too short".
+(c) The "stop loss" the owner asked about this evening is now evidence-motivated: a fold should
+stop, anneal its coefficient, or switch its target once on-slice absorption plateaus — the live
+`distill/teacher_agreement_on_slice` and `distill/collateral_kl_vs_parent` meters (96a00ed6,
+49954120) are the signals, and a dual-ascent coefficient on a collateral-KL budget is the
+mechanism to build. (d) The three-dose cell should keep EVERY checkpoint (`--checkpoint-every-steps
+500000`) and score the untaught meter at ≥3 points per arm, not the endpoint alone.
