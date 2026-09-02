@@ -68,9 +68,10 @@ import torch as th
 from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.training.instrumented_ppo.distill_anchor import ANCHOR_REFS
+from agents.training.lineage import fork_parent as _lineage_fork_parent
 
 #: The resolution routes, in precedence order — the value printed at startup and asserted in tests.
-ANCHOR_PARENT_ROUTES = ("explicit", "original_command", "cli_model")
+ANCHOR_PARENT_ROUTES = ("explicit", "lineage", "original_command", "cli_model")
 
 _MODEL_FLAGS = ("--model", "--model_path", "--model-path")
 
@@ -117,11 +118,13 @@ def resolve_anchor_parent(*, explicit: Optional[str], run_dir: Optional[str],
     """
     if explicit:
         return explicit, "explicit"
-    cmd = read_original_command(run_dir) if run_dir else None
-    if cmd:
-        got = parse_model_arg(cmd)
-        if got:
-            return got, "original_command"
+    # gen3_run_lineage_v1: the parent comes from metadata.json's first-class `lineage` block; a
+    # legacy run (pre-lineage) derives it from `original_command` through the ONE parser in
+    # `agents.training.lineage`, which warns. `.path` is the path AS GIVEN, byte-identical to what
+    # the old inline parse returned, so the loader's behaviour is unchanged.
+    got = _lineage_fork_parent(run_dir, warn=True) if run_dir else None
+    if got is not None:
+        return got.path, ("original_command" if got.derived else "lineage")
     if cli_model:
         return cli_model, "cli_model"
     return None, "unresolved"

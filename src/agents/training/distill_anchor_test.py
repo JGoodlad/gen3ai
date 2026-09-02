@@ -231,8 +231,10 @@ def test_read_original_command_tolerates_junk(tmp_path):
     assert read_original_command(str(tmp_path)) is None            # empty
 
 
-def test_routes_are_the_documented_three():
-    assert ANCHOR_PARENT_ROUTES == ("explicit", "original_command", "cli_model")
+def test_routes_are_the_documented_four():
+    # gen3_run_lineage_v1 inserted "lineage" (metadata's first-class block) ahead of the legacy
+    # "original_command" derivation, which is now the accessor's warn-path, not an inline parse.
+    assert ANCHOR_PARENT_ROUTES == ("explicit", "lineage", "original_command", "cli_model")
 
 
 def test_the_callback_attaches_the_parent_and_the_hparams_on_every_launch():
