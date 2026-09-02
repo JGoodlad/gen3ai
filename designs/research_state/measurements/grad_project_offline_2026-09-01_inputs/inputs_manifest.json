@@ -1,0 +1,94 @@
+{
+  "probe": "grad_project_offline_probe.py",
+  "instrument_imported_verbatim": "lr_licensing_probe.py (2026-08-31, unmodified)",
+  "operator_imported_verbatim": "src/agents/training/instrumented_ppo/distill_grad_project.py -> behaviour_constraints / orthonormalize / project_out / flatten_grads (already pure module-level functions; NO change was needed to that module)",
+  "git_head": "cb6c98de525341a8eb22cccd473ef6c7a739c383",
+  "student_fold_parent": {
+    "run": "ai_v9_59_R2ACTION_0827",
+    "path": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "exists": true,
+    "bytes": 36418802
+  },
+  "teachers": {
+    "a": {
+      "run": "ai_v9_73_R4S3a_0829",
+      "path": "/home/goodlad/dev/gen3ai/models/ai_v9_73_R4S3a_0829/final_model.zip",
+      "exists": true,
+      "bytes": 36417569
+    },
+    "b": {
+      "run": "ai_v9_74_R4S3b_0829",
+      "path": "/home/goodlad/dev/gen3ai/models/ai_v9_74_R4S3b_0829/final_model.zip",
+      "exists": true,
+      "bytes": 36417648
+    },
+    "c": {
+      "run": "ai_v9_75_R4S3c_0829",
+      "path": "/home/goodlad/dev/gen3ai/models/ai_v9_75_R4S3c_0829/final_model.zip",
+      "exists": true,
+      "bytes": 36417649
+    }
+  },
+  "off_slice_state_source_run": "ai_v9_29_rev1_0823",
+  "state_caches": {
+    "lr_states_a.npz": {
+      "sha256": "dca723a41edf92198e1d395cfc27a8c8369adb2b214dc3b8051dc41ba69082e6",
+      "bytes": 3729434,
+      "committed": true,
+      "producer": "lr_licensing_probe.py build-states (2026-08-31)"
+    },
+    "lr_teacher_targets_a.npz": {
+      "sha256": "4e80ae6358089a87a3af41ba9b258444b7324e7354fafb2027a5aa5998d8b096",
+      "bytes": 72386,
+      "committed": true,
+      "producer": "lr_licensing_probe.py build-states (2026-08-31)"
+    },
+    "lr_states_b.npz": {
+      "sha256": "c256961e6d3e17e4bfb17001af2915c06622b7ebf863952d6db8f38b620733ab",
+      "bytes": 3849984,
+      "committed": true,
+      "producer": "lr_licensing_probe.py build-states (2026-08-31)"
+    },
+    "lr_teacher_targets_b.npz": {
+      "sha256": "a5c3c314cfb5711483bfdf45ef41090a37b8973bea29ab60ca1c0990453d7184",
+      "bytes": 72698,
+      "committed": true,
+      "producer": "lr_licensing_probe.py build-states (2026-08-31)"
+    },
+    "lr_states_c.npz": {
+      "sha256": "2801e601e8effbd9b2e7564c977e3fd92401a0dd7023fb50532e8437e634a99f",
+      "bytes": 3872039,
+      "committed": true,
+      "producer": "lr_licensing_probe.py build-states (2026-08-31)"
+    },
+    "lr_teacher_targets_c.npz": {
+      "sha256": "ba81ed5db86fc6e1870979cab0aa5eb5a0153797a91f290e41c8dbcd7fd93979",
+      "bytes": 72981,
+      "committed": true,
+      "producer": "lr_licensing_probe.py build-states (2026-08-31)"
+    }
+  },
+  "off_split": {
+    "seed": 20260901,
+    "n_constraint": 500,
+    "n_eval": 1000,
+    "level": "state"
+  },
+  "split_census": {
+    "a": {
+      "n_constraint": 500,
+      "n_eval": 1000,
+      "disjoint_by_construction": true
+    },
+    "b": {
+      "n_constraint": 500,
+      "n_eval": 1000,
+      "disjoint_by_construction": true
+    },
+    "c": {
+      "n_constraint": 500,
+      "n_eval": 1000,
+      "disjoint_by_construction": true
+    }
+  }
+}
