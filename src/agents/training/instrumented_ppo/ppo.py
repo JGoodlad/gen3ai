@@ -34,6 +34,7 @@ from agents.training.instrumented_ppo.constants import (
     _NOISE_SCALE_EMA_DECAY,
 )
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
+from agents.training.instrumented_ppo.distill_grad_project import make_projector
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
@@ -434,6 +435,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if (accum >= 2 and per_term_enabled(self)
                 and self._noise_per_term_calls % max(1, _NOISE_PER_TERM_EVERY) == 0):
             _ns_terms = PerTermNoiseSampler(list(self.policy.parameters()))
+        # +DISTILL-GRAD-PROJECT (gen3_distill_grad_project_v1): SOURCE-SEPARATED anchoring — project
+        # the DISTILL gradient off the off-slice behaviour subspace and leave PPO's gradient free.
+        # NULL unless `--distill-anchor-mode grad_project`, in which case `_dgp.add(...)` below is a
+        # passthrough and the two step-side hooks do nothing (update bit-identical). The whole
+        # mechanism lives in `distill_grad_project.py`; this file holds only the seam.
+        _dgp = make_projector(self, distill_metrics, list(self.policy.parameters()))
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # +GRAD-ACCUM: start each accumulation group with a clean grad buffer; count micro-batches.
@@ -1008,7 +1015,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             # fewer states still contributes comparable gradient (not swamped by a big one).
                             _distill_kl = th.stack(_per_teacher_kl).mean()
                             distill_term = self.distill_coef * _distill_kl
-                            loss = loss + _ntg.add("distill", distill_term)
+                            # +DISTILL-GRAD-PROJECT: `_dgp.add` records the TEACHER terms (this one
+                            # and the two value-side ones below) as the gradient source to project.
+                            # It returns its argument unchanged, so the fold is the one that was
+                            # here before; the anchor term deliberately does NOT get this wrapper.
+                            loss = loss + _ntg.add("distill", _dgp.add(distill_term))
                             distill_metrics.setdefault("kl", []).append(float(_distill_kl))
                             distill_metrics.setdefault("n_teachers_active", []).append(float(len(_per_teacher_kl)))
                             if _on_agree_n:
@@ -1016,12 +1027,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                     _on_agree / _on_agree_n)
                         if _per_teacher_vd:
                             _distill_vd = th.stack(_per_teacher_vd).mean()    # balanced like the policy KL
-                            loss = loss + _ntg.add("distill", self.distill_value_coef * _distill_vd)
+                            loss = loss + _ntg.add(
+                                "distill", _dgp.add(self.distill_value_coef * _distill_vd))
                             distill_metrics.setdefault("value_mse", []).append(float(_distill_vd))
                         if _per_teacher_vfd:
                             _distill_vfd = th.stack(_per_teacher_vfd).mean()  # balanced like the policy KL
                             loss = loss + _ntg.add(
-                                "distill", self.distill_value_feat_coef * _distill_vfd)
+                                "distill", _dgp.add(self.distill_value_feat_coef * _distill_vfd))
                             # Same naming note as the per-teacher site above: DISTANCE (1 − cos), lower =
                             # better aligned. `value_feat_dist` is canonical; `value_feat_cos` is the
                             # deprecated alias kept one release.
@@ -1342,7 +1354,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # still alive and `.grad` still holds only what previous micro-batches put there.
                 # `autograd.grad` writes no `.grad`, so the accumulation below is untouched.
                 _ntg.flush_micro()
+                # +DISTILL-GRAD-PROJECT: the removal vector is computed while the graph is alive
+                # (read-only `autograd.grad`, no `.grad` written) and applied to `.grad` immediately
+                # after the real backward — so `.grad` goes from `g_ppo + g_distill` to
+                # `g_ppo + P_perp g_distill` with PPO's contribution bit-for-bit untouched. Both are
+                # no-ops unless `--distill-anchor-mode grad_project`.
+                _dgp.before_backward(self.policy, rollout_data)
                 (loss / accum).backward()
+                _dgp.after_backward(accum)
                 micro_in_group += 1
                 # +INSTRUMENTATION: per-edge-family liveness, sampled ONCE per train() and read
                 # HERE because it wants `.grad` populated but not yet cleared by the optimizer

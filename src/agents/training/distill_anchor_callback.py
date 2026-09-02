@@ -253,13 +253,18 @@ class DistillAnchorCallback(BaseCallback):
                  load_parent: Callable[[str], object], ref: str = "parent", ema_tau: float = 0.99,
                  refresh_every: int = 8, run_dir: Optional[str] = None,
                  resume_model: Optional[str] = None, expect_restore: bool = False,
-                 verbose: int = 0):
+                 proj_samples: int = 16, verbose: int = 0):
         super().__init__(verbose)
         self.parent_path = parent_path
         self.route = route
         self.coef = float(coef or 0.0)
         self.mode = str(mode)
         self.monitor = bool(monitor)
+        # gen3_distill_grad_project_v1: `m` for `--distill-anchor-mode grad_project`. It rides THIS
+        # callback because the mode does, and because grad_project is the one mode that needs the
+        # frozen parent attached at coefficient 0 — the projection's whole readout is
+        # `distill/collateral_kl_vs_parent`, which only exists when this callback ran.
+        self.proj_samples = max(1, int(proj_samples or 16))
         self._load_parent = load_parent
         self.ema_tau = float(ema_tau)
         self.refresh_every = int(refresh_every)
@@ -398,6 +403,7 @@ class DistillAnchorCallback(BaseCallback):
         # exits the process, so there is no state in which they are set and the parent is not.
         self.model.distill_anchor_coef = self.coef
         self.model.distill_anchor_mode = self.mode
+        self.model.distill_anchor_proj_samples = self.proj_samples
         self.model.distill_anchor_monitor = self.monitor
         self.model.distill_anchor_ref = self.ref
         try:

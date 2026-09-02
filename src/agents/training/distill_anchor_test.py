@@ -88,8 +88,19 @@ def test_row_weights_split_the_batch_by_teacher_id():
     assert off_all.tolist() == [1.0, 0.0, 1.0, 0.0]     # ...but the METER is still the off-slice one
 
 
-def test_modes_are_exactly_the_two_the_flag_offers():
-    assert ANCHOR_MODES == ("off_slice", "all")
+def test_modes_are_exactly_the_ones_the_flag_offers():
+    """`grad_project` (gen3_distill_grad_project_v1) is a THIRD mode, and it is a different
+    MECHANISM rather than a third row set — it projects the DISTILL gradient off the off-slice
+    behaviour subspace at every step. Its OUTPUT half is `off_slice`'s, pinned just below; the
+    projection itself is pinned by `instrumented_ppo_distill_grad_project_test.py`."""
+    assert ANCHOR_MODES == ("off_slice", "all", "grad_project")
+
+
+def test_grad_project_takes_the_off_slice_row_weights_for_its_output_half():
+    tid = th.tensor([0.0, 1.0, 0.0, 2.0])
+    w, off = anchor_row_weights(tid, "grad_project", th.float32)
+    w_off, off_off = anchor_row_weights(tid, "off_slice", th.float32)
+    assert w.tolist() == w_off.tolist() and off.tolist() == off_off.tolist()
 
 
 def _split_batch():

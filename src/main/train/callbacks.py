@@ -191,7 +191,16 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # student). The resolution happens HERE, in phase 4, so an unresolvable parent refuses BEFORE
     # the model is built rather than mid-`learn()`. The loader is injected so the agents-layer
     # callback needs no `mappings` and no `main.train` import.
-    if (getattr(args, "distill_anchor_coef", 0.0) or 0.0) > 0 or getattr(args, "distill_anchor_monitor", False):
+    # gen3_distill_grad_project_v1: `--distill-anchor-mode grad_project` registers this callback
+    # even at coefficient 0 and without --distill-anchor-monitor. The projection changes the update
+    # on its own, so the mode has to REACH the model (this is the only site that sets
+    # `distill_anchor_mode`), and its readout is `distill/collateral_kl_vs_parent`, which only
+    # exists when the frozen parent is attached. `resolve_config` agrees — it counts the mode as
+    # `_anchor_wanted`, so the two conditions cannot drift into "the flag was accepted and did
+    # nothing".
+    if ((getattr(args, "distill_anchor_coef", 0.0) or 0.0) > 0
+            or getattr(args, "distill_anchor_monitor", False)
+            or getattr(args, "distill_anchor_mode", None) == "grad_project"):
         from agents.training.distill_anchor_callback import (
             DistillAnchorCallback, resolve_anchor_parent)
         _anchor_path, _anchor_route = resolve_anchor_parent(
@@ -199,7 +208,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             run_dir=model_dir, cli_model=args.model)
         if not _anchor_path:
             from main.exit_codes import TrainExitCode
-            print("\n[DistillAnchor] FATAL:--distill-anchor-coef / --distill-anchor-monitor is on "
+            print("\n[DistillAnchor] FATAL: --distill-anchor-coef / --distill-anchor-monitor / "
+                  "--distill-anchor-mode grad_project is on "
                   "but no fold parent could be resolved — no --distill-anchor-parent, no --model, "
                   f"and {model_dir}/metadata.json records no `original_command` with a --model. "
                   "The anchor has nothing to anchor to; refusing rather than training without it.")
@@ -235,6 +245,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             # meanings of their own, so an `x or default` would silently rewrite one of them.
             ema_tau=float(_arg_or(args, "distill_anchor_ema_tau", 0.99)),
             refresh_every=int(_arg_or(args, "distill_anchor_refresh_every", 8)),
+            proj_samples=int(_arg_or(args, "distill_anchor_proj_samples", 16)),
             run_dir=model_dir, resume_model=args.model,
             expect_restore=bool(args.model and is_same_run_checkpoint(args.model, model_dir)),
             load_parent=_load_anchor_parent))

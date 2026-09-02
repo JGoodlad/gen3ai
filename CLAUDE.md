@@ -1526,7 +1526,13 @@ src/
                      #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub;
                      #   noise_scale_terms.py = the PER-LOSS-TERM McCandlish critical batch —
                      #   whether the total `train/noise_scale` reading is the POLICY gradient's
-                     #   or the dense aux heads')
+                     #   or the dense aux heads';
+                     #   distill_anchor.py = the OFF-SLICE output trust region + the collateral
+                     #   meters, distill_grad_project.py = its SOURCE-SEPARATED sibling
+                     #   (`--distill-anchor-mode grad_project`): project the DISTILL gradient off
+                     #   the off-slice behaviour subspace and leave PPO's gradient free — a fold's
+                     #   GIFT and its LEAK are one displacement at the output and two SOURCES at
+                     #   the update)
                      #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
                      #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
                      #   bootstrap; shared by `train/scaffolding_gauge` and main.scaffolding_gauge)

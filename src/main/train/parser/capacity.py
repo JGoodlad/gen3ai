@@ -106,13 +106,42 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
                              "distill/collateral_kl fall while distill/teacher_agreement_on_slice holds, "
                              "and grad/distill_anchor_share against grad/distill_share for the dose.")
     parser.add_argument("--distill-anchor-mode", "--distill_anchor_mode", dest="distill_anchor_mode",
-                        choices=["off_slice", "all"], default=None,
+                        choices=["off_slice", "all", "grad_project"], default=None,
                         help="WHICH rows the anchor applies to. 'off_slice' (default) = only where "
                              "distill_mask == 0, so the anchor never fights the teacher on the states "
                              "the teacher owns. 'all' = every row; it exists so an arm can TEST whether "
                              "excluding the taught slice is what makes the trust region work rather "
                              "than assuming it. The METERS are unaffected — collateral_kl is always "
-                             "the off-slice mean and on_slice_kl always the on-slice one.")
+                             "the off-slice mean and on_slice_kl always the on-slice one. "
+                             "'grad_project' (gen3_distill_grad_project_v1) is SOURCE-SEPARATED and "
+                             "is a different mechanism, not a third row set: every optimizer step it "
+                             "projects the DISTILL gradient off the subspace spanned by "
+                             "grad log pi(argmax) at --distill-anchor-proj-samples sampled OFF-SLICE "
+                             "states, and steps with g_ppo + P_perp g_distill — PPO's gradient is "
+                             "never read or scaled. The point is the one thing an OUTPUT anchor "
+                             "cannot do: a fold's GIFT (an off-slice habit change orthogonal to the "
+                             "taught content, PPO-driven, +5-10pp untaught) and its LEAK (the taught "
+                             "content arriving on untaught boards, -5.7pp) are the same displacement "
+                             "at the output and DIFFERENT SOURCES at the update. Its own output half "
+                             "is 'off_slice', so --distill-anchor-coef 0 is projection-only and a "
+                             "positive coefficient COMPOSES an output anchor on top (the projection "
+                             "is per-step first-order; the output anchor catches the accumulation). "
+                             "The frozen parent is attached in this mode even at coefficient 0, so "
+                             "distill/collateral_kl_vs_parent reads the effect live. Costs the m "
+                             "constraint backwards per micro-batch — see distill/proj_ms.")
+    parser.add_argument("--distill-anchor-proj-samples", "--distill_anchor_proj_samples",
+                        dest="distill_anchor_proj_samples", type=int, default=None,
+                        help="m for --distill-anchor-mode grad_project (default 16): how many "
+                             "OFF-SLICE rows of each micro-batch constrain that step's distill "
+                             "gradient. Each costs one backward over an m-ROW graph (the obs are "
+                             "sliced before the forward, so this is ~m/batch_size of a full "
+                             "backward) and m x |params| floats of peak memory, both freed at the "
+                             "end of the micro-batch. Higher m constrains more of the off-slice "
+                             "behaviour manifold per step; watch distill/proj_rank, which is the "
+                             "number of directions that SURVIVED Gram-Schmidt and is what the "
+                             "projection actually removed along — if it saturates well below m the "
+                             "sampled states are asking for the same change and more samples buy "
+                             "nothing. Ignored (and refused) outside grad_project.")
     parser.add_argument("--distill-anchor-monitor", "--distill_anchor_monitor",
                         dest="distill_anchor_monitor", action="store_true", default=False,
                         help="Attach the frozen fold parent and emit every distill/collateral_kl "

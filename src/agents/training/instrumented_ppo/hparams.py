@@ -309,6 +309,11 @@ class PpoHyperparameters:
     # exists so a future arm can test whether EXCLUDING the taught slice is what makes the trust
     # region work — an assumption otherwise baked in and unmeasurable.
     distill_anchor_mode: str = "off_slice"
+    # gen3_distill_grad_project_v1 — `m` for `--distill-anchor-mode grad_project`: how many OFF-SLICE
+    # rows of each micro-batch constrain that step's DISTILL gradient. Read only in that mode (and
+    # only ever set by `DistillAnchorCallback`, like the mode itself); see
+    # `instrumented_ppo/distill_grad_project.py` for what the projection does and what it costs.
+    distill_anchor_proj_samples: int = 16
     # Attach the frozen parent (and therefore emit the meters) even at coefficient 0.
     distill_anchor_monitor: bool = False
     # WHICH policy the trust region is measured against — "parent" (the FIXED frozen fold parent,

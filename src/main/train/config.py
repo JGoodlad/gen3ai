@@ -428,6 +428,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _anchor_ref_explicit = (args.distill_anchor_ref is not None
                             or args.distill_anchor_ema_tau is not None
                             or args.distill_anchor_refresh_every is not None)
+    # gen3_distill_grad_project_v1: captured with the two above, BEFORE the resolve, for the same
+    # reason — after it an unset flag is indistinguishable from a typed default, and the refusal
+    # below is only honest about a value the user actually typed.
+    _proj_samples_explicit = args.distill_anchor_proj_samples is not None
     _resolve("distill_anchor_coef", 0.0)       # training-only OFF-SLICE anchor KL weight (0.0 = off)
     _resolve("distill_anchor_mode", "off_slice")  # training-only: which rows the anchor applies to
     # WHICH policy the anchor is measured against. "parent" (the FIXED fold parent) is the default
@@ -437,6 +441,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("distill_anchor_ref", "parent")
     _resolve("distill_anchor_ema_tau", 0.99)   # training-only Polyak tau (~1/(1-tau) train() calls)
     _resolve("distill_anchor_refresh_every", 8)  # training-only periodic cadence (0 = never = parent)
+    # gen3_distill_grad_project_v1 — m, the off-slice rows that constrain each step's DISTILL
+    # gradient under `--distill-anchor-mode grad_project`. Same class as the three above:
+    # training-only, never gated, argparse default None so an unset flag lands on the one default.
+    _resolve("distill_anchor_proj_samples", 16)
     # gen3_distill_target_gate_v1 (config v103) — the action-form/top-K distill target, the
     # advantage gate, and the rank tripwire. The td_aux_coef class: recorded for provenance,
     # never gated, read back here so a flagless resume keeps the arm it was launched as.
@@ -775,8 +783,20 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.distill_anchor_coef is not None and args.distill_anchor_coef < 0.0:
         parser.error("--distill-anchor-coef must be >= 0 (0 = off; with --distill-anchor-monitor, "
                      "0 is the pure-instrument arm)")
+    # gen3_distill_grad_project_v1: `grad_project` WANTS the anchor machinery even at coefficient 0
+    # and without --distill-anchor-monitor — the projection is the mode's whole effect, and the
+    # frozen parent has to be attached so `distill/collateral_kl_vs_parent` measures it live. An
+    # experiment whose readout is optional is an experiment nobody reads.
+    _grad_project = args.distill_anchor_mode == "grad_project"   # READ AFTER the resolve above
     _anchor_wanted = bool((args.distill_anchor_coef and args.distill_anchor_coef > 0)
-                          or args.distill_anchor_monitor)
+                          or args.distill_anchor_monitor or _grad_project)
+    if args.distill_anchor_proj_samples is not None and args.distill_anchor_proj_samples < 1:
+        parser.error("--distill-anchor-proj-samples must be >= 1 — it is the number of off-slice "
+                     "rows that constrain each step's distill gradient, and 0 constraints is "
+                     "--distill-anchor-mode off_slice with no projection at all.")
+    if _proj_samples_explicit and not _grad_project:
+        parser.error("--distill-anchor-proj-samples only applies to --distill-anchor-mode "
+                     "grad_project — it sizes that mode's constraint set and nothing else reads it.")
     if _anchor_wanted and not (args.distill_coef and args.distill_coef > 0):
         parser.error("--distill-anchor-coef / --distill-anchor-monitor require --distill-coef > 0 — "
                      "the anchor's OFF-SLICE split reads the `distill_mask` obs key, which the env "

@@ -5940,7 +5940,7 @@ coefficient because the bias REPLACES the trainee teambuilder and would discard 
   `_cos` number quoted in any earlier note as a distance that may have been read as a similarity. Pin:
   `instrumented_ppo_test.py::test_value_feat_metric_is_published_under_the_distance_name_too`.
 
-### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent` / `--distill-anchor-ref` / `--distill-anchor-ema-tau` / `--distill-anchor-refresh-every`)
+### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent` / `--distill-anchor-ref` / `--distill-anchor-ema-tau` / `--distill-anchor-refresh-every` / `--distill-anchor-proj-samples`)
 
 `gen3_distill_offslice_anchor_v1` — **a fold's net is teacher content MINUS overshoot damage on the
 UNTAUGHT distribution**, and every number above measures only the first half. The 2026-08-31
@@ -5970,6 +5970,8 @@ into the loss, in the **`distill` noise-scale group** (it is part of the fold's 
 head). `--distill-anchor-mode` picks the support: `off_slice` (default — the anchor never fights the
 teacher on the teacher's own rows; the gradient there is *exactly* zero, pinned by a test) or `all`,
 which exists so an arm can TEST that exclusion rather than assume it. The METERS are mode-invariant.
+A third value, **`grad_project`**, is not a row set at all but a different MECHANISM — the
+source-separated gradient projection; it has its own subsection below.
 
 🚨 **THIS IS NOT R3-SELF, AND CONFUSING THEM WOULD REPEAT A −9pp RESULT.** The rev-3 SELF fold used
 self-distillation as the fold **TARGET** at production dose and was destructive. A target DRIVES
@@ -6125,6 +6127,131 @@ licensing probe motivated. `ema`/`periodic` are the follow-on arms, and the pre-
 the one this section opened with: run them only if the fixed anchor is measured to suppress a GIFT
 (off-slice change that is *good*), and read `collateral_kl_vs_parent` — not `collateral_kl` — against
 `teacher_agreement_on_slice` in every one of them.
+
+#### SOURCE-SEPARATED anchoring — `--distill-anchor-mode grad_project` (+ `--distill-anchor-proj-samples`)
+
+`gen3_distill_grad_project_v1` — **the one thing an OUTPUT anchor structurally cannot do.** The
+2026-09-01 gift/decay pair (ledger: *"v8's GIFT IS A TRANSIENT HUMP"*, *"WHAT v8's LAST 2.5M
+UNDID"*) measured that a fold does two things in two directions:
+
+| | what it is | direction | worth (untaught) |
+|---|---|---|---|
+| **the GIFT** | an early off-slice HABIT change, PPO-driven | ORTHOGONAL to the teachers' fingerprint (cos 0.14) | **+5 to +10pp**, 92% intact at +15M |
+| **the LEAK** | the taught content arriving on untaught boards through shared weights | PARALLEL to it (cos +0.559, perm p 0.0015, ~⅓ amplitude) | **−5.66pp [−12.1, −0.2]** |
+
+At the OUTPUT there is nothing left to tell apart — both are "the off-slice policy moved away from
+the parent" — so `--distill-anchor-coef` at a fixed reference taxes the gift exactly as hard as the
+leak. That is the ledger's design consequence (a), and it is the reason `ema`/`periodic` exist. **At
+UPDATE time they are separable, because they have different SOURCES**: the total update is
+`g_ppo + g_distill`, and this tree already computes those separately (the `_ntg.add("distill", …)`
+tags the per-term noise sampler reads). The gift is PPO's; the leak is the distill term's.
+
+**THE MECHANISM.** Every optimizer step, sample `m` OFF-SLICE rows of the micro-batch, take
+`∇_θ log π_θ(a* | s)` for each (`a*` = the student's own argmax over the LEGAL set — no label, no
+reference forward), orthonormalise them into a basis `Q`, and step with
+
+```
+g_total = g_ppo + P⊥ g_distill,      P⊥ g = g − Σ_j q_j ⟨q_j, g⟩
+```
+
+To first order the distill term then moves those off-slice log-probs by **zero**, while its
+component along every direction that only moves TAUGHT states survives in full. **PPO's gradient is
+never read, never projected, never scaled** — pinned by a test that recomputes
+`g_ppo + P⊥ g_distill` independently and compares `.grad` to it.
+
+**PRECEDENT:** Orthogonal Gradient Descent (Farajtabar et al. 2020, AISTATS) and Gradient Projection
+Memory (Saha et al. 2021, ICLR), at a different seam — those project the new-TASK gradient off a
+banked memory of old-task directions; here the two "tasks" are two TERMS of one loss at one
+timestep, and the basis is rebuilt from the live minibatch every step rather than banked.
+
+| scalar | reads |
+|---|---|
+| `distill/proj_removed_frac` | `‖g − P⊥g‖² / ‖g‖²` — the LEAK's share of the distill gradient, by this estimate |
+| `distill/proj_rank` | constraints that SURVIVED Gram-Schmidt (≤ m); this is what was actually projected along |
+| `distill/proj_constraint_rows` | off-slice rows sampled (= `min(m, #off-slice)`) |
+| `distill/proj_ms` | wall-clock per micro-batch — read it against `train/train_ms` |
+| `distill/collateral_kl_vs_parent` | **the experiment's readout**, and it is ON in this mode by construction (below) |
+
+**IT IS A MODE, NOT A ROW SET.** `grad_project`'s OUTPUT half is `off_slice`'s, so
+`--distill-anchor-coef 0` is projection-only and a positive coefficient **COMPOSES** an off-slice
+output anchor on top — deliberately supported, because the projection is per-step and FIRST-ORDER
+(the constraint set is resampled every step; curvature carries the policy off the tangent plane) and
+the output anchor is what bounds the ACCUMULATED displacement. Any `--distill-anchor-ref` still
+applies to that output half. **`grad_project` registers `DistillAnchorCallback` on its own** — even
+at coefficient 0 and with no `--distill-anchor-monitor` — for two reasons: that callback is the only
+site that sets `distill_anchor_mode` on the model, and the frozen parent it loads is what makes
+`collateral_kl_vs_parent` exist. An experiment whose readout is optional is an experiment nobody
+reads. (`resolve_config`'s `_anchor_wanted` and the registration condition in `main/train/callbacks.py`
+are pinned to agree.)
+
+**PER MICRO-BATCH, NOT PER ACCUMULATION GROUP**, and at the default `--grad-accum-steps 1` the two
+are identical. (1) The `m` constraint vectors are full-parameter-sized, so holding them across a
+group multiplies peak memory by `accum` — and `--grad-accum-steps` exists to CUT the memory peak.
+(2) Per-micro needs one call after `backward()`; per-group would need an apply before
+`clip_grad_norm_` at both step sites plus a reset on the KL early-stop discard, and `ppo.py` sits
+~1.8k lines under a hard 2,000 gate. (3) `Σᵢ P⊥ᵢ gᵢ` removes at most what `P⊥_∪ (Σᵢ gᵢ)` would, so it
+is the conservative one.
+
+🚨 **THE COST IS REAL — MEASURE IT, DO NOT ASSUME IT.** The `m` constraint backwards run over a graph
+built from only the `m` sampled rows (the obs are SLICED before the forward), so each is ~`m/B` of a
+full backward *in FLOPs* — but at small `m` on CPU the extractor is dispatch-bound and the FLOP
+argument does not survive contact with a clock. Measured on the build smoke (CPU `--debug`,
+`--n-steps 512 --batch-size 128`, `m = 16`, real 2501-dim extractor, box carrying a live fleet):
+`distill/proj_ms` **426–644 ms per micro-batch**, `train/train_ms` **12.9–19.1 s** against the
+monitor-only arm's **4.2–5.9 s** — i.e. the projection was **~55–70% of `train()`**, ~2.5–3× the
+step. The share should fall as `--batch-size` rises and on a GPU (per-row numerator, per-batch
+denominator), **but that has not been measured**; read `proj_ms` against `train/train_ms` on your own
+arm.
+
+⚠️ **`proj_removed_frac` MEASURED 0.75–0.89, AND THAT IS THE FINDING RATHER THAN A BUG.** A random
+vector's projection onto a random 16-dim subspace of a ~2M-dim space keeps ~1e-5 of its energy;
+removing ~80% means the distill gradient and the off-slice behaviour gradients share their dominant
+directions almost entirely — the "shared weights carry taught content onto untaught boards"
+mechanism, seen directly at the update, and the same fact from the other side as M4's fingerprint
+cosine. It also states the method's ceiling: **where a direction BOTH teaches and leaks, a
+first-order projection cannot keep the teaching**, and at `m = 16` most of the teacher term's
+magnitude went with the leak. `distill/proj_rank` came out at ~15.4 of 16, so the sampled directions
+are near-independent — lowering `m` trades removal for coverage, it does not de-duplicate anything.
+
+**THE BUILD SMOKE'S TWO SERIES (n = 1, A SMOKE, NOT A RESULT).** Same 3k teacher and 3k fold parent,
+two 6k folds at `--distill-coef 0.2 --distill-anchor-monitor`, `distill/collateral_kl_vs_parent`
+read off `tb/`. **The projected arm's collateral was HIGHER, not lower:**
+
+| step | `grad_project` | `off_slice` (monitor-only, no projection) |
+|---:|---:|---:|
+| 4096 | 0.00342 | 0.00376 |
+| 4608 | 0.00700 | 0.00673 |
+| 5120 | 0.01388 | 0.00951 |
+| 5632 | 0.02733 | 0.00976 |
+| 6144 | **0.03373** | **0.01004** |
+
+Two separate processes, different dice, five points, no CI, 6k CPU steps — this settles nothing and
+is recorded so nobody has to re-derive it. The parsimonious reading is the `removed_frac` one: with
+~80% of the distill gradient removed the fold pulls far less overall (`distill/kl` stayed HIGHER in
+the projected arm — 0.027–0.035 vs 0.021–0.026, i.e. LESS absorbed), so PPO dominates the off-slice
+motion, and `collateral_kl_vs_parent` counts PPO's own off-slice displacement — **the GIFT** — as
+collateral just like the leak. That is the meter's known limitation, not a new one: it is an
+output-displacement meter, and this whole mode exists because output displacement does not separate
+the two. **A real verdict needs the untaught-team win-rate meter, paired arms and a CI**, not this.
+
+**Class: training-runtime.** Neither flag reaches the extractor, scales a weight shape, or belongs in
+`check_compatible`; both carry an argparse default of `None` and are `_resolve`d in
+`main/train/config.py`. Refusals: `--distill-anchor-proj-samples` outside `grad_project`, or below 1;
+and `grad_project` still requires `--distill-coef > 0` like every other anchor mode (the slice IS the
+`distill_mask` obs key). Where it lives: `instrumented_ppo/distill_grad_project.py` (all of the
+mechanism), a four-line seam in `ppo.py` (construct · `_dgp.add` on the three TEACHER terms and
+**not** the anchor term · `before_backward` · `after_backward`), `distill_anchor_proj_samples` pushed
+onto the model by `DistillAnchorCallback` beside the mode. The `autograd.grad` helper is SHARED with
+`PerTermNoiseSampler` (`noise_scale_terms.term_gradient`) rather than forked — the projection's
+correctness argument is that it operates on the same object the meters report. `--compile-trainer` is
+not a new risk: `retain_graph` backwards through the compiled extractor already happen for the
+noise-scale and grad-balance probes. Gate:
+`src/agents/training/instrumented_ppo_distill_grad_project_test.py` (34 tests — the projection
+algebra, `.grad == g_ppo + P⊥ g_distill` recomputed independently, the accum scaling, off-is-free,
+and the first-order claim measured end to end: **100.0%** reduction of the fold's off-slice log-prob
+movement with the optimizer swapped for plain SGD, **95.1%** on the real Adam + `clip_grad_norm_`
+path — Adam rescales per coordinate, so a projection of the GRADIENT is not exactly a projection of
+the UPDATE).
 
 ### Advantage-gated / action-form distillation (`--distill-target` / `--distill-topk` / `--distill-gate` / `--distill-gate-tau` / `--distill-beta`) + the rank tripwire (`--rank-tripwire`)
 

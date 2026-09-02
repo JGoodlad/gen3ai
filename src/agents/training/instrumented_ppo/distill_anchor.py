@@ -65,10 +65,18 @@ which `matchup_setup.apply_distill_team_bias` gates on the coefficient.
 import torch as th
 from torch.nn import functional as F
 
+from agents.training.instrumented_ppo.distill_grad_project import GRAD_PROJECT_MODE
+
 #: `--distill-anchor-mode` values. `off_slice` (the default) anchors only where no teacher teaches;
 #: `all` anchors everywhere, and exists so a future arm can test whether excluding the taught slice
-#: is what makes the trust region work, rather than assuming it.
-ANCHOR_MODES = ("off_slice", "all")
+#: is what makes the trust region work, rather than assuming it. `grad_project`
+#: (`gen3_distill_grad_project_v1`, `distill_grad_project.py`) is the SOURCE-SEPARATED mode: it
+#: additionally projects the DISTILL gradient off the off-slice behaviour subspace at every step,
+#: which is the thing an OUTPUT anchor structurally cannot do — see that module's docstring. For the
+#: OUTPUT half it behaves exactly like `off_slice`, so `--distill-anchor-coef 0` is
+#: projection-only and a positive coefficient COMPOSES an off-slice output anchor on top (the
+#: projection is first-order per step; the output anchor catches the second-order accumulation).
+ANCHOR_MODES = ("off_slice", "all", GRAD_PROJECT_MODE)
 
 #: `--distill-anchor-ref` values — WHICH policy the anchor is measured against. `parent` (the
 #: default) is the FIXED frozen fold parent and is byte-identical to the behaviour this feature
@@ -84,6 +92,11 @@ def anchor_row_weights(distill_mask, mode, dtype):
     ``off_indicator`` is 1.0 exactly where ``distill_mask == 0`` (no teacher pins this state's team)
     and is the meter's denominator regardless of mode. ``weights`` is what the LOSS sums over: the
     same thing under ``off_slice``, all-ones under ``all``.
+
+    ``grad_project`` takes ``off_slice``'s weights deliberately — the mode's own contribution is the
+    GRADIENT projection, and any output anchor folded beside it belongs on the same rows the
+    projection constrains. Naming the mode here rather than defaulting to it keeps a typo in an
+    unrecognised value falling through to ``off_slice`` visible in exactly one place.
     """
     tid = distill_mask.reshape(-1).to(dtype)
     off = (tid < 0.5).to(dtype)

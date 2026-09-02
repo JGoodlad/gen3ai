@@ -65,7 +65,7 @@ def per_term_enabled(model: object) -> bool:
     return bool(getattr(model, "noise_scale_per_term", True))
 
 
-def _sq_norm(grads: Iterable[Optional[th.Tensor]]) -> float:
+def sq_norm(grads: Iterable[Optional[th.Tensor]]) -> float:
     """‖g‖² over a gradient tuple, tolerating the `None`s `allow_unused=True` returns."""
     acc = None
     for g in grads:
@@ -74,6 +74,32 @@ def _sq_norm(grads: Iterable[Optional[th.Tensor]]) -> float:
         s = g.detach().pow(2).sum()
         acc = s if acc is None else acc + s
     return float(acc) if acc is not None else 0.0
+
+
+#: The original private spelling, kept so nothing that reached for it breaks.
+_sq_norm = sq_norm
+
+
+def sum_terms(terms: Sequence[th.Tensor]) -> th.Tensor:
+    """`Σ terms` as ONE tensor, summed in list order so the graph is built identically every call."""
+    return terms[0] if len(terms) == 1 else sum(terms[1:], terms[0])
+
+
+def term_gradient(terms: Sequence[th.Tensor], params: Sequence[th.nn.Parameter],
+                  *, retain_graph: bool = True) -> Tuple[Optional[th.Tensor], ...]:
+    """`d(Σ terms)/d params` WITHOUT writing a single `.grad` — the one way this tree reads a
+    per-term gradient.
+
+    `torch.autograd.grad` returns the gradients rather than accumulating them, so a caller can read
+    a loss term's own pull while the real `backward()` that follows is completely unaffected. Two
+    callers share it and MUST keep sharing it: `PerTermNoiseSampler` (which measures each group's
+    noise) and `distill_grad_project.DistillGradProjector` (which projects the distill group's
+    gradient). A second implementation would be a second answer to "what is the distill gradient",
+    and the projection's whole correctness argument is that it operates on the same object the
+    meters report.
+    """
+    return th.autograd.grad(sum_terms(terms), params,
+                            retain_graph=retain_graph, allow_unused=True)
 
 
 class NullTermTagger:
@@ -151,9 +177,7 @@ class PerTermNoiseSampler:
                 terms = pending.get(group)
                 if not terms:
                     continue
-                total = terms[0] if len(terms) == 1 else sum(terms[1:], terms[0])
-                grads = th.autograd.grad(total, self._params, retain_graph=True,
-                                         allow_unused=True)
+                grads = term_gradient(terms, self._params)
                 buf = self._accum.get(group)
                 if buf is None:
                     self._accum[group] = [None if g is None else g.detach().clone() for g in grads]
@@ -163,7 +187,7 @@ class PerTermNoiseSampler:
                             continue
                         buf[i] = g.detach().clone() if buf[i] is None else buf[i] + g.detach()
                 if first:
-                    self.small_sq[group] = _sq_norm(grads)
+                    self.small_sq[group] = sq_norm(grads)
             self.micros += 1
         except Exception as exc:                              # pragma: no cover - defensive
             self.failed = True
@@ -189,7 +213,7 @@ class PerTermNoiseSampler:
         for group, buf in self._accum.items():
             if group not in self.small_sq:
                 continue    # first appeared on a later micro-batch — no matched small-batch point
-            out[group] = (self.small_sq[group], _sq_norm(buf) * inv)
+            out[group] = (self.small_sq[group], sq_norm(buf) * inv)
         return out
 
     def release(self) -> None:
