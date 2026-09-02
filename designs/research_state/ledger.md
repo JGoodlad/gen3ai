@@ -8715,3 +8715,39 @@ crossing (a level already met at step 0 read as "−100% collateral") and the P1
 `m == 16` alone, which silently pooled the lr-3e-4 arm as a 7th at the wrong step size — verdicts
 unchanged, intervals were not. Unfinished (listed, not interpolated): projected m=64, seed-2 monitor
 cells, the m sweep on teachers b/c, seed 2 of the lr-3e-4 check.
+
+### ⚠️ THE EMPTY-POOL FORK FOOTGUN FIRED ON THE DOSE CELL — caught at launch, fixed by seeding, deviation ACCEPTED as the registered regime (2026-09-02 14:01)
+
+**Fleet + funding split COMPLETE**: 20/20 fleet arms (04:21) and 8/8 funding forks (13:23), all at
+30,065,184, zero failures, unattended end to end. Owner's go for the three-dose cell + the reuse
+runs (C1/B2/N1/N2) at ~13:35. Arm identities PINNED for the funding read: funded = R5F00,02,…,14
+(their R5FUND forks at 2.5M/team); PRIMARY control = the draw-position-matched next arm
+(01,03,…,15) as 8 PAIRED deltas; SECONDARY = all 12 unfunded (adds the unpaired tail 16–19),
+pooled only; every read split meter/coverage; floor 3.70pp taught beside each delta. C1 keeps
+`--distill-team-bias 0.4` so C1-vs-B2 is a one-variable contrast on `--distill-coef`.
+
+**The defect (training session, before any GPU-hour was spent).** All seven R4ACTION-family
+argvs inherit `--self-play --n-sentinels 5`, but a FORK starts with an EMPTY `snapshots/`, and an
+empty pool makes `--self-play` fall back to the BOT pool — the trainer WARNS and trains anyway
+("the snapshot pool is EMPTY at startup — … falls back to the BOT pool"). R4ACTION itself started
+"Pool has 14 snapshots, win_rate_vs_bots=90.12% → self_play_fraction=90%". A literal reading of
+the pre-registered argvs would have folded at ~0% self-play against a reference that folded at
+90% — an opponent-distribution confound on top of the very contrast the cell measures, ~23 GPU-h
+answering a different question. (The fleet/funding arms carry no `--self-play` and are unaffected.)
+**Fix, two parts, because the first was half:** seeding the 14 zips alone still read
+`self_play_fraction=0%` — the STARTING fraction comes from the pool's metadata files
+(`win_rate_vs_bots.txt` 0.901250, `summary.json`, `model_config.json`), which is also how we know
+R4ACTION's pool was seeded from R2ACTION metadata-and-all. Verified byte-identical to R4ACTION's
+startup line on the live arm. The chain refuses an arm it cannot seed (`POOL_SEED_FAILED` →
+UNCOVERED) and the hourly cron re-checks the SELFPLAY line. **Ruling: NOT a deviation from the
+registration** — the cell was registered as rev-4's fold with only K varied, and rev-4's regime
+was the seeded pool; a poolless start would have been the deviation. This is the second time this
+footgun has cost or nearly cost a cell (TD-aux forks trained vs bots, 2026-08-18); the guard is
+now being BUILT (auto-seed on a genuine fork; refuse poolless `--self-play`).
+
+**Launched 14:01**: R4DOSE12 running with `--fork-lr 2.8e-5 --fork-lr-freeze` confirmed pinning +
+freezing, anchor monitor-only, `--distill-stop warn`; two aborted attempts moved aside (0
+checkpoints, nothing lost). **Timeline revised**: 90% self-play runs ~1.35M/h vs the bot-only
+funding arms' 1.76M/h ⇒ ~3.3 h/arm; dose cell ≈ 00:00, all seven ≈ 13:00 tomorrow. Fallback
+health cron `a1139076` hourly at :47 (repairs one arm, verifies SELFPLAY, notifies only on
+completion/BLOCKED) + arm-transition Monitor, both on the training session.
