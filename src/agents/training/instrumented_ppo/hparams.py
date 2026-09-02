@@ -286,6 +286,32 @@ class PpoHyperparameters:
     # AWR temperature β for the |Â| weight (mirrors search_teacher_beta; w clamped at 20, as there).
     distill_beta: float = 1.0
 
+    # ---- gen3_distill_offslice_anchor_v1 — THE OFF-SLICE TRUST REGION + the collateral meters ----
+    # A fold's net is teacher content MINUS overshoot damage on the UNTAUGHT distribution, and the
+    # 2026-08-31 licensing probe measured that damage as a systematic direction (a smaller distill
+    # step cut off-slice collateral 39% with absorption unchanged) rather than noise. This folds
+    #     distill_anchor_coef * mean_{off-slice} KL(π_parent ‖ π_student)
+    # against the FROZEN FOLD PARENT — a small-coefficient REGULARISER toward the starting policy on
+    # states no teacher covers. It is NOT the R3-SELF self-distillation TARGET (production dose,
+    # −9pp): a target drives steps, an anchor removes freedom. See `distill_anchor.py`.
+    #
+    # 0.0 = OFF and byte-identical *given no parent attached*; with `--distill-anchor-monitor` the
+    # parent IS attached at coef 0, which folds no term but costs one frozen forward per minibatch
+    # and emits every `distill/collateral_kl` meter — the pure-instrument arm.
+    #
+    # TRAINING-only (a loss weight + a diagnostic; no forward/weight-shape change) → NOT
+    # version-locked, NOT in check_compatible, resume-mutable. `_distill_anchor_parent` is a runtime
+    # attr (a loaded frozen model) attached externally by `DistillAnchorCallback`, like
+    # `_distill_teachers` — and RE-LOADED FROM THE FORK-PARENT PATH on every restart, never from the
+    # current checkpoint, which is why it is not persisted.
+    distill_anchor_coef: float = 0.0
+    # "off_slice" (default) anchors only where `distill_mask == 0`; "all" anchors every row. `all`
+    # exists so a future arm can test whether EXCLUDING the taught slice is what makes the trust
+    # region work — an assumption otherwise baked in and unmeasurable.
+    distill_anchor_mode: str = "off_slice"
+    # Attach the frozen parent (and therefore emit the meters) even at coefficient 0.
+    distill_anchor_monitor: bool = False
+
     # COUNTERFACTUAL WIN-PROB GROUNDING (gen3_cf_label_plumbing_v1; G3 of
     # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). A background producer
     # re-rolls recorded training decisions to termination and drops tight Monte-Carlo P(win) labels
@@ -405,6 +431,12 @@ class PpoHyperparameters:
         # exactly: a full frozen FOREIGN model attached at setup and re-loaded from its own path on
         # resume (`--win-prob-pbrs-source` is inherited on a flagless resume for precisely that
         # reason). Pickling it would embed another run's weights in every checkpoint of this one.
+        # `_distill_anchor_parent` (gen3_distill_offslice_anchor_v1) is the `_distill_teacher` genre
+        # with one EXTRA reason: it must be re-loaded from the FORK-PARENT path on every restart, so
+        # persisting it would be worse than useless — a pickled parent would be silently carried
+        # forward and there would then be two answers to "what is the parent", the wrong one being
+        # the one that survives. See `agents.training.distill_anchor_callback`.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
-                                                  "_capacity_state", "_winprob_phi_source"]
+                                                  "_capacity_state", "_winprob_phi_source",
+                                                  "_distill_anchor_parent"]

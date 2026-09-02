@@ -89,6 +89,46 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
                              "--distill-value-coef — watch distill/value_feat_dist (the cosine DISTANCE 1-cos, so "
                              "LOWER = better aligned; the legacy alias distill/value_feat_cos holds the same "
                              "value and reads as its own opposite) fall + the value_cls rank probe.")
+    # THE OFF-SLICE ANCHOR (gen3_distill_offslice_anchor_v1) — a trust region to the FROZEN fold
+    # PARENT on the states no teacher covers, plus the licensing probe's collateral meters, live.
+    # A fold's net is teacher content MINUS overshoot damage off the taught slice, and the
+    # 2026-08-31 probe measured that damage as a systematic direction, not noise.
+    parser.add_argument("--distill-anchor-coef", "--distill_anchor_coef", dest="distill_anchor_coef",
+                        type=float, default=None,
+                        help="OFF-SLICE TRUST-REGION weight (gen3_distill_offslice_anchor_v1): fold "
+                             "coef * KL(pi_parent || pi_student) over the rollout states that are NOT on "
+                             "any teacher's pinned teams, against the FROZEN fold parent. Default 0.0 = "
+                             "OFF (byte-identical; no parent loaded, no forward). Requires "
+                             "--distill-coef > 0 (the slice is the `distill_mask` the teacher term "
+                             "already uses). This is a small-coefficient REGULARISER toward the "
+                             "starting policy, NOT the R3-SELF self-distillation TARGET that measured "
+                             "-9pp at production dose — size it as a FRACTION of --distill-coef. Watch "
+                             "distill/collateral_kl fall while distill/teacher_agreement_on_slice holds, "
+                             "and grad/distill_anchor_share against grad/distill_share for the dose.")
+    parser.add_argument("--distill-anchor-mode", "--distill_anchor_mode", dest="distill_anchor_mode",
+                        choices=["off_slice", "all"], default=None,
+                        help="WHICH rows the anchor applies to. 'off_slice' (default) = only where "
+                             "distill_mask == 0, so the anchor never fights the teacher on the states "
+                             "the teacher owns. 'all' = every row; it exists so an arm can TEST whether "
+                             "excluding the taught slice is what makes the trust region work rather "
+                             "than assuming it. The METERS are unaffected — collateral_kl is always "
+                             "the off-slice mean and on_slice_kl always the on-slice one.")
+    parser.add_argument("--distill-anchor-monitor", "--distill_anchor_monitor",
+                        dest="distill_anchor_monitor", action="store_true", default=False,
+                        help="Attach the frozen fold parent and emit every distill/collateral_kl "
+                             "meter even at --distill-anchor-coef 0 — the PURE-INSTRUMENT arm: no "
+                             "loss term, no parameter changed, one frozen no_grad forward per "
+                             "minibatch. Use it to measure a fold's off-slice damage before deciding "
+                             "whether to penalise it.")
+    parser.add_argument("--distill-anchor-parent", "--distill_anchor_parent",
+                        dest="distill_anchor_parent", type=str, default=None,
+                        help="Explicitly pin the anchor's frozen parent checkpoint (a run dir or "
+                             ".zip). Normally UNSET: the parent is re-resolved on every launch from "
+                             "<run>/metadata.json's immutable `original_command` --model, falling back "
+                             "to this process's --model on a fork's first launch — because an "
+                             "idempotent fork's --model is swapped to the fork's OWN latest checkpoint "
+                             "on every restart, and anchoring to that would let the trust region drift "
+                             "along with the student. Pass this only to override that resolution.")
     parser.add_argument("--distill-team-bias", "--distill_team_bias", dest="distill_team_bias",
                         type=float, default=None,
                         help="Fraction of trainee episodes biased to the teacher TEAMS (rest = pool "

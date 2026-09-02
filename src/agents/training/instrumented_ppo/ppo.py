@@ -33,6 +33,7 @@ from agents.training.instrumented_ppo.constants import (
     _NOISE_PER_TERM_EVERY,
     _NOISE_SCALE_EMA_DECAY,
 )
+from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
@@ -920,6 +921,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # forwards, the per-teacher balancing, every value-side term — is untouched.
                         _d_target = str(getattr(self, "distill_target", "kl"))
                         _gate_n = _gate_agree = _gate_adv = 0.0   # §4.3 liveness, summed over teachers
+                        # gen3_distill_offslice_anchor_v1: the licensing probe's ON-SLICE half —
+                        # student↔teacher top-1 agreement, averaged over the ACTIVE teachers, so
+                        # `distill/teacher_agreement_on_slice` (absorption) is readable beside
+                        # `distill/collateral_kl` (damage) without expanding the per-teacher rows.
+                        _on_agree, _on_agree_n = 0.0, 0
                         _per_teacher_kl, _per_teacher_vd, _per_teacher_vfd = [], [], []
                         for _k, _teacher in enumerate(self._distill_teachers, start=1):
                             _sel = (_tid_flat == _k).to(_s_logits.dtype)      # states on teacher k's team
@@ -951,6 +957,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             if _d_out is not None:
                                 _kl_k, _m_k = _d_out
                                 _per_teacher_kl.append(_kl_k)
+                                _a_k = _m_k.get("agree_rate", _m_k.get("gate_agree_rate"))
+                                if _a_k is not None:
+                                    _on_agree += float(_a_k)
+                                    _on_agree_n += 1
                                 if _d_target != "kl":
                                     _gate_n += _m_k["n_gated"]
                                     _gate_agree += _m_k["gate_agree_rate"] * _m_k["n_gated"]
@@ -1001,6 +1011,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             loss = loss + _ntg.add("distill", distill_term)
                             distill_metrics.setdefault("kl", []).append(float(_distill_kl))
                             distill_metrics.setdefault("n_teachers_active", []).append(float(len(_per_teacher_kl)))
+                            if _on_agree_n:
+                                distill_metrics.setdefault("teacher_agreement_on_slice", []).append(
+                                    _on_agree / _on_agree_n)
                         if _per_teacher_vd:
                             _distill_vd = th.stack(_per_teacher_vd).mean()    # balanced like the policy KL
                             loss = loss + _ntg.add("distill", self.distill_value_coef * _distill_vd)
@@ -1014,6 +1027,21 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             # deprecated alias kept one release.
                             for _vfd_key in ("value_feat_dist", "value_feat_cos"):
                                 distill_metrics.setdefault(_vfd_key, []).append(float(_distill_vfd))
+
+                # +DISTILL-ANCHOR (gen3_distill_offslice_anchor_v1): the OFF-SLICE trust region to
+                # the FROZEN fold parent, and the live collateral-KL meters. ONE call — everything
+                # (the frozen forward, the slice split, the loss, every `distill/*` meter) lives in
+                # `distill_anchor.py`. `_distill_anchor_parent` absent (no flag) ⇒ returns None
+                # having done nothing, so the loss expression is byte-identical; attached at
+                # coefficient 0 (`--distill-anchor-monitor`) ⇒ meters only, still no term. It rides
+                # the `distill` noise-scale group because it is part of the fold's dose, not an aux
+                # head. The student's π is the one `evaluate_actions` already built, as the distill
+                # term reuses it.
+                anchor_term = distill_anchor_step(
+                    self, rollout_data,
+                    getattr(self.policy, "_last_pi_distribution", None), distill_metrics)
+                if anchor_term is not None:
+                    loss = loss + _ntg.add("distill", anchor_term)
 
                 # +SEARCH-TEACHER: AWR policy distillation toward the verified-better action. The
                 # corrections are OFF-POLICY (searched eval-trace states, not in this rollout), so this
@@ -1184,6 +1212,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # exists to read. None (distill off / no teacher-team rows this minibatch) → not
                 # logged; a non-distill run pays nothing.
                 if distill_term is not None:       aux_probe_terms["distill"] = distill_term
+                # +ANCHOR-SHARE (gen3_distill_offslice_anchor_v1): `grad/distill_anchor_share` on
+                # the SAME denominator as `grad/distill_share` — the pair IS the dose reading a
+                # trust region has to be sized by (how hard is the anchor pulling, relative to the
+                # teacher content it is protecting?). Absent when no anchor folded.
+                if anchor_term is not None:        aux_probe_terms["distill_anchor"] = anchor_term
                 # THE FIGHT DETECTOR. Registering the intent term here is what produces
                 # `grad/opp_intent_policy_cosine` — the angle between the intent objective's pull on
                 # the shared trunk and the policy's. Under `--opp-intent-grad-mode detached` the

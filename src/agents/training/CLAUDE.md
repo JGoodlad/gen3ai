@@ -5757,6 +5757,68 @@ coefficient because the bias REPLACES the trainee teambuilder and would discard 
   `_cos` number quoted in any earlier note as a distance that may have been read as a similarity. Pin:
   `instrumented_ppo_test.py::test_value_feat_metric_is_published_under_the_distance_name_too`.
 
+### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent`)
+
+`gen3_distill_offslice_anchor_v1` — **a fold's net is teacher content MINUS overshoot damage on the
+UNTAUGHT distribution**, and every number above measures only the first half. The 2026-08-31
+licensing probe (`designs/research_state/measurements/lr_licensing_probe_2026-08-31.md`) measured the
+second: lowering the distill step cut OFF-SLICE collateral **39%** with on-slice absorption unchanged
+on all six teacher × seed arms — so the damage is a *systematic direction the distill gradient
+carries off the taught slice*, not noise. This ships both halves of the response.
+
+**THE METER (free, and the reason to reach for this first).** Whenever a frozen parent is attached —
+including at `--distill-anchor-coef 0` under `--distill-anchor-monitor`, the pure-instrument arm —
+every `train()` records, per minibatch and averaged over the call:
+
+| scalar | reads |
+|---|---|
+| `distill/collateral_kl` | mean `KL(π_parent ‖ π_student)` on the **OFF-slice** rows — the damage |
+| `distill/on_slice_kl` | the same on the **on-slice** rows — how far the taught slice has moved |
+| `distill/teacher_agreement_on_slice` | student↔teacher top-1 agreement, averaged over ACTIVE teachers — the content |
+| `distill/off_slice_frac` | fraction of the minibatch that is off-slice (a sanity check on `--distill-team-bias`) |
+| `distill/anchor_loss` | the folded term, **0.0 under monitor-only** — a measured zero, not a gap |
+| `distill/anchor_kl` | the unweighted anchor KL (the loss before the coefficient) |
+| `grad/distill_anchor_share` | the anchor's shared-trunk gradient share, on the SAME denominator as `grad/distill_share` — the pair IS the dose reading |
+
+**THE REGULARISER.** `--distill-anchor-coef C` folds `C · mean_off-slice KL(π_parent ‖ π_student)`
+into the loss, in the **`distill` noise-scale group** (it is part of the fold's dose, not an aux
+head). `--distill-anchor-mode` picks the support: `off_slice` (default — the anchor never fights the
+teacher on the teacher's own rows; the gradient there is *exactly* zero, pinned by a test) or `all`,
+which exists so an arm can TEST that exclusion rather than assume it. The METERS are mode-invariant.
+
+🚨 **THIS IS NOT R3-SELF, AND CONFUSING THEM WOULD REPEAT A −9pp RESULT.** The rev-3 SELF fold used
+self-distillation as the fold **TARGET** at production dose and was destructive. A target DRIVES
+steps; an anchor REMOVES freedom. Size `--distill-anchor-coef` as a *fraction* of `--distill-coef`,
+never near it. The direction is FORWARD `KL(parent ‖ student)`, matching the teacher term so the two
+read on one scale — note the licensing probe reported the REVERSE (`KL(now ‖ original)`), so a probe
+figure and a `collateral_kl` figure are comparable in TREND, not in absolute value.
+
+🚨 **THE RESTART RULE — the one way this feature fails silently.** The parent is **re-loaded from the
+ORIGINAL FORK-PARENT PATH on every launch**, never from the current checkpoint. It has to be: a
+launcher run restarts every few hours, and an idempotent fork's `--model` is swapped to the fork's
+OWN latest checkpoint on each relaunch (`launcher.checkpoint.resolve_fork_resume_model`), so
+"anchor to what we just loaded" would re-anchor to a DRIFTED policy at every restart — the trust
+region would follow the student, ratchet by ratchet, constraining nothing while still reading as ON.
+Resolution (`agents.training.distill_anchor_callback.resolve_anchor_parent`), in order:
+`--distill-anchor-parent` → `<run>/metadata.json`'s **immutable** `original_command` → its `--model`
+→ this process's `--model` (correct on a fork's FIRST launch, where the run dir is fresh and
+`resolve_launch_run_dir` refuses to fork onto an existing run). The resolved path AND its route are
+PRINTED at startup (`⚓ [DISTILL-ANCHOR] parent = … (via original_command)`), because a wrong parent
+is a silent no-op and the only defence against a silent no-op is a loud statement of the choice.
+Verified live: a relaunch with `--model <the fork's own final_model.zip>` resolved
+`via original_command` back to the fold parent. Unresolvable ⇒ `FATAL_CONFIG`, never "anchor off".
+
+**Where it lives.** The loss + meters are `instrumented_ppo/distill_anchor.py` (pure helpers +
+`distill_anchor_step`, ONE call site in `ppo.py`); the parent resolution + the frozen load are
+`agents/training/distill_anchor_callback.py`, registered from `main/train/callbacks.py` — a
+CALLBACK rather than an `apply_training_hparams` row precisely because `_on_training_start` runs on
+every launch, which is the cadence the re-load needs. The parent is in `_excluded_save_params`: a
+pickled copy would be a second, wrong answer that survives restarts. Requires `--distill-coef > 0`
+(the slice IS the `distill_mask` obs key, which the env emits only for a live distill). OFF and
+byte-identical with no parent attached — and byte-identical with a parent attached at coefficient 0,
+which is what makes the monitored control arm comparable rather than a third condition. Gate:
+`src/agents/training/distill_anchor_test.py`.
+
 ### Advantage-gated / action-form distillation (`--distill-target` / `--distill-topk` / `--distill-gate` / `--distill-gate-tau` / `--distill-beta`) + the rank tripwire (`--rank-tripwire`)
 
 `gen3_distill_target_gate_v1` (config **v103**; `designs/ai_v10/design_advantage_gated_distillation.md`

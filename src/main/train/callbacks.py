@@ -136,6 +136,52 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         from agents.training.rank_tripwire import RankTripwireCallback
         callbacks.append(RankTripwireCallback(mode=args.rank_tripwire,
                                               drop=args.rank_tripwire_drop))
+    # THE OFF-SLICE DISTILL ANCHOR (gen3_distill_offslice_anchor_v1) — the frozen fold PARENT that
+    # `instrumented_ppo/distill_anchor.py` regularises toward, plus the live collateral meters.
+    # Registered only when the coefficient is live OR --distill-anchor-monitor is on, so an ordinary
+    # fold attaches nothing and stays byte-identical.
+    #
+    # A CALLBACK rather than an `apply_training_hparams` row on purpose: `_on_training_start` runs
+    # on EVERY launch, which is the cadence at which the parent must be re-read from the ORIGINAL
+    # fork-parent path (an idempotent fork's `--model` is swapped to the fork's own latest
+    # checkpoint on each restart — anchoring to that would let the trust region drift with the
+    # student). The resolution happens HERE, in phase 4, so an unresolvable parent refuses BEFORE
+    # the model is built rather than mid-`learn()`. The loader is injected so the agents-layer
+    # callback needs no `mappings` and no `main.train` import.
+    if (getattr(args, "distill_anchor_coef", 0.0) or 0.0) > 0 or getattr(args, "distill_anchor_monitor", False):
+        from agents.training.distill_anchor_callback import (
+            DistillAnchorCallback, resolve_anchor_parent)
+        _anchor_path, _anchor_route = resolve_anchor_parent(
+            explicit=getattr(args, "distill_anchor_parent", None),
+            run_dir=model_dir, cli_model=args.model)
+        if not _anchor_path:
+            from main.exit_codes import TrainExitCode
+            print("\n[DistillAnchor] FATAL:--distill-anchor-coef / --distill-anchor-monitor is on "
+                  "but no fold parent could be resolved — no --distill-anchor-parent, no --model, "
+                  f"and {model_dir}/metadata.json records no `original_command` with a --model. "
+                  "The anchor has nothing to anchor to; refusing rather than training without it.")
+            sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
+        def _load_anchor_parent(path, _args=args):
+            """Load the frozen parent the way a stable opponent / distill teacher is loaded."""
+            from agents.model.snapshot import current_model_version, load_foreign_opponent
+            from agents.observation.state_encoder import load_mappings
+            from agents.training.fixed_opponent_pool import _resolve_zip_and_config
+            from main.train.run_io import _run_arch_toggles
+            _zip, _cfg, _ = _resolve_zip_and_config(path, None)
+            _model, _ = load_foreign_opponent(
+                _zip, current_version=current_model_version(load_mappings(),
+                                                            **_run_arch_toggles(_args)),
+                device=str(_args.device), config_path=_cfg)
+            _model.policy.set_training_mode(False)
+            return _model
+
+        callbacks.append(DistillAnchorCallback(
+            parent_path=_anchor_path, route=_anchor_route,
+            coef=float(getattr(args, "distill_anchor_coef", 0.0) or 0.0),
+            mode=str(getattr(args, "distill_anchor_mode", "off_slice") or "off_slice"),
+            monitor=bool(getattr(args, "distill_anchor_monitor", False)),
+            load_parent=_load_anchor_parent))
     # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
     # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),
     # pushed to every env's exploiter RLPlayer via env_method each rollout. Registered ONLY when

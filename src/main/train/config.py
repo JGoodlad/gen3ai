@@ -387,6 +387,15 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
     _resolve("distill_value_coef", 0.0)        # training-only exploiter VALUE-distillation MSE weight (inherited on resume)
     _resolve("distill_value_feat_coef", 0.0)   # training-only FitNets value-FEATURE distill cosine weight (inherited on resume)
+    # gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region to the frozen fold parent. The
+    # distill_coef class: training-only, never gated, argparse default None so an unset flag lands
+    # on the byte-identical 0.0 / "off_slice" here rather than in three separate places.
+    # `_anchor_mode_explicit` is captured BEFORE the resolve, because after it the unset flag is
+    # indistinguishable from a typed "off_slice" — and the "you typed a knob that does nothing"
+    # refusal below is only honest about a value the user actually typed.
+    _anchor_mode_explicit = args.distill_anchor_mode is not None
+    _resolve("distill_anchor_coef", 0.0)       # training-only OFF-SLICE anchor KL weight (0.0 = off)
+    _resolve("distill_anchor_mode", "off_slice")  # training-only: which rows the anchor applies to
     # gen3_distill_target_gate_v1 (config v103) — the action-form/top-K distill target, the
     # advantage gate, and the rank tripwire. The td_aux_coef class: recorded for provenance,
     # never gated, read back here so a flagless resume keeps the arm it was launched as.
@@ -716,6 +725,24 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--distill-value-feat-coef > 0 requires --distill-coef > 0 — the FitNets value-feature "
                      "match is coherent only because the policy KL drives π_student→π_teacher on those states, "
                      "making the teacher's value_pooled the right target (V^π is policy-relative).")
+    # gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region. The dependency is not a style
+    # rule: the anchor's slice IS the `distill_mask` obs key, and the env emits that key only when
+    # `_distill_species` is populated, which `apply_distill_team_bias` gates on --distill-coef > 0.
+    # Without a live distill there is no slice, so an anchor would either anchor everything or
+    # nothing — either way not the thing the flag names.
+    if args.distill_anchor_coef is not None and args.distill_anchor_coef < 0.0:
+        parser.error("--distill-anchor-coef must be >= 0 (0 = off; with --distill-anchor-monitor, "
+                     "0 is the pure-instrument arm)")
+    _anchor_wanted = bool((args.distill_anchor_coef and args.distill_anchor_coef > 0)
+                          or args.distill_anchor_monitor)
+    if _anchor_wanted and not (args.distill_coef and args.distill_coef > 0):
+        parser.error("--distill-anchor-coef / --distill-anchor-monitor require --distill-coef > 0 — "
+                     "the anchor's OFF-SLICE split reads the `distill_mask` obs key, which the env "
+                     "emits only for a run with a live exploiter-distillation term.")
+    if (_anchor_mode_explicit or args.distill_anchor_parent is not None) and not _anchor_wanted:
+        parser.error("--distill-anchor-mode / --distill-anchor-parent do nothing without "
+                     "--distill-anchor-coef > 0 or --distill-anchor-monitor — pass one of those, or "
+                     "drop these.")
     # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, [team_files]) GROUPS once,
     # stored on args for the teambuilder + model-setup to reuse. Preferred form =
     # 'TEACHER:TEAM[,TEAM...][;TEACHER2:...]' — ';' separates TEACHERS, ',' separates that teacher's TEAMS,
