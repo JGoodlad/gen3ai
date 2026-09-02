@@ -819,8 +819,12 @@ memory peak). E.g. `--batch-size 4096 --grad-accum-steps 4` trains like `--batch
 the peak. `K=1` (default) is byte-identical to stock; it's a train-loop knob (not version-locked) —
 forward it on every resume like `--batch-size`. With `K>=2` it also emits a **`train/noise_scale`**
 diagnostic (McCandlish critical batch size) that tells you, as a number, whether your effective batch
-is too small / about right / bigger than needed. Details: `src/agents/training/CLAUDE.md` → Gradient
-accumulation.
+is too small / about right / bigger than needed. 🚨 **Read it beside the PER-TERM scalars, never
+alone** (`train/noise_scale{,_ratio,_share}_{policy,value,entropy,aux,distill}`, default ON): the
+total is measured on the SUM of every loss term, and this tree's dozen dense supervised aux heads
+have far lower gradient noise than the clipped surrogate — so a total reading "over-batched" can be
+aux DEFLATION rather than a batch that is too big, and the advisor says so explicitly when the two
+disagree. Details: `src/agents/training/CLAUDE.md` → Gradient accumulation.
 
 Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (each `.zip`
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
@@ -1494,7 +1498,10 @@ src/
                      #   eval_sharding/ (battle-level work-stealing pkg), rating.py (Glicko-ready seam)
                      #   cf_audit.py (offline counterfactual audit: tight-MC value labels + the bias map)
                      #   instrumented_ppo/ — the PPO step as a package (ppo.py holds train() and
-                     #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub)
+                     #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub;
+                     #   noise_scale_terms.py = the PER-LOSS-TERM McCandlish critical batch —
+                     #   whether the total `train/noise_scale` reading is the POLICY gradient's
+                     #   or the dense aux heads')
                      #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
                      #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
                      #   bootstrap; shared by `train/scaffolding_gauge` and main.scaffolding_gauge)

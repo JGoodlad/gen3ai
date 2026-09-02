@@ -63,6 +63,14 @@ _METRIC_LABELS = {
     # B_simple / effective-batch: ≫1 noise-limited (bigger batch helps), ≪1 diminishing returns.
     "train/noise_scale": "noise scale",
     "train/noise_scale_ratio": "noise/batch",
+    # The PER-TERM half. The total is measured on the SUM of every loss term, and the dense
+    # supervised aux heads have far lower gradient noise than the clipped surrogate — so read
+    # `noise/batch POLICY` beside `noise/batch`, never instead of it. A disagreement means the
+    # total is being deflated by the aux terms, not that the batch is the wrong size.
+    "train/noise_scale_ratio_policy": "noise/batch POLICY",
+    "train/noise_scale_ratio_aux": "noise/batch aux",
+    "train/noise_scale_share_policy": "|G|² share policy",
+    "train/noise_scale_share_aux": "|G|² share aux",
     # Gradient balance (shared-trunk pull, ONE common denominator → all shares comparable + sum to ~1).
     # The two RL heads are ALWAYS present; tune vf_coef / PopArt to value_policy_logratio.
     "grad/policy_share": "policy share",
@@ -226,6 +234,12 @@ _METRIC_ORDER = [
     # size, and its ratio to the effective batch (≫1 = noise-limited, ≪1 = diminishing returns).
     "train/noise_scale",
     "train/noise_scale_ratio",
+    # The per-term half — the policy term's own critical batch, and who owns |G|². Only the two
+    # headline groups are surfaced here; every group's scalars ride TensorBoard.
+    "train/noise_scale_ratio_policy",
+    "train/noise_scale_ratio_aux",
+    "train/noise_scale_share_policy",
+    "train/noise_scale_share_aux",
     # Value-scale (PopArt prep): the (μ, σ) + tail an adaptive return normalizer would track,
     # and the value head's actual output spread. Watch for non-stationary scale drift.
     "train/return_mean",

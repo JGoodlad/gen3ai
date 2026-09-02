@@ -1,4 +1,4 @@
-"""The four module-level tuning constants of the PPO training fold.
+"""The module-level tuning constants of the PPO training fold.
 
 Kept together, and in the leaf of the package's import graph, because `ppo.py`, `value_terms.py`
 and `noise_scale.py` all read them and none of them may import each other.
@@ -27,3 +27,10 @@ _WIN_CONTESTED_TAU = 0.25
 # EMA the numerator and denominator SEPARATELY (this constant) and divide the smoothed values. 0.99
 # ≈ a few-hundred-train()-call window — long enough to denoise, short enough to track drift.
 _NOISE_SCALE_EMA_DECAY = 0.99
+
+# +PER-TERM NOISE SCALE: sample the per-loss-GROUP noise-scale probe on one train() call in this
+# many. 1 = every call. The probe costs len(groups) extra backward traversals on `accum`
+# micro-batches of the sampled call, so the cadence divides that cost directly; it slows only the
+# per-group EMA's convergence in wall-clock, never its value (the EMA is per SAMPLE). Sized from
+# the measured overhead — see `src/agents/training/CLAUDE.md` -> the per-term section.
+_NOISE_PER_TERM_EVERY = 1

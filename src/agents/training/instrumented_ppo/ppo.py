@@ -10,6 +10,8 @@ matters about it (no flag combination reorders these) would stop being visible.
 Everything that is NOT the sequence has moved out: the knobs (`hparams`), the per-term losses
 (`distill_terms`, `value_terms`, `aux_terms`), the noise-scale machinery (`noise_scale`).
 """
+import time
+
 import numpy as np
 import torch as th
 from gymnasium import spaces
@@ -27,10 +29,18 @@ from agents.training.grad_balance import (
 from agents.training import belief_bank as _belief_bank
 from agents.training.instrumented_ppo.aux_terms import AuxTerms
 from agents.training.instrumented_ppo.capacity_terms import CapacityTerms
-from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
+from agents.training.instrumented_ppo.constants import (
+    _NOISE_PER_TERM_EVERY,
+    _NOISE_SCALE_EMA_DECAY,
+)
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
+from agents.training.instrumented_ppo.noise_scale_terms import (
+    NULL_TAGGER,
+    PerTermNoiseSampler,
+    per_term_enabled,
+)
 from agents.training.instrumented_ppo.signal_metrics import advantage_density_metrics
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe
@@ -154,6 +164,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         minibatch's `value_pooled`, taken right after `evaluate_actions` for the same reason steps
         2-4 sit where they do: the own-forward folds replace the stash.
         """
+        # +INSTRUMENTATION: the wall clock of the WHOLE call, recorded as `train/train_ms`. It is
+        # the denominator every "this probe costs X% of the train step" claim in this file needs,
+        # and reading it live is the only way that claim can stay true as the fold grows.
+        _t_train0 = time.perf_counter()
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         # Update optimizer learning rate
@@ -410,6 +424,15 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # epoch 0) so |G_small|² and |G_big|² come from the SAME data; folded into the EMAs after the epochs.
         noise_g_small_sq = None   # ‖single micro-batch gradient‖²  (B = batch_size)
         noise_g_big_sq = None     # ‖accumulated group gradient‖²   (B = batch_size·accum)
+        # +NOISE-SCALE PER-TERM: the same two points, taken per LOSS GROUP so the total reading can
+        # be told apart from the PPO policy term's own (noise_scale_terms.py's docstring is the why).
+        # Built only on a sampled call — the cadence divides its cost — and NULL otherwise, in which
+        # case every `_ntg.add(...)` below is a passthrough and no extra gradient is ever taken.
+        self._noise_per_term_calls += 1
+        _ns_terms = NULL_TAGGER
+        if (accum >= 2 and per_term_enabled(self)
+                and self._noise_per_term_calls % max(1, _NOISE_PER_TERM_EVERY) == 0):
+            _ns_terms = PerTermNoiseSampler(list(self.policy.parameters()))
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # +GRAD-ACCUM: start each accumulation group with a clean grad buffer; count micro-batches.
@@ -417,6 +440,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             micro_in_group = 0
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):
+                # +NOISE-SCALE PER-TERM: collect on epoch 0's FIRST accumulation group only — the
+                # same window the total's two points are read from, so both readings score the very
+                # same data and a disagreement can only be the gradient. NULL elsewhere ⇒ the
+                # `_ntg.add(...)` calls threaded through the fold below are pure passthroughs.
+                _ntg = _ns_terms if (epoch == 0 and _ns_terms.micros < accum) else NULL_TAGGER
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
                     # Convert discrete action from float to long
@@ -526,7 +554,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # line below is literally the old `loss = policy_loss + …` expression —
                 # byte-identical. Any other value scales ONLY the policy-gradient term.
                 _policy_grad_term = policy_loss if policy_grad_coef == 1.0 else policy_grad_coef * policy_loss
-                loss = _policy_grad_term + self.ent_coef * ent_loss_used + _vf_term
+                # +NOISE-SCALE PER-TERM: `_ent_term` names the sub-expression that was already
+                # there — `a + b * c + d` and `a + (b*c) + d` are the same operations in the same
+                # order — so the fold is byte-identical while the three RL groups become taggable.
+                _ent_term = self.ent_coef * ent_loss_used
+                loss = (_ntg.add("policy", _policy_grad_term) + _ntg.add("entropy", _ent_term)
+                        + _ntg.add("value", _vf_term))
 
                 # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
                 # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
@@ -546,7 +579,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         gates={"hidden_team": belief_aux_on, "move_belief": move_belief_on},
                         site="hidden_move",
                         params={"moves_weight": self.opp_belief_moves_weight}):
-                    loss = loss + _bterm
+                    loss = loss + _ntg.add("aux", _bterm)
                     if _brow.name == "hidden_team":
                         belief_aux_term = _bterm
                     elif _brow.name == "move_belief":
@@ -703,11 +736,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                 oi_m.update(switch_coverage_metrics(
                                     _kind, _need, _content, _rows, f"_{_name}"))
                         if _sv is not None:
-                            loss = loss + self.opp_intent_coef * self.beta_setvalued_coef * _sv
+                            loss = loss + _ntg.add(
+                                "aux", self.opp_intent_coef * self.beta_setvalued_coef * _sv)
                             oi_m["opp_intent/beta_setvalued_loss"] = float(_sv.detach())
                             oi_m["opp_intent/beta_setvalued_rows"] = oi_m_extra_rows
                         opp_intent_term = self.opp_intent_coef * oi_loss
-                        loss = loss + opp_intent_term
+                        loss = loss + _ntg.add("aux", opp_intent_term)
                         for _ok, _ov in oi_m.items():
                             aux_metrics.setdefault(_ok, []).append(_ov)
 
@@ -723,7 +757,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         self.policy.features_extractor, rollout_data.observations,
                         coefs={"move_belief_latent_coef": self.move_belief_latent_coef},
                         gates={"move_latent": move_latent_on}, site="latent"):
-                    loss = loss + _bterm
+                    loss = loss + _ntg.add("aux", _bterm)
                     move_latent_term = _bterm
                     for _bk, _bv in _bm.items():
                         belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
@@ -748,7 +782,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         gates={"spread": spread_belief_on, "hp_type": hp_type_belief_on,
                                "item": item_belief_on},
                         site="revealed"):
-                    loss = loss + _bterm
+                    loss = loss + _ntg.add("aux", _bterm)
                     if _brow.name == "spread":
                         spread_belief_term = _bterm
                     elif _brow.name == "nature_ev":
@@ -777,7 +811,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if wp_out is not None:
                         wp_loss, wp_m = wp_out
                         win_prob_term = self.win_prob_coef * wp_loss
-                        loss = loss + win_prob_term
+                        loss = loss + _ntg.add("aux", win_prob_term)
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
@@ -812,7 +846,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 if cf_twin_on:
                     cf_twin_op_term, _ctm = self._cf_twin_onpolicy_terms(rollout_data)
                     if cf_twin_op_term is not None:
-                        loss = loss + cf_twin_op_term
+                        loss = loss + _ntg.add("aux", cf_twin_op_term)
                         for _ck, _cv in _ctm.items():
                             cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
 
@@ -837,7 +871,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             # Phase B: the CE is the PRIMARY critic loss (vf_coef weight); else the aux coef.
                             _ce_w = self.vf_coef if value_from_dist else self.value_dist_coef
                             value_dist_term = _ce_w * vd_loss
-                            loss = loss + value_dist_term
+                            loss = loss + _ntg.add("aux", value_dist_term)
                             for _vk, _vv in vd_m.items():
                                 value_dist_metrics.setdefault(_vk, []).append(float(_vv))
 
@@ -964,16 +998,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             # fewer states still contributes comparable gradient (not swamped by a big one).
                             _distill_kl = th.stack(_per_teacher_kl).mean()
                             distill_term = self.distill_coef * _distill_kl
-                            loss = loss + distill_term
+                            loss = loss + _ntg.add("distill", distill_term)
                             distill_metrics.setdefault("kl", []).append(float(_distill_kl))
                             distill_metrics.setdefault("n_teachers_active", []).append(float(len(_per_teacher_kl)))
                         if _per_teacher_vd:
                             _distill_vd = th.stack(_per_teacher_vd).mean()    # balanced like the policy KL
-                            loss = loss + self.distill_value_coef * _distill_vd
+                            loss = loss + _ntg.add("distill", self.distill_value_coef * _distill_vd)
                             distill_metrics.setdefault("value_mse", []).append(float(_distill_vd))
                         if _per_teacher_vfd:
                             _distill_vfd = th.stack(_per_teacher_vfd).mean()  # balanced like the policy KL
-                            loss = loss + self.distill_value_feat_coef * _distill_vfd
+                            loss = loss + _ntg.add(
+                                "distill", self.distill_value_feat_coef * _distill_vfd)
                             # Same naming note as the per-teacher site above: DISTANCE (1 − cos), lower =
                             # better aligned. `value_feat_dist` is canonical; `value_feat_cos` is the
                             # deprecated alias kept one release.
@@ -1006,7 +1041,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                          else _td["confirmed_value"])
                                 searchteacher_term = searchteacher_term + \
                                     self.search_teacher_value_coef * ((_vt - _vtgt) ** 2).mean()
-                            loss = loss + searchteacher_term
+                            loss = loss + _ntg.add("aux", searchteacher_term)
                             for _tk, _tv in _st_m.items():
                                 teacher_metrics.setdefault(_tk, []).append(float(_tv))
 
@@ -1030,7 +1065,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             if _opd is not None:
                                 _opd_loss_t, _opd_m = _opd
                                 opd_term = self.opd_coef * _opd_loss_t
-                                loss = loss + opd_term
+                                loss = loss + _ntg.add("aux", opd_term)
                                 for _ok, _ov in _opd_m.items():
                                     opd_metrics.setdefault(_ok, []).append(float(_ov))
 
@@ -1045,7 +1080,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 if td_aux_on:
                     td_aux_term, _tdm = self._td_aux_term(popart)
                     if td_aux_term is not None:
-                        loss = loss + td_aux_term
+                        loss = loss + _ntg.add("aux", td_aux_term)
                         for _tdk, _tdv in _tdm.items():
                             td_aux_metrics.setdefault(_tdk, []).append(float(_tdv))
 
@@ -1076,13 +1111,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if cf_winprob_on:
                         cf_term, _cfm = self._cf_winprob_term(_cf_ctx)
                         if cf_term is not None:
-                            loss = loss + cf_term
+                            loss = loss + _ntg.add("aux", cf_term)
                             for _cfk, _cfv in _cfm.items():
                                 cf_metrics.setdefault(_cfk, []).append(float(_cfv))
                     if cf_evid_on:
                         cf_evid_term, _cfem = self._cf_evidential_term(_cf_ctx)
                         if cf_evid_term is not None:
-                            loss = loss + cf_evid_term
+                            loss = loss + _ntg.add("aux", cf_evid_term)
                             for _cek, _cev in _cfem.items():
                                 cf_evid_metrics.setdefault(_cek, []).append(float(_cev))
                     # +CF-TWIN, half two of two (gen3_cf_twin_heads_v1): the folds that make B and
@@ -1094,14 +1129,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if cf_twin_on:
                         cf_twin_term, _cftm = self._cf_twin_terms(_cf_ctx)
                         if cf_twin_term is not None:
-                            loss = loss + cf_twin_term
+                            loss = loss + _ntg.add("aux", cf_twin_term)
                         for _ck, _cv in _cftm.items():
                             cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
                     # +CF-SHADOW: the passive value twin on `mc_return`. Same sample, same forward.
                     if cf_shadow_on:
                         cf_shadow_term, _cfsm = self._cf_shadow_term(_cf_ctx, popart)
                         if cf_shadow_term is not None:
-                            loss = loss + cf_shadow_term
+                            loss = loss + _ntg.add("aux", cf_shadow_term)
                         for _sk, _sv in _cfsm.items():
                             cf_shadow_metrics.setdefault(_sk, []).append(float(_sv))
                     # +Q-WINPROB (gen3_q_winprob_head_v1): the PER-ACTION head, on the SAME sample
@@ -1111,13 +1146,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if q_winprob_on:
                         q_term, _qm = self._q_winprob_term(_cf_ctx)
                         if q_term is not None:
-                            loss = loss + q_term
+                            loss = loss + _ntg.add("aux", q_term)
                         for _qk, _qv in _qm.items():
                             q_metrics.setdefault(_qk, []).append(float(_qv))
                     if q_onpolicy_on:
                         q_op_term, _qom = self._q_winprob_onpolicy_term(_cf_ctx)
                         if q_op_term is not None:
-                            loss = loss + q_op_term
+                            loss = loss + _ntg.add("aux", q_op_term)
                         for _qk, _qv in _qom.items():
                             q_metrics.setdefault(_qk, []).append(float(_qv))
 
@@ -1270,6 +1305,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # Optimization step. +GRAD-ACCUM: accumulate the 1/accum-scaled gradient (accum
                 # micro-batches of size batch_size sum to the exact (batch_size·accum) gradient) and
                 # step only when the group is full. accum==1 ⇒ one step per minibatch (upstream).
+                # +NOISE-SCALE PER-TERM: take the per-group gradients LAST, while the graph is
+                # still alive and `.grad` still holds only what previous micro-batches put there.
+                # `autograd.grad` writes no `.grad`, so the accumulation below is untouched.
+                _ntg.flush_micro()
                 (loss / accum).backward()
                 micro_in_group += 1
                 # +INSTRUMENTATION: per-edge-family liveness, sampled ONCE per train() and read
@@ -1442,11 +1481,29 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 self.logger.record("train/noise_scale", float(b_simple))
                 self.logger.record("train/noise_scale_ratio", float(b_simple / b_big))
                 _nsr_global = float(b_simple / b_big)
+        # +NOISE-SCALE PER-TERM: the SAME solve, per loss group, on the gradients the sampler
+        # accumulated over that same first group. Emitted beside the total so the two are read
+        # together — the finding this exists for is a DISAGREEMENT between them, and a reader who
+        # has to fetch the halves from different places will not notice one. The probe self-reports
+        # its own cost (`train/noise_per_term_ms`) so the overhead is a live number, not a claim.
+        if _ns_terms.collecting:
+            _pt = _ns_terms.result(accum)
+            if _pt:
+                b_small = float(self.batch_size)
+                for _tag, _val in self._fold_per_term_noise(
+                        _pt, b_small, b_small * accum, self._noise_ema_g2).items():
+                    self.logger.record(_tag, _val)
+            self.logger.record("train/noise_per_term_ms", 1000.0 * _ns_terms.probe_seconds)
+            _ns_terms.release()
+        # +NSR-ADVISOR: the smoothed PPO-policy-term ratio, read off the EMA state so it survives a
+        # call the cadence did not sample (see `_per_term_ratio`).
+        _nsr_policy = self._per_term_ratio("policy", float(self.batch_size) * accum)
         # +NSR-ADVISOR: rate-limited TUI Events warnings when a smoothed noise-scale ratio is out
         # of band, with the concrete fix in the message (see _noise_scale_advice). Only on the
-        # accumulating path (the estimator needs two batch sizes).
+        # accumulating path (the estimator needs two batch sizes). The policy-term ratio rides
+        # along: it is quoted inside the band warnings and, when the two disagree, produces its own.
         if accum >= 2 and _nsr_global is not None:
-            self._emit_noise_scale_warnings(_nsr_global, float(self.batch_size) * accum)
+            self._emit_noise_scale_warnings(_nsr_global, float(self.batch_size) * accum, _nsr_policy)
 
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
         # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`
@@ -1704,3 +1761,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # audits — so the monitor went with it. Its finding survives in designs/CHANGELOG.md.)
         for _sk, _svals in aux_metrics.items():
             self.logger.record(_sk, float(np.mean(_svals)))
+        # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest
+        # denominator for `train/noise_per_term_ms` and for every other probe's cost claim.
+        self.logger.record("train/train_ms", 1000.0 * (time.perf_counter() - _t_train0))

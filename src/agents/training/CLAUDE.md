@@ -18,6 +18,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `ppo.py` | `InstrumentedMaskablePPO` + `train()` — the vendored upstream override and **the whole fold sequence** |
 | `hparams.py` | every after-construction knob `train_rl_agent` sets (`value_tail_weight`, the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
 | `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor |
+| `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the dense aux heads'? |
 | `distill_terms.py` | search-teacher AWR · OPD · the exploiter-distillation family (policy KL — or the top-K/action-CE form with the advantage gate, `_gated_action_distill_loss` — value MSE, the FitNets hint) |
 | `value_terms.py` | the win-prob BCE · the value-dist HL-Gauss CE · `_value_loss_from_se` |
 | `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
@@ -3200,6 +3201,131 @@ Tests: `instrumented_ppo_test.py` — `test_noise_scale_estimate_recovers_known_
 math recovers a planted `|G|²`/`tr(Σ)` exactly), `_smaller_batch_is_noisier_sign`, `_global_grad_sq`
 matches a manual sum, and `_logged_only_when_accumulating` (real `train()`: skipped at accum=1, EMA
 updated + scalar emitted at accum=2).
+
+### 🚨 The total is NOT the policy gradient — the PER-TERM noise scale (`noise_scale_terms.py`)
+
+**`train/noise_scale` is measured on the TOTAL gradient, and on this tree the total gradient is
+mostly not PPO.** The loss is the clipped surrogate + the value term + the entropy bonus + a dozen
+DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, value-dist, TD-aux,
+the counterfactual family) + a distillation KL on a fold. A supervised head's per-example gradients
+**agree** — its target is a label, not an advantage — so its `tr(Σ)` is small and its `|G|²` is not.
+Mixing it into the total therefore **DEFLATES** `B_simple = tr(Σ)/|G|²`, and the run reads
+"over-batched" while the term you are actually trying to train may be starved. Acting on the total
+in that state shrinks the batch the policy gradient needed.
+
+That confound is not hypothetical here: the live runs read `train/noise_scale_ratio` **0.001 early
+and 0.05 late** on the generalists and **1.1** on the v8 fold, i.e. "over-batched 16-1000x" — a
+conclusion no batch-size decision should rest on until the policy term has been read on its own.
+
+**Five groups, the SAME estimator.** `PerTermNoiseSampler` accumulates each group's gradient over
+the same two batch sizes the total already uses for free (one micro-batch, and the accumulated
+first group of epoch 0) and feeds them through the SAME `_noise_scale_estimate` two-point solve and
+the SAME separately-EMA'd numerator/denominator. The math is not forked — the whole point of the
+comparison is that a disagreement can only be the *gradient*, never the estimator.
+
+| group | is |
+|---|---|
+| `policy` | the clipped surrogate AS FOLDED (`_policy_grad_term`; at the 1.0 default that is `policy_loss` itself) |
+| `value` | `vf_coef · value_loss` (0.0 and therefore absent under `value_from_dist`) |
+| `entropy` | `ent_coef · ent_loss_used` — **degenerate at `--ent-coef 0`** (a 0.0-scaled tensor still folds, so the group is present but its norms are 0 and both EMAs stay non-positive ⇒ nothing is emitted, which is the right answer, not a gap) |
+| `aux` | every belief / win-prob / value-dist / TD-aux / search-teacher / OPD / counterfactual term, as ONE bucket (`grad/<term>_share` already breaks the heads out individually) |
+| `distill` | the `--distill-coef` family — separated because it comes and goes with a fold and its dose is the thing being tuned |
+
+Three scalars per group, beside the existing pair:
+- **`train/noise_scale_<g>`** — that group's own `B_simple`.
+- **`train/noise_scale_ratio_<g>`** — over the effective batch. **`_ratio_policy` is the headline.**
+- **`train/noise_scale_share_<g>`** — `|G_g|² / |G_total|²`, i.e. who owns the true gradient's
+  squared length. ⚠️ **The shares do NOT sum to 1 and must not be read as a partition**:
+  `|G_total|² = ‖Σ_g G_g‖²` carries the cross terms, so groups pulling together sum above 1 and
+  groups fighting sum below it.
+
+**The advisor now reads BOTH.** `_noise_scale_advice` takes the policy-term ratio, quotes it inside
+the OVER-BATCHED / NOISE-LIMITED bands, and — when the two land in different bands **or** differ by
+≥3x inside one — emits its own `total_vs_policy_disagree` warning naming the aux deflation and
+pointing at `train/noise_scale_share_*`. **That disagreement is the finding this exists for**, so it
+is a warning of its own rather than a footnote on the total's. The policy ratio is read from the EMA
+state (`_per_term_ratio`), not from the last fold, so a call the cadence did not sample still quotes
+it.
+
+**It cannot change training, structurally.** The tagger is threaded through the fold as
+`loss = loss + _ntg.add("aux", term)` and **`add` returns its argument unchanged**, so the loss
+expression is tensor-for-tensor the one that was there (`_ent_term` merely names a sub-expression
+whose operations and order are unchanged). Gradients come from `torch.autograd.grad(…,
+retain_graph=True)`, which never writes `.grad` — the same read-only mechanism
+`grad_balance_metrics` has used per-term on every `train()` for generations, **which is also why
+`--compile-trainer` is not a new risk**: the compiled backward is already called repeatedly with
+`retain_graph` by that probe. Any exception retires the probe for the call with one printed line and
+leaves the step untouched.
+
+**COST — measured, and the default follows the measurement.** The probe costs `n_groups` extra
+backward traversals on `accum` micro-batches of a sampled `train()`, against
+`n_epochs × n_minibatches` fwd+bwd for the call — so **the overhead is governed by minibatches per
+`train()`, not by batch size**. It self-reports (`train/noise_per_term_ms`) against a new
+`train/train_ms` (the whole call's wall clock, recorded as `train()`'s last line — the honest
+denominator for this and every future probe's cost claim):
+
+| shape (epochs × minibatches per `train()`, accum 2) | `noise_per_term_ms / train_ms` |
+|---|---|
+| `--debug --n-steps 1024 --batch-size 512` (5 × 2 = 10 units, 4 live groups) | **24.3%** (5 calls) |
+| `--debug --n-steps 1024 --batch-size 128` (5 × 8 = 40 units, 4 live groups) | **7.9% / 8.0%** (two runs, 11 calls each) |
+| production `--n-steps 2048 --n-envs 64 --batch-size 16384 --n-epochs 10` (10 × 8 = 80 units, 5 groups) | **≈5.0% — EXTRAPOLATED** (2× the units, 1.25× the groups), not measured on GPU |
+
+*(Both measured rows are CPU `--debug` runs on a box carrying a live fleet. That does not
+invalidate them: the numerator and denominator are wall clocks from the SAME `train()` call, so
+contention stretches both and the RATIO is what survives — which is exactly why `train/train_ms`
+was added rather than an external stopwatch.)*
+
+**Default ON** (`PpoHyperparameters.noise_scale_per_term`), because the production shape is well
+under the 10% bar. Peak extra memory is one gradient accumulator per live group
+(`n_groups × Σ|params|` ≈ 5 × ~16 MB), freed at the end of the call.
+
+**⚠️ WARM-UP: `_policy` is the LAST tag to appear, and that is the signal, not a gap.** A group is
+emitted only once both its EMAs are positive. For a strongly noise-limited term `|G|²` is genuinely
+near zero at these batch sizes — with `accum=2` the estimate is `2·g_big − g_small ≈ 0` — so its
+single-sample estimate SIGN-FLIPS and only the average resolves it. The per-group fold therefore
+uses a DEBIASED warm-up (effective decay `min(decay, 1 − 1/(n+1))`, a plain running mean until the
+window fills) so one negative first sample cannot suppress the tag for hundreds of calls. **The
+total keeps its historical anchor-on-first-sample fold** — its series must stay comparable across
+this change, and it is dominated by the well-conditioned value term anyway. Measured effect on a
+12k-step debug smoke: without the debiasing `_policy` never emitted in 11 calls; with it, it emits
+by call ~10.
+
+**FIRST READING (2026-09-01, two `--debug --steps 12000 --n-steps 1024 --batch-size 128
+--grad-accum-steps 2` runs, CPU, default flags so `aux` is small and `distill` absent).** It
+reproduces the confound in miniature. Run A: `train/noise_scale_share_value` = **1.00001** and
+`train/noise_scale` == `train/noise_scale_value` to five figures — **the "total" IS the value
+term**, contributing ~100% of |G|² — with `noise_scale_ratio` = **0.081** ("over-batched 12×").
+Run B (post-debiasing) put the policy tag on the board: `noise_scale_ratio_policy` = **6.2 then
+2.7** ("noise-limited") on a run whose total ratio read **0.074–0.090**. Same run, same call, ~30–80×
+apart, in the direction the total hides. Do NOT read those numbers as the production runs' answer
+(different device, batch, flag set, and eleven calls) — read them as the instrument working: the
+term PPO actually optimizes says *noise-limited* where the total says *over-batched*.
+
+**One thing the smoke exposed that this change deliberately did NOT fix.** The TOTAL's own EMA has
+the same anchor-on-first-sample fragility the per-term half was debiased for — in run B the total's
+`tr(Σ)` EMA started negative and `train/noise_scale{,_ratio}` therefore never emitted at all across
+11 calls, while every per-term tag did. Fixing it is a two-line change (the same
+`min(decay, 1 − 1/(n+1))`), but it would move `train/noise_scale`'s values, and the byte-identity of
+the total series was a requirement of this work. Raise it as its own change if the total's warm-up
+starts costing readings on production runs.
+
+Two levers, both ENV/constant rather than CLI flags — the probe changes no training math, so it
+never belongs in `model_config.json` and should not have to survive a resume's argv:
+- **`$GEN3AI_NOISE_SCALE_PER_TERM=0`** turns it off for a process (wins over the class default).
+- **`_NOISE_PER_TERM_EVERY`** (`constants.py`, currently `1`) samples one `train()` call in N,
+  dividing the cost directly. It slows the per-group EMA's convergence in wall-clock, never its
+  value — the EMA is per SAMPLE. **Raise it on a config with few minibatches per `train()`**, which
+  is the only regime where this probe is expensive.
+
+Tests: `instrumented_ppo_noise_scale_terms_test.py` — the per-group fold recovers a planted
+`B_simple` per group (with `aux` planted 4000x below `policy`, the confound itself); `share` is
+pinned as NOT a partition; the sampler's `small_sq`/`big_sq` are checked against independently
+computed gradients; a partial group and a group that first appears on a later micro-batch both yield
+nothing; `.grad` is never written; `add` returns the identical object; a raising probe self-disables;
+**the byte-identity gate** runs two identically-seeded fresh models (a `train()` on the toy is *not*
+reproducible from a restored `state_dict` — three consecutive restores drift ~5e-4 with the probe
+absent — so the arms are fresh, and a third OFF arm is the control); and the advisor's disagreement
+family. A source scan asserts the tags in `train()` and `NOISE_TERM_GROUPS` are the same set.
 
 ## The `signal/` group — advantage density × outcome entropy (`gen3_signal_rate_metrics_v1`)
 

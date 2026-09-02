@@ -33,6 +33,15 @@ class PpoHyperparameters:
     #   remainder minibatch in the final group of each epoch (no worse than stock's full-weight step on it).
     #   For a bit-exact effective batch, pick batch_size | rollout and accum | minibatch-count.
     grad_accum_steps: int = 1
+    # +PER-TERM NOISE SCALE (`noise_scale_terms.py`): also estimate the McCandlish critical batch
+    # SEPARATELY per loss group (policy / value / entropy / aux / distill), not just on the total
+    # gradient. Pure DIAGNOSTIC — it takes read-only `autograd.grad` snapshots and never touches
+    # `.grad`, the loss, or the optimizer step, so it is neither version-locked nor recorded. Only
+    # does anything when `grad_accum_steps >= 2` (it needs the same two batch sizes the total
+    # estimator does). An ENV knob rather than a CLI flag — `$GEN3AI_NOISE_SCALE_PER_TERM=0`
+    # disables it and wins over this default (see `noise_scale_terms.per_term_enabled`), because a
+    # switch that changes no training math should not have to survive a launcher resume's argv.
+    noise_scale_per_term: bool = True
     # Set by train_rl_agent after construction (like _async_rollout); resume-immutable (recorded +
     # version-checked). 0.0 = plain MSE value loss (byte-identical to upstream). >0 blends in the CVaR
     # of the worst value misses — see _value_loss_from_se.
