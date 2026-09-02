@@ -8414,3 +8414,71 @@ effect both land the point inside that bar most of the time. A bar must be writt
 interval ("CI half-width < X AND CI inside ±X"), and an equivalence/no-effect verdict always
 quotes the delta's CI, never the arms'. Same family as `feedback_matched_noise_control` and the
 "read the per-arm spread before believing a delta" rule; this is its no-effect-direction twin.
+
+### 🛠️ BUILD WAVE: the step-size question got its instruments — per-term noise scale, fork-time pin + DOSE, an off-slice anchor, an adaptive batch loop (2026-09-01)
+
+**Owner's questions (verbatim in spirit): is the hand-built KL→lr controller still right; should batch
+have a feedback loop; does a distillation target have a batch size; was v8's huge batch a stabiliser;
+and re-evaluate the six-month-old decisions.** Answered inline (see the learning recap of this
+date) and then BUILT, four opus dispatches, all on main, all OFF by default except the first:
+
+| commit | what | default |
+|---|---|---|
+| `53af436b` | **per-loss-term noise scale** (`noise_scale_terms.py`): `train/noise_scale{,_ratio,_share}_{policy,value,entropy,aux,distill}` beside the total; advisor emits `total_vs_policy_disagree` | ON (~8% of train step at the debug shape; ≈5% extrapolated at production; `$GEN3AI_NOISE_SCALE_PER_TERM=0`) |
+| `e9b2a352` | **`--fork-lr` / `--fork-lr-freeze`** (resume-only, fork-vs-restart keyed on where the checkpoint lives) + the recorded **`dose` block** in metadata + `train/dose_rate` + `python -m main.dose` | off |
+| `96a00ed6` | **`--distill-anchor-coef`** — KL(frozen fold parent ‖ student) on OFF-slice states; parent re-loaded from the fork parent's PATH every launch; `--distill-anchor-monitor` gives the live meters (`distill/collateral_kl`, `on_slice_kl`, `off_slice_frac`, `teacher_agreement_on_slice`) with no loss | off |
+| `f60242ba` | **`--adaptive-batch {off,total,policy}`** — holds a chosen term's noise ratio near target by doubling/halving `--grad-accum-steps` (shape-stable, exact); floor K=2 (at K=1 the estimator is blind); band must be ≥√2 or it chatters; slower than the lr loop by construction | off |
+
+**🚨 THE FINDING THAT CAME OUT OF THE FIRST ONE (debug smoke, CPU, aux heads off — the instrument
+working, NOT the production answer): `train/noise_scale_share_value` = 1.00001 — the "total" noise
+scale IS the value term to five figures — while `noise_scale_ratio_policy` read 6.2→2.7
+(NOISE-LIMITED) on a run whose total read 0.07–0.09 ("over-batched 12×").** The two disagree ~30–80×
+in the direction the total hides. Consequence: every "over-batched" reading quoted from
+`train/noise_scale` on the generalists (0.001 early, 0.05 late) was a statement about the CRITIC's
+gradient; the policy term's own batch adequacy is UNMEASURED on production runs until the next arm
+syncing to main reports the per-term tags. The adaptive-batch loop therefore defaults its driver to
+`policy`, never `total`. Also found and left alone (own change): the TOTAL's EMA can silently never
+emit if its first `tr(Σ)` sample is negative.
+
+**DOSE is now a recorded quantity** (`python -m main.dose` reproduces M7 exactly: v8 2.145e-8; rev-2
+6.62×; rev-3 3.19×; **rev-4 `R4ACTION` 3.19×** (ga=2, lr median 2.80e-5); R5F00 1.99×). Two
+controllers now can act on a run (KL→lr, noise-ratio→K); the operator watches `train/dose_rate`,
+never either loop's own series.
+
+**Re-evaluation verdicts, banked:** KL→lr controller KEEP (it absorbed every reward-scale change;
+fixes: forks pin the rate, dose recorded); fixed 16k effective batch = the decision that aged worst,
+but the accumulation trick itself is EXACT (a batch-CHOICE problem, not a functional regression);
+10 epochs REVISIT (v8 used 7; epochs multiply dose); annealing is moot until a checkpoint is headed
+to the ladder (owner). The gen-era folds were NOT noisier than v8's per update (ratios 0.06–0.4 vs
+1.1) — v8's protection was DOSE (11× fewer steps), which the licensing probe's overshoot result
+corroborates; the batch-as-noise-averager theory is not supported by the instrument.
+
+**Also on main:** `c8825016` re-pins the team-loader counts (32→72 sample, 687→647 other, 719
+invariant) — RED on main since the promotion, caught by an agent's broad sweep.
+
+**Method:** four opus dispatches ran 2–3 concurrent on Claude Code 2.1.258 with zero stalls (the
+2026-08-09 starvation signature did not recur at this concurrency); every landing was a rebase +
+targeted gate + explicit-path push by the orchestrator, two doc conflicts and one callback-list
+conflict resolved by keeping both sides.
+
+### 📋 PRE-REGISTERED: the THREE-DOSE FOLD CELL (queued behind the funding split; ~7 GPU-h + 3 CPU untaught arms)
+
+Everything above is consistent with "gentler folds rob less" and none of it has measured it INSIDE a
+real PPO fold. The cell: rev-4's fold (`R4ACTION`: parent `ai_v9_59_R2ACTION_0827/final_model.zip`,
+teachers `R4S3a/b/c` 3×8, `--distill-coef 0.1761 --distill-team-bias 0.4`, `--steps 32567760`,
+same seed) re-run with the rate PINNED at rev-4's own median (`--fork-lr 2.8e-5 --fork-lr-freeze`)
+and ONLY the accumulation count varied: **K=12 (0.53× v8 dose) · K=6 (1.06×) · K=3 (2.1×)**, with
+`R4ACTION` itself (K=2, adaptive lr, 3.19×) as the existing high-dose reference. All three carry
+`--distill-anchor-monitor` (coef 0) so `distill/collateral_kl` is live. Each arm then plays the
+STANDING untaught-8 meter — stochastic · opponent rev-1 24M snapshot · team set M, n=200/team, the
+M9 instrument verbatim — and the taught-side `ordered` extraction.
+**Readings, written against INTERVALS (the 2026-09-01 specimen):**
+- **P1 (dose monotonicity):** untaught pull-down vs parent orders K12 ≥ K6 ≥ K3 ≥ R4 by point, AND
+  the K12 − K3 paired difference's team-clustered 95% CI excludes 0 on the positive side ⇒ PASS.
+  CI straddles 0 ⇒ "NO DETECTABLE dose effect at n=1600/arm" — not "dose does not matter".
+- **P2 (the cost of gentleness):** K6's taught-side extraction is within the taught replicate floor
+  (3.70pp) of R4ACTION's, with its CI quoted ⇒ gentleness does not forfeit the taught gain.
+- **P3 (the live meter, directional only, n=1 each):** end-of-fold `distill/collateral_kl` orders
+  K3 > K6 > K12 — the licensing probe's prediction, now inside a fold.
+- Floor beside every delta: 4.19pp untaught / 3.70pp taught. Rev-4's −6.50 is the number to beat;
+  a K6 result inside the floor of zero is the outcome that changes the revolution fold's argv.
