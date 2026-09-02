@@ -8751,3 +8751,19 @@ checkpoints, nothing lost). **Timeline revised**: 90% self-play runs ~1.35M/h vs
 funding arms' 1.76M/h ⇒ ~3.3 h/arm; dose cell ≈ 00:00, all seven ≈ 13:00 tomorrow. Fallback
 health cron `a1139076` hourly at :47 (repairs one arm, verifies SELFPLAY, notifies only on
 completion/BLOCKED) + arm-transition Monitor, both on the training session.
+
+**Addendum (2026-09-02 ~15:30): the empty-pool fork guard is BUILT and on main (`f95137cd`).**
+`agents/training/pool_seed.py`: on a genuine fork (the `fork_lr` predicate, imported) with
+`--self-play` and an EMPTY `snapshots/`, the trainer copies the parent's `snapshot_*.zip` +
+`summary.json` + `win_rate_vs_bots.txt` + `model_config.json` — audited as the exact set
+`SnapshotPool`/`load_model_snapshot` read; a negative-control test pins that ZIPS ALONE read
+`self_play_fraction=0%` — BEFORE the pool is constructed, prints one seeded line, and records
+`lineage.pool_seeded_from`. A non-empty pool is byte-identical untouched (the dose chain's manual
+seeding is undisturbed); a poolless fork now exits FATAL_CONFIG naming three ways out;
+`--allow-empty-pool` is explicit consent; a fresh run and a restart are unaffected. The class that
+cost the TD-aux forks (2026-08-18) and nearly cost the dose cell (today) is unrepresentable from
+this commit on. Also today: the R5 admission battery is running 4-sharded at 800/arm (decision:
+power over speed — the admission gate is defined at 800), priority-first so the FUNDING-MATCHED
+block (64 cells: 8 funded + 8 parents + reference cells over their 16 slices) merges ~20:15 as a
+labelled PARTIAL; full battery ~03:00–06:00; team-class split to be joined downstream by the
+orchestrator, not the artifact.
