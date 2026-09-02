@@ -115,10 +115,13 @@ def test_loader_real_counts_pin():
     """Pin the real committed pool against the per-mon-collapse fix.
 
     Derived (not hand-counted): each manifest contributes its distinct valid+present files.
-    After collapsing the Yak Attack manifest to one-entry-per-team this is samples=32,
+    After collapsing the Yak Attack manifest to one-entry-per-team this was samples=32,
     others=687, all=719 (was others=1569/all=1601 with the per-mon inflation — Yak Attack alone
-    was 1056 of the 1569 'others', i.e. ~66% of all draws). If the validity policy ever shifts
-    these by a few, update the expected dict below to match the derived number it prints.
+    was 1056 of the 1569 'others', i.e. ~66% of all draws). The 2026-08-31 40-team promotion
+    (`python -m main.promote_teams`, seed 1383414976) MOVED 40 teams from the others manifests into
+    `data/teams/sample/`, so the pins are now samples=72, others=647, all=719 — the total is
+    invariant under a promotion, which is what the third assert protects. If the validity policy
+    ever shifts these by a few, update the pins below to match the derived number it prints.
     """
     repo = get_repo_root()
     old_cwd = os.getcwd()
@@ -152,8 +155,8 @@ def test_loader_real_counts_pin():
         assert len(loader.get_all_teams()) == exp_sample + exp_other
 
         # Documented absolute pins (the post-fix distribution). Derived == documented.
-        assert exp_sample == 32, f"sample teams = {exp_sample}, expected 32"
-        assert exp_other == 687, f"other teams = {exp_other}, expected 687"
+        assert exp_sample == 72, f"sample teams = {exp_sample}, expected 72"
+        assert exp_other == 647, f"other teams = {exp_other}, expected 647"
         assert exp_sample + exp_other == 719
     finally:
         os.chdir(old_cwd)
