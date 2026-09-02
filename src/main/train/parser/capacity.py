@@ -120,6 +120,42 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
                              "loss term, no parameter changed, one frozen no_grad forward per "
                              "minibatch. Use it to measure a fold's off-slice damage before deciding "
                              "whether to penalise it.")
+    parser.add_argument("--distill-anchor-ref", "--distill_anchor_ref", dest="distill_anchor_ref",
+                        choices=["parent", "ema", "periodic"], default=None,
+                        help="WHICH policy the anchor is measured against. 'parent' (DEFAULT, and "
+                             "byte-identical to what this feature shipped with) = the FIXED frozen "
+                             "fold parent, which is Learning-without-Forgetting's design: PPO's clip "
+                             "bounds the per-update RATE against the data-collecting policy and "
+                             "re-reads it every rollout, but the anchor bounds the ACCUMULATED "
+                             "DISPLACEMENT from the fold start — the quantity the licensing probe "
+                             "measured and rev-4's untaught robbery is made of — and that collateral "
+                             "is SYSTEMATIC (the same off-slice direction every step), which a "
+                             "following reference barely resists. 'ema' = a Polyak average of the "
+                             "student (ACER's average-policy trust region), the arm to have if the "
+                             "fixed anchor suppresses a GIFT: a fixed reference cannot tell v8's "
+                             "+5.4pp off-slice switching change from a robbery — both are "
+                             "displacement — while an average lets slow consistent improvement "
+                             "through and still taxes fast overshoot. 'periodic' = re-snapshot the "
+                             "student every --distill-anchor-refresh-every rollouts. Every mode is "
+                             "INITIALISED FROM THE PARENT, so all three coincide at fold start.")
+    parser.add_argument("--distill-anchor-ema-tau", "--distill_anchor_ema_tau",
+                        dest="distill_anchor_ema_tau", type=float, default=None,
+                        help="Polyak coefficient for --distill-anchor-ref ema (default 0.99): "
+                             "ref <- tau*ref + (1-tau)*student, once per train() call. The window is "
+                             "~1/(1-tau) train() CALLS, and at the production shape one call is one "
+                             "rollout = n_envs*n_steps = 48*2048 = 98,304 env steps — so 0.99 is ~100 "
+                             "calls ~ 9.8M env steps, 0.9 is ~10 calls ~ 983k, and 0.999 is ~1000 "
+                             "calls ~ 98M, i.e. longer than any run here and effectively 'parent'. "
+                             "tau=1.0 IS 'parent' (the reference never moves); tau=0.0 makes the "
+                             "reference the current student, so the anchor loss goes to ~0.")
+    parser.add_argument("--distill-anchor-refresh-every", "--distill_anchor_refresh_every",
+                        dest="distill_anchor_refresh_every", type=int, default=None,
+                        help="Rollouts between re-snapshots under --distill-anchor-ref periodic "
+                             "(default 8; one rollout = one train() call). 0 = never = 'parent', "
+                             "collapsed to that mode at construction so nothing downstream carries "
+                             "the special case. The snapshot and its refresh counter are PERSISTED "
+                             "beside every checkpoint, so a launcher restart does not re-anchor to a "
+                             "drifted policy — nor reset the cadence.")
     parser.add_argument("--distill-anchor-parent", "--distill_anchor_parent",
                         dest="distill_anchor_parent", type=str, default=None,
                         help="Explicitly pin the anchor's frozen parent checkpoint (a run dir or "

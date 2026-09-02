@@ -5940,7 +5940,7 @@ coefficient because the bias REPLACES the trainee teambuilder and would discard 
   `_cos` number quoted in any earlier note as a distance that may have been read as a similarity. Pin:
   `instrumented_ppo_test.py::test_value_feat_metric_is_published_under_the_distance_name_too`.
 
-### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent`)
+### The OFF-SLICE ANCHOR + the live collateral meters (`--distill-anchor-coef` / `--distill-anchor-mode` / `--distill-anchor-monitor` / `--distill-anchor-parent` / `--distill-anchor-ref` / `--distill-anchor-ema-tau` / `--distill-anchor-refresh-every`)
 
 `gen3_distill_offslice_anchor_v1` — **a fold's net is teacher content MINUS overshoot damage on the
 UNTAUGHT distribution**, and every number above measures only the first half. The 2026-08-31
@@ -5955,7 +5955,9 @@ every `train()` records, per minibatch and averaged over the call:
 
 | scalar | reads |
 |---|---|
-| `distill/collateral_kl` | mean `KL(π_parent ‖ π_student)` on the **OFF-slice** rows — the damage |
+| `distill/collateral_kl` | mean `KL(π_ref ‖ π_student)` on the **OFF-slice** rows — the damage. Under a MOVING reference (below) this is a RATE, not a displacement |
+| `distill/collateral_kl_vs_parent` | the same against the **FROZEN PARENT**, in EVERY reference mode — the accumulated DISPLACEMENT, and the number the untaught-team meter correlates with. Identical to the row above under the default `parent` reference (one forward, not two) |
+| `distill/anchor_ref_age_rollouts` | WHAT the anchor is anchored to: rollouts since the reference was last refreshed (`parent`/`periodic`), or the nominal EMA window (`ema`) |
 | `distill/on_slice_kl` | the same on the **on-slice** rows — how far the taught slice has moved |
 | `distill/teacher_agreement_on_slice` | student↔teacher top-1 agreement, averaged over ACTIVE teachers — the content |
 | `distill/off_slice_frac` | fraction of the minibatch that is off-slice (a sanity check on `--distill-team-bias`) |
@@ -6001,6 +6003,128 @@ pickled copy would be a second, wrong answer that survives restarts. Requires `-
 byte-identical with no parent attached — and byte-identical with a parent attached at coefficient 0,
 which is what makes the monitored control arm comparable rather than a third condition. Gate:
 `src/agents/training/distill_anchor_test.py`.
+
+#### THE REFERENCE — `--distill-anchor-ref {parent,ema,periodic}` (default `parent`)
+
+**WHY THE REFERENCE IS NOT REFRESHED THE WAY PPO'S CLIP REFERENCE IS.** The clip and the anchor
+bound DIFFERENT QUANTITIES, and the cadence follows from that rather than from taste. PPO's clip
+bounds the per-update **RATE** against the policy that collected the data, so it is re-read every
+rollout by construction — an update is only meaningful relative to the behaviour it is an update
+*of*. The anchor bounds the accumulated **DISPLACEMENT** from the fold start: that is the quantity
+the 2026-08-31 licensing probe measured, and it is what rev-4's untaught robbery is made of. And
+that collateral is **SYSTEMATIC** — the same off-slice direction every step — which is precisely
+the regime a following reference does not resist, because it moves along with the drift and reads a
+small KL the whole way down.
+
+So the default is FIXED, which is **Learning-without-Forgetting**'s design (Li & Hoiem 2016: distil
+against a snapshot of the model taken *before* the new task). The alternative is **ACER**'s trust
+region (Wang et al. 2016: KL to an average-policy network, α ≈ 0.99), and it exists here for one
+specific reason: **a fixed reference cannot tell a GIFT from a ROBBERY.** v8's fold changed
+off-slice switching behaviour by **+5.4pp** and that change was GOOD — but to a fixed anchor it is
+displacement like any other, so a large enough coefficient suppresses it. An average lets slow
+consistent improvement through (the average follows it) while still taxing fast overshoot (the
+average lags it). `ema` is the arm to have if the fixed anchor turns out to suppress the gift.
+
+| `--distill-anchor-ref` | the reference is | knob | precedent |
+|---|---|---|---|
+| **`parent`** (default) | the FIXED frozen fold parent — **byte-identical to what the anchor shipped with** | — | LwF |
+| `ema` | a Polyak average of the STUDENT, `ref ← τ·ref + (1−τ)·student` | `--distill-anchor-ema-tau` (0.99) | ACER |
+| `periodic` | re-snapshot from the student every N rollouts | `--distill-anchor-refresh-every` (8; **0 = never = `parent`**) | — |
+
+**All three are INITIALISED FROM THE PARENT**, so at fold start they hold the same reference and
+only diverge as the student moves. The degenerate settings collapse exactly: `--distill-anchor-ema-tau
+1.0` reproduces `parent`'s update and its KL bit-for-bit, and `0.0` makes the reference the current
+student, so the anchor loss goes to ~0.
+
+**THE UPDATE CADENCE IS ONE PER `train()` CALL, taken in `_on_rollout_end`.** SB3's `learn()` is
+`collect_rollouts → callback.on_rollout_end() → train()`, one train per rollout, and there is **no
+hook after `train()` at all** — so this is the only per-`train()` cadence a callback can have, and
+it is the right resolution for the quantity: a per-optimizer-step reference would cost
+`n_epochs × n_minibatches` times as much for a number nobody reads that finely, and would have
+required a second seam in `ppo.py`. The phase that follows is "the reference used inside `train()` k
+is the average of the policies that produced the data", which is the correct side of the boundary —
+the anchor is a trust region on the policy being updated, not on the update.
+
+**THE WINDOW, in the units that matter.** `1/(1−τ)` **train() CALLS**, and one call is one rollout,
+so at the production shape (`--n-envs 48 --n-steps 2048` ⇒ **98,304 env steps per rollout**):
+
+| τ | window (train calls) | window (env steps) |
+|---|---:|---:|
+| 0.9 | 10 | ~0.98M |
+| **0.99 (default)** | **100** | **~9.8M** — most of a generation |
+| 0.999 | 1000 | ~98M — longer than any run here, i.e. effectively `parent` |
+
+**THE DISPLACEMENT METER IS EMITTED IN EVERY MODE, and that is the point of separating the two
+keys.** `distill/collateral_kl` reads the ANCHOR's own reference, so under `ema`/`periodic` it is a
+RATE, not a displacement — and the displacement is what the untaught-team meter correlates with. So
+`distill/collateral_kl_vs_parent` always reads `KL(frozen PARENT ‖ student)` on the off-slice rows,
+whatever the anchor is anchored to, and the frozen parent stays loaded in all three modes for
+exactly this (~2M params; memory is not the constraint). Under `parent` the two are the SAME number
+computed once, so the default arm pays **no second forward**. `distill/anchor_ref_age_rollouts` says
+what the anchor is anchored to: rollouts since the reference was last refreshed under
+`parent`/`periodic` (so `parent`'s rises for the life of the fold, which is the honest reading), and
+the nominal EMA window under `ema`, because a geometric average has no age.
+
+**MEASURED on a `--debug` fold** (a 3k-step teacher, then a 15k-step fold at `--distill-coef 0.2
+--distill-anchor-coef 0.05`, `distill/*` read back from `tb/`) — the two meters doing the two jobs:
+
+| arm | `collateral_kl` (vs the anchor's reference) | `collateral_kl_vs_parent` | `anchor_ref_age_rollouts` |
+|---|---|---|---|
+| `parent` | 0.00035 → 0.0120 | **identical** to the left column | 1 → 5 (rises for the fold) |
+| `ema` τ=0.5 | 0.00038 → 0.0012 (**flat**) | 0.00038 → **0.0186** | 2.0 (the nominal window) |
+| `periodic` every 2 | 0.00037 → 0.0008 (saw-tooth) | 0.00037 → **0.0100** | 1, 0, 1, 0 (the cadence) |
+
+**🚨 THE MOVING REFERENCE IS RUN STATE AND MUST BE PERSISTED — the mirror of the parent's restart
+rule, not an exception to it.** The parent is re-read from a PATH on every launch precisely so a
+restart cannot re-anchor to a drifted policy. `ema`/`periodic` have no path — the reference is a
+function of THIS run's own trajectory — so re-initialising it on every launcher restart would reset
+the trust region to fold start every few hours, silently, while still reading as ON. It is therefore
+written as a **`<checkpoint>_anchor_ref.pt` SIBLING** at every site that records a resumable
+checkpoint (the periodic callback, the SIGUSR1 forced save, the SIGTERM abort save, and both final
+saves) and restored from the sibling of this launch's `--model`.
+
+- **Beside the checkpoint rather than at the run root, for consistency.** A restart rewinds the
+  policy to a checkpoint; a run-level file would hold whatever the reference was when the process
+  died, i.e. AHEAD of the weights it is a trust region for.
+- **A restore is REFUSED unless the blob's `run_dir`, resolved `parent_path`, `ref` mode and schema
+  all match this launch** — the FORK GUARD: a fork off a fold's `final_model.zip` would otherwise
+  inherit that fold's average as its own starting reference, which is a different run's trajectory
+  wearing this run's name. (Verified live: a relaunch that resolved into a fresh run dir REFUSED the
+  sibling by name and re-initialised from the parent.)
+- **Every refusal, and a missing sibling, is stated on the startup line**, and the wording splits the
+  two meanings of an absent file: on a RESTART (`--model` inside this run dir, the `--fork-lr`
+  predicate) it reads *"EXPECTED one … the trust region has been RESET to fold start"*; on a fork's
+  first launch it reads *"initialising from the PARENT (a fork's first launch)"*.
+- Verified live across a real process restart: `RESTORED from …/checkpoint_16384_steps_anchor_ref.pt
+  (saved at 16384 steps, 5 rollouts since its last refresh)` — weights AND the periodic cadence.
+
+**THE MOVING REFERENCE IS A SECOND, INDEPENDENT LOAD OF THE PARENT — never a `deepcopy` of the live
+student**, and that is a correctness decision rather than thrift. The extractor carries a per-forward
+`ExtractorStashes` full of NON-LEAF tensors, which `deepcopy` refuses outright; and
+`--compile-trainer` patches the BOUND `fe.forward` as an INSTANCE attribute, which `deepcopy` treats
+as **ATOMIC** — so the copy's `forward` would still be closed over the LIVE extractor and every
+"frozen reference" logit would silently be the student's own, reading a KL of exactly **0** forever
+while every meter looked healthy. A second `load_parent(path)` has neither problem, is arch-identical
+by construction, and starts at exactly the weights all three modes are supposed to start at.
+`assert_reference_matches_student` then RAISES (→ `FATAL_CONFIG`) unless the two share one
+`state_dict`, because a `polyak_update_` that quietly skipped the keys it could not find would report
+a trust region against a partly-frozen reference.
+
+**Class: training-runtime, exactly like `--distill-anchor-coef`.** None of the three flags reaches
+the extractor, scales a weight shape, or belongs in `check_compatible`; all three carry an argparse
+default of `None` and are `_resolve`d in `main/train/config.py`, so an unset flag lands on the
+byte-identical default in one place and a flagless resume keeps the arm it was launched as. Refusals:
+a reference knob with no live anchor, `--distill-anchor-ema-tau` outside `[0, 1]` (it is a convex
+weight — outside that it EXTRAPOLATES away from the student and would still train and still read as
+ON), and a negative refresh cadence. `_distill_anchor_ref` and `_distill_anchor_ref_writer` join the
+parent in `_excluded_save_params` — the second is the CALLBACK, which back-references the model and
+SB3's `Logger` (a `_contextvars.Context`), so pickling it would break every save in the run.
+
+**THE FIRST CELL USES `parent`, monitor-or-fold** — the default, byte-identical to the arm the
+licensing probe motivated. `ema`/`periodic` are the follow-on arms, and the pre-registered reading is
+the one this section opened with: run them only if the fixed anchor is measured to suppress a GIFT
+(off-slice change that is *good*), and read `collateral_kl_vs_parent` — not `collateral_kl` — against
+`teacher_agreement_on_slice` in every one of them.
 
 ### Advantage-gated / action-form distillation (`--distill-target` / `--distill-topk` / `--distill-gate` / `--distill-gate-tau` / `--distill-beta`) + the rank tripwire (`--rank-tripwire`)
 

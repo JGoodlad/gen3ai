@@ -11,6 +11,7 @@ from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 
 from agents.model.snapshot import record_checkpoint
+from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
 
@@ -249,4 +250,9 @@ class _TrackingCheckpointCallback(CheckpointCallback):
                     hparams=_model_hparams(self.model),
                     handoff_lr=handoff_lr,
                 )
+            # gen3_distill_anchor_ref_v1: under `--distill-anchor-ref ema|periodic` the anchor's
+            # reference is RUN STATE with no path to re-read, so it rides beside the checkpoint it
+            # belongs to (`<ckpt>_anchor_ref.pt`) and is restored from that sibling on the next
+            # launch. A no-op — and a single `getattr` — in every other run.
+            save_anchor_ref_beside(self.model, ckpt_path)
         return result

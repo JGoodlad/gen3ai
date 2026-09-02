@@ -311,6 +311,17 @@ class PpoHyperparameters:
     distill_anchor_mode: str = "off_slice"
     # Attach the frozen parent (and therefore emit the meters) even at coefficient 0.
     distill_anchor_monitor: bool = False
+    # WHICH policy the trust region is measured against — "parent" (the FIXED frozen fold parent,
+    # Learning-without-Forgetting), "ema" (a Polyak average of the student, ACER's average-policy
+    # trust region) or "periodic" (re-snapshot the student every N rollouts). The default is
+    # byte-identical to what this feature shipped with. The reference OBJECT itself lives on
+    # `_distill_anchor_ref` (a runtime attr, excluded from the save like the parent); this is the
+    # NAME, kept on the class so `train()` and any reader can see the arm without the callback.
+    distill_anchor_ref: str = "parent"
+    # Rollouts since the reference was last refreshed / initialised — or, under "ema", the nominal
+    # window 1/(1-tau), because a geometric average has no age. Published as
+    # `distill/anchor_ref_age_rollouts` so a reader can see WHAT the anchor is anchored to.
+    distill_anchor_ref_age: float = 0.0
 
     # COUNTERFACTUAL WIN-PROB GROUNDING (gen3_cf_label_plumbing_v1; G3 of
     # designs/ai_v10/design_counterfactual_value_grounding.md, rung R1). A background producer
@@ -436,7 +447,16 @@ class PpoHyperparameters:
         # persisting it would be worse than useless — a pickled parent would be silently carried
         # forward and there would then be two answers to "what is the parent", the wrong one being
         # the one that survives. See `agents.training.distill_anchor_callback`.
+        # `_distill_anchor_ref` is the anchor's REFERENCE: under `--distill-anchor-ref parent` it is
+        # the very same object (excluded above), and under `ema`/`periodic` it is a live policy copy
+        # that gets its OWN persistence — a `<checkpoint>_anchor_ref.pt` sibling — because the
+        # checkpoint has to stay loadable by everything that is not this trainer.
+        # `_distill_anchor_ref_writer` is the CALLBACK itself, parked on the model so the checkpoint
+        # sites can reach it without a handle; it back-references the model and SB3's `Logger` (which
+        # carries a `_contextvars.Context`), so pickling it would break EVERY save in the run at the
+        # pre-train round-trip smoke — the `_correction_buffer` lock hazard again.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
                                                   "_capacity_state", "_winprob_phi_source",
-                                                  "_distill_anchor_parent"]
+                                                  "_distill_anchor_parent", "_distill_anchor_ref",
+                                                  "_distill_anchor_ref_writer"]

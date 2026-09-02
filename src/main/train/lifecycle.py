@@ -11,6 +11,7 @@ from datetime import datetime
 
 from agents.model.model_version import ModelVersion
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
+from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.training.eval_callback import request_forced_eval
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
@@ -183,6 +184,7 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             hparams = _model_hparams(model)
             save_model_snapshot(model_dir, version, current_lr=lr, current_epochs=epochs, hparams=hparams)
             record_checkpoint(model_dir, path + ".zip", lr, epochs, hparams=hparams, handoff_lr=_handoff())
+            save_anchor_ref_beside(model, path + ".zip")   # see run_io; no-op without a moving anchor
             print(f"[ABORT] Checkpoint saved → {path}.zip")
         except Exception as e:
             print(f"[ABORT] Save failed: {e}")
@@ -214,6 +216,7 @@ def _setup_signal_handlers(model, model_dir, shutdown_event, version, current_lr
             hparams=_model_hparams(model),
             handoff_lr=_handoff(),
         )
+        save_anchor_ref_beside(model, ckpt + ".zip")       # see run_io; no-op without a moving anchor
         print(f"\n💾 [CHECKPOINT] Forced save → {ckpt}.zip")
 
     def _forced_eval(sig, frame):

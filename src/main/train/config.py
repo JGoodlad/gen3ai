@@ -425,8 +425,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # indistinguishable from a typed "off_slice" — and the "you typed a knob that does nothing"
     # refusal below is only honest about a value the user actually typed.
     _anchor_mode_explicit = args.distill_anchor_mode is not None
+    _anchor_ref_explicit = (args.distill_anchor_ref is not None
+                            or args.distill_anchor_ema_tau is not None
+                            or args.distill_anchor_refresh_every is not None)
     _resolve("distill_anchor_coef", 0.0)       # training-only OFF-SLICE anchor KL weight (0.0 = off)
     _resolve("distill_anchor_mode", "off_slice")  # training-only: which rows the anchor applies to
+    # WHICH policy the anchor is measured against. "parent" (the FIXED fold parent) is the default
+    # and is byte-identical to what the anchor shipped with; "ema"/"periodic" are the moving-
+    # reference arms. Same class as the two above: training-only, never gated, resolved here so an
+    # unset flag lands on the byte-identical default in ONE place.
+    _resolve("distill_anchor_ref", "parent")
+    _resolve("distill_anchor_ema_tau", 0.99)   # training-only Polyak tau (~1/(1-tau) train() calls)
+    _resolve("distill_anchor_refresh_every", 8)  # training-only periodic cadence (0 = never = parent)
     # gen3_distill_target_gate_v1 (config v103) — the action-form/top-K distill target, the
     # advantage gate, and the rank tripwire. The td_aux_coef class: recorded for provenance,
     # never gated, read back here so a flagless resume keeps the arm it was launched as.
@@ -771,10 +781,23 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--distill-anchor-coef / --distill-anchor-monitor require --distill-coef > 0 — "
                      "the anchor's OFF-SLICE split reads the `distill_mask` obs key, which the env "
                      "emits only for a run with a live exploiter-distillation term.")
-    if (_anchor_mode_explicit or args.distill_anchor_parent is not None) and not _anchor_wanted:
-        parser.error("--distill-anchor-mode / --distill-anchor-parent do nothing without "
+    if (_anchor_mode_explicit or _anchor_ref_explicit
+            or args.distill_anchor_parent is not None) and not _anchor_wanted:
+        parser.error("--distill-anchor-mode / --distill-anchor-ref / --distill-anchor-ema-tau / "
+                     "--distill-anchor-refresh-every / --distill-anchor-parent do nothing without "
                      "--distill-anchor-coef > 0 or --distill-anchor-monitor — pass one of those, or "
                      "drop these.")
+    # The two moving-reference knobs. tau is a convex-combination weight, so anything outside [0, 1]
+    # is not an average at all — it EXTRAPOLATES away from the student (tau > 1) or overshoots past
+    # it (tau < 0), and either would still train and still read as ON.
+    if args.distill_anchor_ema_tau is not None and not (0.0 <= args.distill_anchor_ema_tau <= 1.0):
+        parser.error("--distill-anchor-ema-tau must be in [0, 1] — it is the Polyak weight in "
+                     "ref <- tau*ref + (1-tau)*student. 1.0 IS --distill-anchor-ref parent (the "
+                     "reference never moves); 0.0 makes the reference the current student, so the "
+                     "anchor loss goes to ~0.")
+    if args.distill_anchor_refresh_every is not None and args.distill_anchor_refresh_every < 0:
+        parser.error("--distill-anchor-refresh-every must be >= 0 (0 = never refreshed = "
+                     "--distill-anchor-ref parent).")
     # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, [team_files]) GROUPS once,
     # stored on args for the teambuilder + model-setup to reuse. Preferred form =
     # 'TEACHER:TEAM[,TEAM...][;TEACHER2:...]' — ';' separates TEACHERS, ',' separates that teacher's TEAMS,

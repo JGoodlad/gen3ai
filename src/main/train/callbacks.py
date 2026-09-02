@@ -39,6 +39,19 @@ class CallbackBundle:
     run_eval: bool
 
 
+
+def _arg_or(args, name, default):
+    """`args.<name>`, or ``default`` when it is absent/None — WITHOUT collapsing a falsy value.
+
+    `getattr(args, name, d) or d` is the idiom everywhere else in this file and it is wrong for any
+    knob whose 0 / 0.0 means something (`--distill-anchor-ema-tau 0`, `--distill-anchor-refresh-every
+    0`): it would rewrite the value the operator typed into the default and the run would report the
+    arm it was not.
+    """
+    got = getattr(args, name, None)
+    return default if got is None else got
+
+
 def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
                     _fixed_opponents, _bot_weight_vec, OPPONENT_CLASSES,
                     _specialist_team_str, _promote_threshold,
@@ -206,11 +219,24 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             _model.policy.set_training_mode(False)
             return _model
 
+        # A MOVING reference (`--distill-anchor-ref ema|periodic`) is RUN STATE, restored from the
+        # `<checkpoint>_anchor_ref.pt` sibling of this launch's --model. `expect_restore` is the
+        # fork-vs-restart predicate `--fork-lr` already owns (`--model` inside this run dir ⇒ a
+        # RESTART, which SHOULD have written the sibling), so a missing sibling is reported as a
+        # reset trust region on a restart and as an ordinary fold start on a fork's first launch.
+        from main.train.fork_lr import is_same_run_checkpoint
         callbacks.append(DistillAnchorCallback(
             parent_path=_anchor_path, route=_anchor_route,
             coef=float(getattr(args, "distill_anchor_coef", 0.0) or 0.0),
             mode=str(getattr(args, "distill_anchor_mode", "off_slice") or "off_slice"),
             monitor=bool(getattr(args, "distill_anchor_monitor", False)),
+            ref=str(getattr(args, "distill_anchor_ref", "parent") or "parent"),
+            # No `or` fallbacks here: tau 0.0 and refresh_every 0 are both LEGAL values with
+            # meanings of their own, so an `x or default` would silently rewrite one of them.
+            ema_tau=float(_arg_or(args, "distill_anchor_ema_tau", 0.99)),
+            refresh_every=int(_arg_or(args, "distill_anchor_refresh_every", 8)),
+            run_dir=model_dir, resume_model=args.model,
+            expect_restore=bool(args.model and is_same_run_checkpoint(args.model, model_dir)),
             load_parent=_load_anchor_parent))
     # gen3_exploiter_temp_anneal_v1: control the EXPLOITER target's sampling temperature over training
     # (a difficulty curriculum via opponent stochasticity — hot/weak early → true strength later),

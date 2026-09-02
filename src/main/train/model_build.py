@@ -17,6 +17,7 @@ from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
+from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
 from agents.training.dose import kl_controller_snapshot
@@ -636,6 +637,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
+            save_anchor_ref_beside(model, final_path + ".zip")   # see run_io; no-op without a moving anchor
             save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
             print(f"Training complete. Model saved to {final_path}")
@@ -804,6 +806,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _write_latest_txt(model_dir, "final_model.zip")
         _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
         record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
+        save_anchor_ref_beside(model, final_path + ".zip")   # see run_io; no-op without a moving anchor
         save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
         print(f"Training complete. Model saved to {final_path}")
