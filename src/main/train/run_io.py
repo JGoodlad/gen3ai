@@ -56,11 +56,23 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
     `model_path` must be the PRE-WARM-START `--model`: the consensus warm-start re-points
     `args.model` at `<run>/warmstart/warmstart_consensus.zip`, which is an INIT built from the real
     parent, not the parent itself — recording it would make the run its own ancestor.
+
+    `pool_seeded_from` rides IN this block rather than beside it: the block is written once at fork
+    creation and frozen thereafter (`save_model_snapshot`: the existing value always wins), and the
+    pool is seeded earlier in the same process, so the fact is available exactly when the block is
+    built. It is a SIBLING key inside the block, never an edit to `fork_parent` — the immutability
+    mechanism forbids rewriting a recorded block, so a later restart cannot add or change it.
     """
-    return build_lineage(model_path=model_path, model_dir=model_dir,
-                         exploiter=getattr(args, "exploiter", None),
-                         distill_teacher=getattr(args, "distill_teacher", None),
-                         fork_step=fork_step)
+    block = build_lineage(model_path=model_path, model_dir=model_dir,
+                          exploiter=getattr(args, "exploiter", None),
+                          distill_teacher=getattr(args, "distill_teacher", None),
+                          fork_step=fork_step)
+    if block is not None:
+        from agents.training.pool_seed import pool_dir_for, read_seed_record
+        record = read_seed_record(pool_dir_for(args, model_dir))
+        if record is not None:
+            block["pool_seeded_from"] = record
+    return block
 
 
 def _run_arch_toggles(args) -> dict:

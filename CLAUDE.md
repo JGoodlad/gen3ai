@@ -789,6 +789,16 @@ worktree to that commit so the resumed run uses the original code (override with
 `--sync-to-main`). All non-launcher flags are forwarded verbatim to `train_rl_agent.py`.
 `python -m main.launcher.tui …` is an alias for the same command.
 
+🚨 **A FORK starts with an EMPTY self-play pool, and an empty pool does not disable `--self-play` —
+it falls back to the BOT pool.** A genuine fork with `--self-play` now **auto-seeds** its parent's
+pool (every `snapshot_*.zip` PLUS `summary.json` / `win_rate_vs_bots.txt` / `model_config.json` — the
+zips alone still read `self_play_fraction=0%`, because the starting fraction comes from the metadata)
+and prints `🌱 [SELFPLAY] [pool] seeded N snapshots + metadata from <parent>`; a fork that STILL has
+no pool exits `FATAL_CONFIG` naming the three ways out rather than silently training against bots.
+A launcher RESTART never re-seeds, a non-empty pool is never touched, and a FRESH run is unchanged.
+`--no-fork-pool-seed` opts out of the seeding; `--allow-empty-pool` consents to the bot fallback.
+Detail: `src/agents/training/CLAUDE.md` → *A FORK starts POOLLESS*.
+
 🚨 **`--lr`, `--batch-size` and `--n-steps` are INERT on a resume** — the resume path restores the
 checkpoint's own optimizer LR and prints `(arg --lr=… ignored on resume)`, so a FORK inherits
 whatever rate the PARENT's KL controller had annealed to. Measured (ledger M7): three distillation

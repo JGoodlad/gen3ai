@@ -327,8 +327,11 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         Pool 0.0% at 26M. Essentially all 9M fork-steps were bot games, which silently voided the
         external validity of a three-arm A/B whose gates were defined on the self-play regime.
 
-        The fix at the call site is one copy: the pool has no manifest, so copying the base run's
-        `snapshots/*.zip` into the fork's `snapshots/` before launch seeds it.
+        SINCE `gen3_fork_pool_seed_v1` THIS SHOULD BE UNREACHABLE ON A FORK: `pool_seed.prepare_pool`
+        auto-seeds a genuine fork's empty pool from its parent (zips AND the metadata files — the
+        zips alone still read `self_play_fraction=0%`) and REFUSES a poolless `--self-play` fork
+        outright. The warning survives for the cases the guard deliberately lets through: a FRESH
+        run before it clears the win-rate gate, and a fork launched with `--allow-empty-pool`.
         """
         if self._model_dir is None:
             return
@@ -340,10 +343,13 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             return
         msg = ("⚠️  [SELFPLAY] the snapshot pool is EMPTY at startup — until this run seeds its "
                "first snapshot, --self-play falls back to the BOT pool and no self-opponent is "
-               "played. If this is a FORK meant to continue the base's self-play regime, stop and "
-               "seed it: cp <base_run>/snapshots/snapshot_*.zip <this_run>/snapshots/ . A short "
-               "fork can finish before it ever seeds one (measured: 3M-step forks ended with 1-2 "
-               "snapshots vs the base's 12).")
+               "played. On a FORK this is normally auto-seeded and otherwise REFUSED "
+               "(agents.training.pool_seed), so seeing it here means either a FRESH run below the "
+               "win-rate gate or --allow-empty-pool. To seed a fork by hand you need the METADATA "
+               "too, not just the zips: cp <base_run>/snapshots/snapshot_*.zip <base_run>/snapshots/"
+               "{summary.json,win_rate_vs_bots.txt,model_config.json} <this_run>/snapshots/ . A "
+               "short fork can finish before it ever seeds one (measured: 3M-step forks ended with "
+               "1-2 snapshots vs the base's 12).")
         try:
             emit(msg)          # prints when standalone, goes to the launcher event stream otherwise
         except Exception:      # noqa: BLE001 — a warning must never break a run

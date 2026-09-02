@@ -72,6 +72,7 @@ from agents.model.extractor_arch import build_extractor_arch_kwargs
 from agents.model.compile_opponents import arm_compile_quorum
 from agents.model.compile_prewarm import prewarm_extractor_compile
 from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
+from agents.training.pool_seed import prepare_pool
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.async_vec_env import AsyncSubprocVecEnv
@@ -292,6 +293,11 @@ async def main():
         from pathlib import Path as _Path
         from agents.model.snapshot import current_model_version as _current_model_version
 
+        # gen3_fork_pool_seed_v1 — BEFORE the pool is constructed, because the starting
+        # self_play_fraction is read off the pool's METADATA at construction. A genuine fork with
+        # an empty pool gets its parent's pool (zips + metadata); a poolless fork is REFUSED
+        # rather than silently trained against bots. See agents.training.pool_seed.
+        prepare_pool(args, model_dir)
         _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
         _cv = _current_model_version(mappings, **_run_arch_toggles(args))
         _opp_version = _cv

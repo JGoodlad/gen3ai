@@ -282,6 +282,18 @@ fork's own checkpoint once the fork has progress, restart #2 of a fork reads RES
 reason a plain resume does. `--fork-lr-freeze` is the exception: it is a property of the RUN, so it
 persists across every restart, re-read from `metadata.json`'s `dose.fork_lr_pin`.
 
+🚨 **THE SAME SPLIT GOVERNS THE SELF-PLAY POOL, and it is why the restart loop is safe here.** A
+FORK begins in a new run dir whose `snapshots/` is empty, and an empty pool does not disable
+`--self-play` — it silently falls back to the BOT pool. `agents.training.pool_seed` therefore
+auto-seeds a genuine fork's pool from its parent (the zips AND `summary.json` /
+`win_rate_vs_bots.txt` / `model_config.json`, since the starting `self_play_fraction` comes from the
+metadata) and REFUSES a fork whose pool is still empty with `FATAL_CONFIG`. It keys on the SAME
+imported `is_same_run_checkpoint`, so a periodic restart never re-seeds — which matters more here
+than for `--fork-lr`: re-seeding on every restart would overwrite the run's own grown pool with the
+parent's stale one every few hours. The two flags (`--no-fork-pool-seed`, `--allow-empty-pool`) are
+trainer-owned and forwarded verbatim; the launcher must never acquire a default for either
+(`pool_seed_flag_forwarding_test.py`, same shape as `compile_flag_forwarding_test.py`).
+
 The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by
 `save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed
 run uses the same code as the original — unless `--sync-to-main` is passed.

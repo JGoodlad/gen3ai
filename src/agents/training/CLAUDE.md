@@ -1253,6 +1253,94 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   *competent* model — never the random/weak step-0 seed of old. By default nothing is pinned: the
   oldest snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
   stays a recent self; anti-forgetting is the heuristic floor, not a pinned seed.
+
+### 🚨 A FORK starts POOLLESS — auto-seed, and REFUSE the silent bot fallback (`pool_seed.py`)
+
+**`SnapshotPool` derives its whole state from a directory, so a FORK begins in a new run dir whose
+`snapshots/` is EMPTY — and an empty pool does NOT disable `--self-play`. It falls back to the BOT
+pool.** A fold launched to replicate a parent that trained at 90% self-play therefore trains at ~0%
+self-play, silently, with the argv, the startup banner and every metric still saying self-play. It
+has now cost or nearly cost two cells:
+
+* **2026-08-18** — three 3M-step `ai_v9_17_tdaux_*` forks off a 25M base ended with 1, 2 and 1
+  snapshots against the base's 12. Essentially all 9M fork-steps were bot games, voiding a three-arm
+  A/B whose gates were defined on the self-play regime.
+* **2026-09-02** — the three-dose cell. Caught at launch by reading the startup line, before a
+  GPU-hour was spent, and fixed by hand.
+
+**THE MANUAL FIX WAS HALF A FIX THE FIRST TIME, and that half is the point.** Copying the parent's
+`snapshot_*.zip` files alone still printed `self_play_fraction=0%`: the STARTING fraction comes from
+`SnapshotPool.load_persisted_win_rate()`, which reads the pool's **METADATA**, not its zips. A pool
+with 14 snapshots and no metadata reads as a competent-model pool the ramp has not opened yet —
+exactly as wrong as an empty one, and it looks healthier.
+
+**THE FILE SET the pool's loader reads out of its own directory** (audited 2026-09-02; `pool_seed.py`
+copies exactly this, and `pool_seed_test.py` pins the two names against `SnapshotPool`'s own class
+attributes so a rename there breaks the test rather than un-copying a file):
+
+| path | read by |
+|---|---|
+| `snapshot_*.zip` | `_scan()` — they ARE the pool's entries |
+| `summary.json` | `_SUMMARY_FILE` — `load_summary` / `load_persisted_win_rate`; carries `win_rate_vs_bots` (the ramp input) plus `self_play_fraction` / `last_eval_step` / `seeded` / `pool_generation` |
+| `win_rate_vs_bots.txt` | `_WIN_RATE_FILE` — the legacy single-float fallback |
+| `model_config.json` | NOT by `SnapshotPool` itself: `load_model_snapshot` looks beside the `.zip` and then one dir up, so without it every pool opponent arch-checks against the RUN ROOT's config instead of the pool's own |
+
+Nothing else in the directory is read — there is no manifest, which is the whole reason the class is
+directory-derived.
+
+**THE SEEDING RULE** (`agents.training.pool_seed.prepare_pool`, called once from `train_rl_agent`
+**before** the run's `SnapshotPool` is constructed — the starting fraction is read at construction,
+so seeding afterwards would land the files and still announce 0%):
+
+> `--self-play` ON **and** a genuine FORK **and** this run's pool is EMPTY ⇒ copy the fork parent's
+> pool — every `snapshot_*.zip` plus every metadata file above — and print one line:
+> `🌱 [SELFPLAY] [pool] seeded N snapshots + metadata from <parent run> (win_rate_vs_bots=…) [files: …]`
+
+FORK-vs-RESTART is `main.train.fork_lr.is_same_run_checkpoint`, **IMPORTED, never re-derived** (a
+second predicate for the same question is a second answer waiting to disagree), so a launcher restart
+never re-seeds — re-seeding there would overwrite the run's own grown pool with the parent's stale one
+every few hours. A **non-empty pool is never touched**, so the hand-seeded arms of a running cell keep
+exactly the pool they were given when a later arm syncs this code. A **FRESH** run (no `--model`) is
+unchanged: it legitimately starts poolless and grows one, and the win-rate gate is what stops it
+seeding a random-weights opponent. The parent run dir comes from `lineage.fork_parent(run_dir)` when
+the run already records one (immutable, so it names the ORIGINAL parent even after the launcher swaps
+`--model`), else the `--model` path's own run dir — which is the only answer available on a fork's
+first process, before any save has written a lineage block.
+
+**THE REFUSAL.** If `--self-play` is on, the run is a FORK, and the pool is STILL empty after that
+step — the parent has no pool, or `--no-fork-pool-seed` was passed — the launch exits
+**`FATAL_CONFIG`** naming the three ways out (seed by hand, `--allow-empty-pool`, drop `--self-play`)
+rather than quietly training against bots. `FATAL_CONFIG` and not `parser.error` because a restart
+would hit the identical config, so the launcher must give up instead of looping.
+
+| flag | default | |
+|---|---|---|
+| `--fork-pool-seed` / **`--no-fork-pool-seed`** | ON | opt out of the auto-seed. Declared POSITIVELY so `BoolFlag` generates the `--no-` form — declaring `--no-fork-pool-seed` would have generated `--no-no-fork-pool-seed` |
+| **`--allow-empty-pool`** | OFF | explicit consent to the bot fallback on a fork. Never needed by a fresh run |
+
+Both are **training-runtime** flags: they reach no extractor, scale no loss and change no weight
+shape, so they are not in `agents/model/flag_registry.py`, not on `ModelVersion`, and not in
+`check_compatible`; they land in `metadata.json`'s `cli_args` like every train-loop knob and the
+launcher forwards them verbatim (`launcher/pool_seed_flag_forwarding_test.py`).
+
+**PROVENANCE.** `seed_pool` writes `<pool_dir>/pool_seed.json` (parent run dir + name, pool dir, N,
+the snapshot names, the metadata files copied, and the resulting `win_rate_vs_bots`), and
+`run_io._run_lineage` attaches it to the run's lineage block as a **SIBLING key
+`lineage.pool_seeded_from`** — never an edit to `fork_parent`. The block is written ONCE at fork
+creation and frozen thereafter (`save_model_snapshot`: the existing value always wins), and the pool
+is seeded earlier in that same process, so the fact is available exactly when the block is built and
+no later restart can add or change it. ⚠️ The record is deliberately NOT written into
+`metadata.json` at seed time: `run_io._resolve_fresh_model_dir` treats an existing `metadata.json` as
+*"this name is already a run"*, so writing one before the first checkpoint would make a crashed
+pre-save fork un-relaunchable under its own name.
+
+**Verified end to end** (2026-09-02, CPU `--debug`, a scratch run root): a hand-built parent pool at
+`win_rate_vs_bots=0.901250` seeded into a fork reproduced the parent's own startup line exactly —
+`Pool has 1 snapshots, win_rate_vs_bots=90.12% → self_play_fraction=90%` — and the same fork with the
+parent's pool hidden exited **3** with the three-way message. Gates:
+`agents/training/pool_seed_test.py` (34), including the negative control that the **zips alone** read
+`self_play_fraction=0%`, and the idempotence check that a hand-seeded pool comes back byte-identical.
+
 - **PFSP / league-lite (`--pfsp-scale`, `--pool-spread`; both OFF → byte-identical).** A pure recency
   window is a near-50% echo chamber (recent selves beat each other ~evenly), so it never up-weights the
   *kind* of self the trainee is actually losing to. Two opt-in knobs turn it into a prioritised

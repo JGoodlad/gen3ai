@@ -97,6 +97,29 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "launcher restart_err_*.txt files (0 = keep all).")
     parser.add_argument("--self-play", action=BoolFlag, default=False, help="Enable self-play snapshot pool as training opponents")
     parser.add_argument("--snapshot-dir", type=str, default=None, help="Pool directory (default: <run_dir>/snapshots)")
+    # ── The FORK pool-seed guard (gen3_fork_pool_seed_v1) ──────────────────────────────────────
+    # A FORK starts in a new run dir whose snapshots/ is EMPTY, and an empty pool does not disable
+    # --self-play: it silently falls back to the BOT pool. That confound voided a three-arm A/B
+    # (2026-08-18) and nearly voided the three-dose cell (2026-09-02). A genuine fork now seeds its
+    # parent's pool automatically, and a fork that still has no pool REFUSES. See
+    # agents.training.pool_seed for the audited file list and the rule.
+    # Declared POSITIVELY so `BoolFlag` generates the `--no-` form itself: the flag a launch types
+    # is `--no-fork-pool-seed`, and declaring THAT name would generate `--no-no-fork-pool-seed`.
+    parser.add_argument("--fork-pool-seed", "--fork_pool_seed", dest="fork_pool_seed",
+                        action=BoolFlag, default=True,
+                        help="Auto-seed a FORK's empty self-play pool from its fork parent "
+                             "(snapshot_*.zip + summary.json / win_rate_vs_bots.txt / "
+                             "model_config.json). ON by default, and it only ever fires on a "
+                             "genuine fork with an EMPTY pool — a launcher restart and a non-empty "
+                             "pool are never touched. Pass --no-fork-pool-seed to opt out; a "
+                             "poolless --self-play fork is then REFUSED unless --allow-empty-pool.")
+    parser.add_argument("--allow-empty-pool", "--allow_empty_pool", dest="allow_empty_pool",
+                        action=BoolFlag, default=False,
+                        help="Consent explicitly to running --self-play on a FORK with an EMPTY "
+                             "snapshot pool — i.e. to training against the BOT fallback until this "
+                             "run promotes its own first snapshot. Without it such a launch exits "
+                             "FATAL_CONFIG. A FRESH run (no --model) never needs this: it starts "
+                             "poolless by design.")
     parser.add_argument("--promote-threshold", type=float, default=None,
                         help="Win rate vs. pool to trigger snapshot promotion. Default 0.65 with "
                              "stochastic sentinels; auto-lowered to 0.55 under --eval-sentinel-greedy "
