@@ -8482,3 +8482,29 @@ M9 instrument verbatim — and the taught-side `ordered` extraction.
   K3 > K6 > K12 — the licensing probe's prediction, now inside a fold.
 - Floor beside every delta: 4.19pp untaught / 3.70pp taught. Rev-4's −6.50 is the number to beat;
   a K6 result inside the floor of zero is the outcome that changes the revolution fold's argv.
+
+### ⚠️ CORRECTION + FIRST PRODUCTION READING of the per-term noise scale (2026-09-01, evening)
+
+**Re-scoping the BUILD WAVE entry's headline.** The debug smoke's "the total noise scale IS the
+VALUE term" was measured on a config WITHOUT `--value-from-dist`. Production runs it (every
+generation since v29; `designs/production_config.json` `value_from_dist: true`), and under it the
+scalar value term does not exist (`ppo.py:553`: `_vf_term = 0.0 if value_from_dist`), so
+`train/noise_scale_value` is **structurally absent** on every run we care about. The value SIGNAL is
+still the deflator — it lives in the distributional value loss, which the instrument tags **`aux`**.
+Read "value term" as "value signal: tag `value` on a scalar-critic config, tag `aux` under
+value_from_dist". (Caught by the training session before any band was banked.)
+
+**First production reading — `ai_v9_107_R5F15_0831`, first arm to sync main ≥ `53af436b`,
+n = 2 logged points, PROVISIONAL:** total ratio 0.063 · **policy 2.67 → 2.09** · aux 0.005 ·
+entropy 0.02–0.03; shares aux 0.68 → 0.40, policy 0.03 → 0.04. Measured overhead **1.8%**
+(954 ms of a 51.6 s train step), not the 5% extrapolated. Dose 4.258e-8 = M7's R5F00 figure exactly.
+
+**Convention, settled on the source, because the two sessions read the number oppositely:**
+`train/noise_scale_ratio_<g>` = **critical batch ÷ effective batch** (`noise_scale.py` `_NSR_HIGH`
+docstring; the advisor's high-band text "critical batch ≈ ratio × b_eff … raise --grad-accum-steps").
+So policy 2.1–2.7 ⇒ the policy term's critical batch is 2–2.7× ABOVE the 16k effective batch ⇒
+**mildly NOISE-LIMITED, at the band's high edge** — and the total at 0.063 ⇒ critical ≈ 1,030 ⇒
+over-batched ~16×. The two tags sit in OPPOSITE bands ~35–40× apart: the `total_vs_policy_disagree`
+case the advisor exists for. **Nothing leans on either reading yet** — a range is quoted only after
+R5F15 completes and the funding forks add points. What is banked: the value tag is absent by
+construction in production; the deflator is `aux`; the policy term reads ~2, not ≪1 and not ≫1.
