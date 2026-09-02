@@ -3327,6 +3327,101 @@ reproducible from a restored `state_dict` — three consecutive restores drift ~
 absent — so the arms are fresh, and a third OFF arm is the control); and the advisor's disagreement
 family. A source scan asserts the tags in `train()` and `NOISE_TERM_GROUPS` are the same set.
 
+## THE DOSE, and pinning a fork's step size (`--fork-lr` / `--fork-lr-freeze`, `dose.py`)
+
+**`--lr` is INERT on a resume.** `main/train/model_build.py`'s resume path restores the checkpoint's
+optimizer LR and prints `(arg --lr=… ignored on resume)` — correct for a launcher RESTART (the KL
+controller should keep the rate it settled on) and wrong for a FORK, which then inherits whatever
+the PARENT had annealed to. `--batch-size` and `--n-steps` are inherited the same way.
+
+**The quantity that predicts a distillation fold's collateral is the DOSE, not the LR** (ledger M7):
+
+```
+updates_per_env_step = n_epochs / (batch_size * grad_accum_steps)
+dose_rate            = lr * updates_per_env_step
+```
+
+`grad_accum_steps` is in the DENOMINATOR because K micro-batches are summed into ONE optimizer step
+(see *Gradient accumulation* above), so two runs at the same `--lr` differ 8× in dose when one
+accumulates 16 micro-batches and the other 2. Measured over the archive's own sidecars:
+
+| run | eff. batch | epochs | lr median | dose_rate | vs v8 |
+|---|---:|---:|---|---|---|
+| `ai_v8_14_distill3_0725` | 32,768 | 7 | 1.004e-4 | **2.145e-8** | 1.00× |
+| `ai_v9_59_R2ACTION_0827` (rev-2) | 4,096 | 10 | 5.814e-5 | 1.419e-7 | **6.62×** |
+| `ai_v9_70_R3ACTION_0828` (rev-3) | 4,096 | 10 | 2.804e-5 | 6.845e-8 | 3.19× |
+| `ai_v9_92_R5F00_0831` | 16,384 | 10 | 6.977e-5 | 4.258e-8 | 1.99× |
+
+Three folds launched with the same `--lr` ran at three different rates, and nothing in any of them
+said so — the controller's inherited state was a hidden confound in every fold comparison. Two
+flags and one recorded block close that.
+
+### `--fork-lr FLOAT` (resume-only) — and the fork-vs-restart rule
+
+Sets the resumed model's **optimizer LR**, its **`model.lr_schedule`** and the **KL controller's
+`_current_lr`** at load. All three, because each is a separate no-op risk: SB3 re-installs the
+schedule's value at the top of every `train()` (so the optimizer alone would be overwritten on the
+first update), and the controller's multiplicative ladder starts from wherever it thinks it is (so
+seeding it from the checkpoint would walk straight back there). The pin is still clamped into
+`[--min-lr, --max-lr]` — a bound the user set is a bound.
+
+🚨 **It applies ONLY on a genuine FORK.** The launcher re-invokes the same argv every
+`--restart-interval-hours` into the same run dir, so a flag that fires "on resume" fires every few
+hours forever and would reset the adapted rate each time. `main/train/fork_lr.py` keys on WHERE the
+resumed checkpoint lives — outside the run dir ⇒ FORK; `<run>/checkpoints/*.zip` or `<run>/*.zip`
+(the legacy root layout) ⇒ RESTART. That is the predicate `run_io._resolve_fresh_model_dir` already
+uses for its clobber guard and `launcher/checkpoint.resolve_fork_resume_model` uses to decide
+whether a restart re-inits from the source; the launcher SWAPS `--model` to the fork's own
+checkpoint once the fork has progress, so restart #2 of a fork reads RESTART for the same reason a
+plain resume does. `<run>/warmstart/…` is deliberately a FORK — the consensus warm-start is an INIT
+built from foreign teachers, not this run's own progress. A fresh run is REFUSED (use `--lr`).
+
+### `--fork-lr-freeze` — a constant, recordable step size
+
+Disables the KL adaptation **and** the two-phase cosine (`frozen` on both callbacks, plus
+`freeze_at`), so the LR stays at `--fork-lr` exactly. A fold experiment wants a constant dose; an
+adapting LR makes it a per-rollout variable nothing records. Unlike the pin it is a **property of
+the RUN** and DOES persist across every periodic restart — re-read from the pin recorded in
+`metadata.json`, or from the argv a launcher restart reproduces verbatim.
+
+### The recorded `dose` block, and `python -m main.dose`
+
+Every metadata write (and every checkpoint sidecar, through the one `_model_hparams` dict) carries
+`dose`: `lr_now` · `lr_flag` (what `--lr` said, so the inertness is VISIBLE) · `fork_lr` ·
+`lr_frozen` · `batch_size` · `grad_accum_steps` · `effective_batch` · `n_epochs` ·
+`updates_per_env_step` · `dose_rate_now` · `kl_controller` {target_kl, kl_factor, lr_factor,
+min_lr, max_lr, phase} · `fork_lr_pin` when one was applied. **metadata.json ONLY** — never
+`model_config.json`, which is the weight-shape record `check_compatible` reads (root CLAUDE.md's
+provenance rule). Live: `train/dose_rate` + `train/effective_batch` every rollout, because a groomed
+run keeps no sidecars and the rate alone is ambiguous (a falling `dose_rate` is the KL controller
+annealing OR an operator having raised `--grad-accum-steps`, and only the second moves the batch).
+
+⚠️ **The `kl_controller` field is a PLAIN-DATA SNAPSHOT, never the callback.** `model.save()`
+cloudpickles the model's `__dict__`, and an LR callback back-references the model and SB3's
+`Logger`, which carries a `_contextvars.Context` and cannot be pickled — stashing the live object
+breaks EVERY save in the run at the pre-train round-trip smoke (observed while building this, the
+`_correction_buffer` hazard again). The snapshot is taken AFTER the pin so a freeze is captured.
+
+`python -m main.dose <run>…` answers the same question for runs already on disk, from what they
+already wrote down: median LR over the **checkpoint sidecars** (preferred over `snapshot_history`,
+which is CAPPED at ~15 rows while sidecars keep every un-groomed checkpoint; then the run-level
+`current_lr` as a single point), the shape from the SAME rows, and a ratio against a `--reference`
+run (default `ai_v8_14_distill3_0725`). A run whose shape MOVED mid-flight is flagged rather than
+averaged. Torch-free and model-free, so it reads a run whose architecture drifted past current code.
+
+**Flag class: training-runtime.** Neither flag reaches the extractor, scales a loss or changes a
+weight shape ⇒ no `ARCH_SIGNATURE` bump, not in `model_config.json`/`ModelVersion`, not in
+`check_compatible`, and deliberately **not** in `agents/model/flag_registry.py` (whose scope is
+extractor architecture toggles). They land in `metadata.json`'s `cli_args` like every train-loop
+knob, and the launcher forwards them verbatim.
+
+Tests: `src/main/fork_lr_test.py` (the discrimination rule incl. the warm-start case, the four
+decisions, the freeze surviving a restart from the record AND from the argv, the three-site pin, the
+clamp, the freeze holding across a KL excursion a control arm demonstrably moves on, and the three
+config refusals), `src/agents/training/dose_test.py` (the arithmetic against v8's own recorded row,
+the block, the pickle-safety of the snapshot), `src/main/dose_test.py` (source precedence, step
+ordering, the shape-moved flag, the CLI, and that importing it pulls in no torch).
+
 ## The `signal/` group — advantage density × outcome entropy (`gen3_signal_rate_metrics_v1`)
 
 **How much action-attributable learning signal is PPO actually receiving?** Two always-on, flagless

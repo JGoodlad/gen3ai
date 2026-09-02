@@ -501,6 +501,20 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.exploiter_temp_start is None and args.exploiter_temp_mode == "ratchet":
         parser.error("--exploiter-temp-mode ratchet requires --exploiter-temp-start (the initial/max "
                      "temperature to ratchet down from — set it HIGH, e.g. 5.0).")
+    # gen3_fork_lr_pin_v1 — `--fork-lr` is RESUME-ONLY. On a fresh run the optimizer starts at
+    # `--lr` and nothing overrides it, so a pin there is either a no-op or a second spelling of
+    # `--lr`, and the second reading is the dangerous one: a fresh run pinned to a value its own
+    # `--lr` contradicts records a `dose` block naming a rate it never used. Refuse and say which
+    # flag to use. `--fork-lr-freeze` alone is likewise refused — a freeze with nothing to freeze at.
+    if getattr(args, "fork_lr", None) is not None and not args.model:
+        parser.error("--fork-lr is RESUME-ONLY: it pins the LR of a checkpoint being FORKED, and a "
+                     "fresh run has no inherited LR to override. Use --lr on a fresh run.")
+    if getattr(args, "fork_lr_freeze", False) and getattr(args, "fork_lr", None) is None:
+        parser.error("--fork-lr-freeze needs --fork-lr: it freezes the KL controller AT the pinned "
+                     "rate, and without a pin there is no rate to freeze at (pass --fork-lr <value>).")
+    if getattr(args, "fork_lr", None) is not None and args.fork_lr <= 0:
+        parser.error("--fork-lr must be > 0 (it is a learning rate, not a switch).")
+
     if args.opp_belief_cls_k < 0:
         parser.error("--opp-belief-cls-k must be >= 0 (0 = off)")
     if args.opp_belief_aux_coef < 0.0:

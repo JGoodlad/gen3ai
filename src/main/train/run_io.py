@@ -11,6 +11,7 @@ from datetime import datetime
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 
 from agents.model.snapshot import record_checkpoint
+from agents.training.dose import dose_block
 
 
 def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
@@ -104,6 +105,12 @@ def _model_hparams(model) -> dict:
         "clip_range_vf": clip_range_vf,
         "optimizer": type(opt).__name__,
         "weight_decay": opt.param_groups[0].get("weight_decay", 0.0),
+        # gen3_fork_lr_pin_v1 — THE DOSE. `lr x n_epochs / (batch_size*grad_accum_steps)`, plus the
+        # provenance a reader needs to know whether that LR was chosen or inherited. Nested rather
+        # than flattened so `python -m main.dose` reads one key and cannot collide with an hparam
+        # name. metadata.json ONLY — never model_config.json, which is the weight-shape record
+        # `check_compatible` reads.
+        "dose": dose_block(model),
     }
 
 
@@ -156,6 +163,31 @@ class _HparamLogCallback(BaseCallback):
         self.logger.record("hparams/gae_lambda", self.model.gae_lambda)
         self.logger.record("hparams/vf_coef", float(self.model.vf_coef))
         self.logger.dump(self.num_timesteps)
+
+    def _on_step(self) -> bool:
+        return True
+
+
+class DoseLogCallback(BaseCallback):
+    """Publish the DOSE to TensorBoard every rollout — `train/dose_rate` + `train/effective_batch`.
+
+    `train/learning_rate` alone cannot be compared across runs: the same LR at
+    `batch_size 2048 x grad_accum 16` and at `2048 x 2` differ 8x in optimizer steps per env step,
+    and that product is what predicted a distillation fold's collateral (ledger M7). Recording the
+    product LIVE means a run's dose curve exists even when its checkpoint sidecars are groomed away.
+
+    `effective_batch` is emitted beside it because the rate alone is ambiguous — a falling
+    `dose_rate` is a KL controller annealing or an operator having raised `--grad-accum-steps` on a
+    restart, and only the second moves this line.
+    """
+
+    def _on_rollout_end(self) -> None:
+        block = dose_block(self.model)
+        rate = block.get("dose_rate_now")
+        if rate is not None:
+            self.logger.record("train/dose_rate", float(rate))
+        if block.get("effective_batch"):
+            self.logger.record("train/effective_batch", int(block["effective_batch"]))
 
     def _on_step(self) -> bool:
         return True

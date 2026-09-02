@@ -23,7 +23,7 @@ from agents.training.selfplay_callback import SelfPlayCallback
 from main.train.constants import (
     DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_save_freq_vec_calls,
 )
-from main.train.run_io import _HparamLogCallback, _TrackingCheckpointCallback
+from main.train.run_io import DoseLogCallback, _HparamLogCallback, _TrackingCheckpointCallback
 
 
 @dataclasses.dataclass
@@ -126,7 +126,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # element deques per rollout. Its partner `signal/adv_*` is recorded inside `train()`; the two
     # are only readable together (see agents/training/CLAUDE.md → the `signal/` group).
     signal_callback = SignalMetricsCallback()
-    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), graceful_restart_callback, signal_callback]
+    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), DoseLogCallback(), graceful_restart_callback, signal_callback]
     # RANK TRIPWIRE (gen3_distill_target_gate_v1, design_advantage_gated_distillation.md §4.1):
     # watchdog over the EXISTING rank/policy_pr probe — EMA vs the run's own early baseline, with
     # a persistence rule. Default "warn" (no fold runs blind again); pure diagnostic bookkeeping —

@@ -87,9 +87,15 @@ class TwoPhaseLRCallback(BaseCallback):
         cooldown_rollouts: int = 7,
         handoff_lr: float | None = None,
         handoff_ema_alpha: float = 0.10,
+        frozen: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # gen3_fork_lr_pin_v1 — `--fork-lr-freeze`. A FROZEN controller adapts nothing: no KL
+        # ladder in Phase 1 and no cosine in Phase 2, so the LR a fold runs at is the LR it was
+        # pinned to, for the whole run. A fold experiment wants a CONSTANT, recordable step size;
+        # an adapting LR makes the dose a per-rollout variable nothing records.
+        self.frozen = bool(frozen)
         # Phase 1 state
         self._current_lr = initial_lr
         self.min_lr = min_lr
@@ -126,6 +132,11 @@ class TwoPhaseLRCallback(BaseCallback):
     @property
     def current_lr(self) -> float:
         return self._current_lr
+
+    def freeze_at(self, lr: float) -> None:
+        """Hold the LR at `lr` for the rest of the run (`--fork-lr-freeze`)."""
+        self.frozen = True
+        self._current_lr = float(lr)
 
     @property
     def handoff_lr(self) -> float | None:
@@ -179,7 +190,10 @@ class TwoPhaseLRCallback(BaseCallback):
         # Set the initial LR for whatever phase we're starting in.
         self._apply_lr(t)
         if self.verbose >= 1:
-            if self.phase(t) == 1:
+            if self.frozen:
+                print(f"[TwoPhaseLR] FROZEN at LR {self._current_lr:.2e} (--fork-lr-freeze): "
+                      f"KL adaptation and the cosine are both OFF for this run.")
+            elif self.phase(t) == 1:
                 print(
                     f"[TwoPhaseLR] Phase 1 (adaptive) at step {t:,}: "
                     f"LR={self._current_lr:.2e}, "
@@ -196,6 +210,10 @@ class TwoPhaseLRCallback(BaseCallback):
 
     def _apply_lr(self, t: int) -> None:
         """Compute and install the LR for step ``t`` based on phase."""
+        if self.frozen:
+            lr = self._current_lr
+            self.model.lr_schedule = lambda _: lr
+            return
         if self.phase(t) == 1:
             lr = self._current_lr
         else:
@@ -205,6 +223,14 @@ class TwoPhaseLRCallback(BaseCallback):
 
     def _on_rollout_end(self) -> None:
         t = self.model.num_timesteps
+
+        if self.frozen:
+            # `--fork-lr-freeze`: no KL ladder, no cosine, no handoff. Re-install the pinned rate
+            # every rollout so nothing else can drift it, and keep the n_epochs record.
+            lr = self._current_lr
+            self.model.lr_schedule = lambda _: lr
+            self.logger.record("train/n_epochs", self.model.n_epochs)
+            return
 
         # Detect Phase 1 → Phase 2 crossing. Prefer the smoothed LR EMA
         # built up during Phase 1; fall back to the optimizer's instant LR
@@ -340,9 +366,12 @@ class AdaptivePPOCallback(BaseCallback):
         max_lr: float | None = None,
         ema_alpha: float = 0.20,
         cooldown_rollouts: int = 7,
+        frozen: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # gen3_fork_lr_pin_v1 — `--fork-lr-freeze`; see TwoPhaseLRCallback.frozen.
+        self.frozen = bool(frozen)
         self._current_lr = initial_lr
         self.target_kl = target_kl
         self.kl_factor = kl_factor
@@ -360,10 +389,22 @@ class AdaptivePPOCallback(BaseCallback):
     def current_lr(self) -> float:
         return self._current_lr
 
+    def freeze_at(self, lr: float) -> None:
+        """Hold the LR at `lr` for the rest of the run (`--fork-lr-freeze`)."""
+        self.frozen = True
+        self._current_lr = float(lr)
+
     def _on_step(self) -> bool:
         return True
 
     def _on_rollout_end(self) -> None:
+        if self.frozen:
+            # `--fork-lr-freeze`: the KL ladder is OFF. Re-install the pinned rate each rollout so
+            # nothing else can drift it, and keep the n_epochs record the unfrozen path emits.
+            lr = self._current_lr
+            self.model.lr_schedule = lambda _: lr
+            self.logger.record("train/n_epochs", self.model.n_epochs)
+            return
         kl = self.model.logger.name_to_value.get("train/approx_kl")
         if kl is None:
             return

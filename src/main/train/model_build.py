@@ -19,6 +19,7 @@ from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
+from agents.training.dose import kl_controller_snapshot
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.reward_manager import reward_config_digest
 from agents.training.watchdog import start_subprocess_watchdog
@@ -26,6 +27,7 @@ from main.exit_codes import TrainExitCode
 from main.launcher.ipc import emit, send_event
 from main.train.constants import _ABORT_EVAL_DRAIN_SEC
 from main.train.checkpoint_state import _validate_or_reset_optimizer_state
+from main.train.fork_lr import apply_fork_lr_pin, read_recorded_pin, resolve_fork_lr
 from main.train.lifecycle import (
     _apply_grad_checkpointing, _maybe_compile_trainer, _run_roundtrip_test,
     _setup_signal_handlers,
@@ -203,6 +205,13 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     _cap_line = capacity_startup_banner(model)
     if _cap_line:
         emit(_cap_line)
+
+    # gen3_fork_lr_pin_v1 — DOSE PROVENANCE. `--lr` is INERT on a resume (the optimizer's saved LR
+    # wins), so a reader of `metadata.json` has to be able to see BOTH what the flag said and what
+    # the optimizer is doing. `agents.training.dose.dose_block` reads this off the model; argparse is
+    # the only place it exists, and this function is the one place both build paths meet.
+    if getattr(args, "lr", None) is not None:
+        model._dose_lr_flag = float(args.lr)
 
     # DERIVED, not passthrough: the arg is the flag, the attribute is the predicate.
     model._search_teacher_on = bool(args.search_teacher)
@@ -517,6 +526,32 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             adaptive_ppo_callback._current_lr = resume_lr
             lr_detail = f"saved={saved_lr:.2e} (arg --lr={args.lr:.2e} ignored on resume)"
             send_event(f"▶️ Resuming at LR {resume_lr:.2e}, epochs {args.n_epochs} (checkpoint LR={saved_lr:.2e})")
+        # gen3_fork_lr_pin_v1 — `--fork-lr`. LAST WORD on the LR, deliberately after both branches
+        # above: under `--fork-lr-freeze` a Phase-2 resume would otherwise have just installed a
+        # cosine value into the controller's `_current_lr`, and the freeze holds whatever is there.
+        # The fork-vs-restart discrimination (and the reason a periodic restart must NOT re-pin) is
+        # in `main.train.fork_lr`.
+        _fork_decision = resolve_fork_lr(
+            fork_lr=getattr(args, "fork_lr", None),
+            fork_lr_freeze=bool(getattr(args, "fork_lr_freeze", False)),
+            model_path=model_path, model_dir=model_dir)
+        if _fork_decision.apply or getattr(args, "fork_lr", None) is not None:
+            emit(f"🎚️ [ForkLR] {_fork_decision.reason}")
+        if _fork_decision.apply:
+            model._fork_lr_pin = apply_fork_lr_pin(
+                model, _fork_decision, lr_callback=lr_callback,
+                min_lr=args.min_lr, max_lr=_effective_max_lr, source_model=model_path)
+            resume_lr = model.policy.optimizer.param_groups[0]["lr"]
+            lr_detail = (f"PINNED by --fork-lr to {resume_lr:.2e}"
+                         + (" and FROZEN" if _fork_decision.frozen else ""))
+        else:
+            # Carry any recorded pin forward so a restart's metadata still states what this run's
+            # step size was set to and by what — a provenance block that evaporates on restart is
+            # worse than none, because the run reads as if it had never been pinned.
+            model._fork_lr_pin = read_recorded_pin(model_dir)
+        # PLAIN DATA, taken AFTER the pin so a `--fork-lr-freeze` is captured. Never the callback
+        # itself — it back-references the model and SB3's Logger, which cloudpickle cannot save.
+        model._dose_kl = kl_controller_snapshot(lr_callback)
         model.n_epochs = args.n_epochs   # resume-only: the fresh path passes it to the ctor
         # (`grad_accum_steps` was set here too, and again on the fresh path — it is now one row
         #  in `_TRAINING_HPARAMS`, applied on both. Nothing between there and here reads it.)
@@ -657,6 +692,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # Every training-only hparam, from the one table shared with the resume path above.
         apply_training_hparams(model, args, mappings=mappings,
                                attach_cf_labels=_attach_cf_labels)
+        model._dose_kl = kl_controller_snapshot(lr_callback)   # plain data, never the callback
+        model._fork_lr_pin = None          # a FRESH run cannot be pinned — `--fork-lr` is refused there
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
             reward_config=reward_config, value_tail_weight=args.value_tail_weight,

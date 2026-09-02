@@ -269,6 +269,19 @@ child argv itself, so an old run's recorded command relaunches unchanged.
 
 ## Resume contract
 
+🚨 **A PERIODIC RESTART is a resume of the SAME run, and one flag has to tell the two apart.**
+`--fork-lr` pins the LR of a checkpoint being FORKED (`--lr` is inert on any resume — the optimizer's
+saved rate wins), and the restart loop re-invokes the same argv into the same run dir every
+`--restart-interval-hours`. So the trainer keys the pin on WHERE the resumed checkpoint lives
+(`main/train/fork_lr.py::is_same_run_checkpoint`): outside the run dir ⇒ a FORK, pin applies; a
+checkpoint this run wrote (`<run>/checkpoints/*.zip`, or `<run>/*.zip` for the legacy layout) ⇒ a
+RESTART, the pin is NOT re-applied and the KL controller keeps its adapted rate. That is the same
+predicate this package's own `checkpoint.resolve_fork_resume_model` uses to decide whether a restart
+re-inits from the source or continues in place — and because that function SWAPS `--model` to the
+fork's own checkpoint once the fork has progress, restart #2 of a fork reads RESTART for the same
+reason a plain resume does. `--fork-lr-freeze` is the exception: it is a property of the RUN, so it
+persists across every restart, re-read from `metadata.json`'s `dose.fork_lr_pin`.
+
 The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by
 `save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed
 run uses the same code as the original — unless `--sync-to-main` is passed.

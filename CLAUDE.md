@@ -789,6 +789,25 @@ worktree to that commit so the resumed run uses the original code (override with
 `--sync-to-main`). All non-launcher flags are forwarded verbatim to `train_rl_agent.py`.
 `python -m main.launcher.tui …` is an alias for the same command.
 
+🚨 **`--lr`, `--batch-size` and `--n-steps` are INERT on a resume** — the resume path restores the
+checkpoint's own optimizer LR and prints `(arg --lr=… ignored on resume)`, so a FORK inherits
+whatever rate the PARENT's KL controller had annealed to. Measured (ledger M7): three distillation
+folds launched with the same flags ran at a median **5.8e-5 / 2.8e-5 / 1.0e-4**, and the quantity
+that predicts a fold's collateral is the **DOSE** = `lr × n_epochs / (batch_size × grad_accum_steps)`
+— v8's fold was 2.15e-8, every gen-era fold 2–6.6× higher. **`--fork-lr FLOAT`** pins that: on a
+genuine fork it sets the optimizer LR *and* `model.lr_schedule` at load and seeds the KL controller
+from it (still clamped into `[--min-lr, --max-lr]`). **`--fork-lr-freeze`** additionally disables
+the KL adaptation and the two-phase cosine, so the fold runs at one constant, recordable step size.
+
+**The pin applies ONLY on a genuine fork** — a checkpoint from OUTSIDE the target run dir. A
+launcher PERIODIC RESTART re-invokes the same argv into the same run dir every N hours, and
+re-pinning there would reset the controller's adapted rate forever; the FREEZE is a property of the
+run and does persist (re-read from the pin recorded in `metadata.json`). `--fork-lr` on a fresh run
+is refused (use `--lr`). Every metadata write records a **`dose`** block (`lr_now`, `lr_flag`,
+`fork_lr`, `lr_frozen`, `effective_batch`, `updates_per_env_step`, `dose_rate_now`,
+`kl_controller`), and `train/dose_rate` + `train/effective_batch` ride TensorBoard every rollout.
+Read a run's dose — including every run already on disk — with **`python -m main.dose <run>…`**.
+
 ---
 
 ## Training
@@ -1583,6 +1602,11 @@ src/
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
+    dose.py            # THE DOSE READER — `lr_median x n_epochs / (batch_size x grad_accum_steps)`
+                     #   per run, plus the ratio against a reference run, from the checkpoint
+                     #   SIDECARS (falling back to snapshot_history, then the run-level current_lr).
+                     #   Model-free and torch-FREE, so it reads a run whose architecture drifted
+                     #   past current code. The meter `--fork-lr` exists to make choosable
     exploitability.py  # GENERATION EXPLOITABILITY CURVE — pure bookkeeping over
                      #   `fleet_admission`-schema admission artifacts (+ optional run metadata):
                      #   per generation the best-response net extraction (mean + max over

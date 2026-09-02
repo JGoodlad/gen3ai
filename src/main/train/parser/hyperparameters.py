@@ -36,6 +36,28 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "resume like --batch-size.")
     parser.add_argument("--n-epochs", type=int, default=5, help="PPO optimization epochs")
     parser.add_argument("--lr", type=float, default=3e-4, help="Initial learning rate (AdaptiveLRCallback adjusts from here)")
+    parser.add_argument("--fork-lr", "--fork_lr", dest="fork_lr", type=float, default=None,
+                        help="RESUME-ONLY: pin the step size of a FORK. On a resume the optimizer's "
+                             "saved LR wins and --lr is INERT, so a distillation fold silently "
+                             "inherits whatever rate the parent's KL controller had annealed to "
+                             "(measured: 5.8e-5 / 2.8e-5 / 1.0e-4 across three folds that were all "
+                             "launched with the same --lr). This sets the optimizer LR *and* "
+                             "model.lr_schedule at load, and seeds the KL controller from it, so the "
+                             "fold's DOSE (lr x n_epochs / (batch_size*grad_accum_steps)) is a chosen "
+                             "quantity rather than an inherited one. Applied ONLY on a genuine fork — "
+                             "a checkpoint from OUTSIDE the target run dir; a launcher PERIODIC "
+                             "RESTART (same run, same argv, its own checkpoint) never re-applies it, "
+                             "so the controller keeps adapting from where it was. Refused on a fresh "
+                             "run (use --lr there). Recorded in metadata.json's `dose` block.")
+    parser.add_argument("--fork-lr-freeze", "--fork_lr_freeze", dest="fork_lr_freeze",
+                        action="store_true",
+                        help="With --fork-lr: also DISABLE the KL-driven LR controller for this run, "
+                             "so the LR stays at --fork-lr exactly (the [--min-lr, --max-lr] bounds "
+                             "still apply to the pinned value, and the two-phase cosine is held too). "
+                             "A fold experiment wants a CONSTANT, recordable step size — an adapting "
+                             "LR makes the dose a per-rollout variable nothing records. Unlike the pin "
+                             "itself the freeze is a property of the RUN and DOES survive every "
+                             "periodic restart.")
     parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")
     parser.add_argument("--max-lr", type=float, default=None, help="Hard upper bound on adaptive LR (default: 2× --lr)")
     parser.add_argument("--anneal-lr-start-steps", type=int, default=None,
