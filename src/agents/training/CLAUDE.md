@@ -3525,6 +3525,86 @@ value under the same emit gate; the callback mutating `grad_accum_steps` and not
 round-trip through real `record_checkpoint`/`read_checkpoint_metadata`; and the byte-identity gate
 (two identically-seeded fresh models, one with the callback attached and not moving K).
 
+## LINEAGE — who forked whom (`lineage.py`, `python -m main.lineage`)
+
+**Every exploiter, fold, funding fork and dose arm is a fork of some parent, and every comparison
+the ledger makes is a claim about that graph.** Until `gen3_run_lineage_v1` that graph was
+recoverable only by REGEXing `--model` out of `metadata.json`'s recorded `original_command` —
+brittle in the obvious ways (a renamed flag, a quoted path, a `--model=X` spelling) and silent in
+the worst one: **a failed parse reads exactly like a fresh run.** `metadata.json` now states the
+answer instead of implying it.
+
+**The block** — one top-level `lineage` key, written ONCE at fork creation:
+
+```
+lineage: {schema, role, fork_step, recorded_at,
+          fork_parent: {path, resolved_path, run_dir, run_name, git_hash, arch_signature,
+                        model_config_version, num_timesteps, sha256, created_at} | null,
+          teachers: [ …same shape… ], exploiter_target: {…} | null,
+          ancestry: [ {run_name, run_dir, git_hash, arch_signature, fork_step, role,
+                       model_path, source} … ],
+          ancestry_stop: {at, reason}}
+```
+
+`role` is `fresh` / `fork` / `fold` (`--distill-teacher`) / `exploiter` (`--exploiter`, which wins
+— a double-sided exploiter is an exploiter that also distils, and its TARGET is what identifies
+it). `ancestry` is walked through each parent's OWN block, nearest ancestor first, bounded and
+cycle-safe on realpaths; `ancestry_stop` says where the chain went dark and why, because *"the
+chain ends at a fresh root"* and *"the parent directory is gone"* are different facts a bare list
+conflates.
+
+🚨 **IMMUTABILITY is the whole feature, and it reuses `original_command`'s mechanism verbatim**:
+`save_model_snapshot` reads the existing value first and the existing value always wins. A launcher
+run restarts every few hours and an idempotent FORK has its `--model` swapped to the fork's OWN
+latest checkpoint on each relaunch (`launcher.checkpoint.resolve_fork_resume_model`), so a block
+re-derived on a restart would silently re-point the recorded parent at the DRIFTED student — the
+exact failure `distill_anchor_callback` has a module of prose defending against. Belt and braces:
+`build_lineage` also returns `None` on a same-run restart, decided by
+**`main.train.fork_lr.is_same_run_checkpoint`, IMPORTED rather than re-derived** (a second
+predicate for the same question is a second answer waiting to disagree; `<run>/warmstart/…` is
+deliberately a FORK there, and the seam captures `args.model` BEFORE `--warmstart-consensus`
+re-points it, or a warm-started exploiter would record itself as its own ancestor).
+
+**The FRESH form is explicit** (`fork_parent: null, role: "fresh", ancestry: []`) — "no block" and
+"no parent" are different facts and only one of them is a measurement.
+
+**THE ACCESSOR is the API** — `agents.training.lineage.fork_parent(run_dir) -> ForkParent | None`
+and `.ancestry(run_dir)`. It returns the recorded block's parent when there is one and otherwise
+DERIVES it from `original_command`, printing
+`[lineage] WARNING: derived from original_command (legacy run, pre-lineage)` to stderr.
+`ForkParent.derived` says which, so a legacy guess is never mistaken for a recorded fact. Every run
+on disk today is legacy, so the derive path is not a corner case — but it lives in exactly ONE
+place, marked as legacy, instead of in each consumer.
+
+⚠️ `distill_anchor_callback.resolve_anchor_parent`'s `original_command` branch is the CURRENT
+consumer of that regex and should move to this accessor — same answer, one implementation, and the
+recorded block preferred where a run has one.
+
+**The CLI** is `python -m main.lineage <run>…` (torch-free and model-free, so it reads a run whose
+architecture drifted past current code — which is most of `models/`). It prints the tree with each
+node's `git_hash` / `arch_signature` / `role` / `fork_step`, plus the run's teachers and target, and
+**flags a broken link**: a parent run directory that is gone, a parent checkpoint whose sha256 no
+longer matches the file on disk, and an `arch_signature` that CHANGED across a link (a fork cannot
+have loaded a differently-shaped parent, so the recorded parent is wrong). `--json` for scripts;
+exit 1 when anything is flagged. `--backfill` derives a block for a LEGACY run and writes it marked
+`"derived": true` — **dry-run unless `--apply`**, and it REFUSES a run that already records one,
+because a backfill that overwrote a recorded parent with a re-parsed guess would defeat the point of
+recording it.
+
+**The seam is two lines.** `run_io._run_lineage(args, model_dir, model_path=…, fork_step=…)` is the
+one place that knows which argparse fields carry the parent, teachers and target; `model_build`
+builds the block once per path and passes it to every `save_model_snapshot` call. All the work is in
+`agents/training/lineage.py`, which is torch-free and reads a checkpoint's `num_timesteps` out of
+the SB3 zip's plain-JSON `data` member via `zipfile` — never by loading the model.
+
+Tests: `lineage_test.py` (41) — the fork block incl. the sha256 and the zip/filename step read; the
+same-run restart building nothing and the recorded block surviving a restart byte-for-byte against
+a DIFFERENT offered parent; the fresh null form; ancestry over two recorded levels, a legacy stop,
+a missing directory, a CYCLE and the depth limit; the accessor's recorded-vs-derived split and its
+warning; the three integrity checks; the CLI on a synthetic tree; backfill's dry-run, apply and
+refusal; and the seam pins (both build paths ask for it, every save carries it, the pre-warm-start
+capture, and `dose` staying current while `lineage` stays immutable).
+
 ## The `signal/` group — advantage density × outcome entropy (`gen3_signal_rate_metrics_v1`)
 
 **How much action-attributable learning signal is PPO actually receiving?** Two always-on, flagless

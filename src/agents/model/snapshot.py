@@ -25,6 +25,7 @@ def save_model_snapshot(
     cli_args: Optional[dict] = None,
     original_command: Optional[str] = None,
     reward_composition: Optional[dict] = None,
+    lineage: Optional[dict] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -43,6 +44,13 @@ def save_model_snapshot(
     It is recorded because `model_config.json` states the reward FLAGS while nothing stated what
     they COMPOSE TO — the gap the silent v8->v9 composition drift lived in — and because it is the
     field a launch-diff gate compares between a new generation and its reference.
+
+    `lineage` is the **immutable** fork-ancestry block (`agents.training.lineage`): who this run
+    forked from, its teachers/target, and the ancestry chain. Same contract as `original_command` —
+    written ONCE at fork creation, existing value always wins, so a launcher restart (which swaps
+    `--model` to the fork's OWN drifted checkpoint) can never re-point the recorded parent. The
+    caller passes `None` on a same-run restart; a fresh run passes the explicit null form
+    (`fork_parent: null, role: "fresh"`), because "no block" and "no parent" are different facts.
 
     `original_command` is the **immutable** original invocation that CREATED the model — the
     launcher command under a launcher, else this process's `sys.argv`. Unlike `cli_args` (which
@@ -68,6 +76,7 @@ def save_model_snapshot(
     existing_cli_args = None
     existing_launcher_command = None
     existing_original_command = None
+    existing_lineage = None
     existing_matchup_history = []
     existing_reward_composition = None
     if os.path.exists(meta_path):
@@ -79,6 +88,7 @@ def save_model_snapshot(
             existing_cli_args = existing.get("cli_args")
             existing_launcher_command = existing.get("launcher_command")
             existing_original_command = existing.get("original_command")
+            existing_lineage = existing.get("lineage")
             existing_matchup_history = existing.get("matchup_history", [])
             existing_reward_composition = existing.get("reward_composition")
 
@@ -115,6 +125,12 @@ def save_model_snapshot(
     )
     if original:
         metadata["original_command"] = original
+    # LINEAGE — IMMUTABLE, exactly like original_command above: the existing block always wins, so a
+    # restart preserves the fork parent recorded at creation instead of re-deriving it from the
+    # checkpoint the launcher swapped in. See agents.training.lineage.
+    lineage_block = existing_lineage if existing_lineage is not None else lineage
+    if lineage_block is not None:
+        metadata["lineage"] = lineage_block
     if existing_history:
         metadata["snapshot_history"] = existing_history
     if existing_latest_eval is not None:

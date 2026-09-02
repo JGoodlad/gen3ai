@@ -33,7 +33,7 @@ from main.train.lifecycle import (
     _setup_signal_handlers,
 )
 from main.train.run_io import (
-    _attach_run_tb_logger, _model_hparams, _run_arch_toggles, _write_latest_txt,
+    _attach_run_tb_logger, _model_hparams, _run_arch_toggles, _run_lineage, _write_latest_txt,
 )
 from utils.logging.levels import LogLevel
 
@@ -302,6 +302,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                           graceful_restart_callback,
                           _attach_cf_labels, _maybe_seed_pool, evaluate_model_random) -> None:
     """Load or construct the model, then run (and finish) the training job."""
+    # THE FORK PARENT, captured BEFORE the consensus warm-start may re-point `args.model` at
+    # `<run>/warmstart/…` — that init is built FROM the parent, so recording it would make the run
+    # its own ancestor. See `run_io._run_lineage` / `agents.training.lineage`.
+    _fork_source_model = args.model
     # gen3_exploiter_consensus_warmstart_v1: build (ONCE) the disagreement-gated consensus warm-start and
     # re-point --model at it, so the exploiter inits from a competent, archetype-NEUTRAL base (sharp where
     # the teacher exploiters AGREE, high-entropy where they FORK). Exploiter-only (guarded at parse).
@@ -573,8 +577,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
+            # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
+            # `None` on a same-run restart, which is what keeps the recorded parent immutable.
+            _lineage = _run_lineage(args, model_dir, model_path=_fork_source_model,
+                                    fork_step=int(getattr(model, "num_timesteps", 0) or 0))
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition)
+                                reward_composition=reward_composition, lineage=_lineage)
 
             _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,
@@ -629,12 +637,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
             save_model_snapshot(os.path.dirname(final_path), current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition)
+                                reward_composition=reward_composition, lineage=_lineage)
             print(f"Training complete. Model saved to {final_path}")
             best_model_dir = os.path.join(model_dir, "best_model")
             if os.path.isdir(best_model_dir):
                 save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition)
+                                reward_composition=reward_composition, lineage=_lineage)
             if _run_eval:
                 await evaluate_model_random(model)
     else:
@@ -746,8 +754,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
+        # gen3_run_lineage_v1 — a FRESH run states the explicit null form (`fork_parent: null,
+        # role: "fresh"`), because "no block" and "no parent" are different facts.
+        _lineage = _run_lineage(args, model_dir, model_path=None,
+                                fork_step=int(getattr(model, "num_timesteps", 0) or 0))
         save_model_snapshot(model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition)
+                                reward_composition=reward_composition, lineage=_lineage)
 
         _abort_fn = _setup_signal_handlers(
             model, model_dir, _shutdown_event, version,
@@ -793,11 +805,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _final_handoff = lr_callback.handoff_lr if isinstance(lr_callback, TwoPhaseLRCallback) else None
         record_checkpoint(model_dir, final_path + ".zip", adaptive_ppo_callback.current_lr, model.n_epochs, hparams=_model_hparams(model), handoff_lr=_final_handoff)
         save_model_snapshot(os.path.dirname(final_path), version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition)
+                                reward_composition=reward_composition, lineage=_lineage)
         print(f"Training complete. Model saved to {final_path}")
         best_model_dir = os.path.join(model_dir, "best_model")
         if os.path.isdir(best_model_dir):
             save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
-                                reward_composition=reward_composition)
+                                reward_composition=reward_composition, lineage=_lineage)
         if _run_eval:
             await evaluate_model_random(model)

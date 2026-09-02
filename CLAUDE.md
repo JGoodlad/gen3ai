@@ -1608,6 +1608,14 @@ src/
     eval_worker.py     # Subprocess eval worker (frozen snapshot, CPU) — work-steals shard units
     probe_replay.py    # Forensic-replay CLI (thin wrapper over main.prober.engine)
     elo.py             # Offline ELO analyzer CLI (ladder + Elo-vs-step curve)
+    lineage.py         # WHO FORKED WHOM — the ancestry tree of a run, offline and torch-FREE.
+                     #   Reads metadata.json's immutable `lineage` block, falling back to DERIVING
+                     #   the parent from `original_command` (with a warning) for every pre-lineage
+                     #   run. Prints run -> parent -> grandparent with fork_step / git_hash /
+                     #   arch_signature / role / teachers / target, flags a broken link (missing
+                     #   parent, sha256 mismatch, arch change), --json for scripts, and --backfill
+                     #   (dry-run unless --apply) to write a derived block into a legacy run.
+                     #   Engine: agents/training/lineage.py
     dose.py            # THE DOSE READER — `lr_median x n_epochs / (batch_size x grad_accum_steps)`
                      #   per run, plus the ratio against a reference run, from the checkpoint
                      #   SIDECARS (falling back to snapshot_history, then the run-level current_lr).
@@ -1803,6 +1811,28 @@ Every model save writes two **run-level** files at the run root:
   at creation and preserved verbatim across every restart/checkpoint, unlike `cli_args` which is
   overwritten by the resuming process. Provenance lives ONLY here, never in `model_config.json`, which
   is the weight-shape/arch record used for `check_compatible`)
+
+**LINEAGE — who forked whom** (`gen3_run_lineage_v1`). `metadata.json` carries a top-level
+`lineage` block with the SAME immutability contract as `original_command` — written ONCE at fork
+creation, preserved verbatim across every restart and every checkpoint, because
+`save_model_snapshot` reads the existing value first and the existing value always wins. It records
+the `fork_parent` (path as given, resolved realpath, run dir + run name, git hash, arch signature,
+model-config version, the parent checkpoint's `num_timesteps` and its sha256), the `fork_step` this
+run started at, the `role` (`fresh` / `fork` / `fold` / `exploiter`), every `--distill-teacher`, the
+`--exploiter` target, and the `ancestry` chain walked through each parent's own block. A FRESH run
+writes the explicit null form (`fork_parent: null, role: "fresh"`) — "no block" and "no parent" are
+different facts. Fork-vs-restart is decided by `main.train.fork_lr.is_same_run_checkpoint`,
+IMPORTED, never re-derived: a `--model` outside the run dir is a fork, a `<run>/checkpoints/*.zip`
+is a restart, so the launcher swapping `--model` to the fork's own drifted checkpoint can never
+re-point the recorded parent. **Read it through the ONE accessor**,
+`agents.training.lineage.fork_parent(run_dir)` / `.ancestry(run_dir)`, which falls back to DERIVING
+the parent from `original_command` for every pre-`lineage` run on disk and prints
+`[lineage] WARNING: derived from original_command (legacy run, pre-lineage)` when it does — so the
+argv regex lives in exactly one place and is marked as the legacy path.
+**`python -m main.lineage <run>…`** prints the ancestry tree (`--json` for scripts) and flags a
+broken link: a missing parent dir, a sha256 that no longer matches the file on disk, an
+`arch_signature` that changed across a link. `--backfill` writes a derived block into a legacy run's
+metadata (marked `"derived": true`), dry-run unless `--apply`.
 
 These are run-level (one per run), NOT per-checkpoint: a periodic checkpoint `.zip` lives one
 level down in `checkpoints/` beside its own per-checkpoint `.json` sidecar, so

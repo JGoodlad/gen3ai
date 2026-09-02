@@ -12,6 +12,7 @@ from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 
 from agents.model.snapshot import record_checkpoint
 from agents.training.dose import dose_block
+from agents.training.lineage import build_lineage
 
 
 def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
@@ -41,6 +42,24 @@ def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
               f"different --run-name, or pass --model <a checkpoint inside it> to resume that run.")
         sys.exit(1)
     return model_dir
+
+
+def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None":
+    """THE LINEAGE SEAM — the immutable `lineage` block for THIS process, or None on a restart.
+
+    All of the work lives in `agents.training.lineage`; this is the one line that knows which
+    argparse fields carry the fork's parent, teachers and target. `None` means "a same-run restart
+    contributes nothing", and `save_model_snapshot` preserves whatever the run already recorded
+    (the same existing-value-wins rule `original_command` uses).
+
+    `model_path` must be the PRE-WARM-START `--model`: the consensus warm-start re-points
+    `args.model` at `<run>/warmstart/warmstart_consensus.zip`, which is an INIT built from the real
+    parent, not the parent itself — recording it would make the run its own ancestor.
+    """
+    return build_lineage(model_path=model_path, model_dir=model_dir,
+                         exploiter=getattr(args, "exploiter", None),
+                         distill_teacher=getattr(args, "distill_teacher", None),
+                         fork_step=fork_step)
 
 
 def _run_arch_toggles(args) -> dict:
