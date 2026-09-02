@@ -1,0 +1,6 @@
+{
+ "python": "3.11.15",
+ "numpy": "2.4.3",
+ "host_nproc": 16,
+ "worktree_head": "7b26e396c3a0a7c42a07b8e57e33db4db2b234d3"
+}

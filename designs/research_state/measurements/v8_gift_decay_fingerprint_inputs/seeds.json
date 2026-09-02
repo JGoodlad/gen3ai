@@ -1,0 +1,27 @@
+{
+ "GEN3AI_TIMEOUT_SCALE": "12",
+ "OMP_NUM_THREADS": "1",
+ "MKL_NUM_THREADS": "1",
+ "OPENBLAS_NUM_THREADS": "1",
+ "NUMEXPR_NUM_THREADS": "1",
+ "_five_seeds_are_INERT_at_this_commit": "grep over the era tree at b13b30b finds ZERO references to any of the five GEN3AI_*_SEED vars \u2014 they landed 2026-08-30, long after. Determinism here comes from stochastic=False (no policy draw), one pinned team per side (no team draw), and an explicit 4-int sim seed per battle (no dice draw). Same three as probe P, M4 and the timing probe.",
+ "_battle_seeds": "per cell: random.Random(f'{team_sha}:{opp_sha}') -> [[rng.randrange(0,65536) for _ in range(4)] for _ in range(games)]; probe P's construction verbatim, so game index i is the SAME battle for every arm and these battles are the same CRN prefix subsample M4 used.",
+ "_era_pin": "b13b30b289c5eaba136a930a4ab63451e209fbe5 (a PRIVATE copy of the era checkout)",
+ "_regime": {
+  "stochastic": false,
+  "impl": "node",
+  "device": "cpu",
+  "concurrency": 1,
+  "nice": 15,
+  "processes_in_flight": 3,
+  "games_per_cell": 4,
+  "opps": 8,
+  "untaught_teams": 16,
+  "taught_teams": 6,
+  "arms": [
+   "parent",
+   "peak",
+   "final"
+  ]
+ }
+}

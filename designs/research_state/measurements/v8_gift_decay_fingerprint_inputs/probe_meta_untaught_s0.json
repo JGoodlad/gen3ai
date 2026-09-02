@@ -1,0 +1,49 @@
+{
+ "acid": {
+  "pairwise_param_l2": {
+   "parent|peak": 222.9296,
+   "parent|final": 238.9233,
+   "parent|ref": 53.3345,
+   "peak|final": 17.4102,
+   "peak|ref": 177.0511,
+   "final|ref": 192.9632
+  },
+  "all_distinct": true,
+  "n_params": {
+   "parent": 3512397,
+   "peak": 3512397,
+   "final": 3512397,
+   "ref": 3512397
+  }
+ },
+ "kind": "untaught",
+ "games": 4,
+ "opps": [
+  "c1fc379c85",
+  "8a29df031e",
+  "6c129cb50c",
+  "511c359e2e",
+  "0af19b638a",
+  "c0e60903e8",
+  "2c5b1d6abb",
+  "f7e46432b9"
+ ],
+ "shard": "0/3",
+ "impl": "node",
+ "n_rows": 21629,
+ "arms": {
+  "parent": {
+   "path": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+   "step": 277583267
+  },
+  "peak": {
+   "path": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/checkpoints/checkpoint_290115536_steps.zip",
+   "step": 290115536
+  },
+  "final": {
+   "path": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/final_model_interrupted.zip",
+   "step": 292623779
+  }
+ },
+ "wall_s": 2377.2
+}

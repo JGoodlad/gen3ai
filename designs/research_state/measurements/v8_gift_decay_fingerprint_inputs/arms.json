@@ -1,0 +1,33 @@
+{
+ "parent": {
+  "zip": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+  "config": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/model_config.json",
+  "step": 277583267,
+  "fold_delta_steps": 0,
+  "bytes": 44659601,
+  "sha256": "3b7792c873477b0ce270f103bf818a8df91df4d1418d565b44698d8e1a65dbc0"
+ },
+ "peak": {
+  "zip": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/checkpoints/checkpoint_290115536_steps.zip",
+  "config": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/model_config.json",
+  "step": 290115536,
+  "fold_delta_steps": 12532269,
+  "bytes": 44662212,
+  "sha256": "44418cef76daf6dd90d225005184e88a9382331adcd05823e61d7f6959e76e13"
+ },
+ "final": {
+  "zip": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/final_model_interrupted.zip",
+  "config": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/model_config.json",
+  "step": 292623779,
+  "fold_delta_steps": 15040512,
+  "bytes": 44662482,
+  "sha256": "902f01c73290d3622cf62f2a8a5ec476193476a5f3b975c534c102d0a4935eca"
+ },
+ "_reference_opponent": {
+  "zip": "/home/goodlad/dev/gen3ai/models/ai_v8_03_zarch_control_0718/final_model_interrupted.zip",
+  "config": "/home/goodlad/dev/gen3ai/models/ai_v8_03_zarch_control_0718/model_config.json",
+  "bytes": 44657448,
+  "sha256": "1d989d783da92bbf8397768fda116cd574cd820073e557d9412355c2ba70fac3"
+ },
+ "_note": "`parent` and `final` are probe P's AND M4's own two arms, byte-for-byte. `peak` is the argmax of the v8_gift_timing_2026-09-01 untaught curve (+9.67pp at +12.53M) and is therefore a SELECTED arm: any contrast involving it is upward-biased in magnitude and is descriptive, not a registered test of the peak's height."
+}

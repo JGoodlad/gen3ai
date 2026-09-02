@@ -1,0 +1,63 @@
+{
+ "probe_untaught": [
+  "d0a4d2bcb8",
+  "c90e782cad",
+  "a6b630e6b4",
+  "a577a735b7",
+  "9292a21833",
+  "eaa88395e7",
+  "7c2cb5cec1",
+  "89fcef3b53",
+  "32f549483f",
+  "593d7fb8a8",
+  "7163ad9387",
+  "dd460484fc",
+  "b26ed9c8e1",
+  "c84f2b64a2",
+  "f593373169",
+  "048182d1e9"
+ ],
+ "control_taught": [
+  "564b9be3ae",
+  "7594a34f82",
+  "044da80d78",
+  "5c88ff9ca5",
+  "4771662cf7",
+  "45995e432f"
+ ],
+ "opponents": [
+  "c1fc379c85",
+  "8a29df031e",
+  "6c129cb50c",
+  "511c359e2e",
+  "0af19b638a",
+  "c0e60903e8",
+  "2c5b1d6abb",
+  "f7e46432b9"
+ ],
+ "labels": {
+  "d0a4d2bcb8": "balance",
+  "c90e782cad": "balance",
+  "a6b630e6b4": "balance",
+  "a577a735b7": "balance",
+  "9292a21833": "hyper_offense",
+  "eaa88395e7": "hyper_offense",
+  "7c2cb5cec1": "hyper_offense",
+  "89fcef3b53": "offense",
+  "32f549483f": "offense",
+  "593d7fb8a8": "offense",
+  "7163ad9387": "semi_stall",
+  "dd460484fc": "semi_stall",
+  "b26ed9c8e1": "semi_stall",
+  "c84f2b64a2": "stall",
+  "f593373169": "stall",
+  "048182d1e9": "stall",
+  "564b9be3ae": "semi_stall",
+  "7594a34f82": "semi_stall",
+  "044da80d78": "stall",
+  "5c88ff9ca5": "stall",
+  "4771662cf7": "stall",
+  "45995e432f": "stall"
+ },
+ "_provenance": "IMPORTED from v8_fold_behavioral_fingerprint_probe.V8_SELECTION (M4), which copied it from probe P's /tmp/probeP/selection.json. Byte-equality against M4 and list-equality against v8_gift_timing_inputs/selection.json are ASSERTED by the script that wrote this file."
+}
