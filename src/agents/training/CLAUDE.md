@@ -3370,13 +3370,26 @@ under the 10% bar. Peak extra memory is one gradient accumulator per live group
 **⚠️ WARM-UP: `_policy` is the LAST tag to appear, and that is the signal, not a gap.** A group is
 emitted only once both its EMAs are positive. For a strongly noise-limited term `|G|²` is genuinely
 near zero at these batch sizes — with `accum=2` the estimate is `2·g_big − g_small ≈ 0` — so its
-single-sample estimate SIGN-FLIPS and only the average resolves it. The per-group fold therefore
-uses a DEBIASED warm-up (effective decay `min(decay, 1 − 1/(n+1))`, a plain running mean until the
-window fills) so one negative first sample cannot suppress the tag for hundreds of calls. **The
-total keeps its historical anchor-on-first-sample fold** — its series must stay comparable across
-this change, and it is dominated by the well-conditioned value term anyway. Measured effect on a
-12k-step debug smoke: without the debiasing `_policy` never emitted in 11 calls; with it, it emits
-by call ~10.
+single-sample estimate SIGN-FLIPS and only the average resolves it. So EVERY reading here —
+per-group AND the total — folds through the ONE `noise_scale.debiased_ema`: effective decay
+`min(decay, 1 − 1/(n+1))`, i.e. a plain running MEAN until the `1/(1−decay)` window fills and the
+exponential decay takes over, which is Adam's `ema / (1 − beta^t)` spelled as a decay. One negative
+first sample therefore cannot suppress a tag for hundreds of calls. Measured effect on a 12k-step
+debug smoke: without the debiasing `_policy` never emitted in 11 calls; with it, it emits by call
+~10.
+
+🚨 **THE TOTAL USED TO BE THE EXCEPTION, AND IS NOT ANY MORE (`gen3_noise_scale_warmup_v1`,
+2026-09-03).** `train/noise_scale`'s EMA anchored on its FIRST sample at a fixed decay 0.99, so
+after two samples it read `0.99·x₁ + 0.01·x₂` — the first sample, essentially, for its first few
+hundred calls. That is why the first production reading on R5F15 had to be published as
+"provisional, n=2", and it is the mechanism behind the smoke below in which the total never emitted
+at all across 11 calls while every per-term tag did. Both halves now warm up identically, so a
+young run's `train/noise_scale` and `train/noise_scale_ratio_policy` are comparable to each other
+from the first reading. ⚠️ **A run's `train/noise_scale` series is NOT comparable across this
+change** during its first ~100 folds — the fix moves early values by construction; the steady state
+past the warm-up window is unchanged. ⚠️ And an EMA is now `(value, COUNT)`: priming
+`_noise_ema_s`/`_noise_ema_g2` by hand without also setting `_noise_ema_n` leaves the fold on
+sample 1, which takes the next sample whole (the one live edge, pinned in the test file).
 
 **FIRST READING (2026-09-01, two `--debug --steps 12000 --n-steps 1024 --batch-size 128
 --grad-accum-steps 2` runs, CPU, default flags so `aux` is small and `distill` absent).** It
@@ -3389,13 +3402,17 @@ apart, in the direction the total hides. Do NOT read those numbers as the produc
 (different device, batch, flag set, and eleven calls) — read them as the instrument working: the
 term PPO actually optimizes says *noise-limited* where the total says *over-batched*.
 
-**One thing the smoke exposed that this change deliberately did NOT fix.** The TOTAL's own EMA has
-the same anchor-on-first-sample fragility the per-term half was debiased for — in run B the total's
+**One thing that smoke exposed, and that is now FIXED (2026-09-03).** The TOTAL's own EMA had the
+same anchor-on-first-sample fragility the per-term half was debiased for — in run B the total's
 `tr(Σ)` EMA started negative and `train/noise_scale{,_ratio}` therefore never emitted at all across
-11 calls, while every per-term tag did. Fixing it is a two-line change (the same
-`min(decay, 1 − 1/(n+1))`), but it would move `train/noise_scale`'s values, and the byte-identity of
-the total series was a requirement of this work. Raise it as its own change if the total's warm-up
-starts costing readings on production runs.
+11 calls, while every per-term tag did. It was deferred at the time because the byte-identity of
+the total series was a requirement of that work; it has since cost a reading (R5F15's
+"provisional, n=2"), so the deferral was paid off with the shared `debiased_ema` above. The
+revert-catcher is
+`instrumented_ppo_noise_scale_terms_test.py::test_a_negative_first_sample_no_longer_suppresses_the_total_for_hundreds_of_calls`,
+which reproduces exactly this failure. ⚠️ **A CONSTANT synthetic stream cannot detect this class**
+— an anchored fold reads a constant correctly too — so the constant-stream test is the analytic
+anchor and the outlier test is the guard.
 
 Two levers, both ENV/constant rather than CLI flags — the probe changes no training math, so it
 never belongs in `model_config.json` and should not have to survive a resume's argv:

@@ -791,6 +791,7 @@ def test_noise_scale_logged_only_when_accumulating():
 
     # accum=1: measurement path is skipped entirely (no second batch size).
     model._noise_ema_s = model._noise_ema_g2 = None
+    model._noise_ema_n = 0
     model._logger = _Rec()
     _train_from_init(model, init_sd, init_opt, batch_size=8, accum=1)
     assert "train/noise_scale" not in model.logger.keys
@@ -799,6 +800,11 @@ def test_noise_scale_logged_only_when_accumulating():
     # accum=2 (micro=4 → 2 groups): EMA primed positive (post-warmup state) → the path runs, folds a
     # fresh sample (EMA moves), and emits the scalar + ratio.
     model._noise_ema_s, model._noise_ema_g2 = 50.0, 2.0
+    # POST-WARMUP means the COUNT is primed too (gen3_noise_scale_warmup_v1): the total now folds
+    # through `noise_scale.debiased_ema`, whose effective decay is `1 - 1/(n+1)`, so an EMA primed
+    # with a value but not a count is still on sample 1 and takes the next sample WHOLE — which on
+    # this 32-row toy can be the negative estimate the emit gate correctly withholds.
+    model._noise_ema_n = 500
     model._logger = _Rec()
     _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
     assert "train/noise_scale" in model.logger.keys

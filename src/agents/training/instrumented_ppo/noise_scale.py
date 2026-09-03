@@ -11,6 +11,29 @@ per-loss-GROUP gradients: `_fold_per_term_noise` below is only bookkeeping (its 
 the whole point of the comparison is that the total and the per-term readings are the same
 quantity measured on different gradients.
 """
+def debiased_ema(prev, n_prev, sample, decay):
+    """ONE warm-up fold, shared by the TOTAL reading and the PER-TERM readings.
+
+    A plain `d*prev + (1-d)*x` at a fixed `d = 0.99` that is ANCHORED ON ITS FIRST SAMPLE reads
+    `0.99*x1 + 0.01*x2` after two samples — i.e. for the first few hundred calls it reports the
+    first sample rather than the average, and a single bad first sample (this estimator's
+    single-call `tr(Sigma)`/`|G|^2` can SIGN-FLIP under noise) suppresses the tag for hundreds of
+    calls. That is why the first production reading of `train/noise_scale` on R5F15 had to be
+    called "provisional, n=2".
+
+    The fix is the same one Adam's `ema / (1 - beta^t)` performs, spelled as an effective decay:
+    `d = min(decay, 1 - 1/(n+1))` makes the estimate a plain running MEAN until the `1/(1-decay)`
+    window fills and the exponential decay takes over. So at every step the reading is an unbiased
+    average of the samples taken so far, and a CONSTANT stream reads its own constant from step 1.
+
+    `prev` is `None` (equivalently `n_prev == 0`) on the first sample. Pure; unit-tested.
+    """
+    if prev is None or n_prev <= 0:
+        return float(sample)
+    d = min(float(decay), 1.0 - 1.0 / (float(n_prev) + 1.0))
+    return d * float(prev) + (1.0 - d) * float(sample)
+
+
 class NoiseScaleDiagnostics:
     """The noise-scale EMA state, the pure estimator, and the advisor."""
 
@@ -21,6 +44,11 @@ class NoiseScaleDiagnostics:
     # local (reset to None on a launcher restart → re-converges in a few hundred calls); not saved.
     _noise_ema_s: float = None    # EMA of tr(Σ)  (per-example gradient-variance trace)
     _noise_ema_g2: float = None   # EMA of |G|²   (true-gradient squared norm)
+    # +WARM-UP: how many samples are behind the two EMAs above — the `n` `debiased_ema` needs.
+    # The TOTAL used to anchor on its first sample with no correction, so its first ~hundreds of
+    # readings were that sample rather than an average; it now warms up through the SAME helper as
+    # the per-term readings, so the two can never disagree about start-up bias again.
+    _noise_ema_n: int = 0
     # +PER-TERM: the same two EMAs, per loss GROUP — {group: [ema_tr_sigma, ema_g2, n_samples]}.
     # None until the first sampled call; same process-local, unsaved lifetime as the two scalars
     # above. The third slot drives the debiased warm-up (see `_fold_per_term_noise`).
@@ -170,17 +198,13 @@ class NoiseScaleDiagnostics:
             tr_sigma, g2 = self._noise_scale_estimate(small_sq, big_sq, b_small, b_big)
             prev = self._noise_ema_terms.get(group)
             n_prev = int(prev[2]) if prev is not None else 0
-            # DEBIASED WARM-UP: for the first ~1/(1-decay) samples the effective decay is
-            # `1 - 1/(n+1)`, i.e. a plain running MEAN, converging to `decay` afterwards. The plain
-            # EMA anchors on sample 1, and the group that needs the warm-up most is exactly the one
-            # this module exists to read: a strongly noise-limited policy term has |G|² ≈ 0 at these
-            # batch sizes, so its single-sample estimate SIGN-FLIPS, and one negative first sample
-            # would suppress the tag for hundreds of calls. The TOTAL keeps its historical
-            # anchor-on-first-sample fold deliberately — its series has to stay comparable across
-            # this change, and it is dominated by the well-conditioned value term anyway.
-            d = min(decay, 1.0 - 1.0 / (n_prev + 1.0))
-            ema_s = tr_sigma if prev is None else d * prev[0] + (1.0 - d) * tr_sigma
-            ema_g2 = g2 if prev is None else d * prev[1] + (1.0 - d) * g2
+            # DEBIASED WARM-UP — the SHARED `debiased_ema`, the identical fold the TOTAL takes.
+            # The group that needs it most is exactly the one this module exists to read: a
+            # strongly noise-limited policy term has |G|² ≈ 0 at these batch sizes, so its
+            # single-sample estimate SIGN-FLIPS, and one negative first sample under an
+            # anchor-on-first-sample fold would suppress the tag for hundreds of calls.
+            ema_s = debiased_ema(None if prev is None else prev[0], n_prev, tr_sigma, decay)
+            ema_g2 = debiased_ema(None if prev is None else prev[1], n_prev, g2, decay)
             self._noise_ema_terms[group] = [ema_s, ema_g2, n_prev + 1]
             if ema_g2 > 1e-12 and ema_s > 0.0:
                 b_simple = ema_s / ema_g2

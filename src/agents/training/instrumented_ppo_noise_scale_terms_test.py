@@ -21,6 +21,8 @@ import pytest
 import torch as th
 
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+from agents.training.instrumented_ppo.constants import _NOISE_SCALE_EMA_DECAY
+from agents.training.instrumented_ppo.noise_scale import debiased_ema
 from agents.training.instrumented_ppo.noise_scale_terms import (
     NOISE_TERM_GROUPS,
     NULL_TAGGER,
@@ -290,6 +292,9 @@ def _arm(per_term):
     # a 32-row toy can put either estimate negative, which the emit gate correctly withholds; that
     # gate has its own unit test above and is not what this one is measuring.
     model._noise_ema_s, model._noise_ema_g2 = 50.0, 2.0
+    model._noise_ema_n = 500          # post-warmup means the COUNT is primed too: both families
+    # warm up through `debiased_ema`, whose effective decay is `1 - 1/(n+1)`, so an EMA primed with
+    # a value but not a count is still on sample 1 and would take the next sample whole.
     model._noise_ema_terms = {g: [50.0, 2.0, 500] for g in NOISE_TERM_GROUPS}
     model._noise_per_term_calls = 0
     model._logger = _Rec()
@@ -402,3 +407,179 @@ def test_emit_passes_the_policy_ratio_through(monkeypatch):
 
     _P()._emit_noise_scale_warnings(0.05, 16384.0, 3.0)
     assert seen["args"] == (0.05, 16384.0, 3.0)
+
+
+# --------------------------------------------------------------------------------------
+# 5. THE EMA WARM-UP — one helper, one behaviour, for the total AND the per-term readings
+#
+# `gen3_noise_scale_warmup_v1`. The TOTAL's EMA used to ANCHOR ON ITS FIRST SAMPLE at a fixed
+# decay 0.99, so `train/noise_scale` reported that one sample for its first few hundred calls (the
+# R5F15 reading that had to be published as "provisional, n=2"), and a single NEGATIVE first
+# `tr(Σ)` — which this estimator's single-call two-point solve produces routinely under noise —
+# withheld the scalar entirely for hundreds of calls. The per-term half already warmed up as a
+# running MEAN; both now go through the one `debiased_ema`.
+# --------------------------------------------------------------------------------------
+
+
+def test_debiased_ema_is_a_running_mean_while_it_warms_and_decays_afterwards():
+    """The helper's whole contract, on a stream whose analytic mean is known."""
+    decay = 0.99
+    ema, n = None, 0
+    for i, x in enumerate([4.0, 6.0, 2.0, 8.0], start=1):
+        ema = debiased_ema(ema, n, x, decay)
+        n += 1
+        assert ema == pytest.approx(np.mean([4.0, 6.0, 2.0, 8.0][:i]))   # unbiased at every step
+    # past the 1/(1-decay) window the effective decay saturates at `decay` — an EMA again, not a
+    # mean that would keep the whole run's history at equal weight forever.
+    assert debiased_ema(1.0, 10_000, 2.0, decay) == pytest.approx(0.99 * 1.0 + 0.01 * 2.0)
+    assert debiased_ema(None, 0, 7.0, decay) == 7.0                      # first sample is itself
+
+
+def test_debiased_ema_reads_a_constant_stream_as_that_constant_from_step_one():
+    """The property a zero-init-without-correction fold fails: `(1-d)·c`, `(1-d²)·c`, … creeping up
+    to `c`. It is also why a CONSTANT stream alone cannot separate the two warm-ups being fixed
+    here — see the outlier test below for the revert-catcher."""
+    ema, n = None, 0
+    for _ in range(5):
+        ema = debiased_ema(ema, n, 3.25, 0.99)
+        n += 1
+        assert ema == pytest.approx(3.25)
+
+
+class _ConstantEstimate:
+    """A CONSTANT synthetic gradient stream: every call returns the same `(tr(Σ), |G|²)` sample, so
+    the analytic reading is `tr(Σ)/|G|²` at EVERY step with no start-up transient."""
+
+    def __init__(self, tr_sigma, g2):
+        self.sample = (float(tr_sigma), float(g2))
+        self.calls = 0
+
+    def __call__(self, *_args):
+        self.calls += 1
+        return self.sample
+
+
+class _SampleStream:
+    """A scripted sample sequence — the last entry repeats once exhausted."""
+
+    def __init__(self, samples):
+        self.samples = [(float(s), float(g)) for s, g in samples]
+        self.calls = 0
+
+    def __call__(self, *_args):
+        s = self.samples[min(self.calls, len(self.samples) - 1)]
+        self.calls += 1
+        return s
+
+
+def _total_only_model():
+    """A tiny real PPO with the per-term probe OFF, so `_noise_scale_estimate` is called EXACTLY
+    once per `train()` — by the TOTAL fold — and a scripted stream maps one sample to one step."""
+    os.environ["GEN3AI_NOISE_SCALE_PER_TERM"] = "0"
+    th.manual_seed(0)
+    np.random.seed(0)
+    model, _venv = _build_tiny_ppo(n_steps=8, n_envs=4)
+    model.learn(total_timesteps=8 * 4)
+    init_sd = copy.deepcopy(model.policy.state_dict())
+    init_opt = copy.deepcopy(model.policy.optimizer.state_dict())
+    model._noise_ema_s = None          # a FRESH process: nothing folded yet
+    model._noise_ema_g2 = None
+    model._noise_ema_n = 0
+    return model, init_sd, init_opt
+
+
+def test_the_total_reading_has_no_startup_bias_on_a_constant_gradient_stream():
+    """Steps 1, 2 and 3 must each read the analytic `B_simple = tr(Σ)/|G|²` exactly — no warm-up
+    transient at all. Driven through the REAL `train()`, with only the two-point solve replaced by
+    a constant, so this exercises the fold as it ships."""
+    try:
+        model, init_sd, init_opt = _total_only_model()
+        est = _ConstantEstimate(tr_sigma=50.0, g2=2.0)
+        model._noise_scale_estimate = est
+        b_big = 4 * 2                                    # batch_size · accum, the ratio's divisor
+        for step in (1, 2, 3):
+            model._logger = _Rec()
+            _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
+            assert est.calls == step, "the total must take exactly one sample per train()"
+            assert model.logger.vals["train/noise_scale"] == pytest.approx(25.0), f"step {step}"
+            assert model.logger.vals["train/noise_scale_ratio"] == pytest.approx(25.0 / b_big)
+            assert model._noise_ema_n == step
+    finally:
+        os.environ.pop("GEN3AI_NOISE_SCALE_PER_TERM", None)
+
+
+def test_a_negative_first_sample_no_longer_suppresses_the_total_for_hundreds_of_calls():
+    """THE revert-catcher, and the production failure it reproduces (documented in
+    `src/agents/training/CLAUDE.md`: "the total's tr(Σ) EMA started negative and
+    `train/noise_scale{,_ratio}` therefore never emitted at all across 11 calls").
+
+    Sample 1 is `tr(Σ) = -10` — the sign flip a single-call two-point solve produces routinely.
+    Sample 2 is `+30`, so the MEAN is `+10` and step 2 must report `B_simple = 10/2 = 5`. Under the
+    old anchor-on-first-sample fold the EMA at step 2 is `0.99·(-10) + 0.01·(+30) = -9.6`, still
+    negative, so the emit gate withholds the scalar — for hundreds of calls."""
+    try:
+        model, init_sd, init_opt = _total_only_model()
+        model._noise_scale_estimate = _SampleStream([(-10.0, 1.0), (30.0, 3.0)])
+
+        model._logger = _Rec()
+        _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
+        assert "train/noise_scale" not in model.logger.vals, "a negative tr(Σ) must withhold"
+        assert model._noise_ema_s == pytest.approx(-10.0)
+
+        model._logger = _Rec()
+        _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
+        assert model._noise_ema_s == pytest.approx(10.0)    # the MEAN, not 0.99·(-10) + 0.01·30
+        assert model._noise_ema_g2 == pytest.approx(2.0)
+        assert model.logger.vals["train/noise_scale"] == pytest.approx(5.0)
+        assert model.logger.vals["train/noise_scale_ratio"] == pytest.approx(5.0 / 8.0)
+    finally:
+        os.environ.pop("GEN3AI_NOISE_SCALE_PER_TERM", None)
+
+
+def test_the_total_and_the_per_term_readings_warm_up_identically():
+    """Same warm-up, same samples, same answer — the property that lets a reader compare
+    `train/noise_scale` against `train/noise_scale_ratio_policy` on a young run at all.
+
+    Fed the IDENTICAL `(tr(Σ), |G|²)` sequence, the total's fold (as `ppo.train()` performs it,
+    via the shared helper) and `_fold_per_term_noise` must hold the same EMA state at every step —
+    including the first, where an anchored fold and a mean disagree."""
+    decay = _NOISE_SCALE_EMA_DECAY
+    b_small, b_big = 100.0, 200.0
+    samples = [(-1.0, 4.0), (7.0, 2.0), (3.0, 3.0), (5.0, 1.0)]
+
+    fold = _Fold()
+    total_s, total_g2, total_n = None, None, 0
+    for tr_sigma, g2 in samples:
+        total_s = debiased_ema(total_s, total_n, tr_sigma, decay)
+        total_g2 = debiased_ema(total_g2, total_n, g2, decay)
+        total_n += 1
+        # the same sample, spelled as the (g_small_sq, g_big_sq) pair the per-term fold takes
+        small_sq = g2 + tr_sigma / b_small
+        big_sq = g2 + tr_sigma / b_big
+        fold._fold_per_term_noise({"policy": (small_sq, big_sq)}, b_small, b_big, None)
+        ema_s, ema_g2, n = fold._noise_ema_terms["policy"]
+        assert ema_s == pytest.approx(total_s), f"tr(Σ) warm-up diverged at step {total_n}"
+        assert ema_g2 == pytest.approx(total_g2), f"|G|² warm-up diverged at step {total_n}"
+        assert n == total_n
+
+
+def test_both_fold_sites_go_through_the_one_shared_helper():
+    """A source scan, because the two folds live in two modules and the failure mode is that one of
+    them is 'tidied' back into a bare fixed-decay line — which reads perfectly healthy and silently
+    re-introduces the start-up bias on exactly one of the two readings."""
+    import inspect
+
+    from agents.training.instrumented_ppo import noise_scale as ns_mod
+    from agents.training.instrumented_ppo import ppo as ppo_mod
+
+    total_src = inspect.getsource(ppo_mod.InstrumentedMaskablePPO.train)
+    per_term_src = inspect.getsource(ns_mod.NoiseScaleDiagnostics._fold_per_term_noise)
+    for name, src in (("the total fold in train()", total_src),
+                      ("_fold_per_term_noise", per_term_src)):
+        assert "debiased_ema(" in src, f"{name} no longer folds through the shared helper"
+    # and neither site keeps a hand-rolled `d * prev + (1 - d) * x` beside it
+    for name, src in (("the total fold in train()", total_src),
+                      ("_fold_per_term_noise", per_term_src)):
+        assert not re.search(r"d\s*\*\s*self\._noise_ema", src), f"{name} kept a raw EMA fold"
+        assert not re.search(r"d\s*\*\s*prev\[", src), f"{name} kept a raw EMA fold"
+    assert "self._noise_ema_n" in total_src, "the total must carry its own sample count"

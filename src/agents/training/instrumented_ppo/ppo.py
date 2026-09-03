@@ -37,7 +37,7 @@ from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_grad_project import make_projector
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
-from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
+from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics, debiased_ema
 from agents.training.instrumented_ppo.noise_scale_terms import (
     NULL_TAGGER,
     PerTermNoiseSampler,
@@ -1525,9 +1525,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             b_small = float(self.batch_size)
             b_big = b_small * accum
             tr_sigma, g2 = self._noise_scale_estimate(noise_g_small_sq, noise_g_big_sq, b_small, b_big)
-            d = _NOISE_SCALE_EMA_DECAY
-            self._noise_ema_s = tr_sigma if self._noise_ema_s is None else d * self._noise_ema_s + (1 - d) * tr_sigma
-            self._noise_ema_g2 = g2 if self._noise_ema_g2 is None else d * self._noise_ema_g2 + (1 - d) * g2
+            # DEBIASED WARM-UP (gen3_noise_scale_warmup_v1): the SAME `debiased_ema` the per-term
+            # readings take, so the total and the per-term halves warm up identically. The old fold
+            # anchored on its first sample at a fixed decay 0.99, so `train/noise_scale` reported
+            # that sample for its first few hundred calls — and one negative first `tr(Σ)` (this
+            # estimator's single-call solve can sign-flip under noise) suppressed the scalar
+            # entirely, which is exactly what the R5F15 "provisional, n=2" reading was.
+            self._noise_ema_s = debiased_ema(self._noise_ema_s, self._noise_ema_n,
+                                             tr_sigma, _NOISE_SCALE_EMA_DECAY)
+            self._noise_ema_g2 = debiased_ema(self._noise_ema_g2, self._noise_ema_n,
+                                              g2, _NOISE_SCALE_EMA_DECAY)
+            self._noise_ema_n += 1
             if self._noise_ema_g2 > 1e-12 and self._noise_ema_s > 0.0:
                 b_simple = self._noise_ema_s / self._noise_ema_g2
                 self.logger.record("train/noise_scale", float(b_simple))

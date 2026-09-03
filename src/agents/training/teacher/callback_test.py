@@ -3,6 +3,7 @@ subprocess, no model; hand-written shards mimic what a worker publishes."""
 
 import json
 import os
+import subprocess
 from types import SimpleNamespace
 
 import numpy as np
@@ -238,3 +239,89 @@ def test_worker_reap_timeouts_stretch_with_contention(monkeypatch):
     monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
     assert cb_mod._shutdown_reap_timeout() == 60.0
     assert cb_mod._abort_reap_timeout() == 30.0
+
+
+# --- `_abort` must not leak the worker LOG HANDLE ------------------------------------------------
+#
+# The abort path SIGKILLs each cycle worker and then reaps it. The reap used to close the worker's
+# log file only on the SUCCESS path: the `TimeoutExpired` branch re-raised past the `close()`
+# (deliberately, to preserve the surrounding handler's behaviour) and any other `wait` error was
+# swallowed by that same outer handler before reaching it. So every aborted cycle leaked one file
+# descriptor per worker that failed to reap — and a hung-cycle abort under contention is exactly
+# the path that repeats over a long run. The close is now in a `finally`.
+
+
+class _NeverReaps:
+    """A worker whose `wait` always times out — the starved-reap shape, which is what makes the
+    leak RECUR rather than happen once."""
+
+    def __init__(self):
+        self.killed = 0
+
+    def poll(self):
+        return None                      # still 'running' => _abort kills it
+
+    def kill(self):
+        self.killed += 1
+
+    def wait(self, timeout=None):
+        raise subprocess.TimeoutExpired(cmd="worker", timeout=timeout)
+
+
+class _WaitRaises(_NeverReaps):
+    """The other lost path: `wait` raising something that is not a timeout."""
+
+    def wait(self, timeout=None):
+        raise OSError("no such process")
+
+
+def _fd_count():
+    return len(os.listdir("/proc/self/fd"))
+
+
+def _abort_worker(tmp_path, proc, name):
+    return {"proc": proc, "log": open(os.path.join(str(tmp_path), name), "w"),
+            "rbase": os.path.join(str(tmp_path), name)}
+
+
+def test_abort_closes_every_worker_log_even_when_the_reap_times_out(tmp_path, capsys):
+    """Two aborts, two workers each, every reap timing out: every handle closed, no fd growth."""
+    cb = _callback(tmp_path)
+    cb.verbose = 0
+    before = _fd_count()
+    for cycle in range(2):
+        names = ["w%d_%d.log" % (cycle, i) for i in range(2)]
+        workers = [_abort_worker(tmp_path, _NeverReaps(), n) for n in names]
+        cb._pending = {"workers": workers, "step": 1000 * (cycle + 1)}
+        cb._abort()
+        assert cb._pending is None
+        for w in workers:
+            assert w["proc"].killed == 1, "the abort must still SIGKILL the worker"
+            assert w["log"].closed, "the worker log handle was left open on the timeout path"
+    assert _fd_count() == before, "aborting leaked file descriptors"
+    # and the timeout still self-diagnoses rather than dying silently
+    assert "did not reap within" in capsys.readouterr().err
+
+
+def test_abort_closes_the_log_when_the_reap_raises_something_other_than_a_timeout(tmp_path):
+    """The second lost path — the outer `except Exception: pass` used to swallow the error before
+    the `close()` on that line was ever reached."""
+    cb = _callback(tmp_path)
+    cb.verbose = 0
+    before = _fd_count()
+    w = _abort_worker(tmp_path, _WaitRaises(), "boom.log")
+    cb._pending = {"workers": [w], "step": 7}
+    cb._abort()
+    assert w["log"].closed
+    assert _fd_count() == before
+
+
+def test_abort_still_closes_the_log_on_the_clean_reap_path(tmp_path):
+    """The no-op half: a worker that reaps normally is closed exactly as before."""
+    cb = _callback(tmp_path)
+    cb.verbose = 0
+    proc = SimpleNamespace(poll=lambda: 0, kill=lambda: None, wait=lambda timeout=None: 0)
+    w = _abort_worker(tmp_path, proc, "clean.log")
+    cb._pending = {"workers": [w], "step": 3}
+    cb._abort()
+    assert w["log"].closed

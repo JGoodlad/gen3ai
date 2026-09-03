@@ -461,22 +461,28 @@ class SearchTeacherCallback(BaseCallback):
                 w["proc"].kill()
             reap_budget = _abort_reap_timeout()
             try:
-                try:
-                    w["proc"].wait(timeout=reap_budget)
-                except subprocess.TimeoutExpired:
-                    # Self-diagnosing, per the project timeout rule. Re-raised so the surrounding
-                    # handler keeps its exact behaviour (``log.close()`` stays skipped on a
-                    # timeout) — this adds a message, never a semantic change.
-                    print(
-                        f"⚠️  [SearchTeacher] killed worker did not reap within "
-                        f"{reap_budget:.1f}s (base {_ABORT_REAP_TIMEOUT:.1f}s x contention "
-                        f"scale). {describe_contention()}",
-                        file=sys.stderr, flush=True,
-                    )
-                    raise
-                w["log"].close()
+                w["proc"].wait(timeout=reap_budget)
+            except subprocess.TimeoutExpired:
+                # Self-diagnosing, per the project timeout rule: this kill used to be silent, so a
+                # STARVED reap read exactly like a worker that ignored SIGKILL.
+                print(
+                    f"⚠️  [SearchTeacher] killed worker did not reap within "
+                    f"{reap_budget:.1f}s (base {_ABORT_REAP_TIMEOUT:.1f}s x contention "
+                    f"scale). {describe_contention()}",
+                    file=sys.stderr, flush=True,
+                )
             except Exception:  # noqa: BLE001
                 pass
+            finally:
+                # The LOG FILE IS CLOSED ON EVERY PATH — it used to be skipped whenever the reap
+                # raised (the timeout branch re-raised past it, and any other `wait` error was
+                # swallowed by the outer handler before reaching it), so each aborted cycle leaked
+                # one file descriptor per worker that failed to reap. A hung-cycle abort is exactly
+                # the path that repeats under contention, so the leak compounded over a long run.
+                try:
+                    w["log"].close()
+                except Exception:  # noqa: BLE001
+                    pass
         if self.verbose:
             print(f"[SearchTeacher] cycle @ {self._pending['step']:,} timed out — aborted")
         self._pending = None
