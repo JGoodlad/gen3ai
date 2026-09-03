@@ -9011,3 +9011,53 @@ rule is "checkargs on each argv, then launch one arm ~1 min before committing th
 argvs had been dry-launched and were clean, the four reuse argvs were checkargs'd but not launched
 — that is where it cost a slot. **Freeze EXTENDED** from N2's launch (~15:05) to C1's relaunch
 (~19:00): C1 vs B2 is a one-variable contrast and must share B2's hash.
+
+### 🔴 THE THREE-DOSE CELL IS CLOSED: DOSE IS SPENT AS AN EXPLANATION — 9/9 cells rob, no dose effect larger than the floor across a 4× range, every endpoint equals rev-4's (2026-09-03 04:30)
+
+`measurements/dose_cell_2026-09-02/untaught_R4DOSE{12,6,3}_{p1M,mid,end}.json` (72 team-cells,
+14,400 games + the reused 1,600-game baseline). Three arms = rev-4's fold argv with the rate PINNED
+AND FROZEN at rev-4's own 2.8e-5 and ONLY `--grad-accum-steps` varied: K=12 (0.53× v8, `4d9a07be`,
+4h36m) · K=6 (1.06×, `ce4ac432`, 4h41m) · K=3 (2.12×, `ce8ce97b`, 4h04m); three hashes, each
+audited freeze-clean; pool hand-seeded 14/90% on all three; depths MATCHED BY CONSTRUCTION (same
+parent step, same 500k grid). Stamp: stochastic · rev-1 24M snapshot · team set M · n=200/team ·
+baseline 0.5825. (* = outside the 4.19pp untaught floor; intervals team-clustered over 8 teams.)
+
+| arm (dose) | +1.00M | +2.00M | +4.45M (end) |
+|---|---:|---:|---:|
+| K=12 (0.53×) | −7.87 [−11.06, −4.94]* | −9.94 [−12.44, −7.19]* | −5.81 [−7.44, −3.75]* |
+| K=6 (1.06×) | −9.94 [−15.50, −4.25]* | −11.31 [−14.06, −8.63]* | −6.31 [−9.62, −3.06]* |
+| K=3 (2.12×) | −11.00 [−13.00, −8.87]* | −11.06 [−14.06, −7.63]* | −7.56 [−12.31, −3.00]* |
+**9/9 cells negative, 9/9 outside the floor, 4/72 team-cells above baseline.**
+Dose contrast 2.12× − 0.53×: +1M −3.13 [−6.25, −0.25] · +2M −1.13 [−3.56, +1.12] · end −1.75
+[−7.00, +3.25] — ALL INSIDE the floor. Endpoint vs rev-4's endpoint (like-for-like): +0.69 [−2.94,
++4.19] · +0.19 [−1.50, +2.06] · −1.06 [−4.44, +2.38] — all inside the floor.
+
+**Pre-registered readings scored.** **P1 (dose monotonicity, K12 − K3 paired CI excluding 0 on the
+positive side): FAIL** — the contrast is inside the floor at every depth; the +1M contrast excludes
+zero on its own interval but sits INSIDE the 4.19 floor and is not quoted as an effect; monotone
+ordering holds at +1M and end but BREAKS at +2M (K=3 beats K=6), so no trend is claimed. **P2 (cost
+of gentleness on the taught side): UNSCORED** — with no untaught gain to buy, the taught-side
+extraction of the dose arms was not measured; it can be, if a taught-side dose effect is ever
+wanted. **P3 (live collateral orders K3 > K6 > K12): PENDING a TB read of end-of-fold
+`distill/collateral_kl_vs_parent` per arm** (arm 1: 0.61); directional, n=1 each.
+**Bar stated: equivalent within the 4.19pp floor. "Dose is inert" is NOT written** — contrast
+intervals are ±2–5pp and a smaller effect is not excluded.
+
+**THE SHAPE, three times:** every arm dips from +1M to +2M and recovers by +4.45M while finishing
+6–8pp below the parent (pooled over arms 1–2 the recovery was +4.56 [+3.06, +6.19], outside the
+floor; the three-arm pooling is requested). Run-independent, not team-independent.
+
+**⇒ VERDICT.** The step size does not govern the untaught side of a gen-era fold: over a 4× dose
+range, at three depths, with the KL controller off, the fold robs the untaught teams by the same
+amount rev-4 did at a dose none of these arms used. **The "dose sets the race between gift and
+leak" account is RETIRED** as the explanation of the v8/gen-era sign flip (v8 was +4.64 at +1.09M vs
+its own fork parent; these are −7.9 to −11.0 at +1.00M vs theirs). Teacher per-team BUDGET was shown
+(archive, `de2cbee2`) to barely differ between eras; teacher BREADTH at gen-era conditions has now
+robbed FOUR times (rev-4 + three dose arms distil the same 8-team teachers). **Surviving suspects:
+PARENT MATURITY (277M vs 28M — and v8's teachers inherited it), ECOLOGY (PFSP 2.5 over
+teachers-in-pool + stable share 0.35 vs 90% self-pool uniform), and their interaction.** Queue:
+teacher-budget fold (measured manipulation; null expected, scoped) → ecology-only arm → the
+maturity experiment (the one-week run, to be pre-registered as such). What the cell bought the
+programme: the gentle-dose lever is closed, the fold-length lever is sized (absorption still rising
+at 4.45M at every dose; no plateau by the detector), and the recovery shape is a real feature to
+build the stop rule's timing on.
