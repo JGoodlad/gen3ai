@@ -8990,3 +8990,24 @@ also inherited: they forked the 277M parent) and ecology — and those are the o
 ecology-only arm, not a new breadth cell. Queue unchanged: teacher-budget fold (measured
 manipulation, null expected to be LESS surprising now and scoped to per-team budget) → ecology-only
 arm → the maturity experiment.
+
+### ⚠️ C1 (the causal control) FAILED AT LAUNCH — an INHERITED flag no argv-only check can see; recovered, freeze extended to its relaunch (2026-09-03 03:25)
+
+`--distill-target action requires --distill-coef > 0` — exit 2 in five seconds; the chain recorded
+it to `r4dose_reuse_failed_arms.txt` and continued to B2 (launched 03:27 on `01c3a26a`) as designed.
+**Root cause is subtler than the message:** deleting `--distill-target` from C1's argv could not
+fix it, because `config.py`'s gate checks RESOLVED values — typed on this launch OR inherited from
+the fork parent's recorded config — and `R2ACTION` carries `distill_target="action"`. The fix is an
+EXPLICIT `--distill-target kl` (a no-op at coef 0), verified by execution: `[DISTILL] 3 teacher(s) /
+24 team(s), coef=0.0 (LOSS OFF — team bias only, no teacher loaded, no distill_mask) | trainee
+biased 40%` — exactly the registered control (bias kept, loss off, one variable vs B2). C1 relaunches
+automatically when the chain completes (~19:00), run dir moved aside, pool re-seeded.
+**Tooling specimen (third instance of the class):** `checkargs` PASSES the failing argv, because
+`distill_target` has no edge in `flag_registry`'s requires graph AND checkargs is argv-only — a flag
+absent from the argv is never checked, and the inherited half is invisible to it by construction.
+Build queued for after the freeze: checkargs resolves against the fork parent's recorded config the
+way config.py does, plus the distill-target family in the graph. **Process specimen:** the owner's
+rule is "checkargs on each argv, then launch one arm ~1 min before committing the batch"; the dose
+argvs had been dry-launched and were clean, the four reuse argvs were checkargs'd but not launched
+— that is where it cost a slot. **Freeze EXTENDED** from N2's launch (~15:05) to C1's relaunch
+(~19:00): C1 vs B2 is a one-variable contrast and must share B2's hash.
