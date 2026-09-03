@@ -8952,3 +8952,25 @@ the anchor note). Dose set neither the robbery nor the recovery over 0.53–1.06
 (2.12×) ~2 h out: if it lands with these two, the dose cell reads FLAT across a 4× range and the
 suspects that remain are exactly the pre-registered ones — TEACHER CONTENT (the funded-vs-unfunded
 teacher fold, queued), ECOLOGY (the ecology-only arm), MATURITY (the one-week run).
+
+**Addendum — SIZING the pre-registered teacher-content contrast in comparable units (2026-09-03
+03:10, prompted by the training session's "state the manipulation ratio before running it").**
+Read off the archive (lineage + checkpoints), v8's three teachers were forks of the 277M parent for
+17.76M / 7.37M / 12.80M steps over 10 / 3 / 10 teams ⇒ **1.78 / 2.46 / 1.28 M steps PER TEAM, mean
+1.84M/team**. Rev-4's teachers: 1.25M/team; the fleet: 1.5M/team; the funded forks: **2.5M/team**.
+So in per-team units the v8/gen-era teacher-BUDGET gap is only ~1.0–2.0×, and the funded-vs-unfunded
+contrast (1.67×, 2.5M vs 1.5M) SPANS it — the funded teachers match v8's best-funded teacher, the
+unfunded sit between rev-4 and v8's mean. **⇒ The cell is correctly sized for the per-team-budget
+component of the suspect.** What it does NOT vary: teacher-PARENT maturity (v8's teachers forked a
+277M parent) and teacher BREADTH (3–10 teams vs 2). Pre-registration sharpened accordingly:
+- Manipulation: teacher budget 2.5M vs 1.5M per team (1.67×), a MEASURED difference (+3.55pp
+  extraction [+1.15, +5.95], sign clears zero, size inside the 3.70 floor); everything else identical.
+- POSITIVE: the funded-teacher fold's untaught endpoint exceeds the unfunded-teacher fold's by a
+  team-clustered CI that excludes 0 on the positive side — the fold AMPLIFIES a teacher difference
+  that is itself inside the taught floor, and per-team budget is a live ingredient.
+- NULL: retires ONLY "a 1.67× per-team teacher budget, inside v8's own per-team range, does not
+  move the untaught side"; it does NOT retire teacher content via parent maturity or breadth, which
+  are separate, dearer cells (a teacher forked from a mature parent; 10-team teachers).
+- Ordering rationale banked: teacher-content before ecology because its manipulation is MEASURED —
+  a null is informative — whereas an ecology arm has no calibrated manipulation and its null could
+  not separate "does not matter" from "too small".
