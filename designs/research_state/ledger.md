@@ -9160,3 +9160,35 @@ with --distill-coef 0.0 (from the argv)`, exit 1; with `--distill-target kl` it 
 a same-run RESTART too (labelled as such), because `config.py` inherits there as well and a
 restart-inherited incoherence dies identically. **The launch pre-flight rule stays** — checkargs
 every argv, then dry-launch one arm — but the offline half now sees what the launch sees.
+
+### 🟢 TOOLING: the total noise-scale EMA warm-up is fixed (it was ANCHORED on its first sample), and the search-teacher `_abort` fd leak is closed (2026-09-03 16:30, `bfedb5b5`)
+
+**Noise scale.** `train/noise_scale`'s EMA was not zero-initialised — it was anchored on its FIRST
+sample at a fixed 0.99 decay, so for its first few hundred calls it read essentially sample 1, and
+a single negative first `tr(Σ)` (routine from the two-point solve under noise) held the emit gate
+closed indefinitely — the smoke where the total never emitted across 11 calls while every per-term
+tag did, and why R5F15's first production reading was published "provisional, n=2". The per-term
+sampler already warmed up correctly (`min(decay, 1 − 1/(n+1))`, a running mean until the window
+fills = Adam's bias correction spelled as a decay); that is now `noise_scale.debiased_ema` and BOTH
+sites fold through it. **⚠️ `train/noise_scale` is NOT comparable across this change for a run's
+first ~100 folds** — steady state is unchanged; any early-fold comparison between a run launched
+before `bfedb5b5` (the whole dose/reuse batch) and one launched after must discount the warm-up
+window. Guard: the outlier test reproduces the documented failure (negative first sample →
+withheld at step 2 under the old fold, correct under the new); the constant-stream test alone
+cannot see this defect, since an anchored fold reads a constant correctly. Live edge: an EMA is now
+(value, count) — priming the value without the count takes the next sample whole; both harnesses
+prime the count.
+
+**Teacher `_abort`.** `SearchTeacherCallback._abort` closed the worker log only on the success
+path: the `TimeoutExpired` branch re-raised past the close (with a comment saying so) and any other
+reap error was swallowed before reaching it — one fd per unreaped worker per aborted cycle, and the
+hung-cycle abort under contention is exactly the recurring path. Now a `finally`, as
+`_on_training_end`'s reap always was. Both fixes revert-verified (8 new tests; 2 fail per fix on
+revert). One routine-gate intermittent (`cf_producer_integration_test`'s known forfeit race) passes
+in isolation and touches neither module.
+
+**Worktree specimen, for the next agent brief:** a fresh worktree without the two
+`deps/pokemon-showdown` symlinks fails ~26 training tests with `Cannot find module
+.../dist/sim/index.js` buried inside a `No valid teams found` ValueError — the message names the
+team pool, not the missing build. The post-freeze build queue is now EMPTY except the
+stale-worktree sweep, which waits on the owner.
