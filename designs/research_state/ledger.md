@@ -9142,3 +9142,21 @@ launch or not at all) would have been missed. Caught and re-pointed an hour befo
 the training session auditing its own watchers. Rule: when adding a recovery path, add it INSIDE
 the instrumentation's match set in the same edit, and test the watcher against the recovery's
 actual emitted line.
+
+### 🟢 TOOLING: checkargs now resolves the argv against the fork parent's recorded config — the class that killed C1 is caught offline (2026-09-03 15:40, `e0417df6`)
+
+`python -m main.checkargs` was argv-only, so a flag INHERITED from the fork parent's
+`model_config.json` was invisible to it by construction; three launches failed on that class, the
+last being C1 at 03:25 (`distill_target=action` inherited, `--distill-coef 0` in the argv). Now,
+with any `--model`, it builds the EFFECTIVE namespace the way `resolve_config` does (the merge is
+`config.inherit_saved_flag`, IMPORTED, not re-implemented), runs the `flag_registry` requires graph
+AND the value-conditional distill-target refusals on it, and prints per finding whether each value
+came from the argv or was INHERITED. Those four refusals were lifted verbatim out of `resolve_config`
+into `main/train/combination_checks.py`, which config and checkargs both import — one declaration,
+no drift (a test asserts identity). Executed on C1's real argv minus its override: before, `✓ this
+command still launches`; after, `refused combinations: 1 — --distill-target 'action' (INHERITED)
+with --distill-coef 0.0 (from the argv)`, exit 1; with `--distill-target kl` it passes. Sweep of all
+190 recorded commands under `models/`: zero findings, zero unreadable-parent warnings. It resolves on
+a same-run RESTART too (labelled as such), because `config.py` inherits there as well and a
+restart-inherited incoherence dies identically. **The launch pre-flight rule stays** — checkargs
+every argv, then dry-launch one arm — but the offline half now sees what the launch sees.
