@@ -9192,3 +9192,28 @@ in isolation and touches neither module.
 .../dist/sim/index.js` buried inside a `No valid teams found` ValueError — the message names the
 team pool, not the missing build. The post-freeze build queue is now EMPTY except the
 stale-worktree sweep, which waits on the owner.
+
+### 🟠 CORRECTION: the "over-batched ~16×" total noise-scale figure is WITHDRAWN; the pre-fix warm-up window is ~100 ROLLOUTS, longer than a gen-era fold, so every pre-`bfedb5b5` total series is contaminated end to end (2026-09-03 17:00)
+
+The training session re-read R5F15's `train/noise_scale_ratio` after the warm-up fix landed: 31
+logged points over 25.26M→28.12M steps, first three 0.0629/0.0635/0.0642, last three
+0.0870/0.0859/0.0883. The quoted 0.063 was the FIRST LOGGED SAMPLE — the single least trustworthy
+value under the anchored fold — and was reported to two figures as "over-batched ~16×". Withdrawn.
+
+**The boundary, placed from the code** (`instrumented_ppo/ppo.py`, the noise block after the epoch
+loop): the total's EMA advanced ONCE PER `train()` CALL = once per rollout, at fixed decay 0.99
+anchored on sample 1. So after n rollouts the first sample still carries weight 0.99ⁿ — 0.73 at
+R5F15's 31st point — and the `1/(1−0.99)` = 100-rollout window is ~9–13M env steps at production
+`n_steps × n_envs`, i.e. LONGER THAN ANY GEN-ERA FOLD (4.45M). The comparability caveat in the entry
+above is therefore understated: it is not "the first ~100 folds", it is the ENTIRE total series of
+every run launched before `bfedb5b5` (the whole dose/reuse batch, C1 included, and every earlier
+`train/noise_scale` reading in this ledger). The per-term tags were always debiased and stand.
+
+**What the R5F15 series implies, deconvolved (one-step approximation, indicative only):** final
+0.088 ≈ 0.73·0.063 + 0.27·m̄ ⇒ the mean of samples 2–31 is m̄ ≈ 0.15. The defensible statement is:
+the total ratio's underlying level on R5F15 is of order 0.1–0.2, well below the 0.5 over-batched
+threshold, direction robust, magnitude unknown to better than ~2×. **The conclusion that fed on it
+survives** — the total reads over-batched while the per-term POLICY ratio reads mildly
+noise-limited, and the disagreement is aux deflation — because it rested on the per-term tags and
+on the total's DIRECTION, not its magnitude. Rule going forward: no total noise-scale number from a
+pre-`bfedb5b5` run is quoted; post-fix runs read the total from rollout 1.
