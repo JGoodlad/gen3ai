@@ -8804,3 +8804,61 @@ nshards=1 the shard filter accepts every cell, so a "compute verdicts" pass on a
 would have silently started ~8 h of new battles — now VERDICT-ONLY by default when cells exist;
 (3) the 17:40 ETA was measured on two cells before the other shards loaded — a transient quoted
 as a rate, the unpinned calibration's mistake in miniature.
+
+### 🔴 DOSE ARM 1 (0.53× v8): the fold ROBS at ALL THREE DEPTHS — going gentler than rev-4 bought NOTHING on the untaught side (2026-09-02 23:30)
+
+`measurements/dose_cell_2026-09-02/untaught_R4DOSE12_{p1M,mid,end}.json` (per-team rows) · arm
+`ai_v9_1xx_R4DOSE12` = rev-4's fold argv (parent `R2ACTION` final, teachers R4S3a/b/c, coef 0.1761,
+bias 0.4, 4.45M steps) with **`--fork-lr 2.8e-5 --fork-lr-freeze` (pinned + KL controller OFF,
+verified across a periodic restart) and `--grad-accum-steps 12`** ⇒ dose 1.139e-8 = **0.53× v8**,
+read off the run; pool hand-seeded (14 snapshots, 90% self-play, verified); launched on `4d9a07be`
+(arms 2–3 on `ce4ac432`; diff audited training-equivalent — pool guard no-ops on a seeded pool,
+text, metadata). **Stamp:** stochastic · opponent rev-1 24M snapshot · team set M (the 8 untaught
+teams) · n=200/team · the M9 instrument verbatim · baseline = the fork parent's pre-registered
+932/1600 = 0.5825 on the identical instrument.
+
+| fold Δ | untaught WR | Δ vs parent | team-clustered 95% | teams up | vs floor 4.19 |
+|---:|---:|---:|---|---:|---|
+| +1.00M | 0.5038 | **−7.87pp** | [−11.06, −4.94] | 0/8 | OUTSIDE |
+| +2.00M | 0.4831 | **−9.94pp** | [−12.44, −7.19] | 0/8 | OUTSIDE |
+| +4.45M (end) | 0.5244 | **−5.81pp** | [−7.44, −3.75] | 1/8 | OUTSIDE |
+
+**Shape NOT established:** mid−p1M −2.06 [−4.31, +0.06]; end−mid +4.13 [+1.31, +7.06]; end−p1M
++2.06 [−0.75, +5.00] — every between-point difference is INSIDE the 4.19pp floor. Write "robbery at
+three depths, −5.8 to −9.9pp, no established slope"; do not write "dips then recovers".
+**Endpoint vs endpoint, like-for-like: R4DOSE12 0.5244 vs rev-4 0.5175 = +0.69pp [−2.94, +4.19],
+INSIDE the floor — NOT DISTINGUISHABLE.** Halving rev-4's dose produced the same untaught endpoint.
+Live fold meters (arm 1): `teacher_agreement_on_slice` 0.69 → 0.80 monotone, no plateau by the
+detector in 4.45M; `collateral_kl_vs_parent` 0.38 → 0.61 (first value = PPO's own first-rollout
+displacement, parent route verified `R2ACTION` via cli_model then via lineage); `stop_state` 0
+throughout. Absorbing indefinitely does NOT discriminate "substance" from "team-specific lines".
+
+**Sign at matched fold step, references stated:** v8's fold at +1.09M read **+4.64pp** vs ITS
+fork parent (`ai_v8_04 … final_model_interrupted.zip`, scored as its own arm, fixed opponent
+`ai_v8_03`, greedy, 16 teams); this arm at +1.00M reads **−7.87pp** vs its fork parent (`R2ACTION`,
+fixed opponent rev-1 24M, stochastic, 8 teams) at HALF v8's dose. Same reference class (fold − own
+fork parent vs a fixed third party); magnitudes are not comparable across stamps; the SIGNS are
+opposite at matched depth. **⇒ Dose alone does not explain the v8/gen-era sign flip.** The
+"dose sets the race between gift and leak" account, in its simple form, FAILS its first real test.
+Not yet retired: a monotone dose effect at the HIGHER end (R4DOSE6 at 1.06×, R4DOSE3 at 2.12× —
+running); what is retired is "gentler than rev-4 helps untaught".
+
+**Suspects that survive (the ones no dose arm varies):** (i) PARENT MATURITY (277M vs 28M);
+(ii) the fold's ECOLOGY (v8: PFSP 2.5 over teachers-in-pool + stable-opponent share 0.35; here: 90%
+self-play against the parent's own 14-snapshot pool, uniform, stable 0.2); (iii) **TEACHER CONTENT**
+— v8's teachers were 7–19M-step forks; rev-4's were 1.25M/team under-funded (extraction 0.574 on
+coverage teams); a weak teacher may carry only team-specific lines and no team-agnostic habit, in
+which case its distillation is pure LEAK at any dose. (i) needs the one-week run; (ii) is the
+ecology-only arm (queued); (iii) became cheap THIS MORNING.
+
+**PRE-REGISTERED: the TEACHER-CONTENT contrast (queued behind the reuse runs, ~9 GPU-h).** Two
+folds of the same parent (`R2ACTION` final — the rev-4/dose-cell axis), identical in every flag,
+one distilling the 8 FUNDED forks (`R5FUND00…14` at 2.5M/team, extraction +3.55pp over their
+parents) and one their 8 UNFUNDED parents (`R5F00…14` at 1.5M/team), same 16 teams, dose pinned
+at whatever the dose cell licenses (default: rev-4's own 2.8e-5 × K=2), same length, anchor
+monitor + `--distill-stop warn`, untaught scored at +1M / mid / end on the standing stamp.
+**Readings:** P1 — the funded-teacher fold's untaught endpoint exceeds the unfunded-teacher fold's
+by a paired, team-clustered CI that excludes 0 on the positive side ⇒ teacher content carries the
+gift; CI straddling 0 ⇒ NO DETECTABLE teacher-content effect at this n (not "content does not
+matter"). P2 — the taught-side gain (on-slice) is at least as large for the funded fold (the fold
+absorbs the stronger teacher). Floor 4.19 untaught / 3.70 taught beside every delta.
