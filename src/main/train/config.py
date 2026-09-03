@@ -22,6 +22,7 @@ from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
 from agents.training.watchdog import start_orphan_watchdog
 from main.launcher.ipc import emit
 from main.train.checkpoint_state import _load_saved_version
+from main.train.combination_checks import failing_checks
 from main.exit_codes import TrainExitCode
 from main.train.compile_flags import (
     resolve_compile_opponents_preload, resolve_compile_trainer_auto,
@@ -212,6 +213,27 @@ def _announce_cf_duty_cycle(args) -> None:
     sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
+def inherit_saved_flag(args, saved_ver, name, default) -> bool:
+    """THE RESUME INHERITANCE RULE, in one function: `None` on the CLI means INHERIT.
+
+    `resolve_config`'s `_resolve` is this, bound to the process's own `args` + saved `ModelVersion`.
+    It is module-level so `main.checkargs` can build the SAME effective namespace a launch would —
+    argv overlaid on the checkpoint's recorded config — and run the combination checks on THAT,
+    instead of on the argv alone. Absence on the command line carries information only because this
+    rule exists, so the rule cannot live inside the closure that consumes it.
+
+    Returns True when the value came from the SAVED config (what checkargs reports as inherited);
+    False when it was already set on the CLI, or fell through to `default`.
+    """
+    if getattr(args, name) is not None:
+        return False
+    if saved_ver is not None and hasattr(saved_ver, name):
+        setattr(args, name, getattr(saved_ver, name))
+        return True
+    setattr(args, name, default)
+    return False
+
+
 def resolve_config(args, parser) -> ResolvedRunConfig:
     """Desugar, inherit and validate `args` in place. Returns the values that live outside it."""
     # --- Resolve `--use-bridge` into the two internal fields ------------------------------------
@@ -320,8 +342,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             args.damage_matrices_incoming = None
 
     def _resolve(name, default):
-        if getattr(args, name) is None:
-            setattr(args, name, getattr(_saved_ver, name, default) if _saved_ver is not None else default)
+        inherit_saved_flag(args, _saved_ver, name, default)
     _resolve("use_popart", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)
@@ -956,23 +977,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                 args.distill_teacher, resolve_wildcard=read_recorded_trainee_teams)
         except (ValueError, FileNotFoundError) as _e:
             parser.error(str(_e))
+    if args.distill_topk < 1:
+        parser.error("--distill-topk must be >= 1 (1 = argmax CE; K >= n_actions recovers the KL)")
     # gen3_distill_target_gate_v1 (design §7.5): the action-form family's dependency graph.
     # Checked on the RESOLVED values (after `_resolve`), so an incoherent combination is refused
     # whether it was typed on this launch or inherited from the checkpoint's recorded config.
-    if args.distill_target == "action" and not (args.distill_coef and args.distill_coef > 0):
-        parser.error("--distill-target action requires --distill-coef > 0 — the target form is a "
-                     "property of the distill term; without the term there is nothing to shape")
-    if args.distill_topk < 1:
-        parser.error("--distill-topk must be >= 1 (1 = argmax CE; K >= n_actions recovers the KL)")
-    if args.distill_topk != 1 and args.distill_target != "action":
-        parser.error("--distill-topk requires --distill-target action — the top-K dial "
-                     "parameterizes the action-form target; the 'kl' path has no K")
-    if args.distill_gate != "none" and args.distill_target != "action":
-        parser.error("--distill-gate requires --distill-target action (design §7.5: the gate "
-                     "rides the action-form term)")
-    if args.distill_gate_tau != 0.0 and args.distill_gate != "advantage":
-        parser.error("--distill-gate-tau requires --distill-gate advantage — tau is the advantage "
-                     "gate's threshold")
+    #
+    # The four rules themselves live in `main.train.combination_checks`, which `main.checkargs`
+    # reads too — that is the whole point of the module. C1 (2026-09-01) forked a parent recording
+    # `distill_target="action"`, passed `--distill-coef 0`, named no target, and died HERE while
+    # checkargs had said the command still launches. One declaration, both readers.
+    for _combo in failing_checks(args):
+        parser.error(_combo.message)
     if args.distill_beta <= 0.0:
         parser.error("--distill-beta must be > 0 (an AWR temperature)")
     if not (0.0 < args.rank_tripwire_drop < 1.0):

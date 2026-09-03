@@ -728,8 +728,8 @@ box this changes nothing** — niceness only arbitrates under contention.
 
 A run's recorded `launcher_command` outlives the flags in it, and **argparse reports only the FIRST
 unrecognized flag** — so relaunching an old argv after a deletion is a launch-crash-fix loop, ~40 s
-and a stray run dir per stale flag. `checkargs` answers offline, in one pass, without importing
-torch or touching `models/`:
+and a stray run dir per stale flag. `checkargs` answers offline, in one pass, without touching
+`models/`:
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
@@ -738,15 +738,36 @@ python -m main.checkargs --argv "--steps 1 --device cuda"
 ```
 
 Exit 0 = every flag is accepted; exit 1 names each one that would fail (with its value, so you can
-see whether it mattered). It checks **two** ways a command fails: a flag the parser no longer knows,
-and a COMBINATION the extractor refuses — `agents.model.flag_registry`'s `requires` graph, e.g.
-`--intent-conditional` without `--damage-outgoing`. That second crash is later and dearer than an
-argparse error (the run dir exists, the child starts, the traceback comes out of
-`Gen3FeaturesExtractor.__init__`). The dependency half is deliberately conservative: it fires only
-when the argv enables a flag AND explicitly names a dependency with a disabled value, because a
-resume inherits every unspecified flag from the checkpoint's config, so absence carries no
-information. **It reports; it does not repair** — a deleted flag may have a
-replacement, so dropping one silently could change the run. Launcher-owned flags
+see whether it mattered). It checks **three** ways a command fails: a flag the parser no longer
+knows; a COMBINATION the extractor refuses (`agents.model.flag_registry`'s `requires` graph, e.g.
+`--intent-conditional` without `--damage-outgoing`); and a combination `resolve_config` refuses —
+the value-conditional rules that are not `requires`-shaped, which live in
+**`main.train.combination_checks`** and are read by the launch path and by `checkargs` from that one
+declaration (`--distill-target action` needs `--distill-coef > 0`, the top-K/gate/tau family). The
+last two crash later and dearer than an argparse error: the run dir exists and the child starts.
+
+🚨 **AN ARGV IS NOT A CONFIG, and `checkargs` was argv-only until 2026-09-03.** With `--model`,
+every flag the argv does not name is INHERITED from the checkpoint's recorded `model_config.json`
+(`main.train.config`'s `_resolve`), so the thing that launches is the argv OVERLAID ON THE PARENT.
+C1 is the third instance of the resulting class — its parent recorded `distill_target="action"`, the
+argv said `--distill-coef 0` and named no target, `_resolve` inherited `action`, and the launch died
+while `checkargs` had printed "✓ this command still launches". So with a `--model` present it now
+builds that effective namespace — parsed argv, then every unset value filled through
+`config.inherit_saved_flag` (the launch path's own function, called rather than re-implemented) —
+and runs both combination checks on it, printing per finding whether the value came from the command
+line or was `INHERITED`. The run dir the argv would write into is resolved the same way
+`train_rl_agent` resolves it, and `fork_lr.is_same_run_checkpoint` labels the source a **FORK
+PARENT** or a **same-run RESTART checkpoint**; both are read, because `_resolve` reads the recorded
+config on every `--model`. A parent config that cannot be read is a **WARNING naming every path
+tried**, never a silent pass, and the argv-only checks still run.
+
+**The old "absence carries no information" rule survives only where it is still true** — an argv
+with no `--model` (or whose parent config is unreadable). There, the dependency half stays
+conservative: it fires only when the argv enables a flag AND explicitly names a dependency with a
+disabled value. Once the parent is read, an unset flag has a known value and an unsatisfiable
+dependency is reported whether or not the argv mentions it. **It reports; it does not repair** — a
+deleted flag may have a replacement, so dropping one silently could change the run. Launcher-owned
+flags
 (`--restart-interval-hours`, `--nice`, `--sync-to-main`, …) are recognised as not-forwarded rather
 than reported as stale. **Run it after deleting flags**, over the recorded commands of any run you
 might still relaunch or fork — that is what it is for.
@@ -1621,7 +1642,13 @@ src/
                      #   parser/ (build_parser hub + one module per FLAG FAMILY, in --help order:
                      #     base/operational/hyperparameters/reward/clean_world/teacher/
                      #     cf_grounding/value_heads/capacity/distillation/eval_subprocess) ·
-                     #   config.py (desugar/_resolve/validate) ·
+                     #   config.py (desugar/_resolve/validate; `inherit_saved_flag` = THE resume
+                     #     inheritance rule, module-level so main.checkargs can build the same
+                     #     effective namespace a launch does) ·
+                     #   combination_checks.py — the value-conditional refusals that are NOT
+                     #     `requires`-shaped, in ONE list read by resolve_config AND main.checkargs
+                     #     (the C1 defect: an INHERITED `distill_target=action` beside
+                     #     `--distill-coef 0`, which checkargs used to pass) ·
                      #   matchup_setup.py (teams + opponents) · env_factory.py (per-worker _init) ·
                      #   callbacks.py (everything during learn) · model_build.py (resume + fresh
                      #   paths + learn) · final_eval.py · run_io.py · lifecycle.py ·
