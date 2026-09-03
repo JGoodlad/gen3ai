@@ -8862,3 +8862,42 @@ by a paired, team-clustered CI that excludes 0 on the positive side ⇒ teacher 
 gift; CI straddling 0 ⇒ NO DETECTABLE teacher-content effect at this n (not "content does not
 matter"). P2 — the taught-side gain (on-slice) is at least as large for the funded fold (the fold
 absorbs the stronger teacher). Floor 4.19 untaught / 3.70 taught beside every delta.
+
+### 🟢 THE 20-TEACHER COVERAGE TABLE: random-draw coverage extracts as much per teacher as the meter slates did — 20/20 ADMITTED, the largest admitted teacher pool the programme has built (2026-09-03 00:15)
+
+`admission_artifacts/r5_admission.json` (COMPLETE, 136/136, recounted from the file by the training
+session AND by the merge's own missing-cell list; both stamp protections exercised and held) +
+`r5_coverage_rows_2026-09-03.json` + `python -m main.exploitability rev-3/rev-4/rev-5 --md` (identity
+`net = teacher − reference = ordered − seniority` VERIFIED against the per-team cells for all three).
+
+| generation | BRs | teams | funding | mean net | 95% CI (between teachers) | teacher ceiling | target abs on slices |
+|---|---:|---:|---|---:|---|---:|---:|
+| rev-3 | 6 | 12 | 2.5M/team | +0.1350 | [+0.086, +0.184] | 0.690 | 0.561 |
+| rev-4 | 3 | 24 | 1.25M/team | +0.1252 | [+0.110, +0.141] | 0.664 | 0.525 |
+| **rev-5 fleet** | **20** | **40** | **1.5M/team** | **+0.1211** (sd 0.037) | [+0.104, +0.139]* | **0.645** | **0.500** |
+| rev-5 funded 8 | 8 | 16 | 2.5M/team | +0.1462 | — | 0.669 | 0.494 |
+(*fleet-only; the exploitability CLI's all-28 row reads +0.1283 [+0.114, +0.143].)
+
+**Reading.** (1) **Coverage extracts.** Twenty teachers on forty UNIFORM RANDOM teams, at the
+under-funded 1.5M level, extract a mean +0.121 net — inside rev-3's interval and indistinguishable
+from rev-4's — with every one of the 20 admitted (min +0.066 z 2.7, max +0.234 z 9.6). The
+"weak-teacher fleet measures coverage with a blunter instrument" caveat recorded at launch is
+quantified: the ceiling is 0.645 at 1.5M vs 0.690 at rev-3's 2.5M, and the funded 8 recover to
+0.669 — the same ~+3.5pp the paired read found. (2) **The target pilots random teams WORSE** (0.500
+on these slices vs 0.561/0.525 on the hand-picked slates), i.e. the random draw found MORE headroom,
+not less; net extraction correlates mildly with that headroom (ρ −0.29 vs the target's own absolute;
+below-median target-abs +0.128 vs above +0.115). (3) **Archetype is flat** at the team level
+(balance 0.126 · offense 0.122 · semi-stall 0.124 · hyper-offense 0.125) except STALL 0.102 (n=5)
+— the target is hardest to out-pilot on stall. (4) **Spread among teachers is real:** R5F15
+(hyper-offense/semi-stall on the target's worst-piloted team, 0.424) at +0.234 vs R5F08 at +0.066;
+seniority runs −0.02 to +0.07 and is separated from `ordered` in every row. (5) **rev-4 → rev-5
+"exploitability" +0.003 [−0.013, +0.020] is NOT a curve point** — same target, zero team overlap,
+by design (the launch entry said so); it is a coverage comparison at matched target.
+
+**Consequences.** The teacher-admission gate (extraction at 800/arm) is SATISFIED for all 20 —
+the revolution fold has a licensed teacher set, and it is 3.3× rev-3's and 6.7× rev-4's. What the
+table does NOT say is whether these teachers GIFT: dose arm 1 (same night) robbed at every depth
+with rev-4's three teachers, and the pre-registered funded-vs-unfunded TEACHER fold is the test of
+whether teacher strength is what a gift needs. **Decision for the owner (not taken here):** the
+revolution fold's teacher set is ready; its ARGV waits on the dose cell (arms 2–3, ~03:00 / ~08:00)
+and on the teacher-content contrast if the dose cell reads flat.

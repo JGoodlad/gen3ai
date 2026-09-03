@@ -68,3 +68,19 @@ The job directory also holds the piloting/coverage probes `team_slate_40.md` §8
 `coverage_sample.json`, `coverage_sweep.json`). Those are already distilled into the committed
 `designs/ai_v12/team_slate_40.json`, which is what makes the slate survive that directory's
 deletion. The three files here are the ones with a live TOOL reading them.
+
+## rev-5 (2026-09-02/03): `r5_admission.json` (COMPLETE, 136/136 cells) and `r5_admission_PARTIAL_funding.json`
+
+The 40-team fleet (20 teachers × 2 teams × 1.5M/team, target `ai_v9_59_R2ACTION_0827/final_model.zip`,
+reference `ai_v9_29_rev1_0823/final_model.zip`) plus the 8 funded forks (`R5FUND00…14`, 2.5M/team).
+28 arms, 40 teams, 800 games/arm (400/team), 54,400 games, `shard_fail=0`, `UNCOVERED []`. Produced
+by the training session's sharded battery (4 BLAS-pinned shards, cell-round-robin, priority-first on
+the funding block; the merge REFUSES a shard with no artifact and carries its completeness stamp
+through the verdict pass — both protections added after they bit on 2026-09-02). Team identities are
+each run's RECORDED `--trainee-teams`. `team_class_split` is deliberately NOT CLASSIFIED (these are
+uniform random draws — no `COV_` slate); the archetype join lives in
+`../r5_team_classes_2026-09-02.tsv`. `FUNDING_MATCHED_SAME_TEAMS` (funded fork − its own parent on
+the same two teams) is the funding verdict's primary read; `FUNDING_PAIRS` (draw-position pairing) is
+archetype-imbalanced and demoted to a sensitivity read. The PARTIAL file is the 66-cell funding-block
+merge adjudicated first (status stamped "PARTIAL — funding block complete"); the full file supersedes
+it for every cell and agrees on all 64 shared ones.
