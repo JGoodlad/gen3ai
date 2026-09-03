@@ -8901,3 +8901,17 @@ with rev-4's three teachers, and the pre-registered funded-vs-unfunded TEACHER f
 whether teacher strength is what a gift needs. **Decision for the owner (not taken here):** the
 revolution fold's teacher set is ready; its ARGV waits on the dose cell (arms 2–3, ~03:00 / ~08:00)
 and on the teacher-content contrast if the dose cell reads flat.
+
+**⚠️ CORRECTION to the coverage headline's FORM (2026-09-03 00:40, raised by the training session
+before the wording travelled).** "+0.1211 is inside rev-3's interval" is a point-vs-interval
+comparison — the vacuous form banked after the opponent-checkpoint case. The DELTA's own interval,
+cluster-bootstrapped over TEACHERS (the clusters): **rev-5 − rev-4 = −0.4pp [−2.4, +1.7]** (n=20 vs
+3) ⇒ **EQUIVALENT within ±2pp** — that half of the sentence stands, with its bar stated; **rev-5 −
+rev-3 = −1.4pp [−6.2, +3.2]** (n=20 vs 6) ⇒ **NOT DETECTED, not equivalent** — a 9.4pp-wide interval
+against a 3.70pp floor, the same too-wide-by-3× shape as the checkpoint null, and STRUCTURAL: the
+variance that matters is BETWEEN teachers, rev-3 has six, and no re-measurement of existing arms buys
+teacher-level n. Replace the headline's "indistinguishable from rev-3" with "not detected vs rev-3".
+And keep the headroom fact BESIDE the +0.1211 wherever it goes: the target pilots the random teams
+at 0.500 vs 0.561/0.525 on the curated slates, so equal extraction across fleets is partly equal
+difficulty of the target's own piloting, not only equal teacher quality — `ordered` = teacher −
+target grows when the target is weaker on the slice.
