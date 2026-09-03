@@ -8915,3 +8915,40 @@ And keep the headroom fact BESIDE the +0.1211 wherever it goes: the target pilot
 at 0.500 vs 0.561/0.525 on the curated slates, so equal extraction across fleets is partly equal
 difficulty of the target's own piloting, not only equal teacher quality — `ordered` = teacher −
 target grows when the target is weaker on the slice.
+
+### 🔴 DOSE ARM 2 (1.06× v8): doubling the dose is EQUIVALENT WITHIN THE FLOOR at all three depths — and the dip-then-recover SHAPE REPLICATES (2026-09-03 02:40)
+
+`measurements/dose_cell_2026-09-02/untaught_R4DOSE6_{p1M,mid,end}.json` · arm `R4DOSE6` = rev-4's
+fold argv, `--fork-lr 2.8e-5 --fork-lr-freeze`, **K=6 ⇒ dose 2.279e-8 = 1.06× v8**, launched on
+`ce4ac432`, pool seeded 14/90%, survived its periodic restart with pin, anchor route and pool intact.
+Same stamp and baseline as arm 1 (stochastic · rev-1 24M snapshot · set M · n=200 · 0.5825).
+Scoring depths are MATCHED BY CONSTRUCTION across arms (same parent step, same 500k grid).
+
+| depth | R4DOSE12 (0.53×) | R4DOSE6 (1.06×) | contrast 1.06× − 0.53× (clustered) |
+|---:|---:|---:|---|
+| +1.00M | −7.87 | −9.94 | −2.06 [−5.00, +1.12] inside floor |
+| +2.00M | −9.94 | −11.31 | −1.38 [−3.00, +0.63] inside floor |
+| +4.45M (end) | −5.81 | −6.31 | −0.50 [−3.00, +2.38] inside floor |
+Every arm-depth cell negative and OUTSIDE the 4.19 floor (six of six); 3/48 team-cells above
+baseline. Endpoint vs rev-4's endpoint: R4DOSE12 +0.69 [−2.94, +4.19], R4DOSE6 +0.19 [−1.50,
++2.06] — both INSIDE the floor. **Reading: no dose effect larger than the replicate floor, at
+three depths, over a 2× range; the contrast SHRINKS with depth. Bar stated: the 4.19pp untaught
+floor; contrast intervals are ±2–3pp, so a smaller effect is NOT excluded — "equivalent within the
+floor", never "dose is inert".**
+
+**THE SHAPE REPLICATES — new evidence, not the same claim twice.** end − mid: R4DOSE12 +4.13
+[+1.31, +7.06] (inside floor alone); R4DOSE6 **+5.00 [+3.00, +7.19] (OUTSIDE)**; pooled over the two
+independent training runs **+4.56pp z=+3.65 [+3.06, +6.19], OUTSIDE the floor**. The fold partially
+RECOVERS on untaught teams between +2M and +4.45M while still finishing ~6pp below the parent. The
+"no established slope" ruling stands for either arm alone and is REVISED for the pair. Caveat: the
+pooling adds training-run independence, not team independence — the interval is still over the same
+8 team clusters, which remain the limiting n. (The training session caught its own games-per-team
+error before sending — a +2.28 that would have sat inside the floor and reversed the sentence.)
+
+**What the pair says about the flywheel.** The robbery at gen-era fold length is a property of the
+fold, not of its step size: the leak arrives early at any dose we can run, and PPO claws back part
+of it in the second half (the recovery is the untaught teams' own signal, the case-one dynamic from
+the anchor note). Dose set neither the robbery nor the recovery over 0.53–1.06× v8. With arm 3
+(2.12×) ~2 h out: if it lands with these two, the dose cell reads FLAT across a 4× range and the
+suspects that remain are exactly the pre-registered ones — TEACHER CONTENT (the funded-vs-unfunded
+teacher fold, queued), ECOLOGY (the ecology-only arm), MATURITY (the one-week run).
