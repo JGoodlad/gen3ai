@@ -9114,3 +9114,31 @@ agreement never plateaued, so a fold this length is stopped by the clock, not by
 **Verdict unchanged, strengthened:** dose is RETIRED as the sign-flip explanation, now with the
 manipulation shown to have moved the weights and the absorption without moving the untaught meter.
 Queue unchanged: teacher-budget fold → ecology-only → maturity.
+
+### 🟢 C1 RELAUNCHED on a docs-only pin — the batch is 7/7 in flight; the src FREEZE is LIFTED (2026-09-03 14:30)
+
+C1 (`ai_v9_C1`, `--distill-coef 0` with the team bias ON, the explicit `--distill-target kl`
+override) launched unattended at 14:27:06, two seconds after the chain closed at 6/7. Pin
+`6424cb6b` vs B2's `01c3a26a`; the three commits between (`19d25a11`, `9f2f61bd`, `6424cb6b`) are
+all ledger/measurement writes, nothing under `src/agents/{model,training,observation}` or
+`src/main/train`, so **the C1-vs-B2 one-variable contrast HOLDS**. Startup lines confirm both halves
+of the control: pool seeded (14 snapshots, 90% self-play) and `3 teacher(s) / 24 team(s), coef=0.0
+(LOSS OFF — team bias only, no teacher loaded, no distill_mask)`. Completes ~18:20.
+
+**Batch pin table, every one freeze-verified:** R4DOSE12 `4d9a07be` · R4DOSE6 `ce4ac432` · R4DOSE3
+`ce8ce97b` · B2 `01c3a26a` · N1 `19d25a11` · N2 `19d25a11` · C1 `6424cb6b`. N1/N2 (the seed
+replicates) share one hash exactly. Every pair differs by docs commits only, so every contrast in
+the batch is training-equivalent across its arms. **The freeze (2026-09-02 → 14:27 today) is
+lifted**; the post-freeze builds (checkargs resolving the fork parent's recorded config + the
+distill-target family in the requires graph; the noise-scale EMA warm-up; the teacher-callback
+`_abort` handle leak) may land on main again.
+
+**Process specimen (general, not a C1 detail): a recovery path that runs OUTSIDE the mechanism it
+recovers also runs outside that mechanism's instrumentation.** C1's relaunch was bolted on beside
+the chain as a separate waiter script; the chain's monitor matched only `DOSEREUSE …` lines and the
+provenance watcher exited on `DOSE+REUSE CHAIN COMPLETE`, which fires BEFORE the relaunch — so
+neither would have seen C1 launch, and the launch-time pin check (the one that has to happen AT
+launch or not at all) would have been missed. Caught and re-pointed an hour before the event by
+the training session auditing its own watchers. Rule: when adding a recovery path, add it INSIDE
+the instrumentation's match set in the same edit, and test the watcher against the recovery's
+actual emitted line.
