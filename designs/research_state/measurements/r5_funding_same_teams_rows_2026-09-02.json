@@ -1,0 +1,162 @@
+[
+ {
+  "pair": "R5FUND00-R5F00",
+  "team": "T_8bdb5796",
+  "arch": "balance",
+  "parent": 0.6975,
+  "funded": 0.7375,
+  "delta": 0.040000000000000036,
+  "se": 0.03180359649473625,
+  "target": 0.56
+ },
+ {
+  "pair": "R5FUND00-R5F00",
+  "team": "T_43633560",
+  "arch": "balance",
+  "parent": 0.6825,
+  "funded": 0.6825,
+  "delta": 0.0,
+  "se": 0.03291608649277736,
+  "target": 0.4575
+ },
+ {
+  "pair": "R5FUND02-R5F02",
+  "team": "T_6916e138",
+  "arch": "stall",
+  "parent": 0.47,
+  "funded": 0.545,
+  "delta": 0.07500000000000007,
+  "se": 0.03525177300505607,
+  "target": 0.3775
+ },
+ {
+  "pair": "R5FUND02-R5F02",
+  "team": "T_e702a104",
+  "arch": "semi_stall",
+  "parent": 0.7,
+  "funded": 0.6825,
+  "delta": -0.01749999999999996,
+  "se": 0.03266089978858513,
+  "target": 0.5525
+ },
+ {
+  "pair": "R5FUND04-R5F04",
+  "team": "T_64a691c4",
+  "arch": "offense",
+  "parent": 0.655,
+  "funded": 0.705,
+  "delta": 0.04999999999999993,
+  "se": 0.03293744070203391,
+  "target": 0.5025
+ },
+ {
+  "pair": "R5FUND04-R5F04",
+  "team": "T_e2806956",
+  "arch": "semi_stall",
+  "parent": 0.6675,
+  "funded": 0.7475,
+  "delta": 0.08000000000000007,
+  "se": 0.03204245230939729,
+  "target": 0.55
+ },
+ {
+  "pair": "R5FUND06-R5F06",
+  "team": "T_9e95fb59",
+  "arch": "offense",
+  "parent": 0.5975,
+  "funded": 0.685,
+  "delta": 0.08750000000000002,
+  "se": 0.03377383417677063,
+  "target": 0.5125
+ },
+ {
+  "pair": "R5FUND06-R5F06",
+  "team": "T_9d8391d8",
+  "arch": "semi_stall",
+  "parent": 0.7375,
+  "funded": 0.7675,
+  "delta": 0.029999999999999916,
+  "se": 0.03049743841702119,
+  "target": 0.62
+ },
+ {
+  "pair": "R5FUND08-R5F08",
+  "team": "T_750d0561",
+  "arch": "offense",
+  "parent": 0.6025,
+  "funded": 0.585,
+  "delta": -0.01750000000000007,
+  "se": 0.034722786106532406,
+  "target": 0.5575
+ },
+ {
+  "pair": "R5FUND08-R5F08",
+  "team": "T_a9831a5f",
+  "arch": "stall",
+  "parent": 0.51,
+  "funded": 0.5175,
+  "delta": 0.007499999999999951,
+  "se": 0.03534097303414268,
+  "target": 0.2975
+ },
+ {
+  "pair": "R5FUND10-R5F10",
+  "team": "T_6ebe9ebc",
+  "arch": "stall",
+  "parent": 0.53,
+  "funded": 0.65,
+  "delta": 0.12,
+  "se": 0.03451811118818641,
+  "target": 0.405
+ },
+ {
+  "pair": "R5FUND10-R5F10",
+  "team": "T_9b454d9e",
+  "arch": "semi_stall",
+  "parent": 0.65,
+  "funded": 0.6875,
+  "delta": 0.03749999999999998,
+  "se": 0.033254463986057574,
+  "target": 0.4925
+ },
+ {
+  "pair": "R5FUND12-R5F12",
+  "team": "T_009e3d02",
+  "arch": "offense",
+  "parent": 0.5225,
+  "funded": 0.58,
+  "delta": 0.057499999999999996,
+  "se": 0.03511031721588399,
+  "target": 0.385
+ },
+ {
+  "pair": "R5FUND12-R5F12",
+  "team": "T_b904dbe0",
+  "arch": "balance",
+  "parent": 0.6725,
+  "funded": 0.635,
+  "delta": -0.03749999999999998,
+  "se": 0.03361616984428773,
+  "target": 0.5425
+ },
+ {
+  "pair": "R5FUND14-R5F14",
+  "team": "T_aea50f20",
+  "arch": "stall",
+  "parent": 0.7575,
+  "funded": 0.745,
+  "delta": -0.012499999999999956,
+  "se": 0.030564225411418497,
+  "target": 0.535
+ },
+ {
+  "pair": "R5FUND14-R5F14",
+  "team": "T_37d717a9",
+  "arch": "offense",
+  "parent": 0.6775,
+  "funded": 0.745,
+  "delta": 0.0675,
+  "se": 0.03195577999360992,
+  "target": 0.56
+ }
+]

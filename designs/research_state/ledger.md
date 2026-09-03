@@ -8767,3 +8767,40 @@ power over speed — the admission gate is defined at 800), priority-first so th
 block (64 cells: 8 funded + 8 parents + reference cells over their 16 slices) merges ~20:15 as a
 labelled PARTIAL; full battery ~03:00–06:00; team-class split to be joined downstream by the
 orchestrator, not the artifact.
+
+### 🟢 FUNDING SPLIT ADJUDICATED: +1.0M/team buys **+3.55pp extraction [+1.15, +5.95]** — direction clears zero, magnitude straddles the 3.70pp floor (2026-09-02 20:05)
+
+`admission_artifacts/r5_admission_PARTIAL_funding.json` (status "PARTIAL — funding block complete",
+66/136 cells, priority block 64/64, UNCOVERED []) + `r5_funding_same_teams_rows_2026-09-02.json`
++ `r5_team_classes_2026-09-02.tsv` (archetype join). **Stamp:** teacher-vs-target extraction on the
+teacher's OWN two teams · target `R2ACTION` final · n=400/team · the R5 battery harness (BLAS-pinned,
+4 shards, 800/arm — power kept over speed).
+
+**PRIMARY (same-teams, funded fork − its own parent, 16 team cells, 8 pairs):**
+mean **+3.55pp**, team-clustered 95% **[+1.15, +5.95]** (t₁₅), binomial [+1.92, +5.17], dispersion
+1.36× · 11/16 cells positive · all 8 pair means in [−0.5, +7.9] · parent mean 0.633 → funded 0.669.
+The artifact's own per-pair `diff` agrees (pair 00: +2.0pp, z 0.87). **Read:** funding RAISES
+extraction — the interval excludes zero — but its magnitude sits INSIDE the taught replicate floor
+(3.70pp; the floor was itself measured between two forks of one parent, so it is the right floor),
+so "+3.5pp" is a direction with an undecided size, not a number to plan a budget on.
+**Strata:** parent-WR below the median gains **+5.2pp**, above it **+1.9pp** (headroom: the
+teacher ceiling ~0.69–0.75 is where funding stops paying); by archetype offense +4.9 (n=5), stall
++4.8 (4), semi-stall +3.3 (4), balance +0.1 (3). The draw-position pairing (`FUNDING_PAIRS`) is
+archetype-IMBALANCED (funded 16 teams: 4 stall / 0 hyper-offense; controls: 0 / 4) and is therefore
+demoted to a sensitivity read; the same-teams contrast is the verdict.
+
+**What it does and does not retire.** It retires "funding does not move the TEACHER" — it does,
+modestly, and most where the teacher had headroom. It says NOTHING about fold quality: rung 1's
+z=−0.44 was "teacher quality does not drive FOLD quality", and rev-3→rev-4's −0.12 `ordered` on
+coverage teams was a cross-fleet read with different teams. The fleet's shape bet (spend on teacher
+COUNT, fund at 1.5M) stands; the price of 1.5M is ~3.5pp of teacher strength, concentrated on
+low-headroom teams. **Meter/coverage does not apply** to this fleet (uniform random draws, no
+`COV_` slate); the class axes are archetype and parent-WR stratum, joined here.
+
+**Instrument specimens from the training session, banked:** (1) the verdict pass REBUILT `_meta`
+and erased the "PARTIAL" stamp — a partial artifact indistinguishable from a complete one for the
+window before the fix; rule: a pass that does not OWN a key must carry it forward; (2) with
+nshards=1 the shard filter accepts every cell, so a "compute verdicts" pass on a partial artifact
+would have silently started ~8 h of new battles — now VERDICT-ONLY by default when cells exist;
+(3) the 17:40 ETA was measured on two cells before the other shards loaded — a transient quoted
+as a rate, the unpinned calibration's mistake in miniature.
