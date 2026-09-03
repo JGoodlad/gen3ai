@@ -9061,3 +9061,56 @@ maturity experiment (the one-week run, to be pre-registered as such). What the c
 programme: the gentle-dose lever is closed, the fold-length lever is sized (absorption still rising
 at 4.45M at every dose; no plateau by the detector), and the recovery shape is a real feature to
 build the stop rule's timing on.
+
+### 🟢 DOSE CELL, P3 SCORED: collateral KL is MONOTONE in dose ⇒ the untaught null is an INFORMATIVE null; P2 confirmed unscorable; the three-arm shape is pooled (2026-09-03 11:30)
+
+`measurements/dose_cell_2026-09-02/dose_cell_shape.{png,json}` (the pooled figure + its numbers);
+P3 from TensorBoard at the SAME final rollout on all three arms (step 32,637,168).
+
+| arm | dose | `train/dose_rate` | `distill/collateral_kl_vs_parent` | `distill/teacher_agreement_on_slice` | stop_state |
+|---|---:|---:|---:|---:|---:|
+| K=12 | 0.53× | 1.139e-08 | 0.5446 | 0.7975 | 0 |
+| K=6 | 1.06× | 2.279e-08 | 0.5832 | 0.8040 | 0 |
+| K=3 | 2.12× | 4.557e-08 | 0.6047 | 0.8123 | 0 |
+
+**P3 (live collateral orders K3 > K6 > K12): CONFIRMED.** Collateral KL and on-slice agreement are
+both monotone increasing in dose, in the pre-registered order. The detector never armed in any arm
+(stop_state 0 throughout) — absorption was still rising at +4.45M at every dose, as the CLOSED entry
+above already read from the curves.
+
+**Why this changes how the cell reads.** The CLOSED entry's null was "no dose effect larger than the
+floor", which is compatible with the manipulation having done nothing. P3 shows it did something:
+a 4× dose range produced measurably more absorption AND measurably more displacement from the
+parent, ordered correctly, and NONE of it propagated to untaught win rate. That is the standard this
+ledger uses to prefer a measured manipulation over an unmeasured one (the teacher-content cell over
+ecology) — so the dose cell is an **informative null**, not a "varied a knob and saw nothing".
+**Limits, stated beside it:** one scalar per arm, no replicate, so no noise bar; three points in the
+registered order is p ≈ 0.17 under a random-ordering null; the two metrics are correlated, so they
+are one confirmation, not two; the magnitude is modest (KL +11% relative across 4× dose). The
+direction is the finding; the size is not quoted as an effect.
+
+**P2 (cost of gentleness, taught side): UNSCORABLE, two reasons, left as written.** K=3 promoted 0
+snapshots and has NO `snapshot_ladder/` at all (K=12 and K=6 have 16 snapshots, 2 promoted each, a
+10-key ladder). Scoring two arms of three would pool over an absent arm, which is refused
+everywhere else in this ledger; and even the two that have a ladder are at UNMATCHED snapshot count
+(2/2/0 promotions), so a cross-arm Bradley-Terry comparison would violate the matched-count rule
+regardless.
+
+**The shape, pooled over all three arms** (4,800 games per depth; interval cluster-bootstrapped
+over the 8 untaught teams, which remain the limiting n — pooling adds run independence, not team
+independence, since every arm scores the same 8 teams):
+
+| depth | pooled Δ vs parent | cluster CI | vs 4.19 floor |
+|---|---:|---|---|
+| +1.00M | −9.60pp | [−12.81, −6.37] | outside |
+| +2.00M | −10.77pp | [−13.35, −8.10] | outside |
+| +4.45M | −6.56pp | [−9.10, −4.04] | outside |
+
+Pooled recovery end − mid = **+4.21pp** (arms 1–2 alone read +4.56 [+3.06, +6.19]). Dip-then-recover
+is the fold's shape at every dose; the fold ends 6–7pp below the parent at every dose. This is the
+curve the stop rule's TIMING gets sized on: the detector's plateau-AND-rise gate never fired because
+agreement never plateaued, so a fold this length is stopped by the clock, not by the rule.
+
+**Verdict unchanged, strengthened:** dose is RETIRED as the sign-flip explanation, now with the
+manipulation shown to have moved the weights and the absorption without moving the untaught meter.
+Queue unchanged: teacher-budget fold → ecology-only → maturity.
