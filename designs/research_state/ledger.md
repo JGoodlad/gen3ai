@@ -8974,3 +8974,19 @@ component of the suspect.** What it does NOT vary: teacher-PARENT maturity (v8's
 - Ordering rationale banked: teacher-content before ecology because its manipulation is MEASURED —
   a null is informative — whereas an ecology arm has no calibrated manipulation and its null could
   not separate "does not matter" from "too small".
+
+**Addendum — BREADTH as the varied axis, considered and not promoted (2026-09-03 03:40).** The
+training session observed that in per-team units the eras barely differ on teacher BUDGET (v8
+1.28–2.46M/team vs rev-4 1.25M) and differ most on teacher BREADTH (v8 3–10 teams vs the fleet's 2),
+and that breadth is the more direct probe of the "team-agnostic habit" mechanism (a 10-team teacher
+must find what generalises; a 2-team teacher can memorise). Both points are right. Breadth is
+nevertheless NOT promoted ahead of the budget cell, because the gen era has already run the cheap
+breadth read: rev-4's teachers were 8 teams each at 1.25M/team (recorded `--trainee-teams`) — v8's
+breadth at rev-4's budget — and their fold ROBBED −6.50pp; and the M1 axis split ordered the fleet
+shapes (3×4, 6×2, 3×8) by TEACHER COUNT, not by breadth, on the untaught axis. So breadth alone,
+at gen-era parent maturity and ecology, does not make a gift. It remains a candidate only through
+an INTERACTION with the ingredients no gen-era arm varies — parent maturity (which v8's teachers
+also inherited: they forked the 277M parent) and ecology — and those are the one-week run and the
+ecology-only arm, not a new breadth cell. Queue unchanged: teacher-budget fold (measured
+manipulation, null expected to be LESS surprising now and scoped to per-team budget) → ecology-only
+arm → the maturity experiment.
