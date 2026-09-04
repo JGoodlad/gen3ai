@@ -9508,3 +9508,27 @@ authorised — selected from three options (2×2 / single pair / hold), with the
 training session; launch follows the standing pre-flight. The campaign's goal is restated by the
 owner as REPRODUCING THE GIFT, and the suspects that can still do that are teacher content (this
 cell) and parent maturity (next).
+
+### 🟢 TOOLING: the anchor monitor and `--distill-stop warn` are DEFAULT ON for every fold (`3f2e8a14`) — with one structural limit that is exactly tonight's case (2026-09-03 23:20)
+
+Resolved in `config.py` beside the other defaults: `--distill-anchor-monitor` is a tri-state, ON
+whenever `--distill-teacher` names a teacher AND `--distill-coef > 0` (suppressed when the anchor
+loss or `grad_project` already attaches, so no double attach); `--distill-stop` resolves to `warn`
+only when the parent actually attached. Explicit values win both ways (`--no-distill-anchor-monitor`
+exists now). One startup line per resolved default; the resolved value AND its source (`cli` /
+`default` / `default-off` / `default-no-parent`) land in `metadata.json`, so a skipped instrument is
+VISIBLE rather than silent. A defaulted monitor whose parent cannot be resolved WARNS and disarms
+(and disarms a defaulted stop rule with it); an explicit monitor or a live coef still exits
+FATAL_CONFIG. Smokes executed: a coef-0.1 fork of R2ACTION prints both instruments attached and
+logs `anchor_loss 0` beside a nonzero `anchor_kl` (measured, not folded); the no-teacher argv logs
+none of it. 12 + 2 new tests; routine gate 8686 passed, the 15 known viewer errors only.
+
+**The limit, stated so nobody expects the default to have covered C1:** the monitor needs the
+off-slice split, which reads the `distill_mask` obs key the env emits only for a LIVE distill term —
+so a teacher-at-coef-0 argv (C1, rev-4's fold with the loss off) resolves both instruments OFF and
+is byte-identical to before. **A loss-off control arm cannot carry the live monitor by construction;
+the OFFLINE displacement measure (commissioned above) is the only route to its collateral KL**, and
+that is now the standing method for coef-0 arms, not a workaround for one night. Cost of the
+default: one frozen `no_grad` parent forward per minibatch on every fold that did not pay it
+before — a known trade, not yet a number. The 2×2 argvs carry both flags explicitly and are
+unaffected either way.
