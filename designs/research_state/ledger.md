@@ -9254,3 +9254,37 @@ the delta-CI-inside-the-bar standard applied all night, coef 0 with teachers-as-
 at n=400/team on the 9 teacher teams against rev-1 final — the bar is borrowed across instruments,
 and a floor is instrument-specific. The borrow is NOT symmetric: fdC's n=400 vs the floor's 200 shrinks only the WITHIN-team binomial part (conservative, but the minor component), while the floor is dominated by BETWEEN-team variance, which n does not touch and a different team set / opponent can carry more or less of in either direction — so the borrow is not safely conservative; the equivalence is conditional on the borrowed floor, fdC's own floor unmeasured (measurable as two byte-identical no-fold runs on that instrument, not worth games unless a decision turns on the 0.3pp). The prior is sharper; it is still not a prediction for C1
 (different meter, different manipulation), and C1 can disagree without either being wrong.
+
+### 🟡 B2 (rev-4's argv re-run, KL controller LIVE) ends INSIDE the floor — the first arm in the batch to; adaptive lr and highest dose are CONFOUNDED in that one arm, neither established (2026-09-03 18:10)
+
+B2 (`ai_v9_140_B2_0901`, coef 0.1761, gas=2, no `--fork-lr`, controller live; median lr 2.34e-5,
+`dose_rate` 5.70e-08 = 1.25× the highest dose arm, 2.7× v8) vs fork parent 0.5825, floor 4.19pp:
+
+| depth | B2 | Δ vs parent | clustered CI | teams up | floor |
+|---|---:|---:|---|---:|---|
+| +1.05M | 0.4938 | −8.88 | [−13.37, −5.06] | 0/8 | outside |
+| +1.95M | 0.5238 | −5.87 | [−9.25, −2.75] | 0/8 | outside |
+| +4.45M | 0.5550 | −2.75 | [−5.69, +0.00] | 3/8 | **inside** |
+
+B2 − dose-arm endpoints (same depth, teachers, parent): vs K=12 +3.06 [+1.06, +5.31] inside · vs
+K=6 +3.56 [+1.69, +5.13] inside · vs K=3 +4.81 [+0.56, +9.38] outside (a wide interval). B2 vs
+rev-4's endpoint: +3.75 [+1.69, +6.06], inside the floor.
+
+**The confound, stated before the comparison travels (training session):** B2 is NOT a fourth dose
+arm. It differs from the three in exactly the axis the dose cell was built to control — its step
+size ADAPTED during the fold AND its realised dose is the highest of the four. "B2 robs less at the
+endpoint" is therefore not a dose reading: adaptive lr and higher dose are confounded in one arm,
+and the draw is a third candidate. The dose cell's verdict (K varied, lr pinned+frozen, flat) is
+untouched. The weaker statement B2 licenses: **an arm at gen-era settings with an adaptive step
+ended inside the floor where three frozen-step arms did not; which of adaptation / dose / draw is
+not answerable from one arm.**
+
+**Two readings of my own.** (1) B2 vs rev-4 is a FOLD-REPLICATE pair — the same fold argv, a
+different seed — and its endpoint spread is +3.75 [+1.69, +6.06], inside the 4.19 no-fold floor. One
+pair, so weak, but it is the first measurement of what a fold's replicate spread looks like, and it
+does not exceed the no-fold floor: no fold-induced excess variance detected at this power. (2) The
+dip-then-recover shape holds a fifth time, and B2's recovery mid→end (+3.1pp) with three teams
+crossing above the parent is the largest in the batch — consistent with the shape being what an
+adaptive step does to it, and equally with the draw. Neither is called. The pre-registered contrast
+of interest, **C1 − B2, is untouched by this confound**: both arms share gas=2, no fork-lr, controller
+live, the same checkpoint grid. C1's remaining two points land ~19:40.
