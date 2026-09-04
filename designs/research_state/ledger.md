@@ -9319,3 +9319,31 @@ read against B2 at the same pin era, matched by construction.
 **Lesson, general:** "replicate" is a claim about the PIN and the SEED, read from `metadata.json`
 via `python -m main.lineage` / the recorded command — never from an arm's label. "Broad replicate"
 named what B2 was FOR, not what it was a replicate OF.
+
+### 📋 PRE-REGISTERED before the number: which FLOOR each delta takes once the N1/N2 fold-replicate spread lands (2026-09-03 19:00)
+
+N1/N2 are BYTE-IDENTICAL argvs (246 tokens, one differing flag: `--run-name`), seed 42 both, pin
+`19d25a11` both, the same 6-team distill spec; their 6 taught teams and the untaught-8 set are
+DISJOINT (overlap 0). So their spread is the draw and nothing else — the construction that produced
+the 4.19pp NO-fold floor, applied to a FOLD. Armed behind C1's scoring: endpoints in parallel
+(3,200 games, ~1 h), then the four interior points.
+
+**The rule, decided now:**
+1. **A delta with a fold arm on BOTH sides** (C1 − B2, N1 − N2 itself, B2 − dose arms, the
+   teacher-budget contrast, every fold-vs-fold read from here) **takes the FOLD-replicate floor**
+   once measured. Until it lands, the no-fold 4.19 stands as PROVISIONAL and every "outside/inside"
+   verdict on such a delta already written is marked provisional by this entry.
+2. **A delta with a fold arm on ONE side and the fixed parent checkpoint on the other** (every
+   "Δ vs parent" row) **takes `max(4.19, fold floor)`.** The parent is a single scored checkpoint
+   with no training-draw noise, so the no-fold floor is not its natural bar either; the max is the
+   conservative choice and is taken because the fold floor will be ONE pair — a single |draw| from
+   the spread distribution, as the 4.19 itself was — and a smaller single reading is not licence to
+   shrink a bar. If a SECOND fold pair ever exists, pool the two and revisit.
+3. **Never the smaller of the two bars, on any delta, on the strength of one pair.**
+4. If the fold floor comes back LARGER than 4.19: the dose cell's 9/9 survive up to ~5.8pp and are
+   re-read at the new bar; B2's endpoint (−2.75, inside 4.19) stays inside; any "outside" verdict
+   between 4.19 and the new floor is DOWNGRADED to inside, named individually in the entry that
+   reports the floor. If SMALLER: rule 3 — nothing already written moves.
+5. The interior depths, when they land, give the floor at +1M and +2M separately; a depth-specific
+   floor applies to depth-matched deltas; the endpoint floor is not borrowed across depths without
+   saying so.
