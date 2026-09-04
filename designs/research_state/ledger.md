@@ -9217,3 +9217,30 @@ survives** — the total reads over-batched while the per-term POLICY ratio read
 noise-limited, and the disagreement is aux deflation — because it rested on the per-term tags and
 on the total's DIRECTION, not its magnitude. Rule going forward: no total noise-scale number from a
 pre-`bfedb5b5` run is quoted; post-fix runs read the total from rollout 1.
+
+### 🟢 THE DOSE+REUSE BATCH IS COMPLETE, 7/7 — B2's first row is a FOURTH independent robbery; C1's two readings and its PRIOR stated before its number arrives (2026-09-03 17:10)
+
+C1 (`ai_v9_141_C1_0901`) completed 16:59:55, last checkpoint 32,615,184, pin `6424cb6b`, recorded
+config `distill_coef 0.0 · distill_target kl · distill_team_bias 0.4`; wall 2h33m against the other
+reuse arms' 3h37m–3h45m, because coef 0 loads no teachers and runs no distill forward. Every arm of
+the batch — R4DOSE12/6/3 (`ai_v9_150/151/152`), B2 (`ai_v9_140`), N1/N2 (`ai_v9_142/143`), C1 —
+produced artifacts; nothing is uncovered. Scoring runs: B2 and C1 at matched nearest-offset
+checkpoints (+1.05M / +1.95M / end); paired table ~19:30.
+
+**B2 @+1.05M: 0.4938, Δ −8.88pp, z −5.06, clust [−13.37, −5.06], 0/8 teams up — OUTSIDE the floor.**
+B2 was not a dose-cell arm (KL controller live, rev-4 argv), so this is a replication rather than a
+fourth point on the dose curve: **four folds of the same 8-team teachers, four robberies** (dose arms
+at ~+1M: −7.87 / −9.94 / −11.00).
+
+**What C1 decides — both readings on the record before the number.** C1 = B2 with the distillation
+LOSS off and the 40% team bias ON. (a) C1 robs at ~−9pp like B2 ⇒ the loss is not the mechanism;
+the fold's DATA DISTRIBUTION (team-biased sampling) carries the robbery, and the story relocates
+from distillation onto team sampling. (b) C1 near zero ⇒ the loss is convicted and the bias
+exonerated. Called only on the C1−B2 delta's own clustered CI against the 4.19 floor.
+
+**The prior, which exists** (negative-transfer cell, 2026-08-25, `ai_v9_40` = fdC): `--distill-coef
+0.0` with the teachers in the OPPONENT pool read **−1.21pp [−3.4, +1.0], z −1.08** and kept
+`pi_features` rank at 21.9 (vs 12.5 at any nonzero coef). That leans (b). Two differences keep it a
+prior and not a prediction: fdC's meter was the TAUGHT side (per-team piloting on the 9 teacher
+teams) where C1 is scored UNTAUGHT, and fdC's manipulation was teachers-as-opponents where C1's is
+team-biased SAMPLING with the loss off — the sampling axis has never been isolated at coef 0.
