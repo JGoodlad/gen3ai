@@ -9619,3 +9619,58 @@ the floor evidence to three independent draws** (stating that the pooling spans 
 N1_end (−4.25) stays WITHIN FLOOR by 0.02; R4DOSE3 vs R4DOSE12 (−1.75) stays WITHIN FLOOR. The dose
 cell is 9/9 again at 4.27 — and is quoted as "9/9 at the pooled bar, 8/9 at the endpoint bar", never
 one alone.
+
+### 📐 OFFLINE COLLATERAL-KL COLUMN: calibration PASSES, the dose axis SEPARATES (+0.0715 [+0.0313, +0.1067]), C1-vs-B2 does NOT (−0.0188 [−0.1334, +0.1079]) — a limit of the displacement meter, not a contradiction of the win-rate result (2026-09-04)
+
+The offline displacement recipe (Training Run, `offline_collateral_kl.py` in its job dir; to be
+copied into `measurements/` with the artifact) scored five arms on the same off-slice states: the
+three dose arms (R4DOSE12 / R4DOSE6 / R4DOSE3, the fold at 0.53× / 1.06× / 2.12× v8's dose), C1
+(the loss-off control: 40% teacher-team sampling bias, distill coefficient 0) and B2 (the loss-on
+fold, same sampling). **Calibration gate PASSED in both runs**: the dose arms reproduce their
+logged ordering (0.2966 / 0.3017 / 0.3954 and 0.3562 / 0.3770 / 0.4370 against the callback's
+0.5446 / 0.5832 / 0.6047), so C1 and B2 are INTERPRETABLE on this instrument. Levels sit far
+below the logged column, as expected — a different state distribution — and the two columns are
+never merged.
+
+**What it resolves.** The dose axis, paired on the same team draws: R4DOSE3 − R4DOSE12 +0.0715
+[+0.0313, +0.1067], SEPARATES. This is P3 (collateral KL monotone in dose) re-found offline on
+parent-piloted untaught boards, independent of the callback's contaminated EMA.
+
+**What it does not.** C1 − B2 −0.0188 [−0.1334, +0.1079] and B2 − R4DOSE3 −0.0212 [−0.0864,
++0.0396] both SPAN ZERO at 8 clusters. The untaught WIN-RATE instrument separates C1 from B2
+(3/3 at the pooled 4.27 bar, provisionally on two legs); the DISPLACEMENT instrument does not.
+**Read as an instrument limit, never as a contradiction**: a 12pp-wide interval on 8 teams cannot
+see a difference the size the dose axis shows, and a meter that cannot resolve a contrast is not
+evidence that the contrast is absent. NOT DETECTED, per the vocabulary.
+
+**Two errors caught before they were sent, banked because they are the standing classes.**
+(1) The first pass reported bare levels (0.4003 vs 0.3611) and had drafted "C1 displaced MORE
+than B2, so displacement does not predict untaught damage" — the point-vs-interval form. With
+the interval the difference vanishes; **the dissociation claim is WITHDRAWN unsent**, there is no
+measured dissociation, only an unresolved contrast. (2) State-weighted (pooled) and team-weighted
+(clustered) statistics DISAGREE IN SIGN: C1 − B2 is +0.0309 pooled and −0.0188 clustered; 6 of 8
+teams have C1 below B2, and two teams that contributed more states carry the pooled sign. The
+team is this program's unit; **the clustered figure is the one quoted**, and the artifact carries
+both with a metadata note naming the trap (the Simpson class already on record).
+
+**Reproducibility caveat, corrected in the artifact's own metadata.** "One fixed off-slice batch"
+is true WITHIN a run (every arm scored on the same states, which is what makes the paired
+differences meaningful) and FALSE ACROSS runs: only the pool-sequence RNG is seeded, not the sim,
+so a re-run played different battles (948 vs 1213 states) and every level shifted +0.04..+0.075.
+Ordering and paired differences held; **levels are a draw and are not quotable**. Pinning the sim
+seed is a small change and is ORDERED before the next loss-off arm is scored.
+
+**Recipe (re-runnable):** states — the parent (`ai_v9_59_R2ACTION_0827/final_model.zip`) pilots
+each of the 8 UNTAUGHT teams vs rev-1's 24M snapshot, 3 battles/team, every decision captured;
+off-slice by construction (the untaught 8 are disjoint from every teacher slice). Statistic —
+`masked_kl_rows` IMPORTED from `distill_anchor`, forward KL(parent‖arm) over legal actions,
+illegal → −inf both sides. Aggregation — per-team mean, then equal-weight cluster bootstrap over
+the 8 teams, 20k draws, ONE fixed resampling index set shared by every arm so arm-vs-arm is
+paired. Gate — the three dose arms must reproduce their logged ordering or the artifact stamps
+C1/B2 UNINTERPRETABLE. Never — merge with the callback's logged column; quote a bare level; use
+the state-weighted mean.
+
+**Housekeeping from the pooled-floor ruling:** `floor_reread.py` now defaults to 4.27 with the
+single-draw caveat in its docstring (`FLOOR_OWN_DEPTH=1` reproduces the set-aside policy). At 4.27
+four endpoint movers return to SIGNIFICANT; B2 vs N1 at end stays WITHIN FLOOR by 0.02. The 2×2
+teacher-content fold's first arm is still clean on pin 0c76e2ee.
