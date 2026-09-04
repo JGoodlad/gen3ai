@@ -9252,5 +9252,5 @@ the delta-CI-inside-the-bar standard applied all night, coef 0 with teachers-as-
 0.3pp, a near thing. One caveat rides with it: the 3.70 floor was measured on the fold instrument
 (rev-1 24M snapshot · team set M · n=200/team, two byte-identical no-fold runs), while fdC was scored
 at n=400/team on the 9 teacher teams against rev-1 final — the bar is borrowed across instruments,
-and a floor is instrument-specific. The prior is sharper; it is still not a prediction for C1
+and a floor is instrument-specific. The borrow is NOT symmetric: fdC's n=400 vs the floor's 200 shrinks only the WITHIN-team binomial part (conservative, but the minor component), while the floor is dominated by BETWEEN-team variance, which n does not touch and a different team set / opponent can carry more or less of in either direction — so the borrow is not safely conservative; the equivalence is conditional on the borrowed floor, fdC's own floor unmeasured (measurable as two byte-identical no-fold runs on that instrument, not worth games unless a decision turns on the 0.3pp). The prior is sharper; it is still not a prediction for C1
 (different meter, different manipulation), and C1 can disagree without either being wrong.
