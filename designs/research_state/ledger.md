@@ -9674,3 +9674,38 @@ the state-weighted mean.
 single-draw caveat in its docstring (`FLOOR_OWN_DEPTH=1` reproduces the set-aside policy). At 4.27
 four endpoint movers return to SIGNIFICANT; B2 vs N1 at end stays WITHIN FLOOR by 0.02. The 2×2
 teacher-content fold's first arm is still clean on pin 0c76e2ee.
+
+### ✏️ AMENDMENT to the offline collateral-KL entry: the banked +0.0715 was an UNSEEDED draw; the canonical SEEDED value is +0.1203 [+0.0663, +0.1795] — and the seed pin needed concurrency=1 as its second half (2026-09-04)
+
+The previous entry's subject line quotes R4DOSE3 − R4DOSE12 at +0.0715. That figure came from the
+unseeded 1213-state run, whose own caveat was that only ORDERINGS were quotable — quoting its
+level was the exact error the caveat warned against, made in the same entry that recorded the
+caveat. The canonical seeded run (`offline_collateral_kl/run_seeded_conc1_1100states.json`,
+sha e59abe29…, verified on main at 4a622296) reads:
+
+| contrast | seeded (canonical) | unseeded (banked before) | verdict |
+|---|---|---|---|
+| R4DOSE3 − R4DOSE12 (heaviest vs lightest dose fold) | **+0.1203 [+0.0663, +0.1795]** | +0.0715 | SEPARATES |
+| C1 − B2 (loss-off control vs loss-on fold) | **−0.0245 [−0.0841, +0.0267]** | −0.0188 | NOT DETECTED |
+| B2 − R4DOSE3 | **−0.0392 [−0.1066, +0.0174]** | — | NOT DETECTED |
+
+No verdict changes. The dose delta is 68% larger than banked and the C1-vs-B2 interval is 45%
+tighter (±0.055 vs ±0.12), so "the displacement meter does not resolve C1 from B2" is now a firmer
+reading, not a noisier one. Every number in the previous entry is superseded by this table; its
+recipe, gate, and the two caught errors stand.
+
+**The seed pin had two halves, and seeds alone were NOT reproducibility.** Pinning all four
+streams (sim dice, both players' policy sampling, the pool sequence) at concurrency=3 still gave
+1193 vs 1141 states between runs with levels up to +0.043 apart — interleaved battles consume the
+shared streams in a scheduling-dependent order. Seeds AND concurrency=1 give byte-identical runs
+(same state count, every arm equal to six decimals, same sha256). The script now REFUSES
+concurrency ≠ 1 (`OKL_ALLOW_CONCURRENCY=1` opts out, accepting unquotable levels), and the refusal
+was verified to fire. Both conc=3 seeded artifacts are committed as the proof that the first half
+was insufficient, beside both unseeded draws. The pin was nearly shipped on the strength of the
+seeds; the two-run check caught it — the same shape as this program's coverage holes: the fix
+looked right and the untested half was the one that mattered. This joins the global-random
+coupling record (`global_random_sweep_2026-08-30.md`) as its scheduling-order sibling.
+
+Housekeeping: `floor_reread.py` landed one level up in `reuse_batch_2026-09-03/`. TC_FUND_A, the
+2×2's first arm (fund-teacher fold, replicate A), at 29.1M of 32.6M on pin 0c76e2ee, no failures;
+batch pace puts completion near 14:00 on 2026-09-04.
