@@ -9501,3 +9501,10 @@ grant" — it waits for a one-line explicit go. Everything free is done meanwhil
 built, checkargs'd (inherited flags now visible), one arm dry-launched, all four pinned to one
 verified commit. The N1/N2 interiors and the offline collateral column continue (CPU, already
 authorised as tonight's scoring).
+
+**OWNER'S GO (21:40):** the 2×2 replicated teacher-content fold (~18 GPU-h, K=3, pin+freeze) is
+authorised — selected from three options (2×2 / single pair / hold), with the standing direction
+"Make a reasonable call. Keep trying to find a way to replicate v8's gift." Relayed verbatim to the
+training session; launch follows the standing pre-flight. The campaign's goal is restated by the
+owner as REPRODUCING THE GIFT, and the suspects that can still do that are teacher content (this
+cell) and parent maturity (next).
