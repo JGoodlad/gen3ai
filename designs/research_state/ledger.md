@@ -9288,3 +9288,34 @@ crossing above the parent is the largest in the batch — consistent with the sh
 adaptive step does to it, and equally with the draw. Neither is called. The pre-registered contrast
 of interest, **C1 − B2, is untouched by this confound**: both arms share gas=2, no fork-lr, controller
 live, the same checkpoint grid. C1's remaining two points land ~19:40.
+
+### 🔴 RETRACTION: "B2 vs rev-4 is a fold-replicate pair" is WRONG on both halves — same SEED, different CODE (84 commits); the +3.75 spread is confounded, not a floor. N1/N2 are the real pair and will be scored (2026-09-03 18:40)
+
+The entry above called B2 vs rev-4 "the same fold argv, a different seed" and read its +3.75
+[+1.69, +6.06] endpoint spread as a fold's replicate spread inside the no-fold floor. Checked
+against recorded metadata by the training session: every compared key is IDENTICAL, `--seed 42`
+INCLUDED, so the two arms differ by no deliberate seed change — only by unseeded global randomness
+(`--seed` alone does not determinize this tree; the five opt-in `GEN3AI_*_SEED`s were set on neither
+arm). And they are NOT the same code: R4ACTION pinned `d392e80a` (2026-08-30), B2 `01c3a26a` — 84
+commits between them, 59 files under the frozen paths, including `snapshot.py`, the anchor/stop/
+adaptive-lr/adaptive-batch callbacks, `instrumented_ppo/constants.py`, `dose.py`. Four days of
+training-path change inside what I called a replicate pair; the freeze exists to prevent exactly
+this, and the pair predates it. **The +3.75 is the spread between two argv-identical, same-seed arms
+separated by 84 commits AND unseeded randomness, the two confounded. It supports no statement about
+fold-induced variance. Reading (1) is withdrawn.** Reading (2) — B2's mid→end recovery is the
+batch's largest; adaptive-step vs draw not separable — stands. rev-4's other two depths are not on
+disk (only the endpoint file exists), so the "three readings" idea would need new games and would
+not fix a confounded pair anyway.
+
+**The genuine replicate pair is IN the batch: N1/N2** (`ai_v9_142/143`), the NARROW folds (the same
+three teachers restricted to 2 teams each), same pin `19d25a11` (verified identical), same argv,
+same seed, same fold length — differing only in what the draw does, which is the quantity. Neither
+is scored on the untaught instrument. **Dispatched:** score N1 and N2 on it — endpoints first
+(1,600 games each), the other two depths as CPU allows around the teacher-budget fold's launch. The
+pair buys two things at once: the FOLD-replicate floor (the right bar for every fold-vs-fold
+contrast from here, C1−B2 and the teacher-budget fold included) and the narrow-vs-broad untaught
+read against B2 at the same pin era, matched by construction.
+
+**Lesson, general:** "replicate" is a claim about the PIN and the SEED, read from `metadata.json`
+via `python -m main.lineage` / the recorded command — never from an arm's label. "Broad replicate"
+named what B2 was FOR, not what it was a replicate OF.
