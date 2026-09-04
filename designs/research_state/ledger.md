@@ -9485,3 +9485,19 @@ P1/P2 as pre-registered above; **P3 added:** the within-pair spreads of the two 
 with N1/N2's, give the fold floor as an RMS over three pairs with a CI; the six downgrades above
 are re-read ONCE at that bar, in the entry that reports it, and not again. A second standalone
 N-pair is NOT run — the same GPU buys the same floor inside an experiment that already needed it.
+
+**Amendment to the 2×2 decision (21:30, training session's review; two corrections and a hold):**
+(1) **K=2 was WRONG** — rev-4's 2.8e-5 × K=2 is 6.84e-08 = 3.19× v8, 50% ABOVE the top of the dose
+cell's tested range (0.53×–2.12×); the cell licenses any dose INSIDE that range, not beyond it. The
+2×2 runs at **K=3 = R4DOSE3's exact dose (2.12×)**, inside the range, so it inherits the flatness
+result directly. (2) The dose is pinned AND frozen — `--fork-lr 2.8e-5 --fork-lr-freeze` on all
+four argvs; B2 is the cautionary case (neither flag; lr drifted to 2.34e-5, dose 5.70e-08, and that
+is why B2-vs-dose-arms is unreadable). Within a byte-identical pair the controller would not differ
+systematically, but ACROSS the funded/unfunded halves it could, and that is the contrast. (3) **NOT
+LAUNCHED pending the owner's go.** The owner's authorisation covered the seven-arm dose+reuse batch,
+which is complete; the 2×2 is ~18 GPU-h of NEW budget (the pre-registered contrast was ~9), and by
+the standard set when the dose cell was queued — "GPU budget is his to grant and a relay is not a
+grant" — it waits for a one-line explicit go. Everything free is done meanwhile: the four argvs
+built, checkargs'd (inherited flags now visible), one arm dry-launched, all four pinned to one
+verified commit. The N1/N2 interiors and the offline collateral column continue (CPU, already
+authorised as tonight's scoring).
