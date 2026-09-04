@@ -9347,3 +9347,52 @@ the 4.19pp NO-fold floor, applied to a FOLD. Armed behind C1's scoring: endpoint
 5. The interior depths, when they land, give the floor at +1M and +2M separately; a depth-specific
    floor applies to depth-matched deltas; the endpoint floor is not borrowed across depths without
    saying so.
+
+### 🔴 HEADLINE — C1 (loss OFF, 40% team bias ON) DOES NOT ROB: THE DISTILLATION LOSS IS CONVICTED, TEAM-BIASED SAMPLING EXONERATED, on the untaught side with the sampling axis isolated for the first time (2026-09-03 19:20; endpoint pending ~19:35)
+
+Two of three depths, matched pin era, matched checkpoint grid, vs fork parent 0.5825; bar
+PROVISIONAL at 4.19 per the pre-registered clause 1 (fold floor not yet measured):
+
+| depth | arm | score | Δ vs parent | clustered CI | teams up |
+|---|---|---:|---:|---|---:|
+| +1.05M | B2 (coef 0.1761) | 0.4938 | −8.88 | [−13.37, −5.06] | 0/8 |
+| +1.05M | **C1 (coef 0)** | 0.5950 | **+1.25** | [−2.75, +5.13] | 5/8 |
+| +1.95M | B2 (coef 0.1761) | 0.5238 | −5.87 | [−9.25, −2.75] | 0/8 |
+| +1.95M | **C1 (coef 0)** | 0.5825 | **+0.00** | [−3.25, +3.44] | 4/8 |
+
+**C1 − B2:** @+1.05M **+10.12pp, z +5.78, clust [+6.00, +14.31], 8/8 teams** · @+1.95M +5.87pp,
+z +3.35, clust [+1.44, +11.31], 6/8. The +1M interval lies ENTIRELY above 4.19 and survives any fold
+floor up to +6.00pp; the mid interval STRADDLES 4.19 (the point clears, the interval does not) and
+is not individually decisive if the fold floor lands above ~1.4. Not two independent
+confirmations: the +1M depth carries the claim, the mid depth agrees in direction. Integrity check
+done before reporting: C1's mid total 932/1600 equals the baseline's 932/1600 exactly — the
+signature of scoring the parent by mistake — but the per-team rows differ (−14…+17), row hashes
+differ, and the log names C1's `checkpoint_30065184`. Coincidence, the instrument's second.
+
+**⇒ VERDICT (provisional until the endpoint and the fold floor).** With the loss off and everything
+else held — teachers named, the 40% team bias toward teacher teams live, same pin era, same argv,
+same controller, same pool — the fold moves the untaught meter by nothing. With the loss on, it
+robs 6–9pp. **The robbery travels through the distillation LOSS, not through the data
+distribution.** This confirms fdC (taught side, teachers-as-opponents, coef 0 ⇒ equivalence) and
+extends it to the untaught side with a different manipulation. Joined to the dose cell (dose flat;
+P3: the loss's manipulation moved weights and absorption monotonically) and the negative-transfer
+cell (loss channel convicted, coefficient not the lever), the chain now reads: **the leak is taught
+content arriving off-slice THROUGH the loss** — the gift/leak picture's leak term, mechanism
+located.
+
+**The implication neither arm was built to test, stated so it is not fitted later: C1 shows NO GIFT
+either.** v8's fold read +4.64 at +1.09M vs its own parent; C1 at +1.05M reads +1.25 [−2.75, +5.13].
+So the loss carries BOTH directions — under gen-era conditions it delivers leak only, under v8 it
+delivered gift − leak — and the gift is not a product of sampling, team bias, or the fold's
+ecology on their own. Whatever separates the eras lives inside what the loss transports (TEACHER
+CONTENT) or how the parent receives it (MATURITY). **Queue consequence:** the teacher-content fold
+(funded vs unfunded teachers, pre-registered) stays FIRST and is now the direct test of the
+convicted channel; the ecology-only arm is DEMOTED to run only if teacher content is null, because
+its two halves have each been isolated at coef 0 (teachers-as-opponents in fdC, team-biased
+sampling here) and neither moved either meter. The anchor + stop rule act on exactly the convicted
+channel, so they remain the tools; nothing sampling-side (team weighting, PFSP) is a lever for the
+robbery.
+
+**Requested for the entry that closes this:** C1's end-of-fold `distill/collateral_kl_vs_parent`
+beside B2's — with the loss off, C1's displacement from the parent should be the smallest in the
+batch; if it is NOT, the "loss moves the weights" reading (P3) needs a second look.
