@@ -9415,3 +9415,27 @@ entry. **Standing fix, building now:** the anchor monitor and the stop rule in `
 ON whenever `--distill-teacher` is named (pure instruments; coef 0 bit-identical), so an instrument's
 presence stops depending on which argv a cell happened to copy — the second time an absence shaped
 what could be said afterwards.
+
+### 🔴 C1 vs B2 COMPLETE, three depths: C1 never robs and never gifts; the LOSS is the channel at every depth, the +1M depth alone is individually decisive (2026-09-03 19:50; fold floor pending ~21:00)
+
+Endpoint row added to the headline table above (vs fork parent 0.5825; bar 4.19 PROVISIONAL):
+
+| depth | arm | score | Δ vs parent | clustered CI | up | C1 − B2 | CI | teams |
+|---|---|---:|---:|---|---:|---:|---|---:|
+| +4.45M | B2 (loss ON) | 0.5550 | −2.75 | [−5.69, +0.00] | 3/8 | | | |
+| +4.45M | **C1 (loss OFF)** | 0.6075 | **+2.50** | [−0.31, +5.37] | 5/8 | **+5.25** | [+0.75, +10.31] | 6/8 |
+
+Full pair: C1 +1.25 / +0.00 / +2.50, every interval covering zero, at no depth below the parent; B2
+−8.88 / −5.87 / −2.75, robbing at every depth and recovering toward the parent by the end. C1 − B2
+positive at all three depths, positive on 20 of 24 team-cells. **Strengths differ and are not
+pooled into one claim:** +1M [+6.00, +14.31] entirely above the bar; +2M [+1.44, +11.31] and end
+[+0.75, +10.31] straddle it. Three depths of one pair are ONE experiment (shared arms, shared
+teams), not three. **"No gift either" holds at every depth**: on this instrument the loss produces
+BOTH directions and turning it off yields neither.
+
+**Clause-4 list, named before the floor:** "+2M outside" downgrades if the fold floor exceeds 1.44;
+"end outside" if it exceeds 0.75; B2's endpoint stays inside for any floor ≥ 2.75 (a smaller floor
+moves nothing); the +1M contrast is safe below 6.00 — a fold floor above that would be 43% larger
+than the no-fold floor and would itself be the story; the dose cell's 9/9 are untouched below 5.8.
+N1/N2 endpoints running; the offline collateral-KL follows, with its dose-ordering calibration gate
+deciding in-file whether C1's offline value is readable.
