@@ -9244,3 +9244,13 @@ exonerated. Called only on the C1−B2 delta's own clustered CI against the 4.19
 prior and not a prediction: fdC's meter was the TAUGHT side (per-team piloting on the 9 teacher
 teams) where C1 is scored UNTAUGHT, and fdC's manipulation was teachers-as-opponents where C1's is
 team-biased SAMPLING with the loss off — the sampling axis has never been isolated at coef 0.
+
+**Amendment to the fdC prior (17:25, training session's check against our own rule):** "leans (b)"
+understates it. fdC's delta CI [−3.4, +1.0] (width 4.4pp) sits INSIDE the ±3.70 taught floor, so by
+the delta-CI-inside-the-bar standard applied all night, coef 0 with teachers-as-opponents is an
+**EQUIVALENCE within the taught floor**, not merely an undetected null — clearing on the low side by
+0.3pp, a near thing. One caveat rides with it: the 3.70 floor was measured on the fold instrument
+(rev-1 24M snapshot · team set M · n=200/team, two byte-identical no-fold runs), while fdC was scored
+at n=400/team on the 9 teacher teams against rev-1 final — the bar is borrowed across instruments,
+and a floor is instrument-specific. The prior is sharper; it is still not a prediction for C1
+(different meter, different manipulation), and C1 can disagree without either being wrong.
