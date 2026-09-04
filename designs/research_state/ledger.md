@@ -9396,3 +9396,22 @@ robbery.
 **Requested for the entry that closes this:** C1's end-of-fold `distill/collateral_kl_vs_parent`
 beside B2's — with the loss off, C1's displacement from the parent should be the smallest in the
 batch; if it is NOT, the "loss moves the weights" reading (P3) needs a second look.
+
+**ABSENCE, not a null (19:30):** the C1-vs-B2 collateral-KL cross-check I requested above CANNOT be
+run from the logs. `--distill-anchor-monitor` and `--distill-stop` were on the three DOSE argvs
+only; the four reuse argvs (C1, B2, N1, N2) were built from R4ACTION's `original_command` and never
+carried them — C1's TensorBoard has no `distill/*` tag at all, neither log has a DISTILL-ANCHOR
+line, no reference parent was ever loaded. **C1's displacement is UNMEASURED, not small.** Had the
+column been filled with a blank beside 0.545/0.583/0.605, "≈0, prediction confirmed" was the
+easiest reading in the batch — a missing instrument converting into evidence for the convicted
+channel. Same shape as the stamp erasure and the short-shard replay: a gap that renders as a value.
+P3 stands (a within-dose-cell reading over the three arms that carried the instrument). Commissioned
+instead: the same quantity OFFLINE — load each arm's endpoint checkpoint and the fork parent, run
+the off-slice KL on ONE fixed batch of states — across ALL FIVE arms (the three dose arms too, so
+the offline column has its own internal ordering to calibrate against the logged 0.545/0.583/0.605
+before C1's value is read); reported as a distinct offline measure in its own column, never dropped
+into the callback's. Runs after the N1/N2 floor so nothing contends; does not gate the closing
+entry. **Standing fix, building now:** the anchor monitor and the stop rule in `warn` mode default
+ON whenever `--distill-teacher` is named (pure instruments; coef 0 bit-identical), so an instrument's
+presence stops depending on which argv a cell happened to copy — the second time an absence shaped
+what could be said afterwards.
