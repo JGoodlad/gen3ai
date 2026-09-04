@@ -181,8 +181,11 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
                                               drop=args.rank_tripwire_drop))
     # THE OFF-SLICE DISTILL ANCHOR (gen3_distill_offslice_anchor_v1) — the frozen fold PARENT that
     # `instrumented_ppo/distill_anchor.py` regularises toward, plus the live collateral meters.
-    # Registered only when the coefficient is live OR --distill-anchor-monitor is on, so an ordinary
-    # fold attaches nothing and stays byte-identical.
+    # Registered when the coefficient is live, or --distill-anchor-monitor is on, or the mode is
+    # grad_project. gen3_distill_instruments_default_v1 makes the MONITOR the default for any fold
+    # (--distill-teacher with --distill-coef > 0), so an ordinary fold now DOES attach the frozen
+    # parent — one no_grad forward per minibatch, no loss term, no parameter changed. A run with no
+    # teacher, or a teacher at --distill-coef 0, attaches nothing and stays byte-identical.
     #
     # A CALLBACK rather than an `apply_training_hparams` row on purpose: `_on_training_start` runs
     # on EVERY launch, which is the cadence at which the parent must be re-read from the ORIGINAL
@@ -207,67 +210,95 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             explicit=getattr(args, "distill_anchor_parent", None),
             run_dir=model_dir, cli_model=args.model)
         if not _anchor_path:
-            from main.exit_codes import TrainExitCode
-            print("\n[DistillAnchor] FATAL: --distill-anchor-coef / --distill-anchor-monitor / "
-                  "--distill-anchor-mode grad_project is on "
-                  "but no fold parent could be resolved — no --distill-anchor-parent, no --model, "
-                  f"and {model_dir}/metadata.json records no `original_command` with a --model. "
-                  "The anchor has nothing to anchor to; refusing rather than training without it.")
-            sys.exit(int(TrainExitCode.FATAL_CONFIG))
+            # gen3_distill_instruments_default_v1: THE DEFAULT YIELDS, THE ASK REFUSES. The monitor
+            # is now on by default for any fold, and `_resolve_fold_instruments` already declines it
+            # when neither --distill-anchor-parent nor --model can name a parent — so reaching here
+            # on a DEFAULTED monitor means some other route vanished between the two, and the right
+            # answer is still a warning rather than turning a launch that would work into a
+            # FATAL_CONFIG. Anything the operator actually TYPED (an explicit --distill-anchor-monitor,
+            # a live coefficient, grad_project) still refuses, loudly.
+            if (getattr(args, "distill_anchor_monitor_source", "cli") == "default"
+                    and not ((getattr(args, "distill_anchor_coef", 0.0) or 0.0) > 0)
+                    and getattr(args, "distill_anchor_mode", None) != "grad_project"):
+                print("\n[DistillAnchor] WARNING: the default fold monitor could not resolve a fold "
+                      f"parent (no --distill-anchor-parent, no --model, and {model_dir}/metadata.json "
+                      "records no `original_command` with a --model). Leaving it OFF — the "
+                      "distill/collateral_* meters will not exist for this run.")
+                args.distill_anchor_monitor = False
+                args.distill_anchor_monitor_source = "default-no-parent"
+                if getattr(args, "distill_stop_source", "cli") == "default":
+                    print("[DistillStop] WARNING: the default fold stop rule needs the monitor's "
+                          "distill/collateral_kl_vs_parent for its RISE half — disarming it too "
+                          "rather than running a detector whose AND-gate can never close.")
+                    args.distill_stop = "off"
+                    args.distill_stop_source = "default-no-parent"
+                _anchor_path = None
+            else:
+                from main.exit_codes import TrainExitCode
+                print("\n[DistillAnchor] FATAL: --distill-anchor-coef / --distill-anchor-monitor / "
+                      "--distill-anchor-mode grad_project is on "
+                      "but no fold parent could be resolved — no --distill-anchor-parent, no --model, "
+                      f"and {model_dir}/metadata.json records no `original_command` with a --model. "
+                      "The anchor has nothing to anchor to; refusing rather than training without it.")
+                sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
-        def _load_anchor_parent(path, _args=args):
-            """Load the frozen parent the way a stable opponent / distill teacher is loaded."""
-            from agents.model.snapshot import current_model_version, load_foreign_opponent
-            from agents.observation.state_encoder import load_mappings
-            from agents.training.fixed_opponent_pool import _resolve_zip_and_config
-            from main.train.run_io import _run_arch_toggles
-            _zip, _cfg, _ = _resolve_zip_and_config(path, None)
-            _model, _ = load_foreign_opponent(
-                _zip, current_version=current_model_version(load_mappings(),
-                                                            **_run_arch_toggles(_args)),
-                device=str(_args.device), config_path=_cfg)
-            _model.policy.set_training_mode(False)
-            return _model
+        # The default monitor may have just DECLINED above (no resolvable parent). Nothing
+        # below is meaningful without one, so the whole attach — loader, moving-reference
+        # restore, dual-ascent resume, callback — is skipped rather than half-run.
+        if _anchor_path:
+            def _load_anchor_parent(path, _args=args):
+                """Load the frozen parent the way a stable opponent / distill teacher is loaded."""
+                from agents.model.snapshot import current_model_version, load_foreign_opponent
+                from agents.observation.state_encoder import load_mappings
+                from agents.training.fixed_opponent_pool import _resolve_zip_and_config
+                from main.train.run_io import _run_arch_toggles
+                _zip, _cfg, _ = _resolve_zip_and_config(path, None)
+                _model, _ = load_foreign_opponent(
+                    _zip, current_version=current_model_version(load_mappings(),
+                                                                **_run_arch_toggles(_args)),
+                    device=str(_args.device), config_path=_cfg)
+                _model.policy.set_training_mode(False)
+                return _model
 
-        # A MOVING reference (`--distill-anchor-ref ema|periodic`) is RUN STATE, restored from the
-        # `<checkpoint>_anchor_ref.pt` sibling of this launch's --model. `expect_restore` is the
-        # fork-vs-restart predicate `--fork-lr` already owns (`--model` inside this run dir ⇒ a
-        # RESTART, which SHOULD have written the sibling), so a missing sibling is reported as a
-        # reset trust region on a restart and as an ordinary fold start on a fork's first launch.
-        from main.train.fork_lr import is_same_run_checkpoint
-        # gen3_distill_stop_rule_v1: the DUAL-ASCENT coefficient is RUN STATE and rides the SAME
-        # sidecar `handoff_lr` and `grad_accum_steps` ride. The launcher forwards the ORIGINAL argv
-        # on every relaunch, so without this a controller that had climbed to 5x its starting
-        # coefficient over three hours would silently reset to 1x at each restart — the same class
-        # of failure the moving reference's sibling blob exists to prevent.
-        _resumed_dual: dict | None = None
-        if args.model and os.path.exists(args.model):
-            try:
-                _d = read_checkpoint_metadata(args.model).get("distill_anchor_dual_state")
-                if isinstance(_d, dict):
-                    _resumed_dual = _d
-            except Exception as e:
-                print(f"[DistillAnchor] WARNING: failed to read distill_anchor_dual_state from "
-                      f"{args.model}: {e} — the dual restarts from --distill-anchor-coef.")
-        callbacks.append(DistillAnchorCallback(
-            parent_path=_anchor_path, route=_anchor_route,
-            coef=float(getattr(args, "distill_anchor_coef", 0.0) or 0.0),
-            mode=str(getattr(args, "distill_anchor_mode", "off_slice") or "off_slice"),
-            monitor=bool(getattr(args, "distill_anchor_monitor", False)),
-            ref=str(getattr(args, "distill_anchor_ref", "parent") or "parent"),
-            # No `or` fallbacks here: tau 0.0 and refresh_every 0 are both LEGAL values with
-            # meanings of their own, so an `x or default` would silently rewrite one of them.
-            ema_tau=float(_arg_or(args, "distill_anchor_ema_tau", 0.99)),
-            refresh_every=int(_arg_or(args, "distill_anchor_refresh_every", 8)),
-            proj_samples=int(_arg_or(args, "distill_anchor_proj_samples", 16)),
-            run_dir=model_dir, resume_model=args.model,
-            expect_restore=bool(args.model and is_same_run_checkpoint(args.model, model_dir)),
-            target_kl=float(_arg_or(args, "distill_anchor_target_kl", 0.0)),
-            dual_lr=float(_arg_or(args, "distill_anchor_dual_lr", 0.1)),
-            coef_min=float(_arg_or(args, "distill_anchor_coef_min", 0.0)),
-            coef_max=getattr(args, "distill_anchor_coef_max", None),
-            resume_dual=_resumed_dual,
-            load_parent=_load_anchor_parent))
+            # A MOVING reference (`--distill-anchor-ref ema|periodic`) is RUN STATE, restored from the
+            # `<checkpoint>_anchor_ref.pt` sibling of this launch's --model. `expect_restore` is the
+            # fork-vs-restart predicate `--fork-lr` already owns (`--model` inside this run dir ⇒ a
+            # RESTART, which SHOULD have written the sibling), so a missing sibling is reported as a
+            # reset trust region on a restart and as an ordinary fold start on a fork's first launch.
+            from main.train.fork_lr import is_same_run_checkpoint
+            # gen3_distill_stop_rule_v1: the DUAL-ASCENT coefficient is RUN STATE and rides the SAME
+            # sidecar `handoff_lr` and `grad_accum_steps` ride. The launcher forwards the ORIGINAL argv
+            # on every relaunch, so without this a controller that had climbed to 5x its starting
+            # coefficient over three hours would silently reset to 1x at each restart — the same class
+            # of failure the moving reference's sibling blob exists to prevent.
+            _resumed_dual: dict | None = None
+            if args.model and os.path.exists(args.model):
+                try:
+                    _d = read_checkpoint_metadata(args.model).get("distill_anchor_dual_state")
+                    if isinstance(_d, dict):
+                        _resumed_dual = _d
+                except Exception as e:
+                    print(f"[DistillAnchor] WARNING: failed to read distill_anchor_dual_state from "
+                          f"{args.model}: {e} — the dual restarts from --distill-anchor-coef.")
+            callbacks.append(DistillAnchorCallback(
+                parent_path=_anchor_path, route=_anchor_route,
+                coef=float(getattr(args, "distill_anchor_coef", 0.0) or 0.0),
+                mode=str(getattr(args, "distill_anchor_mode", "off_slice") or "off_slice"),
+                monitor=bool(getattr(args, "distill_anchor_monitor", False)),
+                ref=str(getattr(args, "distill_anchor_ref", "parent") or "parent"),
+                # No `or` fallbacks here: tau 0.0 and refresh_every 0 are both LEGAL values with
+                # meanings of their own, so an `x or default` would silently rewrite one of them.
+                ema_tau=float(_arg_or(args, "distill_anchor_ema_tau", 0.99)),
+                refresh_every=int(_arg_or(args, "distill_anchor_refresh_every", 8)),
+                proj_samples=int(_arg_or(args, "distill_anchor_proj_samples", 16)),
+                run_dir=model_dir, resume_model=args.model,
+                expect_restore=bool(args.model and is_same_run_checkpoint(args.model, model_dir)),
+                target_kl=float(_arg_or(args, "distill_anchor_target_kl", 0.0)),
+                dual_lr=float(_arg_or(args, "distill_anchor_dual_lr", 0.1)),
+                coef_min=float(_arg_or(args, "distill_anchor_coef_min", 0.0)),
+                coef_max=getattr(args, "distill_anchor_coef_max", None),
+                resume_dual=_resumed_dual,
+                load_parent=_load_anchor_parent))
     # THE FOLD STOP RULE (gen3_distill_stop_rule_v1) — plateau on teacher_agreement_on_slice AND
     # rise on collateral_kl_vs_parent, AND-gated with a persistence count, driving warn/anneal/
     # abort. Registered only when the flag is on, so an ordinary fold adds no callback and writes

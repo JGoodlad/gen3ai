@@ -1569,8 +1569,17 @@ src/
                      #   AND-gated with a RISE on distill/collateral_kl_vs_parent, the pattern v8
                      #   lost ~5pp of untaught win rate by running past) + the DUAL-ASCENT anchor
                      #   coefficient (`--distill-anchor-target-kl`: hold the off-slice divergence
-                     #   at a readable BUDGET instead of guessing a coefficient). Both OFF by
-                     #   default; both persist through the checkpoint sidecar across restarts
+                     #   at a readable BUDGET instead of guessing a coefficient). The DUAL is OFF
+                     #   by default; `--distill-stop warn` and `--distill-anchor-monitor` are ON
+                     #   by default WHENEVER A FOLD IS RUNNING (--distill-teacher named AND
+                     #   --distill-coef > 0) — gen3_distill_instruments_default_v1: both are pure
+                     #   INSTRUMENTS (no loss term, no parameter changed, warn only logs) and as
+                     #   opt-ins they were carried on 3 of 7 arms in one batch, where an ABSENT
+                     #   series reads like a zero. --no-distill-anchor-monitor / --distill-stop off
+                     #   opt out; a fold with no resolvable parent WARNS and leaves them off
+                     #   (metadata's cli_args records distill_{anchor_monitor,stop}_source, so the
+                     #   absence is visible). All three persist through the checkpoint sidecar
+                     #   across restarts
                      #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
                      #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
                      #   bootstrap; shared by `train/scaffolding_gauge` and main.scaffolding_gauge)

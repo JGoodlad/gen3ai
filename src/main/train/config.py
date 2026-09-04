@@ -234,6 +234,85 @@ def inherit_saved_flag(args, saved_ver, name, default) -> bool:
     return False
 
 
+def _resolve_fold_instruments(args) -> str:
+    """THE TWO PURE INSTRUMENTS DEFAULT ON FOR A FOLD (`gen3_distill_instruments_default_v1`).
+
+    Returns the default `--distill-stop` mode; sets `args.distill_anchor_monitor` and the two
+    `*_source` provenance strings that ride into `metadata.json`'s `cli_args`.
+
+    WHY A DEFAULT AND NOT A FLAG. `--distill-anchor-monitor` (the off-slice collateral meters) and
+    `--distill-stop warn` (the plateau-AND-rise detector in its log-only mode) are pure
+    INSTRUMENTS: the monitor attaches no loss term and changes no parameter, and `warn` only emits
+    a launcher event plus `distill/stop_signal`. As opt-ins they were carried on three of seven
+    fold arms in one batch and omitted on the other four, so the pre-registered cross-check could
+    not be run on the arms that mattered — and an ABSENT series in a column of numbers reads like a
+    zero. An instrument that costs nothing and whose absence is unreadable belongs on by default.
+
+    THE CONDITION is "a fold is actually running": at least one `--distill-teacher` AND
+    `--distill-coef > 0`. Both halves are load-bearing rather than cautious — the anchor's
+    off-slice split reads the `distill_mask` obs key, which the env emits only for a run with a
+    live distill term, and `resolve_config` refuses the anchor without one. A teacher named beside
+    `--distill-coef 0` (the distillation-free arm) is therefore NOT a fold here, and stays exactly
+    as it is today.
+
+    THE DEFAULT YIELDS; AN EXPLICIT FLAG REFUSES — the `--compile-trainer` rule, one flag over. A
+    fold whose parent cannot be resolved WARNS and leaves the instrument off (recorded as
+    `default-no-parent`, so the absence is visible rather than silent); an explicit
+    `--distill-anchor-monitor` still reaches the FATAL in `build_callbacks`, because there the
+    operator asked for something that cannot be delivered.
+    """
+    fold = bool(getattr(args, "distill_teacher", None)
+                and args.distill_coef and args.distill_coef > 0)
+    # WILL a fold parent resolve? `resolve_anchor_parent` tries an explicit --distill-anchor-parent,
+    # then the run dir's `lineage` block, then --model. The lineage route only ever names a parent
+    # for a run that was ITSELF launched from one, so on this launch those two flags decide it —
+    # and deciding it HERE is what makes the skip visible: `cli_args` is snapshotted from this
+    # namespace, before any callback exists.
+    parent_available = bool(getattr(args, "distill_anchor_parent", None)
+                            or getattr(args, "model", None))
+    coef_on = bool(args.distill_anchor_coef and args.distill_anchor_coef > 0)
+    proj_on = args.distill_anchor_mode == "grad_project"
+    if args.distill_anchor_monitor is None:
+        # `coef_on` / `proj_on` already attach the frozen parent and already emit every collateral
+        # meter, so defaulting the monitor on beside them would be a second name for one thing.
+        wanted = fold and not coef_on and not proj_on
+        args.distill_anchor_monitor = bool(wanted and parent_available)
+        if args.distill_anchor_monitor:
+            args.distill_anchor_monitor_source = "default"
+            emit("📏 --distill-anchor-monitor ON by default (a fold is running: --distill-teacher "
+                 "with --distill-coef > 0). Attaches the FROZEN fold parent and emits "
+                 "distill/collateral_kl_vs_parent + the off-slice meters — no loss term, no "
+                 "parameter changed, one frozen no_grad forward per minibatch. "
+                 "--no-distill-anchor-monitor turns it off.")
+        elif wanted:
+            args.distill_anchor_monitor_source = "default-no-parent"
+            emit("⚠️ --distill-anchor-monitor would be ON by default here (a fold is running), but "
+                 "no fold parent can be resolved — no --distill-anchor-parent and no --model. "
+                 "Leaving the instrument OFF rather than refusing to launch; the collateral meters "
+                 "will not exist for this run (cli_args records "
+                 "distill_anchor_monitor_source=default-no-parent). Pass "
+                 "--distill-anchor-parent to get them.")
+        else:
+            args.distill_anchor_monitor_source = "default-off"
+    else:
+        args.distill_anchor_monitor = bool(args.distill_anchor_monitor)
+        args.distill_anchor_monitor_source = "cli"
+    anchor_on = coef_on or proj_on or args.distill_anchor_monitor
+    stop_default = "warn" if (fold and anchor_on) else "off"
+    if args.distill_stop is not None:
+        args.distill_stop_source = "cli"
+    elif stop_default != "off":
+        args.distill_stop_source = "default"
+        emit("🛑 --distill-stop warn by default (a fold is running with the frozen parent "
+             "attached). LOG-ONLY: a launcher event + distill/stop_signal when "
+             "distill/teacher_agreement_on_slice has plateaued AND "
+             "distill/collateral_kl_vs_parent is rising. Nothing is annealed and nothing stops; "
+             "pass --distill-stop off to silence it, or anneal|abort to give it teeth.")
+    else:
+        args.distill_stop_source = "default-off"
+    return stop_default
+
+
 def resolve_config(args, parser) -> ResolvedRunConfig:
     """Desugar, inherit and validate `args` in place. Returns the values that live outside it."""
     # --- Resolve `--use-bridge` into the two internal fields ------------------------------------
@@ -488,7 +567,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # which MEANS "10x the starting coefficient" and is computed inside `AnchorDualAscent` where the
     # starting coefficient is known. A `_resolve(..., None)` would be a line that does nothing and
     # reads as if it did something.
-    _resolve("distill_stop", "off")             # training-only fold stop rule (off = no callback)
+    _stop_default = _resolve_fold_instruments(args)
+    _resolve("distill_stop", _stop_default)
     _resolve("distill_stop_window", 8)          # training-only detector look-back, in rollouts
     _resolve("distill_stop_eps", 0.005)         # training-only PLATEAU threshold (absolute)
     _resolve("distill_stop_kl_slope", 2.0)      # training-only RISE threshold, in slope-SEs

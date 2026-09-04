@@ -143,12 +143,21 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
                              "sampled states are asking for the same change and more samples buy "
                              "nothing. Ignored (and refused) outside grad_project.")
     parser.add_argument("--distill-anchor-monitor", "--distill_anchor_monitor",
-                        dest="distill_anchor_monitor", action="store_true", default=False,
+                        dest="distill_anchor_monitor", action=BoolFlag, default=None,
                         help="Attach the frozen fold parent and emit every distill/collateral_kl "
                              "meter even at --distill-anchor-coef 0 — the PURE-INSTRUMENT arm: no "
                              "loss term, no parameter changed, one frozen no_grad forward per "
                              "minibatch. Use it to measure a fold's off-slice damage before deciding "
-                             "whether to penalise it.")
+                             "whether to penalise it. **ON BY DEFAULT WHENEVER A FOLD IS RUNNING** "
+                             "(gen3_distill_instruments_default_v1): --distill-teacher names at "
+                             "least one teacher AND --distill-coef > 0 AND no anchor coefficient is "
+                             "already attaching the parent. It was opt-in until 2026-09-03, and a "
+                             "batch of seven fold arms carried it on three argvs and not the other "
+                             "four — which made the pre-registered cross-check unrunnable on the "
+                             "arms that mattered, because an ABSENT meter reads like a zero. "
+                             "--no-distill-anchor-monitor opts out; the default never turns a "
+                             "launch into a FATAL — an unresolvable fold parent WARNS and leaves "
+                             "the instrument off (recorded as such in metadata\'s cli_args).")
     parser.add_argument("--distill-anchor-ref", "--distill_anchor_ref", dest="distill_anchor_ref",
                         choices=["parent", "ema", "periodic"], default=None,
                         help="WHICH policy the anchor is measured against. 'parent' (DEFAULT, and "

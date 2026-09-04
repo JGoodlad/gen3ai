@@ -636,3 +636,147 @@ def test_the_sidecar_carries_the_controller_state_only_when_it_is_live():
     assert live["distill_stop_state"] == {"mode": "warn"}
     assert live["distill_anchor_dual_state"] == {"coef": 0.03}
     assert set(live) - set(plain) == {"distill_stop_state", "distill_anchor_dual_state"}
+
+
+# ======================================================================================
+# 7. THE TWO INSTRUMENTS DEFAULT ON FOR A FOLD (`gen3_distill_instruments_default_v1`)
+#
+# `--distill-anchor-monitor` and `--distill-stop warn` are NON-PERTURBING: the monitor attaches no
+# loss term and changes no parameter, `warn` only logs. As opt-ins they were carried on three of
+# seven fold arms in one batch and omitted on the other four, which made a pre-registered
+# cross-check unrunnable on the arms that mattered — an ABSENT series in a column of numbers reads
+# like a zero. So they now default ON whenever a fold is actually running, and OFF changes nothing.
+# ======================================================================================
+
+_TEACHER = ["--distill-teacher", "models/t:data/teams/sample/a.txt"]
+_FOLD = ["--steps", "10", *_TEACHER, "--distill-coef", "0.3", "--model", "models/parent.zip"]
+
+
+def test_no_teacher_leaves_both_instruments_exactly_where_they_were():
+    """(a) The byte-identity arm: nothing named a teacher, so nothing is defaulted on and the
+    resolved namespace is what it has always been."""
+    args, _ = _parsed("--steps", "10")
+    assert args.distill_anchor_monitor is False
+    assert args.distill_stop == "off"
+    assert args.distill_anchor_monitor_source == "default-off"
+    assert args.distill_stop_source == "default-off"
+
+
+def test_a_teacher_at_coef_zero_is_not_a_fold():
+    """A teacher beside `--distill-coef 0` is the distillation-FREE arm: there is no distill term,
+    so there is no `distill_mask` slice for the anchor to split on and `resolve_config` refuses the
+    anchor outright. The default must therefore NOT fire there, or the flag would turn a working
+    command into a usage error."""
+    args, _ = _parsed("--steps", "10", *_TEACHER, "--distill-coef", "0",
+                      "--model", "models/parent.zip")
+    assert args.distill_anchor_monitor is False and args.distill_stop == "off"
+
+
+def test_a_fold_gets_both_instruments_with_nothing_typed():
+    """(b) The motivating case: a fold argv that names neither flag still measures its own
+    collateral and still arms the stop detector in its log-only mode."""
+    args, _ = _parsed(*_FOLD)
+    assert args.distill_anchor_monitor is True
+    assert args.distill_anchor_monitor_source == "default"
+    assert args.distill_stop == "warn"
+    assert args.distill_stop_source == "default"
+
+
+def test_the_explicit_opt_outs_win():
+    """(c) `--no-distill-anchor-monitor` turns the monitor off — and the stop rule follows it down,
+    because the rule's RISE half reads a meter only the attached parent emits."""
+    args, _ = _parsed(*_FOLD, "--no-distill-anchor-monitor")
+    assert args.distill_anchor_monitor is False
+    assert args.distill_anchor_monitor_source == "cli"
+    assert args.distill_stop == "off" and args.distill_stop_source == "default-off"
+
+
+def test_an_explicit_distill_stop_off_wins_over_the_default():
+    args, _ = _parsed(*_FOLD, "--distill-stop", "off")
+    assert args.distill_stop == "off" and args.distill_stop_source == "cli"
+    assert args.distill_anchor_monitor is True         # the monitor is a separate decision
+
+
+def test_an_explicit_monitor_still_forces_it_on():
+    args, _ = _parsed(*_FOLD, "--distill-anchor-monitor")
+    assert args.distill_anchor_monitor is True and args.distill_anchor_monitor_source == "cli"
+
+
+def test_a_live_anchor_coefficient_does_not_also_default_the_monitor_on():
+    """(d, resolution half) `--distill-anchor-coef > 0` ALREADY attaches the frozen parent and
+    already emits every collateral meter, so defaulting the monitor on beside it would be a second
+    name for one thing. The stop rule still defaults on — its dependency is the PARENT, not the
+    flag that attached it."""
+    args, _ = _parsed(*_FOLD, "--distill-anchor-coef", "0.05")
+    assert args.distill_anchor_monitor is False
+    assert args.distill_stop == "warn" and args.distill_stop_source == "default"
+
+
+def test_a_fold_with_no_resolvable_parent_warns_and_records_the_absence():
+    """(e) THE DEFAULT YIELDS. No `--model` and no `--distill-anchor-parent` ⇒ nothing can name a
+    fold parent, so the instrument is left OFF rather than turning the launch into a FATAL_CONFIG —
+    and `cli_args` records WHY, so the missing series is visible instead of silent."""
+    args, _ = _parsed("--steps", "10", *_TEACHER, "--distill-coef", "0.3")
+    assert args.distill_anchor_monitor is False
+    assert args.distill_anchor_monitor_source == "default-no-parent"
+    assert args.distill_stop == "off" and args.distill_stop_source == "default-off"
+
+
+def test_an_explicit_monitor_with_no_parent_still_refuses_at_the_callbacks():
+    """The other half of "a default yields, an ask refuses": typed explicitly, an unresolvable
+    parent is still the FATAL_CONFIG exit it always was."""
+    with pytest.raises(SystemExit):
+        _built(None, "--distill-anchor-monitor", model=None)
+
+
+# --- the ACTUAL callback list, not a re-derivation of it -------------------------------------
+
+def _built(tmp_path, *flags, model="models/parent.zip"):
+    """`build_callbacks`'s real callback list for a fold argv (the `exploiter_ladder_test`
+    convention: `--debug` to skip the eval callback, `--use-bridge node` to keep `resolve_config`
+    off the rust binary). The parent is never LOADED here — `DistillAnchorCallback` takes the
+    loader as a callable and calls it in `_on_training_start` — so a path that does not exist is
+    enough to exercise the wiring."""
+    from main.train.callbacks import build_callbacks
+    from main.train.config import resolve_config
+    from main.train.parser import build_parser
+
+    p = build_parser()
+    argv = ["--steps", "1", "--use-bridge", "node", *_TEACHER, "--distill-coef", "0.3", *flags]
+    if model:
+        argv += ["--model", model]
+    args = p.parse_args(argv)
+    resolve_config(args, p)
+    args.debug, args.debug_eval = True, False
+    return build_callbacks(
+        args=args, model_dir=str(tmp_path or "."), server_config=None, annealing_mode=False,
+        _pool=None, _fixed_opponents=None, _bot_weight_vec=None, OPPONENT_CLASSES=(),
+        _specialist_team_str=None, _promote_threshold=0.6, _heuristic_floor=0.0,
+        _sp_start_wr=0.5, _sp_full_wr=0.9).callbacks
+
+
+def _count(cbs, cls):
+    return sum(1 for c in cbs if isinstance(c, cls))
+
+
+def test_a_default_fold_attaches_the_anchor_once_and_arms_the_stop_rule(tmp_path):
+    cbs = _built(tmp_path)
+    assert _count(cbs, DistillAnchorCallback) == 1
+    assert _count(cbs, DistillStopCallback) == 1
+    anchor = next(c for c in cbs if isinstance(c, DistillAnchorCallback))
+    assert anchor.monitor is True and anchor.coef == 0.0        # instrument, not regulariser
+    assert next(c for c in cbs if isinstance(c, DistillStopCallback)).mode == "warn"
+
+
+def test_a_live_coefficient_attaches_the_anchor_exactly_once(tmp_path):
+    """(d) The attach condition is one `or`, so a coefficient AND a defaulted monitor could never
+    double-register — this pins that, since the two now arrive from different places."""
+    cbs = _built(tmp_path, "--distill-anchor-coef", "0.05")
+    assert _count(cbs, DistillAnchorCallback) == 1
+    assert next(c for c in cbs if isinstance(c, DistillAnchorCallback)).coef == pytest.approx(0.05)
+
+
+def test_opting_out_attaches_neither_callback(tmp_path):
+    cbs = _built(tmp_path, "--no-distill-anchor-monitor")
+    assert _count(cbs, DistillAnchorCallback) == 0
+    assert _count(cbs, DistillStopCallback) == 0

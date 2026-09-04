@@ -79,7 +79,12 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
     # lives in agents/training/distill_stop_callback.py.
     parser.add_argument("--distill-stop", "--distill_stop", dest="distill_stop",
                         choices=["off", "warn", "anneal", "abort"], default=None,
-                        help="THE FOLD STOP RULE (default 'off'). Fire when "
+                        help="THE FOLD STOP RULE. DEFAULT: 'warn' whenever a fold is running "
+                             "(--distill-teacher with --distill-coef > 0 and the frozen parent "
+                             "attached), 'off' otherwise — gen3_distill_instruments_default_v1; it "
+                             "was 'off' everywhere until 2026-09-03, which is how a seven-arm batch "
+                             "ended up with the detector on three argvs and not the other four. "
+                             "Fire when "
                              "distill/teacher_agreement_on_slice has PLATEAUED (its EMA's "
                              "improvement over --distill-stop-window rollouts is below "
                              "--distill-stop-eps) AND distill/collateral_kl_vs_parent is RISING "
@@ -96,7 +101,9 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "attached (--distill-anchor-coef > 0, --distill-anchor-monitor, or "
                              "--distill-anchor-mode grad_project) — nothing else emits "
                              "collateral_kl_vs_parent, so without it the AND-gate could never "
-                             "close and the flag would be a silent no-op. RUN 'warn' FIRST: the window "
+                             "close and the flag would be a silent no-op — which is why the "
+                             "'warn' default is conditioned on the parent actually being attached "
+                             "and falls back to 'off' when it is not. RUN 'warn' FIRST: the window "
                              "and eps are not yet sized by anything measured at this cadence. Every "
                              "detector EMA, the hold count and the latch are persisted in the "
                              "checkpoint sidecar, so a launcher restart continues the count.")

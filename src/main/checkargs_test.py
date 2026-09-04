@@ -310,3 +310,29 @@ def test_an_unresolved_value_is_never_a_verdict():
     unresolved = SimpleNamespace(distill_target=None, distill_coef=None, distill_topk=None,
                                  distill_gate=None, distill_gate_tau=None)
     assert failing_checks(unresolved) == []
+
+
+# --- gen3_distill_instruments_default_v1 ------------------------------------------------------
+
+def test_the_tri_state_monitor_flag_and_its_negation_both_still_validate():
+    """`--distill-anchor-monitor` went from `store_true` to a tri-state `BoolFlag` so it can carry
+    a "not typed" state and a `--no-` opt-out. Both spellings have to survive the offline check, or
+    every recorded fold command that names one becomes un-validatable."""
+    from main.checkargs import check
+    base = ["--distill-teacher", "models/t:data/teams/sample/a.txt", "--distill-coef", "0.1"]
+    for flag in ("--distill-anchor-monitor", "--no-distill-anchor-monitor"):
+        got = check([*base, flag])
+        assert got["unknown"] == [], got["unknown"]
+        assert got["combinations"] == [] and got["unsatisfiable"] == []
+
+
+def test_a_fold_argv_and_a_teacherless_argv_both_still_pass():
+    """(f) The two ends of the new default: a fold command and an ordinary one. Neither the
+    defaulted monitor nor the defaulted stop rule is a COMBINATION check, so neither can make an
+    argv that launches today read as one that would fail."""
+    from main.checkargs import check
+    fold = check(["--steps", "10", "--distill-teacher", "models/t:data/teams/sample/a.txt",
+                  "--distill-coef", "0.3", "--distill-stop", "warn"])
+    assert fold["unknown"] == [] and fold["combinations"] == []
+    plain = check(["--steps", "10", "--device", "cuda"])
+    assert plain["unknown"] == [] and plain["combinations"] == []

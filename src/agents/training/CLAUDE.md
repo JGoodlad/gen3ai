@@ -6054,6 +6054,41 @@ second: lowering the distill step cut OFF-SLICE collateral **39%** with on-slice
 on all six teacher × seed arms — so the damage is a *systematic direction the distill gradient
 carries off the taught slice*, not noise. This ships both halves of the response.
 
+🚨 **BOTH INSTRUMENTS ARE ON BY DEFAULT FOR A FOLD** (`gen3_distill_instruments_default_v1`,
+2026-09-03). `--distill-anchor-monitor` and `--distill-stop warn` resolve ON whenever
+`--distill-teacher` names at least one teacher **and** `--distill-coef > 0`; every other run is
+byte-identical to before. They were opt-in until then, and the cost of that is on the record: one
+batch of seven fold arms carried them on three argvs and not the other four, so a pre-registered
+cross-check could not be run on the arms that mattered — **an ABSENT series in a column of numbers
+reads like a zero**. Neither instrument perturbs training (the monitor attaches no loss term and
+changes no parameter; `warn` only logs), so the only thing an opt-in bought was the chance to
+forget it. Opt out with `--no-distill-anchor-monitor` / `--distill-stop off`.
+
+Three rules the default follows, and each is load-bearing:
+
+* **A teacher at `--distill-coef 0` is NOT a fold.** The anchor's off-slice split reads the
+  `distill_mask` obs key, which the env emits only for a run with a live distill term — and
+  `resolve_config` refuses the anchor without one. So the distillation-free arm is untouched, and
+  the default can never turn a working command into a usage error.
+* **THE DEFAULT YIELDS; AN EXPLICIT FLAG REFUSES** (the `--compile-trainer` rule, one flag over). A
+  fold with no resolvable parent — neither `--distill-anchor-parent` nor `--model` — **WARNS and
+  leaves the instrument off**, and records `distill_anchor_monitor_source="default-no-parent"` in
+  `metadata.json`'s `cli_args` so the missing series is visible rather than silent. A typed
+  `--distill-anchor-monitor` there still exits `FATAL_CONFIG`.
+* **A live `--distill-anchor-coef` does not ALSO default the monitor on** — it already attaches the
+  parent and already emits every meter, so a second name for one thing would be the only effect.
+  The stop rule still defaults on there: its dependency is the attached PARENT, not the flag that
+  attached it.
+
+The resolved values ride `metadata.json`'s `cli_args` alongside their provenance —
+`distill_anchor_monitor_source` and `distill_stop_source`, each one of `cli` / `default` /
+`default-off` / `default-no-parent` — so a later reader sees what actually ran, not what was typed.
+Resolution lives in `main.train.config._resolve_fold_instruments`, beside the other resolved
+defaults, and therefore happens **before** the `cli_args` snapshot. A launcher RESTART re-runs it on
+the same forwarded argv and lands on the same answer; the monitor's `parent` reference is a
+re-read of the fork-parent path on every launch and persists nothing, so nothing extra rides the
+sidecar for it (the MOVING `ema`/`periodic` references and the dual's coefficient still do).
+
 **THE METER (free, and the reason to reach for this first).** Whenever a frozen parent is attached —
 including at `--distill-anchor-coef 0` under `--distill-anchor-monitor`, the pure-instrument arm —
 every `train()` records, per minibatch and averaged over the call:
@@ -6489,11 +6524,13 @@ at the first step rather than collecting one more rollout.
 | `distill/stop_signal` | 0/1, latched at the fire |
 | `distill/stop_rollouts_since_fire` | how long the run has been past its own stop point |
 
-🚨 **THE DEFAULT STAYS `off` UNTIL THE THREE-DOSE CELL'S CURVES SIZE THE WINDOW.**
-`--distill-stop-window 8` and `--distill-stop-eps 0.005` are derived from nothing but the shape of
-the v8 curve at a cadence this tree has never run a fold at. **Run `warn` first** — what it buys is
-exactly the calibration data `anneal` and `abort` need, at zero risk, and a mis-sized rule that
-ABORTS is a new way to lose a training window.
+🚨 **`warn` IS THE DEFAULT FOR A FOLD; `anneal`/`abort` STAY OPT-IN UNTIL THE THREE-DOSE CELL'S
+CURVES SIZE THE WINDOW.** `--distill-stop-window 8` and `--distill-stop-eps 0.005` are derived from
+nothing but the shape of the v8 curve at a cadence this tree has never run a fold at — so a
+mis-sized rule that ABORTS is a new way to lose a training window, while a mis-sized rule that WARNS
+is exactly the calibration data `anneal` and `abort` need, at zero risk. Hence the split: `warn`
+arrives by default on every fold (`gen3_distill_instruments_default_v1` — the section head above),
+and giving the rule teeth is still something an operator types.
 
 **Where it lives.** `agents/training/distill_stop_callback.py` holds both PURE controllers
 (`AnchorDualAscent`, `FoldStopDetector`, `ols_slope_and_se` — no SB3, no torch, no logging) and the
@@ -6501,10 +6538,14 @@ ABORTS is a new way to lose a training window.
 which already owns the coefficient and already runs once per `train()`. `ppo.py` is **untouched** —
 both mechanisms act on `model.distill_anchor_coef` / `model.distill_coef`, which `train()` already
 reads. Registration: `main/train/callbacks.py`. Gate:
-`src/agents/training/distill_stop_callback_test.py` (49 tests — the dual's sign, its convergence to
+`src/agents/training/distill_stop_callback_test.py` (the dual's sign, its convergence to
 the target against a closed-loop plant, both clamps, each detector on planted series, the EMA-fit
 false-positive reproduction, the AND-gate + persist + reset, all three actions, the sidecar
-round-trip, and the byte-identity/config-refusal set).
+round-trip, the byte-identity/config-refusal set, and — §7 — the whole
+`gen3_distill_instruments_default_v1` matrix read off `build_callbacks`'s REAL callback list:
+teacherless and `--distill-coef 0` attach nothing, a fold attaches the anchor exactly once at
+coefficient 0 with the stop rule armed in `warn`, both opt-outs win, a live coefficient attaches
+exactly once, and an unresolvable parent warns instead of exiting).
 
 **THE BUILD SMOKE (n = 1, A SMOKE, NOT A RESULT).** A 3k-step teacher and a separate 3k-step fold
 parent, then a fold at `--distill-coef 0.3 --distill-anchor-coef 0.02 --distill-anchor-target-kl 0.01
