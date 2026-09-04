@@ -644,8 +644,22 @@ the decisive gate is the antipattern's second half; it fails green). ⚠️ **`r
 NOT enough**: two players share the global `random` and the bridge interleaves their
 `choose_move` calls, so the draw order still diverges (`golden_obs_capture` measured the
 decision count swinging by hundreds). Reproducibility needs every randomness source *removed* —
-fixed teams, a per-player RNG, a fixed sim seed. Where a test needs a *qualifying* battle
-(cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED sequence of keys.
+fixed teams, a per-player RNG, a fixed sim seed, **and `concurrency=1`**. Where a test needs a
+*qualifying* battle (cf_audit's non-tie, an ending branch arm), redraw over a bounded FIXED
+sequence of keys.
+
+🚨 **The concurrency clause is the one that gets missed, because the seeds look sufficient.** They
+are not: with the sim dice, both players' policy sampling AND the pool sequence all pinned, a
+`run_local_battles(..., concurrency=3)` measurement still wandered — two runs produced **1193 vs
+1141 captured states with per-arm levels up to +0.043 apart** (measured 2026-09-03, the offline
+collateral-KL column). Interleaved battles consume the shared streams in a *scheduling-dependent*
+order, so the seeds are consumed in a different sequence each run. At `concurrency=1` the same two
+runs are **byte-identical** — same state count, every value equal to 6 decimals, same sha256. A
+measurement that needs quotable LEVELS must therefore serialize; one that needs only orderings or
+paired differences may keep the concurrency and say so. Prefer REFUSING the unreproducible
+configuration over emitting a quietly-wandering number
+(`designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/` does this, and
+keeps the divergent runs as the evidence).
 
 **The "per-player RNG" half is now a set of five OPT-IN seeds**, one per drawer that used to reach
 into a process-wide RNG — `$GEN3AI_{PLAYER,TEAM,POLICY,POOL,STALLER}_SEED`, or the matching ctor
