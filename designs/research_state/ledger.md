@@ -9583,3 +9583,39 @@ not bite here (sub-floor under either), and it is written down so it cannot be c
 controller LIVE — so this is the fold floor for controller-live folds at gen-era dose. The 2×2
 pairs (K=3, pinned+frozen) measure the frozen-dose floor directly; the three-pair pooling in the
 2×2's P3 pools across that difference and says so.
+
+### 📋 RULING: the fold floor is POOLED over depths, 4.27pp [+1.23, +6.92]; the three depth floors are indistinguishable and two span zero; C1-vs-B2 is 3/3 under it, PROVISIONALLY, because the two lesser legs sit inside the bar's own interval (2026-09-04 00:50)
+
+Interiors closed 8/8. N1 − N2 by depth: **p1M +4.62 [−0.12, +9.87] · mid +2.25 [−0.81, +5.13] · end
++5.94 [+1.94, +10.25]**; pairwise depth differences all NOT DISTINGUISHABLE (end − mid +3.69 [−1.00,
++8.75]; end − p1M +1.31 [−4.75, +7.25]; p1M − mid +2.37 [−2.06, +6.62]). Six files sha-verified into
+`measurements/reuse_batch_2026-09-03/`.
+
+**The floor is itself a delta**, and a single-pair depth floor is a point estimate with a ±5pp
+interval — "the mid floor is 2.25" is the point-vs-interval error in a new coat, and a bar
+indistinguishable from zero lets anything through. Clause 5 pre-registered depth-specific floors
+against the case that the depths DIFFER; measured, they do not. The precaution was right; the case
+did not fire, and the clause is set aside for that stated reason.
+
+**Ruling.** Of the candidates — own-depth floors (2/3: the two permissive bars are single-pair
+estimates spanning zero, which clause 3 forbids relying on), the endpoint 5.94 applied everywhere
+(1/3: not a pre-registered policy; clause 2's max was between the no-fold and fold floors, not
+across depths), and the POOLED 4.27 (3/3) — **the pooled bar is ruled**, as the only one estimated
+from more than one reading of the spread. Fold-vs-parent bar = max(4.19, 4.27) = 4.27. **Caveat that
+rides with it, in every quote:** pooling three depths of the SAME two runs adds games and
+checkpoints, not training draws — the number of independent fold draws behind 4.27 is still ONE
+(N2 sits below N1 at all three depths, same sign). The interval [+1.23, +6.92] is over teams, not
+over draws.
+
+**Applied to C1 − B2 (the loss-off control vs the loss-on fold):** +1M +10.12 clears any bar in the
+floor's interval — the robust leg; mid +5.87 and end +5.25 clear 4.27 but sit INSIDE the floor's
+own interval [+1.23, +6.92], so they are **PROVISIONALLY SIGNIFICANT, bar-uncertain** — whether they
+clear depends on where in that interval the true floor lies, which no re-reading resolves. The
+banked claim therefore reads: **the loss is the channel — decisive at +1M, supported at mid and end
+under the pooled floor, with those two legs re-read ONCE when the 2×2's two frozen-dose pairs widen
+the floor evidence to three independent draws** (stating that the pooling spans the controller-live
+/ frozen regimes). Six endpoint movers from the previous entry: at 4.27, R4DOSE12_end (−5.81), N2_end
+(−4.44), B2_end vs R4DOSE3_end (+4.81) and C1_end vs B2_end (+5.25) return to SIGNIFICANT; B2_end vs
+N1_end (−4.25) stays WITHIN FLOOR by 0.02; R4DOSE3 vs R4DOSE12 (−1.75) stays WITHIN FLOOR. The dose
+cell is 9/9 again at 4.27 — and is quoted as "9/9 at the pooled bar, 8/9 at the endpoint bar", never
+one alone.

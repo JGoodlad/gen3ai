@@ -36,3 +36,21 @@ Three things a later reader needs, or the files mislead:
 `untaught_R4ACTION.json` is rev-4's ENDPOINT only; no p1M/mid rows of rev-4 exist on this instrument.
 N1/N2 (the narrow fold-replicate pair, six files) are added here with their own manifest lines when
 scored.
+
+## N1/N2 — the narrow fold-replicate pair (added 2026-09-04)
+
+`ai_v9_142_N1_0901` / `ai_v9_143_N2_0901`: byte-identical argvs (one token apart, the `--run-name`
+value), seed 42 both, pin `19d25a11` both, coef 0.1761, target `action`, gas=2, **controller LIVE**
+(no `--fork-lr`, no freeze) — so their spread is the fold-replicate floor for controller-live folds
+at gen-era dose, not for frozen-dose folds. Their 6 taught teams are disjoint from the untaught 8.
+
+| file | sha256[:16] | file | sha256[:16] |
+|---|---|---|---|
+| `untaught_N1_p1M.json` | 486a5c32e028ae13 | `untaught_N2_p1M.json` | 7fb39346e5adddb8 |
+| `untaught_N1_mid.json` | c889a099f51bccd7 | `untaught_N2_mid.json` | 569a2674371210bd |
+| `untaught_N1_end.json` | 38c9e4760785d194 | `untaught_N2_end.json` | a92f52721c29c10a |
+
+N1 − N2: p1M +4.62 [−0.12, +9.87] · mid +2.25 [−0.81, +5.13] · end +5.94 [+1.94, +10.25]; the three
+are not distinguishable from each other; pooled over the three depths 4.27 [+1.23, +6.92] — the bar
+ruled for this instrument (ledger 2026-09-04 00:50). Re-read script: the training session's
+`floor_reread.py` (takes depths as argv; loss-off arms take `max(4.19, floor)`).
