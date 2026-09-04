@@ -9546,3 +9546,40 @@ minutes after the pin, and is not an ancestor of it — the metadata source fiel
 The launcher log shows both attached (`MONITOR-ONLY (no loss term)`; `mode=warn … fold start`).
 Still running on CPU: the N1/N2 interiors (18/24, 16/24), then the offline collateral column gated
 behind them, with the calibration gate's verdict to be read before any number is quoted.
+
+### 📋 THE FLOOR VOCABULARY, fixed: WITHIN FLOOR ≠ NOT DETECTED; the six endpoint movers by name at 5.94; the dose cell 8/9; the C1-vs-B2 legs await their own depth floors; one ruling (2026-09-04 00:10)
+
+**Vocabulary (training session's fix, adopted for every entry from here):** a delta whose binomial /
+cluster CI excludes zero but whose magnitude sits under the replicate floor is **WITHIN FLOOR** —
+the GAMES are consistent, but the instrument cannot separate the arm from a re-run of the same
+recipe (two byte-identical folds differ by 5.94). **NOT DETECTED** is the other case: magnitude
+above the floor, CI spanning zero. "No effect" is retired as a label for either.
+
+**Six endpoint comparisons move SIGNIFICANT@4.19 → WITHIN FLOOR@5.94, by name:** R4DOSE12_end vs
+parent −5.81 [−7.44, −3.75] · N2_end vs parent −4.44 [−7.25, −2.00] · B2_end vs N1_end −4.25
+[−8.50, −0.00] · B2_end vs R4DOSE3_end +4.81 [+0.69, +9.31] · C1_end vs B2_end +5.25 [+0.75,
++10.25] · R4DOSE3_end vs R4DOSE12_end −1.75 [−7.06, +3.19] (relabel only). Unmoved: R4ACTION /
+R4DOSE6 / R4DOSE3 vs parent stay SIGNIFICANT; B2, N1, C1 vs parent and the other dose contrasts
+were already sub-floor. **The dose cell survives 8/9 at 5.94** — only R4DOSE12's endpoint moves,
+to WITHIN FLOOR, no cell changes sign, every +1M and +2M cell clears the stricter bar with room
+(−7.9 to −11.3). "Every dose robs" stands.
+
+**C1-vs-B2 (the loss-off control vs the loss-on fold), leg by leg:** +1M +10.12 [+6.00, +14.25]
+SIGNIFICANT at either bar; mid +5.87 and end +5.25 SIGNIFICANT@4.19 → WITHIN FLOOR@5.94 — a caveat
+on the banked "never robs at any depth", NOT a retraction, and not the last word: clause 5 gives
+those depths their OWN floors, and the partial N1/N2 interiors (6/8 shared cells, explicitly NOT
+floors yet) read p1M +3.58 [−1.33, +9.17], mid +2.50 [−1.67, +6.08] — if they hold at 8/8, the mid
+leg clears its own depth floor and the claim returns at 3/3. Applying the endpoint floor across
+depths would have been exactly the over-conservatism clause 5 pre-registered against. The two legs
+are re-read once, when the interiors close.
+
+**Ruling on the open question:** a loss-off arm vs the parent (C1 vs R2ACTION, +2.50 [−0.31,
++5.31]) takes clause 2's bar — max(4.19, fold floor) — because clause 2 was written for "a fold
+arm on one side" and C1 is an arm of the fold experiment, whatever its coefficient; a coef-0 arm
+has no measured replicate spread of its own and does not get a smaller bar by assumption. It does
+not bite here (sub-floor under either), and it is written down so it cannot be chosen later.
+
+**Recipe note on the 5.94 itself:** N1/N2 ran rev-4's argv — gas=2, no `--fork-lr`, the KL
+controller LIVE — so this is the fold floor for controller-live folds at gen-era dose. The 2×2
+pairs (K=3, pinned+frozen) measure the frozen-dose floor directly; the three-pair pooling in the
+2×2's P3 pools across that difference and says so.
