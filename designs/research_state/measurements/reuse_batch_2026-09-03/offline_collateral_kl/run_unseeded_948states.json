@@ -1,0 +1,50 @@
+{
+ "_meta": {
+  "statistic": "forward KL(parent||arm) over legal actions, mean over off-slice rows",
+  "same_formula_as": "distill_anchor.masked_kl_rows (imported, not reimplemented)",
+  "state_source": "PARENT piloting the 8 UNTAUGHT teams \u2014 off-slice by construction",
+  "NOT_the_same_as": "the callback's logged value (fold's own rollout states, accumulated)",
+  "n_states": 948,
+  "parent": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "opponent": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "calibration": {
+   "offline_dose_ordering": [
+    0.2966075539588928,
+    0.3017119765281677,
+    0.39543426036834717
+   ],
+   "logged_dose_ordering": [
+    0.5446,
+    0.5832,
+    0.6047
+   ],
+   "reproduces_logged_monotonicity": true,
+   "verdict": "offline statistic tracks the logged one on the arms that carry both \u2014 C1/B2 offline values are interpretable"
+  }
+ },
+ "R4DOSE12": {
+  "offline_collateral_kl": 0.2966075539588928,
+  "desc": "0.53x",
+  "logged_callback_value": 0.5446
+ },
+ "R4DOSE6": {
+  "offline_collateral_kl": 0.3017119765281677,
+  "desc": "1.06x",
+  "logged_callback_value": 0.5832
+ },
+ "R4DOSE3": {
+  "offline_collateral_kl": 0.39543426036834717,
+  "desc": "2.12x",
+  "logged_callback_value": 0.6047
+ },
+ "B2": {
+  "offline_collateral_kl": 0.3611282706260681,
+  "desc": "coef .1761",
+  "logged_callback_value": null
+ },
+ "C1": {
+  "offline_collateral_kl": 0.40033015608787537,
+  "desc": "coef 0",
+  "logged_callback_value": null
+ }
+}

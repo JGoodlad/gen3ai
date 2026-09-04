@@ -1,0 +1,160 @@
+{
+ "_meta": {
+  "statistic": "forward KL(parent||arm) over legal actions, mean over off-slice rows",
+  "same_formula_as": "distill_anchor.masked_kl_rows (imported, not reimplemented)",
+  "state_source": "PARENT piloting the 8 UNTAUGHT teams \u2014 off-slice by construction",
+  "batch_is_fixed": "YES as of 2026-09-03, and it takes BOTH halves: the four seeds below AND concurrency=1. Seeds alone are NOT enough -- measured, seeded at concurrency=3 two runs still gave 1193 vs 1141 states and levels apart by up to +0.043, because interleaved battles consume the shared streams in a scheduling-dependent order. At concurrency=1 two runs are bit-identical (1100 states, every arm equal to 6 decimals). The two artifacts dated before this are UNSEEDED draws, kept deliberately: their +0.04..+0.075 level shift is the evidence for the old levels-are-a-draw caveat.",
+  "read_the_CLUSTER_mean": "cluster_mean/cluster_ci95 weight each of the 8 teams equally and are the program's unit. offline_collateral_kl is the STATE-weighted mean and can disagree in SIGN: on 2026-09-03 C1-B2 was +0.0309 pooled but -0.0188 clustered (6 of 8 teams negative, two big-count teams carrying the pooled sign).",
+  "NOT_the_same_as": "the callback's logged value (fold's own rollout states, accumulated)",
+  "n_states": 1100,
+  "parent": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "opponent": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "seeds": {
+   "sim": "[team_index+1, 2, 3, 4] per team",
+   "pilot_policy": "71000 + team_index",
+   "opponent_policy": "72000 + team_index",
+   "pool_sequence": "61000 + team_index",
+   "note": "pinned 2026-09-03; the two artifacts dated before that are UNSEEDED draws and are kept deliberately -- their +0.04..+0.075 level shift is the evidence for the levels-are-a-draw caveat"
+  },
+  "paired_differences": {
+   "C1-B2": {
+    "delta": -0.024531817063689232,
+    "ci95": [
+     -0.08408661931753159,
+     0.026668965816497803
+    ],
+    "separates_from_zero": false
+   },
+   "R4DOSE3-R4DOSE12": {
+    "delta": 0.12032271921634674,
+    "ci95": [
+     0.06629074364900589,
+     0.1794731616973877
+    ],
+    "separates_from_zero": true
+   },
+   "B2-R4DOSE3": {
+    "delta": -0.039243608713150024,
+    "ci95": [
+     -0.10663365572690964,
+     0.01741752400994301
+    ],
+    "separates_from_zero": false
+   }
+  },
+  "calibration": {
+   "offline_dose_ordering": [
+    0.3062119781970978,
+    0.35018500685691833,
+    0.4415894150733948
+   ],
+   "logged_dose_ordering": [
+    0.5446,
+    0.5832,
+    0.6047
+   ],
+   "reproduces_logged_monotonicity": true,
+   "verdict": "offline statistic tracks the logged one on the arms that carry both \u2014 C1/B2 offline values are interpretable"
+  }
+ },
+ "R4DOSE12": {
+  "offline_collateral_kl": 0.3062119781970978,
+  "desc": "0.53x",
+  "logged_callback_value": 0.5446,
+  "per_team": [
+   0.11450906842947006,
+   0.2704586088657379,
+   0.2745252847671509,
+   0.5011975765228271,
+   0.42353329062461853,
+   0.21698568761348724,
+   0.24817219376564026,
+   0.3689873218536377
+  ],
+  "cluster_mean": 0.30229613184928894,
+  "cluster_ci95": [
+   0.22535467147827148,
+   0.38226038217544556
+  ]
+ },
+ "R4DOSE6": {
+  "offline_collateral_kl": 0.35018500685691833,
+  "desc": "1.06x",
+  "logged_callback_value": 0.5832,
+  "per_team": [
+   0.15971916913986206,
+   0.3354625403881073,
+   0.3233509361743927,
+   0.42969533801078796,
+   0.488057017326355,
+   0.3007589876651764,
+   0.2723427712917328,
+   0.4396308362483978
+  ],
+  "cluster_mean": 0.3436272144317627,
+  "cluster_ci95": [
+   0.2726619839668274,
+   0.4097415804862976
+  ]
+ },
+ "R4DOSE3": {
+  "offline_collateral_kl": 0.4415894150733948,
+  "desc": "2.12x",
+  "logged_callback_value": 0.6047,
+  "per_team": [
+   0.13449572026729584,
+   0.37784430384635925,
+   0.32342973351478577,
+   0.545072615146637,
+   0.672722339630127,
+   0.4588584303855896,
+   0.39927446842193604,
+   0.46925315260887146
+  ],
+  "cluster_mean": 0.4226188659667969,
+  "cluster_ci95": [
+   0.31664565205574036,
+   0.5218197107315063
+  ]
+ },
+ "B2": {
+  "offline_collateral_kl": 0.39381143450737,
+  "desc": "coef .1761",
+  "logged_callback_value": null,
+  "per_team": [
+   0.1841096729040146,
+   0.3551875054836273,
+   0.38060471415519714,
+   0.4543955326080322,
+   0.4367234706878662,
+   0.41155368089675903,
+   0.3346344530582428,
+   0.5097928643226624
+  ],
+  "cluster_mean": 0.38337522745132446,
+  "cluster_ci95": [
+   0.31432557106018066,
+   0.4410536289215088
+  ]
+ },
+ "C1": {
+  "offline_collateral_kl": 0.3701537549495697,
+  "desc": "coef 0",
+  "logged_callback_value": null,
+  "per_team": [
+   0.2593532204627991,
+   0.35631030797958374,
+   0.3046081066131592,
+   0.44505774974823,
+   0.37971431016921997,
+   0.42287611961364746,
+   0.39240697026252747,
+   0.31042057275772095
+  ],
+  "cluster_mean": 0.35884344577789307,
+  "cluster_ci95": [
+   0.3175031542778015,
+   0.39892035722732544
+  ]
+ }
+}
