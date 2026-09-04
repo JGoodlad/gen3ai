@@ -9709,3 +9709,40 @@ coupling record (`global_random_sweep_2026-08-30.md`) as its scheduling-order si
 Housekeeping: `floor_reread.py` landed one level up in `reuse_batch_2026-09-03/`. TC_FUND_A, the
 2×2's first arm (fund-teacher fold, replicate A), at 29.1M of 32.6M on pin 0c76e2ee, no failures;
 batch pace puts completion near 14:00 on 2026-09-04.
+
+---
+
+### 2026-09-03 · the 2×2's wall-clock, measured — 22.5 GPU-h against the ~18 approved
+
+Routine correction, no finding. The completion estimate in the entry above (**"near 14:00 on
+2026-09-04"**) was a **pre-checkpoint guess** — 4.5 h/arm, assumed before `TC_FUND_A` had written a
+single checkpoint — and it was not labelled as one. With four checkpoints on disk the pace is
+measurable instead:
+
+| | |
+|---|---|
+| rate | **13,199 steps/min**, flat (13357 / 13506 / 12757 over the last three intervals — steady state, not warm-up) |
+| arm span | 4,452,576 steps (fork 28,115,184 → target 32,567,760) |
+| per arm | **5.62 h** |
+| four arms | **22.5 GPU-h** vs the **~18** the owner approved — **+25%** |
+| batch end | **~Fri 2026-09-04 18:34**, not 14:00 |
+
+**Continuing all four arms.** The overrun is an estimate landing high on work already authorised —
+same four arms, same dose, nothing expanded — rather than new spend. And the obvious economy is a
+trap: cutting to two arms saves ~11 GPU-h but leaves the funded-vs-unfunded contrast **with no
+floor**, because the second replicate of each half *is* the frozen-regime floor. A contrast with no
+floor is a point estimate, which is the form retired earlier the same day. Four arms is the minimum
+viable design here, not a comfortable one. Surfaced to the owner (notification) and to Model Review
+2, who is raising it in-session and will relay an override before arm 3 starts; **~07:45, after arm
+2, is the only honest cut point** — stopping mid-arm wastes that arm entirely, since nothing counts
+until `final_model.zip` exists, and the two-arm result would be reported UNREADABLE rather than as a
+result.
+
+The durable half is the process one: **an ETA quoted before the first checkpoint is a guess and must
+be labelled as one.** It cost nothing here because the arms were correct and the batch was already
+approved, but the same unlabelled estimate attached to a *decision* — cut or continue, fund or
+not — would have been a number doing work it could not support. Same class as quoting a level from
+an unseeded run, one entry above.
+
+`TC_FUND_A` at 30.1M of 32.6M on pin `0c76e2ee`, arm 1 ending ~02:04; no pin drift, no failures
+recorded, pool line 14 snapshots / 90% verified at launch.
