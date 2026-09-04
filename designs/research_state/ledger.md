@@ -9532,3 +9532,17 @@ that is now the standing method for coef-0 arms, not a workaround for one night.
 default: one frozen `no_grad` parent forward per minibatch on every fold that did not pay it
 before — a known trade, not yet a number. The 2×2 argvs carry both flags explicitly and are
 unaffected either way.
+
+### 🟢 THE 2×2 TEACHER-CONTENT FOLD IS RUNNING — arm 1 (`TC_FUND_A`, the fold distilling the 8 FUNDED teachers) launched 20:05 on `0c76e2ee`; arms interleaved so box drift loads on both halves (2026-09-03 23:40)
+
+Pin `0c76e2ee` expected on all four (drift RECORDED to `tc_failed_arms.txt` per arm, never silently
+passed); pool seeded 14 snapshots / 90% from R2ACTION with its metadata; `[DISTILL] 8 teacher(s) /
+16 team(s), coef=0.1761 | trainee biased 40% across all 16`; `[ForkLR] FORK … pinning LR to
+2.80e-05 and FREEZING the KL controller` (K=3, R4DOSE3's dose); `distill_anchor_monitor=True,
+distill_stop=warn` in `cli_args`. **Order interleaved FUND_A → UNF_A → FUND_B → UNF_B** so ~18 h of
+box drift lands on both halves symmetrically, not on the contrast. **The instruments on this batch
+are carried by the EXPLICIT flags, not the default:** `3f2e8a14` (default-on) landed 20:10, seven
+minutes after the pin, and is not an ancestor of it — the metadata source field will read `cli`.
+The launcher log shows both attached (`MONITOR-ONLY (no loss term)`; `mode=warn … fold start`).
+Still running on CPU: the N1/N2 interiors (18/24, 16/24), then the offline collateral column gated
+behind them, with the calibration gate's verdict to be read before any number is quoted.
