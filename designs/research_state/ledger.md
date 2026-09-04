@@ -9439,3 +9439,49 @@ moves nothing); the +1M contrast is safe below 6.00 — a fold floor above that 
 than the no-fold floor and would itself be the story; the dose cell's 9/9 are untouched below 5.8.
 N1/N2 endpoints running; the offline collateral-KL follows, with its dose-ordering calibration gate
 deciding in-file whether C1's offline value is readable.
+
+### 🟠 THE FOLD-REPLICATE FLOOR (N1/N2, two byte-identical narrow folds) = 5.94pp at the endpoint, LARGER than the no-fold 4.19; six verdicts DOWNGRADED by name; the bar is itself a one-pair point estimate; the teacher-content fold becomes a 2×2 REPLICATED design (2026-09-03 21:10)
+
+| arm | end | Δ vs parent | clustered CI | up |
+|---|---:|---:|---|---:|
+| N1 (narrow fold, loss ON) | 0.5975 | +1.50 | [−1.31, +4.31] | 5/8 |
+| N2 (its byte-identical twin) | 0.5381 | −4.44 | [−7.31, −2.06] | 1/8 |
+| **N1 − N2** | | **+5.94** | **[+1.88, +10.19]** | 7/8 |
+
+One argv token apart (`--run-name`), same pin, same seed: 5.94pp apart at the endpoint, one team
+17.0pp apart, three ≥ ~10pp. **Applied per the pre-registered rule (point estimate, clause 4):**
+fold-on-both-sides bar 5.94; fold-vs-parent bar max(4.19, 5.94) = 5.94.
+
+**Downgraded, six, by name:** C1 − B2 @+1.95M (+5.87) and @+4.45M (+5.25) → INSIDE; B2 − R4DOSE3
+end (+4.81) → INSIDE; R4DOSE12 @end (−5.81), B2 @+2M (−5.87), N2 @end (−4.44) → INSIDE.
+**Survives:** the HEADLINE, narrowly — C1 − B2 @+1.05M +10.12 [+6.00, +14.31], the interval's lower
+bound clearing 5.94 by 0.06pp; stated from here as ONE decisive depth plus consistent direction at
+all three depths, 20/24 team-cells, and C1 never below the parent — not as three depths agreeing.
+The dose cell: 8/9 parent deltas outside, R4DOSE12's endpoint inside; its conclusion (dose flat
+across 4×) untouched, every dose CONTRAST was already inside both floors. C1 never robs: unchanged.
+
+**The bar is a POINT ESTIMATE from ONE pair, CI [+1.88, +10.19] — known to about ±4pp**; under its
+low end nothing downgrades, under its high end the headline falls too. That is the vacuous form
+corrected twice today, now under every re-reading above, applied because the rule said to and
+flagged because the rule cannot make one pair into a measurement. **And the same is true of the
+4.19:** it was ONE no-fold pair. Two single |draws| from spread distributions that differ by 1.75pp
+do NOT establish that fold-to-fold variance exceeds no-fold variance — a 1.42× ratio between two
+one-pair readings is unremarkable. "Folds are noisier" is NOT claimed. Sensitivity, not a
+re-reading: pooling both pairs as one σ gives an RMS bar of 5.14, under which four of the six
+downgrades (C1 − B2 mid/end, R4DOSE12 end, B2 mid) would sit outside again — i.e. the six
+downgrades are bar-sensitive to within the bar's own uncertainty. What is robust under every bar
+from 4.19 to 5.94: the headline's +1M depth, the dose cell's 8 of 9, C1's three nulls, and
+N2's −4.44 sitting inside.
+
+**Decision — buy the floor with the experiment that needs it.** The GPU is idle (the batch is
+done). The pre-registered TEACHER-CONTENT contrast (funded vs unfunded teachers, two folds, ~9
+GPU-h) is upgraded to a **2×2 REPLICATED design**: each arm launched TWICE as byte-identical pairs
+on one pin (`--run-name` the only differing token; the five `GEN3AI_*_SEED`s unset on all four, as
+on N1/N2, so the draw is the same kind of draw), ~18 GPU-h. It yields (a) the contrast at doubled
+power — the arm means differ by a paired delta whose CI is over 8 teams × 2 replicates; (b) TWO
+more fold-floor pairs, at every depth, on the same instrument, making three with N1/N2 — and those
+are folds of the SAME parent at gen-era conditions, the floor the contrast will be read against.
+P1/P2 as pre-registered above; **P3 added:** the within-pair spreads of the two new pairs, pooled
+with N1/N2's, give the fold floor as an RMS over three pairs with a CI; the six downgrades above
+are re-read ONCE at that bar, in the entry that reports it, and not again. A second standalone
+N-pair is NOT run — the same GPU buys the same floor inside an experiment that already needed it.
