@@ -821,7 +821,10 @@ Periodic + forced checkpoints live in `models/<run>/checkpoints/` (each `.zip` b
 `.json` sidecar); legacy runs kept them at the run root and still resume. The checkpoint must
 carry a `metadata.json` with a `git_hash`; the launcher pins the isolated
 worktree to that commit so the resumed run uses the original code (override with
-`--sync-to-main`). All non-launcher flags are forwarded verbatim to `train_rl_agent.py`.
+`--sync-to-main` for HEAD, or **`--pin-commit <sha>`** to name the commit outright — the way to
+keep a whole batch of arms on ONE commit when something may land on `main` mid-batch, since it
+is refused on a same-run restart that would move the pin). All non-launcher flags are forwarded
+verbatim to `train_rl_agent.py`.
 `python -m main.launcher.tui …` is an alias for the same command.
 
 🚨 **A FORK starts with an EMPTY self-play pool, and an empty pool does not disable `--self-play` —

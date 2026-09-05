@@ -71,7 +71,7 @@ from main.train.combination_checks import failing_checks
 # here would be better; it is a short, stable set and the launcher does not export it.
 LAUNCHER_ONLY = {
     "--restart-interval-hours", "--restart-grace-minutes", "--max-crash-restarts",
-    "--nice", "--no-pin", "--sync-to-main",
+    "--nice", "--no-pin", "--sync-to-main", "--pin-commit", "--pin-to-hash",
 }
 
 

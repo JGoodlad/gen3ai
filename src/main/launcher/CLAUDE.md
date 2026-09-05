@@ -148,9 +148,9 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   into the **Events panel** (`🛑 Fatal config error — will NOT restart`, then the reason lines), and
   returns immediately — no restart, no checkpoint discovery — so the fix is on-screen, not buried in
   `crashes/restart_err_*.txt`.
-- **Worktree isolation** — at startup, creates a detached git worktree pinned to the current
-  HEAD (or to the commit recorded in the checkpoint's `metadata.json` when resuming). Agent
-  pushes to `main` never affect a running session.
+- **Worktree isolation** — at startup, creates a detached git worktree pinned to the commit
+  `worktree.resolve_pin` chooses (`--pin-commit` > the checkpoint's recorded `metadata.json`
+  hash on a resume > HEAD). Agent pushes to `main` never affect a running session.
 - **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
   events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
   `f` force eval → confirm → `y`/`n` (off-cadence eval cycle; child rejects if one is already
@@ -221,6 +221,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 | `--nice` | `10` | Scheduling niceness for the launcher **and everything it spawns** — `0` disables. Applied in `run.main()` before any child exists (`run._apply_nice`, default `run.DEFAULT_NICE`); niceness is inherited across fork/exec, so the training child, its SubprocVecEnv workers and every eval worker are covered without per-spawn wiring — including the processes created by later periodic and crash restarts. It only ever **raises** niceness: a negative target needs `CAP_SYS_NICE`, so it no-ops rather than failing. **On an idle box this changes nothing** — niceness only arbitrates under contention. Why it defaults on: a run holds ~940 processes, and at nice 0 it competes on equal terms with interactive work sharing the box (measured 2026-08-13 at load 17–25 on 16 cores: an interactive client in the *same cgroup* as the run waited 2.1 s in the run queue per 1 s of CPU it received, and every training process sat at nice 0). Note the limit of the mechanism: nice arbitrates **within** a cgroup, so a client in its own systemd scope is already protected by cgroup `cpu.weight` and gains little — the flag's value is for whatever shares the run's own scope. Gate: `nice_test.py` (including the inheritance test — without it the workers silently revert to nice 0 and nothing else would notice). |
 | `--no-pin` | off | Skip worktree creation; run from the current source tree |
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
+| `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
 
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
 launcher-owned flags).
@@ -296,7 +297,33 @@ trainer-owned and forwarded verbatim; the launcher must never acquire a default 
 
 The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by
 `save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed
-run uses the same code as the original — unless `--sync-to-main` is passed.
+run uses the same code as the original — unless `--sync-to-main` or `--pin-commit` is passed.
+
+🚨 **THE PIN HAS FOUR SOURCES AND ONE DECISION FUNCTION** (`worktree.resolve_pin`, returning a
+`PinDecision(sha, source, subject)`; every refusal is a `PinRefused` carrying the exit code to
+leave with). In precedence order: an explicit **`--pin-commit`**, the resumed checkpoint's
+recorded **`git_hash`**, **HEAD** under `--sync-to-main`, **HEAD** on a fresh run. The chosen
+source is exported to the child as `LAUNCHER_PIN_SOURCE` and recorded as `metadata.json`'s
+top-level **`pin_source`** (`"pin_commit"` / `"checkpoint"` / `"sync_to_main"` / `"head"`) beside
+the `git_hash` it chose — so a finished run can say whether its commit was NAMED or inherited.
+
+**Why `--pin-commit` exists, measured.** A batch of arms launched sequentially under
+`--sync-to-main` each pins to HEAD *at its own launch*, so a commit landing mid-batch splits the
+batch across two commits and nothing in any run's output says so — that happened on 2026-09-04
+(arm 1 on `0c76e2ee`, arms 2-4 on `52ab5914`). Naming the commit on every arm removes HEAD from
+the decision. It is the launcher half of the fix; the chain script's half is to record the pin
+once and refuse to launch when HEAD has moved off it.
+
+**A RESTART may never MOVE the pin, and that is the one case `--pin-commit` does not win.** The
+launcher re-invokes the identical argv into the identical run dir every
+`--restart-interval-hours`, so a `--pin-commit` that differs from the resumed checkpoint's
+recorded `git_hash` would silently walk a live run onto other code every few hours. That is
+`FATAL_CONFIG`, naming both commits and the three ways out. Fork-vs-restart is
+`main.train.fork_lr.is_same_run_checkpoint`, **IMPORTED** — the same predicate `--fork-lr`, the
+pool seeding and `resolve_fork_resume_model` key on. The **fork swap runs first** on purpose:
+once an idempotent fork has its own progress, re-running its launch command is a RESTART of that
+fork, so the guard is checked against the fork's own checkpoint rather than the source it was
+originally forged from. Gate: `pin_commit_test.py`.
 
 **The child's `PYTHONPATH` is what makes that pin real, and it must never be "cleaned up."** The
 spawn passes no `cwd=`, so `PYTHONPATH=<worktree>/src` is the only thing making a resumed run

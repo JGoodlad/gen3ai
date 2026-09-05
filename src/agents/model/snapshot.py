@@ -66,6 +66,10 @@ def save_model_snapshot(
     if git_hash is None:
         import os as _os
         git_hash = _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
+    # WHERE that pin came from, when a launcher chose it: "pin_commit" (named on the command
+    # line — e.g. every arm of a batch pinned to ONE commit), "checkpoint" (the resumed
+    # checkpoint's own hash), "sync_to_main" or "head". Absent when nothing set it.
+    pin_source = os.environ.get("LAUNCHER_PIN_SOURCE")
 
     # Preserve state accumulated by other writers (this rebuilds metadata from
     # scratch, so anything not carried forward here is dropped).
@@ -98,6 +102,8 @@ def save_model_snapshot(
         "python_version": sys.version,
         "sb3_version": stable_baselines3.__version__,
     }
+    if pin_source:
+        metadata["pin_source"] = pin_source
     if hparams:
         metadata.update(hparams)
     if current_lr is not None:

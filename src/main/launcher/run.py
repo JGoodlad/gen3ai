@@ -50,9 +50,9 @@ from main.launcher.state import LauncherState
 from main.launcher.worktree import (
     _git_hash,
     _prune_stale_launcher_worktrees,
-    _read_checkpoint_git_hash,
     _create_run_worktree,
-    get_git_hash,
+    PinRefused,
+    resolve_pin,
     get_repo_root,
 )
 
@@ -196,7 +196,7 @@ def _prepare_session(
     interval_hours: float,
     pin: bool,
     sync_to_main: bool,
-    pin_hash_override: "str | None",
+    pin_commit: "str | None",
     grace_minutes: float,
     max_crash_restarts: int,
 ) -> _SessionCtx:
@@ -214,34 +214,12 @@ def _prepare_session(
     if interval_hours > 0:
         child_env["LAUNCHER_RESTART_INTERVAL_SEC"] = str(interval_seconds)
 
-    if pin:
-        repo_root = get_repo_root()
-        _prune_stale_launcher_worktrees(repo_root)
-        model_path = _find_model_arg(child_args)
-        if pin_hash_override:
-            pin_hash = pin_hash_override
-        elif model_path and not sync_to_main:
-            checkpoint_hash = _read_checkpoint_git_hash(model_path)
-            if not checkpoint_hash:
-                sys.exit(
-                    f"[launcher] ERROR: --model given but no git_hash found in metadata.json "
-                    f"for {model_path!r}.\nUse --no-pin to skip worktree isolation."
-                )
-            pin_hash = checkpoint_hash
-        else:
-            pin_hash = get_git_hash()  # full hash for worktree add
-
-        try:
-            train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash)
-        except RuntimeError as e:
-            sys.exit(f"[launcher] ERROR: {e}")
-        atexit.register(worktree_cleanup)
-        state.initial_git_hash = pin_hash[:8]
-        child_env["LAUNCHER_GIT_HASH"] = pin_hash
-    else:
-        train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
-        state.initial_git_hash = _git_hash()
-
+    # Run dir FIRST: the pin decision needs it. Whether a `--model` resume is a same-run RESTART
+    # (pin must not move) or a genuine FORK (--pin-commit wins) is decided by WHERE the resumed
+    # checkpoint lives relative to the dir this launch writes into — so the dir has to be known
+    # before the worktree is checked out. Resolution is filesystem-only; nothing here depends on
+    # the worktree existing.
+    #
     # Run dir: fresh → minted/named; a --run-name (or --exploiter) resume → FORK into a new dir
     # (init from --model, write here, never clobber the checkpoint's source dir); plain resume →
     # continue the checkpoint's own dir. (resolve_launch_run_dir documents all three.)
@@ -250,6 +228,7 @@ def _prepare_session(
     except ValueError as e:
         print(f"[launcher] ERROR: {e}")
         sys.exit(1)
+
     # Idempotent fork: if this fork dir ALREADY holds its own progress (a prior launch of this same
     # fork checkpointed), resume from THAT checkpoint rather than re-copying the source --model — so
     # a launcher-process restart / reboot / re-run of the launch command CONTINUES the fork in place
@@ -261,6 +240,41 @@ def _prepare_session(
         state.add_event(
             f"♻️  Fork {os.path.basename(run_dir)} already has progress — resuming in place from "
             f"{os.path.basename(_fork_resume)} (idempotent)")
+
+    # …and the fork swap happens BEFORE the pin decision, deliberately: once a fork has its own
+    # progress the re-launch IS a restart of that fork, so `--pin-commit` must be checked against
+    # the fork's own checkpoint rather than against the source it was originally forged from.
+    pin_decision = None
+    if pin:
+        repo_root = get_repo_root()
+        _prune_stale_launcher_worktrees(repo_root)
+        model_path = _find_model_arg(child_args)
+        try:
+            pin_decision = resolve_pin(
+                model_path=model_path,
+                run_dir=run_dir,
+                pin_commit=pin_commit,
+                sync_to_main=sync_to_main,
+                repo_root=repo_root,
+            )
+        except PinRefused as e:
+            print(f"[launcher] ERROR: {e}", file=sys.stderr)
+            sys.exit(e.exit_code)
+        pin_hash = pin_decision.sha
+
+        try:
+            train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash)
+        except RuntimeError as e:
+            sys.exit(f"[launcher] ERROR: {e}")
+        atexit.register(worktree_cleanup)
+        state.initial_git_hash = pin_hash[:8]
+        child_env["LAUNCHER_GIT_HASH"] = pin_hash
+        # Provenance: WHICH of the four sources chose this pin, so a run's metadata says whether
+        # its commit was named on the command line or inherited from a checkpoint / HEAD.
+        child_env["LAUNCHER_PIN_SOURCE"] = pin_decision.source
+    else:
+        train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
+        state.initial_git_hash = _git_hash()
     os.makedirs(run_dir, exist_ok=True)
     child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 
@@ -288,10 +302,10 @@ def _prepare_session(
             state.add_event(f"🔌 Showdown server :{showdown_port}")
 
     if pin:
-        if pin_hash_override:
-            state.add_event(
-                f"📌 --pin-to-hash: pinned to {state.initial_git_hash} (explicit override)"
-            )
+        if pin_decision is not None and pin_decision.source == "pin_commit":
+            state.add_event(f"📌 --pin-commit {pin_commit} → {pin_decision.sha}")
+            if pin_decision.subject:
+                state.add_event(f"   ↳ {pin_decision.subject}")
         elif sync_to_main and _find_model_arg(child_args):
             state.add_event(
                 f"🔄 --sync-to-main: pinned to current HEAD {state.initial_git_hash} "
@@ -671,7 +685,7 @@ def run(
     interval_hours: float,
     pin: bool = True,
     sync_to_main: bool = False,
-    pin_hash_override: "str | None" = None,
+    pin_commit: "str | None" = None,
     grace_minutes: float = 20.0,
     max_crash_restarts: int = 3,
 ) -> None:
@@ -715,7 +729,7 @@ def run(
         interval_hours=interval_hours,
         pin=pin,
         sync_to_main=sync_to_main,
-        pin_hash_override=pin_hash_override,
+        pin_commit=pin_commit,
         grace_minutes=grace_minutes,
         max_crash_restarts=max_crash_restarts,
     )
@@ -830,12 +844,17 @@ def build_launcher_parser():
         ),
     )
     pin_group.add_argument(
+        "--pin-commit",
         "--pin-to-hash",
-        metavar="HASH",
+        metavar="COMMIT",
+        dest="pin_commit",
         default=None,
         help=(
-            "Pin the isolated worktree to a specific git hash instead of the checkpoint's "
-            "recorded hash or current HEAD. Useful for resuming a run against a known-good commit."
+            "Pin the isolated worktree to THIS commit (full sha or unambiguous prefix) instead "
+            "of the checkpoint's recorded hash or current HEAD. Refused with --sync-to-main "
+            "(two sources of truth), and refused on a same-run RESTART whose checkpoint records "
+            "a different hash. Pass it on every arm of a batch so the batch cannot split across "
+            "two commits when one lands mid-batch. (--pin-to-hash is the legacy spelling.)"
         ),
     )
     parser.add_argument("-h", "--help", action="store_true")
@@ -856,8 +875,8 @@ def main() -> None:
         print("\nAll other arguments are forwarded to train_rl_agent.py.")
         sys.exit(0)
 
-    if known.pin_to_hash and known.no_pin:
-        parser.error("--pin-to-hash and --no-pin are mutually exclusive")
+    if known.pin_commit and known.no_pin:
+        parser.error("--pin-commit and --no-pin are mutually exclusive")
 
     # Deprioritise the whole run before anything is spawned, so the training child and
     # every worker it forks inherits it (see _apply_nice).
@@ -874,7 +893,7 @@ def main() -> None:
             interval_hours=known.restart_interval_hours,
             pin=not known.no_pin,
             sync_to_main=known.sync_to_main,
-            pin_hash_override=known.pin_to_hash,
+            pin_commit=known.pin_commit,
             grace_minutes=known.restart_grace_minutes,
             max_crash_restarts=known.max_crash_restarts,
         )
