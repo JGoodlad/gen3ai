@@ -19,7 +19,16 @@ Usage:
   python -m main.checkargs --argv "--steps 1 …"   # a literal argv
   python -m main.checkargs --pin <sha> …          # judge it by THAT commit's parser
 
-Exit 0 = every flag is accepted. Exit 1 = something would fail at launch.
+Exit 0 = every flag is accepted. Exit 1 = something would fail at launch. Exit 3
+(`FATAL_CONFIG`) = the argv names a flag that exists ONLY in the current tree and not at the pin —
+the same number, on the same finding, that the launcher itself exits with.
+
+🚨 AND IN PINNED MODE THE ACCEPTED BUCKET IS THE PINNED PARSER'S. A flag ADDED since the pin is
+accepted by the parser you are standing in and does not exist in the tree that will run —
+`--checkpoint-every-steps 150000` on the v8 fold's argv exited 0 here and killed three real arms
+(2026-09-05). Every argv flag this tree knows and the pinned option set does not is now the
+LOUDEST line of the output (`✗ NOT IN PINNED TREE @<sha8>: … (exists only in the current tree)`),
+never a `+1` in the accepted count.
 
 🚨 AND THE PARSER IT IS JUDGED BY MUST BE THE ONE THAT WILL RUN IT (2026-09-05). A resume is pinned
 by the launcher to the checkpoint's recorded `git_hash`, so the CURRENT tree's parser is the wrong
@@ -76,6 +85,7 @@ import shlex
 import sys
 from typing import Any, Dict, List, Tuple
 
+from main.exit_codes import TrainExitCode
 from main.train.combination_checks import failing_checks
 
 # Flags the LAUNCHER owns and strips before forwarding — absent from the trainer's parser by
@@ -386,6 +396,23 @@ def argv_from_run(run_dir: str) -> List[str]:
     return parts[1:] if parts and not parts[0].startswith("--") else parts
 
 
+def forwarded_argv(argv: List[str]) -> List[str]:
+    """The argv the LAUNCHER would actually FORWARD — its own flags, and their values, removed.
+
+    A run records its `launcher_command`, which is a LAUNCHER argv: it carries
+    `--restart-interval-hours 6`, `--sync-to-main` and friends that the launcher consumes and
+    never passes on. Handing those to the child's parser makes every one of them read as an
+    unknown flag at the pinned commit — a wall of false findings in front of the real ones.
+    """
+    out: List[str] = []
+    for flag, vals in split_argv(argv):
+        if flag in LAUNCHER_ONLY:
+            continue
+        out.append(flag)
+        out += vals
+    return out
+
+
 def _pinned_report(argv: List[str], explicit: str | None):
     """`(ParseReport | None, one-line note)` — which parser judged this argv, and its verdict.
 
@@ -398,7 +425,8 @@ def _pinned_report(argv: List[str], explicit: str | None):
         return None, f"the CURRENT tree's ({why})"
     if not differs_from_head(sha):
         return None, f"the CURRENT tree's — {why} names HEAD ({sha[:8]})"
-    return pinned_parser_check(sha, argv), f"the PINNED commit {sha[:8]}'s — {why}"
+    return (pinned_parser_check(sha, forwarded_argv(argv)),
+            f"the PINNED commit {sha[:8]}'s — {why}")
 
 
 def main(raw: List[str] | None = None) -> int:
@@ -421,11 +449,26 @@ def main(raw: List[str] | None = None) -> int:
     src = a.run_dir or "--argv"
     print(f"checked {res['n_flags']} flags from {src}")
     print(f"  parser                         : {pin_note}")
+    absent: List[str] = []
     if pinned is not None:
-        from main.launcher.pinned_argv import report_lines
-        for line in report_lines(pinned):
+        from main.launcher.pinned_argv import flags_only_in_current_tree, report_lines
+        absent = flags_only_in_current_tree(pinned, argv)
+        for line in report_lines(pinned, argv):
             print(f"  {line}")
-    print(f"  accepted by the trainer parser : {len(res['accepted'])}")
+    # 🚨 THE ACCEPTED BUCKET IS THE PINNED PARSER'S, NOT THIS TREE'S. Counting a flag as accepted
+    # because TODAY's parser knows it is how `--checkpoint-every-steps 150000` passed this tool and
+    # then killed three arms: the flag is real here and does not exist at b13b30b2, which is the
+    # tree the child runs. A flag absent at the pin leaves this bucket and gets its own line above.
+    accepted = [f for f in res["accepted"] if f.split("=", 1)[0] not in absent]
+    label = ("accepted by the PINNED parser  " if pinned is not None and pinned.available
+             else "accepted by the trainer parser ")
+    print(f"  {label}: {len(accepted)}")
+    if absent:
+        verdict = ("✗ WOULD FAIL AT LAUNCH" if pinned is not None and pinned.authoritative
+                   else "⚠️  WARNING (static scan — not authoritative)")
+        print(f"  in THIS tree but NOT at the pin : {len(absent)}  {verdict}")
+        for flag in absent:
+            print(f"      {flag}")
     print(f"  launcher-owned (not forwarded) : {len(res['launcher_only'])}")
     # When a pinned parser answered, the CURRENT tree's flag findings describe a parser the
     # child will never run: ADVISORY, never the verdict. That inversion is the whole fix —
@@ -471,11 +514,15 @@ def main(raw: List[str] | None = None) -> int:
 
     if pinned is not None and pinned.available:
         # Only the PARSER is pinned; the two combination families above still read this tree.
-        if pinned.ok:
+        if absent and pinned.authoritative:
+            # FATAL_CONFIG rather than 1, so this exit code matches what the LAUNCHER leaves with
+            # on this exact finding — one command, one verdict, one number.
+            return int(TrainExitCode.FATAL_CONFIG)
+        if not pinned.ok and pinned.authoritative:
+            return 1
+        if pinned.ok and not absent:
             print("  ✓ this command still launches (its own commit's parser accepts every flag)")
             return 0
-        if pinned.authoritative:
-            return 1
         print("  ⚠️  the pinned static scan questioned it — see above; not a refusal")
         return 0
     if not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]:

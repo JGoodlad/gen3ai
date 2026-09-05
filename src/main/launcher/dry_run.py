@@ -55,6 +55,7 @@ from main.launcher.pinned_argv import (
     ParseReport,
     differs_from_head,
     pinned_parser_check,
+    refuses,
     report_lines,
 )
 from main.launcher.worktree import (
@@ -256,7 +257,7 @@ def dry_run(
         #     how `--pin-commit b13b30b2` came to be refused for a flag that b13b30b2 accepts.
         if differs_from_head(decision.sha, get_repo_root()):
             pinned = pinned_parser_check(decision.sha, child_args, get_repo_root())
-            for line in report_lines(pinned):
+            for line in report_lines(pinned, child_args):
                 out(f"  {line}")
     else:
         out(f"  pin         : --no-pin — would run from the current tree ({_git_hash()})")
@@ -343,8 +344,9 @@ def dry_run(
     if advisory and (res["unknown"] or res["unsatisfiable"] or res["combinations"]):
         out("      (only the PARSER is read from the pinned commit; the extractor + "
             "resolve_config rules above are this tree's)")
-    # The pinned parser IS the child's parser, so its refusal is the launch's refusal.
-    if pinned is not None and pinned.available and not pinned.ok and pinned.authoritative:
+    # The pinned parser IS the child's parser, so its refusal is the launch's refusal — whether
+    # it could not parse the argv, or the argv names a flag that exists only in THIS tree.
+    if pinned is not None and refuses(pinned, child_args):
         failed = True
 
     if failed:

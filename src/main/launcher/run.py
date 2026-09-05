@@ -48,7 +48,9 @@ from main.launcher.child import (
 from main.launcher.input import _PollFlags, _dispatch_command
 from main.launcher.pinned_argv import (
     differs_from_head,
+    fatal_findings,
     pinned_parser_check,
+    refuses,
     report_lines,
 )
 from main.launcher.state import LauncherState
@@ -280,14 +282,14 @@ def _prepare_session(
         if differs_from_head(pin_hash, repo_root):
             # Validate the argv the CHILD receives, `--run-dir` and all — the launcher injects it
             # a few lines below, and an argv checked without it is not the argv that runs.
-            report = pinned_parser_check(
-                pin_hash, _insert_or_replace_run_dir_arg(child_args, run_dir), repo_root)
-            for line in report_lines(report):
+            checked_argv = _insert_or_replace_run_dir_arg(child_args, run_dir)
+            report = pinned_parser_check(pin_hash, checked_argv, repo_root)
+            for line in report_lines(report, checked_argv):
                 state.add_event(line)
-            if report.available and not report.ok and report.authoritative:
+            if refuses(report, checked_argv):
                 print(f"[launcher] ERROR: the argv does not parse against the PINNED commit "
                       f"{pin_hash[:8]} — the child would crash at startup.", file=sys.stderr)
-                for line in report.findings():
+                for line in fatal_findings(report, checked_argv):
                     print(f"[launcher]   {line}", file=sys.stderr)
                 sys.exit(int(TrainExitCode.FATAL_CONFIG))
 

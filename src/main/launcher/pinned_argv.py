@@ -22,18 +22,27 @@ copy the probe beside it, and run ONE subprocess with a clean environment that p
 argv against the pinned parser. The subprocess boundary is the point: the pinned tree's imports
 (torch included) never enter the launcher's process, and neither do its exceptions.
 
-TWO MODES, AND ONLY ONE OF THEM IS A VERDICT (see ``pinned_argv_probe``):
+THREE MODES, AND ONLY THE FIRST TWO ARE A VERDICT (see ``pinned_argv_probe``):
 
 * ``build_parser`` — the pinned tree's own ``build_parser()``. AUTHORITATIVE: a parse failure here
   is a launch that would die ~40 s later with a stray run dir, so the launcher exits
   ``FATAL_CONFIG`` naming the offending token.
-* ``ast_scan`` — a static read of the pinned ``add_argument`` calls, for commits before
-  ``build_parser()`` existed (it landed 2026-08-16; b13b30b2 predates it). Best-effort, so its
-  findings are a WARNING.
-* ``unavailable`` — no parser could be obtained (git failure, an import the pinned tree cannot
-  satisfy here, a timeout). **Never a silent pass**: the launcher says the argv is UNVALIDATED and
-  proceeds. Validating with the wrong parser is the defect; refusing to launch on a check we could
-  not run would be a worse one.
+* ``parse_args_hook`` — for commits BEFORE ``build_parser()`` existed (it landed 2026-08-16;
+  b13b30b2 predates it), run that tree's ``train_rl_agent.py`` as ``__main__`` with
+  ``ArgumentParser.parse_args`` monkeypatched so the first call answers and ``os._exit``s. Also
+  AUTHORITATIVE — the parser that answers is the parser the child builds.
+* ``ast_scan`` — a static read of the pinned ``add_argument`` calls, when the hook times out or
+  the pinned tree will not import here. Best-effort, so its findings are a WARNING.
+* ``unavailable`` — no parser could be obtained at all. **Never a silent pass**: the launcher says
+  the argv is UNVALIDATED and proceeds. Validating with the wrong parser is the defect; refusing
+  to launch on a check we could not run would be a worse one.
+
+🚨 **THE PINNED OPTION SET IS THE ACCEPTED BUCKET, and getting that backwards cost three arms.**
+``--checkpoint-every-steps 150000`` appended to the v8 argv exits 0 on the CURRENT parser — the
+flag is real *here* — and does not exist at b13b30b2, so the child dies at startup. Any check that
+counts "accepted" against today's parser will pass it. ``flags_only_in_current_tree`` inverts that:
+every argv flag the current tree knows and the PINNED option set does not is named on the LOUDEST
+line of the output, and in an authoritative mode it is a refusal.
 
 WHAT IT DOES NOT COVER. Only the PARSER is pinned. The extractor dependency graph
 (``agents.model.flag_registry``) and the value-conditional refusals
@@ -62,9 +71,12 @@ from typing import Dict, List, Optional, Tuple
 #: every recent pin from the authoritative ``build_parser`` mode to the static scan.
 _ARCHIVE_PATHS = ("src/main", "src/agents", "src/utils", "src/poke_env", "data")
 
-#: Time box for the probe subprocess. A pinned tree may import torch (~2 s measured), and a cold
-#: page cache or a loaded box stretches that; past this the answer is UNAVAILABLE, never a pass.
-DEFAULT_TIMEOUT_S = 60.0
+#: Time box for the probe subprocess. It must cover the ``parse_args_hook`` child's OWN 120 s box
+#: (``pinned_argv_probe.HOOK_TIMEOUT_S``) plus the static-scan fallback that a hook timeout falls
+#: through to — an outer box shorter than the inner one would turn every slow pin into
+#: ``unavailable`` and never reach the fallback it exists for. Past this the answer is
+#: UNAVAILABLE, never a pass.
+DEFAULT_TIMEOUT_S = 180.0
 
 _PROBE_BASENAME = "_pinned_argv_probe.py"
 
@@ -78,28 +90,61 @@ class ParseReport:
     """What the pinned tree's parser said about this argv."""
 
     sha: str
-    mode: str                                   # "build_parser" | "ast_scan" | "unavailable"
+    mode: str            # "build_parser" | "parse_args_hook" | "ast_scan" | "unavailable"
     reason: str = ""                            # why unavailable / why not build_parser
     unknown: List[str] = field(default_factory=list)
     stray: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
     values: Dict[str, str] = field(default_factory=dict)
+    options: List[str] = field(default_factory=list)   # THE PINNED OPTION SET
     n_options: int = 0
     seconds: float = 0.0
+
+    #: The modes in which the parser that answered IS the parser the child builds.
+    AUTHORITATIVE_MODES = ("build_parser", "parse_args_hook")
 
     @property
     def available(self) -> bool:
         """Did we manage to ask the pinned tree anything at all?"""
-        return self.mode in ("build_parser", "ast_scan")
+        return self.mode in (*self.AUTHORITATIVE_MODES, "ast_scan")
 
     @property
     def authoritative(self) -> bool:
         """Is a failure here a REFUSAL (the pinned parser itself) or a WARNING (a static read)?"""
-        return self.mode == "build_parser"
+        return self.mode in self.AUTHORITATIVE_MODES
+
+    @property
+    def how(self) -> str:
+        """WHICH parser answered, in one phrase. Printed on every run — a reader must never have
+        to guess whether the verdict came from the real parser or a reconstruction of it."""
+        return {
+            "build_parser": "the pinned build_parser()",
+            "parse_args_hook": ("the pinned tree's REAL parser, caught at its first parse_args() "
+                                "(the entry point never ran)"),
+            "ast_scan": ("a best-effort STATIC scan of the pinned add_argument() calls (NOT "
+                         "authoritative)"),
+        }.get(self.mode, self.mode)
 
     @property
     def ok(self) -> bool:
         return not (self.unknown or self.stray or self.errors)
+
+    def declares(self, flag: str) -> bool:
+        """Would the PINNED parser accept this spelling?
+
+        Exact match, the ``--flag=value`` form, or an UNAMBIGUOUS PREFIX — argparse
+        abbreviation-matches by default, so a token that is a unique prefix of a pinned option
+        really does parse there, and calling it absent would be a false alarm.
+        """
+        if not self.options:
+            return True                      # nothing to compare against ⇒ never accuse
+        name = flag.split("=", 1)[0]
+        if name in self.options:
+            return True
+        if not name.startswith("--"):
+            return True                      # short/positional spellings are not this check's job
+        hits = [o for o in self.options if o.startswith(name)]
+        return len(hits) == 1
 
     def findings(self) -> List[str]:
         """One human line per thing the pinned parser could not accept."""
@@ -116,14 +161,11 @@ class ParseReport:
             # naming it is the difference between "unvalidated" and a silent pass.
             return (f"⚠️  parser_unavailable_at_pin @{sha8} — argv NOT validated: {self.reason}. "
                     f"The child will parse it with code this box could not inspect.")
-        how = ("the pinned build_parser()" if self.authoritative
-               else "a best-effort STATIC scan of the pinned add_argument() calls (NOT "
-                    "authoritative)")
         if self.ok:
-            return (f"✅ argv validated against PINNED parser @{sha8} via {how} "
-                    f"[{self.n_options} options, {self.seconds:.1f}s]")
+            return (f"✅ argv validated against PINNED parser @{sha8} via {self.how} "
+                    f"[mode={self.mode}, {self.n_options} options, {self.seconds:.1f}s]")
         verb = "REFUSED by" if self.authoritative else "questioned by"
-        return f"✗ argv {verb} the PINNED parser @{sha8} via {how}"
+        return f"✗ argv {verb} the PINNED parser @{sha8} via {self.how} [mode={self.mode}]"
 
 
 def _git(repo_root: str, *args: str, timeout: float = 30.0) -> subprocess.CompletedProcess:
@@ -275,14 +317,84 @@ def pinned_parser_check(
         stray=list(data.get("stray", [])),
         errors=list(data.get("errors", [])),
         values=dict(data.get("values", {})),
+        options=list(data.get("options", [])),
         n_options=int(data.get("n_options", 0)),
         seconds=time.monotonic() - started,
     )
 
 
-def report_lines(report: ParseReport) -> List[str]:
-    """The block a caller prints: the summary, then one line per finding, then what to do."""
-    lines = [report.summary_line()]
+def flags_only_in_current_tree(report: ParseReport, child_argv: List[str]) -> List[str]:
+    """Flags in ``child_argv`` that THIS tree declares and the PINNED commit does not.
+
+    The defect this exists for (2026-09-05, three arms lost): a flag ADDED after the pin parses
+    cleanly against the current parser, so every "is this flag still known?" check passes it,
+    and the child — which runs the pinned tree — dies at startup on a flag its parser never had.
+    ``--checkpoint-every-steps 150000`` on the v8 argv is the case that cost the arms.
+
+    Launcher-owned flags are excluded (they are stripped before forwarding, so they are absent
+    from every trainer parser by design), and so is anything the CURRENT parser does not know
+    either — that is an ordinary stale flag and the existing unrecognized bucket already names it.
+    """
+    if not report.available or not report.options:
+        return []
+    try:
+        from main.checkargs import LAUNCHER_ONLY, known_option_strings, split_argv
+        known = known_option_strings()
+    except Exception:                                # noqa: BLE001 — a check must not kill a launch
+        return []
+    out: List[str] = []
+    for flag, _vals in split_argv(child_argv):
+        name = flag.split("=", 1)[0]
+        if not name.startswith("--") or name in LAUNCHER_ONLY or name in out:
+            continue
+        if name in known and not report.declares(name):
+            out.append(name)
+    return out
+
+
+def absent_at_pin_lines(report: ParseReport, child_argv: List[str]) -> List[str]:
+    """THE LOUDEST LINES in the block — one per flag that exists only in the current tree."""
+    sha8 = report.sha[:8]
+    return [f"✗ NOT IN PINNED TREE @{sha8}: {flag} (exists only in the current tree)"
+            for flag in flags_only_in_current_tree(report, child_argv)]
+
+
+def refuses(report: ParseReport, child_argv: Optional[List[str]] = None) -> bool:
+    """Would this check REFUSE the launch? The single decision every caller asks, in one place.
+
+    Two ways to fail, and both need the parser that answered to have been the real one: the pinned
+    parser could not parse the argv, or the argv names a flag the pinned tree does not have. In
+    ``ast_scan`` mode neither is a refusal — a reconstruction may be incomplete in both
+    directions, and a warning that blocks a launch on a guess is worse than no check.
+    """
+    if not (report.available and report.authoritative):
+        return False
+    if not report.ok:
+        return True
+    return bool(child_argv is not None and flags_only_in_current_tree(report, child_argv))
+
+
+def fatal_findings(report: ParseReport, child_argv: Optional[List[str]] = None) -> List[str]:
+    """Every line a refusal should print to stderr, loudest first."""
+    absent = absent_at_pin_lines(report, child_argv) if child_argv is not None else []
+    return absent + report.findings()
+
+
+def report_lines(report: ParseReport, child_argv: Optional[List[str]] = None) -> List[str]:
+    """The block a caller prints: the loudest finding first, then the summary and the rest.
+
+    ``child_argv`` is what makes the pinned OPTION SET usable — without it this can still report
+    what the pinned parser choked on, but not what it never had.
+    """
+    absent = absent_at_pin_lines(report, child_argv) if child_argv is not None else []
+    lines = list(absent)
+    if absent:
+        lines.append(("    ⚠️  a STATIC scan can be incomplete, so this is a WARNING, not a "
+                      "refusal — the flag may exist at the pin and simply not be readable here")
+                     if not report.authoritative else
+                     ("    the child runs the PINNED tree, whose parser has no such flag — it "
+                      "would die at startup with a run dir already on disk"))
+    lines.append(report.summary_line())
     lines += [f"    {f}" for f in report.findings()]
     if report.available and not report.ok and not report.authoritative:
         lines.append("    (a STATIC scan can be incomplete, so this is a warning, not a refusal — "
