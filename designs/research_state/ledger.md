@@ -9746,3 +9746,78 @@ an unseeded run, one entry above.
 
 `TC_FUND_A` at 30.1M of 32.6M on pin `0c76e2ee`, arm 1 ending ~02:04; no pin drift, no failures
 recorded, pool line 14 snapshots / 90% verified at launch.
+
+---
+
+### 2026-09-04 · PIN DRIFT inside the 2×2 — self-inflicted, verified inert, and the batch-pinning fix it exposes
+
+`TC_UNF_A` (arm 2, the unfunded-teacher fold, replicate A) launched on **`52ab5914`** where arm 1
+had launched on **`0c76e2ee`**. Nothing in the tooling failed: the arms carry `--sync-to-main`, so
+each pins to whatever `main` is **at its own launch**, and four commits were landed between 20:05
+and 02:03 — the offline-KL artifact, the `CLAUDE.md` concurrency clause, the offline-KL amendment,
+and the wall-clock entry. Main was moved under a running batch. Operator error.
+
+**Verified INERT, four ways, before deciding not to re-run.**
+
+| check | result |
+|---|---|
+| what changed in `src/` between the pins | only `3f2e8a14` (the anchor-monitor default-on build): `callbacks.py`, `config.py`, `parser/{capacity,distillation}.py`. Everything else in the range is `designs/` + `CLAUDE.md` |
+| `config.py` new block | guarded by `if args.distill_anchor_monitor is None` — our arms pass the flag explicitly, so it is never `None` and the block never runs |
+| `callbacks.py` new block | guarded by `monitor_source == "default"` — arm 2 records `cli`, takes the `else`, which is the pre-existing code; and the parent resolves anyway, so neither branch fires |
+| parser edits | help text, plus `store_true/default=False` → `BoolFlag/default=None`. With the flag present on the command line both parsers resolve `True` |
+| **empirical** | both arms' `DISTILL-ANCHOR` and `DISTILL-STOP` startup lines are identical — same parent via `cli_model`, `coef=0 mode=off_slice ref=parent`, `MONITOR-ONLY`, `mode=warn`; same dose `4.557e-08`, same freeze, same pool 14/90% |
+
+No fifth arm. A re-run of `TC_FUND_A` on the final pin would cost 5.7 GPU-h and buy metadata
+tidiness, not validity.
+
+**One honest residue:** arm 1's `metadata.json` has no `distill_anchor_monitor_source` field at all
+(it predates the default-on build) while arms 2–4 record `cli`. That is a *schema* difference, not a
+behavioural one, and anything diffing the four arms' metadata should expect it.
+
+**Main was FROZEN for the batch's duration** (both sessions, ledger commits included) the moment
+this was found — that is the only thing that stops arms 3 and 4 inheriting further movement, and it
+temporarily suspends the standing land-artifacts-without-asking autonomy.
+
+**THE DURABLE FAILURE IS THE CHECK'S PLACEMENT, NOT THE DRIFT.** The chain *does* compare each arm's
+recorded pin against an expected one — but it runs that check **after the arm completes**, which is
+far too late: by then the next arm has already launched onto the moved commit, and by the end of a
+four-arm batch three arms can carry a drift the first check has not yet reported. A guard that
+detects a condition only after it has propagated is documentation, not a guard. Same shape as the
+watcher whose filter matched only the happy path, and the fuzz gate that drove only masked-legal
+tokens: the mechanism existed and was pointed one step away from where it mattered.
+
+**BUILD ITEM (queued, dispatched by Model Review 2 after the freeze): a batch pins ONCE.** Resolve
+the commit at batch start, record it, and launch every arm on that recorded commit — either by
+dropping `--sync-to-main` inside a batch or by resolving the pin before arm 1 and passing it
+explicitly — and run the drift check **before each launch** rather than after each completion, so a
+mismatch stops the arm instead of annotating it.
+
+**Wall-clock, corrected once more (same entry, appended before landing).** The 22.5 GPU-h / Fri
+18:34 figure was derived from steps/min, which is blind to **restart-redo**: the launcher restarts
+every 3 h and resumes from the last checkpoint, discarding progress since it (up to one 500k
+checkpoint interval, ~38 min here). Arm 1's *measured* wall clock — 20:05 → 02:03, one restart
+included — is **5.97 h**, against the 5.62 h the rate implied. Four arms at the measured figure is
+**23.9 GPU-h, ending ~Fri 20:00**. Still the same authorised four arms; this is the third refinement
+of one estimate and the reason is worth keeping: a rate measured between checkpoints cannot see work
+that a restart throws away, so *any* wall-clock projection over a restarting run must come from
+elapsed time, not throughput.
+
+**Not acted on, deliberately:** arm 2's launcher is advising `train/noise_scale_ratio 2.2 —
+raise --grad-accum-steps ~3x`. That is a real tuning signal and changing K mid-batch would split
+every pair in the 2×2. It is recorded here for a future batch, not applied to this one.
+
+**MEASURED wall clock, now that the batch has closed — this is the figure to quote.**
+`FUND_A 5.97 h · UNF_A 5.88 h · FUND_B 5.92 h · UNF_B 5.92 h · **TOTAL 23.68 GPU-h**`, against the
+**~18 approved (+32%)**. The spread across four arms is **0.09 h**, so the batch itself was
+extremely uniform: the whole overrun lived in the *initial per-arm estimate*, not in variance
+between arms. Of the three successive projections, only the last (23.9 h) was close, and only
+because it finally came from measured elapsed time rather than throughput.
+
+**A SECOND COUNTER DEFECT, same root cause, found at the finish line.** The chain's closing line
+read `TEACHER-CONTENT 2x2 COMPLETE — 1/4 arms clean`. That is wrong as a health statement: it
+derives the count from `tc_failed_arms.txt`, where three arms are listed for `PIN_DRIFT` against an
+`EXPECT_PIN` set to *arm 1's* commit. All four arms completed normally, and on the only gate that
+means anything — `final_model.zip` — it is **4/4**. So the arms that behaved *correctly* under the
+freeze are exactly the ones the summary flagged, and a reader skimming the last line of a 24-hour
+batch would conclude it had mostly failed. The root cause is identical to the drift check's: **the
+expectation was pinned to the first arm rather than to the batch.** Both go in the build item.
