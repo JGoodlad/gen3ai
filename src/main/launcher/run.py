@@ -247,7 +247,10 @@ def _prepare_session(
     pin_decision = None
     if pin:
         repo_root = get_repo_root()
-        _prune_stale_launcher_worktrees(repo_root)
+        # Prunes only worktrees whose OWNER PROCESS IS DEAD; a live run's tree is kept and
+        # the skip is announced (2026-09-05: an unconditional prune deleted a live run's
+        # worktree). Events, not stdout — the screen is not up yet but the sink echoes.
+        _prune_stale_launcher_worktrees(repo_root, report=state.add_event)
         model_path = _find_model_arg(child_args)
         try:
             pin_decision = resolve_pin(
@@ -263,7 +266,7 @@ def _prepare_session(
         pin_hash = pin_decision.sha
 
         try:
-            train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash)
+            train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash, run_dir)
         except RuntimeError as e:
             sys.exit(f"[launcher] ERROR: {e}")
         atexit.register(worktree_cleanup)

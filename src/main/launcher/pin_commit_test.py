@@ -297,7 +297,8 @@ def test_pin_source_is_handed_to_the_child_and_announced(repo, tmp_path, monkeyp
     monkeypatch.setattr(launcher_run, "get_repo_root", lambda *a, **k: root)
     monkeypatch.setattr(launcher_run, "_prune_stale_launcher_worktrees", lambda *a, **k: None)
     monkeypatch.setattr(
-        launcher_run, "_create_run_worktree", lambda h: ("/t/train.py", "/t/src", lambda: None))
+        launcher_run, "_create_run_worktree",
+        lambda h, run_dir=None: ("/t/train.py", "/t/src", lambda: None))
     # _prepare_session registers at-exit summary printers for the REAL process; a unit test
     # must not leave those behind (they would fire, and print, at the end of the pytest run).
     monkeypatch.setattr(launcher_run.atexit, "register", lambda *a, **k: None)

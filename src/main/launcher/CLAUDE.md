@@ -151,6 +151,46 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 - **Worktree isolation** — at startup, creates a detached git worktree pinned to the commit
   `worktree.resolve_pin` chooses (`--pin-commit` > the checkpoint's recorded `metadata.json`
   hash on a resume > HEAD). Agent pushes to `main` never affect a running session.
+
+  🚨 **THE STARTUP PRUNE REMOVES ONLY A DEAD LAUNCHER'S WORKTREE, and that is a 2026-09-05
+  fix paid for with a run.** `_prune_stale_launcher_worktrees` used to force-remove EVERY
+  `launcher-*` worktree it found, on the assumption that such a directory can only be a
+  crashed session's debris. It is not: it is also every LIVE run's isolated checkout. A
+  one-second validation command — `python -m main.launcher --pin-commit deadbeef --steps 1`,
+  which exits `FATAL_CONFIG` before creating a worktree of its own — deleted a live
+  production run's. The run kept going on its already-open file descriptors and looked
+  healthy for hours; it died at its next 3 h periodic restart, when the launcher re-exec'd
+  the child out of a directory that no longer existed (**exit 2, no `final_model`**). The
+  resume then surfaced a second defect (see *Which commit a checkpoint records*).
+
+  **The ownership record.** `_create_run_worktree` now writes a claim naming this process:
+  `<worktree>.owner.json` — pid, its `/proc/<pid>/stat` **start time** (the pid-reuse guard;
+  a pid alone is not an identity, `(pid, starttime)` is), the run dir, and `sys.argv`. It
+  lives **BESIDE** the worktree, not inside it, so it cannot appear in that worktree's
+  `git status`: the pinned tree is a real checkout of a real commit, and an ignore rule added
+  today does not exist in a checkout of a commit from last month, while the child itself runs
+  `git` in there. Being a `tempfile.mkdtemp` sibling, it is collected by the same /tmp
+  cleanup, and `cleanup()` removes both.
+
+  **The prune rule**, per `launcher-*` worktree — and every ambiguity resolves to KEEP,
+  because a stale directory in /tmp costs disk and a deleted live one costs a run:
+
+  | state | verdict |
+  |---|---|
+  | owner file present, pid alive (`os.kill(pid, 0)`) **and** its starttime matches | **KEEP** — a live run |
+  | owner alive but starttime unrecorded / `/proc` unreadable | **KEEP** — cannot verify reuse |
+  | owner pid gone, or alive with a DIFFERENT starttime (pid reuse) | remove |
+  | no owner file (pre-fix worktree), mtime < 24 h | **KEEP** — may be a live pre-fix run |
+  | no owner file, mtime > 24 h (`_LEGACY_ORPHAN_MAX_AGE_S`) | remove — abandoned |
+  | the directory no longer exists | remove — the case git's own prune handles |
+
+  It **reports every decision** through a `report` callable (`state.add_event` from the
+  launcher, `print` standalone), naming the owning pid on each skip — a startup that leaves
+  debris behind must say so rather than look like a no-op. Gate:
+  `worktree_prune_test.py`, over a real temp git repo: a current-pid worktree survives, a
+  dead-pid one is removed, a reused pid is not mistaken for the owner, an unverifiable live
+  owner is kept, legacy fresh/old split correctly, a non-`launcher-*` worktree is untouched,
+  and the claim provably does not change the worktree's `git status`.
 - **Textual TUI** — live dashboard showing metrics, FPS, restart countdown; `l` logs · `e`
   events · `d` dashboard · `r` restart · `c` forced checkpoint · `p` plots · `s` status ·
   `f` force eval → confirm → `y`/`n` (off-cadence eval cycle; child rejects if one is already
@@ -298,6 +338,49 @@ trainer-owned and forwarded verbatim; the launcher must never acquire a default 
 The checkpoint must have a `metadata.json` with a `git_hash` field (written automatically by
 `save_model_snapshot()`). The launcher pins the worktree to that exact commit so the resumed
 run uses the same code as the original — unless `--sync-to-main` or `--pin-commit` is passed.
+
+### Which commit a checkpoint records
+
+🚨 **The pin only works if the recorded hash IS the code that ran, and until 2026-09-05 it was
+not.** The run whose worktree the prune deleted (above) then failed to resume correctly,
+because its checkpoint **sidecar** recorded `fff95a16` — the ambient HEAD of the main checkout
+— while the run-level `metadata.json` recorded the actual pin `eb5261ff`. `resolve_pin` reads
+the sidecar first, so the resume pinned the wrong commit. Two independent causes:
+
+1. `agents.model.snapshot.record_checkpoint` resolved `git_hash or get_git_hash()`, never
+   consulting `$LAUNCHER_GIT_HASH`. Worse, the truthy value it produced then **won** the
+   `git_hash or env or …` chain inside `_build_snapshot_entry`, so that function's env
+   fallback was dead code for the whole checkpoint path.
+2. `utils.git.get_git_hash()` ran `git rev-parse HEAD` **in the process cwd**. The launcher
+   puts the pinned worktree on the child's `PYTHONPATH` but spawns it with **no `cwd=`** (see
+   the `PYTHONPATH` note above — that split is deliberate, so `models/` lands in the main
+   checkout), so the child *imports* the pin while *standing in* un-pinned `main`.
+
+Fixed at the root: `get_git_hash()` is anchored at `utils.paths.repo_root()`, the checkout the
+code was **imported from** — in a detached launcher worktree that is the pin, in the main
+checkout nothing changes. And **one resolver**, `snapshot.resolve_git_hash`, now serves the
+run-level metadata and every sidecar: explicit argument → `$LAUNCHER_GIT_HASH` → the imported
+checkout's HEAD, **raising `GitHashMismatchError` when the launcher's pin and the imported
+tree name different commits** (a producer-side GIGO throw — a warning in a training child's
+stdout is a line in a 1 MiB ring buffer nobody reads). Gate:
+`src/agents/model/snapshot_git_hash_test.py`.
+
+**`pin_history` — the scalar `git_hash` is "current", not "the code that ran".** It is
+rewritten on every save, so on a run that restarts every 3 h it names the LAST code to touch
+the run (observed on `ai_v9_171`: `eb5261ff`, then `fff95a16` after one resume). `metadata.json`
+therefore also carries an **append-only** `pin_history` — `{git_hash, pin_source, first_step,
+last_step}` per contiguous commit span, written by the same save path, with the same
+immutability contract as `lineage` (an existing entry is never rewritten except to advance its
+`last_step`). A legacy run with no history is seeded with one `derived: true` span from its
+scalar hash, so *absent* never reads as *one commit*. Every checkpoint sidecar stamps the
+history as of its write.
+
+**`python -m main.sidecar_audit <models_dir_or_run>…`** is the offline reader (JSON only, no
+torch, no `.zip` opened): per run it prints the run-level pin, the `pin_history` spans, and
+every sidecar's hash, flags a run with >1 span as **PIN-SPLIT**, and separates a sidecar whose
+hash *is* a recorded span (explained — a restart) from one that appears nowhere (misattributed
+— the shape this defect leaves). `--json`, `-v`, and `--strict` (exit 1 on any unexplained
+hash).
 
 🚨 **THE PIN HAS FOUR SOURCES AND ONE DECISION FUNCTION** (`worktree.resolve_pin`, returning a
 `PinDecision(sha, source, subject)`; every refusal is a `PinRefused` carrying the exit code to

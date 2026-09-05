@@ -14,6 +14,116 @@ from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from utils.git import get_git_hash
 
+#: The launcher exports its chosen pin here; every git_hash written for a run reads it.
+LAUNCHER_GIT_HASH_ENV = "LAUNCHER_GIT_HASH"
+#: ...and WHICH of the four sources chose it ("pin_commit"/"checkpoint"/"sync_to_main"/"head").
+LAUNCHER_PIN_SOURCE_ENV = "LAUNCHER_PIN_SOURCE"
+
+
+class GitHashMismatchError(RuntimeError):
+    """The launcher's declared pin and the imported checkout's HEAD name DIFFERENT commits.
+
+    A producer-side GIGO guard, thrown where the wrong value would be WRITTEN rather than
+    where it is later read. One of the two is lying about which code is running, and a
+    checkpoint stamped with the wrong commit is unrecoverable provenance: the launcher pins a
+    resume to the recorded hash, so a wrong stamp resumes on wrong code.
+    """
+
+
+def _hashes_agree(a: Optional[str], b: Optional[str]) -> bool:
+    """Prefix-tolerant equality (one side may be a short hash). Unknowns never disagree."""
+    x = (a or "").strip().lower()
+    y = (b or "").strip().lower()
+    if not x or not y or x == "unknown" or y == "unknown":
+        return True
+    return x == y or x.startswith(y) or y.startswith(x)
+
+
+def resolve_git_hash(explicit: Optional[str] = None) -> str:
+    """THE one resolver for "which commit is this run's code?" — run metadata AND sidecars.
+
+    Order: an ``explicit`` argument (a caller that already knows, e.g. the round-trip smoke's
+    sentinel) → ``$LAUNCHER_GIT_HASH`` (the launcher's pin) → ``get_git_hash()`` (the HEAD of
+    the checkout this module was IMPORTED from, per ``utils.git``).
+
+    🚨 **When the env pin and the imported tree disagree, this RAISES.** That combination
+    means the child is running code the launcher did not pin — the 2026-09-05 defect in
+    reverse — and silently picking either one is how a sidecar came to record the ambient
+    main HEAD (``fff95a16``) for a run pinned to ``eb5261ff``. Not a warning: a warning in a
+    training child's stdout is a line in a 1 MiB ring buffer nobody reads.
+    """
+    if explicit:
+        return explicit
+    env_hash = (os.environ.get(LAUNCHER_GIT_HASH_ENV) or "").strip()
+    tree_hash = get_git_hash()
+    if env_hash and not _hashes_agree(env_hash, tree_hash):
+        from utils.paths import repo_root
+        raise GitHashMismatchError(
+            f"REFUSING to stamp a checkpoint with an ambiguous commit.\n"
+            f"  ${LAUNCHER_GIT_HASH_ENV} (the launcher's pin) = {env_hash}\n"
+            f"  HEAD of the imported checkout {repo_root()} = {tree_hash}\n"
+            f"These name different commits, so one of them is not the code that is running. "
+            f"Most likely the child's PYTHONPATH no longer points at the pinned worktree. "
+            f"Fix the launch (or unset ${LAUNCHER_GIT_HASH_ENV} if you deliberately run "
+            f"unpinned) — do not let the run stamp a commit it may not be executing."
+        )
+    return env_hash or tree_hash
+
+
+def _update_pin_history(
+    existing: Any,
+    *,
+    git_hash: str,
+    pin_source: Optional[str],
+    step: int,
+    legacy_git_hash: Optional[str] = None,
+    legacy_pin_source: Optional[str] = None,
+) -> list:
+    """APPEND-ONLY spans of "which commit ran which steps".
+
+    The scalar ``git_hash`` is rewritten on every save, so on a run that restarts every 3 h it
+    records the LAST code to touch the run, not the code that ran most of it (observed on
+    ai_v9_171: ``eb5261ff``, then ``fff95a16`` after one resume). This list keeps the whole
+    story: an entry per contiguous commit span, and an existing entry is never rewritten
+    except to advance its ``last_step``.
+
+    A LEGACY metadata.json — one with a scalar ``git_hash`` but no history — is seeded with a
+    single ``derived: true`` entry for that hash, so the absence of a history is not silently
+    read as "this run only ever ran one commit".
+    """
+    hist = [dict(e) for e in existing if isinstance(e, dict)] if isinstance(existing, list) else []
+    if not hist and legacy_git_hash:
+        hist.append({
+            "git_hash": legacy_git_hash,
+            "pin_source": legacy_pin_source,
+            "first_step": int(step),
+            "last_step": int(step),
+            "derived": True,   # first_step is when we NOTICED, not when that commit started
+        })
+    if hist and hist[-1].get("git_hash") == git_hash:
+        last = hist[-1]
+        last["last_step"] = max(int(last.get("last_step") or 0), int(step))
+        if pin_source and not last.get("pin_source"):
+            last["pin_source"] = pin_source
+        return hist
+    hist.append({
+        "git_hash": git_hash,
+        "pin_source": pin_source,
+        "first_step": int(step),
+        "last_step": int(step),
+    })
+    return hist
+
+
+def _read_pin_history(model_dir: str) -> Optional[list]:
+    """The run-level ``pin_history`` as it stands right now, for stamping into a sidecar."""
+    try:
+        with open(os.path.join(model_dir, "metadata.json")) as f:
+            hist = json.load(f).get("pin_history")
+    except (OSError, ValueError):
+        return None
+    return hist if isinstance(hist, list) else None
+
 
 def save_model_snapshot(
     model_dir: str,
@@ -26,6 +136,7 @@ def save_model_snapshot(
     original_command: Optional[str] = None,
     reward_composition: Optional[dict] = None,
     lineage: Optional[dict] = None,
+    num_timesteps: Optional[int] = None,
 ) -> None:
     """Write model_config.json and metadata.json into model_dir.
 
@@ -63,13 +174,14 @@ def save_model_snapshot(
     with open(os.path.join(model_dir, "model_config.json"), "w") as f:
         f.write(version.to_json())
 
-    if git_hash is None:
-        import os as _os
-        git_hash = _os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
+    # ONE resolver for the run metadata and every checkpoint sidecar (`resolve_git_hash`),
+    # so the two can never disagree about which commit ran — and it RAISES when the
+    # launcher's pin and the imported checkout's HEAD do.
+    git_hash = resolve_git_hash(git_hash)
     # WHERE that pin came from, when a launcher chose it: "pin_commit" (named on the command
     # line — e.g. every arm of a batch pinned to ONE commit), "checkpoint" (the resumed
     # checkpoint's own hash), "sync_to_main" or "head". Absent when nothing set it.
-    pin_source = os.environ.get("LAUNCHER_PIN_SOURCE")
+    pin_source = os.environ.get(LAUNCHER_PIN_SOURCE_ENV)
 
     # Preserve state accumulated by other writers (this rebuilds metadata from
     # scratch, so anything not carried forward here is dropped).
@@ -83,6 +195,9 @@ def save_model_snapshot(
     existing_lineage = None
     existing_matchup_history = []
     existing_reward_composition = None
+    existing_pin_history = None
+    existing_git_hash = None
+    existing_pin_source = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
@@ -95,6 +210,9 @@ def save_model_snapshot(
             existing_lineage = existing.get("lineage")
             existing_matchup_history = existing.get("matchup_history", [])
             existing_reward_composition = existing.get("reward_composition")
+            existing_pin_history = existing.get("pin_history")
+            existing_git_hash = existing.get("git_hash")
+            existing_pin_source = existing.get("pin_source")
 
     metadata: Dict[str, Any] = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -104,6 +222,22 @@ def save_model_snapshot(
     }
     if pin_source:
         metadata["pin_source"] = pin_source
+    # APPEND-ONLY commit spans. The scalar `git_hash` above is "the code that saved THIS
+    # checkpoint"; `pin_history` is "which code ran which steps", which the scalar destroys
+    # on every restart. Same immutability contract as `lineage`: existing entries win.
+    _step = num_timesteps
+    if _step is None and hparams:
+        _step = hparams.get("num_timesteps")
+    if _step is None:
+        _step = _max_recorded_step(existing_history)
+    metadata["pin_history"] = _update_pin_history(
+        existing_pin_history,
+        git_hash=git_hash,
+        pin_source=pin_source,
+        step=int(_step or 0),
+        legacy_git_hash=existing_git_hash,
+        legacy_pin_source=existing_pin_source,
+    )
     if hparams:
         metadata.update(hparams)
     if current_lr is not None:
@@ -338,6 +472,21 @@ def read_recorded_matchup(model_path: str) -> "tuple[str | None, dict | None]":
     return None, None
 
 
+def _max_recorded_step(history: dict) -> int:
+    """Highest step number named by a ``snapshot_history`` key, or 0.
+
+    The fall-back step for ``pin_history`` when the caller passed no ``num_timesteps`` — a
+    stale-but-ordered number beats 0, which would collapse every span onto the same point.
+    """
+    best = 0
+    for name in history or {}:
+        try:
+            best = max(best, int(str(name).split("_")[1]))
+        except (IndexError, ValueError):
+            continue
+    return best
+
+
 def _latest_checkpoint(history: dict) -> str | None:
     """Return the checkpoint name with the highest step number, or None."""
     best_name, best_step = None, -1
@@ -359,6 +508,7 @@ def _build_snapshot_entry(
     handoff_lr: Optional[float] = None,
     eval_block: Optional[dict] = None,
     matchup_hash: Optional[str] = None,
+    pin_history: Optional[list] = None,
 ) -> dict:
     """Build the canonical per-checkpoint metadata dict.
 
@@ -382,7 +532,10 @@ def _build_snapshot_entry(
     entry = dict(hparams) if hparams else {}
     entry["lr"] = entry["current_lr"] = lr
     entry["n_epochs"] = entry["current_epochs"] = n_epochs
-    entry["git_hash"] = git_hash or os.environ.get("LAUNCHER_GIT_HASH") or get_git_hash()
+    # Same resolver the run-level metadata uses — so a sidecar and metadata.json can never
+    # name different commits, which is exactly what happened before 2026-09-05 (the sidecar
+    # took `git rev-parse HEAD` in the child's CWD, i.e. the un-pinned main checkout).
+    entry["git_hash"] = resolve_git_hash(git_hash)
     if handoff_lr is not None:
         entry["handoff_lr"] = handoff_lr
     if eval_block:
@@ -392,6 +545,10 @@ def _build_snapshot_entry(
     # overwriting the run-level cli_args.
     if matchup_hash:
         entry["matchup_hash"] = matchup_hash
+    # The run's commit-span history AS OF this write, so a checkpoint carries the whole
+    # provenance and not just the one hash (see `_update_pin_history`).
+    if pin_history:
+        entry["pin_history"] = pin_history
     return entry
 
 
@@ -405,6 +562,7 @@ def record_snapshot_in_history(
     handoff_lr: Optional[float] = None,
     eval_block: Optional[dict] = None,
     matchup_hash: Optional[str] = None,
+    pin_history: Optional[list] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -422,7 +580,7 @@ def record_snapshot_in_history(
             meta = json.load(f)
     history = meta.get("snapshot_history", {})
     history[checkpoint_name] = _build_snapshot_entry(
-        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash
+        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash, pin_history
     )
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
@@ -455,9 +613,16 @@ def record_checkpoint(
     measured; it is the per-checkpoint "latest eval as of this checkpoint" view.
     The canonical, timing-robust record stays the top-level ``latest_eval``.
     """
-    resolved_hash = git_hash or get_git_hash()
+    # 🚨 THIS LINE WAS THE 2026-09-05 DEFECT: it read `git_hash or get_git_hash()`, skipping
+    # $LAUNCHER_GIT_HASH entirely, and `get_git_hash()` asked git about the process CWD — the
+    # UNPINNED main checkout, because the launcher spawns the child with no `cwd=`. The
+    # ambient hash it returned is truthy, so it then WON the `git_hash or env or ...` chain
+    # inside `_build_snapshot_entry` too: every sidecar and every snapshot_history entry
+    # recorded main's HEAD while metadata.json recorded the pin.
+    resolved_hash = resolve_git_hash(git_hash)
     eval_block = _read_latest_eval(model_dir)
     matchup_hash = _read_matchup_hash(model_dir)
+    pin_history = _read_pin_history(model_dir)
     write_checkpoint_metadata(
         checkpoint_path,
         lr,
@@ -467,6 +632,7 @@ def record_checkpoint(
         handoff_lr=handoff_lr,
         eval_block=eval_block,
         matchup_hash=matchup_hash,
+        pin_history=pin_history,
     )
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
@@ -481,6 +647,7 @@ def record_checkpoint(
         handoff_lr=handoff_lr,
         eval_block=eval_block,
         matchup_hash=matchup_hash,
+        pin_history=pin_history,
     )
 
 
@@ -493,6 +660,7 @@ def write_checkpoint_metadata(
     handoff_lr: Optional[float] = None,
     eval_block: Optional[dict] = None,
     matchup_hash: Optional[str] = None,
+    pin_history: Optional[list] = None,
 ) -> None:
     """Write the per-checkpoint metadata sidecar alongside a checkpoint .zip.
 
@@ -508,7 +676,7 @@ def write_checkpoint_metadata(
     handoff_lr / eval_block: see ``record_checkpoint``.
     """
     entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr, eval_block,
-                                  matchup_hash)
+                                  matchup_hash, pin_history)
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(entry, f, indent=2)
 

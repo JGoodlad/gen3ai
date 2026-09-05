@@ -13,10 +13,29 @@ from typing import Optional
 
 
 def get_git_hash(short: bool = False) -> str:
-    """Return the current git HEAD hash, or 'unknown' if git is unavailable."""
+    """The HEAD hash of the checkout THIS CODE WAS IMPORTED FROM, or 'unknown'.
+
+    🚨 **Anchored at ``utils.paths.repo_root()``, never at the process cwd** — and that is a
+    2026-09-05 bug fix, not a refinement. The launcher pins a resumed run to a detached
+    worktree and puts it on the child's ``PYTHONPATH``, but spawns the child with **no
+    ``cwd=``**, so the child *imports* the pinned commit while *standing in* the main
+    checkout. A cwd-relative ``git rev-parse HEAD`` therefore answered with whatever HEAD
+    main happened to be at, and that ambient hash was written into checkpoint sidecars as
+    the identity of the code that ran. Observed: a run pinned to ``eb5261ff`` whose sidecars
+    recorded ``fff95a16``; the resume then pinned the worktree to the wrong commit.
+
+    In a detached launcher worktree ``repo_root()`` IS that worktree and its HEAD is the pin
+    — exactly the answer wanted. In the main checkout nothing changes.
+
+    Callers that specifically want *some other* tree's HEAD should ask git themselves; this
+    function answers one question, and the answer must not depend on where anyone is standing.
+    """
     args = ["git", "rev-parse", "HEAD"] if not short else ["git", "rev-parse", "--short", "HEAD"]
     try:
-        return subprocess.check_output(args, text=True, stderr=subprocess.DEVNULL).strip()
+        from utils.paths import repo_root
+        return subprocess.check_output(
+            args, text=True, stderr=subprocess.DEVNULL, cwd=str(repo_root())
+        ).strip()
     except Exception:
         return "unknown"
 

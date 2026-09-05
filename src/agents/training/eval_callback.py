@@ -651,10 +651,16 @@ def write_best_model_sidecar(model_dir: "str | None", best_zip_path: str, model)
     if not model_dir:
         return
     try:
-        from agents.model.snapshot import write_checkpoint_metadata, _read_latest_eval
+        from agents.model.snapshot import (
+            write_checkpoint_metadata, _read_latest_eval, _read_pin_history,
+        )
         lr = float(model.policy.optimizer.param_groups[0]["lr"])
+        # git_hash=None on purpose: `snapshot.resolve_git_hash` owns that decision for EVERY
+        # sidecar (launcher pin → the imported checkout's HEAD, raising if they disagree).
+        # Passing `get_git_hash()` here used to hand it a pre-resolved ambient value.
         write_checkpoint_metadata(best_zip_path, lr=lr, n_epochs=int(model.n_epochs),
-                                  git_hash=get_git_hash(), eval_block=_read_latest_eval(model_dir))
+                                  eval_block=_read_latest_eval(model_dir),
+                                  pin_history=_read_pin_history(model_dir))
     except Exception as e:  # noqa: BLE001 — best-effort sidecar; must NEVER break the best-save path
         print(f"⚠️ [EVAL] could not write best_model.json sidecar: {e}")
 

@@ -10,8 +10,11 @@ of to whatever HEAD happened to be at each arm's own launch.
 import json
 import os
 import subprocess
+import sys
 import tempfile
+import time
 from dataclasses import dataclass
+from typing import Callable, Optional
 
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import run_dir_for_checkpoint
@@ -19,6 +22,14 @@ from main.train.fork_lr import is_same_run_checkpoint
 from utils.git import get_git_hash, get_repo_root
 
 _WORKTREE_PREFIX = "launcher-"
+
+#: Suffix of the OWNERSHIP file written BESIDE each launcher worktree (never inside it).
+#: See :func:`_owner_path` for why it lives outside the tree.
+_OWNER_SUFFIX = ".owner.json"
+
+#: A pre-fix worktree carries no owner file. It is only pruned once this old, so a LIVE
+#: pre-fix run keeps its worktree while an abandoned one still gets collected eventually.
+_LEGACY_ORPHAN_MAX_AGE_S = 24 * 60 * 60
 
 
 def _git_hash() -> str:
@@ -210,8 +221,140 @@ def resolve_pin(
     )
 
 
-def _prune_stale_launcher_worktrees(repo_root: str) -> None:
-    """Remove any stale launcher-* worktrees left by crashed sessions."""
+# --------------------------------------------------------------------------------------
+# Worktree OWNERSHIP - who is using this launcher-* worktree, and are they still alive?
+# --------------------------------------------------------------------------------------
+#
+# 2026-09-05 INCIDENT. `_prune_stale_launcher_worktrees` used to force-remove EVERY
+# `launcher-*` worktree at startup with no liveness check at all, on the assumption that a
+# launcher-* worktree can only be the debris of a crashed session. A one-second validation
+# command (`python -m main.launcher --pin-commit deadbeef --steps 1`) therefore deleted the
+# isolated worktree of a LIVE production run. The run kept going on its already-open file
+# descriptors and looked healthy for hours; it died at its next 3 h periodic restart, when
+# the launcher re-exec'd the child from a directory that no longer existed (exit 2, no
+# final_model).
+#
+# So a worktree is now pruned ONLY when its owner is provably gone. Every ambiguity - no
+# /proc, an unreadable owner file, a pid we cannot interrogate - resolves to KEEP: leaving a
+# stale directory in /tmp costs disk, deleting a live one costs a run.
+
+
+def _owner_path(worktree_path: str) -> str:
+    """Where a worktree's owner record lives: ``<worktree>.owner.json``, BESIDE the tree.
+
+    Deliberately OUTSIDE the checkout. A file inside the worktree would show up in that
+    worktree's ``git status`` as untracked (the pinned tree is a real checkout of a real
+    commit, and its `.gitignore` is whatever THAT commit says - an ignore rule added today
+    does not exist in a worktree pinned to a commit from last month), and the child's own
+    tooling runs `git` in there. A sibling file is invisible to git by construction, and it
+    sits in the same ``tempfile.mkdtemp`` parent so the same /tmp cleanup collects it.
+    """
+    return worktree_path.rstrip("/") + _OWNER_SUFFIX
+
+
+def _proc_starttime(pid: int) -> "str | None":
+    """Field 22 of ``/proc/<pid>/stat`` - the process start time in clock ticks since boot.
+
+    This is the PID-REUSE guard: a pid alone is not an identity (Linux wraps pids), but
+    (pid, starttime) is unique for the life of a boot. ``None`` when /proc is unavailable or
+    unreadable, which callers must read as "cannot verify", never as "a different process".
+    """
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            raw = f.read()
+    except OSError:
+        return None
+    # The comm field is parenthesised and may itself contain spaces/parens - split after the
+    # LAST ')' so the field offsets below are stable for any process name.
+    close = raw.rfind(")")
+    if close == -1:
+        return None
+    fields = raw[close + 2:].split()
+    # After comm, field numbering restarts at 3 (state), so starttime (22) is index 19.
+    return fields[19] if len(fields) > 19 else None
+
+
+def _write_owner_file(worktree_path: str, run_dir: "str | None" = None) -> None:
+    """Record THIS process as the owner of ``worktree_path``. Best-effort, never raises."""
+    pid = os.getpid()
+    record = {
+        "pid": pid,
+        "proc_starttime": _proc_starttime(pid),
+        "created_at": time.time(),
+        "worktree": worktree_path,
+        "run_dir": run_dir,
+        "argv": list(sys.argv),
+    }
+    try:
+        with open(_owner_path(worktree_path), "w") as f:
+            json.dump(record, f, indent=2)
+    except OSError:
+        pass  # a worktree with no owner file degrades to the LEGACY (age-gated) rule
+
+
+def _remove_owner_file(worktree_path: str) -> None:
+    try:
+        os.remove(_owner_path(worktree_path))
+    except OSError:
+        pass
+
+
+def _owner_is_alive(owner: dict) -> bool:
+    """Is the process that created this worktree still running?
+
+    FAIL-SAFE: every uncertainty returns True (keep the worktree). Only a pid that is
+    provably gone - or provably a DIFFERENT process that reused the number - returns False.
+    """
+    pid = owner.get("pid")
+    if not isinstance(pid, int) or pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True          # alive, just owned by another user
+    except OSError:
+        return True          # cannot tell - keep it
+    recorded = owner.get("proc_starttime")
+    if recorded is None:
+        return True          # written without a starttime - cannot check reuse, keep it
+    actual = _proc_starttime(pid)
+    if actual is None:
+        return True          # /proc unreadable - cannot check reuse, keep it
+    return str(actual) == str(recorded)
+
+
+def _classify_worktree(path: str) -> "tuple[str, str]":
+    """``(verdict, reason)`` for one ``launcher-*`` worktree - ``"keep"`` or ``"remove"``."""
+    if not os.path.isdir(path):
+        return "remove", "its directory no longer exists"
+    owner = _load_json_dict(_owner_path(path))
+    if owner is None:
+        # Pre-fix worktree, or an owner file cleaned out from under it. Age is the only
+        # signal left, so give it a full day before assuming it was abandoned.
+        try:
+            age = time.time() - os.path.getmtime(path)
+        except OSError:
+            return "keep", "no owner file and its mtime is unreadable"
+        if age > _LEGACY_ORPHAN_MAX_AGE_S:
+            return "remove", f"no owner file and {age / 3600:.1f} h old (legacy orphan)"
+        return "keep", f"no owner file but only {age / 3600:.1f} h old - may be a live pre-fix run"
+    if _owner_is_alive(owner):
+        return "keep", f"owned by LIVE pid {owner.get('pid')}"
+    return "remove", f"owner pid {owner.get('pid')} is gone"
+
+
+def _prune_stale_launcher_worktrees(
+    repo_root: str, report: Optional[Callable[[str], None]] = None
+) -> None:
+    """Remove launcher-* worktrees whose OWNER IS DEAD. A live owner's tree is never touched.
+
+    ``report`` receives one line per worktree KEPT (naming the owning pid) and one per
+    removal, so a startup that leaves debris behind says so instead of looking like a no-op.
+    Defaults to ``print``; the launcher passes ``state.add_event``.
+    """
+    say = report if report is not None else print
     result = subprocess.run(
         ["git", "worktree", "list", "--porcelain"],
         capture_output=True, text=True, cwd=repo_root,
@@ -219,20 +362,34 @@ def _prune_stale_launcher_worktrees(repo_root: str) -> None:
     if result.returncode != 0:
         return
     for line in result.stdout.splitlines():
-        if line.startswith("worktree "):
-            path = line[len("worktree "):]
-            if os.path.basename(path).startswith(_WORKTREE_PREFIX):
-                subprocess.run(
-                    ["git", "worktree", "remove", "--force", path],
-                    capture_output=True, cwd=repo_root,
-                )
+        if not line.startswith("worktree "):
+            continue
+        path = line[len("worktree "):]
+        if not os.path.basename(path).startswith(_WORKTREE_PREFIX):
+            continue
+        verdict, reason = _classify_worktree(path)
+        if verdict == "keep":
+            say(f"[worktree] KEPT {os.path.basename(path)} - {reason}")
+            continue
+        subprocess.run(
+            ["git", "worktree", "remove", "--force", path],
+            capture_output=True, cwd=repo_root,
+        )
+        _remove_owner_file(path)
+        say(f"[worktree] pruned {os.path.basename(path)} - {reason}")
 
 
-def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
-    """Create a detached git worktree pinned to git_hash.
+def _create_run_worktree(
+    git_hash: str, run_dir: "str | None" = None
+) -> "tuple[str, str, callable]":
+    """Create a detached git worktree pinned to git_hash, and CLAIM it for this process.
 
     Returns (train_script_path, src_dir_path, cleanup_fn).
     Raises RuntimeError if git worktree add fails.
+
+    The claim is a ``<worktree>.owner.json`` sibling naming this pid + its /proc start time;
+    it is what stops another launcher's startup prune from deleting a LIVE run's worktree
+    (see the 2026-09-05 incident note above). ``cleanup_fn`` removes both.
     """
     repo_root = get_repo_root()
     tmp = tempfile.mkdtemp(prefix=f"{_WORKTREE_PREFIX}{git_hash[:8]}-")
@@ -243,6 +400,7 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
     )
     if result.returncode != 0:
         raise RuntimeError(f"git worktree add failed:\n{result.stderr.strip()}")
+    _write_owner_file(tmp, run_dir)
 
     # Replace the empty submodule placeholder with a symlink to the main repo's
     # fully-initialized pokemon-showdown checkout.  Node's require() needs the
@@ -262,5 +420,6 @@ def _create_run_worktree(git_hash: str) -> "tuple[str, str, callable]":
             ["git", "worktree", "remove", "--force", tmp],
             capture_output=True, cwd=repo_root,
         )
+        _remove_owner_file(tmp)
 
     return train_script, src_dir, cleanup

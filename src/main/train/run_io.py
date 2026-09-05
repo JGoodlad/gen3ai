@@ -154,6 +154,13 @@ def _model_hparams(model) -> dict:
         # `check_compatible` reads.
         "dose": dose_block(model),
     }
+    # The step this snapshot was taken at. Recorded because `pin_history` (metadata.json's
+    # append-only "which commit ran which steps") needs a step for its span boundaries, and
+    # every production save already routes through here. `getattr` because the test doubles
+    # that call this are plain hparam holders, not SB3 models.
+    _steps = getattr(model, "num_timesteps", None)
+    if _steps is not None:
+        out["num_timesteps"] = int(_steps)
     for _key in ("distill_anchor_dual_state", "distill_stop_state"):
         _val = getattr(model, _key, None)
         if isinstance(_val, dict):

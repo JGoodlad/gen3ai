@@ -1692,6 +1692,14 @@ src/
                      #   parent, sha256 mismatch, arch change), --json for scripts, and --backfill
                      #   (dry-run unless --apply) to write a derived block into a legacy run.
                      #   Engine: agents/training/lineage.py
+    sidecar_audit.py   # DOES EVERY CHECKPOINT AGREE WITH ITS RUN ABOUT THE COMMIT? — offline,
+                     #   JSON-only (no torch, no .zip opened, so it reads a run whose arch
+                     #   drifted past current code). Per run: the run-level pin + pin_source,
+                     #   every `pin_history` span, and every sidecar's git_hash. Flags a run
+                     #   with >1 span as PIN-SPLIT, and separates a sidecar hash that IS a
+                     #   recorded span (explained — a restart) from one recorded nowhere
+                     #   (misattributed — the shape the 2026-09-05 cwd-HEAD defect leaves).
+                     #   --json / -v / --strict (exit 1 on any unexplained hash)
     dose.py            # THE DOSE READER — `lr_median x n_epochs / (batch_size x grad_accum_steps)`
                      #   per run, plus the ratio against a reference run, from the checkpoint
                      #   SIDECARS (falling back to snapshot_history, then the run-level current_lr).
@@ -1909,6 +1917,26 @@ argv regex lives in exactly one place and is marked as the legacy path.
 broken link: a missing parent dir, a sha256 that no longer matches the file on disk, an
 `arch_signature` that changed across a link. `--backfill` writes a derived block into a legacy run's
 metadata (marked `"derived": true`), dry-run unless `--apply`.
+
+🚨 **The `git_hash` is the HEAD of the checkout the code was IMPORTED from — never the process
+cwd — and a disagreement with `$LAUNCHER_GIT_HASH` RAISES at the write** (`gen3_sidecar_git_hash_v1`,
+2026-09-05). `utils.git.get_git_hash()` asks git about `utils.paths.repo_root()`, so a launcher
+child — which imports the pinned worktree via `PYTHONPATH` but is spawned with no `cwd=` and
+therefore *stands in* the un-pinned main checkout — records the pin rather than main's ambient HEAD;
+one resolver (`snapshot.resolve_git_hash`) serves the run-level metadata and every checkpoint
+sidecar, and it throws `GitHashMismatchError` when the launcher's pin and the imported tree name
+different commits. Before the fix a run pinned to `eb5261ff` stamped `fff95a16` into every sidecar,
+and its resume pinned the wrong commit.
+
+**`pin_history` — WHICH COMMIT RAN WHICH STEPS.** The scalar `git_hash` is rewritten on every save,
+so on a run that restarts every 3 h it names only the LAST code to touch the run. `metadata.json`
+therefore also carries an **append-only** `pin_history` beside `lineage` and under the same
+immutability contract: one `{git_hash, pin_source, first_step, last_step}` entry per contiguous
+commit span, written by the same save path, an existing entry never rewritten except to advance its
+`last_step`, and a legacy run with no history seeded with a single `derived: true` span from its
+scalar hash (so *absent* never reads as *one commit*). Every checkpoint sidecar stamps the history
+as of its write. Read it with **`python -m main.sidecar_audit <models_dir_or_run>…`**, which flags a
+run with >1 span as PIN-SPLIT and separates an explained sidecar hash from a misattributed one.
 
 These are run-level (one per run), NOT per-checkpoint: a periodic checkpoint `.zip` lives one
 level down in `checkpoints/` beside its own per-checkpoint `.json` sidecar, so
