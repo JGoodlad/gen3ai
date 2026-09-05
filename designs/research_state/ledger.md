@@ -9954,3 +9954,17 @@ consistently latent is part of the instrument's definition.*
 
 **The taught floor comes from the regime's own draws** — the two frozen replicate pairs give a
 taught-side frozen floor for free — and is never blended with the untaught one.
+
+### ✏️ CORRECTION to 8fbbcda4: "a frozen K=2 pair, closer to v8's dose" is WRONG — dose = lr × epochs / (batch × K), so K=2 is 3.19× v8 (heavier than anything tested); the cell nearest v8's dose is K=6 (1.06×). Next cell dispatched under the owner's window: a frozen UNFUNDED pair at K=6 (2026-09-04 ~22:30)
+
+The dose cell (entry 9f2f61bd) ran K=12 / 6 / 3 = 0.53× / 1.06× / 2.12× v8. The 2×2 ran K=3 = 2.12×.
+A frozen K=2 pair still has a use — it separates FREEZE from STEP against the controller-live N1/N2
+draws, which were K=2 — but it is the opposite direction from v8's dose, and 8fbbcda4 said
+otherwise. The owner has authorised running experiments through 2026-09-05 12:00. Dispatched to
+Training Run: **TC_UNF_K6_A / TC_UNF_K6_B — two frozen folds from the UNFUNDED teacher set at K=6
+(1.06× v8's dose), `--fork-lr 2.8e-5 --fork-lr-freeze`, otherwise the 2×2's argv, pinned ONCE at
+batch start** — the closest-to-parent teachers at v8's dose in the regime that is measurable, with
+its own frozen floor. Pre-registered readings: P1 each arm and the pooled pair vs parent, untaught,
+at the frozen K=6 floor; P2 pooled pair vs the K=3 unfunded pair (dose axis at fixed teachers);
+P3 the frozen floor at K=6 vs at K=3 (is the ~0 floor dose-stable). If the UNFUNDED teachers are
+rev-4's teacher set, R4DOSE6 is a prior single draw of this recipe and becomes a third arm.
