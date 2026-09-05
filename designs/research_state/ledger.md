@@ -10373,3 +10373,72 @@ gen-era p1M hole (−3.12 / −3.28 / −4.19). **Outcomes:** all three positive
 spread wider than the effect ⇒ v8's +4.64 — and by extension its whole curve — was one draw, and
 the full 37 GPU-h pair is not bought. EXT_A yields the GPU at launch. Phase 2 is the owner's call
 on this result.
+
+---
+
+### 2026-09-05 · v8 PHASE-1 REPLICATION launched — and `--steps` at b13b30b2 is internally inconsistent
+
+**The question.** v8's fold gifted **+4.64pp** untaught at **+1.09M** and rose to +9.67 by +12.5M;
+every one of our folds digs a **−3 to −4pp hole** at that same depth. Interpolating v8's banked curve
+at OUR fold length (+4.45M) gives **~+8.5pp** — so *fold length is exonerated*: whatever differs,
+differs early and does not need 14.5M steps to appear. Phase 1 asks whether the +4.64 **replicates**
+or was one draw. Three arms, ~1.5 h each, ≈4.5 GPU-h.
+
+**Design.** `v8rep_p1_{A,B,C}_0905`, forked from `ai_v8_04_distill_4teacher_0722/
+final_model_interrupted.zip` (sha256 verified against the recorded lineage), v8_14's own three
+teachers resolving via `best_model/best_model.zip`, its argv **verbatim** apart from `--run-name`
+and `--seed` (42/43/44). The five `GEN3AI_*_SEED` variables **do not exist at this commit** — they
+landed 2026-08-30 — so arm variation is sim-seed only, and the era's determinism recipe
+(`stochastic=False`, pinned teams, explicit 4-int sim seed) is what the original relied on.
+
+**Harness: the era trainer DIRECTLY, no launcher.** The current launcher cannot parse an era argv —
+`--hp-type-belief` **took a value** in the era and does not now, so its value poisons the next flag.
+That is a same-named flag whose **arity** changed, which no flag-presence check catches. With a
+1.5 h arm and a 6 h restart interval no restart fires, so the launcher would contribute only
+worktree isolation, which the private era checkout already provides.
+
+#### `--steps` at b13b30b2 is internally inconsistent — and one half fails SILENTLY, exit 0
+
+Both halves were observed, each by burning GPU:
+
+- `train_rl_agent`'s **own guard reads `--steps` as ABSOLUTE**. With `--steps 1,088,678` an arm
+  exited **0** in one minute having trained nothing: `Training already complete (277,583,267 /
+  1,088,678 steps)`. **A silent no-op carrying a success exit code** — strictly worse than a crash,
+  because every artifact-shaped check passes and only the step count betrays it.
+- It then hands the same number to SB3 with `reset_num_timesteps=False`, and SB3 does
+  `total_timesteps += self.num_timesteps`. With `--steps 278,671,945` (the intended absolute
+  endpoint) the real target became **556,255,212**, and arm A ran ~1M steps past its endpoint still
+  climbing. That overshoot is how the inconsistency was caught at all.
+
+So **no value of `--steps` expresses "train 1.09M more"**: a small one is refused as complete, a
+large one targets hundreds of millions. **And that explains v8_14's own artifact name** — it ran
+`--steps 400000000`, never reached it, and ended as `final_model_INTERRUPTED.zip`. *v8's fold was
+stopped from outside.* So the arms now run v8's own `--steps 400000000` and are killed by explicit
+pid once their depth checkpoint exists: an external stop is **fidelity**, not a workaround.
+
+*(Era-only. The current tree's `model_build.py` passes `remaining_steps = args.steps −
+num_timesteps` and guards ≤ 0 — verified by Model Review 2, no live defect.)*
+
+**Arm A is kept despite the wrong total.** The only way a bad total could contaminate weights is an
+LR schedule spanning `total_timesteps`; the era's cosine anneal is gated on
+`--anneal-lr-start-steps`, which v8's command never sets, so LR is purely KL-adaptive. The total
+decides *when to stop*, not how training proceeds.
+
+**Shared depth = step 278,669,097 = fork + 1,085,830**, the era's own checkpoint cadence point, which
+every arm hits. It is **2,848 steps (0.26%) short** of v8's `c278672` at fork + 1,088,678. The shared
+point is used so the three arms sit at an *identical* depth as each other; the 0.26% offset against
+v8's own checkpoint is **stated rather than corrected**, since correcting it would cost a full re-run
+of arm A for a quarter of a percent.
+
+**Fidelity note on the pool.** Startup reads `Pool has 0 snapshots → self_play_fraction=0%`. That is
+not the poolless-fork hazard: the era has **no parent-pool auto-seeding** (that landed 2026-09-03),
+and its `_maybe_seed_pool` seeds only once competent, so v8_14 started poolless too and filled its
+pool as it went (its `snapshot_history` begins at its own first checkpoint). Opponents come from the
+three `--stable-opponents` exploiters at 0.35 share plus bots. *Inference from era code plus v8_14's
+snapshot history, not a direct observation — its startup log no longer carries the line.*
+
+**Scoring** is the committed era meter `v8_gift_timing_probe.py`, run from a SEPARATE era checkout,
+`--impl node` mandatory (the era rust bridge predates `bc00d4d`), on **its own 16-team set** so P1 is
+like-for-like with the banked +4.64 (parent pooled wr 0.3877). Proven working before launch: a
+two-team smoke loaded both arms and wrote paired CRN cells with an acid block (pairwise L2 45.2,
+`all_distinct`, 3,512,397 params each).
