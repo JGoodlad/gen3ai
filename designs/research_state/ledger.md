@@ -9968,3 +9968,57 @@ its own frozen floor. Pre-registered readings: P1 each arm and the pooled pair v
 at the frozen K=6 floor; P2 pooled pair vs the K=3 unfunded pair (dose axis at fixed teachers);
 P3 the frozen floor at K=6 vs at K=3 (is the ~0 floor dose-stable). If the UNFUNDED teachers are
 rev-4's teacher set, R4DOSE6 is a prior single draw of this recipe and becomes a third arm.
+
+---
+
+### 2026-09-04 · K=6 dose cell at fixed teachers — launched, and why R4DOSE6 is not a third arm
+
+Two frozen unfunded folds at `--grad-accum-steps 6`, launched 21:22 on batch pin `eb5261ff`
+(owner: *"keep running experiments until at least noon tomorrow"*, relayed by Model Review 2).
+`ai_v9_170_TCUNFK6A_0904` and `ai_v9_171_TCUNFK6B_0904`, sequential, ~5.9 h/arm → arm 2 ends ~09:10,
+inside the window with ~3 h of slack.
+
+**Dose.** `lr × epochs / (batch × K)` = `2.8e-5 × 10 / (2048 × 6)` = **2.2786e-08 = 1.06× v8** — the
+v8-dose cell. (The K=3 arms are 2.12×; K=2 would be 3.19×, not "closer to v8".)
+
+**The argvs are the K=3 unfunded arm's, minus two tokens:** `--grad-accum-steps 3→6` and
+`--run-name`. The two arms differ from each other in `--run-name` alone, so their spread is a draw
+and the cell yields its own frozen K=6 floor. Validated by EXECUTING, not clause-checking:
+`checkargs` rc=0 on both *and* a real dry launch of arm A — 8 teachers / 16 teams, pool 14 snapshots
+/ 90%, `pinning LR to 2.80e-05 and FREEZING`, `grad_accum_steps=6` in metadata.
+
+#### R4DOSE6 is NOT a prior draw of this recipe
+
+The question was worth asking — `R4DOSE6` matches on *everything* that usually defines a cell: coef
+0.1761, K=6, `fork_lr 2.8e-05`, frozen, same parent `R2ACTION`. But its teachers are **three** runs
+(`R4S3a/b/c`) where this cell's are **eight** (`R5F00…R5F14`). Different set *and* different count —
+and teacher identity is precisely the variable this cell holds fixed. So it is a draw of a different
+cell and does not join. **P2's dose axis stays a two-point comparison** (K=3 vs K=6) at fixed
+teachers, not three. *A recipe that matches on every recorded hyperparameter can still be a
+different experiment; the thing being held fixed is part of the recipe.*
+
+#### The pin is resolved once and checked BEFORE each launch
+
+Half the batch-pin build item, implemented without touching the launcher (there is no
+`--pin-commit`; the launcher takes its pin from the checkpoint's hash or, under `--sync-to-main`,
+from HEAD). The chain now resolves the pin once at start, records it to `k6_batch_pin.txt`, and
+**refuses to launch** any arm whose HEAD no longer matches — so a mid-batch commit costs one arm's
+delay instead of silently splitting the pair, which is exactly what the 2×2's after-the-fact check
+could not prevent. Its closing summary also reports the **artifact gate separately from pin
+bookkeeping**, so this cell cannot close "1/2 arms clean" on a batch where both produced a model.
+
+Because HEAD is still the source, main is frozen for the duration (both sessions) — including
+against *this entry*, which is why it lands only after arm 2 has launched. The remaining half of the
+build item (the launcher accepting an explicit pin) stays queued for after the window.
+
+**Pre-registered readings, endpoint first:** P1 each arm and the pooled pair vs parent, untaught, at
+the frozen K=6 floor; P2 the pooled K=6 pair vs the K=3 unfunded pair (dose at fixed teachers,
+frozen both sides); P3 the frozen floor at K=6 vs at K=3 — is the near-zero frozen floor
+dose-stable, or was K=3 lucky.
+
+**The pre-launch pin check FIRED for real and passed** (03:36): arm 2 launched only after HEAD was
+verified equal to the batch pin `eb5261ff`, and both arms record it. `k6_failed_arms.txt` is empty
+— the first batch in this program with no pin note at all. Arm 1's measured wall is 6.23 h against
+the K=3 arms' 5.88–5.97 h; the difference is the taught-16 and taught-baseline passes sharing cores,
+not a K=6 effect, and it is visible in the rate trace (11,427/min while the CPU work ran, 13,271/min
+after it finished).
