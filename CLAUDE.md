@@ -786,6 +786,15 @@ flags
 than reported as stale. **Run it after deleting flags**, over the recorded commands of any run you
 might still relaunch or fork — that is what it is for.
 
+**`python -m main.launcher --dry-run` is its EXECUTING complement, and it is the one that is safe
+on a same-run RESTART** — `checkargs` answers "do these flags still parse and cohere?" from an argv
+anywhere, while `--dry-run` resolves the actual launch on this box (role FRESH/FORK/RESTART, the run
+dir, the pin + its subject, `+X steps` against the checkpoint, the INHERITED-vs-argv config, the
+pool) and exits without creating a run dir, a worktree or a child. Reach for it instead of
+"launching the real command and killing it after the startup lines": that habit is harmless on a
+fork and DESTRUCTIVE on a restart, which is the 2026-09-05 incident `src/main/launcher/CLAUDE.md` →
+*Validating a launch without launching* records.
+
 It reads the parser's own `_actions` via **`train_rl_agent.build_parser()`** (extracted from
 `main()` so the parser can be inspected without running a training job), not scraped `--help` text.
 That distinction is load-bearing: `--help` was itself broken by one unescaped `%` — `"~0.6% of"`

@@ -263,6 +263,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 | `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
 
+| `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per-flag `INHERITED` vs `from the argv`), the pool as recorded, and a `(child-only: …)` line for everything that needs torch. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See **Validating a launch without launching** below. |
+
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
 launcher-owned flags).
 
@@ -276,6 +278,65 @@ next to `--no-compile-*`). `compile_flag_forwarding_test.py` pins both against t
 parser rather than a hand-copied twin. Same failure class as `default_port_test.py`, mirrored: that
 one catches a launcher-injected default drifting from the trainer's, this one catches the launcher
 silently swallowing a child flag.
+
+## Validating a launch without launching — `--dry-run`
+
+🚨 **A "dry launch" of the real command is safe on a FORK and DESTRUCTIVE on a same-run RESTART.
+That asymmetry cost a run's provenance on 2026-09-05.** To check that a restart with a larger
+`--steps` would still launch, a session launched the real command and killed it a few seconds
+later, after the startup lines. A fork writes a NEW directory, so that habit had always been
+harmless; a RESTART operates on the REAL run directory, and those seconds were enough to write
+`final_model_interrupted.zip`/`.json`, repoint `latest.txt` at that phantom artifact, overwrite
+`metadata.json` (whose `steps` became a target that never ran) and `model_config.json`, and leave
+`.compile_quorum` files behind. **"Dry" was a property of forks, never of the launcher.**
+
+`--dry-run` makes it a property of the launcher. It performs *everything the launcher resolves
+before a child exists* — argv parse, the fork-vs-restart classification (`fork_lr.
+is_same_run_checkpoint`, IMPORTED), the idempotent-fork `--model` swap, the run dir
+(`resolve_launch_run_dir`, **without** the `makedirs` that follows it in `_prepare_session`), the
+pin (`resolve_pin`), and the effective config a `--model` inherits — prints one startup-shaped
+block, and exits.
+
+**What it prints**, in order: role · run dir (flagged `EXISTS — a real launch WRITES INTO IT` when
+it does) · `--model` · pin sha + subject + source · `--steps` beside the checkpoint's recorded
+`num_timesteps` and the `+X steps` delta · interpreter · transport · restart/grace/nice · the
+effective config with each reported flag marked `INHERITED` or `from the argv` (`distill_teacher`,
+`distill_target`, `distill_coef`, `distill_topk`, `grad_accum_steps`, `fork_lr`, `fork_lr_freeze` —
+`dry_run.REPORTED_DESTS`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool
+drift is visible BEFORE launch) · then one `(child-only: …)` line per fact it structurally cannot
+compute.
+
+**It refuses what the real path refuses**, with the same exit code: an unresolvable `--pin-commit`
+and a same-run RESTART whose `--pin-commit` differs from the checkpoint's recorded hash both leave
+`FATAL_CONFIG` (3); `--pin-commit` + `--sync-to-main` and `--pin-commit` + `--no-pin` still fail at
+parse time (a dry run is not a way around a refusal the parser owns); a stale flag or a refused
+combination is `FATAL_CONFIG` too. A run-dir resolution failure exits `1`, as `_prepare_session`
+does.
+
+**What it never does, and how that is enforced.** No run dir created or modified, no worktree, no
+startup prune, no child, no `metadata.json` / `latest.txt` / `model_config.json` write, no
+environment export — and not even the `--nice` change, because `main()` returns into `dry_run`
+*before* `_apply_nice`. That ordering is the guarantee: `dry_run.py` imports only pure resolvers and
+never reaches `_create_run_worktree` / `_prune_stale_launcher_worktrees` / `_launch_child`. It is
+PROVEN rather than asserted by `dry_run_test.py`, which sha256s (+ mtime) every file in a fake run
+dir before and after a same-run-restart dry run and requires byte-identity, checks `git worktree
+list` is unchanged, and booby-traps all four effectful entry points so a future edit that reaches
+one FAILS the suite.
+
+**What it cannot know.** The architecture-compatibility verdict, the `ModelVersion` round-trip, the
+resolved compile flags, the pool SEEDING and the obs dim all need torch and a built model in the
+child. Each is printed as `(child-only: …)` rather than guessed at — a dry run that invented them
+would be worse than one that names the gap.
+
+**It is the EXECUTING complement to `python -m main.checkargs`** (root `CLAUDE.md` → *Will this
+command still launch?*): `checkargs` answers "do these flags still parse and cohere?" from an argv
+anywhere; `--dry-run` answers "what would THIS command do, on THIS box, right now?" — and calls
+`checkargs.check` for the flag half rather than re-implementing it, so the two cannot drift.
+
+```bash
+python -m main.launcher --dry-run --model models/<run>/checkpoints/checkpoint_N_steps.zip \
+  --steps 30000000 --device cuda
+```
 
 ## Which interpreter the child runs
 

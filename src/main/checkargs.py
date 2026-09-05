@@ -72,6 +72,7 @@ from main.train.combination_checks import failing_checks
 LAUNCHER_ONLY = {
     "--restart-interval-hours", "--restart-grace-minutes", "--max-crash-restarts",
     "--nice", "--no-pin", "--sync-to-main", "--pin-commit", "--pin-to-hash",
+    "--dry-run",
 }
 
 

@@ -835,6 +835,18 @@ def build_launcher_parser():
         default=False,
         help="Skip worktree pinning — child runs from the current working tree (old behaviour)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help=(
+            "Resolve this launch and PRINT it — role (fresh/fork/restart), run dir, pin, "
+            "+steps, the effective config a --model inherits, the pool — then exit without "
+            "creating a run dir, a worktree, or a child. Safe on a same-run RESTART, which a "
+            "'dry launch' of the real command is NOT (it writes final_model_interrupted.zip and "
+            "repoints latest.txt). The executing complement to `python -m main.checkargs`."
+        ),
+    )
     pin_group = parser.add_mutually_exclusive_group()
     pin_group.add_argument(
         "--sync-to-main",
@@ -881,15 +893,32 @@ def main() -> None:
     if known.pin_commit and known.no_pin:
         parser.error("--pin-commit and --no-pin are mutually exclusive")
 
-    # Deprioritise the whole run before anything is spawned, so the training child and
-    # every worker it forks inherits it (see _apply_nice).
-    _apply_nice(known.nice)
-
     child_args = _strip_launcher_args(sys.argv[1:])
     # Launcher sessions are long-lived: default to the dedicated training server (8001)
     # so dev-server churn on 8000 can't drop every worker's connection mid-run. An
     # explicit --showdown-port still wins.
     child_args = _apply_default_showdown_port(child_args)
+
+    # --dry-run returns BEFORE anything with an effect: before the niceness change, before
+    # `_prepare_session`'s makedirs / worktree / prune, before any child. That ordering is the
+    # guarantee (see launcher/dry_run.py's incident note), not a convention.
+    if known.dry_run:
+        from main.launcher.dry_run import dry_run
+        sys.exit(dry_run(
+            child_args,
+            interval_hours=known.restart_interval_hours,
+            pin=not known.no_pin,
+            sync_to_main=known.sync_to_main,
+            pin_commit=known.pin_commit,
+            grace_minutes=known.restart_grace_minutes,
+            max_crash_restarts=known.max_crash_restarts,
+            nice=known.nice,
+        ))
+
+    # Deprioritise the whole run before anything is spawned, so the training child and
+    # every worker it forks inherits it (see _apply_nice).
+    _apply_nice(known.nice)
+
     try:
         run(
             child_args,
