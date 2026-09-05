@@ -4,9 +4,11 @@ The launcher wraps `train_rl_agent.py` for long, unattended runs. **Invocation c
 (start fresh / resume) live in the root `CLAUDE.md` → Launcher section** — this file documents
 how it works internally. The UI is **Textual**, built on the shared `src/main/tui/` base.
 Modules: framework-agnostic core `checkpoint.py`, `worktree.py`, `child.py`, `input.py`,
-`state.py`, `ipc.py` + pure formatters `format.py`; the UI `app.py` + `launcher.tcss`; the run
-loop / supervisor `run.py`; entry points `__init__.main()` (`python -m main.launcher`) and the
-`tui.py` back-compat alias (`python -m main.launcher.tui`).
+`state.py`, `ipc.py` + pure formatters `format.py`; `pinned_argv.py` + `pinned_argv_probe.py`
+(validate the child argv against the PINNED commit's parser, not this tree's); the UI `app.py` +
+`launcher.tcss`; the run loop / supervisor `run.py`; the resolve-and-print `dry_run.py`; entry
+points `__init__.main()` (`python -m main.launcher`) and the `tui.py` back-compat alias
+(`python -m main.launcher.tui`).
 
 > **History:** the launcher used to have a second **Rich** frontend (`ui.py` + a Rich `run()`
 > loop). It was removed once the Textual UI proved out — Textual is now the only UI. If you're
@@ -337,6 +339,84 @@ anywhere; `--dry-run` answers "what would THIS command do, on THIS box, right no
 python -m main.launcher --dry-run --model models/<run>/checkpoints/checkpoint_N_steps.zip \
   --steps 30000000 --device cuda
 ```
+
+## An argv is validated by the parser of the tree that will RUN it — `pinned_argv.py`
+
+🚨 **`--pin-commit` refused the exact command it exists for, and the reason is a class of drift no
+presence check can see.** On 2026-09-05::
+
+    python -m main.launcher --pin-commit b13b30b2 <the argv that run recorded> --dry-run
+    error: argument --hp-type-belief-coef: invalid float value: 'learned'
+
+At `b13b30b2` **`--hp-type-belief` TOOK A VALUE** (`learned`). Today that flag is deleted, so
+argparse — which abbreviation-matches by default — resolved the token onto the surviving
+`--hp-type-belief-coef` and handed it the value. Every argv check the launcher performed (its own
+`--dry-run`, and `main.checkargs`) read the **CURRENT** tree's `build_parser()`, while the child
+runs the **PINNED** tree's. **A same-named flag whose ARITY or TYPE changed is invisible to a "does
+the parser still know this flag?" test**, because the current parser thinks it does — and the
+result was that re-running an old recipe on its own commit, the one thing `--pin-commit` is for,
+could not be validated at all.
+
+**The rule now: when the resolved pin names a commit other than the HEAD of the checkout the
+launcher is running from, every argv validation runs against the PINNED tree's parser.** Pin ==
+HEAD is unchanged in every respect (no subprocess, no archive, the current parser) — pinned to your
+own tree, the current parser IS the right one.
+
+**How the pinned parser is obtained** (`pinned_argv.pinned_parser_check`, one subprocess):
+`git archive <sha> -- src/main src/agents src/utils src/poke_env data` into a temp dir, copy
+`pinned_argv_probe.py` beside it, run it with a **clean environment** (the caller's `PYTHONPATH`
+names the *current* `src` in every worktree shell on this box, so inheriting it would silently
+validate against the parser we are trying not to use). **Measured on this repo (2026-09-05, box
+under a live run): `b13b30b2` 3.25 s cold / 2.89 s warm (`ast_scan`, 171 options); `HEAD~30`
+3.33 s cold / 2.84 s warm (`build_parser`, 579 options).** The archive+extract is only ~0.4 s of
+that — the rest is the probe subprocess importing the pinned tree — so the per-sha cache saves
+little and the whole check is ~3 s either way. `data/` is 18 MB of the archive and `src/` 20 MB;
+`src/rust_sim`'s 66 MB is excluded, since nothing on the parser path imports it. Time-boxed at
+60 s, and a timeout is UNAVAILABLE, never a pass.
+
+**`git archive`, never `git worktree add`.** A worktree is a durable, registered, prunable object,
+and a one-second validation command that touched the worktree list has already cost this program a
+live production run (see the prune incident above). An archive is a read of the object database
+and leaves nothing registered anywhere. `pinned_argv_test.py` asserts `git worktree list` is
+unchanged.
+
+**Three outcomes, and only one of them is a verdict:**
+
+| mode | what it is | a failure means |
+|---|---|---|
+| `build_parser` | the pinned tree's own `build_parser()` — the parser the child constructs | **`FATAL_CONFIG` (3)**, naming the offending token. The child would die on it ~40 s later, with a run dir already on disk |
+| `ast_scan` | a STATIC read of every `…add_argument(…)` call in the pinned `train_rl_agent.py` (+ `main/train/parser/*.py`), replayed into a synthetic parser carrying only each option's SPELLING and ARITY | a **WARNING**. `build_parser()` landed 2026-08-16 (`26b28509`); every commit before it — `b13b30b2` included — builds its parser inline inside `main()`, which cannot be called without starting a training job, so this is the only cheap way to ask them anything. A reconstruction can be incomplete, so it may not refuse |
+| `unavailable` | `parser_unavailable_at_pin` — git failed, the pinned tree will not import here, nothing was statically readable, or the probe timed out | a **WARNING** naming the reason, and the launch proceeds with the argv marked UNVALIDATED. **Never a silent pass** — but also never a refusal on a check we could not run |
+
+`data/` is in the archive and that is not optional: `utils.paths.repo_root()` is
+`__file__`-relative, so a pinned tree looks for its data beside itself and the `gen3_data` facade
+raises `FileNotFoundError` at import — which would silently demote every recent pin from
+`build_parser` to the static scan.
+
+**Only the PARSER is pinned, and the other checks say so.** The extractor dependency graph
+(`agents.model.flag_registry`) and the value-conditional refusals (`main.train.combination_checks`)
+are still read from the current tree, so whenever a pinned check ran their findings print as
+`ℹ️ ADVISORY — the CURRENT tree, not the pinned parser` and do **not** fail the dry run. That
+inversion is the fix: judging a pinned argv by today's flag set is precisely what made
+`--pin-commit` unusable.
+
+**Where it is wired.** `run._prepare_session` (the real launch — checked **before**
+`_create_run_worktree`, so a refusal creates nothing, and against `child_args` **with `--run-dir`
+injected**, because that is the argv the child receives), `launcher/dry_run.py`, and
+`main.checkargs --pin <sha>`. `checkargs` defaults the pin to the git_hash **recorded by the argv's
+`--model` checkpoint** — the commit `worktree.resolve_pin` would pin a resume to — and always
+prints which parser it used.
+
+```bash
+python -m main.checkargs --pin b13b30b2 --argv "--steps 1000 --hp-type-belief learned"
+python -m main.checkargs models/<run>          # pins itself to that checkpoint's git_hash
+```
+
+Gate: `pinned_argv_test.py`, over a real 4-commit temp repo whose `--flag` **changes arity** across
+commits (a deleted flag would test the easy half): the same argv validates clean at commit 1 and is
+refused at commit 2 with the token named, `--dry-run` exits 0 and 3 respectively, a pin naming HEAD
+spawns no probe at all, a commit with no `build_parser` degrades to the static scan and one with no
+readable parser reports `parser_unavailable_at_pin` and still launches.
 
 ## Which interpreter the child runs
 

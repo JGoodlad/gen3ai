@@ -46,6 +46,11 @@ from main.launcher.child import (
     _SRC_DIR,
 )
 from main.launcher.input import _PollFlags, _dispatch_command
+from main.launcher.pinned_argv import (
+    differs_from_head,
+    pinned_parser_check,
+    report_lines,
+)
 from main.launcher.state import LauncherState
 from main.launcher.worktree import (
     _git_hash,
@@ -264,6 +269,27 @@ def _prepare_session(
             print(f"[launcher] ERROR: {e}", file=sys.stderr)
             sys.exit(e.exit_code)
         pin_hash = pin_decision.sha
+
+        # AN ARGV IS VALIDATED BY THE PARSER OF THE TREE THAT WILL RUN IT. The child parses with
+        # the PINNED commit's parser, so when the pin is not HEAD that is the only parser whose
+        # verdict means anything — a flag whose ARITY changed is invisible to any presence check
+        # against the current tree (2026-09-05: `--hp-type-belief` took a value at b13b30b2 and is
+        # deleted today, so argparse abbreviation-matched it onto `--hp-type-belief-coef`).
+        # Checked BEFORE the worktree is created: a refusal here costs nothing, while the same
+        # refusal from the child costs ~40 s and leaves a run dir behind.
+        if differs_from_head(pin_hash, repo_root):
+            # Validate the argv the CHILD receives, `--run-dir` and all — the launcher injects it
+            # a few lines below, and an argv checked without it is not the argv that runs.
+            report = pinned_parser_check(
+                pin_hash, _insert_or_replace_run_dir_arg(child_args, run_dir), repo_root)
+            for line in report_lines(report):
+                state.add_event(line)
+            if report.available and not report.ok and report.authoritative:
+                print(f"[launcher] ERROR: the argv does not parse against the PINNED commit "
+                      f"{pin_hash[:8]} — the child would crash at startup.", file=sys.stderr)
+                for line in report.findings():
+                    print(f"[launcher]   {line}", file=sys.stderr)
+                sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
         try:
             train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash, run_dir)

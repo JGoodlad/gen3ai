@@ -786,6 +786,15 @@ flags
 than reported as stale. **Run it after deleting flags**, over the recorded commands of any run you
 might still relaunch or fork — that is what it is for.
 
+🚨 **A PINNED argv is judged by the PINNED commit's parser** (`gen3_pinned_argv_parser_v1`,
+2026-09-05). `--pin <sha>` validates against that commit's `build_parser()` instead of this tree's,
+and with a `--model` present it does so automatically using the checkpoint's recorded `git_hash` —
+printing which parser it used either way. The launcher does the same for `--pin-commit`. The defect:
+a flag whose **ARITY** changed is invisible to any presence check, so `--pin-commit b13b30b2` died on
+`--hp-type-belief-coef: invalid float value: 'learned'` — the current parser abbreviation-matched a
+deleted flag onto a surviving one. Detail (including what is NOT pinned): `src/main/launcher/CLAUDE.md`
+→ *An argv is validated by the parser of the tree that will RUN it*.
+
 **`python -m main.launcher --dry-run` is its EXECUTING complement, and it is the one that is safe
 on a same-run RESTART** — `checkargs` answers "do these flags still parse and cohere?" from an argv
 anywhere, while `--dry-run` resolves the actual launch on this box (role FRESH/FORK/RESTART, the run
@@ -1614,7 +1623,11 @@ src/
   main/
     launcher/          # Restart loop + Textual TUI (preferred for long runs) — has CLAUDE.md
                      #   core: checkpoint.py, worktree.py, child.py, input.py, state.py, ipc.py
-                     #   UI: app.py + launcher.tcss · run loop: run.py · format.py · tui.py (alias)
+                     #   pinned_argv.py + pinned_argv_probe.py — VALIDATE THE CHILD ARGV AGAINST
+                     #     THE PINNED COMMIT'S PARSER (git archive + one clean-env subprocess),
+                     #     because a flag whose ARITY changed is invisible to a presence check
+                     #   UI: app.py + launcher.tcss · run loop: run.py · dry_run.py · format.py ·
+                     #     tui.py (alias)
     prober/            # Forensic-replay inspector (engine + session + JSON CLI) — has CLAUDE.md
                      #   web/ — browser front end (FastAPI + Jinja2/HTMX over ProbeSession) — has CLAUDE.md
                      #   engine.py (pure analysis), model.py, discovery.py, app.py

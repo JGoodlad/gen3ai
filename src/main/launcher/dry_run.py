@@ -51,6 +51,12 @@ from main.launcher.checkpoint import (
     run_dir_for_checkpoint,
 )
 from main.launcher.child import PYTHON_ENV_VAR, resolve_child_python
+from main.launcher.pinned_argv import (
+    ParseReport,
+    differs_from_head,
+    pinned_parser_check,
+    report_lines,
+)
 from main.launcher.worktree import (
     PinRefused,
     _commit_subject,
@@ -145,8 +151,14 @@ def _effective_namespace(child_args: List[str]) -> dict:
         # flag report still has values to show; an unparseable argv yields ns=None and the caller
         # reports the parse failure instead.
         try:
+            import contextlib
+            import io
+
             from main.train_rl_agent import build_parser
-            ns, _rest = build_parser().parse_known_args(child_args)
+            # argparse dumps the WHOLE usage block on a parse failure; swallow it — the refusal is
+            # reported below, and 200 lines of flag table in the middle of a dry run is noise.
+            with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                ns, _rest = build_parser().parse_known_args(child_args)
         except SystemExit:
             ns = None
         res["resolution"] = {"ns": ns, "inherited": {}, "config_path": None,
@@ -217,6 +229,7 @@ def dry_run(
         out(f"  --model     : {model_path}")
 
     # 3. The pin decision — the real `resolve_pin`, so every refusal it makes, this makes.
+    pinned: Optional[ParseReport] = None
     if pin:
         try:
             decision = resolve_pin(
@@ -238,6 +251,13 @@ def dry_run(
             out(f"                ↳ {subject}")
         out("                (a real launch would create an isolated worktree at this commit — "
             "the dry run does not)")
+        # 3b. AN ARGV IS VALIDATED BY THE PARSER OF THE TREE THAT WILL RUN IT. When the pin is
+        #     not HEAD, the flag checks below read a parser the child will never use — which is
+        #     how `--pin-commit b13b30b2` came to be refused for a flag that b13b30b2 accepts.
+        if differs_from_head(decision.sha, get_repo_root()):
+            pinned = pinned_parser_check(decision.sha, child_args, get_repo_root())
+            for line in report_lines(pinned):
+                out(f"  {line}")
     else:
         out(f"  pin         : --no-pin — would run from the current tree ({_git_hash()})")
 
@@ -256,8 +276,9 @@ def dry_run(
 
     # 5. The operational lines the launcher itself announces at startup.
     py = resolve_child_python()
-    pinned = f" (pinned by ${PYTHON_ENV_VAR})" if os.environ.get(PYTHON_ENV_VAR, "").strip() else ""
-    out(f"  interpreter : {py}{pinned}")
+    py_pinned = (f" (pinned by ${PYTHON_ENV_VAR})"
+                 if os.environ.get(PYTHON_ENV_VAR, "").strip() else "")
+    out(f"  interpreter : {py}{py_pinned}")
     if child_uses_bridge(child_args):
         impl = _peek_arg(child_args, "--use-bridge") or "rust"
         out(f"  transport   : in-process bridge [{impl}] (no Showdown server)")
@@ -297,21 +318,34 @@ def dry_run(
     for line in CHILD_ONLY:
         out(f"  (child-only: {line})")
 
-    # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace.
+    # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
+    #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
+    #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
+    #    run under, and treating them as refusals is exactly what made `--pin-commit` unusable.
+    advisory = pinned is not None and pinned.available
+    mark = "ℹ️  advisory (CURRENT tree, NOT the pinned one)" if advisory else "✗ REFUSED"
     failed = False
     if res["unknown"]:
-        failed = True
-        out("  ✗ REFUSED: flags the trainer parser no longer knows —")
+        failed = failed or not advisory
+        out(f"  {mark}: flags the CURRENT trainer parser does not know —")
         for flag, vals in res["unknown"]:
             out(f"      {flag}{' ' + ' '.join(vals) if vals else ''}")
     for flag, dep, token in res["unsatisfiable"]:
-        failed = True
-        out(f"  ✗ REFUSED (extractor): {flag} requires {dep}, but the config says `{token}`")
+        failed = failed or not advisory
+        out(f"  {mark} (extractor): {flag} requires {dep}, but the config says `{token}`")
     for combo, provenance in res["combinations"]:
-        failed = True
-        out(f"  ✗ REFUSED (resolve_config): {combo.message}")
+        failed = failed or not advisory
+        out(f"  {mark} (resolve_config): {combo.message}")
         for line in provenance:
             out(f"      · {line}")
+    # Only the PARSER half is pinned. The extractor's `requires` graph and the value-conditional
+    # refusals still come from the current tree, so say so rather than imply a full pinned check.
+    if advisory and (res["unknown"] or res["unsatisfiable"] or res["combinations"]):
+        out("      (only the PARSER is read from the pinned commit; the extractor + "
+            "resolve_config rules above are this tree's)")
+    # The pinned parser IS the child's parser, so its refusal is the launch's refusal.
+    if pinned is not None and pinned.available and not pinned.ok and pinned.authoritative:
+        failed = True
 
     if failed:
         out("  ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.")

@@ -17,8 +17,20 @@ the recorded commands of the runs you might still want to relaunch or fork.
 Usage:
   python -m main.checkargs <run_dir>              # the run's recorded launcher_command
   python -m main.checkargs --argv "--steps 1 …"   # a literal argv
+  python -m main.checkargs --pin <sha> …          # judge it by THAT commit's parser
 
 Exit 0 = every flag is accepted. Exit 1 = something would fail at launch.
+
+🚨 AND THE PARSER IT IS JUDGED BY MUST BE THE ONE THAT WILL RUN IT (2026-09-05). A resume is pinned
+by the launcher to the checkpoint's recorded `git_hash`, so the CURRENT tree's parser is the wrong
+authority for it — and the way that bites is not a deleted flag but a flag whose ARITY changed:
+`--hp-type-belief` took a value at b13b30b2 and is gone today, so argparse abbreviation-matched the
+token onto `--hp-type-belief-coef` and refused the value. `--pin <sha>` routes the flag half through
+`main.launcher.pinned_argv.pinned_parser_check` (that commit's own `build_parser()`, in a
+subprocess), and a `--model` argv pins itself to its checkpoint's recorded hash automatically. Which
+parser answered is printed on every run. When a pinned parser answered, the CURRENT tree's flag
+findings are printed as ADVISORY rather than as the verdict — only the PARSER is pinned, and the two
+combination families below still read this tree.
 
 Three ways a command fails, and it reports all three in one pass:
   * a flag the parser no longer knows (the motivating case above);
@@ -319,6 +331,37 @@ def check(argv: List[str]) -> dict:
     return res
 
 
+def model_arg(argv: List[str]) -> str | None:
+    """The `--model` value in an argv, in either spelling, without parsing the whole thing."""
+    for i, tok in enumerate(argv):
+        if tok == "--model" and i + 1 < len(argv):
+            return argv[i + 1]
+        if tok.startswith("--model="):
+            return tok.split("=", 1)[1]
+    return None
+
+
+def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, str]:
+    """`(sha, why)` — WHICH commit's parser should judge this argv, and how we decided.
+
+    An explicit `--pin` wins (it mirrors the launcher's `--pin-commit`). Otherwise, a `--model`
+    resume is pinned by the launcher to that checkpoint's RECORDED `git_hash`, so that is the
+    parser the child would run — read it the same way `worktree.resolve_pin` does, rather than
+    re-deriving it. No `--model` and no `--pin` means the launch runs on HEAD and the current
+    parser is already the right one.
+    """
+    if explicit:
+        return explicit, "--pin"
+    model = model_arg(argv)
+    if not model:
+        return None, "no --model and no --pin — this argv would run on HEAD"
+    from main.launcher.worktree import _read_checkpoint_git_hash
+    recorded = _read_checkpoint_git_hash(model)
+    if not recorded:
+        return None, f"no git_hash recorded for {os.path.basename(model)}"
+    return recorded, f"the git_hash recorded by {os.path.basename(model)}"
+
+
 def argv_from_run(run_dir: str) -> List[str]:
     """The run's recorded `launcher_command`, minus the script path.
 
@@ -343,29 +386,64 @@ def argv_from_run(run_dir: str) -> List[str]:
     return parts[1:] if parts and not parts[0].startswith("--") else parts
 
 
+def _pinned_report(argv: List[str], explicit: str | None):
+    """`(ParseReport | None, one-line note)` — which parser judged this argv, and its verdict.
+
+    None means the CURRENT tree's parser is already the right one (no pin, or a pin that names
+    HEAD), which is the pre-2026-09-05 behaviour unchanged.
+    """
+    from main.launcher.pinned_argv import differs_from_head, pinned_parser_check
+    sha, why = resolve_pin_for(argv, explicit)
+    if not sha:
+        return None, f"the CURRENT tree's ({why})"
+    if not differs_from_head(sha):
+        return None, f"the CURRENT tree's — {why} names HEAD ({sha[:8]})"
+    return pinned_parser_check(sha, argv), f"the PINNED commit {sha[:8]}'s — {why}"
+
+
 def main(raw: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("run_dir", nargs="?", help="a models/<run> dir whose command to validate")
     ap.add_argument("--argv", help="a literal argv string to validate instead")
+    ap.add_argument("--pin", metavar="SHA", default=None,
+                    help="validate against THIS commit's parser (as --pin-commit would pin it). "
+                         "Defaults to the git_hash recorded by the argv's --model checkpoint, "
+                         "since that is the commit the launcher pins a resume to.")
     a = ap.parse_args(raw)
     if not a.run_dir and not a.argv:
         ap.error("give a run_dir or --argv")
 
     argv = shlex.split(a.argv) if a.argv else argv_from_run(a.run_dir)
     res = check(argv)
+    pinned, pin_note = _pinned_report(argv, a.pin)
 
     src = a.run_dir or "--argv"
     print(f"checked {res['n_flags']} flags from {src}")
+    print(f"  parser                         : {pin_note}")
+    if pinned is not None:
+        from main.launcher.pinned_argv import report_lines
+        for line in report_lines(pinned):
+            print(f"  {line}")
     print(f"  accepted by the trainer parser : {len(res['accepted'])}")
     print(f"  launcher-owned (not forwarded) : {len(res['launcher_only'])}")
+    # When a pinned parser answered, the CURRENT tree's flag findings describe a parser the
+    # child will never run: ADVISORY, never the verdict. That inversion is the whole fix —
+    # judging a pinned argv by today's flags is what made `--pin-commit` unusable.
+    advisory = pinned is not None and pinned.available
+    verdict = ("ℹ️  ADVISORY — the CURRENT tree, not the pinned parser" if advisory
+               else "✗ WOULD FAIL AT LAUNCH")
     if res["unknown"]:
-        print(f"  unrecognized                   : {len(res['unknown'])}  ✗ WOULD FAIL AT LAUNCH")
+        print(f"  unrecognized                   : {len(res['unknown'])}  {verdict}")
         for flag, vals in res["unknown"]:
             print(f"      {flag}{' ' + ' '.join(vals) if vals else ''}")
-        print("\n  These are not in the current parser — most likely deleted by a version bump.")
-        print("  Check designs/CHANGELOG.md for which version removed each one, and whether a")
-        print("  replacement flag exists, before you drop it from the command.")
+        if advisory:
+            print("\n  The pinned commit's own parser was consulted above and is the authority;")
+            print("  these flags are simply absent from the tree you are standing in.")
+        else:
+            print("\n  These are not in the current parser — most likely deleted by a version bump.")
+            print("  Check designs/CHANGELOG.md for which version removed each one, and whether a")
+            print("  replacement flag exists, before you drop it from the command.")
     else:
         print("  unrecognized                   : 0")
 
@@ -391,6 +469,15 @@ def main(raw: List[str] | None = None) -> int:
         print("  launch path prints verbatim. A value marked INHERITED was never typed: it came")
         print("  from the parent checkpoint's model_config.json, which is what a fork resumes.")
 
+    if pinned is not None and pinned.available:
+        # Only the PARSER is pinned; the two combination families above still read this tree.
+        if pinned.ok:
+            print("  ✓ this command still launches (its own commit's parser accepts every flag)")
+            return 0
+        if pinned.authoritative:
+            return 1
+        print("  ⚠️  the pinned static scan questioned it — see above; not a refusal")
+        return 0
     if not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]:
         print("  ✓ this command still launches")
         return 0
