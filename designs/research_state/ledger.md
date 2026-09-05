@@ -10211,3 +10211,35 @@ training-inert, and a 5.9 h re-run from the fork would not have fit the window. 
 resume stands with this caveat on the K=6 pair; if the readout leans toward an untaught GIFT, a
 clean re-run of arm 2 is the confirmation to buy** (owner's go). The scoring chain correctly
 marked TC_UNF_K6_B's endpoint UNCOVERED and will re-score it when the arm finishes.
+
+### 🔧 Both launcher fixes LANDED (a8d38636) + the sidecar CENSUS: 1,820 of 3,975 checkpoint sidecars in 120 of 202 runs name a commit that differs from their run's final pin — and with no pin history, NONE can be told apart from a legitimate resume across code (2026-09-05 ~09:00)
+
+**Root cause of the sidecar defect, as found (two independent causes, both live):** (1)
+`record_checkpoint` never read `LAUNCHER_GIT_HASH` — it resolved `git_hash or get_git_hash()` and
+passed the truthy result on, so the env branch downstream was DEAD on the entire checkpoint path;
+only the run-level `save_model_snapshot` consulted the env, which is exactly the split observed.
+(2) `get_git_hash()` ran `git rev-parse HEAD` in the process CWD, and the launcher spawns the child
+with no `cwd=` (deliberate — `models/` must land in the main checkout) with the pin only on
+`PYTHONPATH`: the child IMPORTS the pin but STANDS in main. The env var was exported all along and
+survives restarts; it was simply not read.
+
+**Fixed:** `get_git_hash()` resolves against the imported checkout (`utils.paths.repo_root()`);
+one `resolve_git_hash()` (explicit → env → imported HEAD) serves run metadata and every sidecar,
+and env-vs-imported disagreement RAISES `GitHashMismatchError` naming both; append-only
+`pin_history` `{git_hash, pin_source, first_step, last_step}` per span of code in run metadata and
+every sidecar; prune keeps any `launcher-*` worktree whose recorded owner (pid + `/proc` start
+time, in `<worktree>.owner.json` beside the tree) is alive or ambiguous. 26 new tests; routine gate
+8,755 passed. `python -m main.sidecar_audit <models|run>`.
+
+**The census** (`measurements/sidecar_audit_2026-09-05.json`, read-only over `models/`): 202
+runs · 3,975 sidecars · **1,820 sidecars in 120 runs differ from their run-level hash** · 0 runs
+with a pin history (all pre-fix). That number is an UPPER BOUND on misattribution, not a count of
+it: a run that restarted across commits legitimately has sidecars on more than one hash, and the
+run-level scalar is only the LAST commit to touch the run. Without spans the two cases are
+indistinguishable, which is the defect. **Standing rule until a run has a `pin_history`:** a
+sidecar's `git_hash` is not evidence of which code produced that checkpoint; the run's
+`original_command` + launcher logs + ledger prose are. No banked claim in this program reads a
+sidecar hash (Training Run verified its readouts read the run-level field only), so nothing is
+retracted; the exposure is to FUTURE reproducibility claims, which the fix closes going forward.
+
+Launches against main are released.
