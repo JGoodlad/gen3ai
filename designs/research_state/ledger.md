@@ -10022,3 +10022,143 @@ verified equal to the batch pin `eb5261ff`, and both arms record it. `k6_failed_
 the K=3 arms' 5.88–5.97 h; the difference is the taught-16 and taught-baseline passes sharing cores,
 not a K=6 effect, and it is visible in the rate trace (11,427/min while the CPU work ran, 13,271/min
 after it finished).
+
+### 🔁 RETRACTION + full 2×2 series (96/96 cells): the frozen floor is 1.66pp over six draws, NOT 0.12 — the endpoint pair were the two smallest of six; the funded-minus-unfunded gap is ABSENT at +1M and EMERGES by mid; BOTH halves rob equally at +1M and only the UNFUNDED half recovers (2026-09-05, banked after the K=6 freeze)
+
+**Retraction (Training Run's, banked verbatim in substance).** Entry 2886b360 quoted the frozen
+replicate floor from two draws, both at the ENDPOINT (−0.19, +0.06), as "~0" with a live/frozen
+ratio of ~34×. All six frozen draws (two replicate pairs × three depths): FUND p1M 1.13 · mid
+**4.12 [+1.31, +6.69]** · end 0.19; UNF p1M 2.56 · mid 1.87 · end 0.06. Min 0.06, max 4.12,
+**pooled 1.66pp**. The endpoint pair happened to be the two smallest; FUND/mid alone is as large as
+the controller-live draws it was supposedly 34× below. Corrected: **frozen 1.66 vs live 4.27,
+ratio ~3×, intervals heavily overlapping** (frozen draws span [−3.56, +6.69]). The direction
+survives, the magnitude does not, and "the frozen floor is essentially zero" is WITHDRAWN — as is
+the sentence "freeze is what makes a fold measurable at all"; it is now "freeze roughly thins the
+floor, confounded with K". **P3 answered NO: the frozen floor is not depth-stable.** Named error:
+two draws at the same depth are correlated by depth, not two independent samples of the floor —
+averaging across a dimension with one level and reporting it as general. The 2886b360 caveat ("a
+direction, not 34×") was the right hedge and is now the reading. Frozen-regime comparisons take
+the POOLED 1.66 bar (same ruling as the live floor: pooled over depths, never a single-depth pair).
+
+**The contrast at all three depths (frozen bar 1.66):**
+
+| depth | FUNDED − UNFUNDED, both legs | reading |
+|---|---|---|
+| p1M | +0.16 [−2.53, +3.22] | WITHIN FLOOR; legs DISAGREE in sign (−1.69 / +2.00) |
+| mid | **−6.12 [−8.56, −4.38]** | SIGNIFICANT (exceeds even the 4.12 single draw) |
+| end | **−4.37 [−5.78, −2.78]** | SIGNIFICANT |
+
+The gap is not present at the start of the fold; it EMERGES with fold training.
+
+**Half vs parent by depth — the shape that changes the story:**
+
+| depth | FUNDED half | UNFUNDED half |
+|---|---|---|
+| p1M | −3.12 [−4.87, −1.44] | −3.28 [−5.59, −1.44] |
+| mid | −4.88 [−8.00, −1.94] | +1.25 [−0.16, +2.62] |
+| end | −2.41 [−4.37, −0.63] | +1.97 [−0.13, +4.09] |
+
+**Both halves rob equally at +1M** (−3.12 vs −3.28, indistinguishable). The unfunded half then
+RECOVERS to parent-neutral by mid and stays there; the funded half does not. So the mechanism is
+not "further-travelled teachers rob harder from the outset" — both start in the same hole and only
+the unfunded arms climb out. Whatever the funded teachers carry blocks the RECOVERY rather than
+deepening the initial damage. This is the sentence to check hardest: "recovers" is a claim about a
+within-arm DELTA (p1M → mid, paired on teams), and its interval is REQUESTED before it is banked as
+more than a reading of two point estimates. Note the mirror to v8: v8's gift was a TRANSIENT HUMP
+(early gain that decayed); here the unfunded robbery is a TRANSIENT HOLE (early loss that
+recovers). The fold's early phase moves the student off-slice in both cases; what differs is the
+sign of what remains.
+
+Unchanged: C1-vs-B2 (the loss-off control vs the loss-on fold) stays at the controller-live 4.27
+bar, still owed, still not discharged by frozen work. `tc_readout.py` now carries all six frozen
+draws so the floor cannot be quoted from one depth again.
+
+**"Recovers" is MEASURED, not a reading of point estimates.** The within-arm depth change carries
+no parent noise at all — the parent term cancels exactly in (arm_mid − par) − (arm_p1M − par) — so
+it is a cleaner statistic than the levels it is built from. Paired on the 8 untaught teams:
+
+| | p1M → mid | p1M → end |
+|---|---|---|
+| TC_FUND_A | +0.87 [−1.44, +3.25] | +1.19 [−2.25, +4.44] |
+| TC_FUND_B | −4.38 [−8.25, −0.75] | +0.25 [−1.63, +2.19] |
+| TC_UNF_A | +4.19 [+1.12, +6.94] | +4.00 [+0.94, +6.94] |
+| TC_UNF_B | +4.88 [+1.94, +8.38] | +6.50 [+4.37, +8.94] |
+| FUNDED half | −1.75 [−3.84, +0.50] | +0.72 [−1.06, +2.22] |
+| UNFUNDED half | **+4.53 [+1.97, +7.25]** | **+5.25 [+3.12, +7.19]** |
+| **UNFUNDED − FUNDED recovery** | **+6.28 [+3.16, +9.81]** | **+4.53 [+1.94, +7.41]** |
+
+Both unfunded arms clear zero INDIVIDUALLY and at both depths, so the half's recovery is not one
+replicate carrying it. The difference of the halves' recoveries — the "funded teachers block the
+recovery" number — clears zero at both depths and exceeds the frozen between-arm floor of 1.66,
+which is the right bar for a between-half comparison. **Banked as MEASURED.**
+
+**Qualification:** the funded arms DISAGREE with each other (FUND_A +0.87 flat; FUND_B −4.38, worse,
+interval excluding zero on the wrong side). The funded half is heterogeneous where the unfunded
+half is not, so the banked sentence is "funded shows NO CONSISTENT recovery", not "funded does not
+recover" — the pooled interval averages one flat arm and one that deteriorated. And "recovery" is
+recovery TOWARD the parent only because both halves sat below it at p1M (−3.12 / −3.28,
+indistinguishable) — a premise in the data, not part of the statistic.
+
+**Standing interpretation, now the leading one:** a fold from these teachers at 2.12× v8's dose
+opens an off-slice HOLE of ~3pp in its first million steps regardless of teacher content; the
+student then climbs out when the teachers are the parent's own near exploiters, and does not (or
+does inconsistently) when the teachers have travelled a million steps per team further. v8's gift
+was the sign-flipped version of this transient. The K=6 pair (v8's dose, unfunded teachers) is
+scored at all three depths to see whether the hole-then-recovery shape survives at v8's own dose —
+and whether the recovery overshoots into a gift there.
+
+**Taught side (64/64 cells, endpoint only): funded and unfunded teach the SAME on-slice — funding
+is not a lever with a price, it is simply a loss.** FUNDED − UNFUNDED on the 16 taught teams,
+paired: leg A +0.72 [−2.16, +3.69] NOT DETECTED (pin-split); leg B −0.22 [−3.03, +2.56] WITHIN
+FLOOR (pin-clean); both legs **+0.25 [−2.03, +2.67]** WITHIN FLOOR, legs disagreeing in sign around
+zero. Taught win rates: FUND_A 0.5297 · FUND_B 0.5219 · UNF_A 0.5225 · UNF_B 0.5241. So the
+trade-off shape is: NO on-slice gain, bought at an off-slice cost (−4.37 untaught at endpoint, plus
+the funded half's failure to recover from the shared early hole). The extra 1.0M/team of teacher
+training purchases nothing measurable in what the student learns on the taught teams. This is the
+comparative and does not depend on the baseline below.
+
+Taught replicate floor from this batch's own draws (never blended with the untaught): FUND +0.78
+[−1.50, +3.31] · UNF −0.16 [−2.34, +1.75] → 0.47pp — **PROVISIONAL, two draws at ONE depth**, the
+structure that over-claimed the untaught floor at 0.12 hours earlier; the verdicts above do not
+hinge on it, and 0.47 is not to be quoted as "the taught floor".
+
+**Gap, being closed:** there is NO taught-side PARENT baseline — R2ACTION was never scored on
+these 16 teams — so "did either half teach anything at all" is UNMEASURED and must not be inferred
+from a difference of two arms. Launched: R2ACTION × 16 taught × 200 games (~30 min CPU). It says
+whether the fold taught anything on its own slice, the companion to "it robbed off-slice".
+
+**Taught PARENT baseline (16/16): the fold genuinely TEACHES ~+5pp on-slice, both halves equally,
+so the funded half's off-slice robbery buys nothing at all.** Each arm vs parent on the 16 taught
+teams: FUND_A +5.50 [+2.56, +8.44] · FUND_B +4.72 [+2.28, +7.09] · UNF_A +4.78 [+2.81, +6.94] ·
+UNF_B +4.94 [+2.94, +6.97] — all four clear zero individually. Halves: FUNDED +5.11 [+2.66, +7.42],
+UNFUNDED +4.86 [+3.16, +6.64]; all four pooled +4.98 [+3.24, +6.70].
+
+**The complete picture, both slices vs the same parent, endpoint:**
+
+| | taught (on-slice) | untaught (off-slice) |
+|---|---|---|
+| FUNDED teachers | +5.11 [+2.66, +7.42] | −2.41 [−4.37, −0.63] |
+| UNFUNDED teachers | +4.86 [+3.16, +6.64] | +1.97 [−0.13, +4.09] |
+| funded − unfunded | +0.25 [−2.03, +2.67] WITHIN FLOOR | −4.37 [−5.78, −2.78] SIGNIFICANT |
+
+The fold WORKS on the teams it is trained on, for both halves. The extra 1.0M/team of teacher
+budget adds nothing to that and costs 4.4pp off-slice: the price is paid and nothing is bought.
+**The unfunded fold is the first gen-era fold whose two-slice ledger is not net-negative** — +4.86
+taught, +1.97 (not detected) untaught — at 2.12× v8's dose; the K=6 pair asks whether the untaught
+side becomes a gift at v8's dose.
+
+**Quoting rule:** the parent's taught win rate is 0.4747 against its untaught 0.5825 — the taught
+16 are simply HARDER ground for this parent. Taught and untaught LEVELS are not comparable; only
+the vs-parent deltas WITHIN a slice are, and the +4.98 gain is measured on the harder set. Lining
+up a taught 0.5297 against an untaught 0.6019 and reading a decline is the team sets differing,
+not the model. Caveats carried: the taught floor (0.47) stays provisional (two draws, one depth);
+the taught pass is endpoint-only, so there is no on-slice shape to set against the untaught
+hole-then-recovery — taught p1M/mid would be needed and is not requested.
+
+**Landed after the K=6 freeze (2026-09-05 03:36).** The pre-launch pin guard fired for real and
+passed: arm 2 (TC_UNF_K6_B) launched only after HEAD == batch pin eb5261ff, `k6_failed_arms.txt` is
+EMPTY — the first batch in this program with no pin note, against the 2×2's three. A check placed
+before the action versus one placed after it, demonstrated. Arm 1's wall was 6.23 h against the
+K=3 arms' 5.88–5.97 h and that is NOT a K=6 effect: the taught-16 and taught-baseline passes shared
+the cores (11,427 steps/min while they ran, 13,271 after) — a 6% per-arm slowdown in a dose cell
+is exactly what gets misread as a property of the dose. Arm 2 has the box to itself, ~09:30.
