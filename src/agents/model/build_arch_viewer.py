@@ -272,6 +272,13 @@ def _load_overlays() -> List[Dict[str, Any]]:
     for path in sorted(glob.glob(os.path.join(_MEASUREMENTS, "*.json"))):
         with open(path) as fh:
             raw = json.load(fh)
+        if not isinstance(raw, dict):
+            # ROW files (`*_rows_*.json`: a bare LIST of per-team rows, the paired-meter
+            # artifacts) share this directory with the dict-shaped overlay producers. They
+            # carry no `provenance`/`blocks`, so they are not overlays — skip, never crash.
+            # Two of them (r5_coverage_rows_2026-09-03, r5_funding_same_teams_rows_2026-09-02)
+            # took the whole viewer build red on main for two days before this guard existed.
+            continue
         prov = raw.get("provenance", {})
         if not isinstance(prov, dict):
             # Some measurements record provenance as a one-line STRING (the oracle/baseline

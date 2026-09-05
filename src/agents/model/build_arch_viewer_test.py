@@ -227,3 +227,16 @@ def test_the_assets_are_what_the_page_is_built_from(rendered):
     # the shell keeps its single network dependency, and `--vendor` still knows where to find it
     tag, url = B._cdn()
     assert tag in rendered and "cytoscape" in url
+
+
+def test_a_list_shaped_row_file_in_measurements_is_skipped_not_fatal(tmp_path, monkeypatch):
+    """A `*_rows_*.json` artifact is a bare LIST of per-team rows and shares the
+    measurements dir with the dict-shaped overlay producers. Before the guard, one such
+    file took every viewer test red (`'list' object has no attribute 'get'`)."""
+    import json
+    from agents.model import build_arch_viewer as bav
+    (tmp_path / "x_rows_2026-09-03.json").write_text(json.dumps([{"team": "a", "delta": 0.1}]))
+    (tmp_path / "y_overlay.json").write_text(json.dumps({"provenance": "note", "blocks": {}}))
+    monkeypatch.setattr(bav, "_MEASUREMENTS", str(tmp_path))
+    overlays = bav._load_overlays()  # must not raise
+    assert all(isinstance(o, dict) for o in overlays)
