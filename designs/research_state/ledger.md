@@ -9821,3 +9821,63 @@ means anything — `final_model.zip` — it is **4/4**. So the arms that behaved
 freeze are exactly the ones the summary flagged, and a reader skimming the last line of a 24-hour
 batch would conclude it had mostly failed. The root cause is identical to the drift check's: **the
 expectation was pinned to the first arm rather than to the batch.** Both go in the build item.
+
+### 🎲 2×2 TEACHER-CONTENT FOLD, ENDPOINTS (32/32 cells): FUNDED teachers hand down LESS than UNFUNDED, −4.37pp [−5.78, −2.81], replicated on both legs; and the FROZEN replicate spread is ~0 (−0.19 / +0.06, ±3pp) against the controller-live 4.27 — most of "the fold floor" was the KL controller's own wander (2026-09-04 ~21:00)
+
+Batch: four folds from the parent R2ACTION at the same frozen dose (coef 0.1761, K=3, `--fork-lr
+2.8e-5 --fork-lr-freeze`, dose 4.557e-08 = 2.12× v8, pool 14/90%, 23.68 GPU-h, entry 5af5ff88).
+TC_FUND_A/B = the fold from the FUNDED teacher set (teachers given +1.0M/team extra training),
+replicates A and B; TC_UNF_A/B = the fold from the UNFUNDED set (the same teachers before that
+funding). Endpoint untaught win-rate deltas, paired on teams, cluster-bootstrapped. Coverage
+endpoint only; p1M and mid are running. Nothing pooled across depths until they land.
+
+**Finding 1 — the primary contrast, FUNDED − UNFUNDED:**
+
+| leg | delta | pin |
+|---|---|---|
+| A: TC_FUND_A − TC_UNF_A | −4.50 [−6.75, −2.37] | split (0c76e2ee vs 52ab5914, verified inert) |
+| B: TC_FUND_B − TC_UNF_B | −4.25 [−6.19, −2.25] | clean |
+| both legs | **−4.37 [−5.78, −2.81]** | SIGNIFICANT at the frozen floor |
+
+The sign is the OPPOSITE of the premise the batch was designed under (more teacher content ⇒ more
+to hand down). The more-trained teachers leave the student WORSE on untaught teams by ~4.4pp, and
+the two legs agree to 0.25pp. This is the same sign as the fold-robbery pattern: the further the
+teacher has travelled from the parent, the more the distillation loss costs off-slice. **Not
+adjudicated yet — the entry needs the four arm-vs-parent deltas** (requested) to say whether the
+unfunded folds GIFTED or merely ROBBED LESS; "hands down less" is only the difference between them.
+
+**The pin-drift inert verdict is now corroborated by data**: leg A (split) and leg B (clean)
+differ by 0.25pp, inside either interval. The diff-reading (entry 5af5ff88) said inert; the
+contrast says the same.
+
+**Finding 2 — the frozen replicate spread is ~zero:** TC_FUND_A − TC_FUND_B −0.19 [−3.56, +2.88];
+TC_UNF_A − TC_UNF_B +0.06 [−2.44, +2.56]. Against the controller-live N1/N2 draws (+4.62 / +2.25 /
++5.94, pooled 4.27 [+1.23, +6.92]). So the replicate delta that this program has been calling
+"the fold floor" and paying at every verdict is, in a frozen-controller fold, NOT DETECTED with a
+±3pp interval. **Read it as a direction, not as "34×"**: 0.12 vs 4.27 is a ratio of two uncertain
+numbers, the frozen floor's upper bound (~+3pp) still overlaps the live floor's lower bound
+(+1.23), and the two regimes differ in TWO ways at once — the controller (frozen vs live) AND the
+step (K=3 at 2.8e-5 pinned vs N1/N2's K=2 with the controller free). Freeze is the leading
+account (the controller is the only thing that WANDERS between replicates; K only scales), but a
+frozen K=2 pair or a live K=3 pair is what would separate them, and neither exists. What is not
+uncertain: **a frozen fold contrast of −4.37 clears even the frozen floor's upper interval**, so
+finding 1 does not depend on where the frozen floor truly sits.
+
+**What it changes.** If the controller's wander is the floor, then `--fork-lr-freeze` is not a
+dose-pinning convenience but what makes a fold MEASURABLE at all, and every verdict downgraded at
+4.27 was judged against a bar a frozen design does not pay. The bar stays 4.27 for CONTROLLER-LIVE
+arms — the floor is a property of the regime the arms ran in, never borrowed across — and the
+frozen floor is quoted with its interval until p1M/mid say whether it is depth-stable.
+
+**Caught before sending (Training Run):** the first readout pooled all five replicate draws (two
+frozen, three live) into one 2.61pp bar and applied it to both regimes, which reported C1 − B2
+(the loss-off control vs the loss-on fold) SIGNIFICANT at all three depths — it would have looked
+like the owed re-read resolving. Invalid twice: the blend describes neither regime, and C1/B2 are
+controller-live arms (no `--fork-lr`, K=2), so a frozen batch cannot supply their floor. Fixed: a
+comparison takes the floor of ITS OWN regime, and both floors print with the ratio. **The C1-vs-B2
+re-read stays owed and this batch does not discharge it**: at 4.27 the legs read +10.12 / +5.87 /
++5.25 — unchanged, +1M robust, mid and end bar-uncertain. Ruling on whether to buy more
+controller-live draws to settle it: **NO.** Finding 2 says the controller-live regime is a noisier
+way to run the same fold; sharpening the loss-channel question is done by re-running the loss-off
+control FROZEN beside a frozen fold (~2 arms, ~12 GPU-h, needs the owner's go), not by paying for
+more wander.
