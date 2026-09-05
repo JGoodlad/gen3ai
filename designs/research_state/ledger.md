@@ -9881,3 +9881,43 @@ controller-live draws to settle it: **NO.** Finding 2 says the controller-live r
 way to run the same fold; sharpening the loss-channel question is done by re-running the loss-off
 control FROZEN beside a frozen fold (~2 arms, ~12 GPU-h, needs the owner's go), not by paying for
 more wander.
+
+### ✏️ 2×2 ENDPOINTS, arm-vs-PARENT: NEITHER half gifted — the FUNDED folds ROB (−2.41 [−4.37, −0.62]), the UNFUNDED folds are parent-neutral (+1.97 [−0.13, +4.09]); "unfunded hands down more" is entirely "unfunded robs less" (2026-09-04 ~22:00)
+
+Each arm against the fold parent R2ACTION (untaught win rate 0.5825), paired on the 8 untaught
+teams, endpoint:
+
+| arm | untaught wr | vs parent | reading |
+|---|---|---|---|
+| TC_FUND_A (funded-teacher fold, replicate A) | 0.5575 | −2.50 [−5.62, +0.06] | straddles zero |
+| TC_FUND_B (funded-teacher fold, replicate B) | 0.5594 | −2.31 [−4.06, +0.00] | straddles zero |
+| TC_UNF_A (unfunded-teacher fold, replicate A) | 0.6025 | +2.00 [−0.56, +4.94] | straddles zero |
+| TC_UNF_B (unfunded-teacher fold, replicate B) | 0.6019 | +1.94 [−0.25, +3.87] | straddles zero |
+| **FUNDED half, both replicates** | | **−2.41 [−4.37, −0.62]** | **ROBS** |
+| **UNFUNDED half, both replicates** | | **+1.97 [−0.13, +4.09]** | NOT DETECTED |
+
+**The sentence, corrected from the previous entry:** the funded folds LOST untaught skill relative
+to the parent; the unfunded folds neither demonstrably gained nor lost. The −4.37 funded-minus-
+unfunded gap is a real robbery on one side plus roughly nothing on the other — **not a gift on
+either**. v8's gift is still unreproduced; this batch narrows where it is NOT: a frozen fold from
+these teachers at 2.12× v8's dose, whether the teachers are funded or not. No single arm separates
+from the parent; only the pooled halves do, and only the funded one. Pooling two replicates is
+legitimate (independent draws of one recipe), and the per-arm intervals (~±3pp) are what any
+single future arm faces — a one-arm fold cannot resolve a ±2pp effect against this parent.
+
+**Interpretation, still leading rather than settled:** the unfunded teachers sit closer to the
+parent (they ARE its earlier exploiters), the funded ones one million steps per team further away,
+and the distillation loss's off-slice cost tracks that distance. The unfunded half's +1.97 point
+estimate is the only positive fold-vs-parent reading in the frozen regime and is NOT DETECTED; it
+is the thing a frozen K=2 pair, closer to v8's dose, would test (not requested).
+
+**Taught side: ABSENT, not null.** The untaught probe scores the 8 untaught teams by construction;
+taught-side deltas for the four arms were never measured. ORDERED: a taught-side pass over the 16
+taught teams (4 arms × 16 × 200 games, CPU, no GPU), queued BEHIND the p1M/mid cells so it does not
+slow them. It answers whether funded teachers TEACH more on the taught slice while robbing more off
+it — the trade-off shape — which decides whether teacher funding is a lever with a price or simply
+a loss.
+
+`tc_readout.py` now prints the frozen floor with its interval, labels the live/frozen ratio a
+DIRECTION, states both caveats (interval overlap; freeze AND K differ) and says "do not attribute
+the gap to freeze alone" in its own output.
