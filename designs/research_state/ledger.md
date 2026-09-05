@@ -10162,3 +10162,52 @@ before the action versus one placed after it, demonstrated. Arm 1's wall was 6.2
 K=3 arms' 5.88–5.97 h and that is NOT a K=6 effect: the taught-16 and taught-baseline passes shared
 the cores (11,427 steps/min while they ran, 13,271 after) — a 6% per-arm slowdown in a dose cell
 is exactly what gets misread as a property of the dose. Arm 2 has the box to itself, ~09:30.
+
+### 🚨 K=6 arm 2 KILLED by a one-second launcher validation — two launcher defects, one of them warned about in the build report I landed without acting on; resumed from 30.1M, caveat recorded (2026-09-05 ~07:00)
+
+At ~04:35 Training Run ran `python -m main.launcher --pin-commit deadbeef --steps 1` to check that
+an unresolvable pin FATALs (it does). But the launcher runs `_prune_stale_launcher_worktrees()` at
+STARTUP, before any argument is honoured, and that function `git worktree remove --force`s EVERY
+`launcher-*` worktree with NO liveness check — its docstring says "left by crashed sessions"; the
+code does not check whether a session is crashed. The live arm (TC_UNF_K6_B, the unfunded-teacher
+fold at v8's dose, replicate B) lost its isolated worktree out from under it, ran on open files and
+cwd until its 3 h periodic restart at 06:43, then died re-exec'ing the child from a directory that
+no longer existed (three retries, exit 2, no `final_model.zip`).
+
+**Defect 1 — the prune has no liveness check.** Any launcher invocation kills every other running
+launcher's worktree; latent on a one-run box, lethal the moment two exist, and it fails LATE and
+silently, at the next restart boundary up to 3 h later. **This one is on me:** the `--pin-commit`
+build agent's report (landed as 5cd306cb) said in so many words that it skipped a live smoke
+"because `_prepare_session` calls `_prune_stale_launcher_worktrees`, which from a linked worktree
+would enumerate and force-remove the live training run's `launcher-*` worktrees". I read that
+sentence as a reason the agent had been careful and landed without turning it into a fix or a
+warning to the session that would run the smoke. A hazard a subagent names in its report is a
+finding, not a footnote.
+
+**Defect 2 — the checkpoint SIDECAR records the AMBIENT commit, not the code that ran.** Arm 2's
+run-level `metadata.json` says eb5261ff (the pin); its checkpoint sidecar at 30,115,248 says
+fff95a16 — main's HEAD at write time. `snapshot.py` resolves `git_hash` from `LAUNCHER_GIT_HASH`
+else `utils.git.get_git_hash()`, which is `git rev-parse HEAD` in the process CWD. The new
+`--pin-commit` restart guard is what surfaced it: it refused the resume because it compared the
+requested pin against the sidecar. The guard behaved correctly given a wrong sidecar. **GIGO
+class: the recorded-vs-actual identity of the code behind a checkpoint.** Every reproducibility
+claim that reads a sidecar's `git_hash` is exposed until this is fixed and the historical exposure
+sized — treat run-level `metadata.json`'s pin as authoritative and sidecar hashes from pinned runs
+as SUSPECT meanwhile.
+
+**Both dispatched now, drop-everything:** prune removes only worktrees whose recorded owner pid is
+dead (live sibling survives another launcher's startup, tested); `get_git_hash()` resolves against
+the checkout the code was imported from (`utils.paths.repo_root()`), never cwd, and a sidecar
+write whose env-provided hash disagrees with it RAISES; plus `python -m main.sidecar_audit` to size
+how many historical sidecars misattribute their code.
+
+**Recovery and its caveat.** Checkpoints to 30,115,248 of 32,567,760 (94%) were banked. Resumed
+from checkpoint_30115248, LR still frozen at 2.8e-5, pool 14/90%, ~09:30 finish, inside the
+window. Because of defect 2 the resume pinned to the SIDECAR's hash, so **arm 2's last ~2M steps
+run fff95a16 while its first 30M and all of arm 1 ran eb5261ff**. The range was checked rather
+than assumed: only `snapshot.py` touches anything training-adjacent and its change is additive
+metadata (`pin_source` from an env var) — no weights, no training path — so it is judged
+training-inert, and a 5.9 h re-run from the fork would not have fit the window. **Ruling: the
+resume stands with this caveat on the K=6 pair; if the readout leans toward an untaught GIFT, a
+clean re-run of arm 2 is the confirmation to buy** (owner's go). The scoring chain correctly
+marked TC_UNF_K6_B's endpoint UNCOVERED and will re-score it when the arm finishes.
