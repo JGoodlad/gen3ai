@@ -9921,3 +9921,36 @@ a loss.
 `tc_readout.py` now prints the frozen floor with its interval, labels the live/frozen ratio a
 DIRECTION, states both caveats (interval overlap; freeze AND K differ) and says "do not attribute
 the gap to freeze alone" in its own output.
+
+---
+
+### 2026-09-04 · taught-16 pass LAUNCHED for the 2×2 — the other half of the trade-off
+
+The untaught meter closed the endpoint round with: **funded folds ROB** the parent by −2.41pp
+[−4.37, −0.62]; **unfunded folds are parent-neutral** at +1.97 [−0.13, +4.09]. Neither gifted, and
+the −4.37pp funded-minus-unfunded gap is a robbery on one side plus roughly nothing on the other.
+
+That is only half a trade-off, and the missing half decides what the result *means*. If the funded
+teachers also teach **more on-slice**, extra teacher budget is a lever with a price. If they teach
+no more, it is simply a loss. Ordered by Model Review 2 and launched: **4 arms × 16 taught teams ×
+200 games**, endpoint only, CPU-only, **queued behind** the untaught p1M/mid rounds so the standing
+meter is never slowed by a new one.
+
+**The 16 teams are RESOLVED, never typed** — from each arm's own recorded `--distill-teacher`, whose
+`:*` expands to each teacher's recorded `--trainee-teams`. Verified before launch: all four arms
+resolve to the **identical** set (required, or the contrast is not on one slice), the set is
+**disjoint** from the untaught 8, and every file exists. The same rule that caught a swapped
+161/162 when arm identities were hand-written.
+
+`taught_probe.py` is a **copy** of the untaught probe with its own team list and its own seed family
+(`_SEED_BASE = 40`), not a parameterisation of it — the untaught probe was mid-run, and a new
+instrument must not be able to perturb the standing one.
+
+⚠️ **A latent oddity in `untaught_probe.py`, deliberately NOT fixed:** it carries two `_SEED_BASE`
+assignments (90, then 9 shadowing it). Every untaught measurement on record ran under the effective
+value, so "correcting" it would silently reseed the standing meter and break comparability with the
+entire existing series. It is documented in the taught probe instead. *A latent bug that has been
+consistently latent is part of the instrument's definition.*
+
+**The taught floor comes from the regime's own draws** — the two frozen replicate pairs give a
+taught-side frozen floor for free — and is never blended with the untaught one.
