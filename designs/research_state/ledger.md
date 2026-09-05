@@ -10243,3 +10243,133 @@ sidecar hash (Training Run verified its readouts read the run-level field only),
 retracted; the exposure is to FUTURE reproducibility claims, which the fix closes going forward.
 
 Launches against main are released.
+
+### 🎲 K=6 CELL (v8's dose, unfunded teachers, frozen, 48/48 untaught cells): NO GIFT at v8's own dose — parent-neutral at the end (−0.22 [−2.03, +1.81]); the HOLE-THEN-RECOVERY SHAPE REPLICATES at half the dose; DOSE is null at every depth; the frozen floor is neither small nor depth-stable (2026-09-05)
+
+Two frozen folds from the UNFUNDED teacher set at K=6 = 1.06× v8's dose (TC_UNF_K6_A `ai_v9_170`,
+TC_UNF_K6_B `ai_v9_171`; coef 0.1761, `--fork-lr 2.8e-5 --fork-lr-freeze`, pool 14/90%, parent
+R2ACTION, batch pin eb5261ff; arm 2's last ~2M steps ran fff95a16 after the prune incident, entry
+5762f2ce — verified training-inert, labelled PIN-SPLIT by `tc_readout` from run metadata). Launch
+entry cccd60ef. Paired on the 8 untaught teams, cluster-bootstrapped.
+
+**P1 — vs the parent, untaught:**
+
+| depth | K6_A | K6_B | pooled |
+|---|---|---|---|
+| p1M | | | **−4.19 [−6.28, −1.75]** (clears zero on its own) |
+| mid | | | −0.78 [−3.22, +1.34] |
+| end | +0.37 [−2.00, +2.81] | −0.81 [−2.81, +1.50] | **−0.22 [−2.03, +1.81]** |
+
+Parent-neutral at the end: at v8's own dose the fold neither robs nor gifts off-slice. The K=3
+unfunded pair read +1.97 [−0.13, +4.09] at the same point — also not clearing zero, on the positive
+side. **The arm-2 re-run condition (a lean toward a GIFT) is NOT met; no GPU requested.**
+
+**The shape REPLICATES.** K=6: p1M −4.19 → mid −0.78 → end −0.22; K=3 unfunded: −3.28 → +1.25 →
++1.97. Within-arm recovery at K=6: p1M→mid **+3.41 [+0.44, +6.41]**, p1M→end **+3.97 [+1.16,
++6.78]**, both clearing zero (K=3: +4.53 / +5.25). Same teachers, half the dose, same arc, the early
+hole significant on its own. **The transient off-slice hole with partial recovery is a property of
+folding itself**, now seen in two independent dose cells — the sign-flipped mirror of v8's
+transient hump.
+
+**P2 — the dose axis at fixed teachers, frozen both sides (K=6 − K=3, parent cancels):** p1M −0.91
+[−3.34, +1.41] spans zero · mid −2.03 [−4.22, −0.28] **CI excludes zero but |−2.03| < the 2.46 bar
+⇒ WITHIN FLOOR** · end −2.19 [−4.78, +0.34] spans zero. The mid row is exactly the trap the
+vocabulary exists for: the games are consistent, but two byte-identical arms differ by ~2.5pp on
+average at this dose, so a 2pp difference between arms is not a dose effect. **Halving the dose
+(2.12× → 1.06× v8) changes nothing detectable on the untaught side at any depth.** Dose is now
+null at two frozen doses with fixed teachers and was flat across a 4× range in the dose cell.
+
+**P3 — the frozen K=6 floor, and the caution that outranks the headline:** draws p1M K6_A − K6_B
+**−4.00 [−6.50, −1.56]** (clears zero), mid +2.19 [−0.44, +4.63], end +1.19 [−1.13, +3.69]; mean
+2.46 over three. Two arms differing in ONE ARGV TOKEN diverged by 4pp at p1M, significantly. The
+frozen floor is not small and not stable across depths; pooling all nine frozen draws now available
+gives ~1.9pp. Third time the lesson has bitten: a floor from few draws at one depth is close to
+uninformative (0.12 was the extreme case). The bar used above is K=6's OWN 2.46 — the larger one,
+never a bar borrowed from a cell with more draws when the cell in hand has fewer.
+
+**Standing picture across every frozen cell:** teacher CONTENT moves the untaught side (funded robs
+−2.41; unfunded and K=6 parent-neutral); DOSE does not; the fold TEACHES ~+5 on-slice (K=3; K=6
+taught pass below); every fold digs a ~3–4pp early off-slice hole and near-parent teachers let the
+student climb out of it. **v8's gift remains unreproduced**, and the recipe space it is NOT in has
+grown by one dose. The unfunded K=3 pair's monotone climb (−3.28 → +1.25 → +1.97) is the one
+trajectory that points at a gift, and whether it continues past neutral or plateaus is the next
+cell (extension of TC_UNF_A/B by one more span, zero new knobs, pre-registered in the dispatch).
+
+**Correction that reaches backward — every floor in this program is OPERATIONAL, not a pure draw
+floor.** The 2×2 arms' pools were compared by FILENAME and reported byte-identical; by CONTENT, 14
+of 16 snapshots match (the seeded parent pool) and 2 differ per arm — each arm's OWN promotions
+during its leg (`snapshot_000030000000.zip`, `snapshot_000032000016.zip`). So "two arms differing
+in one argv token" holds at LAUNCH only; from the first self-play promotion the arms are different
+self-play runs with diverging opponent distributions. Consequences: (1) every replicate floor
+quoted here — N1/N2's 4.19/5.94, the K=3 pairs' 1.66, the K=6 draws — includes opponent divergence
+and is the floor for "two same-recipe arms" as this program actually runs them; that is the RIGHT
+bar for judging any two arms, since every arm self-plays, but the wording "pure draw floor" was
+wrong and is withdrawn. (2) The K=6 p1M draw of 4pp between "identical" arms has divergent
+opponents as a candidate account (unadjudicated). (3) The extension of TC_UNF_A/B carries pool
+divergence as a stated confound on P2 (within-arm end→end2) and P4 (the end2 replicate draw); P1 vs
+the fixed external parent stands. The pools' win-rate fields differ per arm because they record the
+TRAINEE's own latest bot win rate, not a pool property (verified against `latest_eval`). Ruling: no
+re-seeding (that would be the recipe change); proceed; pool membership recorded by CONTENT HASH at
+launch and at end2, and a content-hash pool comparison goes into the chain's pre-launch report.
+
+**K=6 taught-16 (16/16 both arms, vs the R2ACTION taught baseline): halving the dose preserves the
+teaching entirely.** K6_A +4.19 [+1.59, +6.81] · K6_B +4.78 [+2.75, +6.87] · pooled **+4.48
+[+2.39, +6.72]**, both arms clearing zero individually; K=3 was +4.98 [+3.24, +6.70]; K=6 − K=3
+−0.38 [−2.34, +1.56] spans zero; taught replicate draw −0.59 [−2.66, +1.22], one draw one depth,
+provisional. **The complete unfunded picture at two frozen doses: teaches ~+4.5–5pp on-slice, robs
+nothing off-slice** (K=6 −0.22, K=3 +1.97, both not detected). EXT_A (the K=3 unfunded extension,
+arm A only; arm B never started) is training at an uncorrected step target 3% short of a matched
+increment and yields the GPU to the v8 line; its original K=3 endpoint artifact is preserved as
+`final_model_k3end.zip`, sha-verified before the copy.
+
+### 🔁 THE V8 LINE, pulled up (owner, 2026-09-05 morning): every artifact survives and the era code runs today; the FULL v8 curve is recovered — at OUR fold length v8 was ~+8.5pp, and it was +4.64 at +1.09M where every fold of ours digs a −3 to −4 hole; LENGTH IS EXONERATED; PHASE 1 pre-registered = three short-leg replications to +1.09M (~4.5 GPU-h)
+
+**Why now.** v8's gift (+5.42 [+3.44, +7.42], 18,432 battles, probe P) is ONE fold draw, and the
+operational replicate floor measured this week is 2–6pp. It has never been re-run. Every cell this
+week searched the recipe space around a gen-era parent for a target that might be a draw.
+
+**Feasibility (Training Run, torch-free, executing where it could):** fork parent
+`ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip`, sha256 matches the recorded lineage;
+teachers ai_v8_09 / ai_v8_06 / ai_v8_13 resolve on the loader's first rung (`best_model/`); commit
+b13b30b2 — the commit that introduced `--distill-teacher '<model>:*'`; an era worktree already
+exists (`/tmp/probeP_v8era`); the recorded `deps/pokemon-showdown` sha (e0551883) is what is on
+disk; `environment.yml` since then: 61 additions and exactly two deletions (`asyncio==4.0.0`,
+`poke-env==0.15.0`, both deliberate, both helping); the era tree IMPORTS and constructs under the
+current env (obs 2992, `gen3_opp_hp_typed_candidates_v1`, config v45). **Instrument:** current code
+REFUSES v45 checkpoints (`ModelVersionError`, pre-generation), so the meter is the committed
+era-pinned `measurements/v8_gift_timing_probe.py` (with the M4/M9b companions), run from a private
+copy of the era checkout with `--impl node` (the era's rust bridge predates the seedless-seed fix)
+and the era's own determinism recipe (`stochastic=False` + one pinned team per side + an explicit
+4-int sim seed; the five `GEN3AI_*_SEED` variables do not exist at that commit).
+
+**Cost.** v8's fold ran 277,583,267 → 292,100,648 = **14,517,381 steps**, 3.26× ours; 11.18 h then
+at ~20,028 steps/min, ~18.3 h/arm today at ~13,200 (the era ran 1.5× faster per step with a LARGER
+obs, 2992 vs 2501 — the accumulated cost of everything added since). A full replication pair ≈
+**37 GPU-h**; a short leg to +1.09M ≈ 1.5 h/arm.
+
+**The full curve** (`v8_gift_timing_2026-09-01.json`, untaught win rate vs the parent's pooled
+0.3877, nine depths): +1.09M **+4.64** · +3.07M +8.06 · +6.05M +9.03 · +9.55M +8.06 · +12.53M
+**+9.67 (peak)** · +13.52M +8.25 · +14.52M +7.03 · +15.04M +4.98. Not monotone: fast rise, peak,
+then ~5pp decay (the leak arriving; entry 2026-09-01). **Interpolated at OUR fold length (+4.45M)
+v8 was ~+8.5pp**; our unfunded K=3 reads +1.97 and K=6 −0.22 at that depth. So "v8's fold was
+longer" explains nothing: at matched depth v8 was ~8pp above us and positive from its first
+checkpoint. **Whatever differs, differs EARLY and does not need 14.5M steps to show.**
+
+**Maturity, re-examined:** both parents are themselves folds — v8's `ai_v8_04` (a fold of
+ai_v8_03) forked at 277,583,267 steps; ours `ai_v9_59_R2ACTION` (a fold of rev-1) forked at
+28,115,184. A 9.9× difference in absolute training volume, the same structural position. If
+maturity is the suspect it is about VOLUME, not lineage shape — and it points the OPPOSITE way
+from "v8's parent was younger": v8's parent had ten times the steps.
+
+**PHASE 1, pre-registered.** Three arms of v8's EXACT fold (its `original_command`, its parent, its
+three teachers, commit b13b30b2 via `--pin-commit`, `--dry-run`-validated), each `--steps` =
+277,583,267 + 1,088,678 so the endpoint IS the +1.09M depth, arm-to-arm variation from the sim
+seed (the only seed the era has), every checkpoint kept. Scored with the era meter against the
+same parent on its team set. **Readings:** P1 each arm vs parent at +1.09M, and the three-arm
+spread as an operational (provisional) floor at that depth; the references are v8's +4.64 and the
+gen-era p1M hole (−3.12 / −3.28 / −4.19). **Outcomes:** all three positive with CIs clearing zero
+⇒ the no-hole fact REPLICATES, the gap is real and early, and depth-1 ablation on the v8 line
+(teachers / ecology / code age, ~1.5 h per arm) is licensed; a hole in two or more arms, or a
+spread wider than the effect ⇒ v8's +4.64 — and by extension its whole curve — was one draw, and
+the full 37 GPU-h pair is not bought. EXT_A yields the GPU at launch. Phase 2 is the owner's call
+on this result.
