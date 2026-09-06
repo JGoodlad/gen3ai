@@ -1,5 +1,6 @@
 import random
 
+from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
 from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 
 # Stable cross-run opponents are a CAPPED minority of the self-play (challenge) bucket — the pool
@@ -7,6 +8,47 @@ from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 # opponents SHARE this slice (so the total stable share stays ≤ this regardless of count). Mastered
 # ones leave the challenge bucket entirely for the floor.
 STABLE_CHALLENGE_SHARE = 0.20
+
+
+def resolve_episode_end(term: bool, trunc: bool, critic: str = CRITIC_DEFAULT):
+    """``(terminated, truncated)`` as the LEARNER should see them (gen3_winprob_critic_mode_v1, B6).
+
+    🚨 **THIS ENV NEVER TRUNCATES IN THE SB3 SENSE, AND THAT IS THE WHOLE FINDING.**
+    ``PokeEnv.calc_term_trunc`` (``poke_env/environment/env.py:951``) sets EITHER flag only when
+    ``battle.finished``; it then splits a finished battle by *how* it finished — exactly one side
+    wiped ⇒ ``terminated``, anything else ⇒ ``truncated``. "Anything else" is the **250-turn cap
+    forfeit** (``gen3_env.action_to_order`` returns a ``ForfeitBattleOrder`` at
+    ``turn >= StallConfig.threshold == MAX_TURNS``, which Showdown answers with ``|win|<opponent>``
+    — measured: ``won=False``, ``finished=True``, six mons alive a side, ``terminated=False,
+    truncated=True``) and a genuine tie. Both are **outcomes**, not cut-off trajectories: the game
+    is over and the result is known. Nothing here is a time limit that interrupted an episode
+    mid-flight, which is the one thing ``TimeLimit.truncated`` is supposed to mean.
+
+    That distinction is worth nothing under ``shaped`` and is the difference between a working and
+    a broken critic under ``winprob``. SB3 bootstraps a truncated done —
+    ``on_policy_algorithm.py:236-245`` (and ``async_vec_env.collect_rollouts_async:216-219``) do
+    ``rewards[idx] += self.gamma * V(s_last)`` whenever ``DummyVecEnv``/``SubprocVecEnv`` wrote
+    ``info["TimeLimit.truncated"] = truncated and not terminated``. Under ``--critic winprob`` the
+    reward is the terminal win indicator (0 for a cap loss) and ``gamma == 1``, so the last step's
+    target becomes ``0 + 1.0 * V(s_last) = V(s_last)`` — its TD error is **identically zero**. The
+    timeout would leave the loss entirely, and a policy that stalls to the cap would be taught
+    nothing about it. That is not a subtle bias: G7's stall rate is a KILL CONDITION on this arm,
+    and it would be measuring a signal the critic never received.
+
+    So under ``winprob`` a truncated end is re-labelled **terminal** — the design's intent, and the
+    only reading consistent with ``V(s) = P(win | s)``: a cap loss really is a state whose win
+    probability is 0, and the critic must be allowed to say so.
+
+    ``shaped`` is UNCHANGED and byte-identical, deliberately, and what it does is worth stating
+    rather than leaving implicit: today a cap forfeit and a tie both bootstrap
+    ``0.9999 * V(s_last)`` on top of a terminal reward that already paid ``--draw-penalty``. Two
+    wrongs that partly cancel — the shaped terminal double-counts the ending while the bootstrap
+    removes it — and re-deriving that composition is a `shaped`-era question this change does not
+    reopen.
+    """
+    if trunc and not term and is_winprob(critic):
+        return True, False
+    return term, trunc
 
 
 class MaskableAgentWrapper(SingleAgentWrapper):
@@ -49,7 +91,8 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  stable_challenge_share=STABLE_CHALLENGE_SHARE, exploiter_player=None,
                  exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
                  stable_teams=None, exploiter_team=None, opponent_pool_team=None,
-                 stable_pfsp=False, team_wr_tracking=True, exploiter_rung_loader=None):
+                 stable_pfsp=False, team_wr_tracking=True, exploiter_rung_loader=None,
+                 critic=CRITIC_DEFAULT):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])
@@ -73,6 +116,11 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             if any(x < 0 for x in w) or sum(w) <= 0:
                 raise ValueError("heuristic_weights must be non-negative with a positive sum")
             self._heuristic_weights = w
+        # gen3_winprob_critic_mode_v1 (design gap B6): the run's CRITIC MODE, needed here and only
+        # here to decide whether a finished-but-not-wiped battle reaches SB3 as a truncation (which
+        # it BOOTSTRAPS) or as a terminal. See `resolve_episode_end`, which owns the reasoning.
+        # `shaped` (the default) is byte-identical.
+        self._critic = str(critic)
         self._pool = pool
         self._pool_player = pool_player
         # Stable cross-run opponents (already-loaded RLPlayers + their labels): UN-mastered ones are
@@ -519,13 +567,21 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             # same as a loss); under the shaped terminal it does NOT (a timeout pays
             # `--draw-penalty`, i.e. WORSE than a loss), and that disagreement between the label
             # and the objective is a real property of the shaped composition, not a bug here.
+            #
+            # ⚠️ CORRECTION, measured 2026-09-06 on a real bridge battle with the stall threshold
+            # lowered: the 250-turn TIMEOUT does NOT arrive as `None`. It forfeits, Showdown answers
+            # `|win|<opponent>`, and `won_by` (poke_env/battle/abstract_battle.py:1619-1626) sets
+            # `_won = False` — a plain LOSS. `None` is `|tie|` alone. The label is 0.0 either way,
+            # so nothing downstream moved, but `signal/draw_rate` counts TIES and not timeouts and
+            # must be read as such. The rate that watches the cap is `signal/stall_rate` / mean
+            # episode length, which is why those and not this are G7's kill condition.
             b = getattr(self.env, "battle1", None)
             _outcome = getattr(b, "won", None) if b is not None else None
             if _outcome is True:
                 won, is_draw = 1.0, False
             elif _outcome is False:
-                won, is_draw = 0.0, False
-            else:                                 # None — a draw, or the 250-turn timeout
+                won, is_draw = 0.0, False       # a normal loss, AND the 250-turn cap forfeit
+            else:                               # None — a tie (`|tie|`)
                 won, is_draw = 0.0, True
             info["win_outcome"] = won
             info["win_draw"] = float(is_draw)
@@ -539,6 +595,12 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
             self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
             self._maybe_record_team_wr(won)       # per-team win-rate tracking (all classes, default ON)
+            # gen3_winprob_critic_mode_v1 (B6). LAST, so every outcome consumer above still sees the
+            # flags the sim produced — this re-labels only what the LEARNER is told, and only under
+            # `--critic winprob`. Placed here rather than in `Gen3Env.calc_term_trunc` because both
+            # rollout loops (SB3's `collect_rollouts` and our `collect_rollouts_async`) read the
+            # VecEnv's `TimeLimit.truncated`, and this is the one seam upstream of both.
+            term, trunc = resolve_episode_end(term, trunc, self._critic)
         return obs, reward, term, trunc, info
 
     def action_masks(self):

@@ -264,3 +264,75 @@ def critic_reliability(rollout_buffer) -> Dict[str, float]:
         return {}
     table = reliability_table(p[m], y[m])
     return {k: float(table[k]) for k in _CRITIC_KEYS if k in table}
+
+
+# --------------------------------------------------------------------------------------------
+# IS `--vf-coef` IN A SANE RANGE? — the FIRST-ROLLOUT scale readout (gen3_winprob_critic_mode_v1)
+# --------------------------------------------------------------------------------------------
+
+#: The BCE of a calibrated forecaster at a 0.5 base rate: `-ln(0.5) = ln 2`. It is the value a
+#: freshly-initialised head sits at (a zero logit is P = 0.5), so it is the right anchor for
+#: "is the first reading normal, or has the run started somewhere strange".
+LN2 = 0.6931471805599453
+
+
+def vf_coef_scale_line(vf_coef: float, bce: float, policy_loss: float) -> str:
+    """One human line: what `--vf-coef` is actually multiplying on this run's first rollout.
+
+    🚨 **`--vf-coef` MEANS SOMETHING DIFFERENT UNDER `--critic winprob`, AND NOTHING IN A METRIC
+    NAME SAYS SO.** Under `shaped` it weights an MSE on a PopArt-normalised shaped return; under
+    `winprob` it weights the win-prob head's **BCE against a Bernoulli outcome**, which is bounded
+    near `ln 2 ~ 0.693` at initialisation and falls from there. The historical default 0.5 was
+    tuned against the first quantity and carries no information about the second — so the first arm
+    needs to READ the ratio rather than inherit a number, and this prints it where the operator is
+    already looking (the `[CRITIC] winprob` banner family).
+
+    Deliberately a PRINT and not a scalar: it is a once-per-run sanity reading whose whole job is
+    to be seen at startup by the person choosing the coefficient. The per-rollout series it would
+    duplicate already exist — `train/policy_gradient_loss` and `win_prob/loss` — and a fourth name
+    for a ratio of two published numbers is a surface, not a measurement.
+
+    Pure: takes the three numbers and returns the sentence, so the wording is testable without a
+    PPO. `policy_loss` is the CLIPPED SURROGATE as folded, which is signed and can sit near zero on
+    a well-fit rollout, so the ratio is taken on magnitudes and reported as UNAVAILABLE rather than
+    as a division by ~0 — an infinite ratio would read as "the value term dominates", which is the
+    opposite of what a near-zero policy loss means.
+    """
+    term = float(vf_coef) * float(bce)
+    pol = abs(float(policy_loss))
+    ratio = (f"{term / pol:.3g}x" if pol > 1e-6 else
+             f"UNAVAILABLE (|policy loss| {pol:.3g} is ~0 this rollout)")
+    return (f"🎯 [CRITIC] winprob — first rollout scale: value term = --vf-coef {float(vf_coef):g} "
+            f"x BCE {float(bce):.4f} = {term:.4f}, against |policy loss| {pol:.4f} -> {ratio}. "
+            f"⚠️ --vf-coef now multiplies a BCE, not the shaped-return MSE 0.5 was tuned for: a "
+            f"BCE at a 0.5 base rate is ln 2 ~ {LN2:.3f} per sample at init and falls, where that "
+            f"MSE on a +-30 return was O(100). Read the ratio, not the coefficient — see "
+            f"designs/ai_v12/design_winprob_only_critic.md 5.4.")
+
+
+def announce_vf_coef_scale(model, bce: Optional[Sequence[float]],
+                           pg_losses: Sequence[float]) -> None:
+    """Print :func:`vf_coef_scale_line` ONCE per process, on the first rollout that can read it.
+
+    Stateful half, kept out of the pure function so the wording stays testable. Three properties:
+
+    * **ONCE**, latched on the model (`_vf_scale_announced`), because it answers a question about
+      the RUN's configuration, not about this rollout — repeating it every rollout would bury the
+      startup banner it belongs beside.
+    * **NEVER on a rollout it cannot read.** A `train()` whose minibatches carried no scorable
+      win-prob label (an absent or EMPTY `bce`) or no policy loss produces no line and does NOT
+      latch, so the next rollout tries again. A number invented from a missing one is worse than
+      a late one. Both inputs are the per-minibatch LISTS `train()` accumulates and averages for
+      its own `record` calls — averaged here the same way, so the printed pair is exactly the pair
+      `win_prob/loss` and `train/policy_gradient_loss` publish for that rollout.
+    * It goes to stdout via `print`, the same channel as `train_rl_agent`'s own `[CRITIC]` banner,
+      so a launcher-managed run finds both in `launcher_child.log` and a bare run finds both on
+      its terminal.
+    """
+    if getattr(model, "_vf_scale_announced", False):
+        return
+    if bce is None or not len(bce) or not len(pg_losses):
+        return
+    model._vf_scale_announced = True
+    print(vf_coef_scale_line(model.vf_coef, float(np.mean(bce)), float(np.mean(pg_losses))),
+          flush=True)

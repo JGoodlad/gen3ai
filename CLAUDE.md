@@ -1853,7 +1853,12 @@ src/
                      #   `--defensive-leaf winprob` scores on the WIN-PROB head, which beat the
                      #   played action by +0.0219 [+0.0089,+0.0364] where the scalar value head's
                      #   +0.0135 [-0.0007,+0.0280] does not clear zero — and unlike `--score auto`
-                     #   it RAISES rather than silently degrading; (futility, probe I) a race that
+                     #   it RAISES rather than silently degrading. On a `--critic winprob`
+                     #   checkpoint both legal sets COLLAPSE at startup (read off the live policy):
+                     #   `winprob` is the only leaf, `--score auto` RESOLVES to win_prob and is
+                     #   announced, and an explicit `value` on either is refused — there is one
+                     #   readout, so probe G's control arm does not exist on that critic (it
+                     #   survives untouched on `shaped`); (futility, probe I) a race that
                      #   never separates keeps the policy action and banks the clock, because 52.2%
                      #   of decisions never separate and the separable ones separate immediately;
                      #   (confirm, OPT-IN) `--defensive-confirm N` settles a proposed overrule with

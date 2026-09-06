@@ -29,6 +29,12 @@ scripted roster, which saturates near 90% and can hide a real dividend in its ce
 cells default to ``--side-swap`` (every game played in both team orientations off one pinned seed)
 so the report can difference out the team draw, and they are read against the null rather than
 folded into the anchored-ELO fit, which has no anchor for ``self``.
+
+On a ``--critic winprob`` checkpoint (`gen3_winprob_critic_mode_v1`) the leaf sets COLLAPSE at
+startup, read off the LIVE policy: ``winprob`` is the only ``--defensive-leaf``, ``--score auto``
+RESOLVES to ``win_prob`` and says so, and an explicit ``value`` on either is refused — there is one
+value readout, so probe G's ``value`` control arm does not exist there (it is untouched on
+``shaped``). See :func:`main.search_dividend.defensive.resolve_for_critic`.
 """
 
 from __future__ import annotations
@@ -41,7 +47,8 @@ from typing import List, Optional
 
 from main.search_dividend.battery import MIRROR, Cell, ResultsFile, run_cell
 from main.search_dividend.budget import WidthCaps
-from main.search_dividend.defensive import LEAVES, DefensiveConfig
+from agents.model.critic_mode import CRITIC_DEFAULT
+from main.search_dividend.defensive import LEAVES, DefensiveConfig, resolve_for_critic
 from main.search_dividend.playoff import (DEFAULT_ROLLOUTS, DEFAULT_SCREEN_MARGIN, MIN_PAIRS,
                                           SE_MULTIPLE, PlayoffConfig)
 from main.search_dividend.racing import RULES, RacingConfig
@@ -88,7 +95,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="live battle bridge child")
     p.add_argument("--search-impl", default="node", choices=["node", "rust"],
                    help="search-driver child (node is the validated default for open_root)")
-    p.add_argument("--score", default="auto", choices=["auto", "value", "win_prob"])
+    p.add_argument("--score", default="auto", choices=["auto", "value", "win_prob"],
+                   help="which readout scores a leaf. On a `--critic winprob` checkpoint there is "
+                        "only one, so `auto` RESOLVES to win_prob (announced at startup) and an "
+                        "explicit `value` is refused.")
     p.add_argument("--max-opp", type=int, default=6, help="cap on alpha-pruned opponent actions")
     p.add_argument("--max-worlds", type=int, default=8, help="cap on determinized worlds K")
     p.add_argument("--max-dice", type=int, default=8, help="cap on CRN dice resamples R")
@@ -119,6 +129,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "`value` head's +0.0135 [-0.0007,+0.0280] does not clear zero (probe G, "
                         "317 decisions / 142,208 terminal rollouts). Unlike `--score auto` this "
                         "never silently falls back — a checkpoint with no win-prob head raises. "
+                        "On a `--critic winprob` checkpoint `winprob` is the ONLY leaf and `value` "
+                        "is refused (there is no second readout for probe G's control arm to be). "
                         "--root-strategy defensive only.")
     p.add_argument("--defensive-wp-margin", type=float, default=DefensiveConfig.wp_margin,
                    help=f"the triage gate: play the policy immediately when n_legal<=1 or "
@@ -349,6 +361,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     from agents.training.eval_callback import eval_opponent_names
 
     model, ckpt = _load_model(args.model, args.device)
+    # gen3_winprob_critic_mode_v1 (design gap B10): the CRITIC MODE narrows `--score` and
+    # `--defensive-leaf`, and it is read off the LIVE POLICY rather than a config file — the seam
+    # that decides is the one the forward actually takes. Resolved ONCE here, at startup, instead
+    # of per decision inside `batch_scores`: `SearchEngine.choose` catches every exception as a
+    # counted `search_error` fallback, so a deep refusal on the flagless default (`--score auto`)
+    # would turn every decision into a policy fallback and report the arm's dividend as ~0 with
+    # nothing in the log saying the battery never ran. A startup refusal is loud once; a per-decision
+    # one is a silent null. `batch_scores`'s own check stays as the library-level backstop.
+    _critic_mode = str(getattr(model.policy, "_critic_mode", CRITIC_DEFAULT))
+    try:
+        args.score, args.defensive_leaf, _critic_notes = resolve_for_critic(
+            _critic_mode, args.score, args.defensive_leaf)
+    except ValueError as exc:
+        raise SystemExit(f"[search_dividend] {exc}")
+    for _n in _critic_notes:
+        print(f"[search_dividend] critic={_critic_mode}: {_n}", flush=True)
     if args.compile_extractor:
         from main.search_dividend.perf import compile_b1_extractor
         ok = compile_b1_extractor(model, enabled=True)

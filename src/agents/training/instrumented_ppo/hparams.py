@@ -460,8 +460,14 @@ class PpoHyperparameters:
         # sites can reach it without a handle; it back-references the model and SB3's `Logger` (which
         # carries a `_contextvars.Context`), so pickling it would break EVERY save in the run at the
         # pre-train round-trip smoke — the `_correction_buffer` lock hazard again.
+        # `_vf_scale_announced` (gen3_winprob_critic_mode_v1) is the once-per-PROCESS latch on the
+        # `[CRITIC] winprob` scale readout. Excluded so a launcher restart re-prints it: the line
+        # belongs beside the startup banner, which every restart also re-prints, and the run's
+        # `--vf-coef` may have been changed between them — a latch that rode the checkpoint would
+        # silence the reading for the rest of the run's life after its first three hours.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
                                                   "_capacity_state", "_winprob_phi_source",
                                                   "_distill_anchor_parent", "_distill_anchor_ref",
-                                                  "_distill_anchor_ref_writer"]
+                                                  "_distill_anchor_ref_writer",
+                                                  "_vf_scale_announced"]

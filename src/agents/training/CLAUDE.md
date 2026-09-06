@@ -3575,6 +3575,75 @@ claim to be about and an ungated assert would refuse a coherent run. It is **INE
 like `--lr`: SB3 restores the checkpoint's own γ, the resume path SAYS so, and it re-points
 `reward_config.gamma` at the value actually in force so the two cannot silently disagree.
 
+### 🚨 THE 250-TURN CAP IS A TERMINAL, NOT A TRUNCATION — and it was the other way round (B6)
+
+**THIS ENV NEVER TRUNCATES IN THE SB3 SENSE, AND THAT IS THE WHOLE FINDING.**
+`PokeEnv.calc_term_trunc` (`poke_env/environment/env.py:951`) sets EITHER flag only when
+`battle.finished`; it then splits a finished battle by *how* it finished — exactly one side wiped ⇒
+`terminated`, anything else ⇒ `truncated`. "Anything else" is the **250-turn cap forfeit** and a
+genuine **tie**. Both are OUTCOMES. Nothing here is a time limit that interrupted an episode
+mid-flight, which is the one thing `TimeLimit.truncated` is supposed to mean.
+
+MEASURED 2026-09-06 on a real bridge battle with `StallConfig.threshold` lowered to 6:
+`gen3_env.action_to_order` returns a `ForfeitBattleOrder` at `turn >= threshold` (`== MAX_TURNS` in
+production), Showdown answers `|win|<opponent>`, and the boundary reported `finished=True`,
+`won=False`, **six mons alive a side**, `terminated=False, truncated=True`.
+
+That flag then becomes `info["TimeLimit.truncated"]` in `DummyVecEnv`/`SubprocVecEnv`, and
+`MaskablePPO.collect_rollouts` (`sb3_contrib/ppo_mask/ppo_mask.py:251-260`, mirrored by our
+`async_vec_env.collect_rollouts_async:216-219`) does `rewards[idx] += gamma * V(s_last)`. Under
+`--critic winprob` the terminal reward is the win indicator — **0** for a cap loss — and γ is
+**1**, so the last step's target becomes `0 + 1.0·V(s_last) = V(s_last)`: **a TD error of
+identically zero.** The timeout leaves the loss entirely, and a policy that stalls to the cap is
+taught nothing about it — while G7's stall rate is a KILL CONDITION on that arm, i.e. the gate
+would have been reading a signal the critic never received. Verified by revert: the row reads
+exactly `V`.
+
+**`agents/training/wrappers.resolve_episode_end` is the fix** — under `winprob` only, a
+`trunc and not term` end is re-labelled TERMINAL. It sits at the END of
+`MaskableAgentWrapper.step`, so every outcome consumer above it still sees the flags the sim
+produced, and it is the ONE seam upstream of BOTH rollout loops (which is why it is here and not in
+`Gen3Env.calc_term_trunc`). The mode arrives as `MaskableAgentWrapper(critic=…)` from
+`env_factory`. Pinned by `winprob_truncation_test.py`, including the SB3 composition through a real
+`collect_rollouts`.
+
+**`shaped` is UNCHANGED and byte-identical, and what it does is worth stating rather than leaving
+implicit:** a cap forfeit and a tie both bootstrap `0.9999·V(s_last)` on top of a terminal reward
+that already paid `--draw-penalty`. Two wrongs that partly cancel — the shaped terminal
+double-counts the ending while the bootstrap removes it — and re-deriving that composition is a
+`shaped`-era question this change does not reopen.
+
+**Two adjacent paths are CLEAN, checked rather than assumed.** A launcher SIGTERM
+(`lifecycle.abort_training`) saves a checkpoint and `os._exit`s, so the partially-collected rollout
+buffer is discarded and never reaches an update — SB3 does not persist it. The eval
+reset-mid-battle forfeit lives in `PokeEnv.reset`, which returns only an observation and fills no
+rollout buffer. Neither can leak a truncation into the loss.
+
+⚠️ **CORRECTION to a comment that shipped with the mode: the cap forfeit is a LOSS, not a draw.**
+`won_by` (`poke_env/battle/abstract_battle.py:1619-1626`) sets `_won = False` on `|win|<opponent>`;
+`won is None` is `|tie|` ALONE. The label is 0.0 either way so nothing downstream moved, but
+`signal/draw_rate` counts **ties and not timeouts** — the series that watches the cap is
+`signal/stall_rate` / mean episode length, which is why those and not `draw_rate` are G7's kill
+condition.
+
+### `--vf-coef` multiplies a BCE now, and the first rollout SAYS what that is worth
+
+`--vf-coef` means a different quantity under each critic while keeping its name: under `shaped` an
+MSE on a PopArt-normalised shaped return (O(100) unnormalised, on a ±30 scale); under `winprob` the
+win-prob head's **BCE against a Bernoulli outcome**, which is `ln 2 ≈ 0.693` per sample at
+initialisation and falls. The 0.5 default was tuned against the first and carries no information
+about the second, and the normalisation that made the two comparable is refused here.
+
+So `calibration.announce_vf_coef_scale` prints, ONCE, on the first rollout carrying a scorable
+win-prob label: the value TERM (`vf_coef × BCE`), `|policy loss|`, and their **RATIO** — the
+actionable number, since the coefficient alone predicts nothing. It does NOT latch on a rollout it
+could not read (a `train()` with no scorable label tries again next time), and `_vf_scale_announced`
+is in `_excluded_save_params`, so a launcher restart re-prints it beside the startup `[CRITIC]`
+banner that every restart also re-prints. It is a PRINT, not a scalar: the per-rollout series it
+would duplicate are already `win_prob/loss` and `train/policy_gradient_loss`, and past rollout 1 the
+right instrument is `grad/value_policy_logratio` (0 = balanced). Recommendation and reading rule:
+design §5.4.
+
 ## PopArt value-target normalization (`--use-popart`)
 
 The fix for the swamping the diagnostics above reveal. `train()` reads `self.popart =

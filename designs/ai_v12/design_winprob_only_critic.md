@@ -571,6 +571,43 @@ keeps its two-value shape only as long as a second readout exists, i.e. not past
   underappreciated benefit: the defensive-search operating point (`--defensive-wp-margin 0.15`, the
   futility rule, the contested deadline) is calibrated on P(win) and does not need re-deriving.
 
+> **DECIDED AND BUILT — `gen3_winprob_critic_mode_v1`, 2026-09-06 (gap B10 closed).** Three rulings,
+> and the first is a deliberate departure from "`auto` is DELETED" above.
+>
+> 1. **`auto` dies as a BEHAVIOUR, and survives as a spelling that RESOLVES.** `--score auto` is
+>    the CLI default, so deleting it outright would make the flagless invocation —
+>    `python -m main.search_dividend <ckpt>` — a usage error on every winprob checkpoint, and the
+>    battery is required to run end to end on this critic. What made `auto` dangerous was never the
+>    spelling but the **fall-back**: it prefers the win-prob head *and silently drops to the value
+>    head* when the run trained none, which is exactly the substitution `check_leaf` exists to
+>    catch. On a winprob policy that fall-back is unreachable by construction — one readout, so
+>    `auto` can only ever resolve to it. So it resolves to `win_prob` and the resolution is
+>    **ANNOUNCED** (`[search_dividend] critic=winprob: --score auto -> win_prob …`), never left for
+>    a reader to infer from silence. An EXPLICIT `--score value` RAISES.
+> 2. **`--defensive-leaf` collapses to `winprob`; `value` is REFUSED.** Probe G's control arm does
+>    not exist on this critic — `predict_values` and the win-prob head are the same number, so a
+>    `value` arm would be the winprob arm wearing a different label and would report a control that
+>    was never run. It is refused rather than aliased. **No ledger retirement is owed**: `shaped`
+>    keeps both leaves and can still re-run G's control, so the arm is retired *on this critic*,
+>    not deleted.
+> 3. **The refusal happens at STARTUP, not in `batch_scores`** — and this is the part the design
+>    did not anticipate. `SearchEngine.choose` catches every exception from a search as a counted
+>    `search_error` that plays the policy action (correct: a search failure must never cost the
+>    battle). A deep `ValueError` on the flagless default would therefore turn *every decision* into
+>    a policy fallback and report the arm's dividend as ≈0, with nothing in the log saying the
+>    battery never searched — a config error arriving through the error path as a silent null
+>    result. `defensive.resolve_for_critic` runs once in `__main__.main` off the LIVE policy's
+>    `_critic_mode` before any `SearchConfig` is built; `batch_scores`'s own check stays as the
+>    library-level backstop for callers that are not the CLI.
+>
+> `check_leaf` and `LEAVES` are **KEPT** exactly as this section asked.
+>
+> **Proven end to end** on a CPU cell against a `--critic winprob` smoke checkpoint (`--arm base
+> --arm honest --budget 1 --games 2 --opponents self --max-depth 1`): 8 games, 111 decisions
+> searched on the `honest` arm, `changed=0.55`, zero `search_error` fallbacks, mirror + ELO blocks
+> rendered. The output is in the B10 handoff note, and the numbers are a plumbing demonstration on
+> a 10k-step toy — **not a dividend measurement**.
+
 ### 3.11 GAE γ and λ in the new currency
 
 **γ: RECOMMEND 1.0** (from 0.9999). The argument: γ < 1 exists to make an infinite-horizon return
@@ -585,6 +622,31 @@ this design is trying to improve.
 Two things to verify before taking it (gap **B6**): SB3's truncation handling
 (`next_non_terminal`) at γ = 1 on a 250-turn cap, and the `PBRS_GAMMA == model.gamma` assert, which
 must not fire when PBRS is deleted.
+
+> **BOTH VERIFIED, and the first one was BROKEN — `gen3_winprob_critic_mode_v1`, 2026-09-06.**
+> Measured on a real bridge battle with `StallConfig.threshold` lowered: the cap FORFEITS
+> (`gen3_env.action_to_order`), Showdown answers `|win|<opponent>` so `battle.won` is **`False`**
+> (a plain loss — NOT the `None` a tie gives), and `PokeEnv.calc_term_trunc`
+> (`poke_env/environment/env.py:951`) then returned **`terminated=False, truncated=True`**, because
+> its test is "was exactly one side wiped" and a forfeit leaves six mons alive a side. SB3
+> (`sb3_contrib/ppo_mask/ppo_mask.py:251-260`, and `async_vec_env.collect_rollouts_async:216-219`)
+> therefore bootstrapped `r += γ·V(s_last)` — at γ = 1 with a terminal-indicator reward of 0 that
+> is `0 + V(s_last)` against a target of `V(s_last)`, a TD error of **identically zero**, removing
+> the timeout from the loss entirely. G7's stall rate would have been a kill condition on a signal
+> the critic never received.
+>
+> **THE GENERAL FACT, which is what makes the fix unambiguous: this env never truncates in the SB3
+> sense at all.** `calc_term_trunc` sets EITHER flag only when `battle.finished`, so a `truncated`
+> out of it never means "an episode was cut off mid-flight" — the one thing `TimeLimit.truncated`
+> is supposed to mean — it means "finished, and not by a wipe": the 250-turn cap, or a genuine
+> tie. Both are OUTCOMES. Under `winprob` they are re-labelled TERMINAL by
+> `wrappers.resolve_episode_end`, which is the design's intent and the only reading consistent with
+> `V(s) = P(win | s)`: a cap loss really is a state whose win probability is 0.
+>
+> `shaped` is UNCHANGED, and what it does is worth stating rather than leaving implicit: a cap
+> forfeit and a tie both bootstrap `0.9999·V(s_last)` on top of a terminal reward that already paid
+> `--draw-penalty` — two wrongs that partly cancel, and a `shaped`-era question this design does
+> not reopen.
 
 **λ: RECOMMEND leaving it exactly where it is for the first arm.** `credit_assignment_and_value_errors.md`
 §2 states the dial precisely — "the more you trust the critic, the lower λ can go; the worse the
@@ -782,6 +844,56 @@ python -m main.launcher \
 >
 > Validate with `python -m main.checkargs --argv "…"` and then `python -m main.launcher --dry-run`,
 > in that order, exactly as this section already says.
+>
+> ### The `--vf-coef` RECOMMENDATION — **start at 0.5, and READ the first-rollout line**
+>
+> `<RE-TUNED>` above is not an answer, and the reason it could not be one is that **`--vf-coef`
+> multiplies a different quantity under each critic while keeping its name**:
+>
+> | critic | what `--vf-coef` multiplies | its magnitude |
+> |---|---|---|
+> | `shaped` | an MSE between a shaped return and V, in PopArt-NORMALISED units | O(1) after normalisation — of a raw return whose scale is ±30, i.e. **O(100)** unnormalised |
+> | **`winprob`** | the win-prob head's **BCE against a Bernoulli outcome** | **ln 2 ≈ 0.693** per sample at initialisation (a zero logit is P = 0.5), falling from there |
+>
+> So the historical 0.5 was calibrated against the first quantity and carries **no information**
+> about the second. Two orders of magnitude separate the unnormalised scales, and the PopArt
+> normalisation that closed that gap is REFUSED under this critic (§3.4) — there is no scale to
+> track on a bounded stationary Bernoulli payoff, so nothing keeps the two comparable any more.
+>
+> **RECOMMENDATION: launch the first arm at `--vf-coef 0.5` and read the banner it prints on the
+> first rollout, rather than re-tuning blind.** The reasoning:
+>
+> * Under PopArt the `shaped` value loss was already O(1) by construction, so 0.5 was never a
+>   number about ±30 — it was a number about a normalised residual. A BCE that starts at 0.693 and
+>   falls is in that same O(1) band, so 0.5 is a *defensible* starting point rather than an
+>   inherited accident. What it is not is a MEASURED one.
+> * The quantity that decides is not the coefficient but the **RATIO of the value term to the
+>   policy term**, which is a property of the run and cannot be predicted from either flag. It is
+>   also already the thing `grad/value_share` and `grad/value_policy_logratio` report per rollout —
+>   the arm's own instruments, and the ones to steer by past the first reading.
+> * A wrong coefficient here is not a silent failure. `train/noise_scale_ratio_value` and
+>   `grad/value_share` both move with it, and §4's gate reads `win_prob/critic_resolution`, which a
+>   swamped or starved critic degrades visibly.
+>
+> **The line the operator reads** (printed once, on the first rollout that carries a scorable
+> win-prob label, from `instrumented_ppo/calibration.vf_coef_scale_line`; it does NOT latch on a
+> rollout it could not read, and it is excluded from the checkpoint so every launcher restart
+> re-prints it beside the `[CRITIC]` banner):
+>
+> ```
+> 🎯 [CRITIC] winprob — first rollout scale: value term = --vf-coef 0.5 x BCE 0.1567 = 0.0784,
+>    against |policy loss| 0.0002 -> 476x.  ⚠️ --vf-coef now multiplies a BCE, not the
+>    shaped-return MSE 0.5 was tuned for: a BCE at a 0.5 base rate is ln 2 ~ 0.693 per sample at
+>    init and falls, where that MSE on a +-30 return was O(100). …
+> ```
+>
+> ⚠️ **That sample is from a CPU `--debug` smoke (1 env, 10k steps) and its 476x is NOT a
+> production reading** — a toy's clipped surrogate sits at ~2e-4, which is the denominator, not a
+> statement about the coefficient. It is reproduced here to show the SHAPE of the line, and it
+> makes the reading rule concrete: **a ratio in the tens or worse means the critic is swamping the
+> policy on the shared trunk** — cut `--vf-coef` by that factor — while a ratio far below 1 means
+> the critic is starved. Confirm against `grad/value_policy_logratio` (0 = balanced), which is the
+> aux-independent version of the same question and the one that keeps reading after rollout 1.
 **Status of this command, measured 2026-09-06.** Everything above **except `--gamma 1.0`
 validates today** — `python -m main.checkargs --argv "…"` accepts all 18 remaining flags and prints
 `✓ this command still launches`. Two things stand between that and the design:
@@ -850,11 +962,11 @@ for it would not. That must be reported as loudly as a pass.
 | 🟢 **B3** | **DONE 2026-09-06** — under `winprob` the promoted BCE folds as `_ntg.add("value", …)` and the grad-balance value term follows the critic. `shaped` keeps its `aux` tag | `instrumented_ppo/ppo.py` | **DONE** |
 | 🟢 **B4** | **DONE 2026-09-06** — `--arm-no-progress-tax`, a resume-immutable `RewardConfig` bool defaulting OFF. Re-arms the tilt ALONE; the other 24 BIAS terms stay zeroed | `agents/training/reward_manager.py`, `parser/clean_world.py` | **DONE** |
 | 🟢 **B5** | **DONE 2026-09-06 — THIRTEEN entries, not two**: the two named plus PopArt, `--value-dist-mode`, `--value-from-dist`, `--win-prob-coef`, `--value-tail-weight`, both `--win-prob-pbrs-*`, `--win-prob-pbrs-frozen`, and the three REQUIRED reward flags | `main/train/combination_checks.py` | **DONE** |
-| 🟡 **B6** | **MOSTLY DONE 2026-09-06** — `--gamma` is a flag (shaped default read from `PBRS_GAMMA` itself), INERT on a resume and stated as such, and the PBRS assert is GATED on a potential actually being folded on BOTH build paths. ⚠️ **NOT done: SB3's truncation handling at γ = 1 on the 250-turn cap is UNVERIFIED** — the design asked for it and this pass did not do it | `main/train/{model_build,config}.py`, `parser/hyperparameters.py` | **verify truncation** |
+| 🟢 **B6** | **DONE 2026-09-06.** `--gamma` is a flag (shaped default read from `PBRS_GAMMA` itself), INERT on a resume and stated as such, and the PBRS assert is GATED on a potential actually being folded on BOTH build paths. **The truncation half was a 🔴 and is now closed** — MEASURED on a real bridge battle: the 250-turn cap forfeits, `battle.won=False`, six mons alive a side, and `PokeEnv.calc_term_trunc` (`poke_env/environment/env.py:951`) returned **`terminated=False, truncated=True`**, so `MaskablePPO.collect_rollouts` (`ppo_mask.py:251-260`) bootstrapped `r += γ·V(s_last)` — at γ=1 the tautology, verified by revert (the row read exactly `V`). Fixed at `wrappers.resolve_episode_end` (winprob-gated, ONE seam upstream of both rollout loops); `shaped` byte-identical and its bootstrap documented. **This env never truncates in the SB3 sense at all**: either flag requires `battle.finished`, so a `truncated` here means "finished, not by a wipe" — the cap and a tie — which is a terminal outcome. (c) is clean: SIGTERM `os._exit`s and the partial buffer dies with it; the eval reset-mid-battle forfeit fills no buffer | `agents/training/wrappers.py`, `main/train/env_factory.py` | **DONE** |
 | 🔵 **B7** | re-scale the prober `calibration` verb's `overvalue_tau` (5.0 = reward units) for probability units | `main/prober/session/aggregate.py` | hours |
 | 🟡 **B8** | the version bump itself: 108, new `ARCH_SIGNATURE`, `MIGRATION_FLOOR` 108, the migration branches and refusal messages for every deleted resume-immutable field | `agents/model/model_version/` | a day |
 | 🟢 **B9** | **DONE 2026-09-06** — the three-way branch is named in `wrappers.py`, `info["win_draw"]` publishes it, and the rate lands as **`signal/draw_rate`** (not `train/`: `SignalMetricsCallback` has a pinned prefix contract, and the rate's siblings are `signal/outcome_*`) | `agents/training/{wrappers,signal_callback}.py` | **DONE** |
-| 🟡 **B10** | **HALF DONE 2026-09-06** — `batch_scores` now REFUSES `--score auto|value` on a policy whose `_critic_mode` is `winprob` (read off the LIVE policy, never a config file). `LEAVES`, `check_leaf` and `--score`'s legal set are UNTOUCHED, so probe G's control survives and nothing is owed a retirement entry yet; the collapse is still the decision the design describes | `main/search_dividend/search.py` | **decision (the collapse)** |
+| 🟢 **B10** | **DONE 2026-09-06.** The collapse is DECIDED and built: `defensive.{leaves_for_critic,scores_for_critic,resolve_for_critic}` narrow both legal sets off the LIVE policy's `_critic_mode` — `--defensive-leaf` to `winprob` alone, `--score` to `win_prob` alone, with an explicit `value` REFUSED on either. **`--score auto` dies as a RESOLUTION, not a refusal**, and that is the decision: `auto` is the CLI default, so refusing it would make the flagless invocation a usage error on every winprob checkpoint, while what made it dangerous — the silent fall-back to the value head — is unreachable when there is one readout. It resolves to `win_prob`, ANNOUNCED at startup and recorded. **`check_leaf` is KEPT** (vacuous here; the guard outlives the thing it currently has nothing to catch). Resolution is at STARTUP, not in `batch_scores`: `SearchEngine.choose` swallows every exception as a counted `search_error`, so a deep refusal on the flagless default would make every decision a policy fallback and report the arm at ~0 in silence — the deep check stays as the library backstop. Probe G's `value` control arm is **retired on this critic only** (the two readouts are one number there); `shaped` keeps it untouched, so no ledger retirement is owed. Proven end to end on a CPU cell — see below | `main/search_dividend/{defensive,search,__main__}.py` | **DONE** |
 
 ### A2 — THE CONSUMER CENSUS (DONE, 2026-09-06). Read this before deleting anything.
 

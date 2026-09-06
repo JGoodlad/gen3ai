@@ -62,10 +62,13 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Mapping, Optional, Sequence
 
+from agents.model.critic_mode import is_winprob
+
 #: The leaf readouts a defensive search may score on. ``winprob`` is the DEFAULT and it is
 #: measured, not preferred (probe G, above). ``value`` exists so the losing arm of that
 #: measurement can be re-run as a control rather than argued about.
-LEAVES = ("winprob", "value")
+LEAF_WINPROB = "winprob"
+LEAVES = (LEAF_WINPROB, "value")
 
 #: probe H's chosen operating point. A decision is FORCED (play the policy, spend nothing) when
 #: ``|P(win) - 0.5| >= this``. 0.15 is where the 150 s ladder budget affords ~16-20 s on the ~15%
@@ -195,6 +198,79 @@ def resolve_score_mode(leaf: str) -> str:
     if leaf not in LEAVES:
         raise ValueError(f"unknown defensive leaf {leaf!r} (want one of {LEAVES})")
     return "win_prob" if leaf == "winprob" else "value"
+
+
+# ---------------------------------------------------------------------------
+# the CRITIC MODE narrows both legal sets (gen3_winprob_critic_mode_v1, design gap B10)
+# ---------------------------------------------------------------------------
+
+#: `--score`'s legal set on a `shaped` policy. Unchanged, and `auto` is still the CLI default.
+SCORES = ("auto", "value", "win_prob")
+
+
+def leaves_for_critic(critic_mode: object) -> tuple:
+    """The `--defensive-leaf` values a checkpoint trained under `critic_mode` can honestly take.
+
+    Under `--critic winprob` there is exactly ONE readout — `predict_values` IS
+    `sigmoid(win-prob logit)` — so `value` names a critic that is in no loss graph and would be
+    the SAME number wearing a different label. It is refused rather than aliased: probe G's whole
+    finding is that the two leaves are different arms with different measured worth, and a run
+    that silently made them one would report a control it never ran.
+    """
+    return (LEAF_WINPROB,) if is_winprob(critic_mode) else LEAVES
+
+
+def scores_for_critic(critic_mode: object) -> tuple:
+    """The `--score` values that mean something on `critic_mode`. See :func:`resolve_for_critic`."""
+    return ("win_prob",) if is_winprob(critic_mode) else SCORES
+
+
+def resolve_for_critic(critic_mode: object, score: str, leaf: Optional[str] = None):
+    """``(score, leaf, notes)`` — the CLI's request, narrowed by the critic the model actually has.
+
+    **`auto` does not survive contact with a winprob policy, and it does not survive as a
+    SILENT default either.** The design's §3.10 says `--score auto` dies; the shape that ships is
+    a RESOLUTION rather than a refusal, and the distinction is worth stating because both readings
+    of "dies" are defensible:
+
+    * A refusal would make the FLAGLESS invocation — `python -m main.search_dividend <ckpt>` — a
+      usage error on every winprob checkpoint, since `auto` is the CLI default. The battery is
+      required to run end to end on this critic; an arm that cannot be launched without a flag is
+      not a working battery.
+    * What made `auto` dangerous was never the spelling — it was the **fall-back**: it prefers the
+      win-prob head *and silently drops to the value head* when the run trained none, which is
+      exactly the substitution :func:`check_leaf` exists to catch. On a winprob policy that
+      fall-back is unreachable by construction: there is one readout, so `auto` can only ever
+      resolve to it. The hazard is gone, not merely tolerated.
+
+    So `auto` RESOLVES to `win_prob` and the resolution is ANNOUNCED and recorded, never inferred
+    by a reader from the absence of a message. An EXPLICIT `value` on either flag RAISES, because
+    that is a request for the arm this checkpoint does not have — and a default that quietly
+    became the losing arm is the class this module was written against.
+
+    `shaped` is returned untouched, notes empty: not "narrowed to the same values", but never
+    consulted at all.
+    """
+    if not is_winprob(critic_mode):
+        return score, leaf, []
+
+    notes = []
+    if str(score) == "value":
+        raise ValueError(
+            "--score value is refused on a --critic winprob model: this checkpoint has ONE value "
+            "readout (predict_values IS the win-prob head's sigmoid), so 'value' names a critic "
+            "that is in no loss graph. Pass --score win_prob.")
+    if str(score) == "auto":
+        score = "win_prob"
+        notes.append("--score auto -> win_prob (a winprob critic has ONE readout, so `auto` has "
+                     "nothing to fall back to; resolved rather than left implicit)")
+    if leaf is not None and leaf not in leaves_for_critic(critic_mode):
+        raise ValueError(
+            f"--defensive-leaf {leaf!r} is refused on a --critic winprob model: the only leaf is "
+            f"{LEAF_WINPROB!r} (probe G's `value` control arm does not exist on this critic — "
+            "predict_values and the win-prob head are the same number). Pass "
+            f"--defensive-leaf {LEAF_WINPROB}.")
+    return score, leaf, notes
 
 
 def check_leaf(mode_used: str, cfg: Optional[DefensiveConfig]) -> None:

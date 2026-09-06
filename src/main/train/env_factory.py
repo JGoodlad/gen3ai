@@ -10,6 +10,7 @@ the body is a verbatim move, and renaming the binding would have meant editing t
 import traceback
 from datetime import datetime
 
+from agents.model.critic_mode import CRITIC_DEFAULT
 from agents.training.gen3_env import Gen3Env
 from agents.training.snapshot_pool import SnapshotPool
 from agents.training.wrappers import MaskableAgentWrapper
@@ -242,6 +243,11 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 exploiter_bot_fraction=args.exploiter_bot_fraction,
                 exploiter_rung_loader=exploiter_rung_loader,
                 team_wr_tracking=getattr(args, "team_wr_tracking", True),
+                # gen3_winprob_critic_mode_v1 (design gap B6): under `--critic winprob` a finished
+                # battle that did not wipe a side — the 250-turn cap forfeit, a tie — must reach the
+                # learner as a TERMINAL, not as a truncation SB3 would bootstrap at gamma 1. See
+                # `wrappers.resolve_episode_end`. `shaped` is byte-identical.
+                critic=getattr(args, "critic", CRITIC_DEFAULT),
             )
 
             # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.

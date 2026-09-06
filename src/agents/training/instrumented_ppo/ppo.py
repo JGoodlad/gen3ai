@@ -37,7 +37,7 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     contested_mask as _calib_contested_mask,                  # cycle `ppo` sits at the end of
     episode_start_rows as _calib_episode_start_rows,          # (pinned by the hub-contract test).
     sigmoid as _calib_sigmoid,
-    critic_reliability,
+    announce_vf_coef_scale, critic_reliability,
     start_metrics as _calib_start_metrics,
 )
 from agents.training.instrumented_ppo.constants import (
@@ -1729,6 +1729,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if critic_winprob:
             for _rk, _rv in critic_reliability(self.rollout_buffer).items():
                 self.logger.record(f"win_prob/critic_{_rk}", _rv)
+            # ONCE, first rollout: what --vf-coef multiplies now it weights a BCE (see calibration).
+            announce_vf_coef_scale(self, win_prob_metrics.get("loss"), pg_losses)
 
         # +WIN-PROB EPISODE-START READ: what the head says at the LEAST-informed state, against
         # what those very episodes went on to do. One extra EAGER forward over the episode-start
