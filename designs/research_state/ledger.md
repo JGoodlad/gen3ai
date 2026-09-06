@@ -11178,3 +11178,67 @@ arms apart from seed and run name; all nine fork from one parent
 fork+1,079,397 … +1,088,431 (**0.84%**). Phase-1 arm A carries a second checkpoint at fork+2,068,193
 from a different `--steps`, which the meter never reads — `_first_ckpt` sorts by step and takes the
 lowest, so repA was scored at fork+1,086,216, inside the band.
+
+### 2026-09-06 · G1 — re-basing note, recorded BEFORE G1 is scored
+
+Cell 2 (`587dd8b7`) established that a plain continuation of v8's parent reproduces v8's gift, which
+makes a frozen parent the wrong baseline for any untaught delta on that parent. **G1 will therefore
+be read against G5 (the continuation control on OUR parent) as well as against the frozen
+`ai_v9_59_R2ACTION_0827`** — and if G5's (i) fires, the frozen-parent reading of G1 is the one that
+gets retired, not the other way round. Recorded now so the comparator is fixed before the number
+exists.
+
+### 2026-09-06 · G5 PRE-REGISTERED — the CONTINUATION CONTROL on our own parent (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`)
+
+Cell 2 showed that a plain +1.08M continuation of **v8's** parent reproduces v8's gift. No such
+control has ever been run on **ours**. G5 is that control: `ai_v9_59_R2ACTION_0827` continued for the
+same depth with no teacher, no distillation term, and no stable opponents.
+
+**Construction** — TCUNFA's recorded argv, `--distill-coef 0`, `--steps 29,201,014` = fork
+`28,115,184` + **1,085,830** (matching cell 2's depth band, so the two plain-continuation cells sit at
+the same depth on the two parents), seeds 72/73/74, everything else byte-identical: same parent, same
+pool line, K=3, `--fork-lr 2.8e-05 --fork-lr-freeze`. `--steps` is ABSOLUTE on current code — verified
+from R5F landing its final checkpoint exactly on its own `--steps` — so the arm stops itself and needs
+no external kill.
+
+**⚠️ Turning a fold argv into a coef-0 control takes FIVE changes, not one, and only ONE of them is a
+deletion the spec would name.** Running `resolve_config` (the launch path, not the parser) refused
+three times in sequence:
+
+1. `--distill-anchor-monitor requires --distill-coef > 0` — the anchor's off-slice split reads the
+   `distill_mask` obs key, which the env emits only for a run with a live distill term.
+2. `--distill-team-bias` with no teacher — *"there is nothing to bias toward without one; the flag
+   would be a silent no-op."*
+3. `--distill-target action requires --distill-coef > 0` — **still, after removing it from the argv**,
+   because it is INHERITED from the parent's recorded `model_config.json`.
+
+So G5 = TCUNFA minus `--distill-teacher`, `--distill-stop`, `--distill-team-bias`,
+`--distill-anchor-monitor`, **plus `--distill-target kl` to OVERRIDE the inherited `action`.** Deleting
+a flag is not the same as disabling it when the parent records it — the C1 lesson in its purest form,
+and the fourth instance of that class in one night.
+
+**🚨 `checkargs` PASSES an argv `resolve_config` REFUSES.** Demonstrated on the half-fixed G5:
+`checkargs` printed *"✓ this command still launches"* and exited 0 while `resolve_config` refused on
+`--distill-anchor-monitor`. `main.train.combination_checks` caught only the `--distill-target` case
+(correctly, and it printed `INHERITED from the parent's recorded config` — the C1 fix working); the
+other two refusals are bare `parser.error` calls inside `resolve_config` and appear in no shared
+list. **"checkargs says it launches" currently means "it parses", not "it launches".** All three G5
+arms were therefore validated by executing `resolve_config` itself.
+
+**Pre-registration.**
+
+- **(i)** POOLED untaught delta vs the frozen parent, three arms, max-pairwise floor. **Clears zero
+  and its floor** ⇒ our parent also gains from a plain continuation, and every untaught meter in the
+  ledger is re-based: a fold's gift is its delta MINUS G5's at the same depth. **NOT DETECTED** ⇒ the
+  frozen baseline stands on our side and the cross-era difference is MATURITY — a converged 277M
+  parent still climbing +3.45pp in 1M steps while a 28M parent does not, which would be surprising,
+  and is recorded here in advance as such.
+- **(ii)** The re-based TC readings at p1M — TC_UNF_A/B and TC_FUND_A/B's banked untaught deltas minus
+  G5 pooled, paired on the 16 teams. G5 is scored on the untaught 8 **and** the taught 16 so this
+  pairing is available.
+- **(iii)** Does a plain continuation also gain on the TAUGHT teams? The fold's ~+5pp on-slice is then
+  re-based the same way.
+
+Whichever way (i) falls, it decides the fleet: if it fires, the origin × budget factorial is re-scoped
+as a question about our ROBBERY rather than v8's gift; if it does not, maturity is the account and the
+fleet is moot for the gift.
