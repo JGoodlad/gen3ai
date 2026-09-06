@@ -11338,3 +11338,54 @@ PINS the teacher file. Any future fleet should record, per teacher, the resolved
 Standing context for teacher quality, from the exploiter-competence probe: every exploiter set pilots
 the untaught 8 WORSE than its origin (funded −7.81pp [−15.23, −0.39], significant), at roughly 3pp of
 on-slice edge per 1pp of untaught win rate — the drift is forgetting.
+
+### 2026-09-06 · G1 RESULT — a homogeneous short-budget teacher set folds **indistinguishably** from the mixture
+
+`ai_v9_172_G1SHORT_0905`: TCUNFA's argv with two tokens changed, eight teachers pinned at exactly
+`@26267760` = fork+1,200,000 (spread **0**). Scored on the untaught 8 against `ai_v9_59_R2ACTION_0827`
+at **fork+1,000,032** — the same checkpoint depth as the TC `_p1M` family, so the comparison is
+like-for-like.
+
+| arm | untaught | vs FROZEN parent (cluster-bootstrapped over the 8 teams) |
+|---|---|---|
+| parent R2ACTION | 58.25pp | — |
+| **G1SHORT_p1M** | **55.19pp** | **−3.06pp [−5.37, −0.69]** |
+| TCUNFA_p1M | 56.25pp | −2.00pp [−4.38, +0.25] |
+| TCUNFB_p1M | 53.69pp | −4.56pp [−7.63, −1.94] |
+| TCFUNDA/B_p1M | 54.56 / 55.69pp | −3.69 / −2.56pp |
+| TCUNFK6A/B_p1M | 52.06 / 56.06pp | −6.19 / −2.19pp |
+
+**Floor from the TC REPLICATE PAIRS** (same recipe, different seed — the max, never the mean):
+|UNFA−UNFB| 2.56 · |FUNDA−FUNDB| 1.13 · |K6A−K6B| **4.00** ⇒ **4.00pp**.
+
+**The paired read, same 8 teams on one shared resampling index:**
+
+> **G1 − TCUNF pooled(A+B) = +0.22pp [−2.47, +2.34]** — spans zero **and** lies INSIDE the ±4.00
+> floor band ⇒ **EQUIVALENCE SUPPORTED**, not merely "no difference detected".
+
+Per-arm: vs TCUNFA −1.06 [−4.31,+1.75] · vs TCUNFB +1.50 [−1.19,+4.13] · vs TCUNFK6A +3.13
+[+0.69,+5.50] · vs TCUNFK6B −0.87 [−4.06,+2.88]. Only the K6A cell excludes zero; it is a DIFFERENT
+dose (K=6) and so not G1's partner, and its point estimate is still sub-floor.
+
+**⇒ On this meter, at this depth, the teacher budget/homogeneity axis does nothing.**
+
+**Two limits, both stated in advance of the number.** (1) G1's partner is a **MIXTURE** — six teachers
+at fork+2,932,272 and two at fork+932,256 (`ebe2e5f8`) — so this is a null across
+*uniform-1.2M vs that mixture*, NOT "teacher budget is irrelevant"; a null across a confounded
+contrast is weaker than one across a clean contrast. (2) G1 has **no replicate of its own**, so its
+floor is borrowed from the TC pairs.
+
+**🔑 This verdict is INVARIANT to the continuation re-basing.** G1 and the TC arms are measured
+against the SAME frozen parent at the SAME depth, so subtracting G5's continuation gain shifts both
+sides identically and the paired delta is unchanged. Whatever G5 reports, "G1 ≡ the mixture" survives
+it — only the ABSOLUTE robbery figures (−3.06, −2.00, …) move.
+
+**Instrument notes.** The scoring chain for G1 was written and died instantly on a `set -u` bug —
+`local out=$P/${probe%%_*}...` on the same line as `probe=$3`, and bash expands every word of a
+`local` command before executing its assignments. It produced no output at all, which is the only
+reason it was noticed: *a chain that dies silently looks exactly like one that has not started.*
+Separately, G1's own launch died once on the `@step` run-spec defect and was relaunched 46 seconds
+after the fix landed; and a validation script of mine imported `main.launcher.__main__` to inspect
+its parser, which EXECUTED the launcher and started an unintended training run beside a live arm
+(bounded only by a tool timeout; no run dir or worktree survived). The tree-side half of that is now
+guarded (`02601b12`); the habit-side rule is **never import an entry point to interrogate it**.
