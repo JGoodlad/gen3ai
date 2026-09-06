@@ -1,0 +1,149 @@
+{
+ "_meta": {
+  "gen_artifact": "/tmp/claude-1000/-home-goodlad-dev-gen3ai/1bdd246b-96e2-4e73-8e09-1d9427eea286/scratchpad/gen_locality.json",
+  "v8_artifact": "/tmp/claude-1000/-home-goodlad-dev-gen3ai/1bdd246b-96e2-4e73-8e09-1d9427eea286/scratchpad/v8_locality.json",
+  "statistic": "R = KL(own teacher||parent) / mean KL(sibling teachers||parent), per taught team, on the SAME parent-piloted states",
+  "why_R_and_not_L": "R holds the TEAM fixed, so any tendency of a team's states to make two arbitrary policies differ more cancels exactly. L does not, and the matched-noise floor shows that tendency is real and points in OPPOSITE directions in the two eras (gen floor L > 1, v8 floor L < 1).",
+  "cross_era_contrast_is_UNPAIRED": "the eras share no team, no pool, no parent",
+  "n_gen_taught_teams": 16,
+  "n_v8_taught_teams": 21,
+  "gen_states": 3339,
+  "v8_states": 4180
+ },
+ "sibling_R": {
+  "gen_unfunded": {
+   "R": 1.0917452579994946,
+   "ci95": [
+    0.9545210809144281,
+    1.2454355353692528
+   ],
+   "local_beyond_1": false
+  },
+  "gen_funded": {
+   "R": 1.1028646157197897,
+   "ci95": [
+    0.9638644519323497,
+    1.2431700560232057
+   ],
+   "local_beyond_1": false
+  },
+  "v8_all": {
+   "R": 1.4601173719057943,
+   "ci95": [
+    1.2467226054940463,
+    1.7347488363895252
+   ],
+   "local_beyond_1": true
+  }
+ },
+ "teacher_L": {
+  "gen_unfunded": {
+   "L": 1.0874894341377481,
+   "ci95": [
+    0.9349425258169686,
+    1.2714866688494006
+   ]
+  },
+  "gen_funded": {
+   "L": 1.1248439830299715,
+   "ci95": [
+    0.9775015584827759,
+    1.2628767944189438
+   ]
+  },
+  "v8_all": {
+   "L": 1.491068164507548,
+   "ci95": [
+    1.1708836555480957,
+    1.967819094657898
+   ]
+  }
+ },
+ "floor": {
+  "gen": {
+   "FLOOR_ckptA": {
+    "untaught_mean": 0.03302218019962311,
+    "untaught_ci95": [
+     0.026400988921523094,
+     0.03826899826526642
+    ],
+    "taught16_mean": 0.04313497245311737,
+    "taught16_ci95": [
+     0.038568928837776184,
+     0.048318248242139816
+    ],
+    "L_floor": 1.3062424659729004
+   },
+   "FLOOR_ckptB": {
+    "untaught_mean": 0.05381322652101517,
+    "untaught_ci95": [
+     0.043268606066703796,
+     0.0638459175825119
+    ],
+    "taught16_mean": 0.08239689469337463,
+    "taught16_ci95": [
+     0.07386808097362518,
+     0.09058291465044022
+    ],
+    "L_floor": 1.5311644077301025
+   }
+  },
+  "v8": {
+   "FLOOR_c277178": {
+    "untaught_mean": 0.0382341668009758,
+    "untaught_ci95": [
+     0.03506544977426529,
+     0.041304975748062134
+    ],
+    "taught_mean": 0.02520255371928215,
+    "taught_ci95": [
+     0.02327997237443924,
+     0.027132101356983185
+    ],
+    "L_floor": 0.6591631174087524
+   },
+   "FLOOR_c275758": {
+    "untaught_mean": 0.0666666328907013,
+    "untaught_ci95": [
+     0.06020659580826759,
+     0.07274115085601807
+    ],
+    "taught_mean": 0.053229834884405136,
+    "taught_ci95": [
+     0.04853410646319389,
+     0.058059267699718475
+    ],
+    "L_floor": 0.7984479069709778
+   }
+  }
+ },
+ "cross_era": {
+  "v8_minus_gen_unfunded_R": {
+   "delta": 0.36837211390629965,
+   "ci95": [
+    0.10416095866533899,
+    0.6700491931738064
+   ],
+   "separates_from_zero": true
+  },
+  "v8_minus_gen_funded_R": {
+   "delta": 0.3572527561860046,
+   "ci95": [
+    0.09810223300949093,
+    0.6589891342435155
+   ],
+   "separates_from_zero": true
+  }
+ },
+ "within_gen": {
+  "funded_minus_unfunded_R": {
+   "delta": 0.011119357720294931,
+   "ci95": [
+    -0.08987770016207401,
+    0.11045087162132099
+   ],
+   "separates_from_zero": false,
+   "paired_on": "the same 16 taught teams and the same states"
+  }
+ }
+}

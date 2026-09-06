@@ -48,9 +48,18 @@ ARMS = [("R4DOSE12","models/ai_v9_150_R4DOSE12_0901/final_model.zip","0.53x", 0.
         ("B2",      "models/ai_v9_140_B2_0901/final_model.zip",      "coef .1761", None),
         ("C1",      "models/ai_v9_141_C1_0901/final_model.zip",      "coef 0",     None)]
 import re
-UNTAUGHT = re.findall(r'"(data/teams/sample/[0-9a-f]+\.txt)"',
-                      open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                        "untaught_probe.py")).read())
+# The untaught-8 list, IN SEED ORDER, lives in untaught_teams.json beside this file. It used to be
+# regex-read from an `untaught_probe.py` that is not in the tree (found 2026-09-05 by the
+# content_locality probe, which recovered the order from untaught_C1_end.json and reproduced the
+# canonical 1100 states exactly). The old path is kept as a fallback for a checkout that has it.
+_here = os.path.dirname(os.path.abspath(__file__))
+if os.path.exists(os.path.join(_here, "untaught_teams.json")):
+    import json as _json
+    UNTAUGHT = _json.load(open(os.path.join(_here, "untaught_teams.json")))["untaught"]
+else:
+    UNTAUGHT = re.findall(r'"(data/teams/sample/[0-9a-f]+\.txt)"',
+                          open(os.path.join(_here, "untaught_probe.py")).read())
+assert len(UNTAUGHT) == 8, UNTAUGHT
 
 
 def _strip_debugger(m):

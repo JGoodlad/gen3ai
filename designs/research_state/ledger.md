@@ -10555,3 +10555,52 @@ looked like bookkeeping when it was set and turned out to be the only surviving 
 time this week a bookkeeping precondition was the thing that saved a result.* `--dry-run` now
 correctly REFUSES to restart these dirs because of the bad sidecar hash — that refusal is right and
 must not be forced.
+
+
+## 2026-09-05 — ARCH→TRANSFER probe H1 (content locality): REFUTED with the SIGN REVERSED — v8's teachers are LOCAL (R 1.45), ours are GLOBAL; within the gen era locality does not separate robbing from neutral teachers, MAGNITUDE does
+
+**Pre-registration** (`content_locality/PREREGISTRATION.md`, frozen before any state existed): gen-era teachers
+(pointer head, closed-form physics) are MORE local than v8-era teachers, and within the gen era the funded
+(robbing) teachers are more local than the unfunded (neutral). Statistic: forward KL(teacher‖parent) over legal
+actions (`masked_kl_rows` imported in the gen era; the v8 copy gated bit-identical on 7 synthetic rows), parent-piloted
+seeded concurrency-1 states (gen 10,025 / v8 11,650), cluster-bootstrapped over teams. The headline is the
+SIBLING-CONTROL locality R = KL on a teacher's own taught teams ÷ KL of its sibling teachers on the SAME states
+(1.00 = perfectly global); raw L = KL_taught/KL_untaught is reported but reads the team sets (see floor).
+
+**Result (n=9 artifacts; n=3 agrees throughout).**
+| teacher set | R (sibling control) | raw L |
+|---|---|---|
+| gen unfunded (8, R5F parents) | 1.072 [0.980, 1.163] — global not excluded | 1.070 [0.924, 1.232] |
+| gen funded (8, R5FUND forks) | 1.102 [1.001, 1.199] — marginal, NOT robust at n=3 (0.964–1.243) | 1.098 [1.000, 1.185] |
+| v8_14's three (v8_09 / v8_06 / v8_13) | **1.450 [1.273, 1.672] — LOCAL** | 1.589 [1.257, 2.045] |
+
+- Cross-era: v8 − gen_unfunded **+0.378 [+0.175, +0.614] SIGNIFICANT**; v8 − gen_funded +0.348 [+0.143, +0.586]
+  SIGNIFICANT. Direction REVERSED from the pre-registration.
+- Within-gen (the decisive, confound-free test): funded − unfunded R **+0.029 [−0.027, +0.081] NOT DETECTED**.
+  What separates them is magnitude: funded teachers are farther from the parent EVERYWHERE — taught +0.1317
+  [+0.1082, +0.1552], untaught +0.0979 [+0.0547, +0.1493], both paired on the 8 teacher pairs, both SIGNIFICANT.
+- Matched-noise floor (two adjacent same-run parent checkpoints): gen raw L 1.07 / 1.16, v8 raw L 0.69 / 0.81 — two
+  arbitrary parent checkpoints already differ more on the gen taught 16 than the untaught 8, and the reverse on v8's
+  sets. Raw L therefore reads the TEAM SETS; R is the headline. Nothing is WITHIN FLOOR (teacher KLs 3–27× the floor).
+- Reproduction cross-check exact: the gen untaught batch regenerated the canonical `offline_collateral_kl` 1100 states.
+
+**Reading.** "Closed-form physics leaves teachers only team-specific content to teach" is dead as stated; the data
+say the opposite: the teachers that GIFTED (v8's) differ from their parent mostly where they specialised, the teachers
+that ROBBED differ everywhere, and among ours the robbers are simply FARTHER. Taken with H2 (the head is not where
+sharing lives) the architecture account has no surviving data-backed leg. Consequence for the v8 line: v8's teachers
+carried little off-slice content for the loss to inject, so the prior on v8's early gift shifts toward ecology / plain
+continued learning (phase-2 cells 1–2) or generalisation of on-slice content. Sent to Training Run for cell 1's
+pre-registration.
+
+**Hazards found (FINDINGS), one fixed here.**
+1. `offline_collateral_kl.py` regex-read its untaught-8 list from an `untaught_probe.py` that is NOT in the tree, so the
+   committed canonical script could not run as committed; the seed-consuming ORDER survived only in
+   `untaught_C1_end.json`'s key order. FIXED in this commit: `untaught_teams.json` (ordered) now sits beside the script
+   and is read first, with the old path as fallback and an `assert len == 8`.
+2. v8_14's three teachers' taught sets OVERLAP (ai_v8_06's `9d5f845869e899ee.txt` is ai_v8_09's t00 by content sha);
+   the union is 22 teams from 23 paths and that team is excluded from the sibling control.
+3. Two different "untaught 8" sets circulate under one name: `rev3_untaught_pulldown_selection.json` names five teams
+   the reuse batch does not use. Every existing untaught number is on the reuse batch's set; that is the one used.
+4. Gen-era raw L ≈ 1.10 would have read "slightly local" without the floor; it is the team set.
+Artifact: `measurements/arch_transfer_2026-09-05/content_locality/` (29 CPU-minutes of battles, CPU only).
+\n

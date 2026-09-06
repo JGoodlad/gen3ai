@@ -1,0 +1,13 @@
+{
+ "note": "the reuse batch's UNTAUGHT 8, in the ORDER the seeds are consumed (index = team seed offset). Recovered 2026-09-05 from untaught_C1_end.json's key order after untaught_probe.py was found absent from the tree; the 1100-state cross-check reproduced the canonical artifact exactly.",
+ "untaught": [
+  "data/teams/sample/61590463ee85d456.txt",
+  "data/teams/sample/9283210847f806ee.txt",
+  "data/teams/sample/ce35b7368c3d692e.txt",
+  "data/teams/sample/9909f2e98e981ccc.txt",
+  "data/teams/sample/9d5f845869e899ee.txt",
+  "data/teams/sample/f7ba5702fe856292.txt",
+  "data/teams/sample/90b94599967c6b77.txt",
+  "data/teams/sample/dbf81d8ecae51c39.txt"
+ ]
+}

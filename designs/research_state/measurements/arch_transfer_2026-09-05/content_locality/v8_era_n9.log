@@ -1,0 +1,51 @@
+[v8] NOTE: 1 team(s) taught by >1 teacher: ['564b9be3ae'] -- excluded from the sibling control
+[v8] 30 teams = 8 untaught + 22 taught ({'pool10': 10, 'semistall3': 3, 'defensive10': 10}), pool 719
+  [ 0] untaught d0a4d2bcb8 + 266 states (total 266, 9s)
+  [ 1] untaught c90e782cad + 255 states (total 521, 17s)
+  [ 2] untaught a6b630e6b4 + 260 states (total 781, 25s)
+  [ 3] untaught a577a735b7 + 312 states (total 1093, 35s)
+  [ 4] untaught 9292a21833 + 270 states (total 1363, 43s)
+  [ 5] untaught eaa88395e7 + 265 states (total 1628, 51s)
+  [ 6] untaught 7c2cb5cec1 + 303 states (total 1931, 61s)
+  [ 7] untaught 89fcef3b53 + 259 states (total 2190, 69s)
+  [ 8] taught   564b9be3ae + 336 states (total 2526, 79s)
+  [ 9] taught   d3c1cd0952 + 300 states (total 2826, 89s)
+  [10] taught   7594a34f82 + 504 states (total 3330, 102s)
+  [11] taught   47dc388b25 + 419 states (total 3749, 114s)
+  [12] taught   4c9552cd01 + 388 states (total 4137, 125s)
+  [13] taught   552d5857a3 + 343 states (total 4480, 135s)
+  [14] taught   f5d46ca0fc + 334 states (total 4814, 145s)
+  [15] taught   3a83154c2a + 601 states (total 5415, 160s)
+  [16] taught   9b454d9ea7 + 371 states (total 5786, 171s)
+  [17] taught   24db4aacdd + 615 states (total 6401, 186s)
+  [18] taught   4771662cf7 + 488 states (total 6889, 199s)
+  [19] taught   45995e432f + 660 states (total 7549, 216s)
+  [20] taught   9278913bce + 368 states (total 7917, 227s)
+  [21] taught   fc908f1bf4 + 438 states (total 8355, 239s)
+  [22] taught   83aee9db7e + 461 states (total 8816, 251s)
+  [23] taught   044da80d78 + 480 states (total 9296, 264s)
+  [24] taught   bef089d2cf + 453 states (total 9749, 276s)
+  [25] taught   3f95b25e9a + 444 states (total 10193, 287s)
+  [26] taught   8b6b8c8f52 + 350 states (total 10543, 297s)
+  [27] taught   5c88ff9ca5 + 398 states (total 10941, 307s)
+  [28] taught   3e9bdcee48 + 257 states (total 11198, 315s)
+  [29] taught   65bfb2e8b4 + 452 states (total 11650, 327s)
+  FLOOR_c277178    KL_t||p  untaught 0.0383  taught22 0.0263
+  FLOOR_c275758    KL_t||p  untaught 0.0664  taught22 0.0535
+  pool10           KL_t||p  untaught 0.3223  taught22 0.4087
+  semistall3       KL_t||p  untaught 0.2190  taught22 0.2839
+  defensive10      KL_t||p  untaught 0.2807  taught22 0.3230
+
+  FLOOR FLOOR_c277178: untaught 0.0383  taught 0.0263
+  FLOOR FLOOR_c275758: untaught 0.0664  taught 0.0535
+
+  === PRIMARY A (per-teacher L = KL_taught / KL_untaught) ===
+  pool10       n=10  KL_taught 0.4719  KL_untaught 0.3223  L 1.4643 CI [1.2475,1.7378]
+  semistall3   n= 3  KL_taught 0.4478  KL_untaught 0.2190  L 2.0450 CI [1.5727,2.5224]
+  defensive10  n=10  KL_taught 0.3529  KL_untaught 0.2807  L 1.2571 CI [1.0936,1.4314]
+  ERA POOLED   KL_taught 0.4170  KL_untaught 0.2740  L 1.5220 CI [1.3551,1.7205]
+
+  === PRIMARY B (sibling control, 21 singly-taught teams, 2 siblings) ===
+  own 0.4201  siblings 0.2959  delta +0.1243 CI [+0.0798,+0.1781]  R 1.4498 CI [1.2761,1.6720]
+
+  wrote /tmp/claude-1000/-home-goodlad-dev-gen3ai/1bdd246b-96e2-4e73-8e09-1d9427eea286/scratchpad/v8_locality_n9.json  (total 361s)

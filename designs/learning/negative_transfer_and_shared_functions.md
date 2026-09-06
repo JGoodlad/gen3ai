@@ -217,6 +217,24 @@ trunk, in both eras, and a score-function kernel at one parameter point is the w
 KL loss applied along a fold. The follow-up (`fold_displacement/`) measures the actual fold
 displacement per parameter group and its first-order projection onto untaught states.
 
+**Content-locality result (2026-09-05, `arch_transfer_2026-09-05/content_locality/`): REFUTED, sign
+REVERSED.** v8's three teachers are LOCAL: sibling-control locality R = 1.45 [1.27, 1.67], each teacher
+diverging from v8's parent about 45% more on its own taught teams than its sibling teachers do on the
+same states. Our gen-era teachers are essentially GLOBAL (unfunded 1.07 [0.98, 1.16], funded
+1.10 [1.00, 1.20]); the cross-era difference is SIGNIFICANT. Within the gen era, locality does NOT
+separate the funded (robbing) teachers from the unfunded (neutral) ones; what separates them is
+magnitude: funded teachers sit farther from the parent *everywhere*, taught +0.13 and untaught +0.10,
+both SIGNIFICANT. So "closed-form physics leaves teachers only team-specific content" is dead as
+stated, and the surviving reading is the opposite of the pre-registration: the teachers that gifted
+differed from their parent mostly where they specialised, and the teachers that robbed differed
+everywhere. If teacher divergence predicts robbery it is *how far*, not *where*. A matched-noise
+floor (two adjacent parent checkpoints) was what made this readable: raw taught/untaught KL ratios
+read the team sets (gen floor 1.07–1.16, v8 floor 0.69–0.81), so the headline is the sibling control,
+same team, same states, own teacher versus siblings. Consequence for the v8 line: v8's teachers
+carried little off-slice content for the distillation term to inject, which raises the prior that
+v8's early gift came through ecology or plain continued learning (phase-2 cells 1 and 2) or through
+generalisation of on-slice content.
+
 What is *not* testable: swapping the head inside the era. Phase 2 of the v8 replication can swap
 teachers, ecology and hyperparameters inside the era code, but the architecture boundary cannot be
 crossed by a fork, so the head hypothesis lives or dies on the two probes above.

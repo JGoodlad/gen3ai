@@ -1,0 +1,58 @@
+  [ 0] untaught 61590463ee85d456 + 280 states (total 280, 10s)
+  [ 1] untaught 9283210847f806ee + 399 states (total 679, 23s)
+  [ 2] untaught ce35b7368c3d692e + 333 states (total 1012, 34s)
+  [ 3] untaught 9909f2e98e981ccc + 458 states (total 1470, 49s)
+  [ 4] untaught 9d5f845869e899ee + 714 states (total 2184, 72s)
+  [ 5] untaught f7ba5702fe856292 + 592 states (total 2776, 92s)
+  [ 6] untaught 90b94599967c6b77 + 391 states (total 3167, 105s)
+  [ 7] untaught dbf81d8ecae51c39 + 301 states (total 3468, 114s)
+  [ 8] taught   8bdb5796b9 + 452 states (total 3920, 131s)
+  [ 9] taught   436335607f + 303 states (total 4223, 141s)
+  [10] taught   6916e13879 + 555 states (total 4778, 159s)
+  [11] taught   e702a104eb + 376 states (total 5154, 172s)
+  [12] taught   64a691c473 + 321 states (total 5475, 184s)
+  [13] taught   e28069562f + 449 states (total 5924, 201s)
+  [14] taught   9e95fb59d7 + 306 states (total 6230, 212s)
+  [15] taught   9d8391d864 + 410 states (total 6640, 228s)
+  [16] taught   750d056194 + 301 states (total 6941, 239s)
+  [17] taught   a9831a5f5e + 568 states (total 7509, 260s)
+  [18] taught   6ebe9ebc4d + 526 states (total 8035, 280s)
+  [19] taught   9b454d9ea7 + 542 states (total 8577, 300s)
+  [20] taught   009e3d0244 + 270 states (total 8847, 310s)
+  [21] taught   b904dbe059 + 399 states (total 9246, 323s)
+  [22] taught   aea50f207e + 406 states (total 9652, 337s)
+  [23] taught   37d717a93a + 373 states (total 10025, 349s)
+  UNTAUGHT STATE CROSS-CHECK: 3468 states on indices 0..7 (canonical offline_collateral_kl batch = 1100)
+  FLOOR_ckptA      KL_t||p  untaught 0.0374  taught16 0.0401
+  FLOOR_ckptB      KL_t||p  untaught 0.0654  taught16 0.0760
+  UNF00            KL_t||p  untaught 0.5759  taught16 0.6371
+  FUND00           KL_t||p  untaught 0.8239  taught16 0.7867
+  UNF02            KL_t||p  untaught 0.5379  taught16 0.5727
+  FUND02           KL_t||p  untaught 0.5944  taught16 0.6588
+  UNF04            KL_t||p  untaught 0.6921  taught16 0.6257
+  FUND04           KL_t||p  untaught 0.7063  taught16 0.7181
+  UNF06            KL_t||p  untaught 0.6474  taught16 0.5773
+  FUND06           KL_t||p  untaught 0.7810  taught16 0.7178
+  UNF08            KL_t||p  untaught 0.5063  taught16 0.5763
+  FUND08           KL_t||p  untaught 0.6374  taught16 0.6920
+  UNF10            KL_t||p  untaught 0.5776  taught16 0.5608
+  FUND10           KL_t||p  untaught 0.6157  taught16 0.6629
+  UNF12            KL_t||p  untaught 0.5678  taught16 0.5861
+  FUND12           KL_t||p  untaught 0.6636  taught16 0.6726
+  UNF14            KL_t||p  untaught 0.6868  taught16 0.6630
+  FUND14           KL_t||p  untaught 0.7527  taught16 0.7709
+
+  FLOOR ckpt_28067760 vs parent_final: untaught 0.0374  taught 0.0401
+  FLOOR ckpt_27917760 vs parent_final: untaught 0.0654  taught 0.0760
+
+  === PRIMARY A (per-teacher L = KL_taught / KL_untaught) ===
+  unfunded  KL_taught 0.6318  KL_untaught 0.5990  L 1.0697 CI [0.9260,1.2321]
+  funded    KL_taught 0.7635  KL_untaught 0.6969  L 1.0983 CI [0.9998,1.1881]
+  FUNDED-UNFUNDED L: +0.0287 CI [-0.0665,+0.0941] SPANS ZERO
+
+  === PRIMARY B (sibling control, 16 taught teams) ===
+  unfunded  own 0.6318  siblings 0.5953  delta +0.0365 CI [-0.0250,+0.0967]  R 1.0723 CI [0.9794,1.1654]
+  funded    own 0.7635  siblings 0.7023  delta +0.0612 CI [-0.0121,+0.1302]  R 1.1016 CI [1.0013,1.1997]
+  FUNDED-UNFUNDED R: +0.0293 CI [-0.0274,+0.0804] SPANS ZERO
+
+  wrote /tmp/claude-1000/-home-goodlad-dev-gen3ai/1bdd246b-96e2-4e73-8e09-1d9427eea286/scratchpad/gen_locality_n9.json  (total 537s)
