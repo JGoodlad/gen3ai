@@ -1686,6 +1686,10 @@ src/
                      #   reliability-resolution-uncertainty split, optionally importance-WEIGHTED
                      #   to undo the eval quota's loss enrichment; shared by
                      #   `train/scaffolding_gauge` and main.scaffolding_gauge)
+                     #   stats.py — the package's SHARED small-sample statistics (Wilson interval,
+                     #   Spearman, the cluster bootstrap for a mean and for a difference of means,
+                     #   sd_true_excess). Pure NumPy, no domain concepts; lifted out of cf_audit.py
+                     #   so a second consumer need not import an instrument to get an interval
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/

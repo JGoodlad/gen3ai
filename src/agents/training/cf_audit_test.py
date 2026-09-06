@@ -28,165 +28,6 @@ def _dec(**kw):
     return Decision(**base)
 
 
-# --------------------------------------------------------------------- Wilson
-
-def test_wilson_ci_is_not_degenerate_at_zero_wins():
-    lo, hi = wilson_ci(0, 8)
-    assert lo == 0.0 and 0.0 < hi < 1.0, "a normal approximation would give the useless [0, 0]"
-    lo, hi = wilson_ci(8, 8)
-    assert hi == 1.0 and 0.0 < lo < 1.0
-
-
-def test_wilson_ci_brackets_the_point_estimate_and_narrows_with_n():
-    lo, hi = wilson_ci(4, 8)
-    assert lo < 0.5 < hi
-    lo2, hi2 = wilson_ci(400, 800)
-    assert (hi2 - lo2) < (hi - lo)
-
-
-def test_wilson_ci_of_no_samples_is_maximally_uninformative():
-    assert wilson_ci(0, 0) == (0.0, 1.0)
-
-
-# ------------------------------------------------------- sd_true_excess (THE meter)
-
-def test_sd_true_excess_returns_zero_when_the_spread_IS_the_binomial_noise():
-    """ZERO TRUE EFFECT. Every state in the cell shares one true p, so all the observed
-    spread of the R-rollout means is sampling noise and there is nothing to resolve. An
-    estimator that reports excess here would license a lever on noise."""
-    rng = np.random.default_rng(0)
-    R = 8
-    excesses = []
-    for p in (0.2, 0.5, 0.85):
-        for _ in range(40):
-            mc = rng.binomial(R, p, size=300) / R
-            excesses.append(sd_true_excess(mc, R)["sd_true_excess"])
-    # The estimator is unbiased in VARIANCE and clamped at 0, so the sd reads slightly
-    # positive on average — and it carries the sampling noise of a variance estimate
-    # (relative sd ~sqrt(2/n)), which at n=300 puts an occasional cell near 0.1. The
-    # property that matters is therefore a DISTRIBUTIONAL one, stated against the real
-    # spreads the G0 map reports (0.11-0.36): spurious excess is small on average and its
-    # worst cell never reaches the smallest genuine signal.
-    assert np.mean(excesses) < 0.03, f"mean spurious sd_true_excess {np.mean(excesses):.4f}"
-    assert np.percentile(excesses, 95) < 0.08, f"p95 {np.percentile(excesses, 95):.4f}"
-    assert max(excesses) < 0.11, f"max {max(excesses):.4f}"
-
-
-def test_sd_true_excess_recovers_a_KNOWN_spread():
-    """Nonzero true effect: true p is spread with sd 0.20, and the estimator must find it
-    after subtracting the R=8 floor (which alone is ~0.17 and would otherwise swamp it)."""
-    rng = np.random.default_rng(1)
-    R = 8
-    true_p = np.clip(rng.normal(0.5, 0.20, size=4000), 0.01, 0.99)
-    mc = rng.binomial(R, true_p) / R
-    st = sd_true_excess(mc, R)
-    assert st["sd_observed"] > st["sd_true_excess"] > 0.17, st
-    assert abs(st["sd_true_excess"] - 0.20) < 0.03, st
-    assert 0.4 < st["frac_variance_real"] < 0.75, st
-
-
-def test_sd_true_excess_is_degenerate_on_a_tiny_cell():
-    st = sd_true_excess([0.5, 0.25], 8)
-    assert st["sd_true_excess"] is None and st["n"] == 2
-
-
-def test_sd_true_excess_weights_recombine_subcells_at_population_shares():
-    """A cell sampled 50/50 from two sub-populations that occur 90/10 must be recombined at
-    the POPULATION shares — otherwise this probe's own oversampling inflates the spread."""
-    a = [0.9] * 50                      # the common sub-population, tight
-    b = [0.1] * 50                      # the rare one, far away
-    unweighted = sd_true_excess(a + b, 8)["sd_true_excess"]
-    weighted = sd_true_excess(a + b, 8, weights=[0.9 / 50] * 50 + [0.1 / 50] * 50)["sd_true_excess"]
-    assert weighted < unweighted, (weighted, unweighted)
-
-
-# --------------------------------------------------------------- clustered CI
-
-def test_cluster_bootstrap_ci_is_wider_than_a_state_level_ci_when_battles_correlate():
-    """Decisions inside a battle are not independent. Resampling STATES would understate the
-    width; resampling BATTLES is the honest unit (the pooled-correlation Simpson lesson)."""
-    rng = np.random.default_rng(3)
-    values, clusters = [], []
-    for b in range(12):                                  # a strong per-battle offset
-        off = rng.normal(0, 1.0)
-        for _ in range(20):
-            values.append(off + rng.normal(0, 0.05))
-            clusters.append(f"b{b}")
-    lo_c, hi_c = cluster_bootstrap_ci(values, clusters, draws=800, seed=1)
-    lo_s, hi_s = cluster_bootstrap_ci(values, [f"s{i}" for i in range(len(values))],
-                                      draws=800, seed=1)
-    assert (hi_c - lo_c) > 3 * (hi_s - lo_s)
-
-
-def test_cluster_bootstrap_ci_refuses_a_single_cluster():
-    assert cluster_bootstrap_ci([1.0, 2.0], ["b", "b"]) == (None, None)
-
-
-# ------------------------------------------- the DIFFERENCE of means (conviction-class readout)
-
-def _two_arms(mean_a, mean_b, n_batt_a, n_batt_b, per_battle=8, sd=0.02, seed=11):
-    """Two disjoint battle-clustered arms with KNOWN means. Deliberately lopsided in battle
-    count, which is where the old pooled construction came apart."""
-    rng = np.random.default_rng(seed)
-
-    def arm(mean, n_batt, tag):
-        vals, cls = [], []
-        for b in range(n_batt):
-            for _ in range(per_battle):
-                vals.append(mean + rng.normal(0, sd))
-                cls.append(f"{tag}{b}")
-        return vals, cls
-    return arm(mean_a, n_batt_a, "L"), arm(mean_b, n_batt_b, "W")
-
-
-def test_cluster_bootstrap_diff_ci_recovers_a_KNOWN_difference_and_brackets_it():
-    """Synthetic arms at +0.30 and +0.10 ⇒ the difference is +0.20, and the interval must contain
-    both the truth and its own point estimate — at a 3:1 arm imbalance, which is the real shape."""
-    from agents.training.cf_audit import cluster_bootstrap_diff_ci
-    (va, ca), (vb, cb) = _two_arms(0.30, 0.10, n_batt_a=30, n_batt_b=10)
-    point, lo, hi = cluster_bootstrap_diff_ci(va, ca, vb, cb, draws=800, seed=1)
-    assert point == pytest.approx(0.20, abs=0.01)
-    assert lo <= point <= hi, f"the CI [{lo}, {hi}] does not contain its own estimate {point}"
-    assert lo <= 0.20 <= hi                                  # …and it covers the truth
-
-
-def test_cluster_bootstrap_diff_ci_beats_the_POOLED_construction_it_replaced():
-    """THE DEFECT, reproduced. The readout used to take its point estimate from
-    ``mean(a) − mean(b)`` and its CI from ``cluster_bootstrap_ci(a + [−x for x in b])`` — the mean
-    of the CONCATENATION, i.e. ``(Σa − Σb)/(n_a + n_b)``, a size-weighted pooled mean. The two
-    coincide only at equal arm sizes; at the real imbalance they diverge far enough that the
-    published interval excluded its own point estimate (the observed +0.205 vs [+0.070, +0.158]).
-    Nothing about that reads as broken — it reads as a precise result.
-
-    The cleanest demonstration is two arms with the SAME mean at 3:1 sizes: the difference is
-    exactly 0, while the pooled statistic is ``(3m − m)/4 = m/2`` and confidently reports an effect
-    that does not exist."""
-    from agents.training.cf_audit import cluster_bootstrap_diff_ci
-    (va, ca), (vb, cb) = _two_arms(0.30, 0.30, n_batt_a=30, n_batt_b=10)
-    point = float(np.mean(va) - np.mean(vb))
-    assert point == pytest.approx(0.0, abs=0.01)             # the truth: no difference
-
-    pooled = list(va) + [-x for x in vb]
-    assert float(np.mean(pooled)) == pytest.approx(0.15, abs=0.01), (   # (3m − m)/4, not m − m
-        "the pooled construction is supposed to invent an effect here — if it no longer does, "
-        "this test has stopped reproducing the defect it guards")
-    old_lo, old_hi = cluster_bootstrap_ci(pooled, list(ca) + list(cb), draws=800, seed=1)
-    assert not (old_lo <= point <= old_hi), (
-        f"the old CI [{old_lo}, {old_hi}] is supposed to exclude the true difference {point}")
-
-    _p, lo, hi = cluster_bootstrap_diff_ci(va, ca, vb, cb, draws=800, seed=1)
-    assert lo <= point <= hi and lo <= 0.0 <= hi             # …the honest statistic finds none
-
-
-def test_cluster_bootstrap_diff_ci_refuses_when_an_ARM_has_one_cluster():
-    """Same refusal convention as the single-arm CI: the point estimate still stands (it needs no
-    resampling), but an un-resamplable arm gets no interval rather than a fake-narrow one."""
-    from agents.training.cf_audit import cluster_bootstrap_diff_ci
-    point, lo, hi = cluster_bootstrap_diff_ci([0.3, 0.4], ["b", "b"], [0.1, 0.2], ["w1", "w2"])
-    assert point == pytest.approx(0.2) and (lo, hi) == (None, None)
-    assert cluster_bootstrap_diff_ci([], [], [0.1], ["w"]) == (None, None, None)
-
-
 def test_the_conviction_class_CI_brackets_its_own_gap():
     """End-to-end through `bias_map`: whatever the arms' sizes, `loss_minus_win_ci` must contain
     `loss_minus_win_gap`. That is the invariant the shipped report violated."""
@@ -324,18 +165,6 @@ def _frame_mass(labels):
     for r in labels:
         c[(min(9, int(r["win_prob"] * 10)), r["outcome"])] += 1
     return c
-
-
-def test_spearman_is_none_when_a_side_is_FLAT_not_zero():
-    """"Wide everywhere" and "width unrelated to blur" are DIFFERENT findings, and the more damning
-    one is the first. A constant input must not be reported as a correlation of 0."""
-    from agents.training.cf_audit import spearman
-    assert spearman([1.0, 1.0, 1.0, 1.0], [1.0, 2.0, 3.0, 4.0]) is None
-    assert spearman([1.0, 2.0, 3.0], [1.0, 2.0]) is None          # mismatched / too short
-    assert spearman([1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]) == 1.0
-    assert spearman([1.0, 2.0, 3.0, 4.0], [4.0, 3.0, 2.0, 1.0]) == -1.0
-    # RANK, not Pearson: a monotone but wildly nonlinear relation is still a perfect 1.0.
-    assert spearman([1.0, 2.0, 3.0, 4.0], [1.0, 10.0, 1e3, 1e9]) == 1.0
 
 
 def test_a_head_whose_width_TRACKS_the_blur_scores_positive():
@@ -585,3 +414,158 @@ def test_attach_twin_heads_is_a_NO_OP_when_the_checkpoint_has_no_heads(capsys):
     assert "columns omitted" in capsys.readouterr().out
     assert attach_twin_heads(object(), labels, {}) == 0      # no probe_model at all
     assert attach_twin_heads(_NoModel(), [], {}) == 0        # no labels
+
+
+# ══════════════════════════════════════════════════ the EXTRACTION parity golden ══
+#
+# `wilson_ci`, `spearman`, `cluster_bootstrap_ci`, `cluster_bootstrap_diff_ci` and
+# `sd_true_excess` moved to `agents/training/stats.py` on 2026-09-06. The move claimed to be pure
+# refactoring, and this is the evidence for that claim rather than a promise of it: every public
+# readout of the audit, run on one synthetic fixture, JSON-serialised canonically and pinned by
+# digest — the golden below was captured from the tree BEFORE the extraction and reproduced
+# byte-for-byte after it.
+#
+# The named values beside the digest are not decoration. A bare hash cannot say WHICH readout
+# moved when it fails, and a test whose only assertion is an opaque digest is one refactor away
+# from being regenerated on autopilot.
+#
+# ⚠️ Regenerating: only ever after establishing WHY it changed. A numpy upgrade can legitimately
+# move the bootstrap percentiles (`default_rng` streams are stable, `np.percentile` tie handling
+# is not guaranteed forever); a change in this module's arithmetic is not legitimate without a
+# stated reason. Print the current digest with::
+#
+#     python -c "import hashlib; from agents.training import cf_audit_test as t; \
+#                print(hashlib.sha256(t._parity_blob().encode()).hexdigest())"
+
+_PARITY_SHA256 = "cf2971d505ef96faf18bce4bc50608ec53831f052055ea4ccc9e4c15b06afd79"
+
+
+def _parity_labels():
+    """A deterministic label set that reaches every branch of the bias map: both outcomes, a
+    spread of deciles and turns, two opponents, the conviction class AND its control, and the
+    optional evidential / twin-head / shadow-critic columns."""
+    rng = np.random.default_rng(20260906)
+    rows = []
+    for b in range(40):
+        outcome = "loss" if b % 3 else "win"
+        opp = "heuristic" if b % 2 else "staller"
+        for k in range(7):
+            wp = float(np.clip(0.05 + ((b * 7 + k) % 19) / 20.0, 0.0, 0.999))
+            mc = float(np.clip(wp - 0.12 + rng.normal(0, 0.18), 0.0, 1.0))
+            rows.append({
+                "battle": f"/t/{opp}/b{b}", "short": f"{opp}/b{b}", "opponent": opp,
+                "opp_class": "bot" if b % 2 else "sentinel",
+                "outcome": outcome, "inv": k, "turn": 2 + (b + 3 * k) % 40,
+                "win_prob": wp, "mc": mc,
+                "evid_width": float(0.05 + 0.4 * abs(wp - 0.5) + 0.01 * k),
+                "evid_precision": float(3.0 + k),
+                "twin_b_pred": float(np.clip(wp - 0.03 + rng.normal(0, 0.02), 0, 1)),
+                "twin_c_pred": float(np.clip(mc + rng.normal(0, 0.05), 0, 1)),
+                "shadow_value": float(rng.normal(0.2, 0.5)),
+                "live_v": float(rng.normal(0.35, 0.5)),
+            })
+    return rows
+
+
+def _parity_readouts() -> dict:
+    """Every public entry point of `cf_audit`, on the fixture above."""
+    from collections import Counter
+
+    from agents.training.cf_audit import (SAMPLER_VERSION, bias_map, cluster_bootstrap_diff_ci,
+                                          evidential_read, paired_head_read, render_markdown,
+                                          resolution_cells, shadow_read, spearman,
+                                          twin_resolution_read)
+
+    labels = _parity_labels()
+    frame = [_dec(battle=r["battle"], short=r["short"], opponent=r["opponent"],
+                  opp_class=r["opp_class"], outcome=r["outcome"], inv=r["inv"], turn=r["turn"],
+                  win_prob=r["win_prob"], value=0.1, action=6, move_rank=r["inv"], n_moves=7)
+             for r in labels]
+    frame_mass: Counter = Counter()
+    for d in frame:
+        frame_mass[(min(9, int(d.win_prob * 10)), d.outcome)] += 1
+    design = {"turn_tercile_edges": list(turn_tercile_edges(frame)),
+              "sampler_version": SAMPLER_VERSION, "seed": 3}
+    bm = bias_map(labels, frame, n_rollouts=8, design=design, accounting={"anchor_ok": 1.0})
+    sample, sdesign = stratified_sample(frame, 60, seed=3)
+    loss = [r for r in labels if r["outcome"] == "loss"]
+    win = [r for r in labels if r["outcome"] == "win"]
+    return {
+        # the statistics that moved, called directly
+        "wilson": [list(wilson_ci(w, n)) for w, n in
+                   ((0, 0), (0, 8), (4, 8), (8, 8), (2.5, 7), (400, 800))],
+        "spearman": [spearman([1, 2, 3, 4, 5], [2, 1, 4, 3, 6]),
+                     spearman([1, 1, 1, 1], [1, 2, 3, 4]),
+                     spearman([1, 2], [1, 2])],
+        "cluster_ci": list(cluster_bootstrap_ci([r["mc"] for r in labels],
+                                                [r["battle"] for r in labels],
+                                                draws=500, seed=7)),
+        "cluster_diff_ci": list(cluster_bootstrap_diff_ci(
+            [r["mc"] for r in loss], [r["battle"] for r in loss],
+            [r["mc"] for r in win], [r["battle"] for r in win], draws=500, seed=7)),
+        "sd_true_excess": sd_true_excess([r["mc"] for r in labels], 8),
+        "sd_true_excess_weighted": sd_true_excess(
+            [r["mc"] for r in labels], 8,
+            weights=[1.0 + (i % 5) for i in range(len(labels))]),
+        # the audit's own readouts, which consume them
+        "bias_map": bm,
+        "resolution_cells": resolution_cells(labels, frame_mass, 8),
+        "evidential_read": evidential_read(labels, frame_mass, 8, draws=120, seed=11),
+        "paired_head_read": paired_head_read(labels, draws=300, seed=13),
+        "twin_resolution_read": twin_resolution_read(labels, 8),
+        "shadow_read": shadow_read(labels, draws=300, seed=17),
+        "markdown": render_markdown(bm, run_dir="/t/run", step=1234, ckpt="/t/ck.zip"),
+        "turn_tercile_edges": list(turn_tercile_edges(frame)),
+        "stratified_sample": [[d.battle, d.inv] for d in sample],
+        "stratified_design_cells": sdesign["cells"],
+        "obs_digest": obs_digest(np.arange(8, dtype=np.float32)),
+    }
+
+
+def _parity_blob() -> str:
+    return json.dumps(_parity_readouts(), sort_keys=True, separators=(",", ":"), default=repr)
+
+
+def test_every_public_readout_matches_the_pre_extraction_golden():
+    """The statistics live in `agents.training.stats` now; nothing they compute may have moved."""
+    import hashlib
+    blob = _parity_blob()
+    assert '"' in blob and len(blob) > 10_000, "the fixture produced nothing to compare"
+    got = hashlib.sha256(blob.encode()).hexdigest()
+    assert got == _PARITY_SHA256, (
+        f"cf_audit's readouts changed: {got} != {_PARITY_SHA256}. Read the named-value test "
+        f"below to find which one, and do not regenerate the digest without a stated reason.")
+
+
+def test_the_named_golden_values_are_what_the_digest_stands_for():
+    """The digest says 'nothing moved'; these say WHAT it is that did not move — so a failure
+    names the readout instead of a hash, and so the golden cannot be regenerated blind."""
+    r = _parity_readouts()
+    h = r["bias_map"]["headline"]
+    assert h["n_labels"] == 280 and h["n_battles"] == 40
+    assert h["population_weighted_gap"] == pytest.approx(0.10380581687311953, abs=1e-12)
+    assert h["population_weighted_sd_true_excess"] == pytest.approx(0.04689387559950886, abs=1e-12)
+    cc = r["bias_map"]["conviction_class"]
+    assert cc["loss_minus_win_gap"] == pytest.approx(-0.0649106018083974, abs=1e-12)
+    assert cc["loss_minus_win_ci"] == pytest.approx([-0.13981247151137305, 0.020275190848265102],
+                                                   abs=1e-12)
+    assert cc["loss_minus_win_ci"][0] <= cc["loss_minus_win_gap"] <= cc["loss_minus_win_ci"][1]
+    assert r["sd_true_excess"]["sd_true_excess"] == pytest.approx(0.23816673899899182, abs=1e-12)
+    assert r["sd_true_excess"]["sd_binomial_floor"] == pytest.approx(0.1506020869266234, abs=1e-12)
+    assert r["evidential_read"]["width_vs_blur_spearman"] == pytest.approx(0.22510994381306007,
+                                                                          abs=1e-12)
+    assert r["evidential_read"]["width_vs_blur_ci"] == pytest.approx(
+        [-0.26547633223229367, 0.5753922836133598], abs=1e-12)
+    assert r["cluster_ci"] == pytest.approx([0.3389425853277456, 0.43906035315049646], abs=1e-12)
+    assert r["cluster_diff_ci"] == pytest.approx(
+        [0.05065245683999575, -0.049559904570685806, 0.1554283053841466], abs=1e-12)
+    first = r["paired_head_read"]["contrasts"][0]
+    assert first["contrast"] == "B_minus_A"
+    assert first["brier"] == pytest.approx(-0.005088422875601386, abs=1e-12)
+    assert first["brier_ci"] == pytest.approx(
+        [-0.006624555553282069, -0.0038394225362491496], abs=1e-12)
+    sh = r["shadow_read"]
+    assert sh["shadow_vs_live_v"] == pytest.approx(-0.1067942550072824, abs=1e-12)
+    assert sh["shadow_vs_live_v_ci"] == pytest.approx(
+        [-0.18986503240932356, -0.01902852911531018], abs=1e-12)
+    assert len(r["resolution_cells"]) == 10 and len(r["markdown"]) == 6276

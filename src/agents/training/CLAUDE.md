@@ -4756,6 +4756,33 @@ Absent (the default) ⇒ the live head, byte-identical to what v104 shipped.
   does any obs-key or eval-mode discrepancy. Its anti-vacuity twin drifts the live weights and
   requires the frozen φ not to move while the live φ does.
 
+## `stats.py` — the package's SHARED small-sample statistics
+
+**`agents/training/stats.py` is where a stateless estimator lives once the second consumer exists.**
+It holds `wilson_ci`, `spearman`, `cluster_bootstrap_ci` / `cluster_bootstrap_diff_ci` and
+`sd_true_excess` — pure NumPy in, floats out: no labels, no battles, no checkpoints, no filesystem,
+no torch, no RNG except an explicitly seeded bootstrap. That is the admission rule; a helper that
+has to know what a *decision* or a *bias map* is belongs beside the instrument that owns the
+concept. They were lifted out of `cf_audit.py` on 2026-09-06 (the file-size ratchet's first cut of
+the 1,000–2,000 band, 1439 → 1279 lines), which imports them straight back, so
+`from agents.training.cf_audit import wilson_ci` — which `cf_producer` and the tests do — still
+resolves. The arithmetic is unchanged, and that is EVIDENCE rather than a promise: the parity golden
+above was captured before the move and reproduced byte-for-byte after it.
+
+⚠️ **Three near-siblings elsewhere in the tree are deliberately NOT merged into it**, and the module
+docstring carries the reasons so nobody "de-duplicates" a shipped instrument's output by accident.
+`scaffolding.py`'s `spearman_rho` and its own `cluster_bootstrap_ci` use the **NaN** refusal
+convention (TensorBoard drops NaN, so a degenerate slice leaves a GAP in the live
+`train/scaffolding_gauge` curve) where this module returns `None` for a JSON report, and its
+bootstrap is strictly more general — it resamples ROW INDICES and evaluates an arbitrary `stat_fn`,
+which is what lets `reliability_table` compose with it. `winprob_finetune.label_noise_variance`
+subtracts the same `p̂(1−p̂)/(n−1)` identity but PER ROW with a heterogeneous `n`.
+`main/q_amortization.spearman` is the one true duplicate — same shape, same `None` convention, an
+exact `std() == 0` flatness test instead of the relative-tolerance one here — and moving its call
+site is a behaviour change (a *near*-flat row starts refusing instead of reporting float noise)
+that wants its own pass and its own evidence. `hodge.py` and `elo.py` carry no general-purpose
+statistics at all; everything in them is bound to the rating model.
+
 ## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
 
 ```bash
@@ -4873,10 +4900,13 @@ own change: missing a label is free, silently re-weighting the sampler is not.
 trainer is a lower bound. Prefix sharing (below) does not apply to a rollout-to-end label, which has
 one arm; it is the lever for the one-ply counterfactual (`lookahead`) path.
 
-**Tests.** `cf_audit_test.py` (pure: the stratifier, `sd_true_excess` validated at ZERO true effect
-AND at a known nonzero one, the clustered bootstrap, Wilson, the schema writer) and
-`cf_audit_integration_test.py` (`sim`: a real bridge battle it plays itself, run end to end at R=2
-— including the anchor refusal).
+**Tests.** `cf_audit_test.py` (pure: the stratifier, the schema writer, and the EXTRACTION PARITY
+GOLDEN — every public readout on one synthetic fixture, JSON-serialised canonically and pinned by
+digest plus a dozen named values, captured from the tree BEFORE the statistics moved to `stats.py`
+and reproduced byte-for-byte after), `stats_test.py` (the estimators themselves — `sd_true_excess`
+validated at ZERO true effect AND at a known nonzero one, the clustered bootstrap and its
+difference-of-means sibling, Wilson, Spearman) and `cf_audit_integration_test.py` (`sim`: a real
+bridge battle it plays itself, run end to end at R=2 — including the anchor refusal).
 
 ## `replay_imputation_probe` — the own-side imputation meter (`replay_imputation_probe.py`)
 
