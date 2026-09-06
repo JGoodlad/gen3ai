@@ -11261,3 +11261,47 @@ fleet is moot for the gift.
 - Gate: registry 5 entries, `_REGISTRY_FLOOR = 5` (a ratchet, not a fixed 2); negative control re-run (hiding two K=6
   artifacts fails exactly the two readouts that read them). Inner loop 8767 passed.
 
+## 2026-09-06 — ARCH→TRANSFER probe H8 (exploiter off-slice competence): the drift is FORGETTING — every exploiter set pilots the untaught 8 WORSE than its origin, the funded (robbing) teachers by −7.81 [−15.23, −0.39] SIGNIFICANT; ~3pp of on-slice edge per 1pp of untaught win rate lost; and `best_model.zip` is not always the run's last checkpoint
+
+**Pre-registration** (`exploiter_competence/README.md`, before any battle): pilot the 16 teachers (resolved through
+`_resolve_zip_and_config`), their ~1.2M checkpoints (the G1 grid), the origin (rev-1 final @25.07M) and the fold parent
+(R2ACTION final) on the UNTAUGHT 8 (in seed order) against ONE fixed opponent (rev-1's 24M snapshot piloting the paired
+opponent teams `offline_collateral_kl.py` draws); team = cluster; paired per-team deltas vs origin and vs parent; floor
+from two adjacent R2ACTION checkpoints piloting the same teams. Power declared up front: ~6pp, not the brief's 3pp
+(4× the battles). 3200 battles, 24 min wall on six concurrency-1 workers, 133.8 CPU-min, 0 timeouts, 3 ties;
+cross-process determinism verified bit-identical before freezing.
+
+| pilot | untaught win rate | vs ORIGIN | verdict |
+|---|---|---|---|
+| ORIGIN rev-1 final | **0.5781** | — | reference |
+| PARENT R2ACTION | 0.5273 | −5.08 [−15.43, +5.08] | NOT DETECTED |
+| G1 grid — 8 exploiters @~1.2M | 0.5469 | −3.12 [−16.28, +9.38] | NOT DETECTED |
+| UNF — 8 R5F teachers | 0.5404 | −3.78 [−11.59, +4.75] | NOT DETECTED |
+| **FUND — 8 R5FUND teachers** | **0.5000** | **−7.81 [−15.23, −0.39]** | **SIGNIFICANT** (1.67× the floor 4.69) |
+
+- (i) FORGETTING ordering FUND < UNF < ORIGIN holds exactly; (ii) LEARNING refused in direction — no set at or above the
+  origin, not even on a point estimate. (iii) Exchange rate negative at every depth, funded interval excludes zero: G1
+  −0.281 · UNF −0.242 · **FUND −0.343 [−0.670, −0.017]** pp untaught per pp of on-slice edge ≈ every 3 points of on-slice
+  edge costs 1 point of untaught win rate — the win-rate denomination of `exploiter_drift`'s flat KL exchange rate.
+- Not separated: FUND − UNF −4.04 [−10.29, +2.21] NOT DETECTED (resolution) — a DIRECTION for the distance story, not a
+  discriminator between the robbing and neutral halves.
+- Reference matters: vs the PARENT, FUND is only −2.73 (NOT DETECTED) because the fold parent has itself lost off-slice
+  ground (ORIGIN − PARENT +5.08): everything that forked from rev-1 and trained is worse on the untaught 8, the
+  longest-trained worst.
+
+**🚩 Finding — `best_model/best_model.zip`, the file a fold LOADS, is selected on BOT win rate and is not always the run's
+last checkpoint.** For 2 of 8 unfunded teachers (`ai_v9_94_R5F02`, `ai_v9_98_R5F06`) it was exported at step 26,000,016 —
+a ~0.93M-step exploiter, not ~2.93M (from `best_model.json → latest_eval.step`, corroborated by mtimes: those two predate
+their `final_model.zip` by 1h32m / 1h04m; every other gap is 4–5 min). So `teacher_distance`'s UNF budget covariate (3.07M)
+is heterogeneous (≈2.43M mean) on the very axis it found rank-indistinguishable from D_off; and UNF02's exported file scores
+0.67 vs the parent where its own earlier eval scored 0.74. Recorded, not repaired — the teacher-selection rule (bot-best vs
+final vs external-best) is a design decision owed. Also caught pre-freeze: an opponent-team draw that re-seeded inside a
+comprehension (all N opponents per team identical); the per-battle `opp_team` column that caught it is permanent.
+
+**Caveats.** One opponent, and it is the origin's near-descendant (rev-1 @24M vs origin @25.07M) — some of the origin's edge
+may be lineage familiarity; this does not touch FUND − UNF / G1 − UNF / FUND − G1, whose arms are equally distant. Piloting
+only; untaught 8 only; one trajectory family; not causal; inherits the distance-vs-budget confound.
+**For the KL-anchored-exploiter proposal:** it now has a direct meter — an anchored arm's untaught win rate should return
+toward 0.578 while its on-slice edge holds (~500 battles per teacher set).
+Artifact: `measurements/arch_transfer_2026-09-05/exploiter_competence/` (verify gate included).
+

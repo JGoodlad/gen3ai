@@ -272,6 +272,20 @@ each other), and half of a gen-era teacher's distance is inherited from the fork
 step. In floor units, the one currency both eras share, v8's teachers sat at 4.5× and gifted; our farthest
 sat at 15× and robbed hardest.
 
+**The drift is forgetting (`arch_transfer_2026-09-05/exploiter_competence/`).** Divergence is a norm, so the
+last open question on the teacher side was whether an exploiter's off-slice movement made it better or worse
+at piloting teams it never plays. Piloting the untaught eight against one fixed opponent, every exploiter set
+is worse than the origin it forked from, and the funded teachers, the half whose fold robs, clear the floor:
+−7.8 points [−15.2, −0.4] against the origin's 57.8 percent. The exchange rate is about three points of
+on-slice edge per point of untaught win rate lost. The fold parent itself has lost off-slice ground against
+the origin (−5.1, not detected), so against the parent the funded teachers read only −2.7. Funded minus
+unfunded is not resolvable at this power, the same verdict locality and distance returned. So distilling a
+funded teacher injects a policy that has measurably forgotten the untaught teams; the mechanism the distance
+story needed now has a direction, though not yet a discriminator between the robbing and neutral halves.
+Two caveats: one opponent, a near relative of the origin, and the teacher files a fold loads are selected on
+bot win rate and are not always the run's last checkpoint (two of eight unfunded teachers were exported at
+under a million exploiter steps).
+
 **Locality, corrected (`arch_transfer_2026-09-05/content_locality_v2/`, the fold's own checkpoint resolver and
 two references).** On the files a fold actually loads, v8's three teachers have sibling-control locality
 1.83 [1.53, 2.17], and our sixteen sit at 1.07 [0.94, 1.20] (unfunded) and 1.11 [1.00, 1.21] (funded) against
