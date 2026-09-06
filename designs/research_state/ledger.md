@@ -11464,3 +11464,71 @@ uniform-1.2M vs that mixture — the mixture's advantage could be its six LONG t
 dispersion, and this cell cannot separate them. The INVARIANCE: both sides are measured against the
 same parent at the same depth, so the continuation re-basing (G5) shifts them equally and cannot
 touch the paired delta. Only the absolutes (−0.19, +2.00) move.
+
+### 2026-09-06 · G5 RESULT — **our parent gains NOTHING from a plain continuation**; the frozen baseline stands on our side
+
+The continuation control on `ai_v9_59_R2ACTION_0827`, three arms (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`),
+coef 0, no teacher, no stable opponents, everything else byte-identical to TCUNFA. Read at the
+**MATCHED** depth `fork+1,000,032` — the exact checkpoint depth of the TC `_p1M` family.
+
+> **G5 continuation gain vs the frozen parent: −1.92pp [−3.98, +0.46] — SPANS ZERO.**
+> G5's own replicate floor: |A−B| 1.00 · |A−C| 1.00 · |B−C| 0.00 ⇒ **1.00pp**.
+
+**Pre-registration (i) does NOT fire.** The CI does not clear zero and the point estimate is
+NEGATIVE. ⇒ **The frozen-parent baseline stands on our side.**
+
+**⇒ THE CROSS-ERA DIFFERENCE IS THE PARENT, NOT THE METER.** The same cell on the two parents:
+
+| parent | plain continuation, ~1M steps | |
+|---|---|---|
+| `ai_v8_04` (v8's, 277M) | **+3.45pp [+0.46, +6.48]** | clears zero and its floor |
+| `ai_v9_59` (ours, 28M) | **−1.92pp [−3.98, +0.46]** | spans zero |
+
+So the meter-level alarm raised after cell 2 — *"every untaught delta in the ledger is measured
+against the wrong baseline"* — **does not generalise.** It is a true statement about `ai_v8_04` and a
+false one about `ai_v9_59`. The control is what separated them; on the strength of cell 2 alone the
+re-basing would have been propagated across the whole ledger and been wrong for our era.
+
+**(ii) The re-based TC column — and it moves the OPPOSITE way from what cell 2 implied.** Because
+G5's gain is negative, subtracting it makes every fold look BETTER:
+
+| arm | vs FROZEN parent | vs CONTINUATION |
+|---|---|---|
+| TCUNFA_p1M | −2.00 | **−0.08** [−3.52, +2.62] |
+| TCUNFB_p1M | −4.56 | −2.65 [−5.25, −0.21] |
+| TCFUNDA_p1M | −3.69 | −1.77 [−4.10, +0.17] |
+| TCFUNDB_p1M | −2.56 | −0.65 [−3.73, +2.04] |
+| TCUNFK6A_p1M | −6.19 | −4.27 [−7.65, −0.94] |
+| TCUNFK6B_p1M | −2.19 | −0.27 [−4.04, +3.21] |
+
+**The correction is NOT significant, so the re-based column is NOT adopted as the reported number.**
+The defensible reading on our side remains the frozen-parent one; this is a sensitivity check that
+happens to be favourable, and it is recorded as such.
+
+**THREE PLAIN-CONTINUATION DRAWS ON THE GEN SIDE, AND NONE GAINS.** Beside G5's −1.92pp sit M9's two
+(`plain_training_robbery_2026-08-31`): **−0.37pp [−3.31, +2.31]** and **−4.56pp [−6.56, −2.31]**.
+⚠️ They are draws of the same CLASS, not of one quantity, and the differences are worth stating:
+M9's arms continue **`ai_v9_29_rev1_0823`** (fork 25,067,760) for **+3M**, while G5 continues
+**`ai_v9_59_R2ACTION_0827`** (fork 28,115,184 — itself a fold off that same rev-1) for **+1M**. So
+this is three draws across TWO gen-era parents at TWO depths; what they support is the general
+statement *no gen-era parent has been observed to gain from ordinary continued training*, not a
+pooled point estimate.
+
+**⚠️ WHAT THIS DOES NOT ESTABLISH.** "Maturity" is the SHAPE of the result, not a demonstrated cause.
+The two parents differ in step count (277M vs 28M) **and** in architecture, observation dimension,
+reward composition and opponent ecology — they are different eras, not two points on one curve, and
+step counts are not commensurable across architectures with different sample efficiency. This cell
+cannot separate maturity from era.
+
+**Instrument notes.** `rebase_tc.py` printed a HARDCODED depth label (`fork+1,085,830`) regardless of
+which tags it was given, so the matched read would have been banked under the wrong depth; the label
+now derives from the tags and prints the overshoot warning for the final-depth ones. A repeated
+`--g5` would have silently kept only the first occurrence (the same argparse-shaped trap that
+`main.untaught_meter` hit with repeated `--control`); it now REFUSES. And the arms themselves
+OVERSHOOT `--steps` — `final_model` lands at fork+1,179,648 rather than the requested +1,085,830,
+because SB3 stops at the next multiple of `n_steps × n_envs` = 98,304 — which is why the matched
+`fork+1,000,032` checkpoint, not the final model, is what (i) and (ii) are read from.
+
+**Still outstanding:** (iii), the taught-16 slice, awaits the final-depth taught readings for arms B
+and C (`taught_G5PLAINA` is complete at 16/16). Per the pre-registration it carries a depth-mismatch
+caveat and is an UPPER BOUND: G5 is ~1.18M where the taught TC readings are at END ~4.45M.
