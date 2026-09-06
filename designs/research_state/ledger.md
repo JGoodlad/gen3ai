@@ -10604,3 +10604,45 @@ pre-registration.
 4. Gen-era raw L ≈ 1.10 would have read "slightly local" without the floor; it is the team set.
 Artifact: `measurements/arch_transfer_2026-09-05/content_locality/` (29 CPU-minutes of battles, CPU only).
 \n
+---
+
+### 2026-09-05 · CELL 1 PRE-REGISTRATION — the era LOSS-OFF control (banked BEFORE the result)
+
+**The question P1 forces.** v8's gift is real (+4.56pp [+1.14, +7.81] vs a 3.22pp floor, `39d9db7c`).
+So *what carries it*? Cell 1 splits **distillation** from **ECOLOGY**: v8_14's exact argv, forked
+from `ai_v8_04` at the same step, `--distill-coef 0` and nothing else changed — the three teachers
+stay attached as `--stable-opponents`, pfsp/self-play/pool/team-bias all untouched. Verified at
+launch: `[STABLE] 3 cross-run opponent(s)` present, no `[DISTILL]` line. Three replicates
+(`v8rep_p2loss_{A,B,C}_0905`, seeds 52/53/54), external stop at each arm's own first checkpoint,
+scored on the era meter against the re-scored parent (0.3848) at the P1 floor of **3.22pp**.
+
+**PRE-REGISTERED BRANCHES**
+- **Gifts** (pooled CI clears zero and exceeds 3.22) ⇒ v8's gift was never distillation. The
+  ecology — stable exploiter opponents + pfsp + pool — carries it, and "what does the loss do
+  differently" dissolves as a question.
+- **Does not gift** ⇒ the distillation loss is confirmed as the carrier, and teacher-content
+  ablations (cell 3a/3b) become the next cut.
+
+**THE PRIOR THIS READS AGAINST, banked now so the outcome cannot be fitted to it afterwards.** The
+content-locality probe finds v8_14's three teachers are **LOCAL** — sibling-control locality
+R = 1.45 [1.27, 1.67], i.e. each diverges from `v8_04` ~45% more on its own taught teams than its
+siblings do on the same states — while our gen-era teachers are essentially **GLOBAL** (unfunded
+1.07 [0.98, 1.16], funded 1.10 [1.00, 1.20]); the cross-era difference is significant and its sign
+is **reversed from that probe's own pre-registration**. Since v8's teachers barely differ from the
+parent *off* their taught teams, and the distill term applies on taught states only, there was
+little off-slice teacher content available to inject. **That raises the prior on cell 1 gifting** —
+i.e. on ecology or plain continued learning carrying v8's effect, or on generalisation of *on-slice*
+content rather than transfer of off-slice content.
+
+Note for the record: **b13b30b2 has no `--distill-target` flag** (grep confirmed), so the
+target-form ablation that mattered so much in the gen era cannot be run inside this era at all;
+v8's target form is whatever that code did and must be read from the source, not varied.
+
+Cell 2 (pure self-play continuation, `--distill-coef 0` **and** stable-opponents dropped) runs
+back-to-back regardless of cell 1's outcome — they are a **factorial, not a branch**, and together
+factor the gift into {loss, teachers-as-opponents, plain learning}. Cell 2 supplies the baseline P1
+does not have: whether a 277M-step parent simply gains ~+4.6pp in 1M more steps of any training.
+
+Every arm carries the P1 provenance discipline: `v8rep_launch.txt` as authoritative (the era's
+sidecars misattribute by construction), byte-identical `model_config.json` check, per-arm depth
+stated, and **three replicates because P1 showed one arm is wrong two times in three**.
