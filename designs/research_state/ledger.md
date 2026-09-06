@@ -10881,3 +10881,40 @@ mainly because it BREAKS the budget confound; (c) with D_on / D_off collinear at
 content with the drift — any such arm pre-registers both meters. Rejected folds listed in the README with reasons.
 Artifact: `measurements/arch_transfer_2026-09-05/teacher_distance/`.
 
+## 2026-09-05 — ARCH→TRANSFER probe H7 (v8 FiLM z-swap): REFUTED — swapping the team code removes 3.8% of a v8 teacher's on-slice KL (rail 20%) and leaves locality untouched; what `zarch` IS, written down; v8's locality on the resolved teacher files is R 1.83 [1.53, 2.18]
+
+**What zarch is** (b13b30b2 `features_extractor.py`): `ZArchEncoder` (L3450–3505) — a DeepSets MEAN over our 6 mons' invariant
+facts (species ⊕ item ⊕ ability ⊕ mean move embedding ⊕ 18-dim spread) → LayerNorm → z ∈ ℝ³², every table read
+`.detach()`ed, team-static by construction; obs-DERIVED, not a table. It enters the network at ONE line (L4425–4430): a
+post-projection / pre-ReLU FiLM on BOTH heads, `h·(1+Δγ)+Δβ` with `[Δγ‖Δβ] = film_{pi,vf}(z)`, generators zero-init.
+**z never touches the trunk**, so a swap of the z-encoder's output is a true swap.
+
+**Pre-registration** (`zswap/PREREGISTRATION.md`, before any state): four conditions per (teacher T, parent P) on the same
+states — own z / T with P's z / P with T's z / on-manifold deletion — rail: >50% of on-slice KL removed by the swap ⇒ z
+carries the specialisation; <20% ⇒ shared weights. States per content_locality's v8 recipe (~29 CPU-min), two teacher-file
+modes × n ∈ {3, 9}. `verify_readme.py` re-derives all 147 quoted numbers from the artifacts (0 mismatches).
+
+**Result.** `f_b` (fraction of on-slice KL removed by giving T the parent's z) = **+0.0383 [+0.0212, +0.0554]** (n=9) —
+SHARED WEIGHTS; the absolute removal (+0.0149) is WITHIN the 0.0535 floor. Locality: `R_a − R_b = −0.0011 [−0.0379,
++0.0318]` **NOT DETECTED** at both n. Not a no-op by construction: FiLM is a co-equal term (175–247% of ‖h‖), the
+exploiters GREW it ~30–40% and moved their codes 3–6× further than ordinary training — engaged, and it did not localise.
+Deleting ALL team-conditional FiLM (on-manifold, dμ) removes 8.4% and cuts R 1.83 → 1.66: ~20% of the excess locality,
+via GENERATOR WEIGHTS, not the code; the other ~80% is shared trunk, unexplained. Parameter mass agrees: the behavioural z
+path is 2.166% of params but 0.35–1.10% of ‖Δθ‖² (below fair share).
+**Consequence:** "add a per-team FiLM code to the gen era" is not to be funded on the locality result.
+
+**Findings.** (1) With the fold's teacher-file resolution applied (v8_14's argv names run DIRS ⇒ `best_model/best_model.zip`),
+semistall3 halves (0.4478 → 0.2156), the other two are unchanged, and content_locality's v8 R rises **1.4498 → 1.8316
+[1.5349, 2.1782]** — direction unchanged and strengthened; every delta from the old number is understated. (2) content_locality
+has a bootstrap UNDER-SAMPLING bug: `own_all` has 23 cells but `bsT` draws in [0, 22), so defensive10's last team never
+enters the pooled-L CI; the headline R (`primary_B`) is correctly sized — passed to the v2 rerun. (3) Two self-inflicted
+issues found and fixed before the final run (a double-wrapped shim that renamed z-path keys; an aux `recon_head` in the
+z-path denominator). (4) The agent fabricated an ACID output block on a first draft and caught it — hence the 147-number
+verifier. Artifact: `measurements/arch_transfer_2026-09-05/zswap/`.
+
+**Campaign state after H1–H7 + the head-to-head.** Architecture (head, trunk sharing, FiLM, depth): every leg NOT
+DETECTED or REFUTED. Teacher facts that survive: v8's teachers are LOCAL (R 1.83) and DESCEND from their parent; ours are
+global-from-origin SIBLINGS of theirs, and the ones that rob are farther everywhere; distance orders teacher SETS but is
+confounded with budget and carries a 0.4–0.5 inherited offset. Causal tests: v8 cells 1–2 (loss vs ecology vs plain
+learning) and the gen origin × budget factorial (G1 / G2), all on the GPU queue.
+

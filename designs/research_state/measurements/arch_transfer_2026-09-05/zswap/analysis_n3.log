@@ -1,0 +1,139 @@
+
+=== H7 Z-SWAP — v8 era, per_team=3, 4180 states, 30 teams (8 untaught + 22 taught) ===
+    ACID shim faithful on all 6 models (bit-identical): True
+    ACID distinct baseline KL vectors: True
+
+--- FiLM MAGNITUDE: how much does the code modulate the head features? ---
+    ||h*dg + db|| / ||h||, averaged over states (h = pre-FiLM pi_pre / vf_pre)
+  parent           pi 170.47%   vf 186.65%
+  FLOOR_c277178    pi 174.60%   vf 190.67%
+  FLOOR_c275758    pi 176.59%   vf 192.43%
+  pool10           pi 229.62%   vf 231.05%
+  semistall3       pi 220.52%   vf 235.61%
+  defensive10      pi 236.92%   vf 240.60%
+
+--- Z GEOMETRY (does a swap have anything to swap?) ---
+  parent           |z| 16.167  centred RMS 10.774  top-dir share of centred energy 31.6%
+  FLOOR_c277178    |z| 16.224  centred RMS 10.748  top-dir 32.2%  RMS dist to z_P 1.313 (= 8.1% of |z|)
+  FLOOR_c275758    |z| 16.219  centred RMS 10.636  top-dir 31.6%  RMS dist to z_P 1.891 (= 11.7% of |z|)
+  pool10           |z| 17.024  centred RMS 10.642  top-dir 33.4%  RMS dist to z_P 7.940 (= 46.6% of |z|)
+  semistall3       |z| 16.979  centred RMS 9.621  top-dir 30.6%  RMS dist to z_P 6.382 (= 37.6% of |z|)
+  defensive10      |z| 17.237  centred RMS 9.658  top-dir 32.7%  RMS dist to z_P 7.655 (= 44.4% of |z|)
+
+--- PARAMETER-MASS SPLIT: how much of |theta_T - theta_P| lives in the z path? ---
+    behavioural z path = z_encoder + film generators (recon_head EXCLUDED: aux-only,
+    never fed forward).  enrichment = displacement share / parameter share (1.0 = fair)
+  FLOOR_c277178    params  2.166%   ||dtheta||^2 share  0.026%   L1 share  0.655%   enrichment 0.012x   ||dtheta|| 6.970
+  FLOOR_c275758    params  2.166%   ||dtheta||^2 share  0.104%   L1 share  0.770%   enrichment 0.048x   ||dtheta|| 8.330
+  pool10           params  2.166%   ||dtheta||^2 share  1.097%   L1 share  1.857%   enrichment 0.506x   ||dtheta|| 16.485
+  semistall3       params  2.166%   ||dtheta||^2 share  0.351%   L1 share  2.256%   enrichment 0.162x   ||dtheta|| 11.050
+  defensive10      params  2.166%   ||dtheta||^2 share  0.676%   L1 share  1.623%   enrichment 0.312x   ||dtheta|| 14.736
+
+    per-group (param share -> ||dtheta||^2 share, enrichment):
+      model                         z_encoder         film_generators              recon_head         shared_trunk_an
+      FLOOR_c277178     0.24%-> 0.02% (0.08x)   1.92%-> 0.01% (0.00x)   0.38%-> 0.05% (0.12x)  97.46%->99.93% (1.03x)
+      FLOOR_c275758     0.24%-> 0.06% (0.25x)   1.92%-> 0.04% (0.02x)   0.38%-> 0.63% (1.68x)  97.46%->99.26% (1.02x)
+      pool10            0.24%-> 0.13% (0.55x)   1.92%-> 0.96% (0.50x)   0.38%-> 0.74% (1.97x)  97.46%->98.16% (1.01x)
+      semistall3        0.24%-> 0.06% (0.26x)   1.92%-> 0.29% (0.15x)   0.38%-> 0.06% (0.17x)  97.46%->99.59% (1.02x)
+      defensive10       0.24%-> 0.09% (0.38x)   1.92%-> 0.58% (0.30x)   0.38%-> 0.52% (1.39x)  97.46%->98.80% (1.01x)
+
+--- PER-TEACHER KL BY CONDITION AND SLICE ---
+    a=T[z_T]||P[z_P]  b=T[z_P]||P[z_P]  c1=P[z_T]||P[z_P]  c2=T[z_T]||P[z_T]
+    d0=T[0]||P[0]  dmu=T[zbar]||P[zbar]
+    zsens_T=T[z_P]||T[z_T]   zsens0_T=T[0]||T[z_T]   zsensmu_T=T[zbar]||T[z_T]
+
+  pool10  (own 10 teams, sibling 12, untaught 8)
+    taught_own      a 0.4570  b 0.4474  c1 0.0141  c2 0.4592  d0 0.2968  dmu 0.3960  zsens_T 0.0223  zsens0_T 0.1469  zsensmu_T 0.0878
+                    f_b +0.0210 CI [-0.0213,+0.0550]
+    taught_sibling  a 0.3629  b 0.3403  c1 0.0107  c2 0.3693  d0 0.2692  dmu 0.3614  zsens_T 0.0223  zsens0_T 0.1218  zsensmu_T 0.0515
+                    f_b +0.0624 CI [+0.0294,+0.0948]
+    untaught        a 0.3410  b 0.3415  c1 0.0031  c2 0.3385  d0 0.2423  dmu 0.3296  zsens_T 0.0057  zsens0_T 0.1069  zsensmu_T 0.0234
+                    f_b -0.0013 CI [-0.0215,+0.0175]
+
+  semistall3  (own 3 teams, sibling 19, untaught 8)
+    taught_own      a 0.2116  b 0.1910  c1 0.0101  c2 0.2141  d0 0.1551  dmu 0.2040  zsens_T 0.0120  zsens0_T 0.0665  zsensmu_T 0.0250
+                    f_b +0.0973 CI [+0.0571,+0.1337]
+    taught_sibling  a 0.1127  b 0.1086  c1 0.0065  c2 0.1145  d0 0.0780  dmu 0.1160  zsens_T 0.0075  zsens0_T 0.0630  zsensmu_T 0.0138
+                    f_b +0.0360 CI [+0.0162,+0.0575]
+    untaught        a 0.0988  b 0.0962  c1 0.0025  c2 0.0981  d0 0.0610  dmu 0.0946  zsens_T 0.0031  zsens0_T 0.0736  zsensmu_T 0.0151
+                    f_b +0.0271 CI [+0.0011,+0.0472]
+
+  defensive10  (own 10 teams, sibling 12, untaught 8)
+    taught_own      a 0.3495  b 0.3344  c1 0.0154  c2 0.3597  d0 0.2648  dmu 0.3435  zsens_T 0.0258  zsens0_T 0.0941  zsensmu_T 0.0199
+                    f_b +0.0433 CI [+0.0178,+0.0660]
+    taught_sibling  a 0.2947  b 0.2851  c1 0.0077  c2 0.2970  d0 0.2247  dmu 0.2938  zsens_T 0.0132  zsens0_T 0.0962  zsensmu_T 0.0267
+                    f_b +0.0325 CI [-0.0128,+0.0804]
+    untaught        a 0.2914  b 0.2876  c1 0.0033  c2 0.2937  d0 0.2108  dmu 0.2799  zsens_T 0.0049  zsens0_T 0.1037  zsensmu_T 0.0203
+                    f_b +0.0133 CI [+0.0041,+0.0232]
+
+=== POOLED (23 teacher-own-team cells; untaught = 8 teams averaged over the 3 teachers) ===
+
+  taught_own  (n=23; floor on this slice 0.0535)
+    a          0.3783  CI [0.3296,0.4308]
+    b          0.3648  CI [0.3178,0.4143]
+    c1         0.0141  CI [0.0118,0.0163]   <- WITHIN FLOOR
+    c2         0.3840  CI [0.3374,0.4310]
+    d0         0.2644  CI [0.2353,0.2904]
+    dmu        0.3481  CI [0.3107,0.3823]
+    zsens_T    0.0225  CI [0.0178,0.0271]   <- WITHIN FLOOR
+    zsens0_T   0.1135  CI [0.0895,0.1448]
+    zsensmu_T  0.0501  CI [0.0238,0.0872]   <- WITHIN FLOOR
+    f_b        +0.0356  CI [+0.0108,+0.0577]   (PRE-REGISTERED PRIMARY)
+               KL removed +0.0135 CI [+0.0040,+0.0224]  -> WITHIN FLOOR
+    f_dmu      +0.0798  CI [+0.0259,+0.1538]   (secondary descriptive)
+               KL removed +0.0302 CI [+0.0091,+0.0636]  -> WITHIN FLOOR
+    f_d0       +0.3010  CI [+0.2473,+0.3606]   (secondary descriptive (OFF-MANIFOLD: z=0 is never a real code))
+               KL removed +0.1139 CI [+0.0853,+0.1521]  -> above floor
+    ==> PRIMARY VERDICT: SHARED WEIGHTS (CI below the 0.20 rail)
+
+  untaught  (n=8; floor on this slice 0.0664)
+    a          0.2438  CI [0.2229,0.2625]
+    b          0.2417  CI [0.2227,0.2589]
+    c1         0.0030  CI [0.0023,0.0038]   <- WITHIN FLOOR
+    c2         0.2434  CI [0.2228,0.2622]
+    d0         0.1714  CI [0.1581,0.1847]
+    dmu        0.2347  CI [0.2158,0.2519]
+    zsens_T    0.0046  CI [0.0036,0.0061]   <- WITHIN FLOOR
+    zsens0_T   0.0947  CI [0.0878,0.1022]
+    zsensmu_T  0.0196  CI [0.0163,0.0233]   <- WITHIN FLOOR
+    f_b        +0.0083  CI [-0.0031,+0.0179]   (PRE-REGISTERED PRIMARY)
+               KL removed +0.0020 CI [-0.0007,+0.0046]  -> WITHIN FLOOR
+    f_dmu      +0.0371  CI [+0.0093,+0.0678]   (secondary descriptive)
+               KL removed +0.0090 CI [+0.0022,+0.0169]  -> WITHIN FLOOR
+    f_d0       +0.2970  CI [+0.2609,+0.3315]   (secondary descriptive (OFF-MANIFOLD: z=0 is never a real code))
+               KL removed +0.0724 CI [+0.0606,+0.0848]  -> above floor
+    ==> PRIMARY VERDICT: SHARED WEIGHTS (CI below the 0.20 rail)
+
+  f_b(taught-own) - f_b(untaught) = +0.0272 CI [+0.0008,+0.0518]  -> SIGNIFICANT
+  c1 (P[z_T]||P[z_P]) 0.0141  vs  KL removed by the swap 0.0135  diff +0.0007 CI [-0.0081,+0.0102]
+
+=== SIBLING-CONTROL LOCALITY R = own / siblings, per condition ===
+    (content_locality PRIMARY B, same singly-taught teams. 1.00 = perfectly GLOBAL)
+  R_a          1.7940  CI [1.4814,2.1584]   own 0.3848 siblings 0.2319  -> LOCAL
+  R_b          1.8136  CI [1.4953,2.1728]   own 0.3721 siblings 0.2208  -> LOCAL
+  R_c1         1.8510  CI [1.5954,2.1101]   own 0.0143 siblings 0.0080  -> LOCAL
+  R_c2         1.8165  CI [1.5094,2.1716]   own 0.3917 siblings 0.2350  -> LOCAL
+  R_d0         1.6690  CI [1.4342,1.8908]   own 0.2684 siblings 0.1715  -> LOCAL
+  R_dmu        1.6184  CI [1.3917,1.8383]   own 0.3534 siblings 0.2325  -> LOCAL
+  R_zsens_T    1.9393  CI [1.5374,2.3912]   own 0.0236 siblings 0.0133  -> LOCAL
+  R_zsens0_T   1.4145  CI [1.0696,1.8893]   own 0.1178 siblings 0.0886  -> LOCAL
+  R_zsensmu_T  1.9594  CI [1.0474,3.1256]   own 0.0509 siblings 0.0281  -> LOCAL
+
+  PAIRED R_a - R_<ablation>  (does the ablation ERASE the locality?)
+    R_a - R_b    -0.0197 CI [-0.0725,+0.0308]  -> NOT DETECTED
+    R_a - R_dmu  +0.1756 CI [+0.0268,+0.3961]  -> SIGNIFICANT
+    R_a - R_d0   +0.1250 CI [-0.0635,+0.3769]  -> NOT DETECTED
+
+=== MATCHED-NOISE FLOOR, measured on THIS run's states ===
+  FLOOR_c277178    taught a 0.0252 b 0.0253 c1 0.0004  |  untaught a 0.0382 b 0.0382
+  FLOOR_c275758    taught a 0.0532 b 0.0526 c1 0.0007  |  untaught a 0.0667 b 0.0666
+
+=== MECHANISM PRECHECK: how much does z move a SINGLE network? (taught-own slice) ===
+  teacher: swap in P's z   T[z_P]||T[z_T]    0.0225 CI [0.0178,0.0271]  -> WITHIN FLOOR
+  teacher: zero z          T[0]||T[z_T]      0.1135 CI [0.0895,0.1448]  -> above floor
+  teacher: mean z          T[zbar]||T[z_T]   0.0501 CI [0.0238,0.0872]  -> WITHIN FLOOR
+  parent:  swap in T's z   P[z_T]||P[z_P]    0.0141 CI [0.0118,0.0163]  -> WITHIN FLOOR
+  parent self:  zsens0_P                   0.0527  -> WITHIN FLOOR
+  parent self:  zsensmu_P                  0.0205  -> WITHIN FLOOR
+
+  wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a46f87a62ac224da5/designs/research_state/measurements/arch_transfer_2026-09-05/zswap/analysis_n3.json

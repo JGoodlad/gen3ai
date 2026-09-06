@@ -249,6 +249,17 @@ each other), and half of a gen-era teacher's distance is inherited from the fork
 step. In floor units, the one currency both eras share, v8's teachers sat at 4.5× and gifted; our farthest
 sat at 15× and robbed hardest.
 
+**FiLM result (z-swap probe, `arch_transfer_2026-09-05/zswap/`): REFUTED.** v8's whole line carried a
+32-dimensional team code: a DeepSets mean over our six mons' static facts, entering the network at exactly
+one line as a FiLM on both heads after projection and never touching the trunk. Substituting the parent's
+code into a v8 teacher removes 3.8% [2.1, 5.5] of the teacher's on-slice divergence against a 20% rail, and
+the locality ratio does not move at all (−0.001 [−0.038, +0.032]). The mechanism was engaged, not idle: FiLM
+is a co-equal term in the heads and the exploiters grew it, yet it did not localise anything. Deleting all
+team-conditional modulation accounts for about a fifth of the excess locality, through the generator
+weights rather than the code; the rest is shared trunk. So "add a per-team code to the gen era" should not
+be funded on the locality result. Same probe, on the resolved teacher files: v8's sibling-control locality
+is 1.83 [1.53, 2.18], stronger than the original 1.45.
+
 **Fold-displacement result (2026-09-05, `arch_transfer_2026-09-05/fold_displacement/`).** Three things
 survive. (1) **Displacement magnitude is set by dose, not by the distillation term**: the loss-off control
 C1 moved the weights as far as the fold B2 did (|Δθ| 7.99 vs 8.08), and every dose-frozen arm grew as

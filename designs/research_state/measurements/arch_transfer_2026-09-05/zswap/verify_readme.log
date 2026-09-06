@@ -1,0 +1,150 @@
+  shim ACID checks across the two headline cells: 24 (README says 24)
+  f_b taught n9                      README     0.0383   artifact     0.0383   OK
+  f_b taught n9 CI lo                README     0.0212   artifact     0.0212   OK
+  f_b taught n9 CI hi                README     0.0554   artifact     0.0554   OK
+  f_b taught n3                      README     0.0356   artifact     0.0356   OK
+  f_b taught n3 CI lo                README     0.0108   artifact     0.0108   OK
+  f_b taught n3 CI hi                README     0.0577   artifact     0.0577   OK
+  f_b untaught n9                    README     0.0069   artifact     0.0069   OK
+  f_b untaught n9 CI lo              README    -0.0032   artifact    -0.0032   OK
+  f_b untaught n9 CI hi              README     0.0188   artifact     0.0188   OK
+  f_b untaught n3                    README     0.0083   artifact     0.0083   OK
+  KL removed taught n9               README     0.0149   artifact     0.0149   OK
+  KL removed taught n9 CI lo         README     0.0081   artifact     0.0081   OK
+  KL removed taught n9 CI hi         README     0.0218   artifact     0.0218   OK
+  floor taught                       README     0.0535   artifact     0.0535   OK
+  f_b taught-untaught n9             README     0.0314   artifact     0.0314   OK
+  f_b taught-untaught n9 CI lo       README     0.0109   artifact     0.0109   OK
+  f_b taught-untaught n9 CI hi       README     0.0514   artifact     0.0514   OK
+  n9 taught a                        README     0.3893   artifact     0.3893   OK
+  n9 untaught a                      README     0.2329   artifact     0.2329   OK
+  n9 taught b                        README     0.3744   artifact     0.3744   OK
+  n9 untaught b                      README     0.2313   artifact     0.2313   OK
+  n9 taught c1                       README     0.0149   artifact     0.0149   OK
+  n9 untaught c1                     README     0.0031   artifact     0.0031   OK
+  n9 taught c2                       README     0.3922   artifact     0.3922   OK
+  n9 untaught c2                     README     0.2339   artifact     0.2339   OK
+  n9 taught dmu                      README     0.3566   artifact     0.3566   OK
+  n9 untaught dmu                    README     0.2281   artifact     0.2281   OK
+  n9 taught d0                       README     0.2728   artifact     0.2728   OK
+  n9 untaught d0                     README     0.1694   artifact     0.1694   OK
+  f_dmu taught n9                    README     0.0840   artifact     0.0840   OK
+  f_dmu taught n9 CI lo              README     0.0423   artifact     0.0423   OK
+  f_dmu taught n9 CI hi              README     0.1393   artifact     0.1393   OK
+  f_dmu KL removed n9                README     0.0327   artifact     0.0327   OK
+  f_d0 taught n9                     README     0.2994   artifact     0.2994   OK
+  f_d0 taught n9 CI lo               README     0.2623   artifact     0.2623   OK
+  f_d0 taught n9 CI hi               README     0.3412   artifact     0.3412   OK
+  c1 n9                              README     0.0149   artifact     0.0149   OK
+  removed n9                         README     0.0149   artifact     0.0149   OK
+  c1-removed diff n9                 README     0.0000   artifact     0.0000   OK
+  c1-removed CI n9 lo                README    -0.0064   artifact    -0.0064   OK
+  c1-removed CI n9 hi                README     0.0063   artifact     0.0063   OK
+  R_a n9                             README     1.8316   artifact     1.8316   OK
+  R_a n3                             README     1.7940   artifact     1.7940   OK
+  R_b n9                             README     1.8327   artifact     1.8327   OK
+  R_b n3                             README     1.8136   artifact     1.8136   OK
+  R_c2 n9                            README     1.8431   artifact     1.8431   OK
+  R_c2 n3                            README     1.8165   artifact     1.8165   OK
+  R_dmu n9                           README     1.6637   artifact     1.6637   OK
+  R_dmu n3                           README     1.6184   artifact     1.6184   OK
+  R_d0 n9                            README     1.7246   artifact     1.7246   OK
+  R_d0 n3                            README     1.6690   artifact     1.6690   OK
+  R_a n9 CI lo                       README     1.5349   artifact     1.5349   OK
+  R_a n9 CI hi                       README     2.1782   artifact     2.1782   OK
+  R_a n3 CI lo                       README     1.4814   artifact     1.4814   OK
+  R_a n3 CI hi                       README     2.1584   artifact     2.1584   OK
+  R_b n9 CI lo                       README     1.5351   artifact     1.5351   OK
+  R_b n9 CI hi                       README     2.1735   artifact     2.1735   OK
+  R_a-R_b n9                         README    -0.0011   artifact    -0.0011   OK
+  R_a-R_b n9 CI lo                   README    -0.0379   artifact    -0.0379   OK
+  R_a-R_b n9 CI hi                   README     0.0318   artifact     0.0318   OK
+  R_a-R_b n3                         README    -0.0197   artifact    -0.0197   OK
+  R_a-R_dmu n9                       README     0.1679   artifact     0.1679   OK
+  R_a-R_dmu n9 CI lo                 README     0.0532   artifact     0.0532   OK
+  R_a-R_dmu n9 CI hi                 README     0.3451   artifact     0.3451   OK
+  R_a-R_dmu n3                       README     0.1756   artifact     0.1756   OK
+  R_a-R_d0 n9                        README     0.1070   artifact     0.1070   OK
+  R_a own n9                         README     0.3969   artifact     0.3969   OK
+  R_a siblings n9                    README     0.2303   artifact     0.2303   OK
+  finalint R_a siblings n9           README     0.2959   artifact     0.2959   OK
+  pool10/taught_own best_model       README     0.4722   artifact     0.4722   OK
+  pool10/taught_own finalint         README     0.4719   artifact     0.4719   OK
+  pool10/untaught best_model         README     0.3176   artifact     0.3176   OK
+  pool10/untaught finalint           README     0.3223   artifact     0.3223   OK
+  semistall3/taught_own best_model   README     0.2156   artifact     0.2156   OK
+  semistall3/taught_own finalint     README     0.4478   artifact     0.4478   OK
+  semistall3/untaught best_model     README     0.1036   artifact     0.1036   OK
+  semistall3/untaught finalint       README     0.2190   artifact     0.2190   OK
+  defensive10/taught_own best_model  README     0.3586   artifact     0.3586   OK
+  defensive10/taught_own finalint    README     0.3529   artifact     0.3529   OK
+  defensive10/untaught best_model    README     0.2775   artifact     0.2775   OK
+  defensive10/untaught finalint      README     0.2807   artifact     0.2807   OK
+  finalint R_a n9                    README     1.4498   artifact     1.4498   OK
+  finalint R_a n9 CI lo              README     1.2728   artifact     1.2737   OK
+  finalint R_a n9 CI hi              README     1.6722   artifact     1.6710   OK
+  finalint R_a n3                    README     1.4601   artifact     1.4601   OK
+  film pi parent                     README   174.5300   artifact   174.5350   OK
+  film vf parent                     README   190.7300   artifact   190.7316   OK
+  film pi FLOOR_c277178              README   178.8400   artifact   178.8362   OK
+  film vf FLOOR_c277178              README   194.8800   artifact   194.8788   OK
+  film pi FLOOR_c275758              README   180.4200   artifact   180.4172   OK
+  film vf FLOOR_c275758              README   196.1300   artifact   196.1308   OK
+  film pi pool10                     README   231.7500   artifact   231.7485   OK
+  film vf pool10                     README   232.9600   artifact   232.9607   OK
+  film pi semistall3                 README   223.6800   artifact   223.6811   OK
+  film vf semistall3                 README   238.5900   artifact   238.5897   OK
+  film pi defensive10                README   243.4800   artifact   243.4823   OK
+  film vf defensive10                README   246.6900   artifact   246.6854   OK
+  parent |z| n9                      README    16.2320   artifact    16.2324   OK
+  parent centred rms n9              README    10.6590   artifact    10.6590   OK
+  z dist FLOOR_c277178               README     1.3340   artifact     1.3341   OK
+  z dist %% FLOOR_c277178            README     8.2000   artifact     8.1884   OK
+  z dist FLOOR_c275758               README     1.9110   artifact     1.9115   OK
+  z dist %% FLOOR_c275758            README    11.7000   artifact    11.7414   OK
+  z dist pool10                      README     7.9280   artifact     7.9281   OK
+  z dist %% pool10                   README    46.5000   artifact    46.4903   OK
+  z dist semistall3                  README     6.3390   artifact     6.3390   OK
+  z dist %% semistall3               README    37.2000   artifact    37.2444   OK
+  z dist defensive10                 README     7.8080   artifact     7.8076   OK
+  z dist %% defensive10              README    45.0000   artifact    45.0432   OK
+  zsens_T                            README     0.0237   artifact     0.0237   OK
+  zsens_T CI lo                      README     0.0189   artifact     0.0189   OK
+  zsens_T CI hi                      README     0.0286   artifact     0.0286   OK
+  zsensmu_T                          README     0.0449   artifact     0.0449   OK
+  zsens0_T                           README     0.1112   artifact     0.1112   OK
+  c1 mech                            README     0.0149   artifact     0.0149   OK
+  zsensmu_P                          README     0.0214   artifact     0.0214   OK
+  zsens0_P                           README     0.0530   artifact     0.0530   OK
+  ||zbar|| lower bound               README    12.2400   artifact    12.2425   OK
+  z path param share                 README     2.1660   artifact     2.1656   OK
+  z disp FLOOR_c277178               README     0.0260   artifact     0.0262   OK
+  z disp FLOOR_c275758               README     0.1040   artifact     0.1038   OK
+  z disp pool10                      README     1.0970   artifact     1.0967   OK
+  z disp semistall3                  README     0.3510   artifact     0.3506   OK
+  z disp defensive10                 README     0.6760   artifact     0.6758   OK
+  enrichment pool10                  README     0.5060   artifact     0.5064   OK
+  enrichment semistall3              README     0.1620   artifact     0.1619   OK
+  enrichment defensive10             README     0.3120   artifact     0.3121   OK
+  enrichment FLOOR_c277178           README     0.0120   artifact     0.0121   OK
+  enrichment FLOOR_c275758           README     0.0480   artifact     0.0479   OK
+  ||dtheta|| pool10                  README    16.4850   artifact    16.4847   OK
+  ||dtheta|| semistall3              README    11.0500   artifact    11.0503   OK
+  ||dtheta|| defensive10             README    14.7360   artifact    14.7359   OK
+  ||dtheta|| FLOOR_c277178           README     6.9700   artifact     6.9696   OK
+  ||dtheta|| FLOOR_c275758           README     8.3300   artifact     8.3305   OK
+  z_encoder param share              README     0.2400   artifact     0.2414   OK
+  film gen param share               README     1.9200   artifact     1.9242   OK
+  recon_head param share             README     0.3800   artifact     0.3758   OK
+  trunk param share                  README    97.4600   artifact    97.4586   OK
+  best n3 states                     README  4180.0000   artifact  4180.0000   OK
+  best n3 states wall                README   254.0000   artifact   254.4000   OK
+  best n3 total wall                 README   368.0000   artifact   368.0000   OK
+  best n9 states                     README 11650.0000   artifact 11650.0000   OK
+  best n9 states wall                README   618.0000   artifact   617.9000   OK
+  best n9 total wall                 README   913.0000   artifact   913.2000   OK
+  fi n9 states                       README 11650.0000   artifact 11650.0000   OK
+  fi n9 states wall                  README   628.0000   artifact   627.6000   OK
+  fi n9 total wall                   README   920.0000   artifact   920.0000   OK
+
+  147 numeric claims checked, 0 mismatch(es)

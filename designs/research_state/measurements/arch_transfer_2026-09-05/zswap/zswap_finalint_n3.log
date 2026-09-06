@@ -1,0 +1,65 @@
+[zswap] NOTE: 1 team(s) taught by >1 teacher: ['564b9be3ae'] -- excluded from the sibling control
+[zswap] TEACHER FILE MODE = 'final_interrupted'; per teacher: {'pool10': 'final_model_interrupted.zip', 'semistall3': 'final_model_interrupted.zip', 'defensive10': 'final_model_interrupted.zip'}
+[zswap] 30 teams = 8 untaught + 22 taught ({'pool10': 10, 'semistall3': 3, 'defensive10': 10}), pool 719
+  [ 0] untaught d0a4d2bcb8 + 109 states (total 109, 8s)
+  [ 1] untaught c90e782cad + 104 states (total 213, 15s)
+  [ 2] untaught a6b630e6b4 +  98 states (total 311, 22s)
+  [ 3] untaught a577a735b7 +  96 states (total 407, 28s)
+  [ 4] untaught 9292a21833 +  88 states (total 495, 35s)
+  [ 5] untaught eaa88395e7 +  80 states (total 575, 41s)
+  [ 6] untaught 7c2cb5cec1 +  92 states (total 667, 48s)
+  [ 7] untaught 89fcef3b53 +  78 states (total 745, 54s)
+  [ 8] taught   564b9be3ae +  89 states (total 834, 61s)
+  [ 9] taught   d3c1cd0952 +  97 states (total 931, 68s)
+  [10] taught   7594a34f82 + 176 states (total 1107, 78s)
+  [11] taught   47dc388b25 + 157 states (total 1264, 88s)
+  [12] taught   4c9552cd01 + 154 states (total 1418, 97s)
+  [13] taught   552d5857a3 +  94 states (total 1512, 104s)
+  [14] taught   f5d46ca0fc +  94 states (total 1606, 110s)
+  [15] taught   3a83154c2a + 395 states (total 2001, 130s)
+  [16] taught   9b454d9ea7 + 178 states (total 2179, 141s)
+  [17] taught   24db4aacdd + 198 states (total 2377, 152s)
+  [18] taught   4771662cf7 + 190 states (total 2567, 163s)
+  [19] taught   45995e432f + 326 states (total 2893, 180s)
+  [20] taught   9278913bce + 109 states (total 3002, 187s)
+  [21] taught   fc908f1bf4 + 115 states (total 3117, 193s)
+  [22] taught   83aee9db7e +  84 states (total 3201, 196s)
+  [23] taught   044da80d78 + 199 states (total 3400, 202s)
+  [24] taught   bef089d2cf + 182 states (total 3582, 208s)
+  [25] taught   3f95b25e9a + 150 states (total 3732, 213s)
+  [26] taught   8b6b8c8f52 + 153 states (total 3885, 218s)
+  [27] taught   5c88ff9ca5 + 126 states (total 4011, 222s)
+  [28] taught   3e9bdcee48 +  74 states (total 4085, 225s)
+  [29] taught   65bfb2e8b4 +  95 states (total 4180, 229s)
+
+[zswap] 4180 states in 229s; scoring
+  ACID shim parent           disarmed max|d| 0.000e+00   armed-with-own-z max|d| 0.000e+00
+  parent forward 2s   z_P (4180, 32) |z| mean 16.167
+  FiLM modulation (parent): pi 170.47% of ||h||, vf 186.65%
+  ACID shim FLOOR_c277178    disarmed max|d| 0.000e+00   armed-with-own-z max|d| 0.000e+00
+  FLOOR_c277178    a 0.0252  b 0.0253  c1 0.0004  zsensT 0.0004  | z rel-dist 0.0809  | dtheta z-share 0.026% of 2.166% params
+  ACID shim FLOOR_c275758    disarmed max|d| 0.000e+00   armed-with-own-z max|d| 0.000e+00
+  FLOOR_c275758    a 0.0532  b 0.0526  c1 0.0007  zsensT 0.0007  | z rel-dist 0.1166  | dtheta z-share 0.104% of 2.166% params
+  ACID shim pool10           disarmed max|d| 0.000e+00   armed-with-own-z max|d| 0.000e+00
+  pool10           a 0.4090  b 0.3946  c1 0.0124  zsensT 0.0237  | z rel-dist 0.4734  | dtheta z-share 1.082% of 2.166% params
+  ACID shim semistall3       disarmed max|d| 0.000e+00   armed-with-own-z max|d| 0.000e+00
+  semistall3       a 0.2690  b 0.2568  c1 0.0118  zsensT 0.0162  | z rel-dist 0.4794  | dtheta z-share 0.580% of 2.166% params
+  ACID shim defensive10      disarmed max|d| 0.000e+00   armed-with-own-z max|d| 0.000e+00
+  defensive10      a 0.3201  b 0.3088  c1 0.0111  zsensT 0.0201  | z rel-dist 0.4470  | dtheta z-share 0.760% of 2.166% params
+
+  wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a46f87a62ac224da5/designs/research_state/measurements/arch_transfer_2026-09-05/zswap/zswap_finalint_n3.json  (total 337s)
+=== ACID: /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a46f87a62ac224da5/designs/research_state/measurements/arch_transfer_2026-09-05/zswap/zswap_finalint_n3.json
+         vs /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a46f87a62ac224da5/designs/research_state/measurements/arch_transfer_2026-09-05/zswap/../content_locality/v8_era_n3.json   (teacher-file mode = final_interrupted) ===
+  recorded teacher rungs: {'pool10': 'final_model_interrupted.zip', 'semistall3': 'final_model_interrupted.zip', 'defensive10': 'final_model_interrupted.zip'}
+  states   zswap 4180   content_locality 4180   MATCH
+  per-team state counts identical: True
+  team order identical: True
+
+  model            role          max|zswap.a - CL|    mean KL  verdict
+  FLOOR_c277178    floor                 0.000e+00   0.028678  OK (must match)
+  FLOOR_c275758    floor                 0.000e+00   0.056813  OK (must match)
+  pool10           teacher               0.000e+00   0.391346  OK (must match)
+  semistall3       teacher               0.000e+00   0.255393  OK (must match)
+  defensive10      teacher               0.000e+00   0.313543  OK (must match)
+
+  PASS
