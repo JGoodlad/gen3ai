@@ -67,11 +67,12 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | `src/main/tui/` | Thin shared Textual base (`Gen3App`, theme, `gradient_color`) — the LAUNCHER's UI (the prober's TUI is retired) |
 | `designs/` | Which `ai_vN` folder is relevant; version map |
 
-**Two non-`CLAUDE.md` docs carry the same always-current obligation:**
+**Three non-`CLAUDE.md` docs carry the same always-current obligation:**
 
 | File | Holds |
 |---|---|
-| `designs/ARCHITECTURE.md` | **What is true NOW** — obs layout, phase chain, per-head inputs, op block, edge families, the production flag table with `INERT` markings, training-only obs keys |
+| `designs/ARCHITECTURE.md` | **What is true NOW about the MODEL** — obs layout, phase chain, per-head inputs, op block, edge families, the production flag table with `INERT` markings, training-only obs keys |
+| `designs/research_state/UNDERSTANDING.md` | **What we BELIEVE NOW about the RESEARCH** — the mission and era map, the flywheel's status, strength and the meters, the live win-prob-critic era, the retired hypotheses, the open questions with their tests, the standing rules of evidence. Every claim carries an evidence tag (SIGNIFICANT / WITHIN FLOOR / NOT DETECTED / EQUIVALENCE SUPPORTED / REFUTED / UNVERIFIED) and a pointer to the ledger entry or `measurements/` artifact behind it. Its append-only counterpart is `designs/research_state/ledger.md`, which **wins any disagreement** — fix the view, never the ledger |
 | `designs/CHANGELOG.md` | **How it got here** — the verbatim v16→v59 version narrative. History; do not quote as current. |
 
 ## Git Workflow

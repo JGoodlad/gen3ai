@@ -6,7 +6,22 @@ docs. Read it whenever you're about to touch anything in `designs/`.
 **It is a version map, not an architecture reference.** For what the model actually is right now —
 obs layout, phase chain, per-head inputs, the `DamageOperator` block, the edge families, and which
 production flags are `INERT` — read [`ARCHITECTURE.md`](ARCHITECTURE.md). For how each version
-changed things, read [`CHANGELOG.md`](CHANGELOG.md) (history; do not quote it as current).
+changed things, read [`CHANGELOG.md`](CHANGELOG.md) (history; do not quote it as current). For what
+we currently BELIEVE about the research — the mission, the era map, the flywheel's status, the live
+win-prob-critic era, the retired hypotheses and the standing rules of evidence — read
+[`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md).
+
+**Three files here carry the ALWAYS-CURRENT obligation** and are updated in the same pass as the
+change that makes one stale — never narrated, never appended to:
+
+| file | states | its append-only counterpart |
+|---|---|---|
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | what the MODEL is now | [`CHANGELOG.md`](CHANGELOG.md) |
+| [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) | what we BELIEVE about the research now — every claim tagged SIGNIFICANT / WITHIN FLOOR / NOT DETECTED / EQUIVALENCE SUPPORTED / REFUTED / UNVERIFIED and pointing at the ledger entry or `measurements/` artifact that established it | [`research_state/ledger.md`](research_state/ledger.md) |
+| every `CLAUDE.md` under `designs/` | where to look | — |
+
+When `UNDERSTANDING.md` and the ledger disagree, **the later ledger entry wins and the view is a
+bug** — fix it, do not edit the ledger.
 
 ---
 
@@ -308,6 +323,13 @@ heading levels, table style, and level of detail vary between versions.
   effort (the ai_v4 tail) and the obs/reward fixes it motivates; currently records the
   `run_20260531_182804` findings, the `gen3_move_effects_v1` move-effect obs fix, and the open
   matchup-variance prior-vs-confirmed question.
+
+- **`research_state/UNDERSTANDING.md`** — **ALWAYS-CURRENT**, the research twin of
+  `ARCHITECTURE.md`: what is believed NOW about the mission, the eras, the flywheel, strength and
+  meters, the live win-prob-critic era, the retired hypotheses, the open questions with their tests
+  and costs, and the standing rules of evidence. Present tense only, no narrative of how a belief
+  changed (that is [`research_state/ledger.md`](research_state/ledger.md), which is append-only and
+  wins any disagreement). Every claim carries an evidence tag and a pointer.
 
 ## `learning/` — concept explainers (version-agnostic)
 
