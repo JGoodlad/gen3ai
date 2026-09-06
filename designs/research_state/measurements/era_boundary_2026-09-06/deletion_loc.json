@@ -1,0 +1,34 @@
+{
+  "value_dist (head + 5 flags)": {
+    "source": 260,
+    "tests": 121
+  },
+  "value_from_dist": {
+    "source": 61,
+    "tests": 33
+  },
+  "value_tail_weight": {
+    "source": 36,
+    "tests": 23
+  },
+  "win_prob_coef": {
+    "source": 42,
+    "tests": 11
+  },
+  "win_prob_pbrs_*": {
+    "source": 44,
+    "tests": 26
+  },
+  "use_popart (KEPT, flipped)": {
+    "source": 190,
+    "tests": 83
+  },
+  "draw_penalty (REFUSED, kept)": {
+    "source": 28,
+    "tests": 48
+  },
+  "score auto (search leaf)": {
+    "source": 47,
+    "tests": 19
+  }
+}

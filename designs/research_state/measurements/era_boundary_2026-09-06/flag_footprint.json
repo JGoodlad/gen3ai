@@ -1,0 +1,948 @@
+{
+  "candidates": {
+    "value_dist_mode": {
+      "cli": "--value-dist-mode",
+      "src_files": 35,
+      "src_files_nontest": 23,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/model/policy.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/extractor_forward.py",
+        "src/agents/model/delivery_graph.py",
+        "src/agents/model/aux_value_heads.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/config.py",
+        "src/main/prober/web/fixture_run.py",
+        "src/main/prober/session/core.py",
+        "src/main/prober/session/scans.py",
+        "src/main/prober/model.py",
+        "src/main/prober/awareness.py"
+      ],
+      "src_line_mentions": 74,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "value_dist_bins": {
+      "cli": "--value-dist-bins",
+      "src_files": 23,
+      "src_files_nontest": 14,
+      "src_files_nontest_list": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/config.py",
+        "src/main/prober/web/fixture_run.py",
+        "src/main/prober/session/core.py",
+        "src/main/prober/model.py"
+      ],
+      "src_line_mentions": 47,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "value_dist_vmin": {
+      "cli": "--value-dist-vmin",
+      "src_files": 24,
+      "src_files_nontest": 16,
+      "src_files_nontest_list": [
+        "src/agents/inference/player.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py",
+        "src/main/prober/web/fixture_run.py",
+        "src/main/prober/session/core.py",
+        "src/main/prober/model.py"
+      ],
+      "src_line_mentions": 36,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "value_dist_vmax": {
+      "cli": "--value-dist-vmax",
+      "src_files": 23,
+      "src_files_nontest": 15,
+      "src_files_nontest_list": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py",
+        "src/main/prober/web/fixture_run.py",
+        "src/main/prober/session/core.py",
+        "src/main/prober/model.py"
+      ],
+      "src_line_mentions": 34,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "value_dist_coef": {
+      "cli": "--value-dist-coef",
+      "src_files": 13,
+      "src_files_nontest": 13,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/model/delivery_graph.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/snapshot.py",
+        "src/main/train/lifecycle.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/run_io.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 24,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 2
+    },
+    "value_from_dist": {
+      "cli": "--value-from-dist",
+      "src_files": 23,
+      "src_files_nontest": 14,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/model/policy.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/agents/model/critic_route_audit.py",
+        "src/agents/model/snapshot.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py",
+        "src/main/prober/awareness.py",
+        "src/main/train_rl_agent.py"
+      ],
+      "src_line_mentions": 89,
+      "ledger_lines_field": 11,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 4
+    },
+    "value_tail_weight": {
+      "cli": "--value-tail-weight",
+      "src_files": 19,
+      "src_files_nontest": 13,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/training/instrumented_ppo/value_terms.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/agents/model/snapshot.py",
+        "src/main/train/lifecycle.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/hyperparameters.py",
+        "src/main/train/model_build.py"
+      ],
+      "src_line_mentions": 59,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "win_prob_coef": {
+      "cli": "--win-prob-coef",
+      "src_files": 23,
+      "src_files_nontest": 18,
+      "src_files_nontest_list": [
+        "src/agents/training/win_prob_callback.py",
+        "src/agents/training/cf_terms.py",
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/model/delivery_graph.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/main/train/lifecycle.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/clean_world.py",
+        "src/main/train/run_io.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py",
+        "src/main/train_rl_agent.py"
+      ],
+      "src_line_mentions": 53,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 4
+    },
+    "use_popart": {
+      "cli": "--use-popart",
+      "src_files": 21,
+      "src_files_nontest": 16,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/model/policy.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/clean_world.py",
+        "src/main/train/run_io.py",
+        "src/main/train/model_build.py",
+        "src/main/train/checkpoint_state.py",
+        "src/main/train/config.py",
+        "src/main/train_rl_agent.py"
+      ],
+      "src_line_mentions": 65,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "draw_penalty": {
+      "cli": "--draw-penalty",
+      "src_files": 19,
+      "src_files_nontest": 11,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_weights.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/reward.py",
+        "src/main/train/config.py",
+        "src/main/eval_worker.py"
+      ],
+      "src_line_mentions": 76,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 5
+    },
+    "win_prob_pbrs_coef": {
+      "cli": "--win-prob-pbrs-coef",
+      "src_files": 13,
+      "src_files_nontest": 11,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/training/winprob_pbrs.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 32,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "win_prob_pbrs_source": {
+      "cli": "--win-prob-pbrs-source",
+      "src_files": 12,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 23,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "win_prob_pbrs_frozen": {
+      "cli": "--win-prob-pbrs-frozen",
+      "src_files": 4,
+      "src_files_nontest": 2,
+      "src_files_nontest_list": [
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/distillation.py"
+      ],
+      "src_line_mentions": 8,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "hand_shaping": {
+      "cli": "--hand-shaping",
+      "src_files": 13,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/clean_world.py"
+      ],
+      "src_line_mentions": 37,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 4
+    },
+    "pbrs_material": {
+      "cli": "--pbrs-material",
+      "src_files": 19,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/clean_world.py",
+        "src/main/prober/session/reading.py"
+      ],
+      "src_line_mentions": 83,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 3
+    },
+    "pbrs_belief": {
+      "cli": "--pbrs-belief",
+      "src_files": 14,
+      "src_files_nontest": 9,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_weights.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py",
+        "src/main/train/parser/clean_world.py"
+      ],
+      "src_line_mentions": 43,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "stall_pbrs": {
+      "cli": "--stall-pbrs",
+      "src_files": 15,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/training/reward_test_fakes.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py"
+      ],
+      "src_line_mentions": 55,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 2
+    },
+    "bias_redesign": {
+      "cli": "--bias-redesign",
+      "src_files": 18,
+      "src_files_nontest": 12,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/eval_callback.py",
+        "src/agents/training/reward_tracker.py",
+        "src/agents/training/reward_weights.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/main/train/parser/reward.py",
+        "src/main/eval_worker.py"
+      ],
+      "src_line_mentions": 46,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "drop_redundant_bias": {
+      "cli": "--drop-redundant-bias",
+      "src_files": 12,
+      "src_files_nontest": 7,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py"
+      ],
+      "src_line_mentions": 26,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "drop_switch_bias": {
+      "cli": "--drop-switch-bias",
+      "src_files": 12,
+      "src_files_nontest": 7,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py"
+      ],
+      "src_line_mentions": 24,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "switch_bias_weight": {
+      "cli": "--switch-bias-weight",
+      "src_files": 13,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_weights.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py"
+      ],
+      "src_line_mentions": 34,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "self_ko_hp_penalty": {
+      "cli": "--self-ko-hp-penalty",
+      "src_files": 11,
+      "src_files_nontest": 7,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py"
+      ],
+      "src_line_mentions": 16,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "mat_alive_weight": {
+      "cli": "--mat-alive-weight",
+      "src_files": 11,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/main/train/parser/reward.py",
+        "src/main/train/model_build.py"
+      ],
+      "src_line_mentions": 17,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 0
+    },
+    "bias_additivity": {
+      "cli": "--bias-additivity",
+      "src_files": 12,
+      "src_files_nontest": 8,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/resume_checks.py",
+        "src/main/train/parser/reward.py",
+        "src/main/train/model_build.py"
+      ],
+      "src_line_mentions": 24,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "all_shaping_pbrs": {
+      "cli": "--all-shaping-pbrs",
+      "src_files": 26,
+      "src_files_nontest": 10,
+      "src_files_nontest_list": [
+        "src/agents/training/reward_manager.py",
+        "src/agents/training/reward_tracker.py",
+        "src/agents/training/reward_weights.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/training/reward_test_fakes.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/main/train/parser/reward.py"
+      ],
+      "src_line_mentions": 117,
+      "ledger_lines_field": 3,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 5
+    },
+    "damage_candidate_k": {
+      "cli": "--damage-candidate-k",
+      "src_files": 16,
+      "src_files_nontest": 11,
+      "src_files_nontest_list": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/damage_op.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/clean_world.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 34,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 2
+    },
+    "pair_value_route": {
+      "cli": "--pair-value-route",
+      "src_files": 21,
+      "src_files_nontest": 17,
+      "src_files_nontest_list": [
+        "src/agents/model/pools.py",
+        "src/agents/model/arch_constants.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/extractor_forward.py",
+        "src/agents/model/pair_value_route.py",
+        "src/agents/model/delivery_graph.py",
+        "src/agents/model/features_extractor.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/critic_route_audit.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 60,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 2
+    },
+    "q_winprob_mode": {
+      "cli": "--q-winprob-mode",
+      "src_files": 17,
+      "src_files_nontest": 14,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/training/q_winprob_terms.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/value_heads.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 46,
+      "ledger_lines_field": 0,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 1
+    },
+    "cf_evidential": {
+      "cli": "--cf-evidential",
+      "src_files": 34,
+      "src_files_nontest": 24,
+      "src_files_nontest_list": [
+        "src/agents/training/cf_audit.py",
+        "src/agents/training/cf_terms.py",
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/training/instrumented_ppo/aux_terms.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/tier_contract.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/harvest.py",
+        "src/main/train/lifecycle.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/value_heads.py",
+        "src/main/train/run_io.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py",
+        "src/main/prober/model.py",
+        "src/main/train_rl_agent.py"
+      ],
+      "src_line_mentions": 158,
+      "ledger_lines_field": 8,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 9
+    },
+    "cf_twin_heads": {
+      "cli": "--cf-twin-heads",
+      "src_files": 35,
+      "src_files_nontest": 22,
+      "src_files_nontest_list": [
+        "src/utils/bridge/counterfactual.py",
+        "src/agents/training/cf_audit.py",
+        "src/agents/training/cf_terms.py",
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/training/cf_label_buffer.py",
+        "src/agents/training/reward_composition.py",
+        "src/agents/training/cf_producer.py",
+        "src/agents/training/cf_mc_return.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/tier_contract.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/value_heads.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 111,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 6
+    },
+    "cf_shadow_critic": {
+      "cli": "--cf-shadow-critic",
+      "src_files": 17,
+      "src_files_nontest": 12,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/combination_checks.py",
+        "src/main/train/parser/value_heads.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 39,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 5
+    },
+    "td_aux_coef": {
+      "cli": "--td-aux-coef",
+      "src_files": 21,
+      "src_files_nontest": 16,
+      "src_files_nontest_list": [
+        "src/agents/training/instrumented_ppo/hparams.py",
+        "src/agents/training/instrumented_ppo/ppo.py",
+        "src/agents/training/instrumented_ppo/aux_terms.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/constants.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/snapshot.py",
+        "src/main/train/lifecycle.py",
+        "src/main/train/parser/capacity.py",
+        "src/main/train/parser/cf_grounding.py",
+        "src/main/train/parser/distillation.py",
+        "src/main/train/run_io.py",
+        "src/main/train/model_build.py",
+        "src/main/train/config.py"
+      ],
+      "src_line_mentions": 65,
+      "ledger_lines_field": 1,
+      "ledger_lines_dashed": 0,
+      "research_state_files": 2
+    }
+  },
+  "residues": {
+    "action_net": {
+      "py_files": [
+        "src/agents/training/distill_stop_callback_test.py",
+        "src/agents/training/distill_anchor_test.py",
+        "src/agents/training/instrumented_ppo_distill_grad_project_test.py",
+        "src/agents/training/instrumented_ppo_test.py",
+        "src/agents/model/belief_label_only_gate_test.py",
+        "src/agents/model/build_arch_viewer.py",
+        "src/agents/model/encoders.py",
+        "src/agents/model/arch_constants.py",
+        "src/agents/model/policy.py",
+        "src/agents/model/pointer_head.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/pointer_head_test.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/parser/clean_world.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/build_arch_viewer.py",
+        "src/agents/model/encoders.py",
+        "src/agents/model/arch_constants.py",
+        "src/agents/model/policy.py",
+        "src/agents/model/pointer_head.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/parser/clean_world.py"
+      ],
+      "py_line_mentions": 38
+    },
+    "zarch": {
+      "py_files": [
+        "src/agents/training/instrumented_ppo_test.py",
+        "src/agents/model/deleted_toggles_v78_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/identity_init_test.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_line_mentions": 27
+    },
+    "film_": {
+      "py_files": [
+        "src/agents/training/instrumented_ppo_test.py",
+        "src/agents/model/policy.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/extractor_api.py",
+        "src/agents/model/identity_init_test.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/policy.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/extractor_api.py"
+      ],
+      "py_line_mentions": 5
+    },
+    "lut_": {
+      "py_files": [
+        "src/agents/observation/assembler_test.py",
+        "src/agents/model/deleted_toggles_v78_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_line_mentions": 8
+    },
+    "pubval": {
+      "py_files": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/snapshot_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/snapshot.py",
+        "src/main/checkargs.py",
+        "src/main/train/parser/__init__.py",
+        "src/main/prober/session/counterfactual.py",
+        "src/main/prober/model.py",
+        "src/main/prober/model_test.py",
+        "src/main/launcher/dry_run_test.py",
+        "src/main/checkargs_test.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/snapshot.py",
+        "src/main/checkargs.py",
+        "src/main/train/parser/__init__.py",
+        "src/main/prober/session/counterfactual.py",
+        "src/main/prober/model.py"
+      ],
+      "py_line_mentions": 32
+    },
+    "damage_reattend": {
+      "py_files": [
+        "src/agents/model/tiered_pipeline_test.py",
+        "src/agents/model/snapshot_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/dead_kwargs_sanitize_test.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_line_mentions": 9
+    },
+    "opp_belief_cls_k": {
+      "py_files": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/projection.py",
+        "src/agents/model/tier_contract_test.py",
+        "src/agents/model/extractor_arch_test.py",
+        "src/agents/model/phase_modules_test.py",
+        "src/agents/model/delivery_graph.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/value_entity_pool_test.py",
+        "src/agents/model/snapshot_test.py",
+        "src/agents/model/critic_route_audit_test.py",
+        "src/agents/model/projection_width_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/ctor_kwarg_snapshot_test.py",
+        "src/agents/model/flag_requires_test.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/parser/clean_world.py",
+        "src/main/train/checkpoint_state.py",
+        "src/main/train/config.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/flag_registry.py",
+        "src/agents/model/projection.py",
+        "src/agents/model/delivery_graph.py",
+        "src/agents/model/arch_tables.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/construct.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py",
+        "src/main/train/parser/clean_world.py",
+        "src/main/train/checkpoint_state.py",
+        "src/main/train/config.py"
+      ],
+      "py_line_mentions": 80
+    },
+    "damage_refine_rounds": {
+      "py_files": [
+        "src/agents/model/snapshot_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/dead_kwargs_sanitize_test.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_line_mentions": 5
+    },
+    "threat_refine": {
+      "py_files": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/snapshot.py"
+      ],
+      "py_line_mentions": 3
+    },
+    "move_belief_prefuse": {
+      "py_files": [
+        "src/agents/model/tiered_pipeline_test.py",
+        "src/agents/model/snapshot_test.py",
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/dead_kwargs_sanitize_test.py",
+        "src/agents/model/extractor_build.py"
+      ],
+      "py_files_nontest": [
+        "src/agents/model/model_version/migrations.py",
+        "src/agents/model/model_version/fields.py",
+        "src/agents/model/model_version/compat.py",
+        "src/agents/model/snapshot.py",
+        "src/agents/model/extractor_build.py"
+      ],
+      "py_line_mentions": 14
+    }
+  }
+}

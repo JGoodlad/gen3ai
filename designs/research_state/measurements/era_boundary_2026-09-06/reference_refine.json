@@ -1,0 +1,1299 @@
+{
+  ".aborted_R4DOSE12_nometa_1401": {
+    "meas_scripts": [],
+    "meas_artifacts": 1,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  ".aborted_R4DOSE12_poolless_1355": {
+    "meas_scripts": [],
+    "meas_artifacts": 1,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  ".dryrun_K6A_1788581936": {
+    "meas_scripts": [],
+    "meas_artifacts": 1,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v12_01_winprob_critic": {
+    "meas_scripts": [],
+    "meas_artifacts": 0,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_100_R5F08_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_101_R5F09_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_102_R5F10_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_103_R5F11_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_104_R5F12_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_105_R5F13_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_106_R5F14_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 19,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_107_R5F15_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_108_R5F16_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_109_R5F17_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_110_R5F18_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_111_R5F19_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_120_R5FUND00_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_ext.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_eval.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_tb2.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_122_R5FUND02_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_124_R5FUND04_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_126_R5FUND06_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_128_R5FUND08_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_130_R5FUND10_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_132_R5FUND12_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_134_R5FUND14_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 16,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_140_B2_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_141_C1_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py"
+    ],
+    "meas_artifacts": 8,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_142_N1_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/tc_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py"
+    ],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_143_N2_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/tc_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py"
+    ],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_150_R4DOSE12_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_151_R4DOSE6_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_152_R4DOSE3_0901": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_160_TCFUNDA_0903": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/recovery_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/k6_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/tc_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_competence/inventory.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/resolve_sets.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/control_funded_vs_unfunded.py"
+    ],
+    "meas_artifacts": 11,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_161_TCFUNDB_0903": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/recovery_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/k6_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/tc_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/control_funded_vs_unfunded.py"
+    ],
+    "meas_artifacts": 9,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_162_TCUNFA_0903": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/recovery_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/k6_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/tc_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_competence/inventory.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/resolve_sets.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/control_funded_vs_unfunded.py"
+    ],
+    "meas_artifacts": 12,
+    "src_py": [
+      "src/main/checkargs.py",
+      "src/main/untaught_meter.py",
+      "src/main/launcher/pinned_argv_test.py",
+      "src/agents/training/untaught_meter.py"
+    ],
+    "loader_scripts": [
+      "src/main/checkargs.py",
+      "src/agents/training/untaught_meter.py"
+    ],
+    "ledger_tail_lines": 3
+  },
+  "ai_v9_163_TCUNFB_0903": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/recovery_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/k6_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/tc_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/control_funded_vs_unfunded.py"
+    ],
+    "meas_artifacts": 9,
+    "src_py": [
+      "src/main/untaught_meter.py"
+    ],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_170_TCUNFK6A_0904": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/k6_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_171_TCUNFK6B_0904": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_readout.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/k6_readout.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_172_G1SHORT_0905": {
+    "meas_scripts": [],
+    "meas_artifacts": 1,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 2
+  },
+  "ai_v9_195_G5PLAINA_0906": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/continuation_drift/drift.py"
+    ],
+    "meas_artifacts": 2,
+    "src_py": [
+      "src/main/untaught_meter.py"
+    ],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_196_G5PLAINB_0906": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/continuation_drift/drift.py"
+    ],
+    "meas_artifacts": 2,
+    "src_py": [
+      "src/main/untaught_meter.py"
+    ],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_197_G5PLAINC_0906": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/continuation_drift/drift.py"
+    ],
+    "meas_artifacts": 2,
+    "src_py": [
+      "src/main/untaught_meter.py"
+    ],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_19_gen16_mechanics_0819": {
+    "meas_scripts": [],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_20_tdaux_rung2_lam00_0820": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_20_tdaux_rung2_lam10_0820": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_20_tdaux_rung2_lam30_0820": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_21_gen17_pfspoff_0820": {
+    "meas_scripts": [
+      "designs/research_state/measurements/obs_conditioning_probe.py",
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "meas_artifacts": 15,
+    "src_py": [
+      "src/agents/model/audit_states_test.py"
+    ],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_22_E1_substrate_on_0821": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_23_E2_substrate_on_0822": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_24_E3_substrate_on_0822": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_25_E4_baitbot_0822": {
+    "meas_scripts": [
+      "designs/research_state/measurements/maturity_harm_trend.py"
+    ],
+    "meas_artifacts": 7,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_26_baitent_probe_0823": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_27_extremedial_probe_0823": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [
+      "src/agents/training/exploiter_ladder_test.py",
+      "src/agents/training/exploiter_ladder.py"
+    ],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_29_rev1_0823": {
+    "meas_scripts": [
+      "designs/research_state/measurements/oppckpt_isolation_inputs/arm_25M.py",
+      "designs/research_state/measurements/defensive_search_first_cell_report.py",
+      "designs/research_state/measurements/critic_bias_split_labels.py",
+      "designs/research_state/measurements/whiff_head_knowledge_evidential.py",
+      "designs/research_state/measurements/greedy_meter_arm.py",
+      "designs/research_state/measurements/whiff_head_knowledge_analyze.py",
+      "designs/research_state/measurements/obs_conditioning_probe.py",
+      "designs/research_state/measurements/whiff_head_knowledge_census.py",
+      "designs/research_state/measurements/defensive_search_iter2_report.py",
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_deliver.py",
+      "designs/research_state/measurements/transfer_coefficient_cell_report.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_probe.py",
+      "designs/research_state/measurements/teacher_content_2x2_2026-09-04/taught_probe.py",
+      "designs/research_state/measurements/whiff_head_knowledge_loadcheck.py",
+      "designs/research_state/measurements/teacher_sharpness_probe.py",
+      "designs/research_state/measurements/bot_gap_oracle_voi_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_truthcheck_probe.py",
+      "designs/research_state/measurements/substrate_hypothesis.py",
+      "designs/research_state/measurements/v8_fold_behavioral_fingerprint_probe.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_competence/compete.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_competence/inventory.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/resolve_sets.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/teacher_distance.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/parent_gap.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/continuation_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/gen_states.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/kernel.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/resolve_teachers.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/combine_v2.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py",
+      "designs/research_state/measurements/defensive_search_iter3_report.py",
+      "designs/research_state/measurements/starmie_ttar_risk_probe.py",
+      "designs/research_state/measurements/axis_split_untaught_arm.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/bias_tax_head_alignment_census.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py",
+      "designs/research_state/measurements/whiff_head_knowledge_sweep.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/plain_training_robbery.py",
+      "designs/research_state/measurements/distillability_index_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 221,
+    "src_py": [
+      "src/main/untaught_meter_reproducibility_integration_test.py",
+      "src/main/train/constants.py",
+      "src/main/train/config.py",
+      "src/main/checkpoint_cadence_test.py",
+      "src/main/search_dividend/perf.py",
+      "src/agents/training/untaught_meter.py",
+      "src/agents/training/cf_producer.py",
+      "src/agents/training/cf_producer_test.py"
+    ],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/teacher_sharpness_probe.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/distillability_index_probe.py",
+      "src/agents/training/untaught_meter.py",
+      "src/agents/training/cf_producer.py"
+    ],
+    "ledger_tail_lines": 2
+  },
+  "ai_v9_30_rev1_exploit_0824": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_31_tock1_k4_0824": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_sharpness_probe.py"
+    ],
+    "meas_artifacts": 8,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/teacher_sharpness_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_32_tock1b_rain_0824": {
+    "meas_scripts": [],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_34_tick1_0824": {
+    "meas_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "meas_artifacts": 11,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "ledger_tail_lines": 1
+  },
+  "ai_v9_35_tick1_exploit_0824": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_36_tock1c_q6_0824": {
+    "meas_scripts": [
+      "designs/research_state/measurements/teacher_sharpness_probe.py"
+    ],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/teacher_sharpness_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_37_tick1_dosext_0825": {
+    "meas_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "meas_artifacts": 8,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "ledger_tail_lines": 1
+  },
+  "ai_v9_38_fdA_coef03_0825": {
+    "meas_scripts": [],
+    "meas_artifacts": 4,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 1
+  },
+  "ai_v9_39_fdB_lossonly_0825": {
+    "meas_scripts": [],
+    "meas_artifacts": 4,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_40_fdC_ecology_0825": {
+    "meas_scripts": [],
+    "meas_artifacts": 5,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_42_fdE_single_0825": {
+    "meas_scripts": [],
+    "meas_artifacts": 4,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_44_tock2_v8shape_0825": {
+    "meas_scripts": [],
+    "meas_artifacts": 5,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_45_fdF_p1_0826": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_48_G1_action_0826": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_49_G2_advgate_0826": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_50_fdF_p1c_0826": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_51_fdF_p2c_0826": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_52_G1p_matched_0826": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_53_R2F5a_0826": {
+    "meas_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_acid.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_build_states.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/distillability_index_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 34,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_acid.py",
+      "designs/research_state/measurements/distillability_index_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_54_R2F5b_0826": {
+    "meas_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_build_states.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/distillability_index_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 21,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/distillability_index_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_55_R2F5c_0826": {
+    "meas_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_build_states.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_56_R2F5d_0826": {
+    "meas_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_build_states.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 17,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_57_R2F5e_0826": {
+    "meas_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_build_states.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 17,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_58_R2CTRL_0827": {
+    "meas_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/plain_training_robbery.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 19,
+    "src_py": [
+      "src/main/distill_team_bias_test.py",
+      "src/main/train/matchup_setup.py",
+      "src/main/train/config.py"
+    ],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py"
+    ],
+    "ledger_tail_lines": 1
+  },
+  "ai_v9_59_R2ACTION_0827": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_truthcheck_probe.py",
+      "designs/research_state/measurements/substrate_hypothesis.py",
+      "designs/research_state/measurements/v8_fold_behavioral_fingerprint_probe.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_competence/analyze.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_competence/inventory.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/fold_displacement/deltas.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/analyze.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/dose_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_tb2.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/resolve_sets.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/teacher_distance.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/parent_gap.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/continuation_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/gen_states.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/kernel.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/resolve_teachers.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/combine_v2.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/ko_boundary_decodability_probe.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py",
+      "designs/research_state/measurements/ko_boundary_constructed_probe.py",
+      "designs/research_state/measurements/plain_training_robbery.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py",
+      "designs/research_state/measurements/axis_split_taught_untaught.py"
+    ],
+    "meas_artifacts": 145,
+    "src_py": [
+      "src/main/untaught_meter_reproducibility_integration_test.py",
+      "src/main/scaffolding_gauge.py",
+      "src/main/untaught_meter.py",
+      "src/main/scaffolding_gauge_test.py",
+      "src/agents/training/trace_selection.py",
+      "src/agents/training/distill_anchor_test.py",
+      "src/agents/training/scaffolding.py"
+    ],
+    "loader_scripts": [
+      "designs/research_state/measurements/per_team_gradient_geometry_2026-08-28/probeF_grads.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/lr_licensing_probe.py"
+    ],
+    "ledger_tail_lines": 8
+  },
+  "ai_v9_60_R2TOPK_0827": {
+    "meas_scripts": [],
+    "meas_artifacts": 9,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_61_R2KL_0827": {
+    "meas_scripts": [],
+    "meas_artifacts": 9,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_62_R2PLAIN_0827": {
+    "meas_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/plain_training_robbery.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py"
+    ],
+    "meas_artifacts": 19,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_63_R3F6a_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 15,
+    "src_py": [
+      "src/main/exploitability.py"
+    ],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_64_R3F6b_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 10,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_65_R3F6c_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 10,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_66_R3F6d_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 10,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_67_R3F6e_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 9,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_68_R3F6f_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 26,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_69_R3F6CURR_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/rev3_untaught_pulldown.py"
+    ],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_70_R3ACTION_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/critic_as_transfer_vehicle_probe.py",
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/substrate_hypothesis.py",
+      "designs/research_state/measurements/v8_fold_behavioral_fingerprint_probe.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/resolve_sets.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/starmie_ttar_risk_probe.py",
+      "designs/research_state/measurements/rev3_untaught_pulldown.py",
+      "designs/research_state/measurements/starmie_ood_control_traces.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py",
+      "designs/research_state/measurements/axis_split_taught_untaught.py"
+    ],
+    "meas_artifacts": 27,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_71_R3ACTIONHI_0828": {
+    "meas_scripts": [],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_72_R3SELF_0828": {
+    "meas_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/starmie_ood_control_traces.py",
+      "designs/research_state/measurements/plain_training_robbery.py"
+    ],
+    "meas_artifacts": 15,
+    "src_py": [
+      "src/agents/training/ai_v12_intersection_test.py"
+    ],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_73_R4S3a_0829": {
+    "meas_scripts": [
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 33,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/lr_licensing_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_74_R4S3b_0829": {
+    "meas_scripts": [
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 25,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/lr_licensing_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_75_R4S3c_0829": {
+    "meas_scripts": [
+      "designs/research_state/measurements/exploitability_taught_untaught.py",
+      "designs/research_state/measurements/starmie_ood_control_traces.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/exploiter_fingerprint_probe.py"
+    ],
+    "meas_artifacts": 27,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/lr_licensing_probe.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_76_R4ACTION_0830": {
+    "meas_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/resolve_sets.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/starmie_ood_control_traces.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/plain_training_robbery.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py",
+      "designs/research_state/measurements/axis_split_taught_untaught.py"
+    ],
+    "meas_artifacts": 25,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/folding_history_probe.py",
+      "designs/research_state/measurements/lr_licensing_probe.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_77_G1LEAN_0830": {
+    "meas_scripts": [
+      "designs/research_state/measurements/starmie_ood_control_traces.py"
+    ],
+    "meas_artifacts": 5,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_79_REVIVE1a_0830": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_80_REVIVE1b_0830": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_81_REVIVE1c_0830": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_82_REFOLD1_0830": {
+    "meas_scripts": [
+      "designs/research_state/measurements/axis_split_taught_untaught.py"
+    ],
+    "meas_artifacts": 6,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_91_COMPFOLD_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/obs_conditioning_probe.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.py",
+      "designs/research_state/measurements/representational_richness_transfer_forward.py",
+      "designs/research_state/measurements/representational_richness_transfer_locus.py",
+      "designs/research_state/measurements/axis_split_taught_untaught.py"
+    ],
+    "meas_artifacts": 11,
+    "src_py": [],
+    "loader_scripts": [
+      "designs/research_state/measurements/representational_richness_transfer_forward.py"
+    ],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_92_R5F00_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_ext.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_sidecar.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_tb.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_eval.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/inspect_tb2.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 21,
+    "src_py": [
+      "src/agents/training/run_spec.py",
+      "src/agents/training/matchup_spec.py"
+    ],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_93_R5F01_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 3,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_94_R5F02_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 20,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_95_R5F03_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_96_R5F04_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_97_R5F05_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_98_R5F06_0831": {
+    "meas_scripts": [
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality/gen_era_locality.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/lineage_check.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/exploiter_drift/drift.py",
+      "designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_locality_v2.py"
+    ],
+    "meas_artifacts": 18,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "ai_v9_99_R5F07_0831": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "run_20260830_180409": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "run_20260830_183828": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "run_20260830_184043": {
+    "meas_scripts": [],
+    "meas_artifacts": 2,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  },
+  "run_20260906_083317": {
+    "meas_scripts": [],
+    "meas_artifacts": 0,
+    "src_py": [],
+    "loader_scripts": [],
+    "ledger_tail_lines": 0
+  }
+}
