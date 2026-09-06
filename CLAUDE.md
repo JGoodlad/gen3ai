@@ -789,7 +789,12 @@ might still relaunch or fork — that is what it is for.
 🚨 **A PINNED argv is judged by the PINNED commit's parser** (`gen3_pinned_argv_parser_v1`,
 2026-09-05). `--pin <sha>` validates against that commit's `build_parser()` instead of this tree's,
 and with a `--model` present it does so automatically using the checkpoint's recorded `git_hash` —
-printing which parser it used either way. The launcher does the same for `--pin-commit`. The defect:
+printing which parser it used either way. **Which commit that is comes from the launcher's own
+resolver** (`main.launcher.worktree.resolve_pin`, CALLED not re-derived: explicit `--pin-commit` >
+`--sync-to-main` ⇒ HEAD > the checkpoint's hash), because a `--sync-to-main` fork runs the child at
+HEAD and judging it at the parent's pin refused every HEAD-only flag (`--fork-lr`,
+`--distill-anchor-monitor`, …) on commands that launch — a false POSITIVE, where this tool's three
+earlier defects were false negatives. The launcher does the same for `--pin-commit`. The defect:
 a flag whose **ARITY** changed is invisible to any presence check, so `--pin-commit b13b30b2` died on
 `--hp-type-belief-coef: invalid float value: 'learned'` — the current parser abbreviation-matched a
 deleted flag onto a surviving one. Detail (including what is NOT pinned): `src/main/launcher/CLAUDE.md`
@@ -1357,6 +1362,12 @@ PS_PASSWORD=… /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main
   --username <acct> --n-battles 20
 ```
 
+Every mode that logs in is bounded by a **connect-or-raise deadline** (`--connect-timeout`,
+default 30 s): a login the server never completes raises `ShowdownConnectionError` naming the
+username and the server instead of silently sitting out the whole battle deadline — which is what
+a username registered on the official ladder does even against a `--no-security` local server,
+since `localhost_server_configuration` still authenticates through Smogon's `action.php`.
+
 `--server local` needs a Showdown server on `--port` (see below); `--server official`
 requires `--username` + a password (registration itself is not a server-side requirement for
 rated play, but our login flow and account safety assume it). Inference runs
@@ -1916,7 +1927,10 @@ Every model save writes two **run-level** files at the run root:
   and `original_command` — the **immutable** original invocation that created the model, written once
   at creation and preserved verbatim across every restart/checkpoint, unlike `cli_args` which is
   overwritten by the resuming process. Provenance lives ONLY here, never in `model_config.json`, which
-  is the weight-shape/arch record used for `check_compatible`)
+  is the weight-shape/arch record used for `check_compatible`. It also carries a top-level
+  **`num_timesteps`** — how far the run has trained — written by the same save path into the
+  run-level file and into every per-checkpoint sidecar, "latest" rather than immutable, and ABSENT
+  (= unknown, never 0) on a run that predates the key)
 
 **LINEAGE — who forked whom** (`gen3_run_lineage_v1`). `metadata.json` carries a top-level
 `lineage` block with the SAME immutability contract as `original_command` — written ONCE at fork

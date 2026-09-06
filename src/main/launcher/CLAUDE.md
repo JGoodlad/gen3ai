@@ -362,6 +362,13 @@ launcher is running from, every argv validation runs against the PINNED tree's p
 HEAD is unchanged in every respect (no subprocess, no archive, the current parser) — pinned to your
 own tree, the current parser IS the right one.
 
+**And "the resolved pin" means `resolve_pin`'s answer, which `main.checkargs` now CALLS rather than
+re-deriving** — explicit `--pin-commit` > `--sync-to-main` ⇒ HEAD > the checkpoint's recorded
+`git_hash` > HEAD, with the chosen rule printed on the parser line: `checkargs` used to take the
+checkpoint's hash whenever a `--model` was present, so every `--sync-to-main` fork was judged at its
+parent's commit and exited 3 naming the HEAD-only flags it legitimately carries (reproduced on
+`models/ai_v9_162_TCUNFA_0903`'s recorded command, a run that trained to completion).
+
 🚨 **AND THE "ACCEPTED" BUCKET IS THE PINNED PARSER'S, NOT THIS TREE'S — the second half, and it
 cost three arms on 2026-09-05.** The inverse of a deleted flag is a flag ADDED since the pin: it
 parses cleanly against the parser you are standing in, so every "is this flag still known?" check

@@ -684,3 +684,131 @@ def test_g_the_hook_answers_the_same_way_for_the_custom_action(repo):
     r = pa.pinned_parser_check(c3, [*ARGV, "--self-play"], root)
     assert r.mode == "parse_args_hook" and r.ok, r.findings()
     assert r.values.get("self_play") == "True"
+
+
+# ---------------------------------------------------------------------------------------
+# (f) THE PIN IS THE LAUNCHER'S RULE, NOT A RE-DERIVATION — and `--sync-to-main` is the case
+#     that made the difference visible (2026-09-05).
+#
+# `resolve_pin_for` used to say "there is a --model, so the pin is its recorded git_hash",
+# full stop. But `--sync-to-main` tells the launcher to run the child at HEAD, so every
+# HEAD-only flag on such a fork (`--fork-lr`, `--fork-lr-freeze`, `--distill-anchor-monitor`,
+# `--distill-stop`) was reported as "in THIS tree but NOT at the pin" and the tool exited 3.
+#
+# DIRECTION MATTERS: the three earlier checkargs defects were false NEGATIVES — a launch that
+# would die passing the check. This one is a false POSITIVE that stops a launch which works,
+# and the proof is `models/ai_v9_162_TCUNFA_0903`: checkargs refused its recorded
+# original_command with exactly those four flags, and that run trained to completion.
+# ---------------------------------------------------------------------------------------
+
+def _ckpt_recording(tmp_path, sha, name="r"):
+    """A checkpoint .zip + sidecar recording `sha` — what `resolve_pin` reads for the pin."""
+    run = tmp_path / "models" / name
+    (run / "checkpoints").mkdir(parents=True)
+    ckpt = run / "checkpoints" / "checkpoint_10_steps.zip"
+    ckpt.write_text("x")
+    (run / "checkpoints" / "checkpoint_10_steps.json").write_text(json.dumps({"git_hash": sha}))
+    return str(ckpt)
+
+
+def test_f_sync_to_main_is_judged_at_HEAD_not_at_the_parents_pin(tmp_path):
+    ckpt = _ckpt_recording(tmp_path, "cafebabecafebabe")
+    sha, why = checkargs.resolve_pin_for(["--model", ckpt, "--sync-to-main"], None)
+    assert sha is None, "the launcher runs a --sync-to-main child at HEAD; judge it there"
+    assert "sync-to-main" in why.lower() and "HEAD" in why
+
+
+def test_f_without_sync_to_main_the_same_argv_still_pins_to_the_parent(tmp_path):
+    """The fix must not widen: a genuine fork is still judged by the commit it will run."""
+    ckpt = _ckpt_recording(tmp_path, "cafebabecafebabe")
+    sha, why = checkargs.resolve_pin_for(["--model", ckpt], None)
+    assert sha == "cafebabecafebabe" and "recorded" in why
+
+
+def test_f_an_argv_pin_commit_overrides_both(repo, monkeypatch, tmp_path):
+    """`--pin-commit` wins over the checkpoint hash AND over --sync-to-main — the launcher's
+    own precedence, which this now inherits by CALLING `worktree.resolve_pin`."""
+    root, (c1, _c2, _c3, _c4, _c5) = repo
+    monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
+    ckpt = _ckpt_recording(tmp_path, "cafebabecafebabe")
+    for extra in ([], ["--sync-to-main"]):
+        sha, why = checkargs.resolve_pin_for(
+            ["--model", ckpt, "--pin-commit", c1, *extra], None)
+        assert sha == c1, f"--pin-commit must win (extra={extra})"
+        assert "pin-commit" in why
+
+
+def test_f_a_pin_the_launcher_would_REFUSE_is_reported_not_raised(repo, monkeypatch, tmp_path):
+    """checkargs is a reporter. An unresolvable --pin-commit makes the launcher raise
+    PinRefused; here it becomes a parser-line note and the current tree answers."""
+    root, _shas = repo
+    monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
+    ckpt = _ckpt_recording(tmp_path, "cafebabecafebabe")
+    sha, why = checkargs.resolve_pin_for(["--model", ckpt, "--pin-commit", "deadbeef"], None)
+    assert sha is None and "refuse" in why.lower()
+
+
+def test_f_end_to_end_sync_to_main_accepts_a_HEAD_ONLY_flag(repo, monkeypatch, capsys, tmp_path):
+    """THE REGRESSION, end to end. `--fork-lr` exists in this tree and not at the pinned
+    commit; with --sync-to-main the child runs THIS tree, so the command must PASS."""
+    root, (c1, _c2, _c3, _c4, _c5) = repo
+    monkeypatch.setattr(pa, "_repo_root", lambda: root)
+    monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
+    ckpt = _ckpt_recording(tmp_path, c1)
+    argv = f"--model {ckpt} --steps 1000 --fork-lr 2.8e-5 --sync-to-main"
+
+    rc = checkargs.main(["--argv", argv])
+    out = capsys.readouterr().out
+    assert rc == 0, out
+    assert "the CURRENT tree's" in out and "sync-to-main" in out
+    assert "NOT IN PINNED TREE" not in out
+
+
+def test_f_end_to_end_without_sync_to_main_the_same_flag_is_REFUSED(
+        repo, monkeypatch, capsys, tmp_path):
+    """…and the fix must not blunt the tool: drop --sync-to-main and the launcher really does
+    pin the parent's commit, where --fork-lr does not exist."""
+    root, (c1, _c2, _c3, _c4, _c5) = repo
+    monkeypatch.setattr(pa, "_repo_root", lambda: root)
+    monkeypatch.setattr(wt, "get_repo_root", lambda *a, **k: root)
+    ckpt = _ckpt_recording(tmp_path, c1)
+
+    rc = checkargs.main(["--argv", f"--model {ckpt} --steps 1000 --fork-lr 2.8e-5"])
+    out = capsys.readouterr().out
+    assert rc == 3, out
+    assert "--fork-lr" in out and "NOT IN PINNED TREE" in out
+
+
+def test_f_the_TCUNFA_command_that_was_wrongly_refused(tmp_path):
+    """The recorded artifact the defect was found on. `models/` lives only in the MAIN
+    checkout and is not committed, so this SKIPS rather than pretending to pass elsewhere."""
+    import shlex
+
+    from utils.paths import main_models_dir
+
+    root = main_models_dir()
+    if root is None:
+        pytest.skip("no models/ archive on this box")
+    run = os.path.join(str(root), "ai_v9_162_TCUNFA_0903")
+    meta_path = os.path.join(run, "metadata.json")
+    if not os.path.exists(meta_path):
+        pytest.skip("ai_v9_162_TCUNFA_0903 is not in this archive")
+    with open(meta_path) as f:
+        cmd = json.load(f).get("original_command") or ""
+    if "--sync-to-main" not in cmd:
+        pytest.skip("that run's recorded command no longer carries --sync-to-main")
+
+    parts, argv, i = shlex.split(cmd)[1:], [], 0
+    while i < len(parts):                       # absolutise --model: models/ is not our cwd
+        if parts[i] == "--model":
+            argv += ["--model", os.path.join(os.path.dirname(str(root)), parts[i + 1])]
+            i += 2
+            continue
+        argv.append(parts[i])
+        i += 1
+
+    sha, why = checkargs.resolve_pin_for(argv, None)
+    assert sha is None, (
+        f"this command LAUNCHED and trained to completion; judging it at {sha} is the false "
+        f"positive — {why}")
+    assert "sync-to-main" in why.lower()

@@ -36,8 +36,11 @@ authority for it — and the way that bites is not a deleted flag but a flag who
 `--hp-type-belief` took a value at b13b30b2 and is gone today, so argparse abbreviation-matched the
 token onto `--hp-type-belief-coef` and refused the value. `--pin <sha>` routes the flag half through
 `main.launcher.pinned_argv.pinned_parser_check` (that commit's own `build_parser()`, in a
-subprocess), and a `--model` argv pins itself to its checkpoint's recorded hash automatically. Which
-parser answered is printed on every run. When a pinned parser answered, the CURRENT tree's flag
+subprocess), and a `--model` argv pins itself the way the LAUNCHER would — `worktree.resolve_pin`
+is called, not re-derived, so an explicit `--pin-commit` wins, a `--sync-to-main` fork is judged at
+HEAD (it used to be judged at the parent's pin, which refused every HEAD-only flag on a launch that
+works), and otherwise the checkpoint's recorded hash is the pin. Which parser answered, and which
+rule chose it, is printed on every run. When a pinned parser answered, the CURRENT tree's flag
 findings are printed as ADVISORY rather than as the verdict — only the PARSER is pinned, and the two
 combination families below still read this tree.
 
@@ -351,25 +354,87 @@ def model_arg(argv: List[str]) -> str | None:
     return None
 
 
+def argv_value(argv: List[str], flag: str) -> str | None:
+    """The value of `flag` in an argv, in either spelling, without parsing the whole thing.
+
+    The same trick `model_arg` uses, and for the same reason: these are LAUNCHER-owned flags,
+    so the trainer parser this module otherwise reads would reject them outright.
+    """
+    for i, tok in enumerate(argv):
+        if tok == flag and i + 1 < len(argv):
+            return argv[i + 1]
+        if tok.startswith(flag + "="):
+            return tok.split("=", 1)[1]
+    return None
+
+
+def argv_run_dir(argv: List[str]) -> str | None:
+    """The run dir this argv names, the way `effective_run_dir` derives it — from the raw argv.
+
+    Only used to answer `resolve_pin`'s RESTART question (a `--pin-commit` that would move a
+    live run's pin is refused). `None` is a legitimate answer and routes the argv through the
+    FORK branch, which is what a freshly-minted run dir is.
+    """
+    run_dir = argv_value(argv, "--run-dir")
+    if run_dir:
+        return run_dir
+    run_name = argv_value(argv, "--run-name")
+    return os.path.join("models", run_name) if run_name else None
+
+
+#: How each `PinDecision.source` reads on the report line. The two HEAD-shaped sources return
+#: `None` for the sha, which means "the CURRENT tree's parser is already the right one".
+_PIN_WHY = {
+    "pin_commit": "--pin-commit in the argv",
+    "checkpoint": "the git_hash recorded by {model}",
+    "sync_to_main": "--sync-to-main — the launcher runs the child at HEAD, not at the parent's pin",
+    "head": "no pin — this argv would run on HEAD",
+}
+
+
 def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, str]:
     """`(sha, why)` — WHICH commit's parser should judge this argv, and how we decided.
 
-    An explicit `--pin` wins (it mirrors the launcher's `--pin-commit`). Otherwise, a `--model`
-    resume is pinned by the launcher to that checkpoint's RECORDED `git_hash`, so that is the
-    parser the child would run — read it the same way `worktree.resolve_pin` does, rather than
-    re-deriving it. No `--model` and no `--pin` means the launch runs on HEAD and the current
-    parser is already the right one.
+    An explicit `--pin` wins (it mirrors the launcher's `--pin-commit`). Everything else is
+    decided by **the launcher's own resolver**, `main.launcher.worktree.resolve_pin`, CALLED
+    rather than re-implemented: explicit `--pin-commit` > `--sync-to-main` ⇒ HEAD > the
+    checkpoint's recorded `git_hash` > HEAD.
+
+    🚨 THE `--sync-to-main` DEFECT (2026-09-05). This function used to read the checkpoint's
+    hash whenever a `--model` was present, full stop — so every `--sync-to-main` fork was judged
+    by its PARENT's parser while the launcher actually runs the child at HEAD. Flags that exist
+    only at HEAD (`--fork-lr`, `--fork-lr-freeze`, `--distill-anchor-monitor`, `--distill-stop`)
+    were then reported as "in THIS tree but NOT at the pin" and the tool exited 3. It made
+    exactly that complaint about `models/ai_v9_162_TCUNFA_0903`'s recorded command — a run that
+    launched and trained to completion. Note the DIRECTION: the three earlier checkargs defects
+    were false NEGATIVES (a bad launch passing), and this one is a false POSITIVE that would
+    stop a correct launch, which is why the fix is to share the launcher's rule rather than to
+    add another special case beside it.
+
+    A pin the launcher would REFUSE (an unresolvable `--pin-commit`, a `--model` with no
+    recorded hash, a `--pin-commit` that would move a live run) is reported on the parser line
+    and falls back to this tree's parser: `checkargs` reports, it never raises at the reader.
     """
     if explicit:
         return explicit, "--pin"
     model = model_arg(argv)
     if not model:
         return None, "no --model and no --pin — this argv would run on HEAD"
-    from main.launcher.worktree import _read_checkpoint_git_hash
-    recorded = _read_checkpoint_git_hash(model)
-    if not recorded:
-        return None, f"no git_hash recorded for {os.path.basename(model)}"
-    return recorded, f"the git_hash recorded by {os.path.basename(model)}"
+    from main.launcher.worktree import PinRefused, resolve_pin
+    try:
+        decision = resolve_pin(
+            model_path=model,
+            run_dir=argv_run_dir(argv),
+            pin_commit=argv_value(argv, "--pin-commit"),
+            sync_to_main="--sync-to-main" in argv,
+        )
+    except PinRefused as exc:
+        first = str(exc).splitlines()[0]
+        return None, f"the launcher would refuse this pin — {first}"
+    why = _PIN_WHY[decision.source].format(model=os.path.basename(model))
+    if decision.source in ("sync_to_main", "head"):
+        return None, why
+    return decision.sha, why
 
 
 def argv_from_run(run_dir: str) -> List[str]:
