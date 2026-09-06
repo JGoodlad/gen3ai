@@ -10918,3 +10918,59 @@ global-from-origin SIBLINGS of theirs, and the ones that rob are farther everywh
 confounded with budget and carries a 0.4–0.5 inherited offset. Causal tests: v8 cells 1–2 (loss vs ecology vs plain
 learning) and the gen origin × budget factorial (G1 / G2), all on the GPU queue.
 
+
+
+
+**`ai_v9_162_TCUNFA_0903` is G1's matched partner** — same recipe, same 16 teams, same parent,
+differing only in teacher checkpoint depth.
+
+**The factorial, and what this cell alone cannot settle.** G1 varies teacher **DISTANCE** with
+origin fixed at *sibling*; G2 varies **ORIGIN**. G1 alone cannot separate "closer" from "closer
+because they descend" — only the pair can. Registered before any number is read.
+
+**Construction.** G1 is `ai_v9_162_TCUNFA_0903`'s recorded `original_command` with **exactly two
+tokens changed**, verified positionally (252 tokens in, 252 out, 2 differences):
+
+| | TCUNFA (long budget) | G1 (short budget) |
+|---|---|---|
+| `--distill-teacher` | the eight R5F exploiters' `final_model` | the same eight at **`@26267760`** |
+| `--run-name` | `ai_v9_162_TCUNFA_0903` | `ai_v9_172_G1SHORT_0905` |
+
+Everything else — `--distill-coef 0.1761`, `--grad-accum-steps 3`, `--fork-lr 2.8e-5`,
+`--fork-lr-freeze`, `--distill-target action`, the parent `ai_v9_59_R2ACTION_0827/final_model.zip`,
+`--steps 32567760` — is byte-identical. So the arms differ in teacher checkpoint and nothing else.
+
+**Zero teacher-offset spread.** All eight exploiters have a checkpoint at *exactly*
+`26,267,760 = fork + 1,200,000` (fork `25,067,760`). A teacher set with no offset spread at all is a
+cleaner "short budget" definition than any earlier cell had — there is no per-teacher depth jitter to
+carry into the read.
+
+**Executed evidence, not clause-checking** (the standing rule; `checkargs` has now been wrong in
+both directions):
+- HEAD parser **accepts** the argv — 256 resolved options.
+- `--distill-teacher` resolves to **8 teachers · 16 distinct teams · 0 empty team lists**.
+- All **8/8** teacher checkpoints exist on disk at the named step.
+- The 16-team slice is **identical to TCUNFA's**, so the comparison is matched on teams.
+
+> ⚠️ **`path@step:*` resolves to ZERO teams — silently.** `read_recorded_trainee_teams` is handed the
+> path *with* the `@step` attached and returns `[]` rather than raising, so the obvious spelling would
+> have launched eight teachers that teach nothing, with only the `[DISTILL]` line's team count as a
+> symptom. G1 therefore **enumerates** each teacher's teams explicitly. Same class as the era's
+> `--steps` no-op: a wrong answer down a success path.
+
+> ⚠️ **`checkargs` FALSE POSITIVE on any `--sync-to-main` fork.** It exits 3 naming
+> `--fork-lr` / `--fork-lr-freeze` / `--distill-anchor-monitor` / `--distill-stop` as "not in the
+> pinned tree", because it pins to the fork parent's `git_hash` and does not model `--sync-to-main`.
+> Proof it is spurious: it makes the **identical** complaint about TCUNFA's own recorded command, and
+> TCUNFA launched and trained. Do not treat exit 3 here as a launch blocker.
+
+**Instrument note.** The watch on this queue tripped immediately on arming: its failure-grep read
+the WHOLE `factorial.log` and matched a stale `INCOMPLETE` line from 2026-09-02, so it fired and
+ended before anything new had happened. Re-armed against a line-count baseline, so only lines
+appended after arming count as events. A monitor that reads history is not watching — it is
+replaying, and it will report an old failure as a live one.
+
+**Scheduling.** G1 cannot overlap cell 2: a current-era arm needs ~9.6 GB against the 3080 Ti's
+12 GB, while an era arm holds ~3.1 GB (7.66 GB free measured). `launch_g1.sh` **refuses** below
+9,800 MiB free rather than OOMing, and gates success on the first checkpoint **file**, never on an
+exit code.
