@@ -11532,3 +11532,70 @@ because SB3 stops at the next multiple of `n_steps × n_envs` = 98,304 — which
 **Still outstanding:** (iii), the taught-16 slice, awaits the final-depth taught readings for arms B
 and C (`taught_G5PLAINA` is complete at 16/16). Per the pre-registration it carries a depth-mismatch
 caveat and is an UPPER BOUND: G5 is ~1.18M where the taught TC readings are at END ~4.45M.
+
+### 2026-09-06 · WIN-PROB CRITIC — arm 1 LAUNCHED (`ai_v12_01_winprob_critic`), pre-registered
+
+The first arm of `designs/ai_v12/design_winprob_only_critic.md`: the critic IS the win-probability
+head, `V(s) = sigmoid(win-prob logit) ∈ [0,1]`, and the value loss is that head's BCE against the
+terminal outcome. Fresh run, **pinned `e798c13a`**, `--steps 75000000` (≈ 4 GPU-days at this box's
+measured ~750k steps/h), launched 13:12:55.
+
+**What the MODE derives rather than requiring it be typed** — the property the design wanted, and
+the reason the three §3.6 protections cannot be forgotten at launch:
+
+| derived by `--critic winprob` | explicit in the argv |
+|---|---|
+| `gamma = 1.0` · `use_popart = False` · `value_dist_mode = none` | `--terminal-indicator` · `--victory-value 1.0` · `--draw-penalty 0` · `--no-hand-shaping` · `--self-play` |
+
+**⚠️ ONE DEVIATION FROM §5.4, and it is a hardware constraint with a provably neutral remedy.** The
+design prints `--batch-size 16384 --grad-accum-steps 4`. `--grad-accum-steps` caps the activation
+peak at ONE micro-batch, so 16384 is the number that must fit — and it does not: every run on this
+box uses 2048 or 4096, and **2048 already measured ~9.6 GB of a 12 GB card**. Substituted
+**`--batch-size 4096 --grad-accum-steps 16`**:
+
+| | effective batch | micro-batches/epoch | optimizer steps/epoch | gradient |
+|---|---|---|---|---|
+| 16384 × 4 | 65,536 | 8 | 2 | — |
+| **4096 × 16** | **65,536** | 32 | **2** | **exactly identical** |
+
+Per `--grad-accum-steps`' own contract this is the EXACT gradient of a `batch_size·K` batch, so only
+the memory peak changes; the rollout (64 × 2048 = 131,072) divides evenly by 4096 so
+`--compile-trainer` is not refused. Confirmed in flight: **GPU 4,723 MiB at 92% utilisation** — 16384
+would not have fit. §5.4's printed command is to be corrected to 4096×16.
+
+**🚨 THE FIRST-ROLLOUT SCALE BANNER IS A DEFECTIVE INSTRUMENT — do not read it as a measurement.**
+It printed:
+
+> `value term = --vf-coef 0.5 × BCE 0.1330 = 0.0665, against |policy loss| 0.0004 → 165×`
+
+165× is far outside the registered ~0.1–10 band, **and it means nothing**: PPO's clipped surrogate at
+epoch 1 of rollout 1 has ratio ≡ 1 and sits at its stationary point, so `|policy loss| ≈ 0` BY
+CONSTRUCTION. Any ratio taken against that denominator is inflated regardless of whether the value
+term is oversized. `vf_coef` was NOT retuned on it. The banner is to be amended to compare GRADIENT
+NORMS through the shared trunk — the quantity that actually competes — and to print on the first
+rollout where the surrogate is non-degenerate. **The decisive instrument is
+`grad/value_policy_logratio` at the first restart boundary.**
+
+The numerator is the informative half and points the other way: **BCE 0.1330 against the ln 2 ≈ 0.693
+a 0.5-base-rate head shows at init**, i.e. the head already calls lopsided early self-play games well
+above chance. Plausible, not alarming — but **watch that it does not collapse toward 0 while
+`win_prob/critic_resolution` stays flat**, which would be the head learning a per-opponent BASE RATE
+rather than states.
+
+**Pre-registered read** (§5.5, one command): `python -m main.critic_gate <run> --parent
+models/ai_v9_59_R2ACTION_0827 --control <G5 arms>` — the anchored ladder at matched snapshot count
+against R2ACTION's first 14 snapshots, the §4.3 calibration gate with RESOLUTION primary, and the
+untaught meter with a continuation control.
+
+**KILL CONDITION: `signal/stall_rate` and mean episode length rising against the era.** A [0,1]
+critic structurally cannot rank a timeout below a loss. `gen3_winprob_truncation_v1` (the pinned
+commit) makes the 250-turn cap, forfeits and ties TERMINAL under this mode rather than SB3
+truncations — previously the cap was `terminated=False, truncated=True` and sb3_contrib bootstrapped
+`γ·V(s_last)` into the target, which at γ=1 made every timeout's TD error identically zero. So the
+critic now SEES timeouts; the registered expectation is that they FALL. Also watch
+`reward/untracked_abs_mean = 0` (composition guard) and `popart/*` absent.
+
+**Validation before launch, by execution:** `checkargs` exit 0 · `--dry-run` clean (role FRESH, pin
+`e798c13a3399a5d874564b838fe29f91576a35bf` source `pin_commit`, 75,000,000 steps from 0). ⚠️ Noted
+gap: `checkargs` reads `--pin-commit` only when a `--model` is present, so a FRESH pinned argv
+validates against HEAD — harmless here because HEAD IS the pin, wrong the day they differ.
