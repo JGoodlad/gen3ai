@@ -309,18 +309,6 @@ def _provenance(dest: str, ns, inherited: Dict[str, Any]) -> str:
     return f"{flag} {val!r} ({where})"
 
 
-def argv_value(argv: List[str], flag: str) -> str | None:
-    """The value of `--flag` in an argv, in either spelling (`--flag v` / `--flag=v`)."""
-    for tok, vals in split_argv(argv):
-        name = tok.split("=", 1)[0]
-        if name != flag:
-            continue
-        if "=" in tok:
-            return tok.split("=", 1)[1]
-        return " ".join(vals) if vals else None
-    return None
-
-
 def teacher_spec_findings(argv: List[str], ns=None) -> List[str]:
     """Every reason this argv's `--distill-teacher` would fail or teach NOTHING.
 
