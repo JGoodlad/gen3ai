@@ -5048,11 +5048,15 @@ Absent (the default) ⇒ the live head, byte-identical to what v104 shipped.
 ## `stats.py` — the package's SHARED small-sample statistics
 
 **`agents/training/stats.py` is where a stateless estimator lives once the second consumer exists.**
-It holds `wilson_ci`, `spearman`, `cluster_bootstrap_ci` / `cluster_bootstrap_diff_ci` and
-`sd_true_excess` — pure NumPy in, floats out: no labels, no battles, no checkpoints, no filesystem,
-no torch, no RNG except an explicitly seeded bootstrap. That is the admission rule; a helper that
+It holds `wilson_ci`, `spearman`, `cluster_bootstrap_ci` / `cluster_bootstrap_diff_ci`,
+`sd_true_excess` and the `MIN_CELL_N` / `MIN_SUBCELL_N` sample-size floors below which that
+spread is not reported — pure NumPy in, floats out: no labels, no battles, no checkpoints, no
+filesystem, no torch, no RNG except an explicitly seeded bootstrap. That is the admission rule; a helper that
 has to know what a *decision* or a *bias map* is belongs beside the instrument that owns the
-concept. They were lifted out of `cf_audit.py` on 2026-09-06 (the file-size ratchet's first cut of
+concept. The floors are the one pair of CONSTANTS admitted, and for the estimator's own reason:
+`cf_audit.resolution_cells` and `cf_audit_twin.twin_resolution_read` bin different things and
+must refuse at the same n, and two copies of a floor is two thresholds that drift.
+They were lifted out of `cf_audit.py` on 2026-09-06 (the file-size ratchet's first cut of
 the 1,000–2,000 band, 1439 → 1279 lines), which imports them straight back, so
 `from agents.training.cf_audit import wilson_ci` — which `cf_producer` and the tests do — still
 resolves. The arithmetic is unchanged, and that is EVIDENCE rather than a promise: the parity golden
@@ -5073,6 +5077,19 @@ that wants its own pass and its own evidence. `hodge.py` and `elo.py` carry no g
 statistics at all; everything in them is bound to the rating model.
 
 ## `cf_audit` — the counterfactual audit instrument (`cf_audit.py`)
+
+**Three modules, one instrument.** `cf_audit.py` owns the frame, the sampler, the label
+schema, the bias map and the CLI; two readouts live beside it because they are the parts that
+need nothing else the module knows. **`cf_audit_render.py`** takes a finished bias map and
+returns markdown — no statistic, no file, and its two formatting rules are the ABSENT-vs-ZERO
+ones (a checkpoint with no evidential head renders a NOTE, a flat width renders `n/a`, because
+a row of zeros makes "no head" and "no uncertainty" read identically). **`cf_audit_twin.py`**
+holds the twin-head paired read, `twin_resolution_read`, `shadow_read` and `attach_twin_heads`
+— it takes labelled rows and, for the last one, a session. Both were extracted on 2026-09-06
+(the ratchet's second cut, 1279 → 918 lines, under the 1,000 TARGET), and `cf_audit`
+re-imports every name, so `from agents.training.cf_audit import render_markdown` still
+resolves. **The extraction-parity golden below is the evidence for both moves** — it calls
+them through those re-exports and was not regenerated.
 
 ```bash
 python -m agents.training.cf_audit models/<run> \
@@ -5192,7 +5209,12 @@ one arm; it is the lever for the one-ply counterfactual (`lookahead`) path.
 **Tests.** `cf_audit_test.py` (pure: the stratifier, the schema writer, and the EXTRACTION PARITY
 GOLDEN — every public readout on one synthetic fixture, JSON-serialised canonically and pinned by
 digest plus a dozen named values, captured from the tree BEFORE the statistics moved to `stats.py`
-and reproduced byte-for-byte after), `stats_test.py` (the estimators themselves — `sd_true_excess`
+and reproduced byte-for-byte through that move AND the `cf_audit_render` / `cf_audit_twin`
+extraction that followed it: 43,075 bytes, sha256 `cf2971d5…`, never regenerated),
+`cf_audit_render_test.py` and `cf_audit_twin_test.py` (the tests that moved with their
+functions; both import their fixtures FROM `cf_audit_test` rather than copying them, because a
+renderer tested against its own hand-built bias map is testing a shape the audit no longer
+emits), `stats_test.py` (the estimators themselves — `sd_true_excess`
 validated at ZERO true effect AND at a known nonzero one, the clustered bootstrap and its
 difference-of-means sibling, Wilson, Spearman) and `cf_audit_integration_test.py` (`sim`: a real
 bridge battle it plays itself, run end to end at R=2 — including the anchor refusal).

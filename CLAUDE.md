@@ -1763,6 +1763,16 @@ src/
                      #   elo.py (Bradley-Terry skill rating), bot_elo_calibration.py (anchor round-robin)
                      #   eval_sharding/ (battle-level work-stealing pkg), rating.py (Glicko-ready seam)
                      #   cf_audit.py (offline counterfactual audit: tight-MC value labels + the bias map)
+                     #   cf_audit_render.py — that bias map's MARKDOWN, and nothing else: a
+                     #   dict in, a string out, computing no statistic. Its two rules are
+                     #   formatting ones that carry meaning — an absent evidential head
+                     #   renders a NOTE and a flat width renders n/a, because a row of zeros
+                     #   would render 'no head' and 'no uncertainty' identically
+                     #   cf_audit_twin.py — the TWIN-HEAD paired read + the SHADOW critic
+                     #   (gen3_cf_twin_heads_v1): per-row proper-score differences across the
+                     #   three win-prob heads on identical states (so the hidden-information
+                     #   floor cancels EXACTLY, not in expectation), each head's own spread
+                     #   binned by its own prediction, and the shadow-vs-live signed gap
                      #   instrumented_ppo/ — the PPO step as a package (ppo.py holds train() and
                      #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub;
                      #   noise_scale_terms.py = the PER-LOSS-TERM McCandlish critical batch —
@@ -1801,8 +1811,10 @@ src/
                      #   `train/scaffolding_gauge` and main.scaffolding_gauge)
                      #   stats.py — the package's SHARED small-sample statistics (Wilson interval,
                      #   Spearman, the cluster bootstrap for a mean and for a difference of means,
-                     #   sd_true_excess). Pure NumPy, no domain concepts; lifted out of cf_audit.py
-                     #   so a second consumer need not import an instrument to get an interval
+                     #   sd_true_excess, + the MIN_CELL_N / MIN_SUBCELL_N floors below which a
+                     #   spread is not reported). Pure NumPy, no domain concepts; lifted out of
+                     #   cf_audit.py so a second consumer need not import an instrument to get
+                     #   an interval
                      #   untaught_meter.py (THE UNTAUGHT METER's engine — team manifests, ref
                      #   resolution through the ONE choke point, the five-seam seed table + the CRN
                      #   per-battle harness, the paired cluster bootstrap, the replicate floor and

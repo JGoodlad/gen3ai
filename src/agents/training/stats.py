@@ -16,7 +16,8 @@ What lives here
 * :func:`spearman` — rank correlation, ``None`` when undefined.
 * :func:`cluster_bootstrap_ci` / :func:`cluster_bootstrap_diff_ci` — percentile CIs that resample
   the unit of independence (a battle), for a mean and for a difference of means.
-* :func:`sd_true_excess` — the within-cell spread net of the binomial sampling floor.
+* :func:`sd_true_excess` — the within-cell spread net of the binomial sampling floor, and
+  the ``MIN_CELL_N`` / ``MIN_SUBCELL_N`` sample-size floors below which it is not reported.
 
 Related statistics elsewhere in this package, and why they are NOT merged here
 -----------------------------------------------------------------------------
@@ -217,6 +218,16 @@ def cluster_bootstrap_diff_ci(values_a: Sequence[float], clusters_a: Sequence[st
 # ---------------------------------------------------------------------------
 # Spread net of the binomial sampling floor
 # ---------------------------------------------------------------------------
+
+#: The sample-size FLOORS that guard :func:`sd_true_excess` from reporting its own noise: a cell
+#: needs `MIN_CELL_N` observations (and `MIN_SUBCELL_N` per sub-cell) before its spread is worth
+#: printing. They live here rather than beside one reader because `cf_audit.resolution_cells` and
+#: `cf_audit_twin.twin_resolution_read` bin different things and must refuse at the SAME n — two
+#: copies of a floor is two thresholds that drift. They are the one pair of constants in this
+#: module, admitted for the same reason as the estimator they guard: sample size is not a domain
+#: concept, and neither of them knows what a label or a decile is.
+MIN_CELL_N, MIN_SUBCELL_N = 12, 3
+
 
 def sd_true_excess(mc: Sequence[float], n_rollouts: int,
                    weights: "Optional[Sequence[float]]" = None) -> dict:
