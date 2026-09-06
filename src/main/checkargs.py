@@ -225,14 +225,17 @@ def parent_config_path(model_path: str) -> Tuple[str | None, List[str]]:
 def resolve_against_parent(argv: List[str]) -> dict | None:
     """The EFFECTIVE namespace a launch would build: argv, then the parent's recorded config.
 
-    Returns None when the argv names no `--model` (nothing to inherit from — the argv IS the
-    config). Otherwise a dict carrying the namespace, which flags were inherited and from where,
-    and — when the parent's config could not be read — the paths tried, so the caller can WARN
-    instead of passing silently.
+    With no `--model` there is nothing to inherit FROM, but the argv is still a config — so the
+    namespace is built anyway (`no_parent: True`) and the combination checks run on it. They did
+    not, until 2026-09-06: a FRESH control arm carrying `--distill-coef 0` beside the fold
+    instruments printed "✓ this command still launches" and then died three times, because the
+    whole combination half was skipped whenever `--model` was absent.
+
+    Otherwise a dict carrying the namespace, which flags were inherited and from where, and — when
+    the parent's config could not be read — the paths tried, so the caller can WARN instead of
+    passing silently.
     """
-    if not any(f in ("--model",) for f, _ in split_argv(argv)):
-        return None
-    from main.train.config import inherit_saved_flag
+    from main.train.config import desugar_umbrella_flags, inherit_saved_flag
     from main.train.fork_lr import is_same_run_checkpoint
     from main.train_rl_agent import build_parser
 
@@ -245,9 +248,23 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
         return {"ns": None, "parse_error": buf.getvalue().strip().splitlines()[-1:] or ["?"],
                 "model": None, "config_path": None, "tried": [], "inherited": {}, "same_run": False}
 
+    # WHICH FLAGS WERE TYPED — snapshotted BEFORE any inheritance, the same moment `resolve_config`
+    # snapshots it (before `_resolve` fills a default). `combination_checks._typed` reads this
+    # marker, so the "you passed a knob that does nothing" refusals answer identically here.
+    ns._explicit_flags = frozenset(d for d, v in vars(ns).items() if v is not None)
+
+    # THE UMBRELLA DESUGARS, run exactly where the launch runs them (after the explicitness
+    # snapshot, before inheritance). A flagless run resolves `--unified-moves` to 'both', which
+    # turns --damage-op / --move-latent / --damage-topk ON — so skipping this would report every
+    # damage-family dependency as unsatisfied on commands that launch fine.
+    with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+        desugar_umbrella_flags(ns)
+
     model = getattr(ns, "model", None)
     if not model:
-        return None
+        ns._saved_config_present = False
+        return {"ns": ns, "model": None, "config_path": None, "tried": [], "inherited": {},
+                "same_run": False, "no_parent": True}
     run_dir = effective_run_dir(ns)
     same_run = bool(run_dir) and is_same_run_checkpoint(model, run_dir)
     config_path, tried = parent_config_path(model)
@@ -258,9 +275,11 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
             from agents.model.model_version import ModelVersion
             saved = ModelVersion.from_json_file(config_path)
         except Exception as e:                       # noqa: BLE001 — unreadable is not a crash
+            ns._saved_config_present = False
             return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
                     "inherited": {}, "same_run": same_run, "read_error": str(e)}
 
+    ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}
     if saved is not None:
         for dest in sorted({a.dest for a in parser._actions} - {"help"}):
@@ -298,6 +317,22 @@ def unsatisfiable_from_namespace(ns) -> List[Tuple[str, str, str]]:
             if dep_state is not None and not dep_state[0]:
                 out.append((name, dep, dep_state[1]))
     return sorted(out)
+
+
+def _unmet_needs(combo, ns) -> List[str]:
+    """Which of a check's `needs` this OFFLINE surface could not satisfy.
+
+    A check that reads something only the launch path is guaranteed to have is still reported —
+    labelled ADVISORY — rather than dropped. Silently skipping is how a partial single-source stops
+    being distinguishable from a clean one, which is the whole failure this module was built after.
+    """
+    out = []
+    for need in getattr(combo, "needs", ()):
+        if need == "saved_config" and not getattr(ns, "_saved_config_present", False):
+            out.append("the parent's recorded config")
+        elif need != "saved_config":
+            out.append(need)
+    return out
 
 
 def _provenance(dest: str, ns, inherited: Dict[str, Any]) -> str:
@@ -353,7 +388,7 @@ def check(argv: List[str]) -> dict:
     res = {"n_flags": len(ok) + len(launcher) + len(unknown),
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
-           "resolution": None, "combinations": [], "teacher_spec": []}
+           "resolution": None, "combinations": [], "teacher_spec": [], "ns": None}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
         # more to the point, the reader has to fix that first. Report it alone.
@@ -369,6 +404,7 @@ def check(argv: List[str]) -> dict:
         res["unsatisfiable"] = unsatisfiable_from_namespace(ns)
     res["combinations"] = [
         (c, [_provenance(d, ns, inherited) for d in c.dests]) for c in failing_checks(ns)]
+    res["ns"] = ns
     return res
 
 
@@ -609,12 +645,17 @@ def main(raw: List[str] | None = None) -> int:
         print(f"  refused combinations           : {len(res['combinations'])}  "
               "✗ WOULD FAIL IN resolve_config")
         for combo, provenance in res["combinations"]:
-            print(f"      {combo.message}")
+            missing = _unmet_needs(combo, res.get("ns"))
+            tag = f"ADVISORY (needs {', '.join(missing)}): " if missing else ""
+            print(f"      {tag}{combo.text(res['ns'])}")
             for line in provenance:
                 print(f"        · {line}")
         print("\n  These are main.train.combination_checks — the value-conditional refusals the")
-        print("  launch path prints verbatim. A value marked INHERITED was never typed: it came")
-        print("  from the parent checkpoint's model_config.json, which is what a fork resumes.")
+        print("  launch path prints verbatim, read from the SAME list resolve_config refuses on")
+        print("  (a rule that lives only inside resolve_config is invisible here: C1 2026-09-01,")
+        print("  G5 2026-09-06). A value marked INHERITED was never typed: it came from the parent")
+        print("  checkpoint's model_config.json, which is what a fork resumes. A finding marked")
+        print("  ADVISORY depends on something only the launch has — it may not fire there.")
 
     if pinned is not None and pinned.available:
         # Only the PARSER is pinned; the two combination families above still read this tree.
@@ -650,6 +691,13 @@ def _print_resolution(resolution: dict | None) -> None:
     if resolution.get("parse_error"):
         print("  ⚠️  WARNING: the argv does not parse, so no inherited value could be resolved: "
               + "; ".join(resolution["parse_error"]))
+        return
+    if resolution.get("no_parent"):
+        # No `--model` at all: nothing to inherit, and that is the FULL truth rather than a
+        # failure to read something — the combination checks below still ran, on the argv's own
+        # values plus the launch path's own desugars and defaults.
+        print("  no --model: the argv IS the config (nothing to inherit) — the checks below read "
+              "it with the launch path's own desugars applied")
         return
     label = "same-run RESTART checkpoint" if resolution["same_run"] else "FORK PARENT"
     if resolution.get("config_path") and not resolution.get("read_error"):

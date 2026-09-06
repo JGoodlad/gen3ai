@@ -248,11 +248,17 @@ def test_negative_twin_shadow_coefficients_are_refused(flag):
 
 def test_checkargs_accepts_the_whole_family():
     """`python -m main.checkargs` must not report the new flags as stale — it is what an operator
-    runs before relaunching a recorded command."""
+    runs before relaunching a recorded command.
+
+    The argv must also LAUNCH: since `gen3_combination_checks_complete_v1` (2026-09-06) checkargs
+    runs every value-conditional refusal the launch path runs, so this test's original argv —
+    `--cf-label-lag-steps 1000` against the default checkpoint interval — was correctly refused by
+    the CF duty-cycle FATAL_CONFIG (0.1% vs the 25% floor). The lag is widened to a launchable
+    value; the assertion this test exists for is the `unrecognized : 0` line."""
     proc = subprocess.run(
         [sys.executable, "-m", "main.checkargs", "--argv",
          "--steps 1 --cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
-         "--no-cf-head-only --cf-label-lag-steps 1000 --cf-label-likelihood binomial "
+         "--no-cf-head-only --cf-label-lag-steps 400000 --cf-label-likelihood binomial "
          "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001 "
          "--win-prob-mode read_only --cf-twin-heads --cf-twin-coef 0.1 "
          "--cf-shadow-critic --cf-shadow-coef 0.5"],

@@ -256,11 +256,21 @@ def test_a_parent_with_no_recorded_config_WARNS_and_still_checks_the_argv(tmp_pa
     assert rc == 0                                 # nothing in the ARGV itself is wrong
 
 
-def test_no_model_means_no_resolution_at_all():
-    """A fresh run has nothing to inherit from — the argv IS the config, and the old conservative
-    argv-only behaviour is what runs."""
+def test_no_model_still_builds_a_namespace_and_runs_the_combination_checks():
+    """A fresh run has nothing to INHERIT from — but the argv is still a config.
+
+    Until 2026-09-06 the whole combination half was skipped whenever `--model` was absent, so a
+    FRESH control arm carrying `--distill-coef 0` beside the fold instruments printed "✓ this
+    command still launches" and then died three times (G5). The resolution is now reported with
+    `no_parent`, and the DEPENDENCY half stays conservative exactly as before.
+    """
     res = check(["--steps", "100", "--device", "cuda"])
-    assert res["resolution"] is None and res["combinations"] == []
+    assert res["resolution"] is not None and res["resolution"]["no_parent"] is True
+    assert res["resolution"]["inherited"] == {}
+    assert res["combinations"] == []                       # a plain argv is still clean
+
+    g5 = check(["--steps", "100", "--distill-coef", "0", "--distill-anchor-monitor"])
+    assert "anchor_needs_live_distill" in [c.name for c, _ in g5["combinations"]], g5["combinations"]
 
 
 def test_a_resolved_namespace_reports_an_ABSENT_dependency_the_argv_alone_cannot(tmp_path):
@@ -284,9 +294,12 @@ def test_config_and_checkargs_share_the_combination_rules():
     """`resolve_config` prints these messages and `checkargs` reports them. If the launch path ever
     stops importing the shared list, the two can drift apart again — which is the whole defect."""
     from main.train import config as _config
-    from main.train.combination_checks import COMBINATION_CHECKS, failing_checks
-    assert _config.failing_checks is failing_checks
+    from main.train.combination_checks import COMBINATION_CHECKS, refuse_first
+    assert _config.refuse_first is refuse_first
     assert "distill_target_needs_coef" in {c.name for c in COMBINATION_CHECKS}
+    # The list is EXHAUSTIVE over its class now, not a sample of four — see
+    # `main.train.combination_checks_test`, which AST-scans `config.py` to keep it that way.
+    assert len(COMBINATION_CHECKS) > 40, len(COMBINATION_CHECKS)
 
 
 def test_the_launch_path_still_refuses_the_C1_combination():
@@ -297,8 +310,11 @@ def test_the_launch_path_still_refuses_the_C1_combination():
     broken = SimpleNamespace(distill_target="action", distill_coef=0.0, distill_topk=1,
                              distill_gate="none", distill_gate_tau=0.0)
     assert [c.name for c in failing_checks(broken)] == ["distill_target_needs_coef"]
+    # `distill_teacher` is now load-bearing on the OK side: a live coefficient with no teacher is
+    # itself one of the migrated refusals, so leaving it out would trip a different rule.
     ok = SimpleNamespace(distill_target="action", distill_coef=0.1, distill_topk=1,
-                         distill_gate="none", distill_gate_tau=0.0)
+                         distill_gate="none", distill_gate_tau=0.0,
+                         distill_teacher="models/t:data/teams/sample/a.txt")
     assert failing_checks(ok) == []
 
 
@@ -326,13 +342,24 @@ def test_the_tri_state_monitor_flag_and_its_negation_both_still_validate():
         assert got["combinations"] == [] and got["unsatisfiable"] == []
 
 
-def test_a_fold_argv_and_a_teacherless_argv_both_still_pass():
+def test_a_fold_argv_and_a_teacherless_argv_both_still_pass(tmp_path):
     """(f) The two ends of the new default: a fold command and an ordinary one. Neither the
-    defaulted monitor nor the defaulted stop rule is a COMBINATION check, so neither can make an
-    argv that launches today read as one that would fail."""
+    defaulted monitor nor the defaulted stop rule may make an argv that LAUNCHES read as one that
+    would fail.
+
+    ⚠️ The fold argv now carries `--model`, and that is a correction, not a convenience. The
+    version of this test written for `gen3_distill_instruments_default_v1` used a `--distill-stop
+    warn` fold with NO parent and asserted checkargs said nothing — but `resolve_config` REFUSES
+    that command (`--distill-stop requires the anchor MONITOR`: with no `--model` and no
+    `--distill-anchor-parent` the monitor cannot default on, so the rule's rise half could never
+    fire). checkargs agreed only because it never ran the check. Verified against the pre-migration
+    tree, 2026-09-06: exit 2, that message.
+    """
     from main.checkargs import check
-    fold = check(["--steps", "10", "--distill-teacher", "models/t:data/teams/sample/a.txt",
+    ckpt, _ = _parent_run(tmp_path)
+    fold = check(["--steps", "10", "--model", ckpt, "--run-name", "child_run",
+                  "--distill-teacher", "models/t:data/teams/sample/a.txt",
                   "--distill-coef", "0.3", "--distill-stop", "warn"])
-    assert fold["unknown"] == [] and fold["combinations"] == []
+    assert fold["unknown"] == [] and fold["combinations"] == [], fold["combinations"]
     plain = check(["--steps", "10", "--device", "cuda"])
     assert plain["unknown"] == [] and plain["combinations"] == []

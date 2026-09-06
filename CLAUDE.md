@@ -755,10 +755,27 @@ Exit 0 = every flag is accepted; exit 1 names each one that would fail (with its
 see whether it mattered). It checks **three** ways a command fails: a flag the parser no longer
 knows; a COMBINATION the extractor refuses (`agents.model.flag_registry`'s `requires` graph, e.g.
 `--intent-conditional` without `--damage-outgoing`); and a combination `resolve_config` refuses —
-the value-conditional rules that are not `requires`-shaped, which live in
-**`main.train.combination_checks`** and are read by the launch path and by `checkargs` from that one
-declaration (`--distill-target action` needs `--distill-coef > 0`, the top-K/gate/tau family). The
-last two crash later and dearer than an argparse error: the run dir exists and the child starts.
+**every** value-conditional rule that is not `requires`-shaped, which lives in
+**`main.train.combination_checks`** and is read by the launch path and by `checkargs` from that one
+declaration. The last two crash later and dearer than an argparse error: the run dir exists and the
+child starts.
+
+🚨 **"EVERY" IS ENFORCED, NOT INTENDED — and it was not true until 2026-09-06.** The list held four
+rules (the `--distill-target action` / top-K / gate / tau family from C1) while ~90 siblings stayed
+as bare `parser.error` lines inside `resolve_config`, invisible here; G5's control arm was refused
+three times in a row on three of them (`--distill-anchor-monitor` at `--distill-coef 0`,
+`--distill-team-bias` with no teacher, then the inherited target) after `checkargs` printed
+"✓ this command still launches". A partial single-source is one nobody can trust, because the output
+does not distinguish "checked and clean" from "never asked". So `resolve_config` now evaluates the
+whole list at one point (`refuse_first`, preserving each rule's own message and exit style —
+`parser.error`, the two `--anneal-lr-*` prints, the CF duty-cycle `FATAL_CONFIG`), and
+**`main/train/combination_checks_test.py` AST-scans `config.py` — resolving local aliases, which is
+how three of them hid — and FAILS naming file:line if a cross-flag `parser.error` reappears.** Its
+allowlist is EMPTY. Two consequences worth knowing: `checkargs` now runs the combination half on an
+argv with **no `--model`** too (it used to skip it entirely, which is what let G5's fresh control arm
+pass), and it runs `config.desugar_umbrella_flags` first so `--unified-moves`' default-'both' is
+resolved the way a launch resolves it. A single-value RANGE check (`--distill-topk >= 1`) is out of
+scope and stays put.
 It also reports a **`--distill-teacher` spec that would teach NOTHING** — the grammar is
 `<run|zip>[@<step>]:<teams|*>`, the `@step` is part of the SPEC and is split by the one canonical
 `agents.training.run_spec.split_run_spec` (a `<run>@<step>:*` teacher used to resolve to zero teams
@@ -1706,13 +1723,18 @@ src/
                      #   parser/ (build_parser hub + one module per FLAG FAMILY, in --help order:
                      #     base/operational/hyperparameters/reward/clean_world/teacher/
                      #     cf_grounding/value_heads/capacity/distillation/eval_subprocess) ·
-                     #   config.py (desugar/_resolve/validate; `inherit_saved_flag` = THE resume
-                     #     inheritance rule, module-level so main.checkargs can build the same
-                     #     effective namespace a launch does) ·
-                     #   combination_checks.py — the value-conditional refusals that are NOT
-                     #     `requires`-shaped, in ONE list read by resolve_config AND main.checkargs
-                     #     (the C1 defect: an INHERITED `distill_target=action` beside
-                     #     `--distill-coef 0`, which checkargs used to pass) ·
+                     #   config.py (desugar/_resolve/validate; three functions are module-level so
+                     #     main.checkargs can build the SAME effective namespace a launch does —
+                     #     `inherit_saved_flag` = THE resume inheritance rule,
+                     #     `desugar_umbrella_flags` = the --unified-*/--damage-matrices desugars,
+                     #     `default_anchor_monitor` = whether a fold defaults the instrument on) ·
+                     #   combination_checks.py — EVERY value-conditional refusal that is NOT
+                     #     `requires`-shaped, in ONE list read by resolve_config (via `refuse_first`,
+                     #     which preserves each rule's message and exit style) AND main.checkargs.
+                     #     The C1 defect was an INHERITED `distill_target=action` beside
+                     #     `--distill-coef 0`; G5 was three MORE rules that had never been migrated,
+                     #     so combination_checks_test.py now AST-scans config.py (resolving local
+                     #     aliases) and FAILS if a cross-flag `parser.error` reappears there ·
                      #   matchup_setup.py (teams + opponents) · env_factory.py (per-worker _init) ·
                      #   callbacks.py (everything during learn) · model_build.py (resume + fresh
                      #   paths + learn) · final_eval.py · run_io.py · lifecycle.py ·

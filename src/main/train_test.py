@@ -56,10 +56,15 @@ def test_the_hub_still_exports_every_pre_split_name(name):
 
 
 def test_no_phase_module_imports_the_hub():
-    """The cycle guard. `main/train/*` may import each other; none may import `train_rl_agent`."""
+    """The cycle guard. `main/train/*` may import each other; none may import `train_rl_agent`.
+
+    A `*_test.py` living in the package is EXEMPT: nothing imports a test module, so it closes no
+    cycle, and a test of the phases legitimately drives the entry point's own `build_parser()` —
+    which is the only honest way to build the namespace a real launch builds.
+    """
     offenders = []
     for path in entry_source_files():
-        if path.name == "train_rl_agent.py":
+        if path.name == "train_rl_agent.py" or path.name.endswith("_test.py"):
             continue
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             mod = None

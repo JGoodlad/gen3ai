@@ -15,15 +15,13 @@ Three jobs, in order, and the order is load-bearing:
 `ResolvedRunConfig`.
 """
 import dataclasses
-import sys
 from typing import Any
 
 from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
 from agents.training.watchdog import start_orphan_watchdog
 from main.launcher.ipc import emit
 from main.train.checkpoint_state import _load_saved_version
-from main.train.combination_checks import failing_checks
-from main.exit_codes import TrainExitCode
+from main.train.combination_checks import refuse_first
 from main.train.compile_flags import (
     resolve_compile_opponents_preload, resolve_compile_trainer_auto,
 )
@@ -133,17 +131,6 @@ def _adaptive_batch_guards(args, parser) -> None:
     mode = getattr(args, "adaptive_batch", "off")
     if mode == "off":
         return
-    if args.adaptive_batch_target <= 0.0:
-        parser.error("--adaptive-batch-target must be > 0 (it is a noise-scale RATIO setpoint)")
-    if args.adaptive_batch_band <= 1.0:
-        parser.error("--adaptive-batch-band must be > 1 — it is a MULTIPLICATIVE no-op band "
-                     "[target/band, target*band]; 1.0 would make every reading out of band")
-    if args.adaptive_batch_min_accum < 1:
-        parser.error("--adaptive-batch-min-accum must be >= 1")
-    if args.adaptive_batch_max_accum < args.adaptive_batch_min_accum:
-        parser.error("--adaptive-batch-max-accum must be >= --adaptive-batch-min-accum")
-    if args.adaptive_batch_every < 1:
-        parser.error("--adaptive-batch-every must be >= 1 (it counts ROLLOUTS between K moves)")
     env = os.environ.get("GEN3AI_NOISE_SCALE_PER_TERM")
     if mode == "policy" and env is not None and env.strip().lower() in ("", "0", "false", "off", "no"):
         parser.error("--adaptive-batch policy steers by train/noise_scale_ratio_policy, which only "
@@ -191,26 +178,6 @@ def _announce_cf_duty_cycle(args) -> None:
     if duty >= CF_DUTY_CYCLE_FLOOR:
         emit(line)
         return
-    print(
-        f"\n[CF] FATAL: the counterfactual label path is STARVED BY CONSTRUCTION.\n"
-        f"  --cf-label-lag-steps         : {args.cf_label_lag_steps:,} env steps\n"
-        f"  checkpoint interval          : {interval:,} env steps "
-        f"({vec_calls:,} vec-calls x {n_envs} envs)\n"
-        f"  --checkpoint-every-steps     : "
-        f"{'(unset — the 50000-vec-call default)' if every is None else format(every, ',')}\n"
-        f"  => DUTY CYCLE                : {shown}  (floor {CF_DUTY_CYCLE_FLOOR:.0%})\n"
-        f"  The producer stamps every label with the newest checkpoint's step, so outside that\n"
-        f"  window EVERY label it writes is expired by the buffer on arrival. Two remedies, and\n"
-        f"  either alone is enough:\n"
-        # Both remedies are printed WITHOUT thousands separators: they are copy-pasteable argv
-        # values, and `--checkpoint-every-steps 600,000` is an argparse error.
-        f"    * checkpoint MORE OFTEN: --checkpoint-every-steps "
-        f"{max(1, int(args.cf_label_lag_steps / CF_DUTY_CYCLE_FLOOR))} or less\n"
-        f"    * widen the staleness bound: --cf-label-lag-steps "
-        f"{max(1, int(CF_DUTY_CYCLE_FLOOR * interval))} or more (a label then supervises a\n"
-        f"      policy further from the one that produced it — the cost this bound exists to cap)\n",
-        file=sys.stderr, flush=True)
-    sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
 def inherit_saved_flag(args, saved_ver, name, default) -> bool:
@@ -232,6 +199,35 @@ def inherit_saved_flag(args, saved_ver, name, default) -> bool:
         return True
     setattr(args, name, default)
     return False
+
+
+def is_fold(args) -> bool:
+    """A fold is actually RUNNING: at least one `--distill-teacher` AND `--distill-coef > 0`."""
+    return bool(getattr(args, "distill_teacher", None)
+                and getattr(args, "distill_coef", None)
+                and args.distill_coef > 0)
+
+
+def default_anchor_monitor(args) -> bool:
+    """Would `--distill-anchor-monitor` default ON for this config? (Pure — no mutation, no print.)
+
+    Module-level and pure for the same reason `inherit_saved_flag` is: `main.checkargs` has to
+    reach the same verdict a launch reaches. It could not, and the cost was a FALSE POSITIVE in the
+    other direction from the C1/G5 family — a perfectly good fold argv reported as "--distill-stop
+    requires the anchor MONITOR", because offline the monitor still read as unset.
+
+    `coef_on` / `proj_on` already attach the frozen parent and already emit every collateral meter,
+    so defaulting the monitor on beside them would be a second name for one thing. And WILL a fold
+    parent resolve? `resolve_anchor_parent` tries an explicit `--distill-anchor-parent`, then the
+    run dir's `lineage` block, then `--model`; the lineage route only ever names a parent for a run
+    that was ITSELF launched from one, so on this launch those two flags decide it.
+    """
+    coef_on = bool(getattr(args, "distill_anchor_coef", None)
+                   and args.distill_anchor_coef > 0)
+    proj_on = getattr(args, "distill_anchor_mode", None) == "grad_project"
+    parent_available = bool(getattr(args, "distill_anchor_parent", None)
+                            or getattr(args, "model", None))
+    return bool(is_fold(args) and not coef_on and not proj_on and parent_available)
 
 
 def _resolve_fold_instruments(args) -> str:
@@ -261,22 +257,11 @@ def _resolve_fold_instruments(args) -> str:
     `--distill-anchor-monitor` still reaches the FATAL in `build_callbacks`, because there the
     operator asked for something that cannot be delivered.
     """
-    fold = bool(getattr(args, "distill_teacher", None)
-                and args.distill_coef and args.distill_coef > 0)
-    # WILL a fold parent resolve? `resolve_anchor_parent` tries an explicit --distill-anchor-parent,
-    # then the run dir's `lineage` block, then --model. The lineage route only ever names a parent
-    # for a run that was ITSELF launched from one, so on this launch those two flags decide it —
-    # and deciding it HERE is what makes the skip visible: `cli_args` is snapshotted from this
-    # namespace, before any callback exists.
-    parent_available = bool(getattr(args, "distill_anchor_parent", None)
-                            or getattr(args, "model", None))
+    fold = is_fold(args)
     coef_on = bool(args.distill_anchor_coef and args.distill_anchor_coef > 0)
     proj_on = args.distill_anchor_mode == "grad_project"
     if args.distill_anchor_monitor is None:
-        # `coef_on` / `proj_on` already attach the frozen parent and already emit every collateral
-        # meter, so defaulting the monitor on beside them would be a second name for one thing.
-        wanted = fold and not coef_on and not proj_on
-        args.distill_anchor_monitor = bool(wanted and parent_available)
+        args.distill_anchor_monitor = default_anchor_monitor(args)
         if args.distill_anchor_monitor:
             args.distill_anchor_monitor_source = "default"
             emit("📏 --distill-anchor-monitor ON by default (a fold is running: --distill-teacher "
@@ -284,7 +269,7 @@ def _resolve_fold_instruments(args) -> str:
                  "distill/collateral_kl_vs_parent + the off-slice meters — no loss term, no "
                  "parameter changed, one frozen no_grad forward per minibatch. "
                  "--no-distill-anchor-monitor turns it off.")
-        elif wanted:
+        elif fold and not coef_on and not proj_on:
             args.distill_anchor_monitor_source = "default-no-parent"
             emit("⚠️ --distill-anchor-monitor would be ON by default here (a fold is running), but "
                  "no fold parent can be resolved — no --distill-anchor-parent and no --model. "
@@ -313,35 +298,16 @@ def _resolve_fold_instruments(args) -> str:
     return stop_default
 
 
-def resolve_config(args, parser) -> ResolvedRunConfig:
-    """Desugar, inherit and validate `args` in place. Returns the values that live outside it."""
-    # --- Resolve `--use-bridge` into the two internal fields ------------------------------------
-    # ONE knob now: `--use-bridge {off,node,rust}`, defaulting to `rust` (serverless training AND
-    # eval). It splits into `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at
-    # every transport site) + `args.bridge_impl` (the "node"|"rust" child selector, read only at
-    # spawn). `off` keeps a bridge_impl of "node" so a websocket run still has a well-formed value
-    # for the offline/search paths that take one.
-    #
-    # The DEPRECATED `--use-showdown-bridge` boolean alias is DELETED. It meant `--use-bridge=node`,
-    # which is no longer the default, so keeping it would have made "the legacy flag" silently mean
-    # "the slower impl" — pass `--use-bridge=node` explicitly for that.
-    _use_bridge = getattr(args, "use_bridge", "rust")
-    args.bridge_impl = "node" if _use_bridge == "off" else _use_bridge
-    args.use_showdown_bridge = _use_bridge != "off"
+def desugar_umbrella_flags(args) -> None:
+    """The UMBRELLA desugars, in one place: `--unified-moves` -> `--unified-damage` -> the
+    component toggles, `--predict-unrevealed-mon-moves`, and `--damage-matrices` -> its two bools.
 
-    # --- Resolve resumable structural toggles (None sentinel = "not passed on the CLI") ---
-    # Each version-checked structural toggle defaults to None so a FLAGLESS resume can INHERIT the
-    # saved value (the documented `--model … --steps …` command), instead of falling back to OFF and
-    # FATALing at check_compatible (saved-ON vs current-default-OFF). An EXPLICIT flag that flips a
-    # toggle still FATALs at load (desirable). A fresh run (no --model) → the toggle's OFF default.
-    _saved_ver = _load_saved_version(args.model) if args.model else None
-    if args.model and _saved_ver is None:
-        print("[Resume] WARNING: saved model_config.json unreadable — structural toggles fall back to "
-              "their OFF defaults and may FATAL at the version check; pass them explicitly if needed.")
-    _popart_explicit = args.use_popart is not None
-    _coef_explicit = args.opp_belief_aux_coef is not None
-    _hp_coef_explicit = args.hp_type_belief_coef is not None   # before _resolve fills the 0.05 default
-
+    Module-level for the same reason `inherit_saved_flag` is: `main.checkargs` has to build the
+    SAME namespace a launch builds before it can read `combination_checks` on it. A flagless run
+    resolves `--unified-moves` to 'both', which turns `--damage-op` / `--move-latent` ON — so a
+    checker that skipped this would report every damage-family dependency as unsatisfied on a
+    command that launches. Mutates `args` in place; prints the two operator notes it always did.
+    """
     # --unified-moves is the umbrella over the WHOLE move system: it sets --unified-damage to the same
     # level (so the op/belief/outgoing desugar below runs) AND turns on the move latent + its grading.
     # Applied BEFORE the --unified-damage desugar so the level flows through. v24.
@@ -419,6 +385,50 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             args.damage_matrices_outgoing = None
         if not hasattr(args, "damage_matrices_incoming"):
             args.damage_matrices_incoming = None
+
+
+def resolve_config(args, parser) -> ResolvedRunConfig:
+    """Desugar, inherit and validate `args` in place. Returns the values that live outside it."""
+    # WHICH FLAGS WERE ACTUALLY TYPED — captured FIRST, before one default is filled, because after
+    # `_resolve` an unset tri-state flag is indistinguishable from a typed default and several
+    # refusals ("you passed a knob that does nothing") are only honest about a typed value.
+    # `main.checkargs` stamps the same marker before it inherits from the parent config, so
+    # `combination_checks._typed` gives both surfaces the same answer. See that module's docstring.
+    args._explicit_flags = frozenset(d for d, v in vars(args).items() if v is not None)
+
+    # --- Resolve `--use-bridge` into the two internal fields ------------------------------------
+    # ONE knob now: `--use-bridge {off,node,rust}`, defaulting to `rust` (serverless training AND
+    # eval). It splits into `args.use_showdown_bridge` (a plain bool = "bridge enabled?", read at
+    # every transport site) + `args.bridge_impl` (the "node"|"rust" child selector, read only at
+    # spawn). `off` keeps a bridge_impl of "node" so a websocket run still has a well-formed value
+    # for the offline/search paths that take one.
+    #
+    # The DEPRECATED `--use-showdown-bridge` boolean alias is DELETED. It meant `--use-bridge=node`,
+    # which is no longer the default, so keeping it would have made "the legacy flag" silently mean
+    # "the slower impl" — pass `--use-bridge=node` explicitly for that.
+    _use_bridge = getattr(args, "use_bridge", "rust")
+    args.bridge_impl = "node" if _use_bridge == "off" else _use_bridge
+    args.use_showdown_bridge = _use_bridge != "off"
+
+    # --- Resolve resumable structural toggles (None sentinel = "not passed on the CLI") ---
+    # Each version-checked structural toggle defaults to None so a FLAGLESS resume can INHERIT the
+    # saved value (the documented `--model … --steps …` command), instead of falling back to OFF and
+    # FATALing at check_compatible (saved-ON vs current-default-OFF). An EXPLICIT flag that flips a
+    # toggle still FATALs at load (desirable). A fresh run (no --model) → the toggle's OFF default.
+    _saved_ver = _load_saved_version(args.model) if args.model else None
+    if args.model and _saved_ver is None:
+        print("[Resume] WARNING: saved model_config.json unreadable — structural toggles fall back to "
+              "their OFF defaults and may FATAL at the version check; pass them explicitly if needed.")
+    # Whether a recorded parent config was READ. `combination_checks` needs it for the one check
+    # whose launch-path behaviour depends on it (an inherited PopArt has its clip auto-cleared just
+    # below, so the refusal must not fire there); `main.checkargs` reports that check as ADVISORY
+    # when it could not read the parent.
+    args._saved_config_present = _saved_ver is not None
+    _popart_explicit = args.use_popart is not None
+    _coef_explicit = args.opp_belief_aux_coef is not None
+
+    desugar_umbrella_flags(args)
+
 
     def _resolve(name, default):
         inherit_saved_flag(args, _saved_ver, name, default)
@@ -521,17 +531,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region to the frozen fold parent. The
     # distill_coef class: training-only, never gated, argparse default None so an unset flag lands
     # on the byte-identical 0.0 / "off_slice" here rather than in three separate places.
-    # `_anchor_mode_explicit` is captured BEFORE the resolve, because after it the unset flag is
-    # indistinguishable from a typed "off_slice" — and the "you typed a knob that does nothing"
-    # refusal below is only honest about a value the user actually typed.
-    _anchor_mode_explicit = args.distill_anchor_mode is not None
-    _anchor_ref_explicit = (args.distill_anchor_ref is not None
-                            or args.distill_anchor_ema_tau is not None
-                            or args.distill_anchor_refresh_every is not None)
-    # gen3_distill_grad_project_v1: captured with the two above, BEFORE the resolve, for the same
-    # reason — after it an unset flag is indistinguishable from a typed default, and the refusal
-    # below is only honest about a value the user actually typed.
-    _proj_samples_explicit = args.distill_anchor_proj_samples is not None
     _resolve("distill_anchor_coef", 0.0)       # training-only OFF-SLICE anchor KL weight (0.0 = off)
     _resolve("distill_anchor_mode", "off_slice")  # training-only: which rows the anchor applies to
     # WHICH policy the anchor is measured against. "parent" (the FIXED fold parent) is the default
@@ -548,18 +547,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # gen3_distill_stop_rule_v1 — the DUAL-ASCENT budget on the anchor coefficient, and the FOLD
     # STOP RULE. Same class as everything above: training-only, never gated, argparse default None
     # so an unset flag lands on the byte-identical OFF default in one place and a flagless resume
-    # keeps the arm it was launched as. `_dual_knob_explicit` is captured BEFORE the resolve for
-    # the same reason `_anchor_ref_explicit` is: afterwards an unset flag is indistinguishable from
-    # a typed default, and the "you typed a knob that does nothing" refusal must only fire on a
-    # value the operator actually typed.
-    _dual_knob_explicit = (args.distill_anchor_dual_lr is not None
-                           or args.distill_anchor_coef_min is not None
-                           or args.distill_anchor_coef_max is not None)
-    _stop_knob_explicit = (args.distill_stop_window is not None
-                           or args.distill_stop_eps is not None
-                           or args.distill_stop_kl_slope is not None
-                           or args.distill_stop_persist is not None
-                           or args.distill_stop_anneal_factor is not None)
+    # keeps the arm it was launched as.
     _resolve("distill_anchor_target_kl", 0.0)   # training-only dual budget (0.0 = off)
     _resolve("distill_anchor_dual_lr", 0.1)     # training-only dual step eta
     _resolve("distill_anchor_coef_min", 0.0)    # training-only lower clamp (0 = no floor)
@@ -606,10 +594,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("hp_type_belief_coef", 0.05)      # training-only (inherited like spread_belief_coef)
     _resolve("item_belief_coef", 0.05)         # training-only (inherited like hp_type_belief_coef)
     # Phase B (v45): the dist head can only BE the critic if it's a live, trunk-shaping head.
-    if args.value_from_dist and args.value_dist_mode != "shaping":
-        parser.error("--value-from-dist requires --value-dist-mode shaping (the distributional head must "
-                     "be a live critic that shapes the trunk; got value_dist_mode="
-                     f"{args.value_dist_mode!r}).")
     # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
     # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
     if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
@@ -623,82 +607,15 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             print(f"[Belief] WARNING: --opp-belief-aux-coef {args.opp_belief_aux_coef:g} flips the belief head "
                   f"vs the saved checkpoint (coef {_sc:g}); a weight-shape change → will FATAL on load.")
 
-    if args.use_popart and args.clip_range_vf is not None:
-        # Require value clipping to be EXPLICITLY off with PopArt — a self-documenting config beats a
-        # silent override. PopArt normalizes the value targets so clipping is unnecessary; and because
-        # the value head returns de-normalized values an active clip would clip in UN-normalized units.
-        parser.error(
-            "--use-popart requires an explicit '--clip-range-vf none' (it defaults to 0.5). PopArt "
-            "normalizes the value targets so value clipping is unnecessary — and an active clip "
-            "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none."
-        )
     if not 0.0 <= args.stable_opponent_selfplay_share <= 1.0:
         parser.error("--stable-opponent-selfplay-share must be a fraction in [0, 1]")
-    if args.exploiter and args.self_play:
-        parser.error("--exploiter trains vs ONE fixed target as the sole opponent — it is mutually "
-                     "exclusive with --self-play. Drop --self-play (the exploiter needs no pool).")
-    if args.exploiter_keep_bots and not args.exploiter:
-        parser.error("--exploiter-keep-bots only applies in exploiter mode — pass --exploiter <target> "
-                     "too (it mixes the bots in ALONGSIDE that target).")
-    if args.warmstart_consensus and not args.exploiter:
-        parser.error("--warmstart-consensus builds an EXPLOITER init (a disagreement-gated consensus of "
-                     "teacher exploiters, sharp-on-agree / flat-on-disagree) and only applies in exploiter "
-                     "mode — pass --exploiter <target>. It is deliberately NOT available for "
-                     "generalist / self-play training, whose objective is to ABSORB per-team divergence "
-                     "(--distill-teacher), the OPPOSITE of distilling the consensus.")
     if not 0.0 <= args.exploiter_bot_fraction <= 1.0:
         parser.error("--exploiter-bot-fraction must be a fraction in [0, 1]")
-    if args.exploiter_temp_start is not None:
-        if not args.exploiter:
-            parser.error("--exploiter-temp-start only applies in exploiter mode — pass --exploiter "
-                         "<target> too (it anneals THAT target's play temperature).")
-        if args.exploiter_temp_start <= 0.0 or args.exploiter_temp_end <= 0.0:
-            parser.error("--exploiter-temp-start / --exploiter-temp-end must be > 0 (a softmax "
-                         "temperature; the opponent's logits are divided by it).")
-        if not 0.0 <= args.exploiter_temp_anneal_frac <= 1.0:
-            parser.error("--exploiter-temp-anneal-frac must be a fraction in [0, 1]")
-        if args.exploiter_temp_mode == "ratchet":
-            if not 0.0 < args.exploiter_temp_ratchet_factor < 1.0:
-                parser.error("--exploiter-temp-ratchet-factor must be in (0, 1) (it multiplies the "
-                             "temperature DOWN each ratchet).")
-            if not 0.0 < args.exploiter_temp_ratchet_wr < 1.0:
-                parser.error("--exploiter-temp-ratchet-wr must be a win-rate in (0, 1).")
-            if args.exploiter_temp_ratchet_games < 1:
-                parser.error("--exploiter-temp-ratchet-games must be >= 1.")
-            if args.exploiter_temp_start <= args.exploiter_temp_end:
-                parser.error("--exploiter-temp-mode ratchet needs --exploiter-temp-start > "
-                             "--exploiter-temp-end (it ratchets the temp DOWN from start toward end).")
-    # gen3_exploiter_pool_ladder_v1 — the POOL-LADDER opponent curriculum. Same shape of dependency
-    # as --exploiter-keep-bots above: it only means anything in exploiter mode, and it names rungs
-    # that end at the --exploiter target, so a ladder with no target is a config with no terminus.
-    if args.exploiter_ladder:
-        if not args.exploiter:
-            parser.error("--exploiter-ladder only applies in exploiter mode — pass --exploiter "
-                         "<target> too (the ladder's TERMINAL rung IS that target; without it the "
-                         "curriculum has no destination).")
-        if not 0.0 < args.exploiter_ladder_gate < 1.0:
-            parser.error("--exploiter-ladder-gate must be a win-rate in (0, 1).")
-        if args.exploiter_ladder_window < 1:
-            parser.error("--exploiter-ladder-window must be >= 1.")
-        if args.exploiter_ladder_rungs < 1:
-            parser.error("--exploiter-ladder-rungs must be >= 1 (the number of auto: rungs drawn "
-                         "BEFORE the --exploiter target is appended).")
-    elif args.exploiter_ladder_rungs < 1:
-        parser.error("--exploiter-ladder-rungs must be >= 1.")
-    if args.exploiter_temp_start is None and args.exploiter_temp_mode == "ratchet":
-        parser.error("--exploiter-temp-mode ratchet requires --exploiter-temp-start (the initial/max "
-                     "temperature to ratchet down from — set it HIGH, e.g. 5.0).")
     # gen3_fork_lr_pin_v1 — `--fork-lr` is RESUME-ONLY. On a fresh run the optimizer starts at
     # `--lr` and nothing overrides it, so a pin there is either a no-op or a second spelling of
     # `--lr`, and the second reading is the dangerous one: a fresh run pinned to a value its own
     # `--lr` contradicts records a `dose` block naming a rate it never used. Refuse and say which
     # flag to use. `--fork-lr-freeze` alone is likewise refused — a freeze with nothing to freeze at.
-    if getattr(args, "fork_lr", None) is not None and not args.model:
-        parser.error("--fork-lr is RESUME-ONLY: it pins the LR of a checkpoint being FORKED, and a "
-                     "fresh run has no inherited LR to override. Use --lr on a fresh run.")
-    if getattr(args, "fork_lr_freeze", False) and getattr(args, "fork_lr", None) is None:
-        parser.error("--fork-lr-freeze needs --fork-lr: it freezes the KL controller AT the pinned "
-                     "rate, and without a pin there is no rate to freeze at (pass --fork-lr <value>).")
     if getattr(args, "fork_lr", None) is not None and args.fork_lr <= 0:
         parser.error("--fork-lr must be > 0 (it is a learning rate, not a switch).")
 
@@ -712,15 +629,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # A negative coef would INVERT the BCE gradient (train the head/trunk to MAXIMISE error).
         # win_prob_coef is training-only (not version-locked), so guard it here — the only gate.
         parser.error("--win-prob-coef must be >= 0 (0 = off; the mode controls on/off)")
-    if args.value_dist_mode != "none":
-        # The atom count is the head's output width; the support must be a real interval. Self-documenting
-        # config: require both explicitly when the head is on (no magic defaults for a versioned param).
-        if not args.value_dist_bins or args.value_dist_bins <= 0:
-            parser.error("--value-dist-mode requires --value-dist-bins > 0 (the atom count; recommended 32)")
-        if not (args.value_dist_vmax > args.value_dist_vmin):
-            parser.error("--value-dist-mode requires --value-dist-vmax > --value-dist-vmin (the atom support)")
-    elif args.value_dist_bins:
-        parser.error("--value-dist-bins is set but --value-dist-mode is none — pass a mode, or drop the bins")
     if args.value_dist_coef is not None and args.value_dist_coef < 0.0:
         # A negative coef would INVERT the CE gradient. value_dist_coef is training-only (not
         # version-locked), so guard it here — the only gate.
@@ -734,21 +642,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # P(win) DOWN. The invariance theorem still holds (φ' = −φ is a valid potential), which is
         # exactly why this cannot be caught downstream: it would train, converge, and be wrong.
         parser.error("--win-prob-pbrs-coef must be >= 0 (0 = off)")
-    if args.win_prob_pbrs_coef and args.win_prob_pbrs_coef > 0 and args.win_prob_mode == "none":
-        # The POTENTIAL IS the win-prob head. Under `none` the head is not BUILT, so there is nothing
-        # to read and the shaping would be a silent no-op — the invisible-regression class. Fail at
-        # config time with the fix in the message, not at the first rollout end.
-        parser.error("--win-prob-pbrs-coef > 0 requires --win-prob-mode read_only|shaping — the PBRS "
-                     "potential φ(s) IS the win-prob head's output, and --win-prob-mode none builds "
-                     "no head. Pass a mode, or drop the shaping coefficient.")
-    if getattr(args, "win_prob_pbrs_source", None) and not (
-            args.win_prob_pbrs_coef and args.win_prob_pbrs_coef > 0):
-        # A frozen φ source with no shaping coefficient loads a whole extra network onto the
-        # training device, runs a forward per rollout, and multiplies the result by zero. Nothing
-        # downstream would say so — the same invisible-no-op class the coef/mode gate above guards.
-        parser.error("--win-prob-pbrs-source names the FROZEN potential for the win-prob PBRS, so it "
-                     "requires --win-prob-pbrs-coef > 0. With no coefficient the source would be a "
-                     "frozen network loaded, forwarded once per rollout, and multiplied by zero.")
     # --- gen3_clean_world_config_v1: the TERMINAL magnitude + the outcome ORDERING it implies ---
     if getattr(args, "victory_value", 30.0) is not None and args.victory_value <= 0.0:
         # A non-positive victory value inverts win/loss (or flattens them), which trains correctly
@@ -779,25 +672,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--intent-label-bot-weight must be >= 0 (0 = train on no bot rows; 1 = off)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
-    if args.opd_coef and args.opd_coef > 0 and not args.search_teacher:
-        # OPD distils the beam's π' from the SAME correction buffer the search-teacher fills (its workers
-        # build π'), so it can't run standalone.
-        parser.error("--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
-                     "correction buffer; its workers build the π' targets)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the
     # correction buffer; `crater` is the default and needs no gate. Two ways `winprob_oneply` can be
     # asked for and be unable to run, both silent otherwise (the callback is simply never built, or
     # every candidate is skipped for want of a head):
-    if args.search_teacher_mode != "crater":
-        if not args.search_teacher:
-            parser.error(f"--search-teacher-mode {args.search_teacher_mode} requires "
-                         "--search-teacher — the mode selects which teacher fills the correction "
-                         "buffer, and without the flag no teacher runs at all.")
-        if args.win_prob_mode == "none":
-            parser.error(f"--search-teacher-mode {args.search_teacher_mode} requires "
-                         "--win-prob-mode read_only|shaping — the one-ply RANKING *is* the win-prob "
-                         "head, and --win-prob-mode none builds no head. Falling back to the critic's "
-                         "shaped-return ranking would run a DIFFERENT teacher under the same flag.")
     if not (0.0 < args.winprob_teacher_band <= 0.5):
         # 0 admits nothing; > 0.5 admits every decision and the gate stops being a gate.
         parser.error("--winprob-teacher-band must be in (0, 0.5] (the |P(win) - 0.5| half-width)")
@@ -806,11 +684,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # gen3_cf_label_plumbing_v1 — training-only, so these parser checks are the ONLY gate.
     if args.cf_winprob_coef is not None and args.cf_winprob_coef < 0.0:
         parser.error("--cf-winprob-coef must be >= 0 (0 = off)")
-    if args.cf_winprob_coef and args.cf_winprob_coef > 0 and args.win_prob_mode == "none":
-        # There is no head to supervise: `win_prob_mode none` means WinProbHead is not BUILT. Fail
-        # at the CLI rather than let a live coefficient silently fold nothing for a whole run.
-        parser.error("--cf-winprob-coef > 0 requires --win-prob-mode read_only|shaping — the "
-                     "counterfactual labels supervise the WIN-PROB head, which 'none' does not build")
     if args.cf_label_lag_steps is not None and args.cf_label_lag_steps < 0:
         parser.error("--cf-label-lag-steps must be >= 0 (0 = never expire)")
     if args.cf_records_keep is not None and args.cf_records_keep < 1:
@@ -832,38 +705,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--cf-evidential-coef must be >= 0 (0 = off)")
     if args.cf_evidential_reg is not None and args.cf_evidential_reg < 0.0:
         parser.error("--cf-evidential-reg must be >= 0 (0 = no KL pull toward Beta(1,1))")
-    if args.cf_evidential_coef and args.cf_evidential_coef > 0 and not args.cf_evidential:
-        # There is no head to supervise, and unlike the win-prob case the head cannot be added to a
-        # run later — it is a state_dict change. Refuse at the CLI rather than fold nothing for a
-        # whole run and then FATAL the resume that tries to fix it.
-        parser.error("--cf-evidential-coef > 0 requires --cf-evidential — the evidential term "
-                     "supervises a head that flag BUILDS, and it is a structural (version-gated) "
-                     "toggle that cannot be turned on mid-run")
     # gen3_cf_twin_heads_v1 — the coefficients are training-only (parser checks are the ONLY gate);
     # the two structural flags are version-gated, so only their CROSS-flag requirements land here.
     if args.cf_twin_coef is not None and args.cf_twin_coef < 0.0:
         parser.error("--cf-twin-coef must be >= 0 (0 = off)")
     if args.cf_shadow_coef is not None and args.cf_shadow_coef < 0.0:
         parser.error("--cf-shadow-coef must be >= 0 (0 = off)")
-    if args.cf_twin_coef and args.cf_twin_coef > 0 and not args.cf_twin_heads:
-        # Same reasoning as --cf-evidential-coef: the heads are a state_dict change, so they cannot
-        # be added mid-run to rescue a live coefficient — the mistake would cost the whole run AND
-        # FATAL the resume that tried to fix it.
-        parser.error("--cf-twin-coef > 0 requires --cf-twin-heads — the twin heads are a "
-                     "state_dict change (v99, version-gated) and cannot be added to a run that "
-                     "did not start with them.")
-    if args.cf_twin_heads and args.win_prob_mode == "none":
-        # Heads B and C mirror head A's on-policy BCE, and head A is `win_head`. With
-        # --win-prob-mode none there is no head A, so the factorial has no control arm: B and C
-        # would carry only their cf folds and B−A would be undefined. Refuse at the CLI rather than
-        # produce an arm whose primary comparison silently does not exist.
-        parser.error("--cf-twin-heads requires --win-prob-mode read_only|shaping — the twins "
-                     "mirror head A's on-policy BCE, and --win-prob-mode none builds no head A, so "
-                     "the arm's control arm would not exist.")
-    if args.cf_shadow_coef and args.cf_shadow_coef > 0 and not args.cf_shadow_critic:
-        parser.error("--cf-shadow-coef > 0 requires --cf-shadow-critic — the shadow head is a "
-                     "state_dict change (v99, version-gated) and cannot be added to a run that "
-                     "did not start with it.")
     # gen3_q_winprob_head_v1 (v107) — the two coefficients are training-only, so these parser
     # checks are their ONLY gate. `--q-winprob-mode` itself is version-gated, so only its
     # cross-flag requirements land here.
@@ -871,20 +718,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--q-winprob-coef must be >= 0 (0 = off)")
     if args.q_winprob_onpolicy_coef is not None and args.q_winprob_onpolicy_coef < 0.0:
         parser.error("--q-winprob-onpolicy-coef must be >= 0 (0 = off)")
-    _q_live = ((args.q_winprob_coef or 0.0) > 0.0
-               or (args.q_winprob_onpolicy_coef or 0.0) > 0.0)
-    if _q_live and (args.q_winprob_mode in (None, "none")):
-        # Same reasoning as --cf-evidential-coef: the head is a state_dict change (v105,
-        # version-gated), so it cannot be added mid-run to rescue a live coefficient. The mistake
-        # would cost the whole run AND FATAL the resume that tried to fix it.
-        parser.error("--q-winprob-coef / --q-winprob-onpolicy-coef > 0 requires --q-winprob-mode "
-                     "read_only — the term supervises a head that flag BUILDS, and it is a "
-                     "structural (version-gated) toggle that cannot be turned on mid-run.")
-    if args.cf_records and not args.use_showdown_bridge:
-        # The record is a `__RECON__` frame off the bridge child's stdout; the websocket transport
-        # never produces one, so the flag would be a silent no-op.
-        parser.error("--cf-records requires the in-process bridge (--use-bridge node|rust) — the "
-                     "reconstruction record is a bridge frame; a websocket run emits none")
     if getattr(args, "checkpoint_every_steps", None) is not None and args.checkpoint_every_steps < 1:
         parser.error("--checkpoint-every-steps must be >= 1 (it is an ENV-STEP interval; there is "
                      "no 'off' value — omit the flag for the historical 50000-vec-call cadence)")
@@ -893,17 +726,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--distill-coef must be >= 0 (0 = off)")
     if args.distill_value_coef is not None and args.distill_value_coef < 0.0:
         parser.error("--distill-value-coef must be >= 0 (0 = off)")
-    if args.distill_value_coef and args.distill_value_coef > 0 and not (args.distill_coef and args.distill_coef > 0):
-        parser.error("--distill-value-coef > 0 requires --distill-coef > 0 — the value distillation is "
-                     "coherent only because the policy KL drives π_student→π_teacher on those states, "
-                     "making V_teacher the right target (V^π is policy-relative).")
     if args.distill_value_feat_coef is not None and args.distill_value_feat_coef < 0.0:
         parser.error("--distill-value-feat-coef must be >= 0 (0 = off)")
-    if (args.distill_value_feat_coef and args.distill_value_feat_coef > 0
-            and not (args.distill_coef and args.distill_coef > 0)):
-        parser.error("--distill-value-feat-coef > 0 requires --distill-coef > 0 — the FitNets value-feature "
-                     "match is coherent only because the policy KL drives π_student→π_teacher on those states, "
-                     "making the teacher's value_pooled the right target (V^π is policy-relative).")
     # gen3_distill_offslice_anchor_v1 — the OFF-SLICE trust region. The dependency is not a style
     # rule: the anchor's slice IS the `distill_mask` obs key, and the env emits that key only when
     # `_distill_species` is populated, which `apply_distill_team_bias` gates on --distill-coef > 0.
@@ -912,30 +736,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.distill_anchor_coef is not None and args.distill_anchor_coef < 0.0:
         parser.error("--distill-anchor-coef must be >= 0 (0 = off; with --distill-anchor-monitor, "
                      "0 is the pure-instrument arm)")
-    # gen3_distill_grad_project_v1: `grad_project` WANTS the anchor machinery even at coefficient 0
-    # and without --distill-anchor-monitor — the projection is the mode's whole effect, and the
-    # frozen parent has to be attached so `distill/collateral_kl_vs_parent` measures it live. An
-    # experiment whose readout is optional is an experiment nobody reads.
-    _grad_project = args.distill_anchor_mode == "grad_project"   # READ AFTER the resolve above
-    _anchor_wanted = bool((args.distill_anchor_coef and args.distill_anchor_coef > 0)
-                          or args.distill_anchor_monitor or _grad_project)
     if args.distill_anchor_proj_samples is not None and args.distill_anchor_proj_samples < 1:
         parser.error("--distill-anchor-proj-samples must be >= 1 — it is the number of off-slice "
                      "rows that constrain each step's distill gradient, and 0 constraints is "
                      "--distill-anchor-mode off_slice with no projection at all.")
-    if _proj_samples_explicit and not _grad_project:
-        parser.error("--distill-anchor-proj-samples only applies to --distill-anchor-mode "
-                     "grad_project — it sizes that mode's constraint set and nothing else reads it.")
-    if _anchor_wanted and not (args.distill_coef and args.distill_coef > 0):
-        parser.error("--distill-anchor-coef / --distill-anchor-monitor require --distill-coef > 0 — "
-                     "the anchor's OFF-SLICE split reads the `distill_mask` obs key, which the env "
-                     "emits only for a run with a live exploiter-distillation term.")
-    if (_anchor_mode_explicit or _anchor_ref_explicit
-            or args.distill_anchor_parent is not None) and not _anchor_wanted:
-        parser.error("--distill-anchor-mode / --distill-anchor-ref / --distill-anchor-ema-tau / "
-                     "--distill-anchor-refresh-every / --distill-anchor-parent do nothing without "
-                     "--distill-anchor-coef > 0 or --distill-anchor-monitor — pass one of those, or "
-                     "drop these.")
     # The two moving-reference knobs. tau is a convex-combination weight, so anything outside [0, 1]
     # is not an average at all — it EXTRAPOLATES away from the student (tau > 1) or overshoots past
     # it (tau < 0), and either would still train and still read as ON.
@@ -952,50 +756,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # would run every rollout and move nothing, while every startup line and every series said it
     # was on. Refuse rather than ship a silent no-op — the same principle as the anchor's
     # unresolvable-parent FATAL.
-    if args.distill_anchor_target_kl and args.distill_anchor_target_kl > 0:
-        if not (args.distill_anchor_coef and args.distill_anchor_coef > 0):
-            parser.error("--distill-anchor-target-kl requires --distill-anchor-coef > 0: the dual "
-                         "update is MULTIPLICATIVE (coef <- coef * exp(...)), so a coefficient of 0 "
-                         "is a fixed point and the controller could never move it. Give the dual a "
-                         "starting coefficient to scale.")
-        if args.distill_anchor_dual_lr is not None and args.distill_anchor_dual_lr <= 0:
-            parser.error("--distill-anchor-dual-lr must be > 0 (it is the dual's step size).")
-        _cmin = args.distill_anchor_coef_min or 0.0
-        if _cmin < 0:
-            parser.error("--distill-anchor-coef-min must be >= 0 (it clamps a KL weight).")
-        if args.distill_anchor_coef_max is not None and args.distill_anchor_coef_max < _cmin:
-            parser.error("--distill-anchor-coef-max must be >= --distill-anchor-coef-min.")
-    elif args.distill_anchor_target_kl is not None and args.distill_anchor_target_kl < 0:
-        parser.error("--distill-anchor-target-kl must be >= 0 (0 = off, a static coefficient).")
-    elif _dual_knob_explicit:
-        parser.error("--distill-anchor-dual-lr / --distill-anchor-coef-min / "
-                     "--distill-anchor-coef-max do nothing without --distill-anchor-target-kl > 0 "
-                     "— pass that, or drop these.")
     # The STOP RULE's AND-gate reads `distill/collateral_kl_vs_parent`, which exists only when the
     # frozen fold parent is attached. Without it the rise half is permanently silent and the rule
     # would never fire, while reading as ON — the exact silent-no-op class the anchor's loud
     # startup line was written against.
-    if args.distill_stop and args.distill_stop != "off":
-        if not _anchor_wanted:
-            parser.error("--distill-stop requires the anchor MONITOR: pass --distill-anchor-monitor "
-                         "(or --distill-anchor-coef > 0, or --distill-anchor-mode grad_project). "
-                         "The rule's RISE half reads distill/collateral_kl_vs_parent, which only "
-                         "exists when the frozen fold parent is attached — without it the AND-gate "
-                         "could never close and the flag would be a silent no-op.")
-        if args.distill_stop_window is not None and args.distill_stop_window < 2:
-            parser.error("--distill-stop-window must be >= 2: the rise test is an OLS slope over "
-                         "window+1 points and needs at least one residual degree of freedom for its "
-                         "standard error to exist.")
-        if args.distill_stop_persist is not None and args.distill_stop_persist < 1:
-            parser.error("--distill-stop-persist must be >= 1.")
-        if (args.distill_stop_anneal_factor is not None
-                and not (0.0 < args.distill_stop_anneal_factor < 1.0)):
-            parser.error("--distill-stop-anneal-factor must be in (0, 1) — it is the per-rollout "
-                         "geometric decay of --distill-coef after the rule fires.")
-    elif _stop_knob_explicit:
-        parser.error("--distill-stop-window / --distill-stop-eps / --distill-stop-kl-slope / "
-                     "--distill-stop-persist / --distill-stop-anneal-factor do nothing without "
-                     "--distill-stop {warn,anneal,abort} — pass one, or drop these.")
     # gen3_exploiter_distill_v1: parse --distill-teacher into (teacher_path, [team_files]) GROUPS once,
     # stored on args for the teambuilder + model-setup to reuse. Preferred form =
     # 'TEACHER:TEAM[,TEAM...][;TEACHER2:...]' — ';' separates TEACHERS, ',' separates that teacher's TEAMS,
@@ -1006,7 +770,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `--distill-team-bias` carries a None argparse default so a TYPED value is distinguishable from
     # the unset flag; the guard below refuses a typed bias with no teacher, and could not exist if
     # every flagless run arrived carrying 0.4. Resolved here, before any reader.
-    _team_bias_explicit = args.distill_team_bias is not None
     if args.distill_team_bias is None:
         args.distill_team_bias = DEFAULT_DISTILL_TEAM_BIAS
     #
@@ -1023,17 +786,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # change the observation SPACE of a run that folds no distill term).
     args._distill_pairs = []
     _items = [x.strip() for x in (args.distill_teacher or "").split(",") if x.strip()]
-    if args.distill_coef and args.distill_coef > 0 and not _items:
-        parser.error("--distill-coef > 0 requires --distill-teacher (as 'TEACHER:TEAM[,TEAM...]' groups)")
-    if _team_bias_explicit and args.distill_team_bias > 0 and not _items:
-        # The bias is a bias TOWARD THE TEACHER TEAMS; with no teacher there is no team to bias
-        # toward, so the flag would be a silent no-op — the exact failure this whole block exists to
-        # make impossible. (Not reachable from the unset flag: the argparse default is None and the
-        # 0.4 resolution happens above, so only a TYPED value lands here.)
-        parser.error("--distill-team-bias > 0 requires --distill-teacher — the bias points at the "
-                     "TEACHER TEAMS ('TEACHER:TEAM[,TEAM...]' groups) and there is nothing to bias "
-                     "toward without one; the flag would be a silent no-op. Drop it, pass "
-                     "--distill-team-bias 0, or name the teacher(s).")
     if _items:
         if ":" not in _items[0]:
             # The bare-list + parallel --distill-teacher-team form is DELETED (no run ever passed it;
@@ -1090,86 +842,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # reads too — that is the whole point of the module. C1 (2026-09-01) forked a parent recording
     # `distill_target="action"`, passed `--distill-coef 0`, named no target, and died HERE while
     # checkargs had said the command still launches. One declaration, both readers.
-    for _combo in failing_checks(args):
-        parser.error(_combo.message)
     if args.distill_beta <= 0.0:
         parser.error("--distill-beta must be > 0 (an AWR temperature)")
     if not (0.0 < args.rank_tripwire_drop < 1.0):
         parser.error("--rank-tripwire-drop must be in (0, 1) — a fractional drop from baseline")
-    if args._distill_pairs and (args.trainee_team or args.trainee_teams):
-        # Keyed on the PAIRS, not the coefficient (gen3_distill_bias_at_coef0_v1): the team bias now
-        # applies at coef 0 too, and it REPLACES the trainee teambuilder — so at coef 0 a pin would
-        # not merely be redundant, it would be silently DISCARDED. Refuse instead.
-        parser.error("--distill-teacher is mutually exclusive with --trainee-team/--trainee-teams: "
-                     "distillation biases the trainee toward the teacher teams via --distill-team-bias "
-                     "while keeping the pool for rehearsal; a hard pin would remove the rehearsal (and "
-                     "cause forgetting), and the bias would override the pin anyway")
-    if args.move_belief_mode in ("unrevealed", "both") and not (args.opp_belief_aux_coef > 0.0):
-        # FAIL LOUD on a nonsensical config: 'unrevealed'/'both' score the HIDDEN opp slots, but without
-        # the species-belief head (--opp-belief-aux-coef>0) those slots are never filled with learned
-        # unknown-mon tokens — they stay encoder placeholders (~zeros). Predicting a hidden mon's moveset
-        # from an empty token (with no representation of WHICH mon it is) is meaningless. 'revealed' mode is
-        # exempt: it scores REVEALED slots, which carry real role-tokens regardless of the belief head.
-        parser.error(
-            f"--move-belief-mode {args.move_belief_mode} scores the opponent's HIDDEN slots, which are "
-            "only filled with learned unknown-mon tokens when the species-belief head is on. Add "
-            "--opp-belief-aux-coef <coef> (>0), or use --move-belief-mode revealed (seen mons only)."
-        )
-    if args.damage_op and args.move_belief_mode not in ("revealed", "both"):
-        # FAIL LOUD: the damage operator reads the opp ACTIVE slot's PREDICTED move logits, which are
-        # only supervised/reinjected for a REVEALED mon (revealed|both). Under off/unrevealed the
-        # active-slot logits are an unsupervised readout and the belief-gradient story breaks.
-        parser.error(
-            "--damage-op requires --move-belief-mode revealed (or both): the operator is fed the opp "
-            "active's predicted moves, which are only supervised for a revealed mon. Set "
-            "--move-belief-mode revealed, or drop --damage-op."
-        )
-    if args.move_prior_fusion and args.move_belief_mode == "off":
-        # FAIL LOUD: prior fusion folds the Smogon prior INTO the move-belief head's logits; with no
-        # head (--move-belief-mode off) there is nothing to fuse.
-        parser.error(
-            "--move-prior-fusion requires --move-belief-mode != off (revealed|unrevealed|both): the prior "
-            "fuses into the move-belief head's logits. Set --move-belief-mode revealed, or drop "
-            "--move-prior-fusion."
-        )
-    if args.species_prior_fusion and not (args.opp_belief_aux_coef and args.opp_belief_aux_coef > 0):
-        # FAIL LOUD: the species prior fuses INTO BeliefHead's species head, and that head only exists
-        # under the in-place believed slots (which --opp-belief-aux-coef>0 is what turns on).
-        parser.error(
-            "--species-prior-fusion requires --opp-belief-aux-coef > 0: the team-composition prior "
-            "fuses into the BeliefHead's species head, which is only built under the hidden-opponent "
-            "belief slots. Set --opp-belief-aux-coef, or drop --species-prior-fusion."
-        )
-    if args.damage_candidate_k and not args.damage_op:
-        # FAIL LOUD at the CLI (not at extractor build, which happens only after the run has already
-        # tried to stand up a server): the cap narrows the DamageOperator's candidate axis, which
-        # only exists when the op is built.
-        parser.error(
-            "--damage-candidate-k requires --damage-op (it caps the damage operator's incoming "
-            "candidate sweep, which only exists when the op is built). Add --damage-op / "
-            "--unified-damage, or drop --damage-candidate-k."
-        )
     if args.damage_candidate_k and args.damage_candidate_k < 0:
         parser.error("--damage-candidate-k must be >= 0 (0 = the full candidate sweep).")
-    if args.damage_outgoing and not args.damage_op:
-        # The outgoing per-move block is emitted by the DamageOperator → the op must exist.
-        parser.error(
-            "--damage-outgoing requires --damage-op (the outgoing block is part of the damage operator). "
-            "Use --unified-damage both, or add --damage-op."
-        )
-    if args.entity_topk_seats and args.entity_topk_seats > 0 and not (
-            args.damage_op and args.move_latent):
-        # gen3_entity_move_seats_v1: the E4 seats gather the op's PRE-transformer candidate weights
-        # and the move latent table — both of which the tiered order produces whenever the op is on.
-        parser.error(
-            "--entity-topk-seats > 0 requires --damage-op AND --move-latent (--unified-moves): "
-            "the E4 threat seats gather the op's pre-transformer candidate weights + move latents. "
-            "Add those flags, or set --entity-topk-seats 0 (E3-only)."
-        )
-    if args.entity_tail_seats and not (args.damage_op
-                                       and args.entity_topk_seats and args.entity_topk_seats > 0):
-        parser.error("--entity-tail-seats requires --damage-op AND --entity-topk-seats > 0 "
-                     "(the tail is defined relative to the E4 seats' truncation).")
     _ebf = args.edge_bias_families
     if _ebf and _ebf != "off":
         # The family vocabulary is the EXTRACTOR'S, single-sourced — a hand-copied set here
@@ -1180,17 +858,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         if _fams - set(_valid):
             parser.error(f"--edge-bias-families: unknown families {sorted(_fams - set(_valid))} "
                          f"(valid: off, d [= d1,d3 frozen], or a comma list of {sorted(_valid)})")
-        if (_fams & {"d1", "s1", "c1", "c2"}) and not (args.damage_op and args.damage_outgoing):
-            parser.error("--edge-bias-families d1/s1/c1/c2 require --damage-op AND --damage-outgoing "
-                         "(--unified-damage both / --unified-moves both).")
-        if "x" in _fams and not args.damage_op:
-            parser.error("--edge-bias-families x requires --damage-op "
-                         "(the Pursuit belief comes from the op's pre-transformer posterior).")
-        if (_fams & {"d2", "d4", "v", "t", "g", "c4", "c3", "c5"}) and not args.damage_op:
-            parser.error("--edge-bias-families d2/d4/v/t/g/c4/c3/c5 require --damage-op (the op's kernels/buffers).")
-        if (_fams & {"d3", "s3"}) and not (args.entity_topk_seats and args.entity_topk_seats > 0):
-            parser.error("--edge-bias-families d3/s3 require --entity-topk-seats > 0 (the bias rows "
-                         "ARE the E4 threat seats).")
     if not (_MIN_PRIOR_FLOOR <= args.move_candidate_floor < 1.0):
         # gen3_unconditional_move_legality_v1: the floor is the LEGAL-BUT-UNOBSERVED base, and a value at
         # or below the "impossible" probability collapses the legality distinction it exists to preserve.
@@ -1203,82 +870,17 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             "If this came from resuming a pre-v65 checkpoint, that model's belief is incompatible — "
             "start a fresh run."
         )
-    if args.move_candidate_floor != _PRIOR_FLOOR and not args.move_prior_fusion:
-        # A NON-DEFAULT floor with no prior fusion is a silently-ignored flag: the floor is only read when
-        # the fused prior is built. (The default is not flagged — it is just the default.)
-        parser.error(
-            "--move-candidate-floor requires --move-prior-fusion (it sets the floor of the FUSED move "
-            "prior, which only exists under fusion). Enable --move-prior-fusion (or --unified-damage), "
-            "or drop --move-candidate-floor."
-        )
-    if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_op:
-        # The discrete incoming move-space block extends the DamageOperator.
-        parser.error(
-            "--damage-topk requires --damage-op (the discrete incoming block extends the damage operator). "
-            "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-topk 0."
-        )
-    if args.damage_topk_k and args.damage_topk_k > 0 and not args.move_latent:
-        # The block gathers each candidate move's identity LATENT from the MoveLatentEncoder.
-        parser.error(
-            "--damage-topk requires --move-latent (the block gathers each move's identity latent "
-            "from the MoveLatentEncoder). Use --unified-moves, or add --move-latent, or set --damage-topk 0."
-        )
-    if args.damage_topk_k and args.damage_topk_k > 0 and not args.damage_matrices_incoming:
-        # gen3_op_block_trim_v1: only reachable when --damage-matrices was passed EXPLICITLY as
-        # off/outgoing (the implicit case is auto-enabled above). K would size a block that isn't emitted.
-        parser.error(
-            f"--damage-topk {args.damage_topk_k} contradicts --damage-matrices {args.damage_matrices}: K is "
-            "the INCOMING matrix's width, and the lean top-K block it used to select was deleted "
-            "(gen3_op_block_trim_v1). Use --damage-matrices incoming/both, or set --damage-topk 0."
-        )
-    if getattr(args, "damage_matrices_outgoing", False) and not args.damage_op:
-        # gen3_per_move_matrices_v1: the outgoing damage matrix is emitted by the DamageOperator.
-        parser.error(
-            "--damage-matrices outgoing requires --damage-op (the matrix is emitted by the damage operator). "
-            "Use --unified-damage / --unified-moves, or add --damage-op, or set --damage-matrices off."
-        )
-    if getattr(args, "damage_matrices_incoming", False):
-        # gen3_per_move_matrices_v1: the incoming matrix needs the op + the move latent, and SUPERSEDES top-K.
-        if not args.damage_op:
-            parser.error(
-                "--damage-matrices incoming requires --damage-op (the matrix is emitted by the damage "
-                "operator). Use --unified-damage / --unified-moves, or add --damage-op."
-            )
-        if not args.move_latent:
-            parser.error(
-                "--damage-matrices incoming requires --move-latent (the matrix header gathers each move's "
-                "identity latent). Use --unified-moves, or add --move-latent."
-            )
     # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed).
-    if getattr(args, "threat_prob_outspeed", False) and not args.damage_op:
-        parser.error(
-            "--threat-prob-outspeed requires --damage-op (the P(outspeed) feature lives in the damage operator)."
-        )
-    if args.move_belief_latent_coef and not args.move_latent:
-        # The latent grading reads the MoveLatentEncoder's latent table → the encoder must exist.
-        parser.error(
-            "--move-belief-latent-coef requires --move-latent (the grading reads its per-move latent "
-            "table). Enable --move-latent (or --unified-moves), or set --move-belief-latent-coef 0."
-        )
-    if args.move_belief_latent_coef and args.move_belief_mode not in ("revealed", "both"):
-        # The grading scores the move belief on REVEALED slots (slot==species), like the move-belief BCE.
-        parser.error(
-            "--move-belief-latent-coef requires --move-belief-mode revealed (or both): it grades the "
-            "move belief on revealed slots. Set --move-belief-mode revealed (or --unified-moves), or set "
-            "--move-belief-latent-coef 0."
-        )
-    if args.spread_belief_coef and not args.spread_belief:
-        # The supervision reads the spread belief's believed stats (last_spread_belief) → the module must exist.
-        parser.error(
-            "--spread-belief-coef requires --spread-belief (it supervises the believed opp spread). "
-            "Enable --spread-belief, or set --spread-belief-coef 0."
-        )
-    if args.spread_belief_nature and not args.spread_belief:
-        # gen3_nature_ev_belief_v1: --spread-belief-nature parameterises the SpreadBelief module → it must exist.
-        parser.error(
-            "--spread-belief-nature requires --spread-belief (it reparameterises the SpreadBelief head). "
-            "Enable --spread-belief, or drop --spread-belief-nature."
-        )
+
+    # THE ONE COMBINATION SWEEP. Every value-conditional refusal — the cross-flag dependency
+    # graph, the mode-scoped ranges, the two --anneal-lr exits and the CF duty-cycle floor —
+    # is DECLARED in `main.train.combination_checks` and evaluated here, once, on the resolved
+    # namespace. `main.checkargs` reads the same list on the effective (argv + inherited)
+    # namespace, so "checkargs says it launches" now means it launches, not merely that it
+    # parses. G5 (2026-09-06) died three times on rules that had never been migrated;
+    # `combination_checks_test.py` AST-scans this file and fails if a cross-flag
+    # `parser.error` reappears outside the list.
+    refuse_first(args, parser)
 
     # One server config, built from --showdown-port and threaded to every Showdown client
     # (training-env players in spawn workers, eval, and self-play). Default port: 8000.
@@ -1327,14 +929,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
 
     annealing_mode = args.anneal_lr_start_steps is not None
-    if annealing_mode:
-        if args.anneal_min_lr is None:
-            print("[AnnealLR] ERROR: --anneal-min-lr is required when --anneal-lr-start-steps is set")
-            sys.exit(1)
-        if args.anneal_lr_start_steps >= args.steps:
-            print(f"[AnnealLR] ERROR: --anneal-lr-start-steps ({args.anneal_lr_start_steps:,}) "
-                  f"must be less than --steps ({args.steps:,})")
-            sys.exit(1)
 
     if args.hp_type_belief_coef and args.move_belief_mode == "off":
         # The CE supervises the HPTypeBelief head's posterior (last_hp_type_logits), and the head is built
@@ -1343,12 +937,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # (_resolve), so on the DEPRECATED `--unified-moves off` ablation baseline the un-passed default
         # would make the flag fail out of the box — the same shape as the `--hp-belief-mode flat` case
         # below, resolved the same way: AUTO-ZERO with a loud note.
-        if _hp_coef_explicit:
-            parser.error(
-                "--hp-type-belief-coef requires a move belief (--move-belief-mode != off / --unified-moves): "
-                "the HP-type head composes P(HP present) out of the move posterior. Enable the move belief, "
-                "or set --hp-type-belief-coef 0."
-            )
         print("[HPBelief] no move belief (--unified-moves off): auto-zeroing the default "
               "--hp-type-belief-coef (the HP-type head is built only alongside a move belief).")
         args.hp_type_belief_coef = 0.0
