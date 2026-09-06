@@ -375,6 +375,19 @@ def _make_test_player(name, connected, listen_done=None):
     return _TestPlayer()
 
 
+def _make_no_loop_player():
+    """A Gen3Player subclass instance with no client at all — for the pure class-attribute
+    assertions, which must hold on a player built by bypassing ``Player.__init__``."""
+    class _P(Gen3Player):
+        def __init__(self):
+            pass
+
+        def choose_move(self, battle):
+            raise NotImplementedError
+
+    return _P()
+
+
 class TestConnectGuard:
     def test_raises_when_listen_exits_without_login(self):
         """The FUNDAMENTAL fix, DETERMINISTIC (no timeout): poke-env's listen()
@@ -404,6 +417,103 @@ class TestConnectGuard:
             with pytest.raises(ShowdownConnectionError) as exc:
                 await me._battle_against(n_battles=1)
             assert "no listening task" in str(exc.value)
+
+        asyncio.run(asyncio.wait_for(run(), timeout=5))
+
+    # -- the DEADLINE half: a listen task that stays alive while the login never lands ------
+
+    def test_a_login_that_never_completes_raises_within_the_bound(self):
+        """🚨 THE 2026-09-05 GAP. The deterministic signal above is 'listen() RETURNED', and a
+        REFUSED LOGIN does not return: `localhost_server_configuration` authenticates against
+        Smogon's `action.php`, so a username registered upstream is rejected even by a
+        --no-security local server — socket still open, listen task still running, `logged_in`
+        never set. Pre-fix the guard spun here silently until the caller's battle deadline
+        expired and the session reported phantom timeouts. It must RAISE on its own clock, and
+        the message must name the USERNAME and the SERVER, since the failure is about the
+        account, not the network."""
+        import asyncio
+        import time
+        from agents.inference.player import ShowdownConnectionError
+
+        async def run():
+            me = _make_test_player("registered_name", connected=False, listen_done=False)
+            me.connect_timeout_s = 0.25            # the parameter, exercised
+            t0 = time.monotonic()
+            with pytest.raises(ShowdownConnectionError) as exc:
+                await me._battle_against(n_battles=1)
+            elapsed = time.monotonic() - t0
+            msg = str(exc.value)
+            assert "registered_name" in msg, "the raise must name the account that could not log in"
+            assert "ws://localhost:1" in msg, "…and the server it could not log in to"
+            assert "did not finish logging in" in msg
+            assert 0.2 <= elapsed < 3.0, f"raised at {elapsed:.2f}s, not on its own 0.25s clock"
+
+        asyncio.run(asyncio.wait_for(run(), timeout=10))
+
+    def test_timeout_zero_restores_the_unbounded_wait(self):
+        """The bound is a PARAMETER, and 0 means 'no deadline' — a caller with its own bound
+        must be able to opt out rather than inherit a second one."""
+        import asyncio
+        from agents.inference.player import ShowdownConnectionError
+
+        async def run():
+            me = _make_test_player("someone", connected=False, listen_done=False)
+            me.connect_timeout_s = 0
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(me._battle_against(n_battles=1), timeout=0.4)
+            # …and the SAME player with a bound raises the guard's own error instead.
+            me.connect_timeout_s = 0.1
+            with pytest.raises(ShowdownConnectionError):
+                await asyncio.wait_for(me._battle_against(n_battles=1), timeout=5)
+
+        asyncio.run(asyncio.wait_for(run(), timeout=10))
+
+    def test_the_default_bound_is_the_module_constant(self):
+        """A class attribute, so a player built by bypassing __init__ still has a deadline."""
+        from agents.inference.player import DEFAULT_CONNECT_TIMEOUT_S
+
+        assert Gen3Player.connect_timeout_s == DEFAULT_CONNECT_TIMEOUT_S
+        assert _make_no_loop_player().connect_timeout_s == DEFAULT_CONNECT_TIMEOUT_S
+
+    # -- the CHALLENGE / ACCEPT / LADDER paths take the same guard --------------------------
+
+    @pytest.mark.parametrize("method,args", [
+        ("_send_challenges", ("rival", 1)),
+        ("_accept_challenges", ("rival", 1)),
+        ("_ladder", (1,)),
+    ])
+    def test_challenge_accept_and_ladder_are_guarded_too(self, method, args):
+        """`src/main/play.py` — the LADDER entry point — calls these three, never
+        `battle_against`. Each opens with a bare `await logged_in.wait()` in poke-env, so
+        without the override a refused login waits out the entire session."""
+        import asyncio
+        from agents.inference.player import ShowdownConnectionError
+
+        async def run():
+            me = _make_test_player("registered_name", connected=False, listen_done=False)
+            me.connect_timeout_s = 0.15
+            with pytest.raises(ShowdownConnectionError) as exc:
+                await getattr(me, method)(*args)
+            assert "registered_name" in str(exc.value)
+
+        asyncio.run(asyncio.wait_for(run(), timeout=10))
+
+    @pytest.mark.parametrize("method,args", [
+        ("_send_challenges", ("rival", 1)),
+        ("_accept_challenges", ("rival", 1)),
+        ("_ladder", (1,)),
+    ])
+    def test_the_guarded_paths_delegate_when_logged_in(self, method, args):
+        """The guard must be a pass-through on a healthy connection — same shape as
+        `test_proceeds_when_logged_in`, for the three paths it now also covers."""
+        import asyncio
+        from unittest.mock import AsyncMock, patch
+
+        async def run():
+            me = _make_test_player("trainee", connected=True)
+            with patch.object(Player, method, new=AsyncMock(return_value="ok")) as sup:
+                assert await getattr(me, method)(*args) == "ok"
+            sup.assert_awaited_once()
 
         asyncio.run(asyncio.wait_for(run(), timeout=5))
 

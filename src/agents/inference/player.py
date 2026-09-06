@@ -16,6 +16,19 @@ class ShowdownConnectionError(RuntimeError):
     Surfacing it lets replay / eval / self-play FAIL FAST (crash → the launcher
     detects and restarts) rather than silently stalling the whole training run."""
 
+
+#: How long a player waits for its own login before giving up (seconds). Generous on purpose —
+#: it is a WEDGE detector, not a latency budget: a healthy local login lands in well under a
+#: second and the official server in a few, so 30 s never fires on a working connection.
+#:
+#: 🚨 A DEADLINE IS REQUIRED, and the listen-task signal alone is NOT enough. `localhost_server_
+#: configuration` authenticates against the real Smogon `action.php`, so a username REGISTERED
+#: upstream is refused even on a `--no-security` local server — and that refusal leaves the
+#: socket OPEN and the listen task RUNNING with `logged_in` never set. The deterministic
+#: "listen task finished" signal below therefore never fires, and the wait sat the whole battle
+#: deadline in silence, reporting phantom timeouts (measured 2026-09-05, cross-era head-to-head).
+DEFAULT_CONNECT_TIMEOUT_S = 30.0
+
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
 
@@ -63,10 +76,18 @@ class Gen3Player(Player):
     Callers can still override (e.g. a plain-Battle baseline) via the kwarg.
     """
 
+    #: The connect-or-raise deadline, in seconds. A CLASS attribute so a test double built
+    #: without ``Player.__init__`` still has one, and so a caller can raise it for a slow link
+    #: (``player.connect_timeout_s = 90``) or per subclass. See ``DEFAULT_CONNECT_TIMEOUT_S``.
+    connect_timeout_s: float = DEFAULT_CONNECT_TIMEOUT_S
+
     def __init__(self, observation_encoder=None, mappings=None,
                  stall_config: Optional[StallConfig] = None,
-                 battle_class=Gen3Battle, **kwargs):
+                 battle_class=Gen3Battle,
+                 connect_timeout_s: Optional[float] = None, **kwargs):
         super().__init__(battle_class=battle_class, **kwargs)
+        if connect_timeout_s is not None:
+            self.connect_timeout_s = float(connect_timeout_s)
         self.observation_encoder = observation_encoder
         self.mappings = mappings
         self._stall_config = stall_config or StallConfig()
@@ -85,28 +106,83 @@ class Gen3Player(Player):
         :class:`ShowdownConnectionError` before delegating. Covers every participant
         — including plain poke-env opponents — since we check their ``ps_client`` too."""
         for participant in (self, *opponents):
-            await self._await_connected(participant.ps_client)
+            await self._await_connected(
+                participant.ps_client, timeout_s=self.connect_timeout_s,
+                username=getattr(participant, "username", None))
         return await super()._battle_against(*opponents, n_battles=n_battles)
 
+    # ---- the SAME guard on the challenge / accept / ladder paths -------------------------
+    # These are the three the LADDER entry point (`src/main/play.py`) actually calls, and they
+    # were unguarded until 2026-09-05: `Player._{send_challenges,accept_challenges,ladder}` all
+    # open with a bare `await self.ps_client.logged_in.wait()`, so a refused login sat there in
+    # silence for the whole session. Overridden at the UNDERSCORE method, exactly like
+    # `_battle_against`, because that is the half `handle_threaded_coroutines` runs on POKE_LOOP
+    # — where the `logged_in` event and the listen task live.
+
+    async def _send_challenges(self, opponent, n_challenges, to_wait=None):
+        await self._await_connected(self.ps_client, timeout_s=self.connect_timeout_s,
+                                    username=getattr(self, "username", None))
+        return await super()._send_challenges(opponent, n_challenges, to_wait)
+
+    async def _accept_challenges(self, opponent, n_challenges, packed_team=None):
+        await self._await_connected(self.ps_client, timeout_s=self.connect_timeout_s,
+                                    username=getattr(self, "username", None))
+        return await super()._accept_challenges(opponent, n_challenges, packed_team)
+
+    async def _ladder(self, n_games: int):
+        await self._await_connected(self.ps_client, timeout_s=self.connect_timeout_s,
+                                    username=getattr(self, "username", None))
+        return await super()._ladder(n_games)
+
     @staticmethod
-    async def _await_connected(client) -> None:
-        """Block until ``client`` is logged in, or raise the moment its listen() task
-        finishes WITHOUT logging in. This is DETERMINISTIC — no timeout guess: a
-        refused connection makes poke-env's listen() return immediately, and a
-        dead-but-open socket is closed by the websocket ping; both finish the listen
-        task. So 'listen task done && not logged in' is an exact signal that the
-        connection failed, which we surface instead of hanging on it forever."""
+    async def _await_connected(client, *, timeout_s: Optional[float] = None,
+                               username: Optional[str] = None) -> None:
+        """Block until ``client`` is logged in, or raise — on either of TWO signals.
+
+        1. DETERMINISTIC, and it fires instantly: the listen() task finishes WITHOUT logging
+           in. A refused *connection* makes poke-env's listen() return immediately, and a
+           dead-but-open socket is closed by the websocket ping; both finish the listen task.
+           So 'listen task done && not logged in' is an exact signal that the connection
+           failed, and it needs no timeout guess.
+        2. The DEADLINE, ``timeout_s`` (default :data:`DEFAULT_CONNECT_TIMEOUT_S`). Signal 1
+           alone is not sufficient and the gap is not hypothetical: a login REFUSED by
+           `action.php` (the `--no-security` local server still authenticates a username that
+           is registered upstream) leaves the socket open and the listen task RUNNING with
+           `logged_in` never set, so this loop would spin until the caller's own battle
+           deadline expired and report a phantom timeout instead of a bad login.
+
+        The raise names the USERNAME and the SERVER, because the whole class of failure here
+        is "this account cannot log in *here*" and a message without both sends the reader to
+        the network. ``timeout_s=None``/``<= 0`` restores the unbounded pre-2026-09-05
+        behaviour and is only for a caller that has its own bound.
+        """
         if client.logged_in.is_set():
             return
+        who = f"{username!r} " if username else ""
         listen_fut = getattr(client, "_listening_coroutine", None)
         if listen_fut is None:
             # No listening task ⇒ the client can never log in on its own. A battling
             # player must listen; fail loudly rather than wait forever.
             raise ShowdownConnectionError(
-                f"{client.websocket_url}: client has no listening task "
+                f"{client.websocket_url}: {who}client has no listening task "
                 f"(start_listening=False?) — it can never log in."
             )
+        loop = asyncio.get_event_loop()
+        deadline = (None if not timeout_s or timeout_s <= 0
+                    else loop.time() + float(timeout_s))
         while not client.logged_in.is_set():
+            if deadline is not None and loop.time() >= deadline:
+                login_err = getattr(client, "_last_login_error", None)
+                raise ShowdownConnectionError(
+                    f"{client.websocket_url}: {who}did not finish logging in within "
+                    f"{float(timeout_s):.0f}s"
+                    + (f" — {login_err}" if login_err else
+                       " — the socket is still open and the listen task is still running, so "
+                       "this is a login the server never completed (a username registered on "
+                       "the official ladder is REFUSED even by a --no-security local server, "
+                       "which authenticates against Smogon's action.php). Try an unregistered "
+                       "username, or supply the account's password.")
+                )
             if listen_fut.done():
                 err = None
                 if not listen_fut.cancelled():
@@ -117,10 +193,10 @@ class Gen3Player(Player):
                 login_err = getattr(client, "_last_login_error", None)
                 if login_err is not None:
                     raise ShowdownConnectionError(
-                        f"{client.websocket_url}: authentication was refused — {login_err}"
+                        f"{client.websocket_url}: {who}authentication was refused — {login_err}"
                     )
                 raise ShowdownConnectionError(
-                    f"{client.websocket_url}: listen task exited without logging in — "
+                    f"{client.websocket_url}: {who}listen task exited without logging in — "
                     f"Showdown server unreachable? "
                     + (f"({err!r})" if err else "(poke-env swallowed the connection error)")
                 )

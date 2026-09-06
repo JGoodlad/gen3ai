@@ -19,6 +19,12 @@ Examples::
         --model models/<run>/final_model.zip --username Gen3AI --n-battles 20 \\
         --proxy socks5h://127.0.0.1:1080
 
+Every mode that logs in is bounded by a CONNECT-OR-RAISE deadline (`--connect-timeout`,
+default 30 s): a login the server never completes raises `ShowdownConnectionError` naming the
+username and the server instead of sitting silently until the battle deadline — which is what a
+username registered on the official ladder does even against a `--no-security` local server,
+since `localhost_server_configuration` still authenticates against Smogon's `action.php`.
+
 `--server official` REQUIRES `--username` and a password. Not because the server demands
 it (rated play has no registration gate — verified in source, see
 designs/research_state/ladder_readiness.md) but because WE do: a guest name is
@@ -175,6 +181,9 @@ def build_model_player(args, teambuilder, server_config, account):
         temperature=max(args.temperature, 1e-6),
         avatar=args.avatar,
         proxy_url=args.proxy,
+        # None ⇒ the class default (DEFAULT_CONNECT_TIMEOUT_S). The guard this feeds wraps
+        # ladder / accept / challenge as well as battle_against — see Gen3Player.
+        connect_timeout_s=args.connect_timeout,
     )
 
 
@@ -206,6 +215,8 @@ async def main(args) -> int:
     player = build_model_player(args, teambuilder, server_config, account)
     print(f"[play] {args.mode}: {args.n_battles} {args.format} battle(s) as "
           f"{player.username} on {server_config.websocket_url}")
+    print(f"[play] connect-or-raise deadline: "
+          f"{'none (waits forever)' if not player.connect_timeout_s else f'{player.connect_timeout_s:g}s'}")
 
     if args.mode == "ladder":
         await player.ladder(args.n_battles)
@@ -254,6 +265,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--debug-obs", action="store_true",
                    help="keep the checkpoint's ObservationDebugger board dumps (off by "
                         "default — it prints a full board on every forward)")
+    # Default None = "use the library's own deadline"
+    # (agents.inference.player.DEFAULT_CONNECT_TIMEOUT_S, 30 s), resolved when the player is
+    # built. Not read here, so `--help` and `--mode selfplay` stay free of the torch import that
+    # module pulls in — the same reason `build_model_player` imports MaskablePPO lazily. The
+    # effective value is printed at startup, so it is never a hidden number.
+    p.add_argument("--connect-timeout", type=float, default=None, metavar="SECONDS",
+                   help="how long to wait for THIS client's login before raising "
+                        "(default: agents.inference.player.DEFAULT_CONNECT_TIMEOUT_S = 30s; "
+                        "0 waits forever). A login the server never completes — e.g. a username "
+                        "registered upstream, which even a --no-security local server refuses, "
+                        "since localhost auth still goes to Smogon's action.php — otherwise "
+                        "waits out the whole battle deadline in silence.")
     p.add_argument("--proxy", type=str, default=None, metavar="SOCKS5_URL",
                    help="SOCKS5 proxy URL, e.g. socks5h://127.0.0.1:1080")
     return p
