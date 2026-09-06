@@ -1169,6 +1169,62 @@ what pins the aggregation to the record: `untaught_meter_test.py` reproduces the
 legs (`TCFUNDA−TCUNFA −4.50`, `TCFUNDB−TCUNFB −4.25`, mean **−4.37**, the ledger's funded−unfunded
 untaught endpoint) and the `UNF/end` replicate draw that is the two-arm control floor.
 
+### The CRITIC GATE (`python -m main.critic_gate`) — the meter's caller, and three others
+
+The win-prob-critic arm's pre-registered read (`designs/ai_v12/design_winprob_only_critic.md` §5.5)
+is four instruments. `python -m main.critic_gate <run> --parent <ref> --control <cont…>` runs all
+four and emits ONE markdown report + a JSON, and its whole design rule is that **it composes and
+never re-derives** — a second estimator for a number another tool already owns is how two published
+values of one quantity start disagreeing.
+
+| section | what it does | whose statistics |
+|---|---|---|
+| 1 ladder | reads both `snapshot_ladder/ladder.json` and compares at **matched SNAPSHOT COUNT** (never matched step), printing `rating not final` while the run is unfinished | the BT fit's, read not re-fit |
+| 2 calibration | §4.3 G1–G4 per checkpoint, `bot`/`pool` **separately**, selection-reweighted | `main.scaffolding_gauge`'s `collect_slices` / `build_reliability` / `true_win_rates`, IMPORTED |
+| 3 G7 kill | stall rate + mean episode length vs the era | the run's own recorded metrics + its trace summaries |
+| 4 untaught meter | `main.untaught_meter --baseline <parent> --control <cont…>` | the meter's, read back out of its own `--json` |
+
+**Where the two halves of G7 come from is not obvious and is worth stating**: `eval_results.jsonl`
+carries **no** episode-length field, so the full-cycle `mean_ep_len_vs_bots` / `pool.mean_ep_len`
+come from `metadata.json`'s `latest_eval` and every `snapshot_history[*].latest_eval`; the stall
+rate is computed off the per-battle trace summaries (`meta.turns >= MAX_TURNS`, which is also the
+forfeit deadline, or a non-win/loss result) and is therefore a **CAPTURE-QUOTA** statistic, printed
+with that label every time because the quota is loss-enriched by design.
+
+**The one statistic the gauge does not publish is the RESOLUTION CI** that G1 needs. It is obtained
+by calling the gauge's own `reliability_table` under `agents.training.scaffolding`'s own
+`cluster_bootstrap_ci` — the same primitives, one extra pass over the gated strata only — never a
+second estimator. The committed baseline publishes no interval for `resolution` either, so G1
+compares the arm's CI against the baseline as a **FIXED bar**; that asymmetry is printed rather than
+smoothed over.
+
+Refusals (exit 2, key named, `main.exploitability`'s pattern): an absent or **unconverged** ladder,
+an empty `ratings` block, `--at-snapshots` beyond the matched count, a missing baseline artifact, a
+**raw (un-reweighted)** baseline artifact (§4.2 — the raw table inverts the verdict, so it is not a
+bar), a missing matched stratum, and the gauge's own `SelectionWeightError` surfaced verbatim rather
+than falling back to unweighted. `--check` resolves every input including the meter's own `--check`
+and exits non-zero naming **every** miss, computing nothing.
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.critic_gate models/<arm> --parent models/<parent> \
+  --control models/<contA> models/<contB> --md gate.md --json gate.json
+python -m main.critic_gate models/<arm> --parent models/<parent> --check   # resolve only
+```
+
+**Validated against the record**: run over `ai_v9_59_R2ACTION_0827` it reproduces §4.1's committed
+table value for value (26M `all` resolution 0.0618 / reliability 0.0013 / ECE 0.0249 / skill +0.336;
+28M `bot` 0.0215 / 0.0012 / 0.0228 / +0.222; …), and comparing that run against itself correctly
+reports **G1 false everywhere** — a generation cannot out-resolve its own baseline.
+
+⚠️ **That same self-comparison surfaces an inconsistency in §4.3's own bars, and the tool reports it
+rather than softening it**: the `pool` stratum of the committed baseline already breaches G2
+(reliability 0.0064 / 0.0103 against a ≤0.005 bar) and G3 (ECE 0.0667 / 0.0875 against ≤0.05), while
+§4.3 says of G3 "the reweighted baseline already passes it". It passes **pooled** and on `bot`; it
+does not pass on `pool`, which is the stratum G3 is registered "in both classes" over. Either the
+pool bars want re-registering or the arm is being asked to clear a bar its predecessor never
+cleared — a decision for the design, not for the instrument.
+
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
 (default 3) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a

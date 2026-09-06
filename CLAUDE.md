@@ -1402,6 +1402,34 @@ two `--workers 2` runs being byte-identical is a standing `sim`+`slow` gate. Tim
 bucket and a run above 25% is INCONCLUSIVE. The recipe, the seed table and the sharding rule are in
 `src/agents/training/CLAUDE.md` → *The untaught meter*.
 
+### The CRITIC GATE — a whole pre-registered read in one command (`python -m main.critic_gate`)
+
+The win-prob-critic arm's read (`designs/ai_v12/design_winprob_only_critic.md` §5.5) is four
+instruments, four output formats and a reader holding §4.3's bars in their head.
+`python -m main.critic_gate <run> --parent <ref> --control <continuation refs…>` is that
+composition — the anchored ladder at **matched SNAPSHOT COUNT** against the parent CONTINUED, the
+§4.3 calibration gate per checkpoint with **RESOLUTION primary** and `bot`/`pool` never pooled, the
+**G7 stall-rate + episode-length KILL condition**, and `main.untaught_meter` with its continuation
+control — emitting one markdown report plus a JSON carrying every input path, every resolved file
+(through the last-snapshot rule) and every threshold used. It **composes**: the ladder is the BT
+fit's, the calibration numbers are `main.scaffolding_gauge --reliability --reliability-reweight`'s
+(imported, and the gauge's reweighting REFUSAL is surfaced rather than softened), the meter's
+numbers are the meter's. Verified against the committed baseline run: it reproduces §4.1's table
+value for value.
+
+🚨 **G1's bar is READ from `measurements/winprob_critic_baseline_2026-09-06/`, never hardcoded**, so
+the bar and the record cannot drift apart — move the artifact's `resolution` and the verdict moves
+with it (a gated test). A missing or unconverged ladder, a raw (un-reweighted) baseline artifact and
+a missing matched stratum all **refuse with exit 2 naming the key**, in `main.exploitability`'s
+pattern. **G1 flat with G2–G4 passing prints the design's falsification sentence VERBATIM as the
+verdict** — never a pass with a footnote — and `critic_gate_test.py` re-reads the design file and
+fails if the two drift apart. G5/G6/G8 are §6 gaps and are printed as NOT RUNNABLE on every report,
+because a gate with unrunnable criteria quietly becomes the runnable ones. The G7 threshold is the
+TOOL's default (the design registers G7 with no number) and every report says so. `--check` resolves
+every input — refs, both ladders, the baseline artifact, the traces, the reweighting, the
+episode-length source, and the meter's own `--check` — and exits non-zero naming **every** miss
+without computing anything.
+
 ### ELO / skill rating
 
 Under self-play pool play, `win_rate_vs_pool` is pinned near 50% by the promotion gate (a
@@ -1902,6 +1930,16 @@ src/
                      #   --check / --dry-run resolve without playing; --from-rows re-reads committed
                      #   per-team artifacts with no models. concurrency > 1 REFUSED; --workers N
                      #   shards over teams. Engine: agents/training/untaught_meter.py
+    critic_gate.py     # THE WIN-PROB CRITIC ARM'S PRE-REGISTERED READ, in ONE command
+                     #   (design_winprob_only_critic.md §5.5): the anchored ladder at matched
+                     #   SNAPSHOT COUNT vs the parent CONTINUED, the §4.3 calibration gate
+                     #   (G1 RESOLUTION primary, bot/pool never pooled, selection-reweighted),
+                     #   the G7 stall/episode-length KILL condition, and main.untaught_meter with
+                     #   its continuation control. COMPOSES the tools — every statistic stays the
+                     #   owner's. --check resolves every input and plays nothing.
+                     #   critic_gate_design.py = what the DESIGN registers (bars, the verbatim
+                     #   falsification clause, the criteria that are NOT runnable);
+                     #   critic_gate_render.py = the markdown + text renderings
     exploitability.py  # GENERATION EXPLOITABILITY CURVE — pure bookkeeping over
                      #   `fleet_admission`-schema admission artifacts (+ optional run metadata):
                      #   per generation the best-response net extraction (mean + max over

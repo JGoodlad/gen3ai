@@ -804,6 +804,11 @@ creating a run dir, a worktree or a child.
 
 ### 5.5 The pre-registered read
 
+**All of it runs as one command: `python -m main.critic_gate <run> --parent <ref> --control
+<continuation refs…>`** — the ladder at matched snapshot count, §4.3's gate with G1 primary, the G7
+kill condition and the untaught meter with its control, composed (never re-derived) into one
+markdown report + JSON, with `--check` to resolve every input first.
+
 Registered **before** the run, three endpoints and a control:
 
 1. **ANCHORED LADDER at matched SNAPSHOT COUNT** — `<run>/snapshot_ladder/ladder.json` (dense, ±10),
