@@ -205,6 +205,18 @@ Both are offline, CPU-only, on existing checkpoints; results land under
   Prediction: a higher cross-team ratio on the pointer head, concentrated in the head group. This
   tests the sharing argument's premise, not the sign.
 
+**Sharing-kernel result (2026-09-05, `arch_transfer_2026-09-05/sharing_kernel/`): NOT DETECTED, and
+the premise failed.** The gen-era cross/within ratio was higher than v8's in direction only
+(delta +0.28, paired CI [−0.27, +0.95], permutation p 0.19), the action head was the *one* group where
+the difference ran the other way, and the pointer head carries **0.66% of the policy-gradient norm**
+against the flat head's 6.2%. In the current model 85% of that norm sits in the encoders (52%) and
+the team transformer (34%). Within either era the taught/untaught split is not a direction the kernel
+distinguishes at all (cross cosines 0.003–0.011, every ratio within 1.6 null SDs of 1). So "the
+pointer head shares more" is dead as stated: whatever couples taught to untaught teams lives in the
+trunk, in both eras, and a score-function kernel at one parameter point is the wrong instrument for a
+KL loss applied along a fold. The follow-up (`fold_displacement/`) measures the actual fold
+displacement per parameter group and its first-order projection onto untaught states.
+
 What is *not* testable: swapping the head inside the era. Phase 2 of the v8 replication can swap
 teachers, ecology and hyperparameters inside the era code, but the architecture boundary cannot be
 crossed by a fork, so the head hypothesis lives or dies on the two probes above.

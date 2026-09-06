@@ -10442,3 +10442,46 @@ snapshot history, not a direct observation — its startup log no longer carries
 like-for-like with the banked +4.64 (parent pooled wr 0.3877). Proven working before launch: a
 two-team smoke loaded both arms and wrote paired CRN cells with an acid block (pairwise L2 45.2,
 `all_distinct`, 3,512,397 params each).
+
+## 2026-09-05 — ARCH→TRANSFER probe H2 (sharing kernel): NOT DETECTED; the pointer head carries 0.66% of the policy-gradient norm, so "entity head shares more" is dead as stated
+
+**Context.** Owner-ordered validation of the inline note that v8 (flat action head + `damage_refine_rounds 2` loop,
+b13b30b2) gifted while the gen era (pointer-native head, no loop) robs. Pre-registered claim: the pointer head has a
+LARGER taught→untaught gradient kernel than the flat head, concentrated in the head group. Instrument: cosine of
+∇θ log π(a*|s) between taught (16 teams of the 2×2) and untaught (8) states, per parameter group, on
+`ai_v9_59_R2ACTION_0827/final_model.zip` (gen) and `ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip` (v8,
+via the era checkout); permutation null over team labels (team blocks intact), team-paired bootstrap, norm shares.
+Artifact: `measurements/arch_transfer_2026-09-05/sharing_kernel/` (landed deab5124; pre-registration written before
+any state existed; re-run from committed states reproduces every statistic with max |diff| = 0).
+
+**Result.**
+| group | ratio gen | ratio v8 | Δ [CI95] | perm p | norm share gen / v8 |
+|---|---|---|---|---|---|
+| ALL | 1.228 | 0.951 | +0.277 [−0.268, +0.954] | 0.193 | 1.00 / 1.00 |
+| action_head | 1.114 | 1.193 | **−0.079** [−0.829, +0.461] | 0.761 | **0.0066 / 0.0623** |
+| encoders | 1.286 | 0.638 | +0.648 [−0.280, +2.072] | 0.055 | 0.518 / 0.315 |
+| team_transformer | 1.185 | 0.925 | +0.260 [−0.300, +0.996] | 0.232 | 0.336 / 0.346 |
+| projection_mlp | 1.176 | 1.125 | +0.051 [−0.504, +0.478] | 0.784 | 0.062 / 0.264 |
+| belief_op | 1.135 | 0.958 | +0.178 [−0.560, +0.772] | 0.416 | 0.077 / 0.013 |
+
+- Prediction 1 (gen ratio > v8): **NOT DETECTED** — direction only. Prediction 2 (concentrated in the head):
+  **NOT DETECTED**, and the head is the ONE group whose era difference is negative. The registered norm-share check
+  FAILS for the story: the pointer head carries 0.66% of the norm vs the flat head's 6.2% (9.4× the wrong way).
+- Within-era: **WITHIN FLOOR** everywhere (smallest p 0.085); cross cosines 0.003–0.011; the taught/untaught split
+  is not a direction either kernel distinguishes at this parameter point (falsifier #3 fired).
+- Control PASS exactly: funded-vs-unfunded resolve to the same 16 teams, ratio 1.000000000.
+- Aggregation caveat: `within_pooled` is pair-count weighted (120 taught pairs vs 28 untaught); dividing by the
+  unweighted mean of the halves collapses gen ALL 1.228 → 1.025. Most of the apparent cross > within is the taught
+  set being internally more heterogeneous.
+- Era confound NOT breakable by this decomposition (28.1M vs 277.6M steps, obs 2501 vs 2992, 84 commits produce the
+  same trunk-moves/head-doesn't pattern). Critic receives exactly zero score-function gradient in both eras.
+
+**Reading.** Whatever couples taught to untaught teams lives in the ENCODER + TRANSFORMER trunk in both eras, not in
+the action head; "the entity head shares more" cannot be the account. A score-function kernel at ONE parameter point
+is also the wrong object for a KL loss applied ALONG a fold. Next (dispatched): `fold_displacement/` — the ACTUAL
+Δθ of the 2×2 arms (funded / unfunded / loss-off C1 / B2) at p1M / mid / end, per parameter group, and its
+first-order projection ⟨∇θ f(s′), Δθ⟩ onto untaught states against the measured off-slice KL.
+
+*(Bookkeeping: deab5124's message says this entry and the note update rode with the artifact; they did not — the
+script writing them aborted in a worktree that predated the note — so they land here, one commit later.)*
+
