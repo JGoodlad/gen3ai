@@ -1,0 +1,493 @@
+{
+ "_meta": {
+  "gen": {
+   "era": "gen",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "parent_steps": 28115184,
+   "head": "pointer_head (pointer-native entity head)",
+   "states": "/tmp/sk/states_gen.npz",
+   "n_states": 456,
+   "n_teams": 24,
+   "states_per_team": 19,
+   "n_params": 3147887,
+   "group_layout": {
+    "action_head": [
+     0,
+     55683
+    ],
+    "encoders": [
+     55683,
+     278842
+    ],
+    "team_transformer": [
+     278842,
+     563434
+    ],
+    "projection_mlp": [
+     563434,
+     1892970
+    ],
+    "belief_op": [
+     1892970,
+     2405237
+    ],
+    "critic": [
+     2405237,
+     3147887
+    ]
+   },
+   "teams_order": [
+    "009e3d0244",
+    "1c4e182530",
+    "21022d30fb",
+    "324235812b",
+    "3495ef83ef",
+    "37d717a93a",
+    "436335607f",
+    "55ff6899a2",
+    "564b9be3ae",
+    "64a691c473",
+    "6916e13879",
+    "6a49f096f0",
+    "6ebe9ebc4d",
+    "750d056194",
+    "8bdb5796b9",
+    "9b454d9ea7",
+    "9d8391d864",
+    "9e95fb59d7",
+    "a7406f6c97",
+    "a9831a5f5e",
+    "aea50f207e",
+    "b904dbe059",
+    "e28069562f",
+    "e702a104eb"
+   ],
+   "taught_teams": [
+    "009e3d0244",
+    "37d717a93a",
+    "436335607f",
+    "64a691c473",
+    "6916e13879",
+    "6ebe9ebc4d",
+    "750d056194",
+    "8bdb5796b9",
+    "9b454d9ea7",
+    "9d8391d864",
+    "9e95fb59d7",
+    "a9831a5f5e",
+    "aea50f207e",
+    "b904dbe059",
+    "e28069562f",
+    "e702a104eb"
+   ],
+   "untaught_teams": [
+    "1c4e182530",
+    "21022d30fb",
+    "324235812b",
+    "3495ef83ef",
+    "55ff6899a2",
+    "564b9be3ae",
+    "6a49f096f0",
+    "a7406f6c97"
+   ],
+   "statistic": "cos(grad log pi(a*|s), grad log pi(a*|s')) at ONE parameter point; a* = argmax over LEGAL actions; SAME-TEAM PAIRS EXCLUDED from within/cross",
+   "nperm": 2000,
+   "nboot": 2000,
+   "seed": 20260905,
+   "threads": 4,
+   "mean_n_legal": 6.719298245614035,
+   "argmax_action_hist": [
+    17,
+    24,
+    28,
+    20,
+    23,
+    26,
+    80,
+    102,
+    74,
+    62,
+    0
+   ],
+   "wall_s": 32.5
+  },
+  "v8": {
+   "era": "v8",
+   "parent": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+   "parent_steps": 277583267,
+   "head": "action_net (SB3 flat positional Linear(latent,11))",
+   "states": "/tmp/sk/states_v8.npz",
+   "n_states": 456,
+   "n_teams": 24,
+   "states_per_team": 19,
+   "n_params": 3512397,
+   "group_layout": {
+    "action_head": [
+     0,
+     5643
+    ],
+    "encoders": [
+     5643,
+     206953
+    ],
+    "team_transformer": [
+     206953,
+     563049
+    ],
+    "projection_mlp": [
+     563049,
+     2046441
+    ],
+    "belief_op": [
+     2046441,
+     2250506
+    ],
+    "critic": [
+     2250506,
+     3512397
+    ]
+   },
+   "teams_order": [
+    "009e3d0244",
+    "1c4e182530",
+    "21022d30fb",
+    "324235812b",
+    "3495ef83ef",
+    "37d717a93a",
+    "436335607f",
+    "55ff6899a2",
+    "564b9be3ae",
+    "64a691c473",
+    "6916e13879",
+    "6a49f096f0",
+    "6ebe9ebc4d",
+    "750d056194",
+    "8bdb5796b9",
+    "9b454d9ea7",
+    "9d8391d864",
+    "9e95fb59d7",
+    "a7406f6c97",
+    "a9831a5f5e",
+    "aea50f207e",
+    "b904dbe059",
+    "e28069562f",
+    "e702a104eb"
+   ],
+   "taught_teams": [
+    "009e3d0244",
+    "37d717a93a",
+    "436335607f",
+    "64a691c473",
+    "6916e13879",
+    "6ebe9ebc4d",
+    "750d056194",
+    "8bdb5796b9",
+    "9b454d9ea7",
+    "9d8391d864",
+    "9e95fb59d7",
+    "a9831a5f5e",
+    "aea50f207e",
+    "b904dbe059",
+    "e28069562f",
+    "e702a104eb"
+   ],
+   "untaught_teams": [
+    "1c4e182530",
+    "21022d30fb",
+    "324235812b",
+    "3495ef83ef",
+    "55ff6899a2",
+    "564b9be3ae",
+    "6a49f096f0",
+    "a7406f6c97"
+   ],
+   "statistic": "cos(grad log pi(a*|s), grad log pi(a*|s')) at ONE parameter point; a* = argmax over LEGAL actions; SAME-TEAM PAIRS EXCLUDED from within/cross",
+   "nperm": 2000,
+   "nboot": 2000,
+   "seed": 20260905,
+   "threads": 4,
+   "mean_n_legal": 6.837719298245614,
+   "argmax_action_hist": [
+    16,
+    13,
+    20,
+    12,
+    28,
+    29,
+    125,
+    101,
+    58,
+    54,
+    0
+   ],
+   "wall_s": 23.4
+  },
+  "pairing": "SAME 24 teams in both eras; bootstrap resamples and label permutations are applied ONCE and shared by both eras",
+  "nboot": 4000,
+  "nperm": 4000,
+  "seed": 20260905
+ },
+ "groups": {
+  "ALL": {
+   "gen": {
+    "within_taught": 0.004067431098907019,
+    "within_untaught": 0.007010193717772334,
+    "within_pooled": 0.004624169972746403,
+    "cross": 0.005677683062877392,
+    "ratio": 1.2278275012251079,
+    "ratio_halves": 1.0250722798137413,
+    "within_same_team": 0.013043632957689205
+   },
+   "v8": {
+    "within_taught": 0.003392191084788482,
+    "within_untaught": 0.004021889608105603,
+    "within_pooled": 0.0035113232378484777,
+    "cross": 0.003340311168714223,
+    "ratio": 0.9512969733771818,
+    "ratio_halves": 0.9010722453872655,
+    "within_same_team": 0.006849821576199449
+   },
+   "gen_norm_share": 1.0,
+   "v8_norm_share": 1.0,
+   "gen_n_params": 3147887,
+   "v8_n_params": 3512397,
+   "delta_ratio_gen_minus_v8": 0.2765305278479261,
+   "delta_ratio_boot_ci95": [
+    -0.2677653150597963,
+    0.9544235057216902
+   ],
+   "delta_ratio_perm_p": 0.19325,
+   "delta_ratio_boot_p": 0.306,
+   "delta_ratio_halves_gen_minus_v8": 0.12400003442647578,
+   "delta_ratio_halves_boot_ci95": [
+    -0.4024491388211246,
+    0.7982039015666909
+   ],
+   "delta_ratio_halves_perm_p": 0.46825,
+   "delta_cross_gen_minus_v8": 0.002337371894163169,
+   "delta_cross_boot_ci95": [
+    -0.0002579930907400455,
+    0.005005116449875206
+   ],
+   "delta_relative_gap": 0.27653052784792614
+  },
+  "action_head": {
+   "gen": {
+    "within_taught": 0.009264861816823903,
+    "within_untaught": 0.010804025884213258,
+    "within_pooled": 0.00955605501876243,
+    "cross": 0.01064175638724416,
+    "ratio": 1.1136139721203004,
+    "ratio_halves": 1.0605227898797993,
+    "within_same_team": 0.014727582819242727
+   },
+   "v8": {
+    "within_taught": 0.009740575923444652,
+    "within_untaught": 0.015670793883598166,
+    "within_pooled": 0.010862509051041263,
+    "cross": 0.012959145688139537,
+    "ratio": 1.193015870205171,
+    "ratio_halves": 1.019948612494544,
+    "within_same_team": 0.011435923530226216
+   },
+   "gen_norm_share": 0.006632350135743973,
+   "v8_norm_share": 0.0623006802584941,
+   "gen_n_params": 55683,
+   "v8_n_params": 5643,
+   "delta_ratio_gen_minus_v8": -0.07940189808487053,
+   "delta_ratio_boot_ci95": [
+    -0.829140029155101,
+    0.46073875110564255
+   ],
+   "delta_ratio_perm_p": 0.76075,
+   "delta_ratio_boot_p": 0.7165,
+   "delta_ratio_halves_gen_minus_v8": 0.04057417738525526,
+   "delta_ratio_halves_boot_ci95": [
+    -0.5397545605842734,
+    0.5820889188525363
+   ],
+   "delta_ratio_halves_perm_p": 0.8165,
+   "delta_cross_gen_minus_v8": -0.002317389300895376,
+   "delta_cross_boot_ci95": [
+    -0.011709435900007852,
+    0.0052827469198270215
+   ],
+   "delta_relative_gap": -0.07940189808487051
+  },
+  "encoders": {
+   "gen": {
+    "within_taught": 0.003191046574394532,
+    "within_untaught": 0.007210739403646174,
+    "within_pooled": 0.003951529001550248,
+    "cross": 0.005081979670967804,
+    "ratio": 1.2860793047385106,
+    "ratio_halves": 0.9771359806280214,
+    "within_same_team": 0.0122474875179144
+   },
+   "v8": {
+    "within_taught": 0.0034853847338375482,
+    "within_untaught": 0.0024335404472346496,
+    "within_pooled": 0.003286387166101865,
+    "cross": 0.0020976585615261525,
+    "ratio": 0.6382871084584602,
+    "ratio_halves": 0.708797120204911,
+    "within_same_team": 0.006698717404731822
+   },
+   "gen_norm_share": 0.5176553210728672,
+   "v8_norm_share": 0.3152103554045914,
+   "gen_n_params": 223159,
+   "v8_n_params": 201310,
+   "delta_ratio_gen_minus_v8": 0.6477921962800505,
+   "delta_ratio_boot_ci95": [
+    -0.28006026817455554,
+    2.0716616516412323
+   ],
+   "delta_ratio_perm_p": 0.05525,
+   "delta_ratio_boot_p": 0.159,
+   "delta_ratio_halves_gen_minus_v8": 0.2683388604231104,
+   "delta_ratio_halves_boot_ci95": [
+    -0.4747640098146017,
+    1.6260784731122089
+   ],
+   "delta_ratio_halves_perm_p": 0.36175,
+   "delta_cross_gen_minus_v8": 0.0029843211094416518,
+   "delta_cross_boot_ci95": [
+    -0.0001460028503852602,
+    0.006833325653659471
+   ],
+   "delta_relative_gap": 0.6477921962800504
+  },
+  "team_transformer": {
+   "gen": {
+    "within_taught": 0.0035284849636214154,
+    "within_untaught": 0.006114692146219368,
+    "within_pooled": 0.004017767403572379,
+    "cross": 0.00476281788907697,
+    "ratio": 1.1854389293024112,
+    "ratio_halves": 0.9878109330205194,
+    "within_same_team": 0.013184349479473945
+   },
+   "v8": {
+    "within_taught": 0.0037876657716518288,
+    "within_untaught": 0.0036319617412827734,
+    "within_pooled": 0.0037582082523928183,
+    "cross": 0.0034778369757560356,
+    "ratio": 0.9253976209385755,
+    "ratio_halves": 0.9374694267854117,
+    "within_same_team": 0.006542649620605232
+   },
+   "gen_norm_share": 0.33642944425660204,
+   "v8_norm_share": 0.3458617838436343,
+   "gen_n_params": 284592,
+   "v8_n_params": 356096,
+   "delta_ratio_gen_minus_v8": 0.26004130836383577,
+   "delta_ratio_boot_ci95": [
+    -0.30017053984819675,
+    0.9955780357273412
+   ],
+   "delta_ratio_perm_p": 0.23225,
+   "delta_ratio_boot_p": 0.377,
+   "delta_ratio_halves_gen_minus_v8": 0.05034150623510769,
+   "delta_ratio_halves_boot_ci95": [
+    -0.44579352305471204,
+    0.6137136196554348
+   ],
+   "delta_ratio_halves_perm_p": 0.74825,
+   "delta_cross_gen_minus_v8": 0.0012849809133209343,
+   "delta_cross_boot_ci95": [
+    -0.001159616448850252,
+    0.003776499323584949
+   ],
+   "delta_relative_gap": 0.26004130836383577
+  },
+  "projection_mlp": {
+   "gen": {
+    "within_taught": 0.008255826830354277,
+    "within_untaught": 0.009379662021213713,
+    "within_pooled": 0.008468444298895253,
+    "cross": 0.009962120962393756,
+    "ratio": 1.1763814711154634,
+    "ratio_halves": 1.129781096088869,
+    "within_same_team": 0.017241876304424614
+   },
+   "v8": {
+    "within_taught": 0.0014337775839170605,
+    "within_untaught": 0.0019602057188981914,
+    "within_pooled": 0.0015333720959405178,
+    "cross": 0.0017250728886695588,
+    "ratio": 1.1250190956497472,
+    "ratio_halves": 1.0165476578736494,
+    "within_same_team": 0.004804248620337392
+   },
+   "gen_norm_share": 0.061978139865813894,
+   "v8_norm_share": 0.26351836387191224,
+   "gen_n_params": 1329536,
+   "v8_n_params": 1483392,
+   "delta_ratio_gen_minus_v8": 0.051362375465716203,
+   "delta_ratio_boot_ci95": [
+    -0.5036531759110944,
+    0.4781948058970658
+   ],
+   "delta_ratio_perm_p": 0.784,
+   "delta_ratio_boot_p": 0.806,
+   "delta_ratio_halves_gen_minus_v8": 0.11323343821521958,
+   "delta_ratio_halves_boot_ci95": [
+    -0.1977284771915201,
+    0.44615771585908404
+   ],
+   "delta_ratio_halves_perm_p": 0.288,
+   "delta_cross_gen_minus_v8": 0.008237048073724197,
+   "delta_cross_boot_ci95": [
+    0.0042069885086232885,
+    0.012647426287652419
+   ],
+   "delta_relative_gap": 0.05136237546571615
+  },
+  "belief_op": {
+   "gen": {
+    "within_taught": 0.006448937857246374,
+    "within_untaught": 0.008229934635425474,
+    "within_pooled": 0.0067858831936586355,
+    "cross": 0.007704214781377661,
+    "ratio": 1.1353297074988264,
+    "ratio_halves": 1.0497011654299535,
+    "within_same_team": 0.014782394076942547
+   },
+   "v8": {
+    "within_taught": 0.0046396302649397815,
+    "within_untaught": 0.00581325507072606,
+    "within_pooled": 0.004861667390358807,
+    "cross": 0.004656449051465634,
+    "ratio": 0.957788486456284,
+    "ratio_halves": 0.8909404249518674,
+    "within_same_team": 0.007546051193906513
+   },
+   "gen_norm_share": 0.07730474466897304,
+   "v8_norm_share": 0.013108816621368116,
+   "gen_n_params": 512267,
+   "v8_n_params": 204065,
+   "delta_ratio_gen_minus_v8": 0.17754122104254244,
+   "delta_ratio_boot_ci95": [
+    -0.5598135439057225,
+    0.7722017974901955
+   ],
+   "delta_ratio_perm_p": 0.4155,
+   "delta_ratio_boot_p": 0.5995,
+   "delta_ratio_halves_gen_minus_v8": 0.15876074047808608,
+   "delta_ratio_halves_boot_ci95": [
+    -0.46649474084765175,
+    0.6598758222173714
+   ],
+   "delta_ratio_halves_perm_p": 0.293,
+   "delta_cross_gen_minus_v8": 0.0030477657299120275,
+   "delta_cross_boot_ci95": [
+    -0.001194676645067065,
+    0.006908574330960205
+   ],
+   "delta_relative_gap": 0.17754122104254252
+  },
+  "critic": {
+   "status": "ZERO GRADIENT in at least one era (off the log-pi path)"
+  }
+ }
+}

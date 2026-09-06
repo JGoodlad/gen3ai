@@ -1,0 +1,215 @@
+{
+ "_meta": {
+  "what": "FUNDED vs UNFUNDED teacher labels over the gen-era parent's kernel; both halves resolve to the SAME 16 teams, so the ratio must be EXACTLY 1.0. An identity check on the meter, not a test of the hypothesis.",
+  "kernel_artifact": "/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a95ab66ffd73bb722/designs/research_state/measurements/arch_transfer_2026-09-05/sharing_kernel/kernel_gen.json"
+ },
+ "fleet_funded": {
+  "run": "ai_v9_160_TCFUNDA_0903",
+  "n_teachers": 8,
+  "n_teams": 16,
+  "team_paths": [
+   "data/teams/sample/009e3d0244.txt",
+   "data/teams/sample/37d717a93a.txt",
+   "data/teams/sample/436335607f.txt",
+   "data/teams/sample/64a691c473.txt",
+   "data/teams/sample/6916e13879.txt",
+   "data/teams/sample/6ebe9ebc4d.txt",
+   "data/teams/sample/750d056194.txt",
+   "data/teams/sample/8bdb5796b9.txt",
+   "data/teams/sample/9b454d9ea7.txt",
+   "data/teams/sample/9d8391d864.txt",
+   "data/teams/sample/9e95fb59d7.txt",
+   "data/teams/sample/a9831a5f5e.txt",
+   "data/teams/sample/aea50f207e.txt",
+   "data/teams/sample/b904dbe059.txt",
+   "data/teams/sample/e28069562f.txt",
+   "data/teams/sample/e702a104eb.txt"
+  ],
+  "team_sha10": [
+   "009e3d0244",
+   "37d717a93a",
+   "436335607f",
+   "64a691c473",
+   "6916e13879",
+   "6ebe9ebc4d",
+   "750d056194",
+   "8bdb5796b9",
+   "9b454d9ea7",
+   "9d8391d864",
+   "9e95fb59d7",
+   "a9831a5f5e",
+   "aea50f207e",
+   "b904dbe059",
+   "e28069562f",
+   "e702a104eb"
+  ]
+ },
+ "fleet_unfunded": {
+  "run": "ai_v9_162_TCUNFA_0903",
+  "n_teachers": 8,
+  "n_teams": 16,
+  "team_paths": [
+   "data/teams/sample/009e3d0244.txt",
+   "data/teams/sample/37d717a93a.txt",
+   "data/teams/sample/436335607f.txt",
+   "data/teams/sample/64a691c473.txt",
+   "data/teams/sample/6916e13879.txt",
+   "data/teams/sample/6ebe9ebc4d.txt",
+   "data/teams/sample/750d056194.txt",
+   "data/teams/sample/8bdb5796b9.txt",
+   "data/teams/sample/9b454d9ea7.txt",
+   "data/teams/sample/9d8391d864.txt",
+   "data/teams/sample/9e95fb59d7.txt",
+   "data/teams/sample/a9831a5f5e.txt",
+   "data/teams/sample/aea50f207e.txt",
+   "data/teams/sample/b904dbe059.txt",
+   "data/teams/sample/e28069562f.txt",
+   "data/teams/sample/e702a104eb.txt"
+  ],
+  "team_sha10": [
+   "009e3d0244",
+   "37d717a93a",
+   "436335607f",
+   "64a691c473",
+   "6916e13879",
+   "6ebe9ebc4d",
+   "750d056194",
+   "8bdb5796b9",
+   "9b454d9ea7",
+   "9d8391d864",
+   "9e95fb59d7",
+   "a9831a5f5e",
+   "aea50f207e",
+   "b904dbe059",
+   "e28069562f",
+   "e702a104eb"
+  ]
+ },
+ "fleet_funded_B": {
+  "run": "ai_v9_161_TCFUNDB_0903",
+  "n_teachers": 8,
+  "n_teams": 16,
+  "team_paths": [
+   "data/teams/sample/009e3d0244.txt",
+   "data/teams/sample/37d717a93a.txt",
+   "data/teams/sample/436335607f.txt",
+   "data/teams/sample/64a691c473.txt",
+   "data/teams/sample/6916e13879.txt",
+   "data/teams/sample/6ebe9ebc4d.txt",
+   "data/teams/sample/750d056194.txt",
+   "data/teams/sample/8bdb5796b9.txt",
+   "data/teams/sample/9b454d9ea7.txt",
+   "data/teams/sample/9d8391d864.txt",
+   "data/teams/sample/9e95fb59d7.txt",
+   "data/teams/sample/a9831a5f5e.txt",
+   "data/teams/sample/aea50f207e.txt",
+   "data/teams/sample/b904dbe059.txt",
+   "data/teams/sample/e28069562f.txt",
+   "data/teams/sample/e702a104eb.txt"
+  ],
+  "team_sha10": [
+   "009e3d0244",
+   "37d717a93a",
+   "436335607f",
+   "64a691c473",
+   "6916e13879",
+   "6ebe9ebc4d",
+   "750d056194",
+   "8bdb5796b9",
+   "9b454d9ea7",
+   "9d8391d864",
+   "9e95fb59d7",
+   "a9831a5f5e",
+   "aea50f207e",
+   "b904dbe059",
+   "e28069562f",
+   "e702a104eb"
+  ]
+ },
+ "fleet_unfunded_B": {
+  "run": "ai_v9_163_TCUNFB_0903",
+  "n_teachers": 8,
+  "n_teams": 16,
+  "team_paths": [
+   "data/teams/sample/009e3d0244.txt",
+   "data/teams/sample/37d717a93a.txt",
+   "data/teams/sample/436335607f.txt",
+   "data/teams/sample/64a691c473.txt",
+   "data/teams/sample/6916e13879.txt",
+   "data/teams/sample/6ebe9ebc4d.txt",
+   "data/teams/sample/750d056194.txt",
+   "data/teams/sample/8bdb5796b9.txt",
+   "data/teams/sample/9b454d9ea7.txt",
+   "data/teams/sample/9d8391d864.txt",
+   "data/teams/sample/9e95fb59d7.txt",
+   "data/teams/sample/a9831a5f5e.txt",
+   "data/teams/sample/aea50f207e.txt",
+   "data/teams/sample/b904dbe059.txt",
+   "data/teams/sample/e28069562f.txt",
+   "data/teams/sample/e702a104eb.txt"
+  ],
+  "team_sha10": [
+   "009e3d0244",
+   "37d717a93a",
+   "436335607f",
+   "64a691c473",
+   "6916e13879",
+   "6ebe9ebc4d",
+   "750d056194",
+   "8bdb5796b9",
+   "9b454d9ea7",
+   "9d8391d864",
+   "9e95fb59d7",
+   "a9831a5f5e",
+   "aea50f207e",
+   "b904dbe059",
+   "e28069562f",
+   "e702a104eb"
+  ]
+ },
+ "all_four_fleets_same_16_teams": true,
+ "matches_gen_states_TAUGHT_SHA": true,
+ "control": {
+  "ALL": {
+   "cross": 0.0040674310989070196,
+   "within_pooled": 0.004067431098907019,
+   "ratio": 1.0000000000000002,
+   "abs_dev_from_1": 2.220446049250313e-16
+  },
+  "action_head": {
+   "cross": 0.009264861816823901,
+   "within_pooled": 0.009264861816823903,
+   "ratio": 0.9999999999999998,
+   "abs_dev_from_1": 2.220446049250313e-16
+  },
+  "encoders": {
+   "cross": 0.0031910465743945323,
+   "within_pooled": 0.003191046574394532,
+   "ratio": 1.0000000000000002,
+   "abs_dev_from_1": 2.220446049250313e-16
+  },
+  "team_transformer": {
+   "cross": 0.003528484963621415,
+   "within_pooled": 0.0035284849636214154,
+   "ratio": 0.9999999999999999,
+   "abs_dev_from_1": 1.1102230246251565e-16
+  },
+  "projection_mlp": {
+   "cross": 0.008255826830354276,
+   "within_pooled": 0.008255826830354277,
+   "ratio": 0.9999999999999998,
+   "abs_dev_from_1": 2.220446049250313e-16
+  },
+  "belief_op": {
+   "cross": 0.006448937857246374,
+   "within_pooled": 0.006448937857246374,
+   "ratio": 1.0,
+   "abs_dev_from_1": 0.0
+  },
+  "critic": {
+   "status": "ZERO GRADIENT \u2014 no state puts any gradient in this group (it is not on the log-pi path)"
+  }
+ },
+ "max_abs_dev_from_1": 2.220446049250313e-16,
+ "PASS": true
+}
