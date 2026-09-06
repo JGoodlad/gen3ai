@@ -367,6 +367,30 @@ def gauge_slice(
 
 # ══════════════════════════════════════════════════════════════════════ the live scalar ══
 
+#: Below this many paired rows, IDENTICAL orderings are a COINCIDENCE, not an identity, and
+#: `_same_ordering` refuses to conclude anything from them. Two unrelated readouts agree on the
+#: order of n distinct values with probability 1/n!: that is 1-in-6 at n = 3 and 1-in-2 at n = 2,
+#: but ~5e-14 at 16 — beyond any plausible accident, while a real rollout's paired read is ~1e5
+#: rows (`train/scaffolding_n` reads 131072 on `models/ai_v12_01_winprob_critic`). So the floor
+#: costs the production path nothing and keeps the gate from silencing a genuine tiny sample.
+_MIN_SAME_ORDERING_N = 16
+
+
+def _same_ordering(a: np.ndarray, b: np.ndarray) -> bool:
+    """Do these two arrays induce the IDENTICAL ranking (ties included)?
+
+    `gen3_tb_relevance_v1`. True ⟺ one is an exact monotone (non-decreasing) transform of the
+    other over at least `_MIN_SAME_ORDERING_N` rows — the condition under which a rank correlation
+    between them is 1.0 by construction and therefore content-free. Uses the same average-rank
+    convention the Spearman path does, so the answer agrees with "ρ would be exactly 1.0" rather
+    than approximating it, and it is a claim about SAMENESS of the two readouts, which is why the
+    sample floor is part of it rather than a separate guard.
+    """
+    if a.size < _MIN_SAME_ORDERING_N:
+        return False
+    return bool(np.array_equal(_rankdata(a), _rankdata(b)))
+
+
 def live_gauge_metrics(values, win_prob_logits) -> Dict[str, float]:
     """`train/scaffolding_*` from one rollout's paired (V, win-prob-logit) reads.
 
@@ -381,6 +405,15 @@ def live_gauge_metrics(values, win_prob_logits) -> Dict[str, float]:
     Returns keys WITHOUT the ``train/`` prefix (the caller adds it — the `signal/` idiom), and an
     EMPTY dict when there is nothing to publish (no head, no rows), so a run without the win-prob
     head writes no curve at all rather than a flat zero.
+
+    🚨 **AND an empty dict when the two readouts are THE SAME QUANTITY** (`gen3_tb_relevance_v1`).
+    Under ``--critic winprob`` the deployed value IS ``sigmoid(win_prob_logit)``, so ρ is 1.0 and
+    the gauge is 0 *by construction* — a tautology, not a measurement, and it published one for
+    every rollout of the first win-prob arm (``train/scaffolding_rho`` a flat 1.0,
+    ``train/scaffolding_gauge`` a flat 5.5e-13). The test is the RANK VECTORS being identical,
+    which is exactly "V is an exact monotone map of the logit"; over a rollout's ~10⁵ paired rows
+    two genuinely different readouts do not produce it, and if they somehow did, the gauge would
+    have nothing to say either.
     """
     if values is None or win_prob_logits is None:
         return {}
@@ -391,6 +424,8 @@ def live_gauge_metrics(values, win_prob_logits) -> Dict[str, float]:
     ok = np.isfinite(v) & np.isfinite(z)
     n = int(ok.sum())
     if n == 0:
+        return {}
+    if _same_ordering(v[ok], z[ok]):
         return {}
     g = rank_gauge(v[ok], z[ok])
     return {"scaffolding_gauge": g["gauge"], "scaffolding_rho": g["rho"],

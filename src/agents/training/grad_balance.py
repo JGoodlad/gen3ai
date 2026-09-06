@@ -100,7 +100,10 @@ def grad_balance_metrics(
     **weighted** contribution (``coef * aux_loss``) exactly as it entered the loss, e.g.
     ``{"species_belief": …, "move_belief": …, "move_latent": …, "win_prob": …,
     "value_dist": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
-    dict means "RL heads only", the upstream-identical 2-way case).
+    dict means "RL heads only", the upstream-identical 2-way case). **An aux term that is the SAME
+    tensor object as ``value_term`` is skipped** (`gen3_tb_relevance_v1`): under
+    ``--critic winprob`` the critic loss IS the win-prob BCE, and reporting it as both would
+    publish duplicate curves and double-count its norm in the shared denominator below.
 
     Every ``grad/<term>_share`` is that term's shared-trunk gradient norm divided by the SAME
     total ``T = ‖g_pi‖ + ‖g_vf‖ + Σ‖g_aux‖`` — so the shares are mutually comparable, sum to
@@ -127,10 +130,19 @@ def grad_balance_metrics(
     n_pi = float(g_pi.norm())
     n_vf = float(g_vf.norm())
 
-    # Per-aux gradient + norm — each is a separately-reported scaffold pulling the SAME trunk.
+    # gen3_tb_relevance_v1: AN AUX TERM THAT *IS* THE VALUE TERM IS NOT A SECOND TERM. Under
+    # `--critic winprob` the deployed critic loss IS the win-prob BCE, so `ppo.py` passes the SAME
+    # tensor object as `value_term` and as `aux_terms["win_prob"]`. Reporting it twice published
+    # three exact duplicate curves (`grad/win_prob_*` ≡ `grad/value_*`) AND — the real defect —
+    # counted its norm twice in the shared denominator, deflating EVERY `grad/*_share` on such a
+    # run (measured on ai_v12_01: policy_share 0.564 published where 0.680 is the true share).
+    # Identity (`is`) rather than value equality: it is exactly the "same tensor" case, it costs
+    # nothing, and two numerically-equal-but-distinct terms are a genuine coincidence to report.
     aux_g: Dict[str, th.Tensor] = {}
     aux_n: Dict[str, float] = {}
     for name, term in (aux_terms or {}).items():
+        if term is value_term:
+            continue
         g = _flat_grads(term, shared_params)
         aux_g[name] = g
         aux_n[name] = float(g.norm())

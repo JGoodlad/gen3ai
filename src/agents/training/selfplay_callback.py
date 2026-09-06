@@ -600,10 +600,21 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         )
         monotonicity = _monotonicity_score(sentinel_win_rates) if len(sentinel_win_rates) >= 2 else 1.0
         td_resid_tail_vs_pool = sum(sentinel_tds) / len(sentinel_tds) if sentinel_tds else None
-        self.logger.record("eval/win_rate_vs_pool", win_rate_vs_pool)
-        self.logger.record("eval/mean_reward_vs_pool", mean_reward_vs_pool)
-        self.logger.record("eval/mean_ep_len_vs_pool", mean_ep_len_vs_pool)
-        self.logger.record("eval/sentinel_monotonicity", monotonicity)
+        # gen3_tb_relevance_v1: NO SENTINEL MEASURED ⇒ NO POOL CURVE. The three `_vs_pool` scalars
+        # above fall back to 0.0 for an empty list, and a published 0.0 is indistinguishable from
+        # "lost every game against the pool" — which is precisely how it read for the first two
+        # cycles of ai_v12_01_winprob_critic (`eval/win_rate_vs_pool` 0.0 beside a
+        # `pool_snapshot_count` of 1, no sentinel matchup having produced a result yet). The
+        # in-process values keep the 0.0 default because `_check_promotion` and the ELO fit consume
+        # them; only the EXPORT is gated, so a gap appears in the curve and fills in the moment a
+        # sentinel is actually played. `sentinel_monotonicity` needs TWO to be a monotonicity at
+        # all, and it was publishing a perfect 1.0 on a single-entry pool.
+        if sentinel_win_rates:
+            self.logger.record("eval/win_rate_vs_pool", win_rate_vs_pool)
+            self.logger.record("eval/mean_reward_vs_pool", mean_reward_vs_pool)
+            self.logger.record("eval/mean_ep_len_vs_pool", mean_ep_len_vs_pool)
+        if len(sentinel_win_rates) >= 2:
+            self.logger.record("eval/sentinel_monotonicity", monotonicity)
         tui["eval/win_rate_vs_pool"] = win_rate_vs_pool
         tui["eval/mean_reward_vs_pool"] = mean_reward_vs_pool
         tui["eval/mean_ep_len_vs_pool"] = mean_ep_len_vs_pool

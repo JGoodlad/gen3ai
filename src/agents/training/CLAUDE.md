@@ -45,22 +45,136 @@ sites are flag-gated off in any one run. **Recount before quoting** — `tmp_cen
 `grep -rn "logger.record(" src/agents/training src/main/train src/main/eval_worker.py` for the
 sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 
-| group | sites | tags seen | cadence | currency | computed in |
-|---|---:|---:|---|---|---|
-| `reward/` | 1 | 46 | **per rollout** | RAW REWARD | `reward_term_callback` ← `reward_term_stats` |
-| `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
-| `win_prob/` | 5 | 42 (+10 under `--critic winprob`) | per rollout | PROBABILITY | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
-| `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | `eval_callback`, `selfplay_callback` |
-| `eval_final/` | 2 | 10 | once, at run end | win rate | `main/train/final_eval.py` |
-| `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | `signal_metrics`, `signal_callback` |
-| `popart/` | 5 | 5 | per rollout | raw (μ,σ) + unitless (norm) | `ppo.py` |
-| `grad/` | (dynamic) | 16 | per rollout | unitless shares | `grad_balance` |
-| `rank/` | 6 | 18 | per rollout | unitless | `rank_tripwire`, `rank_metrics` |
-| `belief/` | 1 | 8 | per rollout | accuracy / CE | `belief_bank` |
-| `distill/` | 7 | — | per rollout | KL / MSE / rate | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
-| `cf/` | 5 | — | per rollout | probability + counts | `cf_terms`, `cf_label_buffer` |
-| `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | `teacher/callback`, `ppo.py` |
-| `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `value_dist/` · `td_aux/` · `q_winprob/` | 20 | — | per rollout | see each section | their own callbacks |
+| group | sites | tags seen | cadence | currency | **era** (`--critic winprob`) | computed in |
+|---|---:|---:|---|---|---|---|
+| `reward/` | 1 | 46 | **per rollout** | RAW REWARD | 14 emitted, of which **6 NOISE (gated)** + 5 REDUNDANT — a 1-term composition has nothing to apportion | `reward_term_callback` ← `reward_term_stats` |
+| `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | LIVE, but `return_*` / `value_loss` / `explained_variance` **change currency to P(win)**; `scaffolding_*` **NOISE (gated)** | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
+| `win_prob/` | 5 | 42 (+10 under `--critic winprob`) | per rollout | PROBABILITY | **the era's core group.** The `critic_*` ten are LIVE and primary; the 19 `contested`/`material` tags are **NOISE** (6 gated, 13 pending — see below) | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
+| `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | LIVE — except **13 `mean_reward_*` REDUNDANT** (byte-identical to their `win_rate_*` twin under the indicator) | `eval_callback`, `selfplay_callback` |
+| `eval_final/` | 2 | 10 | once, at run end | win rate | LIVE | `main/train/final_eval.py` |
+| `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | LIVE — `draw_rate` is **promoted to a PRIMARY endpoint** (the G7 kill condition) | `signal_metrics`, `signal_callback` |
+| `popart/` | 5 | 5 | per rollout | raw (μ,σ) + unitless (norm) | CONDITIONAL — **structurally silent**: PopArt is REFUSED under `winprob` | `ppo.py` |
+| `grad/` | (dynamic) | 16 | per rollout | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
+| `rank/` | 6 | 18 | per rollout | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
+| `belief/` | 1 | 8 | per rollout | accuracy / CE | LIVE (unchanged by the critic mode) | `belief_bank` |
+| `distill/` | 7 | — | per rollout | KL / MSE / rate | CONDITIONAL — silent, no teacher | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
+| `cf/` | 5 | — | per rollout | probability + counts | CONDITIONAL — silent, no `--cf-records` | `cf_terms`, `cf_label_buffer` |
+| `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | CONDITIONAL — silent | `teacher/callback`, `ppo.py` |
+| `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `value_dist/` · `td_aux/` · `q_winprob/` | 20 | — | per rollout | see each section | CONDITIONAL — all silent; `value_dist/` is **REFUSED** by the mode, the rest are flag-off | their own callbacks |
+
+### ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`)
+
+**Measured 2026-09-06 over `models/ai_v12_01_winprob_critic`'s first hours: 216 tags emitted.** The
+`--critic winprob` era changes no tag NAME but removes the SOURCE behind several, and the recorders
+kept publishing — as flat constants and byte-identical duplicates that a reader cannot tell from a
+measurement. Every classification below is from that arm's own tfevents, not from reading code.
+
+| class | on the arm | means |
+|---|---:|---|
+| **LIVE** | 166 | meaningful as published |
+| **NOISE** | **31** | emitted, content-free *here* — a constant, a tautology, or a copy created by the era |
+| **REDUNDANT** | 19 | an exact duplicate of another tag by identical formula or affine invariance |
+| **CONDITIONAL** | (48 more observed on other configs, + ~14 whole families) | correctly SILENT — their flag is off, or the mode refuses them |
+| **DEAD** | **0** | nothing in the recorder set is unreachable; the v75 latent-belief and v88 `V_pub` purges left no orphans |
+
+**The 18 NOISE tags now GATED** — the gate is on the SOURCE, never on the value, so a shaped run is
+byte-identical (verified: 172 tags, empty before/after diff):
+
+| gated | why it was content-free | gate lives in |
+|---|---|---|
+| `train/scaffolding_{gauge,rho,n}` | `V = sigmoid(win_prob_logit)`, so ρ ≡ 1.0 and the gauge ≡ 5.5e-13. A rank gauge between a quantity and **itself** | `scaffolding._same_ordering` — identical rank vectors ⇒ no keys |
+| `grad/win_prob_{share,norm_shared,policy_cosine}` | the critic loss IS the win-prob BCE — the SAME tensor object, passed as `value_term` *and* as `aux_terms["win_prob"]` | `grad_balance_metrics` skips an aux term that `is value_term` |
+| `win_prob/{brier,acc}_contested` · `contested_{frac,label_mean}` · `brier_material` · `skill_vs_material` | `win_margin` is a MATERIAL-potential by-product and is identically 0.0 with no material PBRS term, so `contested_frac` ≡ 1.0, every `*_contested` ≡ its pooled twin, `brier_material` ≡ 0.25 and `skill_vs_material` collapses to `1 − 4·brier` | `value_terms._win_prob_loss` treats a **spread-free** margin as absent |
+| `reward/{bias_refund,class_refund}_{mean,abs_mean,abs_share}` | the refund is the BIAS class's accumulate-and-refund MECHANISM; with no bias term it is structurally 0.0 | `reward_term_stats._has_bias` |
+
+Plus `eval/{win_rate,mean_reward,mean_ep_len}_vs_pool` and `eval/sentinel_monotonicity`, which fell
+back to a confident **0.0** / a perfect **1.0** when no sentinel had been measured yet — the first
+two cycles of the live arm published exactly that beside a `pool_snapshot_count` of 1.
+`selfplay_callback` now leaves a GAP until a sentinel actually reports (the in-process values keep
+their 0.0 default, because `_check_promotion` and the ELO fit consume them; only the EXPORT is gated).
+
+🚨 **The `grad/` one was not merely cosmetic — it was a GIGO defect.** The duplicated norm sat in the
+shared denominator too, so on that arm **every `grad/*_share` was deflated by the critic's own pull**:
+the published norms are policy 0.4555, value 0.1380, win_prob 0.1380 (the same number), hp_type
+0.0723, move_latent 0.0039, and the published `policy_share` 0.5639 is `0.4555 / 0.8077` — a
+denominator carrying 0.1380 twice. Over a de-duplicated denominator the true shares are **policy
+0.680 · value 0.206 · aux 0.114**. The shares summed to 1.0 throughout, which is why nothing caught it.
+
+**13 NOISE tags are NOT yet gated** and are the one open item:
+`win_prob/contested_{ece,mce,rel_gap_b0…b9,rel_n}`. They come through `calibration.contested_mask`,
+which returns `None` only when the margin **key** is missing, not when the margin has no **spread** —
+and `_CalibrationAccumulator.metrics()` already returns `{}` for an unobserved accumulator, so the
+whole family disappears the moment that predicate learns the second case. The fix is one clause in
+`contested_mask`, matching `value_terms`' (see *What to watch* below for what to read instead
+meanwhile).
+
+**REDUNDANT (19) — kept, deliberately, and named so nobody measures them twice:**
+
+* **`eval/mean_reward_*` ≡ `eval/win_rate_*`, all 13 of them.** At `--victory-value 1.0
+  --draw-penalty 0 --terminal-indicator` the episode reward IS the win indicator, so the two families
+  are byte-identical on every opponent (verified to the last bit on the live arm). They are NOT
+  redundant on a `shaped` run and the TUI reads both, so neither is dropped — but quoting both as
+  "two agreeing signals" would be quoting one number twice.
+* `reward/class_terminal_*` ≡ `reward/win_loss_*` and `reward/total_{mean,abs_mean}` ≡ the same —
+  a class rollup over ONE term, and a total over one term. `*_abs_share` is then a constant 1.0: a
+  share partition of a single term.
+* `train/nonbot_fraction` ≡ `train/selfplay_fraction` whenever `--stable-opponents` is unused
+  (`nonbot = pool + stable`). Kept because it separates the moment a stable opponent is added, and a
+  curve that appears mid-run is worse than a duplicate.
+
+**Three tags are the same quantity in three WINDOWS and are not duplicates**: `train/return_mean`
+(this rollout's returns), `rollout/ep_rew_mean` (SB3's 100-episode deque) and
+`signal/outcome_win_rate` (a 200-episode window). Under the indicator all three read a win rate;
+disagreement between them is a window effect, never a defect.
+
+### What to watch on a WIN-PROB run — the 28-tag dashboard
+
+Grouped by the question each answers, **with its currency**. Everything in the first two blocks is in
+PROBABILITY units, which is the era's whole point: the critic, the returns and the head finally share
+one scale. Read the run's `🎯 [CRITIC]` startup line first — a `shaped` run's `train/*` value tags are
+not comparable with these.
+
+**Is it getting stronger?** *(win rate / ELO)*
+1. `eval/elo` **+ `eval/elo_ci`** — anchored Bradley-Terry, the only cross-run number. Quote the run-END `snapshot_ladder/ladder.json`, never a mid-run node (the newest BT node is systematically inflated).
+2. `eval/win_rate_vs_bots` — saturates, so read it as an ALARM: a fall is a regression.
+3. `eval/win_rate_vs_pool` — the promotion gate pins it near 0.50; leaving 0.50 is the news.
+4. `signal/outcome_win_rate_bots` · `_pool` — the same, REALIZED, per rollout instead of per cycle.
+5. `rollout/ep_rew_mean` — under the indicator this IS the training win rate (see the window note above).
+
+**Is the critic HONEST?** *(probability — the era's central claim, and the §4.3 gate's inputs)*
+6. **`win_prob/critic_resolution`** — Murphy RES, **HIGHER is better**. The G1 PRIMARY meter; `main.critic_gate` reads its bar from the committed baseline artifact.
+7. `win_prob/critic_reliability` — Murphy REL, LOWER is better. Miscalibration only.
+8. `win_prob/critic_brier` · `critic_skill` — the DEPLOYED value's proper score, and its skill over the base rate.
+9. `win_prob/critic_uncertainty` · `critic_base_rate` — the decomposition's context; a skill score without them is unreadable.
+10. `win_prob/critic_decomp_residual` — must sit at ≈0, or REL−RES+UNC is not a decomposition of that Brier.
+11. `win_prob/ece` · `win_prob/mce` — the HEAD's own calibration: the count-weighted average, and the worst READABLE bin.
+12. `win_prob/rel_gap_b0`…`b9` — the SHAPE of the miscalibration. A NaN renders as a hole and means an under-populated bin, never a zero error.
+13. `win_prob/start_gap` — the PAIRED episode-start read. **Positive = optimistic at the opening board.**
+14. `train/explained_variance` — now EV in P(win) units (the same number in either currency — see below).
+15. `win_prob/coverage` — the fraction of rows carrying a label. A fall here invalidates every line above it.
+
+**Is the OPTIMIZATION healthy?** *(unitless)*
+16. `train/approx_kl` — the KL controller's input.
+17. `train/learning_rate` · **`train/dose_rate`** — the step size, and the quantity that predicts collateral.
+18. `train/clip_fraction` — how much of the surrogate is at the clip bound.
+19. `train/grad_norm`.
+20. **`grad/value_policy_logratio`** — value-vs-policy pull on the shared trunk, aux-independent. Now that the BCE IS the critic, this is the `--vf-coef` gauge.
+21. `grad/policy_share` · `value_share` · `aux_share` — the trunk partition (corrected this pass; see the GIGO note).
+22. `train/noise_scale_ratio_policy` — read BESIDE `train/noise_scale_ratio`, never alone.
+23. `signal/adv_raw_mean` **as a ratio to** `signal/adv_raw_std` — a systematically mis-centred critic; the no-harm watch.
+
+**The G7 KILL condition, and the GIGO guards** *(the two that must read an exact number)*
+24. **`rollout/ep_len_mean`** — a PRIMARY endpoint, not a monitored one. A `[0,1]` critic cannot represent "a timeout is worse than a loss", so stalling is this era's registered failure mode.
+25. **`signal/draw_rate`** — the same failure as a rate.
+26. **`reward/untracked_abs_mean` must read exactly 0.0.** Anything else means the startup composition census and the reward folds disagree.
+27. **`train/return_abs_max` must read exactly 1.0.** A departure means the reward stream is not the win indicator the mode's `V = P(win)` identity rests on.
+28. `time/fps` — the run is still moving.
+
+**What to read INSTEAD of the contested split, until those 13 tags are gated:** the honest
+contested-vs-blowout question on this era is answered offline by
+`python -m main.scaffolding_gauge --reliability --reliability-reweight` (which stratifies bot vs pool
+sentinel, where the head's bias FLIPS SIGN) and by `main.critic_gate`. The live `contested_*`
+calibration tags are copies of their pooled siblings and add nothing.
 
 ### The five groups the diagnostic contract names
 

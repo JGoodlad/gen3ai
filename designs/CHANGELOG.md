@@ -7510,3 +7510,97 @@ features (the design's own "B2 and B3 before any arm" ordering).**
   squared errors already in the caller's chosen space, so PopArt is `ppo.py`'s business. What was
   missing was a TEST: those paths were the rare case, and under `--critic winprob` (which refuses
   PopArt) they become the ONLY path, permanently. They are pinned now.
+
+---
+
+## `gen3_tb_relevance_v1` — the TensorBoard export, re-read against the win-prob era (2026-09-06)
+
+**Owner ask: "review each tensorboard metric that we are emitting and see if they are still
+relevant."** The answer was measured, not reasoned: every classification below comes from
+`models/ai_v12_01_winprob_critic`'s own tfevents — **216 tags** over its first hours — cross-read
+against two matched CPU debug smokes (a `--critic winprob` arm and a `shaped` one) and against the
+153 static `logger.record(` sites.
+
+`--critic winprob` changes no tag NAME. It removes the SOURCE behind several, and the recorders kept
+publishing anyway — as flat constants, tautologies and byte-identical copies that a reader cannot
+tell apart from a measurement. That is the whole finding.
+
+| class | on the arm | |
+|---|---:|---|
+| LIVE | 166 | meaningful as published |
+| **NOISE** | **31** | content-free *here*; 18 gated in this pass, 13 pending one clause in `calibration.contested_mask` |
+| REDUNDANT | 19 | exact duplicates by identical formula or affine invariance — all KEPT, all named |
+| CONDITIONAL | 48 observed elsewhere + ~14 whole families | correctly SILENT; PopArt and `value_dist/` are *refused* by the mode rather than merely off |
+| **DEAD** | **0** | the v75 latent-belief and v88 `V_pub` purges left no orphaned recorder |
+
+### The rule, applied four times
+
+**A tag whose source is absent is not emitted — and the gate is on the SOURCE, never on the value.**
+A shaped run is therefore byte-identical (verified: 172 tags, empty before/after diff), while the
+winprob arm drops 18:
+
+* `train/scaffolding_{gauge,rho,n}` — under this mode `V = sigmoid(win_prob_logit)`, so the gauge
+  compares a quantity with **itself**: ρ ≡ 1.0, gauge ≡ 5.5e-13, flat for 35 rollouts.
+  `live_gauge_metrics` now returns `{}` when the two rank vectors are identical, which is exactly
+  "one is a monotone map of the other" and is the only condition under which the number is a
+  tautology rather than a reading.
+* `grad/win_prob_{share,norm_shared,policy_cosine}` — the critic loss IS the win-prob BCE, and
+  `ppo.py` passes the SAME tensor object as `value_term` and as `aux_terms["win_prob"]`.
+  `grad_balance_metrics` skips an aux term that `is value_term`.
+* `win_prob/{brier,acc}_contested` · `contested_{frac,label_mean}` · `brier_material` ·
+  `skill_vs_material` — `win_margin` is a by-product of the MATERIAL potential, so a composition
+  with no material PBRS term (every `winprob` arm runs `--no-hand-shaping`) leaves it identically
+  0.0. `contested_frac` then reads a flat 1.0, each `*_contested` is a byte copy of its pooled twin,
+  `brier_material` is a flat 0.25 and `skill_vs_material` collapses to the affine transform
+  `1 − 4·brier`. `_win_prob_loss` now treats a **spread-free** margin as absent.
+* `reward/{bias_refund,class_refund}_*` — the refund is the BIAS class's accumulate-and-refund
+  mechanism; with no bias term it is structurally 0.0. Dropping it from the tracked set
+  **strengthens** `reward/untracked_abs_mean`: a refund that somehow became non-zero now reaches the
+  GIGO guard instead of a curve nobody reads.
+
+Plus `eval/{win_rate,mean_reward,mean_ep_len}_vs_pool` and `eval/sentinel_monotonicity`, which fell
+back to a confident **0.0** and a perfect **1.0** when no sentinel had been measured — which is how
+the live arm's first two cycles read, beside a `pool_snapshot_count` of 1. Only the EXPORT is gated;
+`_check_promotion` and the ELO fit still consume the in-process defaults.
+
+### The one that was not cosmetic
+
+🚨 **The `grad/` duplicate sat in the shared DENOMINATOR too, so every `grad/*_share` on a winprob
+run was deflated by the critic's own pull.** The arm's published norms are policy 0.4555, value
+0.1380, win_prob 0.1380 (*the same number*), hp_type 0.0723, move_latent 0.0039 — and its published
+`policy_share` of 0.5639 is `0.4555 / 0.8077`, a denominator carrying 0.1380 twice. The corrected
+shares are **policy 0.680 · value 0.206 · aux 0.114**. The shares summed to 1.0 the whole time,
+which is precisely why nothing caught it: the invariant everyone checks was preserved by the defect.
+
+### What was NOT changed, and why
+
+* **`eval/mean_reward_*` ≡ `eval/win_rate_*`, all 13, byte for byte** — at `--victory-value 1.0
+  --draw-penalty 0 --terminal-indicator` the episode reward IS the win indicator. Kept: they are not
+  redundant on a `shaped` run and the TUI reads both. Named here so nobody quotes one number twice
+  and calls it two agreeing signals.
+* `reward/class_terminal_*` ≡ `reward/win_loss_*`, `reward/total_*` ≡ the same, and both
+  `*_abs_share` a constant 1.0 — a class rollup and a share partition over a SINGLE term. Kept:
+  suppressing single-member rollups would change the shaped run's tag set, which was the one thing
+  this pass promised not to do.
+* `train/nonbot_fraction` ≡ `train/selfplay_fraction` with no `--stable-opponents`. Kept: it
+  separates the moment a stable opponent is added, and a curve that appears mid-run is worse than a
+  duplicate.
+* `rank/tripwire_no_reading`, a flat 1.0 for the whole run, is the tripwire correctly reporting its
+  own blindness — suppressing it would hide a watchdog that is watching nothing.
+
+### Still open
+
+**13 NOISE tags remain: `win_prob/contested_{ece,mce,rel_gap_b0…b9,rel_n}`.** They pass through
+`calibration.contested_mask`, which returns `None` only when the margin KEY is missing, not when the
+margin has no SPREAD; `_CalibrationAccumulator.metrics()` already returns `{}` for an unobserved
+accumulator, so the family disappears the moment that one predicate learns the second case. It was
+left alone because `calibration.py` was being edited concurrently, not because it is harder.
+
+The deeper fix is a different change and belongs to whoever owns the reward manager: the material
+margin is a cheap by-product, and computing it **unconditionally** would give the win-prob era back a
+genuinely useful contested-vs-blowout split instead of removing it. Until then the honest read is
+`python -m main.scaffolding_gauge --reliability --reliability-reweight`, which stratifies bot vs pool
+sentinel — where the head's bias flips sign.
+
+The classification, and the 28-tag "what to watch on a win-prob run" dashboard it produced, live in
+`src/agents/training/CLAUDE.md` → *ERA RELEVANCE* and *What to watch on a WIN-PROB run*.

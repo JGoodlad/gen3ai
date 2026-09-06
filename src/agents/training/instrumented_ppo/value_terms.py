@@ -33,7 +33,9 @@ class ValueTerms:
         key) is given, ALSO reports the INFORMATION VALUE the aggregate Brier hides: the head's skill on
         CLOSE games (``|margin| < _WIN_CONTESTED_TAU`` — a blowout's P(win) is trivially recoverable from
         material), and a Brier SKILL SCORE vs a material-only baseline (``P_mat = clip(0.5 + 0.5·margin)``):
-        ``skill_vs_material`` > 0 ⇒ the head beats 'just count the mons'."""
+        ``skill_vs_material`` > 0 ⇒ the head beats 'just count the mons'. **A margin with no SPREAD
+        is treated as absent** (`gen3_tb_relevance_v1`) — it cannot stratify, and the six tags it
+        would produce are then copies of their pooled siblings plus two constants."""
         if logits is None or target is None or mask is None:
             return None
         logits = logits.reshape(-1)
@@ -62,7 +64,16 @@ class ValueTerms:
         }
         # Information value the aggregate Brier hides (only when the material margin is available): the
         # head's skill on CLOSE games + a skill score beyond a material-only baseline.
-        if margin is not None:
+        # gen3_tb_relevance_v1: a CONSTANT margin cannot stratify anything, and publishing the
+        # split anyway is worse than publishing nothing. `win_margin` is a by-product of the
+        # MATERIAL potential (`reward_manager._last_material_margin`), so a composition with no
+        # material PBRS term — every `--critic winprob` arm, which runs `--no-hand-shaping` — leaves
+        # it identically 0.0. The whole family then degenerates: `close` is all-ones so every
+        # `*_contested` tag is a byte-identical copy of its pooled sibling, `contested_frac` is a
+        # flat 1.0, the material baseline `p_mat` is a constant 0.5 so `brier_material` is a flat
+        # 0.25, and `skill_vs_material` collapses to the affine transform `1 − 4·brier`. All six
+        # read as measurements. Measured on ai_v12_01_winprob_critic: exactly that, for 35 rollouts.
+        if margin is not None and float(margin.max() - margin.min()) > 0.0:
             with th.no_grad():
                 margin = margin.to(logits.device).reshape(-1)
                 close = (margin.abs() < _WIN_CONTESTED_TAU).float() * mask

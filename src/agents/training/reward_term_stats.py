@@ -181,20 +181,48 @@ def reward_term_metrics(merged: Mapping, term_class: Mapping[str, str]) -> Dict[
     return out
 
 
+def _has_bias(composition: Mapping) -> bool:
+    """Does this composition carry any BIAS term? `gen3_tb_relevance_v1`.
+
+    The refund is the BIAS class's accumulate-and-refund MECHANISM, so with no bias term there is
+    nothing it could ever refund and it is structurally 0.0 -- which is exactly what it published,
+    six flat-zero curves per rollout, on the first `--critic winprob` arm (`--no-hand-shaping`
+    leaves the composition at 1 terminal term and nothing else). Reads the COUNT when present and
+    falls back to the term list, because `reward_class_composition` emits both and a caller may
+    hand us a hand-built census with only one.
+    """
+    n = composition.get("bias")
+    if n is not None:
+        return int(n) > 0
+    return bool(composition.get("bias_terms"))
+
+
 def tracked_terms(composition: Mapping) -> List[str]:
     """The tracked set from a `reward_class_composition(config)` census: every ACTIVE terminal,
-    PBRS and BIAS term, plus the refund mechanism. Ordered terminal -> pbrs -> bias -> refund so
-    the TensorBoard tag order reads the way the fold does."""
+    PBRS and BIAS term, plus the refund mechanism **when this composition has a BIAS class to
+    refund** (`gen3_tb_relevance_v1`; see `_has_bias`). Ordered terminal -> pbrs -> bias -> refund
+    so the TensorBoard tag order reads the way the fold does.
+
+    Dropping the refund from the tracked set does not weaken `untracked_abs_mean` -- it STRENGTHENS
+    it. The residual is `|total - sum(tracked)|`, so a `bias_refund` that somehow became non-zero
+    with no bias term in the census would now be REPORTED by the GIGO guard instead of being
+    quietly absorbed into a curve nobody reads.
+    """
     terms: List[str] = list(composition.get("terminal_terms") or ())
     terms += list(composition.get("pbrs_terms") or ())
     terms += list(composition.get("bias_terms") or ())
-    terms.append(REFUND_FIELD)
+    if _has_bias(composition):
+        terms.append(REFUND_FIELD)
     seen: set = set()
     return [t for t in terms if not (t in seen or seen.add(t))]
 
 
 def term_class_map(composition: Mapping) -> Dict[str, str]:
-    """`{term name -> rollup name}` for `reward_term_metrics`, derived from the same census."""
+    """`{term name -> rollup name}` for `reward_term_metrics`, derived from the same census.
+
+    Carries the refund entry only when `tracked_terms` tracks it, so the two read one predicate and
+    a `class_refund_*` rollup can never appear over an empty set (`gen3_tb_relevance_v1`).
+    """
     out: Dict[str, str] = {}
     for name in composition.get("terminal_terms") or ():
         out[name] = "terminal"
@@ -202,5 +230,6 @@ def term_class_map(composition: Mapping) -> Dict[str, str]:
         out[name] = "pbrs"
     for name in composition.get("bias_terms") or ():
         out[name] = "bias"
-    out[REFUND_FIELD] = "refund"
+    if _has_bias(composition):
+        out[REFUND_FIELD] = "refund"
     return out

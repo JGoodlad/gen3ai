@@ -653,6 +653,66 @@ def test_watchdog_aborts_hung_selfplay_cycle(tmp_path, monkeypatch):
     pool.add_from_path.assert_not_called()         # no pool win rate → no promotion
 
 
+# ── gen3_tb_relevance_v1: NO SENTINEL MEASURED ⇒ NO POOL CURVE ───────────────────────────────
+# The three `_vs_pool` scalars default to 0.0 on an empty sentinel list, and a published 0.0 is
+# indistinguishable from "lost every game against the pool" — which is how it read for the first
+# cycles of ai_v12_01_winprob_critic (win_rate_vs_pool 0.0 beside pool_snapshot_count 1).
+# `sentinel_monotonicity` likewise published a perfect 1.0 on a pool too small to have an order.
+
+
+def _cycle_recorded_tags(tmp_path, monkeypatch, *, n_sentinels, kinds=None):
+    """Run ONE full eval cycle and return the set of tags it recorded."""
+    from agents.training import eval_callback as ec
+    pool = _mock_pool(n_sentinels=n_sentinels)
+    cb = _make_callback(tmp_path, pool=pool)
+    cb._init_callback()
+
+    class _DoneProc:
+        returncode = 0
+        def poll(self):
+            return 0
+        def wait(self, timeout=None):
+            return 0
+
+    def fake_popen(argv, stdout=None, stderr=None, env=None):
+        import json as _json
+        _publish_fake_selfplay_shards(_json.load(open(argv[-1])),
+                                      bot_win=0.6, sentinel_win=0.5, kinds=kinds)
+        return _DoneProc()
+
+    monkeypatch.setattr(ec.subprocess, "Popen", fake_popen)
+    cb._on_step()                       # launch (workers publish synchronously in the fake Popen)
+    cb.num_timesteps += 1
+    cb._on_step()                       # the next step sees poll()==0 and COLLECTS
+    assert cb._pending is None, "the cycle did not collect — the harness, not the gate, is wrong"
+    return {c.args[0] for c in cb.logger.record.call_args_list}
+
+
+def test_no_sentinel_result_publishes_no_pool_curve(tmp_path, monkeypatch):
+    """Sentinels never report → the pool tags are ABSENT, not a confident 0.0."""
+    from agents.training.eval_sharding import BOT
+    recorded = _cycle_recorded_tags(tmp_path, monkeypatch, n_sentinels=3, kinds={BOT})
+    assert "eval/win_rate_vs_bots" in recorded                 # the cycle DID run
+    for tag in ("eval/win_rate_vs_pool", "eval/mean_reward_vs_pool",
+                "eval/mean_ep_len_vs_pool", "eval/sentinel_monotonicity"):
+        assert tag not in recorded, f"{tag} published with no sentinel measured"
+
+
+def test_sentinel_results_publish_the_pool_curve(tmp_path, monkeypatch):
+    """The positive control: with sentinels measured, every pool tag is back."""
+    recorded = _cycle_recorded_tags(tmp_path, monkeypatch, n_sentinels=3)
+    for tag in ("eval/win_rate_vs_pool", "eval/mean_reward_vs_pool",
+                "eval/mean_ep_len_vs_pool", "eval/sentinel_monotonicity"):
+        assert tag in recorded, f"{tag} missing on a cycle that DID measure sentinels"
+
+
+def test_single_sentinel_publishes_pool_but_not_monotonicity(tmp_path, monkeypatch):
+    """A one-entry pool has a win rate but no ORDER — monotonicity needs two."""
+    recorded = _cycle_recorded_tags(tmp_path, monkeypatch, n_sentinels=1)
+    assert "eval/win_rate_vs_pool" in recorded
+    assert "eval/sentinel_monotonicity" not in recorded
+
+
 # ── opponent-mix reporting fractions (pool / stable / nonbot) — pure, no battles ──
 # These mirror MaskableAgentWrapper._select_episode_opponent (wrappers.py) for REPORTING only.
 
