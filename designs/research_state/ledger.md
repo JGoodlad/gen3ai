@@ -11242,3 +11242,22 @@ arms were therefore validated by executing `resolve_config` itself.
 Whichever way (i) falls, it decides the fleet: if it fires, the origin × budget factorial is re-scoped
 as a question about our ROBBERY rather than v8's gift; if it does not, maturity is the account and the
 fleet is moot for the gift.
+
+## 2026-09-06 — BOOKKEEPING closed: `tc_readout.py`'s bars corrected (every delta/interval identical, 21/21 verified against main's copy); `taught_readout.py` / `recovery_readout.py` / `k6_readout.py` written and every banked point estimate reproduces digit-for-digit; readout gate registry now 5 with a ratchet floor
+
+- `tc_readout.py`: the pooled nine-draw 2.53 bar is gone; frozen contrasts take 1.66, C1 − B2 takes the live 4.27 [+1.23,
+  +6.94] with its own CI (separate RNG stream) and reads p1M +10.12 SIGNIFICANT · mid +5.87 / end +5.25 "bar-uncertain",
+  under a STILL OWED block. 21/21 `delta [lo, hi]` triples identical to main's copy in identical order.
+- `taught_readout.py`: FUNDED +5.11 [+2.66, +7.41] / UNFUNDED +4.86 [+3.17, +6.64] / pooled **+4.98** [+3.25, +6.69]; K=6
+  **+4.48** [+2.36, +6.72]; funded − unfunded +0.72 / −0.22 / +0.25 with the banked labels. `recovery_readout.py`:
+  UNFUNDED − FUNDED recovery **+6.28** [+3.16, +9.75] (banked +9.81) and **+4.53** [+1.94, +7.41] exact; every endpoint
+  exact. `k6_readout.py`: P1 pooled −4.19 [−6.28, −1.75] / −0.78 / −0.22; P2 all WITHIN FLOOR at 2.46; P3 draws −4.00 /
+  +2.19 / +1.19, mean 2.46, nine pooled 1.92.
+- Caveat, not a discrepancy: the ad-hoc session's bootstrap seed was never recorded; point estimates are seed-free and
+  exact, intervals move ≤0.12pp (untaught) / ≤0.07pp (taught) across seeds — 1–2 steps of each statistic's resolution
+  grid; no verdict depends on it. Scripts declare `SEED = 20260904`.
+- The K=6 cell never had a directory: its arms are the 2×2 UNFUNDED argv minus two tokens and its rows were produced by
+  the same probes, so `k6_readout.py` lives beside its inputs in `teacher_content_2x2_2026-09-04/`.
+- Gate: registry 5 entries, `_REGISTRY_FLOOR = 5` (a ratchet, not a fixed 2); negative control re-run (hiding two K=6
+  artifacts fails exactly the two readouts that read them). Inner loop 8767 passed.
+

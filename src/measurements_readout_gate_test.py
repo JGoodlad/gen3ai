@@ -22,8 +22,8 @@ resolves each input path and reports the missing ones without computing anything
 one interpreter start per script and stays honest about what it proves: that the FILES are there,
 not that the numbers are right. Reproducing the numbers is the readout's own job, done by hand.
 
-Adding a readout: append it to REGISTRY and give the script a `--check` that exits non-zero when an
-input is missing. A script with no declared inputs does not belong here.
+Adding a readout: append it to REGISTRY, raise `_REGISTRY_FLOOR`, and give the script a `--check`
+that exits non-zero when an input is missing. A script with no declared inputs does not belong here.
 
 Unmarked, ~0.5 s. Skips cleanly when `designs/` is absent (a source tarball, a slimmed container).
 Opt out with GEN3AI_SKIP_READOUT_GATE=1.
@@ -41,7 +41,13 @@ from utils.paths import repo_path
 # (script, why it is registered) — paths relative to designs/research_state/measurements/
 REGISTRY = [
     ("teacher_content_2x2_2026-09-04/tc_readout.py",
-     "the funded-vs-unfunded 2x2 contrast + the frozen replicate floor"),
+     "the funded-vs-unfunded 2x2 UNTAUGHT contrast + the frozen replicate floor"),
+    ("teacher_content_2x2_2026-09-04/taught_readout.py",
+     "the TAUGHT-16 side of the 2x2 and the K=6 cell, every arm vs the fold parent"),
+    ("teacher_content_2x2_2026-09-04/recovery_readout.py",
+     "the 2x2's untaught arm-vs-parent LEVELS by depth + the p1M->mid/end RECOVERY table"),
+    ("teacher_content_2x2_2026-09-04/k6_readout.py",
+     "the K=6 (v8-dose) cell's pre-registered P1 / P2 / P3"),
     ("arch_transfer_2026-09-05/teacher_distance/fold_table.py",
      "every gen-era fold's untaught delta, recomputed from per-team rows"),
 ]
@@ -85,7 +91,17 @@ def test_registered_readout_resolves_its_inputs(rel: str, why: str) -> None:
     )
 
 
-def test_registry_is_not_silently_empty() -> None:
-    """A registry that empties itself turns this whole gate into a no-op that still reports PASSED
-    — the vacuous-guard class this tree keeps retiring. Two entries is the floor it shipped with."""
-    assert len(REGISTRY) >= 2, "REGISTRY shrank; a readout may have been dropped rather than fixed"
+#: The registry may only GROW without a deliberate edit here. A registry that quietly empties itself
+#: turns this whole gate into a no-op that still reports PASSED — the vacuous-guard class this tree
+#: keeps retiring — and a registry that quietly SHRINKS is the same failure at partial strength.
+#: Lowering this number is a legal move only in the same commit that deletes a readout, and the
+#: commit message says which one.
+_REGISTRY_FLOOR = 5
+
+
+def test_registry_does_not_silently_shrink() -> None:
+    assert len(REGISTRY) >= _REGISTRY_FLOOR, (
+        f"REGISTRY has {len(REGISTRY)} entries, below the recorded floor of {_REGISTRY_FLOOR}.\n"
+        "  A readout was dropped rather than fixed. If the deletion is deliberate, lower\n"
+        "  _REGISTRY_FLOOR in the same commit and name the readout in the message."
+    )
