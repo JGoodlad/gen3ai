@@ -57,11 +57,25 @@ _ADV_DEGENERATE_STD = 1e-12
 # by a common one.
 _OUTCOME_WINDOW = 200
 
+# `MaskableAgentWrapper.OPP_CLASS_*` → the TB suffix. Canonical HERE rather than in
+# `signal_callback` because both consumers need it and one of them is `instrumented_ppo.ppo`
+# (the `win_prob/start_*` per-class split): importing it from the callback would put a back-edge
+# from this package into a module that imports the package. Kept as a literal map rather than read
+# off the wrapper class because the wrapper lives in the ENV WORKER process; only the integer
+# crosses the pipe. `wrappers_test`'s companion assertion pins the two together so a renumbering
+# cannot silently relabel a curve.
+OPP_CLASS_SUFFIX: Dict[int, str] = {
+    0: "bots",       # OPP_CLASS_BOT       — heuristic / random floor bots
+    1: "pool",       # OPP_CLASS_POOL      — frozen selves (the self-play pool)
+    2: "stable",     # OPP_CLASS_STABLE    — cross-run stable opponents
+    3: "target",     # OPP_CLASS_EXPLOITER — the exploiter's target
+}
+
 
 def advantage_density_metrics(advantages) -> Dict[str, float]:
     """`signal/adv_*` from the RAW (pre-normalization) GAE advantages of one rollout.
 
-    Returns ``{"adv_raw_std", "adv_raw_abs_mean", "adv_kurtosis"}`` — keys WITHOUT the ``signal/``
+    Returns ``{"adv_raw_mean", "adv_raw_std", "adv_raw_abs_mean", "adv_kurtosis"}`` — keys WITHOUT the ``signal/``
     prefix (the caller adds it, matching the `belief/`/`win_prob/` idiom in `ppo.py`).
 
     * ``adv_raw_std`` — population std. The headline density: how much the critic thinks the
@@ -83,7 +97,8 @@ def advantage_density_metrics(advantages) -> Dict[str, float]:
     # than emitting a NaN triple that hides which rollout went bad.
     a = a[np.isfinite(a)]
     if a.size == 0:
-        return {"adv_raw_std": float("nan"),
+        return {"adv_raw_mean": float("nan"),
+                "adv_raw_std": float("nan"),
                 "adv_raw_abs_mean": float("nan"),
                 "adv_kurtosis": float("nan")}
 
@@ -91,7 +106,15 @@ def advantage_density_metrics(advantages) -> Dict[str, float]:
     centered = a - mean
     var = float(np.mean(centered ** 2))
     std = float(np.sqrt(var))
-    out = {"adv_raw_std": std, "adv_raw_abs_mean": float(np.mean(np.abs(a)))}
+    # `adv_raw_mean` is the NO-HARM watch, not a density reading. GAE advantages have no reason to
+    # be exactly zero-mean over a finite rollout, but a mean that drifts far from 0 relative to
+    # `adv_raw_std` is a systematically MIS-CENTRED critic — every action in the rollout looking
+    # better (or worse) than the critic expected — which `normalize_advantage` then erases per
+    # minibatch, so nothing downstream can report it. Read as the ratio to `adv_raw_std`, never
+    # alone: like the two below it rides the run's own PopArt units.
+    out = {"adv_raw_mean": float(mean),
+           "adv_raw_std": std,
+           "adv_raw_abs_mean": float(np.mean(np.abs(a)))}
 
     # Excess kurtosis m4/m2² − 3. Guarded on the SECOND moment, not on n: a large constant array is
     # exactly as undefined as a small one.
@@ -170,4 +193,11 @@ class OutcomeEntropyTracker:
             if w:
                 out[f"outcome_entropy_{kind}"] = outcome_entropy(self._rate(w))
                 out[f"outcome_n_{kind}"] = float(len(w))
+                # THE ENTROPY CANNOT RECOVER THE RATE, and for two generations only the entropy
+                # shipped per kind. p(1−p) is SYMMETRIC about 0.5: `outcome_entropy_pool = 0.16`
+                # means p = 0.2 or p = 0.8 and nothing in the export said which. So the REALIZED
+                # per-kind win rate — the self-play win rate among them, the partner
+                # `win_prob/start_realized_mean_pool` is paired against — now ships beside it
+                # (gen3_winprob_calibration_export_v1). Free: the same deque, one more mean.
+                out[f"outcome_win_rate_{kind}"] = float(np.mean(w))
         return out

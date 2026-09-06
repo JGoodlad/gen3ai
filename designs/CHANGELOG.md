@@ -7249,3 +7249,104 @@ behaviour-preserving but is a live-hot-path edit in the tree's most physics-crit
 than a provably-inert one. It is banked as the named follow-up in the census, with the seam, instead
 of riding along inside a purge. The unit test asserts the std cannot reach the divisor, so a
 re-introduction has to change a test rather than silently change the physics.
+
+## THE DIAGNOSTIC EXPORT — the reward's composition, the win-prob head's calibration, and the PopArt currency (2026-09-06)
+
+`gen3_reward_term_export_v1` + `gen3_winprob_calibration_export_v1` + `gen3_popart_currency_readout_v1`.
+**Logging only** — no loss term, no parameter touched, no forward changed. The byte-identity check is
+in the report rather than the intent: two identically-seeded tiny PPO models through the REAL
+`train()`, one with the new folds reachable and one with them neutralised, agreed on all eight
+watched training scalars (`train/policy_gradient_loss`, `value_loss`, `entropy_loss`, `loss`,
+`approx_kl`, `clip_fraction`, `explained_variance`, `grad_norm`) and on **12 of 12 parameter tensors
+at max|Δ| 0.000e+00**.
+
+The occasion is the next generation making the win-probability head the critic's only signal, over
+runs measured in days. Four things the export could not say before it:
+
+**1. WHAT THE REWARD IS MADE OF.** A run STATED its composition once at startup
+(`reward_class_composition` → the `metadata.json` `reward_composition` block) and then never
+mentioned its MAGNITUDES again. A term could be structurally present, listed in the banner, and
+identically zero for a whole generation with nothing saying so. The new `reward/` group is one triple
+per ACTIVE term per rollout — `<term>_mean`, `<term>_abs_mean`, `<term>_abs_share` — plus four class
+rollups and four totals, in RAW REWARD units. **The share is `|·|`-weighted and it must be**: PBRS
+terms telescope to zero by construction, so a SIGNED share reports every healthy potential as inert;
+`abs_share` asks instead how much of the reward stream's MOVEMENT a term accounts for, and the signed
+mean ships beside it as the place where the telescoping IS the reading. Measured on the smoke: the
+per-term shares summed to **1.000001** and the class shares to **1.000000**.
+
+**`reward/untracked_abs_mean` is a GIGO guard, not a rounding term.** It is
+`mean|bd.total − Σ tracked terms|`, and the tracked set comes from the same `_pbrs_term_active` /
+`_bias_term_active` predicates the folds are gated on — so a non-zero reading means the startup census
+and the folds disagree about what this config emits, which is exactly the shape of the v9 drift
+(`--all-shaping-pbrs` silently ceasing to be passed, unobservable for a year). It read **0.000000**
+on the smoke. It is PUBLISHED rather than asserted because a reward manager must never take down a run.
+
+The transport is an **`env_method` PULL, not an info-dict thread** — the reward is computed in the env
+worker, and under `--async-rollout` the callback's step locals arrive wave-batched with no way to
+recover which buffer row a step landed on. That is `TeamWinRateCallback`'s reasoning verbatim, and it
+is why one seam covers both collectors. `RewardTermAccumulator.drain()` zeroes the window, so a
+rollout boundary that pulls twice cannot double-count. ALWAYS ON without a flag: the accumulator folds
+only the ACTIVE terms (9 of 35 under the production composition, 46 tags), so an opt-out would buy
+nothing but the chance to forget it.
+
+**2. WHETHER THE HEAD'S 0.7 MEANS 0.7.** `brier` is a PROPER scoring rule and decomposes as
+`reliability − resolution + uncertainty`, so a head can trade calibration for sharpness and hold its
+Brier flat — which is the one failure mode that matters when the head becomes the critic. `win_prob/`
+gains `ece` (10-bin, count-weighted), `mce` (the worst READABLE bin — an average hides a head that is
+badly wrong only on the confident tail), the reliability histogram itself as `rel_gap_b0..b9`, `rel_n`,
+and every one of those again as `contested_*` restricted to material-EVEN decisions, because a
+blowout's P(win) is trivially recoverable from material and the pooled ECE is flattered by exactly the
+states nobody needs the head for. **An under-populated bin publishes NaN, never a gap of 0.0** — a
+three-sample bin's "error" is sampling noise, and TensorBoard renders NaN as a hole. The accumulator
+folds BIN COUNTS across epoch 0's minibatches rather than averaging per-minibatch ECEs, because an ECE
+is nonlinear in the bin populations and the mean of the parts is not the statistic of the whole.
+
+**3. WHAT THE HEAD SAYS AT THE OPENING BOARD, AGAINST WHAT THOSE GAMES DID.** `win_prob/start_*` is a
+PAIRED calibration at the least-informed state, where a miscalibration cannot be excused by a lost
+position. `win_target` is back-filled by `WinProbLabelCallback` from each episode's outcome to every
+step of that episode, so at an episode-START row it IS the realized outcome of the game that starts
+there — prediction and realization come from ONE set of episodes and `start_gap` is a paired
+difference, not the difference of two independently-windowed averages. With the `opp_class` obs key
+present it splits by opponent class, and `start_*_pool` is then literally *"the self-play win
+probability at episode start vs the realized self-play win rate"*. Cost: one EAGER forward over the
+episode-start rows (capped at 1024, a deterministic prefix, never sampled — a diagnostic that moves
+because of its own RNG cannot be compared across arms), once per `train()`; eager `type(fe).forward`
+for the capacity probe's reason, so no dynamo graph is added for a diagnostic.
+
+Its unconditional companion is **`signal/outcome_win_rate_<kind>`**. `p(1−p)` is SYMMETRIC about 0.5,
+so `outcome_entropy_pool = 0.16` means p = 0.2 **or** p = 0.8 and for two generations nothing in the
+export said which. The realized per-class win rate is one more mean over a deque that was already
+there.
+
+**4. WHETHER THE CURRENCY CONVERSION IS CURRENT.** `popart/mu` and `popart/sigma` say what the
+normalizer BELIEVES; `popart/norm_return_mean` and `popart/norm_return_std` apply that belief to this
+rollout's own returns and read ≈0 and ≈1 when it is tracking. The smoke read **−1.618 and 0.525** on a
+warming 10k-step run — i.e. the normalizer lagging the return scale by ~2×, which is precisely the
+factor by which the value gradient is then mis-scaled against the shared trunk, and a fact no
+combination of the three older `popart/*` tags stated.
+
+**TWO RENAMES WERE CONSIDERED AND REFUSED, and the reasoning is the durable part.** Dashboards read
+these names, so a rename has to be paid for by the old name being *misleading*, not merely non-obvious.
+
+* **`train/value_target_std` is `train/return_std`.** The value targets ARE
+  `rollout_buffer.returns`; the existing name is accurate and sits beside its own
+  `return_mean`/`return_abs_max` family.
+* **`train/advantage_mean` / `advantage_std` are `signal/adv_raw_mean` / `signal/adv_raw_std`.** The
+  `signal/` group is where the RAW pre-normalization advantages are read — the one place they still
+  exist, since `normalize_advantage` forces std→1 per minibatch — and two names for one number is
+  worse than one non-obvious name. `adv_raw_mean` is the half that was genuinely missing and is added.
+* **`win_prob/vs_critic_divergence` is `train/scaffolding_gauge`**, which has a documented section, an
+  offline CLI (`python -m main.scaffolding_gauge`) and a companion `scaffolding_rho`.
+
+**AND ONE NON-ADDITION, stated so nobody re-derives it.** A PopArt-normalized
+`train/explained_variance` would be a **duplicate curve, not a second measurement**: EV is
+`1 − Var(y − ŷ)/Var(y)`, PopArt applies the same affine map to `y` and `ŷ`, and a shared affine map
+cancels exactly — `Var(a(y−ŷ))/Var(a·y)` is invariant and the `−μ` cancels inside both variances. SB3's
+default is computed on the RAW shaped-return arrays (`policy._critic_value` de-normalizes, so both
+`values` and `returns` are raw), and the normalized EV is numerically identical to it. The census
+records the currency instead.
+
+The census itself — every group, its cadence, its currency, where it is computed, and the four
+currencies this trainer runs at once — is now a table in `src/agents/training/CLAUDE.md` →
+*TensorBoard export census*, with the recount recipe beside the counts, because this corpus moves
+faster than any prose about it.

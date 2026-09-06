@@ -7,6 +7,184 @@ LiveView/TurnView/LegalActions read-models it consumes are documented in
 `src/agents/battle/CLAUDE.md`. The obs-build performance gate is in
 `src/agents/observation/CLAUDE.md`.
 
+## TensorBoard export census — every scalar, and its CURRENCY
+
+**THE FIRST QUESTION ABOUT ANY SCALAR HERE IS WHAT UNIT IT IS IN**, because this trainer runs
+value quantities in **four different currencies at once** and three of them look like floats:
+
+| currency | is | who is in it |
+|---|---|---|
+| **RAW REWARD** | the units `--victory-value` is in, undiscounted, pre-PopArt | every `reward/*` term, `--draw-penalty` |
+| **RAW SHAPED RETURN** | `Σγᵏr` in raw-reward units | `train/return_*`, `rollout_buffer.{values,returns}`, `train/explained_variance` |
+| **POPART-NORMALIZED RETURN** | `(raw − μ)/σ`, σ moving over the run | `train/value_loss`, `signal/adv_*`, the value-dist support, every `distill/*_value_mse` |
+| **PROBABILITY** | `[0, 1]`, outcome units, undiscounted | every `win_prob/*`, `cf/*` labels, `eval/win_rate_*` |
+
+⚠️ **A number is only comparable to another number in the SAME currency**, and the two most
+frequently confused pairs are `train/return_std` (raw) against `popart/sigma` (the estimate OF it,
+also raw — these two SHOULD track), and `train/value_loss` (normalized, ≈O(1)) against
+`train/return_abs_max` (raw, ~30). The conversion in force is `popart/mu` and `popart/sigma`, and
+whether it is CURRENT is `popart/norm_return_*` (below). Full background:
+`designs/learning/popart_value_scale_and_currencies.md`.
+
+**Counts, measured 2026-09-06** — 153 static `logger.record(` sites across `src/agents/training`,
+`src/main/train`, `src/main/eval_worker.py` and `src/main/elo.py`; 185 distinct tags observed
+across three CPU smokes (a plain run, a `--win-prob-mode read_only` run, and a `--use-popart` run).
+The two do not match and should not: one site can emit a whole dict (`f"reward/{k}"`), and many
+sites are flag-gated off in any one run. **Recount before quoting** — `tmp_census.py`'s recipe is
+`grep -rn "logger.record(" src/agents/training src/main/train src/main/eval_worker.py` for the
+sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
+
+| group | sites | tags seen | cadence | currency | computed in |
+|---|---:|---:|---|---|---|
+| `reward/` | 1 | 46 | **per rollout** | RAW REWARD | `reward_term_callback` ← `reward_term_stats` |
+| `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
+| `win_prob/` | 4 | 42 | per rollout | PROBABILITY | `ppo.py` ← `value_terms`, `calibration` |
+| `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | `eval_callback`, `selfplay_callback` |
+| `eval_final/` | 2 | 10 | once, at run end | win rate | `main/train/final_eval.py` |
+| `signal/` | 3 | 10 | per rollout | NORMALIZED (adv) / probability (outcome) | `signal_metrics`, `signal_callback` |
+| `popart/` | 5 | 5 | per rollout | raw (μ,σ) + unitless (norm) | `ppo.py` |
+| `grad/` | (dynamic) | 16 | per rollout | unitless shares | `grad_balance` |
+| `rank/` | 6 | 18 | per rollout | unitless | `rank_tripwire`, `rank_metrics` |
+| `belief/` | 1 | 8 | per rollout | accuracy / CE | `belief_bank` |
+| `distill/` | 7 | — | per rollout | KL / MSE / rate | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
+| `cf/` | 5 | — | per rollout | probability + counts | `cf_terms`, `cf_label_buffer` |
+| `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | `teacher/callback`, `ppo.py` |
+| `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `value_dist/` · `td_aux/` · `q_winprob/` | 20 | — | per rollout | see each section | their own callbacks |
+
+### The five groups the diagnostic contract names
+
+#### `reward/` — WHAT THE REWARD IS MADE OF (`gen3_reward_term_export_v1`, 2026-09-06)
+
+Per-rollout, RAW REWARD units, one triple per ACTIVE term of this run's composition plus four class
+rollups and four totals. Full rationale — including why the share is `|·|`-weighted and why the
+residual is a GIGO guard rather than a rounding term — is in
+`agents/training/reward_term_stats.py`'s module docstring.
+
+| tag | is |
+|---|---|
+| `reward/<term>_mean` | Σterm ÷ decisions. **A PBRS term should read ≈0** over an episode-complete window — that is the telescoping, visible |
+| `reward/<term>_abs_share` | `Σ\|term\| / Σ_terms Σ\|term\|` — this term's share of the reward stream's MOVEMENT. **The shares partition to 1** |
+| `reward/<term>_abs_mean` | `Σ\|term\|` ÷ decisions, the un-normalized magnitude |
+| `reward/class_{terminal,pbrs,bias,refund}_{mean,abs_mean,abs_share}` | the same, rolled up by `RewardClass` |
+| `reward/total_{mean,abs_mean}` · `reward/n_decisions` | the stream itself and the window size |
+| `reward/untracked_abs_mean` | **THE GIGO GUARD** — `mean\|bd.total − Σ tracked\|`. Reads exactly 0.0 when the startup composition census and the folds agree; anything else means they do not |
+
+The tracked set is derived from `reward_class_composition(config)` — the SAME `_pbrs_term_active` /
+`_bias_term_active` predicates the folds are gated on — so the exported terms cannot disagree with
+the startup line. Under the default composition that is 10 terms (1 terminal + 7 PBRS + 1 bias +
+the refund mechanism) → 46 tags; under `--no-all-shaping-pbrs` it is 28 terms → ~100 tags. Bounded
+by the REGISTRY, never per-team.
+
+**Transport: an `env_method` PULL, not an info-dict thread.** The reward is computed in the env
+WORKER, and under `--async-rollout` the callback's step locals arrive wave-batched with no way to
+recover which buffer row a step landed on — the same reason `TeamWinRateCallback` uses this seam.
+`AsyncSubprocVecEnv.env_method` is drain-safe, so one seam covers both collectors, and
+`RewardTermAccumulator.drain()` zeroes the window so a double pull cannot double-count. ALWAYS ON,
+no flag: the accumulator folds only the ACTIVE terms (9 of 35 under the production composition).
+
+#### `win_prob/` — the head's PREDICTION, its CALIBRATION, and the paired episode-start read
+
+Per rollout, PROBABILITY units, epoch 0 only (by epoch 3 the policy that produced a pair is not the
+policy it is attributed to).
+
+| tag | is | added |
+|---|---|---|
+| `loss` · `acc` · `brier` · `pred_mean` · `label_mean` · `coverage` | the pre-existing fit meters | |
+| `brier_contested` · `acc_contested` · `contested_frac` · `contested_label_mean` · `brier_material` · `skill_vs_material` | the information-value half, restricted to material-EVEN decisions | |
+| **`ece`** | 10-bin count-weighted Expected Calibration Error. **Brier is a PROPER score and decomposes as reliability − resolution + uncertainty, so it can stay flat while calibration drifts**; this isolates the reliability term | ✅ 2026-09-06 |
+| **`mce`** | the WORST readable bin's gap — ECE is an average, so a head badly wrong only on the confident tail holds a small ECE | ✅ |
+| **`rel_gap_b0` … `rel_gap_b9`** | the reliability HISTOGRAM, one scalar per bin, so the SHAPE of the miscalibration is readable. **A bin under 100 samples publishes NaN**, which TensorBoard renders as a hole — a 3-sample bin's "error" is sampling noise | ✅ |
+| **`rel_n`** | rows the diagram was built from | ✅ |
+| **`contested_*`** | every one of the above, restricted to `\|win_margin\| < 0.25` — a blowout's P(win) is trivially recoverable from material, so the pooled ECE is flattered by exactly the states nobody needs the head for | ✅ |
+| **`start_pred_mean` · `start_realized_mean` · `start_gap` · `start_n`** | **THE PAIRED EPISODE-START READ** — what the head says at the LEAST-informed state against what those very episodes went on to do | ✅ |
+| **`start_*_{bots,pool,stable,target}`** | the same, split by opponent class — **`start_*_pool` IS "the self-play win probability at episode start vs the realized self-play win rate"** | ✅ |
+
+🚨 **THE EPISODE-START READ IS PAIRED, AND THAT IS THE WHOLE POINT.** `win_target` is back-filled by
+`WinProbLabelCallback` from the episode's own outcome to every step of that episode, so at an
+episode-START row it IS the realized outcome of the game that starts there. Prediction and
+realization therefore come from ONE set of episodes and `start_gap` is a paired difference — not
+the difference of two independently-windowed averages, which would carry the two windows'
+disagreement as well as the head's error. **POSITIVE = optimistic at the opening board.** Cost: one
+EAGER forward over the episode-start rows (capped at `_WINPROB_START_MAX_ROWS` = 1024, a
+deterministic prefix, never sampled) once per `train()` — eager `type(fe).forward` for the
+capacity-probe's reason (both compile flags patch the BOUND attribute, and a second obs shape
+through the compiled entry point would add a dynamo graph for a diagnostic).
+
+⚠️ **The per-class split is OPPORTUNISTIC**: it needs the `opp_class` obs key, which the env emits
+only alongside the opponent-intent labels (`--opp-intent-coef > 0`). Without it the POOLED read
+still ships, and `signal/outcome_win_rate_<kind>` carries the realized per-class rate
+unconditionally — so the self-play realized rate is never missing, only its paired partner is.
+
+**`win_prob/vs_critic_divergence` does not exist under that name; the scalar is
+`train/scaffolding_gauge`** — `(1 − Spearman ρ(V, P(win)))/2` over epoch 0's paired reads, with
+`train/scaffolding_rho` and `train/scaffolding_n` beside it. It is NOT renamed: the name is
+non-obvious but not misleading, it is the subject of a documented section and an offline CLI
+(`python -m main.scaffolding_gauge`), and dashboards read it. See *The SCAFFOLDING GAUGE* below.
+
+#### `signal/` — advantage density and the REALIZED per-class win rate
+
+| tag | is | currency |
+|---|---|---|
+| **`adv_raw_mean`** | mean RAW GAE advantage — the NO-HARM watch. A mean far from 0 relative to `adv_raw_std` is a systematically MIS-CENTRED critic, and `normalize_advantage` erases it per minibatch so nothing else can report it. **Read as the ratio to `adv_raw_std`** | NORMALIZED ✅ 2026-09-06 |
+| `adv_raw_std` · `adv_raw_abs_mean` · `adv_kurtosis` | the density and its shape | NORMALIZED (kurtosis scale-free) |
+| `outcome_entropy[_<kind>]` · `outcome_n[_<kind>]` | `p(1−p)` over a rolling 200-episode window | probability |
+| **`outcome_win_rate_<kind>`** | **the REALIZED per-class win rate.** `p(1−p)` is SYMMETRIC about 0.5, so `outcome_entropy_pool = 0.16` means p = 0.2 **or** 0.8 and nothing in the export said which — for two generations only the entropy shipped per kind. Free: the same deque, one more mean | probability ✅ 2026-09-06 |
+
+#### `popart/` — and whether the currency conversion is CURRENT
+
+| tag | is |
+|---|---|
+| `mu` · `sigma` | what the normalizer BELIEVES the return mean and scale are. **Should TRACK `train/return_mean` / `train/return_std`** |
+| `value_weight_norm` | the POP rescale staying bounded |
+| **`norm_return_mean`** | `mean((returns − μ)/σ)` — **≈0 when the conversion is current.** Far from 0 is an offset the value head has to carry itself | ✅ 2026-09-06 |
+| **`norm_return_std`** | `std((returns − μ)/σ)` — **≈1 when the conversion is current.** Drifting from 1 is PopArt LAGGING the return scale, and the value gradient is then mis-scaled against the shared trunk by exactly that factor | ✅ 2026-09-06 |
+
+μ and σ alone say what the normalizer believes; these two apply the conversion to THIS rollout's own
+returns and say whether the belief is current. Free — a mean and a std over an array
+`value_scale_metrics` has already read. Emitted only under `--use-popart`.
+
+#### `train/` — value-function health, and the EXPLAINED-VARIANCE currency question
+
+| tag | is | currency |
+|---|---|---|
+| `explained_variance` | `1 − Var(returns − values)/Var(returns)`, over the whole rollout pooled | **see the note below** |
+| `return_mean` · `return_std` · `return_abs_max` | the value TARGETS' scale. **`return_std` IS the value-target std** | RAW SHAPED RETURN |
+| `value_pred_std` | the critic's own output spread | RAW SHAPED RETURN |
+| `value_loss` | the fitted loss | NORMALIZED under PopArt, raw otherwise |
+| `policy_gradient_loss` · `entropy_loss` · `loss` · `approx_kl` · `clip_fraction` · `clip_range[_vf]` · `grad_norm` · `n_updates` | the stock PPO step | unitless / loss units |
+| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head | unitless (rank) |
+| `noise_scale[_ratio][_<term>]` · `dose_rate` · `effective_batch` · `grad_accum_steps` · `train_ms` | the step-size controllers | see their sections |
+
+🚨 **`train/explained_variance` IS THE SAME NUMBER IN BOTH CURRENCIES, and a second "normalized"
+tag would be a duplicate curve rather than a second measurement.** EV is
+`1 − Var(y − ŷ)/Var(y)`, and PopArt applies the SAME affine map `(·−μ)/σ` to both `y` and `ŷ`
+(`policy._critic_value` de-normalizes, so `rollout_buffer.values` and `returns` are both RAW). A
+shared affine map cancels: `Var(a(y−ŷ))/Var(a·y)` is unchanged for any `a ≠ 0`, and the `−μ` cancels
+inside both variances. **So SB3's default is computed on the RAW shaped-return arrays, and the
+PopArt-normalized EV is numerically identical to it.** That is worth stating rather than shipping,
+because "which currency is this EV in?" is a question a reader will otherwise ask on every run.
+
+⚠️ **`train/value_target_std` does not exist and is not needed: it is `train/return_std`.** The
+value targets ARE `rollout_buffer.returns`. Not renamed — `return_std` is accurate, sits beside its
+own `return_mean`/`return_abs_max` family, and dashboards read it.
+Likewise **`train/advantage_mean` / `train/advantage_std` are `signal/adv_raw_mean` /
+`signal/adv_raw_std`** — the `signal/` group is where the raw pre-normalization advantages are read
+(the ONE place they still exist), and duplicating them under `train/` would give two names to one
+number.
+
+### What is NOT exported, deliberately
+
+* **A per-team reward or win-rate SERIES.** Owner rule (design_flywheel_tick_tock.md §6b): per-team
+  curves are noisy spam. The per-team win-rate table rides `metadata.json`'s `team_win_rates` block
+  instead, and `TeamWinRateCallback` has a test that FAILS if anything is emitted to TensorBoard.
+* **A reliability histogram bin's COUNT.** `rel_gap_b<k>` publishes NaN below 100 samples, so an
+  under-populated bin renders as a hole; adding 10 count tags to say the same thing would double the
+  group for no reading.
+* **The opponent's identity beyond its CLASS.** Only the `OPP_CLASS_*` integer crosses the env-worker
+  pipe, so `_bots` / `_pool` / `_stable` / `_target` are real and finer identity (which heuristic,
+  which pool snapshot) is not. `signal/outcome_entropy_rung` is the one finer split, and it exists
+  only because `ExploiterLadderCallback` keeps its own per-rung window in the parent process.
+
 ## The PPO step (`instrumented_ppo/`) — and the FOLD ORDER contract
 
 **`instrumented_ppo` is a PACKAGE** (2026-08-23; it was a single 2,152-line file, the last entry

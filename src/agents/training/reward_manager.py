@@ -10,6 +10,10 @@ from agents.action.constants import SWITCH_END as _SWITCH_END
 from agents.training.battle_snapshot import BattleContext
 from agents.training.turn_delta import SELF_KO_MOVES, TurnDelta
 from agents.training.reward_verify import build_twin as _build_verify_twin, verify_turn
+from agents.training.reward_term_stats import (
+    RewardTermAccumulator as _RewardTermAccumulator,
+    tracked_terms as _tracked_terms,
+)
 from agents.gen3_data import moves as _movedex
 from agents.gen3_mechanics import (
     INVULNERABLE_MOVES as _INVULNERABLE_MOVES,
@@ -486,16 +490,19 @@ def _bias_term_active(config, name: str) -> bool:
 def reward_class_composition(config) -> dict:
     """The per-class ACTIVE-term census of `config` — what this run's reward is MADE OF.
 
-    Returns ``{"terminal": n, "pbrs": n, "bias": n, "bias_terms": [names], "pbrs_terms": [names]}``.
-    `bias_terms` is the one a reader actually acts on: the BIAS class is the only one that biases
-    the converged optimum, so naming its members is naming the run's hand-coded incentives.
+    Returns ``{"terminal": n, "pbrs": n, "bias": n, "bias_terms": [names], "pbrs_terms": [names],
+    "terminal_terms": [names]}``. `bias_terms` is the one a reader acts on: the BIAS class is the
+    only one that biases the converged optimum, so naming its members is naming the run's
+    hand-coded incentives. `terminal_terms` is ADDITIVE (`gen3_reward_term_export_v1`) — the
+    counts and the two older lists are unchanged, and the `reward/` live export derives its
+    tracked set from all three so the exported terms cannot disagree with the census.
     """
     reg = RewardBreakdown._REGISTRY
     pbrs = [n for n, c in reg.items() if c is RewardClass.PBRS and _pbrs_term_active(config, n)]
     bias = [n for n, c in reg.items() if c is RewardClass.BIAS and _bias_term_active(config, n)]
     terminal = [n for n, c in reg.items() if c is RewardClass.TERMINAL]
     return {"terminal": len(terminal), "pbrs": len(pbrs), "bias": len(bias),
-            "bias_terms": bias, "pbrs_terms": pbrs}
+            "bias_terms": bias, "pbrs_terms": pbrs, "terminal_terms": terminal}
 
 
 def reward_config_digest(config) -> str:
@@ -655,6 +662,13 @@ class Gen3RewardManager:
         # two would agree on the same wrong number.
         self._belief_memo = None if _shadow else _IncomingBeliefMemo()
 
+        # The `reward/` live export (`gen3_reward_term_export_v1`) — per-decision sums of the
+        # ACTIVE terms, drained by `env_method` once per rollout. The tracked set is derived from
+        # `reward_class_composition`, the SAME predicates the folds are gated on, so the export
+        # cannot disagree with the startup census. Rationale: `reward_term_stats.py`'s docstring.
+        self._term_stats = None if _shadow else _RewardTermAccumulator(
+            _tracked_terms(reward_class_composition(self.config)))
+
     def _bias_active(self, *names: str) -> bool:
         """Is ANY of these BIAS fields reachable under this run's config? The suppressed-term
         gate — always True on the shadow twin. Callers pass the field name(s) the guarded
@@ -662,6 +676,11 @@ class Gen3RewardManager:
         if not self._skip_inactive_bias:
             return True
         return not self._active_bias.isdisjoint(names)
+
+    def drain_reward_terms(self):
+        """Drain-and-zero the `reward/` term accumulator (`env_method` PULL, once per rollout).
+        ``None`` on the shadow twin, which must stay observationally identical."""
+        return self._term_stats.drain() if self._term_stats is not None else None
 
     def _prev_phi_fields(self) -> tuple:
         """Every ``_prev_phi_*`` PBRS carry-over, DERIVED from the instance — the single source for
@@ -1910,6 +1929,10 @@ class Gen3RewardManager:
 
         self._last_breakdown = bd
         reward = bd.total
+        # +REWARD EXPORT: fold the ACTIVE terms. `reward` is passed rather than re-derived, so
+        # `reward/untracked_abs_mean` compares against the number training actually saw.
+        if self._term_stats is not None:
+            self._term_stats.observe(bd, reward)
         self.total_reward += reward
         self._log_turn(bd, battle, meta)
         if self._verify_twin is not None:

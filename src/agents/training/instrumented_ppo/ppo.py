@@ -10,6 +10,7 @@ matters about it (no flag combination reorders these) would stop being visible.
 Everything that is NOT the sequence has moved out: the knobs (`hparams`), the per-term losses
 (`distill_terms`, `value_terms`, `aux_terms`), the noise-scale machinery (`noise_scale`).
 """
+import contextlib
 import time
 
 import numpy as np
@@ -29,9 +30,19 @@ from agents.training.grad_balance import (
 from agents.training import belief_bank as _belief_bank
 from agents.training.instrumented_ppo.aux_terms import AuxTerms
 from agents.training.instrumented_ppo.capacity_terms import CapacityTerms
+from agents.training.instrumented_ppo.calibration import (   # the MODULE path, never the hub:
+    CalibrationAccumulator as _CalibrationAccumulator,        # a submodule importing the package
+    as_numpy as _calib_as_numpy,                              # __init__ back closes the import
+    contested_mask as _calib_contested_mask,                  # cycle `ppo` sits at the end of
+    episode_start_rows as _calib_episode_start_rows,          # (pinned by the hub-contract test).
+    sigmoid as _calib_sigmoid,
+    start_metrics as _calib_start_metrics,
+)
 from agents.training.instrumented_ppo.constants import (
     _NOISE_PER_TERM_EVERY,
     _NOISE_SCALE_EMA_DECAY,
+    _WIN_CONTESTED_TAU,
+    _WINPROB_START_MAX_ROWS,
 )
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_grad_project import make_projector
@@ -43,7 +54,10 @@ from agents.training.instrumented_ppo.noise_scale_terms import (
     PerTermNoiseSampler,
     per_term_enabled,
 )
-from agents.training.instrumented_ppo.signal_metrics import advantage_density_metrics
+from agents.training.instrumented_ppo.signal_metrics import (
+    OPP_CLASS_SUFFIX as _OPP_CLASS_SUFFIX,
+    advantage_density_metrics,
+)
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe
 from agents.training.scaffolding import live_gauge_metrics
@@ -106,6 +120,65 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         """gen3_bait_entropy_v1: this run's bait boost at the current step (same schedule)."""
         return InstrumentedMaskablePPO._annealed_entropy_boost(
             self, self.bait_entropy_boost, self.bait_entropy_anneal_frac)
+
+    def _winprob_start_metrics(self, head_on: bool) -> dict:
+        """`win_prob/start_*` — the head's P(win) at each EPISODE-START row of this rollout, paired
+        with that episode's own realized outcome (`gen3_winprob_calibration_export_v1`).
+
+        The pairing is the point. `win_target` is back-filled by `WinProbLabelCallback` from the
+        episode's outcome to EVERY step of that episode, so at an episode-start row it IS what that
+        game went on to do — the prediction and the realization come from one set of episodes, and
+        `start_gap` is a paired difference rather than the difference of two independent windows.
+        At the opening board a miscalibration cannot be excused by a lost position, which is what
+        makes this the readable calibration point for "does the head's 0.5 mean 0.5".
+
+        The per-opponent-class split is OPPORTUNISTIC: it needs the `opp_class` obs key, which the
+        env emits only alongside the opponent-intent labels. Without it the pooled read still
+        ships, and `signal/outcome_win_rate_<kind>` carries the realized per-class rate
+        unconditionally.
+
+        Read-only and best-effort: any failure returns `{}` rather than taking down a diagnostic's
+        host. Returns `{}` when the head is off, when the buffer holds no complete episode, or when
+        the win-prob label keys are absent.
+        """
+        if not head_on:
+            return {}
+        try:
+            buf = self.rollout_buffer
+            obs = getattr(buf, "observations", None)
+            if not isinstance(obs, dict) or "win_target" not in obs or "win_mask" not in obs:
+                return {}
+            rows = _calib_episode_start_rows(
+                buf.episode_starts, int(buf.buffer_size), int(buf.n_envs))
+            if rows.size == 0:
+                return {}
+            # A rollout can hold thousands of episode starts at production n_envs; the read is a
+            # mean, so a bounded prefix is the same measurement at a fixed cost. Deterministic
+            # (the first rows in env-major order), never sampled — a diagnostic that moves because
+            # of its own RNG is one nobody can compare across arms.
+            if rows.size > _WINPROB_START_MAX_ROWS:
+                rows = rows[:_WINPROB_START_MAX_ROWS]
+            y = np.asarray(obs["win_target"], dtype=np.float64).reshape(-1)[rows]
+            m = np.asarray(obs["win_mask"], dtype=np.float64).reshape(-1)[rows]
+            if not (m > 0.5).any():                  # only in-progress episodes — nothing realized
+                return {}
+            fe = self.policy.features_extractor
+            ob = th.as_tensor(obs["observation"][rows]).to(self.device)
+            dbg_ctx = getattr(fe, "suppress_observation_debugger", contextlib.nullcontext)()
+            with dbg_ctx, th.no_grad():
+                type(fe).forward(fe, {"observation": ob})
+                z = getattr(fe, "last_win_prob_logits", None)
+            if z is None:
+                return {}
+            p = _calib_sigmoid(_calib_as_numpy(z).reshape(-1))
+            if p.size != y.size:                     # pragma: no cover - defensive
+                return {}
+            cls = None
+            if "opp_class" in obs:
+                cls = np.asarray(obs["opp_class"]).reshape(-1)[rows]
+            return _calib_start_metrics(p, y, m, opp_class=cls, class_names=_OPP_CLASS_SUFFIX)
+        except Exception:                            # pragma: no cover - a probe never kills a run
+            return {}
 
     def train(self) -> None:
         """
@@ -227,6 +300,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # the policy the pair is attributed to). Empty when the head is off → nothing published.
         scaffold_v: list[np.ndarray] = []
         scaffold_z: list[np.ndarray] = []
+        # +WIN-PROB CALIBRATION: reliability-diagram BIN COUNTS over epoch 0, pooled and restricted
+        # to material-EVEN decisions. Bin counts rather than per-minibatch ECEs because an ECE is
+        # nonlinear in the populations (see `calibration.CalibrationAccumulator`).
+        calib_all = _CalibrationAccumulator()
+        calib_contested = _CalibrationAccumulator()
         teacher_metrics: dict[str, list[float]] = {}    # +SEARCH-TEACHER: AWR per-minibatch diagnostics
         opd_metrics: dict[str, list[float]] = {}         # +OPD: on-policy self-distillation KL diagnostics
         # Shared sink for the per-minibatch aux diagnostics that already carry their OWN full TB
@@ -842,6 +920,28 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if _wz is not None:
                         scaffold_v.append(values.detach().reshape(-1).cpu().numpy())
                         scaffold_z.append(_wz.detach().reshape(-1).cpu().numpy())
+
+                # +WIN-PROB CALIBRATION (gen3_winprob_calibration_export_v1): the reliability half
+                # of the head's diagnostics. Brier is a PROPER score and decomposes as
+                # reliability − resolution + uncertainty, so it can stay flat while calibration
+                # drifts; ECE/MCE/the per-bin gaps isolate the reliability term. Accumulated in BIN
+                # COUNTS across the minibatches of EPOCH 0 (an ECE is nonlinear in the bin
+                # populations — the mean of per-minibatch ECEs is not the pooled ECE) and folded
+                # once at the end. Read-only: detached, no gradient, no RNG.
+                if scaffolding_on and epoch == 0:
+                    _cz = getattr(self.policy.features_extractor, "last_win_prob_logits", None)
+                    _ct = rollout_data.observations.get("win_target")
+                    _cm = rollout_data.observations.get("win_mask")
+                    if _cz is not None and _ct is not None and _cm is not None:
+                        _cp = _calib_sigmoid(_calib_as_numpy(_cz).reshape(-1))
+                        _cy = _calib_as_numpy(_ct).reshape(-1)
+                        _ck_mask = _calib_as_numpy(_cm).reshape(-1)
+                        calib_all.observe(_cp, _cy, _ck_mask)
+                        _cmar = _calib_contested_mask(
+                            _calib_as_numpy(rollout_data.observations.get("win_margin")),
+                            _WIN_CONTESTED_TAU)
+                        if _cmar is not None and _cmar.size == _cp.size:
+                            calib_contested.observe(_cp, _cy, _ck_mask * _cmar)
 
                 # +CF-TWIN, half one of two (gen3_cf_twin_heads_v1): head A's OWN loss, mirrored
                 # onto twins B and C on THIS minibatch. It must run HERE, beside A's fold and
@@ -1587,6 +1687,27 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             for _wk, _wvals in win_prob_metrics.items():
                 self.logger.record(f"win_prob/{_wk}", float(np.mean(_wvals)))
 
+        # +WIN-PROB CALIBRATION (gen3_winprob_calibration_export_v1): ECE / MCE / the 10-bin
+        # reliability histogram, pooled and CONTESTED-restricted. These measure the RELIABILITY
+        # term Brier only carries in a decomposition — the quantity that has to be right when the
+        # head becomes the critic's only signal. Gated on the head's EXISTENCE (like the
+        # scaffolding gauge), not on `win_prob_coef`: a `read_only` head at coefficient 0 is still
+        # making claims worth checking. An under-populated bin publishes NaN, so a thin tail bin
+        # renders as a HOLE rather than as a confident calibration error.
+        for _ck2, _cv2 in calib_all.metrics().items():
+            self.logger.record(f"win_prob/{_ck2}", _cv2)
+        for _ck2, _cv2 in calib_contested.metrics(prefix="contested_").items():
+            self.logger.record(f"win_prob/{_ck2}", _cv2)
+
+        # +WIN-PROB EPISODE-START READ: what the head says at the LEAST-informed state, against
+        # what those very episodes went on to do. One extra EAGER forward over the episode-start
+        # rows only (≤ a few hundred), once per `train()`. Eager `type(fe).forward` rather than the
+        # bound `fe.forward` for the capacity-probe's reason: both compile flags patch the bound
+        # attribute, and a second obs shape through the compiled entry point would add a dynamo
+        # graph for a diagnostic (`cache_size_limit` is 8).
+        for _sk2, _sv2 in self._winprob_start_metrics(scaffolding_on).items():
+            self.logger.record(f"win_prob/{_sk2}", _sv2)
+
         # +WIN-PROB PBRS (gen3_winprob_pbrs_v1, ai_v12 route 1): the shaping term's magnitude for THIS
         # rollout, computed in `collect_rollouts` (not here — the term edits rewards, not the loss, so
         # it has no per-minibatch existence). Under `train/` deliberately: it is a property of the
@@ -1816,6 +1937,23 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             self.logger.record("popart/mu", float(self.policy.popart.mu))
             self.logger.record("popart/sigma", float(self.policy.popart.sigma))
             self.logger.record("popart/value_weight_norm", float(self.policy.value_net.weight.norm()))
+            # +THE CURRENCY CONVERSION, MADE READABLE (gen3_popart_currency_readout_v1). μ and σ
+            # alone say what the normalizer BELIEVES; these two say whether that belief is CURRENT.
+            # `train/return_*` is RAW shaped-return currency and the value loss trains in
+            # NORMALIZED currency, so the conversion in force this rollout is
+            # `normalized = (raw − μ)/σ` — and applying it to THIS rollout's own returns is the
+            # one-line audit of it: a tracking normalizer reads ≈0 and ≈1. A `norm_return_std`
+            # drifting from 1 is PopArt LAGGING the return scale (the value gradient is then
+            # mis-scaled against the trunk by exactly that factor), and a `norm_return_mean` far
+            # from 0 is an offset the value head has to carry itself. Free — a mean and a std over
+            # an array `value_scale_metrics` has already read.
+            _pa_r = np.asarray(self.rollout_buffer.returns, dtype=np.float64).reshape(-1)
+            if _pa_r.size:
+                _pa_sigma = float(self.policy.popart.sigma)
+                if _pa_sigma > 0.0:
+                    _pa_z = (_pa_r - float(self.policy.popart.mu)) / _pa_sigma
+                    self.logger.record("popart/norm_return_mean", float(_pa_z.mean()))
+                    self.logger.record("popart/norm_return_std", float(_pa_z.std()))
         # (v61's `value_seeds/*` seed-collapse contract was logged here. The multi-seed critic
         # readout it monitored is DELETED — dV 0.0000 bit-exact on two consecutive end-of-run
         # audits — so the monitor went with it. Its finding survives in designs/CHANGELOG.md.)

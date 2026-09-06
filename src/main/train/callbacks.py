@@ -139,7 +139,19 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # element deques per rollout. Its partner `signal/adv_*` is recorded inside `train()`; the two
     # are only readable together (see agents/training/CLAUDE.md → the `signal/` group).
     signal_callback = SignalMetricsCallback()
-    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), DoseLogCallback(), graceful_restart_callback, signal_callback]
+    # REWARD TERM EXPORT (gen3_reward_term_export_v1): the `reward/` group — every ACTIVE reward
+    # term's per-decision mean and its |·|-weighted share of the reward stream's movement, pulled
+    # from the env workers by `env_method` once per rollout. ALWAYS ON and flagless for the same
+    # reason as the signal group: no battles, no env state, one small dict per worker per rollout.
+    # The `{term -> class}` map is derived from THIS run's `reward_class_composition` census, so
+    # the exported grouping and the startup composition line read one declaration.
+    from agents.training.reward_manager import (
+        RewardConfig as _RewardConfig, reward_class_composition as _rcc)
+    from agents.training.reward_term_callback import RewardTermMetricsCallback
+    from agents.training.reward_term_stats import term_class_map as _tcm
+    reward_term_callback = RewardTermMetricsCallback(
+        term_class=_tcm(_rcc(_RewardConfig.from_args(args))))
+    callbacks = [checkpoint_callback, lr_callback, MetricsExporterCallback(), _HparamLogCallback(args.ent_coef), DoseLogCallback(), graceful_restart_callback, signal_callback, reward_term_callback]
     # ADAPTIVE BATCH (gen3_adaptive_batch_v1): the second controller — it holds a gradient-noise-scale
     # ratio near a target by moving `--grad-accum-steps` K, the one batch lever with no shape change
     # and no memory cost. Registered only when the flag is on, so an `off` run adds no callback and

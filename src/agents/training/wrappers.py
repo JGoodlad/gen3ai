@@ -298,6 +298,19 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         drained: "tuple | None" = _tb.drain_team_wr_counts()
         return drained
 
+    def drain_reward_terms(self):
+        """`reward/` per-term pull (``VecEnv.env_method`` from ``RewardTermMetricsCallback`` once
+        per rollout): drain-and-zero this worker's per-term reward sums.
+
+        An `env_method` PULL rather than an info-dict thread, for the reason the team-WR tracker
+        gives: the wave batching of ``--async-rollout`` cannot recover which BUFFER ROW a step
+        landed on, and `AsyncSubprocVecEnv.env_method` is drain-safe, so one seam covers both
+        collectors. ``None`` when the env has no Gen3 reward manager (a non-Gen3 env, or the
+        `RewardTracker`'s shadow twin)."""
+        rm = getattr(self.env, "reward_manager", None)
+        drain = getattr(rm, "drain_reward_terms", None)
+        return drain() if drain is not None else None
+
     def drain_team_pfsp_counts(self):
         """Team-side PFSP pull (read via ``VecEnv.env_method`` by ``TeamPFSPCallback`` each window):
         drain-and-zero this worker's per-team self-play win/loss accumulators. ``None`` when the

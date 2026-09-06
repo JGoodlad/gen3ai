@@ -117,7 +117,7 @@ def test_non_finite_entries_are_dropped_rather_than_poisoning_every_moment():
 
 def test_an_entirely_non_finite_rollout_reports_nan_across_the_board():
     m = advantage_density_metrics(np.array([np.nan, np.inf, -np.inf, np.nan]))
-    assert set(m) == {"adv_raw_std", "adv_raw_abs_mean", "adv_kurtosis"}
+    assert set(m) == {"adv_raw_mean", "adv_raw_std", "adv_raw_abs_mean", "adv_kurtosis"}
     assert all(np.isnan(v) for v in m.values())
 
 
@@ -358,7 +358,7 @@ def test_the_advantages_ppo_fits_are_left_untouched():
     before = adv.copy()
     m = advantage_density_metrics(adv)
     assert np.array_equal(adv, before) and adv.dtype == before.dtype
-    assert set(m) == {"adv_raw_std", "adv_raw_abs_mean", "adv_kurtosis"}
+    assert set(m) == {"adv_raw_mean", "adv_raw_std", "adv_raw_abs_mean", "adv_kurtosis"}
 
 
 def test_a_real_train_publishes_the_three_scalars():

@@ -20,22 +20,19 @@ ALWAYS ON: three numpy means over ≤200-element deques, once per rollout. No fl
 """
 from __future__ import annotations
 
-from typing import Dict
 
 from stable_baselines3.common.callbacks import BaseCallback
 
-from agents.training.instrumented_ppo.signal_metrics import OutcomeEntropyTracker
+from agents.training.instrumented_ppo.signal_metrics import (   # noqa: F401 — declared re-export
+    OPP_CLASS_SUFFIX,
+    OutcomeEntropyTracker,
+)
 
-# `MaskableAgentWrapper.OPP_CLASS_*` → the TB suffix. Kept as a literal map rather than read off the
-# wrapper class because the wrapper lives in the ENV WORKER process; only the integer crosses the
-# pipe. `wrappers_test`'s companion assertion pins the two together so a renumbering cannot silently
-# relabel a curve.
-OPP_CLASS_SUFFIX: Dict[int, str] = {
-    0: "bots",       # OPP_CLASS_BOT      — heuristic / random floor bots
-    1: "pool",       # OPP_CLASS_POOL     — frozen selves (the self-play pool)
-    2: "stable",     # OPP_CLASS_STABLE   — cross-run stable opponents
-    3: "target",     # OPP_CLASS_EXPLOITER— the exploiter's target
-}
+# `OPP_CLASS_SUFFIX` moved to `instrumented_ppo.signal_metrics` (2026-09-06) and is RE-EXPORTED
+# here so every existing import path still resolves. It had to move: `instrumented_ppo.ppo` needs
+# the same map for the `win_prob/start_*` per-class split, and importing it from this callback
+# would put a back-edge from the package into a module that imports the package.
+
 
 
 class SignalMetricsCallback(BaseCallback):
