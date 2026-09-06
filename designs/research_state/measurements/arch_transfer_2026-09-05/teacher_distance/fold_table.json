@@ -673,7 +673,7 @@
   },
   {
    "fold": "TC_FUND_A",
-   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCFUNDA_end.json",
+   "artifact": "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_TCFUNDA_end.json",
    "parent_artifact": "R2ACTION",
    "untaught_wr": 0.5575000000000001,
    "parent_wr": 0.5825,
@@ -736,7 +736,7 @@
   },
   {
    "fold": "TC_FUND_B",
-   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCFUNDB_end.json",
+   "artifact": "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_TCFUNDB_end.json",
    "parent_artifact": "R2ACTION",
    "untaught_wr": 0.559375,
    "parent_wr": 0.5825,
@@ -799,7 +799,7 @@
   },
   {
    "fold": "TC_UNF_A",
-   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFA_end.json",
+   "artifact": "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_TCUNFA_end.json",
    "parent_artifact": "R2ACTION",
    "untaught_wr": 0.6025,
    "parent_wr": 0.5825,
@@ -862,7 +862,7 @@
   },
   {
    "fold": "TC_UNF_B",
-   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFB_end.json",
+   "artifact": "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_TCUNFB_end.json",
    "parent_artifact": "R2ACTION",
    "untaught_wr": 0.6018749999999999,
    "parent_wr": 0.5825,
@@ -925,7 +925,7 @@
   },
   {
    "fold": "TC_UNF_K6_A",
-   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFK6A_end.json",
+   "artifact": "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_TCUNFK6A_end.json",
    "parent_artifact": "R2ACTION",
    "untaught_wr": 0.5862499999999999,
    "parent_wr": 0.5825,
@@ -988,7 +988,7 @@
   },
   {
    "fold": "TC_UNF_K6_B",
-   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFK6B_end.json",
+   "artifact": "designs/research_state/measurements/teacher_content_2x2_2026-09-04/untaught_TCUNFK6B_end.json",
    "parent_artifact": "R2ACTION",
    "untaught_wr": 0.5743750000000001,
    "parent_wr": 0.5825,

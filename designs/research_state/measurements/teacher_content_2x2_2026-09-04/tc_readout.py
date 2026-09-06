@@ -27,10 +27,18 @@ import json, os
 import numpy as np
 
 P = os.path.dirname(os.path.abspath(__file__))
-MODELS = "/home/goodlad/dev/gen3ai/models"
+MEAS = os.path.dirname(P)                              # .../research_state/measurements
+MODELS = "/home/goodlad/dev/gen3ai/models"             # models/ exists only in the main checkout
+# WHERE EACH ARM'S ARTIFACT LIVES. An artifact belongs to the batch that PRODUCED it, so the 2x2 and
+# K=6 rows sit beside this script and the reuse-batch rows (N1/N2/C1/B2) stay in their own directory
+# -- ONE copy of every file in the tree, and no path is relative to a cwd. This script read every
+# tag from its OWN directory until 2026-09-06, where four of the eight tags have never been; the
+# 2x2/K=6 half additionally existed only in a session job dir until it was rescued on 2026-09-05.
+DIR = {t: f"{MEAS}/reuse_batch_2026-09-03" for t in ("N1", "N2", "C1", "B2")}
 RUN = {"TCFUNDA": "ai_v9_160_TCFUNDA_0903", "TCUNFA": "ai_v9_162_TCUNFA_0903",
        "TCFUNDB": "ai_v9_161_TCFUNDB_0903", "TCUNFB": "ai_v9_163_TCUNFB_0903",
        "N1": "ai_v9_142_N1_0901", "N2": "ai_v9_143_N2_0901"}
+TAGS = ("TCFUNDA", "TCFUNDB", "TCUNFA", "TCUNFB", "N1", "N2", "C1", "B2")
 
 
 def pin(tag):
@@ -54,8 +62,13 @@ PAIRS = {"FUND": ("TCFUNDA", "TCFUNDB"), "UNF": ("TCUNFA", "TCUNFB")}
 BOOT, SEED = 20000, 20260904
 
 
+def path_of(tag, depth=None):
+    return os.path.join(DIR.get(tag, P),
+                        f"untaught_{tag}_{depth}.json" if depth else f"untaught_{tag}.json")
+
+
 def load(tag, depth=None):
-    f = os.path.join(P, f"untaught_{tag}_{depth}.json" if depth else f"untaught_{tag}.json")
+    f = path_of(tag, depth)
     if not os.path.exists(f):
         return None
     d = json.load(open(f))
@@ -156,5 +169,19 @@ def main():
           f"{len(alldraws)}. If a leg's verdict moves, say so BY NAME.")
 
 
+def check():
+    """--check: resolve every input this readout reads and report any that is MISSING, without
+    computing anything. Exists so a cheap test can prove the script still runs AS COMMITTED --
+    the defect it guards is a readout whose artifacts were never committed beside it."""
+    missing = [f for t in TAGS for dep in DEPTHS
+               if not os.path.exists(f := path_of(t, dep))]
+    for f in missing:
+        print(f"MISSING {f}")
+    print(f"tc_readout.py: {len(TAGS) * len(DEPTHS) - len(missing)}/{len(TAGS) * len(DEPTHS)} "
+          f"input artifacts present")
+    return 1 if missing else 0
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(check() if "--check" in sys.argv else (main() or 0))

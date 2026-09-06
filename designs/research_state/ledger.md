@@ -11091,3 +11091,29 @@ neutral ones. With cell 1 (v8's gift survives the loss OFF) the surviving questi
 recipe that ours does not — cell 2 (plain continuation) and the origin × ecology design are the tests. `verify_readme.py`
 recomputes 19 load-bearing numbers verbatim — PASS. Artifact: `measurements/arch_transfer_2026-09-05/content_locality_v2/`.
 
+## 2026-09-06 — BOOKKEEPING: the 2×2 / K=6 per-team artifacts now live beside `tc_readout.py` (one copy in the tree); the readout runs as committed and reproduces every banked delta and interval; a `--check` gate test guards it; two findings on what the committed readout still gets WRONG
+
+- 26 artifacts + 1 probe moved from `arch_transfer_2026-09-05/teacher_distance/inputs/` into
+  `teacher_content_2x2_2026-09-04/` (the tree's convention: a batch dir holds its own per-team rows); `inputs/` keeps a
+  pointer. `teacher_distance/fold_table.py` and `analyze.py` repointed and re-run: `analysis.json` byte-identical,
+  `fold_table.json` identical except six provenance strings that named a since-deleted worktree (now checkout-relative).
+- `tc_readout.py` executed as committed: the six frozen draws (pooled 1.66), the live floor 4.27, the contrast at p1M / mid /
+  end, C1 − B2 at three depths — **every delta and interval matches the ledger exactly**.
+- **Finding 1 — the committed readout is one revision behind the ledger; only its BARS are wrong.** It was committed
+  2026-09-04 19:53 (`5af5ff88`), before the 2026-09-05 retraction: it pools all nine draws into a 2.53pp bar (the ruling
+  says frozen comparisons take 1.66) and re-reads C1 − B2 at that bar, printing SIGNIFICANT at all three depths where the
+  ledger refuses it ("still owed, not discharged by frozen work"; at the 4.27 live floor only the +1M leg clears). No
+  verdict moves under either bar. A newer revision in the job dir refuses the pooling in code but its docstring still
+  describes it. NOT swapped in — the readout's bar logic is owed a deliberate revision, recorded in the 2×2 README.
+- **Finding 2 — the rescue was incomplete for the readout's needs:** it also reads N1/N2 and C1/B2 (twelve files that have
+  always lived in `reuse_batch_2026-09-03/`); fixed with a four-entry DIR map, nothing duplicated.
+- **Finding 3 — three families of banked number have artifacts but NO aggregating script:** the taught side (+5.11 / +4.86 /
+  +0.25 / pooled +4.98; K=6 +4.48), the arm-vs-parent untaught levels + the p1M→mid/end recovery table, and the entire K=6
+  cell (P1/P2/P3). All were computed ad hoc. `fold_table.py` independently recomputes each arm's endpoint untaught delta
+  (TC_FUND_A −2.50 · FUND_B −2.31 · UNF_A +2.00 · UNF_B +1.94 · K6_A +0.37 · K6_B −0.81; halves = the ledger's −2.41 / +1.97
+  / −0.22 exactly). Writing the missing readouts is dispatched.
+- Gate: `src/measurements_readout_gate_test.py` (unmarked, 0.10 s) executes a two-entry registry of readouts in a new
+  `--check` mode (every declared input path resolved, nothing computed; fails naming the missing file — negative control
+  verified by hiding one artifact) and fails if the registry shrinks below two. `~/.claude/jobs/1046b1d6/tmp/probes/`
+  still exists but is to be treated as already gone.
+

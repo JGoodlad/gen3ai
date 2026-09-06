@@ -45,7 +45,8 @@ SUPPORTED as an ordering over teacher sets and NOT ESTABLISHED as a causal dose-
 > — a 3.3× gap, the strongest line here.** **Two hazards:** `content_locality` scored the wrong
 > checkpoint in BOTH eras (its conclusions strengthen, its levels are wrong — v8 5.2× → 4.5×,
 > `semistall3` −0.115); and the 2×2/K=6 per-team artifacts lived ONLY in a session job dir and are
-> now banked in this probe's `inputs/`.
+> now banked in the tree — rescued into this probe's `inputs/`, then moved on 2026-09-06 to
+> `teacher_content_2x2_2026-09-04/`, beside the readout that reads them (hazard 1).
 
 ---
 
@@ -443,7 +444,7 @@ $P analyze.py
 | [`parent_gap.py`](parent_gap.py) → `parent_gap.json` (+ `.log`) | the inherited gap + the floor reproduction |
 | [`v8_checkpoint_fix.py`](v8_checkpoint_fix.py) → `v8_checkpoint_fix.json` (+ `.log`) | v8's `D_off` on the checkpoint the fold actually loaded, both variants, era tree |
 | [`analyze.py`](analyze.py) → `analysis.json` · `analysis.log` | the whole readout above, verbatim |
-| `inputs/` | the 2×2 and K=6 per-team artifacts, **banked here** (see hazard 1) |
+| `inputs/` | a POINTER only. The 2×2 and K=6 per-team artifacts this probe rescued now live at `teacher_content_2x2_2026-09-04/`; `fold_table.py` reads them there (hazard 1) |
 
 ---
 
@@ -453,10 +454,17 @@ $P analyze.py
    (`~/.claude/jobs/1046b1d6/tmp/probes/`), exactly like the admission artifacts before 2026-08-31.
    Every banked funded/unfunded/K=6 untaught number in the ledger rests on files one cleanup would
    have destroyed, and `teacher_content_2x2_2026-09-04/tc_readout.py` reads them from its **own**
-   directory, where they are not. The 26 `untaught_*`/`taught_*` JSONs plus `untaught_probe.py` /
-   `taught_probe.py` are copied into [`inputs/`](inputs/) by this probe. **`tc_readout.py` still
-   cannot run as committed** — the same defect content_locality found in
-   `offline_collateral_kl.py`, in a second script.
+   directory, where they are not. The 25 `untaught_*`/`taught_*` JSONs plus `untaught_teams.json`
+   and `untaught_probe.py` / `taught_probe.py` were copied into `inputs/` by this probe — which
+   rescued the FILES but left `tc_readout.py` unable to run as committed, the same defect
+   content_locality found in `offline_collateral_kl.py`, in a second script.
+   **CLOSED 2026-09-06.** The artifacts were moved out of `inputs/` to
+   `teacher_content_2x2_2026-09-04/` — the batch that PRODUCED them, and where `tc_readout.py`
+   already looked — so there is ONE copy in the tree and both readouts resolve it: this probe's
+   `fold_table.py` now points at that directory (re-run; `fold_table.json` and `analysis.json`
+   reproduce byte-identical apart from the six recorded `artifact` provenance paths, which used to
+   name a deleted worktree). `inputs/` keeps a one-line README saying where they went, and
+   `src/measurements_readout_gate_test.py` fails if either readout's inputs go missing again.
 2. **`content_locality` scored the wrong checkpoint in BOTH eras** — `final_model.zip` (gen) and
    `final_model_interrupted.zip` (v8, not even a rung) where the fold loads
    `best_model/best_model.zip`. Full detail above. Levels are wrong by up to **−0.115 on a single

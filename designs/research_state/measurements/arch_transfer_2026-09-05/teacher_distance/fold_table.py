@@ -14,9 +14,18 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MAIN = "/home/goodlad/dev/gen3ai"
-MD = f"{MAIN}/models"
-MEAS = f"{MAIN}/designs/research_state/measurements"
-IN = f"{HERE}/inputs"
+MD = f"{MAIN}/models"                                  # models/ exists only in the main checkout
+# Artifacts are resolved RELATIVE TO THIS FILE, so the script reads the tree it is committed in
+# (a worktree included) rather than whichever checkout happens to sit at MAIN.
+MEAS = os.path.dirname(os.path.dirname(HERE))
+# Provenance is recorded relative to the CHECKOUT THIS FILE IS IN, not to MAIN: relpath against MAIN
+# from a worktree prefixed every rescued artifact with `.claude/worktrees/agent-<gone>/`, naming a
+# directory that no longer exists.
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(MEAS)))
+# The 2x2 / K=6 per-team artifacts live with the batch that PRODUCED them. They were rescued into
+# this probe's own `inputs/` on 2026-09-05 (hazard 1) and moved to their home on 2026-09-06; one
+# copy in the tree, and `teacher_content_2x2_2026-09-04/tc_readout.py` reads the same files.
+IN = f"{MEAS}/teacher_content_2x2_2026-09-04"
 
 # Where each arm's untaught-8 artifact lives. Every one of these was produced by the SAME probe
 # (untaught_probe.py) at the SAME stamp: stochastic, opponent = rev-1's 24M snapshot, team set M,
@@ -170,7 +179,7 @@ def main(out_path):
         bs = d[idx].mean(axis=1)
         p = prov(run)
         table.append({
-            "fold": tag, "artifact": os.path.relpath(ART[art], MAIN),
+            "fold": tag, "artifact": os.path.relpath(ART[art], ROOT),
             "parent_artifact": par,
             "untaught_wr": float(wr.mean()), "parent_wr": float(pwr.mean()),
             "delta_pp": float(d.mean()),
@@ -200,5 +209,19 @@ def main(out_path):
     print(f"\nwrote {out_path}")
 
 
+def check():
+    """--check: resolve every per-team artifact this table reads and report any that is MISSING,
+    without recomputing or touching models/. The guarded defect is an artifact that was never
+    committed beside (or reachable from) the script that reads it."""
+    want = sorted(set(ART.values()) | set(ART_P1M.values()))
+    missing = [p for p in want if not os.path.exists(p)]
+    for p in missing:
+        print(f"MISSING {p}")
+    print(f"fold_table.py: {len(want) - len(missing)}/{len(want)} input artifacts present")
+    return 1 if missing else 0
+
+
 if __name__ == "__main__":
+    if "--check" in sys.argv:
+        sys.exit(check())
     main(sys.argv[1] if len(sys.argv) > 1 else f"{HERE}/fold_table.json")
