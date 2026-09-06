@@ -3967,7 +3967,42 @@ at matched step.
 python -m main.scaffolding_gauge models/<run>               # table + <run>/scaffolding_gauge.json
 python -m main.scaffolding_gauge models/<run> --plot        # + a 3-panel PNG
 python -m main.scaffolding_gauge models/<run> --constancy   # only the db9bb5c row
+python -m main.scaffolding_gauge models/<run> --reliability --reliability-reweight   # section (4)
 ```
+
+### The RELIABILITY block (`--reliability`) — the head against the TRUTH, not against V
+
+Both gauges above compare the two READOUTS to each other. `--reliability` adds the third question,
+which is the one a calibration gate needs: **how far is the win-prob head from the realized
+outcome?** Opt-in, so the default JSON and render are byte-stable (pinned by a test). It emits per
+checkpoint, stratified `all` / `bot` / `pool` / per-opponent, with cluster-bootstrap CIs over
+battles: `brier`, the Brier **`skill`** score against the slice's own base rate, `ece` / `mce`, the
+Murphy **`reliability` − `resolution` + `uncertainty`** split with its binning residual reported,
+and the per-bin reliability curve. Math: `scaffolding.reliability_table`.
+
+**Read `resolution`, not `reliability`, as the meter.** A base-rate forecaster scores a perfect 0
+reliability and a useless 0 resolution — `designs/learning/win_prob_decomposition.md` axis 2 is the
+statement that the blur, not the level, is this project's critic disease, and the 2026-09-06
+baseline measured exactly that shape on `ai_v9_59_R2ACTION_0827` (reliability 0.0013–0.0020 against
+a resolution of 0.062 / 0.045 out of an available 0.182 / 0.165).
+
+**Read `bot` and `pool` separately; a pooled row describes neither.** Axis 3's ecology split
+measured the head's mean bias FLIPPING SIGN between the two populations, so the split is the
+default rendering and `opponent_class` is where the `sentinel_*` ⇒ pool rule is declared.
+
+🚨 **`--reliability-reweight` is not optional on this tree's traces.** The eval recorder's quota is
+loss-enriched — measured on `ai_v9_59_R2ACTION_0827`, the captured outcome rate is **0.46** against
+the same cycles' recorded **0.901 vs bots / 0.702 vs pool** — so an unweighted table scores the head
+against a population it was never deployed against. The flag importance-weights each opponent's rows
+back to the win/loss mix its own `eval_results.jsonl` row recorded (weights constant within a
+battle, so the clustering survives), and reports Kish `ess` beside `n` so the cost is visible. It
+**REFUSES** when the true rates cannot be resolved rather than falling back — an unweighted table
+looks identical and answers a different question. The size of the correction is the finding: raw, the
+same traces read ECE 0.237 / 0.281 and skill +0.071 / **−0.080**; reweighted, ECE 0.025 / 0.035 and
+skill **+0.336 / +0.265**. Reading raw-first inverts the verdict.
+
+Record: `designs/research_state/measurements/winprob_critic_baseline_2026-09-06/`. The design that
+consumes it as a gate: `designs/ai_v12/design_winprob_only_critic.md`.
 
 A run whose `win_probs` column is all NaN (`--win-prob-mode none`) **REFUSES** with that diagnosis
 rather than curving zeros — "the two readouts agree perfectly" and "there is no second readout"
@@ -3977,8 +4012,14 @@ Tests: `scaffolding_test.py` — the three known regimes (monotone ⇒ exactly 0
 independent ⇒ ~0.5), affine-rescale invariance, the constant-axis NaN, the affine gauge's
 `readout_penalty` convicting the FAMILY on a constructed step function while a linear control
 collapses it, the cluster bootstrap beating an i.i.d. one by ~`sqrt(50)`, and the live scalar's
-byte-identity + NaN-safety + epoch-0-only read. `main/scaffolding_gauge_test.py` folds a
-constructed three-regime trace tree end to end.
+byte-identity + NaN-safety + epoch-0-only read. For the reliability block: a calibrated forecaster
+reading REL→0 with RES>0, a base-rate one reading exactly 0 skill (the meter's whole point), the
+Murphy identity holding to its own reported residual, `p == 1.0` landing in the last bin rather than
+a phantom one, and uniform weights reproducing the unweighted table bit-for-bit.
+`main/scaffolding_gauge_test.py` folds a constructed three-regime trace tree end to end, plus a
+two-opponent-CLASS fixture where the pooled row INVERTS the bot verdict (the ecology confound as a
+test) and a loss-enriched-quota fixture where the reweighting moves the base rate onto the cycle's
+and takes reliability from 0.32 to 0.
 
 ## ⚠️ Reading a belief target: `belief_supervision(...)`, never `last_*`
 

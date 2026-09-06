@@ -47,7 +47,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -394,6 +394,244 @@ def write_plot(report: Dict[str, Any], path: str) -> "str | None":
     return path
 
 
+
+
+# --------------------------------------------------------- the RELIABILITY block (opt-in)
+
+#: Opponent-directory name prefixes that group into an opponent CLASS. The two classes answer
+#: different questions: the scripted BOTS are a fixed, stationary population the head was never
+#: trained against, while the pool SENTINELS are recent selves — the ~90% self-play mixture the
+#: BCE labels actually come from. `win_prob_decomposition.md` axis 3 (the ECOLOGY split) measured
+#: the head's mean bias FLIPPING SIGN between them, so a pooled calibration number is a
+#: population-confounded average of two different forecasters and must never be quoted alone.
+_SENTINEL_PREFIX = "sentinel"
+
+
+def opponent_class(name: str) -> str:
+    """`sentinel_3` -> `pool`, anything else -> `bot`. The one place the split is defined."""
+    return "pool" if str(name).startswith(_SENTINEL_PREFIX) else "bot"
+
+
+def build_reliability(
+    slices: Dict[int, Dict[str, np.ndarray]],
+    *,
+    bins: int = 10,
+    n_boot: int = 400,
+    seed: int = 0,
+    reweight: Optional[Dict[int, Dict[str, float]]] = None,
+) -> List[Dict[str, Any]]:
+    """Per-step reliability blocks, each stratified into ``all`` / ``bot`` / ``pool`` / per-opponent.
+
+    Every stratum carries a cluster-bootstrap CI over BATTLES for ``brier`` and for ``skill`` —
+    the labels are per-battle and broadcast, so an i.i.d. interval over states would be roughly
+    sqrt(states-per-battle) too tight (the recorded Simpson trap in this tree).
+
+    ``reweight`` (``{step: {opponent: true win rate}}``, from :func:`true_win_rates`) turns on the
+    SELECTION correction: rows are importance-weighted so each opponent's win/loss mix matches the
+    eval cycle's rather than the capture quota's. The weights are constant within a battle, so the
+    bootstrap's clusters are unchanged and the CIs stay valid.
+    """
+    from agents.training.scaffolding import cluster_bootstrap_ci, reliability_table
+
+    out: List[Dict[str, Any]] = []
+    for step in sorted(slices):
+        s = slices[step]
+        p = np.asarray(s["win_probs"], dtype=np.float64)
+        y = np.asarray(s["outcomes"], dtype=np.float64)
+        b = np.asarray(s["battles"])
+        opp = np.asarray(s["opponents"])
+        cls = np.array([opponent_class(o) for o in opp.tolist()])
+
+        w: Optional[np.ndarray] = None
+        wmeta: Optional[Dict[str, Any]] = None
+        if reweight is not None:
+            w, wmeta = selection_weights(y, b, opp, reweight.get(int(step), {}))
+
+        strata: List[Tuple[str, str, np.ndarray]] = [("all", "all", np.ones(p.size, dtype=bool))]
+        for c in ("bot", "pool"):
+            sel = cls == c
+            if sel.any():
+                strata.append(("class", c, sel))
+        for o in sorted(set(opp.tolist())):
+            strata.append(("opponent", str(o), opp == o))
+
+        rows: List[Dict[str, Any]] = []
+        for i, (kind, name, sel) in enumerate(strata):
+            pi, yi, bi = p[sel], y[sel], b[sel]
+            wi = None if w is None else w[sel]
+
+            def _stat(idx, key, _p=pi, _y=yi, _w=wi):
+                return reliability_table(_p[idx], _y[idx], bins=bins,
+                                         weights=None if _w is None else _w[idx])[key]
+
+            r = reliability_table(pi, yi, bins=bins, weights=wi)
+            r["brier_ci_lo"], r["brier_ci_hi"] = cluster_bootstrap_ci(
+                lambda idx: _stat(idx, "brier"), bi, n_boot=n_boot, seed=seed + 100 + i)
+            r["skill_ci_lo"], r["skill_ci_hi"] = cluster_bootstrap_ci(
+                lambda idx: _stat(idx, "skill"), bi, n_boot=n_boot, seed=seed + 200 + i)
+            r["n_battles"] = int(len(set(bi.tolist())))
+            rows.append({"kind": kind, "name": name, **r})
+        blk: Dict[str, Any] = {"step": int(step), "bins": int(bins), "strata": rows,
+                               "reweighted": reweight is not None}
+        if wmeta is not None:
+            blk["selection"] = wmeta
+        out.append(blk)
+    return out
+
+
+# ----------------------------------------------- the SELECTION reweighting (`--reliability-reweight`)
+
+class SelectionWeightError(RuntimeError):
+    """The true per-opponent win rates could not be resolved. A REFUSAL, never a silent fall-back
+    to unweighted — an unweighted table looks identical and is answering a different question."""
+
+
+def _sentinel_names_in_manifest_order(step_dir: str) -> List[str]:
+    """The `sentinel_k` directory names, in the order `eval_manifest.json` lists them.
+
+    The manifest's `opponents` list and `eval_results.jsonl`'s `sentinels` list are written by the
+    same eval cycle from the same pool ordering, which is what licenses joining them BY POSITION.
+    That join is an inference, so it is made in ONE place, it is asserted rather than assumed (the
+    counts must agree), and it refuses instead of guessing.
+    """
+    with open(os.path.join(step_dir, "eval_manifest.json")) as fh:
+        opponents = json.load(fh).get("opponents") or []
+    return [str(o) for o in opponents if opponent_class(str(o)) == "pool"]
+
+
+def true_win_rates(run_dir: str) -> Dict[int, Dict[str, float]]:
+    """``{step: {opponent: true win rate}}`` from the run's own ``eval_results.jsonl``.
+
+    This is the population the reweighting targets: the FULL eval cycle the traces were sampled
+    out of, whose per-opponent rates the run already recorded. It is not an outside estimate.
+    """
+    path = os.path.join(run_dir, "eval_results.jsonl")
+    if not os.path.exists(path):
+        raise SelectionWeightError(
+            f"--reliability-reweight needs the run's recorded per-opponent win rates and "
+            f"{path!r} does not exist. Without it the true eval population is unknown, and an "
+            "UNWEIGHTED table over the capture quota is not a calibration of this head — it is a "
+            "calibration on a loss-enriched subsample. Point the tool at the run directory (not a "
+            "bare eval_traces tree), or drop --reliability-reweight and read the raw table knowing "
+            "what it is.")
+    out: Dict[int, Dict[str, float]] = {}
+    with open(path) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            step = row.get("step")
+            if step is None:
+                continue
+            rates = {str(k): float(v) for k, v in (row.get("bots") or {}).items()}
+            sent = list(row.get("sentinels") or [])
+            step_dir = os.path.join(run_dir, "eval_traces", f"step_{int(step)}")
+            names = (_sentinel_names_in_manifest_order(step_dir)
+                     if os.path.exists(os.path.join(step_dir, "eval_manifest.json")) else [])
+            if names and len(names) == len(sent):
+                for name, s in zip(names, sent):
+                    if s.get("win_rate") is not None:
+                        rates[name] = float(s["win_rate"])
+            out[int(step)] = rates
+    return out
+
+
+def selection_weights(
+    outcomes: np.ndarray,
+    battles: np.ndarray,
+    opponents: np.ndarray,
+    true_rates: Dict[str, float],
+) -> "tuple[np.ndarray, Dict[str, Any]]":
+    """Per-ROW importance weights that restore the eval population's win/loss mix per opponent.
+
+    Within one opponent, the capture quota kept ``m`` wins of ``M`` battles while the cycle itself
+    won at rate ``q``. The weight on a captured WIN is ``q / (m/M)`` and on a captured LOSS
+    ``(1 − q) / (1 − m/M)``; both are constant within a battle, so the battle clustering the
+    bootstrap depends on is untouched. Weights are normalized to mean 1 for readability only —
+    every statistic here is a ratio of weighted sums, so the scale cancels.
+
+    An opponent with **no recorded true rate**, or with no captured battles on one side of the
+    outcome (``m == 0`` or ``m == M``), cannot be corrected: its rows are RETURNED WITH WEIGHT 0
+    and named in the report, because silently leaving them at weight 1 would mix a corrected
+    population with an uncorrected one and label the result corrected.
+    """
+    y = np.asarray(outcomes, dtype=np.float64).ravel()
+    opp = np.asarray(opponents).ravel()
+    w = np.zeros(y.size, dtype=np.float64)
+    dropped: Dict[str, str] = {}
+    per_opp: Dict[str, Dict[str, float]] = {}
+    for name in sorted(set(opp.tolist())):
+        sel = opp == name
+        q = true_rates.get(str(name))
+        # the captured mix is a property of BATTLES, not of decisions.
+        seen: Dict[str, float] = {}
+        for b, yy in zip(np.asarray(battles).ravel()[sel].tolist(), y[sel].tolist()):
+            seen[b] = yy
+        m, M = float(sum(seen.values())), float(len(seen))
+        if q is None:
+            dropped[str(name)] = "no recorded true win rate for this opponent"
+            continue
+        if M == 0 or m == 0.0 or m == M:
+            dropped[str(name)] = (f"the quota captured only one outcome class "
+                                  f"({int(m)} wins of {int(M)} battles) — nothing to reweight")
+            continue
+        captured = m / M
+        w_win, w_loss = q / captured, (1.0 - q) / (1.0 - captured)
+        w[sel] = np.where(y[sel] > 0.5, w_win, w_loss)
+        per_opp[str(name)] = {"true_win_rate": q, "captured_win_rate": captured,
+                              "w_win": w_win, "w_loss": w_loss, "n_battles": int(M)}
+    total = float(w.sum())
+    if total <= 0.0:
+        raise SelectionWeightError(
+            "--reliability-reweight resolved no usable opponent: " + json.dumps(dropped, indent=1))
+    w *= w.size / total                                   # mean 1; every statistic is a ratio
+    return w, {"per_opponent": per_opp, "dropped": dropped,
+               "n_rows_zeroed": int((w == 0.0).sum())}
+
+
+def render_reliability(report: Dict[str, Any]) -> str:
+    """Section (4): the reliability / Brier / ECE table, per step and per opponent class."""
+    blocks = report.get("reliability") or []
+    lines: List[str] = []
+    lines.append("\n(4) RELIABILITY — the win-prob head against the REALIZED OUTCOME.")
+    lines.append("    skill = 1 - Brier/Brier_base. NEGATIVE = worse than always predicting the")
+    lines.append("    slice's base rate. res(olution) HIGHER is better; rel(iability) LOWER is.")
+    for blk in blocks:
+        tag = ("SELECTION-REWEIGHTED to the eval cycle's win rates" if blk.get("reweighted")
+               else "RAW capture quota — NOT the deployed population")
+        lines.append(f"\n  step {blk['step']:,}   ({blk['bins']} equal-width bins)  [{tag}]")
+        sel = blk.get("selection") or {}
+        if sel.get("dropped"):
+            for name, why in sorted(sel["dropped"].items()):
+                lines.append(f"    ⚠️  {name}: WEIGHT 0 — {why}")
+        lines.append(f"    {'stratum':<16}{'n':>7}{'ess':>7}{'btl':>5}{'base':>7}{'Brier':>9}"
+                     f"{'[ 95% cluster CI ]':>22}{'skill':>8}{'ECE':>8}{'MCE':>8}"
+                     f"{'rel':>8}{'res':>8}")
+        for r in blk["strata"]:
+            tag = r["name"] if r["kind"] != "class" else f"{r['name']} (class)"
+            lines.append(
+                f"    {tag:<16}{r['n']:>7}{_f(r.get('ess'), '7.0f')}"
+                f"{r['n_battles']:>5}{_f(r['base_rate'], '7.3f')}"
+                f"{_f(r['brier'], '9.4f')}"
+                f"    [{_f(r['brier_ci_lo'], '7.4f')},{_f(r['brier_ci_hi'], '7.4f')} ]"
+                f"{_f(r['skill'], '8.3f')}{_f(r['ece'], '8.3f')}{_f(r['mce'], '8.3f')}"
+                f"{_f(r['reliability'], '8.4f')}{_f(r['resolution'], '8.4f')}")
+        allrow = next((r for r in blk["strata"] if r["kind"] == "all"), None)
+        if allrow:
+            lines.append(f"    per-bin reliability curve (stratum `all`)  "
+                         f"[decomp residual {_f(allrow['decomp_residual'], '.4f')}]")
+            lines.append(f"      {'bin':<12}{'n':>7}{'p_mean':>9}{'y_rate':>9}{'gap':>9}")
+            for row in allrow["table"]:
+                span = "{:.1f}-{:.1f}".format(row["lo"], row["hi"])
+                lines.append(f"      {span:<12}{row['n']:>7}"
+                             f"{_f(row['p_mean'], '9.3f')}{_f(row['y_rate'], '9.3f')}"
+                             f"{_f(row['gap'], '9.3f')}")
+    lines.append("\n  ⚠️  SELECTION: these battles are the eval QUOTA's, not a random sample of")
+    lines.append("      play, and the quota over-captures losses. The labels are per-BATTLE and")
+    lines.append("      broadcast to every decision of that battle. Read `bot` and `pool`")
+    lines.append("      separately — the head's bias is measured to FLIP SIGN between them.")
+    return "\n".join(lines)
 # --------------------------------------------------------------------------- entry point
 
 def build_parser() -> argparse.ArgumentParser:
@@ -413,6 +651,22 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--constancy", action="store_true",
                     help="print ONLY the db9bb5c constancy sanity row (the JSON is unchanged)")
+    ap.add_argument("--reliability", action="store_true",
+                    help="ALSO compute the win-prob head's calibration against the realized "
+                         "outcome — reliability curve, Brier, Brier SKILL score, ECE and the "
+                         "Murphy reliability/resolution split, stratified by opponent CLASS "
+                         "(bot vs pool sentinel) and by opponent. Adds a `reliability` block to "
+                         "the JSON; the existing blocks are untouched.")
+    ap.add_argument("--reliability-bins", type=int, default=10,
+                    help="equal-width forecast bins for --reliability (default 10)")
+    ap.add_argument("--reliability-reweight", action="store_true",
+                    help="CORRECT THE CAPTURE QUOTA. The recorded traces are a loss-enriched "
+                         "subsample (measured on ai_v9_59_R2ACTION_0827: captured outcome rate "
+                         "0.46 against a recorded 0.90 vs bots), so an unweighted table scores the "
+                         "head on a population it was never deployed against. This importance-"
+                         "weights each opponent's rows back to the win/loss mix its own "
+                         "eval_results.jsonl row recorded. REFUSES rather than falling back when "
+                         "the true rates cannot be resolved.")
     ap.add_argument("--quiet", action="store_true")
     return ap
 
@@ -428,6 +682,24 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         seed=args.seed, say=say)
     say(f"{len(slices)} step slices, {coverage['n_traces_read']} traces read")
     report = build_report(slices, coverage, run_dir=run_dir, n_boot=args.boot, seed=args.seed)
+    if args.reliability:
+        rw = true_win_rates(run_dir) if args.reliability_reweight else None
+        report["reliability"] = build_reliability(
+            slices, bins=args.reliability_bins, n_boot=args.boot, seed=args.seed, reweight=rw)
+        report["units"]["reliability"] = {
+            "what": "The win-prob head scored against the REALIZED per-battle outcome: Brier, the "
+                    "Brier SKILL score against the slice's own base rate, ECE/MCE, and Murphy's "
+                    "reliability/resolution split, per opponent CLASS (bot vs pool sentinel) and "
+                    "per opponent. Unlike both gauges above, this compares the head to the TRUTH "
+                    "rather than to the other readout.",
+            "cannot": "The battles are the eval QUOTA's, not a random sample of play, and the "
+                      "quota over-captures losses — so the base rate is a property of the quota. "
+                      "Labels are per-battle and broadcast to every decision, so `n` is not a "
+                      "sample size; only the cluster CIs are. A pooled row averages two "
+                      "populations whose measured bias has OPPOSITE SIGN "
+                      "(designs/learning/win_prob_decomposition.md axis 3) and must never be "
+                      "quoted alone.",
+        }
     report["meta"]["runtime_sec"] = round(time.time() - t0, 1)
 
     out = args.out or os.path.join(run_dir, "scaffolding_gauge.json")
@@ -443,6 +715,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if written:
             say(f"wrote {written}")
     print(render(report, constancy_only=args.constancy))
+    if args.reliability and not args.constancy:
+        print(render_reliability(report))
     return 0
 
 

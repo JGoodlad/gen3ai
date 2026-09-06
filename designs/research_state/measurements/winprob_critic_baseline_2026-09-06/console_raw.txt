@@ -1,0 +1,107 @@
+[scaffolding_gauge] 2 step slices, 474 traces read
+[scaffolding_gauge] wrote designs/research_state/measurements/winprob_critic_baseline_2026-09-06/raw_capture_quota.json
+====================================================================================================
+SCAFFOLDING GAUGE v1   ai_v9_59_R2ACTION_0827
+  2 checkpoint steps   474 traces read   bootstrap 2000 x cluster-over-battles   seed 0
+====================================================================================================
+
+(1) RANK GAUGE — (1 - Spearman rho(V, P(win))) / 2.  UNIT-FREE; ordering only.
+          step       n  battles  winrate      rho    gauge      [ 95% cluster CI ]
+    26,000,016    6487      240    0.456    0.915    0.043      [  0.030,  0.059 ]
+    28,000,032    6207      234    0.463    0.880    0.060      [  0.048,  0.075 ]
+  trend — / 1M steps  (2 points)   NEGATIVE = the readouts are converging.
+
+(2) CALIBRATED-AFFINE GAUGE — |clip(a*V+b) - P(win)| in PROBABILITY units.
+          step         a       b     rms    bias    [ 95% cluster CI ]  Brier_head  Brier_aff  penalty
+    26,000,016    0.0207   0.402   0.242  -0.226      [ 0.192, 0.292 ]      0.2304     0.1835  -0.0469
+    28,000,032    0.0184   0.413   0.293  -0.277      [ 0.241, 0.348 ]      0.2686     0.2011  -0.0676
+  trend — / 1M steps  (2 points)
+  ⚠️  `penalty` = Brier(affine readout) - Brier(head). Large penalty ⇒ most of
+      `rms` is the affine FAMILY being a worse outcome predictor, NOT the two
+      heads disagreeing. That is a readout finding, not a divergence finding.
+
+(3) CONSTANCY SANITY ROW (ledger db9bb5c) — does V_shaped flatten?
+          step    v_mean     v_std     v_iqr     disp  within%
+    26,000,016     2.631    12.084    13.777    1.158     58.3
+    28,000,032     2.703    11.755    12.557    1.171     58.9
+
+----------------------------------------------------------------------------------------------------
+UNITS: recorded V is a PopArt-normalized SHAPED return. No general unit
+conversion to a win probability exists — hence two gauges. (1) claims ORDERING
+only. (2) is in probability units but its map is a per-checkpoint FIT that does
+not transport, and part of its residual is the affine family, not divergence.
+Every CI is a CLUSTER bootstrap over BATTLES (labels are per-battle, broadcast).
+The step curve is NOT a controlled comparison — the eval quota moves under it.
+
+(4) RELIABILITY — the win-prob head against the REALIZED OUTCOME.
+    skill = 1 - Brier/Brier_base. NEGATIVE = worse than always predicting the
+    slice's base rate. res(olution) HIGHER is better; rel(iability) LOWER is.
+
+  step 26,000,016   (10 equal-width bins)  [RAW capture quota — NOT the deployed population]
+    stratum               n    ess  btl   base    Brier    [ 95% cluster CI ]   skill     ECE     MCE     rel     res
+    all                6487   6487  240  0.456   0.2304    [ 0.2044, 0.2574 ]   0.071   0.237   0.351  0.0686  0.0845
+    bot (class)        3208   3208  143  0.488   0.2278    [ 0.1901, 0.2674 ]   0.088   0.247   0.410  0.0763  0.0958
+    pool (class)       3279   3279   97  0.426   0.2330    [ 0.1971, 0.2715 ]   0.047   0.226   0.356  0.0637  0.0742
+    aggressive          328    328   13  0.662   0.1438    [ 0.0485, 0.2681 ]   0.358   0.155   0.483  0.0500  0.1281
+    aggressive_v2       356    356   16  0.435   0.2291    [ 0.1280, 0.3204 ]   0.068   0.278   0.578  0.1055  0.1212
+    heuristic           404    404   18  0.379   0.3131    [ 0.1873, 0.4368 ]  -0.331   0.337   0.545  0.1288  0.0487
+    heuristic2          359    359   16  0.462   0.2485    [ 0.1266, 0.3768 ]   0.000   0.297   0.661  0.1290  0.1255
+    random              199    199    8  1.000   0.0174    [ 0.0122, 0.0239 ]       —   0.083   0.411  0.0166  0.0000
+    sentinel_0          764    764   20  0.431   0.2282    [ 0.1512, 0.3178 ]   0.069   0.212   0.382  0.0609  0.0761
+    sentinel_1          731    731   20  0.386   0.2381    [ 0.1650, 0.3077 ]  -0.005   0.242   0.361  0.0772  0.0757
+    sentinel_2          620    620   20  0.395   0.2375    [ 0.1531, 0.3211 ]   0.006   0.266   0.422  0.0965  0.0983
+    sentinel_3          674    674   20  0.475   0.2200    [ 0.1537, 0.2932 ]   0.118   0.155   0.265  0.0327  0.0604
+    sentinel_4          490    490   17  0.449   0.2452    [ 0.1452, 0.3480 ]   0.009   0.273   0.481  0.0890  0.0880
+    setup_sweep         425    425   19  0.416   0.2515    [ 0.1574, 0.3461 ]  -0.035   0.298   0.514  0.1200  0.1100
+    setup_sweep_v2      379    379   18  0.441   0.2636    [ 0.1585, 0.3721 ]  -0.070   0.280   0.453  0.0912  0.0705
+    staller             382    382   17  0.476   0.2237    [ 0.1297, 0.3295 ]   0.103   0.213   0.313  0.0498  0.0724
+    staller_v2          376    376   18  0.394   0.2413    [ 0.1418, 0.3328 ]  -0.011   0.289   0.532  0.1082  0.1039
+    per-bin reliability curve (stratum `all`)  [decomp residual -0.0017]
+      bin               n   p_mean   y_rate      gap
+      0.0-0.1         366    0.045    0.000    0.045
+      0.1-0.2         227    0.147    0.013    0.133
+      0.2-0.3         240    0.253    0.029    0.224
+      0.3-0.4         246    0.353    0.073    0.280
+      0.4-0.5         320    0.449    0.184    0.265
+      0.5-0.6         441    0.553    0.272    0.281
+      0.6-0.7         635    0.652    0.301    0.351
+      0.7-0.8        1046    0.756    0.409    0.347
+      0.8-0.9        1316    0.847    0.529    0.318
+      0.9-1.0        1650    0.965    0.872    0.093
+
+  step 28,000,032   (10 equal-width bins)  [RAW capture quota — NOT the deployed population]
+    stratum               n    ess  btl   base    Brier    [ 95% cluster CI ]   skill     ECE     MCE     rel     res
+    all                6207   6207  234  0.463   0.2686    [ 0.2340, 0.3037 ]  -0.080   0.281   0.443  0.0956  0.0724
+    bot (class)        3179   3179  141  0.486   0.2739    [ 0.2281, 0.3198 ]  -0.096   0.297   0.496  0.1078  0.0804
+    pool (class)       3028   3028   93  0.438   0.2631    [ 0.2120, 0.3169 ]  -0.069   0.264   0.441  0.0847  0.0648
+    aggressive          323    323   15  0.471   0.3137    [ 0.1576, 0.4554 ]  -0.259   0.328   0.521  0.1433  0.0755
+    aggressive_v2       434    434   19  0.373   0.3158    [ 0.1888, 0.4289 ]  -0.350   0.389   0.707  0.2074  0.1227
+    heuristic           328    328   16  0.445   0.3020    [ 0.1647, 0.4275 ]  -0.223   0.332   0.495  0.1210  0.0641
+    heuristic2          432    432   18  0.488   0.2497    [ 0.1461, 0.3692 ]   0.000   0.271   0.502  0.0990  0.0968
+    random              201    201    9  0.871   0.0794    [ 0.0064, 0.2219 ]   0.295   0.065   0.387  0.0088  0.0404
+    sentinel_0          687    687   20  0.466   0.2607    [ 0.1793, 0.3486 ]  -0.048   0.205   0.372  0.0600  0.0461
+    sentinel_1          733    733   20  0.453   0.2232    [ 0.1362, 0.3205 ]   0.099   0.251   0.495  0.0828  0.1038
+    sentinel_2          638    638   20  0.353   0.3101    [ 0.1767, 0.4431 ]  -0.358   0.333   0.432  0.1225  0.0391
+    sentinel_3          641    641   20  0.382   0.3132    [ 0.2058, 0.4200 ]  -0.326   0.343   0.532  0.1466  0.0665
+    sentinel_4          329    329   13  0.623   0.1684    [ 0.0549, 0.3003 ]   0.283   0.183   0.587  0.0686  0.1309
+    setup_sweep         353    353   16  0.450   0.2718    [ 0.1533, 0.3851 ]  -0.098   0.303   0.546  0.1172  0.0892
+    setup_sweep_v2      381    381   17  0.451   0.3048    [ 0.1681, 0.4464 ]  -0.231   0.314   0.471  0.1057  0.0448
+    staller             394    394   17  0.434   0.3321    [ 0.1901, 0.4765 ]  -0.352   0.366   0.556  0.1460  0.0547
+    staller_v2          333    333   14  0.592   0.1992    [ 0.0795, 0.3362 ]   0.176   0.216   0.555  0.0846  0.1235
+    per-bin reliability curve (stratum `all`)  [decomp residual -0.0032]
+      bin               n   p_mean   y_rate      gap
+      0.0-0.1         222    0.045    0.014    0.032
+      0.1-0.2         208    0.155    0.043    0.112
+      0.2-0.3         177    0.251    0.107    0.144
+      0.3-0.4         220    0.357    0.105    0.253
+      0.4-0.5         226    0.451    0.186    0.266
+      0.5-0.6         315    0.553    0.210    0.343
+      0.6-0.7         410    0.653    0.210    0.443
+      0.7-0.8         886    0.755    0.313    0.442
+      0.8-0.9        1505    0.853    0.474    0.378
+      0.9-1.0        2038    0.960    0.801    0.158
+
+  ⚠️  SELECTION: these battles are the eval QUOTA's, not a random sample of
+      play, and the quota over-captures losses. The labels are per-BATTLE and
+      broadcast to every decision of that battle. Read `bot` and `pool`
+      separately — the head's bias is measured to FLIP SIGN between them.

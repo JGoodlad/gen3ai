@@ -395,3 +395,144 @@ def live_gauge_metrics(values, win_prob_logits) -> Dict[str, float]:
     g = rank_gauge(v[ok], z[ok])
     return {"scaffolding_gauge": g["gauge"], "scaffolding_rho": g["rho"],
             "scaffolding_n": float(n)}
+
+
+# ═══════════════════════════════ the RELIABILITY table (calibration of P(win) vs outcome) ══
+
+#: Default bin count for the reliability table: ten equal-width bins over [0, 1]. EQUAL-WIDTH and
+#: not equal-mass on purpose — "when the head says 0.85, does it happen 85% of the time?" is a
+#: question about the FORECAST axis, and equal-mass bins move their own boundaries between arms,
+#: so two arms' tables would stop being comparable row by row.
+_DEFAULT_RELIABILITY_BINS = 10
+
+
+def reliability_table(win_probs, outcomes, *, bins: int = _DEFAULT_RELIABILITY_BINS,
+                      weights=None) -> Dict[str, object]:
+    """The reliability curve + Brier / ECE / Murphy decomposition of ``P(win)`` against outcome.
+
+    This is the CALIBRATION half of the pair this module opened with. ``affine_gauge`` asks how far
+    the two READOUTS sit apart; this asks how far the win-prob head sits from the TRUTH, and it is
+    the one that yields a bar a future critic must beat.
+
+    Returned keys:
+
+    ``brier``            mean (p − y)² — the head's Brier score. LOWER is better.
+    ``brier_base``       ȳ(1 − ȳ) — the constant base-rate forecaster's Brier on this slice.
+    ``skill``            1 − brier/brier_base, the Brier SKILL SCORE. **Zero means the head is no
+                         better than always predicting the slice's base rate; NEGATIVE means it is
+                         worse.** This is the headline, and it is not implied by the rank gauge: a
+                         forecaster can ORDER states well (high Spearman) and still score below
+                         zero here, because ordering is invariant to the level errors this
+                         penalizes.
+    ``ece``              Σ (n_k/N)·|p̄_k − ȳ_k| — the count-weighted expected calibration error.
+    ``mce``              max_k |p̄_k − ȳ_k| over non-empty bins — the worst bin.
+    ``reliability``      Σ (n_k/N)(p̄_k − ȳ_k)²  — Murphy's REL. LOWER is better.
+    ``resolution``       Σ (n_k/N)(ȳ_k − ȳ)²    — Murphy's RES. **HIGHER is better**: the head's
+                         ability to SEPARATE outcomes, and the component
+                         ``designs/learning/win_prob_decomposition.md`` names as the disease. A
+                         base-rate forecaster scores a perfect 0 reliability and a useless 0
+                         resolution, which is exactly why REL alone is never the meter.
+    ``uncertainty``      ȳ(1 − ȳ) — Murphy's UNC, a property of the SLICE, not of the forecaster.
+    ``decomp_residual``  brier − (reliability − resolution + uncertainty). The identity is EXACT
+                         only when states are grouped by distinct forecast value; binning makes it
+                         approximate, and the size of the approximation is reported rather than
+                         hidden. A residual comparable to ``reliability`` means the bins are too
+                         coarse to trust the split.
+    ``base_rate``        ȳ on this slice.
+    ``n`` / ``n_bins``   finite rows used / bins that carried at least one row.
+    ``table``            per-bin rows ``{lo, hi, n, p_mean, y_rate, gap}``, ``gap`` = p̄_k − ȳ_k
+                         (POSITIVE = the head was OPTIMISTIC in that bin). Empty bins are KEPT with
+                         ``n = 0`` and NaN statistics so two slices' tables align row by row.
+
+    Degenerate input (no finite rows) returns every statistic as NaN and an empty table — never a
+    fabricated 0. A slice whose outcomes are all one class returns ``brier_base = 0`` and therefore
+    ``skill = NaN``: a skill score against a zero-variance reference is undefined, not infinite.
+
+    ⚠️ **The labels are per-BATTLE and broadcast**, so every row of a battle carries that battle's
+    outcome. Nothing here is an i.i.d. sample; pair it with ``cluster_bootstrap_ci`` over battles
+    for any interval, and read ``main.scaffolding_gauge``'s footer on the eval quota, which selects
+    the battles this table is computed over and is not a random sample of play.
+
+    🚨 **``weights`` is the answer to that selection, and on this tree's eval traces it is not
+    optional.** The recorder's quota keeps a NON-REPRESENTATIVE win/loss mix — measured on
+    ``ai_v9_59_R2ACTION_0827`` the captured slice's outcome rate is 0.46 while the run's own
+    ``eval_results.jsonl`` records 0.90 against bots — so an UNWEIGHTED table over captured traces
+    scores the head against a loss-enriched population and reports a large positive ECE that is
+    mostly the quota. Passing per-row importance weights (true-outcome share / captured-outcome
+    share, within an opponent) restores the eval population. Every statistic above becomes its
+    weighted analogue and ``ess`` — Kish's effective sample size, ``(Σw)² / Σw²`` — is returned
+    beside ``n`` so a reader can see how much of the sample the reweighting spent. An ``ess`` far
+    below ``n`` means the correction is carried by a handful of battles and the interval, not the
+    point estimate, is the honest output.
+    """
+    p = np.asarray(win_probs, dtype=np.float64).ravel()
+    y = np.asarray(outcomes, dtype=np.float64).ravel()
+    if p.size != y.size:
+        raise ValueError(f"reliability_table: length mismatch {p.size} vs {y.size}")
+    if weights is None:
+        w_all = np.ones(p.size, dtype=np.float64)
+    else:
+        w_all = np.asarray(weights, dtype=np.float64).ravel()
+        if w_all.size != p.size:
+            raise ValueError(f"reliability_table: weights length {w_all.size} vs {p.size}")
+        if np.any(w_all < 0.0):
+            raise ValueError("reliability_table: negative weights are not a reweighting")
+    nb = int(bins)
+    if nb < 1:
+        raise ValueError(f"reliability_table: bins must be >= 1, got {bins}")
+    ok = np.isfinite(p) & np.isfinite(y) & np.isfinite(w_all)
+    p, y, w_all = p[ok], y[ok], w_all[ok]
+    nan = float("nan")
+    edges = np.linspace(0.0, 1.0, nb + 1)
+    wsum = float(w_all.sum())
+    if p.size == 0 or wsum <= _DEGENERATE_STD:
+        return {k: nan for k in ("brier", "brier_base", "skill", "ece", "mce", "reliability",
+                                 "resolution", "uncertainty", "decomp_residual", "base_rate",
+                                 "ess")} | {"n": int(p.size), "n_bins": 0, "table": []}
+
+    ybar = float((w_all * y).sum() / wsum)
+    brier = float((w_all * (p - y) ** 2).sum() / wsum)
+    unc = ybar * (1.0 - ybar)
+    # digitize against the INTERIOR edges: p == 1.0 then lands in the last bin rather than a
+    # phantom one above it, and p == 0.0 in the first. Clipping is belt-and-braces for -0.0.
+    idx = np.clip(np.digitize(p, edges[1:-1], right=False), 0, nb - 1)
+
+    table: List[Dict[str, float]] = []
+    rel = res = ece = 0.0
+    mce = nan
+    n_used = 0
+    for k in range(nb):
+        sel = idx == k
+        nk = int(sel.sum())
+        wk = float(w_all[sel].sum())
+        row: Dict[str, float] = {"lo": float(edges[k]), "hi": float(edges[k + 1]), "n": nk,
+                                 "p_mean": nan, "y_rate": nan, "gap": nan}
+        if nk and wk > _DEGENERATE_STD:
+            pk = float((w_all[sel] * p[sel]).sum() / wk)
+            yk = float((w_all[sel] * y[sel]).sum() / wk)
+            gap = pk - yk
+            row.update({"p_mean": pk, "y_rate": yk, "gap": gap})
+            w = wk / wsum
+            rel += w * gap * gap
+            res += w * (yk - ybar) ** 2
+            ece += w * abs(gap)
+            mce = abs(gap) if (not np.isfinite(mce) or abs(gap) > mce) else mce
+            n_used += 1
+        table.append(row)
+
+    return {
+        "brier": brier,
+        "brier_base": float(unc),
+        "skill": float(1.0 - brier / unc) if unc > _DEGENERATE_STD else nan,
+        "ece": float(ece),
+        "mce": float(mce),
+        "reliability": float(rel),
+        "resolution": float(res),
+        "uncertainty": float(unc),
+        "decomp_residual": float(brier - (rel - res + unc)),
+        "base_rate": ybar,
+        "n": int(p.size),
+        "ess": float(wsum * wsum / float((w_all * w_all).sum())),
+        "n_bins": n_used,
+        "table": table,
+    }

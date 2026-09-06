@@ -1670,7 +1670,10 @@ src/
                      #   across restarts
                      #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
                      #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
-                     #   bootstrap; shared by `train/scaffolding_gauge` and main.scaffolding_gauge)
+                     #   bootstrap, and reliability_table = Brier / Brier-SKILL / ECE / the Murphy
+                     #   reliability-resolution-uncertainty split, optionally importance-WEIGHTED
+                     #   to undo the eval quota's loss enrichment; shared by
+                     #   `train/scaffolding_gauge` and main.scaffolding_gauge)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
@@ -1799,6 +1802,13 @@ src/
                      #   no longer load. TWO gauges, each labelled with what it cannot claim:
                      #   RANK (Spearman, unit-free) + CALIBRATED-AFFINE (a per-checkpoint
                      #   V->outcome fit, probability units) + the db9bb5c constancy sanity row.
+                     #   `--reliability` adds the THIRD question those two cannot ask — the head
+                     #   against the realized OUTCOME (Brier / skill / ECE / Murphy rel-res-unc),
+                     #   stratified bot vs pool sentinel, because the head's bias FLIPS SIGN
+                     #   between them. `--reliability-reweight` undoes the eval quota's loss
+                     #   enrichment from the run's own eval_results.jsonl and REFUSES rather than
+                     #   falling back; without it the same traces read ECE 0.28 and skill -0.08
+                     #   where the corrected population reads 0.035 and +0.265.
                      #   Cluster-bootstrap CIs over BATTLES. Live half: `train/scaffolding_gauge`.
                      #   Shared math: agents/training/scaffolding.py
     capacity.py        # CAPACITY-EVAL BATTERY CLI — offline saturation tripwire over one

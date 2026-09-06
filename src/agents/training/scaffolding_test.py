@@ -16,6 +16,7 @@ Three things have to hold and none of them is checkable on real traces:
 from __future__ import annotations
 
 import copy
+import math
 
 import numpy as np
 import pytest
@@ -23,7 +24,7 @@ import torch as th
 
 from agents.training.scaffolding import (
     affine_gauge, cluster_bootstrap_ci, constancy_row, gauge_slice, live_gauge_metrics,
-    rank_gauge, spearman_rho,
+    rank_gauge, reliability_table, spearman_rho,
 )
 
 
@@ -434,3 +435,156 @@ def test_the_gauge_is_read_from_EPOCH_ZERO_only():
     model.set_logger(rows)
     model.train()
     assert rows.rows["train/scaffolding_n"] == 32.0        # 8 x 4, once — not 96
+
+
+# ══ 5. RELIABILITY TABLE — Brier / skill / ECE / the Murphy split ═════════════
+
+
+def test_a_perfectly_calibrated_forecaster_has_near_zero_reliability_and_positive_skill():
+    """p drawn uniformly, y ~ Bernoulli(p): REL -> 0, RES > 0, skill > 0.
+
+    The three components are checked together on purpose — REL alone is satisfied by a base-rate
+    forecaster, which is the exact failure the docstring warns about.
+    """
+    rng = np.random.default_rng(0)
+    p = rng.uniform(0.0, 1.0, 40_000)
+    y = (rng.uniform(0.0, 1.0, 40_000) < p).astype(float)
+    r = reliability_table(p, y)
+    assert r["reliability"] < 1e-3          # calibrated by construction
+    assert r["resolution"] > 0.05           # and it separates
+    assert r["skill"] > 0.25
+    assert r["ece"] < 0.02
+
+
+def test_a_base_rate_forecaster_is_perfectly_reliable_and_scores_exactly_zero_skill():
+    """The meter's whole point: REL 0 is NOT success. A constant p == ȳ has zero resolution."""
+    rng = np.random.default_rng(1)
+    y = (rng.uniform(0.0, 1.0, 20_000) < 0.4).astype(float)
+    r = reliability_table(np.full(y.size, float(y.mean())), y)
+    assert r["reliability"] == pytest.approx(0.0, abs=1e-9)
+    assert r["resolution"] == pytest.approx(0.0, abs=1e-9)
+    assert r["skill"] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_a_systematically_optimistic_head_scores_NEGATIVE_skill_and_a_POSITIVE_gap():
+    """Sign convention: gap = p̄ − ȳ, so POSITIVE means the head was optimistic in that bin."""
+    y = np.array([0.0] * 800 + [1.0] * 200)
+    p = np.full(1000, 0.9)
+    r = reliability_table(p, y)
+    assert r["skill"] < 0.0
+    assert r["brier"] > r["brier_base"]
+    hot = [row for row in r["table"] if row["n"]]
+    assert len(hot) == 1 and hot[0]["gap"] > 0.6
+
+
+def test_the_murphy_identity_holds_to_the_reported_residual():
+    """BS = REL − RES + UNC exactly under grouping by distinct forecast; the binning error is
+    REPORTED as `decomp_residual` rather than hidden, so the identity is checkable."""
+    rng = np.random.default_rng(2)
+    p = rng.uniform(0.0, 1.0, 5_000)
+    y = (rng.uniform(0.0, 1.0, 5_000) < p).astype(float)
+    r = reliability_table(p, y, bins=20)
+    lhs = r["reliability"] - r["resolution"] + r["uncertainty"] + r["decomp_residual"]
+    assert lhs == pytest.approx(r["brier"], abs=1e-12)
+    assert abs(r["decomp_residual"]) < 0.01          # 20 bins is fine enough here
+
+
+def test_the_extreme_forecasts_land_in_the_first_and_last_bins_not_a_phantom_one():
+    """p == 1.0 must not fall off the top edge (the np.digitize trap) and p == 0.0 must not fall
+    off the bottom. Every row must be accounted for."""
+    p = np.array([0.0, 1.0, 0.5, 0.999999, 1e-9])
+    y = np.array([0.0, 1.0, 1.0, 1.0, 0.0])
+    r = reliability_table(p, y, bins=10)
+    assert sum(row["n"] for row in r["table"]) == 5
+    assert r["table"][0]["n"] == 2 and r["table"][-1]["n"] == 2 and r["table"][5]["n"] == 1
+
+
+def test_empty_and_all_one_class_slices_report_NaN_rather_than_a_fabricated_number():
+    empty = reliability_table([], [])
+    assert empty["n"] == 0 and empty["table"] == [] and math.isnan(empty["brier"])
+    one_class = reliability_table([0.7, 0.8, 0.9], [1.0, 1.0, 1.0])
+    assert one_class["brier_base"] == pytest.approx(0.0)
+    assert math.isnan(one_class["skill"])            # undefined, not infinite
+    assert one_class["brier"] > 0.0                  # the head is still scored
+
+
+def test_non_finite_rows_are_dropped_and_a_length_mismatch_raises():
+    r = reliability_table([0.5, float("nan"), 0.9], [1.0, 1.0, float("nan")])
+    assert r["n"] == 1
+    with pytest.raises(ValueError, match="length mismatch"):
+        reliability_table([0.5, 0.5], [1.0])
+    with pytest.raises(ValueError, match="bins must be"):
+        reliability_table([0.5], [1.0], bins=0)
+
+
+def test_the_reliability_table_composes_with_the_battle_cluster_bootstrap():
+    """The interval must be over BATTLES: the same rows re-labelled as ONE cluster cannot yield a
+    CI at all, which is the guard against an accidental i.i.d.-over-states interval."""
+    rng = np.random.default_rng(3)
+    p = rng.uniform(0.0, 1.0, 400)
+    y = (rng.uniform(0.0, 1.0, 400) < p).astype(float)
+    battles = np.repeat([f"b{i}" for i in range(40)], 10)
+    lo, hi = cluster_bootstrap_ci(
+        lambda idx: reliability_table(p[idx], y[idx])["brier"], battles, n_boot=200, seed=0)
+    assert math.isfinite(lo) and math.isfinite(hi) and lo < hi
+    one = cluster_bootstrap_ci(
+        lambda idx: reliability_table(p[idx], y[idx])["brier"], np.full(400, "b0"), n_boot=200)
+    assert math.isnan(one[0]) and math.isnan(one[1])
+
+
+def test_weights_of_all_ones_reproduce_the_unweighted_table_exactly():
+    """The weighted form must be a strict generalization — a uniform weight is a no-op, so the
+    reweighting can never be blamed for a change it did not make."""
+    rng = np.random.default_rng(4)
+    p = rng.uniform(0.0, 1.0, 2_000)
+    y = (rng.uniform(0.0, 1.0, 2_000) < p).astype(float)
+    plain = reliability_table(p, y)
+    ones = reliability_table(p, y, weights=np.ones(p.size))
+    for k in ("brier", "skill", "ece", "reliability", "resolution", "base_rate"):
+        assert ones[k] == pytest.approx(plain[k], abs=1e-12)
+    assert ones["ess"] == pytest.approx(float(p.size))
+    scaled = reliability_table(p, y, weights=np.full(p.size, 7.5))   # scale must cancel
+    assert scaled["brier"] == pytest.approx(plain["brier"], abs=1e-12)
+
+
+def test_reweighting_a_loss_enriched_slice_recovers_the_true_base_rate_and_verdict():
+    """The measured defect this exists for, in miniature: a head that is CALIBRATED on the true
+    population scores badly on a loss-enriched capture, and the weights undo exactly that."""
+    # true population: 80% wins. The head says 0.8 everywhere — perfectly calibrated there.
+    # the capture keeps every loss but only a quarter of the wins.
+    n_win, n_loss = 200, 50
+    y = np.array([1.0] * n_win + [0.0] * n_loss)
+    p = np.full(y.size, 0.8)
+    captured_rate = n_win / y.size                       # 0.8 by construction here
+    assert captured_rate == pytest.approx(0.8)
+    unweighted = reliability_table(p, y)
+    assert unweighted["base_rate"] == pytest.approx(0.8)
+
+    # now the loss-enriched capture: same head, half the wins dropped.
+    y2 = np.array([1.0] * 100 + [0.0] * 50)
+    p2 = np.full(y2.size, 0.8)
+    raw = reliability_table(p2, y2)
+    assert raw["base_rate"] == pytest.approx(2 / 3)
+    assert raw["reliability"] > 0.017                    # looks miscalibrated — it is not
+    w = np.where(y2 > 0.5, 0.8 / (2 / 3), 0.2 / (1 / 3))
+    fixed = reliability_table(p2, y2, weights=w)
+    assert fixed["base_rate"] == pytest.approx(0.8)
+    assert fixed["reliability"] == pytest.approx(0.0, abs=1e-12)
+    assert fixed["ess"] < fixed["n"]                     # the correction costs sample
+
+
+def test_zero_weight_rows_are_excluded_from_every_statistic():
+    p = np.array([0.9, 0.9, 0.1])
+    y = np.array([1.0, 1.0, 1.0])
+    r = reliability_table(p, y, weights=np.array([1.0, 1.0, 0.0]))
+    assert r["brier"] == pytest.approx((0.1 ** 2))       # the 0.1/win row contributes nothing
+    assert r["n"] == 3 and r["ess"] == pytest.approx(2.0)
+
+
+def test_bad_weights_raise_rather_than_being_coerced():
+    with pytest.raises(ValueError, match="weights length"):
+        reliability_table([0.5, 0.5], [1.0, 0.0], weights=[1.0])
+    with pytest.raises(ValueError, match="negative weights"):
+        reliability_table([0.5, 0.5], [1.0, 0.0], weights=[1.0, -1.0])
+    allzero = reliability_table([0.5, 0.5], [1.0, 0.0], weights=[0.0, 0.0])
+    assert allzero["n"] == 2 and math.isnan(allzero["brier"])   # no data, not a zero

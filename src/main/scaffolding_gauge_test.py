@@ -16,7 +16,10 @@ import os
 import numpy as np
 import pytest
 
-from main.scaffolding_gauge import build_report, collect_slices, main, render, write_plot
+from main.scaffolding_gauge import (
+    SelectionWeightError, build_reliability, build_report, collect_slices, main, opponent_class,
+    render, selection_weights, true_win_rates, write_plot,
+)
 
 _OBS = 4
 
@@ -251,3 +254,213 @@ def test_the_plot_writes_a_png_or_says_why_it_did_not(tmp_path, report):
         assert not os.path.exists(png)
     else:
         assert os.path.getsize(png) > 1000
+
+
+# ══ the RELIABILITY block — opt-in, stratified, and OFF by default ════════════
+
+
+def _two_class_run(root: str) -> str:
+    """One step, two opponent CLASSES, opposite calibration errors.
+
+    `aggressive` (a BOT) is confidently right; `sentinel_0` (the POOL) says the same thing and is
+    wrong every time. Pooling the two averages a good forecaster with a terrible one, which is
+    precisely the ecology confound the stratification exists to prevent — so the fixture is built
+    to make the pooled row uninformative and the two class rows decisive.
+    """
+    run = os.path.join(root, "run_reliability_fixture")
+    for b in range(12):
+        won = b % 2 == 0
+        name = f"{'win' if won else 'loss'}_{b:03d}"
+        p = np.full(8, 0.9 if won else 0.1)
+        _battle(run, 5_000_000, "aggressive", name, np.linspace(-1, 1, 8), p)
+        # the pool side: the SAME forecasts, the OPPOSITE outcomes.
+        flip = f"{'loss' if won else 'win'}_{b:03d}"
+        _battle(run, 5_000_000, "sentinel_0", flip, np.linspace(-1, 1, 8), p)
+    with open(os.path.join(run, "metadata.json"), "w") as fh:
+        json.dump({"git_hash": "cafebabe"}, fh)
+    return run
+
+
+def test_the_reliability_block_is_ABSENT_unless_asked_for(tmp_path, capsys):
+    """The default JSON and the default render must not move — every existing consumer of this
+    artifact predates the block."""
+    run = _build_run(str(tmp_path))
+    assert main([run, "--boot", "20", "--out", str(tmp_path / "a.json"), "--quiet"]) == 0
+    doc = json.loads(open(str(tmp_path / "a.json")).read())
+    assert "reliability" not in doc
+    assert "RELIABILITY" not in capsys.readouterr().out
+
+
+def test_opponent_class_splits_sentinels_from_bots_by_name():
+    assert opponent_class("sentinel_0") == "pool"
+    assert opponent_class("sentinel_4") == "pool"
+    assert opponent_class("aggressive") == "bot"
+    assert opponent_class("staller_v2") == "bot"
+    assert opponent_class("random") == "bot"
+
+
+def test_the_two_opponent_CLASSES_are_scored_separately_and_the_pooled_row_hides_both(tmp_path):
+    """The stratification's reason for existing, as a measurement: same forecasts, opposite
+    outcomes ⇒ one class scores strongly POSITIVE skill and the other strongly negative, while the
+    pooled row lands between them and describes NEITHER. Quoted alone it would report a head that
+    is near-perfect on bots as a failure — the ecology confound (`win_prob_decomposition.md` axis
+    3) in its starkest form."""
+    run = _two_class_run(str(tmp_path))
+    slices, _ = collect_slices(run)
+    blocks = build_reliability(slices, n_boot=60, seed=0)
+    assert len(blocks) == 1
+    rows = {(r["kind"], r["name"]): r for r in blocks[0]["strata"]}
+    bot, pool, pooled = (rows[("class", "bot")]["skill"], rows[("class", "pool")]["skill"],
+                         rows[("all", "all")]["skill"])
+    assert bot > 0.5 and pool < -1.0
+    assert pool < pooled < bot                             # the pooled row describes neither
+    assert pooled < 0.0 < bot                              # and it INVERTS the bot verdict
+    assert rows[("class", "bot")]["n_battles"] == 12
+    assert set(rows) >= {("opponent", "aggressive"), ("opponent", "sentinel_0")}
+
+
+def test_every_stratum_carries_a_battle_clustered_interval_and_a_battle_count(tmp_path):
+    run = _two_class_run(str(tmp_path))
+    slices, _ = collect_slices(run)
+    for row in build_reliability(slices, n_boot=60, seed=0)[0]["strata"]:
+        assert row["n_battles"] >= 1
+        assert row["n"] == row["n_battles"] * 8            # 8 decisions per fixture battle
+        assert math.isfinite(row["brier_ci_lo"]) and row["brier_ci_lo"] <= row["brier_ci_hi"]
+
+
+def test_the_cli_flag_adds_the_block_the_units_entry_and_the_rendered_section(tmp_path, capsys):
+    run = _two_class_run(str(tmp_path))
+    out_json = str(tmp_path / "r.json")
+    assert main([run, "--boot", "20", "--reliability", "--reliability-bins", "5",
+                 "--out", out_json, "--quiet"]) == 0
+    text = capsys.readouterr().out
+    assert "(4) RELIABILITY" in text and "SELECTION" in text
+    doc = json.loads(open(out_json).read())
+    assert doc["reliability"][0]["bins"] == 5
+    assert len(doc["reliability"][0]["strata"][0]["table"]) == 5
+    # the standing rule: a published number ships what it CANNOT claim.
+    assert "cannot" in doc["units"]["reliability"]
+    assert "quota" in doc["units"]["reliability"]["cannot"]
+
+
+def test_constancy_and_reliability_together_keep_the_constancy_only_render(tmp_path, capsys):
+    """`--constancy` means 'print only that row'; asking for both must not reintroduce the tables
+    it exists to suppress, while the JSON still carries everything computed."""
+    run = _two_class_run(str(tmp_path))
+    out_json = str(tmp_path / "c.json")
+    assert main([run, "--boot", "20", "--constancy", "--reliability",
+                 "--out", out_json, "--quiet"]) == 0
+    text = capsys.readouterr().out
+    assert "RANK GAUGE" not in text and "(4) RELIABILITY" not in text
+    assert "reliability" in json.loads(open(out_json).read())
+
+
+# ══ the SELECTION reweighting — the capture quota is not the deployed population ══
+
+
+def _quota_run(root: str, *, true_win_rate: float = 0.9, kept_wins: int = 4,
+               kept_losses: int = 8, with_results: bool = True) -> str:
+    """A run whose eval CYCLE won at `true_win_rate` but whose recorder kept a loss-enriched slice.
+
+    The head says 0.9 on every decision — right for the cycle, and badly wrong for the capture.
+    That is the measured shape on `ai_v9_59_R2ACTION_0827` (captured 0.46 vs a recorded 0.90)
+    reduced to a fixture with a known answer.
+    """
+    run = os.path.join(root, "run_quota_fixture")
+    for b in range(kept_wins):
+        _battle(run, 7_000_000, "heuristic", f"win_{b:03d}", np.zeros(6), np.full(6, 0.9))
+    for b in range(kept_losses):
+        _battle(run, 7_000_000, "heuristic", f"loss_{b:03d}", np.zeros(6), np.full(6, 0.9))
+    if with_results:
+        with open(os.path.join(run, "eval_results.jsonl"), "w") as fh:
+            fh.write(json.dumps({"step": 7_000_000, "bots": {"heuristic": true_win_rate},
+                                 "sentinels": []}) + "\n")
+    with open(os.path.join(run, "metadata.json"), "w") as fh:
+        json.dump({"git_hash": "cafebabe"}, fh)
+    return run
+
+
+def test_true_win_rates_reads_the_runs_own_recorded_per_opponent_rates(tmp_path):
+    run = _quota_run(str(tmp_path))
+    assert true_win_rates(run) == {7_000_000: {"heuristic": 0.9}}
+
+
+def test_a_run_with_no_eval_results_REFUSES_rather_than_silently_going_unweighted(tmp_path):
+    """The refusal is the point: an unweighted table looks identical and answers a different
+    question, so a fall-back here would publish the wrong population under the right label."""
+    run = _quota_run(str(tmp_path), with_results=False)
+    with pytest.raises(SelectionWeightError, match="eval_results.jsonl"):
+        true_win_rates(run)
+
+
+def test_the_reweighting_moves_the_base_rate_onto_the_cycles_and_fixes_the_verdict(tmp_path):
+    run = _quota_run(str(tmp_path))
+    slices, _ = collect_slices(run)
+    raw = build_reliability(slices, n_boot=40, seed=0)[0]
+    rw = build_reliability(slices, n_boot=40, seed=0, reweight=true_win_rates(run))[0]
+    raw_all = next(r for r in raw["strata"] if r["kind"] == "all")
+    rw_all = next(r for r in rw["strata"] if r["kind"] == "all")
+
+    assert raw["reweighted"] is False and rw["reweighted"] is True
+    assert raw_all["base_rate"] == pytest.approx(4 / 12)          # the capture quota's
+    assert rw_all["base_rate"] == pytest.approx(0.9)              # the eval cycle's
+    # The verdict flips on RELIABILITY, which is the meter that answers "is this head
+    # calibrated": ~0.32 on the quota, ~0 on the population. Brier does NOT go to zero — a 0.9
+    # forecaster on a 0.9 population carries an irreducible 0.09 — and asserting that it would
+    # is the trap this comment exists to mark.
+    assert raw_all["reliability"] > 0.3
+    assert rw_all["reliability"] == pytest.approx(0.0, abs=1e-12)
+    assert rw_all["brier"] == pytest.approx(0.09)          # = the slice's own uncertainty
+    assert rw_all["skill"] == pytest.approx(0.0, abs=1e-12)
+    assert rw_all["ess"] < rw_all["n"]                            # the correction costs sample
+
+
+def test_weights_are_CONSTANT_within_a_battle_so_the_cluster_bootstrap_stays_valid(tmp_path):
+    """The reweighting must not break the clustering the intervals depend on."""
+    run = _quota_run(str(tmp_path))
+    slices, _ = collect_slices(run)
+    s = slices[7_000_000]
+    w, _ = selection_weights(s["outcomes"], s["battles"], s["opponents"], {"heuristic": 0.9})
+    for b in set(s["battles"].tolist()):
+        assert len(set(np.round(w[s["battles"] == b], 12).tolist())) == 1
+
+
+def test_an_opponent_with_only_one_captured_OUTCOME_CLASS_is_zeroed_and_NAMED(tmp_path):
+    """Nothing to reweight ⇒ weight 0 and a named reason. Leaving it at weight 1 would mix a
+    corrected population with an uncorrected one and label the whole thing corrected."""
+    run = _quota_run(str(tmp_path), kept_losses=0)
+    slices, _ = collect_slices(run)
+    s = slices[7_000_000]
+    with pytest.raises(SelectionWeightError, match="no usable opponent"):
+        selection_weights(s["outcomes"], s["battles"], s["opponents"], {"heuristic": 0.9})
+
+
+def test_an_opponent_with_no_recorded_true_rate_is_zeroed_and_named_not_silently_kept(tmp_path):
+    run = _quota_run(str(tmp_path))
+    slices, _ = collect_slices(run)
+    s = slices[7_000_000]
+    with pytest.raises(SelectionWeightError, match="no usable opponent"):
+        selection_weights(s["outcomes"], s["battles"], s["opponents"], {})
+
+
+def test_the_cli_reweight_flag_labels_the_render_and_records_the_selection_block(tmp_path, capsys):
+    run = _quota_run(str(tmp_path))
+    out_json = str(tmp_path / "rw.json")
+    assert main([run, "--boot", "20", "--reliability", "--reliability-reweight",
+                 "--out", out_json, "--quiet"]) == 0
+    text = capsys.readouterr().out
+    assert "SELECTION-REWEIGHTED" in text and "RAW capture quota" not in text
+    doc = json.loads(open(out_json).read())
+    sel = doc["reliability"][0]["selection"]["per_opponent"]["heuristic"]
+    assert sel["true_win_rate"] == 0.9
+    assert sel["captured_win_rate"] == pytest.approx(4 / 12)
+    assert sel["n_battles"] == 12
+
+
+def test_WITHOUT_the_reweight_flag_the_render_says_so_in_the_header(tmp_path, capsys):
+    """The label is not decoration — the two tables answer different questions and a reader who
+    cannot tell them apart will quote the wrong one."""
+    run = _quota_run(str(tmp_path))
+    assert main([run, "--boot", "20", "--reliability",
+                 "--out", str(tmp_path / "raw.json"), "--quiet"]) == 0
+    assert "RAW capture quota — NOT the deployed population" in capsys.readouterr().out
