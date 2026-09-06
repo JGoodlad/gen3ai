@@ -36,11 +36,21 @@ would make nothing closable and the census useless.  A committed *script* does
 protect it — a script names a run dir in order to load it — and prose still
 vetoes when it names an exact planned path.
 
+**TWO POLICIES live here.** ``--policy standing`` (the DEFAULT) is everything above
+and is unchanged. ``--policy tiered`` grades each run by ERA and by whether anything
+still reaches for it, and adds a rule for ``snapshots/`` — the archive's second
+largest consumer, which the standing policy leaves entirely alone. The tiers, the
+reference graph they are built on, and the owner's reason for the aggressive pre-v8
+tier live in the sibling module ``archive_grooming_tiers.py``.
+
 Run:
     python designs/research_state/measurements/archive_grooming_dryrun.py
+    python designs/research_state/measurements/archive_grooming_dryrun.py --policy tiered
 
     # what the owner would run to actually delete (NOT this pass):
     python designs/research_state/measurements/archive_grooming_dryrun.py --apply
+    python designs/research_state/measurements/archive_grooming_dryrun.py \
+        --policy tiered --apply
 
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 """
@@ -65,6 +75,10 @@ _SRC = os.path.join(_REPO, "src")
 if os.path.isdir(_SRC) and _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
+if _HERE not in sys.path:                    # so the sibling tiers module imports
+    sys.path.insert(0, _HERE)
+
+import archive_grooming_tiers as tiers  # noqa: E402  (after the sys.path bootstrap)
 from main.prober.groom import groom_run  # noqa: E402  (after the sys.path bootstrap)
 
 # ---------------------------------------------------------------- policy ----
@@ -172,9 +186,13 @@ def plan_checkpoints(
 
     note(steps[0], "first")
     note(steps[-1], "last")
-    for i, s in enumerate(steps):
-        if i % every == 0:
-            note(s, f"every-{every}th")
+    # ``every=0`` means NO stride — the ends and the pins only.  That is tier 3's
+    # rule, and it must not be spelled as a huge stride: `i % 10**9` still keeps
+    # index 0, which reads as "first" twice and hides the difference.
+    if every:
+        for i, s in enumerate(steps):
+            if i % every == 0:
+                note(s, f"every-{every}th")
 
     if latest_pin:
         pin_step = checkpoint_step(os.path.basename(latest_pin.strip()))
@@ -713,6 +731,243 @@ def build_census(models_dir: str, repo_root: str, recent_days: int = RECENT_DAYS
     }
 
 
+# ------------------------------------------------------- the TIERED census ----
+
+
+def _named_path_collisions(name: str, all_rel: "list[str]", refs: dict) -> "list[str]":
+    """Exact paths a committed file / the ledger names that this plan would delete.
+
+    Unchanged from the standing policy and deliberately shared: the veto is the
+    last-resort net under EVERY policy, so it must be one implementation.
+    """
+    named = refs["named_paths"].get(name, set())
+    return sorted(
+        p for p in all_rel
+        if any(nm == p or nm.startswith(p + "/")
+               or p.startswith(nm.rstrip("/") + "/")
+               or os.path.basename(nm) == os.path.basename(p)
+               for nm in named)
+    )
+
+
+def _standing_style_plan(r: dict, every: int, pinned: "set[str]") -> "tuple[list, dict, int, dict]":
+    """`checkpoints/` at the given stride + `eval_traces/` at the standing 3/1."""
+    run_dir = r["run_dir"]
+    ck_dir = os.path.join(run_dir, "checkpoints")
+    keep, delete = plan_checkpoints(r["checkpoint_names"], r["latest_pin"], pinned,
+                                    every=every)
+    del_paths = [os.path.join("checkpoints", d) for d in delete]
+    freed = 0
+    for d in delete:
+        try:
+            freed += os.path.getsize(os.path.join(ck_dir, d))
+        except OSError:
+            pass
+    tr = plan_traces(run_dir)
+    trace_paths = []
+    for e in tr["plan"]:
+        if e["action"] == "remove_step":
+            trace_paths.append(os.path.join("eval_traces", f"step_{e['step']}"))
+        elif e["action"] == "drop_snapshot":
+            trace_paths.append(
+                os.path.join("eval_traces", f"step_{e['step']}", "snapshot.zip"))
+    freed += tr["bytes_reclaimed"]
+    return del_paths + trace_paths, keep, freed, tr
+
+
+def build_census_tiered(models_dir: str, repo_root: str,
+                        recent_days: int = RECENT_DAYS,
+                        ledger_tail_lines: int = tiers.TIERED_LEDGER_TAIL_LINES,
+                        follow_symlinked_runs: bool = False) -> dict:
+    """The tiered policy.  The standing :func:`build_census` is untouched by it.
+
+    Discovery, the reference index, the symlink hold-out and the named-path veto
+    are the SAME code the standing policy runs — only the grading and the per-tier
+    plan differ, so a divergence between the two policies can only ever be a
+    deliberate one.
+    """
+    names = discover_runs(models_dir)
+    runs = {n: scan_run(models_dir, n) for n in names}
+    live = live_run_dirs(models_dir)
+    refs = build_reference_index(repo_root, names, ledger_tail_lines)
+    now = time.time()
+
+    graph = tiers.build_model_graph(runs)
+    tiers.assign_tiers(runs, live, refs, graph, recent_days, ledger_tail_lines,
+                       follow_symlinked_runs, now)
+
+    excluded_by_named_file: list[dict] = []
+    refusals: list[dict] = []
+
+    for n, r in runs.items():
+        r["plan"] = _empty_plan()
+        r["live_argv"] = live.get(n)
+        r["status"] = {0: "LIVE", 1: "REFERENCED"}.get(r["tier"], "CLOSED")
+        r["status_reasons"] = list(r["tier_reasons"])
+        r["referenced_by_runs"] = sorted(set(graph["referenced_by"].get(n, [])))
+        r["model_refs"] = graph["refs_out"].get(n, [])
+        if r["tier"] == 0:
+            r["plan"]["skipped"] = "tier 0 — LIVE or reached for by something live"
+            continue
+        if r.get("review_hold"):
+            # A HOLD suppresses the plan, it does not merely soften it — see
+            # tiers.REVIEW_HOLDS.  Held runs still appear in the review table.
+            r["plan"]["skipped"] = "REVIEW HOLD — " + r["review_hold"]
+            continue
+
+        pinned = graph["pinned_files"].get(n, set())
+        snap_keep, snap_reason = tiers.snapshots_verdict(n, graph, refs)
+
+        if r["tier"] == 4:
+            try:
+                p4 = tiers.plan_tier4(r["run_dir"], r["latest_pin"], pinned)
+            except tiers.TieredRefusal as exc:
+                refusals.append({"run": n, "reason": str(exc)})
+                r["plan"]["skipped"] = f"tier 4 REFUSED — {exc}"
+                r["plan"]["resolved"] = {"ok": False, "error": str(exc)}
+                continue
+            tiers.assert_safe_tiered(r["run_dir"], p4["delete"], p4["keep"])
+            all_rel, keep, freed = p4["delete"], p4["keep"], p4["bytes_freed"]
+            snap = tiers.plan_snapshots(r["run_dir"], keep=False,
+                                        keep_reason="tier 4 — the whole run is "
+                                                    "reduced to its record + final model")
+            snap["action"] = "delete" if snap["n_snapshots"] or snap["bytes"] else "absent"
+            resolved = p4["resolved"]
+        else:
+            every = (tiers.TIER3_CHECKPOINT_EVERY if r["tier"] == 3
+                     else CHECKPOINT_EVERY)
+            all_rel, keep, freed, _tr = _standing_style_plan(r, every, pinned)
+            _assert_safe(r["run_dir"],
+                         [os.path.join(r["run_dir"], p) for p in all_rel])
+            snap = tiers.plan_snapshots(r["run_dir"], snap_keep, snap_reason)
+            if snap["delete"]:
+                all_rel = all_rel + snap["delete"]
+                freed += snap["bytes"]
+            resolved = None
+
+        collisions = _named_path_collisions(n, all_rel, refs)
+        if collisions:
+            excluded_by_named_file.append({
+                "run": n, "collisions": collisions[:20],
+                "n_collisions": len(collisions),
+                "would_have_freed_gb": _gb(freed),
+                "named_by": refs["by_run"].get(n, [])[:6],
+            })
+            r["plan"] = _empty_plan()
+            r["plan"]["skipped"] = "a committed file or the ledger names a file in the plan"
+            r["status"] = "REFERENCED"
+            r["status_reasons"].append(
+                "a committed file / the ledger names a file the plan would delete")
+            continue
+
+        # `keep` keys are BARE filenames for the standing-shaped tiers (that is
+        # `plan_checkpoints`' contract, which the 34 standing tests pin) and
+        # run-relative paths for tier 4.  `keep_rel` is the normalised form, so
+        # the execution-time guard never has to know which tier it is holding.
+        keep_rel = (sorted(keep) if r["tier"] == 4
+                    else sorted(os.path.join("checkpoints", k) for k in keep))
+        r["plan"] = {
+            "delete": all_rel, "keep": keep, "keep_rel": keep_rel,
+            "bytes_freed": freed, "gb_freed": _gb(freed),
+            "checkpoints_deleted": sum(1 for p in all_rel
+                                       if p.startswith("checkpoint")),
+            "trace_steps_deleted": sum(1 for p in all_rel
+                                       if p.startswith("eval_traces")),
+            "snapshots_dropped": snap["n_snapshots"] if snap["action"] == "delete" else 0,
+            "snapshots": snap,
+        }
+        if resolved is not None:
+            r["plan"]["resolved"] = resolved
+
+    # the review flag is the SAME edge-visibility device the standing policy uses
+    needs_review = []
+    for n, r in sorted(runs.items()):
+        if not r["plan"]["delete"]:
+            continue
+        line = refs["ledger_anywhere"].get(n)
+        if line is not None:
+            needs_review.append({
+                "run": n, "ledger_line": line, "tier": r["tier"],
+                "gb_freed": _gb(r["plan"]["bytes_freed"]),
+                "generation": r["generation"],
+                "n_named_by_committed_prose": len(
+                    [o for o in refs["by_run"].get(n, [])
+                     if o != "ledger.md (tail)" and not _is_script(o)]),
+            })
+            r["review_flag"] = f"named at ledger.md:{line}, outside the tail window"
+
+    symlinked = [
+        {"run": n, "realpath": r["realpath"], "gb": _gb(r["sizes"]["total"]),
+         "status": r["status"], "generation": r["generation"], "tier": r["tier"]}
+        for n, r in sorted(runs.items()) if r["is_symlink"]
+    ]
+    total_bytes = sum(r["sizes"]["total"] for r in runs.values())
+    symlinked_bytes = sum(r["sizes"]["total"] for r in runs.values() if r["is_symlink"])
+    freed_bytes = sum(r["plan"]["bytes_freed"] for r in runs.values())
+    by_freed = sorted(runs.values(), key=lambda r: -r["plan"]["bytes_freed"])
+
+    return {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "models_dir": os.path.abspath(models_dir),
+        "repo_root": os.path.abspath(repo_root),
+        "applied": False,
+        "policy_name": "tiered",
+        "policy": {
+            "keep_trace_steps": KEEP_TRACE_STEPS,
+            "keep_snapshots": KEEP_SNAPSHOTS,
+            "checkpoint_every": CHECKPOINT_EVERY,
+            "tier3_checkpoint_every": tiers.TIER3_CHECKPOINT_EVERY,
+            "snapshot_thin_every": tiers.SNAPSHOT_THIN_EVERY,
+            "recent_days": recent_days,
+            "ledger_tail_lines": ledger_tail_lines,
+            "pre_v8_cutoff_mmdd": list(tiers.PRE_V8_CUTOFF_MMDD),
+            "tier4_keep_subdirs": sorted(tiers.TIER4_KEEP_SUBDIRS),
+            "tier4_keep_root_files": sorted(tiers.TIER4_KEEP_ROOT_FILES),
+            "touchable_subdirs": list(TOUCHABLE_SUBDIRS),
+            "protected_subdirs": sorted(PROTECTED_SUBDIRS),
+            "protected_files": sorted(PROTECTED_FILES),
+        },
+        "tiers": {
+            "table": tiers.tier_table(runs),
+            "snapshots": tiers.snapshot_counts(runs),
+            "refusals": refusals,
+        },
+        "totals": {
+            "n_runs": len(runs),
+            "n_live": sum(1 for r in runs.values() if r["status"] == "LIVE"),
+            "n_referenced": sum(1 for r in runs.values() if r["status"] == "REFERENCED"),
+            "n_closed": sum(1 for r in runs.values() if r["status"] == "CLOSED"),
+            "n_with_plan": sum(1 for r in runs.values() if r["plan"]["delete"]),
+            "archive_bytes": total_bytes,
+            "archive_gb": _gb(total_bytes),
+            "n_symlinked_runs": len(symlinked),
+            "symlinked_gb": _gb(symlinked_bytes),
+            "in_models_gb": _gb(total_bytes - symlinked_bytes),
+            "freed_bytes": freed_bytes,
+            "freed_gb": _gb(freed_bytes),
+            "freed_pct": round(100.0 * freed_bytes / total_bytes, 1) if total_bytes else 0.0,
+            "n_files_planned": sum(len(r["plan"]["delete"]) for r in runs.values()),
+            "n_excluded_by_named_file": len(excluded_by_named_file),
+            "n_needs_review": len(needs_review),
+            "n_tier4_refused": len(refusals),
+        },
+        "needs_review": needs_review,
+        "top20_by_gb_freed": [
+            {"run": r["name"], "gb_freed": _gb(r["plan"]["bytes_freed"]),
+             "generation": r["generation"], "status": r["status"],
+             "tier": r["tier"],
+             "checkpoints_deleted": r["plan"]["checkpoints_deleted"],
+             "trace_steps_deleted": r["plan"]["trace_steps_deleted"]}
+            for r in by_freed[:20] if r["plan"]["bytes_freed"] > 0
+        ],
+        "excluded_by_named_file": excluded_by_named_file,
+        "symlinked_runs": symlinked,
+        "runs": {n: {k: v for k, v in r.items()
+                     if k not in ("checkpoint_names", "_metadata")}
+                 for n, r in runs.items()},
+    }
+
+
 # --------------------------------------------------------------- rendering ----
 
 APPLY_CMD = (
@@ -722,13 +977,29 @@ APPLY_CMD = (
 )
 
 
+def apply_cmd(policy: str = "standing") -> str:
+    """The exact command that would EXECUTE this policy.  Run it from the MAIN
+    checkout — ``models/`` exists only there."""
+    if policy == "tiered":
+        return (
+            "cd /home/goodlad/dev/gen3ai && \\\n"
+            "export PYTHONPATH=$PYTHONPATH:src && \\\n"
+            "/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \\\n"
+            "  designs/research_state/measurements/archive_grooming_dryrun.py \\\n"
+            "  --policy tiered --apply"
+        )
+    return APPLY_CMD
+
+
 def render_markdown(c: dict) -> str:
     t = c["totals"]
     p = c["policy"]
+    policy_name = c.get("policy_name", "standing")
     L: list[str] = []
     A = L.append
 
     A("# Archive-grooming DRY RUN — `models/`\n")
+    A(f"*policy: **{policy_name}***\n")
     A(f"*Generated {c['generated_at']} · `{c['models_dir']}`*\n")
     A("> **NOTHING WAS DELETED IN THIS PASS.** This is a census; the plan below is what "
       "the retention policy *would* do, and it was produced with `--apply` absent.\n")
@@ -747,11 +1018,24 @@ def render_markdown(c: dict) -> str:
     A(f"| LIVE / REFERENCED / CLOSED | {t['n_live']} / {t['n_referenced']} / {t['n_closed']} |")
     A(f"| runs vetoed by a named file | {t['n_excluded_by_named_file']} |")
     A(f"| **CLOSED runs needing review** | **{t['n_needs_review']}** |")
+    if "n_tier4_refused" in t:
+        A(f"| tier-4 runs REFUSED (no resolvable final model) | {t['n_tier4_refused']} |")
     A("")
 
+    if policy_name == "tiered":
+        A(tiers.render_tiered(c))
+
     A("## The policy\n")
-    A(f"Applied to **CLOSED runs only**, and only inside "
-      f"`{'`, `'.join(p['touchable_subdirs'])}`.\n")
+    if policy_name == "tiered":
+        A("Applied per TIER (above). Tiers 1-3 stay inside "
+          f"`{'`, `'.join(p['touchable_subdirs'])}` plus `snapshots/`; tier 4 works "
+          "from a KEEP-LIST instead and is guarded by `assert_safe_tiered`. The rules "
+          "below describe the tier-1/2 body of the policy, which is the standing one "
+          f"verbatim (tier 3 differs only in taking no every-{p['checkpoint_every']}th "
+          "stride).\n")
+    else:
+        A(f"Applied to **CLOSED runs only**, and only inside "
+          f"`{'`, `'.join(p['touchable_subdirs'])}`.\n")
     A(f"- **`checkpoints/`** — keep the FIRST, the LAST, every {p['checkpoint_every']}th, "
       "whatever `latest.txt` pins, and any checkpoint another run's `lineage` block "
       "resolved to. A `.json` sidecar is kept or dropped with its `.zip`, by STEP.")
@@ -761,18 +1045,32 @@ def render_markdown(c: dict) -> str:
     A(f"- **Never touched**: `{'`, `'.join(p['protected_subdirs'])}`, and the run-root "
       f"files `{'`, `'.join(p['protected_files'])}`. `_assert_safe` re-checks every "
       "planned path against these before the plan is reported or executed.")
-    A(f"- A run is REFERENCED — and therefore untouched — if a launcher process names it, "
-      f"the ledger's last {p['ledger_tail_lines']} lines name it, a committed **script** "
-      f"names it, it is v8-era, it was touched within {p['recent_days']} days, or it is "
-      "a (transitive) fork parent of a LIVE run.")
+    if policy_name == "tiered":
+        A(f"- A run is **tier 0** if a launcher process names it, its training output "
+          f"was written within {p['recent_days']} days, its run dir is a symlink, or it "
+          "is a (transitive) model-graph ancestor of any of those. It is **tier 1** if "
+          f"the ledger's last {p['ledger_tail_lines']} lines name it, a committed "
+          "**script** names it, a committed **measurement artifact** names it, or "
+          "another run's model graph names it. The v8-era blanket is RETIRED — the "
+          "model graph replaces it, and reads `original_command` as well as `lineage`.")
+    else:
+        A(f"- A run is REFERENCED — and therefore untouched — if a launcher process names it, "
+          f"the ledger's last {p['ledger_tail_lines']} lines name it, a committed **script** "
+          f"names it, it is v8-era, it was touched within {p['recent_days']} days, or it is "
+          "a (transitive) fork parent of a LIVE run.")
     A("- Prose that merely *mentions* a run does **not** protect it — the historical "
       "record names nearly every run forever, so a `.md` mention as a live reference "
       "would close nothing. A committed script does protect it (a script names a run "
       "dir in order to load it), and prose still **vetoes** when it names an exact "
       "path the plan would delete.")
-    A("- `snapshots/` (the self-play pool) is **out of scope** even though it is the "
-      "second-largest consumer — the standing policy says nothing about it, so this "
-      "pass measures it and proposes nothing.\n")
+    if policy_name == "tiered":
+        A("- `snapshots/` (the self-play pool) HAS a rule here — see *The snapshots "
+          "rule* above. It is the second-largest consumer in the archive and the "
+          "standing policy leaves it entirely alone.\n")
+    else:
+        A("- `snapshots/` (the self-play pool) is **out of scope** even though it is the "
+          "second-largest consumer — the standing policy says nothing about it, so this "
+          "pass measures it and proposes nothing.\n")
 
     A("## Top 20 runs by GB freed\n")
     A("| # | run | generation | GB freed | ckpts deleted | trace steps deleted |")
@@ -834,13 +1132,16 @@ def render_markdown(c: dict) -> str:
 
     A("## Per-run census\n")
     A("Sizes in GB. `plan GB` is 0 for every run that is not CLOSED.\n")
-    A("| run | gen | cfg | status | ckpts | best | snaps | traces | tb | other | total | plan GB |")
-    A("|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+    A("| run | gen | cfg | " + ("tier | " if policy_name == "tiered" else "")
+      + "status | ckpts | best | snaps | traces | tb | other | total | plan GB |")
+    A("|---|---|---:|" + ("---:|" if policy_name == "tiered" else "")
+      + "---|---:|---:|---:|---:|---:|---:|---:|---:|")
     for n in sorted(c["runs"], key=lambda k: -c["runs"][k]["sizes"]["total"]):
         r = c["runs"][n]
         s = r["sizes"]
         cfg = r["config_version"] if r["config_version"] is not None else "—"
-        A(f"| `{n}` | {r['generation']} | {cfg} | {r['status']} | "
+        tcol = f"{r.get('tier', '')} | " if policy_name == "tiered" else ""
+        A(f"| `{n}` | {r['generation']} | {cfg} | {tcol}{r['status']} | "
           f"{_gb(s['checkpoints'])} | {_gb(s['best_model'])} | {_gb(s['snapshots'])} | "
           f"{_gb(s['eval_traces'])} | {_gb(s['tb'])} | {_gb(s['other'])} | "
           f"{_gb(s['total'])} | {_gb(r['plan']['bytes_freed'])} |")
@@ -865,13 +1166,19 @@ def render_markdown(c: dict) -> str:
         A(f"<details><summary><code>{n}</code> — {_gb(r['plan']['bytes_freed'])} GB freed, "
           f"{len(r['plan']['delete'])} entries deleted</summary>\n")
         A("**KEEP**\n")
+        tier4 = r.get("tier") == 4
         for f, reason in sorted(r["plan"]["keep"].items()):
-            A(f"- `checkpoints/{f}` — {reason}")
-        A("- `best_model/`, `snapshots/`, `tb/`, `snapshot_ladder/`, `cf_*`, `elo/`, "
-          "`metadata.json`, `model_config.json`, `latest.txt`, `eval_results.jsonl` "
-          "— never candidates")
-        A(f"- the {KEEP_TRACE_STEPS} most-recent `eval_traces/step_*` "
-          f"(+ `snapshot.zip` on the newest {KEEP_SNAPSHOTS}) — `prober.groom` retention\n")
+            A(f"- `{f if tier4 else 'checkpoints/' + f}` — {reason}")
+        if tier4:
+            A("- everything else in the run dir is DELETED — the keep-list above IS "
+              "the policy\n")
+        else:
+            A("- `best_model/`, `tb/`, `snapshot_ladder/`, `cf_*`, `elo/`, "
+              "`metadata.json`, `model_config.json`, `latest.txt`, `eval_results.jsonl` "
+              "— never candidates")
+            A(f"- the {KEEP_TRACE_STEPS} most-recent `eval_traces/step_*` "
+              f"(+ `snapshot.zip` on the newest {KEEP_SNAPSHOTS}) — `prober.groom` "
+              "retention\n")
         A("**DELETE**\n")
         for d in r["plan"]["delete"]:
             A(f"- `{d}`")
@@ -881,8 +1188,12 @@ def render_markdown(c: dict) -> str:
 
     A("## To actually apply this\n")
     A("```bash")
-    A(APPLY_CMD)
+    A(apply_cmd(policy_name))
     A("```\n")
+    if policy_name == "tiered":
+        A("Run it from the **main checkout** — `models/` exists only there — and read "
+          "*REVIEW BEFORE APPLYING* first. `--policy standing` (the default) is the "
+          "gentler pass and is still available unchanged.\n")
     A("**Nothing was deleted in this pass — this was a dry run, and it wrote only the "
       "two report files.**\n")
     return "\n".join(L)
@@ -901,7 +1212,19 @@ def apply_plan(census: dict) -> dict:
         rels = r["plan"]["delete"]
         if not rels:
             continue
-        _assert_safe(run_dir, [os.path.join(run_dir, p) for p in rels])
+        # RE-CHECK at execution time, under the rules of the tier that produced the
+        # plan — never under a weaker set.  Tier 4 reaches outside the two touchable
+        # subdirs by design, so it is guarded positively by its own keep-list; every
+        # other plan is still held to `_assert_safe`.
+        keep_rel = r["plan"].get("keep_rel") or []
+        if r.get("tier") == 4:
+            tiers.assert_safe_tiered(run_dir, rels, keep_rel)
+        else:
+            pool = [p for p in rels if p == tiers.SNAPSHOT_DIR]
+            rest = [p for p in rels if p != tiers.SNAPSHOT_DIR]
+            if pool:
+                tiers.assert_safe_tiered(run_dir, pool, keep_rel)
+            _assert_safe(run_dir, [os.path.join(run_dir, p) for p in rest])
         for rel in rels:
             full = os.path.join(run_dir, rel)
             try:
@@ -936,12 +1259,19 @@ def main(argv: "list[str] | None" = None) -> int:
     p.add_argument("--models-dir", default=None,
                    help="the run archive (default: $GEN3AI_MODELS_DIR, else <repo>/models)")
     p.add_argument("--repo-root", default=_REPO, help="checkout to scan for references")
-    p.add_argument("--out-prefix",
-                   default=os.path.join(_HERE, "archive_grooming_dryrun_2026-09-06"),
-                   help="write <prefix>.md and <prefix>.json")
+    p.add_argument("--out-prefix", default=None,
+                   help="write <prefix>.md and <prefix>.json (default: named after "
+                        "the POLICY, so a tiered pass can never clobber the standing "
+                        "report or the other way round)")
+    p.add_argument("--policy", choices=("standing", "tiered"), default="standing",
+                   help="standing (the DEFAULT, unchanged): one rule for every CLOSED "
+                        "run. tiered: grade by era + who still reaches for the run, "
+                        "and add a snapshots rule (see archive_grooming_tiers.py)")
     p.add_argument("--recent-days", type=int, default=RECENT_DAYS,
                    help="a run touched this recently counts as REFERENCED (0 disables)")
-    p.add_argument("--ledger-tail-lines", type=int, default=1000)
+    p.add_argument("--ledger-tail-lines", type=int, default=None,
+                   help="default: 1000 under --policy standing, "
+                        f"{tiers.TIERED_LEDGER_TAIL_LINES} under --policy tiered")
     p.add_argument("--follow-symlinked-runs", action="store_true",
                    help="include run dirs that are SYMLINKS into launcher worktrees "
                         "(their data is not under models/; held out by default)")
@@ -956,24 +1286,54 @@ def main(argv: "list[str] | None" = None) -> int:
         print(f"no run archive at {models_dir} — nothing to census", file=sys.stderr)
         return 2
 
-    census = build_census(models_dir, args.repo_root, args.recent_days,
-                          args.ledger_tail_lines, args.follow_symlinked_runs)
+    out_prefix = args.out_prefix
+    if out_prefix is None:
+        out_prefix = os.path.join(
+            _HERE, "archive_grooming_dryrun_2026-09-06" if args.policy == "standing"
+            else "archive_grooming_tiered_2026-09-06")
+
+    tail = args.ledger_tail_lines
+    if tail is None:
+        tail = tiers.TIERED_LEDGER_TAIL_LINES if args.policy == "tiered" else 1000
+    if args.policy == "tiered":
+        census = build_census_tiered(models_dir, args.repo_root, args.recent_days,
+                                     tail, args.follow_symlinked_runs)
+    else:
+        census = build_census(models_dir, args.repo_root, args.recent_days,
+                              tail, args.follow_symlinked_runs)
     if args.apply:
         census = apply_plan(census)
 
     if not args.no_write:
-        with open(args.out_prefix + ".json", "w") as fh:
+        with open(out_prefix + ".json", "w") as fh:
             json.dump(census, fh, indent=1, default=str)
-        with open(args.out_prefix + ".md", "w") as fh:
+        with open(out_prefix + ".md", "w") as fh:
             fh.write(render_markdown(census))
 
     t = census["totals"]
+    print(f"policy                  {census.get('policy_name', 'standing')}")
     print(f"runs                    {t['n_runs']}")
     print(f"archive                 {t['archive_gb']} GB")
     print(f"policy would free       {t['freed_gb']} GB ({t['freed_pct']}%)")
     print(f"LIVE/REFERENCED/CLOSED  {t['n_live']}/{t['n_referenced']}/{t['n_closed']}")
     print(f"vetoed by a named file  {t['n_excluded_by_named_file']}")
-    print(f"NEEDS REVIEW            {t['n_needs_review']} CLOSED runs the ledger "
+    if "tiers" in census:
+        print()
+        print("per tier:   tier  who              runs    GB now   GB freed")
+        for row in census["tiers"]["table"]:
+            print(f"            {row['tier']:>4}  {row['name']:<15} {row['n_runs']:>4} "
+                  f"{row['gb_now']:>9} {row['gb_freed']:>10}")
+        s = census["tiers"]["snapshots"]
+        print(f"snapshots:  {s['kept']} pools KEPT ({s['gb_kept']} GB) · "
+              f"{s['deleted']} FREED ({s['gb_freed']} GB) · "
+              f"proposed thinning of the kept ones would free {s['gb_thin_proposal']} GB")
+        if census["tiers"]["refusals"]:
+            print(f"tier-4 REFUSED (no resolvable final model): "
+                  f"{len(census['tiers']['refusals'])}")
+            for e in census["tiers"]["refusals"][:10]:
+                print(f"    {e['run']}: {e['reason'][:120]}")
+        print()
+    print(f"NEEDS REVIEW            {t['n_needs_review']} runs with a plan the ledger "
           f"names outside its tail")
     for e in census["needs_review"]:
         print(f"    {e['run']:<44} {e['gb_freed']:>7} GB  ledger.md:{e['ledger_line']}")
@@ -989,7 +1349,7 @@ def main(argv: "list[str] | None" = None) -> int:
             print(f"  ERROR {e}")
     else:
         print("NOTHING WAS DELETED IN THIS PASS — dry run.")
-        print("To apply:\n" + APPLY_CMD)
+        print("To apply:\n" + apply_cmd(census.get("policy_name", "standing")))
     return 0
 
 

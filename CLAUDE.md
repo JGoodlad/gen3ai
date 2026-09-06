@@ -2307,6 +2307,26 @@ resume-immutable training hparams. `_run_roundtrip_test()` in `train_rl_agent.py
 before every `model.learn()` (save → reload → zero forward pass), so serialization breakage
 crashes in seconds rather than hours.
 
+### What `models/` keeps — the retention policy
+
+The archive is **257.4 GB over 218 runs** (2026-09-06) and nothing in it is reproducible, so the
+retention rules are written down and executed by ONE tool rather than by habit:
+**[`designs/research_state/models_retention_policy.md`](designs/research_state/models_retention_policy.md)**
+is the policy of record and
+`designs/research_state/measurements/archive_grooming_dryrun.py` is the tool. It carries **two**
+policies. `--policy standing` (the DEFAULT, unchanged) asks only *is this run CLOSED?* and touches
+only `checkpoints/` (first + last + every 10th + the `latest.txt` pin) and `eval_traces/`
+(`prober.groom` 3/1) — 18.8 GB. `--policy tiered` grades each run by ERA and by whether anything
+still reaches for it (**tier 0 LIVE** → untouched · **1 REFERENCED** any era · **2 v9+ CLOSED** ·
+**3 v8 CLOSED** no every-10th · **4 PRE-v8 aggressive keep-list**, on the owner's 2026-09-06
+instruction quoted verbatim in the doc), and adds the rule `snapshots/` never had — 87.9 GB.
+🚨 Two facts a reader needs before touching either: the standing policy structurally **cannot see
+the 20.8 GB of LEGACY root-level checkpoints** 13 pre-v8 runs carry (it only looks inside
+`checkpoints/`), and **an artifact that ENUMERATES the archive is not a reference to anything in
+it** — the committed census names every run by construction, and reading it as evidence put all 118
+non-tier-0 runs in tier 1 on the first tiered pass. **Both policies have been run as DRY RUNS only;
+nothing has been deleted.** `tb/` is never thinned under either.
+
 The architecture-constant single source of truth is `src/agents/model/arch_constants.py`
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`, `ACTIVE_CTX_HIDDEN`,
 `N_HISTORY_TURNS`, …); `ARCH_SIGNATURE` and `MODEL_CONFIG_VERSION` live in

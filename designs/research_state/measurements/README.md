@@ -72,6 +72,16 @@ post-fix number. **`dv_mean` is unaffected** (the critic delta never touches the
 | `gen14_route_audit_12391.json` | 14 | 25M | 12391 | 2026-08-18 | Raw critic-route arms behind §2/§3/§4 |
 | `gen14_family_audit_12391.json` | 14 | 25M | 12391 | 2026-08-18 | Raw edge-family ablation behind §5 |
 | `gen14_pool_refresh_compile_cost.json` | 14 | 4.0M | 2 events | 2026-08-17 | Cost of a self-play pool promotion under `--compile-opponents`: **+77 s recurring (~2.7%)**; the +1095 s first event is a one-time self-play activation, not a promotion |
+| `archive_grooming_dryrun_2026-09-06.{json,md}` | — | — | 218 runs | 2026-09-06 | **`--policy standing`** (the DEFAULT): one rule for every CLOSED run, `checkpoints/` + `eval_traces/` only — would free **18.8 GB of 257.1**. **DRY RUN; nothing deleted.** |
+| `archive_grooming_tiered_2026-09-06.{json,md}` | — | — | 218 runs | 2026-09-06 | **`--policy tiered`**: graded by ERA and by who still reaches for the run (tier 0 LIVE / 1 REFERENCED / 2 v9+ / 3 v8 / 4 pre-v8 keep-list) **plus the first `snapshots/` rule** — would free **87.9 GB of 257.4 (34.1%)**, incl. 377 legacy ROOT-level checkpoints the standing policy structurally cannot see. **DRY RUN; nothing deleted.** |
+
+⚠️ **The two grooming reports above are BOOKKEEPING, not references.** They name every run in
+`models/` by construction, so the tool excludes its own reports (and `fh_lineage*` /
+`sidecar_audit*` / `folding_history_*`) when deciding whether a run is still referenced — reading
+them as evidence put all 118 non-tier-0 runs in tier 1 on the first tiered pass and graded nothing.
+Producer: `archive_grooming_dryrun.py` + `archive_grooming_tiers.py`, both committed here with
+81 tests across `archive_grooming_dryrun_test.py` (34) and `archive_grooming_tiered_test.py` (47).
+Policy of record: [`../models_retention_policy.md`](../models_retention_policy.md).
 
 ⚠️ **The index above is PARTIAL** — it was built when this directory held ~16 records and the
 directory now holds ~60. An unlisted file is not an unofficial one; read its `provenance` block (and
