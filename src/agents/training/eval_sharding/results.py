@@ -63,6 +63,12 @@ class ShardResult:
     sum_ep_len: float        # Σ turns over finished battles
     duration_sec: float
     td_residuals: list[float] = field(default_factory=list)  # raw per-decision δ from captured battles
+    # How many of this shard's battles the FORENSIC QUOTA actually persisted as traces, split by
+    # outcome. Additive like everything else here, so the parent pools them exactly. Defaulted so a
+    # shard file written before `gen3_trace_selection_manifest_v1` still reads back — its counts are
+    # then 0 and the cycle reports as SELECTION UNKNOWN, never as "captured nothing".
+    traces_written: int = 0
+    traces_won: int = 0
 
 
 @dataclass
@@ -77,6 +83,8 @@ class OpponentResult:
     n_finished: int
     n_shards_done: int
     n_shards_total: int
+    traces_written: int = 0
+    traces_won: int = 0
 
     @property
     def coverage(self) -> float:
@@ -123,6 +131,7 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
     out: dict[str, OpponentResult] = {}
     for key, item_units in by_item.items():
         n_won = n_finished = n_episodes = 0
+        traces_written = traces_won = 0
         sum_reward = sum_ep_len = duration = 0.0
         pooled_resid: list[float] = []
         done = 0
@@ -137,6 +146,8 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
             sum_reward += r.sum_reward
             sum_ep_len += r.sum_ep_len
             duration += r.duration_sec
+            traces_written += r.traces_written
+            traces_won += r.traces_won
             pooled_resid.extend(r.td_residuals)
         if done == 0:
             continue  # fully missing opponent — caller reports it as missing, exactly as before
@@ -150,6 +161,8 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
             n_finished=n_finished,
             n_shards_done=done,
             n_shards_total=len(item_units),
+            traces_written=traces_written,
+            traces_won=traces_won,
         )
     return out
 
@@ -164,7 +177,8 @@ def to_merged(per_opponent: dict[str, OpponentResult]) -> dict:
     ``coverage`` ({key: fraction}) rides alongside for partial-coverage warnings.
     """
     merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
-              "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {}}
+              "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {},
+              "traces": {}}
     for key, r in per_opponent.items():
         merged["win_rates"][key] = r.win_rate
         merged["reward_means"][key] = r.reward_mean
@@ -173,5 +187,8 @@ def to_merged(per_opponent: dict[str, OpponentResult]) -> dict:
             merged["td_resid_tails"][key] = r.td_resid_tail
         merged["durations_sec"][key] = r.duration_sec
         merged["counts"][key] = (r.n_won, r.n_finished)
+        # (traces_won, traces_written) — what the forensic QUOTA persisted, so the per-cycle
+        # manifest can state the SELECTION rather than leaving every consumer to assume uniform.
+        merged["traces"][key] = (r.traces_won, r.traces_written)
         merged["coverage"][key] = r.coverage
     return merged

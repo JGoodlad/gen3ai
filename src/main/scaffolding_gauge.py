@@ -45,11 +45,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+
+from agents.training import trace_selection
 
 #: Shipped inside the artifact: what each gauge may and may not be quoted for.
 UNITS: Dict[str, Dict[str, str]] = {
@@ -499,14 +502,58 @@ def _sentinel_names_in_manifest_order(step_dir: str) -> List[str]:
     return [str(o) for o in opponents if opponent_class(str(o)) == "pool"]
 
 
-def true_win_rates(run_dir: str) -> Dict[int, Dict[str, float]]:
-    """``{step: {opponent: true win rate}}`` from the run's own ``eval_results.jsonl``.
+def manifest_win_rates_by_step(run_dir: str) -> Dict[int, Dict[str, float]]:
+    """``{step: {opponent: win rate}}`` read from each cycle's OWN ``eval_manifest.json``.
 
-    This is the population the reweighting targets: the FULL eval cycle the traces were sampled
-    out of, whose per-opponent rates the run already recorded. It is not an outside estimate.
+    The PREFERRED source (`gen3_trace_selection_manifest_v1`), because the manifest states the
+    cycle's per-opponent played/won counts in the same file as the traces they produced — no join,
+    and in particular **no positional sentinel join** of the kind
+    :func:`_sentinel_names_in_manifest_order` has to make against ``eval_results.jsonl``.
+
+    A tree that records no selection returns ``{}``, which is what makes the fall-back below
+    byte-identical on every legacy run.
     """
+    out: Dict[int, Dict[str, float]] = {}
+    root = os.path.join(run_dir, "eval_traces")
+    if not os.path.isdir(root):
+        return out
+    for name in sorted(os.listdir(root)):
+        m = re.match(r"^step_(\d+)$", name)
+        if not m:
+            continue
+        mpath = os.path.join(root, name, "eval_manifest.json")
+        if not os.path.exists(mpath):
+            continue
+        try:
+            with open(mpath) as fh:
+                manifest = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        rates = trace_selection.manifest_win_rates(manifest)
+        if rates:
+            out[int(m.group(1))] = rates
+    return out
+
+
+def true_win_rates(run_dir: str) -> Dict[int, Dict[str, float]]:
+    """``{step: {opponent: true win rate}}`` — the population the reweighting targets.
+
+    The FULL eval cycle the traces were sampled out of, whose per-opponent rates the run already
+    recorded. Not an outside estimate.
+
+    TWO SOURCES, in preference order. The per-cycle **`eval_manifest.json`** selection block wins
+    where it exists: it is written by the same cycle into the same directory as the traces, so it
+    needs no cross-file join. Everything it does not cover falls back to **`eval_results.jsonl`**
+    with the existing positional-sentinel behaviour, unchanged. A run with neither REFUSES.
+
+    On a legacy tree the manifest half is empty and this returns exactly what the jsonl half always
+    returned, value for value — the numbers this tool prints there do not move.
+    """
+    from_manifest = manifest_win_rates_by_step(run_dir)
     path = os.path.join(run_dir, "eval_results.jsonl")
     if not os.path.exists(path):
+        if from_manifest:
+            return from_manifest
         raise SelectionWeightError(
             f"--reliability-reweight needs the run's recorded per-opponent win rates and "
             f"{path!r} does not exist. Without it the true eval population is unknown, and an "
@@ -534,7 +581,81 @@ def true_win_rates(run_dir: str) -> Dict[int, Dict[str, float]]:
                     if s.get("win_rate") is not None:
                         rates[name] = float(s["win_rate"])
             out[int(step)] = rates
+    # The manifest is PREFERRED per (step, opponent): it is the cycle's own record, in the same
+    # directory as the traces. Where it says nothing, the jsonl's value survives untouched — which
+    # on a legacy tree is every value, so nothing this tool prints there moves.
+    for step, rates in from_manifest.items():
+        out.setdefault(step, {}).update(rates)
     return out
+
+
+def win_rate_sources(run_dir: str) -> Dict[int, str]:
+    """``{step: source}`` — WHERE each step's true rates came from, for the report's provenance.
+
+    ``"eval_manifest"`` (the cycle's own selection block), ``"eval_results.jsonl"`` (the legacy
+    join), or ``"mixed"``. Reported rather than assumed, because the two sources can disagree —
+    the jsonl route infers sentinel names BY POSITION and the manifest route does not.
+    """
+    from_manifest = manifest_win_rates_by_step(run_dir)
+    has_jsonl = os.path.exists(os.path.join(run_dir, "eval_results.jsonl"))
+    steps = set(from_manifest)
+    if has_jsonl:
+        try:
+            steps |= set(true_win_rates(run_dir))
+        except SelectionWeightError:
+            pass
+    out: Dict[int, str] = {}
+    for step in sorted(steps):
+        in_m = step in from_manifest
+        out[step] = ("mixed" if (in_m and has_jsonl)
+                     else "eval_manifest" if in_m else "eval_results.jsonl")
+    return out
+
+
+def build_trace_selection_block(run_dir: str) -> Dict[str, Any]:
+    """What the traces are a SAMPLE OF, read off the trace tree itself.
+
+    Per step: whether that cycle recorded a selection, the rule in words, the per-opponent capture
+    rates, and which source the reweighting would take its true rates from. A step that records
+    nothing is reported as ``known: false`` with the standing UNKNOWN label — never omitted and
+    never defaulted to uniform, because "we did not record the quota" and "the quota was uniform"
+    are different facts and only one of them is true here.
+    """
+    sources = win_rate_sources(run_dir)
+    root = os.path.join(run_dir, "eval_traces")
+    steps: Dict[str, Any] = {}
+    n_known = 0
+    if os.path.isdir(root):
+        for name in sorted(os.listdir(root)):
+            m = re.match(r"^step_(\d+)$", name)
+            if not m:
+                continue
+            step = int(m.group(1))
+            manifest = None
+            mpath = os.path.join(root, name, "eval_manifest.json")
+            if os.path.exists(mpath):
+                try:
+                    with open(mpath) as fh:
+                        manifest = json.load(fh)
+                except (OSError, ValueError):
+                    manifest = None
+            rates = trace_selection.capture_rates(manifest)
+            n_known += 1 if rates else 0
+            steps[str(step)] = {
+                "known": bool(rates),
+                "rule": trace_selection.selection_rule(manifest),
+                "label": trace_selection.describe_selection(manifest),
+                "per_opponent": rates,
+                "true_win_rate_source": sources.get(step),
+            }
+    return {
+        "schema": trace_selection.SELECTION_SCHEMA,
+        "n_steps": len(steps),
+        "n_steps_with_selection": n_known,
+        "any_unknown": n_known < len(steps),
+        "unknown_label": trace_selection.UNKNOWN_LABEL,
+        "steps": steps,
+    }
 
 
 def selection_weights(
@@ -631,6 +752,14 @@ def render_reliability(report: Dict[str, Any]) -> str:
     lines.append("      play, and the quota over-captures losses. The labels are per-BATTLE and")
     lines.append("      broadcast to every decision of that battle. Read `bot` and `pool`")
     lines.append("      separately — the head's bias is measured to FLIP SIGN between them.")
+    # What this tree RECORDS about that quota — the label, per step. A step with no record is
+    # named as UNKNOWN rather than left to read as uniform.
+    sel = report.get("trace_selection") or {}
+    for step in sorted((sel.get("steps") or {}), key=lambda s: int(s)):
+        e = sel["steps"][step]
+        src = e.get("true_win_rate_source") or "none"
+        lines.append(f"      step {int(step):,}: {e['label']}")
+        lines.append(f"        true-rate source for --reliability-reweight: {src}")
     return "\n".join(lines)
 # --------------------------------------------------------------------------- entry point
 
@@ -664,9 +793,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "subsample (measured on ai_v9_59_R2ACTION_0827: captured outcome rate "
                          "0.46 against a recorded 0.90 vs bots), so an unweighted table scores the "
                          "head on a population it was never deployed against. This importance-"
-                         "weights each opponent's rows back to the win/loss mix its own "
-                         "eval_results.jsonl row recorded. REFUSES rather than falling back when "
-                         "the true rates cannot be resolved.")
+                         "weights each opponent's rows back to the win/loss mix the cycle itself "
+                         "recorded — PREFERRING each cycle's own eval_manifest.json selection "
+                         "block, falling back to eval_results.jsonl where it has none. REFUSES "
+                         "rather than falling back to unweighted when neither can be resolved.")
     ap.add_argument("--quiet", action="store_true")
     return ap
 
@@ -683,6 +813,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     say(f"{len(slices)} step slices, {coverage['n_traces_read']} traces read")
     report = build_report(slices, coverage, run_dir=run_dir, n_boot=args.boot, seed=args.seed)
     if args.reliability:
+        # WHAT THE TRACES ARE A SAMPLE OF — the recorder's quota, read off the tree itself
+        # (`gen3_trace_selection_manifest_v1`). Present under --reliability whether or not the
+        # tree records one: absent reads as SELECTION UNKNOWN, never as uniform.
+        report["trace_selection"] = build_trace_selection_block(run_dir)
         rw = true_win_rates(run_dir) if args.reliability_reweight else None
         report["reliability"] = build_reliability(
             slices, bins=args.reliability_bins, n_boot=args.boot, seed=args.seed, reweight=rw)

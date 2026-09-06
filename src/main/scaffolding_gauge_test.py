@@ -16,9 +16,11 @@ import os
 import numpy as np
 import pytest
 
+from agents.training.trace_selection import build_selection, forensic_selection_rule
 from main.scaffolding_gauge import (
-    SelectionWeightError, build_reliability, build_report, collect_slices, main, opponent_class,
-    render, selection_weights, true_win_rates, write_plot,
+    SelectionWeightError, build_reliability, build_report, build_trace_selection_block,
+    collect_slices, main, manifest_win_rates_by_step, opponent_class, render, selection_weights,
+    true_win_rates, win_rate_sources, write_plot,
 )
 
 _OBS = 4
@@ -464,3 +466,122 @@ def test_WITHOUT_the_reweight_flag_the_render_says_so_in_the_header(tmp_path, ca
     assert main([run, "--boot", "20", "--reliability",
                  "--out", str(tmp_path / "raw.json"), "--quiet"]) == 0
     assert "RAW capture quota — NOT the deployed population" in capsys.readouterr().out
+
+
+# ══ the trace SELECTION recorded in the manifest (`gen3_trace_selection_manifest_v1`) ══
+#
+# The quota is loss-enriched BY DESIGN and the trace tree used to say nothing about it, so a
+# reader had to know to join `eval_results.jsonl` by hand. The manifest now states it; these pin
+# that the gauge PREFERS it, that it reproduces the old route exactly, and — the load-bearing
+# half — that a legacy tree's numbers do not move.
+
+def _write_selection(run: str, step: int, opponents: dict, *, rule: bool = True) -> None:
+    """Patch a fixture's manifest the way `record_eval_selection` does at collect."""
+    d = os.path.join(run, "eval_traces", f"step_{step}")
+    os.makedirs(d, exist_ok=True)
+    m = {"step": step, "opponents": sorted(opponents)}
+    if rule:
+        m["selection_rule"] = forensic_selection_rule(win_quota=5, loss_quota=10)
+    m["selection"] = build_selection(opponents, win_quota=5, loss_quota=10)
+    with open(os.path.join(d, "eval_manifest.json"), "w") as fh:
+        json.dump(m, fh)
+
+
+#: the fixture's own quota, restated as counts: a cycle that won 90 of 100 and kept 4 wins / 8
+#: losses — the same 0.9-vs-(4/12) shape `_quota_run` builds, now RECORDED.
+_FIXTURE_SELECTION = {"heuristic": dict(battles_played=100, battles_won=90,
+                                        traces_written=12, traces_won=4)}
+
+
+def test_the_manifest_is_PREFERRED_over_the_eval_results_join(tmp_path):
+    """Same answer, better provenance: the manifest is written by the cycle into the same
+    directory as the traces, so it needs no cross-file join and no positional sentinel inference."""
+    run = _quota_run(str(tmp_path))
+    assert win_rate_sources(run) == {7_000_000: "eval_results.jsonl"}
+    _write_selection(run, 7_000_000, _FIXTURE_SELECTION)
+    assert manifest_win_rates_by_step(run) == {7_000_000: {"heuristic": pytest.approx(0.9)}}
+    assert win_rate_sources(run) == {7_000_000: "mixed"}
+    assert true_win_rates(run) == {7_000_000: {"heuristic": pytest.approx(0.9)}}
+
+
+def test_the_manifest_route_and_the_jsonl_route_produce_IDENTICAL_reweighted_numbers(tmp_path):
+    """The manifest is a better SOURCE for the same quantity, not a different correction. Where
+    the two agree, every reweighted number must agree to the bit."""
+    run = _quota_run(str(tmp_path))
+    slices, _ = collect_slices(run)
+    from_jsonl = build_reliability(slices, n_boot=40, seed=0, reweight=true_win_rates(run))
+    _write_selection(run, 7_000_000, _FIXTURE_SELECTION)
+    from_manifest = build_reliability(slices, n_boot=40, seed=0, reweight=true_win_rates(run))
+    # Serialized, not `==`: an under-populated bin publishes NaN (deliberately — see
+    # `reliability_table`), and NaN != NaN would make this pass for the wrong reason.
+    assert json.dumps(from_manifest) == json.dumps(from_jsonl)
+
+
+def test_the_manifest_ALONE_is_enough_where_eval_results_is_absent(tmp_path):
+    """The record travels WITH the traces, so a tree that lost (or never had) its jsonl is still
+    correctable — the refusal is about an unknown population, not about a missing file."""
+    run = _quota_run(str(tmp_path), with_results=False)
+    with pytest.raises(SelectionWeightError):
+        true_win_rates(run)
+    _write_selection(run, 7_000_000, _FIXTURE_SELECTION)
+    assert true_win_rates(run) == {7_000_000: {"heuristic": pytest.approx(0.9)}}
+    assert win_rate_sources(run) == {7_000_000: "eval_manifest"}
+
+
+def test_a_LEGACY_tree_is_labelled_SELECTION_UNKNOWN_and_its_NUMBERS_DO_NOT_MOVE(tmp_path, capsys):
+    """🚨 THE BYTE-IDENTITY PIN. Recording the selection adds a LABEL and a preferred weight
+    source; it must change no formula. Run the same tree twice — once legacy, once with a manifest
+    that AGREES — and the whole reliability block must come back equal, while only the label
+    differs."""
+    run = _quota_run(str(tmp_path))
+    legacy_json = str(tmp_path / "legacy.json")
+    assert main([run, "--boot", "20", "--reliability", "--reliability-reweight",
+                 "--out", legacy_json, "--quiet"]) == 0
+    legacy_text = capsys.readouterr().out
+    legacy = json.loads(open(legacy_json).read())
+
+    assert legacy["trace_selection"]["any_unknown"] is True
+    assert legacy["trace_selection"]["n_steps_with_selection"] == 0
+    assert "SELECTION UNKNOWN" in legacy_text
+    assert legacy["trace_selection"]["steps"]["7000000"]["per_opponent"] is None
+
+    _write_selection(run, 7_000_000, _FIXTURE_SELECTION)
+    recorded_json = str(tmp_path / "recorded.json")
+    assert main([run, "--boot", "20", "--reliability", "--reliability-reweight",
+                 "--out", recorded_json, "--quiet"]) == 0
+    recorded_text = capsys.readouterr().out
+    recorded = json.loads(open(recorded_json).read())
+
+    # EVERY number, byte for byte (serialized — an under-populated bin publishes NaN, and
+    # NaN != NaN would make an `==` comparison pass for the wrong reason). Only provenance differs.
+    for key in set(legacy) | set(recorded):
+        if key == "trace_selection":
+            continue
+        assert json.dumps(recorded.get(key)) == json.dumps(legacy.get(key)), key
+    assert recorded["trace_selection"] != legacy["trace_selection"]
+    assert "SELECTION RECORDED" in recorded_text and "SELECTION UNKNOWN" not in recorded_text
+    assert recorded["trace_selection"]["steps"]["7000000"]["per_opponent"]["heuristic"][
+        "capture_rate_loss"] == pytest.approx(8 / 10)
+
+
+def test_the_render_names_WHICH_SOURCE_the_reweighting_used(tmp_path, capsys):
+    """A number whose provenance is unstated is a number nobody can audit later — and the two
+    sources can disagree (the jsonl route infers sentinel names BY POSITION; this one does not)."""
+    run = _quota_run(str(tmp_path), with_results=False)
+    _write_selection(run, 7_000_000, _FIXTURE_SELECTION)
+    assert main([run, "--boot", "20", "--reliability", "--reliability-reweight",
+                 "--out", str(tmp_path / "s.json"), "--quiet"]) == 0
+    assert "true-rate source for --reliability-reweight: eval_manifest" in capsys.readouterr().out
+
+
+def test_a_manifest_with_NO_selection_block_still_reads_as_UNKNOWN(tmp_path):
+    """The pre-existing manifest (identity only) is the common case on every archived run, and it
+    must not read as 'the quota was uniform'."""
+    run = _quota_run(str(tmp_path))
+    d = os.path.join(run, "eval_traces", "step_7000000")
+    with open(os.path.join(d, "eval_manifest.json"), "w") as fh:
+        json.dump({"step": 7_000_000, "opponents": ["heuristic"], "git_hash": "old"}, fh)
+    assert manifest_win_rates_by_step(run) == {}
+    block = build_trace_selection_block(run)
+    assert block["any_unknown"] is True
+    assert "UNKNOWN" in block["steps"]["7000000"]["label"]

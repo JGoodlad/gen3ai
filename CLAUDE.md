@@ -1503,7 +1503,12 @@ distributional-critic decision where `critic_headroom_upper_bound` = LUCK+NEUTRA
 explicit UPPER BOUND with `caveats`, not a measurement), or **`calibration` to split that
 `unattributed` bucket** into `critic_overvalued` vs `lost_position` via recorded V(s) vs realized
 return G(s) — a selection-aware reliability curve that self-diagnoses the eval-quota confound
-(`bias_on_wins`/`bias_on_losses`). Internals
+(`bias_on_wins`/`bias_on_losses`). 🚨 **The trace quota PREFERS LOSSES, and since
+`gen3_trace_selection_manifest_v1` each cycle's `eval_manifest.json` RECORDS it** — per opponent
+the battles played/won against the traces written/won, plus the two derived capture rates and the
+rule in words — so `calibration`, `falsify-scan` and `main.scaffolding_gauge --reliability-reweight`
+all read the selection off the tree instead of inheriting it silently, and a tree that records none
+is labelled SELECTION UNKNOWN rather than read as uniform. Internals
 — engine/app split, the model-resolution ladder, Outcome panel, flags, and the
 agent API — are in `src/main/prober/CLAUDE.md`.
 
@@ -1813,7 +1818,9 @@ src/
                      #   against the realized OUTCOME (Brier / skill / ECE / Murphy rel-res-unc),
                      #   stratified bot vs pool sentinel, because the head's bias FLIPS SIGN
                      #   between them. `--reliability-reweight` undoes the eval quota's loss
-                     #   enrichment from the run's own eval_results.jsonl and REFUSES rather than
+                     #   enrichment, PREFERRING each cycle's own eval_manifest.json selection block
+                     #   (gen3_trace_selection_manifest_v1) and falling back to eval_results.jsonl,
+                     #   and REFUSES rather than
                      #   falling back; without it the same traces read ECE 0.28 and skill -0.08
                      #   where the corrected population reads 0.035 and +0.265.
                      #   Cluster-bootstrap CIs over BATTLES. Live half: `train/scaffolding_gauge`.

@@ -14,6 +14,46 @@
        <div class="v pos">{{ m.pct(gate.policy_reducible, 0) }}</div></div>
 </div>
 
+{% set sel = r.selection %}
+{% if sel %}
+<h2>What these traces are a sample of</h2>
+<p class="{{ 'interp' if sel.known else 'warn' }}">{{ sel.label }}</p>
+{% if not sel.known %}
+<p class="muted">
+  This curve is computed over a SELECTION-UNKNOWN tree: {{ sel.n_steps_with_selection }} of
+  {{ sel.n_steps }} eval step(s) record their capture quota. Read every number below as a
+  statement about the captured slice, not about the eval population.
+</p>
+{% endif %}
+{% for step, e in sel.steps | dictsort %}
+  {% if e.capture_rates %}
+  <h3 class="muted">step {{ step }} — capture rate per battle PLAYED, by outcome</h3>
+  <div class="scroll-x">
+  <table>
+    <thead><tr>
+      <th>opponent</th><th class="num">played</th><th class="num">won</th>
+      <th class="num">traced</th><th class="num">traced wins</th>
+      <th class="num">capture/win</th><th class="num">capture/loss</th>
+    </tr></thead>
+    <tbody>
+    {% for name, c in e.capture_rates | dictsort %}
+      <tr data-row>
+        <td class="mono">{{ name }}</td>
+        <td class="num">{{ c.battles_played }}</td>
+        <td class="num">{{ c.battles_won }}</td>
+        <td class="num">{{ c.traces_written }}</td>
+        <td class="num">{{ c.traces_won }}</td>
+        <td class="num">{{ m.num(c.capture_rate_win, 3) }}</td>
+        <td class="num">{{ m.num(c.capture_rate_loss, 3) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+{% endfor %}
+{% endif %}
+
 <h2>The selection confound, stated in the data</h2>
 <p class="muted">
   A calibrated critic reads &lt;0 on wins and &gt;0 on losses; the unconditional bias is then

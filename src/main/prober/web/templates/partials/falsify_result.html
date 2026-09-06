@@ -13,6 +13,10 @@
        <div class="v mono">{{ r.dominant_lever or "—" }}</div></div>
 </div>
 
+{% if r.selection %}
+<p class="{{ 'interp' if r.selection.known else 'warn' }}">{{ r.selection.label }}</p>
+{% endif %}
+
 <p class="interp">{{ r.interpretation }}</p>
 
 <h2>Weighted vs count shares</h2>

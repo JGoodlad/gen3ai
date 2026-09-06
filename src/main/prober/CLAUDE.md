@@ -1130,6 +1130,25 @@ got under the size bound — hence a base list rather than one `class` block, an
   re-roll → policy-rollout → return PIT** (the true distributional-critic validator,
   deferred — needs a mid-game rollout primitive). Reads the `caveats`; this is the cheap
   aggregate proxy, knowingly confounded on a quota-captured sample.
+
+  🚨 **THE QUOTA IS NOW STATED, NOT ASSUMED — read `selection` FIRST**
+  (`gen3_trace_selection_manifest_v1`). `captured_win_fraction` says what the sample's mix IS;
+  `selection` says what the recorder's RULE WAS, which is what distinguishes a loss-enriched quota
+  from a genuinely losing population — and until this shipped nothing in the trace tree recorded
+  it, so every curve here silently inherited the skew (measured on `ai_v9_59_R2ACTION_0827`:
+  captured outcome rate **0.46** against the same cycles' recorded **0.901 vs bots / 0.702 vs
+  pool**). Both `calibration` and `falsify_scan` return the block, scoped to the `step` filter,
+  from `ProbeSession.trace_selection(step)`: per step the rule in words plus per-opponent
+  `battles_played` / `battles_won` / `traces_written` / `traces_won` and the derived
+  `capture_rate_win` / `capture_rate_loss` (traces per battle PLAYED, by outcome — the pair whose
+  DIFFERENCE is the skew; a zero denominator reads `None`, never `0.0`). ⚠️ **A tree that records
+  no selection is `known: false` and carries the standing UNKNOWN label — never read as uniform**;
+  `calibration` additionally puts that label FIRST in its `caveats`, because it says whether the
+  selection confound below it can be sized on this tree at all. Every archived run is in that
+  state; only cycles collected after this shipped carry a record. The `/calibration` web view
+  renders the per-opponent capture-rate table and marks a selection-unknown curve as such.
+  Declaration: `agents/training/trace_selection.py` — the one module the recorder, this session,
+  and `main.scaffolding_gauge` all read, so the three cannot drift on what the quota was.
 - `decision_table(steps=, opponents=, outcomes=, categories=, max_battles=)` — a complementary
   MODEL-FREE per-decision FORENSIC TABLE (`forensics.py`): one row per captured decision with `cat`
   (`move_category`: selfko/recovery/**cure**/setup/stall/status/switch/attack_or_other — `cure` is

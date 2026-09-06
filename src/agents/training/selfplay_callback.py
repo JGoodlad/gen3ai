@@ -60,6 +60,7 @@ from agents.training.eval_callback import (
     merge_eval_results,
     persist_eval_snapshot,
     prune_eval_traces,
+    record_eval_selection,
     replay_last_eval_to_tui,
     spawn_eval_workers,
     write_eval_manifest,
@@ -804,6 +805,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
                    if self._pfsp_scale > 0.0 else {}),
             )
 
+        # State the trace SELECTION in this cycle's own manifest (the loss-preferring forensic
+        # quota), BEFORE pruning — a pruned step dir takes its manifest with it.
+        record_eval_selection(self._model_dir, step, merged)
         # Retain the bit-exact snapshot for the prober, groom traces, then drop the scratch.
         persist_eval_snapshot(self._model_dir, step, pending["snapshot"], self._keep_eval_snapshots)
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)

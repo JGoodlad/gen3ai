@@ -1141,7 +1141,19 @@ and turn-re-rollable offline (`replay_battle` / `reroll_turn`), and
 `agents.training.obs_materializer` can rebuild the trainee's one-sided obs from it bit-for-bit
 (guarded by `obs_roundtrip_fuzz_test.py`). It is referee-view data in a **separate artifact** on
 purpose — nothing in the obs/training path reads it (the one-sided/omniscient wall; see the bridge
-README). Websocket eval simply doesn't produce it (degrades gracefully). All
+README). Websocket eval simply doesn't produce it (degrades gracefully). 🚨 **THE CAPTURE QUOTA IS OUTCOME-CONDITIONAL, and the manifest now RECORDS it**
+(`gen3_trace_selection_manifest_v1`): `EvalRLPlayer` persists at most `_FORENSIC_WIN_QUOTA` (5) wins
+and `_FORENSIC_LOSS_QUOTA` (10) losses per opponent per cycle (scaled per shard unit), so the traces
+are a LOSS-ENRICHED sample by design — and every consumer that averages over them (`calibration`,
+`falsify_scan`, `main.scaffolding_gauge`) used to inherit that skew with nothing on disk saying so.
+`record_eval_selection` patches each cycle's manifest at COLLECT with, per opponent,
+`battles_played` / `battles_won` / `traces_written` / `traces_won` plus the derived
+`capture_rate_win` / `capture_rate_loss` and the rule in words; the counts ride the existing shard
+plumbing (`ShardResult.traces_{written,won}`, defaulted so a legacy shard still deserializes).
+**Absent reads as SELECTION UNKNOWN, never as uniform** — a legacy tree, or a cycle that crashed
+before collecting (the block is written `null` at launch). One declaration,
+`agents/training/trace_selection.py` (pure stdlib, imported by the prober and the gauge too), so
+producer and consumers cannot drift. All
 three sit alongside a per-cycle
 **`eval_manifest.json`** (`write_eval_manifest`) recording exactly which model produced them
 — `num_timesteps`, `git_hash` + `arch_signature` (read from the run's `metadata.json` /
@@ -4172,12 +4184,23 @@ default rendering and `opponent_class` is where the `sentinel_*` ⇒ pool rule i
 loss-enriched — measured on `ai_v9_59_R2ACTION_0827`, the captured outcome rate is **0.46** against
 the same cycles' recorded **0.901 vs bots / 0.702 vs pool** — so an unweighted table scores the head
 against a population it was never deployed against. The flag importance-weights each opponent's rows
-back to the win/loss mix its own `eval_results.jsonl` row recorded (weights constant within a
+back to the win/loss mix the cycle itself recorded (weights constant within a
 battle, so the clustering survives), and reports Kish `ess` beside `n` so the cost is visible. It
 **REFUSES** when the true rates cannot be resolved rather than falling back — an unweighted table
 looks identical and answers a different question. The size of the correction is the finding: raw, the
 same traces read ECE 0.237 / 0.281 and skill +0.071 / **−0.080**; reweighted, ECE 0.025 / 0.035 and
 skill **+0.336 / +0.265**. Reading raw-first inverts the verdict.
+
+**TWO SOURCES for the true rates, in preference order** (`gen3_trace_selection_manifest_v1`). Each
+cycle's own **`eval_manifest.json` selection block** wins where it exists — the recorder writes the
+per-opponent played/won counts into the same directory as the traces, so there is no cross-file
+join and, in particular, no positional sentinel inference. Everything it does not cover falls back
+to **`eval_results.jsonl`** with the existing behaviour, unchanged; a run with neither still
+REFUSES. On a legacy tree the manifest half is empty, so the numbers this tool prints there do not
+move (pinned as a byte-identity test on a synthetic tree). `--reliability` additionally emits a
+`trace_selection` block and prints, per step, the capture rates and **which source** the
+reweighting used — a step that records no selection is labelled **SELECTION UNKNOWN**, never read
+as uniform.
 
 Record: `designs/research_state/measurements/winprob_critic_baseline_2026-09-06/`. The design that
 consumes it as a gate: `designs/ai_v12/design_winprob_only_critic.md`.

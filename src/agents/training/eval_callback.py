@@ -38,6 +38,13 @@ BATTLE_FORMAT = "gen3ou"
 EVAL_MANIFEST_NAME = "eval_manifest.json"
 EVAL_SNAPSHOT_NAME = "snapshot.zip"
 
+# `gen3_trace_selection_manifest_v1` — the trace-SELECTION contract. Declared ONCE, in a pure
+# stdlib module the prober and the scaffolding gauge import too, so the recorder and every
+# consumer read one declaration rather than three copies of it.
+from agents.training.trace_selection import (  # noqa: E402
+    SELECTION_SCHEMA, build_selection, forensic_selection_rule as _selection_rule_text,
+)
+
 
 def trace_filename_stem(outcome: str, trace_tag: str, idx: int) -> str:
     """The forensic-trace filename stem ``<outcome>_<trace_tag><idx>`` (no suffix).
@@ -94,6 +101,12 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
     ``trainee_team_sha`` (the pin the trainee piloted — None = the default pool builder), and
     ``opponent_pins`` ({ext label: sha} for stable/exploiter opponents measured on their OWN
     pinned team — the fold-back contract).
+
+    It ALSO records the trace SELECTION (`gen3_trace_selection_manifest_v1`): `selection_rule`
+    names the outcome quota in words, and `selection` is filled in at COLLECT time by
+    :func:`record_eval_selection` with the per-opponent played/won/traced counts. It is written
+    here as ``null`` rather than omitted, because a cycle that crashed before collecting must
+    read as SELECTION UNKNOWN and not as "no traces were kept".
     """
     git_hash, arch_signature, config_version = _read_run_identity(model_dir)
     from agents.model.snapshot import _read_matchup_hash
@@ -127,6 +140,10 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
         "matchup_hash": _read_matchup_hash(model_dir),
         "trainee_team_sha": _sha(trainee_team_str),
         "opponent_pins": {k: _sha(v) for k, v in (opponent_pins or {}).items() if v},
+        "selection_schema": SELECTION_SCHEMA,
+        "selection_rule": forensic_selection_rule(),
+        # Filled by record_eval_selection at collect. NULL here on purpose — see the docstring.
+        "selection": None,
     }
     with open(os.path.join(d, EVAL_MANIFEST_NAME), "w") as f:
         json.dump(manifest, f, indent=2)
@@ -141,6 +158,17 @@ _EVAL_CONCURRENCY = 100
 # remaining battles run the cheap fast path and only feed the win-rate count.
 _FORENSIC_LOSS_QUOTA = 10
 _FORENSIC_WIN_QUOTA = 5
+
+
+def forensic_selection_rule(win_quota: int = _FORENSIC_WIN_QUOTA,
+                            loss_quota: int = _FORENSIC_LOSS_QUOTA) -> str:
+    """This recorder's rule in words, bound to ITS OWN quota constants.
+
+    The sentence lives in `trace_selection`; the DEFAULTS live here, beside the quotas they
+    describe — so a change to `_FORENSIC_*_QUOTA` cannot leave the recorded rule saying the old
+    numbers.
+    """
+    return _selection_rule_text(win_quota=win_quota, loss_quota=loss_quota)
 
 # TD-residual tail metric (#4): the left tail of per-decision critic surprise
 # δ = r + γ·V(s') − V(s) (BattleRecorder, the prober's formula) pooled over an eval cycle's
@@ -489,6 +517,52 @@ def prune_eval_snapshots(model_dir: str | None, keep_n: int) -> None:
             os.remove(p)
         except OSError:
             pass
+
+
+def record_eval_selection(model_dir: str | None, step: int, merged: dict) -> dict | None:
+    """Patch this cycle's manifest with the per-opponent TRACE SELECTION (`gen3_trace_selection_manifest_v1`).
+
+    Called at COLLECT, because the counts do not exist at launch: `write_eval_manifest` runs before
+    a single battle is played. Same patch-the-manifest shape as `persist_eval_snapshot`.
+
+    ``merged`` is the pooled eval result. `counts` gives (n_won, n_finished) per opponent — what
+    was PLAYED — and `traces` gives (traces_won, traces_written) — what the forensic quota KEPT.
+    The two together are the whole record; the derived capture rates are computed by
+    `trace_selection.selection_entry` so the producer and every consumer share one arithmetic.
+
+    Returns the block it wrote, or ``None`` when there was nothing to record or the manifest could
+    not be updated. **A failure is a warning, never a raise** — this is provenance for an offline
+    reader, and it must not be able to take down a training run at an eval boundary. The block then
+    stays ``null``, which every consumer reads as SELECTION UNKNOWN.
+    """
+    if not model_dir:
+        return None
+    counts = merged.get("counts") or {}
+    traces = merged.get("traces") or {}
+    if not counts:
+        return None
+    per_opponent = {}
+    for key, (n_won, n_finished) in counts.items():
+        t_won, t_written = traces.get(key, (0, 0))
+        per_opponent[str(key)] = {
+            "battles_played": n_finished, "battles_won": n_won,
+            "traces_written": t_written, "traces_won": t_won,
+        }
+    block = build_selection(per_opponent, win_quota=_FORENSIC_WIN_QUOTA,
+                            loss_quota=_FORENSIC_LOSS_QUOTA)
+    mpath = os.path.join(model_dir, "eval_traces", f"step_{step}", EVAL_MANIFEST_NAME)
+    try:
+        with open(mpath) as f:
+            m = json.load(f)
+        m["selection_schema"] = SELECTION_SCHEMA
+        m["selection_rule"] = forensic_selection_rule()
+        m["selection"] = block
+        with open(mpath, "w") as f:
+            json.dump(m, f, indent=2)
+    except (OSError, ValueError) as e:
+        print(f"⚠️ [EVAL] could not record trace selection for step {step:,}: {e}")
+        return None
+    return block
 
 
 def persist_eval_snapshot(model_dir: str | None, step: int, snapshot_path: str, keep_n: int) -> None:
@@ -908,6 +982,20 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         captured battles produced residuals this cycle. The eval cycle records it as
         eval/td_resid_tail_vs_<opponent>."""
         return td_tail(self._td_pool)
+
+    @property
+    def traces_written(self) -> int:
+        """Traces this player PERSISTED this cycle/shard — the selection, as a count.
+
+        The manifest records it beside the battles played so a consumer can read the quota's
+        outcome skew off the trace tree instead of inheriting it silently
+        (`gen3_trace_selection_manifest_v1`)."""
+        return self._wins_kept + self._losses_kept
+
+    @property
+    def traces_won(self) -> int:
+        """How many of :attr:`traces_written` were WINS (≤ the battles won, by construction)."""
+        return self._wins_kept
 
     def td_residuals(self) -> list[float]:
         """The raw per-decision δ samples pooled this matchup (a COPY). A sharded eval ships these
@@ -1373,6 +1461,9 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
 
         self._record(step, merged, pending["n_games"], n_workers=len(pending["procs"]))
         self._maybe_save_best(step, pending, merged["win_rates"])
+        # State the trace SELECTION in the cycle's own manifest, BEFORE pruning: a pruned step dir
+        # takes its manifest with it, and a cycle whose traces survive must carry its record.
+        record_eval_selection(self._model_dir, step, merged)
         self._persist_snapshot(pending)
         self._prune_eval_traces()   # trainer grooms the traces it writes
         self._prune_run_artifacts()  # …and bounds its stalls/ + crashes/ dirs

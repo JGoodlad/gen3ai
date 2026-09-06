@@ -998,6 +998,105 @@ def test_calibration_splits_unattributed(tmp_path, monkeypatch):
     assert out["caveats"] and any("UPPER BOUND" in c for c in out["caveats"])
 
 
+# ── the trace SELECTION both aggregations report (`gen3_trace_selection_manifest_v1`) ───────
+#
+# Both `falsify_scan` and `calibration` average over TRACES, and traces are written under a quota
+# that PREFERS LOSSES. The tree used to say nothing about it, so both curves silently described a
+# loss-enriched slice. They now report the quota beside their numbers — or say it is UNKNOWN.
+
+def _record_selection(run, step, opponents):
+    """Patch a fixture's manifest the way `record_eval_selection` does at collect."""
+    from agents.training.trace_selection import build_selection, forensic_selection_rule
+    d = os.path.join(str(run), "eval_traces", f"step_{step}")
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, "eval_manifest.json")
+    m = json.load(open(path)) if os.path.exists(path) else {"step": step}
+    m["selection_rule"] = forensic_selection_rule(win_quota=5, loss_quota=10)
+    m["selection"] = build_selection(opponents, win_quota=5, loss_quota=10)
+    with open(path, "w") as f:
+        json.dump(m, f)
+
+
+def _step_of(run):
+    return ProbeSession(str(run)).tree.all_battles()[0].step
+
+
+def test_a_SELECTION_UNKNOWN_tree_is_LABELLED_as_such_in_both_aggregations(tmp_path, monkeypatch):
+    """🚨 THE RULE. A legacy tree records no quota, and a consumer must never read that as an
+    unbiased sample. Both surfaces carry the label — one in its header block, one additionally as
+    the FIRST caveat, because it says whether the selection confound below can be sized at all."""
+    from agents.training.trace_selection import UNKNOWN_LABEL
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_falsify_scan_run(tmp_path)
+    sel = ProbeSession(run).falsify_scan(outcome="loss")["selection"]
+    assert sel["known"] is False
+    assert sel["n_steps_with_selection"] == 0
+    assert sel["label"] == UNKNOWN_LABEL
+    for e in sel["steps"].values():
+        assert e["capture_rates"] is None and e["rule"] is None
+
+    cal = ProbeSession(_build_calibration_run(tmp_path)).calibration(
+        outcome="loss", n_bins=2, overvalue_tau=5.0)
+    assert cal["selection"]["known"] is False
+    assert cal["caveats"][0].startswith("TRACE SELECTION:")
+    assert "UNKNOWN" in cal["caveats"][0]
+
+
+def test_a_RECORDED_tree_carries_the_capture_rates_and_the_rule(tmp_path, monkeypatch):
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_falsify_scan_run(tmp_path)
+    step = _step_of(run)
+    _record_selection(run, step, {
+        "aggressive_v2": dict(battles_played=100, battles_won=90,
+                              traces_written=12, traces_won=4),
+        "heuristic": dict(battles_played=100, battles_won=95, traces_written=11, traces_won=5),
+    })
+    sel = ProbeSession(run).falsify_scan(outcome="loss")["selection"]
+
+    assert sel["known"] is True and sel["n_steps_with_selection"] == sel["n_steps"] == 1
+    e = sel["steps"][str(step)]
+    assert "LOSS-ENRICHED" in e["rule"]
+    c = e["capture_rates"]["aggressive_v2"]
+    assert (c["battles_played"], c["battles_won"]) == (100, 90)
+    assert (c["traces_written"], c["traces_won"]) == (12, 4)
+    # THE DEFECT, in one line: 4 of 90 wins traced against 8 of 10 losses.
+    assert c["capture_rate_win"] == pytest.approx(4 / 90)
+    assert c["capture_rate_loss"] == pytest.approx(8 / 10)
+    assert e["recorded_win_rates"]["aggressive_v2"] == pytest.approx(0.9)
+
+
+def test_recording_a_selection_changes_no_NUMBER_either_aggregation_reports(tmp_path, monkeypatch):
+    """🚨 THE BYTE-IDENTITY PIN. This change adds a LABEL and a preferred weight source; it must
+    move no crater share, no reliability bin and no gate. Everything but `selection` (and the
+    caveat that carries its label) must come back identical."""
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_falsify_scan_run(tmp_path)
+    before = ProbeSession(run).falsify_scan(outcome="loss")
+    _record_selection(run, _step_of(run), {
+        "aggressive_v2": dict(battles_played=100, battles_won=90,
+                              traces_written=12, traces_won=4)})
+    after = ProbeSession(run).falsify_scan(outcome="loss")
+
+    for key in set(before) | set(after):
+        if key == "selection":
+            continue
+        assert json.dumps(after.get(key)) == json.dumps(before.get(key)), key
+    assert after["selection"] != before["selection"]
+
+
+def test_the_selection_block_is_SCOPED_to_the_step_filter(tmp_path, monkeypatch):
+    """`--step` narrows the battles, so it must narrow the selection reported beside them — a
+    block covering steps the curve did not use would describe the wrong sample."""
+    monkeypatch.setattr("main.prober.falsifier.falsify_battle", _fake_falsify_battle)
+    run = _build_falsify_scan_run(tmp_path)
+    step = _step_of(run)
+    sess = ProbeSession(run)
+    assert set(sess.trace_selection(step)["steps"]) == {str(step)}
+    assert sess.trace_selection(step + 1)["steps"] == {}
+    # no step in scope is not "selection known" — there is nothing to have recorded
+    assert sess.trace_selection(step + 1)["known"] is False
+
+
 def test_cli_calibration_emits_json(tmp_path, monkeypatch):
     import sys
     import main.prober.query as q

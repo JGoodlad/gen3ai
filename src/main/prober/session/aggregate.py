@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 
+from agents.training import trace_selection
 from main.prober.discovery import BattleTrace
 from main.prober.session.serialize import _r, _short_id
 from main.prober.session.stats import (_calibration_stats, _discounted_returns,
@@ -16,6 +17,43 @@ from main.prober.session.stats import (_calibration_stats, _discounted_returns,
 
 
 class _AggregateMixin:
+    def trace_selection(self, step: "int | None" = None) -> dict:
+        """WHAT THE TRACES ARE A SAMPLE OF — the eval recorder's capture quota, per step.
+
+        Both aggregations below average over traces, and traces are written under a quota that
+        PREFERS LOSSES (`gen3_trace_selection_manifest_v1`). Where a cycle recorded its selection
+        this returns the per-opponent capture rates and the rule in words; where it did not — every
+        tree written before that shipped — it returns ``known: false`` and the standing UNKNOWN
+        label, which the caller reports beside its curve.
+
+        Never inferred and never defaulted to uniform: a missing record means the sample's win/loss
+        mix is unknown, and treating that as unbiased is the defect this block exists to close.
+        """
+        steps = sorted({b.step for b in self.tree.all_battles()
+                        if step is None or b.step == step})
+        out: dict = {}
+        n_known = 0
+        for s in steps:
+            manifest = self.tree.manifest_for(s)
+            rates = trace_selection.capture_rates(manifest)
+            n_known += 1 if rates else 0
+            out[str(s)] = {
+                "known": bool(rates),
+                "rule": trace_selection.selection_rule(manifest),
+                "label": trace_selection.describe_selection(manifest),
+                "capture_rates": rates,
+                "recorded_win_rates": trace_selection.manifest_win_rates(manifest) or None,
+            }
+        return {
+            "schema": trace_selection.SELECTION_SCHEMA,
+            "known": bool(steps) and n_known == len(steps),
+            "n_steps": len(steps),
+            "n_steps_with_selection": n_known,
+            "label": (trace_selection.UNKNOWN_LABEL if n_known < len(steps)
+                      else "SELECTION RECORDED for every step in scope — see `steps`."),
+            "steps": out,
+        }
+
     def falsify_scan(self, *, outcome: "str | None" = "loss",
                      opponent: "str | None" = None, step: "int | None" = None,
                      limit: "int | None" = 20, worst: int = 2, n_seeds: int = 32,
@@ -226,6 +264,10 @@ class _AggregateMixin:
             "filters": {"outcome": outcome, "opponent": opponent, "step": step},
             "params": {"limit": limit, "worst": worst, "n_seeds": n_seeds,
                        "n_alts": n_alts, "followup": followup, "concurrency": concurrency},
+            # THE HEADER: what the battles behind this bracket are a sample of. The quota prefers
+            # losses, and `outcome="loss"` filters on top of it — so the crater shares describe
+            # the CAPTURED losses, not the run's losses.
+            "selection": self.trace_selection(step),
             "coverage": {
                 "n_matched": len(matched),
                 "n_with_record": n_with_record,
@@ -382,7 +424,10 @@ class _AggregateMixin:
             f"epistemic share needs true-win-rate reweighting or the rollout-PIT. [{n_unattr} craters, "
             f"reliability over {overall['n']} decisions]"
         )
+        selection = self.trace_selection(step)
         caveats = [
+            # FIRST, because it says whether the confound below can even be sized on this tree.
+            f"TRACE SELECTION: {selection['label']}",
             "SELECTION CONFOUND (dominant): the reliability curve is over the eval's CAPTURED sample, "
             "whose win-fraction (captured_win_fraction) is set by the capture quota, NOT the true win "
             "rate. Since the model wins most games, losses are over-captured → E[G|V] biased LOW → the "
@@ -412,6 +457,11 @@ class _AggregateMixin:
             "params": {"limit": limit, "worst": worst, "n_seeds": n_seeds, "n_alts": n_alts,
                        "followup": followup, "concurrency": concurrency, "n_bins": n_bins,
                        "overvalue_tau": overvalue_tau},
+            # THE SELECTION, beside the curve it conditions. `captured_win_fraction` says what the
+            # sample's mix IS; this says what the recorder's rule WAS, so a reader can tell a
+            # loss-enriched quota from a genuinely losing population — and a tree that records no
+            # rule is labelled as such rather than read as unbiased.
+            "selection": selection,
             "overall_calibration": overall,
             "reliability_curve": bins,
             "unattributed_resolution": {

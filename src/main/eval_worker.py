@@ -189,7 +189,10 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         n_won=trainee.n_won_battles, n_finished=trainee.n_finished_battles,
         sum_reward=trainee.episode_reward_sum, n_episodes=trainee.n_reward_episodes,
         sum_ep_len=episode_length_sum(trainee), duration_sec=dur,
-        td_residuals=trainee.td_residuals())
+        td_residuals=trainee.td_residuals(),
+        # What the forensic QUOTA actually kept from this shard, so the per-cycle manifest can
+        # state the trace SELECTION rather than leaving every consumer to assume it was uniform.
+        traces_written=trainee.traces_written, traces_won=trainee.traces_won)
     win_rate = res.n_won / res.n_finished if res.n_finished else 0.0
     print(f"  {unit.unit_id}: {win_rate * 100:.1f}% ({res.n_won}/{res.n_finished})  "
           f"reward_sum={res.sum_reward:.1f}  [{dur:.0f}s]")
