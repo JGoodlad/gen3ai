@@ -1,0 +1,57 @@
+[v8] RESOLVE pool10: ai_v8_09_pool10_exploiter_0723/best_model/best_model.zip  (v1 scored final_model_interrupted.zip)
+[v8] RESOLVE semistall3: ai_v8_06_semistall_3team_exploiter_0722/best_model/best_model.zip  (v1 scored final_model_interrupted.zip)
+[v8] RESOLVE defensive10: ai_v8_13_defensive10_exploiter_0725/best_model/best_model.zip  (v1 scored final_model_interrupted.zip)
+[v8] NOTE: 1 team(s) taught by >1 teacher: ['564b9be3ae'] -- excluded from the sibling control
+[v8] 30 teams = 8 untaught + 22 taught ({'pool10': 10, 'semistall3': 3, 'defensive10': 10}), pool 719
+  [ 0] untaught d0a4d2bcb8 + 266 states (total 266, 10s)
+  [ 1] untaught c90e782cad + 255 states (total 521, 20s)
+  [ 2] untaught a6b630e6b4 + 260 states (total 781, 30s)
+  [ 3] untaught a577a735b7 + 312 states (total 1093, 42s)
+  [ 4] untaught 9292a21833 + 270 states (total 1363, 60s)
+  [ 5] untaught eaa88395e7 + 265 states (total 1628, 78s)
+  [ 6] untaught 7c2cb5cec1 + 303 states (total 1931, 99s)
+  [ 7] untaught 89fcef3b53 + 259 states (total 2190, 118s)
+  [ 8] taught   564b9be3ae + 336 states (total 2526, 139s)
+  [ 9] taught   d3c1cd0952 + 300 states (total 2826, 158s)
+  [10] taught   7594a34f82 + 504 states (total 3330, 186s)
+  [11] taught   47dc388b25 + 419 states (total 3749, 210s)
+  [12] taught   4c9552cd01 + 388 states (total 4137, 233s)
+  [13] taught   552d5857a3 + 343 states (total 4480, 255s)
+  [14] taught   f5d46ca0fc + 334 states (total 4814, 275s)
+  [15] taught   3a83154c2a + 601 states (total 5415, 294s)
+  [16] taught   9b454d9ea7 + 371 states (total 5786, 306s)
+  [17] taught   24db4aacdd + 615 states (total 6401, 323s)
+  [18] taught   4771662cf7 + 488 states (total 6889, 343s)
+  [19] taught   45995e432f + 660 states (total 7549, 378s)
+  [20] taught   9278913bce + 368 states (total 7917, 401s)
+  [21] taught   fc908f1bf4 + 438 states (total 8355, 426s)
+  [22] taught   83aee9db7e + 461 states (total 8816, 451s)
+  [23] taught   044da80d78 + 480 states (total 9296, 478s)
+  [24] taught   bef089d2cf + 453 states (total 9749, 503s)
+  [25] taught   3f95b25e9a + 444 states (total 10193, 529s)
+  [26] taught   8b6b8c8f52 + 350 states (total 10543, 550s)
+  [27] taught   5c88ff9ca5 + 398 states (total 10941, 564s)
+  [28] taught   3e9bdcee48 + 257 states (total 11198, 572s)
+  [29] taught   65bfb2e8b4 + 452 states (total 11650, 585s)
+  UNTAUGHT CROSS-CHECK  got [266, 255, 260, 312, 270, 265, 303, 259]
+                        exp [266, 255, 260, 312, 270, 265, 303, 259]  REPRODUCED
+  FLOOR_c277178    KL_t||p  untaught 0.0383  taught22 0.0263
+  FLOOR_c275758    KL_t||p  untaught 0.0664  taught22 0.0535
+  pool10           KL_t||p  untaught 0.3176  taught22 0.4083
+  semistall3       KL_t||p  untaught 0.1036  taught22 0.1301
+  defensive10      KL_t||p  untaught 0.2775  taught22 0.3229
+
+  FLOOR FLOOR_c277178: untaught 0.0383  taught 0.0263  floor L 0.6878
+
+  FLOOR FLOOR_c275758: untaught 0.0664  taught 0.0535  floor L 0.8053
+
+  === PRIMARY A (per-teacher L = KL_taught / KL_untaught) ===
+  pool10       n=10  KL_taught 0.4722  KL_untaught 0.3176  L 1.4869 CI [1.2723,1.7671]
+  semistall3   n= 3  KL_taught 0.2156  KL_untaught 0.1036  L 2.0816 CI [1.7053,2.4828]
+  defensive10  n=10  KL_taught 0.3586  KL_untaught 0.2775  L 1.2922 CI [1.1350,1.4619]
+  ERA POOLED   KL_taught 0.3893  KL_untaught 0.2329  L 1.6718 CI [1.4567,1.9161]  (23 cells)
+
+  === PRIMARY B (sibling control, 21 singly-taught teams, 2 siblings) ===
+  own 0.3969  siblings 0.2303  delta +0.1666 CI [+0.1055,+0.2309]  R 1.8316 CI [1.5334,2.1744]
+
+  wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a16403d60f0c9a879/designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/v8_era_v2_n9.json  (total 629s)

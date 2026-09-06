@@ -1,0 +1,36 @@
+  states: gen 3339  v8 4180
+  gen reference gap KL(parent||origin) 0.3361
+
+  SIBLING-CONTROL LOCALITY  R = own / siblings  (1.00 = perfectly GLOBAL)
+    v8_all                      R 1.7940  CI [1.4803,2.1551]  LOCAL (CI excludes 1)
+    gen_unfunded  [REF-A fold parent] R 1.0956  CI [0.9208,1.2971]  CI includes 1 -> GLOBAL not excluded
+    gen_funded    [REF-A fold parent] R 1.1013  CI [0.9604,1.2441]  CI includes 1 -> GLOBAL not excluded
+    gen_unfunded  [REF-B true origin] R 1.2961  CI [1.0439,1.5443]  LOCAL (CI excludes 1)
+    gen_funded    [REF-B true origin] R 1.1859  CI [1.0794,1.2859]  LOCAL (CI excludes 1)
+
+  RAW L = KL_taught / KL_untaught  (confounded by the team set -- see floor)
+    v8_all                      L 1.5601  CI [1.1993,2.1410]
+    gen_unfunded  [REF-A fold parent] L 1.0311  CI [0.8854,1.2052]   taught 0.5824  untaught 0.5663
+    gen_funded    [REF-A fold parent] L 1.1183  CI [0.9687,1.2519]   taught 0.7684  untaught 0.6896
+    gen_unfunded  [REF-B true origin] L 1.5111  CI [1.2795,1.8065]   taught 0.3597  untaught 0.2338
+    gen_funded    [REF-B true origin] L 1.4265  CI [1.3130,1.5564]   taught 0.5381  untaught 0.3793
+
+  MATCHED-NOISE FLOOR
+    gen FLOORA_ckptA    (ref A) untaught 0.0330  taught 0.0431  floor L 1.3062
+    gen FLOORA_ckptB    (ref A) untaught 0.0538  taught 0.0824  floor L 1.5312
+    gen FLOORB_ckptA    (ref B) untaught 0.0094  taught 0.0130  floor L 1.3796
+    gen FLOORB_ckptB    (ref B) untaught 0.0366  taught 0.0457  floor L 1.2474
+    v8  FLOOR_c277178              untaught 0.0382  taught 0.0252  floor L 0.6592
+    v8  FLOOR_c275758              untaught 0.0667  taught 0.0532  floor L 0.7984
+
+  CROSS-ERA (unpaired), gen side under REF-A fold parent:
+    v8_minus_gen_unfunded_R: +0.6983 CI [+0.3277,+1.1064]  SIGNIFICANT
+    v8_minus_gen_funded_R: +0.6926 CI [+0.3482,+1.0854]  SIGNIFICANT
+    WITHIN-GEN (paired) funded-unfunded R +0.0057 CI [-0.1455,+0.1883]  NOT DETECTED
+
+  CROSS-ERA (unpaired), gen side under REF-B true origin:
+    v8_minus_gen_unfunded_R: +0.4978 CI [+0.0920,+0.9374]  SIGNIFICANT
+    v8_minus_gen_funded_R: +0.6080 CI [+0.2752,+0.9863]  SIGNIFICANT
+    WITHIN-GEN (paired) funded-unfunded R -0.1102 CI [-0.3288,+0.1305]  NOT DETECTED
+
+  wrote combined_v2_n3.json

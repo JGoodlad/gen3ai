@@ -1,0 +1,84 @@
+  RESOLVE UNF00: ai_v9_92_R5F00_0831/best_model/best_model.zip
+  RESOLVE FUND00: ai_v9_120_R5FUND00_0901/best_model/best_model.zip
+  RESOLVE UNF02: ai_v9_94_R5F02_0831/best_model/best_model.zip
+  RESOLVE FUND02: ai_v9_122_R5FUND02_0901/best_model/best_model.zip
+  RESOLVE UNF04: ai_v9_96_R5F04_0831/best_model/best_model.zip
+  RESOLVE FUND04: ai_v9_124_R5FUND04_0901/best_model/best_model.zip
+  RESOLVE UNF06: ai_v9_98_R5F06_0831/best_model/best_model.zip
+  RESOLVE FUND06: ai_v9_126_R5FUND06_0901/best_model/best_model.zip
+  RESOLVE UNF08: ai_v9_100_R5F08_0831/best_model/best_model.zip
+  RESOLVE FUND08: ai_v9_128_R5FUND08_0901/best_model/best_model.zip
+  RESOLVE UNF10: ai_v9_102_R5F10_0831/best_model/best_model.zip
+  RESOLVE FUND10: ai_v9_130_R5FUND10_0901/best_model/best_model.zip
+  RESOLVE UNF12: ai_v9_104_R5F12_0831/best_model/best_model.zip
+  RESOLVE FUND12: ai_v9_132_R5FUND12_0901/best_model/best_model.zip
+  RESOLVE UNF14: ai_v9_106_R5F14_0831/best_model/best_model.zip
+  RESOLVE FUND14: ai_v9_134_R5FUND14_0901/best_model/best_model.zip
+  [ 0] untaught 61590463ee85d456 + 280 states (total 280, 12s)
+  [ 1] untaught 9283210847f806ee + 399 states (total 679, 34s)
+  [ 2] untaught ce35b7368c3d692e + 333 states (total 1012, 57s)
+  [ 3] untaught 9909f2e98e981ccc + 458 states (total 1470, 91s)
+  [ 4] untaught 9d5f845869e899ee + 714 states (total 2184, 149s)
+  [ 5] untaught f7ba5702fe856292 + 592 states (total 2776, 194s)
+  [ 6] untaught 90b94599967c6b77 + 391 states (total 3167, 222s)
+  [ 7] untaught dbf81d8ecae51c39 + 301 states (total 3468, 245s)
+  [ 8] taught   8bdb5796b9 + 452 states (total 3920, 279s)
+  [ 9] taught   436335607f + 303 states (total 4223, 302s)
+  [10] taught   6916e13879 + 555 states (total 4778, 351s)
+  [11] taught   e702a104eb + 376 states (total 5154, 391s)
+  [12] taught   64a691c473 + 321 states (total 5475, 414s)
+  [13] taught   e28069562f + 449 states (total 5924, 452s)
+  [14] taught   9e95fb59d7 + 306 states (total 6230, 481s)
+  [15] taught   9d8391d864 + 410 states (total 6640, 519s)
+  [16] taught   750d056194 + 301 states (total 6941, 548s)
+  [17] taught   a9831a5f5e + 568 states (total 7509, 592s)
+  [18] taught   6ebe9ebc4d + 526 states (total 8035, 637s)
+  [19] taught   9b454d9ea7 + 542 states (total 8577, 670s)
+  [20] taught   009e3d0244 + 270 states (total 8847, 681s)
+  [21] taught   b904dbe059 + 399 states (total 9246, 697s)
+  [22] taught   aea50f207e + 406 states (total 9652, 720s)
+  [23] taught   37d717a93a + 373 states (total 10025, 759s)
+  UNTAUGHT STATE CROSS-CHECK: 3468 states on indices 0..7 (canonical offline_collateral_kl batch = 1100 at 3 battles/team)
+  CROSS-CHECK PASS: untaught per-team [280, 399, 333, 458, 714, 592, 391, 301] == published
+
+  REFERENCE GAP  KL(parent||origin) 0.3342   KL(origin||parent) 0.3786
+  FLOORA_ckptA     refA untaught 0.0374 taught16 0.0401  |  refB untaught 0.3471 taught16 0.3571
+  FLOORA_ckptB     refA untaught 0.0654 taught16 0.0760  |  refB untaught 0.3477 taught16 0.3404
+  FLOORB_ckptA     refA untaught 0.3888 taught16 0.3673  |  refB untaught 0.0112 taught16 0.0133
+  FLOORB_ckptB     refA untaught 0.4015 taught16 0.3880  |  refB untaught 0.0415 taught16 0.0453
+  UNF00            refA untaught 0.5669 taught16 0.6139  |  refB untaught 0.2950 taught16 0.3320
+  FUND00           refA untaught 0.8324 taught16 0.8073  |  refB untaught 0.5251 taught16 0.5200
+  UNF02            refA untaught 0.4242 taught16 0.4224  |  refB untaught 0.1073 taught16 0.1300
+  FUND02           refA untaught 0.5961 taught16 0.6407  |  refB untaught 0.3542 taught16 0.4063
+  UNF04            refA untaught 0.6481 taught16 0.5914  |  refB untaught 0.3163 taught16 0.3410
+  FUND04           refA untaught 0.7180 taught16 0.7034  |  refB untaught 0.4036 taught16 0.4584
+  UNF06            refA untaught 0.5148 taught16 0.4552  |  refB untaught 0.1690 taught16 0.1809
+  FUND06           refA untaught 0.7876 taught16 0.7209  |  refB untaught 0.4846 taught16 0.4960
+  UNF08            refA untaught 0.4956 taught16 0.5537  |  refB untaught 0.2621 taught16 0.2965
+  FUND08           refA untaught 0.6280 taught16 0.6954  |  refB untaught 0.3896 taught16 0.4485
+  UNF10            refA untaught 0.5690 taught16 0.5528  |  refB untaught 0.3151 taught16 0.3142
+  FUND10           refA untaught 0.6096 taught16 0.6626  |  refB untaught 0.3750 taught16 0.4128
+  UNF12            refA untaught 0.5504 taught16 0.5651  |  refB untaught 0.2612 taught16 0.3200
+  FUND12           refA untaught 0.6417 taught16 0.6449  |  refB untaught 0.3606 taught16 0.4229
+  UNF14            refA untaught 0.6595 taught16 0.6495  |  refB untaught 0.3351 taught16 0.3718
+  FUND14           refA untaught 0.7523 taught16 0.7578  |  refB untaught 0.4353 taught16 0.4771
+
+  FLOOR FLOORA_ckptA (ref A): untaught 0.0374  taught 0.0401  floor L 1.0725
+
+  FLOOR FLOORA_ckptB (ref A): untaught 0.0654  taught 0.0760  floor L 1.1620
+
+  FLOOR FLOORB_ckptA (ref B): untaught 0.0112  taught 0.0133  floor L 1.1894
+
+  FLOOR FLOORB_ckptB (ref B): untaught 0.0415  taught 0.0453  floor L 1.0923
+
+  === REF-A (fold parent R2ACTION) ===
+  unfunded  KL_taught 0.5789  KL_untaught 0.5536  L 1.0502 [0.8998,1.2137]   R 1.0722 [0.9432,1.1977]
+  funded    KL_taught 0.7613  KL_untaught 0.6957  L 1.0971 [0.9900,1.1912]   R 1.1067 [1.0026,1.2071]
+  FUNDED-UNFUNDED R +0.0345 [-0.0795,+0.1636] SPANS ZERO
+
+  === REF-B (true origin rev-1 final) ===
+  unfunded  KL_taught 0.3433  KL_untaught 0.2576  L 1.3306 [1.1904,1.4944]   R 1.2542 [1.0318,1.4663]
+  funded    KL_taught 0.5317  KL_untaught 0.4160  L 1.2808 [1.1950,1.3697]   R 1.1953 [1.0972,1.2983]
+  FUNDED-UNFUNDED R -0.0589 [-0.2508,+0.1472] SPANS ZERO
+
+  wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a16403d60f0c9a879/designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/gen_era_v2_n9.json  (total 1100s)

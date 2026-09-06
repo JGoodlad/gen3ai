@@ -1,0 +1,28 @@
+  ai_v9_92_R5F00_0831                          -> ai_v9_92_R5F00_0831/best_model/best_model.zip sha 01a20e99822a   was final_model.zip                sha f5f57be964ac  DIFFERENT
+  ai_v9_94_R5F02_0831                          -> ai_v9_94_R5F02_0831/best_model/best_model.zip sha 0238de18d773   was final_model.zip                sha 48f7d9f528a8  DIFFERENT
+  ai_v9_96_R5F04_0831                          -> ai_v9_96_R5F04_0831/best_model/best_model.zip sha 6b0f2a8abf37   was final_model.zip                sha 98cbe6198127  DIFFERENT
+  ai_v9_98_R5F06_0831                          -> ai_v9_98_R5F06_0831/best_model/best_model.zip sha 9867779bf3b4   was final_model.zip                sha 1672953a9a0d  DIFFERENT
+  ai_v9_100_R5F08_0831                         -> ai_v9_100_R5F08_0831/best_model/best_model.zip sha 7795f4c2ec77   was final_model.zip                sha c709aedf5475  DIFFERENT
+  ai_v9_102_R5F10_0831                         -> ai_v9_102_R5F10_0831/best_model/best_model.zip sha ba4653de23f8   was final_model.zip                sha f4b53a2930ba  DIFFERENT
+  ai_v9_104_R5F12_0831                         -> ai_v9_104_R5F12_0831/best_model/best_model.zip sha 19e161318b1d   was final_model.zip                sha a23f0de21ef4  DIFFERENT
+  ai_v9_106_R5F14_0831                         -> ai_v9_106_R5F14_0831/best_model/best_model.zip sha b499771a31ce   was final_model.zip                sha 40ab3a5a22da  DIFFERENT
+  ai_v9_120_R5FUND00_0901                      -> ai_v9_120_R5FUND00_0901/best_model/best_model.zip sha 6afd3971e859   was final_model.zip                sha 8a5b454bbcbc  DIFFERENT
+  ai_v9_122_R5FUND02_0901                      -> ai_v9_122_R5FUND02_0901/best_model/best_model.zip sha aacb20fdb692   was final_model.zip                sha 6d06b696f4ca  DIFFERENT
+  ai_v9_124_R5FUND04_0901                      -> ai_v9_124_R5FUND04_0901/best_model/best_model.zip sha d5d211c732ee   was final_model.zip                sha b18d09807427  DIFFERENT
+  ai_v9_126_R5FUND06_0901                      -> ai_v9_126_R5FUND06_0901/best_model/best_model.zip sha 1546fb4b32e2   was final_model.zip                sha 700e922a5e2a  DIFFERENT
+  ai_v9_128_R5FUND08_0901                      -> ai_v9_128_R5FUND08_0901/best_model/best_model.zip sha 3de0a0a2888f   was final_model.zip                sha f971e07f9d34  DIFFERENT
+  ai_v9_130_R5FUND10_0901                      -> ai_v9_130_R5FUND10_0901/best_model/best_model.zip sha a211563303ac   was final_model.zip                sha 20301b97df2a  DIFFERENT
+  ai_v9_132_R5FUND12_0901                      -> ai_v9_132_R5FUND12_0901/best_model/best_model.zip sha 7f3ee0854b08   was final_model.zip                sha a9675b2d223f  DIFFERENT
+  ai_v9_134_R5FUND14_0901                      -> ai_v9_134_R5FUND14_0901/best_model/best_model.zip sha 13aa8e0c8619   was final_model.zip                sha 8a8bffabb942  DIFFERENT
+  ai_v8_09_pool10_exploiter_0723               -> ai_v8_09_pool10_exploiter_0723/best_model/best_model.zip sha 7a1b65b58119   was final_model_interrupted.zip    sha beb3222d0a57  DIFFERENT
+  ai_v8_06_semistall_3team_exploiter_0722      -> ai_v8_06_semistall_3team_exploiter_0722/best_model/best_model.zip sha b7b5da9bd48b   was final_model_interrupted.zip    sha 3a2036d165f0  DIFFERENT
+  ai_v8_13_defensive10_exploiter_0725          -> ai_v8_13_defensive10_exploiter_0725/best_model/best_model.zip sha ca6cf2ec8983   was final_model_interrupted.zip    sha 7522cd4c8bcb  DIFFERENT
+
+  19/19 teachers resolve to a DIFFERENT file than content_locality scored
+
+  parents (unchanged, exactly as the folds loaded them):
+    gen_parent                       ai_v9_59_R2ACTION_0827/final_model.zip                       sha ab213e4479d3
+    v8_parent                        ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip   sha 3b7792c87347
+    gen_true_origin (rev-1 final)    ai_v9_29_rev1_0823/final_model.zip                           sha 2f17fbab0b5f
+
+  wrote designs/research_state/measurements/arch_transfer_2026-09-05/content_locality_v2/resolved_teachers.json

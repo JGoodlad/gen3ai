@@ -1,0 +1,9 @@
+  own_all cells                23   (10 + 3 + 10 teacher-team pairs)
+  len(taught_union) used by v1 22   (deduped — one team taught twice)
+  => v1 drew indices in [0, 22) over a 23-cell array; cell 22 was unreachable
+
+  RECORDED (v1)              L 1.5220  CI [1.3551, 1.7205]   taught CI [0.3756, 0.4661]
+  REPRODUCED under-sampled   L 1.5220  CI [1.3551, 1.7205]   taught CI [0.3756, 0.4661]
+  CORRECTLY SIZED            L 1.5220  CI [1.3572, 1.7136]   taught CI [0.3767, 0.4637]
+
+  Point estimate identical; only the interval moves. The bug never touched the headline sibling-control R, whose arrays were correctly sized in v1.

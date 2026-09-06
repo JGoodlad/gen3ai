@@ -249,6 +249,18 @@ each other), and half of a gen-era teacher's distance is inherited from the fork
 step. In floor units, the one currency both eras share, v8's teachers sat at 4.5× and gifted; our farthest
 sat at 15× and robbed hardest.
 
+**Locality, corrected (`arch_transfer_2026-09-05/content_locality_v2/`, the fold's own checkpoint resolver and
+two references).** On the files a fold actually loads, v8's three teachers have sibling-control locality
+1.83 [1.53, 2.17], and our sixteen sit at 1.07 [0.94, 1.20] (unfunded) and 1.11 [1.00, 1.21] (funded) against
+the fold parent. Measured against their *true* fork origin instead, ours rise only to 1.25 [1.03, 1.47] and
+1.20 [1.10, 1.30]: the fork-origin offset explains about a quarter of the unfunded gap and an eighth of the
+funded one, and v8's number rose too under the corrected files, so the gap does not close. Gen-era
+exploiters are genuinely more global than v8's even from their own origin, which independently reproduces
+the exploiter-drift probe's flat on/off ratio of about 1.25 on different states and a different statistic.
+Within the gen era, locality still does not separate the robbing teachers from the neutral ones. One caveat
+the reader must carry: the v8 headline rests on the thinnest cell, a three-team teacher whose off-slice
+divergence sits 1.6× above the floor, so the direction is robust and the magnitude less so.
+
 **FiLM result (z-swap probe, `arch_transfer_2026-09-05/zswap/`): REFUTED.** v8's whole line carried a
 32-dimensional team code: a DeepSets mean over our six mons' static facts, entering the network at exactly
 one line as a FiLM on both heads after projection and never touching the trunk. Substituting the parent's

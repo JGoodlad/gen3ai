@@ -1,0 +1,21 @@
+  OK   v8 R n=9                           1.8316 [1.5334, 2.1744]
+  OK   v8 R n=3                           1.7940 [1.4803, 2.1551]
+  OK   gen unfunded R REF-A n=9           1.0722 [0.9432, 1.1977]
+  OK   gen funded R REF-A n=9             1.1067 [1.0026, 1.2071]
+  OK   gen unfunded R REF-B n=9           1.2542 [1.0318, 1.4663]
+  OK   gen funded R REF-B n=9             1.1953 [1.0972, 1.2983]
+  OK   v1 v8 R                            1.4498
+  OK   cross-era unfunded REF-A           +0.7594 | [+0.4312, +1.1236]
+  OK   cross-era funded REF-A             +0.7249 | [+0.4111, +1.0829]
+  OK   within-gen REF-A                   +0.0345 | [-0.0795, +0.1636]
+  OK   cross-era unfunded REF-B           +0.5774 | [+0.2053, +0.9832]
+  OK   cross-era funded REF-B             +0.6363 | [+0.3196, +0.9919]
+  OK   within-gen REF-B                   -0.0589 | [-0.2508, +0.1472]
+  OK   reference gap                      0.3342
+  OK   n_different teachers               19/19 teachers
+  OK   semistall3 untaught                0.1036
+  OK   FUNDED-UNFUNDED untaught REF-A     +0.1421 [+0.0889, +0.2006]
+  OK   gen states                         10025
+  OK   v8 states                          11650
+
+  PASS — all 19 checked claims appear verbatim in README.md

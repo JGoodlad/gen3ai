@@ -1,0 +1,268 @@
+{
+ "_meta": {
+  "gen_artifact": "gen_era_v2_n3.json",
+  "v8_artifact": "v8_era_v2_n3.json",
+  "statistic": "R = KL(own teacher||reference) / mean KL(sibling teachers||reference), per taught team, on the SAME parent-piloted states",
+  "references": {
+   "gen_REF_A": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "gen_REF_B": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "v8": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip  (parent == origin; one column)"
+  },
+  "gen_reference_gap_kl_parent_given_origin": 0.33605441451072693,
+  "resolver": "agents.training.fixed_opponent_pool._resolve_zip_and_config(run_dir, None)",
+  "cross_era_contrast_is_UNPAIRED": "the eras share no team, no pool, no parent",
+  "n_gen_taught_teams": 16,
+  "n_v8_taught_teams": 21,
+  "gen_states": 3339,
+  "v8_states": 4180
+ },
+ "v8": {
+  "R": 1.79395804770449,
+  "ci95": [
+   1.4802748575273927,
+   2.155078451013156
+  ],
+  "local_beyond_1": true,
+  "L": 1.5601458152135212,
+  "L_ci95": [
+   1.199349284172058,
+   2.140965461730957
+  ],
+  "kl_own_mean": 0.38480091094970703,
+  "kl_siblings_mean": 0.23194342851638794
+ },
+ "refA": {
+  "unfunded": {
+   "R": 1.095611156018242,
+   "R_ci95": [
+    0.9207630269998736,
+    1.2971256355955885
+   ],
+   "local_beyond_1": false,
+   "L": 1.031146562121266,
+   "L_ci95": [
+    0.8854464256612607,
+    1.2051589059853245
+   ],
+   "kl_taught_mean": 0.5823895633220673,
+   "kl_taught_ci95": [
+    0.4882016107439995,
+    0.6838765423744916
+   ],
+   "kl_untaught_mean": 0.5663445666432381,
+   "kl_untaught_ci95": [
+    0.5133299008011818,
+    0.6174947619438171
+   ]
+  },
+  "funded": {
+   "R": 1.1013206577439312,
+   "R_ci95": [
+    0.9604174439412597,
+    1.2440818050416198
+   ],
+   "local_beyond_1": false,
+   "L": 1.118276496799313,
+   "L_ci95": [
+    0.9686616977246993,
+    1.2519410689180734
+   ],
+   "kl_taught_mean": 0.7684134170413017,
+   "kl_taught_ci95": [
+    0.6609388288110495,
+    0.8730003669857979
+   ],
+   "kl_untaught_mean": 0.6896418854594231,
+   "kl_untaught_ci95": [
+    0.6362607132643461,
+    0.740300215780735
+   ]
+  },
+  "within_gen_funded_minus_unfunded_R": {
+   "delta": 0.005709501725689264,
+   "ci95": [
+    -0.14553035119396968,
+    0.1882684586405892
+   ],
+   "separates_from_zero": false,
+   "paired_on": "the same 16 taught teams and the same states"
+  },
+  "cross_era_v8_minus_gen_unfunded_R": {
+   "delta": 0.6983468916862481,
+   "ci95": [
+    0.32768191318870904,
+    1.106417865423183
+   ],
+   "separates_from_zero": true
+  },
+  "cross_era_v8_minus_gen_funded_R": {
+   "delta": 0.6926373899605589,
+   "ci95": [
+    0.34824932336548686,
+    1.085439438576907
+   ],
+   "separates_from_zero": true
+  }
+ },
+ "refB": {
+  "unfunded": {
+   "R": 1.2961362566118035,
+   "R_ci95": [
+    1.0438777099281156,
+    1.544258858070634
+   ],
+   "local_beyond_1": true,
+   "L": 1.511113559733999,
+   "L_ci95": [
+    1.2794561990657125,
+    1.8065018169370202
+   ],
+   "kl_taught_mean": 0.35971383284777403,
+   "kl_taught_ci95": [
+    0.2639990309253335,
+    0.45261148409917945
+   ],
+   "kl_untaught_mean": 0.23375816084444523,
+   "kl_untaught_ci95": [
+    0.18490602634847164,
+    0.2757764086127281
+   ]
+  },
+  "funded": {
+   "R": 1.1859159286640364,
+   "R_ci95": [
+    1.0794334610491139,
+    1.2858574412122845
+   ],
+   "local_beyond_1": true,
+   "L": 1.4265218318020567,
+   "L_ci95": [
+    1.3130103308613081,
+    1.5563660531473138
+   ],
+   "kl_taught_mean": 0.5381122939288616,
+   "kl_taught_ci95": [
+    0.4855697825551033,
+    0.5948875633068382
+   ],
+   "kl_untaught_mean": 0.3793361485004425,
+   "kl_untaught_ci95": [
+    0.34471049522981045,
+    0.41363490000367165
+   ]
+  },
+  "within_gen_funded_minus_unfunded_R": {
+   "delta": -0.11022032794776712,
+   "ci95": [
+    -0.3288292219215113,
+    0.13050053056194527
+   ],
+   "separates_from_zero": false,
+   "paired_on": "the same 16 taught teams and the same states"
+  },
+  "cross_era_v8_minus_gen_unfunded_R": {
+   "delta": 0.49782179109268654,
+   "ci95": [
+    0.09202259764816662,
+    0.9373934801973082
+   ],
+   "separates_from_zero": true
+  },
+  "cross_era_v8_minus_gen_funded_R": {
+   "delta": 0.6080421190404537,
+   "ci95": [
+    0.27522807708682095,
+    0.986346591986807
+   ],
+   "separates_from_zero": true
+  }
+ },
+ "floor": {
+  "gen": {
+   "FLOORA_ckptA": {
+    "reference": "A",
+    "untaught_mean": 0.03302218019962311,
+    "untaught_ci95": [
+     0.02643712098652031,
+     0.03815465857042
+    ],
+    "taught16_mean": 0.04313497245311737,
+    "taught16_ci95": [
+     0.03843718479038216,
+     0.04842786323279142
+    ],
+    "L_floor": 1.3062424659729004
+   },
+   "FLOORA_ckptB": {
+    "reference": "A",
+    "untaught_mean": 0.05381322652101517,
+    "untaught_ci95": [
+     0.04328436575597152,
+     0.0640820674598217
+    ],
+    "taught16_mean": 0.08239689469337463,
+    "taught16_ci95": [
+     0.07398239352041855,
+     0.09047869697096757
+    ],
+    "L_floor": 1.5311644077301025
+   },
+   "FLOORB_ckptA": {
+    "reference": "B",
+    "untaught_mean": 0.00941003579646349,
+    "untaught_ci95": [
+     0.007874001108575612,
+     0.010601938934996724
+    ],
+    "taught16_mean": 0.012982143089175224,
+    "taught16_ci95": [
+     0.011841536432621069,
+     0.014086160954320803
+    ],
+    "L_floor": 1.3796061277389526
+   },
+   "FLOORB_ckptB": {
+    "reference": "B",
+    "untaught_mean": 0.03664875030517578,
+    "untaught_ci95": [
+     0.02953929454088211,
+     0.0441622119396925
+    ],
+    "taught16_mean": 0.04571644216775894,
+    "taught16_ci95": [
+     0.04091307579656132,
+     0.050887690554372964
+    ],
+    "L_floor": 1.2474216222763062
+   }
+  },
+  "v8": {
+   "FLOOR_c277178": {
+    "untaught_mean": 0.0382341668009758,
+    "untaught_ci95": [
+     0.03506398148601875,
+     0.04137476487085223
+    ],
+    "taught_mean": 0.02520255371928215,
+    "taught_ci95": [
+     0.02325172061735595,
+     0.027121347047134557
+    ],
+    "L_floor": 0.6591631174087524
+   },
+   "FLOOR_c275758": {
+    "untaught_mean": 0.0666666328907013,
+    "untaught_ci95": [
+     0.060052518267184496,
+     0.07263933018548413
+    ],
+    "taught_mean": 0.053229834884405136,
+    "taught_ci95": [
+     0.048594066576862875,
+     0.05803247655487872
+    ],
+    "L_floor": 0.7984479069709778
+   }
+  }
+ }
+}

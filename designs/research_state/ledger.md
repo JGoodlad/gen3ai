@@ -11047,3 +11047,47 @@ Two edge cases that are not corner cases in practice:
 This is the first time the semantics have been written down, and the reason it mattered was a
 comparison that would otherwise have been read as 0.35-vs-0.20 of the same denominator when the
 denominator itself (`sf`) differs between the runs being compared.
+
+## 2026-09-06 — ARCH→TRANSFER probe H1b (content locality, corrected): on the fold's resolved checkpoints v8's teachers are R 1.83 [1.53, 2.17] vs ours 1.07 / 1.11; against the TRUE fork origin ours rise only to 1.25 / 1.20 — the origin explains ~24% / 12% of the gap; within-gen still NOT DETECTED
+
+**What changed vs H1** (`content_locality_v2/README.md`; `content_locality/` left untouched as the record): (1) every teacher
+loaded through `fixed_opponent_pool._resolve_zip_and_config` — the exact call `model_build.py` makes — 19/19 teachers resolve
+to a DIFFERENT sha256 than H1 scored (every fold named a run DIR, so the `best_model/best_model.zip` rung applies; the era
+checkout's resolver is byte-identical, diffed); (2) two references for the gen teachers — REF-A the fold parent R2ACTION
+(what the fold sees) and REF-B the true origin rev-1 final @25,067,760 (what the exploiter did; `main.lineage` confirms
+all 8 R5F fork there with R2ACTION as `--exploiter` target only; v8's three fork FROM v8_04, so origin = parent);
+KL(parent‖origin) = 0.3342; REF-B gets its own floor from rev-1's two nearest checkpoints; (3) the H1 bootstrap
+under-sampling fixed (`boot.py` derives the resample range from the array and asserts it; `boot_bug_demo.py` reproduces
+H1's under-sampled pooled-L CI bit-identically, then corrects it: [1.3551, 1.7205] → [1.3572, 1.7136]; point estimates and
+the headline R unaffected). States asserted identical to H1's (three cross-checks in the scripts).
+
+| arm | reference | H1 R | **H1b R** |
+|---|---|---|---|
+| v8 (3 teachers) | parent = origin | 1.4498 [1.2728, 1.6722] | **1.8316 [1.5334, 2.1744]** |
+| gen unfunded | REF-A fold parent | 1.0723 | **1.0722 [0.9432, 1.1977]** |
+| gen funded | REF-A fold parent | 1.1016 | **1.1067 [1.0026, 1.2071]** |
+| gen unfunded | REF-B true origin | — | **1.2542 [1.0318, 1.4663]** |
+| gen funded | REF-B true origin | — | **1.1953 [1.0972, 1.2983]** |
+
+- Cross-era: **SIGNIFICANT, strengthened** — v8 − gen_unfunded +0.7594 (REF-A) / +0.5774 (REF-B), v8 − gen_funded +0.7249 /
+  +0.6363, every CI excluding zero (H1 had +0.35 / +0.38).
+- Within-gen funded − unfunded: **NOT DETECTED** under both references (+0.0345 [−0.0795, +0.1636]; −0.0589 [−0.2508, +0.1472]).
+- Pre-registered prediction (ii) — PARTIAL, neither branch fired: R rises to 1.25 / 1.20, between the registered ≥1.3 and ≈1.1;
+  and v8's R rose too (correction 1 hit it hardest), so the gap does not close. **The fork origin explains 24% of the
+  unfunded gap and 12% of the funded one.** Gen exploiters are markedly more global even from their own origin; REF-B
+  unfunded R 1.2542 independently reproduces `exploiter_drift`'s flat ρ ≈ 1.25 on a different state batch and statistic.
+- Reproductions: z-swap's v8 R 1.8316 [1.5349, 2.1782] matched to 4 dp from an independently written script;
+  teacher_distance's levels (UNF 0.5536, FUND 0.6957, paired +0.1421) exact; every matched-noise floor reproduces H1 to 4 dp.
+
+**Hazards.** (1) Naming collision: `exploiter_drift` calls the origin REF-A and the fold parent REF-P; this probe calls the
+fold parent REF-A and the origin REF-B — match on the MODEL, never the letter. (2) The thinnest cell carries the v8 headline:
+`semistall3`'s untaught KL is 0.1036, 1.56× the larger v8 floor, a denominator from a 3-team teacher — direction robust (two
+n, two scripts), magnitude less solid than the CI suggests. (3) Gen REF-A CIs widen while points hold: resolution moved UNF02
+−0.114 and UNF06 −0.133 while others moved ≤0.044 (between-team variance, not the bootstrap).
+
+**Reading.** The origin account is a QUARTER of the story, not the story. Our exploiters diverge from where they started
+about as much off their teams as on them, and v8's did not; locality still does not separate our robbing teachers from our
+neutral ones. With cell 1 (v8's gift survives the loss OFF) the surviving question is what v8's PARENT does with the same
+recipe that ours does not — cell 2 (plain continuation) and the origin × ecology design are the tests. `verify_readme.py`
+recomputes 19 load-bearing numbers verbatim — PASS. Artifact: `measurements/arch_transfer_2026-09-05/content_locality_v2/`.
+
