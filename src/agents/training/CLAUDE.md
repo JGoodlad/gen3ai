@@ -3630,7 +3630,7 @@ rollout buffer. Neither can leak a truncation into the loss.
 `signal/stall_rate` / mean episode length, which is why those and not `draw_rate` are G7's kill
 condition.
 
-### `--vf-coef` multiplies a BCE now, and the first rollout SAYS what that is worth
+### `--vf-coef` multiplies a BCE now, and the first NON-DEGENERATE update SAYS what that is worth
 
 `--vf-coef` means a different quantity under each critic while keeping its name: under `shaped` an
 MSE on a PopArt-normalised shaped return (O(100) unnormalised, on a ±30 scale); under `winprob` the
@@ -3638,15 +3638,32 @@ win-prob head's **BCE against a Bernoulli outcome**, which is `ln 2 ≈ 0.693` p
 initialisation and falls. The 0.5 default was tuned against the first and carries no information
 about the second, and the normalisation that made the two comparable is refused here.
 
-So `calibration.announce_vf_coef_scale` prints, ONCE, on the first rollout carrying a scorable
-win-prob label: the value TERM (`vf_coef × BCE`), `|policy loss|`, and their **RATIO** — the
-actionable number, since the coefficient alone predicts nothing. It does NOT latch on a rollout it
-could not read (a `train()` with no scorable label tries again next time), and `_vf_scale_announced`
-is in `_excluded_save_params`, so a launcher restart re-prints it beside the startup `[CRITIC]`
-banner that every restart also re-prints. It is a PRINT, not a scalar: the per-rollout series it
-would duplicate are already `win_prob/loss` and `train/policy_gradient_loss`, and past rollout 1 the
-right instrument is `grad/value_policy_logratio` (0 = balanced). Recommendation and reading rule:
-design §5.4.
+So `calibration.announce_vf_coef_scale` prints, ONCE, two numbers that answer different questions:
+the **raw BCE** (a statement about the HEAD — `ln 2` is chance, well below it means the head
+already calls lopsided games) and the **ratio of the value term's shared-trunk gradient norm to
+the policy term's** (the statement about the COEFFICIENT — the value norm scales linearly in
+`vf_coef`, so the ratio IS the factor to divide it by, `≫1` cut / `≪1` raise).
+
+🚨 **IT USED TO DIVIDE THE VALUE TERM BY `|policy loss|`, AND THAT DENOMINATOR IS DEGENERATE BY
+CONSTRUCTION.** On epoch 1 the clipped surrogate has `ratio ≡ 1` and sits at its stationary point,
+so `|policy loss| ≈ 0`. The live arm `ai_v12_01_winprob_critic` printed `value term = 0.5 × BCE
+0.1330 = 0.0665 against |policy loss| 0.0004 → **165×**` on rollout 1 — and its own gradient series
+reads UNREADABLE at rollout 1 (`grad/policy_norm_shared` exactly 0.0 against a value norm of 7.53),
+**91×** at rollout 2 and **4.6×** by rollout 17. 165× was not a noisy estimate of 4.6×; it was a
+number about the epoch, and a ratio of LOSS MAGNITUDES was the wrong quantity anyway — what
+competes on a shared trunk is the gradient.
+
+**The norms are READ from `grad_balance_metrics`, never recomputed.** That read-only
+`autograd.grad(retain_graph=True)` probe already runs per-term on every `train()`, so the printed
+ratio is exactly `10 ** grad/value_policy_logratio` and no second backward pass is run for a
+banner. **The threshold is on the NORM, not the epoch** (`MIN_POLICY_GRAD_NORM`, 1e-6): the probe
+samples ONE minibatch per `train()` and it is in epoch 1 by construction, so there is no later
+epoch to wait for inside a reading — and epoch 1 is not degenerate in general, since the policy
+GRADIENT at `ratio ≡ 1` is `A·∇log π ≠ 0`. It does NOT latch on an update it could not read (no
+scorable label, no grad probe, or a policy norm under the floor — the next rollout tries again),
+and `_vf_scale_announced` is in `_excluded_save_params`, so a launcher restart re-prints it beside
+the startup `[CRITIC]` banner. It is a PRINT, not a scalar: past the first reading the right
+instrument is `grad/value_policy_logratio` (0 = balanced). Reading rule: design §5.4.
 
 ## PopArt value-target normalization (`--use-popart`)
 

@@ -922,33 +922,72 @@ python -m main.launcher \
 >   number about ±30 — it was a number about a normalised residual. A BCE that starts at 0.693 and
 >   falls is in that same O(1) band, so 0.5 is a *defensible* starting point rather than an
 >   inherited accident. What it is not is a MEASURED one.
-> * The quantity that decides is not the coefficient but the **RATIO of the value term to the
->   policy term**, which is a property of the run and cannot be predicted from either flag. It is
->   also already the thing `grad/value_share` and `grad/value_policy_logratio` report per rollout —
->   the arm's own instruments, and the ones to steer by past the first reading.
+> * The quantity that decides is not the coefficient but the **RATIO of the value term's pull to
+>   the policy term's**, which is a property of the run and cannot be predicted from either flag.
+>   It is also already the thing `grad/value_share` and `grad/value_policy_logratio` report per
+>   rollout — the arm's own instruments, and the ones to steer by past the first reading.
 > * A wrong coefficient here is not a silent failure. `train/noise_scale_ratio_value` and
 >   `grad/value_share` both move with it, and §4's gate reads `win_prob/critic_resolution`, which a
 >   swamped or starved critic degrades visibly.
 >
-> **The line the operator reads** (printed once, on the first rollout that carries a scorable
-> win-prob label, from `instrumented_ppo/calibration.vf_coef_scale_line`; it does NOT latch on a
-> rollout it could not read, and it is excluded from the checkpoint so every launcher restart
-> re-prints it beside the `[CRITIC]` banner):
+> 🚨 **THE FIRST SHIPPED VERSION OF THIS LINE MEASURED THE WRONG QUANTITY, and its number was
+> meaningless BY CONSTRUCTION.** It divided the value TERM by `|policy loss|`:
 >
 > ```
-> 🎯 [CRITIC] winprob — first rollout scale: value term = --vf-coef 0.5 x BCE 0.1567 = 0.0784,
->    against |policy loss| 0.0002 -> 476x.  ⚠️ --vf-coef now multiplies a BCE, not the
->    shaped-return MSE 0.5 was tuned for: a BCE at a 0.5 base rate is ln 2 ~ 0.693 per sample at
->    init and falls, where that MSE on a +-30 return was O(100). …
+> 🎯 [CRITIC] winprob — first rollout scale: value term = --vf-coef 0.5 x BCE 0.1330 = 0.0665,
+>    against |policy loss| 0.0004 -> 165x.                      ← ai_v12_01_winprob_critic, 13:30
 > ```
 >
-> ⚠️ **That sample is from a CPU `--debug` smoke (1 env, 10k steps) and its 476x is NOT a
-> production reading** — a toy's clipped surrogate sits at ~2e-4, which is the denominator, not a
-> statement about the coefficient. It is reproduced here to show the SHAPE of the line, and it
-> makes the reading rule concrete: **a ratio in the tens or worse means the critic is swamping the
-> policy on the shared trunk** — cut `--vf-coef` by that factor — while a ratio far below 1 means
-> the critic is starved. Confirm against `grad/value_policy_logratio` (0 = balanced), which is the
-> aux-independent version of the same question and the one that keeps reading after rollout 1.
+> On epoch 1 of a rollout PPO's clipped surrogate has `ratio ≡ 1` and sits at its **stationary
+> point**, so `|policy loss| ≈ 0` and any ratio against it is an artifact of the epoch rather than
+> a reading of the coefficient. Worse, it is the wrong quantity even where it is well defined:
+> what two terms compete for on a shared trunk is the **GRADIENT**, not the loss magnitude. The
+> live arm's own gradient series says how far off it was — at rollout 1 the ratio is
+> **unreadable** (`grad/policy_norm_shared` was exactly 0.0 against a value norm of 7.53), at
+> rollout 2 it reads **91x**, and by rollout 17 it has converged to **4.6x**. So 165x was not a
+> noisy estimate of 4.6x; it was a number about the epoch.
+>
+> **The line the operator reads** (printed once, on the first update whose POLICY GRADIENT NORM is
+> non-degenerate and that carries a scorable win-prob label, from
+> `instrumented_ppo/calibration.vf_coef_scale_line`; it does NOT latch on an update it could not
+> read, and it is excluded from the checkpoint so every launcher restart re-prints it beside the
+> `[CRITIC]` banner):
+>
+> ```
+> 🎯 [CRITIC] winprob — --vf-coef 0.5 scale readout (first non-degenerate update): BCE 0.4571
+>    (ln 2 ~ 0.693 = chance; lower = the head already calls lopsided games). SHARED-TRUNK
+>    GRADIENT: ||g_value|| 0.6449 / ||g_policy|| 0.004447 -> 145x. READING: >>1 the value
+>    gradient dominates the trunk, cut --vf-coef by that factor; <<1 raise it. ⚠️ …
+> ```
+>
+> Both numbers are printed because they answer different questions. **The raw BCE is a statement
+> about the HEAD** — `ln 2 ≈ 0.693` is chance, and well below it means the head is already calling
+> lopsided games. **The gradient-norm ratio is the statement about the COEFFICIENT**: the value
+> norm scales linearly in `--vf-coef`, so the ratio IS the factor to divide it by.
+>
+> **The norms are READ, never recomputed.** They come from `grad_balance_metrics` — the read-only
+> `autograd.grad(retain_graph=True)` probe that has run per-term on every `train()` for
+> generations — so the printed ratio is exactly `10 ** grad/value_policy_logratio`, the
+> aux-independent gauge the line tells you to confirm against, and no second backward pass is run
+> for a banner.
+>
+> **The threshold is on the NORM, not on the epoch.** The grad-balance probe samples ONE minibatch
+> per `train()` and by construction that minibatch is in epoch 1, so "wait until after the first
+> epoch" cannot be the rule — there is no later epoch inside the same reading. Nor is epoch 1
+> degenerate in general: unlike the LOSS, the policy GRADIENT at `ratio ≡ 1` is `A·∇log π`, which
+> is not zero, so an epoch rule would also discard perfectly readable measurements. The floor is
+> `1e-6` (`calibration.MIN_POLICY_GRAD_NORM`), ~3.7 decades below the live arm's first readable
+> norm and about where a float32 norm accumulated over ~1e6 trunk parameters bottoms out.
+>
+> ⚠️ **The sample above is from a CPU `--debug` smoke (1 env, 10k steps, `--n-steps 512`) and its
+> 145x is NOT a production reading** — it is reproduced to show the SHAPE of the line. That smoke
+> does independently reproduce the defect's signature, which is why it is the sample kept: its
+> rollout 1 read a policy grad norm of exactly **0** against a value norm of 8.58 and was correctly
+> REFUSED, and rollout 2's printed 145x equals `10 ** 2.16146`, its own recorded
+> `grad/value_policy_logratio`. The reading rule is the concrete part: **a ratio in the tens or
+> worse means the critic is swamping the policy on the shared trunk** — cut `--vf-coef` by that
+> factor — while a ratio far below 1 means the critic is starved. Past the first reading, steer by
+> `grad/value_policy_logratio` (0 = balanced), which is the same question asked every rollout.
 **Status of this command, measured 2026-09-06.** Everything above **except `--gamma 1.0`
 validates today** — `python -m main.checkargs --argv "…"` accepts all 18 remaining flags and prints
 `✓ this command still launches`. Two things stand between that and the design:

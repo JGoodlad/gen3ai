@@ -276,63 +276,114 @@ def critic_reliability(rollout_buffer) -> Dict[str, float]:
 LN2 = 0.6931471805599453
 
 
-def vf_coef_scale_line(vf_coef: float, bce: float, policy_loss: float) -> str:
-    """One human line: what `--vf-coef` is actually multiplying on this run's first rollout.
+def vf_coef_scale_line(vf_coef: float, bce: float,
+                       policy_grad_norm: float, value_grad_norm: float) -> str:
+    """One human line: what `--vf-coef` is actually doing to the SHARED TRUNK on this run.
 
     🚨 **`--vf-coef` MEANS SOMETHING DIFFERENT UNDER `--critic winprob`, AND NOTHING IN A METRIC
     NAME SAYS SO.** Under `shaped` it weights an MSE on a PopArt-normalised shaped return; under
     `winprob` it weights the win-prob head's **BCE against a Bernoulli outcome**, which is bounded
     near `ln 2 ~ 0.693` at initialisation and falls from there. The historical default 0.5 was
     tuned against the first quantity and carries no information about the second — so the first arm
-    needs to READ the ratio rather than inherit a number, and this prints it where the operator is
-    already looking (the `[CRITIC] winprob` banner family).
+    needs to READ the balance rather than inherit a number, and this prints it where the operator
+    is already looking (the `[CRITIC] winprob` banner family).
+
+    🚨 **IT REPORTS A RATIO OF GRADIENTS, NOT OF LOSSES, AND THAT IS THE WHOLE POINT.** The first
+    shipped version of this line divided the value term by `|policy loss|`, and that denominator is
+    **degenerate BY CONSTRUCTION**: on epoch 1 of a rollout PPO's clipped surrogate has
+    ``ratio == 1`` exactly and sits at its stationary point, so `|policy loss| ~ 0` and any ratio
+    against it is an artifact of the epoch, not a reading of the coefficient. Live evidence
+    (`ai_v12_01_winprob_critic`, 2026-09-06): the loss form printed **165x** on rollout 1, where
+    the gradient form is **unreadable** on that same rollout, reads **91x** on rollout 2, and has
+    converged to **4.6x** by rollout 17. What competes on the shared trunk is the GRADIENT, and it
+    is a quantity the run already computes — see :func:`announce_vf_coef_scale`.
+
+    Both numbers are printed because they answer different questions and neither substitutes for
+    the other:
+
+    * **the raw BCE** is informative on its own — `ln 2 ~ 0.693` is chance, and a value well below
+      it means the head is already calling lopsided games. It is a statement about the HEAD.
+    * **the gradient-norm ratio** ``||g_value|| / ||g_policy||`` over
+      :data:`agents.training.grad_balance.SHARED_TRUNK_PHASES` is a statement about the
+      COEFFICIENT: the value norm scales linearly in `vf_coef`, so the ratio IS the factor to
+      divide the coefficient by. It is exactly ``10 ** grad/value_policy_logratio``, the
+      aux-independent balance gauge that keeps reading every rollout after this one.
 
     Deliberately a PRINT and not a scalar: it is a once-per-run sanity reading whose whole job is
     to be seen at startup by the person choosing the coefficient. The per-rollout series it would
-    duplicate already exist — `train/policy_gradient_loss` and `win_prob/loss` — and a fourth name
-    for a ratio of two published numbers is a surface, not a measurement.
+    duplicate already exist — `grad/value_policy_logratio`, `grad/value_share` and `win_prob/loss`.
 
-    Pure: takes the three numbers and returns the sentence, so the wording is testable without a
-    PPO. `policy_loss` is the CLIPPED SURROGATE as folded, which is signed and can sit near zero on
-    a well-fit rollout, so the ratio is taken on magnitudes and reported as UNAVAILABLE rather than
-    as a division by ~0 — an infinite ratio would read as "the value term dominates", which is the
-    opposite of what a near-zero policy loss means.
+    Pure: takes the four numbers and returns the sentence, so the wording is testable without a
+    PPO. A non-positive policy norm reports UNAVAILABLE rather than dividing by ~0 — an infinite
+    ratio would read as "the value gradient dominates", which is a statement about a degenerate
+    minibatch, not about `--vf-coef`. (:func:`announce_vf_coef_scale` refuses that case up front;
+    the guard here only keeps the pure function total.)
     """
-    term = float(vf_coef) * float(bce)
-    pol = abs(float(policy_loss))
-    ratio = (f"{term / pol:.3g}x" if pol > 1e-6 else
-             f"UNAVAILABLE (|policy loss| {pol:.3g} is ~0 this rollout)")
-    return (f"🎯 [CRITIC] winprob — first rollout scale: value term = --vf-coef {float(vf_coef):g} "
-            f"x BCE {float(bce):.4f} = {term:.4f}, against |policy loss| {pol:.4f} -> {ratio}. "
-            f"⚠️ --vf-coef now multiplies a BCE, not the shaped-return MSE 0.5 was tuned for: a "
-            f"BCE at a 0.5 base rate is ln 2 ~ {LN2:.3f} per sample at init and falls, where that "
-            f"MSE on a +-30 return was O(100). Read the ratio, not the coefficient — see "
-            f"designs/ai_v12/design_winprob_only_critic.md 5.4.")
+    n_pi = float(policy_grad_norm)
+    n_vf = float(value_grad_norm)
+    ratio = (f"{n_vf / n_pi:.3g}x" if n_pi > 0.0 else
+             f"UNAVAILABLE (||g_policy|| {n_pi:.3g} is ~0 on this update)")
+    return (f"\U0001f3af [CRITIC] winprob \u2014 --vf-coef {float(vf_coef):g} scale readout (first "
+            f"non-degenerate update): BCE {float(bce):.4f} (ln 2 ~ {LN2:.3f} = chance; lower = the "
+            f"head already calls lopsided games). SHARED-TRUNK GRADIENT: ||g_value|| {n_vf:.4g} / "
+            f"||g_policy|| {n_pi:.4g} -> {ratio}. READING: >>1 the value gradient dominates the "
+            f"trunk, cut --vf-coef by that factor; <<1 raise it. \u26a0\ufe0f this is a ratio of "
+            f"GRADIENTS, not of losses \u2014 on epoch 1 the clipped surrogate sits at its "
+            f"stationary point (ratio == 1), so |policy loss| ~ 0 and a loss ratio against it is an "
+            f"artifact. And --vf-coef now multiplies a BCE, not the shaped-return MSE 0.5 was tuned "
+            f"for, which on a +-30 return was O(100). Confirm with grad/value_policy_logratio (log10 "
+            f"of this ratio) \u2014 see designs/ai_v12/design_winprob_only_critic.md 5.4.")
+
+
+#: The floor a shared-trunk POLICY gradient norm must clear before the ratio above is a reading
+#: rather than an artifact. **The threshold is on the NORM, not on the epoch, and the live arm is
+#: why.** The grad-balance probe samples ONE minibatch per `train()` and by construction that
+#: minibatch is in epoch 1 — so "wait until after the first epoch" cannot be the rule; there is no
+#: later epoch to wait for within the same reading. Nor is epoch 1 degenerate in general: unlike
+#: the LOSS, the policy GRADIENT at ``ratio == 1`` is ``A * grad log pi``, which is not zero, so an
+#: epoch rule would also discard perfectly readable measurements. Reading the norm directly is both
+#: necessary and sufficient. The value: `ai_v12_01_winprob_critic` measured `grad/policy_norm_shared`
+#: at **exactly 0.0** on rollout 1 and **4.9e-3** on rollout 2 (~3.7 decades above this floor), and
+#: a float32 norm accumulated over ~1e6 trunk parameters has a noise floor near 1e-6 — so below it
+#: the number is accumulation noise, not a pull.
+MIN_POLICY_GRAD_NORM: float = 1e-6
 
 
 def announce_vf_coef_scale(model, bce: Optional[Sequence[float]],
-                           pg_losses: Sequence[float]) -> None:
+                           grad_balance: Optional[Mapping[str, float]]) -> None:
     """Print :func:`vf_coef_scale_line` ONCE per process, on the first rollout that can read it.
 
-    Stateful half, kept out of the pure function so the wording stays testable. Three properties:
+    Stateful half, kept out of the pure function so the wording stays testable. Four properties:
 
+    * **THE GRADIENT NORMS ARE READ, NEVER RECOMPUTED.** ``grad_balance`` is the dict
+      `grad_balance_metrics` already produced for this `train()` — the read-only
+      `autograd.grad(retain_graph=True)` probe that has run per-term on every rollout for
+      generations. Under `--critic winprob` its ``grad/value_norm_shared`` is the norm of
+      ``vf_coef * BCE`` (the term as folded) and ``grad/policy_norm_shared`` is
+      ``policy_loss + ent_coef * entropy_loss``, both over the same shared-trunk parameter set. A
+      second backward pass here would cost a rollout's worth of graph and could disagree with the
+      series the operator is told to confirm against.
     * **ONCE**, latched on the model (`_vf_scale_announced`), because it answers a question about
-      the RUN's configuration, not about this rollout — repeating it every rollout would bury the
-      startup banner it belongs beside.
-    * **NEVER on a rollout it cannot read.** A `train()` whose minibatches carried no scorable
-      win-prob label (an absent or EMPTY `bce`) or no policy loss produces no line and does NOT
-      latch, so the next rollout tries again. A number invented from a missing one is worse than
-      a late one. Both inputs are the per-minibatch LISTS `train()` accumulates and averages for
-      its own `record` calls — averaged here the same way, so the printed pair is exactly the pair
-      `win_prob/loss` and `train/policy_gradient_loss` publish for that rollout.
+      the RUN's configuration, not about this rollout.
+    * **NEVER on an update it cannot read, and it does NOT latch there.** No scorable win-prob
+      label (an absent or EMPTY `bce`), no grad probe at all (a non-Gen3 extractor yields `{}`), a
+      non-finite norm, or a policy norm under :data:`MIN_POLICY_GRAD_NORM` all produce no line and
+      leave the latch clear, so the next rollout tries again. The live arm needed exactly this: its
+      rollout-1 probe read a policy norm of 0.0 against a value norm of 7.53, and the first honest
+      reading is rollout 2's.
     * It goes to stdout via `print`, the same channel as `train_rl_agent`'s own `[CRITIC]` banner,
       so a launcher-managed run finds both in `launcher_child.log` and a bare run finds both on
       its terminal.
     """
     if getattr(model, "_vf_scale_announced", False):
         return
-    if bce is None or not len(bce) or not len(pg_losses):
+    if bce is None or not len(bce) or not grad_balance:
+        return
+    n_pi = float(grad_balance.get("grad/policy_norm_shared", 0.0))
+    n_vf = float(grad_balance.get("grad/value_norm_shared", 0.0))
+    if not (np.isfinite(n_pi) and np.isfinite(n_vf)):
+        return
+    if n_pi < MIN_POLICY_GRAD_NORM or n_vf <= 0.0:
         return
     model._vf_scale_announced = True
-    print(vf_coef_scale_line(model.vf_coef, float(np.mean(bce)), float(np.mean(pg_losses))),
-          flush=True)
+    print(vf_coef_scale_line(model.vf_coef, float(np.mean(bce)), n_pi, n_vf), flush=True)

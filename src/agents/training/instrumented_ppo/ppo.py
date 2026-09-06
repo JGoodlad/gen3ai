@@ -1729,8 +1729,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if critic_winprob:
             for _rk, _rv in critic_reliability(self.rollout_buffer).items():
                 self.logger.record(f"win_prob/critic_{_rk}", _rv)
-            # ONCE, first rollout: what --vf-coef multiplies now it weights a BCE (see calibration).
-            announce_vf_coef_scale(self, win_prob_metrics.get("loss"), pg_losses)
+            # ONCE, first NON-DEGENERATE update: what --vf-coef does to the shared trunk now it
+            # weights a BCE. Handed the EXISTING `grad_balance` probe, so the printed ratio IS
+            # 10 ** grad/value_policy_logratio and no second backward runs for a banner.
+            announce_vf_coef_scale(self, win_prob_metrics.get("loss"), grad_balance)
 
         # +WIN-PROB EPISODE-START READ: what the head says at the LEAST-informed state, against
         # what those very episodes went on to do. One extra EAGER forward over the episode-start
