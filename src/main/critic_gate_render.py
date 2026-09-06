@@ -15,7 +15,8 @@ import math
 import os
 from typing import Any, Dict, List
 
-from main.critic_gate_design import DESIGN_DOC, FALSIFICATION_CLAUSE, NOT_RUNNABLE
+from main.critic_gate_design import (DESIGN_DOC, FALSIFICATION_CLAUSE, NOT_RUNNABLE,
+                                     RELATIVE_BARS)
 
 
 def _f(v: Any, spec: str = ".4f", dash: str = "—") -> str:
@@ -87,23 +88,58 @@ def render_markdown(doc: Dict[str, Any]) -> str:
     out.append("")
     if cal:
         out.append(f"Bars read from `{cal['artifact']}` (`{cal['baseline_run']}`, steps "
-                   f"{cal['baseline_steps']}, reduce=`{cal['baseline_reduce']}`), "
+                   f"{cal['baseline_steps']}; G1 reduce=`{cal['baseline_reduce']}`, G2/G3 "
+                   f"reduce=`{cal.get('relative_baseline_reduce')}`), "
                    f"selection-reweighted. {cal['asymmetry_note']}")
         out.append("")
+        out.append("### G1 (resolution, primary) + G4 (skill)")
+        out.append("")
         out.append("| step | stratum | gated | **resolution** [95% CI] | baseline | Δ | "
-                   "reliability | ECE | skill [95% CI] | G1 | G2 | G3 | G4 |")
-        out.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+                   "skill [95% CI] | G1 | G4 |")
+        out.append("|---|---|---|---|---|---|---|---|---|")
         for c in cal["checkpoints"]:
             for s in c["strata"]:
                 out.append(
                     f"| {c['step']:,} | `{s['stratum']}` | {'yes' if s['gated'] else 'no'} | "
                     f"**{_f(s['resolution'])}** [{_f(s['resolution_ci'][0])}, "
                     f"{_f(s['resolution_ci'][1])}] | {_f(s['baseline_resolution'])} | "
-                    f"{_f(s['delta_resolution'], '+.4f')} | {_f(s['reliability'])} | "
-                    f"{_f(s['ece'])} | {_f(s['skill'], '+.3f')} [{_f(s['skill_ci'][0], '+.3f')}, "
+                    f"{_f(s['delta_resolution'], '+.4f')} | "
+                    f"{_f(s['skill'], '+.3f')} [{_f(s['skill_ci'][0], '+.3f')}, "
                     f"{_f(s['skill_ci'][1], '+.3f')}] | {_tick(s['G1_resolution'])} | "
-                    f"{_tick(s['G2_reliability'])} | {_tick(s['G3_ece'])} | "
                     f"{_tick(s['G4_skill'])} |")
+        out.append("")
+        out.append("### G2 / G3 — PER-STRATUM NON-INFERIORITY vs the same-stratum baseline")
+        out.append("")
+        out.append(f"> {cal.get('owner_ruling', '')}")
+        out.append("")
+        out.append(f"Rule: {cal.get('relative_rule', '')} The baseline value is its own row **at "
+                   f"the matched checkpoint** where the artifact carries that step, else its steps "
+                   f"reduced with `{cal.get('relative_baseline_reduce')}` — the cell says which.")
+        out.append("")
+        out.append("| step | stratum | gated | gate | metric | arm [95% CI] | baseline (step) | "
+                   "Δ | verdict | **decided by** | §4.3 absolute (aspirational) |")
+        out.append("|---|---|---|---|---|---|---|---|---|---|---|")
+        for c in cal["checkpoints"]:
+            for s in c["strata"]:
+                for spec in RELATIVE_BARS:
+                    r = (s.get("relative") or {}).get(spec.gate)
+                    if not r:
+                        continue
+                    step_of = r["baseline_from_step"]
+                    where = (f"@{step_of:,}" if isinstance(step_of, int) and step_of > 0
+                             else "mean")
+                    if not r.get("baseline_matched_step", False):
+                        where += f", reduced `{r.get('baseline_reduce')}`"
+                    base = f"{_f(r['baseline'])} ({where})"
+                    asp = (f"≤ {r['aspirational']} — arm "
+                           f"{'meets' if r['aspirational_met'] else 'MISSES'}, baseline "
+                           f"{'meets' if r['baseline_meets_aspirational'] else 'MISSES'}")
+                    out.append(
+                        f"| {c['step']:,} | `{s['stratum']}` | "
+                        f"{'yes' if s['gated'] else 'no'} | {spec.gate} | {r['label']} | "
+                        f"**{_f(r['arm'])}** [{_f(r['arm_ci'][0])}, {_f(r['arm_ci'][1])}] | "
+                        f"{base} | {_f(r['delta'], '+.4f')} | {_tick(r['pass'])} | "
+                        f"`{r['decided_by']}` | {asp} |")
         out.append("")
         out.append(f"_{cal['not_gated_note']}_")
     else:
@@ -196,20 +232,48 @@ def render_text(doc: Dict[str, Any]) -> str:
         out.append(f"    bars: {os.path.basename(cal['artifact'])} ({cal['baseline_run']}, "
                    f"reduce={cal['baseline_reduce']})")
         out.append(f"    {'step':>12}{'stratum':>9}{'btl':>5}{'resolution':>11}"
-                   f"{'[ 95% CI ]':>20}{'base':>8}{'rel':>8}{'ece':>7}{'skill':>8}"
-                   f"   G1 G2 G3 G4")
+                   f"{'[ 95% CI ]':>20}{'base':>8}{'skill':>8}   G1 G4")
         for c in cal["checkpoints"]:
             for s in c["strata"]:
                 flags = " ".join((" Y" if s[k] else " n") for k in
-                                 ("G1_resolution", "G2_reliability", "G3_ece", "G4_skill"))
+                                 ("G1_resolution", "G4_skill"))
                 ci = f"[{_f(s['resolution_ci'][0])},{_f(s['resolution_ci'][1])}]"
                 out.append(f"    {c['step']:>12,}{s['stratum']:>9}{s['n_battles']:>5}"
                            f"{_f(s['resolution']):>11}{ci:>20}"
-                           f"{_f(s['baseline_resolution']):>8}{_f(s['reliability']):>8}"
-                           f"{_f(s['ece'], '.3f'):>7}{_f(s['skill'], '+.3f'):>8}  {flags}"
+                           f"{_f(s['baseline_resolution']):>8}"
+                           f"{_f(s['skill'], '+.3f'):>8}  {flags}"
                            + ("" if s["gated"] else "   (not gated)"))
+        out.append("")
+        out.append("    G2/G3 — PER-STRATUM NON-INFERIORITY vs the SAME-stratum baseline "
+                   f"(reduce={cal.get('relative_baseline_reduce')})")
+        out.append(f"    {'step':>12}{'stratum':>9}{'gate':>5}{'metric':>12}{'arm':>9}"
+                   f"{'[ 95% CI ]':>20}{'base':>10}{'delta':>9}  ok  decided by")
+        for c in cal["checkpoints"]:
+            for s in c["strata"]:
+                for spec in RELATIVE_BARS:
+                    r = (s.get("relative") or {}).get(spec.gate)
+                    if not r:
+                        continue
+                    ci = f"[{_f(r['arm_ci'][0])},{_f(r['arm_ci'][1])}]"
+                    base = _f(r["baseline"]) + ("" if r.get("baseline_matched_step") else "*")
+                    out.append(f"    {c['step']:>12,}{s['stratum']:>9}{spec.gate:>5}"
+                               f"{r['label']:>12}{_f(r['arm']):>9}{ci:>20}"
+                               f"{base:>10}{_f(r['delta'], '+.4f'):>9}"
+                               f"  {'Y' if r['pass'] else 'n'}   {r['decided_by']}"
+                               + ("" if s["gated"] else "   (not gated)"))
+        out.append("    base = the baseline's OWN row at this step; * = no row at this step, so "
+                   f"reduced (`{cal.get('relative_baseline_reduce')}`) over the artifact's steps")
+        for spec in RELATIVE_BARS:
+            first = next((((s.get("relative") or {}).get(spec.gate))
+                          for c in cal["checkpoints"] for s in c["strata"]
+                          if (s.get("relative") or {}).get(spec.gate)), None)
+            if first:
+                out.append(f"    {spec.gate} aspirational (§4.3, NOT gated): {spec.label} "
+                           f"<= {first['aspirational']}")
         out.append(f"    {cal['not_gated_note']}")
         out.append(f"    {cal['asymmetry_note']}")
+        if cal.get("owner_ruling"):
+            out.append(f"    {cal['owner_ruling']}")
     else:
         out.append("    not read")
     out.append("")

@@ -29,7 +29,11 @@ here is computed by the tool that owns it**:
    calibration bias has opposite sign.
 3. **The bars come from the committed artifact**, read at run time from
    ``designs/research_state/measurements/winprob_critic_baseline_2026-09-06/`` — never hardcoded
-   here, so the bar and the record cannot drift apart.
+   here, so the bar and the record cannot drift apart. **G2 and G3 are RELATIVE bars** (owner
+   ruling 2026-09-06): §4.3's absolute 0.005 / 0.05 are ALREADY BREACHED by the baseline on the
+   ``pool`` stratum, so the arm is asked to be no worse than its predecessor on each gated
+   stratum, never to clear a number its predecessor never cleared. The absolutes are still
+   computed and printed, as ASPIRATIONAL targets that gate nothing.
 4. **The falsification clause is a verdict, not a footnote.** G1 flat with G2–G4 passing prints the
    design's own sentence verbatim and the tool does NOT report a pass. ``critic_gate_test.py``
    asserts the constant still matches the design file word for word.
@@ -60,8 +64,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from main.critic_gate_design import (BASELINE_ARTIFACT, DEFAULT_BASELINE_DIR,
                                      DEFAULT_MAX_EP_LEN_RATIO, DEFAULT_MAX_STALL_RATE, DESIGN_DOC,
-                                     FALSIFICATION_CLAUSE, G2_MAX_RELIABILITY, G3_MAX_ECE,
-                                     GATED_STRATA, NOT_RUNNABLE, STALL_RATE_SOURCE_NOTE, Z95)
+                                     FALSIFICATION_CLAUSE, G1_BASELINE_REDUCE, G2_MAX_RELIABILITY,
+                                     G3_MAX_ECE, GATED_STRATA, NOT_RUNNABLE,
+                                     OWNER_RULING_2026_09_06, RELATIVE_BARS,
+                                     RELATIVE_BASELINE_REDUCE, RELATIVE_RULE, RULE_BETTER,
+                                     RULE_NO_CI, RULE_NONINFERIOR, RULE_WORSE,
+                                     STALL_RATE_SOURCE_NOTE, Z95)
 from main.critic_gate_render import render_markdown, render_text
 from utils.paths import src_root
 
@@ -245,15 +253,37 @@ def load_baseline(baseline_dir: str) -> Dict[str, Any]:
             "steps": sorted({int(b["step"]) for b in doc["reliability"]})}
 
 
-def baseline_bar(baseline: Dict[str, Any], stratum: str, reduce: str) -> Dict[str, Any]:
-    """The G1 bar for one stratum. Default `max` = the STRICTEST of the baseline's own steps."""
+def baseline_bar(baseline: Dict[str, Any], stratum: str, reduce: str,
+                 metric: str = "resolution", at_step: Optional[int] = None) -> Dict[str, Any]:
+    """One stratum's baseline value for ONE metric — at the MATCHED checkpoint, else reduced.
+
+    ``metric`` names the same key on both sides — the committed artifact's and the gauge's
+    ``reliability_table``'s — which is what makes "matched stratum, matched metric" checkable
+    rather than asserted.
+
+    ``at_step`` asks for the baseline's own row at that exact step. **A checkpoint must be judged
+    against the matched checkpoint whenever one exists**, and this is not a nicety: without it a
+    generation can be reported as inferior TO ITSELF, because its step-26M row would be compared
+    against the reduction's step-28M value. The reduction is what answers the ordinary case, where
+    the arm's step grid and the baseline's do not coincide at all; it is a fallback, and which of
+    the two happened is recorded in ``matched`` and printed.
+
+    G1 reduces ``resolution`` with ``max`` (the STRICTEST value to beat) and does NOT step-match —
+    it is a single pre-registered bar by design. The relative bars reduce their lower-is-better
+    metric with ``last`` (the baseline's own final checkpoint). Both defaults live in
+    ``critic_gate_design``.
+    """
     rows = baseline["per_stratum"].get(stratum)
     if not rows:
         raise GateRefusal("baseline artifact",
                           f"{baseline['path']!r} has no {stratum!r} stratum, so there is no "
                           "matched-stratum bar for it. G1 compares LIKE WITH LIKE or not at all.")
-    vals = [(float(r["resolution"]), int(r["step"])) for r in rows]
-    if reduce == "max":
+    vals = [(float(r[metric]), int(r["step"])) for r in rows]
+    matched = False
+    if at_step is not None and any(st == int(at_step) for _, st in vals):
+        v, step = next((x, st) for x, st in vals if st == int(at_step))
+        matched = True
+    elif reduce == "max":
         v, step = max(vals)
     elif reduce == "min":
         v, step = min(vals)
@@ -261,8 +291,34 @@ def baseline_bar(baseline: Dict[str, Any], stratum: str, reduce: str) -> Dict[st
         v, step = sorted(vals, key=lambda t: t[1])[-1]
     else:
         v, step = sum(x for x, _ in vals) / len(vals), -1
-    return {"resolution": v, "from_step": step, "reduce": reduce,
-            "per_step": {str(s): x for x, s in vals}}
+    return {"metric": metric, "value": v, "resolution": v, "from_step": step, "reduce": reduce,
+            "matched": matched, "per_step": {str(s): x for x, s in vals}}
+
+
+def relative_verdict(point: float, ci: Optional[Sequence[float]],
+                     base: float) -> Tuple[bool, str]:
+    """The owner ruling's NON-INFERIORITY comparison, for one lower-is-better metric.
+
+    Returns ``(passed, which clause decided it)``. The clauses, in the order they are tried:
+
+    * the arm's point estimate is at or below the baseline's — better or equal, nothing to argue;
+    * the arm's CI CONTAINS the baseline's value — the arm is above it, but not detectably, which
+      is non-inferiority and deliberately NOT a claim that the arm is better;
+    * the arm's whole CI sits above it — the only FAIL.
+
+    A non-finite CI cannot support a non-inferiority claim, so the point alone decides and the row
+    says so. That is the conservative direction: a missing interval never converts a worse point
+    estimate into a pass.
+    """
+    lo, hi = ((float(ci[0]), float(ci[1])) if ci is not None and len(ci) == 2
+              else (float("nan"), float("nan")))
+    if point <= base:
+        return True, RULE_BETTER
+    if not (math.isfinite(lo) and math.isfinite(hi)):
+        return False, RULE_NO_CI
+    if lo <= base <= hi:
+        return True, RULE_NONINFERIOR
+    return False, RULE_WORSE
 
 
 def _gauge_strata_arrays(sl: Dict[str, Any], weights) -> "Dict[str, Tuple[Any, Any, Any, Any]]":
@@ -284,14 +340,20 @@ def _gauge_strata_arrays(sl: Dict[str, Any], weights) -> "Dict[str, Tuple[Any, A
 
 def calibration_section(run_dir: str, baseline: Dict[str, Any], *, bins: int, boot: int,
                         seed: int, max_battles_per_step: Optional[int], reduce: str,
-                        max_reliability: float, max_ece: float,
+                        relative_reduce: str, max_reliability: float, max_ece: float,
                         say=lambda _m: None) -> Dict[str, Any]:
     """Endpoint 2 — §4.3's G1-G4, per checkpoint, bot and pool separately, selection-reweighted.
 
     Every statistic is the scaffolding gauge's. ``build_reliability`` produces the canonical rows
-    (so they are directly comparable with the committed artifact's); the resolution CI G1 needs is
-    the one thing the gauge does not publish, and it is obtained by calling the gauge's OWN
-    ``reliability_table`` under the gauge's OWN ``cluster_bootstrap_ci`` — never a second estimator.
+    (so they are directly comparable with the committed artifact's); the intervals G1 and the
+    relative bars need are the one thing the gauge does not publish, and they are obtained by
+    calling the gauge's OWN ``reliability_table`` under the gauge's OWN ``cluster_bootstrap_ci``
+    — never a second estimator. All three metrics share ONE seed, so they are resampled over the
+    SAME battle draws and their intervals are mutually coherent.
+
+    **G2 and G3 are RELATIVE bars** (owner ruling 2026-09-06): the arm must be no worse than the
+    baseline's SAME-stratum value, by ``relative_verdict``. §4.3's absolute 0.005 / 0.05 are
+    carried through as ASPIRATIONAL targets — computed, printed, and gating nothing.
     """
     from agents.training.scaffolding import cluster_bootstrap_ci, reliability_table
     from main.scaffolding_gauge import (SelectionWeightError, build_reliability,
@@ -322,13 +384,41 @@ def calibration_section(run_dir: str, baseline: Dict[str, Any], *, bins: int, bo
             if row is None:
                 continue
 
-            def _res(idx, _p=p, _y=y, _w=wi):
-                return reliability_table(_p[idx], _y[idx], bins=bins,
-                                         weights=None if _w is None else _w[idx])["resolution"]
+            def _stat(key, _p=p, _y=y, _w=wi):
+                def _fn(idx):
+                    return reliability_table(_p[idx], _y[idx], bins=bins,
+                                             weights=None if _w is None else _w[idx])[key]
+                return cluster_bootstrap_ci(_fn, b, n_boot=boot, seed=seed + 300)
 
-            lo, hi = cluster_bootstrap_ci(_res, b, n_boot=boot, seed=seed + 300)
+            lo, hi = _stat("resolution")
             bar = baseline_bar(baseline, name, reduce)
             skill, skill_lo = float(row["skill"]), float(row["skill_ci_lo"])
+
+            # ---- G2 / G3: per-stratum NON-INFERIORITY against the same-stratum baseline.
+            aspirational = {"reliability": max_reliability, "ece": max_ece}
+            relative: Dict[str, Any] = {}
+            for spec in RELATIVE_BARS:
+                arm = float(row[spec.metric])
+                arm_ci = list(_stat(spec.metric))
+                rbar = baseline_bar(baseline, name, relative_reduce, metric=spec.metric,
+                                    at_step=step)
+                ok, rule = relative_verdict(arm, arm_ci, rbar["value"])
+                target = float(aspirational[spec.metric])
+                relative[spec.gate] = {
+                    "metric": spec.metric, "label": spec.label,
+                    "arm": arm, "arm_ci": arm_ci,
+                    "baseline": rbar["value"], "baseline_from_step": rbar["from_step"],
+                    "baseline_per_step": rbar["per_step"], "baseline_reduce": relative_reduce,
+                    "baseline_matched_step": rbar["matched"],
+                    "baseline_source": ("the baseline's OWN row at this step"
+                                        if rbar["matched"] else
+                                        f"no baseline row at this step; reduced "
+                                        f"(`{relative_reduce}`) over the artifact's steps"),
+                    "delta": arm - rbar["value"], "pass": bool(ok), "decided_by": rule,
+                    "aspirational": target, "aspirational_met": bool(arm <= target),
+                    "baseline_meets_aspirational": bool(rbar["value"] <= target),
+                }
+
             strata.append({
                 "stratum": name, "gated": name in GATED_STRATA,
                 "n_states": int(row["n"]), "n_battles": int(row["n_battles"]),
@@ -340,14 +430,21 @@ def calibration_section(run_dir: str, baseline: Dict[str, Any], *, bins: int, bo
                 "baseline_per_step": bar["per_step"],
                 "delta_resolution": float(row["resolution"]) - bar["resolution"],
                 "reliability": float(row["reliability"]),
+                "reliability_ci": relative["G2"]["arm_ci"],
+                "baseline_reliability": relative["G2"]["baseline"],
                 "ece": float(row["ece"]), "mce": float(row["mce"]),
+                "ece_ci": relative["G3"]["arm_ci"],
+                "baseline_ece": relative["G3"]["baseline"],
                 "brier": float(row["brier"]), "uncertainty": float(row["uncertainty"]),
                 "skill": skill, "skill_ci": [skill_lo, float(row["skill_ci_hi"])],
                 "decomp_residual": float(row["decomp_residual"]),
+                "relative": relative,
                 "G1_resolution": bool(float(row["resolution"]) > bar["resolution"]
                                       and math.isfinite(lo) and lo > bar["resolution"]),
-                "G2_reliability": bool(float(row["reliability"]) <= max_reliability),
-                "G3_ece": bool(float(row["ece"]) <= max_ece),
+                "G2_reliability": relative["G2"]["pass"],
+                "G2_decided_by": relative["G2"]["decided_by"],
+                "G3_ece": relative["G3"]["pass"],
+                "G3_decided_by": relative["G3"]["decided_by"],
                 "G4_skill": bool(skill > 0.0 and math.isfinite(skill_lo) and skill_lo > 0.0),
             })
         checkpoints.append({"step": step, "reweighted": True,
@@ -359,14 +456,19 @@ def calibration_section(run_dir: str, baseline: Dict[str, Any], *, bins: int, bo
         "baseline_run": baseline["run"],
         "baseline_steps": baseline["steps"],
         "baseline_reduce": reduce,
+        "relative_baseline_reduce": relative_reduce,
         "bins": bins, "boot": boot, "seed": seed,
         "coverage": coverage,
         "trace_selection": build_trace_selection_block(run_dir),
         "true_win_rate_sources": {str(k): v for k, v in win_rate_sources(run_dir).items()},
         "checkpoints": checkpoints,
         "bars": {"G1": "resolution > the matched-stratum committed baseline, CI clearing it",
-                 "G2_max_reliability": max_reliability, "G3_max_ece": max_ece,
-                 "G4": "skill > 0 with the cluster CI clearing 0"},
+                 "G2": "reliability NO WORSE than the same-stratum baseline: " + RELATIVE_RULE,
+                 "G3": "ECE NO WORSE than the same-stratum baseline: " + RELATIVE_RULE,
+                 "G4": "skill > 0 with the cluster CI clearing 0",
+                 "aspirational_only": {"G2_max_reliability": max_reliability,
+                                       "G3_max_ece": max_ece},
+                 "owner_ruling": OWNER_RULING_2026_09_06},
         "verdict": {
             "G1": bool(gated) and all(s["G1_resolution"] for s in gated),
             "G2": bool(gated) and all(s["G2_reliability"] for s in gated),
@@ -377,7 +479,11 @@ def calibration_section(run_dir: str, baseline: Dict[str, Any], *, bins: int, bo
         "not_gated_note": ("`all` is reported for context and NEVER gated: it averages two "
                            "populations whose measured calibration bias has opposite sign."),
         "asymmetry_note": ("the committed baseline publishes no interval for `resolution`, so G1 "
-                           "compares the ARM's cluster CI against the baseline as a FIXED bar."),
+                           "compares the ARM's cluster CI against the baseline as a FIXED bar. "
+                           "G2/G3 inherit the same asymmetry: the baseline value they are compared "
+                           "against is a point, and only the ARM carries an interval."),
+        "owner_ruling": OWNER_RULING_2026_09_06,
+        "relative_rule": RELATIVE_RULE,
     }
 
 
@@ -682,9 +788,11 @@ def build_parser() -> argparse.ArgumentParser:
                     "the G7 kill condition, and the untaught meter with a continuation control. "
                     "Composes the existing tools; invents no statistics.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Every bar is READ from the committed baseline artifact, never hardcoded. G1 flat "
-               "with G2-G4 passing prints the design's falsification clause AS THE VERDICT, never "
-               "a pass with a footnote.")
+        epilog="Every bar is READ from the committed baseline artifact, never hardcoded. G2 and "
+               "G3 are PER-STRATUM RELATIVE bars (owner ruling 2026-09-06) and 4.3's absolute "
+               "numbers are printed as aspirational targets only. G1 flat with G2-G4 passing "
+               "prints the design's falsification clause AS THE VERDICT, never a pass with a "
+               "footnote.")
     ap.add_argument("run", help="the arm's run directory (or any ref the last-snapshot rule "
                                 "resolves: <run>, <run>@<step>, a .zip)")
     ap.add_argument("--parent", required=True, metavar="REF",
@@ -699,9 +807,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--baseline-dir", default=DEFAULT_BASELINE_DIR, metavar="DIR",
                     help="the committed calibration baseline directory "
                          "(default: the winprob_critic_baseline_2026-09-06 measurement)")
-    ap.add_argument("--baseline-reduce", choices=("max", "min", "mean", "last"), default="max",
-                    help="how to reduce the baseline's several steps into ONE bar per stratum "
-                         "(default max = the STRICTEST bar)")
+    ap.add_argument("--baseline-reduce", choices=("max", "min", "mean", "last"), default=None,
+                    help="how to reduce the baseline's several steps into ONE value per stratum. "
+                         f"Applies to BOTH gate families when given. Unset: G1 uses "
+                         f"`{G1_BASELINE_REDUCE}` (the STRICTEST resolution to beat) and G2/G3 use "
+                         f"`{RELATIVE_BASELINE_REDUCE}` (the baseline's own final checkpoint)")
     ap.add_argument("--reliability-bins", type=int, default=10,
                     help="equal-width forecast bins (default 10, the gauge's own default)")
     ap.add_argument("--boot", type=int, default=400,
@@ -710,9 +820,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--max-battles-per-step", type=int, default=None,
                     help="seeded subsample of whole BATTLES per step (clusters stay intact)")
     ap.add_argument("--max-reliability", type=float, default=G2_MAX_RELIABILITY,
-                    help=f"G2 bar, from design 4.3 (default {G2_MAX_RELIABILITY})")
+                    help=f"design 4.3's ABSOLUTE reliability number (default "
+                         f"{G2_MAX_RELIABILITY}). ASPIRATIONAL: printed, never gated — G2 is the "
+                         "per-stratum non-inferiority bar (owner ruling 2026-09-06)")
     ap.add_argument("--max-ece", type=float, default=G3_MAX_ECE,
-                    help=f"G3 bar, from design 4.3 (default {G3_MAX_ECE})")
+                    help=f"design 4.3's ABSOLUTE ECE number (default {G3_MAX_ECE}). "
+                         "ASPIRATIONAL: printed, never gated — G3 is the per-stratum "
+                         "non-inferiority bar (owner ruling 2026-09-06)")
     ap.add_argument("--max-stall-rate", type=float, default=DEFAULT_MAX_STALL_RATE,
                     help=f"G7 kill threshold (default {DEFAULT_MAX_STALL_RATE}; "
                          f"{STALL_RATE_SOURCE_NOTE})")
@@ -754,6 +868,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         from agents.observation.constants import MAX_TURNS
         args.stall_turns = int(MAX_TURNS)
 
+    # An explicit --baseline-reduce governs BOTH families; unset, each keeps its own default,
+    # because "the strictest resolution to beat" and "the baseline's own last checkpoint" are
+    # different questions and one word cannot answer both by accident.
+    g1_reduce = args.baseline_reduce or G1_BASELINE_REDUCE
+    rel_reduce = args.baseline_reduce or RELATIVE_BASELINE_REDUCE
+
     resolve_only = bool(args.check or args.dry_run)
     meter_json = (None if (resolve_only or args.skip_meter) else
                   os.path.join(tempfile.gettempdir(), f"critic_gate_meter_{os.getpid()}.json"))
@@ -782,12 +902,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     thresholds = {
         "G1": "resolution > the committed baseline's matched-stratum value, CI clearing it",
-        "G2_max_reliability": args.max_reliability, "G3_max_ece": args.max_ece,
+        "G2": "reliability no worse than the same-stratum baseline. " + RELATIVE_RULE,
+        "G3": "ECE no worse than the same-stratum baseline. " + RELATIVE_RULE,
         "G4": "skill > 0, CI clearing 0",
+        "aspirational_only": {"G2_max_reliability": args.max_reliability,
+                              "G3_max_ece": args.max_ece,
+                              "note": "design 4.3's absolute numbers. PRINTED, never gated."},
+        "owner_ruling": OWNER_RULING_2026_09_06,
         "G7_max_stall_rate": args.max_stall_rate, "G7_stall_turns": args.stall_turns,
         "G7_max_ep_len_ratio": args.max_ep_len_ratio,
         "G7_threshold_provenance": STALL_RATE_SOURCE_NOTE,
-        "baseline_reduce": args.baseline_reduce, "reliability_bins": args.reliability_bins,
+        "baseline_reduce": g1_reduce, "relative_baseline_reduce": rel_reduce,
+        "baseline_reduce_source": ("--baseline-reduce" if args.baseline_reduce else "per-family "
+                                   "default (critic_gate_design)"),
+        "reliability_bins": args.reliability_bins,
         "bootstrap_resamples": args.boot, "seed": args.seed,
         "games_per_team": args.games_per_team,
     }
@@ -809,8 +937,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     baseline = load_baseline(args.baseline_dir)
     doc["calibration"] = calibration_section(
         run["run_dir"], baseline, bins=args.reliability_bins, boot=args.boot, seed=args.seed,
-        max_battles_per_step=args.max_battles_per_step, reduce=args.baseline_reduce,
-        max_reliability=args.max_reliability, max_ece=args.max_ece, say=say)
+        max_battles_per_step=args.max_battles_per_step, reduce=g1_reduce,
+        relative_reduce=rel_reduce, max_reliability=args.max_reliability,
+        max_ece=args.max_ece, say=say)
     say("(3) G7 kill condition")
     doc["kill"] = kill_section(run, parent, stall_turns=args.stall_turns,
                                max_stall_rate=args.max_stall_rate,

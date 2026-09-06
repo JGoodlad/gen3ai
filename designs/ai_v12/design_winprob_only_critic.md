@@ -702,14 +702,62 @@ pooled**, cluster-bootstrapped over battles.
 | # | criterion | bar | why this bar |
 |---|---|---|---|
 | **G1** | **resolution** | strictly greater than the matched-stratum baseline, CI clearing it | the disease (§4.1); the primary endpoint |
-| **G2** | **reliability** | ≤ 0.005 in both classes | promotion must not *un*-calibrate the head; the baseline is 0.001–0.010 and the risk is that a head steering the policy that generates its own labels drifts |
-| **G3** | **ECE** | ≤ 0.05 in both classes | a reader-facing bound; the reweighted baseline already passes it, so this is a no-regression clause |
+| **G2** | **reliability** | per stratum, **no worse than the same-stratum baseline** (≤ 0.005 is ASPIRATIONAL — see the ruling below) | promotion must not *un*-calibrate the head; the risk is that a head steering the policy that generates its own labels drifts |
+| **G3** | **ECE** | per stratum, **no worse than the same-stratum baseline** (≤ 0.05 is ASPIRATIONAL — see the ruling below) | a reader-facing bound, and a genuine no-regression clause once it is stated against the predecessor rather than against a number |
 | **G4** | **skill** | > 0 with the CI clearing 0, both classes | the floor: a critic no better than the base rate cannot assign credit |
 | **G5** | **`sd_true_excess`**, floor-subtracted, per population | not worse than the era's recorded value | the standing plan's headline meter. ⚠️ **gap M1** — not yet runnable from traces alone |
 | **G6** | **the MIRROR TABLE** | no cell crossing 0.50 | the plan's behavioural-resolution meter; a crossing cell is the wake-search signal. ⚠️ **gap M2** |
 | **G7** | **stall rate + mean episode length** | no increase over the era, pre-registered threshold | §3.2/§3.3 removed two anti-stall defences; this is a KILL condition, not a monitor |
 | **G8** | **`win_mask` coverage** | ≥ a pre-registered floor | §3.4 — a rollout fraction with no critic gradient. gap **M3** |
 | **G9** | **capacity `value_pooled` PR** | should RISE off the 2.5 steady state | the plan's third meter; already runnable (`python -m main.capacity`) |
+
+#### 🚨 OWNER RULING 2026-09-06 — G2 and G3 are PER-STRATUM RELATIVE bars
+
+**The finding** (reported by `gen3_critic_gate_v1`'s own self-comparison, and now pinned by
+`critic_gate_test.py` against the committed artifact): §4.3's absolute G2 (reliability ≤ 0.005)
+and G3 (ECE ≤ 0.05) bars **are already breached by the baseline of §4.1 on the `pool`
+stratum** — reliability **0.0064 / 0.0103** and ECE **0.0667 / 0.0875** at 26M / 28M — while the
+G3 row above called itself a no-regression clause "the reweighted baseline already passes". That is
+true **pooled** and true on `bot`; it is **false on `pool`**, and both criteria are registered over
+"in both classes". As written, the arm had to clear a bar its own predecessor never cleared, which
+is not a no-regression clause but a new and unmet requirement smuggled in as one.
+
+**The ruling.** G2 and G3 are **per-stratum RELATIVE** bars. On each gated stratum (`bot`, `pool`,
+never pooled) the arm's reliability and ECE must be **no worse than the baseline's same-stratum
+value at the matched checkpoint** — the baseline's own row at that step where the artifact carries
+it, and otherwise (the ordinary case, since a new arm's step grid will not coincide with the
+baseline's at all) the artifact's steps reduced by `--baseline-reduce`, defaulting to the **LAST**
+for these two. G1 keeps `max`, the strictest resolution to beat, and does not step-match: it is a
+single pre-registered bar by design. Every row records which of the two it got. **The matched
+half is load-bearing, not a nicety** — reduced alone, the arm's 26M row is judged against the
+baseline's 28M value, and a generation compared with ITSELF is then reported as inferior to itself
+(measured: `bot` reliability 0.0027 [0.0013, 0.0080] against 28M's 0.0012 reads FAIL). Read against
+the arm's cluster-bootstrap CI:
+
+* **PASS** if the arm's point estimate is **≤** the baseline's value, **or** if the arm's CI
+  **contains** that value — *non-inferiority*, and deliberately never a claim that the arm is
+  better;
+* **FAIL** only when the arm's **whole CI sits above** the baseline's value.
+
+A non-finite CI cannot support a non-inferiority claim, so there the point estimate alone decides
+and the row says so — a missing interval never converts a worse point estimate into a pass.
+
+**The absolute numbers stay, and stay printed — as ASPIRATIONAL targets that gate nothing.** Every
+row carries whether the arm meets them *and whether the baseline does*, so the distance from the
+number §4.3 wrote down remains visible without it being a bar an arm can fail on. **G1 (resolution,
+the primary endpoint) and G4 (skill) are unchanged**; the promotion is still judged on whether it
+SEPARATES better, which is the disease §4.1 identified.
+
+*Implementation:* `main.critic_gate_design.RELATIVE_BARS` / `RELATIVE_RULE` /
+`OWNER_RULING_2026_09_06` (the rule as DATA, read by the tool and asserted by the test),
+`main.critic_gate.relative_verdict` (the three clauses), `baseline_bar(..., at_step=)` (the matched
+checkpoint, with `matched` recorded and printed), and a report column naming **which clause decided
+each row** beside the baseline value it was decided against.
+
+*Verified* on `ai_v9_59_R2ACTION_0827` compared with itself: **G2 and G3 PASS on every stratum**
+(every delta exactly 0.0000, every row decided by `point <= base`) while **G1 stays false
+everywhere** — a generation is non-inferior to itself and does not out-resolve itself, so the
+composed verdict is §5.5's falsification clause, which is the correct reading of that comparison.
 
 **G1–G4, G7 and G9 are runnable today** (G1–G4 by the instrument built alongside this design; G9 by
 the capacity battery). **G5, G6 and G8 are gaps.** A gate with three unrunnable criteria is a gate

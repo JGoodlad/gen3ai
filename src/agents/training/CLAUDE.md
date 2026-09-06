@@ -1217,13 +1217,17 @@ table value for value (26M `all` resolution 0.0618 / reliability 0.0013 / ECE 0.
 28M `bot` 0.0215 / 0.0012 / 0.0228 / +0.222; …), and comparing that run against itself correctly
 reports **G1 false everywhere** — a generation cannot out-resolve its own baseline.
 
-⚠️ **That same self-comparison surfaces an inconsistency in §4.3's own bars, and the tool reports it
-rather than softening it**: the `pool` stratum of the committed baseline already breaches G2
-(reliability 0.0064 / 0.0103 against a ≤0.005 bar) and G3 (ECE 0.0667 / 0.0875 against ≤0.05), while
-§4.3 says of G3 "the reweighted baseline already passes it". It passes **pooled** and on `bot`; it
-does not pass on `pool`, which is the stratum G3 is registered "in both classes" over. Either the
-pool bars want re-registering or the arm is being asked to clear a bar its predecessor never
-cleared — a decision for the design, not for the instrument.
+🚨 **G2 and G3 are PER-STRATUM RELATIVE bars** (owner ruling 2026-09-06, §4.3): because the
+committed baseline's `pool` stratum already breaches §4.3's absolutes (reliability 0.0064 / 0.0103
+against ≤0.005, ECE 0.0667 / 0.0875 against ≤0.05, true on `bot` and pooled but not on the stratum
+the criteria are registered "in both classes" over), the arm must be **no worse than the baseline's
+SAME-stratum value at the matched checkpoint** (its own row at that step, else the artifact's steps
+reduced by `--baseline-reduce`, default `last` — without the matched half a generation reads as
+inferior to ITSELF) — PASS when its point estimate is at or below that value or its
+cluster-bootstrap CI contains it (non-inferiority, never a direction claim), FAIL only when its
+whole CI sits above — while the absolute numbers are still computed and printed as ASPIRATIONAL
+targets that gate nothing, and every row names which clause decided it beside the baseline value it
+was decided against. G1 and G4 are unchanged.
 
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`

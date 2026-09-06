@@ -20,7 +20,8 @@ import numpy as np
 import pytest
 
 from main import critic_gate as cg
-from main.critic_gate_design import FALSIFICATION_CLAUSE
+from main.critic_gate_design import (FALSIFICATION_CLAUSE, G2_MAX_RELIABILITY, G3_MAX_ECE,
+                                     OWNER_RULING_2026_09_06, RELATIVE_RULE)
 from utils.paths import repo_path, src_root
 
 # ---------------------------------------------------------------------------------- the fixture
@@ -118,14 +119,23 @@ def build_run(root: str, name: str, *, steps=(1_000_000, 2_000_000), sharpness: 
     return run_dir
 
 
-def build_baseline(dirpath: str, *, resolution: float = 0.02) -> str:
-    """A committed-baseline-shaped artifact whose `resolution` is the bar under test."""
+def build_baseline(dirpath: str, *, resolution: float = 0.02, reliability: float = 0.001,
+                   ece: float = 0.02, per_stratum: dict | None = None) -> str:
+    """A committed-baseline-shaped artifact whose values are the bars under test.
+
+    ``per_stratum`` overrides any of `resolution` / `reliability` / `ece` for one named stratum —
+    the shape the REAL artifact has and the reason G2/G3 are per-stratum bars: on the committed
+    baseline `pool` breaches §4.3's absolutes while `bot` does not.
+    """
     os.makedirs(dirpath, exist_ok=True)
     strata = [{"kind": "all", "name": "all"}] + [{"kind": "class", "name": c}
                                                  for c in ("bot", "pool")]
-    blocks = [{"step": 26_000_016, "bins": 10, "reweighted": True,
-               "strata": [dict(s, resolution=resolution, reliability=0.001, ece=0.02,
-                               skill=0.30) for s in strata]}]
+    rows = []
+    for st in strata:
+        row = dict(st, resolution=resolution, reliability=reliability, ece=ece, skill=0.30)
+        row.update((per_stratum or {}).get(st["name"], {}))
+        rows.append(row)
+    blocks = [{"step": 26_000_016, "bins": 10, "reweighted": True, "strata": rows}]
     path = os.path.join(dirpath, cg.BASELINE_ARTIFACT)
     with open(path, "w") as fh:
         json.dump({"tool": "scaffolding_gauge", "meta": {"run_name": "SYNTH_BASELINE"},
@@ -210,6 +220,190 @@ def test_resolution_is_measured_against_the_artifact_not_a_hardcoded_number(tree
     for c in doc["calibration"]["checkpoints"]:
         for s in c["strata"]:
             assert s["baseline_resolution"] == 0.99
+
+
+# ------------------------------------------------- G2/G3: the per-stratum RELATIVE bars (ruling)
+
+def test_moving_the_artifacts_pool_reliability_moves_G2s_verdict(tree):
+    """The sibling of the resolution test: G2's bar is READ per stratum, never baked in.
+
+    The arm is unchanged between the two halves — only the committed artifact's `pool`
+    reliability moves — so a verdict that moves proves the comparison is against the artifact and
+    against the MATCHED stratum.
+    """
+    # (a) a pool baseline the arm is comfortably inside → PASS
+    build_baseline(tree["baseline"], per_stratum={"pool": {"reliability": 0.05}})
+    doc_a = os.path.join(tree["tmp"], "g2_pass.json")
+    cg.main(_run(tree, "--json", doc_a))
+    a = json.load(open(doc_a))
+    assert a["calibration"]["verdict"]["G2"] is True
+
+    # (b) the SAME arm against a pool baseline below it → FAIL, and only on `pool`
+    build_baseline(tree["baseline"], per_stratum={"pool": {"reliability": 1e-9}})
+    doc_b = os.path.join(tree["tmp"], "g2_fail.json")
+    cg.main(_run(tree, "--json", doc_b))
+    b = json.load(open(doc_b))
+    assert b["calibration"]["verdict"]["G2"] is False
+    by_name = {(c["step"], s["stratum"]): s
+               for c in b["calibration"]["checkpoints"] for s in c["strata"]}
+    assert by_name[(1_000_000, "pool")]["G2_reliability"] is False
+    assert by_name[(1_000_000, "bot")]["G2_reliability"] is True          # matched stratum only
+    assert by_name[(1_000_000, "pool")]["relative"]["G2"]["baseline"] == 1e-9
+    assert b["verdict"]["verdict"] != "PASS"
+
+
+def test_moving_the_artifacts_pool_ece_moves_G3s_verdict(tree):
+    build_baseline(tree["baseline"], per_stratum={"pool": {"ece": 1e-9}})
+    path = os.path.join(tree["tmp"], "g3_fail.json")
+    cg.main(_run(tree, "--json", path))
+    doc = json.load(open(path))
+    assert doc["calibration"]["verdict"]["G3"] is False
+    by_name = {(c["step"], s["stratum"]): s
+               for c in doc["calibration"]["checkpoints"] for s in c["strata"]}
+    assert by_name[(2_000_000, "pool")]["G3_ece"] is False
+    assert by_name[(2_000_000, "bot")]["G3_ece"] is True
+
+
+def test_the_absolute_4_3_numbers_are_ASPIRATIONAL_and_gate_nothing(tree):
+    """§4.3's 0.005 / 0.05 are printed and never gated (owner ruling 2026-09-06).
+
+    Driven with an unreachable absolute (0.0): under the OLD rule G2/G3 would both fail; under the
+    ruling they pass on the relative bar while the report says the aspirational target is MISSED.
+    """
+    path = os.path.join(tree["tmp"], "aspirational.json")
+    md_path = os.path.join(tree["tmp"], "aspirational.md")
+    cg.main(_run(tree, "--max-reliability", "0.0", "--max-ece", "0.0",
+                 "--json", path, "--md", md_path))
+    doc = json.load(open(path))
+    cv = doc["calibration"]["verdict"]
+    assert (cv["G2"], cv["G3"]) == (True, True)
+    rows = [s for c in doc["calibration"]["checkpoints"] for s in c["strata"] if s["gated"]]
+    assert rows
+    for s in rows:
+        assert s["relative"]["G2"]["aspirational"] == 0.0
+        assert s["relative"]["G2"]["aspirational_met"] is False
+        assert s["relative"]["G3"]["aspirational_met"] is False
+    # and the numbers ride in the report as targets, under a key that says so
+    assert doc["_meta"]["thresholds"]["aspirational_only"]["G2_max_reliability"] == 0.0
+    assert "aspirational" in open(md_path).read().lower()
+
+
+def test_the_relative_rule_and_the_owner_ruling_are_printed_in_both_renderings(tree):
+    path = os.path.join(tree["tmp"], "ruling.json")
+    md_path = os.path.join(tree["tmp"], "ruling.md")
+    cg.main(_run(tree, "--json", path, "--md", md_path))
+    doc = json.load(open(path))
+    md, txt = open(md_path).read(), cg.render_text(doc)
+    assert doc["calibration"]["owner_ruling"] == OWNER_RULING_2026_09_06
+    assert doc["calibration"]["relative_rule"] == RELATIVE_RULE
+    for text in (md, txt):
+        assert OWNER_RULING_2026_09_06 in text
+        assert "NON-INFERIORITY" in text.upper()
+    # the baseline value sits BESIDE the arm's, and a column names the deciding clause
+    for s in (s for c in doc["calibration"]["checkpoints"] for s in c["strata"]):
+        assert s["baseline_reliability"] == s["relative"]["G2"]["baseline"]
+        assert s["baseline_ece"] == s["relative"]["G3"]["baseline"]
+        assert s["G2_decided_by"] in (cg.RULE_BETTER, cg.RULE_NONINFERIOR, cg.RULE_WORSE,
+                                      cg.RULE_NO_CI)
+    assert cg.RULE_BETTER in md and cg.RULE_BETTER in txt
+
+
+def test_a_generation_is_NEVER_reported_as_inferior_to_ITSELF(tree):
+    """The soundness property the matched-checkpoint half exists for.
+
+    A baseline artifact carrying the arm's OWN per-step values is a self-comparison: every delta
+    must be exactly zero and every gated row must pass. Reduced-only, the 1M row would be judged
+    against the 2M value and this can — and on the real committed artifact does — report FAIL.
+    """
+    # the arm's own values, per step, taken from a first pass
+    first = os.path.join(tree["tmp"], "measure.json")
+    cg.main(_run(tree, "--json", first))
+    rows = {(c["step"], s["stratum"]): s
+            for c in json.load(open(first))["calibration"]["checkpoints"] for s in c["strata"]}
+    steps = sorted({k[0] for k in rows})
+    # ... rebuilt as a two-step artifact whose every cell IS the arm's own measurement
+    strata = [{"kind": "all", "name": "all"}] + [{"kind": "class", "name": c}
+                                                 for c in ("bot", "pool")]
+    blocks = [{"step": st, "bins": 10, "reweighted": True,
+               "strata": [dict(x, resolution=rows[(st, x["name"])]["resolution"],
+                               reliability=rows[(st, x["name"])]["reliability"],
+                               ece=rows[(st, x["name"])]["ece"], skill=0.30) for x in strata]}
+              for st in steps]
+    with open(os.path.join(tree["baseline"], cg.BASELINE_ARTIFACT), "w") as fh:
+        json.dump({"tool": "scaffolding_gauge", "meta": {"run_name": "SELF"},
+                   "reliability": blocks}, fh)
+
+    path = os.path.join(tree["tmp"], "self.json")
+    cg.main(_run(tree, "--json", path))
+    doc = json.load(open(path))
+    cv = doc["calibration"]["verdict"]
+    assert (cv["G2"], cv["G3"]) == (True, True)
+    for s in (s for c in doc["calibration"]["checkpoints"] for s in c["strata"]):
+        for gate in ("G2", "G3"):
+            r = s["relative"][gate]
+            assert r["baseline_matched_step"] is True
+            assert r["delta"] == pytest.approx(0.0, abs=1e-12)
+            assert (r["pass"], r["decided_by"]) == (True, cg.RULE_BETTER)
+    assert cv["G1"] is False          # ... and it does not out-RESOLVE itself either
+
+
+def test_a_step_the_artifact_does_not_carry_falls_back_to_the_reduction_and_says_so(tree):
+    """The ordinary case — a new arm's steps do not coincide with the baseline's at all."""
+    build_baseline(tree["baseline"])          # one block, at 26,000,016; the arm is at 1M / 2M
+    path = os.path.join(tree["tmp"], "reduced.json")
+    md_path = os.path.join(tree["tmp"], "reduced.md")
+    cg.main(_run(tree, "--json", path, "--md", md_path))
+    doc = json.load(open(path))
+    for s in (s for c in doc["calibration"]["checkpoints"] for s in c["strata"]):
+        r = s["relative"]["G2"]
+        assert r["baseline_matched_step"] is False
+        assert r["baseline_from_step"] == 26_000_016
+        assert "reduced" in r["baseline_source"]
+    assert "reduced" in open(md_path).read()
+
+
+@pytest.mark.parametrize("point, ci, base, expect_pass, expect_rule", [
+    (0.004, (0.002, 0.006), 0.005, True, cg.RULE_BETTER),        # better outright
+    (0.005, (0.004, 0.006), 0.005, True, cg.RULE_BETTER),        # equal counts as no worse
+    (0.006, (0.004, 0.008), 0.005, True, cg.RULE_NONINFERIOR),   # above, but CI covers the base
+    (0.006, (0.0055, 0.008), 0.005, False, cg.RULE_WORSE),       # the WHOLE CI sits above
+    (0.006, (float("nan"), float("nan")), 0.005, False, cg.RULE_NO_CI),   # no interval to lean on
+])
+def test_the_non_inferiority_clauses_each_decide_their_own_case(point, ci, base, expect_pass,
+                                                                expect_rule):
+    """The rule is three clauses, and each one is the reason for exactly one shape of row."""
+    ok, rule = cg.relative_verdict(point, ci, base)
+    assert (ok, rule) == (expect_pass, expect_rule)
+
+
+def test_a_higher_arm_inside_its_own_CI_is_never_reported_as_BETTER(tree):
+    """Non-inferiority is not a direction claim — the label must say which clause carried it."""
+    ok, rule = cg.relative_verdict(0.010, (0.001, 0.020), 0.005)
+    assert ok is True and rule == cg.RULE_NONINFERIOR and rule != cg.RULE_BETTER
+
+
+def test_the_committed_baseline_really_does_breach_4_3s_absolutes_on_pool():
+    """The ruling's PREMISE, pinned to the artifact rather than to prose.
+
+    If a future re-measurement brings `pool` under the §4.3 absolutes, this fails and the ruling's
+    justification should be re-read — the finding is a measurement, not a belief.
+    """
+    baseline = cg.load_baseline(cg.DEFAULT_BASELINE_DIR)
+    pool = baseline["per_stratum"]["pool"]
+    assert pool, "the committed baseline must carry a `pool` stratum"
+    assert any(float(r["reliability"]) > G2_MAX_RELIABILITY for r in pool)
+    assert any(float(r["ece"]) > G3_MAX_ECE for r in pool)
+    # ... while `bot` does not, which is precisely why a POOLED reading hid this.
+    assert all(float(r["ece"]) <= G3_MAX_ECE for r in baseline["per_stratum"]["bot"])
+
+
+def test_the_owner_ruling_is_recorded_in_the_design_doc(tree):
+    """The tool prints a ruling; §4.3 must carry the same dated paragraph, or the two drift."""
+    text = " ".join(open(repo_path(cg.DESIGN_DOC)).read().split())
+    assert "OWNER RULING 2026-09-06" in text
+    assert "PER-STRATUM RELATIVE" in text.upper()
+    for phrase in ("aspirational", "non-inferiority"):
+        assert phrase in text.lower()
 
 
 # ---------------------------------------------------------------------- the falsification clause
