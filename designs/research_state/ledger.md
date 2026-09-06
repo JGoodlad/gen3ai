@@ -11417,3 +11417,50 @@ env-step counter) — ~0.5% x-axis slop; (2) PopArt is a live confounder for any
 (`popart_split.py` reusable); (3) v8-era metadata has no top-level num_timesteps (read from the zip's data blob, cross-checked);
 (4) the v8 cell has only two depths per arm. `verify_readme.py`: 369 checks pass (it caught two overclaims in the draft prose).
 
+
+### 2026-09-06 · G1 QUALIFIED — the teacher-budget axis is INVISIBLE at p1M and REAL at the end
+
+`G1SHORT_end` finished scoring after the previous entry (`c1f944b8`) was banked. **The p1M null does
+not survive to the end of the fold**, and the qualification is the actual finding.
+
+| depth | G1 − TCUNF pooled(A+B) | floor | verdict |
+|---|---|---|---|
+| p1M (fork+1,000,032) | +0.22pp [−2.47, +2.34] | 4.00pp | inside ⇒ equivalence |
+| **END (fork+4,521,984)** | **−2.16pp [−4.44, −0.25]** | **1.19pp** | **outside AND excludes zero ⇒ SIGNIFICANT** |
+
+Absolute end readings against the frozen parent (58.25pp):
+
+| arm | untaught | vs parent |
+|---|---|---|
+| **G1SHORT_end** | 58.06pp | **−0.19pp [−1.94, +1.50]** — parent-neutral |
+| TCUNFA_end / TCUNFB_end | 60.25 / 60.19pp | **+2.00 / +1.94pp** |
+| TCFUNDA_end / TCFUNDB_end | 55.75 / 55.94pp | −2.50 / −2.31pp |
+| TCUNFK6A_end / TCUNFK6B_end | 58.62 / 57.44pp | +0.37 / −0.81pp |
+
+**⇒ A homogeneous 1.2M teacher set leaves the fold PARENT-NEUTRAL; the mixture (six teachers at
+fork+2,932,272) ends ~2pp ABOVE the parent.** Read as recovery: both dig a hole by p1M (−3.06 vs
+−2.00/−4.56) and the longer-teacher set climbs further out of it. The funded arms staying down
+(−2.50, −2.31) is the "funding is a pure loss" result reproducing on this meter.
+
+**🔑 WHY THE TWO DEPTHS DISAGREE IS THE FLOOR, NOT THE POINT ESTIMATE — and this is the durable
+lesson.** The end-depth replicate pairs agree to **0.06 / 0.19 / 1.19pp**; the p1M pairs scatter by
+**2.56 / 1.13 / 4.00pp**. Arms CONVERGE, so the same instrument resolves roughly 3× finer at the end
+of a fold than a million steps in. A +0.22 gap against a 4.00 floor says nothing; a −2.16 gap against
+a 1.19 floor is a result. **An operational floor is a property of the DEPTH, not of the meter** —
+quoting one floor across depths would have made this either invisible or spurious depending on which
+was borrowed.
+
+Checked before claiming it: every END reading scores a `final_model.zip` at **exactly 32,637,168 =
+fork+4,521,984** — G1 and all six TC arms identical — so this is not a depth mismatch.
+
+**⚠️ PROCESS ERROR, recorded because the entry above is what it produced.** `c1f944b8` was shipped as
+"G1 RESULT" with the p1M null as its headline **while `G1SHORT_end` was still scoring at 5/8**.
+Nothing in it is false — the p1M null is exactly what it says — but presenting one registered depth
+as *the* result while the other was still running was premature, and the fuller picture inverts the
+reading. **A result is not a result until every registered depth has landed.**
+
+**Two things survive unchanged.** The CONFOUND: G1's partner is a MIXTURE (`ebe2e5f8`), so this is
+uniform-1.2M vs that mixture — the mixture's advantage could be its six LONG teachers *or* its
+dispersion, and this cell cannot separate them. The INVARIANCE: both sides are measured against the
+same parent at the same depth, so the continuation re-basing (G5) shifts them equally and cannot
+touch the paired delta. Only the absolutes (−0.19, +2.00) move.
