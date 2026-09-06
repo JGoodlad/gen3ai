@@ -11305,3 +11305,36 @@ only; untaught 8 only; one trajectory family; not causal; inherits the distance-
 toward 0.578 while its on-slice edge holds (~500 battles per teacher set).
 Artifact: `measurements/arch_transfer_2026-09-05/exploiter_competence/` (verify gate included).
 
+
+### 2026-09-06 · CORRECTION to G1's entry — TCUNFA's teachers are `best_model`, not `final_model`, and two of them are ~0.93M exploiters
+
+G1's pre-registration (`306b4462`) describes its matched partner as using "the eight R5F exploiters'
+`final_model`". **That is false.** TCUNFA names the eight run DIRECTORIES, and
+`_resolve_zip_and_config`'s first rung is `best_model/best_model.zip` — a **bot-win-rate-selected**
+export. Measured through the resolver itself:
+
+| set | resolved file | step | depth | spread |
+|---|---|---|---|---|
+| TCUNFA — 6 teachers | `<run>/best_model/best_model.zip` | 28,000,032 | fork +2,932,272 | |
+| TCUNFA — **2 teachers** (`R5F02`, `R5F06`) | `<run>/best_model/best_model.zip` | **26,000,016** | **fork +932,256** | **2,000,016** |
+| G1 — all 8 | `<run>/checkpoints/checkpoint_26267760_steps.zip` | 26,267,760 | fork +1,200,000 | **0** |
+
+**⇒ G1 is not a SHORT-vs-LONG contrast.** It is a *uniform* 1.20M teacher set against a *mixture*
+whose mean is ~2.43M and whose two shortest members are **shorter than every G1 teacher**. A
+G1−TCUNFA difference therefore admits three explanations — mean budget, dispersion, or those two
+specific teachers — where the entry claimed one. G1 keeps its value as "does a homogeneous
+short-budget teacher set fold differently"; the factorial's DISTANCE axis is confounded on the
+PARTNER's side, and the origin factorial's G2 half is unaffected.
+
+**The error was in reading the argv instead of the resolver** — the exact failure the standing rule
+("when you report a teacher's distance, quote it from the resolved file") was written to prevent. The
+zero-spread claim banked for G1 is correct; the claim about what it was being contrasted WITH was not.
+
+**One useful corollary: naming `@<step>` bypasses the `best_model` rung entirely.** The
+enumerated-teams form G1 was forced into by the run-spec resolver defect is also the only form that
+PINS the teacher file. Any future fleet should record, per teacher, the resolved PATH and its
+`num_timesteps`, and state whether the set is bot-best / final / explicit-step.
+
+Standing context for teacher quality, from the exploiter-competence probe: every exploiter set pilots
+the untaught 8 WORSE than its origin (funded −7.81pp [−15.23, −0.39], significant), at roughly 3pp of
+on-slice edge per 1pp of untaught win rate — the drift is forgetting.
