@@ -214,3 +214,79 @@ def test_pin_history_rides_into_the_checkpoint_sidecar(tmp_path, monkeypatch):
     side = json.load(open(str(tmp_path / "checkpoint_1000_steps.json")))
     assert side["pin_history"] == [{"git_hash": "aaaa1111", "pin_source": None,
                                     "first_step": 1000, "last_step": 1000}]
+
+
+# ---------------------------------------------------------------------------------------
+# num_timesteps — HOW FAR THE RUN TRAINED, in the same two files, from the same save path
+#
+# Found by the fold_displacement probe (2026-09-05): a run's step count lived in NO
+# metadata.json field, so `main.lineage` / `main.sidecar_audit` / `main.dose` — all
+# deliberately JSON-only, no torch, no .zip opened — could not read it at all. Unlike
+# `original_command` / `lineage` / `pin_history` this key is "latest": overwritten on every
+# save. And unlike them, ABSENT must read as UNKNOWN rather than as 0.
+# ---------------------------------------------------------------------------------------
+
+def _meta(model_dir):
+    return json.load(open(str(model_dir / "metadata.json")))
+
+
+def test_steps_a_the_run_level_key_is_written_and_OVERWRITTEN(tmp_path, monkeypatch):
+    _save(tmp_path, git_hash="aaaa1111", step=1000, monkeypatch=monkeypatch)
+    assert _meta(tmp_path)["num_timesteps"] == 1000
+    _save(tmp_path, git_hash="aaaa1111", step=9000, monkeypatch=monkeypatch)
+    assert _meta(tmp_path)["num_timesteps"] == 9000, "'latest' — not immutable like lineage"
+
+
+def test_steps_b_a_save_that_knows_no_step_CARRIES_FORWARD_rather_than_clobbering(
+        tmp_path, monkeypatch):
+    """`_max_recorded_step`'s stale-but-ordered guess feeds pin_history's spans only. Writing a
+    guess HERE would make an inferred number indistinguishable from a recorded one, and writing
+    nothing would lose the fact the run already stated."""
+    _save(tmp_path, git_hash="aaaa1111", step=4242, monkeypatch=monkeypatch)
+    sn.save_model_snapshot(str(tmp_path), _FakeVersion(), git_hash="aaaa1111")  # no step
+    assert _meta(tmp_path)["num_timesteps"] == 4242
+
+
+def test_steps_c_a_LEGACY_run_reads_as_UNKNOWN_never_as_zero(tmp_path, monkeypatch):
+    monkeypatch.setenv(LAUNCHER_GIT_HASH_ENV, "aaaa1111")
+    sn.save_model_snapshot(str(tmp_path), _FakeVersion(), git_hash="aaaa1111")
+    assert "num_timesteps" not in _meta(tmp_path), "absent is UNKNOWN; 0 would be a claim"
+
+
+def test_steps_d_the_explicit_argument_wins_over_a_colliding_hparam(tmp_path, monkeypatch):
+    monkeypatch.setenv(LAUNCHER_GIT_HASH_ENV, "aaaa1111")
+    sn.save_model_snapshot(str(tmp_path), _FakeVersion(), git_hash="aaaa1111",
+                           hparams={"num_timesteps": 111}, num_timesteps=222)
+    assert _meta(tmp_path)["num_timesteps"] == 222
+
+
+def test_steps_e_every_sidecar_and_history_row_carries_it(tmp_path, monkeypatch):
+    """One save path, both places — the same contract `git_hash` and `pin_history` already have."""
+    monkeypatch.setenv(LAUNCHER_GIT_HASH_ENV, "aaaa1111")
+    ckpt = tmp_path / "checkpoint_777000_steps.zip"
+    ckpt.write_text("")
+    sn.record_checkpoint(str(tmp_path), str(ckpt), 3e-4, 5, git_hash="aaaa1111",
+                         hparams={"num_timesteps": 777000})
+    side = json.load(open(str(tmp_path / "checkpoint_777000_steps.json")))
+    hist = _meta(tmp_path)["snapshot_history"]["checkpoint_777000_steps.zip"]
+    assert side["num_timesteps"] == 777000
+    assert hist["num_timesteps"] == 777000, "sidecar and history must never disagree"
+
+
+def test_steps_f_the_zips_own_name_is_the_last_resort(tmp_path):
+    """A caller that passes neither the value nor an hparams block still gets a real number
+    out of `checkpoint_<N>_steps.zip` — the name the checkpoint callback writes FROM
+    `model.num_timesteps`."""
+    ckpt = tmp_path / "checkpoint_31337_steps.zip"
+    ckpt.write_text("")
+    sn.write_checkpoint_metadata(str(ckpt), lr=1e-4, n_epochs=3)
+    assert json.load(open(str(tmp_path / "checkpoint_31337_steps.json")))["num_timesteps"] == 31337
+
+
+def test_steps_g_a_name_with_no_step_in_it_stays_UNKNOWN(tmp_path):
+    """`final_model.zip` / `best_model.zip` encode no step. Inventing one would be worse than
+    saying nothing — the readers render an absent key as unknown."""
+    ckpt = tmp_path / "final_model.zip"
+    ckpt.write_text("")
+    sn.write_checkpoint_metadata(str(ckpt), lr=1e-4, n_epochs=3)
+    assert "num_timesteps" not in json.load(open(str(tmp_path / "final_model.json")))

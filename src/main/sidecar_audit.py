@@ -14,7 +14,9 @@ serves the run metadata and every sidecar), but the historical sidecars on disk 
 whatever they carried. This tool sizes that: how many, in which runs, by how much.
 
 It reads **JSON only** — no torch, no checkpoint loads — so it works on every archived run
-regardless of architecture drift, and it never opens a ``.zip``.
+regardless of architecture drift, and it never opens a ``.zip``. That is also why it reports each
+sidecar's recorded ``num_timesteps`` (and the run's own): the step count is otherwise inside the
+zip, and a sidecar written before that key existed prints ``steps=?`` rather than a zero.
 
 WHAT A "MISMATCH" MEANS, and why it is not always a defect. The run-level scalar ``git_hash``
 is REWRITTEN on every save, so on a run that restarts every 3 h it names the last code to
@@ -108,6 +110,7 @@ def audit_run(run_dir: str) -> Dict[str, Any]:
     """The per-run record: the run-level pin, its history, and every sidecar's hash."""
     meta = _load_json(os.path.join(run_dir, "metadata.json")) or {}
     run_hash = meta.get("git_hash")
+    run_steps = meta.get("num_timesteps")
     pin_history = meta.get("pin_history")
     if not isinstance(pin_history, list):
         pin_history = []
@@ -123,6 +126,9 @@ def audit_run(run_dir: str) -> Dict[str, Any]:
         sidecars.append({
             "path": os.path.relpath(path, run_dir),
             "git_hash": h,
+            # HOW FAR THE RUN HAD TRAINED at this checkpoint. `None` on every pre-2026-09-05
+            # sidecar and rendered as `steps=?`: absent is UNKNOWN, never 0.
+            "num_timesteps": entry.get("num_timesteps"),
             "matches_run": matches,
             # A hash the run's own history knows about is a RESTART span, not a misattribution.
             "explained_by_history": bool(h) and str(h) in known,
@@ -133,6 +139,7 @@ def audit_run(run_dir: str) -> Dict[str, Any]:
         "run_dir": run_dir,
         "run_name": os.path.basename(os.path.normpath(run_dir)),
         "git_hash": run_hash,
+        "num_timesteps": run_steps,
         "pin_source": meta.get("pin_source"),
         "pin_history": pin_history,
         "pin_split": len(pin_history) > 1,
@@ -147,10 +154,16 @@ def _short(h: Optional[str]) -> str:
     return (str(h)[:8] if h else "—")
 
 
+def _steps(value: Any) -> str:
+    """A recorded step count, or `?` — an absent `num_timesteps` means UNKNOWN, not zero."""
+    return f"{int(value):,}" if isinstance(value, (int, float)) else "?"
+
+
 def print_run(rec: Dict[str, Any], *, verbose: bool) -> None:
     print(f"\n== {rec['run_name']} ==")
     src = f"  (pin_source={rec['pin_source']})" if rec.get("pin_source") else ""
     print(f"   run-level git_hash : {_short(rec['git_hash'])}{src}")
+    print(f"   num_timesteps      : {_steps(rec.get('num_timesteps'))}")
 
     hist = rec["pin_history"]
     if not hist:
@@ -178,7 +191,8 @@ def print_run(rec: Dict[str, Any], *, verbose: bool) -> None:
         if not s["matches_run"]:
             note = ("  (a span in pin_history)" if s["explained_by_history"]
                     else "  (in NO recorded span — misattributed)")
-        print(f"       {mark}{s['path']}: {_short(s['git_hash'])}{note}")
+        print(f"       {mark}{s['path']}: {_short(s['git_hash'])}  "
+              f"steps={_steps(s.get('num_timesteps'))}{note}")
 
 
 def main(argv: Optional[List[str]] = None) -> int:

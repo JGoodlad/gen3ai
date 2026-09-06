@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 
 from agents.training.lineage import (
     ancestry_from_parent, build_lineage_from_command, check_links, fork_parent, read_block,
-    read_original_command, role_of,
+    read_num_timesteps, read_original_command, role_of,
 )
 
 
@@ -60,12 +60,16 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     name = os.path.basename(os.path.normpath(run_dir))
     out: Dict[str, Any] = {
         "run": name, "dir": run_dir, "recorded": False, "derived": False, "role": None,
-        "fork_step": None, "fork_parent": None, "teachers": [], "exploiter_target": None,
+        "fork_step": None, "num_timesteps": None, "fork_parent": None, "teachers": [],
+        "exploiter_target": None,
         "ancestry": [], "ancestry_stop": None, "checks": [], "error": None,
     }
     if not os.path.isdir(run_dir):
         out["error"] = "no such run directory"
         return out
+    # HOW FAR THIS RUN TRAINED. A run that predates the key reads None => "unknown" — this is a
+    # JSON-only tool and will not open a checkpoint zip to guess.
+    out["num_timesteps"] = read_num_timesteps(run_dir)
     block = read_block(run_dir)
     out["recorded"] = block is not None
     # warn=True: this is THE accessor's legacy path, and its whole point is that a derived answer
@@ -99,6 +103,11 @@ def _short(h: Optional[str], n: int = 8) -> str:
     return (h[:n] if h else "—")
 
 
+def _steps(value: Optional[int]) -> str:
+    """A step count, thousands-separated — or `unknown` when the run never recorded one."""
+    return f"{value:,}" if isinstance(value, int) else "unknown"
+
+
 def _names(entries: List[Dict[str, Any]]) -> str:
     return ", ".join((e.get("run_name") or e.get("path") or "?") for e in entries) or "—"
 
@@ -111,6 +120,12 @@ def render(row: Dict[str, Any]) -> str:
     tag = "recorded" if row["recorded"] else ("⚠ DERIVED from original_command" if row["derived"]
                                               else "no lineage recorded")
     lines.append(f"{row['run']}   role={row.get('role') or '—'}   [{tag}]")
+    # The two step facts side by side: where this run STARTED (its fork point, from the immutable
+    # lineage block) and how far it GOT (the latest `num_timesteps`). "unknown" is a real answer —
+    # a legacy run recorded neither, and 0 would be a claim.
+    fs, ns = row.get("fork_step"), row.get("num_timesteps")
+    if fs is not None or ns is not None:
+        lines.append(f"    steps: fork_step={_steps(fs)}   num_timesteps={_steps(ns)}")
     if row["teachers"]:
         lines.append(f"    teachers ({len(row['teachers'])}): {_names(row['teachers'])}")
     if row["exploiter_target"]:

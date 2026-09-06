@@ -198,6 +198,7 @@ def save_model_snapshot(
     existing_pin_history = None
     existing_git_hash = None
     existing_pin_source = None
+    existing_num_timesteps = None
     if os.path.exists(meta_path):
         with open(meta_path) as f:
             existing = json.load(f)
@@ -213,6 +214,7 @@ def save_model_snapshot(
             existing_pin_history = existing.get("pin_history")
             existing_git_hash = existing.get("git_hash")
             existing_pin_source = existing.get("pin_source")
+            existing_num_timesteps = existing.get("num_timesteps")
 
     metadata: Dict[str, Any] = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
@@ -240,6 +242,21 @@ def save_model_snapshot(
     )
     if hparams:
         metadata.update(hparams)
+    # HOW FAR THIS RUN TRAINED, as a top-level key — "latest", so unlike `original_command` /
+    # `lineage` / `pin_history` it is OVERWRITTEN on every save. It exists because the step count
+    # was previously readable only by opening the checkpoint .zip, which the JSON-only offline
+    # tools (`main.lineage`, `main.sidecar_audit`, `main.dose`) deliberately never do.
+    # ABSENT rather than 0 when the save does not know it: a legacy run reads UNKNOWN, and an
+    # existing value is carried forward rather than clobbered by a save that was handed no step
+    # (`_max_recorded_step`'s stale-but-ordered guess feeds pin_history's spans ONLY — writing a
+    # guess here would make an inferred number indistinguishable from a recorded one).
+    known_step = num_timesteps
+    if known_step is None and hparams:
+        known_step = hparams.get("num_timesteps")
+    if known_step is None:
+        known_step = existing_num_timesteps
+    if known_step is not None:
+        metadata["num_timesteps"] = int(known_step)
     if current_lr is not None:
         metadata["current_lr"] = current_lr
     if current_epochs is not None:
@@ -500,6 +517,40 @@ def _latest_checkpoint(history: dict) -> str | None:
     return best_name
 
 
+def _step_from_checkpoint_name(checkpoint_path: str) -> Optional[int]:
+    """The step encoded in ``<prefix>_<N>_steps.zip``, or ``None``.
+
+    The LAST-RESORT source for a sidecar's ``num_timesteps`` — used only when the caller passed
+    neither the value nor an hparams block carrying it. The name is written by the checkpoint
+    callback as ``f"{prefix}_{self.num_timesteps}_steps.zip"``, so where the form matches it IS
+    the step; where it does not (``final_model.zip``, ``best_model.zip``) this returns ``None``
+    and the key is simply absent, which reads as unknown.
+    """
+    parts = os.path.basename(checkpoint_path).removesuffix(".json").removesuffix(".zip").split("_")
+    if len(parts) >= 2 and parts[-1] == "steps" and parts[-2].isdigit():
+        return int(parts[-2])
+    return None
+
+
+def _resolve_checkpoint_steps(checkpoint_path: str, hparams: Optional[dict],
+                              explicit: Optional[int]) -> Optional[int]:
+    """The step a checkpoint sits at, in preference order, or ``None`` when nobody knows.
+
+    explicit argument -> the ``hparams`` block (every production caller routes
+    ``main.train.run_io._model_hparams`` through here, which records it) -> the ``.zip``'s own
+    ``..._<N>_steps`` name. ``None`` is a legitimate answer and must stay one: 0 would be a
+    claim, and the readers render an absent key as UNKNOWN.
+    """
+    if explicit is not None:
+        return int(explicit)
+    if hparams and hparams.get("num_timesteps") is not None:
+        try:
+            return int(hparams["num_timesteps"])
+        except (TypeError, ValueError):
+            pass
+    return _step_from_checkpoint_name(checkpoint_path)
+
+
 def _build_snapshot_entry(
     lr: float,
     n_epochs: int,
@@ -509,6 +560,7 @@ def _build_snapshot_entry(
     eval_block: Optional[dict] = None,
     matchup_hash: Optional[str] = None,
     pin_history: Optional[list] = None,
+    num_timesteps: Optional[int] = None,
 ) -> dict:
     """Build the canonical per-checkpoint metadata dict.
 
@@ -549,6 +601,11 @@ def _build_snapshot_entry(
     # provenance and not just the one hash (see `_update_pin_history`).
     if pin_history:
         entry["pin_history"] = pin_history
+    # HOW FAR THE RUN HAD TRAINED when this checkpoint was written. Assigned after the hparams
+    # merge like `git_hash` above, so an explicit argument always wins over a colliding hparam.
+    # Absent — never 0 — when nobody knows it, so a legacy sidecar reads UNKNOWN.
+    if num_timesteps is not None:
+        entry["num_timesteps"] = int(num_timesteps)
     return entry
 
 
@@ -563,6 +620,7 @@ def record_snapshot_in_history(
     eval_block: Optional[dict] = None,
     matchup_hash: Optional[str] = None,
     pin_history: Optional[list] = None,
+    num_timesteps: Optional[int] = None,
 ) -> None:
     """Append or update a checkpoint entry in snapshot_history within metadata.json.
 
@@ -580,7 +638,8 @@ def record_snapshot_in_history(
             meta = json.load(f)
     history = meta.get("snapshot_history", {})
     history[checkpoint_name] = _build_snapshot_entry(
-        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash, pin_history
+        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash, pin_history,
+        num_timesteps,
     )
     meta["snapshot_history"] = history
     with open(meta_path, "w") as f:
@@ -595,6 +654,7 @@ def record_checkpoint(
     hparams: Optional[dict] = None,
     git_hash: Optional[str] = None,
     handoff_lr: Optional[float] = None,
+    num_timesteps: Optional[int] = None,
 ) -> None:
     """Write per-checkpoint metadata file and append to run-level snapshot_history.
 
@@ -623,6 +683,9 @@ def record_checkpoint(
     eval_block = _read_latest_eval(model_dir)
     matchup_hash = _read_matchup_hash(model_dir)
     pin_history = _read_pin_history(model_dir)
+    # THE STEP THIS CHECKPOINT IS: the explicit argument, else the hparams block every production
+    # caller passes (`main.train.run_io._model_hparams` records it), else the .zip's own name.
+    steps = _resolve_checkpoint_steps(checkpoint_path, hparams, num_timesteps)
     write_checkpoint_metadata(
         checkpoint_path,
         lr,
@@ -633,6 +696,7 @@ def record_checkpoint(
         eval_block=eval_block,
         matchup_hash=matchup_hash,
         pin_history=pin_history,
+        num_timesteps=steps,
     )
     name = os.path.basename(checkpoint_path)
     if not name.endswith(".zip"):
@@ -648,6 +712,7 @@ def record_checkpoint(
         eval_block=eval_block,
         matchup_hash=matchup_hash,
         pin_history=pin_history,
+        num_timesteps=steps,
     )
 
 
@@ -661,6 +726,7 @@ def write_checkpoint_metadata(
     eval_block: Optional[dict] = None,
     matchup_hash: Optional[str] = None,
     pin_history: Optional[list] = None,
+    num_timesteps: Optional[int] = None,
 ) -> None:
     """Write the per-checkpoint metadata sidecar alongside a checkpoint .zip.
 
@@ -675,8 +741,10 @@ def write_checkpoint_metadata(
 
     handoff_lr / eval_block: see ``record_checkpoint``.
     """
-    entry = _build_snapshot_entry(lr, n_epochs, hparams, git_hash, handoff_lr, eval_block,
-                                  matchup_hash, pin_history)
+    entry = _build_snapshot_entry(
+        lr, n_epochs, hparams, git_hash, handoff_lr, eval_block, matchup_hash, pin_history,
+        _resolve_checkpoint_steps(checkpoint_path, hparams, num_timesteps),
+    )
     with open(_checkpoint_metadata_path(checkpoint_path), "w") as f:
         json.dump(entry, f, indent=2)
 

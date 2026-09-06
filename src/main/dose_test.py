@@ -174,3 +174,40 @@ def test_the_module_imports_no_torch():
     )
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip() == "False", "main.dose must stay importable without torch"
+
+
+# ------------------------------------------------------------------------------------
+# num_timesteps — the RECORDED step, preferred over the step INFERRED from the filename
+# ------------------------------------------------------------------------------------
+
+def test_the_recorded_num_timesteps_orders_the_rows_over_the_filename(tmp_path):
+    """The filename's number is an inference that only holds for the `checkpoint_<N>_steps`
+    convention; the recorded key is what the save path wrote down. Where they disagree the
+    record wins — here the name says 9 is oldest, the record says it is newest, and the LAST
+    row's shape is what the dose is computed from."""
+    run = tmp_path / "r"
+    (run / "checkpoints").mkdir(parents=True)
+    (run / "checkpoints" / "checkpoint_9_steps.json").write_text(json.dumps(
+        {"lr": 1e-4, "n_epochs": 7, "batch_size": 2048, "grad_accum_steps": 16,
+         "num_timesteps": 900}))
+    (run / "checkpoints" / "checkpoint_10_steps.json").write_text(json.dumps(
+        {"lr": 1e-4, "n_epochs": 7, "batch_size": 2048, "grad_accum_steps": 2,
+         "num_timesteps": 100}))
+    row = read_run(str(run))
+    assert row["grad_accum_steps"] == 16, "the row recording step 900 is the LAST one"
+    assert row["num_timesteps"] == 900
+
+
+def test_the_step_count_is_reported_and_rendered(tmp_path):
+    run = _run(tmp_path, "r", lrs=[1e-4])
+    (run / "metadata.json").write_text(json.dumps({"num_timesteps": 12_345_678}))
+    row = read_run(str(run))
+    assert row["num_timesteps"] == 12_345_678
+    assert "12,345,678" in render([row], None)
+
+
+def test_a_run_that_recorded_no_step_reads_UNKNOWN_not_zero(tmp_path):
+    """Same rule the dose itself follows: a run that recorded nothing must not read as 0."""
+    row = read_run(str(_run(tmp_path, "r", lrs=[1e-4])))
+    assert row["num_timesteps"] is None
+    assert "—" in render([row], None)

@@ -280,6 +280,19 @@ def read_original_command(run_dir: str) -> Optional[str]:
     return val if isinstance(val, str) and val.strip() else None
 
 
+def read_num_timesteps(run_dir: str) -> Optional[int]:
+    """`<run_dir>/metadata.json`'s top-level `num_timesteps` — HOW FAR THE RUN TRAINED — or None.
+
+    Unlike `original_command` this key is "latest", overwritten by every save
+    (`agents.model.snapshot.save_model_snapshot`). `None` means the run predates the key (or was
+    saved without a step being known) and the answer is genuinely UNKNOWN — never 0, and never
+    silently substituted from the checkpoint zip, which this JSON-only reader will not open.
+    """
+    meta = _read_json(os.path.join(run_dir or "", "metadata.json")) or {}
+    val = meta.get("num_timesteps")
+    return int(val) if isinstance(val, (int, float)) else None
+
+
 # --------------------------------------------------------------------------------------------
 # building the block (the WRITE side)
 # --------------------------------------------------------------------------------------------

@@ -129,3 +129,43 @@ def test_it_is_torch_free():
     out = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True,
                          env=env, check=True).stdout.strip()
     assert out == "", f"main.sidecar_audit dragged in heavy modules: {out}"
+
+
+# ------------------------------------------------------------------------------------
+# num_timesteps — the step count, which used to be readable only by opening the .zip
+# ------------------------------------------------------------------------------------
+
+def test_it_reports_each_sidecars_step_count(tmp_path, capsys):
+    """The tool is JSON-only by design (no torch, no zip), so before `num_timesteps` existed
+    it could not say how far a run had trained. It reports the run's own and each sidecar's."""
+    run = _run_dir(
+        tmp_path, "run_steps",
+        meta={"git_hash": "aaaa1111", "num_timesteps": 278_664_287},
+        sidecars={
+            "checkpoint_100_steps": {"git_hash": "aaaa1111", "num_timesteps": 100},
+            "checkpoint_200_steps": {"git_hash": "ffff9999", "num_timesteps": 200},
+        },
+    )
+    rec = sa.audit_run(str(run))
+    assert rec["num_timesteps"] == 278_664_287
+    assert sorted(s["num_timesteps"] for s in rec["sidecars"]) == [100, 200]
+
+    assert sa.main([str(run), "-v"]) == 0
+    out = capsys.readouterr().out
+    assert "278,664,287" in out, "the run-level step count must be on the report"
+    assert "steps=100" in out and "steps=200" in out
+
+
+def test_a_legacy_run_shows_an_UNKNOWN_step_count_never_zero(tmp_path, capsys):
+    """Every sidecar written before 2026-09-05 carries no `num_timesteps`. `?` says so; a 0
+    would read as 'this checkpoint is at step zero'."""
+    run = _run_dir(tmp_path, "run_legacy", meta={"git_hash": "aaaa1111"},
+                   sidecars={"checkpoint_100_steps": {"git_hash": "aaaa1111", "lr": 3e-4}})
+    rec = sa.audit_run(str(run))
+    assert rec["num_timesteps"] is None and rec["sidecars"][0]["num_timesteps"] is None
+
+    assert sa.main([str(run), "-v"]) == 0
+    out = capsys.readouterr().out
+    assert "num_timesteps      : ?" in out
+    assert "steps=?" in out
+    assert "steps=0" not in out

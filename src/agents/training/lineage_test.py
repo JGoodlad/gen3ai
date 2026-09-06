@@ -517,3 +517,53 @@ def test_dose_and_lineage_are_independent_blocks(tmp_path):
         meta = json.load(f)
     assert meta["dose"]["dose_rate_now"] == 2.0        # dose is CURRENT
     assert meta["lineage"]["role"] == "fresh"          # lineage is IMMUTABLE
+
+
+# ---------------------------------------------------------------------------
+# 9 — num_timesteps: how far the run GOT, beside where it STARTED (fork_step)
+# ---------------------------------------------------------------------------
+
+
+def test_read_num_timesteps_reads_the_top_level_key(tmp_path):
+    from agents.training.lineage import read_num_timesteps
+
+    run = _run(tmp_path, "r")
+    meta_path = os.path.join(run, "metadata.json")
+    with open(meta_path) as f:
+        meta = json.load(f)
+    meta["num_timesteps"] = 278_664_287
+    with open(meta_path, "w") as f:
+        json.dump(meta, f)
+    assert read_num_timesteps(run) == 278_664_287
+
+
+def test_read_num_timesteps_is_UNKNOWN_on_a_legacy_run(tmp_path):
+    """A run saved before the key existed. None, never 0 — this reader will not open a zip."""
+    from agents.training.lineage import read_num_timesteps
+
+    assert read_num_timesteps(_run(tmp_path, "legacy")) is None
+    assert read_num_timesteps(str(tmp_path / "nope")) is None
+
+
+def test_main_lineage_prints_the_step_count_beside_fork_step(tmp_path, capsys):
+    from main.lineage import main as lineage_main
+
+    gp, p, c = _chain(tmp_path)
+    meta_path = os.path.join(c, "metadata.json")
+    with open(meta_path) as f:
+        meta = json.load(f)
+    meta["num_timesteps"] = 5_000_000
+    with open(meta_path, "w") as f:
+        json.dump(meta, f)
+    assert lineage_main([c]) == 0
+    out = capsys.readouterr().out
+    assert "fork_step=" in out and "num_timesteps=5,000,000" in out
+
+
+def test_main_lineage_says_unknown_rather_than_zero_for_a_legacy_run(tmp_path, capsys):
+    from main.lineage import main as lineage_main, read_run as lineage_read_run
+
+    gp, p, c = _chain(tmp_path)
+    assert lineage_read_run(c)["num_timesteps"] is None
+    assert lineage_main([c]) == 0
+    assert "num_timesteps=unknown" in capsys.readouterr().out

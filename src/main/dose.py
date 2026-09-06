@@ -28,6 +28,10 @@ WHERE THE NUMBERS COME FROM, in preference order, and why the first one wins:
      its sidecars keep every un-groomed checkpoint), so it is the fallback;
   3. `metadata.json`'s top-level `current_lr` — one point, reported as such.
 
+The `steps` column is `metadata.json`'s top-level `num_timesteps` (else the last sidecar's) — how
+far the run trained, which is the exposure the dose RATE was applied for. A run that predates the
+key shows `—`: this tool never opens a checkpoint zip, so unknown stays unknown.
+
 Everything else (`batch_size`, `grad_accum_steps`, `n_epochs`) comes from the SAME rows, so the
 dose is computed from one consistent record rather than from a shape read out of `cli_args` and an
 LR read out of somewhere else. When a run CHANGED shape mid-flight the table says so
@@ -63,11 +67,30 @@ def _read_json(path: str) -> Optional[Dict[str, Any]]:
     return obj if isinstance(obj, dict) else None
 
 
+def _row_step(row: Dict[str, Any], base: str) -> int:
+    """The step a sidecar sits at: its RECORDED `num_timesteps`, else the filename's own number.
+
+    The recorded key wins because it is what the save path wrote down
+    (`agents.model.snapshot`), while the filename is an inference that only holds for the
+    `checkpoint_<N>_steps` convention — `final_model.json` and `best_model.json` carry no number
+    at all and sort first at -1, unchanged.
+    """
+    recorded = row.get("num_timesteps")
+    if isinstance(recorded, (int, float)):
+        return int(recorded)
+    step = -1
+    for part in base.replace(".json", "").split("_"):
+        if part.isdigit():
+            step = int(part)
+    return step
+
+
 def _sidecar_rows(run_dir: str) -> List[Dict[str, Any]]:
-    """Every per-checkpoint sidecar, oldest first by recorded step (the filename's own number).
+    """Every per-checkpoint sidecar, oldest first by recorded step.
 
     Sorted by STEP rather than by name so `checkpoint_9_steps.json` cannot sort after
-    `checkpoint_10_steps.json`; a name we cannot parse a step out of sorts last by name.
+    `checkpoint_10_steps.json`; a row that states neither a `num_timesteps` nor a parseable name
+    sorts last by name.
     """
     rows = []
     for path in glob.glob(os.path.join(run_dir, "checkpoints", "*.json")):
@@ -75,11 +98,7 @@ def _sidecar_rows(run_dir: str) -> List[Dict[str, Any]]:
         if row is None:
             continue
         base = os.path.basename(path)
-        step = -1
-        for part in base.replace(".json", "").split("_"):
-            if part.isdigit():
-                step = int(part)
-        rows.append((step, base, row))
+        rows.append((_row_step(row, base), base, row))
     rows.sort(key=lambda r: (r[0], r[1]))
     return [r[2] for r in rows]
 
@@ -114,7 +133,8 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         "source": None, "n_lr": 0, "lr_median": None, "lr_min": None, "lr_max": None,
         "batch_size": None, "grad_accum_steps": None, "effective_batch": None, "n_epochs": None,
         "updates_per_env_step": None, "dose_rate": None, "shape_stable": None,
-        "recorded_dose": None, "fork_lr": None, "lr_frozen": None, "error": None,
+        "recorded_dose": None, "fork_lr": None, "lr_frozen": None, "num_timesteps": None,
+        "error": None,
     }
     if not os.path.isdir(run_dir):
         out["error"] = "no such run directory"
@@ -138,6 +158,14 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         out["recorded_dose"] = dose.get("dose_rate_now")
         out["fork_lr"] = dose.get("fork_lr")
         out["lr_frozen"] = dose.get("lr_frozen")
+    # HOW FAR THE RUN TRAINED — the run-level `num_timesteps`, else the LAST row's. A dose is a
+    # rate, so the steps it was applied for is the other half of the exposure; a run that recorded
+    # neither reads None => `—`, never 0.
+    steps = meta.get("num_timesteps")
+    if not isinstance(steps, (int, float)) and rows:
+        steps = rows[-1].get("num_timesteps")
+    if isinstance(steps, (int, float)):
+        out["num_timesteps"] = int(steps)
 
     lrs = [float(r["lr"]) for r in rows
            if isinstance(r.get("lr"), (int, float)) and float(r["lr"]) > 0]
@@ -171,7 +199,8 @@ def render(rows: List[Dict[str, Any]], reference: Optional[Dict[str, Any]],
            markdown: bool = False) -> str:
     """The table. `reference` is a `read_run` result; its own row shows a ratio of 1.00x."""
     ref_dose = (reference or {}).get("dose_rate")
-    header = ["run", "eff.batch", "epochs", "lr_median", "updates/step", "dose_rate", "vs ref"]
+    header = ["run", "steps", "eff.batch", "epochs", "lr_median", "updates/step", "dose_rate",
+              "vs ref"]
     body = []
     for r in rows:
         ratio = ("—" if (ref_dose in (None, 0) or r.get("dose_rate") is None)
@@ -188,6 +217,7 @@ def render(rows: List[Dict[str, Any]], reference: Optional[Dict[str, Any]],
         name = r["run"] + (f"  [{'; '.join(flags)}]" if flags else "")
         body.append([
             name,
+            _fmt(r.get("num_timesteps"), ","),
             _fmt(r.get("effective_batch"), ","),
             _fmt(r.get("n_epochs")),
             _fmt(r.get("lr_median"), ".4g"),
