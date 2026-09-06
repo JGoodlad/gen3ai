@@ -363,3 +363,141 @@ def test_a_fold_argv_and_a_teacherless_argv_both_still_pass(tmp_path):
     assert fold["unknown"] == [] and fold["combinations"] == [], fold["combinations"]
     plain = check(["--steps", "10", "--device", "cuda"])
     assert plain["unknown"] == [] and plain["combinations"] == []
+
+
+# --------------------------------------------------------- (g) models/ lives in the MAIN checkout
+#
+# THE WORKTREE DEFECT (2026-09-06). A recorded command names the archive RELATIVELY, `models/`
+# exists only in the main checkout, and most agents run in a git worktree — so `--model
+# models/<run>/checkpoints/x.zip` resolved to nothing, the parent's config could not be read, and
+# the tool degraded to ARGV-ONLY. The INHERITED half — the half C1 exists to catch — was inert for
+# exactly the readers most likely to need it. Every test below runs from a temp cwd with NO
+# `models/`, which is what a worktree is.
+
+
+def _archive_run(archive, name="parent", **recorded):
+    """A synthetic run inside an ARCHIVE dir, addressed the way a recorded command addresses it."""
+    run = archive / name
+    (run / "checkpoints").mkdir(parents=True)
+    (run / "model_config.json").write_text(json.dumps(_minimal_model_config(**recorded)))
+    (run / "metadata.json").write_text(json.dumps(
+        {"original_command": "x.py --steps 1", "launcher_command": "x.py --steps 7 --device cuda"}))
+    return f"models/{name}/checkpoints/checkpoint_10_steps.zip"
+
+
+def test_a_relative_model_path_resolves_into_the_archive_from_a_worktree(tmp_path, monkeypatch):
+    """(g1) THE FIX. From a cwd with no models/, the parent config is READ and its inherited value
+    reported — the C1 finding, on the relative path a real recorded command carries."""
+    from main.checkargs import check
+    archive, cwd = tmp_path / "archive", tmp_path / "worktree"
+    archive.mkdir()
+    cwd.mkdir()
+    rel = _archive_run(archive, distill_target="action")
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(archive))
+    monkeypatch.chdir(cwd)
+    res = check(_c1_argv(rel))
+    assert res["resolution"]["config_path"] == str(archive / "parent" / "model_config.json")
+    assert res["resolution"]["inherited"]["distill_target"] == "action"
+    assert [c.name for c, _ in res["combinations"]] == ["distill_target_needs_coef"]
+
+
+def test_no_archive_still_WARNS_and_still_runs_the_argv_only_checks(tmp_path, monkeypatch, capsys):
+    """(g2) `$GEN3AI_MODELS_DIR` set-and-missing ⇒ `main_models_dir()` is None ⇒ the path is left
+    exactly as typed, the warning names every path tried, and the flag checks still run. A silent
+    pass here would be worse than the defect."""
+    from main.checkargs import main as checkargs_main, resolve_models_path
+    cwd = tmp_path / "worktree"
+    cwd.mkdir()
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(tmp_path / "nope"))
+    monkeypatch.chdir(cwd)
+    rel = "models/parent/checkpoints/checkpoint_10_steps.zip"
+    assert resolve_models_path(rel) == rel
+    argv = _c1_argv(rel, "--intent-conditional", "--damage-matrices", "off")
+    rc = checkargs_main(["--argv", " ".join(argv)])
+    out = capsys.readouterr().out
+    assert "could not read the FORK PARENT's recorded config" in out and "ARGV-ONLY" in out
+    assert out.count("tried: ") == 2, out
+    # ...and the ARGV-ONLY half still ran on top of the warning, rather than passing in silence.
+    assert "WOULD FAIL IN THE EXTRACTOR" in out and rc == 1
+
+
+def test_an_absolute_path_is_never_rerouted(tmp_path, monkeypatch):
+    """(g3) The archive is a FALLBACK, never an override — an absolute path (and a cwd-existing
+    one) is returned untouched even when an archive holds a same-named run."""
+    from main.checkargs import resolve_models_path
+    archive = tmp_path / "archive"
+    (archive / "parent").mkdir(parents=True)
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(archive))
+    absolute = str(tmp_path / "elsewhere" / "parent" / "final_model.zip")
+    assert resolve_models_path(absolute) == absolute
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "models" / "parent").mkdir(parents=True)
+    assert resolve_models_path("models/parent") == "models/parent"
+    assert resolve_models_path(None) is None
+
+
+def test_the_run_dir_POSITIONAL_resolves_into_the_archive(tmp_path, monkeypatch):
+    """(g4) `checkargs models/<run>` — the form the docs give — from a worktree cwd."""
+    from main.checkargs import argv_from_run
+    archive, cwd = tmp_path / "archive", tmp_path / "worktree"
+    archive.mkdir()
+    cwd.mkdir()
+    _archive_run(archive, name="a_run")
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(archive))
+    monkeypatch.chdir(cwd)
+    assert argv_from_run("models/a_run") == ["--steps", "7", "--device", "cuda"]
+
+
+def test_a_relative_restart_is_still_classified_as_a_RESTART(tmp_path, monkeypatch):
+    """(g5) BOTH sides go through the resolver: a resolved checkpoint beside an UNresolved run dir
+    would sit "outside" it, and every launcher restart would be mislabelled a FORK."""
+    from main.checkargs import resolve_against_parent
+    archive, cwd = tmp_path / "archive", tmp_path / "worktree"
+    archive.mkdir()
+    cwd.mkdir()
+    rel = _archive_run(archive, name="live_run")
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(archive))
+    monkeypatch.chdir(cwd)
+    argv = ["--model", rel, "--run-dir", "models/live_run", "--steps", "10"]
+    assert resolve_against_parent(argv)["same_run"] is True
+    fork = ["--model", rel, "--run-name", "child_run", "--steps", "10"]
+    assert resolve_against_parent(fork)["same_run"] is False
+
+
+def test_the_pin_auto_derivation_reads_the_archives_checkpoint(tmp_path, monkeypatch):
+    """(g6) The `--pin` default is the checkpoint's recorded `git_hash`; unresolved, the read fails
+    and the whole argv silently falls back to the CURRENT tree's parser — the wrong authority."""
+    from main.checkargs import resolve_pin_for
+    archive, cwd = tmp_path / "archive", tmp_path / "worktree"
+    archive.mkdir()
+    cwd.mkdir()
+    rel = _archive_run(archive, name="pinned_run")
+    (archive / "pinned_run" / "checkpoints" / "checkpoint_10_steps.json").write_text(
+        json.dumps({"git_hash": "b13b30b2" + "0" * 32}))
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(archive))
+    monkeypatch.chdir(cwd)
+    sha, why = resolve_pin_for(["--model", rel], None)
+    assert sha == "b13b30b2" + "0" * 32, (sha, why)
+
+
+def test_a_repeated_flag_reads_the_LAST_value_the_way_argparse_does():
+    """(g7) A recorded `launcher_command` carries `--model` TWICE — the operator's fork parent and
+    the run's own checkpoint, appended by the launcher on every restart. argparse takes the last,
+    so anything deriving a pin from the FIRST pins to the parent's commit and reports HEAD-only
+    flags as absent on a command that trained to completion (a false POSITIVE)."""
+    import argparse
+
+    from main.checkargs import argv_value, model_arg
+    argv = ["--model", "models/parent/final_model.zip", "--steps", "10",
+            "--model", "models/child/final_model.zip"]
+    assert model_arg(argv) == "models/child/final_model.zip"
+
+    # ...and "the way argparse does" is asserted against argparse, not against a belief about it.
+    p = argparse.ArgumentParser()
+    p.add_argument("--model")
+    p.add_argument("--steps")
+    assert model_arg(argv) == p.parse_args(argv).model
+
+    assert argv_value(["--run-name", "a", "--run-name=b"], "--run-name") == "b"
+    assert argv_value(["--pin-commit", "deadbeef"], "--pin-commit") == "deadbeef"
+    assert argv_value(["--steps", "1"], "--pin-commit") is None

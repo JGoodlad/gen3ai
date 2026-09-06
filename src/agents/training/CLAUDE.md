@@ -6146,7 +6146,9 @@ teacher it could not load, `apply_distill_team_bias` raises on a team file it ca
 re-asking would newly refuse a `--distill-coef 0` CONTROL arm whose teacher run has since been
 archived, which works today and which nothing about this defect argues against. `main.checkargs`
 passes `True` and also reports a missing run dir / team file, because OFFLINE there is no
-downstream to answer. `_resolve_zip_and_config`
+downstream to answer — through its own `resolve_path` hook (default identity, so `resolve_config`
+is unchanged), since `models/` lives in the MAIN checkout and a worktree would otherwise report a
+teacher that is right there as missing. `_resolve_zip_and_config`
 does the split at ITS entry, which is what makes the four `step=None` callers (`--distill-teacher`,
 `--win-prob-pbrs-source`, `--distill-anchor-parent`, `--warmstart-consensus`) `@step`-capable at
 once. Gate: `src/agents/training/run_spec_test.py`, including an **AST census** that fails, naming

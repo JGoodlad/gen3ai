@@ -100,7 +100,8 @@ def parse_distill_teacher_spec(spec: str, resolve_wildcard=None):
     return expanded
 
 
-def check_teacher_spec(spec, *, resolve_wildcard=None, check_paths: bool = True) -> "list[str]":
+def check_teacher_spec(spec, *, resolve_wildcard=None, check_paths: bool = True,
+                       resolve_path=None) -> "list[str]":
     """Every reason a ``--distill-teacher`` spec would fail or teach NOTHING. ``[]`` = it is fine.
 
     THE ONE DECLARATION, read by BOTH surfaces — `main.train.config.resolve_config` turns the first
@@ -127,6 +128,13 @@ def check_teacher_spec(spec, *, resolve_wildcard=None, check_paths: bool = True)
         the whole job is to answer "would this command launch?" before anything runs, and a
         reporting tool that reads the filesystem is that tool's normal mode.
 
+    ``resolve_path(run_path) -> run_path`` is the caller's chance to say WHERE a relative path
+    resolves before it is stat-ed. Only `main.checkargs` passes one, and only because ``models/``
+    lives in the MAIN checkout: in a git worktree a perfectly good `models/<teacher>` does not
+    exist relative to the cwd, so without this the path half of an offline check reports a teacher
+    that is right there as missing — a FALSE POSITIVE on a command that launches. Default identity,
+    so `resolve_config` (which passes ``check_paths=False`` anyway) is unchanged.
+
     Total either way: it never raises, it returns messages.
     """
     text = (spec or "").strip()
@@ -146,6 +154,8 @@ def check_teacher_spec(spec, *, resolve_wildcard=None, check_paths: bool = True)
         except ValueError as e:
             out.append(str(e))
             continue
+        if resolve_path is not None:
+            run_path = resolve_path(run_path) or run_path
         if check_paths and not os.path.exists(run_path):
             out.append(
                 f"--distill-teacher: teacher {teacher!r} names {run_path!r}, which does not exist "

@@ -815,7 +815,14 @@ line or was `INHERITED`. The run dir the argv would write into is resolved the s
 `train_rl_agent` resolves it, and `fork_lr.is_same_run_checkpoint` labels the source a **FORK
 PARENT** or a **same-run RESTART checkpoint**; both are read, because `_resolve` reads the recorded
 config on every `--model`. A parent config that cannot be read is a **WARNING naming every path
-tried**, never a silent pass, and the argv-only checks still run.
+tried**, never a silent pass, and the argv-only checks still run. A relative `models/...` path —
+the `--model`, the run dir, the `<run_dir>` positional, a `--distill-teacher` run, the checkpoint
+the pin is auto-derived from — resolves through `utils.paths.main_models_dir()` when it does not
+exist relative to the cwd, so the inherited half works in a WORKTREE (where `models/` does not
+exist and the whole check silently degraded to argv-only); an absolute or cwd-existing path is
+untouched, no archive on the box still means the WARNING, and a REPEATED flag reads its LAST value
+the way argparse does (a recorded command carries `--model` twice — reading the first pinned the
+check to the fork PARENT's commit and refused four flags on a command that trained to completion).
 
 **The old "absence carries no information" rule survives only where it is still true** — an argv
 with no `--model` (or whose parent config is unreadable). There, the dependency half stays

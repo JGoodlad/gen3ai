@@ -61,6 +61,15 @@ sharpest instance: its parent recorded `distill_target="action"`, the argv said 
 and named no target, `_resolve` inherited `action`, and the run died at launch — while this tool had
 printed "✓ this command still launches".
 
+🚨 AND `models/` LIVES ONLY IN THE MAIN CHECKOUT (2026-09-06). A recorded command names the
+archive RELATIVELY (`--model models/<run>/checkpoints/x.zip`), and most agents run in a git
+worktree, which has no `models/` at all — so the parent's config read failed, the tool warned, and
+the inherited half above went inert for exactly the readers who most need it. Every relative
+`models/...` path this module resolves — the `--model`, the run dir it would write into, the
+`<run_dir>` positional, and the checkpoint the `--pin` is auto-derived from — now goes through
+`resolve_models_path`, i.e. `utils.paths.main_models_dir()`. An absolute or cwd-existing path is
+untouched, and no archive on the box still means the WARNING, never a silent pass.
+
 So when the argv carries `--model`, the checks below run on the EFFECTIVE namespace: argv parsed by
 the real parser, then every unset value filled from the parent's recorded config through
 `config.inherit_saved_flag` — the launch path's own function, called rather than re-implemented. The
@@ -86,6 +95,7 @@ import json
 import os
 import shlex
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from main.exit_codes import TrainExitCode
@@ -99,6 +109,38 @@ LAUNCHER_ONLY = {
     "--nice", "--no-pin", "--sync-to-main", "--pin-commit", "--pin-to-hash",
     "--dry-run",
 }
+
+
+def resolve_models_path(path: str | None) -> str | None:
+    """A relative ``models/...`` path resolved against the MAIN checkout's run archive.
+
+    🚨 THE WORKTREE DEFECT (2026-09-06). ``models/`` is not committed and exists only in the MAIN
+    checkout, but a recorded command names it RELATIVELY (``--model models/<run>/checkpoints/x.zip``)
+    and most agents run in a git worktree. There the path resolved to nothing, the parent's
+    ``model_config.json`` could not be read, and the tool printed its warning and degraded to
+    ARGV-ONLY checking — so the INHERITED half, the half C1 exists to catch, was inert for exactly
+    the readers most likely to need it. ``utils.paths.main_models_dir()`` reaches across via git's
+    ``--git-common-dir`` (and honours ``$GEN3AI_MODELS_DIR``), which is the one place that knows how.
+
+    The archive is a FALLBACK, never an override: an absolute path, or one that exists relative to
+    the cwd, is returned untouched, and so is a path the archive does not have — so the caller's
+    warning still names what the reader typed. ``None`` in, ``None`` out; ``main_models_dir()``
+    returning ``None`` (no archive on this box) leaves the path alone and the warning stands.
+    """
+    if not path or os.path.isabs(path) or os.path.exists(path):
+        return path
+    from utils.paths import main_models_dir
+    models = main_models_dir()
+    if models is None:
+        return path
+    parts = Path(path).parts
+    rest = parts[1:] if parts and parts[0] == "models" else parts
+    if not rest:
+        return path
+    cand = models.joinpath(*rest)
+    # `cand.parent` covers a checkpoint zip that the archive's run dir does not happen to hold:
+    # the config this tool reads lives at the run root either way, so resolving is still right.
+    return str(cand) if cand.exists() or cand.parent.exists() else path
 
 
 def known_option_strings() -> Dict[str, str]:
@@ -208,6 +250,7 @@ def parent_config_path(model_path: str) -> Tuple[str | None, List[str]]:
     and falls back to the literal dirname when it RAISES, because this tool must still answer about
     a command whose checkpoint is not on this box.
     """
+    model_path = resolve_models_path(model_path) or model_path
     try:
         from agents.model.snapshot import _resolve_paths
         _, cfg_dir = _resolve_paths(model_path)
@@ -260,12 +303,14 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
         desugar_umbrella_flags(ns)
 
-    model = getattr(ns, "model", None)
+    model = resolve_models_path(getattr(ns, "model", None))
     if not model:
         ns._saved_config_present = False
         return {"ns": ns, "model": None, "config_path": None, "tried": [], "inherited": {},
                 "same_run": False, "no_parent": True}
-    run_dir = effective_run_dir(ns)
+    # BOTH sides through the same resolver, or a resolved checkpoint would sit "outside" an
+    # unresolved run dir and every launcher RESTART would be mislabelled a FORK.
+    run_dir = resolve_models_path(effective_run_dir(ns))
     same_run = bool(run_dir) and is_same_run_checkpoint(model, run_dir)
     config_path, tried = parent_config_path(model)
 
@@ -366,9 +411,12 @@ def teacher_spec_findings(argv: List[str], ns=None) -> List[str]:
     from agents.training.matchup_spec import read_recorded_trainee_teams
 
     def _resolve(run_dir):
-        return read_recorded_trainee_teams(run_dir, require_teams=True)
+        # Through the archive resolver too — a `'<teacher>:*'` wildcard READS the teacher run's
+        # recorded provenance, and in a worktree that read finds nothing at a relative path.
+        return read_recorded_trainee_teams(resolve_models_path(run_dir) or run_dir,
+                                           require_teams=True)
 
-    return check_teacher_spec(spec, resolve_wildcard=_resolve)
+    return check_teacher_spec(spec, resolve_wildcard=_resolve, resolve_path=resolve_models_path)
 
 
 def check(argv: List[str]) -> dict:
@@ -410,26 +458,30 @@ def check(argv: List[str]) -> dict:
 
 def model_arg(argv: List[str]) -> str | None:
     """The `--model` value in an argv, in either spelling, without parsing the whole thing."""
-    for i, tok in enumerate(argv):
-        if tok == "--model" and i + 1 < len(argv):
-            return argv[i + 1]
-        if tok.startswith("--model="):
-            return tok.split("=", 1)[1]
-    return None
+    return argv_value(argv, "--model")
 
 
 def argv_value(argv: List[str], flag: str) -> str | None:
-    """The value of `flag` in an argv, in either spelling, without parsing the whole thing.
+    """The LAST value of `flag` in an argv, in either spelling, without parsing the whole thing.
 
-    The same trick `model_arg` uses, and for the same reason: these are LAUNCHER-owned flags,
-    so the trainer parser this module otherwise reads would reject them outright.
+    These are LAUNCHER-owned flags, so the trainer parser this module otherwise reads would
+    reject them outright — hence the hand scan.
+
+    🚨 THE LAST OCCURRENCE, because that is the one that RUNS. A recorded `launcher_command`
+    routinely carries `--model` TWICE: the launcher appends the run's own latest checkpoint on
+    every restart without removing the fork parent the operator typed. argparse — and the
+    launcher's own `_peek_arg`, which IS argparse — take the last; reading the first pinned
+    `models/ai_v9_162_TCUNFA_0903`'s check to its PARENT's commit (77f922e7 instead of
+    52ab5914) and reported four flags as "not in the pinned tree" on a command that trained to
+    completion. A false POSITIVE, the direction that stops a correct launch.
     """
+    found: str | None = None
     for i, tok in enumerate(argv):
         if tok == flag and i + 1 < len(argv):
-            return argv[i + 1]
-        if tok.startswith(flag + "="):
-            return tok.split("=", 1)[1]
-    return None
+            found = argv[i + 1]
+        elif tok.startswith(flag + "="):
+            found = tok.split("=", 1)[1]
+    return found
 
 
 def argv_run_dir(argv: List[str]) -> str | None:
@@ -481,14 +533,17 @@ def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, 
     """
     if explicit:
         return explicit, "--pin"
-    model = model_arg(argv)
+    model = resolve_models_path(model_arg(argv))
     if not model:
         return None, "no --model and no --pin — this argv would run on HEAD"
     from main.launcher.worktree import PinRefused, resolve_pin
     try:
         decision = resolve_pin(
+            # The pin is auto-derived from the checkpoint's recorded git_hash, so this read has
+            # to reach the archive too — in a worktree it otherwise finds nothing and PinRefused
+            # turns the whole answer into "the CURRENT tree's parser", which is the wrong one.
             model_path=model,
-            run_dir=argv_run_dir(argv),
+            run_dir=resolve_models_path(argv_run_dir(argv)),
             pin_commit=argv_value(argv, "--pin-commit"),
             sync_to_main="--sync-to-main" in argv,
         )
@@ -508,6 +563,7 @@ def argv_from_run(run_dir: str) -> List[str]:
     has none yet — say that, rather than raising a traceback at someone who asked a reasonable
     question about a live run.
     """
+    run_dir = resolve_models_path(run_dir) or run_dir
     path = os.path.join(run_dir, "metadata.json")
     if not os.path.isdir(run_dir):
         raise SystemExit(f"no such run dir: {run_dir}")
