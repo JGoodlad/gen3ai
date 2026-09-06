@@ -10485,3 +10485,73 @@ first-order projection ⟨∇θ f(s′), Δθ⟩ onto untaught states against th
 *(Bookkeeping: deab5124's message says this entry and the note update rode with the artifact; they did not — the
 script writing them aborted in a worktree that predated the note — so they land here, one commit later.)*
 
+
+---
+
+### 2026-09-05 · P1 — **v8's gift REPLICATES**: three fresh arms give +4.56pp against v8's own +4.64
+
+**v8's +4.64pp untaught gift at +1.09M was not one lucky draw.** Three fresh arms of v8_14's exact
+recipe, forked from `ai_v8_04` at the same step and scored on the era's own meter, reproduce it.
+
+| arm | vs parent (16 teams, cluster-bootstrapped) | |
+|---|---|---|
+| repA | +3.12pp [−0.39, +6.74] | spans zero |
+| repB | **+6.35pp** [+2.25, +9.96] | clears zero |
+| repC | +4.20pp [−0.10, +8.59] | spans zero |
+| **POOLED** | **+4.56pp [+1.14, +7.81]** | **clears zero** |
+| v8's own | **+4.64pp** | inside the CI, 0.08pp from the point |
+
+**The operational floor, measured for this instrument for the first time: 3.22pp** — the MAX
+pairwise |Δ| among the three replicates (`repA−repB` −3.22 [−6.25, −0.29]; the others −1.07 and
++2.15), per the standing rule that a floor never takes the smaller single-pair bar. Three pairwise
+draws of three arms: better than the single draw everything else has rested on, still thin. The
+pre-registered criterion is met on both halves — the pooled CI clears zero **and** 4.56 > 3.22.
+
+**THE INSTRUMENT WAS CHECKED, NOT ASSUMED.** The parent was re-scored in the same session rather
+than reusing its banked 0.3877: it returned **0.3848**, reproducing to 0.29pp over 1,024 battles.
+Had it not, every comparison here would have rested on a remembered number.
+
+#### ONE ARM WOULD HAVE BEEN WRONG TWO TIMES IN THREE
+
+Only **one of three** arms clears zero on its own. A single-arm study of this exact effect had a
+**two-in-three chance of reporting "no gift" about a real one** — and that is precisely the position
+v8's original +5.42 occupied for months: one draw, no floor. It happened to be right. *Attach this to
+every future one-arm reading.*
+
+#### What is and is not established
+
+Established: v8_14's recipe reproduces its **early** behaviour — the +1.09M no-hole gift. **Nothing
+here speaks to the +9.67 peak or the later decay**, and the interpolated ~+8.5pp at our fold length
+is still one curve. The contrast with our folds' p1M hole (−3.12 to −4.19) is now **two established
+facts on two different meters** — the era's 16-team meter and our untaught-8 — and they are *not the
+same meter*; the comparison is of signs and rough magnitudes, not of numbers.
+
+Cross-reference: this morning's arch probe H2 (`deab5124`/`f91f93c3`) found the taught/untaught split
+is not a gradient-kernel direction in either era, and the pointer head carries 0.66% of policy-
+gradient norm — so "the head shares more" is dead. **P1 and H2 point the same way**: whatever differs
+between v8 and ours is recipe / ecology / parent, not head structure.
+
+#### Provenance, and why the bookkeeping was load-bearing
+
+Depths: repA fork+1,085,830 · repB fork+1,082,077 · repC fork+1,081,910 — spread 3,920 steps
+(0.36% of the leg), 0.26–0.62% shallower than v8's own `c278672`. Stated, not engineered away.
+The arms' `model_config.json` is **byte-identical to v8_14's** (85 keys, 0 differing values).
+
+⚠️ **The era carries the sidecar-provenance defect too, and it hit these arms.**
+`python -m main.sidecar_audit models/v8rep_p1_A_0905`:
+
+```
+```
+
+The era writer honours `LAUNCHER_GIT_HASH` only on its `git_hash is None` path; the checkpoint
+sidecar path takes the hash from `get_git_hash()` in the **cwd** — the main checkout, whose HEAD moved
+under the run as other work landed. **Provenance only** — the weights are era weights (import proved
+`agents -> /tmp/v8rep_era/...`, obs dim 2992). Unfixable at the pin by construction.
+
+**The authoritative provenance is therefore `v8rep_launch.txt`** — written into each run dir under
+launch condition (e), recording harness, pin, cwd, `PYTHONPATH`, `LAUNCHER_GIT_HASH` and the full
+argv — plus `metadata.json` (which correctly holds `b13b30b2`). Never the sidecars. *That condition
+looked like bookkeeping when it was set and turned out to be the only surviving truth: the second
+time this week a bookkeeping precondition was the thing that saved a result.* `--dry-run` now
+correctly REFUSES to restart these dirs because of the bad sidecar hash — that refusal is right and
+must not be forced.
