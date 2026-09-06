@@ -969,7 +969,6 @@ does nothing given another setting.
 | `spread_belief_nature` | `true` | ACTIVE |
 | `switch_branch_cell` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
-| `threat_prob_outspeed` | `false` | OFF |
 | `value_dist_bins` | `51` | ACTIVE |
 | `value_dist_mode` | `"shaping"` | ACTIVE |
 | `value_dist_vmax` | `12.0` | ACTIVE |

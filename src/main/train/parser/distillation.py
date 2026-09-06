@@ -580,13 +580,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "'both' = incoming + outgoing. Unrevealed opp slots zeroed (belief-driven = TODO). "
                              "STRUCTURAL (version-checked, fresh-only). REQUIRES --damage-op. 'off' (default) = "
                              "baseline byte-identical.")
-    # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed).
-    parser.add_argument("--threat-prob-outspeed", "--threat_prob_outspeed", dest="threat_prob_outspeed",
-                        action=BoolFlag, default=None,
-                        help="#3 UNCERTAINTY-AWARE P(outspeed): divide the speed gap by the believed speed STD "
-                             "(SPECIES_SPREAD_PRIOR; sigmoid≈normal-CDF) instead of a fixed scale — a high-variance "
-                             "opp speed reads ~0.5, a pinned one reads sharp. FORWARD-behavior (version-checked, "
-                             "fresh-only). REQUIRES --damage-op. Default off (byte-identical).")
     parser.add_argument("--spread-belief", "--spread_belief", dest="spread_belief",
                         action=BoolFlag, default=None,
                         help="SpreadBelief (gen3_unified_spread_belief_v1): the THIRD belief leg — predict "

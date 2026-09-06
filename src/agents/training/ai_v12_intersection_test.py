@@ -243,7 +243,11 @@ def _fabricated_v104() -> dict:
 
 def test_the_three_migrations_stack_on_a_v104_config():
     out = _migrate_config(_fabricated_v104())
-    assert out["config_version"] == MODEL_CONFIG_VERSION == 107
+    # `>= 104`, not `== 107`: the property under test is that a v104 config lands on the LIVE
+    # version with the wave keys filled, not which number that happens to be today. Pinning the live
+    # number made this fail on the next unrelated schema bump (it did, at v108) — the identical
+    # lesson `cf_coef_provenance_test.py` records having learned at v101.
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 104
     for k, want in _WAVE_KEYS.items():
         assert k in out, f"v10x migration left {k} unset"
         assert out[k] == want, (k, out[k], want)

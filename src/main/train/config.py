@@ -587,7 +587,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             args.damage_matrices_incoming = True
             print("[Arch] --damage-topk implies the INCOMING per-move damage matrix (gen3_op_block_trim_v1: "
                   f"the lean top-K block was deleted) — enabling it at K={args.damage_topk_k}.")
-    _resolve("threat_prob_outspeed", False)      # v36 forward-behavior (prob outspeed; version-checked, fresh-only)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
     _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)

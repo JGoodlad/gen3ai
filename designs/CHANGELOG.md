@@ -7197,3 +7197,55 @@ fail to resolve records `unresolved`, so "not recorded" and "resolved to nothing
 It changes which FILE a run loads, never a weight shape — no `ARCH_SIGNATURE` bump, no
 `MODEL_CONFIG_VERSION` bump, absent from `ModelVersion.check_compatible` by design, and no
 checkpoint on disk becomes incompatible with it.
+
+
+## v108 — `gen3_dead_flag_purge_v2` (2026-09-06): one dead flag deleted, and the census that found only one
+
+The v75/v78/v88 cleanup-journey pattern, run again as an end-state paydown before the win-prob-only
+generation. This round is notable for what it did **not** delete: the census
+(`designs/research_state/flag_census_2026-09-06.md`) classified the whole flag surface against four
+conditions — never ON in any gen-9+ run, absent from the production config, no `state_dict` key
+depending on it, and unnamed as a lever by any live design doc — and exactly **one** flag met all
+four. Every other OFF flag is an armed lever, an umbrella desugar target, or a documented next step.
+An empty-looking purge is the honest outcome when the previous rounds did their job.
+
+* **`threat_prob_outspeed`** (v36, `gen3_bidir_threat_trunk_v1` #3) — the uncertainty-aware
+  P(outspeed): divide the speed gap by the believed speed STD (`SPECIES_SPREAD_PRIOR`, sigmoid ≈
+  normal CDF) instead of a fixed scale, so a high-variance opponent speed reads nearer 0.5 and a
+  pinned one reads sharp. Deleted: the argparse entry, the `_resolve` line, the `flag_registry`
+  entry, the `ModelVersion` field, the `check_compatible` gate, the `combination_checks` rule
+  (`--threat-prob-outspeed requires --damage-op`), the constructor kwarg down through
+  `snapshot` → `extractor_build` → `DamageOperator`, and the branch itself in
+  `DamageOperator._p_outspeed`. Measured usage: **0 of 124 gen-9+ runs**; the 60 archive runs whose
+  recorded command types it are all config ≤ 46, far below `MIGRATION_FLOOR` 96, so none of them
+  can be resumed into the current architecture by any route. Zero mentions under
+  `designs/research_state/`. **There is no replacement flag** — the surviving behaviour is the
+  fixed-scale logistic that every gen-9+ run already used, so a stale command drops the flag and
+  launches unchanged.
+
+**Migration — REFUSED on True, and the reason is the interesting one.** Every other member of
+`_DEAD_FEK_JUDGED` is there because its ON value named PARAMETERS, so popping it would hand SB3 an
+unplaceable `state_dict`. This one is the inverse and the more dangerous shape: it built **no**
+parameters, so a `True` checkpoint and a `False` checkpoint are **byte-identical in every key**. It
+only chose a divisor. Popping `True` would therefore load cleanly, pass every shape gate, and run a
+checkpoint under physics it was never trained on — permanently, with nothing able to notice. So
+`True` raises with the v75 re-read-from-`git_hash` diagnosis and `False` pops silently, in both
+`_migrate_config` (the config JSON, version-independent sanitizer) and
+`snapshot.sanitize_dead_extractor_kwargs` (the pickled `features_extractor_kwargs`).
+**"Loads cleanly" is the reason to refuse it, not a reason to allow it.**
+
+**No `ARCH_SIGNATURE` bump, and that is the safety rule rather than a convenience.** No
+`state_dict` key moves, so every gen-17 checkpoint stays loadable; a bump would refuse them all for
+a deletion that cannot affect them, and the floor contract would drag `MIGRATION_FLOOR` up with it
+in the same commit. `MODEL_CONFIG_VERSION` 107 → 108 (the stamp), `MIGRATION_FLOOR` unchanged at 96.
+`deleted_toggles_v2_test.py` pins all of it — both sanitizers, the parser refusal, the dangling
+combination check, and the signature/floor non-movement.
+
+**Knowingly LEFT BEHIND, recorded rather than smuggled in.** `_p_outspeed` still accepts
+`opp_spe_std`, and ~12 call sites across `damage_op` / `damage_op_blocks` / `damage_op_pairwise`
+still compute it from `SPECIES_SPREAD_PRIOR[..., _SB_SPE, 1]` and pass it. The deleted *branch* was
+code that never ran; those lookups **ran every forward and were discarded**, so removing them is
+behaviour-preserving but is a live-hot-path edit in the tree's most physics-critical module rather
+than a provably-inert one. It is banked as the named follow-up in the census, with the seam, instead
+of riding along inside a purge. The unit test asserts the std cannot reach the divisor, so a
+re-introduction has to change a test rather than silently change the physics.

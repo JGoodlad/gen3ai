@@ -100,7 +100,6 @@ class ExtractorBuild(torch.nn.Module):
                  entity_tail_seats: bool = False,
                  edge_bias_families: str = "off",
                  damage_matrices_outgoing: bool = False, damage_matrices_incoming: bool = False,
-                 threat_prob_outspeed: bool = False,
                  hp_belief_mode: str = "composed", belief_grad_mode: str = "shaping",
                  cf_evidential: bool = False,
                  cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
@@ -620,7 +619,6 @@ class ExtractorBuild(torch.nn.Module):
         self.damage_op = (DamageOperator(layout, outgoing=damage_outgoing, topk_k=self.damage_topk_k,
                                          matrices_outgoing=self.damage_matrices_outgoing,
                                          matrices_incoming=self.damage_matrices_incoming,
-                                         prob_outspeed=threat_prob_outspeed,
                                          candidate_k=self.damage_candidate_k,
                                          reduce_how=_reduce_how,
                                          drop_renders=op_drop_renders,
@@ -660,7 +658,6 @@ class ExtractorBuild(torch.nn.Module):
                     f"value_threat_inject width mismatch: the op's reducer emits {_built} but the "  # type: ignore[union-attr]
                     f"projection was built for {self.cls_pool.value_threat_proj.extra_dim} — "
                     "`value_threat_inject_dim()` has drifted from `PairReducer.extra_dim`.")
-        self.threat_prob_outspeed = bool(threat_prob_outspeed)
         # gen3_tiered_pipeline_v1 (was gen3_damage_op_prefuse_v1, v50): ONE damage computation per
         # forward, PRE-attention, and now the ONLY placement. The spread/HP-type beliefs + the FULL op
         # run on the PRE-transformer role tokens (T0 RESOLVE → T1 REASON), the per-OUR-mon incoming rows

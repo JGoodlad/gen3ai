@@ -171,7 +171,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
 
     def __init__(self, layout: Dict[str, Any], outgoing: bool = False, topk_k: int = 0,
                  matrices_outgoing: bool = False, matrices_incoming: bool = False,
-                 prob_outspeed: bool = False,
                  candidate_k: int = 0,
                  reduce_how: str = "hard_max",
                  drop_renders: bool = False,
@@ -222,10 +221,6 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # moves (0 = the full ~400-wide sweep, byte-identical). No tail-risk bound — the truncated
         # mass is simply dropped, which is the tradeoff under test.
         self.damage_candidate_k = int(candidate_k)
-        # gen3_bidir_threat_trunk_v1 (#3): use a SOFT P(our_spe > opp_spe) over the believed speed mean±std
-        # (SPECIES_SPREAD_PRIOR) instead of the hard point-estimate comparison. Forward-behavior toggle (no
-        # new params; values only). Stored for the forward / _outgoing_block p_outspeed computation.
-        self.prob_outspeed = bool(prob_outspeed)
         from agents.model.damage_tables import (
             build_damage_buffers, HIDDEN_POWER_NUM, HIDDEN_POWER_BP,
             CHOICE_BAND_ITEM_NUM, CHOICE_BAND_PHYS_MULT, CURSE_MOVE_NUM, TOXIC_MOVE_NUM,
@@ -580,12 +575,19 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
 
     def _p_outspeed(self, our_spe: torch.Tensor, opp_spe: torch.Tensor,
                     opp_spe_std: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """P(our mon outspeeds the opp active). LEGACY: a logistic over the speed gap at a FIXED scale.
-        gen3_bidir_threat_trunk_v1 (#3, `prob_outspeed`): UNCERTAINTY-AWARE — divide the gap by the believed
-        speed STD (sigmoid ≈ normal CDF ⇒ divisor = std/1.702), so a high-variance opp speed reads closer to
-        0.5 and a well-pinned one reads sharp. All args broadcast together."""
-        if self.prob_outspeed and opp_spe_std is not None:
-            return torch.sigmoid((our_spe - opp_spe) / (opp_spe_std / _DMG_SPEED_STD_K + 1e-6))
+        """P(our mon outspeeds the opp active): a logistic over the speed gap at a FIXED scale. All args
+        broadcast together.
+
+        `opp_spe_std` IS ACCEPTED AND IGNORED. It fed the uncertainty-aware variant
+        (gen3_bidir_threat_trunk_v1 #3, `prob_outspeed`) — divide the gap by the believed speed STD so a
+        high-variance opp speed reads nearer 0.5 — which was DELETED with its flag by
+        `gen3_dead_flag_purge_v2`: never enabled in any gen-9+ run, OFF in production, and no research_state
+        doc named it as a lever. The parameter and its ~6 `SPECIES_SPREAD_PRIOR[..., _SB_SPE, 1]` lookups
+        survive on purpose, and the distinction is the v88 deletion rule's: the deleted BRANCH is code that
+        never ran, while those lookups RAN every forward and were merely discarded. Removing them is
+        behaviour-preserving but is a live-hot-path edit across `damage_op` / `_blocks` / `_pairwise` rather
+        than a provably-inert one, so it is banked as the named follow-up in
+        `designs/research_state/flag_census_2026-09-06.md` instead of being smuggled into a purge."""
         return torch.sigmoid((our_spe - opp_spe) / _DMG_SPEED_SCALE)
 
     # ------------------------------------------------------------------ pointer-native action head cells

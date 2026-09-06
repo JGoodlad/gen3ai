@@ -280,7 +280,6 @@ ARGVS: dict[str, list[str]] = {
     "damage_matrices_incoming_needs_move_latent": [
         *OFF, "--damage-matrices", "incoming", "--damage-op",
         "--move-belief-mode", "both", "--opp-belief-aux-coef", "0.1"],
-    "threat_prob_outspeed_needs_op": [*OFF, "--threat-prob-outspeed"],
     "move_belief_latent_coef_needs_latent": [*OFF, "--move-belief-latent-coef", "0.1"],
     "move_belief_latent_coef_needs_revealed": [*OFF, "--move-belief-latent-coef", "0.1",
                                                "--move-latent", "--move-belief-mode",

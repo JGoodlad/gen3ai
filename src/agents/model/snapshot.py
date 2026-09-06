@@ -941,6 +941,11 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # v75: the SimSiam latent-belief predictor is deleted. True is REFUSED because
                     # it put parameters in the state_dict; False pops silently (nothing built).
                     ("opp_belief_latent", False),
+                    # v108 (gen3_dead_flag_purge_v2): the uncertainty-aware P(outspeed) divisor. This
+                    # is the OTHER reason for the JUDGED list — not "ON named parameters" but "the
+                    # state_dict is BYTE-IDENTICAL either way", so popping True would silently run a
+                    # checkpoint under the physics it was not trained on and no shape check could tell.
+                    ("threat_prob_outspeed", False),
                     # v78: the ZArchEncoder + FiLM generators, the per-team LUT Embedding, and the
                     # per-seed quantile Linear are deleted. Each ON value named PARAMETERS, so it is
                     # refused for the v75 reason rather than popped into an unplaceable state_dict.
@@ -1193,7 +1198,6 @@ def current_model_version(
     damage_topk_k: int = 0,
     damage_matrices_outgoing: bool = False,
     damage_matrices_incoming: bool = False,
-    threat_prob_outspeed: bool = False,
     hp_type_belief_coef: float = 0.0,
     item_belief_coef: float = 0.0,
     td_aux_coef: float = 0.0,
@@ -1288,7 +1292,6 @@ def current_model_version(
     ext_kwargs["damage_topk_k"] = damage_topk_k
     ext_kwargs["damage_matrices_outgoing"] = damage_matrices_outgoing
     ext_kwargs["damage_matrices_incoming"] = damage_matrices_incoming
-    ext_kwargs["threat_prob_outspeed"] = threat_prob_outspeed
     ext_kwargs["hp_belief_mode"] = hp_belief_mode
     ext_kwargs["belief_grad_mode"] = belief_grad_mode
     policy_kwargs = {
@@ -1416,9 +1419,6 @@ def arch_toggles_from_model(model: Any) -> dict:
         "damage_matrices_incoming": bool(getattr(fe, "damage_matrices_incoming", False)),
         # gen3_per_move_matrices_v1 (v39): the TRANSPOSED outgoing matrix (our 6 mons → opp active) —
         # STRUCTURAL bool (widens the op out_dim), gated in check_compatible, so it must reach the worker's gate.
-        # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed) — a version-gated
-        # forward-behavior bool, so it must reach the worker's check_compatible gate.
-        "threat_prob_outspeed": bool(getattr(fe, "threat_prob_outspeed", False)),
         # gen3_hp_belief_ablation_v1 (v53): 'composed' vs 'flat' changes both the state_dict (the
         # HPTypeBelief head) and the forward, so it must reach the worker's check_compatible gate.
         "hp_belief_mode": str(getattr(fe, "hp_belief_mode", "composed")),

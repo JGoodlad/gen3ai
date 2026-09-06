@@ -205,8 +205,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="the other half of the `--damage-matrices` mode desugar; it also REUSES "
                    "`damage_topk_k` as its K.",
               requires=("damage_op", "move_latent")),
-    ModelFlag("threat_prob_outspeed", False, Tier.CLI, Klass.STRUCTURAL, 36,
-              "uncertainty-aware P(outspeed): divide the speed gap by the believed speed std"),
     ModelFlag("spread_belief_nature", False, Tier.CLI, Klass.STRUCTURAL, 40,
               "swap SpreadBelief's additive head for the NATURE/EV generative head",
               requires=("spread_belief",)),

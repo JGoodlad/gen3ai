@@ -55,7 +55,7 @@ CTOR_KWARGS_V96 = frozenset({
     "pair_outcome_cell", "pair_outcome_switch", "switch_branch_cell",
     "conditional_threat_cell", "pair_value_route",
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
-    "spread_belief", "spread_belief_nature", "t0_species_prior", "threat_prob_outspeed",
+    "spread_belief", "spread_belief_nature", "t0_species_prior",
     "value_dist_bins", "value_dist_mode", "value_dist_vmax", "value_dist_vmin",
     "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
     "win_prob_mode", "q_winprob_mode",

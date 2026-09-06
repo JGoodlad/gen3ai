@@ -213,6 +213,13 @@ done
 
 Both `dist/` and `node_modules/` are gitignored in pokemon-showdown, so these symlinks don't affect `git status`. Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`.
 
+**You no longer have to remember**: the root `conftest.py` probes `deps/pokemon-showdown/dist/sim/index.js`
++ `node_modules/` at session start and REFUSES the run with one message naming the fix — because
+skipping these steps used to surface as ~15 bridge/battle/obs-golden failures that read as real
+regressions (three agents each lost a cycle to it on 2026-09-06); `GEN3AI_SKIP_DEPS_GUARD=1` opts a
+pure-unit CI out, and `src/deps_guard_test.py` pins the message by running a second pytest against a
+tree that is missing the file.
+
 Do **not** symlink the entire `deps/pokemon-showdown` directory — git treats the submodule path as a symlink rather than a real checkout, which breaks `git status` and VS Code's git integration.
 
 ---

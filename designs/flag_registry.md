@@ -71,7 +71,7 @@ offline.
 ## The registry
 
 <!-- BEGIN GENERATED: registry-table -->
-50 toggles — 48 `cli`, 2 `config_only`, 0 `constructor_only`.
+49 toggles — 47 `cli`, 2 `config_only`, 0 `constructor_only`.
 
 | toggle | CLI | tier | class | default | since | requires | meaning |
 |---|---|---|---|---|---|---|---|
@@ -93,7 +93,6 @@ offline.
 | `damage_topk_k` | `--damage-topk` | `cli` | `structural` | `0` | v30 | `damage_op`, `move_latent`, `damage_matrices_incoming` | K = how many of the opp active's believed moves the incoming matrix surfaces |
 | `damage_matrices_outgoing` | `--damage-matrices` | `cli` | `structural` | `False` | v34 | `damage_op` | our active's 4 moves x the opp's 6 mons, per-(move, mon) rolls |
 | `damage_matrices_incoming` | `--damage-matrices` | `cli` | `structural` | `False` | v35 | `damage_op`, `move_latent` | the enriched top-K incoming matrix (per opp move x per our mon) |
-| `threat_prob_outspeed` | `--threat-prob-outspeed` | `cli` | `structural` | `False` | v36 | — | uncertainty-aware P(outspeed): divide the speed gap by the believed speed std |
 | `spread_belief_nature` | `--spread-belief-nature` | `cli` | `structural` | `False` | v40 | `spread_belief` | swap SpreadBelief's additive head for the NATURE/EV generative head |
 | `belief_grad_mode` | `--belief-grad-mode` | `cli` | `resume_immutable` | `'shaping'` | v41 | — | which gradient arrow between the belief heads and the trunk is cut |
 | `damage_candidate_k` | `--damage-candidate-k` | `cli` | `structural` | `0` | v49 | `damage_op` | cap the op's incoming candidate sweep at the K most-believed opponent moves |
@@ -126,7 +125,7 @@ offline.
 | `cf_shadow_critic` | `--cf-shadow-critic` | `cli` | `structural` | `False` | v99 | — | the passive SHADOW CRITIC off value_pooled — a value twin trained on tight-MC `mc_return` labels (the run's own shaped return, PopArt frame), which never computes an advantage and never enters GAE |
 | `q_winprob_mode` | `--q-winprob-mode` | `cli` | `structural` | `'none'` | v107 | — | the PER-ACTION win-probability readout over the pointer head's own action tokens (none|read_only) — one forward, eleven P(win|s,a): the amortized one-ply search leaf |
 
-**Dependencies.** 28 of 50 toggles name a `requires`. The column lists only DIRECT dependencies; the transitive closure is `flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also pulls in `opp_intent`, `entity_topk_seats`, `damage_op`, `move_belief_mode`, `attend_unrevealed_opponents`, `move_latent`, `damage_outgoing`, `damage_matrices_outgoing`. "Enabled" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are OFF, everything else is ON.
+**Dependencies.** 28 of 49 toggles name a `requires`. The column lists only DIRECT dependencies; the transitive closure is `flag_registry.requirement_closure(name)` — e.g. enabling `intent_conditional` also pulls in `opp_intent`, `entity_topk_seats`, `damage_op`, `move_belief_mode`, `attend_unrevealed_opponents`, `move_latent`, `damage_outgoing`, `damage_matrices_outgoing`. "Enabled" follows `flag_registry.is_enabled`: `False` / `0` / `'off'` / `'none'` are OFF, everything else is ON.
 
 Two constructor checks are STRONGER than the column can say, and stay hand-written in `Gen3FeaturesExtractor.__init__`: `damage_op` needs `move_belief_mode` in *{revealed, both}* specifically (the column can only say "enabled"), and `edge_bias_families` carries a requirement PER FAMILY LETTER — most families need `damage_op`, `d1/s1/c1/c2` also need `damage_outgoing`, `d3/s3` need `entity_topk_seats > 0`, `r` needs `history_events`, and `h` needs nothing — which no flag-level declaration can represent. `flag_requires_test.py` holds that list and fails if a new coupling appears in neither place.
 

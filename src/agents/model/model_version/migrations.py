@@ -278,6 +278,23 @@ def _migrate_config(data: dict) -> dict:
                     f"only supported value is {_ok!r}. This checkpoint trained under a forward "
                     "that no longer exists; re-read it from the git_hash in its metadata.json.")
     data.pop("pubval_coef", None)   # training-only (INERT for a forward) ⇒ any value pops silently
+    # v108 (gen3_dead_flag_purge_v2): `threat_prob_outspeed`. It is REFUSED on True rather than popped,
+    # and the reason is the one the JUDGED list exists for — it built NO parameters, so a True and a
+    # False checkpoint have BYTE-IDENTICAL state_dicts and nothing shape-based can catch the swap. It
+    # only chose the divisor in `DamageOperator._p_outspeed` (believed speed STD vs a fixed scale), so a
+    # silent pop would load a checkpoint trained under one physics and run it under the other, forever,
+    # with every gate green. That is the failure mode a purge must not create.
+    if "threat_prob_outspeed" in data:
+        if data.pop("threat_prob_outspeed"):
+            raise ModelVersionError(
+                "threat_prob_outspeed=True is no longer supported (gen3_dead_flag_purge_v2, config "
+                "v108): the uncertainty-aware P(outspeed) forward behind it is DELETED.\n"
+                "It named no parameters, so this checkpoint's weights load cleanly — which is exactly "
+                "why this is refused rather than migrated: running them under the fixed-scale divisor "
+                "they were not trained on would be a silent physics change, not a load error.\n"
+                "Every run that enabled it is pre-gen-9 (config <= 46, far below the migration floor), "
+                "and no gen-9+ run ever did. To re-read this checkpoint, use the git_hash in its own "
+                "metadata.json.")
     # v96 (gen3_critic_route_wave_v1) — the critic-route deletion wave. Three fields LEFT the
     # config, so they must be POPped or a later `cls(**data)` TypeErrors on the stale key. The
     # parallel judgment on the PICKLED side is `snapshot._DEAD_FEK_JUDGED`, which has no floor to
@@ -397,4 +414,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("q_winprob_coef", 0.0)
         data.setdefault("q_winprob_onpolicy_coef", 0.0)
         data["config_version"] = 107
+    # v108 (gen3_dead_flag_purge_v2) — THE STAMP ONLY. The purge's POP/REFUSE half for
+    # `threat_prob_outspeed` is version-INDEPENDENT and ran with the other sanitizers above, because
+    # a stale key TypeErrors in `cls(**data)` whatever vintage wrote it. Nothing is added or
+    # defaulted here: the deletion removes a field rather than introducing one, so the migration owes
+    # a v107 config only its new version number. Same shape as v88's and v96's stamp-only branches.
+    if version < 108:
+        data["config_version"] = 108
     return data

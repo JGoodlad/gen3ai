@@ -785,11 +785,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--damage-matrices incoming requires --move-latent (the matrix header gathers each move's "
         "identity latent). Use --unified-moves, or add --move-latent."),
     CombinationCheck(
-        "threat_prob_outspeed_needs_op", ("threat_prob_outspeed", "damage_op"),
-        lambda a: bool(getattr(a, "threat_prob_outspeed", False)) and not a.damage_op,
-        "--threat-prob-outspeed requires --damage-op (the P(outspeed) feature lives in the damage "
-        "operator)."),
-    CombinationCheck(
         "move_belief_latent_coef_needs_latent", ("move_belief_latent_coef", "move_latent"),
         lambda a: bool(a.move_belief_latent_coef) and not a.move_latent,
         "--move-belief-latent-coef requires --move-latent (the grading reads its per-move latent "

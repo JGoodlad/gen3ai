@@ -396,9 +396,6 @@ class ModelVersionFields:
     # opp ACTIVE (the switch-in offense read; the transpose of damage_matrices_outgoing). Widens both
     # projections via the op out_dim. OFF byte-for-byte (no module output). Gated in check_compatible (bool,
     # like damage_op). Requires damage_op.
-    # v36 FORWARD-behavior (gen3_bidir_threat_trunk_v1): the UNCERTAINTY-AWARE P(outspeed) — divide the speed
-    # gap by the believed speed std instead of a fixed scale. No new params (values only), gated bool.
-    threat_prob_outspeed: bool = False
     # v38 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_opp_hp_type_belief_v1, like win_prob_mode): the
     # opponent HIDDEN-POWER-TYPE belief + the typed-HP candidate fix. 'off' = legacy (the bare typeless
     # HP num-237 candidate out-ranked the 16 typed rows → the opp's Hidden Power read 0-damage/"immune").

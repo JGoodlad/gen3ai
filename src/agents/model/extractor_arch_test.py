@@ -101,4 +101,4 @@ def test_plain_form_is_json_serialisable_and_drops_unpicklables():
     assert "log_level" not in plain
     json.dumps(plain)                                  # must not raise
     # the toggles that actually change the traced graph DO survive
-    assert "damage_op" in plain and "threat_prob_outspeed" in plain
+    assert "damage_op" in plain and "damage_matrices_incoming" in plain

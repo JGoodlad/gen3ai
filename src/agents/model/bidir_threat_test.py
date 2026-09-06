@@ -1,10 +1,10 @@
 """Unit tests for the DamageOperator's discrete OUTGOING + STATUS kernels
-(gen3_bidir_threat_trunk_v1 / gen3_status_trunk_v1) and `threat_prob_outspeed`.
+(gen3_bidir_threat_trunk_v1 / gen3_status_trunk_v1) and `_p_outspeed`.
 
     (E[mult] via SPECIES_EXP_MULT, P(KO) nulled) when `species_probs` is supplied
   * `discrete_incoming_status` / `discrete_outgoing_status` — per-defender
     [P(major), P(immobilize)] (the physics the S1/S3 edge families deliver)
-  * `threat_prob_outspeed` — uncertainty-aware P(outspeed) (÷ believed speed std)
+  * `_p_outspeed` — the fixed-scale logistic over the speed gap
 
 Correctness is exercised on hand-built ctxs (controllable revealed/unrevealed slots + belief),
 so the kernels are pinned independently of which consumer happens to read them.
@@ -28,12 +28,7 @@ _T2I = TypeEncoder.TYPE_TO_IDX
 
 def _op():
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    return DamageOperator(layout, prob_outspeed=False), layout
-
-
-def _op_prob():
-    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    return DamageOperator(layout, prob_outspeed=True), layout
+    return DamageOperator(layout), layout
 
 
 def _num(species_id):
@@ -96,24 +91,30 @@ def _eq():
     return gen3_data.moves.get("earthquake")   # Ground, physical, BP 100
 
 
-# --------------------------------------------------------------------- #3 probabilistic outspeed
-def test_prob_outspeed_bounds_and_differs():
-    op_fixed, _ = _op()
-    op_prob, _ = _op_prob()
+# ------------------------------------------------------------------------------- P(outspeed)
+def test_p_outspeed_is_the_fixed_scale_logistic_and_ignores_the_std():
+    """The uncertainty-aware variant (`threat_prob_outspeed`, gen3_bidir_threat_trunk_v1 #3) is
+    DELETED by gen3_dead_flag_purge_v2, so one behaviour survives and the std argument is inert.
+
+    The std assertion is the load-bearing half. `_p_outspeed` still ACCEPTS `opp_spe_std` — ~12 call
+    sites across `damage_op` / `_blocks` / `_pairwise` still compute and pass it — so "the divisor no
+    longer depends on it" is a claim about the body that a signature check cannot make. Pinning it
+    here means a re-introduction has to change this test rather than silently change the physics."""
+    op, _ = _op()
     our = torch.tensor([200.0, 100.0, 300.0])
     opp = torch.tensor([180.0, 180.0, 180.0])
-    std = torch.tensor([40.0, 40.0, 40.0])
-    p_fixed = op_fixed._p_outspeed(our, opp, std)            # ignores std (prob_outspeed off)
-    p_prob = op_prob._p_outspeed(our, opp, std)
-    assert torch.all((p_prob >= 0.0) & (p_prob <= 1.0))
-    # fixed path == legacy sigmoid over the gap / fixed scale
-    assert torch.allclose(p_fixed, torch.sigmoid((our - opp) / _DMG_SPEED_SCALE))
-    # uncertainty-aware path differs (wider std → softer toward 0.5 for the same gap)
-    assert not torch.allclose(p_prob, p_fixed)
-    # monotonic in our speed, and ~0.5 when speeds tie
-    assert p_prob[2] > p_prob[0] > p_prob[1]
-    tie = op_prob._p_outspeed(torch.tensor([180.0]), torch.tensor([180.0]), torch.tensor([40.0]))
-    assert abs(tie.item() - 0.5) < 1e-5
+    expected = torch.sigmoid((our - opp) / _DMG_SPEED_SCALE)
+
+    assert torch.allclose(op._p_outspeed(our, opp), expected)
+    # Same answer for a WILDLY different std, and for no std at all.
+    for std in (torch.tensor([40.0, 40.0, 40.0]), torch.tensor([1.0, 1.0, 1.0])):
+        assert torch.allclose(op._p_outspeed(our, opp, std), expected), (
+            "opp_spe_std must not reach the divisor — the uncertainty-aware branch is deleted.")
+
+    assert torch.all((expected >= 0.0) & (expected <= 1.0))
+    assert expected[2] > expected[0] > expected[1]          # monotonic in our speed
+    tie = op._p_outspeed(torch.tensor([180.0]), torch.tensor([180.0]))
+    assert abs(tie.item() - 0.5) < 1e-5                     # ~0.5 when speeds tie
 
 
 # ------------------------------------------------------------------------ gradient flow

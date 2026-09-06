@@ -39,7 +39,7 @@ BATTLE_FORMAT = "gen3ou"
 
 _TOGGLES = dict(
     attend_unrevealed_opponents=True, opp_belief_slots=True, move_belief_mode="both",
-    move_prior_fusion=True, damage_op=True, move_latent=True, threat_prob_outspeed=True,
+    move_prior_fusion=True, damage_op=True, move_latent=True,
 )
 
 

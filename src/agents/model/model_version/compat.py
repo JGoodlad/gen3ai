@@ -603,12 +603,3 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "projection widths), so toggling it is incompatible with a saved checkpoint.\n"
                 "Resume with the matching --damage-matrices setting, or start a fresh training run."
             )
-        # gen3_bidir_threat_trunk_v1 (v36): the uncertainty-aware P(outspeed) is a version-gated
-        # forward-behavior toggle — fresh-only.
-        if self.threat_prob_outspeed != saved.threat_prob_outspeed:
-            raise ModelVersionError(
-                f"threat_prob_outspeed mismatch: saved={saved.threat_prob_outspeed}, "
-                f"current={self.threat_prob_outspeed}.\n"
-                "It changes the P(outspeed) forward (uncertainty-aware scale), a version-checked "
-                "forward-behavior change. Resume with the matching flag, or start a fresh run."
-            )

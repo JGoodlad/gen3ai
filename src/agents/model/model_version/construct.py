@@ -267,9 +267,6 @@ class ModelVersionConstruction(ModelVersionFields):
             damage_matrices_incoming=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_matrices_incoming", False)
             ),
-            threat_prob_outspeed=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("threat_prob_outspeed", False)
-            ),
             hp_belief_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("hp_belief_mode", "composed")
             ),

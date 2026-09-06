@@ -168,7 +168,13 @@ from typing import Any, Dict
 #   TRAINING-only (the `cf_winprob_coef` class): recorded for provenance + flagless-resume
 #   read-back, never gated. A pre-v107 config defaults the mode to 'none' and both coefficients to
 #   0.0 — not a guess: none of the three existed, so that is what every such run ran with.
-MODEL_CONFIG_VERSION = 107
+# v108: gen3_dead_flag_purge_v2 — the STAMP only, for `threat_prob_outspeed`. Its POP/REFUSE half is
+#   version-INDEPENDENT (a stale key TypeErrors in `cls(**data)` whatever vintage wrote it), so it
+#   lives with the other sanitizers in `migrations.py` rather than in a `version <` branch.
+#   NO ARCH_SIGNATURE bump, and that is the safety rule rather than a convenience: the flag built no
+#   parameters, so every state_dict key is exactly where it was and no weight becomes unplaceable.
+#   The same fact is why True is REFUSED instead of popped — see the migration.
+MODEL_CONFIG_VERSION = 108
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
