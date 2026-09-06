@@ -22,16 +22,24 @@ Hidden Power is handled bidirectionally (gen3_typed_hidden_power_ids_v1):
     rows with the real typed values — the loops here iterate ``gen3_data.moves`` and skip ONLY the
     bare 237, so typed HP flow through naturally and our OUTGOING HP is priced with the right type.
 
-🚨 **The BELIEF PRIORS live next door, in `belief_tables.py`** (`gen3_belief_tables_split_v1`,
-2026-09-06) — the opponent spread prior, its nature/EV decomposition, the Hidden-Power TYPE prior
-and the ITEM prior, i.e. the per-species Smogon distributions a belief HEAD predicts a delta on top
-of, as opposed to the damage/type/stat buffers here. Every one of them is RE-EXPORTED below, so
-`from agents.model.damage_tables import build_item_prior` still resolves; edit them there. The
-import edge runs ONE way — `belief_tables` imports nothing from this module, and must not, or the
-two close a cycle Python resolves only for whichever is imported first (`belief_tables_test.py`
-AST-scans for it). Two of them, `build_opp_spread_prior` and `build_nature_mult`, are genuine
-CONSUMERS here: `build_damage_buffers` registers their output as the op's `SPECIES_SPREAD_PRIOR`
-and `NATURE_MULT`, and that call is what fixes the direction.
+🚨 **The BELIEF PRIORS live next door, in `belief_tables.py`, and the dex-IDENTITY facts under
+that in `dex_ids.py`** (`gen3_belief_tables_split_v1` then `gen3_dex_ids_split_v1`, both
+2026-09-06). `belief_tables` holds the opponent spread prior, its nature/EV decomposition, the
+Hidden-Power TYPE prior, the ITEM prior, the per-species MOVE prior and the team-composition
+SPECIES prior — i.e. the per-species Smogon distributions a belief HEAD predicts a delta on top of,
+as opposed to the damage/type/stat buffers here. `dex_ids` holds what BOTH need: `HIDDEN_POWER_NUM`,
+`_belief_num`, `_hp_typed_nums` and `build_species_usage_prior`. Every name in both is RE-EXPORTED
+below, so `from agents.model.damage_tables import build_item_prior` (or `build_move_prior_logits`,
+or `HIDDEN_POWER_NUM`) still resolves; edit them there. The layering runs ONE way —
+
+    `damage_tables` → `belief_tables` → `dex_ids`,  and  `damage_tables` → `dex_ids`
+
+— and neither of those two may import back, or they close a cycle Python resolves only for
+whichever module is imported first (`belief_tables_test.py` AST-scans both edges). Four of the
+moved names are genuine CONSUMERS here, which is what fixes the direction: `build_damage_buffers`
+registers `build_opp_spread_prior` / `build_nature_mult` / `build_species_usage_prior` as the op's
+`SPECIES_SPREAD_PRIOR` / `NATURE_MULT` / `SPECIES_USAGE_PRIOR`, and the typed-HP candidate
+expansion reads `HIDDEN_POWER_NUM` + `_hp_typed_nums`.
 
 Reference: `designs/ai_v6/design_differentiable_damage_op.md` (§3 the gen3 formula, §7 the
 edge-case matrix). The math core mirrors `agents/observation/incoming_damage.py` (the live CPU
@@ -39,9 +47,7 @@ belief) and the proven torch port in the ai_v6 design.
 """
 from __future__ import annotations
 
-import math
-from functools import lru_cache
-from typing import cast, Dict, Tuple
+from typing import cast, Dict
 
 import torch
 
@@ -55,26 +61,42 @@ from agents.gen3_mechanics import (ABILITY_STATUS_IMMUNITY, CURSE_NON_GHOST_BOOS
 from agents.observation.types import TypeEncoder
 from agents.training.hidden_power_tracker import HIDDEN_POWER_TYPE_ORDER
 
-# gen3_belief_tables_split_v1 (2026-09-06): the BELIEF-PRIOR constructors moved to `belief_tables.py`
-# — the priors a belief HEAD fuses with (spread / nature+EV / Hidden-Power type / item), as opposed
-# to the damage/type/stat buffers the op's physics reads, which stay here. `build_opp_spread_prior`
-# and `build_nature_mult` are USED below (`build_damage_buffers` registers SPECIES_SPREAD_PRIOR and
-# NATURE_MULT for the op); the rest are RE-EXPORTS so every historical
-# `from agents.model.damage_tables import …` spelling still resolves. The edge is one-way by
-# design — `belief_tables` imports nothing from here, so the two modules layer rather than cycle.
+# gen3_belief_tables_split_v1 + gen3_dex_ids_split_v1 (2026-09-06): the BELIEF-PRIOR constructors
+# moved to `belief_tables.py` (the priors a belief HEAD fuses with — spread / nature+EV /
+# Hidden-Power type / item / move / species co-occurrence), and the dex-IDENTITY facts the two halves
+# SHARE moved to `dex_ids.py`. What stays here is the damage/type/stat buffers the op's physics reads.
+# Four of the moved names are USED below — `build_damage_buffers` registers SPECIES_SPREAD_PRIOR,
+# NATURE_MULT and SPECIES_USAGE_PRIOR for the op, and the typed-HP expansion reads HIDDEN_POWER_NUM
+# and `_hp_typed_nums`; the rest are RE-EXPORTS so every historical
+# `from agents.model.damage_tables import …` spelling still resolves. The layering is one-way by
+# design — `damage_tables` → `belief_tables` → `dex_ids`, never back — so the three modules layer
+# rather than cycle.
 from agents.model.belief_tables import build_nature_mult, build_opp_spread_prior
+from agents.model.dex_ids import HIDDEN_POWER_NUM, _hp_typed_nums, build_species_usage_prior
+from agents.model.dex_ids import _belief_num                            # noqa: F401  (re-export)
+from agents.model.dex_ids import _USAGE_PRIOR_FLOOR                     # noqa: F401  (re-export)
 from agents.model.belief_tables import (                                # noqa: F401  (re-export)
     N_NATURES,                                                          # noqa: F401  (re-export)
     N_SPREAD_STATS,                                                     # noqa: F401  (re-export)
+    SPECIES_CLAUSE_LOGIT,                                               # noqa: F401  (re-export)
     SPREAD_STAT_COLS,                                                   # noqa: F401  (re-export)
+    _COOCCUR_LIFT_CLAMP,                                                # noqa: F401  (re-export)
+    _ILLEGAL_PROB,                                                      # noqa: F401  (re-export)
+    _MIN_PRIOR_FLOOR,                                                   # noqa: F401  (re-export)
     _NATURE_PRIOR_FLOOR,                                                # noqa: F401  (re-export)
+    _PRIOR_FLOOR,                                                       # noqa: F401  (re-export)
+    _SPECIES_CLAUSE_PROB,                                               # noqa: F401  (re-export)
+    _SPECIES_PRIOR_FLOOR,                                               # noqa: F401  (re-export)
     _SPREAD_BASE_IDX,                                                   # noqa: F401  (re-export)
     build_hp_type_prior,                                                # noqa: F401  (re-export)
     build_item_prior,                                                   # noqa: F401  (re-export)
+    build_move_prior_logits,                                            # noqa: F401  (re-export)
     build_species_base_stats,                                           # noqa: F401  (re-export)
+    build_species_cooccur_prior,                                        # noqa: F401  (re-export)
     build_species_ev_prior,                                             # noqa: F401  (re-export)
     build_species_nature_prior,                                         # noqa: F401  (re-export)
     invert_nature_evs,                                                  # noqa: F401  (re-export)
+    sanitize_historical_move_floor,                                     # noqa: F401  (re-export)
 )
 
 # Type-index axis (shared with the obs). Index 0 = unknown sentinel, 18 = "???"; size 19 so
@@ -103,8 +125,8 @@ _ABILITY_TYPE_MULTS = {
     "thickfat": [("FIRE", 0.5), ("ICE", 0.5)],
 }
 
-# Hidden Power: all variants share this num; gen3's max HP base power is 70 ("assume max damage").
-HIDDEN_POWER_NUM = 237
+# Hidden Power: gen3's max HP base power is 70 ("assume max damage"). The typeless NUM the
+# opponent's belief keys on lives in `dex_ids` (both this module's physics and `belief_tables` read it).
 HIDDEN_POWER_BP = 70.0
 N_HP_TYPES = len(HIDDEN_POWER_TYPE_ORDER)   # 16
 
@@ -150,34 +172,6 @@ MOVE_ATTR_COLS = (
 )
 N_MOVE_ATTR = len(MOVE_ATTR_COLS)            # 9 + 10 + 7 = 26
 _PRIORITY_NORM = 6.0                          # gen3 priority spans ~ -6..+5 → normalize into ~[-1, 1]
-
-
-def _belief_num(move_id: str, md: MoveData) -> int:
-    """The move num the OPPONENT's move-belief PRIOR keys on. Every Hidden Power — bare or typed —
-    aggregates to the typeless num ``237``, which under `gen3_typed_hp_belief_v1` is the belief's
-    **PRESENCE channel**: ``prior[species, 237] = Σ_t usage(hiddenpower<t>) = P(species runs SOME HP)``.
-    That is exactly the quantity the presence×type factorisation needs, and it is well-defined for the
-    opponent (Gen 3 never reveals the HP type, so an opp HP is always observed bare and pins 237).
-
-    The per-TYPE half of the factorisation is `build_hp_type_prior` (the conditional
-    ``P(type | has HP)`` from the same Smogon data), and the two are multiplied back into the 16 typed
-    nums 355-370 by ``HPTypeBelief.compose_typed_hp`` — which reconstructs the typed usage exactly,
-    since ``P(has HP)·P(t | has HP) == usage(hiddenpower<t>)``. So no prior information is lost by
-    keying presence here; the typed prior CELLS at 355-370 are overwritten by that composition and are
-    never read. Non-HP moves pass through unchanged.
-
-    See designs/ai_v6/design_typed_hidden_power_ids.md."""
-    return HIDDEN_POWER_NUM if move_id.startswith("hiddenpower") else md.num
-
-
-@lru_cache(maxsize=1)
-def _hp_typed_nums() -> Tuple[int, ...]:
-    """The 16 DISTINCT typed-Hidden-Power dex nums (355-370) in ``HIDDEN_POWER_TYPE_ORDER`` order —
-    the same axis as ``HP_TYPE_IDX`` / the obs ``hp_probs`` / ``belief_labels.HP_TYPE_NAMES``.
-    Data-derived (never hardcoded) so a num remap can't silently misalign the type axis; the throwing
-    GIGO guard in `build_damage_buffers` pins that alignment."""
-    return tuple(cast(MoveData, gen3_data.moves.get("hiddenpower" + t.name.lower())).num
-                 for t in HIDDEN_POWER_TYPE_ORDER)
 
 
 def _move_type_idx(md: MoveData) -> int:
@@ -492,44 +486,6 @@ CURSE_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("curse")).num)          
 TOXIC_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("toxic")).num)              # 92 — C2 tox-vs-psn (shared cat 5)
 REST_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("rest")).num)                # 156 — C3's self-sleep cost channel
 BATON_PASS_MOVE_NUM = int(cast(MoveData, gen3_data.moves.get("batonpass")).num)     # 226 — C5's receiver-axis edge
-
-
-# gen3_unrevealed_outgoing_prior_v1: the FLOOR a real species with no usage entry gets, applied on the
-# NORMALIZED usage scale (so it means "1-in-a-million teams", not "1e-6 raw sets" — the raw counts run to
-# millions and a raw-scale floor would be indistinguishable from the hard zero it exists to prevent).
-_USAGE_PRIOR_FLOOR = 1e-6
-
-
-def build_species_usage_prior(n_species: int) -> torch.Tensor:
-    """``[n_species]`` the normalized gen3ou species USAGE distribution over dex nums —
-    ``P(an unrevealed opp slot is species s)`` before Species-Clause filtering
-    (gen3_unrevealed_outgoing_prior_v1: the expected-latent defender for the OUTGOING kernel's
-    unrevealed columns, marginalized through ``SPECIES_EXP_MULT`` / ``SPECIES_SPREAD_PRIOR``).
-
-    Sourced from `gen3_data.priors.species_usage()` (the Smogon ``Raw count`` weights). The sentinel
-    species (num 0) gets EXACTLY 0; every real base form absent from the usage data gets the tiny
-    `_USAGE_PRIOR_FLOOR` (never a hard zero — in-battle Species-Clause renormalization must always
-    be able to fall back to *something*), then the whole vector is renormalized to sum 1. BASE forms
-    only (a forme shares its base's num — iterating `raw()` would double-write rows). Fail-loud on
-    the canonical carrier (Tyranitar, the #1 gen3ou mon) so a key-normalization drift can't silently
-    flatten the prior to the floor."""
-    usage = gen3_data.priors.species_usage()
-    total = sum(usage.values())
-    if total <= 0.0:
-        raise ValueError("build_species_usage_prior: no species usage data — "
-                         "gen3_smogon_stats.json empty/malformed?")
-    prior = torch.zeros(n_species, dtype=torch.float32)
-    for sid in gen3_data.species.base_form_ids():
-        sd = cast(SpeciesData, gen3_data.species.get(sid))
-        if not (0 < sd.num < n_species):                  # sentinel num 0 stays exactly 0
-            continue
-        prior[sd.num] = max(float(usage.get(sid, 0.0)) / total, _USAGE_PRIOR_FLOOR)
-    tt = gen3_data.species.get("tyranitar")
-    if tt is None or not (0 < tt.num < n_species) or float(prior[tt.num]) < 0.01:
-        raise ValueError(
-            "build_species_usage_prior: Tyranitar did not resolve to a dominant usage share — the "
-            "species-usage prior is empty/misaligned (id normalization drift?). GIGO guard.")
-    return prior / prior.sum()
 
 
 def build_species_cb_prior(n_species: int) -> torch.Tensor:
@@ -972,255 +928,3 @@ def build_move_attr(n_moves: int) -> torch.Tensor:
         attr[num, idx["cures_self"]] = 1.0 if md.cures_self_status else 0.0
         attr[num, idx["cures_team"]] = 1.0 if md.cures_team_status else 0.0
     return attr
-
-
-# Floor probability for a move a species CAN learn but is ~never seen to run (keeps an unseen-but-legal
-# move POSSIBLE — never logit(-inf) — so in-battle evidence can still lift it). Also the value for a
-# species with no known movepool (num 0 / no learnset entry), where there is nothing to prune.
-_PRIOR_FLOOR = 0.02
-
-# Probability assigned to the IMPOSSIBLE — a move the species physically cannot learn. Small enough to
-# be ~0 in the belief, finite so `torch.logit` never produces -inf. logit(1e-6) = -13.8155, vs
-# logit(_PRIOR_FLOOR=0.02) = -3.8918 — a 9.92-nat gap, so "illegal" and "legal but unobserved" are
-# materially different states of the prior rather than the same number.
-_ILLEGAL_PROB = 1e-6
-
-# The legal-unobserved floor must sit MATERIALLY above `_ILLEGAL_PROB`, or the legality gate collapses:
-# a floor of 0.0 (or anything <= _ILLEGAL_PROB) gets clamped straight back up to _ILLEGAL_PROB and every
-# legal-but-unobserved move becomes indistinguishable from an impossible one. That is the silent-GIGO
-# failure this bound exists to make loud. 1e-3 (logit = -6.907) still leaves a ~6.9-nat separation.
-_MIN_PRIOR_FLOOR = 1e-3
-
-
-def sanitize_historical_move_floor(kwargs: dict) -> dict:
-    """Make a PRE-v65 config constructible, in place, without editing the config on disk.
-
-    Every run before `gen3_unconditional_move_legality_v1` recorded ``move_candidate_floor: 0.0``,
-    because that value used to double as the legality on/off SWITCH rather than name a probability.
-    v65 gave the floor a validated range, so those configs now raise — which is correct for a
-    training RESUME (a silently-changed prior is exactly what the version gate exists to catch) but
-    wrong for the OFFLINE tooling that instantiates an extractor purely to read its structure:
-    `delivery_graph`, the architecture viewer, and `extractor_compiles_test` all build from
-    the committed `designs/production_config.json`.
-
-    That file is a VERBATIM copy of a real run and must keep its 0.0 — editing it to satisfy a
-    builder would falsify the historical record it exists to preserve, and would quietly break the
-    reproducibility claim `ARCHITECTURE.md` makes about it. The prior floor changes no node, edge or
-    graph shape, so the safe place to reconcile the two is at the point of CONSTRUCTION, once, here
-    — rather than in `_migrate_config`, which would let a pre-v65 checkpoint resume by silently
-    adopting a different prior.
-    """
-    if float(kwargs.get("move_candidate_floor", 0.0)) < _MIN_PRIOR_FLOOR:
-        kwargs["move_candidate_floor"] = _PRIOR_FLOOR
-    return kwargs
-
-
-def build_move_prior_logits(n_species: int, n_moves: int, floor: float = _PRIOR_FLOOR) -> torch.Tensor:
-    """``[n_species, n_moves]`` LOG-ODDS of the Smogon move-frequency prior, indexed by national-dex
-    ``num`` on BOTH axes — the base rate ``P(move in set)`` for a species, ready to fuse additively into
-    the move-belief logits (``posterior_logit = head_delta + prior_logit``).
-
-    Sources `gen3_data.priors.moves(species)` -> ``{move_id: P(in set)}`` (un-normalized; a set runs
-    ~4 moves). Probabilities for move_ids that collapse to one ``num`` are SUMMED (Hidden Power: all
-    typed variants share num 237, and a mon runs at most one HP type, so ``P(has HP) = Σ typed usage``).
-
-    **LEGALITY IS UNCONDITIONAL** — it is a correctness property, not a feature, and there is no flag to
-    turn it off. A move a species physically **cannot learn** must carry ~zero belief mass; anything else
-    invents phantom threats ("a special attacker might have Explosion") out of a flat floor.
-
-    The rule, per ``(species, move)`` cell:
-
-    - **Illegal** (not in the species' learnset) → ``logit(_ILLEGAL_PROB)`` ≈ 0 probability. This is the
-      only thing pruned: the IMPOSSIBLE.
-    - **Legal, with recorded usage** → its **true Smogon usage**, untouched. A rare tech stays
-      rare-but-present (naturally negligible in the op's hard-max, yet liftable by the learned head, and
-      pinned certain the moment it's revealed) — NOT floored up to ``floor`` and NOT pruned. **No rarity
-      cap**: a surprise move a mon legitimately runs is never zeroed out of the belief (an earlier
-      ``<2%`` prune did that and crippled surprise-move anticipation).
-    - **Legal, absent from the usage data** → the small ``floor`` base, so in-battle evidence can still
-      surface it.
-    - **No learnset at all** (hidden / unknown species, num 0) → the flat ``floor`` everywhere. Nothing
-      is known about the movepool, so there is nothing to prune; marginalising the learnset over a
-      species belief is a later extension.
-
-    Because every move with recorded usage is necessarily legal, the legality mask only ever bites the
-    ABSENT cells. Hidden Power's typed usages sum into ``num`` 237 (legal iff the bare ``'hiddenpower'``
-    is in the learnset).
-
-    ``floor`` is the LEGAL-UNOBSERVED base only — it is not an on/off switch. It must be
-    ``>= _MIN_PRIOR_FLOOR``; see that constant for why a 0.0 floor is a hard error rather than a silent
-    collapse into "everything is impossible".
-
-    Returned as a plain float32 tensor for `MoveBelief` to register as a NON-persistent buffer (pure
-    data-derived physics, recomputable — never a saved weight)."""
-    eps = _ILLEGAL_PROB
-    if not (_MIN_PRIOR_FLOOR <= float(floor) < 1.0):
-        # Fail LOUD. A floor at/below _ILLEGAL_PROB makes legal-unobserved == illegal (the gate becomes a
-        # no-op in the wrong direction), and a floor of exactly 0.0 would additionally be logit(0) = -inf
-        # on any code path that clamps from below — a NaN source, not a configuration.
-        raise ValueError(
-            f"build_move_prior_logits: floor={floor!r} is out of range. The move-prior floor is the "
-            f"LEGAL-BUT-UNOBSERVED base probability and must satisfy "
-            f"{_MIN_PRIOR_FLOOR} <= floor < 1.0 (default {_PRIOR_FLOOR}).\n"
-            f"A floor <= {_ILLEGAL_PROB} would be indistinguishable from the ILLEGAL value, collapsing "
-            f"the legality distinction; a floor of 0.0 is additionally logit(0) = -inf. "
-            f"Pass --move-candidate-floor {_PRIOR_FLOOR} (or any value in range)."
-        )
-
-    # Illegal → eps (impossible); legal-observed → TRUE usage; legal-unobserved → floor.
-    prob = torch.full((n_species, n_moves), eps, dtype=torch.float64)   # default = impossible
-    # Rows this build never touches are NOT "a species that can learn nothing" — they are rows about
-    # which nothing is known: national-dex num 0 (the UNKNOWN-SPECIES sentinel an unrevealed opponent
-    # slot carries, and `MoveBelief.move_logits` indexes `move_prior_logits[opp_species_ids]` directly
-    # with it) and any gap in the num range. Leaving them at the "impossible" default would tell the
-    # model an unseen opponent has NO moves at all — strictly worse than the flat floor, and a claim
-    # the data never made. They are flattened to `floor` below (same rule as a species whose learnset
-    # is missing: no movepool known → nothing to prune).
-    covered = torch.zeros(n_species, dtype=torch.bool)
-    for sid in gen3_data.species.base_form_ids():
-        sd = cast(SpeciesData, gen3_data.species.get(sid))
-        snum = sd.num
-        if not (0 <= snum < n_species):
-            continue
-        covered[snum] = True
-        legal = gen3_data.learnset.get_legal_moves(sid)
-        if legal is None:
-            prob[snum, :] = floor                        # unknown movepool → flat floor (nothing to prune)
-        else:
-            for move_id in legal:                        # every LEGAL move → a small liftable base
-                md = gen3_data.moves.get(move_id)
-                if md is not None:
-                    bnum = _belief_num(move_id, md)      # any HP (learnset carries bare 'hiddenpower') → 237
-                    if 0 <= bnum < n_moves:
-                        prob[snum, bnum] = floor
-                    # gen3_typed_hp_belief_v1 — TYPED-HP LEGALITY. `gen3_learnset.json` carries only the
-                    # bare `hiddenpower` (the type is an IV choice, not a learnset entry), so the 16 typed
-                    # nums 355-370 fell through to the `eps` "impossible" default for EVERY species — the
-                    # gate declared HP-Ice unlearnable by anything. Harmless only because the composition
-                    # overwrites those cells; wrong data in a tensor is exactly the GIGO shape we don't
-                    # leave lying around. A typed HP is legal iff the bare one is.
-                    if move_id == "hiddenpower":
-                        for tnum in _hp_typed_nums():
-                            if 0 <= tnum < n_moves:
-                                prob[snum, tnum] = floor
-        # TRUE usage overrides the floor (an observed move is necessarily legal). HP usage sums into the
-        # 237 PRESENCE channel (see `_belief_num`) AND is written per-type at 355-370, so the typed cells
-        # carry their own real rate and are independently meaningful under inspection.
-        usage: Dict[int, float] = {}
-        for move_id, p in gen3_data.priors.moves(sid).items():
-            md = gen3_data.moves.get(move_id)
-            if md is None:
-                continue
-            bnum = _belief_num(move_id, md)
-            if 0 <= bnum < n_moves:
-                usage[bnum] = usage.get(bnum, 0.0) + float(p)
-            if move_id.startswith("hiddenpower") and 0 <= md.num < n_moves and md.num != bnum:
-                usage[md.num] = usage.get(md.num, 0.0) + float(p)   # the typed cell's own rate
-        for num, u in usage.items():
-            if u > float(prob[snum, num]):
-                prob[snum, num] = u                      # rare moves keep their real (small) rate
-    prob[~covered, :] = floor                            # unknown species (num 0) / dex gaps → flat floor
-    prob = prob.clamp(eps, 1.0 - eps)
-    return torch.logit(prob).to(torch.float32)           # log(p/(1-p)), the additive log-odds base rate
-
-
-# ── gen3_species_prior_fusion_v1 (v68): the TEAM-COMPOSITION species prior ────────────────────────
-#
-# The base rate a species occupies a HIDDEN opponent slot, and how much each ALREADY-REVEALED
-# teammate moves it. Sibling of `build_move_prior_logits` above — same job (a data-derived base rate
-# the learned head becomes a DELTA on top of), same num axis, same "finite floors, never -inf"
-# discipline; the only structural difference is that this prior is CONDITIONAL on the rest of the
-# opponent's team, so it ships as TWO tensors the forward combines on-GPU rather than one lookup.
-
-# A species absent from the training team pool is UNOBSERVED, not impossible — the exact distinction
-# `_PRIOR_FLOOR` draws for a legal-but-unseen move. A small liftable base (log = -9.21), so an
-# off-pool opponent (a ladder / random-battle team) is improbable rather than unrepresentable.
-_SPECIES_PRIOR_FLOOR = 1e-4
-
-# SPECIES CLAUSE is a RULE, not a frequency: a species already revealed on the opponent's team
-# cannot ALSO be sitting in a hidden slot. This is the species-side `_ILLEGAL_PROB` — ~0 (log =
-# -13.82), finite so it never poisons the gradient of the delta the head learns on top.
-_SPECIES_CLAUSE_PROB = 1e-6
-SPECIES_CLAUSE_LOGIT = math.log(_SPECIES_CLAUSE_PROB)
-
-
-# Bound on a single teammate's log-lift evidence (the SMOGON source has no shrinkage step, so
-# this clamp is what keeps one thin co-occurrence row from swinging a whole naive-Bayes read the
-# way the old pool source's pseudo-count shrinkage did). e^4 ≈ 55x either way.
-_COOCCUR_LIFT_CLAMP = 4.0
-
-
-def build_species_cooccur_prior(n_species: int) -> Tuple[torch.Tensor, torch.Tensor]:
-    """The two num-indexed tensors of the team-composition species prior:
-
-      * ``log_marginal`` ``[n_species]`` — ``log P(an unrevealed opp slot is species s)``
-      * ``log_lift``     ``[n_species, n_species]`` — ``log[ P(s | t) / P(s) ]``, the PAIRWISE
-        evidence a revealed teammate ``t`` contributes about ``s``. Zero means "carries no
-        information" (an unobserved pair, or ``t == s``), so an empty revealed set makes the
-        whole evidence term vanish and the prior degrades EXACTLY to the marginal.
-
-    Combined by naive Bayes in the forward (`BeliefHead.species_prior_logits`):
-
-        log P(s | R) ∝ log P(s) + Σ_{r ∈ R} log-lift(s, r)
-
-    **Sourced from SMOGON, never the pool** (owner rule 2026-08-15 — priors are always
-    Smogon-based; the 719-team pool measures structure but never ships as a prior). The marginal
-    is the same normalized usage share `build_species_usage_prior` emits; the lift comes from the
-    chaos ``Teammates`` field (``gen3_data.priors.teammates`` — the ONE species×species joint
-    Smogon publishes, ~2.5M gen3ou battles): ``P(s | t)`` is the per-slot teammate conditional,
-    and the independence baseline renormalizes the usage share to exclude ``t`` itself
-    (a teammate of t is never t). Forme keys accumulate into their base num (the num-axis rule).
-    An s absent from t's teammate row keeps lift 0 — UNOBSERVED at Smogon's truncation, not
-    negative evidence. Until 2026-08-15 this was derived from ``data/teams/gen3_species_priors
-    .json`` (the pool) — `agents.training.species_priors` remains as a pool-ANALYSIS tool only.
-
-    Both are plain float32, for `BeliefHead` to register as NON-persistent buffers — data-derived
-    and recomputable, never a saved weight (same contract as ``move_prior_logits``).
-
-    Fail-loud GIGO guards, mirroring `build_species_usage_prior`: Tyranitar must resolve to a
-    dominant usage marginal, and the sand core (Skarmory | Tyranitar) must carry POSITIVE lift —
-    either failing means the id/num axis drifted and the prior silently flattened."""
-    usage_prior = build_species_usage_prior(n_species)                  # [S] slot shares, sum 1
-    log_marginal = usage_prior.clamp_min(_SPECIES_PRIOR_FLOOR).log()
-    log_marginal[0] = math.log(_SPECIES_PRIOR_FLOOR)                    # sentinel: never a candidate
-
-    log_lift = torch.zeros((n_species, n_species), dtype=torch.float32)
-    base_ids = set(gen3_data.species.base_form_ids())
-    n_cols = 0
-    for tid in base_ids:                                                # evidence species t
-        td = gen3_data.species.get(tid)
-        if td is None or not (0 < td.num < n_species):
-            continue
-        mates = gen3_data.priors.teammates(tid)
-        if not mates:
-            continue
-        base_renorm = max(1.0 - float(usage_prior[td.num]), 1e-6)
-        cond_by_num: dict = {}                                          # formes fold into base num
-        for sid, p_cond in mates.items():
-            sd = cast(SpeciesData, gen3_data.species.get(sid))
-            if sd is None or not (0 < sd.num < n_species) or sd.num == td.num:
-                continue
-            cond_by_num[sd.num] = cond_by_num.get(sd.num, 0.0) + float(p_cond)
-        for snum, p_cond in cond_by_num.items():
-            expected = max(float(usage_prior[snum]), _SPECIES_PRIOR_FLOOR) / base_renorm
-            lift = math.log(max(p_cond, 1e-9) / expected)
-            log_lift[snum, td.num] = max(-_COOCCUR_LIFT_CLAMP, min(_COOCCUR_LIFT_CLAMP, lift))
-        n_cols += 1
-    if n_cols == 0:
-        raise ValueError(
-            "build_species_cooccur_prior: no species carried a Smogon teammate row — "
-            "data/pokemon/gen3_teammate_priors.json is empty or its keys drifted.")
-
-    tt = gen3_data.species.get("tyranitar")
-    if tt is None or not (0 < tt.num < n_species) or float(log_marginal[tt.num]) < math.log(0.05):
-        raise ValueError(
-            "build_species_cooccur_prior: Tyranitar did not resolve to a dominant usage marginal — "
-            "the team-composition species prior is empty/misaligned (id normalization drift?). "
-            "GIGO guard.")
-    sk = gen3_data.species.get("skarmory")
-    if sk is None or float(log_lift[sk.num, tt.num]) <= 0.0:
-        raise ValueError(
-            "build_species_cooccur_prior: Skarmory|Tyranitar lift is not positive — the sand core "
-            "co-occurs far above independence on every Smogon window, so the teammate table is "
-            "empty/misaligned. GIGO guard.")
-    return log_marginal, log_lift

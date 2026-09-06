@@ -1744,9 +1744,12 @@ src/
                      #   critic_mode.py — WHICH READOUT IS THE CRITIC (`--critic`): the
                      #   two-value legal set, torch-FREE so main.checkargs can read it
                      #   damage_tables.py (the op's damage/type/stat buffers) + belief_tables.py
-                     #   (the BELIEF PRIORS a head fuses with: spread / nature+EV / HP-type / item;
-                     #   gen3_belief_tables_split_v1 — damage_tables re-exports every name and the
-                     #   import edge runs ONE way, damage_tables -> belief_tables, never back)
+                     #   (the BELIEF PRIORS a head fuses with: spread / nature+EV / HP-type / item /
+                     #   move / species co-occurrence) + dex_ids.py (the dex-IDENTITY facts BOTH
+                     #   key on: the Hidden-Power nums + their id->num fold, the species usage
+                     #   share). gen3_belief_tables_split_v1 + gen3_dex_ids_split_v1 —
+                     #   damage_tables re-exports every moved name and the import edge only ever
+                     #   points DOWN: damage_tables -> belief_tables -> dex_ids, never back
                      #   capacity_probes.py — the capacity battery's ENGINE (pure-NumPy rank /
                      #   trainability / decodability estimators; CLI is main/capacity.py)
                      #   model_version/ — the version gate as a package (constants/migrations/
