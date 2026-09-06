@@ -1,0 +1,79 @@
+{
+ "depth1": {
+  "games": 100,
+  "decisions": 3938,
+  "searched": 3433,
+  "changed": 2245,
+  "deepened": 0,
+  "fallbacks": {
+   "not_move_selection": 504,
+   "no_scored_arm": 1
+  },
+  "mean_beam": 0.0,
+  "mean_depth": 1.0,
+  "max_depth_realized": [
+   1
+  ],
+  "deepen_rate": [
+   0.0,
+   -1.0829902833295362e-19,
+   0.0011177704552924404
+  ],
+  "change_rate": [
+   0.6539469851441888,
+   0.6378695178235643,
+   0.6696802976814623
+  ],
+  "paired_win_rate": [
+   0.21,
+   0.1354442490481117,
+   0.2845557509518883
+  ]
+ },
+ "depth3": {
+  "games": 100,
+  "decisions": 4000,
+  "searched": 3373,
+  "changed": 2210,
+  "deepened": 2574,
+  "fallbacks": {
+   "not_move_selection": 512,
+   "prefix_gate_failed": 66,
+   "search_error": 3,
+   "root_failed": 46
+  },
+  "mean_beam": 2.7304200000000005,
+  "mean_depth": 1.8311399999999998,
+  "max_depth_realized": [
+   2,
+   3
+  ],
+  "deepen_rate": [
+   0.7631188852653424,
+   0.7484760035618968,
+   0.7771631025187674
+  ],
+  "change_rate": [
+   0.6552030833086273,
+   0.6389941866995841,
+   0.671058852211095
+  ],
+  "paired_win_rate": [
+   0.23,
+   0.14502565092923625,
+   0.31497434907076377
+  ]
+ },
+ "change_rate_diff": [
+  0.0012560981644385016,
+  -0.021332957873346273,
+  0.02383685020980249
+ ],
+ "depth_share_of_changes": 0.0019171127188466362,
+ "depth_dividend_paired": [
+  0.02,
+  -0.09185991239045381,
+  0.1318599123904538,
+  50
+ ]
+}

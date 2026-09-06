@@ -10695,3 +10695,34 @@ movement points, which no scalar we have measures. The one place a direction has
 teachers are farther from the parent everywhere; gifting teachers are local). Next: H5 (teacher-distance dose-response,
 running) and H6 (the exploiter's own drift law over its training, dispatched).
 
+## 2026-09-05 — ARCH→TRANSFER probe H4 (depth statistic): depth is NOT the binding lever — depth fired on 76% of searched decisions and re-ranked +0.19% of them; the committed cells never deepened (`--max-depth` inert under racing/defensive)
+
+**Pre-registration** (`depth_statistic/README.md`): over decisions where search changes the action, the fraction attributable
+to realised depth ≥2; rail <20% ⇒ depth not binding, >40% ⇒ live lever. **Finding zero:** all three committed defensive-search
+cells ran `--max-depth 3` and realised depth 1 on 141,485 decisions (`n_deepened` = 0) — `racing`/`defensive` are root
+allocators and iterative deepening is NOT composed with them, so `--max-depth` is inert there; rows are per-game, the
+depth-1 argmax is overwritten by `_score_world`; prober `better-line` has zero committed results. **Fresh cell** (1.03 CPU-h,
+nice 10, load 20–31): two arms, same seeded games (`--games-seed 7`), `--max-opp 2 --max-worlds 1 --max-dice 1` (width
+pre-narrowed so depth is the only lever), `--max-depth` 1 vs 3, 100 orientation-games/arm, 100/100 finished, 0 timeouts.
+
+| | depth-1 | depth-3 |
+|---|---|---|
+| searched decisions | 3,433 | 3,373 |
+| mean realised depth / beam | 1.000 / 0.00 | 1.831 / 2.73 |
+| deepened (≥2) | 0 | 76.31% [74.85, 77.72] |
+| action changed | 0.6539 | 0.6552 |
+
+- **Depth-attributable change +0.0013 [−0.0213, +0.0238] — NOT DETECTED** (+0.19% of all changes vs the 20% rail).
+- **Depth dividend in win rate +0.0200 [−0.0919, +0.1319] — NOT DETECTED** (weak by design).
+- Gate/futility (committed cells): ~74–75% of decisions FORCED, 55–84% of raced decisions end in futility ⇒ the
+  depth-addressable population is ≈ a tenth of decisions.
+- Side finding: BOTH arms ~27pp below the by-construction 0.50 mirror null — narrow-width search on this critic is
+  strongly harmful; the binding constraint is the LEAF (critic calibration), not depth. Replicates the standing verdict.
+- 🚨 Hazard FIXED (one help string, in this commit): `--max-depth`'s `--help` still said "do not publish a depth-2 number
+  yet" for the defect closed by `16b4bf0` (TASK #38); `deepen.py` said FIXED, `__main__.py` said OPEN. No test pinned it.
+
+**Reading.** The learning note's standing verdict holds with a number: a looped or deeper trunk stays behind the high
+build bar. Caveats: search depth ≠ network depth (the weakest joint); the leaf critic is the same network, so absence is
+ambiguous between "nothing at depth 2" and "this critic cannot see it"; MAX-backup optimism runs WITH the effect
+(conservative reading). Artifact: `measurements/arch_transfer_2026-09-05/depth_statistic/`.
+

@@ -1021,6 +1021,19 @@ iterations".
   already exists: the better-line search records the depth at which it finds an improvement over the
   played action. If depth-2 improvements are rare, extra hops inside the network would not have found
   them either; if they are common, that is the case for depth, looped or stacked.
+**The pre-probe has been run (2026-09-05, `research_state/measurements/arch_transfer_2026-09-05/depth_statistic/`),
+and depth is NOT the binding lever.** The committed search cells could not answer it (their root allocators do
+not compose with iterative deepening, so `--max-depth` was inert there and 141,485 decisions realised depth 1),
+so a fresh two-arm cell was played on the same seeded games with width pre-narrowed and only `--max-depth`
+differing, 1 vs 3. Depth fired on 76% of searched decisions with a 2.7-action beam, and re-ranked essentially
+none of them: the depth-attributable change in the chosen action is +0.0013 [−0.021, +0.024], a fifth of a
+percent of all changes against a 20% rail, and the win-rate dividend +0.020 [−0.092, +0.132] is NOT DETECTED.
+A real simulator ply reproduced the first hop's ordering. Both arms also sat ~27 points *below* the mirror
+null, replicating the standing verdict that narrow search on this critic is harmful: the binding constraint is
+the leaf, not depth. Caveats the reader must carry: search depth is not network depth (the weakest joint), and
+the leaf critic is the same network, so "nothing at depth 2" and "this critic cannot see depth 2" are not
+separated. A looped or deeper trunk therefore stays behind the high build bar, now with a number on it.
+
 - *And transfer.* Tying weights across depth is still more sharing. Under the mechanism in
   [[negative_transfer_and_shared_functions]] a looped trunk makes every distillation gift and every
   leak larger. It changes the magnitude of what a fold does, not its sign, so it is not a remedy for

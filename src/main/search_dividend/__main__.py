@@ -98,10 +98,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "further. 1 = the width-only depth-1 reference. NOTE width is spent "
                         "FIRST (the registered order), so at the default caps it absorbs the "
                         "whole budget and every decision reports depth 1 — lower --max-opp / "
-                        "--max-dice to free time for a ply. WARNING depth>=2 is built and gated "
-                        "but its successor replay has an OPEN fidelity defect (see deepen.py); "
-                        "it fails safe as a counted search_error, but do not publish a depth-2 "
-                        "number yet.")
+                        "--max-dice to free time for a ply. The depth>=2 successor-replay "
+                        "fidelity defect is FIXED (`gen3_search_depth2_chunk_gap_v1`, 16b4bf0 — "
+                        "see deepen.py); the 2026-08-23 depth->=2 readings taken UNDER it stay "
+                        "VOID, but a depth-2 number measured on this code is publishable.")
     p.add_argument("--root-strategy", default="grid", choices=list(ROOT_STRATEGIES),
                    help="how the budget is spread ACROSS OUR ROOT ACTIONS. `grid` (default) is "
                         "the registered fixed sweep — every action on every sample. `racing` "
