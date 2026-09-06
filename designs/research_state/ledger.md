@@ -11599,3 +11599,63 @@ critic now SEES timeouts; the registered expectation is that they FALL. Also wat
 `e798c13a3399a5d874564b838fe29f91576a35bf` source `pin_commit`, 75,000,000 steps from 0). ⚠️ Noted
 gap: `checkargs` reads `--pin-commit` only when a `--model` is present, so a FRESH pinned argv
 validates against HEAD — harmless here because HEAD IS the pin, wrong the day they differ.
+
+### 2026-09-06 · FAMINE PRE-TEST, pre-registered for `ai_v12_01_winprob_critic` (registered BEFORE any read)
+
+`ai_v12_01` is the **SPARSE** condition of the registered three-arm ladder (SPARSE / SELF-φ /
+FROZEN-φ) and went out at generation scale **without** the runbook's 5M pre-test for sparse-reward
+starvation. Rather than restart the arm, the pre-test is run INSIDE it.
+
+**Comparator: `ai_v9_29_rev1_0823`.** Both it and `ai_v9_21_gen17_pfspoff_0820` are clean fresh
+from-zero shaped runs with converged 12-node anchored ladders; rev1 is chosen because it is the most
+recent fresh run **and** the direct ancestor of the line this arm would replace (`R2ACTION` forks
+from it), so "does terminal-only learn at the incumbent's rate" is asked against the incumbent we
+actually built on. gen17 is the second reference, and its existence is what makes the floor
+measurable at all.
+
+**⚠️ FLOOR = 38 Elo, and NOT the adjacent-node spread.** The prescription was the incumbent's
+adjacent-node spread; that number is **172 Elo (gen17) / 186 Elo (rev1)** and is dominated by the
+2M→4M jump — **steep early LEARNING, not noise**. A kill band that wide would pass an arm that had
+learned nothing. The floor used instead is the campaign's standing construction — *what two
+same-class runs differ by at matched steps*:
+
+| step | gen17 | rev1 | \|Δ\| |
+|---|---|---|---|
+| 2,000,016 | 1678.7 | 1692.5 | 13.8 |
+| 4,000,032 | 1851.0 | 1879.0 | 28.0 |
+| 6,000,000 | 1915.5 | 1917.3 | 1.8 |
+| 8,000,016 | 1995.4 | 1957.9 | 37.5 |
+| 10,000,032 | 1999.0 | 2016.4 | 17.4 |
+| 12,000,000 | 2007.5 | 2032.6 | 25.1 |
+| 14,000,016 | 2019.9 | 2044.9 | 25.0 |
+| 16,000,032 | 2029.1 | 2066.9 | **37.8** |
+
+⇒ **max |Δ| = 38 Elo** (the max, never the mean). The ladder's own `se` (±9–10) was rejected as the
+floor: it is FIT error on a single node, not run-to-run variation. These two runs are **not true
+replicates** (different generations), so 38 likely **over-states** pure noise — conservative in the
+right direction for a kill rule.
+
+**THE RULE.** Reads at the first restart boundary and at ~5M — *no earlier*, since the anchored
+ladder needs eval cycles to exist. **At 5M: if the arm's anchored rating at matched SNAPSHOT COUNT
+trails `rev1_0823` by more than 38 Elo AND `win_rate_vs_bots` is not rising cycle over cycle ⇒
+terminal-only starves ⇒ kill the arm and launch FROZEN-φ** (same argv plus
+`--win-prob-pbrs-frozen models/ai_v9_59_R2ACTION_0827`, currently refused-as-deferred). If it learns
+at the incumbent's rate ⇒ continue to 75M and FROZEN-φ becomes a later speed ablation.
+
+**Pre-registered confound:** the incumbent had PBRS **and** PopArt **and** the shaped critic, so
+"at the incumbent's rate" is a rate comparison **ACROSS RECIPES**, and the floor is the incumbent's
+own run-to-run noise rather than a replicate of this arm. A trail inside 38 Elo is therefore NOT
+evidence the two recipes are equivalent — only that starvation has not been demonstrated.
+
+**Duration correction (the launch entry's figure was wrong).** The launch entry says ≈ 4 GPU-days,
+extrapolated from G1's 750k steps/h. Measured on this arm: **5.2M steps/h** (2,621,440 steps in the
+first 0.50 h), because G1 carried eight distillation teachers, the dist head and PopArt and this arm
+carries none of them, at 64 envs rather than 48. **75M is ≈ 14 h at the current rate** — and that is
+a FLOOR on duration, not a forecast: `ep_len_mean` is ~25–33 and lengthens as play improves, so the
+rate will fall.
+
+**Provenance hazard recorded** (the C1 class in reverse — a reader trusting the config over the
+announcer): `model_config.json` records `all_shaping_pbrs=True`, `pbrs_material=True`,
+`pbrs_belief=True` while the child announces **`1 TERMINAL + 0 PBRS + 0 BIAS (none — fully
+policy-invariant)`**. Those flags are INERT under `--terminal-indicator`. **The announcer is the
+authority; the config alone would tell a reader shaping was on.**
