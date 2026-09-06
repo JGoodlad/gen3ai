@@ -1,0 +1,2547 @@
+{
+ "_meta": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "parent_steps": 28115184,
+  "n_states": 456,
+  "n_params": 3147887,
+  "arm_keys": [
+   "TCFUNDA@p1M",
+   "TCFUNDA@mid",
+   "TCFUNDA@end",
+   "TCFUNDB@p1M",
+   "TCFUNDB@mid",
+   "TCFUNDB@end",
+   "TCUNFA@p1M",
+   "TCUNFA@mid",
+   "TCUNFA@end",
+   "TCUNFB@p1M",
+   "TCUNFB@mid",
+   "TCUNFB@end",
+   "R4DOSE12@end",
+   "R4DOSE6@end",
+   "R4DOSE3@end",
+   "B2@end",
+   "C1@end"
+  ],
+  "n_action_grads": 3064,
+  "mean_n_legal": 6.719298245614035,
+  "nboot": 20000,
+  "seed": 20260905,
+  "threads": 4,
+  "statistic": "KL1 = 1/2 sum_a p_a <g_a,Delta>^2 at the PARENT's params; actual = masked_kl_rows(parent, arm) [imported]",
+  "published_offslice_clustered": {
+   "R4DOSE12": 0.3062,
+   "R4DOSE6": 0.3502,
+   "C1": 0.3702,
+   "B2": 0.3938,
+   "R4DOSE3": 0.4416
+  },
+  "group_decomposition_max_residual": 7.105427357601002e-15
+ },
+ "slices": {
+  "untaught": {
+   "n_states": 152,
+   "n_teams": 8,
+   "teams": [
+    "1c4e182530",
+    "21022d30fb",
+    "324235812b",
+    "3495ef83ef",
+    "55ff6899a2",
+    "564b9be3ae",
+    "6a49f096f0",
+    "a7406f6c97"
+   ],
+   "arms": {
+    "TCFUNDA@p1M": {
+     "actual_kl_state_mean": 0.27960525993951607,
+     "actual_kl_cluster": {
+      "mean": 0.2796052599395161,
+      "ci95": [
+       0.2237966519968555,
+       0.3295492590421322
+      ]
+     },
+     "kl1_state_mean": 0.3275141583079547,
+     "kl1_cluster": {
+      "mean": 0.3275141583079547,
+      "ci95": [
+       0.27988962588855326,
+       0.377204135166512
+      ]
+     },
+     "delta_lin_mean": 0.0005197375560460335,
+     "abs_delta_lin_mean": 0.28615518363528625,
+     "pearson_kl1_vs_actual": 0.627813049401357,
+     "spearman_kl1_vs_actual": 0.7859061365919668,
+     "pearson_absdelta_vs_actual": 0.42640991973589143,
+     "spearman_absdelta_vs_actual": 0.6304991149474777,
+     "ratio_kl1_over_actual": 1.1713447679017277,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.022831968441045816,
+       "additive_mean": 0.007477792926482906,
+       "alone_mean": 0.006023510178523617,
+       "alone_share_of_KL1": 0.018391602395582046
+      },
+      "encoders": {
+       "additive_share": 0.29093855843707445,
+       "additive_mean": 0.09528649708584813,
+       "alone_mean": 0.08178287347811194,
+       "alone_share_of_KL1": 0.2497079024022321
+      },
+      "team_transformer": {
+       "additive_share": 0.3389113930039927,
+       "additive_mean": 0.11099827962067912,
+       "alone_mean": 0.08688228063423105,
+       "alone_share_of_KL1": 0.26527793816027173
+      },
+      "projection_mlp": {
+       "additive_share": 0.27590076098839456,
+       "additive_mean": 0.09036140551163824,
+       "alone_mean": 0.09109280020873187,
+       "alone_share_of_KL1": 0.2781339306958425
+      },
+      "belief_op": {
+       "additive_share": 0.07141731912949235,
+       "additive_mean": 0.02339018316330628,
+       "alone_mean": 0.02011679694084475,
+       "alone_share_of_KL1": 0.06142267877753653
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDA@mid": {
+     "actual_kl_state_mean": 0.3741692726876552,
+     "actual_kl_cluster": {
+      "mean": 0.3741692726876552,
+      "ci95": [
+       0.3054162463621378,
+       0.44447643942989684
+      ]
+     },
+     "kl1_state_mean": 0.48056046976547795,
+     "kl1_cluster": {
+      "mean": 0.48056046976547795,
+      "ci95": [
+       0.3983152938054433,
+       0.5934075444160327
+      ]
+     },
+     "delta_lin_mean": 0.07480449118265285,
+     "abs_delta_lin_mean": 0.3682980909794688,
+     "pearson_kl1_vs_actual": 0.5037369403840881,
+     "spearman_kl1_vs_actual": 0.7648767419132169,
+     "pearson_absdelta_vs_actual": 0.3847230181126447,
+     "spearman_absdelta_vs_actual": 0.6715293297521169,
+     "ratio_kl1_over_actual": 1.2843397489954627,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.04691837210669969,
+       "additive_mean": 0.0225471149402271,
+       "alone_mean": 0.01047229934132376,
+       "alone_share_of_KL1": 0.021791845147884153
+      },
+      "encoders": {
+       "additive_share": 0.2891956055077219,
+       "additive_mean": 0.13897597603690268,
+       "alone_mean": 0.1329230525732721,
+       "alone_share_of_KL1": 0.27660005542724087
+      },
+      "team_transformer": {
+       "additive_share": 0.37290245869869726,
+       "additive_mean": 0.1792021807289477,
+       "alone_mean": 0.13824776139710368,
+       "alone_share_of_KL1": 0.28768026105969774
+      },
+      "projection_mlp": {
+       "additive_share": 0.23727885198160148,
+       "additive_mean": 0.11402683657369171,
+       "alone_mean": 0.12557307953625563,
+       "alone_share_of_KL1": 0.2613054702513037
+      },
+      "belief_op": {
+       "additive_share": 0.05370471170527967,
+       "additive_mean": 0.02580836148570876,
+       "alone_mean": 0.022534524883035822,
+       "alone_share_of_KL1": 0.04689217341166882
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDA@end": {
+     "actual_kl_state_mean": 0.42959595487141056,
+     "actual_kl_cluster": {
+      "mean": 0.4295959548714106,
+      "ci95": [
+       0.34027492305577944,
+       0.5376228911191561
+      ]
+     },
+     "kl1_state_mean": 0.751865701947308,
+     "kl1_cluster": {
+      "mean": 0.7518657019473078,
+      "ci95": [
+       0.5505537133824228,
+       0.9696216715185212
+      ]
+     },
+     "delta_lin_mean": 0.005660289372297783,
+     "abs_delta_lin_mean": 0.4257136692885921,
+     "pearson_kl1_vs_actual": 0.25670056541672615,
+     "spearman_kl1_vs_actual": 0.6121829700859082,
+     "pearson_absdelta_vs_actual": 0.25734110115918923,
+     "spearman_absdelta_vs_actual": 0.552655499285807,
+     "ratio_kl1_over_actual": 1.7501694171500317,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.010488539431870949,
+       "additive_mean": 0.00788597306234567,
+       "alone_mean": 0.013690435012637997,
+       "alone_share_of_KL1": 0.01820861754589977
+      },
+      "encoders": {
+       "additive_share": 0.3143826526232273,
+       "additive_mean": 0.23637353379461948,
+       "alone_mean": 0.18354979545559463,
+       "alone_share_of_KL1": 0.24412577270143668
+      },
+      "team_transformer": {
+       "additive_share": 0.2858394956101968,
+       "additive_mean": 0.21491291301122506,
+       "alone_mean": 0.16024547857982996,
+       "alone_share_of_KL1": 0.2131304542351105
+      },
+      "projection_mlp": {
+       "additive_share": 0.3297291081788192,
+       "additive_mean": 0.24791200737332772,
+       "alone_mean": 0.21540877639010803,
+       "alone_share_of_KL1": 0.2864990061818304
+      },
+      "belief_op": {
+       "additive_share": 0.059560204155885726,
+       "additive_mean": 0.04478127470578999,
+       "alone_mean": 0.028838258866656884,
+       "alone_share_of_KL1": 0.03835559833620116
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDB@p1M": {
+     "actual_kl_state_mean": 0.22028196190740046,
+     "actual_kl_cluster": {
+      "mean": 0.22028196190740046,
+      "ci95": [
+       0.1707316433929631,
+       0.27204759068925133
+      ]
+     },
+     "kl1_state_mean": 0.2982370460236559,
+     "kl1_cluster": {
+      "mean": 0.29823704602365597,
+      "ci95": [
+       0.23450783075076587,
+       0.371787041832556
+      ]
+     },
+     "delta_lin_mean": 0.060749609218071605,
+     "abs_delta_lin_mean": 0.31360369100787816,
+     "pearson_kl1_vs_actual": 0.5551822234932183,
+     "spearman_kl1_vs_actual": 0.6811111338923858,
+     "pearson_absdelta_vs_actual": 0.44645558391547047,
+     "spearman_absdelta_vs_actual": 0.6057108099426595,
+     "ratio_kl1_over_actual": 1.3538877329820826,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.01886799431054148,
+       "additive_mean": 0.005627134887567038,
+       "alone_mean": 0.006626013225144199,
+       "alone_share_of_KL1": 0.022217270837032867
+      },
+      "encoders": {
+       "additive_share": 0.40565456405607203,
+       "additive_mean": 0.12098121889009683,
+       "alone_mean": 0.10284921295247292,
+       "alone_share_of_KL1": 0.3448572681487564
+      },
+      "team_transformer": {
+       "additive_share": 0.3934891356557579,
+       "additive_mean": 0.11735303746037484,
+       "alone_mean": 0.09321748906265821,
+       "alone_share_of_KL1": 0.3125617367309368
+      },
+      "projection_mlp": {
+       "additive_share": 0.11189852533185332,
+       "additive_mean": 0.033372285649375166,
+       "alone_mean": 0.05155418961560479,
+       "alone_share_of_KL1": 0.1728631312003927
+      },
+      "belief_op": {
+       "additive_share": 0.07008978064577541,
+       "additive_mean": 0.020903369136242068,
+       "alone_mean": 0.02110927798524438,
+       "alone_share_of_KL1": 0.07078020073860981
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDB@mid": {
+     "actual_kl_state_mean": 0.31870600318951037,
+     "actual_kl_cluster": {
+      "mean": 0.31870600318951037,
+      "ci95": [
+       0.2349451126818789,
+       0.4048878351940187
+      ]
+     },
+     "kl1_state_mean": 0.4445932033717243,
+     "kl1_cluster": {
+      "mean": 0.4445932033717243,
+      "ci95": [
+       0.32875557368649533,
+       0.5869437925116119
+      ]
+     },
+     "delta_lin_mean": 0.0768451504585675,
+     "abs_delta_lin_mean": 0.34204675594449313,
+     "pearson_kl1_vs_actual": 0.44552185205653944,
+     "spearman_kl1_vs_actual": 0.6914481372890738,
+     "pearson_absdelta_vs_actual": 0.35736711480904915,
+     "spearman_absdelta_vs_actual": 0.5981998236729338,
+     "ratio_kl1_over_actual": 1.3949947566797427,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.015709382586090132,
+       "additive_mean": 0.006984284726941794,
+       "alone_mean": 0.009157500612722393,
+       "alone_share_of_KL1": 0.02059748224505764
+      },
+      "encoders": {
+       "additive_share": 0.4073072125763327,
+       "additive_mean": 0.1810860183957196,
+       "alone_mean": 0.15658921129802159,
+       "alone_share_of_KL1": 0.35220783878492484
+      },
+      "team_transformer": {
+       "additive_share": 0.3520641260528318,
+       "additive_mean": 0.15652531759409505,
+       "alone_mean": 0.12097723860994325,
+       "alone_share_of_KL1": 0.2721077103574033
+      },
+      "projection_mlp": {
+       "additive_share": 0.18160636989356238,
+       "additive_mean": 0.08074095774368917,
+       "alone_mean": 0.08636732491144372,
+       "alone_share_of_KL1": 0.19426146026625607
+      },
+      "belief_op": {
+       "additive_share": 0.04331290889118307,
+       "additive_mean": 0.01925662491127872,
+       "alone_mean": 0.0224279682958765,
+       "alone_share_of_KL1": 0.050446043992095124
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDB@end": {
+     "actual_kl_state_mean": 0.398910945386445,
+     "actual_kl_cluster": {
+      "mean": 0.398910945386445,
+      "ci95": [
+       0.28478687282761406,
+       0.5455802871094875
+      ]
+     },
+     "kl1_state_mean": 0.719921514942611,
+     "kl1_cluster": {
+      "mean": 0.719921514942611,
+      "ci95": [
+       0.5197296654216146,
+       0.9627132554946819
+      ]
+     },
+     "delta_lin_mean": 0.05944621944436563,
+     "abs_delta_lin_mean": 0.4278562728708543,
+     "pearson_kl1_vs_actual": 0.3862259641310911,
+     "spearman_kl1_vs_actual": 0.6896062712293004,
+     "pearson_absdelta_vs_actual": 0.3620548422895644,
+     "spearman_absdelta_vs_actual": 0.6162972682973502,
+     "ratio_kl1_over_actual": 1.8047173768199993,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.004567645286668107,
+       "additive_mean": 0.0032883461144985805,
+       "alone_mean": 0.014582908623019987,
+       "alone_share_of_KL1": 0.020256247827490574
+      },
+      "encoders": {
+       "additive_share": 0.35229202697004125,
+       "additive_mean": 0.2536226097584753,
+       "alone_mean": 0.21699743126272944,
+       "alone_share_of_KL1": 0.301418177896833
+      },
+      "team_transformer": {
+       "additive_share": 0.31692756227490537,
+       "additive_mean": 0.22816297076001857,
+       "alone_mean": 0.1731652410136333,
+       "alone_share_of_KL1": 0.2405334990265394
+      },
+      "projection_mlp": {
+       "additive_share": 0.2864044179163416,
+       "additive_mean": 0.20618870243258933,
+       "alone_mean": 0.18793621734882915,
+       "alone_share_of_KL1": 0.2610509804861306
+      },
+      "belief_op": {
+       "additive_share": 0.03980834755204381,
+       "additive_mean": 0.02865888587702936,
+       "alone_mean": 0.025996768262257264,
+       "alone_share_of_KL1": 0.036110558891033574
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFA@p1M": {
+     "actual_kl_state_mean": 0.24425093533788586,
+     "actual_kl_cluster": {
+      "mean": 0.24425093533788586,
+      "ci95": [
+       0.18359287920091058,
+       0.30809600577055407
+      ]
+     },
+     "kl1_state_mean": 0.3853289950093757,
+     "kl1_cluster": {
+      "mean": 0.3853289950093757,
+      "ci95": [
+       0.28038728588620293,
+       0.49624122226470646
+      ]
+     },
+     "delta_lin_mean": 0.09665107843702266,
+     "abs_delta_lin_mean": 0.3459938629810388,
+     "pearson_kl1_vs_actual": 0.3740294482537164,
+     "spearman_kl1_vs_actual": 0.7193016628052405,
+     "pearson_absdelta_vs_actual": 0.40480726930028527,
+     "spearman_absdelta_vs_actual": 0.6103445212173402,
+     "ratio_kl1_over_actual": 1.577594757114558,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.041809793489286505,
+       "additive_mean": 0.016110525706776308,
+       "alone_mean": 0.005434402618474945,
+       "alone_share_of_KL1": 0.01410327976575632
+      },
+      "encoders": {
+       "additive_share": 0.2997408137633476,
+       "additive_mean": 0.11549882653072317,
+       "alone_mean": 0.08735423510844455,
+       "alone_share_of_KL1": 0.22670039431192837
+      },
+      "team_transformer": {
+       "additive_share": 0.36518099478292537,
+       "additive_mean": 0.1407148257162287,
+       "alone_mean": 0.09431401544732132,
+       "alone_share_of_KL1": 0.24476231134650667
+      },
+      "projection_mlp": {
+       "additive_share": 0.26986242108353814,
+       "additive_mean": 0.10398581550691671,
+       "alone_mean": 0.0725918095790738,
+       "alone_share_of_KL1": 0.18838917008388512
+      },
+      "belief_op": {
+       "additive_share": 0.023405976880902356,
+       "additive_mean": 0.009019001548730787,
+       "alone_mean": 0.015993317997105582,
+       "alone_share_of_KL1": 0.04150561780775527
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFA@mid": {
+     "actual_kl_state_mean": 0.2793900138411387,
+     "actual_kl_cluster": {
+      "mean": 0.2793900138411387,
+      "ci95": [
+       0.20948453920643087,
+       0.3594875675651357
+      ]
+     },
+     "kl1_state_mean": 0.4347178462012462,
+     "kl1_cluster": {
+      "mean": 0.4347178462012462,
+      "ci95": [
+       0.3382189646137607,
+       0.5263387615598121
+      ]
+     },
+     "delta_lin_mean": 0.1276909896966604,
+     "abs_delta_lin_mean": 0.3522175109567758,
+     "pearson_kl1_vs_actual": 0.3971431856857955,
+     "spearman_kl1_vs_actual": 0.6858712812416705,
+     "pearson_absdelta_vs_actual": 0.42432164159504465,
+     "spearman_absdelta_vs_actual": 0.6726330825114988,
+     "ratio_kl1_over_actual": 1.555953415172623,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.039841666436788534,
+       "additive_mean": 0.01731988342246919,
+       "alone_mean": 0.008097822523753134,
+       "alone_share_of_KL1": 0.018627766480063868
+      },
+      "encoders": {
+       "additive_share": 0.26125677636867206,
+       "additive_mean": 0.11357298312846975,
+       "alone_mean": 0.109163163261166,
+       "alone_share_of_KL1": 0.25111267967276074
+      },
+      "team_transformer": {
+       "additive_share": 0.37073443209126833,
+       "additive_mean": 0.16116487383135833,
+       "alone_mean": 0.1354149669398805,
+       "alone_share_of_KL1": 0.31150082317345706
+      },
+      "projection_mlp": {
+       "additive_share": 0.28527315589288227,
+       "additive_mean": 0.12401333190878612,
+       "alone_mean": 0.10945944655446578,
+       "alone_share_of_KL1": 0.2517942327672307
+      },
+      "belief_op": {
+       "additive_share": 0.04289396921038899,
+       "additive_mean": 0.01864677391016287,
+       "alone_mean": 0.022381935345371713,
+       "alone_share_of_KL1": 0.051486120344390755
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFA@end": {
+     "actual_kl_state_mean": 0.38647816452433553,
+     "actual_kl_cluster": {
+      "mean": 0.3864781645243355,
+      "ci95": [
+       0.2883374015459235,
+       0.49599772963982725
+      ]
+     },
+     "kl1_state_mean": 0.6233411990938444,
+     "kl1_cluster": {
+      "mean": 0.6233411990938446,
+      "ci95": [
+       0.45904541391639136,
+       0.8254495034544435
+      ]
+     },
+     "delta_lin_mean": 0.10540866640745152,
+     "abs_delta_lin_mean": 0.416783954370202,
+     "pearson_kl1_vs_actual": 0.4610155137850697,
+     "spearman_kl1_vs_actual": 0.6756846342580252,
+     "pearson_absdelta_vs_actual": 0.3631808674824202,
+     "spearman_absdelta_vs_actual": 0.6265385903402838,
+     "ratio_kl1_over_actual": 1.6128755937894501,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.042514577493797015,
+       "additive_mean": 0.026501087713951602,
+       "alone_mean": 0.011958283708580793,
+       "alone_share_of_KL1": 0.019184170284211335
+      },
+      "encoders": {
+       "additive_share": 0.28381048789622126,
+       "additive_mean": 0.17691076984063958,
+       "alone_mean": 0.15846015887368434,
+       "alone_share_of_KL1": 0.2542109507666732
+      },
+      "team_transformer": {
+       "additive_share": 0.3173073691632678,
+       "additive_mean": 0.19779075597554452,
+       "alone_mean": 0.15183206462351442,
+       "alone_share_of_KL1": 0.24357777866156413
+      },
+      "projection_mlp": {
+       "additive_share": 0.31480542552243074,
+       "additive_mean": 0.19623119142639991,
+       "alone_mean": 0.17452264957992103,
+       "alone_share_of_KL1": 0.27997932726671343
+      },
+      "belief_op": {
+       "additive_share": 0.04156213992428344,
+       "additive_mean": 0.025907394137308984,
+       "alone_mean": 0.0287382094034175,
+       "alone_share_of_KL1": 0.04610349748291055
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFB@p1M": {
+     "actual_kl_state_mean": 0.23558770694075137,
+     "actual_kl_cluster": {
+      "mean": 0.23558770694075137,
+      "ci95": [
+       0.1931265052133118,
+       0.27165080436302946
+      ]
+     },
+     "kl1_state_mean": 0.36571835253706586,
+     "kl1_cluster": {
+      "mean": 0.36571835253706586,
+      "ci95": [
+       0.25028042469897105,
+       0.5127885580458749
+      ]
+     },
+     "delta_lin_mean": 0.06672626073465082,
+     "abs_delta_lin_mean": 0.32280884152885636,
+     "pearson_kl1_vs_actual": 0.4454920356836637,
+     "spearman_kl1_vs_actual": 0.7613399490155071,
+     "pearson_absdelta_vs_actual": 0.4384001125627539,
+     "spearman_absdelta_vs_actual": 0.6747039003820419,
+     "ratio_kl1_over_actual": 1.5523660265900097,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.0362042041494207,
+       "additive_mean": 0.013240541896441744,
+       "alone_mean": 0.005132989571407405,
+       "alone_share_of_KL1": 0.014035362283021255
+      },
+      "encoders": {
+       "additive_share": 0.3231921241315539,
+       "additive_mean": 0.11819729119034679,
+       "alone_mean": 0.09424522621895903,
+       "alone_share_of_KL1": 0.2576989247741052
+      },
+      "team_transformer": {
+       "additive_share": 0.3655821251865323,
+       "additive_mean": 0.13370009254021797,
+       "alone_mean": 0.09470849753197459,
+       "alone_share_of_KL1": 0.2589656681841686
+      },
+      "projection_mlp": {
+       "additive_share": 0.24086561668741638,
+       "additive_mean": 0.08808897651774632,
+       "alone_mean": 0.07705824860275333,
+       "alone_share_of_KL1": 0.21070380545078993
+      },
+      "belief_op": {
+       "additive_share": 0.0341559298450766,
+       "additive_mean": 0.012491450392313013,
+       "alone_mean": 0.01765312249911438,
+       "alone_share_of_KL1": 0.04826972006367993
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFB@mid": {
+     "actual_kl_state_mean": 0.31272849741925546,
+     "actual_kl_cluster": {
+      "mean": 0.31272849741925546,
+      "ci95": [
+       0.24555966372791044,
+       0.4115786604691846
+      ]
+     },
+     "kl1_state_mean": 0.4744646534990749,
+     "kl1_cluster": {
+      "mean": 0.47446465349907485,
+      "ci95": [
+       0.3794666129383351,
+       0.5873658827497756
+      ]
+     },
+     "delta_lin_mean": 0.15335589129635904,
+     "abs_delta_lin_mean": 0.3808785453465762,
+     "pearson_kl1_vs_actual": 0.47347190138762496,
+     "spearman_kl1_vs_actual": 0.7029640716516652,
+     "pearson_absdelta_vs_actual": 0.45176257034328277,
+     "spearman_absdelta_vs_actual": 0.6466624293495717,
+     "ratio_kl1_over_actual": 1.5171775435066601,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.047855541184338844,
+       "additive_mean": 0.02270576276603804,
+       "alone_mean": 0.008980836559791065,
+       "alone_share_of_KL1": 0.018928357452044794
+      },
+      "encoders": {
+       "additive_share": 0.2811716134519123,
+       "additive_mean": 0.13340599215023738,
+       "alone_mean": 0.1370058723802862,
+       "alone_share_of_KL1": 0.2887588598431881
+      },
+      "team_transformer": {
+       "additive_share": 0.33480923914993327,
+       "additive_mean": 0.158855149641562,
+       "alone_mean": 0.12577408388282665,
+       "alone_share_of_KL1": 0.26508630928620247
+      },
+      "projection_mlp": {
+       "additive_share": 0.29661456346809567,
+       "additive_mean": 0.14073312607866936,
+       "alone_mean": 0.12247965939005787,
+       "alone_share_of_KL1": 0.25814285318578883
+      },
+      "belief_op": {
+       "additive_share": 0.03954904274571993,
+       "additive_mean": 0.01876462286256811,
+       "alone_mean": 0.023118910039171985,
+       "alone_share_of_KL1": 0.048726306308963144
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFB@end": {
+     "actual_kl_state_mean": 0.3656527376924905,
+     "actual_kl_cluster": {
+      "mean": 0.3656527376924905,
+      "ci95": [
+       0.2886755322720084,
+       0.4528096710197581
+      ]
+     },
+     "kl1_state_mean": 0.5317095368834724,
+     "kl1_cluster": {
+      "mean": 0.5317095368834724,
+      "ci95": [
+       0.3785705362905418,
+       0.711791952332473
+      ]
+     },
+     "delta_lin_mean": 0.09817220167833972,
+     "abs_delta_lin_mean": 0.38742118728336783,
+     "pearson_kl1_vs_actual": 0.38767088002485445,
+     "spearman_kl1_vs_actual": 0.6588173784675947,
+     "pearson_absdelta_vs_actual": 0.39226797848175854,
+     "spearman_absdelta_vs_actual": 0.6354267046658328,
+     "ratio_kl1_over_actual": 1.4541379896097857,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.038453279262255044,
+       "additive_mean": 0.020445975308184466,
+       "alone_mean": 0.011152331217846168,
+       "alone_share_of_KL1": 0.02097448032099201
+      },
+      "encoders": {
+       "additive_share": 0.2524804618854816,
+       "additive_mean": 0.13424626946125465,
+       "alone_mean": 0.1342905001685887,
+       "alone_share_of_KL1": 0.2525636477308838
+      },
+      "team_transformer": {
+       "additive_share": 0.35076114254908425,
+       "additive_mean": 0.18650304466149126,
+       "alone_mean": 0.1626689661282805,
+       "alone_share_of_KL1": 0.3059357691451949
+      },
+      "projection_mlp": {
+       "additive_share": 0.3465291477113093,
+       "additive_mean": 0.1842528526462047,
+       "alone_mean": 0.17407981180659213,
+       "alone_share_of_KL1": 0.327396444357444
+      },
+      "belief_op": {
+       "additive_share": 0.01177596859186983,
+       "additive_mean": 0.006261394806337425,
+       "alone_mean": 0.027516825060738114,
+       "alone_share_of_KL1": 0.05175161089271303
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "R4DOSE12@end": {
+     "actual_kl_state_mean": 0.39373214383103433,
+     "actual_kl_cluster": {
+      "mean": 0.39373214383103433,
+      "ci95": [
+       0.30597333433068424,
+       0.49062762890463785
+      ]
+     },
+     "kl1_state_mean": 0.537645101870574,
+     "kl1_cluster": {
+      "mean": 0.5376451018705739,
+      "ci95": [
+       0.3839292003343063,
+       0.7382203896955741
+      ]
+     },
+     "delta_lin_mean": 0.029417378284604404,
+     "abs_delta_lin_mean": 0.4056601769779851,
+     "pearson_kl1_vs_actual": 0.4604495459604003,
+     "spearman_kl1_vs_actual": 0.7153138006684026,
+     "pearson_absdelta_vs_actual": 0.41492559715933786,
+     "spearman_absdelta_vs_actual": 0.6255373533170675,
+     "ratio_kl1_over_actual": 1.3655098022713084,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03734447843427041,
+       "additive_mean": 0.02007807591209677,
+       "alone_mean": 0.013606029488306923,
+       "alone_share_of_KL1": 0.025306711510936948
+      },
+      "encoders": {
+       "additive_share": 0.26959552889239197,
+       "additive_mean": 0.14494671559520136,
+       "alone_mean": 0.1327392261822361,
+       "alone_share_of_KL1": 0.24689005018442461
+      },
+      "team_transformer": {
+       "additive_share": 0.3359522187903388,
+       "additive_mean": 0.1806230648951771,
+       "alone_mean": 0.12139522654050502,
+       "alone_share_of_KL1": 0.22579063050727505
+      },
+      "projection_mlp": {
+       "additive_share": 0.2812957924069919,
+       "additive_mean": 0.15123730496442098,
+       "alone_mean": 0.15599166780205606,
+       "alone_share_of_KL1": 0.2901387314035413
+      },
+      "belief_op": {
+       "additive_share": 0.07581198147600667,
+       "additive_mean": 0.04075994050367767,
+       "alone_mean": 0.02622662028109075,
+       "alone_share_of_KL1": 0.04878054350322012
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "R4DOSE6@end": {
+     "actual_kl_state_mean": 0.41966201244987494,
+     "actual_kl_cluster": {
+      "mean": 0.41966201244987494,
+      "ci95": [
+       0.30155414528211755,
+       0.5576361749377314
+      ]
+     },
+     "kl1_state_mean": 0.49961277677269716,
+     "kl1_cluster": {
+      "mean": 0.4996127767726971,
+      "ci95": [
+       0.3733696129775296,
+       0.6379623428987536
+      ]
+     },
+     "delta_lin_mean": 0.07737512927449816,
+     "abs_delta_lin_mean": 0.390267491317487,
+     "pearson_kl1_vs_actual": 0.46584311282446633,
+     "spearman_kl1_vs_actual": 0.7122588317306706,
+     "pearson_absdelta_vs_actual": 0.3018124612174791,
+     "spearman_absdelta_vs_actual": 0.5499490838510377,
+     "ratio_kl1_over_actual": 1.1905122740466572,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.055631050830133276,
+       "additive_mean": 0.027793983780025944,
+       "alone_mean": 0.009935233177047323,
+       "alone_share_of_KL1": 0.01988586689320685
+      },
+      "encoders": {
+       "additive_share": 0.3116594805698574,
+       "additive_mean": 0.1557090584950429,
+       "alone_mean": 0.15728234414358885,
+       "alone_share_of_KL1": 0.31480849060660776
+      },
+      "team_transformer": {
+       "additive_share": 0.3449918549246655,
+       "additive_mean": 0.17236233860287561,
+       "alone_mean": 0.14314935890983613,
+       "alone_share_of_KL1": 0.2865206126923433
+      },
+      "projection_mlp": {
+       "additive_share": 0.2621640008989025,
+       "additive_mean": 0.13098048445894056,
+       "alone_mean": 0.1459965863882621,
+       "alone_share_of_KL1": 0.29221948111764245
+      },
+      "belief_op": {
+       "additive_share": 0.025553612776441234,
+       "additive_mean": 0.012766911435812076,
+       "alone_mean": 0.03034932841408263,
+       "alone_share_of_KL1": 0.06074570112103098
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "R4DOSE3@end": {
+     "actual_kl_state_mean": 0.5574618212564066,
+     "actual_kl_cluster": {
+      "mean": 0.5574618212564066,
+      "ci95": [
+       0.4165175058709505,
+       0.7354077167755291
+      ]
+     },
+     "kl1_state_mean": 0.8214063735302171,
+     "kl1_cluster": {
+      "mean": 0.8214063735302172,
+      "ci95": [
+       0.5661307776424314,
+       1.0991020985408229
+      ]
+     },
+     "delta_lin_mean": 0.06147805732285449,
+     "abs_delta_lin_mean": 0.5267404201392679,
+     "pearson_kl1_vs_actual": 0.39796143963042935,
+     "spearman_kl1_vs_actual": 0.593036447761398,
+     "pearson_absdelta_vs_actual": 0.2991058956826112,
+     "spearman_absdelta_vs_actual": 0.5394241349380463,
+     "ratio_kl1_over_actual": 1.4734755676701456,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.035294770044416224,
+       "additive_mean": 0.028991349066766866,
+       "alone_mean": 0.010460451613135281,
+       "alone_share_of_KL1": 0.01273480697280038
+      },
+      "encoders": {
+       "additive_share": 0.21742444739041294,
+       "additive_mean": 0.17859382684777056,
+       "alone_mean": 0.18547278293271635,
+       "alone_share_of_KL1": 0.22579905502266395
+      },
+      "team_transformer": {
+       "additive_share": 0.3321090624828321,
+       "additive_mean": 0.2727965006305434,
+       "alone_mean": 0.1931833147065199,
+       "alone_share_of_KL1": 0.2351860430255272
+      },
+      "projection_mlp": {
+       "additive_share": 0.351554292120872,
+       "additive_mean": 0.28876893618998806,
+       "alone_mean": 0.2623682051291596,
+       "alone_share_of_KL1": 0.3194134031387667
+      },
+      "belief_op": {
+       "additive_share": 0.06361742796146679,
+       "additive_mean": 0.05225576079514826,
+       "alone_mean": 0.029049272647158147,
+       "alone_share_of_KL1": 0.03536528761313478
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "B2@end": {
+     "actual_kl_state_mean": 0.4873365698220392,
+     "actual_kl_cluster": {
+      "mean": 0.4873365698220392,
+      "ci95": [
+       0.4277452019911496,
+       0.5435480922427047
+      ]
+     },
+     "kl1_state_mean": 0.8555038907590491,
+     "kl1_cluster": {
+      "mean": 0.8555038907590491,
+      "ci95": [
+       0.5042604089700866,
+       1.3761834996542093
+      ]
+     },
+     "delta_lin_mean": 0.06268384873909866,
+     "abs_delta_lin_mean": 0.5146850023605918,
+     "pearson_kl1_vs_actual": 0.2593124113201846,
+     "spearman_kl1_vs_actual": 0.627816619851147,
+     "pearson_absdelta_vs_actual": 0.2760548908761548,
+     "spearman_absdelta_vs_actual": 0.580755062568771,
+     "ratio_kl1_over_actual": 1.755468281544013,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.04096782260949728,
+       "additive_mean": 0.035048131638351465,
+       "alone_mean": 0.012041285586963293,
+       "alone_share_of_KL1": 0.014075079864662703
+      },
+      "encoders": {
+       "additive_share": 0.21861746352178085,
+       "additive_mean": 0.187028090630758,
+       "alone_mean": 0.20716237883024377,
+       "alone_share_of_KL1": 0.2421524683498963
+      },
+      "team_transformer": {
+       "additive_share": 0.3298835030889925,
+       "additive_mean": 0.2822166203898579,
+       "alone_mean": 0.25632002648236574,
+       "alone_share_of_KL1": 0.2996129290013454
+      },
+      "projection_mlp": {
+       "additive_share": 0.3929504527993769,
+       "additive_mean": 0.33617064124539703,
+       "alone_mean": 0.3362322019504952,
+       "alone_share_of_KL1": 0.3930224112156543
+      },
+      "belief_op": {
+       "additive_share": 0.017580757980352503,
+       "additive_mean": 0.015040406854684768,
+       "alone_mean": 0.05748836083494211,
+       "alone_share_of_KL1": 0.06719824591789447
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "C1@end": {
+     "actual_kl_state_mean": 0.4309370232355778,
+     "actual_kl_cluster": {
+      "mean": 0.4309370232355778,
+      "ci95": [
+       0.3592126054673007,
+       0.5018163870019686
+      ]
+     },
+     "kl1_state_mean": 0.5963348319876843,
+     "kl1_cluster": {
+      "mean": 0.5963348319876844,
+      "ci95": [
+       0.49737607763087743,
+       0.6983511247479641
+      ]
+     },
+     "delta_lin_mean": -0.039023974000960415,
+     "abs_delta_lin_mean": 0.3968053549762976,
+     "pearson_kl1_vs_actual": 0.33948864529992023,
+     "spearman_kl1_vs_actual": 0.5164981991402346,
+     "pearson_absdelta_vs_actual": 0.1582810998859162,
+     "spearman_absdelta_vs_actual": 0.44490804338465956,
+     "ratio_kl1_over_actual": 1.3838096980163375,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.022008960756909755,
+       "additive_mean": 0.013124709915195315,
+       "alone_mean": 0.01219091762458098,
+       "alone_share_of_KL1": 0.020443074881181432
+      },
+      "encoders": {
+       "additive_share": 0.2954480357360522,
+       "additive_mean": 0.17618595475175006,
+       "alone_mean": 0.17064041376888892,
+       "alone_share_of_KL1": 0.28614866114748944
+      },
+      "team_transformer": {
+       "additive_share": 0.384886735308651,
+       "additive_mean": 0.2295213666345727,
+       "alone_mean": 0.2107740270173966,
+       "alone_share_of_KL1": 0.35344912909891796
+      },
+      "projection_mlp": {
+       "additive_share": 0.20000466249037613,
+       "additive_mean": 0.11926974680295196,
+       "alone_mean": 0.12205740120469599,
+       "alone_share_of_KL1": 0.20467930876661714
+      },
+      "belief_op": {
+       "additive_share": 0.09765160570801096,
+       "additive_mean": 0.058233053883214314,
+       "alone_mean": 0.04500532858438897,
+       "alone_share_of_KL1": 0.07546989739703555
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    }
+   },
+   "ordering": {
+    "arms": [
+     "R4DOSE12@end",
+     "R4DOSE6@end",
+     "R4DOSE3@end",
+     "B2@end",
+     "C1@end"
+    ],
+    "published": [
+     0.3062,
+     0.3502,
+     0.4416,
+     0.3938,
+     0.3702
+    ],
+    "kl1": [
+     0.537645101870574,
+     0.49961277677269716,
+     0.8214063735302171,
+     0.8555038907590491,
+     0.5963348319876843
+    ],
+    "actual": [
+     0.39373214383103433,
+     0.41966201244987494,
+     0.5574618212564066,
+     0.4873365698220392,
+     0.4309370232355778
+    ],
+    "spearman_kl1_vs_published": 0.7999999999999999,
+    "spearman_actual_vs_published": 0.9999999999999999,
+    "spearman_kl1_vs_actual_armlevel": 0.7999999999999999
+   },
+   "contrasts": {
+    "TCFUNDA@end - TCUNFA@end": {
+     "actual": {
+      "delta": 0.043117790347075045,
+      "ci95": [
+       -0.020167881654485506,
+       0.09424516805716182
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.1285245028534633,
+      "ci95": [
+       -0.017545926164681924,
+       0.3003328633626869
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "TCFUNDB@end - TCUNFB@end": {
+     "actual": {
+      "delta": 0.03325820769395449,
+      "ci95": [
+       -0.024774205202582413,
+       0.10225187148522549
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.18821197805913867,
+      "ci95": [
+       -0.06576736684296244,
+       0.40752452445642606
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "TCFUNDA@end - TCFUNDB@end": {
+     "actual": {
+      "delta": 0.030685009484965584,
+      "ci95": [
+       -0.019785052774576397,
+       0.07781409552502867
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.03194418700469673,
+      "ci95": [
+       -0.22136648150361798,
+       0.3184758041359052
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "TCUNFA@end - TCUNFB@end": {
+     "actual": {
+      "delta": 0.020825426831845028,
+      "ci95": [
+       -0.04899818869682805,
+       0.11945362297284545
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.09163166221037208,
+      "ci95": [
+       -0.08451720957592726,
+       0.26321705957010605
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "C1@end - B2@end": {
+     "actual": {
+      "delta": -0.05639954658646144,
+      "ci95": [
+       -0.1494165505809692,
+       0.05628064439449519
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": -0.2591690587713648,
+      "ci95": [
+       -0.8107207922807153,
+       0.08456097036374588
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "R4DOSE3@end - R4DOSE12@end": {
+     "actual": {
+      "delta": 0.1637296774253723,
+      "ci95": [
+       0.07210950591208566,
+       0.273201460609121
+      ],
+      "verdict": "SEPARATES"
+     },
+     "kl1": {
+      "delta": 0.2837612716596432,
+      "ci95": [
+       0.12088657985447412,
+       0.4445285997293313
+      ],
+      "verdict": "SEPARATES"
+     }
+    },
+    "B2@end - R4DOSE3@end": {
+     "actual": {
+      "delta": -0.07012525143436744,
+      "ci95": [
+       -0.19962558512823209,
+       0.024141004623372354
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.03409751722883203,
+      "ci95": [
+       -0.2577477954625854,
+       0.4060489353824738
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    }
+   }
+  },
+  "taught": {
+   "n_states": 304,
+   "n_teams": 16,
+   "teams": [
+    "009e3d0244",
+    "37d717a93a",
+    "436335607f",
+    "64a691c473",
+    "6916e13879",
+    "6ebe9ebc4d",
+    "750d056194",
+    "8bdb5796b9",
+    "9b454d9ea7",
+    "9d8391d864",
+    "9e95fb59d7",
+    "a9831a5f5e",
+    "aea50f207e",
+    "b904dbe059",
+    "e28069562f",
+    "e702a104eb"
+   ],
+   "arms": {
+    "TCFUNDA@p1M": {
+     "actual_kl_state_mean": 0.3525259979045897,
+     "actual_kl_cluster": {
+      "mean": 0.3525259979045897,
+      "ci95": [
+       0.310918876214309,
+       0.39756141013503415
+      ]
+     },
+     "kl1_state_mean": 0.3746912197751177,
+     "kl1_cluster": {
+      "mean": 0.37469121977511766,
+      "ci95": [
+       0.3132974458167804,
+       0.43447794401290457
+      ]
+     },
+     "delta_lin_mean": -0.03311190410822649,
+     "abs_delta_lin_mean": 0.32569068824213593,
+     "pearson_kl1_vs_actual": 0.6207348012712103,
+     "spearman_kl1_vs_actual": 0.7523563453192482,
+     "pearson_absdelta_vs_actual": 0.49486456965871267,
+     "spearman_absdelta_vs_actual": 0.6461162615323862,
+     "ratio_kl1_over_actual": 1.0628754247978243,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03102355253009029,
+       "additive_mean": 0.01162425273925697,
+       "alone_mean": 0.005475628953688837,
+       "alone_share_of_KL1": 0.014613710342546061
+      },
+      "encoders": {
+       "additive_share": 0.3883529489375756,
+       "additive_mean": 0.1455124401406842,
+       "alone_mean": 0.13356277911039016,
+       "alone_share_of_KL1": 0.3564609258539656
+      },
+      "team_transformer": {
+       "additive_share": 0.3785534193788523,
+       "additive_mean": 0.14184064245710384,
+       "alone_mean": 0.11135416366392889,
+       "alone_share_of_KL1": 0.2971891461208017
+      },
+      "projection_mlp": {
+       "additive_share": 0.15467055708621483,
+       "additive_mean": 0.057953699697930815,
+       "alone_mean": 0.07069948382156035,
+       "alone_share_of_KL1": 0.18868732462957843
+      },
+      "belief_op": {
+       "additive_share": 0.04739952206726691,
+       "additive_mean": 0.017760184740141845,
+       "alone_mean": 0.022204386389996434,
+       "alone_share_of_KL1": 0.059260492955567706
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDA@mid": {
+     "actual_kl_state_mean": 0.46756723574155723,
+     "actual_kl_cluster": {
+      "mean": 0.46756723574155723,
+      "ci95": [
+       0.3965554552975422,
+       0.5432562874045104
+      ]
+     },
+     "kl1_state_mean": 0.5371472604339452,
+     "kl1_cluster": {
+      "mean": 0.5371472604339451,
+      "ci95": [
+       0.44856494773688094,
+       0.6203633661748372
+      ]
+     },
+     "delta_lin_mean": 0.0075868860167653705,
+     "abs_delta_lin_mean": 0.3825386140586704,
+     "pearson_kl1_vs_actual": 0.4485693575393746,
+     "spearman_kl1_vs_actual": 0.6641947634492626,
+     "pearson_absdelta_vs_actual": 0.36244927857183434,
+     "spearman_absdelta_vs_actual": 0.6103881015480024,
+     "ratio_kl1_over_actual": 1.1488128751836828,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.038879864051367403,
+       "additive_mean": 0.020884212461236232,
+       "alone_mean": 0.008841900277531378,
+       "alone_share_of_KL1": 0.016460849619503358
+      },
+      "encoders": {
+       "additive_share": 0.3422035724034279,
+       "additive_mean": 0.18381371142721054,
+       "alone_mean": 0.17641387459256694,
+       "alone_share_of_KL1": 0.32842739335586935
+      },
+      "team_transformer": {
+       "additive_share": 0.39857443485933625,
+       "additive_mean": 0.2140931657637004,
+       "alone_mean": 0.18236052422695384,
+       "alone_share_of_KL1": 0.3394981928784859
+      },
+      "projection_mlp": {
+       "additive_share": 0.15762264086347838,
+       "additive_mean": 0.08466656972218103,
+       "alone_mean": 0.09043205337584691,
+       "alone_share_of_KL1": 0.16835616605917259
+      },
+      "belief_op": {
+       "additive_share": 0.06271948782238985,
+       "additive_mean": 0.0336896010596169,
+       "alone_mean": 0.0341929361351852,
+       "alone_share_of_KL1": 0.06365654012190576
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDA@end": {
+     "actual_kl_state_mean": 0.5884196723145937,
+     "actual_kl_cluster": {
+      "mean": 0.5884196723145937,
+      "ci95": [
+       0.49653079198935485,
+       0.6816884707853587
+      ]
+     },
+     "kl1_state_mean": 0.7393059371690629,
+     "kl1_cluster": {
+      "mean": 0.7393059371690629,
+      "ci95": [
+       0.59573743942803,
+       0.9000587797729191
+      ]
+     },
+     "delta_lin_mean": -0.008660144047620739,
+     "abs_delta_lin_mean": 0.42283534798462913,
+     "pearson_kl1_vs_actual": 0.23699297015231116,
+     "spearman_kl1_vs_actual": 0.528783900928528,
+     "pearson_absdelta_vs_actual": 0.25022111428127486,
+     "spearman_absdelta_vs_actual": 0.45694743053551873,
+     "ratio_kl1_over_actual": 1.2564262752483215,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.024959860349035596,
+       "additive_mean": 0.018452972946952695,
+       "alone_mean": 0.011773058541418364,
+       "alone_share_of_KL1": 0.015924474496308728
+      },
+      "encoders": {
+       "additive_share": 0.3746556225309894,
+       "additive_mean": 0.2769851261309318,
+       "alone_mean": 0.23744459651435754,
+       "alone_share_of_KL1": 0.3211723111863218
+      },
+      "team_transformer": {
+       "additive_share": 0.33412379998229325,
+       "additive_mean": 0.24701970907639784,
+       "alone_mean": 0.20863856411436105,
+       "alone_share_of_KL1": 0.2822086955141685
+      },
+      "projection_mlp": {
+       "additive_share": 0.2110776259774177,
+       "additive_mean": 0.15605094208865572,
+       "alone_mean": 0.15206697376062306,
+       "alone_share_of_KL1": 0.20568883071995228
+      },
+      "belief_op": {
+       "additive_share": 0.05518309116026389,
+       "additive_mean": 0.040797186926124725,
+       "alone_mean": 0.04338353086521757,
+       "alone_share_of_KL1": 0.05868143171058657
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDB@p1M": {
+     "actual_kl_state_mean": 0.38711903503464756,
+     "actual_kl_cluster": {
+      "mean": 0.38711903503464756,
+      "ci95": [
+       0.3172040125062475,
+       0.4671361883421046
+      ]
+     },
+     "kl1_state_mean": 0.4176706096534659,
+     "kl1_cluster": {
+      "mean": 0.4176706096534659,
+      "ci95": [
+       0.36001500998588876,
+       0.4785996205982246
+      ]
+     },
+     "delta_lin_mean": -0.06267065342970715,
+     "abs_delta_lin_mean": 0.35450216990728967,
+     "pearson_kl1_vs_actual": 0.49861522128588376,
+     "spearman_kl1_vs_actual": 0.7004448827801895,
+     "pearson_absdelta_vs_actual": 0.33991563091280935,
+     "spearman_absdelta_vs_actual": 0.5848445558508246,
+     "ratio_kl1_over_actual": 1.0789203626116808,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03447610622209381,
+       "additive_mean": 0.014399656304259571,
+       "alone_mean": 0.006168442129364076,
+       "alone_share_of_KL1": 0.014768676528333958
+      },
+      "encoders": {
+       "additive_share": 0.3565108310680814,
+       "additive_mean": 0.14890409616026937,
+       "alone_mean": 0.13274767813934377,
+       "alone_share_of_KL1": 0.3178286311538229
+      },
+      "team_transformer": {
+       "additive_share": 0.37501076664550853,
+       "additive_mean": 0.1566309755314432,
+       "alone_mean": 0.12523989766710705,
+       "alone_share_of_KL1": 0.2998532689935172
+      },
+      "projection_mlp": {
+       "additive_share": 0.1797845565048779,
+       "additive_mean": 0.07509072532167034,
+       "alone_mean": 0.08536645521164464,
+       "alone_share_of_KL1": 0.20438702948831308
+      },
+      "belief_op": {
+       "additive_share": 0.05421773955943828,
+       "additive_mean": 0.022645156335823424,
+       "alone_mean": 0.021231316361599296,
+       "alone_share_of_KL1": 0.050832679798117834
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDB@mid": {
+     "actual_kl_state_mean": 0.46737008414246656,
+     "actual_kl_cluster": {
+      "mean": 0.4673700841424666,
+      "ci95": [
+       0.39058908043431784,
+       0.5532010734706079
+      ]
+     },
+     "kl1_state_mean": 0.5636155334420405,
+     "kl1_cluster": {
+      "mean": 0.5636155334420405,
+      "ci95": [
+       0.4732844057992825,
+       0.6550729522478991
+      ]
+     },
+     "delta_lin_mean": -0.040266316157572875,
+     "abs_delta_lin_mean": 0.3857229065374918,
+     "pearson_kl1_vs_actual": 0.4358305941818444,
+     "spearman_kl1_vs_actual": 0.6471499289780765,
+     "pearson_absdelta_vs_actual": 0.35710090735568134,
+     "spearman_absdelta_vs_actual": 0.5431971547662854,
+     "ratio_kl1_over_actual": 1.205929845672869,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.04086969613190679,
+       "additive_mean": 0.023034795586998745,
+       "alone_mean": 0.010191432458698734,
+       "alone_share_of_KL1": 0.018082241978781038
+      },
+      "encoders": {
+       "additive_share": 0.3640936734816907,
+       "additive_mean": 0.20520885000225522,
+       "alone_mean": 0.17612472480571437,
+       "alone_share_of_KL1": 0.31249089912428074
+      },
+      "team_transformer": {
+       "additive_share": 0.34839583481364783,
+       "additive_mean": 0.19636130428747914,
+       "alone_mean": 0.18286268994820198,
+       "alone_share_of_KL1": 0.3244457952240003
+      },
+      "projection_mlp": {
+       "additive_share": 0.18242544822168674,
+       "additive_mean": 0.10281781631286932,
+       "alone_mean": 0.1079462033668256,
+       "alone_share_of_KL1": 0.1915245357195718
+      },
+      "belief_op": {
+       "additive_share": 0.06421534735106794,
+       "additive_mean": 0.036192767252438085,
+       "alone_mean": 0.028663979021580552,
+       "alone_share_of_KL1": 0.05085732617503917
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCFUNDB@end": {
+     "actual_kl_state_mean": 0.5847682412198226,
+     "actual_kl_cluster": {
+      "mean": 0.5847682412198225,
+      "ci95": [
+       0.4819881719917068,
+       0.694766566097003
+      ]
+     },
+     "kl1_state_mean": 0.7949860276823946,
+     "kl1_cluster": {
+      "mean": 0.7949860276823945,
+      "ci95": [
+       0.6727742670516131,
+       0.9120531942582918
+      ]
+     },
+     "delta_lin_mean": -0.06519602602831005,
+     "abs_delta_lin_mean": 0.4598159650740577,
+     "pearson_kl1_vs_actual": 0.4116527930997728,
+     "spearman_kl1_vs_actual": 0.5905113599838712,
+     "pearson_absdelta_vs_actual": 0.33564688538537185,
+     "spearman_absdelta_vs_actual": 0.5118189407599633,
+     "ratio_kl1_over_actual": 1.3594890618958018,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.028414884460390998,
+       "additive_mean": 0.02258943612422044,
+       "alone_mean": 0.014848955435033132,
+       "alone_share_of_KL1": 0.018678259639759918
+      },
+      "encoders": {
+       "additive_share": 0.33350621071654346,
+       "additive_mean": 0.2651327776649525,
+       "alone_mean": 0.231462399331888,
+       "alone_share_of_KL1": 0.29115278919639037
+      },
+      "team_transformer": {
+       "additive_share": 0.33229807666863936,
+       "additive_mean": 0.2641723279773014,
+       "alone_mean": 0.2263981819920664,
+       "alone_share_of_KL1": 0.28478259253446264
+      },
+      "projection_mlp": {
+       "additive_share": 0.24509137347111798,
+       "additive_mean": 0.1948442174150263,
+       "alone_mean": 0.1633790827705374,
+       "alone_share_of_KL1": 0.2055118921358063
+      },
+      "belief_op": {
+       "additive_share": 0.060689454683308185,
+       "additive_mean": 0.04824726850089387,
+       "alone_mean": 0.041622928221855815,
+       "alone_share_of_KL1": 0.052356804739321305
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFA@p1M": {
+     "actual_kl_state_mean": 0.36092786606389526,
+     "actual_kl_cluster": {
+      "mean": 0.36092786606389526,
+      "ci95": [
+       0.2861620125836315,
+       0.4464078046379885
+      ]
+     },
+     "kl1_state_mean": 0.38704151265994186,
+     "kl1_cluster": {
+      "mean": 0.3870415126599418,
+      "ci95": [
+       0.31426606375685284,
+       0.46326414757319717
+      ]
+     },
+     "delta_lin_mean": 0.0196552104201054,
+     "abs_delta_lin_mean": 0.3409132433418311,
+     "pearson_kl1_vs_actual": 0.5442770382979272,
+     "spearman_kl1_vs_actual": 0.7598329217528691,
+     "pearson_absdelta_vs_actual": 0.44534348866848217,
+     "spearman_absdelta_vs_actual": 0.6898771281215849,
+     "ratio_kl1_over_actual": 1.0723514282253388,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03764891753774344,
+       "additive_mean": 0.014571693993817633,
+       "alone_mean": 0.00468833779252034,
+       "alone_share_of_KL1": 0.012113268574990186
+      },
+      "encoders": {
+       "additive_share": 0.4133819963402695,
+       "additive_mean": 0.15999599316992447,
+       "alone_mean": 0.13913357177346955,
+       "alone_share_of_KL1": 0.35947971269870876
+      },
+      "team_transformer": {
+       "additive_share": 0.32671347797055095,
+       "additive_mean": 0.12645167872011262,
+       "alone_mean": 0.10646132615709304,
+       "alone_share_of_KL1": 0.2750643604750246
+      },
+      "projection_mlp": {
+       "additive_share": 0.1778546643661518,
+       "additive_mean": 0.06883713832990165,
+       "alone_mean": 0.0667188767565468,
+       "alone_share_of_KL1": 0.1723817073213193
+      },
+      "belief_op": {
+       "additive_share": 0.04440094378528418,
+       "additive_mean": 0.017185008446185434,
+       "alone_mean": 0.01843933818475984,
+       "alone_share_of_KL1": 0.047641758265245325
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFA@mid": {
+     "actual_kl_state_mean": 0.4530202012344226,
+     "actual_kl_cluster": {
+      "mean": 0.4530202012344226,
+      "ci95": [
+       0.36348242486821747,
+       0.5512886225070942
+      ]
+     },
+     "kl1_state_mean": 0.5325377402395084,
+     "kl1_cluster": {
+      "mean": 0.5325377402395084,
+      "ci95": [
+       0.41602191781010905,
+       0.658745227492511
+      ]
+     },
+     "delta_lin_mean": 0.010405567862454624,
+     "abs_delta_lin_mean": 0.3710833353021513,
+     "pearson_kl1_vs_actual": 0.5302436958452219,
+     "spearman_kl1_vs_actual": 0.7384641965574174,
+     "pearson_absdelta_vs_actual": 0.4098482907671092,
+     "spearman_absdelta_vs_actual": 0.6350124520620702,
+     "ratio_kl1_over_actual": 1.1755275786563393,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.0420758935970874,
+       "additive_mean": 0.022407001294750928,
+       "alone_mean": 0.007219714705739314,
+       "alone_share_of_KL1": 0.01355718883415146
+      },
+      "encoders": {
+       "additive_share": 0.3592617731911616,
+       "additive_mean": 0.19132045284965998,
+       "alone_mean": 0.16760784446789595,
+       "alone_share_of_KL1": 0.3147342090581495
+      },
+      "team_transformer": {
+       "additive_share": 0.3486891408836143,
+       "additive_mean": 0.18569012713221553,
+       "alone_mean": 0.1563873840766059,
+       "alone_share_of_KL1": 0.29366441523237546
+      },
+      "projection_mlp": {
+       "additive_share": 0.20584277880381455,
+       "additive_mean": 0.10961904826880438,
+       "alone_mean": 0.10279537506916,
+       "alone_share_of_KL1": 0.1930292771793561
+      },
+      "belief_op": {
+       "additive_share": 0.04413041352432214,
+       "additive_mean": 0.023501110694077555,
+       "alone_mean": 0.024438883846674996,
+       "alone_share_of_KL1": 0.04589136506209612
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFA@end": {
+     "actual_kl_state_mean": 0.5275641239482929,
+     "actual_kl_cluster": {
+      "mean": 0.5275641239482929,
+      "ci95": [
+       0.42316843903344975,
+       0.634481294261034
+      ]
+     },
+     "kl1_state_mean": 0.8202563321559367,
+     "kl1_cluster": {
+      "mean": 0.8202563321559367,
+      "ci95": [
+       0.6430818149617319,
+       1.012817210425315
+      ]
+     },
+     "delta_lin_mean": 0.024254066621174353,
+     "abs_delta_lin_mean": 0.4540693479959654,
+     "pearson_kl1_vs_actual": 0.49181560485022696,
+     "spearman_kl1_vs_actual": 0.6821126624902799,
+     "pearson_absdelta_vs_actual": 0.5127411977313038,
+     "spearman_absdelta_vs_actual": 0.6251221340021702,
+     "ratio_kl1_over_actual": 1.5547993029115281,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03412584567213987,
+       "additive_mean": 0.027991941002749002,
+       "alone_mean": 0.009921057219140434,
+       "alone_share_of_KL1": 0.012095069346266708
+      },
+      "encoders": {
+       "additive_share": 0.3024096004399858,
+       "additive_mean": 0.2480533896656451,
+       "alone_mean": 0.21673853168456467,
+       "alone_share_of_KL1": 0.264232683355087
+      },
+      "team_transformer": {
+       "additive_share": 0.3499521372222669,
+       "additive_mean": 0.2870504565080677,
+       "alone_mean": 0.22773174816494854,
+       "alone_share_of_KL1": 0.2776348553950024
+      },
+      "projection_mlp": {
+       "additive_share": 0.2582679062977052,
+       "additive_mean": 0.2118458855333488,
+       "alone_mean": 0.18485365261198905,
+       "alone_share_of_KL1": 0.22536083583301983
+      },
+      "belief_op": {
+       "additive_share": 0.055244510367902316,
+       "additive_mean": 0.04531465944612617,
+       "alone_mean": 0.03555665842287464,
+       "alone_share_of_KL1": 0.04334822790019628
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFB@p1M": {
+     "actual_kl_state_mean": 0.4064466197202496,
+     "actual_kl_cluster": {
+      "mean": 0.40644661972024954,
+      "ci95": [
+       0.3286525154334109,
+       0.4905568802313678
+      ]
+     },
+     "kl1_state_mean": 0.42509101723063425,
+     "kl1_cluster": {
+      "mean": 0.4250910172306342,
+      "ci95": [
+       0.3498989090410629,
+       0.49977413034983803
+      ]
+     },
+     "delta_lin_mean": -0.006292464425746327,
+     "abs_delta_lin_mean": 0.3458369377011003,
+     "pearson_kl1_vs_actual": 0.6229812280430078,
+     "spearman_kl1_vs_actual": 0.7614398047820785,
+     "pearson_absdelta_vs_actual": 0.4921114178355331,
+     "spearman_absdelta_vs_actual": 0.6863301965228195,
+     "ratio_kl1_over_actual": 1.045871700257262,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03549097662276877,
+       "additive_mean": 0.015086895355081436,
+       "alone_mean": 0.004939331607477643,
+       "alone_share_of_KL1": 0.011619468319175975
+      },
+      "encoders": {
+       "additive_share": 0.3778158803759306,
+       "additive_mean": 0.16060613691489198,
+       "alone_mean": 0.1285645650153875,
+       "alone_share_of_KL1": 0.3024400888378087
+      },
+      "team_transformer": {
+       "additive_share": 0.3688234572818735,
+       "additive_mean": 0.15678353863447098,
+       "alone_mean": 0.12837652648936834,
+       "alone_share_of_KL1": 0.30199773997980606
+      },
+      "projection_mlp": {
+       "additive_share": 0.16405756666854868,
+       "additive_mean": 0.06973939789951596,
+       "alone_mean": 0.07240308817970563,
+       "alone_share_of_KL1": 0.17032373125970607
+      },
+      "belief_op": {
+       "additive_share": 0.053812119050878335,
+       "additive_mean": 0.022875048426673865,
+       "alone_mean": 0.019021539485860346,
+       "alone_share_of_KL1": 0.04474698056378867
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFB@mid": {
+     "actual_kl_state_mean": 0.49332148791469277,
+     "actual_kl_cluster": {
+      "mean": 0.49332148791469277,
+      "ci95": [
+       0.39971271148819315,
+       0.60083469538584
+      ]
+     },
+     "kl1_state_mean": 0.6447291268659572,
+     "kl1_cluster": {
+      "mean": 0.6447291268659572,
+      "ci95": [
+       0.48701842374473886,
+       0.8434422336540106
+      ]
+     },
+     "delta_lin_mean": -0.0005714661496343721,
+     "abs_delta_lin_mean": 0.41203609355733495,
+     "pearson_kl1_vs_actual": 0.4392226045432864,
+     "spearman_kl1_vs_actual": 0.701332469950497,
+     "pearson_absdelta_vs_actual": 0.42730252533082935,
+     "spearman_absdelta_vs_actual": 0.64995236373476,
+     "ratio_kl1_over_actual": 1.3069147455775258,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.033590874718601574,
+       "additive_mean": 0.02165701532798775,
+       "alone_mean": 0.008394410185285507,
+       "alone_share_of_KL1": 0.013020057316304174
+      },
+      "encoders": {
+       "additive_share": 0.36123740204134175,
+       "additive_mean": 0.232900274809441,
+       "alone_mean": 0.1769893739828111,
+       "alone_share_of_KL1": 0.27451741608628794
+      },
+      "team_transformer": {
+       "additive_share": 0.3345865934072808,
+       "additive_mean": 0.2157177222285312,
+       "alone_mean": 0.18435785524293602,
+       "alone_share_of_KL1": 0.28594621766059136
+      },
+      "projection_mlp": {
+       "additive_share": 0.21169674784537046,
+       "additive_mean": 0.1364870593987084,
+       "alone_mean": 0.11893878791897183,
+       "alone_share_of_KL1": 0.1844786949476534
+      },
+      "belief_op": {
+       "additive_share": 0.058888381987405355,
+       "additive_mean": 0.03796705510128882,
+       "alone_mean": 0.026346788273243573,
+       "alone_share_of_KL1": 0.040864895310866296
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "TCUNFB@end": {
+     "actual_kl_state_mean": 0.500694072041552,
+     "actual_kl_cluster": {
+      "mean": 0.500694072041552,
+      "ci95": [
+       0.4210970583770985,
+       0.580898218248236
+      ]
+     },
+     "kl1_state_mean": 0.7666843124711891,
+     "kl1_cluster": {
+      "mean": 0.766684312471189,
+      "ci95": [
+       0.6328574241390883,
+       0.908104949585591
+      ]
+     },
+     "delta_lin_mean": -0.0210226472685457,
+     "abs_delta_lin_mean": 0.4390008537504635,
+     "pearson_kl1_vs_actual": 0.4524894701911751,
+     "spearman_kl1_vs_actual": 0.6379208163751716,
+     "pearson_absdelta_vs_actual": 0.4364037345507614,
+     "spearman_absdelta_vs_actual": 0.6176626429808747,
+     "ratio_kl1_over_actual": 1.5312430389780265,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.03513133648013817,
+       "additive_mean": 0.026934644555468738,
+       "alone_mean": 0.010282430723621882,
+       "alone_share_of_KL1": 0.013411557477261258
+      },
+      "encoders": {
+       "additive_share": 0.33092299516692003,
+       "additive_mean": 0.2537134690304567,
+       "alone_mean": 0.21230450722179708,
+       "alone_share_of_KL1": 0.27691254897011497
+      },
+      "team_transformer": {
+       "additive_share": 0.3384236293571343,
+       "additive_mean": 0.259464087597679,
+       "alone_mean": 0.20714650768081103,
+       "alone_share_of_KL1": 0.2701848783277345
+      },
+      "projection_mlp": {
+       "additive_share": 0.24173486969265542,
+       "additive_mean": 0.185334332370626,
+       "alone_mean": 0.14397772371460774,
+       "alone_share_of_KL1": 0.18779270864501774
+      },
+      "belief_op": {
+       "additive_share": 0.053787169303152096,
+       "additive_mean": 0.04123777891695861,
+       "alone_mean": 0.035172060340934175,
+       "alone_share_of_KL1": 0.04587554456092499
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "R4DOSE12@end": {
+     "actual_kl_state_mean": 0.32678954720499503,
+     "actual_kl_cluster": {
+      "mean": 0.32678954720499503,
+      "ci95": [
+       0.2749925576081466,
+       0.3914732018318244
+      ]
+     },
+     "kl1_state_mean": 0.6427962129892556,
+     "kl1_cluster": {
+      "mean": 0.6427962129892556,
+      "ci95": [
+       0.45972845459177175,
+       0.8682906718119514
+      ]
+     },
+     "delta_lin_mean": 0.033953934048527847,
+     "abs_delta_lin_mean": 0.4339371582300235,
+     "pearson_kl1_vs_actual": 0.1179910085747631,
+     "spearman_kl1_vs_actual": 0.5744702934868059,
+     "pearson_absdelta_vs_actual": 0.21639184842645978,
+     "spearman_absdelta_vs_actual": 0.509411606163306,
+     "ratio_kl1_over_actual": 1.967003591415455,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.005079456992013024,
+       "additive_mean": 0.0032650557185077674,
+       "alone_mean": 0.01016988667585093,
+       "alone_share_of_KL1": 0.015821323259757478
+      },
+      "encoders": {
+       "additive_share": 0.23376701328641186,
+       "additive_mean": 0.15026455086231455,
+       "alone_mean": 0.13131919539044326,
+       "alone_share_of_KL1": 0.20429366685244965
+      },
+      "team_transformer": {
+       "additive_share": 0.2878731366761518,
+       "additive_mean": 0.18504376207676873,
+       "alone_mean": 0.14442537920660997,
+       "alone_share_of_KL1": 0.22468299639628408
+      },
+      "projection_mlp": {
+       "additive_share": 0.3745863761556454,
+       "additive_mean": 0.24078270403021765,
+       "alone_mean": 0.21405081554817423,
+       "alone_share_of_KL1": 0.3329994969210438
+      },
+      "belief_op": {
+       "additive_share": 0.09869401688977802,
+       "additive_mean": 0.06344014030144694,
+       "alone_mean": 0.02692290167120599,
+       "alone_share_of_KL1": 0.041884039026931864
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "R4DOSE6@end": {
+     "actual_kl_state_mean": 0.38773859128176763,
+     "actual_kl_cluster": {
+      "mean": 0.3877385912817676,
+      "ci95": [
+       0.31629776709862056,
+       0.4772438641425555
+      ]
+     },
+     "kl1_state_mean": 0.6120612000595816,
+     "kl1_cluster": {
+      "mean": 0.6120612000595815,
+      "ci95": [
+       0.4790314841793123,
+       0.7670210765124273
+      ]
+     },
+     "delta_lin_mean": 0.07802346478234122,
+     "abs_delta_lin_mean": 0.4350080744799885,
+     "pearson_kl1_vs_actual": 0.24425894894704975,
+     "spearman_kl1_vs_actual": 0.579037224201401,
+     "pearson_absdelta_vs_actual": 0.25271295524508697,
+     "spearman_absdelta_vs_actual": 0.49295109279365057,
+     "ratio_kl1_over_actual": 1.578540836072724,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.02546753263821917,
+       "additive_mean": 0.015587688589104988,
+       "alone_mean": 0.008478194045150355,
+       "alone_share_of_KL1": 0.013851873055055667
+      },
+      "encoders": {
+       "additive_share": 0.24311373166261854,
+       "additive_mean": 0.1488004823523854,
+       "alone_mean": 0.13986479825567064,
+       "alone_share_of_KL1": 0.2285144005894433
+      },
+      "team_transformer": {
+       "additive_share": 0.3253374335868669,
+       "additive_mean": 0.1991264200254822,
+       "alone_mean": 0.17819110874677607,
+       "alone_share_of_KL1": 0.29113282908544097
+      },
+      "projection_mlp": {
+       "additive_share": 0.3170939646738082,
+       "additive_mean": 0.19408091254990162,
+       "alone_mean": 0.1738185183464902,
+       "alone_share_of_KL1": 0.28398878793422894
+      },
+      "belief_op": {
+       "additive_share": 0.08898733743848705,
+       "additive_mean": 0.054465696542707324,
+       "alone_mean": 0.030854408434202684,
+       "alone_share_of_KL1": 0.05041065898508047
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "R4DOSE3@end": {
+     "actual_kl_state_mean": 0.4791713875989941,
+     "actual_kl_cluster": {
+      "mean": 0.479171387598994,
+      "ci95": [
+       0.3676267840585579,
+       0.6041063513918707
+      ]
+     },
+     "kl1_state_mean": 0.661267084449006,
+     "kl1_cluster": {
+      "mean": 0.661267084449006,
+      "ci95": [
+       0.511048664783626,
+       0.8264243067374161
+      ]
+     },
+     "delta_lin_mean": 0.0569582701609402,
+     "abs_delta_lin_mean": 0.42370924483045774,
+     "pearson_kl1_vs_actual": 0.37392183083759967,
+     "spearman_kl1_vs_actual": 0.5999497688877631,
+     "pearson_absdelta_vs_actual": 0.2552537216934654,
+     "spearman_absdelta_vs_actual": 0.5455446904198034,
+     "ratio_kl1_over_actual": 1.3800220579998466,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.01934862564707318,
+       "additive_mean": 0.012794609269735344,
+       "alone_mean": 0.008454306804897458,
+       "alone_share_of_KL1": 0.01278501078265815
+      },
+      "encoders": {
+       "additive_share": 0.2647885998274212,
+       "additive_mean": 0.1750959854032134,
+       "alone_mean": 0.17054220814057022,
+       "alone_share_of_KL1": 0.25790215807077826
+      },
+      "team_transformer": {
+       "additive_share": 0.3202634428820823,
+       "additive_mean": 0.21177967313023532,
+       "alone_mean": 0.2010429909585084,
+       "alone_share_of_KL1": 0.30402691391486
+      },
+      "projection_mlp": {
+       "additive_share": 0.319049890082233,
+       "additive_mean": 0.21097719060845405,
+       "alone_mean": 0.19728335528645546,
+       "alone_share_of_KL1": 0.2983414113993589
+      },
+      "belief_op": {
+       "additive_share": 0.0765494415611903,
+       "additive_mean": 0.050619626037367874,
+       "alone_mean": 0.03807846023459587,
+       "alone_share_of_KL1": 0.057584085356863574
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "B2@end": {
+     "actual_kl_state_mean": 0.4189569581505901,
+     "actual_kl_cluster": {
+      "mean": 0.4189569581505901,
+      "ci95": [
+       0.3368866409377574,
+       0.5232350738410242
+      ]
+     },
+     "kl1_state_mean": 0.8624121917831937,
+     "kl1_cluster": {
+      "mean": 0.8624121917831937,
+      "ci95": [
+       0.6496912079328775,
+       1.095242360215205
+      ]
+     },
+     "delta_lin_mean": 0.03705942069593585,
+     "abs_delta_lin_mean": 0.4754278247057725,
+     "pearson_kl1_vs_actual": 0.1793269596759977,
+     "spearman_kl1_vs_actual": 0.48643557080333677,
+     "pearson_absdelta_vs_actual": 0.26635726454930364,
+     "spearman_absdelta_vs_actual": 0.4735121649203594,
+     "ratio_kl1_over_actual": 2.0584744447022834,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.020525101708025184,
+       "additive_mean": 0.017701097950590973,
+       "alone_mean": 0.010366275088029175,
+       "alone_share_of_KL1": 0.012020093392458913
+      },
+      "encoders": {
+       "additive_share": 0.24266442708460464,
+       "additive_mean": 0.2092767604298469,
+       "alone_mean": 0.19602867586089132,
+       "alone_share_of_KL1": 0.22730276511463324
+      },
+      "team_transformer": {
+       "additive_share": 0.31730425732434175,
+       "additive_mean": 0.2736470600212241,
+       "alone_mean": 0.2515705267890803,
+       "alone_share_of_KL1": 0.29170567065953995
+      },
+      "projection_mlp": {
+       "additive_share": 0.355866213393028,
+       "additive_mean": 0.306903361073867,
+       "alone_mean": 0.2852966270209055,
+       "alone_share_of_KL1": 0.3308123768879043
+      },
+      "belief_op": {
+       "additive_share": 0.06364000049000045,
+       "additive_mean": 0.05488391230766481,
+       "alone_mean": 0.040265669280452256,
+       "alone_share_of_KL1": 0.04668958725780033
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    },
+    "C1@end": {
+     "actual_kl_state_mean": 0.4587278637783416,
+     "actual_kl_cluster": {
+      "mean": 0.4587278637783416,
+      "ci95": [
+       0.38214563892261677,
+       0.532558134380284
+      ]
+     },
+     "kl1_state_mean": 0.7194460215433542,
+     "kl1_cluster": {
+      "mean": 0.7194460215433542,
+      "ci95": [
+       0.581825066075495,
+       0.880294421212234
+      ]
+     },
+     "delta_lin_mean": -0.04297904834471922,
+     "abs_delta_lin_mean": 0.4331062572942018,
+     "pearson_kl1_vs_actual": 0.2460694484703891,
+     "spearman_kl1_vs_actual": 0.43244993920796715,
+     "pearson_absdelta_vs_actual": 0.2687103354450991,
+     "spearman_absdelta_vs_actual": 0.41893281524668013,
+     "ratio_kl1_over_actual": 1.5683503845124878,
+     "groups": {
+      "action_head": {
+       "additive_share": 0.035841100827653745,
+       "additive_mean": 0.025785737398189706,
+       "alone_mean": 0.014095858834495559,
+       "alone_share_of_KL1": 0.019592656589103308
+      },
+      "encoders": {
+       "additive_share": 0.3452274708010703,
+       "additive_mean": 0.24837253039530452,
+       "alone_mean": 0.2309665269149319,
+       "alone_share_of_KL1": 0.3210338510448122
+      },
+      "team_transformer": {
+       "additive_share": 0.3493980732303432,
+       "additive_mean": 0.25137305372048396,
+       "alone_mean": 0.24031402798218754,
+       "alone_share_of_KL1": 0.33402648813967495
+      },
+      "projection_mlp": {
+       "additive_share": 0.18811325716482527,
+       "additive_mean": 0.1353373344667954,
+       "alone_mean": 0.1244314667336766,
+       "alone_share_of_KL1": 0.17295455532125462
+      },
+      "belief_op": {
+       "additive_share": 0.08142009797610739,
+       "additive_mean": 0.058577365562580565,
+       "alone_mean": 0.04726743376682128,
+       "alone_share_of_KL1": 0.06569976391755321
+      },
+      "critic": {
+       "additive_share": 0.0,
+       "additive_mean": 0.0,
+       "alone_mean": 0.0,
+       "alone_share_of_KL1": 0.0
+      }
+     }
+    }
+   },
+   "ordering": {
+    "arms": [
+     "R4DOSE12@end",
+     "R4DOSE6@end",
+     "R4DOSE3@end",
+     "B2@end",
+     "C1@end"
+    ],
+    "published": [
+     0.3062,
+     0.3502,
+     0.4416,
+     0.3938,
+     0.3702
+    ],
+    "kl1": [
+     0.6427962129892556,
+     0.6120612000595816,
+     0.661267084449006,
+     0.8624121917831937,
+     0.7194460215433542
+    ],
+    "actual": [
+     0.32678954720499503,
+     0.38773859128176763,
+     0.4791713875989941,
+     0.4189569581505901,
+     0.4587278637783416
+    ],
+    "spearman_kl1_vs_published": 0.6,
+    "spearman_actual_vs_published": 0.8999999999999998,
+    "spearman_kl1_vs_actual_armlevel": 0.49999999999999994
+   },
+   "contrasts": {
+    "TCFUNDA@end - TCUNFA@end": {
+     "actual": {
+      "delta": 0.06085554836630086,
+      "ci95": [
+       -0.05388165461363317,
+       0.16330753564439138
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": -0.08095039498687387,
+      "ci95": [
+       -0.2947918505952908,
+       0.13950773311610476
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "TCFUNDB@end - TCUNFB@end": {
+     "actual": {
+      "delta": 0.0840741691782706,
+      "ci95": [
+       0.008812553925133292,
+       0.16494103868701235
+      ],
+      "verdict": "SEPARATES"
+     },
+     "kl1": {
+      "delta": 0.02830171521120546,
+      "ci95": [
+       -0.11083051872390501,
+       0.1644257686060158
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "TCFUNDA@end - TCFUNDB@end": {
+     "actual": {
+      "delta": 0.0036514310947711216,
+      "ci95": [
+       -0.06025810145342591,
+       0.06851772910403219
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": -0.055680090513331594,
+      "ci95": [
+       -0.1642389967261703,
+       0.08229177742617147
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "TCUNFA@end - TCUNFB@end": {
+     "actual": {
+      "delta": 0.02687005190674086,
+      "ci95": [
+       -0.03533819001220383,
+       0.09337718422872925
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.053572019684747736,
+      "ci95": [
+       -0.07511172990606924,
+       0.18776247785499395
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "C1@end - B2@end": {
+     "actual": {
+      "delta": 0.03977090562775151,
+      "ci95": [
+       -0.08748233610390702,
+       0.15333959860641083
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": -0.14296617023983946,
+      "ci95": [
+       -0.3782175900173333,
+       0.06716148872228882
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "R4DOSE3@end - R4DOSE12@end": {
+     "actual": {
+      "delta": 0.15238184039399907,
+      "ci95": [
+       0.07055858928523989,
+       0.23597962705910766
+      ],
+      "verdict": "SEPARATES"
+     },
+     "kl1": {
+      "delta": 0.018470871459750307,
+      "ci95": [
+       -0.22224352524531524,
+       0.23801769493021438
+      ],
+      "verdict": "NOT DETECTED"
+     }
+    },
+    "B2@end - R4DOSE3@end": {
+     "actual": {
+      "delta": -0.06021442944840397,
+      "ci95": [
+       -0.1329551356348687,
+       0.008783505703957145
+      ],
+      "verdict": "NOT DETECTED"
+     },
+     "kl1": {
+      "delta": 0.20114510733418772,
+      "ci95": [
+       0.017420692806093232,
+       0.4179307091312983
+      ],
+      "verdict": "SEPARATES"
+     }
+    }
+   }
+  }
+ }
+}

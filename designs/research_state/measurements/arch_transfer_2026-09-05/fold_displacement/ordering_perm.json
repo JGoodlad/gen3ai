@@ -1,0 +1,36 @@
+{
+ "untaught": {
+  "|Delta_theta|": {
+   "rho": 0.7,
+   "exact_p_one_sided": 0.11666666666666667,
+   "n_perm": 120
+  },
+  "KL1 (first order)": {
+   "rho": 0.7999999999999999,
+   "exact_p_one_sided": 0.06666666666666667,
+   "n_perm": 120
+  },
+  "actual KL(parent||arm)": {
+   "rho": 0.9999999999999999,
+   "exact_p_one_sided": 0.008333333333333333,
+   "n_perm": 120
+  }
+ },
+ "taught": {
+  "|Delta_theta|": {
+   "rho": 0.7,
+   "exact_p_one_sided": 0.11666666666666667,
+   "n_perm": 120
+  },
+  "KL1 (first order)": {
+   "rho": 0.6,
+   "exact_p_one_sided": 0.175,
+   "n_perm": 120
+  },
+  "actual KL(parent||arm)": {
+   "rho": 0.8999999999999998,
+   "exact_p_one_sided": 0.041666666666666664,
+   "n_perm": 120
+  }
+ }
+}

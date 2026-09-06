@@ -235,6 +235,23 @@ carried little off-slice content for the distillation term to inject, which rais
 v8's early gift came through ecology or plain continued learning (phase-2 cells 1 and 2) or through
 generalisation of on-slice content.
 
+**Fold-displacement result (2026-09-05, `arch_transfer_2026-09-05/fold_displacement/`).** Three things
+survive. (1) **Displacement magnitude is set by dose, not by the distillation term**: the loss-off control
+C1 moved the weights as far as the fold B2 did (|Δθ| 7.99 vs 8.08), and every dose-frozen arm grew as
+|Δθ| ∝ t^0.48, so a fold's displacement is substantially a random walk (two arms differing only in seed
+share cosine 0.56). (2) **The off-slice divergence is carried by the trunk**: encoders plus team
+transformer account for 51–74% of the first-order off-slice KL (about 90% with the projections), the
+pointer head 0.5–5.6%, the critic exactly zero. (3) **Recomputed KL(parent‖arm) reproduces the offline
+collateral-KL ordering exactly** (Spearman 1.0, p 1/120) on different pilots and seeds, an independent
+validation of that artifact; the first-order surrogate over-predicts by 1.2–1.8× and worsens with depth.
+One correction to the kernel probe's reasoning: under Adam, gradient-norm share does not predict
+displacement (the pointer head moves *most* per parameter, the encoders *least*, a factor of 7 the
+opposite way from their norm shares), so "the trunk is where the norm is" was not a valid step even
+though the conclusion holds on the KL decomposition. And a null that matters: funded-minus-unfunded
+off-slice KL is +0.038 [−0.007, +0.093], the same size as seed noise, so the robbing arms are NOT farther
+from the parent off-slice than the neutral ones. A scalar divergence is a norm, not a direction, and
+this is the measurement of it.
+
 What is *not* testable: swapping the head inside the era. Phase 2 of the v8 replication can swap
 teachers, ecology and hyperparameters inside the era code, but the architecture boundary cannot be
 crossed by a fork, so the head hypothesis lives or dies on the two probes above.

@@ -1,0 +1,228 @@
+======================================================================================================================
+TABLE 1 -- PER-GROUP DISPLACEMENT  (Delta = theta_arm - theta_parent, POLICY parameters)
+======================================================================================================================
+parameter counts: encoders=223,159 (7.1%)  team_transformer=284,592 (9.0%)  projection_mlp=1,329,536 (42.2%)  belief_op=512,267 (16.3%)  action_head=55,683 (1.8%)  critic=742,650 (23.6%)
+parent |theta| = 231.847   P = 3,147,887
+
+1a. RELATIVE displacement  |Delta_g| / |theta_g|  (x1000)
+arm                     step  |Delta|     rel   encoders  team_tran  projectio  belief_op  action_he     critic
+TCFUNDA@p1M       29,115,216   3.2660 0.01409      5.200     19.429     29.289     25.352     38.905      9.758
+TCFUNDA@mid       30,115,248   4.4808 0.01933      7.083     26.019     40.355     35.013     53.608     13.355
+TCFUNDA@end       32,637,168   6.7198 0.02898     10.823     39.173     58.483     55.203     76.317     19.566
+TCFUNDB@p1M       29,115,216   3.2637 0.01408      5.133     19.343     29.547     25.178     39.602      9.452
+TCFUNDB@mid       30,115,248   4.4631 0.01925      7.039     25.817     40.421     34.755     54.185     12.932
+TCFUNDB@end       32,637,168   6.7570 0.02914     10.833     39.447     58.444     55.785     75.455     20.385
+TCUNFA@p1M        29,115,216   3.1483 0.01358      4.996     18.618     28.036     24.908     35.843      9.401
+TCUNFA@mid        30,115,248   4.3125 0.01860      6.800     24.857     38.621     34.150     49.485     13.121
+TCUNFA@end        32,637,168   6.5108 0.02808     10.348     37.645     55.305     55.009     70.089     20.702
+TCUNFB@p1M        29,115,216   3.1530 0.01360      5.008     18.795     28.161     24.957     35.624      8.926
+TCUNFB@mid        30,115,248   4.3185 0.01863      6.834     25.008     38.631     34.378     48.714     12.725
+TCUNFB@end        32,637,168   6.5084 0.02807     10.376     37.789     55.428     55.257     69.252     19.415
+R4DOSE12@end      32,637,168   3.9758 0.01715      6.736     23.863     35.772     29.464     51.219     12.228
+R4DOSE6@end       32,637,168   5.1604 0.02226      8.474     30.347     45.573     40.110     59.955     17.170
+R4DOSE3@end       32,637,168   6.5441 0.02823     10.327     36.205     58.392     51.596     73.055     23.098
+B2@end            32,637,168   8.0747 0.03483     12.435     45.242     69.902     67.245     86.040     27.506
+C1@end            32,637,168   7.9954 0.03449     12.518     45.123     63.175     72.069     78.217     29.771
+
+1b. SHARE of |Delta|^2  (%)   -- read against the parameter counts above
+arm                encoders  team_tran  projectio  belief_op  action_he     critic
+TCFUNDA@p1M             8.8       13.0       43.1       27.6        2.9        4.6
+TCFUNDA@mid             8.7       12.4       43.5       28.0        2.9        4.6
+TCFUNDA@end             9.0       12.5       40.6       30.9        2.6        4.4
+TCFUNDB@p1M             8.6       12.9       43.9       27.3        3.0        4.3
+TCFUNDB@mid             8.7       12.3       43.9       27.8        3.0        4.3
+TCFUNDB@end             8.9       12.5       40.1       31.2        2.5        4.7
+TCUNFA@p1M              8.8       12.8       42.5       28.7        2.6        4.6
+TCUNFA@mid              8.6       12.2       43.0       28.7        2.7        4.8
+TCUNFA@end              8.8       12.3       38.7       32.7        2.4        5.2
+TCUNFB@p1M              8.8       13.0       42.7       28.7        2.6        4.1
+TCUNFB@mid              8.7       12.3       42.9       29.1        2.6        4.5
+TCUNFB@end              8.8       12.4       38.9       33.0        2.3        4.6
+R4DOSE12@end           10.0       13.2       43.4       25.2        3.4        4.9
+R4DOSE6@end             9.4       12.7       41.8       27.7        2.7        5.7
+R4DOSE3@end             8.7       11.2       42.7       28.5        2.5        6.4
+B2@end                  8.2       11.5       40.2       31.8        2.3        6.0
+C1@end                  8.5       11.7       33.5       37.2        1.9        7.1
+
+1c. BUFFERS (never inside a group). Every constant data table is byte-identical across all
+    17 arms; the ONLY buffers that moved are PopArt's running normalizer.
+arm                popart.mu  popart.sigma   popart.nu
+TCFUNDA@p1M          1.60734       0.86564    15.51192
+TCFUNDA@mid          1.76433       0.72079    10.66928
+TCFUNDA@end          0.67333       0.52477    20.12093
+TCFUNDB@p1M          0.52803       0.71353    16.63451
+TCFUNDB@mid          0.21834       0.15459     5.92973
+TCFUNDB@end          0.79451       0.24434    13.22569
+TCUNFA@p1M           0.27797       0.13668     1.84285
+TCUNFA@mid           0.16021       0.16311     5.72203
+TCUNFA@end           0.02272       0.69476    19.82559
+TCUNFB@p1M           0.13856       0.22246     5.19931
+TCUNFB@mid           0.24411       0.08710     4.25034
+TCUNFB@end           0.29402       0.23482     8.76587
+R4DOSE12@end         0.26708       1.09170    33.34268
+R4DOSE6@end          0.66242       2.11498    58.46198
+R4DOSE3@end          0.37073       2.38868    69.07391
+B2@end               0.30175       1.89441    53.77032
+C1@end               1.41154       2.45065    65.35391
+
+1d. P1 FLOOR TEST at END depth -- funded-vs-unfunded displacement gap against the
+    two REPLICATE gaps (arms differing only in seed). WITHIN FLOOR unless the
+    cross gap exceeds BOTH replicate gaps.
+group                 funded mean  unfund mean       gap    repl F    repl U  verdict
+ALL                        29.064       28.077     0.987     0.160     0.010  CLEARS FLOOR
+encoders                   10.828       10.362     0.466     0.010     0.028  CLEARS FLOOR
+team_transformer           39.310       37.717     1.593     0.274     0.144  CLEARS FLOOR
+projection_mlp             58.463       55.366     3.097     0.039     0.122  CLEARS FLOOR
+belief_op                  55.494       55.133     0.361     0.582     0.248  WITHIN FLOOR
+action_head                75.886       69.670     6.215     0.862     0.837  CLEARS FLOOR
+critic                     19.975       20.058    -0.083     0.819     1.288  WITHIN FLOOR
+
+======================================================================================================================
+TABLE 2 -- FIRST-ORDER PROJECTION vs ACTUAL OFF-SLICE KL
+======================================================================================================================
+--- UNTAUGHT  (152 states / 8 teams)
+arm              actual KL          cluster CI95      KL1  KL1/act  pearson  spearman
+TCFUNDA@p1M        0.27961     [+0.2238,+0.3295]  0.32751    1.171   +0.628    +0.786
+TCFUNDA@mid        0.37417     [+0.3054,+0.4445]  0.48056    1.284   +0.504    +0.765
+TCFUNDA@end        0.42960     [+0.3403,+0.5376]  0.75187    1.750   +0.257    +0.612
+TCFUNDB@p1M        0.22028     [+0.1707,+0.2720]  0.29824    1.354   +0.555    +0.681
+TCFUNDB@mid        0.31871     [+0.2349,+0.4049]  0.44459    1.395   +0.446    +0.691
+TCFUNDB@end        0.39891     [+0.2848,+0.5456]  0.71992    1.805   +0.386    +0.690
+TCUNFA@p1M         0.24425     [+0.1836,+0.3081]  0.38533    1.578   +0.374    +0.719
+TCUNFA@mid         0.27939     [+0.2095,+0.3595]  0.43472    1.556   +0.397    +0.686
+TCUNFA@end         0.38648     [+0.2883,+0.4960]  0.62334    1.613   +0.461    +0.676
+TCUNFB@p1M         0.23559     [+0.1931,+0.2717]  0.36572    1.552   +0.445    +0.761
+TCUNFB@mid         0.31273     [+0.2456,+0.4116]  0.47446    1.517   +0.473    +0.703
+TCUNFB@end         0.36565     [+0.2887,+0.4528]  0.53171    1.454   +0.388    +0.659
+R4DOSE12@end       0.39373     [+0.3060,+0.4906]  0.53765    1.366   +0.460    +0.715
+R4DOSE6@end        0.41966     [+0.3016,+0.5576]  0.49961    1.191   +0.466    +0.712
+R4DOSE3@end        0.55746     [+0.4165,+0.7354]  0.82141    1.473   +0.398    +0.593
+B2@end             0.48734     [+0.4277,+0.5435]  0.85550    1.755   +0.259    +0.628
+C1@end             0.43094     [+0.3592,+0.5018]  0.59633    1.384   +0.339    +0.516
+
+    per-group ADDITIVE share of KL1 (%; sums to 100 exactly) [group-ALONE quadratic, does NOT sum]
+    arm                      encoders        team_tran        projectio        belief_op        action_he           critic
+    TCFUNDA@p1M           29.1[ 25.0]      33.9[ 26.5]      27.6[ 27.8]       7.1[  6.1]       2.3[  1.8]       0.0[  0.0]
+    TCFUNDA@mid           28.9[ 27.7]      37.3[ 28.8]      23.7[ 26.1]       5.4[  4.7]       4.7[  2.2]       0.0[  0.0]
+    TCFUNDA@end           31.4[ 24.4]      28.6[ 21.3]      33.0[ 28.6]       6.0[  3.8]       1.0[  1.8]       0.0[  0.0]
+    TCFUNDB@p1M           40.6[ 34.5]      39.3[ 31.3]      11.2[ 17.3]       7.0[  7.1]       1.9[  2.2]       0.0[  0.0]
+    TCFUNDB@mid           40.7[ 35.2]      35.2[ 27.2]      18.2[ 19.4]       4.3[  5.0]       1.6[  2.1]       0.0[  0.0]
+    TCFUNDB@end           35.2[ 30.1]      31.7[ 24.1]      28.6[ 26.1]       4.0[  3.6]       0.5[  2.0]       0.0[  0.0]
+    TCUNFA@p1M            30.0[ 22.7]      36.5[ 24.5]      27.0[ 18.8]       2.3[  4.2]       4.2[  1.4]       0.0[  0.0]
+    TCUNFA@mid            26.1[ 25.1]      37.1[ 31.2]      28.5[ 25.2]       4.3[  5.1]       4.0[  1.9]       0.0[  0.0]
+    TCUNFA@end            28.4[ 25.4]      31.7[ 24.4]      31.5[ 28.0]       4.2[  4.6]       4.3[  1.9]       0.0[  0.0]
+    TCUNFB@p1M            32.3[ 25.8]      36.6[ 25.9]      24.1[ 21.1]       3.4[  4.8]       3.6[  1.4]       0.0[  0.0]
+    TCUNFB@mid            28.1[ 28.9]      33.5[ 26.5]      29.7[ 25.8]       4.0[  4.9]       4.8[  1.9]       0.0[  0.0]
+    TCUNFB@end            25.2[ 25.3]      35.1[ 30.6]      34.7[ 32.7]       1.2[  5.2]       3.8[  2.1]       0.0[  0.0]
+    R4DOSE12@end          27.0[ 24.7]      33.6[ 22.6]      28.1[ 29.0]       7.6[  4.9]       3.7[  2.5]       0.0[  0.0]
+    R4DOSE6@end           31.2[ 31.5]      34.5[ 28.7]      26.2[ 29.2]       2.6[  6.1]       5.6[  2.0]       0.0[  0.0]
+    R4DOSE3@end           21.7[ 22.6]      33.2[ 23.5]      35.2[ 31.9]       6.4[  3.5]       3.5[  1.3]       0.0[  0.0]
+    B2@end                21.9[ 24.2]      33.0[ 30.0]      39.3[ 39.3]       1.8[  6.7]       4.1[  1.4]       0.0[  0.0]
+    C1@end                29.5[ 28.6]      38.5[ 35.3]      20.0[ 20.5]       9.8[  7.5]       2.2[  2.0]       0.0[  0.0]
+
+    ARM-ORDERING LADDER against the published clustered off-slice KL
+      arms        ['R4DOSE12@end', 'R4DOSE6@end', 'R4DOSE3@end', 'B2@end', 'C1@end']
+      published   [0.3062, 0.3502, 0.4416, 0.3938, 0.3702]
+      |Delta|     [3.9758, 5.1604, 6.5441, 8.0747, 7.9954]   rho=+0.700
+      KL1         [0.5376, 0.4996, 0.8214, 0.8555, 0.5963]   rho=+0.800
+      actual      [0.3937, 0.4197, 0.5575, 0.4873, 0.4309]   rho=+1.000
+
+    PAIRED contrasts (cluster bootstrap over teams, one shared index set)
+      TCFUNDA@end - TCUNFA@end     actual +0.0431 [-0.0202,+0.0942] NOT DETECTED  | KL1 +0.1285 [-0.0175,+0.3003] NOT DETECTED
+      TCFUNDB@end - TCUNFB@end     actual +0.0333 [-0.0248,+0.1023] NOT DETECTED  | KL1 +0.1882 [-0.0658,+0.4075] NOT DETECTED
+      TCFUNDA@end - TCFUNDB@end    actual +0.0307 [-0.0198,+0.0778] NOT DETECTED  | KL1 +0.0319 [-0.2214,+0.3185] NOT DETECTED
+      TCUNFA@end - TCUNFB@end      actual +0.0208 [-0.0490,+0.1195] NOT DETECTED  | KL1 +0.0916 [-0.0845,+0.2632] NOT DETECTED
+      C1@end - B2@end              actual -0.0564 [-0.1494,+0.0563] NOT DETECTED  | KL1 -0.2592 [-0.8107,+0.0846] NOT DETECTED
+      R4DOSE3@end - R4DOSE12@end   actual +0.1637 [+0.0721,+0.2732] SEPARATES     | KL1 +0.2838 [+0.1209,+0.4445] SEPARATES
+      B2@end - R4DOSE3@end         actual -0.0701 [-0.1996,+0.0241] NOT DETECTED  | KL1 +0.0341 [-0.2577,+0.4060] NOT DETECTED
+
+--- TAUGHT  (304 states / 16 teams)
+arm              actual KL          cluster CI95      KL1  KL1/act  pearson  spearman
+TCFUNDA@p1M        0.35253     [+0.3109,+0.3976]  0.37469    1.063   +0.621    +0.752
+TCFUNDA@mid        0.46757     [+0.3966,+0.5433]  0.53715    1.149   +0.449    +0.664
+TCFUNDA@end        0.58842     [+0.4965,+0.6817]  0.73931    1.256   +0.237    +0.529
+TCFUNDB@p1M        0.38712     [+0.3172,+0.4671]  0.41767    1.079   +0.499    +0.700
+TCFUNDB@mid        0.46737     [+0.3906,+0.5532]  0.56362    1.206   +0.436    +0.647
+TCFUNDB@end        0.58477     [+0.4820,+0.6948]  0.79499    1.359   +0.412    +0.591
+TCUNFA@p1M         0.36093     [+0.2862,+0.4464]  0.38704    1.072   +0.544    +0.760
+TCUNFA@mid         0.45302     [+0.3635,+0.5513]  0.53254    1.176   +0.530    +0.738
+TCUNFA@end         0.52756     [+0.4232,+0.6345]  0.82026    1.555   +0.492    +0.682
+TCUNFB@p1M         0.40645     [+0.3287,+0.4906]  0.42509    1.046   +0.623    +0.761
+TCUNFB@mid         0.49332     [+0.3997,+0.6008]  0.64473    1.307   +0.439    +0.701
+TCUNFB@end         0.50069     [+0.4211,+0.5809]  0.76668    1.531   +0.452    +0.638
+R4DOSE12@end       0.32679     [+0.2750,+0.3915]  0.64280    1.967   +0.118    +0.574
+R4DOSE6@end        0.38774     [+0.3163,+0.4772]  0.61206    1.579   +0.244    +0.579
+R4DOSE3@end        0.47917     [+0.3676,+0.6041]  0.66127    1.380   +0.374    +0.600
+B2@end             0.41896     [+0.3369,+0.5232]  0.86241    2.058   +0.179    +0.486
+C1@end             0.45873     [+0.3821,+0.5326]  0.71945    1.568   +0.246    +0.432
+
+    per-group ADDITIVE share of KL1 (%; sums to 100 exactly) [group-ALONE quadratic, does NOT sum]
+    arm                      encoders        team_tran        projectio        belief_op        action_he           critic
+    TCFUNDA@p1M           38.8[ 35.6]      37.9[ 29.7]      15.5[ 18.9]       4.7[  5.9]       3.1[  1.5]       0.0[  0.0]
+    TCFUNDA@mid           34.2[ 32.8]      39.9[ 33.9]      15.8[ 16.8]       6.3[  6.4]       3.9[  1.6]       0.0[  0.0]
+    TCFUNDA@end           37.5[ 32.1]      33.4[ 28.2]      21.1[ 20.6]       5.5[  5.9]       2.5[  1.6]       0.0[  0.0]
+    TCFUNDB@p1M           35.7[ 31.8]      37.5[ 30.0]      18.0[ 20.4]       5.4[  5.1]       3.4[  1.5]       0.0[  0.0]
+    TCFUNDB@mid           36.4[ 31.2]      34.8[ 32.4]      18.2[ 19.2]       6.4[  5.1]       4.1[  1.8]       0.0[  0.0]
+    TCFUNDB@end           33.4[ 29.1]      33.2[ 28.5]      24.5[ 20.6]       6.1[  5.2]       2.8[  1.9]       0.0[  0.0]
+    TCUNFA@p1M            41.3[ 35.9]      32.7[ 27.5]      17.8[ 17.2]       4.4[  4.8]       3.8[  1.2]       0.0[  0.0]
+    TCUNFA@mid            35.9[ 31.5]      34.9[ 29.4]      20.6[ 19.3]       4.4[  4.6]       4.2[  1.4]       0.0[  0.0]
+    TCUNFA@end            30.2[ 26.4]      35.0[ 27.8]      25.8[ 22.5]       5.5[  4.3]       3.4[  1.2]       0.0[  0.0]
+    TCUNFB@p1M            37.8[ 30.2]      36.9[ 30.2]      16.4[ 17.0]       5.4[  4.5]       3.5[  1.2]       0.0[  0.0]
+    TCUNFB@mid            36.1[ 27.5]      33.5[ 28.6]      21.2[ 18.4]       5.9[  4.1]       3.4[  1.3]       0.0[  0.0]
+    TCUNFB@end            33.1[ 27.7]      33.8[ 27.0]      24.2[ 18.8]       5.4[  4.6]       3.5[  1.3]       0.0[  0.0]
+    R4DOSE12@end          23.4[ 20.4]      28.8[ 22.5]      37.5[ 33.3]       9.9[  4.2]       0.5[  1.6]       0.0[  0.0]
+    R4DOSE6@end           24.3[ 22.9]      32.5[ 29.1]      31.7[ 28.4]       8.9[  5.0]       2.5[  1.4]       0.0[  0.0]
+    R4DOSE3@end           26.5[ 25.8]      32.0[ 30.4]      31.9[ 29.8]       7.7[  5.8]       1.9[  1.3]       0.0[  0.0]
+    B2@end                24.3[ 22.7]      31.7[ 29.2]      35.6[ 33.1]       6.4[  4.7]       2.1[  1.2]       0.0[  0.0]
+    C1@end                34.5[ 32.1]      34.9[ 33.4]      18.8[ 17.3]       8.1[  6.6]       3.6[  2.0]       0.0[  0.0]
+
+    ARM-ORDERING LADDER against the published clustered off-slice KL
+      arms        ['R4DOSE12@end', 'R4DOSE6@end', 'R4DOSE3@end', 'B2@end', 'C1@end']
+      published   [0.3062, 0.3502, 0.4416, 0.3938, 0.3702]
+      |Delta|     [3.9758, 5.1604, 6.5441, 8.0747, 7.9954]   rho=+0.700
+      KL1         [0.6428, 0.6121, 0.6613, 0.8624, 0.7194]   rho=+0.600
+      actual      [0.3268, 0.3877, 0.4792, 0.419, 0.4587]   rho=+0.900
+
+    PAIRED contrasts (cluster bootstrap over teams, one shared index set)
+      TCFUNDA@end - TCUNFA@end     actual +0.0609 [-0.0539,+0.1633] NOT DETECTED  | KL1 -0.0810 [-0.2948,+0.1395] NOT DETECTED
+      TCFUNDB@end - TCUNFB@end     actual +0.0841 [+0.0088,+0.1649] SEPARATES     | KL1 +0.0283 [-0.1108,+0.1644] NOT DETECTED
+      TCFUNDA@end - TCFUNDB@end    actual +0.0037 [-0.0603,+0.0685] NOT DETECTED  | KL1 -0.0557 [-0.1642,+0.0823] NOT DETECTED
+      TCUNFA@end - TCUNFB@end      actual +0.0269 [-0.0353,+0.0934] NOT DETECTED  | KL1 +0.0536 [-0.0751,+0.1878] NOT DETECTED
+      C1@end - B2@end              actual +0.0398 [-0.0875,+0.1533] NOT DETECTED  | KL1 -0.1430 [-0.3782,+0.0672] NOT DETECTED
+      R4DOSE3@end - R4DOSE12@end   actual +0.1524 [+0.0706,+0.2360] SEPARATES     | KL1 +0.0185 [-0.2222,+0.2380] NOT DETECTED
+      B2@end - R4DOSE3@end         actual -0.0602 [-0.1330,+0.0088] NOT DETECTED  | KL1 +0.2011 [+0.0174,+0.4179] SEPARATES
+
+======================================================================================================================
+TABLE 3 -- COSINE BETWEEN DISPLACEMENTS  (P3)
+======================================================================================================================
+pair                                              ALL   encoders  team_tran  projectio  belief_op  action_he     critic
+REPLICATE floor: funded A . funded B           0.5630     0.7343     0.7341     0.2747     0.7993     0.5507     0.7058
+REPLICATE floor: unfunded A . unfunded B       0.5742     0.7315     0.7381     0.2646     0.8163     0.5385     0.7216
+cross: funded A . unfunded A                   0.5259     0.6860     0.6816     0.2175     0.7814     0.4770     0.7113
+cross: funded B . unfunded B                   0.5310     0.6823     0.6859     0.2205     0.7892     0.4720     0.7113
+cross: funded A . unfunded B                   0.5261     0.6861     0.6847     0.2201     0.7813     0.4741     0.6914
+cross: funded B . unfunded A                   0.5298     0.6872     0.6844     0.2188     0.7856     0.4781     0.7108
+reuse: B2 . C1 (the loss-off control)          0.4286     0.5444     0.5469     0.0738     0.7064     0.1202     0.7168
+reuse: dose 2.12x . dose 0.53x                 0.5140     0.6763     0.6619     0.3141     0.6774     0.5594     0.6712
+CROSS-BATCH (not one experiment): TCFUNDA . B2     0.3106     0.3738     0.3539     0.1048     0.4946     0.2958     0.6102
+
+depth rotation: cos(arm@p1M, arm@end) -- how far the fold's own direction turns
+arm                                               ALL   encoders  team_tran  projectio  belief_op  action_he     critic
+TCFUNDA                                        0.6150     0.6665     0.6616     0.5591     0.6661     0.6664     0.5472
+TCFUNDB                                        0.6240     0.6796     0.6714     0.5641     0.6756     0.6668     0.5970
+TCUNFA                                         0.6145     0.6720     0.6658     0.5498     0.6723     0.6625     0.5469
+TCUNFB                                         0.6220     0.6746     0.6716     0.5579     0.6760     0.6558     0.5890
+
+P3 EXACT PAIRING PERMUTATION. Four arms {FA,FB,UA,UB} admit exactly THREE splits into two
+pairs, so the smallest attainable p-value on 'the replicate pairing has the highest mean
+within-pair cosine' is 1/3 = 0.333. Reported for every group:
+group                 within(obs)  cross(obs)      gap  rank of obs  exact p
+ALL                        0.5686      0.5282  +0.0404          1/3    0.333
+encoders                   0.7329      0.6854  +0.0475          1/3    0.333
+team_transformer           0.7361      0.6842  +0.0519          1/3    0.333
+projection_mlp             0.2696      0.2192  +0.0504          1/3    0.333
+belief_op                  0.8078      0.7844  +0.0235          1/3    0.333
+action_head                0.5446      0.4753  +0.0693          1/3    0.333
+critic                     0.7137      0.7062  +0.0075          1/3    0.333
+
+wrote verdict_stats.json

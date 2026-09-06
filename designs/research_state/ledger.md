@@ -10646,3 +10646,52 @@ does not have: whether a 277M-step parent simply gains ~+4.6pp in 1M more steps 
 Every arm carries the P1 provenance discipline: `v8rep_launch.txt` as authoritative (the era's
 sidecars misattribute by construction), byte-identical `model_config.json` check, per-arm depth
 stated, and **three replicates because P1 showed one arm is wrong two times in three**.
+
+## 2026-09-05 — ARCH→TRANSFER probe H2b (fold displacement): dose sets |Δθ| (C1 moves as far as B2); the off-slice KL is carried by the TRUNK (51–74%); a fold's Δθ is substantially a RANDOM WALK (replicate cos 0.56, |Δθ| ∝ t^0.48); funded−unfunded off-slice KL NOT DETECTED
+
+**Design** (`fold_displacement/README.md`, pre-registration frozen before any statistic): Δθ = θ_arm − θ_parent per parameter
+group for the 2×2 arms (TC_FUND_A/B, TC_UNF_A/B) at three depths and the reuse arms (B2, C1, R4DOSE3/6/12) at END, on
+`ai_v9_59_R2ACTION_0827`; first-order off-slice projection ⟨∇θ log π_parent(a|s′), Δθ⟩ and per-state Fisher KL₁ on the
+committed `sharing_kernel` states (304 taught / 152 untaught rows), against the ACTUAL KL(parent‖arm) by forward pass and
+the published clustered offline collateral KL. Loader `load_foreign_opponent` (the standing offline loader). Both stages
+re-run end to end: max |diff| 0 over 4102 leaves.
+
+**P1 (funded moves the trunk more; C1 least): SPLIT.** Funded > unfunded at matched depth AND dose, clearing the
+replicate floor in encoders (+4.5% rel), team_transformer (+4.2%), projection_mlp (+5.6%), action_head (+8.9%), ALL
+(+3.5%); WITHIN FLOOR in belief_op and critic. But **C1 (loss OFF) has the second-largest |Δθ| of all 17 models**
+(7.995 vs B2 8.075; the 2×2 at 6.5–6.8): displacement magnitude is set by DOSE, not by the distillation term.
+**Adam correction:** per-parameter displacement is the OPPOSITE of gradient-norm share — pointer head |Δθ_g|/|θ_g| ≈
+0.076 (moves MOST), encoders 0.011 (least), a factor of 7 the other way from H2's 0.66% / 52% norm shares. H2's
+"instrument the trunk because the norm is there" was not a valid inference; the conclusion survives on P2.2.
+
+**P2.1 (first-order projection predicts the offline KL ordering): NOT SUPPORTED for the surrogate, exact for the
+real thing.** Against the published clustered column: |Δθ| ρ +0.70 (p 0.117) → KL₁ ρ +0.80 (p 0.067) → **actual
+KL(parent‖arm) ρ +1.000, exact p 1/120** — recomputed on greedy piloting with a different opponent and seeds, an
+INDEPENDENT VALIDATION of `offline_collateral_kl`. First order over-predicts 1.17→1.81× (2.06 worst), growing with
+|Δθ|; per-state Pearson 0.6→0.3 across depth.
+
+**P2.2 (which group carries the off-slice movement): CONFIRMED.** encoders + team_transformer carry **51–74%** of the
+first-order off-slice KL (~90% with projection_mlp); **pointer head 0.5–5.6%**; critic exactly 0.0 (closes to 7e-15).
+
+**P3 (direction): NOT DETECTED — and the floor IS the finding.** Two arms differing only in SEED share cos 0.563/0.574
+on all parameters; |Δθ| ∝ t^0.479/0.483/0.482/0.481 on the four dose-frozen arms ⇒ a fold's displacement is
+substantially a random walk. Funded-vs-unfunded cos 0.526–0.531 sits below both replicate cosines in all 7 groupings,
+but four arms admit three pairings ⇒ exact p = 1/3. `projection_mlp` holds ~40% of |Δθ|² and the LOWEST replicate
+cosine (0.270). Pooled 2×2 on actual off-slice KL: funded − unfunded **+0.0382 [−0.0067, +0.0928] NOT DETECTED**,
+replicate gaps +0.0307 / +0.0208 — the robbing half is NOT measurably farther from the parent off-slice than the
+neutral half. The scalar-KL-is-a-norm point, now measured.
+
+**Hazards (FINDINGS).** (1) The 2×2 README's end step 32,567,760 is WRONG for the arms' `final_model.zip`, which report
+**32,637,168** (all nine). (2) `num_timesteps` is in NO `metadata.json` field — `main.lineage` / `sidecar_audit` /
+`dose` cannot read a run's step count without opening the zip; worth a top-level key. (3) B2 and C1 are NOT dose-matched
+(live KL controllers: 6.845e-08 vs 8.215e-08, 1.20×); every B2-vs-C1 claim must carry that. (4) `load_model_snapshot`
+needs a live VecEnv; offline probes use `load_foreign_opponent`.
+
+**Reading, with H1/H2.** The architecture-boundary account is closed: the head neither carries the gradient norm (H2) nor
+the off-slice movement (H2b), the trunk does in both eras, and the split of teams is not a direction the kernel or the
+displacement knows. What a fold does off-slice is a dose-scaled random walk of the trunk whose SIZE is the same with the
+loss on or off and the same for robbing and neutral teachers. So the robbery is not "more movement"; it is WHERE the
+movement points, which no scalar we have measures. The one place a direction has shown up is the TEACHER (H1: robbing
+teachers are farther from the parent everywhere; gifting teachers are local). Next: H5 (teacher-distance dose-response,
+running) and H6 (the exploiter's own drift law over its training, dispatched).
+
