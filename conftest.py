@@ -191,3 +191,82 @@ def pytest_sessionfinish(session, exitstatus):
     # skips as a clean pass). Contended ⇒ advisory; idle ⇒ a real verdict.
     if _over_budget and exitstatus == 0 and _box_is_idle():
         session.exitstatus = 1
+
+
+# --- Fresh-worktree guard: an unfinished checkout must say so ONCE, not 15 times ------------------
+#
+# A linked git worktree is created with `deps/pokemon-showdown/` present but EMPTY — git materializes
+# the submodule PATH, never its contents — and the build artifacts `dist/` + `node_modules/` are
+# gitignored INSIDE the submodule, so even `git submodule update --init` leaves them absent. Every
+# bridge-backed test then dies inside Node with
+#
+#     Error: Cannot find module '.../deps/pokemon-showdown/dist/sim/battle-stream'
+#
+# which pytest reports as ~15 unrelated-looking failures spread across `utils/bridge`, `agents/battle`
+# and the obs-golden linchpin. That reads exactly like a real regression in the code under test. On
+# 2026-09-06 three separate agents each lost a cycle to it. The defect is not in the tree; the tree
+# was never finished being checked out.
+#
+# So: check the ONE artifact the bridge actually loads, at session start, and fail with a single
+# actionable message naming the fix. `scripts/bootstrap.sh` probes the same `dist/sim/index.js`
+# (its step 5), deliberately — one file, one meaning, in both places.
+#
+# WHY `__file__`-RELATIVE AND NOT `utils.paths.repo_root()`. This runs before anything has put `src/`
+# on the import path, and it is not repo-root DISCOVERY in the first place: this conftest IS the repo
+# root, so `deps/` sitting beside it is a local fact. (`utils/paths.py`'s own docstring names exactly
+# this case as the one its helpers are the wrong tool for.)
+#
+# WHY A SESSION-LEVEL FAILURE AND NOT A SKIP. A skip is the thing this guard exists to prevent: a
+# suite that silently drops its battle-backed coverage looks green, and the obs-golden linchpin has
+# already ridden main RED three times behind exactly that kind of hole. A checkout that cannot run
+# the suite should refuse to report on it rather than report a partial pass. Escape hatch for a
+# pure-unit CI that genuinely has no submodule: GEN3AI_SKIP_DEPS_GUARD=1.
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_SHOWDOWN_DIR = os.path.join(_REPO_ROOT, "deps", "pokemon-showdown")
+
+# `dist/sim/index.js` is the compiled entry point the bridge children load (`local_sim_bridge.js`,
+# `replay_kernels.js` and `damage_probe.js` all `require(psPath + '/dist/sim/...')`); `node_modules/`
+# is what that compiled code resolves ITS own imports through. Either one missing breaks the bridge,
+# and the two are restored by different steps, so both are checked and reported BY NAME.
+_REQUIRED_DEPS = (
+    os.path.join("deps", "pokemon-showdown", "dist", "sim", "index.js"),
+    os.path.join("deps", "pokemon-showdown", "node_modules"),
+)
+
+_DEPS_GUARD_MESSAGE = """\
+deps/pokemon-showdown is not usable in this checkout.
+
+MISSING: {missing}
+
+This is a CHECKOUT problem, not a test failure. Left alone it surfaces as ~15 failures across
+unrelated subsystems, each dying inside Node on "Cannot find module
+'.../deps/pokemon-showdown/dist/sim/...'". Nothing is wrong with the code.
+
+FIX (idempotent, run from this checkout):
+
+    ./scripts/bootstrap.sh
+
+or the two manual steps from the root CLAUDE.md "Git Worktree Setup":
+
+    git submodule update --init
+    for n in dist node_modules; do \\
+      [ -e "deps/pokemon-showdown/$n" ] || \\
+        ln -s "<MAIN CHECKOUT>/deps/pokemon-showdown/$n" "deps/pokemon-showdown/$n"; done
+
+Keep the [ -e ] guard, and run it only from a fresh WORKTREE: from the main checkout `dist/` already
+exists, so `ln -s` drops the link INSIDE it as dist/dist -> its own parent and every websocket path
+dies with ELOOP.
+
+Set GEN3AI_SKIP_DEPS_GUARD=1 to run anyway (a pure-unit CI with no submodule)."""
+
+
+def pytest_sessionstart(session):
+    """Refuse the session on an unfinished checkout, with ONE message instead of ~15 failures."""
+    if os.environ.get("GEN3AI_SKIP_DEPS_GUARD"):
+        return
+    missing = [rel for rel in _REQUIRED_DEPS
+               if not os.path.exists(os.path.join(_REPO_ROOT, rel))]
+    if not missing:
+        return
+    import pytest
+    raise pytest.UsageError(_DEPS_GUARD_MESSAGE.format(missing=", ".join(missing)))
