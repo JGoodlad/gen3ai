@@ -21,7 +21,10 @@ The rule the tests below pin: **the coefficient gates the LOSS, not the BOOKKEEP
 Tests 6-8 are the byte-identity half: a run with no `--distill-teacher`, and a run with teachers at
 coef > 0, must be exactly what they were before the fix.
 """
+import atexit
 import random
+import shutil
+import tempfile
 from types import SimpleNamespace
 
 import pytest
@@ -30,7 +33,14 @@ import pytest
 # the teambuilder reads and validates the exports, so they have to exist and be legal gen3ou.
 TEACHER_TEAMS = ("data/teams/sample/9d5f845869e899ee.txt",
                  "data/teams/sample/f7ba5702fe856292.txt")
-TEACHER_SPEC = f"models/T1:{TEACHER_TEAMS[0]},{TEACHER_TEAMS[1]}"
+# The teacher RUN DIR must exist too, since `gen3_run_spec_split_v1`: `check_teacher_spec` refuses a
+# teacher path that is not there, because a teacher resolving to nothing folds no loss and biases no
+# team draw while every startup line still reads as a running fold. It is never LOADED here (coef 0
+# in most of these tests, and the loss half is asserted with a stub), so an empty directory is the
+# whole requirement — it used to be the string 'models/T1', which no box has.
+TEACHER_DIR = tempfile.mkdtemp(prefix="distill_teacher_run_")
+atexit.register(shutil.rmtree, TEACHER_DIR, True)
+TEACHER_SPEC = f"{TEACHER_DIR}:{TEACHER_TEAMS[0]},{TEACHER_TEAMS[1]}"
 
 
 def _argv(*extra):
@@ -61,7 +71,7 @@ def test_r2ctrl_shape_populates_the_distill_pairs():
     """THE REGRESSION. Before the fix this list was empty and every downstream reader — the team
     bias, the eval pin — silently did nothing."""
     args = _resolved(*_R2CTRL)
-    assert args._distill_pairs == [("models/T1", [TEACHER_TEAMS[0], TEACHER_TEAMS[1]])]
+    assert args._distill_pairs == [(TEACHER_DIR, [TEACHER_TEAMS[0], TEACHER_TEAMS[1]])]
     assert args.distill_team_bias == 0.4
     assert args.distill_coef == 0.0
 
@@ -82,7 +92,7 @@ def pool_and_teacher_teams():
 
 def _bias_args(coef, bias):
     return SimpleNamespace(
-        _distill_pairs=[("models/T1", list(TEACHER_TEAMS))],
+        _distill_pairs=[(TEACHER_DIR, list(TEACHER_TEAMS))],
         distill_coef=coef, distill_team_bias=bias,
         team_pfsp="off", team_pfsp_cap=3.0, team_pfsp_floor=0.05)
 
@@ -148,7 +158,7 @@ def _hparam_args(**over):
 
     base = {name: (0.0 if how in (_F0, _F0_OPT) else None) for name, how in _TRAINING_HPARAMS}
     base.update(capacity_telemetry=False, search_teacher=None, opd_coef=0.0,
-                distill_coef=0.0, _distill_pairs=[("models/T1", list(TEACHER_TEAMS))])
+                distill_coef=0.0, _distill_pairs=[(TEACHER_DIR, list(TEACHER_TEAMS))])
     base.update(over)
     return SimpleNamespace(**base)
 
@@ -247,5 +257,5 @@ def test_a_malformed_spec_is_refused_at_coef_zero_TOO(spec):
 
 def test_teachers_at_a_live_coefficient_are_unchanged():
     args = _resolved("--distill-teacher", TEACHER_SPEC, "--distill-coef", "1.0")
-    assert args._distill_pairs == [("models/T1", [TEACHER_TEAMS[0], TEACHER_TEAMS[1]])]
+    assert args._distill_pairs == [(TEACHER_DIR, [TEACHER_TEAMS[0], TEACHER_TEAMS[1]])]
     assert args.distill_team_bias == 0.4

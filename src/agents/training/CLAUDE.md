@@ -5981,6 +5981,38 @@ mean-KLs are AVERAGED (a small-coverage teacher still contributes comparable gra
 training-only, NOT version-locked (inherited on a flagless resume). Validated (ai_v7_16→_19): offense
 transfers (TSS-piloting 0.475→0.75) and HOLDS under the double-sided recipe (see the memory).
 
+🚨 **THE TEACHER SPEC GRAMMAR IS `<run|zip>[@<step>]:<teams|*>`, AND THE `@step` IS SPLIT BY ONE
+FUNCTION** (`gen3_run_spec_split_v1`, 2026-09-05). `;` separates teachers, `,` separates a
+teacher's teams, `*`/`auto` expands to exactly the teams that teacher recorded training on, and the
+teacher half is a RUN SPEC — the same `path[@step]` half `--stable-opponents` takes, pinning
+`<run>/checkpoints/checkpoint_<step>_steps.zip` instead of the run's `best_model`. It is split by
+**`agents.training.run_spec.split_run_spec`**, the only implementation in the tree. Before that it
+was not split at all here: `'<run>@<step>:*'` handed the whole string to
+`matchup_spec.read_recorded_trainee_teams`, which found no `metadata.json` beside a directory that
+does not exist and returned `[]` — **the same answer a real generalist run gives**. A fold written
+the obvious way therefore reported teachers that taught NOTHING, and the only witness was the team
+count in the `🧪 [DISTILL]` startup line (the wrong-answer-on-a-success-path class, exactly like the
+era's `--steps` no-op). Two throwing guards close it, at the producer and the consumer: the reader
+now **RAISES `FileNotFoundError` naming the path** when the path does not exist (`require_teams=True`
+additionally raises when a run that DOES exist recorded no pin — what the `'*'` resolver asks for),
+and **`distill_spec.check_teacher_spec`** is the launch-time refusal, called from
+`resolve_config` as a `parser.error` (`FATAL_CONFIG` class) for every teacher that resolves to ZERO
+teams. `main.checkargs` prints its findings offline from that one function, so the launch answer and
+the offline answer cannot drift — the `main.train.combination_checks` contract, in a separate
+function only because that module explicitly excludes anything touching the filesystem or a teacher
+spec. **The two surfaces differ in ONE declared parameter, `check_paths`, and the asymmetry is
+deliberate:** `resolve_config` passes `False` (structural findings only) because on a real launch a
+bad PATH is already answered loudly downstream — `model_build` exits `FATAL_CONFIG` naming the
+teacher it could not load, `apply_distill_team_bias` raises on a team file it cannot open — and
+re-asking would newly refuse a `--distill-coef 0` CONTROL arm whose teacher run has since been
+archived, which works today and which nothing about this defect argues against. `main.checkargs`
+passes `True` and also reports a missing run dir / team file, because OFFLINE there is no
+downstream to answer. `_resolve_zip_and_config`
+does the split at ITS entry, which is what makes the four `step=None` callers (`--distill-teacher`,
+`--win-prob-pbrs-source`, `--distill-anchor-parent`, `--warmstart-consensus`) `@step`-capable at
+once. Gate: `src/agents/training/run_spec_test.py`, including an **AST census** that fails, naming
+the file, when a run-spec consumer re-derives the `@` split locally.
+
 🚨 **THE COEFFICIENT GATES THE LOSS, NOT THE TEAM BOOKKEEPING** (`gen3_distill_bias_at_coef0_v1`).
 `--distill-teacher` is what turns `--distill-team-bias` on, at ANY coefficient — including
 `--distill-coef 0`, which is the CONTROL-arm shape: same teachers, same teams, same 0.4 bias, no

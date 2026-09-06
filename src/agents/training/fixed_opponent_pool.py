@@ -17,6 +17,7 @@ import os
 from dataclasses import dataclass
 
 from agents.model.model_version import ModelVersion
+from agents.training.run_spec import split_run_spec
 
 # Reserved label namespace for cross-run EXTernal opponents — distinct from the bot roster and
 # from the ``sentinel_<i>`` pool snapshots. The separator is an UNDERSCORE (``ext_<run>``) so the
@@ -86,17 +87,10 @@ def parse_stable_opponents(spec: str) -> list[dict]:
                 f"--stable-opponents token {tok!r}: per-opponent weights (=<weight>) are not "
                 "supported yet — they only matter for the training mix (Stage 2). Drop the "
                 "'=<weight>'.")
-        path, _, step_s = core.partition("@")
-        path = path.strip()
-        if not path:
-            raise ValueError(f"--stable-opponents token {tok!r} has no path")
-        step = None
-        if step_s:
-            try:
-                step = int(step_s)
-            except ValueError:
-                raise ValueError(
-                    f"--stable-opponents token {tok!r}: step {step_s!r} is not an integer")
+        # THE canonical `path[@step]` split (`agents.training.run_spec`) — this parser used to be
+        # the ONLY consumer that did it, which is how every other run-spec flag ended up handing
+        # an `@step` suffix to a reader that takes a directory.
+        path, step = split_run_spec(core, what=f"--stable-opponents token {tok!r}")
         out.append({"path": path, "step": step, "label": (label.strip() or None)})
     return out
 
@@ -110,7 +104,24 @@ def _resolve_zip_and_config(path: str, step: int | None) -> tuple[str, str, str]
     ``<run>/checkpoint_<step>_steps.zip``). ``model_config.json`` is searched next to the zip,
     then the run dir, then the zip's parent — so a ``best_model/best_model.zip`` still finds the
     run-level config. Raises ``FileNotFoundError`` if no zip or no config resolves.
+
+    🚨 **THE `@step` SPLIT HAPPENS HERE, at the ONE choke point every run-spec consumer reaches**
+    (`gen3_run_spec_split_v1`). `--stable-opponents` parsed its own `@step` and passed it in;
+    every OTHER caller — `--distill-teacher`, `--win-prob-pbrs-source`,
+    `--distill-anchor-parent`, `--warmstart-consensus` — calls with ``step=None`` and a raw spec
+    string, so before this they could only ever resolve a run DIR. A spec that still carries a
+    suffix is split here rather than refused, which makes `<run>@<step>` mean the same thing on
+    every flag; an explicit ``step`` that DISAGREES with an embedded one is a ``ValueError``,
+    never a silent winner.
     """
+    embedded_step: "int | None"
+    path, embedded_step = split_run_spec(path, what="run spec")
+    if embedded_step is not None:
+        if step is not None and step != embedded_step:
+            raise ValueError(
+                f"run spec {path!r} names step {embedded_step} but step {step} was also passed — "
+                "give the step once.")
+        step = embedded_step
     apath = os.path.abspath(path)
     zip_path: str | None = None
     run_dir: str

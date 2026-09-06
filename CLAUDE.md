@@ -759,6 +759,11 @@ the value-conditional rules that are not `requires`-shaped, which live in
 **`main.train.combination_checks`** and are read by the launch path and by `checkargs` from that one
 declaration (`--distill-target action` needs `--distill-coef > 0`, the top-K/gate/tau family). The
 last two crash later and dearer than an argparse error: the run dir exists and the child starts.
+It also reports a **`--distill-teacher` spec that would teach NOTHING** — the grammar is
+`<run|zip>[@<step>]:<teams|*>`, the `@step` is part of the SPEC and is split by the one canonical
+`agents.training.run_spec.split_run_spec` (a `<run>@<step>:*` teacher used to resolve to zero teams
+in silence, `gen3_run_spec_split_v1`), and `agents.training.distill_spec.check_teacher_spec` is the
+single declaration both this tool and `resolve_config`'s refusal read.
 
 🚨 **AN ARGV IS NOT A CONFIG, and `checkargs` was argv-only until 2026-09-03.** With `--model`,
 every flag the argv does not name is INHERITED from the checkpoint's recorded `model_config.json`

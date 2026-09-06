@@ -1047,16 +1047,39 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             # segment with no preceding teacher is still refused, by `parse_distill_teacher_spec`.
             parser.error("--distill-teacher takes 'TEACHER:TEAM[,TEAM...]' colon groups — the bare "
                          "teacher list (with the deleted --distill-teacher-team) is no longer accepted")
-        from agents.training.distill_spec import parse_distill_teacher_spec
+        from agents.training.distill_spec import check_teacher_spec, parse_distill_teacher_spec
         from agents.training.matchup_spec import read_recorded_trainee_teams
+
+        def _resolve_teacher_teams(_run_dir):
+            """The ``'TEACHER:*'`` resolver. ``require_teams`` because THIS caller's whole request
+            is "the teams that run trained on" — a run that recorded none is a refusal here, not
+            the empty list a generalist legitimately reads as elsewhere. The `@step` suffix is
+            already off (`distill_spec` splits it); a path that does not exist RAISES."""
+            return read_recorded_trainee_teams(_run_dir, require_teams=True)
+
         try:
             # 'TEACHER:*' → EXACTLY the teams that teacher trained on, from its own recorded
             # provenance (single source of truth — a hand-typed list could mismatch and fire the
             # distill mask where the teacher is off-distribution, silently).
             args._distill_pairs = parse_distill_teacher_spec(
-                args.distill_teacher, resolve_wildcard=read_recorded_trainee_teams)
+                args.distill_teacher, resolve_wildcard=_resolve_teacher_teams)
         except (ValueError, FileNotFoundError) as _e:
             parser.error(str(_e))
+        # gen3_run_spec_split_v1 — THE TEACHER-ASSEMBLY GUARD. A teacher that resolves to ZERO
+        # teams folds no loss and biases no team draw while every log line still reads as a running
+        # fold; the only witness was the team count in the `🧪 [DISTILL]` startup banner. The rule
+        # lives in ONE place (`distill_spec.check_teacher_spec`) and `main.checkargs` reads the same
+        # function offline, so the two cannot drift.
+        #
+        # `check_paths=False`: the PATH questions already have loud answers downstream on a real
+        # launch (`model_build` exits FATAL_CONFIG naming a teacher it cannot load;
+        # `apply_distill_team_bias` raises on a team file it cannot open), and re-asking them here
+        # would newly refuse a coef-0 CONTROL arm whose teacher run has since been archived.
+        # `main.checkargs` passes True, because offline there is no downstream to answer.
+        for _finding in check_teacher_spec(args.distill_teacher,
+                                           resolve_wildcard=_resolve_teacher_teams,
+                                           check_paths=False):
+            parser.error(_finding)
     if args.distill_topk < 1:
         parser.error("--distill-topk must be >= 1 (1 = argmax CE; K >= n_actions recovers the KL)")
     # gen3_distill_target_gate_v1 (design §7.5): the action-form family's dependency graph.

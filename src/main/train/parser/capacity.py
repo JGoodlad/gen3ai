@@ -54,11 +54,14 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
     # Training-only (0 = byte-identical; NOT version-locked). designs/learning/generalist_specialist_amortization_gap.md
     parser.add_argument("--distill-teacher", "--distill_teacher", dest="distill_teacher", type=str, default=None,
                         help="Frozen exploiter teacher(s) to distil into the trainee, as "
-                             "'TEACHER:TEAM' pairs (KL(π_teacher ‖ π_student) on that teacher's team states). "
-                             "TEACHER = a checkpoint dir/.zip, TEAM = its Showdown team file. Comma-separated "
-                             "for N teachers (joint multi-teacher distillation), e.g. "
-                             "'models/expA:data/teams/specialist/a.txt,models/expB:data/teams/specialist/b.txt'. "
-                             "The colon pairing binds each teacher to its team — no misalignment possible.")
+                             "'TEACHER:TEAM' groups (KL(π_teacher ‖ π_student) on that teacher's team states). "
+                             "TEACHER = a RUN SPEC '<run|zip>[@<step>]' ('@<step>' pins "
+                             "<run>/checkpoints/checkpoint_<step>_steps.zip instead of best_model), TEAM = its "
+                             "Showdown team file, or '*'/'auto' for exactly the teams that run recorded training "
+                             "on. ';' separates teachers, ',' separates one teacher's teams, e.g. "
+                             "'models/expA:data/teams/specialist/a.txt;models/expB@26267760:*'. "
+                             "The colon pairing binds each teacher to its team — no misalignment possible; a "
+                             "teacher that resolves to zero teams is REFUSED at launch, never run silently.")
     parser.add_argument("--distill-coef", "--distill_coef", dest="distill_coef", type=float, default=None,
                         help="Exploiter-distillation KL weight (default 0.0 = OFF, loss byte-identical). "
                              "Requires --distill-teacher ('TEACHER:TEAM' pairs). Training-only (inherited on "

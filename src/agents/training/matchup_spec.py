@@ -293,13 +293,27 @@ def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> N
                 "the sample set first if it is proven.")
 
 
-def read_recorded_trainee_teams(path: str) -> "list[str]":
+def read_recorded_trainee_teams(path: str, *, require_teams: bool = False) -> "list[str]":
     """THE single provenance reader: which team files did the run at ``path`` train its trainee on?
 
     ``path`` is a run dir, a checkpoint ``.zip``, or a ``model_config.json`` — the run's
     ``metadata.json`` is searched next to it and one level up (mirroring ``_read_source_elo``).
     Reads ``cli_args.trainee_teams`` (the multi-team ``pin_multi`` form) or ``cli_args.trainee_team``
     (the single pin); a generalist run (neither) returns ``[]``.
+
+    🚨 **A PATH THAT DOES NOT EXIST RAISES** (`gen3_run_spec_split_v1`, 2026-09-05). It used to
+    return ``[]`` — the same answer a real generalist run gives — so a caller that handed this a
+    RUN SPEC rather than a run dir got a wrong answer on a success path::
+
+        read_recorded_trainee_teams('models/ai_v9_92_R5F00_0831')          -> 2 teams
+        read_recorded_trainee_teams('models/ai_v9_92_R5F00_0831@26267760') -> 0 teams   # was []
+
+    A `--distill-teacher '<run>@<step>:*'` fold therefore reported teachers that taught nothing,
+    diagnosed by the wrong message ("that run recorded NO trainee teams"). The producer side is
+    fixed by `agents.training.run_spec.split_run_spec`; this raise is the consumer-side guard, so
+    the silence cannot come back through some other caller. ``require_teams=True`` additionally
+    raises when the run exists but recorded no pin — for a caller (the ``'TEACHER:*'`` wildcard)
+    whose whole request is "the teams this run trained on".
 
     TWO consumers share this so producer and consumer cannot drift:
       * ``--distill-teacher '<model>:*'`` — distil a teacher over EXACTLY the teams it trained on.
@@ -314,6 +328,12 @@ def read_recorded_trainee_teams(path: str) -> "list[str]":
     — the file changed since that run trained on it, so distilling/piloting it would be a lie.
     """
     import os
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"read_recorded_trainee_teams: {path!r} does not exist — refusing to read it as a run "
+            "with no recorded teams. A run SPEC carries an optional '@<step>' suffix that a "
+            "directory reader must not see: split it with "
+            "`agents.training.run_spec.split_run_spec` first.")
     d = path if os.path.isdir(path) else os.path.dirname(path)
     meta = None
     for cand in (os.path.join(d, "metadata.json"),
@@ -326,10 +346,19 @@ def read_recorded_trainee_teams(path: str) -> "list[str]":
             except (OSError, ValueError):
                 continue
     if not isinstance(meta, dict):
+        if require_teams:
+            raise ValueError(
+                f"read_recorded_trainee_teams: {path!r} exists but no metadata.json was found "
+                "beside it or one level up — it is not a run dir / run artifact.")
         return []
     cli = meta.get("cli_args") or {}
     raw = cli.get("trainee_teams") or cli.get("trainee_team")
     if not raw:
+        if require_teams:
+            raise ValueError(
+                f"read_recorded_trainee_teams: run {path!r} recorded NO trainee teams "
+                "(cli_args has neither trainee_teams nor trainee_team) — it was not a "
+                "specialist/exploiter run.")
         return []
     files = [x.strip() for x in str(raw).split(",") if x.strip()]
     for f in files:

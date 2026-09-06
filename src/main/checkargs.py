@@ -309,6 +309,45 @@ def _provenance(dest: str, ns, inherited: Dict[str, Any]) -> str:
     return f"{flag} {val!r} ({where})"
 
 
+def argv_value(argv: List[str], flag: str) -> str | None:
+    """The value of `--flag` in an argv, in either spelling (`--flag v` / `--flag=v`)."""
+    for tok, vals in split_argv(argv):
+        name = tok.split("=", 1)[0]
+        if name != flag:
+            continue
+        if "=" in tok:
+            return tok.split("=", 1)[1]
+        return " ".join(vals) if vals else None
+    return None
+
+
+def teacher_spec_findings(argv: List[str], ns=None) -> List[str]:
+    """Every reason this argv's `--distill-teacher` would fail or teach NOTHING.
+
+    Reads `agents.training.distill_spec.check_teacher_spec` — the SAME function
+    `main.train.config.resolve_config` refuses on — so the offline answer and the launch answer
+    come from one declaration. `gen3_run_spec_split_v1`: a `<run>@<step>:*` teacher used to resolve
+    to zero teams and the only symptom was a count in the `[DISTILL]` startup line.
+
+    Filesystem-reading, so it answers only about paths that exist ON THIS BOX; a spec naming a run
+    dir that is simply not here reports as missing, which is the honest answer for a command about
+    to be launched here. Torch-free (`distill_spec` imports only `run_spec`, `matchup_spec` only
+    the stdlib), keeping this module's no-torch promise.
+    """
+    spec = getattr(ns, "distill_teacher", None) if ns is not None else None
+    if not spec:
+        spec = argv_value(argv, "--distill-teacher") or argv_value(argv, "--distill_teacher")
+    if not spec:
+        return []
+    from agents.training.distill_spec import check_teacher_spec
+    from agents.training.matchup_spec import read_recorded_trainee_teams
+
+    def _resolve(run_dir):
+        return read_recorded_trainee_teams(run_dir, require_teams=True)
+
+    return check_teacher_spec(spec, resolve_wildcard=_resolve)
+
+
 def check(argv: List[str]) -> dict:
     """Every flag in `argv` classified against the live parser. Pure — unit-testable."""
     known = known_option_strings()
@@ -326,12 +365,13 @@ def check(argv: List[str]) -> dict:
     res = {"n_flags": len(ok) + len(launcher) + len(unknown),
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
-           "resolution": None, "combinations": []}
+           "resolution": None, "combinations": [], "teacher_spec": []}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
         # more to the point, the reader has to fix that first. Report it alone.
         return res
 
+    res["teacher_spec"] = teacher_spec_findings(argv)
     resolution = resolve_against_parent(argv)
     res["resolution"] = resolution
     if not resolution or resolution.get("ns") is None:
@@ -566,6 +606,17 @@ def main(raw: List[str] | None = None) -> int:
         print("  The dependency graph is designs/flag_registry.md (generated from")
         print("  agents.model.flag_registry, which is where the constructor's raises are declared).")
 
+    if res["teacher_spec"]:
+        print(f"  --distill-teacher spec         : {len(res['teacher_spec'])}  "
+              "✗ WOULD FAIL IN resolve_config")
+        for line in res["teacher_spec"]:
+            print(f"      {line}")
+        print("\n  These are agents.training.distill_spec.check_teacher_spec — the same function")
+        print("  the launch path refuses on. A teacher that resolves to ZERO teams folds no loss")
+        print("  and biases no team draw while every startup line still reads as a running fold;")
+        print("  the grammar is '<run|zip>[@<step>]:<teams|*>' and the '@<step>' is part of the")
+        print("  SPEC, never part of the directory name.")
+
     if res["combinations"]:
         print(f"  refused combinations           : {len(res['combinations'])}  "
               "✗ WOULD FAIL IN resolve_config")
@@ -585,12 +636,19 @@ def main(raw: List[str] | None = None) -> int:
             return int(TrainExitCode.FATAL_CONFIG)
         if not pinned.ok and pinned.authoritative:
             return 1
+        if res["teacher_spec"]:
+            # Only the PARSER is pinned; a teacher spec is refused by resolve_config in whatever
+            # tree runs, so a pinned-clean parse is not a pass.
+            print("  ⚠️  the pinned parser accepts every flag, but the --distill-teacher spec "
+                  "above would be refused at launch")
+            return 1
         if pinned.ok and not absent:
             print("  ✓ this command still launches (its own commit's parser accepts every flag)")
             return 0
         print("  ⚠️  the pinned static scan questioned it — see above; not a refusal")
         return 0
-    if not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]:
+    if (not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]
+            and not res["teacher_spec"]):
         print("  ✓ this command still launches")
         return 0
     return 1
