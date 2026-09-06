@@ -5878,6 +5878,28 @@ long-lived **standalone sidecar run beside a live trainer** — the `snapshot_la
 consumer share only a file format (that is `cf_label_buffer`'s whole premise), and a producer the
 trainer owned would make a label-path failure a *training* failure.
 
+**Four modules, one factory.** `cf_producer.py` owns the LOOP and everything with state in it —
+the cycle, the record ring's consumer side, the crash-safe `ProducerState`, the anchor, the rollout
+arms, the heartbeat and the CLI. Three pieces that need nothing the loop knows live beside it, the
+same shape as `cf_audit`'s split above. **`cf_producer_sampler.py`** holds the DECLARED, VERSIONED
+priority (`cf_producer_priority_v1`): `SAMPLER_VERSION` / `PRIORITY_WEIGHTS` / `MIN_LABELABLE_TURN`
+and the four pure functions that rank a candidate — `critic_surprise` (the conviction region),
+`normalized_entropy`, `priority_score`, and the `is_move_round` filter. Those two CONSTANTS had to
+travel with the arithmetic rather than stay behind, because `ProducerState` and `label_row` both
+STAMP them and a constant left in the hub would have made the import edge point back up.
+**`cf_producer_snapshot.py`** holds WHICH weights are running (`resolve_latest_checkpoint`,
+`step_from_checkpoint_name`) and the `Snapshot` that both scores decisions and builds the players
+that roll them out — one object because the two must use the SAME weights, and almost everything
+non-obvious in it is a `torch.compile` shape/dtype fact (B=1 scoring under a compiled graph,
+float32 masks, the two-key warm-up) rather than arithmetic. **`cf_producer_labels.py`** holds the
+v1 label ROW and its batch writer — a CONTRACT with `cf_label_buffer`, which knows nothing about
+this loop — and `OPPONENT_LABEL`, i.e. THE ECOLOGY DECISION itself. The cut was 2026-09-06 (the
+ratchet's third pass over the 1,000-2,000 band, **1899 → 1484 lines**; still in the band, because
+the loop class alone is ~810 lines and the 1,000 TARGET is unreachable without splitting it).
+`cf_producer` re-imports every public name, so `from agents.training.cf_producer import label_row`
+still resolves; the private `_warm_the_compiled_graph` is the one name that does not, and its two
+tests reach it through the owning module. **The extraction-parity golden below is the evidence.**
+
 #### 🚨 THE DUTY CYCLE — the number that decides whether ANY of this works
 
 The producer can only stamp a label with the step of the newest `checkpoints/` zip, and the buffer
@@ -6320,20 +6342,39 @@ historical one, a smaller R is a PREFIX of a larger one, `assert_paired_dice` ra
 AND on merely shorter lists, the recorded action always survives a cap, a capped sweep does not
 prefer switches — measured over 400 decisions, with the index-ordered rule pinned as the
 counterfactual it fails — and the wire shape incl. the zero-evidence drop).
-`cf_producer_test.py` (pure: the priority arithmetic incl. the entropy normalization and
-the tie rule, the state file's claim-before-work order and its bounded processed set, the
-producer/retention race — `TestProducerRetentionRace` deletes a record mid-cycle and asserts a
-counted skip, newest-first order, that a preloaded record survives its file, and that a vanished
-anchor record is not an anchor FAILURE — the throttle
+`cf_producer_test.py` (pure: the state file's claim-before-work order and its bounded processed
+set, the producer/retention race — `TestProducerRetentionRace` deletes a record mid-cycle and
+asserts a counted skip, newest-first order, that a preloaded record survives its file, and that a
+vanished anchor record is not an anchor FAILURE — the throttle
 and its sliding window, the stale-trainer pause + resume, the anchor's refusal / cadence /
-crash-is-a-failure, the ecology field on every row, checkpoint resolution, and that every help
-string renders). The THROUGHPUT contract has its own classes: `TestScoreForwardSignature` (a
-compiled snapshot scores one row at a time, an eager one keeps the batched forward, the mask
-reaches the graph as `float32` either way, and the chunking changes not a single number),
-`TestCompiledGraphWarmUp` (the warm-up forwards BOTH obs keys — the live signature — and a warm-up
-that raises is survivable), and `TestRolloutArms` (arms aggregate to the same label sequential or
-overlapped, one dead arm costs that arm alone and the arms after it still run, every arm gets its
-own players and its own dice, all-arms-dead is a skip rather than a phantom 0.0).
+crash-is-a-failure, the q-sweep's pairing / content / budget knobs / cost meter / schema round
+trip, and that every help string renders), plus `TestRolloutArms` (arms aggregate to the same label
+sequential or overlapped, one dead arm costs that arm alone and the arms after it still run, every
+arm gets its own players and its own dice, all-arms-dead is a skip rather than a phantom 0.0).
+**Three sibling files hold the tests that moved with the functions they cover** and reach every
+subject through `cf_producer`'s re-exports as `P.<name>`, which is what proves the move changed
+nothing a caller can see: `cf_producer_sampler_test.py` (the priority arithmetic incl. the entropy
+normalization and the tie rule, the move-round filter), `cf_producer_snapshot_test.py` (checkpoint
+resolution incl. a newer FORCED save outranking an older periodic one, plus the THROUGHPUT
+contract — a compiled snapshot scores one row at a time, an eager one keeps the batched forward,
+the mask reaches the graph as `float32` either way, the chunking changes not a single number, and
+the warm-up forwards BOTH obs keys and survives raising), and `cf_producer_labels_test.py` (the v1
+key set, the ecology field on every row, the optional `mc_return` / `q_labels` streams, and the
+writer's never-reuse-a-name rule).
+
+**The EXTRACTION-PARITY GOLDEN stays in `cf_producer_test.py`**, beside the fixtures, and it is
+what made the cut an extraction rather than a rewrite: every public entry point of the module —
+the four sampler functions, checkpoint resolution, `Snapshot.score` over a recording stub, the
+state file's whole round trip, the label row across its optional streams, the batch file, the
+outcome scalars, the anchor predicates and both refusal TEXTS, and the CLI's declared defaults —
+run on one synthetic fixture, canonically JSON-serialised and pinned by sha256
+(`121fe201…`, a 7,278-byte blob), captured BEFORE the move and reproduced byte-for-byte after it.
+Two fields are deliberately excluded and each says why in place: the row's `created_unix` (a
+`time.time()` default) and the anchor's TIMEOUT tail (it appends `describe_contention()`, which
+reads the live load average — only the self-diagnosing prefix is pinned). A dozen named values sit
+beside the digest so a failure names the entry point instead of a hash. The parser's defaults are
+IN the blob on purpose: a silently changed default is exactly the class it exists to catch, so a
+new flag legitimately moves it and the regeneration note says so.
 **The deliverable is `cf_producer_integration_test.py` (`sim`)**: a REAL bridge
 battle → the REAL `CfRecordRing` in the TRAINING tap's shape (**`trainee_username` stripped**) →
 ONE REAL producer cycle → the REAL `CfLabelBuffer`, asserting every row INGESTED with **zero skips**,

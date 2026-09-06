@@ -1801,6 +1801,30 @@ src/
                      #   three win-prob heads on identical states (so the hidden-information
                      #   floor cancels EXACTLY, not in expectation), each head's own spread
                      #   binned by its own prediction, and the shadow-vs-live signed gap
+                     #   cf_producer.py — the label PRODUCER DRIVER: the standalone sidecar that
+                     #   walks <run>/cf_records/ to <run>/cf_labels/. It owns the LOOP and every
+                     #   piece with state in it (the cycle, the ring's consumer side, the
+                     #   crash-safe ProducerState, the anchor, the rollout arms, the CLI); three
+                     #   siblings hold what needs nothing the loop knows, and it re-imports every
+                     #   public name from them
+                     #   cf_producer_sampler.py — the DECLARED, VERSIONED priority
+                     #   (cf_producer_priority_v1): SAMPLER_VERSION / PRIORITY_WEIGHTS /
+                     #   MIN_LABELABLE_TURN + critic_surprise (the conviction region),
+                     #   normalized_entropy, priority_score and the is_move_round filter. A
+                     #   SAMPLER, not a sweep — so a silent change here is a distribution-shift
+                     #   confound for every downstream readout, which is why it is versioned
+                     #   cf_producer_snapshot.py — WHICH weights are running
+                     #   (resolve_latest_checkpoint, incl. the SIGUSR1 forced-save name a
+                     #   periodic-only glob used to rank below everything) and the Snapshot that
+                     #   both scores decisions and builds their rollout players — ONE object
+                     #   because the two must use the SAME weights. Almost everything
+                     #   non-obvious in it is a torch.compile shape/dtype fact with its own
+                     #   measurement, not arithmetic
+                     #   cf_producer_labels.py — the v1 label ROW + its batch writer: a CONTRACT
+                     #   with cf_label_buffer, which knows nothing about the loop. One NEW file
+                     #   per batch (the buffer keys offsets on (name, inode)), tmp-then-rename,
+                     #   and OPPONENT_LABEL = THE ECOLOGY DECISION — a training record names no
+                     #   opponent, so every row says self_current and never a bot it cannot verify
                      #   instrumented_ppo/ — the PPO step as a package (ppo.py holds train() and
                      #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub;
                      #   noise_scale_terms.py = the PER-LOSS-TERM McCandlish critical batch —

@@ -57,26 +57,33 @@ producer label from a `cf_audit` label, whose opponent IS identified. Closing th
 means threading the opponent's identity through the training-side tap; it is not a change to this
 file.
 
-The sampler (``cf_producer_priority_v1``)
------------------------------------------
-Declared, versioned, and written into the state file AND every label row, because a silent
-priority change is a distribution-shift confound for every downstream readout (design
-decision-of-record 3). Per candidate decision:
+Four modules, one factory
+-------------------------
+This file owns the LOOP and everything with state in it: the cycle, the record ring's consumer
+side, the crash-safe ``ProducerState``, the anchor, the rollout arms, the heartbeat and the CLI.
+Three pieces that need nothing the loop knows live beside it (2026-09-06, the file-size ratchet's
+third cut of the 1,000-2,000 band, 1899 → 1484 lines). **This module re-imports every public name
+from all three**, so ``from agents.training.cf_producer import label_row`` still resolves and no
+caller moved:
 
-``critic_surprise`` = ``|P(win|s) − realized outcome|`` — highest first. This is the **conviction
-region**: the states where the head was sure and the game disagreed. G0 measured that class at
-+0.23 predicted-minus-MC, and measured that a single realized outcome cannot say whether the head
-was wrong or the dice were (53% of that class was genuinely winning). Tight-MC labels are the only
-instrument that separates them, so they are spent here first.
+* **`cf_producer_sampler.py`** — the DECLARED, VERSIONED priority (``cf_producer_priority_v1``):
+  ``SAMPLER_VERSION`` / ``PRIORITY_WEIGHTS`` / ``MIN_LABELABLE_TURN`` and the four pure functions
+  that rank a candidate (``critic_surprise`` — the conviction region — plus ``normalized_entropy``,
+  ``priority_score`` and the ``is_move_round`` filter). It is a SAMPLER, not a sweep, so a silent
+  change here is a distribution-shift confound for every downstream readout; the weights and the
+  reasoning for them travel together in that module's docstring.
+* **`cf_producer_snapshot.py`** — WHICH weights are running (``resolve_latest_checkpoint``,
+  ``step_from_checkpoint_name``) and the ``Snapshot`` that scores decisions and builds the rollout
+  players from them. Almost everything non-obvious there is a `torch.compile` shape/dtype fact,
+  each with its own measurement.
+* **`cf_producer_labels.py`** — the v1 label ROW (``label_row``, ``OPPONENT_LABEL``) and the batch
+  file it is written into (``write_label_batch``). A CONTRACT with `cf_label_buffer`, which knows
+  nothing about this loop.
 
-``policy_entropy`` = the masked action distribution's entropy / ``log(n_legal)`` — the decisions
-the policy has not made up its mind about, where a ground-truth value is worth most.
-
-``score = 1.00·critic_surprise + 0.35·policy_entropy``. Surprise dominates deliberately; entropy
-is a tie-break that keeps the sample off the degenerate "one legal move" states.
-
-A checkpoint with no win-prob head (``--win-prob-mode none``) has no surprise term at all; the
-producer says so once and ranks on entropy alone rather than pretending the term was zero.
+The extraction changed nothing a caller can see, and that is EVIDENCE rather than a promise:
+`cf_producer_test.py`'s extraction-parity golden digests every public entry point of this module —
+the arithmetic, the state file, the row, the batch, the refusal texts and the CLI defaults — and
+was captured BEFORE the cut and reproduced byte-for-byte after it.
 
 Crash safety, and what it costs
 -------------------------------
@@ -191,11 +198,8 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import glob
 import json
-import math
 import os
-import re
 import sys
 import time
 from collections import deque
@@ -204,9 +208,16 @@ from typing import Deque, List, Optional, Sequence
 
 import numpy as np
 
-from agents.action.constants import MOVE_START
 from agents.observation.constants import MAX_TURNS
-from agents.training.cf_audit import LabelRow, obs_b64, obs_digest, wilson_ci
+from agents.training.cf_producer_labels import (LABELS_DIRNAME,  # noqa: F401 (re-export)
+                                                OPPONENT_LABEL, label_row, write_label_batch)
+from agents.training.cf_producer_sampler import (MIN_LABELABLE_TURN,  # noqa: F401 (re-export)
+                                                 PRIORITY_WEIGHTS, SAMPLER_VERSION,
+                                                 critic_surprise, is_move_round,
+                                                 normalized_entropy, priority_score)
+from agents.training.cf_producer_snapshot import (Snapshot,  # noqa: F401 (re-export)
+                                                  load_snapshot, resolve_latest_checkpoint,
+                                                  step_from_checkpoint_name)
 from agents.training.cf_q_labels import (
     Q_SWEEP_VERSION, assert_paired_dice, q_arm_seeds, q_labels_block, q_provenance,
     recorded_arm_is_reusable, select_q_actions)
@@ -215,321 +226,12 @@ from utils.bridge.counterfactual import replay_counterfactual as _run_one
 from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord, replay_battle
 from utils.contention import describe_contention
 
-#: Written into the state file and every label row. Bump it when the weights or the candidate
-#: filter below change — a downstream reader comparing two runs' labels needs to know they were
-#: drawn from the same distribution.
-SAMPLER_VERSION = "cf_producer_priority_v1"
-
-#: The declared priority weights (§ *The sampler*).
-PRIORITY_WEIGHTS = {"critic_surprise": 1.00, "policy_entropy": 0.35}
-
-#: Every row this producer writes names this as its opponent. See *THE ECOLOGY DECISION*.
-OPPONENT_LABEL = "self_current"
-
 STATE_FILENAME = "cf_producer_state.json"
-LABELS_DIRNAME = "cf_labels"
 RECORDS_DIRNAME = "cf_records"
-
-#: Skipped and COUNTED, never silently dropped (`cf_audit` declares the same bound).
-#:
-#: ⚠️ Its ORIGINAL reason is GONE: "the offline replay driver cannot open turn 1" was a rust
-#: `search_driver` defect, fixed 2026-08-23 (`gen3_search_turn1_open_v1`), and both impls now
-#: open turn 1. The second reason it carried — "a turn-1 divergence has no prefix to be faithful
-#: about" — does not survive inspection either: an EMPTY prefix is trivially faithful, which
-#: makes turn 1 the easiest case rather than an excluded one.
-#:
-#: It is left at 2 deliberately, as a SAMPLER choice rather than a capability limit. Lowering it
-#: widens the declared candidate distribution by ~3.35% of move decisions, and this module's own
-#: rule is that missing a label is free while silently re-weighting the sampler is not — so that
-#: is its own change, with its own before/after on the label mix, not a rider on the driver fix.
-MIN_LABELABLE_TURN = 2
 
 #: How many processed-record names the state file remembers. The ring's default cap is 512 and
 #: files age out of it, so 4096 is ~8 ring turnovers of headroom at a few hundred KB of JSON.
 DEFAULT_KEEP_PROCESSED = 4096
-
-#: The TWO names a resumable checkpoint is written under. `_TrackingCheckpointCallback` writes the
-#: PERIODIC `checkpoint_<step>_steps.zip`; `train.lifecycle._forced_checkpoint` (SIGUSR1 — the
-#: launcher TUI's `c` key) writes `checkpoint_forced_<step:010d>_<HHMMSS>.zip` into the same
-#: directory. Reading only the first is not a cosmetic gap: an unparseable name scores `(0, 0, …)`
-#: in `resolve_latest_checkpoint`'s key, so ANY periodic checkpoint outranks EVERY forced one —
-#: a forced save taken AFTER the last periodic one would be silently passed over in favour of an
-#: older snapshot, against this module's own "the highest step wins" contract.
-_CKPT_STEP_RES = (
-    re.compile(r"checkpoint_(\d+)_steps\.zip$"),
-    re.compile(r"checkpoint_forced_(\d+)_\d+\.zip$"),
-)
-
-
-# ---------------------------------------------------------------------------
-# Priority scoring — pure, so the arithmetic is testable without a model
-# ---------------------------------------------------------------------------
-
-def normalized_entropy(probs: Sequence[float]) -> float:
-    """Shannon entropy of a masked action distribution, divided by ``log(n_legal)``.
-
-    Normalizing by the support size is what makes the number comparable ACROSS decisions: a
-    3-legal-action decision and a 9-legal-action one have different maximum entropies, and an
-    un-normalized entropy would rank "many options, all equal" above "two options, genuinely
-    50/50" purely on the option count. Returns 0.0 when there is nothing to be undecided about
-    (0 or 1 legal actions).
-    """
-    p = np.asarray(list(probs), dtype=float)
-    p = p[p > 0.0]
-    if p.size <= 1:
-        return 0.0
-    h = float(-(p * np.log(p)).sum())
-    return max(0.0, min(1.0, h / math.log(p.size)))
-
-
-def critic_surprise(win_prob: Optional[float], outcome: float) -> float:
-    """``|P(win|s) − realized outcome|`` — 0.0 when the checkpoint has no win-prob head.
-
-    ``outcome`` is 1.0 for a won battle, 0.0 for a lost one and 0.5 for a tie (the turn cap), so a
-    tie is maximally uninformative about conviction rather than counted as a loss."""
-    if win_prob is None or not np.isfinite(win_prob):
-        return 0.0
-    return float(abs(float(win_prob) - float(outcome)))
-
-
-def priority_score(surprise: float, entropy: float,
-                   weights: "Optional[dict]" = None) -> float:
-    w = weights or PRIORITY_WEIGHTS
-    return (w["critic_surprise"] * float(surprise)
-            + w["policy_entropy"] * float(entropy))
-
-
-def is_move_round(mask) -> bool:
-    """A start-of-turn MOVE round (as opposed to a mid-turn forced switch).
-
-    The divergence a counterfactual anchors at is a move round, so a forced-switch decision — whose
-    mask offers only switches — is not labelable by this path. Read off the mask rather than a
-    phase string because a ring record has no invocation metadata to carry one."""
-    m = np.asarray(mask)
-    return bool(m[MOVE_START:].sum() > 0)
-
-
-# ---------------------------------------------------------------------------
-# Checkpoint resolution
-# ---------------------------------------------------------------------------
-
-def step_from_checkpoint_name(path: str) -> Optional[int]:
-    """The step a checkpoint FILENAME declares — periodic or forced — else None."""
-    base = os.path.basename(path)
-    for rx in _CKPT_STEP_RES:
-        m = rx.search(base)
-        if m:
-            return int(m.group(1))
-    return None
-
-
-def resolve_latest_checkpoint(run_dir: str) -> "Optional[tuple[str, Optional[int]]]":
-    """The freshest ``(path, step)`` under ``run_dir``, or None when there is not one yet.
-
-    Considers ``latest.txt`` (which holds a run-RELATIVE path) AND the checkpoint glob, and picks
-    the highest STEP among them — not simply whatever ``latest.txt`` names. The two disagree
-    exactly when a checkpoint landed between the zip write and the pointer update, and in that
-    window the higher step is the one whose weights are on disk.
-
-    BOTH resumable checkpoint names count (see ``_CKPT_STEP_RES``): the periodic
-    ``checkpoint_<step>_steps.zip`` and the FORCED ``checkpoint_forced_<step>_<HHMMSS>.zip`` that
-    SIGUSR1 writes. Globbing only the first made a forced save reachable solely through
-    ``latest.txt`` and then, because its step did not parse, rank BELOW every periodic zip — so an
-    operator forcing a checkpoint mid-run moved the producer BACKWARDS to an older snapshot.
-    """
-    cands: "list[str]" = []
-    latest = os.path.join(run_dir, "latest.txt")
-    try:
-        rel = Path(latest).read_text().strip()
-    except OSError:
-        rel = ""
-    if rel:
-        p = rel if os.path.isabs(rel) else os.path.join(run_dir, rel)
-        if os.path.exists(p):
-            cands.append(p)
-    for root in (os.path.join(run_dir, "checkpoints"), run_dir):
-        cands += glob.glob(os.path.join(root, "checkpoint_*_steps.zip"))
-        cands += glob.glob(os.path.join(root, "checkpoint_forced_*.zip"))
-    if not cands:
-        return None
-    # Highest declared step wins; an unparseable name falls back to mtime so a hand-placed
-    # checkpoint is still reachable rather than invisible.
-    def _key(p: str):
-        s = step_from_checkpoint_name(p)
-        return (0 if s is None else 1, s or 0, os.path.getmtime(p))
-    best = max(sorted(set(cands)), key=_key)
-    return best, step_from_checkpoint_name(best)
-
-
-# ---------------------------------------------------------------------------
-# The snapshot — the ONE seam a test substitutes
-# ---------------------------------------------------------------------------
-
-class Snapshot:
-    """A loaded checkpoint: it scores decisions and it builds the players that roll them out.
-
-    Both jobs live behind one object because they must use the SAME weights — a producer that
-    ranked with one snapshot and rolled out with another would be labelling states chosen by a
-    policy that is not the one being measured. The `snapshot_loader` seam in :func:`main` exists so
-    the end-to-end test can run the REAL bridge rollouts without conjuring a current-architecture
-    checkpoint (the same substitution `cf_audit_integration_test` makes, and the same one only).
-    """
-
-    def __init__(self, path: str, step: int, model, mappings, *, compiled: bool = False) -> None:
-        self.path = path
-        self.step = int(step)
-        self.model = model
-        self.mappings = mappings
-        #: True when this snapshot's extractor went through `torch.compile`. It changes ONE thing
-        #: here — the batch size :meth:`score` forwards at — and the reason is in that method.
-        self.compiled = bool(compiled)
-        self._player_seq = 0
-
-    # -- scoring ---------------------------------------------------------------------
-    def score(self, obs: np.ndarray, masks: np.ndarray):
-        """``(win_probs | None, entropies)`` for a batch of decisions.
-
-        ``win_probs`` is None when the checkpoint trained no win-prob head; the caller must fall
-        back to entropy-only ranking and SAY so, rather than reading a missing head as a
-        confident 0.0.
-
-        ⚠️ **UNDER `torch.compile` THIS FORWARDS ONE ROW AT A TIME, on purpose.** The rollouts —
-        99% of this process's work — forward at **B=1**, and dynamo specializes a compiled graph on
-        the batch dimension: a single `B=29` scoring call therefore forces a second trace, and
-        coming back to `B=1` a third. Measured 2026-08-23 on the live `ai_v9_29_rev1_0823`
-        checkpoint: with a batched score in front of them, the FIRST label's 8 rollouts cost
-        **79.4 s** against **3.0 s** for the second — ~76 s of pure recompilation, once per record
-        shape. Row-wise scoring keeps exactly ONE shape alive in the whole process. It costs
-        ~0.12 s per record against ~0.04 s batched (29 candidates × 4.1 ms), i.e. it trades 80 ms
-        for the recompiles, and it is a pure win the moment a second batch size would have appeared.
-        EAGER snapshots have no such guard to keep, so they still take the single batched forward.
-        """
-        import torch as th
-
-        policy = self.model.policy
-        obs_a = np.asarray(obs, dtype=np.float32)
-        # ⚠️ float32 IS THE POINT, not tidiness. A materialized decision's mask arrives as `int8`
-        # while the live rollout path's mask (straight out of `embed_battle`) is float32 — and a
-        # compiled graph guards on DTYPE as hard as it does on shape. Measured 2026-08-23: with the
-        # int8 mask, the first scored row cost **19.5 s** (one full re-trace) against a 3.8 ms
-        # steady state. Same reason as the B=1 chunking below: keep exactly one signature alive.
-        mask_a = np.asarray(masks, dtype=np.float32)
-        step = 1 if self.compiled else len(obs_a)
-        probs_rows: "List[np.ndarray]" = []
-        wp_rows: "List[np.ndarray]" = []
-        have_wp = True
-        with th.no_grad():
-            for lo in range(0, len(obs_a), max(1, step)):
-                ot = th.as_tensor(obs_a[lo:lo + step])
-                mt = th.as_tensor(mask_a[lo:lo + step])
-                dist = policy.get_distribution({"observation": ot, "action_mask": mt})
-                logits = dist.distribution.logits
-                masked = th.where(mt.bool(), logits, th.full_like(logits, -1e8))
-                probs_rows.append(th.softmax(masked, 1).cpu().numpy())
-                # The win-prob head's output is a STASH written by the forward we just ran, so it
-                # is read off the same pass rather than paid for with a second one.
-                fe = getattr(policy, "features_extractor", None)
-                wp_logits = getattr(fe, "last_win_prob_logits", None) if fe is not None else None
-                if wp_logits is None:
-                    have_wp = False
-                else:
-                    wp_rows.append(th.sigmoid(wp_logits[:, 0]).cpu().numpy())
-        probs = np.concatenate(probs_rows, axis=0)
-        win_probs = np.concatenate(wp_rows, axis=0) if (have_wp and wp_rows) else None
-        ent = np.asarray([normalized_entropy(row) for row in probs], dtype=float)
-        return win_probs, ent
-
-    # -- players ---------------------------------------------------------------------
-    def make_player(self, record: ReconstructionRecord, side: str, *, role: str):
-        """A stochastic ``RLPlayer`` on ``side`` of ``record`` — see *THE ECOLOGY DECISION*.
-
-        ``stochastic=True`` is the load-bearing half: a greedy copy of a net is strictly stronger
-        than a temp-1.0 sample of it, so a greedy rollout would bias every label LOW against the
-        regime the training actor actually plays (measured +0.037 [+0.007, +0.066] over 477
-        sentinel states when this was got wrong on the prober's path).
-        """
-        from poke_env.ps_client import AccountConfiguration
-        from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
-        from agents.inference.player import RLPlayer
-
-        self._player_seq += 1
-        return RLPlayer(
-            model=self.model, team=record.packed_team(side), battle_format=record.format_id,
-            server_configuration=LocalhostServerConfiguration, mappings=self.mappings,
-            account_configuration=AccountConfiguration(
-                f"Cf{role}{self._player_seq % 100000}", "pw"),
-            max_concurrent_battles=1, stochastic=True, start_listening=False)
-
-
-def _warm_the_compiled_graph(model) -> float:
-    """Force the re-trace the FIRST REAL decision would otherwise pay for. Returns seconds spent.
-
-    `maybe_compile_extractor` warms the graph with ``{"observation": zeros(1, D)}`` — one key. Every
-    call this process actually makes arrives through ``policy.get_distribution`` with **two**
-    (``observation`` + ``action_mask``), and dynamo guards on the dict's KEY SET exactly as hard as
-    it does on shape and dtype. So the compile looks warm and the first live forward silently
-    re-traces the whole extractor.
-
-    MEASURED 2026-08-23 on the live `ai_v9_29_rev1_0823` checkpoint: that first forward cost
-    **19.5 s** against a 3.8 ms steady state — 17 s of a 27 s six-label pass, charged to whichever
-    record happened to be first. Paying it HERE makes it a startup cost that announces itself
-    rather than a mystery in the first cycle's heartbeat. Never fatal: a warm-up that raises has
-    cost nothing but the warm-up (the real call would simply re-trace as before).
-    """
-    import torch as th
-
-    t0 = time.perf_counter()
-    try:
-        space = model.observation_space
-        dim = int(space["observation"].shape[0])
-        n_act = int(space["action_mask"].shape[0])
-        obs = {"observation": th.zeros(1, dim, dtype=th.float32),
-               "action_mask": th.ones(1, n_act, dtype=th.float32)}
-        with th.no_grad():
-            model.policy.get_distribution(obs)
-    except Exception as exc:                                            # noqa: BLE001
-        print(f"[cf_producer] compiled-graph warm-up skipped ({type(exc).__name__}: "
-              f"{str(exc)[:160]}) — the first real decision will re-trace instead", flush=True)
-    return time.perf_counter() - t0
-
-
-def load_snapshot(path: str, step: Optional[int], *, device: str = "cpu",
-                  compile_extractor: bool = True) -> Snapshot:
-    """Load a checkpoint for scoring + rollouts.
-
-    Uses the prober's `sanitized_load_custom_objects` (drop extractor kwargs the CURRENT
-    constructor no longer accepts) rather than a bare `MaskablePPO.load`, for the same reason
-    every other rollout path does: a checkpoint written one flag-deletion ago otherwise TypeErrors.
-    The step is taken from the model's own ``num_timesteps`` — the authoritative number — with the
-    filename as the fallback for a checkpoint that does not carry one.
-    """
-    from sb3_contrib import MaskablePPO
-    from agents.observation.state_encoder import load_mappings
-    from main.prober.model import sanitized_load_custom_objects
-
-    custom_objects, _dropped = sanitized_load_custom_objects(path, device)
-    model = MaskablePPO.load(path, env=None, device=device, custom_objects=custom_objects)
-    model.policy.set_training_mode(False)
-    # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a DEEP TRACE
-    # banner on every forward; it would drown the heartbeat this process communicates through.
-    for mod in model.policy.modules():
-        if hasattr(mod, "_debugger"):
-            mod._debugger = None
-    compiled = False
-    if compile_extractor:
-        from agents.model.compile_opponents import maybe_compile_extractor
-        t0 = time.perf_counter()
-        compiled = bool(maybe_compile_extractor(
-            model, True, label=f"cf_producer:{os.path.basename(path)}", hide_cuda=True))
-        if compiled:
-            warm = _warm_the_compiled_graph(model)
-            print(f"[cf_producer] extractor compiled in {time.perf_counter() - t0 - warm:.0f}s "
-                  f"(+{warm:.0f}s warming the live call signature) — paid ONCE PER PROCESS, not "
-                  f"per checkpoint: dynamo keys on the CODE object and the weights are graph "
-                  f"inputs, so the NEXT refresh reuses this graph (measured 1.1 s for a whole "
-                  f"second load). It is ~6.4x on every rollout decision", flush=True)
-    resolved = int(getattr(model, "num_timesteps", 0) or 0) or int(step or 0)
-    return Snapshot(path, resolved, model, load_mappings(), compiled=compiled)
 
 
 # ---------------------------------------------------------------------------
@@ -643,116 +345,6 @@ class ProducerState:
             fh.flush()
             os.fsync(fh.fileno())
         os.replace(tmp, self.path)
-
-
-# ---------------------------------------------------------------------------
-# Labels
-# ---------------------------------------------------------------------------
-
-def write_label_batch(labels_dir: str, rows: "Sequence[dict]", *, step: int, seq: int) -> str:
-    """One batch → one NEW file, written tmp-then-rename.
-
-    A new file per batch rather than an append is the inode-safe shape: the buffer keys its byte
-    offsets on ``(name, inode)`` precisely because a producer that recreates a file it already
-    wrote used to have its first rows silently skipped. A name that is never reused cannot hit
-    that path at all, and the atomic rename means a half-written batch is never visible."""
-    os.makedirs(labels_dir, exist_ok=True)
-    path = os.path.join(labels_dir, f"labels_cf_producer_{step}_{seq}.jsonl")
-    tmp = path + ".tmp"
-    with open(tmp, "w") as fh:
-        for r in rows:
-            fh.write(json.dumps(r) + "\n")
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, path)
-    return path
-
-
-def label_row(*, record_path: str, decision: RecordDecision, wins: float, n: int,
-              step: int, surprise: float, entropy: float, score: float,
-              win_prob: Optional[float], n_capped: int = 0,
-              outcome_label: Optional[float] = None,
-              mc_return: Optional[float] = None, mc_return_n: int = 0,
-              reward_sha1: str = "", reward_composition: str = "",
-              q_labels: "Optional[Sequence[dict]]" = None,
-              q_sweep: "Optional[dict]" = None) -> dict:
-    """The shared v1 schema, plus additive provenance the buffer ignores by design.
-
-    The extra keys (`sampler_version`, `priority`, `label_regime`, `n_capped`) are NOT schema
-    changes — the buffer reads a fixed key set and ignores the rest — but they are the difference
-    between a label file you can audit a year later and a bag of numbers.
-
-    ``wins`` is a FLOAT, not a count (`gen3_cf_draw_at_cap_v1`). A draw scores 0.5, and the
-    turn-cap forfeit is a draw (see :meth:`CfProducer._play_arm`), so a label over R rollouts is a
-    mean of ``{0, 0.5, 1}`` rather than of ``{0, 1}``. ``n_capped`` records how many of the R hit
-    the cap, because a label of 0.5 built from 8 draws-at-cap and a label of 0.5 built from 4 wins
-    and 4 losses are the same number about different positions — and the reader who wants to
-    stratify or caveat cannot re-derive it from the row afterwards. ``wilson_lo``/``wilson_hi``
-    keep taking the fractional success total: the Wilson interval is a binomial-proportion
-    interval, so with draws in the sample it is an APPROXIMATION (the sample is no longer
-    Bernoulli) — it errs narrow, which is why `n_capped` sits beside it.
-
-    ``outcome_label`` / ``mc_return`` ARE read by the buffer (`gen3_cf_twin_heads_v1`) and are
-    additive-optional at schema v1: an older consumer ignores them, a newer one supervises nothing
-    extra when they are absent. See `cf_label_buffer`'s module docstring for why they ride the SAME
-    row as the tight-MC label rather than arriving as their own ``kind`` — in one line, the buffer
-    dedups on the obs digest, so a second row for one state would collide with the first and one of
-    them would vanish, and one-row-per-state additionally makes "heads B and C saw identical states"
-    structural rather than hoped-for.
-
-    ``reward_composition`` is the human line beside the digest, for the same reason `format_reward_
-    composition` is printed at launch: a hex digest tells a reader that two rewards DIFFER, and
-    nothing about how.
-
-    ``q_labels`` is the PER-ACTION stream (`gen3_cf_q_labels_v1`, ``--q-labels``) — additive-optional
-    at schema v1 like the two above, and riding the SAME row for the same reason: the buffer dedups
-    on the obs digest, so a second row for one state would collide with the first and one of them
-    would vanish. Passing it also writes ``taken_action``, the consumer-facing name for the index
-    this row has always carried under the provenance key ``recorded_action``; the WEAK on-policy
-    fallback term (``--q-winprob-onpolicy-coef``) reads that name beside ``outcome_label``. The two
-    travel together deliberately — the free field arrives with the expensive one rather than
-    offering a run the on-policy-only regime this whole stream exists to escape.
-    """
-    lo, hi = wilson_ci(float(wins), int(n))
-    row = LabelRow(
-        battle=record_path, decision_idx=int(decision.index),
-        obs_sha1=obs_digest(decision.obs), obs_npz=None, obs_inline=obs_b64(decision.obs),
-        label=float(wins) / float(n) if n else 0.0, n_rollouts=int(n),
-        wilson_lo=round(lo, 6), wilson_hi=round(hi, 6),
-        policy_step=int(step), opponent=OPPONENT_LABEL,
-    ).to_json()
-    row.update(
-        sampler_version=SAMPLER_VERSION,
-        label_regime="self_current_stochastic_both_sides",
-        turn=int(decision.turn),
-        recorded_action=int(decision.action),
-        # How many of `n_rollouts` ended at the 250-turn stall-forfeit cap and were therefore
-        # scored 0.5 rather than by play. Additive-only; the buffer never reads it.
-        n_capped=int(n_capped),
-        priority={"score": round(float(score), 6),
-                  "critic_surprise": round(float(surprise), 6),
-                  "policy_entropy": round(float(entropy), 6),
-                  "win_prob": (None if win_prob is None else round(float(win_prob), 6))},
-        # HEAD B's stream: the RECORDED battle's realized outcome for this state — the single
-        # Monte-Carlo sample the on-policy BCE already eats, on the states the factory selected.
-        # That is the whole coverage arm: same states as C, single-outcome precision.
-        outcome_label=(None if outcome_label is None else round(float(outcome_label), 6)),
-    )
-    if mc_return is not None:
-        # THE SHADOW CRITIC's stream. Written only when it was actually measured; a `null` here and
-        # an absent key mean the same thing to the buffer, but writing the reward provenance
-        # unconditionally would imply a measurement that was not taken.
-        row.update(mc_return=round(float(mc_return), 6), mc_return_n=int(mc_return_n),
-                   reward_sha1=reward_sha1, reward_composition=reward_composition)
-    if q_labels is not None:
-        # Written only when the sweep RAN. An absent key and an empty list mean different things
-        # here: absent = this producer does not do per-action labels, `[]` = it swept this decision
-        # and every arm failed. Both leave the Q head unsupervised on this row; only the second is
-        # a fact about the sweep, and `cf/q_label_coverage` should be able to tell them apart.
-        row.update(q_labels=list(q_labels), taken_action=int(decision.action))
-        if q_sweep is not None:
-            row["q_sweep"] = q_sweep
-    return row
 
 
 # ---------------------------------------------------------------------------

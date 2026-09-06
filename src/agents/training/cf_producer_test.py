@@ -23,143 +23,6 @@ from agents.training import cf_producer as P
 
 
 # ---------------------------------------------------------------------------
-# The priority arithmetic
-# ---------------------------------------------------------------------------
-
-class TestPriorityScoring:
-    def test_entropy_is_normalized_by_the_support_size(self):
-        """A 2-way coin-flip must outrank a 9-way near-certainty, which raw entropy inverts."""
-        coin = P.normalized_entropy([0.5, 0.5])
-        wide = P.normalized_entropy([0.92] + [0.01] * 8)
-        assert coin == pytest.approx(1.0)
-        assert wide < coin, "un-normalized entropy would rank the 9-way state higher"
-
-    def test_a_degenerate_decision_scores_zero_entropy(self):
-        assert P.normalized_entropy([1.0]) == 0.0
-        assert P.normalized_entropy([]) == 0.0
-        assert P.normalized_entropy([1.0, 0.0, 0.0]) == 0.0
-
-    def test_entropy_is_bounded_to_the_unit_interval(self):
-        for k in (2, 3, 4, 11):
-            assert P.normalized_entropy([1.0 / k] * k) == pytest.approx(1.0)
-
-    def test_critic_surprise_is_the_conviction_region(self):
-        # Sure of a win, and lost the battle: the "0.827 class" G0 measured at +0.23.
-        assert P.critic_surprise(0.9, 0.0) == pytest.approx(0.9)
-        # Sure of a win, and won: nothing to learn.
-        assert P.critic_surprise(0.9, 1.0) == pytest.approx(0.1)
-
-    def test_a_tie_is_half_not_a_loss(self):
-        """A turn-cap draw is uninformative about conviction, not evidence the head was wrong."""
-        assert P.critic_surprise(0.5, 0.5) == 0.0
-        assert P.critic_surprise(1.0, 0.5) == pytest.approx(0.5)
-
-    def test_no_win_prob_head_yields_no_surprise_term_rather_than_a_confident_zero(self):
-        assert P.critic_surprise(None, 0.0) == 0.0
-        assert P.critic_surprise(float("nan"), 0.0) == 0.0
-
-    def test_surprise_dominates_the_declared_weighting(self):
-        """The weights are a DECLARATION; this pins their ordering so a silent edit fails a test."""
-        assert P.PRIORITY_WEIGHTS["critic_surprise"] > P.PRIORITY_WEIGHTS["policy_entropy"]
-        # Max entropy cannot outrank a moderate surprise.
-        assert P.priority_score(0.4, 0.0) > P.priority_score(0.0, 1.0)
-        assert P.priority_score(0.5, 0.5) == pytest.approx(0.5 + 0.35 * 0.5)
-
-    def test_sampler_version_is_stamped_and_stable(self):
-        assert P.SAMPLER_VERSION == "cf_producer_priority_v1"
-
-
-class TestMoveRoundFilter:
-    def test_a_forced_switch_round_is_not_labelable(self):
-        """The counterfactual divergence anchors at a start-of-turn MOVE round; a mask offering
-        only switches is a mid-turn forced switch, which has no valid recorded answer to script."""
-        switches_only = np.zeros(11, dtype=np.int8)
-        switches_only[[1, 2, 3]] = 1
-        assert not P.is_move_round(switches_only)
-
-    def test_a_move_round_is_labelable(self):
-        m = np.zeros(11, dtype=np.int8)
-        m[[1, 6, 7]] = 1
-        assert P.is_move_round(m)
-
-    def test_struggle_counts_as_a_move_round(self):
-        m = np.zeros(11, dtype=np.int8)
-        m[10] = 1
-        assert P.is_move_round(m)
-
-
-# ---------------------------------------------------------------------------
-# Checkpoint resolution
-# ---------------------------------------------------------------------------
-
-class TestCheckpointResolution:
-    def test_no_checkpoint_is_none_not_a_crash(self, tmp_path):
-        assert P.resolve_latest_checkpoint(str(tmp_path)) is None
-
-    def test_the_highest_step_wins_over_latest_txt(self, tmp_path):
-        """`latest.txt` and the newest zip disagree exactly in the window between a checkpoint
-        write and the pointer update; the higher step is the one whose weights are on disk."""
-        ck = tmp_path / "checkpoints"
-        ck.mkdir()
-        (ck / "checkpoint_100_steps.zip").write_text("a")
-        (ck / "checkpoint_900_steps.zip").write_text("b")
-        (tmp_path / "latest.txt").write_text("checkpoints/checkpoint_100_steps.zip")
-        path, step = P.resolve_latest_checkpoint(str(tmp_path))
-        assert step == 900 and path.endswith("checkpoint_900_steps.zip")
-
-    def test_a_legacy_run_root_checkpoint_is_found(self, tmp_path):
-        (tmp_path / "checkpoint_42_steps.zip").write_text("a")
-        path, step = P.resolve_latest_checkpoint(str(tmp_path))
-        assert step == 42
-
-    def test_a_dangling_latest_txt_does_not_hide_the_glob(self, tmp_path):
-        ck = tmp_path / "checkpoints"
-        ck.mkdir()
-        (ck / "checkpoint_7_steps.zip").write_text("a")
-        (tmp_path / "latest.txt").write_text("checkpoints/gone.zip")
-        assert P.resolve_latest_checkpoint(str(tmp_path))[1] == 7
-
-    def test_a_forced_checkpoints_step_parses(self):
-        """SIGUSR1 writes `checkpoint_forced_<step:010d>_<HHMMSS>.zip` — a resumable checkpoint
-        under a second name. Reading only the periodic form makes its step unparseable, and an
-        unparseable step ranks BELOW every periodic zip in `_key`."""
-        assert P.step_from_checkpoint_name("checkpoint_forced_0000060000_120000.zip") == 60000
-        assert P.step_from_checkpoint_name("checkpoint_50000_steps.zip") == 50000
-        assert P.step_from_checkpoint_name("final_model.zip") is None
-
-    def test_a_NEWER_forced_checkpoint_beats_an_older_periodic_one(self, tmp_path):
-        """The regression: an operator hits the launcher's `c` (force checkpoint) after the last
-        periodic save. Before the fix the producer resolved the OLDER periodic zip and went on
-        stamping its step — silently labelling against a snapshot it had already moved past."""
-        ck = tmp_path / "checkpoints"
-        ck.mkdir()
-        (ck / "checkpoint_50000_steps.zip").write_text("a")
-        (ck / "checkpoint_forced_0000060000_120000.zip").write_text("b")
-        (tmp_path / "latest.txt").write_text(
-            "checkpoints/checkpoint_forced_0000060000_120000.zip")
-        path, step = P.resolve_latest_checkpoint(str(tmp_path))
-        assert step == 60000, "a newer FORCED checkpoint must outrank an older periodic one"
-        assert path.endswith("checkpoint_forced_0000060000_120000.zip")
-
-    def test_a_forced_checkpoint_is_found_without_latest_txt(self, tmp_path):
-        """It must be reachable by the GLOB too, not only through the pointer file — `latest.txt`
-        is written after the zip, so there is a window in which it names the previous save."""
-        ck = tmp_path / "checkpoints"
-        ck.mkdir()
-        (ck / "checkpoint_forced_0000012288_091921.zip").write_text("a")
-        assert P.resolve_latest_checkpoint(str(tmp_path))[1] == 12288
-
-    def test_an_older_forced_checkpoint_still_loses_to_a_newer_periodic_one(self, tmp_path):
-        """The other direction, so the fix is a step comparison and not a name preference."""
-        ck = tmp_path / "checkpoints"
-        ck.mkdir()
-        (ck / "checkpoint_forced_0000040448_092309.zip").write_text("a")
-        (ck / "checkpoint_50000_steps.zip").write_text("b")
-        path, step = P.resolve_latest_checkpoint(str(tmp_path))
-        assert step == 50000 and path.endswith("checkpoint_50000_steps.zip")
-
-
-# ---------------------------------------------------------------------------
 # The state file
 # ---------------------------------------------------------------------------
 
@@ -635,95 +498,6 @@ class TestAnchorRefusal:
         assert len(runs) == 2
 
 
-# ---------------------------------------------------------------------------
-# The label rows
-# ---------------------------------------------------------------------------
-
-class TestLabelRows:
-    def _row(self, **over):
-        from agents.training.obs_materializer import RecordDecision
-        obs = np.arange(8, dtype=np.float32)
-        d = RecordDecision(index=3, turn=11, action=7, choice="move icebeam",
-                           mask=np.ones(11, dtype=np.int8), obs=obs)
-        kw = dict(record_path="/r/x_reconstruction.json", decision=d, wins=5, n=8,
-                  step=24_000_000, surprise=0.4, entropy=0.6, score=0.61, win_prob=0.8)
-        kw.update(over)
-        return P.label_row(**kw)
-
-    def test_every_row_names_the_ecology_it_was_measured_in(self):
-        """THE ECOLOGY DECISION, enforced: a training record names no opponent, so the row must
-        say `self_current` and never a bot name it cannot verify."""
-        r = self._row()
-        assert r["opponent"] == P.OPPONENT_LABEL == "self_current"
-        assert r["label_regime"] == "self_current_stochastic_both_sides"
-
-    def test_the_row_is_the_shared_v1_schema(self):
-        r = self._row()
-        assert r["schema"] == 1 and r["kind"] == "mc_winprob"
-        assert r["label"] == pytest.approx(5 / 8)
-        assert r["n_rollouts"] == 8 and r["policy_step"] == 24_000_000
-        assert r["wilson_lo"] <= r["label"] <= r["wilson_hi"]
-        assert r["obs_npz"] is None and r["obs_inline"]
-
-    def test_the_row_carries_head_Bs_SINGLE_OUTCOME_stream(self):
-        """gen3_cf_twin_heads_v1. `outcome_label` is the RECORDED battle's realized outcome — the
-        SAME quantity the on-policy BCE eats, on the states the sampler selected. That identity is
-        what makes B−A a read of COVERAGE alone; a row that shipped anything else there would make
-        the contrast measure two things at once."""
-        assert self._row(outcome_label=0.0)["outcome_label"] == 0.0
-        assert self._row(outcome_label=1.0)["outcome_label"] == 1.0
-        assert self._row(outcome_label=0.5)["outcome_label"] == 0.5      # the turn cap / a tie
-        # ABSENT is a first-class value: an older consumer ignores it, a newer one supervises
-        # nothing extra rather than being handed a fabricated 0.
-        assert self._row()["outcome_label"] is None
-
-    def test_the_mc_return_stream_is_written_ONLY_when_it_was_measured(self):
-        """A `null` and an absent key mean the same thing to the buffer — but writing the reward
-        provenance unconditionally would imply a measurement that was not taken, and the digest is
-        the one field a reader uses to decide whether the number is theirs."""
-        bare = self._row()
-        assert "mc_return" not in bare and "reward_sha1" not in bare
-        got = self._row(mc_return=-2.5, mc_return_n=8, reward_sha1="deadbeef",
-                        reward_composition="1 TERMINAL + 7 PBRS + 1 BIAS (x)")
-        assert got["mc_return"] == pytest.approx(-2.5) and got["mc_return_n"] == 8
-        assert got["reward_sha1"] == "deadbeef"
-        # The human line rides beside the digest for the reason the launch banner exists: a hex
-        # digest says two rewards DIFFER and nothing about how.
-        assert "PBRS" in got["reward_composition"]
-
-    def test_the_new_streams_do_not_disturb_the_v1_schema_version(self):
-        """`schema` is a REFUSAL gate: a consumer skips every row whose version it does not know.
-        Bumping it for additive-optional fields would make a new producer's output unreadable by an
-        existing trainer — the opposite of backward compatible."""
-        assert self._row(outcome_label=1.0, mc_return=1.0, mc_return_n=4,
-                         reward_sha1="x")["schema"] == 1
-
-    def test_the_obs_digest_is_of_the_bytes_actually_shipped(self):
-        import base64
-        r = self._row()
-        arr = np.frombuffer(base64.b64decode(r["obs_inline"]), dtype=np.float32)
-        from agents.training.cf_audit import obs_digest
-        assert obs_digest(arr) == r["obs_sha1"]
-
-    def test_the_sampler_and_its_score_ride_on_every_row(self):
-        r = self._row()
-        assert r["sampler_version"] == P.SAMPLER_VERSION
-        assert r["priority"]["critic_surprise"] == pytest.approx(0.4)
-        assert r["priority"]["win_prob"] == pytest.approx(0.8)
-
-    def test_a_headless_checkpoints_rows_say_win_prob_none_not_zero(self):
-        assert self._row(win_prob=None)["priority"]["win_prob"] is None
-
-    def test_a_batch_is_a_new_file_written_atomically(self, tmp_path):
-        rows = [self._row(), self._row()]
-        p1 = P.write_label_batch(str(tmp_path), rows, step=100, seq=1)
-        p2 = P.write_label_batch(str(tmp_path), rows, step=100, seq=2)
-        assert os.path.basename(p1) == "labels_cf_producer_100_1.jsonl"
-        assert p1 != p2, "a batch must never reuse a name — the buffer keys offsets on (name,inode)"
-        assert not [f for f in os.listdir(tmp_path) if f.endswith(".tmp")]
-        assert len(open(p1).read().strip().split("\n")) == 2
-
-
 class TestTraineeSide:
     def test_a_training_record_defaults_to_p1(self):
         """BridgeSession seats env.agent1 — the trainee — on p1, always. A training record names
@@ -742,120 +516,6 @@ class TestTraineeSide:
             commands=(), trainee_username="B")
         assert P._trainee_side(rec) == "p2"
 
-
-# ---------------------------------------------------------------------------
-# The throughput contract: ONE compiled signature, and independent rollout arms
-# ---------------------------------------------------------------------------
-
-class _RecordingPolicy:
-    """A policy stand-in that REMEMBERS the shape and dtype of every forward it was handed.
-
-    The whole point of the scoring changes is *which signature* reaches a compiled graph, so the
-    test subject is the call record, not the numbers — and the numbers are checked too, because a
-    chunked forward that changes the ranking would be a silent sampler change.
-    """
-
-    def __init__(self, *, win_head: bool = True) -> None:
-        self.calls: list = []
-        self.features_extractor = SimpleNamespace(last_win_prob_logits=None)
-        self._win_head = win_head
-
-    def get_distribution(self, obs):
-        import torch as th
-        o, m = obs["observation"], obs["action_mask"]
-        self.calls.append({"n": int(o.shape[0]), "obs_dtype": o.dtype, "mask_dtype": m.dtype})
-        # Deterministic per-row logits so a chunked pass and a batched one are comparable.
-        logits = th.arange(o.shape[0], dtype=th.float32).unsqueeze(1) + th.arange(
-            m.shape[1], dtype=th.float32).unsqueeze(0)
-        if self._win_head:
-            self.features_extractor.last_win_prob_logits = th.zeros(o.shape[0], 1)
-        return SimpleNamespace(distribution=SimpleNamespace(logits=logits))
-
-
-def _snapshot_with(policy, *, compiled: bool):
-    return P.Snapshot("/ckpt.zip", 7, SimpleNamespace(policy=policy), None, compiled=compiled)
-
-
-class TestScoreForwardSignature:
-    def _inputs(self, n=5):
-        obs = np.arange(n * 4, dtype=np.float32).reshape(n, 4)
-        masks = np.ones((n, 3), dtype=np.int8)
-        masks[:, 2] = 0
-        return obs, masks
-
-    def test_a_compiled_snapshot_scores_ONE_ROW_AT_A_TIME(self):
-        """B=1 is the shape every rollout forwards at; a batched score would force a SECOND trace.
-
-        Measured 2026-08-23 on the live checkpoint: with a batched score in front of them, the
-        first label's rollouts cost 79 s against 3 s for the second — pure recompilation."""
-        pol = _RecordingPolicy()
-        obs, masks = self._inputs(5)
-        _snapshot_with(pol, compiled=True).score(obs, masks)
-        assert [c["n"] for c in pol.calls] == [1, 1, 1, 1, 1]
-
-    def test_an_eager_snapshot_still_takes_the_single_batched_forward(self):
-        """There is no graph to keep one signature for, so the cheap path stays the cheap path."""
-        pol = _RecordingPolicy()
-        obs, masks = self._inputs(5)
-        _snapshot_with(pol, compiled=False).score(obs, masks)
-        assert [c["n"] for c in pol.calls] == [5]
-
-    def test_the_mask_reaches_the_graph_as_float32_not_int8(self):
-        """A materialized mask is int8 and a live one is float32 — and dynamo guards on DTYPE as
-        hard as on shape. That mismatch measured a 19.5 s re-trace on the first scored row."""
-        import torch as th
-        for compiled in (True, False):
-            pol = _RecordingPolicy()
-            obs, masks = self._inputs(3)
-            assert masks.dtype == np.int8
-            _snapshot_with(pol, compiled=compiled).score(obs, masks)
-            assert {c["mask_dtype"] for c in pol.calls} == {th.float32}
-            assert {c["obs_dtype"] for c in pol.calls} == {th.float32}
-
-    def test_chunking_does_not_change_a_single_number(self):
-        """The sampler ranks on these values, so the two paths must agree exactly."""
-        obs, masks = self._inputs(6)
-        wp_c, ent_c = _snapshot_with(_RecordingPolicy(), compiled=True).score(obs, masks)
-        wp_e, ent_e = _snapshot_with(_RecordingPolicy(), compiled=False).score(obs, masks)
-        assert np.allclose(ent_c, ent_e)
-        assert np.allclose(wp_c, wp_e)
-
-    def test_a_headless_checkpoint_reports_no_win_probs_through_either_path(self):
-        for compiled in (True, False):
-            obs, masks = self._inputs(4)
-            wp, ent = _snapshot_with(
-                _RecordingPolicy(win_head=False), compiled=compiled).score(obs, masks)
-            assert wp is None and len(ent) == 4
-
-
-class TestCompiledGraphWarmUp:
-    def test_a_warm_up_that_raises_is_survivable_and_says_so(self, capsys):
-        """It is a perf warm-up, not a gate: a model whose spaces are not what we assumed must
-        cost the warm-up and nothing else."""
-        broken = SimpleNamespace(observation_space={}, policy=SimpleNamespace())
-        assert P._warm_the_compiled_graph(broken) >= 0.0
-        assert "warm-up skipped" in capsys.readouterr().out
-
-    def test_it_forwards_the_LIVE_signature_both_keys(self):
-        """`maybe_compile_extractor` warms with `observation` ALONE; every real call also carries
-        `action_mask`, and a dict's KEY SET is part of the guard — so warming with one key leaves
-        the first real decision to re-trace (19.5 s, measured)."""
-        seen = {}
-
-        class _Space:
-            def __init__(self, n):
-                self.shape = (n,)
-
-        def _get_distribution(obs):
-            seen["keys"] = sorted(obs)
-            seen["shapes"] = {k: tuple(v.shape) for k, v in obs.items()}
-
-        model = SimpleNamespace(
-            observation_space={"observation": _Space(9), "action_mask": _Space(11)},
-            policy=SimpleNamespace(get_distribution=_get_distribution))
-        P._warm_the_compiled_graph(model)
-        assert seen["keys"] == ["action_mask", "observation"]
-        assert seen["shapes"] == {"observation": (1, 9), "action_mask": (1, 11)}
 
 
 def _seed_is_even(seed) -> bool:
@@ -1519,3 +1179,318 @@ class TestQSchemaRoundTrip:
         r = buf.sample(1)[0]
         assert r.q_labels == () and r.taken_action == 7, \
             "`taken_action` present says the sweep RAN; its absence says the producer is older"
+
+
+# ══════════════════════════════════════════════════ the EXTRACTION parity golden ══
+#
+# The declared sampler moved to `cf_producer_sampler.py`, the checkpoint + the loaded model to
+# `cf_producer_snapshot.py` and the label schema + batch writer to `cf_producer_labels.py` on
+# 2026-09-06 (the file-size ratchet's third cut of the 1,000-2,000 band). Every one of them is
+# still CALLED HERE through `cf_producer`'s re-exports, which is the point: this golden is what
+# makes each move an EXTRACTION rather than a rewrite, and it has not been regenerated for any of
+# them. Each claimed to be pure refactoring, and this is the evidence for that claim rather than a
+# promise of it: every public entry point of the module — the priority arithmetic, checkpoint
+# resolution, `Snapshot.score` over a recording stub, the state file's whole round trip, the label
+# row and its batch file, the outcome scalars, the anchor predicates and their refusal texts, and
+# the CLI's declared defaults — run on one synthetic fixture, JSON-serialised canonically and
+# pinned by digest. The blob was captured from the tree BEFORE the extraction and reproduces
+# byte-for-byte after it.
+#
+# The named values beside the digest are not decoration. A bare hash cannot say WHICH entry point
+# moved when it fails, and a test whose only assertion is an opaque digest is one refactor away
+# from being regenerated on autopilot.
+#
+# ⚠️ Regenerating: only ever after establishing WHY it changed. A new CLI flag legitimately moves
+# it (the parser's defaults are in the blob on purpose — a silently changed default is exactly the
+# class this pins); a change in the arithmetic, the schema or a refusal text is not legitimate
+# without a stated reason. Print the current digest with::
+#
+#     python -c "import hashlib; from agents.training import cf_producer_test as t; \
+#                print(hashlib.sha256(t._parity_blob().encode()).hexdigest())"
+
+_PARITY_SHA256 = "121fe20156da385aad915bb0fb2943c402057e553d4b47fb3c6a134e66b7ea67"
+
+#: `created_unix` is `time.time()` at construction, so it is dropped rather than pinned — the row
+#: is otherwise byte-stable and this is the only field of it that is not.
+_VOLATILE_ROW_KEYS = ("created_unix",)
+
+
+class _ParityPolicy:
+    """A recording stand-in for `model.policy`: deterministic per-row logits, an optional win-prob
+    stash, and it remembers the shape/dtype signature every call arrived with — which is the half
+    of `Snapshot.score` that is a CONTRACT (B=1 under compile, float32 masks always) rather than
+    arithmetic."""
+
+    def __init__(self, *, win_head: bool = True) -> None:
+        self.calls: "list[dict]" = []
+        self.features_extractor = SimpleNamespace(last_win_prob_logits=None)
+        self._win_head = win_head
+
+    def get_distribution(self, obs):
+        import torch as th
+        o, m = obs["observation"], obs["action_mask"]
+        self.calls.append({"n": int(o.shape[0]), "obs_dtype": str(o.dtype),
+                           "mask_dtype": str(m.dtype)})
+        logits = (th.arange(o.shape[0], dtype=th.float32).unsqueeze(1)
+                  + th.arange(m.shape[1], dtype=th.float32).unsqueeze(0))
+        if self._win_head:
+            self.features_extractor.last_win_prob_logits = th.full((o.shape[0], 1), 0.25)
+        return SimpleNamespace(distribution=SimpleNamespace(logits=logits))
+
+
+def _parity_record():
+    """A `ReconstructionRecord` stand-in with the two fields the outcome/anchor readers touch."""
+    return SimpleNamespace(
+        commands=[("p1", "move 1"), ("p2", "switch 3"), ("p1", "move 2")],
+        username=lambda side: {"p1": "Trainee", "p2": "Opp"}[side])
+
+
+def _parity_decision(**over):
+    from agents.training.obs_materializer import RecordDecision
+    kw = dict(index=3, turn=11, action=7, choice="move icebeam",
+              mask=np.ones(11, dtype=np.int8), obs=np.arange(8, dtype=np.float32))
+    kw.update(over)
+    return RecordDecision(**kw)
+
+
+def _strip_volatile(row: dict) -> dict:
+    return {k: v for k, v in row.items() if k not in _VOLATILE_ROW_KEYS}
+
+
+def _parity_readouts() -> dict:
+    """Every public entry point of `cf_producer`, on one synthetic fixture."""
+    import shutil
+    import tempfile
+    from pathlib import Path
+
+    from agents.action.constants import MOVE_START
+    from agents.training.cf_producer import (DEFAULT_KEEP_PROCESSED, LABELS_DIRNAME,
+                                             MIN_LABELABLE_TURN, OPPONENT_LABEL, PRIORITY_WEIGHTS,
+                                             RECORDS_DIRNAME, SAMPLER_VERSION, STATE_FILENAME,
+                                             ProducerState, Snapshot, _outcome_scalar,
+                                             anchor_refusal_message, build_parser, critic_surprise,
+                                             is_move_round, label_row, normalized_entropy,
+                                             priority_score, record_is_full_replay_anchorable,
+                                             resolve_latest_checkpoint, rollout_outcome_score,
+                                             step_from_checkpoint_name, write_label_batch)
+
+    out: dict = {
+        "constants": {"SAMPLER_VERSION": SAMPLER_VERSION,
+                      "PRIORITY_WEIGHTS": dict(PRIORITY_WEIGHTS),
+                      "MIN_LABELABLE_TURN": MIN_LABELABLE_TURN,
+                      "OPPONENT_LABEL": OPPONENT_LABEL,
+                      "STATE_FILENAME": STATE_FILENAME,
+                      "LABELS_DIRNAME": LABELS_DIRNAME,
+                      "RECORDS_DIRNAME": RECORDS_DIRNAME,
+                      "DEFAULT_KEEP_PROCESSED": DEFAULT_KEEP_PROCESSED},
+    }
+
+    # -- the declared sampler ------------------------------------------------------
+    out["normalized_entropy"] = [
+        normalized_entropy([]), normalized_entropy([1.0]),
+        normalized_entropy([0.5, 0.5]), normalized_entropy([0.25] * 4),
+        normalized_entropy([0.7, 0.2, 0.1]), normalized_entropy([0.9, 0.1, 0.0, 0.0]),
+    ]
+    out["critic_surprise"] = [critic_surprise(None, 1.0), critic_surprise(0.9, 0.0),
+                              critic_surprise(0.5, 0.5), critic_surprise(0.2, 1.0),
+                              critic_surprise(float("nan"), 1.0)]
+    out["priority_score"] = [priority_score(0.9, 0.1), priority_score(0.0, 1.0),
+                             priority_score(0.4, 0.6),
+                             priority_score(0.4, 0.6, {"critic_surprise": 2.0,
+                                                       "policy_entropy": 0.0})]
+    switch_only = np.zeros(11, dtype=np.int8)
+    switch_only[:MOVE_START] = 1
+    move_only = np.zeros(11, dtype=np.int8)
+    move_only[MOVE_START] = 1
+    out["is_move_round"] = [is_move_round(np.ones(11, dtype=np.int8)),
+                            is_move_round(switch_only), is_move_round(move_only)]
+
+    # -- the checkpoint ------------------------------------------------------------
+    out["step_from_checkpoint_name"] = [
+        step_from_checkpoint_name("/m/r/checkpoints/checkpoint_1234_steps.zip"),
+        step_from_checkpoint_name("/m/r/checkpoints/checkpoint_forced_0000009999_131415.zip"),
+        step_from_checkpoint_name("/m/r/best_model/best_model.zip"),
+    ]
+    tmp = tempfile.mkdtemp(prefix="cfprod_parity_")
+    try:
+        run = os.path.join(tmp, "run")
+        cks = os.path.join(run, "checkpoints")
+        os.makedirs(cks)
+        out["resolve_no_checkpoint"] = resolve_latest_checkpoint(run)
+        for name in ("checkpoint_100_steps.zip", "checkpoint_900_steps.zip",
+                     "checkpoint_forced_0000001500_101112.zip"):
+            open(os.path.join(cks, name), "w").close()
+        with open(os.path.join(run, "latest.txt"), "w") as fh:
+            fh.write("checkpoints/checkpoint_100_steps.zip")
+        got = resolve_latest_checkpoint(run)
+        out["resolve_latest_checkpoint"] = [os.path.basename(got[0]), got[1]]
+
+        # -- the state file --------------------------------------------------------
+        st = ProducerState.load(run)
+        for i in range(6):
+            st.claim(f"rec_{i}.json", keep=4)
+        st.claim("rec_2.json", keep=4)                     # idempotent
+        st.note_skip("no_move_round")
+        st.note_skip("no_move_round")
+        st.note_q_skip("all_arms_dead")
+        st.labels_total, st.rollouts_total, st.rollouts_capped = 12, 96, 3
+        st.records_vanished, st.anchors_run, st.anchors_reproduced = 2, 1, 1
+        st.save()
+        body = json.loads(Path(st.path).read_text())
+        body.pop("started_unix")
+        body.pop("updated_unix")
+        out["producer_state"] = body
+        out["producer_state_reload"] = sorted(ProducerState.load(run).processed)
+        out["producer_state_is_processed"] = [st.is_processed("rec_5.json"),
+                                              st.is_processed("rec_0.json")]
+
+        # -- the label batch file --------------------------------------------------
+        rows = [label_row(record_path="/r/a_reconstruction.json", decision=_parity_decision(),
+                          wins=5.0, n=8, step=24_000_000, surprise=0.4, entropy=0.6, score=0.61,
+                          win_prob=0.8, n_capped=1)]
+        p = write_label_batch(os.path.join(run, LABELS_DIRNAME), rows, step=24_000_000, seq=3)
+        out["label_batch"] = {
+            "name": os.path.basename(p),
+            "lines": [_strip_volatile(json.loads(ln))
+                      for ln in Path(p).read_text().splitlines()],
+        }
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # -- the label row, over its optional streams ----------------------------------
+    out["label_row_minimal"] = _strip_volatile(label_row(
+        record_path="/r/x_reconstruction.json", decision=_parity_decision(), wins=5.0, n=8,
+        step=24_000_000, surprise=0.4, entropy=0.6, score=0.61, win_prob=0.8))
+    out["label_row_headless"] = _strip_volatile(label_row(
+        record_path="/r/x_reconstruction.json", decision=_parity_decision(), wins=0.0, n=8,
+        step=1, surprise=0.0, entropy=0.6, score=0.21, win_prob=None))
+    out["label_row_full"] = _strip_volatile(label_row(
+        record_path="/r/x_reconstruction.json", decision=_parity_decision(index=4, turn=19),
+        wins=4.5, n=8, step=24_000_000, surprise=0.4, entropy=0.6, score=0.61, win_prob=0.8,
+        n_capped=2, outcome_label=1.0, mc_return=0.37, mc_return_n=8, reward_sha1="deadbeef",
+        reward_composition="terminal+pbrs",
+        q_labels=[{"action": 7, "label": 0.75, "n": 8}, {"action": 0, "label": 0.5, "n": 8}],
+        q_sweep={"version": "cf_q_sweep_v1", "arms": 2}))
+
+    # -- the loaded snapshot's scoring contract ------------------------------------
+    obs = np.arange(5 * 4, dtype=np.float32).reshape(5, 4)
+    masks = np.ones((5, 3), dtype=np.int8)
+    masks[:, 2] = 0
+    for tag, compiled, win_head in (("compiled", True, True), ("eager", False, True),
+                                    ("headless", False, False)):
+        pol = _ParityPolicy(win_head=win_head)
+        snap = Snapshot("/ckpt.zip", 7, SimpleNamespace(policy=pol), None, compiled=compiled)
+        wp, ent = snap.score(obs, masks)
+        out[f"score_{tag}"] = {
+            "win_probs": None if wp is None else [round(float(v), 12) for v in wp],
+            "entropies": [round(float(v), 12) for v in ent],
+            "calls": pol.calls,
+            "step": snap.step, "path": snap.path, "compiled": snap.compiled,
+        }
+
+    # -- the outcome scalars and the anchor ----------------------------------------
+    rec = _parity_record()
+    out["_outcome_scalar"] = [_outcome_scalar(rec, "p1", {"winner": "Trainee"}),
+                              _outcome_scalar(rec, "p1", {"winner": "Opp"}),
+                              _outcome_scalar(rec, "p1", {}),
+                              _outcome_scalar(rec, "p2", {"winner": "Opp"})]
+    out["rollout_outcome_score"] = [rollout_outcome_score({"outcome": "win"}),
+                                    rollout_outcome_score({"outcome": "loss"}),
+                                    rollout_outcome_score({"outcome": "tie"}),
+                                    rollout_outcome_score({"outcome": "unfinished"}),
+                                    rollout_outcome_score({"outcome": "win", "capped": True})]
+    out["anchorable"] = [
+        record_is_full_replay_anchorable(rec),
+        record_is_full_replay_anchorable(SimpleNamespace(
+            commands=rec.commands + [("forcelose", "p1")])),
+    ]
+    out["anchor_refusal"] = {
+        "mismatch": anchor_refusal_message(
+            error=None, mismatch=("loss", "Trainee", "Opp", "Trainee", ()),
+            state_path="/run/cf_producer_state.json"),
+        "mismatch_exhausted": anchor_refusal_message(
+            error=None, mismatch=("loss", "Trainee", "Opp", "Trainee", ("p2",)),
+            state_path="/run/cf_producer_state.json"),
+        "error": anchor_refusal_message(error="ConnectionResetError: boom", mismatch=None,
+                                        state_path="/run/cf_producer_state.json"),
+    }
+    # A TIMEOUT appends `describe_contention()`, which reads the live load average — so only the
+    # self-diagnosing PREFIX is pinned, never the box's current numbers.
+    timeout = anchor_refusal_message(error="ProgressTimeout: no progress", mismatch=None,
+                                     state_path="/run/cf_producer_state.json")
+    out["anchor_refusal_timeout_head"] = timeout.split("\n")[0]
+
+    # -- the CLI's declared defaults -----------------------------------------------
+    ns = build_parser().parse_args(["/models/run"])
+    out["cli_defaults"] = {k: v for k, v in sorted(vars(ns).items())}
+    return out
+
+
+def _parity_blob() -> str:
+    return json.dumps(_parity_readouts(), sort_keys=True, separators=(",", ":"), default=repr)
+
+
+def test_every_public_entry_point_matches_the_pre_extraction_golden():
+    """The sampler, the snapshot and the label schema live in their own modules now; nothing they
+    compute, write or refuse may have moved."""
+    import hashlib
+    blob = _parity_blob()
+    assert '"' in blob and len(blob) > 6_000, "the fixture produced nothing to compare"
+    got = hashlib.sha256(blob.encode()).hexdigest()
+    assert got == _PARITY_SHA256, (
+        f"cf_producer's entry points changed: {got} != {_PARITY_SHA256}. Read the named-value "
+        f"test below to find which one, and do not regenerate the digest without a stated reason.")
+
+
+def test_the_named_golden_values_are_what_the_digest_stands_for():
+    """The digest says 'nothing moved'; these say WHAT it is that did not move — so a failure
+    names the entry point instead of a hash, and so the golden cannot be regenerated blind."""
+    r = _parity_readouts()
+    assert r["constants"]["SAMPLER_VERSION"] == "cf_producer_priority_v1"
+    assert r["constants"]["PRIORITY_WEIGHTS"] == {"critic_surprise": 1.0, "policy_entropy": 0.35}
+    # The last two are the point of the normalization: a 3-way skew, and a 4-slot mask with two
+    # ZERO-probability actions — which is a 2-support decision, so it divides by log(2), not log(4).
+    assert r["normalized_entropy"] == [0.0, 0.0, 1.0, 1.0,
+                                       pytest.approx(0.7298466991620974, abs=1e-12),
+                                       pytest.approx(0.46899559358928117, abs=1e-12)]
+    assert r["critic_surprise"] == [0.0, 0.9, 0.0, 0.8, 0.0]
+    assert r["priority_score"] == [pytest.approx(0.935, abs=1e-12), 0.35,
+                                   pytest.approx(0.61, abs=1e-12), pytest.approx(0.8, abs=1e-12)]
+    assert r["is_move_round"] == [True, False, True]
+    assert r["step_from_checkpoint_name"] == [1234, 9999, None]
+    assert r["resolve_no_checkpoint"] is None
+    assert r["resolve_latest_checkpoint"] == ["checkpoint_forced_0000001500_101112.zip", 1500]
+    # The processed ring is bounded oldest-first, and `claim` is idempotent.
+    assert r["producer_state_reload"] == ["rec_2.json", "rec_3.json", "rec_4.json", "rec_5.json"]
+    assert r["producer_state"]["skip_reasons"] == {"no_move_round": 2}
+    assert r["producer_state"]["q_skip_reasons"] == {"all_arms_dead": 1}
+    assert r["producer_state"]["records_skipped"] == 2
+    assert r["label_batch"]["name"] == "labels_cf_producer_24000000_3.jsonl"
+    row = r["label_row_minimal"]
+    assert row["schema"] == 1 and row["kind"] == "mc_winprob"
+    assert row["opponent"] == "self_current"
+    assert row["label_regime"] == "self_current_stochastic_both_sides"
+    assert row["label"] == 0.625 and row["n_rollouts"] == 8
+    assert (row["wilson_lo"], row["wilson_hi"]) == (0.305738, 0.863158)
+    assert row["priority"] == {"score": 0.61, "critic_surprise": 0.4, "policy_entropy": 0.6,
+                               "win_prob": 0.8}
+    assert r["label_row_headless"]["priority"]["win_prob"] is None
+    assert "mc_return" not in r["label_row_minimal"] and "q_labels" not in r["label_row_minimal"]
+    assert r["label_row_full"]["mc_return"] == 0.37 and r["label_row_full"]["taken_action"] == 7
+    # B=1 under compile, one batched forward eager, float32 masks on BOTH paths.
+    assert [c["n"] for c in r["score_compiled"]["calls"]] == [1, 1, 1, 1, 1]
+    assert [c["n"] for c in r["score_eager"]["calls"]] == [5]
+    assert {c["mask_dtype"] for c in r["score_compiled"]["calls"]} == {"torch.float32"}
+    assert r["score_compiled"]["win_probs"] == r["score_eager"]["win_probs"]
+    assert r["score_compiled"]["entropies"] == r["score_eager"]["entropies"]
+    assert r["score_headless"]["win_probs"] is None
+    assert r["_outcome_scalar"] == [1.0, 0.0, 0.5, 1.0]
+    assert r["rollout_outcome_score"] == [1.0, 0.0, 0.5, 0.5, 0.5]
+    assert r["anchorable"] == [True, False]
+    assert r["anchor_refusal"]["mismatch"].startswith("cf_producer: ANCHOR MISMATCH")
+    assert "RAN OUT of recorded commands" in r["anchor_refusal"]["mismatch_exhausted"]
+    assert r["anchor_refusal"]["error"].startswith("cf_producer: ANCHOR COULD NOT RUN")
+    assert r["anchor_refusal_timeout_head"].startswith("cf_producer: ANCHOR COULD NOT RUN")
+    d = r["cli_defaults"]
+    assert (d["rollouts"], d["top_n"], d["records_per_cycle"]) == (8, 3, 4)
+    assert d["max_labels_per_hour"] == 2000 and d["anchor_every"] == 50
