@@ -1,0 +1,13 @@
+  [0] 61590463ee85d456 +280 (total 280, 20s)
+  [1] 9283210847f806ee +399 (total 679, 38s)
+  [2] ce35b7368c3d692e +333 (total 1012, 49s)
+  [3] 9909f2e98e981ccc +458 (total 1470, 65s)
+  [4] 9d5f845869e899ee +714 (total 2184, 102s)
+  [5] f7ba5702fe856292 +592 (total 2776, 143s)
+  [6] 90b94599967c6b77 +391 (total 3167, 170s)
+  [7] dbf81d8ecae51c39 +301 (total 3468, 191s)
+  per-team counts [280, 399, 333, 458, 714, 592, 391, 301]  expected [280, 399, 333, 458, 714, 592, 391, 301]  REPRODUCED
+  REV1FIN (the gen-era teachers' own fork parent)      D_off 0.3920
+  FLOOR_ckpt_28067760                                  D_off 0.0374
+  FLOOR_ckpt_27917760                                  D_off 0.0654
+wrote designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/parent_gap.json

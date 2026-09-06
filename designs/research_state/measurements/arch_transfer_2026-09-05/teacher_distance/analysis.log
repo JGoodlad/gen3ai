@@ -1,0 +1,170 @@
+============================================================================================================
+FOLD TABLE  (delta = untaught-8 win rate vs the fold's OWN parent, pp; D_off/D_on = mean KL(teacher||parent))
+============================================================================================================
+fold                 set    par         nT  ntm   D_off    D_on   delta             95% CI    coef  gas
+-------------------------------------------------------------------------------------------------------
+rev-2 / R2ACTION     R2set  29_rev1_08   5    9  0.2175  0.2247   +0.88 [ -1.33, +3.21]   0.181    2
+TC_UNF_A             UNF    59_R2ACTIO   8   16  0.5536  0.5804   +2.00 [ -0.28, +4.56]  0.1761    3
+TC_UNF_B             UNF    59_R2ACTIO   8   16  0.5536  0.5804   +1.94 [ -0.01, +3.67]  0.1761    3
+TC_UNF_K6_A          UNF    59_R2ACTIO   8   16  0.5536  0.5804   +0.37 [ -1.74, +2.53]  0.1761    6
+TC_UNF_K6_B          UNF    59_R2ACTIO   8   16  0.5536  0.5804   -0.81 [ -2.61, +1.22]  0.1761    6
+rev-3 / R3ACTION     R3set  59_R2ACTIO   6   12  0.6172  0.8663   -2.50 [ -4.39, -0.11]  0.1761    2
+TC_FUND_A            FUND   59_R2ACTIO   8   16  0.6957  0.7456   -2.50 [ -5.17, -0.22]  0.1761    3
+TC_FUND_B            FUND   59_R2ACTIO   8   16  0.6957  0.7456   -2.31 [ -3.83, -0.26]  0.1761    3
+rev-4 / R4ACTION     R4set  59_R2ACTIO   3   24  0.7715  0.9022   -6.50 [ -9.39, -3.44]  0.1761    2
+COMPFOLD             R4set  59_R2ACTIO   3   24  0.7715  0.9022   -3.88 [ -6.60, -1.61]  0.1761    2
+B2                   R4set  59_R2ACTIO   3   24  0.7715  0.9022   -2.75 [ -5.33, -0.31]  0.1761    2
+C1 (coef 0)          R4set  59_R2ACTIO   3   24  0.7715  0.9022   +2.50 [ -0.00, +5.06]     0.0    2  <- CONTROL, coef 0, excluded from every fit
+N1                   R4set  59_R2ACTIO   3   24  0.7715  0.9022   +1.50 [ -1.00, +4.06]  0.1761    2
+N2                   R4set  59_R2ACTIO   3   24  0.7715  0.9022   -4.44 [ -7.00, -2.28]  0.1761    2
+R4DOSE12             R4set  59_R2ACTIO   3   24  0.7715  0.9022   -5.81 [ -7.24, -3.94]  0.1761   12
+R4DOSE6              R4set  59_R2ACTIO   3   24  0.7715  0.9022   -6.31 [ -9.22, -3.42]  0.1761    6
+R4DOSE3              R4set  59_R2ACTIO   3   24  0.7715  0.9022   -7.56 [-11.79, -3.45]  0.1761    3
+v8_14 (CROSS-ERA)    v8set  ai_v8_04     3   22  0.2329  0.3385   +4.64 (@+1.09M, era meter)
+
+  MATCHED-NOISE FLOOR on this statistic (untaught side, from content_locality):
+    gen era (two arbitrary R2ACTION checkpoints): ckpt_28067760 0.0374, ckpt_27917760 0.0654
+    v8  era (two arbitrary ai_v8_04 checkpoints): FLOOR_c277178 0.0383, FLOOR_c275758 0.0664
+  D_off in FLOOR UNITS (gen floor mean 0.0514): R2set 4.2x, UNF 10.8x, R3set 12.0x, FUND 13.5x, R4set 15.0x, v8set 4.5x (own era floor, CORRECTED checkpoint; on content_locality's it was 5.2x)
+
+============================================================================================================
+PRIMARY (i).  n_folds_in_fit = 16   n_distinct_points = 5
+============================================================================================================
+
+  FOLD  unit   Spearman rho = -0.7563   Theil-Sen slope = -21.80 pp per unit KL
+    BOOT-FOLD  rho CI [-0.9316,-0.3873] excludes 0 | slope CI [-32.8,-8.4]  width_rho 0.544
+    BOOT-TEAM  rho CI [-0.8213,-0.5819] excludes 0 | slope CI [-31.3,-13.1]  width_rho 0.239
+    BOOT-BOTH  rho CI [-0.9361,-0.2572] excludes 0 | slope CI [-37.2,-6.5]  width_rho 0.679
+
+  POINT unit   Spearman rho = -0.9000   Theil-Sen slope = -11.21 pp per unit KL
+    BOOT-FOLD  rho CI [-1.0000,-0.1111] excludes 0 | slope CI [-38.1,-2.8]  width_rho 0.889
+    BOOT-TEAM  rho CI [-1.0000,-0.6000] excludes 0 | slope CI [-22.5,-4.9]  width_rho 0.400
+    BOOT-BOTH  rho CI [-1.0000,-0.1111] excludes 0 | slope CI [-35.5,+0.4]  width_rho 0.889
+
+============================================================================================================
+(iii)  D_on -- does ON-SLICE distance predict the untaught delta?
+============================================================================================================
+  FOLD unit   Spearman(D_on, delta) = -0.7658  BOOT-FOLD CI [-0.9577,-0.3984]  excludes 0
+  corr(D_off, D_on) over folds = +0.9647  over points = +0.9490
+  -> D_off and D_on are near-collinear across these sets, so (iii) cannot be scored as
+     a partial: there is no set that is far off-slice and near on-slice, or vice versa.
+
+============================================================================================================
+(ii)  Does D_off SEPARATE robbers from neutral/gifting folds?
+============================================================================================================
+  ROBBED (CI<0)          n=10  D_off 0.6172..0.7715  folds: B2, COMPFOLD, N2, R4DOSE12, R4DOSE3, R4DOSE6, TC_FUND_A, TC_FUND_B, rev-3 / R3ACTION, rev-4 / R4ACTION
+  NEUTRAL (CI spans 0)   n= 6  D_off 0.2175..0.7715  folds: N1, TC_UNF_A, TC_UNF_B, TC_UNF_K6_A, TC_UNF_K6_B, rev-2 / R2ACTION
+  GIFTED (CI>0)          n= 0
+  -> ranges OVERLAP
+
+============================================================================================================
+ASCII SCATTER  (x = D_off, y = untaught delta pp).  letters = folds, * = C1 control (excluded)
+============================================================================================================
+  +3.5 |                                                                                    
+  +2.9 |                                                                                *   
+  +2.4 |                                                 #                                  
+  +1.8 |                                                                                m   
+  +1.2 |  a                                                                                 
+  +0.6 |                                                 d                                  
+  +0.1 |------------------------------------------------------------------------------------
+  -0.5 |                                                 e                                  
+  -1.1 |                                                                                    
+  -1.7 |                                                                                    
+  -2.2 |                                                          f          #          k   
+  -2.8 |                                                                                    
+  -3.4 |                                                                                j   
+  -4.0 |                                                                                n   
+  -4.5 |                                                                                    
+  -5.1 |                                                                                    
+  -5.7 |                                                                                o   
+  -6.3 |                                                                                #   
+  -6.8 |                                                                                    
+  -7.4 |                                                                                q   
+  -8.0 |                                                                                    
+  -8.6 |                                                                                    
+       +------------------------------------------------------------------------------------
+        0.198                                                                        0.791
+  key: a=rev-2 / R2ACTION(R2set)  b=TC_UNF_A(UNF)  c=TC_UNF_B(UNF)  d=TC_UNF_K6_A(UNF)  e=TC_UNF_K6_B(UNF)  f=rev-3 / R3ACTION(R3set)  g=TC_FUND_A(FUND)  h=TC_FUND_B(FUND)  i=rev-4 / R4ACTION(R4set)  j=COMPFOLD(R4set)  k=B2(R4set)  *=C1 (coef 0)(R4set)  m=N1(R4set)  n=N2(R4set)  o=R4DOSE12(R4set)  p=R4DOSE6(R4set)  q=R4DOSE3(R4set)
+
+============================================================================================================
+LEAVE-ONE-OUT (POINT unit -- removing a whole teacher-set point)
+============================================================================================================
+  drop R4set@59_R2ACTIO   -> n=4  rho -0.8000  BOOT-TEAM CI [-1.0000,+0.0000]  SPANS 0
+  drop R3set@59_R2ACTIO   -> n=4  rho -1.0000  BOOT-TEAM CI [-1.0000,-0.4000]  excludes 0
+  drop R2set@29_rev1_08   -> n=4  rho -0.8000  BOOT-TEAM CI [-1.0000,-0.4000]  excludes 0
+  drop FUND@59_R2ACTIO    -> n=4  rho -1.0000  BOOT-TEAM CI [-1.0000,-0.4000]  excludes 0
+  drop UNF@59_R2ACTIO     -> n=4  rho -0.8000  BOOT-TEAM CI [-1.0000,-0.4000]  excludes 0
+
+============================================================================================================
+WITHIN-PARENT ONLY (parent = R2ACTION; n_folds=15, n_points=4) -- the clean contrast
+============================================================================================================
+  Spearman -0.7643  BOOT-TEAM CI [-0.8074,-0.5389] excludes 0
+                     BOOT-FOLD CI [-0.9334,-0.3765] excludes 0
+
+  Set means (within-parent):
+    FUND   D_off 0.6957  mean delta  -2.41  (n_folds 2: TC_FUND_A, TC_FUND_B)
+    R3set  D_off 0.6172  mean delta  -2.50  (n_folds 1: rev-3 / R3ACTION)
+    R4set  D_off 0.7715  mean delta  -4.47  (n_folds 8: rev-4 / R4ACTION, COMPFOLD, B2, N1, N2, R4DOSE12, R4DOSE6, R4DOSE3)
+    UNF    D_off 0.5536  mean delta  +0.87  (n_folds 4: TC_UNF_A, TC_UNF_B, TC_UNF_K6_A, TC_UNF_K6_B)
+    drop FUND   -> 3 points, rho -0.7432 BOOT-TEAM CI [-0.7879,-0.5487] excludes 0
+    drop UNF    -> 3 points, rho -0.5570 BOOT-TEAM CI [-0.6093,-0.1044] excludes 0
+    drop R4set  -> 3 points, rho -0.7769 BOOT-TEAM CI [-0.8964,-0.4582] excludes 0
+    drop R3set  -> 3 points, rho -0.7610 BOOT-TEAM CI [-0.8005,-0.5831] excludes 0
+
+============================================================================================================
+THE y-AXIS FLOOR AT IDENTICAL x  (same teacher set, same parent, same D_off)
+============================================================================================================
+  N1           - N2             +5.94 [ +1.94,+10.12]  (D_off identical at 0.7715)
+  TC_FUND_A    - TC_FUND_B      -0.19 [ -3.56, +2.94]  (D_off identical at 0.6957)
+  TC_UNF_A     - TC_UNF_B       +0.06 [ -2.50, +2.62]  (D_off identical at 0.5536)
+  TC_UNF_K6_A  - TC_UNF_K6_B    +1.19 [ -1.06, +3.69]  (D_off identical at 0.5536)
+
+============================================================================================================
+THE INHERITED GAP  (every gen-era teacher forked from rev-1 final; the fold parent for four of the
+five sets is R2ACTION, which is ITSELF a fold off rev-1)
+============================================================================================================
+  KL(REV1FIN (the gen-era teachers' own fork parent || R2ACTION) = 0.3920
+  KL(FLOOR_ckpt_28067760                            || R2ACTION) = 0.0374
+  KL(FLOOR_ckpt_27917760                            || R2ACTION) = 0.0654
+
+  -> a gen-era teacher starts 0.3920 from R2ACTION BEFORE it trains one step.
+     For R2set the teachers' fork parent IS the fold parent, so its inherited gap is 0
+     and its D_off is pure EARNED displacement. The other four sets sit on top of 0.3920.
+     D_off MINUS the inherited gap (a crude excess -- KL does not subtract, so this is
+     an ordering aid, never a level):
+       R2set  D_off 0.2175  inherited 0.0000  excess ~+0.2175
+       UNF    D_off 0.5536  inherited 0.3920  excess ~+0.1616
+       R3set  D_off 0.6172  inherited 0.3920  excess ~+0.2252
+       FUND   D_off 0.6957  inherited 0.3920  excess ~+0.3037
+       R4set  D_off 0.7715  inherited 0.3920  excess ~+0.3794
+
+  TEACHER BUDGET (exploiter span in M steps off rev-1 final @25.0M; FUND = UNF + 2.0M):
+    set     budget_M  teams/tchr   D_off  mean delta
+    R2set       3.07           2  0.2175       +0.88
+    UNF         3.07           2  0.5536       +0.87
+    R3set       5.07           2  0.6172       -2.50
+    FUND        5.07           2  0.6957       -2.41
+    R4set      10.07           8  0.7715       -4.47
+    Spearman(budget, D_off)  = +0.9487
+    Spearman(budget, delta)  = -0.9487
+    Spearman(D_off,  delta)  = -0.9000
+    -> if these agree, budget and distance are RANK-INDISTINGUISHABLE in this table and no
+       fold here breaks the confound.
+    Spearman(EXCESS D_off, delta) = -0.8000  (excess = D_off - inherited gap)
+    The decisive row: R2set and UNF share a budget (3.07M) and a delta (+0.88/+0.87)
+    while their RAW D_off differs 2.5x (0.2175 vs 0.5536) -- the whole difference is
+    the inherited gap, and it moves the delta by nothing. Raw distance is the wrong
+    axis at the one cross-parent point; EARNED displacement is the right one.
+
+============================================================================================================
+RECONCILIATION with content_locality (SAME states -- per-team counts identical -- DIFFERENT checkpoint)
+============================================================================================================
+  content_locality untaught state counts 0..7: [280, 399, 333, 458, 714, 592, 391, 301]
+  this probe's                            0..7: [280, 399, 333, 458, 714, 592, 391, 301]
+  -> states REPRODUCE exactly
+  UNF    final_model.zip (content_locality) 0.5990   best_model/best_model.zip (THIS probe, = what the fold loads) 0.5536   delta -0.0454
+  FUND   final_model.zip (content_locality) 0.6969   best_model/best_model.zip (THIS probe, = what the fold loads) 0.6957   delta -0.0012
+  FUNDED-UNFUNDED on final_model  (content_locality's headline): +0.0979 [+0.0544,+0.1490] SIGNIFICANT
+  FUNDED-UNFUNDED on best_model   (the checkpoints the fold used): +0.1421 [+0.0889,+0.2015] SIGNIFICANT
+
+wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/analysis.json

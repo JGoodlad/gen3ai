@@ -1,0 +1,27 @@
+rev-4 / R4ACTION     wr 0.5175  Δ  -6.50 [ -9.39, -3.44]  up 1/8  | teachers 3 taught 24  coef 0.1761  gas 2  fork_lr None
+rev-3 / R3ACTION     wr 0.5575  Δ  -2.50 [ -4.39, -0.11]  up 1/8  | teachers 6 taught 12  coef 0.1761  gas 2  fork_lr None
+COMPFOLD             wr 0.5437  Δ  -3.88 [ -6.60, -1.61]  up 1/8  | teachers 3 taught 12  coef 0.1761  gas 2  fork_lr None
+rev-2 / R2ACTION     wr 0.5825  Δ  +0.88 [ -1.33, +3.21]  up 5/8  | teachers 5 taught  9  coef 0.181  gas 2  fork_lr None
+B2                   wr 0.5550  Δ  -2.75 [ -5.33, -0.31]  up 3/8  | teachers 3 taught 24  coef 0.1761  gas 2  fork_lr None
+C1 (coef 0)          wr 0.6075  Δ  +2.50 [ -0.00, +5.06]  up 6/8  | teachers 3 taught 24  coef 0.0  gas 2  fork_lr None
+N1                   wr 0.5975  Δ  +1.50 [ -1.00, +4.06]  up 6/8  | teachers 3 taught  6  coef 0.1761  gas 2  fork_lr None
+N2                   wr 0.5381  Δ  -4.44 [ -7.00, -2.28]  up 1/8  | teachers 3 taught  6  coef 0.1761  gas 2  fork_lr None
+R4DOSE12             wr 0.5244  Δ  -5.81 [ -7.24, -3.94]  up 1/8  | teachers 3 taught 24  coef 0.1761  gas 12  fork_lr 2.8e-05
+R4DOSE6              wr 0.5194  Δ  -6.31 [ -9.22, -3.42]  up 1/8  | teachers 3 taught 24  coef 0.1761  gas 6  fork_lr 2.8e-05
+R4DOSE3              wr 0.5069  Δ  -7.56 [-11.79, -3.45]  up 1/8  | teachers 3 taught 24  coef 0.1761  gas 3  fork_lr 2.8e-05
+TC_FUND_A            wr 0.5575  Δ  -2.50 [ -5.17, -0.22]  up 2/8  | teachers 8 taught 16  coef 0.1761  gas 3  fork_lr 2.8e-05
+TC_FUND_B            wr 0.5594  Δ  -2.31 [ -3.83, -0.26]  up 1/8  | teachers 8 taught 16  coef 0.1761  gas 3  fork_lr 2.8e-05
+TC_UNF_A             wr 0.6025  Δ  +2.00 [ -0.28, +4.56]  up 5/8  | teachers 8 taught 16  coef 0.1761  gas 3  fork_lr 2.8e-05
+TC_UNF_B             wr 0.6019  Δ  +1.94 [ -0.01, +3.67]  up 6/8  | teachers 8 taught 16  coef 0.1761  gas 3  fork_lr 2.8e-05
+TC_UNF_K6_A          wr 0.5862  Δ  +0.37 [ -1.74, +2.53]  up 5/8  | teachers 8 taught 16  coef 0.1761  gas 6  fork_lr 2.8e-05
+TC_UNF_K6_B          wr 0.5744  Δ  -0.81 [ -2.61, +1.22]  up 2/8  | teachers 8 taught 16  coef 0.1761  gas 6  fork_lr 2.8e-05
+
+REJECTED:
+  R3SELF: no untaught cell was ever run (ledger, M9 FINAL: "R3SELF's untaught cell also unrun"); only its taught -8.96pp exists
+  R4PLAIN: does not exist — the named-and-priced matched plain control for rev-4 was never launched
+  EXT_A (K=3 unfunded extension): still training at the time of this probe; no endpoint artifact
+  R2PLAIN / R2CTRL: NOT folds — distillation-free arms. They supply the replicate FLOOR, and they have no teacher set, so no D_off exists for them
+  the fdA/fdB/fdC/fdE/fdF and G1/G2 family (ai_v9_38/39/40/42/45/48/49): no untaught-8 artifact exists for ANY of them (searched the tree and the job dirs); they were scored on the TAUGHT side only, and they fork off rev-1 rather than off R2ACTION, so even a future untaught pass would be a sixth parent
+  every rev-2/rev-3-era 'fleet fold' other than R2ACTION/R3ACTION: no untaught-8 artifact on the standing stamp; probe Q's readings are a DIFFERENT team set and a greedy meter and may not be quoted beside these
+
+wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/fold_table.json

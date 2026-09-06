@@ -1,0 +1,292 @@
+{
+ "R4set": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "teachers": [
+   "ai_v9_73_R4S3a_0829",
+   "ai_v9_74_R4S3b_0829",
+   "ai_v9_75_R4S3c_0829"
+  ],
+  "per_teacher_taught": {
+   "ai_v9_73_R4S3a_0829": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6",
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90",
+    "53f215cb45b7d729",
+    "a3ca232f030ef625",
+    "8cdc78b2d46f0515",
+    "e11829f0561ef5a9"
+   ],
+   "ai_v9_74_R4S3b_0829": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce",
+    "e541f7be8713393c",
+    "9eb3abdc52876a63",
+    "9f27f5d3e34021a7",
+    "a04c29cf769e9a11",
+    "0fa105ae42dc85ec",
+    "b89e1e37caa40e6a"
+   ],
+   "ai_v9_75_R4S3c_0829": [
+    "e0d97b0ed592889d",
+    "82e97fe2bfbb6f69",
+    "460b8c99ee366f6c",
+    "7036a0a1dcb59a19",
+    "0972146213a667c9",
+    "d4e74946b54f1a4b",
+    "6d56d06b9fca508e",
+    "f6229d2c867e21d6"
+   ]
+  },
+  "taught_union": [
+   "023a2d47648b85e6",
+   "0972146213a667c9",
+   "0fa105ae42dc85ec",
+   "460b8c99ee366f6c",
+   "53f215cb45b7d729",
+   "63eda9d8d491d6a4",
+   "6d56d06b9fca508e",
+   "7036a0a1dcb59a19",
+   "710d8d529538ff90",
+   "82e97fe2bfbb6f69",
+   "8cdc78b2d46f0515",
+   "8e768980fc8f3b5f",
+   "9eb3abdc52876a63",
+   "9f27f5d3e34021a7",
+   "a04c29cf769e9a11",
+   "a3ca232f030ef625",
+   "b89e1e37caa40e6a",
+   "d4e74946b54f1a4b",
+   "e0d97b0ed592889d",
+   "e11829f0561ef5a9",
+   "e541f7be8713393c",
+   "eccfe630ec08de27",
+   "f5a4f4f0f5dc49ce",
+   "f6229d2c867e21d6"
+  ]
+ },
+ "R3set": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "teachers": [
+   "ai_v9_63_R3F6a_0828",
+   "ai_v9_64_R3F6b_0828",
+   "ai_v9_65_R3F6c_0828",
+   "ai_v9_66_R3F6d_0828",
+   "ai_v9_67_R3F6e_0828",
+   "ai_v9_68_R3F6f_0828"
+  ],
+  "per_teacher_taught": {
+   "ai_v9_63_R3F6a_0828": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6"
+   ],
+   "ai_v9_64_R3F6b_0828": [
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90"
+   ],
+   "ai_v9_65_R3F6c_0828": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "ai_v9_66_R3F6d_0828": [
+    "e541f7be8713393c",
+    "9eb3abdc52876a63"
+   ],
+   "ai_v9_67_R3F6e_0828": [
+    "e0d97b0ed592889d",
+    "82e97fe2bfbb6f69"
+   ],
+   "ai_v9_68_R3F6f_0828": [
+    "460b8c99ee366f6c",
+    "7036a0a1dcb59a19"
+   ]
+  },
+  "taught_union": [
+   "023a2d47648b85e6",
+   "460b8c99ee366f6c",
+   "63eda9d8d491d6a4",
+   "7036a0a1dcb59a19",
+   "710d8d529538ff90",
+   "82e97fe2bfbb6f69",
+   "8e768980fc8f3b5f",
+   "9eb3abdc52876a63",
+   "e0d97b0ed592889d",
+   "e541f7be8713393c",
+   "eccfe630ec08de27",
+   "f5a4f4f0f5dc49ce"
+  ]
+ },
+ "FUND": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "teachers": [
+   "ai_v9_120_R5FUND00_0901",
+   "ai_v9_122_R5FUND02_0901",
+   "ai_v9_124_R5FUND04_0901",
+   "ai_v9_126_R5FUND06_0901",
+   "ai_v9_128_R5FUND08_0901",
+   "ai_v9_130_R5FUND10_0901",
+   "ai_v9_132_R5FUND12_0901",
+   "ai_v9_134_R5FUND14_0901"
+  ],
+  "per_teacher_taught": {
+   "ai_v9_120_R5FUND00_0901": [
+    "8bdb5796b9",
+    "436335607f"
+   ],
+   "ai_v9_122_R5FUND02_0901": [
+    "6916e13879",
+    "e702a104eb"
+   ],
+   "ai_v9_124_R5FUND04_0901": [
+    "64a691c473",
+    "e28069562f"
+   ],
+   "ai_v9_126_R5FUND06_0901": [
+    "9e95fb59d7",
+    "9d8391d864"
+   ],
+   "ai_v9_128_R5FUND08_0901": [
+    "750d056194",
+    "a9831a5f5e"
+   ],
+   "ai_v9_130_R5FUND10_0901": [
+    "6ebe9ebc4d",
+    "9b454d9ea7"
+   ],
+   "ai_v9_132_R5FUND12_0901": [
+    "009e3d0244",
+    "b904dbe059"
+   ],
+   "ai_v9_134_R5FUND14_0901": [
+    "aea50f207e",
+    "37d717a93a"
+   ]
+  },
+  "taught_union": [
+   "009e3d0244",
+   "37d717a93a",
+   "436335607f",
+   "64a691c473",
+   "6916e13879",
+   "6ebe9ebc4d",
+   "750d056194",
+   "8bdb5796b9",
+   "9b454d9ea7",
+   "9d8391d864",
+   "9e95fb59d7",
+   "a9831a5f5e",
+   "aea50f207e",
+   "b904dbe059",
+   "e28069562f",
+   "e702a104eb"
+  ]
+ },
+ "UNF": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "teachers": [
+   "ai_v9_92_R5F00_0831",
+   "ai_v9_94_R5F02_0831",
+   "ai_v9_96_R5F04_0831",
+   "ai_v9_98_R5F06_0831",
+   "ai_v9_100_R5F08_0831",
+   "ai_v9_102_R5F10_0831",
+   "ai_v9_104_R5F12_0831",
+   "ai_v9_106_R5F14_0831"
+  ],
+  "per_teacher_taught": {
+   "ai_v9_92_R5F00_0831": [
+    "8bdb5796b9",
+    "436335607f"
+   ],
+   "ai_v9_94_R5F02_0831": [
+    "6916e13879",
+    "e702a104eb"
+   ],
+   "ai_v9_96_R5F04_0831": [
+    "64a691c473",
+    "e28069562f"
+   ],
+   "ai_v9_98_R5F06_0831": [
+    "9e95fb59d7",
+    "9d8391d864"
+   ],
+   "ai_v9_100_R5F08_0831": [
+    "750d056194",
+    "a9831a5f5e"
+   ],
+   "ai_v9_102_R5F10_0831": [
+    "6ebe9ebc4d",
+    "9b454d9ea7"
+   ],
+   "ai_v9_104_R5F12_0831": [
+    "009e3d0244",
+    "b904dbe059"
+   ],
+   "ai_v9_106_R5F14_0831": [
+    "aea50f207e",
+    "37d717a93a"
+   ]
+  },
+  "taught_union": [
+   "009e3d0244",
+   "37d717a93a",
+   "436335607f",
+   "64a691c473",
+   "6916e13879",
+   "6ebe9ebc4d",
+   "750d056194",
+   "8bdb5796b9",
+   "9b454d9ea7",
+   "9d8391d864",
+   "9e95fb59d7",
+   "a9831a5f5e",
+   "aea50f207e",
+   "b904dbe059",
+   "e28069562f",
+   "e702a104eb"
+  ]
+ },
+ "R2set": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+  "teachers": [
+   "ai_v9_53_R2F5a_0826",
+   "ai_v9_54_R2F5b_0826",
+   "ai_v9_55_R2F5c_0826",
+   "ai_v9_56_R2F5d_0826",
+   "ai_v9_57_R2F5e_0826"
+  ],
+  "per_teacher_taught": {
+   "ai_v9_53_R2F5a_0826": [
+    "eccfe630ec08de27",
+    "023a2d47648b85e6"
+   ],
+   "ai_v9_54_R2F5b_0826": [
+    "8e768980fc8f3b5f",
+    "710d8d529538ff90"
+   ],
+   "ai_v9_55_R2F5c_0826": [
+    "63eda9d8d491d6a4",
+    "f5a4f4f0f5dc49ce"
+   ],
+   "ai_v9_56_R2F5d_0826": [
+    "e541f7be8713393c",
+    "9eb3abdc52876a63"
+   ],
+   "ai_v9_57_R2F5e_0826": [
+    "e0d97b0ed592889d",
+    "eccfe630ec08de27"
+   ]
+  },
+  "taught_union": [
+   "023a2d47648b85e6",
+   "63eda9d8d491d6a4",
+   "710d8d529538ff90",
+   "8e768980fc8f3b5f",
+   "9eb3abdc52876a63",
+   "e0d97b0ed592889d",
+   "e541f7be8713393c",
+   "eccfe630ec08de27",
+   "f5a4f4f0f5dc49ce"
+  ]
+ }
+}

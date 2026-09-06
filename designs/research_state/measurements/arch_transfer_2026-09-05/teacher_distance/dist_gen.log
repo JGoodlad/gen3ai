@@ -1,0 +1,79 @@
+  [ 0] untaught 61590463ee85d456 n9 + 280 states (total 280, 20s)
+  [ 1] untaught 9283210847f806ee n9 + 399 states (total 679, 48s)
+  [ 2] untaught ce35b7368c3d692e n9 + 333 states (total 1012, 71s)
+  [ 3] untaught 9909f2e98e981ccc n9 + 458 states (total 1470, 102s)
+  [ 4] untaught 9d5f845869e899ee n9 + 714 states (total 2184, 152s)
+  [ 5] untaught f7ba5702fe856292 n9 + 592 states (total 2776, 195s)
+  [ 6] untaught 90b94599967c6b77 n9 + 391 states (total 3167, 212s)
+  [ 7] untaught dbf81d8ecae51c39 n9 + 301 states (total 3468, 224s)
+  [ 8] taught   009e3d0244 n3 +  99 states (total 3567, 228s)
+  [ 9] taught   023a2d47648b85e6 n3 +  74 states (total 3641, 231s)
+  [10] taught   0972146213a667c9 n3 + 439 states (total 4080, 247s)
+  [11] taught   0fa105ae42dc85ec n3 + 156 states (total 4236, 254s)
+  [12] taught   37d717a93a n3 +  94 states (total 4330, 262s)
+  [13] taught   436335607f n3 + 123 states (total 4453, 271s)
+  [14] taught   460b8c99ee366f6c n3 +  62 states (total 4515, 274s)
+  [15] taught   53f215cb45b7d729 n3 + 318 states (total 4833, 284s)
+  [16] taught   63eda9d8d491d6a4 n3 +  91 states (total 4924, 288s)
+  [17] taught   64a691c473 n3 + 117 states (total 5041, 292s)
+  [18] taught   6916e13879 n3 + 144 states (total 5185, 297s)
+  [19] taught   6d56d06b9fca508e n3 + 185 states (total 5370, 304s)
+  [20] taught   6ebe9ebc4d n3 + 134 states (total 5504, 309s)
+  [21] taught   7036a0a1dcb59a19 n3 + 192 states (total 5696, 317s)
+  [22] taught   710d8d529538ff90 n3 + 118 states (total 5814, 322s)
+  [23] taught   750d056194 n3 + 129 states (total 5943, 327s)
+  [24] taught   82e97fe2bfbb6f69 n3 + 197 states (total 6140, 335s)
+  [25] taught   8bdb5796b9 n3 +  97 states (total 6237, 340s)
+  [26] taught   8cdc78b2d46f0515 n3 + 510 states (total 6747, 359s)
+  [27] taught   8e768980fc8f3b5f n3 +  91 states (total 6838, 365s)
+  [28] taught   9b454d9ea7 n3 + 176 states (total 7014, 375s)
+  [29] taught   9d8391d864 n3 +  92 states (total 7106, 380s)
+  [30] taught   9e95fb59d7 n3 + 200 states (total 7306, 391s)
+  [31] taught   9eb3abdc52876a63 n3 + 113 states (total 7419, 397s)
+  [32] taught   9f27f5d3e34021a7 n3 + 157 states (total 7576, 406s)
+  [33] taught   a04c29cf769e9a11 n3 + 129 states (total 7705, 413s)
+  [34] taught   a3ca232f030ef625 n3 + 117 states (total 7822, 419s)
+  [35] taught   a9831a5f5e n3 + 129 states (total 7951, 426s)
+  [36] taught   aea50f207e n3 + 303 states (total 8254, 442s)
+  [37] taught   b89e1e37caa40e6a n3 + 176 states (total 8430, 452s)
+  [38] taught   b904dbe059 n3 + 106 states (total 8536, 458s)
+  [39] taught   d4e74946b54f1a4b n3 + 100 states (total 8636, 464s)
+  [40] taught   e0d97b0ed592889d n3 + 105 states (total 8741, 470s)
+  [41] taught   e11829f0561ef5a9 n3 + 130 states (total 8871, 477s)
+  [42] taught   e28069562f n3 + 149 states (total 9020, 484s)
+  [43] taught   e541f7be8713393c n3 + 179 states (total 9199, 490s)
+  [44] taught   e702a104eb n3 + 122 states (total 9321, 495s)
+  [45] taught   eccfe630ec08de27 n3 +  89 states (total 9410, 498s)
+  [46] taught   f5a4f4f0f5dc49ce n3 +  78 states (total 9488, 501s)
+  [47] taught   f6229d2c867e21d6 n3 + 130 states (total 9618, 506s)
+  UNTAUGHT STATE COUNT: 3468 on indices 0..7
+  ai_v9_73_R4S3a_0829        D_off 0.7344  D_on(own  8) 1.0601
+  ai_v9_74_R4S3b_0829        D_off 0.7794  D_on(own  8) 0.7663
+  ai_v9_75_R4S3c_0829        D_off 0.8007  D_on(own  8) 0.8802
+  ai_v9_63_R3F6a_0828        D_off 0.5669  D_on(own  2) 0.8428
+  ai_v9_64_R3F6b_0828        D_off 0.6328  D_on(own  2) 1.0339
+  ai_v9_65_R3F6c_0828        D_off 0.4453  D_on(own  2) 0.4728
+  ai_v9_66_R3F6d_0828        D_off 0.6257  D_on(own  2) 0.9109
+  ai_v9_67_R3F6e_0828        D_off 0.7889  D_on(own  2) 1.0712
+  ai_v9_68_R3F6f_0828        D_off 0.6438  D_on(own  2) 0.8660
+  ai_v9_120_R5FUND00_0901    D_off 0.8324  D_on(own  2) 0.9522
+  ai_v9_122_R5FUND02_0901    D_off 0.5961  D_on(own  2) 0.7069
+  ai_v9_124_R5FUND04_0901    D_off 0.7180  D_on(own  2) 0.5784
+  ai_v9_126_R5FUND06_0901    D_off 0.7876  D_on(own  2) 0.6589
+  ai_v9_128_R5FUND08_0901    D_off 0.6280  D_on(own  2) 0.9285
+  ai_v9_130_R5FUND10_0901    D_off 0.6096  D_on(own  2) 0.6269
+  ai_v9_132_R5FUND12_0901    D_off 0.6417  D_on(own  2) 0.7642
+  ai_v9_134_R5FUND14_0901    D_off 0.7523  D_on(own  2) 0.7493
+  ai_v9_92_R5F00_0831        D_off 0.5669  D_on(own  2) 0.7534
+  ai_v9_94_R5F02_0831        D_off 0.4242  D_on(own  2) 0.3832
+  ai_v9_96_R5F04_0831        D_off 0.6481  D_on(own  2) 0.4912
+  ai_v9_98_R5F06_0831        D_off 0.5148  D_on(own  2) 0.4514
+  ai_v9_100_R5F08_0831       D_off 0.4956  D_on(own  2) 0.8085
+  ai_v9_102_R5F10_0831       D_off 0.5690  D_on(own  2) 0.5339
+  ai_v9_104_R5F12_0831       D_off 0.5504  D_on(own  2) 0.6380
+  ai_v9_106_R5F14_0831       D_off 0.6595  D_on(own  2) 0.5839
+SET R4set   n=3  D_off 0.7715  D_on 0.9022
+SET R3set   n=6  D_off 0.6172  D_on 0.8663
+SET FUND    n=8  D_off 0.6957  D_on 0.7456
+SET UNF     n=8  D_off 0.5536  D_on 0.5804
+wrote designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/dist_gen.json  (814s)

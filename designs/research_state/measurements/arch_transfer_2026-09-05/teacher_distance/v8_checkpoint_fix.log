@@ -1,0 +1,21 @@
+  [0] d0a4d2bcb8 +266 (total 266, 9s)
+  [1] c90e782cad +255 (total 521, 17s)
+  [2] a6b630e6b4 +260 (total 781, 25s)
+  [3] a577a735b7 +312 (total 1093, 34s)
+  [4] 9292a21833 +270 (total 1363, 43s)
+  [5] eaa88395e7 +265 (total 1628, 51s)
+  [6] 7c2cb5cec1 +303 (total 1931, 60s)
+  [7] 89fcef3b53 +259 (total 2190, 69s)
+  per-team counts [266, 255, 260, 312, 270, 265, 303, 259]
+  expected        [266, 255, 260, 312, 270, 265, 303, 259]  REPRODUCED
+  pool10       best_model (WHAT THE FOLD LOADS)             D_off 0.3176
+  pool10       final_model_interrupted (content_locality)   D_off 0.3223
+  semistall3   best_model (WHAT THE FOLD LOADS)             D_off 0.1036
+  semistall3   final_model_interrupted (content_locality)   D_off 0.2190
+  defensive10  best_model (WHAT THE FOLD LOADS)             D_off 0.2775
+  defensive10  final_model_interrupted (content_locality)   D_off 0.2807
+  FLOOR_c277178 D_off 0.0383
+  FLOOR_c275758 D_off 0.0664
+
+  v8 SET D_off  best_model 0.2329 (4.5x floor)   final_model_interrupted 0.2740 (5.2x floor)   floor 0.0523
+wrote /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/v8_checkpoint_fix.json  (82s)

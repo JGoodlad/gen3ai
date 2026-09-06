@@ -1,0 +1,25 @@
+  [ 0] untaught 61590463ee85d456 n9 + 290 states (total 290, 20s)
+  [ 1] untaught 9283210847f806ee n9 + 348 states (total 638, 44s)
+  [ 2] untaught ce35b7368c3d692e n9 + 329 states (total 967, 66s)
+  [ 3] untaught 9909f2e98e981ccc n9 + 454 states (total 1421, 83s)
+  [ 4] untaught 9d5f845869e899ee n9 + 614 states (total 2035, 103s)
+  [ 5] untaught f7ba5702fe856292 n9 + 451 states (total 2486, 119s)
+  [ 6] untaught 90b94599967c6b77 n9 + 423 states (total 2909, 148s)
+  [ 7] untaught dbf81d8ecae51c39 n9 + 338 states (total 3247, 171s)
+  [ 8] taught   023a2d47648b85e6 n3 +  73 states (total 3320, 177s)
+  [ 9] taught   63eda9d8d491d6a4 n3 +  81 states (total 3401, 183s)
+  [10] taught   710d8d529538ff90 n3 + 115 states (total 3516, 191s)
+  [11] taught   8e768980fc8f3b5f n3 + 121 states (total 3637, 200s)
+  [12] taught   9eb3abdc52876a63 n3 +  78 states (total 3715, 206s)
+  [13] taught   e0d97b0ed592889d n3 +  91 states (total 3806, 213s)
+  [14] taught   e541f7be8713393c n3 + 119 states (total 3925, 221s)
+  [15] taught   eccfe630ec08de27 n3 + 134 states (total 4059, 232s)
+  [16] taught   f5a4f4f0f5dc49ce n3 +  85 states (total 4144, 238s)
+  UNTAUGHT STATE COUNT: 3247 on indices 0..7
+  ai_v9_53_R2F5a_0826        D_off 0.3753  D_on(own  2) 0.3535
+  ai_v9_54_R2F5b_0826        D_off 0.1163  D_on(own  2) 0.1555
+  ai_v9_55_R2F5c_0826        D_off 0.3285  D_on(own  2) 0.3894
+  ai_v9_56_R2F5d_0826        D_off 0.1336  D_on(own  2) 0.0986
+  ai_v9_57_R2F5e_0826        D_off 0.1340  D_on(own  2) 0.1265
+SET R2set   n=5  D_off 0.2175  D_on 0.2247
+wrote designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/dist_rev2.json  (281s)

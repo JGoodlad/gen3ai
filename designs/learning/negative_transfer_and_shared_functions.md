@@ -235,6 +235,20 @@ carried little off-slice content for the distillation term to inject, which rais
 v8's early gift came through ecology or plain continued learning (phase-2 cells 1 and 2) or through
 generalisation of on-slice content.
 
+**Correction to the locality result (teacher-distance probe, same day):** the locality probe loaded each
+teacher's `final_model` file, but a fold resolves a teacher through the opponent-pool resolver whose first
+rung is `best_model/best_model.zip`, and every teacher run differs between the two. Re-measured on the
+files a fold actually uses, both conclusions *strengthen* (funded minus unfunded off-slice +0.098 → +0.142;
+v8's teachers 5.2× → 4.5× their floor), but every level and ratio the locality artifact prints is on
+networks no fold used. **Teacher-distance result** (`arch_transfer_2026-09-05/teacher_distance/`): across
+seventeen folds that collapse to five distinct teacher sets, mean off-slice teacher distance orders the
+sets' untaught outcomes (Spearman −0.90, CI excluding zero) but the slope spans zero and two folds at the
+identical distance differ by 8 points, so distance says something about a *set* and nothing about a *fold*.
+The ordering is confounded with teacher training budget (the two are as correlated with the outcome as
+each other), and half of a gen-era teacher's distance is inherited from the fork origin before it trains a
+step. In floor units, the one currency both eras share, v8's teachers sat at 4.5× and gifted; our farthest
+sat at 15× and robbed hardest.
+
 **Fold-displacement result (2026-09-05, `arch_transfer_2026-09-05/fold_displacement/`).** Three things
 survive. (1) **Displacement magnitude is set by dose, not by the distillation term**: the loss-off control
 C1 moved the weights as far as the fold B2 did (|Δθ| 7.99 vs 8.08), and every dose-frozen arm grew as

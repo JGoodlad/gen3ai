@@ -1,0 +1,63 @@
+{
+ "_meta": {
+  "parent": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "opponent": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "states": 3468,
+  "per_team_counts": [
+   280,
+   399,
+   333,
+   458,
+   714,
+   592,
+   391,
+   301
+  ],
+  "reproduces_gen_arm_untaught_batch": true,
+  "wall_s": 215.3
+ },
+ "probes": {
+  "REV1FIN (the gen-era teachers' own fork parent)": {
+   "path": "models/ai_v9_29_rev1_0823/final_model.zip",
+   "per_team": [
+    0.3270954191684723,
+    0.3793257772922516,
+    0.3832467496395111,
+    0.40542981028556824,
+    0.4764704704284668,
+    0.37388765811920166,
+    0.4219648838043213,
+    0.36882203817367554
+   ],
+   "D_off": 0.39203035086393356
+  },
+  "FLOOR_ckpt_28067760": {
+   "path": "models/ai_v9_59_R2ACTION_0827/checkpoints/checkpoint_28067760_steps.zip",
+   "per_team": [
+    0.02150372415781021,
+    0.03572460263967514,
+    0.03839757293462753,
+    0.03205306455492973,
+    0.05529674515128136,
+    0.03605274111032486,
+    0.04659594967961311,
+    0.03341056779026985
+   ],
+   "D_off": 0.037379371002316475
+  },
+  "FLOOR_ckpt_27917760": {
+   "path": "models/ai_v9_59_R2ACTION_0827/checkpoints/checkpoint_27917760_steps.zip",
+   "per_team": [
+    0.03803926706314087,
+    0.05914284661412239,
+    0.08158952742815018,
+    0.06097317114472389,
+    0.07683933526277542,
+    0.07055127620697021,
+    0.06469903886318207,
+    0.07122156023979187
+   ],
+   "D_off": 0.06538200285285711
+  }
+ }
+}

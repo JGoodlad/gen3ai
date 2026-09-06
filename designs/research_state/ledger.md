@@ -10832,3 +10832,52 @@ far is WHERE THE EXPLOITERS START — not architecture, maturity, or FiLM.
   would make the fork origin the whole v8 story.
 Artifact: `measurements/arch_transfer_2026-09-05/exploiter_drift/` (`verify_readme.py` re-asserts every headline figure).
 
+## 2026-09-05 — ARCH→TRANSFER probe H5 (teacher-distance dose-response): SUPPORTED as an ORDERING of teacher sets (ρ −0.90, CI excludes 0), NOT ESTABLISHED as a slope, CONFOUNDED with teacher budget — and two hazards: `content_locality` scored the WRONG checkpoints (both conclusions strengthen), and the 2×2 / K=6 per-team artifacts lived only in a job tmp dir
+
+**Pre-registration** (`teacher_distance/README.md`): across every fold with a banked untaught delta, the delta falls with
+D_off = mean KL(teacher‖parent) on untaught states; rank CI excluding 0 AND a slope; D_on does not predict once D_off is
+in. Honest-unit risk registered before assembling: folds sharing a teacher set share D_off exactly.
+
+**Table.** 17 folds → **5 distinct (parent, teacher-set) points** (4 within R2ACTION). Set means (D_off → untaught Δ):
+UNF 0.554 → +0.87 · R3set 0.617 → −2.50 · FUND 0.696 → −2.41 · R4set 0.772 → −4.47 · R2set 0.218 → +0.88 (cross-parent).
+- (i) Spearman: fold unit −0.756, point unit −0.900, within-parent −0.764 — every rho CI excludes zero under all three
+  bootstraps. **But the point-level slope under the nested bootstrap is [−35.5, +0.4] pp/nat — spans zero.** Fold-level
+  noise dominates team-level ~2:1: more games buy nothing, more teacher sets buy everything.
+- (ii) FAILS as a per-fold predictor: N1 (+1.50) and rev-4 (−6.50) sit at the IDENTICAL D_off 0.7715; the N1/N2 replicate
+  draw is +5.94 [+1.94, +10.12], the size of the whole between-set effect (5.35pp). **No gen-era fold gifted**, so half
+  the prediction was untestable.
+- (iii) NOT SCORABLE: corr(D_off, D_on) = +0.965.
+- **Confound unbroken by any fold:** ρ(budget, Δ) = −0.949 ≥ ρ(D_off, Δ) = −0.900; the two sets sharing a budget
+  (R3set / FUND, 5.07M) share a Δ (−2.50 / −2.41). "Distance causes the leak" and "longer-trained teachers cause the
+  leak" are the same claim on this evidence. (H6, same day, found the exploiter's distance to the parent flat for its
+  first 1.2M steps then rising — the TC_SHORT cell is the test that separates them.)
+- **The inherited gap:** KL(rev-1 final ‖ R2ACTION) = 0.392 on these states — a gen-era teacher sits that far from the
+  fold parent BEFORE it trains a step (>½ of UNF's D_off). R2set and UNF share a budget (3.07M) and a Δ (+0.88 / +0.87)
+  while their raw D_off differs 2.5×: the whole difference is inherited and moves the delta by nothing. **Raw D_off is not
+  comparable across a fork boundary**; every within-parent comparison here is unaffected. (Consistent with H6's 0.534
+  on a different state batch.)
+- **The line that survives in floor units** (gen floor 0.0514, v8 0.0523 — the one currency both eras share): v8's teachers
+  at **4.5×** the floor and its fold GIFTED; our worst at **15.0×** and its fold robs hardest. A 3.3× gap, widened by the
+  checkpoint correction below. Covariate no probe has manipulated: v8's `--distill-coef 1.0` vs every gen fold's 0.1761
+  (5.7×) — v8 ladder cell 3b.
+
+**🚩 Hazard 1 — `content_locality` (landed f7faa660) scored the WRONG CHECKPOINT in both eras.** It loaded `final_model.zip`
+/ `final_model_interrupted.zip`; a fold resolves teachers through `main/train/model_build.py` →
+`fixed_opponent_pool._resolve_zip_and_config`, first rung **`best_model/best_model.zip`** (`final_model_interrupted.zip`
+is not a rung). All 19 teacher runs differ between the two files. Re-measured on byte-identically reproduced states:
+UNF 0.5990 → **0.5536**, v8 set 0.2740 → **0.2329**, `semistall3` 0.2190 → **0.1036** (over half its value). **Both of
+H1's conclusions strengthen** (funded − unfunded +0.0979 → **+0.1421**; v8 5.2× → **4.5×** its floor), but every level
+and every L/R ratio that artifact prints is on networks no fold used. A re-run of the locality R on the resolved files
+(and against the true fork origin, per H6) is dispatched; H1's entry stands as written, with this correction beside it.
+**🚩 Hazard 2 — the 2×2 and K=6 per-team untaught artifacts existed ONLY in `~/.claude/jobs/1046b1d6/tmp/probes/`** — the
+admission-artifact class again: every banked funded / unfunded / K=6 untaught number rested on files one cleanup would
+destroy. Copied into `teacher_distance/inputs/` in this commit. `teacher_content_2x2_2026-09-04/tc_readout.py` still
+cannot run as committed (it reads them from its own directory) — fix owed.
+
+**Lever (proposal, not a build):** a KL-to-parent anchor on the EXPLOITER (the `--distill-anchor-*` machinery one stage
+upstream) hands the fold a local teacher by construction. It stays a proposal because (a) it is indistinguishable from
+"train exploiters less", which is free and is the honest first test (TC_SHORT); (b) an anchored-LONG-budget arm is valuable
+mainly because it BREAKS the budget confound; (c) with D_on / D_off collinear at +0.965, an anchor may remove the taught-side
+content with the drift — any such arm pre-registers both meters. Rejected folds listed in the README with reasons.
+Artifact: `measurements/arch_transfer_2026-09-05/teacher_distance/`.
+

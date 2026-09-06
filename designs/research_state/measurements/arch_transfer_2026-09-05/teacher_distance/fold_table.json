@@ -1,0 +1,1079 @@
+{
+ "_meta": {
+  "statistic": "untaught-8 win-rate delta vs the fold's OWN parent, pp; per-team rows recomputed from the probe artifacts, cluster-bootstrapped over the 8 teams (20000 draws, seed 20260905)",
+  "stamp": "stochastic \u00b7 opponent rev-1 snapshot_000024000000 \u00b7 team set M \u00b7 n=200/team",
+  "untaught_teams": [
+   "U_61590463",
+   "U_92832108",
+   "U_ce35b736",
+   "U_9909f2e9",
+   "U_9d5f8458",
+   "U_f7ba5702",
+   "U_90b94599",
+   "U_dbf81d8e",
+   "POOLED"
+  ]
+ },
+ "folds": [
+  {
+   "fold": "rev-4 / R4ACTION",
+   "artifact": "designs/research_state/measurements/reuse_batch_2026-09-03/untaught_R4ACTION.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.5175000000000001,
+   "parent_wr": 0.5825,
+   "delta_pp": -6.5,
+   "ci95": [
+    -9.38888888888889,
+    -3.4444444444444446
+   ],
+   "per_team_delta_pp": [
+    -0.5000000000000004,
+    0.5000000000000004,
+    -11.999999999999995,
+    -7.9999999999999964,
+    -11.000000000000004,
+    -11.5,
+    -7.9999999999999964,
+    -1.5000000000000013,
+    -6.500000000000005
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_76_R4ACTION_0830",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "0972146213a667c9",
+     "0fa105ae42dc85ec",
+     "460b8c99ee366f6c",
+     "53f215cb45b7d729",
+     "63eda9d8d491d6a4",
+     "6d56d06b9fca508e",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8cdc78b2d46f0515",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "a3ca232f030ef625",
+     "b89e1e37caa40e6a",
+     "d4e74946b54f1a4b",
+     "e0d97b0ed592889d",
+     "e11829f0561ef5a9",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 24,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "d392e80a"
+   }
+  },
+  {
+   "fold": "rev-3 / R3ACTION",
+   "artifact": "designs/research_state/measurements/axis_split_inputs/untaught_R3ACTION.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.5575,
+   "parent_wr": 0.5825,
+   "delta_pp": -2.4999999999999996,
+   "ci95": [
+    -4.388888888888889,
+    -0.1111111111111111
+   ],
+   "per_team_delta_pp": [
+    -4.0000000000000036,
+    -2.0000000000000018,
+    -6.999999999999995,
+    -2.0000000000000018,
+    -1.5000000000000013,
+    -3.9999999999999925,
+    5.500000000000005,
+    -5.000000000000004,
+    -2.500000000000002
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_70_R3ACTION_0828",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_63_R3F6a_0828",
+     "ai_v9_64_R3F6b_0828",
+     "ai_v9_65_R3F6c_0828",
+     "ai_v9_66_R3F6d_0828",
+     "ai_v9_67_R3F6e_0828",
+     "ai_v9_68_R3F6f_0828"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "460b8c99ee366f6c",
+     "63eda9d8d491d6a4",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "e0d97b0ed592889d",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce"
+    ],
+    "n_taught_teams": 12,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "61608ac4"
+   }
+  },
+  {
+   "fold": "COMPFOLD",
+   "artifact": "designs/research_state/measurements/axis_split_inputs/untaught_COMPFOLD.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.54375,
+   "parent_wr": 0.5825,
+   "delta_pp": -3.875000000000001,
+   "ci95": [
+    -6.597222222222225,
+    -1.61111111111111
+   ],
+   "per_team_delta_pp": [
+    -5.500000000000005,
+    -1.0000000000000009,
+    -5.999999999999995,
+    0.5000000000000004,
+    -13.000000000000005,
+    -2.0000000000000018,
+    -3.9999999999999925,
+    0.0,
+    -3.875000000000006
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_91_COMPFOLD_0831",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "460b8c99ee366f6c",
+     "63eda9d8d491d6a4",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "e0d97b0ed592889d",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce"
+    ],
+    "n_taught_teams": 12,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "17f12770"
+   }
+  },
+  {
+   "fold": "rev-2 / R2ACTION",
+   "artifact": "designs/research_state/measurements/reuse_batch_2026-09-03/untaught_R2ACTION.json",
+   "parent_artifact": "REV1FIN",
+   "untaught_wr": 0.5825,
+   "parent_wr": 0.57375,
+   "delta_pp": 0.8750000000000036,
+   "ci95": [
+    -1.3333333333333321,
+    3.2083333333333375
+   ],
+   "per_team_delta_pp": [
+    -2.9999999999999916,
+    -4.0000000000000036,
+    0.0,
+    6.500000000000005,
+    -1.9999999999999907,
+    2.0000000000000018,
+    1.0000000000000009,
+    6.500000000000005,
+    0.8750000000000036
+   ],
+   "teams_up": 5,
+   "provenance": {
+    "run": "ai_v9_59_R2ACTION_0827",
+    "parent_model": "models/ai_v9_29_rev1_0823/final_model.zip",
+    "teachers": [
+     "ai_v9_53_R2F5a_0826",
+     "ai_v9_54_R2F5b_0826",
+     "ai_v9_55_R2F5c_0826",
+     "ai_v9_56_R2F5d_0826",
+     "ai_v9_57_R2F5e_0826"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "63eda9d8d491d6a4",
+     "710d8d529538ff90",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "e0d97b0ed592889d",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce"
+    ],
+    "n_taught_teams": 9,
+    "coef": 0.181,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "77f922e7"
+   }
+  },
+  {
+   "fold": "B2",
+   "artifact": "designs/research_state/measurements/reuse_batch_2026-09-03/untaught_B2_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.555,
+   "parent_wr": 0.5825,
+   "delta_pp": -2.75,
+   "ci95": [
+    -5.333333333333334,
+    -0.30555555555555647
+   ],
+   "per_team_delta_pp": [
+    1.9999999999999907,
+    1.0000000000000009,
+    -6.499999999999995,
+    -3.500000000000003,
+    -10.000000000000004,
+    -5.499999999999994,
+    2.0000000000000018,
+    -1.5000000000000013,
+    -2.749999999999997
+   ],
+   "teams_up": 3,
+   "provenance": {
+    "run": "ai_v9_140_B2_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "0972146213a667c9",
+     "0fa105ae42dc85ec",
+     "460b8c99ee366f6c",
+     "53f215cb45b7d729",
+     "63eda9d8d491d6a4",
+     "6d56d06b9fca508e",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8cdc78b2d46f0515",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "a3ca232f030ef625",
+     "b89e1e37caa40e6a",
+     "d4e74946b54f1a4b",
+     "e0d97b0ed592889d",
+     "e11829f0561ef5a9",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 24,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "01c3a26a"
+   }
+  },
+  {
+   "fold": "C1 (coef 0)",
+   "artifact": "designs/research_state/measurements/reuse_batch_2026-09-03/untaught_C1_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.6075,
+   "parent_wr": 0.5825,
+   "delta_pp": 2.4999999999999982,
+   "ci95": [
+    -1.3816108750890837e-15,
+    5.055555555555554
+   ],
+   "per_team_delta_pp": [
+    3.9999999999999925,
+    -0.5000000000000004,
+    3.0000000000000027,
+    -1.5000000000000013,
+    6.499999999999995,
+    9.499999999999996,
+    3.0000000000000027,
+    -4.0000000000000036,
+    2.500000000000002
+   ],
+   "teams_up": 6,
+   "provenance": {
+    "run": "ai_v9_141_C1_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "0972146213a667c9",
+     "0fa105ae42dc85ec",
+     "460b8c99ee366f6c",
+     "53f215cb45b7d729",
+     "63eda9d8d491d6a4",
+     "6d56d06b9fca508e",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8cdc78b2d46f0515",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "a3ca232f030ef625",
+     "b89e1e37caa40e6a",
+     "d4e74946b54f1a4b",
+     "e0d97b0ed592889d",
+     "e11829f0561ef5a9",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 24,
+    "coef": 0.0,
+    "target": "kl",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "6424cb6b"
+   }
+  },
+  {
+   "fold": "N1",
+   "artifact": "designs/research_state/measurements/reuse_batch_2026-09-03/untaught_N1_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.5974999999999999,
+   "parent_wr": 0.5825,
+   "delta_pp": 1.4999999999999991,
+   "ci95": [
+    -0.9999999999999994,
+    4.055555555555553
+   ],
+   "per_team_delta_pp": [
+    1.9999999999999907,
+    8.499999999999996,
+    4.0000000000000036,
+    -2.500000000000002,
+    4.499999999999993,
+    -1.5000000000000013,
+    -4.999999999999993,
+    2.0000000000000018,
+    1.5000000000000013
+   ],
+   "teams_up": 6,
+   "provenance": {
+    "run": "ai_v9_142_N1_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "0972146213a667c9",
+     "53f215cb45b7d729",
+     "8cdc78b2d46f0515",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 6,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "19d25a11"
+   }
+  },
+  {
+   "fold": "N2",
+   "artifact": "designs/research_state/measurements/reuse_batch_2026-09-03/untaught_N2_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.538125,
+   "parent_wr": 0.5825,
+   "delta_pp": -4.437500000000003,
+   "ci95": [
+    -6.999999999999997,
+    -2.277777777777782
+   ],
+   "per_team_delta_pp": [
+    0.9999999999999898,
+    -2.500000000000002,
+    -12.999999999999995,
+    -5.500000000000005,
+    -5.000000000000004,
+    -4.999999999999993,
+    -1.5000000000000013,
+    -4.0000000000000036,
+    -4.437500000000005
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_143_N2_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "0972146213a667c9",
+     "53f215cb45b7d729",
+     "8cdc78b2d46f0515",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 6,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": null,
+    "gas": 2,
+    "team_bias": 0.4,
+    "git_hash": "19d25a11"
+   }
+  },
+  {
+   "fold": "R4DOSE12",
+   "artifact": "designs/research_state/measurements/dose_cell_2026-09-02/untaught_R4DOSE12_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.524375,
+   "parent_wr": 0.5825,
+   "delta_pp": -5.812500000000001,
+   "ci95": [
+    -7.23611111111111,
+    -3.944444444444446
+   ],
+   "per_team_delta_pp": [
+    -6.500000000000005,
+    -7.000000000000001,
+    -7.499999999999996,
+    -6.000000000000005,
+    -9.000000000000002,
+    -6.999999999999995,
+    0.5000000000000004,
+    -4.0000000000000036,
+    -5.812499999999998
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_150_R4DOSE12_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "0972146213a667c9",
+     "0fa105ae42dc85ec",
+     "460b8c99ee366f6c",
+     "53f215cb45b7d729",
+     "63eda9d8d491d6a4",
+     "6d56d06b9fca508e",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8cdc78b2d46f0515",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "a3ca232f030ef625",
+     "b89e1e37caa40e6a",
+     "d4e74946b54f1a4b",
+     "e0d97b0ed592889d",
+     "e11829f0561ef5a9",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 24,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 12,
+    "team_bias": 0.4,
+    "git_hash": "4d9a07be"
+   }
+  },
+  {
+   "fold": "R4DOSE6",
+   "artifact": "designs/research_state/measurements/dose_cell_2026-09-02/untaught_R4DOSE6_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.519375,
+   "parent_wr": 0.5825,
+   "delta_pp": -6.312499999999998,
+   "ci95": [
+    -9.22222222222222,
+    -3.423611111111112
+   ],
+   "per_team_delta_pp": [
+    -3.0000000000000027,
+    -1.5000000000000013,
+    -11.499999999999993,
+    -10.499999999999998,
+    -12.500000000000005,
+    -8.999999999999996,
+    -2.9999999999999916,
+    0.5000000000000004,
+    -6.312499999999998
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_151_R4DOSE6_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "0972146213a667c9",
+     "0fa105ae42dc85ec",
+     "460b8c99ee366f6c",
+     "53f215cb45b7d729",
+     "63eda9d8d491d6a4",
+     "6d56d06b9fca508e",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8cdc78b2d46f0515",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "a3ca232f030ef625",
+     "b89e1e37caa40e6a",
+     "d4e74946b54f1a4b",
+     "e0d97b0ed592889d",
+     "e11829f0561ef5a9",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 24,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 6,
+    "team_bias": 0.4,
+    "git_hash": "ce4ac432"
+   }
+  },
+  {
+   "fold": "R4DOSE3",
+   "artifact": "designs/research_state/measurements/dose_cell_2026-09-02/untaught_R4DOSE3_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.506875,
+   "parent_wr": 0.5825,
+   "delta_pp": -7.5625,
+   "ci95": [
+    -11.791666666666666,
+    -3.4513888888888937
+   ],
+   "per_team_delta_pp": [
+    2.499999999999991,
+    -3.500000000000003,
+    -4.499999999999993,
+    -13.5,
+    -9.000000000000002,
+    -19.999999999999996,
+    -10.999999999999998,
+    -1.5000000000000013,
+    -7.562500000000005
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_152_R4DOSE3_0901",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_73_R4S3a_0829",
+     "ai_v9_74_R4S3b_0829",
+     "ai_v9_75_R4S3c_0829"
+    ],
+    "taught_teams": [
+     "023a2d47648b85e6",
+     "0972146213a667c9",
+     "0fa105ae42dc85ec",
+     "460b8c99ee366f6c",
+     "53f215cb45b7d729",
+     "63eda9d8d491d6a4",
+     "6d56d06b9fca508e",
+     "7036a0a1dcb59a19",
+     "710d8d529538ff90",
+     "82e97fe2bfbb6f69",
+     "8cdc78b2d46f0515",
+     "8e768980fc8f3b5f",
+     "9eb3abdc52876a63",
+     "9f27f5d3e34021a7",
+     "a04c29cf769e9a11",
+     "a3ca232f030ef625",
+     "b89e1e37caa40e6a",
+     "d4e74946b54f1a4b",
+     "e0d97b0ed592889d",
+     "e11829f0561ef5a9",
+     "e541f7be8713393c",
+     "eccfe630ec08de27",
+     "f5a4f4f0f5dc49ce",
+     "f6229d2c867e21d6"
+    ],
+    "n_taught_teams": 24,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 3,
+    "team_bias": 0.4,
+    "git_hash": "ce8ce97b"
+   }
+  },
+  {
+   "fold": "TC_FUND_A",
+   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCFUNDA_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.5575000000000001,
+   "parent_wr": 0.5825,
+   "delta_pp": -2.499999999999999,
+   "ci95": [
+    -5.166666666666665,
+    -0.22222222222222243
+   ],
+   "per_team_delta_pp": [
+    0.0,
+    -2.500000000000002,
+    -9.999999999999993,
+    -0.5000000000000004,
+    -1.0000000000000009,
+    -8.499999999999996,
+    2.0000000000000018,
+    0.5000000000000004,
+    -2.500000000000002
+   ],
+   "teams_up": 2,
+   "provenance": {
+    "run": "ai_v9_160_TCFUNDA_0903",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_120_R5FUND00_0901",
+     "ai_v9_122_R5FUND02_0901",
+     "ai_v9_124_R5FUND04_0901",
+     "ai_v9_126_R5FUND06_0901",
+     "ai_v9_128_R5FUND08_0901",
+     "ai_v9_130_R5FUND10_0901",
+     "ai_v9_132_R5FUND12_0901",
+     "ai_v9_134_R5FUND14_0901"
+    ],
+    "taught_teams": [
+     "009e3d0244",
+     "37d717a93a",
+     "436335607f",
+     "64a691c473",
+     "6916e13879",
+     "6ebe9ebc4d",
+     "750d056194",
+     "8bdb5796b9",
+     "9b454d9ea7",
+     "9d8391d864",
+     "9e95fb59d7",
+     "a9831a5f5e",
+     "aea50f207e",
+     "b904dbe059",
+     "e28069562f",
+     "e702a104eb"
+    ],
+    "n_taught_teams": 16,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 3,
+    "team_bias": 0.4,
+    "git_hash": "0c76e2ee"
+   }
+  },
+  {
+   "fold": "TC_FUND_B",
+   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCFUNDB_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.559375,
+   "parent_wr": 0.5825,
+   "delta_pp": -2.3125,
+   "ci95": [
+    -3.8333333333333335,
+    -0.25694444444444375
+   ],
+   "per_team_delta_pp": [
+    -3.0000000000000027,
+    5.000000000000004,
+    -4.999999999999993,
+    -5.500000000000005,
+    -2.500000000000002,
+    -3.0000000000000027,
+    -2.9999999999999916,
+    -1.5000000000000013,
+    -2.312500000000006
+   ],
+   "teams_up": 1,
+   "provenance": {
+    "run": "ai_v9_161_TCFUNDB_0903",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_120_R5FUND00_0901",
+     "ai_v9_122_R5FUND02_0901",
+     "ai_v9_124_R5FUND04_0901",
+     "ai_v9_126_R5FUND06_0901",
+     "ai_v9_128_R5FUND08_0901",
+     "ai_v9_130_R5FUND10_0901",
+     "ai_v9_132_R5FUND12_0901",
+     "ai_v9_134_R5FUND14_0901"
+    ],
+    "taught_teams": [
+     "009e3d0244",
+     "37d717a93a",
+     "436335607f",
+     "64a691c473",
+     "6916e13879",
+     "6ebe9ebc4d",
+     "750d056194",
+     "8bdb5796b9",
+     "9b454d9ea7",
+     "9d8391d864",
+     "9e95fb59d7",
+     "a9831a5f5e",
+     "aea50f207e",
+     "b904dbe059",
+     "e28069562f",
+     "e702a104eb"
+    ],
+    "n_taught_teams": 16,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 3,
+    "team_bias": 0.4,
+    "git_hash": "52ab5914"
+   }
+  },
+  {
+   "fold": "TC_UNF_A",
+   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFA_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.6025,
+   "parent_wr": 0.5825,
+   "delta_pp": 1.9999999999999991,
+   "ci95": [
+    -0.27777777777777923,
+    4.555555555555557
+   ],
+   "per_team_delta_pp": [
+    4.499999999999993,
+    -2.0000000000000018,
+    0.0,
+    0.0,
+    1.5000000000000013,
+    -3.0000000000000027,
+    10.000000000000009,
+    4.999999999999993,
+    2.0000000000000018
+   ],
+   "teams_up": 5,
+   "provenance": {
+    "run": "ai_v9_162_TCUNFA_0903",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_92_R5F00_0831",
+     "ai_v9_94_R5F02_0831",
+     "ai_v9_96_R5F04_0831",
+     "ai_v9_98_R5F06_0831",
+     "ai_v9_100_R5F08_0831",
+     "ai_v9_102_R5F10_0831",
+     "ai_v9_104_R5F12_0831",
+     "ai_v9_106_R5F14_0831"
+    ],
+    "taught_teams": [
+     "009e3d0244",
+     "37d717a93a",
+     "436335607f",
+     "64a691c473",
+     "6916e13879",
+     "6ebe9ebc4d",
+     "750d056194",
+     "8bdb5796b9",
+     "9b454d9ea7",
+     "9d8391d864",
+     "9e95fb59d7",
+     "a9831a5f5e",
+     "aea50f207e",
+     "b904dbe059",
+     "e28069562f",
+     "e702a104eb"
+    ],
+    "n_taught_teams": 16,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 3,
+    "team_bias": 0.4,
+    "git_hash": "52ab5914"
+   }
+  },
+  {
+   "fold": "TC_UNF_B",
+   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFB_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.6018749999999999,
+   "parent_wr": 0.5825,
+   "delta_pp": 1.9374999999999991,
+   "ci95": [
+    -0.006944444444441878,
+    3.666666666666662
+   ],
+   "per_team_delta_pp": [
+    4.999999999999993,
+    4.5000000000000036,
+    -2.9999999999999916,
+    -0.5000000000000004,
+    4.499999999999993,
+    -2.0000000000000018,
+    3.500000000000003,
+    3.499999999999992,
+    1.937500000000003
+   ],
+   "teams_up": 6,
+   "provenance": {
+    "run": "ai_v9_163_TCUNFB_0903",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_92_R5F00_0831",
+     "ai_v9_94_R5F02_0831",
+     "ai_v9_96_R5F04_0831",
+     "ai_v9_98_R5F06_0831",
+     "ai_v9_100_R5F08_0831",
+     "ai_v9_102_R5F10_0831",
+     "ai_v9_104_R5F12_0831",
+     "ai_v9_106_R5F14_0831"
+    ],
+    "taught_teams": [
+     "009e3d0244",
+     "37d717a93a",
+     "436335607f",
+     "64a691c473",
+     "6916e13879",
+     "6ebe9ebc4d",
+     "750d056194",
+     "8bdb5796b9",
+     "9b454d9ea7",
+     "9d8391d864",
+     "9e95fb59d7",
+     "a9831a5f5e",
+     "aea50f207e",
+     "b904dbe059",
+     "e28069562f",
+     "e702a104eb"
+    ],
+    "n_taught_teams": 16,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 3,
+    "team_bias": 0.4,
+    "git_hash": "52ab5914"
+   }
+  },
+  {
+   "fold": "TC_UNF_K6_A",
+   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFK6A_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.5862499999999999,
+   "parent_wr": 0.5825,
+   "delta_pp": 0.37499999999999817,
+   "ci95": [
+    -1.7361111111111083,
+    2.5277777777777732
+   ],
+   "per_team_delta_pp": [
+    -1.5000000000000013,
+    5.999999999999995,
+    -3.499999999999992,
+    -3.500000000000003,
+    1.9999999999999907,
+    -3.0000000000000027,
+    2.0000000000000018,
+    4.499999999999993,
+    0.3750000000000031
+   ],
+   "teams_up": 5,
+   "provenance": {
+    "run": "ai_v9_170_TCUNFK6A_0904",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_92_R5F00_0831",
+     "ai_v9_94_R5F02_0831",
+     "ai_v9_96_R5F04_0831",
+     "ai_v9_98_R5F06_0831",
+     "ai_v9_100_R5F08_0831",
+     "ai_v9_102_R5F10_0831",
+     "ai_v9_104_R5F12_0831",
+     "ai_v9_106_R5F14_0831"
+    ],
+    "taught_teams": [
+     "009e3d0244",
+     "37d717a93a",
+     "436335607f",
+     "64a691c473",
+     "6916e13879",
+     "6ebe9ebc4d",
+     "750d056194",
+     "8bdb5796b9",
+     "9b454d9ea7",
+     "9d8391d864",
+     "9e95fb59d7",
+     "a9831a5f5e",
+     "aea50f207e",
+     "b904dbe059",
+     "e28069562f",
+     "e702a104eb"
+    ],
+    "n_taught_teams": 16,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 6,
+    "team_bias": 0.4,
+    "git_hash": "eb5261ff"
+   }
+  },
+  {
+   "fold": "TC_UNF_K6_B",
+   "artifact": ".claude/worktrees/agent-a1e1ddb280ff78374/designs/research_state/measurements/arch_transfer_2026-09-05/teacher_distance/inputs/untaught_TCUNFK6B_end.json",
+   "parent_artifact": "R2ACTION",
+   "untaught_wr": 0.5743750000000001,
+   "parent_wr": 0.5825,
+   "delta_pp": -0.8125,
+   "ci95": [
+    -2.6111111111111085,
+    1.2222222222222208
+   ],
+   "per_team_delta_pp": [
+    -3.0000000000000027,
+    4.0000000000000036,
+    -1.9999999999999907,
+    -3.500000000000003,
+    4.499999999999993,
+    0.0,
+    -3.9999999999999925,
+    -2.500000000000002,
+    -0.8125000000000049
+   ],
+   "teams_up": 2,
+   "provenance": {
+    "run": "ai_v9_171_TCUNFK6B_0904",
+    "parent_model": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+    "teachers": [
+     "ai_v9_92_R5F00_0831",
+     "ai_v9_94_R5F02_0831",
+     "ai_v9_96_R5F04_0831",
+     "ai_v9_98_R5F06_0831",
+     "ai_v9_100_R5F08_0831",
+     "ai_v9_102_R5F10_0831",
+     "ai_v9_104_R5F12_0831",
+     "ai_v9_106_R5F14_0831"
+    ],
+    "taught_teams": [
+     "009e3d0244",
+     "37d717a93a",
+     "436335607f",
+     "64a691c473",
+     "6916e13879",
+     "6ebe9ebc4d",
+     "750d056194",
+     "8bdb5796b9",
+     "9b454d9ea7",
+     "9d8391d864",
+     "9e95fb59d7",
+     "a9831a5f5e",
+     "aea50f207e",
+     "b904dbe059",
+     "e28069562f",
+     "e702a104eb"
+    ],
+    "n_taught_teams": 16,
+    "coef": 0.1761,
+    "target": "action",
+    "fork_lr": 2.8e-05,
+    "gas": 6,
+    "team_bias": 0.4,
+    "git_hash": "fff95a16"
+   }
+  }
+ ],
+ "rejected": [
+  {
+   "fold": "R3SELF",
+   "reason": "no untaught cell was ever run (ledger, M9 FINAL: \"R3SELF's untaught cell also unrun\"); only its taught -8.96pp exists"
+  },
+  {
+   "fold": "R4PLAIN",
+   "reason": "does not exist \u2014 the named-and-priced matched plain control for rev-4 was never launched"
+  },
+  {
+   "fold": "EXT_A (K=3 unfunded extension)",
+   "reason": "still training at the time of this probe; no endpoint artifact"
+  },
+  {
+   "fold": "R2PLAIN / R2CTRL",
+   "reason": "NOT folds \u2014 distillation-free arms. They supply the replicate FLOOR, and they have no teacher set, so no D_off exists for them"
+  },
+  {
+   "fold": "the fdA/fdB/fdC/fdE/fdF and G1/G2 family (ai_v9_38/39/40/42/45/48/49)",
+   "reason": "no untaught-8 artifact exists for ANY of them (searched the tree and the job dirs); they were scored on the TAUGHT side only, and they fork off rev-1 rather than off R2ACTION, so even a future untaught pass would be a sixth parent"
+  },
+  {
+   "fold": "every rev-2/rev-3-era 'fleet fold' other than R2ACTION/R3ACTION",
+   "reason": "no untaught-8 artifact on the standing stamp; probe Q's readings are a DIFFERENT team set and a greedy meter and may not be quoted beside these"
+  }
+ ]
+}
