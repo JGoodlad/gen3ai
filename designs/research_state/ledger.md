@@ -10784,3 +10784,51 @@ anchors needs a direct match before it is quoted as a difference.
 Artifact: `measurements/arch_transfer_2026-09-05/cross_era_head_to_head/` (README, `games.jsonl` 560 rows, `summary.json`,
 `bot_calibration.json`, five scripts). Server pids killed explicitly; 8000/8001 never touched.
 
+## 2026-09-05 — ARCH→TRANSFER probe H6 (exploiter drift law): our teachers are SIBLINGS of the fold parent, not its children (0.53 nats apart at t=0); off-slice drift ∝ t^0.80 (directed); the exploiter is GLOBAL from its first checkpoint; distance to the parent is flat for 1.2M steps then rises into the robbing bracket
+
+**Pre-registration** (`exploiter_drift/README.md`, frozen before any forward pass; TWO references registered once the
+lineage was read): KL(exploiter_t ‖ ref) on the exploiter's own 2 taught teams, the other 14 taught, and the untaught 8
+(`sharing_kernel` states), at 5–6 checkpoints per exploiter along R5F → R5FUND (join verified clean: every funded run's
+`fork_parent` is its R5F run at 28,115,184 = that run's actual final), 73 models, 119 s CPU, no battles. Control: the
+parent's own checkpoint series against its final.
+
+**Finding zero — a LINEAGE hazard that reframes H1.** All 8 R5F exploiters fork from `ai_v9_29_rev1_0823/final_model.zip`
+@ 25,067,760; `ai_v9_59_R2ACTION_0827` is their `--exploiter` TARGET, not their origin — and R2ACTION is itself a
+`role=fold` fork of the SAME checkpoint at the SAME step, ending at the same 28,115,184. Parent and teachers are two
+3.047M-step walks from one θ₀, **KL(θ₀ ‖ parent) = 0.534 on untaught states before any exploiter training**. v8's
+exploiters (ai_v8_09/06/13) were forked FROM v8_04, the parent itself (`--model` = v8_04 final, `--exploiter` = v8_04).
+So the "our teachers are GLOBAL" reading of H1 is carried substantially by the fork-origin offset (a common term in every
+teacher's KL that pushes the sibling-control ratio toward 1), and the cleanest recipe difference between the eras found so
+far is WHERE THE EXPLOITERS START — not architecture, maturity, or FiLM.
+
+**Results.**
+- (i) SIGNIFICANT: `KL_off(t) ∝ t^0.804 [0.758, 0.856]` from θ₀, monotone 8/8, r² 0.88–0.99 — excludes 0 AND the
+  random-walk 1.0 (of the ×2 conversion); `|Δθ| ∝ t^0.548 [0.539, 0.558]` (super-diffusive, above the fold's 0.48) while
+  the realised KL tracks 73% of the quadratic that implies — the walk is directed, the output saturates.
+- (ii) NOT DETECTED, mechanism DEAD: ρ = KL_on/KL_off is 1.22 at 150k and 1.26 at 5.0M (slope +0.006 [−0.094, +0.089]).
+  The exploiter is global from its FIRST checkpoint; the other seven exploiters' taught teams move exactly like untaught
+  ones (exponent 0.768); only its own 2 teams carry a flat +25%.
+- (iii) Exchange rate **+0.0201 nats/pp [+0.0133, +0.0331]** of off-slice drift per point of own-team win-rate gain (from
+  `externals[ext_R2ACTION].win_rate`, 100 games vs the parent, 3 points/exploiter), flat across both budget windows.
+- (iv) The R5F→R5FUND join is exonerated by a placebo: the extrapolation residual (−0.243 at t8, 8/8 negative) is
+  reproduced by the same fit-and-extrapolate INSIDE the unfunded leg (−0.235); the curve is curved, the fork is innocent;
+  b = 0.804 is curvature-averaged, not extrapolable.
+- Control: exploiters sit closer to θ₀ than the fold at all 6 matched depths, but the endpoint displacement ratio 1.509×
+  matches H2b's dose prediction 1.561× (`main.dose`: all 16 exploiters 4.258e-08, the control 3.33× that) — DOSE, not
+  regime; an out-of-sample confirmation of H2b.
+- H1 replicates on a different state batch and on-slice definition: funded − unfunded +0.0942 untaught / +0.1431 own-team.
+- **The lever:** anchored at t=0 (KL(θ₀‖parent) 0.534), distance to the PARENT is FLAT for the first 1.2M steps
+  (0.534 → 0.522, all CIs overlapping t=0) while the exploiter travels hard from θ₀ — the displacement is TRANSVERSE to the
+  parent; by 0.93M it is already at 61.1% vs the target. After 1.2M: 0.522 → 0.611 → 0.660 (the neutral UNF teachers) →
+  0.718 → 0.755 (the FUND teachers, which rob −2.41pp). A teacher stopped at 1.2M sits 0.138 nats closer than today's
+  neutral teacher (1.5× the whole funded−unfunded gap, in the safe direction) for ~5pp of on-slice edge at 2.5× less cost.
+
+**Two cheap causal cells follow (queued with Training Run, gen side, after v8 cells 1–2):**
+- **TC_SHORT ×3** — the TC_UNF fold recipe with teachers = the same 8 R5F exploiters at their ~1.2M checkpoints (they
+  exist; no exploiter training). Pre-reg: untaught delta ≥ TC_UNF's (neutral) and the on-slice gain shrinks toward ~+3
+  (teacher-ceiling falsifier); KL is a norm not a direction, so "close" may mean "learned little".
+- **TC_ORIGIN** — 8 exploiters forked FROM R2ACTION (v8's recipe; same targets, teams, budget as R5F), then the fold ×3.
+  Pre-reg: the teachers come out LOCAL (sibling-control R > 1.3, like v8's 1.45) and the fold does not rob; a GIFT here
+  would make the fork origin the whole v8 story.
+Artifact: `measurements/arch_transfer_2026-09-05/exploiter_drift/` (`verify_readme.py` re-asserts every headline figure).
+

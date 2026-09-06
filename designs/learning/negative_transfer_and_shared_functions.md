@@ -252,6 +252,23 @@ off-slice KL is +0.038 [−0.007, +0.093], the same size as seed noise, so the r
 from the parent off-slice than the neutral ones. A scalar divergence is a norm, not a direction, and
 this is the measurement of it.
 
+**Exploiter-drift result (2026-09-05, `arch_transfer_2026-09-05/exploiter_drift/`), and the fact that
+reframes the locality finding.** Our sixteen teachers were not forked from the fold parent. All eight R5F
+exploiters fork from the rev-1 generalist at 25.07M steps, and the fold parent (R2ACTION) is itself a fold of
+that same checkpoint at the same step, so parent and teachers are *siblings*: two 3M-step walks from one
+origin, already 0.53 nats apart everywhere before any exploiter training began. v8's exploiters, by contrast,
+were forked from v8's parent itself. That offset is exactly the "global" divergence the locality probe
+measured, and it inflates the sibling-control denominator toward 1. Three measured facts sit on top of it:
+(1) an exploiter's off-slice divergence from its origin grows as t^0.80 [0.76, 0.86], directed rather than
+diffusive, while its parameters walk as t^0.55; (2) the on/off ratio is flat from the first checkpoint
+(1.22 at 150k steps, 1.26 at 5M), so an exploiter is global from the start, not because it trained past
+specialisation; the "trains past specialisation" mechanism is dead; (3) the exchange rate is about 0.02 nats
+of off-slice drift per point of on-slice win-rate gain, flat across the budget. The one non-flat thing is the
+distance to the *parent*: flat for the first 1.2M steps of exploiter training (the displacement is transverse
+to the parent), then rising into the bracket where folds rob. Two cheap causal tests follow: a fold whose
+teachers are the same exploiters stopped at 1.2M (checkpoints exist), and a fold whose teachers are forked
+from the parent itself, which is v8's recipe.
+
 What is *not* testable: swapping the head inside the era. Phase 2 of the v8 replication can swap
 teachers, ecology and hyperparameters inside the era code, but the architecture boundary cannot be
 crossed by a fork, so the head hypothesis lives or dies on the two probes above.
