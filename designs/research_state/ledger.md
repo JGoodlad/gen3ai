@@ -11117,3 +11117,64 @@ recomputes 19 load-bearing numbers verbatim — PASS. Artifact: `measurements/ar
   verified by hiding one artifact) and fails if the registry shrinks below two. `~/.claude/jobs/1046b1d6/tmp/probes/`
   still exists but is to be treated as already gone.
 
+
+### 2026-09-06 · CELL 2 — **a plain continuation reproduces v8's gift**: the frozen parent is the wrong baseline
+
+Three arms of v8_14's fork with `--distill-coef 0`, **no stable opponents**, and (see below) no
+teacher-team bias — i.e. ordinary continued self-play on the mature parent for ~1.08M steps — scored
+on the era's 16-team untaught meter against the same-session parent (38.48pp).
+
+| arm | untaught | vs parent | |
+|---|---|---|---|
+| selfA | 41.21pp | +2.73pp [−1.17, +6.93] | spans zero |
+| selfB | 43.55pp | +5.08pp [+2.25, +8.11] | clears zero |
+| selfC | 41.02pp | +2.54pp [−1.27, +6.35] | spans zero |
+| **POOLED** | **41.93pp** | **+3.45pp [+0.46, +6.48]** | **clears zero** |
+
+Pairwise 2.34 / 0.20 / 2.54 ⇒ **floor 2.54pp**; 3.45 > 2.54. Both halves met.
+
+**Paired against the other two cells**, same 16 teams, one shared resampling index:
+
+| comparison | paired Δ | verdict |
+|---|---|---|
+| cell 2 − phase 1 (full v8 recipe) | −1.11pp [−3.12, +0.91] | **inside the ±3.22 floor ⇒ EQUIVALENCE** |
+| cell 2 − cell 1 (ecology, no loss) | −1.46pp [−4.10, +1.01] | outside ±3.71 and straddling zero ⇒ **INDETERMINATE** |
+
+**⇒ Training v8's mature parent for another 1.08M steps, with nothing else at all, reproduces v8's
+gift.** The full recipe is not detectably better than the continuation.
+
+**⚠️ The ladder is not what the cell LABELS say — a precision correction to the cell-1 entry.** At the
+era pin, `args._distill_pairs` is populated only `if distill_coef > 0`, so `--distill-coef 0` disables
+the teacher-team BIAS as well as the loss. (`gen3_distill_bias_at_coef0_v1`, which decouples the two,
+is a GEN-side fix postdating `b13b30b2`; it exists because `ai_v9_58_R2CTRL_0827` asked for bias at
+coef 0 and silently got 0.0.) Executed evidence: exactly one arm ever announced a teacher bias —
+`[DISTILL] 3 teacher(s) / 23 team(s), coef=1.0 | trainee biased 40%` (phase 1) — while both coef-0
+cells printed the ordinary `full pool + 10% sample-team bias`. So:
+
+| cell | distill loss | teacher-team bias | stable opponents | untaught |
+|---|---|---|---|---|
+| phase 1 | ON (1.0) | 40% | 3 @ 0.35 | +4.56pp |
+| cell 1 | off | **none** | 3 @ 0.35 | +4.92pp |
+| cell 2 | off | **none** | none | +3.45pp |
+
+The cell-1 entry's "the LOSS is not the carrier" should therefore be read as **"the loss AND its
+team-sampling bias, together, are not the carrier"** — those arms do not isolate the loss channel.
+The headline survives unchanged: nothing in the fold machinery adds over a continuation.
+
+**THE METER CONSEQUENCE, which is larger than any cell here.** An untaught delta measured against a
+FROZEN parent credits a fold with progress the parent would have made anyway. Re-based on a
+continuation control, v8's celebrated +4.64pp becomes ≈ +1.2pp and is not significant; every fold
+called "parent-neutral" has forgone ~3.45pp of available progress; every "hole" is deeper than
+recorded.
+
+⚠️ **Demonstrated on v8's parent ONLY.** No plain-continuation control has ever been run on the gen
+parent — `fdC` (−1.2pp n.s.) is loss-off-WITH-ecology, not a continuation. Until that cell exists,
+the re-basing is a demonstrated fact about `ai_v8_04` and an open question about `ai_v9_59`. It is
+~1.5 GPU-h per arm and is the highest-value unrun cell on the board.
+
+**Instrument checks run before this read** (all nine arms): each cell is byte-identical across its
+arms apart from seed and run name; all nine fork from one parent
+(`ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip`); scored depths span
+fork+1,079,397 … +1,088,431 (**0.84%**). Phase-1 arm A carries a second checkpoint at fork+2,068,193
+from a different `--steps`, which the meter never reads — `_first_ckpt` sorts by step and takes the
+lowest, so repA was scored at fork+1,086,216, inside the band.
