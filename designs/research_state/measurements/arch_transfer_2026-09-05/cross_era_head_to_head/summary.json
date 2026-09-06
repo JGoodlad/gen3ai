@@ -1,0 +1,58 @@
+{
+ "schema": 1,
+ "question": "P(v8_14 beats v9_59) head to head",
+ "prediction": {
+  "source": "anchored Bradley-Terry ladder.json, each run's top node",
+  "elo_b": 2049.1,
+  "se_b": 13.7,
+  "elo_a": 1957.4,
+  "se_a": 15.0,
+  "elo_delta": 91.7,
+  "predicted_p": 0.629,
+  "predicted_p_ci_from_rating_se": [
+   0.5741,
+   0.6807
+  ]
+ },
+ "counts": {
+  "planned": 560,
+  "attempted": 560,
+  "decisive": 559,
+  "draws": 1,
+  "timeouts": 0,
+  "timeout_fraction": 0.0,
+  "v8_14_wins": 354,
+  "v9_59_wins": 205
+ },
+ "result": {
+  "p_hat": 0.6332737030411449,
+  "wilson95": [
+   0.5925402285332715,
+   0.6721878939082824
+  ],
+  "pair_cluster_bootstrap95": [
+   0.5964285714285714,
+   0.6696428571428571
+  ],
+  "implied_elo_delta": 94.89976038801343,
+  "implied_elo_delta_ci": [
+   65.05324135413315,
+   124.74627942189373
+  ]
+ },
+ "pairs": {
+  "n_complete": 279,
+  "v8_14_sweeps": 103,
+  "v9_59_sweeps": 28,
+  "splits": 148
+ },
+ "verdict": "SIGNIFICANT",
+ "verdict_reason": "the Wilson 95% CI [0.5925,0.6722] excludes 0.500 \u2014 v8_14 is the stronger of the two head to head; and it CONTAINS the pre-registered 0.6290, so the anchored ELO is corroborated",
+ "anomalies": [],
+ "plan": {
+  "seed": 20260905,
+  "n_teams": 32,
+  "n_pairs": 280,
+  "team_dir": "/tmp/v8rep_era/data/teams/sample"
+ }
+}

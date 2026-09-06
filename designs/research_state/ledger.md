@@ -10726,3 +10726,61 @@ build bar. Caveats: search depth ≠ network depth (the weakest joint); the leaf
 ambiguous between "nothing at depth 2" and "this critic cannot see it"; MAX-backup optimism runs WITH the effect
 (conservative reading). Artifact: `measurements/arch_transfer_2026-09-05/depth_statistic/`.
 
+## 2026-09-05 — CROSS-ERA HEAD-TO-HEAD: v8_14 beats v9_59 63.3% [59.3, 67.2] over 559 decisive games; the anchored ELO's extrapolation (+91.7 predicted, +94.9 measured) is CORROBORATED; 560 direct games resolve the gap to ±30 where 720 bot games leave ±86 and cannot exclude zero
+
+**Why.** Both generations are rated against the same anchor bots, but the strongest bot is 1639 and both models sit 300–400
+points above it, so their ladder ratings are extrapolations from ~5% loss rates, from ladders not matched on snapshot count
+(2 vs 14). A direct match has resolution the anchors do not, and TESTS the extrapolation. The two models cannot load in
+one process (config_version 45 / obs 2992 vs current), so the harness is two websocket clients on a private Showdown
+server (port 9137; the submodule pin `e0551883` is byte-identical at main, at `b13b30b2` and in the worktree, and the
+era checkout symlinks main's compiled `dist` — the same server binary; the era parser played 585 games with zero
+unclassified keywords). Pre-registered before any game: P(v8_14 beats v9_59) = 0.629 from ladder 2049.1 vs 1957.4.
+
+**Design.** Paired team draws from the sha256-verified 32-team intersection of the two eras' pools (72 vs 32 — the identical
+team STRING handed to both sides), every pair in both orientations, fixed seeds, both sides greedy (each era's own eval
+convention, verified not assumed), timeouts bucketed separately and never a loss.
+
+**Result (executed).**
+```
+planned=560 decisive=559 draws=1 timeouts=0 (0.0%)
+v8_14 wins 354/559 = 0.6333   Wilson 95% [0.5925, 0.6722]   pair cluster boot 95% [0.5964, 0.6696]
+implied ELO delta +94.9 [+65.1, +124.7]   (predicted +91.7)
+pairs: 103 v8_14-sweeps / 148 splits / 28 v9_59-sweeps (n=279)
+```
+**SIGNIFICANT**, and the pre-registered 0.629 sits inside the interval, 0.004 from the point. Orientation 0 = 0.618 vs
+orientation 1 = 0.649 (the side-swap differenced the team draw out); dropping the 12 stall-forfeits moves the estimate 0.003.
+
+**Bot calibration, same day / same server / same checkpoints (120 games per cell).**
+| bot (anchor) | v8_14 win rate → implied | v9_59 win rate → implied |
+|---|---|---|
+| heuristic2 (1638.8) | 0.925 [0.864, 0.960] → 2075 | 0.858 [0.785, 0.910] → 1952 |
+| staller_v2 (1554.9) | 0.900 [0.833, 0.942] → 1937 | 0.883 [0.814, 0.929] → 1907 |
+| aggressive_v2 (1630.1) | 0.917 [0.853, 0.954] → 2047 | 0.908 [0.843, 0.948] → 2029 |
+| pooled | 0.914 → **2019 ± 64** (ladder 2049, −30) | 0.883 → **1962 ± 57** (ladder 1957, +5) |
+Gap: bot-implied +57 [−29, +143] (contains the ladder's +91.7, the head-to-head's +94.9, AND zero); 5 of 6 per-bot cells
+contain their side's ladder rating (the miss: v8_14 vs staller_v2, 10 points outside on the edge — recorded, not dropped).
+**The two instruments do not disagree; they differ in POWER**: 560 direct games pin the gap to ±30 rating points, 720 bot
+games leave it at ±86 and cannot even establish which model is better.
+
+**Reading.** (1) The anchored Bradley-Terry ratings transfer to a direct match between generations — ONE successful
+out-of-sample test of the extrapolation, not a validation of the ladder as an instrument, and the agreement is closer than
+the design can resolve (±0.040 half-width). (2) For the gift program: v8's line IS the stronger policy, by ~95 points at
+~10× the steps, so "v8's teachers were best responses to a stronger generalist" is a fact; whether our parent at 277M steps
+would match it, this cannot say. (3) Reading-an-ELO rule gains a clause: a bot-anchored gap between two models far above the
+anchors needs a direct match before it is quoted as a difference.
+
+**Hazards (FINDINGS; 1 and 2 are latent tree defects, not fixed here).**
+1. **A refused login costs the entire deadline, silently.** `localhost_server_configuration` authenticates against the REAL
+   Smogon `action.php`, so a short name registered upstream is refused even on a `--no-security` server, and neither era
+   wraps `send_challenges` / `accept_challenges` in the connect-or-raise guard `_battle_against` gets: both sides sat the
+   full 320 s and reported 20 phantom timeouts. The harness bounds `logged_in` at 30 s; **the guard belongs on the
+   challenge paths in the tree** (`src/main/play.py` is the ladder entry point — this is exactly the class of failure a
+   ladder session would hit).
+2. The era's poke-env hangs on a PASSWORDLESS login (sets `logged_in` on `|updateuser| Guest N` before `|challstr|`; current
+   code guards with `_trn_sent`) — mitigated by passwording every account and making the era the acceptor.
+3. A DRAW (24-turn double-KO, `won=None` both sides) was initially booked as a TIMEOUT — "a timeout is never a semantic
+   outcome" has a converse; buckets separated, true timeout count 0.
+4. The eras' team pools differ (72 vs 32 files) — intersection by content sha, so pool drift cannot reach the measurement.
+Artifact: `measurements/arch_transfer_2026-09-05/cross_era_head_to_head/` (README, `games.jsonl` 560 rows, `summary.json`,
+`bot_calibration.json`, five scripts). Server pids killed explicitly; 8000/8001 never touched.
+

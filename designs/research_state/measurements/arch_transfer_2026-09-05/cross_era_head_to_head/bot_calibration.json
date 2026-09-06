@@ -1,0 +1,159 @@
+{
+ "schema": 1,
+ "anchors": {
+  "heuristic2": 1638.8,
+  "staller_v2": 1554.9,
+  "aggressive_v2": 1630.1
+ },
+ "ladder_elo": {
+  "v8_14": 2049.1,
+  "v9_59": 1957.4
+ },
+ "sides": {
+  "v8_14": {
+   "heuristic2": {
+    "won": 111,
+    "games": 120,
+    "timeouts": 0,
+    "win_rate": 0.925,
+    "wilson95": [
+     0.8635894316089088,
+     0.9600433379935513
+    ],
+    "anchor_elo": 1638.8,
+    "implied_elo": 2075.232187738933,
+    "implied_elo_ci": [
+     1959.3837201500337,
+     2191.0806553278326
+    ]
+   },
+   "staller_v2": {
+    "won": 108,
+    "games": 120,
+    "timeouts": 0,
+    "win_rate": 0.9,
+    "wilson95": [
+     0.8333168001483641,
+     0.9418669830068925
+    ],
+    "anchor_elo": 1554.9,
+    "implied_elo": 1936.5970037757302,
+    "implied_elo_ci": [
+     1834.467323374412,
+     2038.7266841770488
+    ]
+   },
+   "aggressive_v2": {
+    "won": 110,
+    "games": 120,
+    "timeouts": 0,
+    "win_rate": 0.9166666666666666,
+    "wilson95": [
+     0.8533762622701224,
+     0.9541068451832697
+    ],
+    "anchor_elo": 1630.1,
+    "implied_elo": 2046.6570740632899,
+    "implied_elo_ci": [
+     1936.0745087629275,
+     2157.2396393636527
+    ]
+   },
+   "_pooled": {
+    "won": 329,
+    "games": 360,
+    "win_rate": 0.9138888888888889,
+    "wilson95": [
+     0.8803640392272324,
+     0.9386736958750758
+    ],
+    "mean_implied_elo": 2019.4954218593177,
+    "mean_implied_elo_se": 32.84872457199037,
+    "mean_implied_elo_ci95": [
+     1955.1119216982165,
+     2083.878922020419
+    ],
+    "ladder_elo": 2049.1,
+    "implied_minus_ladder": -29.60457814068218
+   }
+  },
+  "v9_59": {
+   "heuristic2": {
+    "won": 103,
+    "games": 120,
+    "timeouts": 0,
+    "win_rate": 0.8583333333333333,
+    "wilson95": [
+     0.7848035127258367,
+     0.9096319596840804
+    ],
+    "anchor_elo": 1638.8,
+    "implied_elo": 1951.7553213307592,
+    "implied_elo_ci": [
+     1863.570304133273,
+     2039.9403385282453
+    ]
+   },
+   "staller_v2": {
+    "won": 106,
+    "games": 120,
+    "timeouts": 0,
+    "win_rate": 0.8833333333333333,
+    "wilson95": [
+     0.8136649880680831,
+     0.9292194707890375
+    ],
+    "anchor_elo": 1554.9,
+    "implied_elo": 1906.571131834613,
+    "implied_elo_ci": [
+     1810.9604652877838,
+     2002.181798381442
+    ]
+   },
+   "aggressive_v2": {
+    "won": 109,
+    "games": 120,
+    "timeouts": 0,
+    "win_rate": 0.9083333333333333,
+    "wilson95": [
+     0.843290092093749,
+     0.9480433532105753
+    ],
+    "anchor_elo": 1630.1,
+    "implied_elo": 2028.5135251129593,
+    "implied_elo_ci": [
+     1922.4522169577508,
+     2134.5748332681683
+    ]
+   },
+   "_pooled": {
+    "won": 318,
+    "games": 360,
+    "win_rate": 0.8833333333333333,
+    "wilson95": [
+     0.8460521011242447,
+     0.9125197609168193
+    ],
+    "mean_implied_elo": 1962.279992759444,
+    "mean_implied_elo_se": 28.922734583155545,
+    "mean_implied_elo_ci95": [
+     1905.5914329764591,
+     2018.9685525424288
+    ],
+    "ladder_elo": 1957.4,
+    "implied_minus_ladder": 4.879992759443894
+   }
+  }
+ },
+ "implied_gap_v8_minus_v9": 57.215429099873745,
+ "implied_gap_se": 43.76714843091957,
+ "implied_gap_ci95": [
+  -28.56818182472861,
+  142.9990400244761
+ ],
+ "ladder_gap_v8_minus_v9": 91.69999999999982,
+ "head_to_head_measured_gap": 94.9,
+ "gap_ci_contains_ladder": true,
+ "gap_ci_contains_h2h": true,
+ "gap_ci_contains_zero": true
+}
