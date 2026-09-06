@@ -8,7 +8,7 @@ training-throughput (FPS) critical path. Two independent things can regress here
 have **different** gates:
 
 1. **Observation *values*** — if a change alters what the vector contains, it is
-   **retrain-class**: bump `ARCH_SIGNATURE` in `src/agents/model/model_version.py` (see the
+   **retrain-class**: bump `ARCH_SIGNATURE` in `src/agents/model/model_version/` (see the
    root `CLAUDE.md` → Model Versioning). Value-neutral refactors do **not** bump it.
 2. **Observation *build performance*** — if a change makes `encode` slower, training FPS
    drops for the entire run. **This file governs that gate.**

@@ -483,6 +483,30 @@ it (the ruff handoff list and the c-family lesson both). **Keeping it empty is a
 piecemeal work** — no design doc, no coordination; the 1,000-2,000 census is where the next one comes
 from.
 
+### The CLAUDE.md FRESHNESS gate (`src/claude_md_freshness_gate_test.py`) — the fourth static gate
+
+**Prose has no compiler, and a `CLAUDE.md` is loaded into every session and read as fact.** A path
+that moved and a flag that was deleted do not merely go stale — they are *actively believed*, and
+the believer then reports a false result or types a command that cannot launch. So the same two
+things a scanner CAN check are checked, over every `CLAUDE.md` in the tree: **every repo-relative
+path must exist**, and **every `--flag` must resolve in some parser in this tree**. Unmarked,
+**0.84 s**, opt out with `GEN3AI_SKIP_CLAUDE_MD_GATE=1`.
+
+The flag surface is an AST scan of `add_argument` literals (plus hand-rolled `sys.argv` flags)
+across `src/`, `tools/`, the Rust binaries, the Node harness and `scripts/*.sh` — **not**
+`build_parser()`, because importing the training parser alone costs 1.15 s across ~30 parsers and
+because several entry points live in `__main__.py`, where an import once *started a training run*
+(see `src/main/entry_point_guard_test.py`). It was validated against the live parser: of 588 live
+options, every one the scan missed was an auto-generated `--no-` negation.
+
+**A flag or path named deliberately as HISTORY goes in `designs/deleted_flags.md`** — DELETED,
+DEMOTED off the CLI, or PROPOSED-but-unbuilt, each with the version, signature or date that made it
+so. That list is a ratchet, not a bin: an uncited row fails, and a row whose flag returns to the
+live surface fails too. External tools' flags (`pytest`, `ruff`, `pip`, `cargo`, `git`, chrome) live
+in the test's own allowlist, **each named with its tool**, so it cannot quietly absorb one of ours.
+The census behind it — what each big `CLAUDE.md` is made of and what size is right — is
+`designs/research_state/claude_md_census_2026-09-06.md`.
+
 ### Unit tests only (the fast inner loop)
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
@@ -2233,7 +2257,7 @@ crashes in seconds rather than hours.
 The architecture-constant single source of truth is `src/agents/model/arch_constants.py`
 (`ROLE_TOKEN_SIZE`, `PROJECTION_DIM`, `MOVE_NET_HIDDEN`, `ROLE_ENCODER_HIDDEN`, `ACTIVE_CTX_HIDDEN`,
 `N_HISTORY_TURNS`, …); `ARCH_SIGNATURE` and `MODEL_CONFIG_VERSION` live in
-`src/agents/model/model_version.py`. **Read the live values there, not from prose** — a version
+`src/agents/model/model_version/`. **Read the live values there, not from prose** — a version
 number quoted in a document is stale the moment the next one lands.
 
 - **Current architecture and flag state:** [`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md).
