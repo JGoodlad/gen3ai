@@ -311,18 +311,92 @@ def test_no_run_spec_consumer_re_derives_the_at_step_split():
 
 
 def test_the_choke_point_calls_the_splitter():
-    """`_resolve_zip_and_config` is what makes every `step=None` caller correct at once."""
+    """`resolve_model_ref` is what makes every `step=None` caller correct at once.
+
+    It is the choke point since `gen3_last_snapshot_resolution_v1`; `_resolve_zip_and_config` is a
+    3-tuple wrapper over it (a signature the offline probe scripts import by name), so BOTH are
+    checked — the wrapper must reach the splitter, and it must do so through the resolver rather
+    than by re-deriving the split for itself.
+    """
     path = str(src_path("agents/training/fixed_opponent_pool.py"))
     with open(path, encoding="utf-8") as fh:
         tree = ast.parse(fh.read(), filename=path)
-    fn = next(n for n in ast.walk(tree)
-              if isinstance(n, ast.FunctionDef) and n.name == "_resolve_zip_and_config")
-    called = {n.func.id for n in ast.walk(fn)
-              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
-    assert "split_run_spec" in called, (
-        "fixed_opponent_pool._resolve_zip_and_config no longer splits the run spec — every "
-        "step=None caller (--distill-teacher, --win-prob-pbrs-source, --distill-anchor-parent, "
+    fns = {n.name: n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
+    called_by_resolver = {n.func.id for n in ast.walk(fns["resolve_model_ref"])
+                          if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "split_run_spec" in called_by_resolver, (
+        "fixed_opponent_pool.resolve_model_ref no longer splits the run spec — every step=None "
+        "caller (--distill-teacher, --win-prob-pbrs-source, --distill-anchor-parent, "
         "--warmstart-consensus) silently loses @step support again.")
+    called_by_wrapper = {n.func.id for n in ast.walk(fns["_resolve_zip_and_config"])
+                         if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "resolve_model_ref" in called_by_wrapper, (
+        "_resolve_zip_and_config no longer delegates to resolve_model_ref — the 3-tuple wrapper "
+        "and the provenance-carrying resolver would then be two implementations of one rule.")
+
+
+# ---------------------------------------------------------------------------
+# THE CONSUMER CENSUS — every run-spec consumer routes through the ONE resolver
+# ---------------------------------------------------------------------------
+
+#: Every module that turns a run spec into a model FILE, and the flags it serves. The rung order
+#: (`gen3_last_snapshot_resolution_v1`) is only one rule while these all reach it; a module that
+#: opens `best_model/best_model.zip` (or globs `checkpoints/`) for itself is a second rule that
+#: will drift from the documented one. Names here are the ONLY sanctioned entry points.
+_RESOLVER_ENTRY_POINTS = ("resolve_model_ref", "_resolve_zip_and_config", "resolve_stable_opponents")
+
+#: module -> the flags whose file it resolves (for the failure message)
+_RESOLVER_CONSUMERS = {
+    "main/train/model_build.py": "--distill-teacher, --win-prob-pbrs-source, --warmstart-consensus",
+    "main/train/callbacks.py": "--distill-anchor-parent",
+    "main/train/matchup_setup.py": "--stable-opponents, --exploiter",
+    "agents/training/warmstart.py": "--warmstart-consensus (the standalone CLI)",
+    "agents/training/exploiter_ladder.py": "--exploiter-ladder",
+}
+
+#: Filenames a consumer must not construct for itself — the rungs the resolver owns.
+#:
+#: ⚠️ `final_model*.zip` is deliberately ABSENT. The trainer WRITES those names
+#: (`_write_latest_txt(model_dir, "final_model.zip")`), and an AST scan cannot tell a producer's
+#: literal from a consumer's; listing it would fail on `main/train/model_build.py`'s own save path.
+#: The two below are named only in order to RESOLVE, which is the regression this catches — a
+#: consumer reaching for `best_model/best_model.zip` keeps the OLD bot-win-rate selection after the
+#: rest of the tree moved to the run's last snapshot.
+_RUNG_FILENAMES = ("best_model.zip", "latest.txt")
+
+
+def test_every_run_spec_consumer_routes_through_the_one_resolver():
+    """Each consumer imports a sanctioned entry point and hand-builds no rung filename.
+
+    The rung order is a single rule only while every flag reaches it. This is the test that fails
+    — naming the file and the flags — when the next consumer opens `best_model/best_model.zip`
+    itself and quietly keeps the OLD (bot-win-rate) selection after the rest of the tree moved to
+    the run's last snapshot.
+    """
+    missing, offenders = [], []
+    for rel, flags in _RESOLVER_CONSUMERS.items():
+        path = str(src_path(rel))
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        tree = ast.parse(text, filename=path)
+        imported = {alias.name for node in ast.walk(tree)
+                    if isinstance(node, ast.ImportFrom)
+                    and (node.module or "").endswith("fixed_opponent_pool")
+                    for alias in node.names}
+        if not (imported & set(_RESOLVER_ENTRY_POINTS)):
+            missing.append(f"{rel} ({flags})")
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                for name in _RUNG_FILENAMES:
+                    if node.value.endswith(name):
+                        offenders.append(f"{rel}:{node.lineno} builds {node.value!r}")
+    assert not missing, (
+        "these run-spec consumers no longer import agents.training.fixed_opponent_pool's resolver, "
+        "so their flag resolves a model file by some other rule: " + ", ".join(missing))
+    assert not offenders, (
+        "these consumers name a resolution RUNG's filename themselves instead of calling "
+        "resolve_model_ref, which is how the rung order stops being one rule: "
+        + ", ".join(offenders))
 
 
 # ---------------------------------------------------------------------------

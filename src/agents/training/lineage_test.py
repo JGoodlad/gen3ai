@@ -567,3 +567,116 @@ def test_main_lineage_says_unknown_rather_than_zero_for_a_legacy_run(tmp_path, c
     assert lineage_read_run(c)["num_timesteps"] is None
     assert lineage_main([c]) == 0
     assert "num_timesteps=unknown" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# 9 — WHICH FILE was loaded (`gen3_last_snapshot_resolution_v1`, 2026-09-06)
+# ---------------------------------------------------------------------------
+#
+# A teacher / target / parent is usually named as a run DIRECTORY, and a directory is not a file.
+# Until 2026-09-06 that resolved to the BOT-WIN-RATE `best_model/best_model.zip`, and for 2 of 8
+# R5F teachers it was a ~0.93M-step export rather than the ~2.93M final — with nothing on disk
+# recording it (ledger 2026-09-06, probe H8). The block now states it.
+
+
+def _teacher_run(root, name, *, latest=None, checkpoints=(), final=None, best=None):
+    """A run dir carrying the rungs asked for, so a lineage record has something to resolve."""
+    d = os.path.join(str(root), name)
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, "metadata.json"), "w") as f:
+        json.dump({"git_hash": "cafe1234"}, f)
+    with open(os.path.join(d, "model_config.json"), "w") as f:
+        json.dump({"arch_signature": "test_arch_v1", "config_version": 42}, f)
+    for step in checkpoints:
+        _fake_checkpoint(os.path.join(d, "checkpoints", f"checkpoint_{step}_steps.zip"), step)
+    if final is not None:
+        _fake_checkpoint(os.path.join(d, "final_model.zip"), final)
+    if best is not None:
+        _fake_checkpoint(os.path.join(d, "best_model", "best_model.zip"), best)
+    if latest is not None:
+        with open(os.path.join(d, "latest.txt"), "w") as f:
+            f.write(latest + "\n")
+    return d
+
+
+def test_describe_model_records_the_resolved_file_for_a_RUN_DIR_reference(tmp_path):
+    """A teacher named as a directory records the .zip the resolver picked, and how."""
+    t = _teacher_run(tmp_path, "teacher", latest="final_model.zip", final=28_115_184,
+                     checkpoints=[28_067_760], best=26_000_016)
+    got = describe_model(t, hash_file=False)
+    assert got.resolution_rule == "last_snapshot" and got.resolution_rung == "latest_txt"
+    assert got.resolved_file == os.path.join(t, "final_model.zip")
+    assert got.resolved_num_timesteps == 28_115_184
+
+
+def test_a_reference_that_resolves_NOWHERE_records_unresolved_rather_than_nothing(tmp_path):
+    """`unresolved` and NOT-RECORDED are different facts: the first means this run tried."""
+    got = describe_model(os.path.join(str(tmp_path), "not_a_run"), hash_file=False)
+    assert got.resolution_rule == "unresolved" and got.resolution_rung == "unresolved"
+    assert got.resolved_file is None and got.resolved_num_timesteps is None
+
+
+def test_a_fork_block_carries_the_resolution_of_its_parent_and_every_teacher(tmp_path):
+    parent = _teacher_run(tmp_path, "parent", checkpoints=[5000])
+    teacher = _teacher_run(tmp_path, "teacher", best=1234)     # nothing else -> the fallback
+    team = os.path.join(str(tmp_path), "t.txt")
+    with open(team, "w") as f:
+        f.write("Skarmory @ Leftovers\n")
+    block = build_lineage(
+        model_path=os.path.join(parent, "checkpoints", "checkpoint_5000_steps.zip"),
+        model_dir=os.path.join(str(tmp_path), "fold"),
+        distill_teacher=f"{teacher}:{team}", hash_parent=False)
+    assert block["fork_parent"]["resolution_rung"] == "explicit_zip"
+    assert block["fork_parent"]["resolved_num_timesteps"] == 5000
+    (t,) = block["teachers"]
+    assert t["resolution_rung"] == "best_model_fallback"
+    assert t["resolution_rule"] == "best_model_fallback"
+    assert t["resolved_num_timesteps"] == 1234
+
+
+def test_a_DERIVED_block_records_NO_resolution_because_that_run_recorded_none(tmp_path):
+    """A legacy run loaded under the OLD rule. Re-resolving it today would print a current answer
+    as history, so the backfill leaves the four keys unset and the CLI says so."""
+    parent = _teacher_run(tmp_path, "old_parent", best=99)
+    block = build_lineage_from_command(
+        f"python train.py --model {parent}", model_dir=os.path.join(str(tmp_path), "legacy"),
+        hash_parent=False)
+    assert block["derived"] is True
+    for key in ("resolved_file", "resolved_num_timesteps", "resolution_rung", "resolution_rule"):
+        assert block["fork_parent"][key] is None
+
+
+def test_the_legacy_accessor_path_also_records_no_resolution(tmp_path, capsys):
+    parent = _teacher_run(tmp_path, "legacy_parent", best=7)
+    child = _run(tmp_path, "legacy_child", command=f"python train.py --model {parent}")
+    got = fork_parent(child)
+    assert got is not None and got.derived is True
+    assert got.resolution_rule is None and got.resolved_file is None
+
+
+def test_main_lineage_prints_the_resolved_file_for_a_recorded_reference(tmp_path, capsys):
+    from main.lineage import main as lineage_main
+    parent = _teacher_run(tmp_path, "p", checkpoints=[5000])
+    teacher = _teacher_run(tmp_path, "t", latest="final_model.zip", final=2_930_000)
+    team = os.path.join(str(tmp_path), "t.txt")
+    with open(team, "w") as f:
+        f.write("Skarmory @ Leftovers\n")
+    block = build_lineage(
+        model_path=os.path.join(parent, "checkpoints", "checkpoint_5000_steps.zip"),
+        model_dir=os.path.join(str(tmp_path), "fold"),
+        distill_teacher=f"{teacher}:{team}", hash_parent=False)
+    child = _run(tmp_path, "fold", lineage=block)
+    lineage_main([child])
+    out = capsys.readouterr().out
+    assert "2,930,000 steps" in out
+    assert "rung=latest_txt" in out and "rule=last_snapshot" in out
+
+
+def test_main_lineage_says_NOT_RECORDED_for_a_legacy_run(tmp_path, capsys):
+    from main.lineage import LEGACY_RESOLUTION_NOTE, main as lineage_main
+    parent = _teacher_run(tmp_path, "legacy_p", best=7)
+    child = _run(tmp_path, "legacy_c", command=f"python train.py --model {parent}")
+    lineage_main([child])
+    out = capsys.readouterr().out
+    assert LEGACY_RESOLUTION_NOTE in out
+    assert "pre gen3_last_snapshot_resolution_v1" in out

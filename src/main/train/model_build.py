@@ -239,21 +239,30 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     if args.distill_coef and args.distill_coef > 0 and getattr(args, "_distill_pairs", None):
         from agents.model.snapshot import (
             current_model_version as _cmv_d, load_foreign_opponent as _lfo_d)
-        from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_d
+        from agents.training.fixed_opponent_pool import resolve_model_ref as _rmr_d
         _cv_d = _cmv_d(mappings, **_run_arch_toggles(args))
+        # WHICH FILE each teacher resolved to, printed per teacher (gen3_last_snapshot_resolution_v1).
+        # A bare run dir names a RUN, not a file, and until 2026-09-06 it silently meant the
+        # BOT-WIN-RATE `best_model` export — which for 2 of 8 R5F teachers was a ~0.93M-step
+        # checkpoint rather than the ~2.93M final, with nothing recording it (ledger 2026-09-06,
+        # probe H8). The rung + num_timesteps are stated so a reader never infers them from layout.
+        _teacher_prov: "list[str]" = []
         for _tp, _tf in args._distill_pairs:
             try:
-                _zip_d, _cfg_d, _ = _rzc_d(_tp, None)   # run-dir → (zip, config)
-                _tm_d, _ = _lfo_d(_zip_d, current_version=_cv_d,
-                                  device=str(model.device), config_path=_cfg_d)
+                _ref_d = _rmr_d(_tp, None)              # run-dir/zip/@step → the resolved file
+                _tm_d, _ = _lfo_d(_ref_d.zip_path, current_version=_cv_d,
+                                  device=str(model.device), config_path=_ref_d.config_path)
                 _tm_d.policy.set_training_mode(False)
                 model._distill_teachers.append(_tm_d)
+                _teacher_prov.append(f"{_tp} -> {_ref_d.describe()}")
             except Exception as _e_d:  # noqa: BLE001 — bad/incompatible teacher weights
                 print(f"\n[Distill] FATAL: could not load --distill-teacher {_tp}: {_e_d}")
                 sys.stdout.flush()
                 os._exit(int(TrainExitCode.FATAL_CONFIG))
         emit(f"🧪 [DISTILL] {len(model._distill_teachers)} teacher(s) attached on {model.device} "
              f"(order = teacher-id 1..{len(model._distill_teachers)})")
+        for _i_d, _line_d in enumerate(_teacher_prov, start=1):
+            emit(f"   teacher {_i_d}: {_line_d}")
 
     # gen3_winprob_pbrs_source_v1: the FROZEN φ for the win-prob PBRS. Absent → the attribute stays
     # None and `winprob_pbrs` reads the LIVE head exactly as it did at v104 (byte-identical).
@@ -272,10 +281,11 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     if getattr(args, "win_prob_pbrs_source", None):
         from agents.model.snapshot import (
             current_model_version as _cmv_w, load_foreign_opponent as _lfo_w)
-        from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _rzc_w
+        from agents.training.fixed_opponent_pool import resolve_model_ref as _rmr_w
         _src = str(args.win_prob_pbrs_source)
         try:
-            _zip_w, _cfg_w, _ = _rzc_w(_src, None)          # run-dir OR zip → (zip, config)
+            _ref_w = _rmr_w(_src, None)                     # run-dir OR zip → the resolved file
+            _zip_w, _cfg_w = _ref_w.zip_path, _ref_w.config_path
             _pm_w, _fv_w = _lfo_w(_zip_w, current_version=_cmv_w(mappings, **_run_arch_toggles(args)),
                                   device=str(model.device), config_path=_cfg_w)
             _pm_w.policy.set_training_mode(False)
@@ -286,7 +296,7 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
             os._exit(int(TrainExitCode.FATAL_CONFIG))
         # Provenance, printed rather than merely recorded: a clean-world run is uninterpretable if
         # the identity of its frozen potential is not pinned (probe N §7.8).
-        emit(f"🧊 [WinProbPBRS] frozen φ from {_zip_w} on {model.device} "
+        emit(f"🧊 [WinProbPBRS] frozen φ from {_ref_w.describe()} on {model.device} "
              f"(arch_signature={getattr(_fv_w, 'arch_signature', '?')}, "
              f"config_version={getattr(_fv_w, 'config_version', '?')}) — the LIVE win-prob head is "
              f"now a diagnostic only")

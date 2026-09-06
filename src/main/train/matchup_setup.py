@@ -288,6 +288,9 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         _stable_labels = ", ".join(
             e.label + (f" [pilots ITS OWN pin: {os.path.basename(e.team_file)}]" if e.team_str else "")
             for e in _fixed_opponents)
+        # WHICH FILE each opponent resolved to (gen3_last_snapshot_resolution_v1) — a bare run dir
+        # names a RUN, not a file, and the rung that picked it is stated rather than inferred.
+        _stable_prov = [f"   {e.label}: {e.provenance()}" for e in _fixed_opponents]
         if args.self_play:
             emit(f"🐴 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
                  f"eval greedy; training ≤{args.stable_opponent_selfplay_share:.0%} of self-play until "
@@ -295,6 +298,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         else:
             emit(f"🐴 [STABLE] {len(_fixed_opponents)} cross-run opponent(s): {_stable_labels} — "
                  "EVAL-ONLY (no --self-play, so they don't join the training mix)")
+        for _line_s in _stable_prov:
+            emit(_line_s)
 
     # EXPLOITER mode (--exploiter): resolve the single fixed target the SAME way as a stable opponent
     # (run-dir/checkpoint spec → arch-gated FixedOpponentEntry), validating its weights load here so a
@@ -344,6 +349,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         else:
             emit(f"🥊 [EXPLOITER] training vs {_exploiter_entry.label} as the SOLE opponent every episode "
                  f"({_temp_desc}; no self-play/pool/bots). Goal: learn to beat it.")
+        emit(f"   target: {_exploiter_entry.provenance()}")
         if _exploiter_entry.team_str:
             emit(f"   target pilots ITS OWN pinned team ({os.path.basename(_exploiter_entry.team_file)}) "
                  "— the fold-back contract")

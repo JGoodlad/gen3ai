@@ -181,7 +181,33 @@ class ForkParent:
 
     `derived` is False for a reference read out of a recorded `lineage` block and True for one
     inferred from `original_command`. It is the field that keeps a legacy guess distinguishable
-    from a recorded fact, and every consumer that reports provenance should say which it got."""
+    from a recorded fact, and every consumer that reports provenance should say which it got.
+
+    WHICH FILE WAS ACTUALLY LOADED (`gen3_last_snapshot_resolution_v1`). A teacher / target / parent
+    is usually named as a run DIRECTORY, and a directory is not a file: it is resolved through
+    `agents.training.fixed_opponent_pool.resolve_model_ref`, whose answer depends on what the run
+    left on disk. Until 2026-09-06 that answer was the BOT-WIN-RATE `best_model/best_model.zip`, and
+    for 2 of 8 R5F teachers it was a ~0.93M-step export rather than the ~2.93M final — with nothing
+    recording it (ledger 2026-09-06, probe H8). So the block now states it:
+
+      * `resolved_file`           — the `.zip` the resolver picked, absolute
+      * `resolved_num_timesteps`  — its `num_timesteps` (`None` = the zip declares none: unknown)
+      * `resolution_rung`         — the rung that fired: `explicit_step` / `explicit_zip` /
+                                    `latest_txt` / `highest_checkpoint` / `final_model` /
+                                    `best_model_fallback`, or `unresolved`
+      * `resolution_rule`         — its coarse class: `explicit_step` / `explicit_zip` /
+                                    `last_snapshot` / `best_model_fallback`, or `unresolved`
+
+    `None` on these four means NOT RECORDED — a pre-`gen3_last_snapshot_resolution_v1` run, which
+    loaded under the OLD rule and left no trace of which file it got. `unresolved` means this run
+    DID try and the path resolved to nothing. The two are different facts and readers must not
+    collapse them: `main.lineage` prints "resolved file not recorded (pre
+    gen3_last_snapshot_resolution_v1)" for the first and never re-resolves a legacy reference under
+    today's rule, which would present a current answer as history.
+
+    `resolved_path` / `num_timesteps` / `sha256` keep their older, narrower meaning — they describe
+    the literal path as given, so for a `.zip` reference they agree with the resolved fields and for
+    a run-DIRECTORY reference they are about the directory (i.e. mostly `None`)."""
 
     path: str
     resolved_path: Optional[str] = None
@@ -194,6 +220,10 @@ class ForkParent:
     sha256: Optional[str] = None
     created_at: Optional[str] = None
     derived: bool = False
+    resolved_file: Optional[str] = None
+    resolved_num_timesteps: Optional[int] = None
+    resolution_rung: Optional[str] = None
+    resolution_rule: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in dataclasses.asdict(self).items() if not (k == "derived" and not v)}
@@ -208,17 +238,47 @@ class ForkParent:
         return cls(**kwargs)  # type: ignore[arg-type]
 
 
-def describe_model(path: str, *, hash_file: bool = True) -> ForkParent:
+def _resolve_reference(path: str) -> "Tuple[Optional[str], Optional[int], str, str]":
+    """`(resolved_file, num_timesteps, rung, rule)` for a model reference, through THE resolver.
+
+    Calls `agents.training.fixed_opponent_pool.resolve_model_ref` — the same function every load
+    path uses — so a recorded provenance and the file the run actually opens cannot disagree.
+    Imported lazily because that module reaches back here for `checkpoint_num_timesteps`.
+
+    A reference that resolves nowhere (an archived run, a typo, a coef-0 control arm's absent
+    teacher) comes back as `("unresolved", "unresolved")` rather than raising: recording provenance
+    must never be able to fail a launch."""
+    from agents.training.fixed_opponent_pool import resolve_model_ref
+    from agents.training.run_spec import split_run_spec
+    try:
+        # Resolve the DIRECTORY half against the main checkout first (`models/` is not committed
+        # and does not exist in a worktree), then hand the step back to the resolver.
+        spec_path, spec_step = split_run_spec(path, what="run spec")
+        ref = resolve_model_ref(resolve_model_path(spec_path), spec_step, warn=False)
+    except Exception:  # noqa: BLE001 — unresolvable / malformed: a fact, not this module's error
+        return None, None, "unresolved", "unresolved"
+    return ref.zip_path, ref.num_timesteps, ref.rung, ref.rule
+
+
+def describe_model(path: str, *, hash_file: bool = True, resolve_ref: bool = True) -> ForkParent:
     """Everything recordable about a model reference, from the files it and its run already wrote.
 
     Total: a path that resolves nowhere still produces a `ForkParent` carrying the path as given —
-    provenance must record what it was told even when it cannot confirm it."""
+    provenance must record what it was told even when it cannot confirm it.
+
+    `resolve_ref=False` LEAVES THE FOUR RESOLUTION FIELDS UNSET, and that is not an optimisation:
+    it is what the LEGACY path passes. Deriving a pre-`gen3_last_snapshot_resolution_v1` run's
+    teachers from its `original_command` and then resolving them under TODAY'S rule would print a
+    current answer as if it were what that run loaded, when the honest answer is that the run
+    recorded nothing."""
     resolved = resolve_model_path(path)
     rdir = run_dir_of(path)
     meta = _read_json(os.path.join(rdir, "metadata.json")) if rdir else None
     cfg = _read_json(os.path.join(rdir, "model_config.json")) if rdir else None
     exists = os.path.isfile(resolved)
     cfgv = (cfg or {}).get("config_version")
+    rfile, rsteps, rung, rule = (_resolve_reference(path) if resolve_ref
+                                 else (None, None, None, None))
     return ForkParent(
         path=path,
         resolved_path=resolved,
@@ -230,6 +290,8 @@ def describe_model(path: str, *, hash_file: bool = True) -> ForkParent:
         num_timesteps=checkpoint_num_timesteps(resolved) if exists else None,
         sha256=sha256_file(resolved) if (exists and hash_file) else None,
         created_at=_iso(os.path.getmtime(resolved)) if exists else None,
+        resolved_file=rfile, resolved_num_timesteps=rsteps,
+        resolution_rung=rung, resolution_rule=rule,
     )
 
 
@@ -339,7 +401,10 @@ def build_lineage(*, model_path: Optional[str], model_dir: str,
     if is_same_run_checkpoint(model_path, model_dir):
         return None
 
-    parent = describe_model(model_path, hash_file=hash_parent)
+    # `derived` is the BACKFILL / legacy path: it re-reads an old run's recorded command, so it
+    # must not claim to know which file that run resolved (see `describe_model`'s `resolve_ref`).
+    _res = not derived
+    parent = describe_model(model_path, hash_file=hash_parent, resolve_ref=_res)
     step = fork_step if fork_step is not None else parent.num_timesteps
     chain, stop = ancestry_from_parent(parent)
     block = {
@@ -349,8 +414,9 @@ def build_lineage(*, model_path: Optional[str], model_dir: str,
         "fork_parent": parent.to_dict(),
         "fork_step": int(step) if step is not None else None,
         "recorded_at": now,
-        "teachers": [describe_model(t, hash_file=False).to_dict() for t in teacher_paths(distill_teacher)],
-        "exploiter_target": (describe_model(exploiter, hash_file=False).to_dict()
+        "teachers": [describe_model(t, hash_file=False, resolve_ref=_res).to_dict()
+                     for t in teacher_paths(distill_teacher)],
+        "exploiter_target": (describe_model(exploiter, hash_file=False, resolve_ref=_res).to_dict()
                              if exploiter else None),
         "ancestry": chain,
     }
@@ -401,7 +467,10 @@ def fork_parent(run_dir: str, *, warn: bool = True) -> Optional[ForkParent]:
         return None
     if warn:
         print(f"{_LEGACY_WARNING}: {run_dir}", file=sys.stderr)
-    return dataclasses.replace(describe_model(got, hash_file=False), derived=True)
+    # resolve_ref=False: a legacy run loaded under the OLD (best_model-first) rule and recorded
+    # nothing. Resolving it now would answer with TODAY'S rule and read as history.
+    return dataclasses.replace(describe_model(got, hash_file=False, resolve_ref=False),
+                               derived=True)
 
 
 def role_of(run_dir: str, *, warn: bool = False) -> Optional[str]:

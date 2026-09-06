@@ -7112,3 +7112,88 @@ action → sim-choice-string map inside the ONE replay it already runs; asking a
 `materialize_from_record` prefix replay per labelled decision. `_ReplayObsPlayer._choice_map` is now
 the single definition shared with `map_actions_at`, so the two callers — one feeding the sim, one
 feeding a label — cannot disagree about what "the choice string for action a" is.
+
+---
+
+## `gen3_last_snapshot_resolution_v1` — a bare run directory means the run's LAST SNAPSHOT (2026-09-06)
+
+**Owner ruling, verbatim:** *"I would either prefer us do best against target or just do the last
+snapshot. I feel like best against target will always have a nuance that we need to keep track of,
+whereas the last one is probably what our metrics would measure anyway."* Taken as: a bare run
+directory resolves to the run's **last snapshot**, not to `best_model/best_model.zip`.
+
+### What it replaces, and what that cost
+
+`agents.training.fixed_opponent_pool._resolve_zip_and_config`'s first rung was
+`<run>/best_model/best_model.zip` — an export selected on **BOT win rate**, an opponent set with
+nothing to do with what a teacher is being distilled FOR. Ledger 2026-09-06 (ARCH→TRANSFER probe H8,
+*exploiter off-slice competence*) measured the consequence: for **2 of 8** unfunded R5F teachers
+(`ai_v9_94_R5F02`, `ai_v9_98_R5F06`) the exported file was a **~0.93M-step exploiter rather than the
+~2.93M final** (step 26,000,016 against 28,000,032; corroborated by mtimes — those two predate their
+own `final_model.zip` by 1h32m / 1h04m where every other gap is 4-5 min). So "the teacher" a fold
+distilled from was neither the last snapshot nor the best against its target; `teacher_distance`'s
+UNF budget covariate (3.07M) was heterogeneous (≈2.43M mean) on the very axis it had found
+rank-indistinguishable from D_off; and **nothing on disk recorded which file was used**.
+
+### The rung order, for a BARE run dir (no `@step`)
+
+| # | rung | file | `rule` |
+|---|---|---|---|
+| 1 | `latest_txt` | `<run>/latest.txt` (a run-RELATIVE path; both forms it holds resolve) | `last_snapshot` |
+| 2 | `highest_checkpoint` | the highest-step `checkpoints/checkpoint_<N>_steps.zip`, **incl.** the SIGUSR1 `checkpoint_forced_<N>_<HHMMSS>.zip`; legacy run-root copies too | `last_snapshot` |
+| 3 | `final_model` | `final_model.zip` / `final_model_interrupted.zip` (the higher of the two) | `last_snapshot` |
+| 4 | `best_model_fallback` | `best_model/best_model.zip`, then the legacy `<run>/best_model.zip` — **LAST**, only for a run with nothing else, and it says so on stderr | `best_model_fallback` |
+
+`<run>@<step>` (`explicit_step`) and any path ending `.zip` — **including
+`best_model/best_model.zip`** — (`explicit_zip`) bypass the ladder entirely and are used verbatim.
+Naming the file is how you pin it.
+
+### 🚨 The disagreement rule: the higher `num_timesteps` wins, not the earlier rung
+
+Rungs 1-3 are three names for "the end of this run" and they disagree in **both** directions. A
+COMPLETED run writes `latest.txt → final_model.zip` *after* its last periodic checkpoint, so
+`latest.txt` runs AHEAD — measured on all eight R5F runs (2026-09-06): `final_model.zip`
+@**28,115,184** vs the highest checkpoint @**28,067,760**, **47,424 steps apart**, with rung 1 firing
+for every one of them. An INTERRUPTED run can leave `latest.txt` naming a file a later
+`final_model_interrupted.zip` has since passed. Taking the earlier rung is right in the first case
+and wrong in the second, so the rule is **the file that trained furthest**, with the rung order
+breaking a tie and deciding when nothing declares a step at all. `num_timesteps` comes from the SB3
+zip's plain-JSON `data` member (`lineage.checkpoint_num_timesteps` — no torch, no model load),
+falling back to the `checkpoint_<N>_steps.zip` filename. `best_model` is NOT on that tier: it is a
+different SELECTION rule, so it never competes on steps and loses to every other rung even when it
+trained further.
+
+### One choke point, and a frozen wrapper over it
+
+`resolve_model_ref(path, step=None) -> ResolvedModel(zip_path, config_path, run_base, run_dir, rung,
+rule, num_timesteps)` is the single implementation. Every consumer reaches it: `--distill-teacher`
+and `--win-prob-pbrs-source` (`main/train/model_build.py`), `--stable-opponents` and `--exploiter`
+(via `resolve_stable_opponents`), `--exploiter-ladder`, `--warmstart-consensus`, and
+`--distill-anchor-parent`. `run_spec_test.py` holds a census that fails — naming the file and its
+flags — when one of them stops, and a second that fails when a consumer names a rung's filename for
+itself. `_resolve_zip_and_config` survives as a **frozen 3-tuple wrapper**: the offline probe scripts
+under `designs/research_state/measurements/arch_transfer_2026-09-05/` (`content_locality_v2`,
+`exploiter_competence`) import it by name and unpack three values. **They measured the OLD rule's
+files, by design, and stay as records of it.**
+
+### Provenance — a fold now records which file it loaded
+
+`metadata.json`'s `lineage` block gains four keys on every model reference (`fork_parent`, each
+`teachers` entry, `exploiter_target`): `resolved_file`, `resolved_num_timesteps`, `resolution_rung`
+and `resolution_rule`. `python -m main.lineage` prints them. The startup lines state the same thing
+where an operator sees it: `🧪 [DISTILL]` emits one `teacher <k>: <spec> -> <zip> @<N> steps
+[rung=… rule=…]` per teacher, `🐴 [STABLE]` / `🥊 [EXPLOITER]` the same per opponent, `🧊
+[WinProbPBRS]` for its frozen φ.
+
+🚨 **Every teacher loaded BEFORE this change went through the OLD rule** (`best_model` first, then
+`final_model.zip`, then `<run>/best_model.zip`) and recorded nothing about it, so a pre-change run's
+teacher identity is **not recoverable from its metadata**. `main.lineage` prints `resolved file not
+recorded (pre gen3_last_snapshot_resolution_v1)` rather than re-resolving under today's rule — a
+current answer presented as history is worse than no answer. A reference this change DID try and
+fail to resolve records `unresolved`, so "not recorded" and "resolved to nothing" stay distinct.
+
+### Not versioned
+
+It changes which FILE a run loads, never a weight shape — no `ARCH_SIGNATURE` bump, no
+`MODEL_CONFIG_VERSION` bump, absent from `ModelVersion.check_compatible` by design, and no
+checkpoint on disk becomes incompatible with it.

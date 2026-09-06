@@ -782,6 +782,19 @@ It also reports a **`--distill-teacher` spec that would teach NOTHING** — the 
 in silence, `gen3_run_spec_split_v1`), and `agents.training.distill_spec.check_teacher_spec` is the
 single declaration both this tool and `resolve_config`'s refusal read.
 
+🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`,
+2026-09-06). `--distill-teacher`, `--stable-opponents`, `--exploiter`, `--exploiter-ladder`,
+`--warmstart-consensus`, `--distill-anchor-parent` and `--win-prob-pbrs-source` all resolve their
+model file through the ONE choke point `agents.training.fixed_opponent_pool.resolve_model_ref`,
+whose rungs for a bare dir are **`latest.txt` → the highest-step `checkpoints/` zip →
+`final_model*.zip` → `best_model/best_model.zip` LAST** (a fallback for a run with nothing else,
+printed as such), with the higher `num_timesteps` winning when the first three disagree. `<run>@<step>`
+and an explicit `.zip` path — `best_model/best_model.zip` included — are still used verbatim, so
+naming the file is how you pin it. It changes which FILE a run loads, never a weight shape, so it is
+absent from `check_compatible` by design. Detail — the owner ruling, the measured 47,424-step gap
+that makes the disagreement rule necessary, and what every teacher loaded BEFORE this change went
+through — is in `src/agents/training/CLAUDE.md` → *WHICH FILE a run spec names*.
+
 🚨 **AN ARGV IS NOT A CONFIG, and `checkargs` was argv-only until 2026-09-03.** With `--model`,
 every flag the argv does not name is INHERITED from the checkpoint's recorded `model_config.json`
 (`main.train.config`'s `_resolve`), so the thing that launches is the argv OVERLAID ON THE PARENT.
@@ -1976,10 +1989,22 @@ re-point the recorded parent. **Read it through the ONE accessor**,
 the parent from `original_command` for every pre-`lineage` run on disk and prints
 `[lineage] WARNING: derived from original_command (legacy run, pre-lineage)` when it does — so the
 argv regex lives in exactly one place and is marked as the legacy path.
-**`python -m main.lineage <run>…`** prints the ancestry tree (`--json` for scripts) and flags a
-broken link: a missing parent dir, a sha256 that no longer matches the file on disk, an
-`arch_signature` that changed across a link. `--backfill` writes a derived block into a legacy run's
-metadata (marked `"derived": true`), dry-run unless `--apply`.
+Every model reference in the block — the parent, each teacher, the exploiter target — additionally
+records **WHICH FILE it resolved to and HOW** (`gen3_last_snapshot_resolution_v1`): `resolved_file`,
+`resolved_num_timesteps`, `resolution_rung` (`explicit_step` / `explicit_zip` / `latest_txt` /
+`highest_checkpoint` / `final_model` / `best_model_fallback`) and `resolution_rule` (that rung's
+coarse class). A reference is usually a run DIRECTORY, and a directory is not a file — before this
+it silently meant the BOT-WIN-RATE `best_model` export, which for 2 of 8 R5F teachers was a
+~0.93M-step checkpoint rather than the ~2.93M final with nothing on disk saying so. **A run recorded
+before the change has none of these keys, and `main.lineage` prints `resolved file not recorded (pre
+gen3_last_snapshot_resolution_v1)` rather than re-resolving it under today's rule** — every teacher
+loaded before 2026-09-06 went through the OLD (best_model-first) order, and a current answer
+presented as history would be worse than no answer.
+
+**`python -m main.lineage <run>…`** prints the ancestry tree (`--json` for scripts), the resolved
+file behind every reference, and flags a broken link: a missing parent dir, a sha256 that no longer
+matches the file on disk, an `arch_signature` that changed across a link. `--backfill` writes a
+derived block into a legacy run's metadata (marked `"derived": true`), dry-run unless `--apply`.
 
 🚨 **The `git_hash` is the HEAD of the checkout the code was IMPORTED from — never the process
 cwd — and a disagreement with `$LAUNCHER_GIT_HASH` RAISES at the write** (`gen3_sidecar_git_hash_v1`,

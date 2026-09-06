@@ -1511,11 +1511,102 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   opts in). `selfplay_opponent_fuzz_test.py` covers the opponent load + legal
   play (both modes) + version check in-process via the local bridge (no server).
 
+## WHICH FILE a run spec names — the ONE resolution rule (`gen3_last_snapshot_resolution_v1`)
+
+**A bare run directory resolves to the run's LAST SNAPSHOT, not to `best_model/best_model.zip`.**
+Owner ruling, 2026-09-06, verbatim: *"I would either prefer us do best against target or just do the
+last snapshot. I feel like best against target will always have a nuance that we need to keep track
+of, whereas the last one is probably what our metrics would measure anyway."*
+
+**WHY IT CHANGED.** `best_model/best_model.zip` is exported on **BOT win rate** — an opponent set
+with nothing to do with what a teacher is being distilled FOR. Ledger 2026-09-06 (probe H8,
+*exploiter off-slice competence*) measured the consequence: for 2 of 8 unfunded R5F teachers
+(`ai_v9_94_R5F02`, `ai_v9_98_R5F06`) the exported file was a **~0.93M-step exploiter rather than the
+~2.93M final**, so "the teacher" a fold distilled from was neither the last snapshot nor the best
+against its target — and **nothing recorded which file was used**. It made `teacher_distance`'s
+UNF budget covariate (3.07M) heterogeneous (≈2.43M mean) on the very axis it had found
+rank-indistinguishable from D_off. Every meter this programme banks scores a run at its END, so the
+last snapshot is what the metrics already measure.
+
+### The rungs, for a BARE run dir (no `@step`)
+
+| # | rung | file |
+|---|---|---|
+| 1 | `latest_txt` | `<run>/latest.txt` — a run-RELATIVE path (root CLAUDE.md); resolves both forms it can hold (`checkpoints/checkpoint_<N>_steps.zip` and the bare `final_model.zip`) |
+| 2 | `highest_checkpoint` | the highest-step `checkpoints/checkpoint_<N>_steps.zip`, **including** the SIGUSR1 `checkpoint_forced_<N>_<HHMMSS>.zip`; legacy run-root copies too |
+| 3 | `final_model` | `final_model.zip` / `final_model_interrupted.zip` (the higher of the two) |
+| 4 | `best_model_fallback` | `best_model/best_model.zip`, then the legacy `<run>/best_model.zip` — **LAST**, only for a run that has nothing else, and it says so on **stderr** when it fires |
+
+Two more rungs are not ladder steps at all — they are the ways a caller names a file outright, and
+both **bypass the ladder entirely**: `explicit_step` (`<run>@<step>` → that checkpoint) and
+`explicit_zip` (a path ending `.zip`, **`best_model/best_model.zip` included**, used verbatim).
+**Naming the file is how you pin it.** Each rung also reports a coarse `rule` — `explicit_step` /
+`explicit_zip` / `last_snapshot` (rungs 1-3) / `best_model_fallback`.
+
+### 🚨 DISAGREEMENT: the higher `num_timesteps` wins, not the earlier rung
+
+Rungs 1-3 are three names for "the end of this run", and they disagree in **both** directions:
+
+* a **COMPLETED** run writes `latest.txt → final_model.zip` *after* its last periodic checkpoint, so
+  `latest.txt` is AHEAD of `checkpoints/`. Measured on the eight R5F runs (2026-09-06):
+  `final_model.zip` @**28,115,184** vs the highest checkpoint @**28,067,760** — **47,424 steps
+  apart**, and rung 1 fires for every one of them;
+* an **INTERRUPTED** / crashed run can leave `latest.txt` naming a file a later
+  `final_model_interrupted.zip` has since passed.
+
+Taking the earlier rung is right in the first case and wrong in the second, so neither ordering is
+the rule. The rule is **the file that trained furthest**, with the rung order used only to break a
+tie — or to decide when NO candidate declares a step at all (an unreadable zip). `num_timesteps` is
+read from the SB3 zip's plain-JSON `data` member (`lineage.checkpoint_num_timesteps` — no torch, no
+model load), falling back to the `checkpoint_<N>_steps.zip` filename. `best_model` is not on that
+tier at all: it is a different SELECTION rule, so it never competes on steps and loses to every
+other rung even when it trained further.
+
+### Every consumer goes through the ONE choke point
+
+`agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
+(`zip_path`, `config_path`, `run_base`, `run_dir`, `rung`, `rule`, `num_timesteps`). The flags it
+serves: **`--distill-teacher`** and **`--win-prob-pbrs-source`** (`main/train/model_build.py`),
+**`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`),
+**`--exploiter-ladder`** (`exploiter_ladder.py`), **`--warmstart-consensus`** (`warmstart.py`) and
+**`--distill-anchor-parent`** (`main/train/callbacks.py`). `run_spec_test.py` holds the census that
+fails, naming the file and its flags, when one of them stops.
+
+**`_resolve_zip_and_config(path, step)` is a FROZEN 3-tuple wrapper over it** — the offline probe
+scripts under `designs/research_state/measurements/arch_transfer_2026-09-05/`
+(`content_locality_v2`, `exploiter_competence`) import it by name to reproduce exactly the call
+`model_build.py` makes for a teacher. **They measured the OLD rule's files, by design, and stay as
+records of it.** New call sites that want the rung or the step should call `resolve_model_ref`.
+
+### Provenance — a fold now records which file it loaded
+
+* `metadata.json`'s **`lineage`** block: every model reference (`fork_parent`, each entry of
+  `teachers`, `exploiter_target`) carries `resolved_file`, `resolved_num_timesteps`,
+  `resolution_rung` and `resolution_rule`. `python -m main.lineage <run>` prints them.
+* **Startup lines**: `🧪 [DISTILL]` emits one `teacher <k>: <spec> -> <zip> @<N> steps [rung=… rule=…]`
+  per teacher; `🐴 [STABLE]` and `🥊 [EXPLOITER]` emit the same per opponent
+  (`FixedOpponentEntry.provenance()`); `🧊 [WinProbPBRS]` names its frozen φ the same way.
+
+🚨 **EVERY TEACHER LOADED BEFORE 2026-09-06 WENT THROUGH THE OLD RULE** (`best_model` first, then
+`final_model.zip`, then `<run>/best_model.zip`) and recorded nothing about it. A pre-change run's
+teacher identity is therefore **not recoverable from its metadata**, and `main.lineage` says
+`resolved file not recorded (pre gen3_last_snapshot_resolution_v1)` rather than re-resolving it
+under today's rule — a current answer presented as history is worse than no answer. A reference
+this change DID try and fail to resolve records `unresolved`, so the two are distinguishable.
+
+**NOT VERSIONED.** This changes which FILE a run loads, never a weight shape, so it is absent from
+`ModelVersion.check_compatible` / `arch_signature` by design, and no checkpoint on disk becomes
+incompatible with it. Gates: `agents/training/fixed_opponent_pool_test.py` (each rung, both
+disagreement directions, the explicit-form passthroughs, the frozen 3-tuple, the entry's
+provenance), `agents/training/run_spec_test.py` (the choke-point + consumer census),
+`agents/training/lineage_test.py` (the recorded fields and the legacy message).
+
 ## Stable (cross-run) opponents (`--stable-opponents`, `fixed_opponent_pool.py`)
 
 Load a frozen model from **another, already-finished run** as a **fixed opponent** — measured
 against in eval AND (under `--self-play`) played against in training. Design:
-`designs/ai_v5/design_stable_opponents.md`.
+`designs/ai_v5/design_stable_opponents.md`. Which FILE a run dir resolves to is the ONE rule above
+— the run's **LAST SNAPSHOT**, with `best_model/best_model.zip` as the last-resort fallback.
 
 **Training-mix participation (Stage 2) — "tossed in like a sentinel, becomes a bot when mastered":**
 a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgentWrapper`
@@ -1565,11 +1656,15 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   mastered (win_rate ≥ <wr>)` line at startup (and a `🏇 [SELFPLAY] Mastered stable opponent(s) …`
   line on the challenge→floor flip), and each eval-summary event gains a `stable <pct>%` field. (Per-opponent `eval/win_rate_vs_ext_<run>` also rides the normal eval Metrics table.)
 
-- **CLI:** simplest form is just the run dir — `--stable-opponents models/ai_v5_5_popart_N_0607`;
+- **CLI:** simplest form is just the run dir — `--stable-opponents models/ai_v5_5_popart_N_0607`,
+  which resolves to that run's **LAST SNAPSHOT** (the rung table above; it was `best_model` until
+  2026-09-06);
   the opponent is **labelled by the run-dir name** (`ext_ai_v5_5_popart_N_0607`, derived
   `best_model`/`snapshots`-aware so a direct `…/best_model/best_model.zip` path still yields the run
-  name, not `best_model`). Optional per-entry suffixes: `@<step>` (a specific checkpoint; default
-  `best_model`), `:<name>` (rename). **Per-opponent weights (`=<weight>`) are rejected** with a clear
+  name, not `best_model`). Optional per-entry suffixes: `@<step>` (a specific checkpoint, which
+  BYPASSES the ladder), `:<name>` (rename). The resolved zip, its `num_timesteps` and the rung that
+  picked it ride the entry (`FixedOpponentEntry.{resolution_rung, resolution_rule, num_timesteps}`)
+  and are printed on the `🐴 [STABLE]` / `🥊 [EXPLOITER]` startup lines. **Per-opponent weights (`=<weight>`) are rejected** with a clear
   message (not supported). Knobs: `--stable-opponent-temp` (default 1.0 — the *training* play
   temperature; eval is always greedy) and `--stable-opponent-mastered-wr` (default 0.80 — the
   challenge→floor flip). Parsed + resolved at startup by `fixed_opponent_pool.resolve_stable_opponents`.
@@ -5970,7 +6065,10 @@ aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_c
 
 `gen3_exploiter_distill_v1` — pour a frozen per-team SPECIALIST (an exploiter) into the generalist so it
 learns to PILOT that team, closing the amortization gap the self-play average can't. `--distill-teacher`
-takes `TEACHER:TEAM` colon pairs (comma-separated, N teachers — a checkpoint dir → `best_model.zip`, bound
+takes `TEACHER:TEAM` colon pairs (comma-separated, N teachers — a checkpoint dir → that run's **LAST
+SNAPSHOT** since `gen3_last_snapshot_resolution_v1`, `best_model.zip` before it; see *WHICH FILE a run
+spec names* above, and note the `🧪 [DISTILL]` line now states the resolved file, its step and the rung
+per teacher), bound
 to its Showdown team file); the env emits a training-only integer `distill_mask` obs key (0=none, k=teacher
 k) on states where the trainee pilots team-k (biased there by `--distill-team-bias`, default 0.4; rest =
 pool rehearsal → no forgetting). In `train()`, for each teacher a frozen forward gives π_teacher and

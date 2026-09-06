@@ -23,6 +23,14 @@ WHAT IT CHECKS, per link, from what is on disk:
 A DERIVED chain is labelled `⚠ derived` on every line it applies to. Torch is never imported and no
 checkpoint is loaded, so this reads a run whose architecture drifted past current code — which is
 most of `models/`.
+
+WHICH FILE, not just which run (`gen3_last_snapshot_resolution_v1`). A teacher / target / parent is
+usually named as a run DIRECTORY, so every reference also prints the `.zip` the resolver actually
+picked, its `num_timesteps`, and the rung + rule that picked it. A run recorded before that change
+prints `resolved file not recorded (pre gen3_last_snapshot_resolution_v1)` — those runs went through
+the OLD rule (`best_model/best_model.zip` first, which is selected on BOT win rate and for 2 of 8
+R5F teachers was a ~0.93M-step export rather than the ~2.93M final), and re-resolving them today
+would print a current answer as history.
 """
 from __future__ import annotations
 
@@ -112,6 +120,35 @@ def _names(entries: List[Dict[str, Any]]) -> str:
     return ", ".join((e.get("run_name") or e.get("path") or "?") for e in entries) or "—"
 
 
+#: What `main.lineage` prints for a reference recorded before the resolution provenance existed.
+#: `None` on the four `resolution_*`/`resolved_*` keys means NOT RECORDED — a pre-change run, whose
+#: teacher went through the OLD rule (`best_model/best_model.zip` first). It is deliberately NOT
+#: re-resolved under today's rule: that would print a current answer as if it were history.
+LEGACY_RESOLUTION_NOTE = "resolved file not recorded (pre gen3_last_snapshot_resolution_v1)"
+
+
+def _resolution(entry: Dict[str, Any]) -> str:
+    """One line describing WHICH FILE a recorded reference resolved to, and HOW it was chosen."""
+    rule = entry.get("resolution_rule")
+    if not rule:
+        return LEGACY_RESOLUTION_NOTE
+    if rule == "unresolved":
+        return "UNRESOLVED — the path resolved to no .zip when this run recorded it"
+    steps = entry.get("resolved_num_timesteps")
+    return (f"{entry.get('resolved_file') or '?'}  "
+            f"@{f'{steps:,} steps' if isinstance(steps, int) else 'steps unknown'}  "
+            f"[rung={entry.get('resolution_rung') or '?'} rule={rule}]")
+
+
+def _reference_lines(entries: List[Dict[str, Any]], *, pad: str) -> List[str]:
+    """`- <run name>` + its resolved-file line, per recorded model reference."""
+    out: List[str] = []
+    for e in entries:
+        out.append(f"{pad}- {e.get('run_name') or e.get('path') or '?'}")
+        out.append(f"{pad}    -> {_resolution(e)}")
+    return out
+
+
 def render(row: Dict[str, Any]) -> str:
     """The tree for one run, plus its teachers/target and any broken links."""
     if row.get("error"):
@@ -127,9 +164,11 @@ def render(row: Dict[str, Any]) -> str:
     if fs is not None or ns is not None:
         lines.append(f"    steps: fork_step={_steps(fs)}   num_timesteps={_steps(ns)}")
     if row["teachers"]:
-        lines.append(f"    teachers ({len(row['teachers'])}): {_names(row['teachers'])}")
+        lines.append(f"    teachers ({len(row['teachers'])}):")
+        lines.extend(_reference_lines(row["teachers"], pad="      "))
     if row["exploiter_target"]:
-        lines.append(f"    exploiter target: {_names([row['exploiter_target']])}")
+        lines.append("    exploiter target:")
+        lines.extend(_reference_lines([row["exploiter_target"]], pad="      "))
     parent = row.get("fork_parent")
     if not parent:
         lines.append("    └─ (root — no fork parent)")
@@ -148,6 +187,7 @@ def render(row: Dict[str, Any]) -> str:
             lines.append(f"{npad}   via {parent.get('path')}"
                          f"{f'  @{steps:,} steps' if isinstance(steps, int) else ''}"
                          f"  sha={_short(parent.get('sha256'), 12)}")
+            lines.append(f"{npad}   -> {_resolution(parent)}")
     stop = row.get("ancestry_stop")
     if stop:
         lines.append(f"    ✖ chain ends at {stop.get('at')}: {stop.get('reason')}")

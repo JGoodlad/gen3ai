@@ -395,3 +395,301 @@ def test_multi_pin_sha_mismatch_fails_loud(version):
             f.write("MUTATED @ Leftovers\n")
         with pytest.raises(ValueError, match="pin_sha"):
             resolve_stable_opponents(run, version)
+
+
+# ---------------------------------------------------------------------------
+# THE RUNG ORDER — a bare run dir means the run's LAST SNAPSHOT
+# (`gen3_last_snapshot_resolution_v1`, 2026-09-06)
+# ---------------------------------------------------------------------------
+#
+# Owner decision: "I would either prefer us do best against target or just do the last snapshot. I
+# feel like best against target will always have a nuance that we need to keep track of, whereas
+# the last one is probably what our metrics would measure anyway."
+#
+# The defect it replaces (ledger 2026-09-06, probe H8): the first rung was
+# `best_model/best_model.zip`, which is exported on BOT win rate, and for 2 of 8 unfinanced R5F
+# teachers it was a ~0.93M-step export rather than the ~2.93M final — so "the teacher" a fold
+# distilled from was neither the last snapshot nor the best against its target, and nothing
+# recorded which file was used.
+
+import zipfile
+
+from agents.training.fixed_opponent_pool import (
+    RESOLUTION_RUNGS,
+    _resolve_zip_and_config,
+    resolve_model_ref,
+)
+
+
+def _sb3_zip(path: str, num_timesteps: "int | None") -> str:
+    """A minimal SB3-shaped checkpoint: a `data` member carrying `num_timesteps`, nothing else.
+
+    `lineage.checkpoint_num_timesteps` reads exactly that member, so this is the smallest artifact
+    the resolver's step comparison can be exercised against. `None` writes a zip that declares no
+    step — the honest 'unknown', which the rung order has to fall back through.
+    """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with zipfile.ZipFile(path, "w") as z:
+        z.writestr("data", json.dumps({} if num_timesteps is None
+                                      else {"num_timesteps": num_timesteps}))
+    return path
+
+
+def _run(tmp: str, version, *, name="rung_run", latest=None, checkpoints=(), final=None,
+         final_interrupted=None, best=None, legacy_best=None) -> str:
+    """A synthetic run dir carrying exactly the rungs asked for.
+
+    `checkpoints` is a list of steps; `latest` is the run-RELATIVE path latest.txt names (the
+    convention root CLAUDE.md documents); `final`/`final_interrupted`/`best`/`legacy_best` are step
+    counts (or None to omit the file).
+    """
+    run = os.path.join(tmp, name)
+    os.makedirs(run, exist_ok=True)
+    with open(os.path.join(run, "model_config.json"), "w") as f:
+        f.write(version.to_json())
+    for step in checkpoints:
+        _sb3_zip(os.path.join(run, "checkpoints", f"checkpoint_{step}_steps.zip"), step)
+    if final is not None:
+        _sb3_zip(os.path.join(run, "final_model.zip"), final)
+    if final_interrupted is not None:
+        _sb3_zip(os.path.join(run, "final_model_interrupted.zip"), final_interrupted)
+    if best is not None:
+        _sb3_zip(os.path.join(run, "best_model", "best_model.zip"), best)
+    if legacy_best is not None:
+        _sb3_zip(os.path.join(run, "best_model.zip"), legacy_best)
+    if latest is not None:
+        with open(os.path.join(run, "latest.txt"), "w") as f:
+            f.write(latest + "\n")
+    return run
+
+
+def test_the_rung_vocabulary_is_declared():
+    """Every rung a resolution can report is a member of one declared tuple."""
+    assert RESOLUTION_RUNGS == ("explicit_step", "explicit_zip", "latest_txt",
+                                "highest_checkpoint", "final_model", "best_model_fallback")
+
+
+# --- each rung in isolation -------------------------------------------------
+
+def test_rung_1_latest_txt(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="checkpoints/checkpoint_900_steps.zip",
+                   checkpoints=[900])
+        r = resolve_model_ref(run)
+    assert r.rung == "latest_txt" and r.rule == "last_snapshot"
+    assert r.zip_path.endswith("checkpoints/checkpoint_900_steps.zip")
+    assert r.num_timesteps == 900
+
+
+def test_rung_1_reads_latest_txt_as_a_RUN_RELATIVE_path(version):
+    """root CLAUDE.md: `latest.txt` holds a run-relative path (`checkpoints/...zip`), and the
+    final-model singletons are a bare basename. Both forms must join back with the run dir."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="final_model.zip", final=1234)
+        r = resolve_model_ref(run)
+    assert r.rung == "latest_txt" and r.zip_path == os.path.join(run, "final_model.zip")
+
+
+def test_rung_2_highest_checkpoint_when_there_is_no_latest_txt(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[100, 900, 500])
+        r = resolve_model_ref(run)
+    assert r.rung == "highest_checkpoint" and r.rule == "last_snapshot"
+    assert r.zip_path.endswith("checkpoint_900_steps.zip") and r.num_timesteps == 900
+
+
+def test_rung_2_includes_the_SIGUSR1_forced_checkpoint(version):
+    """A forced save is a resumable checkpoint too — globbing only the periodic form is how
+    `cf_producer` once ranked a forced save BELOW every periodic one and walked backwards."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[100])
+        _sb3_zip(os.path.join(run, "checkpoints", "checkpoint_forced_777_120000.zip"), 777)
+        r = resolve_model_ref(run)
+    assert r.rung == "highest_checkpoint" and r.num_timesteps == 777
+
+
+def test_rung_3_final_model(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, final=4242)
+        r = resolve_model_ref(run)
+    assert r.rung == "final_model" and r.rule == "last_snapshot"
+    assert r.zip_path.endswith("final_model.zip") and r.num_timesteps == 4242
+
+
+def test_rung_3_takes_the_higher_of_final_model_and_final_model_interrupted(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, final=1000, final_interrupted=2000)
+        r = resolve_model_ref(run)
+    assert r.rung == "final_model" and r.zip_path.endswith("final_model_interrupted.zip")
+
+
+def test_rung_4_best_model_is_the_LAST_resort_and_says_so(version, capsys):
+    """The bot-win-rate export is reached only by a run that has nothing else, and it prints that."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, best=26000016)
+        r = resolve_model_ref(run)
+    assert r.rung == "best_model_fallback" and r.rule == "best_model_fallback"
+    assert r.zip_path.endswith("best_model/best_model.zip")
+    err = capsys.readouterr().err
+    assert "FALLING BACK" in err and "BOT-WIN-RATE" in err
+
+
+def test_rung_4_also_covers_the_legacy_run_root_best_model_zip(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, legacy_best=7)
+        r = resolve_model_ref(run, warn=False)
+    assert r.rung == "best_model_fallback"
+    assert r.zip_path == os.path.join(run, "best_model.zip")
+
+
+# --- the ORDER --------------------------------------------------------------
+
+def test_best_model_LOSES_to_every_other_rung(version):
+    """THE CHANGE. Before 2026-09-06 this run resolved to the bot-win-rate export."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[26267760], best=26000016)
+        r = resolve_model_ref(run)
+    assert r.rung == "highest_checkpoint" and r.num_timesteps == 26267760
+
+
+def test_best_model_loses_even_when_it_trained_FURTHER(version):
+    """It is not ranked by steps at all — it is a different SELECTION rule (bot win rate), so it is
+    a fallback for a run with nothing else rather than a competitor on the last-snapshot tier."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[10], best=999999)
+        r = resolve_model_ref(run)
+    assert r.rung == "highest_checkpoint" and r.num_timesteps == 10
+
+
+# --- the DISAGREEMENT rule: the higher num_timesteps wins --------------------
+
+def test_a_COMPLETED_run_resolves_latest_txt_which_is_AHEAD_of_the_checkpoints(version):
+    """The measured production shape (all eight R5F runs, 2026-09-06): `latest.txt` names
+    `final_model.zip` @28,115,184 while the highest `checkpoints/*_steps.zip` is @28,067,760 —
+    47,424 steps apart, and rung 1 fires for every one of them."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="final_model.zip",
+                   final=28_115_184, checkpoints=[28_067_760])
+        r = resolve_model_ref(run)
+    assert r.rung == "latest_txt" and r.num_timesteps == 28_115_184
+
+
+def test_an_INTERRUPTED_run_whose_latest_txt_points_BELOW_a_newer_final_model(version):
+    """The other direction: `latest.txt` still names an older checkpoint while a later
+    `final_model_interrupted.zip` has passed it. The higher `num_timesteps` wins, so the rung that
+    fires is `final_model` even though `latest_txt` is earlier in the order."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="checkpoints/checkpoint_1000_steps.zip",
+                   checkpoints=[1000], final_interrupted=1500)
+        r = resolve_model_ref(run)
+    assert r.rung == "final_model" and r.num_timesteps == 1500
+    assert r.zip_path.endswith("final_model_interrupted.zip")
+
+
+def test_an_earlier_rung_breaks_a_TIE_on_num_timesteps(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="checkpoints/checkpoint_500_steps.zip",
+                   checkpoints=[500], final=500)
+        r = resolve_model_ref(run)
+    assert r.rung == "latest_txt" and r.num_timesteps == 500
+
+
+def test_latest_txt_naming_the_SAME_file_as_another_rung_reports_latest_txt(version):
+    """Dedup keeps the EARLIER rung: reporting the rung that actually fired is the honest answer."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="final_model.zip", final=99)
+        r = resolve_model_ref(run)
+    assert r.rung == "latest_txt" and r.zip_path == os.path.join(run, "final_model.zip")
+
+
+def test_a_KNOWN_step_beats_an_UNREADABLE_zip(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[300])
+        # latest.txt names a file whose step cannot be read at all (not a zip, no step in the name)
+        with open(os.path.join(run, "mystery.zip"), "wb") as f:
+            f.write(b"not a zip")
+        with open(os.path.join(run, "latest.txt"), "w") as f:
+            f.write("mystery.zip\n")
+        r = resolve_model_ref(run)
+    assert r.rung == "highest_checkpoint" and r.num_timesteps == 300
+
+
+def test_when_NOTHING_declares_a_step_the_rung_ORDER_decides(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version)
+        for name in ("a.zip", "final_model.zip"):
+            with open(os.path.join(run, name), "wb") as f:
+                f.write(b"not a zip")
+        with open(os.path.join(run, "latest.txt"), "w") as f:
+            f.write("a.zip\n")
+        r = resolve_model_ref(run)
+    assert r.rung == "latest_txt" and r.num_timesteps is None
+
+
+def test_a_latest_txt_pointing_at_a_MISSING_file_falls_through(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, latest="checkpoints/checkpoint_gone_steps.zip", final=88)
+        r = resolve_model_ref(run)
+    assert r.rung == "final_model" and r.num_timesteps == 88
+
+
+# --- explicit forms bypass the ladder ---------------------------------------
+
+def test_an_explicit_zip_is_used_verbatim_even_when_it_is_best_model(version):
+    """Naming the file is how you PIN it — including the bot-win-rate export."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[999], best=111)
+        best = os.path.join(run, "best_model", "best_model.zip")
+        r = resolve_model_ref(best)
+    assert r.rung == "explicit_zip" and r.rule == "explicit_zip"
+    assert r.zip_path == best and r.num_timesteps == 111
+    assert r.run_base == "rung_run"          # labelled by the RUN, not by 'best_model'
+
+
+def test_at_step_keeps_its_meaning(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[100, 900], best=555)
+        r = resolve_model_ref(f"{run}@100")
+    assert r.rung == "explicit_step" and r.rule == "explicit_step"
+    assert r.zip_path.endswith("checkpoint_100_steps.zip") and r.num_timesteps == 100
+
+
+def test_an_empty_run_still_raises_and_names_every_rung(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version)
+        with pytest.raises(FileNotFoundError) as exc:
+            resolve_model_ref(run)
+    msg = str(exc.value)
+    for name in ("latest.txt", "checkpoints/", "final_model.zip", "best_model/best_model.zip"):
+        assert name in msg
+
+
+# --- the frozen 3-tuple wrapper + the provenance on the entry ---------------
+
+def test_resolve_zip_and_config_keeps_its_three_tuple_signature(version):
+    """The offline probe scripts under designs/research_state/measurements/ import this by NAME and
+    unpack three values; they measured the OLD rule's files and stay as records of it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, checkpoints=[42])
+        got = _resolve_zip_and_config(run, None)
+        ref = resolve_model_ref(run)
+    assert got == (ref.zip_path, ref.config_path, ref.run_base)
+
+
+def test_a_stable_opponent_entry_carries_the_resolution_provenance(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, name="prov_run", latest="final_model.zip", final=28_115_184)
+        e = resolve_stable_opponents(run, version)[0]
+    assert (e.resolution_rung, e.resolution_rule) == ("latest_txt", "last_snapshot")
+    assert e.num_timesteps == 28_115_184
+    line = e.provenance()
+    assert "28,115,184 steps" in line and "rung=latest_txt" in line and "rule=last_snapshot" in line
+
+
+def test_provenance_says_UNKNOWN_rather_than_zero_when_no_step_is_declared(version):
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run(tmp, version, name="unknown_run")
+        with open(os.path.join(run, "final_model.zip"), "wb") as f:
+            f.write(b"not a zip")
+        e = resolve_stable_opponents(run, version)[0]
+    assert e.num_timesteps is None and "steps unknown" in e.provenance()
