@@ -10974,3 +10974,76 @@ replaying, and it will report an old failure as a live one.
 12 GB, while an era arm holds ~3.1 GB (7.66 GB free measured). `launch_g1.sh` **refuses** below
 9,800 MiB free rather than OOMing, and gates success on the first checkpoint **file**, never on an
 exit code.
+
+### 2026-09-06 · CELL 1 — **the distillation LOSS is not what carries v8's gift**: loss-off arms gift +4.92pp, equivalent to loss-on
+
+Three arms of v8_14's recipe with `--distill-coef 0` — teachers still named, still three stable
+opponents at share 0.35 — forked from `ai_v8_04` at the same step and scored on the era's own
+16-team untaught meter against a parent re-scored in the same session (38.48pp).
+
+| arm | untaught | vs parent (cluster-bootstrapped over the 16 teams) | |
+|---|---|---|---|
+| lossA | 43.26pp | +4.79pp [+0.88, +8.89] | clears zero |
+| lossB | 45.31pp | +6.84pp [+3.61, +10.06] | clears zero |
+| lossC | 41.60pp | +3.12pp [−1.56, +7.23] | spans zero |
+| **POOLED** | **43.39pp** | **+4.92pp [+1.63, +8.04]** | **clears zero** |
+
+Pairwise |Δ| 2.05 / 1.66 / 3.71 ⇒ **operational floor 3.71pp** (the MAX, never the mean, never the
+smaller single-pair bar). Both halves of the pre-registered criterion are met: the pooled CI clears
+zero **and** 4.92 > 3.71.
+
+**EQUIVALENCE, established on the DELTA rather than on overlapping intervals.** The paired per-team
+difference (loss-OFF gift − loss-ON gift) across the same 16 teams is **+0.36pp [−2.21, +3.45]**,
+which lies INSIDE the ±3.71 floor band. That is the strong form — equivalence supported, not merely
+"no difference detected". Phase 1's loss-ON arms gave +4.56pp [+1.07, +7.75] on the same meter.
+
+**⇒ Turning the distillation loss off costs v8's gift nothing.** Every account in which the distill
+term is the thing that gifts is dead.
+
+**The cells, read from the recorded argvs rather than from their labels** — this is what makes the
+next comparison sharp:
+
+| cell | `--distill-coef` | teachers | stable opponents | share |
+|---|---|---|---|---|
+| phase 1 | > 0 | 3 | 3 | 0.35 |
+| **cell 1** | **0** | 3 (named, unused) | **3** | 0.35 |
+| cell 2 | 0 | 3 (named, unused) | **0** | — |
+
+So **cell 1 is `fdA`/`fdC`'s exact shape (loss off + ecology on), run on v8's parent and era.** On our
+side that cell — `fdC`, 2026-08-25 — returned **−1.2pp n.s.**; here it returns **+4.92pp**. Same
+cell, opposite verdicts, and the difference is the parent/era. Neither the loss, nor dose, nor
+budget, nor teacher quality, nor team count, nor ecology-as-such survives as a main effect.
+
+⚠️ **Retraction banked with the result.** It was claimed in-session that no gen-era fold had ever
+used stable opponents. That was wrong — a census of all 39 fold runs found **three** gen-era folds in
+v8's exact shape (teachers == stable opponents at 0.35): `ai_v9_34_tick1_0824`,
+`ai_v9_37_tick1_dosext_0825`, `ai_v9_38_fdA_coef03_0825`. The loss × ecology 2×2 therefore already
+existed as the fd factorial, and a proposed cell was promoted on the false claim before the census
+corrected it. **The general claim was made after checking ONE run.**
+
+**Cell 2 is the discriminator** and its arms are already defined correctly: coef 0 with **zero**
+stable opponents — plain continued self-play on a mature parent. If it gifts, ecology is irrelevant
+and maturity is the whole account; if it is parent-neutral, ecology carries the gift on v8's parent
+while being neutral on ours, i.e. an ecology × parent INTERACTION rather than a main effect.
+
+**What `--stable-opponent-selfplay-share` ACTUALLY means** (read off `selfplay_callback`, not the
+help string, and confirmed byte-identical at the era pin `b13b30b2`). It is a share **OF the
+self-play (challenge) slice**, not of all episodes:
+
+    p_pool = sf·(1 − s)        p_stable = sf·s        (sf = the self-play fraction, s = the share)
+
+So both eras' numbers in ONE meaning: **v8 ran 0.35 = 35% of SELF-PLAY episodes against stable
+opponents** (65% against the pool); **the gen era runs 0.20 = 20% of self-play episodes** against
+them (80% against the pool). As a fraction of ALL episodes each is `sf·s`, so neither is an absolute
+until `sf` is fixed — and `sf` ramps, so a share quoted without its `sf` is not a quantity.
+
+Two edge cases that are not corner cases in practice:
+- **With no pool snapshot, an un-mastered stable opponent takes the WHOLE challenge** (`p = sf`, the
+  cap does not apply). That is the live case for a FORK, which starts poolless.
+- **A MASTERED stable opponent (win rate ≥ `--stable-opponent-mastered-wr`, default 0.80 at BOTH
+  pins) leaves the challenge bucket for the floor**, where it sits at weight 1.0 beside the bots. So
+  the share silently stops applying to an opponent the trainee has beaten.
+
+This is the first time the semantics have been written down, and the reason it mattered was a
+comparison that would otherwise have been read as 0.35-vs-0.20 of the same denominator when the
+denominator itself (`sf`) differs between the runs being compared.
