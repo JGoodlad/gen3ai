@@ -398,6 +398,8 @@ table exists to prevent:
 | `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
 | `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |
 | `value_threat_inject.py` | `ValueThreatInject` — the v64 damage-summary row as TOKEN CONTENT on the value pool's local copy of our tokens, inside `CLSPool`. Not in the v89 seam by design (a post-pool route must collapse the J axis) |
+| `damage_tables.py` | the DAMAGE/type/stat lookup buffers the op's physics reads — the type chart + ability multipliers, `build_damage_buffers`, the status-landing / trap / self-boost / recovery / sleep tables, the move-attribute + move-PRIOR tables, the species usage / co-occurrence priors. **Also the re-export HUB for `belief_tables`** |
+| `belief_tables.py` | the BELIEF-PRIOR bases a belief HEAD fuses with — the opponent spread prior, its generative nature/EV decomposition (`build_nature_mult` / `build_species_nature_prior` / `build_species_ev_prior` / `build_species_base_stats` / `invert_nature_evs`), the Hidden-Power TYPE prior and the ITEM prior. See the note below the table |
 | `damage_op_layout.py` | every `_DMG_*` offset/width constant, `OpTensors`, `decode_damage_block` — the block's shape contract |
 | `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes` |
 | `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
@@ -413,6 +415,28 @@ table exists to prevent:
 | `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
 | `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
+
+**`belief_tables.py` is a fourth split round (`gen3_belief_tables_split_v1`, 2026-09-06), and the
+LAYERING is the part to remember.** `damage_tables.py` had reached 1,433 lines holding two unrelated
+subjects, so the BELIEF PRIORS — the per-species Smogon distributions a belief head predicts a
+zero-init DELTA on top of (spread, nature+EV, Hidden-Power type, item) — moved out, leaving the
+damage/type/stat buffers the op's physics reads. The edge runs strictly **one way**:
+`belief_tables` imports nothing from `damage_tables`, while `damage_tables` imports from it
+(`build_damage_buffers` registers `SPECIES_SPREAD_PRIOR` and `NATURE_MULT` for the op, so the op is
+a real CONSUMER of two of these — that call is what fixes the direction, and an import back would
+close a cycle Python resolves only for whichever module is imported first). Do not add one;
+`belief_tables_test.py` AST-scans for it. `damage_tables` **re-exports every moved name**
+(`# noqa: F401  (re-export)` inline, never a new `ruff.toml` entry), so the ~10 historical
+`from agents.model.damage_tables import …` spellings in `belief_heads`, `gen3_env`, the prober and
+four test modules still resolve — and that test asserts they resolve to the SAME object, because a
+second definition of a data-derived table is how a fix lands in one copy while the other keeps
+shipping. **No `state_dict` key moved and `ARCH_SIGNATURE` is untouched**: every one of these tables
+is registered `persistent=False` by its owning head (derived from `data/`, recomputable, never a
+saved weight), so they contribute zero keys and a relocation cannot move a key that does not exist.
+Verified rather than asserted — on a seeded production-config build all 236 `state_dict` keys, all
+236 tensors and all 80 buffers are byte-identical across the cut. The per-table SEMANTICS stay
+beside the head each prior feeds (`spread_belief_test.py` / `hp_type_belief_test.py` /
+`item_belief_test.py`); `belief_tables_test.py` holds only what the SPLIT can break.
 
 ### The extractor CLASS is a base-class CHAIN (`gen3_extractor_class_split_v1`, 2026-08-23)
 

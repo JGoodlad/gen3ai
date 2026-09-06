@@ -224,15 +224,9 @@ def test_the_config_default_matches_the_builder_default():
 # last-write-wins, so a forme would silently redefine the base's stats/types at that num —
 # a plausible-but-false number fed to the model, invisible to any shape check. Every builder
 # therefore iterates `species.base_form_ids()`; these pin that.
-
-def test_base_stats_table_holds_the_BASE_forme():
-    from agents.model.damage_tables import build_species_base_stats, SPREAD_STAT_COLS
-    base = build_species_base_stats(_N_SPECIES)
-    deoxys = gen3_data.species.get("deoxys")
-    row = [float(deoxys.base_stats[s]) for s in SPREAD_STAT_COLS]
-    assert base[deoxys.num].tolist() == row            # NOT Deoxys-Speed's 95/90/95/90/180
-    assert base[deoxys.num][SPREAD_STAT_COLS.index("spe")].item() == 150.0
-
+#
+# The `build_species_base_stats` row moved with its builder to `belief_tables_test.py`
+# (`gen3_belief_tables_split_v1`); the two below cover builders that still live here.
 
 def test_species_type_table_holds_the_BASE_forme():
     from agents.model.damage_tables import build_species_types, _T2I
