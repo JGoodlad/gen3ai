@@ -88,6 +88,29 @@ parent had a trunk geometry where the taught-to-untaught coupling ran positive. 
 cannot separate those. The replication in flight (three short arms to +1.09M on the era code) asks
 the prior question first: does the no-hole fact even reproduce.
 
+### Update, 2026-09-06: the anomaly dissolved
+
+Three cells on v8's own line, era code and era meter, all forked from v8's parent at the same step and
+stopped at the same depth of about 1.08M steps, with three arms each:
+
+| cell | loss | teacher-team bias | teachers in the pool | untaught gain vs frozen parent |
+|---|---|---|---|---|
+| phase 1, the full recipe | on | 40% | yes | +4.56 [+1.14, +7.81] |
+| cell 1 | off | off (the era ties bias to the loss) | yes | +4.92 [+1.63, +8.04] |
+| cell 2, plain continuation | off | off | no | +3.45 [+0.46, +6.48] |
+
+Paired on the same teams, the full recipe minus the plain continuation is −1.11 [−3.12, +0.91], inside
+the replicate floor. **v8's recipe is equivalent to training its parent on with nothing added.** The gift
+was the parent still learning, measured against a frozen copy of itself. Re-based on the continuation,
+v8's celebrated +4.64 is about +1.2 and not significant. Two consequences. First, an untaught delta
+quoted against a frozen parent overstates a fold by whatever the continuation would have gained, so
+every such number needs a continuation control at matched depth; on a mature parent that is about 3.5
+points. Second, the gift-versus-leak contrast between the eras is now a contrast between what the two
+*parents* do when trained on, not between what the two folds do. Whether our 28M-step parent also gains
+under a plain continuation is the open question (cell G5); if it does not, the difference is maturity,
+and if it does, every hole in the gen-era record is deeper than recorded and every "neutral" fold forwent
+progress. The mechanism in §1 and §2 stands unchanged; what changed is the baseline it is measured against.
+
 ## 2. Technical level
 
 ### The kernel
