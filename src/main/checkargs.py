@@ -36,11 +36,14 @@ authority for it — and the way that bites is not a deleted flag but a flag who
 `--hp-type-belief` took a value at b13b30b2 and is gone today, so argparse abbreviation-matched the
 token onto `--hp-type-belief-coef` and refused the value. `--pin <sha>` routes the flag half through
 `main.launcher.pinned_argv.pinned_parser_check` (that commit's own `build_parser()`, in a
-subprocess), and a `--model` argv pins itself the way the LAUNCHER would — `worktree.resolve_pin`
-is called, not re-derived, so an explicit `--pin-commit` wins, a `--sync-to-main` fork is judged at
-HEAD (it used to be judged at the parent's pin, which refused every HEAD-only flag on a launch that
-works), and otherwise the checkpoint's recorded hash is the pin. Which parser answered, and which
-rule chose it, is printed on every run. When a pinned parser answered, the CURRENT tree's flag
+subprocess), and an argv pins itself the way the LAUNCHER would — `worktree.resolve_pin` is called,
+not re-derived, so an explicit `--pin-commit` wins, a `--sync-to-main` fork is judged at HEAD (it
+used to be judged at the parent's pin, which refused every HEAD-only flag on a launch that works),
+and otherwise the checkpoint's recorded hash is the pin. A FRESH argv — no `--model` at all — is
+covered too (2026-09-06): the derivation used to run only when a `--model` was present, so the
+first win-prob arm's `--pin-commit e798c13a` was ignored and the argv was judged at HEAD, harmless
+only because HEAD happened to BE the pin that day. Which parser answered, and which rule chose it,
+is printed on every run. When a pinned parser answered, the CURRENT tree's flag
 findings are printed as ADVISORY rather than as the verdict — only the PARSER is pinned, and the two
 combination families below still read this tree.
 
@@ -508,6 +511,48 @@ def argv_run_dir(argv: List[str]) -> str | None:
     return os.path.join("models", run_name) if run_name else None
 
 
+def pin_commit_arg(argv: List[str]) -> str | None:
+    """The `--pin-commit` value in an argv, honouring the LEGACY `--pin-to-hash` spelling.
+
+    Two spellings, ONE `dest` in the launcher's parser, so the value that runs is the LAST
+    occurrence of EITHER — the same rule `argv_value` documents, extended across the alias pair
+    rather than applied to one spelling and silently missing the other.
+    """
+    found: str | None = None
+    for i, tok in enumerate(argv):
+        for flag in ("--pin-commit", "--pin-to-hash"):
+            if tok == flag and i + 1 < len(argv):
+                found = argv[i + 1]
+            elif tok.startswith(flag + "="):
+                found = tok.split("=", 1)[1]
+    return found
+
+
+#: The launcher-owned flag pairs its OWN parser refuses, before `resolve_pin` is ever reached:
+#: an `argparse` mutually-exclusive group (`--pin-commit` / `--sync-to-main`) and one explicit
+#: `parser.error` (`--pin-commit` / `--no-pin`), both declared in `main.launcher.run`'s
+#: `build_launcher_parser`. Neither is visible to the trainer parser this module otherwise reads,
+#: so an argv carrying either pair passes every flag check here and still never launches.
+_LAUNCHER_EXCLUSIVE = (
+    ("--sync-to-main", "two sources of truth for the pin — argparse mutually-exclusive group"),
+    ("--no-pin", "--no-pin means there is no isolated worktree to pin"),
+)
+
+
+def launcher_refusals(argv: List[str]) -> List[str]:
+    """Combinations the LAUNCHER's own parser kills at parse time, before anything runs.
+
+    Reported, never raised, and never repaired — the same contract as every other finding here.
+    A launch refused at parse time creates no run dir and no worktree, so it is the cheapest
+    failure in this tool's range; it is still a failure, and a `✓ this command still launches`
+    printed over it would be a lie.
+    """
+    if not pin_commit_arg(argv):
+        return []
+    return [f"--pin-commit with {flag} — {why}"
+            for flag, why in _LAUNCHER_EXCLUSIVE if flag in argv]
+
+
 #: How each `PinDecision.source` reads on the report line. The two HEAD-shaped sources return
 #: `None` for the sha, which means "the CURRENT tree's parser is already the right one".
 _PIN_WHY = {
@@ -525,6 +570,19 @@ def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, 
     decided by **the launcher's own resolver**, `main.launcher.worktree.resolve_pin`, CALLED
     rather than re-implemented: explicit `--pin-commit` > `--sync-to-main` ⇒ HEAD > the
     checkpoint's recorded `git_hash` > HEAD.
+
+    🚨 A FRESH ARGV CARRIES A PIN TOO (2026-09-06). The derivation used to be gated on a `--model`
+    being present, so an argv with `--pin-commit <sha>` and no checkpoint — every arm of a batch
+    that starts a new run on one commit — printed "no --pin — this argv would run on HEAD" and was
+    judged by the parser of a tree the child will not run. Observed on the first win-prob arm
+    (`--pin-commit e798c13a`, no `--model`); it was harmless only because HEAD was the pin that
+    afternoon, and wrong the first day they differ. The pin is now read from the raw argv under the
+    same LAST-occurrence rule `argv_value` documents (and across the legacy `--pin-to-hash`
+    spelling), and `resolve_pin` is called with `model_path=None`, which is exactly the launcher's
+    fresh-run path. The two combinations the launcher's OWN parser refuses outright —
+    `--pin-commit` with `--sync-to-main`, and with `--no-pin` — belong to `launcher_refusals`,
+    not here: the precedence `resolve_pin` declares stays exactly what this reports, and the
+    parse-time refusal is printed as its own finding beside it.
 
     🚨 THE `--sync-to-main` DEFECT (2026-09-05). This function used to read the checkpoint's
     hash whenever a `--model` was present, full stop — so every `--sync-to-main` fork was judged
@@ -544,8 +602,10 @@ def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, 
     if explicit:
         return explicit, "--pin"
     model = resolve_models_path(model_arg(argv))
-    if not model:
-        return None, "no --model and no --pin — this argv would run on HEAD"
+    pin_commit = pin_commit_arg(argv)
+    sync_to_main = "--sync-to-main" in argv
+    if not model and not pin_commit:
+        return None, "no --model and no --pin-commit — this argv would run on HEAD"
     from main.launcher.worktree import PinRefused, resolve_pin
     try:
         decision = resolve_pin(
@@ -554,13 +614,13 @@ def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, 
             # turns the whole answer into "the CURRENT tree's parser", which is the wrong one.
             model_path=model,
             run_dir=resolve_models_path(argv_run_dir(argv)),
-            pin_commit=argv_value(argv, "--pin-commit"),
-            sync_to_main="--sync-to-main" in argv,
+            pin_commit=pin_commit,
+            sync_to_main=sync_to_main,
         )
     except PinRefused as exc:
         first = str(exc).splitlines()[0]
         return None, f"the launcher would refuse this pin — {first}"
-    why = _PIN_WHY[decision.source].format(model=os.path.basename(model))
+    why = _PIN_WHY[decision.source].format(model=os.path.basename(model) if model else "")
     if decision.source in ("sync_to_main", "head"):
         return None, why
     return decision.sha, why
@@ -631,8 +691,8 @@ def main(raw: List[str] | None = None) -> int:
     ap.add_argument("--argv", help="a literal argv string to validate instead")
     ap.add_argument("--pin", metavar="SHA", default=None,
                     help="validate against THIS commit's parser (as --pin-commit would pin it). "
-                         "Defaults to the git_hash recorded by the argv's --model checkpoint, "
-                         "since that is the commit the launcher pins a resume to.")
+                         "Defaults to the pin the LAUNCHER would choose for this argv — its own "
+                         "--pin-commit, else the git_hash recorded by its --model checkpoint.")
     a = ap.parse_args(raw)
     if not a.run_dir and not a.argv:
         ap.error("give a run_dir or --argv")
@@ -641,9 +701,15 @@ def main(raw: List[str] | None = None) -> int:
     res = check(argv)
     pinned, pin_note = _pinned_report(argv, a.pin)
 
+    refusals = launcher_refusals(argv)
+
     src = a.run_dir or "--argv"
     print(f"checked {res['n_flags']} flags from {src}")
     print(f"  parser                         : {pin_note}")
+    if refusals:
+        print(f"  refused by the LAUNCHER parser : {len(refusals)}  ✗ WOULD FAIL AT PARSE TIME")
+        for line in refusals:
+            print(f"      {line}")
     absent: List[str] = []
     if pinned is not None:
         from main.launcher.pinned_argv import flags_only_in_current_tree, report_lines
@@ -722,6 +788,15 @@ def main(raw: List[str] | None = None) -> int:
         print("  G5 2026-09-06). A value marked INHERITED was never typed: it came from the parent")
         print("  checkpoint's model_config.json, which is what a fork resumes. A finding marked")
         print("  ADVISORY depends on something only the launch has — it may not fire there.")
+
+    if refusals:
+        # The launcher's argparse kills this argv before a run dir, a worktree or a child exists,
+        # so no parser verdict below can make it launchable. Everything above is still printed —
+        # a reader fixing the pair wants the rest of the findings in the same pass.
+        print("\n  \u2717 the LAUNCHER's own parser would refuse this command at parse time "
+              "(above);")
+        print("  it never reaches the trainer, whatever the flag findings say.")
+        return 1
 
     if pinned is not None and pinned.available:
         # Only the PARSER is pinned; the two combination families above still read this tree.

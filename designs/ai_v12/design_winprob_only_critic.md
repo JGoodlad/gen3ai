@@ -865,7 +865,7 @@ python -m main.launcher \
 >   --run-name ai_v12_01_winprob_critic \
 >   --restart-interval-hours 3 \
 >   --steps 75000000 \
->   --n-envs 64 --batch-size 16384 --grad-accum-steps 4 --n-epochs 10 \
+>   --n-envs 64 --batch-size 4096 --grad-accum-steps 16 --n-epochs 10 \
 >   --n-steps 2048 --lr 0.0003 --ent-coef 0.02 \
 >   --device cuda --log-level periodic \
 >   \
@@ -876,8 +876,15 @@ python -m main.launcher \
 >   --self-play
 > ```
 >
-> Three differences from the block above, each one load-bearing:
+> Four differences from the block above, each one load-bearing:
 >
+> 0. **`--batch-size 4096 --grad-accum-steps 16`, not `16384 --grad-accum-steps 4`** (CORRECTED
+>    2026-09-06, at the first arm's launch): 16384 does not fit the 12 GB card — a 2048 micro-batch
+>    already measures ~9.6 GB, and the activation peak is ONE micro-batch, which is the whole point
+>    of `--grad-accum-steps`. The effective batch is unchanged at **65,536** (4096 × 16 = 16384 × 4),
+>    so it is still 2 optimizer steps per epoch over the 131,072-step rollout (64 envs × 2048), the
+>    rollout still divides evenly, and the accumulation contract makes the gradient EXACTLY the
+>    65,536-sample one either way. The launch entry in the ledger carries this arithmetic.
 > 1. **`--critic winprob`** is what makes it this arm at all (gap B1).
 > 2. **`--terminal-indicator` and `--draw-penalty 0`** replace `--draw-penalty -1.0`. §3.2 chose
 >    "a draw is a not-win, `y = 0`", and §3.6 chose to keep the reward at ±1 — but those two are

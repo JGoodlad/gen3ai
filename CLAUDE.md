@@ -867,7 +867,11 @@ resolver** (`main.launcher.worktree.resolve_pin`, CALLED not re-derived: explici
 `--sync-to-main` ⇒ HEAD > the checkpoint's hash), because a `--sync-to-main` fork runs the child at
 HEAD and judging it at the parent's pin refused every HEAD-only flag (`--fork-lr`,
 `--distill-anchor-monitor`, …) on commands that launch — a false POSITIVE, where this tool's three
-earlier defects were false negatives. The launcher does the same for `--pin-commit`. The defect:
+earlier defects were false negatives. The launcher does the same for `--pin-commit`. **A FRESH
+argv — `--pin-commit <sha>` with no `--model`, i.e. every arm of a batch that starts a new run on
+one commit — is pinned too** (2026-09-06): the derivation used to be gated on a `--model`, so the
+first win-prob arm's `--pin-commit e798c13a` was ignored and the command was judged at HEAD,
+harmless only because HEAD *was* the pin that afternoon. The defect:
 a flag whose **ARITY** changed is invisible to any presence check, so `--pin-commit b13b30b2` died on
 `--hp-type-belief-coef: invalid float value: 'learned'` — the current parser abbreviation-matched a
 deleted flag onto a surviving one. Detail (including what is NOT pinned): `src/main/launcher/CLAUDE.md`

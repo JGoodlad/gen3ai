@@ -501,3 +501,110 @@ def test_a_repeated_flag_reads_the_LAST_value_the_way_argparse_does():
     assert argv_value(["--run-name", "a", "--run-name=b"], "--run-name") == "b"
     assert argv_value(["--pin-commit", "deadbeef"], "--pin-commit") == "deadbeef"
     assert argv_value(["--steps", "1"], "--pin-commit") is None
+
+
+# --------------------------------------------------- (g8) a FRESH argv carries a pin too
+#
+# 2026-09-06. `resolve_pin_for` derived the pin only when a `--model` was present, so an argv
+# with `--pin-commit <sha>` and NO checkpoint — every arm of a batch that starts a NEW run on one
+# commit — printed "no --pin — this argv would run on HEAD" and was judged by the parser of a tree
+# the child will never run. Observed on the first win-prob arm's launch (`--pin-commit e798c13a`,
+# no `--model`): harmless only because HEAD happened to BE the pin that afternoon.
+
+#: A REAL commit in this repository, one before `--critic` existed. Real on purpose: the whole
+#: mechanism is `git archive` + that commit's own `build_parser()`, so a fabricated sha would
+#: exercise nothing. `--critic` is likewise a real current-only flag — `flags_only_in_current_tree`
+#: asks the LIVE parser what it knows, and a made-up spelling would land in the ordinary
+#: unrecognized bucket instead.
+_COMMIT_BEFORE_CRITIC = "08dac300"
+_CURRENT_ONLY_FLAG = "--critic"
+
+#: A `--critic winprob` argv the CURRENT tree accepts outright — every companion the mode's own
+#: combination checks require, so the only thing separating the two arms below is the pin.
+_WINPROB_ARGV = ("--steps 1000 --critic winprob --no-hand-shaping --terminal-indicator "
+                 "--victory-value 1.0 --draw-penalty 0 --device cuda")
+
+
+def _require_commit(sha: str) -> None:
+    import subprocess
+
+    from utils.paths import repo_root
+    ok = subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+                        cwd=str(repo_root()), capture_output=True)
+    if ok.returncode != 0:
+        pytest.skip(f"{sha} is not in this checkout (shallow clone?)")
+
+
+def test_a_fresh_argvs_pin_commit_is_honoured_and_the_rule_is_named():
+    """(g8) No `--model` at all — the pin comes from the argv's own `--pin-commit`, resolved by
+    the LAUNCHER's `resolve_pin` (called, not re-derived) exactly as its fresh-run path does."""
+    from main.checkargs import resolve_pin_for
+    _require_commit(_COMMIT_BEFORE_CRITIC)
+    sha, why = resolve_pin_for(["--pin-commit", _COMMIT_BEFORE_CRITIC, "--steps", "1"], None)
+    assert sha is not None and sha.startswith(_COMMIT_BEFORE_CRITIC), (sha, why)
+    assert "--pin-commit" in why, f"the report must say WHICH rule chose the commit: {why}"
+
+
+def test_a_fresh_argv_with_no_pin_still_reads_as_HEAD():
+    """…and the fix must not widen: with neither a `--model` nor a `--pin-commit` the argv really
+    does run on HEAD, and the note says so."""
+    from main.checkargs import resolve_pin_for
+    sha, why = resolve_pin_for(["--steps", "1", "--device", "cuda"], None)
+    assert sha is None and "HEAD" in why, (sha, why)
+
+
+def test_the_legacy_pin_to_hash_spelling_is_read_too_and_the_LAST_one_wins():
+    """One `dest` behind two spellings, so the value that RUNS is the last occurrence of EITHER —
+    the same rule `argv_value` documents, which is why it is applied across the alias pair rather
+    than to one spelling with the other silently invisible."""
+    from main.checkargs import pin_commit_arg
+    assert pin_commit_arg(["--pin-to-hash", "deadbeef"]) == "deadbeef"
+    assert pin_commit_arg(["--pin-commit", "aaa", "--pin-to-hash", "bbb"]) == "bbb"
+    assert pin_commit_arg(["--pin-to-hash", "aaa", "--pin-commit=bbb"]) == "bbb"
+    assert pin_commit_arg(["--steps", "1"]) is None
+
+
+@pytest.mark.integration
+def test_a_fresh_pinned_argv_is_judged_by_THAT_commits_parser(capsys):
+    """(g8) END TO END, on the real repository: a flag that exists ONLY in the current tree is
+    refused at a commit that predates it, and the finding names the pin. This is the failure the
+    defect hid — the child runs the pinned tree, and would die at startup with a run dir already
+    on disk."""
+    from main.checkargs import main as checkargs_main
+    from main.exit_codes import TrainExitCode
+    _require_commit(_COMMIT_BEFORE_CRITIC)
+    rc = checkargs_main(
+        ["--argv", f"--pin-commit {_COMMIT_BEFORE_CRITIC} {_WINPROB_ARGV}"])
+    out = capsys.readouterr().out
+    assert rc == int(TrainExitCode.FATAL_CONFIG), out
+    assert f"PINNED commit {_COMMIT_BEFORE_CRITIC}" in out, out
+    assert "--pin-commit" in out.split("\n")[1], "the parser line must name the RULE"
+    assert "NOT IN PINNED TREE" in out and _CURRENT_ONLY_FLAG in out, out
+
+
+@pytest.mark.integration
+def test_the_same_argv_WITHOUT_the_pin_passes(capsys):
+    """The paired control. Drop the `--pin-commit` and the identical flags are judged by THIS
+    tree, where they all exist — so the arms differ in the pin and nothing else."""
+    from main.checkargs import main as checkargs_main
+    rc = checkargs_main(["--argv", _WINPROB_ARGV])
+    out = capsys.readouterr().out
+    assert rc == 0, out
+    assert "this argv would run on HEAD" in out and "✓ this command still launches" in out
+
+
+def test_pin_commit_beside_sync_to_main_is_REPORTED_as_the_launcher_would_refuse_it(capsys):
+    """The launcher's OWN parser kills this pair at parse time (a mutually-exclusive group), and
+    the trainer parser this module otherwise reads cannot see either flag — so without this the
+    argv passed every check and still never launched. checkargs REPORTS; it never raises."""
+    from main.checkargs import launcher_refusals, main as checkargs_main
+    assert launcher_refusals(["--pin-commit", "abc1234", "--sync-to-main"])
+    assert launcher_refusals(["--pin-commit", "abc1234", "--no-pin"])
+    assert launcher_refusals(["--sync-to-main", "--steps", "1"]) == [], \
+        "--sync-to-main ALONE is the ordinary fork spelling, not a refusal"
+
+    rc = checkargs_main(["--argv", "--pin-commit abc1234 --sync-to-main --steps 1000"])
+    out = capsys.readouterr().out
+    assert rc == 1, out
+    assert "refused by the LAUNCHER parser" in out and "--sync-to-main" in out
+    assert "✓ this command still launches" not in out
