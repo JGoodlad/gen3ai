@@ -96,11 +96,18 @@ from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
 
-# The three documented compositions. Keys are the CLI spelling a reader would recognise.
+# The documented compositions. Keys are the CLI spelling a reader would recognise.
 COMPOSITIONS = {
     "default": RewardConfig(),
     "--no-all-shaping-pbrs": RewardConfig(all_shaping_pbrs=False),
     "--stall-pbrs": RewardConfig(all_shaping_pbrs=True, stall_pbrs=True),
+    # TERMINAL-only — the win-prob arm (`gen3_terminal_only_short_circuit_v1`). This one exercises
+    # a SECOND fast path on top of the `_active_bias` skip: `_terminal_only` drops the calls that
+    # were ungated *because* their cross-turn mutations feed BIAS terms. The oracle (`_shadow`)
+    # disables both, so an arm that reached a skipped mutation would diverge here — which is the
+    # only way to catch a cross-turn skip, since a single turn's arithmetic looks identical.
+    "--no-hand-shaping --terminal-indicator": RewardConfig(
+        hand_shaping=False, terminal_indicator=True, victory_value=1.0, draw_penalty=0.0),
 }
 
 # The arm whose non-zero BIAS counts stand in as the trigger coverage for what the other arms

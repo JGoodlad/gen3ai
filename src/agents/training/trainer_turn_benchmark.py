@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import random
+import shlex
 import statistics
 import sys
 import time
@@ -59,7 +60,8 @@ from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
-from agents.training.reward_manager import Gen3RewardManager
+from agents.training.reward_manager import (
+    Gen3RewardManager, RewardConfig, format_reward_composition)
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
@@ -109,9 +111,15 @@ class _TrainerTurnPlayer(Player):
     decision and accumulates per-stage timings. A random legal action stands in for the
     policy, so no model is loaded."""
 
-    def __init__(self, *args, warmup: int, use_assembler: bool = True, **kwargs):
+    def __init__(self, *args, warmup: int, use_assembler: bool = True,
+                 reward_config: "RewardConfig | None" = None, **kwargs):
         super().__init__(*args, **kwargs)
         self._use_assembler = use_assembler
+        # The reward COMPOSITION under test. `None` = the dataclass default (the shaped
+        # production reward). `--reward-argv` builds it through the REAL launch path
+        # (`build_parser` → `RewardConfig.from_args`), so a composition measured here is a
+        # composition a run can actually be launched with — never a hand-built lookalike.
+        self._reward_config = reward_config
         maps = load_mappings()
         self.obs_enc = get_observation_encoder(maps)
         self._trackers: Dict[str, EpisodeTracker] = {}
@@ -130,7 +138,7 @@ class _TrainerTurnPlayer(Player):
         if tr is None:
             tr = EpisodeTracker(history_cap=1)
             self._trackers[tag] = tr
-            self._rewards[tag] = Gen3RewardManager()  # QUIET by default
+            self._rewards[tag] = Gen3RewardManager(config=self._reward_config)  # QUIET
         return tr, self._rewards[tag]
 
     def choose_move(self, battle):
@@ -308,8 +316,51 @@ def _report(player: _TrainerTurnPlayer, battles: int) -> None:
     print("  NOTE: absolute ms scale with machine load; trust the % shares + calls/dec.")
 
 
+def _battle_seed(seed: int, index: int) -> List[int]:
+    """The gen-5 PRNG seed for battle ``index`` of a ``--pin-battles`` run — a pure function of
+    ``(--seed, index)``, so arm A and arm B play the SAME ORDERED SEQUENCE of distinct battles.
+
+    ⚠️ WITHOUT this the script cannot A/B anything inside a decision, and that is a measured
+    fact rather than a caution: three back-to-back 400-decision runs on 2026-09-06 put the
+    SHAPED arm's `process_turn_reward` at 0.145 ms and 0.102 ms while the TERMINAL-only arm
+    between them read 0.111 ms — the run-to-run spread was LARGER than the effect and carried
+    the wrong sign. Each invocation walks a fresh RANDOM battle, so two runs profile two
+    different boards; the `--seed` alone pins the team draw and this player's action picks but
+    NOT the sim dice. Same failure `live_view_build_benchmark` exists to avoid.
+
+    Left OFF by default: an unpinned run samples the board distribution, which is what the
+    headline share table wants. Turn it ON for any before/after or arm-vs-arm claim.
+    """
+    # 4 x 16-bit words, the sim's gen-5 seed shape. Distinct per index, deterministic in `seed`.
+    h = (seed * 2654435761 + index * 40503 + 1) & 0xFFFFFFFFFFFFFFFF
+    return [(h >> (16 * k)) & 0xFFFF for k in range(4)]
+
+
+def _reward_config_from_argv(reward_argv: "str | None") -> "RewardConfig | None":
+    """Build the reward config under test from a string of REAL `train_rl_agent` flags.
+
+    e.g. ``--reward-argv '--no-hand-shaping --terminal-indicator --victory-value 1.0'``.
+    It goes through `build_parser()` + `RewardConfig.from_args` — the launch path's own two
+    steps — rather than constructing a `RewardConfig(...)` here by hand, so the arm this
+    benchmark times is provably the arm a launch produces from the same flags. A hand-built
+    lookalike is how a benchmark ends up measuring a composition nothing runs.
+
+    ``None`` (the flag unset) keeps the dataclass default = the shaped production reward.
+    Note this deliberately stops at `parse_args`: `resolve_config`'s cross-flag REFUSALS are a
+    launch concern, and this profiler is allowed to time a composition the launcher would
+    argue with (it never trains anything). The composition it resolved is PRINTED, so what
+    was measured is on the record either way.
+    """
+    if reward_argv is None:
+        return None
+    from main.train_rl_agent import build_parser
+    args = build_parser().parse_args(shlex.split(reward_argv))
+    return RewardConfig.from_args(args)
+
+
 async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
-               use_assembler: bool = True) -> int:
+               use_assembler: bool = True, reward_argv: "str | None" = None,
+               pin: bool = False) -> int:
     # `random.seed(seed)` alone was NOT enough: four drawers shared the global stream (two
     # teambuilders, this player's action pick, and `RandomPlayer`'s entire policy) and the bridge
     # interleaves the two players' `choose_move` calls, so the draw ORDER — and therefore the
@@ -317,10 +368,11 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
     # gets its own stream off a distinct derived seed; p1 and p2 must differ or the two sides draw
     # in lockstep. The module seed stays for any other global consumer in the import graph.
     random.seed(seed)
+    reward_config = _reward_config_from_argv(reward_argv)
     ts = int(time.time()) % 100000
     pool = _team_pool()
     player = _TrainerTurnPlayer(
-        warmup=warmup, use_assembler=use_assembler,
+        warmup=warmup, use_assembler=use_assembler, reward_config=reward_config,
         battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 0),
         rng_seed=seed * 4 + 1,
         account_configuration=AccountConfiguration(f"TTz{ts}", "pw"),
@@ -334,13 +386,19 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
 
     print(f"Trainer-turn CPU profiler — {BATTLE_FORMAT} — target {target_decisions} measured "
           f"decisions (warmup {warmup}, seed {seed}, no GPU/server, "
-          f"obs-assembler {'ON' if use_assembler else 'OFF'})", flush=True)
+          f"obs-assembler {'ON' if use_assembler else 'OFF'}, "
+          f"battles {'PINNED' if pin else 'random'})", flush=True)
+    # The reward arm is part of the measurement, so it is printed with the run header rather
+    # than left implicit — `format_reward_composition` is the SAME announcer a launch prints.
+    print(format_reward_composition(reward_config or RewardConfig())
+          + ("   [default — shaped production reward]" if reward_config is None else
+             f"   [--reward-argv {reward_argv!r}]"), flush=True)
     battles = 0
     while player.measured < target_decisions and battles < battle_cap:
         # The bridge assigns each battle a process-unique tag (local_battle_runner._BATTLE_SEQ),
         # so repeated single-battle calls never collide on a reused tag — no per-call cleanup
         # needed; _battle_finished_callback drops each battle's tracker/reward as it ends.
-        await run_local_battles(player, opp, 1)
+        await run_local_battles(player, opp, 1, seed=_battle_seed(seed, battles) if pin else None)
         battles += 1
 
     if player.measured == 0:
@@ -359,6 +417,17 @@ def _parse_args(argv):
     p.add_argument("--warmup", type=int, default=3,
                    help="decisions to skip before timing (cache/encoder warmup) (default 3)")
     p.add_argument("--seed", type=int, default=0, help="action-selection seed (default 0)")
+    p.add_argument("--pin-battles", dest="pin", action="store_true",
+                   help="pin the SIM DICE so the battle SEQUENCE is a pure function of --seed. "
+                        "REQUIRED for any before/after or arm-vs-arm comparison: unpinned, two "
+                        "invocations play different battles and the run-to-run spread exceeds "
+                        "the effect (measured). Off by default so the headline share table "
+                        "still samples the board distribution.")
+    p.add_argument("--reward-argv", default=None,
+                   help="real train_rl_agent flags naming the reward composition to time, as "
+                        "ONE quoted string (e.g. '--no-hand-shaping --terminal-indicator "
+                        "--victory-value 1.0'). Parsed by the launcher's own build_parser + "
+                        "RewardConfig.from_args. Unset = the shaped production default.")
     p.add_argument("--no-assembler", dest="use_assembler", action="store_false",
                    help="encode WITHOUT the incremental obs cache (gen3_obs_assembler_v1) — the "
                         "A/B arm. Run both back to back in one session: absolute ms on this box "
@@ -373,4 +442,4 @@ if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
         main(args.target_decisions, args.battle_cap, args.warmup, args.seed,
-             args.use_assembler)))
+             args.use_assembler, args.reward_argv, args.pin)))

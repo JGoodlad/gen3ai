@@ -581,6 +581,18 @@ class Gen3RewardManager:
             n for n in RewardBreakdown.registry_fields(RewardClass.BIAS)
             if _bias_term_active(self.config, n))
         self._skip_inactive_bias: bool = not _shadow    # the shadow twin computes EVERYTHING
+
+        # --- TERMINAL-ONLY short circuit (`gen3_terminal_only_short_circuit_v1`) ----------------
+        # True when this run's reward is the ±victory_value terminal ALONE — no PBRS, no BIAS.
+        # Read from `reward_class_composition`, the SAME announcer the startup line and the
+        # `reward/` export derive from, so there is ONE predicate for "what is this reward made
+        # of". NEVER a second hand-written condition on `hand_shaping`: `--arm-no-progress-tax`
+        # re-arms one BIAS term under `--no-hand-shaping`, so the two are not equivalent (the v79
+        # lesson the `_active_bias` block above already encodes). The shadow twin is excluded — it
+        # must compute everything to verify against. Detail: this method's docstring.
+        _comp = reward_class_composition(self.config)
+        self._terminal_only: bool = (not _shadow
+                                     and _comp["pbrs"] == 0 and _comp["bias"] == 0)
         self._verify_twin = None if _shadow else _build_verify_twin(
             Gen3RewardManager, self.config, progress_clock, LogLevel.QUIET)
 
@@ -1669,6 +1681,17 @@ class Gen3RewardManager:
         Builds a RewardBreakdown with every named component; stores it on
         self._last_breakdown so callers (e.g. BattleRecorder) can inspect the
         per-signal contributions without touching the battle object.
+
+        **TERMINAL-only short circuit** (``gen3_terminal_only_short_circuit_v1``). When
+        ``reward_class_composition`` reports 0 PBRS and 0 BIAS terms — the win-prob arm's
+        ``--no-hand-shaping --terminal-indicator`` — the reward IS ``victory_value·1{win}`` and
+        every potential/bias computation below is dead. ``_active_bias`` already skipped the ~25
+        gated BIAS computes; ``_terminal_only`` additionally skips the handful that were UNGATED
+        *because* their cross-turn mutations feed BIAS terms, which under this composition have no
+        reader. Each skip site below names the reader it proved dead, and the full table of what
+        SURVIVES and why — plus the ``_compute_phi_mat`` / ``win_margin`` hazard, which is a
+        PRE-EXISTING defect this neither causes nor fixes — is in
+        ``src/agents/training/CLAUDE.md`` → *And a SECOND fast path*.
         """
         bd = RewardBreakdown()
 
@@ -1753,9 +1776,11 @@ class Gen3RewardManager:
             bd.boost_utilized = self._compute_boost_utilized(delta, live)
 
         # --- Field control ---
-        # NEVER gated: advances `_prev_opp_spikes`, and raw `bd.spikes` feeds the
-        # `_last_attack_had_effect` assembly below (which record_action consumes NEXT turn).
-        bd.spikes, bd.futile_spikes = self._compute_spikes_bonus(delta, live)
+        # Ungated by `_bias_active` because it advances `_prev_opp_spikes` and raw `bd.spikes`
+        # feeds `_last_attack_had_effect` below. Both readers are BIAS (`spikes`/`futile_spikes`,
+        # and `repetition_tax` via the flag), so TERMINAL-only skips the whole call.
+        if not self._terminal_only:
+            bd.spikes, bd.futile_spikes = self._compute_spikes_bonus(delta, live)
 
         # --- Positional: penalty for staying in against a known threat ---
         if self._bias_active("matchup_penalty"):
@@ -1774,7 +1799,9 @@ class Gen3RewardManager:
         # --- Switch rewards (see SWITCH_REWARDS.md for full breakdown) ---
         # Pivot, SE, and sleep-out are skipped when phazed — roar removes our
         # choice, so those signals don't apply.
-        if delta.our_switch_to is not None:
+        if delta.our_switch_to is not None and not self._terminal_only:
+            # TERMINAL-only: every term in this block is BIAS, and the one ungated mutation
+            # (`_last_opp_seen_by`) is read ONLY by `_compute_se_switch_bonus` — also BIAS.
             if not self._last_switch_was_roared:
                 if self._bias_active("pivot_protect", "pivot_status", "pivot_damage"):
                     bd.pivot_protect, bd.pivot_status, bd.pivot_damage = self._compute_pivot_bonus(delta, live)
@@ -1792,9 +1819,11 @@ class Gen3RewardManager:
                 bd.sleep_in = self._compute_sleep_in_penalty(delta, live)
 
         # --- Status signals ---
-        # NEVER gated: advances `_prev_our/opp_statused`, and `_d_opp_statused` feeds the
-        # `_last_attack_had_effect` assembly below.
-        bd.status, _d_opp_statused = self._compute_status_reward(delta, live)
+        # Ungated for the same reason as `spikes` above: `_prev_our/opp_statused` and
+        # `_d_opp_statused` only ever reach BIAS terms.
+        _d_opp_statused = 0
+        if not self._terminal_only:
+            bd.status, _d_opp_statused = self._compute_status_reward(delta, live)
         if self._bias_active("status_wasted"):
             bd.status_wasted = self._compute_status_wasted_penalty(delta, _d_opp_statused)
 
@@ -1821,38 +1850,51 @@ class Gen3RewardManager:
         # (design §4 / §3.1). Gated on bias_redesign; in the default run the clock only feeds the obs.
         self._apply_progress_clock(bd)
 
-        # Update end-of-turn snapshots for next turn's checks
-        self._prev_opp_boosts = self._opp_active_boosts(live)
-        self._update_opp_se_threat(live)
+        # Update end-of-turn snapshots for next turn's checks. `_prev_opp_boosts` is read only by
+        # `_compute_roar_bonus` and `_prev_opp_se_threat` only by `_apply_switch_outcome` /
+        # `_compute_matchup_penalty` — all BIAS, so TERMINAL-only carries neither snapshot.
+        if not self._terminal_only:
+            self._prev_opp_boosts = self._opp_active_boosts(live)
+            self._update_opp_se_threat(live)
 
         # --- Belief PBRS (design_reward_switching.md) → pbrs_belief + the re-gate risk snapshot ---
-        self._fold_belief_pbrs(bd, live, is_terminal)
+        # 🚨 THE EXPENSIVE ONE, and the reason this short circuit is worth having. The fold gates
+        # only its EMITTED FIELD; the `_belief_potential_and_risk` call above that gate — one
+        # `encode_block`, historically 60.0% of this method — runs unconditionally for two
+        # snapshots that feed `_compute_stay_risk_tax` / `_apply_switch_outcome`. Both are BIAS,
+        # so under TERMINAL-only nothing reads either and the encode is pure waste — a whole-call
+        # skip the fold's own gate structurally cannot make.
+        if not self._terminal_only:
+            self._fold_belief_pbrs(bd, live, is_terminal)
 
-        # --- Non-damaging-tempo status PBRS Φ_status (design §2.7) → pbrs_status (bias_redesign only) ---
-        self._fold_status_pbrs(bd, live, is_terminal)
+            # --- Non-damaging-tempo status PBRS Φ_status (design §2.7) → pbrs_status (bias_redesign only) ---
+            self._fold_status_pbrs(bd, live, is_terminal)
 
-        # --- End-state PBRS potentials (design §2.6/§2.7 + boost/opp-boost/progress) → gated on all_shaping_pbrs ---
-        self._fold_progress_pbrs(bd, is_terminal)
-        self._fold_hazard_pbrs(bd, live, is_terminal)
-        self._fold_boost_pbrs(bd, live, is_terminal)
-        # Φ_opp_boosts and Φ_roar are the SAME potential at two weights (−w·Σmax(0, opp boost
-        # stage)), so the Σ is computed once and threaded to both instead of walking twice.
-        opp_positive_boosts = self._opp_positive_boost_stages(live)
-        self._fold_opp_boosts_pbrs(bd, live, is_terminal, positive=opp_positive_boosts)
-        self._fold_roar_pbrs(bd, live, is_terminal, positive=opp_positive_boosts)
+            # --- End-state PBRS potentials (design §2.6/§2.7 + boost/opp-boost/progress) → gated on all_shaping_pbrs ---
+            self._fold_progress_pbrs(bd, is_terminal)
+            self._fold_hazard_pbrs(bd, live, is_terminal)
+            self._fold_boost_pbrs(bd, live, is_terminal)
+            # Φ_opp_boosts and Φ_roar are the SAME potential at two weights (−w·Σmax(0, opp boost
+            # stage)), so the Σ is computed once and threaded to both instead of walking twice.
+            # The Σ is a 7-stage walk that ran even with both folds off; here it is provably dead.
+            opp_positive_boosts = self._opp_positive_boost_stages(live)
+            self._fold_opp_boosts_pbrs(bd, live, is_terminal, positive=opp_positive_boosts)
+            self._fold_roar_pbrs(bd, live, is_terminal, positive=opp_positive_boosts)
 
-        # Track whether our last move did anything PRODUCTIVE this turn, for the
-        # escalating repetition tax. A move counts as effective if it dealt damage,
-        # gained us a stat boost, landed a status, or added a hazard layer. Capped
-        # setup (no boost change), capped hazards, redundant status, and immune/no-op
-        # attacks all flip this to False, routing the next repeat through the steeper
-        # ZERO_EFFECT step — that's how capped setup/hazards escalate.
-        self._last_attack_had_effect = (
-            float(delta.opp_hp_delta.sum()) < 0
-            or int(delta.our_boost_delta.sum()) > 0
-            or _d_opp_statused > 0
-            or bd.spikes > 0
-        )
+            # Track whether our last move did anything PRODUCTIVE this turn, for the
+            # escalating repetition tax. A move counts as effective if it dealt damage,
+            # gained us a stat boost, landed a status, or added a hazard layer. Capped
+            # setup (no boost change), capped hazards, redundant status, and immune/no-op
+            # attacks all flip this to False, routing the next repeat through the steeper
+            # ZERO_EFFECT step — that's how capped setup/hazards escalate.
+            # Its ONLY reader is `record_action`'s `repetition_tax` (BIAS), and two of its four
+            # inputs come from calls TERMINAL-only skipped above.
+            self._last_attack_had_effect = (
+                float(delta.opp_hp_delta.sum()) < 0
+                or int(delta.our_boost_delta.sum()) > 0
+                or _d_opp_statused > 0
+                or bd.spikes > 0
+            )
 
         # --- End-state PBRS suppression: zero the subsumed BIAS terms + redundant drops (gated on
         # all_shaping_pbrs). Runs AFTER all PBRS folds + the _last_attack_had_effect read (which reads

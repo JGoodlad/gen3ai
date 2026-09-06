@@ -826,6 +826,87 @@ view IS the exactness guarantee, and the reasoning lives in `_pbrs_step`'s docst
 would try it. The one expensive Φ input, `pbrs_belief`'s `encode_block` at **60% of the stage**,
 got the safe answer instead — a content-keyed memo, next.
 
+#### And a SECOND fast path when the census reads 0 PBRS + 0 BIAS — `_terminal_only` (`gen3_terminal_only_short_circuit_v1`)
+
+**Under the win-prob arm's composition the reward IS `victory_value · 1{win}`, and almost
+everything `process_turn_reward` does is dead.** `_active_bias` above already skips the ~25 gated
+BIAS computes, so what was left running was the handful that were deliberately UNGATED *because
+their cross-turn mutations feed BIAS terms* — and under a composition with no BIAS terms those
+mutations have no reader at all. `_terminal_only` is that second gate, derived in `__init__` from
+`reward_class_composition(self.config)` — **the SAME announcer** the startup line, the `reward/`
+export and `_hand_pbrs_on` / `_bias_active` already read, never a second `hand_shaping` predicate
+(the v79 lesson, one gate over). The shadow twin is excluded, so `GEN3AI_REWARD_VERIFY=1` verifies
+BOTH fast paths at once.
+
+⚠️ **The gate is the CENSUS, and `--arm-no-progress-tax` is why that is not pedantry.** It re-arms
+`no_progress_tax` alone under `--no-hand-shaping` (design gap B4, the winprob arm's anti-stall
+pressure) — so `hand_shaping == False` does NOT imply "no BIAS terms", and a flag-shaped gate would
+skip the cross-turn state that one surviving term reads. Pinned as its own test.
+
+**What is SKIPPED, with the reader each was proved dead**: `_fold_belief_pbrs` WHOLE — the
+expensive one, since it gates only its emitted field while the `encode_block` above that gate
+(historically **60% of this method**) runs unconditionally for two snapshots that feed
+`_compute_stay_risk_tax` / `_apply_switch_outcome`; `_compute_spikes_bonus` and
+`_compute_status_reward` (their `_prev_*` counters and the `_last_attack_had_effect` assembly reach
+only `repetition_tax`); `_opp_active_boosts` / `_update_opp_se_threat` / `_opp_positive_boost_stages`;
+the whole voluntary-switch block including the `_last_opp_seen_by` update; and the seven remaining
+`_fold_*_pbrs` calls, which were already free early-returns.
+
+**What still RUNS, and its consumer** — the ask was "keep the ones something else reads", so each is
+named rather than assumed: `battle.live_view()` (memoized per state-epoch and shared with five
+stages — the obs builds it either way, so this is a warm read); `_terminal(live)` (the reward
+itself); `_last_breakdown` (`battle_recorder` writes `to_dict()` into every eval-trace decision, and
+`reward_verify`'s twin diffs it); `_term_stats.observe` (the `reward/` export); and
+`_apply_switch_outcome` **paired with** `_apply_pbrs_suppression` — the first advances
+`switch_count` / `last_switch_turn` for the PERIODIC `🏁 Episode Finished` line, the second is what
+zeroes the three BIAS fields it writes, so skipping either alone would change the reward. Both are
+attribute and dict work; neither walks the board.
+
+🚨 **`_compute_phi_mat` is NOT a skip candidate — and it is ALREADY NOT RUNNING, which is a
+PRE-EXISTING DEFECT this short circuit neither causes nor fixes.** Its by-product
+`_last_material_margin` is read by `gen3_env`'s `win_margin` obs key, i.e. by the win-prob head's
+closeness-stratified metrics and its `skill_vs_material` Brier skill score. But
+`_fold_material_pbrs` early-returns under `--no-hand-shaping` (via `_pbrs_term_active`), so **on the
+win-prob arm the margin has been pinned at 0.0 since that arm launched**. Measured 2026-09-06 on a
+6-alive-vs-2 board: shaped reads `+0.667`, the winprob composition reads `0.0`. Consequences, both
+silent: `|margin| < _WIN_CONTESTED_TAU` is always true so `contested_frac ≡ 1.0` and the
+"contested" split stops selecting anything, and the material baseline collapses to a constant
+`P_mat = 0.5` so `skill_vs_material` measures skill against a coin flip rather than against
+"just count the mons". **Left alone deliberately**: reviving it would change a live run's
+observation stream, which is an owner call and not a performance change.
+
+**Measured** (2026-09-06, `trainer_turn_benchmark --decisions 400 --seed 0 --pin-battles`, 468
+decisions / 6 battles per cell, load 41–45 on 16 cores so read the same-session RATIO):
+`process_turn_reward` **0.150–0.164 ms → 0.021–0.025 ms**, i.e. from ~64% of the shaped
+composition's cost to ~14% of it — the reward GROUP falls from 18–19% of our controllable CPU to
+**8%**, and what remains is mostly `build_delta`. The **shaped arm is byte-identical and its
+timings are unchanged** (0.169 ms both rounds).
+
+**Gates.** `reward_skip_parity_fuzz_test.py` carries TERMINAL-only as a **fourth composition** — the
+real-battle oracle, comparing every field of every turn against a `_shadow=True` twin that disables
+both fast paths; it is the only thing that can catch a CROSS-TURN skip, since a single turn's
+arithmetic looks identical whether or not a snapshot was carried. Measured over 12 battles: **PASS
+on all 4 compositions** with full trigger coverage. `reward_terminal_only_skip_test.py` is the
+routine-gate half (the census-derived flag over six compositions, the multi-turn stream against the
+twin on both arms with an anti-vacuity control, and the `reward/` export reading `n_decisions`
+intact with `untracked_abs_mean` exactly 0). Both revert arms verified failing: gating on
+`hand_shaping` instead of the census fails on the re-armed tilt, and applying the skip
+unconditionally fails the shaped stream on real reward differences.
+
+⚠️ **BE HONEST ABOUT WHAT THE TERMINAL-ONLY FUZZ ARM PROVES, because it is WEAKER than the other
+three and for a structural reason.** On the other compositions the twin computes a term the fast
+path skipped and the comparison is a live field-by-field check. Here `_apply_pbrs_suppression`
+zeroes the whole BIAS class on BOTH sides, so every PBRS/BIAS field is 0.0 either way and that half
+of the comparison is satisfied by construction. What it genuinely checks is the TERMINAL fold,
+`bd.total`, and that no skipped cross-turn snapshot leaks into a field the suppression does not
+cover. **The claim underneath — "every skipped mutation's only readers are BIAS terms" — rests on
+the CONSUMER CENSUS, not on the fuzz**: `_prev_active_ko_risk`, `_prev_safe_pivot`,
+`_last_attack_had_effect`, `_prev_opp_spikes`, `_prev_our/opp_statused`, `_prev_opp_se_threat`,
+`_last_opp_seen_by` and `_prev_opp_boosts` were each grepped tree-wide and read ONLY inside
+`reward_manager.py`, only by BIAS-term helpers. **A future term that reads one of them from
+somewhere else would not be caught here** — it would have to be caught by that grep being re-run,
+which is why the readers are named at each skip site rather than left as "no consumer".
+
 #### The belief-block memo — `IncomingBeliefMemo` (`gen3_belief_block_memo_v1`)
 
 Φ_belief's `encode_block` measured **60.0% of `process_turn_reward`** (`compute_team_block` 42.5 /

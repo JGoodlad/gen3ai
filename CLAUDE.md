@@ -635,8 +635,32 @@ basis. Its own work (parse the request, set 11 bits, run two integrity checks) m
 `state_encoder.encode` 26% · progress-clock 10% · `tracker.record` 6% · legal+mask 2.8%**. *When a
 stage looks expensive, check whether it is merely first.* Detail — and the sized, deliberately
 un-built next item (per-mon reuse, ~13–16% of worker CPU) — is in `src/agents/battle/CLAUDE.md`.
+
+**The reward stage's cost depends on the REWARD COMPOSITION, so the baseline above is the SHAPED
+one and there is now a second.** `--reward-argv '<train_rl_agent flags>'` times any composition,
+built through the launcher's own `build_parser` + `RewardConfig.from_args`, and the resolved
+census is printed with the run header — so an arm cannot be timed under a composition no launch
+produces. Under **TERMINAL-only** (`--no-hand-shaping --terminal-indicator --victory-value 1.0`,
+the win-prob arm) `process_turn_reward` is **0.021–0.025 ms — 2.2–2.7% of our CPU**, against the
+shaped composition's **0.169 ms / 16%** in the same session; the `reward` GROUP falls to **8%**
+and is then mostly `build_delta`, the TurnDelta fold, which every composition keeps. Provenance:
+2026-09-06, `--decisions 400 --seed 0 --pin-battles`, load average **41–45 on 16 cores** (a live
+arm was on the box — treat the ABSOLUTES as inflated and read the same-session shaped-vs-terminal
+ratio, which is what the pinning makes comparable). Before the terminal-only short circuit
+(`gen3_terminal_only_short_circuit_v1`) the same cell read **0.150–0.164 ms**, i.e. ~64% of the
+shaped cost where it is now ~14%.
+
+🚨 **`--pin-battles` is REQUIRED for any before/after or arm-vs-arm claim, and that is a measured
+requirement rather than a caution.** Unpinned, each invocation walks a fresh RANDOM battle — the
+`--seed` fixes the team draw and the action picks but NOT the sim dice — so two runs profile two
+different boards. Measured 2026-09-06, three back-to-back 400-decision runs: the SHAPED arm read
+**0.145 ms and 0.102 ms** while the TERMINAL-only arm between them read **0.111 ms** — the
+run-to-run spread was LARGER than the effect and carried the wrong SIGN. Pinned, all four cells
+land on exactly 468 decisions / 6 battles and the comparison is paired. Same trap
+`live_view_build_benchmark` exists to avoid; the flag is off by default so the headline share
+table still samples the board distribution.
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…']
 ```
 
 **Neither benchmark above can measure a CHANGE to `LiveView.from_battle`** — the single largest
