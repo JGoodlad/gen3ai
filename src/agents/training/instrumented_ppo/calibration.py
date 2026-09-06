@@ -212,3 +212,55 @@ def sigmoid(x: Sequence[float]) -> np.ndarray:
     e = np.exp(a[~pos])
     out[~pos] = e / (1.0 + e)
     return out
+
+
+# --------------------------------------------------------------------------------------------
+# THE CRITIC'S OWN RELIABILITY, under `--critic winprob` (gen3_winprob_critic_mode_v1)
+# --------------------------------------------------------------------------------------------
+
+#: The Murphy/Brier keys lifted out of `scaffolding.reliability_table` for the live export. A
+#: fixed list rather than the whole dict: the table also returns the per-bin `table` rows, which
+#: are a curve rather than a scalar and are already served by `rel_gap_b*` above.
+_CRITIC_KEYS = ("brier", "skill", "ece", "mce", "reliability", "resolution", "uncertainty",
+                "decomp_residual", "base_rate", "n")
+
+
+def critic_reliability(rollout_buffer) -> Dict[str, float]:
+    """The Murphy split of the ROLLOUT's own critic values against the realized outcome.
+
+    Under `--critic winprob` the buffer's `values` ARE `sigmoid(win-prob logit)`, and
+    `win_target` / `win_mask` are the Monte-Carlo outcome `WinProbLabelCallback` back-fills for
+    every step whose episode finished inside this buffer. So this needs no forward at all: both
+    columns are already there, in probability units, for the exact states GAE bootstrapped from.
+
+    **This is a DIFFERENT read from `CalibrationAccumulator` above, and the difference is the
+    reason both exist.** That one reads the HEAD's logits per minibatch, inside `train()`; this
+    one reads the DEPLOYED value — what the critic actually told GAE — once per rollout.
+
+    🚨 **The meter is `resolution`, not `reliability`.** A base-rate forecaster scores a perfect 0
+    reliability and a useless 0 resolution, and the committed 2026-09-06 baseline measured this
+    head at reliability ~0.002 against a resolution of 0.062 out of an available 0.182 — already
+    calibrated in the MEAN and starved of SEPARATION. A promotion that improves ECE and leaves
+    resolution flat has moved the meter that was never the disease.
+
+    ⚠️ It is computed on the TRAINING population, not on the eval recorder's loss-enriched quota,
+    so it needs no selection reweighting — and for that same reason its LEVEL is not comparable
+    with `main.scaffolding_gauge --reliability`'s, only its trend. The STATISTIC is shared
+    (`scaffolding.reliability_table`, imported rather than re-implemented) so the two are at least
+    the same question asked of two populations.
+
+    Returns `{}` — never zeros — when the obs keys are absent or no row carries a known label. A
+    calibration of nothing and a perfect calibration must not render the same.
+    """
+    from agents.training.scaffolding import reliability_table
+
+    obs = getattr(rollout_buffer, "observations", None)
+    if not isinstance(obs, dict) or "win_target" not in obs or "win_mask" not in obs:
+        return {}
+    y = np.asarray(obs["win_target"], dtype=np.float64).reshape(-1)
+    m = np.asarray(obs["win_mask"], dtype=np.float64).reshape(-1) > 0.5
+    p = np.asarray(rollout_buffer.values, dtype=np.float64).reshape(-1)
+    if p.shape != y.shape or not bool(m.any()):
+        return {}
+    table = reliability_table(p[m], y[m])
+    return {k: float(table[k]) for k in _CRITIC_KEYS if k in table}

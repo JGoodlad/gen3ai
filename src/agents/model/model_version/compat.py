@@ -311,6 +311,21 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "trunk (a silent mid-run training change).\n"
                 "Resume with the matching --win-prob-mode setting, or start a fresh training run."
             )
+        # gen3_winprob_critic_mode_v1 (v109): WHICH readout is the value function. A different
+        # mode means a different set of heads carries the value, a different loss trains it, and
+        # a different quantity is predicted — and NOTHING downstream would raise, because both
+        # routes return a [B,1] tensor of the right dtype. So the string compare IS the gate.
+        if str(self.critic) != str(saved.critic):
+            raise ModelVersionError(
+                f"critic mismatch: saved={saved.critic!r}, current={self.critic!r}.\n"
+                "Which readout is the CRITIC is fixed for a run's lifetime: 'shaped' values the "
+                "PopArt-normalized shaped RETURN through value_net (or the distributional E[Z]), "
+                "'winprob' values sigmoid(win-prob logit) in [0,1] trained by BCE against the "
+                "terminal outcome. Flipping mid-run swaps the quantity GAE bootstraps from, "
+                "leaves value_net in no loss graph (or untrained), and changes what the reward "
+                "stream has to be — with no shape error anywhere to catch it.\n"
+                "Resume with the matching --critic setting, or start a fresh training run."
+            )
 
 
         # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the

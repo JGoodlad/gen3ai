@@ -699,6 +699,41 @@ is the primary value loss at `vf_coef` weight, and the scalar `value_net` freeze
 So "the critic" in this config is the *categorical* head, not `value_net`. PopArt is still on
 (`use_popart` true, which forces `--clip-range-vf none`).
 
+#### WHICH readout is the critic — `--critic {shaped,winprob}`
+
+`policy._critic_value` has a MODE, and the production config is on the first of two.
+
+| `--critic` | `V(s)` is | trained by | reward stream | PopArt | `gamma` |
+|---|---|---|---|---|---|
+| **`shaped`** (default, **this config**) | `value_net`, or the distributional `E[Z]` under `value_from_dist` | the MSE / HL-Gauss CE at `vf_coef`, in PopArt-normalized units | 1 TERMINAL + 7 PBRS + 1 BIAS, ±30 with a −35 timeout | on | 0.9999 |
+| `winprob` | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal outcome**, at `vf_coef` | the TERMINAL **WIN INDICATOR** alone — `+victory_value` on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **refused** | 1.0 |
+
+Under `winprob` the critic and the return are the same quantity by construction: at
+`--victory-value 1.0` the undiscounted return from any state is exactly `1{win}`, so
+`V(s) = P(win | s)` with no approximation term. `value_net` leaves every loss graph (its scalar
+term is dropped exactly as under `value_from_dist`), the BCE joins the **`value`** noise-scale
+group rather than `aux`, and `--win-prob-coef` is refused — one critic, one coefficient.
+
+The mode is STRUCTURAL: it selects a different set of heads to carry the value, so `critic` is
+recorded in `model_config.json` and string-compared by `check_compatible`. It carries **no
+`ARCH_SIGNATURE` bump**, because `shaped` is the default and builds, moves and initializes nothing
+differently; the signature bump belongs to the default flip, where it forces the fresh weights a
+probability critic cannot be warm-started into.
+
+⚠️ **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The `−35 < −30`
+ordering `--draw-penalty` exists to set is not merely unused under `winprob`, it is
+unrepresentable — so `--draw-penalty` is REFUSED there, and the anti-stall pressure comes from the
+obs deadline clock (§1.4) plus `--arm-no-progress-tax`, which re-arms `no_progress_tax` alone under
+`--no-hand-shaping` without reviving the other 24 BIAS terms. **Stall rate and mean episode length
+are PRIMARY endpoints on any `winprob` arm.**
+
+Three flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`,
+`--no-use-popart`) because their argparse default is the `None` sentinel, so "unset" is
+representable. Four are REQUIRED and named by their own refusal (`--no-hand-shaping`,
+`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so
+an implication could not be told apart from an overwrite. Design of record:
+[`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
+
 **One more readout EXISTS in the code and is OFF here — `q_winprob_mode` (`QWinProbHead`).** It is
 the only member of this family that does not hang off `value_pooled` alone: it scores each of the
 eleven actions from the token of the entity that action selects — the SAME per-action tokens the

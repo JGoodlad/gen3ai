@@ -975,6 +975,49 @@ Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
 / `latest.txt` and the `final_model*.zip` / `best_model/` stay at the run root.
 
+### WHICH readout is the critic — `--critic {shaped,winprob}` (default `shaped`)
+
+`policy._critic_value` has a MODE. **`shaped` is the default and every generation to date** — the
+scalar `value_net` (or the distributional `E[Z]` under `--value-from-dist`), de-normalized through
+PopArt into raw shaped-return units, with the win-prob head an auxiliary BCE at `--win-prob-coef`.
+A flagless run is byte-identical.
+
+**`winprob` promotes the head to BE the critic**: `V(s) = sigmoid(win_head logit)` in [0,1], the
+value loss IS that head's BCE against the terminal outcome (weighted by `--vf-coef`, **not**
+`--win-prob-coef` — one critic, one coefficient), and the reward stream is the TERMINAL **WIN
+INDICATOR** alone: `+victory_value` on a win, `0.0` on a loss, a tie AND a 250-turn timeout alike.
+At `--victory-value 1.0` and `--gamma 1.0` the undiscounted return from any state is exactly
+`1{win}`, so **`V(s) = P(win | s)` with no approximation term** — the identity the mode rests on,
+and why `--terminal-indicator` and `--victory-value 1.0` are requirements rather than suggestions.
+`value_net` leaves every loss graph, the BCE joins the **`value`** noise-scale group (never `aux`,
+which is the §1.4 defect the design records), and PopArt is refused — a bounded stationary
+Bernoulli payoff has no scale to track, and `_denorm` would take V straight out of [0,1].
+
+🚨 **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The `−35 < −30`
+ordering `--draw-penalty` exists to set is not merely unused under `winprob` — it is
+unrepresentable, so `--draw-penalty` is REFUSED there. The anti-stall pressure comes from the obs
+deadline clock plus **`--arm-no-progress-tax`**, which re-arms `no_progress_tax` alone under
+`--no-hand-shaping` without reviving the other 24 BIAS terms. **Stall rate and mean episode length
+are PRIMARY endpoints on any `winprob` arm, not monitored ones.**
+
+Three flags are IMPLIED (`--win-prob-mode shaping`, `--gamma 1.0`, `--no-use-popart`) because their
+argparse default is the `None` sentinel, so "unset" is representable; four are REQUIRED and named
+by their own refusal (`--no-hand-shaping`, `--terminal-indicator`, `--victory-value 1.0`,
+`--draw-penalty 0`) because theirs are concrete and an implication could not be told apart from an
+overwrite. Everything the mode SUBSUMES is refused rather than ignored — `--value-dist-mode`,
+`--value-from-dist`, `--win-prob-coef`, `--value-tail-weight`, both `--win-prob-pbrs-*`, and the
+new `--win-prob-pbrs-frozen` (declared in the win-prob critic's shape — a path, no coefficient —
+but HELD for a later frozen-φ ablation). `python -m main.checkargs` reports every one of them
+offline. **`--critic` is STRUCTURAL and resume-immutable** (`MODEL_CONFIG_VERSION` 109); it carries
+NO `ARCH_SIGNATURE` bump, because with the default unchanged nothing about the forward or the
+`state_dict` moves — the bump belongs to the default flip. Design of record:
+[`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md).
+
+**`--gamma` is now a flag** (it was hardcoded at `0.9999`). Its `shaped` default is
+`reward_weights.PBRS_GAMMA` itself, so the PBRS invariance premise cannot break on a second copy of
+the number, and it is **INERT ON A RESUME** like `--lr` — SB3 restores the checkpoint's own γ, and
+the resume path says so rather than letting the argv silently disagree with GAE.
+
 ### In-process bridge transport (`--use-bridge {off,node,rust}`, **default `rust`**)
 
 `--use-bridge` swaps **both training and eval** between a websocket Showdown server and an
@@ -1640,6 +1683,8 @@ src/
                      #   extractor_api (the last_* stash reads) -> extractor_forward
                      #   (forward_internal) -> features_extractor (the class + forward), plus
                      #   extractor_stashes.py and projection.py
+                     #   critic_mode.py — WHICH READOUT IS THE CRITIC (`--critic`): the
+                     #   two-value legal set, torch-FREE so main.checkargs can read it
                      #   capacity_probes.py — the capacity battery's ENGINE (pure-NumPy rank /
                      #   trainability / decodability estimators; CLI is main/capacity.py)
                      #   model_version/ — the version gate as a package (constants/migrations/
@@ -1680,6 +1725,9 @@ src/
                      #   (metadata's cli_args records distill_{anchor_monitor,stop}_source, so the
                      #   absence is visible). All three persist through the checkpoint sidecar
                      #   across restarts
+                     #   reward_composition.py — the stateless COMPOSITION ANNOUNCER split
+                     #   out of reward_manager (the census + its one launch line + the
+                     #   config digest), re-exported so every historical import resolves
                      #   scaffolding.py (the SCAFFOLDING GAUGE's pure numpy math — rank gauge,
                      #   calibrated-affine gauge, the db9bb5c constancy row, the cluster
                      #   bootstrap, and reliability_table = Brier / Brier-SKILL / ECE / the Murphy

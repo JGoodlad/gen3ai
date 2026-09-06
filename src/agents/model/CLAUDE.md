@@ -891,6 +891,45 @@ the entry in `CHANGELOG.md` and state the new truth in `ARCHITECTURE.md` — nev
 
 A startup smoke test (`_run_roundtrip_test` in `train_rl_agent.py`) saves to a temp dir and reloads before every `model.learn()` call — catches serialization issues immediately.
 
+## The CRITIC MODE (`critic_mode.py`, `--critic {shaped,winprob}`, v109)
+
+`gen3_winprob_critic_mode_v1`. `Gen3DualHeadMaskablePolicy._critic_value` chooses between two
+readouts, and `agents/model/critic_mode.py` is the ONE declaration of the legal set. That module is
+deliberately **torch-free and import-light**: `main.checkargs` promises not to import torch and
+needs the legal set to validate an argv offline.
+
+| `--critic` | `_critic_value` returns | `value_net` | PopArt |
+|---|---|---|---|
+| **`shaped`** (default) | `_denorm(value_net(latent_vf))`, or `_denorm(head.mean(logits))` under `value_from_dist` | trained | allowed |
+| `winprob` | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]`, no `_denorm` | in NO loss graph | **refused at the constructor** |
+
+**Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and
+a `getattr(obj, "critic", "shaped")` read answers correctly through it.
+
+**The `winprob` route has NO FALLBACK, for `value_from_dist`'s exact reason** (the v89
+orphaned-route class): `value_net` is in no loss graph under this critic, so quietly returning it
+would be a critic the training loop believes in and nothing updates. A missing head, an un-stashed
+`last_win_prob_logits`, or a batch-size disagreement with `latent_vf` all RAISE.
+
+🚨 **The version gate matters more here than for a typical structural flag, and the reason is
+worth internalising: BOTH routes return a `[B,1]` float tensor.** A flipped `critic` produces no
+shape error anywhere, no load failure, and no metric that changes name — the run simply predicts a
+different quantity for the rest of its life. So the string compare in `check_compatible` is the
+ONLY thing standing between a resume and that, which is the same argument `win_prob_mode` and
+`q_winprob_mode` make and the reason all three are gated identically.
+
+**NO `ARCH_SIGNATURE` bump at v109, and that is the safety rule rather than a convenience.**
+`shaped` is the DEFAULT, so on every run that does not type the flag no module is added or removed,
+no `state_dict` key moves, the constructor's init RNG stream is untouched and the forward is
+byte-identical. The signature bump belongs to the DEFAULT FLIP — where it is *forced*, because a
+critic trained to predict a shaped return cannot be warm-started into predicting a probability.
+
+`critic` is threaded as a POLICY kwarg (the `use_popart` / `value_from_dist` class), which is why
+it is absent from `agents/model/flag_registry.py`: that registry's declared scope is EXTRACTOR
+architecture toggles, and this one reaches no extractor — the heads it selects between were already
+built by their own flags. It rides `snapshot.current_model_version(critic=…)` and
+`arch_toggles_from_model` so a frozen eval / pool / sentinel opponent's load gate sees it.
+
 ## PopArt value-target normalization (`popart.py`, `--use-popart`)
 
 Opt-in (default off). The dual-head extractor shares one trunk; with γ≈0.9999 the returns run to

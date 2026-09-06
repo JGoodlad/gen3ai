@@ -1149,6 +1149,7 @@ def current_model_version(
     opp_belief_cls_k: int = 0,
     opp_belief_slots: bool = False,
     use_popart: bool = False,
+    critic: str = "shaped",
     opp_belief_aux_coef: float = 0.0,
     move_belief_mode: str = "off",
     move_belief_coef: float = 0.0,
@@ -1299,6 +1300,9 @@ def current_model_version(
         "features_extractor_kwargs": ext_kwargs,
         "net_arch": NET_ARCH,
         "use_popart": use_popart,
+        # gen3_winprob_critic_mode_v1: the critic ROUTE, so a frozen eval/pool/sentinel opponent's
+        # load gate sees it — the same threading `use_popart` gets.
+        "critic": critic,
     }
     return ModelVersion.from_layout_and_policy_kwargs(
         ext_kwargs["layout"], policy_kwargs, vf_coef=vf_coef, reward_config=reward_config,
@@ -1427,6 +1431,8 @@ def arch_toggles_from_model(model: Any) -> dict:
         # Threaded for the trainee's recorded config + so a worker rebuilds the SAME forward (no-op either way).
         "belief_grad_mode": str(getattr(fe, "belief_grad_mode", "shaping")),
         "use_popart": getattr(model.policy, "popart", None) is not None,
+        # gen3_winprob_critic_mode_v1: a policy attribute, like `use_popart` above.
+        "critic": str(getattr(model.policy, "_critic_mode", "shaped")),
     }
 
 

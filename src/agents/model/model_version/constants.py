@@ -174,7 +174,16 @@ from typing import Any, Dict
 #   NO ARCH_SIGNATURE bump, and that is the safety rule rather than a convenience: the flag built no
 #   parameters, so every state_dict key is exactly where it was and no weight becomes unplaceable.
 #   The same fact is why True is REFUSED instead of popped — see the migration.
-MODEL_CONFIG_VERSION = 108
+# v109: gen3_winprob_critic_mode_v1 (designs/ai_v12/design_winprob_only_critic.md) — `critic`,
+#   a STRUCTURAL string in the `win_prob_mode` mould, plus the two resume-immutable reward fields
+#   the 'winprob' value it introduces implies (`terminal_indicator`, `no_progress_tax_armed`).
+#   'shaped' is the DEFAULT and is today's critic exactly, so a flagless run is byte-identical and
+#   there is NO ARCH_SIGNATURE bump: no module is added or removed, no state_dict key moves, and
+#   the forward is unchanged. The signature bump belongs to the DEFAULT FLIP, which is a separate
+#   commit — there it is forced, because a critic trained to predict a shaped return cannot be
+#   warm-started into predicting a probability. A pre-v109 config defaults all three to today's
+#   values; not a guess, since none of the three existed.
+MODEL_CONFIG_VERSION = 109
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -224,6 +233,10 @@ _REWARD_IMMUTABLE_FIELDS: Dict[str, Any] = {
     "victory_value": 30.0,
     "progress_decision_tense": False,
     "progress_switch_freeze": False,
+    # gen3_winprob_critic_mode_v1 — both defaults are today's behaviour, so a pre-v109 config
+    # migrates to them and a flagless resume of any existing run is unchanged.
+    "terminal_indicator": False,
+    "no_progress_tax_armed": False,
 }
 
 # field -> the CLI flag that sets it. Bools use the BoolFlag `--no-` negation (the documented
@@ -246,6 +259,8 @@ _REWARD_FIELD_FLAGS: Dict[str, str] = {
     "victory_value": "--victory-value",
     "progress_decision_tense": "--progress-decision-tense",
     "progress_switch_freeze": "--progress-switch-freeze",
+    "terminal_indicator": "--terminal-indicator",
+    "no_progress_tax_armed": "--arm-no-progress-tax",
 }
 
 

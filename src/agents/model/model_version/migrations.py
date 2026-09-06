@@ -421,4 +421,15 @@ def _migrate_config(data: dict) -> dict:
     # a v107 config only its new version number. Same shape as v88's and v96's stamp-only branches.
     if version < 108:
         data["config_version"] = 108
+    # v109 (gen3_winprob_critic_mode_v1) — ONE STRUCTURAL string plus TWO resume-immutable reward
+    # fields, all defaulted rather than refused, for v98's exact reason: a pre-v109 checkpoint
+    # could not have been trained under any of them, so these are not guesses but the only
+    # possible past. The refusal direction belongs to check_compatible (critic) and
+    # check_reward_config (the two reward fields), which fire the moment a live run's 'winprob'
+    # meets a migrated 'shaped'.
+    if version < 109:
+        data.setdefault("critic", "shaped")
+        data.setdefault("terminal_indicator", False)
+        data.setdefault("no_progress_tax_armed", False)
+        data["config_version"] = 109
     return data

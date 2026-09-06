@@ -91,7 +91,12 @@ class ModelVersionFields:
     # (check_reward_config), excluded from the weight-shape check: they change what the clock counts
     # (and hence the `turns_since_progress` obs scalar) but no dim and no weight.
     progress_decision_tense: bool = False   # gates read decision t, not t+1
-    progress_switch_freeze: bool = False    # a voluntary switch freezes rather than charges
+    progress_switch_freeze: bool = False   # a voluntary switch freezes rather than charges
+    # v109 resume-IMMUTABLE reward fields (gen3_winprob_critic_mode_v1). Both defaults are today's
+    # behaviour; `check_reward_config` enforces them, `check_compatible` excludes them (a frozen
+    # opponent's forward never reads the reward). See RewardConfig for what each one does.
+    terminal_indicator: bool = False
+    no_progress_tax_armed: bool = False
 
     # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
     # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
@@ -566,3 +571,17 @@ class ModelVersionFields:
     # choices, which is the starvation trap this head exists to avoid.
     q_winprob_coef: float = 0.0
     q_winprob_onpolicy_coef: float = 0.0
+    # ---- gen3_winprob_critic_mode_v1 (config v109) — WHICH READOUT IS THE CRITIC ---------------
+    # v109 STRUCTURAL string (the win_prob_mode pattern): 'shaped' (the default, and every
+    # generation through gen-16) routes `policy._critic_value` to the scalar `value_net` — or to
+    # the distributional head's E[Z] under `value_from_dist` — de-normalized through PopArt into
+    # raw shaped-return units. 'winprob' routes it to `sigmoid(win_head logit)` ∈ [0,1]: a
+    # DIFFERENT SET OF HEADS carries the value, the win-prob BCE becomes the value loss at
+    # `vf_coef`, `value_net` leaves every loss graph, and PopArt is refused. A resume that flipped
+    # it would keep training and simply predict a different quantity with nothing saying so, so a
+    # STRING compare in check_compatible is the gate — exactly `win_prob_mode`'s reason.
+    # NO ARCH_SIGNATURE bump at v109 and that is deliberate: 'shaped' is the DEFAULT here, so the
+    # forward, every state_dict key and every weight shape are byte-identical to v108 on every run
+    # that does not type the flag. The signature bump lands with the DEFAULT FLIP, where it forces
+    # the fresh weights a probability critic cannot be warm-started into.
+    critic: str = "shaped"

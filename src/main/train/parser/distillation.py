@@ -507,6 +507,27 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "never a crash-restart loop. TRAINING-only, recorded for provenance and "
                              "inherited on a flagless resume (a resume that silently reverted to "
                              "live-phi would change the objective mid-run with nothing saying so).")
+    # gen3_winprob_critic_mode_v1, owner amendment 2026-09-06 (design_winprob_only_critic.md
+    # §3.7). The FROZEN-phi rung of the registered SPARSE / SELF-phi / FROZEN-phi ladder, declared
+    # in the SHAPE the win-prob critic wants it: a single path flag, on/off by presence, with NO
+    # coefficient -- under that critic the potential's currency is FIXED (see the refusal message),
+    # so the only justified coefficient is the currency-matched one and it is set internally. It is
+    # REFUSED in both critic modes for now and the code path behind --win-prob-pbrs-source is left
+    # intact, so lifting the refusal is one edit rather than a rebuild.
+    parser.add_argument("--win-prob-pbrs-frozen", "--win_prob_pbrs_frozen",
+                        dest="win_prob_pbrs_frozen", type=str, default=None,
+                        help="THE FROZEN-phi ABLATION, in the win-prob critic's shape: a checkpoint "
+                             ".zip or run dir whose FROZEN win-prob head supplies a PBRS potential. "
+                             "No coefficient: under --critic winprob the terminal is the win "
+                             "INDICATOR (+1 on a win, 0 otherwise) and V(s) = P(win|s), so phi IS "
+                             "already in the value currency and the currency-matched coefficient is "
+                             "exactly 1.0 -- set internally and printed at startup, never a knob. "
+                             "REFUSED in this build under BOTH critics: under 'winprob' it is HELD "
+                             "for a later frozen-phi ablation (exact Ng invariance does hold for a "
+                             "fixed phi -- the critic then learns P(win) - phi_frozen, recoverable "
+                             "at inference by adding phi back -- so it is deferred, not wrong); "
+                             "under 'shaped' use the existing --win-prob-pbrs-coef / "
+                             "--win-prob-pbrs-source pair, whose meaning is unchanged.")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "

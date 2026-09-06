@@ -278,7 +278,8 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     the parent's config could not be read — the paths tried, so the caller can WARN instead of
     passing silently.
     """
-    from main.train.config import desugar_umbrella_flags, inherit_saved_flag
+    from main.train.config import (desugar_umbrella_flags, inherit_saved_flag,
+                                   resolve_critic_mode)
     from main.train.fork_lr import is_same_run_checkpoint
     from main.train_rl_agent import build_parser
 
@@ -302,6 +303,15 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     # damage-family dependency as unsatisfied on commands that launch fine.
     with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
         desugar_umbrella_flags(ns)
+
+    # THE CRITIC MODE, in the same place and for the same reason (gen3_winprob_critic_mode_v1).
+    # `--critic winprob` IMPLIES `--win-prob-mode shaping`, `--gamma 1.0` and `--no-use-popart`; a
+    # checker that skipped them would report a launching command as broken on the very flags the
+    # mode fills in. The four reward flags it does NOT imply (--no-hand-shaping,
+    # --terminal-indicator, --victory-value 1.0, --draw-penalty 0) are REQUIRED, and the checks
+    # below are what report a command missing one -- which is the point of running them here.
+    with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+        resolve_critic_mode(ns, None)
 
     model = resolve_models_path(getattr(ns, "model", None))
     if not model:

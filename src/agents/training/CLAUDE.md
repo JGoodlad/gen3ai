@@ -18,6 +18,7 @@ value quantities in **four different currencies at once** and three of them look
 | **RAW SHAPED RETURN** | `Σγᵏr` in raw-reward units | `train/return_*`, `rollout_buffer.{values,returns}`, `train/explained_variance` |
 | **POPART-NORMALIZED RETURN** | `(raw − μ)/σ`, σ moving over the run | `train/value_loss`, `signal/adv_*`, the value-dist support, every `distill/*_value_mse` |
 | **PROBABILITY** | `[0, 1]`, outcome units, undiscounted | every `win_prob/*`, `cf/*` labels, `eval/win_rate_*` |
+| ⚠️ **PROBABILITY, under `--critic winprob`** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (unnormalized — PopArt is refused) |
 
 ⚠️ **A number is only comparable to another number in the SAME currency**, and the two most
 frequently confused pairs are `train/return_std` (raw) against `popart/sigma` (the estimate OF it,
@@ -25,6 +26,16 @@ also raw — these two SHOULD track), and `train/value_loss` (normalized, ≈O(1
 `train/return_abs_max` (raw, ~30). The conversion in force is `popart/mu` and `popart/sigma`, and
 whether it is CURRENT is `popart/norm_return_*` (below). Full background:
 `designs/learning/popart_value_scale_and_currencies.md`.
+
+🚨 **`--critic winprob` COLLAPSES the four currencies into one, which changes what several tags
+MEAN without changing their names** (`gen3_winprob_critic_mode_v1`). The reward is the terminal WIN
+INDICATOR, `V(s) = sigmoid(win_head logit)` and PopArt is refused — so `train/return_mean` reads a
+win RATE, `train/value_loss` is an unnormalized MSE in probability units (a diagnostic; its term is
+dropped from the loss), `train/explained_variance` is EV in the P(win) currency, and the
+POPART-NORMALIZED row of the table above is empty because there is no normalizer. **A `winprob`
+run's `train/*` value tags are not comparable with a `shaped` run's**, and nothing in the tag names
+says so — read the run's `🎯 [CRITIC]` startup line first. The one tag that IS comparable across
+the two is the `win_prob/` family, which was in probability units all along.
 
 **Counts, measured 2026-09-06** — 153 static `logger.record(` sites across `src/agents/training`,
 `src/main/train`, `src/main/eval_worker.py` and `src/main/elo.py`; 185 distinct tags observed
@@ -38,10 +49,10 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 |---|---:|---:|---|---|---|
 | `reward/` | 1 | 46 | **per rollout** | RAW REWARD | `reward_term_callback` ← `reward_term_stats` |
 | `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
-| `win_prob/` | 4 | 42 | per rollout | PROBABILITY | `ppo.py` ← `value_terms`, `calibration` |
+| `win_prob/` | 5 | 42 (+10 under `--critic winprob`) | per rollout | PROBABILITY | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
 | `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | `eval_callback`, `selfplay_callback` |
 | `eval_final/` | 2 | 10 | once, at run end | win rate | `main/train/final_eval.py` |
-| `signal/` | 3 | 10 | per rollout | NORMALIZED (adv) / probability (outcome) | `signal_metrics`, `signal_callback` |
+| `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | `signal_metrics`, `signal_callback` |
 | `popart/` | 5 | 5 | per rollout | raw (μ,σ) + unitless (norm) | `ppo.py` |
 | `grad/` | (dynamic) | 16 | per rollout | unitless shares | `grad_balance` |
 | `rank/` | 6 | 18 | per rollout | unitless | `rank_tripwire`, `rank_metrics` |
@@ -3354,6 +3365,85 @@ was taken deliberately (persisting a diagnostic's optimizer into every checkpoin
 usable reading is **compare recoveries WITHIN a restart window**: at production throughput a 3-hour
 window is ~16M env steps, so a 1M-step reset interval still fires ~16 times inside one. The startup
 banner says so out loud, because a silent ON here is a misreading waiting to happen.
+
+## THE VALUE LOSS has a MODE — `--critic {shaped,winprob}` (`gen3_winprob_critic_mode_v1`)
+
+**Default `shaped`; a flagless run is byte-identical.** Design of record:
+`designs/ai_v12/design_winprob_only_critic.md`. The model-side half (the route, the version gate)
+is `src/agents/model/CLAUDE.md` → *The CRITIC MODE*; this is what `train()` does about it.
+
+| | `shaped` | `winprob` |
+|---|---|---|
+| the value TERM | `vf_coef · _value_loss_from_se(...)`, or the HL-Gauss CE at `vf_coef` under `value_from_dist` | `vf_coef · _win_prob_loss(...)` — the head's **BCE against the terminal outcome** |
+| noise-scale group | `value` | **`value`** |
+| the scalar `value_loss` | the loss | a DIAGNOSTIC only (its term is dropped, `_vf_term = 0.0`), and computed UNCLIPPED |
+| `--win-prob-coef` | weights the auxiliary BCE, tagged `aux` | refused — the BCE is the value loss now |
+| gate | `win_prob_coef != 0` | `win_prob_coef != 0` **or** the critic — the head's own loss cannot be switched off by a coefficient |
+
+**The `"value"` tag is the point of `gen3_value_diagnostics_v1`'s sibling finding, applied one
+critic over.** §1.4 of the design records that under `--value-from-dist` the REAL critic loss was
+folded as `_ntg.add("aux", …)` while `_vf_term` was 0.0 — so `train/noise_scale_value` spent that
+entire era describing a term with weight zero, and the grad-balance probe had to compensate
+separately. The promoted BCE joins `value`, and `grad/value_share`'s term follows the critic
+(`win_prob_term if critic_winprob …`) for the same reason: a `grad/value_share` measuring the
+FROZEN scalar head's pull is the 2026-07-22 catch (`grad/value_dist_share` stuck at ~0.05).
+
+**`win_prob/critic_*` — the P(win)-currency reliability read, once per rollout.** Under `winprob`
+only, from `agents.training.scaffolding.reliability_table` — **imported, never re-implemented**, so
+the live number and `python -m main.scaffolding_gauge --reliability` are the same statistic and a
+run's series is comparable with the committed 2026-09-06 baseline. It reads the rollout BUFFER's
+`values` (which under this critic ARE the P(win) GAE bootstrapped from) against
+`win_target`/`win_mask`, i.e. the DEPLOYED quantity — where the `win_prob/ece` family above reads
+the head's logits per minibatch. Keys: `critic_{brier,skill,ece,mce,reliability,resolution,uncertainty,decomp_residual,base_rate,n}`.
+
+🚨 **`critic_resolution` IS the meter; `critic_reliability` is not.** A base-rate forecaster scores
+a perfect 0 reliability and a useless 0 resolution. The committed baseline measured this head at
+reliability ~0.002 against a resolution of 0.062 out of an available 0.182 — already calibrated in
+the MEAN, starved of SEPARATION — so a promotion that improves ECE and leaves `critic_resolution`
+flat has moved the meter that was never the disease. ⚠️ It is computed on the TRAINING population
+rather than the loss-enriched eval quota, so it needs no selection reweighting and its LEVEL is
+**not** comparable with the offline gate's — only its trend. An unmeasurable rollout publishes
+**`{}`, never zeros**: a calibration of nothing and a perfect calibration must not render the same.
+
+**What `winprob` does to the REWARD, and the one thing it gives up.** The stream becomes the
+TERMINAL **win indicator** alone (`--no-hand-shaping` + `--terminal-indicator` +
+`--victory-value 1.0` + `--draw-penalty 0`, all four REQUIRED and each named by its own
+`combination_checks` refusal), so the undiscounted return is exactly `1{win}` and, at `--gamma 1.0`,
+`V(s) = P(win | s)` with no approximation term. The cost is stated rather than buried: **a critic
+bounded in [0,1] cannot represent "a timeout is worse than a loss."** `--draw-penalty`'s
+`−35 < −30` ordering is unrepresentable there, so the anti-stall pressure is the obs deadline clock
+plus **`--arm-no-progress-tax`** (design gap B4) — which re-arms `no_progress_tax` alone under
+`--no-hand-shaping`, without reviving the other 24 BIAS terms. **Stall rate and mean episode length
+are PRIMARY, kill-condition-bearing endpoints on a `winprob` arm.**
+
+**THE DRAW BRANCH IS EXPLICIT, and `signal/draw_rate` states its frequency** (design §3.2 / gap
+B9). `battle.won` is a TRI-STATE — True / False / **None**, the last being a draw or the 250-turn
+timeout — and `MaskableAgentWrapper.step` used to reach `0.0` for the third case through a boolean
+test, i.e. by accident. It is now a named branch: **a draw is scored as a NOT-WIN by decision**
+(`y = 0`), because that makes "P(win)" literally P(win); 0.5 would make the critic systematically
+wrong exactly where stalling tempts; and masking the episode out would leave its ~250 decisions
+with no learning signal at all. It is SCORED, never dropped — `info["win_draw"]` rides beside
+`win_outcome`, `SignalMetricsCallback` counts it on the terminal scan it already runs (both rollout
+paths), and `signal/draw_rate` + `signal/n_terminals` publish the rate per rollout.
+
+⚠️ **It is `signal/draw_rate`, not the `train/draw_rate` the design proposes**, for two reasons:
+that callback carries a PINNED prefix contract (every row it emits must start with `signal/`), and
+on the merits the draw rate is an OUTCOME statistic whose literal siblings — `signal/outcome_win_rate`,
+`signal/outcome_entropy` — are computed from the same terminal `info` in the same loop.
+
+⚠️ **The label and the objective DISAGREE about draws under the shaped terminal, and that is a real
+property of that composition rather than a defect here.** The label scores a timeout as a not-win
+(`y = 0`, the same as a loss) while the reward pays `--draw-penalty` (−35, i.e. WORSE than the −30
+loss). Under `--terminal-indicator` they agree: a timeout pays 0.0, exactly like a loss.
+
+**`--gamma` is now a flag** (design gap B6; it was hardcoded at `model_build.py`'s
+`InstrumentedMaskablePPO(...)` call). Its `shaped` default is `reward_weights.PBRS_GAMMA` itself
+rather than a retyped `0.9999`, and the `PBRS_GAMMA == reward_config.gamma == model.gamma` assert
+is now **GATED on a hand potential actually being folded** on both build paths — under
+`--no-hand-shaping` every `_fold_*_pbrs` early-returns, so there is nothing for the invariance
+claim to be about and an ungated assert would refuse a coherent run. It is **INERT ON A RESUME**
+like `--lr`: SB3 restores the checkpoint's own γ, the resume path SAYS so, and it re-points
+`reward_config.gamma` at the value actually in force so the two cannot silently disagree.
 
 ## PopArt value-target normalization (`--use-popart`)
 

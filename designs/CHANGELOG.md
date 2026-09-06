@@ -7350,3 +7350,163 @@ The census itself — every group, its cadence, its currency, where it is comput
 currencies this trainer runs at once — is now a table in `src/agents/training/CLAUDE.md` →
 *TensorBoard export census*, with the recount recipe beside the counts, because this corpus moves
 faster than any prose about it.
+
+---
+
+## `gen3_winprob_critic_mode_v1` — THE WIN-PROB CRITIC, as a MODE (config v109, 2026-09-06)
+
+**`--critic {shaped,winprob}`. The DEFAULT IS `shaped` and a flagless run is byte-identical** —
+this commit makes the mode exist, correct and tested; the default flip and the `ARCH_SIGNATURE`
+bump that forces fresh weights land in a later one, after an arm has run. Design of record:
+[`ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md), whose §6 gap list
+this implements in its stated order (A2 census first, then B2/B3, then the mode).
+
+### What the two modes build
+
+| | `shaped` (default) | `winprob` |
+|---|---|---|
+| `policy._critic_value` | `_denorm(value_net(latent_vf))`, or `_denorm(E[Z])` under `--value-from-dist` | `sigmoid(win_head logit)` in **[0,1]**, no `_denorm` at all |
+| the value LOSS | `vf_coef * MSE` (or the HL-Gauss CE under Phase B), in PopArt-normalized units | the win-prob head's **BCE against the terminal outcome**, at `vf_coef` |
+| noise-scale group | `value` | **`value`** — never `aux` |
+| `value_net` | trained | in NO loss graph (its term is dropped, exactly as under Phase B) |
+| reward stream | 1 TERMINAL + 7 PBRS + 1 BIAS; ±30 with a −35 timeout | the TERMINAL **WIN INDICATOR** alone: `+victory_value` on a win, **0.0** on a loss, a tie AND a 250-turn timeout alike |
+| PopArt | on | **refused**, at the launch AND at the policy constructor |
+| `gamma` | 0.9999 (now `--gamma`'s default, read from `PBRS_GAMMA` rather than retyped) | **1.0** |
+| `--win-prob-coef` | weights the auxiliary BCE | **refused** — one critic, one coefficient |
+
+At `--victory-value 1.0` the undiscounted return from any state is exactly `1{win}`, so
+**`V(s) = P(win | s)` with no approximation term** — the identity the whole mode rests on, and the
+reason `--terminal-indicator` and `--victory-value 1.0` are requirements rather than suggestions.
+A `+V/−V` terminal under a `[0,1]` critic would put the return and the critic in different scales
+and give every terminal TD error a systematic, state-dependent offset (a loss reading `−V − V`
+against a truth of `0 − V`).
+
+### The four NEW things, and one deliberate non-thing
+
+* **`--critic`** — STRUCTURAL, recorded, string-compared in `check_compatible`. The gate matters
+  more than usual: BOTH routes return a `[B,1]` float tensor, so a flipped mode produces no shape
+  error anywhere and would simply predict a different quantity for the rest of the run.
+* **`--terminal-indicator`** and **`--arm-no-progress-tax`** — two resume-immutable `RewardConfig`
+  fields, both defaulting to today's behaviour. The second is design gap **B4**: `--no-hand-shaping`
+  zeroes the WHOLE BIAS class, and this re-arms `no_progress_tax` alone without reviving the other
+  24 — the contingency for the anti-stall defence a `[0,1]` critic structurally gives up.
+* **`--gamma`** — γ was a hardcoded `0.9999` at `model_build.py`'s `InstrumentedMaskablePPO(...)`
+  call (design gap **B6**). It is now a flag whose shaped default is `reward_weights.PBRS_GAMMA`
+  itself, so the PBRS invariance premise cannot be broken by a second copy of the number. **INERT
+  ON A RESUME**, like `--lr`: SB3 restores the checkpoint's own γ, and the resume path now says so
+  and re-points `reward_config.gamma` at the value actually in force. The
+  `PBRS_GAMMA == model.gamma` assert is GATED on a potential actually being folded, on both build
+  paths — with none folded there is nothing for the invariance claim to be about.
+* **`win_prob/critic_*`** — the P(win)-currency reliability read, once per rollout, from
+  `agents.training.scaffolding.reliability_table` (imported, so the live number and
+  `main.scaffolding_gauge --reliability` are the SAME statistic). It sits BESIDE
+  `gen3_value_diagnostics_v1`'s `win_prob/ece` / `mce` / `rel_gap_b*` rather than in a parallel
+  prefix: those read the head's logits per MINIBATCH, this reads the buffer's recorded `values` —
+  the P(win) GAE actually bootstrapped from. **The meter is `critic_resolution`, not
+  `critic_reliability`**: the committed baseline measured this head at reliability ~0.002 against a
+  resolution of 0.062 out of an available 0.182, i.e. already calibrated in the MEAN and starved of
+  SEPARATION, so a promotion that improves ECE and leaves resolution flat has moved the meter that
+  was never the disease.
+* **The non-thing:** `value_dist_head` is NOT deleted. Under `--critic winprob` it is simply not
+  built (`--value-dist-mode` is refused there). The A2 consumer census that must precede any
+  deletion is now §6 of the design doc.
+
+### THE CENSUS FINDING THAT SHAPED THE REFUSALS (design gap A2)
+
+The census enumerated every consumer of the distributional head and asked which would break if the
+head were merely absent. The load-bearing answer: **~15 sites gate on the `value_dist_mode` STRING
+rather than on `value_dist_head is None`** — the PPO CE gate, the grad-balance value term,
+`prober.model.value_dist_support`, `session.core._dist_support`, and the PIT/coverage scan. So a
+mode that skipped the build while leaving the string set would produce **numbers with nothing
+behind them**, silently: the run would train with no distributional loss while every flag and
+`model_config.json` claimed it was on. That is why `--critic winprob` REFUSES a non-`none`
+`value_dist_mode` on the RESOLVED value rather than on a typed one — an inherited `'shaping'` from
+a fork parent is exactly the case that would slip through a `_typed` check.
+
+### IMPLIED vs REQUIRED — an asymmetry of the flag surface, not a design preference
+
+Three flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`,
+`--no-use-popart`) because their argparse default is the `None` sentinel, so "unset" is
+representable and an implication can never overwrite a typed value. Four are REQUIRED, each named
+by its own refusal (`--no-hand-shaping`, `--terminal-indicator`, `--victory-value 1.0`,
+`--draw-penalty 0`), because theirs are concrete (`True` / `False` / `30.0` / `−35.0`) — there,
+"left alone" and "typed the default" are indistinguishable, so implying would silently overwrite a
+choice AND make the refusal meant to catch a conflicting one unreachable. This tree's standing
+preference for a composition-changing combination is the same (`--use-popart` requires an explicit
+`--clip-range-vf none`): a self-documenting config beats a silent override.
+
+**`resolve_critic_mode` runs BEFORE the `_resolve` inheritance sweep**, and the order is
+load-bearing: a fork of a `shaped` parent would otherwise inherit that parent's `use_popart=True` /
+`win_prob_mode='none'` from its recorded config, breaking the mode with a value nobody typed — on
+the very command shape (a fork) it is most likely to be launched as. `main.checkargs` calls the
+same function, so the offline answer and the launch answer cannot drift.
+
+### The `--win-prob-pbrs-*` family — REFUSED, NOT DELETED (owner amendment, 2026-09-06)
+
+The design's §3.7 recommended deleting the pair outright. The owner amended it twice on the day,
+and both halves are recorded because the reasoning is what generalizes:
+
+1. **The SELF-φ path is refused for a REASON.** With `V ≡ φ`, `coef·(γφ(s′) − φ(s))` IS the TD
+   residual GAE already turns into the advantage — route 1 would add the advantage to the reward
+   and then take the advantage of that. Its Ng shield is also at its structurally weakest exactly
+   here (the theorem assumes a FIXED φ; ours is the head being trained).
+2. **The FROZEN-φ path is refused as DEFERRED, and the message says so.** Exact invariance DOES
+   hold for a fixed φ — the critic then learns `P(win) − φ_frozen`, recoverable at inference by
+   adding φ back — so it is held for a later ablation, not judged wrong, and
+   `agents/training/winprob_pbrs.py` is left intact. The ledger's registered SPARSE / SELF-φ /
+   FROZEN-φ ladder stays one flag away.
+3. **It is a BOOLEAN, not a scalar.** `--win-prob-pbrs-frozen <run|zip>` is declared now, in the
+   shape the win-prob critic wants: on/off by presence, no coefficient. **The derivation:** under
+   this critic the terminal is the win indicator and `V = P(win) ∈ [0,1]`, so φ = σ(logit) is
+   ALREADY in the value currency and the currency-matched coefficient is exactly **1.0** — set
+   internally and printed at startup, never a knob. (Under a ±1 terminal with `V = 2p − 1` the same
+   argument gives 2 on φ = p; the code's own currency is the indicator one, hence 1.0.)
+   `--win-prob-pbrs-coef` is refused under `winprob` with *"no coefficient: the potential is
+   currency-matched; the dose ladder belonged to the shaped critic."* Nothing under `--critic
+   shaped` changes: the old pair keeps its meaning until the default flip.
+
+### The versioning, precisely
+
+`MODEL_CONFIG_VERSION` **108 → 109** (`critic`, `terminal_indicator`, `no_progress_tax_armed`; a
+pre-v109 config defaults all three to today's values — not a guess, since none of the three
+existed). **`ARCH_SIGNATURE` UNCHANGED at `gen3_critic_route_wave_v1`**, deliberately: with
+`shaped` the default, no module is added or removed, no `state_dict` key moves and the forward is
+byte-identical. The signature bump belongs to the DEFAULT FLIP, where it is forced — a critic
+trained to predict a shaped return cannot be warm-started into predicting a probability.
+`MIGRATION_FLOOR` is untouched for the same reason: nothing here makes an existing checkpoint
+unloadable.
+
+### Riding along: `reward_composition.py`
+
+`reward_manager.py` sat 11 lines under the file-size gate's 2,000-line hard bound, so the
+stateless, config-duck-typed COMPOSITION ANNOUNCER (`_rc`, `_pbrs_term_active`,
+`_bias_term_active`, `reward_class_composition`, `reward_config_digest`,
+`format_reward_composition` — 117 lines) moved to its own module and is re-exported, exactly as
+`reward_weights.py` was. A natural seam rather than an arbitrary cut: `reward_manager`'s subject is
+the per-decision FOLD, and this module's is the static question *"which terms can this config emit
+at all?"*. The gates stay the folds' own — `_hand_pbrs_on` still delegates to `_pbrs_term_active`
+and `_apply_bias_drops` / `_active_bias` still read `_bias_term_active`, which is what keeps the
+census and the folds from advertising different compositions.
+
+**Two more gaps closed in the same pass, recorded because both are correctness rather than
+features (the design's own "B2 and B3 before any arm" ordering).**
+
+* **B9 — the explicit DRAW branch.** `battle.won` is a TRI-STATE (True / False / **None**, the
+  last being a draw or the 250-turn timeout) and `MaskableAgentWrapper.step` reached `0.0` for the
+  third case through a boolean test — by accident. It is now a named branch: **a draw is scored as
+  a NOT-WIN by decision**, and it is SCORED, never dropped. `info["win_draw"]` publishes the fact,
+  `SignalMetricsCallback` counts it on the terminal scan it already runs (both the sync and the
+  wave-batched `--async-rollout` path), and **`signal/draw_rate` + `signal/n_terminals`** state the
+  frequency per rollout. ⚠️ It is `signal/`, not the `train/draw_rate` §3.2 proposes: that callback
+  has a PINNED prefix contract, and the draw rate's literal siblings (`signal/outcome_win_rate`,
+  `signal/outcome_entropy`) are computed from the same `info` in the same loop.
+  ⚠️ Note what this exposes rather than creates: under the SHAPED terminal the label and the
+  objective disagree about draws — the label says not-win (`y = 0`, same as a loss) while the
+  reward pays `--draw-penalty` (−35, i.e. WORSE than a −30 loss). Under `--terminal-indicator`
+  they agree. That disagreement is a property of the shaped composition, not of this branch.
+* **B2 — the `popart is None` audit.** All three sites the design names (`aux_terms.py`'s
+  `/ popart.sigma`, `cf_terms`' `mc_return` normalize and its de-normalized readback) ALREADY
+  branch, and the fourth (`_value_loss_from_se`) never had a branch to lose — it takes per-sample
+  squared errors already in the caller's chosen space, so PopArt is `ppo.py`'s business. What was
+  missing was a TEST: those paths were the rare case, and under `--critic winprob` (which refuses
+  PopArt) they become the ONLY path, permanently. They are pinned now.

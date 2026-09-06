@@ -1,4 +1,3 @@
-import hashlib
 from dataclasses import dataclass, fields
 from enum import Enum
 from typing import ClassVar, Optional
@@ -192,6 +191,32 @@ class RewardConfig:
     # with Φ_mat still on would make material dwarf the outcome. Moot under `--no-hand-shaping`
     # (Φ_mat is off there), which is the composition the ±1 terminal exists for.
     victory_value: float = 30.0
+    # gen3_winprob_critic_mode_v1 — the TERMINAL as a WIN INDICATOR, for the win-prob critic.
+    # False (the default) is every generation to date: a win pays +victory_value, a decisive loss
+    # and a rare pre-cap tie pay -victory_value, a 250-turn TIMEOUT pays `draw_penalty`.
+    # True pays +victory_value on a WIN and **0.0 on everything else** (loss, tie, timeout alike).
+    #
+    # It is not a taste. Under `--critic winprob` the critic is sigmoid(logit) ∈ [0,1] and the
+    # value target is P(win); GAE mixes the REWARD with that critic, so the reward has to be the
+    # win INDICATOR or the two are in different scales and every terminal TD error carries a
+    # systematic, state-dependent offset (a loss would read `-V` against a truth of `0-V`). With
+    # this on and `victory_value == 1.0` the undiscounted return from any state is exactly
+    # 1{win}, so V(s) == E[return] == P(win|s) with no approximation term — which is the whole
+    # identity the win-prob critic rests on.
+    #
+    # ⚠️ `draw_penalty` and the `draw_penalty <= -victory_value` ORDERING become INAPPLICABLE, not
+    # merely inert: a critic bounded in [0,1] cannot represent "a timeout is worse than a loss" at
+    # all. That anti-stall defence has to come from the obs deadline clock and, if the stall rate
+    # rises, from `no_progress_tax_armed` below. `--draw-penalty` is REFUSED under this mode
+    # rather than silently ignored (main.train.combination_checks).
+    terminal_indicator: bool = False
+    # gen3_winprob_critic_mode_v1 (design gap B4) — re-arm the anti-stall tilt under
+    # `--no-hand-shaping`. The master switch zeroes the WHOLE BIAS class, `no_progress_tax`
+    # included; this is the one exception, and it exists because the clean-world composition and
+    # the win-prob terminal each drop an anti-stall defence. False (the default) is today's
+    # behaviour exactly: with `hand_shaping` on it changes nothing either way, because the term is
+    # already reachable.
+    no_progress_tax_armed: bool = False
 
     # --- single source of truth: build once, flow everywhere (training + eval + version record) ---
     # Adding a reward flag = add the field above + a matching `--field-name` CLI arg. `from_args`
@@ -204,7 +229,11 @@ class RewardConfig:
         pulled from ``args``; ``gamma`` is the fixed PPO discount (0.9999, asserted == model.gamma)."""
         vals = {f.name: getattr(args, f.name)
                 for f in fields(cls) if f.name != "gamma" and hasattr(args, f.name)}
-        vals["gamma"] = 0.9999
+        # gen3_winprob_critic_mode_v1: `--gamma` is now a flag, and PBRS is only policy-invariant
+        # when PBRS_GAMMA == reward_config.gamma == model.gamma (asserted at build time whenever
+        # any hand potential is folded). An UNSET --gamma resolves to the historical 0.9999 in
+        # `main.train.config`, so a flagless run reads exactly as it always did.
+        vals["gamma"] = float(getattr(args, "gamma", None) or PBRS_GAMMA)
         return cls(**vals)
 
     @classmethod
@@ -436,116 +465,17 @@ SWITCH_BIAS_DROP_FAMILY = (
 )
 
 
-def _rc(config, name, default):
-    """Read a reward field off any config-shaped object (RewardConfig / ModelVersion / namespace)."""
-    return getattr(config, name, default)
-
-
-def _pbrs_term_active(config, name: str) -> bool:
-    """Is PBRS term `name` folded under `config`? THE gate — every `_fold_*_pbrs` calls this through
-    ``Gen3RewardManager._hand_pbrs_on``, so the census below and the folds cannot drift apart (they
-    were two hand-maintained copies of the same conditions until 2026-08-29)."""
-    if not bool(_rc(config, "hand_shaping", True)):
-        return False                   # --no-hand-shaping: every hand potential off, TERMINAL alone
-    asp = bool(_rc(config, "all_shaping_pbrs", True))
-    if name == "pbrs_material":        # _fold_material_pbrs — its OWN flag, not asp's (see RewardConfig)
-        return bool(_rc(config, "pbrs_material", True))
-    if name == "pbrs_belief":          # _fold_belief_pbrs — likewise
-        return bool(_rc(config, "pbrs_belief", True))
-    if name == "pbrs_status":          # _fold_status_pbrs
-        return bool(_rc(config, "bias_redesign", False)) or asp
-    if name == "pbrs_progress":        # _fold_progress_pbrs
-        return bool(_rc(config, "stall_pbrs", False))
-    if name in ("pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar"):
-        return asp
-    return True
-
-
-def _bias_term_active(config, name: str) -> bool:
-    """Is BIAS term `name` reachable under `config`? Mirrors `_apply_pbrs_suppression`,
-    `_apply_bias_drops`, `_apply_progress_clock` and the three weight-gated terms."""
-    if not bool(_rc(config, "hand_shaping", True)):
-        return False                   # --no-hand-shaping zeroes the WHOLE BIAS class, tilt included
-    asp = bool(_rc(config, "all_shaping_pbrs", True))
-    stall = bool(_rc(config, "stall_pbrs", False))
-    if name == "no_progress_tax":
-        # Charged only under --bias-redesign OR --all-shaping-pbrs; --stall-pbrs then zeroes it
-        # (Φ_progress carries the anti-stall signal policy-invariantly instead).
-        return (bool(_rc(config, "bias_redesign", False)) or asp) and not stall
-    if asp:
-        return False                   # everything-but-stall → every other BIAS term is zeroed
-    if name == "stall_tax":
-        return not (stall or bool(_rc(config, "drop_redundant_bias", False)))
-    if name == "matchup_penalty":
-        return not bool(_rc(config, "drop_redundant_bias", False))
-    if name in SWITCH_BIAS_DROP_FAMILY:
-        return not bool(_rc(config, "drop_switch_bias", False))
-    if name in ("stay_risk_tax", "escape_risk_bonus"):
-        return float(_rc(config, "switch_bias_weight", 0.0)) > 0.0
-    if name == "self_ko_penalty":
-        return float(_rc(config, "self_ko_hp_penalty", 0.0)) > 0.0
-    return True
-
-
-def reward_class_composition(config) -> dict:
-    """The per-class ACTIVE-term census of `config` — what this run's reward is MADE OF.
-
-    Returns ``{"terminal": n, "pbrs": n, "bias": n, "bias_terms": [names], "pbrs_terms": [names],
-    "terminal_terms": [names]}``. `bias_terms` is the one a reader acts on: the BIAS class is the
-    only one that biases the converged optimum, so naming its members is naming the run's
-    hand-coded incentives. `terminal_terms` is ADDITIVE (`gen3_reward_term_export_v1`) — the
-    counts and the two older lists are unchanged, and the `reward/` live export derives its
-    tracked set from all three so the exported terms cannot disagree with the census.
-    """
-    reg = RewardBreakdown._REGISTRY
-    pbrs = [n for n, c in reg.items() if c is RewardClass.PBRS and _pbrs_term_active(config, n)]
-    bias = [n for n, c in reg.items() if c is RewardClass.BIAS and _bias_term_active(config, n)]
-    terminal = [n for n, c in reg.items() if c is RewardClass.TERMINAL]
-    return {"terminal": len(terminal), "pbrs": len(pbrs), "bias": len(bias),
-            "bias_terms": bias, "pbrs_terms": pbrs, "terminal_terms": terminal}
-
-
-def reward_config_digest(config) -> str:
-    """A stable sha1 over EVERY field of a `RewardConfig` — the identity of a reward function.
-
-    `gen3_cf_twin_heads_v1`. A shaped RETURN is a fact about a board *under a reward composition*,
-    so a Monte-Carlo return label manufactured by an offline producer is only a label for THIS run
-    if the producer used THIS run's reward. There is no other way to tell: the number is a float,
-    and a return computed under a different composition is not a noisier sample of ours — it is a
-    measurement of a different value function, and averaging it in is silent GIGO.
-
-    Stable across processes and Python versions: the fields are sorted by name and rendered with
-    `repr`, so it depends on the VALUES and not on dataclass declaration order or dict iteration.
-    Floats go through `repr` deliberately — two configs that differ in the 15th decimal of a weight
-    ARE different rewards, and rounding here would hide exactly the drift the digest exists to
-    catch. Duck-typed (`fields()` when available, else `vars()`) like everything else that consumes
-    a reward config.
-    """
-    try:
-        items = {f.name: getattr(config, f.name) for f in fields(config)}
-    except TypeError:                                    # not a dataclass — best effort
-        items = dict(vars(config))
-    body = ";".join(f"{k}={items[k]!r}" for k in sorted(items))
-    return hashlib.sha1(body.encode("utf-8")).hexdigest()
-
-
-def format_reward_composition(config) -> str:
-    """One human line: ``[Reward] composition: 1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)``.
-
-    Printed at startup so a launch STATES its reward composition instead of implying it. With no
-    BIAS terms the tail reads ``(none — fully policy-invariant)``; with many it truncates, because
-    the count is the signal and the long additive list is the pathology, not the detail.
-    """
-    comp = reward_class_composition(config)
-    names = comp["bias_terms"]
-    if not names:
-        tail = "none — fully policy-invariant"
-    elif len(names) <= 6:
-        tail = ", ".join(names)
-    else:
-        tail = ", ".join(names[:6]) + f", … +{len(names) - 6} more"
-    return (f"[Reward] composition: {comp['terminal']} TERMINAL + {comp['pbrs']} PBRS "
-            f"+ {comp['bias']} BIAS ({tail})")
+# --- THE COMPOSITION ANNOUNCER -----------------------------------------------------------
+# Extracted to `reward_composition.py` (2026-09-06) — the stateless, config-duck-typed census and
+# its one-line render, which had grown to 117 lines inside a file at the size gate's hard bound.
+# Re-exported HERE so every `from agents.training.reward_manager import reward_class_composition`
+# (and the three underscore names the tests read) still resolves, exactly like `reward_weights`.
+# The import sits BELOW `RewardBreakdown` / `SWITCH_BIAS_DROP_FAMILY` because the extracted module
+# reads them back at call time; see its docstring for why that is not a cycle.
+from agents.training.reward_composition import (   # noqa: E402,F401 - declared re-export hub
+    _rc, _pbrs_term_active, _bias_term_active,
+    reward_class_composition, reward_config_digest, format_reward_composition,
+)
 
 
 # --- The reward's tunable MAGNITUDES ---------------------------------------------------
@@ -1752,9 +1682,17 @@ class Gen3RewardManager:
         # same number it always was; it is a config field so a ±1 terminal is reachable by flag
         # (gen3_clean_world_config_v1). The constant remains the DEFAULT's single source.
         victory = float(self.config.victory_value)
+        indicator = bool(getattr(self.config, "terminal_indicator", False))
         won, lost, finished = self._terminal(live)
         if won:
             bd.win_loss = victory
+        elif finished and indicator:
+            # gen3_winprob_critic_mode_v1: the WIN INDICATOR. Every non-win terminal — decisive
+            # loss, pre-cap tie, 250-turn timeout — pays exactly 0.0, so the undiscounted return
+            # is `victory_value * 1{win}` and (at victory_value 1.0) V(s) == P(win|s) exactly.
+            # `draw_penalty` and the draw/loss ORDERING are inapplicable here by construction,
+            # which is why `--draw-penalty` is REFUSED under this mode rather than ignored.
+            bd.win_loss = 0.0
         elif finished:
             # Non-win terminal. A no-progress STALL ends with the trainee FORFEITING at the turn cap
             # (gen3_env issues ForfeitBattleOrder at turn>=cap → lost=True, turn>=cap) — NOT a tie — so

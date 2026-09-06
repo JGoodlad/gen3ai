@@ -109,6 +109,9 @@ class ModelVersionConstruction(ModelVersionFields):
             victory_value=float(getattr(reward_config, "victory_value", 30.0)),
             progress_decision_tense=bool(getattr(reward_config, "progress_decision_tense", False)),
             progress_switch_freeze=bool(getattr(reward_config, "progress_switch_freeze", False)),
+            terminal_indicator=bool(getattr(reward_config, "terminal_indicator", False)),
+            no_progress_tax_armed=bool(
+                getattr(reward_config, "no_progress_tax_armed", False)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
@@ -274,6 +277,10 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
             ),
             value_from_dist=bool(policy_kwargs.get("value_from_dist", False)),
+            # gen3_winprob_critic_mode_v1: a POLICY kwarg like use_popart / value_from_dist, not
+            # an extractor one — the critic ROUTE lives in Gen3DualHeadMaskablePolicy, and the
+            # heads it selects between were already built by their own flags.
+            critic=str(policy_kwargs.get("critic", "shaped")),
             hp_type_belief_coef=float(hp_type_belief_coef),
             item_belief_coef=float(item_belief_coef),
             td_aux_coef=float(td_aux_coef),

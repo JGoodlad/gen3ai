@@ -497,13 +497,38 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             obs, r, term, trunc, info = super().step(0)
             reward += r
         if term or trunc:
-            # Expose the battle OUTCOME for the win-probability label plumbing (win=1 / loss-or-tie=0).
-            # The trainee's battle is finished here (before the VecEnv auto-resets), so battle1.won is
-            # set. Consumed ONLY when the win-prob head is on (WinProbLabelCallback / the async
-            # collector); harmless otherwise. A tie (won is None) counts as not-a-win → 0.0.
+            # Expose the battle OUTCOME for the win-probability label plumbing (win=1 / not-win=0).
+            # The trainee's battle is finished here (before the VecEnv auto-resets), so battle1.won
+            # is set. Consumed ONLY when the win-prob head is on (WinProbLabelCallback / the async
+            # collector); harmless otherwise.
+            #
+            # 🚨 THE DRAW BRANCH IS EXPLICIT (gen3_winprob_critic_mode_v1, design §3.2 / gap B9).
+            # `battle.won` is a TRI-STATE — True / False / **None**, the last being a draw or the
+            # 250-turn timeout — and until this was written out it fell through a boolean test to
+            # 0.0 by accident. **A draw is scored as a NOT-WIN by DECISION**, and the three reasons
+            # are worth having here rather than in a doc: (1) it makes "P(win)" literally P(win),
+            # which is the identity `--critic winprob` rests on; (2) 0.5 would make the critic
+            # systematically wrong exactly where stalling tempts, which is this project's recorded
+            # stall pathology; (3) masking the episode out would leave its ~250 decisions with NO
+            # learning signal at all, and they are the decisions that most need one.
+            #
+            # ⚠️ It is scored, never DROPPED. `info["win_draw"]` publishes the fact so
+            # `train/draw_rate` can state the frequency rather than leave it inferred — the whole
+            # point of naming the branch is that a reader can see how much of the label stream is
+            # this case. Under `--terminal-indicator` the REWARD agrees (a timeout pays 0.0, the
+            # same as a loss); under the shaped terminal it does NOT (a timeout pays
+            # `--draw-penalty`, i.e. WORSE than a loss), and that disagreement between the label
+            # and the objective is a real property of the shaped composition, not a bug here.
             b = getattr(self.env, "battle1", None)
-            won = 1.0 if (b is not None and b.won is True) else 0.0
+            _outcome = getattr(b, "won", None) if b is not None else None
+            if _outcome is True:
+                won, is_draw = 1.0, False
+            elif _outcome is False:
+                won, is_draw = 0.0, False
+            else:                                 # None — a draw, or the 250-turn timeout
+                won, is_draw = 0.0, True
             info["win_outcome"] = won
+            info["win_draw"] = float(is_draw)
             # +SIGNAL (gen3_signal_rate_metrics_v1): tag the outcome with the opponent CLASS so the
             # `signal/outcome_entropy` meters can be split by kind (target / pool / stable / bots).
             # A pooled outcome entropy averages over a mix whose members mean different things — the

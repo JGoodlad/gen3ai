@@ -388,6 +388,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             "activation_fn": POLICY_ACTIVATION_FN,
             "use_popart": args.use_popart,  # version-checked vs the saved model_config.json
             "value_from_dist": args.value_from_dist,  # Phase B: dist head is the critic (resume-immutable)
+            "critic": args.critic,  # gen3_winprob_critic_mode_v1: WHICH readout is the critic
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
@@ -584,6 +585,24 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 print(f"Training already complete ({model.num_timesteps:,} / {args.steps:,} steps)")
                 sys.exit(TrainExitCode.COMPLETE)
             print(f"Continuing Training (Steps: {remaining_steps:,} remaining of {args.steps:,}, LR: {resume_lr:.2e} ({lr_detail}))")
+            # gen3_winprob_critic_mode_v1: `--gamma` is INERT ON A RESUME, exactly like `--lr` —
+            # SB3 restores the checkpoint's own gamma, so the argv's value never reaches GAE. STATE
+            # it rather than let a resumed run silently discount differently from what its command
+            # says, and RE-POINT the reward config's copy at the value actually in force so the
+            # PBRS invariance premise (PBRS_GAMMA == reward gamma == model gamma) stays a fact.
+            if abs(float(reward_config.gamma) - float(model.gamma)) > 1e-12:
+                print(f"[Resume] gamma: using the checkpoint's {float(model.gamma):g} "
+                      f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
+                      f"the reward config's copy follows it so PBRS stays coherent.")
+                reward_config.gamma = float(model.gamma)
+            from agents.training.reward_manager import PBRS_GAMMA as _PBRS_GAMMA_R
+            from agents.training.reward_manager import reward_class_composition as _composition_r
+            if _composition_r(reward_config)["pbrs"] > 0:
+                assert abs(_PBRS_GAMMA_R - float(model.gamma)) < 1e-12, (
+                    f"PBRS_GAMMA ({_PBRS_GAMMA_R}) must equal the RESUMED model.gamma "
+                    f"({model.gamma}) — PBRS is only policy-invariant when they match. This "
+                    "checkpoint was trained at a different discount; a hand potential cannot be "
+                    "folded under it.")
             _maybe_compile_trainer(model, args)
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
@@ -682,6 +701,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
             "use_popart": args.use_popart,  # builds the PopArtNormalizer in the policy; recorded in model_config.json
             "value_from_dist": args.value_from_dist,  # Phase B: GAE reads E[Z]; recorded in model_config.json
+            # gen3_winprob_critic_mode_v1: 'shaped' (the default) is byte-identical to every
+            # generation to date; 'winprob' routes _critic_value to sigmoid(win_head logit).
+            "critic": args.critic,
         }
         
         # --- Model Initialization ---
@@ -698,7 +720,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             n_steps=args.n_steps,
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
-            gamma=0.9999,
+            gamma=args.gamma,
             gae_lambda=0.80,
             clip_range=args.clip_range,
             clip_range_vf=args.clip_range_vf,
@@ -757,11 +779,19 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both
         # exist. A non-default --gamma would silently break PBRS — make it a fast startup crash.
+        #
+        # gen3_winprob_critic_mode_v1 GATES it on a potential actually being FOLDED. `PBRS_GAMMA` is
+        # a module constant of 0.9999, so a run at `--gamma 1.0` would trip an assert about the
+        # invariance of terms it does not emit — and under `--no-hand-shaping` (which `--critic
+        # winprob` implies) EVERY hand potential early-returns. The invariance claim is about the
+        # terms that exist; with none, there is nothing to be invariant.
         from agents.training.reward_manager import PBRS_GAMMA as _PBRS_GAMMA
-        assert abs(_PBRS_GAMMA - float(model.gamma)) < 1e-12 and abs(reward_config.gamma - float(model.gamma)) < 1e-12, (
-            f"PBRS_GAMMA ({_PBRS_GAMMA}) / reward_config.gamma ({reward_config.gamma}) must equal "
-            f"model.gamma ({model.gamma}) — PBRS is only policy-invariant when they match."
-        )
+        from agents.training.reward_manager import reward_class_composition as _composition
+        if _composition(reward_config)["pbrs"] > 0:
+            assert abs(_PBRS_GAMMA - float(model.gamma)) < 1e-12 and abs(reward_config.gamma - float(model.gamma)) < 1e-12, (
+                f"PBRS_GAMMA ({_PBRS_GAMMA}) / reward_config.gamma ({reward_config.gamma}) must equal "
+                f"model.gamma ({model.gamma}) — PBRS is only policy-invariant when they match."
+            )
         _maybe_compile_trainer(model, args)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)

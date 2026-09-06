@@ -472,6 +472,42 @@ barometer*. This design removes the barometer.
 `--win-prob-pbrs-source` also resolves a model reference through `resolve_model_ref`; deleting the
 flag removes one consumer of that choke point and nothing else.
 
+> **🚨 OWNER AMENDMENT, 2026-09-06 — the recommendation above is SUPERSEDED. Refused, not deleted:
+> "self path to be deleted at the default flip; frozen path kept refused for one generation."**
+> Implemented in `gen3_winprob_critic_mode_v1`; `agents/training/winprob_pbrs.py` and everything
+> behind `--win-prob-pbrs-source` are left INTACT.
+>
+> **(a) The SELF-φ path is refused for the REASON above.** Source unset (or pointing at this run's
+> own head) under `--critic winprob` exits with §3.7's double-counting argument stated verbatim in
+> the message: with `V ≡ φ`, `γφ(s′) − φ(s)` IS the TD residual GAE already turns into the
+> advantage, so route 1 adds the advantage to the reward and then takes the advantage of that.
+>
+> **(b) A FROZEN external source is ALSO refused in this build — but as DEFERRED, and the message
+> says so in those words.** Exact Ng invariance *does* hold for a fixed φ: the critic then learns
+> `P(win) − φ_frozen`, which is recoverable at inference by adding φ back. So it is held for a
+> later FROZEN-φ ablation, not judged wrong, and the ledger's registered SPARSE / SELF-φ / FROZEN-φ
+> ladder (`designs/ai_v12/launch_runbook.md`) stays **one edit** away. A refusal that read "this is
+> wrong" would retire a live research rung by accident.
+>
+> **(c) It is a BOOLEAN, not a scalar** (owner, same day: *"it seems like it would be a boolean, not
+> a scalar"*). The frozen rung is declared NOW as **`--win-prob-pbrs-frozen <run|zip>`** — on/off by
+> presence, **no coefficient** — with the coefficient fixed internally and printed at startup.
+>
+> **THE DERIVATION, from the code's OWN currency.** Under `--critic winprob` the terminal is the
+> WIN INDICATOR (`+victory_value` on a win, `0.0` otherwise) at `--victory-value 1.0`, so the
+> undiscounted return is `1{win}` and `V(s) = P(win|s) ∈ [0,1]`. φ = σ(win-prob logit) is therefore
+> **already in the value currency**, and the currency-matched shaping coefficient is exactly **1.0**
+> — the potential is one unit of V per unit of V. (The alternative currency the owner names gives
+> the same answer scaled: with a ±1 terminal and `V = 2p − 1`, φ = p needs a coefficient of **2**.
+> This tree's terminal is the indicator one, hence 1.0. Writing it as a ±1 terminal instead would
+> also break `successor_potential`'s `φ(terminal) := 0` convention, which is the correct zero for a
+> [0,1] potential and the MIDDLE of a [−1,+1] one.)
+>
+> `--win-prob-pbrs-coef` is refused under `winprob` with the message *"no coefficient: the potential
+> is currency-matched; the dose ladder belonged to the shaped critic."* **Nothing under `--critic
+> shaped` changes** — the old pair keeps its meaning, its dose ladder and its `--win-prob-pbrs-source`
+> spelling until the default flip.
+
 ### 3.8 `value_dist_head` — delete, or re-parameterize over P(win)?
 
 **RECOMMEND: DELETE the head and its whole flag family. Do NOT re-parameterize it over P(win).**
@@ -709,6 +745,43 @@ python -m main.launcher \
   --self-play
 ```
 
+> **⚠️ SUPERSEDED by `gen3_winprob_critic_mode_v1` (2026-09-06). The command above LAUNCHES but is
+> NOT this design's arm** — that was §5.4's own warning ("it would launch TODAY'S critic"), and the
+> fix is one flag. **Use this instead:**
+>
+> ```bash
+> export PYTHONPATH=$PYTHONPATH:src
+> python -m main.launcher \
+>   --run-name ai_v12_01_winprob_critic \
+>   --restart-interval-hours 3 \
+>   --steps 75000000 \
+>   --n-envs 64 --batch-size 16384 --grad-accum-steps 4 --n-epochs 10 \
+>   --n-steps 2048 --lr 0.0003 --ent-coef 0.02 \
+>   --device cuda --log-level periodic \
+>   \
+>   --critic winprob \
+>   --no-hand-shaping --terminal-indicator \
+>   --victory-value 1.0 --draw-penalty 0 \
+>   --vf-coef <RE-TUNED — see §3.6; do NOT inherit 0.5, it multiplies a BCE now> \
+>   --self-play
+> ```
+>
+> Three differences from the block above, each one load-bearing:
+>
+> 1. **`--critic winprob`** is what makes it this arm at all (gap B1).
+> 2. **`--terminal-indicator` and `--draw-penalty 0`** replace `--draw-penalty -1.0`. §3.2 chose
+>    "a draw is a not-win, `y = 0`", and §3.6 chose to keep the reward at ±1 — but those two are
+>    INCONSISTENT with §3.1's `V(s) = σ(z) ∈ [0,1]`: a `+1/−1` return against a `[0,1]` critic
+>    gives every terminal TD error a systematic, state-dependent offset (a loss reads `−1 − V`
+>    against the truth `0 − V`). The indicator terminal (`+victory_value` on a win, `0.0` on a
+>    loss, a tie AND a timeout) is what makes `V(s) = E[return] = P(win|s)` hold exactly. This is a
+>    CORRECTION to §3.6's "keep the reward at ±1", not an addition to it.
+> 3. **`--no-use-popart`, `--win-prob-mode shaping` and `--gamma 1.0` are dropped** — all three are
+>    IMPLIED by `--critic winprob` (their argparse defaults are the `None` sentinel, so "unset" is
+>    representable). Passing them explicitly is harmless and still validates.
+>
+> Validate with `python -m main.checkargs --argv "…"` and then `python -m main.launcher --dry-run`,
+> in that order, exactly as this section already says.
 **Status of this command, measured 2026-09-06.** Everything above **except `--gamma 1.0`
 validates today** — `python -m main.checkargs --argv "…"` accepts all 18 remaining flags and prints
 `✓ this command still launches`. Two things stand between that and the design:
@@ -767,23 +840,76 @@ for it would not. That must be reported as loudly as a pass.
 | id | gap | file | cost |
 |---|---|---|---|
 | 🟢 **M0** | reliability curve + Brier + skill + ECE + Murphy split, stratified by opponent class, with the selection reweighting | `agents/training/scaffolding.py`, `main/scaffolding_gauge.py` | **DONE** |
-| 🔵 **B1** | route `_critic_value` to `win_head`; promote the BCE to the value loss at `vf_coef`; delete the `_ce_w` conditional | `agents/model/policy.py`, `instrumented_ppo/ppo.py`, `value_terms.py` | hours |
-| 🔵 **B2** | audit every `popart is None` path — `td_aux`'s `/ popart.sigma` (`aux_terms.py:92`), `cf_shadow`'s normalize (`cf_terms.py:448`), `_value_loss_from_se` — and add the tests that exercise them | `instrumented_ppo/aux_terms.py`, `cf_terms.py` | hours |
-| 🔵 **B3** | tag the critic loss `"value"` again in the per-term noise-scale groups (§1.4 fact 4) | `instrumented_ppo/ppo.py:569-570, 882`, `noise_scale_terms.py` | hours |
-| 🔵 **B4** | make `no_progress_tax` independently re-armable under `--no-hand-shaping` | `agents/training/reward_manager.py`, `main/train/parser/clean_world.py` | hours |
-| 🔵 **B5** | `combination_checks` entries: `--draw-penalty` refused under the win-prob objective; `--win-prob-mode none` refused when it is the critic | `main/train/combination_checks.py` | hours |
-| 🔵 **B6** | `--gamma` as a flag (γ is hardcoded at `model_build.py:691`); verify SB3 truncation at γ = 1 on the 250-turn cap; ensure the `PBRS_GAMMA == model.gamma` assert cannot fire with PBRS off | `main/train/model_build.py`, `main/train/parser/hyperparameters.py` | hours |
+| 🟢 **B1** | **DONE 2026-09-06** as a MODE (`--critic winprob`), default `shaped`, so the OFF path is byte-identical. `_ce_w` survives, because the distributional critic survives under `shaped` | `agents/model/{critic_mode,policy}.py`, `instrumented_ppo/ppo.py` | **DONE** |
+| 🟢 **B2** | **DONE 2026-09-06 — the audit found all three ALREADY branch**, and `_value_loss_from_se` never had a branch to lose (it takes SE in the caller's chosen space). The missing half was the TESTS, which now pin each one: under `--critic winprob` these stop being the rare path | `agents/model/critic_mode_test.py` | **DONE** |
+| 🟢 **B3** | **DONE 2026-09-06** — under `winprob` the promoted BCE folds as `_ntg.add("value", …)` and the grad-balance value term follows the critic. `shaped` keeps its `aux` tag | `instrumented_ppo/ppo.py` | **DONE** |
+| 🟢 **B4** | **DONE 2026-09-06** — `--arm-no-progress-tax`, a resume-immutable `RewardConfig` bool defaulting OFF. Re-arms the tilt ALONE; the other 24 BIAS terms stay zeroed | `agents/training/reward_manager.py`, `parser/clean_world.py` | **DONE** |
+| 🟢 **B5** | **DONE 2026-09-06 — THIRTEEN entries, not two**: the two named plus PopArt, `--value-dist-mode`, `--value-from-dist`, `--win-prob-coef`, `--value-tail-weight`, both `--win-prob-pbrs-*`, `--win-prob-pbrs-frozen`, and the three REQUIRED reward flags | `main/train/combination_checks.py` | **DONE** |
+| 🟡 **B6** | **MOSTLY DONE 2026-09-06** — `--gamma` is a flag (shaped default read from `PBRS_GAMMA` itself), INERT on a resume and stated as such, and the PBRS assert is GATED on a potential actually being folded on BOTH build paths. ⚠️ **NOT done: SB3's truncation handling at γ = 1 on the 250-turn cap is UNVERIFIED** — the design asked for it and this pass did not do it | `main/train/{model_build,config}.py`, `parser/hyperparameters.py` | **verify truncation** |
 | 🔵 **B7** | re-scale the prober `calibration` verb's `overvalue_tau` (5.0 = reward units) for probability units | `main/prober/session/aggregate.py` | hours |
 | 🟡 **B8** | the version bump itself: 108, new `ARCH_SIGNATURE`, `MIGRATION_FLOOR` 108, the migration branches and refusal messages for every deleted resume-immutable field | `agents/model/model_version/` | a day |
-| 🟡 **B9** | an explicit draw branch in the label + a `train/draw_rate` scalar (§3.2) | `agents/training/wrappers.py:485-493`, `win_prob_callback.py` | a day |
-| 🔴 **B10** | **`--defensive-leaf` / `--score` collapse, with `batch_scores`'s fall-back becoming a refusal** — cheap in code, but it invalidates the `LEAVES` two-arm design that probe G's control depends on, so it needs the ledger entry that retires the control | `main/search_dividend/search.py`, `defensive.py`, `__main__.py` | decision |
+| 🟢 **B9** | **DONE 2026-09-06** — the three-way branch is named in `wrappers.py`, `info["win_draw"]` publishes it, and the rate lands as **`signal/draw_rate`** (not `train/`: `SignalMetricsCallback` has a pinned prefix contract, and the rate's siblings are `signal/outcome_*`) | `agents/training/{wrappers,signal_callback}.py` | **DONE** |
+| 🟡 **B10** | **HALF DONE 2026-09-06** — `batch_scores` now REFUSES `--score auto|value` on a policy whose `_critic_mode` is `winprob` (read off the LIVE policy, never a config file). `LEAVES`, `check_leaf` and `--score`'s legal set are UNTOUCHED, so probe G's control survives and nothing is owed a retirement entry yet; the collapse is still the decision the design describes | `main/search_dividend/search.py` | **decision (the collapse)** |
+
+### A2 — THE CONSUMER CENSUS (DONE, 2026-09-06). Read this before deleting anything.
+
+`gen3_winprob_critic_mode_v1` implemented the mode without touching the head, and this is the
+census that licensed that choice. Scope: every consumer of `value_dist_head` / `ValueDistHead` /
+`value_from_dist` / `last_value_dist_logits` / the `value_dist` trace column / the five
+`--value-dist-*` flags / `check_value_dist` / `_value_dist_loss` / the 51-atom output and everything
+built on it (PIT, `coverage80`, `knew_by_turn`, `blind_loss`, the bottom-atom stall signature).
+Method: tree-wide grep, each hit READ for what it does.
+
+**THE STRUCTURAL FACT the whole census turns on:** the head is built iff
+`value_dist_mode != "none"` (`extractor_build.py:807-814`), and **almost every consumer gates on
+the MODE STRING, not on `value_dist_head is None`**. So "skip the build, leave the mode set" is a
+state ~15 sites cannot represent — which is why `--critic winprob` REFUSES a non-`none`
+`value_dist_mode` on the RESOLVED value rather than merely not building the head.
+
+| # | area | representative sites (file:line) |
+|---|---|---|
+| 1 | model / policy | `aux_value_heads.py:50-103` (the class), `:88` (the non-persistent `atoms` buffer), `:96-100` (`mean(logits)` = the E[Z] the Phase-B critic returns) · `extractor_build.py:31,76-77,796-814` · `extractor_forward.py:734-736` (the ONE writer, already `None`-guarded) · `extractor_stashes.py:54` · `extractor_api.py:210` · `features_extractor.py:120` · **`policy.py:184-201`** — `_critic_value`'s load-bearing read, RAISING on a missing head/stash · `policy.py:132,141,155-166,245,272,288` · `critic_route_audit.py:28-30,61-62` |
+| 2 | PPO loss | `value_terms.py:89-141` (`_value_dist_loss`, the HL-Gauss target + PIT) · `hparams.py:139-143` · `ppo.py:237,263,264-266` (**the gate reads the MODE**), `:557-560` (Phase B drops the scalar term), `:867-884` (the CE fold, tagged **`aux`**, weighted `vf_coef` under Phase B), `:1601-1607` |
+| 3 | noise-scale / grad-balance | `ppo.py:882` (group `aux`) · `noise_scale_terms.py:21,109,118,162` (`add` is a passthrough) · `ppo.py:1204,1214,1310-1312` (**grad-balance's value term SWAPS to the CE under Phase B**) · `grad_balance.py:96-102` |
+| 4 | prober | `engine/analyze.py:20-23,27-66,249-255,309` · `engine/views.py:534` · `model.py:583-603` (`value_dist_at`), `:767-779` (`value_dist_support`), `:807,845-846` · `session/core.py:152-172` (`_dist_support`, model-FREE off `model_config.json`) · `session/reading.py:145-147` · `session/scans.py:38-42,55-77,85-105,119,127,245-252,325-329,402,473-474,498` · `awareness.py:1-35,47-70,230-241,245-266` · `engine/intent.py:152-153` · `lookahead.py:195,209` · `better_line.py:81,402-403` · `web/app.py:420,810-813,1100-1129` · `web/templates/partials/analyze_result.html:282,325-334` · `web/fixture_run.py:120-126,160,201-203` · `main/endofrun.py:43-47,184-215` |
+| 5 | TensorBoard | `ppo.py:1601-1607` (`value_dist/{ce,entropy,std,pit_mean,mean_abs_err}`) · `launcher/format.py:101-103,161-165,316-318` · `parser/distillation.py:456-457` |
+| 6 | eval worker / traces | PRODUCER `inference/player.py:465-467,625-635` (already returns `None` with no head) · WRITER `battle_recorder.py:179-181,202-205,223-224` (**omits the npz key entirely** when absent) · readers `analyze.py:34`, `awareness.py:247,261`, `session/reading.py:145`, `session/scans.py:60` — all KeyError/None-guarded. `summary.json` carries no `value_dist` column |
+| 7 | counterfactual family | **NO direct consumer.** `cf_terms.py:420,427,472-483` and `prober/model.py:760-764` reach it only INDIRECTLY, through `policy._critic_value`. `cf_audit`, `cf_q_labels`, `cf_label_buffer`, `q_winprob_terms`, `ShadowValueHead`, `CfEvidentialHead`, the twins: zero references |
+| 8 | stashes / readouts | `extractor_stashes.py:54` · `extractor_api.py:210` · `extractor_forward.py:734-736` · `tier_contract.py:122` (declared **tier 3 DELIVER**) · `arch_tables.py:48,75-78,95` · `delivery_graph.py:93,338-341,774-781,810-813` + `delivery_graph_snapshot.json` |
+| 9 | version machinery | `fields.py:256-266,370-373,377,520-526` · `compat.py:317-319,509-512,567-570` (**FATAL on `value_dist_mode` / `value_dist_bins` mismatch**) · `resume_checks.py:127-152,170-190` · `migrations.py:105-106,132-133` · `construct.py:30,165-169,255-259,276,313` · `flag_registry.py:181-191` · `snapshot.py:796-800,842-849,1171-1175,1266-1269,1308,1359-1360` · `config.py:95-118,456-460,591,631-632` · `combination_checks.py:119,288-291,408-421` · `model_build.py:144,390,400,443-447,455-457,684,725` · `lifecycle.py:91` · `run_io.py:120` · `designs/production_config.json:88-95` |
+| 10 | tests | 30 files / 185 references. Heaviest: `dist_critic_test.py` (24), `prober/awareness_test.py` (21), `value_dist_head_test.py` (21), `prober/web/app_test.py` (15), `prober/engine_test.py` (13), `instrumented_ppo_test.py` (11) |
+| 11 | docs / generated | `ARCHITECTURE.md:226,244,694-697,972-988` · `flag_registry.md:89-92,137-138,157` · `architecture_graph.dot:19,30,131,147,164` + the viewer · `delivery_graph_snapshot.json` · `CHANGELOG.md` (37 refs) · `designs/model.md:62` · four `CLAUDE.md` leaves |
+
+**If the head is simply NOT BUILT** (`value_dist_head is None`, other flags at their defaults):
+
+* **(a) guards cleanly, LOSES a feature** — the writer, both prober support functions, `lookahead`,
+  `better_line`, the web chart, the delivery graph, `arch_tables` (reports ABSENT / the coefficient
+  INERT), and `session/scans.py:38-42`, which returns a structured `{"error": …}`. What goes dark:
+  `knew_by_turn` / `lead_time` / `blind_loss` / `mean_tail_divergence` (the bottom-atom stall
+  signature) / `coverage80` / `pit_mean` / the whole `value_dist/*` TB family / `endofrun`'s
+  awareness verdicts (which read `"UNAVAILABLE"`, correctly).
+* **(b) RAISES, deliberately** — `policy._critic_value:189-196` under `value_from_dist`, and
+  therefore every rollout, every PPO epoch, `td_aux`, `cf_terms` and the prober's `live_v` at once.
+  Plus `check_compatible` / `check_value_from_dist` / `check_value_dist` on a resume, and
+  `extractor_build.py:798-806` if the mode is set with `bins == 0`.
+* **(c) SILENTLY WRONG — the set that shaped this mode's refusals.** `ppo.py:264-266` + `:871`
+  gate on the MODE and then skip the CE with an inner `is not None`, so a run trains with **no
+  distributional loss** while every flag says it is on. `ppo.py:1310-1312` then reports the FROZEN
+  scalar head's pull as `grad/value_share` (the 2026-07-22 catch). `prober/model.py:593,774` and
+  `session/core.py:165` build a support for a head that does not exist. `awareness.py:26-33`'s
+  `fit_denorm` is exact only under `value_from_dist` and would return NUMBERS, not errors, in a
+  changed currency. And `session/scans.py:60-62` would keep computing PIT/`coverage80` against
+  gen-10 baselines across two different currencies.
+
+**Consequence for a future deletion (A4):** the head cannot be removed by not building it. The
+delete must take the MODE with it, and §(c) is the checklist.
 
 ### Delete
 
 | id | gap | file | cost |
 |---|---|---|---|
 | 🔵 **A1** | `--win-prob-pbrs-*` + `agents/training/winprob_pbrs.py` + its tests + its `combination_checks` entry | `agents/training/winprob_pbrs.py` | hours |
-| 🟡 **A2** | **ENUMERATE every consumer of `last_value_dist_logits` / the `value_dist` trace column BEFORE deleting the head** (the awareness stack, PIT, the prober, the web views) and state a replacement for each | tree-wide; start at `agents/model/extractor_api.py:210` | a day — **do this first of the deletions** |
+| 🟢 **A2** | **DONE 2026-09-06** — the consumer census, its "what breaks if the head is absent" split, and the finding that ~15 sites gate on the MODE STRING rather than on the head. It is the section immediately above this table (*A2 — THE CONSUMER CENSUS*), not a separate artifact | tree-wide; started at `agents/model/extractor_api.py:210` | **DONE** |
 | 🟡 **A3** | retire the scaffolding gauge's two DIVERGENCE gauges once there is one readout; keep the reliability half | `main/scaffolding_gauge.py`, `agents/training/scaffolding.py` | a day |
 | 🟡 **A4** | the `value_dist_*` / `value_from_dist` / `--value-tail-weight` / `--win-prob-coef` purge, with registry rows, generated tables, `production_config.json` and `ARCHITECTURE.md` in the same pass | `agents/model/flag_registry.py` + the five hand-synced surfaces | a day |
 

@@ -8,12 +8,46 @@ keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
+from agents.model.critic_mode import CRITIC_MODES
 from main.train.constants import CLIP_RANGE_DEFAULT
 from main.train.parser.base import BoolFlag, optional_float
 
 
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
+    # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH
+    #     readout is the value function. Declared FIRST in this family because it governs the
+    #     reward composition, the PopArt switch and the win-prob head below it. ---
+    parser.add_argument("--critic", dest="critic", choices=CRITIC_MODES, default=None,
+                        help="WHICH readout is the critic. 'shaped' (the DEFAULT, and every "
+                             "generation through gen-16) = the scalar value_net (or the "
+                             "distributional E[Z] under --value-from-dist), de-normalized through "
+                             "PopArt into raw SHAPED-RETURN units, with the win-prob head an "
+                             "auxiliary BCE at --win-prob-coef. 'winprob' = THE WIN-PROB HEAD IS "
+                             "THE CRITIC: V(s) = sigmoid(logit) in [0,1], the value loss IS that "
+                             "head's BCE against the terminal outcome (weighted by --vf-coef, NOT "
+                             "--win-prob-coef -- one critic, one coefficient), the reward stream is "
+                             "the TERMINAL WIN INDICATOR alone (--no-hand-shaping implied, "
+                             "--victory-value 1.0 required, so V(s) == E[return] exactly), PopArt "
+                             "is OFF (a bounded stationary Bernoulli payoff has no scale to track) "
+                             "and --gamma defaults to 1.0 (a win on turn 200 is worth a win on turn "
+                             "20), which makes V(s) EXACTLY P(win|s) with no approximation term. "
+                             "It requires --win-prob-mode read_only|shaping (unset defaults to "
+                             "'shaping' under this critic) and REFUSES the flags whose job it "
+                             "subsumes -- see the refusals `python -m main.checkargs` prints. "
+                             "STRUCTURAL + resume-IMMUTABLE (a different set of heads carries the "
+                             "value, so a mid-run flip is a different training problem).")
+    parser.add_argument("--arm-no-progress-tax", "--arm_no_progress_tax",
+                        dest="no_progress_tax_armed", action=BoolFlag, default=False,
+                        help="Keep the anti-stall `no_progress_tax` BIAS term ARMED even under "
+                             "--no-hand-shaping (default OFF = today's behaviour exactly: the "
+                             "master switch zeroes the whole BIAS class, tilt included). It exists "
+                             "because the clean-world composition and the win-prob critic each drop "
+                             "an anti-stall defence -- --no-hand-shaping drops the tilt, and a "
+                             "critic bounded in [0,1] CANNOT express 'a timeout is worse than a "
+                             "loss' the way --draw-penalty -35 does -- so this is the CONTINGENCY "
+                             "for a run whose stall rate rises, re-armable without reviving the "
+                             "other 24 BIAS terms. Resume-immutable, value-checked.")
     # --- gen3_clean_world_config_v1 (ai_v12 build wave A): the CLEAN-WORLD reward switches. Every
     #     default below is today's behaviour, so a flagless launch is byte-identical. ---
     parser.add_argument("--hand-shaping", "--hand_shaping", dest="hand_shaping",
@@ -53,6 +87,20 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         "MAT_ALIVE_WEIGHT are calibrated against the 30 scale, so a +-1 terminal "
                         "wants Phi_mat off (--no-hand-shaping does that). Resume-immutable, "
                         "value-checked.")
+    parser.add_argument("--terminal-indicator", "--terminal_indicator",
+                        dest="terminal_indicator", action=BoolFlag, default=False,
+                        help="TERMINAL SHAPE: OFF (default, and every generation to date) pays "
+                             "+V on a win, -V on a decisive loss and a pre-cap tie, and "
+                             "--draw-penalty on a 250-turn TIMEOUT. ON pays +V on a WIN and 0.0 on "
+                             "EVERYTHING else, so the undiscounted return is V*1{win} and at "
+                             "--victory-value 1.0 the return IS the win indicator. That is what "
+                             "makes V(s) == P(win|s) exactly under --critic winprob, which IMPLIES "
+                             "this flag; you rarely set it by hand. ⚠️ It makes --draw-penalty and "
+                             "the draw<=loss ORDERING inapplicable, not merely inert -- a [0,1] "
+                             "critic cannot represent 'a timeout is worse than a loss' -- so the "
+                             "anti-stall pressure must come from the obs deadline clock and, if "
+                             "the stall rate rises, --arm-no-progress-tax. Resume-immutable, "
+                             "value-checked.")
     parser.add_argument("--progress-decision-tense", "--progress_decision_tense",
                         dest="progress_decision_tense", action=BoolFlag, default=False,
                         help="No-progress clock: read BOTH window gates (the forced-switch sit-out "

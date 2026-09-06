@@ -25,6 +25,7 @@ from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
 from agents.model.arch_constants import D_MODEL
+from agents.model.critic_mode import CRITIC_DEFAULT, CRITIC_MODES, is_winprob
 from agents.model.popart import PopArtNormalizer
 
 
@@ -130,9 +131,26 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
                                               **self.optimizer_kwargs)
 
     def __init__(self, *args: Any, use_popart: bool = False, value_from_dist: bool = False,
-                 **kwargs: Any) -> None:
+                 critic: str = CRITIC_DEFAULT, **kwargs: Any) -> None:
         # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
         super().__init__(*args, **kwargs)
+        # gen3_winprob_critic_mode_v1: WHICH readout is the value function. 'shaped' (the default)
+        # is every generation through gen-16 — `value_net` / E[Z] in raw shaped-return units.
+        # 'winprob' routes `_critic_value` to sigmoid(win_head logit) ∈ [0,1]; see critic_mode.py.
+        if str(critic) not in CRITIC_MODES:
+            raise ValueError(f"unknown critic {critic!r} (want one of {CRITIC_MODES})")
+        self._critic_mode = str(critic)
+        if is_winprob(self._critic_mode) and use_popart:
+            # Not a preference — PopArt's JOB does not exist here (the payoff set is fixed at
+            # {win, not-win}, so mu/sigma cannot drift), and its POP surgery only ever corrected
+            # `value_net`, which this mode does not read. A normalizer on a probability critic
+            # would rescale V out of [0,1] with nothing downstream noticing. The launch path
+            # refuses this combination (`combination_checks`); this is the last line of defence
+            # for a policy constructed directly.
+            raise ValueError(
+                "critic='winprob' is incompatible with use_popart=True: the win-prob critic's "
+                "target is a bounded, stationary Bernoulli outcome, so there is no return scale "
+                "to normalize, and `_denorm` would take V out of [0,1]. Pass --no-use-popart.")
         self.popart = PopArtNormalizer() if use_popart else None
         # gen3_dist_critic_v1 (Phase B): when True the GAE/bootstrap/deployed value is E[Z] from the
         # distributional head instead of the scalar value_net (which freezes as a fallback + monitor).
@@ -180,7 +198,38 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         silently-wrong critic — the exact shape of the v89 bug (a value source the training loop
         believes in but that nothing updates). A missing head or un-stashed logits here means the
         extractor forward and this critic read are mis-wired, and that must crash, not degrade.
-        With the flag OFF the scalar path is the correct critic, unchanged."""
+        With the flag OFF the scalar path is the correct critic, unchanged.
+
+        gen3_winprob_critic_mode_v1: under ``critic='winprob'`` the value IS the win-prob head's
+        probability — ``sigmoid(logit) ∈ [0,1]`` — and there is no PopArt to de-normalize through
+        (refused at construction). The same NO-FALLBACK rule applies for the same reason: under
+        this mode ``value_net`` is in no loss graph, so quietly returning it would be a critic the
+        training loop believes in and nothing updates."""
+        # `getattr` with the default rather than `self._critic_mode`: this method is called on
+        # policy-shaped STUBS (`dist_critic_test`) and could be reached on a policy restored
+        # from a pre-v109 checkpoint whose saved `policy_kwargs` never carried the key. An
+        # absent field means the historical critic — the same read every other consumer does.
+        if is_winprob(getattr(self, "_critic_mode", CRITIC_DEFAULT)):
+            fe = self.features_extractor
+            logits = getattr(fe, "last_win_prob_logits", None)
+            if getattr(fe, "win_head", None) is None or logits is None:
+                raise RuntimeError(
+                    "critic='winprob' but "
+                    + ("the extractor has no win_head (--win-prob-mode is 'none')"
+                       if getattr(fe, "win_head", None) is None
+                       else "last_win_prob_logits was not stashed by the preceding forward")
+                    + " — the scalar value_net is in NO loss graph under this critic, so falling "
+                    "back to it would be a silently-wrong critic (the v89 orphaned-route class). "
+                    "Check that extract_features ran on THIS policy's extractor before the critic "
+                    "read, and that --win-prob-mode is read_only or shaping.")
+            if logits.shape[0] != latent_vf.shape[0]:
+                raise RuntimeError(
+                    f"stale win-prob stash: logits batch {logits.shape[0]} vs latent_vf "
+                    f"{latent_vf.shape[0]} — the extractor forward and this critic read are "
+                    "from different batches.")
+            # [B,1] like `value_net(latent_vf)`, so every caller's `.flatten()` / `.squeeze(-1)`
+            # is unchanged. NO `_denorm`: probability units are the only currency here.
+            return th.sigmoid(logits.reshape(-1, 1))
         if self._value_from_dist:
             fe = self.features_extractor
             head = fe.value_dist_head

@@ -142,6 +142,11 @@ def test_no_cross_flag_parser_error_remains_in_config():
 OFF = ["--unified-moves", "off"]
 TEACHER = "models/parent/final_model.zip:data/teams/sample/t1.txt"
 
+#: The composition `--critic winprob` REQUIRES. Declared once so a row that is about something
+#: ELSE does not also trip the four requirement rules and make its own failure ambiguous.
+_WP = ["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator",
+       "--victory-value", "1.0", "--draw-penalty", "0"]
+
 ARGVS: dict[str, list[str]] = {
     "adaptive_batch_target_positive": ["--adaptive-batch", "total", "--adaptive-batch-target", "0"],
     "adaptive_batch_band_above_one": ["--adaptive-batch", "total", "--adaptive-batch-band", "1.0"],
@@ -199,6 +204,33 @@ ARGVS: dict[str, list[str]] = {
     "cf_twin_heads_need_win_prob_mode": ["--cf-twin-heads", "--win-prob-mode", "none"],
     "cf_shadow_coef_needs_critic": ["--cf-shadow-coef", "0.1", "--no-cf-shadow-critic"],
     "q_winprob_coef_needs_mode": ["--q-winprob-coef", "0.1", "--q-winprob-mode", "none"],
+    # ---- gen3_winprob_critic_mode_v1. `_WP` is the composition `--critic winprob` REQUIRES, so a
+    # row below trips its own rule rather than the four "you did not pass the reward flags" ones.
+    # The four requirement rows themselves each OMIT exactly one member of `_WP`.
+    "winprob_critic_needs_a_head": _WP + ["--win-prob-mode", "none"],
+    "winprob_critic_refuses_popart": _WP + ["--use-popart"],
+    "winprob_critic_refuses_value_dist": _WP + ["--value-dist-mode", "read_only",
+                                                "--value-dist-bins", "51",
+                                                "--value-dist-vmin", "-12",
+                                                "--value-dist-vmax", "12"],
+    "winprob_critic_refuses_value_from_dist": _WP + ["--value-from-dist"],
+    "winprob_critic_refuses_win_prob_coef": _WP + ["--win-prob-coef", "1.0"],
+    "winprob_critic_refuses_value_tail_weight": _WP + ["--value-tail-weight", "0.3"],
+    "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
+    "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
+    "winprob_critic_refuses_draw_penalty": ["--critic", "winprob", "--no-hand-shaping",
+                                            "--terminal-indicator", "--victory-value", "1.0",
+                                            "--draw-penalty", "-1.0"],
+    "winprob_critic_needs_the_indicator_terminal": ["--critic", "winprob", "--no-hand-shaping",
+                                                    "--victory-value", "1.0",
+                                                    "--draw-penalty", "0"],
+    "winprob_critic_needs_unit_victory_value": ["--critic", "winprob", "--no-hand-shaping",
+                                                "--terminal-indicator", "--victory-value", "7.5",
+                                                "--draw-penalty", "0"],
+    "winprob_critic_needs_no_hand_shaping": ["--critic", "winprob", "--terminal-indicator",
+                                             "--victory-value", "1.0", "--draw-penalty", "0"],
+    # HELD under BOTH critics, so the plain shaped argv is the honest row.
+    "win_prob_pbrs_frozen_is_held": ["--win-prob-pbrs-frozen", "models/p.zip"],
     "cf_records_needs_bridge": ["--cf-records", "--use-bridge", "off"],
     "cf_label_duty_cycle_floor": ["--cf-records", "--cf-winprob-coef", "0.1",
                                   "--win-prob-mode", "read_only", "--cf-label-lag-steps", "10",
@@ -323,14 +355,21 @@ def _first_check(argv: list[str]):
 
 
 def _namespace(argv: list[str]):
-    """The argv as BOTH surfaces see it before the checks run: parsed, marked, desugared."""
-    from main.train.config import desugar_umbrella_flags
+    """The argv as BOTH surfaces see it before the checks run: parsed, marked, critic-resolved,
+    desugared — in that order, which is the order `resolve_config` and `checkargs` use.
+
+    `resolve_critic_mode` belongs here for `desugar_umbrella_flags`' exact reason: it IMPLIES
+    `--win-prob-mode shaping` / `--gamma 1.0` / `--no-use-popart` under `--critic winprob`, so a
+    table row judged without it would report a command as broken on the very flags the mode fills
+    in."""
+    from main.train.config import desugar_umbrella_flags, resolve_critic_mode
     from main.train_rl_agent import build_parser
     parser = build_parser()
     with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
         args = parser.parse_args(argv)
         args._explicit_flags = frozenset(d for d, v in vars(args).items() if v is not None)
         args._saved_config_present = False
+        resolve_critic_mode(args, None)
         desugar_umbrella_flags(args)
     return args
 

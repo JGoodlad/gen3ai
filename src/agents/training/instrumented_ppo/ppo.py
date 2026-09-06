@@ -19,6 +19,7 @@ from gymnasium import spaces
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.utils import explained_variance
 
+from agents.model.critic_mode import is_winprob
 from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
 from agents.training.grad_balance import (
     cell_family_metrics,
@@ -36,6 +37,7 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     contested_mask as _calib_contested_mask,                  # cycle `ppo` sits at the end of
     episode_start_rows as _calib_episode_start_rows,          # (pinned by the hub-contract test).
     sigmoid as _calib_sigmoid,
+    critic_reliability,
     start_metrics as _calib_start_metrics,
 )
 from agents.training.instrumented_ppo.constants import (
@@ -323,9 +325,16 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
         # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
+        # +CRITIC MODE (gen3_winprob_critic_mode_v1): under `--critic winprob` the win-prob head IS
+        # the value function, so the BCE below stops being an auxiliary and becomes THE value loss
+        # — at `vf_coef`, tagged "value" (never "aux": §1.4 of the design records that
+        # `train/noise_scale_value` spent the distributional-critic era describing a zero-weighted
+        # term). The scalar `value_loss` survives as a diagnostic; its TERM is dropped, as under
+        # Phase B. `shaped` (the default) is unchanged.
+        critic_winprob = is_winprob(getattr(self.policy, "_critic_mode", "shaped"))
         win_prob_on = (
             getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-            and self.win_prob_coef != 0.0
+            and (self.win_prob_coef != 0.0 or critic_winprob)   # winprob forces the BCE on
         )
         # +SCAFFOLDING GAUGE: gated on the HEAD's existence alone, NOT on `win_prob_coef` — the
         # gauge is an observability read of whatever the head currently says, and a `read_only`
@@ -577,8 +586,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     value_loss = self._value_loss_from_se(
                         (popart.normalize(rollout_data.returns) - popart.normalize(values)) ** 2
                     )
-                elif self.clip_range_vf is None:
-                    # No clipping
+                elif critic_winprob or self.clip_range_vf is None:
+                    # No clipping. Under `winprob` the scalar MSE is a DIAGNOSTIC (its term is
+                    # dropped below), so clipping would only make `train/value_loss` read as a
+                    # clipped quantity in probability units. `critic_winprob` is False on the
+                    # `shaped` path, so this reads `self.clip_range_vf is None` there.
                     value_loss = self._value_loss_from_se((rollout_data.returns - values) ** 2)
                 else:
                     # Clip the different between old and new value
@@ -635,7 +647,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # Phase B (value_from_dist): the scalar MSE value term is DROPPED (value_net frozen —
                 # the CE below at vf_coef is the critic). value_loss is still logged as the
                 # E[Z]-mean-vs-return diagnostic. Off → the standard vf_coef·MSE term.
-                _vf_term = 0.0 if value_from_dist else self.vf_coef * value_loss
+                # gen3_winprob_critic_mode_v1 adds the SECOND such case, for the same reason: the
+                # critic is the win-prob head and `value_net` is in no loss graph, so the scalar
+                # term would train a readout nothing reads. Its BCE joins the SAME "value" group.
+                _vf_term = 0.0 if (value_from_dist or critic_winprob) else self.vf_coef * value_loss
                 # +PG-COEF: at 1.0 (the default) `_policy_grad_term` IS the `policy_loss` tensor, so the
                 # line below is literally the old `loss = policy_loss + …` expression —
                 # byte-identical. Any other value scales ONLY the policy-gradient term.
@@ -896,8 +911,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     )
                     if wp_out is not None:
                         wp_loss, wp_m = wp_out
-                        win_prob_term = self.win_prob_coef * wp_loss
-                        loss = loss + _ntg.add("aux", win_prob_term)
+                        if critic_winprob:
+                            # THE VALUE LOSS. One critic, one coefficient: `vf_coef`, never
+                            # `win_prob_coef` (the `_ce_w` conditional the design retires).
+                            win_prob_term = self.vf_coef * wp_loss
+                            loss = loss + _ntg.add("value", win_prob_term)
+                        else:
+                            win_prob_term = self.win_prob_coef * wp_loss
+                            loss = loss + _ntg.add("aux", win_prob_term)
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
@@ -1409,7 +1430,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         _policy_grad_term + self.ent_coef * entropy_loss,
                         # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
                         # vf_coef·value_loss is dropped from the loss, so measure the CE instead.
-                        (value_dist_term if (value_from_dist and value_dist_term is not None)
+                        (win_prob_term if (critic_winprob and win_prob_term is not None)
+                         else value_dist_term if (value_from_dist and value_dist_term is not None)
                          else self.vf_coef * value_loss),
                         shared_trunk,
                         # Each ACTIVE scaffold broken out on the trunk: species/move/move-latent
@@ -1698,6 +1720,15 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             self.logger.record(f"win_prob/{_ck2}", _cv2)
         for _ck2, _cv2 in calib_contested.metrics(prefix="contested_").items():
             self.logger.record(f"win_prob/{_ck2}", _cv2)
+
+        # +WIN-PROB CRITIC RELIABILITY (gen3_winprob_critic_mode_v1) — the DEPLOYED value's own
+        # Murphy split, once per rollout, under `--critic winprob` only. Beside the head's
+        # calibration keys above rather than in a parallel prefix; the `critic_` infix says which
+        # of the two this is. `resolution` is the meter, not `reliability` — see
+        # `calibration.critic_reliability`, which owns the read and the reasoning.
+        if critic_winprob:
+            for _rk, _rv in critic_reliability(self.rollout_buffer).items():
+                self.logger.record(f"win_prob/critic_{_rk}", _rv)
 
         # +WIN-PROB EPISODE-START READ: what the head says at the LEAST-informed state, against
         # what those very episodes went on to do. One extra EAGER forward over the episode-start

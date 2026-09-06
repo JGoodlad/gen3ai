@@ -86,7 +86,8 @@ def _run_arch_toggles(args) -> dict:
     run does not build. `use_popart` is appended by hand because it is a policy_kwarg rather than an
     extractor kwarg, so it is out of the registry's scope."""
     from agents.model.extractor_arch import arch_toggles_from_args
-    return {**arch_toggles_from_args(args), "use_popart": args.use_popart}
+    return {**arch_toggles_from_args(args), "use_popart": args.use_popart,
+            "critic": args.critic}
 
 
 def _model_hparams(model) -> dict:

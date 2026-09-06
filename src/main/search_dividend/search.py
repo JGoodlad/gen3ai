@@ -267,6 +267,21 @@ def batch_scores(model, obs: np.ndarray, masks: np.ndarray, mode: str) -> Tuple[
                 "with --score value.")
         wp = (torch.sigmoid(wp_logits.float()).squeeze(-1).cpu().numpy()
               if wp_logits is not None else None)
+    # gen3_winprob_critic_mode_v1 (design gap B10): under `--critic winprob` there is exactly ONE
+    # readout — `predict_values` IS `sigmoid(win-prob logit)` — so `auto`'s fall-back is either a
+    # no-op or a lie about which leaf was used, and `--defensive-leaf value` names a second critic
+    # that does not exist. `check_leaf` was written against precisely this class ("a default that
+    # can quietly become the losing arm is not a default"), so this REFUSES rather than degrading.
+    # It is read off the LIVE policy, never a config file: the seam that decides is the one the
+    # forward actually took. `check_leaf` itself is deliberately KEPT even though it becomes
+    # vacuous here — deleting a guard because it currently has nothing to catch is how the
+    # choice-reject allowlist entry outlived its own fix.
+    if str(getattr(policy, "_critic_mode", "shaped")) == "winprob" and mode != "win_prob":
+        raise ValueError(
+            f"--score {mode!r} is refused on a --critic winprob model: this checkpoint has ONE "
+            "value readout (predict_values IS the win-prob head's sigmoid), so 'value' names a "
+            "critic that is in no loss graph and 'auto' would report a leaf it did not choose. "
+            "Pass --score win_prob (and --defensive-leaf winprob, which is already the default).")
     if mode == "value" or (wp is None and mode in ("auto", "win_prob")):
         return np.asarray(values, dtype=np.float64), "value"
     if wp is None:

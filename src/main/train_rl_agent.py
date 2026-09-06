@@ -225,6 +225,29 @@ async def main():
     # `emit` prints when there is no launcher pipe, so this reaches BOTH a bare run's stdout and the
     # launcher Events panel — the composition must never be visible in only one of them.
     emit(format_reward_composition(reward_config))
+    # gen3_winprob_critic_mode_v1: STATE WHICH READOUT IS THE CRITIC, for the composition line's own
+    # reason. `--critic` changes the quantity the value function predicts, the loss that trains it,
+    # what --vf-coef multiplies and what the reward stream has to be — and NOTHING in a metric would
+    # say so, because both routes emit a [B,1] tensor and every scalar keeps its name. 'shaped' is
+    # announced too: a reader must be able to tell "this run is on the historical critic" from
+    # "this line was not printed by that build".
+    from agents.model.critic_mode import is_winprob as _is_winprob
+    if _is_winprob(args.critic):
+        emit(f"🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS "
+             f"that head's BCE against the terminal outcome, weighted by --vf-coef "
+             f"{args.vf_coef:g} (a BCE, NOT the shaped-return MSE 0.5 was tuned for). Reward = the "
+             f"TERMINAL WIN INDICATOR alone; gamma={args.gamma:g}; PopArt OFF; win_prob_mode="
+             f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
+             f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
+             f"rate and mean episode length are PRIMARY endpoints on this arm"
+             + ("" if args.no_progress_tax_armed else
+                " (--arm-no-progress-tax is the contingency, currently OFF)") + ".")
+    else:
+        emit(f"🎯 [CRITIC] shaped — V(s) = "
+             f"{'the distributional E[Z]' if args.value_from_dist else 'value_net'} in raw "
+             f"shaped-return units (PopArt {'ON' if args.use_popart else 'off'}), gamma="
+             f"{args.gamma:g}; the win-prob head is an auxiliary at --win-prob-coef "
+             f"{args.win_prob_coef:g}.")
     # Bound to the run's reward config here rather than in `model_build`, because the SHADOW
     # critic's `mc_return` labels are only this run's labels if the producer used this run's
     # reward — the digest is what the label buffer checks them against.

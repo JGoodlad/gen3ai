@@ -115,6 +115,12 @@ def _val(args, dest: str, default: Any) -> Any:
     return default if value is None else value
 
 
+def _winprob(args) -> bool:
+    """Is this the WIN-PROB critic? Read through the ONE predicate, never a string compare here."""
+    from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+    return is_winprob(_val(args, "critic", CRITIC_DEFAULT))
+
+
 def _dist_mode(args) -> str:
     return _val(args, "value_dist_mode", "none")
 
@@ -282,6 +288,132 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "adaptive_batch_every_min", ("adaptive_batch", "adaptive_batch_every"),
         lambda a: _adaptive_on(a) and a.adaptive_batch_every < 1,
         "--adaptive-batch-every must be >= 1 (it counts ROLLOUTS between K moves)"),
+
+    # ---- gen3_winprob_critic_mode_v1: THE CRITIC MODE ---------------------------------------
+    # `--critic winprob` makes the win-prob head the value function. Everything below either
+    # CONTRADICTS that (a second critic, a normalizer with no scale to track, a reward whose
+    # currency is not P(win)) or is a knob the mode SUBSUMES. Each one is refused rather than
+    # ignored, because a silently-inert flag on a critic-route change is the failure this whole
+    # module exists to end. `config.resolve_critic_mode` IMPLIES the coherent value for each of
+    # them first, so a refusal here means the operator TYPED something incompatible.
+    CombinationCheck(
+        "winprob_critic_needs_a_head", ("critic", "win_prob_mode"),
+        lambda a: _winprob(a) and _val(a, "win_prob_mode", "none") == "none",
+        "--critic winprob requires --win-prob-mode read_only|shaping: the win-prob HEAD is the "
+        "critic, and 'none' builds no head at all, so there would be no value function. "
+        "(An unset --win-prob-mode is implied to 'shaping' — this fires only on an explicit "
+        "'none'.) 'read_only' is the arm where the critic's gradient does not reach the trunk."),
+    CombinationCheck(
+        "winprob_critic_refuses_popart", ("critic", "use_popart"),
+        lambda a: _winprob(a) and bool(_val(a, "use_popart", False)),
+        "--critic winprob is incompatible with --use-popart. PopArt's JOB does not exist here: "
+        "the payoff set is fixed at {win, not-win}, so the return is bounded and stationary for "
+        "the life of the run and there is no scale to track; the BCE's gradient w.r.t. the logit "
+        "is already O(1). Worse, `_denorm` would take V out of [0,1], and PopArt's POP surgery "
+        "only ever corrected `value_net`, which this critic does not read. Pass --no-use-popart."),
+    CombinationCheck(
+        "winprob_critic_refuses_value_dist", ("critic", "value_dist_mode"),
+        lambda a: _winprob(a) and _dist_mode(a) != "none",
+        lambda a: ("--critic winprob is incompatible with --value-dist-mode "
+                   f"{_dist_mode(a)!r}: that is a SECOND critic. Under a terminal-only objective "
+                   "the return takes two values, so a categorical over that support IS a "
+                   "Bernoulli and the 51-atom head is the same parameterization with 50 redundant "
+                   "degrees of freedom. It also mis-states the run's config to every consumer "
+                   "that gates on the MODE string rather than on the head (the PPO CE gate, the "
+                   "grad-balance value term, the prober's awareness/PIT stack). Pass "
+                   "--value-dist-mode none.")),
+    CombinationCheck(
+        "winprob_critic_refuses_value_from_dist", ("critic", "value_from_dist"),
+        lambda a: _winprob(a) and bool(getattr(a, "value_from_dist", False)),
+        "--critic winprob is incompatible with --value-from-dist: both name WHICH readout is the "
+        "critic, and they name different ones. `_critic_value` cannot route to two places."),
+    CombinationCheck(
+        "winprob_critic_refuses_win_prob_coef", ("critic", "win_prob_coef"),
+        lambda a: _winprob(a) and _typed(a, "win_prob_coef"),
+        "--critic winprob is incompatible with an explicit --win-prob-coef: the head's BCE is now "
+        "THE VALUE LOSS and is weighted by --vf-coef. One critic, one coefficient — two on one "
+        "loss is the ambiguity the distributional critic's `_ce_w` conditional existed to resolve. "
+        "NOTE --vf-coef now multiplies a BCE rather than an MSE over a shaped return, so 0.5 does "
+        "not transfer between the two loss families; re-tune it on this arm."),
+    CombinationCheck(
+        "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
+        lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
+        "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "
+        "MSE, whose term is dropped under this critic, so it would be silently INERT — and its "
+        "shape is the banned one anyway: at the decision boundary relevance and label NOISE "
+        "arrive together, so 'care more' must be MORE SAMPLES, never a larger per-sample weight "
+        "on a Bernoulli likelihood."),
+    CombinationCheck(
+        # See `--terminal-indicator`. A [0,1] critic cannot represent "worse than a loss", so the
+        # ordering `--draw-penalty` exists to set is not merely unused here — it is unrepresentable.
+        "winprob_critic_refuses_draw_penalty", ("critic", "draw_penalty", "terminal_indicator"),
+        lambda a: _winprob(a) and float(_val(a, "draw_penalty", 0.0) or 0.0) != 0.0,
+        lambda a: ("--critic winprob is incompatible with --draw-penalty "
+                   f"{float(_val(a, 'draw_penalty', 0.0)):g}. Under this critic the terminal is "
+                   "the WIN INDICATOR (+victory_value on a win, 0.0 on a loss, a tie AND a "
+                   "250-turn timeout alike), so there is no separate draw magnitude to set, and a "
+                   "critic bounded in [0,1] cannot represent 'a timeout is worse than a loss' at "
+                   "all. The anti-stall pressure comes from the obs deadline clock and, if the "
+                   "stall rate rises, from --arm-no-progress-tax. Pass --draw-penalty 0.")),
+    CombinationCheck(
+        "winprob_critic_needs_the_indicator_terminal", ("critic", "terminal_indicator"),
+        lambda a: _winprob(a) and not bool(_val(a, "terminal_indicator", False)),
+        "--critic winprob requires --terminal-indicator. The critic is sigmoid(logit) in [0,1] "
+        "and GAE mixes the REWARD with it, so a +V/-V terminal would put the return and the "
+        "critic in different scales and every terminal TD error would carry a systematic, "
+        "state-dependent offset (a loss reads `-V - V` against a truth of `0 - V`). The indicator "
+        "terminal is what makes V(s) == E[return] hold."),
+    CombinationCheck(
+        "winprob_critic_needs_unit_victory_value", ("critic", "victory_value"),
+        lambda a: _winprob(a) and float(_val(a, "victory_value", 30.0) or 0.0) != 1.0,
+        lambda a: ("--critic winprob requires --victory-value 1.0 (got "
+                   f"{float(_val(a, 'victory_value', 30.0)):g}). With the indicator terminal the "
+                   "undiscounted return is `victory_value * 1{win}` while the critic is "
+                   "sigmoid(logit) in [0,1], so the two agree at exactly one scale. At 1.0 the "
+                   "return IS the win indicator and V(s) == P(win|s) with no approximation term "
+                   "-- the identity the whole mode rests on.")),
+    CombinationCheck(
+        "winprob_critic_needs_no_hand_shaping", ("critic", "hand_shaping"),
+        lambda a: _winprob(a) and bool(_val(a, "hand_shaping", True)),
+        "--critic winprob requires --no-hand-shaping. The identity V(s) = P(win|s) rests on a "
+        "TERMINAL-ONLY reward: under PBRS with Phi(terminal)=0 the return from s telescopes to "
+        "`R_T - Phi(s)`, so a critic minimizing its loss learns `V_game(s) - Phi(s)` -- not "
+        "P(win), and broken by a KNOWN function rather than approximately. Every PBRS term is "
+        "policy-INVARIANT, so deleting them costs learning SPEED, never correctness. NOTE it also "
+        "drops `no_progress_tax`; re-arm it with --arm-no-progress-tax if the stall rate rises."),
+    CombinationCheck(
+        # Owner amendment, 2026-09-06 (design_winprob_only_critic.md §3.7). The SELF-phi shape,
+        # refused for a REASON rather than deferred: with V == phi the shaping term IS the
+        # advantage, so route 1 adds the advantage to the reward and takes the advantage of that.
+        "winprob_critic_refuses_self_phi_pbrs", ("critic", "win_prob_pbrs_coef"),
+        lambda a: _winprob(a) and _typed(a, "win_prob_pbrs_coef"),
+        "--critic winprob is incompatible with --win-prob-pbrs-coef: no coefficient -- the "
+        "potential is currency-matched; the dose ladder belonged to the shaped critic. And the "
+        "SELF-phi form is DOUBLE COUNTING: phi is the win-prob head, which under this critic IS "
+        "V, so `gamma*phi(s') - phi(s)` is precisely the TD residual GAE already turns into the "
+        "advantage. Its Ng shield is also at its structurally weakest here (the theorem assumes a "
+        "FIXED phi; ours is the head being trained). The FROZEN-phi rung is a separate flag, "
+        "--win-prob-pbrs-frozen."),
+    CombinationCheck(
+        "winprob_critic_refuses_self_phi_source", ("critic", "win_prob_pbrs_source"),
+        lambda a: _winprob(a) and getattr(a, "win_prob_pbrs_source", None) is not None,
+        "--critic winprob is incompatible with --win-prob-pbrs-source: that flag is the SHAPED "
+        "critic's frozen-phi path and is driven by --win-prob-pbrs-coef, which this mode refuses "
+        "(the potential is currency-matched, coefficient exactly 1.0). Under this critic the "
+        "frozen rung is --win-prob-pbrs-frozen, which takes no coefficient."),
+    CombinationCheck(
+        # Owner amendment, 2026-09-06 (design §3.7): "self path to be deleted at the default flip;
+        # frozen path kept refused for one generation." Refused, NOT deleted -- the code path
+        # behind --win-prob-pbrs-source is intact, so lifting this is one edit.
+        "win_prob_pbrs_frozen_is_held", ("critic", "win_prob_pbrs_frozen"),
+        lambda a: getattr(a, "win_prob_pbrs_frozen", None) is not None,
+        "--win-prob-pbrs-frozen is declared but HELD in this build. Under --critic winprob it is "
+        "deferred to a later FROZEN-phi ablation, not judged wrong: exact Ng invariance DOES hold "
+        "for a fixed phi -- the critic then learns `P(win) - phi_frozen`, recoverable at inference "
+        "by adding phi back -- and the currency-matched coefficient is exactly 1.0, since phi is "
+        "already in the value currency (the terminal is the win indicator and V is P(win)). Under "
+        "--critic shaped, use the existing --win-prob-pbrs-coef / --win-prob-pbrs-source pair, "
+        "whose meaning is unchanged."),
 
     # ---- the distributional critic --------------------------------------------------------
     CombinationCheck(
