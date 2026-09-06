@@ -11389,3 +11389,31 @@ after the fix landed; and a validation script of mine imported `main.launcher.__
 its parser, which EXECUTED the launcher and started an unintended training run beside a live arm
 (bounded only by a tool timeout; no run dir or worktree survived). The tree-side half of that is now
 guarded (`02601b12`); the habit-side rule is **never import an entry point to interrogate it**.
+
+## 2026-09-06 — probe H9 (continuation drift, young vs mature): the noise-vs-drift account is DEAD — v8's 277M parent and our 28M parent both walk as t^≈0.48 under plain continuation (v8 0.4914 [0.4620, 0.5321] vs G5 0.4744 [0.4652, 0.4873], perm p 0.70); the mature CRITIC has largely stopped moving (0.29 vs 0.42 after removing PopArt's rescaling)
+
+**Pre-registration** (`continuation_drift/README.md`, before any number): |θ_t − θ_0| ∝ t^b per parameter group on the two
+plain-continuation cells (v8 cell 2 arms, era code, θ_0 = ai_v8_04 final; G5 arms A/B/C, θ_0 = R2ACTION final); prediction
+b(v8) → 1 (directed) vs ours ≈ 0.5 (diffusive); replicate cosines at matched depth; the output twin KL(parent‖arm) ∝ t^c.
+Doses executed: ours 4.557e-08 vs v8 2.574e-08 (1.77×, constant in t ⇒ intercept not slope).
+
+- **P1 NOT DETECTED / WITHIN FLOOR:** v8 b = 0.4914 (arms 0.480 / 0.462 / 0.532) vs G5 0.4744 (0.487 / 0.471 / 0.465);
+  Δ +0.017 against a 0.070 within-cell spread. The mature parent's continuation is 0.0086 from a pure random walk, matching
+  our folds (0.48, H2b) and exploiters (0.548, H6).
+- **P3 WITHIN FLOOR:** KL exponent v8 0.566 [0.476, 0.731] vs gen 0.649 [0.587, 0.735]; c/b 1.15 / 1.37, both below the 2.0
+  a locally-quadratic KL implies — a growing share of displacement lands in output-insensitive directions in both eras.
+- **P2 REVERSED (confounded):** replicate cosine v8 0.22 vs ours 0.40 — our arms all seeded the parent's 14-snapshot pool,
+  v8's started poolless (era code) and built three ecologies.
+- **E1 (exploratory):** within-arm cos(Δθ_t1, Δθ_t2) lands within 0.0022 of the random-walk prediction √(t1/t2) on our side
+  (0.6533 / 0.6511 / 0.6502 vs 0.6511) and within 0.035 on v8's; every group in both eras ≥2.7× closer to diffusive than to 1.
+- **The critic row (by-product, hypothesis):** raw critic exponent v8 0.167 vs gen 0.418; `PopArtNormalizer.update` rescales
+  exactly `policy.value_net` (513 params) with no gradient, carrying 25–28% of v8's critic-group squared displacement (mu
+  swings −1.61 → +1.36 → +0.41); removing it, v8 0.288 vs gen 0.420, complete separation at the p 0.10 floor. Read as "the
+  mature critic has largely stopped moving", never "directed". Group-composition confound (1.26M vs 743k params).
+**Consequence:** "the critic is the lever" is NOT supported by this contrast (and could not have been proved by it); the
+maturity gain rides the same random walk. Hazards: (1) a v8-era `final_model_interrupted.zip` records a LARGER
+num_timesteps than the checkpoint beside it at bit-identical weights (arm C +5,019; the interrupted save stamps the
+env-step counter) — ~0.5% x-axis slop; (2) PopArt is a live confounder for any parameter-space statistic on the critic
+(`popart_split.py` reusable); (3) v8-era metadata has no top-level num_timesteps (read from the zip's data blob, cross-checked);
+(4) the v8 cell has only two depths per arm. `verify_readme.py`: 369 checks pass (it caught two overclaims in the draft prose).
+

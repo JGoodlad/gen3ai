@@ -1,0 +1,102 @@
+{
+ "era": "gen",
+ "popart_params": [
+  "value_net.bias",
+  "value_net.weight"
+ ],
+ "n_popart": 513,
+ "n_rest": 742137,
+ "arms": {
+  "A@d1": {
+   "arm": "A",
+   "depth": "d1",
+   "t": 500016,
+   "fit_point": true,
+   "l2_popart": 0.047981692701673594,
+   "l2_rest": 0.5293078739785209,
+   "popart_share_of_critic_sq": 0.008150424570214356
+  },
+  "A@d2": {
+   "arm": "A",
+   "depth": "d2",
+   "t": 1000032,
+   "fit_point": true,
+   "l2_popart": 0.03867864368962195,
+   "l2_rest": 0.7166909462246946,
+   "popart_share_of_critic_sq": 0.0029041266742549227
+  },
+  "A@d3": {
+   "arm": "A",
+   "depth": "d3",
+   "t": 1179648,
+   "fit_point": true,
+   "l2_popart": 0.04781312239872311,
+   "l2_rest": 0.8052758716131732,
+   "popart_share_of_critic_sq": 0.0035129865080423743
+  },
+  "B@d1": {
+   "arm": "B",
+   "depth": "d1",
+   "t": 500016,
+   "fit_point": true,
+   "l2_popart": 0.01691526001838558,
+   "l2_rest": 0.5293673706302521,
+   "popart_share_of_critic_sq": 0.001019999157259752
+  },
+  "B@d2": {
+   "arm": "B",
+   "depth": "d2",
+   "t": 1000032,
+   "fit_point": true,
+   "l2_popart": 0.030276270936621223,
+   "l2_rest": 0.6840382139952292,
+   "popart_share_of_critic_sq": 0.0019552129625183285
+  },
+  "B@d3": {
+   "arm": "B",
+   "depth": "d3",
+   "t": 1179648,
+   "fit_point": true,
+   "l2_popart": 0.02548562007811621,
+   "l2_rest": 0.742233357193447,
+   "popart_share_of_critic_sq": 0.001177599862019822
+  },
+  "C@d1": {
+   "arm": "C",
+   "depth": "d1",
+   "t": 500016,
+   "fit_point": true,
+   "l2_popart": 0.03861679411238866,
+   "l2_rest": 0.535169218429766,
+   "popart_share_of_critic_sq": 0.005179821182659833
+  },
+  "C@d2": {
+   "arm": "C",
+   "depth": "d2",
+   "t": 1000032,
+   "fit_point": true,
+   "l2_popart": 0.034774516498200424,
+   "l2_rest": 0.6465214549236689,
+   "popart_share_of_critic_sq": 0.0028847069088525253
+  },
+  "C@d3": {
+   "arm": "C",
+   "depth": "d3",
+   "t": 1179648,
+   "fit_point": true,
+   "l2_popart": 0.038526333599041,
+   "l2_rest": 0.7391989395953742,
+   "popart_share_of_critic_sq": 0.0027090347501667563
+  }
+ },
+ "b_critic_excluding_popart": {
+  "A": 0.48887262539205584,
+  "B": 0.39376526272121753,
+  "C": 0.37629305151027
+ },
+ "b_critic_popart_only": {
+  "A": -0.004100289991362412,
+  "B": 0.4775524494651276,
+  "C": -0.00273235462763502
+ }
+}

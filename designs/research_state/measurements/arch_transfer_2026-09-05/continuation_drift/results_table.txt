@@ -1,0 +1,226 @@
+====================================================================================================
+DEPTH GRID (t = steps since that cell's parent)
+====================================================================================================
+
+--- v8  parent @ 277,583,267  P = 3,512,397 policy parameters
+  key                 t     abs step   |dtheta|       rel  KL(p||arm)  fit?
+  A@d1          416,750  278,000,017     1.7659   0.00717      0.0337  yes
+  A@d3ck      1,080,634  278,663,901     2.7901   0.01132      0.0530  NO (same-depth check)
+  A@d3        1,080,663  278,663,930     2.7901   0.01132      0.0530  yes
+  B@d1          416,747  278,000,014     1.7699   0.00718      0.0342  yes
+  B@d3ck      1,079,011  278,662,278     2.7431   0.01113      0.0535  NO (same-depth check)
+  B@d3        1,081,344  278,664,611     2.7496   0.01116      0.0546  yes
+  C@d1          416,747  278,000,014     1.7623   0.00715      0.0311  yes
+  C@d3ck      1,081,345  278,664,612     2.9342   0.01191      0.0626  NO (same-depth check)
+  C@d3        1,086,364  278,669,631     2.9342   0.01191      0.0626  yes
+
+--- gen  parent @ 28,115,184  P = 3,147,887 policy parameters
+  key                 t     abs step   |dtheta|       rel  KL(p||arm)  fit?
+  A@d1          500,016   28,615,200     1.9054   0.00822      0.0710  yes
+  A@d2        1,000,032   29,115,216     2.6385   0.01138      0.1090  yes
+  A@d3        1,179,648   29,294,832     2.8949   0.01249      0.1215  yes
+  B@d1          500,016   28,615,200     1.9024   0.00821      0.0852  yes
+  B@d2        1,000,032   29,115,216     2.6151   0.01128      0.1246  yes
+  B@d3        1,179,648   29,294,832     2.8493   0.01229      0.1410  yes
+  C@d1          500,016   28,615,200     1.9116   0.00825      0.0763  yes
+  C@d2        1,000,032   29,115,216     2.5998   0.01121      0.1141  yes
+  C@d3        1,179,648   29,294,832     2.8499   0.01229      0.1433  yes
+
+v8 same-depth agreement (final_model_interrupted.zip vs checkpoints/*.zip):
+  A: step gap     29  |d| 2.7901 vs 2.7901  rel diff 0.00e+00  bitwise-equal=True
+  B: step gap  2,333  |d| 2.7496 vs 2.7431  rel diff 2.36e-03  bitwise-equal=False
+  C: step gap  5,019  |d| 2.9342 vs 2.9342  rel diff 0.00e+00  bitwise-equal=True
+
+====================================================================================================
+P1 — DISPLACEMENT EXPONENT b in |dtheta| ~ t^b   (0.5 = random walk, 1.0 = directed drift)
+====================================================================================================
+
+--- v8_2pt  (era v8, depths ['d1', 'd3'])
+  group                     A        B        C     mean        boot CI over arms   pooled
+  ALL                  0.4800   0.4620   0.5321   0.4914         [0.4620, 0.5321]   0.4916
+  action_head          0.4961   0.4746   0.5486   0.5064         [0.4746, 0.5486]   0.5066
+  encoders             0.5322   0.4903   0.5729   0.5318         [0.4903, 0.5729]   0.5320
+  team_transformer     0.4799   0.4620   0.5174   0.4865         [0.4620, 0.5174]   0.4866
+  projection_mlp       0.4804   0.4654   0.5389   0.4949         [0.4654, 0.5389]   0.4951
+  belief_op            0.5873   0.5353   0.6364   0.5863         [0.5353, 0.6364]   0.5865
+  critic               0.1597   0.1766   0.1639   0.1667         [0.1597, 0.1766]   0.1668
+
+--- gen_2pt_outer  (era gen, depths ['d1', 'd3'])
+  group                     A        B        C     mean        boot CI over arms   pooled
+  ALL                  0.4873   0.4706   0.4652   0.4744         [0.4652, 0.4873]   0.4744
+  action_head          0.5841   0.5811   0.5667   0.5773         [0.5667, 0.5841]   0.5773
+  encoders             0.4896   0.4755   0.4702   0.4784         [0.4702, 0.4896]   0.4784
+  team_transformer     0.4772   0.4634   0.4523   0.4643         [0.4523, 0.4772]   0.4643
+  projection_mlp       0.5408   0.5279   0.5271   0.5319         [0.5271, 0.5408]   0.5319
+  belief_op            0.4301   0.4233   0.4169   0.4235         [0.4169, 0.4301]   0.4235
+  critic               0.4862   0.3939   0.3748   0.4183         [0.3748, 0.4862]   0.4183
+
+--- gen_3pt  (era gen, depths all fit points)
+  group                     A        B        C     mean        boot CI over arms   pooled
+  ALL                  0.4821   0.4672   0.4589   0.4694         [0.4589, 0.4821]   0.4694
+  action_head          0.5817   0.5762   0.5652   0.5744         [0.5652, 0.5817]   0.5744
+  encoders             0.4828   0.4730   0.4640   0.4732         [0.4640, 0.4828]   0.4732
+  team_transformer     0.4729   0.4629   0.4509   0.4622         [0.4509, 0.4729]   0.4622
+  projection_mlp       0.5387   0.5250   0.5245   0.5294         [0.5245, 0.5387]   0.5294
+  belief_op            0.4241   0.4193   0.4094   0.4176         [0.4094, 0.4241]   0.4176
+  critic               0.4707   0.3870   0.3443   0.4007         [0.3443, 0.4707]   0.4007
+
+HEADLINE CONTRAST — matched two-point windows (v8 d1..d3 vs gen d1..d3)
+  group                    v8      gen    v8-gen  sep?  CIdisj?   permp   spread  verdict
+  ALL                  0.4914   0.4744   +0.0170 False    False   0.700   0.0701  WITHIN FLOOR
+  action_head          0.5064   0.5773   -0.0709  True     True   0.100   0.0740  SIGNIFICANT
+  encoders             0.5318   0.4784   +0.0534  True     True   0.100   0.0826  SIGNIFICANT
+  team_transformer     0.4865   0.4643   +0.0221 False    False   0.300   0.0554  WITHIN FLOOR
+  projection_mlp       0.4949   0.5319   -0.0370 False    False   0.300   0.0734  WITHIN FLOOR
+  belief_op            0.5863   0.4235   +0.1629  True     True   0.100   0.1011  SIGNIFICANT
+  critic               0.1667   0.4183   -0.2515  True     True   0.100   0.1113  SIGNIFICANT
+
+====================================================================================================
+P2 — REPLICATE COSINE cos(dtheta_X, dtheta_Y) at matched depth
+     random-walk floor 1/sqrt(P): v8 5.34e-04  gen 5.64e-04   |   fold-depth reference 0.56
+====================================================================================================
+
+--- v8 @ d1  (t = 416,750)
+  group                   A.B      A.C      B.C     mean       boot CI over pairs
+  ALL                  0.2744   0.2771   0.2783   0.2766         [0.2744, 0.2783]
+  action_head          0.1483   0.1981   0.1999   0.1821         [0.1483, 0.1999]
+  encoders             0.3303   0.3155   0.3277   0.3245         [0.3155, 0.3303]
+  team_transformer     0.4120   0.4068   0.4223   0.4137         [0.4068, 0.4223]
+  projection_mlp       0.1769   0.1809   0.1767   0.1782         [0.1767, 0.1809]
+  belief_op            0.7620   0.7720   0.7723   0.7688         [0.7620, 0.7723]
+  critic               0.6841   0.7144   0.7235   0.7073         [0.6841, 0.7235]
+
+--- v8 @ d3  (t = 1,080,663)
+  group                   A.B      A.C      B.C     mean       boot CI over pairs
+  ALL                  0.2219   0.2221   0.2153   0.2198         [0.2153, 0.2221]
+  action_head          0.1647   0.2126   0.1878   0.1884         [0.1647, 0.2126]
+  encoders             0.3656   0.3619   0.3693   0.3656         [0.3619, 0.3693]
+  team_transformer     0.4161   0.4120   0.4020   0.4100         [0.4020, 0.4161]
+  projection_mlp       0.1025   0.1065   0.0981   0.1024         [0.0981, 0.1065]
+  belief_op            0.8058   0.7881   0.7782   0.7907         [0.7782, 0.8058]
+  critic               0.5138   0.5388   0.5642   0.5389         [0.5138, 0.5642]
+
+--- gen @ d1  (t = 500,016)
+  group                   A.B      A.C      B.C     mean       boot CI over pairs
+  ALL                  0.4569   0.4613   0.4634   0.4605         [0.4569, 0.4634]
+  action_head          0.0975   0.1016   0.1031   0.1007         [0.0975, 0.1031]
+  encoders             0.4945   0.4953   0.5087   0.4995         [0.4945, 0.5087]
+  team_transformer     0.5675   0.5712   0.5747   0.5711         [0.5675, 0.5747]
+  projection_mlp       0.0766   0.0700   0.0760   0.0742         [0.0700, 0.0766]
+  belief_op            0.7650   0.7769   0.7705   0.7708         [0.7650, 0.7769]
+  critic               0.5708   0.6086   0.6179   0.5991         [0.5708, 0.6179]
+
+--- gen @ d2  (t = 1,000,032)
+  group                   A.B      A.C      B.C     mean       boot CI over pairs
+  ALL                  0.4140   0.4048   0.4109   0.4099         [0.4048, 0.4140]
+  action_head          0.1437   0.1444   0.1386   0.1422         [0.1386, 0.1444]
+  encoders             0.4414   0.4431   0.4426   0.4424         [0.4414, 0.4431]
+  team_transformer     0.5300   0.5228   0.5187   0.5238         [0.5187, 0.5300]
+  projection_mlp       0.0727   0.0603   0.0671   0.0667         [0.0603, 0.0727]
+  belief_op            0.7345   0.7310   0.7325   0.7327         [0.7310, 0.7345]
+  critic               0.5452   0.5591   0.5942   0.5662         [0.5452, 0.5942]
+
+--- gen @ d3  (t = 1,179,648)
+  group                   A.B      A.C      B.C     mean       boot CI over pairs
+  ALL                  0.4102   0.3995   0.4020   0.4039         [0.3995, 0.4102]
+  action_head          0.1687   0.1510   0.1556   0.1584         [0.1510, 0.1687]
+  encoders             0.4370   0.4361   0.4323   0.4351         [0.4323, 0.4370]
+  team_transformer     0.5154   0.5103   0.5101   0.5119         [0.5101, 0.5154]
+  projection_mlp       0.0717   0.0606   0.0641   0.0655         [0.0606, 0.0717]
+  belief_op            0.7299   0.7239   0.7253   0.7263         [0.7239, 0.7299]
+  critic               0.5823   0.5599   0.5734   0.5719         [0.5599, 0.5823]
+
+CONTRAST at the end depth (d3):
+  group                    v8      gen    v8-gen  sep?   permp   spread  verdict
+  ALL                  0.2198   0.4039   -0.1841  True   0.100   0.0108  DIRECTIONAL, bar-uncertain
+  action_head          0.1884   0.1584   +0.0300 False   0.200   0.0479  NOT DETECTED
+  encoders             0.3656   0.4351   -0.0695  True   0.100   0.0075  DIRECTIONAL, bar-uncertain
+  team_transformer     0.4100   0.5119   -0.1019  True   0.100   0.0142  DIRECTIONAL, bar-uncertain
+  projection_mlp       0.1024   0.0655   +0.0369  True   0.100   0.0111  DIRECTIONAL, bar-uncertain
+  belief_op            0.7907   0.7263   +0.0644  True   0.100   0.0276  DIRECTIONAL, bar-uncertain
+  critic               0.5389   0.5719   -0.0330 False   0.200   0.0504  NOT DETECTED
+
+====================================================================================================
+P3 — OUTPUT TWIN: c in KL(parent||arm) ~ t^c  (locally-quadratic KL => c ~ 2b)
+====================================================================================================
+
+--- v8  depths ['d1', 'd3']
+  slice                 A        B        C     mean        boot CI over arms   pooled
+  kl_all           0.4762   0.4917   0.7311   0.5663         [0.4762, 0.7311]   0.5670
+  kl_taught        0.4994   0.3950   0.6892   0.5278         [0.3950, 0.6892]   0.5284
+  kl_untaught      0.4318   0.6963   0.8137   0.6473         [0.4318, 0.8137]   0.6480
+  KL LEVELS (cluster bootstrap over the 24 teams):
+    d1: A=0.0337 [0.0279,0.0398]  B=0.0342 [0.0295,0.0389]  C=0.0311 [0.0271,0.0352]
+    d3: A=0.0530 [0.0457,0.0605]  B=0.0546 [0.0464,0.0634]  C=0.0626 [0.0536,0.0719]
+
+--- gen  depths ['d1', 'd3']
+  slice                 A        B        C     mean        boot CI over arms   pooled
+  kl_all           0.6259   0.5872   0.7347   0.6493         [0.5872, 0.7347]   0.6493
+  kl_taught        0.7396   0.5239   0.7192   0.6609         [0.5239, 0.7396]   0.6609
+  kl_untaught      0.3884   0.7512   0.7821   0.6406         [0.3884, 0.7821]   0.6406
+  KL LEVELS (cluster bootstrap over the 24 teams):
+    d1: A=0.0710 [0.0605,0.0824]  B=0.0852 [0.0697,0.1025]  C=0.0763 [0.0619,0.0913]
+    d3: A=0.1215 [0.1057,0.1383]  B=0.1410 [0.1235,0.1587]  C=0.1433 [0.1197,0.1688]
+
+CONTRAST:
+  slice                v8      gen    v8-gen  sep?   permp   spread  verdict
+  kl_all           0.5663   0.6493   -0.0829 False   0.400   0.2548  WITHIN FLOOR
+  kl_taught        0.5278   0.6609   -0.1331 False   0.200   0.2942  WITHIN FLOOR
+  kl_untaught      0.6473   0.6406   +0.0067 False   1.000   0.3937  WITHIN FLOOR
+
+  c/b consistency (expect ~2):  v8 1.153   gen 1.369
+
+====================================================================================================
+E1 — EXPLORATORY (not pre-registered): cos(dtheta_t1, dtheta_t2) WITHIN one arm
+     random walk => sqrt(t1/t2);  directed drift => 1
+====================================================================================================
+
+--- v8
+  arm          t1         t2  sqrt(t1/t2)           ALL   action_head      encoders  team_transfo  projection_m     belief_op        critic
+  A       416,750  1,080,663       0.6210        0.6472        0.6783        0.6671        0.6564        0.6440        0.6716        0.6292
+  B       416,747  1,081,344       0.6208        0.6555        0.6587        0.6751        0.6669        0.6546        0.7024        0.5156
+  C       416,747  1,086,364       0.6194        0.6043        0.6200        0.6263        0.6246        0.6003        0.6407        0.5336
+
+--- gen
+  arm          t1         t2  sqrt(t1/t2)           ALL   action_head      encoders  team_transfo  projection_m     belief_op        critic
+  A       500,016  1,179,648       0.6511        0.6533        0.6599        0.6582        0.6864        0.6352        0.6497        0.7081
+  B       500,016  1,179,648       0.6511        0.6511        0.6499        0.6660        0.6976        0.6410        0.6445        0.6543
+  C       500,016  1,179,648       0.6511        0.6502        0.6541        0.6583        0.6870        0.6394        0.6444        0.6777
+
+====================================================================================================
+BUFFERS CHANGED vs parent (excluded from every group)
+====================================================================================================
+  v8: 9 of 9 checkpoints changed 3 buffer(s): ['popart.mu', 'popart.nu', 'popart.sigma']
+  gen: 9 of 9 checkpoints changed 3 buffer(s): ['popart.mu', 'popart.nu', 'popart.sigma']
+
+====================================================================================================
+FOLLOW-UP (not pre-registered) - PopArt BOOKKEEPING inside the critic group
+     PopArtNormalizer.update rescales exactly `policy.value_net` (513 params) with no
+     gradient behind it. This is the one row a non-learning transform can fake.
+====================================================================================================
+
+--- v8  (value_net = 513 params; critic remainder 1,261,378)
+  A@d1     t=  416,750  |d|_popart=0.1835  |d|_rest=0.3159  PopArt share of critic sq-disp= 25.23%
+  A@d3ck   t=1,080,634  |d|_popart=0.1244  |d|_rest=0.4068  PopArt share of critic sq-disp=  8.56%   (same-depth check)
+  A@d3     t=1,080,663  |d|_popart=0.1244  |d|_rest=0.4068  PopArt share of critic sq-disp=  8.56%
+  B@d1     t=  416,747  |d|_popart=0.1883  |d|_rest=0.3047  PopArt share of critic sq-disp= 27.64%
+  B@d3ck   t=1,079,011  |d|_popart=0.1334  |d|_rest=0.4107  PopArt share of critic sq-disp=  9.55%   (same-depth check)
+  B@d3     t=1,081,344  |d|_popart=0.1019  |d|_rest=0.4115  PopArt share of critic sq-disp=  5.78%
+  C@d1     t=  416,747  |d|_popart=0.1889  |d|_rest=0.3189  PopArt share of critic sq-disp= 25.96%
+  C@d3ck   t=1,081,345  |d|_popart=0.1122  |d|_rest=0.4189  PopArt share of critic sq-disp=  6.69%   (same-depth check)
+  C@d3     t=1,086,364  |d|_popart=0.1122  |d|_rest=0.4189  PopArt share of critic sq-disp=  6.69%
+  b(critic, PopArt layer EXCLUDED): A=0.2654 B=0.3150 C=0.2846  mean=0.2883
+  b(PopArt layer alone)           : A=-0.4078 B=-0.6440 C=-0.5435  mean=-0.5317
+
+--- gen  (value_net = 513 params; critic remainder 742,137)
+  A@d1     t=  500,016  |d|_popart=0.0480  |d|_rest=0.5293  PopArt share of critic sq-disp=  0.82%
+  A@d2     t=1,000,032  |d|_popart=0.0387  |d|_rest=0.7167  PopArt share of critic sq-disp=  0.29%
+  A@d3     t=1,179,648  |d|_popart=0.0478  |d|_rest=0.8053  PopArt share of critic sq-disp=  0.35%
+  B@d1     t=  500,016  |d|_popart=0.0169  |d|_rest=0.5294  PopArt share of critic sq-disp=  0.10%
+  B@d2     t=1,000,032  |d|_popart=0.0303  |d|_rest=0.6840  PopArt share of critic sq-disp=  0.20%
+  B@d3     t=1,179,648  |d|_popart=0.0255  |d|_rest=0.7422  PopArt share of critic sq-disp=  0.12%
+  C@d1     t=  500,016  |d|_popart=0.0386  |d|_rest=0.5352  PopArt share of critic sq-disp=  0.52%
+  C@d2     t=1,000,032  |d|_popart=0.0348  |d|_rest=0.6465  PopArt share of critic sq-disp=  0.29%
+  C@d3     t=1,179,648  |d|_popart=0.0385  |d|_rest=0.7392  PopArt share of critic sq-disp=  0.27%
+  b(critic, PopArt layer EXCLUDED): A=0.4889 B=0.3938 C=0.3763  mean=0.4196
+  b(PopArt layer alone)           : A=-0.0041 B=0.4776 C=-0.0027  mean=0.1569

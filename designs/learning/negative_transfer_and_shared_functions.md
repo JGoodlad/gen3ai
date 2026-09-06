@@ -111,6 +111,16 @@ under a plain continuation is the open question (cell G5); if it does not, the d
 and if it does, every hole in the gen-era record is deeper than recorded and every "neutral" fold forwent
 progress. The mechanism in §1 and §2 stands unchanged; what changed is the baseline it is measured against.
 
+**Measured the same day (`arch_transfer_2026-09-05/continuation_drift/`): the "young updates are noise, mature
+updates are drift" account is dead.** Both plain continuations walk diffusively: v8's 277M-step parent moves as
+t^0.49 [0.46, 0.53] and ours as t^0.47 [0.47, 0.49], each within a hundredth of a pure random walk, and the
+within-arm cosine between two depths sits within 0.002 of the random-walk prediction √(t₁/t₂) on our side. The
+output-side twin agrees. What did separate was the critic group alone, and only after removing PopArt's
+gradient-free rescaling of the value net (which carried up to 28% of that group's squared displacement on v8):
+v8's critic moves as t^0.29 against ours at t^0.42, read as "the mature critic has largely stopped moving",
+never as "the mature update is directed". So a mature parent's gain on untaught teams is not a cleaner
+gradient; whatever it is, it rides on the same random walk ours does.
+
 ## 2. Technical level
 
 ### The kernel
