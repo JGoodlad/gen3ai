@@ -1372,6 +1372,36 @@ design (battle-level work-stealing, exact aggregation, graceful-shutdown drain, 
 sentinels + promotion, `--eval-workers` / `--eval-shard-games` / `--eval-device`) is in
 `src/agents/training/CLAUDE.md`.
 
+### The UNTAUGHT METER — offline off-slice competence (`python -m main.untaught_meter`)
+
+The win rate of a checkpoint **piloting** a fixed team slice against ONE fixed opponent,
+cluster-bootstrapped over teams — the number every fold verdict in the ledger rests on. It lived
+only as per-batch probe scripts copied between measurement directories (each with its own seed
+convention and its own aggregation) until it became `src/main/untaught_meter.py` +
+`src/agents/training/untaught_meter.py`. Offline: no training, no launcher, no server, nothing
+written under `models/`. `--check` resolves every ref, team and opponent and exits non-zero on any
+miss without playing; `--dry-run` prints the plan; `--from-rows` re-reads committed per-team
+artifacts with no models at all. Refs resolve through the ONE choke point
+(`fixed_opponent_pool.resolve_model_ref`), so a bare run dir means the run's LAST SNAPSHOT exactly
+as a launch means it, and the resolved file + rung are printed and stamped in the JSON.
+
+🚨 **A DELTA AGAINST A FROZEN PARENT OVERSTATES A FOLD, and the meter reports a second column for
+it.** Ledger 2026-09-06 (cell 2): a plain +1.08M-step continuation of v8's parent — no teacher, no
+distillation term, no stable opponents — moved this meter **+3.45pp [+0.46, +6.48]** by itself, so
+re-based on a continuation control v8's celebrated +4.64pp becomes ≈ +1.2pp and is not significant.
+`--control <arms…>` supplies the continuation arms at matched depth: they are pooled equal-weight,
+carry their own **max-pairwise replicate floor**, and every ref gets `Δ vs baseline` *and*
+`Δ vs continuation control`, each labelled SIGNIFICANT / WITHIN FLOOR / NOT DETECTED. Run without
+`--control` and the report says in print what it is leaving out.
+
+**Reproducibility takes BOTH halves and the meter enforces them**: all five `$GEN3AI_*_SEED` seams
+per team plus per-battle sim and policy seeds, and `concurrency > 1` is **REFUSED** (seeded at
+concurrency 3, two runs of the same measurement differed by up to +0.043 in level). `--workers N` shards
+over TEAMS into single-concurrency processes; a cell is a pure function of (ref, team, battle), and
+two `--workers 2` runs being byte-identical is a standing `sim`+`slow` gate. Timeouts are their own
+bucket and a run above 25% is INCONCLUSIVE. The recipe, the seed table and the sharding rule are in
+`src/agents/training/CLAUDE.md` → *The untaught meter*.
+
 ### ELO / skill rating
 
 Under self-play pool play, `win_rate_vs_pool` is pinned near 50% by the promotion gate (a
@@ -1742,6 +1772,10 @@ src/
                      #   Spearman, the cluster bootstrap for a mean and for a difference of means,
                      #   sd_true_excess). Pure NumPy, no domain concepts; lifted out of cf_audit.py
                      #   so a second consumer need not import an instrument to get an interval
+                     #   untaught_meter.py (THE UNTAUGHT METER's engine — team manifests, ref
+                     #   resolution through the ONE choke point, the five-seam seed table + the CRN
+                     #   per-battle harness, the paired cluster bootstrap, the replicate floor and
+                     #   the verdict vocabulary; CLI is main/untaught_meter.py)
     battle/          # Event-sourced battle layer (Gen3Battle, BattleEvent log, TurnView,
                      #   LiveView/LegalActions read-models, StrictBattleView) — has CLAUDE.md
   main/
@@ -1856,6 +1890,18 @@ src/
                      #   SIDECARS (falling back to snapshot_history, then the run-level current_lr).
                      #   Model-free and torch-FREE, so it reads a run whose architecture drifted
                      #   past current code. The meter `--fork-lr` exists to make choosable
+    untaught_meter.py  # THE UNTAUGHT METER — piloting win rate on a fixed team slice (default the
+                     #   untaught 8; --taught for the taught 16) against ONE fixed opponent,
+                     #   cluster-bootstrapped over TEAMS with one shared resampling index set so
+                     #   every ref-vs-ref delta is PAIRED. TWO delta columns: vs the frozen
+                     #   --baseline AND vs the --control CONTINUATION arms at matched depth (pooled,
+                     #   with their own max-pairwise replicate floor) — a frozen baseline alone
+                     #   credits a fold with progress the parent would have made anyway (ledger
+                     #   2026-09-06 cell 2: +3.45pp). Refs go through resolve_model_ref, so a bare
+                     #   run dir is the LAST SNAPSHOT and the resolved file + rung are recorded.
+                     #   --check / --dry-run resolve without playing; --from-rows re-reads committed
+                     #   per-team artifacts with no models. concurrency > 1 REFUSED; --workers N
+                     #   shards over teams. Engine: agents/training/untaught_meter.py
     exploitability.py  # GENERATION EXPLOITABILITY CURVE — pure bookkeeping over
                      #   `fleet_admission`-schema admission artifacts (+ optional run metadata):
                      #   per generation the best-response net extraction (mean + max over

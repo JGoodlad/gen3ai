@@ -1,0 +1,21 @@
+{
+ "note": "the 2x2 batch's TAUGHT 16, in the ORDER the seeds are consumed (index = team seed offset). Extracted mechanically from taught_probe.py's SLICES on 2026-09-06 so that `python -m main.untaught_meter --taught` has a manifest to read. The probe resolved them from each arm's OWN recorded --distill-teacher, whose ':*' expands to each teacher's recorded --trainee-teams; verified 2026-09-04 that all four TC arms resolve to this identical set and that it is DISJOINT from the untaught 8. Never hand-type it.",
+ "taught": [
+  "data/teams/sample/009e3d0244.txt",
+  "data/teams/sample/37d717a93a.txt",
+  "data/teams/sample/436335607f.txt",
+  "data/teams/sample/64a691c473.txt",
+  "data/teams/sample/6916e13879.txt",
+  "data/teams/sample/6ebe9ebc4d.txt",
+  "data/teams/sample/750d056194.txt",
+  "data/teams/sample/8bdb5796b9.txt",
+  "data/teams/sample/9b454d9ea7.txt",
+  "data/teams/sample/9d8391d864.txt",
+  "data/teams/sample/9e95fb59d7.txt",
+  "data/teams/sample/a9831a5f5e.txt",
+  "data/teams/sample/aea50f207e.txt",
+  "data/teams/sample/b904dbe059.txt",
+  "data/teams/sample/e28069562f.txt",
+  "data/teams/sample/e702a104eb.txt"
+ ]
+}

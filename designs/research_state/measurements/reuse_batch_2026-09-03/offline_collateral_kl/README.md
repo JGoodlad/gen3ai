@@ -19,6 +19,30 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
   /tmp/okl.json 24 1
 ```
 
+## 📌 The STATE RECIPE below now has an in-tree successor — `python -m main.untaught_meter`
+
+**2026-09-06.** The two halves this file established — *all five global-RNG seams pinned* **and**
+*`concurrency=1`*, with the refusal rather than a warning — plus the equal-weight cluster bootstrap
+over the 8 teams on ONE shared resampling index set, are now the standing implementation in
+`src/agents/training/untaught_meter.py` (CLI `src/main/untaught_meter.py`). `untaught_teams.json`
+beside this README is that CLI's **default team manifest**, read in this order, and at `--seed 0`
+its pool draw is `random.Random(61000 + ti)` — this script's, unchanged.
+
+Two things the successor adds that this script could not:
+
+* a **continuation-control column**. Ledger 2026-09-06 (cell 2) measured a plain continuation moving
+  the untaught win rate +3.45pp [+0.46, +6.48] with no fold machinery at all, so a delta against a
+  frozen parent overstates a fold by whatever the parent would have gained anyway. `--control`
+  pools continuation arms and carries their own max-pairwise replicate floor.
+* **ref resolution through the ONE choke point**, with the resolved file and its rung recorded — the
+  defect probe H8 found (`best_model.zip` is not always a run's last checkpoint) is unrepresentable
+  there.
+
+**This script and its artifacts are NOT superseded and must not be regenerated.** It measures a
+KL, not a win rate; its five artifacts are the evidence for the reproducibility caveats below, and
+the three pre-pin runs exist precisely to show what an unseeded draw looks like. Read this file for
+*why* the recipe is what it is; run the meter when you want a new number.
+
 ## Why this exists
 
 The live `--distill-anchor-monitor` reports `collateral_kl_vs_parent`, but it needs the **off-slice

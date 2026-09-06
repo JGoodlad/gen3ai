@@ -1095,6 +1095,80 @@ Tests: `global_random_coupling_test.py` (47, all four new seams) and
 interleaving pulls the two apart — so if that ever passes, the per-instance RNG has stopped being
 the difference and the rest of the suite is asserting nothing.
 
+### The untaught meter (`untaught_meter.py` · CLI `python -m main.untaught_meter`)
+
+**The first in-tree consumer of all five seeds, and the meter every fold verdict in the ledger rests
+on.** It plays a checkpoint PILOTING a fixed team slice against ONE fixed opponent and reports a
+cluster-bootstrapped win rate. Offline — no training, no launcher, no server, nothing written under
+`models/`.
+
+**THE RECIPE**, which is the banked probes' recipe with one declaration instead of five copies:
+
+| | |
+|---|---|
+| teams | `--teams` a manifest JSON, **in order — the order IS the seed** (index = team seed offset). Default: the untaught 8 (`reuse_batch_2026-09-03/offline_collateral_kl/untaught_teams.json`). `--taught` swaps in the taught 16 (`teacher_content_2x2_2026-09-04/taught_teams.json`). Both `pin_sha` (raw bytes, the MatchupSpec convention) and `team_sha` (strip-normalized, the archetype-artifact join key) are recorded per team — they DIFFER on a file with a trailing newline |
+| refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call `main/train/model_build.py` makes for a `--distill-teacher`. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
+| opponent | one fixed model (default rev-1's 24M snapshot) piloting the **paired** pool draw |
+| module tree | one `model_config.json` for every model (default rev-1's snapshot config, what the probes used; `--config auto` resolves each model's own), observation debugger stripped, `device="cpu"` |
+| play | `stochastic=True` both sides · rust bridge · **`concurrency=1`** |
+| aggregation | equal-weight cluster mean over TEAMS, and **ONE fixed resampling index set shared by every ref and every contrast** so a ref-vs-ref difference is paired on the same team draws |
+
+**THE SEEDS.** Per team, all five global-RNG seams above are set from `--seed` + the team index;
+additionally both players' sampling generators are re-seeded **per battle** and the sim takes a
+per-battle dice seed. **At `--seed 0` the dice, the pool draw and the policy seeds reproduce
+`arch_transfer_2026-09-05/exploiter_competence/compete.py` exactly**, so a level here is comparable
+to that banked one.
+
+| stream | value |
+|---|---|
+| `$GEN3AI_{PLAYER,TEAM,POLICY,POOL,STALLER}_SEED` | `{10000,20000,30000,40000,50000} + 1e6·seed + team_index` |
+| sim dice | `[seed + team_index + 1, battle_index + 1, 3, 4]` |
+| pool sequence | `random.Random(61000 + 1e6·seed + team_index).randrange(n_pool)`, drawn **sequentially** — one `Random` per team, prefix-consistent, so a ref at 12 games/team plays the first 12 of another ref's 200 |
+| pilot / opponent policy | `71000 / 72000 + 1e6·seed + team_index·1000 + battle_index`, re-seeded per battle |
+
+🚨 **`concurrency > 1` is REFUSED** (`GEN3AI_UNTAUGHT_METER_ALLOW_CONCURRENCY=1` accepts unquotable
+levels). Seeds pin the dice and both players' sampling, but interleaved battles consume the shared
+streams in a **scheduling-dependent order** — measured 2026-09-03, seeded at concurrency 3 two runs
+of the offline collateral-KL probe still gave 1193 vs 1141 states with arm levels up to +0.043
+apart. **SHARDING IS OVER TEAMS**: `--workers N` splits the teams round-robin across N
+single-concurrency child processes, which is safe because a cell is a pure function of (ref, team
+index, battle index) — verified by `exploiter_competence` before it sharded 3200 battles across six
+workers, and gated here by
+`src/main/untaught_meter_reproducibility_integration_test.py` (`sim`+`slow`: two `--workers 2` runs,
+byte-identical JSON).
+
+🚨 **THE CONTINUATION CONTROL IS THE SECOND COLUMN, and it is not optional bookkeeping.** Ledger
+2026-09-06 (cell 2) measured a plain +1.08M-step continuation of v8's parent — no teacher, no
+distillation term, no stable opponents — moving this meter **+3.45pp [+0.46, +6.48]** on its own. A
+delta against a **frozen** parent therefore credits a fold with progress the parent would have made
+anyway; re-based, v8's celebrated +4.64pp becomes ≈ +1.2pp and is not significant. `--control
+<arms…>` pools the continuation arms equal-weight and computes their **max-pairwise replicate
+floor** (`|Δ|` is a magnitude; **one** control arm gives a re-based delta but NO floor, and the
+meter says so rather than inventing a zero). `--floor PP` supplies the externally-ruled floor for
+the *baseline* column — regime-specific (1.66pp frozen K=3 · 4.27pp controller-live), **never
+pooled across regimes**. Verdicts, in order: `WITHIN FLOOR` (|Δ| below the floor — the CI may still
+exclude zero, which says the games are consistent, not that the arm differs) → `NOT DETECTED` (CI
+spans zero) → `SIGNIFICANT`.
+
+**Timeouts are their own bucket**: an unfinished battle is never scored as a loss, win rate is over
+FINISHED games, and a run whose timeouts exceed **25%** of attempted battles reports `INCONCLUSIVE`
+with no verdict at all (CLI exit 3).
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.untaught_meter FOLD_A=<run> FOLD_B=<run> \
+  --baseline <frozen parent> --control <cont A> <cont B> <cont C> \
+  --games-per-team 200 --workers 6 --floor 1.66 --json out.json --md out.md
+python -m main.untaught_meter <refs…> --baseline <ref> --check     # resolve only, plays nothing
+python -m main.untaught_meter --from-rows A=<untaught_X_end.json> --baseline B=<untaught_Y_end.json>
+```
+
+`--from-rows` re-reads committed per-team artifacts (`untaught_<TAG>_<depth>.json`-shaped) with no
+models and no battles — the `POOLED` row is a summary and is never counted as a ninth cluster. It is
+what pins the aggregation to the record: `untaught_meter_test.py` reproduces the banked 2×2 endpoint
+legs (`TCFUNDA−TCUNFA −4.50`, `TCFUNDB−TCUNFB −4.25`, mean **−4.37**, the ledger's funded−unfunded
+untaught endpoint) and the `UNF/end` replicate draw that is the two-arm control floor.
+
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
 (default 3) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
