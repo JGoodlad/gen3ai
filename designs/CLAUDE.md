@@ -359,6 +359,15 @@ fix it in the same pass. The `/gen3ai-learning` skill creates and maintains them
   the measured anchors (76% retention, 93% headroom capture, the cosine audit as the conflict
   detector); the tick-tock as an EXPLICIT stability-plasticity schedule; the three-cause
   decay diagnostic (interference / capacity / drift), each with a different cure.
+- **`negative_transfer_and_shared_functions.md`** — why a fold on eight teams moves the other 711:
+  one network, one displacement of a shared function, GIFT and LEAK as that displacement judged
+  from two places; the taught→untaught gradient kernel (sign = teacher CONTENT, magnitude = DOSE,
+  a scalar KL is a norm not a direction); the hole-then-recovery shape and the four remedies with
+  their costs; the v8 boundary stated from git (flat action head + `damage_refine_rounds 2` loop
+  vs pointer head + no loop), why weight sharing amplifies transfer without setting its sign, the
+  "closed-form physics leaves teachers only team-specific content" hypothesis, and the two
+  pre-registered offline probes (content locality, sharing kernel) under
+  `research_state/measurements/arch_transfer_2026-09-05/`.
 - **`quality_diversity_and_open_endedness.md`** — the archive view of the flywheel: MAP-Elites
   (slices = cells, teachers = elites, tock = mutation; coverage and QD-score as first-class
   metrics beside ELO), descriptor choice as THE load-bearing decision (composition axes today, the

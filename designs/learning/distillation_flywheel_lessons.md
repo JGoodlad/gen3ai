@@ -187,6 +187,9 @@ a one-week run as its test.
 
 ## See also
 
+- `negative_transfer_and_shared_functions.md` — the MECHANISM under gift and leak: one displacement
+  of a shared function, sign set by teacher content, magnitude by dose; the architecture-boundary
+  hypothesis and its two pre-registered probes.
 - `generalist_specialist_amortization_gap.md` — why the generalist needs tutors at all.
 - `on_policy_self_distillation.md` — the search-as-teacher variant of the same loss.
 - `credit_assignment_and_value_errors.md` §4 — what the same campaign taught about the critic.

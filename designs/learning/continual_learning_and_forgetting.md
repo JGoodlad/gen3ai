@@ -74,3 +74,6 @@ network). Three causes, three different cures, one measurement plan.
 
 Related: the flywheel design (`../ai_v10/design_flywheel_tick_tock.md`) §4-§5; the retention and
 capture measurements live in the memory/ledger record cited there.
+See also `negative_transfer_and_shared_functions.md` for the same mechanism stated as a gradient kernel
+between taught and untaught states, the hole-then-recovery shape every gen-era fold shows, and why a
+scalar divergence cannot tell interference from generalisation.

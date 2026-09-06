@@ -95,6 +95,11 @@
   what separates critic route **7a** (positional, fully expressive) from **7b/PV** (equivariant,
   rank-*h*).
 
+- **Depth is plies of who-threatens-whom, and recurrence IN DEPTH is not the recurrence we vetoed.**
+  A looped transformer (Saunshi 2025, Huginn, Ouro) re-applies one block for adaptive depth at zero
+  extra parameters; we already ran the miniature (the v8-era `damage_refine_rounds` physics loop) and
+  measured it inert 3-for-3, so it carries a high build bar and a named pre-probe (Part 4).
+
 ---
 
 ## Part 0 — The altitude view (read this before anything else)
@@ -957,6 +962,69 @@ sufficient-statistic half — balances, not statements. The 7×159 positional bl
 still unchanged; the forcing point for it remains Stage 3, whose minimal port is 7 opaque "history
 tokens" through a per-type input projection, preserving every signal without deciding rungs 2–3.
 Those wait on the attention-usage audit, exactly as the edge families waited on theirs.
+
+### Depth, and the looped transformer — recurrence WITHIN a forward is a different thing
+
+The veto above is on recurrence **across decisions**: a hidden state carried from turn 14 to turn
+15. Recurrence **in depth**, the same block applied several times inside one forward pass, carries
+nothing across decisions and breaks no forensic invariant. It is a capacity question, and it is
+worth stating what depth means in an entity model before asking for more of it.
+
+**What a layer is here.** One transformer layer is one round of message passing over the 29 seats:
+my mon reads what every opposing mon threatens. Two layers give a second hop: my mon can read what
+their Tyranitar has learned about my Swampert, which is the "they will go to Skarmory, which walls
+me" reasoning. Depth is plies of who-threatens-whom, one hop per layer. Battles are short
+interaction graphs, so a few hops cover most of it, and every extra *untied* layer buys one hop for
+a full layer of parameters.
+
+**The looped transformer** applies the *same* block L times instead of stacking L different ones.
+Universal Transformers (2018) tied weights across depth; deep equilibrium models (2019) ran the loop
+to its fixed point. The 2025 results are the ones worth knowing:
+
+- *Saunshi et al., ICLR 2025, "Reasoning with Latent Thoughts".* On reasoning tasks a k-layer block
+  looped L times nearly matches a kL-layer model and clearly beats k layers alone. Their framing:
+  many problems need depth but not parameters, and each loop is a latent chain-of-thought step.
+- *Geiping et al. 2025, Huginn-3.5B.* A prelude embeds, a core block recurs, a coda decodes. Two
+  engineering facts carry over: the **input is re-injected on every pass** so the loop never loses
+  the board, and training backpropagates through only the last few recurrences to bound memory.
+  Test-time compute scales from 4 loops to 32 with accuracy still rising on maths and logic.
+- *Ouro (Zhu et al., Oct 2025).* Looped models at 1.4B and 2.6B parameters match models up to 12B;
+  controlled experiments attribute the gain to knowledge *manipulation*, not knowledge capacity. It
+  also learns how many loops to spend per input through an entropy-regularised depth objective.
+
+**We already ran the miniature version, and measured it inert.** Our forward is a fixed-point-shaped
+problem: the belief about their sets feeds the damage physics, physics feeds attention over threats,
+attention refines the belief. The v8-era `damage_refine_rounds` loop was exactly the Huginn recipe in
+small: a lean physics kernel re-run between the two layers from the current belief, its summary
+injected back onto the tokens (input injection, both directions, plus status). It cost about a fifth
+of the per-forward CPU and the trunk-enrichment audit found it near-inert three times (ledger
+K9/K10; the lean kernel was already a 92%-agreement proxy for the full one). It was deleted at v50,
+and the tier contract now *enforces* one pass, belief then physics then attention, because one pass
+matched the measurements. That is the strongest prior we own against "the trunk needs more
+iterations".
+
+**What a real loop would buy here, and cost.**
+
+- *Buy: adaptive depth.* A 1v1 endgame needs one hop; a six-on-six opening with three hidden sets
+  needs several. Weight tying spends the extra compute only where it is needed, at zero extra
+  parameters. The belief-refinement story is also genuine: after attending over the revealed team,
+  the teammate priors sharpen the guess at their sets, and physics recomputed from the sharper guess
+  is not the first pass again.
+- *Cost: the rollout.* Opponents run at batch one on 48 CPU workers and are two thirds of worker
+  time; compilation bought a 6.5× per-forward win there and the gain has saturated. A loop of L
+  multiplies the trunk cost by L, and if the physics op sits inside the loop it multiplies the most
+  expensive block in the forward. Training pays truncated backprop through the loop, and a variable L
+  fights the compiled trainer, which is fail-loud by design.
+- *Cost: the evidence bar.* The standing verdict is that the trunk is healthy (participation rank
+  rising, no representational hole found in eight probes) and the ceiling is structural holes, not
+  capacity, so any "give the trunk more" proposal carries a high build bar. The right pre-probe
+  already exists: the better-line search records the depth at which it finds an improvement over the
+  played action. If depth-2 improvements are rare, extra hops inside the network would not have found
+  them either; if they are common, that is the case for depth, looped or stacked.
+- *And transfer.* Tying weights across depth is still more sharing. Under the mechanism in
+  [[negative_transfer_and_shared_functions]] a looped trunk makes every distillation gift and every
+  leak larger. It changes the magnitude of what a fold does, not its sign, so it is not a remedy for
+  the robbery and could sharpen it.
 
 ---
 
@@ -2048,6 +2116,9 @@ makes it a system rather than a pile: **the pieces share a contract, not a plan.
    treats entity-structured *action* spaces as the primary abstraction.
 
 ## See also
+- [[negative_transfer_and_shared_functions]] — why weight sharing amplifies distillation transfer
+  in both directions, the v8 flat-head + refine-loop vs pointer-head boundary, and the two probes
+  testing whether closed-form physics leaves teachers only team-specific content
 - [[shortcut_learning_and_feature_delivery]] — **the companion decision rule**: when feeding a
   computed feature straight to the head is amortization (a plus) vs. a bottleneck you built
   (a minus); gradient starvation, the "never collapse a choice axis" rule, and the measured P1
