@@ -12652,3 +12652,57 @@ level shift. That is exactly the `critic_gate` defect — the arm's newest-of-4 
 anchored to pinned bots while snapshot-vs-snapshot edges accumulate, so the snapshot cluster
 plausibly re-seats against a fixed anchor, but no explanation is asserted here. What is measured is
 the shape: uniform per-node deflation, stable structure, drifting level.
+
+---
+
+## 2026-09-07 · ROUTINE · `ai_v12_02_winprob_critic` 18M — train episode length +25%, BOTH eval populations FLAT, and the threshold trap that sits exactly on the difference
+
+### State
+
+| | |
+|---|---|
+| bots | **827/900 = 0.919** — SATURATED: 0.894 · 0.900 · 0.896 · 0.922 · 0.919 over five cycles |
+| G7 (the standing kill) | **all OK, arm at 0%** — 18M: stall_rate 0.0000, mean_turns 26.2, ep_bots 21.47, ep_pool 31.75 |
+| clause 2 (DISCHARGED bar, numbers only) | +7.91 turns, 264% |
+| `draw_rate` monitor | 0.0038 (max 0.0080) — **zero of two** consecutive >0.01 buckets |
+| `reward/untracked_abs_mean` | 0.0000 across the last 20 |
+| ladder | 7 nodes, 21/21 pairs; the 18M node is with the updater |
+
+The bots plateau is the one READ AMENDMENT 2 predicted past ~12M; 18M's 0.919 against 16M's 0.922 is
+the plateau, not a decline. That axis has stopped discriminating, which is why the bots clause was
+registered as expiring.
+
+### The divergence
+
+| series | early | 18M | change |
+|---|---|---|---|
+| **train** `rollout/ep_len_mean` | 32.4 | **40.52** | **+25%** |
+| eval `ep_bots` | 20.70 | 21.47 | +3.7% (oscillating ~22 since 4M) |
+| eval `ep_pool` | 25.89 | 31.75 | flat since 10M (31.05 · 31.10 · 32.62 · 32.03 · 31.75) |
+
+Same agent, same period. `ep_bots` at 18M is **lower** than at 10M.
+
+### 🚨 THE TRAP — one threshold, two series with the same name and units
+
+**G7's `ep_len <= 1.25x era` is defined on EVAL episode length** (`eval/mean_ep_len_vs_bots` /
+`_vs_pool`), **never on `rollout/ep_len_mean`.** Train episode length now sits at **+25% over its own
+early value — exactly the number that would fire that threshold.** Applied to the train series G7
+would read as BREACHING today; applied where it is actually defined, the same agent reads +3.7% and
+0% of the kill.
+
+This is a live hazard rather than a hypothetical: `rollout/ep_len_mean` is the ep_len series that
+appears in every instrument read and in the discharged clause 2, so it is the one a reader reaches
+for. The distinction is now the only thing standing between the arm and a false kill verdict.
+
+### A mechanism that fits — **UNVERIFIED**, and its falsifiable form is registered
+
+In TRAIN self-play both sides are the current policy or a recent snapshot, so the two players improve
+TOGETHER and near-equal opponents take longer to resolve. In EVAL the trainee is current while the
+sentinels are older and the set is capped, so as the trainee improves the gap WIDENS and games stay
+short. That predicts precisely what is observed — train lengthening while eval-vs-pool stays flat
+despite pool being self-play-ish — and would make the train rise a signature of **self-play
+equilibrium**, not of stalling.
+
+**No explanation is asserted.** The registered falsifiable form, for a quiet moment: plot `ep_pool`
+per cycle against the trainee-minus-sentinel Elo gap taken from the ladder — reported as a SCATTER
+with n and the sign, **no fit line unless the points earn one.**
