@@ -11715,3 +11715,92 @@ comparing a value against the default, which is what made an earlier version fla
 baselines + 1 list. `production` records `pending.candidate = ai_v12_02_winprob_critic`: the
 production baseline moves only when that arm passes its pre-registered gate, and moving it is a
 command that rewrites the entry and prints the ledger line to append.
+
+### 2026-09-06 · INCIDENT — `ai_v12_01` ran ~7 h on a STRIPPED ARCHITECTURE, and was believed killed while still running
+
+**Two independent failures, one from each session, and the entry carries both because each would
+have been survivable alone.**
+
+**(a) "IT LAUNCHES" AND "IT IS THE EXPERIMENT" ARE INDEPENDENT CHECKS, AND ONLY THE RESOLVED-CONFIG
+DIFF TESTS THE SECOND.** `ai_v12_01_winprob_critic` was built from the design's §5.4 command block,
+which carries the critic flags and PPO knobs and **no architecture surface**. Every architecture flag
+silently took its OFF default. Three gates were run before launch and all three passed:
+`python -m main.checkargs` exit 0, `main.train.config.resolve_config` accepted, `--dry-run` clean.
+**None of them can see this class of defect** — they answer "does this command start a run", not
+"does it build the intended model". The diff against `designs/production_config.json` is the only
+check that asks the second question, and it was not run.
+
+Measured on the running arm, `model_config.json` vs `designs/production_config.json`:
+**31 keys differ, 29 of them architecture.**
+
+| key | production | the arm |
+|---|---|---|
+| `edge_bias_families` | `d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r` | **off** |
+| `entity_topk_seats` | 6 | **0** |
+| `opp_belief_slots` · `opp_intent` | True | **False** |
+| `history_events` · `item_belief` · `spread_belief` | True | **False** |
+| `pair_outcome_cell` · `pair_outcome_switch` · `intent_threshold` · `intent_conditional` · `intent_move_cell` · `conditional_threat_cell` | True | **False** |
+| `move_belief_mode` | both | **revealed** |
+| `opp_belief_cls_k` | 6 | **0** |
+| `opp_belief_aux_coef` · `move_belief_coef` · `item_belief_coef` | 0.05 | **0.0** |
+| `intent_label_bot_weight` | 0.25 | **1.0** |
+| `species_prior_fusion` · `entity_tail_seats` · `damage_matrices_outgoing` | True | **False** |
+
+⇒ **EVERY NUMBER TAKEN OFF `ai_v12_01` IS A MEASUREMENT OF A DIFFERENT MODEL** — no edges, no entity
+seats, no belief slots, no event window, no intent heads. That includes the "31 Elo ahead of rev-1,
+inside the 38 floor" famine reading produced as a tool smoke test: not a weak result, a result about
+another architecture.
+
+**(b) AN ARM KILLED FOR A CONFIG DEFECT IS NOT KILLED UNTIL THE PID IS GONE AND THE GPU IS FREE.**
+The defect was identified and the arm was recorded as killed — on the strength of a report, in both
+sessions' notes. It was not killed. It ran a further **~7 hours to 24.4M steps**, holding the GPU
+(launcher pid 2293127, alive 25,131 s, 6 checkpoints, 11 snapshots), while its successor waited. The
+verification that ended it was three commands: `kill -0` on the recorded pid, the step count from the
+child log, and `nvidia-smi`.
+
+**A third finding, separated deliberately because it is NOT arch drift.** Rebuilding the arm from
+gen-17's recorded `original_command` fails for an unrelated reason: that surface carries **nine flags
+the critic mode SUBSUMES and therefore REFUSES** — `--use-popart`, `--value-from-dist`,
+`--value-dist-{mode,bins,vmin,vmax,coef}`, `--win-prob-coef`, `--value-tail-weight`. `checkargs`
+reported 5 refused combinations until they were stripped. **This failure is loud and pre-launch;
+the arch-drift failure is silent and post-launch.** They must not be conflated: a guard that catches
+the first is no protection against the second.
+
+**The successor, `ai_v12_02_winprob_critic`, was gated on the check that was missing:** 49 derived
+architecture toggles compared against production, **0 differing**, confirmed in the built config
+(`total_dim 2501`, the full edge string, seats 6, every belief and intent head on,
+`intent_label_bot_weight 0.25`, `arch_signature gen3_critic_route_wave_v1`).
+
+### 2026-09-06 · G5 slice (iii) — a plain continuation gains on the TAUGHT teams but not the untaught, and the folds' on-slice gift SURVIVES re-basing
+
+The taught-16 half of the continuation control, completing `b098d31c`. Reference
+`taught_R2ACTION_end.json`; G5 arms A/B/C at `final_model`.
+
+> **G5 continuation gain on the TAUGHT 16: +2.09pp [+0.47, +3.79] — CLEARS zero.**
+> On the untaught 8 the same control gained **nothing**: −1.92pp [−3.98, +0.46], spans zero.
+
+| arm | taught | vs FROZEN parent | **vs CONTINUATION** |
+|---|---|---|---|
+| TCFUNDA_end | 52.97pp | +5.50 [+2.53, +8.41] | **+3.41 [+0.88, +6.18]** |
+| TCFUNDB_end | 52.19pp | +4.72 [+2.28, +7.09] | +2.63 [−0.02, +5.18] |
+| TCUNFA_end | 52.25pp | +4.78 [+2.84, +6.91] | **+2.69 [+0.59, +4.61]** |
+| TCUNFB_end | 52.41pp | +4.94 [+2.97, +6.97] | **+2.84 [+0.79, +5.25]** |
+| TCUNFK6A_end | 51.66pp | +4.19 [+1.56, +6.81] | +2.09 [−0.23, +4.34] |
+| TCUNFK6B_end | 52.25pp | +4.78 [+2.69, +6.87] | **+2.69 [+1.22, +4.25]** |
+
+**⇒ Re-based on the continuation, the folds' ON-SLICE gift is +2.6 to +3.4pp** (four of six clear
+zero), against ~+4.2 to +5.5pp read against the frozen parent. **The gift survives the correction; it
+is not an artifact of the wrong baseline.** That is the opposite of what the untaught side showed,
+where the same re-basing moved the robbery *toward* zero because the continuation gain there was
+negative.
+
+**⚠️ THE DEPTH MISMATCH IS PART OF THE RESULT, NOT A FOOTNOTE.** G5's taught reading is at
+**fork+1,179,648**; the TC taught readings are at END, **~fork+4.45M**. The re-based column therefore
+subtracts a ~1.18M continuation from a ~4.45M fold and **UNDER-corrects**: an honest continuation run
+to 4.45M would gain at least as much, so **the re-based column is an UPPER BOUND on the fold's taught
+gift**, not an estimate of it. A larger correction would push these numbers down, possibly below
+zero. Any later quotation of "+2.6 to +3.4pp" that omits this is overstating the result.
+
+**The asymmetry itself is the finding worth carrying:** ordinary continued training improves the
+teams in the taught slice while doing nothing measurable for the untaught 8. Whatever a fold adds
+on-slice, part of what was previously credited to it was available from training alone.
