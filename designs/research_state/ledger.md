@@ -12164,3 +12164,40 @@ matched snapshot count (amendment 2), never clause 2 alone.
 
 Tag: **REGISTRATION**, no measurement claimed. Run state at the ruling: 5.11M, `draw_rate` 0.0035
 (12% of the 5M bar), `untracked_abs_mean` 0.0000.
+
+### 2026-09-06 · STANDING RULE 15 — a windowed statistic never crosses an opponent-regime boundary; plus the vf_coef ruling for the 23:27 restart read
+
+Raised by the Training Run session at 5.21M, the fourth instrument on `ai_v12_02_winprob_critic` to
+be corrupted by the same 4.00M boundary (first promotion; `selfplay_fraction` 0.0 → 0.90):
+
+| instrument | what the boundary did | fixed by |
+|---|---|---|
+| ep_len kill clause 2 | a bots-era reference against self-play data reads MET forever | amendments 3 → 4 (`0e2bacc7`, `38bfca94`) |
+| `selfplay_fraction` "median of last 20" | printed 0.45, a value the run never occupied | reader prints current value + change history |
+| throughput | a real 420 s compile pause was blamed for a 1.52× regime change | corrected same evening (605 fps is the 0.90-regime rate) |
+| vf_coef `grad/value_policy_logratio` | "median of last 20" spans both regimes from ~3.2M | this entry |
+
+**vf_coef, per 1M bucket (log10):** 0–1M +1.186 (the value head initialising) · 1–2M +0.150 ·
+2–3M −0.180 · 3–4M −0.042 · **4–5M −0.331 · 5–6M −0.392**. Pool-empty regime median **+0.034**
+(n = 39); self-play regime median **−0.348** (n = 15); **shift at the boundary −0.382 log10 (2.4×)**.
+The apparent monotone drift across three reads (−0.180 → −0.279 → −0.331) was mostly the window
+sliding out of one regime into the other.
+
+**Ruling for the 23:27 restart read: (a) — the statistic stays as registered** (`cfc72ad0`, median of
+the last 20 rollouts). The verdict is **KEEP under every framing** — straddling −0.331, self-play-only
+−0.348, latest bucket −0.392, all inside ±0.5 — and the report states all three, names the registered
+one, and notes the window is fully inside the self-play regime from ~6.2M. A registered statistic is
+not changed an hour before its read; this one self-clears.
+
+**STANDING RULE 15 (UNDERSTANDING.md §7):** a windowed statistic on a self-play run never crosses a
+regime boundary — the tooling restricts the window to the current regime or reads NOT EVALUABLE, and
+prints the regime marker beside every windowed number; a regime marker is reported as current value
+plus change history, never a central tendency. Readers adopt it after the restart read.
+
+**FINDING, cause UNVERIFIED:** the value/policy gradient-norm ratio itself fell **2.4×** when the
+opponent became a neural snapshot. That is a property of the arm, not of the window; the ±0.5 band
+was set on pool-empty data, so the vf_coef rule is read per regime from here on. No explanation is
+recorded; candidates are for a probe, not a ledger.
+
+Run state: 5.21M, `draw_rate` 0.0030, `untracked_abs_mean` 0.0000, calibration cost 2.8%,
+`selfplay_fraction` steady at 0.90.

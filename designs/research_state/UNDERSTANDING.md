@@ -629,6 +629,15 @@ z=−1.40" rules out >4.5pp, not >0.
 13. **A result is not a result until every registered depth has landed.**
 14. **Write the kills.** A finding that is not written here or in the ledger evaporates and gets
     re-believed.
+15. **A windowed statistic never crosses an OPPONENT-REGIME boundary.** A regime is a constant
+    `train/selfplay_fraction` (and by extension any step change in the opponent distribution). The
+    tooling restricts the window to the current regime or reads NOT EVALUABLE, and prints the regime
+    marker (current value, the step it changed at) beside every windowed number; a regime marker is
+    reported as its current value plus change history, never as a central tendency. Four instruments
+    on `ai_v12_02` were corrupted by the one 4.00M boundary in a single evening — the ep_len kill
+    clause (amendments 3→4), the `selfplay_fraction` median (0.45, a value never occupied), the
+    throughput diagnosis (a compile pause blamed for a regime change), and the vf_coef window (a
+    "drift" that was the window sliding regimes). Ledger 2026-09-06 · STANDING RULE 15.
 
 ---
 
