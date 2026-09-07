@@ -41,6 +41,15 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   constraints (no writes under `models/`, no training/launcher, no :8000/:8001, no git add/commit/push,
   never import a `__main__` module), the exact tests to run with counts to report, and the docs the
   change must update in the same pass (every touched leaf `CLAUDE.md`, `ARCHITECTURE.md`, `CHANGELOG`).
+- **GIGO is the standing threat, because the code is written agentically** (owner, 2026-09-06): an
+  incorrect metric, an un-fuzzed edge case, or a "byte-identical" that was not, costs days (the exploiter
+  evals once ran against the WRONG team set and survived two rounds of push-back). So every brief asks
+  for edge-case tests; a FUZZ test (real bridge battles, intercepted protocol — root `CLAUDE.md`
+  → *What "fuzz test" means*) wherever a protocol or data pipeline is touched; a byte-identity check
+  (hash the artifact) wherever "unchanged" is claimed; and a THROWING producer+consumer guard for any
+  order or key contract. A GIGO risk found in passing is flagged and addressed in the same pass, never
+  deferred. When the owner says a result looks impossible, that is a GIGO alarm to VERIFY at the
+  source — the artifact, the team list, the resolved file — not an objection to explain away.
 - A brief asks for FINDINGS, not footnotes: "I skipped X because it would break Y" is a defect in Y
   and is reported with file:line.
 - Validate by EXECUTING, never by clause-checking: an argv is parsed, a data selection is consumed by

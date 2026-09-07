@@ -164,6 +164,10 @@ automatically. Never run a Claude session inside the training tmux session (its 
   (teams, battles), never pooled rows.
 - The ledger is append-only and WINS any disagreement; `designs/research_state/UNDERSTANDING.md` is
   fixed to match it in the same pass whenever a belief changes.
+- **A read is validated at the SOURCE before it is quoted** (owner, 2026-09-06 — GIGO vigilance): the
+  resolved checkpoint file and rung, the team manifest actually loaded, the opponent actually played, the
+  metric's definition in code (units, sign, denominator). An eval once ran against the wrong team set and
+  was believed for two rounds; a result that looks impossible is verified at the artifact, not explained.
 - Every code and cell letter carries a human description in the same sentence when written for the
   owner **(owner, standing)**.
 
