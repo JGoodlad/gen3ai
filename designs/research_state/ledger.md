@@ -12459,3 +12459,57 @@ Also recorded: the run's own snapshot-ladder updater plays each new node on prom
 for the updater's node and uses `--backfill` only for gaps, never concurrently (a concurrent backfill
 double-plays pairs and contends with the run). Run state: 12M, bots 0.900 (6 cycles rising,
 decelerating), `untracked_abs_mean` 0.0000, 12M ladder node pending the updater.
+
+---
+
+## 2026-09-07 · ROUTINE · the DRAW-COMPOSITION probe (READ AMENDMENT 5, `08de50d4`) — train `draw_rate` and G7's eval `stall_rate` measure DIFFERENT POPULATIONS, and neither is wrong
+
+Registered as option (c): understand the quantity before deciding what a breach of it means. No run
+touched; read from `<run>/eval_traces/` on `ai_v12_02_winprob_critic` at 12M.
+
+### What the traces can answer
+
+| outcome | n | median turns | p95 | max |
+|---|---|---|---|---|
+| LOSS | 597 | 21 | 53 | **250** |
+| WIN | 512 | 20 | 47 | 141 |
+
+**Battles reaching ≥200 turns: EXACTLY ONE, across 1109 captured battles** — step 4M, opponent
+**`staller`** (a bot), 250 turns, recorded as `LOSS`. That single battle **is** G7's 4M
+`stall_rate` of 0.0062 (1/161).
+
+**So G7 is sound and is not blind to stalls**: it keys on `meta.turns`, never on the result label, so
+a timeout surfaces as a 250-turn LOSS and is counted. The one stall on record is against the bot
+explicitly designed to stall.
+
+### The population split — the actual answer
+
+| | opponent mix | episode length |
+|---|---|---|
+| **train** | 90% self-play (`selfplay_fraction` 0.90) | ep_len ≈ **37** |
+| **eval, bots** | the 9 fixed bots | `ep_bots` ≈ **22.6** |
+| **eval, pool** | sentinels, share GROWING: **0 · 0 · 19 · 39 · 60 · 78** over the six cycles | `ep_pool` ≈ **31.1** |
+
+Train `draw_rate` rises with the self-play fraction; eval `stall_rate` stays ~0 because eval is still
+mostly bots, whose battles are short. The two instruments are not in conflict — they sample different
+opponent mixes. **Prediction this makes: as the sentinel share keeps growing, `ep_pool` is the number
+that moves first**, and it is already 31.1 against bots' 22.6.
+
+### 🚨 TWO SELF-CAUGHT ERRORS, recorded because the second is a class
+
+1. **The bot set was GUESSED FROM MEMORY**, which filed `setup_sweep`, `setup_sweep_v2`, `staller`
+   and `staller_v2` as POOL. They are BOTS. The classes must be read off the tree: 9 bots plus
+   `sentinel_0..3`. A wrong opponent class silently inverts a bot-vs-pool split.
+2. **"0 draws in every eval trace" IS NOT A MEASUREMENT.** The capture's result vocabulary is
+   **WIN and LOSS ONLY** and the filenames are only `win_*` / `loss_*` — **a draw has no bucket.**
+   Zero is what the instrument can express, not what happened. This is the *absence is not a zero*
+   class, and it was nearly reported as evidence that self-play produces no draws. It is the same
+   failure as reading a count from a ring buffer, or a median across a regime boundary: the number
+   came back clean and meant nothing.
+
+### The gap this leaves
+
+A true tie that does NOT reach 250 turns (simultaneous faint) is written as a `LOSS` and is invisible
+as a draw. **It cannot corrupt G7**, which keys on turns — but it means the eval traces can estimate
+a **stall rate** and never a **tie rate**. The tie half of the (c) split would have to come from the
+training signal, not the traces. Backlog row `0fafb78d` (P1).
