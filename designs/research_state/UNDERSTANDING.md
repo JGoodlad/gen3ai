@@ -551,7 +551,14 @@ falsification clause is not triggered because G2 fails too) — the bar is a 28M
 is at 10M, a maturity asymmetry STATED and NOT used to re-base the bar; G1's registered read is the
 75M gate. **The open finding, cause UNVERIFIED: strength and critic calibration are moving in
 OPPOSITE directions on this arm** — it is winning at the shaped incumbent's pace without the
-calibration the design predicted would carry it. G7 clean (stall 0.0000 except 4M 0.0062). The
+calibration the design predicted would carry it. **Candidate mechanism, from the run's own gradient
+scalars [ledger 2026-09-07 · *RESTART 2 RULING*]: the POLICY gradient on the shared trunk tripled
+after self-play began (0.56 → ~1.05) while the value gradient stayed flat (0.36 → 0.21–0.28), so the
+value head's share of the trunk update fell 0.44 → 0.13, and the train value loss and Brier have been
+FLAT since ~6M — the critic is riding a trunk the policy increasingly owns.** The vf_coef flag
+(`grad/value_policy_logratio` −0.298 → −0.5006 → −0.638 across the three restarts) is CONFIRMED and
+closed as a loop; arm B's `--vf-coef` (keep 0.5, or raise to restore the value share) is decided at
+D2 on this evidence. G7 clean (stall 0.0000 except 4M 0.0062). The
 registered ep_len clause 2 read MET (+4.12 turns) on a competence SAWTOOTH locked to the 2M pool
 promotions with draw rate at a third of its bar — the AND with clause 1 is what kept a met clause
 from reading as famine, and the +3.0 bar is banked as too tight for the next registration.
