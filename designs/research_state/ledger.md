@@ -12513,3 +12513,58 @@ A true tie that does NOT reach 250 turns (simultaneous faint) is written as a `L
 as a draw. **It cannot corrupt G7**, which keys on turns — but it means the eval traces can estimate
 a **stall rate** and never a **tie rate**. The tie half of the (c) split would have to come from the
 training signal, not the traces. Backlog row `0fafb78d` (P1).
+
+### 2026-09-07 · RESTART 2 RULING — the vf_coef FLAG is CONFIRMED (−0.638 log10) and CLOSED; the walk is the DENOMINATOR — the POLICY gradient on the shared trunk tripled while the value gradient stayed flat and the train value loss has been flat since ~6M
+
+The 2nd restart of `ai_v12_02_winprob_critic` (~02:27, 14.06M). The registered statistic
+(`cfc72ad0`: median of the last 20 rollouts of `grad/value_policy_logratio`) reads **−0.638 log10 =
+0.23×**, clear of the ±0.5 band and TIGHTER than restart 1's hairline −0.5006 (window 3.6× end to end
+vs 6.0×). The registered action for KEEP+FLAG was "re-read at the 2nd restart"; that has happened and
+confirmed. **Ruling: the flag is CONFIRMED and the re-read loop is CLOSED** — the statistic keeps
+being recorded at every restart as DATA, no further re-read is a verdict, nothing changes on this run
+(vf_coef is resume-immutable; NEW ARM's |med| ≥ 1.0 is 2.3× away), and the number's consumer is arm
+B's `--vf-coef` at D2. The registered readings across restarts: −0.298 → −0.5006 → −0.638, monotone.
+
+**Which reading — regime artefact (a) or walk (b) — is answered from the run's own scalars.** The
+ratio has components on TensorBoard (`grad/value_norm_shared`, `grad/policy_norm_shared`,
+`grad/value_share`, `train/value_loss`, `win_prob/brier`). Per-1M medians:
+
+| bucket | value ‖g‖ | policy ‖g‖ | log10 ratio | value share | train value loss | Brier |
+|---|---|---|---|---|---|---|
+| 2–3M | 0.358 | 0.555 | −0.180 | 0.36 | 0.0251 | 0.157 |
+| 3–4M | 0.614 | 0.679 | −0.042 | 0.44 | 0.0264 | 0.159 |
+| 4–5M (self-play begins) | 0.334 | 0.725 | −0.331 | 0.25 | 0.0266 | 0.158 |
+| 6–7M | 0.359 | 0.952 | −0.395 | 0.24 | 0.0188 | 0.139 |
+| 8–9M | 0.408 | 1.031 | −0.390 | 0.25 | 0.0192 | 0.135 |
+| 10–11M | 0.399 | 0.952 | −0.355 | 0.27 | 0.0180 | 0.143 |
+| 12–13M | 0.244 | 1.032 | −0.643 | 0.16 | 0.0173 | 0.143 |
+| 14–15M | 0.209 | 1.053 | −0.713 | 0.13 | 0.0166 | 0.133 |
+
+**The walk is the denominator.** The policy gradient on the shared trunk roughly **tripled** (0.56 →
+~1.05, still rising); the value gradient is flat-to-slightly-falling (0.36 → 0.21–0.28); the value
+head's SHARE of the trunk update fell **0.44 → 0.13**; and the train value loss and Brier have been
+**FLAT since ~6M** (0.017–0.019; 0.135–0.143). So the benign candidate banked at rule 15 — "a
+sharpening critic shrinks its own gradient" — is NOT the mechanism: the critic is not sharpening on
+train rollouts after 6M, while the policy objective drives an ever-larger share of the trunk.
+Reading (b) is real; its mechanism is the policy term growing, not the value term vanishing. Cause
+of the policy-norm growth **UNVERIFIED** (larger advantages under self-play is the obvious candidate;
+`train/noise_scale_ratio_policy` rising 0.02 → 0.37 says the policy gradient is also getting noisier
+relative to the batch). This is consistent with the 10M read's open finding — strength rising while
+eval-trace resolution sits flat-low — and gives it a candidate mechanism: **the critic is riding a
+trunk the policy increasingly owns.**
+
+**What it feeds, stated and not decided:** arm B's `--vf-coef` at D2 — keep 0.5 if G1 clears its bar
+by 75M (the share was evidently enough), or raise it to restore the value share of the trunk update
+if G1 is still below bar at 75M with a flat train loss. The owner decides arm B's design; this entry
+is the evidence it will be decided on. Readers now print `value_norm_shared`, `policy_norm_shared`
+and `value_share` beside the log-ratio at every read, per regime — a ratio without its components is
+what let this walk look like the critic's doing.
+
+**Rest of the read, clean:** startup +317 s (restart 1: +312 s; **312–317 s is the per-restart cost
+of record**); sidecar audit 7 sidecars, 1 pin span `f971caf2`, no PIN-SPLIT; bots 0.896 at 14M, the
+first non-rise, one cycle on the axis amendment 2 says saturates here — reads as nothing; ladder 5
+nodes 10/10 pairs, and **the 12M add deflated every earlier node** (10M 2022.1 → 2006.2, −15.9; 8M
+−12.3; 6M −18.2; 4M −17.0) — the inflation rule measured ON THIS ARM, confirming the 10M read's −30
+was like-for-like (both nodes newest-of-4) and flagging the next trap (settled 2006 vs rev-1's
+newest-of-4 2052 would read −46 and be wrong the other way); `untracked_abs_mean` 0.0000; monitor
+`draw_rate` 0.0039, zero of two buckets. The Training Run's cron is now `/loop 55m`.
