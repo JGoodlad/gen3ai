@@ -11964,3 +11964,71 @@ arm's own ladder, which cannot exist before the first snapshot at 4M — sequenc
    taken AT the 10M snapshot, not "around" it.
 4. The first eval cycle (2M): bots 55.6% (500/900) against the stripped arm's 50.2% at the same step —
    ONE cycle, clustered by opponent, NOT a difference; on track inside the stripped arm's envelope.
+
+---
+
+## 2026-09-06 · ROUTINE · `ai_v12_02_winprob_critic` 4M read — throughput of record, and every kill-bar quantity clean
+
+**Marginal throughput of record for arm 2 at `--n-envs 2048 --batch-size 32`: 953 fps.**
+
+Construction, because the wrong construction has already cost this program a duration estimate:
+the interval is the **2.4M checkpoint (21:14:55) → the 4,000,032 snapshot (21:42:53)**,
+1,600,032 steps / 1679 s. A snapshot and a checkpoint are written by the same save path, so a
+checkpoint→snapshot interval is the same construction as checkpoint→checkpoint — which is what
+made the figure available one checkpoint earlier than planned. Cross-checked against the OS
+watcher's own step counter, which touches no file mtime at all: **936 fps** over 21:08→21:43.
+The two agree to 1.8%.
+
+**The number NOT of record: 835 fps**, the cumulative launch→first-artifact rate. It is 12% low,
+and the gap IS the compile + startup cost that the marginal construction excludes by design. Arm
+1's 14-hour duration estimate came from that family of figure and was a property of its stripped
+config, not of the box.
+
+### Instruments at 4,030,464 (TensorBoard events, median of the last 20 rollouts)
+
+| instrument | reading | bar |
+|---|---|---|
+| `grad/value_policy_logratio` | **−0.180 log10 = 0.66×** | KEEP `--vf-coef 0.5` (`\|med\| ≤ 0.5`, ledger `cfc72ad0`) |
+| `signal/draw_rate` | 0.0097 (band 0.0061–0.0166) | 5M kill bar is 0.03 AND ep_len rising — at a third of the first clause |
+| `rollout/ep_len_mean` | 29.71 (range 25.88–33.82) | NOT rising — see below |
+| `reward/untracked_abs_mean` | **0.0000 on all 20** | required to read 0 at every read |
+
+The vf_coef window now spans **7.8×** end to end, against the **55×** seen in the early window.
+That earlier spread was a property of early training, not of the instrument — which retires the
+worry that the `cfc72ad0` bar is being read through unusable noise. The median remains the verdict
+statistic either way (SOP §3: a single-sample reading is never a verdict; the max single sample in
+that early window sat ON the NEW-ARM threshold while the median said the gradients were balanced
+to 3%).
+
+**`ep_len_mean` is read as a TREND, not a point** — by thirds of the run so far: **32.42 → 29.48 →
+29.83**. Fell, then flat. This is the correction of an earlier error in this run, where a point read
+("32 → 28.7, falling", then "27.1") was reported as a trend; the series in fact oscillates. The kill
+gate is `draw_rate high AND ep_len RISING`, so a point read there would have asserted the safe half
+of an AND-gate on a rendering artifact.
+
+### G1's primary endpoint, WITHIN-RUN — **train self-play rollouts**
+
+By thirds of the run: resolution **0.0096 → 0.0592 → 0.0737**; skill **0.1344 → 0.2667 → 0.3007**;
+reliability 0.0010 → 0.0016 → 0.0022; ECE 0.0207 → 0.0338 → 0.0381.
+
+🚨 **This trend does NOT meet the G1 bar and must not migrate into a verdict sentence.** The 0.0618
+resolution bar in `measurements/winprob_critic_baseline_2026-09-06/` lives on **selection-reweighted
+eval traces (bot + pool sentinels)**; the series above is **train self-play rollouts**. Different
+populations. **The 10M read is the first time the two populations meet**, and quoting the trend
+against the bar before then would manufacture "the arm already matches baseline" out of a
+population mismatch.
+
+**A rising reliability beside a climbing resolution is the expected shape of a sharpening critic**,
+not a defect — it becomes a finding only if the head is buying discrimination WITH miscalibration.
+Registered bar: **reliability > 10% of resolution**. Currently **2.9%** (0.0021 / 0.0727). This is
+now COMPUTED at every read rather than remembered — the probe reader prints the ratio and the
+verdict, on the same principle as the `absence is not a zero` warning that caught
+`reward/untracked_abs_mean` being read from the wrong group prefix.
+
+### State
+
+Snapshot **1 of the 4** the 10M ladder requires (cadence: every 2M from 4M, so the 4th lands at 10M
+with no margin — the read is taken AT the 10M snapshot). Launcher pid 2635463, up 1h18m, pinned
+`f971caf2`. Registered next events unchanged: 5M smoke (`read_10M.sh --check`), first restart
+~23:27 (vf_coef in both units + trend + verdict, plus `main.sidecar_audit`), then the 10M DECIDING
+famine read per READ AMENDMENT 2.
