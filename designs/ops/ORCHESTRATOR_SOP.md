@@ -35,8 +35,9 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   restructures, flag deletions, era flips, backfills and retention are PROPOSED as rows in
   [`TECH_DEBT_BACKLOG.md`](TECH_DEBT_BACKLOG.md) and dispatched on the owner's word — EXCEPT the
   **week-end burn-down**: whatever quota remains before the weekly reset is spent on that list,
-  ACCEPTED rows first, as a standing housekeeping procedure (owner, 2026-09-06; the procedure and
-  the ordering rule are in the backlog's header). Research and measurement work under the current
+  ACCEPTED rows first, as a standing housekeeping procedure, PACED to reach **95% of the weekly quota
+  by Tuesday ~08:00 PT** and stopping there (owner, 2026-09-06; the procedure and the ordering rule
+  are in the backlog's header; the usage gate runs at `--weekly-threshold 95` for that work). Research and measurement work under the current
   week goal is dispatched autonomously (§6). A RED gate that blocks landings gets the minimal
   unblock, not a refactor.
 - Every agent gets `isolation: "worktree"` and a brief that carries: the worktree setup (submodule +

@@ -10,8 +10,11 @@ quota remains before the weekly reset is burned down on this list as a standing 
 procedure** — ACCEPTED rows first, top to bottom; if ACCEPTED is empty and quota remains, the
 orchestrator notifies the owner with the top PROPOSED rows and, absent a reply in 15 minutes, starts
 the highest one. Read the reset time with `python3 ~/.claude/skills/usage-limits/check_usage.py`
-(the weekly window resets **Tuesdays ~14:00 PDT**); the burn-down begins when the remaining window
-is under ~24 h and the live arm needs nothing.
+(the weekly window resets **Tuesdays ~14:00 PT**). **Target: the weekly quota is used up to 95% by
+Tuesday ~08:00 PT** (owner, 2026-09-06), leaving ~5% spare for an issue — so the burn-down is PACED to
+land there (it starts Monday, earlier if the backlog is large) and STOPS at 95%: burn-down agents run
+under the usage gate at `--weekly-threshold 95`, never higher. The live arm's needs always come first;
+the burn-down uses what the arm does not.
 
 **Ordering:** by CRITICALITY tier, then by size within a tier (small first, so a partial burn-down
 still closes rows). Tiers: **P0** — a GIGO class: could make a measurement or a test lie ·
