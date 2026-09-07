@@ -134,13 +134,19 @@ as win prob — do we need PBRS, do we need to bootstrap with a frozen win-prob 
 we are working on running a model further and validating the win-prob head."* **The long-term goal
 (same statement):** *"a mature model, free of tech debt, that is understood to both benefit from
 search and teacher distillation, to see if we can repro v8's gift."* Consequences that are now
-standing: the FROZEN-φ rung (`ai_v12_03_winprob_frozenphi`, actor-only potential) runs **regardless
-of whether the SPARSE arm passes or is killed**, because "do we need the bootstrap" needs the paired
-comparison, and under this critic the SELF-φ rung does not exist (design §3.7), so "do we need PBRS"
-IS SPARSE-vs-FROZEN-φ; after the ladder, the mature checkpoint is read for a SEARCH dividend and for
-a teacher FOLD (untaught meter with continuation control) before any v8-gift replication attempt.
-Decisions are taken arm by arm from the data, not from a fixed batch (owner). [owner statement ·
-`designs/ops/ORCHESTRATOR_SOP.md` §6]
+standing (owner rulings, same day): **the recipe of record is SPARSE** — the owner's strong bias, because
+it has fewer moving parts and an A/B needs no parent. The FROZEN-φ bootstrap (actor-only potential,
+`--win-prob-pbrs-frozen`) is a CHECK on that bias, and its potential is **the SPARSE arm's OWN mature
+win-prob head**, not the gen-era fold parent the design §5.4 command names — the registered gen-era
+source survives only on the famine-KILL branch, where no mature self head exists. Its read is
+**wall time to roughly equivalent strength** at matched snapshot count, read early: unless the
+bootstrap is *massively* faster, SPARSE stays the recipe and the bootstrap arm is stopped. Under this
+critic the SELF-φ rung does not exist (design §3.7), so "do we need PBRS" IS that comparison. After it,
+the mature checkpoint is read for a SEARCH dividend and for a teacher FOLD (untaught meter with
+continuation control) before any v8-gift replication attempt. The era-boundary flip (win-prob critic as
+the default, `MIGRATION_FLOOR` 109) is licensed once the SPARSE arm proves out; retiring HEAD-loadability
+of the gen-era archive is accepted. Decisions are taken arm by arm from the data, not from a fixed batch.
+[owner rulings · ledger 2026-09-06 · *OWNER RULINGS — the win-prob ladder's shape*]
 
 ### The eras
 

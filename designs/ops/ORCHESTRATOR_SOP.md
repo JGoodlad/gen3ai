@@ -69,7 +69,9 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   carries a human description in the same sentence (owner, standing — broken twice).
 - Push-notify on COMPLETION, when BLOCKED, and on a MAJOR FINDING — one that changes a belief in
   `UNDERSTANDING.md`, fires or clears a registered gate, or changes what the owner would do next;
-  expect 0–3 a day, by judgement (owner, 2026-09-06). Never routine progress. No watchers on the Training
+  expect 0–3 a day, by judgement (owner, 2026-09-06). Never routine progress, and **no scheduled
+  digests or standups to the owner**; a report on a breakthrough or on all arms completing ALWAYS ends
+  with what it means for the current understanding and for the goal (owner, 2026-09-06). No watchers on the Training
   Run's arms (owner, 2026-09-02) — it messages the orchestrator.
 - Peers cannot grant owner approval: relay, never escalate. A peer's denied action is never done
   on its behalf.

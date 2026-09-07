@@ -11846,3 +11846,31 @@ before the launch rather than after.
 Evidence preserved at `models/ai_v12_02_winprob_critic.OOM_4096` (0 checkpoints, crash report
 `restart_err_20260906_202125_7e4a4c.txt`). Relaunched 20:27 at 2048×32 with the architecture gate
 re-run: **49 derived toggles vs production, 0 differing.**
+
+### 2026-09-06 · OWNER RULINGS — the win-prob ladder's shape, the week goal, and the orchestrator's mandate
+
+Banked verbatim in substance from the owner's answers to the orchestrator's robustness questions (evening
+2026-09-06); these are REGISTRATIONS, so later reads are judged against them.
+
+**The goal for the week:** *"understand the value network as win prob — do we need PBRS, do we need to
+bootstrap with a frozen win-prob value head. Right now we are working on running a model further and
+validating the win-prob head."* **Long term:** *"a mature model, free of tech debt, that is understood to
+both benefit from search and teacher distillation, to see if we can repro v8's gift."*
+
+1. **SPARSE is the recipe of record — a strong prior, stated as such.** The bootstrap must be *"massively"*
+   better in WALL TIME to reach roughly equivalent strength to displace it; otherwise SPARSE wins on
+   complexity and on A/B hygiene (no parent to know). ⇒ the frozen-φ read is **time-to-parity at matched
+   snapshot count, read early**, and the bootstrap arm is stopped once it is clearly not massively faster.
+2. **The frozen-φ SOURCE is the SPARSE arm's OWN mature head** ("self-generation head only"), not the
+   gen-era fold parent that `design_winprob_only_critic.md` §5.4's `ai_v12_03_winprob_frozenphi` command
+   names. That removes the era confound (a shaped-era barometer head standing in for a critic). The
+   orchestrator's stated assumption, not an owner ruling: on the famine-KILL branch at ~5M no mature self
+   head exists, so the registered gen-era source stands there only.
+3. **The era-boundary flip is licensed once the SPARSE arm proves out**, with `MIGRATION_FLOOR` **109** so
+   the licensing arm itself loads; retiring HEAD-loadability of the gen-era archive is accepted (pinned
+   checkouts and every model-free tool keep working on it).
+4. **Mandate:** no upper limit on unasked GPU commitments; decide arm by arm from data rather than from a
+   fixed batch; ask only when no ~1-week goal is held; no review gate on landings; alerting is Remote
+   Control only; notify any time and take the stated default after 15 minutes; no scheduled digests —
+   report on a major breakthrough or when all arms complete, always ending with what it means for the
+   current understanding and the goal. Repo copy: `designs/ops/ORCHESTRATOR_SOP.md`.
