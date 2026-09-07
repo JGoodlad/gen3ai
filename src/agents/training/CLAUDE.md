@@ -84,7 +84,7 @@ byte-identical (verified: 172 tags, empty before/after diff):
 |---|---|---|
 | `train/scaffolding_{gauge,rho,n}` | `V = sigmoid(win_prob_logit)`, so ρ ≡ 1.0 and the gauge ≡ 5.5e-13. A rank gauge between a quantity and **itself** | `scaffolding._same_ordering` — identical rank vectors ⇒ no keys |
 | `grad/win_prob_{share,norm_shared,policy_cosine}` | the critic loss IS the win-prob BCE — the SAME tensor object, passed as `value_term` *and* as `aux_terms["win_prob"]` | `grad_balance_metrics` skips an aux term that `is value_term` |
-| `win_prob/{brier,acc}_contested` · `contested_{frac,label_mean}` · `brier_material` · `skill_vs_material` | `win_margin` is a MATERIAL-potential by-product and is identically 0.0 with no material PBRS term, so `contested_frac` ≡ 1.0, every `*_contested` ≡ its pooled twin, `brier_material` ≡ 0.25 and `skill_vs_material` collapses to `1 − 4·brier` | `value_terms._win_prob_loss` treats a **spread-free** margin as absent |
+| `win_prob/{brier,acc}_contested` · `contested_{frac,label_mean}` · `brier_material` · `skill_vs_material` | **NO LONGER NOISE — the SOURCE was repaired 2026-09-06.** `win_margin` was identically 0.0 on the whole win-prob era (a MATERIAL-potential by-product whose compute the composition gated away), so `contested_frac` ≡ 1.0, every `*_contested` ≡ its pooled twin, `brier_material` ≡ 0.25 and `skill_vs_material` collapsed to `1 − 4·brier`. `gen3_obs_margin_unconditional_v1` computes Φ_mat unconditionally, so the margin now spreads and the six tags are LIVE — see *WHAT THE SHORT CIRCUIT MUST NEVER SKIP* below. ⚠️ A run started before that commit carries the degenerate series | `value_terms._win_prob_loss` treats a **spread-free** margin as absent — kept, as the consumer-side guard against any future flat margin |
 | `reward/{bias_refund,class_refund}_{mean,abs_mean,abs_share}` | the refund is the BIAS class's accumulate-and-refund MECHANISM; with no bias term it is structurally 0.0 | `reward_term_stats._has_bias` |
 
 Plus `eval/{win_rate,mean_reward,mean_ep_len}_vs_pool` and `eval/sentinel_monotonicity`, which fell
@@ -862,18 +862,51 @@ itself); `_last_breakdown` (`battle_recorder` writes `to_dict()` into every eval
 zeroes the three BIAS fields it writes, so skipping either alone would change the reward. Both are
 attribute and dict work; neither walks the board.
 
-🚨 **`_compute_phi_mat` is NOT a skip candidate — and it is ALREADY NOT RUNNING, which is a
-PRE-EXISTING DEFECT this short circuit neither causes nor fixes.** Its by-product
-`_last_material_margin` is read by `gen3_env`'s `win_margin` obs key, i.e. by the win-prob head's
-closeness-stratified metrics and its `skill_vs_material` Brier skill score. But
-`_fold_material_pbrs` early-returns under `--no-hand-shaping` (via `_pbrs_term_active`), so **on the
-win-prob arm the margin has been pinned at 0.0 since that arm launched**. Measured 2026-09-06 on a
-6-alive-vs-2 board: shaped reads `+0.667`, the winprob composition reads `0.0`. Consequences, both
-silent: `|margin| < _WIN_CONTESTED_TAU` is always true so `contested_frac ≡ 1.0` and the
-"contested" split stops selecting anything, and the material baseline collapses to a constant
-`P_mat = 0.5` so `skill_vs_material` measures skill against a coin flip rather than against
-"just count the mons". **Left alone deliberately**: reviving it would change a live run's
-observation stream, which is an owner call and not a performance change.
+#### 🚨 WHAT THE SHORT CIRCUIT MUST NEVER SKIP: an OBSERVATION FEATURE (`gen3_obs_margin_unconditional_v1`)
+
+**`_compute_phi_mat` runs UNCONDITIONALLY, every decision, in every composition** — the one
+computation on this page that is not allowed to be skipped, and the census predicate does not gate
+it. Its by-product `_last_material_margin` is `gen3_env`'s **`win_margin` OBSERVATION key** (read by
+`value_terms._win_prob_loss`'s closeness-stratified metrics and its `skill_vs_material` Brier skill
+score), and **an observation feature must not be a function of what the reward is made of.** The
+skip rule one section up — *"this mutation's only readers are BIAS terms"* — is the right test for a
+cross-turn carry and the WRONG one for anything the obs vector carries, because the obs has readers
+the reward composition does not own.
+
+It WAS a function of the reward, for the whole life of the win-prob arm: `_fold_material_pbrs`
+early-returned under `--no-hand-shaping` (via `_pbrs_term_active`) *before* computing Φ_mat, so the
+margin was pinned at **0.0**. Measured 2026-09-06 on a 6-alive-vs-2 board, shaped `+0.667` against
+the winprob composition's `0.0`. Both consequences were silent and both look like measurements:
+`|margin| < _WIN_CONTESTED_TAU` was always true, so `contested_frac ≡ 1.0` and every `*_contested`
+tag was a byte-identical copy of its pooled sibling; and `P_mat ≡ 0.5`, so `skill_vs_material`
+scored the head against a **coin flip** rather than against "just count the mons". (The six tags are
+also on the NOISE list in the TensorBoard census above, gated by `_win_prob_loss`'s spread-free
+guard — that guard is the *consumer* refusing to publish a degenerate split, and it stays; this fix
+removes the degeneracy at the source, so the family becomes real again rather than merely absent.)
+
+**The fix is the idiom `_fold_belief_pbrs` states one method down: the gate wraps the EMITTED FIELD,
+never the compute.** Φ_mat is evaluated above the `_hand_pbrs_on("pbrs_material")` early return and
+only the PBRS fold is gated, so the reward contribution is unchanged in every composition while the
+obs feature is published always. **No margin-only fast path exists and none is wanted** — Φ_mat is
+~4 sums over ≤12 mons, so the full potential IS the cheap path.
+
+**Measured cost** (2026-09-06, paired in-process arms on one board, min-of-7 × 4000):
+`_compute_phi_mat` is **0.00215 ms/call**, and adding it to a terminal-only decision is
+**+0.0035 ms** — ~10–12% of that composition's `process_turn_reward`, ~2% of the shaped
+composition's. The short circuit's ~6–7× win is intact (`trainer_turn_benchmark --pin-battles`,
+468 decisions / 6 battles, load 33: **0.027 ms before → 0.030 ms after**, against the shaped
+composition's ~0.15–0.17 ms; the same pair's untouched `build_delta` line moved 0.062 → 0.047 ms, so
+read the paired in-process figure and not the benchmark's spread). ⚠️ **The SHAPED path calls it
+exactly once either way** — the call was merely hoisted above a gate that was already passing — so
+its cost and its reward stream are unchanged, which the parity fuzz's shaped arm re-proves.
+
+Gates: `reward_terminal_only_skip_test.py::TheObservationMarginIsNotAFunctionOfTheReward` (the
+bug's own 6-vs-2 reproduction, agreement across five compositions × five boards including the
+`--arm-no-progress-tax` arm, the spread-across-boards property the contested split needs, the
+shadow twin agreeing, and the anti-vacuity control — **4 of them verified failing on revert**),
+`win_prob_test.py::test_a_REAL_margin_spread_selects_a_STRICT_SUBSET` (the consumer half, driven by
+margins the real reward manager publishes) and its flat-margin twin, plus the parity fuzz's four
+compositions.
 
 **Measured** (2026-09-06, `trainer_turn_benchmark --decisions 400 --seed 0 --pin-battles`, 468
 decisions / 6 battles per cell, load 41–45 on 16 cores so read the same-session RATIO):

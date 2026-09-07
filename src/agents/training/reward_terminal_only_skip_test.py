@@ -285,5 +285,102 @@ class TheRewardTermExportStaysHonest(unittest.TestCase):
         self.assertGreater(sc["total_abs_mean"], 0.0)
 
 
+class TheObservationMarginIsNotAFunctionOfTheReward(unittest.TestCase):
+    """`gen3_obs_margin_unconditional_v1` — the bug's own reproduction, kept as the gate.
+
+    `_last_material_margin` is Φ_mat's by-product and gen3_env's `win_margin` OBSERVATION key, so
+    it must read the same number on the same board whatever the reward is made of. It did not:
+    `_fold_material_pbrs` early-returned under `--no-hand-shaping`, so `_compute_phi_mat` never ran
+    and the margin was pinned at 0.0 for the whole life of the win-prob arm. Consumers downstream
+    (`value_terms._win_prob_loss`'s contested split and `skill_vs_material`) degenerate silently on
+    a constant margin, so nothing in the pipeline could report it.
+
+    ⚠️ These assert AGREEMENT BETWEEN COMPOSITIONS, never a literal. A weight change in
+    `reward_weights` legitimately moves the value; a composition-dependent value is the defect."""
+
+    #: The board the defect was measured on: 6 alive vs 2, full HP, mid-game.
+    BOARD = dict(our_alive=6, opp_alive=2)
+
+    def _margin(self, config, **board):
+        mgr = Gen3RewardManager(config=config, progress_clock=ProgressClock())
+        mgr.process_turn_reward(_Battle(_full_team_live(**board), turn=5), _delta())
+        return mgr._last_material_margin
+
+    def test_the_margin_is_identical_under_shaped_and_terminal_only(self):
+        shaped = self._margin(SHAPED, **self.BOARD)
+        winprob = self._margin(TERMINAL_ONLY, **self.BOARD)
+        self.assertEqual(shaped, winprob,
+                         "win_margin depends on the reward composition — the obs feature is a "
+                         "function of what the reward is made of")
+
+    def test_the_margin_is_actually_non_zero_on_that_board(self):
+        """The anti-vacuity control. The equality above passes trivially if BOTH arms read 0.0,
+        which is exactly what the pre-fix tree did on one side."""
+        self.assertNotEqual(self._margin(SHAPED, **self.BOARD), 0.0,
+                            "the 6-vs-2 board produces no margin — the agreement test is vacuous")
+
+    def test_the_margin_is_identical_across_every_composition_and_board(self):
+        """Wider than the reproduction: no composition may move the margin on any board. The
+        `--arm-no-progress-tax` arm is in here on purpose — it re-arms one BIAS term under
+        `--no-hand-shaping`, so it is neither `SHAPED` nor `TERMINAL_ONLY` and is the config a
+        flag-shaped (rather than census-shaped) guard gets wrong."""
+        configs = {
+            "shaped": SHAPED,
+            "terminal_only": TERMINAL_ONLY,
+            "no_all_shaping_pbrs": RewardConfig(all_shaping_pbrs=False),
+            "no_pbrs_material": RewardConfig(pbrs_material=False),
+            "armed_tilt": RewardConfig(hand_shaping=False, terminal_indicator=True,
+                                       victory_value=1.0, draw_penalty=0.0,
+                                       no_progress_tax_armed=True, bias_redesign=True),
+        }
+        boards = [dict(our_alive=6, opp_alive=2), dict(our_alive=2, opp_alive=6),
+                  dict(our_alive=6, opp_alive=6), dict(our_alive=4, opp_alive=4, opp_hp=0.5),
+                  dict(our_alive=1, opp_alive=1, our_hp=0.1)]
+        for board in boards:
+            margins = {name: self._margin(cfg, **board) for name, cfg in configs.items()}
+            self.assertEqual(len(set(margins.values())), 1,
+                             f"win_margin differs by composition on {board}: {margins}")
+
+    def test_the_margin_moves_with_the_BOARD_under_terminal_only(self):
+        """The property the contested split needs and the pre-fix tree could not provide: on the
+        win-prob composition the margin must SPREAD across boards, not sit at one constant."""
+        seen = {self._margin(TERMINAL_ONLY, our_alive=n, opp_alive=6 - n) for n in range(1, 6)}
+        self.assertGreater(len(seen), 1,
+                           "win_margin is constant across boards under the win-prob composition — "
+                           "the contested split and skill_vs_material degenerate")
+
+    def test_computing_the_margin_left_the_terminal_only_reward_stream_alone(self):
+        """The margin feeds NO reward term under this composition, so publishing it must not have
+        moved a single reward. This is the twin comparison, restated as the fix's own guard."""
+        fast, fast_d = _stream(TERMINAL_ONLY, shadow=False)
+        full, full_d = _stream(TERMINAL_ONLY, shadow=True)
+        self.assertEqual(fast, full)
+        self.assertEqual(fast_d, full_d)
+        self.assertEqual(fast[:-1], [0.0] * (len(fast) - 1),
+                         "a reward term appeared once Φ_mat started running")
+
+    def test_the_shadow_twin_agrees_about_the_margin_too(self):
+        """`GEN3AI_REWARD_VERIFY=1`'s oracle computes everything the slow way. If the twin and the
+        production manager disagreed about the margin, the shadow mode would be verifying a
+        quantity the run does not have."""
+        for config in (SHAPED, TERMINAL_ONLY):
+            fast = Gen3RewardManager(config=config, progress_clock=ProgressClock())
+            slow = Gen3RewardManager(config=config, progress_clock=ProgressClock(), _shadow=True)
+            for battle, delta, meta in _episode():
+                fast._last_reward_metadata = dict(meta)
+                slow._last_reward_metadata = dict(meta)
+                fast.process_turn_reward(battle, delta)
+                slow.process_turn_reward(battle, delta)
+                self.assertEqual(fast._last_material_margin, slow._last_material_margin,
+                                 f"margin diverged from the shadow twin under {config}")
+
+    def test_reset_still_clears_the_margin(self):
+        mgr = Gen3RewardManager(config=TERMINAL_ONLY, progress_clock=ProgressClock())
+        mgr.process_turn_reward(_Battle(_full_team_live(**self.BOARD), turn=5), _delta())
+        self.assertNotEqual(mgr._last_material_margin, 0.0)
+        mgr.reset()
+        self.assertEqual(mgr._last_material_margin, 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

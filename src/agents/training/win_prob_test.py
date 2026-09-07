@@ -51,6 +51,56 @@ def test_loss_no_margin_omits_stratified():
     assert "brier" in m and "brier_contested" not in m and "skill_vs_material" not in m
 
 
+def test_a_FLAT_margin_is_treated_as_absent():
+    """`gen3_tb_relevance_v1`: a margin with no SPREAD cannot stratify, so the six tags it would
+    produce are copies of their pooled siblings plus two constants — worse than publishing
+    nothing, because all six READ AS MEASUREMENTS. This is the exact shape the pre-fix win-prob
+    arm shipped (`win_margin` pinned at 0.0 by `_fold_material_pbrs`'s early return)."""
+    logits = torch.tensor([[2.0], [-2.0], [1.0], [-1.0]])
+    target = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
+    _, m = InstrumentedMaskablePPO._win_prob_loss(
+        logits, target, torch.ones(4, 1), torch.zeros(4, 1))
+    assert "contested_frac" not in m and "skill_vs_material" not in m
+
+
+def test_a_REAL_margin_spread_selects_a_STRICT_SUBSET():
+    """`gen3_obs_margin_unconditional_v1` — the consumer half of the fix, driven by margins the
+    REAL reward manager publishes under the win-prob composition rather than by hand-typed floats.
+
+    Pre-fix, every one of these read 0.0, so `|margin| < tau` was always true: `contested_frac`
+    was a flat 1.0, every `*_contested` tag was a byte-identical copy of its pooled sibling, and
+    `P_mat` was a constant 0.5 — `skill_vs_material` scored the head against a coin flip."""
+    from agents.training.progress_clock import ProgressClock
+    from agents.training.reward_manager import Gen3RewardManager, RewardConfig
+    from agents.training.reward_test_fakes import _Battle, _delta, _full_team_live
+
+    winprob = RewardConfig(hand_shaping=False, terminal_indicator=True,
+                           victory_value=1.0, draw_penalty=0.0)
+    margins = []
+    for ours, opp in ((6, 1), (6, 2), (4, 4), (3, 3), (2, 6), (1, 6)):
+        mgr = Gen3RewardManager(config=winprob, progress_clock=ProgressClock())
+        mgr.process_turn_reward(_Battle(_full_team_live(our_alive=ours, opp_alive=opp), turn=5),
+                                _delta())
+        margins.append([mgr._last_material_margin])
+
+    margin = torch.tensor(margins)
+    n = margin.shape[0]
+    # A board-derived spread, not a hand-built one — the fix's whole point.
+    assert float(margin.max() - margin.min()) > 0.0, "the reward manager published a flat margin"
+
+    logits = torch.zeros(n, 1)
+    target = (margin > 0).float()
+    _, m = InstrumentedMaskablePPO._win_prob_loss(logits, target, torch.ones(n, 1), margin)
+
+    assert "contested_frac" in m, "the contested family is missing on a real spread"
+    assert 0.0 < m["contested_frac"] < 1.0, (
+        f"the contested split selected {m['contested_frac']:.3f} of the batch — a STRICT SUBSET "
+        "is what makes it a split rather than a copy of the pooled metrics")
+    # The material baseline is no longer the degenerate constant 0.5, so the skill score is a
+    # comparison against 'count the mons' rather than against a coin flip.
+    assert abs(m["brier_material"] - 0.25) > 1e-6, "P_mat collapsed to the constant 0.5"
+
+
 def test_loss_none_guards():
     z = torch.zeros(3, 1)
     assert InstrumentedMaskablePPO._win_prob_loss(None, z, z) is None

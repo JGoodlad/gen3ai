@@ -1523,11 +1523,27 @@ class Gen3RewardManager:
         """Material PBRS Φ_mat (design §2) → ``bd.pbrs_material``. Replaces the old unconditional
         hp/faint base spine; telescopes to −Φ_mat(s_0) → every win +30, every loss −30.
         OFF (--no-pbrs-material / --no-hand-shaping) → byte-identical: `_prev_phi_mat` stays None
-        and the field stays 0.0, the same shape every other fold's early return takes."""
+        and the field stays 0.0, the same shape every other fold's early return takes.
+
+        ⚠️ The gate wraps the EMITTED FIELD ONLY, never `_compute_phi_mat` — the same rule
+        `_fold_belief_pbrs` states one method down, for the same reason and a stronger one. Φ_mat's
+        by-product `_last_material_margin` is an OBSERVATION FEATURE (gen3_env's `win_margin` key,
+        read by the win-prob head's closeness-stratified metrics and its `skill_vs_material` Brier
+        skill score), and an obs feature must not depend on the REWARD COMPOSITION. It did, for the
+        whole of the win-prob arm's life: this method early-returned under `--no-hand-shaping`, so
+        `_compute_phi_mat` never ran and the margin was pinned at 0.0 — measured on a 6-alive-vs-2
+        board, shaped +0.667 against the winprob composition's 0.0. Downstream, `|margin| < tau` was
+        then always true (`contested_frac ≡ 1`, so the contested split selected nothing) and
+        `P_mat ≡ 0.5`, so `skill_vs_material` scored the head against a coin flip. The compute is
+        ~4 sums over ≤12 mons (measured: +0.002 ms/decision, ~9% of the terminal-only fast path's
+        0.023 ms, ~1.3% of the shaped composition's), so there is no margin-only fast path — the
+        full potential IS the cheap path, and computing it unconditionally is what the obs is
+        entitled to (gen3_obs_margin_unconditional_v1)."""
+        phi_mat_next = self._compute_phi_mat(live)      # publishes `_last_material_margin` (obs)
         if not self._hand_pbrs_on("pbrs_material"):
             return
         bd.pbrs_material, self._prev_phi_mat = self._pbrs_step(
-            self._prev_phi_mat, self._compute_phi_mat(live), is_terminal)
+            self._prev_phi_mat, phi_mat_next, is_terminal)
 
     def _fold_belief_pbrs(self, bd: "RewardBreakdown", live, is_terminal: bool) -> None:
         """Incoming-KO belief PBRS (design_reward_switching.md) → ``bd.pbrs_belief``; also snapshots
@@ -1690,9 +1706,13 @@ class Gen3RewardManager:
         gated BIAS computes; ``_terminal_only`` additionally skips the handful that were UNGATED
         *because* their cross-turn mutations feed BIAS terms, which under this composition have no
         reader. Each skip site below names the reader it proved dead, and the full table of what
-        SURVIVES and why — plus the ``_compute_phi_mat`` / ``win_margin`` hazard, which is a
-        PRE-EXISTING defect this neither causes nor fixes — is in
-        ``src/agents/training/CLAUDE.md`` → *And a SECOND fast path*.
+        SURVIVES and why is in ``src/agents/training/CLAUDE.md`` → *And a SECOND fast path*.
+
+        🚨 **A SHORT CIRCUIT MAY NEVER SKIP AN OBSERVATION FEATURE.** ``_fold_material_pbrs`` runs
+        unconditionally below and computes Φ_mat above its own gate, because its by-product
+        ``_last_material_margin`` is gen3_env's ``win_margin`` obs key — a reader the reward
+        composition does not own. "No BIAS term reads this" is the right test for a cross-turn
+        mutation and the WRONG one for anything the observation carries.
         """
         bd = RewardBreakdown()
 
