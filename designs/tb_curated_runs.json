@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "marker": "gen3_tb_curate_v1",
+  "note": [
+    "THE DIAL for what https://tensorboard.g5d.io shows. `python -m main.tb_curate --apply`",
+    "rebuilds <repo>/tb_curated/ as one symlink per entry (<run> -> models/<run>/tb), and the",
+    "TensorBoard user service is pointed at that directory. Every LIVE run is unioned in",
+    "automatically (detected from `ps`), so the arm training right now always appears without",
+    "being listed here — add it here when it finishes and is worth keeping.",
+    "",
+    "Editing this file is enough: TensorBoard rescans its logdir, so no restart is needed after",
+    "an --apply. Removing an entry removes only a symlink; models/ is never touched.",
+    "",
+    "Seeded 2026-09-06 from `python -m main.lineage`. The archive holds 217 runs with a tb/;",
+    "this list is the long lines the owner reads, not the ablation arms that fork off them."
+  ],
+  "runs": [
+    {
+      "run": "ai_v8_01_zarch_film_0717",
+      "why": "v8 line, FiLM arm. tb span 148.4M-171.3M. NOTE its recorded role 'fresh' is DERIVED and wrong — a fresh run cannot open at step 148,401,356; it was built by tmp/fork_zarch_v8.py off a v7 ancestor, whose argv the lineage regex cannot parse. Its span OVERLAPS ai_v8_03's; drop this entry if you want the main line only."
+    },
+    {
+      "run": "ai_v8_03_zarch_control_0718",
+      "why": "v8 MAIN LINE, control arm — the longest single span in the archive (148.4M-268.4M, 29 event files across as many launcher restarts). The line to ai_v8_14 runs through here."
+    },
+    {
+      "run": "ai_v8_04_distill_4teacher_0722",
+      "why": "v8 main line — the 4-teacher distillation fold off ai_v8_03 (268.5M-277.6M)."
+    },
+    {
+      "run": "ai_v8_14_distill3_0725",
+      "why": "v8 main line TERMINUS — the 3-teacher fold, the +69-anchored-ELO multi-team distill payoff (277.6M-292.6M). Its ladder reads 2049 but on only n=2 nodes / 1 measured pair, which is exactly the regime where a BT node is most inflated — do not compare it to rev-1's n=12 fit."
+    },
+    {
+      "run": "ai_v9_29_rev1_0823",
+      "why": "v9 LONG BASELINE — rev-1, fresh from zero to 25.0M, anchored ladder 2098 (n=12, converged, 66/66 pairs): the HIGHEST of any fresh v9 run. Ancestor of the fold parent R2ACTION and of every gen-era fold, and the famine-test comparator for the live v12 arm. This is the v9 line to lead with."
+    },
+    {
+      "run": "ai_v9_59_R2ACTION_0827",
+      "why": "v9 fold-parent line — R2ACTION, the action-form fold off rev-1 (25.1M-28.1M, ladder 1957). Its ladder is only 21/91 pairs measured, so read the rating as provisional and never against a fully-measured run."
+    },
+    {
+      "run": "ai_v9_21_gen17_pfspoff_0820",
+      "why": "v9 SECONDARY reference — gen-17, PFSP off, 22.9M, ladder 2034 (n=12, 66/66; peaks 2060 at 20M). Matched snapshot count with rev-1, so 2034 vs 2098 is a fair comparison. Drop this entry if the owner wants the v9 line to be rev-1 alone."
+    },
+    {
+      "run": "ai_v12_01_winprob_critic",
+      "why": "v12 — the win-prob critic run, the LIVE arm (11.3M, ladder 2024 at n=4 — a young BT node is systematically inflated, so do not read it against a finished run yet). Currently live so it would be unioned in anyway; listed so it survives the run finishing."
+    }
+  ]
+}

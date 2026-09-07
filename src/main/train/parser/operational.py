@@ -79,6 +79,21 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "run), because a 9-opponent x 100-battle final eval costs many minutes "
                              "and a 2k-step policy produces no signal worth that. An explicit value "
                              "always wins.")
+    parser.add_argument(
+        "--tb-inherit",
+        action=BoolFlag,
+        default=True,
+        help="gen3_tb_inherit_v1 — on a FORK, copy the parent's SCALAR TensorBoard events at steps "
+             "<= fork_step into this run's tb/, so its charts read as one continuous curve from "
+             "step 0 instead of starting mid-air at fork_step. A fork's global step continues the "
+             "parent's counter and TensorBoard merges every event file in a run dir by step, so "
+             "this is pure bookkeeping over points the parent already logged — nothing is "
+             "recomputed. Truncated at fork_step (the parent usually trained past the fork), "
+             "scalars only, idempotent via tb/INHERITED_FROM.json (a launcher restart never "
+             "re-copies), and a no-op on a fresh run or a same-run restart. Costs a few hundred KB. "
+             "Pass --no-tb-inherit to opt out — worth doing for a large sibling FLEET under an "
+             "UNCURATED logdir, where 8 exploiters off one target then draw 8 identical prefixes "
+             "in every chart (under `main.tb_curate` this is exactly what you want).")
     parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--log-level", type=str, default="periodic", choices=["quiet", "periodic", "detailed", "debug"], help="Logging verbosity level")

@@ -7604,3 +7604,72 @@ sentinel — where the head's bias flips sign.
 
 The classification, and the 28-tag "what to watch on a win-prob run" dashboard it produced, live in
 `src/agents/training/CLAUDE.md` → *ERA RELEVANCE* and *What to watch on a WIN-PROB run*.
+## `gen3_tb_inherit_v1` — A FORK INHERITS ITS PARENT'S TENSORBOARD CURVES + the CURATED logdir (2026-09-06)
+
+Two changes to how this programme's training curves are READ. Neither touches training: no loss, no
+forward, no weight shape, nothing on `ModelVersion`, nothing in `check_compatible`.
+
+### 1. The fork prefix (`agents/training/tb_inherit.py`, `--tb-inherit` default ON)
+
+**Bookkeeping over two facts the tree already had.** TensorBoard merges every
+`events.out.tfevents.*` inside ONE run directory into one series per tag ordered by step — measured,
+not assumed: `ai_v8_03_zarch_control_0718` carries **29** event files (one per launcher restart) in a
+single `tb/` and renders as one curve. And a fork's global step CONTINUES the parent's
+(`reset_num_timesteps=False`) — measured on that same run, whose `tb/` opens at step **148,401,356**,
+precisely the `fork_step` its `lineage` block records. The parent's curve therefore occupies
+`[0, fork_step]` and the fork's `[fork_step, …]`: two halves of one line, apart only because they
+live in two directories.
+
+At fork creation — the same place the `lineage` block is written — `<fork>/tb/` now gets a
+**TRUNCATED copy of the parent's SCALAR events at steps ≤ `fork_step`**. Truncation is not optional:
+the parent usually trained past the fork (`ai_v8_01` reached 170.6M having been forked at 148.4M) and
+its tail would draw parent-only progress inside the fork's own step range. A fork-of-a-fork composes
+for free, because the parent's `tb/` already carries its own prefix.
+
+🚨 **THE DEFECT THIS SHIPPED WITH AND THE FIX, because the class generalizes.** A TensorBoard scalar
+has two on-disk spellings — the classic `simple_value` field and a rank-0 tensor tagged with the
+`scalars` plugin — and **`EventFileLoader` MIGRATES the first into the second as it reads**. Every
+writer in this tree emits `simple_value`, so the first version copied what that loader returned and
+therefore wrote the *migrated* form; `EventAccumulator` files those under `tensors`, not `scalars`.
+The result: the events were in the file, the provenance file was correct, the event count and the
+sha256 were correct, and **the scalars dashboard showed nothing** — the fork's prefix read back as
+124 `tensors` tags and **0** `scalars` tags, beside its own 124 `scalars`. The reader is now
+`LegacyEventFileLoader` (raw, no migration), and the tests write their synthetic parent in
+`simple_value` form and read back through `EventAccumulator.Scalars` — the accessor the dashboard
+itself uses. The original tests passed the whole time because they wrote the tensor form and read it
+back through the same migrating loader: **a test that writes and reads one normalised form cannot
+see a form bug.** Verified failing on revert.
+
+Other properties: **idempotent** on `<fork>/tb/INHERITED_FROM.json` (a launcher restart that still
+names the parent as `--model` would otherwise append a second copy of every series — a saw-tooth, not
+an error); **scalars only** (measured 2026-09-06: every value in `models/*/tb/` is a scalar, so the
+filter drops nothing today and exists so a later histogram cannot silently multiply the cost); the
+fork decision is **read out of the lineage block**, never re-derived (pinned by an AST test); and it
+**never raises** — a cosmetic convenience must not kill a launch, so a failure returns a reason and
+the run starts its chart at `fork_step`. Cost: a few hundred KB against a 262 MB archive.
+
+Verified end to end on a CPU smoke: a 6,144-step parent, a fork off its `final_model.zip`, prefix
+2,801 events / 124 tags at steps 0..6,144, and `EventAccumulator` reading `rollout/ep_rew_mean` as
+**one series of 47 points from 256 to 12,032** where the fork's own training produced 23.
+
+**Existing forks are NOT backfilled.** `python -m main.tb_inherit --list` censuses them (**137**
+missing a prefix); `--backfill … --apply` writes them. ⚠️ **105 of the 137 name a DERIVED parent** —
+every `lineage` block on disk was written by `main.lineage --backfill`, i.e. by REGEXING `--model`
+out of a recorded command — and the derivation can be wrong: **`ai_v8_01_zarch_film_0717` records
+`role="fresh", fork_step=0` while its own `tb/` opens at step 148,401,356**, arithmetically impossible
+for a fresh run (it was built by a hand-written `tmp/fork_zarch_v8.py` the regex cannot parse). Every
+row prints the flag; the backfill is dry-run by default.
+
+### 2. The curated logdir (`main/tb_curate.py`, `designs/tb_curated_runs.json`)
+
+`tensorboard --logdir models/` served all **217** runs carrying a `tb/`, mostly two-hour ablation
+arms — the long runs were lost in every chart's legend and the origin held all 217 in memory.
+TensorBoard has no server-side "show only these" option, so **the logdir IS the selection**:
+`python -m main.tb_curate --apply` maintains `<repo>/tb_curated/` as one symlink per curated run
+(`<run> -> models/<run>/tb`, so each appears under its own NAME rather than `<run>/tb`), unioning the
+committed list with **every LIVE run** (detected from `ps`, so the current arm always shows). It
+creates and removes symlinks inside that directory and nothing else — never a byte under `models/`,
+and it refuses to delete anything there that is not a symlink.
+
+The `tensorboard.service` user unit was repointed and restarted: **8 runs served, origin RSS
+688 MB → 257 MB.** Editing the list needs no restart (TensorBoard rescans its logdir).

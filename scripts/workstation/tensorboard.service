@@ -4,19 +4,29 @@
 # to localhost:6006). See the "TensorBoard remote access" section of
 # GCP_INFRASTRUCTURE.md for the Jul 29 2026 OOM outage this hardens against.
 #
+# THE LOGDIR IS THE CURATED VIEW, NOT models/ (changed 2026-09-06). `models/` holds
+# 217 runs with a tb/ — mostly two-hour ablation arms — and TensorBoard has no
+# server-side "show only these runs" option, so the logdir IS the selection.
+# `python -m main.tb_curate --apply` maintains <repo>/tb_curated/ as one symlink
+# per curated run (<run> -> models/<run>/tb), from designs/tb_curated_runs.json
+# plus every LIVE run. Editing that list needs NO restart of this unit —
+# TensorBoard rescans its logdir; a restart is only for changing the path here.
+#
 # Install:
 #   cp scripts/workstation/tensorboard.service ~/.config/systemd/user/
 #   systemctl --user daemon-reload
 #   systemctl --user enable --now tensorboard.service
 
 [Unit]
-Description=TensorBoard — models/ (origin for tensorboard.g5d.io)
+Description=TensorBoard — tb_curated/ (origin for tensorboard.g5d.io)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 WorkingDirectory=/home/goodlad/dev/gen3ai
-ExecStart=/home/goodlad/miniconda3/bin/tensorboard --logdir models/ --port 6006
+# Relative to WorkingDirectory. Each entry is a symlink to models/<run>/tb, so the
+# run appears under its own NAME (--logdir models/ showed it as "<run>/tb").
+ExecStart=/home/goodlad/miniconda3/bin/tensorboard --logdir tb_curated/ --port 6006
 Restart=always
 RestartSec=10
 Environment=HOME=/home/goodlad

@@ -4500,6 +4500,79 @@ warning; the three integrity checks; the CLI on a synthetic tree; backfill's dry
 refusal; and the seam pins (both build paths ask for it, every save carries it, the pre-warm-start
 capture, and `dose` staying current while `lineage` stays immutable).
 
+### A FORK INHERITS ITS PARENT'S CURVES (`tb_inherit.py`, `gen3_tb_inherit_v1`)
+
+**Bookkeeping over two facts this tree already had, not a new mechanism.** (1) TensorBoard merges
+every `events.out.tfevents.*` in ONE run directory into one series per tag, ordered by step — not a
+claim: `ai_v8_03_zarch_control_0718` carries **29** event files (one per launcher restart) in a
+single `tb/` and renders as one curve. (2) A fork's global step CONTINUES the parent's
+(`reset_num_timesteps=False`), measured on that same run — its `tb/` opens at step **148,401,356**,
+precisely the `fork_step` its `lineage` block records. So the parent's curve occupies `[0, fork_step]`
+and the fork's occupies `[fork_step, …]`: two halves of one line, apart only because they live in two
+directories. `<fork>/tb/` now also gets a TRUNCATED copy of the parent's scalar events at steps
+**≤ `fork_step`**, and the fork's TensorBoard reads from step 0.
+
+**TRUNCATION is not optional.** The parent usually trained PAST the fork (`ai_v8_01` reached 170.6M
+having been forked at 148.4M); copying its tail would draw parent-only progress inside the fork's own
+step range, where it reads as the fork's.
+
+**FORK-OF-A-FORK composes for free.** The parent's `tb/` already holds its own inherited prefix, so
+reading the parent's WHOLE directory and truncating again yields grandparent `[0, parent_fork_step]`
++ parent `[parent_fork_step, fork_step]`. One rule per link.
+
+🚨 **THE VALUE FORM IS PART OF THE COPY, AND GETTING IT WRONG IS INVISIBLE.** A TB scalar has two
+on-disk spellings — the classic `simple_value` field and a rank-0 tensor tagged with the `scalars`
+plugin — and **`EventFileLoader` MIGRATES the first into the second as it reads**. Every writer in
+this tree emits `simple_value`, so copying what that loader returns writes the migrated form, which
+`EventAccumulator` files under `tensors` rather than `scalars`: the events are in the file, the
+provenance is right, the byte count is right, and **the scalars dashboard shows nothing**. Measured
+while building this — the fork's prefix read back as 124 `tensors` tags and **0** `scalars` tags,
+beside its own 124 `scalars`. `scalar_prefix` therefore reads with **`LegacyEventFileLoader`** (raw),
+and the test writes its synthetic parent in `simple_value` form and reads back through
+`EventAccumulator.Scalars` — the accessor the dashboard uses — because a test that writes and reads
+the same migrated form cannot see it. Two guards fail on revert.
+
+**IDEMPOTENCY is load-bearing.** `<fork>/tb/INHERITED_FROM.json` is the key: if it exists, no-op. A
+launcher restart that still names the parent as `--model` (which happens before the fork has written
+its own checkpoint) re-enters the fork path and would otherwise append a SECOND copy of the prefix —
+the same series twice, which renders as a saw-tooth rather than an error.
+
+**The seam is the LINEAGE seam.** `inherit_from_lineage(model_dir, lineage_block, enabled=…)` is
+called in `main/train/model_build.py` immediately after the block is recorded and BEFORE
+`_attach_run_tb_logger`. The block being non-None **is already the fork decision**
+(`build_lineage` returns None on a same-run restart, via `fork_lr.is_same_run_checkpoint`), and the
+parent + `fork_step` are read out of it — so the curve a fork inherits and the parent it claims
+cannot disagree, and nothing here owns a second answer to "is this a fork?" (pinned by an AST test).
+It **never raises**: a cosmetic convenience must not be able to kill a launch, so a failure returns a
+reason and the run simply starts its chart at `fork_step`.
+
+**SCALARS ONLY** — histograms/images/audio and every non-`scalars` plugin are skipped. Measured
+2026-09-06: every value in `models/*/tb/` is a scalar, so the filter drops nothing today; it exists
+so adding a histogram later cannot silently multiply the copy cost. `tb/` is 262 MB across 217 runs;
+a prefix is a few hundred KB.
+
+**`--no-tb-inherit`** opts out. Worth it for a large sibling FLEET under an UNCURATED logdir — 8
+exploiters off one target then draw 8 identical prefixes in every chart (under `main.tb_curate` that
+is exactly what you want). Training-runtime class: reaches no extractor, scales no loss, changes no
+weight shape ⇒ no `ARCH_SIGNATURE` bump, not on `ModelVersion`, not in `check_compatible`, not in
+`flag_registry`; it lands in `cli_args` and the launcher forwards it verbatim.
+
+**Existing forks are NOT backfilled.** `python -m main.tb_inherit --list` censuses them (**137**
+missing a prefix as of 2026-09-06); `--backfill <run>… | --all` writes one, **dry-run unless
+`--apply`**, `--show` prints a run's provenance. ⚠️ **105 of the 137 name a DERIVED parent** — every
+`lineage` block on disk was written by `main.lineage --backfill`, i.e. by REGEXING `--model` out of a
+recorded shell command — and the derivation can be wrong: `ai_v8_01_zarch_film_0717` records
+`role="fresh", fork_step=0` while its own `tb/` opens at step **148,401,356**, which is arithmetically
+impossible for a fresh run (it was built by a hand-written `tmp/fork_zarch_v8.py` the regex cannot
+read). Every row prints that flag and the census prints the caveat.
+
+Tests: `tb_inherit_test.py` (22) — truncation at the exact boundary; the one-continuous-series claim
+read through `EventAccumulator.Scalars`; the on-disk value-form preservation (both spellings) and its
+revert-catcher; the non-scalar skip; provenance content + sha; the second call being a no-op and
+`force` replacing rather than appending; dry-run touching nothing; fork-of-a-fork truncating the
+grandparent prefix; the seam's restart/fresh/disabled/missing-parent no-ops; the census incl. the
+`derived` flag; and the torch-free + no-second-fork-predicate contracts.
+
 ## The `signal/` group — advantage density × outcome entropy (`gen3_signal_rate_metrics_v1`)
 
 **How much action-attributable learning signal is PPO actually receiving?** Two always-on, flagless

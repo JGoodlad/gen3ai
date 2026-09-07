@@ -2015,6 +2015,20 @@ src/
                      #   SIDECARS (falling back to snapshot_history, then the run-level current_lr).
                      #   Model-free and torch-FREE, so it reads a run whose architecture drifted
                      #   past current code. The meter `--fork-lr` exists to make choosable
+    tb_curate.py       # THE CURATED TENSORBOARD LOGDIR — maintains <repo>/tb_curated/ as one
+                     #   symlink per curated run (<run> -> models/<run>/tb), unioning the
+                     #   committed designs/tb_curated_runs.json with every LIVE run (detected
+                     #   from `ps`). TensorBoard has no server-side run filter, so the logdir IS
+                     #   the selection; the service is pointed here instead of at models/'s 217
+                     #   runs. Touches ONLY symlinks inside that dir — never a byte under
+                     #   models/, and it refuses to delete a non-symlink. --check / --apply /
+                     #   --propose (survey the archive's longest runs, to amend the list from)
+    tb_inherit.py      # A FORK'S INHERITED TB PREFIX — inspect (--show) / census (--list) /
+                     #   BACKFILL (dry-run unless --apply) the parent-curve prefix that
+                     #   gen3_tb_inherit_v1 writes at fork creation. Torch-FREE like
+                     #   main.lineage. Flags a DERIVED parent per row: every lineage block on
+                     #   disk was regexed out of original_command and one of them is provably
+                     #   wrong. Engine: agents/training/tb_inherit.py
     untaught_meter.py  # THE UNTAUGHT METER — piloting win rate on a fixed team slice (default the
                      #   untaught 8; --taught for the taught 16) against ONE fixed opponent,
                      #   cluster-bootstrapped over TEAMS with one shared resampling index set so
@@ -2293,6 +2307,28 @@ commit span, written by the same save path, an existing entry never rewritten ex
 scalar hash (so *absent* never reads as *one commit*). Every checkpoint sidecar stamps the history
 as of its write. Read it with **`python -m main.sidecar_audit <models_dir_or_run>…`**, which flags a
 run with >1 span as PIN-SPLIT and separates an explained sidecar hash from a misattributed one.
+
+**A FORK INHERITS ITS PARENT'S TENSORBOARD CURVES** (`gen3_tb_inherit_v1`, 2026-09-06). A fork's
+global step CONTINUES the parent's (`reset_num_timesteps=False`), so its `tb/` used to open mid-air
+at `fork_step` — measured: `ai_v8_03_zarch_control_0718`'s first logged step is **148,401,356**,
+exactly the `fork_step` its lineage block records. At fork creation, right where the `lineage` block
+is written, `<fork>/tb/` now also gets a TRUNCATED copy of the parent's **scalar** events at steps
+**≤ `fork_step`** (the parent usually trained past the fork, and that tail would draw parent-only
+progress inside the fork's own step range). TensorBoard merges every event file in a run dir into one
+series by step, so the fork's charts read as one continuous curve from step 0. A fork-of-a-fork
+composes for free — the parent's `tb/` already carries its own prefix, so re-truncating it yields the
+grandparent's span plus the parent's. Cost is a few hundred KB against a 262 MB archive.
+`<fork>/tb/INHERITED_FROM.json` records the parent, the truncation step, the tags and the sha256 —
+a curve a run did not train must say so where a reader will find it — and its EXISTENCE is the
+idempotency key, so a launcher restart that still names the parent as `--model` cannot append a
+second copy. `--no-tb-inherit` opts out; worth it for a large sibling FLEET under an UNCURATED
+logdir, where 8 exploiters off one target draw 8 identical prefixes (under `main.tb_curate` it is
+exactly what you want). Existing forks are NOT backfilled: **137 would gain a prefix** —
+`python -m main.tb_inherit --list`, then `--backfill --all` (dry-run unless `--apply`). ⚠️ 105 of
+those name a **derived** parent (regexed out of `original_command`, not recorded at fork time) and
+the derivation can be wrong — `ai_v8_01_zarch_film_0717` claims `role=fresh, fork_step=0` while its
+own tb opens at step 148,401,356 — so the backfill prints that flag per row and is dry-run by
+default. Engine: `agents/training/tb_inherit.py`.
 
 These are run-level (one per run), NOT per-checkpoint: a periodic checkpoint `.zip` lives one
 level down in `checkpoints/` beside its own per-checkpoint `.json` sidecar, so

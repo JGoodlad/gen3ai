@@ -613,6 +613,16 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                                     fork_step=int(getattr(model, "num_timesteps", 0) or 0))
             save_model_snapshot(model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
+            # gen3_tb_inherit_v1 — a FORK inherits its parent's scalar curves (steps <= fork_step),
+            # so its TensorBoard reads from step 0 instead of starting mid-air. Driven off the very
+            # block just recorded above: `_lineage` is non-None ONLY on a fork (build_lineage returns
+            # None on a same-run restart via `fork_lr.is_same_run_checkpoint`), and the parent +
+            # fork_step are read out of it — so the curve a fork inherits and the parent it claims
+            # cannot disagree. Runs BEFORE _attach_run_tb_logger so the prefix is in place before the
+            # run's own writer opens. Never raises: it returns a reason instead (see the module).
+            from agents.training.tb_inherit import inherit_from_lineage as _inherit_tb
+            print(_inherit_tb(model_dir, _lineage,
+                              enabled=bool(getattr(args, "tb_inherit", True))).describe())
 
             _abort_fn = _setup_signal_handlers(
                 model, model_dir, _shutdown_event, current_version,

@@ -254,7 +254,35 @@ Units: `~/.config/systemd/user/{tensorboard,cloudflared-tensorboard}.service`
 Config: `~/.cloudflared/config.yml`  
 Credentials: `~/.cloudflared/9ebabecb-fbdb-476a-925b-7329596cb38f.json`
 
-`--logdir models/` recursively finds every `models/*/tb/` (runs + `_goldens`).
+### The logdir is a CURATED VIEW, not `models/` (changed 2026-09-06)
+
+It used to be `--logdir models/`, which recursively found every `models/*/tb/` — **217 runs**,
+mostly two-hour ablation arms, dose cells and exploiter fleets. The handful of long runs the owner
+actually reads were lost in the legend of every chart, and the origin held all 217 in memory.
+
+TensorBoard has **no server-side "show only these runs" option — the logdir IS the selection** — so
+the unit now points at `<repo>/tb_curated/`, a directory of symlinks maintained by
+**`python -m main.tb_curate`**:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.tb_curate                 # print the proposal + the diff (same as --check)
+python -m main.tb_curate --apply         # rebuild the symlink dir idempotently
+python -m main.tb_curate --propose       # survey the archive's longest runs, to amend the list from
+```
+
+Each entry is `tb_curated/<run> -> models/<run>/tb`, so a run appears under its **own name** (under
+`--logdir models/` it showed as `<run>/tb`). Two sources are unioned: the committed list
+**`designs/tb_curated_runs.json`** (the owner's dial — one `why` line per entry) and **every LIVE
+run**, detected by scanning `ps` for a launcher, so the arm training right now always shows without
+anyone remembering to add it.
+
+**Editing the list needs NO restart of this unit** — TensorBoard rescans its logdir, and `--apply`
+only moves symlinks. A restart is required only if the logdir PATH itself changes. The tool creates
+and removes symlinks inside `tb_curated/` and nothing else; it never writes a byte under `models/`,
+and it refuses to delete anything there that is not a symlink.
+
+Measured at the cutover: **8 runs served, origin RSS 688 MB → 257 MB.**
 
 ### Why the origin is a service (Jul 29 2026 outage)
 
