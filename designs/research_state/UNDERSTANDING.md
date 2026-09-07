@@ -493,8 +493,10 @@ endpoints, not monitored ones.**
 
 ### 4.2 The first arm and its pre-registered read
 
-`ai_v12_02_winprob_critic`, fresh, pinned `f971caf2`, `--steps 75000000` (~33 h at the full
-architecture's measured ~2.3M steps/h), relaunched 2026-09-06 20:27 on the PRODUCTION architecture
+`ai_v12_02_winprob_critic`, fresh, pinned `f971caf2`, `--steps 75000000` (~33 h: **601 fps** once the
+self-play pool is non-empty, 919 fps pool-empty before the first promotion at 4M — a 1.53× step, the
+cost of a neural opponent, not a per-promotion tax; ~312 s per 3 h restart; 75M ETA Tue 08 Sep
+08:00–09:00 [ledger 2026-09-06 · *6M read* and *RESTART READ RULINGS*]), relaunched 2026-09-06 20:27 on the PRODUCTION architecture
 surface — 49 derived toggles diffed against `production_config.json`, 0 differing. Its predecessor
 `ai_v12_01_winprob_critic` ran ~7 GPU-hours with 31 architecture flags at their OFF defaults and is
 DEAD and not evidence [ledger 2026-09-06 · *INCIDENT — ai_v12_01 ran ~7h on a stripped
@@ -533,6 +535,26 @@ ladder is not a rating): trailing rev-1 by more than 38 Elo at matched snapshot 
 [ledger 2026-09-06 · *READ AMENDMENT — the famine read moves to ~10M*] Pre-registered confound: the incumbent
 had PBRS *and* PopArt *and* the shaped critic, so this is a rate comparison ACROSS RECIPES — a trail
 inside 38 Elo is **not** evidence of equivalence, only that starvation was not demonstrated.
+
+**THE 10M READ (2026-09-07 ~00:40): NO KILL — the arm continues to 75M.** [ledger 2026-09-07 ·
+*10M DECIDING READ*; artifacts `measurements/winprob_critic_10M_read_2026-09-07/`] At matched
+snapshot count AND matched fit size the arm **TRAILS rev-1 by 30 Elo against the 38 floor** (WITHIN
+FLOOR; the arm holds 2M more steps at its 4th node), and `win_rate_vs_bots` rose over all five
+cycles 0.556 → 0.894 (SIGNIFICANT, safe direction). Neither half of the famine AND is met.
+🚨 As shipped, `critic_gate` printed **"+64 lead"** — it compared the arm's 4-node fit against rev-1's
+final 12-node fit, and rev-1's 8M node deflates 94 Elo between the two (rule 3 of *Reading an ELO*
+in `src/agents/training/CLAUDE.md`); fixed in `462e9cdb`, which refits the longer ladder on its
+first n. The Δ vs the fold parent (+159) is at UNMATCHED fit size (the fork's early nodes are rated
+only through edges to its late selves) and is not a lead claim. **G1 resolution is BELOW its bar at
+10M on every stratum** (`all` 0.0375 [0.0267, 0.0544] vs 0.0618; G2 also fails, G3 passes; the
+falsification clause is not triggered because G2 fails too) — the bar is a 28M model's and the arm
+is at 10M, a maturity asymmetry STATED and NOT used to re-base the bar; G1's registered read is the
+75M gate. **The open finding, cause UNVERIFIED: strength and critic calibration are moving in
+OPPOSITE directions on this arm** — it is winning at the shaped incumbent's pace without the
+calibration the design predicted would carry it. G7 clean (stall 0.0000 except 4M 0.0062). The
+registered ep_len clause 2 read MET (+4.12 turns) on a competence SAWTOOTH locked to the 2M pool
+promotions with draw rate at a third of its bar — the AND with clause 1 is what kept a met clause
+from reading as famine, and the +3.0 bar is banked as too tight for the next registration.
 
 ### 4.3 What is UNVERIFIED in this era
 
