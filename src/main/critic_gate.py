@@ -90,8 +90,12 @@ class GateRefusal(SystemExit):
     """
 
     def __init__(self, where: str, message: str) -> None:
-        super().__init__(f"\n[critic_gate] REFUSAL — {where}\n\n  {message}\n")
-        self.code = 2
+        self.message = f"\n[critic_gate] REFUSAL — {where}\n\n  {message}\n"
+        super().__init__(self.message)
+        self.code = 2          # the interpreter prints NOTHING for an int code: see __main__
+
+    def __str__(self) -> str:
+        return self.message
 
 
 # --------------------------------------------------------------------------- resolution
@@ -234,6 +238,36 @@ def _nodes(ladder: Dict[str, Any]) -> List[Tuple[int, float, float]]:
     return sorted(out)
 
 
+def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int]
+                   ) -> Tuple[Optional[List[Tuple[int, float, float]]], Optional[str]]:
+    """``(nodes, None)`` — a fresh BT fit over the FIRST ``n`` of the committed ladder's rated
+    snapshots — or ``(None, why)`` when that prefix cannot be fit on its own. The prefix comes
+    from the LADDER's own rated steps, not the pool on disk (a closed run's `snapshots/` may have
+    been groomed while its ladder.json stands). It cannot be fit when the raw pair log is absent,
+    or when the prefix has no measured edge INSIDE itself — a FORK's ladder often rates its early
+    parent snapshots only through edges to its own late selves (`ai_v9_59_R2ACTION_0827`: every
+    pair touches 26M/28M, eval rows exist only there), and a strict prefix fit of that is empty.
+    The caller reports the fit size as UNMATCHED rather than pretending; it never refits loosely,
+    because an edge to a node OUTSIDE the prefix re-imports exactly the future the matched-count
+    rule exists to exclude."""
+    from agents.training import snapshot_ladder as sl
+    games_path = sl.games_log_path(run_dir)
+    if not os.path.exists(games_path):
+        return None, (f"{what} rates more snapshots than the matched count ({n}), so its first-{n} "
+                      f"fit is needed, but there is no {games_path!r} to refit from. Rebuild the "
+                      f"ladder with: python -m agents.training.snapshot_ladder {run_dir} --backfill")
+    doc = sl.fit_ladder(run_dir, first_n=n, write=False, steps=list(rated_steps))
+    nodes = _nodes({**doc, "path": f"{games_path} (first-{n} refit)"})
+    if len(nodes) != n:
+        return None, (f"the first-{n} prefix of {what}'s ladder rates {len(nodes)} node(s) on its "
+                      f"own, not {n}: the prefix has no measured edge inside itself (its early "
+                      "nodes are rated only through edges to LATER snapshots), so a matched-size "
+                      "fit does not exist for it.")
+    if not doc.get("converged"):
+        return None, f"the first-{n} BT fit of {what}'s ladder did not converge."
+    return nodes, None
+
+
 def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                    at_snapshots: Optional[int]) -> Dict[str, Any]:
     """Endpoint 1 — the anchored ladder at matched SNAPSHOT COUNT, against the parent CONTINUED."""
@@ -247,6 +281,30 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
             f"asked for {n} snapshot(s); the run rates {len(nr)} and the parent rates "
             f"{len(npar)}, so the matched count can be at most {avail}. Comparing at MATCHED "
             "COUNT (never at matched step) is the third ELO reading rule."))
+    # MATCHED COUNT MEANS MATCHED FIT SIZE. The n-th node of a run's FINAL 12-node fit is not the
+    # n-th node of a 4-node fit: BT re-solves every node on every add and the newest node is
+    # systematically inflated, so a side with MORE than n rated nodes is REFIT on its first n
+    # (`snapshot_ladder.fit_ladder(first_n=n)`, strict: every snapshot endpoint inside the prefix).
+    # Measured 2026-09-07: rev-1's 8M node is 2052 in a first-4 fit and 1958 in the 12-node fit,
+    # and this section had handed those 94 Elo to the arm it compared against (ledger, 10M read).
+    final_nodes = {"run": nr[n - 1], "parent": npar[n - 1]}
+    refit = {"run": False, "parent": False}
+    unmatched: List[str] = []
+    if len(nr) > n:
+        got, why = _refit_first_n(run["run_dir"], n, what="run",
+                                  rated_steps=[s for s, _, _ in nr])
+        if got is None:
+            unmatched.append(why or "run: refit unavailable")
+        else:
+            nr, refit["run"] = got, True
+    if len(npar) > n:
+        got, why = _refit_first_n(parent["run_dir"], n, what="parent",
+                                  rated_steps=[s for s, _, _ in npar])
+        if got is None:
+            unmatched.append(why or "parent: refit unavailable")
+        else:
+            npar, refit["parent"] = got, True
+    matched_fit_size = not unmatched
     a, b = nr[n - 1], npar[n - 1]
     d = a[1] - b[1]
     se = math.sqrt((a[2] ** 2 if math.isfinite(a[2]) else 0.0)
@@ -272,6 +330,24 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                    "node_at_count": {"step": b[0], "elo": b[1], "se": b[2], "ci95": Z95 * b[2]},
                    "finished": pfinished},
         "delta_elo": d, "delta_se": se, "delta_ci95": [d - Z95 * se, d + Z95 * se],
+        "refit_at_count": refit,
+        "matched_fit_size": matched_fit_size,
+        "final_fit_nodes": {k: {"step": v[0], "elo": v[1], "se": v[2]}
+                            for k, v in final_nodes.items()},
+        "delta_elo_final_fits": final_nodes["run"][1] - final_nodes["parent"][1],
+        "fit_size_note": (
+            "🚨 UNMATCHED FIT SIZE — this delta compares the n-th node of a LONGER final fit "
+            "against a short fit's n-th node, which is the newest-node-inflation error (94 Elo on "
+            "rev-1's 8M node, 2026-09-07) and is NOT a matched-count reading; quote it only with "
+            "this label. Why no refit: " + " | ".join(unmatched)
+            if not matched_fit_size else
+            "a side with more rated nodes than the matched count was REFIT on its first n "
+            "snapshots (strict: every snapshot endpoint inside the prefix), because the newest node "
+            "of a fit is inflated and the n-th node of a longer final fit is a different number — "
+            f"refit: run={refit['run']}, parent={refit['parent']}; the final-fit delta would have "
+            f"read {final_nodes['run'][1] - final_nodes['parent'][1]:+.0f}."
+            if any(refit.values()) else
+            "both ladders have exactly the matched count of nodes, so no refit was needed."),
         "rating_final": finished,
         "rating_note": ("rating final — the run wrote a final model" if finished else
                         "rating not final — run not finished. BT re-solves every node on every "
@@ -302,11 +378,25 @@ def famine_section(run: Dict[str, Any], comparator: Dict[str, Any],
     incumbent's own run-to-run noise — the pre-registered confound, printed with the verdict.
     """
     lad = ladder_section(run, comparator, at_snapshots)
+    if not lad["matched_fit_size"]:
+        raise GateRefusal("famine pre-test", (
+            "the comparator's ladder cannot be refit at the matched snapshot count, so the only "
+            "delta available is at UNMATCHED fit size — the 94-Elo newest-node error, which read a "
+            "30-Elo trail as a 64-Elo lead on 2026-09-07. The famine ladder half is NOT EVALUABLE "
+            "on this comparator; its `win_rate_vs_bots` half still reads from the run. Detail: "
+            + lad["fit_size_note"]))
     trail = -lad["delta_elo"]                      # positive = the arm is BEHIND
     starving = trail > floor_elo
+    direction = ("TRAILS" if trail > 0 else "LEADS" if trail < 0 else "TIES")
     return {
         "comparator": comparator, "floor_elo": floor_elo, "floor_source": floor_source,
         "ladder": lad, "trail_elo": trail, "exceeds_floor": starving,
+        "direction": direction,
+        "sentence": (f"the arm {direction} the comparator by {abs(trail):.0f} ELO at "
+                     f"{lad['at_snapshots']} snapshots (floor {floor_elo:.0f}) — "
+                     + ("the trail EXCEEDS the floor: the ladder half of the famine gate is MET"
+                        if starving else
+                        "inside the floor: starvation is NOT demonstrated on the ladder half")),
         "rule": ("at ~5M: trailing the comparator by more than the floor at matched SNAPSHOT "
                  "COUNT **AND** win_rate_vs_bots not rising ⇒ terminal-only starves ⇒ kill the "
                  "arm and launch FROZEN-φ."),
@@ -1126,4 +1216,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 
 if __name__ == "__main__":                                       # pragma: no cover
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except GateRefusal as exc:
+        # SystemExit(2) is silent by construction; a refusal that names nothing is the zero
+        # this class exists to avoid (measured 2026-09-07: `exit 2` with no text at all).
+        print(exc.message, file=sys.stderr)
+        sys.exit(2)

@@ -707,3 +707,125 @@ def test_an_EXPLICIT_comparator_that_does_not_resolve_still_REFUSES(tree, tmp_pa
         cg.main(_run(tree, "--famine-comparator", str(tmp_path / "nope"),
                      "--famine-floor-elo", "38"))
     assert "--famine-comparator" in str(exc.value)
+
+
+# ------------------------------------------------- matched COUNT means matched FIT SIZE (2026-09-07)
+
+def _write_pair_log(run_dir: str, steps, results):
+    """A `snapshots/` pool + a `games.jsonl` so the ladder can be REFIT on a prefix."""
+    for s in steps:
+        _write_zip(os.path.join(run_dir, "snapshots", f"snapshot_{s:012d}.zip"))
+    os.makedirs(os.path.join(run_dir, "snapshot_ladder"), exist_ok=True)
+    with open(os.path.join(run_dir, "snapshot_ladder", "games.jsonl"), "w") as fh:
+        for a, b, wins_a in results:
+            fh.write(json.dumps({"a": a, "b": b, "wins_a": wins_a, "games": 100}) + "\n")
+
+
+def _three_node_comparator(root: str) -> str:
+    """A comparator rated at THREE snapshots whose committed ladder.json is the 3-node fit.
+
+    The third node is made INCONSISTENT with the first two (it crushes node 2 but barely beats
+    node 1), so the joint 3-node fit moves node 2 away from where a 2-node fit puts it — the
+    newest-node effect in miniature, and the difference the gate must not hand to the arm."""
+    from agents.training import snapshot_ladder as sl
+    steps = (1_000_000, 2_000_000, 3_000_000)
+    comp = build_run(root, "COMP3", sharpness=0.05, steps=steps,
+                     ladder_elo=(1800.0, 1850.0, 1900.0))
+    _write_pair_log(comp, steps, [(2_000_000, 1_000_000, 80),
+                                  (3_000_000, 2_000_000, 95),
+                                  (3_000_000, 1_000_000, 60)])
+    sl.fit_ladder(comp)                       # the committed ladder is the FULL 3-node fit
+    return comp
+
+
+def test_matched_count_refits_the_longer_ladder_on_its_first_n(tree, tmp_path):
+    from agents.training import snapshot_ladder as sl
+    comp = _three_node_comparator(tree["root"])
+    arm = build_run(tree["root"], "ARM2", sharpness=0.05, ladder_elo=(1820.0, 1870.0))
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(comp, what="parent"), None)
+    assert sec["at_snapshots"] == 2
+    assert sec["refit_at_count"] == {"run": False, "parent": True}
+    prefix = sl.fit_ladder(comp, first_n=2, write=False)
+    assert prefix["first_n"] == 2 and set(prefix["ratings"]) == {"1000000", "2000000"}
+    # the parent's 2nd node is the PREFIX fit's, and it differs from the final fit's 2nd node
+    node2_prefix = prefix["ratings"]["2000000"]
+    node2_final = sec["final_fit_nodes"]["parent"]["elo"]
+    assert sec["parent"]["node_at_count"]["elo"] == pytest.approx(node2_prefix, abs=0.05)
+    assert abs(node2_prefix - node2_final) > 5.0, (node2_prefix, node2_final)
+    assert sec["delta_elo"] == pytest.approx(1870.0 - node2_prefix, abs=0.05)
+    assert sec["delta_elo_final_fits"] == pytest.approx(1870.0 - node2_final, abs=0.05)
+    assert "REFIT" in sec["fit_size_note"] and "parent=True" in sec["fit_size_note"]
+
+
+def test_a_longer_ladder_without_its_pair_log_is_labelled_UNMATCHED_and_famine_refuses(tree):
+    comp = build_run(tree["root"], "COMP3NOLOG", sharpness=0.05,
+                     steps=(1_000_000, 2_000_000, 3_000_000),
+                     ladder_elo=(1800.0, 1850.0, 1900.0))
+    arm = build_run(tree["root"], "ARM2B", sharpness=0.05)
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(comp, what="parent"), None)
+    assert sec["matched_fit_size"] is False and sec["refit_at_count"]["parent"] is False
+    assert "UNMATCHED FIT SIZE" in sec["fit_size_note"]
+    assert "games.jsonl" in sec["fit_size_note"] and "--backfill" in sec["fit_size_note"]
+    assert sec["delta_elo"] == sec["delta_elo_final_fits"]          # reported, but labelled
+    with pytest.raises(cg.GateRefusal) as exc:                        # never a famine NUMBER
+        cg.famine_section(cg._resolve_ref(arm, what="run"),
+                          cg._resolve_ref(comp, what="parent"), None, 38.0, "test")
+    assert "NOT EVALUABLE" in str(exc.value) and "UNMATCHED" in str(exc.value)
+
+
+def test_a_forks_ladder_whose_prefix_has_no_inner_edge_is_UNMATCHED_not_loosely_refit(tree):
+    """`ai_v9_59_R2ACTION_0827`'s shape: every measured pair touches a LATE node and the eval
+    rows exist only there, so the early nodes are rated purely through the future. A strict
+    prefix fit of that is empty, and the gate must say UNMATCHED rather than admit those edges."""
+    from agents.training import snapshot_ladder as sl
+    steps = (1_000_000, 2_000_000, 3_000_000)
+    comp = build_run(tree["root"], "FORKSHAPE", sharpness=0.05, steps=steps,
+                     ladder_elo=(1800.0, 1850.0, 1900.0))
+    _write_pair_log(comp, steps, [(3_000_000, 1_000_000, 80), (3_000_000, 2_000_000, 60)])
+    # keep only the LAST step's eval row, like the fork whose early snapshots were never evaluated
+    path = os.path.join(comp, "eval_results.jsonl")
+    rows = [json.loads(line) for line in open(path) if line.strip()]
+    with open(path, "w") as fh:
+        for r in rows:
+            if r["step"] == 3_000_000:
+                fh.write(json.dumps(r) + "\n")
+    sl.fit_ladder(comp)
+    arm = build_run(tree["root"], "ARM2C", sharpness=0.05)
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(comp, what="parent"), None)
+    assert sec["matched_fit_size"] is False
+    assert "no measured edge inside itself" in sec["fit_size_note"]
+
+
+def test_a_refusal_at_the_cli_prints_its_message_and_exits_2(tree, tmp_path):
+    """SystemExit(2) is silent by construction; the CLI wrapper must print the refusal."""
+    os.remove(os.path.join(tree["arm"], "snapshot_ladder", "ladder.json"))
+    proc = subprocess.run(
+        [sys.executable, "-m", "main.critic_gate", tree["arm"], "--parent", tree["parent"],
+         "--baseline-dir", tree["baseline"], "--skip-meter", "--famine-comparator", "off"],
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "PYTHONPATH": str(src_root())})
+    assert proc.returncode == 2
+    assert "REFUSAL" in proc.stderr and "snapshot_ladder" in proc.stderr
+
+
+def test_equal_counts_need_no_refit_and_say_so(tree):
+    sec = cg.ladder_section(cg._resolve_ref(tree["arm"], what="run"),
+                            cg._resolve_ref(tree["parent"], what="parent"), None)
+    assert sec["refit_at_count"] == {"run": False, "parent": False}
+    assert sec["delta_elo"] == sec["delta_elo_final_fits"]
+    assert "no refit" in sec["fit_size_note"]
+
+
+@pytest.mark.parametrize("arm_elo, expect", [((1900.0, 1990.0), "LEADS"),
+                                             ((1900.0, 1850.0), "TRAILS")])
+def test_the_famine_sentence_says_LEADS_or_TRAILS_never_a_signed_trail_alone(tree, arm_elo,
+                                                                            expect):
+    arm = build_run(tree["root"], f"ARM_{expect}", sharpness=0.05, ladder_elo=arm_elo)
+    fam = cg.famine_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(tree["parent"], what="parent"),
+                            None, 38.0, "test")
+    assert fam["direction"] == expect and expect in fam["sentence"]
+    assert ("EXCEEDS" in fam["sentence"]) == fam["exceeds_floor"]

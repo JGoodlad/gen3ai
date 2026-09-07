@@ -79,6 +79,8 @@ def render_markdown(doc: Dict[str, Any]) -> str:
         out.append(f"**Δ at {lad['at_snapshots']} snapshots: {lad['delta_elo']:+.0f} ELO "
                    f"[{lad['delta_ci95'][0]:+.0f}, {lad['delta_ci95'][1]:+.0f}]** — "
                    f"{lad['comparability']}")
+        out.append("")
+        out.append(f"Fit size: {lad['fit_size_note']}")
     else:
         out.append("_not read_")
     out.append("")
@@ -159,9 +161,8 @@ def render_markdown(doc: Dict[str, Any]) -> str:
         out.append(f"Comparator `{name}` → `{c['resolved_file']}`; floor **{fam['floor_elo']:.0f} "
                    f"ELO** (from {fam['floor_source']}).")
         out.append("")
-        out.append(f"**Trail at {lad['at_snapshots']} snapshots: {fam['trail_elo']:+.0f} ELO** "
-                   f"against a floor of {fam['floor_elo']:.0f} — "
-                   f"{'EXCEEDS the floor' if fam['exceeds_floor'] else 'INSIDE the floor'}.")
+        out.append(f"**{fam['sentence']}** (signed trail {fam['trail_elo']:+.0f}, positive = "
+                   "behind).")
         out.append("")
         out.append(f"> RULE: {fam['rule']}")
         out.append(">")
@@ -246,6 +247,7 @@ def render_text(doc: Dict[str, Any]) -> str:
         out.append(f"    Δ at {lad['at_snapshots']} snapshots: {lad['delta_elo']:+.0f} ELO "
                    f"[{lad['delta_ci95'][0]:+.0f}, {lad['delta_ci95'][1]:+.0f}]")
         out.append(f"    {lad['comparability']}")
+        out.append(f"    fit size: {lad['fit_size_note']}")
     else:
         out.append("    not read")
     out.append("")
@@ -311,10 +313,8 @@ def render_text(doc: Dict[str, Any]) -> str:
     else:
         c = fam["comparator"]
         out.append(f"    comparator {c.get('baseline') or c['spec']} -> {c['resolved_file']}")
-        out.append(f"    trail {fam['trail_elo']:+.0f} ELO at "
-                   f"{fam['ladder']['at_snapshots']} snapshots vs floor "
-                   f"{fam['floor_elo']:.0f} ({fam['floor_source']}) -> "
-                   f"{'EXCEEDS' if fam['exceeds_floor'] else 'INSIDE'} the floor")
+        out.append(f"    {fam['sentence']} [floor from {fam['floor_source']}; signed trail "
+                   f"{fam['trail_elo']:+.0f}, positive = behind]")
         out.append(f"    {fam['half_computed']}")
         out.append(f"    CONFOUND: {fam['confound']}")
     out.append("")

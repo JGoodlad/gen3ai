@@ -125,24 +125,50 @@ def _atomic_write_json(path: str, obj: dict) -> None:
 
 
 # ── the fit (dense matrix + bot anchors) ────────────────────────────────────────────────────
-def fit_ladder(run_dir: str, base: float | None = None) -> dict:
+def fit_ladder(run_dir: str, base: float | None = None, *,
+               first_n: int | None = None, write: bool = True,
+               steps: list[int] | None = None) -> dict:
     """Fit the anchored BT ladder from the DENSE frozen matrix + each snapshot's historical
     bot edges (from eval_results.jsonl, which connect the ladder to the pinned bots for the
-    absolute scale). Returns the ladder dict (also written to ladder.json)."""
+    absolute scale). Returns the ladder dict (also written to ladder.json when ``write``).
+
+    ``first_n`` restricts the fit to the run's FIRST ``first_n`` snapshots — every frozen pair
+    and every bot/sentinel edge whose snapshot endpoints all lie in that prefix — and never
+    writes ``ladder.json``. That is what "matched SNAPSHOT COUNT" means for a cross-run
+    comparison: BT re-solves every node on every add and the NEWEST node of a fit is
+    systematically inflated (gen-10's 12M fell 2089 → 2021 over 12 refits), so the n-th node of
+    a run's FINAL 12-node fit is not the same object as the n-th node of a 4-node fit. Measured
+    2026-09-07 on `ai_v9_29_rev1_0823`: its 8M node reads **2052** in a first-4 fit and **1958**
+    in the final 12-node fit — 94 Elo of newest-node deflation, which `main.critic_gate` was
+    silently handing to the arm it compared against."""
     anchors = elo_mod.load_bot_anchors()
     pins = (anchors or {}).get("ratings")
     base = base if base is not None else (anchors or {}).get("base", elo_mod.DEFAULT_BASE)
+
+    # ``steps`` lets a caller re-slice a COMMITTED ladder whose pool has since been groomed
+    # (`main.critic_gate` passes the ladder's own rated steps); the default is the pool on disk.
+    steps = sorted(steps) if steps is not None else pool_snapshot_steps(run_dir)
+    if first_n is not None:
+        if first_n < 1:
+            raise ValueError(f"first_n must be >= 1, got {first_n}")
+        steps = steps[:first_n]
+        write = False
+    keep_keys = {elo_mod.snap_key(s) for s in steps}
+
+    def _kept(*names: str) -> bool:
+        # every SNAPSHOT endpoint must lie in the prefix; a bot endpoint is always kept
+        return all(n in keep_keys for n in names if not n.startswith("bot:"))
 
     results: list[tuple[str, str, int, int]] = []
     # (1) DENSE frozen-vs-frozen edges — the resolution.
     games = load_games(run_dir)
     for (lo, hi), (wins_lo, g) in games.items():
-        if g > 0:
+        if g > 0 and _kept(elo_mod.snap_key(lo), elo_mod.snap_key(hi)):
             results.append((elo_mod.snap_key(lo), elo_mod.snap_key(hi), wins_lo, g))
     # (2) each snapshot's historical bot + sentinel edges — the anchor connection + extra data.
     try:
         for na, nb, wa, g in elo_mod._rows_to_results(elo_mod.load_rows(run_dir, source="log")):
-            if g > 0:
+            if g > 0 and _kept(na, nb):
                 results.append((na, nb, wa, g))
     except Exception:  # noqa: BLE001 — the ladder still works from the frozen matrix alone
         pass
@@ -160,7 +186,6 @@ def fit_ladder(run_dir: str, base: float | None = None) -> dict:
                    "max_abs_err": round(max(errs), 4) if errs else 0.0,
                    "n_frozen_pairs": len(errs)}
 
-    steps = pool_snapshot_steps(run_dir)
     snap_ratings = {str(s): round(ratings[elo_mod.snap_key(s)], 1)
                     for s in steps if elo_mod.snap_key(s) in ratings}
     snap_se = {str(s): round(se.get(elo_mod.snap_key(s), 0.0), 1)
@@ -171,13 +196,17 @@ def fit_ladder(run_dir: str, base: float | None = None) -> dict:
         "base": base,
         "anchored_to_bots": bool(pins),
         "converged": converged,
-        "n_frozen_pairs_measured": sum(1 for v in games.values() if v[1] > 0),
+        "n_frozen_pairs_measured": sum(1 for (lo, hi), v in games.items()
+                                       if v[1] > 0 and _kept(elo_mod.snap_key(lo),
+                                                              elo_mod.snap_key(hi))),
+        "first_n": first_n,
         "n_pairs_possible": len(list(itertools.combinations(steps, 2))),
         "ratings": snap_ratings,
         "se": snap_se,
         "fit_quality": fit_quality,
     }
-    _atomic_write_json(ladder_json_path(run_dir), ladder)
+    if write:
+        _atomic_write_json(ladder_json_path(run_dir), ladder)
     return ladder
 
 

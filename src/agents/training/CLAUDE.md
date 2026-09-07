@@ -1496,7 +1496,7 @@ values of one quantity start disagreeing.
 
 | section | what it does | whose statistics |
 |---|---|---|
-| 1 ladder | reads both `snapshot_ladder/ladder.json` and compares at **matched SNAPSHOT COUNT** (never matched step), printing `rating not final` while the run is unfinished | the BT fit's, read not re-fit |
+| 1 ladder | reads both `snapshot_ladder/ladder.json` and compares at **matched SNAPSHOT COUNT** (never matched step); a side with MORE rated nodes than the count is **REFIT on its first n** (`fit_ladder(first_n=…)`, strict prefix) so the fit SIZE matches too, else the delta is labelled **UNMATCHED FIT SIZE**; prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix when the counts differ |
 | 2 calibration | §4.3 G1–G4 per checkpoint, `bot`/`pool` **separately**, selection-reweighted | `main.scaffolding_gauge`'s `collect_slices` / `build_reliability` / `true_win_rates`, IMPORTED |
 | 3 G7 kill | stall rate + mean episode length vs the era | the run's own recorded metrics + its trace summaries |
 | 4 untaught meter | `main.untaught_meter --baseline <parent> --control <cont…>` | the meter's, read back out of its own `--json` |
@@ -2964,6 +2964,20 @@ Dense measurement buys resolution; it does not buy an early answer.
 
 `n_frozen_pairs_measured` / `n_pairs_possible` in `ladder.json` is the completeness check — a fit
 at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what the bias tracks.
+
+3. **Matched COUNT means matched FIT SIZE, and the tool now REFITS to get it.** Rule 2's
+   "recoverable from `updater.log`" was the only mechanism, and `main.critic_gate` did not use it:
+   it took the comparator's n-th node from its FINAL fit. Measured 2026-09-07 at the win-prob
+   arm's 10M read: rev-1's 8M node is **2052** in a first-4 fit and **1958** in its final 12-node
+   fit, so the gate read a **30-Elo TRAIL as a 64-Elo LEAD** (94 Elo handed to the arm; ledger
+   *10M DECIDING READ*). `snapshot_ladder.fit_ladder(run_dir, first_n=n, write=False, steps=…)`
+   is the refit — every frozen pair AND every bot/sentinel edge whose snapshot endpoints all lie
+   in the prefix, **strict**: an edge to a node outside the prefix re-imports exactly the future
+   the rule excludes (the loose filter reads −12 where strict reads −30). A ladder that cannot be
+   refit — no `games.jsonl`, or a FORK's ladder whose early nodes are rated only through edges to
+   its own late selves (`ai_v9_59_R2ACTION_0827`: every pair touches 26M/28M) — is reported at
+   **UNMATCHED FIT SIZE** with that label on the number, and the famine pre-test REFUSES on it
+   rather than printing a lead.
 
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 

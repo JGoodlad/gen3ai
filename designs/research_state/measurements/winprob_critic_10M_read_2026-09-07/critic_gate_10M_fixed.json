@@ -1,0 +1,2748 @@
+{
+ "tool": "critic_gate",
+ "tool_version": 1,
+ "_meta": {
+  "run": {
+   "spec": "ai_v12_02_winprob_critic",
+   "baseline": null,
+   "baseline_provenance": null,
+   "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/checkpoints/checkpoint_9969408_steps.zip",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic",
+   "run_base": "ai_v12_02_winprob_critic",
+   "resolution_rung": "latest_txt",
+   "resolution_rule": "last_snapshot",
+   "resolved_num_timesteps": 9969408,
+   "config": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/model_config.json"
+  },
+  "parent": {
+   "spec": "v9_fold_parent",
+   "baseline": "v9_fold_parent",
+   "baseline_provenance": "baseline v9_fold_parent = ai_v9_59_R2ACTION_0827@28,115,184 (set 2026-09-06, 2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1))",
+   "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827",
+   "run_base": "ai_v9_59_R2ACTION_0827",
+   "resolution_rung": "explicit_zip",
+   "resolution_rule": "explicit_zip",
+   "resolved_num_timesteps": 28115184,
+   "config": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/model_config.json"
+  },
+  "controls": [
+   {
+    "spec": "models/ai_v9_195_G5PLAINA_0906",
+    "baseline": null,
+    "baseline_provenance": null,
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v9_195_G5PLAINA_0906/final_model.zip",
+    "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_195_G5PLAINA_0906",
+    "run_base": "ai_v9_195_G5PLAINA_0906",
+    "resolution_rung": "latest_txt",
+    "resolution_rule": "last_snapshot",
+    "resolved_num_timesteps": 29294832,
+    "config": "/home/goodlad/dev/gen3ai/models/ai_v9_195_G5PLAINA_0906/model_config.json"
+   },
+   {
+    "spec": "models/ai_v9_196_G5PLAINB_0906",
+    "baseline": null,
+    "baseline_provenance": null,
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v9_196_G5PLAINB_0906/final_model.zip",
+    "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_196_G5PLAINB_0906",
+    "run_base": "ai_v9_196_G5PLAINB_0906",
+    "resolution_rung": "latest_txt",
+    "resolution_rule": "last_snapshot",
+    "resolved_num_timesteps": 29294832,
+    "config": "/home/goodlad/dev/gen3ai/models/ai_v9_196_G5PLAINB_0906/model_config.json"
+   },
+   {
+    "spec": "models/ai_v9_197_G5PLAINC_0906",
+    "baseline": null,
+    "baseline_provenance": null,
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v9_197_G5PLAINC_0906/final_model.zip",
+    "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_197_G5PLAINC_0906",
+    "run_base": "ai_v9_197_G5PLAINC_0906",
+    "resolution_rung": "latest_txt",
+    "resolution_rule": "last_snapshot",
+    "resolved_num_timesteps": 29294832,
+    "config": "/home/goodlad/dev/gen3ai/models/ai_v9_197_G5PLAINC_0906/model_config.json"
+   }
+  ],
+  "design": "designs/ai_v12/design_winprob_only_critic.md",
+  "baseline_dir": "/home/goodlad/dev/gen3ai-wt-gatefix/designs/research_state/measurements/winprob_critic_baseline_2026-09-06",
+  "thresholds": {
+   "G1": "resolution > the committed baseline's matched-stratum value, CI clearing it",
+   "G2": "reliability no worse than the same-stratum baseline. PASS if the arm's point estimate is <= the baseline's same-stratum value, OR the arm's cluster-bootstrap CI CONTAINS that value (non-inferiority \u2014 never a direction claim). FAIL only when the arm's whole CI sits ABOVE it.",
+   "G3": "ECE no worse than the same-stratum baseline. PASS if the arm's point estimate is <= the baseline's same-stratum value, OR the arm's cluster-bootstrap CI CONTAINS that value (non-inferiority \u2014 never a direction claim). FAIL only when the arm's whole CI sits ABOVE it.",
+   "G4": "skill > 0, CI clearing 0",
+   "aspirational_only": {
+    "G2_max_reliability": 0.005,
+    "G3_max_ece": 0.05,
+    "note": "design 4.3's absolute numbers. PRINTED, never gated."
+   },
+   "owner_ruling": "OWNER RULING 2026-09-06: \u00a74.3's absolute G2 (reliability <= 0.005) and G3 (ECE <= 0.05) bars are ALREADY BREACHED by the committed baseline on the POOL stratum (reliability 0.0064 / 0.0103, ECE 0.0667 / 0.0875 at 26M / 28M), while \u00a74.3 called G3 a 'no-regression clause' the reweighted baseline already passes \u2014 true pooled and on bot, FALSE on pool, and both gates are registered over 'both classes'. As written the arm had to clear a bar its predecessor never cleared. G2 and G3 are therefore PER-STRATUM RELATIVE bars: no worse than the baseline's SAME-stratum value. The absolute numbers stay printed as aspirational targets.",
+   "G7_max_stall_rate": 0.05,
+   "G7_stall_turns": 250,
+   "G7_max_ep_len_ratio": 1.25,
+   "G7_threshold_provenance": "the design registers G7 as 'no increase over the era, pre-registered threshold' and names no number; this threshold is main.critic_gate's default, not the design's",
+   "baseline_reduce": "max",
+   "relative_baseline_reduce": "last",
+   "baseline_reduce_source": "per-family default (critic_gate_design)",
+   "reliability_bins": 10,
+   "bootstrap_resamples": 400,
+   "seed": 0,
+   "games_per_team": 200
+  },
+  "argv": [
+   "ai_v12_02_winprob_critic",
+   "--parent",
+   "v9_fold_parent",
+   "--famine-comparator",
+   "famine_comparator",
+   "--control",
+   "models/ai_v9_195_G5PLAINA_0906",
+   "models/ai_v9_196_G5PLAINB_0906",
+   "models/ai_v9_197_G5PLAINC_0906",
+   "--skip-meter",
+   "--json",
+   "/tmp/claude-1000/-home-goodlad-dev-gen3ai/8a1ab698-a856-453b-9fd1-8761dbbf919c/scratchpad/read10M_fixed.json",
+   "--md",
+   "/tmp/claude-1000/-home-goodlad-dev-gen3ai/8a1ab698-a856-453b-9fd1-8761dbbf919c/scratchpad/read10M_fixed.md"
+  ],
+  "volatile": {
+   "generated_at": "2026-09-07T01:00:19",
+   "cwd": "/home/goodlad/dev/gen3ai-wt-gatefix"
+  }
+ },
+ "not_runnable": [
+  {
+   "id": "G5",
+   "criterion": "sd_true_excess, floor-subtracted, per population",
+   "why": "gap M1 \u2014 not runnable from traces"
+  },
+  {
+   "id": "G6",
+   "criterion": "the MIRROR TABLE (no cell crossing 0.50)",
+   "why": "gap M2 \u2014 not runnable from traces"
+  },
+  {
+   "id": "G8",
+   "criterion": "win_mask coverage >= a pre-registered floor",
+   "why": "gap M3 \u2014 the run must record it"
+  },
+  {
+   "id": "G9",
+   "criterion": "capacity value_pooled participation ratio",
+   "why": "runnable, but by `python -m main.capacity`"
+  }
+ ],
+ "falsification_clause": "What would falsify the design, stated before the data: G1 flat (resolution unmoved) with G2\u2013G4 passing means the promotion bought calibration this head already had and nothing else \u2014 the wrong-meter trap, and the target/readout diagnosis of \u00a72 would survive intact while *this* remedy for it would not. That must be reported as loudly as a pass.",
+ "ladder": {
+  "at_snapshots": 4,
+  "available_matched": 4,
+  "run": {
+   "ladder_path": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/snapshot_ladder/ladder.json",
+   "n_rated": 4,
+   "anchored_to_bots": true,
+   "fit_quality": {
+    "mean_abs_err": 0.0712,
+    "max_abs_err": 0.1546,
+    "n_frozen_pairs": 6
+   },
+   "nodes": [
+    {
+     "i": 1,
+     "step": 4000032,
+     "elo": 1778.5,
+     "se": 11.6,
+     "ci95": 22.735582220664625
+    },
+    {
+     "i": 2,
+     "step": 6000000,
+     "elo": 1913.7,
+     "se": 12.8,
+     "ci95": 25.087539002112692
+    },
+    {
+     "i": 3,
+     "step": 8000016,
+     "elo": 1975.0,
+     "se": 13.3,
+     "ci95": 26.067520994382722
+    },
+    {
+     "i": 4,
+     "step": 10000032,
+     "elo": 2022.1,
+     "se": 14.0,
+     "ci95": 27.43949578356076
+    }
+   ],
+   "node_at_count": {
+    "step": 10000032,
+    "elo": 2022.1,
+    "se": 14.0,
+    "ci95": 27.43949578356076
+   },
+   "finished": true,
+   "final_model": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/final_model_interrupted.zip"
+  },
+  "parent": {
+   "ladder_path": "/home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/snapshot_ladder/ladder.json",
+   "n_rated": 14,
+   "anchored_to_bots": true,
+   "fit_quality": {
+    "mean_abs_err": 0.0331,
+    "max_abs_err": 0.1068,
+    "n_frozen_pairs": 21
+   },
+   "nodes": [
+    {
+     "i": 1,
+     "step": 2000016,
+     "elo": 1553.5,
+     "se": 32.7,
+     "ci95": 64.09082229445977
+    },
+    {
+     "i": 2,
+     "step": 4000032,
+     "elo": 1837.2,
+     "se": 29.1,
+     "ci95": 57.03495195011558
+    },
+    {
+     "i": 3,
+     "step": 6000000,
+     "elo": 1817.7,
+     "se": 29.5,
+     "ci95": 57.8189375439316
+    },
+    {
+     "i": 4,
+     "step": 8000016,
+     "elo": 1863.3,
+     "se": 22.4,
+     "ci95": 43.90319325369721
+    }
+   ],
+   "node_at_count": {
+    "step": 8000016,
+    "elo": 1863.3,
+    "se": 22.4,
+    "ci95": 43.90319325369721
+   },
+   "finished": true
+  },
+  "delta_elo": 158.79999999999995,
+  "delta_se": 26.41514716975849,
+  "delta_ci95": [
+   107.02726290094817,
+   210.57273709905172
+  ],
+  "refit_at_count": {
+   "run": false,
+   "parent": false
+  },
+  "matched_fit_size": false,
+  "final_fit_nodes": {
+   "run": {
+    "step": 10000032,
+    "elo": 2022.1,
+    "se": 14.0
+   },
+   "parent": {
+    "step": 8000016,
+    "elo": 1863.3,
+    "se": 22.4
+   }
+  },
+  "delta_elo_final_fits": 158.79999999999995,
+  "fit_size_note": "\ud83d\udea8 UNMATCHED FIT SIZE \u2014 this delta compares the n-th node of a LONGER final fit against a short fit's n-th node, which is the newest-node-inflation error (94 Elo on rev-1's 8M node, 2026-09-07) and is NOT a matched-count reading; quote it only with this label. Why no refit: the first-4 prefix of parent's ladder rates 0 node(s) on its own, not 4: the prefix has no measured edge inside itself (its early nodes are rated only through edges to LATER snapshots), so a matched-size fit does not exist for it.",
+  "rating_final": true,
+  "rating_note": "rating final \u2014 the run wrote a final model",
+  "comparability": "matched SNAPSHOT COUNT, never matched step. Both fits are anchored to the same pinned bots, so the delta is meaningful; its SE combines two independent fits and carries NO term for the anchor uncertainty they share."
+ },
+ "calibration": {
+  "artifact": "/home/goodlad/dev/gen3ai-wt-gatefix/designs/research_state/measurements/winprob_critic_baseline_2026-09-06/selection_reweighted.json",
+  "baseline_run": "ai_v9_59_R2ACTION_0827",
+  "baseline_steps": [
+   26000016,
+   28000032
+  ],
+  "baseline_reduce": "max",
+  "relative_baseline_reduce": "last",
+  "bins": 10,
+  "boot": 400,
+  "seed": 0,
+  "coverage": {
+   "n_traces_seen": 893,
+   "n_traces_read": 893,
+   "n_traces_no_npz": 0,
+   "n_traces_no_winprob": 0,
+   "per_step": {
+    "2000016": {
+     "n_battles": 168,
+     "n_states": 4226
+    },
+    "4000032": {
+     "n_battles": 161,
+     "n_states": 4332
+    },
+    "6000000": {
+     "n_battles": 168,
+     "n_states": 4342
+    },
+    "8000016": {
+     "n_battles": 184,
+     "n_states": 5365
+    },
+    "10000032": {
+     "n_battles": 212,
+     "n_states": 6751
+    }
+   },
+   "per_opponent": {
+    "random": 44,
+    "heuristic": 93,
+    "heuristic2": 98,
+    "staller": 86,
+    "staller_v2": 82,
+    "aggressive": 85,
+    "aggressive_v2": 98,
+    "setup_sweep": 95,
+    "setup_sweep_v2": 94,
+    "sentinel_0": 59,
+    "sentinel_1": 39,
+    "sentinel_2": 20
+   }
+  },
+  "trace_selection": {
+   "schema": 1,
+   "n_steps": 5,
+   "n_steps_with_selection": 5,
+   "any_unknown": false,
+   "unknown_label": "SELECTION UNKNOWN \u2014 this trace tree records no capture quota, so the sample's win/loss mix is unknown and may be LOSS-ENRICHED (the recorder's quota prefers losses by design). Read this curve as a statement about the CAPTURED slice, not about the eval population.",
+   "steps": {
+    "10000032": {
+     "known": true,
+     "rule": "per-opponent per-cycle OUTCOME QUOTA: the first 10 losses and the first 5 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+     "label": "SELECTION RECORDED \u2014 212 traces of 1200 battles played over 12 opponents; mean capture rate 0.093 per WIN vs 0.787 per LOSS. The two differ wherever the quota binds unevenly, and that difference IS the sample's skew \u2014 compare them, never assume they match.",
+     "per_opponent": {
+      "aggressive": {
+       "battles_played": 100,
+       "battles_won": 90,
+       "traces_written": 16,
+       "traces_won": 8,
+       "capture_rate_win": 0.08888888888888889,
+       "capture_rate_loss": 0.8
+      },
+      "aggressive_v2": {
+       "battles_played": 100,
+       "battles_won": 87,
+       "traces_written": 19,
+       "traces_won": 8,
+       "capture_rate_win": 0.09195402298850575,
+       "capture_rate_loss": 0.8461538461538461
+      },
+      "heuristic": {
+       "battles_played": 100,
+       "battles_won": 84,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.09523809523809523,
+       "capture_rate_loss": 0.75
+      },
+      "heuristic2": {
+       "battles_played": 100,
+       "battles_won": 87,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.09195402298850575,
+       "capture_rate_loss": 0.9230769230769231
+      },
+      "random": {
+       "battles_played": 100,
+       "battles_won": 99,
+       "traces_written": 9,
+       "traces_won": 8,
+       "capture_rate_win": 0.08080808080808081,
+       "capture_rate_loss": 1.0
+      },
+      "sentinel_0": {
+       "battles_played": 100,
+       "battles_won": 70,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.11428571428571428,
+       "capture_rate_loss": 0.4
+      },
+      "sentinel_1": {
+       "battles_played": 100,
+       "battles_won": 77,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1038961038961039,
+       "capture_rate_loss": 0.5217391304347826
+      },
+      "sentinel_2": {
+       "battles_played": 100,
+       "battles_won": 83,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.0963855421686747,
+       "capture_rate_loss": 0.7058823529411765
+      },
+      "setup_sweep": {
+       "battles_played": 100,
+       "battles_won": 86,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.09302325581395349,
+       "capture_rate_loss": 0.8571428571428571
+      },
+      "setup_sweep_v2": {
+       "battles_played": 100,
+       "battles_won": 87,
+       "traces_written": 18,
+       "traces_won": 8,
+       "capture_rate_win": 0.09195402298850575,
+       "capture_rate_loss": 0.7692307692307693
+      },
+      "staller": {
+       "battles_played": 100,
+       "battles_won": 92,
+       "traces_written": 15,
+       "traces_won": 8,
+       "capture_rate_win": 0.08695652173913043,
+       "capture_rate_loss": 0.875
+      },
+      "staller_v2": {
+       "battles_played": 100,
+       "battles_won": 93,
+       "traces_written": 15,
+       "traces_won": 8,
+       "capture_rate_win": 0.08602150537634409,
+       "capture_rate_loss": 1.0
+      }
+     },
+     "true_win_rate_source": "mixed"
+    },
+    "2000016": {
+     "known": true,
+     "rule": "per-opponent per-cycle OUTCOME QUOTA: the first 10 losses and the first 5 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+     "label": "SELECTION RECORDED \u2014 168 traces of 900 battles played over 9 opponents; mean capture rate 0.155 per WIN vs 0.248 per LOSS. The two differ wherever the quota binds unevenly, and that difference IS the sample's skew \u2014 compare them, never assume they match.",
+     "per_opponent": {
+      "aggressive": {
+       "battles_played": 100,
+       "battles_won": 68,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.11764705882352941,
+       "capture_rate_loss": 0.375
+      },
+      "aggressive_v2": {
+       "battles_played": 100,
+       "battles_won": 42,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.19047619047619047,
+       "capture_rate_loss": 0.20689655172413793
+      },
+      "heuristic": {
+       "battles_played": 100,
+       "battles_won": 45,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.17777777777777778,
+       "capture_rate_loss": 0.21818181818181817
+      },
+      "heuristic2": {
+       "battles_played": 100,
+       "battles_won": 47,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1702127659574468,
+       "capture_rate_loss": 0.22641509433962265
+      },
+      "random": {
+       "battles_played": 100,
+       "battles_won": 100,
+       "traces_written": 8,
+       "traces_won": 8,
+       "capture_rate_win": 0.08,
+       "capture_rate_loss": null
+      },
+      "setup_sweep": {
+       "battles_played": 100,
+       "battles_won": 41,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1951219512195122,
+       "capture_rate_loss": 0.2033898305084746
+      },
+      "setup_sweep_v2": {
+       "battles_played": 100,
+       "battles_won": 49,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.16326530612244897,
+       "capture_rate_loss": 0.23529411764705882
+      },
+      "staller": {
+       "battles_played": 100,
+       "battles_won": 53,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1509433962264151,
+       "capture_rate_loss": 0.2553191489361702
+      },
+      "staller_v2": {
+       "battles_played": 100,
+       "battles_won": 55,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.14545454545454545,
+       "capture_rate_loss": 0.26666666666666666
+      }
+     },
+     "true_win_rate_source": "mixed"
+    },
+    "4000032": {
+     "known": true,
+     "rule": "per-opponent per-cycle OUTCOME QUOTA: the first 10 losses and the first 5 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+     "label": "SELECTION RECORDED \u2014 161 traces of 900 battles played over 9 opponents; mean capture rate 0.095 per WIN vs 0.717 per LOSS. The two differ wherever the quota binds unevenly, and that difference IS the sample's skew \u2014 compare them, never assume they match.",
+     "per_opponent": {
+      "aggressive": {
+       "battles_played": 100,
+       "battles_won": 86,
+       "traces_written": 19,
+       "traces_won": 8,
+       "capture_rate_win": 0.09302325581395349,
+       "capture_rate_loss": 0.7857142857142857
+      },
+      "aggressive_v2": {
+       "battles_played": 100,
+       "battles_won": 76,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.10526315789473684,
+       "capture_rate_loss": 0.5
+      },
+      "heuristic": {
+       "battles_played": 100,
+       "battles_won": 80,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1,
+       "capture_rate_loss": 0.6
+      },
+      "heuristic2": {
+       "battles_played": 100,
+       "battles_won": 78,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.10256410256410256,
+       "capture_rate_loss": 0.5454545454545454
+      },
+      "random": {
+       "battles_played": 100,
+       "battles_won": 99,
+       "traces_written": 9,
+       "traces_won": 8,
+       "capture_rate_win": 0.08080808080808081,
+       "capture_rate_loss": 1.0
+      },
+      "setup_sweep": {
+       "battles_played": 100,
+       "battles_won": 80,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1,
+       "capture_rate_loss": 0.6
+      },
+      "setup_sweep_v2": {
+       "battles_played": 100,
+       "battles_won": 80,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1,
+       "capture_rate_loss": 0.6
+      },
+      "staller": {
+       "battles_played": 100,
+       "battles_won": 89,
+       "traces_written": 17,
+       "traces_won": 8,
+       "capture_rate_win": 0.0898876404494382,
+       "capture_rate_loss": 0.8181818181818182
+      },
+      "staller_v2": {
+       "battles_played": 100,
+       "battles_won": 92,
+       "traces_written": 16,
+       "traces_won": 8,
+       "capture_rate_win": 0.08695652173913043,
+       "capture_rate_loss": 1.0
+      }
+     },
+     "true_win_rate_source": "mixed"
+    },
+    "6000000": {
+     "known": true,
+     "rule": "per-opponent per-cycle OUTCOME QUOTA: the first 10 losses and the first 5 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+     "label": "SELECTION RECORDED \u2014 168 traces of 1000 battles played over 10 opponents; mean capture rate 0.092 per WIN vs 0.719 per LOSS. The two differ wherever the quota binds unevenly, and that difference IS the sample's skew \u2014 compare them, never assume they match.",
+     "per_opponent": {
+      "aggressive": {
+       "battles_played": 100,
+       "battles_won": 93,
+       "traces_written": 14,
+       "traces_won": 8,
+       "capture_rate_win": 0.08602150537634409,
+       "capture_rate_loss": 0.8571428571428571
+      },
+      "aggressive_v2": {
+       "battles_played": 100,
+       "battles_won": 81,
+       "traces_written": 19,
+       "traces_won": 8,
+       "capture_rate_win": 0.09876543209876543,
+       "capture_rate_loss": 0.5789473684210527
+      },
+      "heuristic": {
+       "battles_played": 100,
+       "battles_won": 88,
+       "traces_written": 16,
+       "traces_won": 8,
+       "capture_rate_win": 0.09090909090909091,
+       "capture_rate_loss": 0.6666666666666666
+      },
+      "heuristic2": {
+       "battles_played": 100,
+       "battles_won": 77,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.1038961038961039,
+       "capture_rate_loss": 0.5217391304347826
+      },
+      "random": {
+       "battles_played": 100,
+       "battles_won": 100,
+       "traces_written": 8,
+       "traces_won": 8,
+       "capture_rate_win": 0.08,
+       "capture_rate_loss": null
+      },
+      "sentinel_0": {
+       "battles_played": 100,
+       "battles_won": 85,
+       "traces_written": 19,
+       "traces_won": 8,
+       "capture_rate_win": 0.09411764705882353,
+       "capture_rate_loss": 0.7333333333333333
+      },
+      "setup_sweep": {
+       "battles_played": 100,
+       "battles_won": 85,
+       "traces_written": 18,
+       "traces_won": 8,
+       "capture_rate_win": 0.09411764705882353,
+       "capture_rate_loss": 0.6666666666666666
+      },
+      "setup_sweep_v2": {
+       "battles_played": 100,
+       "battles_won": 81,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.09876543209876543,
+       "capture_rate_loss": 0.631578947368421
+      },
+      "staller": {
+       "battles_played": 100,
+       "battles_won": 89,
+       "traces_written": 17,
+       "traces_won": 8,
+       "capture_rate_win": 0.0898876404494382,
+       "capture_rate_loss": 0.8181818181818182
+      },
+      "staller_v2": {
+       "battles_played": 100,
+       "battles_won": 91,
+       "traces_written": 17,
+       "traces_won": 8,
+       "capture_rate_win": 0.08791208791208792,
+       "capture_rate_loss": 1.0
+      }
+     },
+     "true_win_rate_source": "mixed"
+    },
+    "8000016": {
+     "known": true,
+     "rule": "per-opponent per-cycle OUTCOME QUOTA: the first 10 losses and the first 5 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+     "label": "SELECTION RECORDED \u2014 184 traces of 1100 battles played over 11 opponents; mean capture rate 0.093 per WIN vs 0.745 per LOSS. The two differ wherever the quota binds unevenly, and that difference IS the sample's skew \u2014 compare them, never assume they match.",
+     "per_opponent": {
+      "aggressive": {
+       "battles_played": 100,
+       "battles_won": 89,
+       "traces_written": 16,
+       "traces_won": 8,
+       "capture_rate_win": 0.0898876404494382,
+       "capture_rate_loss": 0.7272727272727273
+      },
+      "aggressive_v2": {
+       "battles_played": 100,
+       "battles_won": 81,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.09876543209876543,
+       "capture_rate_loss": 0.631578947368421
+      },
+      "heuristic": {
+       "battles_played": 100,
+       "battles_won": 84,
+       "traces_written": 17,
+       "traces_won": 8,
+       "capture_rate_win": 0.09523809523809523,
+       "capture_rate_loss": 0.5625
+      },
+      "heuristic2": {
+       "battles_played": 100,
+       "battles_won": 86,
+       "traces_written": 18,
+       "traces_won": 8,
+       "capture_rate_win": 0.09302325581395349,
+       "capture_rate_loss": 0.7142857142857143
+      },
+      "random": {
+       "battles_played": 100,
+       "battles_won": 98,
+       "traces_written": 10,
+       "traces_won": 8,
+       "capture_rate_win": 0.08163265306122448,
+       "capture_rate_loss": 1.0
+      },
+      "sentinel_0": {
+       "battles_played": 100,
+       "battles_won": 71,
+       "traces_written": 20,
+       "traces_won": 8,
+       "capture_rate_win": 0.11267605633802817,
+       "capture_rate_loss": 0.41379310344827586
+      },
+      "sentinel_1": {
+       "battles_played": 100,
+       "battles_won": 81,
+       "traces_written": 19,
+       "traces_won": 8,
+       "capture_rate_win": 0.09876543209876543,
+       "capture_rate_loss": 0.5789473684210527
+      },
+      "setup_sweep": {
+       "battles_played": 100,
+       "battles_won": 88,
+       "traces_written": 17,
+       "traces_won": 8,
+       "capture_rate_win": 0.09090909090909091,
+       "capture_rate_loss": 0.75
+      },
+      "setup_sweep_v2": {
+       "battles_played": 100,
+       "battles_won": 92,
+       "traces_written": 16,
+       "traces_won": 8,
+       "capture_rate_win": 0.08695652173913043,
+       "capture_rate_loss": 1.0
+      },
+      "staller": {
+       "battles_played": 100,
+       "battles_won": 89,
+       "traces_written": 17,
+       "traces_won": 8,
+       "capture_rate_win": 0.0898876404494382,
+       "capture_rate_loss": 0.8181818181818182
+      },
+      "staller_v2": {
+       "battles_played": 100,
+       "battles_won": 94,
+       "traces_written": 14,
+       "traces_won": 8,
+       "capture_rate_win": 0.0851063829787234,
+       "capture_rate_loss": 1.0
+      }
+     },
+     "true_win_rate_source": "mixed"
+    }
+   }
+  },
+  "true_win_rate_sources": {
+   "2000016": "mixed",
+   "4000032": "mixed",
+   "6000000": "mixed",
+   "8000016": "mixed",
+   "10000032": "mixed"
+  },
+  "checkpoints": [
+   {
+    "step": 2000016,
+    "reweighted": true,
+    "selection": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.68,
+       "captured_win_rate": 0.4,
+       "w_win": 1.7,
+       "w_loss": 0.5333333333333333,
+       "n_battles": 20
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.42,
+       "captured_win_rate": 0.4,
+       "w_win": 1.0499999999999998,
+       "w_loss": 0.9666666666666668,
+       "n_battles": 20
+      },
+      "heuristic": {
+       "true_win_rate": 0.45,
+       "captured_win_rate": 0.4,
+       "w_win": 1.125,
+       "w_loss": 0.9166666666666667,
+       "n_battles": 20
+      },
+      "heuristic2": {
+       "true_win_rate": 0.47,
+       "captured_win_rate": 0.4,
+       "w_win": 1.1749999999999998,
+       "w_loss": 0.8833333333333334,
+       "n_battles": 20
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.41,
+       "captured_win_rate": 0.4,
+       "w_win": 1.025,
+       "w_loss": 0.9833333333333335,
+       "n_battles": 20
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.49,
+       "captured_win_rate": 0.4,
+       "w_win": 1.2249999999999999,
+       "w_loss": 0.8500000000000001,
+       "n_battles": 20
+      },
+      "staller": {
+       "true_win_rate": 0.53,
+       "captured_win_rate": 0.4,
+       "w_win": 1.325,
+       "w_loss": 0.7833333333333333,
+       "n_battles": 20
+      },
+      "staller_v2": {
+       "true_win_rate": 0.55,
+       "captured_win_rate": 0.4,
+       "w_win": 1.375,
+       "w_loss": 0.75,
+       "n_battles": 20
+      }
+     },
+     "dropped": {
+      "random": "the quota captured only one outcome class (8 wins of 8 battles) \u2014 nothing to reweight"
+     },
+     "n_rows_zeroed": 227
+    },
+    "strata": [
+     {
+      "stratum": "all",
+      "gated": false,
+      "n_states": 4226,
+      "n_battles": 168,
+      "ess": 3743.562973148835,
+      "base_rate": 0.5009840896805204,
+      "resolution": 0.07918874903681898,
+      "resolution_ci": [
+       0.05136323134855828,
+       0.10709145143224852
+      ],
+      "baseline_resolution": 0.061831093984661495,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.061831093984661495,
+       "28000032": 0.04452401517311608
+      },
+      "delta_resolution": 0.017357655052157486,
+      "reliability": 0.0014115727120635768,
+      "reliability_ci": [
+       0.0010168900349572544,
+       0.016480381552528883
+      ],
+      "baseline_reliability": 0.0020188404089754516,
+      "ece": 0.033657974098669836,
+      "mce": 0.059197829249612366,
+      "ece_ci": [
+       0.026265290058949096,
+       0.10067086750677229
+      ],
+      "baseline_ece": 0.034920444531253376,
+      "brier": 0.17146783838130134,
+      "uncertainty": 0.2499990315675007,
+      "skill": 0.31412598958406623,
+      "skill_ci": [
+       0.1733423908010659,
+       0.42015134168755836
+      ],
+      "decomp_residual": -0.000754016861443968,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.0014115727120635768,
+        "arm_ci": [
+         0.0010168900349572544,
+         0.016480381552528883
+        ],
+        "baseline": 0.0020188404089754516,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0013431854609110342,
+         "28000032": 0.0020188404089754516
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": -0.0006072676969118749,
+        "pass": true,
+        "decided_by": "point <= base",
+        "aspirational": 0.005,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.033657974098669836,
+        "arm_ci": [
+         0.026265290058949096,
+         0.10067086750677229
+        ],
+        "baseline": 0.034920444531253376,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.02485906357299496,
+         "28000032": 0.034920444531253376
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": -0.00126247043258354,
+        "pass": true,
+        "decided_by": "point <= base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "point <= base",
+      "G3_ece": true,
+      "G3_decided_by": "point <= base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "bot",
+      "gated": true,
+      "n_states": 4226,
+      "n_battles": 168,
+      "ess": 3743.562973148835,
+      "base_rate": 0.5009840896805204,
+      "resolution": 0.07918874903681898,
+      "resolution_ci": [
+       0.05136323134855828,
+       0.10709145143224852
+      ],
+      "baseline_resolution": 0.0336555473769196,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.0336555473769196,
+       "28000032": 0.021521368429933196
+      },
+      "delta_resolution": 0.04553320165989938,
+      "reliability": 0.0014115727120635768,
+      "reliability_ci": [
+       0.0010168900349572544,
+       0.016480381552528883
+      ],
+      "baseline_reliability": 0.0012250309394408053,
+      "ece": 0.033657974098669836,
+      "mce": 0.059197829249612366,
+      "ece_ci": [
+       0.026265290058949096,
+       0.10067086750677229
+      ],
+      "baseline_ece": 0.02280334474575716,
+      "brier": 0.17146783838130134,
+      "uncertainty": 0.2499990315675007,
+      "skill": 0.31412598958406623,
+      "skill_ci": [
+       0.1954652738679459,
+       0.4252516936826306
+      ],
+      "decomp_residual": -0.000754016861443968,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.0014115727120635768,
+        "arm_ci": [
+         0.0010168900349572544,
+         0.016480381552528883
+        ],
+        "baseline": 0.0012250309394408053,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.002667903658165615,
+         "28000032": 0.0012250309394408053
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.00018654177262277145,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.033657974098669836,
+        "arm_ci": [
+         0.026265290058949096,
+         0.10067086750677229
+        ],
+        "baseline": 0.02280334474575716,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.039482478408823296,
+         "28000032": 0.02280334474575716
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.010854629352912676,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": true,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": false,
+      "G3_decided_by": "CI above base",
+      "G4_skill": true
+     }
+    ]
+   },
+   {
+    "step": 4000032,
+    "reweighted": true,
+    "selection": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.86,
+       "captured_win_rate": 0.42105263157894735,
+       "w_win": 2.0425,
+       "w_loss": 0.24181818181818182,
+       "n_battles": 19
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.76,
+       "captured_win_rate": 0.4,
+       "w_win": 1.9,
+       "w_loss": 0.4,
+       "n_battles": 20
+      },
+      "heuristic": {
+       "true_win_rate": 0.8,
+       "captured_win_rate": 0.4,
+       "w_win": 2.0,
+       "w_loss": 0.33333333333333326,
+       "n_battles": 20
+      },
+      "heuristic2": {
+       "true_win_rate": 0.78,
+       "captured_win_rate": 0.4,
+       "w_win": 1.95,
+       "w_loss": 0.36666666666666664,
+       "n_battles": 20
+      },
+      "random": {
+       "true_win_rate": 0.99,
+       "captured_win_rate": 0.8888888888888888,
+       "w_win": 1.11375,
+       "w_loss": 0.09000000000000004,
+       "n_battles": 9
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.8,
+       "captured_win_rate": 0.4,
+       "w_win": 2.0,
+       "w_loss": 0.33333333333333326,
+       "n_battles": 20
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.8,
+       "captured_win_rate": 0.4,
+       "w_win": 2.0,
+       "w_loss": 0.33333333333333326,
+       "n_battles": 20
+      },
+      "staller": {
+       "true_win_rate": 0.89,
+       "captured_win_rate": 0.47058823529411764,
+       "w_win": 1.89125,
+       "w_loss": 0.20777777777777776,
+       "n_battles": 17
+      },
+      "staller_v2": {
+       "true_win_rate": 0.92,
+       "captured_win_rate": 0.5,
+       "w_win": 1.84,
+       "w_loss": 0.15999999999999992,
+       "n_battles": 16
+      }
+     },
+     "dropped": {},
+     "n_rows_zeroed": 0
+    },
+    "strata": [
+     {
+      "stratum": "all",
+      "gated": false,
+      "n_states": 4332,
+      "n_battles": 161,
+      "ess": 2538.834275068895,
+      "base_rate": 0.8163292097547502,
+      "resolution": 0.03136314126086063,
+      "resolution_ci": [
+       0.017628436282598303,
+       0.0537096123913879
+      ],
+      "baseline_resolution": 0.061831093984661495,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.061831093984661495,
+       "28000032": 0.04452401517311608
+      },
+      "delta_resolution": -0.030467952723800866,
+      "reliability": 0.006920506600761159,
+      "reliability_ci": [
+       0.001933841998355754,
+       0.02007037301709457
+      ],
+      "baseline_reliability": 0.0020188404089754516,
+      "ece": 0.04828482318924028,
+      "mce": 0.3257651029215074,
+      "ece_ci": [
+       0.028392748218422335,
+       0.09255309943908864
+      ],
+      "baseline_ece": 0.034920444531253376,
+      "brier": 0.12442202224529413,
+      "uncertainty": 0.14993583105593525,
+      "skill": 0.17016485406428905,
+      "skill_ci": [
+       0.0021391370046979744,
+       0.3115316736086585
+      ],
+      "decomp_residual": -0.0010711741505416567,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.006920506600761159,
+        "arm_ci": [
+         0.001933841998355754,
+         0.02007037301709457
+        ],
+        "baseline": 0.0020188404089754516,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0013431854609110342,
+         "28000032": 0.0020188404089754516
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.004901666191785707,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.04828482318924028,
+        "arm_ci": [
+         0.028392748218422335,
+         0.09255309943908864
+        ],
+        "baseline": 0.034920444531253376,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.02485906357299496,
+         "28000032": 0.034920444531253376
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.013364378657986904,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "CI covers base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "bot",
+      "gated": true,
+      "n_states": 4332,
+      "n_battles": 161,
+      "ess": 2538.834275068895,
+      "base_rate": 0.8163292097547502,
+      "resolution": 0.03136314126086063,
+      "resolution_ci": [
+       0.017628436282598303,
+       0.0537096123913879
+      ],
+      "baseline_resolution": 0.0336555473769196,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.0336555473769196,
+       "28000032": 0.021521368429933196
+      },
+      "delta_resolution": -0.0022924061160589718,
+      "reliability": 0.006920506600761159,
+      "reliability_ci": [
+       0.001933841998355754,
+       0.02007037301709457
+      ],
+      "baseline_reliability": 0.0012250309394408053,
+      "ece": 0.04828482318924028,
+      "mce": 0.3257651029215074,
+      "ece_ci": [
+       0.028392748218422335,
+       0.09255309943908864
+      ],
+      "baseline_ece": 0.02280334474575716,
+      "brier": 0.12442202224529413,
+      "uncertainty": 0.14993583105593525,
+      "skill": 0.17016485406428905,
+      "skill_ci": [
+       0.014832730722667716,
+       0.31173004383608394
+      ],
+      "decomp_residual": -0.0010711741505416567,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.006920506600761159,
+        "arm_ci": [
+         0.001933841998355754,
+         0.02007037301709457
+        ],
+        "baseline": 0.0012250309394408053,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.002667903658165615,
+         "28000032": 0.0012250309394408053
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.005695475661320353,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.04828482318924028,
+        "arm_ci": [
+         0.028392748218422335,
+         0.09255309943908864
+        ],
+        "baseline": 0.02280334474575716,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.039482478408823296,
+         "28000032": 0.02280334474575716
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.02548147844348312,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": false,
+      "G2_decided_by": "CI above base",
+      "G3_ece": false,
+      "G3_decided_by": "CI above base",
+      "G4_skill": true
+     }
+    ]
+   },
+   {
+    "step": 6000000,
+    "reweighted": true,
+    "selection": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.93,
+       "captured_win_rate": 0.5714285714285714,
+       "w_win": 1.6275000000000002,
+       "w_loss": 0.16333333333333322,
+       "n_battles": 14
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.81,
+       "captured_win_rate": 0.42105263157894735,
+       "w_win": 1.9237500000000003,
+       "w_loss": 0.3281818181818181,
+       "n_battles": 19
+      },
+      "heuristic": {
+       "true_win_rate": 0.88,
+       "captured_win_rate": 0.5,
+       "w_win": 1.76,
+       "w_loss": 0.24,
+       "n_battles": 16
+      },
+      "heuristic2": {
+       "true_win_rate": 0.77,
+       "captured_win_rate": 0.4,
+       "w_win": 1.925,
+       "w_loss": 0.3833333333333333,
+       "n_battles": 20
+      },
+      "sentinel_0": {
+       "true_win_rate": 0.85,
+       "captured_win_rate": 0.42105263157894735,
+       "w_win": 2.0187500000000003,
+       "w_loss": 0.2590909090909091,
+       "n_battles": 19
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.85,
+       "captured_win_rate": 0.4444444444444444,
+       "w_win": 1.9125,
+       "w_loss": 0.27,
+       "n_battles": 18
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.81,
+       "captured_win_rate": 0.4,
+       "w_win": 2.025,
+       "w_loss": 0.3166666666666666,
+       "n_battles": 20
+      },
+      "staller": {
+       "true_win_rate": 0.89,
+       "captured_win_rate": 0.47058823529411764,
+       "w_win": 1.89125,
+       "w_loss": 0.20777777777777776,
+       "n_battles": 17
+      },
+      "staller_v2": {
+       "true_win_rate": 0.91,
+       "captured_win_rate": 0.47058823529411764,
+       "w_win": 1.93375,
+       "w_loss": 0.16999999999999993,
+       "n_battles": 17
+      }
+     },
+     "dropped": {
+      "random": "the quota captured only one outcome class (8 wins of 8 battles) \u2014 nothing to reweight"
+     },
+     "n_rows_zeroed": 181
+    },
+    "strata": [
+     {
+      "stratum": "all",
+      "gated": false,
+      "n_states": 4342,
+      "n_battles": 168,
+      "ess": 2388.7638631054697,
+      "base_rate": 0.833853036558288,
+      "resolution": 0.03783156627390854,
+      "resolution_ci": [
+       0.02261905070621082,
+       0.05759381197764569
+      ],
+      "baseline_resolution": 0.061831093984661495,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.061831093984661495,
+       "28000032": 0.04452401517311608
+      },
+      "delta_resolution": -0.023999527710752956,
+      "reliability": 0.0021450109605003144,
+      "reliability_ci": [
+       0.000742008992581379,
+       0.011612128869504872
+      ],
+      "baseline_reliability": 0.0020188404089754516,
+      "ece": 0.035394450477406844,
+      "mce": 0.15135379451516004,
+      "ece_ci": [
+       0.016389046297108203,
+       0.07791380868488666
+      ],
+      "baseline_ece": 0.034920444531253376,
+      "brier": 0.10149179330127234,
+      "uncertainty": 0.1385421499808104,
+      "skill": 0.2674302130049948,
+      "skill_ci": [
+       0.1918064791246818,
+       0.3357823903171911
+      ],
+      "decomp_residual": -0.0013638013661298465,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.0021450109605003144,
+        "arm_ci": [
+         0.000742008992581379,
+         0.011612128869504872
+        ],
+        "baseline": 0.0020188404089754516,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0013431854609110342,
+         "28000032": 0.0020188404089754516
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.00012617055152486277,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.035394450477406844,
+        "arm_ci": [
+         0.016389046297108203,
+         0.07791380868488666
+        ],
+        "baseline": 0.034920444531253376,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.02485906357299496,
+         "28000032": 0.034920444531253376
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.00047400594615346764,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "CI covers base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "bot",
+      "gated": true,
+      "n_states": 3706,
+      "n_battles": 149,
+      "ess": 2039.3448258666688,
+      "base_rate": 0.8335475345627005,
+      "resolution": 0.03458198193301042,
+      "resolution_ci": [
+       0.020290376597242,
+       0.05711008358467329
+      ],
+      "baseline_resolution": 0.0336555473769196,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.0336555473769196,
+       "28000032": 0.021521368429933196
+      },
+      "delta_resolution": 0.000926434556090816,
+      "reliability": 0.002055419008482295,
+      "reliability_ci": [
+       0.0009120697734751171,
+       0.012901403272610464
+      ],
+      "baseline_reliability": 0.0012250309394408053,
+      "ece": 0.03831050385068958,
+      "mce": 0.1503980620025083,
+      "ece_ci": [
+       0.016437970947702826,
+       0.08543399081485449
+      ],
+      "baseline_ece": 0.02280334474575716,
+      "brier": 0.10473355123080173,
+      "uncertainty": 0.13874604218714412,
+      "skill": 0.24514206257837245,
+      "skill_ci": [
+       0.17097707358505998,
+       0.32283279054084024
+      ],
+      "decomp_residual": -0.001485928031814257,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.002055419008482295,
+        "arm_ci": [
+         0.0009120697734751171,
+         0.012901403272610464
+        ],
+        "baseline": 0.0012250309394408053,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.002667903658165615,
+         "28000032": 0.0012250309394408053
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.0008303880690414896,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.03831050385068958,
+        "arm_ci": [
+         0.016437970947702826,
+         0.08543399081485449
+        ],
+        "baseline": 0.02280334474575716,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.039482478408823296,
+         "28000032": 0.02280334474575716
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.015507159104932416,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "CI covers base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "pool",
+      "gated": true,
+      "n_states": 636,
+      "n_battles": 19,
+      "ess": 350.690375985987,
+      "base_rate": 0.8355198746818093,
+      "resolution": 0.06359935956109224,
+      "resolution_ci": [
+       0.026179277445592196,
+       0.12957390482338532
+      ],
+      "baseline_resolution": 0.07109546545561542,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.07109546545561542,
+       "28000032": 0.05299128566966338
+      },
+      "delta_resolution": -0.007496105894523181,
+      "reliability": 0.010630423617213813,
+      "reliability_ci": [
+       0.006051791878895617,
+       0.0604277391271886
+      ],
+      "baseline_reliability": 0.010312634472310164,
+      "ece": 0.03339984280695494,
+      "mce": 0.5650742202997208,
+      "ece_ci": [
+       0.030566426072736116,
+       0.15479494264993046
+      ],
+      "baseline_ece": 0.0874770959351916,
+      "brier": 0.08380455792404962,
+      "uncertainty": 0.13742641369350297,
+      "skill": 0.39018594990803,
+      "skill_ci": [
+       0.1559516466605158,
+       0.5317060680042569
+      ],
+      "decomp_residual": -0.0006529198255749435,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.010630423617213813,
+        "arm_ci": [
+         0.006051791878895617,
+         0.0604277391271886
+        ],
+        "baseline": 0.010312634472310164,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0063630981410956544,
+         "28000032": 0.010312634472310164
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.0003177891449036487,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": false
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.03339984280695494,
+        "arm_ci": [
+         0.030566426072736116,
+         0.15479494264993046
+        ],
+        "baseline": 0.0874770959351916,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.06667150311728637,
+         "28000032": 0.0874770959351916
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": -0.054077253128236656,
+        "pass": true,
+        "decided_by": "point <= base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": false
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "point <= base",
+      "G4_skill": true
+     }
+    ]
+   },
+   {
+    "step": 8000016,
+    "reweighted": true,
+    "selection": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.89,
+       "captured_win_rate": 0.5,
+       "w_win": 1.78,
+       "w_loss": 0.21999999999999997,
+       "n_battles": 16
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.81,
+       "captured_win_rate": 0.4,
+       "w_win": 2.025,
+       "w_loss": 0.3166666666666666,
+       "n_battles": 20
+      },
+      "heuristic": {
+       "true_win_rate": 0.84,
+       "captured_win_rate": 0.47058823529411764,
+       "w_win": 1.785,
+       "w_loss": 0.3022222222222223,
+       "n_battles": 17
+      },
+      "heuristic2": {
+       "true_win_rate": 0.86,
+       "captured_win_rate": 0.4444444444444444,
+       "w_win": 1.935,
+       "w_loss": 0.252,
+       "n_battles": 18
+      },
+      "random": {
+       "true_win_rate": 0.98,
+       "captured_win_rate": 0.8,
+       "w_win": 1.2249999999999999,
+       "w_loss": 0.10000000000000012,
+       "n_battles": 10
+      },
+      "sentinel_0": {
+       "true_win_rate": 0.71,
+       "captured_win_rate": 0.4,
+       "w_win": 1.775,
+       "w_loss": 0.4833333333333334,
+       "n_battles": 20
+      },
+      "sentinel_1": {
+       "true_win_rate": 0.81,
+       "captured_win_rate": 0.42105263157894735,
+       "w_win": 1.9237500000000003,
+       "w_loss": 0.3281818181818181,
+       "n_battles": 19
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.88,
+       "captured_win_rate": 0.47058823529411764,
+       "w_win": 1.87,
+       "w_loss": 0.22666666666666666,
+       "n_battles": 17
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.92,
+       "captured_win_rate": 0.5,
+       "w_win": 1.84,
+       "w_loss": 0.15999999999999992,
+       "n_battles": 16
+      },
+      "staller": {
+       "true_win_rate": 0.89,
+       "captured_win_rate": 0.47058823529411764,
+       "w_win": 1.89125,
+       "w_loss": 0.20777777777777776,
+       "n_battles": 17
+      },
+      "staller_v2": {
+       "true_win_rate": 0.94,
+       "captured_win_rate": 0.5714285714285714,
+       "w_win": 1.645,
+       "w_loss": 0.14000000000000012,
+       "n_battles": 14
+      }
+     },
+     "dropped": {},
+     "n_rows_zeroed": 0
+    },
+    "strata": [
+     {
+      "stratum": "all",
+      "gated": false,
+      "n_states": 5365,
+      "n_battles": 184,
+      "ess": 3138.252533439714,
+      "base_rate": 0.8260904415324362,
+      "resolution": 0.03150181699460472,
+      "resolution_ci": [
+       0.02106467117297115,
+       0.044597012865033425
+      ],
+      "baseline_resolution": 0.061831093984661495,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.061831093984661495,
+       "28000032": 0.04452401517311608
+      },
+      "delta_resolution": -0.030329276990056775,
+      "reliability": 0.0030299321485666064,
+      "reliability_ci": [
+       0.0017388176040129607,
+       0.008643208088375069
+      ],
+      "baseline_reliability": 0.0020188404089754516,
+      "ece": 0.04354079697997865,
+      "mce": 0.29114615950155487,
+      "ece_ci": [
+       0.028033419698187578,
+       0.07489718014306941
+      ],
+      "baseline_ece": 0.034920444531253376,
+      "brier": 0.11400111852842633,
+      "uncertainty": 0.14366502394118083,
+      "skill": 0.20647966080386737,
+      "skill_ci": [
+       0.13922695431503226,
+       0.26207224495229253
+      ],
+      "decomp_residual": -0.0011920205667163841,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.0030299321485666064,
+        "arm_ci": [
+         0.0017388176040129607,
+         0.008643208088375069
+        ],
+        "baseline": 0.0020188404089754516,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0013431854609110342,
+         "28000032": 0.0020188404089754516
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.0010110917395911548,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.04354079697997865,
+        "arm_ci": [
+         0.028033419698187578,
+         0.07489718014306941
+        ],
+        "baseline": 0.034920444531253376,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.02485906357299496,
+         "28000032": 0.034920444531253376
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.008620352448725277,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "CI covers base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "bot",
+      "gated": true,
+      "n_states": 4152,
+      "n_battles": 145,
+      "ess": 2336.8730241120093,
+      "base_rate": 0.85253808114175,
+      "resolution": 0.024945795208557248,
+      "resolution_ci": [
+       0.015832873267160236,
+       0.039733552052277105
+      ],
+      "baseline_resolution": 0.0336555473769196,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.0336555473769196,
+       "28000032": 0.021521368429933196
+      },
+      "delta_resolution": -0.008709752168362353,
+      "reliability": 0.0020601199508802908,
+      "reliability_ci": [
+       0.0014164601916885297,
+       0.00788769495956211
+      ],
+      "baseline_reliability": 0.0012250309394408053,
+      "ece": 0.038010486880903124,
+      "mce": 0.2603651291122784,
+      "ece_ci": [
+       0.02579626586893927,
+       0.07027361798052575
+      ],
+      "baseline_ece": 0.02280334474575716,
+      "brier": 0.1019182870745436,
+      "uncertainty": 0.12571690134489288,
+      "skill": 0.1893032202970064,
+      "skill_ci": [
+       0.11382388502075234,
+       0.25466977659489903
+      ],
+      "decomp_residual": -0.000912939012672323,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.0020601199508802908,
+        "arm_ci": [
+         0.0014164601916885297,
+         0.00788769495956211
+        ],
+        "baseline": 0.0012250309394408053,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.002667903658165615,
+         "28000032": 0.0012250309394408053
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.0008350890114394854,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.005,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.038010486880903124,
+        "arm_ci": [
+         0.02579626586893927,
+         0.07027361798052575
+        ],
+        "baseline": 0.02280334474575716,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.039482478408823296,
+         "28000032": 0.02280334474575716
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.015207142135145964,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": false,
+      "G2_decided_by": "CI above base",
+      "G3_ece": false,
+      "G3_decided_by": "CI above base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "pool",
+      "gated": true,
+      "n_states": 1213,
+      "n_battles": 39,
+      "ess": 802.9346786082853,
+      "base_rate": 0.745034145252677,
+      "resolution": 0.04796572156057606,
+      "resolution_ci": [
+       0.02340597370591492,
+       0.08356535179479797
+      ],
+      "baseline_resolution": 0.07109546545561542,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.07109546545561542,
+       "28000032": 0.05299128566966338
+      },
+      "delta_resolution": -0.023129743895039356,
+      "reliability": 0.010847566320902176,
+      "reliability_ci": [
+       0.004510342176976879,
+       0.04746842558638364
+      ],
+      "baseline_reliability": 0.010312634472310164,
+      "ece": 0.07707749025436743,
+      "mce": 0.44216445494727874,
+      "ece_ci": [
+       0.03552996753354531,
+       0.19788089185928776
+      ],
+      "baseline_ece": 0.0874770959351916,
+      "brier": 0.15103238410417946,
+      "uncertainty": 0.18995826766029,
+      "skill": 0.20491808035290815,
+      "skill_ci": [
+       0.04421626674690716,
+       0.3307637992306098
+      ],
+      "decomp_residual": -0.001807728316436663,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.010847566320902176,
+        "arm_ci": [
+         0.004510342176976879,
+         0.04746842558638364
+        ],
+        "baseline": 0.010312634472310164,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0063630981410956544,
+         "28000032": 0.010312634472310164
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.0005349318485920115,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": false
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.07707749025436743,
+        "arm_ci": [
+         0.03552996753354531,
+         0.19788089185928776
+        ],
+        "baseline": 0.0874770959351916,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.06667150311728637,
+         "28000032": 0.0874770959351916
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": -0.010399605680824167,
+        "pass": true,
+        "decided_by": "point <= base",
+        "aspirational": 0.05,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": false
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "point <= base",
+      "G4_skill": true
+     }
+    ]
+   },
+   {
+    "step": 10000032,
+    "reweighted": true,
+    "selection": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.9,
+       "captured_win_rate": 0.5,
+       "w_win": 1.8,
+       "w_loss": 0.19999999999999996,
+       "n_battles": 16
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.87,
+       "captured_win_rate": 0.42105263157894735,
+       "w_win": 2.06625,
+       "w_loss": 0.22454545454545455,
+       "n_battles": 19
+      },
+      "heuristic": {
+       "true_win_rate": 0.84,
+       "captured_win_rate": 0.4,
+       "w_win": 2.0999999999999996,
+       "w_loss": 0.2666666666666667,
+       "n_battles": 20
+      },
+      "heuristic2": {
+       "true_win_rate": 0.87,
+       "captured_win_rate": 0.4,
+       "w_win": 2.175,
+       "w_loss": 0.21666666666666667,
+       "n_battles": 20
+      },
+      "random": {
+       "true_win_rate": 0.99,
+       "captured_win_rate": 0.8888888888888888,
+       "w_win": 1.11375,
+       "w_loss": 0.09000000000000004,
+       "n_battles": 9
+      },
+      "sentinel_0": {
+       "true_win_rate": 0.7,
+       "captured_win_rate": 0.4,
+       "w_win": 1.7499999999999998,
+       "w_loss": 0.5000000000000001,
+       "n_battles": 20
+      },
+      "sentinel_1": {
+       "true_win_rate": 0.77,
+       "captured_win_rate": 0.4,
+       "w_win": 1.925,
+       "w_loss": 0.3833333333333333,
+       "n_battles": 20
+      },
+      "sentinel_2": {
+       "true_win_rate": 0.83,
+       "captured_win_rate": 0.4,
+       "w_win": 2.0749999999999997,
+       "w_loss": 0.28333333333333344,
+       "n_battles": 20
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.86,
+       "captured_win_rate": 0.4,
+       "w_win": 2.15,
+       "w_loss": 0.23333333333333336,
+       "n_battles": 20
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.87,
+       "captured_win_rate": 0.4444444444444444,
+       "w_win": 1.9575,
+       "w_loss": 0.23399999999999999,
+       "n_battles": 18
+      },
+      "staller": {
+       "true_win_rate": 0.92,
+       "captured_win_rate": 0.5333333333333333,
+       "w_win": 1.725,
+       "w_loss": 0.17142857142857135,
+       "n_battles": 15
+      },
+      "staller_v2": {
+       "true_win_rate": 0.93,
+       "captured_win_rate": 0.5333333333333333,
+       "w_win": 1.7437500000000001,
+       "w_loss": 0.14999999999999988,
+       "n_battles": 15
+      }
+     },
+     "dropped": {},
+     "n_rows_zeroed": 0
+    },
+    "strata": [
+     {
+      "stratum": "all",
+      "gated": false,
+      "n_states": 6751,
+      "n_battles": 212,
+      "ess": 3890.176643594965,
+      "base_rate": 0.8334274664664059,
+      "resolution": 0.03749492915077625,
+      "resolution_ci": [
+       0.026660373467306812,
+       0.05443535597675627
+      ],
+      "baseline_resolution": 0.061831093984661495,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.061831093984661495,
+       "28000032": 0.04452401517311608
+      },
+      "delta_resolution": -0.024336164833885246,
+      "reliability": 0.006853424066163089,
+      "reliability_ci": [
+       0.0024853846692765988,
+       0.018868159947543522
+      ],
+      "baseline_reliability": 0.0020188404089754516,
+      "ece": 0.06057658406000961,
+      "mce": 0.3735679588604146,
+      "ece_ci": [
+       0.028531352949483165,
+       0.10275289884469217
+      ],
+      "baseline_ece": 0.034920444531253376,
+      "brier": 0.10648754541960576,
+      "uncertainty": 0.1388261246057938,
+      "skill": 0.23294303776047653,
+      "skill_ci": [
+       0.17631506062803867,
+       0.2870103889875097
+      ],
+      "decomp_residual": -0.0016970741015748803,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.006853424066163089,
+        "arm_ci": [
+         0.0024853846692765988,
+         0.018868159947543522
+        ],
+        "baseline": 0.0020188404089754516,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0013431854609110342,
+         "28000032": 0.0020188404089754516
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.004834583657187638,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.06057658406000961,
+        "arm_ci": [
+         0.028531352949483165,
+         0.10275289884469217
+        ],
+        "baseline": 0.034920444531253376,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.02485906357299496,
+         "28000032": 0.034920444531253376
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.025656139528756235,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.05,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": false,
+      "G2_decided_by": "CI above base",
+      "G3_ece": true,
+      "G3_decided_by": "CI covers base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "bot",
+      "gated": true,
+      "n_states": 4311,
+      "n_battles": 152,
+      "ess": 2282.0661677279368,
+      "base_rate": 0.86412010136011,
+      "resolution": 0.030334900919407763,
+      "resolution_ci": [
+       0.019314565279236872,
+       0.04818661501430331
+      ],
+      "baseline_resolution": 0.0336555473769196,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.0336555473769196,
+       "28000032": 0.021521368429933196
+      },
+      "delta_resolution": -0.0033206464575118375,
+      "reliability": 0.005501733784718014,
+      "reliability_ci": [
+       0.0017907051208030267,
+       0.0173943262084561
+      ],
+      "baseline_reliability": 0.0012250309394408053,
+      "ece": 0.047281067314825787,
+      "mce": 0.4525247192126543,
+      "ece_ci": [
+       0.01820244836071404,
+       0.08864986263511582
+      ],
+      "baseline_ece": 0.02280334474575716,
+      "brier": 0.09123598303020025,
+      "uncertainty": 0.11741655178550324,
+      "skill": 0.22297170507212383,
+      "skill_ci": [
+       0.1754089540344452,
+       0.26626855350009915
+      ],
+      "decomp_residual": -0.0013474016206132394,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.005501733784718014,
+        "arm_ci": [
+         0.0017907051208030267,
+         0.0173943262084561
+        ],
+        "baseline": 0.0012250309394408053,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.002667903658165615,
+         "28000032": 0.0012250309394408053
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.004276702845277208,
+        "pass": false,
+        "decided_by": "CI above base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": true
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.047281067314825787,
+        "arm_ci": [
+         0.01820244836071404,
+         0.08864986263511582
+        ],
+        "baseline": 0.02280334474575716,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.039482478408823296,
+         "28000032": 0.02280334474575716
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.024477722569068626,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.05,
+        "aspirational_met": true,
+        "baseline_meets_aspirational": true
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": false,
+      "G2_decided_by": "CI above base",
+      "G3_ece": true,
+      "G3_decided_by": "CI covers base",
+      "G4_skill": true
+     },
+     {
+      "stratum": "pool",
+      "gated": true,
+      "n_states": 2440,
+      "n_battles": 60,
+      "ess": 1610.8360147868993,
+      "base_rate": 0.7875324120383409,
+      "resolution": 0.04651539808892856,
+      "resolution_ci": [
+       0.028515723099573943,
+       0.0770528200207363
+      ],
+      "baseline_resolution": 0.07109546545561542,
+      "baseline_from_step": 26000016,
+      "baseline_per_step": {
+       "26000016": 0.07109546545561542,
+       "28000032": 0.05299128566966338
+      },
+      "delta_resolution": -0.02458006736668686,
+      "reliability": 0.01049914878760433,
+      "reliability_ci": [
+       0.003257511678847148,
+       0.04240036558653546
+      ],
+      "baseline_reliability": 0.010312634472310164,
+      "ece": 0.08045752509953627,
+      "mce": 0.3498920980920184,
+      "ece_ci": [
+       0.03424399583520067,
+       0.17204498314485478
+      ],
+      "baseline_ece": 0.0874770959351916,
+      "brier": 0.12929338429264314,
+      "uncertainty": 0.16732511202741376,
+      "skill": 0.22729240861670352,
+      "skill_ci": [
+       0.07700792952819935,
+       0.3243053134996527
+      ],
+      "decomp_residual": -0.002015478433446405,
+      "relative": {
+       "G2": {
+        "metric": "reliability",
+        "label": "reliability",
+        "arm": 0.01049914878760433,
+        "arm_ci": [
+         0.003257511678847148,
+         0.04240036558653546
+        ],
+        "baseline": 0.010312634472310164,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.0063630981410956544,
+         "28000032": 0.010312634472310164
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": 0.00018651431529416625,
+        "pass": true,
+        "decided_by": "CI covers base",
+        "aspirational": 0.005,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": false
+       },
+       "G3": {
+        "metric": "ece",
+        "label": "ECE",
+        "arm": 0.08045752509953627,
+        "arm_ci": [
+         0.03424399583520067,
+         0.17204498314485478
+        ],
+        "baseline": 0.0874770959351916,
+        "baseline_from_step": 28000032,
+        "baseline_per_step": {
+         "26000016": 0.06667150311728637,
+         "28000032": 0.0874770959351916
+        },
+        "baseline_reduce": "last",
+        "baseline_matched_step": false,
+        "baseline_source": "no baseline row at this step; reduced (`last`) over the artifact's steps",
+        "delta": -0.0070195708356553255,
+        "pass": true,
+        "decided_by": "point <= base",
+        "aspirational": 0.05,
+        "aspirational_met": false,
+        "baseline_meets_aspirational": false
+       }
+      },
+      "G1_resolution": false,
+      "G2_reliability": true,
+      "G2_decided_by": "CI covers base",
+      "G3_ece": true,
+      "G3_decided_by": "point <= base",
+      "G4_skill": true
+     }
+    ]
+   }
+  ],
+  "bars": {
+   "G1": "resolution > the matched-stratum committed baseline, CI clearing it",
+   "G2": "reliability NO WORSE than the same-stratum baseline: PASS if the arm's point estimate is <= the baseline's same-stratum value, OR the arm's cluster-bootstrap CI CONTAINS that value (non-inferiority \u2014 never a direction claim). FAIL only when the arm's whole CI sits ABOVE it.",
+   "G3": "ECE NO WORSE than the same-stratum baseline: PASS if the arm's point estimate is <= the baseline's same-stratum value, OR the arm's cluster-bootstrap CI CONTAINS that value (non-inferiority \u2014 never a direction claim). FAIL only when the arm's whole CI sits ABOVE it.",
+   "G4": "skill > 0 with the cluster CI clearing 0",
+   "aspirational_only": {
+    "G2_max_reliability": 0.005,
+    "G3_max_ece": 0.05
+   },
+   "owner_ruling": "OWNER RULING 2026-09-06: \u00a74.3's absolute G2 (reliability <= 0.005) and G3 (ECE <= 0.05) bars are ALREADY BREACHED by the committed baseline on the POOL stratum (reliability 0.0064 / 0.0103, ECE 0.0667 / 0.0875 at 26M / 28M), while \u00a74.3 called G3 a 'no-regression clause' the reweighted baseline already passes \u2014 true pooled and on bot, FALSE on pool, and both gates are registered over 'both classes'. As written the arm had to clear a bar its predecessor never cleared. G2 and G3 are therefore PER-STRATUM RELATIVE bars: no worse than the baseline's SAME-stratum value. The absolute numbers stay printed as aspirational targets."
+  },
+  "verdict": {
+   "G1": false,
+   "G2": false,
+   "G3": false,
+   "G4": true,
+   "n_gated_rows": 8
+  },
+  "not_gated_note": "`all` is reported for context and NEVER gated: it averages two populations whose measured calibration bias has opposite sign.",
+  "asymmetry_note": "the committed baseline publishes no interval for `resolution`, so G1 compares the ARM's cluster CI against the baseline as a FIXED bar. G2/G3 inherit the same asymmetry: the baseline value they are compared against is a point, and only the ARM carries an interval.",
+  "owner_ruling": "OWNER RULING 2026-09-06: \u00a74.3's absolute G2 (reliability <= 0.005) and G3 (ECE <= 0.05) bars are ALREADY BREACHED by the committed baseline on the POOL stratum (reliability 0.0064 / 0.0103, ECE 0.0667 / 0.0875 at 26M / 28M), while \u00a74.3 called G3 a 'no-regression clause' the reweighted baseline already passes \u2014 true pooled and on bot, FALSE on pool, and both gates are registered over 'both classes'. As written the arm had to clear a bar its predecessor never cleared. G2 and G3 are therefore PER-STRATUM RELATIVE bars: no worse than the baseline's SAME-stratum value. The absolute numbers stay printed as aspirational targets.",
+  "relative_rule": "PASS if the arm's point estimate is <= the baseline's same-stratum value, OR the arm's cluster-bootstrap CI CONTAINS that value (non-inferiority \u2014 never a direction claim). FAIL only when the arm's whole CI sits ABOVE it."
+ },
+ "famine": {
+  "comparator": {
+   "spec": "famine_comparator",
+   "baseline": "famine_comparator",
+   "baseline_provenance": "baseline famine_comparator = ai_v9_29_rev1_0823@25,067,760 (set 2026-09-06, 2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1))",
+   "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823",
+   "run_base": "ai_v9_29_rev1_0823",
+   "resolution_rung": "explicit_zip",
+   "resolution_rule": "explicit_zip",
+   "resolved_num_timesteps": 25067760,
+   "config": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/model_config.json"
+  },
+  "floor_elo": 38.0,
+  "floor_source": "registry `famine_comparator`.floor_elo",
+  "ladder": {
+   "at_snapshots": 4,
+   "available_matched": 4,
+   "run": {
+    "ladder_path": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/snapshot_ladder/ladder.json",
+    "n_rated": 4,
+    "anchored_to_bots": true,
+    "fit_quality": {
+     "mean_abs_err": 0.0712,
+     "max_abs_err": 0.1546,
+     "n_frozen_pairs": 6
+    },
+    "nodes": [
+     {
+      "i": 1,
+      "step": 4000032,
+      "elo": 1778.5,
+      "se": 11.6,
+      "ci95": 22.735582220664625
+     },
+     {
+      "i": 2,
+      "step": 6000000,
+      "elo": 1913.7,
+      "se": 12.8,
+      "ci95": 25.087539002112692
+     },
+     {
+      "i": 3,
+      "step": 8000016,
+      "elo": 1975.0,
+      "se": 13.3,
+      "ci95": 26.067520994382722
+     },
+     {
+      "i": 4,
+      "step": 10000032,
+      "elo": 2022.1,
+      "se": 14.0,
+      "ci95": 27.43949578356076
+     }
+    ],
+    "node_at_count": {
+     "step": 10000032,
+     "elo": 2022.1,
+     "se": 14.0,
+     "ci95": 27.43949578356076
+    },
+    "finished": true,
+    "final_model": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/final_model_interrupted.zip"
+   },
+   "parent": {
+    "ladder_path": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/snapshot_ladder/ladder.json",
+    "n_rated": 4,
+    "anchored_to_bots": true,
+    "fit_quality": {
+     "mean_abs_err": 0.0394,
+     "max_abs_err": 0.1102,
+     "n_frozen_pairs": 66
+    },
+    "nodes": [
+     {
+      "i": 1,
+      "step": 2000016,
+      "elo": 1729.7,
+      "se": 11.4,
+      "ci95": 22.343589423756615
+     },
+     {
+      "i": 2,
+      "step": 4000032,
+      "elo": 1940.2,
+      "se": 13.4,
+      "ci95": 26.263517392836725
+     },
+     {
+      "i": 3,
+      "step": 6000000,
+      "elo": 1996.7,
+      "se": 14.3,
+      "ci95": 28.027484978922775
+     },
+     {
+      "i": 4,
+      "step": 8000016,
+      "elo": 2052.0,
+      "se": 15.2,
+      "ci95": 29.79145256500882
+     }
+    ],
+    "node_at_count": {
+     "step": 8000016,
+     "elo": 2052.0,
+     "se": 15.2,
+     "ci95": 29.79145256500882
+    },
+    "finished": true
+   },
+   "delta_elo": -29.90000000000009,
+   "delta_se": 20.66494616494318,
+   "delta_ci95": [
+    -70.40255022574783,
+    10.602550225747656
+   ],
+   "refit_at_count": {
+    "run": false,
+    "parent": true
+   },
+   "matched_fit_size": true,
+   "final_fit_nodes": {
+    "run": {
+     "step": 10000032,
+     "elo": 2022.1,
+     "se": 14.0
+    },
+    "parent": {
+     "step": 8000016,
+     "elo": 1957.9,
+     "se": 9.4
+    }
+   },
+   "delta_elo_final_fits": 64.19999999999982,
+   "fit_size_note": "a side with more rated nodes than the matched count was REFIT on its first n snapshots (strict: every snapshot endpoint inside the prefix), because the newest node of a fit is inflated and the n-th node of a longer final fit is a different number \u2014 refit: run=False, parent=True; the final-fit delta would have read +64.",
+   "rating_final": true,
+   "rating_note": "rating final \u2014 the run wrote a final model",
+   "comparability": "matched SNAPSHOT COUNT, never matched step. Both fits are anchored to the same pinned bots, so the delta is meaningful; its SE combines two independent fits and carries NO term for the anchor uncertainty they share."
+  },
+  "trail_elo": 29.90000000000009,
+  "exceeds_floor": false,
+  "direction": "TRAILS",
+  "sentence": "the arm TRAILS the comparator by 30 ELO at 4 snapshots (floor 38) \u2014 inside the floor: starvation is NOT demonstrated on the ladder half",
+  "rule": "at ~5M: trailing the comparator by more than the floor at matched SNAPSHOT COUNT **AND** win_rate_vs_bots not rising \u21d2 terminal-only starves \u21d2 kill the arm and launch FROZEN-\u03c6.",
+  "half_computed": "the LADDER half only \u2014 win_rate_vs_bots is the AND-gate's other half.",
+  "confound": "the incumbent had PBRS AND PopArt AND the shaped critic, so this is a rate comparison ACROSS RECIPES and the floor is the incumbent's own run-to-run noise, not a replicate of this arm. A trail inside the floor is NOT evidence the two recipes are equivalent \u2014 only that starvation has not been demonstrated."
+ },
+ "kill": {
+  "thresholds": {
+   "max_stall_rate": 0.05,
+   "stall_turns": 250,
+   "max_ep_len_ratio": 1.25,
+   "threshold_provenance": "the design registers G7 as 'no increase over the era, pre-registered threshold' and names no number; this threshold is main.critic_gate's default, not the design's"
+  },
+  "era": {
+   "run": "ai_v9_59_R2ACTION_0827",
+   "ep_len_bots": 18.2825,
+   "ep_len_pool": 29.330000000000002,
+   "note": "the ERA is the parent's own recorded eval metrics, worst (max) cycle"
+  },
+  "cycles": [
+   {
+    "step": 2000016,
+    "ep_len_bots": 20.697499999999998,
+    "ep_len_pool": 0.0,
+    "ep_len_source": "snapshot_history[checkpoint_2400000_steps.zip].latest_eval",
+    "stall_rate_captured": 0.0,
+    "mean_turns_captured": 20.732142857142858,
+    "max_turns_captured": 115,
+    "n_traces": 168,
+    "stalls": 0,
+    "outcomes": {
+     "WIN": 72,
+     "LOSS": 96
+    },
+    "ep_len_bots_ratio_vs_era": 1.1320935320661836,
+    "ep_len_pool_ratio_vs_era": 0.0,
+    "breaches": [],
+    "kill": false
+   },
+   {
+    "step": 4000032,
+    "ep_len_bots": 21.985000000000003,
+    "ep_len_pool": 0.0,
+    "ep_len_source": "snapshot_history[checkpoint_4800000_steps.zip].latest_eval",
+    "stall_rate_captured": 0.006211180124223602,
+    "mean_turns_captured": 22.70807453416149,
+    "max_turns_captured": 250,
+    "n_traces": 161,
+    "stalls": 1,
+    "outcomes": {
+     "WIN": 72,
+     "LOSS": 89
+    },
+    "ep_len_bots_ratio_vs_era": 1.2025160672774513,
+    "ep_len_pool_ratio_vs_era": 0.0,
+    "breaches": [],
+    "kill": false
+   },
+   {
+    "step": 6000000,
+    "ep_len_bots": 21.837500000000002,
+    "ep_len_pool": 25.89,
+    "ep_len_source": "snapshot_history[final_model_interrupted.zip].latest_eval",
+    "stall_rate_captured": 0.0,
+    "mean_turns_captured": 21.916666666666668,
+    "max_turns_captured": 71,
+    "n_traces": 168,
+    "stalls": 0,
+    "outcomes": {
+     "WIN": 80,
+     "LOSS": 88
+    },
+    "ep_len_bots_ratio_vs_era": 1.1944482428551897,
+    "ep_len_pool_ratio_vs_era": 0.8827139447664507,
+    "breaches": [],
+    "kill": false
+   },
+   {
+    "step": 8000016,
+    "ep_len_bots": 21.800000000000004,
+    "ep_len_pool": 28.35,
+    "ep_len_source": "snapshot_history[checkpoint_9969408_steps.zip].latest_eval",
+    "stall_rate_captured": 0.0,
+    "mean_turns_captured": 25.25,
+    "max_turns_captured": 121,
+    "n_traces": 184,
+    "stalls": 0,
+    "outcomes": {
+     "WIN": 88,
+     "LOSS": 96
+    },
+    "ep_len_bots_ratio_vs_era": 1.1923971010529197,
+    "ep_len_pool_ratio_vs_era": 0.9665871121718377,
+    "breaches": [],
+    "kill": false
+   },
+   {
+    "step": 10000032,
+    "ep_len_bots": 22.573749999999997,
+    "ep_len_pool": 31.053333333333338,
+    "ep_len_source": "metadata.latest_eval",
+    "stall_rate_captured": 0.0,
+    "mean_turns_captured": 27.919811320754718,
+    "max_turns_captured": 175,
+    "n_traces": 212,
+    "stalls": 0,
+    "outcomes": {
+     "WIN": 96,
+     "LOSS": 116
+    },
+    "ep_len_bots_ratio_vs_era": 1.234718993573089,
+    "ep_len_pool_ratio_vs_era": 1.0587566768951018,
+    "breaches": [],
+    "kill": false
+   }
+  ],
+  "kill": false,
+  "measured": true,
+  "sources": {
+   "episode_length": "metadata.json latest_eval / snapshot_history[*].latest_eval (mean_ep_len_vs_bots, pool.mean_ep_len) \u2014 the FULL cycle",
+   "stall_rate": "the captured eval traces' per-battle summary meta.turns / meta.result \u2014 the CAPTURE QUOTA, which is loss-enriched by design (agents.training.trace_selection), so read it as an upper-ish bound, never as a population rate",
+   "eval_results.jsonl": "carries no episode-length field; consulted for the cycle inventory only"
+  }
+ },
+ "untaught_meter": null,
+ "verdict": {
+  "verdict": "MIXED",
+  "why": "criteria not met: G1, G2, G3",
+  "falsified": false
+ }
+}

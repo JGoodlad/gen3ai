@@ -1530,7 +1530,9 @@ bucket and a run above 25% is INCONCLUSIVE. The recipe, the seed table and the s
 The win-prob-critic arm's read (`designs/ai_v12/design_winprob_only_critic.md` §5.5) is four
 instruments, four output formats and a reader holding §4.3's bars in their head.
 `python -m main.critic_gate <run> --parent <ref> --control <continuation refs…>` is that
-composition — the anchored ladder at **matched SNAPSHOT COUNT** against the parent CONTINUED, the
+composition — the anchored ladder at **matched SNAPSHOT COUNT and matched FIT SIZE** (the longer
+ladder is REFIT on its first n; measured 2026-09-07, the un-refit comparison read a 30-Elo trail
+as a 64-Elo lead) against the parent CONTINUED, the
 §4.3 calibration gate per checkpoint with **RESOLUTION primary** and `bot`/`pool` never pooled, the
 **G7 stall-rate + episode-length KILL condition**, and `main.untaught_meter` with its continuation
 control — emitting one markdown report plus a JSON carrying every input path, every resolved file

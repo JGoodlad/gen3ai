@@ -12321,3 +12321,102 @@ the critic improves (resolution is rising in the same window).
 
 Run state: 8.0M, snapshot 3 of the 4 the 10M ladder needs, `draw_rate` and `untracked_abs_mean`
 nominal. The 10M deciding read is ~1 h out.
+
+### 2026-09-07 · 🟢 10M DECIDING READ — `ai_v12_02_winprob_critic` (the SPARSE win-prob-critic arm): NO KILL, CONTINUE. At a like-for-like matched snapshot count the arm TRAILS the shaped incumbent by 30 Elo (floor 38) with bots rising; G1 resolution is BELOW its bar at 10M; and `critic_gate` had handed the arm 94 Elo by comparing a 4-node fit against a 12-node fit
+
+Read by the Training Run session at snapshot 4 (10,000,032) as registered (amendments 1–4), the
+ladder half re-derived by the orchestrator after the tool's number was found not to be a matched
+reading. Artifacts: `measurements/winprob_critic_10M_read_2026-09-07/` — `critic_gate_10M_as_shipped.txt`
+(the read as the tool printed it, "+64") and `critic_gate_10M_fixed.{txt,md,json}` (the same inputs
+through the fixed tool, this commit).
+
+**THE VERDICT AND THE SENTENCE IT RESTS ON.** The famine gate is `trails the comparator by more than
+the floor at matched snapshot count AND win_rate_vs_bots not rising over ≥3 cycles`. At matched
+count AND matched fit size the arm trails `famine_comparator` (rev-1, `ai_v9_29_rev1_0823`) by
+**30 Elo against a 38 floor** — inside the floor, with the arm holding **2M MORE steps** at its 4th
+node (its snapshots start at 4M, rev-1's at 2M) — and `win_rate_vs_bots` rose across all five
+cycles (**0.556 → 0.844 → 0.872 → 0.890 → 0.894**). Neither half is met. **Starvation is not
+demonstrated; the arm continues to 75M.** Tag: the ladder half is WITHIN FLOOR (a trail inside the
+floor is not equivalence — the comparator had PBRS, PopArt and the shaped critic, and the floor is
+its own run-to-run noise); the bots half is SIGNIFICANT in the safe direction.
+
+**THE TOOL DEFECT, and why the sentence above is not "leads by 64".** `main.critic_gate` took the
+comparator's n-th node from its FINAL 12-node fit and the arm's from its 4-node fit. Our own rule 3
+of *Reading an ELO* says the newest node of a fit is systematically inflated; the two n-th nodes are
+different objects. Refit strictly on the first four snapshots (every snapshot endpoint inside the
+prefix; the loose "either endpoint" filter reads −12 and is wrong for the same reason the rule
+exists), reproduced independently by both sessions to the decimal:
+
+| | 2M | 4M | 6M | 8M | 10M | 4th node |
+|---|---|---|---|---|---|---|
+| rev-1, first-4 fit | 1730 | 1940 | 1997 | **2052** | — | 2052 |
+| rev-1, final 12-node fit | 1692 | 1879 | 1917 | 1958 | 2016 | 1958 |
+| arm, its own 4-node fit | — | 1778 | 1914 | 1975 | **2022** | 2022 |
+
+As shipped: 2022 − 1958 = **+64 "lead"**. Matched count and fit size: 2022 − 2052 = **−30, a
+trail**. rev-1's 8M node deflated **94 Elo** between its 4-node and 12-node fits, and the tool had
+handed all of it to the arm; its "trail −64 … INSIDE the floor" wording hid the sign. Fixed in this
+commit (`snapshot_ladder.fit_ladder(first_n=, steps=)` + `critic_gate` refits the longer side,
+records both numbers, prints LEADS/TRAILS; a ladder that cannot be refit is labelled **UNMATCHED
+FIT SIZE** and the famine pre-test REFUSES on it; a `GateRefusal` now prints its message at the CLI,
+where it used to exit 2 in silence). Gated by five new tests in `critic_gate_test.py`.
+
+**The Δ vs `v9_fold_parent` (+159 [+107, +211]) is UNQUOTABLE as a matched reading and now says
+so.** R2ACTION's ladder rates its early snapshots ONLY through edges to its own 26M/28M selves
+(every pair in its `games.jsonl` touches one; eval rows exist only there), so a strict first-4
+prefix has no edge inside itself and no matched-size fit exists. The fixed tool prints the +159 with
+the UNMATCHED label. It is not a lead claim.
+
+**🚨 G1 (RESOLUTION, the primary endpoint) is BELOW its bar at 10M — reported as loudly as the pass,
+per the design.** Selection-reweighted eval traces, bar from the committed 28M shaped-critic baseline:
+`all` **0.0375 [0.0267, 0.0544] vs 0.0618** · `bot` 0.0303 vs 0.0337 · `pool` 0.0465 vs 0.0711 —
+below on every stratum, 'n' at every step except 2M/bot (2M read 0.0792, then fell to ~0.03 at the
+4M promotion and has sat 0.03–0.04 since). G2 (reliability) also fails at 10M (0.0069 vs 0.0020);
+G3 (ECE) passes on all three strata. Tool verdict MIXED. The registered falsification clause (G1
+flat WITH G2–G4 passing) is NOT triggered because G2 fails too. **Stated, not used as a rescue:**
+the bar is a 28M model's and the arm is at 10M — the maturity asymmetry amendment 2 flagged for the
+meter, pointing in the baseline's favour. Re-basing a registered bar the moment it fires against the
+arm is refused here for the same reason it was refused on the vf_coef band. G1's registered read is
+the 75M critic gate (week plan D2); this is the trajectory, and the trajectory is currently flat-low
+on eval traces while the same head's resolution on TRAIN rollouts rose 0.0096 → 0.0737 (different
+populations; not comparable to the bar).
+
+**The finding of the night, cause UNVERIFIED:** on this arm STRENGTH and CRITIC CALIBRATION are
+moving in opposite directions — a ladder within the shaped incumbent's floor and a bots curve at
+0.894, with a head that is less resolved and less reliable than the shaped baseline's. The arm is
+winning without the calibration the design predicted would carry it. That bears directly on the
+week's question (can the value net BE the win-prob critic?) and is what the 75M read decides.
+
+**G7 kill condition: clean.** stall_rate 0.0000 at every snapshot except 4M (0.0062), mean turns
+20.7 → 27.9, all OK. The registered draw-rate/ep_len gate: clause 1 at 32% of its 0.01 bar; clause 2
+MET (+4.12 turns, 137% of the bar, against the self-play reference frozen per amendment 4) — and the
+exhibit is why that is not famine:
+
+| bucket | ep_len | draw_rate | |
+|---|---|---|---|
+| 4–5M | 33.63 | 0.0024 | pool promotion |
+| 5–6M | 31.69 | 0.0019 | |
+| 6–7M | 36.37 | 0.0025 | pool promotion |
+| 7–8M | 34.79 | 0.0027 | |
+| 8–9M | 37.73 | 0.0028 | pool promotion |
+| 9–10M | 36.49 | 0.0035 | |
+| 10–11M | 36.72 | 0.0036 | pool promotion |
+
+A sawtooth locked to the 2M promotion period with draw rate at a third of its bar is a stronger
+opponent entering the pool and the policy adapting — competence lengthening games — not a stall,
+which is a monotone rise with draw rate rising alongside. The AND with clause 1 is what kept a MET
+clause from being read as famine. **Finding about the BAR, banked after the read, not applied to
+it:** +3.0 turns is too tight for the self-play competence sawtooth; the next registration of an
+ep_len clause should be a monotonicity-plus-draw-rate test, not an effect size alone.
+
+**Untaught meter: skipped** (`--skip-meter`; amendment 2 makes the 10M column descriptive with no
+verdict on it, and 8,000 battles at concurrency 1 would have blocked the deciding read for hours).
+It can be run sharded for the descriptive column at any time.
+
+Two more defects fixed on the way, both of the "a number that reads like a measurement" class: the
+Training Run's draw-rate direction word was a hardcoded label ("falling" printed over 0.0024 →
+0.0031) and is now derived from the two window medians; and its earlier "zero fresh compiles at 6M"
+count was taken from a ring-buffered child log mid-promotion and is retracted (`68934fdc` correction).
+
+Run state at the read: 10.13M, healthy, launcher up 4h20m. Throughput 601 fps in the 0.90 self-play
+regime; 75M ETA Tue 08 Sep 08:00–09:00.
