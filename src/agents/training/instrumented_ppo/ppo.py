@@ -89,14 +89,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
         else:
             ok = super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
-        # +WIN-PROB PBRS (ai_v12 route 1, gen3_winprob_pbrs_v1): add coef·(γ·φ(s′) − φ(s)) to this
-        # rollout's rewards and RE-RUN GAE, with φ = the DETACHED win-prob head. It has to happen HERE
-        # — after collection, before train() — because both collectors compute GAE as their last act
-        # and PopArt reads `returns` at the top of train(), so this is the one window in which the
-        # shaping can land in RAW reward space and still reach the advantages. Env workers hold no
-        # model, so the reward cannot be shaped where it is produced. Covers BOTH collectors
-        # identically (see winprob_pbrs.py on why the φ read is a batched re-forward). At coef 0 —
-        # the default — not even the import runs, so an OFF run is byte-identical.
+        # +WIN-PROB PBRS (ai_v12 route 1, gen3_winprob_pbrs_v1): coef·(γ·φ(s′) − φ(s)) onto this
+        # rollout's rewards, then RE-RUN GAE, φ = the DETACHED win-prob head. HERE — after collection,
+        # before train() — is the one window between GAE and PopArt's read of `returns` (both
+        # collectors; see winprob_pbrs.py). At coef 0 (default) not even the import runs.
         if ok and float(getattr(self, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0:
             from agents.training.winprob_pbrs import apply_winprob_pbrs
             self._pbrs_metrics = apply_winprob_pbrs(self, rollout_buffer)
