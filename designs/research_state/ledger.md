@@ -11939,3 +11939,28 @@ gradient started ~47× the policy's and converged to ~1.3×; the last six readin
 Under the table that is a **KEEP**, and the convergence itself is the finding: the BCE found signal and
 the two heads came into balance on the shared trunk without retuning. The rollout-1 "165×" banner was a
 loss-ratio against a degenerate denominator and is not evidence (same-day *OOM* entry).
+
+### 2026-09-06 · READ AMENDMENT 2 — the continuation control is the existing G5 arms (no GPU), the untaught column at 10M is DESCRIPTIVE, and the bots clause expires at ~12M
+
+From the Training Run session's early `critic_gate --check` at 2.75M (every input resolves except the
+arm's own ladder, which cannot exist before the first snapshot at 4M — sequencing, not a defect).
+
+1. **Control = the three G5 plain-continuation arms, already on disk.** `--control
+   models/ai_v9_195_G5PLAINA_0906 models/ai_v9_196_G5PLAINB_0906 models/ai_v9_197_G5PLAINC_0906`
+   (each `final_model.zip` @29,294,832, resolved and verified by `--check` at 21:35). No control is
+   bought; the tool's "control NONE — the delta will OVERSTATE" warning was a missing argument, not a
+   missing experiment.
+2. **The untaught-meter column is DESCRIPTIVE at the 10M read, never deciding.** The arm is FRESH and
+   at 10M; the parent is at 28M and its continuation controls at 29M. Any delta there is confounded by
+   maturity in the direction that flatters the parent, so it is reported as an UPPER BOUND on the arm's
+   deficit and no verdict rests on it. **The deciding instrument at 10M is the famine ladder**
+   (matched snapshot count vs `famine_comparator`, floor 38 Elo) AND-gated with `win_rate_vs_bots`.
+3. **The bots clause expires at ~12M.** On this critic `win_rate_vs_bots` saturates
+   (stripped arm: 0.50@2M → 0.77@4M → 0.84@6M → 0.89@8M → 0.90@10M → 0.92@12M, then flat 0.92–0.94
+   to 24M — usable for CADENCE, not strength), so "not rising over ≥3 cycles" discriminates at 10M
+   and reads as famine when it is saturation if the read slips past ~12M. **If the deciding read is
+   taken later than 12M, the bots clause is dropped and the ladder alone decides.** The 10M read has
+   exactly 4 snapshots (4M, 6M, 8M, 10M) — the ≥4 requirement is met with no margin, so the read is
+   taken AT the 10M snapshot, not "around" it.
+4. The first eval cycle (2M): bots 55.6% (500/900) against the stripped arm's 50.2% at the same step —
+   ONE cycle, clustered by opponent, NOT a difference; on track inside the stripped arm's envelope.
