@@ -46,10 +46,22 @@ no pointer is not a measurement.
    continuation is **−1.11pp [−3.12, +0.91]**, inside the ±3.22 floor. **v8's recipe ≡ training its
    parent on.** The gift was the parent still learning, measured against a frozen copy of itself.
    [EQUIVALENCE SUPPORTED · ledger 2026-09-06 · *CELL 2*]
-4. **Our parents gain NOTHING from a plain continuation** — G5 **−1.92pp [−3.98, +0.46]**, three
-   draws across two gen-era parents, none gains. **The frozen-parent baseline stands on our side**,
-   and the cell-2 alarm ("every untaught delta is against the wrong baseline") does NOT generalise.
+4. **Our parents gain NOTHING from a plain continuation ON THE UNTAUGHT SLICE** — G5 **−1.92pp
+   [−3.98, +0.46]**, three draws across two gen-era parents, none gains. **The frozen-parent
+   baseline stands on our side for the untaught meter**, and the cell-2 alarm ("every untaught delta
+   is against the wrong baseline") does NOT generalise there.
    [NOT DETECTED · ledger 2026-09-06 · *G5 RESULT*]
+4b. **But the SAME continuation DOES gain on the TAUGHT slice: +2.09pp [+0.47, +3.79], clearing
+   zero.** The slices answer differently, so "the frozen parent is a fair baseline" is a claim about
+   the untaught meter only. Re-based on the continuation, the folds' on-slice gift is **+2.6 to
+   +3.4pp** (four of six arms clear zero) against ~+4.2 to +5.5pp read against the frozen parent —
+   **the gift survives the correction**. ⚠️ That re-based column is an **UPPER BOUND**: G5's taught
+   reading is at fork+1.18M against the fold readings' ~fork+4.45M, so it subtracts too small a
+   continuation, and a fuller correction pushes the numbers down, possibly below zero. **The
+   asymmetry is the carrying finding** — ordinary continued training improves taught teams while
+   doing nothing measurable for the untaught 8, so part of what was credited to a fold on-slice was
+   available from training alone. [SIGNIFICANT, with the depth caveat · ledger 2026-09-06 ·
+   *G5 slice (iii)*]
 5. **⇒ The cross-era difference is the PARENT, not the fold and not the meter.** *Maturity* is the
    SHAPE of that result, one CONFOUNDED candidate cause — the two parents differ in step count
    (277M vs 28M) **and** in architecture, obs dim, reward composition and ecology. [UNVERIFIED as a
@@ -210,8 +222,12 @@ Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 a
 | UNFUNDED teachers | **+4.86 [+3.16, +6.64]** | +1.97 [−0.13, +4.09] NOT DETECTED |
 | funded − unfunded | +0.25 [−2.03, +2.67] WITHIN FLOOR | **−4.37 [−5.78, −2.78]** SIGNIFICANT |
 
-- **The fold TEACHES.** ~+5pp on-slice, both halves equally, all four arms clearing zero
-  individually. That is not in doubt. [SIGNIFICANT]
+- **The fold TEACHES.** ~+5pp on-slice against the FROZEN parent, both halves equally, all four arms
+  clearing zero individually. Re-based on a plain CONTINUATION — which itself gains +2.09pp
+  [+0.47, +3.79] on this slice — it is **+2.6 to +3.4pp**, four of six arms clearing zero, and that
+  column is an UPPER BOUND (the continuation is measured at fork+1.18M against the folds' ~+4.45M).
+  The fold teaches; part of the headline number did not need it. [SIGNIFICANT, with the depth caveat
+  · ledger 2026-09-06 · *G5 slice (iii)*]
 - **Every fold digs an early off-slice HOLE**, ~3–4pp by +1M, regardless of teacher content (funded
   −3.12, unfunded −3.28, K=6 −4.19 — indistinguishable). Near-parent teachers let the student climb
   out (UNFUNDED − FUNDED recovery **+6.28 [+3.16, +9.81]** at p1M→mid); funded teachers show **no
