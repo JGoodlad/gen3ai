@@ -47,6 +47,7 @@ import tempfile
 import time
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from agents.training import baselines
 from agents.training import untaught_meter as engine
 from agents.training.untaught_meter import MeterError, ResolvedRef, TeamSlice
 from utils.paths import main_models_dir, src_root
@@ -80,11 +81,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--taught", nargs="?", const=str(engine.DEFAULT_TAUGHT_MANIFEST), default=None,
                    metavar="MANIFEST",
                    help="score the TAUGHT slice instead (default manifest: the taught 16).")
-    p.add_argument("--opponent", default=engine.DEFAULT_OPPONENT, metavar="REF",
-                   help="the ONE fixed opponent (default: rev-1's 24M snapshot).")
-    p.add_argument("--config", default=engine.DEFAULT_CONFIG, metavar="PATH",
-                   help="the model_config.json every model is loaded against; 'auto' resolves each "
-                        "model's own (default: rev-1's snapshot config, what the probes used).")
+    p.add_argument("--opponent", default=None, metavar="REF|BASELINE",
+                   help=f"the ONE fixed opponent — a ref, or a registry NAME (default: the "
+                        f"{engine.DEFAULT_OPPONENT_BASELINE!r} baseline).")
+    p.add_argument("--config", default=None, metavar="PATH|BASELINE",
+                   help=f"the model_config.json every model is loaded against; 'auto' resolves each "
+                        f"model's own (default: the {engine.DEFAULT_CONFIG_BASELINE!r} baseline).")
     p.add_argument("--games-per-team", type=int, default=engine.DEFAULT_GAMES_PER_TEAM)
     p.add_argument("--seed", type=int, default=engine.DEFAULT_SEED,
                    help="seeds every stream; at 0 the dice reproduce the banked probes exactly.")
@@ -139,6 +141,31 @@ def _uniquify(labels: List[str]) -> List[str]:
             seen[lab] = 0
             out.append(lab)
     return out
+
+
+def apply_baseline_defaults(args, log=None) -> List[str]:
+    """Fill ``--opponent`` / ``--config`` from the REGISTRY, and expand a registry NAME to a spec.
+
+    Called once, before any resolution and before a shard child's argv is built, so every child
+    receives the SPEC the parent resolved rather than re-reading a registry that could have moved
+    between them. Returns the announcement lines (also emitted through ``log``): a reader must
+    always see WHICH run a default named, and "the meter's opponent" was a string literal in a
+    module until ``gen3_baselines_registry_v1``.
+    """
+    lines: List[str] = []
+    for attr, name in (("opponent", engine.DEFAULT_OPPONENT_BASELINE),
+                       ("config", engine.DEFAULT_CONFIG_BASELINE)):
+        value = getattr(args, attr)
+        if value is None:
+            setattr(args, attr, baselines.spec(name))
+            lines.append(f"[baseline] --{attr} default: {baselines.describe(name)}")
+        elif baselines.is_name(value):
+            setattr(args, attr, baselines.spec(value))
+            lines.append(f"[baseline] --{attr}: {baselines.describe(value)}")
+    if log is not None:
+        for line in lines:
+            log(line)
+    return lines
 
 
 def _config_override(args) -> Optional[str]:
@@ -363,8 +390,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         engine.check_concurrency(args.concurrency)
+        # The shard child's argv is built from `args`, so the defaults are expanded to SPECS here
+        # — before resolution and before any child — and never re-read per process. A shard child
+        # would only re-print its parent's lines, so it stays quiet.
+        announced = apply_baseline_defaults(args)
+        if args.shard_out is None:
+            for line in announced:
+                print(line, flush=True)
         refs, baseline, controls, opponent, teams = resolve_all(args)
-    except MeterError as exc:
+    except (MeterError, baselines.BaselineError) as exc:
         print(f"untaught_meter: {exc}", file=sys.stderr)
         return 1
 

@@ -5,11 +5,13 @@ Three claims, each of which has historically failed silently as prose:
      describe yesterday's architecture.
   2. Each head table's total equals the LIVE `in_features` — the concat parts and their order
      cannot drift from `ProjectionAssembler.forward` / `forward_internal`.
-  3. `designs/production_config.json` still reflects the newest production run's
-     `model_config.json` on every field BOTH carry — the committed mirror cannot quietly stop
-     describing the run everything derives from. (Skipped where `models/` does not exist —
-     a fresh clone / CI has no run archive. `models/` lives only in the MAIN checkout, so the
-     archive is resolved with `utils.paths.main_models_dir()` and a worktree reaches across.)
+  3. `designs/production_config.json` matches the CONSTRUCTION the BASELINE REGISTRY declares
+     for its `production` entry (`designs/baselines.json`, `gen3_baselines_registry_v1`) — the
+     committed mirror cannot quietly stop describing what it claims to describe. This replaced a
+     NEWEST-RUN heuristic on 2026-09-06; the test's own docstring records why that heuristic
+     failed in both directions. (Skipped where `models/` does not exist — a fresh clone / CI has
+     no run archive. `models/` lives only in the MAIN checkout, so the archive is resolved with
+     `utils.paths.main_models_dir()` and a worktree reaches across.)
 """
 import json
 import os
@@ -71,55 +73,70 @@ def test_head_totals_equal_live_in_features(fe_and_cfg):
     assert sum(d for _, d, _ in vf) == fe.value_projection.in_features
 
 
-def _newest_run_config():
-    """The newest run dir (by mtime) under models/ that carries a model_config.json."""
+def test_production_config_matches_the_registry():
+    """DRIFT GATE: `designs/production_config.json` matches the CONSTRUCTION the BASELINE REGISTRY
+    declares for its `production` entry (`designs/baselines.json`, `gen3_baselines_registry_v1`).
+
+    🚨 **This REPLACES `test_production_config_matches_newest_run`, which answered a question
+    nobody asked.** That test compared the mirror against whichever run directory in `models/` had
+    the newest mtime — a heuristic that cannot tell a production generation from a two-hour
+    ablation arm, and that on 2026-09-06 would have been pointed at a MIS-LAUNCHED arm: an argv
+    copied out of a design-doc block, carrying the critic block and the hyperparameters and
+    nothing else, so 31 architecture fields had silently reverted to their OFF defaults. It
+    therefore failed in both directions — green when the mirror described a fiction, red whenever
+    any research arm trained last.
+
+    Which run is production is a JUDGEMENT, so it is DECLARED (a name, a checkpoint, a ledger
+    entry) rather than inferred, and the mirror is checked against that declaration. Since
+    2026-09-06 the declaration is a CONSTRUCTION rather than a copy — gen-17's surface migrated
+    v97 → v109 with a 13-key critic override block — and `baselines.compare_production` checks all
+    three of its parts (surface equality, the declared migration's key delta, every override
+    present at its declared value and actually differing). The full statement of what it checks
+    and why lives there; `src/main/baselines_test.py` owns the unit coverage of each clause.
+
+    Kept HERE as well as there because this file is the one a reader opens when asking "what
+    guards the mirror?" — and because a mirror that stops describing a real config makes
+    ARCHITECTURE.md, the delivery graph and `extractor_compiles_test`'s "production arch" all
+    describe a fiction with a straight face.
+    """
+    from agents.training import baselines
     models_dir = main_models_dir()
     if models_dir is None:
-        return None
-    runs = []
-    for d in os.listdir(models_dir):
-        run_dir = os.path.join(models_dir, d)
-        cfg_path = os.path.join(run_dir, "model_config.json")
-        if os.path.exists(cfg_path):
-            runs.append((os.path.getmtime(run_dir), cfg_path))
-    if not runs:
-        return None
-    return max(runs)[1]
-
-
-def test_production_config_matches_newest_run():
-    """DRIFT GATE: designs/production_config.json is the newest production run's config carried
-    forward to HEAD's schema (see the ARCHITECTURE.md header). Fields only ONE side has are the
-    schema delta and are fine; a differing value on a field BOTH have means the mirror no longer
-    reflects the production run, and everything generated from it describes a fictional config.
-    """
-    run_cfg_path = _newest_run_config()
-    if run_cfg_path is None:
-        pytest.skip(f"no run carries a model_config.json — {models_skip_reason()}")
+        pytest.skip(models_skip_reason())
+    b = baselines.get("production")
+    run_cfg_path = os.path.join(str(models_dir), b.run, "model_config.json")
+    if not os.path.exists(run_cfg_path):
+        # Names the escape hatch, like every other archive skip in this tree: a contributor
+        # reading it must not go hunting for a broken test (utils/paths_test.py pins this).
+        pytest.skip(f"the `production` baseline's run {b.run} is not on this box "
+                    f"({run_cfg_path}) — {models_skip_reason()}")
     with open(run_cfg_path) as fh:
         run_cfg = json.load(fh)
-    prod_cfg = arch_tables.load_config()
+    problems = baselines.compare_production(run_cfg, arch_tables.load_config(), b)
+    assert not problems, (
+        "designs/production_config.json no longer matches the construction "
+        f"designs/baselines.json declares for `production` ({b.run}):\n\n"
+        + "\n\n".join(problems))
 
-    # THE SIGNATURE-BUMP WINDOW. Two live requirements pull this file in opposite directions:
-    # `extractor_compiles_test` needs it to match the LIVE code (it compiles the "production
-    # arch" from it), and this test needs it to mirror the newest RUN. Both hold in the steady
-    # state and CANNOT both hold between an ARCH_SIGNATURE bump and the next launch — for that
-    # window every existing run is, by construction, at the previous architecture.
-    #
-    # Resolving it by relaxing either side would be wrong: dropping the live-code match makes the
-    # compile gate compile a fiction, and dropping the run match lets the mirror rot silently.
-    # So the window is DETECTED instead, from the run's own recorded signature, and the mirror
-    # follows the live code while it lasts. `gen3_frame_deletion_v1` (2026-08-17) is the first
-    # bump to hit this; before it, the two requirements had never been in conflict.
-    if run_cfg.get("arch_signature") != ARCH_SIGNATURE:
+
+def test_the_registry_and_the_live_code_agree_on_the_arch_signature():
+    """THE SIGNATURE-BUMP WINDOW, restated for the registry.
+
+    Two live requirements pull the mirror in opposite directions: `extractor_compiles_test` needs
+    it to match the LIVE code (it compiles the "production arch" from it) and the drift gate needs
+    it to describe a real run. Both hold in the steady state and CANNOT both hold between an
+    `ARCH_SIGNATURE` bump and the next launch, because for that window every existing run is by
+    construction at the previous architecture. Relaxing either side would be wrong — dropping the
+    live-code match makes the compile gate compile a fiction, dropping the run match lets the
+    mirror rot silently — so the window is DETECTED and REPORTED rather than papered over.
+    """
+    from agents.training import baselines
+    b = baselines.get("production")
+    if b.arch_signature != ARCH_SIGNATURE:
         pytest.skip(
-            f"newest run {run_cfg_path} is at arch_signature "
-            f"{run_cfg.get('arch_signature')!r}, live code is {ARCH_SIGNATURE!r} — no run exists "
-            f"at the current architecture yet, so production_config.json tracks the live code "
-            f"until the next generation launches. This skip ENDS the moment one does.")
-    shared = (set(run_cfg) & set(prod_cfg)) - {"config_version", "arch_signature"}
-    diffs = {k: {"run": run_cfg[k], "production_config": prod_cfg[k]}
-             for k in sorted(shared) if run_cfg[k] != prod_cfg[k]}
-    assert not diffs, (
-        f"designs/production_config.json no longer reflects the newest run "
-        f"({run_cfg_path}) on shared fields:\n{json.dumps(diffs, indent=2)}")
+            f"the `production` baseline ({b.run}) records arch_signature {b.arch_signature!r} "
+            f"and the live code is {ARCH_SIGNATURE!r} — a SIGNATURE-BUMP WINDOW. "
+            "designs/production_config.json tracks the live code until a run exists at the new "
+            "signature; re-point the baseline with `python -m main.baselines set production "
+            "<run>/<ckpt> --reason \"<ledger entry title>\"` when one does. This skip ENDS then.")
+    assert arch_tables.load_config().get("arch_signature") == ARCH_SIGNATURE

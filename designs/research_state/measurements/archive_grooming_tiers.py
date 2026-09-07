@@ -15,7 +15,7 @@ reaching for it?* — and grades the answer:
 tier  who                                             what happens
 ===== =============================================== ==========================
 0     LIVE, or anything a live run reaches for        nothing
-1     REFERENCED in any era                           standing + snapshots rule
+1     REFERENCED in any era, incl. a NAMED baseline   standing + snapshots rule
 2     ai_v9+ CLOSED                                   standing + snapshots rule
 3     ai_v8 CLOSED, unreferenced                      first+last+pin, no every-10th
 4     pre-ai_v8 (v5/v6/v7 and the run_2026* dirs)     AGGRESSIVE keep-list
@@ -114,6 +114,49 @@ def is_bookkeeping(rel: str) -> bool:
     """True for a committed file that names runs because it ENUMERATES the archive."""
     base = os.path.basename(rel)
     return any(base.startswith(p) for p in BOOKKEEPING_ARTIFACT_PREFIXES)
+
+
+# ------------------------------------------------------ the BASELINE REGISTRY ----
+
+#: 🚨 **A REGISTRY-NAMED CHECKPOINT SURVIVES EVERY TIER.**  ``designs/baselines.json``
+#: (``gen3_baselines_registry_v1``) is where the NAMED baselines live, and a name is
+#: only worth having if it still resolves a year later — which is exactly what a
+#: retention pass can quietly end.  So the registry is a REFERENCE SOURCE in its own
+#: right (its runs are tier 1) *and* a hard keep-list (its files are never in a
+#: deletion plan, at any tier), enforced by :func:`assert_safe_tiered` the way tier 4's
+#: own keep-list is.
+#:
+#: MEASURED 2026-09-06, and the measurement changed which half of this matters.  All
+#: five runs the seeded registry names are ALREADY tier 1 by the committed-file scan
+#: (2-59 scripts and 15-228 measurement artifacts each), so the RUN-level protection
+#: buys nothing today and is belt-and-braces: it stops a baseline's tier depending on
+#: incidental script mentions that a later cleanup can remove.  **The FILE-level
+#: keep-list is the half that is load-bearing.**  Tier 1 applies the STANDING rule,
+#: which keeps first + last + every 10th checkpoint + the ``latest.txt`` pin — and
+#: ``untaught_meter_opponent`` is ``snapshots/snapshot_000024000000.zip``, a POOL file
+#: that no checkpoint rule covers and that the snapshots rule keeps only while some
+#: fork or script happens to name the run.  A named baseline must not depend on that.
+#:
+#: The run-level half is also not free-riding on the scan: that scan classifies an
+#: origin as a SCRIPT (by extension) or a MEASUREMENT ARTIFACT (by the ``measurements/``
+#: prefix), and ``designs/baselines.json`` is neither.
+BASELINE_REGISTRY_REL = os.path.join("designs", "baselines.json")
+
+
+def baseline_protected() -> "dict[str, list[str]]":
+    """``{run_name: [run-relative file, …]}`` — every file the baseline registry NAMES.
+
+    Degrades to ``{}`` when the registry cannot be read: a retention DRY RUN must not
+    be what a broken registry takes down, and ``python -m main.baselines check`` is the
+    thing that reports it.  The degradation is safe in the right direction only because
+    a missing protection makes the plan *more* aggressive — so the tiered policy prints
+    the count it got and a zero is visible rather than silent.
+    """
+    try:
+        from agents.training import baselines
+        return baselines.protected_files()
+    except Exception:                                           # pragma: no cover
+        return {}
 
 #: **REVIEW HOLDS** — runs pinned to tier 1 by a HUMAN READING, recorded here with
 #: the finding that forced it.  The standing policy's ``needs_review`` flag makes a
@@ -367,6 +410,7 @@ def assign_tiers(runs: dict, live: dict, refs: dict, graph: dict,
                         f"{child}")
         frontier = nxt
 
+    protected = baseline_protected()
     for n, r in runs.items():
         era, era_how = era_of(n, r["generation"])
         r["era"] = era
@@ -378,6 +422,16 @@ def assign_tiers(runs: dict, live: dict, refs: dict, graph: dict,
             continue
 
         why = []
+        if n in protected:
+            # A NAMED baseline. Tier 1 for its whole run dir, and its named files are
+            # additionally on a keep-list `assert_safe_tiered` enforces at every tier.
+            r["baseline_protected"] = list(protected[n])
+            r["tier"], r["tier_name"] = 1, "REFERENCED"
+            r["tier_reasons"] = [
+                f"NAMED in {BASELINE_REGISTRY_REL} (gen3_baselines_registry_v1): "
+                + ", ".join(protected[n])
+                + " — a baseline name must still resolve a year from now"]
+            continue
         if n in REVIEW_HOLDS:
             r["review_hold"] = REVIEW_HOLDS[n]
             r["tier"], r["tier_name"] = 1, "REFERENCED"
@@ -586,6 +640,13 @@ def tier4_keep_set(run_dir: str, resolved_rel: str, latest_pin: "str | None",
             if os.path.isfile(os.path.join(run_dir, cand)):
                 keep.setdefault(cand, "another run's model graph resolved to this file")
                 break
+    # A NAMED baseline's file, at tier 4 as at every other tier. Belt to
+    # `assert_safe_tiered`'s braces: naming it in the keep-list means the plan is built
+    # around it, rather than built and then refused.
+    for rel in baseline_protected().get(os.path.basename(os.path.normpath(run_dir)), []):
+        if os.path.isfile(os.path.join(run_dir, rel)):
+            keep.setdefault(rel, f"NAMED in {BASELINE_REGISTRY_REL} — a baseline name must "
+                                 "still resolve")
     return keep
 
 
@@ -654,9 +715,18 @@ def assert_safe_tiered(run_dir: str, delete_rel: "Iterable[str]",
     outside ``checkpoints/`` and ``eval_traces/`` — so the guarantee is restated
     positively instead: nothing escapes the run dir, and nothing the keep-list
     names (or lives under a kept path) is in the deletion set.
+
+    🚨 **The baseline registry's files are added to the keep-list HERE**, not by the
+    caller — this function is the single choke point every tiered plan passes through
+    (``build_census_tiered`` calls it for the tier-4 plan AND for the pool plan, and
+    ``apply_plan`` calls it again before executing), so protecting them here covers
+    every tier by construction rather than by remembering.  A baseline whose file is
+    groomed away stops resolving, and a NAME that no longer resolves is worse than no
+    name at all.
     """
     run_abs = os.path.realpath(run_dir)
     keep = set(keep_rel)
+    keep |= set(baseline_protected().get(os.path.basename(os.path.normpath(run_abs)), []))
     for rel in delete_rel:
         p_abs = os.path.realpath(os.path.join(run_dir, rel))
         back = os.path.relpath(p_abs, run_abs)
@@ -673,8 +743,10 @@ def assert_safe_tiered(run_dir: str, delete_rel: "Iterable[str]",
 
 TIER_ORDER = [
     (0, "LIVE", "live, or reached for by something live — untouched"),
-    (1, "REFERENCED", "named by a script, a measurement artifact, the ledger tail, "
-                      "or another run's model graph — standing policy + snapshots rule"),
+    (1, "REFERENCED", "named by the BASELINE REGISTRY, a script, a measurement artifact, "
+                      "the ledger tail, or another run's model graph — standing policy + "
+                      "snapshots rule (a registry-NAMED file is additionally kept at every "
+                      "tier)"),
     (2, "v9+ CLOSED", "standing policy + snapshots rule"),
     (3, "v8 CLOSED", "first + last + latest.txt pin (no every-10th) + snapshots rule"),
     (4, "PRE-v8", "AGGRESSIVE keep-list — the era's record survives, the weights do not"),

@@ -71,7 +71,15 @@ from main.critic_gate_design import (BASELINE_ARTIFACT, DEFAULT_BASELINE_DIR,
                                      RULE_NO_CI, RULE_NONINFERIOR, RULE_WORSE,
                                      STALL_RATE_SOURCE_NOTE, Z95)
 from main.critic_gate_render import render_markdown, render_text
+from agents.training import baselines
 from utils.paths import src_root
+
+#: The FAMINE PRE-TEST's comparator, BY NAME out of `designs/baselines.json`
+#: (`gen3_baselines_registry_v1`). It lived only in one ledger entry until 2026-09-06, so "which
+#: run is the famine comparator, and what is its floor?" was a question answerable only by reading
+#: prose. The FLOOR travels with it — `floor_elo` on that registry entry — because a bar and the
+#: run it is a bar against are one fact, not two.
+FAMINE_COMPARATOR_BASELINE = "famine_comparator"
 
 
 class GateRefusal(SystemExit):
@@ -93,15 +101,81 @@ def _resolve_ref(spec: str, *, what: str) -> Dict[str, Any]:
 
     `gen3_last_snapshot_resolution_v1`: a bare run dir means the run's LAST SNAPSHOT, exactly as a
     launch means it. The rung and rule are recorded so no reader has to infer WHICH FILE was read.
+
+    `gen3_baselines_registry_v1`: the spec may also be a NAME from `designs/baselines.json`
+    (`--parent v9_fold_parent`), which expands to that entry's EXPLICIT checkpoint. The name and
+    its one-line provenance are carried into the report, so a reader never has to recognise a path
+    to know which run was meant.
     """
     from agents.training.fixed_opponent_pool import resolve_model_ref
+    given, baseline_name, provenance = spec, None, None
+    if baselines.is_name(spec):
+        b = baselines.get(spec)
+        spec, baseline_name, provenance = b.spec, b.name, b.describe()
+    last: Exception = FileNotFoundError(f"{spec!r}: nothing tried")
+    for cand in baselines.candidate_paths(spec):
+        try:
+            r = resolve_model_ref(cand)
+        except (FileNotFoundError, ValueError) as exc:
+            last = exc
+            continue
+        return {"spec": given, "baseline": baseline_name, "baseline_provenance": provenance,
+                "resolved_file": r.zip_path, "run_dir": r.run_dir,
+                "run_base": r.run_base, "resolution_rung": r.rung, "resolution_rule": r.rule,
+                "resolved_num_timesteps": r.num_timesteps, "config": r.config_path}
+    raise GateRefusal(f"{what} {given!r}", str(last))
+
+
+def _resolve_famine(args, *, explicit: Optional[bool] = None
+                    ) -> Tuple[Optional[Dict[str, Any]], Optional[float]]:
+    """``(comparator, floor_elo)`` for the famine pre-test, or ``(None, None)`` when it is off.
+
+    The FLOOR comes from the comparator's own registry entry unless ``--famine-floor-elo`` names
+    one — a bar and the run it is a bar against are one fact. A comparator that is a raw REF with
+    no registry entry therefore REFUSES rather than inventing a floor: 38 is a measurement about
+    two specific runs, not a constant of nature.
+
+    🚨 **THE DEFAULT YIELDS; AN EXPLICIT FLAG REFUSES** — the same asymmetry `--compile-trainer`
+    settles the same way. The default comparator is a registry NAME resolving under `models/`, and
+    `models/` is not committed: on a fresh clone, in CI, or on any box that does not carry rev-1,
+    a default that refused would take the WHOLE read down over one endpoint of five that nobody
+    asked for. So an unresolvable DEFAULT is recorded as NOT READ, naming the run and the reason,
+    and every other section still runs. An unresolvable comparator the caller NAMED is still a
+    refusal: they asked for it, so its absence is an error rather than a fact about this box.
+    """
+    spec = getattr(args, "famine_comparator", None)
+    if not spec or spec == "off":
+        return None, None
+    # EXPLICIT is read from the ARGV, not by comparing the value against the default: a caller
+    # who deliberately types the default NAME has still asked for it, and a value comparison
+    # cannot tell those apart. `main` passes it. A direct caller that does not gets the
+    # conservative reading — treat it as explicit and REFUSE — because silently NOT READING a
+    # registered endpoint is the failure that must never happen by accident.
+    if explicit is None:
+        explicit = spec != FAMINE_COMPARATOR_BASELINE
     try:
-        r = resolve_model_ref(spec)
-    except (FileNotFoundError, ValueError) as exc:
-        raise GateRefusal(f"{what} {spec!r}", str(exc)) from exc
-    return {"spec": spec, "resolved_file": r.zip_path, "run_dir": r.run_dir,
-            "run_base": r.run_base, "resolution_rung": r.rung, "resolution_rule": r.rule,
-            "resolved_num_timesteps": r.num_timesteps, "config": r.config_path}
+        comparator = _resolve_ref(spec, what="--famine-comparator")
+    except (SystemExit, baselines.BaselineError):
+        if explicit:
+            raise
+        where = baselines.spec(spec) if baselines.is_name(spec) else spec
+        return {"unavailable": (
+            f"the DEFAULT famine comparator ({where}) is not on this box, so the "
+            "pre-test was not read. Every other section still ran. Pass --famine-comparator with "
+            "a ref that IS here, or `off` to say so deliberately."), "spec": spec}, None
+    if args.famine_floor_elo is not None:
+        return comparator, float(args.famine_floor_elo)
+    if baselines.is_name(spec):
+        floor = baselines.get(spec).floor_elo
+        if floor is not None:
+            return comparator, float(floor)
+    raise GateRefusal(
+        f"--famine-comparator {spec!r}",
+        "no kill floor: this comparator carries no `floor_elo` in designs/baselines.json and no "
+        "--famine-floor-elo was given. The floor is a MEASUREMENT about two specific runs (the max "
+        "|delta| between them at matched steps), so it cannot be defaulted for an arbitrary "
+        "comparator. Pass --famine-floor-elo, name a registry baseline that records one, or pass "
+        "--famine-comparator off.")
 
 
 def _run_is_finished(run_dir: str) -> Tuple[bool, Optional[str]]:
@@ -209,6 +283,39 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
             "carries NO term for the anchor uncertainty they share." if anchored else
             "AT LEAST ONE LADDER IS NOT BOT-ANCHORED — its scale is arbitrary and the delta below "
             "is NOT cross-run comparable. Run `python -m agents.training.bot_elo_calibration`."),
+    }
+
+
+def famine_section(run: Dict[str, Any], comparator: Dict[str, Any],
+                   at_snapshots: Optional[int], floor_elo: float,
+                   floor_source: str) -> Dict[str, Any]:
+    """THE FAMINE PRE-TEST — does terminal-only reward learn at the INCUMBENT's rate?
+
+    The registered rule (ledger 2026-09-06, *FAMINE PRE-TEST*): at ~5M, if the arm's anchored
+    rating at matched SNAPSHOT COUNT trails the comparator by more than ``floor_elo`` **AND**
+    ``win_rate_vs_bots`` is not rising cycle over cycle, terminal-only starves ⇒ kill the arm and
+    launch FROZEN-φ. This computes the FIRST half; the second is `win_rate_vs_bots`, which the
+    G7 section already reads off the run's own recorded metrics and which no ladder can supply.
+
+    🚨 **A TRAIL INSIDE THE FLOOR IS NOT EVIDENCE OF EQUIVALENCE.** The incumbent had PBRS *and*
+    PopArt *and* the shaped critic, so this is a rate comparison ACROSS RECIPES against the
+    incumbent's own run-to-run noise — the pre-registered confound, printed with the verdict.
+    """
+    lad = ladder_section(run, comparator, at_snapshots)
+    trail = -lad["delta_elo"]                      # positive = the arm is BEHIND
+    starving = trail > floor_elo
+    return {
+        "comparator": comparator, "floor_elo": floor_elo, "floor_source": floor_source,
+        "ladder": lad, "trail_elo": trail, "exceeds_floor": starving,
+        "rule": ("at ~5M: trailing the comparator by more than the floor at matched SNAPSHOT "
+                 "COUNT **AND** win_rate_vs_bots not rising ⇒ terminal-only starves ⇒ kill the "
+                 "arm and launch FROZEN-φ."),
+        "half_computed": "the LADDER half only — win_rate_vs_bots is the AND-gate's other half.",
+        "confound": ("the incumbent had PBRS AND PopArt AND the shaped critic, so this is a rate "
+                     "comparison ACROSS RECIPES and the floor is the incumbent's own run-to-run "
+                     "noise, not a replicate of this arm. A trail inside the floor is NOT evidence "
+                     "the two recipes are equivalent — only that starvation has not been "
+                     "demonstrated."),
     }
 
 
@@ -727,7 +834,9 @@ def verdict(doc: Dict[str, Any]) -> Dict[str, Any]:
 # --------------------------------------------------------------------------- --check
 
 def check_inputs(args, run: Dict[str, Any], parent: Dict[str, Any],
-                 controls: List[Dict[str, Any]]) -> Tuple[List[str], List[str]]:
+                 controls: List[Dict[str, Any]],
+                 famine: Optional[Dict[str, Any]] = None,
+                 famine_floor: Optional[float] = None) -> Tuple[List[str], List[str]]:
     """Resolve every input; return ``(ok lines, problems)``. Computes NOTHING."""
     ok: List[str] = []
     bad: List[str] = []
@@ -735,6 +844,22 @@ def check_inputs(args, run: Dict[str, Any], parent: Dict[str, Any],
               f"[rung={run['resolution_rung']} rule={run['resolution_rule']}]")
     ok.append(f"parent   {parent['resolved_file']} "
               f"[rung={parent['resolution_rung']} rule={parent['resolution_rule']}]")
+    for d, label in ((run, "run"), (parent, "parent"), (famine, "famine")):
+        if d and d.get("baseline_provenance"):
+            ok.append(f"baseline {label} = {d['baseline_provenance']}")
+    if famine is None:
+        ok.append("famine   OFF (--famine-comparator off) — the pre-test is not read")
+    elif famine.get("unavailable"):
+        # NOT a problem: the DEFAULT comparator simply is not on this box. `--check` answers
+        # "would this read run?", and it would — with one endpoint recorded as not read.
+        ok.append(f"famine   NOT READ — {famine['unavailable']}")
+    else:
+        ok.append(f"famine   {famine['resolved_file']} [floor {famine_floor} ELO]")
+        try:
+            lad = load_ladder(famine["run_dir"], what="--famine-comparator")
+            ok.append(f"ladder   {lad['path']} — {len(lad['ratings'])} rated, converged")
+        except SystemExit as exc:
+            bad.append(str(exc).strip())
     for c in controls:
         ok.append(f"control  {c['resolved_file']} [rung={c['resolution_rung']}]")
     for label, d in (("run", run), ("parent", parent)):
@@ -795,9 +920,19 @@ def build_parser() -> argparse.ArgumentParser:
                "footnote.")
     ap.add_argument("run", help="the arm's run directory (or any ref the last-snapshot rule "
                                 "resolves: <run>, <run>@<step>, a .zip)")
-    ap.add_argument("--parent", required=True, metavar="REF",
+    ap.add_argument("--parent", required=True, metavar="REF|BASELINE",
                     help="the generation being replaced — its ladder is the comparator and its "
-                         "last snapshot is the untaught meter's frozen baseline")
+                         "last snapshot is the untaught meter's frozen baseline. A NAME from "
+                         "designs/baselines.json also works (e.g. `--parent v9_fold_parent`)")
+    ap.add_argument("--famine-comparator", default=FAMINE_COMPARATOR_BASELINE,
+                    metavar="REF|BASELINE",
+                    help=f"the FAMINE PRE-TEST's comparator — does terminal-only reward learn at "
+                         f"the incumbent's rate? (default: the {FAMINE_COMPARATOR_BASELINE!r} "
+                         f"baseline). 'off' skips the pre-test.")
+    ap.add_argument("--famine-floor-elo", type=float, default=None, metavar="ELO",
+                    help="the kill floor in ELO (default: the comparator baseline's own recorded "
+                         "floor_elo — 38, the max |delta| between two same-class runs at matched "
+                         "steps, NOT the adjacent-node spread)")
     ap.add_argument("--control", nargs="+", action="extend", default=[], metavar="REF",
                     help="CONTINUATION arms of the parent at matched depth. §5.5: a FROZEN parent "
                          "is the wrong baseline — it credits an arm with progress the baseline "
@@ -863,6 +998,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     run = _resolve_ref(args.run, what="run")
     parent = _resolve_ref(args.parent, what="--parent")
     controls = [_resolve_ref(c, what="--control") for c in args.control]
+    raw_argv = list(argv if argv is not None else sys.argv[1:])
+    famine, famine_floor = _resolve_famine(args, explicit=any(
+        a == "--famine-comparator" or a.startswith("--famine-comparator=")
+        for a in raw_argv))
+    for d, label in ((run, "run"), (parent, "--parent"), (famine, "--famine-comparator")):
+        if d and d.get("baseline_provenance"):
+            print(f"[baseline] {label}: {d['baseline_provenance']}")
 
     if args.stall_turns is None:
         from agents.observation.constants import MAX_TURNS
@@ -883,7 +1025,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                        check=args.check, dry_run=args.dry_run)
 
     if resolve_only:
-        ok, bad = check_inputs(args, run, parent, controls)
+        ok, bad = check_inputs(args, run, parent, controls, famine, famine_floor)
         for line in ok:
             print("  " + line)
         print("  meter    " + " ".join(margv[2:]))
@@ -940,6 +1082,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         max_battles_per_step=args.max_battles_per_step, reduce=g1_reduce,
         relative_reduce=rel_reduce, max_reliability=args.max_reliability,
         max_ece=args.max_ece, say=say)
+    if famine is not None and famine.get("unavailable"):
+        # The DEFAULT comparator is not on this box — recorded as NOT READ, never as `off`
+        # (which means somebody chose to skip it) and never as a refusal of the whole read.
+        doc["famine"] = dict(famine)
+    elif famine is not None and famine_floor is not None:
+        say("(2b) famine pre-test")
+        try:
+            doc["famine"] = famine_section(run, famine, args.at_snapshots, famine_floor,
+                                           "--famine-floor-elo" if args.famine_floor_elo is not None
+                                           else f"registry `{args.famine_comparator}`.floor_elo")
+        except SystemExit as exc:
+            # A comparator with no usable ladder must not take down the WHOLE read — the famine
+            # pre-test is one endpoint beside four, and its refusal is recorded as such.
+            doc["famine"] = {"unavailable": str(exc).strip(), "comparator": famine,
+                             "floor_elo": famine_floor}
+    else:
+        doc["famine"] = None
     say("(3) G7 kill condition")
     doc["kill"] = kill_section(run, parent, stall_turns=args.stall_turns,
                                max_stall_rate=args.max_stall_rate,

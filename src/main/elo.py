@@ -21,8 +21,10 @@ the live per-cycle scalars are the weak counterpart of this read.
                        [--no-hodge] [--hodge-bootstrap N] [--hodge-seed S]
                        [--hodge-with-bot-rr]
 
-``<run_dir>`` is a ``models/run_<ts>`` directory. ``--out`` defaults to ``<run_dir>/elo/``;
-point it elsewhere (e.g. ``/tmp/elo_<ts>``) to analyze a LIVE run without writing into it.
+``<run_dir>`` is a ``models/run_<ts>`` directory — **or a NAME from ``designs/baselines.json``**
+(``python -m main.elo v9_long_baseline``), which resolves to that baseline's run and prints which
+one it meant. ``--out`` defaults to ``<run_dir>/elo/``; point it elsewhere (e.g. ``/tmp/elo_<ts>``)
+to analyze a LIVE run without writing into it.
 """
 from __future__ import annotations
 
@@ -31,6 +33,7 @@ import sys
 import json
 import argparse
 
+from agents.training import baselines
 from agents.training import elo as elo_mod
 from agents.training import hodge as hodge_mod
 
@@ -193,7 +196,8 @@ def _write_curve(fit: elo_mod.EloFit, out_dir: str) -> str | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Offline ELO analyzer for a training run")
-    ap.add_argument("run_dir", help="models/run_<ts> directory")
+    ap.add_argument("run_dir", help="models/run_<ts> directory, or a NAME from "
+                                    "designs/baselines.json (e.g. `v9_long_baseline`)")
     ap.add_argument("--out", default=None, help="output dir (default <run_dir>/elo/)")
     ap.add_argument("--source", default="auto", choices=["auto", "log", "tb", "meta"],
                     help="results source (default auto: log → tb → meta)")
@@ -209,6 +213,17 @@ def main() -> int:
                     help="fold the static bot-vs-bot round-robin into the graph (its 2700-game "
                          "edges then dominate the weighted width — read the bots, not the run)")
     args = ap.parse_args()
+
+    # A NAME out of the baseline registry resolves to that baseline's RUN DIR, and says so — the
+    # ladder is a property of the run, not of one checkpoint in it (gen3_baselines_registry_v1).
+    if baselines.is_name(args.run_dir):
+        resolved = baselines.run_dir(args.run_dir)
+        if resolved is None:
+            print(f"error: baseline {args.run_dir!r} names a run, but there is no models/ archive "
+                  f"in this checkout", file=sys.stderr)
+            return 2
+        print(f"[baseline] run_dir: {baselines.describe(args.run_dir)}")
+        args.run_dir = resolved
 
     if not os.path.isdir(args.run_dir):
         print(f"error: {args.run_dir} is not a directory", file=sys.stderr)

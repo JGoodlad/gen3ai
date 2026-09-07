@@ -1,0 +1,156 @@
+{
+ "schema": "gen3_baselines_registry_v1",
+ "note": "THE NAMED BASELINES. A baseline is the thing a result is read AGAINST; each one here is a NAME, an explicit checkpoint and the ledger entry that set it. Read them through agents.training.baselines (never by copying a path), change one with `python -m main.baselines set <name> <run>/<file>.zip --reason \"<ledger title>\"`, and validate everything with `python -m main.baselines check`. The checkpoint is ALWAYS explicit (a .zip, a .json, or @<step>) so gen3_last_snapshot_resolution_v1 cannot move what a name points at.",
+ "baselines": {
+  "production": {
+   "kind": "checkpoint",
+   "run": "ai_v9_21_gen17_pfspoff_0820",
+   "checkpoint": "final_model.zip",
+   "commit": "4b031887ebc7926a6730f4c501023168f8960819",
+   "config_version": 97,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "num_timesteps": 25067520,
+   "sha256": "0a3b758ba8370da4395fcbf1985a645cd30656a2f6aea8e23f66eb73c77df7d3",
+   "purpose": "THE ARCHITECTURE SURFACE production runs. designs/production_config.json is CONSTRUCTED from this run's config \u2014 migrated v97 -> v109 with the 13-key critic override block below \u2014 and ARCHITECTURE.md, the delivery graph, the compile gate and the arch viewer are all generated from that mirror.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "THE MIRROR IS CONSTRUCTED, NOT COPIED (CHANGELOG -> production_config_2026-09-06; provenance in designs/production_config.README.md). gen-17 supplies the whole architecture SURFACE; the critic block is overridden to the win-prob era. Non-critic keys changed: ZERO. The entry names gen-17 rather than the era arm because the SURFACE is the thing every derived artifact reads, and because ai_v12_02_winprob_critic had not written a model_config.json when the mirror was built. It moves to ai_v12_02_winprob_critic once that arm passes its critic gate \u2014 see `pending`. Why the surface half matters: the era's FIRST arm launched from a design-doc block with a 38-flag argv, and 31 architecture fields silently reverted to their OFF defaults; mirroring it would have redefined production BY OMISSION, with the delivery graph dropping 60 of 120 nodes and every derived artifact agreeing.",
+   "config_mirror": "designs/production_config.json",
+   "config_mirror_readme": "designs/production_config.README.md",
+   "config_mirror_version": 109,
+   "config_overrides": {
+    "critic": "winprob",
+    "use_popart": false,
+    "win_prob_coef": 1.0,
+    "value_dist_mode": "none",
+    "value_dist_bins": 0,
+    "value_dist_vmin": 0.0,
+    "value_dist_vmax": 0.0,
+    "value_from_dist": false,
+    "value_tail_weight": 0.0,
+    "hand_shaping": false,
+    "terminal_indicator": true,
+    "victory_value": 1.0,
+    "draw_penalty": 0.0
+   },
+   "pending": {
+    "candidate": "ai_v12_02_winprob_critic",
+    "condition": "passes its pre-registered read \u2014 `python -m main.critic_gate <run> --parent v9_fold_parent --control <G5 arms>` (designs/ai_v12/design_winprob_only_critic.md \u00a75.5)",
+    "note": "Until then the surface source is gen-17. Switch it with `python -m main.baselines set production <run>/<ckpt> --reason \"<ledger entry title>\"`, never by hand \u2014 and re-derive config_overrides at the same time, since a run that records the critic block natively needs FEWER of them."
+   }
+  },
+  "v9_long_baseline": {
+   "kind": "checkpoint",
+   "run": "ai_v9_29_rev1_0823",
+   "checkpoint": "final_model.zip",
+   "commit": "d78aa810c6fadf23562afff4416123419c90659e",
+   "config_version": 101,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "num_timesteps": 25067760,
+   "sha256": "2f17fbab0b5f067b7dddae259c3341cbc6cae374296a0c41d79573dec1025717",
+   "purpose": "rev-1: the gen-era FRESH from-zero 25M run, anchored ladder 2098 at 12 nodes \u2014 the long-run reference every gen-era arm is read against.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "The ORIGIN all eight R5F exploiters fork from. Its 24M snapshot is a separate entry (`untaught_meter_opponent`) because a meter opponent must stay pinned even if this one moves."
+  },
+  "v9_fold_parent": {
+   "kind": "checkpoint",
+   "run": "ai_v9_59_R2ACTION_0827",
+   "checkpoint": "final_model.zip",
+   "commit": "77f922e742e2e1c6441bcaa4ec20f97c85a0e8c9",
+   "config_version": 103,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "num_timesteps": 28115184,
+   "sha256": "ab213e4479d32eaac3c3ec428d7f19aacb0168a6b48ed121b0145dbe4e681a1f",
+   "purpose": "R2ACTION: the gen-era FOLD PARENT \u2014 every rev-4 / 2x2 / K=6 / G1 / G5 arm forks from it, it is `main.critic_gate --parent`, and it is the FROZEN-PHI SOURCE the win-prob arm's FROZEN-phi rung would pass to `--win-prob-pbrs-source`.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "A role=fold fork of rev-1 at the same step, ending 28,115,184. It is NOT production \u2014 the 2026-09-06 near-miss was this run being written into production_config.json. ONE entry carries both roles deliberately: they are the same run and the same file, so a second name would be a second place the identity lives and a chance for the two to drift."
+  },
+  "v8_line": {
+   "kind": "checkpoint",
+   "run": "ai_v8_14_distill3_0725",
+   "checkpoint": "final_model_interrupted.zip",
+   "commit": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+   "config_version": 45,
+   "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+   "num_timesteps": 292623779,
+   "sha256": "902f01c73290d3622cf62f2a8a5ec476193476a5f3b975c534c102d0a4935eca",
+   "purpose": "v8's fold \u2014 the ONE line that ever gifted (+69 anchored ELO); the era code runs today from a pinned checkout at its own commit.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "era checkout only: arch_signature gen3_opp_hp_typed_candidates_v1, config v45 \u2014 it does NOT load under current code. Its `final_model_interrupted` name is real: the run was stopped from outside.",
+   "era_checkout_only": true
+  },
+  "v8_parent": {
+   "kind": "checkpoint",
+   "run": "ai_v8_04_distill_4teacher_0722",
+   "checkpoint": "final_model_interrupted.zip",
+   "commit": "ce8bbc954b42fceac0df773eab4040723bd2ffd3",
+   "config_version": 45,
+   "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+   "num_timesteps": 277583267,
+   "sha256": "3b7792c873477b0ce270f103bf818a8df91df4d1418d565b44698d8e1a65dbc0",
+   "purpose": "v8's fold PARENT at 277,583,267 steps \u2014 the frozen baseline every v8-line replication differences against, and the parent whose plain continuation reproduced the gift.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "era checkout only, same era wall as v8_line.",
+   "era_checkout_only": true
+  },
+  "famine_comparator": {
+   "kind": "checkpoint",
+   "run": "ai_v9_29_rev1_0823",
+   "checkpoint": "final_model.zip",
+   "commit": "d78aa810c6fadf23562afff4416123419c90659e",
+   "config_version": 101,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "num_timesteps": 25067760,
+   "sha256": "2f17fbab0b5f067b7dddae259c3341cbc6cae374296a0c41d79573dec1025717",
+   "purpose": "The FAMINE PRE-TEST's comparator: does terminal-only reward learn at the incumbent's rate? Read at matched SNAPSHOT COUNT against the win-prob arm.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "FLOOR = 38 Elo, and NOT the adjacent-node spread (172/186, dominated by the 2M->4M jump \u2014 steep early LEARNING, not noise). 38 is the max |delta| between gen17 and rev-1 at matched steps over 8 nodes (the max, never the mean); the ladder se (+/-9-10) was rejected as fit error on one node. The two runs are not true replicates, so 38 likely OVER-states pure noise \u2014 conservative in the right direction for a kill rule. AND-gated with win_rate_vs_bots not rising. Same run as v9_long_baseline, a DIFFERENT name because the two roles move independently.",
+   "floor_elo": 38.0
+  },
+  "untaught_meter_opponent": {
+   "kind": "checkpoint",
+   "run": "ai_v9_29_rev1_0823",
+   "checkpoint": "snapshots/snapshot_000024000000.zip",
+   "commit": "d78aa810c6fadf23562afff4416123419c90659e",
+   "config_version": 101,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "num_timesteps": 24000000,
+   "sha256": "308250c34b73d00e1d87bfbe4d152b4d8d57b3a3040814f0286fa3ec30a47fb3",
+   "purpose": "The untaught meter's ONE fixed opponent: rev-1's 24M snapshot, what offline_collateral_kl.py and exploiter_competence/compete.py both used.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "PINNED to the explicit snapshot zip on purpose \u2014 a bare run dir would resolve to the run's LAST snapshot and every banked meter level would stop being comparable."
+  },
+  "untaught_meter_config": {
+   "kind": "config",
+   "run": "ai_v9_29_rev1_0823",
+   "checkpoint": "snapshots/model_config.json",
+   "commit": "d78aa810c6fadf23562afff4416123419c90659e",
+   "config_version": 101,
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "num_timesteps": null,
+   "sha256": "d58674c66f92d309363c66f768543cef9648662bc365850a4288dd827c8bd31b",
+   "purpose": "The ONE model_config.json every model in an untaught-meter series is loaded against, so a level here is comparable to a banked one.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "`--config auto` resolves each model's own config instead; that is a different measurement."
+  }
+ },
+ "lists": {
+  "tb_curated": {
+   "members": [
+    "v8_line",
+    "v9_long_baseline"
+   ],
+   "purpose": "The curated TensorBoard runs \u2014 the two long reference curves any new run is read beside.",
+   "set_on": "2026-09-06",
+   "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
+   "notes": "Members are BASELINE NAMES, never run strings: a run named here as well as in its entry would be a second place the identity lives."
+  }
+ }
+}

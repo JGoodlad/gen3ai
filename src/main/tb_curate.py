@@ -16,7 +16,7 @@ own NAME (not `<run>/tb`, which is what `--logdir models/` shows); the data is n
 `models/` stays the single source of truth and this directory can be deleted at any time; and a run
 that is grooming-thinned or archived simply becomes a dangling link rather than a stale copy.
 
-WHAT GETS IN. Two sources, unioned:
+WHAT GETS IN. Three sources, unioned:
 
 1. **`designs/tb_curated_runs.json`** — the committed list, with a one-line `why` per entry. Edit it
     by hand; that file is the owner's dial.
@@ -24,6 +24,11 @@ WHAT GETS IN. Two sources, unioned:
     reading the run name out of its argv. This is the half that matters operationally: the arm
     running right now always shows up, without anyone remembering to add it, and drops back out of
     the union when it finishes (though a run worth keeping should then be added to the list).
+3. **The BASELINE REGISTRY's `tb_curated` list** (`designs/baselines.json`,
+    `gen3_baselines_registry_v1`) — the NAMED reference curves. A baseline whose curve is not on the
+    board is a baseline nobody can look at, so the registry's declared set is unioned in rather than
+    hand-copied here. `--no-baselines` opts out; a broken registry degrades to no union rather than
+    taking TensorBoard curation down with it (`python -m main.baselines check` is what reports it).
 
 SAFETY. This tool creates and removes **symlinks inside the curated directory and nothing else**. It
 refuses to delete anything there that is not a symlink, and it never opens, moves or writes a single
@@ -157,29 +162,63 @@ def live_runs() -> List[Tuple[str, int]]:
 # --------------------------------------------------------------------------------------------
 # the desired state
 # --------------------------------------------------------------------------------------------
+def baseline_runs() -> List[Tuple[str, str]]:
+    """`(run_name, why)` for every member of the registry's `tb_curated` baseline LIST.
+
+    `designs/baselines.json` is where the NAMED baselines live (`gen3_baselines_registry_v1`), and
+    its `tb_curated` list is the declared set of reference curves. Unioning it in here means the
+    two files cannot drift apart in the one direction that matters: a baseline whose curve is not
+    on the board is a baseline nobody can look at. `tb_curated_runs.json` stays the dial for
+    everything else — it curates far more than the registry names, with a `why` per entry.
+
+    Degrades to `[]` on any registry problem: TensorBoard curation must never be what a broken
+    registry takes down, and `python -m main.baselines check` is what reports that.
+    """
+    try:
+        from agents.training import baselines as reg
+        li = reg.get_list("tb_curated")
+        return [(reg.get(m).run, f"baseline `{m}` (registry tb_curated list)") for m in li.members]
+    except Exception:  # noqa: BLE001 — see the docstring: this is a union, not a gate
+        return []
+
+
 def desired(models: str, *, list_file: Optional[str] = None,
-            include_live: bool = True) -> Tuple[List[Dict[str, Any]], List[str]]:
+            include_live: bool = True,
+            include_baselines: bool = True) -> Tuple[List[Dict[str, Any]], List[str]]:
     """`(entries, problems)` — what the curated dir should hold, and what could not be honoured.
 
     An entry is `{run, why, source, target, exists}`. A listed run that has no `tb/` is reported as
     a problem and NOT linked: a dangling link in the logdir makes TensorBoard log an error on every
     reload, and a silently-missing run is worse than a named one.
+
+    Three sources union: the committed list, the LIVE runs, and the baseline registry's
+    `tb_curated` list. A run named by more than one carries them all in `source`.
     """
     entries: Dict[str, Dict[str, Any]] = {}
     problems: List[str] = []
 
-    def add(run: str, why: str, source: str) -> None:
+    def add(run: str, why: str, source: str, *, report_missing: bool = True) -> None:
         tb = os.path.join(models, run, "tb")
         if run in entries:
             entries[run]["source"] = entries[run]["source"] + "+" + source
             return
         if not os.path.isdir(tb):
-            problems.append(f"{run}: no {os.path.join('models', run, 'tb')} ({source})")
+            if report_missing:
+                problems.append(f"{run}: no {os.path.join('models', run, 'tb')} ({source})")
             return
         entries[run] = {"run": run, "why": why, "source": source, "target": tb}
 
     for item in load_list(list_file):
         add(item["run"], item["why"], "list")
+    if include_baselines:
+        # A baseline whose run is not in THIS archive is SILENT here, unlike a listed one. The
+        # committed list is a per-archive dial and a missing entry there is the user's own stale
+        # edit; the baseline registry is a global declaration, so an absent run means "this box
+        # does not have that run" — a fact `python -m main.baselines check` reports properly and
+        # this tool could not act on. Reporting it here would duplicate a finding into a tool with
+        # no remedy, and would fire on every foreign or synthetic models/ tree.
+        for name, why in baseline_runs():
+            add(name, why, "baseline", report_missing=False)
     if include_live:
         for name, pid in live_runs():
             add(name, f"LIVE (pid {pid})", "live")
@@ -327,6 +366,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--curated-dir", default=None, help=f"Override <repo>/{CURATED_DIRNAME}")
     p.add_argument("--models-dir", default=None, help="Override the run archive")
     p.add_argument("--no-live", action="store_true", help="List only; do not union the live runs")
+    p.add_argument("--no-baselines", action="store_true",
+                   help="Do not union the baseline registry's `tb_curated` list "
+                        "(designs/baselines.json)")
     p.add_argument("--json", action="store_true", help="Machine-readable output")
     args = p.parse_args(argv)
 
@@ -349,7 +391,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"\nEdit {LIST_RELPATH} to change what TensorBoard shows.")
         return 0
 
-    entries, problems = desired(models, list_file=args.list_file, include_live=not args.no_live)
+    entries, problems = desired(models, list_file=args.list_file, include_live=not args.no_live,
+                                include_baselines=not args.no_baselines)
 
     if args.json:
         print(json.dumps({"curated_dir": cdir, "entries": entries, "problems": problems,

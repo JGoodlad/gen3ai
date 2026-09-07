@@ -134,14 +134,21 @@ disagree about what is running, the ledger is later and wins.
 
 ### The runs that matter
 
-| run | what it is |
-|---|---|
-| `ai_v9_21_gen17_pfspoff_0820` | **the recorded PRODUCTION config** — what `designs/production_config.json` and `ARCHITECTURE.md` mirror |
-| `ai_v9_29_rev1_0823` (**rev-1**) | the gen-era fresh from-zero run, final @25,067,760. The ORIGIN all eight R5F exploiters fork from, and the famine pre-test's comparator |
-| `ai_v9_59_R2ACTION_0827` (**R2ACTION**) | **the gen-era fold parent** — itself a `role=fold` fork of rev-1 at the same step, ending 28,115,184. Every rev-4 / 2×2 / K=6 / G1 / G5 arm forks from it |
-| `ai_v8_04_distill_4teacher_0722` (**v8_04**) | v8's fold parent, 277,583,267 steps |
-| `ai_v8_14` | **v8's fold** — the one that gifted, +69 anchored ELO, ended `final_model_INTERRUPTED.zip` because it was stopped from outside |
-| `ai_v12_01_winprob_critic` | the live arm (§4) |
+🚨 **Every run below is a NAMED BASELINE** — `designs/baselines.json`
+(`gen3_baselines_registry_v1`, 2026-09-06). Cite it by NAME and resolve it through
+`agents.training.baselines`; never copy a path, and never re-point one by editing a module
+(`python -m main.baselines set <name> <run>/<file>.zip --reason "<ledger title>"`, which
+prints the ledger line to append). Each entry pins an EXPLICIT checkpoint, so the
+last-snapshot rule cannot silently move what a name means.
+
+| run | baseline NAME | what it is |
+|---|---|---|
+| `ai_v9_21_gen17_pfspoff_0820` | `production` | **the production ARCHITECTURE SURFACE** — `designs/production_config.json` is CONSTRUCTED from it (migrated v97 → v109 with a 13-key critic override block), and `ARCHITECTURE.md` + the delivery graph are generated from that mirror |
+| `ai_v9_29_rev1_0823` (**rev-1**) | `v9_long_baseline` · `famine_comparator` · `untaught_meter_opponent` | the gen-era fresh from-zero run, final @25,067,760. The ORIGIN all eight R5F exploiters fork from, and the famine pre-test's comparator |
+| `ai_v9_59_R2ACTION_0827` (**R2ACTION**) | `v9_fold_parent` | **the gen-era fold parent** — itself a `role=fold` fork of rev-1 at the same step, ending 28,115,184. Every rev-4 / 2×2 / K=6 / G1 / G5 arm forks from it |
+| `ai_v8_04_distill_4teacher_0722` (**v8_04**) | `v8_parent` | v8's fold parent, 277,583,267 steps |
+| `ai_v8_14` | `v8_line` | **v8's fold** — the one that gifted, +69 anchored ELO, ended `final_model_INTERRUPTED.zip` because it was stopped from outside |
+| `ai_v12_01_winprob_critic` | *(the live arm — not a baseline)* | the live arm (§4) |
 
 ---
 

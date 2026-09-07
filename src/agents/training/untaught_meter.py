@@ -66,6 +66,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from agents.training import baselines
 from agents.training.fixed_opponent_pool import resolve_model_ref
 from agents.training.team_archetypes import team_sha
 from utils.paths import main_models_dir, repo_path
@@ -84,14 +85,25 @@ DEFAULT_TEAMS_MANIFEST = repo_path(
 DEFAULT_TAUGHT_MANIFEST = repo_path(
     "designs/research_state/measurements/teacher_content_2x2_2026-09-04", "taught_teams.json")
 
-#: The fixed opponent: rev-1's 24M snapshot, the one ``offline_collateral_kl.py`` and
-#: ``exploiter_competence/compete.py`` both use. Resolved under ``models/`` (main checkout only).
-DEFAULT_OPPONENT = "ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip"
+#: The fixed opponent and the ONE ``model_config.json`` every model in the series is loaded
+#: against, BY NAME out of ``designs/baselines.json`` (``gen3_baselines_registry_v1``). They were
+#: string literals here until 2026-09-06, which made "what is the meter's opponent?" a question
+#: answerable only by reading this module — and made re-pointing it an edit with no procedure, no
+#: validation and no ledger entry. **A new opponent is a RE-MEASUREMENT, not a rename**: levels are
+#: not comparable across opponents, so the registry entry is what carries that fact forward.
+#: ``--config auto`` resolves each model's own config instead.
+DEFAULT_OPPONENT_BASELINE = "untaught_meter_opponent"
+DEFAULT_CONFIG_BASELINE = "untaught_meter_config"
 
-#: The ONE ``model_config.json`` every model in the series is loaded against — what the probe
-#: scripts did, so a level here is comparable to a banked one. ``--config auto`` resolves each
-#: model's own config instead.
-DEFAULT_CONFIG = "ai_v9_29_rev1_0823/snapshots/model_config.json"
+
+def default_opponent() -> str:
+    """The fixed opponent's run spec, from the registry. Raises if the registry cannot be read."""
+    return baselines.spec(DEFAULT_OPPONENT_BASELINE)
+
+
+def default_config() -> str:
+    """The shared ``model_config.json``'s run spec, from the registry."""
+    return baselines.spec(DEFAULT_CONFIG_BASELINE)
 
 DEFAULT_GAMES_PER_TEAM = 200
 DEFAULT_SEED = 0
@@ -234,6 +246,15 @@ def _candidate_paths(ref: str) -> List[str]:
     return out
 
 
+def expand_baseline_name(ref: str) -> str:
+    """A registry NAME → that baseline's explicit spec; anything else through unchanged.
+
+    So ``--baseline v9_fold_parent`` works wherever a ref does, and a caller that already holds a
+    name (``main.critic_gate`` forwarding its ``--parent``) can pass it straight through.
+    """
+    return baselines.spec(ref) if baselines.is_name(ref) else ref
+
+
 def resolve_ref(ref: str, *, label: Optional[str] = None, role: str = "ref",
                 config_override: Optional[str] = None) -> ResolvedRef:
     """Resolve one ref through :func:`agents.training.fixed_opponent_pool.resolve_model_ref`.
@@ -245,7 +266,7 @@ def resolve_ref(ref: str, *, label: Optional[str] = None, role: str = "ref",
     never has to infer WHICH FILE was scored — the failure ledger 2026-09-06 records.
     """
     last: Exception = MeterError(f"ref {ref!r}: nothing tried")
-    for cand in _candidate_paths(ref):
+    for cand in _candidate_paths(expand_baseline_name(ref)):
         try:
             r = resolve_model_ref(cand, warn=False)
         except (FileNotFoundError, ValueError) as exc:

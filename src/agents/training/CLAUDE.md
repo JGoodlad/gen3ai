@@ -1252,6 +1252,55 @@ whose nicknames are LOCALIZED species names (`Triopikeur` = Dugtrio, `Airmure` =
 reported 10 false failures until the harness resolved identifiers through poke-env's own
 `battle.team` map. Any future protocol-vs-our-data comparison needs that map.
 
+## THE BASELINE REGISTRY (`baselines.py` · `designs/baselines.json` · `python -m main.baselines`)
+
+**A baseline is the thing a result is read AGAINST, and this module is the ONE accessor over the
+named set.** `gen3_baselines_registry_v1` (2026-09-06) — before it, "production" was a hand-copied
+JSON nothing consumes at launch, THIS package's untaught meter kept its fixed opponent as a string
+literal (`DEFAULT_OPPONENT = "ai_v9_29_rev1_0823/snapshots/…"`), the famine comparator and its floor
+lived in one ledger entry, and the curated TensorBoard set was decided by asking. Torch-free and
+offline: it reads JSON, and only `resolve()` touches `models/`.
+
+**Every entry is EXPLICIT** — a `.zip`, a `.json`, or an `@step`, never a bare run directory — so
+`gen3_last_snapshot_resolution_v1`'s last-snapshot rule cannot move what a name points at while its
+run keeps training. `resolve()` therefore always lands on the `explicit_zip` / `explicit_step` rung,
+and that is asserted rather than assumed.
+
+```python
+from agents.training import baselines
+baselines.get("v9_fold_parent").spec        # "ai_v9_59_R2ACTION_0827/final_model.zip"
+baselines.resolve("v9_fold_parent")         # through fixed_opponent_pool.resolve_model_ref
+baselines.describe("famine_comparator")     # the line every consumer prints
+baselines.get("famine_comparator").floor_elo   # 38.0 — the bar travels with its comparator
+baselines.protected_files()                 # {run: [rel path]} — the grooming keep-list
+```
+
+**Consumers in this package and its CLIs, all accepting a NAME wherever they accept a ref:**
+`main.untaught_meter`'s `--opponent` / `--config` (their literals are GONE — the engine exposes
+`default_opponent()` / `default_config()` and `resolve_ref` expands a name), `--baseline` and
+`--control` through the same path; `main.critic_gate --parent` and its new
+`--famine-comparator` (default the `famine_comparator` baseline, whose `floor_elo` is the kill
+floor — and **an absent DEFAULT comparator is recorded as NOT READ rather than refusing the whole
+read**, since `models/` is not committed and one endpoint of five must not take the other four down;
+an explicit one still refuses); `main.elo`'s positional run dir; `main.tb_curate`, which unions the registry's `tb_curated`
+list into the curated logdir. **Each prints `baseline <name> = <run>@<step> (set <date>, <ledger
+title>)`** — a reader must never have to recognise a path.
+
+🚨 **A NEW OPPONENT IS A RE-MEASUREMENT, NOT A RENAME.** Untaught-meter levels are not comparable
+across opponents, so re-pointing `untaught_meter_opponent` invalidates every banked level measured
+against the old one. That is exactly why it is a registry entry with a `set_by` ledger title rather
+than a constant somebody can edit: `python -m main.baselines set <name> <run>/<file>.zip --reason
+"<ledger entry title>"` rewrites the entry with a freshly computed sha/commit/version and PRINTS the
+ledger line to append. It never edits the ledger — append-only, and the WHY is the one field no tool
+can author.
+
+**Validation is a test in the routine suite** (`src/main/baselines_test.py`, unmarked): every named
+file exists, every sha matches, `config_version` / `arch_signature` are re-read from the run's own
+`model_config.json`, and the `production` entry's declared CONSTRUCTION matches
+`designs/production_config.json`. Archive-backed checks skip through `main_models_dir()`; the
+structural half runs everywhere. `designs/research_state/measurements/archive_grooming_tiers.py`
+reads `protected_files()` so a registry-named checkpoint survives every retention tier.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays
@@ -1348,10 +1397,12 @@ cluster-bootstrapped win rate. Offline — no training, no launcher, no server, 
 |---|---|
 | teams | `--teams` a manifest JSON, **in order — the order IS the seed** (index = team seed offset). Default: the untaught 8 (`reuse_batch_2026-09-03/offline_collateral_kl/untaught_teams.json`). `--taught` swaps in the taught 16 (`teacher_content_2x2_2026-09-04/taught_teams.json`). Both `pin_sha` (raw bytes, the MatchupSpec convention) and `team_sha` (strip-normalized, the archetype-artifact join key) are recorded per team — they DIFFER on a file with a trailing newline |
 | refs | resolved through the **imported** `fixed_opponent_pool.resolve_model_ref` — the same call `main/train/model_build.py` makes for a `--distill-teacher`. A bare run dir therefore means the run's **LAST SNAPSHOT**, and the resolved file + `rung` + `rule` + `num_timesteps` are printed per ref and stamped in the JSON, so no reader has to infer WHICH FILE was scored |
-| opponent | one fixed model (default rev-1's 24M snapshot) piloting the **paired** pool draw |
-| module tree | one `model_config.json` for every model (default rev-1's snapshot config, what the probes used; `--config auto` resolves each model's own), observation debugger stripped, `device="cpu"` |
+| opponent | one fixed model piloting the **paired** pool draw — **BY NAME** out of the baseline registry (`untaught_meter_opponent`, rev-1's 24M snapshot). The string literal is GONE; `--opponent` also takes any other registry name or a raw ref |
+| module tree | one `model_config.json` for every model (**BY NAME**, `untaught_meter_config` — rev-1's snapshot config, what the probes used; `--config auto` resolves each model's own), observation debugger stripped, `device="cpu"` |
 | play | `stochastic=True` both sides · rust bridge · **`concurrency=1`** |
 | aggregation | equal-weight cluster mean over TEAMS, and **ONE fixed resampling index set shared by every ref and every contrast** so a ref-vs-ref difference is paired on the same team draws |
+
+**BOTH DEFAULTS ARE REGISTRY NAMES** (`gen3_baselines_registry_v1`), and the CLI prints `[baseline] --opponent default: …` naming the run before it resolves anything — see *THE BASELINE REGISTRY* above. 🚨 **A new opponent is a RE-MEASUREMENT, not a rename**: levels are not comparable across opponents, so re-pointing that entry is a `python -m main.baselines set` with a ledger title, never a module edit.
 
 **THE SEEDS.** Per team, all five global-RNG seams above are set from `--seed` + the team index;
 additionally both players' sampling generators are re-seeded **per battle** and the sim takes a

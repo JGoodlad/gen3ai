@@ -620,3 +620,90 @@ def test_the_cli_is_reachable_as_a_module(tree):
     assert proc.returncode == 0
     assert "PRE-REGISTERED READ" in proc.stdout
     assert "--control" in proc.stdout and "--at-snapshots" in proc.stdout
+
+
+# ------------------------------------------------------------------------- (2b) the FAMINE pre-test
+
+def test_famine_off_is_recorded_as_off_in_both_renderings(tree, tmp_path):
+    """`off` means somebody CHOSE to skip it — distinct from "not read", which is a fact about
+    the box. The two must never render the same way."""
+    out_json, out_md = str(tmp_path / "g.json"), str(tmp_path / "g.md")
+    rc = cg.main(_run(tree, "--famine-comparator", "off", "--json", out_json, "--md", out_md))
+    assert rc == 0
+    assert json.load(open(out_json))["famine"] is None
+    assert "off (`--famine-comparator off`)" in open(out_md).read()
+
+
+def test_the_famine_trail_is_the_NEGATED_ladder_delta_and_is_read_against_the_floor(tree, tmp_path):
+    """The arm's ladder is (1900, 1950) and the parent's (1850, 1880), so at 2 matched snapshots
+    the arm is +70 AHEAD — a trail of -70, comfortably INSIDE any positive floor. The sign is the
+    whole point: `trail` is how far BEHIND the comparator the arm is."""
+    out_json = str(tmp_path / "g.json")
+    rc = cg.main(_run(tree, "--famine-comparator", tree["parent"],
+                      "--famine-floor-elo", "38", "--json", out_json))
+    assert rc == 0
+    fam = json.load(open(out_json))["famine"]
+    assert fam["trail_elo"] == pytest.approx(-70.0)
+    assert fam["exceeds_floor"] is False
+    assert fam["floor_source"] == "--famine-floor-elo"
+    assert "AND" in fam["rule"] and "win_rate_vs_bots" in fam["half_computed"]
+    assert "NOT evidence" in fam["confound"], "the across-recipe confound must ship with the number"
+
+
+def test_a_trail_past_the_floor_is_flagged_as_starving(tree, tmp_path):
+    """A comparator rated ABOVE the arm by more than the floor. The tool REPORTS the breach; the
+    kill is AND-gated with win_rate_vs_bots, which this half cannot see."""
+    fast = build_run(tree["root"], "FAST", sharpness=0.05, ladder_elo=(2100.0, 2150.0))
+    out_json = str(tmp_path / "g.json")
+    rc = cg.main(_run(tree, "--famine-comparator", fast, "--famine-floor-elo", "38",
+                      "--json", out_json))
+    assert rc == 0
+    fam = json.load(open(out_json))["famine"]
+    assert fam["trail_elo"] == pytest.approx(200.0)
+    assert fam["exceeds_floor"] is True
+
+
+def test_a_comparator_with_no_recorded_floor_REFUSES_rather_than_inventing_one(tree):
+    """38 is a MEASUREMENT about two specific runs, not a constant of nature — so a raw ref with
+    no registry `floor_elo` and no `--famine-floor-elo` cannot be given one."""
+    with pytest.raises(SystemExit) as exc:
+        cg.main(_run(tree, "--famine-comparator", tree["parent"]))
+    msg = str(exc.value)
+    assert "--famine-comparator" in msg and "floor" in msg
+    assert "--famine-floor-elo" in msg and "off" in msg
+
+
+def test_the_floor_TRAVELS_with_a_registry_named_comparator():
+    """The bar and the run it is a bar against are ONE fact, so naming the baseline is enough."""
+    from agents.training import baselines
+    b = baselines.get(cg.FAMINE_COMPARATOR_BASELINE)
+    assert b.floor_elo == 38.0, "the famine floor lives on its comparator's registry entry"
+
+
+def test_an_absent_DEFAULT_comparator_is_NOT_READ_and_the_rest_of_the_read_still_runs(
+        tree, tmp_path, monkeypatch):
+    """🚨 THE PORTABILITY PROPERTY. `models/` is not committed, so on a fresh clone, in CI, or on
+    any box without rev-1 the DEFAULT famine comparator cannot resolve. A default that REFUSED
+    there would take the whole read down over one endpoint of five that nobody asked for — the
+    same asymmetry `--compile-trainer` settles: the default yields, an explicit flag refuses.
+    """
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(tmp_path / "no-such-archive"))
+    out_json, out_md = str(tmp_path / "g.json"), str(tmp_path / "g.md")
+    rc = cg.main(_run(tree, "--json", out_json, "--md", out_md))
+    assert rc == 0
+    doc = json.load(open(out_json))
+    fam = doc["famine"]
+    assert fam is not None, "an absent DEFAULT is NOT READ — never `off`, which means a choice"
+    assert "not on this box" in fam["unavailable"]
+    assert "NOT READ" in open(out_md).read()
+    # every other section still ran
+    assert doc["ladder"] and doc["calibration"] and doc["kill"] and doc["verdict"]
+
+
+def test_an_EXPLICIT_comparator_that_does_not_resolve_still_REFUSES(tree, tmp_path):
+    """The other half of the asymmetry: the caller ASKED for this one, so its absence is an error
+    about their command rather than a fact about the box."""
+    with pytest.raises(SystemExit) as exc:
+        cg.main(_run(tree, "--famine-comparator", str(tmp_path / "nope"),
+                     "--famine-floor-elo", "38"))
+    assert "--famine-comparator" in str(exc.value)

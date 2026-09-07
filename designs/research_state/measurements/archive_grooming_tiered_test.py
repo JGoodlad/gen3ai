@@ -621,3 +621,92 @@ def test_the_default_policy_is_still_standing(tiered_archive, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "policy                  standing" in out
     assert "per tier:" not in out
+
+
+# ---------------------------------------------------- the BASELINE REGISTRY ----
+
+
+def _fake_registry(monkeypatch, mapping: "dict[str, list[str]]") -> None:
+    """Point the tiers module's registry read at a synthetic map.
+
+    Patched at `tiers.baseline_protected` — the seam every consumer goes through — rather than at
+    `agents.training.baselines`, so the test exercises the same call the tiering and the safety
+    net make and does not depend on a committed registry that is free to change.
+    """
+    monkeypatch.setattr(tiers, "baseline_protected", lambda: dict(mapping))
+
+
+def test_a_registry_NAMED_run_is_tier_1_even_with_nothing_else_reaching_for_it(tmp_path,
+                                                                               monkeypatch):
+    """A pre-v8 run with no references at all would be tier 4 (AGGRESSIVE keep-list). Naming it in
+    `designs/baselines.json` makes it REFERENCED — because a baseline name is only worth having if
+    it still resolves a year from now."""
+    models = tmp_path / "models"
+    models.mkdir()
+    make_run(str(models), "ai_v6_90_old_0613", latest_step=25000)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _stamp_old(str(models))
+
+    c = census(str(models), str(repo))
+    assert c["runs"]["ai_v6_90_old_0613"]["tier"] == 4
+
+    _fake_registry(monkeypatch, {"ai_v6_90_old_0613": ["final_model.zip"]})
+    c = census(str(models), str(repo))
+    r = c["runs"]["ai_v6_90_old_0613"]
+    assert r["tier"] == 1 and r["tier_name"] == "REFERENCED"
+    assert any("baselines.json" in why for why in r["tier_reasons"])
+    assert r["baseline_protected"] == ["final_model.zip"]
+
+
+def test_assert_safe_tiered_REFUSES_deleting_a_registry_named_file(tmp_path, monkeypatch):
+    """The load-bearing half. `assert_safe_tiered` is the one choke point every tiered plan passes
+    through, so protecting the registry's files there covers EVERY tier by construction."""
+    run = tmp_path / "ai_v6_90_old_0613"
+    (run / "snapshots").mkdir(parents=True)
+    rel = os.path.join("snapshots", "snapshot_000024000000.zip")
+
+    tiers.assert_safe_tiered(str(run), [rel], set())      # nothing protects it yet
+
+    _fake_registry(monkeypatch, {"ai_v6_90_old_0613": [rel]})
+    with pytest.raises(tiers.TieredRefusal):
+        tiers.assert_safe_tiered(str(run), [rel], set())
+
+
+def test_a_registry_named_file_is_on_the_tier4_keep_list(tmp_path, monkeypatch):
+    run = tmp_path / "ai_v6_90_old_0613"
+    os.makedirs(run / "snapshots")
+    rel = os.path.join("snapshots", "snapshot_000024000000.zip")
+    (run / rel).write_bytes(b"z")
+    (run / "metadata.json").write_text("{}")
+
+    keep = tiers.tier4_keep_set(str(run), "final_model.zip", None, ())
+    assert rel not in keep
+
+    _fake_registry(monkeypatch, {"ai_v6_90_old_0613": [rel]})
+    keep = tiers.tier4_keep_set(str(run), "final_model.zip", None, ())
+    assert rel in keep and "baselines.json" in keep[rel]
+
+
+def test_a_broken_registry_degrades_to_no_protection_rather_than_a_crash(monkeypatch):
+    """A retention DRY RUN must not be what a broken registry takes down —
+    `python -m main.baselines check` is what reports that."""
+    import agents.training.baselines as reg
+
+    def boom(*_a, **_k):
+        raise RuntimeError("registry is unreadable")
+
+    monkeypatch.setattr(reg, "protected_files", boom)
+    assert tiers.baseline_protected() == {}
+
+
+def test_the_committed_registry_protects_the_files_it_names():
+    """The real registry, through the real seam — no monkeypatching. This is what would fail if
+    someone re-pointed a baseline at a run-DIRECTORY (its `rel_path` would be None)."""
+    prot = tiers.baseline_protected()
+    if not prot:
+        pytest.skip("no baseline registry readable from here")
+    for run, rels in prot.items():
+        assert rels, f"{run}: protected with an EMPTY file list"
+        for rel in rels:
+            assert not rel.startswith("/") and ".." not in rel, f"{run}: bad rel path {rel!r}"

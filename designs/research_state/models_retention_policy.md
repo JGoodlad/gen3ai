@@ -50,7 +50,7 @@ on its era.
 | tier | who | what happens to it |
 |---:|---|---|
 | **0 · LIVE** | a launcher/trainer process names it · its training output was written within `--recent-days` (7) · its run dir is a SYMLINK into a launcher worktree · **or it is a (transitive) model-graph ancestor of any of those** | **nothing** |
-| **1 · REFERENCED** *(any era)* | a committed **script** names it · a committed **measurement artifact** names it · the ledger's last **1500** lines name it · **another run's model graph names it** · it carries a **REVIEW HOLD** (§5) | the standing policy + the snapshots rule (a HOLD suppresses the plan entirely) |
+| **1 · REFERENCED** *(any era)* | the **BASELINE REGISTRY** names it (§3.3 — and its named FILES are kept at every tier) · a committed **script** names it · a committed **measurement artifact** names it · the ledger's last **1500** lines name it · **another run's model graph names it** · it carries a **REVIEW HOLD** (§5) | the standing policy + the snapshots rule (a HOLD suppresses the plan entirely) |
 | **2 · v9+ CLOSED** | era ≥ ai_v9, nothing reaches for it | the standing policy + the snapshots rule |
 | **3 · v8 CLOSED** | era = ai_v8, nothing reaches for it | first + last + `latest.txt` pin, **no every-10th stride** + the snapshots rule |
 | **4 · PRE-v8** | ai_v5 / ai_v6 / ai_v7, and the un-prefixed `run_2026*` dirs dated before 07-17 | **AGGRESSIVE keep-list** (§4) |
@@ -96,6 +96,42 @@ its own previous report as evidence can never close a run.
 So `is_bookkeeping()` excludes a committed file by BASENAME prefix — `archive_grooming_`,
 `fh_lineage`, `folding_history_`, `sidecar_audit`, `run_inventory` — from BOTH the artifact and the
 script protection paths. Matching the basename means a future dated copy is covered without an edit.
+
+---
+
+### 3.3 A registry-NAMED baseline survives every tier — file by file
+
+**`designs/baselines.json` (`gen3_baselines_registry_v1`) is a third reference source, and the
+FILE-level half of it is the load-bearing one.** A baseline is the thing a result is read against;
+a NAME is only worth having if it still resolves a year from now, which is exactly what a retention
+pass can quietly end. So `archive_grooming_tiers.baseline_protected()` reads the registry and the
+policy uses it twice:
+
+* **RUN level** — a registry-named run is **tier 1 REFERENCED**, with the reason naming the file.
+* **FILE level** — every file the registry NAMES is added to the keep-list inside
+  `assert_safe_tiered()`, the ONE choke point every tiered plan passes through (the tier-4 plan, the
+  pool plan, and `apply_plan` before execution). So the protection covers every tier by
+  construction rather than by remembering, and it is a REFUSAL — a plan that names such a file
+  raises `TieredRefusal` rather than being silently trimmed.
+
+**MEASURED 2026-09-06, and the measurement is what says which half matters.** All five runs the
+seeded registry names are ALREADY tier 1 by the committed-file scan (2–59 scripts and 15–228
+measurement artifacts each), so the run-level protection buys nothing *today* and is belt-and-braces
+— it stops a baseline's tier depending on incidental script mentions a later cleanup can remove.
+The file-level keep-list is different: tier 1 applies the STANDING rule, which keeps first + last +
+every 10th checkpoint + the `latest.txt` pin, and `untaught_meter_opponent` is
+`snapshots/snapshot_000024000000.zip` — a POOL file that no checkpoint rule covers and that the
+snapshots rule (§5) keeps only while some fork or committed script happens to name the run.
+
+The registry is also not free-riding on the committed-file scan: that scan classifies an origin as a
+SCRIPT (by extension) or a MEASUREMENT ARTIFACT (by the `measurements/` prefix), and
+`designs/baselines.json` is neither.
+
+**A broken registry degrades to NO protection rather than a crash** — a dry run must not be what an
+unreadable registry takes down, and `python -m main.baselines check` is what reports it. That
+degradation is safe only in the wrong direction (it makes a plan *more* aggressive), so the count is
+reported rather than silent. Gates: `archive_grooming_tiered_test.py` → *the BASELINE REGISTRY* (5
+tests, including the refusal and the tier-4 keep-list entry).
 
 ---
 

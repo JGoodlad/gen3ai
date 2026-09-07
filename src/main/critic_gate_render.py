@@ -146,6 +146,30 @@ def render_markdown(doc: Dict[str, Any]) -> str:
         out.append("_not read_")
     out.append("")
 
+    fam = doc.get("famine")
+    out.append("## 2b. FAMINE pre-test — does terminal-only learn at the incumbent's rate?")
+    out.append("")
+    if fam is None:
+        out.append("_off (`--famine-comparator off`)_")
+    elif fam.get("unavailable"):
+        out.append(f"**NOT READ** — {fam['unavailable']}")
+    else:
+        c, lad = fam["comparator"], fam["ladder"]
+        name = c.get("baseline") or c["spec"]
+        out.append(f"Comparator `{name}` → `{c['resolved_file']}`; floor **{fam['floor_elo']:.0f} "
+                   f"ELO** (from {fam['floor_source']}).")
+        out.append("")
+        out.append(f"**Trail at {lad['at_snapshots']} snapshots: {fam['trail_elo']:+.0f} ELO** "
+                   f"against a floor of {fam['floor_elo']:.0f} — "
+                   f"{'EXCEEDS the floor' if fam['exceeds_floor'] else 'INSIDE the floor'}.")
+        out.append("")
+        out.append(f"> RULE: {fam['rule']}")
+        out.append(">")
+        out.append(f"> This computes {fam['half_computed']}")
+        out.append(">")
+        out.append(f"> ⚠️ {fam['confound']}")
+    out.append("")
+
     k = doc.get("kill")
     out.append("## 3. G7 — stall rate + episode length (KILL condition)")
     out.append("")
@@ -276,6 +300,23 @@ def render_text(doc: Dict[str, Any]) -> str:
             out.append(f"    {cal['owner_ruling']}")
     else:
         out.append("    not read")
+    out.append("")
+
+    fam = doc.get("famine")
+    out.append("(2b) FAMINE PRE-TEST — terminal-only vs the incumbent's rate")
+    if fam is None:
+        out.append("    off (--famine-comparator off)")
+    elif fam.get("unavailable"):
+        out.append(f"    NOT READ — {fam['unavailable']}")
+    else:
+        c = fam["comparator"]
+        out.append(f"    comparator {c.get('baseline') or c['spec']} -> {c['resolved_file']}")
+        out.append(f"    trail {fam['trail_elo']:+.0f} ELO at "
+                   f"{fam['ladder']['at_snapshots']} snapshots vs floor "
+                   f"{fam['floor_elo']:.0f} ({fam['floor_source']}) -> "
+                   f"{'EXCEEDS' if fam['exceeds_floor'] else 'INSIDE'} the floor")
+        out.append(f"    {fam['half_computed']}")
+        out.append(f"    CONFOUND: {fam['confound']}")
     out.append("")
 
     k = doc.get("kill")

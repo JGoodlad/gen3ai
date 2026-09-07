@@ -1897,6 +1897,19 @@ src/
                      #   spread is not reported). Pure NumPy, no domain concepts; lifted out of
                      #   cf_audit.py so a second consumer need not import an instrument to get
                      #   an interval
+                     #   baselines.py — THE BASELINE REGISTRY's ONE accessor over
+                     #   designs/baselines.json (gen3_baselines_registry_v1). Torch-FREE and
+                     #   offline; only resolve() touches models/, and it CALLS
+                     #   fixed_opponent_pool.resolve_model_ref rather than re-implementing it,
+                     #   so a name resolves to the file a launch would load. Every entry is
+                     #   EXPLICIT (a .zip, a .json or @step), so the rung is always
+                     #   explicit_zip/explicit_step and the last-snapshot rungs are
+                     #   unreachable — the property that keeps a name stable while its run
+                     #   keeps training. Also owns validate() (the routine-suite gate),
+                     #   compare_production() (the CONSTRUCTED mirror's three claims: surface
+                     #   equality, the declared migration's key delta, every override present
+                     #   at its declared value AND actually differing) and protected_files()
+                     #   (the retention keep-list)
                      #   untaught_meter.py (THE UNTAUGHT METER's engine — team manifests, ref
                      #   resolution through the ONE choke point, the five-seam seed table + the CRN
                      #   per-battle harness, the paired cluster bootstrap, the replicate floor and
@@ -2056,6 +2069,18 @@ src/
                      #   critic_gate_design.py = what the DESIGN registers (bars, the verbatim
                      #   falsification clause, the criteria that are NOT runnable);
                      #   critic_gate_render.py = the markdown + text renderings
+    baselines.py       # THE NAMED BASELINES — read / resolve / validate / re-point
+                     #   designs/baselines.json (gen3_baselines_registry_v1). A baseline is the
+                     #   thing a result is read AGAINST, and every one of ours used to be a
+                     #   string literal, a hand-copied JSON or a sentence in a ledger entry.
+                     #   `list` / `show` / `spec` / `path` / `describe` / `check` / `set`.
+                     #   `set` is a PROCEDURE, not an edit: it re-resolves the target through
+                     #   the run-spec choke point, recomputes the sha256, re-reads the commit
+                     #   and version from the run, rewrites exactly ONE entry and PRINTS the
+                     #   ledger line to append — it never edits the ledger, which is
+                     #   append-only and records WHY. --reason is required. A bare run
+                     #   DIRECTORY is refused (the last-snapshot rule would move it).
+                     #   Engine: agents/training/baselines.py
     exploitability.py  # GENERATION EXPLOITABILITY CURVE — pure bookkeeping over
                      #   `fleet_admission`-schema admission artifacts (+ optional run metadata):
                      #   per generation the best-response net extraction (mean + max over
@@ -2104,6 +2129,13 @@ src/
     paths.py         # PATH DISCOVERY — the one place that knows the tree depth (see below)
     git.py           # get_git_hash(); the git-based repo roots paths.py wraps
     (other utils)    # Hidden Power, teambuilder, team loader, logging
+designs/
+  baselines.json     # THE NAMED BASELINES (gen3_baselines_registry_v1) — per name: the run, an
+                     #   EXPLICIT checkpoint, the commit, config_version, arch_signature, sha256,
+                     #   purpose, set_on and the LEDGER ENTRY that set it. Read it through
+                     #   agents.training.baselines; change one with `python -m main.baselines set`
+  production_config.json  # the production ARCHITECTURE SURFACE mirror — CONSTRUCTED from the
+                     #   `production` baseline's run (see production_config.README.md)
 data/                # Source of truth — derived by tools/, read via agents.gen3_data
   pokemon/           # species/moves/items/abilities/type_chart/natures + smogon stats & priors
   teams/             # Downloaded sample teams (gen3ou pool)
@@ -2347,6 +2379,72 @@ exempt, since vf_coef doesn't affect a forward pass). See `src/agents/model/CLAU
 resume-immutable training hparams. `_run_roundtrip_test()` in `train_rl_agent.py` runs automatically
 before every `model.learn()` (save → reload → zero forward pass), so serialization breakage
 crashes in seconds rather than hours.
+
+### BASELINES — named, resolved by name, never by memory
+
+**A baseline is the thing a result is read AGAINST, and until `gen3_baselines_registry_v1`
+(2026-09-06) not one of ours was a first-class object.** "Production" was a hand-copied
+`designs/production_config.json` that nothing consumes at launch, guarded by a NEWEST-RUN heuristic
+that could not tell a generation from a two-hour ablation arm. The untaught meter's opponent was a
+string literal in a module. The famine comparator and its 38-Elo floor were a sentence in one ledger
+entry. The curated TensorBoard set was decided by asking. The parser's own defaults are a near-bare
+model and nothing said so. Each is a place where *"what is the stable baseline?"* is answered from
+memory — and on 2026-09-06 that cost two incidents in one day: a win-prob arm launched from a
+design-doc block **without the production architecture surface** (81 keys differed, 31 of them
+architecture fields silently reverted to OFF defaults), and, separately, the FOLD PARENT was nearly
+written into `production_config.json` as if it were the production run.
+
+**So a baseline is now NAMED.** [`designs/baselines.json`](designs/baselines.json) records, per
+name: the run, an **EXPLICIT** checkpoint (a `.zip` or an `@step` — never a bare run directory, so
+`gen3_last_snapshot_resolution_v1`'s last-snapshot rule cannot silently move it), the commit, the
+config version and arch signature, the file's sha256, a one-sentence purpose, the date it was set
+and **the ledger entry that set it**.
+
+| name | is |
+|---|---|
+| `production` | the run whose SURFACE production runs — `designs/production_config.json` is CONSTRUCTED from it (see below) |
+| `v9_long_baseline` | rev-1, the gen-era fresh 25M run, anchored ladder 2098 |
+| `v9_fold_parent` | R2ACTION — `main.critic_gate --parent`, and the FROZEN-φ source |
+| `v8_line` / `v8_parent` | v8's fold and its parent, both `era_checkout_only` |
+| `famine_comparator` | rev-1 in its famine role, carrying `floor_elo` **38** |
+| `untaught_meter_opponent` / `untaught_meter_config` | the meter's fixed opponent and shared config |
+| `tb_curated` *(a list)* | the curated TensorBoard reference curves |
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.baselines                       # every baseline, one line each
+python -m main.baselines show production
+python -m main.baselines check                 # validate everything; non-zero on drift
+python -m main.baselines set production <run>/<file>.zip --reason "<ledger entry title>"
+```
+
+**Read them BY NAME, through the one accessor** (`agents.training.baselines`), never by copying a
+path. `python -m main.critic_gate <run> --parent v9_fold_parent`, `python -m main.elo
+v9_long_baseline`, and the untaught meter's `--opponent` / `--config` / `--baseline` all take a
+registry name wherever they take a ref. **Every consumer prints `baseline <name> = <run>@<step>
+(set <date>, <ledger title>)`**, so a reader always sees which run was meant.
+
+Four rules make it a registry rather than a second place to be wrong:
+
+1. **It is VALIDATED by a test in the routine suite** (`src/main/baselines_test.py`): every named
+   file exists, every sha matches, and every `config_version` / `arch_signature` is re-read from the
+   run's OWN `model_config.json` rather than trusted. A baseline groomed away fails the suite.
+2. **The `production` entry OWNS the mirror, and declares HOW it is CONSTRUCTED.**
+   `designs/production_config.json` is not a copy of any one run: it is gen-17's SURFACE migrated
+   **v97 → v109** with an explicit **13-key critic override block**
+   (`designs/production_config.README.md`; `CHANGELOG` → *production_config_2026-09-06*). The gate
+   checks all three parts — the surface equal outside the overrides, the key-set delta legitimate
+   only under the declared migration, and every override present at its declared value AND actually
+   differing. **This REPLACED `arch_tables_test.test_production_config_matches_newest_run`**, whose
+   heuristic would have been pointed at the mis-launched arm; the new
+   `test_production_config_matches_the_registry` says so in its own docstring.
+3. **Changing one is a PROCEDURE.** `python -m main.baselines set … --reason "<ledger title>"`
+   re-resolves the target, recomputes the sha, re-reads the commit and version from the run, rewrites
+   exactly one entry and **prints the ledger line to append**. It never edits the ledger — that is
+   append-only and records WHY, which no tool can author.
+4. **A registry-named checkpoint survives EVERY retention tier.** The grooming policy reads the
+   registry as a reference source AND as a hard keep-list (`assert_safe_tiered`), because a name
+   that no longer resolves is worse than no name at all.
 
 ### What `models/` keeps — the retention policy
 

@@ -7956,3 +7956,131 @@ match**; the other 23 are layout-derived and no argv can move them. Provenance, 
 table and the re-verification instruction live in the new sibling
 `designs/production_config.README.md` (JSON carries no comments, and `--sync-config` writes the file
 verbatim, so the record cannot live inside it).
+
+## `gen3_baselines_registry_v1` — THE NAMED BASELINES BECOME FIRST-CLASS OBJECTS
+
+`designs/baselines.json` + `src/agents/training/baselines.py` + `python -m main.baselines`. No
+architecture change, no `ARCH_SIGNATURE` bump, no `MODEL_CONFIG_VERSION` bump, no training code
+touched: this is a **provenance** change, and what it changes is how a baseline is NAMED and
+RESOLVED.
+
+### The failure it closes
+
+Owner, 2026-09-06: *"How can we prevent this issue in the future? I feel like this happens
+frequently, like we lose what the stable baseline is?"*
+
+The root cause is that **the baselines were not objects**. "Production" was a hand-copied
+`designs/production_config.json` that nothing consumes at launch. The untaught meter's fixed
+opponent was a string literal in `agents/training/untaught_meter.py`. The famine comparator and its
+38-Elo floor were a sentence in one ledger entry. The curated TensorBoard set was decided by asking.
+And the drift gate that nominally guarded the mirror,
+`arch_tables_test.test_production_config_matches_newest_run`, compared it against whichever run
+directory in `models/` had the newest **mtime** — a heuristic that cannot tell a production
+generation from a two-hour ablation arm.
+
+Two incidents the same day made the cost concrete. A win-prob arm was launched from a **design-doc
+command block** carrying only the critic block and the hyperparameters, so 31 architecture fields
+silently reverted to their OFF defaults (81 keys differed from the production surface; mirroring
+that arm would have dropped 60 of 120 delivery-graph nodes and every derived artifact would have
+agreed). Separately, the **fold parent** was nearly written into `production_config.json` as if it
+were the production run.
+
+### What a baseline now is
+
+One JSON entry per NAME: the run, an **EXPLICIT** checkpoint (a `.zip`, a `.json`, or an `@step` —
+never a bare run directory, so `gen3_last_snapshot_resolution_v1`'s last-snapshot rule cannot move
+it), the commit, the config version, the arch signature, the file's sha256, `num_timesteps`, a
+one-sentence purpose, `set_on`, and **`set_by`: the ledger entry that set it**. Seeded with
+`production`, `v9_long_baseline`, `v9_fold_parent`, `v8_line`, `v8_parent`, `famine_comparator`,
+`untaught_meter_opponent`, `untaught_meter_config`, and the `tb_curated` LIST.
+
+`famine_comparator` carries `floor_elo: 38.0` and a `notes` field stating why it is 38 and NOT the
+adjacent-node spread (172/186, dominated by the 2M→4M jump — steep early LEARNING, not noise) — the
+bar and the run it is a bar against are one fact, and `validate()` fails if the number and its prose
+drift apart. `v8_line` / `v8_parent` are `era_checkout_only`: they do not load under current code, so
+a missing file there is a warning rather than an error.
+
+### The `production` entry declares a CONSTRUCTION, not a copy
+
+Since `production_config_2026-09-06` the mirror is gen-17's SURFACE **migrated v97 → v109 with a
+13-key critic override block**. The entry therefore records the surface run, `config_mirror_version`
+109, and all 13 overrides by value — and `compare_production` checks three separate claims: the
+shared keys outside the override block are EQUAL (the half the mis-launched arm destroyed), a
+key-set delta is legitimate **only** under the declared migration, and every override is present at
+its declared value AND actually differs from the run (a STALE override is reported, because it
+exempts a key from the only check that guards it).
+
+**`test_production_config_matches_newest_run` is REPLACED by
+`test_production_config_matches_the_registry`**, and the new test's docstring records why: which run
+is production is a JUDGEMENT, so it is DECLARED rather than inferred. The signature-bump window is
+still detected — it moved to its own test, keyed on the registry's recorded signature rather than on
+the newest run's.
+
+### Consumers read BY NAME, and say which run they meant
+
+`main.untaught_meter`'s `--opponent` / `--config` defaults (the literals deleted; the engine exposes
+`default_opponent()` / `default_config()` and `resolve_ref` expands a name, so `--baseline
+v9_fold_parent` works too) · `main.critic_gate --parent` · `main.elo`'s positional run dir ·
+`main.tb_curate`, which unions the registry's `tb_curated` list into the curated logdir as a third
+source beside the committed list and the live runs. Every one prints
+`baseline <name> = <run>@<step> (set <date>, <ledger title>)`.
+
+**`main.critic_gate` also gains the FAMINE PRE-TEST** (`--famine-comparator`, default the registry
+name; `--famine-floor-elo` to override). It reuses `ladder_section` — matched SNAPSHOT COUNT, never
+matched step — and reports the trail against the floor, plus two things in print rather than in a
+reader's head: that it computes the **LADDER half only** (the AND-gate's other half is
+`win_rate_vs_bots`), and the pre-registered confound (the incumbent had PBRS *and* PopArt *and* the
+shaped critic, so a trail inside the floor is **not** evidence of equivalence — only that starvation
+has not been demonstrated). A comparator with no `floor_elo` and no explicit override REFUSES rather
+than inventing a bar.
+
+🚨 **THE DEFAULT YIELDS; AN EXPLICIT FLAG REFUSES** — the same asymmetry `--compile-trainer` settles
+the same way, and it is the one clause the first cut of this got wrong. The default comparator is a
+registry NAME resolving under `models/`, and `models/` is not committed: on a fresh clone, in CI, or
+on any box that does not carry rev-1, a default that refused took the WHOLE read down over one
+endpoint of five nobody had asked for. Measured before the fix: **24 of 37 `critic_gate_test` tests
+failed under `GEN3AI_MODELS_DIR=/nonexistent`**, on a synthetic tmp tree that needs no archive at
+all — the tool passed here only because this box happens to carry rev-1. So an unresolvable DEFAULT
+is recorded as **NOT READ** (naming the run and the reason, never as `off`, which means somebody
+CHOSE to skip it) and every other section still runs; an unresolvable comparator the caller NAMED is
+still a refusal, because they asked for it. `--check` reports it as an `ok` line, not a problem —
+the question `--check` answers is "would this read run?", and it would.
+
+### Changing one is a PROCEDURE
+
+`python -m main.baselines set <name> <run>/<file>.zip --reason "<ledger entry title>"` re-resolves
+the target through the run-spec choke point, recomputes the sha256, re-reads the commit / version /
+signature from the run itself, rewrites exactly one entry, and **prints the ledger line to append**.
+It never edits the ledger — append-only, and WHY is the one field no tool can author. A bare run
+directory is REFUSED with the reason. `check` validates everything and exits non-zero on any drift.
+
+### Retention: a named baseline survives every tier
+
+`archive_grooming_tiers.py` reads `baselines.protected_files()` twice — a registry-named run is tier
+1 REFERENCED, and its named FILES are added to the keep-list inside `assert_safe_tiered()`, the ONE
+choke point every tiered plan passes through. **MEASURED: all five named runs are already tier 1 by
+the committed-file scan, so the run-level half is belt-and-braces and the FILE-level half is what is
+load-bearing** — `untaught_meter_opponent` is `snapshots/snapshot_000024000000.zip`, a pool file no
+checkpoint rule covers and that the snapshots rule keeps only while some fork or script happens to
+name the run. A broken registry degrades to no protection rather than taking a dry run down.
+
+### Gates
+
+`src/main/baselines_test.py` (29, unmarked, 0.6 s): the committed registry validates end to end;
+every checkpoint is explicit; the seeded name set; the floor/prose agreement; the error messages
+naming the registry path and every available name; `describe()` working with **no archive at all**;
+and every clause of `compare_production` as a pure function (surface drift, declared override, stale
+override, missing override, wrong value, the migration key-delta both ways, `config_version` never
+compared). Archive-backed: every file exists and its sha matches, every checkpoint resolves at an
+EXPLICIT rung, `protected_files()` names every entry's file, and the committed mirror matches the
+declared construction. Plus `archive_grooming_tiered_test.py` → *the BASELINE REGISTRY* (5),
+`arch_tables_test.py`'s replaced drift gate, and the freshness gate over the new prose.
+
+`src/main/critic_gate_test.py` → *(2b) the FAMINE pre-test* (7, unmarked): `off` and NOT READ render
+differently; the trail is the NEGATED ladder delta (the sign is the whole point) and carries its
+`half_computed` + `confound` strings; a trail past the floor is flagged; a comparator with no
+recorded floor refuses naming all three ways out; the floor travels with its registry entry; and the
+two halves of the default/explicit asymmetry — **an absent DEFAULT is NOT READ with every other
+section still computed** (the portability property, verified failing on revert with the pre-fix
+refusal) while an explicit one still refuses.
+

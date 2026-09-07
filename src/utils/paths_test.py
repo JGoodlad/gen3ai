@@ -114,12 +114,20 @@ def _empty_archive(monkeypatch, tmp_path):
 
 
 def test_arch_tables_drift_gate_skips_on_an_empty_archive(monkeypatch, tmp_path):
+    """The registry-backed drift gate (`gen3_baselines_registry_v1` replaced the newest-run
+    heuristic) must still SKIP, not fail, when the archive is empty — and its skip must name the
+    escape hatch. Two ways to have no archive, and both are driven here: an env var pointing at a
+    non-directory (`main_models_dir()` is None) and an empty one (the baseline's run is absent)."""
     from agents.model import arch_tables_test as m
     _empty_archive(monkeypatch, tmp_path)
-    assert m._newest_run_config() is None
     with pytest.raises(Skipped) as ei:
-        m.test_production_config_matches_newest_run()
+        m.test_production_config_matches_the_registry()
     assert MODELS_DIR_ENV_VAR in str(ei.value)
+
+    monkeypatch.setenv(MODELS_DIR_ENV_VAR, str(tmp_path / "not-a-directory"))
+    with pytest.raises(Skipped) as ei2:
+        m.test_production_config_matches_the_registry()
+    assert MODELS_DIR_ENV_VAR in str(ei2.value)
 
 
 def test_intent_move_cell_real_obs_skips_on_an_empty_archive(monkeypatch, tmp_path):
