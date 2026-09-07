@@ -7862,3 +7862,97 @@ gate switched off". It is written by `save_model_snapshot` and POPped by `_migra
 version-independent sanitizers, so `to_json()` stays exactly `asdict(self)` (several tests round-trip
 it straight back through `ModelVersion(**…)`) and no field enters the weight-shape record. Gate:
 `reward_composition_test.py` (17).
+## `production_config_2026-09-06` — PRODUCTION MOVES TO THE WIN-PROB CRITIC
+
+`designs/production_config.json` stops mirroring gen-17 (`models/ai_v9_21_gen17_pfspoff_0820`,
+config v97) and becomes the **win-prob critic era** run `ai_v12_02_winprob_critic` (v109). This is a
+mirror switch, not an architecture change: no `ARCH_SIGNATURE` bump, no `MODEL_CONFIG_VERSION` bump,
+no code path added or removed. What changes is which real run the derived artifacts describe.
+
+### The judgement
+
+Which run counts as production is not derivable — `arch_tables_test.test_production_config_matches_
+newest_run` only enforces that the mirror agrees with the NEWEST run in `models/` on every shared
+field, and cannot tell an experiment arm from a generation. The call was made under the owner's pivot
+to the win-prob era.
+
+### The mirror was CONSTRUCTED, not copied — and that is the entry's real content
+
+The era's first arm, `ai_v12_01_winprob_critic`, launched with a 38-flag argv carrying only the
+critic block and the hyperparameters. Its recorded config sits **44 shared fields** from gen-17, of
+which only 13 are the critic; the other 31 are the whole architecture surface reverting to its OFF
+defaults — `edge_bias_families` `off`, `entity_topk_seats` 0, `entity_tail_seats` false,
+`history_events` false, `opp_belief_slots` false, `opp_intent` false, all four pointer cells off,
+the species/item/spread beliefs off, both value routes off, `op_drop_renders` false. Mirroring it
+would have redefined the production architecture **by omission**, and every derived artifact would
+have said so with a straight face: the delivery graph loses 60 of 120 nodes and 977 of 1103 edges,
+`pi_projection` narrows 1177 → 409, the token sequence drops 29 → 17.
+
+That arm was killed and relaunched with gen-17's full surface plus the critic block. The mirror is
+therefore built the other way round: **gen-17's config migrated v97 → v109, with an explicit
+13-key critic override list**, and then verified. Non-critic keys changed: **zero**.
+
+| key | gen-17 | production | why |
+|---|---|---|---|
+| `critic` | `shaped` | `winprob` | the mode |
+| `use_popart` | true | false | IMPLIED |
+| `win_prob_coef` | 0.05 | 1.0 | the flag is REFUSED; 1.0 is its `_resolve` default |
+| `value_dist_mode` / `_bins` / `_vmin` / `_vmax` | `shaping` / 51 / −12 / 12 | `none` / 0 / 0 / 0 | REFUSED |
+| `value_from_dist` | true | false | REFUSED |
+| `value_tail_weight` | 0.3 | 0.0 | REFUSED |
+| `hand_shaping` | true | false | REQUIRED |
+| `terminal_indicator` | false | true | REQUIRED |
+| `victory_value` | 30.0 | 1.0 | REQUIRED |
+| `draw_penalty` | −35.0 | 0.0 | REQUIRED |
+
+`win_prob_mode` is `shaping` in both. `gamma` is not a `model_config.json` key at all — the mode
+implies 1.0 and the value in force lives in `metadata.json`'s `cli_args`.
+
+**`value_entity_pool` / `value_entity_pool_full` / `value_threat_inject` SURVIVE the swap** and stay
+true: they inject additively into `value_pooled`, which is exactly what the win head reads.
+
+### What moved downstream
+
+The delivery graph loses exactly two nodes — `value_dist_head` and `loss.value_dist_hl_gauss` — and
+the 13 edges into them (1103 → 1090). Every meta field except `config_version` is unchanged:
+`n_tokens` 29, `extra_seats` 16, `op_out_dim` 138, `pi_projection_in` 1177, `vf_projection_in` 128,
+all 17 edge families. §6's generated flag table moves the four `value_dist_*` rows to OFF,
+`value_dist_coef` to `INERT — no value_dist_head`, `value_tail_weight` to OFF and `win_prob_coef` to
+1.0, and gains the v109 schema rows (the `cf_*` family, `q_winprob_*`, `policy_grad_coef`,
+`win_prob_pbrs_coef`) — all OFF or INERT.
+
+### Two latent defects the switch exposed, both fixed here
+
+* **`arch_tables._COEF_MODULE` refused two keys.** `policy_grad_coef` (v102) and
+  `win_prob_pbrs_coef` (v108) had been recorded for generations but never appeared in a generated
+  table, because `production_config.json` sat at v97 and the generator only sees keys the config
+  carries. The generator REFUSED rather than guessing, which is the designed behaviour; both are
+  declared now (`policy_grad_coef` as a core train-loop term like `vf_coef`, `win_prob_pbrs_coef`
+  gated by `win_head`).
+* **`delivery_graph.module_coverage`'s deleted-vs-gated-off discriminator was INERT.** It asked
+  `hasattr(features_extractor, <graph token>)`, but the tokens are graph NODE IDS
+  (`"value_dist_head"`, `"alpha_head"`, …), not class names, so it resolved for **no entry at all**
+  and only stayed quiet while the production config built every declared module. It is now
+  `buildable_child_names()` — an AST read of every `self.<name>` `extractor_build.__init__` assigns,
+  which is literally the fact being asked. The failure it would have caused is the dangerous
+  direction: reporting live, flag-gated-off modules as STALE declarations to be deleted.
+
+### The argv finding
+
+**gen-17's recorded `original_command` no longer launches on HEAD**, for a reason unrelated to the
+critic: `--distill-team-bias 0.4` with no `--distill-teacher` is refused by
+`main.train.combination_checks` (migrated 2026-09-06). It is not a `model_config.json` key, so it
+cannot move the mirror — but a relaunch argv built by copying gen-17's command is rejected until it
+is dropped. Separately, `--intent-label-bot-weight` has a `_resolve` default of **1.0** while gen-17
+ran **0.25**, so a hand-rebuilt argv must pass it explicitly or silently diverge from this mirror.
+
+### Verification
+
+`ai_v12_02` had not written a `model_config.json` yet, so the mirror was verified against the
+**relaunch argv** — gen-17's command minus the launcher-owned and refused flags plus the critic
+block, parsed by the live `build_parser()` and resolved through the launch path's own
+`resolve_critic_mode` → `desugar_umbrella_flags` → `resolve_config`. **All 105 argv-settable fields
+match**; the other 23 are layout-derived and no argv can move them. Provenance, the full override
+table and the re-verification instruction live in the new sibling
+`designs/production_config.README.md` (JSON carries no comments, and `--sync-config` writes the file
+verbatim, so the record cannot live inside it).

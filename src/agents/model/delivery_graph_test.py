@@ -41,6 +41,7 @@ from agents.model.delivery_graph import (
     NON_DELIVERY_MODULES,
     build_extractor,
     build_graph,
+    buildable_child_names,
     module_coverage,
     parametered_children,
     to_dot,
@@ -365,19 +366,19 @@ def test_no_stale_declaration_survives_a_deleted_module(extractor, graph):
     assert not module_coverage(extractor, graph), "preconditions: the live declarations are clean"
 
     # A declared module may legitimately be ABSENT from the production build — flag-gated OFF is
-    # not deleted. `value_intent_route` is the live case: gen-14 runs with `--value-intent` off
-    # (dV 0.1560, condemned by gen-13.5 §2), and asserting child-membership here would have
-    # demanded deleting an entry whose class still exists, silently excusing the module if a
-    # later generation re-enabled it. The real invariant is that the CLASS is still reachable.
-    import agents.model.features_extractor as _fx
+    # not deleted. `value_dist_head` is the live case: the 2026-09-06 win-prob production config
+    # runs `--critic winprob`, which REFUSES `--value-dist-mode`, so the head is not built while
+    # `--critic shaped` still builds it. Asserting child-membership here would demand deleting an
+    # entry the other mode needs, silently excusing the module if a later generation re-enabled it.
+    # The real invariant is that the BUILDER still assigns the attribute.
+    buildable = buildable_child_names()
     children = {name for name, _ in extractor.named_children()}
     for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
         if name in children:
             continue
-        tokens = MODULE_GRAPH_TOKENS.get(name) or ()
-        assert any(hasattr(_fx, t) for t in tokens), (
+        assert name in buildable, (
             f"{name!r} is declared in delivery_graph, is not a child of the extractor at the "
-            f"production config, AND none of its classes {tokens} resolve — delete the entry")
+            f"production config, AND extractor_build no longer assigns it — delete the entry")
 
     MODULE_GRAPH_TOKENS["_ghost_module"] = ("nothing",)
     try:
@@ -414,9 +415,48 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     """
     live = parametered_children(extractor)
     assert len(live) > 25, live
-    for expect in ("damage_op", "team_transformer", "value_dist_head", "alpha_head",
+    # BUILT by this config. `value_dist_head` is deliberately NOT in this list: it is a property of
+    # the CONFIG, not of the enumeration, and the win-prob production run does not build it (see
+    # the buildable-declaration check below, which is where its survival is asserted).
+    for expect in ("damage_op", "team_transformer", "alpha_head",
                    "intent_conditional", "history_events"):
         assert expect in live, f"{expect} vanished from the extractor — update the declarations"
+    # DECLARED and buildable whether or not THIS config builds them — the claim that the
+    # enumeration is not quietly excluding the modules it would be most embarrassing to miss,
+    # keyed on the builder so it survives a generation that gates one off.
+    buildable = buildable_child_names()
+    for expect in ("damage_op", "team_transformer", "value_dist_head", "alpha_head",
+                   "intent_conditional", "history_events"):
+        assert expect in buildable, f"{expect} vanished from extractor_build"
+        assert expect in MODULE_GRAPH_TOKENS or expect in NON_DELIVERY_MODULES, (
+            f"{expect} is buildable but undeclared in the graph — it would ship undrawn")
     # ObsUnpack and the T0 species prior own no parameters; they must not be demanded.
     for parameterless in ("unpack", "activation", "t0_species_prior"):
         assert parameterless not in live
+
+
+def test_the_flag_gated_off_discriminator_is_not_inert():
+    """The OTHER half of the stale-declaration gate: *deleted* vs *merely off* must be separable.
+
+    `module_coverage` reports a declared-but-unbuilt module as STALE unless the discriminator says
+    the code can still build it. If the discriminator answers "no" for everything, the gate is a
+    time bomb: it stays quiet only while the production config happens to build every declared
+    module, and demands the deletion of live entries the moment one turns them off. That is exactly
+    what shipped — the probe was `hasattr(features_extractor, <graph token>)`, and the tokens are
+    graph NODE IDS, so it resolved for **no entry at all**. It went unnoticed for as long as the
+    gen-17 config built every declared module, then reported `value_dist_head` as STALE on the
+    first config that did not (the 2026-09-06 win-prob production run).
+
+    So this pins the discriminator itself, in both directions, and would fail on that revert.
+    """
+    buildable = buildable_child_names()
+
+    # POSITIVE: modules the OTHER critic mode / other flag settings build, that this config does not.
+    for name in ("value_dist_head", "belief_slots", "spread_belief", "hidden_opp_belief",
+                 "item_belief_head", "alpha_head", "beta_head", "belief_head"):
+        assert name in buildable, (
+            f"{name!r} is assigned by extractor_build but the discriminator does not see it — "
+            "module_coverage will report every config that gates it off as a STALE declaration")
+
+    # NEGATIVE: it must not answer "buildable" to a name nothing assigns, or STALE is unreachable.
+    assert "_module_the_builder_never_assigns" not in buildable

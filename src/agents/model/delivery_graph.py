@@ -49,6 +49,33 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from utils.paths import repo_path
 
+
+def buildable_child_names() -> frozenset:
+    """Every `self.<name>` the extractor's `__init__` can assign — the children the CODE knows how
+    to build, independent of which ones THIS config actually builds.
+
+    This is the discriminator `module_coverage` needs for a declared module that is not a child of
+    the production build: *deleted from the code* (a stale declaration, must be reported) versus
+    *flag-gated off at this config* (normal). `named_children()` cannot tell them apart, because it
+    shows only what was built.
+
+    It is read from `extractor_build.py`'s SOURCE by AST rather than from a namespace, because the
+    fact in question is "does the builder still assign this attribute". The previous version asked
+    `hasattr(features_extractor, <graph token>)` — but the tokens are graph NODE IDS
+    (`"value_dist_head"`, `"alpha_head"`, …), not class names, so **none of them ever resolved**;
+    the check returned False for every entry and only stayed quiet because the gen-17 production
+    config happened to build all of them. The 2026-09-06 win-prob production config turns eight off
+    at once and the gate reported all eight as STALE — modules `--critic shaped` still builds.
+    """
+    import ast
+    import agents.model.extractor_build as _eb
+    tree = ast.parse(inspect.getsource(_eb))
+    return frozenset(
+        node.attr for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Store)
+        and isinstance(node.value, ast.Name) and node.value.id == "self")
+
+
 # Edge-type vocabulary. Extending this is a deliberate act: each entry is a claim about a distinct
 # PHYSICAL delivery channel, not a convenience label.
 EDGE_TYPES = ("bias", "content", "concat", "cell", "aux")
@@ -162,20 +189,18 @@ def module_coverage(fe: Any, graph: Dict[str, Any]) -> Dict[str, str]:
     # ran with `--value-intent` OFF (dV 0.1560). Deleting the entry would have silently excused the
     # module if a later generation re-enabled it — the RIGHT answer there was to keep the entry.
     # (That route has since been deleted outright by the critic-route wave, which is the OTHER
-    # branch: the class is gone from the code, so its entry goes too.)
-    # `features_extractor` is the documented re-export hub — every phase-module class resolves
-    # there regardless of which file defines it, which is exactly the property this needs.
-    import agents.model.features_extractor as _fx
-
-    def _class_still_exists(tokens: Any) -> bool:
-        return any(hasattr(_fx, t) for t in (tokens or ()))
+    # branch: the builder no longer assigns it, so its entry goes too.)
+    # The discriminator is `buildable_child_names()` — what `extractor_build.__init__` still
+    # ASSIGNS — because that is literally the fact being asked about. See its docstring for why
+    # asking the re-export hub for the graph token instead was inert.
+    buildable = buildable_child_names()
 
     for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
         if name not in children:
-            if _class_still_exists(MODULE_GRAPH_TOKENS.get(name)):
+            if name in buildable:
                 continue          # flag-gated OFF at this config, not deleted — keep the entry
             problems[name] = ("STALE declaration — the extractor has no child by this name AND "
-                              "its class no longer exists; delete the entry")
+                              "extractor_build no longer assigns it; delete the entry")
         elif name in MODULE_GRAPH_TOKENS and name in NON_DELIVERY_MODULES:
             problems[name] = "declared BOTH mapped and non-delivery — pick one"
 

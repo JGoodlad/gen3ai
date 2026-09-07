@@ -10,9 +10,9 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, launched 2026-08-20) — `model_config.json` `config_version` **97**, `arch_signature` **`gen3_critic_route_wave_v1`**; the **substrate cells are ON in the base** (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate; trains on its own pinned worktree. The E1–E4 arms launched after it are gate EXPERIMENTS forked off this base, not production — they are byte-identical to it on every shared field, so mirroring gen-17 satisfies the drift gate against all of them |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 99 / `gen3_critic_route_wave_v1`) |
-| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json` and never hand-edited. The `gen3_critic_route_wave_v1` **signature-bump window is CLOSED**: gen-17 records that signature, so the mirror once again tracks the newest RUN rather than the live code. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **109**, `arch_signature` **`gen3_critic_route_wave_v1`**. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 109 / `gen3_critic_route_wave_v1`) |
+| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_critic_route_wave_v1` **signature-bump window is CLOSED**: the production run records that signature, so the mirror tracks the RUN rather than the live code. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -223,10 +223,12 @@ embeddings · unpack · pokemon_encoder · entity_seats · edge_bias · team_tra
 hidden_opp_belief · intent_move_cell · intent_threshold_move · intent_conditional ·
 pair_outcome_move · pair_outcome_switch · switch_branch · conditional_threat · t0_species_prior ·
 belief_slots · belief_head · move_belief · spread_belief · hp_type_belief_head ·
-item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_dist_head ·
-value_entity_pool · history_events · pre_proj_norm · projection · value_pre_norm ·
-value_projection · activation · alpha_head · beta_head
+item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_entity_pool ·
+history_events · pre_proj_norm · projection · value_pre_norm · value_projection · activation ·
+alpha_head · beta_head
 ```
+
+Notably **absent** (`None` on the instance): `value_dist_head`.
 <!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
@@ -686,53 +688,76 @@ than flat offsets.
 ### 3.4 Side readouts
 
 A side readout hangs off `value_pooled` AFTER the pools and stashes its logits; none of them ever
-enters `pi` or `vf`, so none changes a projection width. Two are built in this config:
+enters `pi` or `vf`, so none changes a projection width. **One is built in this config, and it is
+the critic:**
 
 | head | flag | grad flow |
 |---|---|---|
-| `win_head` | `win_prob_mode` **`shaping`** (coef 0.05) | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
-| `value_dist_head` | `value_dist_mode` **`shaping`**, 51 atoms over [−12, +12] | live — and `value_from_dist` **true**, so this head IS the critic |
-
-**`value_from_dist` true makes the distributional head load-bearing rather than diagnostic**: GAE,
-bootstrapping and deployment all read `E[Z]` (`policy._critic_value`), the HL-Gauss cross-entropy
-is the primary value loss at `vf_coef` weight, and the scalar `value_net` freezes as a fallback.
-So "the critic" in this config is the *categorical* head, not `value_net`. PopArt is still on
-(`use_popart` true, which forces `--clip-range-vf none`).
+| `win_head` | `win_prob_mode` **`shaping`**, `win_prob_coef` **1.0** | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
 
 #### WHICH readout is the critic — `--critic {shaped,winprob}`
 
-`policy._critic_value` has a MODE, and the production config is on the first of two.
+`policy._critic_value` has a MODE, and the production config is on the second of two. **This is
+the ONLY axis on which this generation differs from gen-17** — the trunk, the seats, the edge
+families, the pointer cells and the belief stack are that run's, unchanged.
 
 | `--critic` | `V(s)` is | trained by | reward stream | PopArt | `gamma` |
 |---|---|---|---|---|---|
-| **`shaped`** (default, **this config**) | `value_net`, or the distributional `E[Z]` under `value_from_dist` | the MSE / HL-Gauss CE at `vf_coef`, in PopArt-normalized units | 1 TERMINAL + 7 PBRS + 1 BIAS, ±30 with a −35 timeout | on | 0.9999 |
-| `winprob` | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal outcome**, at `vf_coef` | the TERMINAL **WIN INDICATOR** alone — `+victory_value` on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **refused** | 1.0 |
+| `shaped` (the argparse default) | `value_net`, or the distributional `E[Z]` under `value_from_dist` | the MSE / HL-Gauss CE at `vf_coef`, in PopArt-normalized units | 1 TERMINAL + 7 PBRS + 1 BIAS, ±30 with a −35 timeout | on | 0.9999 |
+| **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **absent** (`use_popart` false, refused here) | **1.0** |
 
-Under `winprob` the critic and the return are the same quantity by construction: at
-`--victory-value 1.0` the undiscounted return from any state is exactly `1{win}`, so
-`V(s) = P(win | s)` with no approximation term. `value_net` leaves every loss graph (its scalar
-term is dropped exactly as under `value_from_dist`), the BCE joins the **`value`** noise-scale
-group rather than `aux`, and `--win-prob-coef` is refused — one critic, one coefficient.
+The critic and the return are the same quantity by construction: at `--victory-value 1.0` the
+undiscounted return from any state is exactly `1{win}`, so **`V(s) = P(win | s)` with no
+approximation term**. `value_net` is in no loss graph (its scalar term is dropped exactly as it is
+under `value_from_dist`), the BCE joins the **`value`** noise-scale group rather than `aux`, and
+`--win-prob-coef` is refused as a separate weight — one critic, one coefficient, so the 1.0 in the
+table above is the `_resolve` default of a flag this mode does not let you type.
 
-The mode is STRUCTURAL: it selects a different set of heads to carry the value, so `critic` is
-recorded in `model_config.json` and string-compared by `check_compatible`. It carries **no
-`ARCH_SIGNATURE` bump**, because `shaped` is the default and builds, moves and initializes nothing
-differently; the signature bump belongs to the default flip, where it forces the fresh weights a
-probability critic cannot be warm-started into.
+**`value_dist_head` is not built here** (`value_dist_mode` `none`, `value_dist_bins` 0), and
+`--value-dist-mode` is refused under this critic — the A2 consumer census found ~15 sites gating on
+the mode STRING rather than on `value_dist_head is None`, so a config that left the string set while
+skipping the build would report a distributional loss that was never computed. `value_dist_coef`
+stays recorded at 1.0 and §6 marks it `INERT — no value_dist_head`. **Both critic-side enrichment
+routes SURVIVE the swap** (`value_entity_pool` / `value_entity_pool_full` / `value_threat_inject`,
+all still true): they inject additively into `value_pooled`, which is exactly what the win head
+reads, so they enrich a probability critic the same way they enriched a scalar one.
+
+Under `--critic shaped` the mode builds the other route instead: `value_dist_head` (a categorical
+head over `value_dist_bins` atoms spanning `[value_dist_vmin, value_dist_vmax]`, trained by an
+HL-Gauss cross-entropy at `vf_coef`), which becomes the critic itself whenever `value_from_dist` is
+true, with `value_net` frozen as its fallback; PopArt normalizes the value targets (and forces
+`--clip-range-vf none`); the reward is the 1 TERMINAL + 7 PBRS + 1 BIAS composition at γ 0.9999;
+and `win_head` demotes to an auxiliary readout weighted by `--win-prob-coef`. That mode is
+STRUCTURAL — it selects a different set of heads to carry the value — so `critic` is recorded in
+`model_config.json` and string-compared by `check_compatible`. It carries **no `ARCH_SIGNATURE`
+bump**: a flipped mode produces no shape error anywhere (both routes return `[B,1]`), which is
+exactly why the recorded-and-compared field is the whole safety.
 
 ⚠️ **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The `−35 < −30`
-ordering `--draw-penalty` exists to set is not merely unused under `winprob`, it is
-unrepresentable — so `--draw-penalty` is REFUSED there, and the anti-stall pressure comes from the
-obs deadline clock (§1.4) plus `--arm-no-progress-tax`, which re-arms `no_progress_tax` alone under
+ordering `--draw-penalty` exists to set is not merely unused here, it is unrepresentable — so
+`--draw-penalty` is REFUSED at any non-zero value, and the anti-stall pressure comes from the obs
+deadline clock (§1.4) plus `--arm-no-progress-tax`, which re-arms `no_progress_tax` alone under
 `--no-hand-shaping` without reviving the other 24 BIAS terms. **Stall rate and mean episode length
-are PRIMARY endpoints on any `winprob` arm.**
+are PRIMARY endpoints, not monitored ones.** The 250-turn cap, forfeits and ties are TERMINAL under
+this mode rather than SB3 truncations — as truncations at γ = 1 the bootstrapped `γ·V(s_last)` made
+every timeout's TD error identically zero, so the critic could not see them at all.
 
 Three flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`,
 `--no-use-popart`) because their argparse default is the `None` sentinel, so "unset" is
-representable. Four are REQUIRED and named by their own refusal (`--no-hand-shaping`,
-`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so
-an implication could not be told apart from an overwrite. Design of record:
+representable and an implication can never overwrite a typed value. Four are REQUIRED and named by
+their own refusal (`--no-hand-shaping`, `--terminal-indicator`, `--victory-value 1.0`,
+`--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
+overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so a fork of a `shaped`
+parent cannot inherit that parent's `use_popart` / `win_prob_mode` and break the mode with a value
+nobody typed. Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
+
+The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
+`coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
+would add the advantage to the reward and take the advantage of that. The FROZEN-φ route
+(`--win-prob-pbrs-frozen <run|zip>`, a boolean by presence — φ is already in the value currency, so
+the coefficient is exactly 1.0 and never a knob) is DEFERRED rather than judged wrong, and
+`agents/training/winprob_pbrs.py` is intact.
 
 **One more readout EXISTS in the code and is OFF here — `q_winprob_mode` (`QWinProbHead`).** It is
 the only member of this family that does not hang off `value_pooled` alone: it scores each of the
@@ -745,8 +770,8 @@ forward, so `pi`/`vf` are bit-identical whenever it is built and `grad/q_winprob
 construction. **LATENT — not enabled in any run.** The head is a state_dict delta gated by
 `check_compatible`, and its two training coefficients (`--q-winprob-coef`, the per-action
 counterfactual likelihood; `--q-winprob-onpolicy-coef`, the weak and biased taken-action fallback)
-default to 0, so nothing about it is live until a run turns it on. It is absent from §6's table
-because that table is generated from `designs/production_config.json`, which does not carry it.
+default to 0, so nothing about it is live until a run turns it on. §6's table carries it as
+`q_winprob_mode` `"none"` / OFF.
 
 Belief heads run under `belief_grad_mode` **`label_only`**: their outputs are published stop-grad
 to every forward consumer, so no policy/value gradient reaches a belief head's parameters and the
@@ -793,7 +818,10 @@ op.
 ### 4.1 Per-block dependence — the current-config measurement
 
 Source: [`research_state/measurements/gen3_op_block_dependence_6k.json`](research_state/measurements/gen3_op_block_dependence_6k.json)
-— **this run's `checkpoint_9600000_steps.zip`, 6000 real eval states, 2026-08-07.** Method: zero
+— **`models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip`, 6000 real eval
+states, 2026-08-07.** ⚠️ That is gen-3, an EARLIER generation — not the production run. The
+architecture surface it measured is the same family, but the numbers are a fact about that model.
+Method: zero
 each sub-block as a contiguous slice of the op's output **at the `ProjectionAssembler` concat only**
 (edges, the `prefuse_proj` injection and the pointer cells stay live) → masked KL against the
 policy's own distribution. It answers *what does the HEAD still lean on*, not *what does the model
@@ -909,10 +937,11 @@ that can carry an absolute are **token content** (`prefuse_proj`) and **per-acti
 (§3.3). This is a capacity/conditioning argument, not an impossibility proof; the reasoning is in
 `designs/learning/shortcut_learning_and_feature_delivery.md`.
 
-### 5.4 Edge-family audit — the current-config measurement
+### 5.4 Edge-family audit — an EARLIER generation's measurement
 
 Source: [`research_state/measurements/gen3_edge_family_audit_9p6M.json`](research_state/measurements/gen3_edge_family_audit_9p6M.json)
-— **this run's `checkpoint_9600000_steps.zip`, 6000 eval-trace states, 2026-08-07**, produced by
+— **`models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip`, 6000 eval-trace
+states, 2026-08-07** (gen-3, NOT the production run), produced by
 `src/agents/model/edge_ablation_audit.py`. Each row zeroes one family's bias map and measures masked
 KL / argmax flips / |dV| against the unablated policy.
 
@@ -969,6 +998,9 @@ does nothing given another setting.
 |---|---|---|
 | `attend_unrevealed_opponents` | `true` | ACTIVE |
 | `belief_grad_mode` | `"shaping"` | ACTIVE |
+| `cf_evidential` | `false` | OFF |
+| `cf_shadow_critic` | `false` | OFF |
+| `cf_twin_heads` | `false` | OFF |
 | `conditional_threat_cell` | `true` | ACTIVE |
 | `consequence_topk` | `6` | ACTIVE |
 | `damage_candidate_k` | `0` | OFF |
@@ -999,50 +1031,73 @@ does nothing given another setting.
 | `pair_outcome_cell` | `true` | ACTIVE |
 | `pair_outcome_switch` | `true` | ACTIVE |
 | `pair_value_route` | `false` | OFF |
+| `q_winprob_mode` | `"none"` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |
 | `switch_branch_cell` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
-| `value_dist_bins` | `51` | ACTIVE |
-| `value_dist_mode` | `"shaping"` | ACTIVE |
-| `value_dist_vmax` | `12.0` | ACTIVE |
-| `value_dist_vmin` | `-12.0` | ACTIVE |
+| `value_dist_bins` | `0` | OFF |
+| `value_dist_mode` | `"none"` | OFF |
+| `value_dist_vmax` | `0.0` | OFF |
+| `value_dist_vmin` | `0.0` | OFF |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
 | `win_prob_mode` | `"shaping"` | ACTIVE |
+| `cf_evidential_coef` | `0.0` | OFF |
+| `cf_evidential_reg` | `0.001` | INERT — no `cf_evid_head` |
+| `cf_shadow_coef` | `0.0` | OFF |
+| `cf_twin_coef` | `0.0` | OFF |
+| `cf_winprob_coef` | `0.0` | INERT — coef 0, `win_head` built |
 | `hp_type_belief_coef` | `0.05` | ACTIVE |
 | `intent_label_bot_weight` | `0.25` | ACTIVE |
 | `item_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_coef` | `0.05` | ACTIVE |
 | `move_belief_latent_coef` | `0.05` | ACTIVE |
 | `opp_belief_aux_coef` | `0.05` | ACTIVE |
+| `policy_grad_coef` | `1.0` | ACTIVE |
+| `q_winprob_coef` | `0.0` | OFF |
+| `q_winprob_onpolicy_coef` | `0.0` | OFF |
 | `spread_belief_coef` | `0.05` | ACTIVE |
 | `td_aux_coef` | `0.0` | OFF |
-| `value_dist_coef` | `1.0` | ACTIVE |
-| `value_tail_weight` | `0.3` | ACTIVE |
+| `value_dist_coef` | `1.0` | INERT — no `value_dist_head` |
+| `value_tail_weight` | `0.0` | OFF |
 | `vf_coef` | `0.5` | ACTIVE |
-| `win_prob_coef` | `0.05` | ACTIVE |
+| `win_prob_coef` | `1.0` | ACTIVE |
+| `win_prob_pbrs_coef` | `0.0` | INERT — coef 0, `win_head` built |
 <!-- END GENERATED: flag-table -->
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 
-`all_shaping_pbrs` **true** · `draw_penalty` **−35.0** · `no_progress_penalty` 0.15 ·
-`mat_alive_weight` 1.25 · `bias_additivity` 1.0 · `self_ko_hp_penalty` 0.0 ·
+**The production reward is ONE TERMINAL TERM.** `hand_shaping` **false** · `terminal_indicator`
+**true** · `victory_value` **1.0** · `draw_penalty` **0.0** · `no_progress_tax_armed` **false** ·
+γ **1.0**. The composition is **1 TERMINAL (`win_loss`) + 0 PBRS + 0 BIAS**: `+1.0` on a win, `0.0`
+on a loss, a draw and a 250-turn timeout alike.
+
+🚨 **Three fields are recorded `true` and are INERT — read the composition, never these.**
+`all_shaping_pbrs` **true**, `pbrs_material` **true** and `pbrs_belief` **true** are all in
+`model_config.json` and none of them emits a term: `--no-hand-shaping` zeroes the whole shaping
+surface and `--terminal-indicator` replaces the terminal itself, so the flags describe a composition
+that is not built. They are recorded because `RewardConfig` is resume-immutable and every field must
+round-trip — they are *the values a resume must re-pass*, not a description of the objective. The
+authority is `metadata.json`'s `reward_composition` block (0 pbrs terms, 0 bias terms), which a
+launch also prints: `train_rl_agent` emits `[Reward] composition: …`
+(`reward_composition.format_reward_composition`) and records the census
+(`reward_composition.reward_class_composition`). *(A frozen-φ provenance fix is in flight that will
+make the three read as resolved; until it lands the composition block is the honest reading.)*
+
+The remaining fields are the DEFAULTS, recorded and inert for the same reason: `no_progress_penalty`
+0.15 · `mat_alive_weight` 1.25 · `bias_additivity` 1.0 · `self_ko_hp_penalty` 0.0 ·
 `switch_bias_weight` 0.0 · `bias_redesign` false · `drop_redundant_bias` false ·
 `drop_switch_bias` false · `stall_pbrs` false.
 
-These are the DEFAULTS as well as the production values. The **composition** they resolve to is
-**1 TERMINAL + 7 PBRS + 1 BIAS (`no_progress_tax`)** — every non-stall shaping term is a
-telescoping potential, and the anti-stall tilt is the single acknowledged objective bias. A launch
-STATES this: `train_rl_agent` prints `[Reward] composition: …`
-(`reward_manager.format_reward_composition`) and records the census into `metadata.json` as
-`reward_composition` (`reward_manager.reward_class_composition`).
-
-`--no-all-shaping-pbrs` is the fallback, and it is a different objective, not a smaller one:
-2 potentials and **26 additive BIAS terms**, with `no_progress_tax` itself disarmed (its clock
-charge gates on `bias_redesign OR all_shaping_pbrs`).
+Under `--critic shaped` the same fields resolve to a real composition — **1 TERMINAL + 7 PBRS +
+1 BIAS (`no_progress_tax`)** at `all_shaping_pbrs` true and a −35 `draw_penalty`, every non-stall
+shaping term a telescoping potential and the anti-stall tilt the single acknowledged objective bias;
+`--no-all-shaping-pbrs` is its fallback and a different objective rather than a smaller one
+(2 potentials and **26 additive BIAS terms**, with `no_progress_tax` itself disarmed, its clock
+charge gating on `bias_redesign OR all_shaping_pbrs`).
 
 `stall_pbrs` stays off deliberately. Turning it on additionally zeroes `no_progress_tax` and folds
 Φ_progress instead — the zero-BIAS destination, but a separate single-variable step, since the
@@ -1057,9 +1112,15 @@ never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 
-`--compile-opponents` (on in this run) · `--grad-accum-steps 4` · `--grad-checkpointing` ·
-`--async-rollout` · `--use-bridge {off,node,rust}` (this run: `node`). These do not appear in
-`model_config.json` and are **not** inherited on resume.
+`--use-bridge rust` (serverless) · `--compile-opponents` + `--compile-opponents-preload` +
+`--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
+uses · `--grad-checkpointing` · `--async-rollout`. These do not appear in `model_config.json` and
+are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
+be re-passed each launch, not the flag.
+
+⚠️ **`--gamma` is not in `model_config.json` either.** `--critic winprob` implies γ 1.0 and the
+resume path restores the checkpoint's own γ, so the value in force is visible in `metadata.json`'s
+`cli_args` and in the startup lines — not in the mirror, and therefore not in §6's table.
 
 ---
 
@@ -1071,24 +1132,31 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 
 | Key | Shape | Consumer | Emitted when | In production? |
 |---|---|---|---|---|
-| `belief_species` | int64 `[6]` | `BeliefHead` species CE | `opp_belief_aux_coef > 0` **or** `move_belief_mode != off` | ✅ **emitted** (via the move-belief clause) — but **unconsumed**: no `BeliefHead` exists |
-| `belief_moves` | int64 `[6,4]` | `BeliefHead` moves BCE (Hungarian) | " | ✅ emitted, unconsumed |
-| `known_moves` | int64 `[6,4]` | `MoveBelief` BCE | `move_belief_mode` ∈ {revealed, both} | ✅ emitted; **unconsumed** — `move_belief_coef` = 0.0 |
-| `belief_spread` / `belief_spread_mask` | f32 `[6,5]` / `[6]` | `SpreadBelief` regression | `spread_belief` **and** `spread_belief_coef > 0` | ❌ |
-| `belief_nature` / `belief_nature_mask` | int64 `[6]` / f32 `[6]` | nature CE | " | ❌ |
-| `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 | " | ❌ |
+| `belief_species` | int64 `[6]` | `BeliefHead` species CE | `opp_belief_aux_coef > 0` **or** `move_belief_mode != off` | ✅ emitted and consumed (`opp_belief_aux_coef` 0.05) |
+| `belief_moves` | int64 `[6,4]` | `BeliefHead` moves BCE (Hungarian) | " | ✅ emitted and consumed |
+| `known_moves` | int64 `[6,4]` | `MoveBelief` BCE | `move_belief_mode` ∈ {revealed, both} | ✅ emitted and consumed (`move_belief_coef` 0.05) |
+| `belief_spread` / `belief_spread_mask` | f32 `[6,5]` / `[6]` | `SpreadBelief` regression | `spread_belief` **and** `spread_belief_coef > 0` | ✅ emitted and consumed |
+| `belief_nature` / `belief_nature_mask` | int64 `[6]` / f32 `[6]` | nature CE | " | ✅ (`spread_belief_nature` true) |
+| `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 | " | ✅ |
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
-| `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ❌ |
-| `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | win-prob aux (MC outcome — a **future** label) | `win_prob_mode != none` | ❌ |
+| `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ✅ emitted and consumed (`item_belief_coef` 0.05) |
+| `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
 | `defensive_opportunity` | f32 `[1]` | state-conditioned entropy boost | `--defensive-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `bait_opportunity` | f32 `[1]` | state-conditioned entropy boost (bait) | `--bait-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `distill_mask` | f32 `[1]` | exploiter-distillation KL gate | `--distill-coef > 0` with teacher teams | ❌ |
 
-So in production **four privileged keys ride the rollout buffer but only one is read**
-(`hp_type_label`). `belief_species` / `belief_moves` / `known_moves` are emitted because the emit
-gate keys on `move_belief_mode != off` while their losses key on separate coefficients that are
-zero. That is buffer cost, not a leak — but it does mean "the label is emitted" is not evidence
-that a belief is supervised.
+🚨 **In this config a privileged key is no longer merely auxiliary — `win_target` IS the critic's
+training target.** The leak-safety property is unchanged and is exactly what makes that safe: the
+forward reads `obs["observation"]` alone, so a future outcome can label the value head without ever
+being visible to it at decision time. But the consequence for reasoning is real — "training-only"
+now means "not in the forward", never "not load-bearing".
+
+Every belief label above is both emitted AND consumed here (all six supervised coefficients are at
+0.05), so the whole emitted set is read. **Do not infer supervision from emission**, though: the
+emit gates and the loss coefficients are separate conditions, and a config that drops a coefficient
+to 0 keeps paying the buffer cost while training nothing — which reads identically in every metric.
+`--defensive-entropy-boost`, `--bait-entropy-boost` and `--distill-coef` are off, so their three
+keys are not emitted at all.
 
 Only the **trainee** `Gen3Env` emits any of these. Eval and self-play opponents play through
 `RLPlayer`, which never constructs them.

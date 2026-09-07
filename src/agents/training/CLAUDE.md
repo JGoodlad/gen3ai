@@ -23,8 +23,9 @@ value quantities in **four different currencies at once** and three of them look
 ⚠️ **A number is only comparable to another number in the SAME currency**, and the two most
 frequently confused pairs are `train/return_std` (raw) against `popart/sigma` (the estimate OF it,
 also raw — these two SHOULD track), and `train/value_loss` (normalized, ≈O(1)) against
-`train/return_abs_max` (raw, ~30). The conversion in force is `popart/mu` and `popart/sigma`, and
-whether it is CURRENT is `popart/norm_return_*` (below). Full background:
+`train/return_abs_max` (raw, ~30). WHEN POPART IS ON the conversion in force is `popart/mu` and
+`popart/sigma`, and whether it is CURRENT is `popart/norm_return_*` (below); with PopArt off — which
+`--critic winprob` REFUSES it into — there is no conversion and `train/value_loss` is already raw. Full background:
 `designs/learning/popart_value_scale_and_currencies.md`.
 
 🚨 **`--critic winprob` COLLAPSES the four currencies into one, which changes what several tags
@@ -196,8 +197,10 @@ residual is a GIGO guard rather than a rounding term — is in
 
 The tracked set is derived from `reward_class_composition(config)` — the SAME `_pbrs_term_active` /
 `_bias_term_active` predicates the folds are gated on — so the exported terms cannot disagree with
-the startup line. Under the default composition that is 10 terms (1 terminal + 7 PBRS + 1 bias +
-the refund mechanism) → 46 tags; under `--no-all-shaping-pbrs` it is 28 terms → ~100 tags. Bounded
+the startup line. Under the `shaped`-critic default composition that is 10 terms (1 terminal +
+7 PBRS + 1 bias + the refund mechanism) → 46 tags; under `--no-all-shaping-pbrs` it is 28 terms →
+~100 tags. ⚠️ **The production run is neither**: `--no-hand-shaping --terminal-indicator` is ONE
+terminal term, so it emits the smallest tag set of the three. Bounded
 by the REGISTRY, never per-team.
 
 **Transport: an `env_method` PULL, not an info-dict thread.** The reward is computed in the env
@@ -205,7 +208,9 @@ WORKER, and under `--async-rollout` the callback's step locals arrive wave-batch
 recover which buffer row a step landed on — the same reason `TeamWinRateCallback` uses this seam.
 `AsyncSubprocVecEnv.env_method` is drain-safe, so one seam covers both collectors, and
 `RewardTermAccumulator.drain()` zeroes the window so a double pull cannot double-count. ALWAYS ON,
-no flag: the accumulator folds only the ACTIVE terms (9 of 35 under the production composition).
+no flag: the accumulator folds only the ACTIVE terms — 9 of 35 under the `shaped` default, and
+**1 of 35 under the production composition** (`--no-hand-shaping --terminal-indicator`: 1 TERMINAL,
+0 PBRS, 0 BIAS). Read `metadata.json`'s `reward_composition`, never a remembered count.
 
 #### `win_prob/` — the head's PREDICTION, its CALIBRATION, and the paired episode-start read
 
@@ -277,7 +282,7 @@ returns and say whether the belief is current. Free — a mean and a std over an
 | `value_pred_std` | the critic's own output spread | RAW SHAPED RETURN |
 | `value_loss` | the fitted loss | NORMALIZED under PopArt, raw otherwise |
 | `policy_gradient_loss` · `entropy_loss` · `loss` · `approx_kl` · `clip_fraction` · `clip_range[_vf]` · `grad_norm` · `n_updates` | the stock PPO step | unitless / loss units |
-| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head | unitless (rank) |
+| `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head — **DEGENERATE under `--critic winprob`**, where the two readouts are one head | unitless (rank) |
 | `noise_scale[_ratio][_<term>]` · `dose_rate` · `effective_batch` · `grad_accum_steps` · `train_ms` | the step-size controllers | see their sections |
 
 🚨 **`train/explained_variance` IS THE SAME NUMBER IN BOTH CURRENCIES, and a second "normalized"
@@ -544,7 +549,8 @@ stalled battle at the turn cap (`gen3_env` `ForfeitBattleOrder` at turn ≥ `Sta
 a 250-turn stall ends as a forfeit-**loss** (`lost=True`), NOT a tie. The terminal therefore detects a
 timeout by **`live.turn >= _TIMEOUT_TURN_CAP`** (synced to `StallConfig.threshold`), not by won/lost:
 `if won: +30; elif finished: draw_penalty if timed_out else −30`. At the default −35.0 a stall-to-cap
-is strictly worse than a clean loss, which cancels the γ=0.9999 discount pull of delaying an inevitable
+is strictly worse than a clean loss, which cancels the γ=0.9999 discount pull (the `shaped` default;
+`--critic winprob` runs γ=1.0 and REFUSES `--draw-penalty`) of delaying an inevitable
 −30. `--draw-penalty -30` restores the historical default (a tie scored identically to a decisive
 loss); it was tuned under the additive-BIAS regime `--all-shaping-pbrs` replaces, which is why the two
 defaults flipped together (owner decision 2026-08-18 — see **The reward COMPOSITION** below).
@@ -721,13 +727,17 @@ that can move the RETURN SCALE, and two older flags are quietly denominated in t
 | `VALUE-DIST SUPPORT` | a value-dist head, PopArt OFF, and the achievable returns either fall outside `[vmin, vmax]` or span < 8 atoms | with PopArt off the HL-Gauss target is the RAW return, so the atom support and the terminal are in the SAME units — and under `--value-from-dist` that quantized `E[Z]` **is** the critic feeding GAE |
 
 The third is the one that matters for the registered arm, because the clean/sparse arms run
-**without PopArt** (ledger `2d38a4a`) while production carries `value_from_dist=True` over a
-support of `[−12, +12]` / 51 atoms. A ±1 terminal there lands inside ~4 atoms — a critic quantized
+**without PopArt** (ledger `2d38a4a`) while the gen-17-era shaped runs carried
+`value_from_dist=True` over a support of `[−12, +12]` / 51 atoms. ⚠️ **The current production run
+carries no distributional head at all** — `--critic winprob` refuses `--value-dist-mode`, so this
+guard has nothing to check there; it is a `shaped`-critic guard. A ±1 terminal there lands inside ~4 atoms — a critic quantized
 to ~0.5 on a ±1 scale — and nothing downstream tells that apart from a well-fitted one
 (`value_dist/mean_abs_err` looks *better* as the support widens). All three are warnings, never
 refusals: a launch that works today must not become a `FATAL_CONFIG`. Under PopArt the target is
 `popart.normalize(returns)`, the support lives in units of standard deviations, and the guard is
-skipped — which is every run ever launched. Pinned by `ai_v12_intersection_test.py` §1-§2.
+skipped. That was true of every run launched before 2026-09-06; **`--critic winprob` refuses
+PopArt**, so on the production run the guard is NOT skipped and the un-normalized branch is the only
+branch — which is exactly why `ai_v12_intersection_test.py` §1-§2 pins it.
 
 **The clean-world reward flag set, verbatim** (`CLEAN_WORLD_REWARD_FLAGS` in
 `clean_world_config_test.py`; the dense signal is `--win-prob-pbrs-*`, below):
@@ -775,7 +785,9 @@ Pins: `src/main/reward_defaults_test.py` (both defaults, both opt-outs, both com
 #### The census also drives a fast path — `_active_bias` (`gen3_reward_skip_suppressed_v1`)
 
 `process_turn_reward` used to compute every BIAS helper and then hand the results to
-`_apply_pbrs_suppression`, which under the production composition zeroes ~20 of them — a movedex
+`_apply_pbrs_suppression`, which under the `shaped` default composition zeroes ~20 of them (under
+the production `--no-hand-shaping` composition the whole BIAS class and every PBRS fold are off, so
+nothing is computed to suppress) — a movedex
 walk (`dead_matchup_tax`), two effectiveness loops (`se_switch` / pivot) and a 12-mon status scan,
 every decision, for numbers immediately overwritten with 0.0. The manager now derives
 `self._active_bias` ONCE at `__init__` **from `_bias_term_active`** — the same function the census
@@ -4696,8 +4708,9 @@ evenly across decisions, i.e. nothing is being localized even though the std may
 
 ### ⚠️ UNITS — within a run freely, across runs only cautiously
 
-The advantages ride the run's own **PopArt-normalized returns** (`--use-popart`, default on), whose
-σ moves over training. `adv_raw_std` / `adv_raw_abs_mean` are therefore in *this run's current
+The advantages ride the run's own returns — **PopArt-normalized when `--use-popart` is on** (it is
+OFF by default and REFUSED under `--critic winprob`, where they are raw `[0,1]` probability returns),
+in which case σ moves over training. `adv_raw_std` / `adv_raw_abs_mean` are therefore in *this run's current
 normalized-return units*, not a fixed scale: their TREND is meaningful, their absolute level is not
 portable. Across two runs with different reward composition, `gamma`/`gae_lambda`, or PopArt state,
 only **`adv_kurtosis`** — scale-free by construction — compares directly.
@@ -4754,10 +4767,16 @@ monkeypatched out.
 
 ## The SCAFFOLDING GAUGE — `train/scaffolding_gauge` + `python -m main.scaffolding_gauge`
 
-**How far apart are the two value readouts, and is the gap closing?** The critic estimates the
-**shaped** return (PopArt units, `gamma`-discounted); the win-prob head estimates the **game**
-(outcome units, no discount distortion, no PopArt drift). Neither is a repair of the other — the
-two-head structure is the automatic consequence of choosing shaped rewards. What their DIVERGENCE
+🚨 **THIS GAUGE IS A `--critic shaped` INSTRUMENT AND IS DEGENERATE ON THE PRODUCTION RUN.** It
+measures the divergence between TWO readouts; under `--critic winprob` there is one — the win-prob
+head IS the critic, so the gauge compares a head with itself and its rank correlation is 1 by
+construction. Read it on a shaped run, or on an archived one; do not read it as a scaffolding
+measurement of a terminal-only run, which has no scaffolding to measure.
+
+**How far apart are the two value readouts, and is the gap closing?** Under `shaped`, the critic
+estimates the **shaped** return (PopArt units, `gamma`-discounted) while the win-prob head estimates
+the **game** (outcome units, no discount distortion, no PopArt drift). Neither is a repair of the
+other — the two-head structure is the automatic consequence of choosing shaped rewards. What their DIVERGENCE
 measures is the reward scaffolding still doing work, and its trajectory is the registered signal
 for when shaping coefficients can begin annealing toward the pure game.
 
@@ -4784,7 +4803,9 @@ is identical and float32 ranks never saturate.
 
 ### ⚠️ UNITS — the rank form is the ONLY one that is live-legal
 
-`V` is a PopArt-normalized SHAPED return; there is no general unit conversion to a probability. The
+Under `--critic shaped` `V` is a PopArt-normalized SHAPED return and there is no general unit
+conversion to a probability. (Under `--critic winprob` the question dissolves: `V` IS the
+probability, which is the same fact that makes this gauge degenerate there.) The
 live scalar is therefore **rank-based and claims ORDERING only** — nothing about magnitude or
 calibration. It also goes **AMBIGUOUS at the PBRS constancy endpoint**: under a good frozen
 potential, all evaluative content migrates into the reward stream and `V_shaped` is driven toward a
@@ -5290,8 +5311,9 @@ target does — see the design doc's §2.1.
   `rollout_buffer.rewards` **in place**, then RE-RUN `compute_returns_and_advantage`. That window is the
   only one that works — both collectors compute GAE as their last act, and PopArt reads
   `rollout_buffer.returns` at the top of `train()`, so the shaping lands in **RAW reward space** and
-  PopArt normalizes the shaped returns (the only order that keeps the value loss in the units of the
-  stream being optimized).
+  PopArt — when it is on — normalizes the shaped returns (the only order that keeps the value loss in
+  the units of the stream being optimized). ⚠️ This whole `--win-prob-pbrs-*` family is REFUSED under
+  `--critic winprob`, so the path described here is a `shaped`-critic path throughout.
 - **Both collectors are COVERED, not documented around.** The φ read is a batched re-forward rather than
   a per-step callback capture *because* `--async-rollout` forwards a wave of envs at a time and its
   callback locals cannot recover the env→row mapping (the same reason `WinProbLabelCallback`'s terminal
@@ -7132,7 +7154,8 @@ coefficient because the bias REPLACES the trainee teambuilder and would discard 
   policy KL is POLICY-ONLY — the student pilots the teacher's team with its own amortized (~4-dim) critic,
   so it mimics the MOVES but never gets the teacher's per-team VALUE (confirmed: value_cls effective rank
   FLAT across _14→_18→_19). This adds `distill_value_coef · MSE(V_teacher, V_student)` on the SAME
-  teacher-team states, in the student's PopArt-normalized frame (`_value_distill_mse`, a static testable
+  teacher-team states, in the student's own value frame — PopArt-normalized when PopArt is on, raw
+  otherwise, and probability units under `--critic winprob` (`_value_distill_mse`, a static testable
   helper mirroring `_distill_loss`; teacher V from a frozen `predict_values`, real-unit → normalized).
   **Coherent despite V^π being policy-relative** because the policy KL simultaneously drives
   π_student→π_teacher there, so V_teacher becomes the right target — hence it **requires `--distill-coef > 0`**
@@ -7963,7 +7986,8 @@ The pipeline, which is the design doc's "3 filters → 2 transplants" as code:
    is never contested and is **never imputed** — one we cannot judge is one we do not teach from.
 2. **ONE-PLY read** — `ProbeSession.lookahead` re-rolls the turn under each legal action (opponent
    plays its RECORDED move), materializes the successor through the real encoder, reads the heads.
-   We take the **win-prob** read, not V: the critic estimates shaped return in PopArt units, and
+   We take the **win-prob** read, not V: under `--critic shaped` the critic estimates shaped return
+   in PopArt units (under `winprob` the two are the same readout, so the choice is free), and
    probe G measured the win-prob head beating the played action on exactly this job. A candidate with
    no win-prob read is **dropped, never scored from the critic** — a fall-back would silently run a
    different teacher under the same flag (the confusion `defensive.check_leaf` exists to prevent).

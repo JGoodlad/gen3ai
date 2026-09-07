@@ -142,9 +142,12 @@ it was never fed forward, its own role-geometry probe concluded decodable != hel
 the train step. Predicting the opponent's unrevealed mons is unaffected: the species CE, the moves BCE
 and the T0 species prior all remain. See `designs/CHANGELOG.md` for how these landed.)
 A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
-a `last_win_prob_logits` [B,1] — another side readout (never in pi/vf, so projection dims are unchanged),
-read by the win-prob aux loss + the prober. `read_only` feeds it a STOP-GRAD `value_pooled` (head trains
-its own params only); `shaping` feeds it live (the win objective also shapes the trunk).
+a `last_win_prob_logits` [B,1]. It never enters the pi/vf CONCAT, so projection dims are unchanged
+either way — but **what consumes it depends on `--critic`**: under `shaped` it is a side readout fed
+to the win-prob AUX loss and the prober, and under **`winprob` it IS the critic** (`_critic_value`
+returns `sigmoid` of these logits and the head's BCE is the value loss at `vf_coef`). `read_only`
+feeds it a STOP-GRAD `value_pooled` (head trains its own params only); `shaping` feeds it live (the
+win objective also shapes the trunk), and `winprob` implies `shaping`.
 
 `CfEvidentialHead` (`--cf-evidential`, v98) is a third readout off the same `value_pooled`, and
 v99 adds THREE more there (`gen3_cf_twin_heads_v1`): the two `WinProbHead` TWINS
@@ -152,7 +155,8 @@ v99 adds THREE more there (`gen3_cf_twin_heads_v1`): the two `WinProbHead` TWINS
 `ShadowValueHead` (`--cf-shadow-critic`, an MC-grounded value twin that never computes an
 advantage). All four share the evidential head's three properties — built LAST, never called by
 the forward, input detached unconditionally — so the count off `value_pooled` is now SIX heads
-and only `win_head` / `value_dist_head` are in the forward at all. It is
+and only `win_head` / `value_dist_head` are in the forward at all (`value_dist_head` when it is
+built — `--critic winprob` refuses it, leaving `win_head` alone, as the critic). It is
 the one that breaks the pattern in two ways worth knowing about. It emits a **Beta posterior** (α, β)
 over P(win|state) rather than a point estimate — the counterfactual factory's uncertainty confession,
 since G0 convicted the scalar head of RESOLUTION, not of an optimism offset. And it is **not called by
@@ -242,10 +246,13 @@ no incentive to encode hidden state — still feeding the policy. That combinati
 Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
 `AlphaIntentHead` (published unconditionally, so enabling a consumer later cannot reopen the route
 — and since the critic-route deletion wave took every α→vf route, α now reaches the objective only
-through the POLICY, via the pointer cells). `BeliefHead`, `WinProbHead`, `PubValHead`,
-and `BetaSwitchHead` are structurally label-only in every mode — asserted in
-`belief_label_only_gate_test.py`, not assumed, so a head that starts feeding forward fails a test
-instead of quietly rejoining the PPO objective.
+through the POLICY, via the pointer cells). `BeliefHead`, `PubValHead` and `BetaSwitchHead` are
+structurally label-only in every mode — asserted in `belief_label_only_gate_test.py`, not assumed,
+so a head that starts feeding forward fails a test instead of quietly rejoining the PPO objective.
+🚨 **`WinProbHead` is NOT in that set under `--critic winprob`**: there the head IS `_critic_value`,
+so it feeds GAE, the value loss and (at `win_prob_mode shaping`, which the mode implies) the trunk.
+Under `--critic shaped` it is label-only like the other three. The claim is mode-conditional, and
+reading it as unconditional would say the production critic cannot reach the objective.
 
 `detach()` is value-preserving ⇒ the forward is bit-identical in all three modes ⇒ this is a
 resume-immutable training hparam (the `vf_coef` class), NOT weight-shape: no `ARCH_SIGNATURE` bump,
@@ -276,7 +283,8 @@ narrow. Both projection input dims are STATIC ARITHMETIC (`gen3_static_widths_v1
 `ProjectionAssembler.forward`'s concat exactly. **`vf` is a CONSTANT `D_MODEL`** — the
 critic-route deletion wave retired the whole post-assembler vf tail (the seed window; the
 hidden-opp belief's vf half; the `non_matchup_rest` vf concat), so `vf_combined IS value_pooled`,
-the same tensor the dist-head critic reads. That is the structural cure for the v89/M2
+the same tensor every critic parameterization reads — the dist head under `--value-from-dist`, and
+the win head under `--critic winprob`. That is the structural cure for the v89/M2
 orphaned-branch class rather than another instance of it: there is no second vf path left for a
 critic parameterization to bypass. Only TWO inputs still move `pi`: the layout's
 `non_matchup_rest` tail, and the hidden-opp belief pool (`k·D_MODEL`, **policy side only** — its
@@ -986,8 +994,10 @@ built by their own flags. It rides `snapshot.current_model_version(critic=…)` 
 
 ## PopArt value-target normalization (`popart.py`, `--use-popart`)
 
-Opt-in (default off). The dual-head extractor shares one trunk; with γ≈0.9999 the returns run to
-±hundreds, so the value MSE gradient **swamps** the shared trunk and the policy under-updates
+Opt-in (default off, and **refused outright under `--critic winprob`** — a bounded stationary
+Bernoulli payoff has no scale to track). The dual-head extractor shares one trunk; under a SHAPED
+return at γ≈0.9999 the returns run to ±hundreds, so the value MSE gradient **swamps** the shared
+trunk and the policy under-updates
 (diagnosed by a large positive `grad/value_policy_logratio`, see `src/agents/training/CLAUDE.md`). PopArt fixes the value
 *scale* adaptively: `PopArtNormalizer` keeps running `(mu, sigma)` of the value targets, the value
 head outputs **normalized** values, and the PPO loss trains in normalized space — so the value

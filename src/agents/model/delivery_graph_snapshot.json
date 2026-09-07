@@ -73,15 +73,6 @@
       "width": null
     },
     {
-      "dst": "loss.value_dist_hl_gauss",
-      "label_key": "realized return G(s)",
-      "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
-      "source_constant": "training-only rollout-buffer target (not an obs key)",
-      "src": "value_dist_head",
-      "type": "aux",
-      "width": null
-    },
-    {
       "dst": "loss.win_prob_bce",
       "label_key": "MC episode outcome (win=1/loss=0)",
       "note": "privileged label (the OUTCOME / their actual action is the future at decision time); never enters the forward",
@@ -10647,16 +10638,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[0]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -10695,16 +10676,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[1]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -10743,16 +10714,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[2]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -10788,16 +10749,6 @@
       "src": "opp_mon[3]",
       "type": "content",
       "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
-      "width": 128
-    },
-    {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[3]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
       "width": 128
     },
     {
@@ -10839,16 +10790,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[4]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -10884,16 +10825,6 @@
       "src": "opp_mon[5]",
       "type": "content",
       "via": "BetaSwitchHead.scorer (their refined token \u2016 board ctx)",
-      "width": 128
-    },
-    {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "opp_mon[5]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
       "width": 128
     },
     {
@@ -10944,16 +10875,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[0]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -10998,16 +10919,6 @@
       "src": "our_mon[1]",
       "type": "content",
       "via": "PointerNativeActionHead.switch_proj",
-      "width": 128
-    },
-    {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[1]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
       "width": 128
     },
     {
@@ -11058,16 +10969,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[2]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -11112,16 +11013,6 @@
       "src": "our_mon[3]",
       "type": "content",
       "via": "PointerNativeActionHead.switch_proj",
-      "width": 128
-    },
-    {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[3]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
       "width": 128
     },
     {
@@ -11172,16 +11063,6 @@
       "width": 128
     },
     {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[4]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
-      "width": 128
-    },
-    {
       "dst": "vf_projection",
       "pooled": true,
       "source_constant": "D_MODEL",
@@ -11226,16 +11107,6 @@
       "src": "our_mon[5]",
       "type": "content",
       "via": "PointerNativeActionHead.switch_proj",
-      "width": 128
-    },
-    {
-      "dst": "value_dist_head",
-      "note": "`shaping` \u2014 the head's objective also shapes the shared trunk",
-      "pooled": true,
-      "source_constant": "D_MODEL",
-      "src": "our_mon[5]",
-      "type": "content",
-      "via": "CLSPool.value_cls -> ValueDistHead",
       "width": 128
     },
     {
@@ -11560,7 +11431,7 @@
     "arch_signature": "gen3_critic_route_wave_v1",
     "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 97,
+    "config_version": 109,
     "edge_bias_families": [
       "c1",
       "c2",
@@ -11636,11 +11507,6 @@
       "label_key": "belief_spread"
     },
     {
-      "id": "loss.value_dist_hl_gauss",
-      "kind": "aux_loss",
-      "label_key": "realized return G(s)"
-    },
-    {
       "id": "loss.win_prob_bce",
       "kind": "aux_loss",
       "label_key": "MC episode outcome (win=1/loss=0)"
@@ -11692,13 +11558,6 @@
       "in_features": 1177,
       "kind": "head",
       "out_features": 512
-    },
-    {
-      "id": "value_dist_head",
-      "in_features": 128,
-      "kind": "head",
-      "note": "categorical over a fixed atom support; under --value-from-dist the critic's V IS this head's mean, not value_net's scalar",
-      "out_features": 51
     },
     {
       "id": "vf_projection",

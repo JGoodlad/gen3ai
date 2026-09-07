@@ -96,6 +96,12 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     "item_belief_coef": "item_belief_head",     # v83
     "vf_coef": None,
     "value_tail_weight": None,
+    # v102 gen3_policy_grad_coef_v1 — the weight on PPO's own clipped surrogate
+    # (`policy_grad_coef * policy_loss`). A core train-loop term like `vf_coef`: no extractor
+    # module gates it, so it can never be INERT. It was recorded from v102 but stayed invisible
+    # here while `production_config.json` sat at v97; the win-prob run (v109) is the first
+    # production config that carries it, and the generator refused rather than guess.
+    "policy_grad_coef": None,
     # v90 gen3_td_consistency_aux_v1 — a core train-loop term (the Bellman-residual consistency
     # loss). No gating module: it reads the critic through `policy.predict_values`, so there is
     # nothing in the extractor that could make it INERT.
@@ -120,6 +126,11 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # likely to set on a run whose mode is still 'none'.
     "q_winprob_coef": "q_winprob_head",
     "q_winprob_onpolicy_coef": "q_winprob_head",
+    # v108 gen3_winprob_pbrs_v1 — the win-prob PBRS reward-shaping weight. φ(s) IS the win head's
+    # sigmoid, and the flag requires `--win-prob-mode read_only|shaping`, so the head is what gates
+    # it: a live coefficient with no `win_head` shapes nothing. (Refused outright under `--critic
+    # winprob`, where φ ≡ V and the term would re-add the advantage to the reward.)
+    "win_prob_pbrs_coef": "win_head",
 }
 
 _FALSY_STRINGS = {"none", "off", ""}
