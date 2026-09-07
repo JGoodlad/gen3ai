@@ -73,3 +73,18 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   on its behalf.
 - Memory: a durable owner ruling is written to the project memory the moment it is given, and the
   matching SOP file here is updated in the same pass.
+
+## 6. Owner availability — notify, then act
+
+- **The owner may be notified at any time; if there is no reply within 15 minutes, take the
+  reasonable action** (owner, 2026-09-06). A notification is a request for input, not a hold: state
+  the decision, the default you will take, and the deadline in the notification itself.
+- **At night (20:00–08:00 local), a BLOCKED Training Run session does not idle the GPU** (owner,
+  2026-09-06): pick something reasonable and keep the GPU working toward the next registered goal,
+  in this order — the REGISTERED successor arm if a pre-registered kill fired (launched under
+  `TRAINING_RUN_SOP.md` §1's checks); a relaunch of the same arm with the minimal fix when the block
+  is operational; the next cell already queued in `UNDERSTANDING.md` or the ledger tail. Record the
+  decision in the ledger, push-notify once, hand the run back to the Training Run session (or run its
+  four layers yourself if it is dead).
+- **Never on your own authority**, day or night: a retention apply, a baseline `set`, any deletion, a
+  `--sync-to-main` batch, an unregistered scientific change, anything the owner reserved by name.
