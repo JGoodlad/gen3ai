@@ -103,11 +103,13 @@ no pointer is not a measurement.
     sign-flip by ecology; ~39% of conviction-region blur is the IRREDUCIBLE hidden-information
     floor. The win-prob gate's primary endpoint is therefore a resolution gate.
     [`critic_calibration_plan.md` §0]
-15. **Live now: `ai_v12_01_winprob_critic`** — `V(s) = σ(win logit) ∈ [0,1]`, the value loss is that
-    head's BCE against the terminal WIN INDICATOR, γ=1, no PopArt, no shaping. Read by
-    `python -m main.critic_gate`; famine pre-test floor **38 Elo** against `ai_v9_29_rev1_0823`;
-    KILL on rising stall rate. [ledger 2026-09-06 · *WIN-PROB CRITIC — arm 1 LAUNCHED* and
-    *FAMINE PRE-TEST*]
+15. **Live now: `ai_v12_02_winprob_critic`** (arm 2, the full production surface at 2048×32;
+    arm 1 `ai_v12_01` ran a stripped architecture and is DEAD, not evidence) — `V(s) = σ(win logit)
+    ∈ [0,1]`, the value loss is that head's BCE against the terminal WIN INDICATOR, γ=1, no PopArt,
+    no shaping. Read by `python -m main.critic_gate`; famine pre-test floor **38 Elo** against
+    `ai_v9_29_rev1_0823`: **10M read NO KILL (−30 at n = 4), n = 12 read WITHIN FLOOR (−34 at 26M)**;
+    the standing kill is G7 (stall rate + episode length on the EVAL traces), at ~0%. [§4.2; ledger
+    2026-09-07 · *10M DECIDING READ* and *THE n = 12 STRENGTH READ*]
 
 ---
 
