@@ -9,6 +9,8 @@ end-of-run batteries live in `designs/research_state/gen*_endofrun_runbook.md`. 
 era-independent.
 
 Owner rulings are marked **(owner, date)**. Everything else is a standing rule the team adopted.
+This file and [`ORCHESTRATOR_SOP.md`](ORCHESTRATOR_SOP.md) are the PROCEDURES OF RECORD; the
+project-memory files that used to hold these rules are pointers to them.
 
 ---
 
@@ -20,6 +22,22 @@ Owner rulings are marked **(owner, date)**. Everything else is a standing rule t
 | **Orchestrator** | one Claude session, renamed per handoff | dispatches agents, LANDS branches, banks ledger entries, keeps `UNDERSTANDING.md` current, relays to peers |
 | **Training Run** | one Claude session | RUNS the arm: launch, watchers, crons, kill/relaunch, routine ledger entries for incidents on its run; messages the orchestrator on belief change, blocked, gate failure, batch complete |
 | **Agents** | subagents in isolated worktrees | build and measure; never write under `models/`, never launch, never touch the Showdown servers on :8000/:8001 |
+
+**The Training Run session reports to the ORCHESTRATOR, not to the owner.** The orchestrator is its
+scrum master (`ORCHESTRATOR_SOP.md` §1): it holds the backlog, unblocks it, and carries owner-facing
+traffic. Anything needing the owner's approval is escalated through the orchestrator, never decided
+here.
+
+**Standing autonomy grant (owner, 2026-09-03** — *"you can give it more autonomy if needed so it
+doesn't wake you unnecessarily"***).** This session may, without asking:
+
+- commit and LAND its own measurement artifacts;
+- bank ROUTINE ledger entries — launches, pin and pool checks, calibration passes, housekeeping;
+- make small, already-justified instrument fixes.
+
+It messages the orchestrator only for: a belief-changing reading, a blocker or an owner-go item, a
+meter-gate failure or a crash, and the completion of a batch. **Tiebreak: message if the ledger's
+headline entries would read differently because of it.** Its silence is expected, not a stall.
 
 **Who is the orchestrator right now** is written to one file that every session on this box can
 read at any time, because session names change on every handoff and `ListAgents` shows a dozen
@@ -40,6 +58,13 @@ session-independent channel, so when every session is down nothing can page them
 watcher's status file is therefore the record of the unattended period, and any session taking over
 a run reads it before anything else. The orchestrator carries no cap on unasked GPU commitments and
 decides the next arm from the data (`ORCHESTRATOR_SOP.md` §6).
+
+**If this session dispatches a subagent**, the dispatch rules are the orchestrator's and are not
+duplicated here: Opus only, never a fork, `isolation: "worktree"`, no conditional git-state
+instructions in the brief, hazards in the report are findings — `ORCHESTRATOR_SOP.md` §2. The stall
+mechanics (`stallMs`, the two watchdogs, resume-then-stop) and the waiting mechanics (the
+self-matching `pgrep` trap, the `Monitor` pattern) are `ORCHESTRATOR_SOP.md` §7, and the `pgrep`
+trap in particular applies directly to the watchers this session arms in §2 below.
 
 ---
 
@@ -90,29 +115,61 @@ answers one of the two questions; do both.
 
 ## 2. At launch — the four layers, set up unasked
 
-Every long run gets all four (`feedback_long_run_sop`):
+**Every long-running job gets all FOUR, at launch, without being asked** — the owner made the cron
+half explicit ("set fallback cron (make this standard sop)"):
 
-1. **OS-level watcher** (`nohup`): polls progress, ~35 min wedge limit, matches FAILURE words as
-   well as progress, writes a status file. Survives a dead session.
-2. **OS-level chain** for multi-stage work, so stage N+1 starts without a session.
+1. **OS-level watcher** (`nohup`, `watch.sh`-style): polls progress, ~35 min wedge limit, matches
+   FAILURE words as well as progress, writes a status file. Survives a dead session.
+2. **OS-level chain** for multi-stage work, so stage N+1 starts without a session. Survives too.
 3. **`Monitor`** on the status file, filtered to terminal + failure lines only — owned by the
    Training Run session. The orchestrator does NOT watch the run **(owner, 2026-09-02)**; it is
    messaged.
 4. **Fallback cron — every 55 MINUTES, never every hour (owner, 2026-09-06)**: the prompt-cache
    time-to-live is 1 h, so a wake inside the window re-uses the cached context and an hourly wake
-   re-pays the whole prefix. Prefer a drift-free INTERVAL (`/loop 55m <prompt>`, or a self-paced
-   wake at 3300 s); if only a cron EXPRESSION is available, `3,58 * * * *` keeps every gap ≤ 55 min
-   at the cost of one extra cached wake per hour. Off-minute alignment (never :00/:30). Its prompt
-   carries the REPAIR
-   steps (the argv file, the exact relaunch command per failure mode), the arm-INVALIDATING
-   conditions (`Pinned to` must read the registered sha; a `--sync-to-main` line voids the arm — stop
-   it), and the notification policy below.
+   re-pays the whole prefix (the root `CLAUDE.md` alone is ~45k tokens). Prefer a drift-free INTERVAL
+   (`/loop 55m <prompt>`, or a self-paced wake at 3300 s); if only a cron EXPRESSION is available,
+   `3,58 * * * *` keeps every gap ≤ 55 min at the cost of one extra cached wake per hour. Off-minute
+   alignment (never :00/:30). Longer gaps are fine when nothing needs checking that often — the rule
+   is "never 60 ± a few minutes", the worst point on the cost curve. Scheduling wakes ONLY to keep
+   the cache warm is still waste.
 
-**Notification policy (owner, 2026-08-23):** push on COMPLETION (artifacts on disk, not "training
-stopped") and when BLOCKED on a decision only the owner can make. Never routine progress. Bake it
-into every cron and watcher prompt.
+**Layers 1–2 are OS processes and keep the machine working if the session dies; layers 3–4 are
+session-scoped and are what reach the owner.** Say that asymmetry out loud on every handoff: the
+training survives a dead session, the alerting does not.
 
-**Every status update carries MARGINAL fps from checkpoint mtimes** (owner, 2026-08-23).
+**The cron is the only layer that can REPAIR rather than notify, so its prompt must carry:**
+
+- what the run is and its argv file path;
+- the exact repair command per failure mode (a cron that reports is a slower watcher; a cron that
+  relaunches is the actual defense);
+- the arm-INVALIDATING conditions — `Pinned to` must read the registered sha, and a `--sync-to-main`
+  line voids the arm: stop it, do not let it run. A cron that keeps a scientifically void run alive
+  is worse than no cron;
+- the notification policy below.
+
+Retire the cron when the work lands (it auto-expires in seven days, but a wake on finished work is
+noise). Never use a self-matching `pgrep` pattern in any of these layers (`[w]atch.sh`, not
+`watch.sh`) — it has killed this session's own shell repeatedly, and inside a `Monitor` it fails
+silently instead. Full trap list: `ORCHESTRATOR_SOP.md` §7.
+
+**Notification policy (owner, 2026-08-23, extended 2026-09-06):** push on COMPLETION (all registered
+parts done AND artifacts on disk, not "training stopped"), when BLOCKED on something unrepairable or
+on a decision only the owner can make, and on a MAJOR FINDING (0–3 a day, by judgement). Never
+routine progress — leg transitions, evals firing, healthy watcher ticks. One line, <200 chars, the
+actionable part first. Bake this policy into every cron and watcher prompt, so it holds on fires that
+land while the session is idle or mid-turn.
+
+**Every status update carries MARGINAL fps, measured from CHECKPOINT MTIMES** (owner, 2026-08-23 —
+the mtime method is the standard meter). SB3's `time/fps` is CUMULATIVE (num_timesteps ÷
+elapsed-this-child) so it lags every regime change: a fresh run's bots-only warmup held it at ~950
+while the true rate had already fallen to ~525 as self-play ramped. **The obvious fix is a trap** —
+recovering elapsed as `T = step / fps` and differencing is exact in algebra, but `fps` is logged as
+an INTEGER, so at 7M steps a 1-unit change moves T by ~30 s against the ~200 s between rows; the
+derived marginals explode (6,008 fps was observed, physically impossible) and the error grows with
+the run, so the numbers look plausible early and rot silently. With `--checkpoint-every-steps N` the
+files land every exactly N env-steps, so the wall-clock gap between consecutive checkpoints is a
+rounding-free rate. Quote a RANGE while the opponent mix is still ramping. Never reintroduce the
+integer-fps derivative.
 
 The launcher runs everything at `--nice 10`; a detached launch (`nohup … < /dev/null &`) is headless
 automatically. Never run a Claude session inside the training tmux session (its cgroup).
@@ -129,6 +186,12 @@ restart read is not KEEP, the run is blocked or crashed, or the batch completes.
 registered reads, bank the routine row in the ledger, send nothing. No new instrument unless a
 registered read needs one. Measured 2026-09-06/07: ~55 messages in 18 h, most of them routine reads and
 re-derivations that cost a conversation each where a no-op costs nothing.
+
+**Amendment (owner, 2026-09-07): a quick one-liner every once in a while is welcome.** *"I am ok with
+quick one liners of progress, eta, highlight or so every once in a while."* Silence is the default
+BETWEEN events; an occasional single line — progress, an ETA, one highlight — is wanted. One line, no
+reply expected, no back-and-forth, no scheduled digest, and never a reason to invent a check so there
+is something to report.
 
 - **Pre-registered kill conditions are executed, not debated.** Under `--critic winprob` stall rate
   and mean episode length are standing KILL conditions (a [0,1] critic cannot rank a timeout below a
@@ -185,8 +248,15 @@ re-derivations that cost a conversation each where a no-op costs nothing.
   resolved checkpoint file and rung, the team manifest actually loaded, the opponent actually played, the
   metric's definition in code (units, sign, denominator). An eval once ran against the wrong team set and
   was believed for two rounds; a result that looks impossible is verified at the artifact, not explained.
-- Every code and cell letter carries a human description in the same sentence when written for the
-  owner **(owner, standing)**.
+- **Every code and cell letter carries a human description in the same sentence when written for the
+  owner, on EVERY use** (owner, 2026-09-03, repeated 2026-09-06): "C1, the fold with the distillation
+  loss switched off"; "R4DOSE3, the fold at double v8's step size". Not just the first use — the owner
+  reads on mobile and out of order, and a bare code "means very little" to them. Ledger entries may
+  keep the bare codes (they carry the pin tables) but open with the description. Full rule and the
+  self-check: `ORCHESTRATOR_SOP.md` §5.
+- Reports to the orchestrator lead with the verdict, the evidence tag and one number with its
+  interval; the orchestrator carries it to the owner at the design-doc level (`ORCHESTRATOR_SOP.md`
+  §5). Detail belongs in the ledger entry the report names.
 
 ---
 

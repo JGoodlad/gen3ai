@@ -13487,3 +13487,35 @@ sentinels the eval edge and the ladder edge would have been the same experiment;
 **Cadence directive (owner, same message):** the Training Run wakes on its cron, hits the cache,
 and no-ops unless something changed; no checks invented to feel busy or to sustain a conversation.
 Relayed as a standing order; written into both SOPs.
+
+### 2026-09-07 · HISTORY · session SOPs moved from memory into `designs/ops/` + cadence amendment (one-liners welcome)
+
+Owner: *"move sop for you and the training agent from memory into a to the relevant ops Md"*. The
+operating procedure for the two long-lived sessions lived only in the orchestrator's project-memory
+files, where no peer session, no agent and no future session could read it. It is now merged into the
+two documents of record — [`designs/ops/ORCHESTRATOR_SOP.md`](../ops/ORCHESTRATOR_SOP.md) (160 → 410
+lines) and [`designs/ops/TRAINING_RUN_SOP.md`](../ops/TRAINING_RUN_SOP.md) (199 → 269 lines) — each
+rule stated once in the file that owns it and cross-referenced from the other. Every incident date and
+measured number came with it (the 2026-09-05 pruned-worktree arm death; the Workflow `stallMs`
+0-of-5/0-of-4 vs 8-of-9; the 19,286-turn measurement that DOWNGRADED the concurrency-starvation
+explanation of agent stalls to a token-cost rule; the integer-`fps` derivative trap behind the
+checkpoint-mtime fps meter; the ~55-messages-in-18-h reading behind the silence cadence).
+
+**Cadence amendment (owner, same message):** *"I am ok with quick one liners of progress, eta,
+highlight or so every once in a while."* Written into BOTH SOPs beside the 2026-09-07 silence rule —
+silence is the default BETWEEN events, an occasional one-line progress/ETA/highlight is welcome, and it
+is never a back-and-forth, a scheduled digest, or a reason to invent a check.
+
+These 21 memory files are now POINTERS to the section that holds them (kept, not deleted — other
+memories link them by name): `feedback_subagents_opus_only`, `feedback_ideation_session_operating_pattern`,
+`feedback_role_division_ideation_vs_running`, `feedback_relay_direct_to_training_session`,
+`feedback_training_run_autonomy_grant`, `feedback_no_busywork_checks`, `feedback_no_training_run_monitors`,
+`feedback_notification_standing_order`, `feedback_long_run_sop`, `feedback_fallback_cron_55m`,
+`feedback_agent_stream_stalls`, `feedback_workflow_stall_ms`, `feedback_agent_report_hazards_are_findings`,
+`feedback_quota_pacing`, `feedback_waiting_on_background_work`, `feedback_notify_then_act_15m`,
+`feedback_night_autonomy_keep_gpu_busy`, `feedback_report_at_design_doc_level`,
+`feedback_owner_autonomy_no_cap`, `feedback_no_auto_tech_debt`, `feedback_arm_labels_need_human_description`.
+Two contradictions were resolved in favour of the later measurement and recorded in the SOP text: agent
+concurrency is capped for TOKEN COST rather than for stall prevention (the starvation theory is measured
+flat), and the 2026-07 hard quota ceilings are superseded by the Max-20x "never waste" ruling of
+2026-09-06 while the pacing habits survive. Tag: HISTORY (a procedure move; no measurement changed).
