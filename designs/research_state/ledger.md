@@ -12706,3 +12706,48 @@ equilibrium**, not of stalling.
 **No explanation is asserted.** The registered falsifiable form, for a quiet moment: plot `ep_pool`
 per cycle against the trainee-minus-sentinel Elo gap taken from the ladder — reported as a SCATTER
 with n and the sign, **no fit line unless the points earn one.**
+
+### 2026-09-07 · OBSERVATION + REGISTRATION — the 20M node is the run's first ladder REGRESSION (loses to its three most recent ancestors, beats every older one, bots at a new high); a PLATEAU SIGNAL is pre-registered before 22M exists
+
+Reported by the Training Run session at 05:45. The 20M snapshot of `ai_v12_02_winprob_critic` is
+the first node to come in BELOW its predecessor on the ladder (18M 2078.7 ± 11.2 → 20M 2057.2 ± 11.3,
+against the grain — the newest node is normally the inflated one; ~1.35 SE on the ladder alone, which
+would not be called), and the head-to-head pairs are what make it real:
+
+| 20M vs | wins/100 | |
+|---|---|---|
+| 4M | 84 | |
+| 6M | 70 | |
+| 8M | 69 | |
+| 10M | 64 | |
+| 12M | 55 | |
+| 14M | 47 | below |
+| 16M | 48 | below |
+| 18M | 38 | Wilson [0.291, 0.478], excludes 0.50 |
+
+Pooled vs the recent three: **133/300 = 0.443, Wilson [0.388, 0.500]**; pooled vs the older five:
+342/500 = 0.684 [0.642, 0.723]. **At the same snapshot `win_rate_vs_bots` read a new high, 0.927.**
+The 20M weights are the strongest of the run against the fixed bots and the weakest of the last four
+against their own recent lineage — different opponents, not a contradiction, and the second
+appearance of the two-populations theme (ep_len at 16–18M; now STRENGTH). Known self-play shapes fit
+(non-transitivity; a policy that moved where the pool punishes it); **cause UNVERIFIED, no candidate
+asserted.** G7 untouched, run healthy.
+
+**Ruling: nothing changes for the 75M plan on one snapshot.**
+
+**PLATEAU SIGNAL, registered before 22M exists.** It fires at a new snapshot when BOTH hold: (1) the
+new node is below its predecessor on the ladder for the SECOND consecutive add, and (2) pooled
+head-to-head vs its three most recent ancestors is below 0.50 with the Wilson 95% interval excluding
+0.50, again. Firing is a REPORT trigger to the orchestrator, not a kill (the kill stays G7); on a
+fire the orchestrator decides with the owner whether the 75M read moves earlier or gains an interim
+matched-count read against the comparator. If 22M comes in above 18M, or its pooled interval
+includes 0.50, the 20M node is recorded as a one-off and nothing further is said. The 22M report
+prints the same eight-row profile plus 22M vs 20M specifically (a node that beats the dip but not
+18M is a different shape from one that beats neither).
+
+Also at this restart: vf_coef all three framings FLAG for the first time (registered −0.627, regime
+median −0.517, n = 160) — data for D2, the loop is closed; the startup measurement (+412 s) is
+CONTAMINATED by a collision with the 20M promotion (412 − 317 ≈ 95 s, the ~80 s promotion cost) and
+is filed as such, **312–317 s per restart stands** on its two clean measurements; the startup tool
+now refuses an excess under 100 s as NOT YET OBSERVED (a restart on this arm cannot cost ~0, so ~0 is
+the absence of one in the data — the same precondition class as the ring-buffer count).
