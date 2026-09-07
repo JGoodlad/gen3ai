@@ -329,7 +329,12 @@ def test_c_dry_run_at_head_never_spawns_the_probe(isolated, monkeypatch, capsys)
     monkeypatch.setattr(
         pa, "materialise",
         lambda *a, **k: pytest.fail("pin == HEAD must not materialise anything"))
-    _dry_run(["--pin-commit", c5_head, "--steps", "1000"], monkeypatch, expect=0)
+    # `--allow-nonproduction-arch`: the pin IS head here, so the arch-surface guard is a GATE
+    # rather than advisory, and a bare `--steps 1000` is not the production architecture. This
+    # test is about the probe, so it consents. (`--arch` exists in this tree, and no pinned parser
+    # runs at head, so the flag cannot perturb what is being measured.)
+    _dry_run(["--pin-commit", c5_head, "--steps", "1000", "--allow-nonproduction-arch"],
+             monkeypatch, expect=0)
     out = capsys.readouterr().out
     assert "PINNED parser" not in out
 
@@ -466,7 +471,7 @@ def test_e_checkargs_pin_fails_on_the_arity_changing_commit(repo, monkeypatch, c
 def test_e_without_a_pin_checkargs_is_unchanged(repo, monkeypatch, capsys):
     """No `--model`, no `--pin` ⇒ the launch runs on HEAD and the current parser is right."""
     monkeypatch.setattr(pa, "_repo_root", lambda: repo[0])
-    rc = checkargs.main(["--argv", "--steps 1000"])
+    rc = checkargs.main(["--argv", "--steps 1000 --allow-nonproduction-arch"])
     out = capsys.readouterr().out
     assert rc == 0 and "the CURRENT tree's" in out
     assert "PINNED" not in out

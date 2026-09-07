@@ -117,6 +117,10 @@ class Baseline:
     num_timesteps: Optional[int] = None
     floor_elo: Optional[float] = None
     config_overrides: Dict[str, Any] = field(default_factory=dict)
+    #: ``production`` only: the repo-relative path of the CONSTRUCTED mirror this entry owns.
+    #: Declared in the registry rather than hardcoded by each consumer, so :func:`production_config`
+    #: and the ARCH-SURFACE guard read the same file the entry says it constructs.
+    config_mirror: Optional[str] = None
     #: ``production`` only: the CONSTRUCTED mirror's own schema version, when it differs from the
     #: surface run's. ``None`` means "the mirror is a straight copy" and a key-set delta is then
     #: drift rather than a migration.
@@ -196,6 +200,8 @@ class Baseline:
             out["floor_elo"] = self.floor_elo
         if self.config_overrides:
             out["config_overrides"] = dict(self.config_overrides)
+        if self.config_mirror:
+            out["config_mirror"] = self.config_mirror
         if self.config_mirror_version is not None:
             out["config_mirror_version"] = self.config_mirror_version
         if self.pending:
@@ -301,6 +307,8 @@ def _build(name: str, raw: Dict[str, Any]) -> Baseline:
                        else int(raw["num_timesteps"])),
         floor_elo=(None if raw.get("floor_elo") is None else float(raw["floor_elo"])),
         config_overrides=dict(raw.get("config_overrides") or {}),
+        config_mirror=(None if raw.get("config_mirror") is None
+                       else str(raw["config_mirror"])),
         config_mirror_version=(None if raw.get("config_mirror_version") is None
                                else int(raw["config_mirror_version"])),
         pending=dict(raw.get("pending") or {}),
@@ -457,6 +465,44 @@ def run_dir(name: str, path: Optional[str] = None) -> Optional[str]:
     """The baseline's run directory on this box, or ``None`` with no archive."""
     models = main_models_dir()
     return None if models is None else os.path.join(str(models), get(name, path).run)
+
+
+# --------------------------------------------------------------------------------------------
+# The CONSTRUCTED production mirror — one reader
+# --------------------------------------------------------------------------------------------
+
+#: Where the ``production`` entry's mirror lives when the entry declares no ``config_mirror``.
+#: A fallback, not the authority: the registry entry is.
+DEFAULT_PRODUCTION_CONFIG = "designs/production_config.json"
+
+
+def production_config_path(path: Optional[str] = None) -> str:
+    """The absolute path of the CONSTRUCTED architecture mirror the ``production`` entry owns.
+
+    Read this rather than hardcoding ``designs/production_config.json``. Every consumer that
+    hardcodes it is a second opinion about what "production" is, and the registry exists because
+    this project has twice discovered two such opinions disagreeing — the newest-run drift
+    heuristic that would have blessed a 38-flag research argv, and the fold parent that was nearly
+    written into the mirror as if it were the production surface.
+    """
+    rel = get("production", path).config_mirror or DEFAULT_PRODUCTION_CONFIG
+    return rel if os.path.isabs(rel) else str(repo_path(*rel.split("/")))
+
+
+def production_config(path: Optional[str] = None) -> Dict[str, Any]:
+    """The mirror itself, as a dict. Raises :class:`BaselineError` naming the path when unreadable.
+
+    A mirror that silently is not there would let the ARCH-SURFACE guard report "0 keys differ",
+    which is precisely the false clean the guard exists to prevent.
+    """
+    p = production_config_path(path)
+    doc = _read_json(p)
+    if doc is None:
+        raise BaselineError(
+            f"the `production` baseline names {p} as its architecture mirror, but that file "
+            f"cannot be read. Every derived architecture artifact keys on it — regenerate it, or "
+            f"fix the entry's `config_mirror` in {path or REGISTRY_PATH}.")
+    return dict(doc)
 
 
 # --------------------------------------------------------------------------------------------
@@ -685,9 +731,11 @@ def _validate_production_mirror(path: Optional[str],
     have been compared against is not the mirror anybody intends.
     """
     out: List[Finding] = []
-    prod_path = production_config or str(repo_path("designs", "production_config.json"))
     try:
         b = get("production", path)
+        # The entry declares its own mirror (`config_mirror`); the explicit argument still wins,
+        # because a caller validating a candidate file must be able to name it.
+        prod_path = production_config or production_config_path(path)
     except BaselineError as exc:
         return [Finding("error", "production", str(exc))]
     models = main_models_dir()

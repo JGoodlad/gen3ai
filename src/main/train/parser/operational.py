@@ -97,3 +97,26 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--eval-concurrency", type=int, default=100, help="Concurrent battles during evaluation")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--log-level", type=str, default="periodic", choices=["quiet", "periodic", "detailed", "debug"], help="Logging verbosity level")
+    # --- gen3_arch_surface_guard_v1 (2026-09-06) — THE ARCH SURFACE ---------------------------
+    # "it launches" and "it is the experiment" are INDEPENDENT checks. A validator that only ever
+    # answered the first let a 38-token argv train a near-bare architecture for ~7 GPU-hours /
+    # 24.4M steps (31 keys off production). These two flags are the answer to the OTHER question.
+    parser.add_argument("--arch", type=str, default=None, choices=["production"],
+                        help="Apply an ENTIRE architecture surface as if every flag had been "
+                             "typed. 'production' reads designs/production_config.json — the same "
+                             "mirror the generated ARCHITECTURE.md tables and the compile gate key "
+                             "on — and sets every structural toggle in it that this argv leaves "
+                             "unset, so an explicitly-typed flag still wins. It does NOT set the "
+                             "training coefficients (the belief-supervision doses) or the CRITIC "
+                             "readouts: those are what an experiment varies, and the startup block "
+                             "lists them so their absence is visible. Refused on a resume, which "
+                             "INHERITS its parent's surface instead. Records "
+                             "arch_source=production_config@<content hash> in model_config.json.")
+    parser.add_argument("--allow-nonproduction-arch", action="store_true",
+                        help="Consent to a FRESH run whose architecture differs from "
+                             "designs/production_config.json. Without it such a launch is REFUSED, "
+                             "naming every differing key with both values (--dry-run, "
+                             "`python -m main.checkargs` and the launcher itself all refuse "
+                             "identically). Use it for a deliberate ablation; the choice is "
+                             "recorded in model_config.json's arch_source and in metadata's "
+                             "cli_args. A fork/restart never needs it.")

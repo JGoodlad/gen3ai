@@ -8084,3 +8084,168 @@ two halves of the default/explicit asymmetry — **an absent DEFAULT is NOT READ
 section still computed** (the portability property, verified failing on revert with the pre-fix
 refusal) while an explicit one still refuses.
 
+
+---
+
+## `gen3_arch_surface_guard_v1` — "IS THIS THE ARCHITECTURE YOU MEANT?", asked at launch (config v111, 2026-09-06)
+
+**The owner's question, verbatim, after the incident: "How can we prevent this issue in the future?
+I feel like this happens frequently, like we lose what the stable baseline is?"**
+
+### The incident this answers
+
+`ai_v12_01_winprob_critic` was launched from a design document's 38-token command block — the critic
+flags and the PPO knobs, and **no architecture surface**. Every architecture flag silently took its
+OFF default. **31 keys of its `model_config.json` differ from `designs/production_config.json`**:
+every edge family off (`edge_bias_families` `off` against production's 17-family string), zero
+entity seats, `opp_belief_slots` / `opp_intent` / `history_events` / `item_belief` / `spread_belief`
+/ `pair_outcome_cell` / `intent_threshold` all False, `move_belief_mode` `revealed`,
+`intent_label_bot_weight` 1.0 against production's 0.25. It trained **24.4M steps over 25,131 s**
+and was still holding the GPU when it was discovered a second time. Every number taken off it
+measures a different model. Ledger: `2026-09-06 · INCIDENT`.
+
+**Three gates ran before that launch and all three passed** — `python -m main.checkargs` exit 0,
+`resolve_config` accepted, `python -m main.launcher --dry-run` clean. All three were RIGHT.
+
+> **"it launches" and "it is the experiment" are INDEPENDENT checks, and only the RESOLVED-CONFIG
+> DIFF tests the second.**
+
+That sentence is the whole change. The gap was never a missing check; it was a missing QUESTION.
+`arch_tables_test`'s drift gate would have gone red — but only for whoever next ran the suite, which
+happened hours after the GPU started, and a launch-time answer is the only one that arrives before
+the GPU-hours do.
+
+### The guard
+
+`main.train.arch_surface.report()` — **ONE function, four readers**: `python -m main.checkargs`,
+`python -m main.launcher --dry-run`, the launcher's own `_prepare_session`, and the child's
+`resolve_config`. Three copies of a guard is three things to keep in step, and this tree has paid
+for that shape twice (the pre-`combination_checks` `parser.error` lines; the pre-registry
+`ARCH_ARG_KEYS`).
+
+**The key set is DERIVED, never hand-listed.** `flag_registry.arch_surface_flags()` = the
+`structural` × `family=ARCH` rows — the toggles whose mismatch means a DIFFERENT NETWORK. A literal
+list would have gone stale the first time a toggle landed and the guard would then silently
+under-report; `arch_surface_test::test_no_hand_written_key_list_exists_in_the_module` is the
+standing guard against re-introducing one. Everything excluded is excluded **by its own
+declaration**, in the row that declares everything else about it:
+
+| excluded | by | why |
+|---|---|---|
+| `family=CRITIC` (7 structural + 2 `resume_immutable`) | a NEW `Family` enum on `ModelFlag` | the readouts an experiment deliberately VARIES. `--critic winprob` IMPLIES `win_prob_mode` and REFUSES `--value-dist-mode` / `--value-from-dist`, so a guard demanding these match production would refuse **every critic arm** — the exact class of arm the incident was |
+| `Klass.RUNTIME` / `Klass.TRAINING_COEF` | `Klass`, unchanged | not architecture |
+| `Klass.RESUME_IMMUTABLE` | `Klass`, unchanged | the forward is identical (`belief_grad_mode`, the value-dist bounds) |
+
+🚨 **THE COMPARED-KEY COUNT IS RECONCILED, NOT MERELY SMALLER.** A guard that compares fewer keys
+than a reader's own count leaves them unable to tell an excluded row from a forgotten one — so the
+difference is ARITHMETIC and every printed block carries it:
+`39 arch + 7 critic + 3 non-structural = 49 registry rows` (`arch_surface.surface_partition()`,
+measured 2026-09-06). A row that lands without a `family` decision breaks that identity rather than
+quietly moving the surface. The hand-rolled check that validated the corrected relaunch compared all
+49 and found 0 differing; this guard compares the 39 it declares and finds 0 on the same config.
+Both are right, and the block says which question it asked.
+
+### FRESH REFUSES; PINNED is ADVISORY; a FORK is INFO
+
+* **FRESH** (no `--model`), un-pinned, drifting ⇒ **REFUSED** — exit 1 from `checkargs`,
+  `FATAL_CONFIG` from `--dry-run` and from `_prepare_session`, naming every differing key with both
+  values. `_prepare_session` asks at the LAST point before anything exists: immediately before
+  `_create_run_worktree` on the pinned path and before the `makedirs` on `--no-pin`, so a refusal
+  leaves no worktree, no run dir and no child.
+* **PINNED to another commit ⇒ ADVISORY**, for `gen3_pinned_argv_parser_v1`'s exact reason: the
+  mirror is THIS tree's, that commit has its own registry and its own `production_config.json`, and
+  `--arch` does not exist before 2026-09-06 — so refusing it would be the same false POSITIVE that
+  rule already fixed for the parser. **The diff is still computed and printed**, never dropped;
+  that is the other half of the same lesson, and dropping it is how the guard would silently stop
+  working the day a batch pins.
+* **A FORK or RESTART is INFO only** — it INHERITS its parent's surface through
+  `config.inherit_saved_flag`, so its silence is the parent's architecture, not a bare one.
+* **`resolve_config` REPORTS and RECORDS but does not refuse**, and that is a placement decision:
+  it runs in the CHILD, after the pin is resolved, the worktree created and the run dir made, so a
+  refusal there is both late and a duplicate of `_prepare_session`'s.
+
+🚨 **THIS IS NOT THE SAME FAILURE AS A REFUSED FLAG COMBINATION, AND THE TWO NEVER SHARE A MESSAGE,
+A SUMMARY LINE OR A REFUSAL PATH.** Rebuilding the same arm from an older generation's recorded
+`original_command` also fails — on nine flags `--critic winprob` SUBSUMES (`--use-popart`,
+`--value-from-dist`, the four `--value-dist-*`, `--value-dist-coef`, `--win-prob-coef`,
+`--value-tail-weight`; `checkargs` reported 5 refused combinations until they were stripped). That
+failure is **LOUD and PRE-launch**: nothing starts, the operator fixes it in a minute. Arch drift is
+**SILENT and POST-launch**: everything parses, the run starts, and seven GPU-hours later the config
+diff is the only thing that would have told you. A guard that catches the first is no protection
+against the second, so `checkargs` prints a separate closing verdict — *"✗ this command LAUNCHES —
+and builds the wrong architecture"* — that fires only when no combination also failed.
+
+### `--arch production` — so a document never carries the surface again
+
+Applies every ARCH-surface key from `designs/production_config.json` as if typed, inside
+`desugar_umbrella_flags` and **FIRST**, before every other desugar (`--unified-moves` and
+`--damage-matrices` both only fill what is still unset, so running the umbrella first makes it a
+DEFAULT that the sugar and every explicit flag alike still override — precedence in one direction,
+top to bottom, no special cases). Refused on a resume (`combination_checks`'
+`arch_umbrella_is_fresh_only`, read by the launch path and `checkargs` from one declaration): a fork
+INHERITS its parent's surface, and writing production's values over that is a `check_compatible`
+FATAL at best and a silently different network at worst.
+
+**What it deliberately does NOT set is NAMED on every run**, because a validator whose silence reads
+as coverage is the same failure one layer down: the CRITIC readouts (above), `--belief-grad-mode`,
+and the **SUPERVISION DOSES** — `--move-belief-coef` · `--move-belief-latent-coef` ·
+`--spread-belief-coef` · `--item-belief-coef` · `--hp-type-belief-coef` ·
+`--intent-label-bot-weight`, all of which production trains at 0.05 (0.25 for the last) and a fresh
+run defaults to 0.0 or 1.0. Those six are declared by a new `ModelFlag.coef_arg` on the toggle they
+supervise, so the list is derived like everything else. **Measured completeness**: of the 31 mirror
+keys the incident's own recorded config differs on, **26 are refused on the ARCH surface, 4 are
+named as doses, and the 1 remainder (`opp_belief_aux_coef`) is the enable coefficient of
+`opp_belief_slots`, which is itself refused** — not one can pass unmentioned
+(`test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED`).
+
+### `arch_source` — config v111, provenance only
+
+One string in `model_config.json`, the `win_prob_pbrs_source` class exactly: recorded, never gated,
+absent from `_WEIGHT_FIELDS` and from every `check_*`, **no `ARCH_SIGNATURE` bump** (no module, no
+`state_dict` key, no forward). `--arch production` stamps `production_config@<12 hex of the mirror's
+git blob hash>` — a CONTENT hash computed without git, so it names what the mirror SAID rather than
+when it was last touched; `--allow-nonproduction-arch` stamps the deliberate-drift form; a run that
+used neither records `None`. The migration defaults it to `None` and **never infers it** — a run
+whose surface happens to match today's mirror still did not SAY so, and a derived answer presented
+as a record is worse than no answer. It exists because the incident's run recorded a bare
+architecture with nothing on disk saying whether that was a decision or an accident.
+
+### One reader for the mirror
+
+`arch_surface` resolves `designs/production_config.json` through
+`agents.training.baselines.production_config_path()` — the `production` entry's own declared
+`config_mirror` (`gen3_baselines_registry_v1`) — rather than opening the path itself, and
+`_validate_production_mirror` now reads it the same way. A second opinion about what "production"
+is is exactly what the registry exists to remove.
+
+### Gates
+
+`src/main/train/arch_surface_test.py` (39, unmarked, 1.2 s), whose central test is the REAL recorded
+argv read off `models/ai_v12_01_winprob_critic/metadata.json` (with the verbatim string as the
+fallback, so it means the same thing on a box with no archive): it must be REFUSED and must name at
+least twenty keys. Around that: the umbrella closes it and does not fight `--critic winprob`; an
+explicit `--entity-topk-seats 0` beats the umbrella and is then refused (a default, not a lock); the
+consent flag passes and is recorded; a fork is not gated but its diff is still printed; the umbrella
+is refused on a resume; **the pinned-vs-fresh asymmetry on the surface an operator runs** (pinned
+prints `ADVISORY` and never `✗ REFUSED`, fresh refuses); **the arch verdict never sharing a line
+with a combination refusal**, with no subsumed critic flag appearing as arch drift; the surface
+partition being exhaustive and printed; the guard reading a RECORDED `model_config.json` as well as
+an argv (a derived row is read from `opp_intent_coef` OR the recorded `opp_intent` — reading only
+the coefficient reported `opp_intent False` against the LIVE run, whose recorded value is `True`);
+the corrected relaunch `ai_v12_02_winprob_critic` reading **0 of 39**; and `checkargs` and
+`--dry-run` reaching the same verdict, which is the split this whole class of failure lives in.
+
+`src/main/launch_runbook_test.py` gains **`test_the_runbook_ARCH_block_IS_the_production_surface`**
+(parametrized over all five arms): the runbook's hand-pasted `$ARCH` block reports **0 of 39
+ARCH-surface keys differing**, so "and it is the production surface" is a measurement rather than a
+claim, and an edit to it fails with the document named.
+
+### Docs
+
+`designs/ai_v12/design_winprob_only_critic.md` §5.4 opens with **"A COMMAND BLOCK IN THIS DOCUMENT
+IS NOT A LAUNCH COMMAND"** and the incident's numbers; its corrected command carries
+`--arch production` plus the six doses. `designs/ai_v12/launch_runbook.md` gains §2.6 (why `$ARCH`
+exists, the one flag that replaces it, the three classes it does not set, and the pinned-vs-fresh
+asymmetry), a rewritten PRE-FLIGHT step 1, and the ARCH-SURFACE banner at the top of §4.1. Root
+`CLAUDE.md` → *Will this command still launch?* and `src/main/launcher/CLAUDE.md` carry the same
+truth for their own surface.

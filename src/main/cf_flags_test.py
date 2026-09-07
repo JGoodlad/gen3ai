@@ -254,14 +254,19 @@ def test_checkargs_accepts_the_whole_family():
     runs every value-conditional refusal the launch path runs, so this test's original argv —
     `--cf-label-lag-steps 1000` against the default checkpoint interval — was correctly refused by
     the CF duty-cycle FATAL_CONFIG (0.1% vs the 25% floor). The lag is widened to a launchable
-    value; the assertion this test exists for is the `unrecognized : 0` line."""
+    value; the assertion this test exists for is the `unrecognized : 0` line.
+
+    `--allow-nonproduction-arch` is there for the same reason one layer on:
+    `gen3_arch_surface_guard_v1` (2026-09-06) makes checkargs refuse a FRESH argv whose
+    architecture is not `designs/production_config.json`'s, and this argv is a flag-recognition
+    fixture, not a production launch."""
     proc = subprocess.run(
         [sys.executable, "-m", "main.checkargs", "--argv",
          "--steps 1 --cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
          "--no-cf-head-only --cf-label-lag-steps 400000 --cf-label-likelihood binomial "
          "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001 "
          "--win-prob-mode read_only --cf-twin-heads --cf-twin-coef 0.1 "
-         "--cf-shadow-critic --cf-shadow-coef 0.5"],
+         "--cf-shadow-critic --cf-shadow-coef 0.5 --allow-nonproduction-arch"],
         capture_output=True, text=True, timeout=300, cwd=str(_REPO),
         env={**os.environ, "PYTHONPATH": str(_REPO / "src")},
     )

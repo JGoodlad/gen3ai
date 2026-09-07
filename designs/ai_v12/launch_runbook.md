@@ -193,12 +193,71 @@ $ python -m main.checkargs --argv "<each of the five argvs above>"
 counts above are over the FORWARDED flags; `--restart-interval-hours` is in `checkargs`'
 `LAUNCHER_ONLY` set and is classified rather than rejected if you paste the whole launcher line.
 
+### 2.6 THE ARCH SURFACE — why `$ARCH` exists, and the one flag that replaces it
+
+🚨 **`$ARCH` is not boilerplate. On 2026-09-06 an arm launched WITHOUT it and burned ~7 GPU-hours.**
+`ai_v12_01_winprob_critic` was built from a design document's command block — the critic flags and
+the PPO knobs, no architecture surface — so every architecture flag silently took its OFF default:
+every edge family off, zero entity seats, no belief slots, no event window, no intent heads.
+**31 keys of its `model_config.json` differ from `designs/production_config.json`.** It trained
+24.4M steps over 25,131 s and was still holding the GPU when it was found a second time. Ledger:
+`2026-09-06 · INCIDENT`.
+
+Three gates were run before that launch and all three passed — `checkargs` exit 0, `resolve_config`
+accepted, `--dry-run` clean. All three were RIGHT:
+
+> **"it launches" and "it is the experiment" are INDEPENDENT checks, and only the RESOLVED-CONFIG
+> DIFF tests the second.**
+
+**`$ARCH` above IS the production surface, and that is now a MEASUREMENT rather than a claim.**
+`launch_runbook_test::test_the_runbook_ARCH_block_IS_the_production_surface` builds each arm's argv
+out of this file and reports **0 of 39 ARCH-surface keys differing** from
+`designs/production_config.json`. If someone edits `$ARCH`, that test says so with this document
+named.
+
+**For any NEW arm, do not paste it — type `--arch production`** (`gen3_arch_surface_guard_v1`). It
+applies every ARCH-surface key from the same mirror as if typed, an explicitly-typed flag still
+wins, and it records `arch_source: production_config@<12 hex of the mirror's content hash>` in
+`model_config.json`. It is refused on a resume, which INHERITS its parent's surface instead.
+
+**What `--arch production` does NOT set, and therefore what still has to be typed.** The umbrella
+writes the ARCHITECTURE only; it prints this list on every run rather than leaving the omission to
+be discovered:
+
+| class | keys | why not |
+|---|---|---|
+| SUPERVISION DOSES | `--move-belief-coef 0.05` · `--move-belief-latent-coef 0.05` · `--spread-belief-coef 0.05` · `--item-belief-coef 0.05` · `--hp-type-belief-coef 0.05` · `--intent-label-bot-weight 0.25` | a dose is TRAINING, not a network. Omit them and you get the production network with its belief heads unsupervised — the same silent-omission class, one layer down |
+| CRITIC readouts | `--win-prob-mode` · the four `--value-dist-*` · `--cf-evidential` · `--cf-twin-heads` · `--cf-shadow-critic` · `--q-winprob-mode` | this is the quantity an experiment VARIES. `--critic winprob` implies one of them and REFUSES two others, so pinning them to production would refuse every critic arm |
+| `resume_immutable` | `--belief-grad-mode shaping` | the forward is identical either way |
+
+**A drifting FRESH run is REFUSED; a PINNED one is ADVISORY.** The mirror is the CURRENT tree's, and
+a run pinned to another commit is built by THAT commit's registry, its flags and its own mirror —
+`--arch` does not even exist before 2026-09-06. Refusing it would be the false positive
+`gen3_pinned_argv_parser_v1` already fixed for the parser. So a pinned argv prints the diff and is
+never gated; an un-pinned fresh one at HEAD refuses with `--arch production` or
+`--allow-nonproduction-arch` as the two ways forward. **The diff is printed on both** — dropping it
+on the pinned path is how the guard would silently stop working the day a batch pins.
+
+⚠️ **The arch-surface refusal and a refused flag COMBINATION are different failures and read
+differently on purpose.** Rebuilding an arm from an older generation's recorded `original_command`
+also fails, on the nine flags `--critic winprob` SUBSUMES (`--use-popart`, `--value-from-dist`, the
+four `--value-dist-*`, `--value-dist-coef`, `--win-prob-coef`, `--value-tail-weight`) — but that
+failure is **LOUD and PRE-launch**: `checkargs` names it, nothing starts, you fix it in a minute.
+Arch drift is **SILENT and POST-launch**. A guard that catches the first is no protection against
+the second, so the two never share a block, a summary line, or a refusal path.
+
+---
+
 ---
 
 ## 3. PRE-FLIGHT
 
-1. **Re-run `checkargs` on the day.** It is 2 seconds and it is the only thing that catches a
-   flag deleted between this document and the launch.
+1. **Re-run `checkargs` on the day, and READ THE `ARCH SURFACE` BLOCK.** Two seconds, and it now
+   answers two independent questions: *does this still launch* (a flag deleted between this
+   document and the launch) and *is this the architecture you meant* (§2.6). The second is the one
+   that cost ~7 GPU-hours when nothing asked it. On a fresh arm the block must read
+   **`✓ every ARCH-surface key matches the production mirror`**; anything else is a launch blocker
+   unless `--allow-nonproduction-arch` is a deliberate part of the arm.
 2. **`git log -1`** — record the hash the arms launch on. The launcher pins a resumed run to its
    checkpoint's commit; a fresh run pins nothing.
 3. **Confirm the frozen-φ source loads** before committing 25M steps to it (§6.5). The FROZEN-φ
@@ -212,6 +271,15 @@ counts above are over the FORWARDED flags; `--restart-interval-hours` is in `che
 ## 4. WHAT A HEALTHY FIRST HOUR LOOKS LIKE
 
 ### 4.1 Startup banners — read these before walking away
+
+**FIRST, before every other banner: the ARCH SURFACE block.** The launcher prints it into the event
+stream from `_prepare_session`, *before* the pinned worktree and the run dir exist, and the child
+prints it again from `resolve_config`. On a production arm it reads
+`✓ every ARCH-surface key matches the production mirror (39 of 49 registry toggles are the ARCH
+surface; 7 critic readouts + 3 non-structural rows are excluded by their own declaration)`. A run
+that got past the gate on `--allow-nonproduction-arch` says so instead, and records it in
+`model_config.json`'s `arch_source` — so "we meant this" is on disk rather than in a memory.
+
 
 | line | SPARSE | SELF-φ | FROZEN-φ |
 |---|---|---|---|

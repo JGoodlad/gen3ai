@@ -121,6 +121,14 @@ def _snapshot_tree(path):
     return out
 
 
+#: Every FRESH argv below is a bare `--steps N`, which the ARCH-SURFACE guard
+#: (`gen3_arch_surface_guard_v1`, 2026-09-06) correctly refuses — it is not the production
+#: architecture. These tests are about the PIN, the run dir and the child-only gaps, so they carry
+#: the consent flag rather than becoming arch tests by accident. That the guard fires on this exact
+#: shape is `main/train/arch_surface_test.py`'s subject; §(g) below pins the interaction here.
+_ARCH_OK = ["--allow-nonproduction-arch"]
+
+
 def _dry_run(argv, monkeypatch, expect=0):
     """Drive the REAL entry point (`main()`), so the strip / port-default / branch plumbing is
     covered too. Returns the captured stdout block."""
@@ -197,7 +205,7 @@ def test_b_fork_dry_run_creates_no_directory(isolated, monkeypatch, capsys):
 def test_c_fresh_dry_run_prints_role_fresh_and_a_head_pin(isolated, monkeypatch, capsys):
     _root, (_first, second), work = isolated
     monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
-    _dry_run(["--steps", "1000"], monkeypatch)
+    _dry_run(["--steps", "1000", *_ARCH_OK], monkeypatch)
     out = capsys.readouterr().out
     assert "role        : FRESH" in out
     assert second in out and "(source: head)" in out
@@ -207,7 +215,7 @@ def test_c_fresh_dry_run_prints_role_fresh_and_a_head_pin(isolated, monkeypatch,
 
 def test_c_no_pin_says_so_and_still_resolves_everything_else(isolated, monkeypatch, capsys):
     _root, (_first, _second), _work = isolated
-    _dry_run(["--no-pin", "--steps", "1000"], monkeypatch)
+    _dry_run(["--no-pin", "--steps", "1000", *_ARCH_OK], monkeypatch)
     out = capsys.readouterr().out
     assert "--no-pin" in out and "role        : FRESH" in out
 
@@ -310,7 +318,60 @@ def test_f_the_parser_knows_it_and_it_defaults_off():
 
 def test_the_child_only_gaps_are_printed(isolated, monkeypatch, capsys):
     _root, _shas, _work = isolated
-    _dry_run(["--steps", "1000"], monkeypatch)
+    _dry_run(["--steps", "1000", *_ARCH_OK], monkeypatch)
     out = capsys.readouterr().out
     assert out.count("(child-only:") == len(dry_run_mod.CHILD_ONLY)
     assert "check_compatible" in out, "the arch check is the gap a reader most needs named"
+
+
+# ---------------------------------------------------------------------------------------
+# (g) THE ARCH SURFACE — a fresh dry run is a GATE on it, a fork is only informed
+# ---------------------------------------------------------------------------------------
+
+def test_g_a_fresh_dry_run_refuses_a_nonproduction_arch(isolated, monkeypatch, capsys):
+    """The 2026-09-06 incident, at this surface: `--dry-run` said "would launch" about an argv
+    that built a near-bare network. Without the consent flag it must now say the opposite.
+
+    The pin is forced to the fixture repo's OWN head. Left alone it resolves to the real
+    checkout's HEAD, which is not a commit in the temp repo — so the launch reads as PINNED to
+    another commit and the arch finding is correctly demoted to ADVISORY, which is a different
+    code path from the one this test is about."""
+    _root, (_first, second), work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    _dry_run(["--steps", "1000"], monkeypatch, expect=int(TrainExitCode.FATAL_CONFIG))
+    out = capsys.readouterr().out
+    assert "ARCH SURFACE vs designs/production_config.json" in out
+    assert "would NOT launch" in out
+    assert not os.path.exists(work / "models"), "a refused dry run must still create nothing"
+
+
+def test_g_the_consent_flag_turns_it_into_a_note(isolated, monkeypatch, capsys):
+    _root, (_first, second), _work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)   # not-advisory, as above
+    _dry_run(["--steps", "1000", *_ARCH_OK], monkeypatch)
+    out = capsys.readouterr().out
+    assert "ARCH SURFACE" in out and "EXPLICIT choice" in out
+    assert "would launch" in out
+
+
+def test_g_a_RESTART_is_informed_not_gated(isolated, monkeypatch, capsys):
+    """A resume INHERITS its parent's surface, so the diff is INFO — never a refusal. Without this
+    the guard would block every relaunch of every archived run."""
+    _root, (first, _second), work = isolated
+    _run_dir, ckpt = _make_run(work, first)
+    _dry_run(["--model", ckpt, "--steps", "99000000"], monkeypatch)
+    out = capsys.readouterr().out
+    assert "ARCH SURFACE" in out
+    assert "INFO only" in out and "would launch" in out
+
+
+def test_g_a_PINNED_launch_demotes_the_finding_to_advisory(isolated, monkeypatch, capsys):
+    """`designs/production_config.json` is THIS tree's mirror. A child pinned to another commit is
+    built by THAT commit's registry and its own mirror — and `--arch` may not exist there at all —
+    so refusing it on today's would be `gen3_pinned_argv_parser_v1`'s false POSITIVE again. The
+    diff is still computed and printed; only the gate is dropped."""
+    _root, _shas, _work = isolated
+    _dry_run(["--steps", "1000"], monkeypatch)          # pin resolves off-repo => differs from HEAD
+    out = capsys.readouterr().out
+    assert "ARCH SURFACE" in out and "ADVISORY" in out
+    assert "would launch" in out

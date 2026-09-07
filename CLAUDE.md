@@ -885,6 +885,70 @@ flags
 than reported as stale. **Run it after deleting flags**, over the recorded commands of any run you
 might still relaunch or fork — that is what it is for.
 
+🚨 **AND IT NOW ASKS THE OTHER QUESTION: IS THIS THE ARCHITECTURE YOU MEANT?**
+(`gen3_arch_surface_guard_v1`, 2026-09-06.) **"it launches" and "it is the experiment" are
+INDEPENDENT checks, and only the RESOLVED-CONFIG DIFF tests the second.** On **2026-09-06** the
+first win-prob-critic arm was launched from a design document's 38-token command block — the critic
+flags and the PPO knobs, none of the production feature flags, so every architecture flag silently
+took its OFF default. Three gates ran and **all three passed**: `checkargs` exit 0, `resolve_config`
+accepted, `--dry-run` clean. All three were right. The run trained a near-bare network for
+**25,131 s / 24.4M steps / 6 checkpoints** — still holding the GPU when it was discovered a second
+time — and **31 keys of its `model_config.json` differ from `designs/production_config.json`**
+(every edge family off, zero entity seats, no belief slots, no event window, no intent heads).
+Every number taken off it measures a different model. The gate that would have caught it
+(`arch_tables_test`'s drift gate) fires only when someone runs the suite. The gap was never a
+missing check — it was a missing QUESTION. Ledger: `2026-09-06 · INCIDENT`.
+
+So `checkargs`, `--dry-run` and the launcher's own `_prepare_session` all print an **ARCH SURFACE
+vs designs/production_config.json** block, from ONE function (`main.train.arch_surface.report` —
+three copies of a guard is three things to keep in step). Its key set is DERIVED, never hand-listed:
+`flag_registry.arch_surface_flags()` = the `structural` × `family=arch` rows, the toggles whose
+mismatch means a DIFFERENT NETWORK. Everything else drops out by its own declaration —
+`training_coef` and `runtime` are not architecture, `resume_immutable` leaves the forward identical,
+and `family=critic` marks the readouts an experiment deliberately VARIES (`--critic winprob`
+IMPLIES `win_prob_mode` and REFUSES `--value-dist-mode`, so gating them would refuse every critic
+arm). The count is RECONCILED rather than merely smaller — every block prints
+`39 arch + 7 critic + 3 non-structural = 49 registry rows`, because a guard that compares fewer keys
+than a reader's own count leaves them unable to tell an excluded row from a forgotten one. On a
+**FRESH** argv a non-empty diff **REFUSES** (exit 1 / `FATAL_CONFIG`), naming every key
+with both values, unless the argv carries **`--allow-nonproduction-arch`**. A **FORK or RESTART is
+exempt but still printed** — it INHERITS its parent's surface through `config.inherit_saved_flag`,
+so its silence is the parent's architecture, not a bare one. A **PINNED** launch is ADVISORY for
+`gen3_pinned_argv_parser_v1`'s exact reason: the mirror is THIS tree's, that commit has its own
+registry and its own `production_config.json`, and `--arch` does not exist before 2026-09-06 — so
+refusing there would be the same false POSITIVE that rule already fixed. **The diff is printed
+either way**; dropping it on the pinned path is how the guard would silently stop working the day a
+batch pins.
+
+🚨 **AN ARCH-SURFACE REFUSAL AND A REFUSED FLAG COMBINATION ARE DIFFERENT FAILURES AND SHARE NO
+MESSAGE, NO SUMMARY LINE AND NO REFUSAL PATH.** Rebuilding that arm from an older generation's
+recorded `original_command` also fails — on nine flags the win-prob critic SUBSUMES (`--use-popart`,
+`--value-from-dist`, the four `--value-dist-*`, `--value-dist-coef`, `--win-prob-coef`,
+`--value-tail-weight`). That failure is **LOUD and PRE-launch**: `checkargs` names it, nothing
+starts, it is fixed in a minute. Arch drift is **SILENT and POST-launch**: everything parses, the
+run starts, and seven GPU-hours later the config diff is the only thing that would have told you. A
+guard that catches the first is no protection against the second, so `checkargs` closes an
+arch-only failure with its own verdict — *"✗ this command LAUNCHES — and builds the wrong
+architecture"* — which fires only when no combination also failed.
+
+**`--arch production` is the remedy and makes the runbook's `$ARCH` block one token**: it applies
+every ARCH-surface key from `designs/production_config.json` as if typed, inside
+`desugar_umbrella_flags` (so an explicitly-typed flag still wins and the C1-class inheritance rules
+are untouched), and records `arch_source: "production_config@<12 hex of the mirror's git blob
+hash>"` in `model_config.json` (config **v111**, provenance only — recorded, never gated, no
+`ARCH_SIGNATURE` bump). It is refused on a resume, and it deliberately does NOT set the CRITIC
+readouts, `--belief-grad-mode`, or the six **SUPERVISION DOSES** (`--move-belief-coef` ·
+`--move-belief-latent-coef` · `--spread-belief-coef` · `--item-belief-coef` ·
+`--hp-type-belief-coef` · `--intent-label-bot-weight`, declared by `ModelFlag.coef_arg` on the
+toggle each supervises) — the block lists all of them, every time, so its silence is never read as
+coverage. Measured against the incident's own config: of its 31 differing keys, **26 are refused on
+the surface, 4 are named as doses, and the last is the enable coefficient of a refused surface
+row** — not one can pass unmentioned. The mirror is read through
+`agents.training.baselines.production_config_path()`, the registry's own accessor, so the guard and
+`designs/baselines.json` cannot disagree about what "production" is. The launch path (`resolve_config`) prints the block and records
+`arch_source` but does NOT refuse: it runs in the child, after the worktree and the run dir already
+exist, so its refusal would be both late and a duplicate of `_prepare_session`'s.
+
 🚨 **A PINNED argv is judged by the PINNED commit's parser** (`gen3_pinned_argv_parser_v1`,
 2026-09-05). `--pin <sha>` validates against that commit's `build_parser()` instead of this tree's,
 and with a `--model` present it does so automatically using the checkpoint's recorded `git_hash` —

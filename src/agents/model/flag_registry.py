@@ -98,6 +98,27 @@ class Klass(str, Enum):
     RUNTIME = "runtime"
 
 
+class Family(str, Enum):
+    """WHICH SURFACE a toggle belongs to — orthogonal to `Klass`, and read by the ARCH-SURFACE
+    guard (`main.train.arch_surface`).
+
+    `Klass` already separates the reward / training-coefficient / runtime families from the
+    architecture: they are `training_coef` and `runtime`, and the guard drops them by class. The one
+    split `Klass` cannot express is inside `structural`: the CRITIC READOUTS (`win_prob_mode`, the
+    `value_dist_*` block, the four counterfactual heads, `q_winprob_mode`) build modules exactly the
+    way an entity seat does, but they are the quantity an experiment is deliberately CHANGING —
+    `--critic winprob` implies one of them and REFUSES two others — so a guard that demanded they
+    match the production mirror would refuse every critic arm it exists to protect.
+
+    So the guard's key set is `structural` AND `ARCH`, and the exclusion is DECLARED here rather
+    than hand-listed at the guard: a new critic readout marks itself `family=Family.CRITIC` in the
+    same row that declares everything else about it, and `arch_surface_test` fails if a row is
+    added to the surface without a decision being made.
+    """
+    ARCH = "arch"
+    CRITIC = "critic"
+
+
 @dataclass(frozen=True)
 class ModelFlag:
     """One extractor toggle, and everything the five surfaces need to agree on.
@@ -118,6 +139,25 @@ class ModelFlag:
     cli_name: Optional[str] = None  # the long flag when it is NOT `--<arg with dashes>`
     note: str = ""                  # anything a reader needs that ``meaning`` cannot carry
     requires: Tuple[str, ...] = ()  # flags that must be ENABLED for this one to be (see below)
+    family: Family = Family.ARCH    # which SURFACE it belongs to — see `Family`
+    #: For a DERIVED row only: the value to write into `source_arg` to turn this toggle ON when
+    #: `designs/production_config.json` cannot supply one. A derived toggle's CLI surface is a
+    #: training COEFFICIENT, and `model_config.json` records only the BOOL it derives — so
+    #: `opp_intent` has no recorded coefficient to copy and the umbrella would otherwise have no
+    #: way to enable a toggle production has ON. The magnitude is a training dose, not an
+    #: architecture fact: `--arch production` writes it and an explicit `--opp-intent-coef` wins.
+    on_value: Optional[Any] = None
+    #: The SEPARATE training-coefficient field that supervises this toggle's head, where the toggle
+    #: is a mode/bool of its own (a `derived` row has no such split — its CLI surface IS the
+    #: coefficient, so it declares `source_arg` instead). NOT part of the arch surface and never
+    #: written by `--arch production`: a dose is training, not architecture, and pinning it would
+    #: make the umbrella refuse the ablations it exists to leave free.
+    #:
+    #: It is declared here so the ARCH-SURFACE guard can NAME it. `--arch production` builds the
+    #: production network with `move_belief_coef` 0.0 and `spread_belief_coef` 0.0 where production
+    #: trains at 0.05 — the same class of silent-omission the guard exists to end, one layer down —
+    #: and a block that listed only what it applied would read as coverage of what it did not.
+    coef_arg: Optional[str] = None
 
     @property
     def arg(self) -> str:
@@ -159,7 +199,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               requires=("attend_unrevealed_opponents",)),
     ModelFlag("move_belief_mode", "off", Tier.CLI, Klass.STRUCTURAL, 17,
               "predict + reinject each opp mon's moveset (off|revealed|unrevealed|both)",
-              requires=("attend_unrevealed_opponents",)),
+              requires=("attend_unrevealed_opponents",), coef_arg="move_belief_coef"),
     ModelFlag("damage_op", False, Tier.CLI, Klass.STRUCTURAL, 19,
               "build the differentiable GPU DamageOperator",
               requires=("move_belief_mode",)),
@@ -167,7 +207,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "fuse the Smogon move-frequency prior into the move belief as a log-odds delta",
               requires=("move_belief_mode",)),
     ModelFlag("win_prob_mode", "none", Tier.CLI, Klass.STRUCTURAL, 22,
-              "auxiliary win-probability side head off value_pooled (none|read_only|shaping)"),
+              "auxiliary win-probability side head off value_pooled (none|read_only|shaping)",
+              family=Family.CRITIC),
     ModelFlag("damage_outgoing", False, Tier.CLI, Klass.STRUCTURAL, 23,
               "the op's OUTGOING per-move direction (our active's moves -> the opp active)",
               requires=("damage_op",)),
@@ -175,20 +216,25 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "the LEGAL-BUT-UNOBSERVED base probability of the move prior",
               note="must equal damage_tables._PRIOR_FLOOR; legality itself is unconditional (v65)."),
     ModelFlag("move_latent", False, Tier.CLI, Klass.STRUCTURAL, 24,
-              "the context-free MoveLatentEncoder concatenated into the move network"),
+              "the context-free MoveLatentEncoder concatenated into the move network",
+              coef_arg="move_belief_latent_coef"),
     ModelFlag("spread_belief", False, Tier.CLI, Klass.STRUCTURAL, 25,
-              "predict + reinject the opponent's hidden spread (5 derived stats per slot)"),
+              "predict + reinject the opponent's hidden spread (5 derived stats per slot)",
+              coef_arg="spread_belief_coef"),
     ModelFlag("value_dist_mode", "none", Tier.CLI, Klass.STRUCTURAL, 29,
               "distributional VALUE side head off value_pooled (none|read_only|shaping)",
-              requires=("value_dist_bins",)),
+              requires=("value_dist_bins",), family=Family.CRITIC),
     ModelFlag("value_dist_bins", 0, Tier.CLI, Klass.STRUCTURAL, 29,
-              "atom count = the value-dist head's output Linear width"),
+              "atom count = the value-dist head's output Linear width",
+              family=Family.CRITIC),
     ModelFlag("value_dist_vmin", 0.0, Tier.CLI, Klass.RESUME_IMMUTABLE, 29,
               "low end of the return range the value-dist atoms span",
-              note="value-MEANING, so check_value_dist on the resume path only."),
+              note="value-MEANING, so check_value_dist on the resume path only.",
+              family=Family.CRITIC),
     ModelFlag("value_dist_vmax", 0.0, Tier.CLI, Klass.RESUME_IMMUTABLE, 29,
               "high end of the return range the value-dist atoms span",
-              note="value-MEANING, so check_value_dist on the resume path only."),
+              note="value-MEANING, so check_value_dist on the resume path only.",
+              family=Family.CRITIC),
     ModelFlag("damage_topk_k", 0, Tier.CLI, Klass.STRUCTURAL, 30,
               "K = how many of the opp active's believed moves the incoming matrix surfaces",
               cli_name="--damage-topk",
@@ -216,7 +262,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "cap the op's incoming candidate sweep at the K most-believed opponent moves",
               requires=("damage_op",)),
     ModelFlag("hp_belief_mode", "composed", Tier.CLI, Klass.STRUCTURAL, 53,
-              "how the 16 typed Hidden-Power channels are produced (composed|flat)"),
+              "how the 16 typed Hidden-Power channels are produced (composed|flat)",
+              coef_arg="hp_type_belief_coef"),
     ModelFlag("entity_topk_seats", 0, Tier.CLI, Klass.STRUCTURAL, 54,
               "E4 — the opp active's top-K believed threat-move attention seats",
               requires=("damage_op", "move_latent")),
@@ -232,8 +279,12 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               requires=("damage_op",)),
     ModelFlag("opp_intent", False, Tier.CLI, Klass.STRUCTURAL, 68,
               "the alpha (their move) / beta (their switch-in) supervised pointer heads",
-              derived=True, source_arg="opp_intent_coef",
-              note="coef>0 is the enable signal, like opp_belief_slots.",
+              derived=True, source_arg="opp_intent_coef", on_value=0.05,
+              coef_arg="intent_label_bot_weight",
+              note="coef>0 is the enable signal, like opp_belief_slots. `coef_arg` is the heads' "
+                   "BOT-label weight, which is a separate dose from the enable signal: production "
+                   "trains it at 0.25 and a fresh run defaults to 1.0, so `--arch production` "
+                   "names it rather than setting it.",
               requires=("entity_topk_seats",)),
     ModelFlag("species_prior_fusion", False, Tier.CLI, Klass.STRUCTURAL, 69,
               "read BeliefHead's species head as a DELTA on the team-composition prior",
@@ -285,7 +336,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               note="BeliefBank's seventh row (--item-belief-coef supervises the revealed "
                    "slots). Cold start posterior == the Smogon prior exactly; its CB column is "
                    "within ~0.6% of the static table (row-floor renorm), so enabling is "
-                   "~behavior-preserving at init and the delta must EARN its movement."),
+                   "~behavior-preserving at init and the delta must EARN its movement.",
+              coef_arg="item_belief_coef"),
     ModelFlag("intent_threshold", False, Tier.CLI, Klass.STRUCTURAL, 84,
               "the α-weighted threshold operator p_thresh(τ,⋛): Focus Punch / Substitute / "
               "Endure / Destiny Bond / Endeavor through the pointer MOVE cell (+ p_KO as "
@@ -415,7 +467,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "and is not even CALLED by the forward pass. So OFF is byte-identical AND "
                    "ON-at-coef-0 is bit-identical in pi/vf (it is built LAST, so no earlier "
                    "module's init RNG draw moves). No `requires`: it reads `value_pooled`, which "
-                   "is unconditional."),
+                   "is unconditional.",
+              family=Family.CRITIC),
     ModelFlag("cf_twin_heads", False, Tier.CLI, Klass.STRUCTURAL, 99,
               "the TWIN win-prob heads B and C off value_pooled — B trained on the cf-labelled "
               "states with SINGLE-OUTCOME labels, C on the same states with TIGHT-MC labels, both "
@@ -438,7 +491,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "— and `checkargs` walks this column, so without it an operator validating a "
                    "recorded launcher_command gets exit 0 on a command the child then refuses, "
                    "which is the launch-crash-fix loop checkargs exists to end.",
-              requires=("win_prob_mode",)),
+              requires=("win_prob_mode",),
+              family=Family.CRITIC),
     ModelFlag("cf_shadow_critic", False, Tier.CLI, Klass.STRUCTURAL, 99,
               "the passive SHADOW CRITIC off value_pooled — a value twin trained on tight-MC "
               "`mc_return` labels (the run's own shaped return, PopArt frame), which never "
@@ -451,7 +505,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "read_only/shaping split — and never called by the forward, so OFF is "
                    "byte-identical and ON-at-coef-0 is bit-identical in pi/vf. Its coefficient "
                    "(--cf-shadow-coef) is training-only, the --opd-coef class. No `requires`: it "
-                   "reads value_pooled, which is unconditional."),
+                   "reads value_pooled, which is unconditional.",
+              family=Family.CRITIC),
     ModelFlag("q_winprob_mode", "none", Tier.CLI, Klass.STRUCTURAL, 107,
               "the PER-ACTION win-probability readout over the pointer head's own action tokens "
               "(none|read_only) — one forward, eleven P(win|s,a): the amortized one-ply search "
@@ -471,7 +526,8 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "Its two coefficients (--q-winprob-coef, --q-winprob-onpolicy-coef) are NOT "
                    "here: training-only loss weights in the --cf-winprob-coef class. No "
                    "`requires` — it reads `value_pooled` and `stash.pointer_inputs`, both "
-                   "unconditional."),
+                   "unconditional.",
+              family=Family.CRITIC),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}
@@ -549,6 +605,31 @@ def recorded_flags() -> Tuple[ModelFlag, ...]:
                  if f.klass is not Klass.RUNTIME and f.tier is not Tier.CONSTRUCTOR_ONLY)
 
 
+def arch_surface_flags() -> Tuple[ModelFlag, ...]:
+    """The ARCH SURFACE: the rows a fresh launch is judged against `designs/production_config.json`.
+
+    `structural` AND `family=ARCH` AND recorded (never `constructor_only`) — i.e. the toggles whose
+    mismatch means the run builds a DIFFERENT NETWORK, minus the critic readouts an experiment is
+    deliberately varying. Everything else drops out by its own declaration: `training_coef` and
+    `runtime` are not architecture, `resume_immutable` leaves the forward identical, and the reward
+    / PPO fields were never in this registry at all.
+
+    THE POINT is that this is DERIVED, not typed. The 2026-09-06 incident launched a near-bare
+    architecture from a 38-token argv while all three validators said "it launches" (~7 GPU-hours,
+    24.4M steps, 31 keys off the mirror), and a hand-written list of "the flags that matter" would
+    have gone stale the first time a toggle landed.
+
+    The COUNT is reconciled rather than merely smaller — `arch_surface.surface_partition()` prints
+    `39 arch + 7 critic + 3 non-structural = 49 registry rows` in every block, because a guard that
+    compares fewer keys than a reader's own count leaves them unable to tell an excluded row from a
+    forgotten one.
+    """
+    return tuple(f for f in REGISTRY
+                 if f.klass is Klass.STRUCTURAL
+                 and f.family is Family.ARCH
+                 and f.tier is not Tier.CONSTRUCTOR_ONLY)
+
+
 def extractor_kwarg_flags() -> Tuple[ModelFlag, ...]:
     """Rows that reach ``Gen3FeaturesExtractor`` — every tier except ``constructor_only``."""
     return tuple(f for f in REGISTRY if f.tier is not Tier.CONSTRUCTOR_ONLY)
@@ -593,8 +674,8 @@ def registry_table_section() -> str:
         f"{len(cli_flags())} `cli`, {len(config_only_flags())} `config_only`, "
         f"{len([f for f in REGISTRY if f.tier is Tier.CONSTRUCTOR_ONLY])} `constructor_only`.",
         "",
-        "| toggle | CLI | tier | class | default | since | requires | meaning |",
-        "|---|---|---|---|---|---|---|---|",
+        "| toggle | CLI | tier | class | family | default | since | requires | meaning |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for f in REGISTRY:
         cli = f"`{f.cli_flag}`" if f.tier is Tier.CLI else "—"
@@ -602,8 +683,20 @@ def registry_table_section() -> str:
             cli += " *(coef)*"
         req = ", ".join(f"`{d}`" for d in f.requires) or "—"
         lines.append(
-            f"| `{f.name}` | {cli} | `{f.tier.value}` | `{f.klass.value}` | "
+            f"| `{f.name}` | {cli} | `{f.tier.value}` | `{f.klass.value}` | `{f.family.value}` | "
             f"{_cell(f.default)} | v{f.since} | {req} | {f.meaning} |")
+
+    surface = arch_surface_flags()
+    lines += [
+        "",
+        f"**The ARCH SURFACE.** {len(surface)} of {len(REGISTRY)} toggles are `structural` AND "
+        "`family` = `arch`. That set is what `--arch production` applies and what the ARCH-SURFACE "
+        "guard compares against `designs/production_config.json` on every FRESH launch "
+        "(`main.train.arch_surface`, read by `--dry-run`, `python -m main.checkargs` and the "
+        "launcher alike). `family` = `critic` marks a readout an experiment deliberately VARIES "
+        "(`--critic winprob` implies one and refuses two others), so it is excluded from both; "
+        "`training_coef` / `runtime` / `resume_immutable` are excluded by CLASS.",
+    ]
 
     dependents = [f for f in REGISTRY if f.requires]
     lines += [

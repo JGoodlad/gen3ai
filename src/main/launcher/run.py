@@ -54,6 +54,7 @@ from main.launcher.pinned_argv import (
     report_lines,
 )
 from main.launcher.state import LauncherState
+from main.train import arch_surface
 from main.launcher.worktree import (
     _git_hash,
     _prune_stale_launcher_worktrees,
@@ -248,6 +249,39 @@ def _prepare_session(
             f"♻️  Fork {os.path.basename(run_dir)} already has progress — resuming in place from "
             f"{os.path.basename(_fork_resume)} (idempotent)")
 
+    #: Set below once the pin is resolved: True when the child will run a commit that is NOT this
+    #: tree's HEAD, which makes the arch-surface comparison informational (see the gate's docstring).
+    pinned_differs = False
+
+    def _arch_surface_gate() -> None:
+        """THE ARCH SURFACE (gen3_arch_surface_guard_v1, 2026-09-06) — "is this the architecture
+        you meant?", asked at launch instead of at the next `pytest` run.
+
+        Called at the LAST point before anything is created — immediately before
+        `_create_run_worktree` on the pinned path, and before the `makedirs` on `--no-pin` — so a
+        refusal leaves no worktree, no run dir and no child. It is deliberately AFTER the pin
+        decision and the pinned-parser check: those say the command cannot launch at all, which a
+        reader must see before a question about the command's INTENT.
+
+        ONE function serves this, `--dry-run` and `python -m main.checkargs`
+        (`arch_surface.report`); three copies of a guard is three things to keep in step.
+        """
+        rep = arch_surface.report_for_child_argv(child_args, advisory=pinned_differs)
+        if rep is None:
+            return                       # an argv that does not parse — reported by its own path
+        if rep.fresh or rep.diffs:
+            for line in arch_surface.report_lines(rep):
+                state.add_event(line)
+        if not rep.refuses:
+            return
+        print("[launcher] ERROR: this FRESH run's architecture differs from "
+              f"designs/production_config.json on {len(rep.diffs)} key(s). Pass "
+              f"--arch production to apply the production surface, or {arch_surface.ALLOW_FLAG} "
+              "to assert the drift is deliberate.", file=sys.stderr)
+        for line in arch_surface.report_lines(rep):
+            print(f"[launcher]   {line}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
     # …and the fork swap happens BEFORE the pin decision, deliberately: once a fork has its own
     # progress the re-launch IS a restart of that fork, so `--pin-commit` must be checked against
     # the fork's own checkpoint rather than against the source it was originally forged from.
@@ -279,7 +313,8 @@ def _prepare_session(
         # deleted today, so argparse abbreviation-matched it onto `--hp-type-belief-coef`).
         # Checked BEFORE the worktree is created: a refusal here costs nothing, while the same
         # refusal from the child costs ~40 s and leaves a run dir behind.
-        if differs_from_head(pin_hash, repo_root):
+        pinned_differs = differs_from_head(pin_hash, repo_root)
+        if pinned_differs:
             # Validate the argv the CHILD receives, `--run-dir` and all — the launcher injects it
             # a few lines below, and an argv checked without it is not the argv that runs.
             checked_argv = _insert_or_replace_run_dir_arg(child_args, run_dir)
@@ -292,6 +327,8 @@ def _prepare_session(
                 for line in fatal_findings(report, checked_argv):
                     print(f"[launcher]   {line}", file=sys.stderr)
                 sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
+        _arch_surface_gate()           # last stop before anything exists on disk
 
         try:
             train_script, src_dir, worktree_cleanup = _create_run_worktree(pin_hash, run_dir)
@@ -306,6 +343,7 @@ def _prepare_session(
     else:
         train_script, src_dir = _TRAIN_SCRIPT, _SRC_DIR
         state.initial_git_hash = _git_hash()
+        _arch_surface_gate()           # the --no-pin path's own last stop, before the makedirs
     os.makedirs(run_dir, exist_ok=True)
     child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
 

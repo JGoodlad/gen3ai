@@ -265,6 +265,8 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 | `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
 
+| `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** below. Refused on a resume. |
+| `--allow-nonproduction-arch` | off | *(forwarded)* Consent to a FRESH run whose architecture differs from the production mirror; without it that launch is REFUSED. |
 | `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per-flag `INHERITED` vs `from the argv`), the pool as recorded, and a `(child-only: …)` line for everything that needs torch. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See **Validating a launch without launching** below. |
 
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
@@ -339,6 +341,67 @@ anywhere; `--dry-run` answers "what would THIS command do, on THIS box, right no
 python -m main.launcher --dry-run --model models/<run>/checkpoints/checkpoint_N_steps.zip \
   --steps 30000000 --device cuda
 ```
+
+## Is this the ARCHITECTURE you meant? — the ARCH-SURFACE guard (`gen3_arch_surface_guard_v1`)
+
+> **"it launches" and "it is the experiment" are INDEPENDENT checks, and only the RESOLVED-CONFIG
+> DIFF tests the second.**
+
+**2026-09-06, ~7 GPU-hours** (ledger `2026-09-06 · INCIDENT`). The first win-prob-critic arm was
+launched from a design document's 38-token command block: the critic flags and the PPO knobs, none
+of the production feature flags, so every architecture flag silently took its OFF default. Three
+gates ran and all three passed — `python -m main.checkargs` exit 0, `resolve_config` accepted,
+`--dry-run` clean. All three were RIGHT. The run trained a near-bare network for **25,131 s / 24.4M
+steps / 6 checkpoints** and was still holding the GPU when it was found a second time; **31 keys of
+its `model_config.json` differ from `designs/production_config.json`** (every edge family off, zero
+entity seats, no belief slots, no event window, no intent heads). Every validator here answered
+*does this launch*; none answered *is this the architecture you meant*, and only a launch-time
+answer arrives before the GPU-hours do.
+
+🚨 **THIS IS A DIFFERENT FAILURE FROM A REFUSED FLAG COMBINATION, AND THE TWO SHARE NO MESSAGE, NO
+SUMMARY LINE AND NO REFUSAL PATH.** Rebuilding that arm from an older generation's recorded
+`original_command` also fails — on nine flags `--critic winprob` SUBSUMES. That failure is **LOUD
+and PRE-launch**: `checkargs` names it, nothing starts, it is fixed in a minute. Arch drift is
+**SILENT and POST-launch**. A guard that catches the first is no protection against the second.
+
+`_prepare_session` now runs that comparison. It is the LAST thing before anything exists on disk —
+immediately before `_create_run_worktree` on the pinned path, before the `makedirs` under
+`--no-pin` — and deliberately AFTER the pin decision and the pinned-parser check, because "this
+command cannot launch at all" must reach the reader before a question about its intent.
+
+| the argv | what the guard does |
+|---|---|
+| **FRESH**, un-pinned or pinned to HEAD | prints the diff and **REFUSES** (`FATAL_CONFIG`), naming every differing key with both values |
+| FRESH + `--allow-nonproduction-arch` | prints the diff, launches, and stamps `arch_source` in `model_config.json` |
+| FRESH + `--arch production` | applies the whole surface first, so there is usually nothing to print |
+| **FORK / RESTART** | prints the diff as **INFO** — a resume INHERITS its parent's surface through `config.inherit_saved_flag`, so its silence is the parent's architecture |
+| **PINNED to a non-HEAD commit** | prints the diff as **ADVISORY** — see below |
+
+**The ADVISORY rung is `gen3_pinned_argv_parser_v1`'s lesson applied a second time.**
+`designs/production_config.json` is THIS tree's mirror; a child pinned to another commit is built by
+that commit's registry, its flags and its own mirror — and `--arch` does not exist before
+2026-09-06, so a pinned older argv could not even take the remedy the message offers. Refusing there
+would be the same false POSITIVE that made `--pin-commit` unusable. The diff is still computed and
+printed; only the gate is dropped.
+
+**ONE function, four readers.** `main.train.arch_surface.report` serves this, `--dry-run`,
+`python -m main.checkargs` and `resolve_config`'s (report-only) print. Three copies of a guard is
+three things to keep in step, and this tree has paid for that shape twice already. The key set is
+DERIVED from `flag_registry.arch_surface_flags()` — the `structural` × `family=arch` rows — never a
+hand list, which would go stale the first time a toggle landed and then silently under-report.
+
+**The compared-key count is RECONCILED, not merely smaller.** Every block prints
+`39 arch + 7 critic + 3 non-structural = 49 registry rows` (`arch_surface.surface_partition()`,
+2026-09-06), because a guard that compares fewer keys than a reader's own count leaves them unable
+to tell an excluded row from a forgotten one. `family=critic` is excluded because `--critic winprob`
+IMPLIES one of those readouts and REFUSES two others, so gating them would refuse every critic arm.
+
+**`--arch production` is the remedy**, and what it does NOT set it NAMES on every run: the critic
+readouts, `--belief-grad-mode`, and the six SUPERVISION DOSES (`--move-belief-coef` and siblings,
+declared by `ModelFlag.coef_arg`). Silence that reads as coverage is the same failure one layer
+down. Measured against the incident's own config: of its 31 differing keys, 26 are refused on the
+surface, 4 are named as doses, and the last is the enable coefficient of a refused surface row —
+none can pass unmentioned.
 
 ## An argv is validated by the parser of the tree that will RUN it — `pinned_argv.py`
 

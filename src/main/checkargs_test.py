@@ -521,8 +521,14 @@ _CURRENT_ONLY_FLAG = "--critic"
 
 #: A `--critic winprob` argv the CURRENT tree accepts outright — every companion the mode's own
 #: combination checks require, so the only thing separating the two arms below is the pin.
+# `--allow-nonproduction-arch` is carried deliberately: these two tests are about WHICH PARSER
+# judges an argv, and without it the ARCH-SURFACE guard (gen3_arch_surface_guard_v1) refuses the
+# command for a different, correct reason — a bare fresh argv is not the production architecture —
+# which would make the pinned/unpinned arms differ in two things instead of one. That the guard
+# fires on this exact shape is `main/train/arch_surface_test.py`'s subject.
 _WINPROB_ARGV = ("--steps 1000 --critic winprob --no-hand-shaping --terminal-indicator "
-                 "--victory-value 1.0 --draw-penalty 0 --device cuda")
+                 "--victory-value 1.0 --draw-penalty 0 --device cuda "
+                 "--allow-nonproduction-arch")
 
 
 def _require_commit(sha: str) -> None:

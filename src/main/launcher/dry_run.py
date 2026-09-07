@@ -319,6 +319,34 @@ def dry_run(
     for line in CHILD_ONLY:
         out(f"  (child-only: {line})")
 
+    # 7b. THE ARCH SURFACE (gen3_arch_surface_guard_v1, 2026-09-06). The same
+    #     `arch_surface.report` `main.checkargs` and the launcher's own `_prepare_session` call, on
+    #     the namespace resolved above — so the dry run cannot say "would launch" about a command
+    #     the launcher will refuse a second later. On a FRESH argv a diff REFUSES; on a FORK or a
+    #     RESTART it is INFO, because the surface is INHERITED from the parent's recorded config.
+    arch = None
+    if ns is not None:
+        from main.train import arch_surface
+        arch = arch_surface.report(
+            ns,
+            fresh=not bool(model_path),
+            allowed=bool(getattr(ns, "allow_nonproduction_arch", False)),
+            umbrella=getattr(ns, "arch", None),
+            # The mirror is THIS tree's. When the child runs another commit, that commit's registry
+            # and its own production_config.json are the authority — the same reason the flag
+            # findings below are demoted there, and `--arch` may not even exist at the pin.
+            advisory=pinned is not None,
+        )
+        if arch.umbrella:
+            # The umbrella has ALREADY run on this namespace (`resolve_against_parent` calls
+            # `desugar_umbrella_flags`), so re-applying it here would report 0. State the surface
+            # it covers instead, and let the per-key block below show what it did NOT close.
+            out(f"  arch        : --arch {arch.umbrella} — "
+                f"{len(arch_surface.production_surface_keys())} ARCH-surface key(s) applied from "
+                f"designs/production_config.json for every flag this argv leaves unset")
+        for line in arch_surface.report_lines(arch):
+            out(f"  {line}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -347,6 +375,10 @@ def dry_run(
     # The pinned parser IS the child's parser, so its refusal is the launch's refusal — whether
     # it could not parse the argv, or the argv names a flag that exists only in THIS tree.
     if pinned is not None and refuses(pinned, child_args):
+        failed = True
+    # A fresh, un-pinned drift refuses here exactly as it refuses in `_prepare_session`; a PINNED
+    # one is advisory (see the `advisory=` argument above) and `refuses` is already False.
+    if arch is not None and arch.refuses:
         failed = True
 
     if failed:

@@ -592,3 +592,17 @@ class ModelVersionFields:
     # that does not type the flag. The signature bump lands with the DEFAULT FLIP, where it forces
     # the fresh weights a probability critic cannot be warm-started into.
     critic: str = "shaped"
+    # ---- gen3_arch_surface_guard_v1 (config v111) — WHERE THIS RUN'S ARCHITECTURE CAME FROM ----
+    # v111 PROVENANCE-only string, the `win_prob_pbrs_source` class exactly: recorded, never
+    # gated, absent from `_WEIGHT_FIELDS` and from every `check_*`. It changes no forward, no
+    # weight shape and no `state_dict` key — a resume may set it, clear it or change it freely,
+    # because it describes how the OPERATOR chose the surface rather than what the surface IS
+    # (the ~40 structural fields above already say that, and they are what gates a load).
+    #   "production_config@<12 hex>"  — `--arch production` applied the mirror, content-hashed
+    #   "nonproduction (--allow-nonproduction-arch, N key(s) vs …)" — a deliberate ablation
+    #   None                          — neither flag was used (every run before 2026-09-06)
+    # It exists because the 2026-09-06 incident's run recorded a bare architecture with nothing on
+    # disk saying whether that was a decision or an accident, and "we meant it" belongs beside the
+    # config rather than in a memory. Reading `ai_v12_01_winprob_critic`'s config afterwards told
+    # you WHAT it built; no field told you whether anybody had chosen it.
+    arch_source: Optional[str] = None

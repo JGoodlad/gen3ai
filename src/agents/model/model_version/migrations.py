@@ -446,4 +446,12 @@ def _migrate_config(data: dict) -> dict:
     if version < 110:
         data.setdefault("win_prob_pbrs_frozen", None)
         data["config_version"] = 110
+    # v111 (gen3_arch_surface_guard_v1) — ONE provenance-only string, defaulted to None. There is
+    # no refusal direction and never will be: `arch_source` gates nothing, so a pre-v111 config's
+    # honest value is "not recorded", which is exactly what None means here. Do NOT infer it from
+    # the config's other fields — a run whose surface happens to match today's mirror still did not
+    # SAY so, and a derived answer presented as a record is worse than no answer.
+    if version < 111:
+        data.setdefault("arch_source", None)
+        data["config_version"] = 111
     return data

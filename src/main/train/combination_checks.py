@@ -289,6 +289,17 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: _adaptive_on(a) and a.adaptive_batch_every < 1,
         "--adaptive-batch-every must be >= 1 (it counts ROLLOUTS between K moves)"),
 
+    # ---- gen3_arch_surface_guard_v1: THE ARCH UMBRELLA ---------------------------------------
+    CombinationCheck(
+        "arch_umbrella_is_fresh_only", ("arch", "model"),
+        lambda a: getattr(a, "arch", None) is not None and bool(getattr(a, "model", None)),
+        "--arch production is a FRESH-run flag and is refused on a resume. A fork or restart "
+        "INHERITS its parent's architecture surface from the recorded model_config.json "
+        "(main.train.config's `_resolve`), which is the ONLY value that can load its weights; "
+        "writing production's values over that would either FATAL at check_compatible or train a "
+        "network the parent never was. Drop --arch, and read the ARCH SURFACE block that "
+        "`--dry-run` / `python -m main.checkargs` print for a fork — it is INFO there, not a gate."),
+
     # ---- gen3_winprob_critic_mode_v1: THE CRITIC MODE ---------------------------------------
     # `--critic winprob` makes the win-prob head the value function. Everything below either
     # CONTRADICTS that (a second critic, a normalizer with no scale to track, a reward whose

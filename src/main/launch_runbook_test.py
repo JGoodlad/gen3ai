@@ -87,6 +87,37 @@ def test_every_runbook_argv_is_still_launchable(arm):
     assert res["n_flags"] > 80, f"{arm}: only {res['n_flags']} flags parsed — the block did not extract"
 
 
+@pytest.mark.parametrize("arm", sorted(_ARMS))
+def test_the_runbook_ARCH_block_IS_the_production_surface(arm):
+    """§2.6 — the claim `$ARCH` makes about itself, MEASURED.
+
+    On 2026-09-06 an arm launched from a design document's command block WITHOUT this surface and
+    trained a near-bare network for ~7 GPU-hours; 31 keys of its `model_config.json` differ from
+    `designs/production_config.json`. The runbook's answer is that `$ARCH` is pasted once and
+    shared; this test is what makes "and it is the production surface" a measurement rather than a
+    claim, so an edit to `$ARCH` fails here with the document named.
+
+    It is the same `arch_surface.report` `checkargs`, `--dry-run` and the launcher call, on the
+    same effective namespace — not a second opinion about what production is.
+    """
+    rep = check(_argv(arm))["arch"]
+    assert rep is not None, f"{arm}: the argv did not resolve, so the surface was never compared"
+    assert not rep.diffs, (
+        f"{arm}: designs/ai_v12/launch_runbook.md's $ARCH block no longer matches "
+        f"designs/production_config.json:\n" + "\n".join(f"    {d.line()}" for d in rep.diffs))
+    assert not rep.refuses
+
+
+def test_the_runbook_would_not_be_REFUSED_by_the_arch_guard():
+    """The composed verdict, not just the diff: every arm in this document is a FRESH run, so a
+    non-empty surface diff would be a hard refusal at `--dry-run` and at the launcher — the
+    document would describe a launch that cannot happen."""
+    for arm in sorted(_ARMS):
+        rep = check(_argv(arm))["arch"]
+        assert rep.fresh, f"{arm}: expected a FRESH argv (no --model)"
+        assert not rep.refuses, arm
+
+
 def test_the_clean_arms_carry_the_four_flags_that_MAKE_them_clean():
     """A runbook whose clean composition quietly lost a flag would still launch — and would train
     the incumbent reward under a clean-world run name."""

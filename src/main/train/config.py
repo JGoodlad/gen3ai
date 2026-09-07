@@ -20,6 +20,7 @@ from typing import Any
 from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
 from agents.training.watchdog import start_orphan_watchdog
 from main.launcher.ipc import emit
+from main.train import arch_surface
 from main.train.checkpoint_state import _load_saved_version
 from main.train.combination_checks import refuse_first
 from main.train.compile_flags import (
@@ -317,6 +318,24 @@ def desugar_umbrella_flags(args) -> None:
     checker that skipped this would report every damage-family dependency as unsatisfied on a
     command that launches. Mutates `args` in place; prints the two operator notes it always did.
     """
+    # --- gen3_arch_surface_guard_v1: `--arch production`, FIRST -------------------------------
+    # Before every other desugar, because the others read the values it writes: `--unified-moves`
+    # only fills `move_latent` / `damage_topk_k` when they are still None, and `--damage-matrices`'
+    # else-branch preserves whatever is already set. Running it first therefore makes the umbrella a
+    # DEFAULT that the sugar and every explicit flag alike still override — precedence in one
+    # direction, top to bottom, with no special cases.
+    #
+    # A resume is REFUSED (`combination_checks`' `arch_umbrella_on_resume`, which both surfaces
+    # read) rather than handled here: a fork INHERITS its parent's surface through `_resolve`, and
+    # writing production's values over that would replace inheritance with a mirror the parent may
+    # never have matched — a check_compatible FATAL at best, a silently different network at worst.
+    if getattr(args, "arch", None) == "production" and not getattr(args, "model", None):
+        from main.train.arch_surface import apply_production_arch, arch_source_tag
+        applied = apply_production_arch(args)
+        args.arch_source = arch_source_tag()
+        print(f"[Arch] --arch production: applied {len(applied)} ARCH-surface flag(s) from "
+              f"designs/production_config.json ({args.arch_source}). An explicitly-typed flag "
+              f"still wins.")
     # --unified-moves is the umbrella over the WHOLE move system: it sets --unified-damage to the same
     # level (so the op/belief/outgoing desugar below runs) AND turns on the move latent + its grading.
     # Applied BEFORE the --unified-damage desugar so the level flows through. v24.
@@ -956,6 +975,34 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `combination_checks_test.py` AST-scans this file and fails if a cross-flag
     # `parser.error` reappears outside the list.
     refuse_first(args, parser)
+
+    # --- gen3_arch_surface_guard_v1: IS THIS THE ARCHITECTURE YOU MEANT? -----------------------
+    # AFTER the combination sweep, deliberately: a broken flag combination is a bug in the command
+    # and must be reported before a question about the command's INTENT.
+    #
+    # 🚨 THIS SURFACE REPORTS AND RECORDS; IT DOES NOT REFUSE, and that is a placement decision
+    # rather than an omission. `resolve_config` runs in the CHILD, by which time the launcher has
+    # already resolved the pin, created the isolated worktree and made the run dir — so a refusal
+    # here is both late and a duplicate of one already made. The three surfaces that DO refuse all
+    # answer before anything exists: `_prepare_session` (before the worktree and the `makedirs`),
+    # `--dry-run`, and `python -m main.checkargs`. All four read the same `arch_surface.report`.
+    #
+    # The residue is a DIRECT `python src/main/train_rl_agent.py …`, which is the smoke/debug path
+    # (`--debug` is non-production by construction and would trip this on every run). There the
+    # block is printed and `arch_tables_test::test_production_config_matches_newest_run` remains
+    # the gate, exactly as before.
+    _arch_report = arch_surface.report(
+        args,
+        fresh=not bool(args.model),
+        allowed=bool(getattr(args, "allow_nonproduction_arch", False)),
+        umbrella=getattr(args, "arch", None),
+    )
+    if not getattr(args, "arch_source", None) and _arch_report.allowed and _arch_report.diffs:
+        args.arch_source = (f"nonproduction ({arch_surface.ALLOW_FLAG}, "
+                            f"{len(_arch_report.diffs)} key(s) vs {_arch_report.source_tag})")
+    if _arch_report.fresh and not getattr(args, "debug", False):
+        for _line in arch_surface.report_lines(_arch_report):
+            emit(_line)
 
     # One server config, built from --showdown-port and threaded to every Showdown client
     # (training-env players in spawn workers, eval, and self-play). Default port: 8000.

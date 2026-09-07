@@ -303,9 +303,12 @@ def test_pin_source_is_handed_to_the_child_and_announced(repo, tmp_path, monkeyp
     # must not leave those behind (they would fire, and print, at the end of the pytest run).
     monkeypatch.setattr(launcher_run.atexit, "register", lambda *a, **k: None)
     state = LauncherState(0.0)
+    # `--allow-nonproduction-arch`: this test is about the PIN, and a bare `--steps 1` is a FRESH
+    # argv the ARCH-SURFACE guard (gen3_arch_surface_guard_v1) correctly refuses before the
+    # worktree is created. Consenting keeps the test's one subject its only subject.
     ctx = launcher_run._prepare_session(
-        state, ["--steps", "1"], interval_hours=0.0, pin=True, sync_to_main=False,
-        pin_commit=first[:8], grace_minutes=1.0, max_crash_restarts=0,
+        state, ["--steps", "1", "--allow-nonproduction-arch"], interval_hours=0.0, pin=True,
+        sync_to_main=False, pin_commit=first[:8], grace_minutes=1.0, max_crash_restarts=0,
     )
     assert ctx.child_env["LAUNCHER_PIN_SOURCE"] == "pin_commit"
     assert ctx.child_env["LAUNCHER_GIT_HASH"] == first, "the FULL sha is what gets recorded"

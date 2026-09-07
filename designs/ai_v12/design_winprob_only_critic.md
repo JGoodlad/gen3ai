@@ -960,6 +960,34 @@ its migration branch and its refusal message in the same pass — the v75 rule.
 
 ### 5.4 The ONE fresh-run launch command
 
+> # 🚨 A COMMAND BLOCK IN THIS DOCUMENT IS NOT A LAUNCH COMMAND
+>
+> **2026-09-06 — the block below cost ~7 GPU-hours, and this banner is the record of why.**
+> `ai_v12_01_winprob_critic` was launched from it verbatim. It carries the critic flags and the PPO
+> knobs and **no architecture surface**, so every architecture flag silently took its OFF default:
+> every edge family off, zero entity seats, no belief slots, no event window, no intent heads.
+> **31 keys of the resulting `model_config.json` differ from `designs/production_config.json`.**
+> The run trained 24.4M steps over 25,131 s and was still holding the GPU when it was discovered a
+> second time. Every number taken off it measures a different model. Ledger:
+> `2026-09-06 · INCIDENT`.
+>
+> Three gates were run before that launch and **all three passed**: `python -m main.checkargs`
+> exit 0, `resolve_config` accepted, `--dry-run` clean. All three were RIGHT.
+>
+> > **"it launches" and "it is the experiment" are INDEPENDENT checks, and only the
+> > RESOLVED-CONFIG DIFF tests the second.**
+>
+> **The guard that now asks the second question is `gen3_arch_surface_guard_v1`.** A FRESH run
+> whose resolved architecture differs from `designs/production_config.json` is **REFUSED** — by
+> `python -m main.checkargs`, by `python -m main.launcher --dry-run`, and by the launcher itself
+> before a worktree or a run dir exists — naming every differing key with both values. The remedy
+> is **`--arch production`**, which applies the whole surface as if typed, so a design document
+> never needs to carry it again. See `designs/ai_v12/launch_runbook.md`.
+>
+> **So every command block below is an OVERLAY, and `--arch production` is the base.** A block that
+> omits it is describing the critic experiment, not the run.
+
+
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
 python -m main.launcher \
@@ -989,9 +1017,14 @@ python -m main.launcher \
 >   --run-name ai_v12_01_winprob_critic \
 >   --restart-interval-hours 3 \
 >   --steps 75000000 \
->   --n-envs 64 --batch-size 4096 --grad-accum-steps 16 --n-epochs 10 \
+>   --n-envs 64 --batch-size 2048 --grad-accum-steps 32 --n-epochs 10 \
 >   --n-steps 2048 --lr 0.0003 --ent-coef 0.02 \
 >   --device cuda --log-level periodic \
+>   \
+>   --arch production \
+>   --move-belief-coef 0.05 --move-belief-latent-coef 0.05 --spread-belief-coef 0.05 \
+>   --item-belief-coef 0.05 --hp-type-belief-coef 0.05 --intent-label-bot-weight 0.25 \
+>   --belief-grad-mode shaping \
 >   \
 >   --critic winprob \
 >   --no-hand-shaping --terminal-indicator \
@@ -1000,15 +1033,29 @@ python -m main.launcher \
 >   --self-play
 > ```
 >
-> Four differences from the block above, each one load-bearing:
+> **`--arch production` is the first line for the reason the banner above records** — it applies
+> every ARCH-surface key from `designs/production_config.json` that this argv leaves unset, and an
+> explicitly-typed flag still wins. The six coefficient lines under it are the SUPERVISION DOSES the
+> umbrella deliberately does NOT set (a dose is training, not architecture) and which the guard's
+> own block NAMES on every run; production trains all six, and a run that omits them builds the
+> production network with its belief heads unsupervised. `--belief-grad-mode` is
+> `resume_immutable`, likewise named and likewise not set.
 >
-> 0. **`--batch-size 4096 --grad-accum-steps 16`, not `16384 --grad-accum-steps 4`** (CORRECTED
->    2026-09-06, at the first arm's launch): 16384 does not fit the 12 GB card — a 2048 micro-batch
->    already measures ~9.6 GB, and the activation peak is ONE micro-batch, which is the whole point
->    of `--grad-accum-steps`. The effective batch is unchanged at **65,536** (4096 × 16 = 16384 × 4),
+> Four differences from the pre-`gen3_winprob_critic_mode_v1` block above, each one load-bearing:
+>
+> 0. **`--batch-size 2048 --grad-accum-steps 32`, not `16384 --grad-accum-steps 4`** (CORRECTED
+>    twice, both times at a launch): 16384 does not fit the 12 GB card, and **`4096` does not fit
+>    the PRODUCTION ARCHITECTURE either** — it OOMed at iteration 1 on 2026-09-06 and the live run
+>    was relaunched at `2048 × 32`. 🚨 **The earlier 4096 × 16 figure was measured on the
+>    STRIPPED-surface arm** (no edge families, no entity seats, no belief slots, no intent heads),
+>    so it was never a reading of the production peak — the same incident, in its second costume.
+>    **The general rule, and the one to state when sizing any arm: `--grad-accum-steps` keeps the
+>    EFFECTIVE batch while `--batch-size` sets the ACTIVATION PEAK, and that peak is a function of
+>    the ARCHITECTURE SURFACE.** A micro-batch measured under one surface says nothing about
+>    another. The effective batch is unchanged at **65,536** (2048 × 32 = 4096 × 16 = 16384 × 4),
 >    so it is still 2 optimizer steps per epoch over the 131,072-step rollout (64 envs × 2048), the
 >    rollout still divides evenly, and the accumulation contract makes the gradient EXACTLY the
->    65,536-sample one either way. The launch entry in the ledger carries this arithmetic.
+>    65,536-sample one at every shape. The launch entry in the ledger carries this arithmetic.
 > 1. **`--critic winprob`** is what makes it this arm at all (gap B1).
 > 2. **`--terminal-indicator` and `--draw-penalty 0`** replace `--draw-penalty -1.0`. §3.2 chose
 >    "a draw is a not-win, `y = 0`", and §3.6 chose to keep the reward at ±1 — but those two are
@@ -1126,9 +1173,14 @@ python -m main.launcher \
 >   --run-name ai_v12_03_winprob_frozenphi \
 >   --restart-interval-hours 3 \
 >   --steps 75000000 \
->   --n-envs 64 --batch-size 16384 --grad-accum-steps 4 --n-epochs 10 \
+>   --n-envs 64 --batch-size 2048 --grad-accum-steps 32 --n-epochs 10 \
 >   --n-steps 2048 --lr 0.0003 --ent-coef 0.02 \
 >   --device cuda --log-level periodic \
+>   \
+>   --arch production \
+>   --move-belief-coef 0.05 --move-belief-latent-coef 0.05 --spread-belief-coef 0.05 \
+>   --item-belief-coef 0.05 --hp-type-belief-coef 0.05 --intent-label-bot-weight 0.25 \
+>   --belief-grad-mode shaping \
 >   \
 >   --critic winprob \
 >   --no-hand-shaping --terminal-indicator \
@@ -1147,8 +1199,11 @@ python -m main.launcher \
 > identity is pinned in the log rather than inferred from the path. To pin a specific file instead,
 > name the `.zip` or use `<run>@<step>`; both bypass the ladder verbatim.
 >
-> **Validated 2026-09-06**, in the order this section requires: `python -m main.checkargs --argv "…"`
-> reports **19 flags accepted, 0 unrecognized, ✓ this command still launches**, then
+> **Re-validated 2026-09-06 after `gen3_arch_surface_guard_v1`**, in the order this section
+> requires: `python -m main.checkargs --argv "…"` reports **26 flags accepted, 0 unrecognized,
+> `✓ every ARCH-surface key matches the production mirror (39 of 49 registry toggles are the ARCH
+> surface; 7 critic readouts + 3 non-structural rows are excluded by their own declaration)`,
+> ✓ this command still launches**, then
 > `python -m main.launcher --dry-run …` resolves the real launch — **role FRESH, run dir
 > `models/ai_v12_03_winprob_frozenphi` [would be created], transport rust, restarts every 3.0 h,
 > `✓ DRY RUN — this command would launch`** — and exits without creating a run dir, a worktree or a
@@ -1202,7 +1257,10 @@ validates today** — `python -m main.checkargs --argv "…"` accepts all 18 rem
 **Validate with `python -m main.checkargs --argv "…"` and then `python -m main.launcher --dry-run`,
 in that order, before the real launch** — the argv-only tool answers "do these cohere", the dry run
 resolves the actual launch on the box (role, run dir, pin, inherited-vs-argv config) without
-creating a run dir, a worktree or a child.
+creating a run dir, a worktree or a child. **Both now also print the `ARCH SURFACE` block, and on a
+FRESH arm it must read `✓ every ARCH-surface key matches the production mirror`** — that is the
+question neither of them was asked on 2026-09-06 (§5.4's banner), and it is the one that costs
+GPU-hours when nobody asks it.
 
 ### 5.5 The pre-registered read
 

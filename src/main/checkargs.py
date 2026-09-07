@@ -102,6 +102,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from main.exit_codes import TrainExitCode
+from main.train import arch_surface
 from main.train.combination_checks import failing_checks
 
 # Flags the LAUNCHER owns and strips before forwarding — absent from the trainer's parser by
@@ -432,8 +433,13 @@ def teacher_spec_findings(argv: List[str], ns=None) -> List[str]:
     return check_teacher_spec(spec, resolve_wildcard=_resolve, resolve_path=resolve_models_path)
 
 
-def check(argv: List[str]) -> dict:
-    """Every flag in `argv` classified against the live parser. Pure — unit-testable."""
+def check(argv: List[str], *, advisory: bool = False) -> dict:
+    """Every flag in `argv` classified against the live parser. Pure — unit-testable.
+
+    `advisory` demotes the ARCH-SURFACE finding to informational — pass it when the child will run
+    a PINNED commit other than this tree's HEAD, whose registry and whose own
+    `designs/production_config.json` are the authority on it (`ArchReport.refuses`).
+    """
     known = known_option_strings()
     unknown, launcher, ok = [], [], []
     for flag, vals in split_argv(argv):
@@ -449,7 +455,8 @@ def check(argv: List[str]) -> dict:
     res = {"n_flags": len(ok) + len(launcher) + len(unknown),
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
-           "resolution": None, "combinations": [], "teacher_spec": [], "ns": None}
+           "resolution": None, "combinations": [], "teacher_spec": [], "ns": None,
+           "arch": None}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
         # more to the point, the reader has to fix that first. Report it alone.
@@ -465,6 +472,18 @@ def check(argv: List[str]) -> dict:
         res["unsatisfiable"] = unsatisfiable_from_namespace(ns)
     res["combinations"] = [
         (c, [_provenance(d, ns, inherited) for d in c.dests]) for c in failing_checks(ns)]
+    # THE ARCH SURFACE (gen3_arch_surface_guard_v1). The same `arch_surface.report` the launch path
+    # and `--dry-run` call, on the SAME effective namespace the combination checks just ran on —
+    # so "does this launch" and "is this the architecture you meant" are answered from one place.
+    # `resolve_against_parent` has already applied the `--arch production` umbrella (it runs inside
+    # `desugar_umbrella_flags`), so what is compared here is what would be built.
+    res["arch"] = arch_surface.report(
+        ns,
+        fresh=not bool(resolution.get("model")),
+        allowed=bool(getattr(ns, "allow_nonproduction_arch", False)),
+        umbrella=getattr(ns, "arch", None),
+        advisory=advisory,
+    )
     res["ns"] = ns
     return res
 
@@ -698,8 +717,14 @@ def main(raw: List[str] | None = None) -> int:
         ap.error("give a run_dir or --argv")
 
     argv = shlex.split(a.argv) if a.argv else argv_from_run(a.run_dir)
-    res = check(argv)
+    # The pin is resolved FIRST, because `check` needs to know it: a PINNED argv's ARCH-SURFACE
+    # finding is ADVISORY (`gen3_pinned_argv_parser_v1`'s rule — the mirror is THIS tree's, and the
+    # pinned commit has its own registry, its own production_config.json, and may not have `--arch`
+    # at all). `_pinned_report` returns None whenever the pin IS this tree's HEAD, so
+    # `pinned is not None` is exactly "the child runs another commit" — the same expression
+    # `--dry-run` passes.
     pinned, pin_note = _pinned_report(argv, a.pin)
+    res = check(argv, advisory=pinned is not None)
 
     refusals = launcher_refusals(argv)
 
@@ -789,6 +814,16 @@ def main(raw: List[str] | None = None) -> int:
         print("  checkpoint's model_config.json, which is what a fork resumes. A finding marked")
         print("  ADVISORY depends on something only the launch has — it may not fire there.")
 
+    # THE ARCH SURFACE (gen3_arch_surface_guard_v1, 2026-09-06). Printed on EVERY argv that
+    # resolved — as a gate on a FRESH one, as INFO on a fork/restart, and as a clean ✓ when it
+    # matches. "does this launch" was the only question this tool asked until an arm launched
+    # cleanly onto a near-bare architecture; the block below is the other one.
+    arch = res.get("arch")
+    if arch is not None:
+        print()
+        for line in arch_surface.report_lines(arch):
+            print(f"  {line}")
+
     if refusals:
         # The launcher's argparse kills this argv before a run dir, a worktree or a child exists,
         # so no parser verdict below can make it launchable. Everything above is still printed —
@@ -812,11 +847,31 @@ def main(raw: List[str] | None = None) -> int:
             print("  ⚠️  the pinned parser accepts every flag, but the --distill-teacher spec "
                   "above would be refused at launch")
             return 1
+        # NO arch branch here, deliberately. A refused teacher spec is refused by whatever tree
+        # runs; an ARCH-SURFACE diff is not — it is measured against THIS tree's mirror, which the
+        # pinned commit neither wrote nor is judged by. `check` was therefore called with
+        # `advisory=True` above, so `arch.refuses` is False on this path and the block printed
+        # itself as ADVISORY. Reported, never dropped; that is the other half of the same lesson.
         if pinned.ok and not absent:
             print("  ✓ this command still launches (its own commit's parser accepts every flag)")
             return 0
         print("  ⚠️  the pinned static scan questioned it — see above; not a refusal")
         return 0
+    arch_only = (arch is not None and arch.refuses and not res["unknown"]
+                 and not res["unsatisfiable"] and not res["combinations"]
+                 and not res["teacher_spec"])
+    if arch_only:
+        # 🚨 A SEPARATE VERDICT, NOT A SHARED ONE. A refused flag COMBINATION and architecture
+        # drift are different failures and must never read alike: a bad combination is LOUD and
+        # PRE-launch — nothing starts, the operator fixes it in a minute — while arch drift is
+        # SILENT and POST-launch, and on 2026-09-06 it cost ~7 GPU-hours and 24.4M steps of a run
+        # that parsed, resolved, dry-ran and started cleanly. A guard that catches the first is no
+        # protection against the second, so they get separate blocks and separate closing lines.
+        print("  ✗ this command LAUNCHES — and builds the wrong architecture.")
+        print("    That is not a flag error: every flag parses and every combination is legal.")
+        print("    'it launches' and 'it is the experiment' are INDEPENDENT checks, and only the")
+        print("    resolved-config diff above tests the second.")
+        return 1
     if (not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]
             and not res["teacher_spec"]):
         print("  ✓ this command still launches")

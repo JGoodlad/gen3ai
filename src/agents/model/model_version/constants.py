@@ -191,7 +191,15 @@ from typing import Any, Dict
 #   module is added or removed, no state_dict key moves, and no forward pass changes; the flag
 #   edits a numpy array between collection and train(). None is the default and is every pre-v110
 #   run's only possible past.
-MODEL_CONFIG_VERSION = 110
+# v111: gen3_arch_surface_guard_v1 — ONE provenance-only string, `arch_source`, in the v105
+#   `win_prob_pbrs_source` mould. It records WHERE this run's architecture surface came from:
+#   `--arch production` stamps `production_config@<12 hex of the mirror's git blob hash>`,
+#   `--allow-nonproduction-arch` stamps the deliberate-drift form, and a run that used neither
+#   records None. It gates NOTHING — absent from `_WEIGHT_FIELDS` and from every `check_*` — and
+#   carries NO ARCH_SIGNATURE bump: no module, no state_dict key, no forward. It exists because
+#   the 2026-09-06 incident's run recorded a near-bare architecture with nothing on disk saying
+#   whether that was a decision or an accident.
+MODEL_CONFIG_VERSION = 111
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
