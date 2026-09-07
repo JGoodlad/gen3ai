@@ -13115,3 +13115,43 @@ every step read as MISSING and it printed "no traces yet" for traces that were p
 confident false negative from an unchecked return shape; and its `--steps` parser swallowed
 `--boot`'s argument. Both fixed before the number above was produced. `sentinel_0` stands at skill
 −0.061 on 20 battles, printed with a NEGATIVE SKILL flag.
+
+### 2026-09-07 · 28M — the registered Spearman is NOT DETECTED on both strata (bot ρ = −0.012 [−0.190, +0.186]; pool +0.335 [−0.247, +0.695]); the bot-side test is close to unanswerable BY CONSTRUCTION (base rates span 0.049); the 26M ordering dissolved under pooling (staller_v2's skill flips sign); "negative skill on 20% of opponent-cycles" is a HYPOTHESIS registered with its NULL; restart 4 +346 s; value share below 0.10
+
+Training Run session, the test re-registered in `50188e43`: 40 (opponent, step) rows over 8 bots and
+25 over 5 sentinels, 20M–28M, bootstrap clustered by opponent. **Both NOT DETECTED**; the bot ρ is
+essentially zero.
+
+**The 26M table was a single-cycle arrangement.** Its strongest anti-cap datapoint, staller_v2 (base
+0.952, skill +0.241 at 26M), has a five-cycle mean skill of **−0.056**; heuristic2 +0.192 → +0.079;
+setup_sweep +0.011 → +0.090. The second single-cycle pattern to reverse under more data today (the
+first: the three-cycle bots decline). **Lesson, in the Training Run's words: a single-cycle ordering
+is a hypothesis, never a finding.**
+
+**Structural limit, recorded so the test is not re-run expecting more:** the bot base rates span only
+**0.859–0.908** across the pooled cycles — a 0.049-wide predictor — so the cap account's ordering
+claim has almost nothing to be tested against on bots; the sentinels span 0.602–0.919. The bot-side
+NOT DETECTED is not evidence either way. **The cap-vs-blur question moves entirely to the 75M
+identity test**, where `sd_true_excess` is measured per STATE and the predictor is the state's own
+uncertainty.
+
+**The observation that survives, as a HYPOTHESIS with its null registered:** **13 of 65
+opponent-cycles (20%) have skill < 0** — the head worse than a constant predictor at the base rate —
+across 5 of 8 bots and 3 of 5 sentinels; sentinel_1's five-cycle mean is −0.007, staller_v2's −0.056.
+A per-cell skill on 12–20 battles is noisy enough that a decent critic shows negative cells by
+chance, so the count means nothing without the count expected under sampling. **Registered null and
+vocabulary:** (i) per-OPPONENT pooled skill over the five cycles (~60–100 battles each) with a
+battle-clustered bootstrap — how many of the 13 opponents sit entirely BELOW zero, entirely above,
+covering; (ii) a parametric null for the cell count — per cell, resample outcomes as Bernoulli at the
+head's own forecasts and recompute skill, giving the fraction of cells a PERFECTLY calibrated critic
+with these forecasts would score negative at these n. Observed inside the null ⇒ withdrawn; above it
+⇒ "worse than constant on K opponents, SIGNIFICANT" and K enters the 75M framing.
+
+**Restart 4** (08:38, missed at the time and reported late): startup **+346 s** from TB. The tool
+had first printed +412 s — restart 3's number — because it took the LARGEST gap in a baseline that
+spanned two restarts; it now refuses when the baseline spans more than one restart-sized gap
+(rule 16 again). Per-restart costs of record: 312, 317, ~412 (contaminated), 346; the pool grew 2 →
+5 → 9 → 13 snapshots across them, so a pool-size scaling is a **hypothesis at n = 3**. vf_coef at
+restart 4: registered −0.689, regime-only −0.573, both FLAG (loop closed, data for D2); components
+value_norm 0.173 · policy_norm 1.337 · **value share 0.098 — below 0.10 for the first time**.
+Sidecar audit clean, 11 sidecars, one pin span.
