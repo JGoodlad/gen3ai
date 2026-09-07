@@ -74,8 +74,16 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
 - Results go to `designs/research_state/ledger.md` (append-only, with the evidence tag and the
   artifact path); a belief change updates `UNDERSTANDING.md` in the same pass. Kills are written as
   honestly as wins.
-- Baselines by NAME (`python -m main.baselines`), never by path or memory; changing one is the `set`
-  procedure that prints the ledger line.
+- **"What is the baseline?" is answered by NAME and by DIFF, never from memory** (owner, 2026-09-06 —
+  "an always-changing, always-confusing question; unrecorded, it puts us in a bad state"). Every result
+  names what it was measured AGAINST as a registry name (`python -m main.baselines show <name>`), and
+  the ledger entry quotes the consumer's own `baseline <name> = <run>@<step> (set <date>, <title>)`
+  line. Every launch entry pastes the RESOLVED-config diff against `designs/production_config.json`.
+  A MODE flag — is a head SHAPING the trunk or read-only / detached, is a coefficient 0 or 0.05 — is
+  READ from the run's `model_config.json` (`belief_grad_mode`, `opp_intent_grad_mode`,
+  `hp_type_belief_coef`, …) and quoted with the run it came from; prose that says "we use X" with no
+  registry name is a smell to flag. Changing a baseline is the `set` procedure that prints the ledger
+  line; the old value stays in the ledger.
 - Never quote a mid-run ELO; compare at matched snapshot count; every delta carries its interval and
   the evidence vocabulary; a floor is the max pairwise difference among replicates.
 

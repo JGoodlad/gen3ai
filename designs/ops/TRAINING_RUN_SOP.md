@@ -64,7 +64,10 @@ answers one of the two questions; do both.
 5. Diff the RESOLVED `model_config` against `designs/production_config.json` and paste the diff into
    the launch entry. The only differing keys may be the experiment's own.
 6. Baselines by NAME: `python -m main.baselines check` must pass; never hand-edit
-   `designs/baselines.json` or `designs/production_config.json`.
+   `designs/baselines.json` or `designs/production_config.json`. **The launch entry states what this
+   arm is measured AGAINST by registry name, and states every MODE flag's value as READ from the
+   resolved config** (shaping vs read-only vs detached per head, each coefficient) — "what is the
+   baseline?" is answered in writing at launch, never reconstructed later (owner, 2026-09-06).
 
 **Shape and pinning**
 7. Every arm of a batch pins its commit explicitly: `--pin-commit <sha>`. Never `--sync-to-main` on
