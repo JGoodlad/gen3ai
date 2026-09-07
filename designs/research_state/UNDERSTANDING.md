@@ -526,8 +526,11 @@ SPARSE / SELF-φ / FROZEN-φ ladder and went out at generation scale without the
 starvation pre-test, so the pre-test runs INSIDE it. Comparator **`ai_v9_29_rev1_0823`**;
 **floor 38 Elo** — the max |Δ| between two same-class fresh runs at matched steps, **NOT** the
 adjacent-node spread (172/186 Elo, which is steep early LEARNING and would pass an arm that learned
-nothing). **At ~5M: trailing rev-1 by more than 38 Elo at matched snapshot count AND
-`win_rate_vs_bots` not rising ⇒ kill and launch FROZEN-φ.** Pre-registered confound: the incumbent
+nothing). **At ~10M (amended 2026-09-06 — at 5M the full-surface arm has ONE snapshot, and a one-node
+ladder is not a rating): trailing rev-1 by more than 38 Elo at matched snapshot count AND
+`win_rate_vs_bots` not rising over ≥3 cycles ⇒ kill and launch FROZEN-φ. ~5M is a SMOKE of the read
+(inputs resolve, comparator prints, composition guard 0, draw-rate bar ≥ 0.03 with rising episode length).**
+[ledger 2026-09-06 · *READ AMENDMENT — the famine read moves to ~10M*] Pre-registered confound: the incumbent
 had PBRS *and* PopArt *and* the shaped critic, so this is a rate comparison ACROSS RECIPES — a trail
 inside 38 Elo is **not** evidence of equivalence, only that starvation was not demonstrated.
 

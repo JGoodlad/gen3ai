@@ -11874,3 +11874,38 @@ both benefit from search and teacher distillation, to see if we can repro v8's g
    Control only; notify any time and take the stated default after 15 minutes; no scheduled digests —
    report on a major breakthrough or when all arms complete, always ending with what it means for the
    current understanding and the goal. Repo copy: `designs/ops/ORCHESTRATOR_SOP.md`.
+
+### 2026-09-06 · READ AMENDMENT — the famine read moves to ~10M; 5M becomes a pipeline smoke; the draw-rate kill bar is made numeric
+
+Raised by the Training Run session at step ~1.57M of `ai_v12_02_winprob_critic`; decided by the
+orchestrator under the owner's arm-by-arm mandate (same-day *OWNER RULINGS* entry). **This changes a
+pre-registered read, and the reason is that the registration rested on the STRIPPED arm's properties**
+— the same defect class as the batch shape and the duration, third instance.
+
+**The defect.** "Kill at ~5M if trailing `famine_comparator` by more than the 38-Elo floor at matched
+snapshot count AND `win_rate_vs_bots` not rising" needs a ladder and a direction. Measured cadence on
+the identical flag surface: first checkpoint **3,200,000**, first snapshot **4,000,000**, snapshots
+every ~2M. At 5M the arm has ONE snapshot — an anchored Bradley-Terry fit on one node is not a rating
+— and ~1 eval cycle, which has no direction.
+
+**The amendment.**
+1. **~5M is a SMOKE of the read, not the read:** `python -m main.critic_gate` must resolve every input
+   (`--check`), the comparator must print as `famine_comparator = ai_v9_29_rev1_0823@…`, the
+   composition guard `reward/untracked_abs_mean` must read 0, and the draw-rate bar below is read.
+2. **~10M is the DECIDING famine read** — ≥4 snapshots, matched snapshot count against
+   `famine_comparator`, floor **38 Elo** from the registry, AND-gated with `win_rate_vs_bots` not
+   rising over ≥3 eval cycles. Kill ⇒ the registered gen-era-head frozen-φ successor (the KILL branch
+   is unchanged by the owner's self-head ruling, which applies to the PASS branch).
+3. **The draw-rate half of G7 gets a NUMBER.** `signal/draw_rate` (the 250-turn cap routes here under
+   the win-prob critic) has no shaped-era comparator — `ai_v9_29_rev1_0823` carries no such scalar
+   (418 tags, none) — so the only comparator is the stripped arm, whose curve is the finding:
+   **0.010 (1.0M) → 0.0144 (2.0M) → 0.016 (3.0M) → 0.0026 (5.0M) → 0.0025 (10.0M)** — an early
+   TRANSIENT that resolved by 5M. Arm 2 reads 0.0056 (1.0M) → 0.0173 (1.57M) → 0.0142 (1.67M), inside
+   that envelope. **Bar:** kill on draw rate only if it is **≥ 0.03 at the 5M smoke AND `ep_len_mean`
+   is rising against its own 1–3M mean**; at 10M, re-read against the stripped arm's 0.0025, and a
+   rate > 4× it with a rising episode length is the kill. Tag: the transient claim is
+   **UNVERIFIED on the full surface** until arm 2's 5M reading exists.
+
+**Why the 38-Elo floor is untouched:** it is a property of the comparator's replicates, not of this
+arm's cadence. **Why 10M and not later:** ~4 nodes is the smallest count at which matched-count
+comparison against rev-1 (whose n=4 is at ~8M) is a comparison of ratings rather than of one edge.
