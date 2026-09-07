@@ -11659,3 +11659,59 @@ announcer): `model_config.json` records `all_shaping_pbrs=True`, `pbrs_material=
 `pbrs_belief=True` while the child announces **`1 TERMINAL + 0 PBRS + 0 BIAS (none — fully
 policy-invariant)`**. Those flags are INERT under `--terminal-indicator`. **The announcer is the
 authority; the config alone would tell a reader shaping was on.**
+
+---
+
+## 2026-09-06 · BASELINES REGISTRY — the named baselines become first-class objects (gen3_baselines_registry_v1)
+
+**Why.** Owner, after the first win-prob arm launched without the production architecture surface:
+*"How can we prevent this issue in the future? I feel like this happens frequently, like we lose
+what the stable baseline is?"* The root cause is not forgetfulness — the baselines were not objects
+anywhere in the tree. `designs/production_config.json` was a hand-copied JSON nothing consumed at
+launch; `main.untaught_meter`'s opponent and config were string literals in a module; the famine
+comparator lived in a ledger entry; the TensorBoard baseline was settled by asking the orchestrator;
+and the parser's DEFAULTS are a near-bare model, so a command that omits a flag silently gets the
+starter kit. Both validators answered *does this launch?*, never *is this the model you meant?*
+
+**What landed** (`2da835dd`). `designs/baselines.json` — eight named baselines plus one list — read
+through one accessor (`agents/training/baselines.py`) and a CLI (`python -m main.baselines
+{check,set}`). Every entry pins an **explicit** checkpoint (`@step` or a `.zip`), so the
+last-snapshot rule (`gen3_last_snapshot_resolution_v1`) cannot move what a name means, and carries
+`commit` / `config_version` / `arch_signature` / `sha256` / `purpose` / `set_on` / `set_by`.
+
+| name | run@step |
+|---|---|
+| `production` | `ai_v9_21_gen17_pfspoff_0820`@25,067,520 — the SURFACE source; `production_config.json` is CONSTRUCTED from it (v97 → v109) with 13 declared critic overrides |
+| `v9_long_baseline` | `ai_v9_29_rev1_0823`@25,067,760 — the fresh-from-zero 25M run, ladder 2098 |
+| `v9_fold_parent` | `ai_v9_59_R2ACTION_0827`@28,115,184 — also the frozen-φ potential source |
+| `v8_line` / `v8_parent` | `ai_v8_14_distill3_0725` / `ai_v8_04_distill_4teacher_0722` (era_checkout_only) |
+| `famine_comparator` | `ai_v9_29_rev1_0823`@25,067,760, `floor_elo` 38.0 |
+| `untaught_meter_opponent` / `_config` | `ai_v9_29_rev1_0823`'s 24M snapshot and its config |
+| `tb_curated` (list) | `[v8_line, v9_long_baseline]` — members are NAMES |
+
+**The drift gate changed KIND, not threshold.** `arch_tables_test::test_production_config_matches_
+newest_run` compared the mirror against whichever run in `models/` was newest, and it failed in
+**both** directions on the same day: it went red against a research arm that was never production,
+and its `arch_signature` escape hatch could not fire because `--critic` deliberately carries no
+signature bump. It is replaced by `test_production_config_matches_the_registry`, which checks three
+claims against the DECLARED construction — surface equality outside the overrides, a key-set delta
+legal only under the declared migration, and every override present at its declared value **and
+actually differing** (a stale override is reported).
+
+**Consumers resolve by name and say which run they meant.** `main.untaught_meter` (its two literals
+deleted), `main.critic_gate` (`--parent`, plus `--famine-comparator` / `--famine-floor-elo`),
+`main.elo`, `main.tb_curate`. Each prints `baseline <name> = <run>@<step> (set <date>, <ledger
+title>)`. Registry-named FILES join every retention tier's keep set at the one choke point
+(`assert_safe_tiered`) — measured: all five named runs were already tier 1 by the committed-file
+scan, so the file-level half is the load-bearing one (`untaught_meter_opponent` is a pool file no
+checkpoint rule covers).
+
+**One design rule worth carrying.** The famine comparator's DEFAULT yields when `models/` is absent
+(recorded as NOT READ, never as `off`, and the rest of the read proceeds) while an EXPLICIT flag
+refuses — the `--compile-trainer` asymmetry — and `explicit` is read off the **argv**, not by
+comparing a value against the default, which is what made an earlier version flaky.
+
+**Status.** Mechanism, not a measurement. `python -m main.baselines check` reports OK on 8
+baselines + 1 list. `production` records `pending.candidate = ai_v12_02_winprob_critic`: the
+production baseline moves only when that arm passes its pre-registered gate, and moving it is a
+command that rewrites the entry and prints the ledger line to append.
