@@ -12201,3 +12201,80 @@ recorded; candidates are for a probe, not a ledger.
 
 Run state: 5.21M, `draw_rate` 0.0030, `untracked_abs_mean` 0.0000, calibration cost 2.8%,
 `selfplay_fraction` steady at 0.90.
+
+---
+
+## 2026-09-06 · `ai_v12_02_winprob_critic` 6M — the throughput picture CORRECTED, and the promotion compile tax is ONE-TIME, not per-promotion
+
+Supersedes the throughput half of the 4M entry (`7acbc958`). That entry's 953 fps is correct for
+what it measured and is **relabelled the POOL-EMPTY rate** — bots only, `train/selfplay_fraction`
+0.0. It is **not** a "promotion-free" rate: that wording invites the reading that the cost is a
+per-promotion tax that amortizes, and it is not.
+
+### The cause was never the compile tax
+
+`train/selfplay_fraction` steps **0.0 → 0.90 at 4,000,032**. Before it the pool was empty and every
+battle was a scripted bot; after it, 90% are against a neural snapshot, which costs a policy forward
+per opponent decision. Rollout cadence (98,304 steps per rollout), with the compile pause excluded
+entirely:
+
+| regime | median gap | rate | n |
+|---|---|---|---|
+| pool-empty, `selfplay_fraction` 0.00 | 107.0 s | **919 fps** | 40 |
+| self-play, `selfplay_fraction` 0.90 | 163.7 s | **601 fps** | 19 |
+
+**1.53× slower, and it is a STEP CHANGE, not a dip.** The self-play figure is stable: IQR 162–168 s,
+full range 160–170 s → **577–614 fps**. (An earlier reading of 605 fps on n=7 stands up at n=19.)
+
+**A throughput number on this arm is a function of `selfplay_fraction` and is meaningless without
+it** — recorded beside every figure from here.
+
+### The compile tax is ONE-TIME PER PROCESS
+
+Measured at both promotions, against the self-play baseline gap of 164 s:
+
+| promotion | rollout gap | excess | compile lines |
+|---|---|---|---|
+| 4M | 527 s | **+363 s** | 48 fresh traces (one per worker), 13.3 → 1.7 ms, 7.8× |
+| 6M | 243 s | **+80 s** | **0 fresh**, all `ON (reused this process's validated compile)` |
+
+The architecture is identical across pool snapshots — only the weights differ — so a worker that has
+compiled one pool opponent reuses that validated graph for every later one. The 4M pause was the
+first-time cost, not a recurring one. The residual +80 s at 6M is snapshot load plus the reuse
+validation, not tracing.
+
+**So there is no promotion-time-preload backlog row**, and the earlier projection built on a
+recurring 16.7% tax (794 fps) is **withdrawn**. The correct model is a one-time cost plus a
+permanent regime step.
+
+⚠️ **An earlier claim in this run's messages that the arm was "40× more exposed" to promotion
+compiles was wrong on its premise** and is withdrawn: `n_envs` is 48, not 2048 (see the correction
+entry above). A promotion is 48 worker compiles, the same as any 48-env run.
+
+### 75M ETA
+
+70.2M steps remaining at 601 fps = **32.4 h of training**, plus ~10 launcher restarts × 262 s of
+measured startup = 0.7 h ⇒ **~33 h, landing Tue 08 Sep 07:00–09:30**. The range, not a point, because
+`selfplay_fraction` may step again to 1.00; at a proportional cost that is ~568 fps and the late end
+of the window.
+
+🚨 **One term in that ETA is UNMEASURED and is about to be measurable.** The 262 s startup was
+measured on a **pool-empty** launch. Every launcher restart from here starts fresh processes against
+a **non-empty** pool, and `--compile-opponents-preload` covers only opponents existing at env
+construction — so a restart may pay a first-compile cost the original launch did not. **The ~23:27
+restart measures it**; until then the 0.7 h startup term is a lower bound.
+
+### The self-play clause-2 reference, frozen
+
+Per READ AMENDMENT 4 (`38bfca94`), frozen once from the first 2M fully inside the current regime:
+
+| regime | reference | window | n |
+|---|---|---|---|
+| 0.00 pool-empty | 30.0395 | 1,081,344..2,949,120 | 20 |
+| **0.90 self-play** | **32.6110** | 4,000,032..6,000,032 | 21 |
+
+**The two references differ by +2.57 turns — 86% of the +3.0 bar, from the regime change alone.**
+That is the quantitative case for AMENDMENT 4 stated as a number: had clause 2 kept the pool-empty
+reference, it would have entered the 10M read already 86% of the way to MET for a reason with nothing
+to do with famine. Frozen once per regime and the tool refuses to overwrite; the pool-empty value
+stays in the record and prints on every report, marked as not used against self-play data.
