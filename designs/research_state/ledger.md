@@ -13155,3 +13155,34 @@ spanned two restarts; it now refuses when the baseline spans more than one resta
 restart 4: registered −0.689, regime-only −0.573, both FLAG (loop closed, data for D2); components
 value_norm 0.173 · policy_norm 1.337 · **value share 0.098 — below 0.10 for the first time**.
 Sidecar audit clean, 11 sidecars, one pin span.
+
+### 2026-09-07 · THE NEGATIVE-SKILL NULL (registered `28420de6`) — K = 0: no opponent is significantly worse than a constant predictor once pooled; yet 13 of 65 negative cells against a calibrated null of [0, 1]; the reconciliation is OVERDISPERSION — the head's per-cycle skill varies far more than its own forecasts permit; carried to the 75M identity test, not verdicted
+
+Training Run session, both halves as registered.
+
+**(i) Per-opponent pooled skill** (five cycles, ~66–100 battles each, battle-clustered bootstrap):
+entirely ABOVE zero **6** (aggressive +0.150 [+0.050, +0.222] · heuristic +0.112 [+0.009, +0.195] ·
+setup_sweep_v2 +0.145 [+0.023, +0.218] · staller +0.181 [+0.073, +0.277] · sentinel_2 +0.238
+[+0.092, +0.329] · sentinel_3 +0.217 [+0.120, +0.302]); entirely BELOW zero **0**; covering **7**,
+including the two single-cycle candidates — staller_v2 +0.002 [−0.294, +0.169] and sentinel_1
+−0.003 [−0.241, +0.141]. **The "worse than constant on K opponents" vocabulary reads K = 0.** Third
+single-cycle extreme today (sentinel_0 −0.061, sentinel_1's mean, staller_v2's +0.241) not to
+survive pooling.
+
+**(ii) Parametric null:** resampling each cell's outcomes as Bernoulli at the head's OWN forecasts,
+at the same n, a perfectly calibrated critic produces **median 0 negative cells, 95% band [0, 1]**
+over 300 draws. Observed **13**, far outside.
+
+**Reconciliation — the finding is about VARIANCE, not level.** The head is better than constant on
+average everywhere (6 of 13 significantly above, none below), yet its per-cycle skill swings far
+more than a calibrated head's forecasts allow. That is OVERDISPERSION relative to its own forecasts,
+not "bad on some opponents". Neither earlier framing (the 26M ordering, the 20% count) caught it.
+**Caveat on the null's tightness, not oversold:** (ii) assumes the forecasts are exactly right, so
+ANY miscalibration inflates the negative-cell count against it, and G2/G3 and a non-zero ECE already
+say the head is not perfectly calibrated. Read (ii) as "the forecasts are not exactly right, and the
+per-cell consequence is large", not as an independent discovery; a null resampling from empirical
+outcomes would be more conservative and was not run. **The 20% claim is neither confirmed nor
+withdrawn**; the overdispersion is what is carried to 75M, where `sd_true_excess` measures spread
+per STATE and is the instrument built for exactly this shape.
+
+Run state: ~28.9M, healthy; 30M ~35 min out.
