@@ -242,6 +242,14 @@ feeding the `d1`/`d2` outgoing physics. And faithfulness is **not missing-at-ran
 stratum is **loss-enriched 1.29×**, so any outcome-labelled objective needs outcome-balanced
 weights, pre-registered.
 
+### `ops/` — operational procedure (SOP) documents, era-independent
+[`ops/TRAINING_RUN_SOP.md`](ops/TRAINING_RUN_SOP.md) — how a training run is launched (the two
+independent checks: *it launches* vs *it is the experiment*), watched (the four layers; the 55-minute
+fallback cron), killed and relaunched (pid gone + GPU free; move the dead dir aside), and read (one
+command per registered read, the evidence vocabulary). Also where sessions find the ORCHESTRATOR
+(`~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`). Always-current; per-era commands stay in
+that era's runbook.
+
 ### ai_v12 (🟢 THE LIVE CHAPTER — the clean-world / win-probability-critic era)
 Opened 2026-08-29. **Code landed 2026-09-06; arm 1 is running.** Where ai_v9 is the entity graph
 inside one battle, ai_v10 what transfers between teams and ai_v11 what an external action

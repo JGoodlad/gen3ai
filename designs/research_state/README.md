@@ -97,6 +97,8 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   — two smaller standing plans (critic reliability; the GIGO/order-mismatch tripwire).
 - **[metamon_replay_feasibility.md](metamon_replay_feasibility.md)** — the external-corpus feasibility
   study behind the (owner-PUNTED) human-replay chapter.
+- **[`../ops/TRAINING_RUN_SOP.md`](../ops/TRAINING_RUN_SOP.md)** — the era-independent operating
+  procedure for a training run (launch checks, watchers + the 55-minute cron, kill/relaunch, reading).
 - **`gen{11..16}_endofrun_runbook.md`** — one per generation: the pre-registered end-of-run battery for
   that generation, its §-numbered gates, and what each gate returned. Historical once its generation
   closes, except where a § is explicitly still open (`gen14_endofrun_runbook` §(c) was closed by probe O
