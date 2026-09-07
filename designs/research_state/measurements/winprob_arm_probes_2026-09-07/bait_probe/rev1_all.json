@@ -1,0 +1,2159 @@
+{
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823",
+  "params": {
+    "outcome": null,
+    "opponent": "sentinel_*",
+    "step": null,
+    "max_battles": null,
+    "near_zero_frac": 0.01
+  },
+  "aggregate": {
+    "n_battles": 834,
+    "opp_voluntary_pivots": 6799,
+    "moved_into_pivots": 4567,
+    "misses": 180,
+    "whiff_kinds": {
+      "immune": 622,
+      "fail": 54,
+      "near_zero": 1
+    },
+    "whiff_rate_per_pivot": {
+      "n": 677,
+      "d": 4567,
+      "rate": 0.1482
+    },
+    "whiff_rate_per_decision": {
+      "n": 677,
+      "d": 30553,
+      "rate": 0.0222
+    },
+    "reclick_rate": {
+      "n": 151,
+      "d": 677,
+      "rate": 0.223
+    },
+    "loop_battle_rate": {
+      "n": 84,
+      "d": 834,
+      "rate": 0.1007
+    },
+    "loop_ge3_battle_rate": {
+      "n": 31,
+      "d": 834,
+      "rate": 0.0372
+    },
+    "loop_steps_per_decision": {
+      "n": 243,
+      "d": 30553,
+      "rate": 0.008
+    },
+    "worst_loop_max": 8,
+    "median_chosen_prob": {
+      "loop_steps": 0.915,
+      "other_whiffs": 0.842,
+      "all_baits": 0.789
+    },
+    "critic_delta": {
+      "loop_step": {
+        "n": 243,
+        "median_delta_v": -1.9550666809082031,
+        "median_delta_win_prob": -0.02399599552154541
+      },
+      "other_bait": {
+        "n": 434,
+        "median_delta_v": -1.5033648014068604,
+        "median_delta_win_prob": -0.0270681232213974
+      },
+      "other": {
+        "n": 29048,
+        "median_delta_v": -0.05289125442504883,
+        "median_delta_win_prob": -0.0012307395227253437
+      }
+    },
+    "readouts": {
+      "beta_slot_accuracy": {
+        "first_time": {
+          "n": 371,
+          "d": 777,
+          "rate": 0.4775
+        },
+        "repeat": {
+          "n": 2184,
+          "d": 3317,
+          "rate": 0.6584
+        },
+        "loop_step": {
+          "n": 148,
+          "d": 201,
+          "rate": 0.7363
+        }
+      },
+      "beta_species_correct": {
+        "n": 2926,
+        "d": 6799,
+        "rate": 0.4304
+      },
+      "alpha_switch_top1": {
+        "all_pivots": {
+          "n": 4190,
+          "d": 6799,
+          "rate": 0.6163
+        },
+        "loop_steps": {
+          "n": 164,
+          "d": 243,
+          "rate": 0.6749
+        }
+      },
+      "alpha_switch_p_median_on_loop_steps": 0.539
+    },
+    "mirror": {
+      "our_voluntary_pivots": 6388,
+      "whiff_rate_per_pivot": {
+        "n": 561,
+        "d": 4701,
+        "rate": 0.1193
+      },
+      "loop_battle_rate": {
+        "n": 70,
+        "d": 834,
+        "rate": 0.0839
+      }
+    },
+    "median_turns": 32.0,
+    "by_outcome": {
+      "win": {
+        "n_battles": 360,
+        "opp_voluntary_pivots": 3318,
+        "moved_into_pivots": 2123,
+        "misses": 75,
+        "whiff_kinds": {
+          "immune": 279,
+          "fail": 37,
+          "near_zero": 1
+        },
+        "whiff_rate_per_pivot": {
+          "n": 317,
+          "d": 2123,
+          "rate": 0.1493
+        },
+        "whiff_rate_per_decision": {
+          "n": 317,
+          "d": 13718,
+          "rate": 0.0231
+        },
+        "reclick_rate": {
+          "n": 77,
+          "d": 317,
+          "rate": 0.2429
+        },
+        "loop_battle_rate": {
+          "n": 44,
+          "d": 360,
+          "rate": 0.1222
+        },
+        "loop_ge3_battle_rate": {
+          "n": 15,
+          "d": 360,
+          "rate": 0.0417
+        },
+        "loop_steps_per_decision": {
+          "n": 124,
+          "d": 13718,
+          "rate": 0.009
+        },
+        "worst_loop_max": 8,
+        "median_chosen_prob": {
+          "loop_steps": 0.9255,
+          "other_whiffs": 0.883,
+          "all_baits": 0.7559999999999999
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 124,
+            "median_delta_v": -1.6542644500732422,
+            "median_delta_win_prob": -0.020506709814071655
+          },
+          "other_bait": {
+            "n": 193,
+            "median_delta_v": -1.1199188232421875,
+            "median_delta_win_prob": -0.0200900137424469
+          },
+          "other": {
+            "n": 13043,
+            "median_delta_v": 0.10970544815063477,
+            "median_delta_win_prob": 0.0019804835319519043
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 208,
+              "d": 371,
+              "rate": 0.5606
+            },
+            "repeat": {
+              "n": 1281,
+              "d": 1745,
+              "rate": 0.7341
+            },
+            "loop_step": {
+              "n": 83,
+              "d": 104,
+              "rate": 0.7981
+            }
+          },
+          "beta_species_correct": {
+            "n": 1656,
+            "d": 3318,
+            "rate": 0.4991
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 2033,
+              "d": 3318,
+              "rate": 0.6127
+            },
+            "loop_steps": {
+              "n": 78,
+              "d": 124,
+              "rate": 0.629
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.4302
+        },
+        "mirror": {
+          "our_voluntary_pivots": 2951,
+          "whiff_rate_per_pivot": {
+            "n": 297,
+            "d": 2082,
+            "rate": 0.1427
+          },
+          "loop_battle_rate": {
+            "n": 39,
+            "d": 360,
+            "rate": 0.1083
+          }
+        },
+        "median_turns": 31.0
+      },
+      "loss": {
+        "n_battles": 474,
+        "opp_voluntary_pivots": 3481,
+        "moved_into_pivots": 2444,
+        "misses": 105,
+        "whiff_kinds": {
+          "immune": 343,
+          "fail": 17
+        },
+        "whiff_rate_per_pivot": {
+          "n": 360,
+          "d": 2444,
+          "rate": 0.1473
+        },
+        "whiff_rate_per_decision": {
+          "n": 360,
+          "d": 16835,
+          "rate": 0.0214
+        },
+        "reclick_rate": {
+          "n": 74,
+          "d": 360,
+          "rate": 0.2056
+        },
+        "loop_battle_rate": {
+          "n": 40,
+          "d": 474,
+          "rate": 0.0844
+        },
+        "loop_ge3_battle_rate": {
+          "n": 16,
+          "d": 474,
+          "rate": 0.0338
+        },
+        "loop_steps_per_decision": {
+          "n": 119,
+          "d": 16835,
+          "rate": 0.0071
+        },
+        "worst_loop_max": 5,
+        "median_chosen_prob": {
+          "loop_steps": 0.91,
+          "other_whiffs": 0.797,
+          "all_baits": 0.812
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 119,
+            "median_delta_v": -2.1812353134155273,
+            "median_delta_win_prob": -0.03256356716156006
+          },
+          "other_bait": {
+            "n": 241,
+            "median_delta_v": -2.2399253845214844,
+            "median_delta_win_prob": -0.04063606262207031
+          },
+          "other": {
+            "n": 16005,
+            "median_delta_v": -0.28226280212402344,
+            "median_delta_win_prob": -0.009557068347930908
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 163,
+              "d": 406,
+              "rate": 0.4015
+            },
+            "repeat": {
+              "n": 903,
+              "d": 1572,
+              "rate": 0.5744
+            },
+            "loop_step": {
+              "n": 65,
+              "d": 97,
+              "rate": 0.6701
+            }
+          },
+          "beta_species_correct": {
+            "n": 1270,
+            "d": 3481,
+            "rate": 0.3648
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 2157,
+              "d": 3481,
+              "rate": 0.6196
+            },
+            "loop_steps": {
+              "n": 86,
+              "d": 119,
+              "rate": 0.7227
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.56045
+        },
+        "mirror": {
+          "our_voluntary_pivots": 3437,
+          "whiff_rate_per_pivot": {
+            "n": 264,
+            "d": 2619,
+            "rate": 0.1008
+          },
+          "loop_battle_rate": {
+            "n": 31,
+            "d": 474,
+            "rate": 0.0654
+          }
+        },
+        "median_turns": 32.0
+      }
+    },
+    "by_step": [
+      {
+        "step": 4000032,
+        "n_battles": 17,
+        "opp_voluntary_pivots": 72,
+        "moved_into_pivots": 46,
+        "misses": 4,
+        "whiff_kinds": {
+          "immune": 4
+        },
+        "whiff_rate_per_pivot": {
+          "n": 4,
+          "d": 46,
+          "rate": 0.087
+        },
+        "whiff_rate_per_decision": {
+          "n": 4,
+          "d": 566,
+          "rate": 0.0071
+        },
+        "reclick_rate": {
+          "n": 0,
+          "d": 4,
+          "rate": 0.0
+        },
+        "loop_battle_rate": {
+          "n": 0,
+          "d": 17,
+          "rate": 0.0
+        },
+        "loop_ge3_battle_rate": {
+          "n": 0,
+          "d": 17,
+          "rate": 0.0
+        },
+        "loop_steps_per_decision": {
+          "n": 0,
+          "d": 566,
+          "rate": 0.0
+        },
+        "worst_loop_max": 0,
+        "median_chosen_prob": {
+          "loop_steps": null,
+          "other_whiffs": 0.645,
+          "all_baits": 0.7005000000000001
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 0,
+            "median_delta_v": null,
+            "median_delta_win_prob": null
+          },
+          "other_bait": {
+            "n": 4,
+            "median_delta_v": -1.0819189548492432,
+            "median_delta_win_prob": -0.022067872807383537
+          },
+          "other": {
+            "n": 545,
+            "median_delta_v": 0.0056378841400146484,
+            "median_delta_win_prob": 0.0005193948745727539
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 4,
+              "d": 10,
+              "rate": 0.4
+            },
+            "repeat": {
+              "n": 10,
+              "d": 17,
+              "rate": 0.5882
+            },
+            "loop_step": {
+              "n": 0,
+              "d": 0,
+              "rate": null
+            }
+          },
+          "beta_species_correct": {
+            "n": 17,
+            "d": 72,
+            "rate": 0.2361
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 37,
+              "d": 72,
+              "rate": 0.5139
+            },
+            "loop_steps": {
+              "n": 0,
+              "d": 0,
+              "rate": null
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": null
+        },
+        "mirror": {
+          "our_voluntary_pivots": 42,
+          "whiff_rate_per_pivot": {
+            "n": 2,
+            "d": 30,
+            "rate": 0.0667
+          },
+          "loop_battle_rate": {
+            "n": 0,
+            "d": 17,
+            "rate": 0.0
+          }
+        },
+        "median_turns": 22.0
+      },
+      {
+        "step": 6000000,
+        "n_battles": 39,
+        "opp_voluntary_pivots": 229,
+        "moved_into_pivots": 162,
+        "misses": 4,
+        "whiff_kinds": {
+          "immune": 17
+        },
+        "whiff_rate_per_pivot": {
+          "n": 17,
+          "d": 162,
+          "rate": 0.1049
+        },
+        "whiff_rate_per_decision": {
+          "n": 17,
+          "d": 1373,
+          "rate": 0.0124
+        },
+        "reclick_rate": {
+          "n": 2,
+          "d": 17,
+          "rate": 0.1176
+        },
+        "loop_battle_rate": {
+          "n": 2,
+          "d": 39,
+          "rate": 0.0513
+        },
+        "loop_ge3_battle_rate": {
+          "n": 0,
+          "d": 39,
+          "rate": 0.0
+        },
+        "loop_steps_per_decision": {
+          "n": 4,
+          "d": 1373,
+          "rate": 0.0029
+        },
+        "worst_loop_max": 2,
+        "median_chosen_prob": {
+          "loop_steps": 0.589,
+          "other_whiffs": 0.9470000000000001,
+          "all_baits": 0.6990000000000001
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 4,
+            "median_delta_v": 1.6346197128295898,
+            "median_delta_win_prob": 0.05865582823753357
+          },
+          "other_bait": {
+            "n": 13,
+            "median_delta_v": -0.597468376159668,
+            "median_delta_win_prob": -0.036087989807128906
+          },
+          "other": {
+            "n": 1318,
+            "median_delta_v": -0.08580875396728516,
+            "median_delta_win_prob": -0.0008240938186645508
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 13,
+              "d": 26,
+              "rate": 0.5
+            },
+            "repeat": {
+              "n": 49,
+              "d": 78,
+              "rate": 0.6282
+            },
+            "loop_step": {
+              "n": 2,
+              "d": 3,
+              "rate": 0.6667
+            }
+          },
+          "beta_species_correct": {
+            "n": 82,
+            "d": 229,
+            "rate": 0.3581
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 153,
+              "d": 229,
+              "rate": 0.6681
+            },
+            "loop_steps": {
+              "n": 0,
+              "d": 4,
+              "rate": 0.0
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.1687
+        },
+        "mirror": {
+          "our_voluntary_pivots": 196,
+          "whiff_rate_per_pivot": {
+            "n": 10,
+            "d": 146,
+            "rate": 0.0685
+          },
+          "loop_battle_rate": {
+            "n": 0,
+            "d": 39,
+            "rate": 0.0
+          }
+        },
+        "median_turns": 33.0
+      },
+      {
+        "step": 8000016,
+        "n_battles": 54,
+        "opp_voluntary_pivots": 329,
+        "moved_into_pivots": 213,
+        "misses": 5,
+        "whiff_kinds": {
+          "immune": 32,
+          "fail": 1
+        },
+        "whiff_rate_per_pivot": {
+          "n": 33,
+          "d": 213,
+          "rate": 0.1549
+        },
+        "whiff_rate_per_decision": {
+          "n": 33,
+          "d": 2095,
+          "rate": 0.0158
+        },
+        "reclick_rate": {
+          "n": 4,
+          "d": 33,
+          "rate": 0.1212
+        },
+        "loop_battle_rate": {
+          "n": 4,
+          "d": 54,
+          "rate": 0.0741
+        },
+        "loop_ge3_battle_rate": {
+          "n": 0,
+          "d": 54,
+          "rate": 0.0
+        },
+        "loop_steps_per_decision": {
+          "n": 8,
+          "d": 2095,
+          "rate": 0.0038
+        },
+        "worst_loop_max": 2,
+        "median_chosen_prob": {
+          "loop_steps": 0.6865,
+          "other_whiffs": 0.8270000000000001,
+          "all_baits": 0.6990000000000001
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 8,
+            "median_delta_v": -1.2336578369140625,
+            "median_delta_win_prob": 0.000269085168838501
+          },
+          "other_bait": {
+            "n": 25,
+            "median_delta_v": -1.9901466369628906,
+            "median_delta_win_prob": -0.03674948215484619
+          },
+          "other": {
+            "n": 2009,
+            "median_delta_v": -0.03623771667480469,
+            "median_delta_win_prob": -0.0005509257316589355
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 20,
+              "d": 42,
+              "rate": 0.4762
+            },
+            "repeat": {
+              "n": 64,
+              "d": 120,
+              "rate": 0.5333
+            },
+            "loop_step": {
+              "n": 5,
+              "d": 7,
+              "rate": 0.7143
+            }
+          },
+          "beta_species_correct": {
+            "n": 104,
+            "d": 329,
+            "rate": 0.3161
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 201,
+              "d": 329,
+              "rate": 0.6109
+            },
+            "loop_steps": {
+              "n": 6,
+              "d": 8,
+              "rate": 0.75
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.3627
+        },
+        "mirror": {
+          "our_voluntary_pivots": 291,
+          "whiff_rate_per_pivot": {
+            "n": 30,
+            "d": 222,
+            "rate": 0.1351
+          },
+          "loop_battle_rate": {
+            "n": 7,
+            "d": 54,
+            "rate": 0.1296
+          }
+        },
+        "median_turns": 36.0
+      },
+      {
+        "step": 10000032,
+        "n_battles": 74,
+        "opp_voluntary_pivots": 507,
+        "moved_into_pivots": 362,
+        "misses": 20,
+        "whiff_kinds": {
+          "immune": 42,
+          "fail": 1
+        },
+        "whiff_rate_per_pivot": {
+          "n": 43,
+          "d": 362,
+          "rate": 0.1188
+        },
+        "whiff_rate_per_decision": {
+          "n": 43,
+          "d": 2573,
+          "rate": 0.0167
+        },
+        "reclick_rate": {
+          "n": 6,
+          "d": 43,
+          "rate": 0.1395
+        },
+        "loop_battle_rate": {
+          "n": 5,
+          "d": 74,
+          "rate": 0.0676
+        },
+        "loop_ge3_battle_rate": {
+          "n": 1,
+          "d": 74,
+          "rate": 0.0135
+        },
+        "loop_steps_per_decision": {
+          "n": 11,
+          "d": 2573,
+          "rate": 0.0043
+        },
+        "worst_loop_max": 3,
+        "median_chosen_prob": {
+          "loop_steps": 0.9990000000000001,
+          "other_whiffs": 0.7625,
+          "all_baits": 0.7405
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 11,
+            "median_delta_v": -2.2143611907958984,
+            "median_delta_win_prob": -0.04763570427894592
+          },
+          "other_bait": {
+            "n": 32,
+            "median_delta_v": -0.5387828350067139,
+            "median_delta_win_prob": -0.016490966081619263
+          },
+          "other": {
+            "n": 2457,
+            "median_delta_v": -0.056713104248046875,
+            "median_delta_win_prob": -0.0005082488059997559
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 42,
+              "d": 76,
+              "rate": 0.5526
+            },
+            "repeat": {
+              "n": 119,
+              "d": 201,
+              "rate": 0.592
+            },
+            "loop_step": {
+              "n": 4,
+              "d": 8,
+              "rate": 0.5
+            }
+          },
+          "beta_species_correct": {
+            "n": 196,
+            "d": 507,
+            "rate": 0.3866
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 308,
+              "d": 507,
+              "rate": 0.6075
+            },
+            "loop_steps": {
+              "n": 11,
+              "d": 11,
+              "rate": 1.0
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.5767
+        },
+        "mirror": {
+          "our_voluntary_pivots": 542,
+          "whiff_rate_per_pivot": {
+            "n": 52,
+            "d": 399,
+            "rate": 0.1303
+          },
+          "loop_battle_rate": {
+            "n": 13,
+            "d": 74,
+            "rate": 0.1757
+          }
+        },
+        "median_turns": 31.5
+      },
+      {
+        "step": 12000000,
+        "n_battles": 91,
+        "opp_voluntary_pivots": 613,
+        "moved_into_pivots": 426,
+        "misses": 14,
+        "whiff_kinds": {
+          "immune": 46,
+          "fail": 1
+        },
+        "whiff_rate_per_pivot": {
+          "n": 47,
+          "d": 426,
+          "rate": 0.1103
+        },
+        "whiff_rate_per_decision": {
+          "n": 47,
+          "d": 3030,
+          "rate": 0.0155
+        },
+        "reclick_rate": {
+          "n": 8,
+          "d": 47,
+          "rate": 0.1702
+        },
+        "loop_battle_rate": {
+          "n": 7,
+          "d": 91,
+          "rate": 0.0769
+        },
+        "loop_ge3_battle_rate": {
+          "n": 1,
+          "d": 91,
+          "rate": 0.011
+        },
+        "loop_steps_per_decision": {
+          "n": 15,
+          "d": 3030,
+          "rate": 0.005
+        },
+        "worst_loop_max": 3,
+        "median_chosen_prob": {
+          "loop_steps": 0.7929999999999999,
+          "other_whiffs": 0.802,
+          "all_baits": 0.7665
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 15,
+            "median_delta_v": -0.8336575031280518,
+            "median_delta_win_prob": -0.021711409091949463
+          },
+          "other_bait": {
+            "n": 32,
+            "median_delta_v": -1.6291229724884033,
+            "median_delta_win_prob": -0.030797511339187622
+          },
+          "other": {
+            "n": 2892,
+            "median_delta_v": -0.06675004959106445,
+            "median_delta_win_prob": -0.0011992454528808594
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 39,
+              "d": 81,
+              "rate": 0.4815
+            },
+            "repeat": {
+              "n": 179,
+              "d": 260,
+              "rate": 0.6885
+            },
+            "loop_step": {
+              "n": 9,
+              "d": 12,
+              "rate": 0.75
+            }
+          },
+          "beta_species_correct": {
+            "n": 261,
+            "d": 613,
+            "rate": 0.4258
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 285,
+              "d": 613,
+              "rate": 0.4649
+            },
+            "loop_steps": {
+              "n": 4,
+              "d": 15,
+              "rate": 0.2667
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.20015
+        },
+        "mirror": {
+          "our_voluntary_pivots": 575,
+          "whiff_rate_per_pivot": {
+            "n": 43,
+            "d": 429,
+            "rate": 0.1002
+          },
+          "loop_battle_rate": {
+            "n": 3,
+            "d": 91,
+            "rate": 0.033
+          }
+        },
+        "median_turns": 28.0
+      },
+      {
+        "step": 14000016,
+        "n_battles": 92,
+        "opp_voluntary_pivots": 733,
+        "moved_into_pivots": 499,
+        "misses": 23,
+        "whiff_kinds": {
+          "immune": 64,
+          "fail": 2
+        },
+        "whiff_rate_per_pivot": {
+          "n": 66,
+          "d": 499,
+          "rate": 0.1323
+        },
+        "whiff_rate_per_decision": {
+          "n": 66,
+          "d": 3226,
+          "rate": 0.0205
+        },
+        "reclick_rate": {
+          "n": 5,
+          "d": 66,
+          "rate": 0.0758
+        },
+        "loop_battle_rate": {
+          "n": 3,
+          "d": 92,
+          "rate": 0.0326
+        },
+        "loop_ge3_battle_rate": {
+          "n": 1,
+          "d": 92,
+          "rate": 0.0109
+        },
+        "loop_steps_per_decision": {
+          "n": 8,
+          "d": 3226,
+          "rate": 0.0025
+        },
+        "worst_loop_max": 4,
+        "median_chosen_prob": {
+          "loop_steps": 0.895,
+          "other_whiffs": 0.7489999999999999,
+          "all_baits": 0.75
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 8,
+            "median_delta_v": -2.672961950302124,
+            "median_delta_win_prob": -0.03200417757034302
+          },
+          "other_bait": {
+            "n": 58,
+            "median_delta_v": -2.161543369293213,
+            "median_delta_win_prob": -0.027674049139022827
+          },
+          "other": {
+            "n": 3068,
+            "median_delta_v": -0.043193817138671875,
+            "median_delta_win_prob": -0.000932544469833374
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 37,
+              "d": 80,
+              "rate": 0.4625
+            },
+            "repeat": {
+              "n": 224,
+              "d": 343,
+              "rate": 0.6531
+            },
+            "loop_step": {
+              "n": 3,
+              "d": 5,
+              "rate": 0.6
+            }
+          },
+          "beta_species_correct": {
+            "n": 304,
+            "d": 733,
+            "rate": 0.4147
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 424,
+              "d": 733,
+              "rate": 0.5784
+            },
+            "loop_steps": {
+              "n": 6,
+              "d": 8,
+              "rate": 0.75
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.71695
+        },
+        "mirror": {
+          "our_voluntary_pivots": 605,
+          "whiff_rate_per_pivot": {
+            "n": 49,
+            "d": 450,
+            "rate": 0.1089
+          },
+          "loop_battle_rate": {
+            "n": 2,
+            "d": 92,
+            "rate": 0.0217
+          }
+        },
+        "median_turns": 31.0
+      },
+      {
+        "step": 16000032,
+        "n_battles": 89,
+        "opp_voluntary_pivots": 802,
+        "moved_into_pivots": 544,
+        "misses": 13,
+        "whiff_kinds": {
+          "immune": 83,
+          "fail": 11
+        },
+        "whiff_rate_per_pivot": {
+          "n": 94,
+          "d": 544,
+          "rate": 0.1728
+        },
+        "whiff_rate_per_decision": {
+          "n": 94,
+          "d": 3435,
+          "rate": 0.0274
+        },
+        "reclick_rate": {
+          "n": 28,
+          "d": 94,
+          "rate": 0.2979
+        },
+        "loop_battle_rate": {
+          "n": 15,
+          "d": 89,
+          "rate": 0.1685
+        },
+        "loop_ge3_battle_rate": {
+          "n": 6,
+          "d": 89,
+          "rate": 0.0674
+        },
+        "loop_steps_per_decision": {
+          "n": 45,
+          "d": 3435,
+          "rate": 0.0131
+        },
+        "worst_loop_max": 5,
+        "median_chosen_prob": {
+          "loop_steps": 0.903,
+          "other_whiffs": 0.917,
+          "all_baits": 0.8105
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 45,
+            "median_delta_v": -2.1714589595794678,
+            "median_delta_win_prob": -0.03317737579345703
+          },
+          "other_bait": {
+            "n": 49,
+            "median_delta_v": -1.1434597969055176,
+            "median_delta_win_prob": -0.01347261667251587
+          },
+          "other": {
+            "n": 3252,
+            "median_delta_v": -0.0594630241394043,
+            "median_delta_win_prob": -0.0017195343971252441
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 45,
+              "d": 90,
+              "rate": 0.5
+            },
+            "repeat": {
+              "n": 272,
+              "d": 414,
+              "rate": 0.657
+            },
+            "loop_step": {
+              "n": 28,
+              "d": 38,
+              "rate": 0.7368
+            }
+          },
+          "beta_species_correct": {
+            "n": 348,
+            "d": 802,
+            "rate": 0.4339
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 503,
+              "d": 802,
+              "rate": 0.6272
+            },
+            "loop_steps": {
+              "n": 26,
+              "d": 45,
+              "rate": 0.5778
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.5245
+        },
+        "mirror": {
+          "our_voluntary_pivots": 725,
+          "whiff_rate_per_pivot": {
+            "n": 71,
+            "d": 552,
+            "rate": 0.1286
+          },
+          "loop_battle_rate": {
+            "n": 6,
+            "d": 89,
+            "rate": 0.0674
+          }
+        },
+        "median_turns": 32.0
+      },
+      {
+        "step": 18000000,
+        "n_battles": 95,
+        "opp_voluntary_pivots": 968,
+        "moved_into_pivots": 630,
+        "misses": 29,
+        "whiff_kinds": {
+          "immune": 81,
+          "fail": 8
+        },
+        "whiff_rate_per_pivot": {
+          "n": 89,
+          "d": 630,
+          "rate": 0.1413
+        },
+        "whiff_rate_per_decision": {
+          "n": 89,
+          "d": 3953,
+          "rate": 0.0225
+        },
+        "reclick_rate": {
+          "n": 21,
+          "d": 89,
+          "rate": 0.236
+        },
+        "loop_battle_rate": {
+          "n": 12,
+          "d": 95,
+          "rate": 0.1263
+        },
+        "loop_ge3_battle_rate": {
+          "n": 6,
+          "d": 95,
+          "rate": 0.0632
+        },
+        "loop_steps_per_decision": {
+          "n": 34,
+          "d": 3953,
+          "rate": 0.0086
+        },
+        "worst_loop_max": 4,
+        "median_chosen_prob": {
+          "loop_steps": 0.972,
+          "other_whiffs": 0.816,
+          "all_baits": 0.807
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 34,
+            "median_delta_v": -1.6027610301971436,
+            "median_delta_win_prob": -0.012440592050552368
+          },
+          "other_bait": {
+            "n": 55,
+            "median_delta_v": -2.288405418395996,
+            "median_delta_win_prob": -0.04536823928356171
+          },
+          "other": {
+            "n": 3771,
+            "median_delta_v": -0.13358688354492188,
+            "median_delta_win_prob": -0.004346668720245361
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 43,
+              "d": 85,
+              "rate": 0.5059
+            },
+            "repeat": {
+              "n": 376,
+              "d": 561,
+              "rate": 0.6702
+            },
+            "loop_step": {
+              "n": 18,
+              "d": 26,
+              "rate": 0.6923
+            }
+          },
+          "beta_species_correct": {
+            "n": 450,
+            "d": 968,
+            "rate": 0.4649
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 539,
+              "d": 968,
+              "rate": 0.5568
+            },
+            "loop_steps": {
+              "n": 20,
+              "d": 34,
+              "rate": 0.5882
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.4915
+        },
+        "mirror": {
+          "our_voluntary_pivots": 1102,
+          "whiff_rate_per_pivot": {
+            "n": 106,
+            "d": 758,
+            "rate": 0.1398
+          },
+          "loop_battle_rate": {
+            "n": 13,
+            "d": 95,
+            "rate": 0.1368
+          }
+        },
+        "median_turns": 35.0
+      },
+      {
+        "step": 20000016,
+        "n_battles": 92,
+        "opp_voluntary_pivots": 899,
+        "moved_into_pivots": 603,
+        "misses": 22,
+        "whiff_kinds": {
+          "immune": 96,
+          "near_zero": 1,
+          "fail": 16
+        },
+        "whiff_rate_per_pivot": {
+          "n": 113,
+          "d": 603,
+          "rate": 0.1874
+        },
+        "whiff_rate_per_decision": {
+          "n": 113,
+          "d": 3578,
+          "rate": 0.0316
+        },
+        "reclick_rate": {
+          "n": 42,
+          "d": 113,
+          "rate": 0.3717
+        },
+        "loop_battle_rate": {
+          "n": 17,
+          "d": 92,
+          "rate": 0.1848
+        },
+        "loop_ge3_battle_rate": {
+          "n": 9,
+          "d": 92,
+          "rate": 0.0978
+        },
+        "loop_steps_per_decision": {
+          "n": 62,
+          "d": 3578,
+          "rate": 0.0173
+        },
+        "worst_loop_max": 8,
+        "median_chosen_prob": {
+          "loop_steps": 0.873,
+          "other_whiffs": 0.943,
+          "all_baits": 0.8420000000000001
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 62,
+            "median_delta_v": -1.7229886054992676,
+            "median_delta_win_prob": -0.01136663556098938
+          },
+          "other_bait": {
+            "n": 51,
+            "median_delta_v": -2.6263394355773926,
+            "median_delta_win_prob": -0.051857709884643555
+          },
+          "other": {
+            "n": 3373,
+            "median_delta_v": -0.023260116577148438,
+            "median_delta_win_prob": -0.0014882683753967285
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 33,
+              "d": 82,
+              "rate": 0.4024
+            },
+            "repeat": {
+              "n": 370,
+              "d": 521,
+              "rate": 0.7102
+            },
+            "loop_step": {
+              "n": 46,
+              "d": 56,
+              "rate": 0.8214
+            }
+          },
+          "beta_species_correct": {
+            "n": 447,
+            "d": 899,
+            "rate": 0.4972
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 544,
+              "d": 899,
+              "rate": 0.6051
+            },
+            "loop_steps": {
+              "n": 44,
+              "d": 62,
+              "rate": 0.7097
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.5112
+        },
+        "mirror": {
+          "our_voluntary_pivots": 835,
+          "whiff_rate_per_pivot": {
+            "n": 71,
+            "d": 633,
+            "rate": 0.1122
+          },
+          "loop_battle_rate": {
+            "n": 12,
+            "d": 92,
+            "rate": 0.1304
+          }
+        },
+        "median_turns": 30.0
+      },
+      {
+        "step": 22000032,
+        "n_battles": 95,
+        "opp_voluntary_pivots": 824,
+        "moved_into_pivots": 517,
+        "misses": 17,
+        "whiff_kinds": {
+          "immune": 70,
+          "fail": 11
+        },
+        "whiff_rate_per_pivot": {
+          "n": 81,
+          "d": 517,
+          "rate": 0.1567
+        },
+        "whiff_rate_per_decision": {
+          "n": 81,
+          "d": 3458,
+          "rate": 0.0234
+        },
+        "reclick_rate": {
+          "n": 15,
+          "d": 81,
+          "rate": 0.1852
+        },
+        "loop_battle_rate": {
+          "n": 8,
+          "d": 95,
+          "rate": 0.0842
+        },
+        "loop_ge3_battle_rate": {
+          "n": 2,
+          "d": 95,
+          "rate": 0.0211
+        },
+        "loop_steps_per_decision": {
+          "n": 24,
+          "d": 3458,
+          "rate": 0.0069
+        },
+        "worst_loop_max": 5,
+        "median_chosen_prob": {
+          "loop_steps": 0.783,
+          "other_whiffs": 0.902,
+          "all_baits": 0.754
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 24,
+            "median_delta_v": -1.3972187042236328,
+            "median_delta_win_prob": -0.019875168800354004
+          },
+          "other_bait": {
+            "n": 57,
+            "median_delta_v": -1.2135109901428223,
+            "median_delta_win_prob": -0.022073566913604736
+          },
+          "other": {
+            "n": 3282,
+            "median_delta_v": -0.062192440032958984,
+            "median_delta_win_prob": -0.0026201754808425903
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 55,
+              "d": 104,
+              "rate": 0.5288
+            },
+            "repeat": {
+              "n": 284,
+              "d": 410,
+              "rate": 0.6927
+            },
+            "loop_step": {
+              "n": 17,
+              "d": 20,
+              "rate": 0.85
+            }
+          },
+          "beta_species_correct": {
+            "n": 380,
+            "d": 824,
+            "rate": 0.4612
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 576,
+              "d": 824,
+              "rate": 0.699
+            },
+            "loop_steps": {
+              "n": 15,
+              "d": 24,
+              "rate": 0.625
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.3942
+        },
+        "mirror": {
+          "our_voluntary_pivots": 751,
+          "whiff_rate_per_pivot": {
+            "n": 57,
+            "d": 525,
+            "rate": 0.1086
+          },
+          "loop_battle_rate": {
+            "n": 5,
+            "d": 95,
+            "rate": 0.0526
+          }
+        },
+        "median_turns": 32.0
+      },
+      {
+        "step": 24000000,
+        "n_battles": 96,
+        "opp_voluntary_pivots": 823,
+        "moved_into_pivots": 565,
+        "misses": 29,
+        "whiff_kinds": {
+          "immune": 87,
+          "fail": 3
+        },
+        "whiff_rate_per_pivot": {
+          "n": 90,
+          "d": 565,
+          "rate": 0.1593
+        },
+        "whiff_rate_per_decision": {
+          "n": 90,
+          "d": 3266,
+          "rate": 0.0276
+        },
+        "reclick_rate": {
+          "n": 20,
+          "d": 90,
+          "rate": 0.2222
+        },
+        "loop_battle_rate": {
+          "n": 11,
+          "d": 96,
+          "rate": 0.1146
+        },
+        "loop_ge3_battle_rate": {
+          "n": 5,
+          "d": 96,
+          "rate": 0.0521
+        },
+        "loop_steps_per_decision": {
+          "n": 32,
+          "d": 3266,
+          "rate": 0.0098
+        },
+        "worst_loop_max": 6,
+        "median_chosen_prob": {
+          "loop_steps": 0.9625,
+          "other_whiffs": 0.7789999999999999,
+          "all_baits": 0.8240000000000001
+        },
+        "critic_delta": {
+          "loop_step": {
+            "n": 32,
+            "median_delta_v": -3.2852795124053955,
+            "median_delta_win_prob": -0.06943643093109131
+          },
+          "other_bait": {
+            "n": 58,
+            "median_delta_v": -1.328244924545288,
+            "median_delta_win_prob": -0.02243441343307495
+          },
+          "other": {
+            "n": 3081,
+            "median_delta_v": -0.01275634765625,
+            "median_delta_win_prob": -0.0001474618911743164
+          }
+        },
+        "readouts": {
+          "beta_slot_accuracy": {
+            "first_time": {
+              "n": 40,
+              "d": 101,
+              "rate": 0.396
+            },
+            "repeat": {
+              "n": 237,
+              "d": 392,
+              "rate": 0.6046
+            },
+            "loop_step": {
+              "n": 16,
+              "d": 26,
+              "rate": 0.6154
+            }
+          },
+          "beta_species_correct": {
+            "n": 337,
+            "d": 823,
+            "rate": 0.4095
+          },
+          "alpha_switch_top1": {
+            "all_pivots": {
+              "n": 620,
+              "d": 823,
+              "rate": 0.7533
+            },
+            "loop_steps": {
+              "n": 32,
+              "d": 32,
+              "rate": 1.0
+            }
+          },
+          "alpha_switch_p_median_on_loop_steps": 0.65865
+        },
+        "mirror": {
+          "our_voluntary_pivots": 724,
+          "whiff_rate_per_pivot": {
+            "n": 70,
+            "d": 557,
+            "rate": 0.1257
+          },
+          "loop_battle_rate": {
+            "n": 9,
+            "d": 96,
+            "rate": 0.0938
+          }
+        },
+        "median_turns": 31.0
+      }
+    ],
+    "coverage": {
+      "n_matched": 834,
+      "n_skipped": 0,
+      "skipped_reasons": {}
+    }
+  },
+  "baseline": {
+    "generation": "gen-15",
+    "measured": "2026-08-19",
+    "run": "ai_v9_18_gen15_v8rewards_0818",
+    "scope": "sentinel_* eval opponents, every step",
+    "n_battles": 843,
+    "moved_into_pivots": 4923,
+    "whiffs": 820,
+    "whiff_rate_per_moved_into_pivot": 0.167,
+    "loop_battles": 117,
+    "loop_battle_rate": 0.139,
+    "loop_ge3_battles": 52,
+    "loop_ge3_rate": 0.062,
+    "reclicks": 264,
+    "reclick_rate": 0.322,
+    "median_chosen_prob_on_loop_steps": 0.963,
+    "loop_step_median_delta_v": -4.31,
+    "loop_step_median_delta_win_prob": -0.096,
+    "whiff_kinds": {
+      "immune": 769,
+      "fail": 41,
+      "near_zero": 10
+    },
+    "loop_battle_rate_by_step": {
+      "4M": 0.05,
+      "20M": 0.211,
+      "24M": 0.152
+    },
+    "beta_slot_accuracy": {
+      "first_time": 0.52,
+      "repeat": 0.659,
+      "loop_step": 0.821
+    },
+    "alpha_switch_top1_on_loop_steps": 0.762,
+    "alpha_switch_p_median_on_loop_steps": 0.6,
+    "mirror_whiff_rate": 0.145,
+    "source": "designs/research_state/ledger.md (2026-08-19); designs/research_state/bait_loop_hunt.md"
+  },
+  "caveats": [
+    "Baselines are gen-15, measured 2026-08-19 on 843 sentinel_* eval opponents, every step battles (designs/research_state/ledger.md (2026-08-19); designs/research_state/bait_loop_hunt.md) \u2014 a reference point, NOT a target. Compare at MATCHED scope: a run-wide read includes the bot opponents the baseline excluded.",
+    "CONFOUND 1 (length): loop_battle_rate rises with game LENGTH \u2014 a 200-turn game has more chances to repeat a pair than a 30-turn one. Read whiff_rate_per_pivot and whiff_rate_per_decision, which normalize the exposure, before the per-battle rate.",
+    "CONFOUND 2 (winning positions): the loops concentrate in games we were WINNING (a won position is where a free turn is affordable), so by_outcome is always reported and an overall rate that moves with the win rate has moved for two reasons. Compare win-arm to win-arm.",
+    "A MISS is never a whiff: it is dice, and taxing it would make this partly a luck reading. Misses are counted separately (aggregate.misses).",
+    "beta_slot_accuracy is decidable only when the arriving mon was ALREADY revealed (the obs slot is the k-th REVEALED opponent mon), so its denominator is smaller than the pivot count and is skewed toward REPEAT pivots by construction.",
+    "The mirror block (THEY whiff into OUR pivots) is the control, not a target: it measures the OPPONENT's policy, which in a sentinel matchup is a frozen self."
+  ],
+  "battles": [
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_20000016/sentinel_2/win_s1_002_summary.json",
+      "short_id": "step_20000016/sentinel_2/win_1002",
+      "step": 20000016,
+      "opponent": "sentinel_2",
+      "outcome": "win",
+      "turns": 110,
+      "our_side": "p1",
+      "moved_into_pivots": 24,
+      "whiffs": 10,
+      "reclicks": 7,
+      "worst_loop": 8,
+      "loops": [
+        {
+          "move": "toxic",
+          "arrival": "swampert",
+          "count": 8,
+          "turns": [
+            35,
+            43,
+            47,
+            51,
+            76,
+            80,
+            97,
+            101
+          ]
+        }
+      ],
+      "whiff_turns": [
+        4,
+        7,
+        35,
+        43,
+        47,
+        51,
+        76,
+        80,
+        97,
+        101
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_24000000/sentinel_2/win_s3_002_summary.json",
+      "short_id": "step_24000000/sentinel_2/win_3002",
+      "step": 24000000,
+      "opponent": "sentinel_2",
+      "outcome": "win",
+      "turns": 87,
+      "our_side": "p1",
+      "moved_into_pivots": 17,
+      "whiffs": 7,
+      "reclicks": 5,
+      "worst_loop": 6,
+      "loops": [
+        {
+          "move": "earthquake",
+          "arrival": "salamence",
+          "count": 6,
+          "turns": [
+            7,
+            11,
+            18,
+            25,
+            30,
+            36
+          ]
+        }
+      ],
+      "whiff_turns": [
+        7,
+        11,
+        18,
+        25,
+        30,
+        34,
+        36
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_20000016/sentinel_0/loss_s2_001_summary.json",
+      "short_id": "step_20000016/sentinel_0/loss_2001",
+      "step": 20000016,
+      "opponent": "sentinel_0",
+      "outcome": "loss",
+      "turns": 168,
+      "our_side": "p1",
+      "moved_into_pivots": 24,
+      "whiffs": 7,
+      "reclicks": 5,
+      "worst_loop": 5,
+      "loops": [
+        {
+          "move": "earthquake",
+          "arrival": "salamence",
+          "count": 5,
+          "turns": [
+            2,
+            40,
+            45,
+            49,
+            53
+          ]
+        },
+        {
+          "move": "earthquake",
+          "arrival": "claydol",
+          "count": 2,
+          "turns": [
+            7,
+            13
+          ]
+        }
+      ],
+      "whiff_turns": [
+        2,
+        7,
+        13,
+        40,
+        45,
+        49,
+        53
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_20000016/sentinel_1/win_s2_002_summary.json",
+      "short_id": "step_20000016/sentinel_1/win_2002",
+      "step": 20000016,
+      "opponent": "sentinel_1",
+      "outcome": "win",
+      "turns": 110,
+      "our_side": "p1",
+      "moved_into_pivots": 26,
+      "whiffs": 10,
+      "reclicks": 5,
+      "worst_loop": 5,
+      "loops": [
+        {
+          "move": "toxic",
+          "arrival": "swampert",
+          "count": 5,
+          "turns": [
+            60,
+            72,
+            77,
+            87,
+            91
+          ]
+        },
+        {
+          "move": "earthquake",
+          "arrival": "salamence",
+          "count": 2,
+          "turns": [
+            9,
+            13
+          ]
+        }
+      ],
+      "whiff_turns": [
+        9,
+        13,
+        20,
+        60,
+        72,
+        77,
+        82,
+        87,
+        91,
+        103
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_22000032/sentinel_0/loss_s0_004_summary.json",
+      "short_id": "step_22000032/sentinel_0/loss_004",
+      "step": 22000032,
+      "opponent": "sentinel_0",
+      "outcome": "loss",
+      "turns": 124,
+      "our_side": "p1",
+      "moved_into_pivots": 28,
+      "whiffs": 7,
+      "reclicks": 5,
+      "worst_loop": 5,
+      "loops": [
+        {
+          "move": "toxic",
+          "arrival": "swampert",
+          "count": 5,
+          "turns": [
+            46,
+            74,
+            80,
+            94,
+            96
+          ]
+        },
+        {
+          "move": "toxic",
+          "arrival": "metagross",
+          "count": 2,
+          "turns": [
+            2,
+            13
+          ]
+        }
+      ],
+      "whiff_turns": [
+        2,
+        13,
+        46,
+        74,
+        80,
+        94,
+        96
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_16000032/sentinel_1/loss_s3_005_summary.json",
+      "short_id": "step_16000032/sentinel_1/loss_3005",
+      "step": 16000032,
+      "opponent": "sentinel_1",
+      "outcome": "loss",
+      "turns": 43,
+      "our_side": "p1",
+      "moved_into_pivots": 13,
+      "whiffs": 7,
+      "reclicks": 4,
+      "worst_loop": 5,
+      "loops": [
+        {
+          "move": "thunderwave",
+          "arrival": "swampert",
+          "count": 5,
+          "turns": [
+            12,
+            17,
+            21,
+            25,
+            36
+          ]
+        }
+      ],
+      "whiff_turns": [
+        2,
+        7,
+        12,
+        17,
+        21,
+        25,
+        36
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_20000016/sentinel_0/loss_s3_002_summary.json",
+      "short_id": "step_20000016/sentinel_0/loss_3002",
+      "step": 20000016,
+      "opponent": "sentinel_0",
+      "outcome": "loss",
+      "turns": 52,
+      "our_side": "p1",
+      "moved_into_pivots": 11,
+      "whiffs": 5,
+      "reclicks": 4,
+      "worst_loop": 5,
+      "loops": [
+        {
+          "move": "earthquake",
+          "arrival": "salamence",
+          "count": 5,
+          "turns": [
+            11,
+            19,
+            24,
+            28,
+            32
+          ]
+        }
+      ],
+      "whiff_turns": [
+        11,
+        19,
+        24,
+        28,
+        32
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_22000032/sentinel_2/win_s0_001_summary.json",
+      "short_id": "step_22000032/sentinel_2/win_001",
+      "step": 22000032,
+      "opponent": "sentinel_2",
+      "outcome": "win",
+      "turns": 43,
+      "our_side": "p1",
+      "moved_into_pivots": 13,
+      "whiffs": 5,
+      "reclicks": 4,
+      "worst_loop": 5,
+      "loops": [
+        {
+          "move": "earthquake",
+          "arrival": "salamence",
+          "count": 5,
+          "turns": [
+            2,
+            6,
+            10,
+            34,
+            39
+          ]
+        }
+      ],
+      "whiff_turns": [
+        2,
+        6,
+        10,
+        34,
+        39
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_16000032/sentinel_0/loss_s0_004_summary.json",
+      "short_id": "step_16000032/sentinel_0/loss_004",
+      "step": 16000032,
+      "opponent": "sentinel_0",
+      "outcome": "loss",
+      "turns": 94,
+      "our_side": "p1",
+      "moved_into_pivots": 19,
+      "whiffs": 9,
+      "reclicks": 5,
+      "worst_loop": 4,
+      "loops": [
+        {
+          "move": "thunderbolt",
+          "arrival": "jolteon",
+          "count": 4,
+          "turns": [
+            2,
+            13,
+            45,
+            49
+          ]
+        },
+        {
+          "move": "thunderwave",
+          "arrival": "heracross",
+          "count": 2,
+          "turns": [
+            43,
+            47
+          ]
+        },
+        {
+          "move": "thunderwave",
+          "arrival": "swampert",
+          "count": 2,
+          "turns": [
+            29,
+            33
+          ]
+        }
+      ],
+      "whiff_turns": [
+        2,
+        13,
+        19,
+        29,
+        33,
+        43,
+        45,
+        47,
+        49
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_18000000/sentinel_0/win_s0_002_summary.json",
+      "short_id": "step_18000000/sentinel_0/win_002",
+      "step": 18000000,
+      "opponent": "sentinel_0",
+      "outcome": "win",
+      "turns": 196,
+      "our_side": "p1",
+      "moved_into_pivots": 39,
+      "whiffs": 7,
+      "reclicks": 4,
+      "worst_loop": 4,
+      "loops": [
+        {
+          "move": "toxic",
+          "arrival": "swampert",
+          "count": 4,
+          "turns": [
+            89,
+            109,
+            114,
+            124
+          ]
+        },
+        {
+          "move": "thunderwave",
+          "arrival": "swampert",
+          "count": 2,
+          "turns": [
+            84,
+            94
+          ]
+        }
+      ],
+      "whiff_turns": [
+        9,
+        84,
+        89,
+        94,
+        109,
+        114,
+        124
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_14000016/sentinel_0/win_s3_001_summary.json",
+      "short_id": "step_14000016/sentinel_0/win_3001",
+      "step": 14000016,
+      "opponent": "sentinel_0",
+      "outcome": "win",
+      "turns": 44,
+      "our_side": "p1",
+      "moved_into_pivots": 11,
+      "whiffs": 4,
+      "reclicks": 3,
+      "worst_loop": 4,
+      "loops": [
+        {
+          "move": "earthquake",
+          "arrival": "salamence",
+          "count": 4,
+          "turns": [
+            2,
+            6,
+            9,
+            18
+          ]
+        }
+      ],
+      "whiff_turns": [
+        2,
+        6,
+        9,
+        18
+      ]
+    },
+    {
+      "id": "models/ai_v9_29_rev1_0823/eval_traces/step_16000032/sentinel_0/loss_s0_005_summary.json",
+      "short_id": "step_16000032/sentinel_0/loss_005",
+      "step": 16000032,
+      "opponent": "sentinel_0",
+      "outcome": "loss",
+      "turns": 110,
+      "our_side": "p1",
+      "moved_into_pivots": 17,
+      "whiffs": 4,
+      "reclicks": 3,
+      "worst_loop": 4,
+      "loops": [
+        {
+          "move": "earthquake",
+          "arrival": "skarmory",
+          "count": 4,
+          "turns": [
+            1,
+            9,
+            15,
+            27
+          ]
+        }
+      ],
+      "whiff_turns": [
+        1,
+        9,
+        15,
+        27
+      ]
+    }
+  ]
+}

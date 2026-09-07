@@ -1,0 +1,760 @@
+{
+  "meta": {
+    "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic",
+    "run_name": "ai_v12_02_winprob_critic",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/final_model_interrupted.zip",
+    "model_config": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/model_config.json",
+    "arch_signature": "gen3_critic_route_wave_v1",
+    "config_version": 110,
+    "obs_dim": 2501,
+    "num_timesteps": 20054016,
+    "n_states": 3000,
+    "sampling": {
+      "sampler": "stratified_round_robin_v1",
+      "seed": 0,
+      "n_states": 3000,
+      "n_files_read": 207,
+      "n_files_matched": 2025,
+      "per_step": {
+        "step_10000032": 300,
+        "step_12000000": 300,
+        "step_14000016": 300,
+        "step_16000032": 300,
+        "step_18000000": 300,
+        "step_20000016": 300,
+        "step_2000016": 300,
+        "step_4000032": 300,
+        "step_6000000": 300,
+        "step_8000016": 300
+      },
+      "per_opponent": {
+        "aggressive": 283,
+        "aggressive_v2": 273,
+        "heuristic": 302,
+        "heuristic2": 321,
+        "random": 310,
+        "sentinel_0": 259,
+        "sentinel_1": 212,
+        "sentinel_2": 99,
+        "sentinel_3": 105,
+        "sentinel_4": 59,
+        "setup_sweep": 207,
+        "setup_sweep_v2": 162,
+        "staller": 223,
+        "staller_v2": 185
+      }
+    },
+    "seed": 0,
+    "device": "cpu",
+    "tree_git_hash": "ae8e9fa9fa61e061edc36e82b1a33070bd74a73f",
+    "generated_at": "2026-09-07T06:18:04",
+    "runtime_sec": 67.7
+  },
+  "battery_version": 1,
+  "rank": {
+    "trained": {
+      "role_tokens": {
+        "pr": 15.778628233994507,
+        "srank99": 100.0,
+        "effrank": 33.275271107027294,
+        "n90": 39.0,
+        "n95": 59.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.12327053307808208
+      },
+      "team_tokens": {
+        "pr": 11.91501582407439,
+        "srank99": 107.0,
+        "effrank": 31.570472971422696,
+        "n90": 47.0,
+        "n95": 69.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.09308606112558117
+      },
+      "value_pooled": {
+        "pr": 4.893205437074445,
+        "srank99": 54.0,
+        "effrank": 10.317098173936433,
+        "n90": 14.0,
+        "n95": 24.0,
+        "dim": 128,
+        "n_rows": 3000,
+        "pr_frac": 0.0382281674771441
+      },
+      "pi_features": {
+        "pr": 11.01263757631248,
+        "srank99": 270.0,
+        "effrank": 29.08886467935981,
+        "n90": 51.0,
+        "n95": 108.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.021509057766235313
+      },
+      "vf_features": {
+        "pr": 6.414873375813537,
+        "srank99": 139.0,
+        "effrank": 15.776713342516947,
+        "n90": 23.0,
+        "n95": 44.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.012529049562135814
+      }
+    },
+    "fresh": {
+      "role_tokens": {
+        "pr": 17.377367961469208,
+        "srank99": 98.0,
+        "effrank": 34.63471078932752,
+        "n90": 40.0,
+        "n95": 58.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.13576068719897819
+      },
+      "team_tokens": {
+        "pr": 6.541260347265276,
+        "srank99": 88.0,
+        "effrank": 17.36186424142061,
+        "n90": 31.0,
+        "n95": 48.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.05110359646300997
+      },
+      "value_pooled": {
+        "pr": 4.275973486511664,
+        "srank99": 57.0,
+        "effrank": 11.844128129815195,
+        "n90": 20.0,
+        "n95": 31.0,
+        "dim": 128,
+        "n_rows": 3000,
+        "pr_frac": 0.03340604286337238
+      },
+      "pi_features": {
+        "pr": 8.595270915174043,
+        "srank99": 200.0,
+        "effrank": 31.716679443493057,
+        "n90": 54.0,
+        "n95": 90.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.016787638506199302
+      },
+      "vf_features": {
+        "pr": 5.203002122211853,
+        "srank99": 116.0,
+        "effrank": 15.648648539631347,
+        "n90": 25.0,
+        "n95": 41.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.010162113519945025
+      }
+    }
+  },
+  "trainability": {
+    "n_targets": 8,
+    "seed": 0,
+    "folds": 5,
+    "target_family": "tanh(signed_log(obs) @ N(0,1) / sqrt(D))",
+    "taps": {
+      "role_tokens": {
+        "r2_trained": 0.3849510509844757,
+        "r2_fresh": 0.3807675736067288,
+        "nmse_trained": 0.6150489490155243,
+        "nmse_fresh": 0.6192324263932711,
+        "capacity_ratio": 1.010986958101815,
+        "per_target_r2_trained": [
+          0.18660839738259694,
+          0.6625716474845402,
+          0.15476051442973615,
+          0.2974264776334822,
+          0.2274409198218561,
+          0.6275429483239039,
+          0.6456203591120482,
+          0.2776371436876418
+        ]
+      },
+      "team_tokens": {
+        "r2_trained": 0.45433921913173275,
+        "r2_fresh": 0.48059616007676664,
+        "nmse_trained": 0.5456607808682672,
+        "nmse_fresh": 0.5194038399232334,
+        "capacity_ratio": 0.945365895264665,
+        "per_target_r2_trained": [
+          0.2043349439254779,
+          0.7626474929097544,
+          0.22032893808230725,
+          0.3062188543724903,
+          0.2980402763108442,
+          0.7992108624434341,
+          0.7979146385480489,
+          0.24601774646150487
+        ]
+      },
+      "value_pooled": {
+        "r2_trained": 0.4269428306419768,
+        "r2_fresh": 0.45948430667890655,
+        "nmse_trained": 0.5730571693580232,
+        "nmse_fresh": 0.5405156933210935,
+        "capacity_ratio": 0.9291782644936551,
+        "per_target_r2_trained": [
+          0.1588305868439862,
+          0.735313671786046,
+          0.21876506311996946,
+          0.28164691432414124,
+          0.2689456731225617,
+          0.77862224158022,
+          0.7647777828392484,
+          0.20864071151964136
+        ]
+      },
+      "pi_features": {
+        "r2_trained": 0.40167676707506045,
+        "r2_fresh": 0.4622075051432642,
+        "nmse_trained": 0.5983232329249395,
+        "nmse_fresh": 0.5377924948567359,
+        "capacity_ratio": 0.8690399065470781,
+        "per_target_r2_trained": [
+          0.11180222745415969,
+          0.7237768192505297,
+          0.20509181617136452,
+          0.2370598119735019,
+          0.2601157700222101,
+          0.7325046377659759,
+          0.7650474241112246,
+          0.1780156298515173
+        ]
+      },
+      "vf_features": {
+        "r2_trained": 0.4086333321992258,
+        "r2_fresh": 0.47153246796600384,
+        "nmse_trained": 0.5913666678007742,
+        "nmse_fresh": 0.5284675320339962,
+        "capacity_ratio": 0.8666069888292127,
+        "per_target_r2_trained": [
+          0.15553348501348463,
+          0.7459894519899024,
+          0.18372222271689997,
+          0.2683751015992266,
+          0.2690600875462872,
+          0.7700528125830606,
+          0.7465374828644611,
+          0.12979601328048396
+        ]
+      }
+    }
+  },
+  "decodability": {
+    "skipped": {},
+    "facts": {
+      "our_active_hp": {
+        "task": "regression",
+        "note": "HP fraction of our active mon",
+        "target_std": 0.37516809556978564,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.2789761234688072,
+            "fresh": 0.33528774888659585,
+            "l2": 10.0
+          },
+          "team_tokens": {
+            "trained": 0.6609987655083301,
+            "fresh": 0.5138716161881351,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.6179091496351451,
+            "fresh": 0.5212663622339914,
+            "l2": 1.0
+          },
+          "pi_features": {
+            "trained": 0.8189814374195356,
+            "fresh": 0.5990887833000755,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.6210851157897879,
+            "fresh": 0.5144500565257439,
+            "l2": 10.0
+          }
+        }
+      },
+      "opp_active_hp": {
+        "task": "regression",
+        "note": "HP fraction of the opponent's active mon",
+        "target_std": 0.32212700865305927,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.45195045149021107,
+            "fresh": 0.2911694057460551,
+            "l2": 10.0
+          },
+          "team_tokens": {
+            "trained": 0.5951520728618533,
+            "fresh": 0.2167694796321873,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.5829990239469757,
+            "fresh": 0.2221744650927966,
+            "l2": 0.1
+          },
+          "pi_features": {
+            "trained": 0.6080536543308737,
+            "fresh": 0.2028352960588936,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.4949892911438929,
+            "fresh": 0.24523073813965313,
+            "l2": 100.0
+          }
+        }
+      },
+      "our_alive": {
+        "task": "regression",
+        "note": "count of our slots with hp > 0",
+        "target_std": 1.70599257520854,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.9599927032485586,
+            "fresh": 0.9705490938735175,
+            "l2": 1.0
+          },
+          "team_tokens": {
+            "trained": 0.9435530995081562,
+            "fresh": 0.9555976315031187,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.956914301180075,
+            "fresh": 0.9576356331744678,
+            "l2": 1.0
+          },
+          "pi_features": {
+            "trained": 0.9002428489101477,
+            "fresh": 0.9674868566126353,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.965431859267159,
+            "fresh": 0.9671948192007671,
+            "l2": 0.1
+          }
+        }
+      },
+      "opp_alive": {
+        "task": "regression",
+        "note": "count of opp slots with hp > 0 (UNREVEALED slots included \u2014 this is what the obs says, not the true remaining party)",
+        "target_std": 1.137419301166754,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.9304218745403529,
+            "fresh": 0.9256214954665819,
+            "l2": 1.0
+          },
+          "team_tokens": {
+            "trained": 0.8701363913416936,
+            "fresh": 0.8940663759794854,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.8885047530995887,
+            "fresh": 0.9159157115309741,
+            "l2": 0.1
+          },
+          "pi_features": {
+            "trained": 0.8555255252342249,
+            "fresh": 0.9247614372011683,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.8961685763762778,
+            "fresh": 0.9427596103545357,
+            "l2": 10.0
+          }
+        }
+      },
+      "our_spikes": {
+        "task": "classification",
+        "note": "spikes on OUR side (global hazards[0] > 0)",
+        "target_std": 0.26659144772479104,
+        "taps": {
+          "role_tokens": {
+            "trained": 1.0,
+            "fresh": 1.0,
+            "l2": 10.0
+          },
+          "team_tokens": {
+            "trained": 0.9939809798964728,
+            "fresh": 0.9858107463741267,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.978370612173429,
+            "fresh": 0.9669923191049952,
+            "l2": 0.1
+          },
+          "pi_features": {
+            "trained": 0.9714807883821969,
+            "fresh": 0.9936167119265711,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.9776201888877946,
+            "fresh": 0.9824088274792501,
+            "l2": 100.0
+          }
+        },
+        "pos_rate": 0.077
+      },
+      "opp_spikes": {
+        "task": "classification",
+        "note": "spikes on the OPPONENT's side (global hazards[1] > 0)",
+        "target_std": 0.39230090491866065,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.9999299689553101,
+            "fresh": 0.9999350227420403,
+            "l2": 10.0
+          },
+          "team_tokens": {
+            "trained": 0.9740711861959426,
+            "fresh": 0.9861230236084038,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.9464298606598801,
+            "fresh": 0.9759475850119125,
+            "l2": 0.1
+          },
+          "pi_features": {
+            "trained": 0.9442119702548553,
+            "fresh": 0.9984954154934662,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.9624749115587322,
+            "fresh": 0.9825673236589416,
+            "l2": 100.0
+          }
+        },
+        "pos_rate": 0.19
+      },
+      "clock_elapsed": {
+        "task": "regression",
+        "note": "the global CLOCK group's log-elapsed scalar",
+        "target_std": 0.14692191258308482,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.9281906285493338,
+            "fresh": 0.9267442484212234,
+            "l2": 1.0
+          },
+          "team_tokens": {
+            "trained": 0.9124350794574231,
+            "fresh": 0.9298581324308482,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.8783166961177697,
+            "fresh": 0.9115736695282654,
+            "l2": 0.1
+          },
+          "pi_features": {
+            "trained": 0.8519060798652848,
+            "fresh": 0.9343669783754718,
+            "l2": 100.0
+          },
+          "vf_features": {
+            "trained": 0.894030258816317,
+            "fresh": 0.9362320678766483,
+            "l2": 10.0
+          }
+        }
+      },
+      "turns_since_progress": {
+        "task": "regression",
+        "note": "the board block's no-progress clock",
+        "target_std": 0.22846589075762674,
+        "taps": {
+          "role_tokens": {
+            "trained": 0.26919803069662074,
+            "fresh": 0.27333137171308775,
+            "l2": 10.0
+          },
+          "team_tokens": {
+            "trained": 0.30012167775026743,
+            "fresh": 0.28866949702223665,
+            "l2": 10.0
+          },
+          "value_pooled": {
+            "trained": 0.29827350471639424,
+            "fresh": 0.28587531346268513,
+            "l2": 1.0
+          },
+          "pi_features": {
+            "trained": 0.31618910838715053,
+            "fresh": 0.7768786458345607,
+            "l2": 1000.0
+          },
+          "vf_features": {
+            "trained": 0.279752677672948,
+            "fresh": 0.25191763398625633,
+            "l2": 100.0
+          }
+        }
+      }
+    }
+  },
+  "params": {
+    "n_params_total": 1950003,
+    "phases": {
+      "projection": {
+        "n_params": 603136,
+        "param_share": 0.3093000369743021,
+        "l2_norm": 33.085752290581134,
+        "rms": 0.042602333538687566,
+        "zero_frac": 0.0
+      },
+      "team_transformer": {
+        "n_params": 283904,
+        "param_share": 0.14559157088476274,
+        "l2_norm": 60.31006153763016,
+        "rms": 0.11318894600685533,
+        "zero_frac": 0.0
+      },
+      "cls_pool": {
+        "n_params": 201088,
+        "param_share": 0.1031218926329857,
+        "l2_norm": 41.900668745873126,
+        "rms": 0.09343893442915045,
+        "zero_frac": 0.0
+      },
+      "hidden_opp_belief": {
+        "n_params": 199808,
+        "param_share": 0.10246548338643581,
+        "l2_norm": 44.02492047387107,
+        "rms": 0.09849000143578468,
+        "zero_frac": 0.0
+      },
+      "pokemon_encoder": {
+        "n_params": 161024,
+        "param_share": 0.08257628321597454,
+        "l2_norm": 39.4885132552715,
+        "rms": 0.0984068833488273,
+        "zero_frac": 0.0
+      },
+      "belief_head": {
+        "n_params": 103456,
+        "param_share": 0.05305427735239382,
+        "l2_norm": 27.310025063051295,
+        "rms": 0.08490714876309322,
+        "zero_frac": 0.0
+      },
+      "item_belief_head": {
+        "n_params": 77656,
+        "param_share": 0.039823528476622856,
+        "l2_norm": 14.116529573943412,
+        "rms": 0.050657112851666804,
+        "zero_frac": 0.0
+      },
+      "value_projection": {
+        "n_params": 66048,
+        "param_share": 0.03387071712197366,
+        "l2_norm": 15.999999046325655,
+        "rms": 0.062257276925645824,
+        "zero_frac": 0.007751937984496124
+      },
+      "move_belief": {
+        "n_params": 54032,
+        "param_share": 0.02770867531998669,
+        "l2_norm": 14.276583561215569,
+        "rms": 0.06141843838753175,
+        "zero_frac": 0.03819958543085579
+      },
+      "value_entity_pool": {
+        "n_params": 42560,
+        "param_share": 0.021825607447783415,
+        "l2_norm": 12.843456456006361,
+        "rms": 0.06225598488179842,
+        "zero_frac": 0.0
+      },
+      "alpha_head": {
+        "n_params": 41218,
+        "param_share": 0.021137403378353778,
+        "l2_norm": 17.906982671139517,
+        "rms": 0.08820210620088328,
+        "zero_frac": 0.0
+      },
+      "embeddings": {
+        "n_params": 30720,
+        "param_share": 0.015753821917197052,
+        "l2_norm": 176.02528459818237,
+        "rms": 1.004302281934283,
+        "zero_frac": 0.0
+      },
+      "beta_head": {
+        "n_params": 24705,
+        "param_share": 0.012669211278136494,
+        "l2_norm": 12.222666170159863,
+        "rms": 0.07776309211008894,
+        "zero_frac": 0.0
+      },
+      "history_events": {
+        "n_params": 17797,
+        "param_share": 0.009126652625662627,
+        "l2_norm": 27.671459588519667,
+        "rms": 0.207423838697167,
+        "zero_frac": 0.0
+      },
+      "win_head": {
+        "n_params": 16897,
+        "param_share": 0.008665114874182245,
+        "l2_norm": 19.623444687845566,
+        "rms": 0.15096297419712554,
+        "zero_frac": 0.0
+      },
+      "entity_seats": {
+        "n_params": 9600,
+        "param_share": 0.004923069349124078,
+        "l2_norm": 12.030946365502265,
+        "rms": 0.12279033215946815,
+        "zero_frac": 0.0
+      },
+      "spread_belief": {
+        "n_params": 4894,
+        "param_share": 0.0025097397286055457,
+        "l2_norm": 12.995063991900722,
+        "rms": 0.18575753525244648,
+        "zero_frac": 0.0
+      },
+      "hp_type_belief_head": {
+        "n_params": 4752,
+        "param_share": 0.0024369193278164186,
+        "l2_norm": 19.017685634849407,
+        "rms": 0.27587951141807765,
+        "zero_frac": 0.0
+      },
+      "pre_proj_norm": {
+        "n_params": 2354,
+        "param_share": 0.0012071776299831334,
+        "l2_norm": 34.32582018176917,
+        "rms": 0.7074857450885232,
+        "zero_frac": 0.0
+      },
+      "prefuse_proj": {
+        "n_params": 1664,
+        "param_share": 0.0008533320205148402,
+        "l2_norm": 3.8591607298328183,
+        "rms": 0.09460546090148324,
+        "zero_frac": 0.0
+      },
+      "belief_slots": {
+        "n_params": 768,
+        "param_share": 0.00039384554792992624,
+        "l2_norm": 1.5060066121476756,
+        "rms": 0.05434333268280105,
+        "zero_frac": 0.0
+      },
+      "edge_bias": {
+        "n_params": 688,
+        "param_share": 0.0003528199700205589,
+        "l2_norm": 2.5361034105942313,
+        "rms": 0.09668803608281573,
+        "zero_frac": 0.011627906976744186
+      },
+      "value_pre_norm": {
+        "n_params": 256,
+        "param_share": 0.00013128184930997542,
+        "l2_norm": 11.313708498984761,
+        "rms": 0.7071067811865476,
+        "zero_frac": 0.5
+      },
+      "pair_outcome_switch": {
+        "n_params": 240,
+        "param_share": 0.00012307673372810197,
+        "l2_norm": 1.2550226110948826,
+        "rms": 0.08101136119807045,
+        "zero_frac": 0.0
+      },
+      "pair_outcome_move": {
+        "n_params": 210,
+        "param_share": 0.0001076921420120892,
+        "l2_norm": 0.7575939821630667,
+        "rms": 0.052278951505575814,
+        "zero_frac": 0.0
+      },
+      "intent_conditional": {
+        "n_params": 182,
+        "param_share": 9.333318974381065e-05,
+        "l2_norm": 1.5011504144978576,
+        "rms": 0.11127267189520657,
+        "zero_frac": 0.14285714285714285
+      },
+      "damage_op": {
+        "n_params": 138,
+        "param_share": 7.076912189365862e-05,
+        "l2_norm": 11.309288622865429,
+        "rms": 0.9627105798449811,
+        "zero_frac": 0.0
+      },
+      "switch_branch": {
+        "n_params": 90,
+        "param_share": 4.6153775148038235e-05,
+        "l2_norm": 0.8549265913573635,
+        "rms": 0.09011717536444305,
+        "zero_frac": 0.0
+      },
+      "intent_move_cell": {
+        "n_params": 56,
+        "param_share": 2.8717904536557123e-05,
+        "l2_norm": 0.1387955125336079,
+        "rms": 0.018547330525801757,
+        "zero_frac": 0.0
+      },
+      "intent_threshold_move": {
+        "n_params": 42,
+        "param_share": 2.1538428402417842e-05,
+        "l2_norm": 0.20259648416076034,
+        "rms": 0.03126131619654721,
+        "zero_frac": 0.0
+      },
+      "conditional_threat": {
+        "n_params": 20,
+        "param_share": 1.025639447734183e-05,
+        "l2_norm": 0.5527580067360437,
+        "rms": 0.12360044781690804,
+        "zero_frac": 0.0
+      }
+    }
+  },
+  "validity": {
+    "rank": {
+      "movement": "A FALLING participation ratio / srank@0.99 at matched step across generations = the representation is collapsing into fewer directions, the classic precursor to capacity loss.",
+      "confirm": "PAIRED behavioural evidence is required: anchored ELO at matched snapshot COUNT (ladder.json, end-of-run), and a per-skill retention read on the distilled behaviours. Rank that falls while ELO and retention hold is a representation becoming MORE efficient, not a network running out of room.",
+      "no_verdict": "No kill/build decision from this number alone. PR(K_u)=17 was 'low', was noise, and its lever was refuted by two independent nulls."
+    },
+    "trainability": {
+      "movement": "capacity_ratio = r2_trained / r2_fresh. Falling well below 1 and CONTINUING to fall generation over generation = the trained features have lost the ability to express new functions (Lyle et al. capacity loss).",
+      "confirm": "A single generation's ratio is uncalibrated \u2014 the trained net is not supposed to match a random net at random targets. Only the TREND at matched step is readable, and it must be paired with a trainability test that has stakes: a fresh exploiter fork's learning curve on a NEW skill vs the same fork from an earlier generation.",
+      "no_verdict": "No kill/build decision from this number alone. A low ratio licenses running the exploiter-fork trainability test, nothing else."
+    },
+    "decodability": {
+      "movement": "These facts are deliberately EASY (each is an obs coordinate or a count over six of them), so a high r\u00b2/AUC is the EXPECTED reading and says nothing. The signal is DRIFT: an established fact becoming less decodable across generations at matched step = capacity being reallocated away from it.",
+      "confirm": "Decodable != used, and this repo has the measurement \u2014 the belief-latent role-geometry probe found SPECIES geometry strongly decodable and the move-id table not at all, and neither predicted whether the head HELPED. So a decodability drop needs an ablation or an intervention showing the policy's behaviour actually depends on the dropped fact.",
+      "no_verdict": "No kill/build decision from this number alone."
+    },
+    "params": {
+      "movement": "A phase whose rms is ~unchanged from init while every sibling has grown is a phase that is not learning; zero_frac ~1.0 on a zero-init route means it has never left identity.",
+      "confirm": "Weight norm is not usage. The per-edge-family liveness metrics and the route-ablation audits (critic_route_audit, edge_ablation_audit) are the instruments that price a route in |dV| / argmax-flip terms; this census only says where to point them.",
+      "no_verdict": "No kill/build decision from this number alone."
+    }
+  }
+}

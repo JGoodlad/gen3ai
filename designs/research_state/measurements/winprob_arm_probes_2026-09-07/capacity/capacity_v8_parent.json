@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722",
+    "run_name": "ai_v8_04_distill_4teacher_0722",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/final_model_interrupted.zip",
+    "model_config": "/home/goodlad/dev/gen3ai/models/ai_v8_04_distill_4teacher_0722/model_config.json",
+    "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+    "config_version": 45,
+    "obs_dim": 2992,
+    "num_timesteps": 277583267,
+    "n_states": 3000,
+    "sampling": {
+      "sampler": "stratified_round_robin_v1",
+      "seed": 0,
+      "n_states": 3000,
+      "n_files_read": 201,
+      "n_files_matched": 754,
+      "per_step": {
+        "step_270000016": 750,
+        "step_272000006": 750,
+        "step_274000001": 750,
+        "step_276000000": 750
+      },
+      "per_opponent": {
+        "aggressive": 253,
+        "aggressive_v2": 299,
+        "heuristic": 299,
+        "heuristic2": 387,
+        "random": 381,
+        "sentinel_0": 293,
+        "setup_sweep": 239,
+        "setup_sweep_v2": 259,
+        "staller": 348,
+        "staller_v2": 242
+      }
+    },
+    "seed": 0,
+    "device": "cpu",
+    "worktree_git_hash": "ce8bbc954b42fceac0df773eab4040723bd2ffd3",
+    "generated_at": "2026-09-07T06:21:53",
+    "probes_run": [
+      "rank"
+    ],
+    "estimator_source": "current main checkout capacity_probes.py (verbatim copy)",
+    "runtime_sec": 16.3
+  },
+  "battery_version": 1,
+  "rank": {
+    "trained": {
+      "role_tokens": {
+        "pr": 18.733077420515617,
+        "srank99": 87.0,
+        "effrank": 32.71274060469877,
+        "n90": 33.0,
+        "n95": 49.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.14635216734777826
+      },
+      "team_tokens": {
+        "pr": 27.10411890993788,
+        "srank99": 110.0,
+        "effrank": 49.75389231404899,
+        "n90": 55.0,
+        "n95": 75.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.2117509289838897
+      },
+      "value_pooled": {
+        "pr": 4.818856788628382,
+        "srank99": 51.0,
+        "effrank": 10.199148926807323,
+        "n90": 12.0,
+        "n95": 21.0,
+        "dim": 128,
+        "n_rows": 3000,
+        "pr_frac": 0.03764731866115924
+      },
+      "pi_features": {
+        "pr": 42.91166608814888,
+        "srank99": 403.0,
+        "effrank": 107.90579616558911,
+        "n90": 157.0,
+        "n95": 244.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.08381184782841578
+      },
+      "vf_features": {
+        "pr": 4.36448686156778,
+        "srank99": 218.0,
+        "effrank": 15.766316548656361,
+        "n90": 42.0,
+        "n95": 87.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.00852438840149957
+      }
+    },
+    "fresh": {
+      "role_tokens": {
+        "pr": 14.110923644448397,
+        "srank99": 97.0,
+        "effrank": 32.00558574674738,
+        "n90": 39.0,
+        "n95": 58.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.1102415909722531
+      },
+      "team_tokens": {
+        "pr": 6.16612318719696,
+        "srank99": 95.0,
+        "effrank": 21.24413220524008,
+        "n90": 40.0,
+        "n95": 58.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.04817283739997625
+      },
+      "value_pooled": {
+        "pr": 10.998861736720437,
+        "srank99": 66.0,
+        "effrank": 23.753277049862387,
+        "n90": 29.0,
+        "n95": 40.0,
+        "dim": 128,
+        "n_rows": 3000,
+        "pr_frac": 0.08592860731812842
+      },
+      "pi_features": {
+        "pr": 52.64076790357314,
+        "srank99": 332.0,
+        "effrank": 108.63202626208596,
+        "n90": 127.0,
+        "n95": 195.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.10281399981166629
+      },
+      "vf_features": {
+        "pr": 55.924631554242715,
+        "srank99": 331.0,
+        "effrank": 110.67540887220466,
+        "n90": 126.0,
+        "n95": 192.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.1092277960043803
+      }
+    }
+  }
+}

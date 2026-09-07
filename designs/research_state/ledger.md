@@ -12751,3 +12751,56 @@ CONTAMINATED by a collision with the 20M promotion (412 − 317 ≈ 95 s, the ~8
 is filed as such, **312–317 s per restart stands** on its two clean measurements; the startup tool
 now refuses an excess under 100 s as NOT YET OBSERVED (a restart on this arm cannot cost ~0, so ~0 is
 the absence of one in the data — the same precondition class as the ring-buffer count).
+
+### 2026-09-07 · TWO OFFLINE PROBES on the win-prob arm at 20M (owner-requested): the BAIT LOOP is under a third of the shaped comparator's rate, and the value pathway's effective rank sits ABOVE its fresh net where v8's and gen-17's sit far below theirs
+
+Artifacts: `measurements/winprob_arm_probes_2026-09-07/{bait_probe,capacity}/` (tool JSON + the two
+opus agents' summaries + the v8 driver). Both are DIFFERENCES between generations at UNMATCHED
+steps; neither is a verdict on its own.
+
+**1. Bait-loop census** (`python -m main.prober.query loops <run> --opponent 'sentinel_*'`,
+model-free, raw protocol; 576 arm battles 6–20M vs 834 rev-1 battles 4–24M, 0 skipped on either; the
+tool prints counts, NO intervals):
+
+| rate | arm `ai_v12_02` | rev-1 `ai_v9_29` (shaped) | gen-15 baseline |
+|---|---|---|---|
+| whiffs per pivot | **0.081** (220/2726) | 0.148 (677/4567) | 0.167 |
+| re-click after a whiff | **0.168** (37/220) | 0.223 (151/677) | 0.322 |
+| battles with a loop | **0.028** (16/576) | 0.101 (84/834) | 0.139 |
+| loops ≥ 3 | 0.012 | 0.037 | 0.062 |
+| win-arm to win-arm, loop battles | **0.008** (2/240) | 0.122 (44/360) | — |
+| mirror CONTROL (the frozen opponent) | 0.121 / 0.064 | 0.119 / 0.084 | 0.145 |
+
+The mirror control is the same on both runs, so the difference is the trainee. Opponent-intent
+readout: α switch top-1 **0.85 vs 0.62** (0.81 vs 0.67 on loop steps); β species-correct 0.30 vs
+0.43 (weaker). The arm's critic reads a loop step as ΔP(win) −0.026, the comparator's shaped head
+−0.024 in probability units — neither critic is blind to the mistake. Per-step cells are noise-sized
+(loop battles 0/19 at 6M, 6/95 at 16M, 1/96 at 20M); only the pooled rows are quotable. Caveats:
+fewer arm battles, shorter step range; the baseline is a reference point, not a target. Tag:
+**difference SIGNIFICANT by count** (no interval printed; the pooled gap is 3–15× on every row).
+
+**2. Effective rank** (probe (a) of the capacity battery, ONE estimator — the current
+`capacity_probes.py` copied verbatim into pinned v8-era worktrees; 3000 states each, seed 0,
+each run's own traces; PR = participation ratio, fresh same-config init in parentheses):
+
+| tap | dim | v8_line 292.6M (fold) | v8_parent 277.6M | gen-17 36M | **arm 20.05M** |
+|---|---|---|---|---|---|
+| role_tokens | 128 | 18.2 (14.4) | 18.7 (14.1) | 14.6 (13.3) | 15.8 (17.4) |
+| team_tokens | 128 | 30.5 (6.3) | 27.1 (6.2) | 16.2 (5.1) | 11.9 (6.5) |
+| **value_pooled** | 128 | 4.7 (10.9) | 4.8 (11.0) | 2.5 (5.5) | **4.9 (4.3)** |
+| pi_features | 512 | 40.3 (58.6) | 42.9 (52.6) | 16.0 (9.3) | 11.0 (8.6) |
+| **vf_features** | 512 | 4.4 (57.9) | 4.4 (55.9) | 3.1 (6.6) | **6.4 (5.2)** |
+
+Every earlier generation's value taps sit FAR BELOW their own fresh net (v8: 4.4 of 512 against a
+fresh 57.9 — the "crystallised" shape banked at the value-distill work); the arm's sit slightly
+ABOVE theirs (6.4 vs 5.2; 4.9 vs 4.3). The arm's policy-side taps are LOWER than v8's (pi 11 vs 40)
+at 14× fewer steps. Deviations recorded by the agent: v8's fresh column has no `restore_identity_init`
+(it did not exist before 2026-08-01), obs_dim 2992 vs 2501, steps unmatched, only probe (a) on the
+v8 side. Validity discipline quoted: a participation ratio treats every column as a magnitude; no
+build/kill decision from any number here alone.
+
+What the two probes say together, as a hypothesis and not a finding: the terminal-only critic has
+not collapsed its value representation the way every shaped-critic generation did, and the policy
+it shapes does not fire into immune pivots the way theirs do. Neither says the critic is CALIBRATED
+where G1 measures it. The identity test — V(s) against the empirical win fraction under the current
+policy (the counterfactual audit) — has not been run on this arm and is the next instrument.

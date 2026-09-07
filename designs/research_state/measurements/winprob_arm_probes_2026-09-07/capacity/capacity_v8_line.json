@@ -1,0 +1,161 @@
+{
+  "meta": {
+    "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725",
+    "run_name": "ai_v8_14_distill3_0725",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/final_model_interrupted.zip",
+    "model_config": "/home/goodlad/dev/gen3ai/models/ai_v8_14_distill3_0725/model_config.json",
+    "arch_signature": "gen3_opp_hp_typed_candidates_v1",
+    "config_version": 45,
+    "obs_dim": 2992,
+    "num_timesteps": 292623779,
+    "n_states": 3000,
+    "sampling": {
+      "sampler": "stratified_round_robin_v1",
+      "seed": 0,
+      "n_states": 3000,
+      "n_files_read": 161,
+      "n_files_matched": 2055,
+      "per_step": {
+        "step_278000007": 375,
+        "step_280000011": 375,
+        "step_282000031": 375,
+        "step_284000011": 375,
+        "step_286000007": 375,
+        "step_288000019": 375,
+        "step_290000002": 375,
+        "step_292000005": 375
+      },
+      "per_opponent": {
+        "aggressive": 176,
+        "aggressive_v2": 227,
+        "ext_ai_v8_06_semistall_3team_exploiter_0722": 466,
+        "ext_ai_v8_09_pool10_exploiter_0723": 506,
+        "ext_ai_v8_13_defensive10_exploiter_0725": 489,
+        "heuristic": 149,
+        "heuristic2": 137,
+        "random": 130,
+        "sentinel_0": 247,
+        "setup_sweep": 137,
+        "setup_sweep_v2": 99,
+        "staller": 107,
+        "staller_v2": 130
+      }
+    },
+    "seed": 0,
+    "device": "cpu",
+    "worktree_git_hash": "b13b30b289c5eaba136a930a4ab63451e209fbe5",
+    "generated_at": "2026-09-07T06:21:18",
+    "probes_run": [
+      "rank"
+    ],
+    "estimator_source": "current main checkout capacity_probes.py (verbatim copy)",
+    "runtime_sec": 9.9
+  },
+  "battery_version": 1,
+  "rank": {
+    "trained": {
+      "role_tokens": {
+        "pr": 18.241170968204013,
+        "srank99": 81.0,
+        "effrank": 30.6800860271825,
+        "n90": 30.0,
+        "n95": 44.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.14250914818909385
+      },
+      "team_tokens": {
+        "pr": 30.47239545518182,
+        "srank99": 110.0,
+        "effrank": 51.64753834649183,
+        "n90": 55.0,
+        "n95": 75.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.23806558949360798
+      },
+      "value_pooled": {
+        "pr": 4.646071074003928,
+        "srank99": 47.0,
+        "effrank": 9.076571100861834,
+        "n90": 10.0,
+        "n95": 18.0,
+        "dim": 128,
+        "n_rows": 3000,
+        "pr_frac": 0.03629743026565569
+      },
+      "pi_features": {
+        "pr": 40.27185240174047,
+        "srank99": 390.0,
+        "effrank": 99.34044903154118,
+        "n90": 144.0,
+        "n95": 227.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.07865596172214935
+      },
+      "vf_features": {
+        "pr": 4.436899257017559,
+        "srank99": 205.0,
+        "effrank": 14.530001379517715,
+        "n90": 35.0,
+        "n95": 77.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.00866581886136242
+      }
+    },
+    "fresh": {
+      "role_tokens": {
+        "pr": 14.35743044506471,
+        "srank99": 92.0,
+        "effrank": 29.788761237325748,
+        "n90": 34.0,
+        "n95": 51.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.11216742535206804
+      },
+      "team_tokens": {
+        "pr": 6.301282471803173,
+        "srank99": 94.0,
+        "effrank": 21.217345062967656,
+        "n90": 38.0,
+        "n95": 56.0,
+        "dim": 128,
+        "n_rows": 36000,
+        "pr_frac": 0.04922876931096229
+      },
+      "value_pooled": {
+        "pr": 10.922153002527484,
+        "srank99": 64.0,
+        "effrank": 22.759328932444614,
+        "n90": 27.0,
+        "n95": 38.0,
+        "dim": 128,
+        "n_rows": 3000,
+        "pr_frac": 0.08532932033224597
+      },
+      "pi_features": {
+        "pr": 58.567260451441285,
+        "srank99": 331.0,
+        "effrank": 112.05686806655115,
+        "n90": 125.0,
+        "n95": 192.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.11438918056922126
+      },
+      "vf_features": {
+        "pr": 57.85172151776542,
+        "srank99": 325.0,
+        "effrank": 109.8591825481754,
+        "n90": 122.0,
+        "n95": 187.0,
+        "dim": 512,
+        "n_rows": 3000,
+        "pr_frac": 0.11299164358938558
+      }
+    }
+  }
+}
