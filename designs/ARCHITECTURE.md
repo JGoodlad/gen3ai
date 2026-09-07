@@ -773,10 +773,13 @@ counterfactual likelihood; `--q-winprob-onpolicy-coef`, the weak and biased take
 default to 0, so nothing about it is live until a run turns it on. §6's table carries it as
 `q_winprob_mode` `"none"` / OFF.
 
-Belief heads run under `belief_grad_mode` **`label_only`**: their outputs are published stop-grad
-to every forward consumer, so no policy/value gradient reaches a belief head's parameters and the
-belief is trained by its supervised labels alone. The heads' trunk READ stays live, so the label
-loss still shapes the trunk — see `src/agents/model/CLAUDE.md` for the four-route table.
+Belief heads run under `belief_grad_mode` **`shaping`** (production mirror `belief_grad_mode:
+"shaping"`; §6's table carries it ACTIVE): all four routes are live — the label loss trains the
+head AND shapes the shared trunk through the head's read, and the PPO loss reaches the head's
+parameters through the reinject write. The opponent-INTENT head is the exception and runs
+**`detached`** (`opp_intent_grad_mode: "detached"`): its trunk read is stop-grad, so the intent
+labels cannot reshape the trunk. `label_only` (publish stop-grad; labels alone train the head) is
+a built, non-default mode — see `src/agents/model/CLAUDE.md` for the four-route table.
 
 ---
 

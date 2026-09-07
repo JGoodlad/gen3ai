@@ -98,6 +98,13 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   the owner has decided: stop protesting, execute in full, record the decision and the objection in the
   ledger entry, and raise it again only on new evidence.
 
+- **Report at the design-doc level** (owner, 2026-09-06): the verdict in plain words — did it gift or
+  rob, is PBRS needed, is sparse within the bar — with its evidence tag and one number with its
+  interval, then what it means for the current understanding and the goal. Bars, snapshot counts,
+  seeds, paths and flag names belong in the ledger entry the report names; the owner asks for detail
+  when they want it. Registrations and rulings written FOR the owner's decision stay precise; the
+  operational traffic with the Training Run session is not for the owner. The exception is a GIGO or
+  baseline finding, where the specific artifact IS the point.
 - Teach inline; expand every abbreviation on first use; every code, arm name, cell letter or gate id
   carries a human description in the same sentence (owner, standing — broken twice).
 - Push-notify on COMPLETION, when BLOCKED, and on a MAJOR FINDING — one that changes a belief in
