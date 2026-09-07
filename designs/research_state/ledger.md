@@ -12804,3 +12804,34 @@ not collapsed its value representation the way every shaped-critic generation di
 it shapes does not fire into immune pivots the way theirs do. Neither says the critic is CALIBRATED
 where G1 measures it. The identity test — V(s) against the empirical win fraction under the current
 policy (the counterfactual audit) — has not been run on this arm and is the next instrument.
+
+### 2026-09-07 · 22M — the PLATEAU SIGNAL does NOT fire (20M is a one-off per `ae8e9fa9`); the ladder's deceleration is the GENERIC curve rev-1 also shows; and the STRENGTH HALF of D2 is decidable at n = 12 = the arm's 26M, not at 75M
+
+**The registered read, mechanical** (Training Run, 07:0x): 22M 2050.2 is ABOVE 20M 2045.8 (no
+second consecutive dip); pooled vs the recent three 153/300 = 0.510, Wilson [0.454, 0.566], includes
+0.50. Both clauses fail; **20M is recorded as a one-off and nothing further is said about it.** The
+shape: 22M beats the dip (53/100 vs 20M) but not the pre-dip (44/100 vs 18M, [0.347, 0.538]).
+
+**The deceleration, stated so it is not read as recovery.** Arm per-add (10-node fit): +140.7, +60.3,
++33.0, +39.6, +31.5, +7.4, +38.5, −28.4, +4.4 — first 8M (4→12M) **+273.6**, 14→22M **+21.9**, a 12×
+reduction; peak still 18M at 2074.2. Beside it, **rev-1's own final 12-node fit**, same
+construction: +186.5, +38.3, +40.6, +58.5, +16.2, +12.3, +22.0, −9.1, +11.1, +14.3, +15.2 — first
+8M (2→10M) **+323.9**, 14→22M **+38.3**, an 8.5× reduction, with its own sub-predecessor node at
+18M. The arm decelerates on the shaped incumbent's schedule, slightly harder, from a lower base.
+Neither is a plateau by the registered rule; both are the learning curve. Tag: DESCRIPTIVE.
+
+**REGISTRATION — the strength half of D2 lands at n = 12.** `famine_comparator` (rev-1) has 12
+rated nodes, so the largest matched snapshot count against it is n = 12, reached at the arm's 26M
+snapshot. There both ladders are 12-node fits — matched count AND matched fit size with no refit —
+and the design's sufficiency bar (not inferior by more than the 38-Elo floor at n = 12) is
+decidable. Past 26M the arm cannot be compared to rev-1 at matched count at all; the
+parent-continued comparison (R2ACTION, 14 nodes) maxes out at n = 14 = the arm's 30M. So the read is
+taken when the 26M node lands (`main.critic_gate … --famine-comparator famine_comparator` from HEAD,
+the n = 12 sentence and the fit-size note quoted verbatim); **75M is for G1's calibration
+trajectory and for a MATURE model for the search and distillation halves of the week goal, not for
+the ladder-vs-rev-1 question.** For scale only: rev-1's 12th node is 2098.4; the arm's 10th is
+2050.2 in a 10-node fit.
+
+22M state: bots 0.918 (saturated band), `draw_rate` 0.0042 (zero of two monitor buckets), train
+ep_len flat across the last three snapshots (40.52 · 39.72 · 39.65), G7 untouched, launcher up
+~10 h 15 m.
