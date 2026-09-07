@@ -20,6 +20,12 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
 
 ## 2. Dispatching agents
 
+- **Opus subagents DRIVE the work — "period" (owner, 2026-09-07).** The default for doing a thing
+  — an analysis, a verification, a probe, a build — is to brief an Opus agent for it; the
+  orchestrator dispatches, rules, bands, lands and relays. Do it inline only when it is a
+  one-command read, a landing, or a ruling. Said after the orchestrator had run several analyses
+  itself in one morning (a gradient decomposition, a ladder refit, a capacity battery, a per-bot
+  table) — each correct, each a thing an agent should have carried.
 - **Every subagent runs on OPUS: pass `model: "opus"` on every `Agent` call. Never Fable — the
   orchestrator's own model — unless the owner is asked and says yes (owner, 2026-09-06).** A `fork`
   agent inherits the parent's model and ignores the override, so forks are off-limits too; write a
