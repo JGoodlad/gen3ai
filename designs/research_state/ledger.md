@@ -13042,3 +13042,44 @@ class today; whether it can stratify by name decides whether this is a read or a
 Together with the 10M read's opening (strength up, eval-trace calibration flat-low) and the 20M/24M
 dissociations, this is the consolidated shape of the arm at 26M. Tag: **OBSERVATION**, three
 instruments, no account.
+
+### 2026-09-07 · PER-BOT CALIBRATION at 26M — the cap/saturation account is REFUTED on this table (r(base, skill) = +0.79, n = 8): the critic has the LEAST skill against the bots the arm finds MOST contested; two readings survive (reducible blur vs the hidden-information floor) and the 75M identity test separates them; the 28M sign check is pre-registered
+
+The registered discriminator needed no building: `scaffolding_gauge.py` already appends an
+`("opponent", name)` stratum beside the class strata (`critic_gate` does not surface them);
+`python -m main.scaffolding_gauge <run> --reliability --reliability-reweight` prints them. Training
+Run session, 26M traces, ordered by base rate (cap = base × (1 − base)):
+
+| bot | base | cap | skill | resolution | battles |
+|---|---|---|---|---|---|
+| staller_v2 | 0.952 | 0.046 | **0.241** | 0.0143 | 13 |
+| heuristic2 | 0.930 | 0.065 | 0.192 | 0.0162 | 12 |
+| heuristic | 0.911 | 0.081 | 0.143 | 0.0171 | 15 |
+| setup_sweep_v2 | 0.899 | 0.091 | 0.053 | 0.0086 | 14 |
+| aggressive_v2 | 0.870 | 0.113 | 0.153 | 0.0263 | 17 |
+| aggressive | 0.868 | 0.115 | 0.173 | 0.0262 | 19 |
+| setup_sweep | 0.823 | 0.146 | **0.011** | 0.0191 | 20 |
+| staller | 0.823 | 0.146 | **0.044** | 0.0220 | 18 |
+
+**Pearson r(base, skill) = +0.788.** The cap account predicts the opposite sign (least skill where
+the arm dominates and the cap is smallest); observed, the largest caps sit with the worst skill. So
+the bot-side decay banked at *REFRAMING* is **not the cap**. Also from the same table: `sentinel_0`
+skill **−0.061** (20 battles) — worse than the base rate against one pool sentinel.
+
+**Caveat, not buried:** 12–20 battles per bot, cluster CIs on Brier wide (staller [0.042, 0.315]);
+the ordering is suggestive, r = +0.79 on n = 8 is not a significance claim.
+
+**Two readings survive and this table cannot separate them.** (a) Reducible: the head lacks
+resolution on contested opponents — the blur disease (§1 rule 14). (b) Irreducible: against
+setup_sweep and staller the outcome is decided by hidden information and dice the head cannot see,
+so achievable skill there is low for ANY critic — the hidden-information floor the shaped-critic G0
+audit found (the 0.83-class states were 53% luck). Both predict low skill where outcomes are
+contested. The instrument that separates them is the 75M identity test's `sd_true_excess` (spread
+above the binomial floor per state), not this table. **Banked as "against the cap account", not as
+"the head is blur-limited".**
+
+**Pre-registered for 28M:** pool the 26M + 28M per-bot rows (doubling n); report r(base, skill)
+with a bootstrap-over-battles interval, and the same for the pool sentinels by name. Interval clear
+of zero ⇒ the anti-cap observation stands and enters the 75M read's framing; covers zero ⇒ carried
+as suggestive. `sentinel_0`'s negative skill is a line item at doubled n. Also verified this cycle:
+bots at 26M = 825/900 = 0.917, 24M was the outlier; per-bot rebounds as recorded at *REFRAMING*.
