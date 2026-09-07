@@ -12075,3 +12075,49 @@ Inductor disk cache is warm after the first and the second may be dynamo-only an
 **953 fps remains correct as a promotion-free rate** (2.4M → 4.0M contained no promotion, because
 snapshots begin at 4M). It is not yet a steady-state rate, and no ETA should be built on it until
 the 4M → 6M figure is beside it.
+
+### 2026-09-06 · READ AMENDMENT 3 — clause 2 of the draw-rate kill bar ("`ep_len_mean` rising") is a FIXED EFFECT SIZE of +3.0 turns over a frozen 1–3M reference, measured on the LAST 2M before the read
+
+Raised by the Training Run session at 4.42M, before any data the clause judges exists. Ruled by the
+orchestrator; registered here so the 10M read is executed, not interpreted.
+
+**The defect.** Amendment 1 registered both kill gates as AND-gates whose second clause is
+"`rollout/ep_len_mean` is rising against its own 1–3M mean" with no operational definition of *rising*.
+Evaluated the obvious way — mean of the 1–3M window against the mean of everything since — today's
+series reads **30.04 → 30.35, "+0.31, RISING"** on a series whose own range is 25.88–40.94. Welch on
+the same two windows: Δ +0.31, 95% CI **[−1.80, +2.42]**, t = 0.30. A sign on noise. Clause 2 would
+have read MET today on an arm that is plainly not stalling; it did not matter only because clause 1
+(draw rate, bar 0.03 at 5M) is at a quarter of its bar and the AND held. **At 10M clause 1's bar drops
+to 0.01 (4× the stripped arm's 0.0025) with `draw_rate` already at 0.0074, so clause 2 becomes
+load-bearing exactly where the naive reading is useless.** Same error class as the point read
+corrected in the 4M entry ("32 → 28.7, falling" off an oscillating series).
+
+**The definition, registered:**
+
+1. **Reference** = mean of `rollout/ep_len_mean` over the **1–3M window**, computed ONCE from the
+   events file, written into the read as a number, and frozen. (The Training Run's read at 4.42M
+   gives **30.04**; the 10M report re-derives it from the same events and states what it used.)
+2. **Test window** = the **LAST 2M steps before the read** — 8–10M for the 10M read; the last 2M
+   before a restart for a restart read. NOT "everything since 3M": a mean over 3–10M dilutes a late
+   rise, and a famine is a late phenomenon.
+3. **Bar:** test-window mean − reference **≥ +3.0 turns** reads **RISING**; below reads NOT RISING.
+   The bar is the POINT estimate.
+4. The **Welch 95% CI** of the same difference is reported beside the verdict, descriptively. A point
+   that clears +3.0 with a CI that includes zero is still RISING, and the report says the CI includes
+   zero.
+5. Clause 1 and the AND are unchanged. The famine read (ladder at matched snapshot count + the bots
+   clause, amendment 2) is untouched.
+
+**Why an effect size and not a CI test (the option the Training Run had wired).** A CI-only test's
+power scales with how many rollouts the window holds and with the run's own variance, so the bar
+would move with the window and a slow genuine famine could sit under it indefinitely. **Why +3.0:** a
+2M window holds ~20 rollouts (48 envs × 2048 steps); at the series' SD of ~3 the SE of a window mean
+is ~0.7, so +3 is ~4 SE and cannot be noise — and it is 10% of a 30-turn episode, the smallest shift
+a stall that costs games against a 250-turn cap would plausibly produce. **Why not the raw mean:**
+it fires on +0.31.
+
+**Acknowledged bias:** this is STRICTER in the running arm's favour — it survives readings the naive
+clause would have killed. It is registered before the data it judges exists, in the phenomenon's own
+units, with the other clause and the famine read unchanged. Every report names the definition and the
+frozen reference it used. Tag: **REGISTRATION**, no measurement claimed. The Training Run's
+`killbar.py` (wired into `read_10M.sh` and `restart_read.sh`) implements it.
