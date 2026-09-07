@@ -249,7 +249,11 @@ fallback cron), killed and relaunched (pid gone + GPU free; move the dead dir as
 command per registered read, the evidence vocabulary). Also where sessions find the ORCHESTRATOR
 (`~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`). Always-current; per-era commands stay in
 that era's runbook. [`ops/ORCHESTRATOR_SOP.md`](ops/ORCHESTRATOR_SOP.md) — the orchestrator session's own
-procedure: handoff, dispatch (OPUS subagents only, 2–3 at a time), landing, banking, relay.
+procedure: identity and the three roles, dispatch (OPUS subagents only, 2–3 at a time), landing, banking,
+what a report to the owner contains and the notification/cadence rules, the scope of unasked action, and
+the agent-stall + background-waiting mechanics. **Both files are the PROCEDURES OF RECORD for the two
+long-lived sessions** (2026-09-07: the rules were moved out of session memory, which now holds only
+pointers), so an owner ruling about how a session operates is written into the owning section here.
 [`ops/TECH_DEBT_BACKLOG.md`](ops/TECH_DEBT_BACKLOG.md) — the one tech-debt list; nothing on it is
 dispatched without the owner's word.
 
