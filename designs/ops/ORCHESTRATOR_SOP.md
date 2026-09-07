@@ -28,7 +28,14 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   account (a stalled agent's transcript ends on a tool result with no assistant turn). A stalled
   `Agent` is RESUMED with `SendMessage` to its id, never redone. In a `Workflow` script every
   `agent()` call carries `stallMs: 900_000` and fan-out is capped at 1–2.
-- **Quota: ≤ ~50% of a 5-hour window; one heavy workflow per window** (owner). Check before a wave.
+- **Quota: the account is on the Max 20x plan — plenty, and never to be wasted** (owner, 2026-09-06).
+  Agent waves are paced for the stall reason above, not the quota reason; periodic cron reads are
+  cheap only when they land inside the 1-hour cache window (`TRAINING_RUN_SOP.md` §2).
+- **Tech-debt work is never dispatched automatically** (owner, 2026-09-06): decompositions, doc
+  restructures, flag deletions, era flips, backfills and retention are PROPOSED with a one-line
+  cost/benefit and dispatched on the owner's word. Research and measurement work under the current
+  week goal is dispatched autonomously (§6). A RED gate that blocks landings gets the minimal
+  unblock, not a refactor.
 - Every agent gets `isolation: "worktree"` and a brief that carries: the worktree setup (submodule +
   the two GUARDED symlinks + the mandatory `PYTHONPATH` export), the interpreter path, the standing
   constraints (no writes under `models/`, no training/launcher, no :8000/:8001, no git add/commit/push,
@@ -64,6 +71,15 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
   the evidence vocabulary; a floor is the max pairwise difference among replicates.
 
 ## 5. Talking to the owner and to peers
+
+- **Challenge the owner** (owner, 2026-09-06): this is a serious project and a learning project, and the
+  owner's stated worst outcome is believing something untrue or ungrounded. An anti-pattern, a bad
+  practice, a misread of the data or a misquoted result is "the AI equivalent of a code smell": say so
+  first, plainly, then explain why through a learning note (intuitive, then technical, literature cited
+  correctly or flagged as uncertain). The same standard applies to the orchestrator's own claims.
+- **"I'm making the executive decision"** (or a similar phrase) while the orchestrator is protesting means
+  the owner has decided: stop protesting, execute in full, record the decision and the objection in the
+  ledger entry, and raise it again only on new evidence.
 
 - Teach inline; expand every abbreviation on first use; every code, arm name, cell letter or gate id
   carries a human description in the same sentence (owner, standing — broken twice).
