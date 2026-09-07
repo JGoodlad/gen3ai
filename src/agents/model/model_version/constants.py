@@ -183,7 +183,15 @@ from typing import Any, Dict
 #   commit — there it is forced, because a critic trained to predict a shaped return cannot be
 #   warm-started into predicting a probability. A pre-v109 config defaults all three to today's
 #   values; not a guess, since none of the three existed.
-MODEL_CONFIG_VERSION = 109
+# v110: gen3_frozen_phi_actor_only_v1 (designs/ai_v12/design_winprob_only_critic.md §3.7) — ONE
+#   training-only path, `win_prob_pbrs_frozen`, in the v105 `win_prob_pbrs_source` mould. It names
+#   the FROZEN checkpoint whose win-prob head supplies the ACTOR-ONLY potential: the shaping is
+#   applied to `rollout_buffer.advantages` alone, so the critic keeps regressing the unshaped
+#   terminal indicator and V(s) = P(win|s) is preserved bit-for-bit. NO ARCH_SIGNATURE bump — no
+#   module is added or removed, no state_dict key moves, and no forward pass changes; the flag
+#   edits a numpy array between collection and train(). None is the default and is every pre-v110
+#   run's only possible past.
+MODEL_CONFIG_VERSION = 110
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -278,6 +278,13 @@ def _migrate_config(data: dict) -> dict:
                     f"only supported value is {_ok!r}. This checkpoint trained under a forward "
                     "that no longer exists; re-read it from the git_hash in its metadata.json.")
     data.pop("pubval_coef", None)   # training-only (INERT for a forward) ⇒ any value pops silently
+    # gen3_frozen_phi_actor_only_v1: `inert_reward_flags` is a DERIVED ANNOTATION `save_model_snapshot`
+    # writes beside the fields — it names the reward flags a config's own gates make unreachable, so
+    # a reader does not conclude "shaping was on" from a faithfully-recorded default. It is not a
+    # `ModelVersion` field (it is a pure function of fields already in the file), so it POPs here
+    # rather than migrating. Version-INDEPENDENT for the reason above the block: `cls(**data)`
+    # TypeErrors on a stale key whatever vintage wrote it, and this one appears from v110 forward.
+    data.pop("inert_reward_flags", None)
     # v108 (gen3_dead_flag_purge_v2): `threat_prob_outspeed`. It is REFUSED on True rather than popped,
     # and the reason is the one the JUDGED list exists for — it built NO parameters, so a True and a
     # False checkpoint have BYTE-IDENTICAL state_dicts and nothing shape-based can catch the swap. It
@@ -432,4 +439,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("terminal_indicator", False)
         data.setdefault("no_progress_tax_armed", False)
         data["config_version"] = 109
+    # v110 (gen3_frozen_phi_actor_only_v1) — ONE training-only PATH, v105's shape exactly. None is
+    # not a guess: the flag did not exist, so no pre-v110 run can have had a frozen actor-only
+    # potential. Not version-locked and not in check_compatible — it edits the ADVANTAGE, never a
+    # forward pass or a weight shape.
+    if version < 110:
+        data.setdefault("win_prob_pbrs_frozen", None)
+        data["config_version"] = 110
     return data

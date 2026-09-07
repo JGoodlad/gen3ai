@@ -3774,6 +3774,56 @@ claim to be about and an ungated assert would refuse a coherent run. It is **INE
 like `--lr`: SB3 restores the checkpoint's own γ, the resume path SAYS so, and it re-points
 `reward_config.gamma` at the value actually in force so the two cannot silently disagree.
 
+### THE ACTOR-ONLY FROZEN POTENTIAL — `--win-prob-pbrs-frozen` (`gen3_frozen_phi_actor_only_v1`)
+
+**The value loss is the ONE thing this flag does not touch, and that is the whole construction.**
+`agents/training/frozen_phi.py` reads φ = σ(logit) from a FROZEN checkpoint's win-prob head and adds
+`γφ(s′) − φ(s)` to the stream that feeds the POLICY's advantages — writing **only**
+`rollout_buffer.advantages`. `rewards` and `returns` are restored to what the collector produced (by
+ASSIGNMENT from a snapshot; `(a+b)−b` is not `a` in float32), so the critic keeps regressing the
+unshaped terminal indicator and every consumer of the value target — the scalar-MSE diagnostic
+`train/value_loss`, `train/explained_variance`, `value_scale_metrics` — reads the UNSHAPED return.
+Under this critic the real value loss is the head's BCE against `win_target`, which never reads
+`rewards` at all, so `V ≡ P(win|s)` is preserved **bit-for-bit** with or without the flag.
+
+**A potential added to the REWARD could not be**, and that is why the rung was held rather than
+because of any doubt about the invariance: the shaped return telescopes to `1{win} − φ(s)`, negative
+wherever the frozen head was optimistic about a lost game, and a sigmoid cannot output a negative
+number — so the critic would be fitted to a target outside its own range and the identity the search
+leaf, the calibration gate and `--vf-coef`'s meaning all rest on would be false by a known function.
+Restricting the term to the advantage keeps the Ng shield (φ is FIXED, so the theorem holds
+**exactly**) and, at λ = 1, makes the shaped advantage the unshaped one minus `−coef·φ(s)` — a
+state-dependent BASELINE, i.e. zero-bias for a policy gradient. `φ(terminal) := 0` both makes the sum
+telescope and stops the potential leaking the outcome the terminal state just revealed; the
+conventions come from `winprob_pbrs.successor_potential`, IMPORTED, so the two shaping paths cannot
+drift on the one convention the theorem rests on. **The coefficient is exactly 1.0, DERIVED** (φ is
+already one unit of V per unit of V) and PRINTED at startup, never a knob.
+
+**BOTH SEAMS LIVE IN `frozen_phi.py`**, in the `distill_anchor.py` shape: `shape_after_rollout` at
+`collect_rollouts` — the ONE point both rollout loops pass through, so the async collector is covered
+by construction — and `record_metrics` in `train()`. `ppo.py` carries one call each, because it sits
+AT the file-size ratchet's 2,000-line hard bound. The frozen network rides `_winprob_phi_source`, the
+attribute the shaped ladder's `--win-prob-pbrs-source` already uses (the two are mutually exclusive
+by refusal), so `phi_model` and `_excluded_save_params` need no second name and the foreign weights
+are never pickled into our checkpoint.
+
+⚠️ **Read `pbrs/frozen_phi_mean` FIRST, and it must be FLAT** — φ is a fixed function of state, so a
+mean that wanders like a live head's means the frozen source is not the thing being read (the
+runbook §4.2 check: frozen `0.403 → 0.391 → 0.391` against live-φ's `0.680 → 0.347 → 0.216`).
+`pbrs/frozen_phi_episode_dose` prices the shaping against one win, and
+`signal/adv_shaped_minus_unshaped_mean` is the telescoping term — at λ = 1 on complete episodes
+exactly `−coef ×` the φ mean, so the pair is a one-glance audit that the terminal convention holds on
+real episodes. **The cost is stated with the benefit**: the frozen head's biases are now inside every
+advantage, and §4.1's baseline measured this class of head starved of RESOLUTION — so a FROZEN-φ arm
+that beats SPARSE has measured *this head's* separation, not dense credit in general.
+
+Training-only (config **v110**, recorded and `_resolve`-inherited) — and the inheritance is
+load-bearing here in a way it is not for a coefficient: the flag is **boolean by PRESENCE**, so
+"not typed" and "off" are the same argv, and a launcher restart re-invoking the original command
+would otherwise turn a FROZEN-φ arm into the SPARSE arm mid-run under the same run name. Refused
+under `--critic shaped` (there φ and V are in different units and the dose is a real question — use
+`--win-prob-pbrs-coef` / `--win-prob-pbrs-source`). Gate: `frozen_phi_test.py`.
+
 ### 🚨 THE 250-TURN CAP IS A TERMINAL, NOT A TRUNCATION — and it was the other way round (B6)
 
 **THIS ENV NEVER TRUNCATES IN THE SB3 SENSE, AND THAT IS THE WHOLE FINDING.**

@@ -203,22 +203,37 @@ def test_the_value_dist_refusal_is_on_the_RESOLVED_mode_not_a_typed_flag():
     assert "winprob_critic_refuses_value_dist" in [c.name for c in failing_checks(a)]
 
 
-@pytest.mark.parametrize("critic", ["shaped", "winprob"])
-def test_win_prob_pbrs_frozen_is_HELD_under_both_critics(critic):
-    """Owner amendment 2026-09-06: refused, NOT deleted, so the registered SPARSE / SELF-phi /
-    FROZEN-phi ladder stays one flag away. It is declared with the shape the win-prob critic wants
-    (a path, no coefficient) precisely so lifting the refusal needs no rebuild."""
-    hits = _hits(["--critic", critic, "--win-prob-pbrs-frozen", "models/p.zip"])
-    assert "win_prob_pbrs_frozen_is_held" in hits
+def test_win_prob_pbrs_frozen_is_BUILDABLE_under_the_winprob_critic():
+    """gen3_frozen_phi_actor_only_v1 lifted the hold. The rung the owner amendment kept ONE EDIT
+    away is now that edit: under `winprob` the flag must raise no refusal of its own, so a
+    FROZEN-phi arm is a launch rather than a message."""
+    hits = _hits(["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator",
+                  "--victory-value", "1.0", "--draw-penalty", "0",
+                  "--win-prob-pbrs-frozen", "models/p.zip"])
+    assert "win_prob_pbrs_frozen_needs_the_winprob_critic" not in hits
+    assert "win_prob_pbrs_frozen_needs_a_head" not in hits
 
 
-def test_the_frozen_refusal_says_DEFERRED_rather_than_wrong():
-    """The amendment's own wording requirement: exact Ng invariance DOES hold for a fixed phi, so
-    a message that read 'this is wrong' would retire a live research rung by accident."""
+def test_win_prob_pbrs_frozen_is_REFUSED_under_the_shaped_critic():
+    """The surviving refusal is a ROUTING answer, not a deferral: under `shaped` the critic
+    predicts a PopArt-normalized shaped return, so phi is in different units and the dose is a real
+    question the shaped ladder's own coefficient exists to ask."""
+    hits = _hits(["--win-prob-pbrs-frozen", "models/p.zip"])
+    assert "win_prob_pbrs_frozen_needs_the_winprob_critic" in hits
+
+
+def test_the_shaped_refusal_ROUTES_rather_than_deferring():
     from main.train.combination_checks import BY_NAME
-    text = BY_NAME["win_prob_pbrs_frozen_is_held"].text(_ns([]))
-    assert "HELD" in text and "not judged wrong" in text
+    text = BY_NAME["win_prob_pbrs_frozen_needs_the_winprob_critic"].text(_ns([]))
+    assert "--win-prob-pbrs-coef" in text and "--win-prob-pbrs-source" in text, (
+        "the refusal must name the flags that DO work under `shaped`")
+    assert "ACTOR-ONLY" in text
     assert "1.0" in text, "the currency-matched coefficient must be stated, not left to be derived"
+
+
+def test_the_frozen_flag_still_needs_a_win_prob_head():
+    hits = _hits(["--win-prob-pbrs-frozen", "models/p.zip", "--win-prob-mode", "none"])
+    assert "win_prob_pbrs_frozen_needs_a_head" in hits
 
 
 def test_the_self_phi_refusal_states_the_double_counting():

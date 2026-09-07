@@ -301,6 +301,53 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
              f"config_version={getattr(_fv_w, 'config_version', '?')}) — the LIVE win-prob head is "
              f"now a diagnostic only")
 
+    # gen3_frozen_phi_actor_only_v1: the ACTOR-ONLY frozen potential (`--win-prob-pbrs-frozen`).
+    # SAME loader shape as the block above — `resolve_model_ref` (a bare run dir means the run's
+    # LAST SNAPSHOT, gen3_last_snapshot_resolution_v1) then `load_foreign_opponent`, eager, never
+    # compiled, never pickled into our checkpoint, a bad path a FATAL_CONFIG rather than a
+    # crash-restart loop — and the SAME attribute, `_winprob_phi_source`, so there is exactly one
+    # frozen-φ network per run whichever flag attached it and `winprob_pbrs.phi_model` /
+    # `_excluded_save_params` need no second name. The two flags are mutually exclusive by refusal
+    # (`combination_checks`: --win-prob-pbrs-source is refused under `winprob`, and
+    # --win-prob-pbrs-frozen is refused under `shaped`), so they can never both fire.
+    #
+    # WHAT DIFFERS is the GATE and the COEFFICIENT, and both are deliberate: `_frozen_phi_on` is a
+    # boolean because the flag is, and the coefficient is `FROZEN_PHI_COEF` — PRINTED here rather
+    # than chosen, because under this critic the potential is already in the value currency.
+    model._frozen_phi_on = False
+    model.frozen_phi_coef = 0.0
+    if getattr(args, "win_prob_pbrs_frozen", None):
+        from agents.model.snapshot import (
+            current_model_version as _cmv_f, load_foreign_opponent as _lfo_f)
+        from agents.training.fixed_opponent_pool import resolve_model_ref as _rmr_f
+        from agents.training.frozen_phi import FROZEN_PHI_COEF as _FPC
+        _srcf = str(args.win_prob_pbrs_frozen)
+        try:
+            _ref_f = _rmr_f(_srcf, None)                 # run-dir (LAST SNAPSHOT) OR zip → the file
+            _pm_f, _fv_f = _lfo_f(_ref_f.zip_path,
+                                  current_version=_cmv_f(mappings, **_run_arch_toggles(args)),
+                                  device=str(model.device), config_path=_ref_f.config_path)
+            _pm_f.policy.set_training_mode(False)
+            model._winprob_phi_source = _pm_f
+            model._frozen_phi_on = True
+            model.frozen_phi_coef = float(_FPC)
+        except Exception as _e_f:  # noqa: BLE001 — bad path / incompatible obs family
+            print(f"\n[FrozenPhi] FATAL: could not load --win-prob-pbrs-frozen {_srcf}: {_e_f}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
+        emit(f"🧊 [FrozenPhi] ACTOR-ONLY potential from {_ref_f.describe()} on {model.device} "
+             f"(arch_signature={getattr(_fv_f, 'arch_signature', '?')}, "
+             f"config_version={getattr(_fv_f, 'config_version', '?')})")
+        emit(f"   coefficient {model.frozen_phi_coef:g} — CURRENCY-MATCHED, not a knob: the "
+             f"terminal is the win indicator at --victory-value "
+             f"{float(getattr(args, 'victory_value', 1.0) or 0.0):g} and V(s) = P(win|s), so "
+             f"φ = σ(win-prob logit) ∈ [0,1] is already one unit of V per unit of V.")
+        emit("   ACTOR-ONLY: γφ(s′) − φ(s) is added to the advantages ONLY. The critic keeps "
+             "training on the UNSHAPED terminal indicator, so V ≡ P(win) is preserved exactly; "
+             "φ(terminal) := 0, so the per-episode shaping telescopes to −φ(s₀) and leaks no "
+             "outcome. Watch pbrs/frozen_phi_mean (must be FLAT — φ is fixed) and "
+             "signal/adv_shaped_minus_unshaped_mean.")
+
     if args.search_teacher:
         from agents.training.teacher.buffer import CorrectionBuffer
         model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
@@ -404,6 +451,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             td_aux_coef=args.td_aux_coef,
             win_prob_pbrs_coef=args.win_prob_pbrs_coef,
             win_prob_pbrs_source=getattr(args, "win_prob_pbrs_source", None),
+            win_prob_pbrs_frozen=getattr(args, "win_prob_pbrs_frozen", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             cf_records=args.cf_records,
@@ -760,6 +808,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             td_aux_coef=args.td_aux_coef,
             win_prob_pbrs_coef=args.win_prob_pbrs_coef,
             win_prob_pbrs_source=getattr(args, "win_prob_pbrs_source", None),
+            win_prob_pbrs_frozen=getattr(args, "win_prob_pbrs_frozen", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             cf_records=args.cf_records,

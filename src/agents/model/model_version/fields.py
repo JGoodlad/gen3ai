@@ -444,6 +444,13 @@ class ModelVersionFields:
     # read back on a flagless resume (`_resolve`) — a resume that silently reverted to live-φ would
     # change the objective mid-run with nothing saying so.
     win_prob_pbrs_source: Optional[str] = None
+    # v110 TRAINING-ONLY provenance (gen3_frozen_phi_actor_only_v1, NOT version-locked): the path of
+    # the FROZEN checkpoint whose win-prob head supplies the ACTOR-ONLY potential under
+    # `--critic winprob`. None = no frozen-φ shaping (the SPARSE arm). Recorded for the v105 field's
+    # reason and one more: the flag is BOOLEAN BY PRESENCE, so "absent" and "off" are the same argv,
+    # and a launcher restart re-invoking a flagless resume would silently convert a FROZEN-φ arm
+    # into the SPARSE arm mid-run under the same run name. `_resolve` reads this field back.
+    win_prob_pbrs_frozen: Optional[str] = None
     # v102 TRAINING-ONLY coefficient (gen3_policy_grad_coef_v1, NOT version-locked): the weight on the PPO
     # policy-gradient term itself — `policy_grad_coef * policy_loss` in the loss fold, scaling ONLY the
     # clipped surrogate (never entropy, never the value term, never an aux). 1.0 = the upstream

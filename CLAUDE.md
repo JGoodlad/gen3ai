@@ -1058,10 +1058,15 @@ argparse default is the `None` sentinel, so "unset" is representable; four are R
 by their own refusal (`--no-hand-shaping`, `--terminal-indicator`, `--victory-value 1.0`,
 `--draw-penalty 0`) because theirs are concrete and an implication could not be told apart from an
 overwrite. Everything the mode SUBSUMES is refused rather than ignored — `--value-dist-mode`,
-`--value-from-dist`, `--win-prob-coef`, `--value-tail-weight`, both `--win-prob-pbrs-*`, and the
-new `--win-prob-pbrs-frozen` (declared in the win-prob critic's shape — a path, no coefficient —
-but HELD for a later frozen-φ ablation). `python -m main.checkargs` reports every one of them
-offline. **`--critic` is STRUCTURAL and resume-immutable** (`MODEL_CONFIG_VERSION` 109); it carries
+`--value-from-dist`, `--win-prob-coef`, `--value-tail-weight` and both `--win-prob-pbrs-*`.
+`python -m main.checkargs` reports every one of them offline. **`--win-prob-pbrs-frozen <run|zip>`
+is the exception and is BUILDABLE here** (`gen3_frozen_phi_actor_only_v1`, config v110): a frozen
+checkpoint's win-prob head supplies an ACTOR-ONLY potential — `γφ(s′) − φ(s)` reaches the POLICY's
+advantages and nothing else, so the critic keeps regressing the unshaped terminal indicator and
+`V ≡ P(win)` survives bit-for-bit, where a shaped REWARD would make its target `P(win) − φ`, which a
+sigmoid cannot represent below 0. No coefficient (φ is already in the value currency, so it is
+exactly 1.0, printed at startup); refused under `shaped`, where the shaped ladder's
+`--win-prob-pbrs-coef` / `--win-prob-pbrs-source` are the right pair. **`--critic` is STRUCTURAL and resume-immutable** (`MODEL_CONFIG_VERSION` 109); it carries
 NO `ARCH_SIGNATURE` bump, because with the default unchanged nothing about the forward or the
 `state_dict` moves — the bump belongs to the default flip. Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md).

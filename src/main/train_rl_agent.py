@@ -213,7 +213,7 @@ async def main():
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
     # factory passes it to every env's reward manager. Default = the single-variable run.
     from agents.training.reward_manager import (
-        RewardConfig, format_reward_composition, reward_class_composition)
+        RewardConfig, format_reward_composition, reward_composition_block)
     # Single construction site (gamma == InstrumentedMaskablePPO(gamma=0.9999), asserted below). Every
     # reward CLI flag flows in by name → training, eval, and the version record all use ONE config.
     reward_config = RewardConfig.from_args(args)
@@ -221,7 +221,12 @@ async def main():
     # STATE the reward composition rather than implying it. The v8->v9 drift was invisible because a
     # launch never said what its reward was made of; this line, and the `reward_composition` block it
     # records into metadata.json, are what a launch-diff gate compares.
-    reward_composition = reward_class_composition(reward_config)
+    # The census PLUS the announced LINE, the class shares and the INERT-flag list — additive over
+    # `reward_class_composition`, so every existing reader of this block is untouched. The line is
+    # recorded because a launch PRINTED its composition and nothing kept it: a launcher rotates the
+    # child log, and `model_config.json`'s recorded flag values can read shaping-ON on a run whose
+    # composition is `1 TERMINAL + 0 PBRS + 0 BIAS` (see `reward_composition.inert_reward_flags`).
+    reward_composition = reward_composition_block(reward_config)
     # `emit` prints when there is no launcher pipe, so this reaches BOTH a bare run's stdout and the
     # launcher Events panel — the composition must never be visible in only one of them.
     emit(format_reward_composition(reward_config))

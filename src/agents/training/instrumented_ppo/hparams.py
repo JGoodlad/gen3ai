@@ -221,6 +221,23 @@ class PpoHyperparameters:
     # instance is the classic version of this bug); `collect_rollouts` always rebinds a fresh dict.
     _pbrs_metrics = None
 
+    # FROZEN-φ ACTOR-ONLY SHAPING (gen3_frozen_phi_actor_only_v1; `--win-prob-pbrs-frozen`, the
+    # FROZEN-φ rung of the ai_v12 ladder). The gate is a BOOLEAN because the flag is: under
+    # `--critic winprob` the potential is currency-matched, so the only justified coefficient is
+    # 1.0 and it is `frozen_phi.FROZEN_PHI_COEF`, printed at startup rather than chosen. The frozen
+    # NETWORK itself rides `_winprob_phi_source` — the same attribute the shaped ladder's
+    # `--win-prob-pbrs-source` uses, deliberately: `winprob_pbrs.phi_model` and
+    # `_excluded_save_params` already know that name, and the two flags are mutually exclusive by
+    # refusal (`combination_checks`), so there is one frozen-φ network per run whichever flag
+    # attached it. False ⇒ the module is not even imported (byte-identical).
+    _frozen_phi_on: bool = False
+    frozen_phi_coef: float = 0.0
+    # Set by `collect_rollouts` when the actor-only shaping ran; drained into `pbrs/frozen_phi_*` +
+    # `signal/adv_shaped_minus_unshaped_*` by train()'s logging block. Keys arrive ALREADY
+    # PREFIXED, unlike `_pbrs_metrics`, because they land under two different TB groups. Not a
+    # mutable class default for the reason above it.
+    _frozen_phi_metrics = None
+
     opp_intent_coef: float = 0.0
     # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
     # ON TOP of opp_intent_coef, so it is a share of the intent budget rather than a second one.

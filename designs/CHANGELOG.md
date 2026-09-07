@@ -7673,3 +7673,192 @@ and it refuses to delete anything there that is not a symlink.
 
 The `tensorboard.service` user unit was repointed and restarted: **8 runs served, origin RSS
 688 MB → 257 MB.** Editing the list needs no restart (TensorBoard rescans its logdir).
+## `gen3_frozen_phi_actor_only_v1` — the FROZEN-φ rung, as ACTOR-ONLY shaping (config v110, 2026-09-06)
+
+`--win-prob-pbrs-frozen <run|zip>` becomes BUILDABLE under `--critic winprob`. It is the FROZEN-φ
+rung of the SPARSE / SELF-φ / FROZEN-φ ladder registered in `designs/ai_v12/launch_runbook.md`, and
+`design_winprob_only_critic.md` §3.7's owner amendment declared it — boolean by presence, coefficient
+fixed at the currency-matched 1.0 — while HOLDING it for "a later frozen-φ ablation". This is that
+ablation, and designing it turned out to need one sentence about the CRITIC rather than about the
+shaping.
+
+### What was actually blocking it, and it was NOT the invariance
+
+The amendment held the rung on the grounds that exact Ng invariance *does* hold for a fixed φ, so the
+refusal should read DEFERRED rather than wrong. That was correct about the theorem and did not go far
+enough about the target. Route 1 (`winprob_pbrs.py`) adds the potential to `rollout_buffer.rewards`,
+so the critic's regression target becomes the SHAPED return; with Φ(terminal) = 0 and γ = 1 that
+telescopes to
+
+```
+G'(s) = 1{win} − φ(s)
+```
+
+which is **NEGATIVE wherever `φ(s) > 1{win}`** — on every state of every lost game the frozen head
+was optimistic about. `V(s) = σ(z) ∈ [0,1]` cannot represent a negative number at all, so the critic
+would be fitted to a target outside its own range and `V ≡ P(win)` would be false by a known,
+state-dependent function. That identity is the search leaf's contract (`--score` collapses to
+`win_prob` on this critic), the calibration gate's contract (`win_prob/critic_resolution`, §4.3 G1)
+and the reason `--vf-coef` multiplies a BCE. The amendment's own escape — *"recoverable at inference
+by adding φ back"* — is true of the ARITHMETIC and false of the TRAINING: a sigmoid cannot be fitted
+to a target it cannot output, so there is nothing to add back to.
+
+### The construction: shape the ACTOR, leave the CRITIC alone
+
+§3.4 already separates the two (*"the critic's target and the advantage estimator are separate
+choices, and this design changes only the first"*). This changes only the second.
+
+* The **CRITIC** trains on the UNSHAPED terminal indicator, exactly as before — under `--critic
+  winprob` its loss is the win-prob head's BCE against `win_target`, a Monte-Carlo outcome label in
+  the obs dict that never reads `rewards`. `V` stays `P(win|s)` **bit-for-bit**.
+* The **POLICY's advantages** are GAE over `r + γφ(s′) − φ(s)` with the UNSHAPED `V` as baseline.
+
+Both are STRUCTURAL rather than promised. `agents/training/frozen_phi.py` writes **only**
+`rollout_buffer.advantages`; `rewards` and `returns` are restored to what the collector produced —
+by ASSIGNMENT from a snapshot, because `(a+b)−b` is not `a` in float32 — so `train/value_loss`,
+`train/explained_variance` and `value_scale_metrics` all read the unshaped return. The two arms share
+ONE recomputed `last_values`/`dones` pair, so their difference is the shaping and nothing else.
+
+### It is still potential-based shaping, and the guarantee is the STRONGER one
+
+Ng, Harada & Russell (1999): for a FIXED φ, `Σ γ^t (γφ(s_{t+1}) − φ(s_t)) = γ^T φ(s_T) − φ(s_0) =
+−φ(s_0)` under `φ(terminal) := 0` — the sum depends only on the endpoints, so it adds the same
+constant to every policy's return from a given start state. Our φ is a checkpoint's head, loaded once
+and never trained, so the hypothesis holds **exactly** — the whole reason the frozen rung gets what
+route 1's live-head form does not.
+
+Restricting the term to the ADVANTAGE is a *restriction* of that transformation. At λ = 1 the
+identity is exact and per-row:
+
+```
+A′_t − A_t = Σ_k γ^k (γφ(s_{t+k+1}) − φ(s_{t+k})) = γ^{T−t} φ(s_T) − φ(s_t) = −φ(s_t)
+```
+
+so the shaped advantage is the unshaped one minus a **function of the state alone** — a
+state-dependent BASELINE, the textbook zero-bias modification of a policy gradient. At λ < 1 the sum
+truncates geometrically and the argument applies to each partial sum. **The actor-only form inherits
+the invariance AND avoids the one thing the reward-stream form would have cost.**
+
+`φ(terminal) := 0` does double duty: it makes the sum telescope, and it stops the potential leaking
+OUTCOME information (a frozen head at a terminal state could be read as predicting the result that
+state just revealed; forcing 0 makes the last transition's shaping `−φ(s_{T−1})`, a function of the
+state the agent ACTED in). The conventions are `winprob_pbrs.successor_potential`'s, **IMPORTED**, so
+the two shaping paths cannot drift on the one convention the theorem rests on — including the
+BUFFER-BOUNDARY truncation case, which is NOT forced to 0.
+
+### The coefficient is 1.0, derived
+
+Under this critic the terminal is the WIN INDICATOR at `--victory-value 1.0`, so the undiscounted
+return is `1{win}` and `V = P(win|s) ∈ [0,1]`. φ = σ(logit) is already in that currency, so the
+matched coefficient is exactly 1.0 — fixed internally, PRINTED at startup, never a knob. (The ±1
+terminal alternative gives the same answer scaled by 2, and would additionally break `φ(terminal) :=
+0`, which is the correct zero for a [0,1] potential and the MIDDLE of a [−1,+1] one.)
+
+### What it buys, and what it costs
+
+**BUYS: dense credit from a calibrated head.** The clean-world composition is 1 TERMINAL + 0 PBRS +
+0 BIAS — ~1 bit per ~40 decisions — and the SPARSE arm is the famine test of whether that is
+learnable. A frozen mature φ scores every transition without changing the optimum: the accelerant
+§3.3 deleted, in the one form whose invariance is exact.
+
+**COSTS: the frozen head's biases become part of every advantage.** §4.1's committed baseline
+measured this class of head at reliability ~0.002 against a resolution of 0.062 out of an available
+0.182 — calibrated in the MEAN, starved of SEPARATION. A blurry potential is a WEAK potential rather
+than a wrong one, so the failure mode is "does less than hoped" rather than "teaches the wrong
+thing" — the invariance covers the second. But **a FROZEN-φ arm that beats SPARSE has measured THIS
+HEAD's separation, not dense credit in general.**
+
+### The seams, and why they moved
+
+Both live in `frozen_phi.py` — `shape_after_rollout` (the `collect_rollouts` seam, the ONE point both
+rollout loops pass through, so `--async-rollout` is covered by construction) and `record_metrics` —
+with `ppo.py` carrying one call each. That is the `distill_anchor.py` shape, taken because `ppo.py`
+sat at **1,997 lines against the size ratchet's 2,000 hard bound**: the first draft's inline comment
+blocks tripped the gate, and the gate's remedy is decomposition rather than a shorter comment. The
+frozen network rides `_winprob_phi_source` — the attribute `--win-prob-pbrs-source` already uses,
+the two being mutually exclusive by refusal — so `phi_model` and `_excluded_save_params` need no
+second name and the foreign weights are never pickled into our checkpoint.
+
+### Diagnostics
+
+`pbrs/frozen_phi_{coef,mean,shaping_mean,shaping_absmean,episode_dose,episode_dose_n}` and
+`signal/adv_shaped_minus_unshaped_{mean,absmean}`. **Read `frozen_phi_mean` first and it must be
+FLAT** — φ is a fixed function of state, so a mean wandering like a live head's means the frozen
+source is not the thing being read (the runbook §4.2 check: frozen `0.403 → 0.391 → 0.391` against
+live-φ's `0.680 → 0.347 → 0.216`). At λ = 1 on complete episodes
+`signal/adv_shaped_minus_unshaped_mean` is exactly `−coef ×` the φ mean, so the pair audits the
+terminal convention on real episodes rather than only in the unit test.
+
+### Config, refusals, provenance
+
+Config **v110** — one training-only PATH field, `win_prob_pbrs_frozen`, in the v105
+`win_prob_pbrs_source` mould. **NO `ARCH_SIGNATURE` bump**: no module is added or removed, no
+`state_dict` key moves, no forward changes; the flag edits a numpy array between collection and
+`train()`. It is `_resolve`-inherited, and that is load-bearing in a way it is not for a coefficient
+— the flag is **boolean by PRESENCE**, so "not typed" and "off" are the same argv and a launcher
+restart re-invoking the original command would otherwise convert a FROZEN-φ arm into the SPARSE arm
+mid-run under the same run name and the same TB series.
+
+The `win_prob_pbrs_frozen_is_held` refusal is replaced by two: `..._needs_the_winprob_critic` (under
+`shaped` — a ROUTING answer naming `--win-prob-pbrs-coef` / `--win-prob-pbrs-source`, not a
+deferral) and `..._needs_a_head` (the potential IS the head). The SELF-φ refusals are unchanged.
+`metadata.json`'s `lineage` block gains a `winprob_phi_source` reference carrying `resolved_file` /
+`resolution_rung` / `resolution_rule` — recorded on a FRESH run too, which is the case a
+teachers-only block would have missed, since the FROZEN-φ arm is fresh by construction.
+
+### Verification
+
+`frozen_phi_test.py` (20): the telescoping identity in both forms (per-episode `−coef·φ(s_0)`; the
+per-ROW `−coef·φ(s_t)` at λ = 1) on REAL `MaskableDictRolloutBuffer`s rather than a hand-rolled GAE;
+`returns` bit-identical with and without the flag AND a bit-identical value loss computed from them;
+`rewards` restored exactly; the advantage delta matching a GAE over the pure shaping stream at
+λ = 0.9; the LOUD refusal when no frozen source is attached (the SELF-φ double counting); the
+coefficient's linearity; the dose meter and its omission at a zero terminal scale; and byte-identity
+on the REAL PPO update through `instrumented_ppo_test._train_from_init`, with the two-replay
+anti-vacuity control.
+
+**CPU smoke, 2026-09-06** (`--debug --steps 10000 --critic winprob --win-prob-pbrs-frozen <a 6k-step
+source built in the smoke's own run dir>`): exit 0, `Training complete`, and the startup lines
+
+```
+🧊 [FrozenPhi] ACTOR-ONLY potential from …/phi_source/final_model.zip @6,144 steps
+   [rung=latest_txt rule=last_snapshot] on cpu (arch_signature=gen3_critic_route_wave_v1,
+   config_version=110)
+   coefficient 1 — CURRENCY-MATCHED, not a knob: …
+   ACTOR-ONLY: γφ(s′) − φ(s) is added to the advantages ONLY. …
+```
+
+with `frozen_phi_coef 1`, `frozen_phi_mean 0.00828`, `frozen_phi_episode_dose 0.00385` over 15
+complete episodes, and `adv_shaped_minus_unshaped_mean −0.00361`. The launch command for
+`ai_v12_03_winprob_frozenphi` is `design_winprob_only_critic.md` §5.4, validated by `checkargs`
+(19 flags, 0 unrecognized) and by `python -m main.launcher --dry-run` (role FRESH, `✓ DRY RUN`).
+
+### Riding along — the RECORDED reward composition vs the ANNOUNCED one
+
+Observed on the live `ai_v12_01_winprob_critic` arm: `model_config.json` reads
+`all_shaping_pbrs=True`, `pbrs_material=True`, `pbrs_belief=True` — their argparse defaults,
+faithfully recorded — while the startup announcer prints `1 TERMINAL + 0 PBRS + 0 BIAS (none — fully
+policy-invariant)`. Both are correct and they disagree, because `--no-hand-shaping` makes all three
+unreachable without changing what any of them RECORDS. A reader who opens the config concludes
+shaping was on.
+
+Two answers, and the split matters. `metadata.json`'s `reward_composition` block gains the
+ANNOUNCER'S OWN STRING verbatim (`composition_line`), the per-class `class_shares` and
+`inert_reward_flags` — the launch printed its composition and nothing kept it, since a launcher
+rotates the child log away. And `model_config.json` gains `inert_reward_flags` **beside** the values
+it describes, never in place of them: `check_reward_config` compares each RECORDED value against the
+one `RewardConfig.from_args` builds from the RESUMING argv, and that argv still says
+`all_shaping_pbrs=True` — so a config recording False would FATAL every restart of the very run the
+annotation exists to describe, and that run restarts every three hours.
+
+`inert_reward_flags` is DERIVED from the folds' own `_pbrs_term_active` / `_bias_term_active`
+predicates through a small flag→terms table, so it cannot drift from the census; the only
+hand-maintained fact is which switch reaches which term, and a typo there fails a test.
+`draw_penalty` under `--terminal-indicator` is the one MAGNITUDE-shaped entry (the term is still
+emitted; its number is simply not read) and is stated as its own rule. `bias_additivity` is
+deliberately absent even with an empty BIAS class — it is inert by having nothing to act on rather
+than by a gate, and listing it would make this "flags that happen not to matter" instead of "flags a
+gate switched off". It is written by `save_model_snapshot` and POPped by `_migrate_config`'s
+version-independent sanitizers, so `to_json()` stays exactly `asdict(self)` (several tests round-trip
+it straight back through `ModelVersion(**…)`) and no field enters the weight-shape record. Gate:
+`reward_composition_test.py` (17).

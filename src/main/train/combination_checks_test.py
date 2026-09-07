@@ -229,8 +229,11 @@ ARGVS: dict[str, list[str]] = {
                                                 "--draw-penalty", "0"],
     "winprob_critic_needs_no_hand_shaping": ["--critic", "winprob", "--terminal-indicator",
                                              "--victory-value", "1.0", "--draw-penalty", "0"],
-    # HELD under BOTH critics, so the plain shaped argv is the honest row.
-    "win_prob_pbrs_frozen_is_held": ["--win-prob-pbrs-frozen", "models/p.zip"],
+    # gen3_frozen_phi_actor_only_v1: BUILDABLE under winprob, refused under shaped, so the plain
+    # (shaped-default) argv is the row that fires the routing refusal.
+    "win_prob_pbrs_frozen_needs_the_winprob_critic": ["--win-prob-pbrs-frozen", "models/p.zip"],
+    "win_prob_pbrs_frozen_needs_a_head": ["--win-prob-pbrs-frozen", "models/p.zip",
+                                          "--win-prob-mode", "none"],
     "cf_records_needs_bridge": ["--cf-records", "--use-bridge", "off"],
     "cf_label_duty_cycle_floor": ["--cf-records", "--cf-winprob-coef", "0.1",
                                   "--win-prob-mode", "read_only", "--cf-label-lag-steps", "10",

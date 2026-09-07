@@ -475,6 +475,7 @@ SWITCH_BIAS_DROP_FAMILY = (
 from agents.training.reward_composition import (   # noqa: E402,F401 - declared re-export hub
     _rc, _pbrs_term_active, _bias_term_active,
     reward_class_composition, reward_config_digest, format_reward_composition,
+    inert_reward_flags, reward_composition_block,
 )
 
 

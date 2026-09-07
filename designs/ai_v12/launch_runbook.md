@@ -28,6 +28,29 @@ from**, all at terminal `{win +1, loss −1, draw −1}`:
 - `FROZEN − SELF` = the value of maturity + exact-vs-approximate invariance
 - `FROZEN − SPARSE` = the total worth of outcome-grounded shaping
 
+> ### ⚠️ THE LADDER ABOVE IS THE **SHAPED**-CRITIC ladder — under `--critic winprob` it has TWO rungs
+>
+> `gen3_winprob_critic_mode_v1` and `gen3_frozen_phi_actor_only_v1` (2026-09-06) between them
+> re-shape this table for the win-prob critic, and the middle rung stops existing there:
+>
+> | rung | under `--critic shaped` (this document) | under `--critic winprob` |
+> |---|---|---|
+> | SPARSE | `$CLEAN` alone | the live `ai_v12_01_winprob_critic` arm |
+> | SELF-φ | `--win-prob-pbrs-coef $COEF` | **REFUSED** — with `V ≡ φ`, `γφ(s′) − φ(s)` IS the TD residual GAE already turns into the advantage, so route 1 would add the advantage to the reward and then take the advantage of that (`design_winprob_only_critic.md` §3.7) |
+> | FROZEN-φ | `--win-prob-pbrs-coef $COEF --win-prob-pbrs-source $PHI_SRC` | **`--win-prob-pbrs-frozen <run\|zip>`** — one flag, NO coefficient (φ is already in the value currency, so it is exactly 1.0 and is printed at startup), and the shaping is **ACTOR-ONLY**: it reaches the advantages and nothing else |
+>
+> **So `FROZEN − SELF` is not measurable on that critic** and the arm reads `FROZEN − SPARSE`
+> alone — which is worth saying out loud, because it is the contrast this document's §1 calls "the
+> total worth of outcome-grounded shaping" and it no longer decomposes.
+>
+> **Everything in §4 below still applies to the winprob FROZEN arm, with the metric names moved**:
+> `train/pbrs_phi_mean` → `pbrs/frozen_phi_mean`, `train/pbrs_episode_dose` →
+> `pbrs/frozen_phi_episode_dose`, and the `🧊` banner is `[FrozenPhi]` rather than `[WinProbPBRS]`.
+> §4.2's constancy check is unchanged and is still the cheapest live proof that the frozen source is
+> the thing being read. The `signal/adv_shaped_minus_unshaped_mean` series is NEW there and has no
+> counterpart here: it is the telescoping term the policy gradient gained, and at λ = 1 it is exactly
+> `−1.0 ×` the φ mean. The winprob arm's own command is `design_winprob_only_critic.md` §5.4.
+
 The incumbent comparison is **free** — existing rev-1/rev-3-class 25M checkpoints via h2h +
 anchored ELO. It is an imperfect control (era-config differences) and is a reference, not an arm.
 

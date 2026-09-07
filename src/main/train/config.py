@@ -532,7 +532,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # it would silently swap the FROZEN potential back to the live, drifting head — a change of
     # objective mid-run with nothing in any metric saying so.
     _resolve("win_prob_pbrs_source", None)
-    _resolve("policy_grad_coef", 1.0)                 # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
+    # gen3_frozen_phi_actor_only_v1: the ACTOR-ONLY frozen potential, inherited for exactly the
+    # reason above and one more. It is BOOLEAN BY PRESENCE, so "the flag was not typed" and "the
+    # shaping is off" are the same argv — which makes a flagless launcher RESTART (every 3 h, the
+    # original argv re-invoked) the one that would silently turn the arm into the SPARSE arm
+    # mid-run, with the same run name and the same TB series. Inheriting the path is what keeps a
+    # restart the same experiment.
+    _resolve("win_prob_pbrs_frozen", None)
+    _resolve("policy_grad_coef", 1.0)               # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate

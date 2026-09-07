@@ -507,27 +507,46 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "never a crash-restart loop. TRAINING-only, recorded for provenance and "
                              "inherited on a flagless resume (a resume that silently reverted to "
                              "live-phi would change the objective mid-run with nothing saying so).")
-    # gen3_winprob_critic_mode_v1, owner amendment 2026-09-06 (design_winprob_only_critic.md
-    # §3.7). The FROZEN-phi rung of the registered SPARSE / SELF-phi / FROZEN-phi ladder, declared
-    # in the SHAPE the win-prob critic wants it: a single path flag, on/off by presence, with NO
-    # coefficient -- under that critic the potential's currency is FIXED (see the refusal message),
-    # so the only justified coefficient is the currency-matched one and it is set internally. It is
-    # REFUSED in both critic modes for now and the code path behind --win-prob-pbrs-source is left
-    # intact, so lifting the refusal is one edit rather than a rebuild.
+    # gen3_frozen_phi_actor_only_v1 (2026-09-06), lifting the hold that gen3_winprob_critic_mode_v1
+    # declared this flag under. The FROZEN-phi rung of the registered SPARSE / SELF-phi / FROZEN-phi
+    # ladder, in the SHAPE the win-prob critic wants it: a single path flag, on/off by presence, no
+    # coefficient -- under that critic the potential's currency is FIXED, so the only justified
+    # coefficient is the currency-matched one and it is set internally. What made it buildable is
+    # that the shaping is ACTOR-ONLY: adding the potential to the REWARD would make the critic's
+    # target `P(win) - phi`, which a sigmoid cannot represent below 0.
     parser.add_argument("--win-prob-pbrs-frozen", "--win_prob_pbrs_frozen",
                         dest="win_prob_pbrs_frozen", type=str, default=None,
-                        help="THE FROZEN-phi ABLATION, in the win-prob critic's shape: a checkpoint "
-                             ".zip or run dir whose FROZEN win-prob head supplies a PBRS potential. "
-                             "No coefficient: under --critic winprob the terminal is the win "
-                             "INDICATOR (+1 on a win, 0 otherwise) and V(s) = P(win|s), so phi IS "
-                             "already in the value currency and the currency-matched coefficient is "
-                             "exactly 1.0 -- set internally and printed at startup, never a knob. "
-                             "REFUSED in this build under BOTH critics: under 'winprob' it is HELD "
-                             "for a later frozen-phi ablation (exact Ng invariance does hold for a "
-                             "fixed phi -- the critic then learns P(win) - phi_frozen, recoverable "
-                             "at inference by adding phi back -- so it is deferred, not wrong); "
-                             "under 'shaped' use the existing --win-prob-pbrs-coef / "
-                             "--win-prob-pbrs-source pair, whose meaning is unchanged.")
+                        help="THE FROZEN-phi ACTOR-ONLY POTENTIAL (gen3_frozen_phi_actor_only_v1; "
+                             "requires --critic winprob): a checkpoint .zip or run dir whose FROZEN "
+                             "win-prob head supplies a potential. A bare run dir means that run's "
+                             "LAST SNAPSHOT (gen3_last_snapshot_resolution_v1); name a .zip or use "
+                             "<run>@<step> to pin a file. ACTOR-ONLY is the whole construction: "
+                             "gamma*phi(s') - phi(s) is added to the stream that feeds the POLICY's "
+                             "advantages and to nothing else, so the critic keeps training on the "
+                             "UNSHAPED terminal indicator and V(s) = P(win|s) is preserved exactly. "
+                             "A potential added to the REWARD would make the critic's target "
+                             "`P(win) - phi`, negative wherever the frozen head was optimistic about "
+                             "a lost game -- unrepresentable by a sigmoid, and it would break the "
+                             "search leaf's and every calibration meter's contract. NO coefficient: "
+                             "the terminal is the win INDICATOR at --victory-value 1.0 and V is "
+                             "P(win), so phi = sigmoid(logit) in [0,1] is already one unit of V per "
+                             "unit of V -- the coefficient is exactly 1.0, set internally and "
+                             "PRINTED at startup. Exact Ng invariance holds (phi is a FIXED function "
+                             "of state), and at lambda=1 the shaped advantage is the unshaped one "
+                             "minus -phi(s), a state-dependent BASELINE, which is zero-bias for a "
+                             "policy gradient. COSTS one frozen extractor of memory (the "
+                             "--distill-teacher class) and one no_grad forward per rollout, and it "
+                             "puts the frozen head's own biases -- notably the resolution starvation "
+                             "the committed baseline measured -- into every advantage. Under "
+                             "--critic shaped it is REFUSED: use --win-prob-pbrs-coef / "
+                             "--win-prob-pbrs-source there, where phi and V are in different units "
+                             "and the dose is a real question. TRAINING-only (not version-locked for "
+                             "a forward; recorded and inherited on a flagless resume, because the "
+                             "flag is boolean by PRESENCE and a launcher restart would otherwise "
+                             "turn a FROZEN-phi arm into the SPARSE arm mid-run). Watch "
+                             "pbrs/frozen_phi_mean (FLAT -- phi is fixed), pbrs/frozen_phi_episode_"
+                             "dose (the shaping's budget as a fraction of a win) and "
+                             "signal/adv_shaped_minus_unshaped_mean (the telescoping term).")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "

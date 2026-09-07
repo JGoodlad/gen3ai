@@ -61,6 +61,7 @@ from agents.training.instrumented_ppo.signal_metrics import (
     advantage_density_metrics,
 )
 from agents.training.instrumented_ppo.value_terms import ValueTerms
+from agents.training import frozen_phi          # gen3_frozen_phi_actor_only_v1 (both seams live there)
 from agents.training.rank_metrics import rank_probe
 from agents.training.scaffolding import live_gauge_metrics
 
@@ -99,6 +100,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         if ok and float(getattr(self, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0:
             from agents.training.winprob_pbrs import apply_winprob_pbrs
             self._pbrs_metrics = apply_winprob_pbrs(self, rollout_buffer)
+        frozen_phi.shape_after_rollout(self, rollout_buffer, ok)   # --win-prob-pbrs-frozen
         return ok
 
     def _annealed_entropy_boost(self, B: float, af: float) -> float:
@@ -1754,6 +1756,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             for _pk, _pv in self._pbrs_metrics.items():
                 self.logger.record(f"train/pbrs_{_pk}", float(_pv))
 
+        frozen_phi.record_metrics(self, self.logger)  # pbrs/frozen_phi_*, signal/adv_shaped_*
         # +VALUE-DIST: distributional value head diagnostics under their OWN `value_dist/` TB prefix (the
         # interpretability head's aggregate health, complementing the prober's per-decision histogram).
         # `entropy`/`std` fall as the critic sharpens; `pit_mean` ≈ 0.5 ⟺ calibrated; `mean_abs_err` =

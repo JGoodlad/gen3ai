@@ -165,6 +165,45 @@ def test_a_fresh_run_writes_the_null_form(tmp_path):
     assert "ancestry_stop" not in block
 
 
+def test_a_fresh_run_records_its_FROZEN_PHI_SOURCE(tmp_path):
+    """gen3_frozen_phi_actor_only_v1. The FROZEN-φ arm is FRESH by construction — the critic
+    promotion forbids a warm start — so a teachers-only block would have recorded nothing about
+    the one model reference that arm HAS. It is a reference like any other (usually a bare run
+    DIRECTORY, and a directory is not a file), so it goes through `describe_model` and carries the
+    resolution fields."""
+    phi = tmp_path / "phi_run" / "final_model.zip"
+    phi.parent.mkdir(parents=True)
+    phi.write_bytes(b"not a real zip")
+    block = build_lineage(model_path=None, model_dir=str(tmp_path / "fresh"), fork_step=0,
+                          winprob_phi_source=str(phi))
+    assert block["role"] == "fresh" and block["fork_parent"] is None
+    ref = block["winprob_phi_source"]
+    assert ref["path"] == str(phi)
+    assert ref["run_name"] == "phi_run"
+    for key in ("resolved_file", "resolution_rung", "resolution_rule"):
+        assert key in ref, f"{key} must be recorded — a bare run dir names a RUN, not a file"
+
+
+def test_a_run_with_no_frozen_phi_records_the_explicit_NULL(tmp_path):
+    """"absent" and "no frozen φ" must not read the same, exactly like `fork_parent`."""
+    for block in (build_lineage(model_path=None, model_dir=str(tmp_path / "a"), fork_step=0),
+                  build_lineage(model_path=None, model_dir=str(tmp_path / "b"), fork_step=0,
+                                winprob_phi_source=None)):
+        assert "winprob_phi_source" in block and block["winprob_phi_source"] is None
+
+
+def test_the_seam_reads_EITHER_frozen_phi_flag(tmp_path):
+    """One key, two flags: `--win-prob-pbrs-frozen` (the winprob critic's actor-only rung) and
+    `--win-prob-pbrs-source` (the shaped ladder's). They are mutually exclusive by refusal, so the
+    seam never has to choose between them — it only has to not know which critic is on."""
+    import inspect
+
+    from main.train import run_io
+
+    src = inspect.getsource(run_io._run_lineage)
+    assert "win_prob_pbrs_frozen" in src and "win_prob_pbrs_source" in src
+
+
 def test_the_null_form_round_trips_through_metadata(tmp_path):
     run = str(tmp_path / "run")
     block = build_lineage(model_path=None, model_dir=run, fork_step=0)

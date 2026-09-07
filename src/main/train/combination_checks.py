@@ -402,18 +402,34 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "(the potential is currency-matched, coefficient exactly 1.0). Under this critic the "
         "frozen rung is --win-prob-pbrs-frozen, which takes no coefficient."),
     CombinationCheck(
-        # Owner amendment, 2026-09-06 (design §3.7): "self path to be deleted at the default flip;
-        # frozen path kept refused for one generation." Refused, NOT deleted -- the code path
-        # behind --win-prob-pbrs-source is intact, so lifting this is one edit.
-        "win_prob_pbrs_frozen_is_held", ("critic", "win_prob_pbrs_frozen"),
-        lambda a: getattr(a, "win_prob_pbrs_frozen", None) is not None,
-        "--win-prob-pbrs-frozen is declared but HELD in this build. Under --critic winprob it is "
-        "deferred to a later FROZEN-phi ablation, not judged wrong: exact Ng invariance DOES hold "
-        "for a fixed phi -- the critic then learns `P(win) - phi_frozen`, recoverable at inference "
-        "by adding phi back -- and the currency-matched coefficient is exactly 1.0, since phi is "
-        "already in the value currency (the terminal is the win indicator and V is P(win)). Under "
-        "--critic shaped, use the existing --win-prob-pbrs-coef / --win-prob-pbrs-source pair, "
-        "whose meaning is unchanged."),
+        # gen3_frozen_phi_actor_only_v1 (2026-09-06). The rung this check used to HOLD is now
+        # BUILDABLE under `winprob` -- as ACTOR-ONLY shaping, which is what unblocked it: adding
+        # the potential to the REWARD would make the critic's target `P(win) - phi`, a quantity a
+        # sigmoid cannot represent below 0, so the deferral was never about the invariance (which
+        # holds exactly for a frozen phi) but about the critic identity. `agents/training/
+        # frozen_phi.py` shapes only `rollout_buffer.advantages`, so V stays P(win) bit-for-bit.
+        # What survives is the refusal under `shaped`, which is a ROUTING answer, not a deferral.
+        "win_prob_pbrs_frozen_needs_the_winprob_critic",
+        ("critic", "win_prob_pbrs_frozen"),
+        lambda a: getattr(a, "win_prob_pbrs_frozen", None) is not None and not _winprob(a),
+        "--win-prob-pbrs-frozen requires --critic winprob. It is the ACTOR-ONLY form: the "
+        "potential shapes the POLICY's advantages while the critic keeps training on the unshaped "
+        "terminal indicator, and its coefficient is fixed at the currency-matched 1.0 -- both of "
+        "which are statements about a critic whose value IS P(win) in [0,1]. Under --critic "
+        "shaped the value function predicts a shaped, discounted, PopArt-normalized return, so "
+        "phi is in different units and the dose is a real question: use the shaped ladder's "
+        "--win-prob-pbrs-coef / --win-prob-pbrs-source there, whose meaning is unchanged."),
+    CombinationCheck(
+        # The head is what phi IS, on both sides. `winprob_critic_needs_a_head` already refuses
+        # 'none' under this critic, so this fires only on the combination that slips past it --
+        # and it is stated separately because the REASON differs: there the head is the critic,
+        # here it is the potential, and a reader who fixed one has not necessarily fixed the other.
+        "win_prob_pbrs_frozen_needs_a_head", ("win_prob_pbrs_frozen", "win_prob_mode"),
+        lambda a: (getattr(a, "win_prob_pbrs_frozen", None) is not None
+                   and _val(a, "win_prob_mode", "none") == "none"),
+        "--win-prob-pbrs-frozen requires --win-prob-mode read_only|shaping: the potential IS the "
+        "win-prob head, read off the FROZEN source, and 'none' builds no head for this run's "
+        "obs family to be checked against."),
 
     # ---- the distributional critic --------------------------------------------------------
     CombinationCheck(

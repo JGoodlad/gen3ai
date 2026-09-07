@@ -206,7 +206,10 @@ def test_a_pre_v109_config_migrates_to_todays_behaviour():
     assert out["critic"] == "shaped"
     assert out["terminal_indicator"] is False
     assert out["no_progress_tax_armed"] is False
-    assert out["config_version"] == 109 == MODEL_CONFIG_VERSION
+    # The migration walks to whatever the CURRENT version is — the subject here is the three v109
+    # DEFAULTS, and pinning the stamp to a literal 109 made this test fail on the next unrelated
+    # bump (v110, `gen3_frozen_phi_actor_only_v1`) while every claim it exists to make still held.
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 109
 
 
 def test_a_recorded_critic_survives_the_migration():

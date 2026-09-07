@@ -171,8 +171,33 @@ def save_model_snapshot(
     """
     os.makedirs(model_dir, exist_ok=True)
 
+    # `model_config.json` = the recorded config, PLUS one DERIVED annotation.
+    #
+    # 🚨 `inert_reward_flags` (gen3_frozen_phi_actor_only_v1) names the reward flags this config's
+    # own gates make unreachable — because a recorded value is not a running value and nothing said
+    # so. Measured on the live `--critic winprob --terminal-indicator` arm: the file reads
+    # `all_shaping_pbrs=True`, `pbrs_material=True`, `pbrs_belief=True` (their argparse defaults,
+    # faithfully recorded) while the startup announcer prints `1 TERMINAL + 0 PBRS + 0 BIAS`.
+    #
+    # WRITTEN BESIDE THE VALUES, NEVER IN PLACE OF THEM, and that is a resume-contract decision
+    # rather than caution: `check_reward_config` compares each RECORDED value against the one
+    # `RewardConfig.from_args` builds from the RESUMING argv, and that argv still carries
+    # `all_shaping_pbrs=True` (its default) — so recording False here would FATAL every restart of
+    # the run this annotation exists to describe, and that run restarts every three hours.
+    #
+    # It is NOT a `ModelVersion` field: it is a pure function of fields already in the file, so a
+    # field would be a second copy of a derived fact, would need `check_compatible` to ignore it by
+    # name, and would put a documentation string inside the weight-shape record. `to_json()` stays
+    # exactly `asdict(self)` (several tests round-trip it straight back through `ModelVersion(**…)`),
+    # and `_migrate_config` POPs this key on the way in as a version-INDEPENDENT sanitizer.
+    _cfg = json.loads(version.to_json())
+    try:
+        from agents.training.reward_composition import inert_reward_flags
+        _cfg["inert_reward_flags"] = inert_reward_flags(version)
+    except Exception:  # noqa: BLE001 — an ANNOTATION must never be able to fail a save
+        pass
     with open(os.path.join(model_dir, "model_config.json"), "w") as f:
-        f.write(version.to_json())
+        json.dump(_cfg, f, indent=2, sort_keys=True)
 
     # ONE resolver for the run metadata and every checkpoint sidecar (`resolve_git_hash`),
     # so the two can never disagree about which commit ran — and it RAISES when the

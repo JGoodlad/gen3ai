@@ -508,6 +508,130 @@ flag removes one consumer of that choke point and nothing else.
 > shaped` changes** — the old pair keeps its meaning, its dose ladder and its `--win-prob-pbrs-source`
 > spelling until the default flip.
 
+---
+
+> ### 🟢 THE FROZEN RUNG IS BUILT — `gen3_frozen_phi_actor_only_v1` (2026-09-06)
+>
+> **Amendment (b) above is DISCHARGED. `--win-prob-pbrs-frozen <run|zip>` is buildable under
+> `--critic winprob`;** the refusal that survives is under `--critic shaped`, and it is a ROUTING
+> answer rather than a deferral (*"use the shaped ladder's `--win-prob-pbrs-coef` /
+> `--win-prob-pbrs-source` there"*). Everything the amendment fixed stands unchanged: boolean by
+> presence, coefficient fixed at the currency-matched **1.0** and PRINTED, the SELF-φ path still
+> refused for §3.7's double-counting reason.
+>
+> #### What was actually blocking it, and it was NOT the invariance
+>
+> The amendment held the rung because exact Ng invariance holds for a fixed φ but the arm had not
+> been designed. The real obstacle is one line, and it is a statement about the CRITIC rather than
+> about the shaping. Route 1 adds the potential to `rollout_buffer.rewards`, so the critic's
+> regression target becomes the SHAPED return; with Φ(terminal) = 0 and γ = 1 that telescopes to
+>
+> ```
+> G'(s) = 1{win} − φ(s)
+> ```
+>
+> which is **NEGATIVE wherever `φ(s) > 1{win}`** — i.e. on every state of every lost game the frozen
+> head was optimistic about. `V(s) = σ(z) ∈ [0,1]` cannot represent a negative number **at all**, so
+> the critic would be fitted to a target outside its own range, and `V ≡ P(win)` would be false by a
+> known, state-dependent function. That identity is not decoration: it is the search leaf's contract
+> (`--score` collapses to `win_prob` on this critic, §3.10), the calibration gate's contract
+> (`win_prob/critic_resolution`, §4.3 G1), and the reason `--vf-coef` multiplies a BCE (§3.6).
+>
+> The amendment's own escape — *"recoverable at inference by adding φ back"* — is true of the
+> ARITHMETIC and false of the TRAINING: a sigmoid cannot be fitted to a target it cannot output, so
+> there is nothing to add back to.
+>
+> #### THE CONSTRUCTION: shape the ACTOR, leave the CRITIC alone
+>
+> §3.4 already separates the two: *"the critic's target and the advantage estimator are separate
+> choices, and this design changes only the first."* The frozen rung takes the same split one step
+> further and changes only the second.
+>
+> * the **CRITIC** trains on the UNSHAPED terminal indicator, exactly as it does today. Under
+>   `--critic winprob` its loss is the win-prob head's BCE against `win_target` — a Monte-Carlo
+>   outcome label carried in the obs dict, which never reads `rewards` at all. So `V` stays
+>   `P(win|s)` **bit-for-bit**, with or without the flag.
+> * the **POLICY's advantages** are computed from the shaped stream: GAE over `r + γφ(s′) − φ(s)`
+>   with the UNSHAPED `V` as the baseline.
+>
+> Both are structural rather than promised. `agents/training/frozen_phi.py` writes **only**
+> `rollout_buffer.advantages`; `rewards` and `returns` are restored to the values the collector
+> produced (by ASSIGNMENT from a snapshot — `(a+b)−b` is not `a` in float32), so the scalar-MSE
+> diagnostic `train/value_loss`, `train/explained_variance` and `value_scale_metrics` all read the
+> unshaped return.
+>
+> #### It is STILL potential-based shaping, and the guarantee is the STRONGER one
+>
+> Ng, Harada & Russell (1999): for a FIXED φ, adding `F = γφ(s′) − φ(s)` leaves the optimal policy
+> set unchanged, because over any trajectory the term telescopes —
+>
+> ```
+> Σ_{t=0}^{T-1} γ^t ( γφ(s_{t+1}) − φ(s_t) )  =  γ^T φ(s_T) − φ(s_0)  =  −φ(s_0)
+> ```
+>
+> with `φ(terminal) := 0`. The sum depends only on the endpoints, so it adds the same constant to
+> every policy's return from a given start state. Our φ is a checkpoint's win-prob head, loaded once
+> and never trained, so it **is** a fixed function of state — the theorem's hypothesis holds exactly,
+> which is the entire reason the frozen rung exists where route 1's live-head form does not get it.
+>
+> Restricting the term to the ADVANTAGE is a *restriction* of that transformation, not a departure
+> from it. At λ = 1 the identity is exact and per-row:
+>
+> ```
+> A′_t − A_t  =  Σ_{k≥0} γ^k ( γφ(s_{t+k+1}) − φ(s_{t+k}) )  =  γ^{T−t} φ(s_T) − φ(s_t)  =  −φ(s_t)
+> ```
+>
+> so the shaped advantage is the unshaped advantage minus a **function of the state alone** — a
+> state-dependent BASELINE, the textbook zero-bias modification of a policy gradient
+> (`E_a[∇log π(a|s)·b(s)] = 0` for any `b` not depending on `a`). At λ < 1 the sum is truncated
+> geometrically and the same argument applies to each partial sum. **The actor-only form therefore
+> inherits the invariance AND avoids the one thing the reward-stream form would have cost.**
+>
+> `φ(terminal) := 0` does double duty and both jobs matter: it is what makes the sum telescope to a
+> constant, and it is what stops the potential leaking OUTCOME information — a frozen head evaluated
+> at a terminal state could be read as a prediction of the result that state just revealed, so
+> forcing 0 makes the last transition's shaping `−φ(s_{T−1})`, a function of the state the agent
+> ACTED in. (The buffer-boundary TRUNCATION case is different and is NOT forced to 0; the conventions
+> are `winprob_pbrs.successor_potential`'s, IMPORTED rather than re-derived, so the two shaping paths
+> cannot drift on the one convention the theorem rests on.)
+>
+> #### THE COEFFICIENT IS 1.0, DERIVED — unchanged from the amendment
+>
+> Under this critic the terminal is the WIN INDICATOR at `--victory-value 1.0`, so the undiscounted
+> return is `1{win}` and `V(s) = P(win|s) ∈ [0,1]`. `φ = σ(win-prob logit)` is **already in that
+> currency** — one unit of φ is one unit of V — so the currency-matched coefficient is exactly 1.0.
+> Fixed internally, printed at startup, never a knob. The alternative currency gives the same answer
+> scaled (a ±1 terminal with `V = 2p − 1` needs 2), and that currency would additionally break
+> `φ(terminal) := 0`, which is the correct zero for a [0,1] potential and the MIDDLE of a [−1,+1] one.
+>
+> #### WHAT IT BUYS, AND WHAT IT COSTS — both, because only one of them is the pitch
+>
+> **BUYS: dense credit from a calibrated head.** The clean-world composition is 1 TERMINAL + 0 PBRS +
+> 0 BIAS, i.e. ~1 bit per ~40 decisions, and the SPARSE arm is the famine test of whether that is
+> learnable at all. A frozen mature φ scores every transition without changing the optimum — the
+> accelerant §3.3 deleted, restored in the one form whose invariance is exact.
+>
+> **COSTS: the frozen head's own biases become part of every advantage.** §4.1's committed baseline
+> measured this class of head at reliability ~0.002 against a resolution of 0.062 out of an available
+> 0.182 — already calibrated in the MEAN and **starved of SEPARATION**. A blurry potential is a WEAK
+> potential rather than a wrong one (a φ constant across a set of states contributes nothing over
+> that set and cannot mislead within it), so the failure mode is "the shaping does less than hoped",
+> not "the shaping teaches the wrong thing" — the invariance covers the second. But that resolution
+> starvation is now inside the policy gradient, and **a FROZEN-φ arm that beats SPARSE has measured
+> the value of THIS SPECIFIC HEAD's separation, not of dense credit in general.**
+>
+> #### The instruments
+>
+> | scalar | reads |
+> |---|---|
+> | `pbrs/frozen_phi_mean` | φ over the buffer. **Must be FLAT across rollouts** — φ is a fixed function of state, so a wandering mean means the frozen source is not the thing being read (the runbook §4.2 check, which measured frozen `0.403 → 0.391 → 0.391` against live-φ's `0.680 → 0.347 → 0.216`) |
+> | `pbrs/frozen_phi_episode_dose` | the per-episode discounted shaping budget ÷ the terminal magnitude — "the shaping is worth X% of a win". Denominator is a CONSTANT, so it survives a terminal-only stream |
+> | `signal/adv_shaped_minus_unshaped_mean` | the TELESCOPING TERM the policy gradient gained. At λ=1 on complete episodes it is exactly `−coef·mean(φ)`, so reading it beside `pbrs/frozen_phi_mean` audits the terminal convention on real episodes |
+> | `pbrs/frozen_phi_coef` · `_shaping_mean` · `_shaping_absmean` · `_episode_dose_n` | the coefficient in force, the term's magnitude, and how many complete episodes the dose averaged |
+>
+> The launch command is **§5.4**, beside the SPARSE one.
+
+
 ### 3.8 `value_dist_head` — delete, or re-parameterize over P(win)?
 
 **RECOMMEND: DELETE the head and its whole flag family. Do NOT re-parameterize it over P(win).**
@@ -988,6 +1112,78 @@ python -m main.launcher \
 > worse means the critic is swamping the policy on the shared trunk** — cut `--vf-coef` by that
 > factor — while a ratio far below 1 means the critic is starved. Past the first reading, steer by
 > `grad/value_policy_logratio` (0 = balanced), which is the same question asked every rollout.
+>
+> ### THE FROZEN-φ ARM — `ai_v12_03_winprob_frozenphi` (`gen3_frozen_phi_actor_only_v1`)
+>
+> The successor arm, ready to launch rather than ready to design. **Same argv as the SPARSE arm
+> above, plus one flag** — that is the experiment: the ladder's `FROZEN − SPARSE` contrast is only a
+> measurement of the potential if nothing else moves, and a hand-retyped 19-flag command cannot be
+> audited for that.
+>
+> ```bash
+> export PYTHONPATH=$PYTHONPATH:src
+> python -m main.launcher \
+>   --run-name ai_v12_03_winprob_frozenphi \
+>   --restart-interval-hours 3 \
+>   --steps 75000000 \
+>   --n-envs 64 --batch-size 16384 --grad-accum-steps 4 --n-epochs 10 \
+>   --n-steps 2048 --lr 0.0003 --ent-coef 0.02 \
+>   --device cuda --log-level periodic \
+>   \
+>   --critic winprob \
+>   --no-hand-shaping --terminal-indicator \
+>   --victory-value 1.0 --draw-penalty 0 \
+>   --vf-coef 0.5 \
+>   --self-play \
+>   \
+>   --win-prob-pbrs-frozen models/ai_v9_59_R2ACTION_0827
+> ```
+>
+> **The source is a bare RUN DIRECTORY, deliberately, and that resolves to the run's LAST
+> SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) rather than to the bot-win-rate `best_model`
+> export. `ai_v9_59_R2ACTION_0827` is §4.1's own baseline checkpoint — the head whose reliability
+> and resolution this design's gate is registered against — so the arm's potential and its bar come
+> from the same weights. The startup line PRINTS the resolved file, its step and the rung, so the
+> identity is pinned in the log rather than inferred from the path. To pin a specific file instead,
+> name the `.zip` or use `<run>@<step>`; both bypass the ladder verbatim.
+>
+> **Validated 2026-09-06**, in the order this section requires: `python -m main.checkargs --argv "…"`
+> reports **19 flags accepted, 0 unrecognized, ✓ this command still launches**, then
+> `python -m main.launcher --dry-run …` resolves the real launch — **role FRESH, run dir
+> `models/ai_v12_03_winprob_frozenphi` [would be created], transport rust, restarts every 3.0 h,
+> `✓ DRY RUN — this command would launch`** — and exits without creating a run dir, a worktree or a
+> child. Reach for `--dry-run` rather than "launch it and Ctrl-C after the banner": that habit is
+> harmless on a fresh run and DESTRUCTIVE on a restart.
+>
+> #### THE PRE-REGISTERED READ — the SPARSE arm's gate, plus one comparator
+>
+> **Everything in §5.5 applies unchanged**, and it runs as the same one command:
+> `python -m main.critic_gate models/ai_v12_03_winprob_frozenphi --parent <ref> --control <refs…>`.
+> The G1 resolution bar, G7's stall kill condition, the ladder at matched SNAPSHOT COUNT and the
+> untaught meter with its continuation control are all the same instruments against the same bars —
+> a successor arm that moved its own gate would be measuring itself.
+>
+> **The one addition is the FAMINE PRE-TEST comparator**: this arm launches ONLY IF the SPARSE arm's
+> pre-registered kill rule fires at ~5M (it has not fired as of this writing), so the question it answers is *"does a frozen calibrated
+> potential rescue the terminal-only recipe?"* and the comparator is **the SPARSE arm's own first
+> 5M, at matched snapshot count**. Matched COUNT and not matched STEP, for §5.5's reason: anchored
+> BT re-solves every rating on every add and the newest node is systematically inflated, so a live
+> node against a finished run's final value reads the drift and nothing else.
+>
+> ⚠️ **What a pass would and would not license.** The arm is `FROZEN − SPARSE` on the runbook's
+> ladder, so a win says *outcome-grounded shaping is worth something at this dose*. It does NOT
+> isolate maturity from exact-vs-approximate invariance — that is `FROZEN − SELF`, and the SELF-φ
+> rung is REFUSED under this critic (§3.7's double counting), so the ladder's middle rung does not
+> exist here. Nor does it separate "dense credit helps" from "this particular head's separation
+> helps": §4.1 measured this head starved of resolution, so a null is as consistent with a blurry
+> potential as with dense credit being worthless, and the section above says so before the data.
+>
+> **The instruments to read in the launch window**, before any of the above:
+> `pbrs/frozen_phi_mean` must be **FLAT** across rollouts (a wandering mean means the frozen source
+> is not the thing being read — the runbook §4.2 check), `pbrs/frozen_phi_episode_dose` prices the
+> shaping against one win, and `signal/adv_shaped_minus_unshaped_mean` should read ≈ `−1.0 ×`
+> `pbrs/frozen_phi_mean` (exactly, at λ = 1 on complete episodes).
+
 **Status of this command, measured 2026-09-06.** Everything above **except `--gamma 1.0`
 validates today** — `python -m main.checkargs --argv "…"` accepts all 18 remaining flags and prints
 `✓ this command still launches`. Two things stand between that and the design:
