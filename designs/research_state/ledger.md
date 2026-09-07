@@ -11804,3 +11804,45 @@ zero. Any later quotation of "+2.6 to +3.4pp" that omits this is overstating the
 **The asymmetry itself is the finding worth carrying:** ordinary continued training improves the
 teams in the taught slice while doing nothing measurable for the untaught 8. Whatever a fold adds
 on-slice, part of what was previously credited to it was available from training alone.
+
+### 2026-09-06 · OOM — the win-prob arm's batch correction is **2048×32**, not 4096×16; the earlier figure was measured on a STRIPPED arm
+
+`ai_v12_02_winprob_critic` died at **iteration 1 (98,304 steps)** with
+`torch.OutOfMemoryError: Tried to allocate 234.00 MiB. GPU 0 has 11.63 GiB of which 241.50 MiB is
+free`, inside `grad_balance_metrics` (a `retain_graph` backward on the compiled trainer). The
+allocation named in the traceback is the tell:
+
+```
+buf581 = empty_strided_cuda((s0, 4, 61, 61), (14884, 3721, 61, 1), torch.float32)
+```
+
+— the **edge-bias attention** tensor, 4 heads × 61 × 61 per sample.
+
+**⚠️ THIS CORRECTS AN EARLIER LEDGER LINE.** The launch entry (`3babe6f9`) records the §5.4 batch
+correction as **4096×16**, verified in flight at "4,723 MiB / 92% GPU — 16384 would not have fit".
+**That verification was performed on `ai_v12_01`, which had a STRIPPED ARCHITECTURE** (`81016942`:
+edges off, seats 0, belief slots off, event window off, intent heads off). An architecture with no
+edge-bias families never allocates the `(batch, 4, 61, 61)` tensor at all, so the memory headroom it
+demonstrated was headroom for a different model. **The correction for the FULL production
+architecture is `--batch-size 2048 --grad-accum-steps 32`.**
+
+| | effective batch | micro-batches/epoch | optimizer steps/epoch | fits the full arch |
+|---|---|---|---|---|
+| 16384 × 4 (design §5.4) | 65,536 | 8 | 2 | no |
+| 4096 × 16 (first correction) | 65,536 | 32 | 2 | **no — OOM at iteration 1** |
+| **2048 × 32** | **65,536** | 64 | **2** | **yes** |
+
+All three are the same effective batch and the same two optimizer steps per epoch, and by the
+`--grad-accum-steps` contract the same exact gradient; only the activation peak differs. **2048 is
+what every full-architecture run on this box uses** — `TCUNFA` (2048×3), `gen17_pfspoff` (2048×8),
+`rev1_0823` (2048×8), all with the full edge string.
+
+**The durable lesson, and it is the same shape as the incident above it:** a resource measurement
+taken on one configuration does not transfer to another, and *"I saw it fit"* is only evidence about
+the model that was actually running. The stripped arm made 4096 look proven. The evidence to prefer
+was already on disk — three full-architecture production runs, all at 2048 — and it was reachable
+before the launch rather than after.
+
+Evidence preserved at `models/ai_v12_02_winprob_critic.OOM_4096` (0 checkpoints, crash report
+`restart_err_20260906_202125_7e4a4c.txt`). Relaunched 20:27 at 2048×32 with the architecture gate
+re-run: **49 derived toggles vs production, 0 differing.**
