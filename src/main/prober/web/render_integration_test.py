@@ -142,9 +142,83 @@ DESKTOP = (1280, 900)
 
 _CHROME_TIMEOUT = 180.0     # generous on an idle box; scaled at CALL time when it is not
 
+# 🚨 QUIET IS DECIDED ON THE RAW LOAD RATIO, NOT ON `cpu_contention_factor`.
+#
+# `cpu_contention_factor` is a SCALING metric and is clamped to a floor of 1.0 — by construction it
+# cannot tell a half-loaded box from an idle one, because both scale by 1.0. Using it as a
+# CLASSIFIER is the mistake this constant exists to record: measured 2026-09-06 at load 12.89 on 16
+# cores, with chrome unable to render a page inside 180 s, the factor read exactly **1.0** — so a
+# 1.05 "quiet" bar called an 80%-utilised box idle and turned every starvation timeout into a hard
+# FAILURE. That is strictly worse than the raw `TimeoutExpired` it replaced.
+#
+# The raw ratio has no floor and separates the cases: 3.89/16 = 0.24 (genuinely idle) vs
+# 12.89/16 = 0.81 (a live trainer). The bar sits at 0.5 — half the cores actually free — which is
+# well clear of both.
+_QUIET_LOAD = 0.5
+
+
+def _load_ratio() -> float:
+    """1-minute load average per available CPU, UNFLOORED. See `_QUIET_LOAD`."""
+    try:
+        return os.getloadavg()[0] / max(1, len(os.sched_getaffinity(0)))
+    except (OSError, AttributeError):       # not Linux / no affinity — assume busy, never idle
+        return 1.0
+
 
 def _dump_dom(binary: str, url: str, *, budget_ms: int = 20000, size=DESKTOP,
               dark: bool = False) -> str:
+    """Render `url` in headless chrome and return the DOM.
+
+    🚨 **A TIMEOUT IS NEVER A SEMANTIC OUTCOME** (root CLAUDE.md → *Running beside a live training
+    run*), and until 2026-09-06 this function broke that rule: a starved chrome raised
+    `TimeoutExpired`, pytest recorded a FAILURE, and a load average was reported as a rendering
+    bug. Measured on the win-prob-era landing: three failures at load 36.8/16 cores, every one a
+    timeout and not one a layout assertion — and on a re-run the failing SET MOVED (`/` passed,
+    then failed, on identical code), which is the signature no real regression has.
+
+    So a timeout now gets its own bucket, and the quiet/busy asymmetry decides what it means:
+
+    * **quiet box** (`_load_ratio()` < `_QUIET_LOAD`) — RETRY once, then a hard FAILURE. A page
+      that cannot render in 180 s on an idle machine is genuinely broken, and softening that would
+      gut the gate this file exists to be. The bound is deliberately NOT inflated to paper over
+      starvation either: *scaling does not rescue a cap*, because a starved subprocess slows by a
+      multiple of `loadavg / cpus`, so a bigger constant only buys a confidently-reported wrong
+      answer later.
+    * **contended box** — SKIP immediately, loudly, with `describe_contention()`. The run is
+      INCONCLUSIVE about this page, which is a different claim from "this page is broken" and must
+      read differently.
+
+    ⚠️ **The retry is QUIET-ONLY, and that asymmetry is measured rather than tidy.** On an idle box
+    the cheapest explanation for one timeout is a lost scheduling race, so a second attempt is
+    worth 180 s. On a busy box the first timeout is already the answer, and retrying only doubles
+    the slow path — which is not hypothetical: a two-attempt-everywhere draft turned a 45-test tier
+    into 7 tests in 50 minutes and was killed mid-line by its own wrapper, destroying the pytest
+    summary and every failure message with it.
+    """
+    quiet = _load_ratio() < _QUIET_LOAD
+    attempts = 2 if quiet else 1
+    last: "subprocess.TimeoutExpired | None" = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return _run_chrome(binary, url, budget_ms=budget_ms, size=size, dark=dark)
+        except subprocess.TimeoutExpired as e:
+            last = e
+    ratio = _load_ratio()
+    waited = getattr(last, "timeout", None) or 0.0
+    detail = (f"headless chrome did not return within {waited:.0f}s "
+              f"on {attempts} attempt(s) for {url}")
+    if ratio < _QUIET_LOAD:
+        raise AssertionError(
+            f"{detail} — and THE BOX WAS QUIET (load/cpu {ratio:.2f} < {_QUIET_LOAD}), so this is a "
+            f"real rendering failure, not starvation.\n    {describe_contention()}")
+    pytest.skip(
+        f"INCONCLUSIVE (not a failure): {detail}. The box is BUSY (load/cpu {ratio:.2f}), and a "
+        f"timeout is never a semantic outcome — this says nothing about the page.\n"
+        f"    {describe_contention()}\n    Re-run on a quiet box for a verdict; below "
+        f"load/cpu {_QUIET_LOAD} a timeout here FAILS.")
+
+
+def _run_chrome(binary: str, url: str, *, budget_ms: int, size, dark: bool) -> str:
     # The wall-clock bound is SCALED by measured CPU contention, per the project's timeout
     # doctrine (root CLAUDE.md → "Running beside a live training run"). A chrome run that takes
     # ~25s on an idle box takes several times that beside a live trainer, and a raw 180s constant

@@ -720,6 +720,47 @@ Two things bite that are not obvious:
   `scrollingwrappers` — the last distinguishing "the table fits" from "the wrapper is not
   constraining it and the page is absorbing the width".
 
+### A CHROME TIMEOUT IS NEVER A SEMANTIC OUTCOME
+
+`_dump_dom` used to let a starved chrome raise `TimeoutExpired`, which pytest recorded as a
+FAILURE — a load average reported as a rendering bug, and the exact rule the root `CLAUDE.md`
+timeout doctrine exists to enforce. Measured on the win-prob-era landing (2026-09-06): **three
+failures at load 36.8 on 16 cores, every one a timeout and not one a layout assertion**, and on a
+re-run the failing SET MOVED (`/` passed, then failed, on identical code) — the signature no real
+regression has.
+
+A timeout now gets its own bucket, and the quiet/busy asymmetry decides what it means:
+
+| box | a timeout means | why |
+|---|---|---|
+| **quiet** (`_load_ratio()` < `_QUIET_LOAD` = **0.5**) | retry once, then hard **FAILURE** | a page that cannot render in 180 s on an idle machine is broken, and bucketing every timeout as "busy" would quietly delete this gate |
+| **busy** | **SKIP** immediately, loudly, with `describe_contention()` | INCONCLUSIVE about the page — a different claim from "broken", and it must read differently |
+
+🚨 **QUIET IS THE RAW LOAD RATIO, NOT `cpu_contention_factor`** — and getting that wrong is the
+defect this section records, because the first version of this fix shipped it. That factor is a
+SCALING metric clamped to a floor of **1.0**, so by construction it cannot tell a half-loaded box
+from an idle one. Measured 2026-09-06 at **load 12.89 on 16 cores**, chrome unable to render inside
+180 s: the factor read exactly **1.0**, so a 1.05 "quiet" bar called an 80%-utilised box idle and
+turned every starvation timeout into a hard FAILURE — *strictly worse than the raw
+`TimeoutExpired`* it replaced. The unfloored ratio separates the cases cleanly: 3.89/16 = 0.24
+(idle) vs 12.89/16 = 0.81 (a live trainer), with the bar at 0.5.
+
+⚠️ **The retry is QUIET-ONLY.** On an idle box a second attempt is worth 180 s; on a busy box the
+first timeout is already the answer, and retrying only doubles the slow path. Also measured: a
+two-attempt-everywhere draft turned the 45-test tier into **7 tests in 50 minutes** and was killed
+mid-line by its own wrapper, destroying the pytest summary and every failure message with it.
+
+⚠️ **The bound was deliberately NOT inflated.** *Scaling does not rescue a cap* — a starved
+subprocess slows by a multiple of `loadavg / cpus`, so a bigger constant only buys a
+confidently-reported wrong answer later.
+
+The asymmetry is pinned in **`app_test.py`** (unmarked, stubbed chrome, milliseconds) rather than
+beside the browser tests it guards — the rule needs no browser, and a guard that only runs inside a
+24-minute tier is one nobody sees fail. Four cases: the retry, busy⇒skip, **quiet⇒still fails**,
+and that the quiet bar is not the looks-idle bar. ⚠️ `Skipped` derives from `BaseException`, so
+`pytest.raises(Exception)` does NOT catch it — a test written that way skips itself while looking
+like it asserted something (which is exactly what the first draft of these did).
+
 **Headless chrome clamps its window to 500px wide** — `--window-size=390,844` silently renders a
 500px page (measured, both `--headless` and `--headless=new`). So the narrow case is **500×900**,
 labelled as such rather than claiming an iPhone width it is not testing; the 720px breakpoint sits

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import time
 
 import pytest
@@ -2373,3 +2374,126 @@ def test_an_EMPTY_curve_never_reports_an_unreachable_threshold():
     wp = {"mode": "winprob", "units": "P(win)", "span": 1.0}
     assert _unreachable_threshold_warning(5.0, wp, []) is None
     assert _unreachable_threshold_warning(5.0, wp, [{"gap": None}]) is None
+
+
+# ---------------------------------------------------------------------------
+# A CHROME TIMEOUT IS NEVER A SEMANTIC OUTCOME (render_integration_test._dump_dom)
+#
+# These live HERE, unmarked, rather than beside the browser tests they guard: the rule is about
+# what a starved run MEANS, it needs no browser to check, and a guard that only runs in a 24-minute
+# tier is a guard nobody sees fail. They stub the chrome call, so they cost milliseconds.
+# ---------------------------------------------------------------------------
+
+
+def _timeout_after(n_failures):
+    """A fake `_run_chrome` that raises TimeoutExpired for the first `n_failures` calls."""
+    calls = {"n": 0}
+
+    def fake(*_a, **_k):
+        calls["n"] += 1
+        if calls["n"] <= n_failures:
+            raise subprocess.TimeoutExpired(cmd=["chrome"], timeout=397.0)
+        return "<body data-ready='1'></body>"
+    return fake, calls
+
+
+def _render_module():
+    from main.prober.web import render_integration_test as rit
+    return rit
+
+
+def test_a_transient_chrome_timeout_is_RETRIED_before_anything_is_concluded(monkeypatch):
+    """The cheapest explanation for one timeout is a lost scheduling race, not a wedge. Retrying
+    once turns a blip into a pass instead of into a verdict about the page."""
+    rit = _render_module()
+    fake, calls = _timeout_after(1)          # first attempt times out, second succeeds
+    monkeypatch.setattr(rit, "_run_chrome", fake)
+    monkeypatch.setattr(rit, "_load_ratio", lambda: 0.1)      # idle: a blip is the likely cause
+    dom = rit._dump_dom("chrome", "http://127.0.0.1:1/scan")
+    assert "data-ready" in dom
+    assert calls["n"] == 2, "on an IDLE box the first timeout must be retried, not reported"
+
+
+def test_a_timeout_on_a_BUSY_box_is_INCONCLUSIVE_never_a_failure(monkeypatch):
+    """The defect this replaces: three win-prob-era failures at load 36.8/16 cores, every one a
+    timeout and not one a layout assertion — a load average reported as a rendering bug."""
+    rit = _render_module()
+    fake, _ = _timeout_after(99)
+    monkeypatch.setattr(rit, "_run_chrome", fake)
+    monkeypatch.setattr(rit, "_load_ratio", lambda: 0.81)     # the MEASURED live-trainer band
+    # `Skipped` derives from BaseException, NOT Exception — `pytest.raises(Exception)` does not
+    # catch it, and a test written that way SKIPS ITSELF while looking like it asserted something.
+    with pytest.raises(pytest.skip.Exception) as ei:
+        rit._dump_dom("chrome", "http://127.0.0.1:1/scan")
+    assert "INCONCLUSIVE" in str(ei.value)
+
+
+def test_a_timeout_on_a_QUIET_box_STILL_FAILS(monkeypatch):
+    """THE HALF THAT MAKES THE GUARD WORTH HAVING. Bucketing every timeout as "the box was busy"
+    would quietly delete this gate — a page that cannot render in 180s on an idle machine is
+    broken, and must still say so."""
+    rit = _render_module()
+    fake, _ = _timeout_after(99)
+    monkeypatch.setattr(rit, "_run_chrome", fake)
+    monkeypatch.setattr(rit, "_load_ratio", lambda: 0.1)
+    with pytest.raises(AssertionError, match="THE BOX WAS QUIET"):
+        rit._dump_dom("chrome", "http://127.0.0.1:1/scan")
+
+
+def test_quiet_is_the_RAW_load_ratio_not_the_floored_contention_factor(monkeypatch):
+    """THE BUG THIS REPLACES. `cpu_contention_factor` is a SCALING metric clamped to a floor of
+    1.0, so it CANNOT distinguish a half-loaded box from an idle one. Measured 2026-09-06: at load
+    12.89 on 16 cores, with chrome unable to render inside 180 s, that factor read exactly 1.0 — so
+    a factor-based "quiet" bar called an 80%-utilised box idle and turned every starvation timeout
+    into a hard FAILURE, strictly worse than the raw TimeoutExpired it replaced."""
+    rit = _render_module()
+    from utils.contention import cpu_contention_factor          # noqa: F401 — the contrast IS the test
+    fake, _ = _timeout_after(99)
+    monkeypatch.setattr(rit, "_run_chrome", fake)
+    # 12.89/16 — the load the defect was measured at. The floored factor says 1.0 ("idle"); the
+    # raw ratio says 0.81, and only the raw one gets this right.
+    monkeypatch.setattr(rit, "_load_ratio", lambda: 12.89 / 16)
+    with pytest.raises(pytest.skip.Exception):
+        rit._dump_dom("chrome", "http://127.0.0.1:1/scan")
+
+
+def test_the_retry_is_QUIET_ONLY_so_a_busy_tier_does_not_double_its_slow_path(monkeypatch):
+    """A two-attempt-everywhere draft turned a 45-test tier into 7 tests in 50 minutes and was
+    killed mid-line by its own wrapper, destroying the pytest summary and every failure message.
+    On a busy box the FIRST timeout is already the answer."""
+    rit = _render_module()
+    fake, calls = _timeout_after(99)
+    monkeypatch.setattr(rit, "_run_chrome", fake)
+    monkeypatch.setattr(rit, "_load_ratio", lambda: 0.81)
+    with pytest.raises(pytest.skip.Exception):
+        rit._dump_dom("chrome", "http://127.0.0.1:1/scan")
+    assert calls["n"] == 1, f"a busy box must not retry; chrome ran {calls['n']}x"
+
+
+def test_a_healthy_render_passes_straight_through_the_retry_wrapper(monkeypatch):
+    """The SUCCESS path, pinned without a browser.
+
+    `_dump_dom` was split into a retry/bucket wrapper plus `_run_chrome` (the original chrome
+    invocation, extracted byte-for-byte). The risk of that refactor is not the timeout branch the
+    other tests cover — it is that the ordinary path grows a wrapper that drops, mangles or
+    re-attempts a perfectly good render. So: one call, returned verbatim, no retry.
+
+    This is deliberately a UNIT test. The end-to-end version needs headless chrome and a quiet box,
+    and this machine carries a trainer — three attempts to confirm it live were killed by wrapper
+    limits at loads from 6 to 25 on 16 cores. A stubbed check that always runs beats an
+    end-to-end one that never completes.
+    """
+    rit = _render_module()
+    calls = {"n": 0}
+
+    def ok(*_a, **_k):
+        calls["n"] += 1
+        return "<body data-ready='1' data-charts='2'></body>"
+
+    monkeypatch.setattr(rit, "_run_chrome", ok)
+    for ratio in (0.1, 0.9):           # idle and busy alike — success is success
+        calls["n"] = 0
+        monkeypatch.setattr(rit, "_load_ratio", lambda r=ratio: r)
+        dom = rit._dump_dom("chrome", "http://127.0.0.1:1/")
+        assert dom == "<body data-ready='1' data-charts='2'></body>"
+        assert calls["n"] == 1, "a successful render must not be retried"
