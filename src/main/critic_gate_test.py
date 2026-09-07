@@ -829,3 +829,64 @@ def test_the_famine_sentence_says_LEADS_or_TRAILS_never_a_signed_trail_alone(tre
                             None, 38.0, "test")
     assert fam["direction"] == expect and expect in fam["sentence"]
     assert ("EXCEEDS" in fam["sentence"]) == fam["exceeds_floor"]
+
+
+# ------------------------------------------ G7 reads episode length from TensorBoard (2026-09-07)
+
+def _write_tb_ep_len(run_dir: str, rows):
+    """``rows`` = [(step, ep_bots, ep_pool_or_None)] as the eval callback logs them."""
+    from torch.utils.tensorboard import SummaryWriter
+    w = SummaryWriter(os.path.join(run_dir, "tb"))
+    for step, bots, pool in rows:
+        w.add_scalar("eval/mean_ep_len_vs_bots", bots, step)
+        if pool is not None:
+            w.add_scalar("eval/mean_ep_len_vs_pool", pool, step)
+    w.close()
+
+
+def test_G7_fills_a_cycle_the_metadata_blocks_missed_from_tensorboard(tree):
+    """The 10M/14M shape: a checkpoint cadence that never captured those cycles' eval."""
+    arm = tree["arm"]
+    _write_tb_ep_len(arm, [(1_000_000, 18.0, None), (1_500_000, 18.4, 29.5),
+                           (2_000_000, 18.2, 29.0)])
+    sec = cg.kill_section(cg._resolve_ref(arm, what="run"),
+                          cg._resolve_ref(tree["parent"], what="parent"),
+                          stall_turns=250, max_stall_rate=0.05, max_ep_len_ratio=1.25)
+    by_step = {c["step"]: c for c in sec["cycles"]}
+    assert 1_500_000 in by_step, "the cycle no metadata block captured must come from TB"
+    mid = by_step[1_500_000]
+    assert mid["ep_len_bots"] == pytest.approx(18.4) and mid["ep_len_pool"] == pytest.approx(29.5)
+    assert mid["ep_len_source"] == "tb:eval/mean_ep_len_vs_{bots,pool}"
+    assert mid["ep_len_evaluable"] and mid["verdict"] == "OK"
+    assert sec["ep_len_not_evaluable_steps"] == []
+
+
+def test_G7_names_a_blank_episode_length_NOT_EVALUABLE_instead_of_OK(tree, tmp_path):
+    """A step with a stall reading but no recorded episode length is not an OK row."""
+    arm = tree["arm"]
+    meta_path = os.path.join(arm, "metadata.json")
+    with open(meta_path) as fh:
+        meta = json.load(fh)
+    # drop every recorded episode length: the shape a blank cycle has
+    meta["latest_eval"].pop("mean_ep_len_vs_bots", None)
+    meta["latest_eval"].pop("pool", None)
+    for entry in meta.get("snapshot_history", {}).values():
+        entry.get("latest_eval", {}).pop("mean_ep_len_vs_bots", None)
+        entry.get("latest_eval", {}).pop("pool", None)
+    with open(meta_path, "w") as fh:
+        json.dump(meta, fh)
+    sec = cg.kill_section(cg._resolve_ref(arm, what="run"),
+                          cg._resolve_ref(tree["parent"], what="parent"),
+                          stall_turns=250, max_stall_rate=0.05, max_ep_len_ratio=1.25)
+    assert sec["kill"] is False
+    assert sec["ep_len_not_evaluable_steps"], "every step lost its episode length"
+    for c in sec["cycles"]:
+        assert c["ep_len_evaluable"] is False
+        assert "NOT EVALUABLE" in c["verdict"] and c["verdict"] != "OK"
+    # and the RENDERED report says so, in both renderings, on the real path
+    out_json, out_md = str(tmp_path / "g7.json"), str(tmp_path / "g7.md")
+    cg.main(_run(tree, "--json", out_json, "--md", out_md))
+    md = open(out_md).read()
+    assert "NOT EVALUABLE" in md and "| OK |" not in md.split("## 3. G7")[1].split("## 4")[0]
+    doc = json.load(open(out_json))
+    assert doc["kill"]["ep_len_not_evaluable_steps"] == [c["step"] for c in sec["cycles"]]

@@ -187,7 +187,7 @@ def render_markdown(doc: Dict[str, Any]) -> str:
             out.append(f"| {c['step']:,} | {_f(c['stall_rate_captured'])} | "
                        f"{_f(c['mean_turns_captured'], '.1f')} | {_f(c['ep_len_bots'], '.2f')} | "
                        f"{_f(c['ep_len_pool'], '.2f')} | "
-                       f"{'**KILL** — ' + '; '.join(c['breaches']) if c['kill'] else 'OK'} |")
+                       f"{('**' + c['verdict'] + '**') if c['kill'] else c['verdict']} |")
         out.append("")
         out.append(f"_{k['sources']['stall_rate']}_")
     else:
@@ -332,7 +332,7 @@ def render_text(doc: Dict[str, Any]) -> str:
             out.append(f"    {c['step']:>12,}{_f(c['stall_rate_captured']):>12}"
                        f"{_f(c['mean_turns_captured'], '.1f'):>12}"
                        f"{_f(c['ep_len_bots'], '.2f'):>9}{_f(c['ep_len_pool'], '.2f'):>9}  "
-                       + ("KILL — " + "; ".join(c["breaches"]) if c["kill"] else "OK"))
+                       + c["verdict"])
         out.append(f"    stall rate source: {k['sources']['stall_rate']}")
     else:
         out.append("    not read")

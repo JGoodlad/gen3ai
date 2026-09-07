@@ -686,15 +686,51 @@ def calibration_section(run_dir: str, baseline: Dict[str, Any], *, bins: int, bo
 
 # --------------------------------------------------------------------------- (3) the kill
 
+def _tb_ep_len(run_dir: str) -> Dict[int, Dict[str, Any]]:
+    """``{step: {ep_len_bots, ep_len_pool, source}}`` from the run's TensorBoard scalars
+    ``eval/mean_ep_len_vs_bots`` / ``eval/mean_ep_len_vs_pool`` — the ONE per-cycle, append-only
+    record of episode length. Empty when there is no event file or no tensorboard."""
+    out: Dict[int, Dict[str, Any]] = {}
+    try:
+        from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+    except ImportError:
+        return out
+    import glob
+    files = sorted(glob.glob(os.path.join(run_dir, "tb", "**", "events.out.tfevents.*"),
+                             recursive=True), key=os.path.getmtime)
+    tags = {"eval/mean_ep_len_vs_bots": "ep_len_bots", "eval/mean_ep_len_vs_pool": "ep_len_pool"}
+    for f in files:
+        try:
+            acc = EventAccumulator(f, size_guidance={"scalars": 0})
+            acc.Reload()
+            present = set(acc.Tags().get("scalars", []))
+        except Exception:  # noqa: BLE001 — a corrupt event file is skipped, never a zero
+            continue
+        for tag, key in tags.items():
+            if tag not in present:
+                continue
+            for ev in acc.Scalars(tag):
+                row = out.setdefault(int(ev.step), {"ep_len_bots": None, "ep_len_pool": None,
+                                                   "source": f"tb:{tag.split('/')[1]}"})
+                row[key] = float(ev.value)
+                row["source"] = "tb:eval/mean_ep_len_vs_{bots,pool}"
+    return out
+
+
 def _recorded_ep_len(run_dir: str) -> Dict[int, Dict[str, Any]]:
     """``{step: {ep_len_bots, ep_len_pool, source}}`` from the run's OWN recorded eval metrics.
 
-    The FULL-cycle number, not a quota statistic: ``mean_ep_len_vs_bots`` and ``pool.mean_ep_len``
-    are written per eval cycle into ``metadata.json`` (top-level ``latest_eval``, plus every
-    ``snapshot_history[*].latest_eval``). ``eval_results.jsonl`` does **not** carry episode length
-    — it is read for the cycle inventory only, which is why both files are consulted and named.
+    The FULL-cycle number, not a quota statistic. **TensorBoard is the primary source**
+    (`_tb_ep_len`: ``eval/mean_ep_len_vs_bots`` / ``_vs_pool`` are logged EVERY cycle); the
+    ``metadata.json`` blocks (top-level ``latest_eval``, plus every
+    ``snapshot_history[*].latest_eval``) fill only the steps TensorBoard lacks. Measured
+    2026-09-07 on `ai_v12_02_winprob_critic`: the metadata blocks are keyed by CHECKPOINT and a
+    checkpoint captures whichever eval was latest when it was saved, so at a 2.4M checkpoint
+    cadence against a 2M eval cadence the 10M and 14M cycles landed in NO block and G7 printed
+    them blank — while every one of them was on TensorBoard. ``eval_results.jsonl`` does **not**
+    carry episode length; it is read for the cycle inventory only.
     """
-    out: Dict[int, Dict[str, Any]] = {}
+    out: Dict[int, Dict[str, Any]] = dict(_tb_ep_len(run_dir))
     meta_path = os.path.join(run_dir, "metadata.json")
     if not os.path.exists(meta_path):
         return out
@@ -718,6 +754,10 @@ def _recorded_ep_len(run_dir: str) -> Dict[int, Dict[str, Any]]:
         if not isinstance(step, (int, float)):
             continue
         pool = blk.get("pool") if isinstance(blk.get("pool"), dict) else {}
+        have = out.get(int(step))
+        if have and have.get("ep_len_bots") is not None:
+            have.setdefault("win_rate_vs_bots", blk.get("win_rate_vs_bots"))
+            continue                                    # TensorBoard already has this cycle
         out[int(step)] = {"ep_len_bots": blk.get("mean_ep_len_vs_bots"),
                           "ep_len_pool": (pool or {}).get("mean_ep_len"),
                           "win_rate_vs_bots": blk.get("win_rate_vs_bots"),
@@ -814,6 +854,14 @@ def kill_section(run: Dict[str, Any], parent: Dict[str, Any], *, stall_turns: in
                                     f"(> {max_ep_len_ratio:.2f})")
         row["breaches"] = breaches
         row["kill"] = bool(breaches)
+        # A blank episode length is NOT an OK: the ep_len half of G7 was not evaluated at this
+        # step, and a row that prints OK on a blank would let the half silently stop existing.
+        row["ep_len_evaluable"] = any(isinstance(row[k], (int, float))
+                                      for k in ("ep_len_bots", "ep_len_pool"))
+        row["verdict"] = ("KILL — " + "; ".join(breaches) if breaches else
+                          "OK" if row["ep_len_evaluable"] else
+                          "OK on stall rate; ep_len NOT EVALUABLE (no recorded episode length "
+                          "at this step)")
         cycles.append(row)
 
     return {
@@ -826,9 +874,12 @@ def kill_section(run: Dict[str, Any], parent: Dict[str, Any], *, stall_turns: in
         "kill": any(c["kill"] for c in cycles),
         "measured": any(c["stall_rate_captured"] is not None or c["ep_len_bots"] is not None
                         for c in cycles),
+        "ep_len_not_evaluable_steps": [c["step"] for c in cycles if not c["ep_len_evaluable"]],
         "sources": {
-            "episode_length": "metadata.json latest_eval / snapshot_history[*].latest_eval "
-                              "(mean_ep_len_vs_bots, pool.mean_ep_len) — the FULL cycle",
+            "episode_length": "TensorBoard eval/mean_ep_len_vs_{bots,pool} (every cycle), then "
+                              "metadata.json latest_eval / snapshot_history[*].latest_eval "
+                              "(mean_ep_len_vs_bots, pool.mean_ep_len) for steps TB lacks — the "
+                              "FULL cycle, never the capture quota",
             "stall_rate": "the captured eval traces' per-battle summary meta.turns / meta.result "
                           "— the CAPTURE QUOTA, which is loss-enriched by design "
                           "(agents.training.trace_selection), so read it as an upper-ish bound, "

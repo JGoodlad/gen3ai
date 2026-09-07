@@ -1498,7 +1498,7 @@ values of one quantity start disagreeing.
 |---|---|---|
 | 1 ladder | reads both `snapshot_ladder/ladder.json` and compares at **matched SNAPSHOT COUNT** (never matched step); a side with MORE rated nodes than the count is **REFIT on its first n** (`fit_ladder(first_n=…)`, strict prefix) so the fit SIZE matches too, else the delta is labelled **UNMATCHED FIT SIZE**; prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix when the counts differ |
 | 2 calibration | §4.3 G1–G4 per checkpoint, `bot`/`pool` **separately**, selection-reweighted | `main.scaffolding_gauge`'s `collect_slices` / `build_reliability` / `true_win_rates`, IMPORTED |
-| 3 G7 kill | stall rate + mean episode length vs the era | the run's own recorded metrics + its trace summaries |
+| 3 G7 kill | stall rate + mean episode length vs the era; episode length is read from TensorBoard `eval/mean_ep_len_vs_{bots,pool}` (every cycle) first, the `metadata.json` blocks second — the blocks are keyed by CHECKPOINT and miss any cycle no checkpoint captured (10M and 14M on `ai_v12_02`); a step with no episode length prints **ep_len NOT EVALUABLE**, never OK | the run's own recorded metrics + its trace summaries |
 | 4 untaught meter | `main.untaught_meter --baseline <parent> --control <cont…>` | the meter's, read back out of its own `--json` |
 
 **Where the two halves of G7 come from is not obvious and is worth stating**: `eval_results.jsonl`

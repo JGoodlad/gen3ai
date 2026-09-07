@@ -12568,3 +12568,25 @@ nodes 10/10 pairs, and **the 12M add deflated every earlier node** (10M 2022.1 �
 was like-for-like (both nodes newest-of-4) and flagging the next trap (settled 2006 vs rev-1's
 newest-of-4 2052 would read −46 and be wrong the other way); `untracked_abs_mean` 0.0000; monitor
 `draw_rate` 0.0039, zero of two buckets. The Training Run's cron is now `/loop 55m`.
+
+### 2026-09-07 · G7's episode length is read from TensorBoard per cycle — the `metadata.json` blocks are keyed by CHECKPOINT and missed the 10M and 14M cycles (blank printed as OK); a blank now reads NOT EVALUABLE
+
+Flagged by the Training Run session at the 16M read: G7's `ep_bots` / `ep_pool` were BLANK at 10M and
+14M while `stall_rate` and `mean_turns` were present and the row printed OK. Cause, read from the
+tree: `_recorded_ep_len` took episode length only from `metadata.json`'s `latest_eval` (overwritten
+each cycle) and `snapshot_history[*].latest_eval` (one block per CHECKPOINT, holding whichever eval
+was latest at the save). At a 2.4M checkpoint cadence against a 2M eval cadence, the 10M and 14M
+cycles were superseded before any checkpoint captured them and landed in NO block. Every cycle was
+on TensorBoard the whole time (`eval/mean_ep_len_vs_bots`, `eval/mean_ep_len_vs_pool`, logged by the
+eval callback each cycle). Fix (this commit): TensorBoard is the primary source, the metadata blocks
+fill only what it lacks, the source is named per row, and **a step with no recorded episode length
+prints "OK on stall rate; ep_len NOT EVALUABLE"** with the steps listed in the section — a blank
+printed as OK is how the ep_len half of a kill condition would quietly stop existing. Gated by two
+tests. Re-read on the live arm: all eight cycles evaluable, `ep_bots` 20.70 → 22.32 (+7.8% against
+the 1.25× threshold), `ep_pool` 25.89 → 32.03, stall 0.0000 everywhere but 4M's 0.0062 — G7 at ~0%.
+
+16M state banked with it: bots **0.922** (830/900; the 14M 0.896 was one cycle and reads as noise
+in hindsight), train ep_len 32.4 → 39.45 (+22%) against eval-vs-bots 20.7 → 22.3 (+7.8%) over the
+same period — the lengthening lives in self-play, where the kill is not measured, exactly as the
+draw-composition probe predicted; monitor `draw_rate` 0.0032, six buckets at 0.0032–0.0045 with no
+upward drift; 16M ladder node pending the updater.
