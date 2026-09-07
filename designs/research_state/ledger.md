@@ -12420,3 +12420,42 @@ count was taken from a ring-buffered child log mid-promotion and is retracted (`
 
 Run state at the read: 10.13M, healthy, launcher up 4h20m. Throughput 601 fps in the 0.90 self-play
 regime; 75M ETA Tue 08 Sep 08:00–09:00.
+
+### 2026-09-07 · READ AMENDMENT 5 — the draw-rate/ep_len AND-gate was the bar of two READS (5M, 10M), both taken and passed; it is DISCHARGED, not standing. G7 is the standing kill from here; train `draw_rate` above 0.01 in two consecutive 1M buckets is a MONITOR trigger, not a kill
+
+Raised by the Training Run session at 12M: train `signal/draw_rate` per 1M inside the self-play
+regime reads 0.0024 · 0.0019 · 0.0025 · 0.0027 · 0.0028 · 0.0035 · 0.0045 · 0.0038 · 0.0040 (4–13M) —
+roughly a doubling, not monotone, at 40% of the 10M read's 0.01 bar — while clause 2 (ep_len) sits at
+148% of its bar on the competence sawtooth. Its concern: an AND with one clause permanently MET
+reads as an OR on the other, and a `draw_rate` breach would then be a FALSE KILL on an arm that is
+winning on the ladder, beating bots and showing no stall signature.
+
+**Ruling.** Amendment 1 registered the draw-rate/ep_len gate as the bar of two specific reads — the
+5M smoke (≥ 0.03 AND rising ep_len) and the 10M read (> 4× the stripped arm's 0.0025 AND rising
+ep_len). Both reads have been taken and both passed. **The gate is DISCHARGED.** No clause is stuck
+because no gate remains for it to be stuck in; a train `draw_rate` crossing 0.01 after 10M cannot
+fire a kill on its own. The problem is dissolved, not patched — the bar is not moved, and nothing
+about the two reads already taken changes.
+
+**What stands from here is G7 as the design registers it**, computed by `main.critic_gate` at every
+snapshot on the eval traces, bot and pool never pooled: `stall_rate` (the fraction of eval battles
+reaching 250 turns) ≤ 0.05 and mean episode length ≤ 1.25× the era. Those are the TOOL's default
+numbers, printed as such on every report; the design registers no number, and the open item — a
+stall threshold derived from the era's recorded rate — stays open. G7 has read **0.0000** at every
+snapshot except 4M (0.0062): the arm is at ~0% of the standing kill.
+
+**A probe, registered (no run touched):** from the eval traces and the recorded signal, split what
+train `draw_rate` counts on this arm — 250-turn timeouts vs true ties, and bots vs pool sentinels —
+per opponent regime, and place it beside G7's `stall_rate` for the same snapshots. A draw between two
+competent copies is plausibly a different event from a draw against a bot, and the design names stall
+under self-play as the quantity to watch (it removed two anti-stall defences). The split is reported;
+it is not a bar.
+
+**A monitor, registered:** train `draw_rate` > 0.01 in two consecutive 1M buckets ⇒ the Training Run
+messages the orchestrator with G7's eval `stall_rate` and ep_len beside it and the probe's split. A
+report trigger. **The kill stays G7.**
+
+Also recorded: the run's own snapshot-ladder updater plays each new node on promotion; a read WAITS
+for the updater's node and uses `--backfill` only for gaps, never concurrently (a concurrent backfill
+double-plays pairs and contends with the run). Run state: 12M, bots 0.900 (6 cycles rising,
+decelerating), `untracked_abs_mean` 0.0000, 12M ladder node pending the updater.
