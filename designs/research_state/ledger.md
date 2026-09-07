@@ -13244,3 +13244,58 @@ after the 32M cycle: 2077.1 vs 1964.1, +113.0.
 **Contrast, unchanged:** `eval/elo` is a per-cycle sparse star (±30, newest node inflated); the dense
 ladder is 91/91 frozen pairs (30M → 2063.5, se 9.7). The rule stands: quote the ladder at run end at
 matched snapshot count, never the live `eval/elo`. No defect found.
+
+### 2026-09-07 · 🚨 GIGO in the DENSE LADDER — `fit_ladder` already folds the eval cycles' greedy-vs-STOCHASTIC sentinel edges into the frozen greedy-vs-greedy matrix; on the live run the eval edge favours the newer snapshot by +8.9 pp [+7.0, +10.7] over 60 shared pairs and inflates ladder.json's newest nodes by +21 to +29 Elo. REGISTRATION: the fit drops eval sentinel edges (bot edges stay as the anchor), the gate refits both sides from raw records, and the two famine reads are RE-COMPUTED under the fixed fit and banked beside the registered numbers
+
+Owner question (11:5x): "we added dense ranking; once a snapshot is in the pool we know it from its
+last evaluation — what is the simplest path to dense, can we reuse the evals?" Opus investigation
+at `measurements/winprob_arm_probes_2026-09-07/dense_reuse/summary.md`, verified from source and
+the live run, every claim with file:line.
+
+**Premise check.** RIGHT: the eval-cycle model at step s and the pool snapshot promoted at s are the
+SAME FILE (`selfplay_callback.py:402-404` freezes to `.eval_runs/step_<s>/snapshot.zip`; `:784` →
+`snapshot_pool.py:229-242` copies that file into the pool) — bit-exact, zero step gap. RIGHT: dense
+ranking IS supported and complete (the ladder updater: 105/105 pairs on this run), and the evals
+already play 57% of those pairs (60 of 105; 6,000 battles), which the updater then re-plays —
+**6,100 ladder battles spent re-measuring pairs an eval had measured; at steady state 5 of the 14
+pairs per promotion (36% of the per-promotion tax) are duplicated effort**. WRONG, and the important
+half: "we know it from its last evaluation" assumes the eval edge is the same quantity as the ladder
+edge. It is not. Eval: greedy trainee vs a temperature-1.0 STOCHASTIC sentinel
+(`eval_worker.py:153`, `eval_sentinel_greedy=False` on every run we compare), with an asymmetric
+team builder (trainee biased 10% toward the sample teams, sentinel unbiased, `eval_worker.py:75`,
+`:211`). Ladder: greedy vs greedy, symmetric builders (`snapshot_ladder.py:246-249`). Neither is
+seeded; both seat the newer snapshot on p1; 100 games each.
+
+**Measured, paired over the 60 shared pairs:** eval win rate − ladder win rate for the newer
+snapshot = **+0.0887, sd 0.0735, 95% CI [+0.0701, +0.1073]**. Systematic.
+
+**And `fit_ladder` ALREADY MIXES THEM** (`snapshot_ladder.py:168-174` folds `_rows_to_results(load_rows)`,
+which yields bot AND sentinel edges, `elo.py:382-385`). Refit of the live run with only the eval
+sentinel edges toggled: 26M 2046.2 → 2024.8 · 28M 2059.9 → 2037.2 · 30M 2051.5 → 2029.0 · 32M
+2061.3 → 2032.0 — **+21 to +29 Elo, largest on the newest node**, compounding the newest-node
+inflation the matched-count rule exists to control. All three compared runs (the arm, rev-1,
+R2ACTION) share `eval_sentinel_greedy=False, self_play_temp=1.0, n_sentinels=5`, so the bias is on
+every ladder and the famine deltas are affected only by its DIFFERENCE between runs — unknown until
+refit. (`eval/elo`, the per-cycle star, uses the sentinel edges DELIBERATELY and is unchanged — its
++110 Elo of sentinel signal, `fb85a4e8`, is the right instrument for that fit.)
+
+**Options weighed:** A treat eval-covered pairs as covered (saves 500 battles/promotion; makes the
+biased edge the ONLY measurement of 57% of pairs — unsafe alone); B seed games.jsonl from eval rows
+(same bias + double counting + hollows "a measured pair is never replayed"); C rotate sentinels so
+evals go dense (changes what `win_rate_vs_pool` and the promotion gate measure); **D make the two
+measurements the SAME experiment first** (`--eval-sentinel-greedy` on the next run + a symmetric
+sentinel team builder at `eval_worker.py:211`), after which A is a ~5-line change.
+
+**REGISTERED (before the fixed numbers exist), an instrument change to a read already taken:**
+1. `fit_ladder` DROPS the `snap:`-vs-`snap:` rows from the eval source and keeps the bot edges
+   (the anchor); the count dropped is recorded in the ladder dict. `eval/elo` untouched.
+2. `main.critic_gate` REFITS BOTH sides from games.jsonl + eval rows with the current fit whenever
+   games.jsonl exists, because a run's committed ladder.json is its own PINNED code's fit — the live
+   run's updater will keep writing the biased fit until its pin moves.
+3. The 10M (n = 4: −30) and 26M (n = 12: −34) famine reads are RE-COMPUTED under the fixed fit and
+   banked BESIDE the registered numbers, which stand as recorded with this entry as their
+   correction. The verdict vocabulary is unchanged (WITHIN FLOOR / trails by more than 38).
+4. Arm B's argv carries `--eval-sentinel-greedy` and the symmetric builder (option D), so its eval
+   edges and ladder edges are one experiment and option A (reuse, 500 battles per promotion) becomes
+   available then — not retrofitted to arm A mid-run.
+Build dispatched to an opus agent (worktree `ladder-fit-eval-sentinel`); results in the next entry.
