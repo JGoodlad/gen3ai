@@ -12278,3 +12278,46 @@ That is the quantitative case for AMENDMENT 4 stated as a number: had clause 2 k
 reference, it would have entered the 10M read already 86% of the way to MET for a reason with nothing
 to do with famine. Frozen once per regime and the tool refuses to overwrite; the pool-empty value
 stays in the record and prints on every report, marked as not used against self-play data.
+
+### 2026-09-06 · RESTART READ RULINGS — the restart's +312 s is startup plus one per-worker VALIDATION run (settled from source; the orchestrator's "48 fresh traces" pre-registration could never discriminate), and the hairline vf_coef FLAG stands with NO per-regime band
+
+Two rulings off the Training Run session's first restart read (23:47 rollout-boundary restart at
+7.67M; sidecar audit clean — 5 sidecars, 1 pin span `f971caf2`, no PIN-SPLIT).
+
+**1. The restart startup cost is +312 s (TB wall-clock, valid) — and the mechanism is read from
+`src/agents/model/compile_opponents.py`, not from the child log.** The `[CompileExtractor] …: ON —
+median X → Y ms` line is printed by the FIRST compile in a process, because a per-process global
+(`_COMPILE_VALIDATED`) runs the eager-vs-compiled validation benchmark once; every later opponent in
+that process prints `ON (reused this process's validated compile)`. The compile is keyed on the
+**code object**, so a second extractor in the same process compiles in 0.00 s and `load_state_dict`
+never recompiles. The post-restart log holds exactly **21 fresh for snapshot 4M + 27 fresh for
+snapshot 6M = 48**, one per worker, whichever snapshot each drew first. So a "fresh" line is a
+VALIDATION print, not a trace; the orchestrator's pre-registered reading ("excess ≥ 300 s AND 48
+fresh trace lines ⇒ defect") conflated the two and is **withdrawn** — it could never have
+discriminated. The right baseline for a restart is the 262 s pool-empty startup, not zero:
+312 − 262 ≈ **50 s across 48 workers** is the validation benchmark plus snapshot load, and it says
+the forkserver preload IS covering pool opponents. **No defect, no backlog row.** The ETA carries
+312 s per restart (+~9 min over ~11 restarts). The same source explains the promotion pair banked in
+`68934fdc`: 4M was expensive (+363 s) because it was every worker's first pool opponent and
+therefore its validation run; 6M was cheap (+80 s) because the code object was already compiled.
+
+**The ring-buffer lesson stands on its own** (`launcher_child.log` is a ~1024 KiB ring buffer that
+trims silently; the Training Run's "zero fresh compiles at 6M" count was unrecoverable once trimmed
+and is retracted in its own correction). A backlog row: a full rotating copy beside the ring buffer.
+
+**2. vf_coef at the restart: `grad/value_policy_logratio` median of the last 20 rollouts =
+−0.5006 log10 (0.32×) ⇒ KEEP + FLAG, re-read at the 2nd restart (~02:27), exactly as registered
+(`cfc72ad0`).** The margin is +0.0006; the 10th/11th sorted points straddle −0.5, so one rollout
+flips it; last-30 and last-40 read KEEP, last-10/15/25 read FLAG. Regime-only median (n = 40) is
+−0.454; the regime shift is now **−0.488 log10 (3.1×)** on n = 40, refined from the −0.382 on n = 15.
+**No per-regime band is registered before the re-read.** Re-basing the band to the self-play regime
+the moment it fires against the arm is fitting the bar to the data in the arm's favour, and unlike
+amendments 3/4 the case is not mechanical. The flag's registered action changes nothing about this
+run (vf_coef is resume-immutable), NEW ARM needs |med| ≥ 1.0 (3.2× away), and the number's only
+consumer is arm B's `--vf-coef` at D2, decided with the whole per-regime series. Candidate for the
+downward walk, **UNVERIFIED**, recorded beside the finding and not as its explanation: a sharpening
+critic has smaller BCE gradients on states it already predicts well, so the ratio can fall BECAUSE
+the critic improves (resolution is rising in the same window).
+
+Run state: 8.0M, snapshot 3 of the 4 the 10M ladder needs, `draw_rate` and `untracked_abs_mean`
+nominal. The 10M deciding read is ~1 h out.
