@@ -11909,3 +11909,33 @@ every ~2M. At 5M the arm has ONE snapshot — an anchored Bradley-Terry fit on o
 **Why the 38-Elo floor is untouched:** it is a property of the comparator's replicates, not of this
 arm's cadence. **Why 10M and not later:** ~4 nodes is the smallest count at which matched-count
 comparison against rev-1 (whose n=4 is at ~8M) is a comparison of ratings rather than of one edge.
+
+### 2026-09-06 · REGISTRATION — the vf_coef restart rule, in ONE unit (log10 of the shared-trunk value/policy gradient-norm ratio)
+
+The Training Run session found, before the first restart (~23:27), that the rule it had been relayed —
+"within ±0.5 keep · ≥3× flat ⇒ relaunch · ≤0.3 ⇒ raise" — mixes log10 with ratios so that all three
+clauses overlap (3× is log10 0.477, inside the ±0.5 band; 0.3 read as log10 is 2.0×, also inside it).
+**That rule is in no ledger entry, no design section and not in `UNDERSTANDING.md`** — the registered
+text (design §5.4 note; ledger *the win-prob critic ARM 1 is LIVE*) says only "a ratio in the tens or
+worse ⇒ cut `--vf-coef` by that factor; far below 1 ⇒ starved; steer by `grad/value_policy_logratio`,
+0 = balanced". A rule that was relayed but never banked was never registered. Registered now:
+
+**Quantity:** `grad/value_policy_logratio` = log10(‖g_value‖ / ‖g_policy‖) on the shared trunk
+(`grad_balance.py`), **median of the last 20 rollouts** before the restart boundary; both units printed.
+
+| median (log10) | ratio | action at the restart |
+|---|---|---|
+| in **[−0.5, +0.5]** | 0.32× – 3.16× | **KEEP 0.5**; nothing else changes |
+| in (+0.5, +1.0) or (−1.0, −0.5) | 3.2×–10× or 0.1×–0.32× | KEEP, flag it, re-read at the second restart |
+| **≥ +1.0** | ≥ 10× — "tens or worse" | value swamps the policy ⇒ a **NEW ARM** with `--vf-coef` scaled by 10^(−median) |
+| **≤ −1.0** | ≤ 0.1× | critic starved ⇒ a **NEW ARM** with `--vf-coef` scaled by 10^(−median) |
+
+`--vf-coef` is resume-immutable by design (§3.x: keep the flag, keep it immutable, re-tune the value),
+so any change is a fresh launch that forfeits the run so far — which is why the bar for changing it is a
+full decade, not a factor of three, and why the inner band keeps.
+
+**The reading at ~1.7M** (Training Run, 21:01): 0.926 → 1.668 → 1.520 → 0.439 → 0.127, i.e. the value
+gradient started ~47× the policy's and converged to ~1.3×; the last six readings are 0.13–0.47 (1.3×–3.0×).
+Under the table that is a **KEEP**, and the convergence itself is the finding: the BCE found signal and
+the two heads came into balance on the shared trunk without retuning. The rollout-1 "165×" banner was a
+loss-ratio against a degenerate denominator and is not evidence (same-day *OOM* entry).

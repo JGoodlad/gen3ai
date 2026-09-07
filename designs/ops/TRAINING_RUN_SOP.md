@@ -78,7 +78,10 @@ answers one of the two questions; do both.
    `--fork-lr`; the self-play pool auto-seeds from the parent. On a RESTART nothing re-pins.
 10. Register the read BEFORE launch: endpoints, comparator baseline by name, matched snapshot count,
     the floor (max pairwise difference among replicates), the kill conditions and the successor arm.
-    The read is not renegotiated after launch.
+    The read is not renegotiated after launch. **A rule that is not in the ledger is not registered:**
+    a relayed threshold cites its ledger entry, in one stated unit, or it is written there first
+    (ledger 2026-09-06 · *REGISTRATION — the vf_coef restart rule*, where a relayed rule mixed log10
+    with ratios and its three clauses overlapped).
 
 ---
 
