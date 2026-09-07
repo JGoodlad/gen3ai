@@ -536,6 +536,16 @@ ladder is not a rating): trailing rev-1 by more than 38 Elo at matched snapshot 
 had PBRS *and* PopArt *and* the shaped critic, so this is a rate comparison ACROSS RECIPES — a trail
 inside 38 Elo is **not** evidence of equivalence, only that starvation was not demonstrated.
 
+**THE n = 12 STRENGTH READ (2026-09-07 ~09:05, the strength half of D2):** at matched snapshot
+count AND matched fit size (both 12-node fits, no refit) the arm **TRAILS rev-1 by 34 Elo against the
+38 floor — WITHIN FLOOR**, margin 4, with 2M extra steps in the arm's favour; sparse is not
+demonstrated inferior at this depth and not demonstrated equivalent [ledger 2026-09-07 · *THE n = 12
+STRENGTH READ*; `measurements/winprob_critic_26M_n12_read_2026-09-07/`]. 26M is a new ladder peak
+(2064.1; rev-1's 12th node 2098.4). Calibration G1 fails on every stratum and the BOT stratum's
+resolution has decayed 0.030 → 0.014 since 14M while pool holds ~0.05; G2/G3 pass at 26M; G4 fails
+on bots. Two dissociations between the fixed-bot axis and the self-play-lineage axis in five
+snapshots, opposite signs, no account.
+
 **THE 10M READ (2026-09-07 ~00:40): NO KILL — the arm continues to 75M.** [ledger 2026-09-07 ·
 *10M DECIDING READ*; artifacts `measurements/winprob_critic_10M_read_2026-09-07/`] At matched
 snapshot count AND matched fit size the arm **TRAILS rev-1 by 30 Elo against the 38 floor** (WITHIN
@@ -667,6 +677,12 @@ z=−1.40" rules out >4.5pp, not >0.
     clause (amendments 3→4), the `selfplay_fraction` median (0.45, a value never occupied), the
     throughput diagnosis (a compile pause blamed for a regime change), and the vf_coef window (a
     "drift" that was the window sliding regimes). Ledger 2026-09-06 · STANDING RULE 15.
+16. **An instrument that reads an artifact ANOTHER PROCESS IS STILL WRITING asks first whether it
+    is complete, and refuses naming what is missing.** Five instances on the night of 2026-09-06/07:
+    the ring-buffered child log, the events file mid-restart ("+2 s startup" = no restart in the
+    data), the ladder mid-update (a correctly formatted verdict about the previous node), the
+    compile lines mid-promotion, and the anchor pass under a policy that did not play the trace.
+    Ledger 2026-09-07 · *THE n = 12 STRENGTH READ*.
 
 ---
 

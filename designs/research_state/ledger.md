@@ -12954,3 +12954,56 @@ did its job.
 snapshot against itself — which is also the correct object: the recorded V it compares against IS
 that snapshot's. The 250-cap exclusion (`cf_producer.record_is_full_replay_anchorable`) is a
 follow-up, not needed for the read.
+
+### 2026-09-07 · 🟡 THE n = 12 STRENGTH READ (the strength half of D2, registered `7318ceae`) — the sparse arm TRAILS the shaped incumbent by 34 Elo against the 38 floor at matched count AND matched fit size: WITHIN FLOOR, starvation not demonstrated, sufficiency NOT demonstrated either; the margin narrowed from 8 (n = 4) to 4 (n = 12); 26M is a new ladder peak; calibration G1 fails on every stratum with the bot side decaying
+
+Run by the Training Run session at the 26M snapshot (~09:05) from HEAD `1a1ad063`; artifacts
+`measurements/winprob_critic_26M_n12_read_2026-09-07/critic_gate_26M.{txt,md}`.
+
+**THE SENTENCE, verbatim from the fixed tool:** *"the arm TRAILS the comparator by 34 ELO at 12
+snapshots (floor 38) — inside the floor: starvation is NOT demonstrated on the ladder half."* Both
+ladders are 12-node fits, so matched count and matched fit size coincide with no refit and the
+famine half carries no fit-size note (checked, not assumed). The design's sufficiency bar — not
+inferior by more than the 38-Elo floor at n = 12 — reads **WITHIN FLOOR**. Two honest qualifiers:
+the margin is **4 Elo** (n = 4 read: −30, inside by 8; n = 12: −34, inside by 4), and the arm holds
+**2M more steps** at matched count (its 12th node is 26M, rev-1's 24M), an asymmetry in the arm's
+favour. A trail inside the floor is not equivalence: the incumbent had PBRS, PopArt and the shaped
+critic, and the floor is its own run-to-run noise. **Tag: WITHIN FLOOR** — the sparse recipe is not
+demonstrated inferior at this depth, and not demonstrated equivalent.
+
+**The 12-node ladder** (add · refit): 4M 1712.8 · 6M 1854.2 (+141.4) · 8M 1907.9 (+53.7) · 10M
+1945.9 (+38.0) · 12M 1980.7 (+34.8) · 14M 2006.1 (+25.4) · 16M 2024.1 (+18.0) · 18M 2052.8 (+28.7)
+· 20M 2025.4 (−27.4) · 22M 2035.2 (+9.8) · 24M 2045.4 (+10.2) · **26M 2064.1 (+18.7) — a NEW PEAK**,
+the first newest-node high since 18M; refit shifts −1.7 to −10.2 across every node with no age
+gradient (the level-shift finding, twelfth add). rev-1's 12th node: 2098.4. The Δ vs the fold
+parent (+108 [+48, +167]) prints with the UNMATCHED FIT SIZE label — permanently, the fork's early
+nodes are rated only through its late selves — and is not a lead claim.
+
+**Calibration at 26M (§4.3 gate, selection-reweighted, bots and pool separately):** G1 resolution
+`all` 0.0378 [0.0193, 0.0636] vs 0.0618 · `bot` **0.0141** vs 0.0337 · `pool` 0.0508 vs 0.0711 —
+fails on every stratum, and **the bot stratum has DECAYED 0.030 (14M) → 0.016 → 0.020 → 0.014 →
+0.0095 (22M) → 0.027 → 0.014 (26M)** while pool holds ~0.04–0.07. G4 (skill with the cluster CI
+clearing 0) fails on `bot` at 26M (skill +0.114, CI not clear on 136 battles; also 20M pool, 22M
+bot). **G2 and G3 PASS on both gated strata at 26M** (bot: point ≤ base; pool: CI covers base) —
+the tool's aggregate "criteria not met G1–G4" is across steps, and the per-step truth is stated
+beside it. G7 clean (26M stall 0.0000, ep_bots 21.44, ep_pool 31.33; 24M carried one 250-turn
+battle, 0.0041). **The 10M read's opposition is now wider: strength at the incumbent's pace and a
+new peak, with a head whose eval-trace resolution against bots is falling as the bots saturate.**
+Candidate, UNVERIFIED and not an account: against opponents it now beats ~0.9 of the time the head
+forecasts near the base rate and resolution has little room; the pool stratum, where outcomes are
+contested, holds flat. The identity test at 75M (V vs Monte-Carlo under the frozen policy) is the
+instrument that separates "no room" from "no skill".
+
+**Also banked from the 24M report:** the plateau signal did not fire at 22M or 24M (20M stays a
+one-off); the bots axis fell three cycles to 0.898 (five of nine bots down, ~1–1.5 SE clustered,
+no decisive cell) while the head-to-head vs the recent lineage recovered 0.443 → 0.510 → 0.537 —
+**the second dissociation between the fixed-bot axis and the self-play-lineage axis in five
+snapshots, opposite sign to the first; recorded as a pattern with no account.**
+
+**STANDING RULE 16 (UNDERSTANDING.md §7):** an instrument that reads an artifact ANOTHER PROCESS IS
+STILL WRITING must first ask whether the artifact is complete, and refuse naming what is missing.
+Five instances in one night: the ring-buffered child log (a count of what still fit), the events
+file mid-restart (a "+2 s startup" that was the absence of a restart), the ladder mid-update (a
+correctly formatted plateau verdict about the previous node), the compile lines mid-promotion, and
+the anchor pass under a policy that did not play the trace. Each was fixed by making the
+precondition explicit; the rule is the fix's general form.
