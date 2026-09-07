@@ -129,6 +129,19 @@ teams — taught teams are a rounding error of the 719-team pool.
 (multi-day, 75M-step) runs and for search: the win-probability head promoted to BE the critic.
 That is the `ai_v12` chapter and it is what is running now (§4).
 
+**The goal for the coming week, in the owner's words (2026-09-06):** *"understand the value network
+as win prob — do we need PBRS, do we need to bootstrap with a frozen win-prob value head. Right now
+we are working on running a model further and validating the win-prob head."* **The long-term goal
+(same statement):** *"a mature model, free of tech debt, that is understood to both benefit from
+search and teacher distillation, to see if we can repro v8's gift."* Consequences that are now
+standing: the FROZEN-φ rung (`ai_v12_03_winprob_frozenphi`, actor-only potential) runs **regardless
+of whether the SPARSE arm passes or is killed**, because "do we need the bootstrap" needs the paired
+comparison, and under this critic the SELF-φ rung does not exist (design §3.7), so "do we need PBRS"
+IS SPARSE-vs-FROZEN-φ; after the ladder, the mature checkpoint is read for a SEARCH dividend and for
+a teacher FOLD (untaught meter with continuation control) before any v8-gift replication attempt.
+Decisions are taken arm by arm from the data, not from a fixed batch (owner). [owner statement ·
+`designs/ops/ORCHESTRATOR_SOP.md` §6]
+
 ### The eras
 
 | era | what it is | status |
@@ -474,10 +487,18 @@ endpoints, not monitored ones.**
 
 ### 4.2 The first arm and its pre-registered read
 
-`ai_v12_01_winprob_critic`, fresh, pinned `e798c13a`, `--steps 75000000`, launched 2026-09-06.
-One hardware deviation: `--batch-size 4096 --grad-accum-steps 16` in place of the design's
-16384 × 4 — the same 65,536 effective batch and the **exactly identical gradient**, at an activation
-peak that fits a 12 GB card. Measured in flight: 4,723 MiB at 92% utilisation.
+`ai_v12_02_winprob_critic`, fresh, pinned `f971caf2`, `--steps 75000000` (~33 h at the full
+architecture's measured ~2.3M steps/h), relaunched 2026-09-06 20:27 on the PRODUCTION architecture
+surface — 49 derived toggles diffed against `production_config.json`, 0 differing. Its predecessor
+`ai_v12_01_winprob_critic` ran ~7 GPU-hours with 31 architecture flags at their OFF defaults and is
+DEAD and not evidence [ledger 2026-09-06 · *INCIDENT — ai_v12_01 ran ~7h on a stripped
+architecture*]; the first `ai_v12_02` launch at `--batch-size 4096 --grad-accum-steps 16` OOMed at
+iteration 1 inside the gradient-balance probe [ledger 2026-09-06 · *OOM — the win-prob batch
+correction is 2048x32*]. The shape that fits the full surface on the 12 GB card is
+**`--batch-size 2048 --grad-accum-steps 32`** — the same 65,536 effective batch and the exactly
+identical gradient; the micro-batch sets the activation peak and the peak is a function of the
+architecture surface, so a fit measured on the stripped arm was evidence about a different model.
+In flight: ~7.3 GB at 87% utilisation, 0 OOM.
 
 **The read is one command**: `python -m main.critic_gate <run> --parent models/ai_v9_59_R2ACTION_0827
 --control <G5 arms>` — the anchored ladder at **matched SNAPSHOT COUNT** against the parent
@@ -553,7 +574,7 @@ z=−1.40" rules out >4.5pp, not >0.
 
 | question | the test that would settle it | cost |
 |---|---|---|
-| **Does the win-prob critic RESOLVE better than the shaped one?** | `python -m main.critic_gate ai_v12_01_winprob_critic --parent ai_v9_59_R2ACTION_0827 --control <G5 arms>` — G1 is the primary endpoint | free once the arm reaches its eval cycles; the arm is ~14 h at the measured 5.2M steps/h (a FLOOR: `ep_len_mean` lengthens as play improves) |
+| **Does the win-prob critic RESOLVE better than the shaped one?** | `python -m main.critic_gate ai_v12_02_winprob_critic --parent ai_v9_59_R2ACTION_0827 --control <G5 arms>` — G1 is the primary endpoint | free once the arm reaches its eval cycles; the arm is ~14 h at the measured 5.2M steps/h (a FLOOR: `ep_len_mean` lengthens as play improves) |
 | **Does terminal-only reward STARVE?** | the famine pre-test at ~5M against rev-1 at matched snapshot count, floor 38 Elo, AND-gated with `win_rate_vs_bots` rising | already inside the live arm |
 | **Is MATURITY the cause of the era gap, or is it era?** | a gen-era parent trained to a comparable step count, then the same continuation cell. There is no cheap version — step counts are not commensurable across architectures | a multi-week generation; **not scheduled** |
 | **Does a FOLD ON v8's PARENT with OUR teachers gift?** | the origin factorial's unrun half — 8 exploiters forked FROM R2ACTION in v8's recipe (`TC_ORIGIN`), then the fold ×3. A gift here makes the fork origin the whole story | 8 exploiter runs + 3 folds, ~30+ GPU-h |

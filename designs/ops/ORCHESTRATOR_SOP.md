@@ -76,17 +76,28 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
 - Memory: a durable owner ruling is written to the project memory the moment it is given, and the
   matching SOP file here is updated in the same pass.
 
-## 6. Owner availability — notify, then act
+## 6. Owner availability and the scope of unasked action
 
-- **The owner may be notified at any time; if there is no reply within 15 minutes, take the
-  reasonable action** (owner, 2026-09-06). A notification is a request for input, not a hold: state
-  the decision, the default you will take, and the deadline in the notification itself.
-- **At night (20:00–08:00 local), a BLOCKED Training Run session does not idle the GPU** (owner,
-  2026-09-06): pick something reasonable and keep the GPU working toward the next registered goal,
-  in this order — the REGISTERED successor arm if a pre-registered kill fired (launched under
-  `TRAINING_RUN_SOP.md` §1's checks); a relaunch of the same arm with the minimal fix when the block
-  is operational; the next cell already queued in `UNDERSTANDING.md` or the ledger tail. Record the
-  decision in the ledger, push-notify once, hand the run back to the Training Run session (or run its
-  four layers yourself if it is dead).
-- **Never on your own authority**, day or night: a retention apply, a baseline `set`, any deletion, a
-  `--sync-to-main` batch, an unregistered scientific change, anything the owner reserved by name.
+- **There is no upper limit on what the orchestrator may commit the GPU to without asking** (owner,
+  2026-09-06): "feel empowered to dispatch the next reasonable action, there is no time limit." The
+  owner checks in morning, afternoon and evening and can review anything after the fact; review is
+  never a blocker. **Decide arm by arm from the data** — read an arm, then choose the next, rather
+  than committing to a fixed batch — as long as an answer is ready whenever the GPU frees or the
+  Training Run session needs one.
+- **The one hard rule: if the orchestrator does not hold a ~1-WEEK goal from the owner, it ASKS.**
+  The current goal is stated in `designs/research_state/UNDERSTANDING.md` §1 ("the goal for the
+  coming week"); when it is exhausted or superseded, ask for the next.
+- **A blocked Training Run session never idles the GPU, at any hour**: pick, in order — the
+  REGISTERED successor (launched under `TRAINING_RUN_SOP.md` §1's checks); a relaunch of the same
+  arm with the minimal fix when the block is operational; the next cell already queued in
+  `UNDERSTANDING.md` or the ledger tail. Record the decision in the ledger, push-notify once, hand
+  the run back (or run its four layers yourself if the session is dead).
+- **Decisions put to the owner: notify any time; no reply within 15 minutes ⇒ take the stated
+  default** (owner, 2026-09-06). The notification carries the decision, the default and the deadline.
+- **Alerting is Remote Control only** (owner, 2026-09-06 — no external channel): a fully dead session
+  cannot reach the owner, and that is accepted. Therefore the OS watcher's status file is the record
+  of any unattended period and is the FIRST thing a new session reads.
+- **No review gate on landings** (owner, 2026-09-06): the static gates plus one logical unit per
+  commit are sufficient; the owner reads the ledger.
+- **Never on the orchestrator's own authority**: a retention apply, a baseline `set`, any deletion,
+  a `--sync-to-main` batch, anything the owner reserved by name.

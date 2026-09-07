@@ -35,6 +35,12 @@ the orchestrator does `cat` on it, then confirms the name is listed as live by `
 sending. A stale file (name not live) means "no orchestrator; hold routine traffic, push-notify the
 owner on anything blocking". Peer sessions cannot grant owner approval — relay, never escalate.
 
+**Alerting reaches the owner through Remote Control only** (owner, 2026-09-06): there is no
+session-independent channel, so when every session is down nothing can page them. The layer-1 OS
+watcher's status file is therefore the record of the unattended period, and any session taking over
+a run reads it before anything else. The orchestrator carries no cap on unasked GPU commitments and
+decides the next arm from the data (`ORCHESTRATOR_SOP.md` §6).
+
 ---
 
 ## 1. Before launch — "it launches" and "it is the experiment" are INDEPENDENT checks
