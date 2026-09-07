@@ -12835,3 +12835,35 @@ the ladder-vs-rev-1 question.** For scale only: rev-1's 12th node is 2098.4; the
 22M state: bots 0.918 (saturated band), `draw_rate` 0.0042 (zero of two monitor buckets), train
 ep_len flat across the last three snapshots (40.52 · 39.72 · 39.65), G7 untouched, launcher up
 ~10 h 15 m.
+
+### 2026-09-07 · REGISTRATION (owner, 07:2x) — THREE VALUE-FUNCTION TESTS at 75M on `ai_v12_02_winprob_critic`, run by opus subagents; a DRY RUN at ~22M proves the pipelines first
+
+The owner committed to the top three of six proposed tests of the win-prob critic at the arm's 75M
+checkpoint. Registered here before any 75M data exists. All three are OFFLINE (CPU, rust bridge or
+trace reads, nothing written under `models/`).
+
+1. **THE IDENTITY TEST — V(s) against the Monte-Carlo win fraction under the frozen 75M policy**
+   (`python -m agents.training.cf_audit <run> --checkpoint <75M> --rollouts 8 --states N --impl rust`,
+   the counterfactual audit's tight-MC labels + bias map). Under `--critic winprob`, V is defined as
+   P(win | s, π), so this measures V against the thing it was trained toward, on the population it
+   trained on. Read: the bias map by turn bucket and by material; `sd_true_excess`
+   (resolution) as the meter, per the G0 verdict's rule that the defect class on the shaped critic
+   was RESOLUTION, not offset. No pass/fail bar is registered — the reading is DESCRIPTIVE, with the
+   shaped-critic G0 map as the comparator where strata match.
+2. **THE CALIBRATION GATE on eval traces, G1–G4** (`python -m main.critic_gate … --famine-comparator
+   famine_comparator --control <G5 arms>`): resolution primary, bots and pool separately,
+   selection-reweighted, bars READ from the committed baseline artifact. Already registered (design
+   §5.5, amendments 1–5); listed here because tests 1 and 2 are read TOGETHER — 1 on the training
+   population, 2 on the eval population — and that pairing is what separates "starved head" from
+   "distribution shift", which the gradient decomposition (`4b4b4f54`) could not.
+3. **BOOTSTRAP CONSISTENCY — V(s) vs V(s′) along trajectories.** At γ = 1 with terminal reward
+   only, consecutive values should agree in expectation; the per-cycle `td_resid_tails` in
+   `eval_results.jsonl` and the prober's model-free `calibration` split (critic_overvalued vs
+   lost_position) are the instruments, read by turn bucket. A critic whose residuals concentrate late
+   has a horizon problem, not a calibration problem. DESCRIPTIVE.
+
+**Method rules:** every agent is OPUS, dispatched by the orchestrator; runs from the main checkout
+read-only with explicit `--out` paths (every tool's default output is INSIDE the run dir); one agent
+at a time beside the live run. **A dry run at the ~22M checkpoint runs NOW** (small n) to prove
+each pipeline executes on this arm's architecture and to fix the exact 75M commands; its numbers
+are not a reading. The 75M ETA is Tue 08 Sep 08:00–09:00.
