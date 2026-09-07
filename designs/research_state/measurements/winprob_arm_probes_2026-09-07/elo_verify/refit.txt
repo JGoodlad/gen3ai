@@ -1,0 +1,10 @@
+anchors: True pinned bots: 9 base: 1000.0
+rows: 16 latest step: 32000016
+(a) BOT edges only           elo= 1964.12  se= 20.04  ci95=+-39.28  players= 25  edges= 144  conv=True
+(b) BOT + SENTINEL edges     elo= 2077.10  se= 15.09  ci95=+-29.58  players= 25  edges= 204  conv=True
+
+difference (b-a): +112.98 elo ; ci95 39.28 -> 29.58
+recorded TB eval/elo @30M: 2088.74  ci 30.05
+reproduce live @30M: elo=2088.74 ci=30.05   (TB recorded 2088.74 / 30.05)
+same cycle, BOT-ONLY : elo=1978.45 ci=40.58
+delta +110.30

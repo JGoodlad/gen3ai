@@ -13215,3 +13215,32 @@ applied to a registered read.
 one-off stands; bots 823/900 = 0.914 (four cycles 0.898 · 0.917 · 0.928 · 0.914, no direction);
 `draw_rate` 0.0034, zero of two monitor buckets; `untracked_abs_mean` 0.0000; G7 untouched.
 **The plateau signal does not fire — on both clauses, for the right reason.** Restart 5 due ~11:38.
+
+### 2026-09-07 · VERIFIED (owner-requested) — the per-cycle `eval/elo` DOES include the self-play pool sentinels, unweighted and unfiltered, and they carry most of the number: dropping them from the latest cycle moves the trainee 2088.7 → 1978.5 (−110 Elo) and widens the CI ±30 → ±41
+
+Opus verification agent, from source and the live run's artifacts; report at
+`measurements/winprob_arm_probes_2026-09-07/elo_verify/`.
+
+**Edge inventory** (`eval_callback.py:871` `record_elo` → `fit_from_run(source="log")` refits the
+whole accumulated log each cycle; edges from `elo.py:374-386`): trainee × each of the 9 bots
+(`:382-383`) and trainee × each `snap:<step>` sentinel (`:384-385`) enter the SAME loop with the
+SAME `n_games` (100 on this run) and no weight; sentinel × sentinel edges are absent by construction
+(every edge is incident to the row's trainee — the dense ladder is what supplies those); sentinel × bot
+edges enter historically, because a sentinel was the trainee of its own earlier row (player identity
+unified by step, `elo.py:37-39`). Nothing mutes them; the only drop is a sentinel whose worker died.
+The `eval/hodge_*` width scalars exclude sentinel edges by design (`hodge.py:785-787`) — width only,
+not `eval/elo`. Sentinels: `n_sentinels` 5, evenly spaced newest-first from the pool
+(`snapshot_pool.py:312-323`).
+
+**Artifacts:** sentinels first appear at 6M and reach five at 14M; `eval/elo` and `eval/elo_ci` have
+a point at every one of the 15 cycles. Latest cycles show the bots at 0.82–1.00 (saturated) and the
+sentinels at 0.62–0.92 — where the resolution is.
+
+**The direct test — refit with the project's own functions at 30M:** (b) bots + sentinels
+**2088.74 ± 30.05**, reproducing the recorded TensorBoard value bit-for-bit; (a) bots only
+**1978.45 ± 40.58**; difference **+110.3 Elo**, CI 10.5 tighter with sentinels. On the 16-row log
+after the 32M cycle: 2077.1 vs 1964.1, +113.0.
+
+**Contrast, unchanged:** `eval/elo` is a per-cycle sparse star (±30, newest node inflated); the dense
+ladder is 91/91 frozen pairs (30M → 2063.5, se 9.7). The rule stands: quote the ladder at run end at
+matched snapshot count, never the live `eval/elo`. No defect found.
