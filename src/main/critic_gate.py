@@ -287,23 +287,41 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
     # (`snapshot_ladder.fit_ladder(first_n=n)`, strict: every snapshot endpoint inside the prefix).
     # Measured 2026-09-07: rev-1's 8M node is 2052 in a first-4 fit and 1958 in the 12-node fit,
     # and this section had handed those 94 Elo to the arm it compared against (ledger, 10M read).
+    #
+    # 🚨 BOTH SIDES ARE REFIT WHENEVER `games.jsonl` EXISTS — even when the node counts ALREADY
+    # match and no size correction is needed. A run's committed `ladder.json` was written by the
+    # code that run is PINNED to, and every ladder written before 2026-09-07 folded the eval
+    # cycles' SENTINEL edges (`snap:` vs `snap:`) into the fit alongside the dense matrix. Those
+    # edges measure the same frozen pair under a different protocol (greedy trainee vs STOCHASTIC
+    # sentinel, asymmetric teambuilder) and favour the newer snapshot by +8.9 pp [+7.0, +10.7]
+    # (60 shared pairs, `ai_v12_02_winprob_critic`), inflating the newest nodes by +21..+29 Elo.
+    # A live run pinned to an older commit keeps writing biased ladders for as long as it runs, so
+    # trusting the committed file would compare one side's corrected fit against another side's
+    # biased one. Refitting here puts BOTH sides through THIS tree's `fit_ladder`.
+    # A side with no `games.jsonl` cannot be refit; it falls back to its committed `ladder.json`
+    # and is LABELLED as such in `fit_size_note` — never silently trusted.
     final_nodes = {"run": nr[n - 1], "parent": npar[n - 1]}
     refit = {"run": False, "parent": False}
     unmatched: List[str] = []
-    if len(nr) > n:
-        got, why = _refit_first_n(run["run_dir"], n, what="run",
-                                  rated_steps=[s for s, _, _ in nr])
-        if got is None:
-            unmatched.append(why or "run: refit unavailable")
+    fallbacks: List[str] = []
+
+    def _side(nodes: List[Tuple[int, float, float]], run_dir: str, what: str
+              ) -> List[Tuple[int, float, float]]:
+        got, why = _refit_first_n(run_dir, n, what=what,
+                                  rated_steps=[s for s, _, _ in nodes])
+        if got is not None:
+            refit[what] = True
+            return got
+        if len(nodes) > n:
+            # the SIZE is genuinely unmatched and cannot be corrected — the pre-existing refusal
+            unmatched.append(why or f"{what}: refit unavailable")
         else:
-            nr, refit["run"] = got, True
-    if len(npar) > n:
-        got, why = _refit_first_n(parent["run_dir"], n, what="parent",
-                                  rated_steps=[s for s, _, _ in npar])
-        if got is None:
-            unmatched.append(why or "parent: refit unavailable")
-        else:
-            npar, refit["parent"] = got, True
+            # the size already matches; only the SOURCE is the committed (possibly pre-fix) file
+            fallbacks.append(f"{what}: {why or 'refit unavailable'}")
+        return nodes
+
+    nr = _side(nr, run["run_dir"], "run")
+    npar = _side(npar, parent["run_dir"], "parent")
     matched_fit_size = not unmatched
     a, b = nr[n - 1], npar[n - 1]
     d = a[1] - b[1]
@@ -331,6 +349,7 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                    "finished": pfinished},
         "delta_elo": d, "delta_se": se, "delta_ci95": [d - Z95 * se, d + Z95 * se],
         "refit_at_count": refit,
+        "refit_fallbacks": fallbacks,
         "matched_fit_size": matched_fit_size,
         "final_fit_nodes": {k: {"step": v[0], "elo": v[1], "se": v[2]}
                             for k, v in final_nodes.items()},
@@ -341,13 +360,17 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
             "rev-1's 8M node, 2026-09-07) and is NOT a matched-count reading; quote it only with "
             "this label. Why no refit: " + " | ".join(unmatched)
             if not matched_fit_size else
-            "a side with more rated nodes than the matched count was REFIT on its first n "
-            "snapshots (strict: every snapshot endpoint inside the prefix), because the newest node "
-            "of a fit is inflated and the n-th node of a longer final fit is a different number — "
-            f"refit: run={refit['run']}, parent={refit['parent']}; the final-fit delta would have "
-            f"read {final_nodes['run'][1] - final_nodes['parent'][1]:+.0f}."
-            if any(refit.values()) else
-            "both ladders have exactly the matched count of nodes, so no refit was needed."),
+            "BOTH sides were REFIT from their own games.jsonl on their first n snapshots (strict: "
+            "every snapshot endpoint inside the prefix) with THIS tree's fit_ladder — because the "
+            "newest node of a longer fit is inflated, AND because a committed ladder.json written "
+            "before 2026-09-07 folded the eval cycles' greedy-vs-stochastic SENTINEL edges into "
+            "the fit (+8.9 pp to the newer snapshot; +21..+29 Elo on the newest nodes) — "
+            f"refit: run={refit['run']}, parent={refit['parent']}; the committed-ladder delta "
+            f"would have read {final_nodes['run'][1] - final_nodes['parent'][1]:+.0f}."
+            + ("" if not fallbacks else
+               " ⚠️ FELL BACK to the COMMITTED ladder.json for: " + " | ".join(fallbacks)
+               + " — that side's numbers are whatever its own pinned code wrote, which before "
+                 "2026-09-07 included the sentinel edges.")),
         "rating_final": finished,
         "rating_note": ("rating final — the run wrote a final model" if finished else
                         "rating not final — run not finished. BT re-solves every node on every "

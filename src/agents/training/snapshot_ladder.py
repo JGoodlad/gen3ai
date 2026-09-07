@@ -132,8 +132,13 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     bot edges (from eval_results.jsonl, which connect the ladder to the pinned bots for the
     absolute scale). Returns the ladder dict (also written to ladder.json when ``write``).
 
+    The eval cycles' SENTINEL edges (`snap:` vs `snap:`) are EXCLUDED — they measure the same
+    frozen pair as the dense matrix but under a different protocol (greedy trainee vs stochastic
+    sentinel, asymmetric teambuilder), worth +8.9 pp to the newer snapshot and +21..+29 Elo on the
+    newest nodes. The count is returned as ``eval_sentinel_edges_dropped``; see source (2) below.
+
     ``first_n`` restricts the fit to the run's FIRST ``first_n`` snapshots — every frozen pair
-    and every bot/sentinel edge whose snapshot endpoints all lie in that prefix — and never
+    and every bot edge whose snapshot endpoints all lie in that prefix — and never
     writes ``ladder.json``. That is what "matched SNAPSHOT COUNT" means for a cross-run
     comparison: BT re-solves every node on every add and the NEWEST node of a fit is
     systematically inflated (gen-10's 12M fell 2089 → 2021 over 12 refits), so the n-th node of
@@ -165,11 +170,33 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
     for (lo, hi), (wins_lo, g) in games.items():
         if g > 0 and _kept(elo_mod.snap_key(lo), elo_mod.snap_key(hi)):
             results.append((elo_mod.snap_key(lo), elo_mod.snap_key(hi), wins_lo, g))
-    # (2) each snapshot's historical bot + sentinel edges — the anchor connection + extra data.
+    # (2) each snapshot's historical BOT edges — the anchor connection, and ONLY that.
+    #
+    # 🚨 THE EVAL CYCLES' SENTINEL EDGES (`snap:` vs `snap:`) ARE DROPPED HERE, deliberately.
+    # `elo._rows_to_results` yields both families off an eval row: trainee-vs-bot (`bot:`) and
+    # trainee-vs-sentinel (`snap:`). The sentinel edges are a DIFFERENT MEASUREMENT of the same
+    # frozen pair the dense matrix above already measures: an eval cycle plays the GREEDY trainee
+    # against a STOCHASTIC sentinel (`eval_worker`: `stochastic=not sentinel_greedy`,
+    # `temperature=self_play_temp`) with an ASYMMETRIC teambuilder (the trainee gets the
+    # sample-team bias, the sentinel does not), while `_play_pair` above plays greedy-vs-greedy
+    # with the SAME biased builder on both sides. Measured 2026-09-07 on
+    # `ai_v12_02_winprob_critic` over the 60 pairs both sources cover: the eval edge favours the
+    # NEWER snapshot by **+8.9 pp [+7.0, +10.7]** against the ladder's own edge for the same pair
+    # — systematic, not noise. Folding both in inflated `ladder.json`'s newest nodes by +21 to +29
+    # Elo, compounding exactly the newest-node inflation the matched-count rule exists to control.
+    # So: `games.jsonl` is the ONLY snapshot-vs-snapshot source, and the eval rows contribute the
+    # bot anchor alone. (The per-cycle `eval/elo` star fit — `elo.fit_from_run` — is UNCHANGED and
+    # still uses the sentinel edges; it has no dense matrix to prefer, and its own caveat is
+    # documented at `elo.py`'s greedy-vs-stochastic note.)
+    sentinel_edges_dropped = 0
     try:
         for na, nb, wa, g in elo_mod._rows_to_results(elo_mod.load_rows(run_dir, source="log")):
-            if g > 0 and _kept(na, nb):
-                results.append((na, nb, wa, g))
+            if g <= 0 or not _kept(na, nb):
+                continue
+            if elo_mod.is_snapshot(na) and elo_mod.is_snapshot(nb):
+                sentinel_edges_dropped += 1
+                continue
+            results.append((na, nb, wa, g))
     except Exception:  # noqa: BLE001 — the ladder still works from the frozen matrix alone
         pass
 
@@ -200,6 +227,10 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
                                        if v[1] > 0 and _kept(elo_mod.snap_key(lo),
                                                               elo_mod.snap_key(hi))),
         "first_n": first_n,
+        # How many eval-cycle sentinel (`snap:` vs `snap:`) edges were EXCLUDED from this fit —
+        # see the comment at source (2). A ladder written before 2026-09-07 has no such key and
+        # was fit WITH them (worth +21..+29 Elo on its newest nodes).
+        "eval_sentinel_edges_dropped": sentinel_edges_dropped,
         "n_pairs_possible": len(list(itertools.combinations(steps, 2))),
         "ratings": snap_ratings,
         "se": snap_se,

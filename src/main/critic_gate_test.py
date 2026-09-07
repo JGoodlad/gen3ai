@@ -811,12 +811,17 @@ def test_a_refusal_at_the_cli_prints_its_message_and_exits_2(tree, tmp_path):
     assert "REFUSAL" in proc.stderr and "snapshot_ladder" in proc.stderr
 
 
-def test_equal_counts_need_no_refit_and_say_so(tree):
+def test_equal_counts_with_no_pair_log_fall_back_to_the_committed_ladders_and_say_so(tree):
+    """Equal node counts and NO `games.jsonl` on either side: nothing can be refit, so both
+    sides use their committed `ladder.json` — which is exactly the case the note must LABEL
+    (2026-09-07), because a ladder written before then folded the sentinel edges into its fit."""
     sec = cg.ladder_section(cg._resolve_ref(tree["arm"], what="run"),
                             cg._resolve_ref(tree["parent"], what="parent"), None)
     assert sec["refit_at_count"] == {"run": False, "parent": False}
     assert sec["delta_elo"] == sec["delta_elo_final_fits"]
-    assert "no refit" in sec["fit_size_note"]
+    assert len(sec["refit_fallbacks"]) == 2
+    assert "FELL BACK" in sec["fit_size_note"]
+    assert sec["matched_fit_size"] is True          # the SIZE is matched; only the SOURCE is old
 
 
 @pytest.mark.parametrize("arm_elo, expect", [((1900.0, 1990.0), "LEADS"),
@@ -890,3 +895,60 @@ def test_G7_names_a_blank_episode_length_NOT_EVALUABLE_instead_of_OK(tree, tmp_p
     assert "NOT EVALUABLE" in md and "| OK |" not in md.split("## 3. G7")[1].split("## 4")[0]
     doc = json.load(open(out_json))
     assert doc["kill"]["ep_len_not_evaluable_steps"] == [c["step"] for c in sec["cycles"]]
+
+
+def test_a_committed_ladder_is_NOT_used_when_its_own_games_log_can_be_refit(tree):
+    """🚨 A COMMITTED `ladder.json` IS NOT EVIDENCE — it is whatever that run's PINNED code wrote.
+
+    Every ladder written before 2026-09-07 folded the eval cycles' greedy-vs-stochastic SENTINEL
+    edges into the fit (+8.9 pp to the newer snapshot; +21..+29 Elo on the newest nodes), and a
+    live run pinned to an older commit keeps writing them. So the gate refits BOTH sides from
+    their own `games.jsonl` with THIS tree's `fit_ladder` whenever that log exists — even when the
+    node counts already match and no size correction is needed.
+
+    Here both sides rate exactly 2 nodes, so the OLD code would have refit neither and taken the
+    committed numbers verbatim. The committed values are planted far from what the pair log
+    implies, so using them is detectable.
+    """
+    from agents.training import snapshot_ladder as sl
+    steps = (1_000_000, 2_000_000)
+    arm = build_run(tree["root"], "ARMCOMMITTED", sharpness=0.05, steps=steps,
+                    ladder_elo=(1800.0, 2500.0))     # a wildly inflated 2nd node
+    comp = build_run(tree["root"], "COMPCOMMITTED", sharpness=0.05, steps=steps,
+                     ladder_elo=(1800.0, 1850.0))
+    _write_pair_log(arm, steps, [(2_000_000, 1_000_000, 55)])   # barely ahead, not +700
+    _write_pair_log(comp, steps, [(2_000_000, 1_000_000, 55)])
+
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(comp, what="parent"), None)
+    assert sec["at_snapshots"] == 2
+    # BOTH sides refit, at MATCHED node count — the behaviour the old `len(nodes) > n` guard skipped
+    assert sec["refit_at_count"] == {"run": True, "parent": True}
+    assert sec["refit_fallbacks"] == []
+
+    fresh_arm = sl.fit_ladder(arm, first_n=2, write=False)["ratings"]["2000000"]
+    fresh_comp = sl.fit_ladder(comp, first_n=2, write=False)["ratings"]["2000000"]
+    assert sec["run"]["node_at_count"]["elo"] == pytest.approx(fresh_arm, abs=0.05)
+    assert sec["parent"]["node_at_count"]["elo"] == pytest.approx(fresh_comp, abs=0.05)
+    # the committed numbers said +650; the refit says the two runs are level
+    assert sec["delta_elo_final_fits"] == pytest.approx(2500.0 - 1850.0, abs=0.05)
+    assert abs(sec["delta_elo"]) < 20.0
+
+
+def test_a_side_with_no_pair_log_at_matched_count_is_LABELLED_as_a_fallback(tree):
+    """A side that cannot be refit (no `games.jsonl`) still uses its committed ladder — but the
+    note SAYS so, because those numbers may carry the pre-2026-09-07 sentinel bias."""
+    steps = (1_000_000, 2_000_000)
+    arm = build_run(tree["root"], "ARMNOLOG", sharpness=0.05, steps=steps,
+                    ladder_elo=(1800.0, 1900.0))
+    comp = build_run(tree["root"], "COMPWITHLOG", sharpness=0.05, steps=steps,
+                     ladder_elo=(1800.0, 1850.0))
+    _write_pair_log(comp, steps, [(2_000_000, 1_000_000, 55)])
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(comp, what="parent"), None)
+    assert sec["refit_at_count"] == {"run": False, "parent": True}
+    assert len(sec["refit_fallbacks"]) == 1 and "run:" in sec["refit_fallbacks"][0]
+    assert "FELL BACK" in sec["fit_size_note"] and "games.jsonl" in sec["fit_size_note"]
+    # the SIZE is matched, so the famine half stays evaluable — only the SOURCE is labelled
+    assert sec["matched_fit_size"] is True
+    assert sec["run"]["node_at_count"]["elo"] == 1900.0

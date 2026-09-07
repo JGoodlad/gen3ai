@@ -1496,7 +1496,7 @@ values of one quantity start disagreeing.
 
 | section | what it does | whose statistics |
 |---|---|---|
-| 1 ladder | reads both `snapshot_ladder/ladder.json` and compares at **matched SNAPSHOT COUNT** (never matched step); a side with MORE rated nodes than the count is **REFIT on its first n** (`fit_ladder(first_n=…)`, strict prefix) so the fit SIZE matches too, else the delta is labelled **UNMATCHED FIT SIZE**; prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix when the counts differ |
+| 1 ladder | reads both `snapshot_ladder/ladder.json` for the node LIST, then **REFITS BOTH SIDES** on their first n from their own `games.jsonl` with this tree's `fit_ladder(first_n=…)` (strict prefix) — *always*, not only when the counts differ, because a committed ladder written before 2026-09-07 carries the eval-**sentinel** bias (+21..+29 Elo on its newest nodes) and a run pinned to an older commit keeps writing it. Compares at **matched SNAPSHOT COUNT**, never matched step. A side that cannot be refit falls back to its committed ladder and is NAMED in `refit_fallbacks` + `fit_size_note`; a side with MORE rated nodes that cannot be refit is still **UNMATCHED FIT SIZE** and the famine pre-test still REFUSES on it. Prints `rating not final` while the run is unfinished | the BT fit's, re-fit on the prefix — both sides |
 | 2 calibration | §4.3 G1–G4 per checkpoint, `bot`/`pool` **separately**, selection-reweighted | `main.scaffolding_gauge`'s `collect_slices` / `build_reliability` / `true_win_rates`, IMPORTED |
 | 3 G7 kill | stall rate + mean episode length vs the era; episode length is read from TensorBoard `eval/mean_ep_len_vs_{bots,pool}` (every cycle) first, the `metadata.json` blocks second — the blocks are keyed by CHECKPOINT and miss any cycle no checkpoint captured (10M and 14M on `ai_v12_02`); a step with no episode length prints **ep_len NOT EVALUABLE**, never OK. 🚨 **The 1.25× threshold is defined on EVAL episode length, never on the train series `rollout/ep_len_mean`** — same name, same units, different population: on `ai_v12_02` at 18M the train series was +25% over its early value (self-play opponents improve WITH the trainee, so near-equal games lengthen) while eval-vs-bots was +3.7% and eval-vs-pool flat, so applying the eval threshold to the train series would have fired a kill on an arm at 0% of the real one | the run's own recorded metrics + its trace summaries |
 | 4 untaught meter | `main.untaught_meter --baseline <parent> --control <cont…>` | the meter's, read back out of its own `--json` |
@@ -2845,7 +2845,8 @@ fires a **DETACHED** `python -m agents.training.snapshot_ladder <run> --promote 
 (`--snapshot-ladder-games`, default 100/pair; 0 disables) and appends to
 `<run>/snapshot_ladder/games.jsonl` (**forever, race-safe line appends; a measured pair is NEVER
 replayed**). `fit_ladder` combines that dense frozen-vs-frozen matrix with each snapshot's
-historical bot edges (from `eval_results.jsonl` — the anchor connection) → an anchored BT fit
+historical bot edges (from `eval_results.jsonl` — the anchor connection, **and only the BOT edges**:
+see the eval-sentinel exclusion below) → an anchored BT fit
 (`fit_pairwise`, bots pinned) written to `<run>/snapshot_ladder/ladder.json` (the sidecar metric);
 `_record_ladder_elo` surfaces the latest promoted node's rating as `eval/ladder_elo` (+`_ci`) on
 TB/TUI — the high-resolution counterpart to the saturated `eval/elo`. Snapshots load via
@@ -2854,7 +2855,31 @@ skipped). `--backfill` pays the one-time back tax over the whole current pool (i
 measured pairs); `--fit-only` refits without playing. `ladder.json.fit_quality.mean_abs_err`
 QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-scissors — the dense
 matrix at least measures it). Tests: `snapshot_ladder_test.py` (store accumulation/symmetry,
-measure-once contract, fit-recovers-ordering, sidecar read).
+measure-once contract, fit-recovers-ordering, sidecar read, the eval-sentinel exclusion).
+
+🚨 **THE EVAL CYCLES' SENTINEL EDGES ARE EXCLUDED FROM THE LADDER FIT** (2026-09-07).
+`elo._rows_to_results` yields TWO families off one eval row — trainee-vs-bot (`bot:`) and
+trainee-vs-**sentinel** (`snap:` vs `snap:`) — and `fit_ladder` used to fold in both. The second
+is a **different measurement of the same frozen pair** the dense matrix already holds: an eval
+cycle plays the GREEDY trainee against a **STOCHASTIC** sentinel (`eval_worker`:
+`stochastic=not sentinel_greedy`, `temperature=self_play_temp`) with an **asymmetric teambuilder**
+(the trainee gets the sample-team bias, the sentinel does not), while the ladder plays
+greedy-vs-greedy with the same biased builder on both sides. Measured on
+`ai_v12_02_winprob_critic` over the **60 pairs both sources cover**: the eval edge favours the
+NEWER snapshot by **+8.9 pp [+7.0, +10.7]** — systematic, not noise. Mixing them inflated
+`ladder.json`'s newest nodes by **+21 to +29 Elo**, compounding exactly the newest-node inflation
+the matched-count rule exists to control. All three runs compared in the win-prob era carry
+`eval_sentinel_greedy=False` / `self_play_temp=1.0`, so **every ladder written before 2026-09-07
+has it**. `games.jsonl` is now the ONLY snapshot-vs-snapshot source; the excluded count is
+returned and written as **`eval_sentinel_edges_dropped`** (absent ⇒ a pre-fix ladder).
+Re-fit shift, per run (committed `ladder.json` → current `fit_ladder`, same rated steps): the
+early nodes RISE and the late nodes FALL — `ai_v12_02_winprob_critic` 4M **+32.1** → 34M
+**−33.6**; `ai_v9_29_rev1_0823` 2M **+30.5** → 24M **−45.1**.
+**The per-cycle `eval/elo` star fit (`elo.fit_from_run` / `record_elo`) is UNCHANGED and still
+uses the sentinel edges** — it has no dense matrix to prefer, and those near-50% edges are the
+only resolution the saturated bots cannot give (removing them from one cycle moves the trainee
+−110 Elo and WIDENS the CI ±30 → ±41). The exclusion is the LADDER's alone, and
+`snapshot_ladder_test.py` pins that separation with a test on `fit_from_run`.
 
 ### Hodge decomposition — the SPINE and the WIDTH (`hodge.py`)
 
@@ -2978,6 +3003,22 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    its own late selves (`ai_v9_59_R2ACTION_0827`: every pair touches 26M/28M) — is reported at
    **UNMATCHED FIT SIZE** with that label on the number, and the famine pre-test REFUSES on it
    rather than printing a lead.
+
+4. **A committed `ladder.json` is not evidence — REFIT BOTH SIDES from `games.jsonl`.** A run's
+   `ladder.json` was written by the code that run is PINNED to, and every ladder written before
+   2026-09-07 folded the eval cycles' greedy-vs-stochastic **sentinel** edges into the fit
+   (+8.9 pp to the newer snapshot, +21..+29 Elo on the newest nodes — see the ladder section
+   above). A live run pinned to an older commit keeps writing biased ladders for as long as it
+   runs, so trusting the committed file compares one side's corrected fit against another side's
+   biased one. `main.critic_gate` therefore refits **both** sides with THIS tree's `fit_ladder`
+   whenever `games.jsonl` exists — even at already-matched node counts, where the old
+   `len(nodes) > n` guard refit neither — and LABELS in `fit_size_note` (and `refit_fallbacks`)
+   any side that had to fall back to its committed ladder. Measured effect on the registered
+   famine read (arm `ai_v12_02_winprob_critic` vs `famine_comparator` = `ai_v9_29_rev1_0823`,
+   both refit on a strict prefix): the trail goes from **+29.9 Elo (se 20.7) → +13.0 (se 22.1)**
+   at n=4 and from **+34.3 (se 14.7) → +20.9 (se 15.8)** at n=12. The verdict does not change —
+   both are inside the registry floor of 38 — but the registered −30 / −34 numbers were
+   measured through the biased fit.
 
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 
