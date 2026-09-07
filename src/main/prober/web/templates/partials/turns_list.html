@@ -143,14 +143,24 @@
        same explanations are collected once, visibly, in the legend at the top of the page: a
        `title` is invisible on a phone, and this view is built to be read on one. #}
     <p class="critic">
+      {% set _cur = turns.critic_currency if turns is defined and turns else None %}
+      {% if _cur and _cur.is_probability %}
+      <span class="metric" title="V(s) — on this run the critic IS the win-prob head, so V is a PROBABILITY of winning in [0,1] and 0.5 really is even. It is the same number as P(win) on this row, not a second estimator.">V {{ m.num(d.value) }}</span>
+      {% else %}
       <span class="metric" title="V(s) — the critic's expected SHAPED, DISCOUNTED return from this state. Its zero is NOT 'even': a measured self-mirror 50/50 reads about −6.5, so read it against that offset rather than against 0. For odds you can read directly, use P(win).">V {{ m.num(d.value) }}</span>
+      {% endif %}
       <span class="metric" title="How far V moved from this decision to the next. A large negative step is a VALUE CLIFF — the moment the critic's read of the game fell apart, and the metric `scan` ranks battles by to find the turn a loss turned.">ΔV {{ m.signed(d.delta_v) }}</span>
       {% if d.win_prob is not none %}
-      {# P(win) beside V, not instead of it: V is a SHAPED, discounted return whose zero is not
-         "even" (a measured self-mirror 50/50 reads about −6.5), so the two disagree in sign all
-         the time and only the calibrated one is readable as odds. Absent on a run with no
-         win-prob head — the great majority of traces. #}
+      {# P(win) beside V, not instead of it — on a SHAPED critic. There V is a discounted return
+         whose zero is not "even" (a measured self-mirror 50/50 reads about −6.5), so the two
+         disagree in sign all the time and only the calibrated one is readable as odds. Under
+         `--critic winprob` they are ONE number and the row says so rather than inviting a
+         cross-check that cannot fail. Absent on a run with no win-prob head. #}
+      {% if _cur and _cur.is_probability %}
+      <span class="metric" title="The win-prob head's calibrated probability of winning. On this run it IS the critic — the same number as V on this row, shown as a percentage.">P(win) {{ m.pct(d.win_prob, 0) }} <span class="muted">= V</span></span>
+      {% else %}
       <span class="metric" title="The win-prob head's CALIBRATED probability of winning from this state — the interpretable [0,1] complement to V. Unlike V, 50% here really is even. (The P(win) · dist strip below is a different estimator of the same thing: the return distribution's own mass above zero.)">P(win) {{ m.pct(d.win_prob, 0) }}</span>
+      {% endif %}
       <span class="metric" title="How much this move moved the win odds, in percentage POINTS — a difference of two probabilities, which is not a '%'. +1.3pp means the odds improved by 1.3 points (e.g. 82% → 83.3%).">ΔP {{ m.signed_pp(d.delta_win_prob) }}</span>
       {% endif %}
       <span class="metric" title="TD residual δ = r + γV(s′) − V(s) — how SURPRISED the critic was by what happened. Near 0 = the turn went as it expected; large NEGATIVE = the outcome was much worse than predicted, which is what `scan --metric td_residual` ranks by.">TD δ {{ m.signed(d.td_residual) }}</span>

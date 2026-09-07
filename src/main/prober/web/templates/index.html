@@ -36,8 +36,22 @@
     <div class="stat"><div class="k">wins</div><div class="v win">{{ data.totals.win }}</div></div>
     <div class="stat"><div class="k">losses</div><div class="v loss">{{ data.totals.loss }}</div></div>
     <div class="stat"><div class="k">γ</div><div class="v">{{ data.gamma }}</div></div>
+    {# WHICH READOUT IS THE CRITIC — the one fact that decides how to read every V on every other
+       page. Orientation is where it belongs: a reader who does not learn it here will carry the
+       shaped ±30 scale into a number that is a probability. #}
+    {% if data.critic_currency %}
+    <div class="stat" title="{{ data.critic_currency.note }}">
+      <div class="k">critic</div><div class="v">{{ data.critic_currency.mode }}</div></div>
+    {% endif %}
     <div class="stat"><div class="k">checkpoints</div><div class="v">{{ data.checkpoints | length }}</div></div>
   </div>
+  {% if data.critic_currency %}
+  <p class="muted small">
+    V on every page of this run is in <strong>{{ data.critic_currency.units }}</strong>
+    (range {{ data.critic_currency.low }} … {{ data.critic_currency.high }}, even =
+    <strong>{{ data.critic_currency.even }}</strong>). {{ data.critic_currency.note }}
+  </p>
+  {% endif %}
   {{ m.chart("outcomes", spec) }}
 </section>
 
@@ -105,6 +119,44 @@
   </table>
   </div>
   {% endif %}
+</section>
+
+{# OFFLINE INSTRUMENTS — LINKED, not re-implemented. Each of these owns statistics this app does
+   not (a Bradley-Terry ladder, a cluster bootstrap over teams, a selection reweighting that
+   REFUSES rather than falling back), and the one rule here is that every number comes back from a
+   session method verbatim. Re-deriving any of them in a handler is exactly how two surfaces start
+   disagreeing about one run — so the honest surface is the command. #}
+<section class="card">
+  <h2>Offline instruments for this run</h2>
+  <p class="muted small">
+    These run outside the app — they play battles, fit ladders, or load checkpoints, which is work
+    a page request must not start. Copy a line and run it in the repo.
+  </p>
+  <div class="scroll-x">
+  <table>
+    <thead><tr><th>question</th><th>command</th></tr></thead>
+    <tbody>
+    {% if data.critic_currency and data.critic_currency.is_probability %}
+      <tr><td>Does this critic clear the era's pre-registered gate? (ladder at matched snapshot
+        count, calibration with <strong>resolution</strong> primary, the stall kill-condition,
+        the untaught meter)</td>
+        <td class="mono">python -m main.critic_gate {{ run or "&lt;run&gt;" }} --parent &lt;ref&gt; --control &lt;refs…&gt;</td></tr>
+    {% endif %}
+      <tr><td>Is the win-prob head calibrated against the realized outcome, with the eval quota's
+        loss-enrichment undone?</td>
+        <td class="mono">python -m main.scaffolding_gauge {{ run or "&lt;run&gt;" }} --reliability --reliability-reweight</td></tr>
+      <tr><td>Can it pilot teams it was never taught?</td>
+        <td class="mono">python -m main.untaught_meter {{ run or "&lt;run&gt;" }} --control &lt;continuation arms…&gt;</td></tr>
+      <tr><td>Where does it sit on the anchored ladder?</td>
+        <td class="mono">python -m main.elo {{ run or "&lt;run&gt;" }}</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted small">
+    ⚠ <strong>An ELO is only final once the run is</strong>, and a cross-run comparison must be at
+    matched snapshot <em>count</em>, not matched step — the newest Bradley-Terry node is
+    systematically inflated.
+  </p>
 </section>
 {% endif %}
 {% endblock %}

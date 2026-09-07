@@ -30,6 +30,10 @@ class _AnalysisMixin:
                                our_team_details=self._our_team_details(b))
         d = asdict(a)
         d["model_resolution"] = dict(_choice_dict(choice), dropped_kwargs=list(dropped))
+        # WHICH READOUT IS THE CRITIC. Under `--critic winprob` `value` and `win_prob` below are
+        # the SAME number, so a surface must be able to say so instead of presenting them as two
+        # estimators that happen to agree on every decision ever rendered.
+        d["critic_currency"] = self.critic_currency()
         d["protocol"] = self._protocol_for(b, d.get("turn", 0))   # raw Showdown log for this turn
         if d.get("value"):  # add the TD residual the engine (γ-agnostic) can't
             reward = (d.get("outcome") or {}).get("reward")

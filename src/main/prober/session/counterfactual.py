@@ -63,11 +63,18 @@ class _CounterfactualMixin:
         model, _ = self._model_for(b)
         summary, npz = self._summary(b), self._npz(b)
         if inv is not None:
-            return lookahead_decision(model, record, summary, npz, int(inv),
-                                      n_seeds=n_seeds, followup=followup, impl=self._impl)
-        return lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
-                                gamma=self._gamma, n_seeds=n_seeds, followup=followup,
-                                impl=self._impl)
+            out = lookahead_decision(model, record, summary, npz, int(inv),
+                                     n_seeds=n_seeds, followup=followup, impl=self._impl)
+        else:
+            out = lookahead_battle(model, record, summary, npz, invs=invs, worst=worst,
+                                   gamma=self._gamma, n_seeds=n_seeds, followup=followup,
+                                   impl=self._impl)
+        # The currency `value_crn` / `delta_v` are in. Under `--critic winprob` `win_prob_crn` is
+        # the SAME number as `value_crn` (verified on the live arm: equal to 4 dp on every
+        # candidate), so a surface must be able to say "one readout" rather than presenting a
+        # column that can never disagree as a second opinion.
+        out["critic_currency"] = self.critic_currency()
+        return out
 
     def better_line(self, battle_id: str, inv: int, *, depth: int = 2, beam: int = 3, top_k: int = 4,
                     followup: str = "random", opponent_ckpt: "str | None" = None,
@@ -129,6 +136,8 @@ class _CounterfactualMixin:
             model, record, summary, npz, int(inv), depth=depth, beam=beam, top_k=top_k,
             followup=followup, opp_model=opp_model, session=search_session, impl=self._impl)
         out["interior_opponent"] = opp_used
+        # The currency the beam's ΔV and every ply's V(s′) are in — see `lookahead` above.
+        out["critic_currency"] = self.critic_currency()
 
         # Ground-truth CONFIRM of the recommended first action vs the RELOADED REAL opponent.
         if confirm_rollouts > 0 and out.get("best_alternative"):

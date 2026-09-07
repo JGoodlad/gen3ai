@@ -283,6 +283,15 @@
 <section class="card">
   <h2>the critic</h2>
 
+  {% set cur = a.critic_currency %}
+  {% if cur %}
+  <p class="muted small">
+    <strong>{{ cur.mode }}</strong> critic — V is in <strong>{{ cur.units }}</strong>
+    (even = {{ cur.even }}).{% if cur.is_probability %} The P(win) tiles below are
+    <strong>the same number</strong> as V, shown as a percentage — one readout, not two.{% endif %}
+  </p>
+  {% endif %}
+
   {% if a.value %}
   <div class="stats">
     <div class="stat"><div class="k" title="the value recorded at capture time">V recorded</div>
@@ -313,12 +322,15 @@
 
   {% if a.win_prob %}
   <div class="stats">
-    <div class="stat"><div class="k" title="the win-probability head's calibrated P(win|s)">P(win)</div>
+    <div class="stat"><div class="k" title="the win-probability head's calibrated P(win|s){% if cur and cur.is_probability %} — on this run this IS the critic, identical to V above{% endif %}">P(win){% if cur and cur.is_probability %} <span class="muted">= V</span>{% endif %}</div>
       <div class="v">{{ m.pct(a.win_prob.recorded, 1) }}</div></div>
     <div class="stat"><div class="k">P(win) next</div>
       <div class="v">{{ m.pct(a.win_prob.next_recorded, 1) }}</div></div>
-    <div class="stat"><div class="k" title="how much this move moved the win odds">ΔP(win)</div>
-      <div class="v">{{ m.signed(a.win_prob.delta, 3) }}</div></div>
+    {# percentage POINTS, matching turns_list — a difference of two probabilities is not a '%',
+       and the two surfaces printing the same quantity in different units is how a reader ends up
+       comparing 0.430 against 43.0pp. #}
+    <div class="stat"><div class="k" title="how much this move moved the win odds, in percentage POINTS">ΔP(win)</div>
+      <div class="v">{{ m.signed_pp(a.win_prob.delta) }}</div></div>
   </div>
   {% endif %}
 

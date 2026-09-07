@@ -231,6 +231,79 @@ answers, each pinned by a test in `app_test.py` → "usability / information flo
   `V > 0`, which the project's own docs call systematically wrong, so it belongs next to the two
   categories it distorts.
 
+## The critic's CURRENCY, and the thresholds that depend on it
+
+`--critic winprob` makes V a **probability in [0,1]** instead of a shaped return of roughly ±30,
+and `values` then EQUALS `win_probs`. Nothing here computes that — `ProbeSession.critic_currency()`
+does, and it rides `run_summary()`, `battle_turns()`, `analyze()` and `calibration()`. This package
+only has to stop CONTRADICTING it.
+
+**The regression worth remembering: a "default" typed into a handler is not a default.** `/api/triage`
+declared `v_even: float = Query(0.0)` and `/calibration` `overvalue_tau = Form("5.0")`, so both
+reached the session as **EXPLICIT** arguments and defeated its per-currency resolution entirely —
+the engine's `if v_even is None` branch was dead code on every web request. Both are now `None`/blank
+by default (`_form_opt_float` keeps "unset" and "the user typed a number" tellable apart, and treats
+an unparseable value as unset rather than as a threshold). The calibration form's placeholder shows
+the run's own `default_overvalue_tau`, so the hint cannot drift from the resolver.
+
+The consequence on a winprob run was not cosmetic: a shaped τ of 5.0 exceeds the whole range a
+probability gap can occupy, so `critic_overvalued` read a confident **0%** for units reasons alone.
+`calibration_result.html` now renders the engine's **`threshold_warning`** ABOVE the numbers it
+invalidates — generating that sentence and discarding it in the template is the same defect one
+layer up.
+
+`/` names the mode in its stat strip and spells out the units, because a reader who does not learn
+it on the orientation page carries the shaped scale into every later V. `/battle`'s legend, the
+per-turn V tooltip and `/analyze`'s critic card all branch on `is_probability`; under winprob they
+say P(win) **is** V rather than describing it as "the readable complement to V", and mark the P(win)
+tiles `= V`. Two panels showing one number while the copy promises two estimators is a reader trap,
+not a redundancy.
+
+**The reliability charts follow the currency too.** On a win-prob critic the curve is a genuine
+PROBABILITY CALIBRATION — predicted P(win) against the realized win rate — because `values` IS
+P(win) and G is the terminal win indicator at γ=1. Its axes therefore read `predicted P(win)` /
+`realized win rate` rather than `recorded V(s)` / `realized return G(s)`, and the gap chart's y-axis
+reads `gap (pp)`, since a difference of two probabilities is percentage POINTS. That is not a
+styling preference: labelling 0..1 axes as a "return" invites the reader to hunt for a shaped scale
+that is not there — the same units confusion `overvalue_tau` encoded as a number, restated in prose.
+`charts_test.py` pins both eras, including that the winprob spec contains the string "realized
+return" nowhere.
+
+**DEAD under this era — listed for the era-boundary purge, deliberately NOT deleted here.** The
+dist head is not built (`value_dist_mode == "none"`), so every awareness surface degrades to empty.
+Nothing 500s; the cost is real estate and a reader wondering what is broken:
+
+| surface | state |
+|---|---|
+| `index.html` "did it know?" card | heading + 6-line blurb always render; the swap fills with `{{ data.error }}` — a permanently empty card, second section of the landing page |
+| `scan_table.html` `knew @` / `lead` columns | headers always render, every cell `—` |
+| `triage_table.html` `blind` / `median lead` columns | same |
+| `battle.html` `P(win) · dist` legend entry | static `<dl>`, so it explains a strip that never appears |
+| `app.py::_value_dist_spec` + `/api/awareness`'s `lead_bar`/`cap_turn`/`stall_bar` | never called / inert |
+
+Purging them is an A4-shaped change (the mode has to go with the head — see the design's A2 census),
+so it belongs to that pass, not this one.
+
+**The era's offline instruments are LINKED from `/`, not re-implemented here.** Each owns statistics
+this app does not — a Bradley-Terry ladder, a cluster bootstrap over teams, a selection reweighting
+that REFUSES rather than falling back — and *the one rule* says every number comes back from a
+session method verbatim. Re-deriving one in a handler is how two surfaces start disagreeing about a
+run; running one in a request would start minutes of battles on a box that trains. So `/` carries a
+card with the commands, `critic_gate` shown only on a winprob run:
+
+```bash
+python -m main.critic_gate <run> --parent <ref> --control <refs…>        # the pre-registered read
+python -m main.scaffolding_gauge <run> --reliability --reliability-reweight
+python -m main.untaught_meter <run> --control <continuation arms…>       # refs are POSITIONAL
+python -m main.elo <run>
+```
+
+⚠ **A command in a template is a command someone will paste**, so these were checked against the
+live parsers rather than written from memory — which caught one (`main.untaught_meter` takes its
+refs positionally; a `--ref` flag does not exist). Keeping them in this file is deliberate: the
+CLAUDE.md freshness gate resolves every `--flag` against some parser in the tree, so the flags
+above cannot rot silently the way the template alone would.
+
 ## Which sim the probes spawn (`--impl`)
 
 `falsify_scan` and `calibration` re-roll turns through an offline replay/search driver, and since
@@ -707,6 +780,16 @@ was applied to a copy of the tree and the matching test confirmed red):
   (values under water, so the onset marker and the `knew` strip render), one trace with **no
   `value_dist` at all** (the counted-but-never-judged path), and win-prob on exactly one battle so
   the far more common no-win-prob rendering stays gated.
+
+  **`build_winprob()` is the SECOND era's fixture**, and separate on purpose: the two differ in what
+  EXISTS, not in numbers. `values` equals `win_probs` exactly (so the "one readout" copy has a case
+  that cannot be faked by two close numbers), there is no dist head at all, γ is 1.0 with a terminal
+  win indicator, and `model_config.json` carries `"critic": "winprob"` — while `build()` deliberately
+  carries NO `critic` key, because 214 of 215 archived runs carry none and "absent means shaped" is
+  the rule that keeps them readable. Its loss is valued high and its win low, so `V − G` spans about
+  ±0.7: above the winprob τ (≈0.083) and far below the shaped one (5.0), which is exactly the
+  discrimination the unreachable-threshold guard has to make. Without it none of the currency
+  behaviour was test-covered, which is how the hardcoded handler defaults shipped.
 
   ⚠ **A distribution must agree with its own recorded V.** The awareness fold denormalizes the
   support by a least-squares fit over the trace's `(dist mean, recorded V)` pairs, so a row built

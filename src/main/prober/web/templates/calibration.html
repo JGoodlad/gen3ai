@@ -33,7 +33,12 @@
     <label>worst/battle<input type="number" name="worst" value="2" min="1" max="10" size="3"></label>
     <label>seeds<input type="number" name="seeds" value="32" min="2" max="200" size="4"></label>
     <label>V-bins<input type="number" name="bins" value="10" min="2" max="50" size="3"></label>
-    <label>overvalue τ<input type="number" name="overvalue_tau" value="5.0" step="0.5" size="4"></label>
+    {# BLANK by default, and the placeholder names the currency this run actually uses. A literal
+       here is right on one era and silently unreachable on the next — a shaped 5.0 typed against a
+       [0,1] critic can never fire, so `critic_overvalued` reads 0% for units reasons alone. #}
+    <label title="Reliability gap above which a crater counts as critic_overvalued. Units follow this run's critic — leave blank for the per-currency default.">overvalue τ
+      <input type="number" name="overvalue_tau" value="" step="any" size="5"
+             placeholder="{{ '%.3f'|format(summary.critic_currency.default_overvalue_tau) if summary.critic_currency else 'auto' }}"></label>
     <label>concurrency<input type="number" name="concurrency" value="8" min="1" max="16" size="3"></label>
     <button class="primary" type="submit">run calibration</button>
     <span id="cal-busy" class="htmx-indicator muted">submitting…</span>

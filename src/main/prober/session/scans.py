@@ -418,7 +418,7 @@ class _ScansMixin:
         return dict(row.get("bots") or {})
 
     def triage(self, *, step: "int | None" = None, opponent: "str | None" = None,
-               wp_even: float = WP_EVEN_DEFAULT, v_even: float = 0.0) -> dict:
+               wp_even: float = WP_EVEN_DEFAULT, v_even: "float | None" = None) -> dict:
         """Loss attribution: categorize every loss's decisive turning point into the engine taxonomy,
         aggregate, and RANK the failure categories by estimated recoverable win-rate (the lever
         prioritization). Model-free. Defaults to the latest step that has loss traces.
@@ -429,8 +429,18 @@ class _ScansMixin:
         (default 0). NB: V's zero is NOT "even" — V is a shaped/discounted return with a structural
         negative offset (a self-mirror 50/50 reads V≈−6.5), so the V-fallback over-counts grinds; pass
         ``v_even`` = the checkpoint's structural even-point (its self-mirror V / PopArt μ) to re-center a
-        no-win-prob run."""
+        no-win-prob run.
+
+        ``v_even=None`` (the default) resolves that even-point from the run's CRITIC CURRENCY: 0.0
+        on a shaped critic — the documented over-counting fallback above — but **0.5 under
+        ``--critic winprob``**, where V *is* P(win) and 0.0 is not "even" but a certain loss. On a
+        winprob run the fallback is also unreachable in practice (``values`` equals ``win_probs``,
+        so the primary split always has its input), but a threshold that is wrong only where it is
+        currently unused is still wrong, and the next reader will not know that."""
         from collections import defaultdict
+        currency = self.critic_currency()
+        if v_even is None:
+            v_even = float(currency["even"])
         losses = [b for b in self.tree.all_battles() if b.outcome == "loss"]
         if step is None:
             steps = sorted({b.step for b in losses})
@@ -548,7 +558,8 @@ class _ScansMixin:
             "n_losses_analyzed": total, "n_bot_opponents": len(bot_opps),
             "bot_win_rates": {o: wr[o] for o in bot_opps},
             "ranking_metric": ranking_metric,
-            "winning_split": {"wp_even": wp_even, "v_even": v_even, "wp_coverage": wp_frac},
+            "winning_split": {"wp_even": wp_even, "v_even": v_even, "wp_coverage": wp_frac,
+                              "critic_mode": currency["mode"], "v_units": currency["units"]},
             "caveats": caveats,
             "categories": cats,
         }

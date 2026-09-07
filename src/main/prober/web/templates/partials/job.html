@@ -54,7 +54,7 @@
       <th class="num" title="the critic's value of the state this action leads to, on the realized dice">V(s′) CRN</th>
       <th class="num" title="V(s′) minus the chosen line's V(s′)">ΔV vs played</th>
       {% if r.n_seeds %}<th class="num">dice mean ± std</th>{% endif %}
-      <th class="num">P(win|s′)</th><th>terminal</th>
+      <th class="num" title="{% if r.critic_currency and r.critic_currency.is_probability %}on this run the critic IS the win-prob head, so this is the SAME number as V(s′){% else %}the win-prob head's calibrated P(win) on the successor{% endif %}">P(win|s′){% if r.critic_currency and r.critic_currency.is_probability %} <span class="muted">= V</span>{% endif %}</th><th>terminal</th>
     </tr></thead>
     <tbody>
     {% for c in r.candidates %}
@@ -133,6 +133,10 @@
     <span class="mono">{{ r.opp_model_used or r.interior_opponent or "—" }}</span>.
     The two P(win) figures above are the head's readings of the two lines; they are printed side by
     side rather than subtracted.
+    {% if r.critic_currency and r.critic_currency.is_probability %}
+    On this run the win-prob head <strong>is</strong> the critic, so those two figures are the same
+    numbers as the two V readings — one readout shown twice, not two estimators agreeing.
+    {% endif %}
   </p>
 
   {% if r.depth > 1 and "self_model_approx" in (r.opp_model_used or "") %}

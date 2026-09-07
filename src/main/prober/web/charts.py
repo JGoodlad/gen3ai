@@ -88,15 +88,34 @@ def crater_bracket_spec(gate: dict, *, weighting: str = "delta") -> dict:
     )
 
 
-def reliability_curve_spec(bins: "list[dict]") -> dict:
+def _reliability_labels(currency: "dict | None") -> "tuple[str, str, str, str]":
+    """``(x_axis, y_axis, title, subtitle_tail)`` for the two reliability charts.
+
+    On a WIN-PROB critic this curve is not "V against a return" — it is a genuine PROBABILITY
+    CALIBRATION plot (predicted P(win) against the realized win rate), because `values` IS P(win)
+    and G is the terminal win indicator at γ=1. Labelling it "realized return G(s)" there is not a
+    stylistic slip: it invites the reader to look for a shaped-return scale on axes that run 0..1,
+    which is the same units confusion `overvalue_tau` encoded numerically.
+    """
+    if currency and currency.get("is_probability"):
+        return ("predicted P(win)", "realized win rate",
+                "Critic calibration: predicted P(win) vs realized win rate",
+                "on this run the critic IS the win-prob head, so this is an outcome calibration")
+    return ("recorded V(s)", "realized return G(s)",
+            "Critic reliability: recorded V vs realized return G",
+            "selection-skewed, read the caveats")
+
+
+def reliability_curve_spec(bins: "list[dict]", currency: "dict | None" = None) -> dict:
     """The critic reliability curve: recorded V (x) against realized return G (y), per equal-count
-    bin, over a dashed identity rule.
+    bin, over a dashed identity rule. Axis labels follow the run's CRITIC CURRENCY.
 
     This is the chart that most justifies a browser. In a terminal the curve is a table of ten
     rows and the reader has to hold "is G tracking V?" in their head; here the deviation from the
     identity line IS the finding, and the bin's `gap` rides the point size so a wide bin cannot
     quietly dominate a narrow one.
     """
+    x_lab, y_lab, head, tail = _reliability_labels(currency)
     values = [{"v_mean": b["v_mean"], "g_mean": b["g_mean"], "gap": b["gap"], "n": b["n"],
                "v_lo": b["v_lo"], "v_hi": b["v_hi"]} for b in bins]
     ident = {"mark": {"type": "line", "strokeDash": [4, 4], "color": "#9a9a95", "opacity": 0.9},
@@ -112,38 +131,43 @@ def reliability_curve_spec(bins: "list[dict]") -> dict:
                   "y": {"field": "g_mean", "type": "quantitative"},
                   "size": {"field": "n", "type": "quantitative",
                            "legend": {"title": "decisions in bin"}},
-                  "tooltip": [{"field": "v_mean", "type": "quantitative", "title": "V (bin mean)"},
-                              {"field": "g_mean", "type": "quantitative", "title": "G (realized)"},
-                              {"field": "gap", "type": "quantitative", "title": "gap V−G"},
+                  "tooltip": [{"field": "v_mean", "type": "quantitative", "title": x_lab},
+                              {"field": "g_mean", "type": "quantitative", "title": y_lab},
+                              {"field": "gap", "type": "quantitative", "title": "gap (pred − real)"},
                               {"field": "n", "type": "quantitative", "title": "n"}]}}
     return _spec(
-        title=_title("Critic reliability: recorded V vs realized return G",
+        title=_title(head,
                      "above the dashed identity ⇒ the critic UNDER-valued; below ⇒ "
-                     "OVER-valued · selection-skewed, read the caveats"),
+                     f"OVER-valued · {tail}"),
         data={"values": values},
         width="container", height=280,
         layer=[ident, curve, points],
-        encoding={"x": {"axis": {"title": "recorded V(s)"}},
-                  "y": {"axis": {"title": "realized return G(s)"}}},
+        encoding={"x": {"axis": {"title": x_lab}},
+                  "y": {"axis": {"title": y_lab}}},
     )
 
 
-def reliability_gap_spec(bins: "list[dict]") -> dict:
+def reliability_gap_spec(bins: "list[dict]", currency: "dict | None" = None) -> dict:
     """Per-bin `gap` = V−G as a diverging bar — the same data as the curve, read as a residual.
+    Axis labels follow the run's CRITIC CURRENCY, like the curve above.
 
     The curve answers "does G track V"; this answers "WHERE does it not, and by how much", which
-    is the question `calibration` actually splits its unattributed bucket on.
+    is the question `calibration` actually splits its unattributed bucket on — and the cutoff it
+    splits on (`overvalue_tau`) is in these same units, which is why they must be named right.
     """
+    x_lab, y_lab, _, _ = _reliability_labels(currency)
+    is_prob = bool(currency and currency.get("is_probability"))
     values = [{"v_mean": b["v_mean"], "gap": b["gap"], "n": b["n"]} for b in bins]
     return _spec(
-        title=_title("Reliability gap per V-bin (V − G)",
-                     "positive ⇒ the critic systematically over-values at that V level"),
+        title=_title(f"Reliability gap per bin ({x_lab} − {y_lab})",
+                     "positive ⇒ the critic systematically over-values at that level"),
         data={"values": values},
         width="container", height=180,
         mark={"type": "bar", "tooltip": True},
         encoding={
-            "x": {"field": "v_mean", "type": "quantitative", "axis": {"title": "recorded V(s)"}},
-            "y": {"field": "gap", "type": "quantitative", "axis": {"title": "gap V − G"}},
+            "x": {"field": "v_mean", "type": "quantitative", "axis": {"title": x_lab}},
+            "y": {"field": "gap", "type": "quantitative",
+                  "axis": {"title": "gap (pp)" if is_prob else "gap V − G"}},
             "color": {"field": "gap", "type": "quantitative",
                       "scale": {"scheme": "redblue", "reverse": True, "domainMid": 0},
                       "legend": None},

@@ -1,7 +1,24 @@
 {% import "_macros.html" as m %}
 {% set gate = r.gate %}
 {% set oc = r.overall_calibration %}
+{# THE UNITS ERROR, ABOVE THE NUMBERS IT INVALIDATES. The engine detects a threshold no gap in
+   this run can reach and writes the sentence; discarding it here is how a confident 0% gets read
+   as a finding about the critic instead of a finding about the units. #}
+{% if r.threshold_warning %}
+<p class="warn"><strong>{{ r.threshold_warning }}</strong></p>
+{% endif %}
+
 {% for name, spec in specs %}{{ m.chart(name, spec) }}{% endfor %}
+
+{% set cur = r.critic_currency %}
+{% if cur %}
+<p class="muted small">
+  Critic: <strong>{{ cur.mode }}</strong> — V is measured in <strong>{{ cur.units }}</strong>
+  (even = {{ cur.even }}). Over-valued cutoff τ = <strong>{{ r.params.overvalue_tau }}</strong>
+  {{ cur.units }} ({{ r.params.overvalue_tau_source }}).
+  {{ cur.note }}
+</p>
+{% endif %}
 
 <div class="stats">
   <div class="stat"><div class="k">critic_mean_reducible (LOOSE upper bound)</div>

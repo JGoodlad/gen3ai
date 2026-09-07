@@ -205,9 +205,11 @@ def _build_parser() -> argparse.ArgumentParser:
     pt.add_argument("--opponent", help="restrict to one opponent")
     pt.add_argument("--wp-even", type=float, default=0.5,
                     help="P(win) winning-threshold for the grind/throw split (default 0.5; needs a win-prob head)")
-    pt.add_argument("--v-even", type=float, default=0.0,
-                    help="V winning-threshold fallback when no win-prob head (default 0.0; pass the "
-                         "checkpoint's self-mirror V / PopArt μ to re-center — V's zero is NOT 'even')")
+    pt.add_argument("--v-even", type=float, default=None,
+                    help="V winning-threshold fallback when no win-prob head. Unset takes the run's "
+                         "CRITIC CURRENCY even-point: 0.0 shaped (pass the checkpoint's self-mirror "
+                         "V / PopArt μ to re-center — a shaped V's zero is NOT 'even'), 0.5 under "
+                         "--critic winprob (where V IS P(win))")
 
     pp = sub.add_parser(
         "probe", help="linear-probe the model's activations for a derived quantity (is it already in the rep?)")
@@ -374,8 +376,12 @@ def _build_parser() -> argparse.ArgumentParser:
     pca.add_argument("--concurrency", type=int, default=8,
                      help="re-roll parallelism for the falsify pass (default 8; lower on a busy box)")
     pca.add_argument("--bins", type=int, default=10, help="reliability-curve V-bins (default 10)")
-    pca.add_argument("--overvalue-tau", type=float, default=5.0,
-                     help="reliability-gap (return units) above which a crater is critic_overvalued")
+    pca.add_argument("--overvalue-tau", type=float, default=None,
+                     help="reliability-gap above which a crater is critic_overvalued. UNITS FOLLOW "
+                          "THE RUN'S CRITIC: unset takes the per-currency default (5.0 shaped "
+                          "return units, ~0.083 P(win) under --critic winprob — the same 1/12 of "
+                          "span either way). An explicit value is used verbatim, and is reported "
+                          "as unreachable rather than silently yielding 0 if no gap can clear it")
 
     pdt = sub.add_parser(
         "decision-table", help="per-decision forensic export (move-cat / policy conf / reward / "

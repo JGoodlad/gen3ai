@@ -406,8 +406,13 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         step: "int | None" = Query(None),
         opponent: "str | None" = Query(None),
         wp_even: float = Query(0.5, description="P(win) threshold for the winning/behind split"),
-        v_even: float = Query(0.0, description="V fallback threshold when no win-prob head"),
+        v_even: "float | None" = Query(
+            None, description="V fallback threshold when no win-prob head. Unset (the default) "
+                              "takes the run's CRITIC CURRENCY even-point: 0.0 shaped, 0.5 under "
+                              "--critic winprob, where V IS P(win)"),
     ) -> dict:
+        # v_even stays None unless the caller names one: `triage` resolves it from the run's
+        # critic currency, and passing a shaped 0.0 here would defeat that for every winprob run.
         return session(pick(run)).triage(step=step, opponent=opponent,
                                          wp_even=wp_even, v_even=v_even)
 
@@ -474,7 +479,10 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         alts: int = Query(2, ge=1, le=8),
         concurrency: int = Query(8, ge=1, le=16),
         bins: int = Query(10, ge=2, le=50),
-        overvalue_tau: float = Query(5.0),
+        overvalue_tau: "float | None" = Query(
+            None, description="reliability-gap above which a crater is critic_overvalued. UNITS "
+                              "FOLLOW THE RUN'S CRITIC — unset takes the per-currency default "
+                              "(5.0 shaped, ~0.083 P(win) under --critic winprob)"),
     ) -> JobRef:
         require_unlocked(request)
         sess = session(pick(run))
@@ -903,7 +911,10 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         alts: "str | None" = Form("2"),
         concurrency: "str | None" = Form("8"),
         bins: "str | None" = Form("10"),
-        overvalue_tau: "str | None" = Form("5.0"),
+        # EMPTY by default, not "5.0": the form is the path a human actually takes, and a shaped
+        # tau typed in here on a winprob run is unreachable — `critic_overvalued` then reads a
+        # confident 0% that means only "wrong units". Blank ⇒ the per-currency default.
+        overvalue_tau: "str | None" = Form(None),
     ) -> HTMLResponse:
         if not unlocked(request):
             return fragment(request, "partials/locked.html", next_url="/calibration")
@@ -913,7 +924,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
                   "worst": _form_int(worst, 2), "seeds": _form_int(seeds, 32),
                   "alts": _form_int(alts, 2), "concurrency": _form_int(concurrency, 8),
                   "bins": _form_int(bins, 10),
-                  "overvalue_tau": _form_float(overvalue_tau, 5.0)}
+                  "overvalue_tau": _form_opt_float(overvalue_tau)}
         job = app.state.jobs.submit(
             "calibration", params,
             lambda: sess.calibration(outcome=params["outcome"], opponent=params["opponent"],
@@ -1201,6 +1212,21 @@ def _form_float(value: "str | None", default: float) -> float:
         return default
 
 
+def _form_opt_float(value: "str | None") -> "float | None":
+    """A blank field means UNSET, not zero and not a hardcoded default — so the engine can resolve
+    the value from the run itself. Distinct from ``_form_float`` because "the caller did not choose"
+    and "the caller chose this number" must stay tellable apart: a currency-dependent threshold
+    resolved from the run is right on every run, while any literal baked in here is right on one
+    era and silently wrong on the next. An unparseable value is also None — a typo must not become
+    a threshold."""
+    if value is None or value.strip() == "":
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
 # A run has thousands of traces; 2397 rows rendered to 545 KB of HTML is not a table anyone reads,
 # it is a download. Cap it and say so — the filters are how you find a specific battle.
 _BATTLE_PAGE = 200
@@ -1345,8 +1371,11 @@ def _job_view(kind: str, result: "dict | None") -> dict:
         bins = result.get("reliability_curve") or []
         specs = []
         if bins:
-            specs.append(("reliability", charts.reliability_curve_spec(bins)))
-            specs.append(("gap", charts.reliability_gap_spec(bins)))
+            # The CURRENCY rides into the chart: on a win-prob critic these axes are a
+            # probability calibration, not a return, and the labels must say which.
+            cur = result.get("critic_currency")
+            specs.append(("reliability", charts.reliability_curve_spec(bins, cur)))
+            specs.append(("gap", charts.reliability_gap_spec(bins, cur)))
         specs.append(("bracket", charts.crater_bracket_spec(result["falsify_gate"])))
         return {"specs": specs, "kind": kind}
     return {"specs": [], "kind": kind}

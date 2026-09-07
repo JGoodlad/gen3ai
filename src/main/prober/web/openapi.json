@@ -192,7 +192,6 @@
                 "type": "null"
               }
             ],
-            "default": "5.0",
             "title": "Overvalue Tau"
           },
           "seeds": {
@@ -1602,13 +1601,21 @@
             }
           },
           {
+            "description": "reliability-gap above which a crater is critic_overvalued. UNITS FOLLOW THE RUN'S CRITIC \u2014 unset takes the per-currency default (5.0 shaped, ~0.083 P(win) under --critic winprob)",
             "in": "query",
             "name": "overvalue_tau",
             "required": false,
             "schema": {
-              "default": 5.0,
-              "title": "Overvalue Tau",
-              "type": "number"
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "reliability-gap above which a crater is critic_overvalued. UNITS FOLLOW THE RUN'S CRITIC \u2014 unset takes the per-currency default (5.0 shaped, ~0.083 P(win) under --critic winprob)",
+              "title": "Overvalue Tau"
             }
           }
         ],
@@ -2341,15 +2348,21 @@
             }
           },
           {
-            "description": "V fallback threshold when no win-prob head",
+            "description": "V fallback threshold when no win-prob head. Unset (the default) takes the run's CRITIC CURRENCY even-point: 0.0 shaped, 0.5 under --critic winprob, where V IS P(win)",
             "in": "query",
             "name": "v_even",
             "required": false,
             "schema": {
-              "default": 0.0,
-              "description": "V fallback threshold when no win-prob head",
-              "title": "V Even",
-              "type": "number"
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "V fallback threshold when no win-prob head. Unset (the default) takes the run's CRITIC CURRENCY even-point: 0.0 shaped, 0.5 under --critic winprob, where V IS P(win)",
+              "title": "V Even"
             }
           }
         ],

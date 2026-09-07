@@ -2255,3 +2255,121 @@ def test_the_clause_panel_is_absent_on_a_belief_off_run(client):
     box that reads as a broken probe."""
     _stub_analyze(client, _BARE_ANALYSIS)
     assert "species clause" not in _fragment(client)
+
+
+# ---------------------------------------------------------------------------
+# THE CRITIC'S CURRENCY (`gen3_prober_winprob_currency_v1`)
+#
+# Under `--critic winprob` the critic IS the win-prob head: V is a probability in [0,1] rather
+# than a shaped return of roughly ±30. Every threshold expressed in value units therefore means
+# something different, and the failure mode is SILENT — a shaped `overvalue_tau` of 5.0 exceeds
+# the entire representable range of a probability gap, so `critic_overvalued` reads a confident
+# 0% that is a units error wearing the costume of a finding. These pin both eras.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def wp_run(tmp_path_factory):
+    return fixture_run.build_winprob(str(tmp_path_factory.mktemp("proberwp")))
+
+
+@pytest.fixture()
+def wp_client(wp_run):
+    app = create_app(wp_run, password="test-only-password")
+    with TestClient(app) as c:
+        c.app_state = app.state
+        yield c
+
+
+def test_a_run_with_no_critic_key_reads_as_SHAPED(run):
+    """The archive's rule: `--critic` landed at config version 109, so a run recorded before it
+    has no key and every one of them is shaped. Absence must never be read as the new era."""
+    s = ProbeSession(run)
+    assert s.critic_mode() == "shaped"
+    cur = s.critic_currency()
+    assert cur["is_probability"] is False
+    assert cur["even"] == 0.0 and cur["default_overvalue_tau"] == 5.0
+
+
+def test_a_winprob_run_reads_as_a_PROBABILITY_critic(wp_run):
+    s = ProbeSession(wp_run)
+    assert s.critic_mode() == "winprob"
+    cur = s.critic_currency()
+    assert cur["is_probability"] is True
+    assert cur["even"] == 0.5
+    assert 0.0 < cur["default_overvalue_tau"] < 1.0, \
+        "a tau outside [0,1] could never fire on a probability"
+
+
+def test_an_UNREADABLE_config_falls_back_to_shaped_not_to_the_new_era(tmp_path):
+    """A run whose config cannot be parsed keeps the HISTORICAL behaviour. Re-scaling an old run's
+    numbers because a file failed to open would corrupt a reading rather than fail it."""
+    run = fixture_run.build_winprob(str(tmp_path))
+    with open(os.path.join(run, "model_config.json"), "w") as f:
+        f.write("{ this is not json")
+    assert ProbeSession(run).critic_mode() == "shaped"
+
+
+def test_triage_centres_the_V_fallback_on_the_CRITIC_not_on_zero(run, wp_run):
+    """V's even-point is 0.0 only on a shaped critic. Under winprob, V=0.0 is a CERTAIN LOSS, so a
+    `V > 0` winning split would call a hopeless position 'winning'."""
+    assert ProbeSession(run).triage()["winning_split"]["v_even"] == 0.0
+    assert ProbeSession(wp_run).triage()["winning_split"]["v_even"] == 0.5
+
+
+def test_the_overvalue_cutoff_DEFAULTS_per_currency(run, wp_run):
+    from main.prober.session.aggregate import _resolve_overvalue_tau
+    shaped = ProbeSession(run).critic_currency()
+    wp = ProbeSession(wp_run).critic_currency()
+    assert _resolve_overvalue_tau(shaped, None) == (5.0, True)
+    tau, defaulted = _resolve_overvalue_tau(wp, None)
+    assert defaulted and tau < 1.0
+    # An EXPLICIT value always wins, in both eras — a threshold sweep must not be re-scaled.
+    assert _resolve_overvalue_tau(wp, 5.0) == (5.0, False)
+    assert _resolve_overvalue_tau(shaped, 0.5) == (0.5, False)
+
+
+def test_a_threshold_no_gap_can_reach_is_REPORTED_not_silently_zero():
+    """THE DURABLE GUARD. This is the defect the whole change was written from: a cutoff larger
+    than any gap the run can produce yields `critic_overvalued: 0` BY CONSTRUCTION, which reads as
+    'the critic is fine'. It must announce itself as a units error instead."""
+    from main.prober.session.aggregate import _unreachable_threshold_warning
+    bins = [{"gap": 0.41}, {"gap": 0.07}, {"gap": -0.33}]
+    wp = {"mode": "winprob", "units": "P(win)", "span": 1.0}
+    warn = _unreachable_threshold_warning(5.0, wp, bins)
+    assert warn and "THRESHOLD UNREACHABLE" in warn
+    assert "0.41" in warn, "the warning must name the largest gap actually observed"
+    # Reachable => silent. A guard that fires on healthy input is noise, and noise gets ignored.
+    assert _unreachable_threshold_warning(0.083, wp, bins) is None
+    # And it is not winprob-specific: a shaped tau against shaped gaps stays silent.
+    shaped = {"mode": "shaped", "units": "shaped return", "span": 60.0}
+    assert _unreachable_threshold_warning(5.0, shaped, [{"gap": 8.0}]) is None
+
+
+def test_the_run_summary_page_NAMES_the_critics_currency(wp_client, client):
+    """The one fact that decides how to read every V on every other page. A reader who does not
+    learn it on the orientation page carries the shaped scale into a probability."""
+    wp_body = wp_client.get("/").text
+    assert "winprob" in wp_body
+    assert "P(win)" in wp_body
+    assert "shaped return" in client.get("/").text
+
+
+def test_the_web_does_not_force_a_SHAPED_threshold_onto_a_winprob_run(wp_client):
+    """The regression that mattered most: the API/form used to pass a hardcoded 5.0 / 0.0 as
+    EXPLICIT arguments, which defeated the engine's per-currency defaults entirely."""
+    seen = {}
+    sess = _the_session(wp_client)
+    sess.triage = lambda **kw: seen.update(kw) or {"categories": [], "winning_split": {}}
+    wp_client.get("/api/triage")
+    assert seen["v_even"] is None, "an unset v_even must reach the engine as unset"
+
+
+def test_an_EMPTY_curve_never_reports_an_unreachable_threshold():
+    """Absent evidence is not a units error. With no bins the largest gap is vacuously 0, and a
+    naive `tau > max_gap` would brand every threshold unreachable on a run that simply captured
+    nothing to measure — an alarm that fires loudest where it knows least."""
+    from main.prober.session.aggregate import _unreachable_threshold_warning
+    wp = {"mode": "winprob", "units": "P(win)", "span": 1.0}
+    assert _unreachable_threshold_warning(5.0, wp, []) is None
+    assert _unreachable_threshold_warning(5.0, wp, [{"gap": None}]) is None

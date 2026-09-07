@@ -47,6 +47,10 @@ class _ReadingMixin:
         }
         return {
             "run_dir": self.run_dir, "gamma": self._gamma, "n_steps": len(steps),
+            # WHICH READOUT IS THE CRITIC, and so what currency every V on every page below is in.
+            # Orientation is exactly where this belongs: a reader who does not learn here that V
+            # is a probability will read the shaped scale into every later number.
+            "critic_currency": self.critic_currency(),
             "checkpoints": [{"step": s, "path": p} for s, p in list_checkpoints(self.run_dir)],
             "steps": steps, "totals": totals,
         }
@@ -239,6 +243,9 @@ class _ReadingMixin:
             "id": b.summary_path, "short_id": _short_id(b),
             "step": b.step, "opponent": b.opponent, "outcome": b.outcome,
             "meta": meta, "gamma": self._gamma,
+            # The currency the per-turn V / ΔV below are in, so the reader's tooltip can say what
+            # V's zero MEANS on this run rather than asserting the shaped scale on every run.
+            "critic_currency": self.critic_currency(),
             "n_turns": len(turns), "n_decisions": len(invs),
             # The same `notable` block `battle_overview` returns (faints, switches, the biggest value
             # drops) — a 249-turn replay needs entry points, and re-deriving them per surface is how

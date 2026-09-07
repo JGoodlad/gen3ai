@@ -70,6 +70,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         self._by_short = {_short_id(b): b for b in self.tree.all_battles()}
         self._gamma = self._read_gamma()
         self._dist_support_cache: object = "unset"   # model-free dist support (see _dist_support)
+        self._critic_mode_cache: object = "unset"    # model-free critic currency (see critic_mode)
 
     def close(self) -> None:
         """Drop the cached models/summaries. A long-lived caller — the persistent search-teacher
@@ -169,6 +170,66 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
             support = None
         self._dist_support_cache = support
         return support
+
+    def critic_mode(self) -> str:
+        """WHICH READOUT IS THE CRITIC, and therefore WHAT CURRENCY the recorded ``values`` are
+        in — read MODEL-FREE from the run root's ``model_config.json`` (`--critic`), exactly as
+        ``_dist_support`` reads the dist head's support. ``"shaped"`` or ``"winprob"``.
+
+        **An ABSENT key means ``"shaped"``**, and that is a fact about the archive rather than a
+        default chosen here: `--critic` landed with config version 109, so every run recorded
+        before it (214 of the 215 on this box, measured 2026-09-06) has no key and every one of
+        them is shaped. A run that cannot be read at all is also shaped — the historical
+        behaviour, so an unreadable config can never silently re-scale an old run's numbers.
+
+        Why this exists: under ``winprob`` the critic IS the win-prob head, so V(s) = P(win) ∈
+        [0, 1] instead of a shaped, discounted return of roughly ±``victory_value`` (30). Every
+        threshold expressed in *value units* therefore means something different, and a threshold
+        carried across the two currencies unchanged does not merely lose precision — it silently
+        stops firing. See ``calibration``'s ``overvalue_tau``, which at its shaped default of 5.0
+        exceeds the entire representable range of a probability gap.
+        """
+        if self._critic_mode_cache != "unset":
+            return self._critic_mode_cache            # type: ignore[return-value]
+        mode = "shaped"
+        try:
+            with open(os.path.join(self.run_dir or "", "model_config.json")) as f:
+                mode = str(json.load(f).get("critic") or "shaped")
+        except (OSError, KeyError, TypeError, ValueError):
+            mode = "shaped"
+        self._critic_mode_cache = mode
+        return mode
+
+    def critic_currency(self) -> dict:
+        """The recorded critic's currency as DATA, for any surface that must scale a threshold,
+        label an axis, or centre a "was it winning?" split. One declaration, so the CLI and the
+        browser cannot end up describing the same run's units differently.
+
+        ``even`` is the value at which the critic rates a position 50/50 — the number a
+        winning-vs-losing split must compare against. It is **not** 0 on a shaped critic: V there
+        is a shaped, discounted return carrying a structural negative offset (a measured
+        self-mirror 50/50 reads V ≈ −6.5), which is why the shaped ``v_even`` stays 0.0 as a
+        documented over-counting fallback rather than pretending to be centred.
+        """
+        mode = self.critic_mode()
+        if mode == "winprob":
+            return {
+                "mode": "winprob", "units": "P(win)", "low": 0.0, "high": 1.0, "even": 0.5,
+                "span": 1.0, "is_probability": True,
+                # 1/12 of span — the same fraction the shaped 5.0 is of 60. See `calibration`.
+                "default_overvalue_tau": round(1.0 / 12.0, 4),
+                "note": "V(s) = sigmoid(win-prob logit) ∈ [0,1]; `values` EQUALS `win_probs`. "
+                        "PopArt absent; the realized return G(s) is the terminal win indicator "
+                        "(0 or 1) at gamma 1.",
+            }
+        return {
+            "mode": "shaped", "units": "shaped return", "low": -35.0, "high": 30.0, "even": 0.0,
+            "span": 60.0, "is_probability": False,
+            "default_overvalue_tau": 5.0,     # the historical bar; 1/12 of the ±30 span
+            "note": "V(s) is a shaped, discounted return of roughly ±victory_value (30). Its zero "
+                    "is NOT 'even' — a self-mirror 50/50 reads V ≈ −6.5 — so a V-based winning "
+                    "split over-counts grinds unless re-centred.",
+        }
 
     def _awareness(self, battle: BattleTrace, invs: "list[dict]",
                    npz: "dict | None" = None) -> "dict | None":

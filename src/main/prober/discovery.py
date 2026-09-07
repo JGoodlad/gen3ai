@@ -6,7 +6,8 @@ step / opponent / outcome / index from path strings and never opens the JSON or
 npz (per-trace metadata is loaded lazily when a battle is selected), so opening a
 run with thousands of traces stays instant.
 
-Also resolves the checkpoint to probe with (override > best_model > latest).
+Also resolves the checkpoint to probe with (override > the run's LAST SNAPSHOT, through the one
+choke point every run spec goes through).
 """
 
 from __future__ import annotations
@@ -246,24 +247,64 @@ def load_model_config(run_dir: "str | None") -> "dict | None":
 
 
 def resolve_checkpoint(run_dir: "str | None", override: "str | None" = None) -> str:
-    """Resolve the checkpoint to probe: override > best_model > latest.
+    """Resolve the checkpoint to probe: override > **the run's LAST SNAPSHOT**.
 
     Raises ``FileNotFoundError`` with an actionable message when none is found.
+    """
+    return resolve_checkpoint_with_rung(run_dir, override)[0]
+
+
+def resolve_checkpoint_with_rung(
+    run_dir: "str | None", override: "str | None" = None,
+) -> "tuple[str, str]":
+    """``(zip_path, rung)`` — the file, and WHICH LADDER STEP named it.
+
+    🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT, here as everywhere else**
+    (`gen3_last_snapshot_resolution_v1`). This delegates to the ONE choke point,
+    ``agents.training.fixed_opponent_pool.resolve_model_ref`` — the same resolution a
+    ``--distill-teacher`` or ``--stable-opponents`` spec gets — rather than keeping a second
+    opinion about what "this run's model" means.
+
+    It used to prefer ``best_model/best_model.zip`` and fall back to latest, which is the ordering
+    that rule INVERTED: ``best_model`` is the BOT-WIN-RATE export and is now the LAST rung, a
+    fallback for a run with nothing else. The two answers were not academic — measured 2026-09-06
+    over five runs on this box, **all five disagreed**, the prober loading a bot-selected export
+    while the tier label told the reader "most recent". One of them was a ~23.3M-step checkpoint
+    against the best-model pick.
+
+    The rung comes back so a surface can SAY which it got: `best_model_fallback` means the probe is
+    reading weights chosen by bot win rate, which is a different claim from "the latest state of
+    this run" and must not render as the same sentence.
+
+    Falls back to the historical ladder when the choke point cannot resolve — it requires a
+    ``model_config.json``, and the prober deliberately loads checkpoints without a version check so
+    that a tree missing one still probes. The fallback is reported as its own rung, never as a
+    silent success.
     """
     if override:
         if not os.path.exists(override):
             raise FileNotFoundError(f"--ckpt not found: {override}")
-        return override
+        return override, "override"
     if run_dir:
+        # Local import: `discovery` is otherwise pure-filesystem and model-free, and this keeps
+        # its import graph that way (the same reason `find_latest_checkpoint` is imported below
+        # rather than at module scope). `fixed_opponent_pool` is torch-free — verified, not assumed.
+        try:
+            from agents.training.fixed_opponent_pool import resolve_model_ref
+
+            resolved = resolve_model_ref(run_dir, warn=False)
+            return resolved.zip_path, resolved.rung
+        except Exception:      # noqa: BLE001 — any failure falls back; see the docstring
+            pass
         best = os.path.join(run_dir, "best_model", "best_model.zip")
-        if os.path.exists(best):
-            return best
         # Reuse the launcher's run-dir-aware checkpoint finder (latest.txt → max step).
         from main.launcher.checkpoint import find_latest_checkpoint
 
         latest = find_latest_checkpoint(run_dir, run_dir=run_dir)
         if latest:
-            return latest
+            return latest, "legacy_latest"
+        if os.path.exists(best):
+            return best, "legacy_best_model"
     raise FileNotFoundError(
         "No checkpoint found. Pass --ckpt <path/to/model.zip> "
         f"(looked under run dir: {run_dir!r})."
@@ -291,9 +332,9 @@ def _nearest_checkpoint(tree: TraceTree, step: int) -> "tuple[str, int] | None":
     return path, cstep
 
 
-def _most_recent(tree: TraceTree) -> "str | None":
+def _most_recent(tree: TraceTree) -> "tuple[str, str] | None":
     try:
-        return resolve_checkpoint(tree.run_dir, None)
+        return resolve_checkpoint_with_rung(tree.run_dir, None)
     except FileNotFoundError:
         return None
 
@@ -304,8 +345,10 @@ def resolve_model_for_step(
     """Pick the checkpoint to load for an eval `step` and explain the choice.
 
     Ladder (tier="auto"): the bit-exact retained eval snapshot → the nearest persisted
-    checkpoint by |Δstep| → the most-recent (best_model/latest). `tier="nearest"` skips
-    exact; `tier="recent"` forces best/latest. An explicit `override` always wins.
+    checkpoint by |Δstep| → the run's LAST SNAPSHOT (through the one choke point — see
+    :func:`resolve_checkpoint_with_rung`; it was best_model/latest until 2026-09-06).
+    `tier="nearest"` skips exact; `tier="recent"` forces the last snapshot. An explicit
+    `override` always wins. Every returned ``detail`` names the file AND the rung that chose it.
     """
     manifest = tree.manifest_for(step)
     if override:
@@ -329,7 +372,15 @@ def resolve_model_for_step(
 
     recent = _most_recent(tree)
     if recent:
-        return ModelChoice(recent, "recent",
-                           f"most recent · {os.path.basename(recent)}", manifest, step)
+        path, rung = recent
+        # The RUNG rides the detail line. "most recent" is a claim, and on the
+        # `best_model_fallback` rung it is the wrong one — those weights were selected by BOT WIN
+        # RATE, not by being latest, and a reader comparing two probes needs to see that.
+        if rung == "best_model_fallback":
+            detail = (f"best_model FALLBACK · {os.path.basename(path)} — selected by BOT WIN RATE, "
+                      "not the run's latest state (no latest.txt / checkpoint / final_model)")
+        else:
+            detail = f"last snapshot · {os.path.basename(path)} · rung {rung}"
+        return ModelChoice(path, "recent", detail, manifest, step)
 
     return ModelChoice(None, "none", "no checkpoint found (pass --ckpt)", manifest, step)

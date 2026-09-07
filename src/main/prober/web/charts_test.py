@@ -10,6 +10,8 @@ honest — the fixed lever order, and the identity rule the curve's deviation is
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from main.prober.web import charts
@@ -142,3 +144,41 @@ def test_specs_are_json_serializable():
     import json
     json.dumps(charts.crater_bracket_spec(_GATE))
     json.dumps(charts.reliability_curve_spec(_BINS))
+
+
+# --- the reliability charts follow the CRITIC'S CURRENCY -----------------------------------
+# On a win-prob critic the curve is a PROBABILITY CALIBRATION (predicted P(win) vs realized win
+# rate), not "V against a return". Labelling it as a return invites the reader to look for a
+# shaped scale on axes that run 0..1 — the same units confusion `overvalue_tau` encoded as a
+# number, restated in prose.
+
+_WINPROB = {"mode": "winprob", "units": "P(win)", "is_probability": True, "span": 1.0}
+_SHAPED = {"mode": "shaped", "units": "shaped return", "is_probability": False, "span": 60.0}
+
+
+def _axis_titles(spec):
+    enc = spec.get("encoding", {})
+    return (enc.get("x", {}).get("axis", {}).get("title"),
+            enc.get("y", {}).get("axis", {}).get("title"))
+
+
+def test_the_reliability_curve_is_labelled_a_RETURN_on_a_shaped_critic():
+    for cur in (None, _SHAPED):                      # None = the historical call, unchanged
+        x, y = _axis_titles(charts.reliability_curve_spec(_BINS, cur))
+        assert x == "recorded V(s)" and y == "realized return G(s)"
+
+
+def test_the_reliability_curve_is_labelled_a_PROBABILITY_on_a_winprob_critic():
+    spec = charts.reliability_curve_spec(_BINS, _WINPROB)
+    x, y = _axis_titles(spec)
+    assert x == "predicted P(win)" and y == "realized win rate"
+    blob = json.dumps(spec)
+    assert "realized return" not in blob, "a probability calibration must not claim to plot a return"
+
+
+def test_the_gap_chart_follows_the_same_currency():
+    x_s, y_s = _axis_titles(charts.reliability_gap_spec(_BINS, _SHAPED))
+    x_w, y_w = _axis_titles(charts.reliability_gap_spec(_BINS, _WINPROB))
+    assert x_s == "recorded V(s)" and y_s == "gap V − G"
+    # a difference of two probabilities is percentage POINTS, not a return
+    assert x_w == "predicted P(win)" and y_w == "gap (pp)"

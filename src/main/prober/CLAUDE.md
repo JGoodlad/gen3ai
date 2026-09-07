@@ -182,7 +182,21 @@ and loads the model **per selected battle**, not once at startup
    `|Δstep|` (exact weights at a nearby step). `discovery.list_checkpoints` searches BOTH the
    current `<run>/checkpoints/` and the legacy `<run>/` root (deduping a copy-backported step to
    the `checkpoints/` path), so the ladder finds checkpoints under either layout.
-3. **most recent** — `best_model` / latest.
+3. **most recent** — **the run's LAST SNAPSHOT**, resolved through the ONE choke point
+   `agents.training.fixed_opponent_pool.resolve_model_ref`, so a bare run dir means here exactly
+   what it means to a `--distill-teacher` or `--stable-opponents` spec.
+
+🚨 **This tier was `best_model` → latest until 2026-09-06, which is the ordering
+`gen3_last_snapshot_resolution_v1` INVERTED everywhere else** — `best_model/best_model.zip` is the
+BOT-WIN-RATE export and is now the LAST rung, a fallback for a run with nothing else. The prober
+kept a second opinion, and it was not academic: measured over five archived runs on this box, **all
+five disagreed**, the prober loading the bot-selected export while its own tier label read "most
+recent" (one pick differed by ~23.3M steps). `resolve_checkpoint_with_rung` returns the RUNG beside
+the file and `ModelChoice.detail` prints it, so a `best_model_fallback` read says outright that
+those weights were chosen by bot win rate rather than by being latest — a different claim, which
+must not render as the same sentence. It falls back to the historical ladder (reported as its own
+rung, never silently) when the choke point cannot resolve, since it needs a `model_config.json` and
+the prober deliberately loads without a version check.
 
 `--ckpt` forces an override. The badge shows the active tier + the trace's
 `git_hash`/`arch_signature` from the manifest, so any faithfulness drift is
@@ -688,9 +702,12 @@ got under the size bound — hence a base list rather than one `class` block, an
   `P(win) ≥ wp_even` (default 0.5)**, NOT the sign of V — V is a shaped/discounted RETURN with a
   structural **negative offset** (a measured self-mirror 50/50 reads V≈−6.5; PopArt μ≈−3.6), so the
   old `V>0` test systematically OVER-counted grinds (mislabeled even/favored positions as "already
-  behind"). It falls back to `V > v_even` (default 0) only when no win-prob was recorded; pass
-  `--v-even` = the checkpoint's self-mirror V / PopArt μ to re-center a head-less run. The result
-  carries a `winning_split` block (`wp_even`/`v_even`/`wp_coverage`) + a caveat naming the signal.
+  behind"). It falls back to `V > v_even` only when no win-prob was recorded, and **`v_even`
+  defaults from the run's CRITIC CURRENCY** (`None` ⇒ 0.0 shaped, **0.5** under `--critic winprob`,
+  where V *is* P(win) and 0.0 is a certain loss rather than "even"); pass `--v-even` =
+  the checkpoint's self-mirror V / PopArt μ to re-center a head-less shaped run. The result
+  carries a `winning_split` block (`wp_even`/`v_even`/`wp_coverage`/`critic_mode`/`v_units`) + a
+  caveat naming the signal.
   Reads the
   true per-opponent win-rates from `eval_results.jsonl` (falls back to ranking by raw
   loss volume, announced in the metric + a caveat, when absent). Carries explicit
@@ -726,7 +743,19 @@ got under the size bound — hence a base list rather than one `class` block, an
   speed — not a feature gap).
 - `run_summary()` — **orient** (model-free): steps, per-step model identity
   (git/arch/snapshot-available), opponents with win/loss tallies, persisted
-  checkpoints, and γ. The natural first call.
+  checkpoints, γ, and **`critic_currency`**. The natural first call.
+
+  **`critic_currency` says WHICH READOUT IS THE CRITIC, and therefore what every V on every other
+  view MEANS** (`ProbeSession.critic_mode()` / `.critic_currency()`, model-free off the run's
+  `model_config.json` `critic` key, cached exactly like `_dist_support`). `{mode, units, low, high,
+  even, span, is_probability, default_overvalue_tau, note}` — `shaped` (V is a shaped, discounted
+  return of roughly ±30, and its zero is NOT "even": a self-mirror 50/50 reads V≈−6.5) or
+  `winprob` (V = sigmoid(win-prob logit) ∈ [0,1], `values` EQUALS `win_probs`, PopArt absent,
+  G(s) the terminal win indicator at γ=1, and **0.5 really is even**).
+  **An ABSENT `critic` key means `shaped`** — a fact about the archive rather than a chosen
+  default: the flag landed at config version 109, so every run recorded before it has no key and
+  every one of them is shaped (**214 of the 215** on this box, measured 2026-09-06). An unreadable
+  config is shaped too, so a failed read can never silently re-scale an old run's numbers.
 - `battles(outcome=, opponent=, step=)` — list/filter battles (each carries an
   `id` + `short_id`).
 - `scan(outcome=, opponent=, step=, metric=, limit=)` — **cross-battle, model-free
@@ -1110,7 +1139,7 @@ got under the size bound — hence a base list rather than one `class` block, an
   not deep per-decision seeds. `include_decisions=True` adds each battle's full
   per-decision list to its row (the calibration probe reads it).
 - `calibration(outcome="loss", step=, opponent=, limit=20, worst=2, n_seeds=32,
-  n_alts=2, concurrency=8, n_bins=10, overvalue_tau=5.0)` — resolve `falsify_scan`'s
+  n_alts=2, concurrency=8, n_bins=10, overvalue_tau=None)` — resolve `falsify_scan`'s
   **unattributed** (NEUTRAL) bucket into **`critic_overvalued`** (epistemic — a
   better/distributional critic helps) vs **`lost_position`** (the critic was right),
   by comparing the RECORDED value V(s) to the REALIZED discounted return G(s) =
@@ -1149,6 +1178,23 @@ got under the size bound — hence a base list rather than one `class` block, an
   renders the per-opponent capture-rate table and marks a selection-unknown curve as such.
   Declaration: `agents/training/trace_selection.py` — the one module the recorder, this session,
   and `main.scaffolding_gauge` all read, so the three cannot drift on what the quota was.
+
+  🚨 **`overvalue_tau` IS IN THE CRITIC'S OWN UNITS, and until 2026-09-06 it silently was not**
+  (`gen3_prober_winprob_currency_v1`). It defaults per CRITIC CURRENCY — `None` resolves it from
+  the run — because the two eras' V are not the same quantity: 5.0 SHAPED RETURN UNITS on a critic
+  spanning roughly ±30, ≈**0.083** P(win) under `--critic winprob`, the same 1/12-of-span fraction
+  either way. Carried across unchanged, the shaped 5.0 **exceeds the entire representable range of
+  a probability gap**, so no crater can clear it and `critic_overvalued` reads a confident **0** —
+  a units error in the shape of a finding. Measured on `ai_v12_01_winprob_critic` step 8M — the
+  FIRST win-prob arm, since **KILLED** (it launched without the production surface; the relaunch is
+  `ai_v12_02_winprob_critic`): the reliability gaps ran **0.067–0.461** and the headline flipped
+  from `critic_mean_reducible_upper_bound` **0.0** to **0.4997** once the tau was in the right
+  currency. The kill does not weaken it — the defect is in the CURRENCY of the recorded `values`,
+  which `--critic winprob` fixes at [0,1] regardless of what else the arm was training.
+  An EXPLICIT value is still honoured verbatim (a threshold sweep must not be re-scaled), and the
+  result carries `params.overvalue_tau_source` plus `critic_currency`. **A tau no gap in the run
+  can reach now produces a loud `threshold_warning`** naming the largest observed gap — the durable
+  half, since any future currency change re-opens this for every value-unit threshold in the tree.
 - `decision_table(steps=, opponents=, outcomes=, categories=, max_battles=)` — a complementary
   MODEL-FREE per-decision FORENSIC TABLE (`forensics.py`): one row per captured decision with `cat`
   (`move_category`: selfko/recovery/**cure**/setup/stall/status/switch/attack_or_other — `cure` is

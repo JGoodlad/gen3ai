@@ -114,9 +114,15 @@
     <summary>how to read a turn card</summary>
     <dl class="legend-dl">
       <dt>V</dt>
+      {% if turns and turns.critic_currency and turns.critic_currency.is_probability %}
+      <dd>The critic's <strong>probability of winning</strong> from this state — on this run the
+        critic <em>is</em> the win-prob head, so V is in [0,1] and <strong>0.5 really is
+        even</strong>. It is the same number as P(win) below, not a second opinion.</dd>
+      {% else %}
       <dd>The critic's expected <strong>shaped, discounted return</strong> from this state.
         <strong>Its zero is not "even"</strong> — a measured self-mirror 50/50 reads about −6.5 —
         so read it against that offset, not against 0.</dd>
+      {% endif %}
 
       <dt>ΔV</dt>
       <dd>How far V moved to the next decision. A large negative step is a <strong>value
@@ -125,8 +131,14 @@
         ranks battles by.</dd>
 
       <dt>P(win)</dt>
+      {% if turns and turns.critic_currency and turns.critic_currency.is_probability %}
+      <dd>The win-prob head's calibrated probability of winning. On this run it is
+        <strong>the critic itself</strong> — identical to V above, shown as a percentage.
+        Do not read the two as agreeing estimators; there is only one.</dd>
+      {% else %}
       <dd>The win-prob head's <strong>calibrated</strong> probability of winning — the readable
         complement to V. Here 50% really is even. Absent on runs without that head.</dd>
+      {% endif %}
 
       <dt>ΔP</dt>
       <dd>How much the move moved the odds, in percentage <strong>points</strong> (a difference of

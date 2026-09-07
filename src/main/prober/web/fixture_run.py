@@ -202,3 +202,60 @@ def build(root: str) -> str:
                    "value_dist_vmin": DIST_SUPPORT[0], "value_dist_vmax": DIST_SUPPORT[1],
                    "value_dist_bins": DIST_BINS}, f)
     return run
+
+
+def build_winprob(root: str) -> str:
+    """A `--critic winprob` run — the SECOND era, written so every currency-dependent surface has
+    a case to render (`gen3_prober_winprob_currency_v1`).
+
+    It is a separate builder rather than a flag on `build` because the two eras differ in what
+    EXISTS, not merely in numbers: here the critic IS the win-prob head, so
+
+    * ``values`` is a probability in [0, 1] and **equals** ``win_probs`` exactly — the duplicate
+      V / P(win) panels must be able to say "one readout", which they cannot infer from a fixture
+      where the two merely happen to be close;
+    * there is **no dist head** (no `value_dist` key, `value_dist_mode` absent from the config), so
+      every awareness / PIT / coverage surface takes its empty path;
+    * ``metadata.json`` carries **gamma 1.0** and the rewards are a terminal win indicator, so the
+      realized return G(s) is 0 or 1 — which is what makes a shaped `overvalue_tau` of 5.0
+      unreachable and the guard worth testing;
+    * ``model_config.json`` carries ``"critic": "winprob"``. The historical fixture deliberately
+      does NOT carry the key, because 214 of the 215 archived runs do not either and "absent means
+      shaped" is the rule that keeps them readable.
+
+    Values are chosen so the reliability curve has a real gap: the loss is valued HIGH and the win
+    LOW, so ``V − G`` spans roughly ±0.7 — comfortably above the winprob τ (≈0.083) and far below
+    the shaped one (5.0), which is exactly the discrimination the guard has to make.
+    """
+    run = os.path.join(root, "run_fixture_winprob")
+    os.makedirs(run, exist_ok=True)
+
+    # A confident LOSS: V stays high while the game is lost ⇒ a large positive V−G gap.
+    _write_battle(run, STEPS[0], OPPONENTS[0], "loss_001",
+                  [_inv(1, "earthquake", 0.0), _inv(2, "switch:m0", 0.0, faint=True)],
+                  [0.88, 0.74, 0.09], win_probs=[0.88, 0.74, 0.09])
+    # An under-valued WIN: V stays low and the game is won ⇒ a large NEGATIVE gap, so the curve
+    # is not one-signed and `bias_on_wins` / `bias_on_losses` have distinguishable inputs.
+    _write_battle(run, STEPS[0], OPPONENTS[1], "win_001",
+                  [_inv(1, "thunderbolt", 0.0), _inv(2, "thunderbolt", 1.0)],
+                  [0.21, 0.35, 0.96], win_probs=[0.21, 0.35, 0.96])
+    # A second step, with the board + recorded actions the turn-by-turn replay folds into a log.
+    _write_battle(run, STEPS[1], OPPONENTS[1], "loss_003",
+                  [_inv(1, "icebeam", 0.0, hp=("100%", "100%"),
+                        outcome={"our": {"action": "icebeam", "hp_delta": "-22%"},
+                                 "opp": {"action": "earthquake", "hp_delta": "-31%"}}),
+                   _inv(2, "roost", 0.0, faint=True, hp=("78%", "69%"),
+                        outcome={"our": {"action": "roost", "hp_delta": "-100%"},
+                                 "opp": {"action": "hydropump", "hp_delta": "0%"}})],
+                  [0.62, 0.41, 0.03], win_probs=[0.62, 0.41, 0.03])
+    _write_battle(run, STEPS[1], OPPONENTS[1], "win_002",
+                  [_inv(1, "thunderbolt", 1.0)], [0.55, 0.98], win_probs=[0.55, 0.98])
+
+    open(os.path.join(run, "checkpoint_3200000_steps.zip"), "w").close()
+    with open(os.path.join(run, "metadata.json"), "w") as f:
+        json.dump({"gamma": 1.0}, f)          # undiscounted: G(s) is the terminal win indicator
+    with open(os.path.join(run, "model_config.json"), "w") as f:
+        # No `value_dist_*`: `--critic winprob` REFUSES a non-none dist mode, so a fixture that
+        # carried one would describe a configuration the trainer will not launch.
+        json.dump({"critic": "winprob"}, f)
+    return run

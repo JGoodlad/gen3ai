@@ -103,9 +103,15 @@ def test_resolve_checkpoint_precedence(tmp_path):
     _touch(str(run / "checkpoint_4000000_steps.zip"), "")
     _touch(str(run / "latest.txt"), "checkpoint_4000000_steps.zip")
     assert resolve_checkpoint(str(run)).endswith("checkpoint_4000000_steps.zip")
-    # best_model wins over latest
+    # 🚨 THE LAST SNAPSHOT WINS — best_model does NOT (`gen3_last_snapshot_resolution_v1`).
+    # This assertion is INVERTED from what it said until 2026-09-06, and deliberately: the prober
+    # kept a second opinion about what "this run's model" means while every training-side ref went
+    # through `resolve_model_ref`, whose rungs put `best_model` LAST because it is the BOT-WIN-RATE
+    # export, not the run's latest state. Measured over five archived runs, ALL FIVE disagreed —
+    # the prober loading a bot-selected export while its own tier label read "most recent".
     _touch(str(run / "best_model" / "best_model.zip"), "")
-    assert resolve_checkpoint(str(run)).endswith("best_model.zip")
+    assert resolve_checkpoint(str(run)).endswith("checkpoint_4000000_steps.zip"), \
+        "best_model must NOT outrank the run's last snapshot"
     # explicit override wins over everything
     override = str(run / "checkpoint_4000000_steps.zip")
     assert resolve_checkpoint(str(run), override=override) == override
@@ -237,3 +243,32 @@ def test_ladder_no_models_at_all(tmp_path):
     tree = build_trace_tree(str(run))
     c = resolve_model_for_step(tree, 2000000)
     assert c.tier == "none" and c.path is None
+
+
+def test_the_resolution_rung_is_REPORTED_not_just_the_file(tmp_path):
+    """A file without its rung cannot be read: `best_model` means "chosen by bot win rate" and a
+    checkpoint means "the run's latest state", and those are different claims about what the probe
+    is even showing. `resolve_model_ref` returns the provenance; the prober must carry it."""
+    from main.prober.discovery import resolve_checkpoint_with_rung
+    run = tmp_path / "run_rung"
+    run.mkdir()
+    _touch(str(run / "checkpoint_4000000_steps.zip"), "")
+    _touch(str(run / "latest.txt"), "checkpoint_4000000_steps.zip")
+    path, rung = resolve_checkpoint_with_rung(str(run))
+    assert path.endswith("checkpoint_4000000_steps.zip")
+    assert rung and rung != "override"
+    # an override says so, rather than borrowing whatever rung the run would have used
+    override = str(run / "checkpoint_4000000_steps.zip")
+    assert resolve_checkpoint_with_rung(str(run), override=override) == (override, "override")
+
+
+def test_a_run_with_ONLY_best_model_still_resolves_and_is_labelled(tmp_path):
+    """The fallback must still WORK — demoting best_model is not removing it. A run whose only
+    artifact is the bot-selected export is probeable; it just has to say that is what it is."""
+    from main.prober.discovery import resolve_checkpoint_with_rung
+    run = tmp_path / "run_bm"
+    (run / "best_model").mkdir(parents=True)
+    _touch(str(run / "best_model" / "best_model.zip"), "")
+    path, rung = resolve_checkpoint_with_rung(str(run))
+    assert path.endswith("best_model.zip")
+    assert "best_model" in rung, f"the rung must name the fallback, got {rung!r}"

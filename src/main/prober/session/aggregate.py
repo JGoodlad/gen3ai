@@ -16,6 +16,70 @@ from main.prober.session.stats import (_calibration_stats, _discounted_returns,
     _reliability_curve, _reliability_gap_at)
 
 
+def _resolve_overvalue_tau(currency: dict, requested: "float | None") -> "tuple[float, bool]":
+    """``(tau, was_defaulted)`` — the over-valued cutoff, PER CRITIC CURRENCY
+    (`gen3_prober_winprob_currency_v1`).
+
+    The historical bar is 5.0 SHAPED RETURN UNITS against a critic spanning roughly
+    ±``victory_value`` (30), i.e. 1/12 of that 60-wide span. Under ``--critic winprob`` the critic
+    is a probability: the span is 1.0 and the reliability gap is bounded in [-1, 1], so the SAME
+    NUMBER can never be reached and the split it decides silently collapses to 100%
+    ``lost_position`` — reported, before this, as a confident
+    ``critic_mean_reducible_upper_bound: 0.0`` on a run whose measured gaps ran 0.067–0.461, where
+    the correctly-scaled tau reports **0.4997**. Measured on ``ai_v12_01_winprob_critic`` step 8M
+    (2026-09-06), the FIRST win-prob arm, since KILLED — it had launched without the production
+    surface. That does not weaken the measurement: the defect is in the CURRENCY of the recorded
+    ``values``, which `--critic winprob` fixes at [0,1] whatever else the arm was or was not
+    training.
+
+    The winprob bar is DERIVED, not invented: the same 1/12 fraction of the critic's own span
+    (1.0/12 ≈ 0.083), so the cutoff means what it always meant — "systematically off by about a
+    twelfth of the value scale at this level" — rather than importing a new, unstated standard.
+    It is declared ONCE, on the currency block (``core.critic_currency``), so the browser's form
+    placeholder and this resolver cannot drift apart.
+
+    An EXPLICIT value always wins — a caller sweeping the threshold, or reproducing an older
+    reading, must not be silently re-scaled — so the currency only supplies the default.
+    """
+    if requested is not None:
+        return float(requested), False
+    return float(currency.get("default_overvalue_tau", 5.0)), True
+
+
+def _unreachable_threshold_warning(tau: float, currency: dict,
+                                   bins: "list[dict]") -> "str | None":
+    """THE DURABLE GUARD, and the reason this is a function rather than a one-off `if`: a
+    threshold that CANNOT FIRE must announce itself instead of reporting a confident zero.
+
+    That is the failure this whole block was written from, and it is a class, not an incident —
+    any future change of the critic's currency re-opens it for every value-unit threshold in the
+    tree. So the check is against what the data can actually produce (the observed gaps) AND
+    against what the currency can represent (its span), never against a hardcoded expectation.
+
+    Returns the warning text, or None when the threshold is reachable.
+    """
+    gaps = [abs(float(b["gap"])) for b in bins
+            if isinstance(b, dict) and b.get("gap") is not None]
+    # NO CURVE ⇒ no claim. An empty scan produces no gaps, and "the largest gap is 0" would then
+    # make every positive threshold look unreachable — a false alarm on a run that simply has
+    # nothing to measure. Absent evidence is not a units error.
+    if not gaps:
+        return None
+    span = float(currency.get("span") or 0.0)
+    max_gap = max(gaps)
+    if tau <= max_gap:
+        return None
+    return (
+        f"⚠️ THRESHOLD UNREACHABLE — overvalue_tau={tau} ({currency['units']}) EXCEEDS the largest "
+        f"reliability gap this run produced ({max_gap:.4f}"
+        + (f", on a critic whose whole span is {span:g}" if span > 0 else "")
+        + "). No crater can clear it, so `critic_overvalued` is 0 BY CONSTRUCTION and says nothing "
+          "about the critic. This is a UNITS error, not a finding: the threshold is in the wrong "
+          f"currency for a `{currency['mode']}` critic. Re-run without an explicit --overvalue-tau "
+          "to take the per-currency default, or pass one sized to the gaps above."
+    )
+
+
 class _AggregateMixin:
     def trace_selection(self, step: "int | None" = None) -> dict:
         """WHAT THE TRACES ARE A SAMPLE OF — the eval recorder's capture quota, per step.
@@ -311,7 +375,7 @@ class _AggregateMixin:
                     opponent: "str | None" = None, step: "int | None" = None,
                     limit: "int | None" = 20, worst: int = 2, n_seeds: int = 32,
                     n_alts: int = 2, followup: str = "random", concurrency: int = 8,
-                    n_bins: int = 10, overvalue_tau: float = 5.0) -> dict:
+                    n_bins: int = 10, overvalue_tau: "float | None" = None) -> dict:
         """Critic CALIBRATION probe — resolve ``falsify_scan``'s **unattributed**
         (NEUTRAL) bucket into **`critic_overvalued`** (epistemic — a better /
         distributional critic helps) vs **`lost_position`** (the critic was right;
@@ -329,6 +393,12 @@ class _AggregateMixin:
         would help. **Model-free** (uses the recorded V — no checkpoint); the falsify
         pass that finds the unattributed craters runs at ``concurrency`` (default 8).
 
+        **``overvalue_tau`` is CURRENCY-DEPENDENT and defaults per critic mode** (``None`` =
+        resolve from the run's ``--critic``): 5.0 on a shaped critic, ≈0.083 on a win-prob one,
+        the same 1/12-of-span fraction either way. An explicit value is honoured verbatim and, if
+        it cannot be reached by any gap this run produced, the result carries a loud
+        ``threshold_warning`` rather than a confident ``critic_overvalued: 0``.
+
         Reads the **caveats**: the reliability curve is over the eval's CAPTURED sample
         (quota over-captures losses → E[G|V] biased low → the over-valuation gap, and
         thus ``critic_overvalued``, is an **UPPER BOUND**); per-crater it uses the
@@ -336,6 +406,12 @@ class _AggregateMixin:
         the gold-standard per-crater resolution is a re-roll → policy-rollout → return
         PIT (the true distributional-critic validator), deferred.
         """
+        # 0. WHAT CURRENCY the recorded V is in — model-free, off the run's `--critic`. Every
+        #    value-unit threshold below is resolved against it rather than assuming the shaped
+        #    scale that was the only one that existed until config version 109.
+        currency = self.critic_currency()
+        overvalue_tau, tau_defaulted = _resolve_overvalue_tau(currency, overvalue_tau)
+
         # 1. reliability backbone over wins AND losses at the step (selection-free
         #    in the loss/win sense — binned by V). Uses ALL captured battles, not the
         #    falsify limit, for a dense curve (model-free: recorded V + rewards).
@@ -448,15 +524,29 @@ class _AggregateMixin:
             "The gold-standard per-crater resolution is re-roll → POLICY ROLLOUT to terminal → the return "
             "distribution → PIT (where V sits in it) — the true distributional-critic validator. This "
             "model-free reliability version is its cheap aggregate proxy; the rollout primitive is deferred.",
-            f"overvalue_tau={overvalue_tau} (return units) sets the over-valued cutoff; mean_gap and the "
+            f"overvalue_tau={overvalue_tau} ({currency['units']}, "
+            f"{'per-currency default' if tau_defaulted else 'EXPLICIT — not the per-currency default'}"
+            f") sets the over-valued cutoff on a `{currency['mode']}` critic; mean_gap and the "
             "reliability curve are reported so the threshold isn't the whole story.",
+            f"CRITIC CURRENCY: {currency['note']}",
         ]
+        # A threshold that cannot fire is a units error, not a finding — say so FIRST, above the
+        # statistical caveats, because it invalidates the split rather than qualifying it.
+        threshold_warning = _unreachable_threshold_warning(overvalue_tau, currency, bins)
+        if threshold_warning:
+            caveats.insert(0, threshold_warning)
         return {
             "run_dir": self.run_dir,
             "filters": {"outcome": outcome, "opponent": opponent, "step": step},
             "params": {"limit": limit, "worst": worst, "n_seeds": n_seeds, "n_alts": n_alts,
                        "followup": followup, "concurrency": concurrency, "n_bins": n_bins,
-                       "overvalue_tau": overvalue_tau},
+                       "overvalue_tau": overvalue_tau,
+                       "overvalue_tau_source": "per-currency default" if tau_defaulted else "explicit"},
+            # THE CURRENCY the recorded V is in, beside every number expressed in it. A reader
+            # (or a later diff of two runs) can otherwise not tell a shaped ±30 return from a
+            # probability, and the two are not comparable.
+            "critic_currency": currency,
+            "threshold_warning": threshold_warning,
             # THE SELECTION, beside the curve it conditions. `captured_win_fraction` says what the
             # sample's mix IS; this says what the recorder's rule WAS, so a reader can tell a
             # loss-enriched quota from a genuinely losing population — and a tree that records no
