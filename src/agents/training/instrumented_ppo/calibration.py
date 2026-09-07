@@ -187,10 +187,22 @@ def start_metrics(pred, realized, mask=None,
 
 def contested_mask(margin, tau: float) -> Optional[np.ndarray]:
     """Rows whose normalized material margin is inside ``±tau`` — the material-EVEN decisions the
-    contested Brier is already restricted to. ``None`` when no margin key was present."""
+    contested Brier is already restricted to. ``None`` when the margin cannot stratify anything.
+
+    ⚠️ A SPREAD-FREE margin is ABSENT, not "every row is contested" (gen3_tb_relevance_v1). A run
+    whose composition never computed the material potential carries an identically-constant
+    ``win_margin`` — 0.0 on every pre-``gen3_obs_margin_unconditional_v1`` win-prob-critic run —
+    and ``|const| < tau`` is then all-ones, so the 13 ``win_prob/contested_*`` calibration tags
+    emit as byte-identical copies of their pooled twins and read as a measurement of a split that
+    did not happen. The predicate is ``max − min > 0``, MIRRORING ``value_terms._win_prob_loss``
+    exactly: the two consumers stratify on the same column, so a run in which one publishes the
+    split and the other does not would be worse than either answer alone.
+    """
     if margin is None:
         return None
     m = np.asarray(margin, dtype=np.float64).reshape(-1)
+    if m.size == 0 or not float(m.max() - m.min()) > 0.0:
+        return None
     return np.abs(m) < float(tau)
 
 

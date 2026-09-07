@@ -326,7 +326,8 @@ def test_train_is_byte_identical_with_and_without_the_advantage_read():
     """The `signal/adv_*` read must not perturb the update. Compared against the SAME train() with
     the estimator monkeypatched to a no-op — the only difference between the arms is whether the
     diagnostic ran."""
-    from agents.training.instrumented_ppo import ppo as ppo_mod
+    # `train_setup`, not `ppo` — the raw advantages are read once per train(), before the loop.
+    from agents.training.instrumented_ppo import train_setup as ppo_mod
     from agents.training.instrumented_ppo_test import _build_tiny_ppo, _train_from_init
 
     model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)

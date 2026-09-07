@@ -187,11 +187,11 @@ def test_the_latch_is_EXCLUDED_from_the_checkpoint_so_a_restart_re_prints_it():
 def test_train_calls_it_only_on_the_winprob_critic():
     """A source pin: the call must sit inside `train()`'s `critic_winprob` block. On `shaped` the
     coefficient still multiplies the MSE it was tuned for, so the whole warning would be false."""
-    import inspect
-
     from agents.training.instrumented_ppo import ppo as ppo_mod
 
-    src = inspect.getsource(ppo_mod.InstrumentedMaskablePPO.train)
+    # The whole TRAIN STEP: the announcement is recorded in `metrics_export._record_head_metrics`,
+    # and this predicate is about the fold's guard, not about which module the line sits in.
+    src = ppo_mod.train_step_source()
     i_call = src.index("announce_vf_coef_scale(")
     guard = src.rindex("if critic_winprob:", 0, i_call)
     assert "\n\n" not in src[guard:i_call], (
@@ -203,11 +203,11 @@ def test_train_hands_it_the_GRAD_BALANCE_dict_and_runs_no_second_backward():
     recomputed. A second `autograd.grad` here would cost a rollout's worth of graph AND could
     disagree with the `grad/value_policy_logratio` series the line tells the operator to confirm
     against."""
-    import inspect
-
     from agents.training.instrumented_ppo import ppo as ppo_mod
 
-    src = inspect.getsource(ppo_mod.InstrumentedMaskablePPO.train)
+    # The whole TRAIN STEP: the announcement is recorded in `metrics_export._record_head_metrics`,
+    # and this predicate is about the fold's guard, not about which module the line sits in.
+    src = ppo_mod.train_step_source()
     i_call = src.index("announce_vf_coef_scale(")
     # Slice to the MATCHING close paren — the first `)` closes `get("loss")`, not the call.
     depth, end = 0, i_call

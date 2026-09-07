@@ -392,13 +392,12 @@ def test_the_seam_gates_on_the_BOOLEAN_and_on_the_collectors_own_verdict():
 def test_the_metrics_reach_the_logger_under_their_OWN_prefixes():
     """They arrive already prefixed because they land in TWO groups — `pbrs/` for the potential and
     `signal/` for the telescoping term — so the drain records the keys VERBATIM."""
-    import inspect
-
     from agents.training import frozen_phi
-    from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+    from agents.training.instrumented_ppo import ppo as ppo_mod
 
-    assert "frozen_phi.record_metrics(self, self.logger)" in inspect.getsource(
-        InstrumentedMaskablePPO.train)
+    # The whole TRAIN STEP — the drain is one line of `metrics_export._record_term_metrics`, and
+    # this predicate is about the seam existing, not about which module holds it.
+    assert "frozen_phi.record_metrics(self, self.logger)" in ppo_mod.train_step_source()
 
     class _Logger:
         def __init__(self):

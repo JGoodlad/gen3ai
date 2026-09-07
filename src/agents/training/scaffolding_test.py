@@ -395,7 +395,8 @@ def test_a_NaN_win_head_leaves_a_GAP_and_never_crashes_train():
 def test_train_is_byte_identical_with_and_without_the_scaffolding_read():
     """It is a DIAGNOSTIC. Compared against the same train() with the estimator monkeypatched to a
     no-op — the only difference between the arms is whether the read ran at all."""
-    from agents.training.instrumented_ppo import ppo as ppo_mod
+    # `metrics_export`, not `ppo` — the gauge is read where its keys are recorded.
+    from agents.training.instrumented_ppo import metrics_export as ppo_mod
     from agents.training.instrumented_ppo_test import _build_tiny_ppo, _train_from_init
 
     model, _ = _build_tiny_ppo(n_steps=8, n_envs=4)

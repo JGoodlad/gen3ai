@@ -224,3 +224,40 @@ class TestTheHelpers:
         m = contested_mask(margin, _WIN_CONTESTED_TAU)
         assert m.tolist() == [True, True, False, False]
         assert contested_mask(None, _WIN_CONTESTED_TAU) is None
+
+    @pytest.mark.parametrize("const", [0.0, 0.5, -1.0])
+    def test_a_SPREAD_FREE_margin_is_ABSENT_not_all_contested(self, const):
+        """A constant margin stratifies nothing, so it must read as no margin at all.
+
+        `|const| < tau` is all-ones (or all-zeros), and an all-ones mask makes every
+        `win_prob/contested_*` tag a byte-identical copy of its pooled twin — a duplicate that
+        renders as a measurement. Every pre-`gen3_obs_margin_unconditional_v1` win-prob-critic run
+        carries exactly this: `win_margin` identically 0.0 for the life of the run.
+        """
+        assert contested_mask(np.full(8, const), _WIN_CONTESTED_TAU) is None
+
+    def test_a_margin_WITH_spread_still_yields_the_mask(self):
+        """The anti-vacuity control: the guard must refuse a flat column, not every column."""
+        m = contested_mask(np.array([0.0, 0.1, 0.9, -0.4]), _WIN_CONTESTED_TAU)
+        assert m is not None
+        assert m.tolist() == [True, True, False, False]
+
+    def test_the_guard_MIRRORS_the_win_prob_loss_predicate(self):
+        """The two consumers stratify on the SAME column and must agree on when it is usable.
+
+        `value_terms._win_prob_loss` gates its own contested split on `max − min > 0`; a different
+        threshold here would publish the split in one place and suppress it in the other, which is
+        worse than either answer alone. Read off the live source rather than restated.
+        """
+        import inspect
+
+        from agents.training.instrumented_ppo import calibration, value_terms
+
+        for src in (inspect.getsource(value_terms.ValueTerms._win_prob_loss),
+                    inspect.getsource(calibration.contested_mask)):
+            assert "max() - " in src and "min()) > 0.0" in src, (
+                "the two spread predicates have drifted apart")
+
+    def test_an_empty_margin_is_ABSENT(self):
+        """`max()` on an empty array raises; a rollout with no rows stratifies nothing either."""
+        assert contested_mask(np.array([]), _WIN_CONTESTED_TAU) is None

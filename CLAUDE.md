@@ -1921,7 +1921,15 @@ src/
                      #   and OPPONENT_LABEL = THE ECOLOGY DECISION — a training record names no
                      #   opponent, so every row says self_current and never a bot it cannot verify
                      #   instrumented_ppo/ — the PPO step as a package (ppo.py holds train() and
-                     #   the whole fold sequence; hparams/noise_scale/*_terms behind a hub;
+                     #   the whole FOLD SEQUENCE, which is the one thing that is never split;
+                     #   everything AROUND it moved out — train_setup.py = the pre-loop half
+                     #   (the opponent-intent label alignment, the FoldFlags "which terms does
+                     #   this call fold", the once-per-call ProbeSetup), metrics_export.py = the
+                     #   ~400-line logger.record tail (diagnostics, no gradient), and
+                     #   rollout_probes.py = collect_rollouts + the entropy-boost schedule + the
+                     #   episode-start read. A source-level pin that says "in train()" reads
+                     #   ppo.train_step_source(), which concatenates the three;
+                     #   hparams/noise_scale/*_terms behind a hub;
                      #   noise_scale_terms.py = the PER-LOSS-TERM McCandlish critical batch —
                      #   whether the total `train/noise_scale` reading is the POLICY gradient's
                      #   or the dense aux heads';

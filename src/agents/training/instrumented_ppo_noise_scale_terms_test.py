@@ -572,7 +572,9 @@ def test_both_fold_sites_go_through_the_one_shared_helper():
     from agents.training.instrumented_ppo import noise_scale as ns_mod
     from agents.training.instrumented_ppo import ppo as ppo_mod
 
-    total_src = inspect.getsource(ppo_mod.InstrumentedMaskablePPO.train)
+    # The whole TRAIN STEP: the total fold is recorded in `metrics_export`, and this predicate is
+    # about the fold's arithmetic rather than about which module holds the `logger.record` beside it.
+    total_src = ppo_mod.train_step_source()
     per_term_src = inspect.getsource(ns_mod.NoiseScaleDiagnostics._fold_per_term_noise)
     for name, src in (("the total fold in train()", total_src),
                       ("_fold_per_term_noise", per_term_src)):

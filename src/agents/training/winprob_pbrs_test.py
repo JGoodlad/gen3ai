@@ -246,9 +246,11 @@ def test_collect_rollouts_does_not_even_IMPORT_the_shaping_when_the_coef_is_zero
     assert 'getattr(self, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0' in src
     assert "from agents.training.winprob_pbrs import apply_winprob_pbrs" in src, (
         "the import must live INSIDE the non-zero branch")
-    # and it must not be a module-level import of the ppo module
-    import agents.training.instrumented_ppo.ppo as ppo_mod
-    assert "winprob_pbrs" not in inspect.getsource(ppo_mod).split("class InstrumentedMaskablePPO")[0]
+    # …and not a module-level import of the module that OWNS `collect_rollouts`. Resolved from the
+    # function rather than named, so the check follows the method if it ever moves again — naming
+    # `ppo` would leave this passing while testing a module that no longer holds the branch.
+    owner = inspect.getmodule(InstrumentedMaskablePPO.collect_rollouts)
+    assert "winprob_pbrs" not in inspect.getsource(owner).split("class ")[0]
 
 
 def test_the_class_default_is_off():
@@ -346,8 +348,9 @@ def test_the_potentials_read_every_row_of_the_buffer_even_across_chunk_boundarie
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 
 def test_train_records_the_pbrs_scalars_under_the_train_prefix():
-    from agents.training.instrumented_ppo.ppo import InstrumentedMaskablePPO
-    src = inspect.getsource(InstrumentedMaskablePPO.train)
+    from agents.training.instrumented_ppo import ppo as ppo_mod
+    # The whole TRAIN STEP — these scalars are recorded in `metrics_export._record_term_metrics`.
+    src = ppo_mod.train_step_source()
     assert 'self.logger.record(f"train/pbrs_{_pk}", float(_pv))' in src
     assert "if self._pbrs_metrics:" in src
 

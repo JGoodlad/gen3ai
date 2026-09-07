@@ -2064,9 +2064,11 @@ def test_policy_grad_coef_between_zero_and_one_is_live():
 # ---------------------------------------------------------------------------------------------
 
 def _patch_toy_trunk(monkeypatch, model):
-    from agents.training.instrumented_ppo import ppo as ppo_mod
+    # `train_setup`, not `ppo` — the trunk is resolved once per train() in `_train_probe_setup`,
+    # so that is the module whose global the probe reads.
+    from agents.training.instrumented_ppo import train_setup as setup_mod
     monkeypatch.setattr(
-        ppo_mod, "shared_trunk_parameters",
+        setup_mod, "shared_trunk_parameters",
         lambda fe, _m=model: [p for p in _m.policy.mlp_extractor.parameters()
                               if p.requires_grad])
 
@@ -2103,7 +2105,7 @@ def test_grad_distill_share_telemetry_does_not_change_the_update(monkeypatch):
     """TELEMETRY ONLY: the probe (including the new distill entry) is read-only autograd.grad —
     the same init/data/seed produce bit-identical parameters with the probe sampling and with it
     disabled entirely. The one property the feature must never lose."""
-    from agents.training.instrumented_ppo import ppo as ppo_mod
+    from agents.training.instrumented_ppo import train_setup as setup_mod
 
     model, teacher = _build_distill_ppo(n_steps=8, n_envs=4)
     model._distill_teachers = [teacher]
@@ -2117,7 +2119,7 @@ def test_grad_distill_share_telemetry_does_not_change_the_update(monkeypatch):
     assert "grad/distill_share" in model.logger.name_to_value, (
         "precondition: the probe (with the distill entry) must actually have sampled")
 
-    monkeypatch.setattr(ppo_mod, "shared_trunk_parameters", lambda fe: [])   # probe fully off
+    monkeypatch.setattr(setup_mod, "shared_trunk_parameters", lambda fe: [])  # probe fully off
     off = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=1)
     for k in on:
         assert th.equal(on[k], off[k]), f"the grad probe perturbed {k} — telemetry only!"

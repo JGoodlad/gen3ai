@@ -4,7 +4,15 @@ The re-export HUB. `instrumented_ppo.py` was 2,152 lines and is now one module p
 name it ever exported still resolves from `agents.training.instrumented_ppo`.
 
     ppo.py            the class + `train()` — the vendored upstream override and THE FOLD
-                      SEQUENCE, deliberately kept in ONE straight-line module (see its docstring)
+                      SEQUENCE, deliberately kept in ONE straight-line module (see its docstring),
+                      plus `train_step_source()`: the unit a source-level pin should read
+    train_setup.py    the PRE-LOOP half of `train()` — the opponent-intent label alignment, the
+                      FOLD FLAGS (`FoldFlags`) and the once-per-call probes (`ProbeSetup`), both
+                      unpacked back into the locals the loop was written against
+    metrics_export.py the ~400-line `self.logger.record` tail — diagnostics, no gradient, one
+                      method per TB prefix group
+    rollout_probes.py `collect_rollouts`, the entropy-boost schedule, the episode-start read —
+                      per-ROLLOUT work that is not part of the fold at all
     hparams.py        every after-construction knob `train_rl_agent` sets, with its rationale
     noise_scale.py    the McCandlish gradient-noise-scale estimator + the NSR advisor
     distill_terms.py  search-teacher AWR · OPD · the exploiter-distillation family

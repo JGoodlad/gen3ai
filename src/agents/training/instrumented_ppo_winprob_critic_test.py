@@ -28,7 +28,6 @@ import pytest
 import torch as th
 
 from agents.model.critic_mode import is_winprob
-from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.instrumented_ppo.calibration import critic_reliability
 from agents.training.instrumented_ppo_test import _build_tiny_ppo, _train_from_init
 
@@ -105,8 +104,16 @@ def test_the_clip_branch_condition_still_reduces_to_the_original():
 # --------------------------------------------------------------------------------------------
 
 def _train_source() -> str:
-    import inspect
-    return inspect.getsource(InstrumentedMaskablePPO.train)
+    """The whole TRAIN STEP — `train()` plus the setup and export it delegates to.
+
+    These are predicates about the train step, not about which of three modules a line ended up
+    in, so they read `ppo.train_step_source()`: `critic_winprob` is resolved in `train_setup` and
+    the critic-reliability read is recorded in `metrics_export`, while the loss-fold tags are in
+    `train()` itself. Asking only `train()` would make each of these pass or fail on a
+    decomposition that changed nothing about the fold.
+    """
+    from agents.training.instrumented_ppo import ppo as _ppo
+    return _ppo.train_step_source()
 
 
 def test_the_win_prob_term_is_tagged_value_under_the_winprob_critic():

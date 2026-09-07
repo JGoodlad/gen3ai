@@ -21,10 +21,14 @@ can lose an entry without any import failing: the class would still construct an
 just without one family of loss terms. `MaskablePPO` must also stay LAST, or `super()` calls
 inside a mixin stop reaching upstream.
 
-**3. `train()` and its FOLD SEQUENCE stay in ONE module.** The order in which the terms are added
+**3. `train()`'s FOLD SEQUENCE stays in ONE module.** The order in which the terms are added
 to `loss` is a contract (see `ppo.py`), and the property that matters about it — no flag
 combination reorders these — is only visible while it is straight-line source. This test pins
 that `train()` is defined in `ppo.py` and still carries every `+` instrumentation marker.
+What `train()` delegates is everything AROUND the sequence: the pre-loop setup (`train_setup`)
+and the metrics export (`metrics_export`). A source-level pin on a line that sits in one of those
+should read `ppo.train_step_source()`, which concatenates the three — the fold's own ORDERING
+pins stay on `train()` itself, where straight-line source order is the thing being checked.
 
 **4. No submodule imports its own hub**, and **5. every submodule stands up on its own.**
 
@@ -56,7 +60,7 @@ _PRE_SPLIT = (
 )
 
 _BASES = ("PpoHyperparameters", "NoiseScaleDiagnostics", "DistillTerms", "ValueTerms", "AuxTerms",
-          "CapacityTerms")
+          "CapacityTerms", "TrainSetup", "TrainMetricsExport", "RolloutProbes")
 
 
 @pytest.mark.parametrize("name", _PRE_SPLIT)
@@ -84,6 +88,11 @@ def test_the_ppo_class_carries_every_term_family():
                    "_noise_scale_estimate", "_global_grad_sq", "_emit_noise_scale_warnings",
                    "_capacity", "_capacity_snapshot_features", "_capacity_observe",
                    "_capacity_finish",
+                   "_align_opp_intent_labels", "_resolve_fold_flags", "_train_probe_setup",
+                   "_record_grad_balance_metrics", "_record_signal_metrics",
+                   "_record_noise_scale_metrics", "_record_head_metrics", "_record_term_metrics",
+                   "_record_cf_metrics", "_record_capacity_and_popart_metrics",
+                   "_annealed_entropy_boost", "_winprob_start_metrics",
                    "_excluded_save_params", "collect_rollouts", "train"):
         assert callable(getattr(hub.InstrumentedMaskablePPO, method, None)), (
             f"`InstrumentedMaskablePPO.{method}` is gone — a mixin dropped out of the base list "
@@ -166,10 +175,25 @@ def test_every_submodule_imports_on_its_own():
 
 
 def test_the_hub_re_exports_from_every_module():
-    """Every `.py` beside the hub must be reachable from it — directly, or through `ppo`."""
+    """Every `.py` beside the hub must be REACHABLE from it, following the package's own imports.
+
+    A module nothing in the package imports is either dead or a name the hub silently stopped
+    exporting. Reachability is transitive on purpose — `ppo` imports the three mixins and each of
+    those imports its own dependencies, so requiring a DIRECT edge from `__init__`/`ppo` would
+    forbid a decomposition rather than check one.
+    """
     modules = {p.stem for p in _DIR.glob("*.py") if p.stem != "__init__"}
-    hub_src = (_DIR / "__init__.py").read_text(encoding="utf-8")
-    ppo_src = (_DIR / "ppo.py").read_text(encoding="utf-8")
-    missing = sorted(m for m in modules
-                     if f"{_PKG}.{m} import" not in hub_src and f"{_PKG}.{m} import" not in ppo_src)
+
+    def _edges(stem: str) -> set[str]:
+        src = (_DIR / f"{stem}.py").read_text(encoding="utf-8")
+        return {m for m in modules if f"{_PKG}.{m} import" in src}
+
+    reached, frontier = set(), _edges("__init__")
+    while frontier:
+        stem = frontier.pop()
+        if stem in reached:
+            continue
+        reached.add(stem)
+        frontier |= _edges(stem) - reached
+    missing = sorted(modules - reached)
     assert not missing, f"nothing in the package reaches: {missing}"

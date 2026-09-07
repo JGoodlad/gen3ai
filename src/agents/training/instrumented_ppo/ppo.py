@@ -1,16 +1,32 @@
-"""`InstrumentedMaskablePPO` — the class, and `train()`: the whole loss fold in ONE module.
+"""`InstrumentedMaskablePPO` — the class, and `train()`: the whole FOLD SEQUENCE in ONE module.
 
-⚠️ **`train()` is not split, and that is the design.** It is a vendored copy of upstream
-`sb3_contrib.MaskablePPO.train` (hash-pinned in the hub) with our terms folded in, and the ORDER
-in which those terms are folded is a CONTRACT — see `train()`'s own docstring for the numbered
-version. Splitting the sequence across modules would make an ordering that is currently
+⚠️ **The fold sequence is not split, and that is the design.** `train()` is a vendored copy of
+upstream `sb3_contrib.MaskablePPO.train` (hash-pinned in the hub) with our terms folded in, and the
+ORDER in which those terms are folded is a CONTRACT — see `train()`'s own docstring for the
+numbered version. Splitting the sequence across modules would make an ordering that is currently
 straight-line source order into something a reader has to reassemble, and the one property that
 matters about it (no flag combination reorders these) would stop being visible.
 
-Everything that is NOT the sequence has moved out: the knobs (`hparams`), the per-term losses
-(`distill_terms`, `value_terms`, `aux_terms`), the noise-scale machinery (`noise_scale`).
+Everything that is NOT the sequence has moved out. The per-term losses live in `distill_terms`,
+`value_terms` and `aux_terms`; the knobs in `hparams`; the noise-scale machinery in `noise_scale`.
+Three modules hold the rest of what `train()` used to spell out inline, and each is a mixin whose
+methods `train()` calls in place:
+
+    train_setup.py      the pre-loop half — the opponent-intent label alignment, the FOLD FLAGS
+                        (`FoldFlags`) and the once-per-call probes (`ProbeSetup`). Both containers
+                        are unpacked back into the locals the loop is written against, so the fold
+                        body is unchanged by their existence.
+    metrics_export.py   the ~400-line `self.logger.record` tail — diagnostics, no gradient. One
+                        method per TB prefix group, each taking the accumulators this call filled.
+    rollout_probes.py   `collect_rollouts`, the entropy-boost schedule, the episode-start read —
+                        per-ROLLOUT work that is not part of the fold at all.
+
+**A source-level pin that says "in `train()`" should read `train_step_source()`** (below), which is
+`train()` plus those delegates. The fold, its setup and its export are one train step; which of the
+three a given line sits in is a decomposition detail, and a pin that depends on it breaks on a move
+that changed nothing.
 """
-import contextlib
+import inspect
 import time
 
 import numpy as np
@@ -19,14 +35,10 @@ from gymnasium import spaces
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.utils import explained_variance
 
-from agents.model.critic_mode import is_winprob
-from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
 from agents.training.grad_balance import (
     cell_family_metrics,
     edge_family_metrics,
     grad_balance_metrics,
-    shared_trunk_parameters,
-    value_scale_metrics,
 )
 from agents.training import belief_bank as _belief_bank
 from agents.training.instrumented_ppo.aux_terms import AuxTerms
@@ -35,35 +47,45 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     CalibrationAccumulator as _CalibrationAccumulator,        # a submodule importing the package
     as_numpy as _calib_as_numpy,                              # __init__ back closes the import
     contested_mask as _calib_contested_mask,                  # cycle `ppo` sits at the end of
-    episode_start_rows as _calib_episode_start_rows,          # (pinned by the hub-contract test).
-    sigmoid as _calib_sigmoid,
-    announce_vf_coef_scale, critic_reliability,
-    start_metrics as _calib_start_metrics,
+    sigmoid as _calib_sigmoid,                                # (pinned by the hub-contract test).
 )
-from agents.training.instrumented_ppo.constants import (
-    _NOISE_PER_TERM_EVERY,
-    _NOISE_SCALE_EMA_DECAY,
-    _WIN_CONTESTED_TAU,
-    _WINPROB_START_MAX_ROWS,
-)
+from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
-from agents.training.instrumented_ppo.distill_grad_project import make_projector
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
-from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics, debiased_ema
-from agents.training.instrumented_ppo.noise_scale_terms import (
-    NULL_TAGGER,
-    PerTermNoiseSampler,
-    per_term_enabled,
-)
-from agents.training.instrumented_ppo.signal_metrics import (
-    OPP_CLASS_SUFFIX as _OPP_CLASS_SUFFIX,
-    advantage_density_metrics,
-)
+from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
+from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
+from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER
+from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
+from agents.training.instrumented_ppo.train_setup import TrainSetup
 from agents.training.instrumented_ppo.value_terms import ValueTerms
-from agents.training import frozen_phi          # gen3_frozen_phi_actor_only_v1 (both seams live there)
 from agents.training.rank_metrics import rank_probe
-from agents.training.scaffolding import live_gauge_metrics
+
+
+def train_step_source() -> str:
+    """`train()` plus every method it delegates a piece of the train step to, concatenated.
+
+    THE unit a source-level pin should read. Before the setup and the metrics export moved out of
+    `train()`, `inspect.getsource(InstrumentedMaskablePPO.train)` WAS the train step, and a dozen
+    tests in this tree pin properties of it that way — that a flag is resolved with `is_winprob`,
+    that a term is tagged `value` and not `aux`, that the noise-scale fold goes through the shared
+    debiased EMA. Those properties are about the train step, not about which of three files a line
+    ended up in, so they read this. The fold's own ORDERING pins stay on `train()` itself, where
+    straight-line source order is the thing being checked.
+    """
+    return "\n".join(inspect.getsource(fn) for fn in (
+        InstrumentedMaskablePPO.train,
+        TrainSetup._align_opp_intent_labels,
+        TrainSetup._resolve_fold_flags,
+        TrainSetup._train_probe_setup,
+        TrainMetricsExport._record_grad_balance_metrics,
+        TrainMetricsExport._record_signal_metrics,
+        TrainMetricsExport._record_noise_scale_metrics,
+        TrainMetricsExport._record_head_metrics,
+        TrainMetricsExport._record_term_metrics,
+        TrainMetricsExport._record_cf_metrics,
+        TrainMetricsExport._record_capacity_and_popart_metrics,
+    ))
 
 
 class InstrumentedMaskablePPO(PpoHyperparameters,
@@ -72,6 +94,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                               ValueTerms,
                               AuxTerms,
                               CapacityTerms,
+                              TrainSetup,
+                              TrainMetricsExport,
+                              RolloutProbes,
                               MaskablePPO):
     """MaskablePPO with `train/clip_fraction_vf` instrumentation added.
 
@@ -82,103 +107,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
     ``self._async_rollout`` is set and the env is an ``AsyncSubprocVecEnv`` (``--async-rollout``);
     otherwise it is the unchanged stock ``MaskablePPO.collect_rollouts``.
     """
-
-    def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
-        if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
-            ok = collect_rollouts_async(
-                self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
-        else:
-            ok = super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
-        # +WIN-PROB PBRS (ai_v12 route 1, gen3_winprob_pbrs_v1): coef·(γ·φ(s′) − φ(s)) onto this
-        # rollout's rewards, then RE-RUN GAE, φ = the DETACHED win-prob head. HERE — after collection,
-        # before train() — is the one window between GAE and PopArt's read of `returns` (both
-        # collectors; see winprob_pbrs.py). At coef 0 (default) not even the import runs.
-        if ok and float(getattr(self, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0:
-            from agents.training.winprob_pbrs import apply_winprob_pbrs
-            self._pbrs_metrics = apply_winprob_pbrs(self, rollout_buffer)
-        frozen_phi.shape_after_rollout(self, rollout_buffer, ok)   # --win-prob-pbrs-frozen
-        return ok
-
-    def _annealed_entropy_boost(self, B: float, af: float) -> float:
-        """The state-conditioned entropy-boost multiplier at the CURRENT step. Constant `B` if the anneal
-        fraction is 0; else linearly annealed toward 1.0, reaching 1.0 once `af` of training has elapsed
-        (uses SB3's `_current_progress_remaining`, which runs 1.0 at the start → 0.0 at the end). Shared by
-        the defensive (`gen3_defensive_entropy_v1`) and bait (`gen3_bait_entropy_v1`) boosts — ONE schedule,
-        so the two flags can never drift apart. Pure → unit-testable."""
-        B, af = float(B), float(af)
-        if af <= 0.0 or B == 1.0:
-            return B
-        done = 1.0 - float(getattr(self, "_current_progress_remaining", 1.0))   # 0 → 1 over training
-        return 1.0 + (B - 1.0) * max(0.0, 1.0 - done / af)
-
-    def _defensive_entropy_boost_eff(self) -> float:
-        """gen3_defensive_entropy_v1: this run's defensive boost at the current step."""
-        return InstrumentedMaskablePPO._annealed_entropy_boost(
-            self, self.defensive_entropy_boost, self.defensive_entropy_anneal_frac)
-
-    def _bait_entropy_boost_eff(self) -> float:
-        """gen3_bait_entropy_v1: this run's bait boost at the current step (same schedule)."""
-        return InstrumentedMaskablePPO._annealed_entropy_boost(
-            self, self.bait_entropy_boost, self.bait_entropy_anneal_frac)
-
-    def _winprob_start_metrics(self, head_on: bool) -> dict:
-        """`win_prob/start_*` — the head's P(win) at each EPISODE-START row of this rollout, paired
-        with that episode's own realized outcome (`gen3_winprob_calibration_export_v1`).
-
-        The pairing is the point. `win_target` is back-filled by `WinProbLabelCallback` from the
-        episode's outcome to EVERY step of that episode, so at an episode-start row it IS what that
-        game went on to do — the prediction and the realization come from one set of episodes, and
-        `start_gap` is a paired difference rather than the difference of two independent windows.
-        At the opening board a miscalibration cannot be excused by a lost position, which is what
-        makes this the readable calibration point for "does the head's 0.5 mean 0.5".
-
-        The per-opponent-class split is OPPORTUNISTIC: it needs the `opp_class` obs key, which the
-        env emits only alongside the opponent-intent labels. Without it the pooled read still
-        ships, and `signal/outcome_win_rate_<kind>` carries the realized per-class rate
-        unconditionally.
-
-        Read-only and best-effort: any failure returns `{}` rather than taking down a diagnostic's
-        host. Returns `{}` when the head is off, when the buffer holds no complete episode, or when
-        the win-prob label keys are absent.
-        """
-        if not head_on:
-            return {}
-        try:
-            buf = self.rollout_buffer
-            obs = getattr(buf, "observations", None)
-            if not isinstance(obs, dict) or "win_target" not in obs or "win_mask" not in obs:
-                return {}
-            rows = _calib_episode_start_rows(
-                buf.episode_starts, int(buf.buffer_size), int(buf.n_envs))
-            if rows.size == 0:
-                return {}
-            # A rollout can hold thousands of episode starts at production n_envs; the read is a
-            # mean, so a bounded prefix is the same measurement at a fixed cost. Deterministic
-            # (the first rows in env-major order), never sampled — a diagnostic that moves because
-            # of its own RNG is one nobody can compare across arms.
-            if rows.size > _WINPROB_START_MAX_ROWS:
-                rows = rows[:_WINPROB_START_MAX_ROWS]
-            y = np.asarray(obs["win_target"], dtype=np.float64).reshape(-1)[rows]
-            m = np.asarray(obs["win_mask"], dtype=np.float64).reshape(-1)[rows]
-            if not (m > 0.5).any():                  # only in-progress episodes — nothing realized
-                return {}
-            fe = self.policy.features_extractor
-            ob = th.as_tensor(obs["observation"][rows]).to(self.device)
-            dbg_ctx = getattr(fe, "suppress_observation_debugger", contextlib.nullcontext)()
-            with dbg_ctx, th.no_grad():
-                type(fe).forward(fe, {"observation": ob})
-                z = getattr(fe, "last_win_prob_logits", None)
-            if z is None:
-                return {}
-            p = _calib_sigmoid(_calib_as_numpy(z).reshape(-1))
-            if p.size != y.size:                     # pragma: no cover - defensive
-                return {}
-            cls = None
-            if "opp_class" in obs:
-                cls = np.asarray(obs["opp_class"]).reshape(-1)[rows]
-            return _calib_start_metrics(p, y, m, opp_class=cls, class_names=_OPP_CLASS_SUFFIX)
-        except Exception:                            # pragma: no cover - a probe never kills a run
-            return {}
 
     def train(self) -> None:
         """
@@ -247,36 +175,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self.policy.set_training_mode(True)
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
-        # +OPPONENT INTENT (gen3_opp_intent_v1): ALIGN the labels to the predictions, ONCE, BEFORE
-        # `get()` flattens and shuffles. The env emits, at buffer row i, what the opponent did at
-        # decision i-1 (their turn-t action is only observable while building the obs for t+1), so
-        # row i's own label sits at row i+1 of the same env column. Shifting here — while the
-        # [n_steps, n_envs] structure and `episode_starts` still exist — is the only place the
-        # episode-boundary drop is even expressible; after the shuffle the adjacency is gone.
-        # Idempotent per rollout: collect_rollouts refills these keys every time.
-        if getattr(self, "opp_intent_coef", 0.0) > 0.0:
-            _obs_buf = getattr(self.rollout_buffer, "observations", None)
-            if isinstance(_obs_buf, dict) and "opp_action_kind" in _obs_buf:
-                from agents.training.opp_intent_labels import (KIND_UNKNOWN, SWITCH_SLOT_NONE,
-                                                               align_labels_to_predictions)
-                _starts = self.rollout_buffer.episode_starts
-                # EVERY one-ahead intent key must be shifted, including `opp_switch_species`.
-                # It was omitted originally, so beta's CONTENT-ADDRESSED target read the species of
-                # decision t-1 against the kind/slot of decision t. That is not merely wrong, it is
-                # INVISIBLE: on most rows the stale species is 0 -> resolve_believed_slot_by_content
-                # returns INTENT_IGNORE and the path silently no-ops, which reads exactly like the
-                # documented "the belief is too cold to clear the floor" case below. Two consecutive
-                # switch-ins is the one shape where it resolves — to the PREVIOUS switch-in's slot.
-                for _k, _fill in (("opp_action_kind", KIND_UNKNOWN), ("opp_action_num", 0),
-                                  ("opp_switch_slot", SWITCH_SLOT_NONE),
-                                  ("opp_switch_species", 0),
-                                  # `opp_class` is CONSTANT within an episode, so the shift is a
-                                  # semantic no-op — included anyway so every intent label is
-                                  # row-aligned by the same rule. A reader should never have to
-                                  # remember which of these keys was shifted and which was not;
-                                  # that asymmetry is what produced the bug documented above.
-                                  ("opp_class", 0)):
-                    _obs_buf[_k] = align_labels_to_predictions(_obs_buf[_k], _starts, _fill)
+        # +OPPONENT INTENT (gen3_opp_intent_v1): row-align the one-ahead intent labels to the
+        # predictions ONCE, here, while the [n_steps, n_envs] structure and `episode_starts` still
+        # exist — after `get()` shuffles, the adjacency is gone. See `train_setup.py`.
+        self._align_opp_intent_labels()
 
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]
@@ -313,146 +215,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         td_aux_metrics: dict[str, list[float]] = {}      # +TD-AUX: Bellman-residual diagnostics
         value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
-        # Compute once: the aux path is fully skipped when off → loss stays byte-identical to upstream.
-        belief_aux_on = self.opp_belief_aux_coef > 0.0
-        move_belief_on = self.move_belief_coef > 0.0  # +MOVE-BELIEF reinjection-head supervised loss
-        move_latent_on = self.move_belief_latent_coef > 0.0  # +MOVE-LATENT grading (gen3_unified_move_system_v1)
-        spread_belief_on = self.spread_belief_coef > 0.0  # +SPREAD-belief supervision (gen3_unified_spread_belief_v1)
-        hp_type_belief_on = self.hp_type_belief_coef > 0.0  # +HP-TYPE belief CE (gen3_opp_hp_type_belief_v1)
-        item_belief_on = self.item_belief_coef > 0.0  # +ITEM belief CE (gen3_item_belief_v1)
-        # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
-        # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
-        # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
-        # +CRITIC MODE (gen3_winprob_critic_mode_v1): under `--critic winprob` the win-prob head IS
-        # the value function, so the BCE below stops being an auxiliary and becomes THE value loss
-        # — at `vf_coef`, tagged "value" (never "aux": §1.4 of the design records that
-        # `train/noise_scale_value` spent the distributional-critic era describing a zero-weighted
-        # term). The scalar `value_loss` survives as a diagnostic; its TERM is dropped, as under
-        # Phase B. `shaped` (the default) is unchanged.
-        critic_winprob = is_winprob(getattr(self.policy, "_critic_mode", "shaped"))
-        win_prob_on = (
-            getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-            and (self.win_prob_coef != 0.0 or critic_winprob)   # winprob forces the BCE on
-        )
-        # +SCAFFOLDING GAUGE: gated on the HEAD's existence alone, NOT on `win_prob_coef` — the
-        # gauge is an observability read of whatever the head currently says, and a `read_only`
-        # head at coef 0 still says something worth curving. ALWAYS ON when the head exists;
-        # there is no flag, matching the `signal/` group.
-        scaffolding_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-        # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
-        # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
-        # input — the loss term is identical. OFF → skipped (loss byte-identical to upstream).
-        # gen3_dist_critic_v1 (Phase B): the distributional head IS the critic — GAE reads E[Z]
-        # (policy._critic_value), the HL-Gauss CE is the PRIMARY value loss (weighted by vf_coef,
-        # not value_dist_coef), and the scalar MSE term is dropped (value_net freezes as a fallback).
-        value_from_dist = bool(getattr(self.policy, "_value_from_dist", False))
-        value_dist_on = (
-            getattr(self.policy.features_extractor, "value_dist_mode", "none") != "none"
-            and (self.value_dist_coef != 0.0 or value_from_dist)   # Phase B forces the CE on
-        )
-        # +SEARCH-TEACHER: AWR policy distillation. On when enabled, the coef is non-zero, AND the
-        # standalone correction buffer has been populated (the callback fills it from worker shards).
-        # Each minibatch samples its OWN correction batch + does its OWN policy forward (off-policy
-        # states not in the rollout). OFF / empty buffer → skipped (loss byte-identical to upstream).
-        search_teacher_on = (
-            getattr(self, "_search_teacher_on", False) and self.search_teacher_coef != 0.0
-            and getattr(self, "_correction_buffer", None) is not None
-            and len(self._correction_buffer) > 0
-        )
-        # +OPD: on-policy self-distillation. On when enabled, the coef is non-zero, AND the SAME
-        # standalone correction buffer (filled by the SearchTeacherCallback, its workers building π')
-        # is populated. Its OWN get_distribution forward, like the search-teacher AWR. A sampled batch
-        # with no π' (an AWR-only buffer) is skipped by the None-guard. OFF → byte-identical to upstream.
-        opd_on = (
-            getattr(self, "_opd_on", False) and self.opd_coef != 0.0
-            and getattr(self, "_correction_buffer", None) is not None
-            and len(self._correction_buffer) > 0
-        )
-        # +DISTILL (gen3_exploiter_distill_v1): exploiter distillation, N teachers. On when a non-empty list
-        # of frozen teacher models is attached AND the coef is non-zero. Per minibatch: ONE student forward
-        # + one forward per teacher, each KL masked to that teacher's team states (the `distill_mask` obs key
-        # holds an INTEGER team-id — 0 = none, k = teacher k, 1-indexed). Per-teacher mean-KLs are averaged
-        # (per-archetype balancing → no teacher dominates). N=1 is byte-identical to the single-teacher form
-        # (id ∈ {0,1}). OFF (empty list / coef 0) → byte-identical to upstream.
-        distill_on = (
-            bool(getattr(self, "_distill_teachers", None)) and self.distill_coef != 0.0
-        )
-        # +DISTILL-SHARE (gen3_grad_distill_share_v1): does THIS rollout hold any teacher-team rows
-        # at all? Decides whether the grad-balance probe below WAITS for a minibatch with a live
-        # distill term (so `grad/distill_share` — the §6.2 dose meter of
-        # designs/ai_v10/design_advantage_gated_distillation.md — isn't silently dropped from the
-        # per-train() sample) or samples immediately: an all-zero buffer would otherwise suppress
-        # the WHOLE probe for the call (the cf starving-buffer lesson at the probe's gate). One
-        # np.max over the buffer per train(); off (no teachers / coef 0) it short-circuits free.
-        _buf_obs = getattr(self.rollout_buffer, "observations", None) if distill_on else None
-        distill_rows_in_buffer = (
-            distill_on and isinstance(_buf_obs, dict) and "distill_mask" in _buf_obs
-            and float(np.max(_buf_obs["distill_mask"])) >= 1.0
-        )
-        # +PG-COEF (gen3_policy_grad_coef_v1, `--policy-grad-coef`): the PPO policy-gradient term's own weight.
-        # 1.0 (default) takes the UNSCALED `policy_loss` tensor — the loss expression is then
-        # byte-identical to upstream; 0.0 removes the policy-gradient contribution alone (the
-        # arm-F pure-distill/aux phase). Scales ONLY `policy_loss` — entropy and the value term
-        # keep their own coefficients (`ent_coef`, `vf_coef`).
-        policy_grad_coef = float(getattr(self, "policy_grad_coef", 1.0))
-        # +TD-AUX (gen3_td_consistency_aux_v1): the Bellman-residual consistency term over CONTIGUOUS
-        # buffer pairs. 0.0 → the block is skipped entirely (no sampler, no extra forward, loss
-        # byte-identical to today). See `_td_aux_term`.
-        td_aux_on = float(getattr(self, "td_aux_coef", 0.0)) > 0.0
-        # +CF-WINPROB (gen3_cf_label_plumbing_v1): the counterfactual MC win-prob grounding term.
-        # On when the coef is non-zero, a label buffer is attached, AND the extractor actually has a
-        # win-prob head to supervise (`--win-prob-mode` != none). 0.0 / no buffer / no head → the
-        # block is skipped entirely: no disk poll, no sample, no forward, loss byte-identical.
-        cf_buffer = getattr(self, "_cf_buffer", None)
-        cf_winprob_on = (
-            float(getattr(self, "cf_winprob_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "win_head", None) is not None
-        )
-        # +CF-EVIDENTIAL (gen3_cf_evidential_head_v1): the Beta uncertainty readout, on the SAME
-        # labels and the SAME forward. Independent of the scalar term — either, both or neither may
-        # be live — but it needs the STRUCTURAL head (`--cf-evidential`), a launch-time decision.
-        cf_evid_on = (
-            float(getattr(self, "cf_evidential_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "cf_evid_head", None) is not None
-        )
-        # +CF-TWIN (gen3_cf_twin_heads_v1): the twin win-prob heads B/C — the within-run paired
-        # comparison. Needs the STRUCTURAL heads (`--cf-twin-heads`) AND a live coefficient; at
-        # coefficient 0 the whole block is skipped INCLUDING the on-policy mirror, so a built-but-
-        # unused pair leaves every parameter update byte-identical to not building them.
-        cf_twin_on = (
-            float(getattr(self, "cf_twin_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "cf_twin_head_b", None) is not None
-        )
-        # +CF-SHADOW (gen3_cf_twin_heads_v1): the passive value twin on `mc_return` labels.
-        cf_shadow_on = (
-            float(getattr(self, "cf_shadow_coef", 0.0)) != 0.0
-            and cf_buffer is not None
-            and getattr(self.policy.features_extractor, "cf_shadow_head", None) is not None
-        )
-        # +Q-WINPROB (gen3_q_winprob_head_v1, v107): the PER-ACTION win-prob head — the amortized
-        # one-ply search leaf (E5 step 2, GROUND). Two INDEPENDENT coefficients over one head: the
-        # counterfactual per-action likelihood, and the WEAK taken-action fallback whose bias is
-        # documented at its flag. Either being live turns the block on; both zero, no buffer or no
-        # head (`--q-winprob-mode none`) skips it entirely — no sample, no forward, loss
-        # byte-identical.
-        q_head_built = getattr(self.policy.features_extractor, "q_winprob_head", None) is not None
-        q_winprob_on = (
-            float(getattr(self, "q_winprob_coef", 0.0)) != 0.0
-            and cf_buffer is not None and q_head_built
-        )
-        q_onpolicy_on = (
-            float(getattr(self, "q_winprob_onpolicy_coef", 0.0)) != 0.0
-            and cf_buffer is not None and q_head_built
-        )
-        cf_any_on = (cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
-                     or q_winprob_on or q_onpolicy_on)
-        if cf_any_on:
-            # ONE disk poll per train() (= per rollout), not per minibatch: the producer writes at
-            # its own pace and re-globbing a directory 240 times an update buys nothing.
-            cf_buffer.poll(int(self.num_timesteps))
+        # Compute once: WHICH terms this call folds — and, for the counterfactual family, the one
+        # per-rollout buffer poll. Every flag is read by exactly the guard of the term it names,
+        # and the reasoning for each sits beside its computation in `train_setup._resolve_fold_flags`.
+        # Unpacked back into locals so the fold below reads exactly as it was written.
+        _f = self._resolve_fold_flags()
+        belief_aux_on, move_belief_on = _f.belief_aux_on, _f.move_belief_on
+        move_latent_on, spread_belief_on = _f.move_latent_on, _f.spread_belief_on
+        hp_type_belief_on, item_belief_on = _f.hp_type_belief_on, _f.item_belief_on
+        critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
+        scaffolding_on, value_from_dist = _f.scaffolding_on, _f.value_from_dist
+        value_dist_on, search_teacher_on = _f.value_dist_on, _f.search_teacher_on
+        opd_on, distill_on = _f.opd_on, _f.distill_on
+        distill_rows_in_buffer, policy_grad_coef = _f.distill_rows_in_buffer, _f.policy_grad_coef
+        td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
+        cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
+        q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
@@ -462,70 +240,16 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         continue_training = True
 
-        # +INSTRUMENTATION: gradient-balance + value-scale diagnostics (grad_balance.py).
-        # The dual-head extractor shares one trunk; both losses' gradients compete there. We
-        # sample that pull ONCE per train() call (first minibatch) so vf_coef / return
-        # normalization (PopArt) can be tuned to a number rather than inferred from KL.
-        shared_trunk = shared_trunk_parameters(self.policy.features_extractor)
-        grad_balance: dict[str, float] = {}
-        rank_metrics: dict[str, float] = {}  # effective rank of trunk / value_cls / policy reps (once/train)
-        edge_metrics: dict[str, float] = {}  # edge/<fam>_{weight,grad}_norm — per-family liveness
-        cell_metrics: dict[str, float] = {}  # cell/<name>_{weight,grad}_norm — per-CELL liveness
-        grad_norms: list[float] = []  # pre-clip total grad norm (shows grad-clip activity)
-
-        # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1): the plasticity canary, the half-batch
-        # trunk-gradient cosine and the fixed-probe feature velocity. `None` when the flag is off,
-        # and OFF is the whole cost — no head, no optimizer, no projection matrix, no probe batch,
-        # and no extra forward or backward anywhere below. See `capacity_telemetry.py`.
-        capacity = self._capacity()
-        capacity_metrics: dict[str, float] = {}
-
-        # +PopArt: advance the value-target normalizer once per train() (before the epochs) from
-        # this rollout's returns; update() also POP-rescales value_net so its de-normalized outputs
-        # are preserved. The value loss below then trains in normalized space. No-op when disabled.
-        popart = getattr(self.policy, "popart", None)
-        if popart is not None:
-            popart.update(
-                th.as_tensor(self.rollout_buffer.returns, device=self.device), self.policy.value_net
-            )
-
-        # +SIGNAL (gen3_signal_rate_metrics_v1): ADVANTAGE DENSITY — how much action-attributable
-        # learning signal this rollout carries. Read ONCE per train() off the buffer's RAW GAE
-        # advantages, HERE, because this is the last point at which they still exist unmodified:
-        # the minibatch loop below applies `normalize_advantage`, which forces std→1 per minibatch
-        # and so erases the very quantity being measured. Read-only numpy over the buffer — no
-        # torch, no RNG, no gradient path, and the advantages PPO fits are untouched.
-        # ⚠️ UNITS: these ride the run's PopArt-normalized returns, whose σ moves over training, so
-        # `adv_raw_std`/`adv_raw_abs_mean` compare WITHIN a run and only cautiously across runs
-        # (`adv_kurtosis` is scale-free and does compare). Must be read WITH `signal/outcome_entropy`
-        # — see signal_metrics.py's module docstring for the mirror paradox and the 2x2 reading.
-        signal_metrics = advantage_density_metrics(self.rollout_buffer.advantages)
-
-        # +GRAD-ACCUM: number of `batch_size` micro-batches whose gradients are summed before one
-        # optimizer.step() (1 = OFF, stock one-step-per-minibatch). See the class attr docstring.
-        accum = max(1, int(getattr(self, "grad_accum_steps", 1)))
-
-        # +NOISE-SCALE: when accumulating (accum>=2) we get gradient norms at two batch sizes for free —
-        # one micro-batch (batch_size) and the full first group (batch_size·accum) — which is exactly
-        # what the McCandlish gradient-noise-scale estimator needs. Captured once per train() (group 0 of
-        # epoch 0) so |G_small|² and |G_big|² come from the SAME data; folded into the EMAs after the epochs.
-        noise_g_small_sq = None   # ‖single micro-batch gradient‖²  (B = batch_size)
-        noise_g_big_sq = None     # ‖accumulated group gradient‖²   (B = batch_size·accum)
-        # +NOISE-SCALE PER-TERM: the same two points, taken per LOSS GROUP so the total reading can
-        # be told apart from the PPO policy term's own (noise_scale_terms.py's docstring is the why).
-        # Built only on a sampled call — the cadence divides its cost — and NULL otherwise, in which
-        # case every `_ntg.add(...)` below is a passthrough and no extra gradient is ever taken.
-        self._noise_per_term_calls += 1
-        _ns_terms = NULL_TAGGER
-        if (accum >= 2 and per_term_enabled(self)
-                and self._noise_per_term_calls % max(1, _NOISE_PER_TERM_EVERY) == 0):
-            _ns_terms = PerTermNoiseSampler(list(self.policy.parameters()))
-        # +DISTILL-GRAD-PROJECT (gen3_distill_grad_project_v1): SOURCE-SEPARATED anchoring — project
-        # the DISTILL gradient off the off-slice behaviour subspace and leave PPO's gradient free.
-        # NULL unless `--distill-anchor-mode grad_project`, in which case `_dgp.add(...)` below is a
-        # passthrough and the two step-side hooks do nothing (update bit-identical). The whole
-        # mechanism lives in `distill_grad_project.py`; this file holds only the seam.
-        _dgp = make_projector(self, distill_metrics, list(self.policy.parameters()))
+        # The once-per-train() probes, PopArt's advance and the two gradient samplers —
+        # `train_setup._train_probe_setup`, which takes `distill_metrics` because the grad-projector
+        # writes straight into it. Unpacked into the names the fold's `_ntg`/`_dgp` seams use.
+        _p = self._train_probe_setup(distill_metrics)
+        shared_trunk, grad_balance = _p.shared_trunk, _p.grad_balance
+        rank_metrics, edge_metrics = _p.rank_metrics, _p.edge_metrics
+        cell_metrics, grad_norms, capacity = _p.cell_metrics, _p.grad_norms, _p.capacity
+        capacity_metrics, popart = _p.capacity_metrics, _p.popart
+        signal_metrics, accum, noise_g_small_sq = _p.signal_metrics, _p.accum, _p.noise_g_small_sq
+        noise_g_big_sq, _ns_terms, _dgp = _p.noise_g_big_sq, _p.ns_terms, _p.dgp
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # +GRAD-ACCUM: start each accumulation group with a clean grad buffer; count micro-batches.
@@ -1589,410 +1313,19 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             if vf_clip_fractions:
                 self.logger.record("train/clip_fraction_vf", float(np.mean(vf_clip_fractions)))
 
-        # +INSTRUMENTATION: gradient-balance + value-scale diagnostics. These prepare for
-        # reducing vf_coef and adding return normalization (PopArt) — see grad_balance.py and
-        # src/agents/training/CLAUDE.md. All ride the standard logger → TensorBoard + launcher TUI.
-        for _key, _val in grad_balance.items():
-            self.logger.record(_key, _val)
-        for _key, _val in rank_metrics.items():   # rank/{trunk,value_cls,policy}_* effective-rank probe
-            self.logger.record(_key, _val)
-        for _key, _val in edge_metrics.items():   # edge/<fam>_{weight,grad}_norm — is each family ALIVE?
-            self.logger.record(_key, _val)
-        for _key, _val in cell_metrics.items():   # cell/<name>_{weight,grad}_norm — is each cell ALIVE?
-            self.logger.record(_key, _val)
-        for _key, _val in value_scale_metrics(
-            self.rollout_buffer.returns, self.rollout_buffer.values
-        ).items():
-            self.logger.record(_key, _val)
-        if grad_norms:
-            self.logger.record("train/grad_norm", float(np.mean(grad_norms)))
-
-        # +SIGNAL (gen3_signal_rate_metrics_v1): the ADVANTAGE-DENSITY half of the `signal/` group,
-        # measured above off the RAW pre-normalization advantages. `adv_raw_std` = how much the critic
-        # thinks this rollout's actions mattered; `adv_raw_abs_mean` = its outlier-robust companion
-        # (std rising alone ⇒ a few runaway points, not a broader density); `adv_kurtosis` = EXCESS
-        # kurtosis, POSITIVE when the signal is concentrated in a few decisive turns (which is what
-        # exploit signal looks like) and ≈0 when advantage mass is smeared evenly across decisions.
-        # Read WITH `signal/outcome_entropy` (SignalMetricsCallback) — high outcome entropy with LOW
-        # density is the mirror paradox, not health. NaN on a degenerate (constant) rollout.
-        for _sk, _sv in signal_metrics.items():
-            self.logger.record(f"signal/{_sk}", float(_sv))
-
-        # +SCAFFOLDING GAUGE: `train/scaffolding_gauge` = (1 − Spearman ρ(V, P(win))) / 2 over
-        # epoch 0's paired reads. 0 = the shaped critic and the win-prob head order states
-        # identically (no scaffolding divergence visible in the ordering); 0.5 = independent.
-        # It should SHRINK as a generation matures, and that trajectory is the registered signal
-        # for annealing the shaping coefficients toward the pure game.
-        # ⚠️ ORDERING ONLY — it claims nothing about magnitude, and it goes AMBIGUOUS exactly
-        # where PBRS drives V_shaped toward a constant (the critic then has no variance left to
-        # rank with). Read it beside `train/value_std`; the magnitude question is the offline
-        # `python -m main.scaffolding_gauge`, which fits a per-checkpoint affine V→outcome map on
-        # realized outcomes. NaN on a degenerate rollout, and NO key at all when the run carries
-        # no win-prob head — a run without the head must leave a GAP, not a flat zero.
-        if scaffold_v:
-            for _gk, _gv in live_gauge_metrics(np.concatenate(scaffold_v),
-                                               np.concatenate(scaffold_z)).items():
-                self.logger.record(f"train/{_gk}", float(_gv))
-
-        # +NOISE-SCALE: fold this call's two-batch-size sample into the EMAs and log the smoothed
-        # McCandlish 'simple' gradient noise scale B_simple = tr(Σ)/|G|² — the critical batch size.
-        # Read it against your EFFECTIVE batch (batch_size·accum): `train/noise_scale_ratio` = B_simple /
-        # effective; ≫1 ⇒ noise-limited (a bigger batch buys ~linear per-step progress), ≪1 ⇒
-        # diminishing returns (could shrink for more update steps). Only when accumulating (needs two
-        # batch sizes) AND both norms were captured (a full first group formed).
-        _nsr_global = None   # +NSR-ADVISOR: this call's smoothed ratios (None until EMAs positive)
-        if accum >= 2 and noise_g_small_sq is not None and noise_g_big_sq is not None:
-            b_small = float(self.batch_size)
-            b_big = b_small * accum
-            tr_sigma, g2 = self._noise_scale_estimate(noise_g_small_sq, noise_g_big_sq, b_small, b_big)
-            # DEBIASED WARM-UP (gen3_noise_scale_warmup_v1): the SAME `debiased_ema` the per-term
-            # readings take, so the total and the per-term halves warm up identically. The old fold
-            # anchored on its first sample at a fixed decay 0.99, so `train/noise_scale` reported
-            # that sample for its first few hundred calls — and one negative first `tr(Σ)` (this
-            # estimator's single-call solve can sign-flip under noise) suppressed the scalar
-            # entirely, which is exactly what the R5F15 "provisional, n=2" reading was.
-            self._noise_ema_s = debiased_ema(self._noise_ema_s, self._noise_ema_n,
-                                             tr_sigma, _NOISE_SCALE_EMA_DECAY)
-            self._noise_ema_g2 = debiased_ema(self._noise_ema_g2, self._noise_ema_n,
-                                              g2, _NOISE_SCALE_EMA_DECAY)
-            self._noise_ema_n += 1
-            if self._noise_ema_g2 > 1e-12 and self._noise_ema_s > 0.0:
-                b_simple = self._noise_ema_s / self._noise_ema_g2
-                self.logger.record("train/noise_scale", float(b_simple))
-                self.logger.record("train/noise_scale_ratio", float(b_simple / b_big))
-                _nsr_global = float(b_simple / b_big)
-        # +NOISE-SCALE PER-TERM: the SAME solve, per loss group, on the gradients the sampler
-        # accumulated over that same first group. Emitted beside the total so the two are read
-        # together — the finding this exists for is a DISAGREEMENT between them, and a reader who
-        # has to fetch the halves from different places will not notice one. The probe self-reports
-        # its own cost (`train/noise_per_term_ms`) so the overhead is a live number, not a claim.
-        if _ns_terms.collecting:
-            _pt = _ns_terms.result(accum)
-            if _pt:
-                b_small = float(self.batch_size)
-                for _tag, _val in self._fold_per_term_noise(
-                        _pt, b_small, b_small * accum, self._noise_ema_g2).items():
-                    self.logger.record(_tag, _val)
-            self.logger.record("train/noise_per_term_ms", 1000.0 * _ns_terms.probe_seconds)
-            _ns_terms.release()
-        # +NSR-ADVISOR: the smoothed PPO-policy-term ratio, read off the EMA state so it survives a
-        # call the cadence did not sample (see `_per_term_ratio`).
-        _nsr_policy = self._per_term_ratio("policy", float(self.batch_size) * accum)
-        # +NSR-ADVISOR: rate-limited TUI Events warnings when a smoothed noise-scale ratio is out
-        # of band, with the concrete fix in the message (see _noise_scale_advice). Only on the
-        # accumulating path (the estimator needs two batch sizes). The policy-term ratio rides
-        # along: it is quoted inside the band warnings and, when the two disagree, produces its own.
-        if accum >= 2 and _nsr_global is not None:
-            self._emit_noise_scale_warnings(_nsr_global, float(self.batch_size) * accum, _nsr_policy)
-
-        # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
-        # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`
-        # groups). Only when the aux is on AND some minibatch had believed slots. `species_acc` is the
-        # headline: top-1 accuracy of predicting a hidden mon's species — rises as the model learns to
-        # anticipate the un-revealed party.
-        if belief_metrics:
-            for _bk, _bvals in belief_metrics.items():
-                self.logger.record(f"belief/{_bk}", float(np.mean(_bvals)))
-
-        # +WIN-PROB: auxiliary win-probability diagnostics under their OWN `win_prob/` TB prefix (NOT
-        # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`eval/` groups). Only when
-        # the head is on AND some minibatch had a known label. Calibration: `acc` (top-1 win/loss) +
-        # `brier` (lower = P(win) tracks the win rate); `pred_mean` vs `label_mean` watches a base-rate
-        # collapse; `coverage` = fraction with a known label. INFORMATION VALUE (the aggregate hides it —
-        # blowouts are trivial): `brier_contested`/`acc_contested` on CLOSE games (|margin|<τ; judge vs the
-        # ~0.25 no-skill floor of a 50/50 game), `contested_frac`/`contested_label_mean`, and
-        # `skill_vs_material` (Brier skill vs a material-only baseline — >0 ⇒ beats counting mons). The
-        # shared-trunk pull rides `grad/win_prob_share` (≈0 under read_only; real under shaping).
-        if win_prob_metrics:
-            for _wk, _wvals in win_prob_metrics.items():
-                self.logger.record(f"win_prob/{_wk}", float(np.mean(_wvals)))
-
-        # +WIN-PROB CALIBRATION (gen3_winprob_calibration_export_v1): ECE / MCE / the 10-bin
-        # reliability histogram, pooled and CONTESTED-restricted. These measure the RELIABILITY
-        # term Brier only carries in a decomposition — the quantity that has to be right when the
-        # head becomes the critic's only signal. Gated on the head's EXISTENCE (like the
-        # scaffolding gauge), not on `win_prob_coef`: a `read_only` head at coefficient 0 is still
-        # making claims worth checking. An under-populated bin publishes NaN, so a thin tail bin
-        # renders as a HOLE rather than as a confident calibration error.
-        for _ck2, _cv2 in calib_all.metrics().items():
-            self.logger.record(f"win_prob/{_ck2}", _cv2)
-        for _ck2, _cv2 in calib_contested.metrics(prefix="contested_").items():
-            self.logger.record(f"win_prob/{_ck2}", _cv2)
-
-        # +WIN-PROB CRITIC RELIABILITY (gen3_winprob_critic_mode_v1) — the DEPLOYED value's own
-        # Murphy split, once per rollout, under `--critic winprob` only. Beside the head's
-        # calibration keys above rather than in a parallel prefix; the `critic_` infix says which
-        # of the two this is. `resolution` is the meter, not `reliability` — see
-        # `calibration.critic_reliability`, which owns the read and the reasoning.
-        if critic_winprob:
-            for _rk, _rv in critic_reliability(self.rollout_buffer).items():
-                self.logger.record(f"win_prob/critic_{_rk}", _rv)
-            # ONCE, first NON-DEGENERATE update: what --vf-coef does to the shared trunk now it
-            # weights a BCE. Handed the EXISTING `grad_balance` probe, so the printed ratio IS
-            # 10 ** grad/value_policy_logratio and no second backward runs for a banner.
-            announce_vf_coef_scale(self, win_prob_metrics.get("loss"), grad_balance)
-
-        # +WIN-PROB EPISODE-START READ: what the head says at the LEAST-informed state, against
-        # what those very episodes went on to do. One extra EAGER forward over the episode-start
-        # rows only (≤ a few hundred), once per `train()`. Eager `type(fe).forward` rather than the
-        # bound `fe.forward` for the capacity-probe's reason: both compile flags patch the bound
-        # attribute, and a second obs shape through the compiled entry point would add a dynamo
-        # graph for a diagnostic (`cache_size_limit` is 8).
-        for _sk2, _sv2 in self._winprob_start_metrics(scaffolding_on).items():
-            self.logger.record(f"win_prob/{_sk2}", _sv2)
-
-        # +WIN-PROB PBRS (gen3_winprob_pbrs_v1, ai_v12 route 1): the shaping term's magnitude for THIS
-        # rollout, computed in `collect_rollouts` (not here — the term edits rewards, not the loss, so
-        # it has no per-minibatch existence). Under `train/` deliberately: it is a property of the
-        # reward stream PPO is fitting, not of the win-prob head, and it belongs beside the other
-        # train-loop quantities a reader checks when the loss moves. `pbrs_reward_share` is the one to
-        # watch — the shaping's mean |magnitude| as a fraction of the UNSHAPED reward's, i.e. how much
-        # of the return signal this coefficient has replaced.
-        if self._pbrs_metrics:
-            for _pk, _pv in self._pbrs_metrics.items():
-                self.logger.record(f"train/pbrs_{_pk}", float(_pv))
-
-        frozen_phi.record_metrics(self, self.logger)  # pbrs/frozen_phi_*, signal/adv_shaped_*
-        # +VALUE-DIST: distributional value head diagnostics under their OWN `value_dist/` TB prefix (the
-        # interpretability head's aggregate health, complementing the prober's per-decision histogram).
-        # `entropy`/`std` fall as the critic sharpens; `pit_mean` ≈ 0.5 ⟺ calibrated; `mean_abs_err` =
-        # |E[Z] − return| in support units. Ride the generic logger → TensorBoard + launcher TUI.
-        if value_dist_metrics:
-            for _vk, _vvals in value_dist_metrics.items():
-                self.logger.record(f"value_dist/{_vk}", float(np.mean(_vvals)))
-
-        # +SEARCH-TEACHER: AWR diagnostics under their OWN `teacher/` TB prefix. `agree_rate` (policy ↔
-        # A* — should RISE as the distillation lands), `mean_adv` (the confirmed win-rate improvement of
-        # the corrections), `mean_w` (AWR weight), `ce`, `loss`, `n`; `buffer_size` = the standalone ring
-        # depth. The shared-trunk pull rides `grad/searchteacher_share` (+ `_policy_cosine` — the live
-        # "is the teacher fighting the actor" signal). `teacher/yield` + `/corrections_per_cycle` are
-        # emitted by SearchTeacherCallback (cross-process facts). Empty (off / empty buffer) → not logged.
-        if teacher_metrics:
-            for _tk, _tvals in teacher_metrics.items():
-                self.logger.record(f"teacher/{_tk}", float(np.mean(_tvals)))
-            cb = getattr(self, "_correction_buffer", None)
-            if cb is not None:
-                self.logger.record("teacher/buffer_size", float(len(cb)))
-
-        # +OPD: on-policy self-distillation KL diagnostics under their OWN `opd/` TB prefix. `kl` = the
-        # forward KL(π' ‖ π_student) being minimized (should FALL as the student matches π'),
-        # `pi_target_entropy` = π' sharpness (low = decisive target), `agree_rate` = student ↔ π' mode
-        # agreement (should RISE), `n` = the sampled correction count. The shared-trunk pull rides
-        # `grad/opd_share`. Empty (off / empty buffer / an AWR-only π'-less sample) → not logged.
-        if opd_metrics:
-            for _ok, _ovals in opd_metrics.items():
-                self.logger.record(f"opd/{_ok}", float(np.mean(_ovals)))
-
-        # +DISTILL: exploiter-distillation KL diagnostics under their OWN `distill/` TB prefix. `kl` = the
-        # masked forward KL(π_teacher ‖ π_student) being minimized (should FALL as the student matches the
-        # specialist), `agree_rate` = student ↔ teacher mode agreement on teacher-team states (should RISE),
-        # `coverage` = fraction of the minibatch on the teacher's team, `n` = teacher-team state count.
-        # Under `--distill-target action` (gen3_distill_target_gate_v1) the §4.3 liveness row rides the
-        # same prefix: `gated_frac` / `n_gated` (0 is a reading: the gate found nothing) /
-        # `gate_agree_rate` (student argmax == teacher argmax ON GATED ROWS) / `mean_gate_adv` — the
-        # dose meters G2's share-matching is read against (with grad/distill_share).
-        # Empty (off / no teacher-team states in any minibatch) → not logged.
-        if distill_metrics:
-            for _dk, _dvals in distill_metrics.items():
-                self.logger.record(f"distill/{_dk}", float(np.mean(_dvals)))
-
-        # +TD-AUX: Bellman-residual diagnostics under their OWN `td_aux/` TB prefix. `resid_rms` is
-        # the headline — the quantity the term minimises, and the live counterpart of the offline
-        # ΔV-dispersion instrument the rung-1 gate used; it should FALL. `resid_mean` (SIGNED) is the
-        # no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias that
-        # drifts away from ~0 means the residual-gradient (Baird) term is shifting the level rather
-        # than tightening it — read it beside `train/explained_variance`. `scale` is the unit the
-        # residual is expressed in (PopArt's sigma; 1.0 with PopArt off), and `pair_drop_frac` is the
-        # fraction of candidate pairs lost to episode boundaries. Empty (off) → not logged.
-        if td_aux_metrics:
-            for _tdk, _tdvals in td_aux_metrics.items():
-                self.logger.record(f"td_aux/{_tdk}", float(np.mean(_tdvals)))
-
-        # +CF-WINPROB (gen3_cf_label_plumbing_v1). Two blocks, and they answer DIFFERENT questions:
-        #
-        #  * `cf/*` is PRODUCER LIVENESS — published on every train() the moment a buffer exists,
-        #    whether or not a single label ever arrived. An empty buffer that does not announce
-        #    itself is this tree's oldest failure mode (the search-teacher's silent starvation), so
-        #    `cf/buffer_fill` == 0 with a flat `cf/labels_ingested_total` is a first-class reading,
-        #    not an absence of readings.
-        #  * `train/cf_loss` + `train/cf_grad_share` are the TERM — only when it actually folded.
-        #    `cf_grad_share` is lifted from the grad-balance probe's shared denominator so it is
-        #    directly comparable with grad/policy_share et al; it reads 0.0 under `cf_head_only`
-        #    (the default) because the head's input is stop-grad'd, which is the head-only stage's
-        #    verification, not a defect.
-        if cf_buffer is not None:
-            for _ck, _cv in cf_buffer.stats(int(self.num_timesteps)).items():
-                self.logger.record(_ck, _cv)
-        if cf_any_on:
-            # Rows CONSUMED per train() — the throughput half of liveness, which residency alone
-            # cannot report. Recorded whenever the fold is enabled (0 is the reading that matters:
-            # the term is on and the buffer gave it nothing).
-            self.logger.record("cf/rows_sampled", float(cf_rows_sampled))
-        if cf_metrics:
-            for _ck2, _cvals in cf_metrics.items():
-                self.logger.record(f"cf/{_ck2}", float(np.mean(_cvals)))
-            self.logger.record("train/cf_loss", float(np.mean(cf_metrics.get("loss", [0.0]))))
-        if cf_winprob_on:
-            self.logger.record("train/cf_grad_share",
-                               float(grad_balance.get("grad/cf_winprob_share", 0.0)))
-        # +CF-EVIDENTIAL (gen3_cf_evidential_head_v1) — `cf/evid_*`, its own sub-prefix so a reader
-        # can tell the Beta readout's numbers from the scalar head's at a glance.
-        #
-        #  * `nll` is the term being minimised (Beta-Binomial marginal, per rollout) and `reg` the
-        #    KL pull toward Beta(1,1).
-        #  * `precision_mean` (α+β) is the EVIDENCE the head claims. An unbounded climb is the
-        #    evidential-overconfidence failure `--cf-evidential-reg` exists to bound; read the two
-        #    together, because a falling `nll` with a runaway precision is the head buying its loss
-        #    with certainty it has not earned.
-        #  * `epistemic_std_mean` is THE HEADLINE and the pre-registered read: the confessed width
-        #    should CORRELATE, per stratum, with `cf_audit`'s measured `sd_true_excess` for that
-        #    stratum. Wide everywhere and wide nowhere are the same null.
-        if cf_evid_metrics:
-            for _ek, _evals in cf_evid_metrics.items():
-                self.logger.record(f"cf/evid_{_ek}", float(np.mean(_evals)))
-            self.logger.record("train/cf_evidential_loss",
-                               float(np.mean(cf_evid_metrics.get("nll", [0.0]))))
-        if cf_evid_on:
-            # Reads 0.0 by construction (the head's input is always detached). Published so the
-            # always-detached contract is a LIVE measurement rather than a claim in a docstring.
-            self.logger.record("train/cf_evidential_grad_share",
-                               float(grad_balance.get("grad/cf_evidential_share", 0.0)))
-        # +CF-TWIN (gen3_cf_twin_heads_v1) — `cf/twin_*`. The PAIRED read, live.
-        #
-        #  * `c_loss` / `b_loss` are the two arms' cf folds; `b_coverage` is the fraction of the
-        #    sampled rows that carried a single-outcome label AT ALL. **Read `b_coverage` first.**
-        #    A twin-heads run whose producer ships no `outcome_label` trains B on nothing, B then
-        #    equals A, and the C−B contrast silently becomes C−A while every other scalar reads
-        #    healthy. That is the one way this arm can produce a confident wrong answer.
-        #  * `b_vs_c_abs` / `b_minus_c` are the two heads' predictions differing on the SAME states.
-        #    A `b_vs_c_abs` pinned near 0 means the label streams have not separated the heads and
-        #    there is nothing to decompose yet — a coverage/dosage reading, not a result.
-        #  * `*_onpolicy_*` are the mirrored control objective. They should track head A's
-        #    `win_prob/*` closely; a persistent gap means the twins are NOT carrying a bit-identical
-        #    copy of A's loss and the factorial's base is not shared.
-        #  THE RESULT IS NONE OF THESE. It is `cf_audit`'s held-out, battle-clustered paired
-        #  differences (runbook §2 as amended); these are the launch-window instrument.
-        if cf_twin_metrics:
-            for _tk, _tvals in cf_twin_metrics.items():
-                self.logger.record(f"cf/twin_{_tk}", float(np.mean(_tvals)))
-            # ABSENT, never zero — the shadow head's rule, for the shadow head's reason. The
-            # COMBINED (C + B) unweighted fold, summed per minibatch inside `cf_twin_terms` and
-            # only meaned here: the two arms' lists differ in length when B starves, so
-            # mean(c)+mean(b) would be the mean of no minibatch that ever folded. One scalar,
-            # because this block contributes ONE term to the loss; the per-arm split is already
-            # live at `cf/twin_c_loss` / `cf/twin_b_loss`, which is where you read the arms.
-            # The key is missing (not 0.0) when the CF fold never ran — `cf_twin_metrics` can be
-            # non-empty from the ON-POLICY mirror alone, and a defaulted 0.0 would then publish
-            # a perfect score for an arm that saw no counterfactual label at all.
-            if "loss" in cf_twin_metrics:
-                self.logger.record("train/cf_twin_loss",
-                                   float(np.mean(cf_twin_metrics["loss"])))
-        if cf_twin_on:
-            self.logger.record("train/cf_twin_grad_share",
-                               float(grad_balance.get("grad/cf_twin_share", 0.0)))
-        # +CF-SHADOW (gen3_cf_twin_heads_v1) — `cf/shadow_*`.
-        #
-        #  * `loss` is the MSE against `mc_return` in the PopArt-normalized frame; `abs_err`,
-        #    `pred_mean` and `label_mean` are the same quantities de-normalized to real shaped-return
-        #    units, which is the only frame a reader can interpret.
-        #  * **`shadow_vs_live_v` is THE METER** — the SIGNED mean of (shadow − live V) in real
-        #    units on the same states. It is the staged-promotion evidence: a shadow sitting
-        #    systematically BELOW the live critic is a live critic that is optimistic about the
-        #    states the factory sampled, measured against ground truth rather than argued from a
-        #    calibration curve. `live_v_vs_label` is its direct half (live V minus the MC label);
-        #    read them together, since the shadow is itself a fitted head and can be wrong too.
-        #  * `coverage` is `mc_return`'s label coverage — the same first-read rule as `b_coverage`.
-        if cf_shadow_metrics:
-            for _sk, _svals in cf_shadow_metrics.items():
-                self.logger.record(f"cf/shadow_{_sk}", float(np.mean(_svals)))
-            # ABSENT, never zero. A starved shadow (no `mc_return` arrived, or every row's reward
-            # digest was refused) folds NO term, so there is no `loss` key — and defaulting it to
-            # 0.0 would publish a PERFECT SCORE for a head that trained on nothing, which is
-            # indistinguishable on a TB chart from a perfectly-fit one. `cf/shadow_coverage` still
-            # publishes, so the starvation is visible rather than silent.
-            if "loss" in cf_shadow_metrics:
-                self.logger.record("train/cf_shadow_loss",
-                                   float(np.mean(cf_shadow_metrics["loss"])))
-        if cf_shadow_on:
-            # 0.0 by construction (always-detached), published for the same reason as the
-            # evidential head's — this head is a promotion PATH, so its passivity is the contract.
-            self.logger.record("train/cf_shadow_grad_share",
-                               float(grad_balance.get("grad/cf_shadow_share", 0.0)))
-        # +Q-WINPROB (gen3_q_winprob_head_v1) — `q_winprob/*`, its own prefix so the PER-ACTION
-        # head's numbers can never be read as the per-state win head's.
-        #
-        #  * **`label_coverage` and `labels_per_row` are the FIRST read, before any score.** They
-        #    are the starvation tell this head is most exposed to: a producer shipping no
-        #    `q_labels` trains it on nothing, and a producer shipping ONE action per state trains
-        #    it into exactly the on-policy failure it exists to avoid (ledger 229e9f1).
-        #  * `abs_err` / `bias` are the fit on labelled cells. Read them WITH `pred_spread` vs
-        #    `label_spread`: a head that has learned nothing per-ACTION can still score well on
-        #    `abs_err` by predicting each state's mean, and the spread pair is what tells the two
-        #    apart — a `pred_spread` far below `label_spread` is a head that has amortized the
-        #    VALUE and not the SEARCH.
-        #  * `onpolicy_*` are the WEAK fallback's, prefixed apart on purpose (see the flag's
-        #    caveat). They are not evidence about the counterfactual stream.
-        if q_metrics:
-            for _qk2, _qvals in q_metrics.items():
-                self.logger.record(f"q_winprob/{_qk2}", float(np.mean(_qvals)))
-            # ABSENT, never zero — the shadow head's rule for the shadow head's reason: a starved
-            # fold publishes its coverage columns but no `loss`, and a defaulted 0.0 would be a
-            # perfect score for a head that trained on nothing.
-            if "loss" in q_metrics:
-                self.logger.record("train/q_winprob_loss", float(np.mean(q_metrics["loss"])))
-        if q_winprob_on or q_onpolicy_on:
-            # 0.0 by construction (every input detached inside the extractor forward), published
-            # so the "cannot perturb the policy" contract is a measurement, not a claim.
-            self.logger.record("train/q_winprob_grad_share",
-                               float(grad_balance.get("grad/q_winprob_share", 0.0)))
-
-        # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1). Read them as TRENDS, never as levels —
-        # every one of these is a saturation EARLY WARNING and none has a meaningful absolute value:
-        #   canary_loss / canary_recovery / canary_age  the plasticity canary. `canary_recovery` is
-        #       the one-number read (post-reset loss ÷ pre-reset loss for the target that was last
-        #       re-seeded); compare it at a MATCHED `canary_age`, since it decays with age by design.
-        #   canary_steps  how many canary updates this train() actually took. 0 with the flag ON
-        #       means the `value_pooled` snapshot never arrived (a non-Gen3 extractor, or a stash
-        #       that stopped being populated) — the tell that would otherwise be a silent gap.
-        #   halfbatch_cosine  the two half-batches' agreement on the shared trunk. Falling toward
-        #       0 / negative = the batch is fighting itself. Read with halfbatch_grad_norm_ratio.
-        #   feature_velocity{,_cos,_rel}  how far the FROZEN probe batch's features moved since the
-        #       last measurement. Falling velocity at constant `train/grad_norm` = weights move but
-        #       functions do not.
-        for _capk, _capv in capacity_metrics.items():
-            self.logger.record(f"capacity/{_capk}", float(_capv))
-
-        # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
-        # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion
-        # signals a degenerate sigma / broken preservation). With PopArt on, train/value_loss is the
-        # NORMALIZED loss (≈O(1)) and grad/value_policy_logratio should fall toward ~0 (the
-        # aux-independent value/policy balance; grad/value_share also drops but moves with the aux count).
-        if popart is not None:
-            self.logger.record("popart/mu", float(self.policy.popart.mu))
-            self.logger.record("popart/sigma", float(self.policy.popart.sigma))
-            self.logger.record("popart/value_weight_norm", float(self.policy.value_net.weight.norm()))
-            # +THE CURRENCY CONVERSION, MADE READABLE (gen3_popart_currency_readout_v1). μ and σ
-            # alone say what the normalizer BELIEVES; these two say whether that belief is CURRENT.
-            # `train/return_*` is RAW shaped-return currency and the value loss trains in
-            # NORMALIZED currency, so the conversion in force this rollout is
-            # `normalized = (raw − μ)/σ` — and applying it to THIS rollout's own returns is the
-            # one-line audit of it: a tracking normalizer reads ≈0 and ≈1. A `norm_return_std`
-            # drifting from 1 is PopArt LAGGING the return scale (the value gradient is then
-            # mis-scaled against the trunk by exactly that factor), and a `norm_return_mean` far
-            # from 0 is an offset the value head has to carry itself. Free — a mean and a std over
-            # an array `value_scale_metrics` has already read.
-            _pa_r = np.asarray(self.rollout_buffer.returns, dtype=np.float64).reshape(-1)
-            if _pa_r.size:
-                _pa_sigma = float(self.policy.popart.sigma)
-                if _pa_sigma > 0.0:
-                    _pa_z = (_pa_r - float(self.policy.popart.mu)) / _pa_sigma
-                    self.logger.record("popart/norm_return_mean", float(_pa_z.mean()))
-                    self.logger.record("popart/norm_return_std", float(_pa_z.std()))
-        # (v61's `value_seeds/*` seed-collapse contract was logged here. The multi-seed critic
-        # readout it monitored is DELETED — dV 0.0000 bit-exact on two consecutive end-of-run
-        # audits — so the monitor went with it. Its finding survives in designs/CHANGELOG.md.)
-        for _sk, _svals in aux_metrics.items():
-            self.logger.record(_sk, float(np.mean(_svals)))
+        self._record_grad_balance_metrics(grad_balance, rank_metrics, edge_metrics, cell_metrics,
+                                          grad_norms)
+        self._record_signal_metrics(signal_metrics, scaffold_v, scaffold_z)
+        self._record_noise_scale_metrics(accum, noise_g_small_sq, noise_g_big_sq, _ns_terms)
+        self._record_head_metrics(belief_metrics, win_prob_metrics, calib_all, calib_contested,
+                                  critic_winprob, scaffolding_on, grad_balance)
+        self._record_term_metrics(value_dist_metrics, teacher_metrics, opd_metrics,
+                                  distill_metrics, td_aux_metrics)
+        self._record_cf_metrics(cf_buffer, cf_any_on, cf_rows_sampled, cf_metrics, cf_winprob_on,
+                                cf_evid_metrics, cf_evid_on, cf_twin_metrics, cf_twin_on,
+                                cf_shadow_metrics, cf_shadow_on, q_metrics, q_winprob_on,
+                                q_onpolicy_on, grad_balance)
+        self._record_capacity_and_popart_metrics(capacity_metrics, popart, aux_metrics)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest
         # denominator for `train/noise_per_term_ms` and for every other probe's cost claim.
         self.logger.record("train/train_ms", 1000.0 * (time.perf_counter() - _t_train0))

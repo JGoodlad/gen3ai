@@ -50,7 +50,7 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 |---|---:|---:|---|---|---|---|
 | `reward/` | 1 | 46 | **per rollout** | RAW REWARD | 14 emitted, of which **6 NOISE (gated)** + 5 REDUNDANT — a 1-term composition has nothing to apportion | `reward_term_callback` ← `reward_term_stats` |
 | `train/` | 53 | 23 | per rollout (`train()`) | MIXED — see per-tag below | LIVE, but `return_*` / `value_loss` / `explained_variance` **change currency to P(win)**; `scaffolding_*` **NOISE (gated)** | `instrumented_ppo/ppo.py`, `grad_balance`, `run_io` |
-| `win_prob/` | 5 | 42 (+10 under `--critic winprob`) | per rollout | PROBABILITY | **the era's core group.** The `critic_*` ten are LIVE and primary; the 19 `contested`/`material` tags are **NOISE** (6 gated, 13 pending — see below) | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
+| `win_prob/` | 5 | 42 (+10 under `--critic winprob`) | per rollout | PROBABILITY | **the era's core group.** The `critic_*` ten are LIVE and primary; the 19 `contested`/`material` tags are **NOISE** on a spread-free margin and are ALL gated (see below) | `ppo.py` ← `value_terms`, `calibration`, `scaffolding.reliability_table` |
 | `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | LIVE — except **13 `mean_reward_*` REDUNDANT** (byte-identical to their `win_rate_*` twin under the indicator) | `eval_callback`, `selfplay_callback` |
 | `eval_final/` | 2 | 10 | once, at run end | win rate | LIVE | `main/train/final_eval.py` |
 | `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | LIVE — `draw_rate` is **promoted to a PRIMARY endpoint** (the G7 kill condition) | `signal_metrics`, `signal_callback` |
@@ -73,12 +73,12 @@ measurement. Every classification below is from that arm's own tfevents, not fro
 | class | on the arm | means |
 |---|---:|---|
 | **LIVE** | 166 | meaningful as published |
-| **NOISE** | **31** | emitted, content-free *here* — a constant, a tautology, or a copy created by the era |
+| **NOISE** | **31** | emitted, content-free *here* — a constant, a tautology, or a copy created by the era. All 31 are now GATED |
 | **REDUNDANT** | 19 | an exact duplicate of another tag by identical formula or affine invariance |
 | **CONDITIONAL** | (48 more observed on other configs, + ~14 whole families) | correctly SILENT — their flag is off, or the mode refuses them |
 | **DEAD** | **0** | nothing in the recorder set is unreachable; the v75 latent-belief and v88 `V_pub` purges left no orphans |
 
-**The 18 NOISE tags now GATED** — the gate is on the SOURCE, never on the value, so a shaped run is
+**The NOISE tags are GATED** — the gate is on the SOURCE, never on the value, so a shaped run is
 byte-identical (verified: 172 tags, empty before/after diff):
 
 | gated | why it was content-free | gate lives in |
@@ -101,13 +101,15 @@ the published norms are policy 0.4555, value 0.1380, win_prob 0.1380 (the same n
 denominator carrying 0.1380 twice. Over a de-duplicated denominator the true shares are **policy
 0.680 · value 0.206 · aux 0.114**. The shares summed to 1.0 throughout, which is why nothing caught it.
 
-**13 NOISE tags are NOT yet gated** and are the one open item:
-`win_prob/contested_{ece,mce,rel_gap_b0…b9,rel_n}`. They come through `calibration.contested_mask`,
-which returns `None` only when the margin **key** is missing, not when the margin has no **spread** —
-and `_CalibrationAccumulator.metrics()` already returns `{}` for an unobserved accumulator, so the
-whole family disappears the moment that predicate learns the second case. The fix is one clause in
-`contested_mask`, matching `value_terms`' (see *What to watch* below for what to read instead
-meanwhile).
+**The last 13 are GATED too** — `win_prob/contested_{ece,mce,rel_gap_b0…b9,rel_n}`, which come
+through `calibration.contested_mask`. It used to return `None` only when the margin **key** was
+missing, not when the margin had no **spread**, so a flat column made `|const| < tau` all-ones and
+the family emitted as byte-identical copies of its pooled twins. It now returns `None` on a
+spread-free (or empty) margin, MIRRORING `value_terms._win_prob_loss`'s own `max − min > 0`
+predicate — the two consumers stratify on the same column, so a run in which one publishes the
+split and the other does not would be worse than either answer alone (a source-read test pins that
+the two predicates cannot drift apart). `_CalibrationAccumulator.metrics()` already returned `{}`
+for an unobserved accumulator, so the whole family now disappears rather than duplicating.
 
 **REDUNDANT (19) — kept, deliberately, and named so nobody measures them twice:**
 
@@ -171,11 +173,12 @@ not comparable with these.
 27. **`train/return_abs_max` must read exactly 1.0.** A departure means the reward stream is not the win indicator the mode's `V = P(win)` identity rests on.
 28. `time/fps` — the run is still moving.
 
-**What to read INSTEAD of the contested split, until those 13 tags are gated:** the honest
-contested-vs-blowout question on this era is answered offline by
-`python -m main.scaffolding_gauge --reliability --reliability-reweight` (which stratifies bot vs pool
-sentinel, where the head's bias FLIPS SIGN) and by `main.critic_gate`. The live `contested_*`
-calibration tags are copies of their pooled siblings and add nothing.
+**What to read when the contested split is ABSENT:** on a run whose margin has no spread the whole
+`contested_*` family is now gated off rather than duplicated, so the contested-vs-blowout question
+is answered offline by `python -m main.scaffolding_gauge --reliability --reliability-reweight`
+(which stratifies bot vs pool sentinel, where the head's bias FLIPS SIGN) and by
+`main.critic_gate`. ⚠️ A run started before `gen3_obs_margin_unconditional_v1` carries the
+degenerate margin AND, if it also predates the gate, the duplicate tags — read them as absent.
 
 ### The five groups the diagnostic contract names
 
@@ -323,7 +326,10 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 
 | module | holds |
 |---|---|
-| `ppo.py` | `InstrumentedMaskablePPO` + `train()` — the vendored upstream override and **the whole fold sequence** |
+| `ppo.py` | `InstrumentedMaskablePPO` + `train()` — the vendored upstream override and **the whole fold sequence**, plus `train_step_source()` (below) |
+| `train_setup.py` | **the pre-loop half of `train()`** — `_align_opp_intent_labels`, `_resolve_fold_flags` (→ `FoldFlags`: which terms this call folds, plus the counterfactual buffer's one per-rollout poll) and `_train_probe_setup` (→ `ProbeSetup`: the once-per-call diagnostics, PopArt's advance, the two gradient samplers). Both containers are `NamedTuple`s carrying the SAME names the fold uses, so `train()` unpacks them back into the locals the loop was written against |
+| `metrics_export.py` | **the ~400-line `self.logger.record` tail** — diagnostics, no gradient, one method per TB prefix group, each taking the accumulators this call filled |
+| `rollout_probes.py` | `collect_rollouts`, the entropy-boost schedule (`_annealed_entropy_boost` and its two accessors) and `_winprob_start_metrics` — per-ROLLOUT work that is not part of the fold at all |
 | `hparams.py` | every after-construction knob `train_rl_agent` sets (`value_tail_weight`, the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
 | `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor + `noise_ratio_sample`, the read seam `--adaptive-batch` steers by |
 | `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the dense aux heads'? |
@@ -332,9 +338,27 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
 | `constants.py` | `_VALUE_TAIL_FRAC` · `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
 
-**`train()` is deliberately NOT split**, and the reason is the contract below. It is ~1,250 lines
-in one module because the ORDER the terms are folded in is straight-line source order, and that is
-only checkable by reading while it stays one straight line. Per minibatch:
+**THE FOLD SEQUENCE is deliberately NOT split**, and the reason is the contract below. `train()` is
+~1,220 lines in one module — of which the epoch loop is ~1,020 — because the ORDER the terms are
+folded in is straight-line source order, and that is only checkable by reading while it stays one
+straight line. What DID move out is everything AROUND the sequence: the pre-loop setup
+(`train_setup`) and the metrics export (`metrics_export`), neither of which folds a term, plus the
+per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,331
+lines** — its floor with the loop intact is ~1,200, so the file-size ratchet's 1,000-line TARGET is
+unreachable here without splitting the sequence, which is the thing that must not happen.
+
+🚨 **A SOURCE-LEVEL PIN THAT SAYS "in `train()`" SHOULD READ `ppo.train_step_source()`** — `train()`
+concatenated with the three setup methods and the seven export methods. The fold, its setup and its
+export are ONE train step; which of the three modules a given line sits in is a decomposition
+detail, and a pin that depends on it breaks on a move that changed nothing. Five test files read it
+(`instrumented_ppo_winprob_critic_test`, `vf_coef_scale_readout_test`,
+`instrumented_ppo_noise_scale_terms_test`, `winprob_pbrs_test`, and the hub contract's own
+docstring). **The fold's own ORDERING pins stay on `inspect.getsource(train)`**, where
+straight-line source order is the thing being checked. The same rule holds for a MONKEYPATCH: a
+test that stubs a diagnostic must patch the module that now owns the call
+(`train_setup.advantage_density_metrics` / `train_setup.shared_trunk_parameters` /
+`metrics_export.live_gauge_metrics`), because patching `ppo` would silently stub nothing and the
+byte-identity test would then compare two identical arms and pass. Per minibatch:
 
 1. the upstream PPO loss (`policy_grad_coef·policy_loss + ent_coef·entropy + vf_term` — `--policy-grad-coef`
    scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
@@ -360,7 +384,9 @@ crash — it silently scores the wrong states. `instrumented_ppo_hub_contract_te
 7-before-8 half by reading the source, along with the mixin base list (a dropped mixin removes a
 whole family of loss terms without breaking an import) and `MaskablePPO` staying LAST in the MRO
 (or `_excluded_save_params`'s `super()` stops reaching upstream and checkpoints start pickling a
-`threading.Lock`).
+`threading.Lock`). It also walks the package's own import graph TRANSITIVELY from the hub, so a
+module reached only through `train_setup` still counts as reachable — requiring a direct edge from
+`__init__`/`ppo` would forbid a decomposition rather than check one.
 
 The upstream-drift hash check (`_verify_upstream_unchanged` + `_EXPECTED_UPSTREAM_TRAIN_HASH`)
 stays in the HUB on purpose: `instrumented_ppo_test` patches that global on the module object it
