@@ -248,7 +248,8 @@ independent checks: *it launches* vs *it is the experiment*), watched (the four 
 fallback cron), killed and relaunched (pid gone + GPU free; move the dead dir aside), and read (one
 command per registered read, the evidence vocabulary). Also where sessions find the ORCHESTRATOR
 (`~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`). Always-current; per-era commands stay in
-that era's runbook.
+that era's runbook. [`ops/ORCHESTRATOR_SOP.md`](ops/ORCHESTRATOR_SOP.md) — the orchestrator session's own
+procedure: handoff, dispatch (OPUS subagents only, 2–3 at a time), landing, banking, relay.
 
 ### ai_v12 (🟢 THE LIVE CHAPTER — the clean-world / win-probability-critic era)
 Opened 2026-08-29. **Code landed 2026-09-06; arm 1 is running.** Where ai_v9 is the entity graph
