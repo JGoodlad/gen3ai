@@ -13007,3 +13007,38 @@ file mid-restart (a "+2 s startup" that was the absence of a restart), the ladde
 correctly formatted plateau verdict about the previous node), the compile lines mid-promotion, and
 the anchor pass under a policy that did not play the trace. Each was fixed by making the
 precondition explicit; the rule is the fix's general form.
+
+### 2026-09-07 · REFRAMING — the axis on `ai_v12_02` is FIXED-BOT vs POOL, not strength vs calibration: three independent instruments show the arm's relationship to the fixed bots degrading or flat while its relationship to its own pool holds or improves; the fourth (bot win rate) is noise; the bot-side calibration decay survives base-rate normalisation at ÷2.2 vs the pool's ÷1.2
+
+Proposed by the Training Run session after the n = 12 read; two corrections by the orchestrator from
+`eval_results.jsonl`. No account is asserted.
+
+**Three instruments, three quantities:**
+
+| instrument | fixed bots | pool (self-play lineage) |
+|---|---|---|
+| eval episode length (G7 source) | flat ~22 turns for 22M steps | 25.9 → 31.3 |
+| G1 resolution, eval traces | 0.030 (14M) → 0.014 (26M) | ~0.05, flat since 16M |
+| G4 Murphy skill (resolution − reliability, ÷ uncertainty) | +0.255 → +0.114 (**÷2.2**) | +0.236 → +0.197 (÷1.2) |
+
+**The fourth instrument does not stand.** The bot win rate's three-cycle decline to 0.898 was one low
+cycle: per bot, 24M → 26M reads heuristic2 0.83 → 0.95, setup_sweep_v2 0.86 → 0.92, staller_v2
+0.91 → 0.95, heuristic 0.89 → 0.93, setup_sweep 0.87 → 0.82; the 26M aggregate is ~0.917, inside the
+saturated band. The specialisation candidate's own falsifiable prediction — that the scripted-pattern
+bots drop most — was stated at 24M and reversed at 26M, so it is weakened before it is tested.
+
+**Normalise before reading the decay.** Resolution is bounded by the base rate's uncertainty term
+base × (1 − base): ~0.07 against bots the arm beats ~0.92 of the time, ~0.21–0.25 against the
+contested pool. The raw resolution ratios (bot ÷5.6, pool ÷1.25) overstate the split because the
+bot cap shrank as the arm improved; the normalised quantity is the skill score, and there the split
+is ÷2.2 vs ÷1.2 — real, smaller than raw. Skill is printed beside resolution per read from here,
+and the bot stratum is led with skill.
+
+**Registered discriminator (cheap, 28M):** the per-BOT calibration rows (skill and resolution by
+opponent NAME, not win rate) over the same cycles. Concentrated in the bots the arm beats most
+easily ⇒ the cap and saturation; spread evenly ⇒ something about the head. The gauge stratifies by
+class today; whether it can stratify by name decides whether this is a read or a build.
+
+Together with the 10M read's opening (strength up, eval-trace calibration flat-low) and the 20M/24M
+dissociations, this is the consolidated shape of the arm at 26M. Tag: **OBSERVATION**, three
+instruments, no account.

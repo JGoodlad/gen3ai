@@ -546,7 +546,13 @@ STRENGTH READ*; `measurements/winprob_critic_26M_n12_read_2026-09-07/`]. 26M is 
 (2064.1; rev-1's 12th node 2098.4). Calibration G1 fails on every stratum and the BOT stratum's
 resolution has decayed 0.030 → 0.014 since 14M while pool holds ~0.05; G2/G3 pass at 26M; G4 fails
 on bots. Two dissociations between the fixed-bot axis and the self-play-lineage axis in five
-snapshots, opposite signs, no account.
+snapshots, opposite signs, no account. **Reframed at 26M: the axis is FIXED-BOT vs POOL, not
+strength vs calibration** — three instruments (eval episode length, G1 resolution, G4 skill) show
+the arm's relationship to the fixed bots degrading or flat while its relationship to its own pool
+holds or improves; the bot win-rate "decline" was noise (per-bot rows rebounded at 26M); the bot-side
+calibration decay survives base-rate normalisation at ÷2.2 (skill) against the pool's ÷1.2 [ledger
+2026-09-07 · *REFRAMING — FIXED-BOT vs POOL*]. UNVERIFIED account; the per-bot calibration rows at
+28M are the registered discriminator.
 
 **THE 10M READ (2026-09-07 ~00:40): NO KILL — the arm continues to 75M.** [ledger 2026-09-07 ·
 *10M DECIDING READ*; artifacts `measurements/winprob_critic_10M_read_2026-09-07/`] At matched
