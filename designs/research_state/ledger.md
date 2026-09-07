@@ -12590,3 +12590,65 @@ in hindsight), train ep_len 32.4 → 39.45 (+22%) against eval-vs-bots 20.7 → 
 same period — the lengthening lives in self-play, where the kill is not measured, exactly as the
 draw-composition probe predicted; monitor `draw_rate` 0.0032, six buckets at 0.0032–0.0045 with no
 upward drift; 16M ladder node pending the updater.
+
+---
+
+## 2026-09-07 · ROUTINE · the ladder-refit drift MEASURED on `ai_v12_02_winprob_critic` — it is a LEVEL SHIFT of the whole ladder, not inflation of the newest node
+
+The standing rule says *the newest BT node is systematically inflated* (gen-10's 12M fell 2089 → 2021
+over 12 refits), and it is the rule that produced tonight's `+64 → −30` correction. This arm grew a
+ladder from 4 to 7 nodes in four hours with every intermediate fit recorded, so the rule's SHAPE is
+now measured rather than inferred — **and the shape is not what the wording implies.**
+
+### Every fit, as the ladder grew
+
+| node | 4-node | 5-node | 6-node | 7-node | as newest | settled(7) | total |
+|---|---|---|---|---|---|---|---|
+| 4M | 1778.5 | 1761.5 | 1747.6 | 1739.6 | 1778.5 | 1739.6 | **−38.9** |
+| 6M | 1913.7 | 1895.5 | 1876.9 | 1874.0 | 1913.7 | 1874.0 | **−39.7** |
+| 8M | 1975.0 | 1962.7 | 1946.4 | 1942.5 | 1975.0 | 1942.5 | **−32.5** |
+| 10M | 2022.1 | 2006.2 | 1989.5 | 1977.6 | 2022.1 | 1977.6 | **−44.5** |
+| 12M | — | 2043.9 | 2024.1 | 2017.9 | 2043.9 | 2017.9 | −26.0 |
+| 14M | — | — | 2057.8 | 2046.3 | 2057.8 | 2046.3 | −11.5 |
+| 16M | — | — | — | 2063.4 | 2063.4 | 2063.4 | 0.0 |
+
+🚨 **EVERY node deflates on every add, by a similar amount, regardless of age.** The 4M node was
+never the newest in any of these fits and still lost 38.9. Per-add deflation is ~11–20 Elo across
+the board (4M: −17.0 · −13.9 · −8.0; 10M: −15.9 · −16.7 · −11.9). A node's TOTAL loss tracks how
+many adds it has lived through, not how new it was.
+
+### Level vs structure — the decisive split
+
+Over the four nodes present in every fit:
+
+| | 4-node | 7-node | moved |
+|---|---|---|---|
+| **mean level** | 1922.3 | 1883.4 | **−38.9** |
+| **spread (10M − 4M)** | 243.6 | 238.0 | **−5.6** |
+
+**The spread moved 14% of what the level moved**, and the per-node deviation from the 4-node fit has
+an sd of only **4.27** at 7 nodes against a 38.9 mean shift. Adjacent gaps hold too — the 4M→6M gap
+reads 135.2 · 134.0 · 129.3 · 134.4 across the four fits.
+
+**So the ladder's INTERNAL STRUCTURE is stable and its ABSOLUTE LEVEL drifts down as nodes are
+added.** The newest node looks most inflated only because it has the most adds still ahead of it,
+never because the fit treats it differently.
+
+### Why this matters, and what it does NOT change
+
+This is the mechanism behind *matched fit size*: a comparison of two nodes **inside one fit** is
+robust (structure is stable), while a comparison **across fits of different sizes** inherits the
+level shift. That is exactly the `critic_gate` defect — the arm's newest-of-4 against rev-1's
+4th-of-12 differed by 93.8 Elo, which is this level drift run further, not a property of either run.
+
+- **The 10M read's −30 stands unchanged** and must not be refreshed: both sides were newest-of-4, so
+  the level shift was common to them and cancelled. Against today's settled 1977.6 the same
+  comparison would read **−74.4**, and that number would be wrong.
+- rev-1's **94 Elo** over a 12-node fit is this same curve run to 12 nodes, not an outlier.
+- Deflation DECELERATES per add (10M: −15.9 · −16.7 · −11.9), consistent with converging to a
+  settled value rather than drifting without bound.
+
+**Limits, stated:** ONE arm, four fits, 7 nodes. The mechanism is **UNVERIFIED** — the fit is
+anchored to pinned bots while snapshot-vs-snapshot edges accumulate, so the snapshot cluster
+plausibly re-seats against a fixed anchor, but no explanation is asserted here. What is measured is
+the shape: uniform per-node deflation, stable structure, drifting level.
