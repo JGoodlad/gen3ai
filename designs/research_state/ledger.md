@@ -13438,3 +13438,28 @@ edges are one experiment. Launches when A reaches 75M (~Tue 08:00–09:00); its 
 matched snapshot count against A's own nodes past 25M (same recipe, same start, PFSP the only
 difference), plus G1–G4. Arm B (the frozen-φ bootstrap) stays conditional on the 75M calibration
 read as registered.
+
+### 2026-09-07 · READ AMENDMENT 6b — G7's ep_pool half is DESCRIPTIVE (its population is non-stationary by construction); ep_bots keeps the bar (reference 21.911, 1.25× = 27.39, sustained two snapshots, REPORT); the clause-1 re-check under the fixed ladder fit: one sign flip (34M), no consecutive pair, no verdict changes
+
+**Clause-1 re-check** (adds from the FIXED column, every node since 20M; Training Run): 20M −42.4
+BELOW · 22M +10.1 · 24M +8.5 · 26M +19.0 · 28M +11.7 · 30M −8.1 BELOW · 32M +2.8 · **34M +1.7 →
+−10.0 BELOW (sign flipped)**. Below-adds 20M, 30M, 34M — none consecutive; **clause 1 would not have
+fired at any snapshot.** The orchestrator's "~6 Elo" bound on an add's movement was UNDERSTATED:
+under a compression an add moves by the DIFFERENCE of two adjacent node shifts, which grows toward
+the tip (34M's node moved −33.6); every near-zero add near the tip is at risk, not only those within
+6. Detector on the emitted key passed: 70 sentinel edges dropped.
+
+**Amendment-6 references, computed from TB and frozen:** ep_bots **21.911** (n = 2 cycles in
+4–6M) → 1.25× bar **27.389**; ep_pool 25.890 (n = 1 cycle — only 6M has a pool value). Latest:
+ep_bots 23.49 (34M), 22.58 (36M), ratio 1.072; ep_pool 31.69 (34M) = 1.224, 33.00 (36M) = 1.275 —
+one over, one under, NOT sustained. The re-reference moved the nominal breach from bots to pool.
+
+**Ruling: the ep_pool half is DESCRIPTIVE — no bar.** Its population is non-stationary by
+construction: the five sentinels are drawn from a pool that gains a stronger self every 2M, so
+eval-vs-pool episode length rises monotonically as the sentinels strengthen (documented at
+16–18M), and a reference frozen at any early window is a reference from a different opponent
+population — the non-commensurability that just dismissed the fold-parent era. Choosing between the
+n = 1 reference (25.89, bar 32.36, 36M over) and a two-cycle one (27.12, bar 33.90, 36M under) would
+be fitting the bar to the data, so neither is chosen. ep_pool prints its value and its ratio to the
+6M value every read, labelled DESCRIPTIVE. **ep_bots keeps the bar; the stall-rate half (≤ 0.05)
+stays primary; under the owner's ruling nothing kills this arm either way.**
