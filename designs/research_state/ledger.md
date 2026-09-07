@@ -12032,3 +12032,46 @@ with no margin — the read is taken AT the 10M snapshot). Launcher pid 2635463,
 `f971caf2`. Registered next events unchanged: 5M smoke (`read_10M.sh --check`), first restart
 ~23:27 (vf_coef in both units + trend + verdict, plus `main.sidecar_audit`), then the 10M DECIDING
 famine read per READ AMENDMENT 2.
+
+---
+
+### 2026-09-06 · CORRECTION to the 4M-read entry — arm 2 is **`--n-envs 48 --batch-size 2048 --grad-accum-steps 32`**, not "`--n-envs 2048 --batch-size 32`"
+
+The entry immediately above opens *"Marginal throughput of record for arm 2 at `--n-envs 2048
+--batch-size 32`: 953 fps."* **The config in that sentence is false on both fields.** Read from the
+run's own `metadata.json` `cli_args`, and cross-checked against the recorded argv:
+
+| field | truth | the entry said |
+|---|---|---|
+| `n_envs` | **48** | 2048 |
+| `batch_size` | **2048** | — |
+| `grad_accum_steps` | **32** | 32, mislabelled as `--batch-size` |
+
+**The 953 fps measurement itself is unaffected** — it is a wall-clock rate between two step-stamped
+artifacts and does not depend on knowing the config. What the error corrupts is the LABEL the
+number is filed under, which is the half a later reader quotes.
+
+The origin is a conflation of `2048×32` — the **batch** correction this same run's OOM entry
+(`### 2026-09-06 · OOM`) records — with the env count. The two notations collide: `2048×32` in this
+ledger has always meant `batch_size × grad_accum_steps`, and reading it as `n_envs × batch_size` is
+the specific misreading to guard against.
+
+**One inference drawn from the wrong number is also withdrawn.** On finding the ~8-minute
+step-counter pause after the 4M pool promotion, the claim was made that "at `n_envs=2048` a
+promotion means 2048 opponent compiles, so this arm is far more exposed than the runs the default
+was tuned on." At 48 envs that exposure argument is void: a promotion is **48** worker compiles, and
+this arm's exposure is **the same as every other 48-env run**, not 40× worse.
+
+**The pause is still real and still unexplained by the correction** — `launcher_child.log` carries
+the per-worker `[CompileExtractor] pool:snapshot_000004000032.zip` lines (13.3 → 1.7 ms, 7.8×), and
+48 dynamo traces on 16 cores beside a live trainer is the right order for 8 minutes. The
+forkserver preload (`--compile-opponents-preload`) covers only opponents that exist at env
+CONSTRUCTION; a snapshot promoted mid-run is traced per worker. So the throughput tax stands as a
+question and is being measured — the 4M → 6M interval contains exactly one promotion — with the
+pause taken as a MEASURED duration (first to last `CompileExtractor` line for that snapshot) rather
+than inferred from a flat step counter, and with the 6M promotion checked separately, since the
+Inductor disk cache is warm after the first and the second may be dynamo-only and shorter.
+
+**953 fps remains correct as a promotion-free rate** (2.4M → 4.0M contained no promotion, because
+snapshots begin at 4M). It is not yet a steady-state rate, and no ETA should be built on it until
+the 4M → 6M figure is beside it.
