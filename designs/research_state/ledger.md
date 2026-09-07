@@ -13186,3 +13186,32 @@ withdrawn**; the overdispersion is what is carried to 75M, where `sd_true_excess
 per STATE and is the instrument built for exactly this shape.
 
 Run state: ~28.9M, healthy; 30M ~35 min out.
+
+### 2026-09-07 · 30M — DEFECT in the plateau-signal tool (`ae8e9fa9`): clause 1 compared the new node against the fixed 20M DIP rather than its immediate predecessor, so it read "second consecutive: YES" on a single −1.7 Elo dip; the verdict was right only because clause 2 happened to miss. Fixed, with both comparisons printed. The signal does not fire, now for the right reason
+
+Training Run session, at the 30M node. Ladder: 26M 2054.2 · 28M 2065.2 (+11.0, ABOVE its
+predecessor) · 30M 2063.5 (**−1.7**, the FIRST below-predecessor add in this sequence, against
+per-node SEs ~10). The tool printed **"SECOND CONSECUTIVE below-predecessor add: YES"**.
+
+**The misimplementation.** The registration says "the new node is below its predecessor for the
+SECOND CONSECUTIVE add". It was coded as "the new node is below its predecessor AND the 20M dip
+node was below ITS predecessor" — a comparison against a node five adds back, which is fixed history
+and therefore permanently true, so clause 1 was destined to fire on the next dip whenever it came.
+Fixed: `newest < predecessor AND predecessor < its predecessor`, both comparisons printed so the
+reading is checkable rather than trusted; post-fix it reads "no".
+
+**Why it is recorded as a defect and not a near-miss.** Clause 2 read 149/300 = 0.497, Wilson
+[0.440, 0.553], covering 0.50 — so the AND returned the correct verdict while half its logic was
+wrong, and had 30M's head-to-head come in slightly worse we would have had a PLATEAU SIGNAL FIRES
+report on a ladder that dipped 1.7 Elo once. Same structure as the discharged draw-rate/ep_len gate
+(one permanently-satisfied clause turns an AND into an OR on the other), except here the satisfied
+clause was a BUG. It was caught only because the printed line contradicted a ladder the reader
+happened to be looking at. **Lesson: a multi-clause gate needs a planted case PER CLAUSE — a case
+where that clause alone decides — or a broken clause can ride inside a correct verdict
+indefinitely.** That is the anti-vacuity class (`designs/learning/vacuous_tests_and_guards.md`)
+applied to a registered read.
+
+**30M state, clean:** 30M vs the dip node 62/100; ABOVE the pre-dip 18M on the ladder, so the 20M
+one-off stands; bots 823/900 = 0.914 (four cycles 0.898 · 0.917 · 0.928 · 0.914, no direction);
+`draw_rate` 0.0034, zero of two monitor buckets; `untracked_abs_mean` 0.0000; G7 untouched.
+**The plateau signal does not fire — on both clauses, for the right reason.** Restart 5 due ~11:38.
