@@ -13083,3 +13083,35 @@ with a bootstrap-over-battles interval, and the same for the pool sentinels by n
 of zero ⇒ the anti-cap observation stands and enters the 75M read's framing; covers zero ⇒ carried
 as suggestive. `sentinel_0`'s negative skill is a line item at doubled n. Also verified this cycle:
 bots at 26M = 825/900 = 0.917, 24M was the outlier; per-bot rebounds as recorded at *REFRAMING*.
+
+### 2026-09-07 · CORRECTION to *PER-BOT CALIBRATION at 26M* (`eb220c51`) — "the cap/saturation account is REFUTED (r = +0.79)" is WITHDRAWN: with its interval, r = +0.787 has a 95% cluster-bootstrap-over-battles interval of **[−0.609, +0.795]** (n = 8 opponents), which covers zero. The point estimate points away from the cap account; the data do not resolve the sign. The 28M test is re-registered as a clustered SPEARMAN over pooled cycles
+
+The Training Run session built the pre-registered tool, reproduced the point estimate exactly, and
+added the interval it had not had: bots **r = +0.787 [−0.609, +0.795]**, pool sentinels r = +0.483
+[−0.475, +0.920] (n = 5). Both cover zero. The orchestrator wrote "REFUTED" into the headline off a
+correlation with no interval — the exact error §7 rule 6 and the "DELTA's CI before any sentence"
+rule exist to prevent — and that headline is withdrawn here; the entry stands with this correction
+beside it (append-only). What the data support: **the ordering points away from the cap account,
+NOT DETECTED at n = 8.**
+
+**Why doubling battles at 28M would not have fixed it (structural):** pooling cycles tightens each
+opponent's skill estimate, but the correlation's sample size is the NUMBER OF OPPONENTS — 8 bots,
+5 sentinels — and the interval is dominated by having 8 points, not by their precision.
+
+**Re-registered test for 28M — (b) primary, (c) descriptive:**
+- **(b)** pool the per-opponent rows over **20M–28M** (five cycles × 8 bots; sentinels by name),
+  unit = (opponent, step), bootstrap clustered by OPPONENT so repeated measures are respected, and
+  **SPEARMAN** rather than Pearson — the cap account is an ORDERING claim (skill falls as base rises)
+  and rank is what it predicts. One-sided: the cap account predicts ρ < 0. Vocabulary: interval
+  clear of zero on the positive side ⇒ "the ordering points away from the cap account, SIGNIFICANT";
+  covers zero ⇒ NOT DETECTED; clear on the negative side ⇒ the cap account is SUPPORTED.
+- **(c)** "the two lowest-cap bots (staller_v2, heuristic2) have the highest skill" was chosen after
+  seeing the table — post hoc — and carries no verdict; it is printed as one descriptive line under
+  (b), labelled as such.
+
+**Two self-caught tool defects, recorded because they are the rule-16 class inside the rule-16
+tool:** `collect_slices` returns a tuple `(slices, meta)` and the tool bound the whole tuple, so
+every step read as MISSING and it printed "no traces yet" for traces that were present — a
+confident false negative from an unchecked return shape; and its `--steps` parser swallowed
+`--boot`'s argument. Both fixed before the number above was produced. `sentinel_0` stands at skill
+−0.061 on 20 battles, printed with a NEGATIVE SKILL flag.
