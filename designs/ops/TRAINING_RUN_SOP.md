@@ -133,6 +133,11 @@ automatically. Never run a Claude session inside the training tmux session (its 
   the pin is unchanged across the restart.
 - **Landings during a live cell are announced to the Training Run session before they go to `main`**
   and name what changed in any file the arm's pinned tree also contains.
+- **A single-sample reading is never a verdict.** Every registered instrument is read as the median
+  (or the series) over the registered window — `grad/value_policy_logratio` swung a full decade
+  between consecutive rollouts while its 20-rollout median sat at +0.15; three single-sample readings
+  in one day would each have produced the wrong call (ledger 2026-09-06 · *REGISTRATION — the vf_coef
+  restart rule*).
 - **Composition guard:** `reward/untracked_abs_mean` must read 0; the launch banner must match the
   registered composition (e.g. "1 TERMINAL + 0 PBRS + 0 BIAS").
 
