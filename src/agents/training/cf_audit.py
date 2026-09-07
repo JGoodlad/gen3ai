@@ -748,6 +748,38 @@ def _default_session(traces: str, *, impl: str, ckpt_override: Optional[str]):
     return ProbeSession(traces, impl=impl, ckpt_override=ckpt_override, compile_extractor=True)
 
 
+def build_sessions(factory, traces: str, *, impl: str, checkpoint: Optional[str]):
+    """``(anchor_session, label_session, note)``.
+
+    The ANCHOR is not a pure replay: it scripts the recorded prefix and plays the rest of the
+    battle LIVE with the reloaded trainee, so it reproduces the recorded outcome only when that
+    trainee is the network that PLAYED the trace — the step dir's own ``snapshot.zip``, which the
+    default ladder resolves at tier ``exact``. A ``--checkpoint`` override therefore MUST NOT reach
+    the anchor: measured 2026-09-07 on `ai_v12_02_winprob_critic` (136 bot anchors, paired), the
+    default ladder anchors **136/136**; the same battles with the run's +454k-step checkpoint
+    anchor **115/136 = 84.6%** (identical failing set under rust and node, so the driver is exact),
+    with a 12M-older checkpoint **109/136**, and every failure was a recorded LOSS the other policy
+    turned into a win or tie — the first divergence was always OUR OWN ACTION, never a mechanic.
+    That read as a label-trust REFUSAL (correct: the gate did its job) until the cause was found
+    (ledger 2026-09-07 · *anchor root cause*).
+
+    The LABEL session keeps the override — but note that the bias map then compares the trace's
+    recorded ``win_prob`` (the snapshot's) against Monte-Carlo rolled out under a DIFFERENT policy,
+    which is a policy mismatch, not a value error; the note says so loudly.
+    """
+    anchor = factory(traces, impl=impl, ckpt_override=None)
+    if checkpoint is None:
+        return anchor, anchor, ""
+    label = factory(traces, impl=impl, ckpt_override=checkpoint)
+    note = (f"cf_audit: 🚨 --checkpoint {checkpoint!r} applies to the LABEL rollouts ONLY. The "
+            "anchor (label-trust) arm replays under each trace's OWN snapshot, because its "
+            "continuation is played live by the reloaded trainee and only the network that played "
+            "the trace reproduces it. The bias map will compare the snapshot's recorded win_prob "
+            "against Monte-Carlo under the OVERRIDE policy — a policy mismatch. Drop --checkpoint "
+            "to audit the snapshot against itself.")
+    return anchor, label, note
+
+
 def main(argv: "Optional[Sequence[str]]" = None, *, session_factory=None) -> int:
     """``session_factory(traces, impl=…, ckpt_override=…)`` returns the object the labeler
     calls ``replay_counterfactual`` on. It exists so the end-to-end test can run the REAL
@@ -776,8 +808,11 @@ def main(argv: "Optional[Sequence[str]]" = None, *, session_factory=None) -> int
           f"(R={args.rollouts}, load={os.getloadavg()[0]:.1f})", flush=True)
     print(f"  skipped: {dict(skipped)}", flush=True)
 
-    session = (session_factory or _default_session)(
-        traces, impl=args.impl, ckpt_override=args.checkpoint)
+    anchor_session, session, session_note = build_sessions(
+        session_factory or _default_session, traces, impl=args.impl,
+        checkpoint=args.checkpoint)
+    if session_note:
+        print(session_note, flush=True)
 
     # ── LABEL TRUST FIRST. A bias map from an inexact replay measures the bug. ──
     rng = random.Random(args.seed ^ 0x5EED)
@@ -793,7 +828,7 @@ def main(argv: "Optional[Sequence[str]]" = None, *, session_factory=None) -> int
         anchors.append(ds[len(ds) // 2])
     for d in anchors:
         try:
-            out = _label_one(session, d, n_rollouts=1, opp_ckpt=None)
+            out = _label_one(anchor_session, d, n_rollouts=1, opp_ckpt=None)
         except Exception as exc:                                        # noqa: BLE001
             anchor_err += 1
             print(f"  anchor {d.short} inv {d.inv}: {type(exc).__name__}: {str(exc)[:160]}",

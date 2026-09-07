@@ -430,3 +430,28 @@ def test_the_named_golden_values_are_what_the_digest_stands_for():
     assert sh["shadow_vs_live_v_ci"] == pytest.approx(
         [-0.18986503240932356, -0.01902852911531018], abs=1e-12)
     assert len(r["resolution_cells"]) == 10 and len(r["markdown"]) == 6276
+
+
+# ------------------------------------------------ the anchor never takes --checkpoint (2026-09-07)
+
+def test_the_anchor_session_never_takes_the_checkpoint_override():
+    """The anchor plays the recorded prefix then continues LIVE with the reloaded trainee, so it
+    reproduces the record only under the trace's own snapshot. With --checkpoint the dry run
+    anchored 115/136 (84.6%) and REFUSED; the default ladder anchors 136/136."""
+    from agents.training.cf_audit import build_sessions
+    calls = []
+
+    def factory(traces, *, impl, ckpt_override):
+        calls.append(ckpt_override)
+        return ("session", ckpt_override)
+
+    a, l, note = build_sessions(factory, "traces/step_1", impl="rust", checkpoint=None)
+    assert a is l and a == ("session", None) and note == "" and calls == [None]
+
+    calls.clear()
+    a, l, note = build_sessions(factory, "traces/step_1", impl="rust",
+                                checkpoint="checkpoints/x.zip")
+    assert a == ("session", None), "the anchor must replay under the trace's own snapshot"
+    assert l == ("session", "checkpoints/x.zip"), "the label pass keeps the override"
+    assert calls == [None, "checkpoints/x.zip"]
+    assert "policy mismatch" in note and "LABEL rollouts ONLY" in note

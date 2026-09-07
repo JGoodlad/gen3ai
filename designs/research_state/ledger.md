@@ -12903,3 +12903,54 @@ arm**, and any row where they differ means the terminal-only reward assumption h
 
 The 75M runbook (three commands, every `--out` outside `models/`, the anchor warning inline) is in
 the report. Test 2 was not re-run (already proven).
+
+### 2026-09-07 · ANCHOR ROOT CAUSE — the replay path is EXACT (rust ≡ node, 136/136 under the trace's own snapshot); the dry run's `--checkpoint` had swapped the anchor's LIVE continuation to a different policy. Test 1 is UNBLOCKED: audit each step dir's snapshot against itself. `cf_audit` now keeps the override away from the anchor
+
+Opus root-cause agent, ~07:50–08:05; report at
+`measurements/winprob_arm_probes_2026-09-07/vf_dryrun_22M/anchor_rootcause.md`.
+
+**The anchor is not a pure replay.** `cf_audit`'s label-trust arm scripts the recorded prefix and
+then plays the rest of the battle LIVE with the *reloaded* greedy trainee
+(`replay_counterfactual(..., n_rollouts=1)`) — the ledger already records that `cf_producer`'s
+FULL-replay oracle is "a deliberately STRONGER form than cf_audit's — no policy acts". So the anchor
+reproduces the recorded outcome only when the reloaded trainee IS the network that played the trace:
+the step dir's own `snapshot.zip`, which the default resolution ladder finds at tier `exact`.
+`--checkpoint` swaps that network, and the continuation is a different game.
+
+**Reproduction, the SAME 136 bot anchors, paired** (arm, `step_22000032`, seed 3):
+
+| replaying checkpoint | anchored | flips |
+|---|---|---|
+| default ladder → `step_22000032/snapshot.zip` (tier `exact`) | **136/136 = 100.0%**, 0 errors | none |
+| `checkpoint_22454016_steps.zip` (the dry run's, +454k steps) | 115/136 = 84.6% | 19 loss→win, 2 loss→tie |
+| same override, **`--impl node`** | 115/136 = 84.6% | the IDENTICAL failing set |
+| `checkpoint_9969408_steps.zip` (12M older) | 109/136 = 80.1% | 20 loss→win, 1 tie, 6 win→loss |
+
+The dry run's 80.0% (n = 20) and 87.5% (n = 80) sit inside this. **Bisect:** rust ≡ node under the
+same override (driver exonerated); the shaped comparator rev-1 on its default ladder anchors
+**132/133 = 99.2%** (not arm- or era-specific; its one miss is a 250-turn-cap record the replay
+driver refuses as truncated). **Direction test:** a WEAKER checkpoint introduces 6 win→loss flips the
+newer one never produces — failures track POLICY IDENTITY, not replay fidelity. Every failure under
+the override is a recorded LOSS the other policy turned into a win or tie; no opponent
+concentration (8 of 9 bots, never `random`); recorded win_prob of failures indistinguishable from
+the pool (0.914 vs 0.918); every record carries a `sodium,<hex>`-seeded reconstruction sibling.
+**First divergence, narrated for three battles: byte-identical sim up to it, and the first
+difference is always OUR OWN ACTION** (turn 18 Ice Punch vs Body Slam; a turn-9 forced switch
+Tyranitar vs Jirachi; a turn-10 forced switch Tyranitar vs Swampert). **No mechanic is implicated.**
+Ruled out explicitly: missing/partial dice, forfeits or `/choose default` fallbacks (0/136),
+replay kernels ≠ bridge. Surviving as an AMPLIFIER: the loss-enriched capture quota (100% of the
+flips are losses; the pool is ~47% losses). Minor: a 250-turn-cap record counts as an anchor
+failure rather than a declared skip.
+
+**Fix (this commit).** `cf_audit.build_sessions` builds the ANCHOR session with `ckpt_override=None`
+always, and the LABEL session with the override; when they differ it prints, loudly, that the bias
+map will then compare the snapshot's recorded `win_prob` against Monte-Carlo under a DIFFERENT
+policy — a policy mismatch, not a value error. Gated by
+`test_the_anchor_session_never_takes_the_checkpoint_override`. `--anchor-tolerance` is untouched: it
+did its job.
+
+**75M runbook change:** test 1 runs `cf_audit <run> --step <75M step dir> --impl rust --rollouts 8
+--states N --out <outside models/>` with NO `--checkpoint`, so the identity test audits the 75M
+snapshot against itself — which is also the correct object: the recorded V it compares against IS
+that snapshot's. The 250-cap exclusion (`cf_producer.record_is_full_replay_anchorable`) is a
+follow-up, not needed for the read.
