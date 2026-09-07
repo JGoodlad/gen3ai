@@ -12121,3 +12121,46 @@ clause would have killed. It is registered before the data it judges exists, in 
 units, with the other clause and the famine read unchanged. Every report names the definition and the
 frozen reference it used. Tag: **REGISTRATION**, no measurement claimed. The Training Run's
 `killbar.py` (wired into `read_10M.sh` and `restart_read.sh`) implements it.
+
+### 2026-09-06 · READ AMENDMENT 4 — clause 2's reference and test window must lie in the SAME OPPONENT REGIME (a constant `train/selfplay_fraction`); the 1–3M reference is the POOL-EMPTY one and is not used against self-play data
+
+Raised by the Training Run session at 5.11M off the 5M smoke (which PASSES — only the expected
+ladder refusal). Ruled by the orchestrator; registered before 8M, i.e. before any of the data the
+10M test window will hold.
+
+**The defect in amendment 3.** Its reference (30.04, the 1–3M mean) was measured with the pool EMPTY
+— `selfplay_fraction` 0.0, every battle against scripted bots. At exactly 4.00M the first promotion
+stepped the fraction to **0.90**, and per-1M bucket means of `rollout/ep_len_mean` against that
+reference read: 0–1M +2.65 · 1–2M −0.05 · 2–3M +0.05 · 3–4M −1.06 · **4–5M +3.59** · 5–6M +1.38
+(partial). The self-play bucket already clears the +3.0 bar. At 10M the test window (8–10M) is
+entirely self-play, so clause 2 would read MET permanently for a reason that is not famine: two
+competent neural players take longer to resolve a game than a scripted bot does. **A clause that
+always reads MET is not a clause**, and its collapse would leave the gate on clause 1 alone (bar 0.01
+at 10M; `draw_rate` has already touched 0.0138 in this run). Same error class as the
+`selfplay_fraction` median of 0.45 — a statistic computed across a regime boundary describes neither
+regime; 4.00M split this run in two and several instruments straddle it.
+
+**The rule, registered:**
+
+1. A **regime** is a constant value of `train/selfplay_fraction`. Clause 2's **reference** is the
+   mean of `rollout/ep_len_mean` over the **first 2M-step window lying fully inside the current
+   regime**, frozen once and named with its regime. For the 0.90 regime that is **4–6M, frozen at
+   the 6M snapshot**. 30.04 stays in the record as the **pool-empty (0.0) reference** and is not
+   used against self-play data.
+2. **Test window** = the last 2M before the read, unchanged. If a regime step falls inside the
+   test window, or the test window and the reference lie in different regimes, clause 2 reads
+   **NOT EVALUABLE**, the report says so, and clause 1 + the famine read decide. Declared now.
+3. If `selfplay_fraction` steps again (0.90 → 1.0) before 8M, the reference is re-frozen from the
+   first 2M fully inside the new regime; if that window is incomplete at the read, clause 2 is NOT
+   EVALUABLE there. **Once per regime, never on the arm's request.**
+4. The bar is unchanged at **+3.0 turns**, with the Welch 95% CI reported beside it.
+
+**Two things every report using it must state.** (i) The direction: this is again HARDER to fire
+and favours the running arm; it is registered before the data exists. (ii) The residual confound:
+under self-play, competence itself lengthens games, and the pool gains a stronger snapshot every
+2M, so a genuine +3 in the self-play regime can still be improvement rather than stall. That is why
+the AND with clause 1 stays the load-bearing structure and why the famine verdict is the LADDER at
+matched snapshot count (amendment 2), never clause 2 alone.
+
+Tag: **REGISTRATION**, no measurement claimed. Run state at the ruling: 5.11M, `draw_rate` 0.0035
+(12% of the 5M bar), `untracked_abs_mean` 0.0000.
