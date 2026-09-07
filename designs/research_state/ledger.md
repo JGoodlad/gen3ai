@@ -12867,3 +12867,39 @@ read-only with explicit `--out` paths (every tool's default output is INSIDE the
 at a time beside the live run. **A dry run at the ~22M checkpoint runs NOW** (small n) to prove
 each pipeline executes on this arm's architecture and to fix the exact 75M commands; its numbers
 are not a reading. The 75M ETA is Tue 08 Sep 08:00–09:00.
+
+### 2026-09-07 · DRY RUN of the 75M value-function tests at ~22M — test 3 runs clean; 🚨 test 1 (the identity test) REFUSES on LABEL TRUST: the recorded-action + recorded-dice anchor replay reproduces only 80–87.5% of this arm's traces against the 90% tolerance. Root cause dispatched; the tolerance is NOT lowered
+
+Opus dry-run agent, ~07:30–07:45; report at
+`measurements/winprob_arm_probes_2026-09-07/vf_dryrun_22M/summary.md`. Numbers here are pipeline
+proofs, not readings.
+
+**Test 1 — `cf_audit` executes end to end on this architecture (2 m 34 s, exit 0) but REFUSES to
+emit labels**, verbatim: `LABEL TRUST FAILED — 16/20 anchors reproduced the recorded outcome (80.0%
+< 90%). REFUSING to emit labels; the bias map is written for diagnosis ONLY and must not be quoted.`
+A second independent draw (`--anchors 80 --seed 7`): **70/80 = 87.5%**. Two draws agree at ~80–88%,
+genuinely under the tolerance; not stall-driven (232 traces, median 28 turns, one ≥ 200). So the
+R = 1 replay of the RECORDED actions with the RECORDED dice fails to reproduce ~12% of this arm's
+recorded outcomes. **Lowering `--anchor-tolerance` is refused — it is the GIGO gate this audit
+exists for. A root-cause pass on the anchor replay is dispatched (bisect by run against rev-1 and a
+G0-era run; characterise the failing anchors; first-divergence replays under rust AND node).** Until
+it lands, test 1 at 75M would degrade to a bias map the module itself says must not be quoted. The
+bias-map FORMAT is captured (headline gap, `sd_true_excess`, strata by outcome × decile ×
+turn-tercile × opponent with battle-clustered CIs, the conviction-class block, the RESOLUTION table
+with the binomial floor subtracted); evidential and twin-head columns are ABSENT on this checkpoint
+(it carries neither head).
+
+**Test 3 — clean, no refusals.** (a) `td_resid_tails` in `eval_results.jsonl` is a per-opponent
+CVaR@5% of δ = r + γV(s′) − V(s); under `--critic winprob` that is exactly the mean of the worst 5%
+one-step DROPS in P(win) (r ≡ 0 off-terminal, γ = 1). Mean over the 9 bots: −0.185 @2M → −0.104
+@20M → −0.139 @22M (the δ pool is the loss-enriched CAPTURED sample and is shard-dependent).
+(b) prober `calibration`: 1.9 s; the win-prob currency fix is live (`overvalue_tau` 0.0833 in
+probability units); **selection RECORDED** (0.097 capture per win vs 0.732 per loss); split
+`unattributed 0.471 → critic_overvalued 0.471 / lost_position 0.0`, which the tool labels
+SELECTION-CONFOUNDED, a LOOSE UPPER BOUND (bias −0.126 on wins vs +0.684 on losses — the signature
+of a calibrated critic under a loss-enriched sample). (c) prober `turns` gives a model-free
+per-decision V / dV / TD profile in 0.2 s; **invariant for the 75M read: TD == dV exactly on this
+arm**, and any row where they differ means the terminal-only reward assumption has broken.
+
+The 75M runbook (three commands, every `--out` outside `models/`, the anchor warning inline) is in
+the report. Test 2 was not re-run (already proven).
