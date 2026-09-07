@@ -121,6 +121,15 @@ automatically. Never run a Claude session inside the training tmux session (its 
 
 ## 3. During the run
 
+**🤫 THE CADENCE IS SILENCE (owner, 2026-09-07).** *"We don't need so many updates from the training agent.
+The training agent can merely wake up on the cron, hit the cache, and no-op. … we definitely don't need
+extensive checks just to have back-and-forth conversations."* A cron wake is a cache-hitting NO-OP unless
+something CHANGED: a registered verdict flips (a G7 half, the plateau signal, the draw-rate monitor), a
+restart read is not KEEP, the run is blocked or crashed, or the batch completes. Otherwise run the
+registered reads, bank the routine row in the ledger, send nothing. No new instrument unless a
+registered read needs one. Measured 2026-09-06/07: ~55 messages in 18 h, most of them routine reads and
+re-derivations that cost a conversation each where a no-op costs nothing.
+
 - **Pre-registered kill conditions are executed, not debated.** Under `--critic winprob` stall rate
   and mean episode length are standing KILL conditions (a [0,1] critic cannot rank a timeout below a
   loss). The famine pre-test compares against the named comparator at matched SNAPSHOT COUNT with

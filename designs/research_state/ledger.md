@@ -13463,3 +13463,27 @@ n = 1 reference (25.89, bar 32.36, 36M over) and a two-cycle one (27.12, bar 33.
 be fitting the bar to the data, so neither is chosen. ep_pool prints its value and its ratio to the
 6M value every read, labelled DESCRIPTIVE. **ep_bots keeps the bar; the stall-rate half (≤ 0.05)
 stays primary; under the owner's ruling nothing kills this arm either way.**
+
+### 2026-09-07 · HISTORY (owner question) — the eval sentinels were GREEDY on every self-play run from v5.5 (2026-06-07) through v8 and the 2026-09-05 v8-replication arms (49 runs); the flag was DROPPED, unrecorded, at the v9 fresh-generation launch (`ai_v9_01`, 2026-08-04) and every v9/v12 run since (164) evaluates against STOCHASTIC sentinels. Plus the owner's cadence directive
+
+Owner: "It seems like I remember us primarily running it with Greedy under the argument that if we
+play Greedy, they play Greedy, so it would be equivalent and not have an easier out for one side."
+Surveyed from `models/*/metadata.json` `cli_args.eval_sentinel_greedy` (213 runs carry the key):
+**True on 49** — `ai_v5_5_popart_50m_0607` through `ai_v8_15_retention_A_frozen_0726`, plus all nine
+`v8rep_*_0905` arms; **False on 164** — `ai_v9_01_gen1_edges6_40m_0804` onward, including
+`ai_v9_29_rev1_0823` (the famine comparator), `ai_v9_59_R2ACTION_0827` (the fold parent) and both
+`ai_v12` arms. The flag `--eval-sentinel-greedy` was introduced 2026-06-06 (`20c601dd`, "best-vs-best
+pool eval + regime-aware promote threshold"). `ai_v8_14`'s `original_command` carries it;
+`ai_v9_01`'s does not, and no ledger, CHANGELOG or UNDERSTANDING line records the drop as a decision.
+**The owner's memory is right, and the change at the era boundary is the "what is the baseline?"
+class — a mode flag silently reverting to its default at a fresh launch.** Consequences: (1) every
+v9/v12 ladder and per-cycle Elo was measured under the greedy-vs-stochastic handicap, and the v8-era
+ladders were not — a cross-era ladder comparison mixes regimes on top of the fit-size rule; (2) the
+dense-ladder sentinel-edge bias fixed in `3e6875a5` exists BECAUSE of this drop — under greedy
+sentinels the eval edge and the ladder edge would have been the same experiment; (3) arm C's
+`--eval-sentinel-greedy` restores the v8 convention rather than introducing one. Tag: VERIFIED
+(from the run records; the "why" of the drop is UNRECORDED and stays so).
+
+**Cadence directive (owner, same message):** the Training Run wakes on its cron, hits the cache,
+and no-ops unless something changed; no checks invented to feel busy or to sustain a conversation.
+Relayed as a standing order; written into both SOPs.

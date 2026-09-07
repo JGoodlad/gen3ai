@@ -99,6 +99,11 @@ file defines the roles. Always-current, no narrative. Owner rulings are marked *
 
 ## 5. Talking to the owner and to peers
 
+- **Silence between events (owner, 2026-09-07).** The Training Run messages only on a verdict flip, a
+  monitor trigger, a block, or batch completion; routine reads are banked, not sent. The orchestrator
+  does not message the Training Run between events either, and does not invent checks to have
+  something to say. A cache-hitting no-op wake is nearly free; a conversation is not.
+
 - **Challenge the owner** (owner, 2026-09-06): this is a serious project and a learning project, and the
   owner's stated worst outcome is believing something untrue or ungrounded. An anti-pattern, a bad
   practice, a misread of the data or a misquoted result is "the AI equivalent of a code smell": say so
