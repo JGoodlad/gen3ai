@@ -15,14 +15,20 @@ and the two never needed to share a file.
 which is exactly how a census can advertise a composition the folds do not implement. Keep the
 delegation: a rename here must break three call sites loudly rather than silently un-gate a term.
 
-**Imports of `reward_manager` are FUNCTION-LOCAL, deliberately.** `reward_manager` re-exports every
-public name below (so `from agents.training.reward_manager import reward_class_composition` — and
-`_pbrs_term_active` / `_bias_term_active` / `_rc`, which the tests read — still resolves), which
-makes the dependency mutual. Deferring the three names this module needs to call time is what keeps
-that from being an import cycle, and costs one dict lookup on a path that runs once per launch.
+**The three declarations this module reads come from `reward_config`, at MODULE level.** They
+were function-local imports of `reward_manager` until 2026-09-07, deferred to call time because
+`reward_manager` re-exports every public name below (so `from agents.training.reward_manager
+import reward_class_composition` — and `_pbrs_term_active` / `_bias_term_active` / `_rc`, which
+the tests read — still resolves) and the dependency was therefore mutual. The decomposition moved
+`RewardBreakdown` / `RewardClass` / `SWITCH_BIAS_DROP_FAMILY` into `reward_config`, whose only
+import is `reward_weights` — so there is no cycle left to defer around, and the deferral went with
+it. The re-export through `reward_manager` is unchanged.
 """
 import hashlib
 from dataclasses import fields
+
+from agents.training.reward_config import (
+    RewardBreakdown, RewardClass, SWITCH_BIAS_DROP_FAMILY)
 
 
 def _rc(config, name, default):
@@ -72,7 +78,6 @@ def _bias_term_active(config, name: str) -> bool:
         return not (stall or bool(_rc(config, "drop_redundant_bias", False)))
     if name == "matchup_penalty":
         return not bool(_rc(config, "drop_redundant_bias", False))
-    from agents.training.reward_manager import SWITCH_BIAS_DROP_FAMILY
     if name in SWITCH_BIAS_DROP_FAMILY:
         return not bool(_rc(config, "drop_switch_bias", False))
     if name in ("stay_risk_tax", "escape_risk_bonus"):
@@ -92,7 +97,6 @@ def reward_class_composition(config) -> dict:
     counts and the two older lists are unchanged, and the `reward/` live export derives its
     tracked set from all three so the exported terms cannot disagree with the census.
     """
-    from agents.training.reward_manager import RewardBreakdown, RewardClass
     reg = RewardBreakdown._REGISTRY
     pbrs = [n for n, c in reg.items() if c is RewardClass.PBRS and _pbrs_term_active(config, n)]
     bias = [n for n, c in reg.items() if c is RewardClass.BIAS and _bias_term_active(config, n)]
@@ -172,7 +176,6 @@ _FLAG_TERMS: "dict[str, tuple[str, ...]]" = {
 def _term_active(config, name: str) -> bool:
     """Is term `name` emittable under `config`? Routes to whichever class predicate owns it, so a
     term that moves classes needs no edit here. A TERMINAL term is always active."""
-    from agents.training.reward_manager import RewardBreakdown, RewardClass
     cls = RewardBreakdown._REGISTRY.get(name)
     if cls is RewardClass.PBRS:
         return _pbrs_term_active(config, name)

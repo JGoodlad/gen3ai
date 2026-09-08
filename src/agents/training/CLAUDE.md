@@ -400,12 +400,36 @@ the function reads — a test that still passes, for the wrong reason.
 
 ## Reward redesign — registry + PBRS + the no-progress clock (`reward_manager.py`, `progress_clock.py`)
 
-> **Where the reward lives.** `reward_manager.py` (the terms, the folds, `RewardConfig`,
-> `RewardBreakdown` and the composition census) · `reward_weights.py` (every tunable MAGNITUDE —
-> weights, bonuses, thresholds, clamps; re-exported by `reward_manager`, so the old import path
-> still resolves) · `reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin) ·
-> `progress_clock.py` (the no-progress clock the reward READS). Changing a value in
-> `reward_weights.py` is a RETRAIN-class change, not a knob.
+> **Where the reward lives — six modules, one import path.** `reward_manager.py` re-exports every
+> public name the other five declare, so `from agents.training.reward_manager import RewardConfig`
+> (or `SE_SWITCH_BONUS`, or `reward_class_composition`) resolves exactly as it always did. What is
+> re-exported is stated at each hub in that file.
+>
+> | Module | Holds | Lines |
+> |---|---|---|
+> | `reward_manager.py` | `Gen3RewardManager`: its state + lifecycle, the CURRENT-BOARD accessors, the class-level applications (`_apply_progress_clock` / `_apply_bias_drops` / `_apply_pbrs_suppression` / `_fold_bias_refund`) and **`process_turn_reward` — the fold SEQUENCE, deliberately not split** | 808 |
+> | `reward_bias_terms.py` | `RewardBiasTerms` — every `_compute_*` producing one additive BIAS field. A MIXIN (it reads the manager's cross-turn state) | 533 |
+> | `reward_config.py` | The DECLARATIONS: `RewardClass`, `RewardConfig`, `RewardBreakdown` (+ `_REGISTRY`, the reward's source of truth) and `SWITCH_BIAS_DROP_FAMILY` | 445 |
+> | `reward_potentials.py` | `RewardPotentials` — the Φ potentials, `_pbrs_step`, `_hand_pbrs_on` and the eight `_fold_*_pbrs`. Also a MIXIN | 357 |
+> | `reward_composition.py` | The stateless, config-duck-typed per-class CENSUS + its one-line render | 253 |
+> | `reward_weights.py` | Every tunable MAGNITUDE — weights, bonuses, thresholds, clamps | 174 |
+>
+> Plus `reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin) and `progress_clock.py` (the
+> no-progress clock the reward READS). Changing a value in `reward_weights.py` is a RETRAIN-class
+> change, not a knob.
+>
+> 🚨 **THE SEQUENCE IS NOT SPLIT, AND THAT IS THE DESIGN** (the rule `instrumented_ppo/ppo.py`
+> keeps for its minibatch fold, `ccd08003`). The per-term math moved out on 2026-09-07 — 1,990
+> lines, ten short of the size gate's hard bound, into the table above with the reward sequence
+> **byte-identical** (2,802 decisions × 39 fields × 6 compositions, sha256
+> `9463dc24…`). The ORDER `process_turn_reward` folds those terms in is a CONTRACT and stays one
+> straight line there.
+>
+> 🚨 **A PATCH TARGET FOLLOWS THE SYMBOL.** `_encode_incoming_block` is read in
+> `reward_potentials`, not `reward_manager`; a stub naming the old module would stub NOTHING and
+> the test would assert about the real code path. `src/test_stub_vacuity_gate_test.py` fails that
+> rather than letting it pass — do not silence it with a re-export that exists only to keep a
+> stale target alive.
 
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/reward.md`](../../../designs/training/reward.md).**
 

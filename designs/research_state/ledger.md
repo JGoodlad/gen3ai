@@ -13733,3 +13733,63 @@ Tag: **RECIPE CHANGE** (a default flip + a measurement-protocol change; the +8.9
 on is VERIFIED, ledger 2026-09-07 *dense_reuse*). Tests: `main/train/eval_sentinel_regime_test.py`
 (15), `agents/training/snapshot_ladder_test.py` (+8), `agents/training/elo_row_contract_test.py`
 (+4), `agents/training/eval_sentinel_greedy_test.py` (+3), `agents/training/selfplay_callback_test.py` (+3).
+---
+
+### 2026-09-07 · TECH DEBT · `reward_manager.py` decomposed (1,990 → 808 / 533 / 445 / 357 lines), reward sequence byte-identical
+
+**The trap.** `reward_manager.py` sat at **1,990 lines against the file-size gate's 2,000-line hard
+bound** — the same position `instrumented_ppo/ppo.py` was in before `ccd08003`. The next edit
+anywhere in it would have turned the gate red, i.e. the next *reward fix* would have arrived
+blocked. The allowlist is empty by policy and a new entry is not a legal move, so the only exit was
+to decompose.
+
+**The cut, around the fold contract** (the seam the backlog named: the per-term fold functions vs
+`RewardConfig`). `process_turn_reward` is the reward's fold SEQUENCE, and the ORDER it applies the
+per-class treatments in is a contract — so the sequence did **not** move, exactly as `ppo.py`'s
+minibatch fold did not. What moved is everything that is not the sequence:
+
+| Module | Holds | Lines |
+|---|---|---|
+| `reward_manager.py` | `Gen3RewardManager` state + lifecycle, the CURRENT-BOARD accessors, the class-level applications, and `process_turn_reward` itself | 1,990 → **808** |
+| `reward_bias_terms.py` | `RewardBiasTerms` mixin — every `_compute_*` that produces one additive BIAS field, plus the LiveView accessors they read the board through | **533** (new) |
+| `reward_config.py` | `RewardClass`, `RewardConfig`, `RewardBreakdown` (+ `_REGISTRY`), `SWITCH_BIAS_DROP_FAMILY` | **445** (new) |
+| `reward_potentials.py` | `RewardPotentials` mixin — the Φ potentials, `_pbrs_step`, `_hand_pbrs_on`, the eight `_fold_*_pbrs` | **357** (new) |
+
+Mixins rather than free functions because the term math reads the manager's cross-turn state
+(`_prev_opp_spikes`, `_prev_phi_*`, `self.config`); passing that explicitly would have turned a
+move into a rewrite, and a rewrite is what a byte-identity change cannot afford. Every attribute
+path, every `state_dict`-adjacent name and every import path is unchanged — `reward_manager`
+re-exports the four declarations the way it already re-exported `reward_weights` and
+`reward_composition`.
+
+**The acceptance was byte-identity, because the reward IS the objective.** A purpose-built golden
+harness (reproducible by construction: teams pinned by pool index, a per-player RNG rather than the
+global module RNG, a fixed sim PRNG seed, `concurrency=1`) replayed the same battles through the
+manager under **six reward compositions** — production default, the full additive-BIAS regime,
+the redesign levers (`bias_redesign` + `switch_bias_weight` + `self_ko_hp_penalty` +
+`bias_additivity 0.5`), the two drop flags, fully-PBRS (`--all-shaping-pbrs --stall-pbrs`), and the
+clean-world win-prob indicator — and emitted **every declared `RewardBreakdown` field as
+`float.hex()`**, exact bits rather than a rounded repr. 2,802 rows, 35 of the 39 fields exercised
+non-zero (the four that never fired on random play — `boost_utilized`, `explosion_block`,
+`pbrs_boost`, `setup_low_hp` — are covered by the unit suite, which also passes unchanged).
+
+    BEFORE  sha256 9463dc242efde3fabadd652db4bef6e158eb24b5a0e53680e29be077b6a1926f
+    AFTER   sha256 9463dc242efde3fabadd652db4bef6e158eb24b5a0e53680e29be077b6a1926f
+
+The harness was proven reproducible first (two runs of the BEFORE tree, identical output) — an
+unreproducible golden would have made an identical hash meaningless.
+
+**The hazard `ccd08003` created and `83478fcd` armed against fired here, once.**
+`reward_manager_test.py` patched `agents.training.reward_manager._encode_incoming_block` at three
+sites; the symbol now lives in `reward_potentials`, so those stubs would have stubbed NOTHING and
+the three tests would have gone on passing while asserting about the real belief encode. Repointed;
+`src/test_stub_vacuity_gate_test.py` green with the allowlist still **EMPTY**. The 32 patch sites
+in `reward_tracker_test.py` that the gate's docstring flagged as the anticipated exposure all name
+`reward_tracker`, not `reward_manager`, and were unaffected.
+
+One extra simplification fell out: `reward_composition.py`'s three **function-local** imports of
+`reward_manager` existed only to defer an import cycle. `reward_config.py`'s only dependency is
+`reward_weights`, so the cycle is gone and those are module-level imports now.
+
+Tag: TECH DEBT + a size-gate exit. **No measurement about the model changed, and that is the
+claim being made** — the objective every live arm trains against is bit-for-bit what it was.

@@ -11,12 +11,36 @@ points here. **This file is the owner of the detail.**
 
 ## Reward redesign — registry + PBRS + the no-progress clock (`reward_manager.py`, `progress_clock.py`)
 
-> **Where the reward lives.** `reward_manager.py` (the terms, the folds, `RewardConfig`,
-> `RewardBreakdown` and the composition census) · `reward_weights.py` (every tunable MAGNITUDE —
-> weights, bonuses, thresholds, clamps; re-exported by `reward_manager`, so the old import path
-> still resolves) · `reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin) ·
-> `progress_clock.py` (the no-progress clock the reward READS). Changing a value in
-> `reward_weights.py` is a RETRAIN-class change, not a knob.
+> **Where the reward lives — six modules, one import path.** `reward_manager.py` re-exports every
+> public name the other five declare, so `from agents.training.reward_manager import RewardConfig`
+> (or `SE_SWITCH_BONUS`, or `reward_class_composition`) resolves exactly as it always did. What is
+> re-exported is stated at each hub in that file.
+>
+> | Module | Holds | Lines |
+> |---|---|---|
+> | `reward_manager.py` | `Gen3RewardManager`: its state + lifecycle, the CURRENT-BOARD accessors, the class-level applications (`_apply_progress_clock` / `_apply_bias_drops` / `_apply_pbrs_suppression` / `_fold_bias_refund`) and **`process_turn_reward` — the fold SEQUENCE, deliberately not split** | 808 |
+> | `reward_bias_terms.py` | `RewardBiasTerms` — every `_compute_*` producing one additive BIAS field. A MIXIN (it reads the manager's cross-turn state) | 533 |
+> | `reward_config.py` | The DECLARATIONS: `RewardClass`, `RewardConfig`, `RewardBreakdown` (+ `_REGISTRY`, the reward's source of truth) and `SWITCH_BIAS_DROP_FAMILY` | 445 |
+> | `reward_potentials.py` | `RewardPotentials` — the Φ potentials, `_pbrs_step`, `_hand_pbrs_on` and the eight `_fold_*_pbrs`. Also a MIXIN | 357 |
+> | `reward_composition.py` | The stateless, config-duck-typed per-class CENSUS + its one-line render | 253 |
+> | `reward_weights.py` | Every tunable MAGNITUDE — weights, bonuses, thresholds, clamps | 174 |
+>
+> Plus `reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin) and `progress_clock.py` (the
+> no-progress clock the reward READS). Changing a value in `reward_weights.py` is a RETRAIN-class
+> change, not a knob.
+>
+> 🚨 **THE SEQUENCE IS NOT SPLIT, AND THAT IS THE DESIGN** (the rule `instrumented_ppo/ppo.py`
+> keeps for its minibatch fold, `ccd08003`). The per-term math moved out on 2026-09-07 — 1,990
+> lines, ten short of the size gate's hard bound, into the table above with the reward sequence
+> **byte-identical** (2,802 decisions × 39 fields × 6 compositions, sha256
+> `9463dc24…`). The ORDER `process_turn_reward` folds those terms in is a CONTRACT and stays one
+> straight line there.
+>
+> 🚨 **A PATCH TARGET FOLLOWS THE SYMBOL.** `_encode_incoming_block` is read in
+> `reward_potentials`, not `reward_manager`; a stub naming the old module would stub NOTHING and
+> the test would assert about the real code path. `src/test_stub_vacuity_gate_test.py` fails that
+> rather than letting it pass — do not silence it with a re-export that exists only to keep a
+> stale target alive.
 
 The reward (`Gen3RewardManager`) is organised as a **registry of class-tagged terms**
 (design `designs/ai_v5/design_markovian_reward_and_features.md`). Every `RewardBreakdown` field is one
@@ -307,7 +331,7 @@ v14→v15 migration).
 ### The reward COMPOSITION — stated at launch, recorded in `metadata.json`
 
 **A launch says what its reward is MADE OF.** `reward_class_composition(config)` (pure, in
-`reward_manager.py`) returns the per-class ACTIVE-term census —
+`reward_composition.py`; re-exported by `reward_manager`) returns the per-class ACTIVE-term census —
 `{terminal, pbrs, bias, bias_terms, pbrs_terms}` — where ACTIVE means *"this config does not
 structurally force the term to zero"* (it mirrors the `_fold_*_pbrs` early-returns,
 `_apply_pbrs_suppression`, `_apply_bias_drops`, `_apply_progress_clock`, and the three weight-gated
@@ -450,7 +474,8 @@ under `--bias-redesign`), which costs time, never correctness.
 `_last_opp_seen_by` update all stay **ungated**, so the manager's observable state is identical
 turn for turn whether the skip fires or not. The one exception is `_compute_dead_matchup_tax`,
 skipped whole despite mutating `_consecutive_dead_matchup_stays`, because that counter has ZERO
-readers outside `reward_manager.py` — suppressed, it is write-only, not observable state.
+readers outside the reward modules (`reward_manager` / `reward_bias_terms` / `reward_potentials`)
+— suppressed, it is write-only, not observable state.
 
 **Measured** (2026-08-23, order-alternated same-process A/B, both arms on the same decision;
 absolutes contaminated by a busy box, ratios are the claim): **~1.08× on `process_turn_reward`**
@@ -590,7 +615,8 @@ cover. **The claim underneath — "every skipped mutation's only readers are BIA
 the CONSUMER CENSUS, not on the fuzz**: `_prev_active_ko_risk`, `_prev_safe_pivot`,
 `_last_attack_had_effect`, `_prev_opp_spikes`, `_prev_our/opp_statused`, `_prev_opp_se_threat`,
 `_last_opp_seen_by` and `_prev_opp_boosts` were each grepped tree-wide and read ONLY inside
-`reward_manager.py`, only by BIAS-term helpers. **A future term that reads one of them from
+the reward modules, only by BIAS-term helpers (which live in `reward_bias_terms.py` since
+2026-09-07). **A future term that reads one of them from
 somewhere else would not be caught here** — it would have to be caught by that grep being re-run,
 which is why the readers are named at each skip site rather than left as "no consumer".
 
@@ -598,7 +624,8 @@ which is why the readers are named at each skip site rather than left as "no con
 
 Φ_belief's `encode_block` measured **60.0% of `process_turn_reward`** (`compute_team_block` 42.5 /
 `_attacker_threat` 10.8) — the largest single item anywhere in the per-decision CPU budget, and
-`reward_manager.py` is the tree's **only** per-decision caller of that pipeline. It now answers
+the reward path (`reward_potentials._belief_potential_and_risk`) is the tree's **only**
+per-decision caller of that pipeline. It now answers
 from a per-manager, **content-keyed** cache
 (`agents/observation/incoming_damage_encoder.IncomingBeliefMemo`), threaded as
 `encode_block(live, memo=…)` and cleared at `reset()` (episode scope).

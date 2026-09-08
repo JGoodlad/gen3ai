@@ -2154,7 +2154,7 @@ class TestPbrsSwitchShaping(unittest.TestCase):
     math is tested in isolation."""
 
     def _phi(self, rm, mons, block):
-        with patch("agents.training.reward_manager._encode_incoming_block", return_value=block):
+        with patch("agents.training.reward_potentials._encode_incoming_block", return_value=block):
             phi, risk, _min_bench_pko = rm._belief_potential_and_risk(_fake_live(mons))
             return phi, risk
 
@@ -2234,7 +2234,7 @@ class TestBeliefRiskOutspeedIndex(unittest.TestCase):
 
     def test_fast_active_against_certain_ko_has_zero_risk(self):
         live = self._live_one_active()
-        with patch("agents.training.reward_manager._encode_incoming_block",
+        with patch("agents.training.reward_potentials._encode_incoming_block",
                    return_value=self._block(outspeed=1.0, crit_delta=0.7, pko=1.0)):
             _phi, active_risk, _min_bench = self.manager._belief_potential_and_risk(live)
         # outspeed read at idx 6 → risk = pko·(1−1) = 0. The stale +4 read crit_delta=0.7 →
@@ -2243,7 +2243,7 @@ class TestBeliefRiskOutspeedIndex(unittest.TestCase):
 
     def test_slow_active_against_certain_ko_has_full_risk(self):
         live = self._live_one_active()
-        with patch("agents.training.reward_manager._encode_incoming_block",
+        with patch("agents.training.reward_potentials._encode_incoming_block",
                    return_value=self._block(outspeed=0.0, crit_delta=0.0, pko=1.0)):
             _phi, active_risk, _min_bench = self.manager._belief_potential_and_risk(live)
         self.assertAlmostEqual(active_risk, 1.0, places=6)
