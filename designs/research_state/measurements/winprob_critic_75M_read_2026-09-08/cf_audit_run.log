@@ -1,0 +1,55 @@
+cf_audit: frame 6083 decisions / 242 battles → 800 sampled (R=8, load=2.0)
+  skipped: {'turn_1_unopenable': 242, 'forced_switch_rounds': 936}
+[CompileExtractor] prober:snapshot.zip: ON — median 13.86 -> 1.83 ms (7.6x, cache /tmp/gen3ai_inductor_cache)
+  ANCHOR: 142/142 reproduced the recorded outcome (100.0%), 0 errors
+  1/800 ok=1 err=0 0.0m load=2.1
+[CompileExtractor] prober:snapshot_000072000000.zip: ON (reused this process's validated compile)
+[CompileExtractor] prober:snapshot_000052000032.zip: ON (reused this process's validated compile)
+[CompileExtractor] prober:snapshot_000062000016.zip: ON (reused this process's validated compile)
+[CompileExtractor] prober:snapshot_000044000016.zip: ON (reused this process's validated compile)
+  21/800 ok=21 err=0 0.7m load=18.9
+  41/800 ok=41 err=0 1.3m load=31.1
+  61/800 ok=61 err=0 1.8m load=25.1
+  81/800 ok=81 err=0 2.1m load=18.7
+  101/800 ok=101 err=0 2.4m load=15.0
+  121/800 ok=121 err=0 2.9m load=23.4
+  141/800 ok=141 err=0 3.5m load=27.0
+  161/800 ok=161 err=0 4.1m load=35.3
+  181/800 ok=181 err=0 4.5m load=30.0
+  201/800 ok=201 err=0 4.8m load=25.7
+  221/800 ok=221 err=0 5.1m load=19.0
+  241/800 ok=241 err=0 5.4m load=14.1
+  261/800 ok=261 err=0 5.7m load=10.7
+  281/800 ok=281 err=0 6.0m load=8.8
+  301/800 ok=301 err=0 6.3m load=7.0
+  321/800 ok=321 err=0 6.6m load=5.9
+  341/800 ok=341 err=0 6.9m load=13.3
+  361/800 ok=361 err=0 7.6m load=27.2
+  381/800 ok=381 err=0 8.3m load=24.7
+  401/800 ok=401 err=0 8.7m load=24.1
+  421/800 ok=421 err=0 9.0m load=17.8
+  441/800 ok=441 err=0 9.4m load=12.4
+  461/800 ok=461 err=0 9.9m load=13.1
+  481/800 ok=481 err=0 10.3m load=15.8
+  501/800 ok=501 err=0 10.9m load=18.0
+  521/800 ok=521 err=0 11.6m load=24.0
+  541/800 ok=541 err=0 12.1m load=16.5
+  561/800 ok=561 err=0 12.5m load=11.8
+  581/800 ok=581 err=0 12.9m load=19.7
+  601/800 ok=601 err=0 13.7m load=26.0
+  621/800 ok=621 err=0 14.2m load=31.8
+  641/800 ok=641 err=0 14.6m load=22.3
+  661/800 ok=661 err=0 14.8m load=17.8
+  681/800 ok=681 err=0 15.1m load=13.4
+  701/800 ok=701 err=0 15.4m load=10.8
+  721/800 ok=721 err=0 16.1m load=16.5
+  741/800 ok=741 err=0 16.6m load=18.5
+  761/800 ok=761 err=0 17.0m load=22.0
+  781/800 ok=781 err=0 17.6m load=29.9
+  evidential: this checkpoint carries no cf_evid_head — columns omitted
+  twin heads: this checkpoint carries neither cf_twin_head_b nor cf_shadow_head — columns omitted
+
+cf_audit: 800 labels / 6400 rollouts / 17.79 core-min
+  bias map: /home/goodlad/.claude/jobs/9ab51de6/tmp/identity_75M/cf_audit/bias_map.md
+  labels:   /home/goodlad/.claude/jobs/9ab51de6/tmp/identity_75M/cf_audit/cf_labels/labels_cf_audit_74000016.jsonl
+  gap +0.0979   sd_true_excess 0.2550

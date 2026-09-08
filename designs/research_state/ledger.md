@@ -15362,3 +15362,57 @@ not runnable from traces (gaps M1 / M2 / M3); G9 is `python -m main.capacity`.
 **Falsification clause, printed by the tool and carried here:** *"G1 flat (resolution unmoved) with
 G2–G4 passing means the promotion bought calibration this head already had and nothing else — the
 wrong-meter trap … That must be reported as loudly as a pass."*
+### 2026-09-08 · 75M READ · test 1 IDENTITY (cf_audit, no --checkpoint): OFFSET DETECTED, RESOLUTION STILL DOMINATES — V − p̂ = +0.0965 [+0.0671, +0.1268], reproduction 142/142
+
+Opus agent, 10:11–10:31 PT, offline/CPU, from worktree `read75-identity-0908` at main `b697e82a`;
+report + every artifact at `measurements/winprob_critic_75M_read_2026-09-08/`. Registration
+`44e3a7f5` (test 1 of three), runbook change `1a1ad063` (drop `--checkpoint`). **No pass/fail bar is
+registered for this test** — the registration's words are "the reading is DESCRIPTIVE, with the
+shaped-critic G0 map as the comparator where strata match" — so nothing here is scored met or
+missed; the ONE threshold it carries is the label-trust gate `--anchor-tolerance 0.9`, and it is
+**met at 142/142 = 100.0 %, Wilson [0.974, 1.000]**.
+
+**Run.** `cf_audit models/ai_v12_02_winprob_critic --step 74000016 --rollouts 8 --states 800
+--anchors 150 --impl rust --seed 0 --deadline-min 90 --out <job tmp>`, NO `--checkpoint`. 800 labels
+/ 214 battles / 6 400 rollouts / 17.79 core-min, **0 errors, 0 timeouts**; frame 6 083 decisions /
+242 battles; skipped `turn_1_unopenable` 242, `forced_switch_rounds` 936. Declared deviations from
+the dry-run runbook, both n-only: `--states 800` (suggested 400) and `--anchors 150` (default 20 —
+150 takes ALL 142 bot battles, so the reproduction rate is a census of the bot pool). **The 75M read
+is at 74.0M**: the final eval cycle wrote no trace dir (`eval_results.jsonl` ends at 74000016; the
+newest `eval_traces/` entry is `step_74000016`, 09:06, vs `final_model.zip` 09:41).
+
+**The tool's numbers, quoted.** Population-weighted gap **+0.0979**; population-weighted
+**`sd_true_excess` 0.2550** (per-decile 0.221–0.304, 66–92 % of the variance real); conviction class
+(V ≥ 0.75 in a LOST battle) n=379/92 battles, predicted 0.861 vs tight-MC 0.579, gap **+0.2818
+[+0.2288, +0.3394]**, LOSS−WIN difference +0.2928 [+0.2254, +0.3547], of which **40.9 % had MC ≥ 0.75
+(the critic was right and the dice lost it)** and 30.9 % had MC < 0.50. Evidential and twin-head
+columns ABSENT (this checkpoint carries neither head); **no material stratum exists** in the bias
+map, so that half of the registered read is not available. `random` is the only negative opponent
+cell (−0.0925 [−0.1199, −0.0665]).
+
+**The readout's numbers** (`identity_readout.py`, committed beside the raw rows; every interval a
+battle-clustered bootstrap, population columns recombined at the frame's own decile×outcome mass
+inside each stratum, coverage 99.9 %). Bias V − p̂ **+0.0965 [+0.0671, +0.1268]** population-weighted
+(+0.1717 [+0.1367, +0.2073] as drawn — the sampler's number, not the critic's). Reliability curve
+monotone, p̂ below V̄ in all 10 bins, 5 of 10 gap CIs excluding 0; the ≥0.9 bin reads p̂ = 0.849
+[0.784, 0.904]. Murphy at rollout level, population-weighted: **Brier 0.1943 [0.1749, 0.2143] =
+reliability 0.0106 [0.0063, 0.0192] − resolution 0.0476 [0.0348, 0.0635] + uncertainty 0.2331
+[0.2193, 0.2425]** (+0.0008 within-bin, −0.0025 residual); base rate 0.6302, base-rate cap p(1−p) =
+0.2331, **skill score +0.166 [+0.097, +0.231]** (on the as-drawn sample the same critic scores −0.049,
+i.e. worse than the constant — the weighting is not optional). By turn bucket: early ≤10
+**+0.0015 [−0.0335, +0.0385]**, mid 11–24 +0.1412 [+0.1024, +0.1815], late ≥25 +0.1687 [+0.0963,
++0.2474]; the DELTA late−early is **+0.1672 [+0.0863, +0.2511]**. By stratum: bot +0.1043 [+0.0556,
++0.1570], pool/sentinel +0.1025 [+0.0667, +0.1381], **DELTA bot−pool +0.0018 [−0.0597, +0.0674] —
+NOT DETECTED**. 🚨 The pool stratum is CROSS-REGIME and descriptive: arm A ran WITHOUT
+`--eval-sentinel-greedy` (confirmed in `original_command`), the greedy-trainee-vs-stochastic-sentinel
+handicap measured at +8.9 pp [+7.0, +10.7] in the trainee's favour.
+
+**Against G0 where the strata match** (gen-17 @24M, shaped run, same R = 8), two independently
+measured constants, no delta CI available from published summaries: mean gap |0.05|–|0.07| (sign
+flipping with the weighting) → +0.0965 [+0.0671, +0.1268] here; within-decile `sd_true_excess`
+0.11–0.36 → 0.221–0.304; per-state error 2–6× the offset → **2.6×**; bot-vs-pool sign FLIPPED at G0
+(−0.065 vs +0.106) → same sign here. Coverage bounds unchanged and printed: turn-1 decisions and
+forced-switch rounds outside the frame, sentinel battles outside the anchor pool, R = 8 (a single
+label's own sd ≤ 0.177). Contention factor 1.00 at the check; loadavg 2.0–35.3 as arm C launched
+mid-run. Tag: MEASUREMENT / IDENTITY TEST. **Test 1 of the three registered 75M value tests; the
+verdict is written by the orchestrator reading tests 1 and 2 together, not here.**

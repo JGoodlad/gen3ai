@@ -1,0 +1,1052 @@
+{
+ "n_rollouts": 8,
+ "sampler": {
+  "sampler_version": "cf_audit_strata_v1",
+  "seed": 0,
+  "n_requested": 800,
+  "n_drawn": 800,
+  "conviction_boost": 4.0,
+  "conviction_decile_floor": 7,
+  "max_per_battle": 12,
+  "turn_tercile_edges": [
+   10.0,
+   19.0
+  ],
+  "cells": [
+   {
+    "decile": 0,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 27,
+    "target": 2,
+    "drawn": 2
+   },
+   {
+    "decile": 0,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 81,
+    "target": 6,
+    "drawn": 6
+   },
+   {
+    "decile": 1,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 3,
+    "target": 0,
+    "drawn": 0
+   },
+   {
+    "decile": 1,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 35,
+    "target": 3,
+    "drawn": 3
+   },
+   {
+    "decile": 1,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 74,
+    "target": 5,
+    "drawn": 5
+   },
+   {
+    "decile": 2,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 12,
+    "target": 1,
+    "drawn": 1
+   },
+   {
+    "decile": 2,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 28,
+    "target": 2,
+    "drawn": 2
+   },
+   {
+    "decile": 2,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 89,
+    "target": 6,
+    "drawn": 6
+   },
+   {
+    "decile": 3,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 16,
+    "target": 1,
+    "drawn": 1
+   },
+   {
+    "decile": 3,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 57,
+    "target": 4,
+    "drawn": 4
+   },
+   {
+    "decile": 3,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 111,
+    "target": 8,
+    "drawn": 8
+   },
+   {
+    "decile": 3,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 2,
+    "target": 0,
+    "drawn": 0
+   },
+   {
+    "decile": 3,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 1,
+    "target": 0,
+    "drawn": 0
+   },
+   {
+    "decile": 3,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 2,
+    "target": 0,
+    "drawn": 0
+   },
+   {
+    "decile": 4,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 104,
+    "target": 7,
+    "drawn": 7
+   },
+   {
+    "decile": 4,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 80,
+    "target": 6,
+    "drawn": 6
+   },
+   {
+    "decile": 4,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 112,
+    "target": 8,
+    "drawn": 8
+   },
+   {
+    "decile": 4,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 15,
+    "target": 1,
+    "drawn": 1
+   },
+   {
+    "decile": 4,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 7,
+    "target": 1,
+    "drawn": 1
+   },
+   {
+    "decile": 4,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 14,
+    "target": 1,
+    "drawn": 1
+   },
+   {
+    "decile": 5,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 183,
+    "target": 13,
+    "drawn": 13
+   },
+   {
+    "decile": 5,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 137,
+    "target": 10,
+    "drawn": 10
+   },
+   {
+    "decile": 5,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 82,
+    "target": 6,
+    "drawn": 6
+   },
+   {
+    "decile": 5,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 61,
+    "target": 4,
+    "drawn": 4
+   },
+   {
+    "decile": 5,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 38,
+    "target": 3,
+    "drawn": 3
+   },
+   {
+    "decile": 5,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 20,
+    "target": 1,
+    "drawn": 1
+   },
+   {
+    "decile": 6,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 292,
+    "target": 21,
+    "drawn": 21
+   },
+   {
+    "decile": 6,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 201,
+    "target": 14,
+    "drawn": 14
+   },
+   {
+    "decile": 6,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 134,
+    "target": 10,
+    "drawn": 10
+   },
+   {
+    "decile": 6,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 191,
+    "target": 14,
+    "drawn": 14
+   },
+   {
+    "decile": 6,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 43,
+    "target": 3,
+    "drawn": 3
+   },
+   {
+    "decile": 6,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 47,
+    "target": 3,
+    "drawn": 3
+   },
+   {
+    "decile": 7,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 289,
+    "target": 83,
+    "drawn": 83
+   },
+   {
+    "decile": 7,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 222,
+    "target": 64,
+    "drawn": 64
+   },
+   {
+    "decile": 7,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 174,
+    "target": 50,
+    "drawn": 50
+   },
+   {
+    "decile": 7,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 300,
+    "target": 22,
+    "drawn": 22
+   },
+   {
+    "decile": 7,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 115,
+    "target": 8,
+    "drawn": 8
+   },
+   {
+    "decile": 7,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 66,
+    "target": 5,
+    "drawn": 5
+   },
+   {
+    "decile": 8,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 214,
+    "target": 61,
+    "drawn": 61
+   },
+   {
+    "decile": 8,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 176,
+    "target": 51,
+    "drawn": 51
+   },
+   {
+    "decile": 8,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 182,
+    "target": 52,
+    "drawn": 52
+   },
+   {
+    "decile": 8,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 243,
+    "target": 17,
+    "drawn": 17
+   },
+   {
+    "decile": 8,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 169,
+    "target": 12,
+    "drawn": 12
+   },
+   {
+    "decile": 8,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 119,
+    "target": 9,
+    "drawn": 9
+   },
+   {
+    "decile": 9,
+    "outcome": "loss",
+    "turn_tercile": 0,
+    "frame_n": 65,
+    "target": 19,
+    "drawn": 19
+   },
+   {
+    "decile": 9,
+    "outcome": "loss",
+    "turn_tercile": 1,
+    "frame_n": 118,
+    "target": 34,
+    "drawn": 34
+   },
+   {
+    "decile": 9,
+    "outcome": "loss",
+    "turn_tercile": 2,
+    "frame_n": 248,
+    "target": 71,
+    "drawn": 71
+   },
+   {
+    "decile": 9,
+    "outcome": "win",
+    "turn_tercile": 0,
+    "frame_n": 203,
+    "target": 15,
+    "drawn": 15
+   },
+   {
+    "decile": 9,
+    "outcome": "win",
+    "turn_tercile": 1,
+    "frame_n": 477,
+    "target": 34,
+    "drawn": 34
+   },
+   {
+    "decile": 9,
+    "outcome": "win",
+    "turn_tercile": 2,
+    "frame_n": 404,
+    "target": 29,
+    "drawn": 29
+   }
+  ]
+ },
+ "accounting": {
+  "frame_decisions": 6083,
+  "frame_battles": 242,
+  "evidential_scored": 0,
+  "twin_scored": 0,
+  "tasks_issued": 800,
+  "labelled": 800,
+  "errors": 0,
+  "anchors_issued": 142,
+  "anchors_reproduced": 142,
+  "anchor_errors": 0,
+  "anchor_rate": 1.0,
+  "rollouts": 6400,
+  "core_minutes": 17.79,
+  "loadavg": 23.744140625,
+  "skipped": {
+   "turn_1_unopenable": 242,
+   "forced_switch_rounds": 936
+  },
+  "label_trust_passed": true
+ },
+ "by_outcome": [
+  {
+   "stratum": "win",
+   "n": 182,
+   "n_battles": 88,
+   "mean_predicted": 0.8455921010329173,
+   "mean_mc": 0.8770604395604396,
+   "mean_gap": -0.03146833852752225,
+   "gap_ci": [
+    -0.05993928755005983,
+    -0.0009434495134339343
+   ]
+  },
+  {
+   "stratum": "loss",
+   "n": 618,
+   "n_battles": 126,
+   "mean_predicted": 0.7533350027027663,
+   "mean_mc": 0.5218446601941747,
+   "mean_gap": 0.2314903425085916,
+   "gap_ci": [
+    0.19255799560961917,
+    0.27275344890699355
+   ]
+  }
+ ],
+ "by_decile_outcome": [
+  {
+   "stratum": "decile0/loss",
+   "n": 8,
+   "n_battles": 6,
+   "mean_predicted": 0.031089759548194706,
+   "mean_mc": 0.015625,
+   "mean_gap": 0.015464759548194706,
+   "gap_ci": [
+    -0.01628194684162736,
+    0.043991151627241834
+   ],
+   "decile": 0,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile1/loss",
+   "n": 8,
+   "n_battles": 8,
+   "mean_predicted": 0.1538122734054923,
+   "mean_mc": 0.09375,
+   "mean_gap": 0.060062273405492306,
+   "gap_ci": [
+    -0.0648087925510481,
+    0.15969199070241302
+   ],
+   "decile": 1,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile2/loss",
+   "n": 9,
+   "n_battles": 8,
+   "mean_predicted": 0.24666666156715816,
+   "mean_mc": 0.1111111111111111,
+   "mean_gap": 0.13555555045604706,
+   "gap_ci": [
+    0.06407924273775684,
+    0.20540179312229156
+   ],
+   "decile": 2,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile3/loss",
+   "n": 13,
+   "n_battles": 12,
+   "mean_predicted": 0.3481019185139583,
+   "mean_mc": 0.18269230769230768,
+   "mean_gap": 0.16540961082165057,
+   "gap_ci": [
+    -0.014729920473127139,
+    0.3412593239297469
+   ],
+   "decile": 3,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile4/win",
+   "n": 3,
+   "n_battles": 3,
+   "mean_predicted": 0.4907902578512828,
+   "mean_mc": 0.625,
+   "mean_gap": -0.13420974214871725,
+   "gap_ci": [
+    -0.38231223821640015,
+    -0.00567704439163208
+   ],
+   "decile": 4,
+   "outcome": "win"
+  },
+  {
+   "stratum": "decile4/loss",
+   "n": 21,
+   "n_battles": 19,
+   "mean_predicted": 0.44942320528484525,
+   "mean_mc": 0.23809523809523808,
+   "mean_gap": 0.21132796718960717,
+   "gap_ci": [
+    0.09857572912105492,
+    0.31518005883232464
+   ],
+   "decile": 4,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile5/win",
+   "n": 8,
+   "n_battles": 5,
+   "mean_predicted": 0.5613418370485306,
+   "mean_mc": 0.546875,
+   "mean_gap": 0.014466837048530579,
+   "gap_ci": [
+    -0.20714568346738815,
+    0.20889612038930258
+   ],
+   "decile": 5,
+   "outcome": "win"
+  },
+  {
+   "stratum": "decile5/loss",
+   "n": 29,
+   "n_battles": 24,
+   "mean_predicted": 0.5478673145688814,
+   "mean_mc": 0.43103448275862066,
+   "mean_gap": 0.11683283181026063,
+   "gap_ci": [
+    0.00440571755833096,
+    0.21831610290067527
+   ],
+   "decile": 5,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile6/win",
+   "n": 20,
+   "n_battles": 17,
+   "mean_predicted": 0.6678614437580108,
+   "mean_mc": 0.75,
+   "mean_gap": -0.08213855624198914,
+   "gap_ci": [
+    -0.1888276607626014,
+    0.01150166531734992
+   ],
+   "decile": 6,
+   "outcome": "win"
+  },
+  {
+   "stratum": "decile6/loss",
+   "n": 45,
+   "n_battles": 36,
+   "mean_predicted": 0.643077822526296,
+   "mean_mc": 0.5527777777777778,
+   "mean_gap": 0.0903000447485182,
+   "gap_ci": [
+    0.009905249183275263,
+    0.17512839503003474
+   ],
+   "decile": 6,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile7/win",
+   "n": 35,
+   "n_battles": 32,
+   "mean_predicted": 0.7507539255278451,
+   "mean_mc": 0.8357142857142857,
+   "mean_gap": -0.0849603601864406,
+   "gap_ci": [
+    -0.14535526488508496,
+    -0.02232638512338915
+   ],
+   "decile": 7,
+   "outcome": "win"
+  },
+  {
+   "stratum": "decile7/loss",
+   "n": 197,
+   "n_battles": 86,
+   "mean_predicted": 0.7486792488146554,
+   "mean_mc": 0.5425126903553299,
+   "mean_gap": 0.2061665584593255,
+   "gap_ci": [
+    0.15695608797272173,
+    0.25788868177766827
+   ],
+   "decile": 7,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile8/win",
+   "n": 38,
+   "n_battles": 31,
+   "mean_predicted": 0.8483520056072035,
+   "mean_mc": 0.8881578947368421,
+   "mean_gap": -0.03980588912963867,
+   "gap_ci": [
+    -0.09499144612087143,
+    0.03717328513210469
+   ],
+   "decile": 8,
+   "outcome": "win"
+  },
+  {
+   "stratum": "decile8/loss",
+   "n": 164,
+   "n_battles": 70,
+   "mean_predicted": 0.8437912689476479,
+   "mean_mc": 0.6105182926829268,
+   "mean_gap": 0.23327297626472102,
+   "gap_ci": [
+    0.17762514391187895,
+    0.29203136046633454
+   ],
+   "decile": 8,
+   "outcome": "loss"
+  },
+  {
+   "stratum": "decile9/win",
+   "n": 78,
+   "n_battles": 56,
+   "mean_predicted": 0.9751751850812863,
+   "mean_mc": 0.9663461538461539,
+   "mean_gap": 0.008829031235132461,
+   "gap_ci": [
+    -0.01876996893626626,
+    0.04582102388790238
+   ],
+   "decile": 9,
+   "outcome": "win"
+  },
+  {
+   "stratum": "decile9/loss",
+   "n": 124,
+   "n_battles": 40,
+   "mean_predicted": 0.9451642656518567,
+   "mean_mc": 0.5554435483870968,
+   "mean_gap": 0.38972071726475993,
+   "gap_ci": [
+    0.28623244676307574,
+    0.49380865427313
+   ],
+   "decile": 9,
+   "outcome": "loss"
+  }
+ ],
+ "by_turn_tercile": [
+  {
+   "stratum": "turn<=10/win",
+   "n": 73,
+   "n_battles": 57,
+   "mean_predicted": 0.7860071454962639,
+   "mean_mc": 0.8613013698630136,
+   "mean_gap": -0.0752942243667498,
+   "gap_ci": [
+    -0.11484951170900559,
+    -0.03009309602875106
+   ]
+  },
+  {
+   "stratum": "turn<=10/loss",
+   "n": 206,
+   "n_battles": 99,
+   "mean_predicted": 0.7537855194176285,
+   "mean_mc": 0.6377427184466019,
+   "mean_gap": 0.11604280097102657,
+   "gap_ci": [
+    0.07004671066920139,
+    0.1624898655466902
+   ]
+  },
+  {
+   "stratum": "turn 10-19/win",
+   "n": 61,
+   "n_battles": 49,
+   "mean_predicted": 0.8792909657368895,
+   "mean_mc": 0.8688524590163934,
+   "mean_gap": 0.010438506720496005,
+   "gap_ci": [
+    -0.04130164104488378,
+    0.07140434627592245
+   ]
+  },
+  {
+   "stratum": "turn 10-19/loss",
+   "n": 190,
+   "n_battles": 93,
+   "mean_predicted": 0.7534465099194725,
+   "mean_mc": 0.4605263157894737,
+   "mean_gap": 0.29292019412999876,
+   "gap_ci": [
+    0.2362773526507541,
+    0.3496066818248039
+   ]
+  },
+  {
+   "stratum": "turn>19/win",
+   "n": 48,
+   "n_battles": 35,
+   "mean_predicted": 0.8933852470169464,
+   "mean_mc": 0.9114583333333334,
+   "mean_gap": -0.01807308631638686,
+   "gap_ci": [
+    -0.05688091297554814,
+    0.03525683439293731
+   ]
+  },
+  {
+   "stratum": "turn>19/loss",
+   "n": 222,
+   "n_battles": 64,
+   "mean_predicted": 0.7528215215566594,
+   "mean_mc": 0.46677927927927926,
+   "mean_gap": 0.28604224227738007,
+   "gap_ci": [
+    0.20475655496947537,
+    0.37450841046733
+   ]
+  }
+ ],
+ "by_opponent": [
+  {
+   "stratum": "aggressive",
+   "n": 17,
+   "n_battles": 10,
+   "mean_predicted": 0.8095431205104379,
+   "mean_mc": 0.5514705882352942,
+   "mean_gap": 0.2580725322751438,
+   "gap_ci": [
+    0.07584392107450046,
+    0.4227792855352161
+   ]
+  },
+  {
+   "stratum": "aggressive_v2",
+   "n": 57,
+   "n_battles": 17,
+   "mean_predicted": 0.7812138484758243,
+   "mean_mc": 0.618421052631579,
+   "mean_gap": 0.16279279584424539,
+   "gap_ci": [
+    0.04878450428567282,
+    0.2740689653977041
+   ]
+  },
+  {
+   "stratum": "heuristic",
+   "n": 69,
+   "n_battles": 18,
+   "mean_predicted": 0.8094888074674468,
+   "mean_mc": 0.5760869565217391,
+   "mean_gap": 0.23340185094570767,
+   "gap_ci": [
+    0.11451446707298611,
+    0.36488632469585064
+   ]
+  },
+  {
+   "stratum": "heuristic2",
+   "n": 46,
+   "n_battles": 13,
+   "mean_predicted": 0.821767613939617,
+   "mean_mc": 0.7065217391304348,
+   "mean_gap": 0.1152458748091822,
+   "gap_ci": [
+    -0.0307445819993935,
+    0.24974999777846277
+   ]
+  },
+  {
+   "stratum": "random",
+   "n": 18,
+   "n_battles": 7,
+   "mean_predicted": 0.9074611266454061,
+   "mean_mc": 1.0,
+   "mean_gap": -0.09253887335459392,
+   "gap_ci": [
+    -0.11986634415738723,
+    -0.06645814246601528
+   ]
+  },
+  {
+   "stratum": "sentinel_0",
+   "n": 94,
+   "n_battles": 17,
+   "mean_predicted": 0.7720307294041553,
+   "mean_mc": 0.5545212765957447,
+   "mean_gap": 0.21750945280841055,
+   "gap_ci": [
+    0.1393632672282051,
+    0.2935003068753414
+   ]
+  },
+  {
+   "stratum": "sentinel_1",
+   "n": 66,
+   "n_battles": 18,
+   "mean_predicted": 0.7024730221989254,
+   "mean_mc": 0.4734848484848485,
+   "mean_gap": 0.22898817371407693,
+   "gap_ci": [
+    0.13372140414862443,
+    0.3189029304063486
+   ]
+  },
+  {
+   "stratum": "sentinel_2",
+   "n": 78,
+   "n_battles": 18,
+   "mean_predicted": 0.6852826624153516,
+   "mean_mc": 0.5913461538461539,
+   "mean_gap": 0.09393650856919777,
+   "gap_ci": [
+    0.03806431703901737,
+    0.15654347047929748
+   ]
+  },
+  {
+   "stratum": "sentinel_3",
+   "n": 60,
+   "n_battles": 20,
+   "mean_predicted": 0.7227042881461482,
+   "mean_mc": 0.6208333333333333,
+   "mean_gap": 0.10187095481281479,
+   "gap_ci": [
+    0.028701373429355644,
+    0.15638912237195204
+   ]
+  },
+  {
+   "stratum": "sentinel_4",
+   "n": 96,
+   "n_battles": 20,
+   "mean_predicted": 0.7632359978742898,
+   "mean_mc": 0.6692708333333334,
+   "mean_gap": 0.09396516454095642,
+   "gap_ci": [
+    0.016949045179705875,
+    0.17288346368112956
+   ]
+  },
+  {
+   "stratum": "setup_sweep",
+   "n": 45,
+   "n_battles": 16,
+   "mean_predicted": 0.8210456285211775,
+   "mean_mc": 0.6333333333333333,
+   "mean_gap": 0.18771229518784416,
+   "gap_ci": [
+    0.07853131310359851,
+    0.29420621662455443
+   ]
+  },
+  {
+   "stratum": "setup_sweep_v2",
+   "n": 46,
+   "n_battles": 15,
+   "mean_predicted": 0.8192924610946489,
+   "mean_mc": 0.5380434782608695,
+   "mean_gap": 0.28124898283377936,
+   "gap_ci": [
+    0.09921123321961473,
+    0.38123516016404824
+   ]
+  },
+  {
+   "stratum": "staller",
+   "n": 51,
+   "n_battles": 13,
+   "mean_predicted": 0.8286106376086965,
+   "mean_mc": 0.6102941176470589,
+   "mean_gap": 0.21831651996163762,
+   "gap_ci": [
+    0.03643540801347187,
+    0.355919131511063
+   ]
+  },
+  {
+   "stratum": "staller_v2",
+   "n": 57,
+   "n_battles": 12,
+   "mean_predicted": 0.7941108002866569,
+   "mean_mc": 0.5592105263157895,
+   "mean_gap": 0.23490027397086746,
+   "gap_ci": [
+    -0.028559099057104523,
+    0.46631448988004454
+   ]
+  }
+ ],
+ "conviction_class": {
+  "stratum": "wp>=0.75 & LOST",
+  "n": 379,
+  "n_battles": 92,
+  "mean_predicted": 0.8606307390182817,
+  "mean_mc": 0.5788258575197889,
+  "mean_gap": 0.2818048814984928,
+  "gap_ci": [
+   0.2287859023402528,
+   0.3394126889248586
+  ],
+  "control": {
+   "stratum": "wp>=0.75 & WON",
+   "n": 134,
+   "n_battles": 81,
+   "mean_predicted": 0.9116233565024475,
+   "mean_mc": 0.9225746268656716,
+   "mean_gap": -0.010951270363224087,
+   "gap_ci": [
+    -0.03789049188983761,
+    0.01982797034795327
+   ]
+  },
+  "share_mc_ge_0.75": 0.40897097625329815,
+  "share_mc_lt_0.50": 0.3087071240105541,
+  "share_mc_lt_0.25": 0.14511873350923482,
+  "median_predicted": 0.848859429359436,
+  "median_mc": 0.625,
+  "loss_minus_win_gap": 0.2927561518617169,
+  "loss_minus_win_ci": [
+   0.22543596704496974,
+   0.3547367326244733
+  ]
+ },
+ "resolution": [
+  {
+   "n": 13,
+   "mean": 0.18269230769230765,
+   "sd_observed": 0.31711338261873684,
+   "sd_binomial_floor": 0.08983348454254095,
+   "sd_true_excess": 0.3041230712899672,
+   "frac_variance_real": 0.9197495731360273,
+   "decile": 3,
+   "mean_predicted": 0.34810191851395816
+  },
+  {
+   "n": 24,
+   "mean": 0.28004876649454963,
+   "sd_observed": 0.28427604496810166,
+   "sd_binomial_floor": 0.13319386351576365,
+   "sd_true_excess": 0.25114192096193394,
+   "frac_variance_real": 0.7804730195235139,
+   "decile": 4,
+   "mean_predicted": 0.45390878929807343
+  },
+  {
+   "n": 37,
+   "mean": 0.4574932573300681,
+   "sd_observed": 0.27193492337717673,
+   "sd_binomial_floor": 0.15867529190447477,
+   "sd_true_excess": 0.22084101587155563,
+   "frac_variance_real": 0.6595223250741752,
+   "decile": 5,
+   "mean_predicted": 0.5509449886093386
+  },
+  {
+   "n": 65,
+   "mean": 0.6138124082232012,
+   "sd_observed": 0.2844485240472508,
+   "sd_binomial_floor": 0.14994312037785176,
+   "sd_true_excess": 0.24171889351892306,
+   "frac_variance_real": 0.7221274032401973,
+   "decile": 6,
+   "mean_predicted": 0.6507476436343487
+  },
+  {
+   "n": 232,
+   "mean": 0.6634646349245046,
+   "sd_observed": 0.2959996749129867,
+   "sd_binomial_floor": 0.13951088059780653,
+   "sd_true_excess": 0.26106037949757593,
+   "frac_variance_real": 0.7778564582152527,
+   "decile": 7,
+   "mean_predicted": 0.7495350974416229
+  },
+  {
+   "n": 202,
+   "mean": 0.7441779741794176,
+   "sd_observed": 0.27934033860078045,
+   "sd_binomial_floor": 0.12702640664225168,
+   "sd_true_excess": 0.24878769419960464,
+   "frac_variance_real": 0.7932141986846077,
+   "decile": 8,
+   "mean_predicted": 0.8459868729061469
+  },
+  {
+   "n": 202,
+   "mean": 0.8494491089927851,
+   "sd_observed": 0.2820110167953894,
+   "sd_binomial_floor": 0.0836053789209262,
+   "sd_true_excess": 0.26933316581783573,
+   "frac_variance_real": 0.9121106423755202,
+   "decile": 9,
+   "mean_predicted": 0.9666374251643992
+  }
+ ],
+ "headline": {
+  "population_weighted_gap": 0.09790777177475089,
+  "population_weighted_sd_true_excess": 0.2550133027952192,
+  "n_labels": 800,
+  "n_battles": 214
+ },
+ "evidential": null,
+ "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic",
+ "traces": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/eval_traces/step_74000016",
+ "policy_step": 74000016,
+ "impl": "rust"
+}
