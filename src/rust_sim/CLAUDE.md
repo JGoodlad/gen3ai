@@ -326,10 +326,15 @@ class this file polices elsewhere (corrected 2026-09-07, verified against the co
   guard used to be and threads `SearchTeacherCallback(impl=args.bridge_impl)` instead, so a rust
   run's teacher no longer silently falls back to node.
 
-**What is genuinely NOT gated is the COMPOSITION**: every leg runs on rust (better_line node≡rust
-candidate values bit-identical · `search_clone_parity` · the counterfactual confirm leg), but a
-full multi-cycle teacher run end-to-end on rust has never been done. `--use-bridge=node` is the
-fallback if a cycle misbehaves.
+**The COMPOSITION was the last ungated rung, and it is gated now** (2026-09-07,
+`gen3_search_teacher_composition_rust_v1`). Every leg already ran on rust — better_line node≡rust
+candidate values bit-identical · `search_clone_parity` · the counterfactual confirm leg — and
+`src/main/train/search_teacher_composition_test.py` (`sim` + `slow`, ~11 min) now adds the rung above
+them: the real `train_rl_agent.py` at smoke scale on `--use-bridge rust`, asserted to run **>= 2
+search-teacher cycles** whose workers carry `"impl": "rust"`, whose shards come back without a
+`worker_no_shard` or `error:*` status, and whose corrections reach the AWR fold (`teacher/loss` +
+`grad/searchteacher_share` in the TB events). **It found no seam on the first run.**
+`--use-bridge=node` remains the fallback if a cycle misbehaves.
 
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
 

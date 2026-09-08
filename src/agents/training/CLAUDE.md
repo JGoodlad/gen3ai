@@ -2974,9 +2974,20 @@ run its battles would have been generated on node regardless.
 (`gen3_rust_search_driver_v1` / `gen3_rust_replay_driver_v1`: one `search_driver` binary serves both
 offline verb families). Each LEG is gated on rust — `better_line` node≡rust candidate V (an
 obs-level bit-identity claim), `search_clone_parity` (clone ≡ `reroll_many` at the obs), and the
-counterfactual confirm leg — but the COMPOSITION is not: **no full multi-cycle teacher run has been
-done end-to-end on rust.** Treat the first one as an experiment and fall back to `--use-bridge=node`
-if a cycle misbehaves. That guard's OLD stated reason — the record's `input_log` being
+counterfactual confirm leg — and since **2026-09-07 the COMPOSITION is gated too**:
+`src/main/train/search_teacher_composition_test.py` (`gen3_search_teacher_composition_rust_v1`,
+`sim` + `slow`, ~11 min) launches the real `train_rl_agent.py` at smoke scale under
+`--use-bridge rust` and asserts on the ARTIFACTS of **>= 2 cycles** — the per-cycle markers, the
+worker config's `"impl": "rust"`, the worker status histogram, and the TB scalars for both the
+cross-process facts (`teacher/corrections_per_cycle`) and the in-process fold (`teacher/loss`,
+`teacher/n`, `grad/searchteacher_share`). **The first multi-cycle rust run found no seam.**
+🚨 **The one knob that had to be MEASURED rather than guessed is `--teacher-confirm-rollouts`**: the
+Wilson strictly-better gate needs the alternative line to win at least one confirm game, and a
+6k-step policy does that at p ~= 0.028, so at 2 rollouts a whole cycle yields nothing about 90% of
+the time (measured: 0 corrections over 12 candidates and 3 cycles) while at 16 the yield is 4 of 11.
+A cycle reporting `status={'gate_failed': N}` has still exercised every join — the yield is a
+property of the POLICY, not of the composition. Fall back to `--use-bridge=node` if a cycle
+misbehaves. That guard's OLD stated reason — the record's `input_log` being
 replay-equivalent rather than byte-identical — was **wrong and is retracted**: no consumer reads the
 committed-choice lines, so do not re-derive a plan from it. See `src/utils/bridge/README.md` →
 *Offline driver transport* for the seam and the full gate table.

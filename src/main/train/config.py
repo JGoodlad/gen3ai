@@ -1107,9 +1107,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                 emit("🦀 [BRIDGE=rust] search-teacher on the RUST offline drivers "
                      "(search_driver binary serves open_root/expand_many + replay/reroll/"
                      "reroll_many). Gated by: better_line node≡rust candidate values bit-identical, "
-                     "search_clone_parity (clone ≡ reroll_many at the obs), and the counterfactual "
-                     "confirm leg — each run on rust. NOT yet gated: a full multi-cycle teacher run "
-                     "end-to-end on rust. Fall back with --use-bridge=node if a cycle misbehaves.")
+                     "search_clone_parity (clone ≡ reroll_many at the obs), the counterfactual "
+                     "confirm leg, AND the COMPOSITION itself — "
+                     "src/main/train/search_teacher_composition_test.py runs >=2 cycles end-to-end "
+                     "on rust. Fall back with --use-bridge=node if a cycle misbehaves.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
 

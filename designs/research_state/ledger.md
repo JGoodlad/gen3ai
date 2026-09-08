@@ -10919,8 +10919,6 @@ confounded with budget and carries a 0.4–0.5 inherited offset. Causal tests: v
 learning) and the gen origin × budget factorial (G1 / G2), all on the GPU queue.
 
 
-
-
 **`ai_v9_162_TCUNFA_0903` is G1's matched partner** — same recipe, same 16 teams, same parent,
 differing only in teacher checkpoint depth.
 
@@ -14319,3 +14317,76 @@ the same way.
 
 Docs-only change: the two §2 rows updated in place with their verdicts, the TensorBoard-backfill row
 marked UNBLOCKED with its reason. No code, no `ARCHITECTURE.md`, no `CHANGELOG` entry.
+
+## 2026-09-07 · TECH DEBT · search-teacher composition gated end-to-end on rust: PASSES — no seam, and the knob that decides whether a cycle teaches anything is `--teacher-confirm-rollouts`
+
+**The row** (`designs/ops/TECH_DEBT_BACKLOG.md` §2, P2/M): *"a full multi-cycle search-teacher run
+end-to-end on the rust bridge is not gated (every leg is, the composition is not) — the first such
+run will find the seam."* The same sentence was live in three places: the `--use-bridge=rust`
+startup banner in `main/train/config.py`, `src/agents/training/CLAUDE.md`'s search-teacher chapter,
+and `src/rust_sim/CLAUDE.md`. All three are now corrected in the same pass.
+
+**THE GATE.** `src/main/train/search_teacher_composition_test.py`
+(`gen3_search_teacher_composition_rust_v1`), `sim` + `slow`. It launches the REAL
+`src/main/train_rl_agent.py` as a subprocess at smoke scale — `--debug --debug-eval --device cpu
+--use-bridge rust --steps 18000 --n-steps 512 --eval-freq 500 --eval-games 1 --search-teacher
+--search-teacher-coef 0.5 --teacher-search-freq 1500 --teacher-search-budget 8
+--teacher-confirm-rollouts 16 --teacher-search-workers 2 --run-dir <pytest tmp_path>` — and asserts
+on ARTIFACTS, never on "it did not crash": >= 2 COLLECTED cycles; every launched cycle carrying
+candidates; each worker config's `"impl": "rust"`; no `worker_no_shard` and no `error:*` in the
+worker status histogram; no hung-cycle abort; the run's total corrections > 0; and, read from the
+TENSORBOARD EVENTS rather than the child log's rendered table, `teacher/corrections_per_cycle` at
+>= 2 points plus `teacher/loss`, `teacher/ce`, `teacher/n` and `grad/searchteacher_share` present
+with `teacher/n > 0`. Then `Training complete`.
+
+**VERDICT: NO SEAM.** The composition works on rust exactly as designed. The gating run:
+**638 s (10 m 38 s) at contention factor 1.32 — 8 cycles LAUNCHED, 8 COLLECTED, 34 candidate-shots,
+4 corrections**, every shard returned, no `worker_no_shard`, no `error:*`, no hung-cycle abort. The
+`CorrectionBuffer` fills and the AWR aux loss folds: `grad/searchteacher_share` runs 0.15-0.47 across
+successive `train()` calls and `teacher/agree_rate` climbs to 1.0 on the buffered corrections — the
+teacher's gradient is a real share of the trunk pull, not a logged-but-inert term.
+
+**WHAT THE COMPOSITION RUN DID FIND — three facts no leg-level test could have shown, all about
+sizing rather than correctness.**
+
+1. 🚨 **`--teacher-confirm-rollouts` is what decides whether a cycle teaches anything, and at the
+   pilot's value the answer was NEVER.** The Wilson strictly-better gate needs the alternative line
+   to win at least one confirm game against a played rate of 0.0. A ~6k-step policy wins one at
+   **p ≈ 0.028** (fitted from the pilots). At `--teacher-confirm-rollouts 2` that is a 5.5% chance
+   per candidate: two pilot runs produced **1 correction from 14 candidates**, and one 5-cycle pilot
+   produced **0 from 12 candidates over 3 cycles**, every one reported as `gate_failed`. At **16**
+   the measured yield is **4 of 11** offline and **3 of 12** in the gating run. The knob is not a
+   throughput dial — below a threshold set by the policy's strength it silently turns the whole
+   teacher into a no-op that still logs cycles. The production default is 8.
+2. **A cycle's LAUNCH is not a cycle's COLLECT, and `--steps` has to be sized by the collect.** The
+   first gating attempt at `--steps 6000` launched two cycles and collected ONE — the second was
+   still pending when training ended, and nothing waits for a per-cycle worker at
+   `_on_training_end` (only the PERSISTENT pool has a shutdown handshake). Measured cadence: the
+   first cycle with candidates launches at step 3000, and a launch is SKIPPED while a cycle is
+   pending. `--steps 12000` measured 3 launches / 2 collects / 13 candidate-shots — a ~2% flake on
+   the "total > 0" bar; `--steps 18000` measured 8 / 8 / 34, i.e. ~0.4%. The candidate BUDGET is
+   sized the same way and against the same clock: 16 candidates x 16 rollouts on 2 workers had not
+   collected 5,000 timesteps after launch, while 8 collects in ~1,500.
+3. **Selection is the run's dominant BLOCKING cost and it runs inside `_on_step`.**
+   `select_candidates` falsifies every loss trace of the newest eval cycle **inline in the training
+   loop** — measured 30 s over 9 traces and 100 s over the 60-trace `scan_limit` on a loaded box —
+   while the search/confirm workers are async and cost the loop nothing. There is no CLI flag for
+   `scan_limit` (the callback's default 60 is what a production run gets), so on a run with many
+   loss traces per eval cycle the teacher's cost lands on the trainer, not on the spare cores. Noted,
+   not changed.
+
+**What the test deliberately does NOT assert, and why.** Whether a GIVEN cycle yields a label is a
+property of the policy's luck at the Wilson gate, not of the composition: a cycle that searched 9
+candidates, ran every confirm rollout on rust, wrote its shard and reported
+`status={'gate_failed': 9}` has exercised every join under test. Asserting per-cycle `> 0` would be
+a ~2%-flaky assertion about a 6k-step policy. The assertion is on the RUN's total (P(zero) ≈ 0.4% at the measured
+34 candidate-shots), and the reason is written in the test's docstring rather than left for a future
+reader to rediscover as a flake.
+
+**Cost discipline.** The child is bounded by a `ProgressDeadline` on its own log (every appended
+byte is a sign of life), never by a total-duration cap; a wedge is reported as **INCONCLUSIVE**,
+worded distinctly from a failed assertion and carrying `describe_contention()`. Every output path is
+the pytest `tmp_path` — nothing is written under `models/`. The rust binaries are checked, not
+built: a missing one FAILS with the exact `cargo build --release --bin sim_bridge --bin
+search_driver --manifest-path src/rust_sim/Cargo.toml` line, because a cargo build inside a test
+saturates every core and turns every other test's contention-scaled bound into a wall of timeouts.

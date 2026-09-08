@@ -94,6 +94,34 @@ a busy one it is ADVISORY** — a compile-heavy test slows by multiples of the c
 (measured: 12.3 s idle → 65.9 s at load 22, against a 1.2× scaled budget), so a scaled-only guard
 would go red whenever a run is live. `tier_budget_guard_test.py` pins both halves and that the
 guard may only ever ADD a failure, never clear one.
+
+### COMPOSITION gates — where a whole RUN is the unit under test
+
+Some properties exist only in the JOINS between subsystems, and no leg-level test can see them: the
+legs are exercised with fake sessions, hand-built shards and pre-recorded fixtures, so a defect in
+the hand-off between two of them is invisible to every one of them at once. Those get a test that
+launches the real entry point as a SUBPROCESS at smoke scale and asserts on the ARTIFACTS the run
+leaves behind — never on "it did not crash".
+
+| Gate | The composition it closes | Tier · measured |
+|---|---|---|
+| `src/main/train/search_teacher_composition_test.py` (`gen3_search_teacher_composition_rust_v1`) | **>= 2 search-teacher cycles on `--use-bridge rust`**, end to end: eval traces → falsify-gated selection → frozen trainee → worker subprocess on the rust `search_driver` → confirm rollouts → shard → `CorrectionBuffer` → the AWR aux loss inside `train()`, across a cycle boundary. Asserts the per-cycle markers, the worker config's `"impl": "rust"`, the status histogram (no `worker_no_shard`, no `error:*`) and the TB scalars (`teacher/corrections_per_cycle`, `teacher/loss`, `teacher/n`, `grad/searchteacher_share`) | `sim` + `slow` · **10 m 38 s** (2026-09-07, 16-core box, contention factor 1.32; 8 cycles, 34 candidate-shots, 4 corrections) |
+
+**They are `slow` by DECLARATION, not by measurement.** A live training run normally shares this
+box, so a duration recorded beside one is a note for planning, never a bound to assert against.
+
+Three rules every composition gate here follows, each of them a project rule applied to a subprocess:
+
+- **Every output path goes to the test's `tmp_path` — 🚨 NEVER under `models/`.** The run archive is
+  not a scratch space; `train_rl_agent.py`'s `--run-dir` takes the temp dir.
+- **The child is bounded by a `ProgressDeadline` on its own log, not by a total-duration cap.**
+  Contention stretches duration; only a real wedge stops output. A wedge is reported as
+  **INCONCLUSIVE**, in wording distinct from a failed assertion and carrying
+  `describe_contention()` — a timeout is never a semantic outcome.
+- **A missing precondition FAILS, it never skips** — an unbuilt rust binary fails with the exact
+  `cargo build` line, and a run that reaches "Training complete" having launched fewer than two
+  cycles fails as NO-CYCLE rather than passing green on a run that did nothing.
+
 ### Test file naming conventions
 
 | Pattern | Requires | Marker |
