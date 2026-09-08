@@ -579,6 +579,23 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "error downstream that would catch the mismatch.\n"
                 "Resume with the matching --q-winprob-mode setting, or start a fresh training run."
             )
+        # gen3_value_true_team_v1 (v114): the PRIVILEGED true-team route's params are the
+        # state_dict delta, and its injection is ADDITIVE into `value_pooled` — a tensor whose
+        # width never changes. So a resume that dropped the flag would load "successfully" and
+        # silently take the privilege away from the critic mid-run, and one that added it would
+        # start a fresh zero-init route inside a trained value path. Neither produces a shape
+        # error; a bool compare is the only gate. It is the same reason value_entity_pool has one.
+        if self.value_true_team != saved.value_true_team:
+            raise ModelVersionError(
+                f"value_true_team mismatch: saved={saved.value_true_team!r}, "
+                f"current={self.value_true_team!r}.\n"
+                "The PRIVILEGED true-opponent-team value route is fixed for a run's lifetime: "
+                "building it changes the state_dict, and because it injects additively into "
+                "`value_pooled` there is no width change downstream that would catch the "
+                "mismatch. It also changes WHAT V(s) is a function of, so a run that flipped it "
+                "mid-flight would not be one experiment.\n"
+                "Resume with the matching --value-true-team setting, or start a fresh training run."
+            )
         if self.value_dist_bins != saved.value_dist_bins:
             raise ModelVersionError(
                 f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"

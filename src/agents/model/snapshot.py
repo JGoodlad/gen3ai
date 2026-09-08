@@ -1255,6 +1255,7 @@ def current_model_version(
     cf_twin_heads: bool = False,
     cf_shadow_critic: bool = False,
     q_winprob_mode: str = "none",
+    value_true_team: bool = False,
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -1311,6 +1312,11 @@ def current_model_version(
     # ONLY output is a stash, so nothing downstream would fail on a mismatch — a frozen eval/pool
     # opponent's gate must see the toggle or a Q-head run FATALs loading its OWN sentinels.
     ext_kwargs["q_winprob_mode"] = q_winprob_mode
+    # gen3_value_true_team_v1 (v114): the privileged true-team route's params are a state_dict
+    # delta injected ADDITIVELY into value_pooled, so no width change downstream would catch a
+    # mismatch — a frozen eval/pool opponent's gate must see the toggle or a privileged run FATALs
+    # loading its OWN sentinels.
+    ext_kwargs["value_true_team"] = value_true_team
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1405,6 +1411,9 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_q_winprob_head_v1 (v107): same category — params in the state_dict whose only
         # output is a side stash, so the recorded toggle is all a load gate can compare.
         "q_winprob_mode": str(getattr(fe, "q_winprob_mode", "none")),
+        # gen3_value_true_team_v1 (v114): same category — params in the state_dict, additive into
+        # value_pooled, so the recorded toggle is all a load gate can compare.
+        "value_true_team": bool(getattr(fe, "value_true_team", False)),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

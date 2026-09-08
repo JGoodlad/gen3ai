@@ -49,6 +49,7 @@ from agents.model.q_winprob_head import Q_WINPROB_MODES, QWinProbHead
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
+from agents.model.true_team_value import TrueTeamValueReadout
 from agents.model.value_readouts import UnifiedValueReadout
 from agents.model.value_threat_inject import (
     VALUE_THREAT_INJECT_REDUCE_HOW, value_threat_inject_dim)
@@ -104,6 +105,7 @@ class ExtractorBuild(torch.nn.Module):
                  cf_evidential: bool = False,
                  cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
                  q_winprob_mode: str = "none",
+                 value_true_team: bool = False,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -981,6 +983,14 @@ class ExtractorBuild(torch.nn.Module):
                          move_cell_dim=self.pointer_move_cell_dim,
                          switch_cell_dim=self.pointer_switch_cell_dim)
             if self.q_winprob_mode != "none" else None)
+
+        # gen3_value_true_team_v1 (v114) — the PRIVILEGED true-opponent-team VALUE route, arm 5 of
+        # the critic ladder. Built after the Q head for the same append-never-insert reason, and
+        # it has no ordering constraint of its own: its only input is an obs key, so it depends on
+        # no other module's width.
+        self.value_true_team = bool(value_true_team)
+        self.true_team_value = (
+            TrueTeamValueReadout(layout) if self.value_true_team else None)
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

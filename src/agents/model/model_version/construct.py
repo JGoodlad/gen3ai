@@ -260,6 +260,9 @@ class ModelVersionConstruction(ModelVersionFields):
             q_winprob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("q_winprob_mode", "none")
             ),
+            value_true_team=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("value_true_team", False)
+            ),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
             ),

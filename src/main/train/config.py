@@ -664,6 +664,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("q_winprob_mode", "none")         # v107 structural, version-checked
     _resolve("q_winprob_coef", 0.0)            # v107 training-only
     _resolve("q_winprob_onpolicy_coef", 0.0)   # v107 training-only
+    _resolve("value_true_team", False)         # v114 structural, version-checked (arm 5 ceiling probe)
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The td_aux_coef class:
     # recorded for provenance, never gated, and read back here so a flagless resume (or a
     # hand-typed one between launcher restarts) keeps logging the run's own `capacity/*` series.

@@ -110,6 +110,16 @@ deletes the flat `action_net` and the action logits come from the `PointerNative
 the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITECTURE.md` § Heads). The startup `_run_roundtrip_test` and the snapshot/feature tests all
 unpack the tuple — keep that in mind when touching the extractor's return shape.
 
+**The one channel the policy path cannot see** (`--value-true-team`, v114,
+`gen3_value_true_team_v1`). Because `vf_combined` IS `value_pooled` and `pi_combined` is a concat
+that never contains it, anything injected into `value_pooled` is vf-only at ANY weight — which is
+what makes the PRIVILEGED true-opponent-team route (the critic ladder's arm-5 ceiling probe) safe
+to build at all. It reads the opponent's real party off a training-and-eval-only obs key
+`opp_true_team` and is the only route in the tree that adds INFORMATION rather than re-reading the
+shared observation. Detail — including why it AUGMENTS rather than replaces the belief-keyed opp
+view, why it RAISES on a missing key, and why the prober's offline forwards REFUSE on such a
+checkpoint — is in [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
+
 ### Phase-by-phase data flow
 The per-phase walkthrough and the static-width arithmetic:
 [`designs/model/phase_pipeline.md`](../../../designs/model/phase_pipeline.md). Two things stay here.

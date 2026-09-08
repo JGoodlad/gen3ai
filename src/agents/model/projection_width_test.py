@@ -30,6 +30,8 @@ import torch
 from agents.model.arch_constants import D_MODEL
 from agents.model.features_extractor import Gen3FeaturesExtractor, compute_projection_widths
 from agents.model.value_route_gradient_test import _ALL_ROUTES_ON
+from agents.observation.constants import POKEMON_FULL_DIM, TEAM_SIZE
+from agents.observation.true_team import TRUE_TEAM_KEY
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from utils.git import get_repo_root
 
@@ -91,6 +93,12 @@ def _assert_widths(fe, kwargs):
         _LAYOUT, opp_belief_cls_k=kwargs.get("opp_belief_cls_k", 0))
     g = torch.Generator().manual_seed(11)
     obs = {"observation": torch.rand(3, _LAYOUT["total_dim"], generator=g)}
+    # gen3_value_true_team_v1: the PRIVILEGED route is in `_ALL_ROUTES_ON` and RAISES on a missing
+    # key (a silent skip reads exactly like a route that learned nothing). Its injection is
+    # ADDITIVE, so it cannot move a projection WIDTH — which is precisely what this file measures,
+    # and precisely why the zero block is the right input here.
+    if kwargs.get("value_true_team"):
+        obs[TRUE_TEAM_KEY] = torch.zeros(3, TEAM_SIZE, POKEMON_FULL_DIM)
     with torch.no_grad():
         pi, vf = fe.forward_internal(obs)
     assert pi.shape[1] == exp_pi, (

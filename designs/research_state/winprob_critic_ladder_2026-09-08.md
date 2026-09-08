@@ -36,7 +36,40 @@ a flag that arm A left at zero.
 
 ## 1. AUDIT
 
-### L1 — ASYMMETRIC (PRIVILEGED) CRITIC · **does not exist today**
+### L1 — ASYMMETRIC (PRIVILEGED) CRITIC · **BUILT 2026-09-08 — `--value-true-team`**
+
+> **STATUS UPDATE (2026-09-08, `gen3_value_true_team_v1`, commit `__COMMIT__`).** The audit below
+> was right that no value path saw the opponent's true team; it is now a flag, default OFF. What it
+> got wrong is the COST of turning it on: the note predicted "FRESH-RUN-ONLY … `check_compatible`
+> will reject every existing checkpoint", because it assumed the channel had to widen the 2501-dim
+> observation. It does not — the privileged block rides a SEPARATE Dict obs key (`opp_true_team`,
+> the `win_target` / `belief_species` precedent), the readout is built LAST, and the injection into
+> `value_pooled` is additive, so **there is no `ARCH_SIGNATURE` bump and every existing checkpoint
+> still resumes**; only the arm that turns the flag on is fresh-run-only, and only because a
+> STRUCTURAL bool cannot flip mid-run. The rest of the audit stands, including the ladder-safety
+> argument, which is now asserted rather than argued: `ProjectionAssembler` returns `vf_combined`
+> **as** `value_pooled` and `pi_combined` as a concat that never contains it, so `pi` is
+> BIT-identical under an arbitrary perturbation of the privileged key at a large random weight
+> (`true_team_value_test.py`), and a policy-only backward leaves the route's projection with zero
+> gradient.
+>
+> Two things the audit did not anticipate, both load-bearing for reading the arm:
+> * **The key must exist at EVAL, not only in training.** Both critic meters take V and P(win) from
+>   the eval traces' npz, so a channel present only during rollout collection would have the arm
+>   measured on a V the run never trained. `LocalBattleRunner` — the transport for bridge training,
+>   bridge eval AND `replay_counterfactual` — sets an `_opp_player` back-reference on both sides,
+>   and `RLPlayer` reads it. **`cf_audit` and `main.critic_gate` therefore read this arm
+>   unaffected.** At ladder play there is no runner and the all-zero "unknown" block goes instead.
+> * **The prober's offline forwards REFUSE on such a checkpoint** (`ProbeModel._pin`): a V rebuilt
+>   from the recorded observation vector alone is V stripped of exactly the privilege the arm
+>   exists to measure. Model-free prober commands are unaffected.
+>
+> The argv is `/home/goodlad/.claude/jobs/9ab51de6/tmp/argv_E_truevalue.txt`
+> (`ai_v12_14_ladder_truevalue`, 10M): `checkargs` exit 0, 0 unrecognized, and a clean ARCH SURFACE
+> — the flag is `family=CRITIC`, so the surface key set did not grow and no existing argv's verdict
+> moved. The audit below is preserved as written.
+
+### L1 — the audit as written (2026-09-08, before the build)
 
 **Verdict: NO value path sees the opponent's true team/sets/items.** The two flags whose names
 suggest otherwise are both ON in arm A and are *not* privileged:

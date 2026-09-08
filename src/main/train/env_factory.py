@@ -61,6 +61,11 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
                 move_belief_mode=args.move_belief_mode,
                 emit_win_target=(args.win_prob_mode != "none"),
+                # PRIVILEGED TRUE-TEAM channel (gen3_value_true_team_v1): emit the opponent's
+                # actual party only when the value route that reads it was built. Emitting it
+                # unconditionally would put a key in the observation_space that no consumer reads
+                # and that every non-local path would then have to fabricate.
+                emit_opp_true_team=bool(getattr(args, "value_true_team", False)),
                 # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
                 # true-spread label only when the loss will consume it (coef>0; the CLI guards that
                 # --spread-belief-coef requires --spread-belief, so the head is present to supervise).

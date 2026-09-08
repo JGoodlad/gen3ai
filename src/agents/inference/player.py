@@ -3,6 +3,10 @@ import os
 import numpy as np
 import torch
 from typing import Dict, Any, Optional
+
+from agents.observation.true_team import (
+    TRUE_TEAM_KEY, build_true_team_block, empty_true_team_block,
+)
 from poke_env.player import Player
 from poke_env.player.battle_order import ForfeitBattleOrder
 
@@ -80,6 +84,15 @@ class Gen3Player(Player):
     #: without ``Player.__init__`` still has one, and so a caller can raise it for a slow link
     #: (``player.connect_timeout_s = 90``) or per subclass. See ``DEFAULT_CONNECT_TIMEOUT_S``.
     connect_timeout_s: float = DEFAULT_CONNECT_TIMEOUT_S
+
+    #: gen3_value_true_team_v1 — the privileged true-team channel's three lazily-resolved slots.
+    #: CLASS attributes for the SAME reason `connect_timeout_s` is one: a test double (or any
+    #: subclass) built without ``Player.__init__`` must still read as "no opponent handle, nothing
+    #: resolved yet" rather than raising `AttributeError` on the first decision.
+    #: ``_opp_player`` is set by `LocalBattleRunner` when both sides live in this process.
+    _opp_player = None
+    _true_team_wanted: Optional[bool] = None
+    _species_num: Optional[Dict[str, int]] = None
 
     def __init__(self, observation_encoder=None, mappings=None,
                  stall_config: Optional[StallConfig] = None,
@@ -269,12 +282,19 @@ class Gen3Player(Player):
             tracker.update_progress_clock(battle, legal)
         return legal, mask, tracker
 
-    def embed_battle(self, battle) -> Dict[str, Any]:
+    def _encoder(self):
+        """The lazily-built observation encoder. ONE site, because `RLPlayer.__init__` passes
+        `observation_encoder=None` and two independent lazy builds would be two chances to hold
+        different `mappings`."""
         if self.observation_encoder is None:
             from agents.observation.state_encoder import load_mappings, get_observation_encoder
             if self.mappings is None:
                 self.mappings = load_mappings()
             self.observation_encoder = get_observation_encoder(self.mappings)
+        return self.observation_encoder
+
+    def embed_battle(self, battle) -> Dict[str, Any]:
+        self._encoder()
         legal, mask, tracker = self.track_decision(battle)
 
         # Thread the same legality snapshot into the encoder for its trapped / maybe_trapped
@@ -291,11 +311,56 @@ class Gen3Player(Player):
         )
 
 
-        return {
+        out = {
             # gen3_frame_deletion_v1: the obs IS the encoder output (no appended tail).
             "observation": obs,
             "action_mask": mask,
         }
+        if self._wants_true_team():
+            out[TRUE_TEAM_KEY] = self._true_team_block(battle)
+        return out
+
+    def _wants_true_team(self) -> bool:
+        """Does the LOADED model's observation space carry the privileged true-team key?
+
+        Asked of the SPACE rather than of the extractor flag on purpose: SB3's `preprocess_obs`
+        iterates the space's keys and indexes the obs dict, so a model whose space declares the key
+        gets a `KeyError` — not a quiet skip — if the key is missing. The space is therefore the
+        thing that decides, and the answer is cached because it cannot change for a loaded model.
+        """
+        if self._true_team_wanted is None:
+            space = getattr(getattr(self, "model", None), "observation_space", None)
+            spaces_ = getattr(space, "spaces", None)
+            self._true_team_wanted = bool(spaces_ is not None and TRUE_TEAM_KEY in spaces_)
+        return self._true_team_wanted
+
+    def _true_team_block(self, battle):
+        """gen3_value_true_team_v1: the opponent's TRUE party, or the all-zero 'unknown' block.
+
+        The privileged view exists exactly when the opponent PLAYER is in this process — which is
+        exactly when a `LocalBattleRunner` attached the two sides and set `_opp_player`. On a real
+        server (`src/main/play.py`, the ladder) there is no such object, the block is all zeros,
+        and the value route reads "unknown" rather than the run crashing: the policy head is what
+        plays a ladder game, and it never reads this key at all.
+        """
+        opp = getattr(self, "_opp_player", None)
+        opp_battle = None
+        if opp is not None:
+            try:
+                opp_battle = opp._battles.get(getattr(battle, "battle_tag", None))
+            except Exception:
+                opp_battle = None
+        if opp_battle is None:
+            return empty_true_team_block()
+        if self._species_num is None:
+            self._species_num = {sid: rec["num"]
+                                 for sid, rec in (self.mappings or {}).get("species", {}).items()
+                                 if "num" in rec}
+        return build_true_team_block(
+            list(opp_battle.team.values()), opp_battle,
+            self._encoder().pokemon_encoder,
+            species_to_num=self._species_num,
+        )
 
     def action_to_order(self, action_idx, battle):
         ctx = self._get_tracker(battle).last_ctx
@@ -414,6 +479,13 @@ class RLPlayer(Gen3Player):
             obs_tensor = torch.as_tensor(obs_batched).to(self.model.device)
             mask_tensor = torch.as_tensor(mask_batched).to(self.model.device)
             policy_in = {"observation": obs_tensor, "action_mask": mask_tensor}
+            # gen3_value_true_team_v1: the privileged block rides through to the extractor only
+            # when the model's own space declares it (see `_wants_true_team`). It feeds the VALUE
+            # route alone, so it changes nothing about the action chosen here — it is threaded so
+            # that `predict_values` below reads the same V the training loop trained.
+            if TRUE_TEAM_KEY in obs_dict:
+                policy_in[TRUE_TEAM_KEY] = torch.as_tensor(
+                    np.expand_dims(obs_dict[TRUE_TEAM_KEY], axis=0)).to(self.model.device)
             dist = self.model.policy.get_distribution(policy_in)
             logits = dist.distribution.logits
             masked_logits = logits + (mask_tensor - 1.0) * 1e9

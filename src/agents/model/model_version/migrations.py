@@ -482,4 +482,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 113:
         data.setdefault("teacher_scan_limit", 60)
         data["config_version"] = 113
+    # v114 (gen3_value_true_team_v1) — ONE STRUCTURAL bool, defaulted rather than refused, for
+    # v98's exact reason: a pre-v114 checkpoint could not have built the privileged true-team
+    # route, so False is not a guess but the only possible past. The refusal direction belongs to
+    # check_compatible, which fires the moment a live run's True meets a migrated False.
+    if version < 114:
+        data.setdefault("value_true_team", False)
+        data["config_version"] = 114
     return data

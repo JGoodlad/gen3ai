@@ -47,6 +47,53 @@ instead of v64's 13-wide damage summary, so the critic gets the six status ident
 the `s3` edge family's softmax-normalised RATIO). The two stack additively and independently.
 ⚠️ Its ENABLING owes the C4-style offline gate first (ledger C6); BUILDING it is free.
 
+## The PRIVILEGED route — `--value-true-team` (v114, `gen3_value_true_team_v1`)
+
+Every route above re-reads, re-pools or re-weights the SAME 2501-dim observation both heads
+consume; none of them adds information. **This one does.** `TrueTeamValueReadout`
+(`src/agents/model/true_team_value.py`) reads the opponent's ACTUAL party off a
+training-and-eval-only Dict key `opp_true_team` — `[6, POKEMON_FULL_DIM]`, the obs's OWN per-mon
+layout, built by `agents.observation.true_team.build_true_team_block` through the SAME
+`PokemonEncoder.encode` called with `is_own=True` against the OPPONENT's own battle view, because
+from that side every one of its mons IS a fully-known own mon. Six rows go through a shared per-mon
+MLP (permutation-equivariant; the block's order is `species num ascending` and means nothing), then
+`TTV_K`=4 learned queries over `TTV_DIM`=64 and a zero-init projection into `value_pooled`.
+
+**It is a CEILING PROBE, arm 5 of the critic ladder** (`designs/research_state/winprob_critic_ladder_2026-09-08.md`
+§L1): how much of the win-prob critic's residual error is irreducible uncertainty about the
+opponent's team? A critic that needs privileged inputs is not the critic that ships, so it is
+`family=CRITIC`, OFF by default, and never in `designs/production_config.json`.
+
+**Four properties, each a constraint rather than a style choice.**
+
+1. **vf-ONLY is structural.** The route injects into `value_pooled`, and `ProjectionAssembler`
+   gives `value_pooled` to the value head ALONE (`vf_combined IS value_pooled`); `pi_combined` is a
+   concat that does not contain it. So `pi` is bit-identical for an ARBITRARY weight in this
+   module, not merely at init — `true_team_value_test.py` asserts it by perturbing the key at a
+   large random weight, and asserts the backward direction too (a policy-only loss leaves the
+   route's projection with no gradient).
+2. **It AUGMENTS rather than REPLACES the belief-keyed opp view on the value side.** Replacing
+   would be the cleaner ceiling in the abstract and would confound two changes in practice: a null
+   could then mean "privilege does not help" OR "the belief route was carrying the signal".
+   Additive injection leaves every existing value route bit-identical at init, and it is the only
+   form the seam admits — additive injection changes no width, so route availability can never
+   mis-size `value_pre_norm`.
+3. **Presence follows the LOCAL sim, and nothing else.** `LocalBattleRunner` sets an `_opp_player`
+   back-reference on both sides at attach time — one place that knows both sides, so "the sim is
+   local" and "the privileged key is available" are the same fact. That covers bridge TRAINING,
+   bridge EVAL (`eval_callback`: workers play in-process via `run_local_battles`) and the
+   counterfactual replay driver. `Gen3Env` does not need it: it reads `battle2.team` directly. At
+   ladder play (`src/main/play.py`, a real server) there is no runner, `RLPlayer` supplies the
+   all-zero "unknown" block, and the policy — which never reads the key — runs unchanged.
+4. **The route RAISES on a missing key rather than skipping.** A silent skip reads exactly like a
+   route that learned nothing, which is the gen-12 dead-tail bug the seam exists to prevent. Every
+   caller that builds its own obs dict therefore owes the key: `lifecycle._run_roundtrip_test`
+   supplies the zero block, and `ProbeModel._pin` — the prober's one offline-forward seam —
+   REFUSES on such a checkpoint instead, because a V computed from the recorded observation vector
+   alone is V stripped of the privilege, a different quantity. The arm's V is the one the eval
+   traces RECORDED (computed with the key, on the bridge), which is what `cf_audit` and
+   `main.critic_gate` already read — both take V and P(win) from the npz, never from a re-forward.
+
 ## `WinProbHead`, `CfEvidentialHead` and the three v99 additions
 
 A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes

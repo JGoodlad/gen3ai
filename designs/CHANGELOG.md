@@ -8324,3 +8324,113 @@ launch, parametrized over the three interesting argvs. Plus `snapshot_ladder_tes
 planted HALF-symmetric row that must NOT be reused), `elo_row_contract_test.py` (+4, the
 writer→row→ladder join), `eval_sentinel_greedy_test.py` (+3, both halves of the switch) and
 `selfplay_callback_test.py` (+3, the stamp incl. the specialist case).
+
+---
+
+## v114 — `--value-true-team`: the PRIVILEGED (asymmetric) value channel (`gen3_value_true_team_v1`)
+
+2026-09-08. **Arm 5 of the critic ladder** (`designs/research_state/winprob_critic_ladder_2026-09-08.md`),
+built to answer a question the other four cannot: *how much of the win-prob critic's residual error
+is irreducible uncertainty about the opponent's team?* Arm A's head fails its primary bar (G1
+resolution 0.0452 [0.0331, 0.0615] against 0.0618) and is optimistic against its own Monte-Carlo
+continuation by +0.0965 [+0.0671, +0.1268]. That residual has a ceiling somewhere, and until this
+flag existed there was no way to measure it: the note's L1 audit found **no value path in the tree
+sees the opponent's true team**, because the model consumes one flat 2501-dim observation and
+`Gen3FeaturesExtractor` merely SPLITS it into `(pi_features, vf_features)` — `--value-entity-pool`
+and `--value-threat-inject`, whose names suggest otherwise, are routing choices over
+already-observed entities.
+
+**Default OFF, `family=CRITIC`, never in the production mirror.** A critic that needs privileged
+inputs is not the critic that ships — every downstream use we want (search leaf, distillation
+target, calibration instrument) is on the un-privileged net — so this is a CEILING PROBE and is
+declared as one. `checkargs` on the arm's argv prints `✓ every ARCH-surface key matches the
+production mirror (39 of 50 registry toggles are the ARCH surface; 8 critic readouts + 3
+non-structural rows are excluded by their own declaration)`: the surface key set did not grow, so no
+existing argv's verdict moved and turning the flag ON does not move one either.
+
+### What it carries, and where it enters
+
+A new Dict obs key `opp_true_team` `[6, POKEMON_FULL_DIM]` — the opponent's ACTUAL party (species,
+moves, item, ability, derived stats, current HP, status) in the observation's OWN per-mon layout,
+built by `agents.observation.true_team.build_true_team_block` through the SAME
+`PokemonEncoder.encode` the flat vector's opp slice uses, called with `is_own=True` against the
+OPPONENT's own battle view. That is the whole trick and the reason there is no second encoding to
+keep in step: from the opponent's side of the sim, every one of its mons is a fully-known own mon.
+Row order is `species num ascending`, the same canonical order `belief_labels.assign_hidden_to_slots`
+uses; slot position carries no meaning and the consumer pools permutation-invariantly.
+
+`TrueTeamValueReadout` (`src/agents/model/true_team_value.py`) slices the block with the SAME
+`slice_pokemon_categoricals` `ObsUnpack` uses, looks its categoricals up in the SHARED `Embeddings`
+tables, zeroes the embedding-id columns of the raw row (the manifest rule — a raw dex num must never
+reach a `Linear`; the column set is PROBED out of the slicer rather than restated, so a moved offset
+cannot make the two disagree), runs ONE shared per-mon MLP to `TTV_DIM`=64, pools with `TTV_K`=4
+learned queries under an explicit NaN-safe softmax that masks absent slots, and adds a **zero-init**
+`D_MODEL` projection into `value_pooled` through the `_value_pooled_routes` seam. The seam now has
+two members; the gradient-connectivity guard iterates it, so the new route was covered by
+construction on the day it was written — which is exactly what the seam's docstring said it was for.
+
+### Why vf-only is structural rather than a convention
+
+`ProjectionAssembler` returns `pi_combined` as a concat of the team pools, the refined active token,
+`non_matchup_rest` and (when built) the hidden-opp belief — and `vf_combined` **IS** `value_pooled`.
+So anything injected into `value_pooled` is unreachable from the policy at ANY weight, not merely at
+init. `true_team_value_test.py` asserts both directions on a real build: perturbing the privileged
+key at a large random weight leaves `pi` BIT-identical while `vf` moves, and a policy-only backward
+leaves the route's projection with no gradient at all.
+
+**It AUGMENTS rather than REPLACES the belief-keyed opp view on the value side**, deliberately.
+Replacing is the cleaner ceiling in the abstract and confounds two changes in practice: a null could
+then mean "privilege does not help" OR "the belief route was carrying the signal". Additive
+injection also leaves every existing value route bit-identical at init, and it is the only form the
+seam admits — additive injection changes no width, so route availability cannot mis-size
+`value_pre_norm`.
+
+### Presence follows the LOCAL sim, and nothing else
+
+`LocalBattleRunner` sets an `_opp_player` back-reference on both sides at attach time. That is the
+one place that knows both sides, so "the sim is local" and "the privileged key is available" become
+the same fact instead of two things a caller must keep in step — and it covers bridge TRAINING,
+bridge EVAL (`eval_callback`: workers play in-process via `run_local_battles`) and the
+counterfactual replay driver alike. `Gen3Env` does not need it: it reads `battle2.team` directly.
+At ladder play (`src/main/play.py`, a real server) there is no runner, `RLPlayer` supplies the
+all-zero "unknown" block — the encoder's own ABSENT-slot spelling — and the policy, which never
+reads the key, runs unchanged. `RLPlayer` decides by asking the loaded model's observation SPACE
+rather than a flag, because SB3's `preprocess_obs` iterates the space's keys and indexes the obs
+dict: a model whose space declares the key gets a `KeyError`, not a quiet skip.
+
+The route **RAISES on a missing key** rather than skipping, because a silent skip reads exactly like
+a route that learned nothing (the gen-12 dead-tail bug). Two callers build their own obs dicts and
+therefore owe the key: `lifecycle._run_roundtrip_test` supplies the zero block, and
+`ProbeModel._pin` — the prober's single offline-forward seam — REFUSES instead, since a V computed
+from the recorded observation vector alone is V *stripped of the privilege*, a different quantity
+that would then be charted against the un-privileged arms. The arm's V is the one the eval traces
+RECORDED, which is what `cf_audit` and `main.critic_gate` already read — both take V and P(win) from
+the npz rather than re-forwarding — so both critic meters read the arm unaffected.
+
+### Versioning
+
+`MODEL_CONFIG_VERSION` 113 → **114**, one STRUCTURAL bool `value_true_team` gated by a bool compare
+in `check_compatible` (the injection is additive, so no width change downstream could catch a
+flipped flag), with a migration defaulting a pre-v114 config to `False` — not a guess, since nothing
+could set it. **NO `ARCH_SIGNATURE` bump**, and the claim is precise: the 2501-dim observation
+VECTOR is unchanged (the privileged block rides a separate Dict key, the `win_target` /
+`belief_species` precedent), no existing module moves, and the readout is built LAST — so an OFF run
+on this code is bit-identical to the same run on v113 and **every existing checkpoint still
+resumes**. The design note predicted this would be fresh-run-only for every checkpoint; it is
+fresh-run-only only for the arm that turns it on.
+
+### Gates
+
+`agents/observation/true_team_test.py` (7: order, the absent-slot spelling, the active flag riding
+the MON not the row, truncation, an unmapped species, a per-mon encode failure degrading to one
+absent row rather than killing the rollout), `agents/model/true_team_value_test.py` (12: the probed
+id-column set against the slicer, permutation invariance, masking, the all-absent block staying
+finite, zero-init exactness, ON-at-init bit-identical to OFF, the missing-key raise, and the two
+policy-independence assertions), `agents/training/true_team_channel_integration_test.py` (6, `sim`:
+a real bridge battle proving the block carries agent2's WHOLE team, that it carries strictly more
+mons than the trainee has revealed, that a revealed mon's species-derived columns agree between the
+two views, that it carries an ITEM the trainee cannot see, `LocalBattleRunner` setting the
+back-reference on both sides, and `RLPlayer`'s two branches), plus `value_route_gradient_test.py`
+extended to cover the new route in the seam. Obs-build benchmark: unchanged, and structurally so —
+no file on the `encode` path is touched. `--debug --steps 10000 --value-true-team` trains to
+`Training complete` on the rust bridge and records `config_version 114` / `value_true_team true`.

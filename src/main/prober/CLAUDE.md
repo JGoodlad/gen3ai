@@ -629,6 +629,16 @@ impl-invariant. The two known divergences and the build/override path: `designs/
   exceptional one (measured: 79/79 runs). Any surface that loads a model should render its message
   — it is written to be read by a human, multi-line, and ends with the `git checkout` to run — and
   should NOT collapse it to "analysis failed". See the drift section above.
+- **A `--value-true-team` run REFUSES every model-loading view**, on purpose (v114,
+  `gen3_value_true_team_v1`). That arm's critic reads the opponent's TRUE party off an obs key the
+  recorded observation vector does not contain and cannot reconstruct, so a forward here would
+  return V *without* the privilege — a different quantity from the one the run trained, which would
+  then be charted against the un-privileged arms. `ProbeModel._pin` — the ONE seam every offline
+  forward on that class goes through — raises an `ArchDriftError` naming the situation. The arm's V
+  is the one the eval traces RECORDED (computed with the key, at eval, on the bridge):
+  `agents.training.cf_audit` and `main.critic_gate` both take V and P(win) from the npz rather than
+  re-forwarding, so both critic meters read the arm unaffected. Model-FREE commands (`scan`,
+  `triage`, `turns`, `falsify`, `calibration`, `loops`) work on such a run unchanged.
 - `models/` is gitignored and lives only in the **main checkout**, not in a
   worktree — point the prober at an absolute `models/...` path when running from
   a worktree.

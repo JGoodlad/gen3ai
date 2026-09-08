@@ -13,6 +13,7 @@ from agents.model.model_version import ModelVersion
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
 from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.training.eval_callback import request_forced_eval
+from agents.observation.true_team import TRUE_TEAM_KEY, TRUE_TEAM_SHAPE
 from main.exit_codes import TrainExitCode
 from main.launcher.ipc import send_event
 from main.train.run_io import _model_hparams, _write_latest_txt
@@ -134,6 +135,12 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
             "observation": torch.zeros(1, total_dim, device=dev),
             "action_mask": torch.ones(1, 11, dtype=torch.int8, device=dev),
         }
+        # gen3_value_true_team_v1: the privileged value route reads its own obs key and RAISES on
+        # a missing one (a silent skip is the gen-12 dead-tail bug). The round-trip smoke builds
+        # its own dict, so it owes the key — the all-zero block, which is exactly the "no
+        # privileged view" input the ladder path supplies.
+        if getattr(reloaded.policy.features_extractor, "true_team_value", None) is not None:
+            dummy_obs[TRUE_TEAM_KEY] = torch.zeros(1, *TRUE_TEAM_SHAPE, device=dev)
         with torch.no_grad():
             pi_features, vf_features = reloaded.policy.features_extractor(dummy_obs)
         assert pi_features.shape == (1, PROJECTION_DIM), (

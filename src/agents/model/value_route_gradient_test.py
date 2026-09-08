@@ -26,6 +26,8 @@ import torch
 
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+from agents.observation.constants import POKEMON_FULL_DIM, TEAM_SIZE
+from agents.observation.true_team import TRUE_TEAM_KEY
 
 _ALL_ROUTES_ON = dict(
     attend_unrevealed_opponents=True, move_belief_mode="revealed", move_prior_fusion=True,
@@ -38,10 +40,14 @@ _ALL_ROUTES_ON = dict(
     # claim — *every zero-init projection the critic depends on receives critic gradient* — stays
     # true of the whole critic surface rather than only of the seam.
     pair_value_route=True,
+    # gen3_value_true_team_v1 (v114): the PRIVILEGED route — the seam's second member, and the
+    # first whose input is not the shared observation. It is here for the reason this file states
+    # about itself: the guard's value is covering the NEXT route on the day it is written.
+    value_true_team=True,
 )
 # Flags that gate a value route (must stay in sync with _value_pooled_routes — pinned below by
 # the registry-coverage test, so a drift here is a failing test, not silent shrinkage).
-_ROUTE_FLAGS = ("value_entity_pool",)
+_ROUTE_FLAGS = ("value_entity_pool", "value_true_team")
 
 
 def _build(dist_critic: bool, seed=7, **extra):
@@ -58,10 +64,24 @@ def _build(dist_critic: bool, seed=7, **extra):
     return fe, layout
 
 
+def _obs(layout, batch):
+    """The obs dict every build in this file forwards on.
+
+    It carries the PRIVILEGED key unconditionally because `_ALL_ROUTES_ON` turns
+    `value_true_team` on for every build here, and that route RAISES on a missing key rather than
+    skipping — a silent skip is the exact failure mode this file exists to forbid. The values are
+    random floats in [0, 1); the categorical columns floor to id 0, which is all these
+    gradient/independence assertions need.
+    """
+    return {"observation": torch.rand(batch, layout["total_dim"]),
+            TRUE_TEAM_KEY: torch.rand(batch, TEAM_SIZE, POKEMON_FULL_DIM)}
+
+
 def _route_projs(fe):
     """The zero-init OUTPUT projection of every route the forward's registry yields."""
     projs = {
         "value_entity_pool": fe.value_entity_pool.out_proj,
+        "value_true_team": fe.true_team_value.out_proj,
     }
     for name, proj in projs.items():
         assert float(proj.weight.abs().max()) == 0.0, f"{name} must start zero-init"
@@ -70,7 +90,7 @@ def _route_projs(fe):
 
 def _registry_names(fe, layout):
     torch.manual_seed(11)
-    obs = {"observation": torch.rand(2, layout["total_dim"])}
+    obs = _obs(layout, 2)
     fe.eval()
     with torch.no_grad():
         fe(obs)   # populate the stashes the generator reads
@@ -96,7 +116,7 @@ def test_every_route_receives_critic_gradient(dist_critic):
     fe, layout = _build(dist_critic)
     fe.train()
     torch.manual_seed(11)
-    obs = {"observation": torch.rand(3, layout["total_dim"])}
+    obs = _obs(layout, 3)
     pi, vf = fe(obs)
     loss = fe.last_value_dist_logits.sum() if dist_critic else vf.sum()
     loss.backward()
@@ -118,7 +138,7 @@ def test_the_two_TOKEN_CONTENT_injections_also_receive_critic_gradient(dist_crit
     fe, layout = _build(dist_critic, **{"value_threat_inject": True})
     fe.train()
     torch.manual_seed(11)
-    pi, vf = fe({"observation": torch.rand(3, layout["total_dim"])})
+    pi, vf = fe(_obs(layout, 3))
     loss = fe.last_value_dist_logits.sum() if dist_critic else vf.sum()
     loss.backward()
     for name in ("value_threat_proj", "pair_value_proj"):
@@ -135,10 +155,11 @@ def test_every_value_route_flag_flows_through_the_registry():
     way (e.g. a new vf-tail concat) is exactly the wiring this guard exists to forbid."""
     fe, layout = _build(dist_critic=True)
     names = set(_registry_names(fe, layout))
-    assert names == {"value_entity_pool"}, names
+    assert names == {"value_entity_pool", "value_true_team"}, names
     # and the flag list this file parametrizes over covers every registry entry's flag
     for flag in _ROUTE_FLAGS:
-        assert getattr(fe, {"value_entity_pool": "value_entity_pool"}[flag]) is not None
+        assert getattr(fe, {"value_entity_pool": "value_entity_pool",
+                            "value_true_team": "true_team_value"}[flag]) is not None
     # The DELETED routes must stay deleted: a re-added attribute here means someone rebuilt a
     # condemned route without re-running the audit that condemned it.
     for gone in ("intent_value_reduce", "intent_threshold_value",
@@ -154,7 +175,7 @@ def test_routes_are_vf_only_at_any_weight():
     fe, layout = _build(dist_critic=True)
     fe.eval()
     torch.manual_seed(11)
-    obs = {"observation": torch.rand(3, layout["total_dim"])}
+    obs = _obs(layout, 3)
     with torch.no_grad():
         pi_zero, vf_zero = fe(obs)
         dist_zero = fe.last_value_dist_logits.clone()
@@ -172,7 +193,7 @@ def test_zero_init_makes_on_at_init_exact():
     see bit-identical inputs vs the routes-off build under the same seed."""
     fe_on, layout = _build(dist_critic=True)
     torch.manual_seed(11)
-    obs = {"observation": torch.rand(3, layout["total_dim"])}
+    obs = _obs(layout, 3)
     fe_on.eval()
     with torch.no_grad():
         fe_on(obs)

@@ -47,6 +47,14 @@ TRANSFORMER_FFN_DIM = 256
 UVR_K = 4
 UVR_DIM = 64
 _UVR_N_SOURCES = 3
+# gen3_value_true_team_v1 (v112, `--value-true-team`): the PRIVILEGED true-opponent-team value
+# route — the critic ladder's arm 5 CEILING PROBE. Six rows (the opponent's actual party, encoded
+# in the obs's own per-mon layout) projected to TTV_DIM and pooled by TTV_K learned queries, with a
+# zero-init projection to D_MODEL. Deliberately the SAME shape family as the entity pool above: the
+# arm asks what the critic could do with perfect team knowledge, and a differently-sized readout
+# would confound "more information" with "more capacity".
+TTV_K = 4
+TTV_DIM = 64
 # gen3_unified_value_readout_v2 (v82, `value_entity_pool_full`): +source 3 = the refined
 # GLOBAL token, +source 4 = the hidden-opp belief queries — the pool's COMPLETE row set (the
 # one successor for every condemnable vf route). A separate flag/shape so v80-table

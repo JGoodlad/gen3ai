@@ -528,6 +528,26 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "`requires` — it reads `value_pooled` and `stash.pointer_inputs`, both "
                    "unconditional.",
               family=Family.CRITIC),
+    ModelFlag("value_true_team", False, Tier.CLI, Klass.STRUCTURAL, 114,
+              "the PRIVILEGED true-opponent-team value route: the opponent's ACTUAL party, in the "
+              "obs's own per-mon layout, pooled into value_pooled — vf-only, zero-init",
+              note="Arm 5 of the critic ladder, a CEILING PROBE "
+                   "(designs/research_state/winprob_critic_ladder_2026-09-08.md L1). It is the "
+                   "ONLY route that adds INFORMATION rather than re-reading the shared 2501-dim "
+                   "obs: it consumes a training-and-eval-only Dict key, `opp_true_team`, emitted "
+                   "wherever the sim is LOCAL (Gen3Env from `battle2.team`; RLPlayer from its "
+                   "`_opp_player` back-reference, which only a LocalBattleRunner sets) and ABSENT "
+                   "at ladder play, where the zero block reads as 'unknown' and the value head is "
+                   "not consulted anyway. family=CRITIC for the reason the enum documents: this is "
+                   "exactly the quantity an experiment varies, it will never be production, and "
+                   "putting it on the ARCH surface would make the guard refuse the arm it exists "
+                   "to protect. vf-only is STRUCTURAL, not a convention — the route injects into "
+                   "`value_pooled`, which `ProjectionAssembler` gives to vf ALONE, so pi is "
+                   "bit-identical at ANY weight. No `requires`: it reads its own obs key and needs "
+                   "no other module, and it is deliberately NOT tied to `--critic winprob` — the "
+                   "scalar critic reads the same `value_pooled`, so a shaped-critic arm remains "
+                   "available as a control.",
+              family=Family.CRITIC),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

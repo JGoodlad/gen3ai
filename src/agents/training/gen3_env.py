@@ -20,6 +20,9 @@ from agents.observation.belief_labels import (
     build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, N_HP_TYPES_LABEL,
     build_item_labels, zero_item_labels,
 )
+from agents.observation.true_team import (
+    TRUE_TEAM_KEY, TRUE_TEAM_SHAPE, build_true_team_block, empty_true_team_block,
+)
 from agents.model.damage_tables import invert_nature_evs, _hp_typed_nums, HIDDEN_POWER_NUM
 from agents import gen3_data
 from agents.action.mask_generator import Gen3ActionMasker
@@ -74,6 +77,7 @@ class Gen3Env(SinglesEnv):
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off",
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
+                 emit_opp_true_team: bool = False,
                  emit_opp_intent_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_item_labels: bool = False,
                  emit_defensive_opportunity: bool = False,
@@ -163,6 +167,15 @@ class Gen3Env(SinglesEnv):
         # labels). Read ONLY by the win-prob aux loss; the model forward reads only obs["observation"].
         # Enabled by --win-prob-mode != none (threaded as emit_win_target from train_rl_agent).
         self._emit_win_target = emit_win_target
+        # PRIVILEGED TRUE-TEAM key (TRAINING+EVAL-only, gen3_value_true_team_v1): when on, the obs
+        # Dict carries `opp_true_team` [6, POKEMON_FULL_DIM] — the opponent's ACTUAL six mons in the
+        # obs's OWN per-mon layout, built from `battle2.team` (agent2's own view, where every
+        # Gen-3-hidden fact is known) through the SAME `PokemonEncoder.encode`. Read ONLY by the
+        # `TrueTeamValueReadout` value route, which injects into `value_pooled` — the tensor the
+        # assembler hands the VALUE head alone — so it provably cannot reach the policy. Enabled by
+        # --value-true-team (threaded as emit_opp_true_team from train_rl_agent). It is the critic
+        # ladder's arm-5 CEILING PROBE, not a shippable channel.
+        self._emit_opp_true_team = emit_opp_true_team
         # DEFENSIVE-EXPLORATION flag (TRAINING-ONLY, gen3_defensive_entropy_v1): when on, the obs Dict carries
         # `defensive_opportunity` [1] = 1.0 on decisions where the active mon has a PRODUCTIVE defensive option
         # (a legal HP-recovery move with HP to restore, OR a legal self/team status-cure with a status to
@@ -289,6 +302,15 @@ class Gen3Env(SinglesEnv):
             # placeholder), used by the win-prob loss to stratify P(win) skill by how decided the game
             # is (value lives in close games, |margin|≈0) + a material-baseline skill score.
             base_obs["win_margin"] = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
+        if self._emit_opp_true_team:
+            # gen3_value_true_team_v1: the opponent's TRUE party in the obs's own per-mon layout.
+            # The bounds are the per-mon block's own: it carries embedding NUMS (up to the species
+            # axis) alongside normalised scalars, exactly like the opp-team slice of the flat
+            # vector, so the Box is bounded by the widest of those axes rather than by 1.0.
+            base_obs[TRUE_TEAM_KEY] = spaces.Box(
+                low=0.0, high=float(max(self.observation_encoder.get_layout()["max_species"],
+                                        self.observation_encoder.get_layout()["max_moves"])),
+                shape=TRUE_TEAM_SHAPE, dtype=np.float32)
         if self._emit_defensive_opportunity:
             # gen3_defensive_entropy_v1: 1.0 = a productive defensive move (recovery/cure) is legal this
             # decision. A REAL per-step value; read ONLY by the state-conditioned entropy boost in the PPO loss.
@@ -752,12 +774,35 @@ class Gen3Env(SinglesEnv):
             # step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
             agent_obs["win_margin"] = np.array(
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
+        if self._emit_opp_true_team:
+            agent_obs[TRUE_TEAM_KEY] = self._true_team_block()
         if self._emit_defensive_opportunity:
             agent_obs["defensive_opportunity"] = np.array([self._defensive_opportunity()], dtype=np.float32)
         if self._emit_bait_opportunity:
             agent_obs["bait_opportunity"] = np.array([self._bait_opportunity()], dtype=np.float32)
         if self._emit_distill_mask:
             agent_obs["distill_mask"] = np.array([self._distill_mask()], dtype=np.float32)
+
+    def _true_team_block(self) -> np.ndarray:
+        """gen3_value_true_team_v1: the opponent's TRUE party, in the obs's own per-mon layout.
+
+        Same privileged source as every belief label — `battle2.team`, agent2's OWN battle view, so
+        item / ability / EV spread / the fourth move / the Hidden Power type are all populated. The
+        block is built by the SAME `PokemonEncoder.encode` the flat vector's opp slice uses, called
+        with `is_own=True` against agent2's own battle: from that side every one of its mons IS a
+        fully-known own mon, so this is not a second encoding of the same facts.
+
+        All-zero (`species_known == 0` on every row — the encoder's own ABSENT-slot spelling) until
+        both battles exist, which is also what a consumer sees when no privileged view is available
+        at all (ladder play). Read ONLY by the value route.
+        """
+        b2 = getattr(self, "battle2", None)
+        if b2 is None:
+            return empty_true_team_block()
+        return build_true_team_block(
+            list(b2.team.values()), b2, self.observation_encoder.pokemon_encoder,
+            species_to_num=self._species_num,
+        )
 
     def _distill_mask(self) -> float:
         """gen3_exploiter_distill_v1 (N teachers): the INTEGER team-id of the trainee's CURRENT team among
@@ -872,6 +917,7 @@ class Gen3Env(SinglesEnv):
                     or self._emit_defensive_opportunity
                     or self._emit_bait_opportunity
                     or self._emit_distill_mask
+                    or self._emit_opp_true_team
                     or self._emit_opp_intent_labels):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
@@ -898,6 +944,7 @@ class Gen3Env(SinglesEnv):
                     or self._emit_defensive_opportunity
                     or self._emit_bait_opportunity
                     or self._emit_distill_mask
+                    or self._emit_opp_true_team
                     or self._emit_opp_intent_labels):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)

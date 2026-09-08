@@ -605,6 +605,17 @@ class ModelVersionFields:
     # choices, which is the starvation trap this head exists to avoid.
     q_winprob_coef: float = 0.0
     q_winprob_onpolicy_coef: float = 0.0
+    # ---- gen3_value_true_team_v1 (config v114) — THE PRIVILEGED (TRUE-TEAM) VALUE CHANNEL ------
+    # v114 STRUCTURAL bool (the value_entity_pool pattern): the ONLY value route that adds
+    # INFORMATION rather than re-reading the shared 2501-dim obs. ON builds a
+    # `TrueTeamValueReadout` whose params ARE the state_dict delta and injects its zero-init
+    # output into `value_pooled`; OFF builds nothing and is byte-for-byte the baseline. A bool
+    # compare in check_compatible is the gate — the route writes into a tensor whose WIDTH never
+    # changes (additive injection), so a flipped flag would produce no shape error anywhere.
+    # NO ARCH_SIGNATURE bump: the observation VECTOR is unchanged (the privileged block rides a
+    # separate Dict key), no existing module moves, and the readout is built LAST, so an OFF run
+    # on this code is bit-identical to the same run on v113.
+    value_true_team: bool = False
     # ---- gen3_winprob_critic_mode_v1 (config v109) — WHICH READOUT IS THE CRITIC ---------------
     # v109 STRUCTURAL string (the win_prob_mode pattern): 'shaped' (the default, and every
     # generation through gen-16) routes `policy._critic_value` to the scalar `value_net` — or to

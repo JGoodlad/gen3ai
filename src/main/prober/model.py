@@ -352,6 +352,17 @@ class ProbeModel:
                  pokemon_encoder=None, our_team_off: int = 0, opp_team_off: int = 0,
                  turn_delta_encoder=None, dropped_kwargs=()) -> None:
         self._policy = policy
+        # gen3_value_true_team_v1: a checkpoint trained with `--value-true-team` has a PRIVILEGED
+        # value route whose input — the opponent's true party — is NOT in the recorded observation
+        # vector. Every forward on this class rebuilds its obs from that vector alone, so a V
+        # computed here would be V WITHOUT the privilege: a different quantity from the one the
+        # run trained and the one the eval traces recorded, and one that would compare silently
+        # against the un-privileged arms. REFUSE, and name where the real number lives — the
+        # trace's own `value` / `win_probs`, which `cf_audit` and `main.critic_gate` already read
+        # (they take V from the npz, never from a re-forward, so BOTH critic meters read this arm
+        # unaffected). Model-FREE prober commands are unaffected.
+        self._privileged_value = bool(getattr(
+            getattr(policy, "features_extractor", None), "value_true_team", False))
         self.offsets = offsets
         # Extractor kwargs the CURRENT code no longer accepts, dropped so the load could proceed
         # (see the module docstring). NON-EMPTY means the rebuilt extractor is not bit-identical to
@@ -368,6 +379,31 @@ class ProbeModel:
         self._opp_team_off = opp_team_off
         # For decoding the most-recent TurnDelta (crit + couldn't-move reason) from the history block.
         self._turn_delta_encoder = turn_delta_encoder
+
+    def _pin(self, ot, mt):
+        """THE policy-input dict for every offline forward on this class — one seam, so the
+        privileged-channel refusal below cannot be reached from fifteen places and missed at one.
+
+        `gen3_value_true_team_v1`: a `--value-true-team` checkpoint's value path reads the
+        opponent's TRUE party off an obs key that the recorded observation vector does not carry
+        and cannot reconstruct. Feeding it the all-zero 'unknown' block would return a number that
+        LOOKS like V and is a different quantity — V stripped of exactly the privilege the arm
+        exists to measure — and it would then be charted against the un-privileged arms. So this
+        refuses, and names where the arm's real V lives.
+        """
+        if self._privileged_value:
+            raise ArchDriftError(
+                "this checkpoint was trained with --value-true-team (gen3_value_true_team_v1): its "
+                "value path reads the opponent's TRUE team off the `opp_true_team` obs key, which "
+                "the recorded observation vector does not contain and cannot reconstruct. A "
+                "forward here would return V WITHOUT the privilege — a different quantity from the "
+                "one this run trained.\n"
+                "The arm's V is the one the EVAL TRACES recorded (computed with the key, at eval, "
+                "on the bridge): read it with `python -m agents.training.cf_audit` and "
+                "`python -m main.critic_gate`, both of which take V and P(win) from the npz rather "
+                "than re-forwarding. Model-FREE prober commands (scan, triage, turns, falsify, "
+                "calibration) work on this run unchanged.")
+        return {"observation": ot, "action_mask": mt}
 
     @classmethod
     def load(cls, ckpt_path: str, device: str = "cpu") -> "ProbeModel":
@@ -495,7 +531,7 @@ class ProbeModel:
 
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
-        d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
+        d = self._policy.get_distribution(self._pin(ot, mt))
         lg = d.distribution.logits.clone()
         masked = torch.where(mt.bool(), lg, torch.full_like(lg, -1e8))
         probs = torch.softmax(masked, 1)[0].detach().numpy()
@@ -514,7 +550,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs)
         mt = torch.as_tensor(np.asarray(masks))
         with torch.no_grad():
-            d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
+            d = self._policy.get_distribution(self._pin(ot, mt))
             lg = d.distribution.logits
             masked = torch.where(mt.bool(), lg, torch.full_like(lg, -1e8))
             probs = torch.softmax(masked, 1).cpu().numpy()
@@ -534,7 +570,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs)
         mt = torch.as_tensor(np.asarray(masks))
         with torch.no_grad():
-            v = self._policy.predict_values({"observation": ot, "action_mask": mt})
+            v = self._policy.predict_values(self._pin(ot, mt))
         return v.reshape(-1).cpu().numpy()
 
     def _expected_obs_dim(self) -> "int | None":
@@ -563,7 +599,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            v = self._policy.predict_values({"observation": ot, "action_mask": mt})
+            v = self._policy.predict_values(self._pin(ot, mt))
         return float(v.reshape(-1)[0])
 
     def popart_stats(self) -> "tuple[float, float] | None":
@@ -596,7 +632,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         logits = extractor.last_value_dist_logits
         if logits is None:
             return None
@@ -616,7 +652,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         logits = extractor.last_win_prob_logits
         if logits is None:
             return None
@@ -649,7 +685,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         logits = extractor.last_q_winprob_logits
         if logits is None:
             return None
@@ -684,7 +720,7 @@ class ProbeModel:
         else:
             mt = torch.as_tensor(np.asarray(masks))
         with torch.no_grad():
-            feats = self._policy.extract_features({"observation": ot, "action_mask": mt})
+            feats = self._policy.extract_features(self._pin(ot, mt))
         vf = feats[1] if isinstance(feats, tuple) and len(feats) == 2 else None
         return getattr(getattr(ex, "stash", None), "value_pooled", None), vf
 
@@ -860,7 +896,7 @@ class ProbeModel:
 
         ot = torch.as_tensor(obs).unsqueeze(0).requires_grad_(True)
         mt = torch.as_tensor(mask).unsqueeze(0)
-        d = self._policy.get_distribution({"observation": ot, "action_mask": mt})
+        d = self._policy.get_distribution(self._pin(ot, mt))
         d.distribution.logits[0, action_idx].backward()
         return ot.grad[0].abs().numpy()
 
@@ -877,7 +913,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            pi, vf = self._policy.extract_features({"observation": ot, "action_mask": mt})
+            pi, vf = self._policy.extract_features(self._pin(ot, mt))
         return {"pi": pi[0].detach().numpy(), "vf": vf[0].detach().numpy()}
 
     def belief(self, obs: np.ndarray, mask: np.ndarray):
@@ -895,7 +931,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         logits = extractor.last_belief_logits
         bmask = extractor.last_opp_believed_mask
         if logits is None or bmask is None or "species" not in logits:
@@ -928,7 +964,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         raw = op.last_raw_block                              # the op stashes on ITSELF, not the extractor
         if raw is None:
             return None
@@ -998,7 +1034,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         logits = extractor.last_move_belief_logits
         if logits is None:
             return None
@@ -1049,7 +1085,7 @@ class ProbeModel:
         ot = torch.as_tensor(obs).unsqueeze(0)
         mt = torch.as_tensor(mask).unsqueeze(0)
         with torch.no_grad():
-            self._policy.extract_features({"observation": ot, "action_mask": mt})
+            self._policy.extract_features(self._pin(ot, mt))
         sb = extractor.last_spread_belief
         if sb is None:
             return None
@@ -1086,6 +1122,6 @@ class ProbeModel:
 
         ot = torch.as_tensor(obs).unsqueeze(0).requires_grad_(True)
         mt = torch.as_tensor(mask).unsqueeze(0)
-        v = self._policy.predict_values({"observation": ot, "action_mask": mt})
+        v = self._policy.predict_values(self._pin(ot, mt))
         v.reshape(-1)[0].backward()
         return ot.grad[0].abs().numpy()

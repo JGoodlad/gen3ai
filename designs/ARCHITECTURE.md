@@ -390,13 +390,32 @@ steps, while `value_threat_proj` (the one `value_pooled` route) trained to 0.117
 gradient-connectivity guard (`value_route_gradient_test.py`) backprops the critic through every
 registered route each suite run, under BOTH critic parameterizations.
 
-**The seam has ONE member** (v96 `gen3_critic_route_wave_v1`). Four of its five original routes
-were deleted on measured dependence against a 0.39 dV bar: `intent_value_reduce` 0.3176 and
-`value_clock` 0.2169 (both re-audited at 2× sample first), `intent_threshold`'s p_KO vf half
-0.155/0.136, and `value_intent` 0.156. `value_intent`'s **re-entry condition survives its
-deletion**: any future α/β-to-critic proposal passes the C4-style offline gate FIRST (ledger C6 —
-the delivery line is EXHAUSTED). The seam itself is kept generic at one entry because its value is
-covering the NEXT route on the day it is written.
+**The seam has TWO members** — `value_entity_pool` (production, below) and, since v114,
+`value_true_team`, the PRIVILEGED route (`gen3_value_true_team_v1`, `--value-true-team`, **OFF in
+production and never in the mirror**). It is the only route in the tree whose input is not the
+shared 2501-dim observation: it reads the opponent's ACTUAL party — species, moves, item, ability,
+derived stats, current HP and status — off a training-and-eval-only Dict key `opp_true_team`,
+encoded in the obs's OWN per-mon layout by the SAME `PokemonEncoder.encode`, and pools six rows
+through a shared per-mon MLP and `TTV_K`=4 learned queries over `TTV_DIM`=64 into a zero-init
+`D_MODEL` injection. It is the critic ladder's **arm-5 CEILING PROBE** — "how much of the win-prob
+critic's residual error is irreducible uncertainty about the opponent's team?" — and deliberately
+not a shippable channel: the critic that ships is the un-privileged one. The key is emitted
+wherever the sim is LOCAL (`Gen3Env` from `battle2.team`; `RLPlayer` from the `_opp_player`
+back-reference that `LocalBattleRunner` sets, which is the transport for bridge training, bridge
+eval and the counterfactual replay driver alike) and is ABSENT at ladder play, where `RLPlayer`
+supplies the all-zero "unknown" block instead and the policy — which never reads the key — runs
+unchanged. `family=CRITIC` in the flag registry, so it is excluded from the ARCH surface by its own
+declaration and turning it on moves no surface key. Offline prober forwards REFUSE on such a
+checkpoint (`ProbeModel._pin`) rather than return a V stripped of the privilege; the arm's V is the
+one the eval traces recorded, which is what `cf_audit` and `main.critic_gate` already read.
+
+**Four of the seam's five original routes were deleted** (v96 `gen3_critic_route_wave_v1`), on
+measured dependence against a 0.39 dV bar: `intent_value_reduce` 0.3176 and `value_clock` 0.2169
+(both re-audited at 2× sample first), `intent_threshold`'s p_KO vf half 0.155/0.136, and
+`value_intent` 0.156. `value_intent`'s **re-entry condition survives its deletion**: any future
+α/β-to-critic proposal passes the C4-style offline gate FIRST (ledger C6 — the delivery line is
+EXHAUSTED). The seam is kept generic because its value is covering the NEXT route on the day it is
+written — which is exactly what it did for the privileged route above.
 
 **ON in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3 T3-DELIVER of
 `design_unified_belief.md` §3). ONE attention pool over the critic's entity-row set (the 12

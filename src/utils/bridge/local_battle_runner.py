@@ -247,6 +247,14 @@ class _LocalBattleRunner:
         # with start_listening=False so no websocket was ever opened.
         self.c1 = self._attach(self.p1, "p1")
         self.c2 = self._attach(self.p2, "p2")
+        # gen3_value_true_team_v1: the two players are IN THIS PROCESS, which is the whole
+        # precondition for a privileged view of the other side's team. The back-reference is set
+        # here, at the one place that knows both sides, so "the sim is local" and "the privileged
+        # key is available" are the SAME fact rather than two things a caller must keep in step.
+        # A real-server player (src/main/play.py) never reaches this code, so at ladder play the
+        # attribute is absent and every reader falls back to the all-zero 'unknown' block.
+        self.p1._opp_player = self.p2
+        self.p2._opp_player = self.p1
         if concurrency <= 1:
             # Sequential path — what all the fuzz suites, the parity test and (at the default
             # --eval-concurrency-per-worker 1) eval itself exercise. Bounded by the IDLE gap, so a

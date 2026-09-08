@@ -222,7 +222,17 @@ from typing import Any, Dict
 #   ~100 s per cycle at 60 — which is what the same commit moves off the training step) and its
 #   SUPPLY (the crater pool a cycle's candidates are drawn from). A pre-v113 config defaults to 60,
 #   which is not a guess: no run could set anything else, because nothing could set it.
-MODEL_CONFIG_VERSION = 113
+# v114 (gen3_value_true_team_v1): `value_true_team` — the PRIVILEGED (true-opponent-team) VALUE
+#   route, arm 5 of the critic ladder (designs/research_state/winprob_critic_ladder_2026-09-08.md).
+#   The value_entity_pool mould: STRUCTURAL, recorded, and gated by a bool compare in
+#   check_compatible because the injection is ADDITIVE into `value_pooled` and therefore changes no
+#   width that a shape error could catch. NO ARCH_SIGNATURE bump, and that is a claim worth making
+#   precisely: the 2501-dim observation VECTOR is unchanged (the privileged block rides a SEPARATE
+#   Dict key, `opp_true_team`, the win_target/belief_species precedent), no existing module moves,
+#   and the readout is built LAST — so an OFF run on this code is bit-identical to the same run on
+#   v113 and every existing checkpoint still resumes. A pre-v114 config defaults to False, which is
+#   not a guess: no run could set anything else, because nothing could set it.
+MODEL_CONFIG_VERSION = 114
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

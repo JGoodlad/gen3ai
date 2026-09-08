@@ -102,6 +102,25 @@ def add_value_head_flags(parser: argparse.ArgumentParser) -> None:
                              "deliberately no 'shaping' value, because a per-action readout "
                              "carrying a counterfactual label is a larger leak surface than a "
                              "per-state one and trunk exposure owes its own gate.")
+    # --- THE PRIVILEGED (TRUE-TEAM) VALUE CHANNEL (gen3_value_true_team_v1, v114) — arm 5 of the
+    # critic ladder, a CEILING PROBE. Every other value route re-reads the SAME observation both
+    # heads consume; this one adds INFORMATION the policy never sees, so it measures how much of
+    # the win-prob critic's residual error is irreducible uncertainty about the opponent's team.
+    parser.add_argument("--value-true-team", "--value_true_team", dest="value_true_team",
+                        action=BoolFlag, default=None,
+                        help="BUILD the PRIVILEGED true-opponent-team value route: the "
+                             "opponent's ACTUAL six mons (species/moves/item/ability/stats/HP/"
+                             "status), encoded in the obs's own per-mon layout on a "
+                             "training-and-eval-only Dict key `opp_true_team`, pooled by K "
+                             "learned queries and injected into `value_pooled` through a "
+                             "ZERO-INIT projection. vf-ONLY and provably so: `value_pooled` is "
+                             "what the assembler hands the VALUE head alone, so pi is "
+                             "bit-identical at any weight. The key is emitted wherever the sim is "
+                             "LOCAL (training envs and bridge eval) and is ABSENT at ladder play, "
+                             "where the route reads an all-zero 'unknown' block and the value "
+                             "head is not consulted. A CEILING PROBE, not a shippable feature — "
+                             "the critic that ships is the un-privileged one. STRUCTURAL and "
+                             "version-gated; OFF (default) builds nothing.")
     parser.add_argument("--q-winprob-coef", "--q_winprob_coef", dest="q_winprob_coef",
                         type=float, default=None,
                         help="Weight on the per-action COUNTERFACTUAL likelihood: the masked "

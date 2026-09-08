@@ -472,6 +472,28 @@ announcement and every value-side flag below — is in
 | `--td-aux-coef` | `0.0` | the Bellman identity as an explicit loss over CONTIGUOUS pairs the PPO permutation destroys. 🚨 **Pre-registered band 1.0–3.0; `λ ≤ 0.1` measured significantly WORSE than control** — the small-coef regime is to be avoided, not treated as "a bit of the effect". Episode boundaries DROP the pair, never zero it |
 | `--value-dist-mode` / `--value-dist-coef` | `none` / `0.0` | HL-Gauss categorical readout off `value_pooled`, **interpretability only** — ledger K1 killed it as a win-rate lever. Validate PIT ≈ uniform, never win rate. REFUSED under `winprob` |
 
+## The PRIVILEGED true-team value channel (`--value-true-team`)
+
+`gen3_value_true_team_v1` (v114), the critic ladder's **arm-5 CEILING PROBE**
+(`designs/research_state/winprob_critic_ladder_2026-09-08.md` §L1): how much of the win-prob
+critic's residual error is irreducible uncertainty about the opponent's team? It is the only
+channel in the tree that gives the network information the observation does not already carry.
+
+The plumbing is the belief labels' exactly. `Gen3Env` declares ONE more training-only obs key,
+`opp_true_team` `[6, POKEMON_FULL_DIM]`, and fills it from **`battle2.team`** — agent2's own battle
+view, the same privileged source `belief_species` / `belief_spread` / `item_label` / `hp_type_label`
+already read — through `agents.observation.true_team.build_true_team_block`, which calls the SAME
+`PokemonEncoder.encode` the flat vector's opp slice uses. Unlike those, this key is **not a label**:
+it enters the FORWARD, on the value side only, via `TrueTeamValueReadout`'s zero-init injection into
+`value_pooled` (`pi_combined` never contains `value_pooled`, so `pi` is bit-identical at any
+weight). It must therefore also be present at EVAL, or the arm's own meters would read a V the run
+never trained — `RLPlayer` emits it from the `_opp_player` back-reference `LocalBattleRunner` sets,
+which is the transport for bridge training, bridge eval and the counterfactual replay driver. At
+ladder play there is no runner and the all-zero "unknown" block goes instead.
+
+Model half + the four contracts (vf-only, augment-not-replace, presence-follows-the-local-sim,
+raise-not-skip): [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
+
 ## The win-probability head (`--win-prob-mode` / `--win-prob-coef`) and its two PBRS routes
 
 A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, back-filled onto every

@@ -32,6 +32,7 @@ from agents.model.pair_outcome import pair_alpha, reduce_pair_in, reduce_pair_in
 from agents.model.pointer_head import _request_order_move_tokens
 from agents.model.team_transformer import _event_reference_cells
 from agents.observation.constants import POKEMON_PROTECT_OFFSET, TEAM_SIZE
+from agents.observation.true_team import TRUE_TEAM_KEY
 
 from agents.model.damage_op import _OUT_SEC_COLS as _OSC
 _OUT_SEC_FLINCH_COL = _OSC.index("flinch")   # gen3_intent_conditional_v1: fails at import if dropped
@@ -708,7 +709,7 @@ class ExtractorForward(ExtractorApi):
         # ============================================================================
         for _route_name, _contrib in self._value_pooled_routes(ctx, our_team_out,
                                                                their_team_out, belief,
-                                                               damage_block):
+                                                               damage_block, obs):
             value_pooled = value_pooled + _contrib
         # Read-only stash of the value-CLS pool (the critic's whole-board "who's winning" summary, the
         # 128-dim FitNets HINT layer). Consumed ONLY by the FitNets value-feature distillation
@@ -765,7 +766,8 @@ class ExtractorForward(ExtractorApi):
 
     def _value_pooled_routes(self, ctx: ExtractorContext, our_team_out: torch.Tensor,
                              their_team_out: torch.Tensor, belief: Optional[torch.Tensor],
-                             damage_block: Optional[torch.Tensor]
+                             damage_block: Optional[torch.Tensor],
+                             obs: Optional[Dict[str, torch.Tensor]] = None
                              ) -> Iterator[Tuple[str, torch.Tensor]]:
         """Yield `(name, [B, D_MODEL] contribution)` for every enabled value route
         (gen3_value_pooled_routes_v1). THE route registry: the gradient-connectivity guard
@@ -794,3 +796,22 @@ class ExtractorForward(ExtractorApi):
                     _uvr_kw["belief_rows"] = belief.view(ctx.batch_size, -1, D_MODEL)
             yield "value_entity_pool", self.value_entity_pool(
                 our_team_out, their_team_out, ctx.all_fainted, _op_rows, _op_alive, **_uvr_kw)
+        # gen3_value_true_team_v1 (v114) — arm 5 of the critic ladder, the PRIVILEGED route. It is
+        # the one member of this seam whose input does NOT come from the shared observation: it
+        # reads the training-and-eval-only `opp_true_team` Dict key, the opponent's ACTUAL party in
+        # the obs's own per-mon layout. Everything else about it is the seam's standard contract —
+        # additive into `value_pooled` (so vf-only at ANY weight, by the assembler's construction),
+        # zero-init output projection, and a LOUD raise rather than a silent skip when it is built
+        # and its input is missing.
+        if self.true_team_value is not None:
+            _tt = obs.get(TRUE_TEAM_KEY) if obs is not None else None
+            if _tt is None:
+                raise RuntimeError(
+                    f"value_true_team is ON but this forward received no {TRUE_TEAM_KEY!r} obs "
+                    "key. Every path that can reach a run with this flag supplies the key — "
+                    "`Gen3Env` from `battle2.team`, `RLPlayer` from its `_opp_player` "
+                    "back-reference, and BOTH fall back to an all-zero 'unknown' block rather "
+                    "than omitting it — so an absent key means the caller built its own obs dict "
+                    "and forgot. A silent skip would read exactly like a route that learned "
+                    "nothing, which is the gen-12 dead-tail bug this seam exists to prevent.")
+            yield "value_true_team", self.true_team_value(_tt, self.embeddings)
