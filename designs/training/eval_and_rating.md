@@ -230,7 +230,7 @@ was decided against. G1 and G4 are unchanged.
 
 `PerOpponentEvalCallback` (non-self-play path) does **not** eval in-process. On each
 scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-workers`
-(default 3) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
+(default 5) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
 shared pool, load the **frozen** snapshot, and play against the shared Showdown server (or the
 in-process bridge) **without pausing training**. **The trainee's eval teambuilder follows the
 run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `eval_worker._build_trainee_tb`;

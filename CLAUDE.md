@@ -162,7 +162,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Five static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Six static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -171,6 +171,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 | `src/file_size_gate_test.py` | >2,000 lines FAILS; 1,000–2,000 reported. **The allowlist is EMPTY — a new entry is not a legal move; decompose it** | `GEN3AI_SKIP_SIZE_GATE=1` |
 | `src/claude_md_freshness_gate_test.py` | every repo-relative path and every `--flag` in a `CLAUDE.md` resolves | `GEN3AI_SKIP_CLAUDE_MD_GATE=1` |
 | `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` / `mod.x = stub` target under `src/**/*_test.py` is a symbol the code under test actually READS — **a stub that stubs nothing FAILS**. **The allowlist is EMPTY**; fix at the source | `GEN3AI_SKIP_STUB_GATE=1` |
+| `src/mode_flag_doc_gate_test.py` | every MODE-flag value `designs/ARCHITECTURE.md`'s PROSE states equals `designs/production_config.json` (read via `agents.training.baselines.production_config()`), and every key the mirror marks INERT is called INERT. The (doc pattern → key) table is DECLARED, so a renamed key FAILS instead of going quiet | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |
 
 A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation.
 

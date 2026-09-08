@@ -26,11 +26,16 @@ answer is the tool:
 
 ```bash
 cd src/rust_sim/harness && SCAN_UNIVERSE=1 node scan_move_coverage.js   # exits non-zero if any MISMODELED
-cd src/rust_sim/harness && node scan_move_coverage.js                   # the 722-team pool report
+cd src/rust_sim/harness && node scan_move_coverage.js                   # the 762-team pool report
 ```
 
-**Measured 2026-08-23: 369 gen3-legal moves → 309 MODELED · 60 FAIL-LOUD · 0 MISMODELED**, pool
-722/722 fully engine-playable. For scale, the ROUND-40 entry says 281/88 and ROUND 44 says 286/83 —
+**Measured 2026-08-23, re-run 2026-09-07: 369 gen3-legal moves → 309 MODELED · 60 FAIL-LOUD ·
+0 MISMODELED**, pool **762/762** fully engine-playable (813 `.txt` files, 51 validate-fail — the
+count MOVES as the pool grows, and it read 722/722 when the pool was 40 teams smaller). ⚠️ **This
+is NOT the root `CLAUDE.md`'s 719-team pool and the two must not be "reconciled".** 762 is what
+`Teams.import` + `TeamValidator('gen3ou')` accept out of `data/teams/*.txt`; **719** is what
+`utils.team_loader.TeamLoader.get_all_teams()` returns to TRAINING (72 sample + 647 other,
+measured 2026-09-07). Different filters, both current. For scale, the ROUND-40 entry says 281/88 and ROUND 44 says 286/83 —
 both were true when written. **The invariant is the load-bearing claim, not the split:** 0
 MISMODELED is what makes an unmodeled move a loud construction failure rather than a silent
 desync, and it has held under every round separately and combined. Re-run after admitting any move
@@ -306,11 +311,25 @@ purely so this readout can name it. **Every other name (`choicelock`, `perishson
 right; `replay_impl_parity` prints a `pre_state:nonempty-volatiles` count on every run precisely so
 an all-empty record set cannot be mistaken for coverage.
 
-**STILL NEEDED before this can replace node in `better_line`** (all Python-side, owned elsewhere):
-`utils/bridge/search_session.py` must gain an impl switch that spawns this binary, and the
-`search_clone_parity_fuzz_test` must be run with it. Note the search teacher's OTHER blocker is
-unchanged and unrelated: `--search-teacher` needs the sim's OWN byte-identical `input_log`, which
-the rust record renders replay-EQUIVALENT rather than byte-identical.
+**IT ALREADY REPLACES node in `better_line`.** This paragraph used to list three things as STILL
+NEEDED and every one of them had already been done — *a note that outlived its own fix*, the exact
+class this file polices elsewhere (corrected 2026-09-07, verified against the code named here):
+
+- `utils/bridge/search_session.py` **has** the impl switch — `SearchSession(..., impl="node")`
+  selects the child through `search_driver_spawn_argv(impl)`, and `"rust"` spawns this binary.
+- `search_clone_parity_fuzz_test` **takes** `--impl rust`, documented in its own header, plus an
+  independent `--record-impl` so a record made by one engine is replayed on the other.
+- The search TEACHER's `input_log` blocker is **gone, and its stated reason was FALSE.** Nothing
+  reads the record's committed-choice lines; the only readers (`replay_kernels.js::writeStart`,
+  `ReconstructionRecord.start_options()` / `.players()`) touch the `>start` / `>player` lines,
+  which the rust record renders exactly. `main/train/config.py` records that finding where the
+  guard used to be and threads `SearchTeacherCallback(impl=args.bridge_impl)` instead, so a rust
+  run's teacher no longer silently falls back to node.
+
+**What is genuinely NOT gated is the COMPOSITION**: every leg runs on rust (better_line node≡rust
+candidate values bit-identical · `search_clone_parity` · the counterfactual confirm leg), but a
+full multi-cycle teacher run end-to-end on rust has never been done. `--use-bridge=node` is the
+fallback if a cycle misbehaves.
 
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
 
@@ -574,9 +593,10 @@ capstone drives BOTH engines over **REAL Showdown-export teams** for **complete 
 game-end**, asserting per-decision state + status + boosts + confusion + running PRNG seed + winner
 **bit-for-bit**. It is the union of every prior layer exercised on production data.
 
-- **The generator** `harness/gen_e2e_fuzz.js` loads all 770 `data/teams/*.txt` (the sample/ +
-  others/ pools), imports each with the real `Teams.import`, **validates it under gen3ou** (skips
-  rejects/import-fails → 719 valid), and packs it (the EXACT bytes `team::unpack` ingests). From a
+- **The generator** `harness/gen_e2e_fuzz.js` GLOBS `data/teams/*.txt` (the sample/ + others/
+  pools) — 813 files as of 2026-09-07, 770 when the committed golden was generated — imports each
+  with the real `Teams.import`, **validates it under gen3ou** (skips rejects/import-fails: 762
+  valid today, 719 then), and packs it (the EXACT bytes `team::unpack` ingests). From a
   fixed **`MASTER_SEED`** it pairs distinct teams + a battle seed, and at EACH decision reads the sim
   request and picks a RANDOM legal choice from a SEPARATE seeded **choice-RNG** (mulberry32, recorded
   via `MASTER_SEED` so a failing battle re-runs deterministically) — RESTRICTED to mechanics the port
@@ -1786,7 +1806,7 @@ NEITHER is the training/ladder surface:
 
 | mode | on-surface? | diverse? |
 |---|---|---|
-| `pool` | **yes** — the 722 real gen3ou teams | **no**: a FIXED human-built set from a narrow meta, and the committed capstone samples only 220 battles of it |
+| `pool` | **yes** — the 762 real gen3ou teams | **no**: a FIXED human-built set from a narrow meta, and the committed capstone samples only 220 battles of it |
 | `randbats` | **no** — non-L100 levels, curated movesets, near-uniform items | yes |
 | **`ourandom`** | **yes** | **yes** |
 
@@ -1801,7 +1821,7 @@ and it is why a gen3ou-native random generator is worth having.
 (the species×species joint, so teams are recognisable CORES not six unrelated mons) ·
 `gen3_move_priors.json` / `gen3_item_priors.json` / `gen3_ability_priors.json` /
 `gen3_spread_priors.json`. Deliberately NOT `data/teams/gen3_species_priors.json` — that is
-POOL-derived, and the whole point is independence from the 722.
+POOL-derived, and the whole point is independence from the pool.
 
 **LEGALITY IS SHOWDOWN'S VERDICT, NOT A REIMPLEMENTATION.** Every generated team goes through the
 real `TeamValidator('gen3ou')`, so the banlist and every team-building clause are enforced by the

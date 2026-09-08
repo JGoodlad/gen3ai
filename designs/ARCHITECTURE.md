@@ -268,7 +268,8 @@ The concrete steps:
    ACTIVE mon's row, bench rows zero (the §6-audited entity home; the global-token/projection
    routes remain — additive delivery, pinned by `e2_ctx_injection_test.py`). Stashes
    `last_move_tokens` `[B,12,4,32]` (sorted-by-id) for the seats and the pointer head.
-3. **`MoveBelief`** (T0) — reads the opp **role** tokens, predicts each opp slot's moveset,
+3. **`MoveBelief`** (T0, `move_belief_mode` = `"both"` — every opp slot, revealed and hidden)
+   — reads the opp **role** tokens, predicts each opp slot's moveset,
    fuses the Smogon log-odds prior, pins revealed moves, and reinjects the soft-embedded moveset
    into the opp role tokens. Stash: `last_move_belief_logits` `[B,6,400]`.
    The prior buffer `[n_species, n_moves]` is **learnset-gated unconditionally**: a move the species
@@ -277,7 +278,8 @@ The concrete steps:
    `move_candidate_floor` base, and a row about which nothing is known (national-dex num 0 — the
    unknown-species sentinel an unrevealed slot carries — or a dex gap) is the **flat floor**, never
    "no moves". Non-persistent, recomputed from `data/` at build.
-4. **`HPTypeBelief.compose_typed_hp`** — inside the same step: rewrites the posterior so Hidden
+4. **`HPTypeBelief.compose_typed_hp`** (`hp_belief_mode` = `"composed"`) — inside the same step:
+   rewrites the posterior so Hidden
    Power exists only at the 16 typed move-nums **355–370** (each `logit(presence · P(type))`) and
    the bare typeless 237 is driven to a finite `-30`. `Σ_t P(HP_t) == presence`, and presence is
    reveal-pinned, so a seen Hidden Power can never be believed away. Every downstream consumer
@@ -785,20 +787,29 @@ a built, non-default mode — see `src/agents/model/CLAUDE.md` for the four-rout
 
 ## 4. The `DamageOperator` output block
 
-**`out_dim` = 660** under the production config. Layout is contiguous, in this order, and every
-sub-block is appended after the previous one (so enabling a later one never moves an earlier
-offset).
+**`out_dim` = 138** under the production config — that is the width of the FLAT block, which is
+what the `ProjectionAssembler` concat and `pointer_cells` slice. Layout is contiguous, in this
+order, and every sub-block is appended after the previous one (so enabling a later one never moves
+an earlier offset).
 
-| # | Sub-block | Width | Present? | Gate |
+| # | Sub-block | Width | In the flat block? | Gate |
 |---|---|---|---|---|
 | 1 | incoming per-mon — 6 × `[phys(low,high,crit,pko,acc), spec(…), p_outspeed, provenance]` | 6 × 12 = **72** | ✅ | `damage_op` |
 | 2 | Choice-Band tail — `phys_high_cb ×6`, `pko_cb ×6`, `p_cb` | **13** | ✅ | `damage_op` |
 | | *(1 + 2 = `incoming_dim` = **85**)* | | | |
 | 3 | outgoing single-active — 4 moves × `[low,high,crit,pko]`, `p_outspeed`, 4 × 7 secondary | **45** | ✅ | `damage_outgoing` |
 | 4 | status-landing — `P(lands) ×4`, `known ×4` | **8** | ✅ | `damage_outgoing` |
-| 5 | `outgoing_matrix` — our 4 moves × opp 6 mons | **126** | ❌ **ABSENT** | `damage_matrices_outgoing` = **false** |
-| 6 | `incoming_matrix` — K=6 headers (51 each) + 6 mons × 6 moves × 6-wide cells | 6×51 + 6×6×6 = **522** | ✅ | `damage_matrices_incoming` = true, K = `damage_topk_k` = 6 |
-| | **Total** | **85 + 45 + 8 + 522 = 660** | | |
+| 5 | `outgoing_matrix` — our 4 moves × opp 6 mons | 126 | ❌ **not rendered** | `damage_matrices_outgoing` = true, and `op_drop_renders` = **true** |
+| 6 | `incoming_matrix` — K=6 headers (51 each) + 6 mons × 6 moves × 6-wide cells | 6×51 + 6×6×6 = 522 | ❌ **not rendered** | `damage_matrices_incoming` = true, K = `damage_topk_k` = 6, and `op_drop_renders` = **true** |
+| | **Total** | **85 + 45 + 8 = 138** | | |
+
+🚨 **"Not rendered" is not "off".** Sub-blocks 5 and 6 are COMPUTED on every forward and both
+flags are `true`; `op_drop_renders` (v86, `gen3_op_lean_forward_v1`) drops only their
+serialization into the flat block, which had no consumer. The `outgoing_matrix` call is what
+`stash.out_cells` / `stash.out_pko` are a view of (the OA2 switch-branch magnitudes and the
+Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `last_topk_cand_idx`
+— the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
+`op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
 
 The block passes through a learned per-channel `out_gain` (a Parameter, multiplicative only, so the
 "no threat ⇒ exactly 0" gates stay clean) before it reaches the heads and before `pointer_cells`
@@ -823,7 +834,9 @@ op.
 Source: [`research_state/measurements/gen3_op_block_dependence_6k.json`](research_state/measurements/gen3_op_block_dependence_6k.json)
 — **`models/run_20260807_135637_gen3/checkpoints/checkpoint_9600000_steps.zip`, 6000 real eval
 states, 2026-08-07.** ⚠️ That is gen-3, an EARLIER generation — not the production run. The
-architecture surface it measured is the same family, but the numbers are a fact about that model.
+architecture surface it measured is the same family, but the numbers are a fact about that model,
+and it was taken with the op's render tail still in the flat block (`op_drop_renders` off) — which
+is why its `FULL_CONCAT` ceiling is 660 wide where production's is 138.
 Method: zero
 each sub-block as a contiguous slice of the op's output **at the `ProjectionAssembler` concat only**
 (edges, the `prefuse_proj` injection and the pointer cells stay live) → masked KL against the
@@ -866,10 +879,10 @@ make it non-transferable:
 |---|---|---|
 | OUTGOING (per-action, un-collapsed) | 65.7% | ✅ yes (sub-block 3) |
 | `outgoing_attacker_matrix` | 21.4% | ❌ **no** — the OAX flat block is deleted (v88); the kernel survives as `d2`'s engine |
-| `incoming_matrix` (mon × move) | 15.4% | ✅ yes (sub-block 6) |
+| `incoming_matrix` (mon × move) | 15.4% | computed, but **not in the flat block** — `op_drop_renders` = **true** |
 | incoming per-mon | 12.7% | ✅ yes (sub-block 1) |
 | status-landing | 8.8% | ✅ yes (sub-block 4) |
-| `outgoing_matrix` | 6.3% | ❌ **no** — `damage_matrices_outgoing` false |
+| `outgoing_matrix` | 6.3% | computed, but **not in the flat block** — `damage_matrices_outgoing` = true, `op_drop_renders` = **true** |
 | Choice-Band | 2.9% | ✅ yes (sub-block 2) |
 | incoming effect (collapsed) | 1.2% | ❌ deleted from the code |
 | incoming secondary (collapsed) | 0.1% | ❌ deleted from the code |
@@ -887,8 +900,8 @@ under `research_state/measurements/`.
 
 ## 5. Edge families — physics as attention bias
 
-`edge_bias_families = "d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5"` — **all 15 families are on** in
-the production config. Each maps its per-pair cell through a **zero-init**
+`edge_bias_families = "d1,d2,d3,d4,s1,s3,v,t,x,g,c4,c1,c3,c2,c5,h,r"` — **all 17 families are on**
+in the production config. Each maps its per-pair cell through a **zero-init**
 `Linear(cell_width, 2 · n_heads)`: one head-set for `row→col`, one for `col→row`. Zero-init ⇒ the
 whole edge system is bitwise-identical to `off` at initialisation.
 
@@ -912,7 +925,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 | **d4** | our mon *i* × opp mon *j* (active column pre-zeroed) | 4 | `[phys_high, spec_high, phys_pko, spec_pko]` — the opp **bench**'s believed threat |
 | **v** | our mon *i* × opp mon *j* | 3 | `[p_outspeed, both_alive, revealed_j]` |
 | **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
-| **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 2 | `[is_actor, is_target]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C): event *e*'s recorded actor/target IS mon *m* (species-num equality, side-gated against mirror false-links; `_event_reference_cells`, pure). **Not in the production string** — requires `--history-events` (the seats are the rows) |
+| **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 2 | `[is_actor, is_target]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C): event *e*'s recorded actor/target IS mon *m* (species-num equality, side-gated against mirror false-links; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × **global** (both sides) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
 | **g** | each mon × **global** (both sides) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |

@@ -16,7 +16,7 @@ change that makes one stale — never narrated, never appended to:
 
 | file | states | its append-only counterpart |
 |---|---|---|
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | what the MODEL is now | [`CHANGELOG.md`](CHANGELOG.md) |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | what the MODEL is now — §6's tables are GENERATED (`python -m agents.model.arch_tables`, pinned by `arch_tables_test.py`) and the PROSE around them is pinned by `src/mode_flag_doc_gate_test.py`, which compares every MODE-flag value the prose states against `production_config.json` | [`CHANGELOG.md`](CHANGELOG.md) |
 | [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) | what we BELIEVE about the research now — every claim tagged SIGNIFICANT / WITHIN FLOOR / NOT DETECTED / EQUIVALENCE SUPPORTED / REFUTED / UNVERIFIED and pointing at the ledger entry or `measurements/` artifact that established it | [`research_state/ledger.md`](research_state/ledger.md) |
 | every `CLAUDE.md` under `designs/` | where to look | — |
 

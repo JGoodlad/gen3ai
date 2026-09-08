@@ -137,10 +137,14 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 - Commit inside the agent's worktree (`git -c user.name=JGoodlad -c user.email=mrgoodlad@gmail.com
   commit -F -`) with this session's attribution trailer; `git rebase main`; conflicts in the
   append-only files (`CHANGELOG.md`, `ledger.md`, `CLAUDE.md` tails) are resolved by KEEPING BOTH
-  SIDES; then the land script runs ruff + mypy + the file-size gate + the CLAUDE.md freshness gate IN
-  THE WORKTREE and refuses to push on any failure, pushes `<branch>:main`, syncs main, removes the
-  worktree. `cd` back to the main checkout afterwards (the worktree you stood in is gone), and remove
-  a worktree only after checking that no process is still running from it.
+  SIDES; then **`scripts/land.sh <branch> [worktree]`** (`--help` for the contract) runs ruff + mypy
+  + every `src/*_gate_test.py` static IN THE WORKTREE and refuses to push on any failure, pushes
+  `<branch>:main`, syncs main, removes the worktree. It derives the main checkout from
+  `git rev-parse --git-common-dir` and re-execs itself out of the worktree before deleting it, so it
+  is safe to invoke from the tree it is about to remove. `cd` back to the main checkout afterwards
+  (the worktree you stood in is gone), and remove a worktree only after checking that no process is
+  still running from it. It never force-pushes: a rejected non-fast-forward means someone landed
+  first — rebase and re-run.
 - Agents commit but do NOT push; the orchestrator lands. Agent briefs carry no attribution trailers
   (the landing session's trailer is the one that goes on the commit).
 - Never `git add`/`commit`/`push` from the main checkout; main is never dirty (scratch goes in
