@@ -649,7 +649,21 @@ def _stat_drop_boosts(entry):
         return None
     if entry.get("category") != "Status":
         return None
-    if entry.get("target") not in ("normal", "adjacentFoe", "any"):
+    # ⚠️ `allAdjacentFoes` IS ADMITTED (`gen3_spread_stat_drop_v1`, 2026-09-08). In gen-3
+    # SINGLES a spread foe-target resolves to the one foe, and the mechanic is measurably
+    # identical to a `normal`-target drop on every axis that could differ — PROBED, not assumed
+    # (`harness/probe_spread_stat_drop.js`): one accuracy roll then a draw-free boost; the
+    # `|move|` announce still renders the FOE; the `|-unboost|<foe>|<stat>|<mag>` form including
+    # the DELTA-0 line at the −6 floor; Soundproof blocks Growl and not Leer; a Substitute blocks
+    # with `[still]`+`-fail|<user>`; Clear Body / Hyper Cutter gate exactly as for Screech.
+    # This admits leer / growl / tailwhip / stringshot / sweetscent — 234 legal learners that the
+    # `target: normal` gate had been excluding for a difference that does not exist in singles.
+    # It is the SAME shape as this function's accuracy/evasion exclusion, which also kept moves
+    # fail-loud for a reason that was not true.
+    # 🚨 A FUTURE GEN MUST REVISIT THIS. In doubles `allAdjacentFoes` hits BOTH foes, which is a
+    # different mechanic and a different draw model; the gen-3 singles engine is the only reason
+    # the widening is sound. Keep it keyed on the generation when doubles arrive.
+    if entry.get("target") not in ("normal", "adjacentFoe", "any", "allAdjacentFoes"):
         return None
     boosts = entry.get("boosts")
     if not isinstance(boosts, dict) or not boosts:

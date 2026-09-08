@@ -41,10 +41,17 @@ of only how many, which is what made the drift visible at all.
 
 | Universe | gen3-legal ids | Engine RUNS it | Engine FAIL-LOUDS | Gap |
 |---|---:|---:|---:|---:|
-| **Moves** | 369 | **312** | **57** | 15.4% |
+| **Moves** (at the census) | 369 | **312** | **57** | 15.4% |
+| **Moves** (after ROUNDS 57-58) | 369 | **320** | **49** | 13.3% |
 | **Abilities** | 76 | **76** | 0 | **CLOSED** |
 | **Species** | 392 | **392** | 0 | **CLOSED** |
 | **Items** | 106 | **102** | **4** | 3.8% |
+
+**The move row moved while this file was being written, which is the point of dating it.** ROUND 57
+closed the pure-confusion family (`supersonic` / `sweetkiss` / `teeterdance`) and ROUND 58 the spread
+stat-drops (`leer` / `growl` / `tailwhip` / `stringshot` / `sweetscent`). The ranked list below is
+the state **at the census**; strike those eight when reading it. The current number is always
+`scan_move_probe`.
 
 *Universe = every id in `Dex.forFormat('gen3customgame')` with `exists && !isNonstandard && gen <= 3`
 (`struggle` excluded from moves — it is modeled and has its own differential gate, but it is not a

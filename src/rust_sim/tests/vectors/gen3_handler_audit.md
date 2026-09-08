@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-59 conditions (engine state space + attached), 299 modeled moves
-→ **1081 (effect, hook) rows**.
+59 conditions (engine state space + attached), 304 modeled moves
+→ **1091 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1028 |
+| implemented | 1038 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -615,7 +615,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (497 rows: implemented=493, noop_justified=2, unreachable_justified=2)
+## move (507 rows: implemented=503, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -789,6 +789,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | glare | status | implemented | `turn.rs::modeled_status_move` |
 | grasswhistle | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | grasswhistle | status | implemented | `turn.rs::modeled_status_move` |
+| growl | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| growl | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | growth | boosts | implemented | `turn.rs::self_boost_spec` |
 | growth | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | growth | neverMiss | implemented | `turn.rs::never_miss` |
@@ -838,6 +840,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | leechseed | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | leechseed | onTryImmunity | implemented | `turn.rs::run_status_move` |
 | leechseed | volatileStatus | implemented | `turn.rs::apply_leech_seed` |
+| leer | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| leer | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | lick | secondaries | implemented | `turn.rs::apply_secondaries` |
 | lightscreen | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | lightscreen | neverMiss | implemented | `turn.rs::never_miss` |
@@ -1032,6 +1036,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | spore | status | implemented | `turn.rs::modeled_status_move` |
 | steelwing | secondaries | implemented | `turn.rs::apply_secondaries` |
 | stomp | secondaries | implemented | `turn.rs::apply_secondaries` |
+| stringshot | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| stringshot | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | struggle | noPPBoosts | implemented | `turn.rs::must_struggle` |
 | struggle | onModifyMove | implemented | `turn.rs::run_move` |
 | struggle | recoil | implemented | `turn.rs::run_move` |
@@ -1051,6 +1057,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | supersonic | volatileStatus | implemented | `secondaries.rs::add_confusion` |
 | sweetkiss | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | sweetkiss | volatileStatus | implemented | `secondaries.rs::add_confusion` |
+| sweetscent | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| sweetscent | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | swift | neverMiss | implemented | `turn.rs::never_miss` |
 | swordsdance | boosts | implemented | `turn.rs::self_boost_spec` |
 | swordsdance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -1061,6 +1069,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | tailglow | boosts | implemented | `turn.rs::self_boost_spec` |
 | tailglow | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | tailglow | neverMiss | implemented | `turn.rs::never_miss` |
+| tailwhip | boosts | implemented | `turn.rs::stat_drop_boosts` |
+| tailwhip | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | takedown | recoil | implemented | `turn.rs::apply_recoil` |
 | taunt | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | taunt | volatileStatus | implemented | `state.rs::taunt` |

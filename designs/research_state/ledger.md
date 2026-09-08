@@ -15149,3 +15149,58 @@ be updated and still be unwired*. Both classifiers now consult it.
 md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; handler audit 1075 → 1081 rows green; `--mode pool
 --protocol --format gen3ou` byte fuzz as the OU-surface regression control. Five revert-verified
 mutations. Tag: RUST SIM / FIX. **No model measurement changed and no run was touched.**
+
+## 2026-09-08 · RUST SIM · gen3 parity round 2: the SPREAD STAT-DROPS close with ZERO engine code — the gap was an extractor predicate (315 → 320 of 369 moves)
+
+**ROUND 58 in `designs/rust_sim/port_build_log.md`.** Five moves, **234 legal learners, not one line
+of engine code** — the round that shows what the data-driven mechanic-class framework is for.
+
+**THE GAP WAS A PREDICATE, NOT A MECHANIC.** `tools/pokemon_data_extractor/sync.py`'s
+`_stat_drop_boosts` gated on `target in ("normal","adjacentFoe","any")`, so the five gen-3 stat-drop
+status moves whose target is **`allAdjacentFoes`** never got a `statDropBoosts` field — and the
+engine's arm, which is complete and already handles accuracy, Protect, Soundproof, Substitute and
+the `onTryBoost` immunity abilities, never saw them: `leer` (−1 Def, 83 learners), `growl` (−1 Atk,
+78, the family's SOUND move), `tailwhip` (−1 Def, 48), `sweetscent` (−1 evasion, 20 — gen-3's only
+foe-EVASION drop), `stringshot` (−1 Spe, acc 95, 5).
+
+**PROBE-MEASURED, NOT ASSUMED** (`harness/probe_spread_stat_drop.js`). "In singles a spread foe
+target is just the one foe" is exactly the *should* the mod-chain law exists to distrust, so every
+axis was measured against a `target: normal` CONTROL (Screech) on the same board: draw model (one
+accuracy roll then a draw-free boost), the `|move|` announce still rendering the FOE, the
+`|-unboost|` form **including the delta-0 line at the −6 floor**, Soundproof (blocks Growl not Leer),
+Substitute (`[still]`+`-fail|<user>`), and Clear Body / Hyper Cutter gating. All identical. The
+comment records the condition under which the widening stops being sound: in DOUBLES
+`allAdjacentFoes` hits both foes — a different mechanic and a different draw model.
+
+**⚠️ THE SAME STALE-EXCLUSION SHAPE THIS FUNCTION ALREADY CARRIED ONCE.** `_STAT_DROP_STATS`
+excluded accuracy/evasion until 2026-08-18 for a reason that was already false, and that exclusion
+"kept four moves fail-loud for nothing" — `sandattack` among them, then the largest single gap in
+the gen3OU move-slot prior mass. **A gate written for one shape outlives the reason it was written;
+when a data predicate excludes something, check whether the exclusion still describes reality.**
+
+**THE MIRRORS NEEDED NO EDIT, AND THAT IS THE RESULT.** Both the census's `MODELED_STATDROP` and the
+e2e picker's `MODELED_STATDROP_MOVES` are DERIVED from the data rather than hardcoded — a change made
+after `gen3_sand_attack_v1`, when a hardcoded list left the picker refusing to choose the very moves
+a data change existed to unlock. Both picked the five up automatically. Contrast ROUND 57, where the
+hand-mirrored `MODELED_STATUS` had to be edited by hand and `MODELED_LOCKIN_ROLLOUT` had been three
+moves stale for two rounds. **Derive the mirror or it will go stale.**
+
+**⚠️ THE DATA DIFF WAS VERIFIED STRUCTURALLY** (ROUND-52 discipline): a 20-insertion/5-deletion line
+diff, but a field-by-field comparison of both revisions proves what a line diff cannot — the move set
+is unchanged (370 → 370), exactly five moves changed at all, each gained `statDropBoosts` as an
+ADDITION, and **zero other fields on any of the 370 moves differ**.
+
+**GATES:** `tests/spread_stat_drop_test.rs` (4 named feature pins, each carrying a control that stops
+it passing on a blanket rule) + `tests/spread_stat_drop_golden_test.rs` — **1,032 rows, 43 scenarios
+x 24 seeds, 0 seed mismatches, 0 byte mismatches**, with ENFORCED floors (110 delta-0 floor rows, 26
+miss rows, 163 ability-blocked rows, an evasion floor for Sweet Scent's unique drop).
+**REVERT-VERIFIED THROUGH THE DATA** — the honest mutation for a data-driven round: deleting
+`leer.statDropBoosts` restores the pre-round state and the engine FAIL-LOUDS rather than silently
+doing nothing.
+
+`cargo test --release --no-fail-fast` **742 passed / 0 failed**; e2e md5
+`3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; handler audit 1081 → 1091 green; the Python
+`gen3_data` + `observation` + `tools` suites **407 passed** (reproducible AND obs-neutral — the
+facade ignores `statDropBoosts`); `--mode pool --protocol --format gen3ou` byte fuzz **GREEN-GATE
+PASS** (300 battles, ok=296, 0 non-allowlisted, 4 correctly allowlisted turn-0 artifacts).
+Tag: RUST SIM / FIX. **No model measurement changed and no run was touched.**

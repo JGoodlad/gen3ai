@@ -40,8 +40,8 @@ it said 309/60 where the engine itself runs **312/57**. `scan_move_probe` cannot
 *is* the engine running. The JS scan keeps the two jobs the probe cannot do: the team-pool report and
 the `0 MISMODELED` invariant gate.
 
-**Measured 2026-09-08 by `scan_move_probe`, after ROUND 57: 369 gen3-legal moves → 315 MODELED ·
-54 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
+**Measured 2026-09-08 by `scan_move_probe`, after ROUND 58: 369 gen3-legal moves → 320 MODELED ·
+49 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
 (the four fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by
 family and by legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](../../designs/rust_sim/gen3_coverage_census_2026-09-08.md) —
 a dated SNAPSHOT, not a current number.
@@ -794,7 +794,8 @@ revert-verified regression pins. Those records are **CLOSED** and live verbatim 
 are debugging rather than loading all of them here. The build log also holds the 55 numbered fuzz
 ROUNDS and the move-coverage BATCH 1-9 records.
 
-CONFUSION family (confuseray / supersonic / sweetkiss / teeterdance) · Damage · Fixed-damage moves ·
+CONFUSION family (confuseray / supersonic / sweetkiss / teeterdance) ·
+SPREAD STAT-DROPS (leer / growl / tailwhip / stringshot / sweetscent) · Damage · Fixed-damage moves ·
 Full battle · Multi-turn · PP tracking + Struggle · Phazing ·
 Protect / Detect · Recovery moves · SNATCH · Secondary effects + onBeforeMove status · Setup moves ·
 Spikes · Status moves · Switch-in events · TRICK · Taunt + Disable · Trapping · YAWN.

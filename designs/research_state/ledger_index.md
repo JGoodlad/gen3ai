@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,152-line file. **The ledger itself is append-only and is never edited by this**;
+15,207-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**448 headings · 408 dated · 2026-08-01 → 2026-09-08 · ledger 15,152 lines.**
+**449 headings · 409 dated · 2026-08-01 → 2026-09-08 · ledger 15,207 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -468,3 +468,4 @@ rename.
   - `L14941` · `2026-09-08` · DOCS · src/agents/model/CLAUDE.md split (1,279 → 453 lines; topics to designs/model/, ARCHITECTURE.md stays the doc of record) + 6 stale pointers from the training split repointed
   - `L15003` · `2026-09-08` · DOCS · README + CONTRIBUTING verified and fixed (12 claims wrong); 15 READMEs current, 17 fixed; designs/ staleness census
 - `L15087` · `2026-09-08` · RUST SIM · gen3 parity round 1: the CONFUSION family (supersonic / sweetkiss / teeterdance) — and the shipped Confuse Ray never rolled its accuracy (312 → 315 of 369 moves)
+- `L15153` · `2026-09-08` · RUST SIM · gen3 parity round 2: the SPREAD STAT-DROPS close with ZERO engine code — the gap was an extractor predicate (315 → 320 of 369 moves)

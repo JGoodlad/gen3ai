@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 59,
-   "moves": 299,
-   "rows": 1081
+   "moves": 304,
+   "rows": 1091
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -4490,6 +4490,18 @@
    "anchor": "turn.rs::modeled_status_move",
    "reason": "the standalone status-inflicting move arm (accuracy + try_set_status)"
   },
+  "move:growl:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"atk\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:growl:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:growth:boosts": {
    "disposition": "implemented",
    "fp": "val:{\"spa\":1}",
@@ -4782,6 +4794,18 @@
    "disposition": "implemented",
    "fp": "val:\"leechseed\"",
    "anchor": "turn.rs::apply_leech_seed"
+  },
+  "move:leer:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:leer:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
   "move:lick:secondaries": {
    "disposition": "implemented",
@@ -5944,6 +5968,18 @@
    "anchor": "turn.rs::apply_secondaries",
    "reason": "the <=1-col secondary shape isModeledMove admits (status/flinch/confusion/boosts/self-boosts)"
   },
+  "move:stringshot:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"spe\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:stringshot:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:struggle:noPPBoosts": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -6058,6 +6094,18 @@
    "anchor": "secondaries.rs::add_confusion",
    "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
   },
+  "move:sweetscent:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"evasion\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:sweetscent:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
   "move:swift:neverMiss": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -6117,6 +6165,18 @@
    "fp": "val:true",
    "anchor": "turn.rs::never_miss",
    "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:tailwhip:boosts": {
+   "disposition": "implemented",
+   "fp": "val:{\"def\":-1}",
+   "anchor": "turn.rs::stat_drop_boosts",
+   "reason": "the standalone foe stat-drop arm (Screech/Charm/Metal Sound/… — gen3_moves.json statDropBoosts; accuracy roll + a draw-free boost, gen3_move_coverage_batch2_v1)"
+  },
+  "move:tailwhip:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
   },
   "move:takedown:recoil": {
    "disposition": "implemented",

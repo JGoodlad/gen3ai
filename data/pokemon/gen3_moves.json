@@ -3512,7 +3512,10 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": true,
-        "minimize": false
+        "minimize": false,
+        "statDropBoosts": {
+            "atk": -1
+        }
     },
     "growth": {
         "name": "Growth",
@@ -5111,7 +5114,10 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
-        "minimize": false
+        "minimize": false,
+        "statDropBoosts": {
+            "def": -1
+        }
     },
     "lick": {
         "name": "Lick",
@@ -9277,7 +9283,10 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
-        "minimize": false
+        "minimize": false,
+        "statDropBoosts": {
+            "spe": -1
+        }
     },
     "struggle": {
         "name": "Struggle",
@@ -9649,7 +9658,10 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
-        "minimize": false
+        "minimize": false,
+        "statDropBoosts": {
+            "evasion": -1
+        }
     },
     "swift": {
         "name": "Swift",
@@ -9826,7 +9838,10 @@
         "noPPBoosts": false,
         "contact": false,
         "sound": false,
-        "minimize": false
+        "minimize": false,
+        "statDropBoosts": {
+            "def": -1
+        }
     },
     "takedown": {
         "name": "Take Down",

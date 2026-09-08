@@ -5947,3 +5947,76 @@ oracle and JS mirror now agreeing.
 but it was only ever consulted by `classifyDamaging` — and all three are category **Status**, so they
 fell through to the fail-loud tail. **A set can be updated and still be unwired.** Both classifiers
 now consult it.
+### ROUND 58 (FIX) — the SPREAD STAT-DROPS: five moves closed with ZERO engine code
+
+`gen3_spread_stat_drop_v1`. gen3 parity round 2, and the round that shows what the data-driven
+mechanic-class framework is FOR: **five moves, 234 legal learners, and not one line of engine code.**
+
+**THE GAP WAS A PREDICATE, NOT A MECHANIC.** `tools/pokemon_data_extractor/sync.py`'s
+`_stat_drop_boosts` emits the `statDropBoosts` field for a pure declarative foe stat-drop — but it
+gated on `target in ("normal", "adjacentFoe", "any")`. The five gen-3 stat-drop moves whose target
+is **`allAdjacentFoes`** were therefore excluded from the DATA, and the engine's `statDropBoosts`
+arm — which is complete, and already handles accuracy, Protect, Soundproof, Substitute and the
+`onTryBoost` immunity abilities — never saw them:
+
+| move | drop | acc | learners | note |
+|---|---|---:|---:|---|
+| `leer` | −1 Def | 100 | 83 | |
+| `growl` | −1 Atk | 100 | 78 | the family's `sound` move |
+| `tailwhip` | −1 Def | 100 | 48 | |
+| `sweetscent` | −1 evasion | 100 | 20 | **gen-3's only foe-EVASION drop** |
+| `stringshot` | −1 Spe | 95 | 5 | the only one that can miss |
+
+**PROBE-MEASURED, NOT ASSUMED** (`harness/probe_spread_stat_drop.js`). "In singles a spread foe
+target is just the one foe" is exactly the kind of *should* the mod-chain law exists to distrust, so
+every axis on which a spread target could plausibly differ was measured against a `target: normal`
+CONTROL (Screech) on the same board: the DRAW MODEL (one accuracy roll, then a draw-free boost —
+identical); the `|move|` ANNOUNCE (still renders the FOE); the `|-unboost|<foe>|<stat>|<mag>` FORM
+**including the delta-0 line at the −6 floor**; SOUNDPROOF (blocks Growl, not Leer); SUBSTITUTE
+(`[still]` + `-fail|<user>`); and CLEAR BODY / HYPER CUTTER gating exactly as for Screech. All
+identical. The widening is sound **because it was measured**, and the comment records the one
+condition under which it stops being sound: in DOUBLES `allAdjacentFoes` hits both foes, which is a
+different mechanic and a different draw model.
+
+**⚠️ THIS IS THE SAME STALE-EXCLUSION SHAPE THE FUNCTION ALREADY CARRIED ONCE.** `_STAT_DROP_STATS`
+excluded `accuracy`/`evasion` until 2026-08-18 for a stated reason that was already false, and that
+exclusion "kept four moves fail-loud for nothing" — `sandattack` among them, then the single largest
+gap in the gen3OU move-slot prior mass. A gate written for one generation's shape outlives the
+reason it was written. **When a data predicate excludes something, check whether the exclusion still
+describes reality.**
+
+**THE MIRRORS NEEDED NO EDIT, AND THAT IS THE POINT.** Both `MODELED_STATDROP` (the census) and
+`MODELED_STATDROP_MOVES` (the e2e picker) are **DERIVED** from `gen3_moves.json`'s `statDropBoosts`
+rather than hardcoded — a change made after `gen3_sand_attack_v1`, when a hardcoded list left the
+picker refusing to choose the very moves the data change existed to unlock. Both picked the five up
+automatically. Compare ROUND 57, where the hand-mirrored `MODELED_STATUS` had to be edited by hand
+and the hand-mirrored `MODELED_LOCKIN_ROLLOUT` had been three moves stale for two rounds.
+
+**⚠️ THE DATA DIFF WAS VERIFIED STRUCTURALLY, NOT BY EYEBALL** (the ROUND-52 discipline). A
+regeneration produced a 20-insertion / 5-deletion line diff; parsing both revisions and comparing
+FIELD BY FIELD proved the stronger statement the line diff cannot: **the move SET is unchanged (370
+→ 370), exactly five moves changed at all, each gained `statDropBoosts` as an ADDITION, and zero
+other fields on any of the 370 moves differ.**
+
+**GATES.**
+* `tests/spread_stat_drop_test.rs` (4 named feature pins) — SD1 each move lands its declared drop
+  AND the announce renders the FOE (an `allAdjacentFoes` entry wrongly added to
+  `status_move_announce_renders_user` would render the USER, the `gen3_nickname_ident_v1` crash
+  class); SD2 the −6 floor emits the delta-0 line (with the six real drops asserted, so an engine
+  that emitted nothing could not pass the negative half); SD3 Soundproof blocks Growl and NOT Leer;
+  SD4 Clear Body refuses Growl, Hyper Cutter refuses Growl but NOT Leer's Defense drop.
+* `tests/spread_stat_drop_golden_test.rs` + `harness/gen_spread_stat_drop_golden.js` —
+  **1,032 rows, 43 scenarios x 24 seeds, 0 seed mismatches, 0 byte mismatches**, with ENFORCED
+  floors (568 `-unboost` rows, **110 delta-0 floor rows**, 26 miss rows, 163 ability-blocked rows,
+  and an evasion floor so Sweet Scent's unique drop cannot silently vanish).
+
+**REVERT-VERIFIED THROUGH THE DATA**, which is the honest mutation for a data-driven round: deleting
+`leer.statDropBoosts` restores the pre-round state and the engine FAIL-LOUDS (`status move "leer" is
+not modeled`), failing the golden — it does not silently do nothing.
+
+**Gates:** `cargo test --release --no-fail-fast` **742 passed / 0 failed** (736 before); e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1081 → 1091 rows**, green; the
+Python `gen3_data` + `observation` + `tools` suites **407 passed** (the data change is reproducible
+AND obs-neutral — the facade ignores `statDropBoosts`); `--mode pool --protocol --format gen3ou`
+byte fuzz as the OU-surface regression control. **CENSUS: 315 → 320 MODELED / 54 → 49 FAIL-LOUD**,
+engine oracle and JS mirror agreeing.
