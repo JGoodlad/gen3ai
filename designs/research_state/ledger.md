@@ -14514,3 +14514,159 @@ which would have voided this pass's identical-selection proof and is a different
 own measurement. It is also why the select child's config is named `select_config.json` rather than
 `config_*.json`: the gate globs the latter and asserts `"impl": "rust"` on every match, and a name
 that pulled selection into that glob would have made the gate assert something false.
+## 2026-09-07 · TECH DEBT · slow-tier last-known-status gate + six `win_prob` tags RECLASSIFIED (the classification was wrong, not the emitter) + the reward golden promoted to a collected test
+
+Three tech-debt rows, one landing (`8be27b4d`). Two were the backlog's top P0 and P1
+(`designs/ops/TECH_DEBT_BACKLOG.md` §2, now §3); the third fell out of the morning's
+`reward_manager.py` decomposition and had no row.
+
+### 1. The six `win_prob/*` tags — the TEST was the stale half, and the arm keeps emitting them
+
+`tb_relevance_test::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag` was RED on main
+(2/2 in isolation) because it asserted that `win_prob/{brier,acc}_contested`,
+`contested_{frac,label_mean}`, `brier_material` and `skill_vs_material` are NOT published under
+`--critic winprob`, while the live arm publishes all six. **The emitter was right and the
+classification was stale, by about four hours.**
+
+```
+fc10fbb4  2026-09-06 15:42   the classification lands: the six are content-free under winprob
+b87604cd  2026-09-06 (later) gen3_obs_margin_unconditional_v1 — Φ_mat computed ABOVE the PBRS
+                             gate, so `win_margin` is an OBSERVATION feature again and spreads
+                             under --no-hand-shaping
+f971caf2  2026-09-06 20:07   the live arm's pin — which CONTAINS b87604cd
+```
+
+The classification described the margin as it was when it was written; the SOURCE was repaired the
+same day and nothing went back to the list. Measured on the live arm
+`ai_v12_02_winprob_critic` (515 rollouts, read from its `tb` on 2026-09-07):
+
+| tag | degenerate signature | measured on the arm |
+|---|---|---|
+| `contested_frac` | flat **1.0** | **0.444 – 0.844**, 515 distinct values |
+| `brier_contested` | byte-identical to `brier` | differs from `brier` on **515 of 515** rows |
+| `brier_material` | flat **0.25** (P_mat ≡ 0.5) | 0.138 – 0.222 |
+| `skill_vs_material` | the affine `1 − 4·brier` | mean **+0.323** |
+
+So: **RECLASSIFIED, not suppressed.** The six move out of `NOISE_TAGS` into a new `MARGIN_TAGS`
+tuple asserted PRESENT on BOTH critic modes; `_win_prob_loss`'s spread predicate is untouched and
+stays as the CONSUMER-SIDE guard against any future flat margin (the G3 unit block still pins it,
+with its docstrings rewritten from "this is what the winprob composition does" to "this is the
+defence"). The winprob smoke additionally asserts `min(contested_frac) < 1.0` — presence alone
+catches a revert of `b87604cd`, and the spread check catches the worse case where source AND guard
+both go and the six republish as constants. The training leaf's census column had ALREADY been
+corrected on 2026-09-06 and read "NO LONGER NOISE"; only the test disagreed.
+
+🚨 **The live arm is PINNED and goes on emitting them until it ends — correctly. Nothing was done
+to the run.** The backlog row's "the arm stops emitting them" acceptance is superseded: on that pin
+the tags are measurements.
+
+### 2. The P0 — a `slow` test can ride RED invisibly (`gen3_slow_tier_status_v1`)
+
+The routine gate is `-m "not slow and not e2e"`, so a `slow` test is DESELECTED, and **a deselected
+test cannot fail**. The red above sat on main for a day for exactly that reason — one marker
+further out than the obs-golden linchpin, which rode main red three times behind
+`-m "not integration"`.
+
+Shape chosen: **the last-known-status file** (backlog option 1), not a scheduler. The slow tier
+WRITES its verdict; the routine gate READS it.
+
+* **Writer** — the root `conftest.py`. `pytest_itemcollected` captures the FULL `slow` set before
+  `-m` deselection can hide it; every phase report of every slow test that RAN is folded into one
+  verdict per test id (`fail` > `inconclusive` > `skip` > `pass`, so a teardown error beats a
+  passing call and a SKIP is never banked as a pass) and banked **at that test's teardown**, not only at session finish — the tier is
+  ~2 hours beside a live run and a session interrupted at test 79 of 80 must not throw away 79
+  verdicts. **Merge, never replace**, under an `flock` (in the temp dir, never beside the artifact)
+  plus an atomic rename, so one slow test cannot erase the other 79 rows and two `xdist` workers
+  cannot lose each other's. A run in which no slow test executed writes nothing.
+* **Artifact** — `designs/ops/slow_tier_status.json`, **COMMITTED**.
+* **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, ~0.03 s, the seventh static gate.
+
+**Four classes, one of them fatal.** `fail` FAILS the routine gate, naming the test id, the commit
+it failed at and the first `E ` line. `inconclusive` (a DECLARED timeout signature), `unrecorded`
+(collected as slow, no row) and `stale` (>25 commits behind HEAD, or an unknown commit) are
+REPORTED — as warnings, which survive `-q` — and pass.
+
+**Why staleness is reported and not fatal.** A stale row is a fact about the SCHEDULE, not about
+the code. Failing on it would make "nobody has run the tier for 25 commits" indistinguishable from
+"a test is red" — the same conflation as *a TIMEOUT is never a semantic outcome* — and would breed
+a reflex `GEN3AI_SKIP_SLOW_STATUS_GATE=1` that costs the real signal too.
+
+**Why COMMITTED and not gitignored.** The worktree workflow decides it: a gitignored file is
+per-worktree and a fresh worktree — where essentially all work here happens — would have none, so
+the gate would be dead exactly where it is needed. That is the `models/` failure mode
+(`main_models_dir()` returns `None` in a worktree and every caller must skip); a gate that skips in
+every worktree is not a gate. Committed, a red slow test is also visible in the DIFF. The price is
+a merge conflict when two branches both run the tier, and the rows are keyed by test id so the
+resolution is always a UNION.
+
+**Why a MISSING file FAILS rather than warns** (the bootstrap question the row asked to be
+justified): the artifact is committed, so "missing" cannot mean "fresh checkout" — it means a bad
+rebase or a stray delete. A present-but-EMPTY file fails the same way with **NO SLOW-TIER STATUS
+RECORDED**, because a gate reading zero rows is reading nothing. Both messages name the restore
+command and `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, so neither can strand anyone.
+
+⚠️ **The honest limitation, recorded rather than hidden: a slow test that broke SINCE the last
+recorded run still reads `pass`.** Nothing but running the tier closes that; the staleness report
+is what prices the green.
+
+**First status file** (`pytest src/ -m slow -q -n 2`, `1 h 41 m` for the whole tier, then `1 h 54 m` re-recording two files beside the live arm):
+
+```
+80 rows   30 pass   44 skip   6 inconclusive   0 FAIL
+  22 pass                  utils/bridge/bridge_impl_parity_test.py
+  44 skip  1 pass          main/prober/web/render_integration_test.py
+   6 inconclusive  2 pass  agents/model/build_arch_viewer_render_integration_test.py
+   2 pass                  agents/training/tb_relevance_test.py   (both smokes, incl. the P1 fix)
+   1 pass each             compile_prewarm · extractor_compiles · untaught_meter_reproducibility
+```
+
+**No recorded red, so the gate passes — and the two non-pass classes are both the contention rule
+working, not a code problem.** All six `inconclusive` rows are the arch-viewer's headless chrome
+hitting its 180 s bound at a measured contention factor of **2.22**; all 44 `skip` rows are the
+prober's render suite, which calls `pytest.skip()` on its own chrome timeout precisely because *a
+timeout is never a semantic outcome*. Two tests that behave differently on the same starved box,
+and the artifact now distinguishes them rather than painting both green.
+
+🚨 **THE FIRST REAL RUN FOUND A BUG IN THE RECORDER, which is why it was run before landing rather
+than after.** A skipped test reports `skipped` in SETUP and then `passed` in TEARDOWN, so with
+`pass` ranked above `skip` all 44 skips banked as **GREEN** — a browser suite that never ran,
+recorded as a browser suite that passed. That is the absence-is-not-a-zero class inside the very
+artifact built to prevent it. `skip` now outranks `pass` in the fold, a meta-test pins it
+(`test_a_SKIPPED_test_never_banks_as_a_PASS`), and the two affected files were re-run so the
+committed rows are measurements rather than a repair. Second finding from the same run: banking
+only at session finish would have thrown away 79 verdicts if the ~2 h tier were interrupted at test
+80, so each verdict is now banked at **its own teardown**.
+
+**Acceptance, proved both ways.** A planted red fails the routine gate with the test id and the
+commit — end-to-end through the real gate via `$GEN3AI_SLOW_STATUS_FILE`. Ten meta-tests in the
+gate file plant each class (red, inconclusive, unrecorded, stale, unknown commit, a merge that must
+not truncate) so the gate's behaviour is pinned rather than described.
+
+### 3. The reward golden, promoted (`gen3_reward_golden_v1`)
+
+The byte-identity reference the `reward_manager.py` decomposition (`b0b3a253`) was accepted on
+lived in one agent's scratch directory, where it protected exactly one refactor. It is now
+`src/agents/training/reward_golden_test.py` — tier **`sim`**, **19.7 s** of call time under pytest
+beside the live arm, in the ROUTINE gate — replaying 30 real bridge battles (5 keys × 6 reward
+compositions) and hashing every `RewardBreakdown` field of every decision as `float.hex()`.
+
+    recorded  sha256 9463dc242efde3fabadd652db4bef6e158eb24b5a0e53680e29be077b6a1926f
+    2,802 rows · 2,772 decisions · 30 sweeps · 6 compositions
+
+`src/agents/training/reward_golden.json` carries that hash, the commit it was produced at, and a
+**PER-SWEEP** hash, so a mismatch names the composition and battle that moved rather than only
+saying "the reward changed". The hash reproduced **bit-for-bit in a fresh worktree with an
+independently checked-out `data/`** — the reproducibility clauses are the four testing.md requires
+(teams by pool index, per-player RNG, fixed sim PRNG seed, `concurrency=1`). Preconditions are
+ASSERTED, never branched on: a harness that errored, or that played a different number of
+decisions, fails with THAT message, because a battle that diverged is not a reward change.
+
+**Proven to fire on a ONE-ULP plant.** `HP_VALUE` 2.0 → `2.0000000000000004`
+(`0x1.0000000000001p+1`): the whole-body hash moves to `c18c89a9…` and the per-sweep report names
+**25 of 30** sweeps — every sweep of `production_default`, `additive_bias`, `redesign_levers`,
+`drops_and_stall` and `fully_pbrs`. The five that did NOT move are exactly `clean_world`'s, the
+terminal-indicator composition that prices no HP. The localisation is therefore a real diagnosis,
+not a hash comparison with extra words.
+
+Tag: TECH DEBT. **No measurement about the model changed** — the win-prob reclassification is a
+statement about what six curves MEAN, not about their values, and no live run was touched.

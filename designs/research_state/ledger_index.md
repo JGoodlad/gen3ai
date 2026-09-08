@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-14,517-line file. **The ledger itself is append-only and is never edited by this**;
+14,673-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**435 headings · 398 dated · 2026-08-01 → 2026-09-08 · ledger 14,517 lines.**
+**439 headings · 399 dated · 2026-08-01 → 2026-09-08 · ledger 14,673 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -455,3 +455,7 @@ rename.
 - `L14321` · `2026-09-07` · TECH DEBT · search-teacher composition gated end-to-end on rust: PASSES — no seam, and the knob that decides whether a cycle teaches anything is `--teacher-confirm-rollouts`
 - `L14396` · `2026-09-07` · FIX · `main.lineage` never read a block's own `derived` flag — 47 derived-fresh runs were invisible to the marker
 - `L14434` · `2026-09-08` · TECH DEBT · search-teacher selection moved off the training step (350 s → 0.004 s per cycle; corrections identical)
+- `L14517` · `2026-09-07` · TECH DEBT · slow-tier last-known-status gate + six `win_prob` tags RECLASSIFIED (the classification was wrong, not the emitter) + the reward golden promoted to a collected test
+  - `L14523` · 1. The six `win_prob/*` tags — the TEST was the stale half, and the arm keeps emitting them
+  - `L14563` · 2. The P0 — a `slow` test can ride RED invisibly (`gen3_slow_tier_status_v1`)
+  - `L14645` · 3. The reward golden, promoted (`gen3_reward_golden_v1`)
