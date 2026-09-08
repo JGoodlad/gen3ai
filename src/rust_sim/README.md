@@ -5,7 +5,8 @@ Showdown battle simulator. Goal: given the same seed, teams, and choice
 sequence, emit byte-identical protocol output to upstream Showdown — so it can
 slot in behind our existing bridge/tooling without changing any results.
 
-> **Status: skeleton, eight modules built.** The PRNG, the dex, the team codec,
+> **Status: LIVE — bit-for-bit through full battles, and the DEFAULT training/eval
+> transport** (`--use-bridge` defaults to `rust`). The PRNG, the dex, the team codec,
 > in-battle stat computation, construction-time battle state, the single-hit
 > damage calc, the **event-dispatch core + `>start` switch-in events** (Intimidate
 > / Sand Stream / Drizzle / Drought), **multi-turn move execution + residuals**
@@ -32,16 +33,20 @@ slot in behind our existing bridge/tooling without changing any results.
 > self-hit, flinch) are also done**, proven by a per-seed PER-DECISION
 > STATE(+status)+SEED+winner differential to game-end where status is inflicted
 > IN-ENGINE. **THE CAPSTONE** (`tests/e2e_fuzz_test.rs` + `harness/gen_e2e_fuzz.js`)
-> drives BOTH engines over **REAL Showdown teams** (the 770 `data/teams/*.txt`, imported
-> + gen3ou-validated + packed) for **complete random battles to game-end**, with each
-> decision a random legal choice RESTRICTED to the modeled move/ability/item set —
+> drives BOTH engines over **REAL Showdown teams** (the 813 `.txt` files under `data/teams/`,
+> imported + gen3ou-validated + packed — 762 survive) for **complete random battles to game-end**,
+> with each decision a random legal choice RESTRICTED to the modeled move/ability/item set —
 > asserting per-decision state + status + boosts + confusion + running PRNG seed +
 > winner **bit-for-bit** across **all 220/220 battles** (STRICT — `filtered_diverged == 0`
-> over every battle, no escape hatch; 10636 decisions at the current BATCH-4-admitted corpus
-> (filter-clean teams **719/719 — the ENTIRE real-gen3ou pool**), of which 4210 USE SPIKES, 353
-> USE PHAZE, 612 USE EXPLOSION,
-> 343 USE SUBSTITUTE, 114 USE TAUNT (0 USE DISABLE — no sample team carries it), and 201 involve a
-> TRAPPED mon. **BATCH 4 (`gen3_ability_batch4_v1`) — the FINAL mechanics tail — is WIRED,
+> over every battle, no escape hatch; 11575 decisions
+> (filter-clean teams **762/762 — the ENTIRE real-gen3ou pool**), of which 4062 USE SPIKES, 442
+> USE PHAZE, 636 USE EXPLOSION,
+> 472 USE SUBSTITUTE, 106 USE TAUNT (0 USE DISABLE — no sample team carries it), 235 USE
+> FIXED-DAMAGE, 252 USE BATCH-5, 58 USE BATCH-6, and 241 involve a
+> TRAPPED mon. 🚨 **Those are the CURRENT tallies; every `a → b` pool arrow further down this
+> status block is scoped to the ADMISSION that wrote it and is history, not today's pool.** The
+> current answer is always the tool — `node harness/scan_move_coverage.js`.
+> **BATCH 4 (`gen3_ability_batch4_v1`) — the FINAL mechanics tail — is WIRED,
 > golden-proven + e2e-admitted**: TRUANT (the priority-9 loaf cant + the order-27 residual toggle;
 > the last team-carry gap, =4), INNER FOCUS (block-at-the-flinch-APPLY — the roll still draws),
 > SHADOW TAG (unconditional draw-free trap, mutual mirror), CUTE CHARM + the ATTRACT volatile
@@ -53,8 +58,9 @@ slot in behind our existing bridge/tooling without changing any results.
 > — validated by `gen_ability_batch4_golden.js` → `tests/ability_batch4_test.rs` (1260 game-end
 > battles, per-decision STATE+HP+STATUS+TRAPPED+SEED, md5-pinned) + the B4-1..B4-7
 > revert-verified pins. The admission grew the pool **712 → 719/719** and the honest taxonomy's
-> 300-battle UNFILTERED sweep is 300/300 clean with an EMPTY ability+item gap list; the ONLY
-> deferred member is FORECAST (a Castform forme-change, 0 teams). **The BATCH-2 DRAW-BEARING "reactive" ability classes are now MODELED + e2e-admitted**
+> 300-battle UNFILTERED sweep is 300/300 clean with an EMPTY ability+item gap list; the
+> once-deferred FORECAST is MODELED too (`gen3_forecast_v1`, `src/turn/forecast.rs` →
+> `forecast_test.rs`: 280 runs over 7 scenarios, 398 forme-change rows). **The BATCH-2 DRAW-BEARING "reactive" ability classes are now MODELED + e2e-admitted**
 > (`gen3_ability_batch2_v1`): CONTACT_PROC (Static par / Poison Point psn / Flame Body brn / Effect Spore
 > slp|par|psn — an `onDamagingHit` that, on a CONTACT hit into the holder, draws `randomChance(1,3)` [or
 > Effect Spore's `random(10)`+`sample(3)`] and statuses the ATTACKER — drawn AFTER the move's own secondary
@@ -85,7 +91,8 @@ slot in behind our existing bridge/tooling without changing any results.
 > weather fix shipped with it:** gen3 sun/rain fire the end-of-turn `eachEvent('Weather')` tie-shuffle
 > UNCONDITIONALLY (the port used to gate it on Sand|Hail) — a weather-turn speed tie under sun/rain drew
 > one fewer call → FIXED (schedule off RAW weather for sun/rain, off `effectiveWeather()` for sand/hail).
-> FORECAST is DEFERRED (a Castform forme+TYPE change under rain/sun/hail — not a no-op).
+> FORECAST — the Castform forme+TYPE change under rain/sun/hail — is its own layer
+> (`gen3_forecast_v1`, `src/turn/forecast.rs`), NOT a no-op ability row.
 > **NATURAL CURE is MODELED + e2e-admitted** (`gen3_natural_cure_v1`, the sole gen-3
 > SWITCH_OUT-cure ability — the holder's major status is CURED when it switches OUT, voluntary OR
 > phaze-drag, DRAW-FREE): it was the #1 team-carry gap (naturalcure=254 on Blissey/Starmie/Celebi/
@@ -177,7 +184,7 @@ slot in behind our existing bridge/tooling without changing any results.
 > sleep draws `random(2,6)`] / `magma_armor_blocks_freeze` / `immunity_blocks_tox_but_not_burn`. Admitting the
 > 6 members (+ moving `insomnia`/`vitalspirit` OUT of `NOOP_ABILITIES`) grew the filter-clean pool
 > **449 → 525 / 719** (+76 teams, immunity=97 the #2 gap); the enlarged corpus is a STRICT
-> `filtered_diverged == 0` pass (220/220, 11651 decisions, byte-reproducible). It surfaced + FIXED ONE real
+> `filtered_diverged == 0` pass (220/220, 11575 decisions, byte-reproducible). It surfaced + FIXED ONE real
 > engine bug (NOT the STATUS_IMMUNE class) — the **EMPTY NATURE**: e2e_8/e2e_73 carry a Suicune with an
 > OMITTED nature field, which the sim treats as NEUTRAL (Serious) but the port PANICKED on; `stats.rs` now
 > computes the neutral all-1.0 multipliers for an empty nature (VERIFIED vs the sim, pinned
@@ -203,8 +210,10 @@ slot in behind our existing bridge/tooling without changing any results.
 > the gen4-inherited `stall` `counterMax: 8`; the counter resets after one non-protect/switch turn —
 > the `stall` volatile's `duration: 2` expiry, modeled at the residual) + the move-BLOCK (a foe move
 > TARGETING the protected mon draws its accuracy roll then is blocked BEFORE crit/damage/secondary/
-> status, gen-3-`tryMoveHit`-ordered; a self-target move is never blocked). DEFERRED (fail-loud):
-> Endure (`volatileStatus:'endure'`, a survive-at-1-HP `onDamage`) + the gen4+ Quick/Wide Guard /
+> status, gen-3-`tryMoveHit`-ordered; a self-target move is never blocked). Endure
+> (`volatileStatus:'endure'`, the survive-at-1-HP `onDamage`) is MODELED alongside it — its
+> 0-net-damage `|-damage|<mon>|1/<max>` clamp is frozen as byte-fuzz fixture
+> `24_endure_survive_at_one_hp.txt`. DEFERRED (fail-loud): the gen4+ Quick/Wide Guard /
 > King's Shield (none in gen3). Its own differential golden (`gen_protect_move_golden.js`/
 > `protect_move_test.rs`) asserts the per-decision STALL COUNTER + the block (HP unchanged) + seed,
 > and the protect expansion surfaced + FIXED a real residual-model gap — **the `protect`/`stall`
@@ -214,7 +223,7 @@ slot in behind our existing bridge/tooling without changing any results.
 > omitted). The **e2e capstone picks the modeled status + setup + recovery + protect + SPIKES + LEECH
 > SEED + PHAZE sets** (`isModeledMove`); **SUBSTITUTE + LEECH SEED + EXPLOSION/SELF-DESTRUCT + PHAZING
 > (Roar/Whirlwind) are now INCLUDED** (`SUBSTITUTE_E2E_EXCLUDED = false`, `LEECHSEED_E2E_EXCLUDED = false`,
-> `EXPLOSION_E2E_EXCLUDED = false`, `PHAZE_E2E_EXCLUDED = false` — 541 explosion / self-KO + **1035
+> `EXPLOSION_E2E_EXCLUDED = false`, `PHAZE_E2E_EXCLUDED = false` — 636 explosion / self-KO + **442
 > phaze-DRAG** decisions across the 220-battle strict gate, bit-for-bit). The PHAZE re-enable required
 > ROOT-CAUSING the multi-phaze `sample` draw-POSITION desync: gen-3 **Roar / Whirlwind carry the
 > `protect: 1` flag**, so a Protect / Detect BLOCKS the phaze at `TryHit` (after the accuracy roll) → NO
@@ -248,8 +257,9 @@ slot in behind our existing bridge/tooling without changing any results.
 > (`gen_spikes_golden.js`/`spikes_test.rs`) asserts the per-side SPIKES LAYERS + the switch-in chip
 > (HP) + seed to game-end (5 scenarios × 80 seeds, 400 runs), and the e2e capstone now picks it
 > (`MODELED_HAZARD_MOVES`) so real Skarmory/Forretress/Cloyster spikers lay Spikes + grounded
-> switch-ins take the chip on the filtered gate. DEFERRED (fail-loud): Toxic Spikes / Stealth Rock
-> (NOT gen3), Rapid Spin (the hazard-CLEAR move). And now **PHAZING — Roar + Whirlwind** (the gen-3
+> switch-ins take the chip on the filtered gate; the hazard-CLEAR move **Rapid Spin** is MODELED
+> (its `|-sideend|…|Spikes` is byte-fuzz fixture `15_rapidspin_sideend_spikes.txt`). DEFERRED
+> (fail-loud): Toxic Spikes / Stealth Rock (NOT gen3). And now **PHAZING — Roar + Whirlwind** (the gen-3
 > `forceSwitch` moves: force the FOE to switch to a RANDOM eligible team member). The draw model,
 > verified vs a sim PRNG probe (`probe_phaze_rng.js`): gen-3 Roar/Whirlwind resolve to **`accuracy:
 > 100`** (NOT never-miss — the SURPRISE this layer surfaced!), so they DRAW `randomChance(100,100)`
@@ -266,14 +276,15 @@ slot in behind our existing bridge/tooling without changing any results.
 > (the random-target proof — ≥2 distinct drags per multi-bench scenario), and asserts the per-decision
 > active species (which mon was dragged) + HP (the phaze-into-Spikes chip) + spikes layers + seed to
 > game-end (7 scenarios × 80 seeds, 560 runs, 10388 seed + 20776 HP/spikes assertions, 2795 drags).
-> **Phaze is now INCLUDED in the e2e capstone** (`PHAZE_E2E_EXCLUDED = false` — 1035 phaze-DRAG decisions
+> **Phaze is now INCLUDED in the e2e capstone** (`PHAZE_E2E_EXCLUDED = false` — 442 phaze-DRAG decisions
 > across the 220-battle strict gate, bit-for-bit, `phaze_decisions >= 50` coverage floor) after fixing the
 > multi-phaze `sample` draw-POSITION desync (= the MISSING Protect block above: the port dragged an EXTRA
 > `sample` into a protected foe the sim left in place, shifting every LATER phaze's `sample` position —
 > same total draw COUNT, wrong `sample` INDEX). Pinned by
-> `phaze_blocked_by_protect_draws_no_sample_and_leaves_the_target`. DEFERRED (fail-loud): **Haze** (resets
-> boosts — a DIFFERENT mechanic, not
-> forceSwitch), Perish Song, Roar of Time (not gen3). And now **LEECH SEED** (`leechseed`) — a
+> `phaze_blocked_by_protect_draws_no_sample_and_leaves_the_target`. **Haze** (resets boosts — a
+> DIFFERENT mechanic, not forceSwitch) and **Perish Song** are MODELED as their own layers
+> (`haze_test.rs`; the perish counter rides the batch-6 golden). DEFERRED (fail-loud): Roar of Time
+> (not gen3). And now **LEECH SEED** (`leechseed`) — a
 > foe-targeting Status move (type Grass, **accuracy 90**) that plants the `leechseed` volatile on the
 > FOE; each end-of-turn the seeded mon loses `floor(maxhp/8)` and the SEEDER's CURRENT active heals it.
 > The draw model, verified vs a sim PRNG probe (`probe_leechseed_rng.js`): the MOVE DRAWS
@@ -290,8 +301,10 @@ slot in behind our existing bridge/tooling without changing any results.
 > leech-drain KO, the **leech+Leftovers+sand+burn 4-way residual ORDER** (the risk case), the
 > seeder-replaced heal-follows, leech-into-a-real-battle — plus 3 deterministic regression pins. Leech
 > Seed is **INCLUDED in the e2e capstone** (`MODELED_LEECH_MOVES`, `LEECHSEED_E2E_EXCLUDED = false`): its
-> residual is DRAW-FREE so it can't shift the LCG the way the phaze `sample` does. DEFERRED (fail-loud):
-> a **Liquid Ooze** target reverses the drain (rare in gen-3 OU). And now **SUBSTITUTE** (`substitute`) —
+> residual is DRAW-FREE so it can't shift the LCG the way the phaze `sample` does. A **Liquid Ooze**
+> target REVERSES the drain, and that is modeled too (`liquidooze_test.rs`; the reversal is an
+> INSTAFAINT, so the reversal-KO'd seeder's `|faint|` precedes the seeded mon's — byte-fuzz fixture
+> `63_liquid_ooze_leech_double_faint_order.txt`). And now **SUBSTITUTE** (`substitute`) —
 > a never-miss self-targeting Status move that spends `floor(maxhp/4)` HP to make a decoy with that much
 > HP that ABSORBS incoming foe hits. The draw model, verified vs the sim PRNG probes
 > (`probe_substitute_*.js`): the MOVE is DRAW-FREE (never-miss + a draw-free create/fail; FAILS if
@@ -307,7 +320,7 @@ slot in behind our existing bridge/tooling without changing any results.
 > held-sub absorb + secondary-suppression, the break no-carry, blocked status, blocked stat-drop, the
 > confusion-self-hit-hits-the-mon, the phaze drag-through, sub-into-a-real-battle) — plus 5 deterministic
 > regression pins. Substitute is now **INCLUDED in the e2e capstone** (`SUBSTITUTE_E2E_EXCLUDED = false`,
-> 284 substitute-MOVE / 320 sub-up decisions across the 220-battle strict gate, bit-for-bit) after FIXING
+> 472 substitute decisions across the 220-battle strict gate, bit-for-bit) after FIXING
 > the SWITCHING/weather `eachEvent('WeatherChange')` switch-in tie-shuffle the substitute battle surfaced
 > (e2e_84 dec4 — a switch-in-into-a-speed-TIE + freshly-set-weather draw-COUNT bug, NOT a substitute bug;
 > see the FIXED note in EDGE_CASES.md + the regression pin).
@@ -322,7 +335,7 @@ slot in behind our existing bridge/tooling without changing any results.
 > golden (`gen_explosion_golden.js` / `explosion_test.rs`) sweeps 7 scenarios × 80 seeds (560 runs, 3688
 > decision rows, 7376 FAINTED assertions, 880 self-KO rows, 294 sub-break boundaries, 341 wins + 59 ties)
 > + 4 deterministic regression pins E1-E4. It is now **INCLUDED in the e2e capstone** (`EXPLOSION_E2E_EXCLUDED
-> = false`, bit-for-bit — 544 explosion / self-KO decisions across the 220-battle strict gate,
+> = false`, bit-for-bit — 636 explosion / self-KO decisions across the 220-battle strict gate,
 > `explosion_decisions >= 50` coverage floor) after FIXING the two STATEFUL desyncs admitting it surfaced
 > (NEITHER the self-KO): (1) a **double-faint → double-replacement → cascade `runSwitch` cancellation**
 > (e2e_9 — when the FIRST runSwitch faints its own entrant on its side's Spikes, gen-3 `faintMessages`
@@ -347,10 +360,11 @@ slot in behind our existing bridge/tooling without changing any results.
 > `target.hp` before the sub-intercept). Its own differential golden (`gen_fixeddamage_golden.js` /
 > `fixeddamage_test.rs`) sweeps 9 scenarios × 80 seeds (720 runs, 4144 seed + 8288 HP assertions, 2469
 > fixed-damage-hit decisions, 720 wins) + 4 deterministic regression pins (FD1-FD4). The DEFERRED
-> fixed-damage family (Psywave / the OHKO moves / Counter / Mirror Coat / Bide / Endeavor) is routed here
-> too but FAIL-LOUDs (PANICS) rather than silently no-op. The e2e allow-list carries
-> `MODELED_FIXED_DAMAGE_MOVES`, but 0 filter-clean teams happen to carry one (the leech-seed situation) —
-> so the layer is proven by its dedicated golden + the FD1-FD4 pins, not the e2e. **PROTOCOL EMISSION
+> fixed-damage family (Psywave / the OHKO moves / Bide) is routed here
+> too but FAIL-LOUDs (PANICS) rather than silently no-op — Counter / Mirror Coat / Endeavor are the
+> batch-5 reactive set and MODELED. The e2e allow-list carries `MODELED_FIXED_DAMAGE_MOVES` and the
+> filter-clean pool exercises it: **235 fixed-damage decisions** across the 220-battle strict gate,
+> on top of the dedicated golden + the FD1-FD4 pins. **PROTOCOL EMISSION
 > (level-2) Phase 1 + Phase 2 + Phase 3 are now BUILT, and the drop-in `BattleStream::write_line`
 > streaming surface with them** —
 > `protocol.rs`'s `ProtocolBuilder` (an append-only, PRNG-free line buffer — two sim-mirroring
@@ -367,9 +381,9 @@ slot in behind our existing bridge/tooling without changing any results.
 > `-sidestart` (Spikes), `-start`/`-end`/`-activate` (Substitute up/break/absorb `[damage]`),
 > `-singleturn`/`-activate` (Protect). `run_full_battle_logged` returns `(BattleOutcome,
 > Vec<ProtocolLine>)`. It is **OBSERVATION-ONLY** (draws no PRNG, mutates no asserted state) — the
-> entire seed suite stays green with BYTE-IDENTICAL assertion counts (e2e 14228 / battle_test 2034 /
+> entire seed suite stays green with BYTE-IDENTICAL assertion counts (e2e 11575 / battle_test 2034 /
 > fullbattle 2053) — gated by `tests/protocol_test.rs`, which replays the capture golden and asserts
-> byte-equality on the filtered stream (**114 battles, 16115 lines byte-equal** across ALL 19 scenarios —
+> byte-equality on the filtered stream (**138 battles, 22737 lines byte-equal** across ALL 23 scenarios —
 > up from Phase-2's 66/8721, 63/7223, 51/5630 and Phase-1's 30/1512; **0 scenario deferrals**,
 > `DEFERRED_SCENARIOS` empty, **0 battles skipped**). **Phase 3** (`gen3_protocol_phase3_v1`, 8 new
 > capture scenarios) closed the deferred long tail: the taunt/disable residual `-end`s + the Disable
@@ -380,8 +394,8 @@ slot in behind our existing bridge/tooling without changing any results.
 > `-fail|unboost` form + the Substitute `-hint`), Leech Seed's full line family, Splash's `-nothing`,
 > Pay Day's `-fieldactivate`, and the Rest-at-full-HP `-fail|heal` detail. And **`gen3_writeline_stream_v1`**:
 > `battle.rs`'s `BattleStream::write_line` is the streaming drop-in — per-write byte-gated against the
-> real Node `BattleStream` by `tests/writeline_test.rs` (`harness/gen_writeline_capture.js`: **38
-> battles / 1722 writes, every per-write chunk byte-equal**). The `status_para_and_boost_drop` / `secondary_status_flinch` all-Seismic-Toss
+> real Node `BattleStream` by `tests/writeline_test.rs` (`harness/gen_writeline_capture.js`: **44
+> battles / 2377 writes across 22 scenarios, every per-write chunk byte-equal**). The `status_para_and_boost_drop` / `secondary_status_flinch` all-Seismic-Toss
 > pair was un-deferred by
 > `gen3_forced_replacement_resume_v1`: a **forced-replacement REQUEST-BOUNDARY resume** fix — the
 > "phantom" was really an INVALID scripted move slot after a replacement swapped in a mon with FEWER
@@ -423,16 +437,18 @@ slot in behind our existing bridge/tooling without changing any results.
 > (`gen_trapping_golden.js` / `trapping_test.rs`) sweeps 8 scenarios × 80 seeds (640 runs, 5771 seed
 > + 8346 trapped assertions, 508 mutual-trap rows, 160 phaze-drag rows) + 5 revert-verified pins
 > (T1-T5, incl. the grounded-Ghost Showdown-gen3 surprise). `arenatrap`/`magnetpull` are in the e2e
-> `MODELED_ABILITIES` (they took filter-clean teams 18 → 22; now 88 trapped-boundary decisions
-> bit-for-bit at the DMG_MOD-admitted 151-team corpus); the
+> `MODELED_ABILITIES` (they took filter-clean teams 18 → 22; now 241 trapped-boundary decisions
+> bit-for-bit at the 762-team corpus); the
 > admission's corpus shift surfaced + FIXED a real Intimidate-vs-SUBSTITUTE gap (a mid-battle
 > Intimidate switch-in must NOT drop a subbed foe's Atk — probe-proven seed-neutral, pinned by
-> `intimidate_into_a_substitute_is_a_noop`). The rest of the live engine (the full
-> `runEvent` gather,
-> Wish/Heal-Bell status moves, the OHKO/reactive fixed-damage moves, Torment/Imprison/Encore,
-> Mean Look / Shadow Tag, the
-> request/choice layer, protocol Phases 3-5) is
-> next. See `CLAUDE.md` for the architecture, the bit-for-bit contract, and why the hard part is
+> `intimidate_into_a_substitute_is_a_noop`). What is still OPEN is the full `runEvent` gather (the
+> port dispatches AT-SITE, bounded by the handler-completeness audit below) and the fail-loud move
+> tail. **The move census is RECOUNTED, never quoted** — `SCAN_UNIVERSE=1 node
+> harness/scan_move_coverage.js` is the only current answer (measured 2026-09-08: **369 gen3-legal
+> moves → 309 MODELED · 60 FAIL-LOUD · 0 MISMODELED**, pool **762/762** fully engine-playable).
+> Psywave, the OHKO moves and Bide PANIC in `run_fixed_damage_move`; Snore, Triple Kick and the
+> unmodeled multi-secondary shapes panic at their own sites — a gap is always LOUD, never a silent
+> desync. See `CLAUDE.md` for the architecture, the bit-for-bit contract, and why the hard part is
 > RNG-consumption-order + protocol parity, not the math.
 
 ## Layout
@@ -502,7 +518,8 @@ src/rust_sim/
                           #          miss → no accuracy draw, DRAW-FREE boost() apply [±6 clamp, own Clear Body
                           #          never blocks self], landed FALSE; +Spe Dragon Dance/Agility raises boosts[4]
                           #          NOW but cached_speed stays stale → the first-mover flips NEXT turn, bit-exact;
-                          #          fail-loud excludes Defense Curl/Minimize/Double Team/Belly Drum/Curse)
+                          #          Defense Curl/Minimize/Double Team/Belly Drum/Curse are NOT this branch —
+                          #          each is modeled by its own later move-coverage batch)
                           #        + SELF-HEAL / RECOVERY MOVES (run_status_move recovery branch + run_rest:
                           #          Recover/Soft-Boiled/Slack Off/Milk Drink → floor(maxhp/2); Moonlight/Synthesis/
                           #          Morning Sun → gen4-inherited PLAIN-integer weather heal [none floor(maxhp/2) /
@@ -510,8 +527,8 @@ src/rust_sim/
                           #          a FIXED Sleep(3) whose slp.onStart STILL draws-then-DISCARDS one random(2,6)
                           #          [the draw-COUNT crux] + the gen3ou SetStatus shuffle ordered shuffle→random(2,6);
                           #          never-miss → no accuracy draw, DRAW-FREE apply_heal, full-HP/heal-0 FAIL path,
-                          #          landed FALSE; splash = a draw-free no-op; fail-loud excludes Wish/Heal Bell/
-                          #          Aromatherapy/Refresh/Leech Seed)
+                          #          landed FALSE; splash = a draw-free no-op; Wish/Heal Bell/Aromatherapy/Refresh/
+                          #          Leech Seed are NOT this branch — each is modeled by its own later layer)
                           #        + PROTECT / DETECT (run_protect + the foe-move block in run_move:
                           #          NEVER-MISS + priority 3 → resolves before the foe's attack; the gen-3 STALL
                           #          success draw [FIRST protect short-circuits NO draw, a CONSECUTIVE one draws
@@ -537,9 +554,9 @@ src/rust_sim/
                           #          accuracy-only draw [acc-100-but-NOT-never-miss STILL draws; acc-90 CAN miss],
                           #          NO crit/damage roll/secondary; accuracy-drawn-THEN-immune type gate [Fighting→
                           #          Ghost, Ghost→Normal, Normal→Ghost]; sub-absorb of the fixed number [Super Fang
-                          #          halves the MON's hp behind a sub]; fail-loud on Psywave/OHKO/Counter/Mirror
-                          #          Coat/Bide/Endeavor; 0 e2e filter-clean teams carry one → proven by the
-                          #          dedicated golden + FD1-FD4 pins)
+                          #          halves the MON's hp behind a sub]; fail-loud on Psywave/OHKO/Bide (Counter/
+                          #          Mirror Coat/Endeavor are the MODELED batch-5 reactive set); 235 e2e fixed-damage
+                          #          decisions on the strict gate + the dedicated golden + FD1-FD4 pins)
                           #        + PP TRACKING + STRUGGLE (gen3_pp_tracking_v1): per-move PP (init pp*8/5 via 3
                           #          PP-ups; −1/use draw-free, −2 into Pressure, only when the mon MOVES, PERSISTS
                           #          across switch), the Choice-Band lock, must_struggle() → the forced-Struggle
@@ -560,12 +577,12 @@ src/rust_sim/
                           #          gate; phaze drags + forced replacements never gated), and trap_event_shuffles
                           #          (the endTurn TrapPokemon/MaybeTrapPokemon tie-shuffles: the speed-tied
                           #          Magneton mirror draws 4/endTurn — gen3 magnetpull is onAny*; Dugtrio mirror 0).
-                          #          In the e2e modeled set (trapping took teams 18 → 22; now 88 trapped decisions at the 151-team DMG_MOD corpus).
+                          #          In the e2e modeled set (trapping took teams 18 → 22; now 241 trapped decisions at the 762-team corpus).
                           #        — the RNG-consumption-order layer, cross-turn AND to game-end
     battle.rs             # Battle::start{,_with_switchins} + state_mut + BattleStream::write_line
                           #   (gen3_writeline_stream_v1 — the per-write streaming drop-in, byte-gated by
-                          #   writeline_test.rs vs gen_writeline_capture.js: 38 battles / 1722 writes /
-                          #   5510 filtered lines); snapshot/reseed/choose stay todo!()
+                          #   writeline_test.rs vs gen_writeline_capture.js: 44 battles / 2377 writes /
+                          #   6736 filtered lines across 22 scenarios); snapshot/reseed/choose stay todo!()
     protocol.rs           # Player / Choice / ProtocolLine types
                           #        + ProtocolBuilder — the Phase-1 EMIT API (append-only, PRNG-free line buffer on
                           #          BattleState.log; one retro-edit: attr_last_move_still = attrLastMove('[still]')):
@@ -573,6 +590,25 @@ src/rust_sim/
                           #          ([from] item: … | [from] <bare>) + typed constructors for the core line types;
                           #          run_full_battle_logged emits framing + the |move|/|-damage|/|switch|/|faint|/…
                           #          stream; OBSERVATION-ONLY (draws no PRNG → the seed suite is unchanged)
+    turn/                 # DONE — turn.rs's submodules (gen3_turn_submodule_split_v1, pure file-org, ZERO
+                          #   behaviour change): driver.rs moves.rs status_moves.rs secondaries.rs residuals.rs
+                          #   items.rs status.rs switch.rs speed.rs forecast.rs helpers.rs
+    bridge.rs             # DONE — the PER-SIDE (p1/p2) streams + the |request| JSON + the HP-privacy fold,
+                          #   additive on top of the omniscient stream: run_full_battle_bridge + BridgeSession
+                          #   (snapshot / clear_chunks / request_kind / is_choice_done / active_request_json)
+    search.rs             # DONE — the search + replay KERNELS (gen3_rust_search_driver_v1): the aux PRNG,
+                          #   Record::parse, build_to_turn, resolve_turn*, the outcome_of/pre_state renderers
+    bin/
+      sim_bridge.rs       # DONE — the drop-in `node local_sim_bridge.js` REPLACEMENT, INCREMENTAL
+                          #   (gen3_bridge_incremental_replay_v1): O(1) per CHOOSE, O(N) per battle
+      search_driver.rs    # DONE — the drop-in for BOTH node offline drivers: the persistent {id, cmd}
+                          #   search server AND the one-shot `mode` replay verbs (dispatch is on the KEY)
+      ab_replay.rs        # the A/B fuzzer's chunk REPLAYER — per-battle JSON verdicts, never panics on a
+                          #   divergence; --protocol runs the OMNISCIENT BYTE differential + the known-residual
+                          #   allowlist (classify_known_residual)
+      bridge_replay.rs    # the PER-SIDE/|request| fuzzer's replayer; --ab is the byte differential vs the
+                          #   recorded real getPlayerStreams + the SEED ANCHOR
+      scan_move_probe.rs  # the move-coverage scanner's engine-side probe (construction + run reachability)
   tests/
     prng_golden.rs        # differential vs real prng.js (~2900 assertions)
     dex_test.rs           # parity vs agents.gen3_data (~1500 assertions) + smoke
@@ -580,7 +616,8 @@ src/rust_sim/
     stats_test.rs         # differential vs the sim's own storedStats (18 cases) + smoke
     state_test.rs         # differential vs the sim's construction-time state (12 mons) + smoke
     switchin_test.rs      # differential vs the sim's post-switch-in boosts+weather (5 scenarios) + smoke
-    damage_test.rs        # EXACT differential vs the omniscient oracle (31 scenarios) + smoke
+    damage_test.rs        # EXACT differential vs the omniscient oracle (63 scenarios, 20 of them item/
+                          #   ability-modifier probes) + smoke
     turn_test.rs          # per-seed STATE + post-turn-PRNG-SEED differential (15 scenarios x 60 seeds;
                           #   780 EXACT seed-parity rows + speed-tie first-mover) — the single-turn proof
     battle_test.rs        # per-seed CROSS-TURN STATE+SEED differential (12 scenarios x 40 seeds x several
@@ -710,13 +747,14 @@ src/rust_sim/
                           #   a paralyzed queued move, so TD4 is the only ordering gate). All revert-verified.
                           #   Plus the 4 substitute pins + the 7 prior engine-bug pins + the switch-tie-weather pin.
     e2e_fuzz_test.rs      # THE CAPSTONE — per-seed PER-DECISION STATE(+STATUS+BOOSTS+CONFUSION+SPIKES)+SEED+winner
-                          #   differential TO GAME-END over REAL teams (data/teams/*.txt) with RANDOM modeled
+                          #   differential TO GAME-END over REAL teams (data/teams/, recursive) with RANDOM modeled
                           #   choices (INCLUDING status moves, SETUP, RECOVERY, PROTECT/DETECT, SPIKES, SUBSTITUTE,
                           #   EXPLOSION/SELF-DESTRUCT, and TAUNT/DISABLE): 220 battles, ALL 220 bit-for-bit clean (STRICT
-                          #   filtered_diverged 0, no escape hatch), 11630 decisions of which 5069 USE SPIKES, 581 a
-                          #   SUBSTITUTE, 557 an EXPLOSION self-KO, 282 a PHAZE drag, 178 USE TAUNT, and 88 a TRAPPED mon (the new
-                          #   coverage + a taunt_decisions >= 50 floor; 0 USE DISABLE — no sample team carries it,
-                          #   the honest disclosure). The EXPLOSION re-enable surfaced + FIXED
+                          #   filtered_diverged 0, no escape hatch), 11575 decisions of which 4062 USE SPIKES, 472 a
+                          #   SUBSTITUTE, 636 an EXPLOSION self-KO, 442 a PHAZE drag, 106 USE TAUNT, 235 a FIXED-DAMAGE
+                          #   move, 252 a BATCH-5 move, 58 a BATCH-6 move, and 241 a TRAPPED mon (the coverage floors
+                          #   + a taunt_decisions >= 50 floor; 0 USE DISABLE — no sample team carries it,
+                          #   the honest disclosure). 218 wins + 2 ties. The EXPLOSION re-enable surfaced + FIXED
                           #   the double-faint→double-replacement→cascade runSwitch-cancellation (gen-3 cancelAction over
                           #   getAllActive drops the FOE's pending runSwitch → the foe entrant is NOT re-chipped) + the
                           #   confusion-self-hit Choice-Band fold (gen-4 confusion runs the FULL getDamage). The SPIKES
@@ -726,18 +764,37 @@ src/rust_sim/
                           #   RESIDUAL duration handlers + no-delete-on-fail stall + willAct() gate, the RESIDUAL HANDLER
                           #   GATHER-ORDER bug, Water/Volt Absorb heal-on-miss, + Toxic stage-reset-on-switch.
                           #   gen3customgame. Headline tallies are clean-only (loop breaks at first divergence).
-                          #   Ignored: e2e_diag, e2e_trace_one
-    protocol_test.rs      # PROTOCOL-EMISSION (level-2, Phase 1+2) BYTE-differential — replays the capture golden
-                          #   through run_full_battle_logged, FILTERS both sides to the Phase-1+2 line types (only
+                          #   Ignored: e2e_diag, e2e_trace_log, e2e_trace_one
+    protocol_test.rs      # PROTOCOL-EMISSION (level-2, Phase 1+2+3) BYTE-differential — replays the capture golden
+                          #   through run_full_battle_logged, FILTERS both sides to the emitted line types (only
                           #   debug + still-deferred-mechanic lines dropped from BOTH; |t:| normalized), asserts
                           #   BYTE-EQUALITY per line in order (a truncated/turn-capped golden is a PREFIX match).
-                          #   66 battles / 8721 lines byte-equal across ALL 11 scenarios; 0 deferred + 0 skipped
-                          #   (the all-Seismic-Toss pair un-deferred by gen3_forced_replacement_resume_v1; the 3
+                          #   138 battles / 22737 lines byte-equal across ALL 23 scenarios; 0 deferred + 0 skipped
+                          #   (the all-Seismic-Toss pair un-deferred by gen3_forced_replacement_resume_v1; the
                           #   recover_and_rest Struggle battles un-skipped by gen3_pp_tracking_v1 — PP + forced-Struggle
-                          #   + the Choice-Band lock + the Struggle |move| / |-damage| [from] Recoil|[of] lines).
-                          #   A truncated/turn-capped golden is a byte-exact PREFIX match. The OBSERVATION-ONLY proof
-                          #   is the seed suite staying green with IDENTICAL counts (e2e 13367 / battle 2034 / full 2053).
-    vectors/{prng,dex,team,stats,state,switchin,damage,turn,battle,fullbattle,secondary,status_move,setup_move,recovery_move,protect_move,spikes,phaze,leechseed,substitute,explosion,fixeddamage,pp_struggle}_golden.txt
+                          #   + the Choice-Band lock + the Struggle |move| / |-damage| [from] Recoil|[of] lines; 4
+                          #   battles REPLAY a forced Struggle byte-exact). The OBSERVATION-ONLY proof
+                          #   is the seed suite staying green with IDENTICAL counts (e2e 11575 / battle 2034 / full 2053).
+    <class>_test.rs       # the per-class goldens, one for each harness/gen_<class>_golden.js — same
+                          #   per-decision STATE+SEED-to-game-end shape: accuracy, item_mods, ability_dmgmod,
+                          #   ability_batch{1,2,4}, berry_batch3, flashfire, naturalcure, statusimmune,
+                          #   forecast, haze, liquidooze, trick, whiteherb, wonderguard, yawn, substitute,
+                          #   fixeddamage, movecoverage_batch{1,2,3,4,4b,4c,5,6} + movecoverage_snatch
+                          #   (+ fire_thaw_ko, species_formes, turn0_construction, lens1_review,
+                          #   review_confusion_boost_tri)
+    bridge_test.rs        # the PER-SIDE / |request| layer vs the recorded real getPlayerStreams
+    bridge_corpus_test.rs # the FROZEN per-side/|request| corpus gate (14 clean + 3 allowlisted fixtures)
+    bridge_choice_reject_test.rs / bridge_clone_branch_test.rs / sim_bridge_seed_test.rs
+                          # the reject-and-re-request boundary, BridgeSession::snapshot, the bridge seed model
+    byte_fuzz_corpus_test.rs   # the FROZEN omniscient-BYTE corpus gate (76 fixtures; floor >= 15)
+    protocol_byte_fuzz_test.rs # the byte-fuzzer's own unit gates (22 tests)
+    handler_audit_test.rs # the handler-completeness manifest gate (gen3_handler_audit_v1)
+    search_driver_test.rs / replay_driver_test.rs  # the search server + the one-shot replay verbs
+    writeline_test.rs     # BattleStream::write_line, per-write byte-gated vs the real Node BattleStream
+    vectors/{prng,dex,team,stats,state,switchin,damage,turn,battle,fullbattle,secondary,status_move,setup_move,recovery_move,protect_move,spikes,phaze,leechseed,substitute,explosion,fixeddamage,pp_struggle,accuracy,item_mods,ability_dmgmod,ability_batch1,ability_batch2,ability_batch4,berry_batch3,flashfire,naturalcure,statusimmune,forecast,haze,liquidooze,trick,whiteherb,wonderguard,yawn,taunt_disable,trapping,movecoverage_*}_golden.txt
+    vectors/protocol_capture_golden.txt / writeline_capture_golden.txt / bridge_capture_golden.txt
+    vectors/bridge_corpus/ + vectors/byte_fuzz_corpus/   # the two frozen repro corpora (each has a README)
+    vectors/gen3_handler_audit.{json,md} + gen3_mechanics_inventory.md + protocol_inventory.md
     vectors/e2e_fuzz_golden.txt     # the CAPSTONE filtered gate (real teams, modeled mechanics, full battles)
     vectors/e2e_fuzz_taxonomy.txt   # coverage map: gaps ranked by STATIC team composition (which unmodeled
                           #   ability/item the paired teams carry) — NOT observed divergence cause, move-blind
@@ -850,10 +907,10 @@ src/rust_sim/
     trace_multiturn_rng.js # instrumented MULTI-turn PRNG draw tracer (eachEvent shuffles + residuals)
     trace_switch_rng.js   # instrumented SWITCH-turn PRNG draw tracer (switch-phase + post-faint crux)
     trace_status_secondary_rng.js # instrumented STATUS onBeforeMove + SECONDARY draw tracer (this step's crux)
-    gen_protocol_capture.js # PROTOCOL-EMISSION (level-2) capture — drives the sim (gen3customgame) over 11
-                          #   scenarios x 6 seeds, captures the RAW OMNISCIENT |...| stream verbatim (|t:|
-                          #   normalized) -> tests/vectors/protocol_capture_golden.txt (66 battles, 9740 lines,
-                          #   38 line types); the byte target protocol_test.rs replays + diffs the Phase-1 subset
+    gen_protocol_capture.js # PROTOCOL-EMISSION (level-2) capture — drives the sim (gen3customgame + gen3ou)
+                          #   over 23 scenarios x 6 seeds, captures the RAW OMNISCIENT |...| stream verbatim (|t:|
+                          #   normalized) -> tests/vectors/protocol_capture_golden.txt (138 battles, 24034 lines,
+                          #   41 line types); the byte target protocol_test.rs replays + diffs the emitted subset
 ```
 
 ## Build & test
@@ -882,16 +939,24 @@ cd src/rust_sim
 nohup node harness/ab_fuzz.js --mode randbats --hours 12 > /dev/null 2>&1 &
 # The modeled-universe generator (widest coverage of the modeled surface):
 nohup node harness/ab_fuzz.js --mode random --hours 12 > /dev/null 2>&1 &
-# Or a fixed battle count / the e2e's 585 filter-clean real teams:
+# Or a fixed battle count / the e2e's 762 filter-clean real teams:
 node harness/ab_fuzz.js --mode pool --battles 500
+# Smogon-derived RANDOM gen3ou teams (the surface training + ladder actually use):
+node harness/ab_fuzz.js --mode ourandom --battles 500
+# The OMNISCIENT BYTE differential (the emission-form hunter behind byte_fuzz_corpus/):
+node harness/ab_fuzz.js --mode pool --protocol --format gen3ou --battles 200
 ```
 
-Flags: `--mode randbats|random|pool` (default randbats) · `--battles N` /
+Flags: `--mode randbats|random|pool|ourandom` (default randbats) · `--battles N` /
 `--hours H` (default: run until killed) · `--master-seed S` (default from time —
 ALWAYS printed, so any run is reproducible) · `--chunk N` (default 25) ·
 `--out DIR` (default `harness/ab_fuzz_out/`) · `--keep-chunks` (default: clean
 chunk files are deleted after replay; divergent battles are always saved
-standalone). No Showdown server is needed (in-process BattleStream only); the
+standalone) · `--protocol` (the OMNISCIENT BYTE differential — adds the `protocol`
+divergence kind and the known-residual allowlist GREEN GATE) · `--format
+gen3customgame|gen3ou` (default gen3customgame). `POKESIM_AB_REPLAY_BIN` points the
+driver at an isolated `ab_replay` build so a byte run never touches the shared
+`target/`. No Showdown server is needed (in-process BattleStream only); the
 driver `cargo build --release --bin ab_replay`s once at startup.
 
 ### Where results land / how to read them
@@ -901,7 +966,7 @@ driver `cargo build --release --bin ab_replay`s once at startup.
   cum_diverged=2 cum_panic=0 … kinds=state=2 species=213 moves=118
   adj_rate=0.008 bph=2450 …`. `kinds=` is the cumulative first-divergence
   taxonomy (`seed|state|status|boost|confusion|spikes|species|firstmover|
-  request|decision_count|ended|winner|panic|start_error`); `bph` =
+  request|decision_count|ended|winner|protocol|panic|parse_error|start_error`); `bph` =
   battles/hour; `adj_rate` (randbats) = sets touched by the item/ability
   adapter / sets fielded.
 - `<out>/divergences/<runid>_<battleid>/` — one SELF-CONTAINED repro per
@@ -960,10 +1025,15 @@ additionally self-contained, so they replay even after the generator changes.
   gen3-dex species whose learnset ∩ modeled moves has ≥4 options (≥1 modeled
   DAMAGING move forced per mon), modeled/no-op ability, modeled item, random
   nature/EVs/IVs, level 100. The widest legal coverage of the claimed modeled
-  surface — the mode that flushes out modeled-predicate ↔ engine drift the 151
-  real teams never exercised.
-- **pool** — the e2e capstone's filter-clean `data/teams/` pool (585 teams),
+  surface — the mode that flushes out modeled-predicate ↔ engine drift the fixed
+  real-team pool never exercises.
+- **pool** — the e2e capstone's filter-clean `data/teams/` pool (762 teams),
   fresh seeds/choices every run.
+- **ourandom** — `harness/ou_random_teams.js`: RANDOM teams drawn from the REAL
+  gen3ou distribution (Smogon usage + teammate/move/item/ability/spread priors
+  out of `data/pokemon/`, never the pool's own co-occurrence file), L100 with a
+  BP-70 Hidden Power pinned by construction. The surface training and ladder
+  actually meet, without being the 762 fixed teams.
 
 ## Regenerating the PRNG golden vectors
 
@@ -1037,8 +1107,8 @@ node src/rust_sim/harness/gen_item_mods_golden.js
 
 `tests/item_mods_test.rs` replays all 33 scenarios × 30 seeds (990 battles) and enforces
 >=10 boosted-hit rows per member. The exact fold math is additionally pinned by the
-damage golden's 17 item probes (`node src/rust_sim/harness/gen_damage_golden.js` →
-`tests/damage_test.rs`, 48 EXACT max-roll scenarios).
+damage golden's 20 item probes (`node src/rust_sim/harness/gen_damage_golden.js` →
+`tests/damage_test.rs`, 63 EXACT max-roll scenarios).
 
 ## Regenerating the dex golden vectors
 
@@ -1176,7 +1246,7 @@ investigation that pinned the switch model; not a golden generator).
 The **level-2** target: the RAW OMNISCIENT `|...|` protocol stream Showdown emits,
 verbatim, per battle — the byte set `protocol.rs`'s `ProtocolBuilder` reproduces.
 Captured from the omniscient `BattleStream` (no server, no per-side privacy fold →
-full `x/y` HP both sides) over 11 scenarios × 6 seeds; the `|t:|` wall-clock line is
+full `x/y` HP both sides) over 23 scenarios × 6 seeds; the `|t:|` wall-clock line is
 normalized to `|t:|<NORMALIZED>` (un-reproducible + poke-env-ignored). Regenerate
 after any change to the scenarios or the sim's line ordering (needs the submodule
 symlinks):
@@ -1186,25 +1256,29 @@ node src/rust_sim/harness/gen_protocol_capture.js
 ```
 
 `tests/protocol_test.rs` replays each battle through `run_full_battle_logged`,
-FILTERS both the golden's lines and the engine's output to the **Phase-1 + Phase-2**
-line types (only `debug` [poke-env-ignored] + the still-deferred mechanics' lines are
-dropped from BOTH sides — a real subset-equality, not a fake pass), and asserts
+FILTERS both the golden's lines and the engine's output to the **Phase-1 + Phase-2 +
+Phase-3** line types (only `debug` [poke-env-ignored] + the still-deferred mechanics'
+lines are dropped from BOTH sides — a real subset-equality, not a fake pass), and asserts
 BYTE-EQUALITY per line, in order, with a first-divergence panic (a turn-capped/truncated
 golden — one with no terminal `|win|`/`|tie|`, e.g. `spikes_and_phaze/2`'s infinite
 Spikes-at-cap↔immune-EQ stall — is asserted as a byte-exact PREFIX of the longer engine
-output). **51 battles / 5630 lines byte-equal** across 9 scenarios: the 4 design-core +
-`sand_intimidate_effectiveness` (Phase 1) PLUS `substitute_absorb` / `protect_block` /
-`spikes_and_phaze` / `recover_and_rest` (Phase 2 — the status-move `|move|` announce +
-`-status`/`-curestatus`/`cant`/`-boost`/`-weather`/`-ability`/`-fail`/`-sidestart`/
-`-start`/`-end`/`-activate`/`-singleturn` lines). STILL deferred: `status_para_and_boost_
-drop` + `secondary_status_flinch` — their status/boost lines ARE emitted AND (now) the
-Seismic Toss lines replay byte-exact (fixed-damage is modeled), but both all-ST battles
-ALSO exercise a **forced-replacement REQUEST-BOUNDARY resume** the port collapses (a
-switching-layer nuance, same family as `forced_replacement_recaches_speed_seed`, NOT a
-protocol gap) + 3 `recover_and_rest` battles that hit **Struggle** (no PP tracking).
-Phase-2 emission is still **observation-only** — it draws no PRNG, so the whole seed suite
+output). **138 battles / 22737 lines byte-equal** across ALL 23 scenarios, **0 deferred
+and 0 skipped**: the 4 design-core + `sand_intimidate_effectiveness` (Phase 1);
+`substitute_absorb` / `protect_block` / `spikes_and_phaze` / `recover_and_rest` /
+`status_para_and_boost_drop` / `secondary_status_flinch` (Phase 2 — the status-move
+`|move|` announce + `-status`/`-curestatus`/`cant`/`-boost`/`-weather`/`-ability`/
+`-fail`/`-sidestart`/`-start`/`-end`/`-activate`/`-singleturn` lines); and the Phase-3
+tail `taunt_lifecycle` / `disable_lifecycle` / `trace_switchin` / `flashfire_cycle` /
+`flashfire_tryhit_miss` / `waterabsorb_tryhit_miss` / `status_immune_lines` /
+`synchronize_lum_rest` / `midswitch_ability_lines` / `leechseed_splash_payday` /
+`leechseed_into_substitute` / `intimidate_atk_floor`. The all-Seismic-Toss pair is
+carried by `gen3_forced_replacement_resume_v1` (the REQUEST-BOUNDARY resume: an invalid
+scripted move slot after a replacement is validated + SKIPPED draw-free, mirroring
+`side.choose`), and 4 battles replay a forced **Struggle** byte-exact under
+`gen3_pp_tracking_v1`.
+Emission is **observation-only** — it draws no PRNG, so the whole seed suite
 (`prng`/`dex`/…/`battle`/`fullbattle`/`secondary`/`e2e_fuzz`) stays green with IDENTICAL
-seed-assertion counts (e2e 14228 / battle_test 2034 / fullbattle 2053); that is the
+seed-assertion counts (e2e 11575 / battle_test 2034 / fullbattle 2053); that is the
 load-bearing proof it didn't perturb the engine. The line grammar + the parse/ignore split
 are catalogued in `tests/vectors/protocol_inventory.md`; the design is
 `PROTOCOL_EMISSION_DESIGN.md`.

@@ -16,7 +16,7 @@ it:
 These tests pin all three halves of the fix: the constant's VALUE, that BOTH construction sites
 pass it, and that the kwarg is actually WIRED into the tower rather than swallowed and ignored.
 
-Same family as `src/main/default_port_test.py` — a test whose whole job is to catch a drift between
+Same family as `src/main/launcher/default_port_test.py` — a test whose whole job is to catch a drift between
 two defaults that no other gate compares.
 """
 

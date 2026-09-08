@@ -360,7 +360,7 @@ for m in (agents, main, utils, poke_env):
     # A SLICE, not the whole tier: ~600 tests over the obs encoder, the action layer, the
     # event-sourced battle layer and the shared utils — the four packages that actually break
     # when the environment is wrong (a missing data file, a half-built submodule, the wrong
-    # numpy). ~10 s. The full 4536-test inner loop is what you run next, not what you wait for
+    # numpy). ~10 s. The full ~10,000-test inner loop is what you run next, not what you wait for
     # here; a bootstrap that ends in a two-minute test run gets interrupted.
     info "a ~10 s slice of the unit suite (obs / action / battle / utils) ..."
     "$PY" -m pytest src/agents/observation src/agents/action src/agents/battle src/utils \

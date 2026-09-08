@@ -14,7 +14,7 @@ This script:
      Files already on disk are skipped unless `--force`.
   3. Merges them into a single aggregated file at `--output` with the same
      shape as a single-month chaos JSON, so downstream consumers
-     (src/scripts/compute_hidden_power_priors.py and friends) work unchanged.
+     (tools/smogon_stats_downloader/compute_priors.py and friends) work unchanged.
 
 Aggregation rules:
   - Sum value-counts in the dict-of-numbers fields: Moves, Abilities, Items,

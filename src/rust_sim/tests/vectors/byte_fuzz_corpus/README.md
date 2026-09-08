@@ -3,8 +3,9 @@
 Each `*.txt` here is a **frozen A/B `--protocol` byte-fuzzer repro** — a single,
 self-contained real gen3ou/gen3customgame battle in the fuzzer's chunk golden format
 (`SCEN` / `TEAM` / `FMT` / `INIT` / `DEC` / `END` / `L` rows — exactly a repro dir's
-`battle.txt`). Every fixture **replays byte-clean today** through the emitting engine
-(`run_full_battle_logged`) and **guards a specific `|...|` emission form** that the
+`battle.txt`). **76 fixtures**, each replayed through the emitting engine
+(`run_full_battle_logged`): all but the two tagged allowlist fixtures (`21_*`, `27_*`)
+**replay byte-clean today**, and each **guards a specific `|...|` emission form** that the
 omniscient-byte fuzzer once surfaced as a divergence and the engine now emits
 bit-for-bit (see `gen3_omniscient_byte_fuzz_v1` in `src/rust_sim/CLAUDE.md`).
 
@@ -37,6 +38,7 @@ The fixtures are named by the form they guard, e.g.:
 | `24_endure_survive_at_one_hp.txt` | Endure survive-at-1 emits `\|-damage\|<mon>\|1/<max>` even when already at 1 HP (0-net clamp) |
 | `25_natural_cure_pursuit_ko_curestatus.txt` | Natural Cure `-curestatus [silent]` on a Pursuit-KO'd switcher, BEFORE the `\|-hint\|`/`\|faint\|` |
 | `26_freeze_persists_vs_hp_fire.txt` | freeze PERSISTS through a Hidden Power Fire hit (base-type Fire only thaws — the T1 state fix) |
+| `27_construction_mirror_weather_of.txt` | **ALLOWLIST fixture** — A1 turn-0 construction speed-tie weather-`[of]` FLIP on a same-species MIRROR lead; MUST diverge with `allowlisted:turn0-construction-speed-tie-mirror-of-flip` |
 | `38_white_herb_lead_intimidate_restore.txt` | White Herb restores a slower LEAD's Intimidate drop at its switch-in (`-enditem`/`-clearnegativeboost` before `\|turn\|1` — the ab_6_13 lead case) |
 | `39_white_herb_midbattle_residual_restore.txt` | White Herb restores a MID-BATTLE Intimidate-switch-in drop at the order-29 end-of-turn residual when the holder does not move (the ab_7_4 case) |
 | `40_soundproof_damaging_immune.txt` | a DAMAGING `flags.sound` move (Hyper Voice) into a Soundproof holder → `\|-immune\|…\|[from] ability: Soundproof` (accuracy-only draw, no crit/damage — `gen3_ability_batch2_v1`) |
@@ -54,8 +56,9 @@ The fixtures are named by the form they guard, e.g.:
 - **Emission-form fixture** (the default, no header tag) — MUST replay **byte-clean** (`ok`).
 - **Allowlist fixture** — carries a `# ALLOWLIST <reason>` header comment. It MUST replay to a
   `diverged` verdict whose `allowlisted` reason EXACTLY equals `<reason>` (the documented,
-  non-gen3ou-impacting residual `ab_replay`'s `classify_known_residual` tags — e.g. R1's
-  `turn0-construction-speed-tie-attribution`). This makes the allowlist AUDITABLE + BOUNDED: it can
+  non-gen3ou-impacting residuals `ab_replay`'s `classify_known_residual` tags). **Two today**:
+  `21_*` → R1's `turn0-construction-speed-tie-attribution`, `27_*` → A1's
+  `turn0-construction-speed-tie-mirror-of-flip`. This makes the allowlist AUDITABLE + BOUNDED: it can
   only grow by a reviewed reason+fixture pair, and any un-cataloged divergence is a hard failure
   (proven — stripping the tag makes the gate fail).
 

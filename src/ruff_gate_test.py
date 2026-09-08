@@ -17,8 +17,9 @@ check that runs when someone remembers. `F821` (undefined name) in particular is
 `NameError` waiting on a branch nobody exercised — precisely the class of bug the unit suite is
 worst at reaching.
 
-**Complements mypy, does not overlap it.** `mypy_gate_test.py` is deep but covers ONE package
-(`src/agents/model`, per `mypy.ini`). This is shallow but covers `agents/` + `main/` + `utils/`
+**Complements mypy, does not overlap it.** `mypy_gate_test.py` is deep but covers two packages
+(`src/agents/model` + `src/agents/observation`, per `mypy.ini`). This is shallow but covers
+`agents/` + `main/` + `utils/`
 entire. `src/poke_env` (a vendored FORK) and `src/rust_sim` (a Rust crate; its Python is harness
 scratch) are excluded — neither is ours to lint — and those two excludes are mirrored in
 `ruff.toml` so a bare `ruff check src/` from a shell agrees with this test.

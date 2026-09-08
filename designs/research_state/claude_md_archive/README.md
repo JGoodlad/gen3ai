@@ -1,7 +1,8 @@
 # `CLAUDE.md` archive — narrative lifted out of the rules files
 
-Created **2026-09-07**, when the root `CLAUDE.md` was cut from 2,644 lines (206 KB, ~57k tokens
-loaded into EVERY session) to ~1,650 (119 KB, ~33k tokens).
+Created **2026-09-07**, when the root `CLAUDE.md` — 2,644 lines, 206 KB, ~57k tokens loaded into
+EVERY session — was cut to a constitution, a command card and a map. It stands at **396 lines
+(36 KB, ~10k tokens)**.
 
 **The rule applied** (from `designs/research_state/claude_md_census_2026-09-06.md` §0):
 
@@ -31,7 +32,15 @@ to the leaf every session that touches `designs/` loads:
 | `designs_version_map_ai_v9_stages_and_forward_designs.md` | the **ai_v9** state-table cell (20.8 KB in one cell) |
 | `designs_version_map_state_table_2026-09-07.md` | the remaining long cells — the active run and its generation history, and the ai_v12 / ai_v10 / ai_v11 chapter cells |
 
-**Added 2026-09-08 (third pass), from `src/agents/training/CLAUDE.md`** — 3,183 → 740 lines, the
+**Added 2026-09-08 (third pass), from `src/rust_sim/CLAUDE.md`** — 2,659 → 791 lines, the same
+rule applied to the leaf every session that touches the Rust port loads. The topic detail went to
+`designs/rust_sim/`; only the passages that were **rewritten** rather than moved are archived here:
+
+| file | lifted from |
+|---|---|
+| `rust_sim_leaf_history.md` | the passages the split restated as a rule / a command / a hazard |
+
+**Added 2026-09-08 (fourth pass), from `src/agents/training/CLAUDE.md`** — 3,183 → 740 lines, the
 same rule applied to the leaf every session that touches `src/agents/training/` loads:
 
 | file | lifted from |
@@ -59,6 +68,6 @@ to the new `designs/model/` tree; only the dated records came here:
 checking the code first — an entry that outlives its own fix misleads every reader after it.
 
 Related, from the same passes: `designs/training/` (the training leaf's topics), `designs/model/`
-(the model leaf's topics), `designs/prober/` (the prober leaf's topics),
-`designs/rust_sim/port_build_log.md` (the port's closed coverage rounds), and
+(the model leaf's topics), `designs/prober/` (the prober leaf's topics), `designs/rust_sim/` (the
+port's topics, plus `designs/rust_sim/port_build_log.md`'s closed coverage rounds), and
 `designs/research_state/memory_archive/` (retired agent memories).

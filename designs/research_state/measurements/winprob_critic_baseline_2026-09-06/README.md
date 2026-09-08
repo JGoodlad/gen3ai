@@ -141,8 +141,9 @@ design's gap list.
 - **This is the head as a BAROMETER.** It has never carried a gradient into `pi`, so nothing here
   predicts how it calibrates once it becomes the critic and its own errors start steering the
   policy that generates its labels.
-- **Draws are labelled as losses** (`wrappers.py:491-493` — `won is None` ⇒ 0.0), so every drawn
-  episode's decisions are scored against a loss label here as in training.
+- **Draws are labelled as losses** (`src/agents/training/wrappers.py`, the `_outcome` →
+  `win_outcome` branch — `won is None` ⇒ 0.0), so every drawn episode's decisions are scored
+  against a loss label here as in training.
 - The `random` opponent at 26M was captured as 8 wins of 8 battles: one outcome class, nothing to
   reweight, **weight 0**, and it is named as such in the console output rather than silently
   dropped.

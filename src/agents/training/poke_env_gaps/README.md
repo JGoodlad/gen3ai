@@ -10,20 +10,22 @@ confirmed these behaviors at scale.
 
 `TurnDelta` (in `turn_delta.py`; the per-decision `BattleContext` snapshot it reads lives in
 `battle_snapshot.py`) exposes `opp_move_id` and `opp_move_known` to the reward function and the
-observation encoder. In production these fold from the event log (`build_from_events`); the
-legacy snapshot-diff `TurnDelta.build` these gap tests exercise reads
-`battle.opponent_active_pokemon.last_move`, which poke-env populates from the Showdown
-`|-move|` protocol.
+observation encoder. `TurnDelta.build_from_events` is the only builder — it folds from the event
+log and does no diff-detective reconstruction. What these gap tests exercise is the poke-env read
+UNDER it: `BattleContext.opp_last_move_id` takes `battle.opponent_active_pokemon.last_move`, which
+poke-env populates from the Showdown `|move|` protocol.
 
 poke-env's `Pokemon.last_move` iterates `self.moves.values()` and returns the `Move` whose
 `_is_last_used` flag is `True`. That flag is set inside `Pokemon.moved()`:
 
 ```python
 def moved(self, move_id, failed=False, use=True, reveal=True, pressure=False):
+    ...                                  # counters/preparing-move reset elided
     move = None
     if reveal:
         move = self._add_move(move_id)   # adds to self.moves, returns the Move object
     if use:
+        ...
         for m in self.moves.values():
             m._is_last_used = m is move  # exactly one gets True; None → all get False
 ```
@@ -36,7 +38,7 @@ to `False` and `last_move` returns `None`.
 ## Confirmed Behaviors (from fuzz test + poke-env source)
 
 ### 1. Normal moves
-`last_move` is always set correctly after `|-move|`. No gap.
+`last_move` is always set correctly after `|move|`. No gap.
 
 ### 2. `|cant|` turns (paralysis, freeze, flinch, confusion, sleep-no-sleeptalk)
 `cant_move()` does **not** clear `_is_last_used`. So:
@@ -49,7 +51,7 @@ TurnDelta handles this via `opp_move_known = False` when `opp_last_move_id is No
 
 ### 3. Explosion / Self-Destruct (the attacker-fainted gap)
 When the opponent uses Explosion and faints:
-1. `|-move|` sets `last_move = "explosion"` on the attacker.
+1. `|move|` sets `last_move = "explosion"` on the attacker.
 2. `|faint|` removes the attacker from `opponent_active_pokemon`.
 3. The new switch-in becomes `opponent_active_pokemon`, whose `last_move = None`.
 
@@ -97,6 +99,7 @@ Because `reveal=False` → `move=None` → all `_is_last_used` flags cleared →
 | **Metronome** | Extremely rare (Clefable) | Low — too chaotic to be meta |
 | **Nature Power** | Niche (becomes Swift in standard terrain) | Low |
 | **Copycat** | Gen 4+ — not in Gen 3 | N/A |
+| **Round** | Gen 5+ — not in Gen 3 | N/A |
 | **Assist** | Niche (Delcatty, Persian) — not in handler, falls to warning | Low |
 | **Mirror Move** | Niche (Pidgeot, Swellow) — not in handler | Low |
 
@@ -131,11 +134,13 @@ the regression guard that the strict parser does not mis-fire on normal play.
 
 ---
 
-## Fuzz Test Results Summary (50 battles × 3 scenarios, ~30K transitions)
+## Fuzz Test Results Summary
 
-Run: `python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50`
+Recorded over the **A–C** batches at 50 battles each, ~30K transitions, with
+`python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50`. That command runs
+**four** batches today — D (Roar/Whirlwind) postdates this measurement and is not in the totals.
 
-| Metric | A-Explosion | B-Rest/SleepTalk | C-HyperBeam | Total |
+| Metric | A-Explosion | B-Rest/SleepTalk | C-Outrage/HyperBeam | Total |
 |--------|------------|------------------|-------------|-------|
 | Total transitions | 5,602 | 17,540 | 7,294 | 30,436 |
 | `our_move_slot_unknown` | 0 | 0 | 0 | **0** |
@@ -147,7 +152,7 @@ Run: `python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50`
 
 ¹ "True anomaly" = `revealed_moves` grew (a move was used) but `last_move = None`. These
   are almost certainly false positives from poke-env's `_update_from_request()` adding
-  moves to a Pokémon via the `|request|` metadata path (not via `|-move|`), so
+  moves to a Pokémon via the `|request|` metadata path (not via `|move|`), so
   `last_move = None` is actually correct in those cases. Not a training concern.
 
 **Key finding:** `our_move_slot_unknown = 0` across all 30K transitions confirms
@@ -187,34 +192,44 @@ doing only if these moves become relevant in training.
 Runs battles **in-process via the local BattleStream bridge — no `npm run showdown`** (only the `deps/pokemon-showdown` `dist/` + `node_modules` symlinks from the root CLAUDE.md worktree setup):
 
 ```bash
-# One-time worktree setup (per root CLAUDE.md — symlink the BUILD ARTIFACTS, never the whole
-# submodule dir, which breaks git status):
+# One-time worktree setup: ./scripts/bootstrap.sh does this (and everything else) idempotently.
+# The manual form, per root CLAUDE.md — symlink the BUILD ARTIFACTS, never the whole submodule
+# dir (git then treats the submodule path as a symlink and `git status` breaks), and KEEP the
+# [ -e ] guard: from the main checkout `dist` already exists, so an unguarded `ln -s TARGET dist`
+# lands INSIDE it as dist/dist pointing at its own parent and `node build` dies with ELOOP.
 git submodule update --init
-ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/dist         deps/pokemon-showdown/dist
-ln -s /home/goodlad/dev/gen3ai/deps/pokemon-showdown/node_modules deps/pokemon-showdown/node_modules
+for n in dist node_modules; do
+  [ -e "deps/pokemon-showdown/$n" ] || \
+    ln -s "/home/goodlad/dev/gen3ai/deps/pokemon-showdown/$n" "deps/pokemon-showdown/$n"
+done
 
 # Run (30 battles per scenario ≈ 2 min)
 # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python src/agents/training/poke_env_gaps/transition_fuzz_test.py 30
 
-# More thorough (50 battles ≈ 5 min)
+# More thorough (50 battles ≈ 5 min); bare argv defaults to 50
 python src/agents/training/poke_env_gaps/transition_fuzz_test.py 50
 ```
 
-Scenarios:
+Scenarios (all four run, in order):
 - **A — Explosion**: Gengar/Claydol/Metagross with Explosion — stresses the attacker-fainted gap
 - **B — Rest/Sleep Talk**: Suicune/Snorlax with Rest+Sleep Talk, Smeargle/Gengar with sleep inducers
-- **C — Hyper Beam**: Tyranitar/Regice with Hyper Beam — confirms recharge-turn `last_move` persistence
-- **D — Roar/Whirlwind**: phaze recovery via the DamagingMoveEvent
+- **C — Outrage / Hyper Beam**: Salamence with Outrage, Tyranitar/Regice with Hyper Beam —
+  confirms lock-in and recharge-turn `last_move` persistence
+- **D — Roar/Whirlwind**: phaze recovery via the DamagingMoveEvent — the active slot changes to
+  the new mon before the snapshot, so `opp_move_id` must be recovered from `opp_all_last_move_ids`
 
 ---
 
 ## Fuzz Coverage Map (what's validated, and what to expand)
 
-Two e2e fuzz tests run real `gen3ou` battles and validate the protocol →
-poke-env → `BattleContext` → `TurnDelta` → encoded-obs pipeline. The matching
-unit tests are `src/agents/training/move_attribution_test.py` (decision table)
-and the per-encoder `*_test.py` files (dim/layout).
+This directory holds **24 bridge-backed suites**. The three below own the move-attribution
+question this README is about and are documented in full; the other 21 are inventoried at the end
+of this section. All 24 run real `gen3ou` battles in-process and check a layer of the pipeline
+against protocol truth; the three here take the protocol → poke-env → `BattleContext` →
+`TurnDelta` → encoded-obs path for move attribution specifically. The matching unit tests are
+`src/agents/training/move_attribution_test.py` (decision table) and the per-encoder `*_test.py`
+files (dim/layout).
 
 ### `transition_fuzz_test.py` — move ATTRIBUTION (who used what)
 | Validated | Notes |
@@ -248,6 +263,35 @@ against the raw protocol:
 | **Coverage** | FAILS if no Snatch was ever observed (≈ 12 snatches/battle in practice). |
 
 Run it: `python src/agents/training/poke_env_gaps/snatch_fuzz_test.py 20`
+
+### The rest of the suite
+
+Same bridge, same discipline (real battles, protocol truth, FAIL on missing coverage), aimed at
+other obs blocks rather than at move attribution. Each is a script: `python <file> [n_battles]`.
+
+| File | What it validates against protocol truth |
+|---|---|
+| `abilities_fuzz_test.py` | The `{known, ability1, ability2}` encoding — `AbilitiesEncoder` at three layers |
+| `baton_pass_obs_integration_test.py` | Baton Pass carry-over read at the OBSERVATION. The only pytest-collected file here (`pytestmark = pytest.mark.sim`); the parser itself is pinned by `src/poke_env/battle/baton_pass_carryover_test.py` |
+| `belief_labels_fuzz_test.py` | The hidden-opponent belief LABELS (the privileged training target) on real battle state |
+| `damage_op_fuzz_test.py` | The differentiable DamageOperator's PHYSICS — its predicted gen3 damage band must CONTAIN Showdown's realized damage |
+| `damage_op_probe_fuzz_test.py` | The gold-standard oracle for the same op: its band vs the sim's EXACT realized damage on constructed single-turn scenarios |
+| `effectiveness_fuzz_e2e_test.py` | Effectiveness + move order |
+| `event_window_fuzz_test.py` | Tier H-B (`gen3_event_window_v1`) — the event-window obs block, at every decision |
+| `faint_attribution_fuzz_test.py` | A recorded `` `<side>:<species>:fainted` `` event names the mon that ACTUALLY fainted |
+| `hidden_power_typed_obs_fuzz_test.py` | Our OWN Hidden Power is never typeless in the obs the network sees |
+| `incoming_damage_fuzz_test.py` | The incoming-damage / OHKO belief block (`incoming_damage_v1`) |
+| `item_consumption_fuzz_test.py` | Item consumption |
+| `matchup_realized_fuzz_test.py` | The REALIZED matchup equals the DECLARED `MatchupSpec` — the permanent form of the probe that caught the training-mirror bug |
+| `move_alignment_fuzz_test.py` | Per-move obs ↔ action-space alignment (`gen3_move_slot_align_v1`): feature slot *k* ↔ action logit 6+*k* |
+| `move_id_decode_fuzz_test.py` | Every protocol move decodes, and none is mis-associated (`gen3_typed_hidden_power_ids_v1`) |
+| `obs_assembler_fuzz_test.py` | Incremental obs ≡ full rebuild, BIT-FOR-BIT, at every decision (`gen3_obs_assembler_v1`) |
+| `opponent_pin_fuzz_test.py` | A PINNED opponent really pilots ITS OWN team, per episode (the league fold-back contract) |
+| `pair_history_fuzz_test.py` | Tier H-A (`gen3_pair_history_v1`) — the compiled-history obs blocks |
+| `protect_success_prob_fuzz_test.py` | The Protect-success-odds obs feature (`gen3_protect_odds_v1`) |
+| `recency_fuzz_test.py` | E9 (`gen3_entity_recency_v1`) — the per-mon recency obs block |
+| `sleep_wake_fuzz_test.py` | The sleep/wake belief obs feature (`gen3_sleep_wake_belief_v1`) |
+| `wish_floating_fuzz_test.py` | The "wish floating" obs feature (`gen3_wish_wired_v1`), on a curated team |
 
 ### Known gaps / to expand
 - **Effectiveness on delegated damaging moves**: `our_last_damaging_event` can lag

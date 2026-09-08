@@ -439,7 +439,7 @@ $P analyze.py
 |---|---|
 | [`PREREGISTRATION.md`](PREREGISTRATION.md) | frozen before any measurement |
 | [`resolve_sets.py`](resolve_sets.py) → `teacher_sets.json` | teacher sets + taught teams from run metadata; the disjointness/existence GIGO gate |
-| [`fold_table.py`](fold_table.py) → `fold_table.json` | every fold's delta RECOMPUTED from per-team rows + provenance + the rejection list |
+| [`fold_table.py`](fold_table.py) → `fold_table.json` (+ `.log`) | every fold's delta RECOMPUTED from per-team rows + provenance + the rejection list |
 | [`teacher_distance.py`](teacher_distance.py) → `dist_gen.json` · `dist_rev2.json` (+ `.log`) | `D_off` / `D_on` per teacher and per set |
 | [`parent_gap.py`](parent_gap.py) → `parent_gap.json` (+ `.log`) | the inherited gap + the floor reproduction |
 | [`v8_checkpoint_fix.py`](v8_checkpoint_fix.py) → `v8_checkpoint_fix.json` (+ `.log`) | v8's `D_off` on the checkpoint the fold actually loaded, both variants, era tree |

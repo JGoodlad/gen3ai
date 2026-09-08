@@ -81,10 +81,10 @@ taught/untaught split. They are reported separately as `within_same_team` (a sca
   from `teacher_content_2x2_2026-09-04/taught_probe.py::SLICES`, which resolved them at run time
   from each arm's own recorded `--distill-teacher`) and the 8 **untaught** teams of
   `rev3_untaught_pulldown_selection.json` (the same off-slice set
-  `reuse_batch_2026-09-03/offline_collateral_kl.py` uses). Each team is piloted by the era's parent
-  against a FIXED opponent model on 3 FIXED opponent teams (the first three of probe P's
-  pre-registered opponent set), 1 battle per cell = 72 battles per era. **19 evenly-spaced states
-  per team**, equal across all 24 teams.
+  `reuse_batch_2026-09-03/offline_collateral_kl/offline_collateral_kl.py` uses). Each team is
+  piloted by the era's parent against a FIXED opponent model on 3 FIXED opponent teams (the
+  first three of probe P's pre-registered opponent set), 1 battle per cell = 72 battles per
+  era. **19 evenly-spaced states per team**, equal across all 24 teams.
 * **Teams resolved by CONTENT SHA, never filename.** The 16 taught teams were promoted into
   `data/teams/sample/` with sha10 filenames after `b13b30b2`; at the era they sit in
   `data/teams/others/giraffe/`. Both trees hold 770 team files and all 24 team strings —
@@ -143,7 +143,7 @@ era** — 24 teams × 19, equal per team, and 0 states with a zero gradient afte
 | `kernel.py` | gradients, groups, per-era kernel + permutation + cluster bootstrap |
 | `compare.py` | the paired between-era test |
 | `control_funded_vs_unfunded.py` | the label-identity control |
-| `states_{gen,v8}.npz` + `_meta.json` | the frozen state batches and their provenance |
+| `states_{gen,v8}.npz` + `states_{gen,v8}_meta.json` | the frozen state batches and their provenance |
 | `kernel_{gen,v8}.json` | per-era results incl. the full 24×24 team-block cosine matrices |
 | `compare.json`, `control_gen.json`, `results_table.txt` | comparison, control, printed tables |
 

@@ -67,7 +67,7 @@ damage): a contraction of `α_SWITCH` against a property of the DEPARTING mon, w
 valence — their switch is what makes our move good. This is `α_SWITCH` contracted through β against
 a property of the ARRIVING mon, with **negative** valence — their switch is what makes our move
 worthless. Pursuit needs no β because the sim strikes the departing mon before the switch resolves
-(verified against `src/rust_sim/state.rs`); Rapid Spin needs β because it resolves *after*, onto
+(verified against `src/rust_sim/src/state.rs`); Rapid Spin needs β because it resolves *after*, onto
 whoever arrived. Same operator, opposite sign, different resolution order — and that difference is
 a fact about gen-3, not a modelling choice.
 

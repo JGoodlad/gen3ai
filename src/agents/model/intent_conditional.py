@@ -38,7 +38,7 @@ rolls, `p_outspeed`, the secondary columns) contracted with the published α. No
   per-(move, their mon) pko from the outgoing matrix (which prices an unrevealed arrival's
   P(KO) as NULLED — so unrevealed β mass honestly contributes zero rather than a guess).
 * **Pursuit** (§3.6, CORRECTED): the doc's formula weighted the damage by a β-weighted
-  switch-IN, but the sim (verified against `src/rust_sim/state.rs`'s pursuit interrupt, itself
+  switch-IN, but the sim (verified against `src/rust_sim/src/state.rs`'s pursuit interrupt, itself
   golden-gated against Showdown) strikes the DEPARTING mon at ×2 BP, never-miss, before the
   switch resolves. So no β enters: `E[pursuit] = dmg(active) + α_SWITCH · (2·dmg − dmg)`. The
   cell carries the trigger probability and the α-weighted bonus damage separately.

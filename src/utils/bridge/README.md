@@ -119,7 +119,7 @@ tolerate too** — a stricter parser there is a whole-run crash, not a better er
 of exactly that shape killed `--use-bridge=rust --n-envs 48` at ~8 minutes, twice, at load 31 and
 at load 5 alike (it is a RATE, not a load effect):
 - **`CHOOSE <side> default` / `pass`.** Node writes every token to the sim verbatim
-  (`local_sim_bridge.js:279`), so Showdown's `Side.choose` handled `default`/`auto`/`pass`/`skip`;
+  (`local_sim_bridge.js:278`), so Showdown's `Side.choose` handled `default`/`auto`/`pass`/`skip`;
   the port's `parse_choice` took only `move `/`switch ` and answered `__ERR__`. These are ordinary
   production tokens, not a tail event — `singles_env.py`'s `action == -2`, an inference player
   whose predict returns `None`, its redecide-budget exhaustion, and `Player`'s
@@ -139,15 +139,25 @@ node AND rust — node is the reference arm. Repro (no training, ~5 s):
 `bridge_session_fuzz_test.py --impl rust` drives only masked-legal `move`/`switch` tokens and
 never lands a CHOOSE after `__END__`; a 16-worker / ~22 000-episode soak passes clean either way.
 
+**The CHOICE-REJECT framing is MODELED** (`gen3_choice_reject_framing_v1`). When a client sends a
+choice the request marks illegal, `bridge.rs`'s `RejectClass` / `classify_reject` emit the sim's own
+`|error|[Unavailable choice] …` — for a `disabled` move, plus a re-request differing in exactly two
+ways (`"update":true` and `"disabledSource":""` on the offending slot) — or `[Invalid choice] …`
+with nothing following, for an out-of-range move slot and a `switch` into an active / fainted /
+non-existent slot. The line goes to THAT side ONLY; the non-offending side receives ZERO chunks,
+which is the half that matters, because re-opening the whole boundary made the other side record a
+phantom extra pick. The forms are node-MEASURED bytes
+(`src/rust_sim/harness/probe_choice_reject_framing.js`, re-runnable) — only the switch-into-a-FAINTED
+slot string is read from source. The rule modeled is the CONDITION, not a per-message verdict:
+`Side.emitChoiceError` emits `[Unavailable choice]` + re-issues the request IFF its update callback
+actually CHANGED the request. Both parity harnesses now compare the framing chunks strictly (their
+reject allowlist entries are deleted; the only live entry in either is `.error` message TEXT), and
+`src/rust_sim/tests/bridge_choice_reject_test.rs` pins one case per measured class plus a
+forced-Struggle control — a Struggle substitution is NOT a refusal, and classifying it as one emits
+an `|error|` the sim never sends. ⚠️ A classifier must never refuse the ONE action the request DID
+offer; that shape (`gen3_locked_choice_never_rejected_v1`) killed two production launches.
+
 Still genuinely deferred:
-- **The CHOICE-REJECT framing.** When a client sends a choice the request marks illegal (an
-  explicit `disabled` move, a `switch` into a fainted slot), node emits
-  `|error|[Unavailable choice] …` / `[Invalid choice] …` to THAT side and re-asks only it; the port
-  emits no `|error|` and re-opens the boundary to BOTH sides. A pre-existing `bridge.rs` gap on a
-  path poke-env never takes (its action mask never offers an illegal choice) — it surfaces only
-  because the search drivers deliberately feed arbitrary candidate choices. Allowlisted in both
-  parity harnesses and reconciled ONLY when every remaining log chunk is byte-equal, so the battle
-  itself is proven identical.
 - **`pre_state` volatile NAMES** are reconstructed from the port's typed fields rather than read
   from a keyed map. The golden verifies exactly one fact about them — that duration-1 volatiles
   (`focuspunch`, `pursuit`, `protect`, …) must not leak into a move-request boundary, which really
@@ -203,8 +213,8 @@ Tests — the ENGINE EQUIVALENCE (the claim that actually matters: rust answers 
 
 | gate | what it pins |
 |---|---|
-| `src/rust_sim/harness/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18873 leaf fields**, only `\|t:\|` normalized. **Re-measured on 7 FRESHLY generated goldens 2026-08-23: PASS on every one**, ~37.6k leaf fields each, allowlist 0 hits |
-| `src/rust_sim/harness/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30689 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm. **Re-measured on the same 7 fresh sets: PASS on every one**, ~45-47k leaf fields each |
+| `src/rust_sim/harness/search_impl_parity.py` | node vs rust on `open_root`/`expand_many` — 6 cases / 60 arms / **18877 leaf fields**, only `\|t:\|` normalized. **Re-measured on 7 FRESHLY generated goldens 2026-08-23: PASS on every one**, ~37.6k leaf fields each, allowlist 0 hits |
+| `src/rust_sim/harness/replay_impl_parity.py` | node vs rust on `replay`/`reroll`/`reroll_many` — 76 cases / 136 arms / **30703 leaf fields**, incl. 9 error classes, 2 ended arms, 1 stuck arm. **Re-measured on the same 7 fresh sets: PASS on every one**, ~45-47k leaf fields each |
 | `search_clone_parity_fuzz_test.py --impl rust [--record-impl rust]` | the rust clone ≡ the rust `reroll_many` **at the OBS**, bit-for-bit, + the `value_crn` anchor + depth-2 |
 | `counterfactual_fuzz_test.py --impl rust [--record-impl rust]` | the CONFIRM leg — scripted-prefix obs oracle, divergence-to-terminal, Monte-Carlo reseed determinism |
 | `main/prober/better_line_integration_test.py` | parametrized over both impls, **plus a cross-impl test** asserting node and rust yield identical candidate V. The fake model is `V = obs.sum()`, so an exact match is an obs-level bit-identity claim at every ply of the beam |
@@ -249,7 +259,7 @@ effort — the materializer is the next lever, same lesson as the `torch.compile
 `V = obs.sum()` stub, so a real extractor's forward adds impl-invariant time on both arms.
 
 The RSS and cold-start numbers matter more than they look for the SEARCH TEACHER, which runs
-`--teacher-workers` of these concurrently and (in batch mode) respawns per cycle: 5 workers is
+`--teacher-search-workers` of these concurrently and (in batch mode) respawns per cycle: 5 workers is
 ~0.97 GB of node children vs ~47 MB of rust ones.
 
 Both `--impl` and `--record-impl` exist on the two fuzz scripts on purpose: a MIXED run (train on
@@ -271,12 +281,19 @@ modeled** (`gen3_forecast_v1`, ROUND 35). Arbitrary ladder `gen3ou` remains ~5% 
 from Smogon usage weights, not measured).
 
 The old counter-hazard — unmodeled items/moves running as **silent no-ops** — is likewise CLOSED by
-the ROUND 39/40 silent-no-op audits: the 5 genuinely-effectful unmodeled items
-(`gen3_unmodeled_item_failloud_v1`) and the 16 silent-desync moves (`fakeout`, `rollout`, the lock-in
-family, …, `gen3_unmodeled_move_failloud_v2`) now FAIL LOUD at construction. Full-universe census,
-re-run **2026-09-08** with the ENGINE as the oracle (`src/rust_sim/src/bin/scan_move_probe.rs`):
-**369 gen3-legal moves → 312 modeled, 57 fail-loud, 0 MISMODELED**; **abilities 76/76** and
-**species 392/392** CLOSED; **items 102/106**. The ranked remaining gap:
+the ROUND 39/40 silent-no-op audits: the 5 genuinely-effectful unmodeled items (`shellbell`,
+`berryjuice`, `mentalherb`, `machobrace`, `mail` — `gen3_unmodeled_item_failloud_v1`) FAIL LOUD at
+construction. The 16 silent-desync moves that audit found (`fakeout`, `rollout`, the lock-in family,
+…, `gen3_unmodeled_move_failloud_v2`) are now all **MODELED**, so `UNMODELED_FAILLOUD_MOVES` is an
+EMPTY list; what keeps that seam honest is its negative controls
+(`a_ditto_without_transform_builds_fine`, `transform_carriers_build_now_that_transform_is_modeled`),
+which fail if an over-broad guard silently returns. The rest fail loud at RUNTIME instead (the
+`run_status_move` / fixed-damage / charge guards). Full-universe census, re-run **2026-09-08** with
+the ENGINE as the oracle (`src/rust_sim/src/bin/scan_move_probe.rs`): **369 gen3-legal moves → 312
+modeled, 57 fail-loud, 0 MISMODELED**; **abilities 76/76** and **species 392/392** CLOSED;
+**items 102/106**. Pool report: **762/762** teams fully engine-playable, out of 813 `.txt` files —
+the 719-team TRAINING pool `TeamLoader` returns is a DIFFERENT filter and the two must not be
+reconciled. The ranked remaining gap:
 `designs/rust_sim/gen3_coverage_census_2026-09-08.md`. ⚠️ **Recount rather than quote** — the modeled
 count moves with every coverage round, and this line has already gone stale three times (281/88 from
 2026-08-04 while the tree was at 309/60; then 309/60 while the tree was at 312/57). 🚨 **Recount with
@@ -382,13 +399,15 @@ which it fails. Terminal by design and safe: the signal fires only on no-in-plac
 while a routine `_recycle_child` CANCELS the reader and so reaches neither — confirmed by
 `bridge_session_fuzz_test --impl {node,rust}`, 40 episodes each (including the every-9th-episode
 forfeit-reset), both clean.
-- **The impls still differ on move-INDEX validation.** Rust does not validate the move index
-  against the request, so an out-of-range `move N` is accepted and the turn advances where node
-  refuses it — benign in training (poke-env only sends choices drawn from the request) but it is
-  why the two children diverge on a malformed driver, and why the node side is the one that could
-  spin.
+- **Both impls validate the move INDEX against what the REQUEST OFFERED**, not against the moveset
+  (`gen3_single_entry_request_slot_reject_v1`) — `Side.chooseMove`'s index check runs FIRST, ahead of
+  the Struggle and Choice-lock substitution branches, so the two shapes that collapse the offered
+  array to ONE entry (a 0-PP mon, a locked/charging mon) refuse `move 2`..`move 4` like any other
+  out-of-range slot. An out-of-range `move N` is `[Invalid choice] Can't move: Your X doesn't have a
+  move N` on node and rust alike, the turn does not advance, and either child can therefore park.
 **Diagnostic rule: an idle bridge child means "waiting for a legal choice", so look at the last
-choice the DRIVER sent, not at the child.** (Full diagnosis: `src/rust_sim/CLAUDE.md` → ROUND 30.)
+choice the DRIVER sent, not at the child.** (Full diagnosis:
+`designs/rust_sim/port_build_log.md` → ROUND 36.)
 
 The move-name/switch-species transport parity (poke-env serializes choices by move-id + species
 name, e.g. `move hiddenpowerice` / `switch Salamence` — not slot numbers) is exercised by
@@ -400,7 +419,7 @@ node at every scale measured, and its child is an order of magnitude smaller:
 | workers | node | rust | rust/node | node RSS/child | rust RSS/child |
 |---|---|---|---|---|---|
 | 8  | 1852 steps/s | 2182 steps/s | **1.18×** | 225 MB | 9 MB |
-| 48 (production `--n-envs`) | 1942 steps/s | 2729 steps/s | **1.41×** | 223 MB | 9 MB |
+| 48 | 1942 steps/s | 2729 steps/s | **1.41×** | 223 MB | 9 MB |
 
 The ~25× smaller child is the bigger operational win: at `--n-envs 48` the bridge children cost
 ~10.7 GB under node vs ~0.4 GB under rust. (An older note recording node 798 vs rust 427 fps at 8
@@ -458,7 +477,7 @@ storm.
     so chunks for one battle stay strictly ordered, and the two sides use independent clients.
 
 Two child-lifecycle modes (`attach_bridge_transport(persistent=…)`): **persistent** (default)
-reuses ONE long-lived Node child per env across every episode (a fresh `START` rebuilds a clean
+reuses ONE long-lived bridge child per env across every episode (a fresh `START` rebuilds a clean
 `BattleStream`); **spawn-per-battle** spawns a fresh child per battle. Persistent is the win — a
 single-env transport-latency A/B (`bridge_vs_websocket_latency_benchmark.py`, RandomPlayer
 opponent, no GPU) measured **~13.0 ms/step websocket → ~6.1 ms/step persistent bridge (~2.1×)**,
@@ -471,12 +490,12 @@ opt-out. Guarded by `bridge_session_test.py` (transport-swap contract, no server
 and `bridge_session_integration_test.py` (a real `Gen3Env` plays full episodes over the bridge).
 
 **Persistent-child lifecycle (two rules, both guarded):**
-- **A dead child CRASHES the env, no in-place recovery.** If the Node child exits mid-run, lost /
+- **A dead child CRASHES the env, no in-place recovery.** If the bridge child exits mid-run, lost /
   inconsistent battle state means resuming could feed PPO a corrupted transition — so the reader
   latches `_child_crashed` on stdout EOF and the next `reset()` raises (the launcher restarts from
   checkpoint). Same crash-over-corruption rule as the trainee's stale-decision path.
 - **A healthy child is RECYCLED every `recycle_every` battles — a backstop, not a routine need.**
-  `bridge_heap_growth_benchmark.py` measured a child's RSS **flat**: ~189 MB fresh → a one-time
+  `bridge_heap_growth_benchmark.py` measured a NODE child's RSS **flat**: ~189 MB fresh → a one-time
   ~+36 MB V8 warmup → **~229 MB with ~0 growth over thousands of battles** (V8 GC reclaims the
   per-battle `BattleStream`). At production scale a child plays only ~2150 battles in the
   launcher's 3h restart window, so the default `recycle_every=5000` **never fires under the
@@ -601,7 +620,7 @@ seam that merges extra `START` fields like `resumeReseed`.) For a human-readable
 `counterfactual.summarize_trajectory(side, sink)` parses OUR one-sided protocol into a per-turn
 `{turn, events}` log (moves / switches / damage / faints / crits / status / win) — so a recovered
 counterfactual win reads as an actual move-by-move line (`replay_counterfactual(..., capture_trajectory=True)`
-→ the prober's `--narrate` / TUI `C`).
+→ the prober's `python -m main.prober.query replay-counterfactual --narrate`).
 
 ### Warm clone-and-branch search-server (`search_driver.js` + `search_session.py`)
 
@@ -709,7 +728,7 @@ Every timeout raised on this path appends `describe_contention()` — the load a
 
 ### Team validation
 ```python
-from src.utils.bridge.team_validator import validate_team_locally
+from utils.bridge.team_validator import validate_team_locally
 
 result = validate_team_locally("gen3ou", team_text)
 if result["valid"]:

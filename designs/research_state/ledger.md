@@ -15000,3 +15000,87 @@ Gates: the four static gates plus the mode-flag doc gate and the ledger-index ga
 routine gate green.
 
 Tag: DOCS / TECH DEBT. **No measurement changed, no run was touched, and no code behaviour changed.**
+### 2026-09-08 · DOCS · README + CONTRIBUTING verified and fixed (12 claims wrong); 15 READMEs current, 17 fixed; designs/ staleness census
+
+Owner request: "look for stale docs or outdated docs, review the root README and CONTRIBUTING.md,
+see if those are out of date." Every claim in both was checked against the tree — paths `test -e`'d,
+commands run at `--help` or `--dry-run`, counts re-measured, flags checked against the parsers.
+**No training, no launcher, no Showdown server, nothing written under `models/`.**
+
+**The twelve wrong claims.** README (4): "distributional critic" — the production critic is
+`--critic winprob` and `value_dist_mode` is `"none"` (`production_config.json`); "Thirteen
+generations and counting" — twelve design eras, `ai_v12` live; "6,500+ tests run in the routine
+gate" — **10,105 collected, 10,186 in the full suite**; "Every refactor is gated on byte-identical
+model outputs (a sha over the forward pass)" — **no such gate exists**; what does exist is
+`reward_golden_test.py`, the obs roundtrip fuzz against the protocol stream, and the pinned
+delivery-graph snapshot, and the sentence now says that. CONTRIBUTING (8): "Two static gates run
+inside the suite" — **eight**, plus two import-precedence gates, now a table with each opt-out;
+mypy "type-checks the model package" — model **and observation** (`mypy.ini`'s `files =`); the
+bootstrap step-7 row omitted the two import-precedence gates and understated its cost; the leaf
+`CLAUDE.md` list omitted `gen3_data`, `rust_sim`, `prober/web`, `tui` and `designs/`; "Other
+`designs/` documents are explicit-only" omitted the always-current `designs/` trees and the
+append-only ledger; `utils/paths_test.py` → `src/utils/paths_test.py`; the landing was a bare
+`git push origin myfeature:main` with no mention of `scripts/land.sh`; the marker table omitted
+`benchmark`. Both were tightened rather than grown — README 126 → 128 lines, CONTRIBUTING 257 → 274
+with a 12-row gate table added.
+
+**Three more in the always-current top-level docs, fixed in the same pass.** `docs/RUNNING.md` also
+said "two static gates" and gave `python -m mypy src/agents/model`; **its launcher example omitted
+`--arch production`** — the exact shape of the 2026-09-06 incident where an arm trained a near-bare
+network for 24.4M steps — and now carries that hazard plus the resume-inheritance rule. Root
+`CLAUDE.md` said "Seven static gates" over a table of eight, and said the bootstrap verifies with
+"the two static gates" when it runs four. `ARCHITECTURE.md`'s "at this writing" `MODEL_CONFIG_VERSION`
+was 109 against a live **113**; its Production-run row also attributed `config_version` 109 to the
+run, while the run's `model_config.json` records **110** and 109 is the *mirror*'s — the row now
+says which is which (the `mode_flag_doc` gate keys on the mirror, and still passes).
+
+**READMEs: 33 in the tree, 17 fixed, 15 verified current, 1 stale-unfixable.** The unfixable is
+`designs/ai_v3/README.md` — frozen history by the documentation rules, but its banner asserts a
+*current* 3321-dim obs (it is 2501) and points at a root-`CLAUDE.md` section that no longer exists.
+Two fixes are worth naming because they were live hazards, not prose: `poke_env_gaps/README.md`
+carried the worktree `ln -s` recipe **without the `[ -e ]` guard** — the exact unguarded form that
+produced the `dist/dist` ELOOP outage — and `src/rust_sim/README.md` carried its e2e tally in three
+places with three different wrong values (now 220 battles / 11575 decisions, and the pool
+813 files → **762 valid, 762/762 clean**). `src/agents/model/feature_coverage/README.md` predated
+`gen3_frame_deletion_v1` and was missing three defects that ARE live.
+
+**Docstring drift: 6 path references and 1 flag, comment-only, no behaviour changed.**
+`src/main/policy_activation_pin_test.py` named `src/main/default_port_test.py` (it is under
+`launcher/`); `tools/smogon_stats_downloader/sync.py` named a `src/scripts/` that never existed;
+two model modules named `src/rust_sim/state.rs` for `src/rust_sim/src/state.rs`;
+`src/main/prober/engine/analyze.py` named `--spread-belief-off`, which matches no flag (`--no-spread-belief`);
+`damage_tables.py` justified a parity requirement by two flags deleted at v48. Every `Run:` header
+in the tree was machine-checked and all resolve. **One left deliberately**:
+`src/agents/observation/species.py:45` raises "Update `data/mappings/gen3_mapping.json`", a path
+long gone (it is `data/pokemon/gen3_species.json`) — a runtime string literal, so outside a
+comment-only pass; backlogged.
+
+**The `designs/` staleness census** — report only, those docs are explicit-only —
+`designs/research_state/measurements/docs_staleness_census_2026-09-08.md`. 40 documents assessed.
+The finding that matters: **the LIVE chapter misdescribes the running experiment.**
+`designs/ai_v12/design_winprob_only_critic.md`, the design *of record*, opens "Nothing here is built
+and nothing is sanctioned to run" 68M steps into the run it designed; its section headed "WHAT IS
+TRUE NOW" states `victory_value` 30.0 / `draw_penalty` −35.0 / `hand_shaping` true against a shipped
+1.0 / 0.0 / false; and its §5.1 claims an `ARCH_SIGNATURE` bump forced fresh weights when no bump
+happened (`ARCHITECTURE.md` §3.4 says so outright) — a reader carrying that reasoning forward
+mis-plans the next era's warm start. `launch_runbook.md` calls itself "the thing the training
+session executes from" while its three arms never launched and it names the DEAD `ai_v12_01` as
+live. Also flagged: `designs/model.md` (a running log that stopped running — every headline figure
+in its "current state" table is wrong, and it calls `WinProbHead` a side readout "never in pi/vf"
+when it IS the critic); `design_pathologies.md` ("review this before every retrain" over an ai_v4
+fixed-bot register from May); `pubval_deletion_decision.md` ("Status: NOT DELETED" for a subsystem
+deleted at v88). Of 26 learning notes, 8 hold, 15 are partly stale, 3 are superseded by the v78
+zarch/FiLM deletion — `conditioning_architectures.md` worst, because its two sibling notes carry a
+correction banner and it does not. **No doc duplicates an always-current doc wholesale**; the notes
+are additive by construction.
+
+**Two governance findings, backlogged.** (1) `src/main/launch_runbook_test.py:128` asserts
+`--draw-penalty -1.0` while both shipped ai_v12 runs and `baselines.json` pin **0.0** — the test is
+green because it pins the *runbook*, which is itself superseded: a gate holding a stale doc in
+place. (2) `src/claude_md_freshness_gate_test.py` scans only `CLAUDE.md` files, which is why ~10
+deleted flags survive in `designs/ai_v12/` and `designs/learning/`; extending the scan is small and
+would close the class, but fails the tree today.
+
+Gates: the eight static gates green; the routine gate green — **10,078 passed in 6m18s** on a box
+carrying a live training run and two other agents. Tag: DOCS / TECH DEBT. **No measurement about
+the model changed and no run was touched.**

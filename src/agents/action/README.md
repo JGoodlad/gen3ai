@@ -29,8 +29,9 @@ touches poke-env order types:
    `Choice` (`choice.py`). Fully testable with a `LegalActions` stub — no battle object.
 3. **serialize** (the one poke-env touch) — `serialize.choice_to_order(choice, battle)`
    turns a `Choice` into the `BattleOrder` the client sends. This is the **only** module in
-   `action/` that imports poke-env order/move types (`serialize.order_to_action` is the
-   reverse boundary, for diagnostics).
+   `action/` that imports poke-env order/move types at runtime (`mapper.py` names
+   `BattleOrder` under `TYPE_CHECKING` only; `serialize.order_to_action` is the reverse
+   boundary, for diagnostics).
 
 The env / player compose them: snapshot `legal` once at observation time, build the mask
 from it, store it on the `BattleContext`, and at action time decode + serialize against the
@@ -110,7 +111,7 @@ move/switch than the model selected:
 | `mapper.py` | `Gen3ActionMapper` — pure `action_to_choice`, the `action_to_order` convenience, `assert_decision_current`, reverse `order_to_action` |
 | `serialize.py` | The single poke-env touch: `choice_to_order` + `order_to_action` |
 | `mask_generator.py` | `Gen3ActionMasker` — `mask_from_legal` (pure) + `get_mask(battle)` |
-| `ordering_integrity.py` | Move/team ordering alignment guards (now `legal`-driven) |
+| `ordering_integrity.py` | The `LiveView` + `legal`-driven alignment guards: `check_switch_ordering_alignment`, `check_move_validity_alignment`, `check_move_data_consistent`, plus the sorted-order helpers (`reorder_move_bits_to_sorted`, `assert_sorted_validity_correct`) |
 | `constants.py` | The 11-action layout constants |
 
 ## Tests
@@ -121,4 +122,5 @@ move/switch than the model selected:
 | `ordering_integrity_test.py` | Unit | Move/team ordering alignment (snapshot-driven) |
 | `fuzz_test_unit.py` | Standalone script | Snapshot-immutability simulation: corrupt the request mid-decision, prove the captured snapshot decodes identically (replaces the old latch race sim) |
 | `fuzz_test.py` | Fuzz (local bridge, no server) | Real battles vs RandomPlayer; exhaustively decodes + serializes every legal action each turn |
+| `trapping_signals_fuzz_test.py` | Fuzz (local bridge, no server) | `gen3_trapping_signals_v1` end to end over a forced Arena-Trap run: the `trapped` / `maybe_trapped` bits at OUR ACTIVE MON'S entity slot equal `legal.trapped` / `legal.maybe_trapped` on every decision (bench slots stay 0), and a refused switch puts an `EVENT_T_SWITCH_REJECTED` row as the event window's NEWEST — checked against raw-protocol `\|error\|[Unavailable choice]` truth, not our own fold |
 | `telemetry_e2e_test.py` | E2E (requires server) | Monitors for silent mid-decision state updates in live battles |

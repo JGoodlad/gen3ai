@@ -68,8 +68,17 @@ python -m main.launcher \
   --restart-interval-hours 3 \
   --steps 15000000 --n-envs 64 --batch-size 16384 \
   --n-epochs 10 --ent-coef 0.02 --n-steps 2048 --lr 0.0003 \
-  --device cuda --log-level periodic
+  --device cuda --log-level periodic --arch production
 ```
+
+🚨 **`--arch production` is not optional on a fresh run.** Every architecture toggle defaults to
+OFF, so an argv that omits it trains a near-bare network that launches cleanly and looks healthy.
+It applies the whole surface in `designs/production_config.json` as if each flag had been typed,
+and an explicitly-typed flag still wins. Validate any argv offline first with
+`python -m main.checkargs --argv "…"`, which prints an architecture-surface diff and refuses a
+fresh argv that differs from production. Resolve what a launch would actually do, changing nothing,
+with `python -m main.launcher --dry-run …` — never by launching the real command and killing it,
+which is destructive on a restart.
 
 Resume from a checkpoint (the launcher pins to the checkpoint's recorded commit):
 
@@ -77,6 +86,11 @@ Resume from a checkpoint (the launcher pins to the checkpoint's recorded commit)
 python -m main.launcher --model models/<run>/checkpoints/checkpoint_NNNN_steps.zip \
   --restart-interval-hours 3 --steps 15000000 --device cuda
 ```
+
+On a resume an argv is not a config: every flag you do not name is inherited from the checkpoint's
+`model_config.json`, and `--lr`, `--batch-size`, `--n-steps` and `--gamma` are inert because SB3
+restores the checkpoint's own values. A bare run directory anywhere a model is expected means that
+run's **last snapshot** — name the `.zip` to pin a file.
 
 Checkpoints land in `models/run_<timestamp>/checkpoints/`; TensorBoard logs beside them
 (`tensorboard --logdir models/`).
@@ -101,10 +115,14 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 | **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
 | Everything (before a release/ship) | `pytest src/ -q` | ~31 min |
 
-Two static gates run inside the suite (and independently):
+Eight static gates run inside the suite, unmarked so they run in every tier: mypy, ruff, file size,
+`CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md` mode-flag mirror and
+the ledger index. Two of them also run standalone, and two more guard the import path
+(`src/packaging_gate_test.py`, `src/poke_env_fork_gate_test.py`). The full table with each gate's
+opt-out is in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ```bash
-python -m mypy src/agents/model                                   # typed packages, zero errors
+python -m mypy                                                    # scope from mypy.ini's files =
 ruff check src/agents src/main src/utils --select F,E9            # real-bug lint classes
 ```
 

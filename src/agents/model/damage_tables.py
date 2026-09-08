@@ -503,8 +503,8 @@ def build_species_cb_prior(n_species: int) -> torch.Tensor:
 
 # gen3_unified_op_physics_v1: FIXED-damage moves (constant damage at L100, ignoring Atk/Def/roll/crit but
 # RESPECTING type immunity). They read BP 0 in the dex so the formula gives ~0 — the op overrides with this
-# constant. Mirrors incoming_damage.FIXED_DAMAGE (the CPU block the GPU op must reach parity with so
-# --unified-obs / --mask-incoming-damage-obs doesn't regress the model's damage understanding).
+# constant. Mirrors incoming_damage.FIXED_DAMAGE (the CPU block the GPU op must reach parity with — the
+# two must agree or the op and the obs encoder describe the same move differently).
 _FIXED_DAMAGE = {"seismictoss": 100, "nightshade": 100, "dragonrage": 40, "sonicboom": 20}
 
 

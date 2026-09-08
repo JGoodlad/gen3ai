@@ -33,7 +33,8 @@ returned ALL-LEGAL on every row of every audit ever run, and `edge_ablation_audi
 actions" guard passed vacuously by construction. On a 400-file sample **38.4% of the action space
 was wrongly counted legal** (min 18%, max 68%).
 
-**24 files here carry a `kl_mean`, and all of them are pre-fix.** The mask is both the KL's
+**25 files here carry a `kl_mean`, and 24 of them are pre-fix** — the exception is
+`ai_v9_34_tick1_0824_endofrun.json` (landed 2026-08-25, after the fix). The mask is both the KL's
 summation domain and the policy's renormalization domain, so the affected axes move materially.
 Re-measured on gen-17 (`ai_v9_21_gen17_pfspoff_0820` final, n=512, identical states both arms):
 
@@ -80,12 +81,13 @@ post-fix number. **`dv_mean` is unaffected** (the critic delta never touches the
 `sidecar_audit*` / `folding_history_*`) when deciding whether a run is still referenced — reading
 them as evidence put all 118 non-tier-0 runs in tier 1 on the first tiered pass and graded nothing.
 Producer: `archive_grooming_dryrun.py` + `archive_grooming_tiers.py`, both committed here with
-81 tests across `archive_grooming_dryrun_test.py` (34) and `archive_grooming_tiered_test.py` (47).
+86 tests across `archive_grooming_dryrun_test.py` (34) and `archive_grooming_tiered_test.py` (52).
 Policy of record: [`../models_retention_policy.md`](../models_retention_policy.md).
 
 ⚠️ **The index above is PARTIAL** — it was built when this directory held ~16 records and the
-directory now holds ~60. An unlisted file is not an unofficial one; read its `provenance` block (and
-its `.md` companion, where one exists) directly. The one window that IS indexed completely is below.
+directory now holds **175 top-level records plus 24 per-programme subdirectories**. An unlisted file
+is not an unofficial one; read its `provenance` block (and its `.md` companion, where one exists)
+directly. The one window that IS indexed completely is below.
 
 ### The 2026-08-26 → 08-30 programme week (complete)
 
@@ -113,13 +115,12 @@ registered reading was selected.
 | `bias_tax_head_alignment_2026-08-29.{json,md}` | `1d5a866` | 🚨 **Probe M: the one live BIAS term is a de-facto SWITCH TAX the head refutes.** Alignment 45.7% vs a 44.7% matched control; **48.5% over-tax; 73% of voluntary switches charged vs 6.7% of moves; 36% on zero-agency replacements.** Implied −0.101/decision against switching vs the head's +0.0042 preference FOR it |
 | `no_progress_tax_review_2026-08-29.md` | `cfbc9bf` | 📜 **Probe N: COMPOSITION DRIFT** — the switch toll was designed inside a reward where a switch also collected **+0.35**; `928a00b` deleted every counterweight and kept the toll (net **+0.35 → −0.15**). A new defect genre, plus the SITOUT off-by-one confirmed exactly and a third defect found |
 | `stall_tail_head_reading_2026-08-29.{json,md}` | `32c39df` | 🟡 **Probe O: the clock fix HELD** (81.2% → 22.2% over seven generations, break exactly at the clock boundary) — **and 34.8% of cap tails still end φ ≥ 0.5 on games that lose by construction** (4.3× ordinary losses). Exposure is CONDITIONAL ⇒ the clean world's no-bias launch stands |
-
 | `global_random_sweep_2026-08-30.md` | *(dispatch S2)* | 🔧 **The staller's global-`random` coin was a GENRE, and the staller was its SMALLEST member.** Census of every process-wide RNG draw in the tree: **4 class-(a) cross-arm couplings** (every player's `choose_random_*` + `DEFAULT_CHOICE_CHANCE`; the TEAM DRAW; `RLPlayer`'s **torch**-global action sample; the self-play pool draw), 6 class-(b), ~45 benign. All four fixed OPT-IN, defaults byte-identical. Measured stake: under the **same fixed sim seed**, unseeded arms played *different games* (84/145 turns vs 212/233, different winners); seeded, identical battle for battle. ⚠️ **The falsifier that found the staller could not have caught the biggest one** — it conditions on zero-overrule units and `random`'s overrule rate is 1.00, so that bot contributed **none**, while the "7 deterministic bots · 0.0000" row was read as covering it |
 
 Two records from the same window that are **method artifacts rather than verdicts**:
 `teacher_sharpness_probe.{json,md}` and `playoff_formal_read.{json,md}`. And
 `post_paydown_baselines_2026-08-23.{json,md}` holds the per-decision CPU baseline that
-`CLAUDE.md`'s trainer-turn table cites.
+`../claude_md_archive/benchmark_measurements.md` and `../../training/compile_flags.md` cite.
 
 ## The two headline reads
 

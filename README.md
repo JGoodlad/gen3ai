@@ -32,9 +32,10 @@ the generation rewards genuine strategic understanding rather than raw damage ou
 - **The simulator** — training runs against an **in-process Rust reimplementation of the Gen 3
   Showdown battle engine**: byte-for-byte protocol parity with the reference implementation,
   validated move-by-move; no server, no websockets, deterministic replay from recorded seeds.
-- **Training** — PPO self-play with a frozen-opponent pool and promotion gates, distributional
-  critic, non-blocking evaluation workers, and an **anchored Bradley–Terry ELO** that makes
-  model generations comparable across runs. Thirteen generations and counting.
+- **Training** — PPO self-play with a frozen-opponent pool and promotion gates, a
+  **win-probability critic** whose value output *is* P(win), non-blocking evaluation workers, and
+  an **anchored Bradley–Terry ELO** that makes model generations comparable across runs. Twelve
+  design eras and counting.
 - **The prober** — a forensic replay inspector (web UI): for any lost game it can attribute the
   loss to **luck vs. mistake by re-rolling the actual dice**, replay counterfactual moves against
   the real opponent to a win/loss, and beam-search for a better line by cloning mid-battle
@@ -46,13 +47,15 @@ the generation rewards genuine strategic understanding rather than raw damage ou
 
 ## Engineering culture
 
-The part we're quietly proudest of. Every refactor is gated on **byte-identical model outputs**
-(a sha over the forward pass); the physics are pinned by **oracle fuzz tests** against the real
-engine; 6,500+ tests run in the routine gate with mypy and ruff enforced inside it; the
-architecture diagram is **generated from the live code**, and a module without edges fails a
-completeness test. When we found a silently-dead subsystem this month, the fix shipped with the
-structural guard that makes the whole bug class unrepresentable. History is append-only, claims
-carry their measurements, and retractions are recorded as retractions.
+The part we're quietly proudest of. The reward function is pinned by a **golden test** and the
+observation encoder by **fuzz tests that replay real battles** and check every field against the
+protocol stream; the physics are pinned by **oracle fuzz tests** against the real engine; **10,000+
+tests run in the routine gate**, with eight always-on static gates — mypy, ruff, file size,
+documentation freshness, stub vacuity, slow-tier status, the architecture flag mirror, the ledger
+index — enforced inside it; the architecture diagram is **generated from the live code**, and a
+module without edges fails a completeness test. When we find a silently-dead subsystem, the fix
+ships with the structural guard that makes the whole bug class unrepresentable. History is
+append-only, claims carry their measurements, and retractions are recorded as retractions.
 
 ## Getting started
 

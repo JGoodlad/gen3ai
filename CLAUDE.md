@@ -108,7 +108,7 @@ Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
 ## Python Environment
 
-`./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the two static gates plus a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version.
+`./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the ruff/mypy gates, the two import-precedence gates and a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version.
 
 The env is **`gen3ai_stable`** (not `deps/venv`, which is outdated — ignore it):
 
@@ -165,7 +165,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Seven static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Eight static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|

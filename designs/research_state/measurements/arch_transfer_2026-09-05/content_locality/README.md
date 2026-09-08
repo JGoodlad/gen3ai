@@ -1,5 +1,11 @@
 # Content locality — is a specialist teacher's divergence LOCAL or GLOBAL?
 
+> 🚨 **The headline `R` here is SUPERSEDED.** [`../content_locality_v2/`](../content_locality_v2/README.md)
+> re-runs this measurement with three corrections — chief among them that v1 scored a network no
+> fold ever distilled from, for **19/19** teachers — and [`../zswap/`](../zswap/README.md) §5 reads
+> the corrected number. This file is preserved as the record of what was measured; take the
+> numbers from v2.
+
 **2026-09-05. Offline. No training, no launcher, no server.** Two eras, one statistic, ~29 CPU
 minutes of battles in total.
 

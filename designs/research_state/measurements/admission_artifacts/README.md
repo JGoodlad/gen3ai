@@ -1,8 +1,8 @@
 # Fleet-admission artifacts — the committed copies
 
-**Why this directory exists.** These three files are the entire evidential basis of the
-exploitability curve, of the teacher-ceiling reframe, and of the taught/untaught decomposition —
-and until 2026-08-31 they existed **only** in `~/.claude/jobs/1046b1d6/tmp/probes/`, a
+**Why this directory exists.** The three rev-2/rev-3/rev-4 files below are the entire evidential
+basis of the exploitability curve, of the teacher-ceiling reframe, and of the taught/untaught
+decomposition — and until 2026-08-31 they existed **only** in `~/.claude/jobs/1046b1d6/tmp/probes/`, a
 session-scoped job directory outside the repo. Every exploitability claim in the ledger was one
 `rm -rf` away from being un-reproducible. They are copied here **byte-identically** (verified by
 sha256 against the job directory at copy time) with no schema change, so the tools that read them
@@ -67,7 +67,8 @@ The job directory also holds the piloting/coverage probes `team_slate_40.md` §8
 (`pilot_R2ACTION_n300.json`, `cov_R2ACTION.json`, `cov_rev1fin.json`, `headroom_screen.json`,
 `coverage_sample.json`, `coverage_sweep.json`). Those are already distilled into the committed
 `designs/ai_v12/team_slate_40.json`, which is what makes the slate survive that directory's
-deletion. The three files here are the ones with a live TOOL reading them.
+deletion. The rev-2/-3/-4 files here are the ones `exploitability_taught_untaught.py` reads by
+default; the rev-5 artifacts below are passed to `main.exploitability` by path.
 
 ## rev-5 (2026-09-02/03): `r5_admission.json` (COMPLETE, 136/136 cells) and `r5_admission_PARTIAL_funding.json`
 

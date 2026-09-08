@@ -299,7 +299,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
             move_belief = None
 
     # Spread belief: the believed opp DERIVED stats (the op's stat input) vs the true derived stats from the
-    # privileged team_details. Best-effort; None on a --spread-belief-off checkpoint.
+    # privileged team_details. Best-effort; None on a --no-spread-belief checkpoint.
     spread_belief = None
     sbfn = getattr(model, "spread_belief_view", None)
     if sbfn is not None:
