@@ -26,7 +26,6 @@ import subprocess
 import pytest
 
 from main.exit_codes import TrainExitCode
-import main.launcher.child as child_mod
 import main.launcher.dry_run as dry_run_mod
 import main.launcher.worktree as wt
 
@@ -80,8 +79,14 @@ def isolated(repo, tmp_path, monkeypatch):
             monkeypatch.setattr(
                 launcher_run, name,
                 lambda *a, **k: pytest.fail(f"--dry-run must never call {name}"))
+    # `launcher_run`, NOT `child_mod`. `run.py` takes `_launch_child` by a MODULE-LEVEL
+    # `from .child import _launch_child` (run.py:42) and calls its own reference (run.py:459), so a
+    # stub on `main.launcher.child` reaches nothing and this — the most consequential of the three
+    # traps, since tripping it means `--dry-run` spawned a real training child — was the one that
+    # was NOT ARMED. Found by `test_stub_vacuity_gate_test.py`, 2026-09-07; named as a module
+    # object rather than looped over so that gate can keep auditing it.
     monkeypatch.setattr(
-        child_mod, "_launch_child",
+        launcher_run, "_launch_child",
         lambda *a, **k: pytest.fail("--dry-run must never spawn a child"))
     monkeypatch.setattr(
         launcher_run, "_apply_nice",

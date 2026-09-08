@@ -162,7 +162,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Four static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Five static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -170,8 +170,11 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 | `src/ruff_gate_test.py` | `ruff check … --select F,E9` — wrongness only, never style | `GEN3AI_SKIP_RUFF_GATE=1` |
 | `src/file_size_gate_test.py` | >2,000 lines FAILS; 1,000–2,000 reported. **The allowlist is EMPTY — a new entry is not a legal move; decompose it** | `GEN3AI_SKIP_SIZE_GATE=1` |
 | `src/claude_md_freshness_gate_test.py` | every repo-relative path and every `--flag` in a `CLAUDE.md` resolves | `GEN3AI_SKIP_CLAUDE_MD_GATE=1` |
+| `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` / `mod.x = stub` target under `src/**/*_test.py` is a symbol the code under test actually READS — **a stub that stubs nothing FAILS**. **The allowlist is EMPTY**; fix at the source | `GEN3AI_SKIP_STUB_GATE=1` |
 
 A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation.
+
+🚨 **A DECOMPOSITION MOVES SYMBOLS OUT FROM UNDER THE STUBS THAT NAME THEM.** A patch on `mod.func` reaches the code under test only if `mod` still READS `func` at call time — a consumer that wrote `from mod import func` holds its own copy and the stub reaches nothing, so the test asserts about the real path and passes for the wrong reason. `ccd08003` created four such sites in one commit; two were `mod.name = stub` assignments, which raise NOTHING at runtime. The stub gate above is standing for exactly this, and it is blind to a target named through a LOOP VARIABLE — spell the module and attribute out.
 
 🚨 **A TIMEOUT IS NEVER A SEMANTIC OUTCOME.** The box normally carries a production run, so bounds scale by measured contention (`src/utils/contention.py`; the factor is exactly 1.0 on an idle box). A run whose timeouts exceed 25% of attempted battles is INCONCLUSIVE, not reported. **Benchmarks get the opposite treatment — warn, never stretch**: a benchmark's output IS the measurement. `GEN3AI_TIMEOUT_SCALE=6` forces the factor; run the suite under it after touching any of this.
 

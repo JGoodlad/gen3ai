@@ -13519,3 +13519,68 @@ Two contradictions were resolved in favour of the later measurement and recorded
 concurrency is capped for TOKEN COST rather than for stall prevention (the starvation theory is measured
 flat), and the 2026-07 hard quota ceilings are superseded by the Max-20x "never waste" ruling of
 2026-09-06 while the pacing habits survive. Tag: HISTORY (a procedure move; no measurement changed).
+
+---
+
+### 2026-09-07 · TECH DEBT · anti-vacuity gate on test stubs (`gen3_stub_vacuity_gate_v1`): 407 patch sites, 1 vacuous, 0 tests were green for the wrong reason
+
+Backlog §1 ACCEPTED row 2 (P0, M). `src/test_stub_vacuity_gate_test.py` over the engine
+`src/stub_vacuity_scan.py` — unmarked, in the ROUTINE gate, 3.6 s, opt-out `GEN3AI_SKIP_STUB_GATE=1`,
+and an empty scan FAILS rather than passes. Pure AST: it never imports a test module, because doing so
+would cost minutes, break on any run whose architecture drifted past current code, and could execute an
+entry point.
+
+**THE CENSUS** (full detail:
+[`measurements/stub_vacuity_audit_2026-09-07.md`](measurements/stub_vacuity_audit_2026-09-07.md),
+recorded BEFORE the fix so the number is the one the tree actually carried). **407 patch sites across
+70 test files** — `monkeypatch.setattr`/`delattr` 284, bare `patch("…")` 79, `patch.object` 29,
+hand-rolled `mod.name = stub` assignment 10, `mock.patch` 5. Verdicts: **267 ok, 139 skipped
+(each with its recorded reason), 0 `missing`, 1 `unread`.** Of the 267 clears, **223** are the module
+loading the name itself and **44** are a legitimate DEFINITION-SITE patch cleared by the consumer
+search — a module that never calls its own symbol but whose consumers hold the MODULE and resolve the
+attribute at call time (`main.launcher.ipc.emit` is the type case). That 44 is the whole reason the
+gate carries a consumer search: without it the gate opens with a 44-finding false-positive storm and is
+excluded inside a week. The 139 skips are 97 non-ours targets (`sys.argv`, `torch`, `subprocess`, a
+local object), 34 CLASS attributes (safe by construction — patching a class object is seen by every
+holder of that class) and 8 computed targets.
+
+**THE ONE FINDING — a booby trap that was not armed.** `src/main/launcher/dry_run_test.py:83` trapped
+`_launch_child` on `main.launcher.child`, but `main/launcher/run.py:42` takes it by a MODULE-LEVEL
+`from .child import _launch_child` and `run.py:459` calls its own reference. The consumer search finds
+ZERO non-test modules reaching `main.launcher.child._launch_child` qualified. Verified at runtime:
+with the old spelling installed, `run._launch_child` was still the real function. That fixture's
+docstring promises "every effectful launcher entry point booby-trapped so a future edit that reaches
+one FAILS"; the two worktree traps beside it are correctly installed on BOTH modules, and only the
+child-spawn trap — the one whose tripping would mean `--dry-run` spawned a REAL TRAINING CHILD into a
+live run directory, the 2026-09-05 incident this whole file exists for — was disconnected. It rode
+19 `--dry-run` tests. Repointed at `launcher_run`, spelled out as a module object rather than looped
+over so the gate can keep auditing it.
+
+**K = 0 — no test's outcome changed.** All 21 `dry_run_test.py` tests pass identically before and
+after the correction, so `--dry-run` genuinely never reaches `_launch_child` today. The trap was
+INSURANCE that was not connected, not a green-for-the-wrong-reason pass. Stating that plainly matters:
+the row was opened expecting the `ccd08003` shape (a byte-identity test comparing two identical arms),
+and the honest finding is that the tree carried no such live case. **ALLOWLIST: EMPTY** — the single
+finding was fixed at the source rather than listed, and a stale entry fails the gate.
+
+**PROOF THE GATE CATCHES THE MOTIVATING CASE.** Replanting the three pre-`ccd08003` patch spellings
+against current source: all three are reported, as the stronger `missing` shape (the decomposition
+moved the names out of `ppo.py` entirely) — `monkeypatch.setattr(ppo_mod, "shared_trunk_parameters")`
+plus the two ASSIGNMENTS `ppo_mod.live_gauge_metrics = …` and `ppo_mod.advantage_density_metrics = …`.
+The assignment shape is why the gate does not stop at `monkeypatch`: two of that commit's three
+patch-target sites were hand-rolled assignments, which **raise nothing at runtime** and would have
+stayed silent forever. Eight synthetic self-checks pin both vacuity shapes, both legitimate clears
+(module-holding consumer, deferred in-function import) and the two non-subjects (a local object's
+attribute write, an out-of-ours target).
+
+**WHAT THE GATE IS AND IS NOT.** These shapes are created by a MOVE, not by writing a bad test: every
+`ccd08003` site was correct the day it was written. One finding in 407 is a clean tree — and it is
+clean partly because that commit already swept the file family that motivated the row. The value is
+that the count is now MEASURED every routine run instead of discovered at the next decomposition.
+`reward_manager.py` (1,990 of 2,000 lines, the next cut on the backlog) is patched at **32 sites from
+`reward_tracker_test.py` alone**, the largest concentration in the tree — the gate is standing before
+that cut rather than after it. **One known blind spot, stated rather than hidden:** a target named
+through a loop variable (`for name in (…): monkeypatch.setattr(mod, name, …)`) is invisible to the
+scan — 8 such sites exist; spell the target out in new tests.
+
+Tag: ROUTINE (a gate landed; no research measurement changed).
