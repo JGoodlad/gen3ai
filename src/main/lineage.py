@@ -20,7 +20,14 @@ WHAT IT CHECKS, per link, from what is on disk:
   * the `arch_signature` CHANGED across the link — a fork cannot have loaded a differently-shaped
     parent, so the recorded parent is wrong.
 
-A DERIVED chain is labelled `⚠ derived` on every line it applies to. Torch is never imported and no
+RECORDED vs DERIVED are two INDEPENDENT facts and the header line states both. A run's lineage is
+DERIVED when it was REGEXed out of `original_command` — either at read time (no block at all) or
+once, by `--backfill`, into a block that says `"derived": true`. That second case is still a block
+on disk, so it prints `recorded ⚠ DERIVED from original_command`; it is not a lesser kind of
+recording, it is a recorded GUESS. A DERIVED ANCESTOR is a different fact again and is marked
+`⚠ derived` on the node it applies to. More than one run also prints a summary line counting each.
+
+Torch is never imported and no
 checkpoint is loaded, so this reads a run whose architecture drifted past current code — which is
 most of `models/`.
 
@@ -67,7 +74,8 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     """Everything the CLI knows about one run. Pure over the filesystem; unit-tested directly."""
     name = os.path.basename(os.path.normpath(run_dir))
     out: Dict[str, Any] = {
-        "run": name, "dir": run_dir, "recorded": False, "derived": False, "role": None,
+        "run": name, "dir": run_dir, "recorded": False, "derived": False,
+        "derived_self": False, "parent_derived": False, "role": None,
         "fork_step": None, "num_timesteps": None, "fork_parent": None, "teachers": [],
         "exploiter_target": None,
         "ancestry": [], "ancestry_stop": None, "checks": [], "error": None,
@@ -83,8 +91,27 @@ def read_run(run_dir: str) -> Dict[str, Any]:
     # warn=True: this is THE accessor's legacy path, and its whole point is that a derived answer
     # announces itself. It goes to stderr, so `--json` stdout stays machine-readable.
     parent = fork_parent(run_dir, warn=True)
-    out["derived"] = bool(parent is not None and parent.derived) or (
-        block is None and read_original_command(run_dir) is not None)
+    # TWO DIFFERENT FACTS, kept apart because they answer different questions.
+    #
+    # `derived_self` — THIS RUN's lineage answer was REGEXed out of `original_command` rather than
+    # recorded at fork time: either the block on disk says `"derived": true` (a `--backfill`
+    # write), or there is no block and the command is all there is (derived at read time). The
+    # first half was MISSING until 2026-09-07: the block's own key was never read, so a run whose
+    # derivation concluded `fresh` — no `fork_parent`, hence no parent-side signal — printed
+    # `derived: false` while its metadata said the opposite. 47 runs were invisible to the ⚠ marker
+    # that way and the archive count read 115 where the census read 162 (ledger 2026-09-07).
+    #
+    # `parent_derived` — the parent REFERENCE this run names carries `derived`. `build_lineage`
+    # never writes that into a stored `fork_parent`, so on today's archive it only ever fires
+    # through `fork_parent()`'s own two paths and agrees with `derived_self`; it is kept as its own
+    # term so a hand-written or future block that does carry it is not quietly dropped.
+    #
+    # `derived` is their union — the historic field, unchanged wherever it was already True.
+    # Whether an ANCESTOR's lineage was derived is a THIRD fact, marked per node in `render`.
+    out["derived_self"] = bool(block.get("derived")) if block is not None else bool(
+        read_original_command(run_dir))
+    out["parent_derived"] = bool(parent is not None and parent.derived)
+    out["derived"] = out["derived_self"] or out["parent_derived"]
     out["role"] = role_of(run_dir, warn=False)
     if block is not None:
         out["fork_step"] = block.get("fork_step")
@@ -154,8 +181,16 @@ def render(row: Dict[str, Any]) -> str:
     if row.get("error"):
         return f"{row['run']}: {row['error']}"
     lines = []
-    tag = "recorded" if row["recorded"] else ("⚠ DERIVED from original_command" if row["derived"]
-                                              else "no lineage recorded")
+    # RECORDED and DERIVED are two independent facts and the tag states both. A `--backfill` block
+    # is on disk (recorded) AND was REGEXed out of `original_command` (derived); before 2026-09-07
+    # the "recorded" branch swallowed the second half and the ⚠ never printed for such a run.
+    # The tag reads `derived_self`, not the `derived` union: a run whose own block claims nothing
+    # but whose stored parent reference carries the flag is not making a derived claim about
+    # ITSELF, and its header is left exactly as it has always read.
+    if row["recorded"]:
+        tag = "recorded ⚠ DERIVED from original_command" if row["derived_self"] else "recorded"
+    else:
+        tag = ("⚠ DERIVED from original_command" if row["derived"] else "no lineage recorded")
     lines.append(f"{row['run']}   role={row.get('role') or '—'}   [{tag}]")
     # The two step facts side by side: where this run STARTED (its fork point, from the immutable
     # lineage block) and how far it GOT (the latest `num_timesteps`). "unknown" is a real answer —
@@ -194,6 +229,32 @@ def render(row: Dict[str, Any]) -> str:
     for problem in row["checks"]:
         lines.append(f"    ⚠ {problem}")
     return "\n".join(lines)
+
+
+def summarize(rows: List[Dict[str, Any]]) -> Dict[str, int]:
+    """How many of these runs STATE their lineage, and how many only IMPLY it.
+
+    The four counts are deliberately not a partition — `derived` cuts ACROSS `recorded`, because a
+    `--backfill` block is both on disk and a re-parse of a shell command. Reading it as a partition
+    is exactly the mistake this function exists to prevent: on 2026-09-07 the backlog carried 105
+    "runs with a derived parent" (the `main.tb_inherit` FORK population) against a census figure of
+    162 (every run whose lineage is derived at all), and nothing printed either number."""
+    return {
+        "runs": len(rows),
+        "recorded": sum(1 for r in rows if r.get("recorded")),
+        "derived": sum(1 for r in rows if r.get("derived")),
+        # `derived_self`, to agree with the ⚠ that `render` puts on those same header lines.
+        "recorded_and_derived": sum(1 for r in rows
+                                    if r.get("recorded") and r.get("derived_self")),
+        "no_lineage": sum(1 for r in rows if not r.get("recorded") and not r.get("derived")
+                          and not r.get("error")),
+    }
+
+
+def render_summary(s: Dict[str, int]) -> str:
+    return (f"{s['runs']} runs: {s['recorded']} record a lineage block "
+            f"({s['recorded_and_derived']} of them ⚠ DERIVED), "
+            f"{s['derived']} ⚠ DERIVED in total, {s['no_lineage']} state no lineage at all")
 
 
 def backfill(run_dir: str, *, apply: bool = False) -> Dict[str, Any]:
@@ -269,12 +330,15 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     rows = [read_run(d) for d in dirs]
     if args.json:
-        print(json.dumps({"runs": rows}, indent=2))
+        print(json.dumps({"runs": rows, "summary": summarize(rows)}, indent=2))
         return 0
     for i, row in enumerate(rows):
         if i:
             print()
         print(render(row))
+    if len(rows) > 1:
+        print()
+        print(render_summary(summarize(rows)))
     return 1 if any(r["checks"] or r.get("error") for r in rows) else 0
 
 

@@ -432,6 +432,71 @@ def test_main_lineage_reports_a_missing_run(tmp_path, capsys):
 
 
 # ---------------------------------------------------------------------------
+# 7b — THE ⚠ DERIVED MARKER reads the BLOCK'S OWN FLAG (regression, 2026-09-07)
+# ---------------------------------------------------------------------------
+#
+# `read_run` computed `derived` from the PARENT reference alone. A block whose derivation concluded
+# `fresh` has no parent, so the marker was silent on it even though the block on disk literally
+# says `"derived": true` — 47 runs in the archive, and the reason `main.lineage` counted 115
+# derived where the census counted 162 (census 2026-09-07, `lineage_review.md` defect 1).
+
+
+def _derived_fresh(root, name="derived_fresh"):
+    """The exact shape `--backfill` writes when a legacy command names no `--model`."""
+    return _run(root, name, command="python train_rl_agent.py --steps 5000000",
+                lineage={"schema": LINEAGE_SCHEMA, "role": "fresh", "fork_parent": None,
+                         "fork_step": 0, "recorded_at": "2026-09-02T02:28:54Z",
+                         "teachers": [], "exploiter_target": None, "ancestry": [],
+                         "derived": True})
+
+
+def test_a_DERIVED_block_with_NO_parent_is_reported_as_derived(tmp_path):
+    from main.lineage import read_run
+    row = read_run(_derived_fresh(tmp_path))
+    assert row["recorded"] is True          # the block IS on disk …
+    assert row["derived_self"] is True      # … and it says it was derived, with no parent to say so
+    assert row["derived"] is True
+    assert row["fork_parent"] is None and row["role"] == "fresh"
+
+
+def test_main_lineage_PRINTS_the_marker_for_a_derived_block_with_no_parent(tmp_path, capsys):
+    from main.lineage import main as lineage_main
+    assert lineage_main([_derived_fresh(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "⚠ DERIVED from original_command" in out
+    assert "recorded" in out                # recorded AND derived — both facts, not one
+
+
+def test_the_summary_COUNTS_a_derived_block_with_no_parent(tmp_path, capsys):
+    from main.lineage import main as lineage_main, summarize, read_run
+    d, plain = _derived_fresh(tmp_path), _run(tmp_path, "plain", lineage={
+        "schema": LINEAGE_SCHEMA, "role": "fresh", "fork_parent": None, "fork_step": 0,
+        "ancestry": [], "teachers": [], "exploiter_target": None})
+    assert summarize([read_run(d), read_run(plain)]) == {
+        "runs": 2, "recorded": 2, "derived": 1, "recorded_and_derived": 1, "no_lineage": 0}
+    assert lineage_main([d, plain, "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["summary"]["derived"] == 1
+
+
+def test_a_NON_derived_block_whose_PARENT_reference_is_derived_keeps_its_header(tmp_path, capsys):
+    """PIN. The two facts stay apart: the run claims nothing about its own derivation, so its
+    header reads exactly as it did before the fix — only the parent-side flag is reported."""
+    from main.lineage import main as lineage_main, read_run
+    parent = _run(tmp_path, "p", steps=42)
+    run = _run(tmp_path, "c", lineage={
+        "schema": LINEAGE_SCHEMA, "role": "fork", "fork_step": 42, "ancestry": [],
+        "teachers": [], "exploiter_target": None,
+        "fork_parent": {"path": os.path.join(parent, "final_model.zip"), "run_dir": parent,
+                        "run_name": "p", "derived": True}})
+    row = read_run(run)
+    assert row["parent_derived"] is True and row["derived_self"] is False
+    assert row["derived"] is True                      # the historic field, unchanged
+    assert lineage_main([run]) == 0
+    header = capsys.readouterr().out.splitlines()[0]
+    assert header.endswith("[recorded]")               # no ⚠ on the header — as before the fix
+
+
+# ---------------------------------------------------------------------------
 # 8 — BACKFILL: dry-run by default, refuses to overwrite a recorded block
 # ---------------------------------------------------------------------------
 

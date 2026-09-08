@@ -2002,6 +2002,18 @@ exit 1 when anything is flagged. `--backfill` derives a block for a LEGACY run a
 because a backfill that overwrote a recorded parent with a re-parsed guess would defeat the point of
 recording it.
 
+🚨 **RECORDED and DERIVED are INDEPENDENT, and the CLI's header line states both.** A `--backfill`
+block is on disk *and* was REGEXed out of `original_command`, so it prints
+`[recorded ⚠ DERIVED from original_command]` — a recorded GUESS, not a lesser kind of recording. A
+run with no block but a parseable command prints `[⚠ DERIVED from original_command]`; a DERIVED
+ANCESTOR is a third fact, marked `⚠ derived` on its own node. Each row carries `derived_self` (this
+run's lineage was derived), `parent_derived` (the parent REFERENCE it names carries the flag) and
+`derived`, their union; more than one run also prints a summary counting each. **Until 2026-09-07
+the flag was computed from the parent alone**, so a block whose derivation concluded `fresh` — no
+parent, hence no parent-side signal — read `derived: false` while its metadata said the opposite:
+**47 runs invisible to the marker, and an archive count of 115 against the census's 162**
+(`designs/research_state/measurements/tech_debt_census_2026-09-07/lineage_review.md` defect 1).
+
 **The seam is two lines.** `run_io._run_lineage(args, model_dir, model_path=…, fork_step=…)` is the
 one place that knows which argparse fields carry the parent, teachers and target; `model_build`
 builds the block once per path and passes it to every `save_model_snapshot` call. All the work is in
