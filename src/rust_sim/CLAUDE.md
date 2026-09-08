@@ -40,8 +40,8 @@ it said 309/60 where the engine itself runs **312/57**. `scan_move_probe` cannot
 *is* the engine running. The JS scan keeps the two jobs the probe cannot do: the team-pool report and
 the `0 MISMODELED` invariant gate.
 
-**Measured 2026-09-08 by `scan_move_probe`, after ROUND 58: 369 gen3-legal moves → 320 MODELED ·
-49 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
+**Measured 2026-09-08 by `scan_move_probe`, after ROUND 59: 369 gen3-legal moves → 321 MODELED ·
+48 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
 (the four fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by
 family and by legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](../../designs/rust_sim/gen3_coverage_census_2026-09-08.md) —
 a dated SNAPSHOT, not a current number.
@@ -795,7 +795,8 @@ are debugging rather than loading all of them here. The build log also holds the
 ROUNDS and the move-coverage BATCH 1-9 records.
 
 CONFUSION family (confuseray / supersonic / sweetkiss / teeterdance) ·
-SPREAD STAT-DROPS (leer / growl / tailwhip / stringshot / sweetscent) · Damage · Fixed-damage moves ·
+SPREAD STAT-DROPS (leer / growl / tailwhip / stringshot / sweetscent) · FOCUS ENERGY ·
+Damage · Fixed-damage moves ·
 Full battle · Multi-turn · PP tracking + Struggle · Phazing ·
 Protect / Detect · Recovery moves · SNATCH · Secondary effects + onBeforeMove status · Setup moves ·
 Spikes · Status moves · Switch-in events · TRICK · Taunt + Disable · Trapping · YAWN.
@@ -806,6 +807,15 @@ already-confused target the +2 Atk still lands and there is NO `-fail`; at the +
 `-boost|…|atk|0` prints AND the confusion still applies). They remain FAIL-LOUD; closing them needs
 a positive foe-directed `targetBoosts` field in `gen3_moves.json` (`statDropBoosts` is
 negative-only). ROUND 57 in the build log has the measurement.
+
+🚨 **ATTRACT (338 learners — the largest single-move gap) IS BLOCKED BY A CONSTRUCTION DRAW, not by
+Attract.** Its spec is settled and committed (`harness/probe_attract_move.js`), but
+`MonState::from_set` stores only the PACKED gender, while the sim's ctor is
+`set.gender || species.gender || sample(['M','F'])` — and that sample is a construction-time draw
+the `start_with_switchins` path does not model. A `None` gender PANICS at the attract compare, which
+is harmless today only because Cute Charm is on 0 pool teams. Admitting the MOVE would fail-loud
+across every corpus. The prerequisite round is the construction gender, and modelling that sample
+adds draws and moves **every committed golden's seed**. ROUND 59b has the full finding.
 
 ## Where the rest of the detail lives
 

@@ -15232,3 +15232,53 @@ GREEDY-symmetric while A's was handicapped, so the pool column is cross-regime a
 the gen-16 shape — pure PFSP over a homogeneous fresh self-pool cost 26–33 Elo (ledger L1159) —
 unless the win-prob critic changes it; v8's +69 came against a DIVERSE, ANCHORED pool, which C does
 not have. A WITHIN FLOOR read is the honest prior. Tag: REGISTRATION.
+## 2026-09-08 · RUST SIM · gen3 parity round 3: FOCUS ENERGY closes and ATTRACT is scoped-out with its cause (320 → 321 of 369 moves; campaign 312 → 321, abilities and species CLOSED)
+
+**ROUND 59 + 59b in `designs/rust_sim/port_build_log.md`.** The last fix round of the 2026-09-08
+all-gen3 campaign, and its stop point (weekly quota).
+
+**FOCUS ENERGY CLOSED (40 learners)** — the third round running whose mechanic was already half
+built. `MonState::focus_energy` (+2 crit stages, cleared on switch-out) has been modelled since
+`gen3_ability_batch4_v1`; in gen 3 the only way to reach it was a **Lansat Berry**. Probe-settled
+(`harness/probe_focus_energy.js`): `target: self`, never-miss, **DRAW-FREE**;
+`|-start|<user>|move: Focus Energy` (the `move: ` prefix matters — the berry path emits item
+framing); a second cast gives the blanked-target `[still]` + `-fail|<USER>`; **Snatch steals it for
+free** because the interception gates on the dex's `flags.snatch`, not an id list.
+
+**⚠️ THE CRIT EFFECT IS PINNED AS A RATE, AND THAT PIN IS THE ROUND'S POINT.** An engine that SET
+the flag and never READ it satisfies every emission assertion. Mutation A — leaving the arm intact
+and making the crit path ignore the flag — leaves FE1/FE2/FE4 **all green** and fails only FE3,
+which reports `crits WITH Focus Energy 9/200 vs control 9/200`. Probe measured 23.5% vs 5.5%
+(gen3: 1/4 at stage +2, 1/16 at stage 0), and the golden GENERATOR **refuses to write a vector**
+whose Focus Energy arm does not out-crit its control. **A flag that is set and never read is
+invisible to every emission test you can write** — and ROUND 57's Confuse Ray is the standing proof
+that is not hypothetical.
+
+**ATTRACT (338 learners — the LARGEST single-move gap) INVESTIGATED AND DELIBERATELY NOT CLOSED.**
+Its spec is settled and committed (`harness/probe_attract_move.js`), including two branches a source
+read gets wrong: a same-gender/genderless target emits a bare **`-immune`** (the MOVE's
+`onTryImmunity`) while **Oblivious** emits `[still]`+`-fail` (the VOLATILE's `onStart`), and neither
+Substitute (`bypasssub`) nor Safeguard blocks it. **What blocks the round is not Attract.**
+`MonState::from_set` stores only the PACKED gender; the sim's ctor is
+`set.gender || species.gender || sample(['M','F'])`, and that sample is a construction-time draw the
+`start_with_switchins` path does not model (it IS modelled on the bridge's turn-0 path). A `None`
+gender PANICS at the attract compare — harmless today only because Cute Charm is on 0 pool teams.
+Admitting the MOVE makes it reachable on 338 species whose exports routinely omit gender, so it
+would fail-loud across `scan_move_probe`, the e2e generator and the pool fuzz. The prerequisite is a
+**construction-layer round that adds draws and moves every committed golden's seed** — scoped as its
+own round rather than approximated here. The census's own ranked list is annotated so the next
+reader does not re-derive this.
+
+**CAMPAIGN TOTAL (rounds 0-3, commits `d56a9e58` · `81d5b5d1` · `28215d27` · this):** moves
+**312 → 321 of 369**; **abilities 76/76 and species 392/392 measured CLOSED**; items 102/106. Two
+live bugs found in a SHIPPED move (ROUND 57's Confuse Ray: no accuracy roll, no Substitute gate).
+Two measurement instruments corrected: the JS census mirror (three moves stale, and a set that was
+updated but never wired into the Status classifier) and the census's own gate-exposure tiers (which
+counted a `dex_golden.txt` row as battle exposure — tier D is **36**, not the 0 first published).
+
+**Gates:** `cargo test --release --no-fail-fast` **748 passed / 0 failed** (727 at campaign start);
+e2e golden md5 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED across all three fix rounds**; handler
+audit 1075 → **1094** rows green; `--mode pool --protocol --format gen3ou` byte fuzz **GREEN-GATE
+PASS** on each round (300 battles, ok=296, 0 non-allowlisted). A ranked P1 backlog row for the
+remaining 48 moves is in `designs/ops/TECH_DEBT_BACKLOG.md` §2. Tag: RUST SIM / FIX.
+**No model measurement changed and no run was touched.**

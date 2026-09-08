@@ -42,16 +42,23 @@ of only how many, which is what made the drift visible at all.
 | Universe | gen3-legal ids | Engine RUNS it | Engine FAIL-LOUDS | Gap |
 |---|---:|---:|---:|---:|
 | **Moves** (at the census) | 369 | **312** | **57** | 15.4% |
-| **Moves** (after ROUNDS 57-58) | 369 | **320** | **49** | 13.3% |
+| **Moves** (after ROUNDS 57-59) | 369 | **321** | **48** | 13.0% |
 | **Abilities** | 76 | **76** | 0 | **CLOSED** |
 | **Species** | 392 | **392** | 0 | **CLOSED** |
 | **Items** | 106 | **102** | **4** | 3.8% |
 
 **The move row moved while this file was being written, which is the point of dating it.** ROUND 57
-closed the pure-confusion family (`supersonic` / `sweetkiss` / `teeterdance`) and ROUND 58 the spread
-stat-drops (`leer` / `growl` / `tailwhip` / `stringshot` / `sweetscent`). The ranked list below is
-the state **at the census**; strike those eight when reading it. The current number is always
-`scan_move_probe`.
+closed the pure-confusion family (`supersonic` / `sweetkiss` / `teeterdance`), ROUND 58 the spread
+stat-drops (`leer` / `growl` / `tailwhip` / `stringshot` / `sweetscent`) and ROUND 59 `focusenergy`.
+The ranked list below is the state **at the census**; strike those nine when reading it. The current
+number is always `scan_move_probe`.
+
+⚠️ **ONE ENTRY IN THE RANKED LIST IS NOW KNOWN TO BE MIS-RANKED BY EFFORT.** `attract` (338
+learners, the largest single-move gap) reads as cheap here because its volatile is already modelled.
+It is not: the port has no gender for a mon whose packed set omits it, because the sim's ctor
+`sample(['M','F'])` is a construction-time draw `start_with_switchins` does not model. The
+prerequisite is a construction-layer round that moves every committed golden's seed. ROUND 59b in
+the build log has the measurement; `harness/probe_attract_move.js` has the settled spec.
 
 *Universe = every id in `Dex.forFormat('gen3customgame')` with `exists && !isNonstandard && gen <= 3`
 (`struggle` excluded from moves — it is modeled and has its own differential gate, but it is not a

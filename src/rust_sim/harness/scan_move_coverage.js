@@ -294,6 +294,9 @@ function classifyStatus(m, id) {
   // RECYCLE (`gen3_recycle_v1`) — restores a SELF-CONSUMED item; never-miss, draw-free.
   if (id === 'recycle') return { cov: 'MODELED', mech: 'item-recycle' };
   if (id === 'skillswap') return { cov: 'MODELED', mech: 'ability-swap' };  // gen3_skill_swap_v1
+  // FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — never-miss, DRAW-FREE, sets the
+  // `focusenergy` volatile (+2 crit stages) the port has modelled since the Lansat Berry.
+  if (id === 'focusenergy') return { cov: 'MODELED', mech: 'crit-stage volatile (gen3_focus_energy_move_v1)' };
   // MOVE-COVERAGE BATCH 2 (`gen3_move_coverage_batch2_v1`) — status-cure / weather-set /
   // stat-drop / screens, all MODELED bit-for-bit.
   if (MODELED_CURE.has(id)) return { cov: 'MODELED', mech: 'status-cure (batch 2)' };

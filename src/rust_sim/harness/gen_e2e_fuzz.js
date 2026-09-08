@@ -410,6 +410,13 @@ const BATCH6_E2E_EXCLUDED = false;
 const MODELED_SNATCH_MOVES = new Set(['snatch']);
 const SNATCH_E2E_EXCLUDED = false;
 
+// FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — a `target: self`, NEVER-MISS,
+// **DRAW-FREE** status move that sets the `focusenergy` volatile (+2 crit stages). The volatile
+// itself has been modelled since `gen3_ability_batch4_v1`; before this round the only way to reach
+// it in gen 3 was a Lansat Berry eat. It carries `flags.snatch`, and the snatch interception gates
+// on the dex flag rather than an id list, so the steal works without an entry here.
+const MODELED_FOCUS_ENERGY_MOVES = new Set(['focusenergy']);
+
 // HAZE (`gen3_haze_v1`) — a category-Status FIELD move (`target: all`, `accuracy: true`) that
 // emits ONE `|-clearallboost` line + zeroes BOTH actives' boost stages (incl. the USER's own).
 // DRAW-FREE (probe-settled). Modeled bit-for-bit in `run_status_move`'s haze arm (the DEDICATED
@@ -805,6 +812,7 @@ function isModeledMove(id, allowHiddenPower = false) {
       // moves the picker also picks (all `isModeledMove`), so the steal always re-dispatches
       // a modeled arm (never a fail-loud). Closes 722/722.
       (SNATCH_E2E_EXCLUDED ? false : MODELED_SNATCH_MOVES.has(id)) ||
+      MODELED_FOCUS_ENERGY_MOVES.has(id) ||
       // HAZE (`gen3_haze_v1`) — the boost-reset FIELD move, category Status + bit-for-bit modeled.
       (HAZE_E2E_EXCLUDED ? false : MODELED_HAZE_MOVES.has(id)) ||
       // YAWN (`gen3_yawn_v1`) — the delayed-sleep move, category Status + bit-for-bit modeled.
@@ -1960,6 +1968,7 @@ module.exports = {
   MODELED_LEECH_MOVES, MODELED_FIXED_DAMAGE_MOVES, MODELED_SUBSTITUTE_MOVES,
   MODELED_RESTRICTION_MOVES, MODELED_RECYCLE_MOVES, MODELED_SKILLSWAP_MOVES, MODELED_BATCH3_MOVES,
   MODELED_CURE_MOVES, MODELED_WEATHER_MOVES, MODELED_STATDROP_MOVES, MODELED_SCREEN_MOVES,
+  MODELED_FOCUS_ENERGY_MOVES,
   MODELED_PARTIALTRAP_MOVES,
   mulberry32, randInt, seedFrom, toId,
   FORMAT, dex3,

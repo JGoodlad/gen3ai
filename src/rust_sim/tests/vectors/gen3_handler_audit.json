@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 59,
-   "moves": 304,
-   "rows": 1091
+   "moves": 305,
+   "rows": 1094
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -4423,6 +4423,24 @@
    "fp": "val:true",
    "anchor": "turn.rs::run_status_move",
    "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:focusenergy:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:focusenergy:neverMiss": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::never_miss",
+   "reason": "accuracy === true — NO accuracy draw at all"
+  },
+  "move:focusenergy:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"focusenergy\"",
+   "anchor": "turn/status_moves.rs::run_status_move",
+   "reason": "the focusenergy arm: never-miss and DRAW-FREE, sets MonState::focus_energy (+2 crit stages, read at the one crit-ratio site in helpers.rs) and emits |-start|<user>|move: Focus Energy; an already-up volatile gives the [still]+-fail did-nothing form (gen3_focus_energy_move_v1)"
   },
   "move:focuspunch:onTry": {
    "disposition": "implemented",

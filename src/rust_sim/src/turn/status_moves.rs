@@ -3128,6 +3128,56 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
+        // --- FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59). The MOVE half of a volatile
+        //     the port has modelled since `gen3_ability_batch4_v1` — `MonState::focus_energy`,
+        //     +2 crit stages through the one crit-ratio read in `helpers.rs`, cleared on
+        //     switch-out. Until now the ONLY way to reach it in gen 3 was a **Lansat Berry** eat;
+        //     the move is 40 legal learners.
+        //
+        //     PROBE-SETTLED (`harness/probe_focus_energy.js`, re-runnable):
+        //       dex row     : `target: self`, `accuracy: true` (**NEVER-MISS**), `flags.snatch`
+        //       plain cast  : **ZERO DRAWS** -> `|move|<user>|Focus Energy|<user>` then
+        //                     `|-start|<user>|move: Focus Energy`
+        //       second cast : ZERO DRAWS -> `|move|…||[still]` + `|-fail|<USER>` (addVolatile
+        //                     returns false on a volatile that is already up)
+        //       SNATCH      : STOLEN — and free here, because the interception above gates on the
+        //                     dex's own `is_snatchable` (`flags.snatch`) rather than an id list.
+        //
+        //     ⚠️ THE CRIT EFFECT IS MEASURED, NOT ASSUMED. The probe runs 200 seeded Tackles with
+        //     and without the volatile: **23.5% vs 5.5%** crits, against the gen-3 expectations of
+        //     1/4 (stage +2) and 1/16 (stage 0). A pin that only checked the FLAG would pass on an
+        //     engine that set it and never read it, so `focus_energy_test.rs` asserts the rate.
+        //
+        //     DRAW-FREE and never-miss, so there is no accuracy roll to place and no miss branch:
+        //     the whole arm is two state reads and an emission. ---
+        if move_id == "focusenergy" {
+            debug_assert!(
+                never_miss,
+                "focusenergy: expected the gen3 never-miss (accuracy:true) dex row, got \
+                 never_miss={never_miss} — a roll here would add a draw the sim does not make"
+            );
+            if self.sides[_side].pokemon[_slot].focus_energy {
+                // ALREADY UP: `addVolatile` returns false → the did-nothing form. The retro-edit
+                // BLANKS the `|move|` target field and appends `|[still]` (the exact battle.js
+                // transform), which is what turns the self-target announce
+                // `|move|<user>|Focus Energy|<user>` into the sim's `|move|<user>|Focus Energy||[still]`.
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            self.sides[_side].pokemon[_slot].focus_energy = true;
+            // [EMIT] `|-start|<user>|move: Focus Energy` — note the `move: ` prefix, which the
+            // Lansat Berry path does NOT use (a berry eat emits its own item framing).
+            if self.logging() {
+                let user = self.mon_ref(_side, _slot, dex);
+                self.log.volatile_start(&user, "move: Focus Energy");
+            }
+            return MoveResolution::done(false, false, false);
+        }
+
         // --- THE PURE-VOLATILE CONFUSION MOVES (`gen3_confusion_move_family_v1`, ROUND 57).
         //     Confuse Ray (`gen3_confuse_ray_v1`, ROUND 44) plus its three siblings — every gen-3
         //     status move whose WHOLE effect is `volatileStatus: 'confusion'`:

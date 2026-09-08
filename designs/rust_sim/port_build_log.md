@@ -6020,3 +6020,94 @@ Python `gen3_data` + `observation` + `tools` suites **407 passed** (the data cha
 AND obs-neutral — the facade ignores `statDropBoosts`); `--mode pool --protocol --format gen3ou`
 byte fuzz as the OU-surface regression control. **CENSUS: 315 → 320 MODELED / 54 → 49 FAIL-LOUD**,
 engine oracle and JS mirror agreeing.
+### ROUND 59 (FIX) — FOCUS ENERGY: the move half of a volatile only a BERRY could reach
+
+`gen3_focus_energy_move_v1`. gen3 parity round 3, and the third round in a row whose mechanic was
+already half-built: `MonState::focus_energy` (+2 crit stages through the single crit-ratio read in
+`helpers.rs`, cleared on switch-out) has been modelled since `gen3_ability_batch4_v1` — but in gen 3
+the ONLY way to reach it was a **Lansat Berry** eat. The MOVE is **40 legal learners**.
+
+**PROBE-SETTLED** (`harness/probe_focus_energy.js`, re-runnable): `target: self`,
+`accuracy: true` (**never-miss**), `flags.snatch`. A plain cast is **DRAW-FREE** —
+`|move|<user>|Focus Energy|<user>` then `|-start|<user>|move: Focus Energy` (note the `move: `
+prefix; the berry path emits its own item framing). A SECOND cast is also draw-free and gives the
+did-nothing form: the `|move|` target field BLANKED and `|[still]` appended, then a bare
+`|-fail|<USER>`. **SNATCH steals it for free** — the interception gates on the dex's own
+`is_snatchable` (`flags.snatch`), not an id list, so admitting the move admitted the steal.
+
+**⚠️ THE CRIT EFFECT IS MEASURED AS A RATE, NOT ASSERTED FROM THE FLAG — and that is the whole
+point of the round's gating.** An engine that set `focus_energy` and never read it would satisfy
+every emission assertion completely. So the probe runs 200 seeded Tackles with and without the
+volatile (**23.5% vs 5.5%** crits, against gen-3's 1/4 at stage +2 and 1/16 at stage 0), and
+`focus_energy_test.rs::FE3` asserts the same comparison against the PORT, with a CONTROL arm that is
+the same board and the same seeds with the cast replaced by a Splash.
+
+**THAT PIN IS THE ONE THAT EARNED ITS KEEP.** Mutation A — leaving the arm intact but making the
+crit path ignore the flag (`if false && mon.focus_energy`) — leaves FE1 (the start line), FE2 (the
+re-cast fail) and FE4 (the Snatch steal) **all passing**, and fails only FE3, which reports
+`crits WITH Focus Energy 9/200 vs control 9/200`. **A flag that is set and never read is invisible
+to every emission test you can write**, and ROUND 57's Confuse Ray is the standing proof that this
+is not a hypothetical: it carried a named pin asserting its emissions while its draw model had been
+wrong for months.
+
+**TWO GATES.** `tests/focus_energy_test.rs` (4 named feature pins: the start line, the `[still]`
+re-cast form with a "started exactly ONCE" count, the crit RATE with a non-vacuity check that the
+control crit at all, and the Snatch steal asserting the victim does NOT also get it) and
+`tests/focus_energy_golden_test.rs` + `harness/gen_focus_energy_golden.js` — **480 rows, 4
+scenarios x 120 seeds, 0 seed mismatches, 0 byte mismatches**. The generator **REFUSES to write a
+vector** in which the Focus Energy arm does not out-crit its control, so a golden that cannot
+demonstrate the volatile is read is never produced in the first place.
+
+**MUTATION-PROVEN two ways:** the unread-flag mutation above (fails FE3 and the golden); dropping
+the already-up guard so a re-cast silently re-applies (fails the golden).
+
+**Gates:** `cargo test --release --no-fail-fast` **748 passed / 0 failed** (742 before); e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1091 → 1094 rows**, green;
+`--mode pool --protocol --format gen3ou` byte fuzz **GREEN-GATE PASS** (300 battles, ok=296, 0
+non-allowlisted, 4 correctly allowlisted turn-0 artifacts). **CENSUS: 320 → 321 MODELED / 49 → 48
+FAIL-LOUD**, engine oracle and JS mirror agreeing.
+
+### ROUND 59b (INVESTIGATION, NOT CLOSED) — ATTRACT is blocked by an unmodelled CONSTRUCTION draw
+
+`attract` is **338 legal learners — the largest single-move gap left**, and it looked like the
+cheapest round of the campaign: the volatile is fully modelled (`MonState::attract`, the
+`onBeforeMove` priority-2 `-activate` + `randomChance(1,2)` immobilize, the source-left and
+holder-switch-out clears), reachable today only through a Cute Charm contact proc. It is NOT cheap,
+and the reason is worth recording so the next attempt does not re-derive it.
+
+**THE SPEC IS SETTLED** (`harness/probe_attract_move.js`, committed and re-runnable). Six branches,
+and two of them are counter-intuitive enough that a source read would get them wrong:
+
+| branch | draws | emission |
+|---|---|---|
+| plain hit (M into F) | accuracy | `\|-start\|<t>\|Attract` (**bare** — no `[from]`) |
+| **same gender / genderless** | accuracy | **`\|-immune\|<t>\|`** — the MOVE's own `onTryImmunity` |
+| **OBLIVIOUS** | accuracy | **`\|move\|…\|\|[still]` + `\|-fail\|<USER>`** — the VOLATILE's `onStart` |
+| already attracted | accuracy | `[still]` + `-fail\|<USER>` |
+| SUBSTITUTE | accuracy | **does NOT block** (`bypasssub: 1`) |
+| SAFEGUARD | accuracy | **does NOT block** — the ward does not cover attraction |
+| PROTECT | accuracy | `\|-activate\|<t>\|Protect` |
+
+The gender gate and Oblivious emit **different forms** because they live at different layers: gender
+is the move's `onTryImmunity` (→ `-immune`), Oblivious is `runEvent('Attract')` inside the volatile's
+`onStart` (→ the addVolatile fails → the move's `-fail`).
+
+**🚨 WHAT BLOCKS IT: THE PORT DOES NOT KNOW A MON'S GENDER ON THE PATH THE GATES USE.**
+`MonState::from_set` stores `gender: set.gender` — the packed string's field, and nothing else. The
+sim's constructor is `gender = set.gender || species.gender || sample(['M','F'])`, and that
+`sample` is a **construction-time PRNG draw the `Battle::start_with_switchins` path does not model**
+(it IS modelled on the bridge's `new_construct_turn0` path, `gen3_turn0_construction_v1`). Today a
+`None` gender reaching the attract compare PANICS fail-loud, which is correct and harmless *because
+Cute Charm appears on 0 pool teams*. **Admitting the MOVE changes that:** Attract is legal on 338
+species, Showdown team exports routinely omit the gender field, and `scan_move_probe`, the e2e
+capstone generator and the pool byte fuzz all build teams through `start_with_switchins`. The move
+would fail-loud across the corpora — so the census would not even count it as closed.
+
+**THE REAL WORK IS THEREFORE CONSTRUCTION-LAYER, NOT ATTRACT:** either apply the species' fixed
+gender at `from_set` (draw-free, correct, but leaves every ratio species still unknown) or model the
+construction `sample(['M','F'])` on the `start_with_switchins` path — which ADDS DRAWS and would
+change the seed of **every committed golden**, including the e2e capstone md5. That is a
+substantial, separately-gated round with a blast radius across the whole vector set, and it should
+be scoped as one. **Left out with the finding written up rather than approximated** — the probe is
+committed, so the next attempt starts from the settled spec and spends its budget on the gender
+question alone.

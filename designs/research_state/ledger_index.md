@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,235-line file. **The ledger itself is append-only and is never edited by this**;
+15,285-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**450 headings · 410 dated · 2026-08-01 → 2026-09-08 · ledger 15,235 lines.**
+**451 headings · 411 dated · 2026-08-01 → 2026-09-08 · ledger 15,285 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -470,3 +470,4 @@ rename.
 - `L15087` · `2026-09-08` · RUST SIM · gen3 parity round 1: the CONFUSION family (supersonic / sweetkiss / teeterdance) — and the shipped Confuse Ray never rolled its accuracy (312 → 315 of 369 moves)
 - `L15153` · `2026-09-08` · RUST SIM · gen3 parity round 2: the SPREAD STAT-DROPS close with ZERO engine code — the gap was an extractor predicate (315 → 320 of 369 moves)
   - `L15208` · `2026-09-08` · ARM C REGISTRATION · `ai_v12_04_pfsp_fork25M` — the PFSP fork of arm A at 24,854,016, launched as A finishes at 75M
+- `L15235` · `2026-09-08` · RUST SIM · gen3 parity round 3: FOCUS ENERGY closes and ATTRACT is scoped-out with its cause (320 → 321 of 369 moves; campaign 312 → 321, abilities and species CLOSED)

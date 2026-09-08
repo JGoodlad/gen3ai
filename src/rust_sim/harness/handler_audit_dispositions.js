@@ -438,6 +438,12 @@ const MOVE_VOLATILE_ANCHOR = {
   // duration handler: gen-3 torment has no `duration`/`onResidual`, and a phantom one would
   // tie the NO_ORDER/subOrder-2 protect/stall/flinch group.
   torment: IMPL('state.rs::move_usable', 'the torment volatile — blocks the LAST-USED slot, permanent until switch-out (gen3_torment_v1)'),
+  // FOCUS ENERGY (`gen3_focus_energy_move_v1`, ROUND 59) — keyed by the VOLATILE NAME, which for
+  // this move happens to equal the move id. The volatile itself predates the move: it has been
+  // modelled since `gen3_ability_batch4_v1` (reachable via a Lansat Berry eat), so the MOVE arm
+  // only had to set the existing flag and emit the `move: `-prefixed start line.
+  focusenergy: IMPL('turn/status_moves.rs::run_status_move',
+    'the focusenergy arm: never-miss and DRAW-FREE, sets MonState::focus_energy (+2 crit stages, read at the one crit-ratio site in helpers.rs) and emits |-start|<user>|move: Focus Energy; an already-up volatile gives the [still]+-fail did-nothing form (gen3_focus_energy_move_v1)'),
   confusion: IMPL('secondaries.rs::add_confusion', 'the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)'),
 };
 

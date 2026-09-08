@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-59 conditions (engine state space + attached), 304 modeled moves
-→ **1091 (effect, hook) rows**.
+59 conditions (engine state space + attached), 305 modeled moves
+→ **1094 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1038 |
+| implemented | 1041 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -615,7 +615,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (507 rows: implemented=503, noop_justified=2, unreachable_justified=2)
+## move (510 rows: implemented=506, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -778,6 +778,9 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | flamewheel | secondaries | implemented | `turn.rs::apply_secondaries` |
 | flash | boosts | implemented | `turn.rs::stat_drop_boosts` |
 | flash | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| focusenergy | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| focusenergy | neverMiss | implemented | `turn.rs::never_miss` |
+| focusenergy | volatileStatus | implemented | `turn/status_moves.rs::run_status_move` |
 | focuspunch | onTry | implemented | `turn.rs::run_move` |
 | focuspunch | priority | implemented | `turn.rs::move_priority` |
 | furyattack | multihit | implemented | `turn.rs::run_multihit` |
