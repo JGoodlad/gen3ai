@@ -14072,3 +14072,106 @@ its saved traces was wrong.
 
 Tag: ROUTINE (a forensic-tooling bug fixed; no research measurement changes, but every rendered
 timeline read before today should be re-read on the fixed renderer).
+---
+
+### 2026-09-07 · TECH DEBT · the Training Run session's instruments promoted into `scripts/ops/` + `src/main/ops/`
+
+**The row (P1, S).** Every operational instrument the Training Run session had built over
+2026-08/09 lived in `/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/` — a session-scoped
+temporary directory — and would have vanished with the session. The backlog row named four; the
+directory held 200 files, of which **fifteen are reusable INSTRUMENTS and the rest are one-off
+chains, argv snapshots and per-cell readouts.** All fifteen are now in the repo. The session
+keeps its own copies and its live cron still executes from that directory: **nothing there was
+touched.**
+
+**What each one measures, and where it came from.** Every path below is
+`/home/goodlad/.claude/jobs/1046b1d6/tmp/probes/<name>`.
+
+| origin | repo path | what it measures |
+|---|---|---|
+| `watch_arm2.sh` | `scripts/ops/watch_run.sh` | SOP §2 **layer 1**: step progress, the 35-min wedge limit, FAILURE WORDS, the arm-INVALIDATING `--sync-to-main` line, one status line per tick carrying marginal fps from checkpoint mtimes |
+| `marginal_fps.sh` | `scripts/ops/marginal_fps.sh` | the **standard throughput meter** — `(Δsteps)/(Δmtime)` per checkpoint pair, with `train/selfplay_fraction` beside it |
+| `read_10M.sh` | `scripts/ops/famine_read.sh` | the **deciding famine read**: `main.critic_gate` with parent + famine comparator by REGISTRY NAME and the control runs, then the kill-bar table |
+| `restart_read.sh` | `scripts/ops/restart_read.sh` | the registered **first-restart read**: vf_coef + verdict, `sidecar_audit` (the pin across the restart), the restart evidence, then killbar · vf_framings · restart_startup |
+| — | `scripts/ops/_common.sh` | new: repo root · MAIN checkout · `models/` (mirrors `utils.paths.main_models_dir()`) · run resolution · interpreter |
+| `tb_read.py` | `src/main/ops/tb_read.py` | the registered scalars **from the TB EVENTS, not the child log's table** — last-N series, median, the vf_coef verdict, the calibration-cost ratio; a missing tag WARNS and exits non-zero |
+| `killbar.py` | `src/main/ops/killbar.py` | the kill bars as an AND-gate, clause 2 a fixed +3.0-turn effect size evaluated only INSIDE ONE OPPONENT REGIME |
+| `vf_framings.py` | `src/main/ops/vf_framings.py` | `grad/value_policy_logratio` under all three framings with the REGISTERED one named, plus the ratio's COMPONENTS |
+| `restart_startup.py` | `src/main/ops/restart_startup.py` | a restart's startup cost: the TB wall-time gap across the boundary minus the steady cadence, against a pre-registered reading |
+| `plateau_signal.py` | `src/main/ops/plateau_signal.py` | the two-clause ladder plateau REPORT trigger (never a kill) |
+| `g7_report.py` | `src/main/ops/g7_report.py` | the G7 rows **QUOTED** from `critic_gate` — "untouched" and "clean" are not available as outputs |
+| `stall_exhibit.py` | `src/main/ops/stall_exhibit.py` | `ep_len` and `draw_rate` per 1M bucket on the SAME rows — stall vs competence sawtooth |
+| `calib_trend.py` | `src/main/ops/calib_trend.py` | G1 resolution / G4 skill per checkpoint, BOT and POOL kept apart |
+| `perbot_r.py` | `src/main/ops/perbot_r.py` | Pearson `r(base, skill)` across opponents, battle-clustered bootstrap |
+| `perbot_rank.py` | `src/main/ops/perbot_rank.py` | the same claim as an ORDERING — Spearman rho, bootstrap clustered by OPPONENT |
+| `negskill_null.py` | `src/main/ops/negskill_null.py` | the null for a count of negative-skill cells, resampled from the head's OWN forecasts |
+| — | `src/main/ops/run_ref.py` | new: a run NAME or DIRECTORY → the directory, REFUSING when there is no archive |
+
+**NOT promoted, and why:** `watch.sh` / `health.sh` (superseded by `watch_arm2.sh`),
+`watch_stop_C.sh` (a one-off for one arm's first checkpoint), `provenance_watch.sh` (bound to the
+dose+reuse chain's tag list), and every `chain_*.sh` / `run_*.sh` / `r3_*` / `r4_*` / `r5_*` — those
+are batch scripts, not instruments.
+
+**Why a `main.ops` SUBPACKAGE and not `src/main/*.py`.** The root `CLAUDE.md` names `src/main/*.py`
+as *the offline meters*: they read a FINISHED run's artifacts and write nothing. These are a
+different tier — they read a LIVE run's TB events, its launcher child log, its checkpoint mtimes
+and its snapshot ladder **while all of those are still being appended to**, and several REFUSE
+rather than report when a precondition of the live read is unmet (the ladder not caught up with the
+snapshots on disk, the restart boundary not yet in the data, the ring buffer trimmed). Mixing them
+into that list would dilute the one thing its name promises. Both `CLAUDE.md` and the SOP now say
+which tier is which.
+
+**What was generalized.** The arm name (`arm2`, `ai_v12_02_winprob_critic`) is an argument
+everywhere, and **a bare invocation REFUSES rather than defaulting to a run** — that is the defect
+being removed, not a convenience. `/home/...` model paths go through `utils.paths.main_models_dir()`
+(worktree-aware, `$GEN3AI_MODELS_DIR` authoritative), whose `None` every caller turns into a
+refusal naming the escape hatch; the shell half mirrors the same contract in `_common.sh`. The
+interpreter is `$GEN3AI_PYTHON` → `sys.executable` (Python) or the `land.sh` fall-back chain
+(shell). Registered constants that are per-ARM facts — the `ep_bots` reference and its `n`, the
+`ep_pool` anchor, the 1.25x bar, the step floors, the dip step — became options that are PRINTED at
+every read, and the two that would silently score one arm's registration against another's data
+(`--dip-step`, `perbot_rank`'s step pool) are now REQUIRED. `killbar`'s frozen references moved from
+beside the module to **beside the RUN** (`<run>/ops_frozen_refs.json`), because a repo-level file
+lets two arms overwrite each other's and the contract is that a frozen entry is never rewritten;
+they are still written only under an explicit `--freeze`. **The reference the session froze for
+`ai_v12_02_winprob_critic` is `selfplay_0.90 = 32.61095210484096`, n=21, window
+`4,000,032..6,000,032`, frozen 2026-09-06** — recorded here rather than written into `models/`,
+since an agent does not write there (SOP §6).
+
+**Gates.** `src/main/ops/tb_read_test.py` (7 tests, 0.6 s) on a SYNTHETIC events file written with
+the real `SummaryWriter`, so the real `EventAccumulator` path is exercised: a missing tag WARNS,
+never prints 0, and makes the WHOLE read exit non-zero; `--last N` is the last N **by step across
+every event directory**; the median is the window's, not the series'; the regime marker is never
+reported as a central tendency; both sides of the 10% calibration-cost bar. `src/main/ops/ops_scripts_test.py`
+(28 tests, unmarked): `bash -n`, executable bit, `--help` exits 0 and names the script, **a bare
+invocation exits 2**, no `/home/…` literal outside a comment (one documented exemption, itself
+asserted to still hold one), and every entry point sources `_common.sh`. All eleven modules answer
+`--help`; `killbar`, `stall_exhibit` and `marginal_fps.sh` were run against the live arm and match.
+
+**THREE FINDINGS about the scripts themselves. Recorded, not fixed** — changing a registered
+reading is not a promotion's call.
+
+1. **`restart_read.sh` computes the registered vf_coef statistic from the CHILD LOG**, which is
+   exactly the source `tb_read.py` was written to replace: the `| value_policy_logratio |` table
+   drops the `grad/` group prefix, `--log-level periodic` UNDERSAMPLES the rollouts, and
+   `launcher_child.log` is a ~1 MiB **ring buffer that trims silently** — so "the median of the last
+   20" from it is the median of the last 20 rows *that still fit*, which need not be the last 20
+   rollouts. Worse, step 5 of the same script (`vf_framings`) computes the SAME registered statistic
+   from the events: **one script prints one statistic from two sources and does not say which to
+   believe.** Left as it was, flagged in the script header and here.
+2. **`calib_trend.py` closed with a HARDCODED conclusion** — "The decay is BOT-SIDE. Pool holds." —
+   printed unconditionally, whatever the two strata's endpoints said. This is the same defect its
+   sibling `stall_exhibit.py` carries a 🚨 about, and there it had already produced a
+   known-unreliable "falling" read of `draw_rate`. **This one literal was removed** (the numbers
+   above it are unchanged); the removal is recorded in the module's docstring.
+3. **`g7_report.py`'s `sustained` test carried a VACUOUS first clause** —
+   `any(allover[i] and allover[i-1] …)` over a list of step NUMBERS, true whenever the list has two
+   entries. It contributed nothing to the conjunction that follows it; the port drops it and the
+   verdict is unchanged. Harmless here, but it is the shape the plateau signal's clause 1 had when
+   it false-fired at 30M: a clause that cannot fail, riding inside an AND.
+
+One thing the watcher does that reads as clean when it is not, worth stating: the
+`--sync-to-main` invalidation check is a `grep -q … 2>/dev/null` on the launcher log, and an
+**ABSENT** log returns non-zero exactly like a clean one. The file existed for the arm this was
+written for. The port now says so once in the status file — `WARN: launcher log … is ABSENT — the
+--sync-to-main invalidation check CANNOT fire` — which is additive reporting, not a changed reading.

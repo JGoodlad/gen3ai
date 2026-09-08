@@ -118,8 +118,10 @@ answers one of the two questions; do both.
 **Every long-running job gets all FOUR, at launch, without being asked** — the owner made the cron
 half explicit ("set fallback cron (make this standard sop)"):
 
-1. **OS-level watcher** (`nohup`, `watch.sh`-style): polls progress, ~35 min wedge limit, matches
-   FAILURE words as well as progress, writes a status file. Survives a dead session.
+1. **OS-level watcher** — [`scripts/ops/watch_run.sh`](../../scripts/ops/watch_run.sh) under
+   `nohup`: polls progress, ~35 min wedge limit, matches FAILURE words as well as progress,
+   checks the arm-INVALIDATING `--sync-to-main` line, writes a status file. Survives a dead
+   session.
 2. **OS-level chain** for multi-stage work, so stage N+1 starts without a session. Survives too.
 3. **`Monitor`** on the status file, filtered to terminal + failure lines only — owned by the
    Training Run session. The orchestrator does NOT watch the run **(owner, 2026-09-02)**; it is
@@ -174,6 +176,27 @@ integer-fps derivative.
 The launcher runs everything at `--nice 10`; a detached launch (`nohup … < /dev/null &`) is headless
 automatically. Never run a Claude session inside the training tmux session (its cgroup).
 
+**THE INSTRUMENTS ARE IN THE REPO, not in a session's scratch directory** (2026-09-07). They were
+built here and lived in a session-scoped temporary directory with one arm's name compiled in;
+they now take the run as an argument, resolve `models/` the way `utils.paths.main_models_dir()`
+does, and REFUSE rather than default. `scripts/ops/` holds the shell layer, `src/main/ops/` the
+Python instruments, and [`scripts/ops/README.md`](../../scripts/ops/README.md) lists every one
+with what it measures.
+
+| this layer / read | the command |
+|---|---|
+| layer 1, the OS watcher | `scripts/ops/watch_run.sh <run> --pid-file … --launcher-log …` |
+| MARGINAL fps, from checkpoint mtimes | `scripts/ops/marginal_fps.sh <run> [--target N:label]` |
+| the deciding famine read | `scripts/ops/famine_read.sh <run> --parent … --famine-comparator … --control "…"` |
+| the registered first-restart read | `scripts/ops/restart_read.sh <run> [--baseline …]` |
+| the registered scalars, at the SOURCE | `python -m main.ops.tb_read <run> --last 20` |
+| the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
+| G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
+| stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
+
+A session may still keep a scratch copy while an arm is live; the repo copies are the durable
+ones and are what this document names.
+
 ---
 
 ## 3. During the run
@@ -202,7 +225,14 @@ is something to report.
   never matched step (`feedback_elo_reading_rules`).
 - **First-restart checks:** the decision that is registered for it (today: `vf_coef` from the median
   of the last 20 rollouts' `grad/value_policy_logratio`); `python -m main.sidecar_audit <run>` shows
-  the pin is unchanged across the restart.
+  the pin is unchanged across the restart. One command: `scripts/ops/restart_read.sh <run>`.
+- **Read a scalar from the EVENTS, never the child log's table.** The table is a RENDERING — it
+  drops the group prefix (`grad/value_policy_logratio` prints bare) and `--log-level periodic`
+  UNDERSAMPLES it, and `launcher_child.log` is a ~1 MiB ring buffer that trims silently, so a
+  "last 20" taken from it is the last 20 rows that still FIT. `python -m main.ops.tb_read <run>`
+  reads the events, and WARNS on a missing tag instead of defaulting to 0. It has already caught
+  two log-rendering misreads: an episode length reported as "falling" that was oscillating, and a
+  metric read under the wrong group.
 - **Landings during a live cell are announced to the Training Run session before they go to `main`**
   and name what changed in any file the arm's pinned tree also contains.
 - **A single-sample reading is never a verdict.** Every registered instrument is read as the median

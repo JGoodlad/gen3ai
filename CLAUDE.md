@@ -243,6 +243,12 @@ python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoi
 
 **Offline meters** (no training, nothing written under `models/`): `main.elo` · `main.untaught_meter` · `main.critic_gate` · `main.exploitability` · `main.scaffolding_gauge` · `main.capacity` · `main.lineage` · `main.dose` · `main.sidecar_audit` · `main.baselines` · `main.tb_curate`.
 
+**LIVE-run instruments are a different tier — `main.ops.*` and `scripts/ops/`**, and reading a live
+arm through an offline meter is not the same operation: they read TensorBoard events, the launcher
+child log and checkpoint mtimes while all of those are still being appended to, and REFUSE when a
+precondition of the live read is unmet. `designs/ops/TRAINING_RUN_SOP.md` §2 names which layer uses
+which; `scripts/ops/README.md` lists every one.
+
 🚨 **Reporting an ELO has three rules:** the headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), not `eval/elo` (±29); a rating is only final once the run is (the newest BT node is systematically inflated); and a cross-run comparison must be at matched snapshot **COUNT**, not matched step.
 
 🚨 **`win_rate_vs_pool` / `eval/elo` carry an OPPONENT-REGIME BOUNDARY at 2026-09-07** and are not comparable across it. Eval pool sentinels are now **GREEDY and draw the trainee's own teams** by default (`--no-eval-sentinel-greedy` opts out; `--promote-threshold` follows, 0.55 / 0.65). The old asymmetry was worth **+8.9 pp** to the trainee, so equal skill reads ~9 pp lower now. **The regime is RECORDED and INHERITED on a flagless resume** — read it (`model_config.json`'s `eval_sentinel_greedy`, or the launch's `⚖️  [EVAL REGIME]` line), never assume it. `ladder.json` and every bot edge are UNAFFECTED. Detail: `designs/training/eval_and_rating.md`.
@@ -311,6 +317,8 @@ src/
     training/        # Callbacks, reward, eval, distillation, cf grounding, meters — has CLAUDE.md
   main/
     launcher/        # Restart loop + Textual TUI — has CLAUDE.md
+    ops/             # LIVE-run instruments: tb_read, killbar, g7_report, plateau_signal…
+                     #   the shell half is scripts/ops/ — see scripts/ops/README.md
     prober/          # Forensic-replay inspector (+ web/) — has CLAUDE.md
     train/           # The training entry point's phases (parser/, config, combination_checks)
     search_dividend/ # Search-around-the-policy probe + its 4-arm battery

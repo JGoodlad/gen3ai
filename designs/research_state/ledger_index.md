@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-13,991-line file. **The ledger itself is append-only and is never edited by this**;
+14,178-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**428 headings · 391 dated · 2026-08-01 → 2026-09-07 · ledger 13,991 lines.**
+**430 headings · 393 dated · 2026-08-01 → 2026-09-07 · ledger 14,178 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -448,3 +448,5 @@ rename.
   - `L13738` · `2026-09-07` · TECH DEBT · `reward_manager.py` decomposed (1,990 → 808 / 533 / 445 / 357 lines), reward sequence byte-identical
   - `L13799` · `2026-09-07` · TECH DEBT · ARCHITECTURE.md frozen-φ "in flight" sentence CLOSED (the fix had already landed 63 minutes earlier) + a generated ledger title index
   - `L13872` · `2026-09-07` · TECH DEBT · eval traces gain a DRAW bucket (tie vs timeout) + launcher_child.full.log rotation
+- `L13994` · `2026-09-07` · PROBER · "no effect" claimed on a status-inflicting move after a switch-in — fixed
+  - `L14077` · `2026-09-07` · TECH DEBT · the Training Run session's instruments promoted into `scripts/ops/` + `src/main/ops/`
