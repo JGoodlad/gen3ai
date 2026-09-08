@@ -14175,3 +14175,61 @@ One thing the watcher does that reads as clean when it is not, worth stating: th
 **ABSENT** log returns non-zero exactly like a clean one. The file existed for the arm this was
 written for. The port now says so once in the status file — `WARN: launcher log … is ABSENT — the
 --sync-to-main invalidation check CANNOT fire` — which is additive reporting, not a changed reading.
+
+## 2026-09-07 · DOCS · stall-cause wording corrected in root CLAUDE.md + designs/CLAUDE.md density + restart_read single-source
+
+Tech-debt burn-down, three items in one landing. Nothing here changes a measurement or a
+registered reading's VALUE; one item changes which SOURCE a registered reading is computed from.
+
+**1. The root `CLAUDE.md` stall section stated a cause that was downgraded a month ago.** It said
+capping subagent concurrency to 1–2 was "the actual cause" of agent stalls, via API stream
+starvation at ≥3 live streams. That account was **DOWNGRADED on 2026-08-11** — measured over
+19,286 remote turns, slow turns (>60 s) had *lower* mean concurrency (1.40) than fast ones (1.52)
+and the stall rate was flat (~6%) across every idle bucket — and `ORCHESTRATOR_SOP.md` §2/§7 has
+carried the corrected account since. **The operational advice is unchanged: both rules stay.** Only
+the reason changed — cap fan-out for **TOKEN COST** (a retry restarts an agent from scratch, so a
+four-attempt agent costs 4×; one workflow phase burned ~3.5 attempts per agent), not for stream
+capacity, which neither the cap nor `stallMs` buys. The root section now says that in four lines
+and points at the SOP for the evidence. *A rule whose stated cause is false still gets followed —
+until someone reasons FROM the cause.*
+
+**2. `designs/CLAUDE.md`: 95 KB → 20 KB** (504 → ~245 lines), the tech-debt backlog's P2 row. It is
+the leaf every session that touches `designs/` loads, and two cells of its state table were ~21 KB
+each — the config-version ladder v51→v111 and the ai_v9 concat-deletion/forward-design record. Both
+are NARRATIVE by the census rule (*a `CLAUDE.md` earns a line only if an agent that has NOT read it
+would do the work wrong*), so both went verbatim to `research_state/claude_md_archive/`
+(`designs_version_map_config_version_ladder.md`,
+`designs_version_map_ai_v9_stages_and_forward_designs.md`, plus
+`designs_version_map_state_table_2026-09-07.md` for the live-arm and chapter cells), which is
+HISTORY — additive only, never updated afterwards. The leaf keeps what the root's leaf map requires
+of it: which `ai_vN` folder is relevant, and the version map. The two hazards those cells carried
+that are RULES rather than narrative stayed: read the version constants from
+`model_version/constants.py` and never from prose (the old cell carried a stale `MIGRATION_FLOOR`
+for a month), and read a live run from the run.
+
+**3. `scripts/ops/restart_read.sh` computed the registered vf_coef statistic TWICE, from TWO
+sources** — finding 1 of the `561e9510` promotion, recorded not fixed then, fixed now. Step 1 read
+`grad/value_policy_logratio` from the launcher child log's rendered table; step 5
+(`main.ops.vf_framings`) read the same statistic from the TB events. One script, one statistic, two
+sources, no statement of which to believe. **The events are now the only source** for the
+registered reading and the verdict, via `main.ops.tb_read`, with the verdict bar IMPORTED from
+`vf_framings.verdict` so there is one definition of it in the tree. The child log's table is a
+rendering — it drops the `grad/` prefix, `--log-level periodic` undersamples the rollouts, and
+`launcher_child.log` is a ~1 MiB ring buffer that trims silently, so its "last 20" is the last 20
+rows *that still fit*. It survives as a **labelled CROSS-CHECK** that prints both medians and their
+difference and WARNS above **0.10 log10** — one fifth of the narrowest verdict band (|med| ≤ 0.5
+KEEP), so a difference at or below it cannot move the call unless the events median already sits
+within 0.10 of a band edge, which is reported separately. The cross-check never produces a verdict
+and never overrides one; an empty cross-check (ring buffer trimmed) is stated as saying nothing.
+Verified on the live arm `ai_v12_02_winprob_critic` at 55.05M: events median **−0.708** log10 over
+the last 20 rollouts (steps 53,182,464..55,050,240) → KEEP + FLAG; child-log cross-check −0.709,
+difference −0.000, inside tolerance. `ops_scripts_test.py` (28 tests) green.
+
+**Also discharged in the same pass:** `UNDERSTANDING.md`'s ⚠️ that "`designs/CLAUDE.md`'s
+version-map table carries no ai_v12 row and `ARCHITECTURE.md` still names gen-17 as the production
+run" — both halves were already false (`ARCHITECTURE.md` line 13 names `ai_v12_02_winprob_critic`,
+and the state table carries both an ai_v12 row and an active-run row), and it still named the DEAD
+`ai_v12_01` as the live arm.
+
+Gates: the `CLAUDE.md` freshness gate, the ledger-index gate, the mode-flag and measurements-readout
+gates, ruff/mypy/size, and `ops_scripts_test.py` green; the routine gate run before landing.

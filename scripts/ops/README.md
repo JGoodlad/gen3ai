@@ -24,7 +24,7 @@ holds that line for the shell layer (`bash -n`, `--help`, bare-invocation refusa
 | [`watch_run.sh`](watch_run.sh) | **SOP §2 layer 1.** Polls a run's step progress, bounds the idle gap (35-min wedge limit), matches FAILURE WORDS (`OutOfMemory`, `FATAL`, `Traceback`), checks the arm-INVALIDATING `--sync-to-main` line in the launcher log, and appends one status line per tick carrying MARGINAL fps from checkpoint mtimes. Survives a dead session. |
 | [`marginal_fps.sh`](marginal_fps.sh) | **The standard throughput meter** (owner, 2026-08-23). `(steps_N − steps_{N−1}) / (mtime_N − mtime_{N−1})` per consecutive checkpoint pair — never SB3's cumulative `time/fps`, never the integer-`fps` derivative. Prints `train/selfplay_fraction` at every artifact beside it, because an fps figure on a self-play arm is a function of it. |
 | [`famine_read.sh`](famine_read.sh) | **The deciding famine read.** Runs `main.critic_gate` with the parent and famine comparator given BY REGISTRY NAME plus the control runs, then the noise-aware kill-bar table. Prints the ladder-backfill command rather than running it (a backfill concurrent with the run's own updater reports the previous node's verdict). |
-| [`restart_read.sh`](restart_read.sh) | **The registered first-restart read.** The vf_coef statistic and its verdict, `main.sidecar_audit` (the pin must be unchanged across the restart), the restart evidence, then `killbar` · `vf_framings` · `restart_startup`. |
+| [`restart_read.sh`](restart_read.sh) | **The registered first-restart read.** The vf_coef statistic and its verdict **from the TB EVENTS** (`main.ops.tb_read`, verdict bar imported from `vf_framings`), with the child log's table demoted to a labelled CROSS-CHECK that prints both medians and their difference and warns above 0.10 log10 without ever deciding; then `main.sidecar_audit` (the pin must be unchanged across the restart), the restart evidence, `killbar` · `vf_framings` · `restart_startup`. |
 | [`_common.sh`](_common.sh) | Sourced, not executed. Repo root, MAIN checkout, `models/` (mirroring `utils.paths.main_models_dir()`, `$GEN3AI_MODELS_DIR` authoritative), run resolution and the interpreter. |
 
 ## The Python layer — `src/main/ops/`
@@ -54,7 +54,14 @@ Every module is `python -m main.ops.<name>`; every one prints its contract on `-
   The reference the Training Run session froze for `ai_v12_02_winprob_critic` is
   `selfplay_0.90 = 32.61095210484096`, n=21, window `4,000,032..6,000,032`, frozen 2026-09-06 —
   transcribe it rather than re-freezing if that arm's bar is ever read again.
-- **`restart_read.sh` step 1 reads the CHILD LOG** while `tb_read` exists precisely because that
-  source is a rendering over a ring buffer. It is left as it was — changing a registered reading
-  is not this promotion's call — and the discrepancy is recorded in the script's header and in
-  the ledger entry for 2026-09-07.
+- **`restart_read.sh` computes the registered vf_coef statistic ONCE, from the EVENTS** (fixed
+  2026-09-07). It used to compute it twice from two sources — step 1 from the child log's rendered
+  table, step 5 from the events via `vf_framings` — and said nothing about which to believe. The
+  child log is a rendering over a ~1 MiB ring buffer, so its "last 20" is the last 20 rows that
+  still FIT; the events carry every rollout with its step, and the SOP's rule is *validate at the
+  source*. The child-log read survives only as a **CROSS-CHECK**: it prints both medians and their
+  difference and WARNS when they differ by more than **0.10 log10** — one fifth of the narrowest
+  verdict band (|med| ≤ 0.5), so a difference at or below it cannot move the call. It never
+  produces a verdict, never overrides one, and an empty cross-check (the ring buffer trimmed) says
+  nothing about the events read. The verdict bar itself is imported from `vf_framings.verdict`, so
+  there is one definition of it in the tree.

@@ -160,10 +160,12 @@ of the gen-era archive is accepted. Decisions are taken arm by arm from the data
 | **ai_v10 / ai_v11** | exploiter-SCALING and human-ladder-replay. **Nothing built**; ai_v11 is owner-PUNTED | open, unrun |
 | **ai_v12** | clean-world / win-prob. `design_winprob_only_critic.md` is the design of record | **LIVE** |
 
-⚠️ `designs/CLAUDE.md`'s version-map table carries no ai_v12 row and `ARCHITECTURE.md` still names
-gen-17 as the production run. Both are true of the last full GENERATION; the live ARM is
-`ai_v12_01_winprob_critic` (launched 2026-09-06, pinned `e798c13a`). Where they and the ledger
-disagree about what is running, the ledger is later and wins.
+The live ARM is **`ai_v12_02_winprob_critic`** (relaunched 2026-09-06, pinned `f971caf2`);
+`ai_v12_01_winprob_critic` ran ~7 h on a STRIPPED architecture and is dead. `ARCHITECTURE.md` and
+`designs/CLAUDE.md`'s state table both name it (the 2026-09-07 ⚠️ that they did not is discharged),
+and gen-17 `ai_v9_21_gen17_pfspoff_0820` is what the §4/§5 measurements were taken on — the last
+full GENERATION, not the live arm. Where a doc and the ledger disagree about what is running, the
+ledger is later and wins.
 
 ### The runs that matter
 

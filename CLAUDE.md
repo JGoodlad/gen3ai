@@ -38,12 +38,14 @@ Architecture constants (embedding dims, layer sizes, etc.) are defined as module
    their own stall watchdog **hardcoded** in the Claude Code binary (3 min, 5 retries). There is **no
    env var and no `settings.json` key**. `stallMs` is Workflow-only — the `Agent` tool rejects it.
    ⚠️ `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` does **NOT** cover Workflow; it feeds the Agent-tool path.
-2. **Cap concurrency to 1–2 agents. This is the actual cause.** `stallMs` only raises the kill
-   threshold; it creates no stream capacity. Stalls are **API stream starvation** when ≥3 LLM streams
-   are live on the account (interactive sessions + agents). Signature: a transcript ending on a
-   **`user`-role tool result with no assistant turn after**. A workflow retry restarts the agent from
-   scratch, so plain `Agent` calls beat Workflow fan-out here — **a stalled `Agent` can be RESUMED
-   with `SendMessage` to its agentId rather than redone.**
+2. **Cap concurrency to 1–2 agents — for TOKEN COST, not to prevent stalls.** A retry restarts the
+   agent from scratch, so a four-attempt agent costs 4× tokens and one workflow phase burned ~3.5
+   attempts per agent. ⚠️ The old "≥3 live streams starve the account" cause is **DOWNGRADED**
+   (2026-08-11, 19,286 remote turns) — capping buys no stream capacity, and neither does `stallMs`,
+   which only raises the kill threshold. Plain `Agent` calls still beat Workflow fan-out: **a
+   stalled `Agent` is RESUMED with `SendMessage` to its agentId rather than redone.** Evidence and
+   the stall mechanics: [`designs/ops/ORCHESTRATOR_SOP.md`](designs/ops/ORCHESTRATOR_SOP.md) §7
+   (the measurement is in §2).
 3. **Never let a script report agent ERRORS as "no findings".** `parallel()` returns `null` for a
    failed agent, so `findings.length === 0` is ambiguous — track failures and return a distinct
    status. Diagnose from `journal.jsonl`; the field is **`result`**, not `value`.

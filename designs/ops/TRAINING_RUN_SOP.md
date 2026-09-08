@@ -224,8 +224,10 @@ is something to report.
   read `<run>/snapshot_ladder/ladder.json` at run END, and compare runs at matched snapshot count,
   never matched step (`feedback_elo_reading_rules`).
 - **First-restart checks:** the decision that is registered for it (today: `vf_coef` from the median
-  of the last 20 rollouts' `grad/value_policy_logratio`); `python -m main.sidecar_audit <run>` shows
-  the pin is unchanged across the restart. One command: `scripts/ops/restart_read.sh <run>`.
+  of the last 20 rollouts' `grad/value_policy_logratio`, **read from the TB EVENTS**); `python -m
+  main.sidecar_audit <run>` shows the pin is unchanged across the restart. One command:
+  `scripts/ops/restart_read.sh <run>` — it reads the statistic from the events and prints the child
+  log's figure only as a labelled CROSS-CHECK (warning above 0.10 log10, never deciding).
 - **Read a scalar from the EVENTS, never the child log's table.** The table is a RENDERING — it
   drops the group prefix (`grad/value_policy_logratio` prints bare) and `--log-level periodic`
   UNDERSAMPLES it, and `launcher_child.log` is a ~1 MiB ring buffer that trims silently, so a

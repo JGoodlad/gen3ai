@@ -22,6 +22,15 @@ which arm won, what the number was in August — is **NARRATIVE**, and lives her
 | `pythonpath_archaeology.md` | § The `export PYTHONPATH` prefix (67 → 40) |
 | `file_size_paydown.md` | § The FILE-SIZE ratchet (50 → 30) |
 
+**Added 2026-09-07 (second pass), from `designs/CLAUDE.md`** — 95 KB → 20 KB, the same rule applied
+to the leaf every session that touches `designs/` loads:
+
+| file | lifted from |
+|---|---|
+| `designs_version_map_config_version_ladder.md` | the **Code on main** state-table cell (21.7 KB in one cell) |
+| `designs_version_map_ai_v9_stages_and_forward_designs.md` | the **ai_v9** state-table cell (20.8 KB in one cell) |
+| `designs_version_map_state_table_2026-09-07.md` | the remaining long cells — the active run and its generation history, and the ai_v12 / ai_v10 / ai_v11 chapter cells |
+
 **Nothing here is current.** Every guard these incidents produced is live and described in
 `CLAUDE.md`; this is the evidence behind them. Do not re-derive a plan from anything here without
 checking the code first — an entry that outlives its own fix misleads every reader after it.
