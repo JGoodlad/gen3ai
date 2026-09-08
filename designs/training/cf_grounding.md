@@ -5,7 +5,8 @@ split by topic (it was 8,219 lines / 676 KB, loaded in full for any session touc
 training package). Each section below is unchanged, including its dated measurements.
 
 `src/agents/training/CLAUDE.md` keeps the heading and the opening paragraph of each, and
-points here. **This file is the owner of the detail.**
+points here. **This file is the owner of the detail.** *Prefix-sharing materialization* was added
+in the **2026-09-08** second pass.
 
 ---
 
@@ -1254,3 +1255,37 @@ into the real buffer's per-action columns, and
 `test_scan_record_recovers_the_FULL_choice_map_at_every_decision` checks the capture against the one
 entry known independently — the map's value at the RECOVERED action index must be the string the
 side actually committed, since a wrong map is a silently MISLABELLED action rather than an error.
+
+## Prefix-sharing materialization (`obs_materializer.materialize_branches`)
+
+K counterfactual arms of one decision share an identical prefix, and the materializer used to
+replay it from turn 1 for **every** arm — the measured bottleneck of the counterfactual label path
+(`arm_ms = 4.78 + 0.853·turn`, of which prefix replay is `2.53 + 0.855·turn`; the branched turn is
+~0.5 ms and the obs encode ~1.8 ms). `materialize_branches` replays the prefix once, snapshots the
+player's whole battle/tracker state at the branch decision, and restores it per arm.
+
+- **Contract: exactly equivalent to per-arm `materialize_decisions`, bit-for-bit.** Measured on 6
+  gen-17 eval battles / 59 decisions / 452 arms: **59/59 byte-identical**, **15.4 → 5.3 ms per arm
+  (2.91×)**, rising with the branch turn (3.7–3.9× at turn 26–28) because the part it removes is the
+  part that is linear in the turn. Gate: `obs_materializer_branch_integration_test.py`, which
+  compares EVERY arm rather than a sample.
+- The clone SHARES append-only immutable records (`BattleEvent`, `BattleContext`) instead of copying
+  them — a **contract, not an inference**, and the reason the gate compares every arm: a broken
+  contract shows up as arm 2+ reading history arm 1 mutated.
+- **The per-arm RESTORE is serialized ONCE and rebuilt per arm, not deep-copied per arm**
+  (`_PlayerSnapshot._freeze`, 2026-08-23). Once the prefix is shared, `restore` becomes the single
+  largest cost in the loop: measured on a live search-dividend oracle decision it was **3.69 ms of
+  the materializer's 6.45 ms per arm — 57% of it**, because a restore is three `deepcopy`
+  traversals of the battle graph and deepcopy re-walks and re-dispatches every node every time.
+  Pickling each master once at snapshot time and `loads`-ing per arm measures **1.98 → 0.22 ms
+  (9.1×)** on the same graph against a one-off 0.66 ms to freeze. Equivalence rests on three
+  things: **three separate blobs** (one per structure, reproducing the three independent memos —
+  a single blob would ALIAS the 12 objects reachable from both `battles` and `trackers`); **pins
+  honoured via `persistent_id`**, so a `Logger` / `MappingProxyType` / immutable record comes back
+  as itself; and `GenData` added to the pin set, because it declares itself a singleton with
+  `__deepcopy__` and pickle honours no such hook. A graph that will not pickle **falls back to
+  deepcopy and says so once on stderr** — a 9× regression nothing mentions is the failure shape
+  this tree keeps eating. Gates: the every-arm bit-identity test above, plus
+  `obs_materializer_test.py` for the graph contract.
+- `lookahead` uses it for its whole `(candidate × seed)` sweep.
+

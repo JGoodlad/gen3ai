@@ -378,7 +378,7 @@ there is to pin it explicitly, not to change it.
 - `src/agents/model/CLAUDE.md` — architecture-constant rules, the model-versioning playbook,
   the dual-head policy and pointer-head contract
 - `designs/ARCHITECTURE.md` — the current phase chain, per-head inputs, the `DamageOperator` block
-- `src/agents/training/CLAUDE.md` → Compiled CPU opponents / Compiled GPU trainer — why the B=1 CPU
+- `designs/training/compile_flags.md` → Compiled CPU opponents / Compiled GPU trainer — why the B=1 CPU
   forward is the throughput-relevant regime
 - `designs/learning/entity_tokens_biases_pointers.md` — why the action head is a pointer, and what
   it scores

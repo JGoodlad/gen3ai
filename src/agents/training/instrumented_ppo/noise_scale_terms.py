@@ -29,7 +29,7 @@ a two-instruction passthrough and no gradient is taken at all.
 WHAT IT COSTS. `len(groups)` extra backward traversals per micro-batch, on `accum` micro-batches,
 on one `train()` call in `_NOISE_PER_TERM_EVERY`. Peak extra memory is
 `len(active groups) × Σ|params|` (one gradient accumulator per group, freed at the end of the
-call). The measured overhead and the resulting default live in `src/agents/training/CLAUDE.md`.
+call). The measured overhead and the resulting default live in `designs/training/step_size_and_batch.md`.
 
 FAILURE IS SELF-DISABLING. Anything the probe raises retires it for the rest of the call with one
 printed line and leaves the training step untouched: a diagnostic must never take a run down.

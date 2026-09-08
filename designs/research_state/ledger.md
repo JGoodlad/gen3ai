@@ -14793,3 +14793,41 @@ command — are preserved verbatim in
 Root `CLAUDE.md` updated in the same pass (leaf-map row, the *Where the detail is* pointer, the
 `designs/`-trees sentence). Gates: freshness / file-size / ruff / mypy green; the routine gate green.
 Tag: TECH DEBT / DOCS. **No measurement about the model changed.**
+
+### 2026-09-08 · DOCS · src/agents/training/CLAUDE.md split by topic (3,183 → 740 lines; detail to designs/training/, history to claude_md_archive/)
+
+Second pass of the tech-debt row *Split the two giant leaves*, owner-authorized 2026-09-07/08. The
+training leaf was **3,183 lines / 264 KB (~66k tokens)**, loaded into every session that touches
+`src/agents/training/`; it is now **740 lines / 59 KB**. The rule applied is the census's
+(`claude_md_census_2026-09-06.md` §0): *a line earns its place in a `CLAUDE.md` only if an agent
+that has NOT read it would do the work WRONG.*
+
+**Nothing was deleted.** Every section landed in one of three places, verbatim where it moved: the
+leaf (a RULE, a HAZARD, a COMMAND or a MAP), one of `designs/training/`'s topic docs (the detail),
+or `designs/research_state/claude_md_archive/` (dated incident narrative whose rule is stated
+elsewhere). Nine new topic docs — `ppo_step`, `matchup_and_lineage`, `team_curriculum`,
+`critic_and_value_losses`, `winprob_head_and_pbrs`, `belief_losses`, `step_size_and_batch`,
+`search_teacher`, `offline_meters` — plus merges into `telemetry_scalars` (the census detail and
+the gradient-balance probe), `eval_and_rating` (THE BASELINE REGISTRY, which that doc already
+referenced as "above" without holding it), `reward` (the defensive-entropy boost) and
+`cf_grounding` (prefix-sharing materialization). Two history files:
+`training_leaf_faint_attribution_history.md` and `training_leaf_deleted_subsystems_history.md`
+(the v75 latent-belief loss and the v88 V_pub purge).
+
+**What stayed, and why.** The FOLD ORDER contract (the per-minibatch sequence and the 7-before-8
+stash hazard — a wrong order silently scores the wrong states); the belief-target reading rule
+(`belief_supervision(...)`, never `last_*` — the failure is silent under `label_only`); the
+last-snapshot resolution rule and its rungs; the `--critic` mode's four required flags and its
+stated cost; the three ELO reading rules and the recorded eval-opponent regime; the never-hardcode
+and never-copy-a-baseline-path rules; the flag defaults and byte-identity claims an agent needs
+before typing a flag. A completeness check confirms every non-boilerplate line of the old leaf is
+present verbatim in the leaf, a topic doc or the archive, or has a stated counterpart there.
+
+⚠️ **The one stale sentence the pass corrected**: the census section's pin note said "do NOT move
+it to `designs/training/` — that breaks the gate". `tb_relevance_test.py::test_the_census_table_
+carries_an_era_column` in fact asserts two strings — `gen3_tb_relevance_v1` and the heading *What
+to watch on a WIN-PROB run* — and both stay in the leaf; the note now says what the gate actually
+checks. Gates: the four static gates and the routine gate pass, `tb_relevance_test.py` included.
+
+Tag: DOCS / TECH DEBT. **No measurement changed and no run was touched.** The rust half of the
+same backlog row landed the same day as `244431af`.

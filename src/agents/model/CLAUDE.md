@@ -640,7 +640,7 @@ pinned as a limitation test that fails if it ever lifts.
 
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the
 architecture. Before reaching for a global suppression flag, bisect to the op — see
-`src/agents/training/CLAUDE.md` → Compiled CPU opponents.
+`designs/training/compile_flags.md` → Compiled CPU opponents.
 
 ## ⚠️ Identity-at-init is NOT free — SB3 clobbers it (`gen3_identity_init_guard_v1`)
 

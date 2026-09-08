@@ -5,9 +5,59 @@ split by topic (it was 8,219 lines / 676 KB, loaded in full for any session touc
 training package). Each section below is unchanged, including its dated measurements.
 
 `src/agents/training/CLAUDE.md` keeps the heading and the opening paragraph of each, and
-points here. **This file is the owner of the detail.**
+points here. **This file is the owner of the detail.** *THE BASELINE REGISTRY* below was added
+in the **2026-09-08** second pass.
 
 ---
+
+## THE BASELINE REGISTRY (`baselines.py` · `designs/baselines.json` · `python -m main.baselines`)
+
+**A baseline is the thing a result is read AGAINST, and this module is the ONE accessor over the
+named set.** `gen3_baselines_registry_v1` (2026-09-06) — before it, "production" was a hand-copied
+JSON nothing consumes at launch, THIS package's untaught meter kept its fixed opponent as a string
+literal (`DEFAULT_OPPONENT = "ai_v9_29_rev1_0823/snapshots/…"`), the famine comparator and its floor
+lived in one ledger entry, and the curated TensorBoard set was decided by asking. Torch-free and
+offline: it reads JSON, and only `resolve()` touches `models/`.
+
+**Every entry is EXPLICIT** — a `.zip`, a `.json`, or an `@step`, never a bare run directory — so
+`gen3_last_snapshot_resolution_v1`'s last-snapshot rule cannot move what a name points at while its
+run keeps training. `resolve()` therefore always lands on the `explicit_zip` / `explicit_step` rung,
+and that is asserted rather than assumed.
+
+```python
+from agents.training import baselines
+baselines.get("v9_fold_parent").spec        # "ai_v9_59_R2ACTION_0827/final_model.zip"
+baselines.resolve("v9_fold_parent")         # through fixed_opponent_pool.resolve_model_ref
+baselines.describe("famine_comparator")     # the line every consumer prints
+baselines.get("famine_comparator").floor_elo   # 38.0 — the bar travels with its comparator
+baselines.protected_files()                 # {run: [rel path]} — the grooming keep-list
+```
+
+**Consumers in this package and its CLIs, all accepting a NAME wherever they accept a ref:**
+`main.untaught_meter`'s `--opponent` / `--config` (their literals are GONE — the engine exposes
+`default_opponent()` / `default_config()` and `resolve_ref` expands a name), `--baseline` and
+`--control` through the same path; `main.critic_gate --parent` and its new
+`--famine-comparator` (default the `famine_comparator` baseline, whose `floor_elo` is the kill
+floor — and **an absent DEFAULT comparator is recorded as NOT READ rather than refusing the whole
+read**, since `models/` is not committed and one endpoint of five must not take the other four down;
+an explicit one still refuses); `main.elo`'s positional run dir; `main.tb_curate`, which unions the registry's `tb_curated`
+list into the curated logdir. **Each prints `baseline <name> = <run>@<step> (set <date>, <ledger
+title>)`** — a reader must never have to recognise a path.
+
+🚨 **A NEW OPPONENT IS A RE-MEASUREMENT, NOT A RENAME.** Untaught-meter levels are not comparable
+across opponents, so re-pointing `untaught_meter_opponent` invalidates every banked level measured
+against the old one. That is exactly why it is a registry entry with a `set_by` ledger title rather
+than a constant somebody can edit: `python -m main.baselines set <name> <run>/<file>.zip --reason
+"<ledger entry title>"` rewrites the entry with a freshly computed sha/commit/version and PRINTS the
+ledger line to append. It never edits the ledger — append-only, and the WHY is the one field no tool
+can author.
+
+**Validation is a test in the routine suite** (`src/main/baselines_test.py`, unmarked): every named
+file exists, every sha matches, `config_version` / `arch_signature` are re-read from the run's own
+`model_config.json`, and the `production` entry's declared CONSTRUCTION matches
+`designs/production_config.json`. Archive-backed checks skip through `main_models_dir()`; the
+structural half runs everywhere. `designs/research_state/measurements/archive_grooming_tiers.py`
+reads `protected_files()` so a registry-named checkpoint survives every retention tier.
 
 ## Bot evaluation (subprocess, non-blocking)
 
@@ -304,6 +354,12 @@ matched neither quota branch, so its buffered capture was **dropped** — no fil
 on disk to question. Measured over the whole archive: **145,173 traces, every one `win_*` or
 `loss_*`, `meta.result` never anything but `WIN`/`LOSS`.** "0 draws in every eval trace" was what
 the instrument could express, not what happened.
+
+**The two seams that implement it.** `classify_result` tests the 250-turn cap **before** the
+loss, on the same constant the reward uses (`reward_weights._TIMEOUT_TURN_CAP` == `MAX_TURNS`),
+so the label and the terminal fold cannot disagree about a timeout; and the per-cycle manifest
+states all three quotas in words under `forensic_selection_rule`, so a reader never has to
+recognise the numbers.
 
 **READING AN OLD TREE.** A trace written before this carries no `meta.result_vocabulary`, and that
 ABSENCE is what dates it (`trace_result.result_era` → `gen3_trace_result_v1`). In that era a

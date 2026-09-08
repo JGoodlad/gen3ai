@@ -229,5 +229,5 @@ check it landed on *style* and not noise.
 - [[latent_belief_metrics_and_collapse]] — collapse/std diagnostics + VICReg, reused here as the
   anti-collapse guard.
 - `src/agents/model/CLAUDE.md` — `CLSPool`, `ProjectionAssembler`, the belief-head arch-toggle pattern.
-- `src/agents/training/CLAUDE.md` → Team-side PFSP — the per-team accumulator the behavioral grounding
+- `designs/training/team_curriculum.md` → Team-side PFSP — the per-team accumulator the behavioral grounding
   (and the validation win-rate history) reuse.

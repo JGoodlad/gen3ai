@@ -165,7 +165,7 @@ the teacher per turn.
   richer *targets* force richer reps; richer/easier *inputs* permit lazier ones (gradient starvation,
   amortization-vs-bottleneck, the axis rule, the P1 ablation numbers)
 - `src/agents/model/CLAUDE.md` → distributional value head (v29, `ValueDistHead`, HL-Gauss `_value_dist_loss`)
-- `src/agents/training/CLAUDE.md` → Exploiter distillation (`--distill-value-coef` scalar vs `--distill-value-feat-coef` FitNets); Tail-weighted value loss; grad-balance rank notes
+- `src/agents/training/CLAUDE.md` → Exploiter distillation (`--distill-value-coef` scalar vs `--distill-value-feat-coef` FitNets) and the gradient-balance probe; `designs/training/critic_and_value_losses.md` → `--value-tail-weight`
 - `designs/ai_v6/design_distributional_value_critic.md` (Phase A done / Phase B — the distributional critic)
 - `designs/learning/marginalization_and_uncertainty.md` (how a net carries uncertainty — the distributional head is where that lives)
 - `designs/learning/on_policy_self_distillation.md` (the bits-per-decision / dense-signal argument for policy distillation)
