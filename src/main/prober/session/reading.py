@@ -7,6 +7,7 @@ model-loading tier table in `main/prober/CLAUDE.md`).
 
 from __future__ import annotations
 
+from agents.training.trace_result import OUTCOMES, era_note, result_era, result_of
 from main.prober.discovery import list_checkpoints
 from main.prober.engine import (_npz_win_prob, _timeline_for, build_board, parse_pct,
     protocol_for_turn, summary_flags, timeline_entry_text)
@@ -23,13 +24,12 @@ class _ReadingMixin:
         steps = []
         for sg in self.tree.steps:
             man = self.tree.manifest_for(sg.step)
-            opps, wl = [], {"win": 0, "loss": 0}
+            opps, wl = [], {o: 0 for o in OUTCOMES}
             for og in sg.opponents:
-                w = sum(1 for b in og.battles if b.outcome == "win")
-                l = sum(1 for b in og.battles if b.outcome == "loss")
-                wl["win"] += w
-                wl["loss"] += l
-                opps.append({"name": og.name, "win": w, "loss": l, "battles": len(og.battles)})
+                counts = {o: sum(1 for b in og.battles if b.outcome == o) for o in OUTCOMES}
+                for o in OUTCOMES:
+                    wl[o] += counts[o]
+                opps.append({"name": og.name, **counts, "battles": len(og.battles)})
             steps.append({
                 "step": sg.step,
                 "identity": None if not man else {
@@ -41,8 +41,7 @@ class _ReadingMixin:
                 "totals": wl,
             })
         totals = {
-            "win": sum(s["totals"]["win"] for s in steps),
-            "loss": sum(s["totals"]["loss"] for s in steps),
+            **{o: sum(s["totals"][o] for s in steps) for o in OUTCOMES},
             "battles": len(self.tree.all_battles()),
         }
         return {
@@ -51,9 +50,45 @@ class _ReadingMixin:
             # Orientation is exactly where this belongs: a reader who does not learn here that V
             # is a probability will read the shaped scale into every later number.
             "critic_currency": self.critic_currency(),
+            # WHICH RESULT VOCABULARY this tree was written under, and — when any of it predates
+            # the DRAW bucket — the one sentence that says what its zero draws actually mean.
+            # 🚨 `"draw": 0` on a pre-draw-bucket tree is what the INSTRUMENT could express, not
+            # what happened: a timeout was booked as a loss and a tie was dropped unwritten.
+            "result_vocabulary": self._result_eras(),
+            "result_vocabulary_note": self._result_era_note(),
             "checkpoints": [{"step": s, "path": p} for s, p in list_checkpoints(self.run_dir)],
             "steps": steps, "totals": totals,
         }
+
+    # -- result vocabulary (which ERA these traces were written in) ----------
+
+    def _trace_metas(self, limit: int = 200) -> "list[dict]":
+        """The `meta` block of up to ``limit`` traces, spread across the tree's steps.
+
+        SAMPLED, not exhaustive: a run has tens of thousands of traces and the question this
+        answers — which vocabulary was in force — changes at most once per run (at a restart onto
+        new code). One trace per opponent-group, oldest steps first, is enough to catch a mixed
+        tree while keeping `run_summary` model-free AND instant."""
+        out = []
+        for sg in self.tree.steps:
+            for og in sg.opponents:
+                if not og.battles:
+                    continue
+                try:
+                    out.append(self._summary(og.battles[0]).get("meta") or {})
+                except Exception:      # noqa: BLE001 — an unreadable trace is not a vocabulary
+                    continue
+                if len(out) >= limit:
+                    return out
+        return out
+
+    def _result_eras(self) -> "list[str]":
+        """Every result vocabulary present in the sampled traces, sorted."""
+        return sorted({result_era(m) for m in self._trace_metas()})
+
+    def _result_era_note(self) -> "str | None":
+        """`trace_result.era_note` over the sampled traces — None when the tree is all-current."""
+        return era_note(self._trace_metas())
 
     # -- discovery -----------------------------------------------------------
 
@@ -119,8 +154,15 @@ class _ReadingMixin:
                 "events": (inv.get("outcome") or {}).get("events") or [],
                 "flags": list(summary_flags(inv)),
             })
+        meta = summary.get("meta", {})
+        # 🚨 THE READ-SIDE THROWING GUARD. A `meta.result` outside the vocabulary is REFUSED here
+        # rather than rendered — a forensic tool that displays a result it cannot classify is how
+        # a mislabelled bucket survives being looked at. `result_of` returns None for an ABSENT
+        # result (a summary written by something that never had one), which is not the same thing
+        # and is allowed through.
+        result_of(meta)
         return {
-            "id": b.summary_path, "short_id": _short_id(b), "meta": summary.get("meta", {}),
+            "id": b.summary_path, "short_id": _short_id(b), "meta": meta,
             "gamma": self._gamma,
             "model_resolution": _choice_dict(self._resolve(b)),
             "notable": self._notable(rows),
@@ -151,6 +193,8 @@ class _ReadingMixin:
         values = npz.get("values")
         invs = summary.get("invocations", [])
         meta = summary.get("meta", {})
+        result_of(meta)          # same throwing guard as `battle_overview` — never render an
+                                 # outcome this build cannot name.
         # "Did it KNOW?" folded once for the battle, then joined onto each decision by INDEX.
         awareness = self._awareness(b, invs, npz=npz)
         aware_by_dec = self._awareness_by_decision(awareness)
@@ -246,6 +290,12 @@ class _ReadingMixin:
             # The currency the per-turn V / ΔV below are in, so the reader's tooltip can say what
             # V's zero MEANS on this run rather than asserting the shaped scale on every run.
             "critic_currency": self.critic_currency(),
+            # WHICH RESULT VOCABULARY this tree was written under, and — when any of it predates
+            # the DRAW bucket — the one sentence that says what its zero draws actually mean.
+            # 🚨 `"draw": 0` on a pre-draw-bucket tree is what the INSTRUMENT could express, not
+            # what happened: a timeout was booked as a loss and a tie was dropped unwritten.
+            "result_vocabulary": self._result_eras(),
+            "result_vocabulary_note": self._result_era_note(),
             "n_turns": len(turns), "n_decisions": len(invs),
             # The same `notable` block `battle_overview` returns (faints, switches, the biggest value
             # drops) — a 249-turn replay needs entry points, and re-deriving them per surface is how

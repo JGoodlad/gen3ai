@@ -42,8 +42,12 @@ def generate_loss_traces(trainee, opponent, *, out_dir: str, n_battles: int, ste
     from utils.bridge.local_battle_runner import run_local_battles
 
     os.makedirs(out_dir, exist_ok=True)
-    # Capture LOSSES only (those are the teacher's candidates); a high quota = keep them all this batch.
-    trainee.begin_forensic_cycle(out_dir, step, trace_tag="", win_quota=0, loss_quota=loss_quota)
+    # Capture LOSSES only (those are the teacher's candidates); a high quota = keep them all this
+    # batch. `draw_quota=0` is explicit, not inherited: a DRAW (a tie, or a 250-turn timeout) is
+    # not a loss the teacher can search a better line out of, and the glob below only collects
+    # `loss_*` anyway — so capturing draws would write files nothing reads.
+    trainee.begin_forensic_cycle(out_dir, step, trace_tag="", win_quota=0,
+                                 loss_quota=loss_quota, draw_quota=0)
     trainee.reset_battles()
     if hasattr(opponent, "reset_battles"):
         opponent.reset_battles()

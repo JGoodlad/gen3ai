@@ -12,6 +12,7 @@ import os
 
 import numpy as np
 
+from agents.training.trace_result import OUTCOMES
 from main.prober.discovery import BattleTrace
 from main.prober.awareness import AWARENESS_BASELINES, coverage_from_npz
 from main.prober.loops import LOOP_BASELINES
@@ -68,7 +69,12 @@ class _ScansMixin:
                 "id": b.summary_path, "short_id": _short_id(b), "step": b.step,
                 "opponent": b.opponent, "outcome": b.outcome,
                 "last_turn": last_turn,
-                "cap_loss": (b.outcome == "loss" and last_turn is not None
+                # A battle that reached the forfeit deadline. The bucket it lands in depends on
+                # WHEN the trace was written: `draw` since the draw bucket landed (2026-09-07),
+                # `loss` before it (the trainee forfeits, so poke-env reported a loss). Both are
+                # accepted so this row means the same thing across the whole archive — the turn
+                # count, not the label, is what makes it a cap game.
+                "cap_loss": (b.outcome in ("loss", "draw") and last_turn is not None
                              and last_turn >= cap_turn),
                 "knew_by_turn": v["knew_by_turn"], "lead_time": v["lead_time"],
                 "blind_loss": v["blind_loss"],
@@ -189,7 +195,7 @@ class _ScansMixin:
 
         agg = _loop_aggregate(folds)
         agg["by_outcome"] = {k: _loop_aggregate([f for f in folds if f.outcome == k])
-                             for k in ("win", "loss") if any(f.outcome == k for f in folds)}
+                             for k in OUTCOMES if any(f.outcome == k for f in folds)}
         by_step: "dict[int, list]" = collections.defaultdict(list)
         for r, f in zip(rows, folds):
             by_step[r["step"]].append(f)

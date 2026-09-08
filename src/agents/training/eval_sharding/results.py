@@ -69,6 +69,15 @@ class ShardResult:
     # then 0 and the cycle reports as SELECTION UNKNOWN, never as "captured nothing".
     traces_written: int = 0
     traces_won: int = 0
+    # DRAWS — the bucket that did not exist before 2026-09-07 (`gen3_trace_result_v2`).
+    # `n_drawn` is every drawn battle PLAYED (tie or 250-turn timeout), counted by the player
+    # because poke-env counts neither: a tie leaves `_won` None and a timeout is booked as our
+    # forfeit, so `n_won`/`n_finished` cannot recover it. `traces_drawn` is how many of those the
+    # draw quota persisted. Additive like everything else here, and defaulted so a shard file
+    # written by an older build still deserializes — its draws then read as 0, which is HONEST
+    # only because that build could not persist a draw at all.
+    n_drawn: int = 0
+    traces_drawn: int = 0
 
 
 @dataclass
@@ -85,6 +94,8 @@ class OpponentResult:
     n_shards_total: int
     traces_written: int = 0
     traces_won: int = 0
+    n_drawn: int = 0
+    traces_drawn: int = 0
 
     @property
     def coverage(self) -> float:
@@ -132,6 +143,7 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
     for key, item_units in by_item.items():
         n_won = n_finished = n_episodes = 0
         traces_written = traces_won = 0
+        n_drawn = traces_drawn = 0
         sum_reward = sum_ep_len = duration = 0.0
         pooled_resid: list[float] = []
         done = 0
@@ -148,6 +160,8 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
             duration += r.duration_sec
             traces_written += r.traces_written
             traces_won += r.traces_won
+            n_drawn += r.n_drawn
+            traces_drawn += r.traces_drawn
             pooled_resid.extend(r.td_residuals)
         if done == 0:
             continue  # fully missing opponent — caller reports it as missing, exactly as before
@@ -163,6 +177,8 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
             n_shards_total=len(item_units),
             traces_written=traces_written,
             traces_won=traces_won,
+            n_drawn=n_drawn,
+            traces_drawn=traces_drawn,
         )
     return out
 
@@ -178,7 +194,7 @@ def to_merged(per_opponent: dict[str, OpponentResult]) -> dict:
     """
     merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
               "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {},
-              "traces": {}}
+              "traces": {}, "draws": {}}
     for key, r in per_opponent.items():
         merged["win_rates"][key] = r.win_rate
         merged["reward_means"][key] = r.reward_mean
@@ -187,8 +203,14 @@ def to_merged(per_opponent: dict[str, OpponentResult]) -> dict:
             merged["td_resid_tails"][key] = r.td_resid_tail
         merged["durations_sec"][key] = r.duration_sec
         merged["counts"][key] = (r.n_won, r.n_finished)
-        # (traces_won, traces_written) — what the forensic QUOTA persisted, so the per-cycle
-        # manifest can state the SELECTION rather than leaving every consumer to assume uniform.
-        merged["traces"][key] = (r.traces_won, r.traces_written)
+        # (traces_won, traces_written, traces_drawn) — what the forensic QUOTA persisted, so the
+        # per-cycle manifest can state the SELECTION rather than leaving every consumer to assume
+        # uniform. The tuple GREW a third element on 2026-09-07; `record_eval_selection` unpacks
+        # it by length, so a manifest written from a 2-tuple (an older parent, or a caller in a
+        # test) still reads — but reports its draws as UNKNOWN, never as zero.
+        merged["traces"][key] = (r.traces_won, r.traces_written, r.traces_drawn)
+        # Drawn battles PLAYED — the denominator of `capture_rate_draw`, in its own map rather
+        # than appended to `counts` so every existing `(n_won, n_finished)` unpack keeps working.
+        merged["draws"][key] = r.n_drawn
         merged["coverage"][key] = r.coverage
     return merged

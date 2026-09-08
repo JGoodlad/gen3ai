@@ -36,6 +36,11 @@ import argparse
 import json
 import sys
 
+# The outcome buckets the recorder actually writes (`gen3_trace_result_v2`) — every `--outcome`
+# choice list below is built from this one tuple, so the CLI can never offer a bucket that does
+# not exist or miss one that does.
+from agents.training.trace_result import OUTCOMES
+
 _FIND_CRITERIA = ["switch", "uncertain", "faint", "opp-switch", "cure-skipped", "disagree",
                   "value_drop", "low_value", "high_value"]
 
@@ -145,14 +150,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
     pl = sub.add_parser("list", help="list battles in a run dir")
     pl.add_argument("root", help="run dir / eval_traces dir")
-    pl.add_argument("--outcome", choices=["win", "loss"])
+    pl.add_argument("--outcome", choices=list(OUTCOMES))
     pl.add_argument("--opponent")
     pl.add_argument("--step", type=int)
 
     psc = sub.add_parser(
         "scan", help="cross-battle turning-point scan (model-free): worst ΔV/TD per battle, ranked")
     psc.add_argument("root", help="run dir / eval_traces dir")
-    psc.add_argument("--outcome", choices=["win", "loss"])
+    psc.add_argument("--outcome", choices=list(OUTCOMES))
     psc.add_argument("--opponent")
     psc.add_argument("--step", type=int)
     psc.add_argument("--limit", type=int, default=None, help="cap the number of battles returned")
@@ -166,7 +171,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # `all` is REQUIRED, not a convenience: the result's own caveat tells the reader to judge the
     # quantile-coverage half unfiltered (a loss filter biases PIT low by construction), and with
     # only win/loss to choose from that instruction named a reading this CLI could not produce.
-    paw.add_argument("--outcome", choices=["win", "loss", "draw", "all"], default="loss",
+    paw.add_argument("--outcome", choices=[*OUTCOMES, "all"], default="loss",
                      help="filter battles (default loss); `all` is the UNFILTERED read the "
                           "quantile-coverage baseline is comparable to")
     paw.add_argument("--opponent")
@@ -183,7 +188,7 @@ def _build_parser() -> argparse.ArgumentParser:
                       "fire anyway — whiff/re-click/loop rates + the α/β readout on the same "
                       "pivots, against the gen-15 baseline")
     plp.add_argument("root", help="run dir / eval_traces dir")
-    plp.add_argument("--outcome", choices=["win", "loss"],
+    plp.add_argument("--outcome", choices=list(OUTCOMES),
                      help="filter battles (default: BOTH — the win/loss split is a registered "
                           "confound and is always reported, so filtering hides it)")
     plp.add_argument("--opponent",
@@ -236,7 +241,7 @@ def _build_parser() -> argparse.ArgumentParser:
     svi.add_argument("root", help="run dir / eval_traces dir")
     svi.add_argument("--step", type=int, help="step (default: latest with traces)")
     svi.add_argument("--opponent", help="restrict to one opponent")
-    svi.add_argument("--outcome", choices=["win", "loss"], help="restrict to win/loss battles")
+    svi.add_argument("--outcome", choices=list(OUTCOMES), help="restrict to one outcome bucket (win / loss / draw)")
     svi.add_argument("--max-battles", type=int, default=400, help="cap battles scanned (default 400)")
 
     # Model-free, so it gets its OWN parser rather than joining the overview/find/analyze group —
@@ -346,7 +351,7 @@ def _build_parser() -> argparse.ArgumentParser:
                              "proven-policy; critic_headroom_upper_bound is an UPPER BOUND — read "
                              "caveats). Input to the distributional-critic decision; bridge-eval only")
     pfs.add_argument("root", help="run dir / eval_traces dir")
-    pfs.add_argument("--outcome", default="loss", choices=["win", "loss"],
+    pfs.add_argument("--outcome", default="loss", choices=list(OUTCOMES),
                      help="which battles to falsify (default loss — craters live in losses)")
     pfs.add_argument("--opponent")
     pfs.add_argument("--step", type=int)
@@ -365,7 +370,7 @@ def _build_parser() -> argparse.ArgumentParser:
                             "critic_overvalued (epistemic) vs lost_position via recorded V(s) vs "
                             "realized return G(s) — a selection-aware reliability curve. Model-free")
     pca.add_argument("root", help="run dir / eval_traces dir")
-    pca.add_argument("--outcome", default="loss", choices=["win", "loss"])
+    pca.add_argument("--outcome", default="loss", choices=list(OUTCOMES))
     pca.add_argument("--opponent")
     pca.add_argument("--step", type=int)
     pca.add_argument("--limit", type=int, default=20, help="max loss battles to falsify (default 20)")
@@ -389,7 +394,7 @@ def _build_parser() -> argparse.ArgumentParser:
     pdt.add_argument("root", help="run dir / eval_traces dir / summary.json")
     pdt.add_argument("--step", type=int, action="append", help="filter to this step (repeatable)")
     pdt.add_argument("--opponent", action="append", help="filter to this opponent (repeatable)")
-    pdt.add_argument("--outcome", choices=["win", "loss"], action="append", help="filter (repeatable)")
+    pdt.add_argument("--outcome", choices=list(OUTCOMES), action="append", help="filter (repeatable)")
     pdt.add_argument("--cat", action="append",
                      help="filter to a move category (selfko/recovery/setup/stall/status/switch/attack_or_other)")
     pdt.add_argument("--max-battles", type=int, default=None, help="cap battles scanned")

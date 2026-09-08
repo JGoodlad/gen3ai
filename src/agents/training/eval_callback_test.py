@@ -1,6 +1,7 @@
 import os
 import json
 import math
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -843,3 +844,119 @@ def test_eval_manifest_handles_a_multi_team_pin(tmp_path):
     assert single["trainee_team_sha"] == m["trainee_team_sha"][0]
     assert write_eval_manifest(str(tmp_path), 44, opponents=["heuristic"], n_games=10,
                                trainee_team_str=None)["trainee_team_sha"] is None
+
+
+# ── the DRAW bucket in the CAPTURE QUOTA (`gen3_trace_result_v2`, 2026-09-07) ────────────────
+
+def _quota_player(monkeypatch, tmp_path, *, draw_quota=5):
+    """An `EvalRLPlayer` built for its `_battle_finished_callback` alone.
+
+    `__new__` + the fields that method touches, with the two side effects stubbed: the reward
+    mixin's own callback (it needs a live poke-env battle) and `write_battle_record` (it writes
+    three artifacts). The stub RECORDS the prefixes written, which is what the assertions read.
+    """
+    from agents.training.eval_callback import EvalRLPlayer
+    from agents.training.reward_tracker import RewardTrackingMixin
+    import agents.training.eval_callback as ec
+
+    monkeypatch.setattr(RewardTrackingMixin, "_battle_finished_callback",
+                        lambda self, battle: None, raising=False)
+    written = []
+    monkeypatch.setattr(ec, "write_battle_record",
+                        lambda prefix, rec, battle, step: written.append(prefix))
+    monkeypatch.setattr(ec, "register_trace_prefix", lambda *a, **k: None)
+
+    p = EvalRLPlayer.__new__(EvalRLPlayer)
+    p._forensic_dir = str(tmp_path)
+    p._forensic_step = 1000
+    p._trace_tag = ""
+    p._trace_idx = 0
+    p._win_quota, p._loss_quota, p._draw_quota = 5, 10, draw_quota
+    p._wins_kept = p._losses_kept = p._draws_kept = p._draws_seen = 0
+    p._td_pool = []
+    p._recorders = {}
+    # `username` is a read-only property reaching into the ps_client, which a __new__-built
+    # player has none of. The trace registration that reads it is stubbed above; the stub keeps
+    # this seam honest by standing in for the client rather than for the property.
+    p.ps_client = SimpleNamespace(username="trainee")
+    return p, written
+
+
+class _FinishedBattle:
+    def __init__(self, tag, *, won=False, lost=False, finished=True, turn=40):
+        self.battle_tag = tag
+        self.won, self.lost, self.finished, self.turn = won, lost, finished, turn
+
+
+class _StubRecorder:
+    def td_residuals(self):
+        return [0.1]
+
+
+def _finish(p, battle):
+    p._recorders[battle.battle_tag] = _StubRecorder()
+    p._battle_finished_callback(battle)
+
+
+def test_a_pre_cap_TIE_is_now_PERSISTED_instead_of_silently_dropped(monkeypatch, tmp_path):
+    """The half of the defect that left NO artifact at all: a tie matched neither quota branch,
+    so the buffered capture was discarded — no file, no count, nothing on disk to question.
+    Verified against the archive: 145,173 traces, zero of them anything but win_/loss_."""
+    p, written = _quota_player(monkeypatch, tmp_path)
+    _finish(p, _FinishedBattle("b1", turn=37))          # won/lost both falsy, finished
+    assert p._draws_kept == 1 and p._draws_seen == 1
+    assert len(written) == 1 and os.path.basename(written[0]).startswith("draw_")
+
+
+def test_a_250_TURN_TIMEOUT_lands_in_the_DRAW_bucket_not_the_LOSS_bucket(monkeypatch, tmp_path):
+    from agents.observation.constants import MAX_TURNS
+    p, written = _quota_player(monkeypatch, tmp_path)
+    _finish(p, _FinishedBattle("b1", lost=True, turn=MAX_TURNS))
+    assert (p._draws_kept, p._losses_kept) == (1, 0)
+    assert os.path.basename(written[0]).startswith("draw_")
+
+
+def test_the_draw_bucket_is_INDEPENDENT_so_a_stall_storm_cannot_evict_a_loss(monkeypatch, tmp_path):
+    """WHERE DRAWS SIT, as behaviour. 20 timeouts arrive first and fill the draw quota; the loss
+    quota is untouched, so the decisive losses the prober exists to study are all still captured.
+    Under the old code every one of those timeouts consumed a LOSS slot."""
+    from agents.observation.constants import MAX_TURNS
+    p, written = _quota_player(monkeypatch, tmp_path, draw_quota=5)
+    for i in range(20):
+        _finish(p, _FinishedBattle(f"t{i}", lost=True, turn=MAX_TURNS))
+    for i in range(10):
+        _finish(p, _FinishedBattle(f"l{i}", lost=True, turn=60))
+    assert p._draws_kept == 5                    # bucket filled and STOPPED
+    assert p._draws_seen == 20                   # …but every draw PLAYED is still counted
+    assert p._losses_kept == 10                  # every decisive loss still captured
+    prefixes = [os.path.basename(w).split("_")[0] for w in written]
+    assert prefixes.count("draw") == 5 and prefixes.count("loss") == 10
+
+
+def test_the_draw_RATE_denominator_does_not_depend_on_the_quota(monkeypatch, tmp_path):
+    """`draws_seen` counts every drawn battle PLAYED, quota or no quota. It is the only place a
+    draw denominator exists: poke-env books a tie as neither a win nor a loss and a timeout as
+    our forfeit, so `n_won`/`n_finished` cannot recover it."""
+    p, _ = _quota_player(monkeypatch, tmp_path, draw_quota=1)
+    for i in range(7):
+        _finish(p, _FinishedBattle(f"d{i}", turn=30))
+    assert (p._draws_kept, p._draws_seen, p.traces_drawn) == (1, 7, 1)
+
+
+def test_wins_and_decisive_losses_are_bucketed_exactly_as_before(monkeypatch, tmp_path):
+    p, written = _quota_player(monkeypatch, tmp_path)
+    _finish(p, _FinishedBattle("w", won=True, turn=20))
+    _finish(p, _FinishedBattle("l", lost=True, turn=20))
+    assert (p._wins_kept, p._losses_kept, p._draws_kept, p._draws_seen) == (1, 1, 0, 0)
+    assert [os.path.basename(w).split("_")[0] for w in written] == ["win", "loss"]
+
+
+def test_the_quota_stays_OPEN_while_only_the_draw_bucket_is_unfilled(monkeypatch, tmp_path):
+    """`_quota_open` gates the EXPENSIVE capture path. If it ignored draws, a cycle whose wins and
+    losses filled first would take the fast path and no draw could ever be recorded — the same
+    absence, reintroduced one layer down."""
+    p, _ = _quota_player(monkeypatch, tmp_path)
+    p._wins_kept, p._losses_kept = p._win_quota, p._loss_quota
+    assert p._quota_open is True
+    p._draws_kept = p._draw_quota
+    assert p._quota_open is False

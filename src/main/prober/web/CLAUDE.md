@@ -321,8 +321,8 @@ produced it.
 
 | View | Session call | Notes |
 |---|---|---|
-| `/` run | `run_summary()` + `awareness_scan()` | steps · per-step identity · opponents · checkpoints · γ, **plus the "did it know?" panel** (async, see below) |
-| `/battles` | `battles()` | outcome / opponent / step filters |
+| `/` run | `run_summary()` + `awareness_scan()` | steps · per-step identity · opponents · checkpoints · γ, **plus the "did it know?" panel** (async, see below). Prints `result_vocabulary_note` above the outcome chart when any of the tree predates the DRAW bucket — 🚨 a pre-2026-09-07 run's `draw: 0` is what the instrument could express, not what happened, and the chart omits the draw series there rather than drawing a flat zero. See *THE RESULT VOCABULARY* in `../CLAUDE.md` |
+| `/battles` | `battles()` | outcome / opponent / step filters — **outcome is `win` / `loss` / `draw`** (the `draw` option and every `pattern=` here are built from `agents.training.trace_result.OUTCOMES`, so a bucket cannot exist in the CLI and 422 on the web) |
 | `/scan` | `scan()` | each battle's worst turning point, ranked (model-free) |
 | `/triage` | `triage()` | failure categories ranked by recoverable win-rate |
 | `/battle` | `battle_turns()` | **one game, turn by turn** — board · expected opponent intent (α/β) · battle log · critic · **P(win) and the P(loss) strip** (model-free) |

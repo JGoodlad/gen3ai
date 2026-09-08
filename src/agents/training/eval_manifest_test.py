@@ -177,4 +177,5 @@ def test_the_shard_layer_pools_trace_counts_exactly_and_reads_legacy_shards(tmp_
     pooled = aggregate(units, d)["h"]
     assert (pooled.n_won, pooled.n_finished) == (7, 10)
     assert (pooled.traces_written, pooled.traces_won) == (3, 1)   # 3+0, 1+0
-    assert to_merged({"h": pooled})["traces"]["h"] == (1, 3)      # (won, written)
+    # The tuple grew a third element (traces_drawn) with the DRAW bucket, 2026-09-07.
+    assert to_merged({"h": pooled})["traces"]["h"] == (1, 3, 0)   # (won, written, drawn)

@@ -415,10 +415,17 @@ class _AggregateMixin:
         # 1. reliability backbone over wins AND losses at the step (selection-free
         #    in the loss/win sense — binned by V). Uses ALL captured battles, not the
         #    falsify limit, for a dense curve (model-free: recorded V + rewards).
-        cal_battles = [b for b in self.tree.all_battles()
-                       if (step is None or b.step == step)
-                       and (opponent is None or b.opponent == opponent)
-                       and b.outcome in ("win", "loss")]
+        # 🚨 DRAWS ARE EXCLUDED, and the count is reported rather than left implicit. A
+        # reliability curve needs a BINARY realized label per battle; a draw (a tie, or a
+        # 250-turn timeout) has none — it is neither a 1 nor a 0 — so folding it either way would
+        # bias the curve by exactly the games where the critic was least resolved. Excluding it
+        # silently would be the same absence-is-not-a-zero defect the draw bucket exists to fix,
+        # which is why `n_draw_excluded` rides in the result.
+        _scoped = [b for b in self.tree.all_battles()
+                   if (step is None or b.step == step)
+                   and (opponent is None or b.opponent == opponent)]
+        cal_battles = [b for b in _scoped if b.outcome in ("win", "loss")]
+        n_draw_excluded = sum(1 for b in _scoped if b.outcome == "draw")
         V, G, Vw, Gw, Vl, Gl = [], [], [], [], [], []
         n_win_b = 0
         for b in cal_battles:
@@ -440,6 +447,8 @@ class _AggregateMixin:
         overall["bias_on_wins"] = _calibration_stats(Vw, Gw)["bias"]
         overall["bias_on_losses"] = _calibration_stats(Vl, Gl)["bias"]
         overall["captured_win_fraction"] = round(n_win_b / max(1, len(cal_battles)), 4)
+        # Stated, not implied: how many battles in scope had NO binary label and were dropped.
+        overall["n_draw_excluded"] = n_draw_excluded
 
         # 2. the unattributed (NEUTRAL) craters via falsify (concurrency on the re-rolls).
         fs = self.falsify_scan(outcome=outcome, opponent=opponent, step=step,

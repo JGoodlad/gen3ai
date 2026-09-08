@@ -285,15 +285,59 @@ and turn-re-rollable offline (`replay_battle` / `reroll_turn`), and
 `agents.training.obs_materializer` can rebuild the trainee's one-sided obs from it bit-for-bit
 (guarded by `obs_roundtrip_fuzz_test.py`). It is referee-view data in a **separate artifact** on
 purpose — nothing in the obs/training path reads it (the one-sided/omniscient wall; see the bridge
-README). Websocket eval simply doesn't produce it (degrades gracefully). 🚨 **THE CAPTURE QUOTA IS OUTCOME-CONDITIONAL, and the manifest now RECORDS it**
-(`gen3_trace_selection_manifest_v1`): `EvalRLPlayer` persists at most `_FORENSIC_WIN_QUOTA` (5) wins
-and `_FORENSIC_LOSS_QUOTA` (10) losses per opponent per cycle (scaled per shard unit), so the traces
-are a LOSS-ENRICHED sample by design — and every consumer that averages over them (`calibration`,
+README). Websocket eval simply doesn't produce it (degrades gracefully). 🚨 **THE RESULT VOCABULARY IS `WIN` | `LOSS` | `DRAW`** (`gen3_trace_result_v2`,
+`agents/training/trace_result.py`, pure stdlib — one declaration the recorder writes and the
+prober, the harvesters and the gauge read). `<outcome>` in every filename above is the lowercase
+form, so a captured draw is `draw_s<shard>_NNN_*`. A `DRAW` carries **`meta.draw_kind`**:
+
+| `draw_kind` | the battle layer's report | what it is |
+|---|---|---|
+| `timeout` | `lost` **and** `turn >= MAX_TURNS` (250) | the trainee FORFEITED at the deadline — a stall |
+| `tie` | `won`/`lost` both falsy, `finished` | the sim emitted `\|tie\|` |
+
+🚨 **THE DEFECT THIS CLOSED (2026-09-07).** A timeout arrives wearing a loss's flags — the trainee
+forfeits at the cap (`inference/player._handle_stall`), so poke-env reports `lost=True` — and was
+written as an ordinary `loss_*`. The **training reward never agreed**: `reward_manager`'s terminal
+fold pays `draw_penalty` for exactly that state, detected by the TURN COUNT, which is also why the
+G7 kill clause survived (it keys on `meta.turns`, never on the label). A true TIE was worse: it
+matched neither quota branch, so its buffered capture was **dropped** — no file, no count, nothing
+on disk to question. Measured over the whole archive: **145,173 traces, every one `win_*` or
+`loss_*`, `meta.result` never anything but `WIN`/`LOSS`.** "0 draws in every eval trace" was what
+the instrument could express, not what happened.
+
+**READING AN OLD TREE.** A trace written before this carries no `meta.result_vocabulary`, and that
+ABSENCE is what dates it (`trace_result.result_era` → `gen3_trace_result_v1`). In that era a
+timeout is separable only by `meta.turns >= MAX_TURNS` and a tie is not present at all, so such a
+tree can estimate a **STALL rate** but a **TIE rate is NOT MEASURABLE** there —
+`trace_result.era_note` is the one sentence that says so, printed by `run_summary()` and by the
+prober's `/` page. Nothing back-fills the archive, and `to_summary` / the prober both **REFUSE** a
+result outside the vocabulary (`UnknownTraceResult`) rather than coercing it. ⚠️ The live arm
+`ai_v12_02_winprob_critic` is PINNED and keeps writing `gen3_trace_result_v1` until it ends.
+
+🚨 **THE CAPTURE QUOTA IS OUTCOME-CONDITIONAL, and the manifest now RECORDS it**
+(`gen3_trace_selection_manifest_v1`): `EvalRLPlayer` persists at most `_FORENSIC_WIN_QUOTA` (5) wins,
+`_FORENSIC_LOSS_QUOTA` (10) losses and `_FORENSIC_DRAW_QUOTA` (5) draws per opponent per cycle
+(scaled per shard unit), so the traces are a LOSS-ENRICHED sample by design — and every consumer that averages over them (`calibration`,
 `falsify_scan`, `main.scaffolding_gauge`) used to inherit that skew with nothing on disk saying so.
+**WHERE DRAWS SIT: their OWN bucket**, independent of both others. Folding them into the loss
+quota is what the old code did, and it lets a stall storm evict the decisive losses the prober
+exists to study — the loss slice would change meaning in exactly the cycles where a regression is
+worth reading. Giving them no bucket is the other half of the old defect. The draw quota is set to
+the WIN quota rather than the loss quota because a draw is a rate to notice, not a game to dissect,
+and it bounds a pathological stall cycle at 5 extra traces per opponent.
+
 `record_eval_selection` patches each cycle's manifest at COLLECT with, per opponent,
-`battles_played` / `battles_won` / `traces_written` / `traces_won` plus the derived
-`capture_rate_win` / `capture_rate_loss` and the rule in words; the counts ride the existing shard
-plumbing (`ShardResult.traces_{written,won}`, defaulted so a legacy shard still deserializes).
+`battles_played` / `battles_won` / `battles_drawn` / `traces_written` / `traces_won` /
+`traces_drawn` plus the derived `capture_rate_win` / `capture_rate_loss` / `capture_rate_draw` and
+the rule in words; the counts ride the existing shard plumbing (`ShardResult.traces_{written,won,drawn}`
++ `n_drawn`, defaulted so a legacy shard still deserializes). 🚨 **A DRAW IS SUBTRACTED FROM THE
+LOSSES, NOT ADDED TO THE PLAYED COUNT** — poke-env's `n_finished_battles` already contains every
+draw (a tie is neither a win nor a loss to it, a timeout is our forfeit), so
+`lost = played − won − drawn` is what keeps `capture_rate_loss` a statement about DECISIVE losses.
+The drawn-battles-played denominator comes from `EvalRLPlayer.draws_seen` because **no other layer
+counts it**. The `selection` block is **schema 2**, purely additive: `read_selection` accepts
+schema 1 as well, so every cycle recorded before today stays READ rather than being demoted to
+SELECTION UNKNOWN — its draw keys are simply ABSENT, which is not the same as zero.
 **Absent reads as SELECTION UNKNOWN, never as uniform** — a legacy tree, or a cycle that crashed
 before collecting (the block is written `null` at launch). One declaration,
 `agents/training/trace_selection.py` (pure stdlib, imported by the prober and the gauge too), so

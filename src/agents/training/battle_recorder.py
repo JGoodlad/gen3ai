@@ -8,6 +8,10 @@ from agents.training.reward_function import RewardFunction
 from agents.training.reward_tracker import RewardTracker
 from agents.training.slot_registry import SlotRegistry
 from agents.training.reward_manager import Gen3RewardManager
+from agents.training.reward_weights import _TIMEOUT_TURN_CAP
+from agents.training.trace_result import (
+    DRAW, DRAW_KIND_KEY, RESULT_VOCABULARY, VOCABULARY_KEY, check_result, classify_result,
+)
 from agents.gen3_mechanics import boosts_str as _boosts_str_fn
 
 
@@ -274,12 +278,12 @@ class BattleRecorder:
 
         self._append_status_events(events, prev_ctx, delta, live)
 
-        if view.won:
-            events.append("result:win")
-        elif view.lost:
-            events.append("result:loss")
-        else:
-            events.append("result:tie")
+        # `gen3_trace_result_v2` — the SAME three-bucket classification the summary's
+        # `meta.result` uses, so a turn's RESULT line and the battle's header can never disagree.
+        # A timeout reads `result:draw:timeout`, not `result:loss`, which is the whole point.
+        _res, _kind = classify_result(won=view.won, lost=view.lost, finished=view.finished,
+                                      turn=view.turn, turn_cap=_TIMEOUT_TURN_CAP)
+        events.append(f"result:{_res.lower()}" + (f":{_kind}" if _kind else ""))
 
         breakdown = getattr(self._tracker._reward_fn, "_last_breakdown", None)
         self._pending_entry["outcome"] = {
@@ -295,21 +299,35 @@ class BattleRecorder:
         """Export the full battle summary as a JSON-serializable dict."""
         view = battle.strict_view()
         live = view.live
-        if view.won:
-            result = "WIN"
-        elif view.lost:
-            result = "LOSS"
-        else:
-            result = "TIE"
+        # `gen3_trace_result_v2`: WIN / LOSS / DRAW, with a DRAW naming WHICH draw it was. The
+        # turn cap is the training reward's own (`_TIMEOUT_TURN_CAP` == `MAX_TURNS` == the forfeit
+        # deadline), so a trace calls a 250-turn stall a DRAW exactly when the reward pays
+        # `draw_penalty` for it — the two used to disagree, and only the reward was right.
+        result, draw_kind = classify_result(
+            won=view.won, lost=view.lost, finished=view.finished,
+            turn=view.turn, turn_cap=_TIMEOUT_TURN_CAP,
+        )
+        # 🚨 THE THROWING GUARD. A result outside the vocabulary is refused here, at the write,
+        # rather than shipped to disk for a reader to coerce. `classify_result` cannot currently
+        # produce one — which is precisely why this must stay: the day it can, the failure is a
+        # crash in a forensic writer, not five months of mislabelled traces.
+        check_result(result)
+
+        meta = {
+            "step": step,
+            "battle_id": self.battle_tag,
+            "result": result,
+            "turns": view.turn,
+            "invocations": len(self._invocations),
+            # The CAPTURE-VERSION field. Its ABSENCE is what identifies a pre-draw-bucket trace,
+            # so it is written unconditionally from here on and never back-filled onto old ones.
+            VOCABULARY_KEY: RESULT_VOCABULARY,
+        }
+        if result == DRAW:
+            meta[DRAW_KIND_KEY] = draw_kind
 
         return {
-            "meta": {
-                "step": step,
-                "battle_id": self.battle_tag,
-                "result": result,
-                "turns": view.turn,
-                "invocations": len(self._invocations),
-            },
+            "meta": meta,
             "teams": {
                 "ours": [
                     {

@@ -44,6 +44,14 @@ EVAL_SNAPSHOT_NAME = "snapshot.zip"
 from agents.training.trace_selection import (  # noqa: E402
     SELECTION_SCHEMA, build_selection, forensic_selection_rule as _selection_rule_text,
 )
+# `gen3_trace_result_v2` — the RESULT vocabulary (WIN / LOSS / DRAW, a DRAW naming tie vs
+# timeout). Pure stdlib, shared with the recorder and every reader.
+from agents.training.trace_result import (  # noqa: E402
+    DRAW, LOSS, WIN, classify_result, outcome_prefix,
+)
+# The forfeit deadline (== MAX_TURNS, `gen3_deadline_clock_v1`) — the SAME number the training
+# reward reads to decide a terminal pays `draw_penalty`. Imported, never re-typed.
+from agents.training.reward_weights import _TIMEOUT_TURN_CAP  # noqa: E402
 
 
 def trace_filename_stem(outcome: str, trace_tag: str, idx: int) -> str:
@@ -154,21 +162,38 @@ _EVAL_CONCURRENCY = 100
 # opponent, all gathered. Cap the AGGREGATE in-flight battles so N opponents don't
 
 
-# Forensic-trace sample caps per opponent per eval cycle. Once both are filled the
+# Forensic-trace sample caps per opponent per eval cycle. Once every bucket is filled the
 # remaining battles run the cheap fast path and only feed the win-rate count.
 _FORENSIC_LOSS_QUOTA = 10
 _FORENSIC_WIN_QUOTA = 5
+# 🚨 WHERE DRAWS SIT IN THE QUOTA: their OWN bucket, independent of both others.
+#
+# The two rejected alternatives, and why. (a) Fold draws into the LOSS quota — that is what the
+# code did until 2026-09-07, and it means a stall storm evicts the decisive losses the prober
+# exists to study; the loss slice would silently change meaning in exactly the cycles where a
+# regression is worth reading. (b) Give draws no quota — that was the OTHER half of the old
+# behaviour (a true tie matched no branch and its capture was dropped), and it is how "0 draws in
+# every eval trace" became a number nobody could question.
+#
+# An independent bucket keeps the loss slice's meaning FIXED across cycles and makes the draw rate
+# readable off the tree. It is set to the win quota rather than the loss quota because a draw is
+# not loss forensics — it is a rate to notice, not a game to dissect — and because at the observed
+# draw frequency (0 persisted in 145k archived traces) the bucket costs nothing in the normal case
+# and bounds a pathological stall cycle at 5 extra traces per opponent.
+_FORENSIC_DRAW_QUOTA = 5
 
 
 def forensic_selection_rule(win_quota: int = _FORENSIC_WIN_QUOTA,
-                            loss_quota: int = _FORENSIC_LOSS_QUOTA) -> str:
+                            loss_quota: int = _FORENSIC_LOSS_QUOTA,
+                            draw_quota: int = _FORENSIC_DRAW_QUOTA) -> str:
     """This recorder's rule in words, bound to ITS OWN quota constants.
 
     The sentence lives in `trace_selection`; the DEFAULTS live here, beside the quotas they
     describe — so a change to `_FORENSIC_*_QUOTA` cannot leave the recorded rule saying the old
     numbers.
     """
-    return _selection_rule_text(win_quota=win_quota, loss_quota=loss_quota)
+    return _selection_rule_text(win_quota=win_quota, loss_quota=loss_quota,
+                                draw_quota=draw_quota)
 
 # TD-residual tail metric (#4): the left tail of per-decision critic surprise
 # δ = r + γ·V(s') − V(s) (BattleRecorder, the prober's formula) pooled over an eval cycle's
@@ -526,9 +551,15 @@ def record_eval_selection(model_dir: str | None, step: int, merged: dict) -> dic
     a single battle is played. Same patch-the-manifest shape as `persist_eval_snapshot`.
 
     ``merged`` is the pooled eval result. `counts` gives (n_won, n_finished) per opponent — what
-    was PLAYED — and `traces` gives (traces_won, traces_written) — what the forensic quota KEPT.
-    The two together are the whole record; the derived capture rates are computed by
-    `trace_selection.selection_entry` so the producer and every consumer share one arithmetic.
+    was PLAYED — `traces` gives (traces_won, traces_written[, traces_drawn]) — what the forensic
+    quota KEPT — and `draws` gives the DRAWN battles played (tie or 250-turn timeout), which
+    poke-env counts nowhere. Together they are the whole record; the derived capture rates are
+    computed by `trace_selection.selection_entry` so the producer and every consumer share one
+    arithmetic.
+
+    🚨 The `traces` tuple GREW a third element on 2026-09-07. It is unpacked BY LENGTH, so a
+    2-tuple (an older parent, or a caller written before the draw bucket) still records — with
+    its draws left ABSENT rather than written as a zero nobody measured.
 
     Returns the block it wrote, or ``None`` when there was nothing to record or the manifest could
     not be updated. **A failure is a warning, never a raise** — this is provenance for an offline
@@ -539,17 +570,22 @@ def record_eval_selection(model_dir: str | None, step: int, merged: dict) -> dic
         return None
     counts = merged.get("counts") or {}
     traces = merged.get("traces") or {}
+    draws = merged.get("draws") or {}
     if not counts:
         return None
     per_opponent = {}
     for key, (n_won, n_finished) in counts.items():
-        t_won, t_written = traces.get(key, (0, 0))
+        t = tuple(traces.get(key) or (0, 0))
+        t_won, t_written = t[0], t[1]
+        t_drawn = t[2] if len(t) > 2 else 0
         per_opponent[str(key)] = {
             "battles_played": n_finished, "battles_won": n_won,
-            "traces_written": t_written, "traces_won": t_won,
+            "battles_drawn": int(draws.get(key) or 0),
+            "traces_written": t_written, "traces_won": t_won, "traces_drawn": t_drawn,
         }
     block = build_selection(per_opponent, win_quota=_FORENSIC_WIN_QUOTA,
-                            loss_quota=_FORENSIC_LOSS_QUOTA)
+                            loss_quota=_FORENSIC_LOSS_QUOTA,
+                            draw_quota=_FORENSIC_DRAW_QUOTA)
     mpath = os.path.join(model_dir, "eval_traces", f"step_{step}", EVAL_MANIFEST_NAME)
     try:
         with open(mpath) as f:
@@ -934,7 +970,8 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
     """
 
     def __init__(self, *args, reward_fn_factory, gamma: float = 0.99,
-                 loss_quota=_FORENSIC_LOSS_QUOTA, win_quota=_FORENSIC_WIN_QUOTA, **kwargs):
+                 loss_quota=_FORENSIC_LOSS_QUOTA, win_quota=_FORENSIC_WIN_QUOTA,
+                 draw_quota=_FORENSIC_DRAW_QUOTA, **kwargs):
         # reward_fn_factory is REQUIRED (no silent default): eval MUST measure with the run's actual
         # RewardConfig, not a bare Gen3RewardManager() — a default here once silently scored eval with
         # bias_redesign=False (the old anti-spam reward), making the eval reward meaningless. Callers
@@ -944,11 +981,19 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         self._gamma = float(gamma)
         self._loss_quota = loss_quota
         self._win_quota = win_quota
+        self._draw_quota = draw_quota
         self._forensic_dir: str | None = None
         self._forensic_step = 0
         self._trace_tag = ""
         self._wins_kept = 0
         self._losses_kept = 0
+        self._draws_kept = 0
+        # Every DRAW this player SAW, quota or no quota — the denominator the manifest's
+        # `capture_rate_draw` needs. poke-env counts wins and finished battles but has no draw
+        # count (a tie leaves `_won` None and a timeout is booked as our forfeit), so unless we
+        # count it here the draw rate is unrecoverable from the trace tree — which is the exact
+        # absence this whole change exists to close.
+        self._draws_seen = 0
         self._trace_idx = 0
         self._recorders: dict[str, BattleRecorder] = {}
         # δ residuals pooled across THIS matchup's captured battles (one EvalRLPlayer per
@@ -957,7 +1002,8 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
 
     def begin_forensic_cycle(self, forensic_dir: str | None, step: int, *,
                              trace_tag: str = "", win_quota: int | None = None,
-                             loss_quota: int | None = None) -> None:
+                             loss_quota: int | None = None,
+                             draw_quota: int | None = None) -> None:
         """Arm (or disable, if dir is None) forensic capture for one eval cycle / shard.
 
         ``trace_tag`` namespaces this player's persisted trace filenames. Under battle-level
@@ -974,8 +1020,12 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
             self._win_quota = win_quota
         if loss_quota is not None:
             self._loss_quota = loss_quota
+        if draw_quota is not None:
+            self._draw_quota = draw_quota
         self._wins_kept = 0
         self._losses_kept = 0
+        self._draws_kept = 0
+        self._draws_seen = 0
         self._trace_idx = 0
         self._recorders.clear()
         self._td_pool = []
@@ -993,12 +1043,26 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         The manifest records it beside the battles played so a consumer can read the quota's
         outcome skew off the trace tree instead of inheriting it silently
         (`gen3_trace_selection_manifest_v1`)."""
-        return self._wins_kept + self._losses_kept
+        return self._wins_kept + self._losses_kept + self._draws_kept
 
     @property
     def traces_won(self) -> int:
         """How many of :attr:`traces_written` were WINS (≤ the battles won, by construction)."""
         return self._wins_kept
+
+    @property
+    def traces_drawn(self) -> int:
+        """How many of :attr:`traces_written` were DRAWS — a tie or a 250-turn timeout."""
+        return self._draws_kept
+
+    @property
+    def draws_seen(self) -> int:
+        """Every DRAW this player PLAYED this cycle/shard, whether or not its trace was kept.
+
+        The denominator of `capture_rate_draw`. Counted here because no other layer counts it:
+        poke-env's `n_won_battles` / `n_finished_battles` book a tie as neither and a timeout as
+        a loss."""
+        return self._draws_seen
 
     def td_residuals(self) -> list[float]:
         """The raw per-decision δ samples pooled this matchup (a COPY). A sharded eval ships these
@@ -1011,6 +1075,7 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         """Whether either outcome still needs forensic samples this cycle."""
         return self._forensic_dir is not None and (
             self._wins_kept < self._win_quota or self._losses_kept < self._loss_quota
+            or self._draws_kept < self._draw_quota
         )
 
     def choose_move(self, battle):
@@ -1043,14 +1108,28 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         # Harvest δ from EVERY captured battle (even one whose trace we drop below for quota) —
         # the tail metric wants signal from all the V(s) we paid for, not just the persisted sample.
         self._td_pool.extend(rec.td_residuals())
+        # `gen3_trace_result_v2`: WIN / LOSS / DRAW, classified ONCE (here) by the same function
+        # the summary writer uses, so the filename prefix and `meta.result` cannot disagree. The
+        # ORDER inside `classify_result` is what fixes the old defect — a 250-turn TIMEOUT arrives
+        # with `lost=True` and used to be booked as a decisive loss, and a true TIE matched
+        # neither branch and was dropped without a file, a count or a trace of having happened.
+        result, _draw_kind = classify_result(
+            won=battle.won, lost=battle.lost, finished=battle.finished,
+            turn=battle.turn, turn_cap=_TIMEOUT_TURN_CAP,
+        )
+        if result == DRAW:
+            # Counted BEFORE the quota test: the draw RATE must not depend on the capture quota.
+            self._draws_seen += 1
         # Persist this trace only if its outcome is one we still want a sample of;
         # otherwise drop the buffered capture (we already have enough of that result).
-        if battle.won and self._wins_kept < self._win_quota:
-            outcome = "win"
-        elif battle.lost and self._losses_kept < self._loss_quota:
-            outcome = "loss"
-        else:
+        _kept, _quota = {
+            WIN:  (self._wins_kept,   self._win_quota),
+            LOSS: (self._losses_kept, self._loss_quota),
+            DRAW: (self._draws_kept,  self._draw_quota),
+        }[result]
+        if _kept >= _quota:
             return
+        outcome = outcome_prefix(result)
         self._trace_idx += 1
         # `_trace_tag` namespaces the file so concurrent shard units of the same opponent (each a
         # fresh player with _trace_idx restarting at 0, all writing this one dir) never collide.
@@ -1066,10 +1145,12 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         # Websocket eval never produces a record, so the registration just evicts.
         register_trace_prefix(battle.battle_tag, prefix,
                               extra={"trainee_username": self.username})
-        if outcome == "win":
+        if result == WIN:
             self._wins_kept += 1
-        else:
+        elif result == LOSS:
             self._losses_kept += 1
+        else:
+            self._draws_kept += 1
 
 
 # ── Force-an-eval-now request channel (the launcher "force eval" button) ──────

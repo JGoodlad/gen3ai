@@ -23,7 +23,7 @@
         hx-indicator="#falsify-busy">
     <input type="hidden" name="run" value="{{ run or '' }}">
     <label>outcome
-      <select name="outcome"><option value="loss">loss</option><option value="win">win</option></select>
+      <select name="outcome"><option value="loss">loss</option><option value="win">win</option><option value="draw">draw</option></select>
     </label>
     <label>opponent
       <select name="opponent">{{ m.opponent_options(opponents) }}</select>

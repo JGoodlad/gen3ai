@@ -272,3 +272,21 @@ def test_a_run_with_ONLY_best_model_still_resolves_and_is_labelled(tmp_path):
     path, rung = resolve_checkpoint_with_rung(str(run))
     assert path.endswith("best_model.zip")
     assert "best_model" in rung, f"the rung must name the fallback, got {rung!r}"
+
+
+# ── the DRAW bucket (`gen3_trace_result_v2`, 2026-09-07) ─────────────────────────────────────
+
+def test_a_planted_draw_trace_is_discovered_and_sorted_last(tmp_path):
+    """Before 2026-09-07 a `draw_*` filename parsed as outcome '?' and fell into the unknown
+    tail — the same silent blinding the `s<shard>_` infix once caused."""
+    run = tmp_path / "run_d"
+    et = run / "eval_traces"
+    for name in ("win_001", "loss_002", "draw_s1_003"):
+        _touch(str(et / "step_100" / "staller" / f"{name}_summary.json"))
+    tree = build_trace_tree(str(run))
+    battles = tree.all_battles()
+    assert sorted(b.outcome for b in battles) == ["draw", "loss", "win"]
+    # report order: wins, then losses, then draws — deliberate, not the unknown tail
+    assert [b.outcome for b in tree.steps[0].opponents[0].battles] == ["win", "loss", "draw"]
+    drawn = next(b for b in battles if b.outcome == "draw")
+    assert drawn.index == 1 * 1000 + 3        # the shard infix still folds into the index

@@ -46,11 +46,19 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from agents.training.trace_result import OUTCOMES
 from main.prober.engine import BELIEF_NAME_CAVEAT, opponent_rank, sort_opponents
 from main.prober.web import charts
 from main.prober.web.auth import COOKIE, Auth
 from main.prober.web.jobs import JobRegistry
 from main.prober.web.runs import RunAccessError, RunStore
+
+# The outcome-filter query patterns, BUILT from the recorder's own vocabulary
+# (`gen3_trace_result_v2`) rather than retyped — `draw` joined it on 2026-09-07 and a hand-written
+# `^(win|loss)$` here would have rejected the new bucket with a 422 while the CLI accepted it.
+_OUTCOME_PATTERN = "^(" + "|".join(OUTCOMES) + ")$"
+#: …and the same with the empty string permitted, for the filters whose blank value means "all".
+_OUTCOME_OR_ALL_PATTERN = "^(" + "|".join(OUTCOMES) + "|)$"
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _TEMPLATES = os.path.join(_HERE, "templates")
@@ -348,7 +356,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
              summary="ProbeSession.battles() — the filtered battle list")
     def api_battles(
         run: "str | None" = Query(None),
-        outcome: "str | None" = Query(None, pattern="^(win|loss)$"),
+        outcome: "str | None" = Query(None, pattern=_OUTCOME_PATTERN),
         opponent: "str | None" = Query(None),
         step: "int | None" = Query(None),
     ) -> list:
@@ -390,7 +398,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
              summary="ProbeSession.scan() — each battle's worst turning point, ranked (model-free)")
     def api_scan(
         run: "str | None" = Query(None),
-        outcome: "str | None" = Query(None, pattern="^(win|loss)$"),
+        outcome: "str | None" = Query(None, pattern=_OUTCOME_PATTERN),
         opponent: "str | None" = Query(None),
         step: "int | None" = Query(None),
         metric: str = Query("value_drop", pattern="^(value_drop|td_residual)$"),
@@ -423,7 +431,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         # An EMPTY outcome means "every battle", and it has to be reachable: the quantile-coverage
         # half of this probe is only comparable to the published baseline unfiltered (the loss
         # filter biases PIT low by construction, which the result's own caveats state).
-        outcome: "str | None" = Query("loss", pattern="^(win|loss|draw|)$"),
+        outcome: "str | None" = Query("loss", pattern=_OUTCOME_OR_ALL_PATTERN),
         opponent: "str | None" = Query(None),
         step: "int | None" = Query(None),
         lead_bar: int = Query(5, ge=0, description="turns of warning that count as 'aware'"),
@@ -442,7 +450,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def api_job_falsify(
         request: Request,
         run: "str | None" = Query(None),
-        outcome: str = Query("loss", pattern="^(win|loss)$"),
+        outcome: str = Query("loss", pattern=_OUTCOME_PATTERN),
         opponent: "str | None" = Query(None),
         step: "int | None" = Query(None),
         limit: int = Query(20, ge=1, le=200),
@@ -470,7 +478,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
     def api_job_calibration(
         request: Request,
         run: "str | None" = Query(None),
-        outcome: str = Query("loss", pattern="^(win|loss)$"),
+        outcome: str = Query("loss", pattern=_OUTCOME_PATTERN),
         opponent: "str | None" = Query(None),
         step: "int | None" = Query(None),
         limit: int = Query(20, ge=1, le=200),

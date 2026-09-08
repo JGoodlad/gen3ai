@@ -1205,7 +1205,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "pattern": "^(win|loss)$",
+                  "pattern": "^(win|loss|draw)$",
                   "type": "string"
                 },
                 {
@@ -1491,7 +1491,7 @@
             "required": false,
             "schema": {
               "default": "loss",
-              "pattern": "^(win|loss)$",
+              "pattern": "^(win|loss|draw)$",
               "title": "Outcome",
               "type": "string"
             }
@@ -1673,7 +1673,7 @@
             "required": false,
             "schema": {
               "default": "loss",
-              "pattern": "^(win|loss)$",
+              "pattern": "^(win|loss|draw)$",
               "title": "Outcome",
               "type": "string"
             }
@@ -2181,7 +2181,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "pattern": "^(win|loss)$",
+                  "pattern": "^(win|loss|draw)$",
                   "type": "string"
                 },
                 {

@@ -52,6 +52,13 @@
     <strong>{{ data.critic_currency.even }}</strong>). {{ data.critic_currency.note }}
   </p>
   {% endif %}
+  {# WHICH RESULT VOCABULARY these traces were written under. Printed only when some of the tree
+     predates the DRAW bucket (or carries a tag this build does not define) — a note on every page
+     would train the reader to skip it, and the note only MEANS something where a zero draw count
+     is an artifact of the instrument rather than a measurement. #}
+  {% if data.result_vocabulary_note %}
+  <p class="muted small">⚠️ {{ data.result_vocabulary_note }}</p>
+  {% endif %}
   {{ m.chart("outcomes", spec) }}
 </section>
 

@@ -176,17 +176,24 @@ def reliability_gap_spec(bins: "list[dict]", currency: "dict | None" = None) -> 
 
 
 def outcome_by_step_spec(steps: "list[dict]") -> dict:
-    """Win/loss counts per eval step from `run_summary` — the run's shape at a glance.
+    """Win/loss/draw counts per eval step from `run_summary` — the run's shape at a glance.
 
     NOT a win-rate curve: eval traces are LOSS-WEIGHTED by the capture quota, so the ratio here is
     a sampling artifact. The subtitle says so, because a stacked bar of wins and losses is exactly
     the chart someone would otherwise read as progress.
+
+    🚨 The DRAW series is drawn only when the tree actually has draws. On a pre-draw-bucket run
+    (everything written before 2026-09-07) a flat zero line would be a claim the instrument could
+    not make — the bucket did not exist — so the series is omitted and `/` prints the vocabulary
+    note instead.
     """
     values = []
+    has_draws = any((s.get("totals") or {}).get("draw") for s in steps)
+    series = ["win", "loss"] + (["draw"] if has_draws else [])
     for s in steps:
         t = s.get("totals") or {}
-        values.append({"step": s["step"], "outcome": "win", "n": t.get("win", 0)})
-        values.append({"step": s["step"], "outcome": "loss", "n": t.get("loss", 0)})
+        for name in series:
+            values.append({"step": s["step"], "outcome": name, "n": t.get(name, 0)})
     return _spec(
         title=_title("Captured traces per eval step",
                      "CAPTURE COUNTS, not a win rate — eval trace capture is loss-weighted"),
@@ -199,7 +206,8 @@ def outcome_by_step_spec(steps: "list[dict]") -> dict:
             "y": {"field": "n", "type": "quantitative", "stack": "zero",
                   "axis": {"title": "captured battles"}},
             "color": {"field": "outcome", "type": "nominal",
-                      "scale": {"domain": ["win", "loss"], "range": ["#2a7f62", "#a4553f"]},
+                      "scale": {"domain": series,
+                                "range": ["#2a7f62", "#a4553f", "#7a6f9b"][:len(series)]},
                       "legend": {"title": None, "orient": "top"}},
         },
     )

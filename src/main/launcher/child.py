@@ -70,10 +70,21 @@ def _read_metrics_pipe(fd_r: int, state: LauncherState) -> None:
 
 
 def child_log_path(run_dir: "str | None") -> "str | None":
-    """Path of the persisted child-output log for a run, or None if no run_dir."""
+    """Path of the persisted child-output log for a run, or None if no run_dir.
+
+    This is the RING BUFFER — the recent tail, the file the TUI and every crash dump read."""
     if not run_dir:
         return None
     return os.path.join(run_dir, "launcher_child.log")
+
+
+def child_full_log_path(run_dir: "str | None") -> "str | None":
+    """Path of the ROTATING full copy of the child's output, or None if no run_dir.
+
+    ``launcher_child.full.log``, with older generations at ``.1`` … ``._FULL_LOG_BACKUPS``."""
+    if not run_dir:
+        return None
+    return os.path.join(run_dir, "launcher_child.full.log")
 
 
 # Cap the on-disk child log to a disk ring buffer. The in-memory scrollback (state.py's
@@ -160,6 +171,164 @@ class _CappedChildLog:
             pass
 
 
+# ── The ROTATING full copy (`launcher_child.full.log`) ───────────────────────────────────────
+#
+# WHY IT EXISTS. The ring buffer above keeps ~1 MiB — deliberately, after a repaint storm wrote a
+# 982 MB `launcher_child.log`. But a ring that trims SILENTLY also destroys evidence: on
+# 2026-09-06 the Training Run session counted per-worker compile lines across a restart and the
+# number became unrecoverable the moment the ring wrapped, so the count had to be settled from
+# source instead. **A read that cannot be redone is a read that cannot be checked.**
+#
+# THE CAPS, and why these numbers. 64 MiB per file × (1 live + 7 rotations) = **512 MiB maximum on
+# disk, per run, forever**. Chosen against the incident that produced the ring, not against a
+# typical run:
+#
+#   * the 982 MB storm would fill this rotation and STOP at 512 MiB — bounded, roughly half the
+#     incident, and the storm's own tail is still the file you open first;
+#   * a normal 3-hour restart cycle writes single-digit MiB, so the rotation never engages at all
+#     and the full log simply IS the whole run;
+#   * 64 MiB is a file a reader can actually grep, `less` and copy off the box, which a single
+#     512 MiB file is not — the point is a redoable READ, not an archive;
+#   * 8 files is the smallest count that keeps a whole storm plus the normal output that preceded
+#     it. Fewer, and a storm evicts exactly the context that explains it.
+#
+# 🚨 UNBOUNDED IS NOT AN OPTION HERE. The disk this writes to also holds `models/`; the 982 MB log
+# is the proof that a training child can emit at a rate no human notices until the volume is full.
+_FULL_LOG_MAX_BYTES = 64 * 1024 * 1024   # 64 MiB per generation
+_FULL_LOG_BACKUPS = 7                    # + the live file = 8 files = 512 MiB hard ceiling
+
+
+class _RotatingChildLog:
+    """Best-effort size-capped ROTATING log — the full child output beside the ring buffer.
+
+    Same streaming discipline as `_CappedChildLog` (line-buffered, so a hard ``os._exit`` still
+    leaves everything written on disk) and the same never-raise contract. The difference is what
+    happens at the cap: this one ROTATES (``.log`` → ``.log.1`` → … → ``.log.7``, oldest deleted)
+    instead of throwing the old bytes away, so a count taken across a restart can be REDONE.
+
+    Used by a single reader thread, so no locking is needed.
+    """
+
+    def __init__(self, path: str, max_bytes: int = _FULL_LOG_MAX_BYTES,
+                 backups: int = _FULL_LOG_BACKUPS) -> None:
+        self.path = path
+        self.max_bytes = max_bytes
+        self.backups = backups
+        # A pre-existing file already at/over the cap is rotated BEFORE we append, mirroring the
+        # ring's trim-on-open: a restart must not push one generation past the per-file bound.
+        if self._disk_size() >= self.max_bytes:
+            self._rotate()
+        self._f = open(path, "a", buffering=1, errors="replace")
+        self._size = self._disk_size()
+
+    def _disk_size(self) -> int:
+        try:
+            return os.path.getsize(self.path)
+        except OSError:
+            return 0
+
+    def write(self, s: str) -> None:
+        try:
+            self._f.write(s)
+        except Exception:
+            return
+        self._size += len(s.encode("utf-8", "replace"))
+        if self._size >= self.max_bytes:
+            self._roll()
+
+    def _roll(self) -> None:
+        """Close, shift the generations, reopen at zero."""
+        try:
+            self._f.flush()
+            self._f.close()
+        except Exception:
+            pass
+        self._rotate()
+        try:
+            self._f = open(self.path, "a", buffering=1, errors="replace")
+        except Exception:
+            # Losing the full log must never cost us the ring or the run.
+            self._f = open(os.devnull, "a")
+        self._size = self._disk_size()
+
+    def _rotate(self) -> None:
+        """``.6``→``.7``, … , ``.1``→``.2``, base→``.1``; whatever was at ``.7`` is DELETED.
+
+        Deleting the oldest generation is what makes the ceiling hard. Walked newest-last so no
+        rename can clobber a generation that has not moved yet.
+        """
+        try:
+            oldest = f"{self.path}.{self.backups}"
+            if os.path.exists(oldest):
+                os.remove(oldest)
+            for n in range(self.backups - 1, 0, -1):
+                src, dst = f"{self.path}.{n}", f"{self.path}.{n + 1}"
+                if os.path.exists(src):
+                    os.replace(src, dst)
+            if os.path.exists(self.path):
+                os.replace(self.path, f"{self.path}.1")
+        except Exception:
+            pass
+
+    def flush(self) -> None:
+        try:
+            self._f.flush()
+        except Exception:
+            pass
+
+    def close(self) -> None:
+        try:
+            self._f.flush()
+            self._f.close()
+        except Exception:
+            pass
+
+
+class _ChildLogFanout:
+    """Writes every line to BOTH sinks — the ring buffer and the rotating full copy.
+
+    🚨 THE RING IS UNTOUCHED. It is what the TUI reads, what the crash dump tails and what every
+    "the full log path is printed on exit" line names; the full copy is strictly ADDITIVE. The
+    ring is written FIRST on every call, so a failure in the (larger, rotating) full log can never
+    cost a byte of the surface anybody currently depends on.
+
+    ``path`` is the ring's path, so callers that print "log written to …" are unchanged.
+    """
+
+    def __init__(self, ring, full=None) -> None:
+        self._ring = ring
+        self._full = full
+        self.path = ring.path
+
+    @property
+    def full_path(self) -> "str | None":
+        return self._full.path if self._full is not None else None
+
+    def write(self, s: str) -> None:
+        self._ring.write(s)
+        if self._full is not None:
+            try:
+                self._full.write(s)
+            except Exception:
+                pass
+
+    def flush(self) -> None:
+        self._ring.flush()
+        if self._full is not None:
+            try:
+                self._full.flush()
+            except Exception:
+                pass
+
+    def close(self) -> None:
+        self._ring.close()
+        if self._full is not None:
+            try:
+                self._full.close()
+            except Exception:
+                pass
+
+
 def _open_child_log(state: LauncherState):
     """Open the size-capped persistent child-output log in the run directory.
 
@@ -167,17 +336,34 @@ def _open_child_log(state: LauncherState):
     the child that bypasses Python cleanup — still leaves the recent output behind. The log
     is ring-buffered to ``_CHILD_LOG_MAX_BYTES`` (a pre-existing oversized file is trimmed on
     open). Returns None if there is no run_dir yet or the file can't be opened (logging is
-    best-effort, never fatal)."""
+    best-effort, never fatal).
+
+    TWO SINKS, one stream. The ring (``launcher_child.log``) is unchanged in every respect — same
+    path, same cap, same trim — and a second, ROTATING copy (``launcher_child.full.log``, 64 MiB ×
+    8) rides beside it so a count taken across a restart survives the ring wrapping. The full copy
+    is strictly optional: if it cannot be opened, the ring alone is returned and nothing else
+    changes."""
     path = child_log_path(state.run_dir)
     if not path:
         return None
     try:
         os.makedirs(state.run_dir, exist_ok=True)
-        log = _CappedChildLog(path)
-        log.write(f"\n===== child attached {time.strftime('%Y-%m-%d %H:%M:%S')} (pid {state.pid}) =====\n")
-        return log
+        ring = _CappedChildLog(path)
     except Exception:
         return None
+    full = None
+    try:
+        full_path = child_full_log_path(state.run_dir)
+        if full_path:
+            full = _RotatingChildLog(full_path)
+    except Exception:
+        full = None
+    log = _ChildLogFanout(ring, full)
+    try:
+        log.write(f"\n===== child attached {time.strftime('%Y-%m-%d %H:%M:%S')} (pid {state.pid}) =====\n")
+    except Exception:
+        pass
+    return log
 
 
 def _read_child_stdout(proc: subprocess.Popen, state: LauncherState, log_file=None) -> None:

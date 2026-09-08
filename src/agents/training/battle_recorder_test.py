@@ -640,3 +640,75 @@ def test_write_battle_record_collapses_belief_leaves(tmp_path):
     data = json.loads(text)
     assert data["invocations"][0]["belief"][0]["top"][0]["species"] == "skarmory"
     assert '{"species": "skarmory", "prob": "40.0%"}' in text
+
+
+# ── the DRAW bucket in the SUMMARY (`gen3_trace_result_v2`, 2026-09-07) ──────────────────────
+
+def _finished_recorder(turn, won=False, lost=False, tie=False):
+    """A recorder with one recorded decision, finalized on a battle that ended `turn`."""
+    our = _FakeMon("zapdos", 0.5)
+    opp = _FakeMon("opp_blissey", 0.5)
+    b1 = _battle([our], [opp], "zapdos", "opp_blissey", turn=1, move_ids=["thunderbolt"])
+    end_our = _FakeMon("zapdos", 0.5)
+    end_opp = _FakeMon("opp_blissey", 0.5)
+    b_end = _battle([end_our], [end_opp], "zapdos", "opp_blissey",
+                    turn=turn, won=won, lost=lost)
+    if tie:
+        # A sim `|tie|` leaves `_won` None: won AND lost are falsy while `finished` is true.
+        # `_battle` derives `finished` from won/lost, so it is set explicitly here — which is
+        # exactly the state the old two-branch quota matched NEITHER arm of.
+        b_end.finished = True
+    _with_events(b_end, [])
+    rec = _rec()
+    rec.record(b1, 0, _probs(), _mask(0))
+    rec.finalize(b_end)
+    return rec, b_end
+
+
+def test_summary_calls_a_250_turn_timeout_a_DRAW_not_a_LOSS():
+    """The defect this closes: the trainee FORFEITS at the cap, so poke-env says `lost=True` and
+    the summary said LOSS. The training reward always paid `draw_penalty` for this state."""
+    from agents.observation.constants import MAX_TURNS
+    rec, b = _finished_recorder(MAX_TURNS, lost=True)
+    meta = rec.to_summary(b, step=1000)["meta"]
+    assert meta["result"] == "DRAW"
+    assert meta["draw_kind"] == "timeout"
+    assert meta["turns"] == MAX_TURNS
+    assert "result:draw:timeout" in rec._invocations[0]["outcome"]["events"]
+
+
+def test_summary_calls_a_pre_cap_tie_a_DRAW_and_names_it_a_tie():
+    rec, b = _finished_recorder(37, tie=True)
+    meta = rec.to_summary(b, step=1000)["meta"]
+    assert meta["result"] == "DRAW"
+    assert meta["draw_kind"] == "tie"
+    assert "result:draw:tie" in rec._invocations[0]["outcome"]["events"]
+
+
+def test_a_decisive_loss_before_the_cap_is_still_a_LOSS_with_no_draw_kind():
+    rec, b = _finished_recorder(60, lost=True)
+    meta = rec.to_summary(b, step=1000)["meta"]
+    assert meta["result"] == "LOSS"
+    assert "draw_kind" not in meta
+
+
+def test_every_summary_carries_the_CAPTURE_VERSION_field():
+    """The field whose ABSENCE identifies a pre-draw-bucket trace. Written unconditionally from
+    here on, and never back-filled onto the ~145k archived traces."""
+    from agents.training.trace_result import RESULT_VOCABULARY, VOCABULARY_KEY
+    rec, b = _finished_recorder(60, won=True)
+    meta = rec.to_summary(b, step=1000)["meta"]
+    assert meta[VOCABULARY_KEY] == RESULT_VOCABULARY
+    assert meta["result"] == "WIN"
+
+
+def test_the_summary_REFUSES_an_unknown_result(monkeypatch):
+    """The throwing guard, proven to FIRE. `classify_result` cannot currently emit an unknown
+    result — which is why the guard has to be tested by planting one: the day the classifier can,
+    the failure must be a crash in a forensic writer, not five months of mislabelled traces."""
+    import agents.training.battle_recorder as br
+    from agents.training.trace_result import UnknownTraceResult
+    monkeypatch.setattr(br, "classify_result", lambda **kw: ("TIE", None))
+    rec, b = _finished_recorder(60, lost=True)
+    with pytest.raises(UnknownTraceResult):
+        rec.to_summary(b, step=1000)

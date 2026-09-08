@@ -667,6 +667,36 @@ because eval is non-blocking and **skips a cycle while the previous one is still
 (below): a heavier roster self-throttles to a sparser cadence instead of needing tuned
 ceilings.
 
+**THE FORENSIC TRACE'S RESULT VOCABULARY — `gen3_trace_result_v2`, `trace_result.py`.** A captured
+battle's summary says `WIN` | `LOSS` | `DRAW`, the filename prefix says the same word in lowercase,
+and a `DRAW` carries `meta.draw_kind` — **`timeout`** (`lost` **and** `turn >= MAX_TURNS`: the
+trainee FORFEITED at the deadline) or **`tie`** (the sim's `|tie|`, `won`/`lost` both falsy).
+
+🚨 **A TIMEOUT ARRIVES WEARING A LOSS'S FLAGS**, which is why it went unnoticed until 2026-09-07:
+poke-env reports `lost=True` for our own forfeit, so the summary said `LOSS`. The **reward never
+agreed** — `reward_manager`'s terminal fold pays `draw_penalty` for exactly that state, detected by
+the TURN COUNT — and `classify_result` now tests the cap **before** the loss, on the same constant
+(`reward_weights._TIMEOUT_TURN_CAP` == `MAX_TURNS`). A true TIE was worse: it matched neither quota
+branch and its buffered capture was **discarded**, so it left no file, no count and nothing to
+question. Measured over the whole archive: **145,173 traces, every one `win_*` or `loss_*`, zero
+`TIE`** — "0 draws in every eval trace" was what the instrument could express, not what happened.
+
+**Where draws sit in the quota: their own bucket.** `_FORENSIC_DRAW_QUOTA` (5) beside win 5 /
+loss 10, and the per-cycle manifest states all three in words (`forensic_selection_rule`). Folding
+draws into the loss quota is what the old code did, and it lets a stall storm evict the decisive
+losses the prober exists to study; giving them none is the other half of the old defect. The
+manifest (`gen3_trace_selection_manifest_v1`, **schema 2** — additive, schema 1 still READS) gains
+`battles_drawn` / `traces_drawn` / `capture_rate_draw`, and a draw is **subtracted from the losses**
+rather than added to the played count (poke-env's `n_finished_battles` already contains it), so the
+loss capture rate stays a statement about DECISIVE losses. The drawn-battles-played denominator is
+counted by `EvalRLPlayer.draws_seen` because **no other layer counts it**.
+
+🚨 **AN UNKNOWN RESULT IS REFUSED.** `to_summary` runs `check_result` before writing and the prober
+runs `result_of` before rendering; both raise `UnknownTraceResult`. And a trace written before this
+landed carries **no `meta.result_vocabulary`** — that absence dates it, `trace_result.era_note`
+turns it into the one sentence a reader needs, and nothing back-fills the archive. The live arm
+`ai_v12_02_winprob_critic` is PINNED and keeps writing the old vocabulary until it ends.
+
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
 
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)

@@ -18,6 +18,10 @@ import os
 import re
 from dataclasses import dataclass
 
+# `gen3_trace_result_v2` — the outcome vocabulary the recorder writes, read from the ONE
+# declaration (pure stdlib, no torch, so importing it costs the prober nothing).
+from agents.training.trace_result import OUTCOMES
+
 # Roster order mirrors the launcher's _METRIC_ORDER so the prober lists opponents
 # the same way the training dashboard does; unknown names fall after, alphabetically.
 _OPPONENT_ORDER = [
@@ -27,7 +31,11 @@ _OPPONENT_ORDER = [
 # Eval writes either `<outcome>_<idx>` (un-sharded) or `<outcome>_s<shard>_<idx>`
 # (the work-stealing eval's per-shard namespacing, `agents.training.eval_callback`'s
 # `{outcome}_s{shard}_{idx}` trace_tag). Match both; the `s<shard>_` infix is optional.
-_FNAME_RE = re.compile(r"^(win|loss)_(?:s(\d+)_)?(\d+)_summary\.json$")
+# The outcome alternation is BUILT from `trace_result.OUTCOMES`, not retyped: the last time the
+# producer's stem and this regex drifted, every sharded trace parsed as `"?"` and the whole prober
+# went blind. `draw` joined the vocabulary on 2026-09-07; a tree written before then simply
+# contains none (which is NOT the same as having had none — see `trace_result`).
+_FNAME_RE = re.compile(r"^(" + "|".join(OUTCOMES) + r")_(?:s(\d+)_)?(\d+)_summary\.json$")
 _STEP_RE = re.compile(r"step_(\d+)")
 # Filenames the eval writes (contract with agents.training.eval_callback —
 # duplicated here so the prober doesn't import the heavy training module).
@@ -40,7 +48,7 @@ _CKPT_STEP_RE = re.compile(r"(?:checkpoint|forced)_(\d+)_steps\.zip$")
 class BattleTrace:
     summary_path: str
     npz_path: "str | None"   # None when the _states.npz is missing
-    outcome: str             # "win" | "loss" | "?"
+    outcome: str             # "win" | "loss" | "draw" | "?"
     index: int
     opponent: str
     step: int
@@ -106,8 +114,13 @@ def _opponent_sort_key(name: str):
         return (1, name)
 
 
+#: Report order: wins, losses, then draws, then anything unparsed. Built from the vocabulary so a
+#: new bucket sorts somewhere deliberate instead of silently landing in the "unknown" tail.
+_OUTCOME_RANK = {name: i for i, name in enumerate(OUTCOMES)}
+
+
 def _outcome_sort_key(outcome: str) -> int:
-    return {"win": 0, "loss": 1}.get(outcome, 2)
+    return _OUTCOME_RANK.get(outcome, len(_OUTCOME_RANK))
 
 
 def _parse_trace(summary_path: str) -> BattleTrace:

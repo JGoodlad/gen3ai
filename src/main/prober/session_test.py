@@ -128,12 +128,15 @@ def test_run_summary(tmp_path):
     run, _ = _build_run(tmp_path)
     s = ProbeSession(run).run_summary()
     assert s["n_steps"] == 1 and s["gamma"] == 0.95
-    assert s["totals"] == {"win": 1, "loss": 0, "battles": 1}
+    # `draw` joined the totals with the DRAW bucket (2026-09-07). It is 0 here because this
+    # fixture's trace is a WIN — not because a zero is what a pre-draw-bucket tree can claim.
+    assert s["totals"] == {"win": 1, "loss": 0, "draw": 0, "battles": 1}
     step = s["steps"][0]
     assert step["step"] == 2000000
     assert step["identity"]["git_hash"] == "abc123"
     assert step["identity"]["snapshot_available"] is False
-    assert step["opponents"][0] == {"name": "staller", "win": 1, "loss": 0, "battles": 1}
+    assert step["opponents"][0] == {"name": "staller", "win": 1, "loss": 0, "draw": 0,
+                                    "battles": 1}
     assert s["checkpoints"][0]["step"] == 3200000
 
 
@@ -1470,3 +1473,67 @@ def test_cli_loops_emits_json(tmp_path):
     parsed = json.loads(buf.getvalue())
     assert parsed["aggregate"]["loop_battle_rate"]["n"] == 1
     assert parsed["params"]["opponent"] == "sentinel_*"
+
+
+# ── the DRAW bucket end-to-end in the prober (`gen3_trace_result_v2`, 2026-09-07) ────────────
+
+def _plant_trace(run, opponent, name, meta):
+    """Write one minimal trace summary into a run's eval_traces tree.
+
+    A COPY of the shape, never a file from `models/` — a collected test must not read the run
+    archive (it exists only in the main checkout).
+    """
+    bd = os.path.join(run, "eval_traces", "step_2000000", opponent)
+    os.makedirs(bd, exist_ok=True)
+    path = os.path.join(bd, f"{name}_summary.json")
+    with open(path, "w") as f:
+        json.dump({"meta": meta, "invocations": []}, f)
+    return path
+
+
+def test_run_summary_counts_DRAWS_and_the_filter_selects_them(tmp_path):
+    """The bucket, visible on the surface an agent actually reads."""
+    run, _ = _build_run(tmp_path)
+    _plant_trace(run, "staller", "draw_002",
+                 {"step": 2000000, "result": "DRAW", "draw_kind": "timeout", "turns": 250,
+                  "invocations": 0, "result_vocabulary": "gen3_trace_result_v2"})
+    sess = ProbeSession(run)
+    totals = sess.run_summary()["totals"]
+    assert (totals["win"], totals["loss"], totals["draw"]) == (1, 0, 1)
+    picked = sess.battles(outcome="draw")
+    assert len(picked) == 1 and picked[0]["outcome"] == "draw"
+
+
+def test_a_pre_draw_bucket_tree_prints_the_vocabulary_NOTE_beside_its_zero(tmp_path):
+    """🚨 ABSENCE IS NOT A ZERO. `_build_run` writes a legacy trace (no `result_vocabulary`), so
+    `draw: 0` here is what the INSTRUMENT could express, not what happened — and the summary says
+    so rather than leaving a reader to discover it."""
+    run, _ = _build_run(tmp_path)
+    summ = ProbeSession(run).run_summary()
+    assert summ["totals"]["draw"] == 0
+    assert summ["result_vocabulary"] == ["gen3_trace_result_v1"]
+    note = summ["result_vocabulary_note"]
+    assert note and "NOT MEASURABLE" in note and "TIMEOUTS" in note
+
+
+def test_a_current_tree_carries_no_note(tmp_path):
+    run = str(tmp_path / "run2")
+    os.makedirs(run, exist_ok=True)
+    _plant_trace(run, "staller", "win_001",
+                 {"step": 2000000, "result": "WIN", "turns": 30, "invocations": 0,
+                  "result_vocabulary": "gen3_trace_result_v2"})
+    summ = ProbeSession(run).run_summary()
+    assert summ["result_vocabulary"] == ["gen3_trace_result_v2"]
+    assert summ["result_vocabulary_note"] is None
+
+
+def test_the_prober_REFUSES_to_render_a_trace_whose_result_it_cannot_NAME(tmp_path):
+    """The read-side throwing guard. A forensic tool that displays an outcome it cannot classify
+    is how a mislabelled bucket survives being looked at."""
+    from agents.training.trace_result import UnknownTraceResult
+    run = str(tmp_path / "run3")
+    os.makedirs(run, exist_ok=True)
+    path = _plant_trace(run, "staller", "win_001",
+                        {"step": 2000000, "result": "TIE", "turns": 30, "invocations": 0})
+    with pytest.raises(UnknownTraceResult):
+        ProbeSession(run).battle_overview(path)

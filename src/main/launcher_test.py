@@ -674,14 +674,20 @@ class TestCappedChildLog:
         assert p.stat().st_size <= 4000            # shrunk on open
         assert "RECENT_MARKER" in p.read_text()    # tail preserved
 
-    def test_open_child_log_returns_capped_writer(self, tmp_path):
-        from main.launcher.child import _open_child_log, _CappedChildLog
+    def test_open_child_log_returns_a_fanout_over_the_capped_writer(self, tmp_path):
+        """The ring is still what `_open_child_log` gives you — now behind a fan-out that also
+        feeds the rotating full copy. `log.path` is still the RING's path, so every caller that
+        prints "log written to …" is unchanged."""
+        from main.launcher.child import _open_child_log, _CappedChildLog, _ChildLogFanout
         st = LauncherState(interval_hours=0)
         st.run_dir = str(tmp_path)
         st.pid = 123
         log = _open_child_log(st)
         try:
-            assert isinstance(log, _CappedChildLog)
+            assert isinstance(log, _ChildLogFanout)
+            assert isinstance(log._ring, _CappedChildLog)
+            assert log.path.endswith("launcher_child.log")
+            assert log.full_path.endswith("launcher_child.full.log")
         finally:
             log.close()
 
@@ -748,3 +754,127 @@ class TestChildLogPersistence:
         from main.launcher.run import _dump_logs_on_exit
         state = LauncherState(interval_hours=0)
         _dump_logs_on_exit(None, state)   # must not raise
+
+
+# ── The ROTATING full copy beside the ring (`launcher_child.full.log`, 2026-09-07) ───────────
+class TestRotatingChildLog:
+    """`launcher_child.log` is a ~1 MiB ring that trims SILENTLY — by design, after the 982 MB
+    repaint-log incident. On 2026-09-06 a per-worker count taken across a restart became
+    unrecoverable the moment it wrapped. The full copy makes that read redoable, while staying
+    hard-bounded: a repaint storm must fill the rotation and STOP, never the disk."""
+
+    def test_rotates_at_the_cap_instead_of_discarding(self, tmp_path):
+        from main.launcher.child import _RotatingChildLog
+        p = str(tmp_path / "full.log")
+        log = _RotatingChildLog(p, max_bytes=2000, backups=3)
+        for i in range(400):
+            log.write(f"line {i:05d} " + "x" * 30 + "\n")
+        log.close()
+        assert os.path.exists(p) and os.path.exists(p + ".1")
+        # THE POINT: the oldest lines are still ON DISK, in an older generation — the ring
+        # would have thrown them away.
+        allof = "".join(open(f).read() for f in
+                        [p] + [f"{p}.{n}" for n in range(1, 4) if os.path.exists(f"{p}.{n}")])
+        assert "line 00399" in allof                       # newest
+        assert "line 00300" in allof                       # …and history the ring would have lost
+
+    def test_the_file_count_is_BOUNDED_and_the_oldest_generation_is_deleted(self, tmp_path):
+        from main.launcher.child import _RotatingChildLog
+        p = str(tmp_path / "full.log")
+        log = _RotatingChildLog(p, max_bytes=1000, backups=3)
+        for i in range(2000):
+            log.write(f"{i:06d} " + "y" * 40 + "\n")
+        log.close()
+        gens = [f for f in os.listdir(tmp_path) if f.startswith("full.log")]
+        assert len(gens) == 4, sorted(gens)                # live + 3 backups, never more
+        assert not os.path.exists(p + ".4")
+
+    def test_a_REPAINT_STORM_is_bounded_on_disk_not_merely_slowed(self, tmp_path):
+        """The 982 MB incident, planted. A child that emits at a rate no human notices must fill
+        the rotation and stop — the disk this writes to also holds `models/`."""
+        from main.launcher.child import _RotatingChildLog
+        p = str(tmp_path / "full.log")
+        max_bytes, backups = 4096, 4
+        log = _RotatingChildLog(p, max_bytes=max_bytes, backups=backups)
+        payload = "\x1b[2J\x1b[H repaint " + "z" * 200 + "\n"
+        for _ in range(5000):                               # ~1.05 MB of storm
+            log.write(payload)
+        log.close()
+        total = sum(os.path.getsize(os.path.join(tmp_path, f))
+                    for f in os.listdir(tmp_path) if f.startswith("full.log"))
+        ceiling = max_bytes * (backups + 1) + len(payload)  # + one line's overshoot per file
+        assert total <= ceiling, total
+        # …and it is BOUNDED, not empty: the storm's own tail is still readable.
+        assert "repaint" in open(p).read()
+
+    def test_the_production_caps_give_a_hard_512_MiB_ceiling(self, tmp_path):
+        """The caps are a DECISION, not an accident, so they are asserted: 64 MiB × (1 + 7)."""
+        from main.launcher.child import _FULL_LOG_MAX_BYTES, _FULL_LOG_BACKUPS
+        assert _FULL_LOG_MAX_BYTES == 64 * 1024 * 1024
+        assert _FULL_LOG_BACKUPS == 7
+        ceiling = _FULL_LOG_MAX_BYTES * (_FULL_LOG_BACKUPS + 1)
+        assert ceiling == 512 * 1024 * 1024
+        # bounded WELL below the 982 MB incident that produced the ring in the first place
+        assert ceiling < 982 * 1000 * 1000
+
+    def test_an_oversized_preexisting_full_log_is_rotated_on_open_not_appended_to(self, tmp_path):
+        from main.launcher.child import _RotatingChildLog
+        p = tmp_path / "full.log"
+        p.write_text("OLD\n" * 2000)
+        log = _RotatingChildLog(str(p), max_bytes=1000, backups=2)
+        log.write("NEW\n")
+        log.close()
+        assert "OLD" in (tmp_path / "full.log.1").read_text()   # preserved, not discarded
+        assert p.read_text().strip() == "NEW"                   # the live file starts fresh
+
+    def test_THE_RING_IS_UNTOUCHED_by_the_fan_out(self, tmp_path):
+        """The ring is what the TUI reads and what the crash dump tails. The full copy is
+        strictly additive: same ring path, same cap, same trim marker, same tail."""
+        from main.launcher.child import _CappedChildLog, _RotatingChildLog, _ChildLogFanout
+        ring_p = str(tmp_path / "child.log")
+        full_p = str(tmp_path / "child.full.log")
+        fan = _ChildLogFanout(_CappedChildLog(ring_p, max_bytes=4000),
+                              _RotatingChildLog(full_p, max_bytes=100_000, backups=3))
+        for i in range(3000):
+            fan.write(f"line {i:05d} " + "x" * 30 + "\n")
+        fan.close()
+
+        # the ring: byte-for-byte the behaviour its own test pins
+        assert os.path.getsize(ring_p) <= 4000
+        ring_text = open(ring_p).read()
+        assert "line 02999" in ring_text and "line 00000" not in ring_text
+        assert "trimmed" in ring_text
+        # the full copy: EVERYTHING, including what the ring dropped — read across the
+        # generations, because "still on disk in an older file" is exactly the guarantee.
+        full_text = "".join(open(f).read() for f in
+                            [full_p] + [f"{full_p}.{n}" for n in range(1, 4)
+                                        if os.path.exists(f"{full_p}.{n}")])
+        assert "line 00000" in full_text and "line 02999" in full_text
+
+    def test_a_broken_full_log_never_costs_the_ring_a_byte(self, tmp_path):
+        """Logging is best-effort and the ring is the surface everything depends on, so the ring
+        is written FIRST and a failure in the full copy is swallowed."""
+        from main.launcher.child import _CappedChildLog, _ChildLogFanout
+
+        class _Exploding:
+            path = "/nope/full.log"
+
+            def write(self, s):
+                raise OSError("disk full")
+
+            def flush(self):
+                raise OSError("disk full")
+
+            def close(self):
+                raise OSError("disk full")
+
+        ring_p = str(tmp_path / "child.log")
+        fan = _ChildLogFanout(_CappedChildLog(ring_p, max_bytes=4000), _Exploding())
+        fan.write("survives\n")
+        fan.flush()
+        assert "survives" in open(ring_p).read()
+
+    def test_child_full_log_path(self):
+        from main.launcher.child import child_full_log_path
+        assert child_full_log_path(None) is None
+        assert child_full_log_path("/models/run_x").endswith("launcher_child.full.log")

@@ -244,6 +244,30 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   quit) the full log path is printed and the file is finalized (the in-memory buffer is
   flushed to it as a fallback if streaming never started).
 
+  🚨 **THE RING TRIMS SILENTLY, so a ROTATING full copy rides beside it**:
+  **`<run_dir>/launcher_child.full.log`**, with older generations at `.1` … `.7`
+  (`child._RotatingChildLog`, **64 MiB × (1 live + 7 backups) = a hard 512 MiB ceiling per
+  run**). Both sinks are fed by the same reader thread through `child._ChildLogFanout`, and
+  the **ring is written FIRST and is unchanged in every respect** — same path, same cap,
+  same trim marker, same tail — because it is what the TUI reads and what the crash dump
+  tails; the full copy is strictly additive and a failure in it is swallowed. `log.path` is
+  still the RING's path, so every "log written to …" line is unchanged; the exit summary
+  additionally names the rotating copy and how many generations exist.
+
+  **Why rotate rather than keep or drop.** 2026-09-06: a per-worker compile count taken
+  across a restart became unrecoverable the moment the ring wrapped, and had to be settled
+  from source instead — *a read that cannot be redone is a read that cannot be checked*. But
+  the ring exists because of a **982 MB repaint log**, so unbounded is not an option: the
+  volume this writes to also holds `models/`. 64 MiB × 8 is chosen against that incident —
+  the storm fills the rotation and **stops** at roughly half its size, a normal 3-hour
+  restart cycle never engages the rotation at all, and 64 MiB is a file a reader can
+  actually `grep` and copy off the box. Gate: `launcher_test.py::TestRotatingChildLog`
+  (rotation at the cap, the file-count bound, the ring untouched by the fan-out, and a
+  planted repaint storm proving the on-disk total is bounded).
+
+  ⚠️ The live launcher process runs OLD code and is **pinned**, so it will not pick this up.
+  The rotating copy appears on the next launcher started from new code.
+
 ## Exit codes (`src/main/exit_codes.py`)
 
 | Code | `TrainExitCode` | Meaning |

@@ -52,7 +52,7 @@ from agents.model.snapshot import (current_model_version, load_model_snapshot,
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
     BATTLE_FORMAT, build_eval_opponents, build_eval_players, episode_length_sum,
-    _FORENSIC_WIN_QUOTA, _FORENSIC_LOSS_QUOTA,
+    _FORENSIC_WIN_QUOTA, _FORENSIC_LOSS_QUOTA, _FORENSIC_DRAW_QUOTA,
 )
 from agents.training.eval_sharding import ShardedEvalPool, ShardResult, BOT, SENTINEL, FIXED
 from agents.training.reward_manager import Gen3RewardManager, RewardConfig
@@ -212,7 +212,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
     trainee.begin_forensic_cycle(
         forensic_dir, step, trace_tag=f"s{unit.shard_index}_",
         win_quota=max(1, math.ceil(_FORENSIC_WIN_QUOTA / n_shards)),
-        loss_quota=max(1, math.ceil(_FORENSIC_LOSS_QUOTA / n_shards)))
+        loss_quota=max(1, math.ceil(_FORENSIC_LOSS_QUOTA / n_shards)),
+        draw_quota=max(1, math.ceil(_FORENSIC_DRAW_QUOTA / n_shards)))
 
     start = datetime.now()
     asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl))
@@ -226,7 +227,12 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         td_residuals=trainee.td_residuals(),
         # What the forensic QUOTA actually kept from this shard, so the per-cycle manifest can
         # state the trace SELECTION rather than leaving every consumer to assume it was uniform.
-        traces_written=trainee.traces_written, traces_won=trainee.traces_won)
+        traces_written=trainee.traces_written, traces_won=trainee.traces_won,
+        # DRAWS: every drawn battle PLAYED (`n_drawn`) and how many the draw quota KEPT. The
+        # played count is here and nowhere else — poke-env books a tie as neither a win nor a
+        # loss and a 250-turn timeout as our forfeit, so without this the draw rate cannot be
+        # recovered from the shard record at all.
+        n_drawn=trainee.draws_seen, traces_drawn=trainee.traces_drawn)
     win_rate = res.n_won / res.n_finished if res.n_finished else 0.0
     print(f"  {unit.unit_id}: {win_rate * 100:.1f}% ({res.n_won}/{res.n_finished})  "
           f"reward_sum={res.sum_reward:.1f}  [{dur:.0f}s]")

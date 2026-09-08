@@ -40,6 +40,7 @@ from main.launcher.child import (
     PYTHON_ENV_VAR,
     _build_child_env,
     _launch_child,
+    child_full_log_path,
     child_log_path,
     resolve_child_python,
     _TRAIN_SCRIPT,
@@ -155,6 +156,14 @@ def _dump_logs_on_exit(run_dir: "str | None", state: LauncherState) -> None:
                 f.write("\n".join(snap.log_lines) + "\n")
             f.write(f"===== session ended {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         print(f"\n📄 Full child log: {path}", file=sys.stderr)
+        # The ring buffer above is the RECENT TAIL. Name the rotating copy too — an operator who
+        # needs a count from before the ring wrapped has no way to learn it exists otherwise, and
+        # that is exactly the read that went unrecoverable on 2026-09-06.
+        full = child_full_log_path(run_dir)
+        if full and os.path.exists(full):
+            gens = 1 + sum(1 for n in range(1, 32) if os.path.exists(f"{full}.{n}"))
+            print(f"📚 Untrimmed copy (rotating, {gens} file(s)): {full}"
+                  + (f" + .1…{gens - 1}" if gens > 1 else ""), file=sys.stderr)
     except Exception:
         pass
 

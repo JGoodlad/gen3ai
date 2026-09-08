@@ -31,7 +31,16 @@ from __future__ import annotations
 
 # The version tag of the contract below. Bump when the recorder's rule changes SHAPE, so a
 # consumer can tell a rule it understands from one it does not.
-SELECTION_SCHEMA = 1
+#
+# 2 (2026-09-07) added the DRAW bucket: `battles_drawn` / `traces_drawn` / `capture_rate_draw`
+# and the `draw_quota`. Purely ADDITIVE — every schema-1 key kept its name and its meaning — so
+# schema 1 stays READABLE rather than being demoted to SELECTION UNKNOWN, which would have
+# silently thrown away the recorded selection of every cycle written before today.
+SELECTION_SCHEMA = 2
+
+#: Every schema this build can read. A manifest at an OLDER known schema is read as it was
+#: written (its draw keys simply absent); an UNKNOWN schema is SELECTION UNKNOWN, never guessed.
+KNOWN_SELECTION_SCHEMAS = (1, 2)
 
 #: The key the per-cycle manifest carries the per-opponent record under.
 SELECTION_KEY = "selection"
@@ -47,18 +56,27 @@ UNKNOWN_LABEL = (
 )
 
 
-def forensic_selection_rule(win_quota: int, loss_quota: int) -> str:
+def forensic_selection_rule(win_quota: int, loss_quota: int,
+                            draw_quota: "int | None" = None) -> str:
     """The ONE sentence describing which battles get a forensic trace.
 
     Spelled out rather than named: a reader of a two-year-old trace tree has the recorder's
     constants nowhere to hand, and the numbers are what make the capture rates interpretable.
+
+    ``draw_quota`` is ``None`` only for a caller reconstructing the PRE-DRAW-BUCKET rule; the live
+    recorder always passes it, and the sentence then states where draws sit.
     """
-    return (f"per-opponent per-cycle OUTCOME QUOTA: the first {loss_quota} losses and the first "
-            f"{win_quota} wins of each opponent are persisted as traces; every later battle is "
-            f"played (and counts toward the win rate) but is NOT traced. Under battle-level "
-            f"work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the "
-            f"per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN — the traces "
-            f"are a loss-forensics sample, never a random subsample of the cycle.")
+    draws = (f"the first {draw_quota} DRAWS (a tie, or a 250-turn timeout — its OWN bucket, so a "
+             f"stall storm cannot evict the decisive losses), "
+             if draw_quota is not None else
+             "NO DRAW BUCKET AT ALL — a timeout was booked as a loss and a tie was dropped "
+             "unwritten, so this tree's draw count is UNKNOWN and not zero; ")
+    return (f"per-opponent per-cycle OUTCOME QUOTA: the first {loss_quota} losses, {draws}"
+            f"and the first {win_quota} wins of each opponent are persisted as traces; every "
+            f"later battle is played (and counts toward the win rate) but is NOT traced. Under "
+            f"battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), "
+            f"so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN — the "
+            f"traces are a loss-forensics sample, never a random subsample of the cycle.")
 
 
 def _rate(num: int, den: int) -> "float | None":
@@ -71,46 +89,63 @@ def _rate(num: int, den: int) -> "float | None":
 
 
 def selection_entry(*, battles_played: int, battles_won: int,
-                    traces_written: int, traces_won: int) -> dict:
-    """One opponent's selection record, with the two derived capture rates.
+                    traces_written: int, traces_won: int,
+                    battles_drawn: int = 0, traces_drawn: int = 0) -> dict:
+    """One opponent's selection record, with the three derived capture rates.
 
     ``capture_rate_win``  = traces_won  / battles_won        (traces per WON battle played)
     ``capture_rate_loss`` = traces_lost / battles_lost       (traces per LOST battle played)
+    ``capture_rate_draw`` = traces_drawn / battles_drawn     (traces per DRAWN battle played)
 
-    Both are ``None`` when their denominator is zero. Counts are CLAMPED into consistency
+    All three are ``None`` when their denominator is zero. Counts are CLAMPED into consistency
     (`traces_won <= battles_won`, `traces_lost <= battles_lost`) rather than trusted: a partial
     eval cycle can report a shard's traces while its battle counts came from elsewhere, and a
     capture rate above 1 is an arithmetic impossibility that would silently produce a negative
     importance weight downstream.
+
+    🚨 **A DRAW IS SUBTRACTED FROM THE LOSSES, NOT ADDED TO THE PLAYED COUNT.** poke-env counts a
+    250-turn timeout as a loss and a tie as neither a win nor a loss, so ``battles_played`` (its
+    ``n_finished_battles``) already contains every draw. ``lost = played - won - drawn`` is what
+    makes the loss capture rate a statement about DECISIVE losses; treating draws as extra
+    battles would inflate the denominator and quietly deflate the rate.
     """
     played = max(0, int(battles_played))
     won = min(max(0, int(battles_won)), played)
+    drawn = min(max(0, int(battles_drawn)), played - won)
     written = min(max(0, int(traces_written)), played)
     t_won = min(max(0, int(traces_won)), won, written)
-    lost = played - won
-    t_lost = min(written - t_won, lost)
+    t_drawn = min(max(0, int(traces_drawn)), drawn, written - t_won)
+    lost = played - won - drawn
+    t_lost = min(written - t_won - t_drawn, lost)
     return {
         "battles_played": played,
         "battles_won": won,
+        "battles_drawn": drawn,
         "traces_written": written,
         "traces_won": t_won,
+        "traces_drawn": t_drawn,
         "capture_rate_win": _rate(t_won, won),
         "capture_rate_loss": _rate(t_lost, lost),
+        "capture_rate_draw": _rate(t_drawn, drawn),
     }
 
 
-def build_selection(per_opponent: "dict[str, dict]", *, win_quota: int, loss_quota: int) -> dict:
+def build_selection(per_opponent: "dict[str, dict]", *, win_quota: int, loss_quota: int,
+                    draw_quota: "int | None" = None) -> dict:
     """The whole `selection` block: the schema tag, the quotas, and one entry per opponent.
 
-    ``per_opponent`` maps an opponent key to the four raw counts (the keyword names of
+    ``per_opponent`` maps an opponent key to the raw counts (the keyword names of
     :func:`selection_entry`).
     """
-    return {
+    block = {
         "schema": SELECTION_SCHEMA,
         "win_quota": int(win_quota),
         "loss_quota": int(loss_quota),
         "opponents": {str(k): selection_entry(**v) for k, v in sorted(per_opponent.items())},
     }
+    if draw_quota is not None:
+        block["draw_quota"] = int(draw_quota)
+    return block
 
 
 def read_selection(manifest: "dict | None") -> "dict | None":
@@ -120,13 +155,17 @@ def read_selection(manifest: "dict | None") -> "dict | None":
     that crashed before collecting (the block is written as ``null`` at launch), a schema this
     build does not know, or an empty opponent map. All of them mean the same thing to a consumer:
     the selection is UNKNOWN. Never inferred, never defaulted to uniform.
+
+    An OLDER KNOWN schema is not missing — it is read as it was written. Schema 1 predates the
+    draw bucket, so its entries simply carry no ``battles_drawn`` / ``traces_drawn`` /
+    ``capture_rate_draw``; a consumer must treat those as ABSENT (unknown), never as zero.
     """
     if not isinstance(manifest, dict):
         return None
     sel = manifest.get(SELECTION_KEY)
     if not isinstance(sel, dict):
         return None
-    if sel.get("schema") != SELECTION_SCHEMA:
+    if sel.get("schema") not in KNOWN_SELECTION_SCHEMAS:
         return None
     opponents = sel.get("opponents")
     if not isinstance(opponents, dict) or not opponents:
@@ -176,6 +215,14 @@ def describe_selection(manifest: "dict | None") -> str:
     losses = [e["capture_rate_loss"] for e in rates.values() if e["capture_rate_loss"] is not None]
     played = sum(e["battles_played"] for e in rates.values())
     traced = sum(e["traces_written"] for e in rates.values())
+    # Schema 1 has no draw keys at all — ABSENT, not zero. `.get(...)` with an `is None` filter is
+    # what keeps a pre-draw-bucket cycle from reporting "0 draws" as if it had counted them.
+    has_draws = any("battles_drawn" in e for e in rates.values())
+    drawn = sum(e.get("battles_drawn") or 0 for e in rates.values()) if has_draws else None
+    draw_note = (f"; {drawn} of those battles were DRAWS (tie or 250-turn timeout)"
+                 if has_draws else
+                 "; DRAWS NOT COUNTED (pre-draw-bucket cycle — a timeout was booked as a loss "
+                 "and a tie was dropped unwritten, so a zero here would be a claim)")
 
     def _mean(xs: "list[float]") -> str:
         return f"{sum(xs) / len(xs):.3f}" if xs else "n/a"
@@ -187,4 +234,5 @@ def describe_selection(manifest: "dict | None") -> str:
     return (f"SELECTION RECORDED — {traced} traces of {played} battles played over "
             f"{len(rates)} opponents; mean capture rate {_mean(wins)} per WIN vs "
             f"{_mean(losses)} per LOSS. The two differ wherever the quota binds unevenly, and "
-            f"that difference IS the sample's skew — compare them, never assume they match.")
+            f"that difference IS the sample's skew — compare them, never assume they match"
+            f"{draw_note}.")
