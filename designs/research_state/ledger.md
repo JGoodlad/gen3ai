@@ -13988,3 +13988,87 @@ green on the branch: 9,975 passed / 10 skipped / 16 xfailed.
 could not express a draw, so every reader that asked it about draws got a confident zero. An
 instrument's vocabulary is part of its measurement — when a count is zero, ask whether the
 instrument had a word for the thing before concluding it did not happen.
+
+---
+
+## 2026-09-07 · PROBER · "no effect" claimed on a status-inflicting move after a switch-in — fixed
+
+**THE REPORT (owner).** `analyze models/ai_v12_02_winprob_critic/eval_traces/step_50000016/sentinel_0/loss_s0_002_summary.json 0`
+rendered turn 1 as `opp switch suicune → cloyster` / `we thunderwave — no effect`. The Cloyster was
+paralyzed.
+
+**VERDICT: PROBER (forensic artifacts + narration). NOT the observation, NOT the battle layer, NOT
+the model.** Nothing about the live run changes. The evidence, in the order it settles the question:
+
+* the raw log, `loss_s0_002_replay.html` turn 1, verbatim —
+  `|switch|p2a: Cloyster|Cloyster, M|100/100` · `|move|p1a: Blissey|Thunder Wave|p2a: Cloyster` ·
+  `|-status|p2a: Cloyster|par`. The battle layer classified it: the next decision's recorded board
+  reads `opp: cloyster … status: PAR`;
+* the OBSERVATION the model actually saw. Read through `Gen3ObservationEncoder.get_layout()` (never
+  a literal index): `parts.opp_team` 732:1464, 122 dims per mon, `pokemon.condition` offset 16,
+  dim 7, PAR at index 2. At invocation 1 (`has_state=1`), opp slot 1 (Cloyster, active flag 1.0)
+  reads `par = 1.0`; at invocation 0 the active is Suicune with an all-zero condition block. **The
+  network was never blind to it.**
+
+**TWO forensic layers were broken, in the same shape — attribution keyed on the mon that was ACTIVE
+WHEN THE DECISION WAS MADE, not on the mon the move RESOLVED against.**
+
+1. **`agents/training/battle_recorder._append_status_events` (the trace WRITER).** It diffed
+   `prev_ctx.our_active` / `prev_ctx.opp_active` only. The decision was made against Suicune, whose
+   status never changed, so the arrival's paralysis **was never written into any trace ever
+   recorded**. `outcome.events` for that decision is literally `[]`. It now diffs the WHOLE board on
+   both sides against a rolling per-mon snapshot, which closes the class for every status
+   (brn/par/slp/frz/psn/tox) and every shape that moves a mon under the move — pivot, drag, forced
+   replacement. This fixes traces written from here on and NOTHING already on disk.
+2. **`main/prober/engine/timeline` (the READER).** With no recorded event it asserted "no effect"
+   anyway. Three separate defects, all fixed:
+   * `_STATUS_EVENT_RE` was `[A-Z]{3}$` — it matched a bare `PAR` and silently dropped `TOX(1)`,
+     `SLP(3)`, `PAR|TAUNT`, which are about a third of all status events the recorder writes;
+   * `analyze` was calling `_timeline_for` with **no protocol at all**, so the deepest view in the
+     prober got none of the protocol repairs `battle_turns` has had since they landed;
+   * a bare "no effect" was the fall-through for a blank line rather than a claim requiring
+     evidence.
+
+**THE RULE THAT REPLACES IT** (`_no_effect_supported`): "no effect" is ours to say only when the
+recorder decoded a fate/effectiveness, the sim said so (`|-fail|`/`|-immune|`/`|-miss|` in the
+move's own window), or that window was located and is EMPTY. Otherwise the line reads
+**`— outcome unrecorded`** — a gap in the evidence, said out loud. A window that CONTRADICTS the
+claim beats every recorded outcome. The throwing form is `verify_timeline_against_protocol` →
+`TimelineContradiction`, deliberately not called from the builder (a forensic view must still render
+a trace it cannot fully explain) and used by the regression tests.
+
+New reader `protocol_move_effects` supplies the missing evidence from the log: `{result, status,
+effects}`, window-scoped to the actor's own move. Its `status` carries `self_targeted`, read off the
+`pNa:` **player tag** rather than the name, because this pool's teams ship LOCALIZED nicknames
+(`Airmure` = Skarmory, `Leuphorie` = Blissey) — using the name would have renamed the mon mid-line.
+Two more instances of the same class fell out and were fixed: a recorded status event names a side
+and a species but never a CAUSE, so it was being billed to whichever move sat on the same turn
+(`we substitute → zapdos SLP(5)` on a turn the Zapdos used Rest; `opp thunderbolt → quagsire SLP(1)`
+on a turn whose log reads `|-immune|p1a: Quagsire`); and a phazed action string
+(`"firepunch → phazed_to:aerodactyl"`) missed every `gen3_data.moves` lookup, making a real move a
+non-attack that could neither deal damage nor inflict anything.
+
+**HOW BIG IT WAS.** Every move line in `ai_v12_02_winprob_critic`'s trace tree re-rendered on the
+OLD code (from the main checkout) and on the NEW, then diffed. The live run keeps writing traces, so
+the comparison is over the **186,956 move lines present in both reads** (4,607+ battles):
+**14,579 lines (7.8%) changed.** 9,964 unsupported `— no effect` → `— outcome unrecorded`; 2,409
+`— missed` → a NAMED status (`we toxic → celebi TOX(1)`); 1,008 bare lines → a named status
+(`opp rest → zapdos SLP`); 681 `— no effect` → a named status (`we spore → skarmory SLP`); 205
+`— missed` → an EVIDENCED `— no effect`; 161 phazed lines that now carry their damage; 59
+mis-attributed statuses removed; 7 that now correctly read `— no effect (immune)`.
+**`verify_timeline_against_protocol` finds ZERO contradictions across 143,703 decisions** after the
+fix — that sweep is the corpus-scale form of the regression test.
+
+The calibration battle still reads correctly: `step_22000032/sentinel_0/win_s0_001` T3/T7 keep
+`we earthquake — no effect (immune)`, T54 keeps `we surf — couldn't move (fully paralyzed)`, and T40
+moves from `we rapidspin — no effect` to `we rapidspin — outcome unrecorded` (its log shows
+`-resisted` + a 1% `-damage` the recorded delta cannot price across a switch). `loops.py`'s standing
+warning is updated: the three-way collapse it documented no longer exists, but the rule that a
+detector reads the PROTOCOL and never the rendered timeline is unchanged and load-bearing.
+
+**WHAT THIS DOES NOT TOUCH.** No training flag, no reward, no observation, no model. `ai_v12_02_winprob_critic`
+is unaffected — its observations carried the status all along; only the human-readable narration of
+its saved traces was wrong.
+
+Tag: ROUTINE (a forensic-tooling bug fixed; no research measurement changes, but every rendered
+timeline read before today should be re-read on the fixed renderer).

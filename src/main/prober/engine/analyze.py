@@ -84,7 +84,8 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
                        opp_team: "tuple[str, ...] | None" = None,
                        our_hp_types: "dict | None" = None,
                        opp_team_details: "list | None" = None,
-                       our_team_details: "list | None" = None) -> InvocationAnalysis:
+                       our_team_details: "list | None" = None,
+                       protocol: "tuple[str, ...] | None" = None) -> InvocationAnalysis:
     """Analyze a single decision point. Pure given ``model`` (the torch boundary).
 
     ``opp_team`` is the opponent's PRIVILEGED full team (species ids from the trace's
@@ -92,7 +93,14 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     AND the model exposes the belief, the result carries the slot-MATCHED `belief_truth`.
     ``opp_team_details`` is the richer per-mon `team_details()` list ({species, evs, ivs, nature, …}) from
     the same `reconstruction.json`; when given AND the model exposes the spread belief, the result carries
-    the believed-vs-true `spread_belief`."""
+    the believed-vs-true `spread_belief`.
+
+    ``protocol`` is THIS decision's turn slice of the raw Showdown log (`protocol_for_turn`), loaded by
+    the caller like every other file read. It is what lets the RESULT timeline say whether a move
+    executed at all, what came of it, and which mon it actually landed on — `battle_turns` has passed
+    it since the protocol readers landed, and `analyze` did NOT, so the deepest view in the prober was
+    the one getting the least evidence. That is how `we thunderwave — no effect` reached a reader on
+    a turn whose log reads `|-status|p2a: Cloyster|par` (2026-09-07)."""
     meta = build_meta(summary, summary_path, npz_path)
     inv = summary["invocations"][inv_index]
     chosen = inv["chosen"]
@@ -119,7 +127,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
     # re-computed read): the intent heads are supervised against what the opponent then did, so the
     # honest question is what THIS decision's model expected, not what a later checkpoint would.
     opp_intent = build_opp_intent(inv)
-    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}   # model-free RESULT lines
+    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol)}
     opp_full_team = build_opp_full_team(opp_team_details, board)   # model-free; available without state
     # Forced-switch panel: what each ALIVE candidate would DO to the opp active (the op's outgoing is
     # all-zero here). Model-free / privileged — available even without captured state.
@@ -165,7 +173,7 @@ def analyze_invocation(model, summary: dict, npz, inv_index: int,
                 outcome = {**outcome, **to}
     # Rebuild the RESULT timeline now that crit / move_order / cant are merged in (the no-state path
     # above already built a model-free one without them).
-    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome)}
+    outcome = {**outcome, "timeline": _timeline_for(inv, next_board, outcome, protocol=protocol)}
     acts = inv["actions"]
     # The recorded `actions` dict is ALREADY in ACTION-INDEX order: `BattleRecorder._all_action_labels`
     # iterates action index 0..10 and keys move slot m (action 6+m) on `legal.move_ids[m]` — the SAME

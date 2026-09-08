@@ -64,6 +64,11 @@ class BattleRecorder:
         self._gamma = float(gamma)
         self._td_residuals: list[float] = []
         self._prev_value: Optional[float] = None  # V(s_t) carried across decisions
+        # Every mon's normalized status on BOTH sides as of the last board we saw, keyed
+        # "our:<species>" / "opp:<species>". A per-TEAM snapshot rather than the two actives,
+        # because a status is inflicted on whichever mon is STANDING THERE when the move resolves,
+        # and that is not always the one we chose against — see `_append_status_events`.
+        self._status_seen: Optional[dict] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -88,6 +93,12 @@ class BattleRecorder:
         self._states.append(state or {})
         self._actions_taken.append(int(action_idx))
         self._action_masks.append(np.asarray(mask).astype(bool).reshape(-1))
+
+        # Seed the status baseline from the FIRST board we ever see, so the first turn's diff has
+        # something to compare against. Afterwards `_append_status_events` rolls it forward: the
+        # post-turn board it reads IS the next decision's board, so the chain has no gap.
+        if self._status_seen is None:
+            self._status_seen = self._snapshot_statuses(live)
 
         if self._pending_entry is not None:
             prev_ctx = self._tracker.pending_ctx
@@ -491,28 +502,47 @@ class BattleRecorder:
             return gained
         return [fallback] if fallback else []
 
+    def _snapshot_statuses(self, live: LiveView) -> dict:
+        """Every mon's normalized status key on both sides, keyed ``"our:<species>"`` /
+        ``"opp:<species>"``. A fainted mon reads ``None`` — ``fnt`` is not a status a move inflicted,
+        and the faint already has its own event."""
+        out: dict = {}
+        for side, team in (("our", live.ours), ("opp", live.opp)):
+            for mon in team.mons:
+                out[f"{side}:{mon.species}"] = (
+                    None if mon.fainted else self._status_key(self._mon_display_status(mon)))
+        return out
+
     def _append_status_events(self, events: list, prev_ctx: BattleContext,
                               delta: TurnDelta, live: LiveView) -> None:
-        """Append events for any status conditions newly applied this turn."""
-        prev_our_status = self._pending_entry["our"].get("status")
-        prev_opp_status = self._pending_entry["opp"].get("status")
+        """Append an event for EVERY status newly applied this turn — on either side, to ANY mon.
 
-        # Only track the mon that was active at decision time; skip if they fainted.
-        if not delta.we_fainted:
-            our_mon = live.ours.get(prev_ctx.our_active)
-            if our_mon:
-                new_status = self._mon_display_status(our_mon)
-                if self._status_key(new_status) != self._status_key(prev_our_status):
-                    if new_status:
-                        events.append(f"our:{prev_ctx.our_active}:{new_status}")
+        🚨 **It used to diff only the mon that was ACTIVE WHEN THE DECISION WAS MADE**
+        (``prev_ctx.our_active`` / ``prev_ctx.opp_active``), and a move resolves against whoever is
+        STANDING THERE, which after an opponent pivot is a different Pokémon. So a status inflicted
+        on a mon that SWITCHED IN never reached the trace at all — and the prober, having no event
+        to render, said the move did nothing. Found on `ai_v12_02_winprob_critic`
+        `step_50000016/sentinel_0/loss_s0_002` turn 1: the opponent switched Suicune → Cloyster, our
+        Thunder Wave paralyzed the Cloyster (``|-status|p2a: Cloyster|par`` in the replay, and the
+        next decision's obs carries the PAR bit — the MODEL always saw it), and the timeline read
+        ``we thunderwave — no effect``. A forensic-artifact bug, not a training one.
 
-        if not delta.opp_fainted:
-            opp_mon = live.opp.get(prev_ctx.opp_active)
-            if opp_mon:
-                new_status = self._mon_display_status(opp_mon)
-                if self._status_key(new_status) != self._status_key(prev_opp_status):
-                    if new_status:
-                        events.append(f"opp:{prev_ctx.opp_active}:{new_status}")
+        Diffing the whole board closes the class for every status (brn/par/slp/frz/psn/tox) and every
+        shape that moves a mon under the move — the pivot, the drag, the forced replacement. Only
+        NEWLY-APPLIED statuses are emitted: a cure clears the key and says nothing, which is the
+        behaviour the summary always had.
+        """
+        before = self._status_seen or {}
+        now = self._snapshot_statuses(live)
+        for key, new_key in now.items():
+            if not new_key or new_key == before.get(key):
+                continue
+            side, _, species = key.partition(":")
+            mon = (live.ours if side == "our" else live.opp).get(species)
+            display = self._mon_display_status(mon) if mon is not None else None
+            if display:
+                events.append(f"{side}:{species}:{display}")
+        self._status_seen = now
 
     def _fill_pending_outcome(self, prev_ctx: BattleContext, curr_ctx: BattleContext,
                               delta: TurnDelta, reward: float, live: LiveView) -> None:

@@ -5,6 +5,7 @@ exercised deterministically. A separate regression test pins the resolved obs
 offsets against the live encoder layout, so a silent obs-layout shift fails loud.
 """
 
+import pytest
 import warnings
 
 import numpy as np
@@ -2214,3 +2215,187 @@ def test_a_RECORDED_outcome_still_beats_the_log():
         "swampert", "gengar", "move_selection", our_result_hint="immune")
     ours = [e for e in entries if e["side"] == "we" and e["kind"] == "move"]
     assert ours and ours[0]["no_effect"] == "missed"
+
+
+# ── "no effect" claimed on a move that inflicted a status (2026-09-07) ────────────────────────────
+# Reported by the owner on `ai_v12_02_winprob_critic` `step_50000016/sentinel_0/loss_s0_002`
+# decision 0. The opponent pivoted Suicune → Cloyster, our Thunder Wave resolved against the
+# SWITCH-IN and paralyzed it, and `analyze` rendered `we thunderwave — no effect`. Verdict: a
+# forensic bug in TWO layers, neither of them the model (the next decision's obs carries the opp
+# active's PAR bit — the network always saw it):
+#   1. `battle_recorder._append_status_events` diffed only the mon that was ACTIVE WHEN THE DECISION
+#      WAS MADE, so the arrival's paralysis was never written to any trace;
+#   2. the timeline then had nothing to render and asserted "no effect" anyway.
+# These lines are the trace's turn-1 protocol slice, copied verbatim. Real `models/` traces are
+# gitignored and live only in the main checkout, so the fixture is pinned HERE.
+
+_TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN = (
+    "|turn|1",
+    "|",
+    "|switch|p2a: Cloyster|Cloyster, M|100/100",
+    "|move|p1a: Blissey|Thunder Wave|p2a: Cloyster",
+    "|-status|p2a: Cloyster|par",
+    "|",
+    "|upkeep",
+)
+#: The decision as the recorder wrote it — note `events: []`. That emptiness is the bug's first
+#: half, and the reason a fix that only reads recorded events could not have worked.
+_TW_OUTCOME = {"our": {"action": "thunderwave", "hp_delta": "+0%"},
+               "opp": {"action": "switched_to:cloyster", "hp_delta": "+0%"},
+               "reward": {"total": 0.0}, "events": []}
+
+
+def _tw_timeline(**kw):
+    from main.prober.engine import build_result_timeline, protocol_move_effects, protocol_move_result
+    proto = _TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN
+    return build_result_timeline(
+        _TW_OUTCOME, "blissey", "suicune", "move_selection",
+        our_result_hint=protocol_move_result(proto, "blissey", "suicune"),
+        our_effects_hint=protocol_move_effects(proto, "blissey", "suicune"), **kw)
+
+
+def test_protocol_move_effects_reads_the_status_its_side_and_the_effect_tags():
+    from main.prober.engine import protocol_move_effects
+
+    eff = protocol_move_effects(_TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN, "blissey", "suicune")
+    # PRECONDITION, asserted rather than branched on: the log really does carry the paralysis.
+    assert any("|-status|p2a: Cloyster|par" == ln for ln in _TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN)
+    assert eff is not None and eff["status"] == ("cloyster", "PAR", False)   # not self-targeted
+    assert eff["result"] is None and "-status" in eff["effects"]
+    # A mirror, an actor that never moved, and no log at all each REFUSE rather than guess.
+    assert protocol_move_effects(_TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN, "blissey", "blissey") is None
+    assert protocol_move_effects(_TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN, "gengar", "suicune") is None
+    assert protocol_move_effects(None, "blissey", "suicune") is None
+
+
+def test_a_status_on_the_mon_that_switched_IN_is_named_not_called_no_effect():
+    """THE REPORTED BUG. The move resolved against the arrival, not against the mon we chose
+    against, and the line must say what it did to the arrival."""
+    from main.prober.engine import timeline_entry_text
+
+    we = next(e for e in _tw_timeline() if e["kind"] == "move")
+    assert we["status"] == "PAR" and we["target"] == "cloyster"
+    assert we["no_effect"] == "", "a move that paralyzed its target did not 'fail'"
+    assert timeline_entry_text(we) == "we thunderwave → cloyster PAR"
+
+
+def test_the_old_rendering_is_what_the_throwing_guard_catches():
+    """FAILS ON REVERT: with the log withheld the line reverts to the reported sentence, and the
+    guard must call that a contradiction rather than let it render."""
+    from main.prober.engine import (TimelineContradiction, build_result_timeline,
+                                    timeline_entry_text, verify_timeline_against_protocol)
+
+    blind = build_result_timeline(_TW_OUTCOME, "blissey", "suicune", "move_selection")
+    we = next(e for e in blind if e["kind"] == "move")
+    assert timeline_entry_text(we).endswith("outcome unrecorded"), (
+        "with NO evidence at all the line must read as a gap, never as a finding")
+    # Now hand the guard the log it was rendered without.
+    with pytest.raises(TimelineContradiction, match="applied PAR"):
+        verify_timeline_against_protocol(blind, _TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN,
+                                         "blissey", "suicune")
+    # ...and the fixed rendering passes it.
+    verify_timeline_against_protocol(_tw_timeline(), _TURN_1_THUNDER_WAVE_ON_A_SWITCH_IN,
+                                     "blissey", "suicune")
+    verify_timeline_against_protocol(blind, None, "blissey", "suicune")   # no log ⇒ nothing to check
+
+
+def test_no_effect_is_only_claimed_when_something_says_so():
+    """`no effect` is a claim about the turn. Three things can support it and nothing else does."""
+    from main.prober.engine import _no_effect_supported
+
+    assert _no_effect_supported(None, "hit", None, None)                    # recorder decoded a fate
+    assert _no_effect_supported("immune", None, None, None)
+    assert _no_effect_supported(None, None, "missed", None)                 # the sim said so
+    assert _no_effect_supported(None, None, None, {"result": "failed", "effects": ()})
+    assert _no_effect_supported(None, None, None, {"result": None, "effects": ()})   # located, empty
+    # Nothing at all — and, decisively, a log that CONTRADICTS the claim.
+    assert not _no_effect_supported(None, None, None, None)
+    assert not _no_effect_supported(None, "hit", None, {"result": None, "effects": ("-boost",)})
+
+
+def test_an_effect_the_timeline_cannot_name_reads_unrecorded_not_no_effect():
+    """The calibration battle's T40: a Rapid Spin into a switch-in for a resisted 1% — the log shows
+    it landed, the recorded delta cannot price it across the switch. That collapsed into the same
+    `— no effect` as a genuine immunity (`loops.py`'s standing warning). It must not any more."""
+    from main.prober.engine import (build_result_timeline, protocol_move_effects,
+                                    protocol_move_result, timeline_entry_text)
+
+    t40 = ("|turn|40", "|switch|p2a: Metagross|Metagross|91/100",
+           "|move|p1a: Claydol|Rapid Spin|p2a: Metagross",
+           "|-resisted|p2a: Metagross", "|-damage|p2a: Metagross|90/100", "|upkeep")
+    entries = build_result_timeline(
+        {"our": {"action": "rapidspin", "hp_delta": "+0%"},
+         "opp": {"action": "switched_to:metagross", "hp_delta": "+0%"}},
+        "claydol", "salamence", "move_selection", opp_hp_after="90%",
+        our_result_hint=protocol_move_result(t40, "claydol", "salamence"),
+        our_effects_hint=protocol_move_effects(t40, "claydol", "salamence"))
+    we = next(e for e in entries if e["kind"] == "move")
+    assert we["no_effect"] == "unrecorded"
+    assert timeline_entry_text(we) == "we rapidspin — outcome unrecorded"
+
+
+def test_a_recorded_status_is_credited_only_to_a_move_that_could_have_caused_it():
+    """A recorded status EVENT names a side and a species, never a cause. Measured: `we substitute
+    → zapdos SLP(5)` on a turn the Zapdos used Rest, and `opp thunderbolt → quagsire SLP(1)` on a
+    turn whose log reads `|-immune|p1a: Quagsire` and then our own Rest."""
+    from main.prober.engine import _can_apply_status, build_result_timeline
+
+    assert _can_apply_status("toxic") and _can_apply_status("bodyslam")     # status move / secondary
+    assert not _can_apply_status("substitute") and not _can_apply_status("spikes")
+    # ...and a phazed action string is still a move id, not an unknown one.
+    assert _can_apply_status("firepunch → phazed_to:aerodactyl")
+
+    def _status_of(action, **kw):
+        e = build_result_timeline(
+            {"our": {"action": action, "hp_delta": "+0%"},
+             "opp": {"action": "rest", "hp_delta": "+0%"},
+             "events": ["opp:zapdos:SLP(5)"], **kw},
+            "blissey", "zapdos", "move_selection")
+        return next(x for x in e if x["side"] == "we")["status"]
+
+    assert _status_of("substitute") == ""                # cannot cause sleep — not ours to claim
+    assert _status_of("spore") == "SLP(5)"               # can, and the counter now survives
+    assert _status_of("thunderbolt", our_effectiveness="immune") == ""    # the sim says it did not
+
+
+def test_the_status_event_regex_keeps_counters_and_volatiles():
+    """`[A-Z]{3}$` matched only a bare three-letter status, so `TOX(1)` / `SLP(3)` / `PAR|TAUNT` —
+    about a third of every status the recorder writes — were dropped and their move read "missed"."""
+    from main.prober.engine import _STATUS_EVENT_RE
+
+    for ev, want in (("our:milotic:PAR", ("our", "milotic", "PAR")),
+                     ("opp:swampert:TOX(1)", ("opp", "swampert", "TOX(1)")),
+                     ("our:zapdos:PAR|TAUNT", ("our", "zapdos", "PAR|TAUNT")),
+                     ("opp:mr-mime:BRN", ("opp", "mr-mime", "BRN"))):
+        assert _STATUS_EVENT_RE.match(ev).groups() == want
+    for ev in ("opp:celebi:fainted", "result:win", "opp:celebi:loss"):
+        assert _STATUS_EVENT_RE.match(ev) is None
+
+
+def test_a_self_inflicted_status_names_the_actor_not_the_target():
+    """Rest lands on the mon that used it. The player TAG says which side, never the name — this
+    pool ships LOCALIZED nicknames (`Airmure` = Skarmory), so the log's name would rename the mon."""
+    from main.prober.engine import build_result_timeline, protocol_move_effects, timeline_entry_text
+
+    rest = ("|turn|9", "|move|p2a: Zapdos|Rest|p2a: Zapdos",
+            "|-status|p2a: Zapdos|slp|[from] move: Rest", "|upkeep")
+    assert protocol_move_effects(rest, "zapdos", "blissey")["status"] == ("zapdos", "SLP", True)
+    entries = build_result_timeline(
+        {"our": {"action": "softboiled", "hp_delta": "+0%"},
+         "opp": {"action": "rest", "hp_delta": "+0%"}},
+        "blissey", "zapdos", "move_selection",
+        opp_effects_hint=protocol_move_effects(rest, "zapdos", "blissey"))
+    opp = next(e for e in entries if e["side"] == "opp" and e["kind"] == "move")
+    assert timeline_entry_text(opp) == "opp rest → zapdos SLP"
+
+    # The other side: a localized nickname must not leak into the line.
+    burn = ("|turn|18", "|move|p2a: Jirachi|Fire Punch|p1a: Airmure",
+            "|-damage|p1a: Airmure|189/301", "|-status|p1a: Airmure|brn", "|upkeep")
+    hint = protocol_move_effects(burn, "jirachi", "skarmory")
+    assert hint["status"] == ("airmure", "BRN", False)
+    entries = build_result_timeline(
+        {"our": {"action": "roar", "hp_delta": "-37%"},
+         "opp": {"action": "firepunch → phazed_to:aerodactyl", "hp_delta": "+0%"}},
+        "skarmory", "jirachi", "move_selection", opp_effects_hint=hint, our_hp_after="63%")
+    opp = next(e for e in entries if e["side"] == "opp" and e["kind"] == "move")
+    assert opp["status"] == "BRN" and opp["target"] == "skarmory"

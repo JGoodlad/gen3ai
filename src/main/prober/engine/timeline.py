@@ -13,7 +13,7 @@ import re
 from agents import gen3_data
 
 from main.prober.engine.protocol import (move_order_from_protocol, protocol_action_fate,
-    protocol_move_result)
+    protocol_move_effects, protocol_move_result)
 from main.prober.engine.util import _loss_pct, _multiplier_meaningful, _norm_species, _pct
 from main.prober.engine.views import BoardView
 
@@ -29,8 +29,22 @@ from main.prober.engine.views import BoardView
 _SENT_IN = "_sent_in"
 _SEP = " → "                       # the " → " the recorder uses to pack a forced replacement
 _FAINT_EVENT_RE = re.compile(r"^(our|opp):(.+):fainted$")
-_STATUS_EVENT_RE = re.compile(r"^(our|opp):(.+):([A-Z]{3})$")   # our:milotic:PAR, opp:swampert:TOX
+# our:milotic:PAR · opp:swampert:TOX(1) · our:zapdos:PAR|TAUNT · opp:gengar:PERISH(2)|CONF
+# 🚨 `[A-Z]{3}$` matched only a BARE three-letter status, so every recorded status carrying a
+# COUNTER or a volatile was silently dropped and its move rendered "— missed" / "— no effect".
+# Measured on `ai_v12_02_winprob_critic`'s traces: TOX(n)/SLP(n)/`PAR|TAUNT` are ~1 in 3 of all
+# recorded status events. The recorder's spelling is `battle_recorder._mon_display_status`.
+_STATUS_EVENT_RE = re.compile(r"^(our|opp):([^:]+):([A-Z][A-Z0-9()|]*)$")
 _SWITCH_IN_HIT_MAX_HP = 90.0       # a switched-in mon below this clearly took our hit (vs a sand tick)
+
+
+def _bare_move_id(move_id: "str | None") -> str:
+    """The bare move id out of a RECORDED action string. The recorder packs a phaze onto the
+    actor's own action — ``"firepunch → phazed_to:aerodactyl"`` — and every `gen3_data.moves`
+    lookup on that whole string misses, which silently made the move a non-attack that could
+    inflict nothing and take no damage. Measured: it dropped a real `|-status|…|brn` off a Fire
+    Punch line. The `_sent_in` form is already split by `_parse_outcome_action`."""
+    return (move_id or "").lower().split(_SEP.strip())[0].strip()
 
 
 def _is_attack(move_id: "str | None") -> bool:
@@ -38,7 +52,16 @@ def _is_attack(move_id: "str | None") -> bool:
     Night Shade), variable-power (Return), or Hidden Power (the bare id reads BP 0 but is a real
     attack). Uses the same ``_multiplier_meaningful`` predicate the matchup panel does, so a real hit
     is never dropped from the attribution and a whiffed attack can be flagged 'missed'/'no effect'."""
-    return _multiplier_meaningful((move_id or "").lower())
+    return _multiplier_meaningful(_bare_move_id(move_id))
+
+
+def _can_apply_status(move_id: "str | None") -> bool:
+    """Whether a move could have inflicted a status at all — a damaging ATTACK (secondaries: Body
+    Slam's PAR, Ice Beam's FRZ) or a move whose whole job is the status (Thunder Wave, Toxic, Spore).
+    The same predicate `_no_effect_reason` uses to decide a move is even eligible to be explained,
+    and for the same reason: the recorded status EVENT names a side and a species, never a cause."""
+    mid = _bare_move_id(move_id)
+    return bool(_is_attack(mid) or (md := gen3_data.moves.get(mid)) and md.status_inflicted)
 
 
 def _no_effect_reason(move_id: "str | None", effectiveness: "str | None",
@@ -50,7 +73,7 @@ def _no_effect_reason(move_id: "str | None", effectiveness: "str | None",
     'hit'/'miss'/'fail') — preferred when present, so 'missed'/'failed' is a fact; a type immunity
     (a hit that did nothing) reads 'immune' first; only when the outcome wasn't decoded (model-free /
     older trace) do we fall back to inferring a miss from the move's accuracy."""
-    mid = (move_id or "").lower()
+    mid = _bare_move_id(move_id)
     md = gen3_data.moves.get(mid)
     if not (_is_attack(mid) or (md and md.status_inflicted)):
         return None
@@ -65,6 +88,34 @@ def _no_effect_reason(move_id: "str | None", effectiveness: "str | None",
     if md and md.accuracy and md.accuracy < 100 and not md.never_miss:   # fallback: no recorded fate
         return "missed"
     return "failed"
+
+
+def _no_effect_supported(eff: "str | None", fate: "str | None", result_hint: "str | None",
+                         effects_hint: "dict | None") -> bool:
+    """Whether a bare **"no effect"** is a claim the EVIDENCE supports.
+
+    Three things can support it, and nothing else does:
+
+    * the recorder DECODED the move's fate or effectiveness (``gen3_move_outcome_v1`` — it watched
+      the turn and says the move connected / failed / was immune);
+    * the SIM said so — a ``|-fail|`` / ``|-immune|`` / ``|-miss|`` in the move's own protocol
+      window;
+    * the window was LOCATED and is EMPTY of effect tags: the move executed and the log records
+      nothing coming of it, which is the fact itself.
+
+    A window that CONTRADICTS the claim (it shows the move did something) supports nothing, whatever
+    the recorder decoded — the log outranks a recorded outcome about *what happened*, and that
+    asymmetry is the whole point: the recorded ``events`` list is known to have a hole (a status on a
+    mon that switched IN was never written), while the protocol is the sim's own transcript.
+
+    Unsupported ⇒ the line reads ``— outcome unrecorded``: a gap in the evidence, said out loud."""
+    if effects_hint is not None:
+        if effects_hint.get("effects"):
+            return False                       # the log contradicts the claim — it wins
+        if effects_hint.get("result"):
+            return True
+        return True                            # located, empty: the move ran and nothing came of it
+    return bool(eff or fate or result_hint)
 
 
 def _parse_outcome_action(action: "str | None") -> dict:
@@ -103,7 +154,9 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
                           our_fate_hint: "str | None" = None,
                           opp_fate_hint: "str | None" = None,
                           our_result_hint: "str | None" = None,
-                          opp_result_hint: "str | None" = None) -> "list[dict]":
+                          opp_result_hint: "str | None" = None,
+                          our_effects_hint: "dict | None" = None,
+                          opp_effects_hint: "dict | None" = None) -> "list[dict]":
     """Ordered, one-line-per-action model of what HAPPENED after a decision (the RESULT panel). Pure.
 
     Re-attributes each side's HP loss to the OPPONENT's move that dealt it, and pairs it with the
@@ -136,7 +189,7 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
     opp_target = pa_our.get("switch_to") if pa_our["kind"] == "switch" else our_species
 
     def _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in, eff,
-                    fate, actor="", fate_hint=None, result_hint=None):
+                    fate, actor="", fate_hint=None, result_hint=None, effects_hint=None):
         e = {"side": side, "kind": "move", "move": pa.get("move", ""), "crit": bool(crit),
              "boost": boost or "", "cant": cant, "target": "", "damage": "", "hp_before": "",
              "hp_after": "", "status": "", "resulting": False, "no_effect": "",
@@ -183,8 +236,37 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
             # that LEFT) can't price the hit on the switch-IN. The next board's HP is still truth —
             # show the RESULTING hp ("→ celebi (now 11%)") rather than dropping the attack entirely.
             e["target"], e["hp_after"], e["resulting"] = target, f"{after:.0f}%", True
-        if key in statuses:                          # a status this move applied (own line or alongside dmg)
+        # THE SIM'S OWN VERDICT on this move, recorded or read off the log. It gates the status
+        # attribution below: a move the sim called immune or a miss applied nothing, so a status
+        # event on the same turn belongs to something else.
+        res = result_hint or (effects_hint or {}).get("result")
+        landed = (eff != "immune" and fate != "miss" and res not in ("immune", "missed")
+                  and _can_apply_status(pa.get("move")))
+        if landed and key in statuses:
+            # A status this move applied (own line, or alongside its damage). The recorded event
+            # names the SIDE and the SPECIES, not the CAUSE — so it is credited only to a move that
+            # could have caused it. Without that guard a self-inflicted status was billed to the
+            # other side's move on the same turn: `we substitute → zapdos SLP(5)` where the Zapdos
+            # had used Rest, and `opp thunderbolt → quagsire SLP(1)` on a turn whose log reads
+            # `|-immune|p1a: Quagsire` then our own Rest (both measured in one run's traces).
             e["target"], e["status"] = target, statuses[key]
+        elif res not in ("immune", "missed") and effects_hint and effects_hint.get("status"):
+            # 🚨 THE RECORDED `events` LIST HAS A HOLE, and this is where it shows. Until
+            # 2026-09-07 `battle_recorder._append_status_events` diffed the status of the mon that
+            # was ACTIVE WHEN THE DECISION WAS MADE — so a status inflicted on a mon that SWITCHED
+            # IN before the move resolved was never written to the trace at all, and the line fell
+            # through to "— no effect". The log names the status AND the side it landed on, which is
+            # the fact rather than an inference from it; it fills in because there is nothing
+            # recorded to overrule. Fixing the recorder does nothing for the traces already on disk.
+            # No `_can_apply_status` gate here: the window IS the causal link (it spans this move
+            # and stops at the next), which is what the recorded event never had. That is also how
+            # a self-status the move tables do not carry — Rest's own sleep — gets named.
+            st_name, st_code, st_self = effects_hint["status"]
+            # WHICH SIDE, from the protocol's own player tag — then this module's OWN species
+            # spelling for that side. The log's name is a NICKNAME (this pool ships localized ones:
+            # `Leuphorie` = Blissey), so printing it would rename the mon mid-timeline.
+            side_species = (actor if st_self else target)
+            e["target"], e["status"] = (side_species or st_name), st_code
         # A move that produced NOTHING visible: say WHY (missed / no effect / immune) so a blank line
         # never reads as "data missing". Silent for utility moves (hazards/heal/boost — reason None).
         if not (e["damage"] or e["status"] or e["hp_after"]):
@@ -199,10 +281,13 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
             if eff or fate:
                 reason = _no_effect_reason(pa.get("move"), eff, fate)
             else:
+                # `protocol_move_result` names immune/missed; `protocol_move_effects` also
+                # carries the sim's own `|-fail|`, which is the one thing that makes a bare
+                # "no effect" a RECORDED fact rather than a leftover.
                 reason = _no_effect_reason(
                     pa.get("move"),
-                    "immune" if result_hint == "immune" else None,
-                    "miss" if result_hint == "missed" else None)
+                    "immune" if res == "immune" else None,
+                    {"missed": "miss", "failed": "fail"}.get(res))
             # ...UNLESS the target SWITCHED IN and nothing recorded the move's fate. Then the
             # recorded hp_delta compares the mon that LEFT, so it cannot price the hit either way —
             # and `_no_effect_reason`'s last resort is to infer a miss from the move's accuracy,
@@ -213,6 +298,15 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
             # An absent explanation is honest; a wrong one is worse than none.
             if switched_in and not fate and not result_hint and reason == "missed":
                 reason = None
+            # 🚨 "no effect" is a CLAIM ABOUT THE TURN, not a fallback for a blank line. It is
+            # ours to make only when something POSITIVELY says the move achieved nothing — the
+            # recorder's decoded fate/effectiveness, the sim's own `|-fail|`/`|-immune|`/`|-miss|`,
+            # or a located protocol window that is EMPTY of effects. Otherwise the honest line is
+            # "outcome unrecorded", which reads as a gap in the evidence instead of a finding about
+            # the play. And when the log CONTRADICTS the claim — the window shows the move did
+            # something we could not name — the log wins outright.
+            if reason == "failed" and not _no_effect_supported(eff, fate, result_hint, effects_hint):
+                reason = "unrecorded"
             e["no_effect"] = reason or ""
         return e
 
@@ -236,7 +330,8 @@ def build_result_timeline(outcome: dict, our_species: str, opp_species: str, pha
         e = _move_entry(side, pa, crit, boost, cant, target, delta, before, after, switched_in,
                         eff, fate, actor=actor,
                         fate_hint=(our_fate_hint if side == "we" else opp_fate_hint),
-                        result_hint=(our_result_hint if side == "we" else opp_result_hint))
+                        result_hint=(our_result_hint if side == "we" else opp_result_hint),
+                        effects_hint=(our_effects_hint if side == "we" else opp_effects_hint))
         e["actor"] = actor
         return e
 
@@ -305,6 +400,11 @@ def _timeline_for(inv: dict, next_board: "BoardView | None", outcome: dict,
         opp_fate_hint=protocol_action_fate(protocol, opp_sp, our_sp),
         our_result_hint=protocol_move_result(protocol, our_sp, opp_sp),
         opp_result_hint=protocol_move_result(protocol, opp_sp, our_sp),
+        # ...and WHAT CAME OF IT beyond immune/missed: the status it applied (to whichever mon was
+        # standing there when it resolved, switch-in included) and whether the log shows ANY effect
+        # at all. Without this a status the recorder never wrote read as "— no effect".
+        our_effects_hint=protocol_move_effects(protocol, our_sp, opp_sp),
+        opp_effects_hint=protocol_move_effects(protocol, opp_sp, our_sp),
     )
 
 
@@ -321,7 +421,12 @@ CANT_PHRASE = {"slp": "asleep", "frz": "frozen", "par": "fully paralyzed", "flin
                # decoded TurnDelta. Measured over a run's replays, the live set is
                # par/slp/frz/flinch/`Focus Punch`/`move: Taunt`/recharge.
                "focus punch": "lost its focus"}
-NO_EFFECT_TEXT = {"immune": "no effect (immune)", "missed": "missed", "failed": "no effect"}
+NO_EFFECT_TEXT = {"immune": "no effect (immune)", "missed": "missed", "failed": "no effect",
+                  # NOT a synonym for "no effect". It says the timeline could not account for the
+                  # move's outcome — the reader is being told the evidence is missing, not that the
+                  # move achieved nothing. A blank line silently becoming "no effect" is exactly the
+                  # bug this key exists to make impossible (see `_no_effect_supported`).
+                  "unrecorded": "outcome unrecorded"}
 
 
 def cant_phrase(cant: str) -> str:
@@ -394,3 +499,45 @@ def timeline_entry_text(e: dict) -> str:
     if e.get("crit"):
         text += "  ⚡CRIT"
     return text
+
+
+# ── The throwing guard ───────────────────────────────────────────────────────────────────────────
+# `_no_effect_supported` makes an unsupported claim render honestly; this makes a CONTRADICTED one
+# fail loudly, so a regression cannot ride quietly in a rendered sentence the way this one did.
+
+class TimelineContradiction(AssertionError):
+    """A rendered timeline line contradicts the raw protocol the same turn was built from."""
+
+
+def verify_timeline_against_protocol(entries: "list[dict]", protocol: "tuple[str, ...] | None",
+                                     our_species: str, opp_species: str) -> None:
+    """RAISE :class:`TimelineContradiction` when a move line says nothing happened while that move's
+    own protocol window says otherwise — a bare ``no effect`` over a window carrying effect tags, or
+    a ``|-status|`` the line failed to name.
+
+    Deliberately NOT called from :func:`build_result_timeline`: a forensic view must render even a
+    trace it cannot fully explain, and `_no_effect_supported` already downgrades an unsupported claim
+    to ``outcome unrecorded``. This is the assertion form, for tests and for any surface that would
+    rather stop than mislead. Silent (nothing to check) when no protocol is available."""
+    if not protocol:
+        return
+    for e in entries or ():
+        if e.get("kind") != "move" or e.get("cant") or e.get("never_moved"):
+            continue
+        # The entry's OWN actor when it has one — on a turn a side switched, the mon that moved is
+        # not the one the decision was made with, and that mismatch is the whole bug's shape.
+        ours, opps = ((e.get("actor") or our_species), opp_species) if e.get("side") == "we" \
+            else (our_species, (e.get("actor") or opp_species))
+        actor, other = (ours, opps) if e.get("side") == "we" else (opps, ours)
+        hint = protocol_move_effects(protocol, actor, other)
+        if not hint:
+            continue
+        st = hint.get("status")
+        if st and not e.get("status"):
+            raise TimelineContradiction(
+                f"{e.get('side')} {e.get('move')}: the log says it applied {st[1]} to {st[0]}, "
+                f"the timeline says {timeline_entry_text(e)!r}")
+        if e.get("no_effect") == "failed" and hint.get("effects") and not hint.get("result"):
+            raise TimelineContradiction(
+                f"{e.get('side')} {e.get('move')}: 'no effect' claimed over a log window carrying "
+                f"{list(hint['effects'])}")

@@ -10,11 +10,12 @@ policy at all. Gen-16 enables the switch-branch cell — that channel — and th
 instrument that says whether the behaviour died.
 
 **Everything here is derived from the raw Showdown PROTOCOL, never from the prober's rendered
-timeline.** That is not a preference: the rendered `— no effect` deliberately collapses an
-immunity, a full-paralysis `cant`, and an unpriced small hit into one phrase, and a detector built
-on it would count all three (verified on the calibration battle — its T54 `we surf — no effect` is
-a `|cant|p1a: Suicune|par` and its T40 `rapidspin — no effect` is a real 1% resisted hit; neither
-is a bait).
+timeline.** That is not a preference: a rendering is a SENTENCE, and a detector must key on the fact
+underneath it. It was once worse than a style point — `— no effect` collapsed an immunity, a
+full-paralysis `cant` and an unpriced small hit into one phrase, and a detector built on it would
+have counted all three (the calibration battle's T54 `we surf` and T40 `rapidspin`, neither a bait).
+Both now read honestly (`— couldn't move (fully paralyzed)` / `— outcome unrecorded`, 2026-09-07),
+and the rule is unchanged: the timeline's job is to be readable, this module's is to be exact.
 
 Definitions, fixed HERE so every surface means the same thing:
 

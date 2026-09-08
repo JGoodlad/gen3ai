@@ -22,19 +22,27 @@ class _AnalysisMixin:
         # one that played, so faithfulness is approximate — it rides `model_resolution` because that
         # is already the block a surface reads to say WHICH model produced these numbers.
         dropped = tuple(getattr(model, "dropped_kwargs", ()) or ())
-        a = analyze_invocation(model, self._summary(b), self._npz(b), inv_index,
+        summary = self._summary(b)
+        # The turn's raw log slice, read ONCE and handed to the engine as well as to the caller.
+        # `battle_turns` has always passed it; `analyze` did not, so every protocol-sourced repair
+        # (did the move execute, was it immune/missed, WHICH mon it landed on and what it applied)
+        # was missing from the deepest view in the prober — the one the owner reads.
+        turn = int((summary.get("invocations") or [{}])[inv_index].get("turn") or 0)
+        protocol = tuple(self._protocol_for(b, turn))
+        a = analyze_invocation(model, summary, self._npz(b), inv_index,
                                summary_path=b.summary_path, npz_path=b.npz_path,
                                our_hp_types=self._our_hp_types(b),
                                opp_team=(opp[0] if opp else None),
                                opp_team_details=(opp[1] if opp else None),
-                               our_team_details=self._our_team_details(b))
+                               our_team_details=self._our_team_details(b),
+                               protocol=protocol)
         d = asdict(a)
         d["model_resolution"] = dict(_choice_dict(choice), dropped_kwargs=list(dropped))
         # WHICH READOUT IS THE CRITIC. Under `--critic winprob` `value` and `win_prob` below are
         # the SAME number, so a surface must be able to say so instead of presenting them as two
         # estimators that happen to agree on every decision ever rendered.
         d["critic_currency"] = self.critic_currency()
-        d["protocol"] = self._protocol_for(b, d.get("turn", 0))   # raw Showdown log for this turn
+        d["protocol"] = list(protocol)                 # raw Showdown log for this turn
         if d.get("value"):  # add the TD residual the engine (γ-agnostic) can't
             reward = (d.get("outcome") or {}).get("reward")
             rtotal = reward.get("total") if isinstance(reward, dict) else reward

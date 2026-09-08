@@ -7,6 +7,7 @@ from agents.training.battle_recorder import BattleRecorder
 from agents.battle.live_view import LiveView
 from agents.battle.strict_view import StrictBattleView
 from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP
+from agents.enums import Status
 
 
 def _ev(kind, side, actor, turn=2, **value):
@@ -712,3 +713,79 @@ def test_the_summary_REFUSES_an_unknown_result(monkeypatch):
     rec, b = _finished_recorder(60, lost=True)
     with pytest.raises(UnknownTraceResult):
         rec.to_summary(b, step=1000)
+
+
+def test_status_event_is_written_for_a_mon_that_SWITCHED_IN():
+    """🚨 THE 2026-09-07 GIGO REPORT. The opponent pivots Suicune → Cloyster and our Thunder Wave
+    resolves against the ARRIVAL, paralyzing it.
+
+    `_append_status_events` used to diff only the mon that was ACTIVE WHEN THE DECISION WAS MADE
+    (Suicune, whose status never changed), so the Cloyster's paralysis was never written to the
+    trace at all — and the prober, having no event, rendered `we thunderwave — no effect` on a turn
+    whose replay reads `|-status|p2a: Cloyster|par`. Forensic only: the next decision's observation
+    carried the PAR bit throughout, so the MODEL always saw it. FAILS ON REVERT.
+    """
+    blissey = _FakeMon("blissey", 1.0)
+    suicune = _FakeMon("suicune", 1.0)
+    # Turn 1 sees only Suicune: the Cloyster is still hidden on the opponent's bench.
+    b1 = _battle([blissey], [suicune], "blissey", "suicune", turn=1, move_ids=["thunderwave"])
+
+    blissey2 = _FakeMon("blissey", 1.0)
+    suicune2 = _FakeMon("suicune", 1.0)
+    cloyster2 = _FakeMon("cloyster", 1.0)
+    cloyster2.status = Status.PAR                      # the ARRIVAL, paralyzed by the Thunder Wave
+    b2 = _battle([blissey2], [suicune2, cloyster2], "blissey", "cloyster", turn=2,
+                 move_ids=["thunderwave"])
+    _with_events(b2, [
+        _ev(EventKind.SWITCH, OPP, "cloyster", prev_active="suicune"),
+        _ev(EventKind.MOVE, OURS, "blissey", move_id="thunderwave", target_status="par"),
+    ])
+
+    rec = _rec()
+    rec.record(b1, 6, _probs(), _mask(6))
+    rec.record(b2, 6, _probs(), _mask(6))
+
+    inv = rec._invocations[0]
+    # PRECONDITION, asserted rather than branched on: the decision really was made against Suicune.
+    assert inv["opp"]["species"] == "suicune" and "status" not in inv["opp"]
+    assert "opp:cloyster:PAR" in inv["outcome"]["events"]
+
+
+def test_a_status_on_the_DECISION_TIME_active_is_still_written():
+    """The case that always worked, kept honest by the whole-board diff."""
+    blissey = _FakeMon("blissey", 1.0)
+    ttar = _FakeMon("tyranitar", 1.0)
+    b1 = _battle([blissey], [ttar], "blissey", "tyranitar", turn=1, move_ids=["thunderwave"])
+
+    blissey2 = _FakeMon("blissey", 1.0)
+    ttar2 = _FakeMon("tyranitar", 1.0)
+    ttar2.status = Status.PAR
+    b2 = _battle([blissey2], [ttar2], "blissey", "tyranitar", turn=2, move_ids=["thunderwave"])
+
+    rec = _rec()
+    rec.record(b1, 6, _probs(), _mask(6))
+    rec.record(b2, 6, _probs(), _mask(6))
+    assert "opp:tyranitar:PAR" in rec._invocations[0]["outcome"]["events"]
+
+
+def test_a_status_already_on_the_board_is_not_re_reported_each_turn():
+    """Only a NEWLY-APPLIED status is an event; a standing one, and a cure, say nothing."""
+    blissey = _FakeMon("blissey", 1.0)
+    ttar = _FakeMon("tyranitar", 1.0)
+    ttar.status = Status.PAR
+    b1 = _battle([blissey], [ttar], "blissey", "tyranitar", turn=1, move_ids=["seismictoss"])
+
+    blissey2 = _FakeMon("blissey", 1.0)
+    ttar2 = _FakeMon("tyranitar", 1.0)
+    ttar2.status = Status.PAR
+    b2 = _battle([blissey2], [ttar2], "blissey", "tyranitar", turn=2, move_ids=["seismictoss"])
+
+    blissey3 = _FakeMon("blissey", 1.0)
+    ttar3 = _FakeMon("tyranitar", 1.0)          # cured
+    b3 = _battle([blissey3], [ttar3], "blissey", "tyranitar", turn=3, move_ids=["seismictoss"])
+
+    rec = _rec()
+    for b in (b1, b2, b3):
+        rec.record(b, 6, _probs(), _mask(6))
+    assert rec._invocations[0]["outcome"]["events"] == []
+    assert rec._invocations[1]["outcome"]["events"] == []

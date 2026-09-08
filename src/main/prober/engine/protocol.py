@@ -165,3 +165,103 @@ def protocol_move_result(lines: "tuple[str, ...] | None",
         if ln.startswith("|-miss|") and len(parts) > 2 and _nick(parts[2]) == a:
             return "missed"
     return None
+
+
+#: Protocol tags that PROVE the actor's move DID something, whether or not the timeline can name it.
+#: Deliberately broad — the point is not to classify the effect but to know one EXISTS, so a bare
+#: "no effect" is never asserted over a log that shows otherwise. Results (`-fail`/`-immune`/`-miss`)
+#: are excluded on purpose: those say the move did nothing, and they are read as `result` instead.
+_VISIBLE_EFFECT_TAGS = frozenset({
+    "-status", "-damage", "-heal", "-sethp", "-boost", "-unboost", "-setboost", "-swapboost",
+    "-copyboost", "-invertboost", "-clearboost", "-clearnegativeboost", "-clearallboost",
+    "-sidestart", "-sideend", "-start", "-end", "-weather", "-fieldstart", "-fieldend",
+    "-item", "-enditem", "-curestatus", "-cureteam", "-transform", "-mustrecharge",
+    "-singleturn", "-singlemove", "-activate", "-crit", "-supereffective", "-resisted",
+    "-hitcount", "-formechange", "-ohko", "-mega", "-primal", "-burst", "-zpower", "faint",
+    "swap", "detailschange", "replace",
+    # A two-turn move's CHARGE turn (Solar Beam / Fly / Dig) emits only `-prepare`: the move did
+    # exactly what it was supposed to, and calling that "no effect" is the same error in a new place.
+    "-prepare", "-anim", "-ability", "-endability", "-fieldactivate",
+})
+#: A `-status` line's status code → the timeline's display spelling (the recorder's own vocabulary,
+#: `battle_recorder._mon_display_status`), so a protocol-sourced status reads identically to a
+#: recorded one. Toxic's counter is not on the line, so it renders bare — a counter we do not have
+#: is not one to invent.
+_PROTOCOL_STATUS_DISPLAY = {"brn": "BRN", "par": "PAR", "slp": "SLP", "frz": "FRZ",
+                            "psn": "PSN", "tox": "TOX"}
+
+
+def protocol_move_effects(lines: "tuple[str, ...] | None",
+                          actor: str, other: str) -> "dict | None":
+    """Everything the LOG says the ACTOR's own move did this turn, or ``None`` when the move's
+    window cannot be located (no window ⇒ no evidence, which is a different answer from "nothing").
+
+    ``{"result": "immune"|"missed"|"failed"|None, "status": (name, "PAR", self_targeted)|None,
+       "effects": tuple[str, ...]}`` — ``effects`` are the raw tags that PROVE something happened.
+
+    A status carries ``self_targeted`` (Rest/Toxic Orb land on the actor, Thunder Wave on the other
+    side) read from the ``pNa:`` player tag of the actor's own ``|move|`` line, NOT from the name:
+    this pool's teams carry LOCALIZED nicknames (``Leuphorie`` = Blissey), so a caller must be able
+    to say WHICH SIDE was hit and then use its own species spelling. ``name`` is the raw nickname,
+    a last-resort fallback only.
+
+    The superset of :func:`protocol_move_result`, and it exists because "no effect" was being
+    ASSERTED over a log that said otherwise. Measured on `ai_v12_02_winprob_critic`
+    `step_50000016/sentinel_0/loss_s0_002` turn 1: the opponent pivoted Suicune → Cloyster, our
+    Thunder Wave resolved against the SWITCH-IN and paralyzed it (``|-status|p2a: Cloyster|par``
+    right there in the log, and the next decision's obs carries the PAR bit) — and the timeline read
+    ``we thunderwave — no effect``. The recorded ``events`` list could not have saved it: the
+    recorder only ever wrote a status event for the mon that was ACTIVE WHEN THE DECISION WAS MADE,
+    so the arrival's paralysis reached no trace ever written (fixed the same day in
+    `battle_recorder._append_status_events`, which does nothing for the traces already on disk).
+
+    Windowing is :func:`protocol_move_result`'s, tightened: the scan starts at the actor's own
+    ``|move|`` line and stops at the next one, at the turn's blank separator (the residual phase
+    begins there — a Leftovers heal is not the move's doing), or at ``|upkeep``/``|turn|``. Sides
+    are matched by nickname exactly as its siblings do, and a mirror returns ``None``.
+    """
+    a, o = _norm_species(actor), _norm_species(other)
+    if not a or not o or a == o:
+        return None
+
+    def _nick(field: str) -> str:
+        return _norm_species(field.split(":", 1)[1] if ":" in field else field)
+
+    def _player(field: str) -> str:
+        return field.split(":", 1)[0].strip() if ":" in field else ""
+
+    started = False
+    actor_tag = ""
+    result: "str | None" = None
+    status: "tuple[str, str, bool] | None" = None
+    effects: "list[str]" = []
+    for ln in lines or ():
+        parts = ln.split("|")
+        tag = parts[1] if len(parts) > 1 else ""
+        if tag == "move" and len(parts) > 2:
+            if started:
+                break                          # the next move — out of this move's window
+            started = _nick(parts[2]) == a
+            if started:
+                actor_tag = _player(parts[2])  # "p1a" — which SIDE this move came from
+            continue
+        if not started:
+            continue
+        if tag in ("", "turn", "upkeep"):
+            break                              # the action block ended; residuals are not the move
+        if tag == "-immune":
+            result = result or "immune"
+        elif tag == "-miss" and len(parts) > 2 and _nick(parts[2]) == a:
+            result = result or "missed"
+        elif tag == "-fail":
+            result = result or "failed"
+        elif tag == "-status" and len(parts) > 3:
+            code = parts[3].strip().lower()
+            if status is None and code in _PROTOCOL_STATUS_DISPLAY:
+                status = (_nick(parts[2]), _PROTOCOL_STATUS_DISPLAY[code],
+                          bool(actor_tag) and _player(parts[2]) == actor_tag)
+        if tag in _VISIBLE_EFFECT_TAGS:
+            effects.append(tag)
+    if not started:
+        return None
+    return {"result": result, "status": status, "effects": tuple(effects)}

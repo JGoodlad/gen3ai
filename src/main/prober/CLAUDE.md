@@ -314,6 +314,17 @@ attack/status move blocked by a type immunity reads `— no effect (immune)` (Se
 move that **missed** reads `— missed` (Hypnosis), a connected-but-fizzled move `— no effect`; a hazard /
 heal / boost move (whose effect is legitimately invisible in the outcome) is left bare.
 
+🚨 **"— no effect" IS A CLAIM, AND IT IS ONLY OURS TO MAKE WHEN THE EVIDENCE SUPPORTS IT**
+(`engine._no_effect_supported`, 2026-09-07). Exactly three things support it: the recorder DECODED
+the move's fate/effectiveness, the SIM said so (`|-fail|` / `|-immune|` / `|-miss|` in the move's own
+protocol window), or that window was LOCATED and is EMPTY of effect tags. Anything else renders
+**`— outcome unrecorded`** — a gap in the evidence, said out loud, and *not* a synonym. And a window
+that CONTRADICTS the claim (it carries effect tags) beats every recorded outcome, because the log is
+the sim's own transcript while the recorded `events` list is known to have had a hole. The assertion
+form of the same rule is **`verify_timeline_against_protocol`** → raises `TimelineContradiction`;
+it is deliberately NOT called from `build_result_timeline` (a forensic view must still render a trace
+it cannot fully explain) — it is for tests and for a surface that would rather stop than mislead.
+
 ⚠️ **"Nothing happened" had THREE causes and one sentence, so the line described the wrong thing.**
 The recorded outcome says what a side CHOSE; nothing in a model-free trace says whether the choice
 ever ran, so a move that never executed was explained as one that executed and achieved nothing — a
@@ -335,6 +346,17 @@ read `we explosion — no effect`. Two pure readers over the turn's protocol sli
   starts at its `|move|` and stops at the next, so the other side's immunity cannot be borrowed; a
   `|-miss|` names the ATTACKER first). It also turns a `missed` that used to be INFERRED from the
   move's accuracy into a recorded fact.
+- **`protocol_move_effects`** → `{result, status, effects}`, its superset and the same window
+  (tightened to stop at the turn's blank separator, so a residual Leftovers heal is not the move's
+  doing). `result` adds the sim's own `|-fail|`; `status` is `(name, "PAR", self_targeted)`, with the
+  SIDE read off the `pNa:` player tag rather than the name — this pool ships LOCALIZED nicknames
+  (`Airmure` = Skarmory), so a caller maps the side to its own species spelling; `effects` is the raw
+  tag list that PROVES something happened.
+
+⚠️ **`analyze` was passing NO protocol at all** until 2026-09-07, so the deepest view in the prober
+got none of these repairs while `battle_turns` got all of them. `ProbeSession.analyze` now slices the
+turn once and hands it to `analyze_invocation(..., protocol=…)` as well as to the JSON's `protocol`
+field.
 
 **The RECORDED fate/effectiveness wins outright** — it comes from the TurnDelta the analysis was
 built on, and `_no_effect_reason` ranks immune ABOVE miss, so feeding a protocol immunity alongside
@@ -691,10 +713,12 @@ got under the size bound — hence a base list rather than one `class` block, an
   anyway — repeatedly.* Detection lives in `main/prober/loops.py` (pure, no torch, no session,
   unit-tested on hand-written protocol lines); this method is the run-level fold. **It reads the
   raw Showdown PROTOCOL from each battle's `*_replay.html`, never the rendered timeline** — the
-  timeline's `— no effect` deliberately collapses an immunity, a full-paralysis `cant` and an
-  unpriced small hit into one phrase, so a detector built on it would count all three (verified on
-  the calibration battle: its T54 `we surf — no effect` is a `|cant|…|par` and its T40 `rapidspin
-  — no effect` is a real 1% resisted hit).
+  rendering is a SENTENCE, and a detector must key on the fact underneath it. It used to be worse
+  than a style point: `— no effect` collapsed an immunity, a full-paralysis `cant` and an unpriced
+  small hit into one phrase (the calibration battle's T54 and T40). Both of those now read honestly
+  (`— couldn't move (fully paralyzed)`, `— outcome unrecorded`), but the rule stands as written —
+  the timeline's job is to be readable, the detector's is to be exact, and they must not be wired
+  together.
   Definitions, fixed in `loops.py` so every surface means the same thing: a **voluntary pivot** is
   a `|switch|` with no faint earlier in the turn block and no `|drag|` (turn-0 leads excluded); we
   **moved into** it if we then used a move, after the arrival, TARGETING that side (a self-targeting
