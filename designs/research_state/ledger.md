@@ -14752,3 +14752,44 @@ substance; not one `feedback_*` memory was archived as superseded, because none 
 later feedback memory or by a SOP section. The only behavioural change is the one merge above.
 
 Tag: DOCS / ARCHIVE. **No measurement about the model changed**; no live run touched.
+
+### 2026-09-08 · DOCS · src/rust_sim/CLAUDE.md split (2,659 → 791 lines; 29 rounds to port_build_log.md; topics to designs/rust_sim/)
+
+`244431af`. The port's leaf was **2,659 lines / 329 KB (~90k tokens)**, auto-loaded by every agent
+working under `src/rust_sim/`. It is now **791 lines / 60 KB** — a command card, per the
+owner-accepted rule in `claude_md_census_2026-09-06.md` (*a line earns its place only if an agent
+that has NOT read it would do the work WRONG*).
+
+**The round count in this entry's title is what the dispatch expected, not what was found.** The
+2026-09-07 pass had already moved **all 55 numbered ROUNDs and the BATCH 1-9 records** into
+`designs/rust_sim/port_build_log.md`; the leaf's remaining `ROUND N` mentions are cross-references,
+not headings. So **0 rounds were appended to the build log** — it was already complete, and the
+329 KB that remained was topic DETAIL, not round history. Reported as a correction rather than
+silently, because the next reader will otherwise look for 29 rounds that were never there.
+
+**What stayed (constitution):** the module map at one line per module; the conventions; the
+differential-gate LADDER as a table with each rung's harness, gate and what it proves; the three
+turn-layer draw-COUNT subtleties (the parity invariants a change must not break); the four fuzzers'
+invocations; the **E1/A1 green-gate allowlist clauses**, which the census correctly identified as the
+live definition of when the gate may pass rather than history; and every hazard that has already
+fired. Added: a **Standing lessons** block — ten lessons that outlive their rounds, including *a
+determinism-oriented suite systematically under-tests the nondeterministic default* (the seedless
+bridge ran one fixed dice stream for months because every gate on it was seeded), *a picker
+predicate that gates a test silently SHRINKS that test*, *an allowlist entry can outlive its own
+fix*, and *a count comparison whose two sides cover different windows is not evidence and reads
+exactly like evidence*.
+
+**What left:** seven topic docs under `designs/rust_sim/` (`module_map`, `differential_gates`,
+`e2e_capstone`, `regression_pins`, `ab_fuzzer_findings`, `data_driven_mechanics`,
+`protocol_emission`), a tree the root already names as ALWAYS-CURRENT and owning what it holds.
+
+**Nothing was deleted, and that is CHECKED rather than asserted.** A line-level audit against
+`git show HEAD~1:src/rust_sim/CLAUDE.md` reports **0 unaccounted lines**: every non-blank line of the
+old leaf appears verbatim in the new leaf or in a destination doc. The eleven passages that were
+REWRITTEN rather than moved — an opening paragraph restated as a rule, a dated smoke restated as a
+command — are preserved verbatim in
+`designs/research_state/claude_md_archive/rust_sim_leaf_history.md` (HISTORY, additive only).
+
+Root `CLAUDE.md` updated in the same pass (leaf-map row, the *Where the detail is* pointer, the
+`designs/`-trees sentence). Gates: freshness / file-size / ruff / mypy green; the routine gate green.
+Tag: TECH DEBT / DOCS. **No measurement about the model changed.**
