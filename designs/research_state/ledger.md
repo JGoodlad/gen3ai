@@ -14670,3 +14670,16 @@ not a hash comparison with extra words.
 
 Tag: TECH DEBT. **No measurement about the model changed** — the win-prob reclassification is a
 statement about what six curves MEAN, not about their values, and no live run was touched.
+
+### 2026-09-08 · TECH DEBT · TensorBoard fork-prefix backfill APPLIED — 136 forks written, 0 skipped, 0 failed (owner-authorized)
+
+Owner (2026-09-08 ~02:10 PT): *"Do the backfill."* Run by the orchestrator from the main checkout,
+`nice -n 10 python -m main.tb_inherit --backfill --all` as a DRY RUN first (136 to write, 0 skipped,
+0 failed), then `--apply`. Result: **136 WROTE, 0 skipped, 0 failed**; each fork's `tb/` now carries
+its parent's scalars up to the fork step as an inherited prefix (e.g. the seven R5F arms inherit
+75,745 events / 418 tags from `ai_v9_29_rev1_0823` up to step 25,067,760). Prerequisite discharged
+by the 2026-09-07 lineage review: all 105 derived parents among the forks CONSISTENT, 0 contradicted.
+The single fork left without a prefix is `ai_v8_01_zarch_film_0717`, which claims `fresh` in an
+immutable lineage block against a first scalar at 148,401,356 — a hand edit, the owner's call.
+No live run touched; `ai_v12_02_winprob_critic` is fresh and not a fork. Log: job tmp
+`tb_backfill_apply.log`. Tag: TECH DEBT / ARCHIVE — a reading aid, not a measurement.
