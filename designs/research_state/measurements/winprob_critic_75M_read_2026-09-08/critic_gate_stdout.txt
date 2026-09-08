@@ -1,0 +1,297 @@
+[baseline] --parent: baseline v9_fold_parent = ai_v9_59_R2ACTION_0827@28,115,184 (set 2026-09-06, 2026-09-06 · BASELINES REGISTRY — the named baselines become first-class objects (gen3_baselines_registry_v1))
+[baseline] --famine-comparator: baseline famine_comparator = ai_v9_29_rev1_0823@25,067,760 (set 2026-09-06, 2026-09-06 · BASELINES REGISTRY — the named baselines become first-class objects (gen3_baselines_registry_v1))
+[critic_gate] (1) ladder
+[critic_gate] (2) calibration gate
+[critic_gate] (2b) famine pre-test
+[critic_gate] (3) G7 kill condition
+[critic_gate] wrote /home/goodlad/.claude/jobs/9ab51de6/tmp/gate_75M/critic_gate_75M_nometer.json
+[critic_gate] wrote /home/goodlad/.claude/jobs/9ab51de6/tmp/gate_75M/critic_gate_75M_nometer.md
+
+====================================================================================================
+CRITIC GATE  —  ai_v12_02_winprob_critic  vs  ai_v9_59_R2ACTION_0827
+  design designs/ai_v12/design_winprob_only_critic.md §5.5 (endpoints) / §4.3 (bars)
+====================================================================================================
+
+  run      /home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/final_model.zip  [rung=latest_txt rule=last_snapshot]
+  parent   /home/goodlad/dev/gen3ai/models/ai_v9_59_R2ACTION_0827/final_model.zip  [rung=explicit_zip rule=explicit_zip]
+  control  /home/goodlad/dev/gen3ai/models/ai_v9_195_G5PLAINA_0906/final_model.zip  [rung=latest_txt rule=last_snapshot]
+  control  /home/goodlad/dev/gen3ai/models/ai_v9_196_G5PLAINB_0906/final_model.zip  [rung=latest_txt rule=last_snapshot]
+  control  /home/goodlad/dev/gen3ai/models/ai_v9_197_G5PLAINC_0906/final_model.zip  [rung=latest_txt rule=last_snapshot]
+
+VERDICT: MIXED
+  criteria not met: G1, G2, G3, G4
+
+(1) ANCHORED LADDER — matched SNAPSHOT COUNT, never matched step
+    rating final — the run wrote a final model
+      #        run step     elo   ±95%      parent step     elo   ±95%
+      1      36,000,000    1964     19        2,000,016    1588     81
+      2      38,000,016    1966     19        4,000,032    1837     57
+      3      40,000,032    1979     19        6,000,000    1817     58
+      4      42,000,000    1977     19        8,000,016    1888     55
+      5      44,000,016    1974     19       10,000,032    1913     55
+      6      46,000,032    1969     19       12,000,000    1916     55
+      7      48,000,000    1992     20       14,000,016    1965     55
+      8      50,000,016    1982     19       16,000,032    1937     55
+      9      52,000,032    2008     20       18,000,000    1962     55
+     10      54,000,000    2005     20       20,000,016    1934     74
+     11      56,000,016    1980     19       22,000,032    1934     74
+     12      58,000,032    1999     20       24,000,000    1983     74
+     13      60,000,000    1992     20       26,000,016    1948     30
+     14      62,000,016    1996     20       28,000,032    1947     30
+    Δ at 14 snapshots: +49 ELO [+13, +85]
+    matched SNAPSHOT COUNT, never matched step. Both fits are anchored to the same pinned bots, so the delta is meaningful; its SE combines two independent fits and carries NO term for the anchor uncertainty they share.
+    fit size: BOTH sides were REFIT from their own games.jsonl on their first n snapshots (strict: every snapshot endpoint inside the prefix) with THIS tree's fit_ladder — because the newest node of a longer fit is inflated, AND because a committed ladder.json written before 2026-09-07 folded the eval cycles' greedy-vs-stochastic SENTINEL edges into the fit (+8.9 pp to the newer snapshot; +21..+29 Elo on the newest nodes) — refit: run=True, parent=True; the committed-ladder delta would have read +89.
+
+(2) CALIBRATION GATE — RESOLUTION primary; bot and pool NEVER pooled
+    bars: selection_reweighted.json (ai_v9_59_R2ACTION_0827, reduce=max)
+            step  stratum  btl resolution          [ 95% CI ]    base   skill   G1 G4
+      36,000,000      all  232     0.0315     [0.0214,0.0452]  0.0618  +0.144   n  Y   (not gated)
+      36,000,000      bot  137     0.0134     [0.0070,0.0267]  0.0337  +0.108   n  Y
+      36,000,000     pool   95     0.0472     [0.0303,0.0692]  0.0711  +0.085   n  n
+      38,000,016      all  225     0.0290     [0.0164,0.0472]  0.0618  +0.159   n  Y   (not gated)
+      38,000,016      bot  134     0.0211     [0.0132,0.0348]  0.0337  +0.122   n  Y
+      38,000,016     pool   91     0.0310     [0.0153,0.0627]  0.0711  +0.132   n  n
+      40,000,032      all  228     0.0351     [0.0183,0.0600]  0.0618  +0.204   n  Y   (not gated)
+      40,000,032      bot  130     0.0133     [0.0063,0.0263]  0.0337  +0.072   n  n
+      40,000,032     pool   98     0.0459     [0.0209,0.0798]  0.0711  +0.217   n  Y
+      42,000,000      all  228     0.0436     [0.0321,0.0586]  0.0618  +0.266   n  Y   (not gated)
+      42,000,000      bot  133     0.0184     [0.0106,0.0317]  0.0337  +0.175   n  Y
+      42,000,000     pool   95     0.0578     [0.0395,0.0840]  0.0711  +0.230   n  Y
+      44,000,016      all  237     0.0393     [0.0251,0.0577]  0.0618  +0.215   n  Y   (not gated)
+      44,000,016      bot  140     0.0183     [0.0099,0.0322]  0.0337  +0.110   n  n
+      44,000,016     pool   97     0.0470     [0.0292,0.0730]  0.0711  +0.189   n  Y
+      46,000,032      all  229     0.0408     [0.0241,0.0615]  0.0618  +0.242   n  Y   (not gated)
+      46,000,032      bot  137     0.0185     [0.0099,0.0310]  0.0337  +0.181   n  Y
+      46,000,032     pool   92     0.0455     [0.0268,0.0711]  0.0711  +0.179   n  Y
+      48,000,000      all  227     0.0421     [0.0307,0.0615]  0.0618  +0.220   n  Y   (not gated)
+      48,000,000      bot  128     0.0166     [0.0098,0.0287]  0.0337  +0.121   n  n
+      48,000,000     pool   99     0.0527     [0.0344,0.0817]  0.0711  +0.171   n  Y
+      50,000,016      all  239     0.0410     [0.0309,0.0530]  0.0618  +0.224   n  Y   (not gated)
+      50,000,016      bot  139     0.0269     [0.0181,0.0403]  0.0337  +0.247   n  Y
+      50,000,016     pool  100     0.0433     [0.0296,0.0621]  0.0711  +0.151   n  Y
+      52,000,032      all  225     0.0397     [0.0268,0.0582]  0.0618  +0.254   n  Y   (not gated)
+      52,000,032      bot  126     0.0133     [0.0080,0.0232]  0.0337  +0.132   n  Y
+      52,000,032     pool   99     0.0451     [0.0306,0.0710]  0.0711  +0.218   n  Y
+      54,000,000      all  233     0.0464     [0.0335,0.0642]  0.0618  +0.259   n  Y   (not gated)
+      54,000,000      bot  133     0.0186     [0.0104,0.0304]  0.0337  +0.189   n  Y
+      54,000,000     pool  100     0.0542     [0.0354,0.0814]  0.0711  +0.194   n  Y
+      56,000,016      all  237     0.0422     [0.0291,0.0602]  0.0618  +0.241   n  Y   (not gated)
+      56,000,016      bot  138     0.0332     [0.0218,0.0492]  0.0337  +0.268   n  Y
+      56,000,016     pool   99     0.0395     [0.0224,0.0677]  0.0711  +0.156   n  Y
+      58,000,032      all  226     0.0395     [0.0266,0.0592]  0.0618  +0.222   n  Y   (not gated)
+      58,000,032      bot  126     0.0130     [0.0054,0.0279]  0.0337  +0.118   n  n
+      58,000,032     pool  100     0.0447     [0.0311,0.0678]  0.0711  +0.172   n  Y
+      60,000,000      all  235     0.0361     [0.0236,0.0525]  0.0618  +0.202   n  Y   (not gated)
+      60,000,000      bot  135     0.0205     [0.0127,0.0360]  0.0337  +0.154   n  n
+      60,000,000     pool  100     0.0321     [0.0187,0.0522]  0.0711  +0.126   n  Y
+      62,000,016      all  235     0.0390     [0.0273,0.0536]  0.0618  +0.209   n  Y   (not gated)
+      62,000,016      bot  136     0.0239     [0.0147,0.0381]  0.0337  +0.166   n  Y
+      62,000,016     pool   99     0.0377     [0.0246,0.0581]  0.0711  +0.131   n  Y
+      64,000,032      all  229     0.0261     [0.0158,0.0411]  0.0618  +0.139   n  Y   (not gated)
+      64,000,032      bot  129     0.0174     [0.0094,0.0323]  0.0337  +0.143   n  Y
+      64,000,032     pool  100     0.0263     [0.0123,0.0477]  0.0711  +0.078   n  n
+      66,000,000      all  243     0.0411     [0.0284,0.0589]  0.0618  +0.184   n  Y   (not gated)
+      66,000,000      bot  144     0.0152     [0.0083,0.0305]  0.0337  +0.085   n  n
+      66,000,000     pool   99     0.0514     [0.0316,0.0756]  0.0711  +0.163   n  Y
+      68,000,016      all  238     0.0358     [0.0241,0.0536]  0.0618  +0.196   n  Y   (not gated)
+      68,000,016      bot  139     0.0133     [0.0073,0.0305]  0.0337  +0.065   n  n
+      68,000,016     pool   99     0.0489     [0.0312,0.0750]  0.0711  +0.200   n  Y
+      70,000,032      all  235     0.0437     [0.0296,0.0663]  0.0618  +0.217   n  Y   (not gated)
+      70,000,032      bot  135     0.0313     [0.0209,0.0539]  0.0337  +0.262   n  Y
+      70,000,032     pool  100     0.0384     [0.0183,0.0685]  0.0711  +0.096   n  n
+      72,000,000      all  242     0.0276     [0.0178,0.0409]  0.0618  +0.136   n  Y   (not gated)
+      72,000,000      bot  143     0.0137     [0.0062,0.0296]  0.0337  +0.040   n  n
+      72,000,000     pool   99     0.0337     [0.0186,0.0543]  0.0711  +0.104   n  n
+      74,000,016      all  242     0.0452     [0.0331,0.0615]  0.0618  +0.240   n  Y   (not gated)
+      74,000,016      bot  142     0.0257     [0.0162,0.0425]  0.0337  +0.186   n  Y
+      74,000,016     pool  100     0.0500     [0.0350,0.0696]  0.0711  +0.213   n  Y
+
+    G2/G3 — PER-STRATUM NON-INFERIORITY vs the SAME-stratum baseline (reduce=last)
+            step  stratum gate      metric      arm          [ 95% CI ]      base    delta  ok  decided by
+      36,000,000      all   G2 reliability   0.0088     [0.0026,0.0233]   0.0020*  +0.0068  n   CI above base   (not gated)
+      36,000,000      all   G3         ECE   0.0827     [0.0418,0.1324]   0.0349*  +0.0477  n   CI above base   (not gated)
+      36,000,000      bot   G2 reliability   0.0029     [0.0015,0.0094]   0.0012*  +0.0017  n   CI above base
+      36,000,000      bot   G3         ECE   0.0395     [0.0205,0.0698]   0.0228*  +0.0167  Y   CI covers base
+      36,000,000     pool   G2 reliability   0.0309     [0.0110,0.0751]   0.0103*  +0.0206  n   CI above base
+      36,000,000     pool   G3         ECE   0.1579     [0.0866,0.2553]   0.0875*  +0.0704  Y   CI covers base
+      38,000,016      all   G2 reliability   0.0036     [0.0018,0.0132]   0.0020*  +0.0016  Y   CI covers base   (not gated)
+      38,000,016      all   G3         ECE   0.0499     [0.0318,0.0896]   0.0349*  +0.0150  Y   CI covers base   (not gated)
+      38,000,016      bot   G2 reliability   0.0074     [0.0044,0.0142]   0.0012*  +0.0062  n   CI above base
+      38,000,016      bot   G3         ECE   0.0597     [0.0387,0.0965]   0.0228*  +0.0369  n   CI above base
+      38,000,016     pool   G2 reliability   0.0051     [0.0028,0.0270]   0.0103*  -0.0052  Y   point <= base
+      38,000,016     pool   G3         ECE   0.0599     [0.0425,0.1305]   0.0875*  -0.0276  Y   point <= base
+      40,000,032      all   G2 reliability   0.0023     [0.0018,0.0090]   0.0020*  +0.0003  Y   CI covers base   (not gated)
+      40,000,032      all   G3         ECE   0.0432     [0.0304,0.0793]   0.0349*  +0.0082  Y   CI covers base   (not gated)
+      40,000,032      bot   G2 reliability   0.0052     [0.0028,0.0139]   0.0012*  +0.0040  n   CI above base
+      40,000,032      bot   G3         ECE   0.0555     [0.0297,0.0999]   0.0228*  +0.0327  n   CI above base
+      40,000,032     pool   G2 reliability   0.0037     [0.0027,0.0192]   0.0103*  -0.0066  Y   point <= base
+      40,000,032     pool   G3         ECE   0.0517     [0.0327,0.1217]   0.0875*  -0.0357  Y   point <= base
+      42,000,000      all   G2 reliability   0.0035     [0.0022,0.0081]   0.0020*  +0.0014  n   CI above base   (not gated)
+      42,000,000      all   G3         ECE   0.0248     [0.0217,0.0607]   0.0349*  -0.0101  Y   point <= base   (not gated)
+      42,000,000      bot   G2 reliability   0.0049     [0.0023,0.0106]   0.0012*  +0.0037  n   CI above base
+      42,000,000      bot   G3         ECE   0.0566     [0.0311,0.0811]   0.0228*  +0.0338  n   CI above base
+      42,000,000     pool   G2 reliability   0.0116     [0.0048,0.0391]   0.0103*  +0.0013  Y   CI covers base
+      42,000,000     pool   G3         ECE   0.0763     [0.0400,0.1715]   0.0875*  -0.0111  Y   point <= base
+      44,000,016      all   G2 reliability   0.0020     [0.0013,0.0095]   0.0020*  +0.0000  Y   CI covers base   (not gated)
+      44,000,016      all   G3         ECE   0.0306     [0.0223,0.0736]   0.0349*  -0.0043  Y   point <= base   (not gated)
+      44,000,016      bot   G2 reliability   0.0057     [0.0025,0.0134]   0.0012*  +0.0045  n   CI above base
+      44,000,016      bot   G3         ECE   0.0559     [0.0316,0.0961]   0.0228*  +0.0331  n   CI above base
+      44,000,016     pool   G2 reliability   0.0056     [0.0025,0.0230]   0.0103*  -0.0048  Y   point <= base
+      44,000,016     pool   G3         ECE   0.0642     [0.0381,0.1297]   0.0875*  -0.0233  Y   point <= base
+      46,000,032      all   G2 reliability   0.0019     [0.0009,0.0101]   0.0020*  -0.0001  Y   point <= base   (not gated)
+      46,000,032      all   G3         ECE   0.0332     [0.0167,0.0777]   0.0349*  -0.0017  Y   point <= base   (not gated)
+      46,000,032      bot   G2 reliability   0.0022     [0.0013,0.0063]   0.0012*  +0.0010  n   CI above base
+      46,000,032      bot   G3         ECE   0.0255     [0.0174,0.0517]   0.0228*  +0.0027  Y   CI covers base
+      46,000,032     pool   G2 reliability   0.0084     [0.0027,0.0365]   0.0103*  -0.0019  Y   point <= base
+      46,000,032     pool   G3         ECE   0.0796     [0.0410,0.1746]   0.0875*  -0.0079  Y   point <= base
+      48,000,000      all   G2 reliability   0.0035     [0.0018,0.0146]   0.0020*  +0.0015  Y   CI covers base   (not gated)
+      48,000,000      all   G3         ECE   0.0467     [0.0227,0.1058]   0.0349*  +0.0118  Y   CI covers base   (not gated)
+      48,000,000      bot   G2 reliability   0.0052     [0.0024,0.0116]   0.0012*  +0.0040  n   CI above base
+      48,000,000      bot   G3         ECE   0.0471     [0.0275,0.0732]   0.0228*  +0.0243  n   CI above base
+      48,000,000     pool   G2 reliability   0.0144     [0.0046,0.0481]   0.0103*  +0.0041  Y   CI covers base
+      48,000,000     pool   G3         ECE   0.1124     [0.0484,0.2096]   0.0875*  +0.0249  Y   CI covers base
+      50,000,016      all   G2 reliability   0.0058     [0.0030,0.0140]   0.0020*  +0.0037  n   CI above base   (not gated)
+      50,000,016      all   G3         ECE   0.0554     [0.0281,0.1008]   0.0349*  +0.0205  Y   CI covers base   (not gated)
+      50,000,016      bot   G2 reliability   0.0023     [0.0016,0.0069]   0.0012*  +0.0011  n   CI above base
+      50,000,016      bot   G3         ECE   0.0133     [0.0111,0.0508]   0.0228*  -0.0095  Y   point <= base
+      50,000,016     pool   G2 reliability   0.0136     [0.0045,0.0430]   0.0103*  +0.0033  Y   CI covers base
+      50,000,016     pool   G3         ECE   0.1002     [0.0470,0.1932]   0.0875*  +0.0127  Y   CI covers base
+      52,000,032      all   G2 reliability   0.0006     [0.0006,0.0054]   0.0020*  -0.0014  Y   point <= base   (not gated)
+      52,000,032      all   G3         ECE   0.0126     [0.0137,0.0545]   0.0349*  -0.0223  Y   point <= base   (not gated)
+      52,000,032      bot   G2 reliability   0.0043     [0.0021,0.0091]   0.0012*  +0.0031  n   CI above base
+      52,000,032      bot   G3         ECE   0.0413     [0.0276,0.0669]   0.0228*  +0.0185  n   CI above base
+      52,000,032     pool   G2 reliability   0.0013     [0.0009,0.0164]   0.0103*  -0.0090  Y   point <= base
+      52,000,032     pool   G3         ECE   0.0272     [0.0202,0.1080]   0.0875*  -0.0603  Y   point <= base
+      54,000,000      all   G2 reliability   0.0026     [0.0012,0.0120]   0.0020*  +0.0006  Y   CI covers base   (not gated)
+      54,000,000      all   G3         ECE   0.0374     [0.0190,0.0908]   0.0349*  +0.0025  Y   CI covers base   (not gated)
+      54,000,000      bot   G2 reliability   0.0024     [0.0009,0.0080]   0.0012*  +0.0012  Y   CI covers base
+      54,000,000      bot   G3         ECE   0.0333     [0.0154,0.0588]   0.0228*  +0.0105  Y   CI covers base
+      54,000,000     pool   G2 reliability   0.0120     [0.0032,0.0460]   0.0103*  +0.0016  Y   CI covers base
+      54,000,000     pool   G3         ECE   0.0976     [0.0386,0.1973]   0.0875*  +0.0101  Y   CI covers base
+      56,000,016      all   G2 reliability   0.0006     [0.0006,0.0063]   0.0020*  -0.0014  Y   point <= base   (not gated)
+      56,000,016      all   G3         ECE   0.0178     [0.0142,0.0611]   0.0349*  -0.0171  Y   point <= base   (not gated)
+      56,000,016      bot   G2 reliability   0.0051     [0.0026,0.0110]   0.0012*  +0.0039  n   CI above base
+      56,000,016      bot   G3         ECE   0.0424     [0.0217,0.0727]   0.0228*  +0.0196  Y   CI covers base
+      56,000,016     pool   G2 reliability   0.0060     [0.0025,0.0274]   0.0103*  -0.0043  Y   point <= base
+      56,000,016     pool   G3         ECE   0.0663     [0.0356,0.1419]   0.0875*  -0.0212  Y   point <= base
+      58,000,032      all   G2 reliability   0.0016     [0.0010,0.0079]   0.0020*  -0.0004  Y   point <= base   (not gated)
+      58,000,032      all   G3         ECE   0.0361     [0.0247,0.0771]   0.0349*  +0.0012  Y   CI covers base   (not gated)
+      58,000,032      bot   G2 reliability   0.0030     [0.0016,0.0132]   0.0012*  +0.0018  n   CI above base
+      58,000,032      bot   G3         ECE   0.0369     [0.0261,0.0693]   0.0228*  +0.0141  n   CI above base
+      58,000,032     pool   G2 reliability   0.0076     [0.0035,0.0307]   0.0103*  -0.0027  Y   point <= base
+      58,000,032     pool   G3         ECE   0.0708     [0.0482,0.1616]   0.0875*  -0.0167  Y   point <= base
+      60,000,000      all   G2 reliability   0.0010     [0.0007,0.0063]   0.0020*  -0.0010  Y   point <= base   (not gated)
+      60,000,000      all   G3         ECE   0.0236     [0.0175,0.0595]   0.0349*  -0.0113  Y   point <= base   (not gated)
+      60,000,000      bot   G2 reliability   0.0054     [0.0018,0.0134]   0.0012*  +0.0041  n   CI above base
+      60,000,000      bot   G3         ECE   0.0565     [0.0226,0.0906]   0.0228*  +0.0337  Y   CI covers base
+      60,000,000     pool   G2 reliability   0.0054     [0.0024,0.0293]   0.0103*  -0.0049  Y   point <= base
+      60,000,000     pool   G3         ECE   0.0655     [0.0401,0.1627]   0.0875*  -0.0219  Y   point <= base
+      62,000,016      all   G2 reliability   0.0021     [0.0012,0.0072]   0.0020*  +0.0001  Y   CI covers base   (not gated)
+      62,000,016      all   G3         ECE   0.0387     [0.0246,0.0700]   0.0349*  +0.0038  Y   CI covers base   (not gated)
+      62,000,016      bot   G2 reliability   0.0068     [0.0032,0.0141]   0.0012*  +0.0055  n   CI above base
+      62,000,016      bot   G3         ECE   0.0623     [0.0383,0.0900]   0.0228*  +0.0395  n   CI above base
+      62,000,016     pool   G2 reliability   0.0082     [0.0034,0.0319]   0.0103*  -0.0021  Y   point <= base
+      62,000,016     pool   G3         ECE   0.0722     [0.0464,0.1565]   0.0875*  -0.0153  Y   point <= base
+      64,000,032      all   G2 reliability   0.0035     [0.0019,0.0111]   0.0020*  +0.0015  Y   CI covers base   (not gated)
+      64,000,032      all   G3         ECE   0.0515     [0.0289,0.0965]   0.0349*  +0.0166  Y   CI covers base   (not gated)
+      64,000,032      bot   G2 reliability   0.0023     [0.0014,0.0077]   0.0012*  +0.0011  n   CI above base
+      64,000,032      bot   G3         ECE   0.0411     [0.0210,0.0755]   0.0228*  +0.0183  Y   CI covers base
+      64,000,032     pool   G2 reliability   0.0114     [0.0057,0.0335]   0.0103*  +0.0011  Y   CI covers base
+      64,000,032     pool   G3         ECE   0.0958     [0.0573,0.1700]   0.0875*  +0.0083  Y   CI covers base
+      66,000,000      all   G2 reliability   0.0052     [0.0020,0.0173]   0.0020*  +0.0032  Y   CI covers base   (not gated)
+      66,000,000      all   G3         ECE   0.0677     [0.0342,0.1163]   0.0349*  +0.0328  Y   CI covers base   (not gated)
+      66,000,000      bot   G2 reliability   0.0041     [0.0018,0.0182]   0.0012*  +0.0028  n   CI above base
+      66,000,000      bot   G3         ECE   0.0569     [0.0237,0.1203]   0.0228*  +0.0341  n   CI above base
+      66,000,000     pool   G2 reliability   0.0138     [0.0044,0.0463]   0.0103*  +0.0035  Y   CI covers base
+      66,000,000     pool   G3         ECE   0.1088     [0.0498,0.2013]   0.0875*  +0.0213  Y   CI covers base
+      68,000,016      all   G2 reliability   0.0030     [0.0014,0.0114]   0.0020*  +0.0010  Y   CI covers base   (not gated)
+      68,000,016      all   G3         ECE   0.0469     [0.0256,0.0844]   0.0349*  +0.0119  Y   CI covers base   (not gated)
+      68,000,016      bot   G2 reliability   0.0070     [0.0012,0.0349]   0.0012*  +0.0058  n   CI above base
+      68,000,016      bot   G3         ECE   0.0387     [0.0197,0.0877]   0.0228*  +0.0159  Y   CI covers base
+      68,000,016     pool   G2 reliability   0.0071     [0.0025,0.0302]   0.0103*  -0.0032  Y   point <= base
+      68,000,016     pool   G3         ECE   0.0732     [0.0384,0.1534]   0.0875*  -0.0143  Y   point <= base
+      70,000,032      all   G2 reliability   0.0040     [0.0014,0.0175]   0.0020*  +0.0020  Y   CI covers base   (not gated)
+      70,000,032      all   G3         ECE   0.0554     [0.0285,0.1160]   0.0349*  +0.0205  Y   CI covers base   (not gated)
+      70,000,032      bot   G2 reliability   0.0027     [0.0023,0.0090]   0.0012*  +0.0015  n   CI above base
+      70,000,032      bot   G3         ECE   0.0223     [0.0203,0.0654]   0.0228*  -0.0005  Y   point <= base
+      70,000,032     pool   G2 reliability   0.0169     [0.0061,0.0550]   0.0103*  +0.0066  Y   CI covers base
+      70,000,032     pool   G3         ECE   0.1191     [0.0665,0.2237]   0.0875*  +0.0316  Y   CI covers base
+      72,000,000      all   G2 reliability   0.0041     [0.0019,0.0123]   0.0020*  +0.0021  Y   CI covers base   (not gated)
+      72,000,000      all   G3         ECE   0.0517     [0.0332,0.0907]   0.0349*  +0.0168  Y   CI covers base   (not gated)
+      72,000,000      bot   G2 reliability   0.0097     [0.0039,0.0226]   0.0012*  +0.0084  n   CI above base
+      72,000,000      bot   G3         ECE   0.0654     [0.0428,0.0983]   0.0228*  +0.0426  n   CI above base
+      72,000,000     pool   G2 reliability   0.0121     [0.0044,0.0402]   0.0103*  +0.0018  Y   CI covers base
+      72,000,000     pool   G3         ECE   0.1033     [0.0539,0.1764]   0.0875*  +0.0158  Y   CI covers base
+      74,000,016      all   G2 reliability   0.0023     [0.0017,0.0085]   0.0020*  +0.0003  Y   CI covers base   (not gated)
+      74,000,016      all   G3         ECE   0.0263     [0.0225,0.0748]   0.0349*  -0.0086  Y   point <= base   (not gated)
+      74,000,016      bot   G2 reliability   0.0028     [0.0017,0.0085]   0.0012*  +0.0016  n   CI above base
+      74,000,016      bot   G3         ECE   0.0364     [0.0237,0.0720]   0.0228*  +0.0136  n   CI above base
+      74,000,016     pool   G2 reliability   0.0045     [0.0031,0.0228]   0.0103*  -0.0059  Y   point <= base
+      74,000,016     pool   G3         ECE   0.0475     [0.0324,0.1369]   0.0875*  -0.0400  Y   point <= base
+    base = the baseline's OWN row at this step; * = no row at this step, so reduced (`last`) over the artifact's steps
+    G2 aspirational (§4.3, NOT gated): reliability <= 0.005
+    G3 aspirational (§4.3, NOT gated): ECE <= 0.05
+    `all` is reported for context and NEVER gated: it averages two populations whose measured calibration bias has opposite sign.
+    the committed baseline publishes no interval for `resolution`, so G1 compares the ARM's cluster CI against the baseline as a FIXED bar. G2/G3 inherit the same asymmetry: the baseline value they are compared against is a point, and only the ARM carries an interval.
+    OWNER RULING 2026-09-06: §4.3's absolute G2 (reliability <= 0.005) and G3 (ECE <= 0.05) bars are ALREADY BREACHED by the committed baseline on the POOL stratum (reliability 0.0064 / 0.0103, ECE 0.0667 / 0.0875 at 26M / 28M), while §4.3 called G3 a 'no-regression clause' the reweighted baseline already passes — true pooled and on bot, FALSE on pool, and both gates are registered over 'both classes'. As written the arm had to clear a bar its predecessor never cleared. G2 and G3 are therefore PER-STRATUM RELATIVE bars: no worse than the baseline's SAME-stratum value. The absolute numbers stay printed as aspirational targets.
+
+(2b) FAMINE PRE-TEST — terminal-only vs the incumbent's rate
+    comparator famine_comparator -> /home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/final_model.zip
+    the arm TRAILS the comparator by 51 ELO at 12 snapshots (floor 38) — the trail EXCEEDS the floor: the ladder half of the famine gate is MET [floor from registry `famine_comparator`.floor_elo; signed trail +51, positive = behind]
+    the LADDER half only — win_rate_vs_bots is the AND-gate's other half.
+    CONFOUND: the incumbent had PBRS AND PopArt AND the shaped critic, so this is a rate comparison ACROSS RECIPES and the floor is the incumbent's own run-to-run noise, not a replicate of this arm. A trail inside the floor is NOT evidence the two recipes are equivalent — only that starvation has not been demonstrated.
+
+(3) G7 KILL CONDITION — stall rate + episode length
+    thresholds: stall<=0.05 turns>=250 ep_len<=1.25x era (the design registers G7 as 'no increase over the era, pre-registered threshold' and names no number; this threshold is main.critic_gate's default, not the design's)
+            step  stall_rate  mean_turns  ep_bots  ep_pool  verdict
+       2,000,016           —           —    20.70        —  OK
+       4,000,032           —           —    21.99        —  OK
+       6,000,000           —           —    21.84    25.89  OK
+       8,000,016           —           —    21.80    28.35  OK
+      10,000,032           —           —    22.57    31.05  OK
+      12,000,000           —           —    22.34    31.10  OK
+      14,000,016           —           —    21.94    32.62  OK
+      16,000,032           —           —    22.32    32.03  OK
+      18,000,000           —           —    21.47    31.75  OK
+      20,000,016           —           —    21.93    31.87  OK
+      22,000,032           —           —    22.78    32.07  OK
+      24,000,000           —           —    21.54    32.08  OK
+      26,000,016           —           —    21.44    31.33  OK
+      28,000,032           —           —    21.61    31.50  OK
+      30,000,000           —           —    21.83    31.58  OK
+      32,000,016           —           —    23.79    33.14  OK
+      34,000,032           —           —    23.49    31.69  OK
+      36,000,000      0.0000        26.7    22.58    33.00  OK
+      38,000,016      0.0044        28.4    22.94    31.96  OK
+      40,000,032      0.0044        27.2    23.12    31.51  OK
+      42,000,000      0.0000        26.6    22.76    31.85  OK
+      44,000,016      0.0042        26.9    23.64    31.95  OK
+      46,000,032      0.0000        26.6    22.83    32.44  OK
+      48,000,000      0.0000        28.0    23.46    32.70  OK
+      50,000,016      0.0000        27.4    22.82    33.04  OK
+      52,000,032      0.0000        28.2    22.88    35.60  OK
+      54,000,000      0.0000        27.1    23.22    35.60  OK
+      56,000,016      0.0000        28.8    23.85    36.03  OK
+      58,000,032      0.0000        29.6    23.93    36.94  OK
+      60,000,000      0.0000        26.7    23.17    34.83  OK
+      62,000,016      0.0000        28.1    23.34    34.78  OK
+      64,000,032      0.0000        27.9    23.69    35.42  OK
+      66,000,000      0.0123        28.7    23.50    33.80  OK
+      68,000,016      0.0000        28.7    24.09    35.54  OK
+      70,000,032      0.0043        27.9    23.27    34.69  OK
+      72,000,000      0.0000        27.0    22.32    35.60  OK
+      74,000,016      0.0041        26.0    21.89    35.60  OK
+    stall rate source: the captured eval traces' per-battle summary meta.turns / meta.result — the CAPTURE QUOTA, which is loss-enriched by design (agents.training.trace_selection), so read it as an upper-ish bound, never as a population rate
+
+(4) UNTAUGHT METER — with a CONTINUATION control
+    skipped (--skip-meter)
+
+----------------------------------------------------------------------------------------------------
+NOT RUNNABLE HERE (§4.3 criteria this tool does not compute):
+  G5: sd_true_excess, floor-subtracted, per population — gap M1 — not runnable from traces
+  G6: the MIRROR TABLE (no cell crossing 0.50) — gap M2 — not runnable from traces
+  G8: win_mask coverage >= a pre-registered floor — gap M3 — the run must record it
+  G9: capacity value_pooled participation ratio — runnable, but by `python -m main.capacity`
+
+FALSIFICATION CLAUSE (design §5.5, verbatim):
+  What would falsify the design, stated before the data: G1 flat (resolution unmoved) with G2–G4 passing means the promotion bought calibration this head already had and nothing else — the wrong-meter trap, and the target/readout diagnosis of §2 would survive intact while *this* remedy for it would not. That must be reported as loudly as a pass.

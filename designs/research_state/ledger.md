@@ -15232,6 +15232,7 @@ GREEDY-symmetric while A's was handicapped, so the pool column is cross-regime a
 the gen-16 shape — pure PFSP over a homogeneous fresh self-pool cost 26–33 Elo (ledger L1159) —
 unless the win-prob critic changes it; v8's +69 came against a DIVERSE, ANCHORED pool, which C does
 not have. A WITHIN FLOOR read is the honest prior. Tag: REGISTRATION.
+
 ## 2026-09-08 · RUST SIM · gen3 parity round 3: FOCUS ENERGY closes and ATTRACT is scoped-out with its cause (320 → 321 of 369 moves; campaign 312 → 321, abilities and species CLOSED)
 
 **ROUND 59 + 59b in `designs/rust_sim/port_build_log.md`.** The last fix round of the 2026-09-08
@@ -15282,3 +15283,82 @@ audit 1075 → **1094** rows green; `--mode pool --protocol --format gen3ou` byt
 PASS** on each round (300 battles, ok=296, 0 non-allowlisted). A ranked P1 backlog row for the
 remaining 48 moves is in `designs/ops/TECH_DEBT_BACKLOG.md` §2. Tag: RUST SIM / FIX.
 **No model measurement changed and no run was touched.**
+
+### 2026-09-08 · 75M READ · test 2 CRITIC GATE at run end: G1 `bot` 0.0257 [0.0162, 0.0425] vs bar 0.0337 — `n`, and G1 fails on 60 of 60 rows · G4 `bot` +0.186 [+0.098, +0.256] — `Y`, all three strata clear zero at 74M · ladder vs `famine_comparator` −51 ELO [−81.5, −20.5] at n = 12 matched fit — INFERIOR on the point estimate (the tool: "the trail EXCEEDS the floor"), the CI straddling the −38 floor
+
+Opus subagent, ~10:0x–11:0x PT, from worktree `read75-gate-0908` off `b697e82a`, CPU only at
+`nice -n 10` beside arm C. Artifacts
+`measurements/winprob_critic_75M_read_2026-09-08/critic_gate.{md,json}` + `critic_gate_stdout.txt`.
+The arm finished at 75,005,952 (`final_model.zip` 09:41). **No refusal** — exit 1, `VERDICT: MIXED`,
+`criteria not met: G1, G2, G3, G4` (a `GateRefusal` is exit 2 and did not occur). This entry is a
+QUOTE of `main.critic_gate`; the verdict is the orchestrator's, reading tests 1 and 2 together.
+
+**Command** (the registered D2 argv plus `--skip-meter`, minus nothing else):
+`python -m main.critic_gate ai_v12_02_winprob_critic --parent v9_fold_parent --famine-comparator
+famine_comparator --control models/ai_v9_195_G5PLAINA_0906 models/ai_v9_196_G5PLAINB_0906
+models/ai_v9_197_G5PLAINC_0906 --skip-meter --json … --md …`, both outputs outside `models/`.
+
+**G1 (RESOLUTION, primary; bars from `winprob_critic_baseline_2026-09-06/selection_reweighted.json`,
+`ai_v9_59_R2ACTION_0827` steps [26M, 28M], `reduce=max`): fails on EVERY stratum at EVERY one of the
+20 trace steps — 60 of 60 rows `n`.** At the last measured step 74,000,016: `all` **0.0452**
+[0.0331, 0.0615] vs 0.0618 · `bot` **0.0257** [0.0162, 0.0425] vs 0.0337 · `pool` **0.0500**
+[0.0350, 0.0696] vs 0.0711. The `all` and `pool` arm CIs sit entirely BELOW their bars (strictly
+worse); the `bot` CI straddles its bar ⇒ NOT DETECTED on that stratum.
+
+**G2 / G3 (per-stratum non-inferiority):** `bot` fails G2 at 19 of 20 steps (CI above base) and G3 at
+11 of 20; `pool` passes G2 at 19 of 20 and G3 at 20 of 20. At 74M: `bot` G2 0.0028 [0.0017, 0.0085]
+vs 0.0012 `n`, G3 0.0364 [0.0237, 0.0720] vs 0.0228 `n`; `pool` G2 0.0045 [0.0031, 0.0228] vs 0.0103
+`Y`, G3 0.0475 [0.0324, 0.1369] vs 0.0875 `Y`. 🚨 **The `pool` stratum is the HANDICAPPED one** —
+those traces are the greedy-trainee-vs-stochastic-sentinel eval games worth +8.9 pp [+7.0, +10.7] to
+the newer snapshot (`3e6875a5`); the ladder fit drops those edges, the calibration strata cannot.
+The bot stratum is the unhandicapped one, and it is the one that fails.
+
+**G4 (skill > 0):** at 74,000,016 all three strata clear zero — `all` **+0.240** [+0.175, +0.294],
+`bot` **+0.186** [+0.098, +0.256], `pool` **+0.213** [+0.115, +0.274]. Over the run `all` 20/20 `Y`,
+`bot` 12/20, `pool` 15/20.
+
+**G7 (amendment 6 / 6b), MEASURED, quoted:** `kill: false`, all 37 cycles `OK`. 74,000,016 stall
+0.0041, ep_bots 21.889, ep_pool 35.602 (descriptive). Max ep_bots over the whole run **24.089 at
+68M**, max stall rate 0.0123 at 66M. ⚠️ **The tool's era reference here is the PARENT's own worst
+eval cycle** (`ai_v9_59_R2ACTION_0827`, ep_bots 29.4775, bar 36.85), not amendment 6's arm-own
+21.911 / bar 27.39 — **neither is breached**, and the 32M / 34M cycles that fired the standing kill
+on the old 18.28 reference read 23.791 and 23.487 and print `OK` on both.
+
+**SUFFICIENCY — the famine half.** Tool sentence, verbatim: *"the arm TRAILS the comparator by 51
+ELO at 12 snapshots (floor 38) — the trail EXCEEDS the floor: the ladder half of the famine gate is
+MET."* `delta_elo` **−51.0** [−81.5, −20.5] (SE 15.56), matched fit size, BOTH sides refit from their
+own `games.jsonl`; `delta_elo_final_fits` **−47.0** (run 58,000,032 = 2051.4 se 6.8; parent
+24,000,000 = 2098.4 se 10.6), for which the tool publishes no interval. Registered bar, verbatim:
+*"NOT INFERIOR by more than the 38-Elo floor at n = 12 (the comparator's count)."* Point estimate
+**INFERIOR**; **the DELTA's 95% CI straddles the −38 floor, so the exceedance is NOT DETECTED.**
+
+**🚨 CONTRADICTS THE REGISTRATION — the n = 12 node set is not the arm's first 12.** The registration
+reads *"at n = 12 A is at ~24M"*. At run end the arm's ladder rates only its 20 SURVIVING pool
+snapshots, 36,000,000 → 74,000,016; the pool groomed the rest off disk and `critic_gate` re-slices
+the committed ladder's own rated steps. So the arm's first 12 are **36M → 58M** (node #1 1967.4,
+node #12 2002.3) against the comparator's true **2M → 24M** (1723.0 → 2053.3). Fit size is matched;
+training position is not. The asymmetry FAVOURS the arm and it still trails 51. **This −51 is not
+comparable to the 26M read's −21** — that n = 12 was the arm's 4M → 26M, a node set no longer on
+disk; two different objects with the same name, so "worsened from −21 to −51" is not a sentence
+anyone may write. The same caveat rides §1's Δ vs the fold parent: **+49 ELO [+13, +85] at 14
+snapshots**, the arm's 14 nodes being 36M → 62M.
+
+**The arm's full 20-node ladder** (committed `ladder.json`, written 09:22 by the run's own PINNED
+pre-fix updater, so it still folds the sentinel edges): 36M 1996.6 · 38M 2013.8 · 40M 2014.2 · 42M
+2013.0 · 44M 2008.1 · 46M 2011.3 · 48M 2030.5 · 50M 2025.1 · 52M 2047.0 · 54M 2044.4 · 56M 2022.1 ·
+58M 2051.4 · 60M 2036.2 · 62M 2046.4 · **64M 2061.9 (peak)** · 66M 2037.6 · 68M 2049.2 · 70M 2060.4 ·
+72M 2047.1 · **74,000,016 2057.3 (se 7.7) — the FINAL node, and final because the run is** (no
+snapshot will be added, so newest-node inflation has stopped moving). A read-only refit of the same
+20 steps with this tree's `fit_ladder` (47 sentinel edges dropped) reads 36M 1954.5 … **74M 1984.2
+(se 8.5)**, peak 64M 2000.2 — the committed file is **~+73 high at the final node**. The ladder never
+rates the 75,005,952 `final_model.zip` itself; its last rated object is the 74M snapshot.
+
+**The untaught meter is NOT RUN** (`--skip-meter`) — DESCRIPTIVE by registration, so nothing gated is
+missing, but it is a deviation from the registered argv and is recorded as one: the meter's plan is
+8,000 battles at concurrency 1 over five refs, and arm C began training on this box mid-read. All
+three G5 controls were still passed and every ref RESOLVED under `--dry-run`. G5 / G6 / G8 remain
+not runnable from traces (gaps M1 / M2 / M3); G9 is `python -m main.capacity`.
+
+**Falsification clause, printed by the tool and carried here:** *"G1 flat (resolution unmoved) with
+G2–G4 passing means the promotion bought calibration this head already had and nothing else — the
+wrong-meter trap … That must be reported as loudly as a pass."*
