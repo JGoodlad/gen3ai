@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-14,834-line file. **The ledger itself is append-only and is never edited by this**;
+14,885-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**443 headings · 403 dated · 2026-08-01 → 2026-09-08 · ledger 14,834 lines.**
+**444 headings · 404 dated · 2026-08-01 → 2026-09-08 · ledger 14,885 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -463,3 +463,4 @@ rename.
   - `L14687` · `2026-09-08` · MEMORY AUDIT · 168 files: 87 live / 21 pointers / 59 archived / 1 merged / 12 stale refs fixed; MEMORY.md 16 KB → 11 KB
   - `L14756` · `2026-09-08` · DOCS · src/rust_sim/CLAUDE.md split (2,659 → 791 lines; 29 rounds to port_build_log.md; topics to designs/rust_sim/)
   - `L14797` · `2026-09-08` · DOCS · src/agents/training/CLAUDE.md split by topic (3,183 → 740 lines; detail to designs/training/, history to claude_md_archive/)
+  - `L14835` · `2026-09-08` · DOCS · src/main/prober/CLAUDE.md split (1,624 → 712 lines; topics to designs/prober/, history to claude_md_archive/)

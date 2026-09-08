@@ -39,10 +39,18 @@ same rule applied to the leaf every session that touches `src/agents/training/` 
 | `training_leaf_faint_attribution_history.md` | § Faint attribution in the trace (49 → 13 lines) |
 | `training_leaf_deleted_subsystems_history.md` | § Latent-belief loss — DELETED (v75) and § V_pub — DELETED (v88) (35 → 8) |
 
+**Added 2026-09-08 (fourth pass), from `src/main/prober/CLAUDE.md`** — 1,624 → 712 lines, the same
+rule applied to the leaf every session that touches the prober loads:
+
+| file | lifted from |
+|---|---|
+| `prober_leaf_history.md` | the Textual TUI's retirement and what was dropped with it, the TUI's model-tier keys, manual review mode, and two TUI-only gotchas (48 → 5 lines in the leaf) |
+
 **Nothing here is current.** Every guard these incidents produced is live and described in
 `CLAUDE.md`; this is the evidence behind them. Do not re-derive a plan from anything here without
 checking the code first — an entry that outlives its own fix misleads every reader after it.
 
-Related, from the same pass: `designs/training/` (the training leaf's topics),
+Related, from the same pass: `designs/training/` (the training leaf's topics), `designs/prober/`
+(the prober leaf's topics),
 `designs/rust_sim/port_build_log.md` (the port's closed coverage rounds), and
 `designs/research_state/memory_archive/` (retired agent memories).

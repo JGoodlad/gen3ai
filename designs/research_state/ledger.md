@@ -14831,3 +14831,54 @@ checks. Gates: the four static gates and the routine gate pass, `tb_relevance_te
 
 Tag: DOCS / TECH DEBT. **No measurement changed and no run was touched.** The rust half of the
 same backlog row landed the same day as `244431af`.
+
+### 2026-09-08 · DOCS · src/main/prober/CLAUDE.md split (1,624 → 712 lines; topics to designs/prober/, history to claude_md_archive/)
+
+Third leaf of the tech-debt burn-down, owner-authorized 2026-09-08. The prober's leaf was **1,624
+lines / 137 KB (~34k tokens)**, auto-loaded by every agent that touches the prober — three of them
+overnight. It is now **712 lines / 52 KB**, and the browser front end's leaf
+(`src/main/prober/web/CLAUDE.md`) went **858 → 771 lines / 62 KB → 55 KB** in the same pass. The
+rule applied is the census's (`claude_md_census_2026-09-06.md` §0): *a line earns its place in a
+`CLAUDE.md` only if an agent that has NOT read it would do the work WRONG.*
+
+**NOTHING WAS DELETED, and that is CHECKED rather than asserted.** A line-level audit against
+`git show HEAD~1:` reports **0 unaccounted lines on both leaves**: every non-blank line of the old
+files appears verbatim in the new leaf, in a `designs/prober/` topic doc, or in
+`designs/research_state/claude_md_archive/prober_leaf_history.md`. Exactly ONE line was rewritten
+rather than moved — the `web/` bullet's cross-reference to a section that is now a topic doc — and
+it is preserved verbatim in that history file.
+
+**New tree — `designs/prober/`**, always-current and OWNING what it holds (the root's
+*designs/-trees* sentence now names five): `analyze_panels` (the `/analyze` field map),
+`result_timeline` (the three protocol readers), `beliefs_and_threats`, `session_reading`,
+`session_scans`, `analyze_output`, `counterfactual_probes`, `engine_and_model`, `arch_drift`,
+`sim_impl`, `tests`, and `web_views` (`/battle`'s per-element field map, lifted from the web leaf).
+
+**What stayed (constitution), and why.** The engine/app seam and both module maps — the analysis is
+a pure engine and every surface is a thin caller, which is why retiring the TUI cost no analysis.
+THE RESULT VOCABULARY in full: `win`/`loss`/`draw`, that a TIMEOUT arrives wearing a LOSS's flags,
+that **a pre-draw-bucket tree's `draw: 0` is not a measurement**, that an unknown result is refused
+rather than rendered, and that draws hold their own capture-quota bucket. The exact→nearest→recent
+resolution ladder with its `best_model`-is-the-LAST-rung inversion. The `ArchDriftError` rule. The
+CLAIM rule for the RESULT timeline (`— no effect` is only ours to make when the evidence supports
+it; otherwise `— outcome unrecorded`) and its assertion form. The rule that **a detector reads the
+raw protocol and only a human surface reads the rendered timeline**. `critic_currency` — what every
+V on every view MEANS, and that an ABSENT `critic` key means shaped. β's name PROVENANCE (a label
+that produced a wrong research conclusion on 73.3% of pivots). **The trace QUOTA is stated, not
+assumed** — a tree that records no selection is `known: false` and is never read as uniform. That
+`overvalue_tau` is in the critic's own units. The whole JSON-CLI command block and the investigation
+recipe, the obs-offset regression rule, the counterfactual tier's three must-flag caveats,
+`--compile` / `--impl`, and the Gotchas section verbatim — the highest-density-per-line block in the
+file, including the deliberately-kept "the op move-order caveat is GONE" entry, which exists because
+the doc told two readers otherwise after the fix had landed.
+
+**It did NOT reach the ~500-line dispatch target: it landed at 712.** Every section above is on the
+dispatch's own keep-verbatim list, and the census that opened this work judged this file *"basically
+healthy — a reference manual for two surfaces over one engine, and a reference manual is
+legitimately long"* with a target of ~1,000 lines. 712 is below that; going lower means moving a
+hazard, which is the trade this whole exercise exists to refuse. Reported rather than trimmed to fit.
+
+Also landed: the P2 backlog row for the `entity_seats_test` / `scaffolding_gauge_test` contention
+flake seen at the rust-leaf landing (a test that flakes under contention is a timeout or
+shared-state defect, not noise). Gates: the four static gates green; the routine gate green.
+Tag: DOCS / TECH DEBT. **No measurement about the model changed and no run was touched.**

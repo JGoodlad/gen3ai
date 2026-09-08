@@ -16,6 +16,7 @@
 | reason about the research | `designs/research_state/UNDERSTANDING.md`; `ledger.md` wins any disagreement |
 | touch a training flag | `src/agents/training/CLAUDE.md` → its `designs/training/<topic>.md` |
 | touch the rust port | `src/rust_sim/CLAUDE.md`, then its `designs/rust_sim/<topic>.md` |
+| probe a run's traces / the prober | `src/main/prober/CLAUDE.md`, then its `designs/prober/<topic>.md` |
 
 ---
 
@@ -61,7 +62,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 - **`designs/CHANGELOG.md`**: append-only history. Add the new version entry in the same pass. Never edit or "correct" an existing entry — its job is to record what was believed at the time.
 - **Every `README.md`**: always current. **Exception:** `designs/ai_v3/README.md` is a **frozen ai_v3 historical** digraph — do NOT update it for current-arch changes.
 
-**Four `designs/` trees hold detail lifted OUT of a `CLAUDE.md`** (2026-09-07) and each OWNS what it holds — update it in the same pass as the code, exactly like a leaf: `designs/ops/` (the testing + training-runbook chapters, and the SOPs), `designs/training/` (the training leaf's topics), `designs/rust_sim/` (the port's topic docs — the module map, the gate-ladder rungs, the e2e capstone, the regression pins, the fuzzer findings, the mechanic classes, protocol emission — plus `port_build_log.md`, its closed coverage rounds). `designs/research_state/claude_md_archive/` is the exception — it is HISTORY, do not update it.
+**Five `designs/` trees hold detail lifted OUT of a `CLAUDE.md`** (2026-09-07) and each OWNS what it holds — update it in the same pass as the code, exactly like a leaf: `designs/ops/` (the testing + training-runbook chapters, and the SOPs), `designs/training/` (the training leaf's topics), `designs/rust_sim/` (the port's topic docs — the module map, the gate-ladder rungs, the e2e capstone, the regression pins, the fuzzer findings, the mechanic classes, protocol emission — plus `port_build_log.md`, its closed coverage rounds), `designs/prober/` (the prober's topic docs — the analyze panels, the result timeline, the belief/threat views, the per-method session reference, the counterfactual probes, arch drift, the sim impl, the tests, and `/battle`'s field map). `designs/research_state/claude_md_archive/` is the exception — it is HISTORY, do not update it.
 
 **Do NOT auto-update other docs under `designs/`** — `impl_step*.md`, `design_*.md`, `todo.md` are explicit-only (directly, or via `/gen3ai-update-design-docs`). The lone exception is `CLAUDE.md` files inside `designs/`, which follow the always-current rule.
 
@@ -76,7 +77,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 | `src/agents/training/` | The training hub — each topic keeps its heading + summary there and its detail in `designs/training/<topic>.md` |
 | `src/rust_sim/` | The Rust Showdown port: the module map, the conventions, the differential-gate ladder and how to run each rung, the four A/B fuzzers and their green-gate allowlists, the search/replay drivers, and the standing lessons — detail in `designs/rust_sim/` |
 | `src/main/launcher/` | Launcher internals: restarts, crash reporting, exit codes, flags, port default |
-| `src/main/prober/` (+ `web/`) | Forensic-replay inspector: the analysis ENGINE, the `ProbeSession` facade, the JSON CLI; `web/` is the browser front end |
+| `src/main/prober/` (+ `web/`) | Forensic-replay inspector: the analysis ENGINE, the `ProbeSession` facade, the JSON CLI, and the hazards that have cost a wrong reading; the detail is its `designs/prober/<topic>.md`. `web/` is the browser front end |
 | `src/main/tui/` | Thin shared Textual base — the LAUNCHER's UI (the prober's TUI is retired) |
 | `designs/` | Which `ai_vN` folder is relevant; the version map |
 
