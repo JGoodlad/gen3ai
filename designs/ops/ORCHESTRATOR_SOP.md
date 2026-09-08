@@ -95,7 +95,7 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   ACCEPTED rows top-down by criticality tier then size, as a standing housekeeping procedure, PACED
   to reach **95% of the weekly quota by Tuesday ~08:00 PT** and stopping there (owner, 2026-09-06;
   the usage gate runs at `--weekly-threshold 95` for that work, never higher; if ACCEPTED is empty,
-  notify the owner with the top PROPOSED rows and start the highest after 15 minutes). Research and
+  notify the owner with the top PROPOSED rows and start the highest after 15 minutes). **Amendment (owner, 2026-09-08): once the NEXT ARM is in STEADY STATE — launched, past its first promotion, first read banked, no block open — the ceiling is 98% of the BINDING weekly window (`--weekly-threshold 98`), spent in the owner's priority order: the pending probes on the finished arm → rust-sim gen3 parity (all of gen3, not OU only) → backlog rows. Before steady state the reserve for those probes and the launch is kept. The last 2% is the owner's; the 5-hour rule is unchanged. Research and
   measurement work under the current week goal is dispatched autonomously (§6), and the live arm's
   needs always come before the burn-down. A RED gate that blocks landings gets the minimal unblock,
   not a refactor.
