@@ -524,7 +524,7 @@ class Gen3RewardManager(RewardBiasTerms, RewardPotentials):
         gated BIAS computes; ``_terminal_only`` additionally skips the handful that were UNGATED
         *because* their cross-turn mutations feed BIAS terms, which under this composition have no
         reader. Each skip site below names the reader it proved dead, and the full table of what
-        SURVIVES and why is in ``src/agents/training/CLAUDE.md`` → *And a SECOND fast path*.
+        SURVIVES and why is in ``designs/training/reward.md`` → *And a SECOND fast path*.
 
         🚨 **A SHORT CIRCUIT MAY NEVER SKIP AN OBSERVATION FEATURE.** ``_fold_material_pbrs`` runs
         unconditionally below and computes Φ_mat above its own gate, because its by-product

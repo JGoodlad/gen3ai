@@ -672,7 +672,7 @@ write was removed.
 > (`agents/training/reward_skip_parity_fuzz_test.py`). **If you add a board read to
 > `_attacker_threat`, add it to `attacker_state_key` in the same edit** — the AST gate will tell
 > you, but an under-key is a silently wrong reward, not a crash. Rationale + measurements:
-> `src/agents/training/CLAUDE.md` → *The belief-block memo*.
+> `designs/training/reward.md` → *The belief-block memo*.
 > **Downstream reader:** the prober engine (`src/main/prober/engine/`) resolves its obs
 > offsets at runtime from `get_layout()` (`ObsOffsets`), with `0 = absent` for deleted blocks
 > (`mm_off`, and since gen3_entity_rehome_v1 also `om_off`/`tm_off` — ThreatView/saliency

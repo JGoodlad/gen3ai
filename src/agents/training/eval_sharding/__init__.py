@@ -20,7 +20,7 @@ samples and computes the CVaR once (a CVaR can't be averaged); its aggregation i
 *captured sample set* shifts slightly with ``shard_games`` because the forensic capture quota
 interacts with the shard count — so ``td_resid_tail`` is a shard-dependent sampled diagnostic, not
 a per-game exact aggregate (win_rate etc. are exact regardless). Full notes:
-``src/agents/training/CLAUDE.md`` → item-level work-stealing.
+``designs/training/eval_and_rating.md`` → *Battle-level work-stealing*.
 
 Extensibility (Glicko/TrueSkill): aggregation preserves exact per-opponent W/L counts (the
 ``counts`` map), and ``agents.training.rating`` defines the ``MatchRecord`` / ``RatingModel`` seam

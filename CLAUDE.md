@@ -12,7 +12,7 @@
 | run / resume / fork a training run | `designs/ops/training_runbook.md`, then `src/main/launcher/CLAUDE.md` |
 | operate a live run (watch, kill, read) | `designs/ops/TRAINING_RUN_SOP.md` |
 | write or tier a test, or run a benchmark | `designs/ops/testing.md` |
-| reason about the model | `designs/ARCHITECTURE.md` **first**, then `src/agents/model/CLAUDE.md` |
+| reason about the model | `designs/ARCHITECTURE.md` **first**, then `src/agents/model/CLAUDE.md` → `designs/model/` |
 | reason about the research | `designs/research_state/UNDERSTANDING.md`; `ledger.md` wins any disagreement |
 | touch a training flag | `src/agents/training/CLAUDE.md` → its `designs/training/<topic>.md` |
 | touch the rust port | `src/rust_sim/CLAUDE.md`, then its `designs/rust_sim/<topic>.md` |
@@ -62,7 +62,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 - **`designs/CHANGELOG.md`**: append-only history. Add the new version entry in the same pass. Never edit or "correct" an existing entry — its job is to record what was believed at the time.
 - **Every `README.md`**: always current. **Exception:** `designs/ai_v3/README.md` is a **frozen ai_v3 historical** digraph — do NOT update it for current-arch changes.
 
-**Five `designs/` trees hold detail lifted OUT of a `CLAUDE.md`** (2026-09-07) and each OWNS what it holds — update it in the same pass as the code, exactly like a leaf: `designs/ops/` (the testing + training-runbook chapters, and the SOPs), `designs/training/` (the training leaf's topics), `designs/rust_sim/` (the port's topic docs — the module map, the gate-ladder rungs, the e2e capstone, the regression pins, the fuzzer findings, the mechanic classes, protocol emission — plus `port_build_log.md`, its closed coverage rounds), `designs/prober/` (the prober's topic docs — the analyze panels, the result timeline, the belief/threat views, the per-method session reference, the counterfactual probes, arch drift, the sim impl, the tests, and `/battle`'s field map). `designs/research_state/claude_md_archive/` is the exception — it is HISTORY, do not update it.
+**Six `designs/` trees hold detail lifted OUT of a `CLAUDE.md`** (2026-09-07) and each OWNS what it holds — update it in the same pass as the code, exactly like a leaf: `designs/ops/` (the testing + training-runbook chapters, and the SOPs), `designs/training/` (the training leaf's topics), `designs/model/` (the model leaf's topics — the phase pipeline, the readouts, the file layout, the flag-registry rules, versioning, opponent intent), `designs/rust_sim/` (the port's topic docs — the module map, the gate-ladder rungs, the e2e capstone, the regression pins, the fuzzer findings, the mechanic classes, protocol emission — plus `port_build_log.md`, its closed coverage rounds), `designs/prober/` (the prober's topic docs — the analyze panels, the result timeline, the belief/threat views, the per-method session reference, the counterfactual probes, arch drift, the sim impl, the tests, and `/battle`'s field map). `designs/research_state/claude_md_archive/` is the exception — it is HISTORY, do not update it.
 
 **Do NOT auto-update other docs under `designs/`** — `impl_step*.md`, `design_*.md`, `todo.md` are explicit-only (directly, or via `/gen3ai-update-design-docs`). The lone exception is `CLAUDE.md` files inside `designs/`, which follow the always-current rule.
 

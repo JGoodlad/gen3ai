@@ -172,6 +172,14 @@ CENSUSED, not decided** —
 prices it (which flags become deletable, which runs stop loading, the ordered commit list with a
 gate per commit); the flip waits on the live arm.
 
+## `model/` — the model leaf's topic docs, always-current
+[`model/`](model/) holds the detail lifted out of `src/agents/model/CLAUDE.md` on 2026-09-08 and OWNS
+it — update the topic doc in the same pass as the code, exactly like a leaf. Ten docs:
+`phase_pipeline.md`, `readouts_and_value_routes.md`, `file_layout.md`, `op_contracts.md`,
+`flag_registry_rules.md`, `versioning.md`, `opponent_intent.md`, `architecture_artifacts.md`,
+`popart.md`, `typing.md`. **[`ARCHITECTURE.md`](ARCHITECTURE.md) stays the doc of record for what the
+model IS** — a topic doc points at it rather than restating it, and loses any disagreement with it.
+
 ## `ops/` — operational procedure (SOP) documents, era-independent
 [`ops/TRAINING_RUN_SOP.md`](ops/TRAINING_RUN_SOP.md) — how a run is launched (*it launches* vs *it is
 the experiment*, two independent checks), watched (the four layers; the 55-minute fallback cron),

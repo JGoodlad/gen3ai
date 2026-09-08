@@ -24,7 +24,7 @@ Three of this project's standing facts are population-game facts in disguise:
   splits the same matrix into spine + cycle and tests the cycle against its own binomial noise
   floor — read it offline with `python -m main.elo <run>` (the live `eval/hodge_width_elo` /
   `eval/hodge_cyclic_fraction` scalars are the weak per-cycle counterpart); details in
-  `src/agents/training/CLAUDE.md` → *Hodge decomposition*. First reading: gen-15's ladder is ~96%
+  `designs/training/eval_and_rating.md` → *Hodge decomposition*. First reading: gen-15's ladder is ~96%
   spine but carries **46 ELO of excess width (p = 0.005)** and three significant snapshot
   3-cycles, so the cycles discussed below are a measured quantity here, not an analogy.
 - **The exploiter random walk** (ai_v10 §9: "past N teams the restoring force is too small and we

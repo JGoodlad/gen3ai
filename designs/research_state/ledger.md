@@ -14937,3 +14937,66 @@ number). Tag: RUST SIM / CENSUS. **No engine behaviour changed, no gate moved, n
 process. Every redirect on the box was silently producing 0-byte files ("Disk quota exceeded"),
 which broke tooling in this session and would corrupt any other agent's captured output the same
 way. Removed; `/tmp` went 80% → 18%, returning ~30 GB of RAM on a box carrying a live training run.
+
+### 2026-09-08 · DOCS · src/agents/model/CLAUDE.md split (1,279 → 453 lines; topics to designs/model/, ARCHITECTURE.md stays the doc of record) + 6 stale pointers from the training split repointed
+
+The last of the four leaf splits in this burn-down (training, rust_sim, prober, model),
+owner-authorized 2026-09-08. The
+model leaf was **1,279 lines / 109 KB (~27k tokens)**, loaded by every session that touches
+`src/agents/model/`; it is now **453 lines / 34 KB**. Same rule as the two passes before it
+(`claude_md_census_2026-09-06.md` §0): *a line earns its place in a `CLAUDE.md` only if an agent that
+has NOT read it would do the work WRONG.*
+
+**The structural decision this pass makes, and it is the one worth recording: where
+`designs/ARCHITECTURE.md` already states a fact, the leaf now POINTS at it rather than restating
+it.** The census read this leaf as the healthiest of the five (43% RULE, 12% HAZARD) and proposed
+~1,000 lines; the cut to 453 comes almost entirely from deleting a SECOND statement of what
+ARCHITECTURE.md owns — the phase chain, the tier table, the per-phase walkthrough — not from
+dropping rules. `ARCHITECTURE.md` §8 had already recorded this leaf as a repeat offender in exactly
+that class (three different `ARCH_SIGNATURE` values, fourteen different `MODEL_CONFIG_VERSION`s, a
+"3390-dim" `ObsUnpack`), so the fix is structural rather than another correction pass.
+
+**Nothing was deleted.** A declared line-level partition assigned all 1,279 lines to exactly one
+destination before anything was written, and a post-hoc audit re-derives it: **1,102 of the 1,109
+non-blank lines are byte-identical somewhere in the new corpus**, and the 7 that are not are each
+accounted for — one line split at a sentence boundary (both halves verbatim, they reconstruct
+exactly), three stale pointers repointed on purpose (below), and three intra-document *"above"*
+references this pass itself made dangling. **Unaccounted: 0.**
+
+Ten new topic docs under **`designs/model/`**, which now OWNS the detail and carries the leaf's
+always-current obligation: `phase_pipeline`, `readouts_and_value_routes`, `file_layout`,
+`op_contracts`, `flag_registry_rules`, `versioning`, `opponent_intent`, `architecture_artifacts`,
+`popart`, `typing`. History — the SimSiam-deletion parenthetical, the two refactor-proof bundles,
+the M1 ortho-init measurement — went to
+`designs/research_state/claude_md_archive/model_leaf_history.md` (HISTORY, additive only).
+
+**What stayed verbatim:** the architecture-constant single-source rule; the dual-head
+`Gen3DualHeadMaskablePolicy` pairing rule; the *Rules to preserve* phase contract and the
+width-arithmetic rule; the versioning playbooks (what to bump when, the deleted-kwarg hazard, the
+optimizer-reorder guard); the SB3 ortho-init clobber and its `restore_identity_init` guard; the
+`log_softmax().exp()` spelling; the whole `--critic` mode section; the op's one-slicer rule; the
+α-consumer conventions and the `_pool`-suffix reading rule. The DamageOp **trunk route is DEAD**
+(`gen3_no_concat_v1`, v61) is now stated as a standing rule at the top of the phase section rather
+than buried mid-paragraph.
+
+⚠️ **One leaf-vs-`ARCHITECTURE.md` disagreement found and NOT fixed, per the reporting rule.** The
+per-phase walkthrough says `ObsUnpack` peels a **2,667**-dim observation (`gen3_entity_rehome_v1`);
+`ARCHITECTURE.md` §1 and `Gen3ObservationEncoder.get_layout()` say **2501**. The text moved verbatim
+into `designs/model/phase_pipeline.md` and carries a `**STALE:**` marker naming the live figure —
+ARCHITECTURE.md remains the doc of record and its §8 item 5 already logged the same drift.
+
+**Six stale pointers left by the training split, repointed** (each named a section of the old
+training leaf that now lives under `designs/training/`): the evidential Beta head and the per-action
+Q win-prob head → `cf_grounding.md`; *The reward COMPOSITION*, *The belief-block memo* and *And a
+SECOND fast path* → `reward.md`; *Hodge decomposition* and item-level (now **battle-level**)
+work-stealing → `eval_and_rating.md`. Two of the seven sites are code docstrings
+(`reward_manager.py`, `eval_sharding/__init__.py`) — comment-only edits, no behaviour. A seventh of
+the same class, `research_state/hodge_predictions.md`, was found and fixed in the same pass.
+
+Root `CLAUDE.md` updated in the same pass (the *Where the detail is* model row now reads
+`ARCHITECTURE.md` → the leaf → `designs/model/`, and the `designs/`-trees sentence names the new
+tree); `designs/CLAUDE.md` gained a `model/` section; the archive README gained its fourth-pass row.
+Gates: the four static gates plus the mode-flag doc gate and the ledger-index gate green; the
+routine gate green.
+
+Tag: DOCS / TECH DEBT. **No measurement changed, no run was touched, and no code behaviour changed.**

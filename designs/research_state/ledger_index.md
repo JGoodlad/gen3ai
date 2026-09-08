@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-14,940-line file. **The ledger itself is append-only and is never edited by this**;
+15,003-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**445 headings · 405 dated · 2026-08-01 → 2026-09-08 · ledger 14,940 lines.**
+**446 headings · 406 dated · 2026-08-01 → 2026-09-08 · ledger 15,003 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -465,3 +465,4 @@ rename.
   - `L14797` · `2026-09-08` · DOCS · src/agents/training/CLAUDE.md split by topic (3,183 → 740 lines; detail to designs/training/, history to claude_md_archive/)
   - `L14835` · `2026-09-08` · DOCS · src/main/prober/CLAUDE.md split (1,624 → 712 lines; topics to designs/prober/, history to claude_md_archive/)
 - `L14886` · `2026-09-08` · RUST SIM · gen3 parity round 0: the coverage census beyond OU — the engine runs 312/369 moves, not the 309 three docs claimed (369 moves 309→312 measured · abilities 76/76 · species 392/392 · items 102/106)
+  - `L14941` · `2026-09-08` · DOCS · src/agents/model/CLAUDE.md split (1,279 → 453 lines; topics to designs/model/, ARCHITECTURE.md stays the doc of record) + 6 stale pointers from the training split repointed

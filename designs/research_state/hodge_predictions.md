@@ -21,8 +21,8 @@ export PYTHONPATH=$PYTHONPATH:src
 python -m main.elo <run_dir> --out <scratch> --no-plot --hodge-bootstrap 300 --hodge-seed 0
 ```
 
-Mechanism and scope rules: `src/agents/training/CLAUDE.md` → *Hodge decomposition — the SPINE and
-the WIDTH*. Implementation + tests: `src/agents/training/hodge.py`, `hodge_test.py`.
+Mechanism and scope rules: `designs/training/eval_and_rating.md` → *Hodge decomposition — the SPINE
+and the WIDTH*. Implementation + tests: `src/agents/training/hodge.py`, `hodge_test.py`.
 Units: **1 logit = 400/ln10 ≈ 173.72 Elo**.
 
 ---

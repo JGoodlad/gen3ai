@@ -1,5 +1,36 @@
 # Model Directory — Contributor Notes
 
+**This leaf is a CONTRACT and a HAZARD LIST** — the rules a change to the model must follow, the
+footguns that have already fired, and a map. **[`designs/ARCHITECTURE.md`](../../../designs/ARCHITECTURE.md)
+is the only document that states the model AS IT IS NOW**; read it first, and where it and this file
+disagree, ARCHITECTURE.md wins. History: [`designs/CHANGELOG.md`](../../../designs/CHANGELOG.md).
+
+The split is deliberate: this file holds the **rules** a phase must follow (durable), and
+`ARCHITECTURE.md` holds the **state** the model is currently in (changes every run). When you touch
+`features_extractor.py`, update the contract here if a rule changed, and `ARCHITECTURE.md` if the
+state did — then regenerate the delivery graph.
+
+## Where the detail is — the topic map
+
+**`designs/model/` owns the detail and carries the same always-current obligation as this file —
+update the topic doc in the same pass as the code.**
+
+| I am about to touch… | Read |
+|---|---|
+| the phase chain, the tier order, the T0/T1 belief+physics stack, what a phase does | [`designs/model/phase_pipeline.md`](../../../designs/model/phase_pipeline.md) (`ARCHITECTURE.md` §2.1 first) |
+| any readout off `value_pooled` — win-prob, the cf heads, `QWinProbHead` — or a critic delivery route | [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md) |
+| which file a class lives in, the table layering, the extractor class chain | [`designs/model/file_layout.md`](../../../designs/model/file_layout.md) |
+| a stash surface, or the `torch.compile` refusal | [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md) |
+| adding, demoting or deleting a model flag | [`designs/model/flag_registry_rules.md`](../../../designs/model/flag_registry_rules.md) + the GENERATED [`designs/flag_registry.md`](../../../designs/flag_registry.md) |
+| `model_version/`, a config bump, a deleted kwarg, a resume-immutable hparam, `--critic`'s gate | [`designs/model/versioning.md`](../../../designs/model/versioning.md) |
+| the α/β heads, their metrics, or a new α consumer | [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md) |
+| PopArt | [`designs/model/popart.md`](../../../designs/model/popart.md) |
+| the delivery graph, the architecture viewer, where the canonical architecture lives | [`designs/model/architecture_artifacts.md`](../../../designs/model/architecture_artifacts.md) |
+| a type annotation, or the mypy gate's scope | [`designs/model/typing.md`](../../../designs/model/typing.md) |
+
+Closed history — **do not update it, do not re-derive a plan from it**:
+[`designs/research_state/claude_md_archive/model_leaf_history.md`](../../../designs/research_state/claude_md_archive/model_leaf_history.md).
+
 ## Architecture constants — single source of truth
 
 All network dims are defined as module-level constants in **`arch_constants.py`** (relocated there
@@ -24,191 +55,22 @@ Embedding dims (`species_embedding_dim`, `move_embedding_dim`, etc.) live in `st
 
 ## Phase module structure
 
-`forward_internal` is decomposed into phase `nn.Module`s, chained by a thin orchestrator, in ONE
-order — the TIER ORDER (`gen3_tiered_pipeline_v1`). There is no placement flag and no second chain:
+**[`designs/ARCHITECTURE.md`](../../../designs/ARCHITECTURE.md) §2.1 states the chain and the four
+tiers as they are now.** Three rules about it live here:
 
-`ObsUnpack` → `PokemonEncoder` → `[BeliefSlots?]` → `[MoveBelief?]` → `[SpreadBelief?]` →
-`[HPTypeBelief?]` → `[DamageOperator?]` → `prefuse_proj` residual → `EntityMoveSeats` → edge cells →
-`TeamTransformer` → `[BeliefHead?]` → `CLSPool` → `[α/β?]` → `[side readouts?]` →
-`ProjectionAssembler`, then **two** root heads
-(`pre_proj_norm`/`projection` for policy, `value_pre_norm`/`value_projection` for value), each → `ReLU`.
-
-Grouped into the four tiers the contract asserts:
-
-| tier | question | modules |
-|---|---|---|
-| **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
-| **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
-| **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
-
-**The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
-module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
-entries are non-decreasing within a forward and (b) no entry point receives a tensor whose STORAGE
-was produced by a strictly later tier (checked over two forwards, so a stale stash counts; keyed on
-storage so `.detach()` and views do not hide it). Every `nn.Module` child must declare a tier or be
-listed in `UNTIERED_CHILDREN`, so a new phase cannot escape the contract by omission. Both checks
-are proved falsifiable by planted-violation tests. **What it cannot catch:** a T0 leg *recomputing*
-something intent-like from raw tokens — that is a semantic judgement, and the contract is a
-data-flow check. It buys that such a head could not then be FED the real α, and could not run out
-of order.
-
-**`t0_species_prior` (v72) is the case that shows why the tier map earns its keep.** The SAME
-team-composition species belief exists in two places, and the tier is the entire difference between
-useful and unreachable. At T2, inside `BeliefHead`, it is a training-only readout the physics cannot
-see — which is why the `DamageOperator` priced every unrevealed opponent from the static
-`SPECIES_USAGE_PRIOR` frequency table for as long as it did, with the op's own `species_probs`
-override sitting unused since the day it was added. Declared T0, the same computation is a resolve
-step the op consumes directly. The math lives once, in `t0_species.species_team_prior_logits`, which
-`BeliefHead.species_prior_logits` also calls. When the flag is on, the belief is resolved ONCE in
-`forward_internal` and the same tensor goes to all three unrevealed-defender sites (the op block,
-the `d1` cells, `pairwise_boost`) — the gate asserts tensor identity, because two
-equal-but-separately-computed tensors is exactly how the "bias and concat can never disagree"
-invariant stops holding without anything failing. Parameter-free, so OFF is byte-identical and the
-version check is the only thing that can reject a mid-run flip.
-
-`BeliefSlots`/`BeliefHead` are built only when `opp_belief_slots` (`--opp-belief-aux-coef>0`),
-`MoveBelief` only when `move_belief_mode != off`, `DamageOperator` only when `damage_op` (which requires
-`move_belief_mode` revealed/both); with all off the chain is the baseline `ObsUnpack →
-PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler` byte-for-byte. `BeliefSlots` swaps the
-un-revealed opp role-tokens for learned unknown-mon tokens *before* the transformer (so the belief is
-refined in-lineup); `BeliefHead` reads the refined opp tokens *after* the transformer and stashes the
-species/moves aux logits (a side readout — does NOT feed forward). **That T0/T2 split of the species
-belief is deliberate and stays**: `BeliefHead` is a training-only side readout, not a second resolve
-path, and its T2 declaration is what records the fact — if it ever started feeding a T0/T1 consumer
-the provenance check would fail. `MoveBelief` predicts + **reinjects** the moveset into the opp
-**role** tokens *before* the transformer (so the believed moves co-refine through attention, and every
-T1 consumer reads one posterior computed once); `DamageOperator`
-runs *after* `MoveBelief` and consumes its predicted-move logits to compute the believed-move incoming
-damage to each of our mons. Its per-our-mon incoming rows are added to our role tokens through the
-zero-init `prefuse_proj` (built whenever `damage_op` is), so attention reasons over the physics. **`MoveBelief`'s Smogon prior is LEGALITY-GATED unconditionally**
-(`gen3_unconditional_move_legality_v1`, v65): `build_move_prior_logits` drives every
-`(species, move)` the species cannot learn to `_ILLEGAL_PROB` 1e-6, so the belief can no longer
-invent "this special attacker might be holding Explosion". Three cases, and keeping them apart is
-the whole point — **`floor` is the LEGAL-UNOBSERVED base, never an on/off switch**:
-| case | prior | meaning |
-|---|---|---|
-| species has a learnset, move NOT in it | `_ILLEGAL_PROB` 1e-6 | **impossible** |
-| legal, absent from usage data | `floor` (`_PRIOR_FLOOR` 0.02) | unlikely but liftable by evidence |
-| legal, with recorded usage | its TRUE Smogon rate | no rarity cap — a surprise tech survives |
-| **no learnset at all** (unknown species / num 0) | `floor` everywhere | nothing known ⇒ everything stays POSSIBLE |
-That last row is a correctness invariant, not a default: *"not known to be illegal"* must never
-collapse into *"known to be illegal"*, or the belief asserts an unidentified opponent can do
-nothing. `logit(0.02) = -3.89` vs `logit(1e-6) = -13.8` is a **9.92-nat** gap, and a floor at or
-below `_MIN_PRIOR_FLOOR` (1e-3) is a hard `ValueError` — the collapse is unrepresentable rather
-than merely unlikely, because a collapsed floor silently turns the legality gate into the rarity
-prune that previously crippled surprise-move anticipation. **gen3_no_concat_v1 (v61): its flat block no longer enters either
-projection** — the op reaches the policy via the pointer cells + prefuse injection + edge cells, and
-the critic through `UnifiedValueReadout` (`--value-entity-pool`, `gen3_unified_value_readout_v1` —
-Stage-3 T3-DELIVER of `design_unified_belief.md` §3): ONE attention pool over the critic's entity
-rows (the 12 team tokens + the op's per-our-mon incoming rows, per-source type embeddings, UVR_K=4
-queries, zero-init out projection, injected into `value_pooled` so pi is untouched at any weight).
-v61's stopgap — the `MultiSeedValueReadout`, k=4×64 seed queries over the same rows — was the
-critic's window in between, and the **critic-route deletion wave DELETED it** along with its
-`value_seeds/*` TB collapse contract: dV **0.0000 bit-exact** on two consecutive end-of-run audits,
-against the entity pool's 5.490 (97% of the whole critic route joint). The succession the v80 flag
-was built for is complete; `value_entity_pool_test.py` pins the contract.
-**TWO PRESSURES WERE APPLIED TO THOSE SEEDS AND BOTH WERE DELETED (v78)** — the record is kept
-because the finding is what closed the line, not the code. `--value-seed-vicreg-coef` (v62,
-`seed_vicreg.py`) was the repulsive one: gen-6 satisfied every VICReg term while
-`out_effective_rank` stayed 1.05, because the deviations occupied <1 direction (three seeds
-identical, one breakaway). `--seed-quantile-coef` (v63, `seed_quantile.py`) was the positive
-counterpart — seed k predicts quantile τ_k of the return through ONE SHARED Linear, so k different
-predictions require k different seed reads — and gen-7 drove `crossing_rate` to 0.000 with
-`quantile_spread` 1.016 (the seeds genuinely predict four ordered quantiles) while
-`out_effective_rank` reached only **1.157 of k=4**, matching gen-6's centered PR 0.846 from the
-opposite direction. **A SHARED readout can only constrain each seed's component along its own
-weight vector; every orthogonal direction stays free**, so multiplicity is not the missing axis and
-no coefficient reaches it — which is why both flags were deleted rather than retuned. The response is
-**`--value-threat-inject` (v64, `value_threat_inject.py`)** — magnitude as TOKEN CONTENT rather
-than as another readout seat: one shared zero-init `Linear(13, D_MODEL)` adds the op's α-weighted
-incoming row for our mon j (α = the R1 `belief_mean` rung, which the flag forces on since R0
-`hard_max` builds no reducer) to that mon's token on **the value pool's copy only**, inside
-`CLSPool`. Keeping the augmented tensor a local is what makes "vf-only" structural rather than a
-convention: `our_cls`, `our_active_refined` and the pointer head cannot reach it, so `pi` is
-bit-identical at ANY weight — gated against a large random projection, not just at init. Equivariant
-in both axes (α has no defender index by Contract W; the row rides mon j's token; attention pooling
-is permutation-invariant). `W_inj` sits in the `restore_identity_init()` capture set (M1) and that
-is gated on a REAL `MaskablePPO` build. Structural + version-checked, off = no module).
-**v95 adds its SIBLING on the same local copy — `--pair-value-route` (PV,
-`design_opponent_intent.md` §7a(2)) — carrying Phase A's UNIFIED 14-coordinate `pair_in` row
-instead of v64's 13-wide damage summary, so the critic gets the six status identities,
-`neutralization` and `tempo_cost` per entity for the first time (they otherwise reach vf only as
-the `s3` edge family's softmax-normalised RATIO). The two stack additively and independently.
-⚠️ Its ENABLING owes the C4-style offline gate first (ledger C6); BUILDING it is free.
-(`BeliefHead` also carried an asymmetric SimSiam **latent** predictor until v75, regressing each
-believed slot toward the stop-grad `pokemon_encoder` role-token of the true hidden mon. It is DELETED —
-it was never fed forward, its own role-geometry probe concluded decodable != helps, and it cost ~13% of
-the train step. Predicting the opponent's unrevealed mons is unaffected: the species CE, the moves BCE
-and the T0 species prior all remain. See `designs/CHANGELOG.md` for how these landed.)
-A separate `WinProbHead` (`win_prob_mode != none`) reads `value_pooled` *after* the pools and stashes
-a `last_win_prob_logits` [B,1]. It never enters the pi/vf CONCAT, so projection dims are unchanged
-either way — but **what consumes it depends on `--critic`**: under `shaped` it is a side readout fed
-to the win-prob AUX loss and the prober, and under **`winprob` it IS the critic** (`_critic_value`
-returns `sigmoid` of these logits and the head's BCE is the value loss at `vf_coef`). `read_only`
-feeds it a STOP-GRAD `value_pooled` (head trains its own params only); `shaping` feeds it live (the
-win objective also shapes the trunk), and `winprob` implies `shaping`.
-
-`CfEvidentialHead` (`--cf-evidential`, v98) is a third readout off the same `value_pooled`, and
-v99 adds THREE more there (`gen3_cf_twin_heads_v1`): the two `WinProbHead` TWINS
-(`--cf-twin-heads` — heads B and C, the within-run paired R1 comparison) and the passive
-`ShadowValueHead` (`--cf-shadow-critic`, an MC-grounded value twin that never computes an
-advantage). All four share the evidential head's three properties — built LAST, never called by
-the forward, input detached unconditionally — so the count off `value_pooled` is now SIX heads
-and only `win_head` / `value_dist_head` are in the forward at all (`value_dist_head` when it is
-built — `--critic winprob` refuses it, leaving `win_head` alone, as the critic). It is
-the one that breaks the pattern in two ways worth knowing about. It emits a **Beta posterior** (α, β)
-over P(win|state) rather than a point estimate — the counterfactual factory's uncertainty confession,
-since G0 convicted the scalar head of RESOLUTION, not of an optimism offset. And it is **not called by
-the forward at all**: the training-side term (`instrumented_ppo._cf_evidential_term`) applies it to the
-STASHED `value_pooled`, always detached, so there is no `read_only`/`shaping` split to make and the
-rollout pays nothing. Built LAST in `__init__`, so ON-at-coefficient-0 is BIT-identical to OFF in pi/vf
-— not merely equal in shape, which is all the two heads above claim. Training half + the pre-registered
-read: `src/agents/training/CLAUDE.md` → the evidential Beta head.
-
-### `QWinProbHead` (`--q-winprob-mode`, v107) — the one readout that is NOT off `value_pooled`
-
-`gen3_q_winprob_head_v1`. Every other readout in this package evaluates a STATE, which is why "what
-is my win probability if I click Rock Slide?" costs eleven simulator re-rolls rather than a read.
-This head scores each of the eleven actions **from the token of the entity that action selects** —
-the SAME per-action tokens `PointerNativeActionHead` scores, taken off `stash.pointer_inputs` — with
-`value_pooled` as the board CONTEXT, and stashes `last_q_winprob_logits [B, 11]` in action-space
-order. One forward, eleven `P(win|s,a)`: the amortized one-ply search leaf (ledger 229e9f1 /
-5edbd05).
-
-**Four properties, and each one is a constraint rather than a style choice:**
-
-1. **ONE shared scorer** over all eleven slots. Three input projections exist only because the three
-   families carry different WIDTHS; everything after them is shared, so the readout is
-   permutation-equivariant within a family — permute our team and the six switch Q values permute
-   with it. The pointer head's own lesson applies verbatim: a flat `Linear(ctx, 11)` learns "slot 0
-   is usually right" from an ordering that means nothing, and a Q head that did so would be useless
-   as a search leaf. (The pointer head's THREE scorers are correct there, where each family's logit
-   has its own semantics; here every slot answers the same question.)
-2. **ZERO-INIT scorer** (weight and bias) ⇒ every logit exactly 0 ⇒ `P = 0.5` everywhere ⇒ the
-   untrained ranking is a total tie, which is the honest state of knowledge for a head that has seen
-   no label. It is covered by `restore_identity_init`'s by-observation capture set automatically —
-   and `q_winprob_head_test` proves the automatic coverage actually reached it on a REAL
-   `MaskablePPO` build, because "it should be picked up" is what the M1 bug was made of.
-3. **NO `shaping` mode.** Every input is detached INSIDE the forward, so `pi`/`vf` are bit-identical
-   whenever the head is built and `grad/q_winprob_share` reads exactly 0.0 by construction. That is
-   the `CfEvidentialHead` contract rather than `WinProbHead`'s tri-state, deliberately: a per-action
-   readout carrying a COUNTERFACTUAL label is a strictly larger leak surface than a per-state one,
-   so trunk exposure is a later decision that owes its own gate.
-4. **The forward DOES call it** — the one place it departs from the four cf readouts. Eleven Q
-   values are only useful if the forward that chose the action publishes them, so the contract is
-   not "never runs" but "runs and publishes only".
-
-**Built LAST in `__init__` for TWO reasons, and the second is specific to it.** The usual one is the
-append-never-insert rule (SB3 restores optimizer state positionally; appending also leaves every
-earlier module's init RNG draw untouched, which is what makes OFF byte-identical rather than merely
-equal in shape). The specific one: it sizes its projections from `pointer_move_cell_dim` /
-`pointer_switch_cell_dim`, so it must be constructed after every module that widens a pointer cell —
-the op, the intent cells, the pair-outcome cells, the switch branch, the conditional threat.
-
-Its two coefficients (`--q-winprob-coef`, `--q-winprob-onpolicy-coef`) are TRAINING-only and appear
-nowhere in this package; the fold and the starvation caveat that governs the second one live in
-`src/agents/training/CLAUDE.md` → the per-action Q win-prob head.
+- **The TIER ORDER is an ASSERTED INVARIANT, not a convention** (`gen3_tiered_pipeline_v1`).
+  `tier_contract.py` declares a tier per module; `tier_contract_test.py` runs a real forward and
+  checks tier entries are non-decreasing and that no entry point receives a tensor whose STORAGE was
+  produced by a strictly later tier. **Every `nn.Module` child must declare a tier or be listed in
+  `UNTIERED_CHILDREN`** — a new phase cannot escape by omission. It is a data-flow check, not a
+  semantic one.
+- **There is no placement flag and no second chain.** With every optional block off the chain is the
+  baseline `ObsUnpack → PokemonEncoder → TeamTransformer → CLSPool → ProjectionAssembler`
+  byte-for-byte.
+- 🚨 **`gen3_no_concat_v1` (v61): the op's flat block enters NEITHER projection.** The op reaches the
+  policy through the pointer cells + the `prefuse_proj` injection + the edge cells, and the critic
+  through `UnifiedValueReadout`. The TRUNK/concat route is DEAD; adding one back is a new
+  architecture decision, not a restoration.
 
 ### `--belief-grad-mode` — which arrow gets cut (`gen3_belief_grad_mode_v1` / `gen3_belief_label_only_v1`)
 
@@ -223,14 +85,6 @@ the rest of the network:
 | C | PPO loss → belief head params (the WRITE) | on | on | **CUT** |
 | D | PPO loss → shared trunk (normal training) | on | on | on |
 
-`detached` stop-grads the head's trunk **read** (`detach_read`), so the belief cannot reshape the
-trunk. It does **not** stop PPO training the heads — the reinject write stays live, deliberately
-(`belief_grad_mode_test::test_detached_preserves_normal_trunk_training`). `label_only` stop-grads
-the head's **output** at its publish boundary (`publish_detach` inside a head, `_publish_belief` on
-the extractor), so the belief is trained by its labels alone while the policy still reads it. The
-read stays live under `label_only`, because cutting B and C together leaves a probe on a trunk with
-no incentive to encode hidden state — still feeding the policy. That combination is not offered.
-
 **Two rules when touching this:**
 
 1. **A supervised loss reads `belief_supervision(name)`, never the `last_*` attribute.** Under
@@ -242,23 +96,6 @@ no incentive to encode hidden state — still feeding the policy. That combinati
    That table also trains from `PokemonEncoder`, so the damage would be an invisible slowdown, not
    a dead parameter. Same shape in `HPTypeBelief.reinject` (`hp_soft_type` → `type_embedding`). The
    reinjection adapters have no supervised loss, so PPO is their ONLY gradient source.
-
-Scope is the four heads with a forward path: `MoveBelief`, `SpreadBelief`, `HPTypeBelief`, and
-`AlphaIntentHead` (published unconditionally, so enabling a consumer later cannot reopen the route
-— and since the critic-route deletion wave took every α→vf route, α now reaches the objective only
-through the POLICY, via the pointer cells). `BeliefHead`, `PubValHead` and `BetaSwitchHead` are
-structurally label-only in every mode — asserted in `belief_label_only_gate_test.py`, not assumed,
-so a head that starts feeding forward fails a test instead of quietly rejoining the PPO objective.
-🚨 **`WinProbHead` is NOT in that set under `--critic winprob`**: there the head IS `_critic_value`,
-so it feeds GAE, the value loss and (at `win_prob_mode shaping`, which the mode implies) the trunk.
-Under `--critic shaped` it is label-only like the other three. The claim is mode-conditional, and
-reading it as unconditional would say the production critic cannot reach the objective.
-
-`detach()` is value-preserving ⇒ the forward is bit-identical in all three modes ⇒ this is a
-resume-immutable training hparam (the `vf_coef` class), NOT weight-shape: no `ARCH_SIGNATURE` bump,
-excluded from `check_compatible`, enforced resume-only by `check_belief_grad_mode`
-(`--allow-belief-grad-mode-change` for an intentional migration). `BELIEF_GRAD_MODES` in
-`features_extractor.py` is the single source for the legal set.
 
 **Dual-head value readout (H4 / Option C).** The transformer body is shared, but the actor and
 critic read it through independent paths. `CLSPool` holds a third query `value_cls` that attends
@@ -274,98 +111,13 @@ the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITEC
 unpack the tuple — keep that in mind when touching the extractor's return shape.
 
 ### Phase-by-phase data flow
+The per-phase walkthrough and the static-width arithmetic:
+[`designs/model/phase_pipeline.md`](../../../designs/model/phase_pipeline.md). Two things stay here.
 
-The embedding tables live in a shared `Embeddings` module passed as a forward argument to the
-phases that need them, so they register exactly once. An immutable `ExtractorContext` produced
-by `ObsUnpack` carries the ~30 unpacked tensors downstream, keeping each phase's signature
-narrow. Both projection input dims are STATIC ARITHMETIC (`gen3_static_widths_v1`):
-`compute_projection_widths(layout, opp_belief_cls_k=…)` in `features_extractor.py` mirrors
-`ProjectionAssembler.forward`'s concat exactly. **`vf` is a CONSTANT `D_MODEL`** — the
-critic-route deletion wave retired the whole post-assembler vf tail (the seed window; the
-hidden-opp belief's vf half; the `non_matchup_rest` vf concat), so `vf_combined IS value_pooled`,
-the same tensor every critic parameterization reads — the dist head under `--value-from-dist`, and
-the win head under `--critic winprob`. That is the structural cure for the v89/M2
-orphaned-branch class rather than another instance of it: there is no second vf path left for a
-critic parameterization to bypass. Only TWO inputs still move `pi`: the layout's
-`non_matchup_rest` tail, and the hidden-opp belief pool (`k·D_MODEL`, **policy side only** — its
-vf half read dV 0.0000 while its pi half flipped 39.6% of argmaxes, so the deletion had to be
-per-head). Every other flag is width-neutral by construction: the v89 value routes inject
-ADDITIVELY into `value_pooled`, and the intent cells widen the pointer stash, not pi/vf.
-
-> 🚨 **The old construction-time DISCOVERY forward is DELETED — its job is now a TEST.**
-> `__init__` used to measure the widths by running a dummy `forward_internal` with
-> `_intent_reduce_discovering` zero-fill branches threaded through the runtime forward; that
-> mechanism shipped the ede5a88 bug class (a discovery branch's early `return` hid every vf part
-> appended below it — the critic was built 128 dims short and died on the first real forward,
-> only when both flags met). `projection_width_test.py` is the old mechanism preserved as the
-> new mechanism's verifier: it builds production / all-routes-on / minimal / targeted flag
-> combos, runs a REAL forward each, and asserts the measured concat widths equal the arithmetic.
 > **When you add a width-contributing part**: extend `compute_projection_widths` in the same
 > pass and add the flag to the sweep — a wrong width for any combo fails in the suite, not at a
 > production launch. (A new additive `value_pooled` route needs no width change at all — see
 > `_value_pooled_routes`, whose runtime RAISE guards stay.)
-
-1. **`Embeddings`** — shared tables: species (32), move (16), item (16), ability (16), type (16,
-   shared for Pokémon types, move types, and TurnDelta move/type IDs). Owns the Hidden Power
-   soft-type blend (`hp_soft_type`) and the per-slot TurnDelta embedder (`embed_delta_slot`).
-2. **`ObsUnpack`** (stateless) — peels the flat observation (2667 dims under
-   `gen3_entity_rehome_v1`) into the named tensors of `ExtractorContext` via the declarative
-   schema's validated slice map (`build_schema(layout).slices()` — the tiling proof runs at
-   construction): per-Pokémon block + categorical IDs, the global/board feature slices, and
-   (hoisted here) the active-slot indices + fainted key-masks used downstream.
-3. **`PokemonEncoder`** — embeds + stitches the enriched per-Pokémon vector; runs the **shared
-   move processor** (Linear→ReLU→Linear, `MOVE_NET_HIDDEN`) over every move slot (input:
-   move/type embeddings, remnants, known flag, battle context, HP-candidate distribution, and
-   prev-turn move validity — the CPU matchup ×6 / validity ×6 inputs are DELETED with their obs
-   block, `gen3_entity_rehome_v1`), a
-   **within-Pokémon move self-attention** (MHA 32-dim, 2 heads, + LayerNorm residual), then the
-   **role encoder** (Linear→ReLU→Linear, `ROLE_ENCODER_HIDDEN`) → 12 × 128 role tokens. The role
-   input carries the **E2 active-context injection** (gen3_entity_rehome_v1): each side's
-   boosts+volatiles block scattered onto its ACTIVE mon's row (bench rows zero) — the entity owns
-   its own ctx; the global-token/projection routes remain (additive). Pinned by
-   `e2_ctx_injection_test.py`.
-4. **`TeamTransformer`** — builds a **13**-token sequence (6 our-team + 6 their-team role tokens
-   + 1 global token). `gen3_frame_deletion_v1` deleted the `N_HISTORY_TURNS` history seats along
-   with the lag frames that fed them (20 → 13), and that count is load-bearing rather than
-   cosmetic: every edge family addressing the GLOBAL seat indexes it as `2·TEAM_SIZE`, and every
-   `extra` seat (E3/E4, the H-B event seats) as `_total_tokens + k`, so a stale count writes whole
-   families onto the wrong tokens instead of raising. Adds token-type embeddings, and runs a
-   `TRANSFORMER_N_LAYERS`-deep `nn.TransformerEncoderLayer` stack (d_model
-   128, `TRANSFORMER_N_HEADS` heads, FFN `TRANSFORMER_FFN_DIM`, post-LN) under a key-padding mask
-   that masks fainted team slots. The global token comes from the two active-contexts +
-   non-matchup scalars; `embed_delta_slot` and `history_proj` are deleted.
-   Returns the two refined team-token blocks. **Optional gradient checkpointing**: a runtime
-   `grad_checkpointing` flag (set per run by `train_rl_agent.py --grad-checkpointing`, never
-   saved/version-checked) runs these encoder layers under `torch.utils.checkpoint(...,
-   use_reentrant=False)` during the backward-needing pass — **bit-exact** (dropout=0.0), trading
-   one extra forward on the otherwise-idle GPU for the layers' ~5 GB of activation VRAM at
-   batch 16384. A no-op under inference (gated on `torch.is_grad_enabled()`), so eval / the
-   self-play opponent forward pay nothing.
-5. **`CLSPool`** — one learned CLS query per side cross-attends over its 6 post-transformer team
-   tokens (fainted slots key-masked) → a 128-dim pooled team token per side (+ LayerNorm). Also
-   extracts `our_active_refined` = the transformer output of our active slot. A **third learned
-   query, `value_cls`**, cross-attends over **all 12 team tokens** (both sides, fainted
-   key-masked) → a 128-dim global `value_pooled` summary — a whole-board "who's winning" read for
-   the critic, a different aggregation than the policy's our-active-centric pools.
-5b. **`HiddenOppBeliefPool`** *(optional — built only when `--opp-belief-cls-k > 0`)* — **k** distinct
-   learned query tokens run through a `TransformerDecoderLayer` (self-attention among the queries to
-   coordinate + cross-attention to the 12 team tokens under the single-sourced `ctx.all_fainted`
-   key-mask) → a `[B, k·D_MODEL]` hidden-opponent belief. `None` when `k=0`. See the v9 toggle note
-   under *Model versioning* and `designs/ai_v5/design_offense_and_opponent_belief.md` §B2.
-6. **`ProjectionAssembler`** — emits a `(pi_combined, vf_combined)` pair. Policy: `our_pool(128)
-   + their_pool(128) + our_active_refined(128) + non_matchup_rest`. Value: `value_pooled(128) +
-   non_matchup_rest` (+ the seed readout over the op's typed `incoming_rows` when the op is on).
-   **`gen3_ctx_dedup_v1`: the per-side encoded active contexts are DELETED from both heads** —
-   they were duplicated delivery with a 1:1 entity-native replacement already live (the E2
-   injection puts each side's FULL raw ctx block on its active token; the global token is a
-   second route). `non_matchup_rest` stays: the global token is its only other route and no
-   pool reads that token directly, so the concat is currently its one direct head path. When
-   the hidden-opponent belief is on, its `[B, K·D_MODEL]` is appended to **both** (last),
-   widening each projection input by `k·D_MODEL`.
-7. **Root heads** — two parallel `pre_proj_norm` (LayerNorm) → `projection` (Linear) → `ReLU`
-   heads, one per `*_combined`, both emitting `PROJECTION_DIM`. SB3 sizes the shared
-   `mlp_extractor` from `features_dim = PROJECTION_DIM`, then `Gen3DualHeadMaskablePolicy` feeds
-   the policy half to `forward_actor` and the value half to `forward_critic`.
 
 Rules to preserve:
 
@@ -380,170 +132,36 @@ Rules to preserve:
 
 ## File layout (one responsibility per file; phases split 2026-08-16)
 
-Three split rounds, all **pure relocations** — same classes, same constants, same forward math
-(`gen3_damage_op_split_v1` 2026-08-01 carved out the op; the 2026-08-16 round carved the phase
-modules out of the extractor and the layout out of the op; `gen3_extractor_class_split_v1`
-2026-08-23 carved the orchestrator CLASS itself into the base-class chain below). The critic-route
-deletion wave then
-REMOVED two files rather than reshuffling any — `value_routes.py` (`ValueClockRoute` /
-`ValueIntentRoute`) and `intent_value_reduce.py` — plus `seed_diagnostics.py`. **The five
-surviving critic-side files stay as they are**: three distinct delivery MECHANISMS (the v89 seam
-in `value_readouts.py`; the two `CLSPool` token-content injections in `value_threat_inject.py` and
-`pair_value_route.py`) plus the two producers (`pair_outcome.py`, `conditional_threat.py`).
-Merging any of them would put two mechanisms behind one filename, which is the property this
-table exists to prevent:
+**Every file, its one responsibility, and the split rounds that produced it:**
+[`designs/model/file_layout.md`](../../../designs/model/file_layout.md). The map:
 
-| file | holds |
+| you are looking for | file |
 |---|---|
-| `arch_constants.py` | the architecture constants — the single source of truth for weight-shape dims |
-| `extractor_ctx.py` | `ExtractorContext`, `ObsUnpack`, `Embeddings`, token-type ids, obs helpers |
-| `encoders.py` | `MoveLatentEncoder`, `PokemonEncoder` |
-| `team_transformer.py` | `EdgeBias` (+ the `_EDGE_*_CELL` definitions), `BiasedEncoderLayer`, `TeamTransformer`, `EventSeats` |
-| `pools.py` | `CLSPool`, `HiddenOppBeliefPool` |
-| `belief_heads.py` | `BeliefSlots`, `BeliefHead`, `MoveBelief`, `SpreadBelief`, `ItemBelief`, `HPTypeBelief`, `BELIEF_GRAD_MODES` |
-| `q_winprob_head.py` | `QWinProbHead` (v107) + `Q_WINPROB_MODES` — the PER-ACTION `P(win\|s,a)` readout over the pointer head's own action tokens. Its own file rather than a fifth entry in `aux_value_heads.py`, because that file's subject is "readouts off `value_pooled`" and this one's input is the pointer stash; `value_pooled` is only its CONTEXT |
-| `aux_value_heads.py` | `WinProbHead`, `ValueDistHead`, `CfEvidentialHead` (v98), `ShadowValueHead` (v99 — the passive MC-grounded value twin behind `--cf-shadow-critic`; the twin WIN-PROB heads B/C reuse `WinProbHead` unchanged, which is the point: an architecture difference would be a second explanation for a score difference) (v98 — the EVIDENTIAL Beta posterior over P(win\|state); `softplus+1` ⇒ α,β ≥ 1 so the Beta stays unimodal and `Beta(1,1)` is reachable, plus the two closed forms the loss needs: the Beta-Binomial marginal NLL and `KL(·‖Beta(1,1))`. The ONE readout here with no `read_only`/`shaping` split — its input is detached UNCONDITIONALLY and the forward never calls it) |
-| `pointer_head.py` | `EntityMoveSeats`, `PointerNativeActionHead`, request-slot alignment |
-| `value_readouts.py` | `UnifiedValueReadout` (the critic's entity pool — the ONE `_value_pooled_routes` member) |
-| `value_threat_inject.py` | `ValueThreatInject` — the v64 damage-summary row as TOKEN CONTENT on the value pool's local copy of our tokens, inside `CLSPool`. Not in the v89 seam by design (a post-pool route must collapse the J axis) |
-| `damage_tables.py` | the DAMAGE/type/stat lookup buffers the op's physics reads — the type chart + ability multipliers, `build_damage_buffers`, the status-landing / trap / self-boost / recovery / sleep tables, the move-attribute + fixed-damage + Choice-Band tables. **Also the re-export HUB for `belief_tables` and `dex_ids`** |
-| `belief_tables.py` | the BELIEF-PRIOR bases a belief HEAD fuses with — the opponent spread prior, its generative nature/EV decomposition (`build_nature_mult` / `build_species_nature_prior` / `build_species_ev_prior` / `build_species_base_stats` / `invert_nature_evs`), the Hidden-Power TYPE prior, the ITEM prior, the per-species MOVE prior (`build_move_prior_logits` + `sanitize_historical_move_floor` + the `_PRIOR_FLOOR` / `_ILLEGAL_PROB` / `_MIN_PRIOR_FLOOR` triple) and the team-composition SPECIES prior (`build_species_cooccur_prior`, `SPECIES_CLAUSE_LOGIT`). See the note below the table |
-| `dex_ids.py` | the dex-IDENTITY facts BOTH of those key on — `HIDDEN_POWER_NUM` + `_belief_num` + `_hp_typed_nums` (the Hidden-Power num identity) and `build_species_usage_prior` (the normalized gen3ou usage share per num). The BOTTOM layer: it imports neither of the two above |
-| `damage_op_layout.py` | every `_DMG_*` offset/width constant, `OpTensors`, `decode_damage_block` — the block's shape contract |
-| `damage_op.py` | `DamageOperator` (ctor, core roll math, pointer surface, forward) + `OpStashes` |
-| `damage_op_pairwise.py` | `DamageOperatorPairwise` MIXIN — the 17 `pairwise_*` edge-family cell producers |
-| `damage_op_blocks.py` | `DamageOperatorBlocks` MIXIN — the outgoing/incoming/status flat-block builders (incl. the OAX kernel = d2's engine) |
-| `switch_branch.py` | `gen3_switch_branch_v1` — OA2 (E[our move \| they SWITCH], β-contracted, kept DECORRELATED from the stay branch), the Rapid-Spin spinblock (the Pursuit mirror) and Protect's α-derived attack mass. `SWITCH_BRANCH_COORDS` is the contract; each coordinate's §9a admission answer is in the module docstring |
-| `conditional_threat.py` | `gen3_conditional_threat_v1` — **OA1**, the conditional THREAT cell (the defensive pivot): the four α-contracted coordinates the reduced outcome row structurally cannot carry (`e_pko_acc`, `e_type_mult`, `margin_high`, `margin_crit`), on the pointer SWITCH cell. `CONDITIONAL_THREAT_COORDS` is the contract; the module docstring holds the **substitution table** for the three §1.2 clauses that are superseded (no `λ`, no re-emitted row coordinates, `--damage-matrices-outgoing-all` void) plus each coordinate's §9a admission answer |
-| `pair_value_route.py` | `gen3_pair_value_route_v1` — **PV**, the pair-VALUE CRITIC route: Phase A's unified row as TOKEN CONTENT on our mon j's token, injected inside `CLSPool` on the value pool's copy. The docstring carries the **C4 re-entry condition**, why the v89 seam was rejected (a post-pool route must collapse the J axis), and why α is R1 by ORDERING |
-| `pair_outcome.py` | the UNIFIED per-pair OUTCOME VECTOR's contract — `PAIR_OUTCOME_COORDS` (the coordinate table, with each one's §9a admission answer), `pair_alpha` (the publication read + the R1 fallback), `reduce_pair_in` (Contract W's one line), `PairOutcomeMoveCell`, plus Phase B's `reduce_pair_in_all` (Contract W at EVERY defender), `pair_alpha_full` (the three-way α split a SWITCH-branch consumer needs) and `PairOutcomeSwitchCell` (the FIRST module to widen the pointer SWITCH cell). Its op-side producer is `DamageOperatorBlocks.pair_outcome_coords` |
-| `extractor_stashes.py` | `ExtractorStashes` — the per-forward side-value container (`gen3_extractor_stashes_v1`) |
-| `projection.py` | `compute_projection_widths` (the STATIC width arithmetic) + `ProjectionAssembler` (the concat it describes) |
-| `extractor_build.py` | `ExtractorBuild` — `Gen3FeaturesExtractor.__init__`: every flag validation, every module, in construction ORDER |
-| `extractor_api.py` | `ExtractorApi` — the `last_*` stash reads, the pointer-cell widths, the debugger/ortho-init/belief-grad-mode setters |
-| `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
-| `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
-| `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
+| the architecture constants | `arch_constants.py` |
+| the extractor: `__init__` · the `last_*` surface · `forward_internal` · the class + `forward` | `extractor_build.py` · `extractor_api.py` · `extractor_forward.py` · `features_extractor.py` (the re-export HUB) |
+| the phases | `extractor_ctx.py` · `encoders.py` · `team_transformer.py` · `pools.py` · `belief_heads.py` · `projection.py` |
+| the op | `damage_op.py` · `damage_op_layout.py` · `damage_op_pairwise.py` · `damage_op_blocks.py` |
+| the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
+| the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` · `pair_value_route.py` |
+| the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` |
+| versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` · `popart.py` |
 
-**`belief_tables.py` + `dex_ids.py` are a fourth split round, taken in two passes
-(`gen3_belief_tables_split_v1` then `gen3_dex_ids_split_v1`, both 2026-09-06), and the LAYERING is
-the part to remember.** `damage_tables.py` had reached 1,433 lines holding unrelated subjects. Pass
-one moved the BELIEF PRIORS a head fuses with — the per-species Smogon distributions it predicts a
-zero-init DELTA on top of (spread, nature+EV, Hidden-Power type, item) — into `belief_tables`. Pass
-two moved the remaining two priors of that kind (the MOVE prior and the team-composition SPECIES
-prior, ~350 lines) and took `damage_tables` from 1,226 to **930**, under the size gate's 1,000-line
-TARGET. That second pass needed a THIRD module: those two builders read `HIDDEN_POWER_NUM`,
-`_belief_num`, `_hp_typed_nums` and `build_species_usage_prior`, which **the op's physics also
-reads** — so putting them in a belief module would have parked dex-identity facts the physics
-depends on inside the beliefs. `dex_ids.py` is the neutral bottom layer that holds them instead.
-
-The order is:
-
-```
-damage_tables  →  belief_tables  →  dex_ids          (and damage_tables → dex_ids)
-```
-
-**and it only ever points down.** Each higher layer is a real CONSUMER, which is what fixes the
-direction rather than leaving it a convention: `build_damage_buffers` registers
-`SPECIES_SPREAD_PRIOR`, `NATURE_MULT` and `SPECIES_USAGE_PRIOR` for the op and its typed-HP
-expansion reads `HIDDEN_POWER_NUM` + `_hp_typed_nums`; `build_move_prior_logits` calls `_belief_num`
-and `_hp_typed_nums`. An import back would close a cycle Python resolves **only for whichever module
-was imported first** — so it would work in the normal import order and raise in every other. Do not
-add one. `belief_tables_test.py` AST-scans every up-edge from a single declared `_LAYERS` tuple (so
-a fourth module is one more entry, not one more test), plus a COLD-IMPORT test that runs a fresh
-interpreter importing only `dex_ids` and asserts the two above it stay out of `sys.modules`. It also
-fails if any name is DEFINED in two of the three — a floor re-declared rather than imported is the
-same "a fix lands in one copy" hazard, and is exactly the shortcut a later split round is tempted by.
-
-`damage_tables` **re-exports every moved name** (`# noqa: F401  (re-export)` inline, never a new
-`ruff.toml` entry), so the ~20 historical `from agents.model.damage_tables import …` spellings in
-`belief_heads`, `t0_species`, `extractor_build`, `snapshot`, `gen3_env`, `main.train.config`,
-`flag_registry`, the prober and nine test modules still resolve — and the test asserts they resolve
-to the SAME object as the owning module.
-
-**No `state_dict` key moved and `ARCH_SIGNATURE` is untouched**: every one of these tables is
-registered `persistent=False` by its owning head (derived from `data/`, recomputable, never a saved
-weight), so they contribute zero keys and a relocation cannot move a key that does not exist.
-Verified rather than asserted, both rounds — on a seeded production-config build all **236
-`state_dict` entries and all 80 buffers are byte-identical** across the cut, and every moved
-definition is executable-AST identical to its pre-cut self (docstrings stripped; each gains one
-origin line). The probe is re-runnable against any baseline:
-`designs/research_state/measurements/dex_ids_split_2026-09-06/equivalence_probe.py`.
-
-The per-table SEMANTICS stay beside the head each prior feeds (`spread_belief_test.py` /
-`hp_type_belief_test.py` / `item_belief_test.py` / `move_prior_fusion_test.py` /
-`species_prior_fusion_test.py` / `damage_tables_test.py` — all of which reach their subject through
-the `damage_tables` hub and so were untouched by either move); `belief_tables_test.py` holds only
-what the SPLIT can break.
+🚨 **The table layering only ever points DOWN** (`damage_tables` → `belief_tables` → `dex_ids`), and
+**an import back closes a cycle Python resolves only for whichever module was imported first** — it
+would work in the normal import order and raise in every other. Do not add one;
+`belief_tables_test.py` AST-scans every up-edge and also fails if a name is DEFINED in two of the
+three. Every one of these tables is `persistent=False`, so a relocation moves no `state_dict` key.
 
 ### The extractor CLASS is a base-class CHAIN (`gen3_extractor_class_split_v1`, 2026-08-23)
-
-A third split round, and the one that took the last entry off the size ratchet's grandfathered list
-(the tree now has **no** source file over 2,000 lines). `features_extractor.py` went 2,280 → **277**:
-
-    ExtractorBuild(torch.nn.Module)   extractor_build.py    __init__
-      └─ ExtractorApi                 extractor_api.py      the last_* surface + the setters
-           └─ ExtractorForward        extractor_forward.py  forward_internal + the T0/T1 stack
-                └─ Gen3FeaturesExtractor  features_extractor.py  the class, and `forward`
-
-**Inheritance rather than helper functions, for four reasons that are each a constraint, not a
-preference:**
-
-1. **`state_dict` keys.** Moving CODE is free; moving where a sub-MODULE is ATTACHED is not. A base
-   class changes no attribute PATH on the instance, so the 236 keys are byte-identical.
-2. **The constructor SIGNATURE is a public surface.** SB3 builds the extractor as
-   `features_extractor_class(observation_space, **features_extractor_kwargs)`, and ~10 sites read
-   `inspect.signature(Gen3FeaturesExtractor.__init__).parameters` as the flag set (`compile_prewarm`,
-   `compile_preload`, `ctor_kwarg_snapshot_test`, `config_only_pattern_test`, `delivery_graph`, …).
-   An inherited `__init__` IS that function, so every one of them is unchanged.
-3. **Every body keeps its `self.` spelling**, so the split is checkable as a pure relocation — all
-   44 members are source-hash identical to the pre-split class.
-4. **mypy needs no declarations.** Each mixin's `self.<attr>` resolves against the `__init__` that
-   assigns it, because that `__init__` is an ANCESTOR rather than a sibling.
+`ExtractorBuild` → `ExtractorApi` → `ExtractorForward` → `Gen3FeaturesExtractor`, one file each,
+`features_extractor.py` holding the class and `forward`. Why inheritance rather than helper
+functions, why `__init__` is not split further, and the module-GLOBAL patching hazard a test author
+must know: [`designs/model/file_layout.md`](../../../designs/model/file_layout.md).
 
 **⚠️ `forward` stays on `Gen3FeaturesExtractor`, and must.** Both compile flags patch the BOUND
 `fe.forward`; `cf_terms` calls `type(fe).forward` for a deliberately-EAGER pass; and
 `instrumented_ppo_test` ASSIGNS `type(fe).forward` and restores it. An attribute defined on a base
 would be SHADOWED by that assignment and the restore would leave the shadow in place forever.
-
-**⚠️ `__init__` is deliberately NOT split further** — same reasoning as `instrumented_ppo.train()`.
-Its checkable property is MODULE CONSTRUCTION ORDER: SB3 restores optimizer state POSITIONALLY (the
-ai_v6_13 "128 vs 5" crash), so a module must be APPENDED, never inserted, and several comments in the
-body say exactly where in that order they sit. That is only readable while it is one straight line.
-
-**⚠️ A test that patches a module GLOBAL must name the module that HOLDS the caller.** Python
-resolves a global at call time against the *defining* module's namespace, so
-`agents.model.features_extractor.threshold_probs = fake` stopped reaching `forward_internal` the
-moment the forward moved. `intent_threshold_test` caught it because its pin is `assert not equal`, so
-a patch landing nowhere reads as "the cell is dead" — the same drift under an `assert equal` pin
-would have passed for the wrong reason forever. It now resolves the module through
-`inspect.getmodule(type(fe).forward_internal)`, which follows the code.
-
-**⚠️ `flag_requires_test._guarded_raises` resolves the ctor from the FUNCTION**
-(`Gen3FeaturesExtractor.__init__` + its `__qualname__`), never from
-`inspect.getsourcefile(Gen3FeaturesExtractor)` — the class's file no longer holds an `__init__` at
-all.
-
-No import cycle: `DamageOperator` touches the extractor only through `ctx: 'ExtractorContext'`, which
-is a **string** forward-reference and so costs no runtime import. The re-exports mean every historical
-path (`from agents.model.features_extractor import DamageOperator / EdgeBias / decode_damage_block /
-_DMG_* / _SB_ATK`, `from agents.model.snapshot import maybe_compile_extractor`) still resolves — the
-prober, `model_version`, `snapshot` and the tests all rely on that. `Gen3FeaturesExtractor` itself
-stays DEFINED in `features_extractor.py`: SB3 checkpoints pickle the class by its defining module.
-
-**The gate for a refactor claiming to change nothing is proof, not review:** byte-identity on pi/vf +
-the raw op block (`tmp/damage_op_equiv_probe.py`), unchanged `state_dict` keys, the constructed-scenario
-physics oracle (`damage_op_probe_fuzz_test.py`, 22/22), and the full suite. All four held.
-
-The 2026-08-23 class split was held to the same standard, escalated once more (the proofs are in the
-commit message): a **line-coverage splitter** reading the pre-split text from the COMMIT assigned all
-2,280 original lines to exactly one target (2,270 assigned + 10 verified-blank) before writing
-anything; **44/44 class members are source-hash identical** with `forward` / `forward_internal` /
-`__init__` additionally executable-AST identical; the `state_dict` KEY sha and the whole-`state_dict`
-TENSOR sha are unchanged on a seeded production-config build (236 keys); and pi/vf plus every
-`ExtractorStashes` field and every `last_*` property are bit-identical through both `fe(obs)` and
-`type(fe).forward(fe, obs)`. Exactly ONE deliberate edit: the class's base, `torch.nn.Module` →
-`ExtractorForward`.
 
 ## The op's flat layout has ONE slicer (`gen3_op_tensors_views_v1`)
 
@@ -556,87 +174,26 @@ consumer** — the layout walk raises if a region is added to the block without 
 block remains the serialization: `decode_damage_block` (the prober's human-readable mirror) and
 `last_raw_block` still read it, and dropping it from the forward is `design_op_tensors.md` step 3
 (retrain-class — it shrinks `out_gain`). Landed as a byte-identical refactor under the proof
-bundle above, on 64 real gen-9 eval states across three config arms.
+bundle recorded in `designs/research_state/claude_md_archive/model_leaf_history.md`, on 64 real
+gen-9 eval states across three config arms.
 
-## The op's SIDE VALUES have ONE container (`gen3_op_stashes_v1`)
-
-Every per-forward stash the op exposes (`last_topk_idx`, `last_pair_cells`, `last_w_all`,
-`last_out_pko`, `last_raw_block`, `last_tensors`, …) lives in ONE `OpStashes` dataclass that the
-forward replaces at ENTRY — so no stash can carry a previous batch, uniformly (three different
-clearing conventions used to coexist, and the top-K trio had none). **Reads** use the `last_*`
-properties (the documented surface); **writes** go through `op.stash.<field>` — writing a
-`last_*` name raises. When you add a stash: add the dataclass field with its shape comment, write
-via `self.stash`, and never add a bare `self.last_x = …` attribute. The extractor's tuple
-stashes are typed the same way (`PointerInputs`, `ThresholdProbs` — NamedTuples, so positional
-unpacks keep working).
-
-**The EXTRACTOR's side values follow the same contract (`gen3_extractor_stashes_v1`).** Every
-per-forward stash `Gen3FeaturesExtractor` exposes — `last_pointer_inputs`, the α/β intent trio,
-every belief publication (`last_move_belief_logits`, `last_spread_*`, `last_item_logits`,
-`last_hp_type_logits`, `last_belief_logits`, `last_opp_believed_mask`, `last_opp_active_local`,
-`last_move_latent_table`), `last_damage_block`, `last_value_pooled`, `last_win_prob_logits`,
-`last_value_dist_logits`, the internal T0→T1/T2 hand-offs (`t0_species_probs`,
-`entity_latent_table`, `thresh_probs`) and the LIVE `belief_supervision` dict — lives in ONE
-`ExtractorStashes` dataclass that `forward_internal` replaces at ENTRY. Same rules: **reads** on
-the `last_*` properties (every cross-module consumer — the policy's pointer head + dist critic,
-`instrumented_ppo`, the prober, inference — uses the typed properties, never `getattr(..., None)`);
-**writes** through `fe.stash.<field>`; a stray write to a `last_*` name raises. When you add a
-stash: add the dataclass field with its shape comment, write via `self.stash`, add the read-only
-property if it has an external consumer — never a bare `self.last_x = …` attribute. The
-publication/stop-grad semantics (`_publish_belief` / `belief_supervision()`) are unchanged — the
-supervision dict rides the container, so its per-forward clear IS the entry replacement.
-Boundary rule: each producer module owns its own stash surface — the op keeps `OpStashes`,
-`PokemonEncoder` keeps `last_move_tokens` (written unconditionally every encoder forward, read in
-the same extractor forward) — a submodule never writes into its parent's container. Related
-fail-loud: `Gen3DualHeadMaskablePolicy._critic_value` under `--value-from-dist` RAISES when the
-dist head/logits are missing or batch-stale instead of falling back to the FROZEN scalar
-`value_net` (the silently-wrong-critic shape v89 exposed). Gate: `extractor_stashes_test.py`.
+**The op's SIDE VALUES and the EXTRACTOR's follow one contract** (`gen3_op_stashes_v1` /
+`gen3_extractor_stashes_v1`): every per-forward stash lives in ONE dataclass the forward replaces at
+ENTRY, **reads** go through the `last_*` properties and **writes** through `op.stash.<field>` /
+`fe.stash.<field>` — writing a `last_*` name raises. Add the dataclass field with its shape comment,
+never a bare `self.last_x = …`; each producer owns its own stash surface and a submodule never writes
+into its parent's. Gate: `extractor_stashes_test.py`. Detail:
+[`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 
 `BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written
 as **`log_softmax(...).exp()`, not `torch.softmax(...)`, and that is deliberate** — do not
 "simplify" it.
-
-`torch.softmax` over the last dim of the `[B,6,n_species]` logits lowers to a numerator buffer plus a
-`[B,6,1]` denominator, and the Inductor **CPU** scheduler then trips `AssertionError: buf<N>` trying to
-fuse the division. That single op was the reason `--compile-opponents` used to set
-`torch._dynamo.config.suppress_errors = True`, which in turn meant the production config compiled only
-partially (3.6× instead of 6.53×) and every other backend failure in the process went silent.
-
-`tmp/softmax_variant_probe.py` measured the alternatives: `.contiguous()`, `.clone()`, a 2-D
-reshape and a hand-rolled `exp / sum` **all still fail**; only the `log_softmax().exp()` factoring
-lowers cleanly. It is mathematically identical and keeps the same max-subtraction stability (measured
-max|Δ| vs eager 5.07e-07). Guarded by `extractor_compiles_test.py`, which owns the whole compile
-matrix: the fast tests pin the math, and the compile cells run a real compile of the literal
-production arch with suppression OFF (verified to fail if the old spelling returns) across
-CPU/CUDA x forward/backward — `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `GEN3AI_TEST_ALLOW_GPU=1` is
-needed for the CUDA cells (the root conftest hides the GPU from the suite). Repro:
-`tmp/inductor_crash_repro.py`. Note the CPU **backward** does NOT lower — an `atomic_add` scatter
-the C++ backend refuses — which is why the compiled-opponent artifact is inference-only.
-
-**It is NOT "CPU cannot accumulate", and the distinction is the actionable part.** Inductor's C++
-backend has THREE store kernels and two of them implement the mode: `CppKernel.store` emits
-`atomic_add(&buf[i], v)`, `CppVecKernel.store` emits `atomic_add_vec<...>(...)`, and only
-**`CppTile2DKernel.store`** carries the bare `assert mode is None`. `CppTile2DKernel` is the
-2D-tiled/TRANSPOSED variant, chosen when the store's index pattern needs a transpose. So the
-refusal is one missing case in one kernel variant, selected by memory LAYOUT — if a CPU training
-compile ever mattered, the lever is to reshape the scatter so Inductor picks `CppVecKernel`, not to
-wait upstream. Triton's `store()` has the case unconditionally (`tl.atomic_add(..., sem='relaxed')`),
-which is why CUDA — the only compiled backward we actually run — is unaffected.
-
-The op is an accumulate-scatter because it IS a backward: the gradient of a gather/index-select is
-a scatter-ADD (indices may repeat, so writes must accumulate). Cut the gradient and it disappears.
-**So the refusal is CONFIG-CONDITIONAL, and the pin now says so**: `--belief-grad-mode label_only`
-publishes every belief output stop-grad, which deletes those backwards and lets the CPU backward
-compile cleanly. Bisected 2026-08-15 — `shaping` REFUSED, `label_only` COMPILED, `win_prob_mode`
-irrelevant. ⚠️ **Which gather is NOT pinned**: detaching the obvious candidate
-(`damage_op.py`'s `w_all.gather(-1, topk_idx)`, whose shape matches the reported buffer exactly)
-left the refusal in place, so there are several sites and the shape match was a coincidence. The
-limitation test therefore builds at `belief_grad_mode="shaping"` explicitly, because production
-moved to `label_only` at gen-11 and the pin would otherwise have gone green while testing nothing;
-that is
-pinned as a limitation test that fails if it ever lifts.
+`extractor_compiles_test.py` owns the compile matrix and pins the spelling (a real compile of the
+production arch with suppression OFF; `GEN3AI_SKIP_COMPILE_TESTS=1` opts out, `GEN3AI_TEST_ALLOW_GPU=1`
+for the CUDA cells). The Inductor diagnosis:
+[`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
 **The general lesson:** a backend that "can't compile our model" was one op, not a property of the
 architecture. Before reaching for a global suppression flag, bisect to the op — see
@@ -649,13 +206,6 @@ re-initialised by SB3 when the policy is built.** `ActorCriticPolicy._build()` r
 `self.features_extractor.apply(partial(self.init_weights, gain=sqrt(2)))`
 (`stable_baselines3/common/policies.py:617-631`); `init_weights` re-inits every Linear/Conv2d it
 finds, and `ortho_init` defaults **True**.
-
-Until 2026-08-01 this silently falsified the identity-at-init contract for **13** Linears in every
-real training run — the zero-init physics projections (`prefuse_proj` and, in the configs of the
-day, the between-layers refine loop's), `film_pi`/`film_vf`, plus the belief heads
-(`MoveBelief.move_head`, `SpreadBelief.*`, `HPTypeBelief.type_head`) whose zero-init is what makes
-the **cold-start posterior equal the Smogon prior**. Measured max|W| before the fix: 0.19–0.47. See `designs/research_state/ledger.md` → **M1**
-for the standing caveat this puts on the K10 and D4 result families.
 
 **The guard.** `Gen3FeaturesExtractor.restore_identity_init()` re-zeros them, and
 `Gen3DualHeadMaskablePolicy.__init__` calls it after `super().__init__()` (by which point SB3 has
@@ -670,142 +220,33 @@ training uses. Assert "byte-identical / identity-at-init / cold-start == prior" 
 `MaskablePPO`-built policy. `identity_init_test.py` does exactly that, and fails 8/10 if the guard
 is removed.
 
-## The flag registry — one declaration, five surfaces (`flag_registry.py`)
+## The flag registry — read it BEFORE adding a toggle
 
-**Add a model-relevant toggle by adding a `ModelFlag` row to `agents/model/flag_registry.py`, then
-following where the tests send you.** That file is the single declaration of every extractor
-architecture toggle and of the five hand-synced places each one has to appear:
+**A model-relevant toggle is one `ModelFlag` row in `agents/model/flag_registry.py`, and five
+hand-synced surfaces** — the `argparse` entry (**defaulting to `None`**, or its `_resolve` line is
+dead code), the `_resolve("name", default)` line beside it, `extractor_arch.ARCH_ARG_KEYS`,
+`snapshot.current_model_version()`'s keyword, and the `ModelVersion` field. `flag_registry_test.py`
+fails with a message NAMING the missing site; every historical failure in this class was silent.
+Four more rules govern the row, all of them enforced, none of them guessable:
 
-| # | surface | what it buys | how it is kept honest |
-|---|---|---|---|
-| 1 | the `argparse` entry in `main.train_rl_agent`, **defaulting to `None`** | a human can SET it, and leaves the sentinel `_resolve` needs | **validated** (both halves) |
-| 2 | the `_resolve("name", default)` line beside it | a **flagless** resume INHERITS it | **validated** |
-| 3 | `extractor_arch.ARCH_ARG_KEYS` / `_DERIVED` / `FROZEN_ARCH_KWARGS` | it reaches the extractor | **generated** |
-| 4 | `snapshot.current_model_version()`'s keyword (via `_run_arch_toggles` → `arch_toggles_from_args`) | an eval/self-play WORKER rebuilds the SAME gate | **generated** + validated |
-| 5 | the `ModelVersion` dataclass field | it is RECORDED and version-GATED | **validated** |
+- **Three TIERS** — `cli` / `config_only` / `constructor_only`. A `config_only` toggle is FROZEN at
+  its registry `default` for every CLI-launched run, so that default must be what production wants.
+- **Four CLASSES** — `structural` / `resume_immutable` / `training_coef` / `runtime` — decide which
+  gate a mismatch gets, and getting it wrong hurts in BOTH directions.
+- **`requires=`** is the dependency data. `requirement_closure(name)` gives the transitive set,
+  `flag_requires_test.py` enforces it forward and in reverse, and `python -m main.checkargs` reads
+  the graph so an unsatisfiable command is reported offline instead of crashing a launch.
+- **Read [`designs/flag_registry.md`](../../../designs/flag_registry.md)** for the current table
+  (GENERATED; `--check` is the gate).
 
-`flag_registry_test.py` fails with a message **naming the missing site**, which is the whole point:
-every historical failure in this class was silent. A toggle in `ARCH_ARG_KEYS` but not on
-`ModelVersion` means a resume version-checks against an architecture it does not build; one with an
-argparse entry but no `_resolve` line means a flagless resume reverts it to OFF. The test earned its
-keep on the first run — it found three rows whose flag name is not `--<field>`: `--damage-topk`
-writes `damage_topk_k`, and the `--damage-matrices` MODE flag desugars into both
-`damage_matrices_*` bools. Those name their flag with `cli_name=` rather than being exempted.
-
-🚨 **Surface 1 is TWO claims, and for a long time only one was gated.** `_resolve(name, default)`
-fires on `getattr(args, name) is None`, so an argparse entry defaulting to anything else makes its
-own `_resolve` line **dead code** — while `test_cli_flags_have_a_resolve_line` keeps passing, because
-the line is *present*. `test_cli_flags_argparse_default_is_none` closes the REACHABILITY half, and it
-found **five live flags** in exactly that state (2026-08-22): `value_threat_inject` (ON in the gen-17
-production config) and `opp_intent_coef` (which the structural `opp_intent` is DERIVED from) — either
-of which would have made a flagless resume of PRODUCTION FATAL at `check_compatible` — plus
-`cf_evidential` / `cf_twin_heads` / `cf_shadow_critic`. Use `default=None` with `action=BoolFlag` for
-a bool, so `--no-<flag>` can still turn one off explicitly on a resume, and let `_resolve` supply the
-OFF value for a fresh run. **That gate asserts against the BUILT parser, not the source text** — a
-default can be an expression, so only the constructed object knows what it is.
-
-**Read `designs/flag_registry.md`** for the current table (generated; `--check` is the gate).
-### The three TIERS — a flag can lose its CLI entry without losing explicitness
-
-A flag plays three independent roles — **SELECT** (choose it at launch), **RECORD** (write it into
-`model_config.json`), **GATE** (refuse a mismatched resume). Only SELECT needs argparse; RECORD and
-GATE live in `ModelVersion` and are reached whether or not argparse ever heard of the toggle.
-
-| tier | argparse | `_resolve` | recorded + gated | reachable for an experiment |
-|---|---|---|---|---|
-| `cli` | yes | yes | yes | via the flag |
-| `config_only` | **no** | **no** | yes | via the extractor **constructor kwarg** |
-| `constructor_only` | no | no | no | via the constructor only (`pair_reduce`'s `reduce_how`) |
-
-**A `config_only` toggle is FROZEN at its registry `default` for every CLI-launched run** — that is
-the only value the CLI can now produce, so the default must be the value production actually wants.
-Demote a toggle when it is *settled*: same value in every run, no live experiment. The extractor's
-own constructor default is deliberately left alone, so the OFF baseline stays constructible for a
-test or a probe; only the launch surface shrinks. `config_only_pattern_test.py` pins the contract
-end to end (recorded in a fresh `model_config.json` · rejected on a mismatched resume · no argparse
-entry). The one config_only survivor: `attend_unrevealed_opponents` (frozen **ON** — a hard
-prerequisite of the whole belief stack since v16). The other two v78 demotions
-(`value_active_readout`, `damage_matrices_outgoing_all`) were frozen OFF and are **deleted
-outright at v88** (`gen3_dead_flag_purge_v1`): the fields, gates and forwards are gone, and the
-migration refuses a checkpoint that recorded either ON.
-
-### The four CLASSES — which gate a mismatch gets
-
-| class | a mismatch means | gate |
-|---|---|---|
-| `structural` | weights and/or the trained forward differ | `check_compatible` — runs on **every** load |
-| `resume_immutable` | the forward is bit-identical; only TRAINING differs | a dedicated `check_*`, **resume path only** |
-| `training_coef` | a loss weight moved | none; recorded for provenance **and `_resolve`-inherited** |
-| `runtime` | a perf knob moved | none; never recorded, never inherited on resume |
-
-Getting this wrong hurts in **both** directions, so both are asserted: a `structural` toggle with no
-`check_compatible` compare lets a resume silently flip the architecture, and a `resume_immutable`
-toggle *inside* `check_compatible` makes a run FATAL while loading its own pool snapshots (that gate
-runs on frozen eval/pool/distill opponents too, whose forward is identical regardless).
-
-
-### Dependencies — `requires=`, and why both directions are enforced
-
-A flag's DEPENDENCIES used to live only as ~30 hand-written `raise ValueError` lines inside
-`Gen3FeaturesExtractor.__init__` ("intent_threshold requires opp_intent", "value_entity_pool_full
-requires value_entity_pool", …). Nothing outside that function knew them, so `checkargs` could not
-warn about an unsatisfiable command, the generated table could not show the graph, and answering
-"what is the minimum config that turns X on?" meant reading the constructor.
-
-`ModelFlag.requires` is that data — the flags that must be **enabled** for this one to be, where
-enabled is `flag_registry.is_enabled` (`False` / `0` / `'off'` / `'none'` are OFF; note it is *not*
-`bool()`, because a mode string's OFF state is the truthy `'off'`). `requirement_closure(name)`
-gives the transitive set. **24 of 44** toggles declare one.
-
-`flag_requires_test.py` enforces it in **both** directions, because a declaration nothing checks is
-a comment and a check nothing declares is invisible:
-
-| direction | what it does | what it catches |
-|---|---|---|
-| forward, positive | build with the flag on + **only** its declared closure | an INCOMPLETE `requires` — the ctor refuses a config the registry called complete |
-| forward, negative | build with the closure minus **one** declared dep | a dependency that stopped being enforced |
-| reverse | AST-scan `__init__` for every `raise` guarded on ≥2 registry flags | a hand-written coupling the registry never learned |
-
-The positive control found a real omission on its first run (`value_dist_mode` also needs
-`value_dist_vmax > value_dist_vmin`, enforced inside `ValueDistHead`), which is why the test carries
-an explicit `_VALUE_RELATIONS` table rather than a silent fixup.
-
-**What stays bespoke, and how narrow the carve-out is.** `requires` says only "must be enabled", so
-a per-VALUE dependency has no flag-level form. Only `edge_bias_families` is exempt
-(`BESPOKE_COUPLINGS` in the test, with the reason): its 17 family letters each carry their own
-requirement and `h` carries none, so no statement about the flag is true. `damage_op` is NOT exempt
-— it declares `move_belief_mode` (the weaker truth) while the constructor keeps the stronger
-`in {revealed, both}`, because a weaker truth in the registry beats a blank. A stale exemption fails
-too: `test_every_bespoke_coupling_still_exists` refuses an entry that matches no live raise.
-
-**Downstream:** `python -m main.checkargs` reads the graph, so a recorded command that enables a
-flag while explicitly disabling one of its dependencies is reported offline instead of crashing the
-child ~40 s into a launch. It only fires on an EXPLICIT negation — an omitted dependency is inherited
-from the checkpoint's config on resume, so absence carries no information.
+All four in full, with the demotion history and the reachability gate that found five live flags in
+the dead-`_resolve` state: [`designs/model/flag_registry_rules.md`](../../../designs/model/flag_registry_rules.md).
 
 ## Model versioning (`model_version/`, `snapshot.py`)
 
-**`model_version` is a PACKAGE** (2026-08-23; it was a single 2,000-line file, exactly at the size
-gate's hard bound). `agents/model/model_version/__init__.py` is a pure re-export hub, so every
-`from agents.model.model_version import <name>` across the ~48 import sites resolves unchanged:
-
-| module | holds |
-|---|---|
-| `constants.py` | `MODEL_CONFIG_VERSION` · `ARCH_SIGNATURE` · `ModelVersionError` · the reward-immutable field table + `_reward_flag_repr` |
-| `migrations.py` | `MIGRATION_FLOOR` · `SIGNATURE_FIRST_VERSION` · `_migrate_config`, **including the PRE-FLOOR HISTORY archive** (a deliberate record of what every deleted branch did — do not trim it) |
-| `fields.py` | `ModelVersionFields` — the dataclass field block alone. Declaration ORDER is the constructor's positional order and `asdict()`'s key order |
-| `construct.py` | `from_layout_and_policy_kwargs` |
-| `compat.py` | `check_compatible` — the gate that runs on **every** load |
-| `resume_checks.py` | `check_opponent_compatible` + the six resume-immutable hparam gates |
-| `spec.py` | `ModelVersion` = the fields plus one mixin per family, and the JSON IO |
-
-`ModelVersion` is assembled from MIXINS, which trades a file-size problem for a **base-list**
-problem: a family can drop out of the bases without any import failing, and the class would still
-construct, still round-trip through JSON, and simply stop gating. `model_version_hub_contract_test.py`
-pins the base list, every gate method by name, the hub's pre-split export list (recovered by AST),
-the no-submodule-imports-its-own-hub cycle guard, and that the migration archive survived.
-
-Every model save writes the **run-level** `model_config.json` + `metadata.json` at the run root via `save_model_snapshot()`, plus a **per-checkpoint** `.json` sidecar beside each checkpoint `.zip` (`write_checkpoint_metadata`, derived from the zip path). Periodic + forced checkpoints `.zip` live in `<run>/checkpoints/` (so their sidecar lands there too); the run-level config/metadata stay one level up at the run root. Loading goes through `load_model_snapshot()`, which resolves the zip then searches **its dir AND its parent** for `model_config.json` (so the run-root config is found even when the zip is in `checkpoints/`; `load_foreign_opponent` does the same) and runs `check_compatible()` before `MaskablePPO.load()` — a mismatch fails fast with a clear error rather than silently loading bad weights. (`snapshot_history` keys + the `worktree.py` resume lookup stay BARE basenames, e.g. `checkpoint_123_steps.zip`, regardless of the subdir.) Both files carry a top-level **`num_timesteps`** — how far the run had trained at that write, "latest" at the run level (overwritten every save, unlike the immutable `original_command` / `lineage` / `pin_history`) and per-checkpoint in each sidecar, so the JSON-only offline tools (`main.lineage`, `main.sidecar_audit`, `main.dose`) can read a run's step count without opening a `.zip`; a run that predates the key is ABSENT, which reads as unknown and never as 0.
+**`model_version` is a PACKAGE**; `__init__.py` is a pure re-export hub. What each module holds, what
+a save writes, the two sanitizers and the `--critic` version gate:
+[`designs/model/versioning.md`](../../../designs/model/versioning.md). The playbooks are here.
 
 **When you change an architecture constant:**
 - `check_compatible()` catches the mismatch automatically — no extra steps needed
@@ -827,33 +268,9 @@ from `model_config.json`** — so a deleted kwarg `TypeError`s every training re
 opponent and eval worker that touches such a checkpoint. `_migrate_config`'s `MIGRATION_FLOOR` does
 NOT cover it: the pickled kwargs carry no `config_version` for a floor to apply to.
 
-1. **Judge it**, into exactly one of `snapshot._DEAD_FEK_*`:
-   - **`_DEAD_FEK_INERT`** — no value of it selected anything in the surviving forward (it only
-     SIZED or INITIALISED a deleted module, was training-only, or its branch was unreachable in
-     production). Popped unconditionally.
-   - **`_DEAD_FEK_JUDGED`** — some value fed a forward this code can no longer reproduce. Record the
-     one value that IS still reproducible; every other value is REFUSED loudly. Two things put a
-     flag here: a byte-identical state_dict across its values (nothing shape-based can catch the
-     swap), or an ON value that named PARAMETERS (popping it hands SB3 an unplaceable state_dict).
-2. **`_migrate_config`** needs a matching entry only if the name could still appear in a config at
-   or above `MIGRATION_FLOOR`; below the floor the blanket PRE-GENERATION refusal already owns the
-   config half. That asymmetry is pinned by `dead_kwargs_sanitize_test.py`.
-3. **Update `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96`** — last, and only after steps 1–2.
-
-That snapshot is the tripwire, and it exists because the machinery cannot detect this failure about
-itself: the sanitizer is a CURATED list, so a forgotten name produces no error at deletion time and
-no failing test — only a bare `TypeError` months later. **Measured 2026-08-17 over the 89 archived
-runs carrying a checkpoint:** 23 distinct rejected kwarg names, **five in neither list**
-(`mask_incoming_damage_obs` / `mask_active_move_scalars_obs` / `mask_move_effects_obs` at v48,
-`hp_type_belief_mode` at v52, `spread_belief_nature_marginalize` at v66), present on **70 of the 89
-runs**; 7 of them (generations `ai_v9_01`–`ai_v9_07`) reached the TypeError rather than a judgment.
-All five are JUDGED now and the archive is at 0 TypeErrors.
-
-**Do not confuse this with the prober's sanitizer.** `main.prober.model.sanitized_load_custom_objects`
-is pure set math over the live signature and NEVER refuses — reading an archived model may be
-approximate as long as it SAYS SO (`dropped_kwargs` rides the drift banner). The curated one serves
-the paths where being wrong corrupts something, so it refuses (69 of 89 runs). Both are needed;
-neither delegates to the other.
+The judging procedure — `_DEAD_FEK_INERT` vs `_DEAD_FEK_JUDGED`, when `_migrate_config` needs a
+matching entry, and `ctor_kwarg_snapshot_test.CTOR_KWARGS_V96` LAST — is in
+[`designs/model/versioning.md`](../../../designs/model/versioning.md). Do all three, in that order.
 
 **⚠️ REORDERING a module's parameters silently breaks the optimizer on resume.** SB3/torch save+load
 the Adam optimizer state **by parameter POSITION, not name**. So if a refactor changes the *order*
@@ -876,76 +293,22 @@ back to the legacy shape-only drop-all-momentum reset only if the zip can't be r
 resume); no-op (momentum carried verbatim) on an aligned resume. Pinned by
 `src/main/resume_optimizer_realign_test.py` (incl. the same-shape-reorder + zip-read cases).
 
-**Resume-immutable training hparams (value-meaning, NOT weight-shape).** A hyperparameter can
-be wrong-to-change-mid-run without changing any weight shape — `vf_coef` (`--vf-coef`) is the
-first: it rescales the value head's gradient on the shared trunk, so a forgotten/typo'd flag on
-resume would silently drift training. These are recorded on `ModelVersion` (→ `model_config.json`)
-but **deliberately excluded from `check_compatible`** — that gates EVERY load, including the frozen
-eval / self-play-pool / distill opponents, where the forward is identical regardless of the value
-and a false rejection would break league play. Instead they get a dedicated check
-(`ModelVersion.check_vf_coef`) invoked **only on the training-resume path** via
-`load_model_snapshot(..., enforce_vf_coef=…)`; `train_rl_agent.py` FATALs on mismatch exactly like
-an arch error. To add another such hparam, follow the optional-feature playbook above (field +
-`MODEL_CONFIG_VERSION` bump + `_migrate_config` default) **plus** a dedicated `check_*` + an
-`enforce_*` opt-in on `load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`.
-
-The **reward-config** hparams are the same kind, bundled into one check: `bias_additivity`
-(`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
-`switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5),
-`draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — **DEFAULT −35.0**, so a
-stall-to-cap is strictly worse than a clean loss; `-30` restores the historical value, where a tie
-scored as a decisive loss), `self_ko_hp_penalty`
-(`--self-ko-hp-penalty`, the HP-scaled self-KO penalty — default 0.0 = OFF; >0 charges −w·hp when
-our mon self-KOs via Explosion/Self-Destruct, since the symmetric material PBRS prices a healthy 1-for-1
-trade at ~0 and the critic then over-values it), the de-bias cleanup pair `drop_redundant_bias` +
-`drop_switch_bias` (`--drop-redundant-bias` / `--drop-switch-bias` — zero the audit-flagged
-distorting BIAS terms: stall_tax + matchup_penalty redundant with the no-progress clock/`--draw-penalty`
-and `pbrs_belief`; the hand-coded switch subsidy), and the **two end-state PBRS switches**
-`all_shaping_pbrs` (**DEFAULT ON**) + `stall_pbrs` (default off) plus `no_progress_penalty`
-(`--all-shaping-pbrs` / `--stall-pbrs` / `--no-progress-penalty`):
-`all_shaping_pbrs` = "everything but stall" — folds
-Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status and **zeros every BIAS term except the anti-stall tilt
-`no_progress_tax`** (so all non-stall shaping is policy-invariant; the bad turn-ramp `stall_tax` is
-zeroed); `stall_pbrs` = "stall" — folds Φ_progress and zeros `no_progress_tax`+`stall_tax`. Run BOTH ⇒
-the whole BIAS class is zero (TERMINAL + PBRS only); run only `all_shaping_pbrs` ⇒ keep the
-`no_progress` stall tilt as the single acknowledged BIAS. `no_progress_penalty` is recorded+checked
-because it is Φ_progress's weight. (`--all-shaping-pbrs` ALSO now folds the DEDICATED phaze-out-boosts PBRS
-**`pbrs_roar`** Φ_roar = −`ROAR_BOOST_WEIGHT`(0.25)·Σmax(0,opp-active-boost) — NO separate flag/field, it
-rides the existing `all_shaping_pbrs` toggle, stacking with the bundled `pbrs_opp_boosts` for stronger
-proportional roar-out-boosts shaping; safe since both telescope to 0.) All are recorded on
-`ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
-shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
-`ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check — a fresh run is needed to measure them.
-
-🚨 **Two of these defaults FLIPPED on 2026-08-18** (`all_shaping_pbrs` false→**true**,
-`draw_penalty` −30.0→**−35.0**), restoring the validated ai_v8 composition after the ledger recorded
-that the flag had silently stopped being passed at the v8→v9 generation boundary. Consequences that
-belong to THIS file: (1) the `ModelVersion` field defaults and `_REWARD_IMMUTABLE_FIELDS`'
-per-field fallbacks track `RewardConfig`'s, so a version built with `reward_config=None` records
-what a default run actually trains with — pinned by `src/main/reward_defaults_test.py`; (2) every
-pre-flip run now FATALs on a FLAGLESS resume, which is correct (a live run's reward must never flip
-under it) and is why `check_reward_config`'s error NAMES the flags to re-pass
-(`--no-all-shaping-pbrs --draw-penalty -30.0`) rather than only printing a diff; (3) frozen
-eval/pool/distill opponents are untouched, because reward fields stay out of `check_compatible`.
-The composition each config resolves to — and the announcer that states it at launch — is in
-`src/agents/training/CLAUDE.md` → *The reward COMPOSITION*.
+**Resume-immutable training hparams (value-meaning, NOT weight-shape)** — `vf_coef`, the reward
+fields — are recorded on `ModelVersion` but **deliberately excluded from `check_compatible`**, which
+gates EVERY load including the frozen eval / pool / distill opponents whose forward is identical
+regardless. They get a dedicated `check_*` on the training-resume path only, and `train_rl_agent.py`
+FATALs on a mismatch exactly like an arch error. To add one: field + `MODEL_CONFIG_VERSION` bump +
+`_migrate_config` default, **plus** a dedicated `check_*` and an `enforce_*` opt-in on
+`load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`. The family list and the 2026-08-18
+default flip: [`designs/model/versioning.md`](../../../designs/model/versioning.md).
 
 The live `MODEL_CONFIG_VERSION` is in `model_version/constants.py`; per-version entries are in `designs/CHANGELOG.md`.
 
-**The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**
-(verbatim). They described what each of v6–v57 added, in parallel with the root `CLAUDE.md`'s own
-version narrative — two records of the same history that had drifted out of agreement with each
-other and with the code.
-
-- **What the architecture IS right now** — obs layout, the phase chain under the production config,
-  what each head consumes, the `DamageOperator` block, the edge families, the flag table with
-  `INERT` markings: **`designs/ARCHITECTURE.md`**.
-- **What each version changed**: `designs/CHANGELOG.md` (history — do not quote as current).
-- **The live values**: `MODEL_CONFIG_VERSION` and `ARCH_SIGNATURE` in `model_version/constants.py`. Read them
-  there. This file deliberately no longer states them: a version number written into prose is stale
-  the moment the next one lands, and quoting a stale one is how a v30 description got applied to a
-  v59 model.
+- **What the architecture IS right now**: [`designs/ARCHITECTURE.md`](../../../designs/ARCHITECTURE.md).
+- **What each version changed**: [`designs/CHANGELOG.md`](../../../designs/CHANGELOG.md) — history, do not quote as current.
+- **The live values**: `MODEL_CONFIG_VERSION` and `ARCH_SIGNATURE` in `model_version/constants.py`. Read
+  them there. This file deliberately states neither: a version number in prose is stale the moment the
+  next one lands, and quoting a stale one is how a v30 description got applied to a v59 model.
 
 The mechanics above (what to bump when, the optimizer-reorder guard, the resume-immutable-hparam
 playbook) are the durable part and stay here. When you add a toggle, follow those rules, then record
@@ -968,115 +331,36 @@ needs the legal set to validate an argv offline.
 **Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and
 a `getattr(obj, "critic", "shaped")` read answers correctly through it.
 
-**The `winprob` route has NO FALLBACK, for `value_from_dist`'s exact reason** (the v89
-orphaned-route class): `value_net` is in no loss graph under this critic, so quietly returning it
-would be a critic the training loop believes in and nothing updates. A missing head, an un-stashed
-`last_win_prob_logits`, or a batch-size disagreement with `latent_vf` all RAISE.
-
-🚨 **The version gate matters more here than for a typical structural flag, and the reason is
-worth internalising: BOTH routes return a `[B,1]` float tensor.** A flipped `critic` produces no
-shape error anywhere, no load failure, and no metric that changes name — the run simply predicts a
-different quantity for the rest of its life. So the string compare in `check_compatible` is the
-ONLY thing standing between a resume and that, which is the same argument `win_prob_mode` and
-`q_winprob_mode` make and the reason all three are gated identically.
-
-**NO `ARCH_SIGNATURE` bump at v109, and that is the safety rule rather than a convenience.**
-`shaped` is the DEFAULT, so on every run that does not type the flag no module is added or removed,
-no `state_dict` key moves, the constructor's init RNG stream is untouched and the forward is
-byte-identical. The signature bump belongs to the DEFAULT FLIP — where it is *forced*, because a
-critic trained to predict a shaped return cannot be warm-started into predicting a probability.
-
-`critic` is threaded as a POLICY kwarg (the `use_popart` / `value_from_dist` class), which is why
-it is absent from `agents/model/flag_registry.py`: that registry's declared scope is EXTRACTOR
-architecture toggles, and this one reaches no extractor — the heads it selects between were already
-built by their own flags. It rides `snapshot.current_model_version(critic=…)` and
-`arch_toggles_from_model` so a frozen eval / pool / sentinel opponent's load gate sees it.
+🚨 **The version gate matters more here than for a typical structural flag: BOTH routes return a
+`[B,1]` float tensor**, so a flipped `critic` produces no shape error, no load failure and no metric
+that changes name — the run simply predicts a different quantity for the rest of its life. The string
+compare in `check_compatible` is the only thing standing between a resume and that. **No
+`ARCH_SIGNATURE` bump at v109** — `shaped` is the default, so an untyped flag adds and removes
+nothing; the bump belongs to the DEFAULT FLIP, where it is forced.
+[`designs/model/versioning.md`](../../../designs/model/versioning.md) has both in full, and how the
+kwarg is threaded.
 
 ## PopArt value-target normalization (`popart.py`, `--use-popart`)
 
-Opt-in (default off, and **refused outright under `--critic winprob`** — a bounded stationary
-Bernoulli payoff has no scale to track). The dual-head extractor shares one trunk; under a SHAPED
-return at γ≈0.9999 the returns run to ±hundreds, so the value MSE gradient **swamps** the shared
-trunk and the policy under-updates
-(diagnosed by a large positive `grad/value_policy_logratio`, see `src/agents/training/CLAUDE.md`). PopArt fixes the value
-*scale* adaptively: `PopArtNormalizer` keeps running `(mu, sigma)` of the value targets, the value
-head outputs **normalized** values, and the PPO loss trains in normalized space — so the value
-gradient stays O(1). The **POP** half rescales `value_net`'s weight+bias on every stats update so the
-**de-normalized** prediction is unchanged (`W'=(σ_old/σ_new)·W`, `b'=(σ_old·b+μ_old−μ_new)/σ_new`),
-making the stats update a no-op on the value function (no corruption — the failure mode of naive
-running-std normalization). Pure/torch-only → unit-tested in `popart_test.py` (load-bearing test:
-**POP invariance**, de-normalized outputs identical across a stats update).
-
-- **Policy integration** (`policy.py`): `__init__` takes `use_popart` (from `policy_kwargs`) and
-  builds `self.popart` **after** `super().__init__` (which builds `value_net`); the 3 value sites
-  (`forward`/`evaluate_actions`/`predict_values`) wrap the output in `self._denorm(...)` so GAE /
-  advantages / bootstrapping always see **real-unit** values. `popart` is `None` when off (identity
-  `_denorm`). The `(mu, sigma)` buffers ride the policy state_dict → save/restore for free.
-- **PPO loop** (`instrumented_ppo.py`): once per `train()` (before the epochs) `popart.update(returns,
-  value_net)` advances the stats + POPs; the value loss becomes `MSE(normalize(returns),
-  normalize(values))`. **`--use-popart` requires an explicit `--clip-range-vf none`** (errors
-  otherwise — a self-documenting config beats a silent override): clipping is unnecessary with value
-  normalization (the literature finds it little/negative regardless), and since the value sites
-  return *de-normalized* values an active clip would clip in un-normalized units (`clip_range_vf` vs
-  σ) and cripple the critic.
-- **Version-checked**: `ModelVersion.use_popart` is recorded in `model_config.json` (config v3) and
-  `check_compatible` raises a dedicated error if a resume toggles it — the value head's
-  parameterization differs, so it can't be flipped mid-run.
-- **Diagnostics** (TB + TUI): `popart/mu` & `popart/sigma` (should track `train/return_mean` &
-  `train/return_std`), `popart/value_weight_norm` (POP keeps it bounded). With PopArt on,
-  `train/value_loss` is the *normalized* loss (≈O(1)) and `grad/value_policy_logratio` should fall toward ~0.
-- `_DEFAULT_BETA` (EMA decay, 0.1) and `_SIGMA_FLOOR` (1e-2) are module constants in `popart.py`
-  (the only flag is on/off). The POP rescale changes `value_net` outside the optimizer; momentum
-  staleness is negligible because `σ_old/σ_new ≈ 1` each call (optimizer state intentionally not
-  rescaled — the standard PopArt approximation).
-
-## Where the canonical architecture lives
-
-| Question | File |
-|---|---|
-| What the architecture **IS** right now — obs layout, the phase chain with the production config's flags resolved, what each head consumes, the `DamageOperator` block, the edge families, the flag table | **`designs/ARCHITECTURE.md`** |
-| A machine-checked picture of it — seats and sinks, edges typed by what they physically carry | `designs/architecture_graph.dot` (generated by `delivery_graph.py`, pinned by `delivery_graph_test.py`). **A new parametered module cannot ship undrawn**: `test_every_parametered_module_is_reachable_in_the_graph` enumerates the extractor's top-level children that own parameters and demands each resolve to a node id / a declared `via` substring (`MODULE_GRAPH_TOKENS`) or to `NON_DELIVERY_MODULES` with a reason. The snapshot and the DOT compare the graph against ITSELF, so both are blind to omission — which is how thirteen modules, including the v84/v87 value routes, sat undrawn for months |
-| **The same picture, interrogable** — path queries ("what does the critic see?"), the measured-dependence overlay across every audited checkpoint, a per-family bias selector, and per-token detail (what a seat can deliver to, and every bias family acting on it ranked by measured dependence). **Family codes are never shown bare** — every `d2` / `c1` / `s3` carries its one-line label, with the cell definition parsed out of `team_transformer.py`'s `_EDGE_*_CELL` block so it cannot drift (`FAMILY_LABEL` holds only the curated phrase; a family with no entry fails the tests) | **https://model.g5d.io** — served live by `--serve` (re-rendered from the checkout per request, so it cannot go stale), or **`designs/architecture_viewer.html`** via `file://`. **Dark by default**. Generated by `build_arch_viewer.py` from **real asset files** — `arch_viewer_assets/viewer.{html,css,js}`, not a string literal, so the JS is `node --check`ed by a test and the CSS is lintable; the server lives apart in `arch_viewer_serve.py`. Pinned by `build_arch_viewer_test.py`; regenerate with `python -m agents.model.build_arch_viewer` (`--check` is the staleness gate). `--vendor --out <path>` inlines cytoscape for a copy that needs no network at all (a separate output — the committed artifact stays CDN-linked so `--check` has one thing to compare against) |
-| **Does the page actually render?** — the text tests never execute a line of its JavaScript, and a `#theme` deep link once painted every node in the wrong palette because cytoscape resolves the CSS variables once at construction | `build_arch_viewer_render_integration_test.py` — headless chrome reads back a `document.body.dataset` record (script completed, every node positioned, and the node fill **as cytoscape computed it**). Skips, naming which, when there is no browser or no network |
-| The **phase CONTRACT** — what a phase may own, `ExtractorContext` / `Embeddings` rules, the versioning playbook | the "Phase-by-phase data flow" + "Model versioning" sections **above** |
-| How each version got here | `designs/CHANGELOG.md` |
-
-The split is deliberate: this file holds the **rules** a phase must follow (durable), and
-`ARCHITECTURE.md` holds the **state** the model is currently in (changes every run). When you touch
-`features_extractor.py`, update the contract here if a rule changed, and `ARCHITECTURE.md` if the
-state did — then regenerate the delivery graph.
-
-> `designs/ai_v3/README.md` holds an old Mermaid digraph + dimension table. It is a **frozen
-> historical record** (1309-dim obs, the pre-unified-transformer attention paths) and is **NOT
-> maintained** — do not update it for current-arch changes. It carries a banner saying so. It is
-> also the reason `designs/architecture_graph.dot` is generated rather than drawn.
+Opt-in (default off, **refused outright under `--critic winprob`** — a bounded stationary Bernoulli
+payoff has no scale to track). It tracks running `(mu, sigma)` of the value targets so the value
+gradient on the SHARED trunk stays O(1), and the **POP** half rescales `value_net` on every stats
+update so the de-normalized prediction is unchanged. `--use-popart` **requires an explicit
+`--clip-range-vf none`**, and `use_popart` is version-checked — it cannot be flipped mid-run. Detail:
+[`designs/model/popart.md`](../../../designs/model/popart.md).
 
 ## Opponent intent — `α` / `β` (`opp_intent.py`, v67)
 
 The build for one sentence the model could not express: *"they are likely to click **this**, so
 **this** is my answer."* `--opp-intent-coef>0` adds two SUPERVISED pointer heads:
 
-- **`α`** — a distribution over the opponent's K believed threat-move seats (the refined **E4**
-  tokens) **plus a SWITCH option**. Seat k's logit is scored from seat k's own token through a
-  SHARED scorer, so `α` is equivariant under permuting their moves; SWITCH is scored from board
-  context alone (there is no per-seat object to point at — it is the "none of these" option).
-- **`β`** — given a switch, which of their mons comes in. A pointer over their six team tokens,
-  masked to alive-and-non-active: an illegal switch-in must be UNREPRESENTABLE, not merely
-  unlikely, or the head spends capacity learning the rules.
+- **`α`** — a pointer over the opponent's K believed threat-move seats **plus a SWITCH option**.
+- **`β`** — given a switch, which of their mons comes in; masked to alive-and-non-active, because an
+  illegal switch-in must be UNREPRESENTABLE rather than merely unlikely.
 
-**Why pointers and not a flat `Linear(ctx, K)`.** The flat form passes every shape test and then
-learns "seat 0 is usually right" from the belief's own `w.topk` sort order — memorising exactly the
-ordering `α` exists to correct. Equivariance is gated in both axes.
-
-**Matching is by canonical id.** Seats permute every turn and are built by the model mid-forward, so
-the env emits the opponent's move NUM and `match_seats_to_move_num` locates it at loss time. A
-belief miss is MASKED and `opp_intent/alpha_mask_rate` is logged — that rate is the BELIEF's coverage
-failure, and folding it into "α was wrong" would hide which component to fix.
-
-**The label is for the PREVIOUS decision.** Their turn-t action is only observable while building the
-obs for t+1, so `instrumented_ppo` shifts the label block back one row **before `get()` shuffles**
-and drops any pair whose successor starts an episode (`align_labels_to_predictions`). Skipping that
-drop splices one battle's first decision onto another's last board — invisible in every metric.
+Why pointers and not a flat `Linear(ctx, K)`, matching by canonical id, and why the label is shifted
+back one row before `get()` shuffles:
+[`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
 
 **Supervision only:** both heads read a DETACHED input, so a null indicts the head's predictive
 power, not the policy. Structural + version-checked; requires `--entity-topk-seats>0` (fail-loud);
@@ -1092,40 +376,11 @@ uniform and the achievable gain is ~0 BY CONSTRUCTION; against a heuristic it is
 decision tree rather than a player. Measured on gen-11: bot info gain **0.124 nats** vs pool
 **0.254**, with bot accuracy flat at ~0.50 all run.
 
-**The bare key is a MIX, and the mix MOVES.** Supervised rows ran **100% bot at 2M and ~7% from 6M
-on** (self-play competence-gating), so a pooled metric rises as the mix shifts toward the pool and
-that rise is indistinguishable from the head improving. The pooled α accuracy at 2M read 0.580 —
-which was a pure bot measurement; the pool figure at the same step was 0.296. Any trend that spans
-the ramp is uninterpretable; a trend after ~6M happens to be safe, but read `_pool` and do not rely
-on that.
-
-The split covers **every** axis: the KIND decision both directions (`alpha_switch_recall` /
-`_precision`, `alpha_move_kind_recall` / `_precision`), the move axis (`alpha_move_recall_top1` /
-`_top2` against `alpha_move_baseline_argmax_w` — compared LIKE FOR LIKE, both "given they moved"),
-the β pointer (`beta_recall_top1` / `_top2`, `beta_info_gain_nats`), and the switch-coverage matrix
-(`beta_switch_to_revealed` / `_hidden_found` / `_hidden_missed`, which partition voluntary switches
-and sum to 1, plus `beta_belief_miss_rate` over the rows that ASKED). It used to cover only
-accuracy / info-gain / count, which left exactly the metrics a reader uses to LOCATE a deficit
-pooled. `alpha_mask_rate` stays whole-batch: it is the BELIEF's coverage failure, and folding it
-into "α was wrong" would hide which component to fix.
-
-One computation serves both reads — `_alpha_subset_metrics` / `_beta_subset_metrics` /
-`switch_coverage_metrics` take a row subset and a suffix — so a pooled and a stratified number can
-never drift apart. `switch_coverage_metrics` is module-level rather than a closure in the PPO loop
-because nothing tested that matrix at all, and a metric with no test can silently read zero.
-
-**Interpretability is a first-class output, not a debug aid** (`render_alpha` → the trace's
-`opp_intent` block): `α` as a ranked list of NAMED moves. The owner constraint is that the model may
-only ever point at options it can name, and rendering is where that becomes checkable.
-
-**The path from the head to a human is WHOLE**, and it is worth naming because for one commit it was
-not — `RLPlayer._opp_intent` built the block and `BattleRecorder` never wrote it, so the payload was
-computed on every decision and dropped on the floor:
-
-`α`/`β` logits → `RLPlayer._opp_intent` (`render_alpha`, plus the `β` naming rule below) → the
-summary invocation's `opp_intent` block → `engine.build_opp_intent` / `opp_intent_text` → the
-prober's Summary **EXPECT** line, `analyze`'s `opp_intent`, and the web replay's per-turn *expect*
-line (`src/main/prober/CLAUDE.md`).
+🚨 **The bare key is a MIX, and the mix MOVES** — supervised rows ran 100% bot at 2M and ~7% from 6M
+on, so a pooled metric rises as the mix shifts and that rise is indistinguishable from the head
+improving. Any trend spanning the ramp is uninterpretable. `alpha_mask_rate` stays whole-batch on
+purpose: it is the BELIEF's coverage failure. Full metric inventory and the head→human path:
+[`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md).
 
 #### 🚨 How a `β` slot is NAMED — two branches, and conflating them produced a wrong conclusion
 
@@ -1137,26 +392,15 @@ row means** (`gen3_beta_revealed_naming_v1`):
 | already REVEALED on the board | `battle.opponent_team`, read through `ObservationEncoder.get_team_list` so obs slot `k` and `β` candidate `k` cannot drift apart | `"revealed": true` |
 | still HIDDEN | the model's OWN species posterior (`belief_decode.top_species_per_slot`) — the same content-addressing `β`'s training target uses | `"revealed": false` |
 
-The posterior used to name **both**, and that was a display defect, not a modelling one. `β`'s
-candidate mask is alive-and-not-active, which **includes revealed bench mons**, while the species
-aux only supervises the *believed* slots — so on a revealed slot the posterior is un-trained.
-Measured over a 843-battle sentinel sweep (2026-08-19): the rendered name was a mon **not on the
-opponent's team at all in 73.3% of 6,876 pivots** (88.3% on revealed slots), and an owner-facing
-analysis read "β predicts porygon2" on a turn where `β`'s slot held the revealed Salamence and `β`
-was **CORRECT**. The slot mapping itself was validated 7560/7560 against the belief block's
-hidden-slot set — the pointer was fine; the label beside it was a different head's output.
-
 **Traces already on disk cannot be repaired** (they baked the posterior name and do not carry the
 board), so the read side attaches `engine.BELIEF_NAME_CAVEAT` to any candidate not flagged
 `revealed` rather than inventing a replacement name. See `src/main/prober/CLAUDE.md`.
 
 ### The rules an α CONSUMER follows (`pair_outcome.py` is the current template)
 
-Nine modules now contract α against the op's physics — `IntentValueReduce`, `IntentMoveCell`,
-`IntentThresholdMoveCell`, `IntentConditionalMoveCell`, `PairOutcomeMoveCell`, the v94 pair
-`PairOutcomeSwitchCell` / `SwitchBranchMoveCell`, and the v95 pair `ConditionalThreatCell` /
-`PairValueInject`. They share four conventions, and each one exists because breaking it fails
-silently:
+Nine modules now contract α against the op's physics (listed in
+[`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md)). They share four
+conventions, and each exists because breaking it fails silently:
 
 1. **T1 produces, T2 consumes.** α is scored from the E4 seats and the CLS pools, both DOWNSTREAM
    of the op — so the op cannot reduce by α, and every consumer runs at the pointer stash. A
@@ -1170,16 +414,10 @@ silently:
    bug class.
 4. **Zero-init the projection**, and let `restore_identity_init` capture it by observation (M1).
 
-`pair_outcome.py` adds two the others did not need, and both are worth copying:
-
-* **Stop-grad α unconditionally** on a POLICY-side consumer. `label_only` happens to cut the
-  PPO→`alpha_head` route today, but resting on it makes the route's EXISTENCE a function of a
-  TRAINING flag — one `--belief-grad-mode` change away from silently reopening.
-* **Give α a documented FALLBACK if the flag can stand alone.** With no intent head it uses the
-  shipped R1 `belief_mean` rung (`α := w/Σw`), re-exported from `pair_reduce` rather than
-  re-spelled. That makes the flag independently enableable and separates the DELIVERY claim from
-  the DISTRIBUTION claim — but the two are NOT the same object (presence belief vs usage belief,
-  and one sums to 1 where the other sums to `1 − α_SWITCH`), so say so loudly wherever it appears.
+`pair_outcome.py` adds two worth copying — **stop-grad α unconditionally** on a policy-side consumer
+(resting on `label_only` makes the route's EXISTENCE a function of a TRAINING flag), and **give α a
+documented FALLBACK only if the flag can stand alone**, saying loudly that the R1 `belief_mean` rung
+is a different object from the publication.
 
 **⚠️ "Give it a fallback" is not the same as "a fallback is meaningful", and v94 is where the two
 came apart.** `SwitchBranchMoveCell` REFUSES one and requires `opp_intent` instead: every coordinate
@@ -1191,38 +429,13 @@ compute something", it is "is what I would compute an ABSENCE or a CLAIM". Same 
 tempting `softmax` over an all-`-inf` β row: that yields a UNIFORM arrival distribution, which is a
 claim; the shipped code gates it to exactly zero.
 
-**⚠️ WHERE a consumer sits in the phase chain decides WHICH α it can have — and v95's PV is the
-case where that is not a choice at all.** Every consumer above runs at the pointer stash, i.e. after
-the α/β heads are scored, so "read the PUBLICATION" is available to them. `PairValueInject` runs
-inside `CLSPool`, which pools at T2 **before** those heads exist, so it takes the R1 `belief_mean`
-rung **unconditionally — even with `--opp-intent` ON**. Say ORDERING, not "fallback": a fallback is
-something that fires when a head is absent, and calling this one that would invite a future edit to
-"upgrade" it to the publication, which is unbuildable without moving the pool. The gate asserts the
-injected rows are byte-identical across the intent flag AND that the two rungs genuinely differ on
-that seed, so the claim is live rather than vacuous. **The general rule: before choosing an α rung,
-locate the consumer in the tier chain — the answer may already be fixed.**
-
-**A critic-facing α consumer owes its own gradient guard.** `value_route_gradient_test.py` iterates
-`_value_pooled_routes` — since the deletion wave a ONE-member seam (`value_entity_pool`), kept
-generic precisely because its value is covering the NEXT route the day it is written, which is
-exactly what did not happen for the four it lost. A route added to that seam is covered by
-construction; the two token-content injections (`value_threat_proj` v64, `pair_value_proj` v95)
-are NOT in the seam, by
-design: a post-pool additive route must collapse the team axis, and the only equivariant collapse is
-a sum, which cannot tell one mon losing 90% of its bar from six losing 15%. Both are zero-init, so a
-disconnected one is indistinguishable from one that learned nothing — the exact gen-12 dead-tail
-failure, one level up. The guard therefore carries a dedicated cell for them, and its real claim is
-*every zero-init projection the critic depends on receives critic gradient*, not *every seam entry
-does*. **When you add a critic-side enrichment anywhere other than the seam, extend that test in the
-same pass.**
-
-**A per-DEFENDER delivery is not a per-defender BELIEF.** `reduce_pair_in_all` produces six rows,
-one per our mon, from ONE α — the reduction may vary per defender, the DISTRIBUTION may not (that is
-the whole content of §2's "D2 and D3 fall to ONE restriction"). α still has no `J` axis, so defect D3
-stays a shape error even in the phase whose entire job is producing a column of rows. When you add
-another per-defender consumer, take α from the same `pair_alpha` / `pair_alpha_full` ladder rather
-than computing a defender-conditioned one; the planted-violation test in
-`pair_outcome_switch_test.py` is what proves the structure is real rather than merely intended.
+Two more rules, evidence in
+[`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md): **before choosing an
+α rung, locate the consumer in the tier chain** — one inside `CLSPool` pools BEFORE the α/β heads
+exist, so its rung is fixed by ORDERING and is not a fallback; and **a critic-facing α consumer owes
+its own gradient guard** — `value_route_gradient_test.py` covers the `_value_pooled_routes` seam by
+construction, but the two token-content injections sit outside it by design, so extend that test in
+the same pass as any critic-side enrichment.
 
 ---
 
@@ -1235,45 +448,6 @@ The model package is **type-checked, and the gate is ZERO errors**. New code in
 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m mypy src/agents/model   # must be clean
 ```
 
-**Config: `mypy.ini` at the repo root**, deliberately SCOPED to this package. Everything else in
-the tree is read for types via `follow_imports = silent` but its errors are not reported, so this
-package can be tightened without waiting on the others.
-
-**Strictness landed:** `disallow_untyped_defs`, `disallow_incomplete_defs`, `check_untyped_defs`,
-`no_implicit_optional`, `strict_equality`, `warn_return_any`, `warn_redundant_casts`,
-`warn_unused_ignores`. NOT `strict` (nor `disallow_any_generics` / `disallow_untyped_calls`) — those
-fire almost entirely on the untyped third-party boundary, where a targeted `# type: ignore[code]`
-says more than a guessed annotation. **Excluded:** `*_test.py`, the GENERATED `extractor_arch.py`,
-and `feature_coverage/` (its probes are all `*_test.py`, and `_support.py` is their fixture).
-
-**The rules for the annotations themselves:**
-
-- **The `[B, 6, K]` shape comments are the shape documentation and mypy does not replace them** —
-  a tensor is `torch.Tensor` to the checker and its shape lives in the comment. Keep both.
-- **Registered buffers and mixin surfaces are DECLARED under `if TYPE_CHECKING:`, not ignored.**
-  `register_buffer` in a loop (the whole `damage_tables` set, PopArt's `mu`/`sigma`, `Embeddings`'
-  index maps) exists only dynamically, so `Module.__getattr__` types every read `Any` and the `Any`
-  then leaks into every expression downstream. A TYPE_CHECKING block of `NAME: torch.Tensor`
-  declarations is the fix — no runtime effect, and it keeps arithmetic typed.
-- `damage_op_pairwise.py` / `damage_op_blocks.py` are **mixins composed into an `nn.Module`**, so
-  they additionally declare `def __getattr__(self, name: str) -> Any: ...` (mirroring what
-  `torch.nn.Module` gives the composed class) plus the sibling/composed-class methods they call.
-- `typing.cast` is the narrowing tool where a value is **provably** present — chiefly the
-  `gen3_data` facade, whose `.get()` is `Optional` but is keyed by the facade's own `raw()` /
-  `base_form_ids()` list. `cast` returns its argument unchanged, so the forward stays bit-identical.
-- **`# type: ignore` always carries a specific code**, and a one-line reason where the cause is not
-  obvious. Two causes dominate and are worth knowing before you read one as a smell:
-  1. **torch types `Module.__call__` as `Callable[..., Any]`**, so every `return self.some_layer(x)`
-     in a forward trips `warn_return_any`. That is a stub defect, not an unknown in our code.
-  2. **Flag-gated submodules are `Optional`, and their reads sit under a *correlated* guard** —
-     `Gen3FeaturesExtractor.damage_op` is read under `edge_bias is not None` /
-     `damage_block is not None` / `intent_* is not None`, implications the constructor enforces with
-     a raise. That invariant spans two objects, so no narrowing expresses it.
-- **A `1.0 - <Tensor>` reads as `Any`** through torch's stubs (the reflected `__rsub__` return is
-  lost). Pin it at the binding — `revealed: torch.Tensor = 1.0 - mask` — never with an ignore.
-
-**Two annotations mypy proved were FALSE** are recorded here rather than silently widened:
-`Gen3FeaturesExtractor.__init__` declares `observation_space: spaces.Dict` but never reads the
-parameter, and three serverless probe paths pass a flat `Box`; and its `layout` is
-`Optional[...] = None` while the first phase module built indexes it unconditionally, so `None` is
-not a usable argument.
+The mypy scope, the strictness set, and the annotation rules (shape comments stay; buffers declared
+under `if TYPE_CHECKING:`; every `# type: ignore` carries a code):
+[`designs/model/typing.md`](../../../designs/model/typing.md).
