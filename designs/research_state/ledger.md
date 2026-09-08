@@ -13868,3 +13868,123 @@ truth, or write nothing.**
 
 **Keep writing entries as `### YYYY-MM-DD · TAG · title`.** The index does not change the
 convention, it formalises it; the leading form is the one that reads correctly in an index line.
+
+### 2026-09-07 · TECH DEBT · eval traces gain a DRAW bucket (tie vs timeout) + launcher_child.full.log rotation
+
+Two backlog rows, one commit (`a040e640`). Both are instrument repairs: an absence that read as a
+zero, and a read that could not be redone.
+
+**A. THE EVAL-TRACE DRAW BUCKET — `gen3_trace_result_v2`.**
+
+`meta.result` was WIN/LOSS only and filenames were `win_`/`loss_`. Two distinct failures hid behind
+that:
+
+- A **250-turn TIMEOUT arrives wearing a loss's flags.** The trainee FORFEITS at the cap
+  (`inference/player._handle_stall` → `ForfeitBattleOrder`), so poke-env reports `lost=True`, and
+  the summary wrote `LOSS`. **The training reward never agreed** — `reward_manager`'s terminal fold
+  pays `draw_penalty` for exactly that state, detected by the TURN COUNT, not by won/lost. That is
+  also why the **G7 kill clause survived unharmed**: it keys on `meta.turns >= MAX_TURNS` and never
+  read the label.
+- A true **TIE** (the sim's `|tie|`; `_won` stays `None`, so `won` and `lost` are both falsy)
+  matched **neither** quota branch in `_battle_finished_callback`, so the buffered capture was
+  **discarded** — no file, no count, nothing on disk to question.
+
+**Measured before touching anything, over the whole archive: 145,173 eval traces, every one
+`win_*` or `loss_*`; `meta.result` is never anything but `WIN` or `LOSS`; zero `TIE`.** So
+"0 draws in every eval trace" (probe (c), 2026-09-07) was **what the instrument could express, not
+what happened** — the absence-is-not-a-zero class, again.
+
+The vocabulary is now ONE pure-stdlib declaration, `agents/training/trace_result.py`, that the
+recorder writes and the prober, the harvesters and the gauge read (the `trace_selection` pattern):
+**WIN | LOSS | DRAW**, with a DRAW naming `meta.draw_kind` — **`timeout`** (`lost` AND
+`turn >= MAX_TURNS`) or **`tie`** (finished, neither won nor lost, before the cap).
+`classify_result` tests the CAP **before** the loss, on the same constant the reward reads
+(`reward_weights._TIMEOUT_TURN_CAP` == `MAX_TURNS`, `gen3_deadline_clock_v1`); the parity is pinned
+by a test, because the day those two disagree a trace's label contradicts the reward that shaped
+the behaviour it records.
+
+**WHERE DRAWS SIT IN THE QUOTA: their own bucket** — `_FORENSIC_DRAW_QUOTA` = 5, beside win 5 /
+loss 10, and the per-cycle manifest states all three in words. The two rejected alternatives are
+the two halves of the old behaviour: fold draws into the LOSS quota and a stall storm evicts the
+decisive losses the prober exists to study (the loss slice would change meaning in exactly the
+cycles where a regression is worth reading); give them no bucket and a tie vanishes. Set to the
+WIN quota rather than the loss quota because a draw is a rate to notice, not a game to dissect —
+and at the observed frequency it costs nothing normally while bounding a pathological cycle at 5
+extra traces per opponent.
+
+Threaded through the eval worker's capture, `trace_selection`'s quota accounting, the shard
+plumbing, the prober's filename regex / sort order / `--outcome` choices / web query patterns and
+dropdowns / `run_summary` totals / the outcome chart, and `calibration` (draws **EXCLUDED** — a draw
+has no binary realized label — with `n_draw_excluded` REPORTED rather than dropped silently, since
+an unstated exclusion is the same defect one layer down). `awareness_scan`'s `cap_loss` accepts
+`loss` **or** `draw` at the cap so the row means the same thing across the whole archive.
+
+**THROWING GUARDS, both sides.** `to_summary` runs `check_result` before writing; the prober's
+`battle_overview` / `battle_turns` run `result_of` before rendering. Both raise
+`UnknownTraceResult`. `"TIE"` — the token the *previous* writer would have emitted — is **refused,
+not translated**: a coerced unknown is a silent misclassification, and the last one cost five months
+of invisible timeouts. An ABSENT result is not an unknown one and passes through.
+
+**BACKWARD COMPATIBILITY, and the capture-version field.** Every archived trace stays readable and
+is reported **as it was written** — nothing rewrites history. A pre-bucket trace carries no
+`meta.result_vocabulary`, and that **ABSENCE is what dates it** (`result_era` →
+`gen3_trace_result_v1`). `run_summary()` reports the eras present (sampled, one trace per
+opponent-group) plus `era_note`, the one sentence a consumer prints beside its numbers: such a
+tree's LOSS traces **mix decisive losses with timeouts** and cannot be split by result alone (use
+`meta.turns >= MAX_TURNS`, the way G7 does), and its **TIE rate is NOT MEASURABLE** — a zero there
+is not a measurement. The web summary prints the note above the outcome chart, and the chart
+**omits the draw series entirely** on such a tree rather than drawing a flat zero line. A MIXED tree
+(a run that restarted onto new code mid-flight) gets the note too. The manifest's `selection` block
+is **schema 2, purely additive**, and `read_selection` accepts schema 1 as well — demoting every
+pre-today cycle to SELECTION UNKNOWN would have thrown away a perfectly good record that simply
+says nothing about draws. A draw is **SUBTRACTED from the losses**, never added to the played count
+(poke-env's `n_finished_battles` already contains it), so `capture_rate_loss` stays a statement
+about DECISIVE losses; the drawn-battles-played denominator comes from `EvalRLPlayer.draws_seen`
+because **no other layer counts it** (a tie is neither a win nor a loss to poke-env, and a timeout
+is our forfeit).
+
+⚠️ **The live arm `ai_v12_02_winprob_critic` is PINNED and keeps writing the OLD vocabulary
+(`gen3_trace_result_v1`) until it ends.** Its traces are therefore still un-splittable, and its
+draw count still unknown rather than zero. The run was not touched.
+
+**B. `launcher_child.full.log` — A BOUNDED ROTATION BESIDE THE RING.**
+
+`launcher_child.log` is a ~1024 KiB ring buffer that trims **silently** — by design, after a 982 MB
+repaint log. On 2026-09-06 the Training Run session counted per-worker compile lines across a
+restart and the number became unrecoverable the moment the ring wrapped; the count had to be
+settled from source instead. **A read that cannot be redone is a read that cannot be checked.**
+
+`child._RotatingChildLog` keeps a full copy at `<run_dir>/launcher_child.full.log`, rotating into
+`.1` … `.7` at **64 MiB** — a **hard 512 MiB ceiling per run**. The caps are chosen against the
+incident that produced the ring, not against a typical run: the 982 MB storm **fills the rotation
+and stops** at roughly half its size; a normal 3-hour restart cycle writes single-digit MiB and
+never engages the rotation at all; 64 MiB is a file a reader can actually grep, `less` and copy off
+the box, which a single 512 MiB file is not; and 8 files is the smallest count that keeps a whole
+storm plus the context that explains it. **Unbounded was not an option** — the volume this writes
+to also holds `models/`, and the 982 MB log is the proof that a training child can emit at a rate
+no human notices.
+
+Both sinks are fed by one reader thread through `_ChildLogFanout`. **THE RING IS UNTOUCHED** — same
+path, same cap, same trim marker, same tail — and it is written **FIRST**, with any failure in the
+(larger, rotating) full copy swallowed, because the ring is what the TUI reads and what the crash
+dump tails. `log.path` is still the ring's, so every "log written to …" line is unchanged; the exit
+summary additionally names the rotating copy and how many generations exist.
+
+⚠️ **The live launcher process runs old, PINNED code and will not pick this up.** The rotating copy
+appears on the next launcher started from new code.
+
+**Gates.** `trace_result_test.py` (27 tests: the classification, both refusals, the era reads, the
+filename seam, the quota, the manifest at both schemas); planted tie and timeout through
+`battle_recorder_test` (including the write-side refusal, proven to fire on a planted unknown) and
+through the capture quota in `eval_callback_test` (including a 20-timeout stall storm proving the
+loss bucket is **not** evicted, and `_quota_open` staying open on draws alone); a planted `draw_*`
+trace through `discovery_test` and `session_test` (totals, filter, the era note, the read-side
+refusal); `TestRotatingChildLog` (rotation at the cap, the file-count bound, the production caps
+asserted as a decision, rotate-on-open, the ring untouched by the fan-out, a broken full log costing
+the ring nothing, and a planted repaint storm proving the on-disk total is bounded). Routine gate
+green on the branch: 9,975 passed / 10 skipped / 16 xfailed.
+
+**The lesson, stated because it is the third time this class has appeared:** the eval-trace capture
+could not express a draw, so every reader that asked it about draws got a confident zero. An
+instrument's vocabulary is part of its measurement — when a count is zero, ask whether the
+instrument had a word for the thing before concluding it did not happen.
