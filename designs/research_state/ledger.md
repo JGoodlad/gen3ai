@@ -13652,3 +13652,84 @@ reconciliation: **762 is not the root `CLAUDE.md`'s 719**. 762 is what `Teams.im
 
 Routine gate green (9860 passed, 10 skipped, 16 xfailed). Tag: HISTORY + a new GATE; no measurement
 about the model changed — but four sentences an agent would have acted on did.
+
+### 2026-09-07 · RECIPE CHANGE · eval sentinels GREEDY by default + symmetric sentinel teambuilder + ladder reuse of eval-measured pairs (gen3_eval_sentinel_greedy_default_v1)
+
+**What changed.** Four things, one commit, one recipe.
+
+1. **`--eval-sentinel-greedy` is ON by default.** In an eval cycle the measured trainee has always
+   played greedy; the pool SENTINEL it is measured against now plays greedy too
+   (`main/eval_worker.py::_play_unit`). `--no-eval-sentinel-greedy` restores the old regime.
+2. **The sentinel draws its team the way the trainee does** (`eval_worker._sentinel_tb`). The
+   trainee drew from `Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)`; the
+   sentinel drew from the flat `Gen3Teambuilder(all_teams)`. ONE switch moves both halves: they are
+   two faces of one regime, and four regimes would be three more than anyone can interpret. The
+   eval ROW records them SEPARATELY (`sentinel_regime = {greedy, symmetric_teams}`), so the reuse
+   gate below READS the regime instead of assuming it.
+3. **`--promote-threshold` follows the regime** — 0.55 greedy / 0.65 stochastic, one definition in
+   `agents/training/snapshot_pool.promote_threshold_default`. An explicit value still wins.
+4. **The dense snapshot ladder REUSES a pair the eval cycle already measured** when the row says
+   BOTH `greedy` and `symmetric_teams` (`snapshot_ladder.eval_measured_pairs` /
+   `ingest_eval_measured_pairs`): the edge is appended to `games.jsonl` tagged
+   `source: "eval_cycle"` and `_measure_missing` skips it. ≈**500 battles saved per promotion**
+   (5 sentinels × 100 games), 36% of the per-promotion tax at a 15-snapshot pool. A run in the old
+   regime reuses nothing and its rows carry no `source` key at all — byte-identical.
+
+**Why.** Measured 2026-09-07 on `ai_v12_02_winprob_critic` over the **60 pairs both sources cover**:
+the eval-cycle edge favours the newer snapshot by **+8.9 pp [+7.0, +10.7]** against the dense
+ladder's own edge for the same frozen pair — the same frozen weights, differing only in protocol
+(greedy-vs-stochastic, and the team-draw asymmetry). That is what inflated every pre-2026-09-07
+`ladder.json`'s newest nodes by +21..+29 Elo (fixed separately by `3e6875a5`, which DROPS the
+sentinel edges from the fit). Once the two protocols agree, dropping the edge stops being the only
+option and reusing it becomes the better one. **And the flag was ours already:** it was ON for 49
+runs, v5.5 through v8, and was dropped UNRECORDED at the v9 launch — 164 runs since have been
+compared against v8-era ones across a regime boundary nothing on disk named. This flip RESTORES the
+v8 convention rather than introducing one.
+
+**The resume-safety rule (rule of evidence 15: a windowed statistic never crosses an opponent-regime
+boundary).** `eval_sentinel_greedy` and `promote_threshold` are now RECORDED `ModelVersion` fields
+(**MODEL_CONFIG_VERSION 112**; not gated by `check_compatible` — a frozen eval/pool/distill opponent
+runs no eval cycle) with an argparse default of `None`, so a **flagless resume or a launcher restart
+INHERITS the regime its checkpoint recorded**. A v9-era run resumed on this code STAYS STOCHASTIC.
+The gate's three branches are ordered: an explicit `--promote-threshold` wins; a regime TYPED on
+this argv re-derives the gate (inheriting 0.65 into a freshly-greedy run would freeze the pool);
+otherwise the checkpoint's own gate is inherited. Every launch prints one line naming both resolved
+values and their source — `⚖️  [EVAL REGIME] … source=argv|inherited|default`. `main.checkargs`
+calls the SAME function (`main.train.config.resolve_eval_sentinel_regime`), so the two surfaces
+cannot report different effective configs; a blanket inheritance sweep reported 0.65 where the
+launch resolves 0.55, and that divergence was found and closed here.
+
+**A pre-v112 config migrates to `eval_sentinel_greedy=False` and derives its gate from that.** For
+everything above `MIGRATION_FLOOR` (96) that is a RECORD, not a guess — the argparse default was
+False from the v9 launch until this bump. The 49 v5.5–v8 greedy runs sit below the floor and cannot
+be migrated at all; their regime survives only in `metadata.json:cli_args`. A run that typed an
+explicit `--promote-threshold` before v112 recorded it in `cli_args` only, so a resume of one must
+re-type it — the migration cannot invent what was never in `model_config.json`.
+
+**THE KNOWN DISCONTINUITY.** `win_rate_vs_pool` and `eval/elo` on any run launched under the new
+default are **not comparable** to the same series on any v9-era run: the sentinel edges move by
+about the measured +8.9 pp, and `win_rate_vs_pool` should read ~9 pp LOWER for equal skill (which
+is why the promotion gate drops to 0.55). **What is NOT affected:** the dense snapshot ladder
+(`ladder.json`) and every bot edge. The ladder already plays greedy-vs-greedy with symmetric
+builders and already drops the eval sentinel edges from its fit, so its numbers, its
+bot anchors, and every cross-run comparison made at matched snapshot COUNT are untouched. `eval/elo`
+keeps its bot-anchored scale for the same reason — trainee-vs-bot records are unchanged.
+
+**The live arm is NOT affected.** `ai_v12_02_winprob_critic` is PINNED to `f971caf2`; the launcher
+runs it from a worktree at that commit, so it never sees this code, and nothing in `models/` was
+written by this change.
+
+🚨 **AN OPERATIONAL FINDING FOR ANY FORK.** `launcher.worktree.resolve_pin` pins a run with
+`--model` and no `--pin-commit` to **the parent checkpoint's recorded `git_hash`**. A fork of
+`ai_v12_02_winprob_critic` therefore runs on `f971caf2` and gets NEITHER this recipe nor the ladder
+fit fix, and — because the parent's config records the stochastic regime — a flagless fork would
+INHERIT stochastic even on new code. A fork that wants this recipe must carry **`--sync-to-main`**
+(or `--pin-commit <this commit>`) **and an explicit `--eval-sentinel-greedy`**. Verified offline
+with `python -m main.checkargs --argv …`: without them the resolved namespace reads
+`eval_sentinel_greedy=False (inherited), promote_threshold=0.65 (inherited)`; with them it reads
+`True (argv) / 0.55 (default)` and the ARCH SURFACE is 0 of 39 keys differing.
+
+Tag: **RECIPE CHANGE** (a default flip + a measurement-protocol change; the +8.9 pp figure it rests
+on is VERIFIED, ledger 2026-09-07 *dense_reuse*). Tests: `main/train/eval_sentinel_regime_test.py`
+(15), `agents/training/snapshot_ladder_test.py` (+8), `agents/training/elo_row_contract_test.py`
+(+4), `agents/training/eval_sentinel_greedy_test.py` (+3), `agents/training/selfplay_callback_test.py` (+3).

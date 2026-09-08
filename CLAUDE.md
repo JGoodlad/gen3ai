@@ -244,6 +244,8 @@ python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoi
 
 🚨 **Reporting an ELO has three rules:** the headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), not `eval/elo` (±29); a rating is only final once the run is (the newest BT node is systematically inflated); and a cross-run comparison must be at matched snapshot **COUNT**, not matched step.
 
+🚨 **`win_rate_vs_pool` / `eval/elo` carry an OPPONENT-REGIME BOUNDARY at 2026-09-07** and are not comparable across it. Eval pool sentinels are now **GREEDY and draw the trainee's own teams** by default (`--no-eval-sentinel-greedy` opts out; `--promote-threshold` follows, 0.55 / 0.65). The old asymmetry was worth **+8.9 pp** to the trainee, so equal skill reads ~9 pp lower now. **The regime is RECORDED and INHERITED on a flagless resume** — read it (`model_config.json`'s `eval_sentinel_greedy`, or the launch's `⚖️  [EVAL REGIME]` line), never assume it. `ladder.json` and every bot edge are UNAFFECTED. Detail: `designs/training/eval_and_rating.md`.
+
 ---
 
 ## Playing / the LADDER

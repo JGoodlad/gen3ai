@@ -283,7 +283,7 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     passing silently.
     """
     from main.train.config import (desugar_umbrella_flags, inherit_saved_flag,
-                                   resolve_critic_mode)
+                                   resolve_critic_mode, resolve_eval_sentinel_regime)
     from main.train.fork_lr import is_same_run_checkpoint
     from main.train_rl_agent import build_parser
 
@@ -340,6 +340,13 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
 
     ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}
+    # THE EVAL OPPONENT REGIME, run BEFORE the blanket inheritance sweep and for
+    # `resolve_critic_mode`'s reason. `--promote-threshold` is not a plain inherited flag: when the
+    # argv TYPES the regime, the launch RE-DERIVES the gate from the new regime instead of
+    # inheriting the parent's (0.65 into a freshly-greedy run would freeze the pool). A sweep that
+    # ran first would inherit 0.65 and this surface would report an effective config the launch
+    # does not produce — and "what is the baseline?" is answered off this report.
+    resolve_eval_sentinel_regime(ns, saved, announce=False)
     if saved is not None:
         for dest in sorted({a.dest for a in parser._actions} - {"help"}):
             if not hasattr(ns, dest):

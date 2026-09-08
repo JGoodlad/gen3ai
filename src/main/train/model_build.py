@@ -467,6 +467,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             cf_shadow_coef=args.cf_shadow_coef,
             q_winprob_coef=args.q_winprob_coef,
             q_winprob_onpolicy_coef=args.q_winprob_onpolicy_coef,
+            # gen3_eval_sentinel_greedy_default_v1 (v112): the EVAL REGIME + the gate it
+            # derives, so a flagless resume reads its own regime back instead of crossing
+            # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.
+            eval_sentinel_greedy=args.eval_sentinel_greedy,
+            promote_threshold=args.promote_threshold,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
@@ -825,6 +830,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             cf_shadow_coef=args.cf_shadow_coef,
             q_winprob_coef=args.q_winprob_coef,
             q_winprob_onpolicy_coef=args.q_winprob_onpolicy_coef,
+            # gen3_eval_sentinel_greedy_default_v1 (v112): the EVAL REGIME + the gate it
+            # derives, so a flagless resume reads its own regime back instead of crossing
+            # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.
+            eval_sentinel_greedy=args.eval_sentinel_greedy,
+            promote_threshold=args.promote_threshold,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,

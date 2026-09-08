@@ -716,11 +716,17 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # the overwritten latest_eval block + TensorBoard).
         ext_block = {k: {"win_rate": v, "counts": merged.get("counts", {}).get(k)}
                      for k, v in ext_wr.items()}
+        # Per-sentinel EXACT W/L rides the row beside the win rate — the snapshot ladder consumes
+        # these edges when the regime permits (see `_sentinel_regime`), and a rounded game count
+        # would quietly become a rounded edge.
+        _sent_counts = merged.get("counts", {})
         elo_result = record_elo(
             self._model_dir, step, bot_wr,
-            [{"step": e.step, "win_rate": v} for e, _l, v, _rw, _ep in kept_sentinels],
+            [{"step": e.step, "win_rate": v,
+              **({"counts": _sent_counts[lbl]} if lbl in _sent_counts else {})}
+             for e, lbl, v, _rw, _ep in kept_sentinels],
             pending["n_games"], self.logger, tui, bot_td_tails=bot_td, bot_counts=bot_counts,
-            externals=ext_block or None,
+            externals=ext_block or None, sentinel_regime=self._sentinel_regime(),
         )
         # ELO for each stable opponent (display-only, out of the fit) → fills the eval table's elo
         # column for the ext_ rows: its OWN recorded ELO when available, else a trainee-derived ballpark.
@@ -824,6 +830,23 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
         prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)  # bound stalls/ + crashes/
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+
+    def _sentinel_regime(self) -> dict:
+        """The OPPONENT REGIME this cycle's sentinel edges were measured under, stamped onto the
+        ``eval_results.jsonl`` row (gen3_eval_sentinel_greedy_default_v1).
+
+        ``greedy`` — the sentinel played argmax rather than sampling at ``--self-play-temp``.
+
+        ``symmetric_teams`` — **both players drew from the LADDER's own builder** (the full pool
+        with a 0.1 sample-team bias). That is a stricter claim than "the two players drew the same
+        way", and deliberately so: it is the condition under which an eval edge and a dense-ladder
+        edge for the same frozen pair are the SAME EXPERIMENT, which is what licenses the ladder to
+        reuse the pair instead of replaying it. A SPECIALIST run (``--trainee-team`` /
+        ``--trainee-teams``) draws both players from the taught team(s) — symmetric between the
+        players, but not the ladder's draw — so it records False and its pairs are always replayed.
+        """
+        return {"greedy": bool(self._eval_sentinel_greedy),
+                "symmetric_teams": bool(self._eval_sentinel_greedy) and not self._trainee_team_str}
 
     def _spawn_snapshot_ladder_update(self, step: int) -> None:
         """Fire a DETACHED subprocess that round-robins the just-promoted frozen snapshot vs the

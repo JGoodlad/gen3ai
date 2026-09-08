@@ -454,4 +454,25 @@ def _migrate_config(data: dict) -> dict:
     if version < 111:
         data.setdefault("arch_source", None)
         data["config_version"] = 111
+    # v112 (gen3_eval_sentinel_greedy_default_v1) — the EVAL OPPONENT REGIME + the gate it derives.
+    # A pre-v112 config defaults to `eval_sentinel_greedy=False`, and that is a RECORD rather than a
+    # guess for every run this migration can actually reach: MIGRATION_FLOOR is 96, and the flag's
+    # argparse default was False from the v9 launch (2026-06) until this bump, so every config in
+    # range trained with stochastic sentinels unless its launch typed the flag. ⚠️ THE EXCEPTION IS
+    # NAMED RATHER THAN PAPERED OVER: the 49 v5.5–v8 runs that DID type it sit far below the floor
+    # and cannot be migrated at all; their regime survives only in `metadata.json:cli_args`.
+    # `promote_threshold` is then DERIVED from the migrated regime by exactly the rule that produced
+    # it at launch — 0.55 greedy / 0.65 stochastic — rather than pinned to one number, so a config
+    # that carries a greedy regime does not migrate into a gate that would freeze its pool. A run
+    # that typed an explicit `--promote-threshold` pre-v112 recorded it in `cli_args` only; a resume
+    # of one must re-type it (the migration cannot invent what was never in this file).
+    # The two literals are NOT imported from `agents.training.snapshot_pool.promote_threshold_default`
+    # — `agents.model` does not depend on `agents.training` — so they are pinned to it by
+    # `main/train/eval_sentinel_regime_test.py::test_a_pre_v112_config_migrates_to_STOCHASTIC_and_its_own_gate`,
+    # which asserts this branch against that function's constants.
+    if version < 112:
+        data.setdefault("eval_sentinel_greedy", False)
+        data.setdefault("promote_threshold",
+                        0.55 if data.get("eval_sentinel_greedy") else 0.65)
+        data["config_version"] = 112
     return data

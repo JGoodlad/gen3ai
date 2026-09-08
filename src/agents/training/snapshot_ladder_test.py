@@ -235,3 +235,133 @@ def test_the_per_cycle_eval_elo_star_fit_still_counts_sentinel_edges(tmp_path):
     # both snapshots are rated, and 200 sits far above 100 — which is only possible through the
     # sentinel edge (their bot win rates are identical).
     assert fit.ratings[elo_mod.snap_key(200)] - fit.ratings[elo_mod.snap_key(100)] > 100.0
+
+
+# ── OPTION A: reusing an eval-measured pair (gen3_eval_sentinel_greedy_default_v1, 2026-09-07) ──
+# Once a run's eval cycles play their sentinels GREEDY with the ladder's own (symmetric) team draw,
+# the eval edge and the ladder edge for a frozen pair are the SAME experiment — so the ladder counts
+# the pair as covered instead of spending another 100 battles on it. BOTH halves of the regime must
+# hold: either alone is the asymmetric measurement worth +8.9 pp [+7.0, +10.7] to the newer snapshot.
+
+def _symmetric_row(trainee, sentinels, *, greedy=True, symmetric=True, n_games=100):
+    return {"step": trainee, "n_games": n_games,
+            "bots": {"random": 0.9},
+            "sentinel_regime": {"greedy": greedy, "symmetric_teams": symmetric},
+            "sentinels": sentinels}
+
+
+def test_eval_measured_pairs_reads_only_fully_symmetric_rows(tmp_path):
+    run = str(tmp_path)
+    _plant_eval_log(run, [
+        _symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}]),
+        # greedy but the TEAM draw was still asymmetric → a different experiment, not reusable
+        _symmetric_row(300, [{"step": 200, "win_rate": 0.6, "counts": [60, 100]}], symmetric=False),
+        # symmetric teams but the sentinel SAMPLED → likewise not reusable
+        _symmetric_row(400, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}], greedy=False),
+        # no regime stamp at all = written before 2026-09-07 ⇒ unknown ⇒ not reusable
+        {"step": 400, "n_games": 100, "sentinels": [{"step": 200, "win_rate": 0.6}]},
+    ])
+    pairs = sl.eval_measured_pairs(run)
+    assert pairs == {(100, 300): [40, 100]}, pairs   # 300 won 60 ⇒ the LO node (100) won 40
+
+
+def test_eval_measured_pairs_falls_back_to_win_rate_when_a_row_has_no_counts(tmp_path):
+    run = str(tmp_path)
+    _plant_eval_log(run, [_symmetric_row(300, [{"step": 100, "win_rate": 0.63}], n_games=200)])
+    assert sl.eval_measured_pairs(run) == {(100, 300): [74, 200]}   # 200 - round(0.63*200)
+
+
+def test_promotion_REUSES_a_symmetric_eval_pair_instead_of_replaying_it(tmp_path, monkeypatch):
+    """The whole point: 5 sentinels a cycle = 500 battles a promotion that need not be played."""
+    run = str(tmp_path)
+    _plant_eval_log(run, [_symmetric_row(300, [
+        {"step": 100, "win_rate": 0.60, "counts": [60, 100]},
+        {"step": 200, "win_rate": 0.55, "counts": [55, 100]},
+    ])])
+    played: list[tuple[int, int]] = []
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300])
+    monkeypatch.setattr(sl, "_measure_missing",
+                        lambda d, pairs, *a, **k: (played.extend(pairs), 0)[1])
+    monkeypatch.setattr(sl, "fit_ladder", lambda d, *a, **k: {"ratings": {}})
+
+    sl.update_for_promotion(run, 300, n_games=100)
+
+    # BOTH pairs came from the eval cycle, so _measure_missing is handed them and finds them present
+    games = sl.load_games(run)
+    assert games == {(100, 300): [40, 100], (200, 300): [45, 100]}
+    rows = [json.loads(x) for x in open(sl.games_log_path(run))]
+    assert {r["source"] for r in rows} == {"eval_cycle"}
+    # the reuse leaves nothing for the round-robin to do
+    have = sl.load_games(run)
+    assert all(have[sl._pair_key(a, b)][1] > 0 for a, b in played)
+
+
+def test_promotion_does_NOT_reuse_a_pair_whose_row_is_only_HALF_symmetric(tmp_path, monkeypatch):
+    """The planted half-and-half case. `greedy` without `symmetric_teams` (and vice versa) is the
+    asymmetric measurement the +8.9 pp figure was measured ON — it must still be replayed."""
+    run = str(tmp_path)
+    _plant_eval_log(run, [
+        _symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}], symmetric=False),
+        _symmetric_row(300, [{"step": 200, "win_rate": 0.6, "counts": [60, 100]}], greedy=False),
+    ])
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300])
+    monkeypatch.setattr(sl, "fit_ladder", lambda d, *a, **k: {"ratings": {}})
+    played: list[tuple[int, int]] = []
+
+    def fake_measure(d, pairs, *a, **k):
+        played.extend(pairs)
+        return len(pairs)
+
+    monkeypatch.setattr(sl, "_measure_missing", fake_measure)
+    sl.update_for_promotion(run, 300, n_games=100)
+
+    assert sl.load_games(run) == {}                       # nothing ingested
+    assert sorted(played) == [(300, 100), (300, 200)]     # both still handed to the round-robin
+
+
+def test_a_stochastic_run_ingests_nothing_and_its_rows_carry_no_source_key(tmp_path, monkeypatch):
+    """Today's behaviour, byte-identically: an asymmetric run's games.jsonl rows are exactly the
+    rows it wrote before this change — no `source` key — and `pairs_by_source` says so."""
+    run = str(tmp_path)
+    _plant_eval_log(run, [{"step": 300, "n_games": 100,
+                           "sentinels": [{"step": 100, "win_rate": 0.6}]}])
+    assert sl.ingest_eval_measured_pairs(run, [(100, 300)]) == 0
+    _append_pair(run, 100, 300, 40, 100)
+    row = json.loads(open(sl.games_log_path(run)).readline())
+    assert set(row) == {"a", "b", "wins_a", "games", "at"}
+    monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 300])
+    assert sl.fit_ladder(run, write=False)["pairs_by_source"] == {"ladder": 1}
+
+
+def test_ingestion_is_idempotent_so_a_reused_edge_is_never_double_weighted(tmp_path):
+    """`load_games` SUMS duplicate lines by design, so a second ingest of the same cycle would
+    silently double the edge's weight in the fit."""
+    run = str(tmp_path)
+    _plant_eval_log(run, [_symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}])])
+    assert sl.ingest_eval_measured_pairs(run, [(100, 300)]) == 1
+    assert sl.ingest_eval_measured_pairs(run, [(100, 300)]) == 0
+    assert sl.load_games(run) == {(100, 300): [40, 100]}
+
+
+def test_a_reused_edge_reaches_the_fit_exactly_once(tmp_path, monkeypatch):
+    """The double-count that ruled this approach out is gone because `fit_ladder` drops EVERY
+    snap-vs-snap eval edge from source (2) — so an ingested pair enters through games.jsonl alone."""
+    run = str(tmp_path)
+    _plant_eval_log(run, [_symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}])])
+    sl.ingest_eval_measured_pairs(run, [(100, 300)])
+
+    seen: list[list] = []
+    real_fit = sl.elo_mod.fit_pairwise
+    monkeypatch.setattr(sl.elo_mod, "fit_pairwise",
+                        lambda results, *a, **k: (seen.append(list(results)),
+                                                  real_fit(results, *a, **k))[1])
+    monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 300])
+    ladder = sl.fit_ladder(run, write=False)
+
+    snap_pairs = [r for r in seen[0]
+                  if sl.elo_mod.is_snapshot(r[0]) and sl.elo_mod.is_snapshot(r[1])]
+    assert len(snap_pairs) == 1 and snap_pairs[0][2:] == (40, 100)
+    assert ladder["eval_sentinel_edges_dropped"] == 1        # the log copy was dropped
+    assert ladder["pairs_by_source"] == {"eval_cycle": 1}

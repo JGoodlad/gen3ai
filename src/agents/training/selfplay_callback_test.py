@@ -813,3 +813,31 @@ def test_stable_mastery_streak_resets_on_dip(tmp_path):
         assert lab not in cb._stable_mastered   # streak restarted after the dip
     cb._push_stable_mastered({lab: 0.85})
     assert lab in cb._stable_mastered
+
+
+# ── the eval row's OPPONENT-REGIME stamp (gen3_eval_sentinel_greedy_default_v1, 2026-09-07) ────
+# `_sentinel_regime` is what tells `snapshot_ladder` whether a cycle's sentinel edges were measured
+# under the ladder's own protocol. Getting it wrong in the permissive direction would put a
+# systematically trainee-favouring edge (+8.9 pp [+7.0, +10.7]) into the dense matrix as the ONLY
+# measurement of that pair, so the two conditions are asserted separately rather than as a pair.
+
+def test_sentinel_regime_is_greedy_and_symmetric_by_default(tmp_path):
+    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path), server_config=MagicMock(),
+                          showdown_port=9999, eval_sentinel_greedy=True)
+    assert cb._sentinel_regime() == {"greedy": True, "symmetric_teams": True}
+
+
+def test_sentinel_regime_is_neither_under_no_eval_sentinel_greedy(tmp_path):
+    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path), server_config=MagicMock(),
+                          showdown_port=9999, eval_sentinel_greedy=False)
+    assert cb._sentinel_regime() == {"greedy": False, "symmetric_teams": False}
+
+
+def test_a_SPECIALIST_run_is_greedy_but_NOT_ladder_symmetric(tmp_path):
+    """`--trainee-team` draws BOTH players from the taught team — symmetric between the players,
+    but not the LADDER's draw (full pool, 0.1 sample bias). So the pair is not reusable, and the
+    row must say so rather than let the ladder infer symmetry from the greedy half."""
+    cb = SelfPlayCallback(pool=_mock_pool(1), model_dir=str(tmp_path), server_config=MagicMock(),
+                          showdown_port=9999, eval_sentinel_greedy=True,
+                          trainee_team_str="Tyranitar @ Leftovers\n")
+    assert cb._sentinel_regime() == {"greedy": True, "symmetric_teams": False}

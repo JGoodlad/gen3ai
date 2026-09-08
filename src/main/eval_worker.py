@@ -20,7 +20,8 @@ snapshot, port, model_dir, step, claim_dir, result_dir, concurrency, device, wor
 gamma, and the self-play knobs (self_play_temp, eval_sentinel_greedy).
 
 Opponent kinds (from the plan item): a bot plays the scripted roster path; a sentinel plays the
-frozen trainee (greedy) vs a pool snapshot (stochastic unless eval_sentinel_greedy), loaded via
+frozen trainee (greedy) vs a pool snapshot (stochastic + the flat pool teambuilder unless
+eval_sentinel_greedy, which makes the sentinel argmax AND gives it the trainee's own builder), loaded via
 ``load_model_snapshot`` and version-checked; a fixed/ext_ opponent plays a foreign frozen model
 (``load_foreign_opponent``, greedy yardstick). Sentinel/fixed model loads are CACHED per worker by
 path so a fine shard split doesn't pay an N× (~27MB) deserialize — the snapshot is immutable within
@@ -73,6 +74,38 @@ def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
         # a plain str = the single --trainee-team pin.
         return Gen3Teambuilder(list(team_str) if isinstance(team_str, (list, tuple)) else [team_str])
     return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
+
+
+def _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy: bool):
+    """The pool SENTINEL's eval teambuilder — the trainee's own when the run is in the SYMMETRIC
+    (greedy) regime, else the historical unbiased pool builder.
+
+    🚨 THE ASYMMETRY THIS CLOSES WAS INVISIBLE AND SYSTEMATIC (gen3_eval_sentinel_greedy_default_v1,
+    2026-09-07). The trainee draws from ``Gen3Teambuilder(all_teams, bias_teams=sample_teams,
+    bias_prob=0.1)`` — a 10% tilt toward the curated sample teams — while the sentinel drew from the
+    flat ``Gen3Teambuilder(all_teams)``. The dense snapshot ladder gives BOTH sides the biased
+    builder, so an eval sentinel edge and a ladder edge for the SAME frozen pair were two different
+    experiments; measured over the 60 pairs both sources covered on ``ai_v12_02_winprob_critic``,
+    the eval edge favoured the newer snapshot by **+8.9 pp [+7.0, +10.7]**. The team asymmetry and
+    the greedy-vs-stochastic asymmetry are two halves of ONE regime, which is why one switch moves
+    both: four regimes would be three more than anyone wants to interpret, and the pair of them is
+    exactly the condition under which the ladder may REUSE an eval-measured pair.
+
+    ⚠️ SYMMETRIC HERE MEANS "the sentinel draws the way the TRAINEE does", which on a SPECIALIST run
+    (``--trainee-team`` / ``--trainee-teams``) means the sentinel is pinned to the taught team(s)
+    too — right for eval (both players in the distribution the run trains on), but NOT the ladder's
+    own draw. The eval row records the ladder-comparability separately (see
+    ``selfplay_callback``'s ``sentinel_regime.symmetric_teams``), so a specialist run's pairs are
+    always replayed by the ladder rather than reused.
+
+    ⚠️ THE TWO PLAYERS SHARE ONE BUILDER OBJECT, which is safe only because this worker constructs
+    it with both of ``Gen3Teambuilder``'s stateful features at their defaults: ``team_pfsp`` is
+    "off" (so ``_draw_team`` is one ``_rng.choice`` and nothing here ever calls
+    ``record_team_pfsp_outcome``) and ``_block_episodes`` is 1 (``set_block_episodes`` is a
+    TRAINING-env call, never made here), so ``yield_team`` carries no per-player state. If either
+    ever reaches eval, give the sentinel its own instance — a shared block cache would hand both
+    players the SAME team and burn the block twice as fast."""
+    return trainee_tb if sentinel_greedy else opp_tb
 
 
 def _fixed_opponent_tb(item, opp_tb):
@@ -146,7 +179,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
                                         current_version=current_version, device=device),
             compile_extractor=compile_extractor, device=device)
         opponent = RLPlayer(
-            model=opp_model, team=opp_tb, battle_format=BATTLE_FORMAT,
+            model=opp_model, team=_sentinel_tb(trainee_tb, opp_tb, sentinel_greedy),
+            battle_format=BATTLE_FORMAT,
             server_configuration=server_config, mappings=mappings,
             account_configuration=AccountConfiguration(f"SPse{tag}", "password"),
             max_concurrent_battles=concurrency,
@@ -222,6 +256,9 @@ def _run(cfg: dict) -> None:
     step = cfg["step"]
     gamma = cfg.get("gamma", 0.99)
     self_play_temp = cfg.get("self_play_temp", 1.0)
+    # No default that means a REGIME: the callback always writes this key (it is resolved and
+    # recorded per run). `False` is the pre-2026-09-07 shape and is kept only so a cfg written
+    # by an older tree still parses.
     sentinel_greedy = cfg.get("eval_sentinel_greedy", False)
     claim_dir = cfg["claim_dir"]
     result_dir = cfg["result_dir"]

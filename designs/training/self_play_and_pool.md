@@ -265,15 +265,45 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   `--self-play-temp` (default `1.0` = the policy's own distribution; >1 flatter). **The measured
   trainee is always greedy** (`stochastic=False`) — that's what gives `win_rate_vs_bots`
   (curriculum) and `win_rate_vs_pool` (promotion) a stable, comparable control signal. The bots
-  are deterministic rule-based players. The **pool sentinels default to stochastic@`--self-play-temp`**
-  (mirroring how they act as training opponents) — so a sentinel matchup is greedy-trainee vs
-  stochastic-sentinel, a deliberate asymmetry that inflates `win_rate_vs_pool` by a ~constant
-  temperature handicap (≈15–20 pts; the [ELO caveat](#elo--skill-rating) below). **`--eval-sentinel-greedy`
-  makes the sentinels greedy too** (`_play_unit` builds the sentinel opponent `stochastic=False`), so the
-  matchup is best-vs-best and `win_rate_vs_pool` / the snapshot ELO reflect real skill (≈50% vs a
-  recent self, ramping with sentinel age). It's eval-only — TRAINING opponents stay stochastic — and
-  it auto-lowers `--promote-threshold` to `0.55` (else the handicap-free pool win rate never clears
-  the 0.65 gate and the pool freezes). Default off so the live metric stays continuous until opted in.
+  are deterministic rule-based players. The **pool sentinels are GREEDY by default since 2026-09-07**
+  (`gen3_eval_sentinel_greedy_default_v1`) — `_play_unit` builds the sentinel `stochastic=False` AND
+  hands it the **trainee's own teambuilder** (`_sentinel_tb`), so a sentinel matchup is best-vs-best
+  on a symmetric team draw and `win_rate_vs_pool` / the snapshot ELO reflect real skill (≈50% vs a
+  recent self, ramping with sentinel age). It is eval-only — TRAINING opponents stay stochastic —
+  and `--promote-threshold` follows the regime (`0.55` greedy / `0.65` stochastic; else the
+  handicap-free pool win rate never clears the gate and the pool freezes). Pass
+  **`--no-eval-sentinel-greedy`** for the old regime: sentinel stochastic@`--self-play-temp` drawing
+  from the flat pool builder while the trainee draws sample-biased and plays greedy.
+
+  🚨 **THE OLD REGIME'S HANDICAP WAS MEASURED, AND IT IS NOT SMALL.** Against the dense snapshot
+  ladder's own edge for the SAME frozen pair (greedy-vs-greedy, both sides sample-biased), the
+  asymmetric eval edge favoured the newer snapshot by **+8.9 pp [+7.0, +10.7]** — 60 paired pairs on
+  `ai_v12_02_winprob_critic`, 2026-09-07 — which inflated every pre-fix `ladder.json`'s newest nodes
+  by +21..+29 Elo. `--eval-sentinel-greedy` was ON for 49 runs (v5.5 through v8) and was dropped,
+  **unrecorded**, at the v9 launch; 164 runs since were compared across that boundary with nothing
+  on disk naming it. The default flip RESTORES the v8 convention rather than inventing one.
+
+  🚨 **THE REGIME IS RECORDED AND INHERITED — a resume never crosses the boundary silently.**
+  `eval_sentinel_greedy` and `promote_threshold` are `ModelVersion` fields (config **v112**) with
+  argparse defaults of `None`, so a **flagless resume or launcher restart INHERITS what the
+  checkpoint recorded** (`main.train.config.resolve_config` → `inherit_saved_flag`) and a v9-era run
+  resumed on this code stays stochastic. That is rule of evidence 15 applied to a flag: a windowed
+  statistic never crosses an opponent-regime boundary. Resolution order for the gate: an explicit
+  `--promote-threshold` wins; a regime **typed on this argv** re-derives it (inheriting 0.65 into a
+  freshly-greedy run would freeze the pool); otherwise the checkpoint's own gate is inherited. Every
+  launch prints one line naming both resolved values and their source (`argv` / `inherited` /
+  `default`): `⚖️  [EVAL REGIME] …`. A pre-v112 config migrates to stochastic + 0.65 — a record, not
+  a guess, for everything above `MIGRATION_FLOOR`; the 49 v5.5–v8 greedy runs sit below the floor
+  and their regime survives only in `metadata.json:cli_args`.
+
+  Each eval row in `eval_results.jsonl` carries its own **`sentinel_regime`** stamp
+  (`{"greedy", "symmetric_teams"}`) plus exact per-sentinel `counts`. `symmetric_teams` is the
+  stricter claim — *both players drew from the LADDER's own builder* — so a **specialist** run
+  (`--trainee-team`) records `greedy: true, symmetric_teams: false`: both its players draw from the
+  taught team, which is right for eval and is not the ladder's draw. Tests:
+  `eval_sentinel_greedy_test.py` (both halves of the switch), `selfplay_callback_test.py` (the
+  stamp, incl. the specialist case), `main/train/eval_sentinel_regime_test.py` (the default, resume
+  inheritance both ways, the gate's three branches, the round-trip and the migration).
 - **Opponent snapshots are version-checked.** They load via `load_model_snapshot` (not a raw
   `MaskablePPO.load`), and `SnapshotPool` writes a shared `model_config.json` next to its
   snapshots, so an arch-mismatched snapshot fails with a clean `ModelVersionError` instead of

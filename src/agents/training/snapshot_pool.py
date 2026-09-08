@@ -67,6 +67,30 @@ SELF_PLAY_START = 0.55
 SELF_PLAY_FULL = 0.80
 HEURISTIC_FLOOR = 0.10
 
+# ── The EVAL OPPONENT REGIME (gen3_eval_sentinel_greedy_default_v1, 2026-09-07) ────────────────
+# The measured trainee is ALWAYS greedy. Whether the pool SENTINEL it is measured against is also
+# greedy is the run's eval regime, and it is now GREEDY by default (`--no-eval-sentinel-greedy`
+# opts out). A stochastic sentinel hands the trainee a temperature handicap worth **+8.9 pp
+# [+7.0, +10.7]** against the same frozen pair played symmetrically by the dense ladder (measured
+# 2026-09-07 on `ai_v12_02_winprob_critic`, 60 paired pairs), which inflated every pre-fix
+# `ladder.json`'s newest nodes by +21..+29 Elo. The flag existed and was ON for 49 runs (v5.5
+# through v8) and was dropped, unrecorded, at the v9 launch — so the default flip RESTORES the v8
+# convention rather than inventing one.
+#
+# THE PROMOTION GATE FOLLOWS THE REGIME. Greedy-vs-greedy removes the handicap, so a genuinely-
+# ahead trainee wins the pool by a smaller margin; 0.65 under greedy sentinels would freeze the
+# pool. An explicit `--promote-threshold` always wins over both defaults.
+EVAL_SENTINEL_GREEDY_DEFAULT = True
+PROMOTE_THRESHOLD_GREEDY = 0.55
+PROMOTE_THRESHOLD_STOCHASTIC = 0.65
+
+
+def promote_threshold_default(eval_sentinel_greedy: bool) -> float:
+    """The regime-aware promotion threshold. ONE definition, read by the parser help, the launch
+    path (`main.train.config.resolve_config`) and every test — so the two numbers cannot drift
+    apart from the sentence that explains them."""
+    return PROMOTE_THRESHOLD_GREEDY if eval_sentinel_greedy else PROMOTE_THRESHOLD_STOCHASTIC
+
 
 def heuristic_fraction(win_rate_vs_bots: float, *, floor: float = HEURISTIC_FLOOR,
                        start: float = SELF_PLAY_START, full: float = SELF_PLAY_FULL) -> float:

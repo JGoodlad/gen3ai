@@ -482,6 +482,25 @@ class ModelVersionFields:
     cf_evidential_reg: float = 1e-3
     cf_twin_coef: float = 0.0
     cf_shadow_coef: float = 0.0
+    # ---- gen3_eval_sentinel_greedy_default_v1 (config v112) — THE EVAL OPPONENT REGIME ---------
+    # Two EVAL-only knobs, the td_aux_coef class and then some: neither is read by any forward, no
+    # weight shape depends on either, and a frozen eval/pool/distill opponent runs no eval cycle at
+    # all — so they are recorded for PROVENANCE + flagless-resume read-back (`_resolve` reads these
+    # fields) and NEVER compared by check_compatible.
+    #
+    # They are recorded because the ALTERNATIVE HAS ALREADY COST US A YEAR OF COMPARABILITY.
+    # `eval_sentinel_greedy` decides whether the pool sentinel a cycle measures the trainee against
+    # plays argmax and draws its team the way the trainee does; the asymmetric regime reads +8.9 pp
+    # [+7.0, +10.7] in the trainee's favour on the SAME frozen pair the dense ladder plays
+    # symmetrically. It was ON for 49 runs (v5.5–v8) and dropped, UNRECORDED, at the v9 launch, so
+    # 164 later runs were compared across a regime boundary nothing on disk named. `metadata.json`'s
+    # `cli_args` is overwritten by every resuming process, which makes `model_config.json` the only
+    # durable record — and the only place a flagless resume can read the regime back FROM.
+    # `promote_threshold` rides along because it is DERIVED from the regime (0.55 greedy / 0.65
+    # stochastic): a resume that inherited one without the other would change the promotion gate
+    # mid-run with nothing saying so.
+    eval_sentinel_greedy: bool = True
+    promote_threshold: float = 0.55
     # ---- gen3_capacity_telemetry_v1 (config v101) — LIVE CAPACITY TELEMETRY --------------------
     # Four TRAINING-only diagnostic knobs (the plasticity canary / half-batch trunk cosine /
     # feature velocity). They are the td_aux_coef class and then some: td_aux_coef at least scales

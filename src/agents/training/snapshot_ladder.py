@@ -19,6 +19,12 @@ race-safe line appends); the fitted ratings + win-matrix + non-transitivity read
 to ``<run>/snapshot_ladder/ladder.json`` (the sidecar metric). Frozen-vs-frozen means a pair
 already in ``games.jsonl`` is NEVER replayed.
 
+A pair can also arrive there WITHOUT this module playing it: when the run's eval cycles measure
+their sentinels under this module's own protocol (greedy + the same team draw — the default since
+2026-09-07), :func:`ingest_eval_measured_pairs` folds those edges in at promotion tagged
+``source: "eval_cycle"``, saving ~500 battles per promotion. Under any other regime the eval edge
+is a DIFFERENT measurement of the same pair (+8.9 pp to the newer snapshot) and nothing is reused.
+
 Non-transitivity caveat: if the frozen pool is non-transitive (rock-paper-scissors), NO scalar
 Elo represents it faithfully, however densely measured — but the dense matrix at least lets
 ``fit_quality`` (mean/max |predicted − observed|) QUANTIFY the intransitivity, which the sparse
@@ -107,13 +113,148 @@ def load_games(run_dir: str) -> dict[tuple[int, int], list[int]]:
     return out
 
 
-def _append_game(run_dir: str, step_a: int, step_b: int, wins_a: int, games: int) -> None:
-    """Append one measured pair (race-safe: a single sub-PIPE_BUF line append is atomic)."""
+def _append_game(run_dir: str, step_a: int, step_b: int, wins_a: int, games: int,
+                 source: "str | None" = None) -> None:
+    """Append one measured pair (race-safe: a single sub-PIPE_BUF line append is atomic).
+
+    ``source`` is PROVENANCE, written only when it is not the default: a row this module played
+    itself carries no ``source`` key (so a run that reuses nothing writes byte-identical rows to
+    every run before 2026-09-07), and a row ingested from an eval cycle carries
+    ``"source": "eval_cycle"``. See :func:`ingest_eval_measured_pairs`."""
     os.makedirs(_ladder_dir(run_dir), exist_ok=True)
     row = {"a": int(step_a), "b": int(step_b), "wins_a": int(wins_a), "games": int(games),
            "at": datetime.now(timezone.utc).isoformat()}
+    if source:
+        row["source"] = str(source)
     with open(games_log_path(run_dir), "a") as f:
         f.write(json.dumps(row) + "\n")
+
+
+LADDER_SOURCE = "ladder"        #: a pair this module PLAYED (rows carry no `source` key)
+EVAL_CYCLE_SOURCE = "eval_cycle"  #: a pair REUSED from an eval cycle measured under the ladder's protocol
+
+
+def pair_sources(run_dir: str) -> dict[tuple[int, int], set[str]]:
+    """{(lo, hi): {source, …}} over games.jsonl — a row with no ``source`` key counts as
+    ``LADDER_SOURCE``. Read for the ladder dict's ``pairs_by_source`` provenance block; kept
+    separate from :func:`load_games` so that function's arithmetic stays exactly what it was."""
+    out: dict[tuple[int, int], set[str]] = {}
+    path = games_log_path(run_dir)
+    if not os.path.exists(path):
+        return out
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                key = _pair_key(int(r["a"]), int(r["b"]))
+            except (json.JSONDecodeError, KeyError, ValueError):
+                continue
+            out.setdefault(key, set()).add(str(r.get("source") or LADDER_SOURCE))
+    return out
+
+
+# ── OPTION A: reusing the pairs an eval cycle ALREADY measured ──────────────────────────────
+def eval_measured_pairs(run_dir: str) -> dict[tuple[int, int], list[int]]:
+    """{(lo, hi): [wins_lo, games]} for every frozen pair an eval cycle already played **under the
+    ladder's own protocol** — i.e. from rows whose ``sentinel_regime`` says BOTH ``greedy`` and
+    ``symmetric_teams``. Rows without that stamp, or with either half false, are skipped.
+
+    🚨 BOTH CONDITIONS ARE LOAD-BEARING; EITHER ALONE IS A DIFFERENT EXPERIMENT. An eval cycle
+    freezes the live model to the very file promotion later copies into the pool (byte-identical
+    weights, zero step gap), so the PLAYERS are the same object the ladder would load. What differed
+    was the PROTOCOL: the ladder plays greedy-vs-greedy with the sample-biased builder on both
+    sides, while an asymmetric eval cycle played a greedy trainee against a temperature-1.0 sentinel
+    drawing from the flat pool builder. Measured 2026-09-07 on ``ai_v12_02_winprob_critic`` over the
+    60 pairs both sources covered, that protocol gap is worth **+8.9 pp [+7.0, +10.7]** to the newer
+    snapshot — systematic, not noise. So a pair is reusable only when the row SAYS both halves held;
+    a run in the old regime reuses nothing and pays the full round-robin tax exactly as before.
+
+    Per promotion this covers the cycle's own sentinels — 5 pairs = **500 battles** at the default
+    ``--snapshot-ladder-games 100`` — which on a 15-snapshot pool is 36% of the per-promotion tax.
+
+    Rows measuring the SAME pair are SUMMED, exactly as :func:`load_games` sums duplicate lines and
+    for the same reason: a frozen pair is stationary, so two cycles that both measured it (a resume
+    re-evaluating a step is the only way this happens) are independent samples of one Bernoulli and
+    adding them tightens the edge. Unlike ``elo._rows_from_log`` — which dedups by step, last write
+    wins — because that reader is building a per-step ROW and this one is building an EDGE.
+    """
+    path = os.path.join(run_dir, "eval_results.jsonl")
+    out: dict[tuple[int, int], list[int]] = {}
+    if not os.path.exists(path):
+        return out
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            regime = r.get("sentinel_regime") or {}
+            if not (regime.get("greedy") and regime.get("symmetric_teams")):
+                continue
+            try:
+                trainee = int(r["step"])
+                n_default = int(r.get("n_games", 0))
+            except (KeyError, TypeError, ValueError):
+                continue
+            for sent in (r.get("sentinels") or []):
+                try:
+                    other = int(sent["step"])
+                    counts = sent.get("counts")
+                    if counts:
+                        wins, games = int(counts[0]), int(counts[1])
+                    else:
+                        # A row written without exact counts: fall back to the cycle's declared game
+                        # count. Exact only at full shard coverage, which is why `counts` exists.
+                        games = n_default
+                        wins = int(round(float(sent["win_rate"]) * games))
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if games <= 0 or other == trainee:
+                    continue
+                lo, hi = _pair_key(trainee, other)
+                wins_lo = wins if trainee == lo else games - wins
+                e = out.setdefault((lo, hi), [0, 0])
+                e[0] += wins_lo
+                e[1] += games
+    return out
+
+
+def ingest_eval_measured_pairs(run_dir: str, target_pairs) -> int:
+    """Fold the eval-cycle-measured edges among ``target_pairs`` into games.jsonl, tagged
+    ``source="eval_cycle"``. Returns how many PAIRS were ingested.
+
+    Only pairs with NO existing row are ingested, which makes this idempotent (``load_games`` SUMS
+    duplicate lines by design, so a second ingest of the same cycle would double-weight the edge)
+    and keeps the "a measured pair is NEVER replayed" invariant pointing at one row per pair.
+    ``_measure_missing`` then skips exactly these pairs, which is where the 500 battles/promotion
+    are saved.
+
+    Landing the edge in games.jsonl — rather than teaching the FIT a second source — is what keeps
+    the arithmetic honest: ``fit_ladder`` drops every ``snap:``-vs-``snap:`` edge from the eval rows
+    unconditionally, so an ingested pair is counted exactly ONCE however it was measured, and the
+    double-count that ruled this approach out before that filter landed cannot occur."""
+    reusable = eval_measured_pairs(run_dir)
+    if not reusable:
+        return 0
+    have = load_games(run_dir)
+    n = 0
+    for a, b in target_pairs:
+        key = _pair_key(a, b)
+        if key in have and have[key][1] > 0:
+            continue
+        edge = reusable.get(key)
+        if not edge or edge[1] <= 0:
+            continue
+        _append_game(run_dir, key[0], key[1], edge[0], edge[1], source=EVAL_CYCLE_SOURCE)
+        have[key] = list(edge)          # so a repeated target pair in one call is ingested once
+        n += 1
+    return n
 
 
 def _atomic_write_json(path: str, obj: dict) -> None:
@@ -122,6 +263,18 @@ def _atomic_write_json(path: str, obj: dict) -> None:
     with open(tmp, "w") as f:
         json.dump(obj, f, indent=2)
     os.replace(tmp, path)
+
+
+def _pairs_by_source_counts(run_dir: str, keep_keys: set) -> dict[str, int]:
+    """{source: n_pairs} over the frozen pairs inside this fit's prefix. A pair carrying rows from
+    both sources counts once per source — that is a real, if unusual, state (a hand `--backfill`
+    after a reuse) and hiding it would be the wrong kind of tidy."""
+    counts: dict[str, int] = {}
+    for (lo, hi), srcs in pair_sources(run_dir).items():
+        if elo_mod.snap_key(lo) in keep_keys and elo_mod.snap_key(hi) in keep_keys:
+            for src in srcs:
+                counts[src] = counts.get(src, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 # ── the fit (dense matrix + bot anchors) ────────────────────────────────────────────────────
@@ -231,6 +384,11 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
         # see the comment at source (2). A ladder written before 2026-09-07 has no such key and
         # was fit WITH them (worth +21..+29 Elo on its newest nodes).
         "eval_sentinel_edges_dropped": sentinel_edges_dropped,
+        # PROVENANCE of the dense edges in THIS fit: how many of the kept frozen pairs this module
+        # PLAYED vs how many it REUSED from an eval cycle measured under its own protocol
+        # (`ingest_eval_measured_pairs`). A ladder whose run never left the stochastic regime reads
+        # {"ladder": N} and nothing else, exactly as before 2026-09-07.
+        "pairs_by_source": _pairs_by_source_counts(run_dir, keep_keys),
         "n_pairs_possible": len(list(itertools.combinations(steps, 2))),
         "ratings": snap_ratings,
         "se": snap_se,
@@ -318,9 +476,18 @@ def _measure_missing(run_dir, target_pairs, n_games, concurrency, impl):
 
 def update_for_promotion(run_dir, new_step, n_games=100, concurrency=4, impl="node") -> dict:
     """The per-promotion tax: play the newly-promoted frozen snapshot vs every OTHER frozen
-    snapshot on disk (skipping already-measured pairs), append, refit. Returns the ladder dict."""
+    snapshot on disk (skipping already-measured pairs), append, refit. Returns the ladder dict.
+
+    OPTION A (gen3_eval_sentinel_greedy_default_v1): before playing anything, fold in the pairs the
+    cycle that JUST promoted this snapshot already measured under the ladder's own protocol — the
+    5 sentinels of a greedy+symmetric run, 500 battles at the default 100 games/pair. A run in the
+    asymmetric (stochastic) regime ingests nothing and plays every pair exactly as before."""
     others = [s for s in pool_snapshot_steps(run_dir) if s != new_step]
-    _measure_missing(run_dir, [(new_step, o) for o in others], n_games, concurrency, impl)
+    targets = [(new_step, o) for o in others]
+    reused = ingest_eval_measured_pairs(run_dir, targets)
+    played = _measure_missing(run_dir, targets, n_games, concurrency, impl)
+    print(f"[ladder] promotion @{new_step}: {len(targets)} pairs — {reused} REUSED from eval cycles "
+          f"(≈{reused * n_games} battles saved), {played} played", flush=True)
     return fit_ladder(run_dir)
 
 

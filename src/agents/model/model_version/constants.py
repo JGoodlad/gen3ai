@@ -199,7 +199,20 @@ from typing import Any, Dict
 #   carries NO ARCH_SIGNATURE bump: no module, no state_dict key, no forward. It exists because
 #   the 2026-09-06 incident's run recorded a near-bare architecture with nothing on disk saying
 #   whether that was a decision or an accident.
-MODEL_CONFIG_VERSION = 111
+# v112: gen3_eval_sentinel_greedy_default_v1 — the EVAL OPPONENT REGIME (`eval_sentinel_greedy`)
+#   and the promotion gate it derives (`promote_threshold`), in the v101 capacity-telemetry mould:
+#   TRAINING/EVAL-only, RECORDED for provenance + flagless-resume read-back, NEVER gated. Neither is
+#   read by any forward and neither changes a weight shape, so there is NO ARCH_SIGNATURE bump and
+#   a frozen eval/pool/distill opponent (which runs no eval cycle) passes trivially.
+#   The bump exists because the UNRECORDED version of this flag already cost a year of
+#   comparability: `--eval-sentinel-greedy` was ON for 49 runs (v5.5–v8) and dropped without a note
+#   at the v9 launch, and the asymmetric regime it left behind reads +8.9 pp [+7.0, +10.7] in the
+#   trainee's favour on the same frozen pair the dense ladder plays symmetrically. THE DEFAULT IS
+#   FLIPPED in the same commit (greedy + symmetric teams), which is exactly why the field must be
+#   recorded and inherited: without it, every resume of a v9-era run on this code would silently
+#   cross an opponent-regime boundary mid-run (rule of evidence 15). A pre-v112 config defaults to
+#   False and derives its gate from that — see the migration for why that is a record, not a guess.
+MODEL_CONFIG_VERSION = 112
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

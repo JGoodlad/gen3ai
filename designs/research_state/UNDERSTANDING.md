@@ -365,7 +365,7 @@ containing the ladder's +91.7, the head-to-head's +94.9 **and zero**. 560 direct
 to ±30; 720 bot games cannot establish which model is better.
 [meas: `cross_era_head_to_head/`]
 
-### 3.2 Reading an ELO — four rules
+### 3.2 Reading an ELO — five rules
 
 1. The headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), never `eval/elo` (±29).
 2. A rating is only final once the run is — BT re-solves every node on every add and the newest is
@@ -373,6 +373,21 @@ to ±30; 720 bot games cannot establish which model is better.
 3. A cross-run comparison must be at **matched snapshot COUNT**, not matched step.
 4. **New clause**: a bot-anchored gap between two models far ABOVE the anchors needs a direct match
    before it is quoted as a difference.
+5. 🚨 **`win_rate_vs_pool` and `eval/elo` carry an OPPONENT-REGIME BOUNDARY at 2026-09-07** and are
+   not comparable across it. From that date eval pool sentinels play GREEDY and draw the trainee's
+   own teams by default (`gen3_eval_sentinel_greedy_default_v1`); before it the trainee played a
+   temperature-1.0 sentinel drawing from a different team distribution, worth **+8.9 pp
+   [+7.0, +10.7]** to the trainee on the SAME frozen pair the dense ladder plays symmetrically
+   (60 paired pairs on `ai_v12_02_winprob_critic`). Equal skill therefore reads ~9 pp LOWER on the
+   new regime, and the promotion gate moves 0.65 → 0.55 with it. The same flag was ON for 49 runs
+   (v5.5–v8) and dropped UNRECORDED at the v9 launch, which is the boundary nobody marked the first
+   time. **The regime is now RECORDED per run (`model_config.json` config v112) and per eval row
+   (`sentinel_regime`), and is INHERITED on a flagless resume** — read it, never assume it.
+   **`ladder.json` and every bot edge are UNAFFECTED**: the ladder always played greedy-vs-greedy
+   with symmetric builders, and since `3e6875a5` it drops the eval sentinel edges from its fit
+   entirely. Evidence: VERIFIED (ledger 2026-09-07 · *dense_reuse*, and the RECIPE CHANGE entry of
+   the same date). Under the new regime the ladder also REUSES the pairs a cycle already measured
+   (≈500 battles/promotion) — provenance rides in `games.jsonl` as `source: "eval_cycle"`.
 
 ### 3.3 The untaught meter
 

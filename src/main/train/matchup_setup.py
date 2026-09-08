@@ -404,14 +404,12 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
               f"heuristic_floor={_heuristic_floor:g} "
               f"(defaults {SELF_PLAY_START:g}/{SELF_PLAY_FULL:g}/{HEURISTIC_FLOOR:g})")
 
-    # Promotion gate: regime-aware default — 0.55 under greedy sentinels (the temperature handicap
-    # is gone, so a genuinely-ahead trainee wins the pool by a smaller margin and 0.65 would freeze
-    # the pool), else the original 0.65. An explicit --promote-threshold always wins.
-    _promote_threshold = (args.promote_threshold if args.promote_threshold is not None
-                          else (0.55 if args.eval_sentinel_greedy else 0.65))
-    if args.eval_sentinel_greedy:
-        print(f"[Opponents] eval sentinels GREEDY (best-vs-best pool/ELO signal) — "
-              f"promote_threshold={_promote_threshold:g}")
+    # Promotion gate: ALREADY RESOLVED. `resolve_config` (gen3_eval_sentinel_greedy_default_v1)
+    # owns the three-branch rule — explicit argv > re-derived from a typed regime > inherited from
+    # the checkpoint > the regime default — and prints the one [EVAL REGIME] line naming the
+    # resolved value and its source. Re-deriving it here would be a second place for the numbers to
+    # disagree, and the copy that lost would be the one `metadata.json:cli_args` records.
+    _promote_threshold = float(args.promote_threshold)
 
     return MatchupSetup(
         matchup=matchup, mappings=mappings,

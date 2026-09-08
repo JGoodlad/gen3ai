@@ -933,7 +933,20 @@ it cannot trend up however much the model improves; `win_rate_vs_bots` saturates
 ELO subsystem gives a single **absolute** number that genuinely rises with skill, anchored to the
 fixed bots.
 
-**Full detail — every flag, gate, measurement and hazard — is in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
+🚨 **THE EVAL OPPONENT REGIME IS A RECORDED, INHERITED PROPERTY OF A RUN** (2026-09-07,
+`gen3_eval_sentinel_greedy_default_v1`). Pool sentinels are **GREEDY by default** and draw the
+**trainee's own teams**; `--no-eval-sentinel-greedy` restores the old greedy-trainee-vs-stochastic-
+sentinel regime, whose asymmetry read **+8.9 pp [+7.0, +10.7]** in the trainee's favour on the same
+frozen pair the dense ladder plays symmetrically. `--promote-threshold` follows the regime (0.55
+greedy / 0.65 stochastic) and an explicit value still wins. Both are `ModelVersion` fields (config
+**v112**) with argparse default `None`, so **a flagless resume or launcher restart INHERITS the
+checkpoint's regime** rather than silently crossing an opponent-regime boundary (rule of evidence
+15); every launch prints `⚖️  [EVAL REGIME] …` naming both resolved values and their source. Under
+the symmetric regime the dense ladder **REUSES** the pairs a cycle already measured (≈500 battles
+saved per promotion) — gated on the row's own `sentinel_regime` stamp, both halves required.
+
+**Full detail — every flag, gate, measurement and hazard — is in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)
+and [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 

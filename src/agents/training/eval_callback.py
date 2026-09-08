@@ -869,12 +869,14 @@ def _record_opponent_elos(fit, bot_names, sentinels, tui):
 
 
 def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
-               bot_td_tails=None, bot_counts=None, externals=None):
+               bot_td_tails=None, bot_counts=None, externals=None, sentinel_regime=None):
     """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
     ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
 
     Shared by BOTH eval callbacks so the bot-only and self-play paths surface ELO
-    identically. ``sentinels`` is ``[{"step", "win_rate"}, …]`` (``[]`` on the bot path).
+    identically. ``sentinels`` is ``[{"step", "win_rate", "counts"}, …]`` (``[]`` on the bot path;
+    ``counts`` optional). ``sentinel_regime`` is the cycle's ``{"greedy", "symmetric_teams"}``
+    opponent-regime stamp, passed straight through to the row — see ``append_eval_result_row``.
     Returns ``(elo, ci_halfwidth)`` for the current snapshot, or ``None``. The live number
     is the best estimate from data SO FAR (batch-BT is global, so early points retro-adjust
     as more cycles land); ``python -m main.elo`` re-fits canonically offline. Best-effort —
@@ -895,7 +897,8 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
                                                   n_games, bot_counts=bot_counts)
         append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels,
                                bot_td_tails=bot_td_tails, bot_counts=bot_counts,
-                               externals=externals, hodge=hodge_block)
+                               externals=externals, hodge=hodge_block,
+                               sentinel_regime=sentinel_regime)
         # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
         # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
         fit = elo_mod.fit_from_run(model_dir, source="log")

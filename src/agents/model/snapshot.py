@@ -393,6 +393,7 @@ def append_eval_result_row(
     bot_counts: "dict | None" = None,
     externals: "dict | None" = None,
     hodge: "dict | None" = None,
+    sentinel_regime: "dict | None" = None,
 ) -> None:
     """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
 
@@ -401,8 +402,12 @@ def append_eval_result_row(
     produced — the trainee (frozen at ``step``) vs every bot and every pool sentinel,
     ``n_games`` each. Append-only (one line per cycle) so it survives launcher restarts,
     unlike the overwritten top-level ``metadata.json:latest_eval``. ``bot_win_rates`` maps
-    bot name → trainee win rate; ``sentinels`` is ``[{"step": int, "win_rate": float}, …]``
-    (empty/omitted on the non-self-play bot-only path).
+    bot name → trainee win rate; ``sentinels`` is
+    ``[{"step": int, "win_rate": float, "counts": [n_won, n_finished]}, …]`` (``counts`` optional;
+    empty/omitted on the non-self-play bot-only path).
+
+    ``sentinel_regime`` (optional) is ``{"greedy": bool, "symmetric_teams": bool}`` — the OPPONENT
+    REGIME this cycle's sentinel edges were measured under. See the inline note at the write.
 
     ``bot_counts`` (optional) maps bot name → ``(n_won, n_finished)`` — the EXACT win/loss
     record. Recovering counts from ``win_rate * n_games`` is exact only at full coverage; under
@@ -437,10 +442,27 @@ def append_eval_result_row(
             "evaluated_at": datetime.now(timezone.utc).isoformat(),
             "bots": {k: float(v) for k, v in bot_win_rates.items()},
             "sentinels": [
-                {"step": int(s["step"]), "win_rate": float(s["win_rate"])}
+                {"step": int(s["step"]), "win_rate": float(s["win_rate"]),
+                 # EXACT W/L per sentinel, for the same reason `counts` exists on the bot side:
+                 # recovering it from win_rate x n_games is exact only at full shard coverage, and
+                 # the snapshot ladder now CONSUMES these rows (see `sentinel_regime` below), where
+                 # a rounded game count would quietly become a rounded edge. Omitted when the caller
+                 # supplies none, so an older writer's rows stay byte-identical.
+                 **({"counts": [int(s["counts"][0]), int(s["counts"][1])]} if s.get("counts") else {})}
                 for s in (sentinels or [])
             ],
         }
+        # gen3_eval_sentinel_greedy_default_v1 — THE ROW'S OWN OPPONENT REGIME. Two booleans:
+        # `greedy` (the sentinel played argmax, not temperature-sampled) and `symmetric_teams` (both
+        # players drew from the LADDER's own builder — full pool, sample-team bias 0.1). Recorded
+        # PER ROW rather than per run because a resume can legitimately move the regime and a
+        # windowed statistic must never cross that boundary unmarked (rule of evidence 15), and
+        # because `agents.training.snapshot_ladder` READS these two to decide whether the cycle
+        # already measured a frozen pair under the ladder's own protocol. An absent block means
+        # "written before 2026-09-07" and is treated as neither.
+        if sentinel_regime:
+            row["sentinel_regime"] = {"greedy": bool(sentinel_regime.get("greedy", False)),
+                                      "symmetric_teams": bool(sentinel_regime.get("symmetric_teams", False))}
         # #4 — per-bot TD-residual tail history (append-only, restart-safe). Optional sibling of
         # `bots`; omitted when no captured battles produced residuals, so old rows stay identical.
         if bot_td_tails:

@@ -7,7 +7,9 @@ keep their original relative order, which is the order `--help` renders.
 import argparse
 
 from agents.training.eval_callback import _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES
-from agents.training.snapshot_pool import HEURISTIC_FLOOR, SELF_PLAY_FULL, SELF_PLAY_START
+from agents.training.snapshot_pool import (
+    EVAL_SENTINEL_GREEDY_DEFAULT, HEURISTIC_FLOOR, PROMOTE_THRESHOLD_GREEDY,
+    PROMOTE_THRESHOLD_STOCHASTIC, SELF_PLAY_FULL, SELF_PLAY_START)
 from agents.training.wrappers import STABLE_CHALLENGE_SHARE
 from main.train.parser.base import BoolFlag
 
@@ -121,19 +123,28 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "FATAL_CONFIG. A FRESH run (no --model) never needs this: it starts "
                              "poolless by design.")
     parser.add_argument("--promote-threshold", type=float, default=None,
-                        help="Win rate vs. pool to trigger snapshot promotion. Default 0.65 with "
-                             "stochastic sentinels; auto-lowered to 0.55 under --eval-sentinel-greedy "
-                             "(greedy-vs-greedy removes the temperature handicap, so a genuinely-ahead "
-                             "trainee wins the pool by a smaller margin — 0.65 would freeze the pool). "
-                             "An explicit value always wins.")
+                        help=f"Win rate vs. pool to trigger snapshot promotion. Regime-aware default: "
+                             f"{PROMOTE_THRESHOLD_GREEDY:g} under greedy sentinels (the default) and "
+                             f"{PROMOTE_THRESHOLD_STOCHASTIC:g} under --no-eval-sentinel-greedy — greedy-vs-greedy "
+                             f"removes the temperature handicap, so a genuinely-ahead trainee wins the pool by "
+                             f"a smaller margin and {PROMOTE_THRESHOLD_STOCHASTIC:g} would freeze the pool. An "
+                             f"explicit value always wins; a FLAGLESS resume INHERITS the value its checkpoint "
+                             f"recorded (regime continuity — rule of evidence 15).")
     parser.add_argument("--eval-sentinel-greedy", "--eval_sentinel_greedy", dest="eval_sentinel_greedy",
-                        action=BoolFlag, default=False,
-                        help="Eval the self-play pool sentinels GREEDY (argmax) instead of stochastic. "
-                             "Removes the greedy-trainee-vs-stochastic-sentinel handicap so win_rate_vs_pool "
-                             "/ snapshot ELO reflect real best-vs-best skill (≈50%% vs a recent self, ramping "
-                             "with sentinel age) instead of a flat temperature offset. Eval-only — TRAINING "
-                             "opponents stay stochastic. Metric discontinuity vs prior cycles; pair with the "
-                             "auto-lowered --promote-threshold (0.55).")
+                        action=BoolFlag, default=None,
+                        help=f"Eval the self-play pool sentinels GREEDY (argmax) and draw their teams the "
+                             f"SAME WAY the trainee draws its own. ON BY DEFAULT since 2026-09-07 "
+                             f"(gen3_eval_sentinel_greedy_default_v1); pass --no-eval-sentinel-greedy for the "
+                             f"old greedy-trainee-vs-stochastic-sentinel regime. Greedy+symmetric makes an eval "
+                             f"sentinel edge the SAME EXPERIMENT as the dense snapshot ladder's edge for that "
+                             f"pair (the asymmetric pair read +8.9 pp [+7.0, +10.7] in the trainee's favour), so "
+                             f"win_rate_vs_pool / snapshot ELO reflect real best-vs-best skill AND the ladder can "
+                             f"REUSE the pair instead of replaying it. Eval-only — TRAINING opponents stay "
+                             f"stochastic. --promote-threshold follows the regime "
+                             f"({PROMOTE_THRESHOLD_GREEDY:g} greedy / {PROMOTE_THRESHOLD_STOCHASTIC:g} stochastic). "
+                             f"Default None so a FLAGLESS resume INHERITS the regime its checkpoint recorded "
+                             f"rather than silently crossing an opponent-regime boundary; a FRESH run with no "
+                             f"flag gets {EVAL_SENTINEL_GREEDY_DEFAULT}.")
     parser.add_argument("--self-play-temp", type=float, default=1.0,
                         help="Sampling temperature for self-play TRAINING opponents (they sample, "
                              "not argmax, so the learner faces the policy's full action distribution). "

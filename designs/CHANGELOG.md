@@ -8249,3 +8249,78 @@ exists, the one flag that replaces it, the three classes it does not set, and th
 asymmetry), a rewritten PRE-FLIGHT step 1, and the ARCH-SURFACE banner at the top of §4.1. Root
 `CLAUDE.md` → *Will this command still launch?* and `src/main/launcher/CLAUDE.md` carry the same
 truth for their own surface.
+
+---
+
+## `gen3_eval_sentinel_greedy_default_v1` — the EVAL OPPONENT REGIME becomes a recorded property (config v112, 2026-09-07)
+
+### The measurement
+
+An eval cycle plays the frozen trainee GREEDY. Until now the pool SENTINEL it was measured against
+sampled at `--self-play-temp` (1.0) **and** drew its team from the flat `Gen3Teambuilder(all_teams)`
+while the trainee drew from the sample-biased builder. The dense snapshot ladder plays the same
+frozen pair greedy-vs-greedy with the biased builder on both sides. Over the **60 pairs both
+sources cover** on `ai_v12_02_winprob_critic`, the eval edge favoured the newer snapshot by
+**+8.9 pp [+7.0, +10.7]** — same weights, same step, different protocol. That is what inflated every
+pre-fix `ladder.json`'s newest nodes by +21..+29 Elo (dropped from the fit separately, `3e6875a5`).
+
+### The change
+
+`--eval-sentinel-greedy` is ON by default and now moves BOTH halves of the regime: the sentinel
+plays argmax (`eval_worker._play_unit`) and takes the trainee's own teambuilder
+(`eval_worker._sentinel_tb`). `--promote-threshold` follows — 0.55 greedy / 0.65 stochastic, one
+definition in `agents.training.snapshot_pool.promote_threshold_default`, an explicit value still
+wins. `--no-eval-sentinel-greedy` restores the old regime exactly.
+
+**The flag is not new and neither is the convention it restores:** it was ON for 49 runs, v5.5
+through v8, and was dropped UNRECORDED at the v9 launch.
+
+### Config v112 — two recorded, ungated fields
+
+`eval_sentinel_greedy` and `promote_threshold` join `ModelVersion` in the v101 capacity-telemetry
+mould: TRAINING/EVAL-only, recorded for provenance + flagless-resume read-back, NEVER compared by
+`check_compatible` (a frozen eval/pool/distill opponent runs no eval cycle). NO `ARCH_SIGNATURE`
+bump — no module, no state_dict key, no forward. Both argparse defaults become `None`, so a flagless
+resume or a launcher restart INHERITS the regime its checkpoint recorded and a v9-era run resumed on
+this code stays stochastic. A pre-v112 config migrates to `False` + the gate that regime derives —
+a record rather than a guess for everything above `MIGRATION_FLOOR`, since the argparse default was
+`False` from the v9 launch until this bump.
+
+`main.train.config.resolve_eval_sentinel_regime` is module-level and called by BOTH
+`resolve_config` and `main.checkargs.resolve_against_parent`, for `resolve_critic_mode`'s reason:
+the gate is not a plain inherited flag (a TYPED regime re-derives it), so a blanket inheritance
+sweep reported the parent's 0.65 against a launch that resolves 0.55. Every launch prints
+`⚖️  [EVAL REGIME] …` naming both resolved values and their source (`argv` / `inherited` /
+`default`).
+
+### The ladder reuses what the cycle already measured (option A)
+
+Each `eval_results.jsonl` row now carries `sentinel_regime = {greedy, symmetric_teams}` plus exact
+per-sentinel `counts`. When BOTH halves hold, `snapshot_ladder.ingest_eval_measured_pairs` appends
+the cycle's sentinel edges to `games.jsonl` tagged `source: "eval_cycle"` before
+`_measure_missing` runs, so the pair is not replayed: ≈**500 battles per promotion**, 36% of the
+per-promotion tax at a 15-snapshot pool. `fit_ladder` reports `pairs_by_source`. Landing the edge in
+`games.jsonl` rather than teaching the fit a second source is what keeps it counted exactly once —
+source (2) drops every `snap:`-vs-`snap:` eval edge unconditionally, so the double-count that ruled
+this approach out before that filter landed cannot occur. `symmetric_teams` is the stricter claim
+(*both players drew from the LADDER's builder*), so a SPECIALIST run records `false` and its pairs
+are always replayed.
+
+### The discontinuity, stated
+
+`win_rate_vs_pool` and `eval/elo` on a run launched under the new default are NOT comparable to the
+same series on a v9-era run — equal skill reads ~9 pp lower, which is why the gate drops to 0.55.
+`ladder.json`, its bot anchors, and every cross-run comparison at matched snapshot COUNT are
+UNAFFECTED. The live arm `ai_v12_02_winprob_critic` is pinned to `f971caf2` and never sees this code.
+
+### Gates
+
+`src/main/train/eval_sentinel_regime_test.py` (15): the fresh-run default; the negation and the gate
+following it; a flagless resume of a stochastic run staying stochastic and of a greedy run staying
+greedy; a parent's EXPLICIT threshold surviving; a typed regime RE-DERIVING the gate; an explicit
+threshold beating everything; the JSON round-trip; the pre-v112 migration in both directions;
+`check_compatible` accepting a mismatch; and **the two surfaces agreeing** — `checkargs` vs the
+launch, parametrized over the three interesting argvs. Plus `snapshot_ladder_test.py` (+8, incl. the
+planted HALF-symmetric row that must NOT be reused), `elo_row_contract_test.py` (+4, the
+writer→row→ladder join), `eval_sentinel_greedy_test.py` (+3, both halves of the switch) and
+`selfplay_callback_test.py` (+3, the stamp incl. the specialist case).

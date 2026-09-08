@@ -460,6 +460,65 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
             setattr(args, name, value)
 
 
+def resolve_eval_sentinel_regime(args, saved_ver, *, announce: bool = True) -> None:
+    """THE EVAL OPPONENT REGIME and the promotion gate it derives, resolved in place.
+
+    RULE OF EVIDENCE 15: a windowed statistic never crosses an opponent-regime boundary. Whether
+    the pool SENTINEL a cycle measures the trainee against plays greedy — and draws its team the
+    way the trainee does — decides what `win_rate_vs_pool` and `eval/elo` MEAN; the asymmetric
+    regime reads **+8.9 pp [+7.0, +10.7]** in the trainee's favour on the same frozen pair the
+    dense ladder plays symmetrically. So `--eval-sentinel-greedy` carries an argparse default of
+    `None` and is INHERITED here: a run recorded stochastic stays stochastic across every launcher
+    restart and every flagless resume, and only a TYPED flag moves it. A FRESH run (no `--model`)
+    gets `EVAL_SENTINEL_GREEDY_DEFAULT` = True.
+
+    🚨 THE 49-RUN PRECEDENT is why the inheritance is not optional: `--eval-sentinel-greedy` was ON
+    for v5.5 through v8 and was dropped, UNRECORDED, at the v9 launch — 164 stochastic runs were
+    then compared against greedy ones with nothing on disk saying the regime had moved.
+
+    THE GATE FOLLOWS THE REGIME, and the ORDER of the three branches is the rule:
+
+    * ``argv`` — an explicit ``--promote-threshold`` always wins.
+    * ``regime typed on THIS argv`` — the operator MOVED the regime, so the gate is re-derived from
+      the NEW regime rather than inherited from the old one. Inheriting 0.65 into a freshly-greedy
+      run would freeze the pool, which is the exact failure the auto-lowering exists to prevent.
+    * otherwise — inherit the checkpoint's own gate (which preserves a parent's EXPLICIT value),
+      else the regime-derived default.
+
+    Module-level and callable from `main.checkargs` for `resolve_critic_mode`'s reason: a checker
+    that re-implemented this would report a *different* effective config than the launch resolves,
+    and "what is the baseline?" is answered off that report. `announce=False` suppresses the launch
+    line for the offline surfaces.
+    """
+    from agents.training.snapshot_pool import (
+        EVAL_SENTINEL_GREEDY_DEFAULT, promote_threshold_default)
+
+    greedy_typed = args.eval_sentinel_greedy is not None
+    greedy_inherited = inherit_saved_flag(args, saved_ver, "eval_sentinel_greedy",
+                                          EVAL_SENTINEL_GREEDY_DEFAULT)
+    args.eval_sentinel_greedy = bool(args.eval_sentinel_greedy)
+    args.eval_sentinel_greedy_source = ("argv" if greedy_typed
+                                        else "inherited" if greedy_inherited else "default")
+
+    thr_default = promote_threshold_default(args.eval_sentinel_greedy)
+    if args.promote_threshold is not None:
+        args.promote_threshold_source = "argv"
+    elif greedy_typed:
+        args.promote_threshold = thr_default
+        args.promote_threshold_source = "default"
+    else:
+        args.promote_threshold_source = (
+            "inherited" if inherit_saved_flag(args, saved_ver, "promote_threshold", thr_default)
+            else "default")
+    if announce:
+        emit(f"⚖️  [EVAL REGIME] eval sentinels "
+             f"{'GREEDY + symmetric teams' if args.eval_sentinel_greedy else 'STOCHASTIC @ --self-play-temp'} "
+             f"(--{'' if args.eval_sentinel_greedy else 'no-'}eval-sentinel-greedy, "
+             f"source={args.eval_sentinel_greedy_source}); "
+             f"promote_threshold={args.promote_threshold:g} "
+             f"(source={args.promote_threshold_source})")
+
+
 def resolve_config(args, parser) -> ResolvedRunConfig:
     """Desugar, inherit and validate `args` in place. Returns the values that live outside it."""
     # WHICH FLAGS WERE ACTUALLY TYPED — captured FIRST, before one default is filled, because after
@@ -681,6 +740,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             args.damage_matrices_incoming = True
             print("[Arch] --damage-topk implies the INCOMING per-move damage matrix (gen3_op_block_trim_v1: "
                   f"the lean top-K block was deleted) — enabling it at K={args.damage_topk_k}.")
+    # gen3_eval_sentinel_greedy_default_v1 — THE EVAL OPPONENT REGIME, and the gate it implies.
+    # Module-level for the same reason `inherit_saved_flag` and `resolve_critic_mode` are:
+    # `main.checkargs` has to reach the same resolved values a launch reaches.
+    resolve_eval_sentinel_regime(args, _saved_ver)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
     _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)

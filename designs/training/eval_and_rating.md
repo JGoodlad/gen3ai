@@ -563,14 +563,21 @@ fixed bots.
   and prints a ranked ladder + writes `elo_ratings.json` + an Elo-vs-step `elo_curve.png` (CI band
   + bot anchor lines). `--out` defaults to `<run>/elo/`; point elsewhere to analyze a LIVE run
   without writing into it.
-- **Caveat (acceptable, noted in code):** by default the trainee is greedy but the sentinels are
-  stochastic@temp, so a snapshot's rating blends greedy strength (when it's the cycle's trainee)
-  with stochastic strength (when it's a later sentinel) — a roughly uniform shift that preserves the
-  trend, but it does mean the same snapshot is scored in two regimes. **`--eval-sentinel-greedy`
-  removes this** — sentinels play greedy too, so every snapshot is scored greedy in both roles and
-  the ELO ladder is internally consistent (at the cost of a one-time scale shift vs prior cycles;
-  the bot-anchored scale is preserved since trainee-vs-bot records are unchanged). Tests:
-  `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders, `fit_pairwise`).
+- **The two-regime caveat is CLOSED for new runs (2026-09-07, `gen3_eval_sentinel_greedy_default_v1`).**
+  It used to bite by default: the trainee played greedy but the sentinels sampled at
+  `--self-play-temp`, so a snapshot's rating blended greedy strength (as a cycle's trainee) with
+  stochastic strength (as a later sentinel), and the sentinel additionally drew its team from the
+  flat pool builder while the trainee drew sample-biased. **Sentinels are now GREEDY and draw the
+  trainee's own teams by default**, so every snapshot is scored in one regime and the ELO ladder is
+  internally consistent. `--no-eval-sentinel-greedy` restores the old behaviour. 🚨 **The cost is a
+  ONE-TIME DISCONTINUITY in `eval/elo` and `win_rate_vs_pool` against every v9-era run** — the
+  asymmetric edge read **+8.9 pp [+7.0, +10.7]** in the trainee's favour — and the discontinuity is
+  in the SENTINEL edges only: the bot-anchored scale is preserved, since trainee-vs-bot records are
+  untouched. A run's regime is recorded (`model_config.json` config v112) and INHERITED on a
+  flagless resume, so a windowed statistic can no longer cross the boundary unmarked; see
+  [`self_play_and_pool.md`](self_play_and_pool.md) for the resolution rule and the startup line.
+  Tests: `elo_test.py` (synthetic-ladder recovery, anchoring, perfect-score, loaders,
+  `fit_pairwise`), `main/train/eval_sentinel_regime_test.py` (the regime + gate resolution).
 
 ### Frozen-snapshot ELO ladder — the dense, pay-once resolution (`snapshot_ladder.py`)
 
@@ -620,6 +627,40 @@ uses the sentinel edges** — it has no dense matrix to prefer, and those near-5
 only resolution the saturated bots cannot give (removing them from one cycle moves the trainee
 −110 Elo and WIDENS the CI ±30 → ±41). The exclusion is the LADDER's alone, and
 `snapshot_ladder_test.py` pins that separation with a test on `fit_from_run`.
+
+#### Reusing the pairs an eval cycle already measured — OPTION A (2026-09-07)
+
+The exclusion above is what a *different* measurement of the same pair costs. Once the two
+measurements are **the same experiment**, the opposite move becomes available: the ladder can count
+an eval-measured pair as COVERED instead of replaying it. The eval cycle freezes the live model to
+the very file promotion copies into the pool (`selfplay_callback.py` → `snapshot_pool.add_from_path`
+— byte-identical weights, zero step gap), so the players were never in question; only the protocol
+was.
+
+**The gate is BOTH halves of the regime, read off the row and never assumed.** A pair is reusable
+only when its `eval_results.jsonl` row's `sentinel_regime` says `greedy` **and** `symmetric_teams`.
+Either alone is the asymmetric measurement the +8.9 pp was measured on, and a row with no stamp
+(written before 2026-09-07) is UNKNOWN, which reads as not-reusable. A `--no-eval-sentinel-greedy`
+run therefore reuses nothing and pays the full round-robin tax, byte-identically.
+
+**The mechanics** (`snapshot_ladder.py`): `eval_measured_pairs` parses the reusable edges (exact
+`counts` when the row has them, else `win_rate × n_games`); `ingest_eval_measured_pairs` appends the
+ones among this promotion's target pairs that `games.jsonl` does not already hold, tagged
+`"source": "eval_cycle"`; `_measure_missing` then finds them present and skips them.
+`update_for_promotion` prints `N REUSED … M played` per promotion, and `fit_ladder` reports
+`pairs_by_source` (a run that reuses nothing reads `{"ladder": N}` and its rows carry no `source`
+key at all). **Landing the edge in `games.jsonl` rather than teaching the FIT a second source is
+what keeps the arithmetic honest** — source (2) drops every `snap:`-vs-`snap:` eval edge
+unconditionally, so an ingested pair is counted exactly ONCE; the double-count that ruled this
+approach out before that filter landed cannot occur.
+
+**The saving:** 5 sentinels per cycle = **500 battles per promotion** at the default
+`--snapshot-ladder-games 100`; on a 15-snapshot pool that is 5 of 14 pairs = **36% of the
+per-promotion tax**. On `ai_v12_02_winprob_critic` (the pre-fix run, measured but not applied) 60 of
+105 pairs — 6,000 battles — had been measured twice. Tests: `snapshot_ladder_test.py` (the
+regime read incl. the planted HALF-symmetric row that must NOT be reused, the counts fallback, the
+promotion path, idempotence, exactly-once-in-the-fit, and the byte-identical stochastic path);
+`elo_row_contract_test.py` (the writer→row→ladder join, so the two field names cannot drift).
 
 ### Hodge decomposition — the SPINE and the WIDTH (`hodge.py`)
 
