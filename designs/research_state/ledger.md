@@ -15416,3 +15416,74 @@ forced-switch rounds outside the frame, sentinel battles outside the anchor pool
 label's own sd ≤ 0.177). Contention factor 1.00 at the check; loadavg 2.0–35.3 as arm C launched
 mid-run. Tag: MEASUREMENT / IDENTITY TEST. **Test 1 of the three registered 75M value tests; the
 verdict is written by the orchestrator reading tests 1 and 2 together, not here.**
+
+### 2026-09-08 · D2 VERDICT · the win-prob-only critic FAILS its primary critic-quality bar at 75M; sparse is WITHIN FLOOR on the one clean strength read (26M); the run-end strength read is NOT COMPARABLE (pool grooming) — orchestrator's read of tests 1 + 2 together
+
+**Inputs (both QUOTED, landed today):** test 1 IDENTITY `cbad491d` (cf_audit, no `--checkpoint`,
+`step_74000016`, 142/142 anchors reproduce, 800 states / 214 battles / 6,400 rollouts) and test 2
+CRITIC GATE `23164e03` (`main.critic_gate`, `--skip-meter`, exit 1 `VERDICT: MIXED`, G1–G4 not met).
+Test 3 (bootstrap consistency) is still to run — it stalled four times under a 5-stream load and
+is re-dispatched fresh; it is DESCRIPTIVE and does not move this verdict.
+
+**Critic quality — FAIL, and worse than the design's own falsification shape.** The design's
+pre-stated falsifier (`design_winprob_only_critic.md` §5.5, verbatim): *"G1 flat (resolution
+unmoved) with G2–G4 passing means the promotion bought calibration this head already had and
+nothing else — the wrong-meter trap … That must be reported as loudly as a pass."* What was
+measured: G1 is not flat but BELOW the matched-stratum gen-era baseline — resolution `all` 0.0452
+[0.0331, 0.0615] vs bar 0.0618, `pool` 0.0500 [0.0350, 0.0696] vs 0.0711 (intervals entirely under
+the bar), `bot` 0.0257 [0.0162, 0.0425] vs 0.0337 (NOT DETECTED) — failing 60 of 60 rows over 20
+snapshots; G2 reliability and G3 ECE FAIL on the BOT stratum (the unhandicapped one) and pass on
+the pool stratum; G4 skill > 0 holds on all three (`all` +0.240 [+0.175, +0.294]). The identity
+test says why the head is wrong and not merely uninformative: **V is optimistic against its own
+Monte-Carlo continuation by +0.0965 [+0.0671, +0.1268]**, monotone reliability curve with p̂ under V
+in all ten bins, and the offset is a LATE-GAME phenomenon — early ≤10 turns +0.0015 [−0.0335,
++0.0385], late ≥25 turns +0.1687 [+0.0963, +0.2474], late − early **+0.1672 [+0.0863, +0.2511]**;
+bot vs pool Δ +0.0018 [−0.0597, +0.0674] NOT DETECTED. Per-state error 0.255 is 2.6× the offset:
+resolution dominates. Brier 0.1943 = REL 0.0106 − RES 0.0476 + UNC 0.2331 (base-rate cap at p̂ 0.63).
+So: the head is informative (skill +0.166 [+0.097, +0.231]) but (a) systematically over-values late
+positions relative to what its own policy then achieves and (b) resolves states more coarsely than
+the gen-era shaped head it was meant to replace. The primary bar is missed; the falsification
+clause is exceeded, not merely met.
+
+**Strength ("is sparse within the bar") — WITHIN FLOOR, on the 26M read; the 75M read is
+NOT COMPARABLE.** The clean read stands: at n = 12, matched count AND matched fit size, the arm
+trailed `famine_comparator` by 34 vs floor 38 (ledger 2026-09-07 *THE n = 12 STRENGTH READ*).
+The run-end read (−51.0 [−81.5, −20.5], straddling −38 ⇒ exceedance NOT DETECTED) is registered
+INVALID as a like-for-like: the self-play pool's sliding window of 20 groomed the arm's early
+snapshots off disk, the committed `ladder.json` rates only the 20 survivors (36M → 74M), and
+`critic_gate` re-slices that, so "the arm's first 12" became 36M → 58M against the comparator's
+2M → 24M. Fit size matched; training position not (registration 44e3a7f5 assumed early nodes
+survive). **TOOL DEFECT, P1:** `games.jsonl` is append-only and holds every early pair, so the
+matched-count slice must refit over ALL steps ever rated, not the surviving pool — until then no
+run-end matched-count read on a groomed pool is admissible (rule of evidence: an instrument that
+slices an artifact must know what the artifact's owner deleted).
+
+**A headline correction for every A number quoted this week:** A's committed ladder was written by
+its pinned PRE-FIX updater and folds the eval-sentinel edges; a read-only refit on the fixed fit
+(47 sentinel edges dropped) reads the final node **1984.2 (se 8.5)**, not 2057.3, and the 64M peak
+**2000.2**, not 2061.9 — ~+73 in the committed headline. The famine-vs-arm delta above is on the
+fixed fit both sides, so it is unaffected.
+
+**Also recorded:** G7 no breach on either reference (the tool used the parent's own worst cycle as
+the era reference, not amendment 6's arm-own 21.911 — neither breached; a tool-side amendment-6
+wiring gap, P2). The untaught-meter column NOT RUN (`--skip-meter`, 8,000 battles beside a live
+arm refused; descriptive by registration). Test 1's pool stratum is cross-regime (A ran stochastic
+sentinels; +8.9 pp handicap) — the bot stratum carries the calibration verdict.
+
+**Consequence per the week plan's D2 branch ("Critic FAIL ⇒ the falsification sentence printed
+verbatim and the week pivots to the frozen-head bootstrap from the GEN-ERA head as the recovery
+arm"):** the recovery arm is a FRESH run on A's argv plus `--win-prob-pbrs-frozen <gen-era head>`
+(the gen-era shaped model's win-prob readout as an actor-only frozen potential, the upper-bound
+evidence arm of D3) — NOT A's own head, which this verdict just failed. **GPU sequencing is the
+owner's:** arm C (`ai_v12_04_pfsp_fork25M`, owner-ordered) holds the GPU; default under the
+15-minute rule = C continues to its first registered read (ladder at matched count vs A's own
+post-25M nodes, plus G1–G4 at its first two promotions), then the recovery arm launches; the owner
+can reorder. **Open question the verdict raises, for test 3 and the next arm:** whether the late
+optimism is the BCE-on-terminal target under γ = 1 (every late state inherits the final label with
+no discounting, so a head that reads the material lead over-commits) or the moving target of a
+self-improving policy (V tracks "what the policy I am becoming wins"); the bootstrap-consistency
+read separates them (a consistent bootstrap with late optimism ⇒ target; a within-game drift ⇒
+moving policy). Tag: VERDICT. Sentence, verbatim as the design demands: **the win-prob-only critic
+did not out-resolve the gen-era head at matched strata and over-values late positions against its
+own rollouts by +0.10; sparse terminal reward trained a stronger-than-floor policy on a
+worse-than-baseline critic.**

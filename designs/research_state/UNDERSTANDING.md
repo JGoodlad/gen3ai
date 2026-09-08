@@ -598,6 +598,25 @@ registered ep_len clause 2 read MET (+4.12 turns) on a competence SAWTOOTH locke
 promotions with draw rate at a third of its bar — the AND with clause 1 is what kept a met clause
 from reading as famine, and the +3.0 bar is banked as too tight for the next registration.
 
+### 4.2b The 75M read (2026-09-08) — VERDICT [ledger 2026-09-08 · *D2 VERDICT*]
+
+**The win-prob-only critic FAILED its primary bar.** [MEASURED, `23164e03` + `cbad491d`] At run end
+(75,005,952 steps; last trace cycle 74.0M) the head's resolution sits BELOW the matched-stratum
+gen-era baseline on 60 of 60 rows (all 0.0452 [0.0331, 0.0615] vs 0.0618), reliability and ECE
+fail on the unhandicapped bot stratum, skill stays positive (+0.240 [+0.175, +0.294]). The identity
+test explains the failure: V over-values positions against its own Monte-Carlo continuation by
++0.0965 [+0.0671, +0.1268], and the offset is late-game (late − early +0.167 [+0.086, +0.251]);
+per-state error 0.255 is 2.6× the offset. The design's own falsification clause (§5.5) is exceeded.
+**Sparse is WITHIN FLOOR on strength** on the one clean read (26M, −34 vs floor 38). The run-end
+strength read is NOT COMPARABLE: pool grooming deleted the early snapshots and the tool slices the
+survivors — a P1 tool defect (refit from `games.jsonl` over all rated steps). **Every committed A
+ladder number is ~+73 high** (pre-fix updater folds sentinel edges; fixed-fit final node 1984.2,
+peak 2000.2). **Open:** is the late optimism the γ = 1 terminal-label target or a moving-policy
+target? Test 3 (bootstrap consistency) separates them. **Next arm per D2:** the frozen GEN-ERA head
+as an actor-only potential on a fresh run (the D3 upper-bound arm), sequenced after arm C's first
+read. Arm C (`ai_v12_04_pfsp_fork25M`, PFSP 2.5 one-sided, greedy sentinels) is LIVE on the GPU
+since 2026-09-08 10:12, pinned at `ef981a89` [MEASURED, pin_history].
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

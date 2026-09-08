@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,419-line file. **The ledger itself is append-only and is never edited by this**;
+15,490-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**453 headings · 413 dated · 2026-08-01 → 2026-09-08 · ledger 15,419 lines.**
+**454 headings · 414 dated · 2026-08-01 → 2026-09-08 · ledger 15,490 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -473,3 +473,4 @@ rename.
 - `L15236` · `2026-09-08` · RUST SIM · gen3 parity round 3: FOCUS ENERGY closes and ATTRACT is scoped-out with its cause (320 → 321 of 369 moves; campaign 312 → 321, abilities and species CLOSED)
   - `L15287` · `2026-09-08` · 75M READ · test 2 CRITIC GATE at run end: G1 `bot` 0.0257 [0.0162, 0.0425] vs bar 0.0337 — `n`, and G1 fails on 60 of 60 rows · G4 `bot` +0.186 [+0.098, +0.256] — `Y`, all three strata clear zero at 74M · ladder vs `famine_comparator` −51 ELO [−81.5, −20.5] at n = 12 matched fit — INFERIOR on the point estimate (the tool: "the trail EXCEEDS the floor"), the CI straddling the −38 floor
   - `L15365` · `2026-09-08` · 75M READ · test 1 IDENTITY (cf_audit, no --checkpoint): OFFSET DETECTED, RESOLUTION STILL DOMINATES — V − p̂ = +0.0965 [+0.0671, +0.1268], reproduction 142/142
+  - `L15420` · `2026-09-08` · D2 VERDICT · the win-prob-only critic FAILS its primary critic-quality bar at 75M; sparse is WITHIN FLOOR on the one clean strength read (26M); the run-end strength read is NOT COMPARABLE (pool grooming) — orchestrator's read of tests 1 + 2 together
