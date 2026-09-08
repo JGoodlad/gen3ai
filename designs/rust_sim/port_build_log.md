@@ -5840,3 +5840,110 @@ SNAPSHOT, never the current number.
 
 **Gates:** nothing to re-run — no engine file changed. The probe extension is additive and links only
 existing lib APIs.
+### ROUND 57 (FIX) — the CONFUSION FAMILY, and a shipped move that never rolled its accuracy
+
+`gen3_confusion_move_family_v1`. The first fix round of the *all-gen3* campaign. Target: the
+**confusion family**, the census's second-largest gap by legal learners (432 across 5 moves) and the
+cheapest, because its hard half — the confusion volatile — has been modelled since ROUND 44.
+
+**THREE MOVES CLOSED, TWO DELIBERATELY NOT.** `supersonic` (acc 55, SOUND, 39 learners),
+`sweetkiss` (acc 75, 11) and `teeterdance` (acc 100, `allAdjacent`, 5) join `confuseray` in one
+arm keyed by `is_pure_confusion_move`. **Swagger (372 learners) and Flatter (5) are NOT closed** —
+see the finding below; they still fail loud.
+
+**🚨 THE ROUND'S REAL FIND: THE SHIPPED CONFUSE RAY WAS BROKEN, TWICE.** Generalising one move into
+four is what exposed it, because writing the sibling forced the question "where does this arm roll
+its accuracy?".
+
+1. **IT NEVER ROLLED ITS ACCURACY.** The ROUND-44 arm's header asserted "accuracy is already rolled
+   upstream". It is not: `run_move` rolls accuracy on the **damaging** path only, and every status
+   arm rolls its own. So a Confuse Ray turn consumed **one draw fewer than the sim** and desynced
+   the PRNG stream from that point to the end of the battle. MEASURED: seeded at the sim's
+   pre-decision state, the port ended a Confuse Ray turn on `13521,38977,6462,56077` where the sim
+   ended on `48590,39028,4743,65508` — while a **Splash CONTROL on the same board, same seed, same
+   harness matched the sim exactly**.
+2. **A SUBSTITUTE DID NOT BLOCK IT.** No family member carries `bypasssub`, so the sim blocks the
+   whole move at `onTryPrimaryHit` with `[still]` + `-fail` on the USER; the port applied the
+   confusion straight through the sub.
+
+**⚠️ HOW A "MODELED" MOVE CARRIED A DRAW BUG — AND WHY THE CENSUS'S OWN TIER TABLE MISSED IT.**
+`confuseray` is **tier A** in the ROUND-56 census: it has a named, revert-verified pin. That pin
+asserts the `-start|confusion` and `-fail` EMISSIONS and **no seed**, so a missing draw was invisible
+to it. **Tier membership answers "is there a gate", never "does that gate assert the draw count".**
+Worse, the move is played in **NO committed battle golden** — it appears in `tests/vectors/` only in
+`dex_golden.txt` and the handler audit, and the census's tier-C bucket had been counting that DEX ROW
+as battle exposure. Correcting the census for that moves **36 moves from C to D**: tier D is 36, not
+the 0 first published. **A coverage measure that cannot tell a data dump from a played turn will
+report a move as gated when nothing has ever executed it.**
+
+Its gen3OU move-slot prior mass is **0.0136%** — 156x rarer than Thunder Wave — so neither the pool
+nor the `ourandom` generator reaches it often. **UNVERIFIED:** ROUND 53's and ROUND 55's `ourandom`
+runs each left one unexplained `kind=seed` divergence filed under "the known ROUND-26 tail"; this bug
+is a candidate cause, but nobody has replayed those repros against the fixed binary.
+
+**PROBE-SETTLED FIRST** (`harness/probe_confusion_family.js`, re-runnable). Six dispositions, each a
+different draw count and a different emission: plain hit (accuracy + `random(2,6)`); already-confused
+(accuracy only → `[still]`+`-fail|USER`); Own Tempo (accuracy only →
+`-immune|<t>|confusion|[from] ability: Own Tempo`); **Soundproof** (accuracy only →
+`-immune|<t>|[from] ability: Soundproof` — note the **missing `confusion` token**, a DIFFERENT
+emission form from Own Tempo's); Safeguard (`-activate|<t>|move: Safeguard`, no user `-fail`);
+Substitute (`[still]`+`-fail|USER`).
+
+**⚠️ WHY SWAGGER AND FLATTER ARE NOT IN THE FAMILY — a probe result, not a scoping excuse.** They
+carry a TARGET `boosts` map, and the probe shows the two halves **succeed and fail INDEPENDENTLY**:
+a Swagger into an ALREADY-CONFUSED target still lands `-boost|<t>|atk|2` and emits **no `-fail`**,
+where every pure-volatile member fails as a unit; into a target at the **+6 Atk cap** it emits the
+delta-0 `-boost|<t>|atk|0` (the same cap-before-TryBoost shape as ROUND 55) **and still confuses**;
+into Own Tempo the boost lands and only the confusion is refused. A predicate that swept them into
+this arm would emit the wrong bytes on all three boards. Closing them needs a `targetBoosts` field in
+`gen3_moves.json` (positive, foe-directed — `statDropBoosts` is negative-only), i.e. a data
+regeneration with the ROUND-52 structural-diff discipline. **Left open with the finding recorded**
+rather than approximated.
+
+**TWO GATES, 703 assertions between them.**
+* `tests/confusion_family_test.rs` (7 tests) — one hand-built board per disposition: the seed
+  gate CF1 (with the **load-bearing Splash CONTROL row**) plus emission gates for the plain hit,
+  the Substitute block, Own Tempo, Soundproof (with a Sweet Kiss control so it cannot pass on a
+  blanket "Soundproof blocks everything"), Safeguard, and Teeter Dance's `allAdjacent` announce
+  still rendering the FOE.
+* `tests/confusion_family_golden_test.rs` + `harness/gen_confusion_family_golden.js` — **696 rows,
+  29 scenarios x 24 seeds, 0 seed mismatches, 0 byte mismatches.** One seed can never reach the MISS
+  path (Supersonic is accuracy 55: a fixed seed either misses or does not), so the vector sweeps
+  seeds; it carries **144 miss rows** and 232 confusion-landed rows, and those counts are
+  **ENFORCED FLOORS, not reported statistics**.
+
+**⚠️ THE FLOORS EARNED THEIR KEEP ON THEIR FIRST RUN.** The `-protect` scenarios were written with
+the two-decision shape the other blockers use (blocker on turn 1, cast on turn 2) — but **Protect
+lasts only the turn it is used**, so all 96 rows hit an unprotected foe. Every one of them passed the
+byte comparison, because the port and the sim agree perfectly about a scenario that tests nothing.
+The enforced `protect >= 20` floor failed and named it. **A scenario can be perfectly green and
+perfectly vacuous, and only a floor tells them apart.**
+
+**⚠️ AND THE GOLDEN'S FIRST CAPTURE ACCUSED A CORRECT PORT.** Reading the raw `BattleStream` chunks
+records every HP event **twice** — the raw stream carries `|split|pN` markers pairing the owner's
+exact `x/y` line with the spectator's percentage line. The golden then showed a doubled
+`-damage`/`-heal` and the port looked like it was dropping lines. `getPlayerStreams(...).omniscient`
+is the referee view that resolves the split, and it is what `gen_protocol_capture.js` had always
+used. **When a new harness disagrees with a long-green engine, suspect the harness first.**
+
+**MUTATION-PROVEN, five ways** (a pin that passes on the pre-fix binary is not a pin): deleting the
+accuracy roll fails CF1 on 9 of 10 rows **while the Splash control stays green**; deleting the
+Substitute gate fails CF3 and **74 of 696** golden rows; deleting the Soundproof gate fails CF5;
+dropping `teeterdance` from the predicate makes it FAIL LOUD (not silently work) and takes 4 tests
+with it. **⚠️ One mutation attempt was itself wrong and looked right:** an unanchored
+`substitute.is_some()` replacement patched the FIRST such line in the file — a different move's gate
+at line 768 — and the family suite stayed green, which reads exactly like "the pin is vacuous".
+**An unanchored mutation does not mutate the thing you meant.**
+
+**Gates:** `cargo test --release --no-fail-fast` **736 passed / 0 failed** (727 before); e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` **UNCHANGED**; handler audit **1075 → 1081 rows**, green
+(admitting the three moves pulled their `volatileStatus`/`ignoreImmunity` handlers into the surface,
+exactly as the audit is designed to demand); `--mode pool --protocol --format gen3ou` byte fuzz clean
+as the OU-surface regression control. **CENSUS: 312 → 315 MODELED / 57 → 54 FAIL-LOUD**, engine
+oracle and JS mirror now agreeing.
+
+**⚠️ THE JS CENSUS MIRROR WAS ALSO REPAIRED HERE, and the defect is worth naming.**
+`MODELED_LOCKIN_ROLLOUT` had gained `defensecurl` (ROUND 51) and `minimize` + `imprison` (ROUND 52),
+but it was only ever consulted by `classifyDamaging` — and all three are category **Status**, so they
+fell through to the fail-loud tail. **A set can be updated and still be unwired.** Both classifiers
+now consult it.

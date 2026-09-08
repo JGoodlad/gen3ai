@@ -183,10 +183,15 @@ const MOVE_ID_BLOCKLIST = new Set([
 // (the port FAIL-LOUDs on them). Kept in lockstep with `modeled_status_move` in
 // src/turn.rs.
 const MODELED_STATUS_MOVES = new Set([
-  // CONFUSE RAY (`gen3_confuse_ray_v1`) — a VOLATILE-inflicting status move (the rest of this
-  // set inflicts MAJOR statuses). Admitted once the engine grew its arm; the shared
-  // `add_confusion` path supplies the random(2,6) duration draw and the `-start|confusion`.
-  'confuseray',
+  // THE PURE-VOLATILE CONFUSION FAMILY (`gen3_confusion_move_family_v1`, ROUND 57) — the four
+  // gen-3 status moves whose whole effect is `volatileStatus: 'confusion'` (the rest of this set
+  // inflicts MAJOR statuses). Confuse Ray was admitted at ROUND 44; its three siblings differ
+  // only in accuracy and join it here. The shared `add_confusion` path supplies the random(2,6)
+  // duration draw and the `-start|confusion`; the arm supplies the accuracy roll and the TryHit
+  // gates. 🚨 SWAGGER and FLATTER are deliberately ABSENT — they carry a TARGET `boosts` map
+  // whose half succeeds independently of the confusion half, so they are a different move shape
+  // and still fail loud.
+  'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
   'thunderwave', 'stunspore', 'glare',
   'poisonpowder', 'poisongas',
   'toxic',

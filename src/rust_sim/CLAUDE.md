@@ -40,11 +40,19 @@ it said 309/60 where the engine itself runs **312/57**. `scan_move_probe` cannot
 *is* the engine running. The JS scan keeps the two jobs the probe cannot do: the team-pool report and
 the `0 MISMODELED` invariant gate.
 
-**Measured 2026-09-08 by `scan_move_probe`: 369 gen3-legal moves → 312 MODELED · 57 FAIL-LOUD ·
-0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106** (the four
-fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by family and by
-legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](../../designs/rust_sim/gen3_coverage_census_2026-09-08.md) —
-a dated SNAPSHOT, not a current number. Pool **762/762** fully engine-playable (813 `.txt` files, 51 validate-fail — the
+**Measured 2026-09-08 by `scan_move_probe`, after ROUND 57: 369 gen3-legal moves → 315 MODELED ·
+54 FAIL-LOUD · 0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106**
+(the four fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by
+family and by legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](../../designs/rust_sim/gen3_coverage_census_2026-09-08.md) —
+a dated SNAPSHOT, not a current number.
+
+🚨 **"MODELED" MEANS "THE ENGINE DOES NOT FAIL LOUD" — IT DOES NOT MEAN "GATED", AND IT DOES NOT MEAN
+"THE DRAW COUNT IS RIGHT".** ROUND 57 found that `confuseray` — shipped at ROUND 44, carrying a
+named revert-verified pin, and counted MODELED by every census since — **never rolled its accuracy**,
+consuming one draw fewer than the sim on every use. Its pin asserted EMISSIONS and no seed. Of the
+312 moves the engine ran before that round, **36 are played by no committed battle golden at all**
+(the census's first tier table said 0, because it counted a `dex_golden.txt` row as battle exposure).
+When you touch a move, check whether anything has ever EXECUTED it. Pool **762/762** fully engine-playable (813 `.txt` files, 51 validate-fail — the
 count MOVES as the pool grows, and it read 722/722 when the pool was 40 teams smaller). ⚠️ **This
 is NOT the root `CLAUDE.md`'s 719-team pool and the two must not be "reconciled".** 762 is what
 `Teams.import` + `TeamValidator('gen3ou')` accept out of `data/teams/*.txt`; **719** is what
@@ -786,9 +794,17 @@ revert-verified regression pins. Those records are **CLOSED** and live verbatim 
 are debugging rather than loading all of them here. The build log also holds the 55 numbered fuzz
 ROUNDS and the move-coverage BATCH 1-9 records.
 
-Damage · Fixed-damage moves · Full battle · Multi-turn · PP tracking + Struggle · Phazing ·
+CONFUSION family (confuseray / supersonic / sweetkiss / teeterdance) · Damage · Fixed-damage moves ·
+Full battle · Multi-turn · PP tracking + Struggle · Phazing ·
 Protect / Detect · Recovery moves · SNATCH · Secondary effects + onBeforeMove status · Setup moves ·
 Spikes · Status moves · Switch-in events · TRICK · Taunt + Disable · Trapping · YAWN.
+
+🚨 **SWAGGER and FLATTER inflict confusion and are NOT in that family** — they carry a TARGET
+`boosts` map whose half succeeds INDEPENDENTLY of the confusion half (probe-measured: into an
+already-confused target the +2 Atk still lands and there is NO `-fail`; at the +6 cap the delta-0
+`-boost|…|atk|0` prints AND the confusion still applies). They remain FAIL-LOUD; closing them needs
+a positive foe-directed `targetBoosts` field in `gen3_moves.json` (`statDropBoosts` is
+negative-only). ROUND 57 in the build log has the measurement.
 
 ## Where the rest of the detail lives
 

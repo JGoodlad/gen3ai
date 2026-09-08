@@ -36,14 +36,20 @@ const rustMoves = JSON.parse(fs.readFileSync(RUST_MOVES, 'utf8'));
 // Each is the exact Rust `matches!`/data-driven set. If turn.rs changes, update here.
 
 // Standalone status-inflicting moves (`modeled_status_move`) PLUS the volatile-inflicting
-// status moves that have their own engine arm. `confuseray` (`gen3_confuse_ray_v1`) is the
+// status moves that have their own engine arm. The pure-CONFUSION family
+// (`gen3_confusion_move_family_v1` — confuseray / supersonic / sweetkiss / teeterdance) is the
 // latter kind: it lives OUTSIDE `modeled_status_move` (which maps only MAJOR statuses) and is
-// dispatched by its own arm in `status_moves.rs`, so a reader checking only that fn would
-// wrongly conclude it is unmodeled.
+// dispatched by `is_pure_confusion_move`'s own arm in `status_moves.rs`, so a reader checking
+// only that fn would wrongly conclude it is unmodeled.
+// 🚨 THIS SET IS A HAND-MIRROR OF `turn.rs` AND HAS GONE STALE BEFORE — it was three moves
+// behind on 2026-09-08 (defensecurl / minimize / imprison), which made the universe census
+// report 309 modeled where the ENGINE ran 312. The engine oracle is
+// `src/bin/scan_move_probe.rs`; this mirror's job is the TEAM-POOL report, and it must be
+// re-synced in the same pass as any turn.rs admission.
 const MODELED_STATUS = new Set([
   'thunderwave', 'stunspore', 'glare', 'toxic', 'poisonpowder', 'poisongas',
   'willowisp', 'spore', 'sleeppowder', 'hypnosis', 'sing', 'lovelykiss', 'grasswhistle',
-  'confuseray',
+  'confuseray', 'supersonic', 'sweetkiss', 'teeterdance',
 ]);
 // Self-boost SETUP moves — DATA-DRIVEN from gen3_moves.json `selfBoosts` (== engine's
 // `self_boost_spec`, which reads `MoveData::self_boosts`).
@@ -266,6 +272,16 @@ function classifyDamaging(m, id) {
 
 // Classify a category-Status move against the engine's modeled status-move sets.
 function classifyStatus(m, id) {
+  // 🚨 THE CATEGORY-STATUS MEMBERS OF A "DAMAGING" MODELED SET MUST BE CHECKED HERE TOO.
+  // `MODELED_LOCKIN_ROLLOUT` gained `defensecurl` (ROUND 51) and `minimize` + `imprison`
+  // (ROUND 52), but it was only ever consulted by `classifyDamaging` — and all three are
+  // category **Status**, so they fell through to the fail-loud tail and this census reported
+  // 309 MODELED where the ENGINE ran 312. A set can be updated and still be unwired: the
+  // 2026-09-08 census caught it only because `scan_move_probe` runs the engine instead of a
+  // mirror. Any future set that spans both categories belongs in BOTH classifiers.
+  if (MODELED_LOCKIN_ROLLOUT.has(id)) {
+    return { cov: 'MODELED', mech: 'rollout ladder (gen3_rollout_defensecurl_v1)' };
+  }
   if (MODELED_STATUS.has(id)) return { cov: 'MODELED', mech: 'status-inflict' };
   if (MODELED_SETUP.has(id)) return { cov: 'MODELED', mech: 'self-boost-setup' };
   if (MODELED_RECOVERY.has(id)) return { cov: 'MODELED', mech: 'recovery/rest/splash' };
@@ -355,15 +371,16 @@ function statusMechanic(m, id) {
   if (S('ingrain')) return 'residual-self-heal';
   if (S('roleplay') || S('skillswap')) return 'ability-swap';
   // (`recycle` is MODELED above — this label is now unreachable for it, kept for shape.)
+  // `teeterdance` is MODELED (`gen3_confusion_move_family_v1`) and caught by MODELED_STATUS
+  // above, so this label is unreachable for it — kept for shape, like `recycle`'s.
   if (S('teeterdance')) return 'confuse';
+  // The BOOST-carrying confusers are the family's two NON-members: their target `boosts` map is
+  // not in `gen3_moves.json`, and their two halves succeed independently of each other.
   if (S('swagger') || S('flatter')) return 'boost+confuse';
   if (S('attract')) return 'attract';
   if (S('charge')) return 'charge-volatile';
   if (S('foresight') || S('odorsleuth') || S('miracleeye')) return 'identify';
   if (S('lockon') || S('mindreader')) return 'lock-on';
-  // `confuseray` is MODELED (`gen3_confuse_ray_v1`); its siblings supersonic/sweetkiss are
-  // NOT (they share the volatile but not the arm — model them the same way when wanted).
-  if (S('supersonic') || S('sweetkiss')) return 'confuse';
   if (S('gravity')) return 'field-gravity';
   if (S('taunt') || S('disable')) return 'move-restriction';
   return 'other-status-move';

@@ -63,18 +63,27 @@ A move counts for a tier if its id appears as a standalone token in that tier's 
 |---|---|---:|
 | **A** | named in a **hand-written Rust gate** (`tests/*.rs`) — a pin, a feature gate or a scenario assertion | **205** |
 | **B** | named only in a **hand-written JS golden generator** (`harness/gen_*.js`) — a constructed differential scenario | **57** |
-| **C** | named only in an **emitted sweep corpus** (`tests/vectors/*` — the e2e capstone golden, the byte-fuzz fixtures, the protocol captures) — exposure by fuzzing, not by design | **50** |
-| **D** | **no committed gate artifact names it at all** | **0** |
+| **C** | named only in a **played sweep corpus** (the e2e capstone golden, the byte-fuzz fixtures, the protocol captures) | **14** |
+| **D** | **nothing has ever executed it in a committed artifact** | **36** |
 
-**D is empty, and that is the load-bearing result:** every move the engine executes has at least
-fuzz-corpus exposure. Tier C is the honest weak spot — 50 moves whose only evidence is that a sweep
-happened to play them — but it is exposure, not silence, and the ROUND-40 `0 MISMODELED` invariant
-means none of them can desync silently: a move outside the modeled universe fail-louds.
+🚨 **THIS TABLE WAS WRONG WHEN FIRST PUBLISHED, AND THE CORRECTION IS THE FINDING.** The first
+version reported **C = 50, D = 0** and concluded "every move the engine executes has at least
+fuzz-corpus exposure". It did not: it swept `tests/vectors/` as one bucket, and that directory holds
+**data dumps** — `dex_golden.txt`, the handler-audit manifest, the mechanics inventory, the protocol
+inventory, the e2e taxonomy — alongside the battle corpora. A move id appearing in a **dex row** was
+being counted as **battle exposure**. Excluding the dumps moves 36 moves from C to D. **A coverage
+measure that cannot tell a data dump from a played turn will report a move as gated when nothing has
+ever executed it.**
 
-⚠️ **A first attempt at this measure reported "312/312 gated" and was worthless** — a bare substring
-search over all 576 gate artifacts matches a move id inside any taxonomy list or comment. The tiers
-above use a token match and separate hand-written gates from emitted corpora, which is what makes the
-205/57/50 split mean anything.
+⚠️ **AND TIER A IS NOT DRAW COVERAGE.** `confuseray` sits in tier A — it has a named, revert-verified
+ROUND-44 pin — and ROUND 57 nevertheless found that it **never rolled its accuracy**, desyncing the
+PRNG on every use. The pin asserted the `-start|confusion` and `-fail` EMISSIONS and no seed, so the
+missing draw was invisible to it. Tier membership answers "is there a gate", never "does that gate
+assert the draw count".
+
+⚠️ **The very first attempt at this measure reported "312/312 gated" and was worthless** — a bare
+substring search over all 576 gate artifacts matches a move id inside any taxonomy list or comment.
+Three drafts, and only the third is a measurement.
 
 ### The 4 uncovered items
 

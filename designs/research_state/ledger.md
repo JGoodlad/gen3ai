@@ -15084,3 +15084,68 @@ would close the class, but fails the tree today.
 Gates: the eight static gates green; the routine gate green — **10,078 passed in 6m18s** on a box
 carrying a live training run and two other agents. Tag: DOCS / TECH DEBT. **No measurement about
 the model changed and no run was touched.**
+## 2026-09-08 · RUST SIM · gen3 parity round 1: the CONFUSION family (supersonic / sweetkiss / teeterdance) — and the shipped Confuse Ray never rolled its accuracy (312 → 315 of 369 moves)
+
+**ROUND 57 in `designs/rust_sim/port_build_log.md`.** The first fix round of the *all-gen3*
+campaign. Target: the confusion family — the census's second-largest gap by legal learners (432
+across 5 moves) and the cheapest, because the confusion volatile has been modelled since ROUND 44.
+
+**THREE MOVES CLOSED** — `supersonic` (acc 55, SOUND), `sweetkiss` (acc 75), `teeterdance` (acc 100,
+`allAdjacent`) — in one arm with `confuseray`. Census **312 → 315 MODELED / 57 → 54 FAIL-LOUD**,
+0 MISMODELED, engine oracle and JS mirror agreeing.
+
+**🚨 THE FIND IS NOT THE THREE MOVES. Generalising one move into four exposed TWO LIVE BUGS in the
+SHIPPED Confuse Ray**, because writing the sibling forced the question "where does this arm roll its
+accuracy?":
+1. **IT NEVER ROLLED ITS ACCURACY.** The ROUND-44 arm's header asserted the roll happened "upstream";
+   `run_move` rolls accuracy on the DAMAGING path only and every status arm rolls its own. Confuse
+   Ray consumed **one draw fewer than the sim** and desynced the PRNG for the rest of the battle.
+   Measured against a **Splash control on the same board and seed that matched the sim exactly** —
+   the control is what makes it a localization instead of a suspicion.
+2. **A SUBSTITUTE DID NOT BLOCK IT** (no `bypasssub` in the family).
+
+**⚠️ WHAT THIS SAYS ABOUT THE ROUND-0 CENSUS, AND THE CENSUS IS CORRECTED IN THE SAME PASS.**
+`confuseray` was **tier A** — a named, revert-verified pin — and that pin asserts EMISSIONS and no
+seed. **Tier membership answers "is there a gate", never "does that gate assert the draw count".**
+And the move is played in **NO committed battle golden**: it appears in `tests/vectors/` only in
+`dex_golden.txt` and the handler audit. The census's tier-C bucket had been counting that **dex row
+as battle exposure**; excluding data dumps moves **36 moves from C to D**, so tier D is **36, not the
+0 first published**. *A coverage measure that cannot tell a data dump from a played turn will report
+a move as gated when nothing has ever executed it.* Its gen3OU move-slot prior mass is **0.0136%**,
+156x rarer than Thunder Wave, which is why neither the pool nor `ourandom` reaches it often.
+**UNVERIFIED:** ROUND 53's and ROUND 55's runs each left one unexplained `kind=seed` divergence filed
+under "the ROUND-26 tail"; this is a candidate cause, unconfirmed.
+
+**SWAGGER (372 learners) AND FLATTER ARE DELIBERATELY NOT CLOSED — a probe result, not a scoping
+excuse.** They carry a TARGET `boosts` map and the two halves succeed and fail INDEPENDENTLY: into an
+already-confused target the +2 Atk still lands and there is **no `-fail`** (every pure-volatile member
+fails as a unit); at the +6 cap the delta-0 `-boost|…|atk|0` prints **and the confusion still
+applies**; into Own Tempo the boost lands and only the confusion is refused. A predicate that swept
+them in would emit wrong bytes on all three boards. Closing them needs a positive foe-directed
+`targetBoosts` field in `gen3_moves.json` (`statDropBoosts` is negative-only) — a data regeneration
+with the ROUND-52 structural-diff discipline. Left open **with the measurement recorded**.
+
+**TWO GATES.** `confusion_family_test.rs` (7 hand-built dispositions incl. the Splash control) and
+`confusion_family_golden_test.rs` + `gen_confusion_family_golden.js` — **696 rows, 29 scenarios x 24
+seeds, 0 seed mismatches, 0 byte mismatches**, with **ENFORCED coverage floors** (144 miss rows: one
+fixed seed can never reach the miss branch of an accuracy-55 move).
+
+**⚠️ TWO METHOD FAILURES WORTH KEEPING.** (a) The `-protect` scenarios were written with the
+two-decision shape the other blockers use, but **Protect lasts only its own turn** — all 96 rows hit
+an unprotected foe and **every one passed the byte comparison**, because port and sim agree perfectly
+about a scenario that tests nothing. The enforced floor caught it. *A scenario can be perfectly green
+and perfectly vacuous.* (b) The golden's first capture read raw `BattleStream` chunks, which carry
+`|split|pN` markers pairing the owner's exact-HP line with the spectator's percentage line — so it
+recorded every `-damage`/`-heal` twice and **accused a correct port of dropping lines**. *When a new
+harness disagrees with a long-green engine, suspect the harness.* (c) One mutation was itself
+unanchored and patched a DIFFERENT move's substitute gate; the suite stayed green, which reads exactly
+like a vacuous pin.
+
+**Also repaired:** the JS census mirror's `MODELED_LOCKIN_ROLLOUT` was consulted only by
+`classifyDamaging` while all three of its ROUND-51/52 additions are category **Status** — *a set can
+be updated and still be unwired*. Both classifiers now consult it.
+
+**Gates:** `cargo test --release --no-fail-fast` **736 passed / 0 failed** (727 before); e2e golden
+md5 `3155eb796cb4bf453c6053d769ba98e5` UNCHANGED; handler audit 1075 → 1081 rows green; `--mode pool
+--protocol --format gen3ou` byte fuzz as the OU-surface regression control. Five revert-verified
+mutations. Tag: RUST SIM / FIX. **No model measurement changed and no run was touched.**

@@ -1126,6 +1126,22 @@ pub(crate) fn modeled_phaze_move(move_id: &str) -> bool {
     matches!(move_id, "roar" | "whirlwind")
 }
 
+/// The gen-3 status moves whose **whole** effect is `volatileStatus: 'confusion'`
+/// (`gen3_confusion_move_family_v1`) — the one arm in `run_status_move` that serves all four.
+/// They differ ONLY in accuracy (100 / 55 / 75 / 100) and in two flags the shared gates already
+/// read from the dex (`sound` on Supersonic; `allAdjacent` targeting on Teeter Dance, which in
+/// singles is the one foe and which `status_move_announce_renders_user` correctly leaves
+/// rendering the FOE).
+///
+/// 🚨 **SWAGGER and FLATTER are NOT members**, even though they also inflict confusion. They
+/// carry a TARGET `boosts` map, and probe measurement (`harness/probe_confusion_family.js`)
+/// shows the two halves succeed and fail **independently**: a Swagger into an already-confused
+/// target still lands its +2 Atk and emits NO `-fail`, where every move here fails as a unit.
+/// A "confusion move" predicate that swept them in would emit the wrong bytes.
+pub(crate) fn is_pure_confusion_move(move_id: &str) -> bool {
+    matches!(move_id, "confuseray" | "supersonic" | "sweetkiss" | "teeterdance")
+}
+
 pub(crate) fn modeled_status_move(move_id: &str) -> Option<&'static str> {
     Some(match move_id {
         // paralysis

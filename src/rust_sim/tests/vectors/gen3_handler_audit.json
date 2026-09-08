@@ -6,8 +6,8 @@
    "abilities": 77,
    "items": 63,
    "conditions": 59,
-   "moves": 296,
-   "rows": 1075
+   "moves": 299,
+   "rows": 1081
   },
   "excluded_deferred": {
    "forecast": "Castform forme+TYPE change under weather — deferred (probe_forecast_rng.js settled the map; the reporting surface is unprobed); the port FAIL-LOUDs in state::MonState::from_set (GIGO guard: an unmodeled ability would silently no-op then desync under weather); NOT in MODELED/NOOP + REJECT_ABILITIES/REJECT_SPECIES so the e2e filter + randbats adapter exclude its teams",
@@ -6034,6 +6034,30 @@
    "anchor": "turn.rs::apply_self_drops",
    "reason": "the self stat-drop (Overheat/Superpower) + the gen3 selfDrops random(100)"
   },
+  "move:supersonic:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:supersonic:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"confusion\"",
+   "anchor": "secondaries.rs::add_confusion",
+   "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
+  },
+  "move:sweetkiss:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:sweetkiss:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"confusion\"",
+   "anchor": "secondaries.rs::add_confusion",
+   "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
+  },
   "move:swift:neverMiss": {
    "disposition": "implemented",
    "fp": "val:true",
@@ -6111,6 +6135,18 @@
    "fp": "val:\"taunt\"",
    "anchor": "state.rs::taunt",
    "reason": "the taunt volatile (gen3_taunt_disable_v1)"
+  },
+  "move:teeterdance:ignoreImmunity": {
+   "disposition": "implemented",
+   "fp": "val:true",
+   "anchor": "turn.rs::run_status_move",
+   "reason": "the Status-category resolved default (true) / explicit false (Thunder Wave respects Ground) — the port's status arm implements the gen3 status immunities from first principles"
+  },
+  "move:teeterdance:volatileStatus": {
+   "disposition": "implemented",
+   "fp": "val:\"confusion\"",
+   "anchor": "secondaries.rs::add_confusion",
+   "reason": "the confusion volatile via the shared add_confusion — the same path Water Pulse & co use, owning the KO / already-confused / Own-Tempo gates and the random(2,6) duration draw (gen3_confuse_ray_v1)"
   },
   "move:thief:onAfterHit": {
    "disposition": "implemented",

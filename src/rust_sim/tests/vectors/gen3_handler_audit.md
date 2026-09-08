@@ -7,12 +7,12 @@ the GATE is `node src/rust_sim/harness/dump_gen3_handlers.js --audit` (wired int
 handler, a STALE manifest row, a body-FINGERPRINT drift, a dead `implemented` anchor.
 
 Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
-59 conditions (engine state space + attached), 296 modeled moves
-→ **1075 (effect, hook) rows**.
+59 conditions (engine state space + attached), 299 modeled moves
+→ **1081 (effect, hook) rows**.
 
 | disposition | rows |
 |---|---|
-| implemented | 1022 |
+| implemented | 1028 |
 | noop_justified | 36 |
 | unreachable_justified | 17 |
 
@@ -615,7 +615,7 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | yawn | onResidualSubOrder | implemented | `turn.rs::run_residuals` |
 | yawn | onStart | implemented | `turn.rs::run_status_move` |
 
-## move (491 rows: implemented=487, noop_justified=2, unreachable_justified=2)
+## move (497 rows: implemented=493, noop_justified=2, unreachable_justified=2)
 
 | effect | hook | disposition | anchor / reason |
 |---|---|---|---|
@@ -1047,6 +1047,10 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | sunnyday | neverMiss | implemented | `turn.rs::never_miss` |
 | sunnyday | weather | implemented | `turn.rs::modeled_weather_set_move` |
 | superpower | self | implemented | `turn.rs::apply_self_drops` |
+| supersonic | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| supersonic | volatileStatus | implemented | `secondaries.rs::add_confusion` |
+| sweetkiss | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| sweetkiss | volatileStatus | implemented | `secondaries.rs::add_confusion` |
 | swift | neverMiss | implemented | `turn.rs::never_miss` |
 | swordsdance | boosts | implemented | `turn.rs::self_boost_spec` |
 | swordsdance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
@@ -1060,6 +1064,8 @@ Surface: 77 abilities (MODELED ∪ NOOP), 63 items,
 | takedown | recoil | implemented | `turn.rs::apply_recoil` |
 | taunt | ignoreImmunity | implemented | `turn.rs::run_status_move` |
 | taunt | volatileStatus | implemented | `state.rs::taunt` |
+| teeterdance | ignoreImmunity | implemented | `turn.rs::run_status_move` |
+| teeterdance | volatileStatus | implemented | `secondaries.rs::add_confusion` |
 | thief | onAfterHit | implemented | `turn.rs::apply_item_removal` |
 | thrash | self | implemented | `turn/moves.rs::run_move` |
 | thunder | onModifyMove | implemented | `turn.rs::run_move` |

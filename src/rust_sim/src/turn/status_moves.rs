@@ -3128,24 +3128,116 @@ impl crate::state::BattleState {
             return MoveResolution::done(false, false, false);
         }
 
-        // --- CONFUSE RAY (`gen3_confuse_ray_v1`). A VOLATILE-inflicting status move, so it
-        //     sits outside `modeled_status_move` (which maps only MAJOR statuses). Accuracy is
-        //     already rolled upstream — reaching here means the move HIT.
+        // --- THE PURE-VOLATILE CONFUSION MOVES (`gen3_confusion_move_family_v1`, ROUND 57).
+        //     Confuse Ray (`gen3_confuse_ray_v1`, ROUND 44) plus its three siblings — every gen-3
+        //     status move whose WHOLE effect is `volatileStatus: 'confusion'`:
         //
-        //     PROBE-SETTLED (`harness/probe_confuseray.js`, and re-runnable):
-        //       plain hit      : random(100) accuracy THEN random(2,6) duration
-        //                        -> `|-start|<target>|confusion`
+        //       confuseray  acc 100   supersonic  acc 55 (SOUND)   sweetkiss  acc 75
+        //       teeterdance acc 100 (`target: allAdjacent`, and NOT `reflectable`)
+        //
+        //     They sit outside `modeled_status_move` (which maps only MAJOR statuses); the
+        //     accuracy is the ONLY thing that differs between them, so they are one arm.
+        //     ⚠️ SWAGGER and FLATTER are deliberately NOT here: they carry a TARGET `boosts` map
+        //     as well, which makes them a structurally different move (the two halves succeed and
+        //     fail INDEPENDENTLY — see `harness/probe_confusion_family.js` case 2), and the boost
+        //     map is not in `gen3_moves.json` yet.
+        //
+        //     PROBE-SETTLED (`harness/probe_confusion_family.js` + `harness/probe_confuseray.js`,
+        //     both re-runnable — do NOT re-derive from source):
+        //       plain hit       : randomChance(acc,100) THEN random(2,6) duration
+        //                         -> `|-start|<target>|confusion`
         //       already confused: accuracy ONLY, NO duration draw
-        //                        -> `|move|…|[still]` + `|-fail|<USER>`   (the USER, not the target)
-        //       OWN TEMPO      : accuracy ONLY, NO duration draw
-        //                        -> `|-immune|<target>|confusion|[from] ability: Own Tempo`
+        //                         -> `|move|…||[still]` + `|-fail|<USER>`  (the USER, not the target)
+        //       OWN TEMPO       : accuracy ONLY, NO duration draw
+        //                         -> `|-immune|<target>|confusion|[from] ability: Own Tempo`
+        //       SOUNDPROOF      : accuracy ONLY (Supersonic is the family's only `sound` move)
+        //                         -> `|-immune|<target>|[from] ability: Soundproof`  (NO `confusion`
+        //                            token — a DIFFERENT emission form from the Own Tempo one)
+        //       SAFEGUARD       : accuracy ONLY -> `|-activate|<target>|move: Safeguard`
+        //                         (emitted by `add_confusion`, which owns the ward gate)
+        //       SUBSTITUTE      : accuracy ONLY -> `|move|…||[still]` + `|-fail|<USER>`
+        //
+        //     🚨 THIS ARM FIXES TWO LIVE BUGS IN THE SHIPPED CONFUSE RAY, both of which the
+        //     four-move generalisation is what surfaced:
+        //       (1) **THE ACCURACY ROLL WAS NEVER DRAWN.** The ROUND-44 arm's header asserted
+        //           "accuracy is already rolled upstream"; it is not — `run_move` rolls accuracy
+        //           on the DAMAGING path only, and every status arm rolls its own. So Confuse Ray
+        //           consumed one draw FEWER than the sim and desynced every stream after it.
+        //           MEASURED (`tests/confusion_family_test.rs::confusion_family_seed_matches_showdown`):
+        //           seeded at the sim's pre-decision state, the port ended a Confuse Ray turn on a
+        //           different PRNG seed while a Splash CONTROL on the same board matched exactly.
+        //       (2) **A SUBSTITUTE DID NOT BLOCK IT.** None of the family carries `bypasssub`, so
+        //           a sub blocks the whole move at `onTryPrimaryHit`; the arm applied the
+        //           confusion straight through it.
+        //     ⚠️ **WHY IT SURVIVED — MEASURED, not guessed.** `confuseray` is played in **NO
+        //     committed battle golden**: it appears in `tests/vectors/` only in `dex_golden.txt`
+        //     (a dex-row dump) and the handler audit, never in the 220-battle e2e capstone, the
+        //     protocol captures or the byte-fuzz corpus. Its gen3OU move-slot prior mass is
+        //     **0.0136%** — 156x rarer than Thunder Wave — so the `ourandom` generator that samples
+        //     from those priors reaches it seldom, and the OU pool (the surface training actually
+        //     plays) carries it almost never. **UNVERIFIED:** ROUND 53's 10,775-battle and ROUND
+        //     55's 17,575-battle `ourandom` runs each left one unexplained `kind=seed` divergence
+        //     filed under "the known ROUND-26 tail"; this bug is a candidate cause for those, but
+        //     nobody has replayed those repros against the fixed binary to confirm it.
+        //     🚨 The census tier that called this move "sweep-corpus exposed" was counting a DEX
+        //     ROW as battle exposure. A coverage measure that cannot tell a data dump from a played
+        //     turn will report a move as gated when nothing has ever executed it.
         //
         //     The hard half already existed: `secondaries.rs::add_confusion` implements the
-        //     KO / already-confused / Own-Tempo gates, the random(2,6) duration draw and the
-        //     `-start|confusion` emission (it is the shared path with Water Pulse & co). This arm
-        //     adds only the two MOVE-LEVEL emissions a secondary never produces, and must
-        //     therefore re-test the gates itself to know WHICH to emit. ---
-        if move_id == "confuseray" {
+        //     KO / already-confused / Own-Tempo / SAFEGUARD gates, the random(2,6) duration draw
+        //     and the `-start|confusion` emission (it is the shared path with Water Pulse & co).
+        //     This arm adds the accuracy roll, the TryHit gates, and the MOVE-LEVEL emissions a
+        //     secondary never produces — and must therefore re-test the gates itself to know
+        //     WHICH to emit. ---
+        if is_pure_confusion_move(move_id) {
+            // (1) ACCURACY — the family's whole spread (55 / 75 / 100), none never-miss.
+            let acc_hit = if never_miss {
+                true
+            } else {
+                self.roll_accuracy(_side, _slot, foe, foe_slot, accuracy, never_miss, move_type, dex)
+            };
+            if !acc_hit {
+                // [EMIT] a genuine miss: the `[miss]` retro-edit + `|-miss|` (the standalone
+                // path every other foe-targeting status arm uses).
+                if self.logging() {
+                    self.log.attr_last_move_miss();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.miss(&user, Some(&target));
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (2) (TryHit) PROTECT — before Soundproof (`gen3_protect_before_soundproof_v1`).
+            if self.protect_blocks(foe, foe_slot, false) {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.activate(&target, "Protect", None);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (3) (TryHit) SOUNDPROOF — Supersonic is the family's only `sound` move.
+            if self.move_is_sound(move_id, dex)
+                && dex
+                    .ability(&to_id(&self.sides[foe].pokemon[foe_slot].ability))
+                    .map(|a| a.blocks_sound)
+                    .unwrap_or(false)
+            {
+                if self.logging() {
+                    let target = self.mon_ref(foe, foe_slot, dex);
+                    self.log.immune_from_ability(&target, "Soundproof");
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (4) (onTryPrimaryHit) SUBSTITUTE — no `bypasssub` anywhere in the family.
+            if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                if self.logging() {
+                    self.log.attr_last_move_still();
+                    let user = self.mon_ref(_side, _slot, dex);
+                    self.log.fail(&user, None, false);
+                }
+                return MoveResolution::done(false, false, false);
+            }
+            // (5) the confusion half.
             let target = &self.sides[foe].pokemon[foe_slot];
             let own_tempo = to_id(&target.ability) == "owntempo";
             let already = target.confusion.is_some();
@@ -3165,7 +3257,8 @@ impl crate::state::BattleState {
                 }
                 return MoveResolution::done(false, false, false);
             }
-            // SUCCESS → the shared path draws random(2,6) and emits `-start|confusion`.
+            // SUCCESS → the shared path handles SAFEGUARD, else draws random(2,6) and emits
+            // `-start|confusion`.
             self.add_confusion(foe, foe_slot, true, dex);
             return MoveResolution::done(false, false, false);
         }
