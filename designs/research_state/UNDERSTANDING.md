@@ -714,6 +714,7 @@ z=−1.40" rules out >4.5pp, not >0.
 | what | where |
 |---|---|
 | the append-only record | [`ledger.md`](ledger.md) — cite an entry by its DATE + TITLE, or by its landing sha |
+| FINDING an entry in it | [`ledger_index.md`](ledger_index.md) — generated, one line per heading (date · line · title). `python -m main.ledger_index --write` after any append; never hand-edit it |
 | every number behind a claim | [`measurements/`](measurements/) — each artifact carries its checkpoint, step, state count and date |
 | the week's campaign | [`measurements/arch_transfer_2026-09-05/`](measurements/arch_transfer_2026-09-05/) (H1–H9, the head-to-head), [`measurements/teacher_content_2x2_2026-09-04/`](measurements/teacher_content_2x2_2026-09-04/), [`measurements/reuse_batch_2026-09-03/`](measurements/reuse_batch_2026-09-03/) |
 | the win-prob baseline the gate reads | [`measurements/winprob_critic_baseline_2026-09-06/`](measurements/winprob_critic_baseline_2026-09-06/) |
@@ -729,4 +730,4 @@ z=−1.40" rules out >4.5pp, not >0.
 **Instruments** (all offline, none needs a GPU): `python -m main.untaught_meter` ·
 `python -m main.critic_gate` · `python -m main.elo` · `python -m main.exploitability` ·
 `python -m main.scaffolding_gauge` · `python -m main.dose` · `python -m main.lineage` ·
-`python -m main.capacity` · `python -m main.prober.query`.
+`python -m main.capacity` · `python -m main.prober.query` · `python -m main.ledger_index`.

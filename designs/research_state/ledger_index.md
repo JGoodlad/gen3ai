@@ -1,0 +1,448 @@
+# Ledger — title index
+
+<!-- GENERATED FILE — DO NOT EDIT BY HAND.
+     Regenerate with:  export PYTHONPATH=$PYTHONPATH:src && python3 -m main.ledger_index --write
+     Generator: src/main/ledger_index.py · currency gate: src/ledger_index_gate_test.py -->
+
+One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
+carries one, and its title — so a registration can be found without a regex over a
+13,798-line file. **The ledger itself is append-only and is never edited by this**;
+this file is regenerated from scratch, so a difference between the two means the index is
+stale, never that the ledger is wrong.
+
+**An ENTRY is a heading carrying an ISO date** — that one rule covers both eras (the early
+`## Gen-3 40M gate (2026-08-08) — …` and the current `### 2026-09-07 · TECH DEBT · …`).
+Undated headings — the file's front matter, and the subsections inside an entry — are
+listed too, with no date column and nested by their own heading level, so nothing can be
+lost to a convention guess that turns out wrong.
+Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
+rename.
+
+**426 headings · 389 dated · 2026-08-01 → 2026-09-07 · ledger 13,798 lines.**
+
+- `L00006` · The method (how a hypothesis earns a verdict)
+- `L00023` · Status
+- `L00052` · Programme-level (the exploiter → distill loop, ai_v8)
+- `L00067` · GO-TO-BUILD queue (the next FRESH run stacks these)
+- `L00083` · Active runs / context
+- `L00090` · Re-verify tooling
+- `L00100` · Cross-refs
+- `L00118` · `2026-08-01` · ⚠️ Standing caveat on the identity-at-init experiments (M1, 2026-08-01)
+- `L00140` · `2026-08-08` · Gen-3 40M gate (2026-08-08) — the concat re-read + coverage probe
+- `L00175` · `2026-08-10` · STEP 0 of the pair-reduction plan (gen-5 final, 24M, stratified n=6000)
+- `L00220` · `2026-08-11` · the op `in_matrix` REFUND is a measured NO (out_dim 660→138 not worth doing for perf)
+- `L00253` · `2026-08-11` · BOTH seed mechanisms produce ONE-DIMENSIONAL differentiation (structural, predictable)
+- `L00284` · `2026-08-11` · G2a SEAT COVERAGE measured (the two ceilings on design_opponent_intent.md)
+  - `L00315` · `2026-08-11` · ⚠️ CORRECTION (2026-08-11, same day) to the ladder entry above — I quoted an SE as a CI
+  - `L00344` · `2026-08-13` · G3 (2026-08-13): the c2 arm is a DEAD DISCRIMINATOR — and the reason indicts the whole gate
+  - `L00384` · `2026-08-13` · v72 (2026-08-13): the species belief the physics could never read — and the bug that shipped with it
+  - `L00408` · `2026-08-13` · rust bridge lock-in reject contradiction (2026-08-13) — FIXED, AND NOW TESTED IN BATTLE (2026-08-14)
+    - `L00439` · `2026-08-14` · RESOLUTION (2026-08-14) — the battle test this entry was missing
+  - `L00492` · `2026-08-13` · ⚠️ PROCESS: a subagent FABRICATED a complete verification (2026-08-13)
+  - `L00512` · `2026-08-13` · FPS regression gen-7 -> gen-8 (2026-08-13/14): NOT the model's compute — narrowed by elimination
+    - `L00551` · `2026-08-14` · ⚠️ CORRECTION (2026-08-14) to the FPS entry above — the train-step number is on the WRONG DEVICE
+  - `L00582` · `2026-08-14` · ✅ SOLVED (2026-08-14): the gen-7 -> gen-8 FPS regression is the TRAIN step, and two flags own it
+  - `L00636` · `2026-08-15` · Belief-coupling lift (2026-08-15): move-pair structure is REAL — and the prior budget is Smogon-shaped
+  - `L00654` · `2026-08-16` · Measurement honesty (2026-08-16): the golden capture AND the obs benchmark never ran the tracker leg
+  - `L00665` · `2026-08-15` · Dist-head instrument baselines (2026-08-15, gen-10): optimistic AND over-confident
+  - `L00674` · `2026-08-17` · Method (2026-08-17): a dV ablation cannot license an irreversible deletion on its own
+  - `L00748` · `2026-08-17` · Method (2026-08-17, the Damp closure): a CLAMP at an embedding boundary is the silent cousin of crash-don't-drop
+  - `L00775` · `2026-08-17` · Result (2026-08-17, the §7 successor): stall blindness was a DELIVERY problem, it was already fixed, and COVERAGE was never the constraint
+  - `L00805` · `2026-08-17` · Method (2026-08-17, same pass): a POOLED correlation across battles is a Simpson trap — the §7 clustering rule killed my own finding
+  - `L00829` · `2026-08-17` · Method (2026-08-17, the false stall): a monitor whose PATTERN can stop matching reports STUCK and NOT-MATCHING identically
+  - `L00856` · `2026-08-17` · Result (2026-08-17): a self-play pool promotion costs ~18.5 min of wall-clock, and ~31% of the run
+  - `L00877` · `2026-08-17` · Correction (2026-08-17, hours after shipping it): "gen-14 supplies the power" was wrong
+  - `L00895` · `2026-08-17` · Correction to T1 (2026-08-17, within the hour): the applicable benefit is +43.7%, not +33.3% — and that makes it a WASH, not a loss
+  - `L00915` · `2026-08-17` · Method note (2026-08-17): fix the CLAIM, not just append the correction beneath it
+  - `L00930` · `2026-08-17` · Correction (2026-08-17, ~40 min after shipping it): the promotion-cost projection was an UPPER BOUND sold as an estimate
+  - `L00959` · `2026-08-17` · T1 KILLED (2026-08-17, same day, on the owner's challenge): I generalised a ONE-TIME transition into a recurring bill
+  - `L01003` · `2026-08-18` · Method (2026-08-18): the reward composition drifted SILENTLY at the v8→v9 boundary — and fork pools start empty
+  - `L01034` · `2026-08-18` · Method (2026-08-18, the route wave): an instrument that outlives its subject re-points, it does not go quiet
+  - `L01051` · `2026-08-18` · Method (2026-08-18, the positional-binding sweep): the census, and its FIVE live sites
+  - `L01119` · `2026-08-19` · Sentinel sweep, gen-15 (2026-08-19, 843 battles, opus agent; scripts /tmp only)
+  - `L01151` · `2026-08-21` · GEN-17 PFSP ATTRIBUTION + the BAIT programme's HABIT verdict (2026-08-21)
+  - `L01211` · `2026-08-19` · α/β injection probe, gen-15 (2026-08-19, causal intervention at ff1daae, exact-tier snapshots)
+  - `L01241` · `2026-08-19` · Scenario-conditioned C-family read, gen-15 @24M (2026-08-19, opus agent, 72,997 decisions)
+  - `L01285` · `2026-08-21` · Expected-SARSA / chance-marginalized TD targets — KILLED at the gate (2026-08-21, opus offline probe, 247 decisions × k=16 rerolls, gen-17-era checkpoint)
+  - `L01320` · `2026-08-21` · Three-axis value-target variance decomposition — THE ORDERING (2026-08-21, opus offline probe, 140 decisions × 4×4×4 factorial, gen-17 @24M)
+  - `L01359` · `2026-08-21` · Counterfactual label factory — COST MODEL (2026-08-21, opus offline probe, paired A/Bs on gen-17 @24M, self-validating to 0.987)
+  - `L01422` · `2026-08-23` · CROSS-IMPL PARITY TRIAGE — the un-broken harnesses were hiding FOUR rust bugs (2026-08-23, `gen3_fresh_golden_parity_triage_v1`)
+  - `L01473` · `2026-08-22` · G0 BIAS MAP — PROCEED, and the defect is RESOLUTION not offset (2026-08-22, opus agent, 2,204 tight-MC labels / 16,832 rollouts / 216 battles, gen-17 @24M, R=8, battle-clustered CIs)
+  - `L01513` · `2026-08-22` · The factory is BUILT and PLUMBED — steps 3+4 of the counterfactual program landed (2026-08-22, two opus agents in parallel isolated worktrees, orchestrated landing)
+  - `L01555` · `2026-08-22` · Adversarial review of the factory landings — two REAL bugs, one wedge-class gap, the scary contracts HELD (2026-08-22, opus agent, landed `5b8f485`)
+  - `L01595` · `2026-08-22` · Beta-distributional cf targets BUILT — evidence weighting + the head that confesses its blur (2026-08-22, opus agent, landed `0baf7d7`, MODEL_CONFIG_VERSION 98)
+  - `L01633` · `2026-08-22` · Experiment-readiness batch — tasks #28/#29 CLOSED, and the producer's DEFAULT output was unconsumable (2026-08-22, opus agent)
+  - `L01679` · `2026-08-22` · The PRODUCER DRIVER lands — R1 is fully executable (2026-08-22, opus agent, `897ab62`)
+  - `L01721` · `2026-08-22` · The HIDDEN-INFORMATION FLOOR — ~40% of R1's primary meter is irreducible, and it is CONCENTRATED (2026-08-22, opus probe, 123 decisions / 70 battles / 10,040 rollouts, gen-17 @24M)
+  - `L01767` · `2026-08-22` · E-battery ADJUDICATED — the "thin" verdict SURVIVES conditioning, the bait turf is WORSE than pooled, and E3 deepened after all (2026-08-22, opus conditioned read on gen-17/E1/E2/E3, content-only, battle-clustered)
+  - `L01808` · `2026-08-22` · Wall-clock-seed sweep — the antipattern has a SECOND HALF: guarded assertions (2026-08-22, opus agent, `09577b3`)
+  - `L01834` · `2026-08-22` · The mask-recovery fix lands — and EVERY historical flip/KL audit carried ~38% phantom legality (2026-08-22, opus agent, `a4d0942`)
+  - `L01864` · `2026-08-22` · Three owner sign-offs (2026-08-22, evening)
+  - `L01885` · `2026-08-22` · Tech-debt scope landed — two landmines PROVED by experiment before anyone stepped on them (2026-08-22, opus survey, `tmp/tech_debt_scope.md`)
+  - `L01905` · `2026-08-22` · Plasticity audit — measured NULL, opposite sign, lever CLOSED for this lineage (2026-08-22, opus probe, gen-17's 9 checkpoints + 3 E-arm forks, fixed 4000-obs probe set, replicated on a battle-disjoint set)
+  - `L01938` · `2026-08-22` · Phase 0 LANDED — both landmines closed, and both closures VERIFIED against a live index (2026-08-22)
+  - `L01972` · `2026-08-22` · Phase 1 LANDED — the launcher's hardcoded interpreter is gone; the whole spawn surface audited (2026-08-22)
+  - `L02007` · `2026-08-22` · Phase 2 LANDED — `pyproject.toml` + editable install; the incantation is now OPTIONAL, and the sys.path ORDER became load-bearing machinery (2026-08-22)
+  - `L02090` · `2026-08-23` · Twin heads + shadow critic LANDED — v99, and the build's own review caught two label-poisoning bugs (2026-08-23, opus agent, `3d3c07f`+`aa1c630`+`6a16a2b`)
+  - `L02122` · `2026-08-22` · The training entry point is a PACKAGE — 4,667 lines → a 350-line orchestrator, and the size ratchet's first entry is GONE (2026-08-22, `main/train/`)
+  - `L02171` · `2026-08-22` · Phase 4 LANDED — path discovery consolidated; four tests that skipped forever off this box now RUN, and the class is closed (2026-08-22)
+  - `L02227` · `2026-08-23` · Post-fix re-baseline — every conditioned claim CONFIRMS, one AMENDS, one of OUR OWN ledger lines was wrong, and E4's primary is armed at 7.6σ (2026-08-23, opus probe, ~23:00)
+- `L02258` · `2026-08-22` · FLAG-SURFACE REFRESH: the mirror was two generations behind, and five `_resolve` lines were dead code
+  - `L02339` · `2026-08-23` · E4 VERDICT — branch (c) BELOW-THRESHOLD, and the deeper finding: the cells moved, the information arrived, and the BEHAVIOR still didn't (2026-08-23, both sessions' registered limbs assembled, `tmp/e4_adjudication.md`)
+  - `L02384` · `2026-08-23` · The incremental-encoder census — 95% of the obs is cacheable, rust is DEAD by arithmetic, and a 4× redundant view construction was hiding in plain sight (2026-08-23, read-only census, design promoted to `designs/ai_v9/design_incremental_obs_encoder.md`)
+  - `L02421` · `2026-08-23` · BUILT (not run): `--bait-entropy-boost` — the sampling-side probe the E4 verdict left owed (2026-08-23)
+  - `L02461` · `2026-08-23` · Baseline-hour addendum — the REWARD share was mis-documented by generations, and the encoder campaign's Amdahl updates (2026-08-23)
+  - `L02480` · `2026-08-23` · Stage A LANDED — the redundant view construction was FIVE×, not four, and one caller was bypassing the accessor entirely (2026-08-23, `gen3_live_view_memo_v1`)
+  - `L02538` · `2026-08-23` · R1 MULTI-CYCLE COMPOSITION SMOKE — the twin-heads landing's one not-gated item, run; the composition holds and it found one live defect (2026-08-23)
+  - `L02604` · `2026-08-23` · Parity-triage rider — the two TRAINING-PATH bugs were live through gen-17 and the whole E-battery (2026-08-23, orchestrator note on `38d8cb1`)
+  - `L02626` · `2026-08-23` · Stage B LANDED — encode 1.79x, worker CPU 1.19x, and the census's own Amdahl was the thing that was wrong (2026-08-23, `gen3_obs_assembler_v1`)
+  - `L02717` · `2026-08-23` · TREE-WIDE VACUITY HUNT — the week's ten specimens made into a taxonomy, and it found two MORE live ones (2026-08-23, `gen3_vacuity_hunt_v1`)
+  - `L02817` · `2026-08-23` · The prober's two biggest files are PACKAGES — 5,631 lines → 28 modules, and the size ratchet's last two prober entries are GONE (2026-08-23, `main/prober/engine/` + `main/prober/session/`)
+  - `L02884` · `2026-08-23` · Reward-manager Stage LANDED — the census's map was right about the RANKING and wrong about both MAGNITUDES; the suppressed-term skip is real but small, and the deferred item's trigger has FIRED (2026-08-23, `gen3_reward_skip_suppressed_v1`)
+  - `L02976` · `2026-08-23` · DOC-TRUTH AUDIT — the token table contradicted its own prose, and the move census was 28 moves stale in two always-current docs (2026-08-23, `gen3_doc_truth_audit_v1`)
+  - `L03079` · `2026-08-23` · The size ratchet's last two giants are PACKAGES — and the allowlist is down to ONE entry (2026-08-23, `agents/training/instrumented_ppo/` + `agents/model/model_version/`)
+  - `L03162` · `2026-08-23` · The belief-block memo LANDED — the deferred item's trigger fired at 60%, and the two defects it left behind are both fixed (2026-08-23, `gen3_belief_block_memo_v1` + `gen3_prev_phi_reset_v1`)
+- `L03247` · `2026-08-23` · The intermittent `ANCHOR REFUSED` is ROOT-CAUSED: a forfeit RACE, not a replay bug
+  - `L03316` · `2026-08-23` · OWNER CONSTRAINT (2026-08-23): the LADDER PATH is permanent — any poke-env streamline/rebuild must preserve online play
+  - `L03330` · `2026-08-23` · poke-env census — 74.3% of the fork is LIVE (the "we use a third" prior dead), upstream still carries our race bug, and the A/B/C options are priced (2026-08-23, read-only census, `tmp/pokeenv_census.md`)
+  - `L03356` · `2026-08-23` · THE PERF CAMPAIGN'S REGISTER CLOSES — the last un-attacked stage was 88% a MISLABEL, and the thing actually costing 17% was never the mask (2026-08-23, `gen3_live_view_build_micros_v1`)
+  - `L03491` · `2026-08-23` · THE DEBT REGISTER IS EMPTY — the weekend's found-not-fixed backlog cleared item by item, and the flag census refused three of its own candidates (2026-08-23, `90e9067`+`a562594`+`446b26c`+this)
+- `L03593` · `2026-08-23` · Baton Pass never carried its boosts into the observation (GIGO, since the fork)
+  - `L03659` · `2026-08-23` · 🚨 BATON PASS CARRYOVER — a FIVE-MONTH obs-GIGO defect, owner-spotted from one trace view, fixed at `393532c` (2026-08-23)
+  - `L03701` · `2026-08-23` · 📌 PARKED (owner, 2026-08-23) — battle STATE representation: the goal is EXPRESSIVENESS, not parser surgery
+  - `L03720` · `2026-08-23` · 🪤 PROBE PAIR ADJUDICATED — punishment CLOSED, credit CONVICTED; the bait load moves off-policy (2026-08-23)
+  - `L03752` · `2026-08-23` · 🎡 FLYWHEEL NEAR-TERM ROADMAP — ratified by owner (2026-08-23)
+  - `L03776` · `2026-08-23` · 📐 HODGE BASELINES MEASURED + SPINNING-TOP PREDICTIONS REGISTERED (34af8ce, 2026-08-23)
+  - `L03794` · `2026-08-23` · ⚖️ CAPACITY INSTRUMENTATION — owner constraint: LIVE or ≤1-min ONLY; heavy offline battery DEFERRED (2026-08-23)
+  - `L03813` · `2026-08-23` · 🪤 LEG-A CODE-MATCHED CONFIRMATION — **HOLDS**; the credit conviction is CLEAN on both axes (2026-08-23)
+  - `L03828` · `2026-08-23` · 📈 LIVE CAPACITY TELEMETRY LANDED (`1c7fe59`) — saturation as a CURVE, not a probe (2026-08-23)
+  - `L03845` · `2026-08-23` · 🚨 REV-1 HOUR-2 INCIDENT — R1 label path starved ~100×; training UNAFFECTED; fix in flight (2026-08-23)
+  - `L03868` · `2026-08-23` · 📚 METAMON VERIFIED (`e38f029`) — three beliefs corrected, one door measured (2026-08-23)
+  - `L03895` · `2026-08-23` · 🏭 PRODUCER BATCHING: THREE-ARM RESULT — compute-bound CONFIRMED, rpc=4 is the resting place (2026-08-23)
+  - `L03908` · `2026-08-23` · ⚡ PRODUCER WARM-PATH LANDED (`53870dd`) — the 8 s/label was the POLICY FORWARD; my brief's levers measured ~nothing (2026-08-23)
+  - `L03927` · `2026-08-23` · 🔭 SEARCH-DIVIDEND PROBE — REGISTERED (owner-ordered, 2026-08-23); build dispatches on next agent slot
+  - `L03949` · `2026-08-23` · 🔭 SEARCH-DIVIDEND PROBE — DEPTH AMENDMENT (owner, 2026-08-23, minutes after registration)
+  - `L03960` · `2026-08-23` · 🔭 SEARCH-DIVIDEND PROBE — TIMER CORRECTION (owner, 2026-08-23)
+  - `L03969` · `2026-08-23` · 🎯 #34 CLOSED (`f8eec73`) — capped rollouts were a DETERMINISTIC 0 on the trainee, not a race (2026-08-23)
+  - `L03988` · `2026-08-23` · 🪜 LADDER REQUIREMENTS — owner-registered (2026-08-23, while the readiness audit is in flight)
+  - `L04007` · `2026-08-23` · 🪜 LADDER READINESS LANDED (`683b607`+) — ~2–3 days from a first rated game; three walls MEASURED DOWN (2026-08-23)
+  - `L04027` · `2026-08-23` · 🪞 MIRROR EVAL PRODUCTIONIZED (`87c5a4e`) — and a MIRROR-DIRECTIONAL silent bias caught before it shipped a wrong verdict (2026-08-23, overnight)
+  - `L04048` · `2026-08-23` · ✅ MIRROR HARNESS VALIDATED — the owner-ordered base-vs-base control read EXACTLY 50% (2026-08-23, overnight)
+  - `L04057` · `2026-08-23` · ⚡ SEARCH-PATH PERF AUDIT LANDED (`11b4622`) — 9× on the hot spot; the compile recipe has a WIDE-forward trap (2026-08-23, overnight)
+  - `L04077` · `2026-08-24` · 🔮 ORACLE ANOMALY RESOLVED (`83d4687`..`c540830`) — a CLAIRVOYANCE LEAK, and under it the night's real finding: **depth-1 search on today's critic is NEGATIVE** (2026-08-24, ~02:00)
+  - `L04104` · `2026-08-24` · 📉 SEARCH-DIVIDEND FINAL TABLE (clean v3 cells, full n, 2026-08-24 ~04:10) — NEGATIVE at every point, dose-response confirms the mechanism
+  - `L04119` · `2026-08-24` · 🌅 REVOLUTION ONE COMPLETE — end-of-generation adjudication (2026-08-24 morning)
+  - `L04150` · `2026-08-24` · 🔬 WANG RECONCILED (`e0a1545`) — his leaves were OUR KIND OF CRITIC; the difference is the ESTIMATOR REGIME, and the R-LADDER now decides variance-vs-bias (2026-08-24)
+  - `L04175` · `2026-08-24` · 🏁 REVOLUTION ONE CLOSED — final rulings, two corrections, and the FIRST registered-prediction hit (2026-08-24 ~09:00)
+  - `L04204` · `2026-08-24` · 🎯 TOCK-1 TARGETS ORDERED (`f7b9816`) — the diversity rule REVERSED the deficit queue (2026-08-24)
+  - `L04221` · `2026-08-24` · 🧪 R1 FIRST READ (`703fdd9`) — NOT flat: the primary is NET-NEGATIVE, and the factory's two design choices are the suspects (2026-08-24)
+  - `L04252` · `2026-08-24` · 📏 ERA STANDING-METER ROW 1 FINAL + PHASE-B RULINGS (2026-08-24 ~11:00)
+  - `L04280` · `2026-08-24` · 🧯 COMPILE-FLOOR CORRECTION (supersedes part of 5e63ecb) — the GATE is broken, not the target class (2026-08-24)
+  - `L04302` · `2026-08-24` · 🛠️ COMPILE-FLOOR FIX LANDED (`cd07aa7`) — median-of-5 alternated, identical warm-up, cross-process quorum (2026-08-24)
+  - `L04318` · `2026-08-24` · ⚖️ R-LADDER VERDICT — **BIAS, not variance**: flat across a 32× dice sweep; search formally PARKS behind critic calibration (2026-08-24)
+  - `L04338` · `2026-08-24` · 🔄 TICK-1 MID-RUN RULINGS (18:40 PT, 2026-08-24)
+  - `L04359` · `2026-08-24` · 🎾 PLAYOFF ARM LANDED (`000709a`+`c51cdb2`) — and game 1's shape already corroborates the bias verdict from a new angle (2026-08-24 evening)
+  - `L04383` · `2026-08-24` · 🎲 THE FORMAT TERM (owner's frame, 2026-08-24 evening) — Wang played RANDOMS; we play the richest meta on the board
+  - `L04407` · `2026-08-24` · 🧹 CLEANUPS BATCH LANDED (`d6e7ffa`..`1c8d784`) — four owed fixes, one bonus find (2026-08-24 evening)
+  - `L04421` · `2026-08-24` · 🎭 IMPUTATION METER LANDED (`280fbe1`) — the replay door's risk is now numbers, and one finding nobody anticipated (2026-08-24 night)
+  - `L04437` · `2026-08-25` · 🔻 TICK-1 GRADED: THE FOLD DID NOT PAY — inferior on three independent meters, with a mechanism and a prime suspect (2026-08-25 morning)
+  - `L04467` · `2026-08-25` · 🧭 OPEN THREADS SNAPSHOT (2026-08-25 morning — the handoff line for any fresh session)
+  - `L04483` · `2026-08-25` · 🎾 PLAYOFF CELL COMPLETE (80/80, 2026-08-25 morning) — the honest-null branch lands: harm NEUTRALIZED, no dividend
+  - `L04499` · `2026-08-25` · ⚗️ DISCRIMINATOR VERDICT: THE TEACHERS WERE GOOD — the fold produced NEGATIVE TRANSFER; factorial arm ordered (2026-08-25 ~07:45)
+  - `L04526` · `2026-08-25` · 🧨 FACTORIAL VERDICT: THE LOSS CHANNEL — and the collapse is a SWITCH, not a dial (2026-08-25 ~16:45)
+  - `L04554` · `2026-08-25` · 🔴 CORRECTION (supersedes b4f7766's mechanism clause) — the KL was ALWAYS on-pin-gated; the owner's question exposed the misread (2026-08-25 evening)
+  - `L04580` · `2026-08-25` · 🔴 CORRECTION-OF-THE-CORRECTION (owner's memory right again; amends 3c12508's teacher-length claim, 2026-08-25)
+  - `L04598` · `2026-08-25` · 🔴 CORRECTION 3 OF THE EVENING (amends 1022747's regime clause; owner-verified) — the opponent regimes were IDENTICAL too (2026-08-25)
+  - `L04616` · `2026-08-25` · 🔬 SHARPNESS PROBE (`978b1aa`) — the narrowness theory REFUTED; the surviving finding reframes the mechanism (2026-08-25 night)
+  - `L04637` · `2026-08-25` · 🧲 TELEMETRY TRIAGE (`88091ca`) — INTERFERENCE signature fires; the mechanism is settled enough to design against (2026-08-25 night)
+  - `L04658` · `2026-08-25` · 🕳️ ARM E — THE DEEP BRANCH FIRES: the KL-to-specialist FORM is wrong at any gating, dose, or multiplicity (2026-08-25 ~21:00)
+  - `L04690` · `2026-08-25` · 📐 ADVANTAGE-GATED DISTILL DESIGN LANDED (`3de0fbe`) — and it argues the brief down: TARGET FORM leads, not the gate (2026-08-25 night)
+  - `L04713` · `2026-08-25` · 🎾 PLAYOFF FORMAL READ BANKED (`measurements/playoff_formal_read.md`) — honest NULL confirmed, failed-pairs diagnosed, cell closed (2026-08-25)
+  - `L04736` · `2026-08-25` · 🌙 EVENING OWNER EXCHANGE BANKED — lineage verified, rung (e) pre-registered, transfer gate proposed (2026-08-25, before the arm-F/tock-2 relays)
+  - `L04767` · `2026-08-26` · 🌅 OVERNIGHT RELAYS BANKED — arm F stopped honestly; the teacher side is FULLY eliminated; the narrowness half of the distance decomposition is DEAD (2026-08-26)
+  - `L04812` · `2026-08-26` · ⚖️ MORNING ADJUDICATIONS BANKED + v102 LANDED — the fold recipe is decided; G1/G2 build dispatched (2026-08-26)
+  - `L04836` · `2026-08-26` · 🏗️ v103 LANDED — G1/G2 are launchable; the whole fold-repair stack built in one morning (2026-08-26)
+  - `L04851` · `2026-08-26` · 🚀 ARM F LIVE (two-phase) + TRANSFER GATE RUNNING — phase-2 interpretation ENDORSED; one near-miss caught by an assert (2026-08-26)
+  - `L04880` · `2026-08-26` · 🛑 ARM F PHASE 1 CONFOUNDED AND VOIDED — the SUBTRACTION RULE minted; rerun ordered post-G1 (2026-08-26)
+  - `L04904` · `2026-08-26` · 🚪 TRANSFER GATE: BELOW-ZERO — team-scoped exploitation with collateral damage; the v8 reconciliation hypothesis; #2b flagged for re-adjudication (2026-08-26)
+  - `L04939` · `2026-08-26` · 🎯 G1 LAUNCHED — the discriminator is live (2026-08-26 10:15)
+  - `L04950` · `2026-08-26` · 🎉 G1/G2 IN — the TARGET FORM was the lever: +7.6pp at matched dose; the rank-collapse mechanism story FALSIFIED (2026-08-26)
+  - `L04978` · `2026-08-26` · 🔬 F-COLLAPSES FIRED — KL-ALONE corrupts; interference demoted to consequence; §1.3 amended in place per its own pre-registration (2026-08-26)
+  - `L04999` · `2026-08-26` · 🏁 CAPSTONE AUTHORIZED — flywheel revolution two, pre-registered; #2b RESOLVED as union-coverage; PCGrad shelved with a registered prediction (2026-08-26 evening)
+  - `L05021` · `2026-08-26` · 📐 SPEC SHARPENED BY TWO OWNER QUESTIONS — the v8-union cell corrected; the PER-TEAM BUDGET LAW registered (2026-08-26 evening)
+  - `L05038` · `2026-08-26` · 🔀 CONSISTENCY PROTOCOL REGISTERED + FOLD-OVERLAP RULING (2026-08-26 evening, owner exchange)
+  - `L05051` · `2026-08-26` · 🚀 FLEET ARMED + R2-CTRL CONTROL CORRECTED — the fdC-derivation confound caught pre-launch (2026-08-26 ~21:00, training relay + adjudication)
+  - `L05072` · `2026-08-27` · 🏁 CAPSTONE VERDICT — HOLDS-BY-LETTER, QUALIFIED; revolution three GATED on a second control (2026-08-27 evening)
+  - `L05098` · `2026-08-27` · 🎯 REVOLUTION THREE REDIRECTED TO AN IMPROVEMENT BAR + DEPRECATION FREEZE (owner direction, 2026-08-27 evening)
+  - `L05122` · `2026-08-27` · 🔬 TRANSFER-EFFICIENCY DECOMPOSITION REGISTERED + ZapDug readout MISSING from the record (2026-08-27 late, owner exchange)
+  - `L05146` · `2026-08-28` · 🔭 PLASTICITY FORENSICS DISPATCHED — v8 era vs current era, CPU-only, predictions pre-registered (2026-08-28, owner directive)
+  - `L05169` · `2026-08-27` · 📊 ZAPDUG READOUT + THE BUDGET LAW'S PROSPECTIVE CONFIRMATION + one honest gap (2026-08-27 ~20:05, training relay, banked 08-28)
+  - `L05191` · `2026-08-28` · 🔴 PLASTICITY FORENSICS VERDICT — the account is NOT SUPPORTED; two reframes replace it (2026-08-28)
+  - `L05226` · `2026-08-28` · 🔭 TWO FOLLOW-UP PROBES DISPATCHED on the replacement accounts — predictions registered pre-result (2026-08-28, owner directive)
+  - `L05244` · `2026-08-28` · 🔭 PROBES C + D DISPATCHED — era recipe diff + the dark-knowledge decomposition (2026-08-28, owner directive)
+  - `L05269` · `2026-08-28` · 🟢 PROBE B VERDICT: MIXED — content is REAL (≥+4.0pp, confound-free) AND the rev-2 control was never bias-matched (2026-08-28)
+  - `L05298` · `2026-08-28` · 🔴 PROBE A VERDICT: FLAT — breadth does NOT drive differentiation; fork LENGTH is the surviving candidate (2026-08-28)
+  - `L05323` · `2026-08-28` · 🟡 PROBE D VERDICT: MIXED — mechanism SUPPORTED, premise REFUTED; the tail is certifiably DRIFT (2026-08-28)
+  - `L05352` · `2026-08-25` · 🚨 PROBE C: the 2026-08-25 "CORRECTION 3" IS FALSE — v8's exploiters trained in a DIFFERENT OPPONENT REGIME; C1–C5 ranked (2026-08-28)
+  - `L05380` · `2026-08-28` · 🟢 BIAS FIX LANDED (6ff4c04) — --distill-team-bias now effective at coef 0, revert-verified (2026-08-28)
+  - `L05400` · `2026-08-28` · 📏 EPISTEMIC AUDIT (owner challenge, 2026-08-28 late) — what is MEASURED vs NARRATIVE in the day's two headline stories; probe E dispatched
+  - `L05419` · `2026-08-28` · 🧪 F6-LADDER ORDERED (owner design, 2026-08-28 late) — the pool-ratchet exploiter; build dispatched; predictions registered
+  - `L05444` · `2026-08-28` · 🔴 PROBE E VERDICT: v8's teacher tails are NOT special — the full-KL re-entry path loses its main empirical pillar (2026-08-28, ~6 min turnaround from existing dumps)
+  - `L05469` · `2026-08-28` · 📏 THE +69 AUDIT (owner challenge, 2026-08-28 late) — ELO leg downgraded, piloting+retention legs solid, and the DOSE ARITHMETIC un-mysteries v8
+  - `L05492` · `2026-08-28` · 🟢 F6-LADDER BUILD LANDED (7514fba) — the pool-ratchet exploiter curriculum is launchable (2026-08-28 late)
+  - `L05519` · `2026-08-28` · 🧪 BLOCK-LENGTH ABLATION REGISTERED AS CONDITIONAL (owner order, 2026-08-28 late)
+  - `L05534` · `2026-08-28` · 🔭 PROBE F DISPATCHED — per-team GRADIENT GEOMETRY under the fold (owner question: does PCGrad pair with blocking?) (2026-08-28 late)
+  - `L05552` · `2026-08-28` · 💡 STRIDED BLOCKING REGISTERED (owner concept, 2026-08-28 late) — overlapping team windows; queued behind R3-BLOCK1 + the micro-probe instrument
+  - `L05569` · `2026-08-28` · 🟡 PROBE F VERDICT: PCGrad has a substrate at fold-INIT and none at fold-END — and the conflict has ARCHETYPE structure (2026-08-28 late)
+  - `L05595` · `2026-08-29` · 🟢 DISTILLABILITY INDEX: instrument ADMITTED — absorption RISES with age; the collateral is mostly ADAM OVERSHOOT, not content rejection (2026-08-29 early)
+  - `L05623` · `2026-08-28` · ⚖️ value-feat-coef ADJUDICATED: 0.0 for all three R3 arms — recipe fidelity, NOT demonstrated inertness; critic-watch tripwire attached (2026-08-28 morning)
+  - `L05643` · `2026-08-28` · 🧭 TRAJECTORY REVIEW (owner question, 2026-08-28 morning) — two promotions; parkings ratified
+  - `L05666` · `2026-08-28` · 📡 SIGNAL-RATE TB METRICS ORDERED (owner, 2026-08-28) — outcome entropy × advantage density as a live pair; build dispatched
+  - `L05687` · `2026-08-28` · 🟢 SIGNAL-RATE TB METRICS LANDED (21066fa → main) — `signal/` group live for every future run (2026-08-28)
+  - `L05706` · `2026-08-28` · 🎯 TEACHER-AS-OPPONENT ANALYZED (owner question, 2026-08-28) — the fold currently SKIPS the population move; hole-persistence probe registered
+  - `L05731` · `2026-08-28` · ⚠️ GENERAL-STRENGTH H2H BANKED + THE DILUTION CORRECTION — the h2h cannot see team-local gains BY ARITHMETIC (2026-08-28 evening)
+  - `L05757` · `2026-08-28` · 🗺️ LADDER-SEARCH ELO-MAXING PROGRAM SKETCHED (owner question, 2026-08-28 late) — "make comparisons fair, not leaves true"
+  - `L05779` · `2026-08-28` · 🔭 LADDER-SEARCH PROGRAM DISPATCHED — three parallel probes/builds, predictions registered (2026-08-28 late, owner: "keep iterating until ≥1 interesting to try")
+  - `L05800` · `2026-08-29` · 🟡 PROBE I VERDICT: racing lands the MIDDLE branch (1.47× deadline / 1.87–2.40× spend) — and finds the battery's own 1s cell is 14% allocator noise (2026-08-29 early)
+  - `L05823` · `2026-08-29` · 🔴 PROBE H VERDICT: the "forced decisions" premise is REFUTED — search flips 69% of decisions; only the CRITIC knows which flips matter; and search currently NET-LOSES (2026-08-29 early)
+  - `L05850` · `2026-08-29` · 🟡 PROBE G VERDICT: MIXED — offset is 73% and cancels in pairs; contrastive training SIZED not convicted; and the WIN-PROB HEAD beats the played action (2026-08-29 early)
+  - `L05870` · `2026-08-29` · 🎯 THE SYNTHESIS: "DEFENSIVE PAIRED SEARCH" — the program's ≥1-interesting-to-try, assembled from G×H×I, build+first-cell dispatched (2026-08-29)
+  - `L05889` · `2026-08-29` · 🟢 DEFENSIVE SEARCH, FIRST CELL: PRIMARY BAR MET — 0.494 vs honest's 0.293 at the SAME budget; and the miss diagnosis is the next move (2026-08-29)
+  - `L05912` · `2026-08-29` · 🔴 DEFENSIVE SEARCH ITER 2: the mechanism moved EXACTLY to spec and the dividend is ZERO — the LEAF is convicted (2026-08-29)
+  - `L05939` · `2026-08-29` · 🏆 REV-3 ADMISSION: 6/6 ADMIT — and the TEACHER CEILING dissolves the budget law; fold launch CONFIRMED (2026-08-29)
+  - `L05978` · `2026-08-29` · 🧭 WIN-PROB HEAD EMPOWERMENT PROGRAM registered (owner direction, 2026-08-29) — "the binding constraint gets everything"
+  - `L05997` · `2026-08-29` · 🔄 PROBE K (via iter-2 relay, provisional pending K's own report): the LEAF IS PARTIALLY EXONERATED — the zero is a per-decision→per-episode TRANSFER failure (2026-08-29)
+  - `L06015` · `2026-08-29` · ⚖️ VALUE-FUNCTION FOUNDATIONS RULING (owner question, 2026-08-29) — the bootstrap pick was RIGHT; two jobs, two instruments; the blend is PBRS
+  - `L06037` · `2026-08-29` · 🔭 PROBE L DISPATCHED — does the WIN-PROB HEAD already know about the whiffs? (owner question, 2026-08-29) + two verified corrections
+  - `L06062` · `2026-08-29` · 📐 CORRECTION + the BAROMETER/COACH distinction (owner exchange, 2026-08-29) — two "shapings" were conflated; only one is live and it carries no behavioral force
+  - `L06084` · `2026-08-29` · 🧩 THE THREE-ROUTE TAXONOMY crystallized (owner exchange, 2026-08-29) — suppress vs prescribe; route 3 feeds route 2
+  - `L06106` · `2026-08-29` · 🏗️ AI_V12 PROGRAM BUILD DISPATCHED (owner order, 2026-08-29) — all three win-prob→behavior routes implemented ahead of their era, OFF by default
+  - `L06123` · `2026-08-29` · 🏆 PROBE L VERDICT: the head KNOWS 96.4% OF THE WHIFFS AT DECISION TIME — and the "shaping" lever is structurally REFUTED (2026-08-29)
+  - `L06152` · `2026-08-29` · 🟢 AI_V12 BUILD LANDED (7d1a851→6ec053a) — all three routes implemented, OFF-by-default; and the build caught a 2-order-of-magnitude arm-sizing error (2026-08-29)
+  - `L06178` · `2026-08-29` · 💡 THE Q-WIN-PROB AMORTIZATION registered (owner deduction, 2026-08-29) — the convergence point of ai_v12 route 2 and the R1 label factory
+  - `L06197` · `2026-08-29` · 🔄 E5 COMPLETED AS A CLOSED LOOP (owner design, 2026-08-29) — predict → ground → prioritize → teach → measure
+  - `L06217` · `2026-08-29` · 📖 VALUE-FOUNDATIONS ADDENDUM (owner question, 2026-08-29 late) — the critic is PLUMBING, and its demotion is the design
+  - `L06233` · `2026-08-29` · 🔴 TRANSFER CELL VERDICT: R2 — COMPOUNDING destroys the per-decision gain; τ = 0.17 [−0.34, +0.68], excludes 1.0 (2026-08-29 late)
+  - `L06261` · `2026-08-29` · 🔭 PROBE M DISPATCHED — does the win-prob head ALIGN with the hand-coded BIAS taxes? (owner question, 2026-08-29 late)
+  - `L06279` · `2026-08-29` · 🚨 PROBE M VERDICT: the live BIAS term is a de-facto SWITCH TAX the head refutes — and a candidate cause of the under-switching pathology (2026-08-29 late)
+  - `L06311` · `2026-08-29` · 🔭 PROBE N DISPATCHED (no_progress_tax intent review) + THE CLEAN-WORLD EXPERIMENT REGISTERED (owner, 2026-08-29 late)
+  - `L06338` · `2026-08-29` · 📏 CORRECTION (owner challenge, 2026-08-29 late) — "shaping was necessary" is NARRATIVE, not measured; the clean-world design gains a PURE-SPARSE control arm
+  - `L06357` · `2026-08-29` · 📜 PROBE N VERDICT: COMPOSITION DRIFT — the switch toll was DESIGNED against counterweights that were later deleted; clean-world spec amended twice (2026-08-29 late)
+  - `L06393` · `2026-08-29` · ✅ CLEAN-WORLD ARM STRUCTURE CONFIRMED (owner, 2026-08-29 late) — the potential-source ladder
+  - `L06407` · `2026-08-29` · ⚖️ CLEAN-WORLD EXECUTIVE DECISIONS (owner, 2026-08-29 late) — draw = loss; NO launch bias, escalation must be EARNED; probe O dispatched on the stall tail
+  - `L06432` · `2026-08-29` · 🟡 PROBE O VERDICT: the clock fix HELD (81%→22% over seven generations) — but 35% of cap tails still read hopeful, and the exposure is CONDITIONAL (2026-08-29 late)
+  - `L06465` · `2026-08-29` · 🔍 THE 0.999 MECHANISM (owner question, 2026-08-29 late) — labels VERIFIED correct; the failure is cliff-vs-slope × gradient economics × joint selection
+  - `L06487` · `2026-08-29` · 💡 THE GATE-STRUCTURE FAMILY registered (owner insight, 2026-08-29 late) — coverage/answer-count features + learned multiplicative gates
+  - `L06509` · `2026-08-29` · ⚖️ OWNER RULING: NO HAND-PICKED AGGREGATES — the GENERAL multiplicative program supersedes the feature family (2026-08-29 late)
+  - `L06532` · `2026-08-29` · 📐 THE HARVEST DESIGN OPERATIONALIZED (owner exchange, 2026-08-29 late) — no propagation problem exists for the head; the chain that solves the policy's
+  - `L06552` · `2026-08-29` · 🧭 ASYMMETRIC GATING RULING (owner exchange, 2026-08-29 late) — gate-as-CLS-token is legal and standard; TEAM dials must clear the bar that LUT/FiLM failed
+  - `L06573` · `2026-08-30` · 🗺️ THE ROAD TO AI_V12 (owner request, 2026-08-30 early) — build list + clock, banked for both sessions
+  - `L06590` · `2026-08-30` · 💡 POPART RETIREMENT registered as a clean-world simplification (owner, 2026-08-30 early)
+  - `L06604` · `2026-08-30` · 📐 TURN-ZERO MECHANICS + a correction to the unit-valued-critic claim (owner exchange, 2026-08-30 early)
+  - `L06623` · `2026-08-30` · 🏗️ THE AI_V12 BUILD WAVE — five agents dispatched in parallel (owner order, 2026-08-30)
+  - `L06643` · `2026-08-30` · 🟢 WAVE E LANDED (2b86f03+2c4b746) — the gauge + the exploitability curve exist; and the curve's FIRST READING is flat (2026-08-30)
+  - `L06663` · `2026-08-30` · 🟢 WAVES A + D LANDED (d80db46, 4437c85) — the clean world is flag-reachable; the fixes are one-flag-enable-able; a version collision resolved at the landing step (2026-08-30)
+  - `L06688` · `2026-08-30` · 🟢 WAVE C LANDED (0825f03) — the E5 Q-win-prob head exists, dormant at v107; the producer gap is the named next piece (2026-08-30)
+  - `L06709` · `2026-08-30` · 🏁 REV-3 RECAP ADJUDICATED — bar MISSED (called honestly), transfer LOCAL+replicated, the TREADMILL named; rev-4 = the shape discriminator; 40-team direction ENDORSED (2026-08-30)
+  - `L06742` · `2026-08-30` · 🔭 PROBE P DISPATCHED — did v8 ALSO redistribute? and was team-PFSP the treadmill-killer? (owner directive, 2026-08-30)
+  - `L06766` · `2026-08-30` · 🟢 WAVE B LANDED (cd092c4) — the harvest/factory pipeline complete; the pilot's FAILURE is the finding; THE BUILD WAVE IS DONE 5/5 (2026-08-30)
+  - `L06790` · `2026-08-30` · 🔭 THE READINESS PROGRAM (owner order, 2026-08-30) — probe Q + three ai_v12 launch agents; target: launch-ready AND adversarially reviewed inside ~2 days
+  - `L06815` · `2026-08-30` · 📜 THE V8 NARRATIVE OF RECORD — pre-registered before probe P's final (owner review, 2026-08-30)
+  - `L06832` · `2026-08-30` · 🏗️ SECOND DISPATCH WAVE (owner quota release, 2026-08-30) — four more: the 40-team slate, the global-random sweep, research_state sync, task #38
+  - `L06850` · `2026-08-30` · 🟢 S3 LANDED (4602136) — the mutable views synced to the week's ledger; six contradictions resolved, ledger winning each (2026-08-30)
+  - `L06868` · `2026-08-30` · 🚨 S1 LANDED (52831e5) — TWO WALLS in front of the 40-team revolution, found by audit not by launch failure (2026-08-30)
+  - `L06896` · `2026-08-30` · 🟢 R1 LANDED (0a5948d) — the adversarial review: 7 findings, 5 litigated, 2 escalated; the M2 genre caught PRE-launch this time (2026-08-30)
+  - `L06923` · `2026-08-30` · ⚖️ OWNER DECISIONS: the 40-team walls resolved — RANDOM team draw + budget funded to ceiling (2026-08-30)
+  - `L06943` · `2026-08-30` · 🔴 SEARCH ITER-3 SCORED: rollout-confirmed overrules — the confirm rung CLOSES the R-ladder (2026-08-30)
+  - `L06967` · `2026-08-30` · 🔧 TASK #38 CLOSED — the depth-2 replay defect was ONE seam bug, and the filed diagnosis is REFUTED (2026-08-30)
+  - `L06990` · `2026-08-30` · 🛠️ S5 LANDED — `python -m main.promote_teams`: launch day is now a seed and a commit (2026-08-30)
+  - `L07013` · `2026-08-30` · 🚀 R2 LANDED — the clean-world launch runbook: four argvs SMOKED FOR REAL, the ladder's unit error corrected (2026-08-30)
+  - `L07042` · `2026-08-30` · 🏁 R3 LANDED — the q_labels producer; the ai_v12 READINESS TRIAD IS CLOSED (2026-08-30)
+  - `L07066` · `2026-08-30` · 🎲 S2 LANDED — the global-random coupling GENRE swept: four more seams, and the staller was the SMALLEST (2026-08-30)
+  - `L07090` · `2026-08-30` · ⚖️ PROBE Q SCORED — the frozen table's rev-3 row FAILS; the treadmill is SHARPENED, not refuted (2026-08-30)
+  - `L07116` · `2026-08-30` · 📋 PRE-REGISTERED: the V8-REPRODUCTION SCORECARD for rev-4 (2026-08-30, owner-approved: "reproduction will be a massive win")
+  - `L07153` · `2026-08-30` · 🧭 OWNER CLARIFICATION on the reproduction scorecard: OUTCOME over implementation (2026-08-30)
+  - `L07167` · `2026-08-30` · 🟢 PROBE P FINAL SCORED — v8's fold GIFTED the pool: +5.42pp on untaught (z=4.8); the frozen table stands 1 PASS / 1 FAIL / 2 PENDING (2026-08-30)
+  - `L07189` · `2026-08-30` · 🧩 NAMED HYPOTHESIS: the TEAMS-PER-TEACHER SWEET SPOT (owner synthesis, 2026-08-30 — banked as hypothesis, not belief)
+  - `L07211` · `2026-08-30` · 🗺️ THE FOLD-MECHANISM CATEGORY MAP + coach-vs-opponent role theory (2026-08-30)
+  - `L07246` · `2026-08-30` · 🎲 REGISTERED EXPECTATIONS for rev-4 (before any rev-4 number exists) + the fallback tree (2026-08-30)
+  - `L07269` · `2026-08-30` · 🖐️ NAMED INSTRUMENT: the BEHAVIORAL FINGERPRINT of a fold — the arch-portable attribution path (2026-08-30)
+  - `L07290` · `2026-08-30` · 📚 LEARNING NOTE + 🎯 ai_v12 CAPSTONE REGISTERED — temperature/Nash/risk, and the risk-modulation probe (2026-08-30)
+  - `L07309` · `2026-08-30` · ⚖️ ADJUDICATED: "was material reward a mistake?" — decomposed into three decisions, two convicted, one on trial (2026-08-30)
+  - `L07330` · `2026-08-30` · 🎚️ DESIGN CANDIDATE: opponent-SKILL conditioning — de-mixing the marginal opponent model (2026-08-30, VoI-gated)
+  - `L07354` · `2026-08-30` · 🔬 STARMIE/TTAR CONSTRUCTED RISK PROBE — the mask reads the KO boundary at ⅓ amplitude and NEVER flips (2026-08-30)
+  - `L07382` · `2026-08-31` · 🚦 DISPATCHED: probes SI-1 (skill inferability) + SI-2 (oracle bot-knowledge VoI) — predictions registered pre-data (2026-08-31)
+  - `L07402` · `2026-08-31` · 🎓 TAUGHT + NAMED: decision-focused value learning — "close games carry the value function's job" (2026-08-31)
+  - `L07423` · `2026-08-31` · 🟢 SI-1 CLOSED: class is GLARING in ≤2 turns, skill among kin is NOT — both registered predictions CORRECT (2026-08-31)
+  - `L07449` · `2026-08-31` · 🎚️ SI-2 SCORED: the bot gap is CREDIT, not conditioning — the oracle A/B prices de-mixing at ~0.6pp of 7.4pp (2026-08-31)
+  - `L07471` · `2026-08-31` · 🔬 STARMIE/TTAR RISK PROBE v2 — revealing the threat HALVES the mask's truth-tracking amplitude, and the mask prices the HP BAR, not the roll table (2026-08-31)
+  - `L07498` · `2026-08-30` · 🏛️ CAMPAIGN RELAY SCORED — R3-SELF PASSES (anchor DEAD, content REAL), the fold has a HARM CHANNEL, the wheel is FLAT (2026-08-30)
+  - `L07532` · `2026-08-31` · 🎲 RISK CAPSTONE BASELINE SCORED — the PRIMARY instrument has ZERO population support; explosion FIRES the surprise, but only behind (2026-08-31)
+  - `L07563` · `2026-08-31` · 🔴 CREDIT-SURFACE HYPOTHESIS REFUTED ON ITS OWN NAMED EVIDENCE — exploiters do NOT farm boundary states; the INVERSION is the invariant (2026-08-31)
+  - `L07591` · `2026-08-31` · 🟢 LR LICENSING PROBE — LICENSED: 1e-4 Pareto-dominates on the REAL ingredients, 6/6 arms (2026-08-31)
+  - `L07620` · `2026-08-31` · 🟢 HEAD-BLINDNESS ESCAPE HATCH CLOSED — the refutation STANDS and the inversion gets 5.8× STRONGER under ground truth (2026-08-31)
+  - `L07659` · `2026-08-31` · ⚠️ CONSEQUENCE FOR THE LIVE BUDGET LADDER: bar C's INTERPRETATION is now orphaned (2026-08-31)
+  - `L07679` · `2026-08-31` · 🟡 EXPLOITABILITY DECOMPOSED taught-vs-untaught: the flat curve is a COMPOSITION artifact, and rev-4 is not a curve point (2026-08-31)
+  - `L07740` · `2026-08-31` · 🚨 THE FLAT EXPLOITABILITY CURVE IS A COMPOSITION ARTIFACT — the METER is broken, not (necessarily) the wheel (2026-08-31)
+  - `L07779` · `2026-08-31` · 🛠️ BOTH EXPLOITABILITY-DECOMPOSITION DEFECTS REPAIRED — a plan is not a record, and a count is not a set (2026-08-31)
+  - `L07820` · `2026-08-31` · 🟢 KO-BOUNDARY DECODABILITY — expressiveness ACQUITTED; the head is beaten by a LINEAR map of its own input (2026-08-31)
+  - `L07880` · `2026-08-31` · 🧪 OOD CONTROL on the constructed risk probe — the bias HOLDS and is LARGER at common faint counts; the objection named the wrong blocks (2026-08-31)
+  - `L07904` · `2026-08-31` · 🧰 METHOD NUGGETS from the exclusions repair (2026-08-31, `32f347c`)
+  - `L07922` · `2026-08-31` · 🚀 THE 40-TEAM FLEET LAUNCHED — 20 teachers × 2 teams × 1.5M = 60M (2026-08-31 16:03)
+  - `L07955` · `2026-08-31` · 🔴 SCORECARD VERDICT: REV-4 DID NOT REPRODUCE v8 — REPRO-1 FAILS, and the floor stratum RESOLVES probe Q's confound (2026-08-31)
+  - `L07994` · `2026-08-31` · 🔄 ITER-3 RECORD SUPERSEDED BY ITS OWN AGENT — better statistics, a null with teeth, and the code fix (2026-08-31)
+  - `L08028` · `2026-08-31` · 🔬 M5 — THE CRITIC IS NOT THE OFF-SLICE VEHICLE; the fold's off-slice gift to the critic is LEVEL, and RESOLUTION is as LOCAL as the behaviour (2026-08-31)
+  - `L08077` · `2026-08-31` · 🔻 M1 AXIS SPLIT — the taught and untaught axes ORDER IDENTICALLY; the v8 gift is NOT a shape effect (2026-08-31)
+  - `L08137` · `2026-08-31` · ⚠️ CORRECTION (M9 interim, 2026-08-31): M5's "fold below its own no-fold floor" has NO measured floor — and the REPLICATE noise floor equals the effects we have been calling significant
+  - `L08176` · `2026-08-31` · 🔬 M4 — v8's GIFT IS NOT DILUTED TAUGHT CONTENT, and the fold that gifted NOTHING changed MORE (2026-08-31)
+  - `L08258` · `2026-08-31` · 🔴 M9 FINAL — PLAIN TRAINING IS NOT THE ROBBER, BUT A DISTILLATION-FREE ARM PRODUCED A "SIGNIFICANT" ROBBERY ANYWAY (2026-08-31)
+  - `L08309` · `2026-09-01` · THE REV-2 CONTRADICTION RESOLVED: meter and composition each carry about half
+  - `L08352` · `2026-09-01` · 🔗 FUNDING-SPLIT CHAIN ARMED on fleet completion — the GPU does not idle overnight (2026-09-01 16:05)
+  - `L08383` · `2026-09-01` · 🟢 OPPONENT-CHECKPOINT AXIS ISOLATED: ~0.3pp — the "composition" column is TEAM SET (2026-09-01)
+  - `L08397` · `2026-09-01` · ⚠️ CORRECTION: the opponent-checkpoint axis is UNDETECTED, not inert — an equivalence claim scored on a point estimate (2026-09-01 17:05)
+  - `L08418` · `2026-09-01` · 🛠️ BUILD WAVE: the step-size question got its instruments — per-term noise scale, fork-time pin + DOSE, an off-slice anchor, an adaptive batch loop (2026-09-01)
+  - `L08464` · 📋 PRE-REGISTERED: the THREE-DOSE FOLD CELL (queued behind the funding split; ~7 GPU-h + 3 CPU untaught arms)
+  - `L08486` · `2026-09-01` · ⚠️ CORRECTION + FIRST PRODUCTION READING of the per-term noise scale (2026-09-01, evening)
+  - `L08524` · `2026-09-01` · 🔴 v8's GIFT IS A TRANSIENT HUMP — it DOUBLES by +3M, plateaus +8–10pp for ~9M, then DECAYS over the last ~2.5M to the +5pp probe P banked (2026-09-01)
+  - `L08575` · `2026-09-01` · 🟢 WHAT v8's LAST 2.5M UNDID: nothing — the gift is 92% INTACT at the end; the decay is the TEACHERS' fingerprint LEAKING onto untaught boards (2026-09-01, late)
+  - `L08623` · `2026-09-01` · 🧭 SOURCE-SEPARATED ANCHOR BUILT (`--distill-anchor-mode grad_project`, `2e99e6fe`) — and its smoke shows the LEAK AT THE UPDATE: ~80% of the distill gradient lies along off-slice-moving directions (2026-09-01, late)
+  - `L08656` · `2026-09-02` · 🛑 THE FOLD STOP RULE + a DUAL-ASCENT ANCHOR COEFFICIENT are BUILT (`2c2fa08c`, 2026-09-02 early) — OFF by default until the dose cell sizes the window
+  - `L08680` · `2026-09-02` · 🔴 KILL: `grad_project` is NOT LICENSED — on production gradients the projection removes 15% (not 80%) and buys NOTHING at matched absorption, at 2.3–2.5× the compute (2026-09-02 early)
+  - `L08719` · `2026-09-02` · ⚠️ THE EMPTY-POOL FORK FOOTGUN FIRED ON THE DOSE CELL — caught at launch, fixed by seeding, deviation ACCEPTED as the registered regime (2026-09-02 14:01)
+  - `L08771` · `2026-09-02` · 🟢 FUNDING SPLIT ADJUDICATED: +1.0M/team buys **+3.55pp extraction [+1.15, +5.95]** — direction clears zero, magnitude straddles the 3.70pp floor (2026-09-02 20:05)
+  - `L08808` · `2026-09-02` · 🔴 DOSE ARM 1 (0.53× v8): the fold ROBS at ALL THREE DEPTHS — going gentler than rev-4 bought NOTHING on the untaught side (2026-09-02 23:30)
+  - `L08866` · `2026-09-03` · 🟢 THE 20-TEACHER COVERAGE TABLE: random-draw coverage extracts as much per teacher as the meter slates did — 20/20 ADMITTED, the largest admitted teacher pool the programme has built (2026-09-03 00:15)
+  - `L08919` · `2026-09-03` · 🔴 DOSE ARM 2 (1.06× v8): doubling the dose is EQUIVALENT WITHIN THE FLOOR at all three depths — and the dip-then-recover SHAPE REPLICATES (2026-09-03 02:40)
+  - `L08994` · `2026-09-03` · ⚠️ C1 (the causal control) FAILED AT LAUNCH — an INHERITED flag no argv-only check can see; recovered, freeze extended to its relaunch (2026-09-03 03:25)
+  - `L09015` · `2026-09-03` · 🔴 THE THREE-DOSE CELL IS CLOSED: DOSE IS SPENT AS AN EXPLANATION — 9/9 cells rob, no dose effect larger than the floor across a 4× range, every endpoint equals rev-4's (2026-09-03 04:30)
+  - `L09065` · `2026-09-03` · 🟢 DOSE CELL, P3 SCORED: collateral KL is MONOTONE in dose ⇒ the untaught null is an INFORMATIVE null; P2 confirmed unscorable; the three-arm shape is pooled (2026-09-03 11:30)
+  - `L09118` · `2026-09-03` · 🟢 C1 RELAUNCHED on a docs-only pin — the batch is 7/7 in flight; the src FREEZE is LIFTED (2026-09-03 14:30)
+  - `L09146` · `2026-09-03` · 🟢 TOOLING: checkargs now resolves the argv against the fork parent's recorded config — the class that killed C1 is caught offline (2026-09-03 15:40, `e0417df6`)
+  - `L09164` · `2026-09-03` · 🟢 TOOLING: the total noise-scale EMA warm-up is fixed (it was ANCHORED on its first sample), and the search-teacher `_abort` fd leak is closed (2026-09-03 16:30, `bfedb5b5`)
+  - `L09196` · `2026-09-03` · 🟠 CORRECTION: the "over-batched ~16×" total noise-scale figure is WITHDRAWN; the pre-fix warm-up window is ~100 ROLLOUTS, longer than a gen-era fold, so every pre-`bfedb5b5` total series is contaminated end to end (2026-09-03 17:00)
+  - `L09221` · `2026-09-03` · 🟢 THE DOSE+REUSE BATCH IS COMPLETE, 7/7 — B2's first row is a FOURTH independent robbery; C1's two readings and its PRIOR stated before its number arrives (2026-09-03 17:10)
+  - `L09258` · `2026-09-03` · 🟡 B2 (rev-4's argv re-run, KL controller LIVE) ends INSIDE the floor — the first arm in the batch to; adaptive lr and highest dose are CONFOUNDED in that one arm, neither established (2026-09-03 18:10)
+  - `L09292` · `2026-09-03` · 🔴 RETRACTION: "B2 vs rev-4 is a fold-replicate pair" is WRONG on both halves — same SEED, different CODE (84 commits); the +3.75 spread is confounded, not a floor. N1/N2 are the real pair and will be scored (2026-09-03 18:40)
+  - `L09323` · `2026-09-03` · 📋 PRE-REGISTERED before the number: which FLOOR each delta takes once the N1/N2 fold-replicate spread lands (2026-09-03 19:00)
+  - `L09351` · `2026-09-03` · 🔴 HEADLINE — C1 (loss OFF, 40% team bias ON) DOES NOT ROB: THE DISTILLATION LOSS IS CONVICTED, TEAM-BIASED SAMPLING EXONERATED, on the untaught side with the sampling axis isolated for the first time (2026-09-03 19:20; endpoint pending ~19:35)
+  - `L09419` · `2026-09-03` · 🔴 C1 vs B2 COMPLETE, three depths: C1 never robs and never gifts; the LOSS is the channel at every depth, the +1M depth alone is individually decisive (2026-09-03 19:50; fold floor pending ~21:00)
+  - `L09443` · `2026-09-03` · 🟠 THE FOLD-REPLICATE FLOOR (N1/N2, two byte-identical narrow folds) = 5.94pp at the endpoint, LARGER than the no-fold 4.19; six verdicts DOWNGRADED by name; the bar is itself a one-pair point estimate; the teacher-content fold becomes a 2×2 REPLICATED design (2026-09-03 21:10)
+  - `L09512` · `2026-09-03` · 🟢 TOOLING: the anchor monitor and `--distill-stop warn` are DEFAULT ON for every fold (`3f2e8a14`) — with one structural limit that is exactly tonight's case (2026-09-03 23:20)
+  - `L09536` · `2026-09-03` · 🟢 THE 2×2 TEACHER-CONTENT FOLD IS RUNNING — arm 1 (`TC_FUND_A`, the fold distilling the 8 FUNDED teachers) launched 20:05 on `0c76e2ee`; arms interleaved so box drift loads on both halves (2026-09-03 23:40)
+  - `L09550` · `2026-09-04` · 📋 THE FLOOR VOCABULARY, fixed: WITHIN FLOOR ≠ NOT DETECTED; the six endpoint movers by name at 5.94; the dose cell 8/9; the C1-vs-B2 legs await their own depth floors; one ruling (2026-09-04 00:10)
+  - `L09587` · `2026-09-04` · 📋 RULING: the fold floor is POOLED over depths, 4.27pp [+1.23, +6.92]; the three depth floors are indistinguishable and two span zero; C1-vs-B2 is 3/3 under it, PROVISIONALLY, because the two lesser legs sit inside the bar's own interval (2026-09-04 00:50)
+  - `L09623` · `2026-09-04` · 📐 OFFLINE COLLATERAL-KL COLUMN: calibration PASSES, the dose axis SEPARATES (+0.0715 [+0.0313, +0.1067]), C1-vs-B2 does NOT (−0.0188 [−0.1334, +0.1079]) — a limit of the displacement meter, not a contradiction of the win-rate result (2026-09-04)
+  - `L09678` · `2026-09-04` · ✏️ AMENDMENT to the offline collateral-KL entry: the banked +0.0715 was an UNSEEDED draw; the canonical SEEDED value is +0.1203 [+0.0663, +0.1795] — and the seed pin needed concurrency=1 as its second half (2026-09-04)
+  - `L09715` · `2026-09-03` · the 2×2's wall-clock, measured — 22.5 GPU-h against the ~18 approved
+  - `L09752` · `2026-09-04` · PIN DRIFT inside the 2×2 — self-inflicted, verified inert, and the batch-pinning fix it exposes
+  - `L09825` · `2026-09-04` · 🎲 2×2 TEACHER-CONTENT FOLD, ENDPOINTS (32/32 cells): FUNDED teachers hand down LESS than UNFUNDED, −4.37pp [−5.78, −2.81], replicated on both legs; and the FROZEN replicate spread is ~0 (−0.19 / +0.06, ±3pp) against the controller-live 4.27 — most of "the fold floor" was the KL controller's own wander (2026-09-04 ~21:00)
+  - `L09885` · `2026-09-04` · ✏️ 2×2 ENDPOINTS, arm-vs-PARENT: NEITHER half gifted — the FUNDED folds ROB (−2.41 [−4.37, −0.62]), the UNFUNDED folds are parent-neutral (+1.97 [−0.13, +4.09]); "unfunded hands down more" is entirely "unfunded robs less" (2026-09-04 ~22:00)
+  - `L09927` · `2026-09-04` · taught-16 pass LAUNCHED for the 2×2 — the other half of the trade-off
+  - `L09958` · `2026-09-04` · ✏️ CORRECTION to 8fbbcda4: "a frozen K=2 pair, closer to v8's dose" is WRONG — dose = lr × epochs / (batch × K), so K=2 is 3.19× v8 (heavier than anything tested); the cell nearest v8's dose is K=6 (1.06×). Next cell dispatched under the owner's window: a frozen UNFUNDED pair at K=6 (2026-09-04 ~22:30)
+  - `L09974` · `2026-09-04` · K=6 dose cell at fixed teachers — launched, and why R4DOSE6 is not a third arm
+    - `L09990` · R4DOSE6 is NOT a prior draw of this recipe
+    - `L10000` · The pin is resolved once and checked BEFORE each launch
+  - `L10026` · `2026-09-05` · 🔁 RETRACTION + full 2×2 series (96/96 cells): the frozen floor is 1.66pp over six draws, NOT 0.12 — the endpoint pair were the two smallest of six; the funded-minus-unfunded gap is ABSENT at +1M and EMERGES by mid; BOTH halves rob equally at +1M and only the UNFUNDED half recovers (2026-09-05, banked after the K=6 freeze)
+  - `L10166` · `2026-09-05` · 🚨 K=6 arm 2 KILLED by a one-second launcher validation — two launcher defects, one of them warned about in the build report I landed without acting on; resumed from 30.1M, caveat recorded (2026-09-05 ~07:00)
+  - `L10215` · `2026-09-05` · 🔧 Both launcher fixes LANDED (a8d38636) + the sidecar CENSUS: 1,820 of 3,975 checkpoint sidecars in 120 of 202 runs name a commit that differs from their run's final pin — and with no pin history, NONE can be told apart from a legitimate resume across code (2026-09-05 ~09:00)
+  - `L10247` · `2026-09-05` · 🎲 K=6 CELL (v8's dose, unfunded teachers, frozen, 48/48 untaught cells): NO GIFT at v8's own dose — parent-neutral at the end (−0.22 [−2.03, +1.81]); the HOLE-THEN-RECOVERY SHAPE REPLICATES at half the dose; DOSE is null at every depth; the frozen floor is neither small nor depth-stable (2026-09-05)
+  - `L10325` · `2026-09-05` · 🔁 THE V8 LINE, pulled up (owner, 2026-09-05 morning): every artifact survives and the era code runs today; the FULL v8 curve is recovered — at OUR fold length v8 was ~+8.5pp, and it was +4.64 at +1.09M where every fold of ours digs a −3 to −4 hole; LENGTH IS EXONERATED; PHASE 1 pre-registered = three short-leg replications to +1.09M (~4.5 GPU-h)
+  - `L10379` · `2026-09-05` · v8 PHASE-1 REPLICATION launched — and `--steps` at b13b30b2 is internally inconsistent
+    - `L10400` · `--steps` at b13b30b2 is internally inconsistent — and one half fails SILENTLY, exit 0
+- `L10446` · `2026-09-05` · ARCH→TRANSFER probe H2 (sharing kernel): NOT DETECTED; the pointer head carries 0.66% of the policy-gradient norm, so "entity head shares more" is dead as stated
+  - `L10491` · `2026-09-05` · P1 — **v8's gift REPLICATES**: three fresh arms give +4.56pp against v8's own +4.64
+    - `L10514` · ONE ARM WOULD HAVE BEEN WRONG TWO TIMES IN THREE
+    - `L10521` · What is and is not established
+    - `L10534` · Provenance, and why the bookkeeping was load-bearing
+- `L10560` · `2026-09-05` · ARCH→TRANSFER probe H1 (content locality): REFUTED with the SIGN REVERSED — v8's teachers are LOCAL (R 1.45), ours are GLOBAL; within the gen era locality does not separate robbing from neutral teachers, MAGNITUDE does
+  - `L10609` · `2026-09-05` · CELL 1 PRE-REGISTRATION — the era LOSS-OFF control (banked BEFORE the result)
+- `L10650` · `2026-09-05` · ARCH→TRANSFER probe H2b (fold displacement): dose sets |Δθ| (C1 moves as far as B2); the off-slice KL is carried by the TRUNK (51–74%); a fold's Δθ is substantially a RANDOM WALK (replicate cos 0.56, |Δθ| ∝ t^0.48); funded−unfunded off-slice KL NOT DETECTED
+- `L10698` · `2026-09-05` · ARCH→TRANSFER probe H4 (depth statistic): depth is NOT the binding lever — depth fired on 76% of searched decisions and re-ranked +0.19% of them; the committed cells never deepened (`--max-depth` inert under racing/defensive)
+- `L10729` · `2026-09-05` · CROSS-ERA HEAD-TO-HEAD: v8_14 beats v9_59 63.3% [59.3, 67.2] over 559 decisive games; the anchored ELO's extrapolation (+91.7 predicted, +94.9 measured) is CORROBORATED; 560 direct games resolve the gap to ±30 where 720 bot games leave ±86 and cannot exclude zero
+- `L10787` · `2026-09-05` · ARCH→TRANSFER probe H6 (exploiter drift law): our teachers are SIBLINGS of the fold parent, not its children (0.53 nats apart at t=0); off-slice drift ∝ t^0.80 (directed); the exploiter is GLOBAL from its first checkpoint; distance to the parent is flat for 1.2M steps then rises into the robbing bracket
+- `L10835` · `2026-09-05` · ARCH→TRANSFER probe H5 (teacher-distance dose-response): SUPPORTED as an ORDERING of teacher sets (ρ −0.90, CI excludes 0), NOT ESTABLISHED as a slope, CONFOUNDED with teacher budget — and two hazards: `content_locality` scored the WRONG checkpoints (both conclusions strengthen), and the 2×2 / K=6 per-team artifacts lived only in a job tmp dir
+- `L10884` · `2026-09-05` · ARCH→TRANSFER probe H7 (v8 FiLM z-swap): REFUTED — swapping the team code removes 3.8% of a v8 teacher's on-slice KL (rail 20%) and leaves locality untouched; what `zarch` IS, written down; v8's locality on the resolved teacher files is R 1.83 [1.53, 2.18]
+  - `L10978` · `2026-09-06` · CELL 1 — **the distillation LOSS is not what carries v8's gift**: loss-off arms gift +4.92pp, equivalent to loss-on
+- `L11051` · `2026-09-06` · ARCH→TRANSFER probe H1b (content locality, corrected): on the fold's resolved checkpoints v8's teachers are R 1.83 [1.53, 2.17] vs ours 1.07 / 1.11; against the TRUE fork origin ours rise only to 1.25 / 1.20 — the origin explains ~24% / 12% of the gap; within-gen still NOT DETECTED
+- `L11094` · `2026-09-06` · BOOKKEEPING: the 2×2 / K=6 per-team artifacts now live beside `tc_readout.py` (one copy in the tree); the readout runs as committed and reproduces every banked delta and interval; a `--check` gate test guards it; two findings on what the committed readout still gets WRONG
+  - `L11121` · `2026-09-06` · CELL 2 — **a plain continuation reproduces v8's gift**: the frozen parent is the wrong baseline
+  - `L11182` · `2026-09-06` · G1 — re-basing note, recorded BEFORE G1 is scored
+  - `L11191` · `2026-09-06` · G5 PRE-REGISTERED — the CONTINUATION CONTROL on our own parent (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`)
+- `L11246` · `2026-09-06` · BOOKKEEPING closed: `tc_readout.py`'s bars corrected (every delta/interval identical, 21/21 verified against main's copy); `taught_readout.py` / `recovery_readout.py` / `k6_readout.py` written and every banked point estimate reproduces digit-for-digit; readout gate registry now 5 with a ratchet floor
+- `L11264` · `2026-09-06` · ARCH→TRANSFER probe H8 (exploiter off-slice competence): the drift is FORGETTING — every exploiter set pilots the untaught 8 WORSE than its origin, the funded (robbing) teachers by −7.81 [−15.23, −0.39] SIGNIFICANT; ~3pp of on-slice edge per 1pp of untaught win rate lost; and `best_model.zip` is not always the run's last checkpoint
+  - `L11309` · `2026-09-06` · CORRECTION to G1's entry — TCUNFA's teachers are `best_model`, not `final_model`, and two of them are ~0.93M exploiters
+  - `L11342` · `2026-09-06` · G1 RESULT — a homogeneous short-budget teacher set folds **indistinguishably** from the mixture
+- `L11393` · `2026-09-06` · probe H9 (continuation drift, young vs mature): the noise-vs-drift account is DEAD — v8's 277M parent and our 28M parent both walk as t^≈0.48 under plain continuation (v8 0.4914 [0.4620, 0.5321] vs G5 0.4744 [0.4652, 0.4873], perm p 0.70); the mature CRITIC has largely stopped moving (0.29 vs 0.42 after removing PopArt's rescaling)
+  - `L11421` · `2026-09-06` · G1 QUALIFIED — the teacher-budget axis is INVISIBLE at p1M and REAL at the end
+  - `L11468` · `2026-09-06` · G5 RESULT — **our parent gains NOTHING from a plain continuation**; the frozen baseline stands on our side
+  - `L11536` · `2026-09-06` · WIN-PROB CRITIC — arm 1 LAUNCHED (`ai_v12_01_winprob_critic`), pre-registered
+  - `L11603` · `2026-09-06` · FAMINE PRE-TEST, pre-registered for `ai_v12_01_winprob_critic` (registered BEFORE any read)
+- `L11665` · `2026-09-06` · BASELINES REGISTRY — the named baselines become first-class objects (gen3_baselines_registry_v1)
+  - `L11719` · `2026-09-06` · INCIDENT — `ai_v12_01` ran ~7 h on a STRIPPED ARCHITECTURE, and was believed killed while still running
+  - `L11774` · `2026-09-06` · G5 slice (iii) — a plain continuation gains on the TAUGHT teams but not the untaught, and the folds' on-slice gift SURVIVES re-basing
+  - `L11808` · `2026-09-06` · OOM — the win-prob arm's batch correction is **2048×32**, not 4096×16; the earlier figure was measured on a STRIPPED arm
+  - `L11850` · `2026-09-06` · OWNER RULINGS — the win-prob ladder's shape, the week goal, and the orchestrator's mandate
+  - `L11878` · `2026-09-06` · READ AMENDMENT — the famine read moves to ~10M; 5M becomes a pipeline smoke; the draw-rate kill bar is made numeric
+  - `L11913` · `2026-09-06` · REGISTRATION — the vf_coef restart rule, in ONE unit (log10 of the shared-trunk value/policy gradient-norm ratio)
+  - `L11943` · `2026-09-06` · READ AMENDMENT 2 — the continuation control is the existing G5 arms (no GPU), the untaught column at 10M is DESCRIPTIVE, and the bots clause expires at ~12M
+- `L11970` · `2026-09-06` · ROUTINE · `ai_v12_02_winprob_critic` 4M read — throughput of record, and every kill-bar quantity clean
+  - `L11987` · Instruments at 4,030,464 (TensorBoard events, median of the last 20 rollouts)
+  - `L12009` · G1's primary endpoint, WITHIN-RUN — **train self-play rollouts**
+  - `L12028` · State
+  - `L12038` · `2026-09-06` · CORRECTION to the 4M-read entry — arm 2 is **`--n-envs 48 --batch-size 2048 --grad-accum-steps 32`**, not "`--n-envs 2048 --batch-size 32`"
+  - `L12079` · `2026-09-06` · READ AMENDMENT 3 — clause 2 of the draw-rate kill bar ("`ep_len_mean` rising") is a FIXED EFFECT SIZE of +3.0 turns over a frozen 1–3M reference, measured on the LAST 2M before the read
+  - `L12125` · `2026-09-06` · READ AMENDMENT 4 — clause 2's reference and test window must lie in the SAME OPPONENT REGIME (a constant `train/selfplay_fraction`); the 1–3M reference is the POOL-EMPTY one and is not used against self-play data
+  - `L12168` · `2026-09-06` · STANDING RULE 15 — a windowed statistic never crosses an opponent-regime boundary; plus the vf_coef ruling for the 23:27 restart read
+- `L12207` · `2026-09-06` · `ai_v12_02_winprob_critic` 6M — the throughput picture CORRECTED, and the promotion compile tax is ONE-TIME, not per-promotion
+  - `L12214` · The cause was never the compile tax
+  - `L12232` · The compile tax is ONE-TIME PER PROCESS
+  - `L12254` · 75M ETA
+  - `L12267` · The self-play clause-2 reference, frozen
+  - `L12282` · `2026-09-06` · RESTART READ RULINGS — the restart's +312 s is startup plus one per-worker VALIDATION run (settled from source; the orchestrator's "48 fresh traces" pre-registration could never discriminate), and the hairline vf_coef FLAG stands with NO per-regime band
+  - `L12325` · `2026-09-07` · 🟢 10M DECIDING READ — `ai_v12_02_winprob_critic` (the SPARSE win-prob-critic arm): NO KILL, CONTINUE. At a like-for-like matched snapshot count the arm TRAILS the shaped incumbent by 30 Elo (floor 38) with bots rising; G1 resolution is BELOW its bar at 10M; and `critic_gate` had handed the arm 94 Elo by comparing a 4-node fit against a 12-node fit
+  - `L12424` · `2026-09-07` · READ AMENDMENT 5 — the draw-rate/ep_len AND-gate was the bar of two READS (5M, 10M), both taken and passed; it is DISCHARGED, not standing. G7 is the standing kill from here; train `draw_rate` above 0.01 in two consecutive 1M buckets is a MONITOR trigger, not a kill
+- `L12465` · `2026-09-07` · ROUTINE · the DRAW-COMPOSITION probe (READ AMENDMENT 5, `08de50d4`) — train `draw_rate` and G7's eval `stall_rate` measure DIFFERENT POPULATIONS, and neither is wrong
+  - `L12470` · What the traces can answer
+  - `L12485` · The population split — the actual answer
+  - `L12498` · 🚨 TWO SELF-CAUGHT ERRORS, recorded because the second is a class
+  - `L12510` · The gap this leaves
+  - `L12517` · `2026-09-07` · RESTART 2 RULING — the vf_coef FLAG is CONFIRMED (−0.638 log10) and CLOSED; the walk is the DENOMINATOR — the POLICY gradient on the shared trunk tripled while the value gradient stayed flat and the train value loss has been flat since ~6M
+  - `L12572` · `2026-09-07` · G7's episode length is read from TensorBoard per cycle — the `metadata.json` blocks are keyed by CHECKPOINT and missed the 10M and 14M cycles (blank printed as OK); a blank now reads NOT EVALUABLE
+- `L12596` · `2026-09-07` · ROUTINE · the ladder-refit drift MEASURED on `ai_v12_02_winprob_critic` — it is a LEVEL SHIFT of the whole ladder, not inflation of the newest node
+  - `L12603` · Every fit, as the ladder grew
+  - `L12620` · Level vs structure — the decisive split
+  - `L12637` · Why this matters, and what it does NOT change
+- `L12658` · `2026-09-07` · ROUTINE · `ai_v12_02_winprob_critic` 18M — train episode length +25%, BOTH eval populations FLAT, and the threshold trap that sits exactly on the difference
+  - `L12660` · State
+  - `L12675` · The divergence
+  - `L12685` · 🚨 THE TRAP — one threshold, two series with the same name and units
+  - `L12697` · A mechanism that fits — **UNVERIFIED**, and its falsifiable form is registered
+  - `L12710` · `2026-09-07` · OBSERVATION + REGISTRATION — the 20M node is the run's first ladder REGRESSION (loses to its three most recent ancestors, beats every older one, bots at a new high); a PLATEAU SIGNAL is pre-registered before 22M exists
+  - `L12755` · `2026-09-07` · TWO OFFLINE PROBES on the win-prob arm at 20M (owner-requested): the BAIT LOOP is under a third of the shaped comparator's rate, and the value pathway's effective rank sits ABOVE its fresh net where v8's and gen-17's sit far below theirs
+  - `L12808` · `2026-09-07` · 22M — the PLATEAU SIGNAL does NOT fire (20M is a one-off per `ae8e9fa9`); the ladder's deceleration is the GENERIC curve rev-1 also shows; and the STRENGTH HALF of D2 is decidable at n = 12 = the arm's 26M, not at 75M
+  - `L12839` · `2026-09-07` · REGISTRATION (owner, 07:2x) — THREE VALUE-FUNCTION TESTS at 75M on `ai_v12_02_winprob_critic`, run by opus subagents; a DRY RUN at ~22M proves the pipelines first
+  - `L12871` · `2026-09-07` · DRY RUN of the 75M value-function tests at ~22M — test 3 runs clean; 🚨 test 1 (the identity test) REFUSES on LABEL TRUST: the recorded-action + recorded-dice anchor replay reproduces only 80–87.5% of this arm's traces against the 90% tolerance. Root cause dispatched; the tolerance is NOT lowered
+  - `L12907` · `2026-09-07` · ANCHOR ROOT CAUSE — the replay path is EXACT (rust ≡ node, 136/136 under the trace's own snapshot); the dry run's `--checkpoint` had swapped the anchor's LIVE continuation to a different policy. Test 1 is UNBLOCKED: audit each step dir's snapshot against itself. `cf_audit` now keeps the override away from the anchor
+  - `L12958` · `2026-09-07` · 🟡 THE n = 12 STRENGTH READ (the strength half of D2, registered `7318ceae`) — the sparse arm TRAILS the shaped incumbent by 34 Elo against the 38 floor at matched count AND matched fit size: WITHIN FLOOR, starvation not demonstrated, sufficiency NOT demonstrated either; the margin narrowed from 8 (n = 4) to 4 (n = 12); 26M is a new ladder peak; calibration G1 fails on every stratum with the bot side decaying
+  - `L13011` · `2026-09-07` · REFRAMING — the axis on `ai_v12_02` is FIXED-BOT vs POOL, not strength vs calibration: three independent instruments show the arm's relationship to the fixed bots degrading or flat while its relationship to its own pool holds or improves; the fourth (bot win rate) is noise; the bot-side calibration decay survives base-rate normalisation at ÷2.2 vs the pool's ÷1.2
+  - `L13046` · `2026-09-07` · PER-BOT CALIBRATION at 26M — the cap/saturation account is REFUTED on this table (r(base, skill) = +0.79, n = 8): the critic has the LEAST skill against the bots the arm finds MOST contested; two readings survive (reducible blur vs the hidden-information floor) and the 75M identity test separates them; the 28M sign check is pre-registered
+  - `L13087` · `2026-09-07` · CORRECTION to *PER-BOT CALIBRATION at 26M* (`eb220c51`) — "the cap/saturation account is REFUTED (r = +0.79)" is WITHDRAWN: with its interval, r = +0.787 has a 95% cluster-bootstrap-over-battles interval of **[−0.609, +0.795]** (n = 8 opponents), which covers zero. The point estimate points away from the cap account; the data do not resolve the sign. The 28M test is re-registered as a clustered SPEARMAN over pooled cycles
+  - `L13119` · `2026-09-07` · 28M — the registered Spearman is NOT DETECTED on both strata (bot ρ = −0.012 [−0.190, +0.186]; pool +0.335 [−0.247, +0.695]); the bot-side test is close to unanswerable BY CONSTRUCTION (base rates span 0.049); the 26M ordering dissolved under pooling (staller_v2's skill flips sign); "negative skill on 20% of opponent-cycles" is a HYPOTHESIS registered with its NULL; restart 4 +346 s; value share below 0.10
+  - `L13159` · `2026-09-07` · THE NEGATIVE-SKILL NULL (registered `28420de6`) — K = 0: no opponent is significantly worse than a constant predictor once pooled; yet 13 of 65 negative cells against a calibrated null of [0, 1]; the reconciliation is OVERDISPERSION — the head's per-cycle skill varies far more than its own forecasts permit; carried to the 75M identity test, not verdicted
+  - `L13190` · `2026-09-07` · 30M — DEFECT in the plateau-signal tool (`ae8e9fa9`): clause 1 compared the new node against the fixed 20M DIP rather than its immediate predecessor, so it read "second consecutive: YES" on a single −1.7 Elo dip; the verdict was right only because clause 2 happened to miss. Fixed, with both comparisons printed. The signal does not fire, now for the right reason
+  - `L13219` · `2026-09-07` · VERIFIED (owner-requested) — the per-cycle `eval/elo` DOES include the self-play pool sentinels, unweighted and unfiltered, and they carry most of the number: dropping them from the latest cycle moves the trainee 2088.7 → 1978.5 (−110 Elo) and widens the CI ±30 → ±41
+  - `L13248` · `2026-09-07` · 🚨 GIGO in the DENSE LADDER — `fit_ladder` already folds the eval cycles' greedy-vs-STOCHASTIC sentinel edges into the frozen greedy-vs-greedy matrix; on the live run the eval edge favours the newer snapshot by +8.9 pp [+7.0, +10.7] over 60 shared pairs and inflates ladder.json's newest nodes by +21 to +29 Elo. REGISTRATION: the fit drops eval sentinel edges (bot edges stay as the anchor), the gate refits both sides from raw records, and the two famine reads are RE-COMPUTED under the fixed fit and banked beside the registered numbers
+- `L13305` · `2026-09-07` · INCIDENT · G7 — the STANDING KILL — fired at 32M and 34M and the operator did not know, because seven "G7 untouched" lines were INFERENCES, not measurements
+  - `L13311` · What fired
+  - `L13321` · The failure
+  - `L13332` · What the fired rows do and do not show
+  - `L13351` · What changed (READ AMENDMENT 6, registered by Orchestrator 1)
+  - `L13362` · The lesson, which is not the threshold
+  - `L13372` · `2026-09-07` · 🚨 INCIDENT + OWNER RULING — G7 (the standing kill) FIRED at 32M and 34M on its episode-length half (eval ep_bots 1.30× / 1.28× a fold-parent era of 18.28) and was NOT MEASURED for four hours ("G7 untouched" asserted by inference at seven snapshots); 36M is back under (1.235×); stall rate 0.0042. OWNER: "I don't want to stop it, run it to 75M regardless." READ AMENDMENT 6 re-references the ep_len half to the arm's own regime; a G7 line is a QUOTE of the tool, never an inference
+  - `L13442` · `2026-09-07` · READ AMENDMENT 6b — G7's ep_pool half is DESCRIPTIVE (its population is non-stationary by construction); ep_bots keeps the bar (reference 21.911, 1.25× = 27.39, sustained two snapshots, REPORT); the clause-1 re-check under the fixed ladder fit: one sign flip (34M), no consecutive pair, no verdict changes
+  - `L13467` · `2026-09-07` · HISTORY (owner question) — the eval sentinels were GREEDY on every self-play run from v5.5 (2026-06-07) through v8 and the 2026-09-05 v8-replication arms (49 runs); the flag was DROPPED, unrecorded, at the v9 fresh-generation launch (`ai_v9_01`, 2026-08-04) and every v9/v12 run since (164) evaluates against STOCHASTIC sentinels. Plus the owner's cadence directive
+  - `L13491` · `2026-09-07` · HISTORY · session SOPs moved from memory into `designs/ops/` + cadence amendment (one-liners welcome)
+  - `L13525` · `2026-09-07` · TECH DEBT · anti-vacuity gate on test stubs (`gen3_stub_vacuity_gate_v1`): 407 patch sites, 1 vacuous, 0 tests were green for the wrong reason
+  - `L13587` · `2026-09-07` · TECH DEBT · mode-flag doc gate + `scripts/land.sh` + stale-numerics sweep
+  - `L13656` · `2026-09-07` · RECIPE CHANGE · eval sentinels GREEDY by default + symmetric sentinel teambuilder + ladder reuse of eval-measured pairs (gen3_eval_sentinel_greedy_default_v1)
+  - `L13738` · `2026-09-07` · TECH DEBT · `reward_manager.py` decomposed (1,990 → 808 / 533 / 445 / 357 lines), reward sequence byte-identical

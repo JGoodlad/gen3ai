@@ -29,6 +29,24 @@ disagree, **the ledger wins and the view is wrong** — fix the view.
   opens with an at-a-glance status table and then runs chronologically. **Entries are cited by
   their landing sha** (e.g. `1d5a866` = probe M's verdict) — that is this folder's stable
   entry id, since the headings are prose.
+- **[ledger_index.md](ledger_index.md)** — a GENERATED title index over the file above: one line per
+  heading, with its line number and its date. **Never edit it, and never edit the ledger to suit
+  it.** Regenerate with `export PYTHONPATH=$PYTHONPATH:src && python3 -m main.ledger_index --write`
+  (generator `src/main/ledger_index.py`), which `src/ledger_index_gate_test.py` enforces as an
+  unmarked gate in the routine suite and in `scripts/land.sh` — so an entry appended without a
+  regeneration fails before it lands.
+
+  **The ledger's heading convention, which the index formalises without changing.** An ENTRY is a
+  heading (`##`–`####`) carrying an ISO date, and the two eras write it differently: the early one
+  parenthesises it mid-title (`## Gen-3 40M gate (2026-08-08) — …`), the current one leads with it
+  (`### 2026-09-07 · TECH DEBT · …`). Undated headings are the front matter or a subsection inside
+  an entry (`### What fired`); the index lists them too, nested and dateless, so nothing is lost to
+  a convention guess. **Keep writing entries as `### YYYY-MM-DD · TAG · title`** — the leading form
+  is what makes an index line sort and read correctly.
+
+  🚨 **On a rebase conflict in `ledger_index.md`, never merge it by hand: keep BOTH ledger entries,
+  then take either side of the index and re-run the generator.** The index is a pure function of the
+  ledger, so the merged ledger determines it completely.
 - **[measurements/](measurements/)** — the raw audit outputs behind every number quoted anywhere,
   each carrying its own checkpoint, step, state count and date. A `.md` companion beside a `.json`
   is the probe's own write-up. Cite a file here rather than re-typing a percentage.

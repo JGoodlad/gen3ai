@@ -162,7 +162,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Six static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Seven static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -172,6 +172,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 | `src/claude_md_freshness_gate_test.py` | every repo-relative path and every `--flag` in a `CLAUDE.md` resolves | `GEN3AI_SKIP_CLAUDE_MD_GATE=1` |
 | `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` / `mod.x = stub` target under `src/**/*_test.py` is a symbol the code under test actually READS — **a stub that stubs nothing FAILS**. **The allowlist is EMPTY**; fix at the source | `GEN3AI_SKIP_STUB_GATE=1` |
 | `src/mode_flag_doc_gate_test.py` | every MODE-flag value `designs/ARCHITECTURE.md`'s PROSE states equals `designs/production_config.json` (read via `agents.training.baselines.production_config()`), and every key the mirror marks INERT is called INERT. The (doc pattern → key) table is DECLARED, so a renamed key FAILS instead of going quiet | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |
+| `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` (the generated date · line · title index over the 13.8k-line ledger) matches what `python -m main.ledger_index` renders — an entry appended without a regeneration FAILS here. **On a rebase conflict take either side and re-run the generator; never hand-merge it, and never edit the ledger** | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
 
 A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation.
 
@@ -316,7 +317,8 @@ src/
     tui/             # Shared Textual base — has CLAUDE.md
     *.py             # The offline CLIs: elo, dose, lineage, baselines, critic_gate,
                      #   untaught_meter, exploitability, scaffolding_gauge, capacity,
-                     #   checkargs, sidecar_audit, tb_curate, tb_inherit, play, promote_teams
+                     #   checkargs, sidecar_audit, tb_curate, tb_inherit, play, promote_teams,
+                     #   ledger_index
   poke_env/          # Forked poke-env library (vendored — see the Python Environment warning)
   rust_sim/          # The Rust Showdown port — has CLAUDE.md
   utils/             # paths.py (path discovery), git.py, bridge/, teambuilder, logging

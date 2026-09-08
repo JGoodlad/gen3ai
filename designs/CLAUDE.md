@@ -17,7 +17,7 @@ change that makes one stale — never narrated, never appended to:
 | file | states | its append-only counterpart |
 |---|---|---|
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | what the MODEL is now — §6's tables are GENERATED (`python -m agents.model.arch_tables`, pinned by `arch_tables_test.py`) and the PROSE around them is pinned by `src/mode_flag_doc_gate_test.py`, which compares every MODE-flag value the prose states against `production_config.json` | [`CHANGELOG.md`](CHANGELOG.md) |
-| [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) | what we BELIEVE about the research now — every claim tagged SIGNIFICANT / WITHIN FLOOR / NOT DETECTED / EQUIVALENCE SUPPORTED / REFUTED / UNVERIFIED and pointing at the ledger entry or `measurements/` artifact that established it | [`research_state/ledger.md`](research_state/ledger.md) |
+| [`research_state/UNDERSTANDING.md`](research_state/UNDERSTANDING.md) | what we BELIEVE about the research now — every claim tagged SIGNIFICANT / WITHIN FLOOR / NOT DETECTED / EQUIVALENCE SUPPORTED / REFUTED / UNVERIFIED and pointing at the ledger entry or `measurements/` artifact that established it. 🔎 **Find a ledger entry through the GENERATED [`research_state/ledger_index.md`](research_state/ledger_index.md)** (date · line · title, `python -m main.ledger_index --write`, gated by `src/ledger_index_gate_test.py`) rather than a regex over the 13.8k-line ledger — and NEVER edit either the index or the ledger by hand; `research_state/README.md` holds the heading convention and the rebase rule | [`research_state/ledger.md`](research_state/ledger.md) |
 | every `CLAUDE.md` under `designs/` | where to look | — |
 
 When `UNDERSTANDING.md` and the ledger disagree, **the later ledger entry wins and the view is a

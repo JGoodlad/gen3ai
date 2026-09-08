@@ -1100,8 +1100,28 @@ round-trip — they are *the values a resume must re-pass*, not a description of
 authority is `metadata.json`'s `reward_composition` block (0 pbrs terms, 0 bias terms), which a
 launch also prints: `train_rl_agent` emits `[Reward] composition: …`
 (`reward_composition.format_reward_composition`) and records the census
-(`reward_composition.reward_class_composition`). *(A frozen-φ provenance fix is in flight that will
-make the three read as resolved; until it lands the composition block is the honest reading.)*
+(`reward_composition.reward_class_composition`).
+
+**A reader no longer has to know the INERT rule to apply it: the RESOLVED reading is recorded
+beside the raw values.** `agents.training.reward_composition.inert_reward_flags(config)` is the
+resolver — it routes each recorded flag's terms through the folds' own
+`_pbrs_term_active` / `_bias_term_active` predicates, so it cannot drift from the census — and its
+sorted list is written in **two** places: as a derived sibling key `inert_reward_flags` in
+`model_config.json` (`agents.model.snapshot.save_model_snapshot`) and inside `metadata.json`'s
+`reward_composition` block (`reward_composition.reward_composition_block`, which also carries
+`composition_line` verbatim and `class_shares`). On the live `--critic winprob
+--terminal-indicator` surface it names eleven flags — `all_shaping_pbrs`, `pbrs_material` and
+`pbrs_belief` among them, and `draw_penalty`, the one entry that is inert by MAGNITUDE rather than
+by term, since the indicator terminal pays `+victory_value` on a win and `0.0` on a loss, a draw
+and a 250-turn timeout alike.
+
+🚨 **It is written BESIDE the values and never in place of them, and that is the resume contract
+rather than caution.** `check_reward_config` compares each RECORDED value against the one
+`RewardConfig.from_args` rebuilds from the RESUMING argv, and that argv still carries
+`all_shaping_pbrs=True` (its default) — so recording `false` would FATAL every restart of the run
+the annotation exists to describe. It is not a `ModelVersion` field either (it is a pure function
+of fields already in the file); `_migrate_config` pops the key on the way in as a
+version-independent sanitizer, and `to_json()` stays exactly `asdict(self)`.
 
 The remaining fields are the DEFAULTS, recorded and inert for the same reason: `no_progress_penalty`
 0.15 · `mat_alive_weight` 1.25 · `bias_additivity` 1.0 · `self_ko_hp_penalty` 0.0 ·
