@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-14,686-line file. **The ledger itself is append-only and is never edited by this**;
+14,755-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**440 headings · 400 dated · 2026-08-01 → 2026-09-08 · ledger 14,686 lines.**
+**441 headings · 401 dated · 2026-08-01 → 2026-09-08 · ledger 14,755 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -460,3 +460,4 @@ rename.
   - `L14563` · 2. The P0 — a `slow` test can ride RED invisibly (`gen3_slow_tier_status_v1`)
   - `L14645` · 3. The reward golden, promoted (`gen3_reward_golden_v1`)
   - `L14674` · `2026-09-08` · TECH DEBT · TensorBoard fork-prefix backfill APPLIED — 136 forks written, 0 skipped, 0 failed (owner-authorized)
+  - `L14687` · `2026-09-08` · MEMORY AUDIT · 168 files: 87 live / 21 pointers / 59 archived / 1 merged / 12 stale refs fixed; MEMORY.md 16 KB → 11 KB

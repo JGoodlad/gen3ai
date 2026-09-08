@@ -1,0 +1,20 @@
+---
+name: project_nature_ev_belief_built
+description: "Nature/EV generative spread belief + op nature-marginalization BUILT (v40, gen3_nature_ev_belief_v1) — the fix for the stuck spread largest_bias; NOT shipped"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: a6b67bc4-6b85-495f-93e8-837a94b09851
+---
+
+> **Archived 2026-09-08** — v40 build record; the spread belief is production and stated in designs/ARCHITECTURE.md. Preserved verbatim; nothing below is current.
+
+2026-06-20 (worktree bridge-cse, `gen3_nature_ev_belief_v1`, MODEL_CONFIG_VERSION **40**, NOT shipped — awaiting /gen3ai-ship). Built steps 1–3 of the user-ranked roadmap to fix the SpreadBelief head's "over-estimates the largest EV" order-statistic bias (`belief/spread_largest_bias` stuck ≈ −13 to −31). The user chose the **nature-decomposition with priors for BOTH nature AND EVs** route (over the evidence-driven route, which is the deferred steps 4–6: speed-from-move-order, observed-damage residual, CB evidence).
+
+**S1 data (`damage_tables.py`):** `build_species_nature_prior` [n,25] (log-prior, uniform floor), `build_species_ev_prior` [n,5], `build_nature_mult` [25,5], `build_species_base_stats` [n,5] + **`invert_nature_evs`** — deterministically recovers the TRUE (nature, EVs) from agent2's known `mon.stats` (gen3 hides opp nature/EVs, so invert the visible derived stats; GIGO-guarded; verified reproduces 6 real spreads exactly). Labels `belief_nature`/`belief_ev`(+masks) emitted by `gen3_env._spread_labels`, cached per battle (frozenset key), under the existing `_emit_spread_labels` gate. Leak-safe (training-only Dict keys, never in pi/vf).
+
+**S2 head (`SpreadBelief`, `--spread-belief-nature`):** swaps the additive point-estimate for a GENERATIVE head — predict nature categorical ⊕ Smogon log-prior + per-stat EV ⊕ prior (move/HP-type prior-fusion pattern), IV 31, COMPUTE `believed=(2·base+31+E[EV]/4+5)·E[nature_mult]`. Nature coupling (one ×1.1/one ×0.9) + EV budget now STRUCTURAL → can't inflate every stat. Same `believed[B,6,5]` op interface (projection widths UNCHANGED); stashes `last_spread_nature_logits`/`last_spread_ev`. Loss `_nature_ev_belief_loss` (nature CE + EV smooth_l1, REVEALED slots, folded at SAME `spread_belief_coef`, metrics `belief/natureev_*`). `_EV_DELTA_SCALE=64` forward cancels `_EV_LOSS_SCALE=64` loss → O(1) grads (verified ratio 0.96).
+
+**S3 op marginalization (`--spread-belief-nature-marginalize`):** `DamageOperator._nature_marg_ko` marginalises the nonlinear P(KO) over the believed nature distribution — EXACT 3-point quadrature {×0.9/×1.0/×1.1} on each candidate's ONE offensive stat (atk phys/spa spec). Unit-proven: a near-OHKO the mean-field reads `0.0` gets its true `0.303` KO risk (hand-checked). `em` cancels analytically (== E[mult] in believed) → nature-posterior grad flows clean through case weights, NOT double-counted (do NOT detach em). Reconstructs `dmg=high_frac·maxhp` (`_DMG_CHIP_CAP=1.5` only saturates overkill→pko 1); fixed-damage candidates kept at ko_ramp. Marginalises ko_ramp + ko_cb.
+
+Both toggles version-checked (`spread_belief_nature` STRUCTURAL, `marginalize` FORWARD-BEHAVIOR), OFF byte-identical, NO `ARCH_SIGNATURE` bump, threaded through current_model_version/arch_toggles_from_model/_run_arch_toggles + both extractor_kwargs sites. **Verified:** 2921+16 unit green; serverless smoke `Round-trip PASSED`, **`nature_acc` 0.51→0.67 + `largest_bias` −31.5→−18.5 (trending to 0)** in 4k steps; 5-lens adversarial review = 4 ship + ML-soundness "needs-fixes" whose 4 majors I REFUTED empirically (EV-grad cancellation, em cancellation, separate heads, within-run determinism — all false positives; the project's "recov% is an upper bound, verify adversarially" pattern again). Use: `--spread-belief --spread-belief-nature --spread-belief-nature-marginalize --spread-belief-coef 0.05` (+ `--damage-op` via `--unified-moves`). Supersedes the point-estimate floor in [[project_spread_belief_supervision]]; deferred evidence route in the ranked roadmap. Follows [[feedback_provide_vs_learn]] / [[feedback_gigo_order_bugs_asap]].

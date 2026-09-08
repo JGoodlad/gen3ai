@@ -14683,3 +14683,72 @@ The single fork left without a prefix is `ai_v8_01_zarch_film_0717`, which claim
 immutable lineage block against a first scalar at 148,401,356 — a hand edit, the owner's call.
 No live run touched; `ai_v12_02_winprob_critic` is fresh and not a fork. Log: job tmp
 `tb_backfill_apply.log`. Tag: TECH DEBT / ARCHIVE — a reading aid, not a measurement.
+
+### 2026-09-08 · MEMORY AUDIT · 168 files: 87 live / 21 pointers / 59 archived / 1 merged / 12 stale refs fixed; MEMORY.md 16 KB → 11 KB
+
+Owner: *"audit the memory usage."* Every file in
+`~/.claude/projects/-home-goodlad-dev-gen3ai/memory/` (167 memories + `MEMORY.md`) was read and
+classified. Table of record:
+`designs/research_state/measurements/memory_audit_2026-09-08.md`. **Nothing was deleted** — every
+retired file is in `designs/research_state/memory_archive/` (now 77 memories + a README map),
+carrying a one-line `> **Archived 2026-09-08** — …` header naming what supersedes it.
+
+**Counts.** 75 LIVE · 21 POINTER (bodies already pointing at `designs/ops/*_SOP.md`, converted
+2026-09-07; kept because other memories link them by name) · 12 STALE-REFERENCE, all repaired ·
+55 CLOSED-ERA archived · 3 SUPERSEDED archived (each self-declared in its own banner:
+`project_code_rank_ceiling`, `project_oa_cells_path_forward`, `project_spread_belief_supervision`) ·
+1 DUPLICATE merged. The 87 in the title is LIVE + STALE-REFERENCE-fixed — the files that survive as
+content rather than as pointers.
+
+**The retirement criterion**, applied file by file: the subject is an ai_v5/v6/v7/v8-era build or
+verdict (eras `UNDERSTANDING.md` §1 marks CLOSED), or the ai_v9 gen-1…gen-6 build narrative, **and**
+the operative fact is now stated by an always-current document — `designs/ARCHITECTURE.md`, a leaf
+`CLAUDE.md`, `UNDERSTANDING.md`, or a standing `feedback_*` rule. The single largest retirement is
+`project_rust_sim_port` (127 KB), whose doc of record `src/rust_sim/CLAUDE.md` is always-current.
+
+**Two findings worth carrying.**
+
+1. 🚨 **`ledger_index.md` begins at 2026-08-01.** For every pre-August memory the ledger does NOT
+   hold the verdict — the memory file is the only record of it. That is why this wave archives
+   rather than deletes, and why each pre-August row cites an always-current *document* rather than a
+   ledger line. Anyone reasoning about ai_v5–ai_v7 from the ledger alone is reading a file that does
+   not go back that far.
+2. 🚨 **The `probes/` directory does not exist anywhere** — not in the main checkout, not in a
+   worktree, not in a session scratchpad. Seven surviving memories cite it as the reference
+   implementation for the extraction / fold-transfer / teacher-ceiling / dose readouts
+   (`probes/r3_budget_read.py`, `probes/dose_rate.py`, `probes/PREREG_maturity.md`, …). It was a
+   session scratchpad. **The numbers those memories record stand; the scripts do not**, and the
+   committed successors are `python -m main.exploitability`, `main.untaught_meter`, `main.dose`.
+   Each of the seven now carries a `**STALE:**` line saying so.
+
+**The merge.** `feedback_delta_interval_before_writing` and `feedback_equivalence_needs_delta_ci`
+stated the same rule from two sides (compute the DELTA's own CI; a pre-registered bar met by a POINT
+estimate is a vacuous guard) off the same two catches. Merged into the second — which keeps the
+worked cases and the cluster-count argument — with the first's four-step checklist and the
+WITHIN FLOOR / NOT DETECTED vocabulary (ledger `42ed1b6f`) carried across verbatim in substance. The
+merged-away note is archived as the record, and the two memories that linked it now link the survivor.
+
+**Other stale references repaired:** the Textual TUI is retired, so
+`feedback_prober_self_improvement`'s "port it to the TUI (`app.py`)" now names
+`src/main/prober/web/` and its subcommand list is the real one (`list|overview|find` was a
+three-generation-old spelling); `scripts/GCP_INFRASTRUCTURE.md` → `scripts/workstation/`;
+`tmp/belief_coupling_lift.py` is gone (the measurement JSON survives);
+`tc_readout.py` resolved into `measurements/teacher_content_2x2_2026-09-04/`;
+`project_training_versions`'s 2026-06 phase snapshot marked `**STALE:**` while its rule
+(the live run is almost never HEAD) survives unchanged.
+
+**`MEMORY.md`: 16,447 → 11,324 bytes (−31%),** every one of the 108 surviving memories still indexed
+with a hook and zero dangling links (verified programmatically, both directions). The
+"Sessions, agents, notifications" section collapsed from 14 lines to 6: the two SOPs are named once
+with their section map, three hooks that bind *before* a SOP is opened stay first-class
+(opus-only subagents, cadence-is-silence, notify on completion/blocked/major-finding, plus the
+stall-resume rule), and the remaining nine pointers sit on one line. It did not reach the ~9 KB
+target: 108 entries with a link and a usable hook do not compress below ~11 KB without dropping
+entries, and dropping an entry makes a file unfindable — the wrong trade for an index whose whole
+job is discovery.
+
+**Behavioural memories were left alone by default.** The owner-rules block is unchanged in
+substance; not one `feedback_*` memory was archived as superseded, because none is contradicted by a
+later feedback memory or by a SOP section. The only behavioural change is the one merge above.
+
+Tag: DOCS / ARCHIVE. **No measurement about the model changed**; no live run touched.
