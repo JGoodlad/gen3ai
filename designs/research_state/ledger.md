@@ -13795,3 +13795,76 @@ Commit `b0b3a253`. Routine gate green: 9882 passed, 10 skipped, 16 xfailed.
 
 Tag: TECH DEBT + a size-gate exit. **No measurement about the model changed, and that is the
 claim being made** — the objective every live arm trains against is bit-for-bit what it was.
+
+### 2026-09-07 · TECH DEBT · ARCHITECTURE.md frozen-φ "in flight" sentence CLOSED (the fix had already landed 63 minutes earlier) + a generated ledger title index
+
+Two P1/P2 backlog rows, one landing (`386a6d03`). Both are documentation-integrity rows and
+both turned out to be the same genre: a claim about the repo that nobody re-checked.
+
+**(A) The "in flight" claim was FALSE WHEN IT WAS WRITTEN.** `ARCHITECTURE.md` §6.3 carried
+*"A frozen-φ provenance fix is in flight that will make the three read as resolved; until it lands
+the composition block is the honest reading."* The fix was already on main. Evidence, in order:
+
+* `9943bbe0` (2026-09-06 **17:17** PT, `gen3_frozen_phi_actor_only_v1`) added
+  `reward_composition.inert_reward_flags(config)` + `reward_composition_block(config)`,
+  the write in `snapshot.save_model_snapshot`, the `_migrate_config` pop, and 263 lines of
+  `reward_composition_test.py`.
+* `eb022481` (2026-09-06 **18:20** PT) rewrote §6.3 for the win-prob critic and wrote the "in
+  flight" sentence — **63 minutes after the thing it says is in flight had landed**, and
+  `git merge-base --is-ancestor 9943bbe0 eb022481` = YES, so the fix was in that author's own tree.
+* It is not merely landed but LIVE: `models/ai_v12_02_winprob_critic/model_config.json` carries
+  `inert_reward_flags` with eleven entries (`all_shaping_pbrs`, `pbrs_material`, `pbrs_belief`,
+  `draw_penalty`, …), and `metadata.json`'s `reward_composition` block carries the same list beside
+  `composition_line` and `class_shares`.
+
+So there was nothing to build. The sentence is replaced by the current truth, stated positively:
+the resolver is `agents.training.reward_composition.inert_reward_flags`, it routes each recorded
+flag's terms through the folds' own `_pbrs_term_active` / `_bias_term_active` predicates (so it
+cannot drift from the census), it is written in BOTH sidecars **beside** the raw values and never in
+place of them — because `check_reward_config` compares each recorded value against the resuming
+argv's, so recording `false` would FATAL every restart of the very run it describes — and
+`draw_penalty` is called out as the one entry inert by MAGNITUDE rather than by term. No code
+changed; no sidecar changed; no `CHANGELOG.md` entry, because nothing about the model changed.
+
+**The genre, which is the reusable half:** an always-current document was made stale by a
+same-day commit an hour older than the sentence. The mode-flag doc gate (`a0317cdf`) pins §6's
+flag VALUES to `production_config.json`, and it was green throughout — a value gate cannot catch a
+prose claim about *the state of the work*. **A doc sentence that describes work rather than truth
+("in flight", "pending", "about to land", "not yet") has no gate and dates instantly; write the
+truth, or write nothing.**
+
+**(B) The ledger has a generated TITLE INDEX** — `designs/research_state/ledger_index.md`,
+448 lines over a 13,798-line ledger. `ugrep` hit complexity errors on the ledger twice on
+2026-09-06; a registration that cannot be found is a registration that gets re-made.
+
+* Generator `src/main/ledger_index.py` (`python -m main.ledger_index [--write|--check]`).
+  **`src/main/`, not `tools/`**: `tools/` is the acquisition layer that knows the three upstreams
+  and writes `data/` (`tools/CLAUDE.md`), and this knows no upstream — the same reason
+  `promote_teams` lives in `src/main/`. Mechanically it also has to be importable by the gate.
+* **The heading convention, verified against the whole file rather than assumed**: 426 headings,
+  **389 dated**, and the two eras differ exactly as suspected — the early era parenthesises the date
+  mid-title (`## Gen-3 40M gate (2026-08-08) — …`, `### ⚠️ CORRECTION (2026-08-11, same day) …`),
+  the current era leads with it (`### 2026-09-07 · TECH DEBT · …`). One rule covers both: **an
+  ENTRY is a heading carrying an ISO date.** The 37 undated headings are the seven front-matter
+  `##` sections and 30 subsections inside entries (`### What fired`) — plus one genuine but undated
+  entry at L8464, which is exactly why the index emits EVERY heading, nested by its own level, with
+  a date column that is simply absent when there is none. Nothing can be lost to a convention guess
+  that turns out wrong; the cost is ~30 lines.
+* **Currency is a HARD unmarked gate**, `src/ledger_index_gate_test.py` (5 tests, 0.07 s): the
+  committed file must equal what the generator renders, and the failure names the regeneration
+  command. It also proves itself by planting an entry, covers both heading eras, proves a heading
+  inside a ``` fence is not an entry, and asserts the generator never touches the ledger.
+* **Why a hard gate and not a generation step in `scripts/land.sh`** — considered, rejected on
+  mechanics: `land.sh` gates and PUSHES, it never commits. A generation step there would write the
+  file *after* the commit it belongs to, leaving it unlanded while the gate went green; making it
+  work means teaching the landing script to commit on the author's behalf. The gate is one command
+  from fixed and `land.sh` already runs `src/*_gate_test.py`, so it fires before a landing, not
+  after it.
+* **The concurrency cost, and its rule:** two agents that both append will both regenerate and the
+  index will conflict on rebase. **Never hand-merge it — keep BOTH ledger entries, take either side
+  of the index, re-run the generator.** The index is a pure function of the ledger. Written into
+  `research_state/README.md` beside the append-only rule, `designs/CLAUDE.md`'s research_state row,
+  `UNDERSTANDING.md` §8, and root `CLAUDE.md`'s gate table (six static gates → seven).
+
+**Keep writing entries as `### YYYY-MM-DD · TAG · title`.** The index does not change the
+convention, it formalises it; the leading form is the one that reads correctly in an index line.

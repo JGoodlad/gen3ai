@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-13,798-line file. **The ledger itself is append-only and is never edited by this**;
+13,871-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**426 headings · 389 dated · 2026-08-01 → 2026-09-07 · ledger 13,798 lines.**
+**427 headings · 390 dated · 2026-08-01 → 2026-09-07 · ledger 13,871 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -446,3 +446,4 @@ rename.
   - `L13587` · `2026-09-07` · TECH DEBT · mode-flag doc gate + `scripts/land.sh` + stale-numerics sweep
   - `L13656` · `2026-09-07` · RECIPE CHANGE · eval sentinels GREEDY by default + symmetric sentinel teambuilder + ladder reuse of eval-measured pairs (gen3_eval_sentinel_greedy_default_v1)
   - `L13738` · `2026-09-07` · TECH DEBT · `reward_manager.py` decomposed (1,990 → 808 / 533 / 445 / 357 lines), reward sequence byte-identical
+  - `L13799` · `2026-09-07` · TECH DEBT · ARCHITECTURE.md frozen-φ "in flight" sentence CLOSED (the fix had already landed 63 minutes earlier) + a generated ledger title index
