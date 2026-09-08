@@ -118,3 +118,65 @@ A *value* change to the data is retrain-class: bump `ARCH_SIGNATURE` and regener
 fixture. (Example: `gen3_item_num_fix_v1` switched the item id from Showdown's spritenum to the
 true item-dex `num` — same obs dim, but every item id re-meaned, so old item embeddings are
 invalid.)
+
+## The files in `data/pokemon/` — what each one holds
+
+*(Moved here from the root `CLAUDE.md` on 2026-09-07: the root states the governing rules, this leaf owns the per-file schema. Regenerate every reference file with `tools/pokemon_data_extractor/sync.py`; the priors with `tools/smogon_stats_downloader/`.)*
+
+Reference data (deterministic) under `data/pokemon/`, all regenerable via
+`tools/pokemon_data_extractor/sync.py`:
+- `gen3_species.json` — species id → `{num, baseStats, name, types}` (`types` UPPERCASED to the TypeEncoder
+  axis — `gen3_bidir_threat_trunk_v1`, for the op's expected-latent read; the obs still reads revealed types live).
+  **419 rows** = the 386 base forms + the 33 gen-3 ALTERNATE/COSMETIC FORMES (`gen3_species_formes_v1`:
+  Deoxys-Attack/-Defense/-Speed with their own base stats, the 27 Unown letters, Castform's 3 weather
+  formes), each carrying `baseSpecies`. Formes were missing before and cost the `src/rust_sim` port
+  **6.6% of gen3 random-battle teams / ~14% of battles** at construction. A forme SHARES its base's
+  `num`, and the obs species channel + every `table[species.num]` model buffer are num-keyed — so
+  num-indexed consumers MUST iterate `gen3_data.species.base_form_ids()` (see
+  `src/agents/gen3_data/CLAUDE.md`)
+- `gen3_moves.json` — move id → `{num, basePower, type, accuracy, never_miss, hasSecondary, hasRecoil,
+  priority, secondaryEffects {col: percent}, drainFraction, recoilFraction, …}` (the structured
+  secondary/priority/drain fields are `gen3_unified_move_system_v1` — GPU-side only, NOT in the obs vector).
+  **Typed Hidden Power has distinct nums** (`gen3_typed_hidden_power_ids_v1`): bare `hiddenpower`=237,
+  the 16 typed variants=355-370 (Showdown ships them all at 237; the extractor tool overrides — see
+  `tools/CLAUDE.md`). OUR known HP uses the distinct num; the opponent's unrevealed HP is the bare 237.
+- `gen3_items.json` — item id → `{num, name}` (`num` is the item-dex number; cross-gen aliases share one num)
+- `gen3_abilities.json` — ability id → `{num, name}`
+- `gen3_type_chart.json` — `{DEF: {ATT: multiplier}}` effectiveness chart (was live `GenData`)
+- `gen3_natures.json` — nature → `{num, stat multipliers}` (was live `poke_env/.../natures.json`)
+- `gen3_learnset.json` — species id → `[move_id, ...]` gen3 legal movepool (the hard legality gate the
+  move-belief prior uses to prune impossible candidate moves; via `gen3_data.learnset`)
+- `gen3_move_aliases.json` — `{alias_id: canonical_move_id}` from Showdown's `aliases.ts`
+  (`wisp`→`willowisp`, `sd`→`swordsdance`, …). **Consumed ONLY by the `src/rust_sim` port** (its dex
+  resolves a packed-team move alias like the RL runtime never touches); the `agents.gen3_data` facade
+  does NOT load it, so it is obs-neutral. `gen3_move_alias_resolution_v1`.
+
+Smogon-derived priors (probabilistic), via `tools/smogon_stats_downloader/` (`sync.py` merges 12
+months of chaos JSONs → `compute_priors.py` derives six committed artifacts). **ALL priors must be
+Smogon-derived; only the MODEL gets bias against the pool** (owner rule 2026-08-15): anything the
+network READS must trace to Smogon (or ground-truth labels / ladder replays) — pool structure may
+enter only implicitly, through training against pool opponents (team sampling / league targeting
+are the sanctioned pool consumers). The 719-team pool may MEASURE structure (it is the only
+set-level joint we own) but never ships as a prior:
+- `gen3_smogon_stats.json` (raw aggregated chaos stats; per-species `Moves`/`Items`/`Spreads`/
+  `Teammates` are 12-month summed counts) → `gen3_ability_priors.json`,
+  `gen3_hidden_power_priors.json`, `gen3_move_priors.json`, `gen3_item_priors.json`,
+  `gen3_spread_priors.json`, and `gen3_teammate_priors.json` — the chaos `Teammates` field
+  normalized per species: the ONE species×species JOINT Smogon publishes (the hidden-team
+  belief's coupling prior; `gen3_data.priors.teammates`). Note chaos `Moves` are per-species
+  MARGINALS — within-species move-pair couplings exist in the data we can measure (pool) but
+  have no Smogon source, so they stay with in-battle evidence + learning.
+
+Pool-derived (a committed calibration artifact, same pattern):
+- `data/teams/gen3_team_archetypes.json` — every pool team labeled by PACE class
+  (hyper_offense/offense/balance/semi_stall/stall via a transparent composition rubric) + style
+  TAGS (sand/spikes/spin/spinblock/phaze/**trap**/**trap_core**/wish/boom/choice/…), keyed by
+  `sha1(team_str)[:10]` (the MatchupSpec `pin_sha` convention, so labels join every provenance
+  record). Derived by `python -m agents.training.team_archetypes` (a k-means cross-tab prints as
+  the unsupervised sanity check); consumed by league targeting (the `trap_core` exploiter
+  shortlist) and future archetype-aware team sampling. Loader:
+  `agents.training.team_archetypes.load_team_archetypes`.
+
+All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
+empty. The data layer is poke-env-free; the only poke-env touches left in the battle layer are a
+parser sentinel (`GenData.UNKNOWN_ITEM`) and the `to_id_str` string util — neither is static data.
