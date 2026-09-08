@@ -13791,5 +13791,7 @@ One extra simplification fell out: `reward_composition.py`'s three **function-lo
 `reward_manager` existed only to defer an import cycle. `reward_config.py`'s only dependency is
 `reward_weights`, so the cycle is gone and those are module-level imports now.
 
+Commit `b0b3a253`. Routine gate green: 9882 passed, 10 skipped, 16 xfailed.
+
 Tag: TECH DEBT + a size-gate exit. **No measurement about the model changed, and that is the
 claim being made** — the objective every live arm trains against is bit-for-bit what it was.
