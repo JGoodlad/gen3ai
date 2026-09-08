@@ -76,8 +76,17 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SO
 # The MAIN checkout: `dirname` of the shared git dir. In a linked worktree `--git-common-dir` is
 # the main checkout's `.git`; in the main checkout it is `.git` itself. Resolved relative to the
 # script's own location, so it works from any cwd.
-MAIN_CHECKOUT="$(cd "$(dirname "$SCRIPT_PATH")/.." \
-    && cd "$(git rev-parse --git-common-dir)" && cd .. && pwd)"
+#
+# ⚠️ Carried ACROSS the re-exec below in the environment, never recomputed. The relocated copy
+# lives in `/tmp`, where `dirname "$SCRIPT_PATH"/..` is `/` and `git rev-parse` fails outright —
+# which left `MAIN_CHECKOUT` empty and the run dead on `cd: null directory`. Resolve it once, in
+# the tree that can answer the question.
+if [ -n "${_LAND_MAIN_CHECKOUT:-}" ]; then
+    MAIN_CHECKOUT="$_LAND_MAIN_CHECKOUT"
+else
+    MAIN_CHECKOUT="$(cd "$(dirname "$SCRIPT_PATH")/.." \
+        && cd "$(git rev-parse --git-common-dir)" && cd .. && pwd)"
+fi
 
 PY="${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3}"
 [ -x "$PY" ] || PY="$(command -v python3)"
@@ -90,6 +99,7 @@ if [ -n "$WORKTREE" ] && [ -z "${_LAND_RELOCATED:-}" ]; then
             TMP="$(mktemp -t land.XXXXXX.sh)"
             cp "$SCRIPT_PATH" "$TMP"
             export _LAND_RELOCATED=1
+            export _LAND_MAIN_CHECKOUT="$MAIN_CHECKOUT"
             exec bash "$TMP" "$@"
             ;;
     esac
