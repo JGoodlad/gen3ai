@@ -13584,3 +13584,71 @@ through a loop variable (`for name in (…): monkeypatch.setattr(mod, name, …)
 scan — 8 such sites exist; spell the target out in new tests.
 
 Tag: ROUTINE (a gate landed; no research measurement changed).
+### 2026-09-07 · TECH DEBT · mode-flag doc gate + `scripts/land.sh` + stale-numerics sweep
+
+Commit `a0317cdf`. Three backlog rows (§1's P0 ACCEPTED head, and two P1s from §2), landed together.
+
+**The gate.** `src/mode_flag_doc_gate_test.py` — unmarked, ~40 ms, in the routine suite. It compares
+the MODE-flag values `designs/ARCHITECTURE.md`'s **PROSE** states against
+`designs/production_config.json`, read through `agents.training.baselines.production_config()` (the
+registry accessor, never a path). The gap it closes is that §6's tables are GENERATED and pinned by
+`arch_tables_test`, while every sentence around them is hand-written and was pinned by nothing — a
+reader cannot tell the two halves apart, so the hand-written half inherited the generated half's
+authority without inheriting its gate. That is how the doc came to say belief heads run `label_only`
+while its own table, the mirror and the live arm all said `shaping` (hand-fixed `22e757db`).
+
+The extraction is **DECLARED, not inferred**: an explicit table of ~50 (regex → config key) rows
+covering `critic`, `belief_grad_mode` (twice), `opp_intent_grad_mode`, `hp_belief_mode` (twice),
+`win_prob_mode`, `q_winprob_mode`, `move_belief_mode`, the whole §6.3 reward block, every head
+coefficient, the structural ON/OFF prose claims and the op-block gates. A row whose pattern stops
+matching **fails** rather than going quiet, which is the rename tripwire; `_REQUIRED_COVERAGE` pins
+the mode-flag set so a row cannot be deleted to make a failure go away; a fourth test plants four
+contradictions into an in-memory copy of the real document and asserts each one fires (proving the
+ROW is reachable, not merely the comparison); and a fifth asserts every key the mirror marks INERT
+is called INERT wherever the prose names it.
+
+**What it found on main — four drifts, all fixed in the same commit:**
+
+1. §4 stated the `DamageOperator` `out_dim` as **660** and named `damage_matrices_outgoing` =
+   **false** as the gate for the absent `outgoing_matrix`. Both false. The flag is `true`; `out_dim`
+   is **138**, measured by building the production extractor (`incoming_dim` 85, `drop_renders`
+   True). `op_drop_renders` — `true` in production since v86 — drops sub-blocks 5 **and** 6 out of
+   the FLAT block while both are still COMPUTED: the `outgoing_matrix` call is what `stash.out_cells`
+   / `stash.out_pko` are a view of, and the `incoming_matrix` call is where `last_topk_idx` /
+   `last_topk_cand_idx` are selected. So the doc had the right conclusion (the block is absent) from
+   the wrong cause, and a 522-dim sub-block the flat concat has not carried for a generation counted
+   in its total. §4.1's 660-wide `FULL_CONCAT` ceiling is a **pre-`drop_renders`** gen-3 measurement
+   and now says so.
+2. §5 stated `edge_bias_families = "…,c5"` and "**all 15 families are on**"; the mirror carries
+   **17** (`…,c5,h,r`). The section already contradicted itself — §5.2 said the string carries `h`
+   and `r`, while the `r` row said "**Not in the production string**".
+3. `move_belief_mode` and `hp_belief_mode` had **no** prose statement of their production value at
+   all (only gating conditions such as `hp_belief_mode == composed`). Both are now stated at their
+   §3.2 steps: `"both"` / `"composed"`.
+4. `value_dist_coef` is the one INERT key the prose names, and it already said so — the INERT check
+   passes on main and now cannot silently stop passing.
+
+**`scripts/land.sh`** — the ORCHESTRATOR_SOP §3 landing procedure moved out of a session-scoped
+`/tmp` directory into the repo. Behaviour preserved; the main checkout is now derived from
+`git rev-parse --git-common-dir` rather than a literal, the gate list is every `src/*_gate_test.py`,
+and it re-execs itself out of the worktree before deleting it (it now lives inside the tree it
+removes). SOP §3 points at it.
+
+**The numerics sweep**, each re-verified against code rather than against the census:
+`--eval-workers` default is **5**, not 3 (`main/train/parser/eval_subprocess.py:18`) — fixed in
+`designs/training/eval_and_rating.md`. The rust_sim leaf's "STILL NEEDED before this can replace
+node in `better_line`" block was wrong on **all three** claims (the impl switch exists in
+`search_session.py`; `search_clone_parity_fuzz_test` takes `--impl rust`; the search teacher's
+`input_log` blocker is gone and `main/train/config.py` records its stated reason as FALSE) — *a note
+that outlived its own fix*, which is the class that file polices elsewhere. What is genuinely
+ungated is the COMPOSITION: a full multi-cycle teacher run end-to-end on rust. And the "722-team
+pool" is **40 teams stale**: re-running `node scan_move_coverage.js` gives 813 `.txt` files, 51
+validate-fail, **762 VALID, 762/762 fully engine-playable**; `SCAN_UNIVERSE=1` still reads
+369 → 309/60/0, so only the pool count moved. Recorded beside it, because it invites a wrong
+reconciliation: **762 is not the root `CLAUDE.md`'s 719**. 762 is what `Teams.import` +
+`TeamValidator('gen3ou')` accept out of `data/teams/*.txt`; 719 is what
+`utils.team_loader.TeamLoader.get_all_teams()` returns to TRAINING (72 sample + 647 other, measured
+2026-09-07). Different filters, both current.
+
+Routine gate green (9860 passed, 10 skipped, 16 xfailed). Tag: HISTORY + a new GATE; no measurement
+about the model changed — but four sentences an agent would have acted on did.
