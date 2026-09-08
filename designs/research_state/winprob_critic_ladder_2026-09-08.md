@@ -38,7 +38,7 @@ a flag that arm A left at zero.
 
 ### L1 — ASYMMETRIC (PRIVILEGED) CRITIC · **BUILT 2026-09-08 — `--value-true-team`**
 
-> **STATUS UPDATE (2026-09-08, `gen3_value_true_team_v1`, commit `__COMMIT__`).** The audit below
+> **STATUS UPDATE (2026-09-08, `gen3_value_true_team_v1`, commit `d94de2e3`).** The audit below
 > was right that no value path saw the opponent's true team; it is now a flag, default OFF. What it
 > got wrong is the COST of turning it on: the note predicted "FRESH-RUN-ONLY … `check_compatible`
 > will reject every existing checkpoint", because it assumed the channel had to widen the 2501-dim
