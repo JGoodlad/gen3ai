@@ -14233,3 +14233,89 @@ and the state table carries both an ai_v12 row and an active-run row), and it st
 
 Gates: the `CLAUDE.md` freshness gate, the ledger-index gate, the mode-flag and measurements-readout
 gates, ruff/mypy/size, and `ops_scripts_test.py` green; the routine gate run before landing.
+
+---
+
+## 2026-09-07 · CENSUS · worktrees (4 live / 18 resumable / 17 leftover / 55 need a decision) + lineage review (161 consistent / 1 contradicted / 0 undecidable) — reports only, nothing removed or backfilled
+
+Two `TECH_DEBT_BACKLOG.md` §2 rows asked for a review before an action. Both reviews are done and
+**neither action was taken**: nothing was removed, unlocked, pruned or signalled; no `--backfill
+--apply`; nothing written under `models/`. Reports at
+`designs/research_state/measurements/tech_debt_census_2026-09-07/{worktrees.md,lineage_review.md}`.
+
+**A. The worktrees — 77, not the 129 the row records.** 1 MAIN · **4 LIVE** (the production arm's
+`/tmp/launcher-f971caf2-ypftpd3a`, two sibling agents' test trees, one idle bash) · **18 RESUMABLE**
+· **37 DIRTY-UNMERGED** · **17 AGENT-LEFTOVER** · 0 UNKNOWN. 26.7 GB total.
+
+*The finding that decides the row.* The backlog suspected the old `gen*-run-*` trees are
+unreferenced now that a run's pin is a `/tmp/launcher-<sha>-*` tree. Verified, and stronger: **a pin
+is a COMMIT, not a directory**, and **every pin commit in the census is an ancestor of `main`**
+(`git merge-base --is-ancestor <sha> main`, 16/16). `resolve_pin` builds a *fresh* `/tmp` checkout,
+so no resume re-enters a `.claude/worktrees/` tree, and removing one cannot orphan a pin or make a
+commit gc-eligible. The 18 RESUMABLE trees hold **16.5 GB — 62% of all worktree disk** — and are
+recoverable for one `git worktree add` each. They are still filed as a HUMAN DECISION, not as
+removable: spending that is the owner's call.
+
+*What separates a leftover from lost work.* A stale checkout is dirty against a three-month-old
+HEAD, which says nothing about whether the work landed. The discriminating test is
+**`git cat-file -e` on the working file's blob**: if the object exists, the content was committed
+somewhere and survives removal; if it does not, that content exists only in that directory. 14 of
+the 57 dirty trees are byte-identical to `main` today; 39 hold at least one file whose blob is in no
+git object (204 files). Only the second class is called DIRTY-UNMERGED, and no verdict is offered on
+any of them — four also carry commits ahead of `main` (1, 1, 1 and 3).
+
+*Removable now:* 7 stale leftovers (1.6 GB) plus 10 clean, fully-merged trees branched today
+(2.4 GB) that read as this evening's sibling sessions and are listed separately because an idle
+session can hold one. Both blocks are printed as a pasteable `git worktree remove` list with the two
+SOP traps attached — `cd` to main first, and 47 of 76 carry a populated submodule checkout that may
+need `rm -rf` + `git worktree prune`. One entry (`agent-a1f66f946603d8820`) is LOCKED with its
+directory already gone and its owning pid dead; `remove` refuses a locked entry.
+
+**B. The lineage — 162 derived-parent runs, not 105.** 231 run directories: **162 DERIVED** (153
+carrying a `derived: true` block, 9 with no block at all and derived at read time from
+`original_command`), 36 RECORDED, and **33 UNREVIEWABLE** — 12 with no `metadata.json` and 21 with
+neither a block nor a command. Each derived row was checked against two independent signals: the
+run's **own first TensorBoard scalar step** (read with `EventFileLoader`, min over the head of every
+event file) against the parent's step at the fork, and **`arch_signature` / `config_version` across
+the link**. **161 CONSISTENT, 1 CONTRADICTED, 0 UNDECIDABLE.** The 12 runs with no `tb/` are exactly
+the 12 with no `metadata.json` — the two unreadable populations coincide, so nothing in the reviewed
+population lost a signal.
+
+*The one contradicted row is the one the backlog named,* and it is worse than recorded.
+`ai_v8_01_zarch_film_0717` records `role: fresh`, `fork_parent: null`, `derived: true`; its first TB
+scalar is at step **148,401,356** and its first checkpoint at 149,411,773. The parent is
+`ai_v7_14_league_capstone_0712` on three independent grounds — its last checkpoint is
+`checkpoint_148223095_steps.zip` and no other run in the archive ends within 3M steps of the
+observed start; `config_version` 43 → 44, one rung, the v44 z_arch/FiLM toggle; and the fork script
+**still exists**, `tmp/fork_zarch_v8.py`, naming `DONOR_ZIP =
+models/ai_v7_14_league_capstone_0712/final_model_interrupted.zip`. **`python -m main.lineage
+ai_v8_01_zarch_film_0717 --backfill` cannot repair it** — run as a dry run it prints `SKIP — already
+records a lineage block (immutable)`, and even if the block were rewritable the derivation would
+re-read `tmp/fork_zarch_v8.py`, find no `--model`, and write `fresh` again. The run was never
+launched through the launcher, so its `original_command` is a bare script path with no argv. Fixing
+it is a hand edit of an IMMUTABLE block — a policy decision, left to the owner.
+
+*A second defect, recorded not fixed.* `src/main/lineage.py:86` computes `derived` as
+`bool(parent is not None and parent.derived) or (block is None and read_original_command(...))` and
+**never reads the block's own `"derived": true` key**. When a derivation concluded *fresh* there is
+no parent, so the CLI prints `derived: false` for a block that literally says `true` — reproducible
+on `ai_v8_01_zarch_film_0717` in one command. **47 derived-`fresh` runs are invisible to the CLI's
+`⚠ DERIVED` marker**, which is why the backlog's 105 and this review's 162 differ: 105 is exactly
+the number of `main.tb_inherit --list` forks whose parent is derived, a correct but different
+quantity. This report reads the stored blocks directly and does not use that flag.
+
+*The prerequisite is discharged: the TensorBoard fork-prefix backfill is UNBLOCKED.* Of the **137**
+forks `main.tb_inherit --list` reports as missing a prefix, 32 have a RECORDED parent and **105 have
+a DERIVED parent, all 105 CONSISTENT** — 0 contradicted, 0 undecidable. One caveat the backfill
+cannot see: `ai_v8_01_zarch_film_0717` is not among the 137 (it claims `fresh`), so after the
+backfill it becomes the one fork in the archive with no inherited prefix and nothing reports it as
+missing. Fix the lineage row first, or record the exception.
+
+*Why the cross-check was conclusive, and will not be again.* A fork whose TB prefix had already been
+inherited would show a first scalar at ~0 and be indistinguishable from a fresh run. **No fork in
+the archive is in that state** — all 137 are still missing their prefix, which is the only reason
+signal 1 could decide every row. Once the backfill runs, this review is no longer reproducible in
+the same way.
+
+Docs-only change: the two §2 rows updated in place with their verdicts, the TensorBoard-backfill row
+marked UNBLOCKED with its reason. No code, no `ARCHITECTURE.md`, no `CHANGELOG` entry.

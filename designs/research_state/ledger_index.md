@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-14,236-line file. **The ledger itself is append-only and is never edited by this**;
+14,322-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**431 headings · 394 dated · 2026-08-01 → 2026-09-07 · ledger 14,236 lines.**
+**432 headings · 395 dated · 2026-08-01 → 2026-09-07 · ledger 14,322 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -451,3 +451,4 @@ rename.
 - `L13994` · `2026-09-07` · PROBER · "no effect" claimed on a status-inflicting move after a switch-in — fixed
   - `L14077` · `2026-09-07` · TECH DEBT · the Training Run session's instruments promoted into `scripts/ops/` + `src/main/ops/`
 - `L14179` · `2026-09-07` · DOCS · stall-cause wording corrected in root CLAUDE.md + designs/CLAUDE.md density + restart_read single-source
+- `L14239` · `2026-09-07` · CENSUS · worktrees (4 live / 18 resumable / 17 leftover / 55 need a decision) + lineage review (161 consistent / 1 contradicted / 0 undecidable) — reports only, nothing removed or backfilled
