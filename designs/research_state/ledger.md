@@ -14390,3 +14390,43 @@ the pytest `tmp_path` — nothing is written under `models/`. The rust binaries 
 built: a missing one FAILS with the exact `cargo build --release --bin sim_bridge --bin
 search_driver --manifest-path src/rust_sim/Cargo.toml` line, because a cargo build inside a test
 saturates every core and turns every other test's contention-scaled bound into a wall of timeouts.
+
+---
+
+## 2026-09-07 · FIX · `main.lineage` never read a block's own `derived` flag — 47 derived-fresh runs were invisible to the marker
+
+Defect 1 of the lineage review above, fixed in `6f6cfe73`. `src/main/lineage.py`'s `read_run`
+computed a run's `derived` marker as `bool(parent is not None and parent.derived) or (block is None
+and read_original_command(...))` and **never read the recorded block's own `"derived": true` key**.
+A block whose derivation concluded *fresh* has no `fork_parent`, so the first clause was False, and
+the block exists, so the second was False: the CLI printed `derived: false` for a run whose
+`metadata.json` says the opposite. **The block was always right; the READER was wrong** — no
+immutable block was touched and nothing was written under `models/`.
+
+*Measured READ-ONLY over the 231 run directories in `models/` (`python -m main.lineage <all dirs>
+--json`, default mode, no `--backfill`):* derived **115 → 162**, **47 newly marked**, **0 lost**.
+Every one of the 47 has `role: fresh` — exactly the population the review predicted, and 162 is
+exactly the census figure. The backlog's 105 remains correct and remains a *different* quantity:
+the `main.tb_inherit --list` forks whose parent is derived.
+
+*RECORDED and DERIVED are independent facts and the header now states both.* A `--backfill` block
+is on disk **and** was REGEXed out of `original_command`, so it prints `[recorded ⚠ DERIVED from
+original_command]` — a recorded GUESS, not a lesser kind of recording; the old "recorded" branch
+swallowed the second half, so the ⚠ never printed for any of the 153 blocks that carry the flag.
+Each row now carries three separated fields: `derived_self` (this run's own lineage was derived),
+`parent_derived` (the parent REFERENCE it names carries the flag) and `derived`, their union — the
+historic field, True wherever it was True before. The header ⚠ keys off `derived_self`, so a block
+that claims nothing about its own derivation reads exactly as it always has (pinned by a test).
+`summarize()` / `render_summary()` print the counts for a multi-run invocation and add a `summary`
+key to `--json`; nothing counted them before.
+
+*Four regression tests in `src/agents/training/lineage_test.py`*, all four RED on revert:
+`test_a_DERIVED_block_with_NO_parent_is_reported_as_derived`,
+`test_main_lineage_PRINTS_the_marker_for_a_derived_block_with_no_parent`,
+`test_the_summary_COUNTS_a_derived_block_with_no_parent`, and the pin
+`test_a_NON_derived_block_whose_PARENT_reference_is_derived_keeps_its_header`.
+
+*Still open, and deliberately untouched:* `ai_v8_01_zarch_film_0717`'s block still claims `fresh`
+against a first TB scalar at 148,401,356. That is defect 2 of the review — a hand edit of an
+IMMUTABLE block, filed for the owner. It now prints `[recorded ⚠ DERIVED from original_command]`,
+which states the provenance of the claim without changing the claim.

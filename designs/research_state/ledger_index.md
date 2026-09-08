@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-14,393-line file. **The ledger itself is append-only and is never edited by this**;
+14,433-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**433 headings · 396 dated · 2026-08-01 → 2026-09-07 · ledger 14,393 lines.**
+**434 headings · 397 dated · 2026-08-01 → 2026-09-07 · ledger 14,433 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -453,3 +453,4 @@ rename.
 - `L14177` · `2026-09-07` · DOCS · stall-cause wording corrected in root CLAUDE.md + designs/CLAUDE.md density + restart_read single-source
 - `L14237` · `2026-09-07` · CENSUS · worktrees (4 live / 18 resumable / 17 leftover / 55 need a decision) + lineage review (161 consistent / 1 contradicted / 0 undecidable) — reports only, nothing removed or backfilled
 - `L14321` · `2026-09-07` · TECH DEBT · search-teacher composition gated end-to-end on rust: PASSES — no seam, and the knob that decides whether a cycle teaches anything is `--teacher-confirm-rollouts`
+- `L14396` · `2026-09-07` · FIX · `main.lineage` never read a block's own `derived` flag — 47 derived-fresh runs were invisible to the marker
