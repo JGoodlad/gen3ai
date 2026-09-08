@@ -15487,3 +15487,99 @@ moving policy). Tag: VERDICT. Sentence, verbatim as the design demands: **the wi
 did not out-resolve the gen-era head at matched strata and over-values late positions against its
 own rollouts by +0.10; sparse terminal reward trained a stronger-than-floor policy on a
 worse-than-baseline critic.**
+
+### 2026-09-08 · 75M READ · test 3 BOOTSTRAP CONSISTENCY: mean TD residual +0.0072 [+0.0058, +0.0085] (late +0.0021 [−0.0024, +0.0062], NOT DETECTED), terminal |V − outcome| 0.0719 [0.0564, 0.0913] (0.3050 [0.2587, 0.3558] on decisive losses); trend over 4 cycles FLAT — reads as TARGET
+
+Model-free read of `ai_v12_02_winprob_critic` `eval_traces` at **50000016 / 60000000 / 70000032 /
+74000016** (the last = the run's final cycle at 75,005,952). Writeup + raw JSON:
+`designs/research_state/measurements/winprob_critic_75M_read_2026-09-08/bootstrap_consistency.md`.
+DESCRIPTIVE, no bar (registration `44e3a7f5`). Answers the open question the D2 VERDICT raised
+(`6c4ae35d`): is the late optimism the γ = 1 terminal-label TARGET or a MOVING-POLICY target?
+
+**Invariants asserted, not assumed, and exact on all four cycles:** γ = 1.0; **0** of 28,536
+decisions carry a non-zero off-terminal reward; **0** violations of δ ≡ ΔV; terminal reward
+`WIN→[1.0] / LOSS→[0.0]`. So δ_t = V(s_{t+1}) − V(s_t) exactly, and G(s) is the terminal win
+indicator.
+
+🚨 **THE METHOD IS THE RESULT: the registered discriminator is NOT EVALUABLE ON THE RAW TRACES.** The
+tree is loss-enriched by design (`eval_manifest.selection_rule`: first 10 losses + 5 wins per
+opponent), i.e. battles are selected on their OUTCOME — a FUTURE event — which breaks the martingale
+property E[δ | V] = 0 *even for a perfectly consistent critic*. The manifest records per-opponent
+`capture_rate_win/loss`, so every battle was reweighted by 1/capture_rate; **the weights validate —
+the reweighted count is exactly 1400.0 = 14 opponents × 100 on every cycle**, and the win rate goes
+0.463 captured → **0.821** population. Read raw, this test returns **the opposite answer with a
+confident interval**: δ_late −0.0078 [−0.0130, −0.0034] (detected ⇒ "within-game drift ⇒ MOVING
+POLICY"), overdispersion 1.73 [1.55, 1.92], skill **−0.116** against the base-rate cap. Reweighted:
+δ_late NOT DETECTED, overdispersion **0.966 [0.855, 1.100]** (1.0 inside), skill **+0.258**. Every
+number below is the reweighted read; intervals are a 2,000-resample cluster bootstrap over BATTLES.
+This also closes the `calibration` CLI's own dominant caveat — its raw bias +0.3113 and
+`critic_mean_reducible_upper_bound` **0.6284** are the loose bound it warns about; its stated
+identity P(win)·bias_win + P(loss)·bias_loss = 0.8213·(−0.1651) + 0.1787·(+0.6354) = **−0.0220**
+reproduces the reweighted bias **+0.0060 [−0.0319, +0.0501]** (NOT DETECTED) within its interval.
+
+**(a) TD residual, 74M.** All +0.0072 [+0.0058, +0.0085]; early ≤10 **+0.0147 [+0.0126, +0.0166]**
+(detected), mid 11–24 +0.0017 [−0.0003, +0.0036], **late ≥25 +0.0021 [−0.0024, +0.0062] — NOT
+DETECTED**; bot +0.0113 [+0.0099, +0.0129], pool +0.0023 [−0.0001, +0.0041]. Sign runs 2.206 against
+the iid reference 2.0, lag-1 acf −0.042 — no persistent one-way run. **The sharp instrument, E[δ |
+V-level]** (conditioning on the PAST only, so 0 at every level under a consistent bootstrap): ALL
+**+0.0182 [+0.0115, +0.0253]** at [0.40,0.60), **+0.0119 [+0.0085, +0.0153]** at [0.60,0.80),
+**+0.0065 [+0.0034, +0.0095]** at [0.80,0.95), −0.0021 [−0.0042, −0.0005] at [0.95,1.01); BOT
++0.0300 / +0.0223 / +0.0123 / +0.0002. So the bootstrap is **not perfectly consistent — V drifts
+UPWARD from mid-confidence states** — but the drift is at the extremes absent and, decisively, has
+the **WRONG SIGN** to produce late optimism.
+
+**(b) Calibration (Murphy, base-rate cap, overdispersion), 74M.** OVERALL Brier **0.1261 = REL 0.0019
+− RES 0.0454 + UNC 0.1700** (p̄ 0.783), skill **+0.2582**, overdispersion 0.966 [0.855, 1.100].
+**The bias FLIPS SIGN across the game and the flip is detected on the BOT stratum, the one that
+carries the verdict** (the pool stratum ran under the greedy-vs-stochastic handicap): bot early
+**−0.0960 [−0.1270, −0.0572]** (PESSIMISTIC) → bot mid **+0.0321 [+0.0039, +0.0672]** (OPTIMISTIC) →
+bot late +0.0575 [−0.0112, +0.1842] (not detected, only 31 battles reach turn 25 vs bots); pooled
+late **+0.0732 [+0.0030, +0.1611]**, early −0.0585 [−0.0946, −0.0147]. **This replicates test 1's
+late-minus-early gradient in DIRECTION** (+0.167 [+0.086, +0.251] there) at roughly half the
+magnitude once the population weighting is applied. Overdispersion covers 1.0 in every slice but
+`bot/early` (0.713 [0.622, 0.826] — UNDER-confident). **Resolution is the defect: RES 0.0454 against
+a base-rate cap of 0.1700 = 27% of the available uncertainty**; `bot/early` RES 0.0074 against a cap
+0.0996. That is D2's G1 failure seen from a second instrument.
+
+**(c) The terminal anchor — the largest single defect, and QUOTA-IMMUNE** (a within-class read; the
+IPW and raw columns agree to 0.011). **On the last decision of a game it is about to lose the critic
+still says it wins 30.5% of the time**: |V(s_T) − y| on decisive losses **0.3050 [0.2587, 0.3558]**,
+against 0.0212 [0.0110, 0.0343] on wins (V ends 0.979). All 0.0719 [0.0564, 0.0913]; bot 0.0470
+[0.0329, 0.0662]. The 0.5 crossing: in a lost game V **peaks at 0.860 around turn 12** and then
+falls, and **21.7% of decisive losses (26.1% vs bots) end with V still above 0.5**, while **100% of
+wins** end on the right side. "V rising then losing" is real — but it is carried by the anchor, not
+by a late residual.
+
+**TREND over 50M→74M: FLAT.** Terminal V(s_T) on losses 0.300 → 0.237 → 0.230 → 0.305; RES 0.040 →
+0.034 → 0.043 → 0.045; skill +0.239 → +0.207 → +0.252 → +0.258; E[δ | V∈[0.60,0.80)] +0.0177 →
++0.0132 → +0.0147 → +0.0119, every interval clear of zero, no trend. The arm's own reweighted win
+rate over the same window is flat-to-declining, 0.848 → 0.821.
+
+**DIRECTION — TARGET.** Against the registered discriminator read literally: the "target" clause
+(δ ≈ 0 at every bucket, with late optimism) holds in the buckets where the optimism lives — late and
+mid both NOT DETECTED, late optimism +0.0732 [+0.0030, +0.1611] — and fails only EARLY; the "moving
+policy" clause's own stated condition, δ ≠ 0 **late**, is **not met on any of the four cycles**.
+Three positive legs: (1) **the optimism enters at the anchor** — V(s_T) = 0.305 on a loss is exactly
+the γ = 1 undiscounted final label failing to drive a losing terminal state to 0, and with the late
+bootstrap consistent it propagates back into every late state; (2) **the drift that does exist has
+the wrong sign** — upward from mid-confidence states, with the head PESSIMISTIC early (bot −0.096),
+which is the lag signature, but a lag cannot then over-predict late; (3) **a lag that does not shrink
+when the thing it lags stops moving is not a lag** — the policy is flat-to-declining over 50M→74M
+while the drift, the resolution and the anchor are unchanged. **What unifies every number is neither
+hypothesis in its pure form: the head is COMPRESSED toward its own base rate** — V sits near
+0.75–0.79 while the truth runs 0.814 early → 0.703 late, so one shrinkage reads as early pessimism,
+late optimism, and a V(s_T) that cannot reach 0. The γ = 1 terminal label is the *reason* for the
+compression (a single undiscounted 0/1 per battle is a maximally high-variance target and a head fit
+to it under-fits toward the mean), so the direction stands as **TARGET, with the mechanism named as
+UNDER-RESOLUTION** rather than "reads the material lead and over-commits".
+
+**Contradicted the registration.** (i) **`td_resid_tails` is not a CLI and has no `--help`** — it is
+an eval-time metric name (per-opponent TD-residual CVaR written into snapshot rows by
+`src/agents/training/eval_callback.py` / `src/agents/model/snapshot.py`); the instrument was built
+for this test and ships beside the writeup as `bootstrap_consistency.py` + `ipw_pass.py`. (ii)
+`main.prober.query calibration` reports **neither** the Murphy decomposition, the base-rate cap nor
+overdispersion, and stratifies by neither turn bucket nor stratum (`--opponent` takes one name), so
+those were computed here on the project's own primitives (`_reliability_curve` / `_calibration_stats`
+from `main.prober.session.stats`) with the CLI's output reported alongside. (iii) The selection
+confound above. Nothing was written under `models/`; CPU only, `nice -n 10`, beside arm C. Tag:
+MEASUREMENT.

@@ -1,0 +1,405 @@
+{
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic",
+  "filters": {
+    "outcome": "loss",
+    "opponent": null,
+    "step": 74000016
+  },
+  "params": {
+    "limit": 10,
+    "worst": 2,
+    "n_seeds": 16,
+    "n_alts": 2,
+    "followup": "random",
+    "concurrency": 2,
+    "n_bins": 10,
+    "overvalue_tau": 0.0833,
+    "overvalue_tau_source": "per-currency default"
+  },
+  "critic_currency": {
+    "mode": "winprob",
+    "units": "P(win)",
+    "low": 0.0,
+    "high": 1.0,
+    "even": 0.5,
+    "span": 1.0,
+    "is_probability": true,
+    "default_overvalue_tau": 0.0833,
+    "note": "V(s) = sigmoid(win-prob logit) \u2208 [0,1]; `values` EQUALS `win_probs`. PopArt absent; the realized return G(s) is the terminal win indicator (0 or 1) at gamma 1."
+  },
+  "threshold_warning": null,
+  "selection": {
+    "schema": 2,
+    "known": true,
+    "n_steps": 1,
+    "n_steps_with_selection": 1,
+    "label": "SELECTION RECORDED for every step in scope \u2014 see `steps`.",
+    "steps": {
+      "74000016": {
+        "known": true,
+        "rule": "per-opponent per-cycle OUTCOME QUOTA: the first 10 losses and the first 5 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+        "label": "SELECTION RECORDED \u2014 242 traces of 1400 battles played over 14 opponents; mean capture rate 0.100 per WIN vs 0.625 per LOSS. The two differ wherever the quota binds unevenly, and that difference IS the sample's skew \u2014 compare them, never assume they match; DRAWS NOT COUNTED (pre-draw-bucket cycle \u2014 a timeout was booked as a loss and a tie was dropped unwritten, so a zero here would be a claim).",
+        "capture_rates": {
+          "aggressive": {
+            "battles_played": 100,
+            "battles_won": 93,
+            "traces_written": 13,
+            "traces_won": 8,
+            "capture_rate_win": 0.08602150537634409,
+            "capture_rate_loss": 0.7142857142857143
+          },
+          "aggressive_v2": {
+            "battles_played": 100,
+            "battles_won": 86,
+            "traces_written": 19,
+            "traces_won": 8,
+            "capture_rate_win": 0.09302325581395349,
+            "capture_rate_loss": 0.7857142857142857
+          },
+          "heuristic": {
+            "battles_played": 100,
+            "battles_won": 82,
+            "traces_written": 19,
+            "traces_won": 8,
+            "capture_rate_win": 0.0975609756097561,
+            "capture_rate_loss": 0.6111111111111112
+          },
+          "heuristic2": {
+            "battles_played": 100,
+            "battles_won": 88,
+            "traces_written": 17,
+            "traces_won": 8,
+            "capture_rate_win": 0.09090909090909091,
+            "capture_rate_loss": 0.75
+          },
+          "random": {
+            "battles_played": 100,
+            "battles_won": 100,
+            "traces_written": 8,
+            "traces_won": 8,
+            "capture_rate_win": 0.08,
+            "capture_rate_loss": null
+          },
+          "sentinel_0": {
+            "battles_played": 100,
+            "battles_won": 68,
+            "traces_written": 20,
+            "traces_won": 8,
+            "capture_rate_win": 0.11764705882352941,
+            "capture_rate_loss": 0.375
+          },
+          "sentinel_1": {
+            "battles_played": 100,
+            "battles_won": 55,
+            "traces_written": 20,
+            "traces_won": 8,
+            "capture_rate_win": 0.14545454545454545,
+            "capture_rate_loss": 0.26666666666666666
+          },
+          "sentinel_2": {
+            "battles_played": 100,
+            "battles_won": 73,
+            "traces_written": 20,
+            "traces_won": 8,
+            "capture_rate_win": 0.1095890410958904,
+            "capture_rate_loss": 0.4444444444444444
+          },
+          "sentinel_3": {
+            "battles_played": 100,
+            "battles_won": 70,
+            "traces_written": 20,
+            "traces_won": 8,
+            "capture_rate_win": 0.11428571428571428,
+            "capture_rate_loss": 0.4
+          },
+          "sentinel_4": {
+            "battles_played": 100,
+            "battles_won": 77,
+            "traces_written": 20,
+            "traces_won": 8,
+            "capture_rate_win": 0.1038961038961039,
+            "capture_rate_loss": 0.5217391304347826
+          },
+          "setup_sweep": {
+            "battles_played": 100,
+            "battles_won": 86,
+            "traces_written": 19,
+            "traces_won": 8,
+            "capture_rate_win": 0.09302325581395349,
+            "capture_rate_loss": 0.7857142857142857
+          },
+          "setup_sweep_v2": {
+            "battles_played": 100,
+            "battles_won": 87,
+            "traces_written": 18,
+            "traces_won": 8,
+            "capture_rate_win": 0.09195402298850575,
+            "capture_rate_loss": 0.7692307692307693
+          },
+          "staller": {
+            "battles_played": 100,
+            "battles_won": 90,
+            "traces_written": 15,
+            "traces_won": 8,
+            "capture_rate_win": 0.08888888888888889,
+            "capture_rate_loss": 0.7
+          },
+          "staller_v2": {
+            "battles_played": 100,
+            "battles_won": 94,
+            "traces_written": 14,
+            "traces_won": 8,
+            "capture_rate_win": 0.0851063829787234,
+            "capture_rate_loss": 1.0
+          }
+        },
+        "recorded_win_rates": {
+          "aggressive": 0.93,
+          "aggressive_v2": 0.86,
+          "heuristic": 0.82,
+          "heuristic2": 0.88,
+          "random": 1.0,
+          "sentinel_0": 0.68,
+          "sentinel_1": 0.55,
+          "sentinel_2": 0.73,
+          "sentinel_3": 0.7,
+          "sentinel_4": 0.77,
+          "setup_sweep": 0.86,
+          "setup_sweep_v2": 0.87,
+          "staller": 0.9,
+          "staller_v2": 0.94
+        }
+      }
+    }
+  },
+  "overall_calibration": {
+    "n": 7261,
+    "bias": 0.3112818134735437,
+    "mae": 0.44500134367895444,
+    "ev": 0.1936262294467358,
+    "slope": 0.9716467143881301,
+    "v_mean": 0.7161847194093652,
+    "g_mean": 0.4049029059358215,
+    "bias_on_wins": -0.16512542667032098,
+    "bias_on_losses": 0.6354283735344005,
+    "captured_win_fraction": 0.4628,
+    "n_draw_excluded": 0
+  },
+  "reliability_curve": [
+    {
+      "v_lo": 0.008477636612951756,
+      "v_hi": 0.411308228969574,
+      "v_mean": 0.23150304295481317,
+      "g_mean": 0.013755158184319119,
+      "n": 727,
+      "gap": 0.21774788477049406
+    },
+    {
+      "v_lo": 0.4117579460144043,
+      "v_hi": 0.5593137145042419,
+      "v_mean": 0.49504357436800134,
+      "g_mean": 0.15426997245179064,
+      "n": 726,
+      "gap": 0.3407736019162107
+    },
+    {
+      "v_lo": 0.5594010949134827,
+      "v_hi": 0.6414188742637634,
+      "v_mean": 0.6034477520580134,
+      "g_mean": 0.25895316804407714,
+      "n": 726,
+      "gap": 0.34449458401393623
+    },
+    {
+      "v_lo": 0.6414660811424255,
+      "v_hi": 0.6994345188140869,
+      "v_mean": 0.6719586749871572,
+      "g_mean": 0.3333333333333333,
+      "n": 726,
+      "gap": 0.3386253416538239
+    },
+    {
+      "v_lo": 0.6994398236274719,
+      "v_hi": 0.7496773600578308,
+      "v_mean": 0.7237731687129365,
+      "g_mean": 0.41735537190082644,
+      "n": 726,
+      "gap": 0.30641779681211007
+    },
+    {
+      "v_lo": 0.7497270107269287,
+      "v_hi": 0.8033053278923035,
+      "v_mean": 0.7764188867298368,
+      "g_mean": 0.39669421487603307,
+      "n": 726,
+      "gap": 0.37972467185380376
+    },
+    {
+      "v_lo": 0.8034651279449463,
+      "v_hi": 0.8570004105567932,
+      "v_mean": 0.8299781189969748,
+      "g_mean": 0.45041322314049587,
+      "n": 726,
+      "gap": 0.37956489585647896
+    },
+    {
+      "v_lo": 0.8573434352874756,
+      "v_hi": 0.9218342900276184,
+      "v_mean": 0.888864261552322,
+      "g_mean": 0.5013774104683195,
+      "n": 726,
+      "gap": 0.3874868510840025
+    },
+    {
+      "v_lo": 0.9219085574150085,
+      "v_hi": 0.9773158431053162,
+      "v_mean": 0.9504640092534468,
+      "g_mean": 0.6391184573002755,
+      "n": 726,
+      "gap": 0.31134555195317126
+    },
+    {
+      "v_lo": 0.9773802161216736,
+      "v_hi": 0.9992647767066956,
+      "v_mean": 0.9910633100951014,
+      "g_mean": 0.8842975206611571,
+      "n": 726,
+      "gap": 0.10676578943394432
+    }
+  ],
+  "unattributed_resolution": {
+    "n_unattributed_craters": 12,
+    "n_without_gap": 0,
+    "overvalued_share_of_unattributed": 1.0,
+    "mean_reliability_gap": 0.3544,
+    "examples": [
+      {
+        "id": "step_74000016/heuristic/loss_004",
+        "inv": 44,
+        "turn": 41,
+        "v": 0.95,
+        "reliability_gap": 0.31,
+        "anchor_delta": -0.7842,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_004",
+        "inv": 38,
+        "turn": 37,
+        "v": 0.85,
+        "reliability_gap": 0.38,
+        "anchor_delta": -0.0887,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_005",
+        "inv": 23,
+        "turn": 20,
+        "v": 0.63,
+        "reliability_gap": 0.34,
+        "anchor_delta": -0.2977,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_005",
+        "inv": 18,
+        "turn": 16,
+        "v": 0.89,
+        "reliability_gap": 0.39,
+        "anchor_delta": -0.0805,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_1003",
+        "inv": 21,
+        "turn": 17,
+        "v": 0.58,
+        "reliability_gap": 0.34,
+        "anchor_delta": -0.1204,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_1005",
+        "inv": 18,
+        "turn": 17,
+        "v": 0.82,
+        "reliability_gap": 0.38,
+        "anchor_delta": -0.2569,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_2003",
+        "inv": 27,
+        "turn": 23,
+        "v": 0.83,
+        "reliability_gap": 0.38,
+        "anchor_delta": -0.4466,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_2004",
+        "inv": 27,
+        "turn": 23,
+        "v": 0.6,
+        "reliability_gap": 0.34,
+        "anchor_delta": -0.2508,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_3001",
+        "inv": 18,
+        "turn": 15,
+        "v": 0.88,
+        "reliability_gap": 0.39,
+        "anchor_delta": -0.2553,
+        "bucket": "critic_overvalued"
+      },
+      {
+        "id": "step_74000016/heuristic/loss_3001",
+        "inv": 14,
+        "turn": 12,
+        "v": 0.92,
+        "reliability_gap": 0.39,
+        "anchor_delta": -0.1849,
+        "bucket": "critic_overvalued"
+      }
+    ]
+  },
+  "gate": {
+    "policy_reducible": 0.053,
+    "aleatoric": 0.3186,
+    "unattributed": 0.6284,
+    "unattributed_critic_overvalued": 0.6284,
+    "unattributed_lost_position": 0.0,
+    "critic_mean_reducible_upper_bound": 0.6284
+  },
+  "falsify_gate": {
+    "aleatoric": 0.3186,
+    "policy_reducible": 0.053,
+    "unattributed": 0.6284,
+    "mixed": 0.0,
+    "critic_headroom_upper_bound": 0.947
+  },
+  "falsify_coverage": {
+    "n_matched": 130,
+    "n_with_record": 130,
+    "n_falsified": 10,
+    "n_capped_by_limit": 120,
+    "n_skipped_no_record": 0,
+    "n_battle_errors": 0,
+    "n_decisions": 20,
+    "n_decision_errors": 0,
+    "skipped_no_record_sample": []
+  },
+  "interpretation": "SELECTION-CONFOUNDED \u2014 read the splits, not the headline. Captured win-fraction 0.4628 (\u2260 true win rate; eval quota). Bias E[V\u2212G] splits -0.165 on WINS vs 0.635 on LOSSES (unconditional 0.311) \u2014 the <0-on-wins / >0-on-losses pattern is the signature of a CALIBRATED critic, so the unconditional over-valuation is largely the capture quota over-sampling losses, NOT miscalibration. explained-variance(G|V)=0.194, slope=0.972. Against this skewed baseline ~100% of the unattributed 63% sits at 'over-valued' V-levels \u21d2 critic_mean_reducible ~63% of total crater mass \u2014 a LOOSE UPPER BOUND inflated by the selection skew; the real epistemic share needs true-win-rate reweighting or the rollout-PIT. [12 craters, reliability over 7261 decisions]",
+  "caveats": [
+    "TRACE SELECTION: SELECTION RECORDED for every step in scope \u2014 see `steps`.",
+    "SELECTION CONFOUND (dominant): the reliability curve is over the eval's CAPTURED sample, whose win-fraction (captured_win_fraction) is set by the capture quota, NOT the true win rate. Since the model wins most games, losses are over-captured \u2192 E[G|V] biased LOW \u2192 the unconditional bias and every bin's gap are inflated. The bias_on_wins (<0) / bias_on_losses (>0) split is the CALIBRATED-critic signature; the unconditional E[V\u2212G] \u2248 P(win)\u00b7bias_win + P(loss)\u00b7bias_loss, which is ~0 for a calibrated critic at the true win rate. So critic_mean_reducible is a LOOSE upper bound until reweighted to the true win rate (or replaced by the selection-free rollout-PIT).",
+    "critic_mean_reducible is an UPPER BOUND: the reliability curve is built over the eval's CAPTURED sample, whose win/loss mix is set by the capture quota (losses over-captured), so E[G|V] is biased LOW and the over-valuation gap is overstated. Reweighting to the true per-opponent win rate would tighten it.",
+    "Per crater the split uses the AGGREGATE reliability gap at its V-level, NOT the crater's own realized G (one draw, selection-biased on losses). So a single crater's label is a population inference, not a per-state measurement.",
+    "lost_position means the critic's MEAN was right; such a crater is reducible only by a risk-SENSITIVE policy (a distributional critic's other use), not by a better mean estimate.",
+    "The gold-standard per-crater resolution is re-roll \u2192 POLICY ROLLOUT to terminal \u2192 the return distribution \u2192 PIT (where V sits in it) \u2014 the true distributional-critic validator. This model-free reliability version is its cheap aggregate proxy; the rollout primitive is deferred.",
+    "overvalue_tau=0.0833 (P(win), per-currency default) sets the over-valued cutoff on a `winprob` critic; mean_gap and the reliability curve are reported so the threshold isn't the whole story.",
+    "CRITIC CURRENCY: V(s) = sigmoid(win-prob logit) \u2208 [0,1]; `values` EQUALS `win_probs`. PopArt absent; the realized return G(s) is the terminal win indicator (0 or 1) at gamma 1."
+  ]
+}
