@@ -98,6 +98,107 @@ _COST_MARKERS = ("slow", "e2e", "benchmark")
 _over_budget: "list[tuple[str, float]]" = []
 
 
+# --- Slow-tier LAST-KNOWN STATUS: a red `slow` test must be visible to the ROUTINE gate ---------
+#
+# The routine gate is `-m "not slow and not e2e"`, so a `slow` test is DESELECTED — and a deselected
+# test cannot fail. A red one is therefore invisible until the next full-suite run, which happens at
+# most once before a ship. Measured 2026-09-07: `tb_relevance_test`'s winprob smoke rode main red
+# for a day behind that marker, the same shape as the obs-golden linchpin riding red three times
+# behind the old `-m "not integration"` cut.
+#
+# So the slow tier WRITES its verdict and the routine gate READS it: this block records every `slow`
+# test that actually RAN, and `src/slow_tier_status_gate_test.py` asserts against the file. The
+# whole contract — the four verdict classes, why staleness is reported and never fatal, why the file
+# is committed rather than gitignored, and why a MISSING file fails — is in
+# `src/utils/slow_tier_status.py`'s module docstring.
+#
+# It records nothing at all on a run in which no slow test executed, so the routine gate never
+# touches the artifact. Escape hatch: GEN3AI_SKIP_SLOW_STATUS_RECORD=1.
+_slow_results: "dict[str, dict]" = {}
+_slow_collected: "set[str]" = set()
+_slow_write_note = []
+
+
+def pytest_configure(config):
+    """Publish the live `slow`-set object on `config`, so the gate test reads it off `request.config`
+    rather than by importing the root conftest as a module (which depends on sys.path order)."""
+    config._gen3ai_slow_collected = _slow_collected
+
+
+def pytest_itemcollected(item):
+    """The FULL `slow` set, captured before `-m` deselection can hide it from the routine gate.
+
+    `pytest_itemcollected` fires per item during collection, ahead of every
+    `pytest_collection_modifyitems` (which is where `-m` deselection happens) — so a routine run
+    that executes zero slow tests still knows exactly which ones it skipped, and can therefore tell
+    "recorded green" apart from "never recorded".
+    """
+    if "slow" in item.keywords:
+        _slow_collected.add(item.nodeid)
+
+
+def _record_slow_result(report):
+    """Fold one phase report of one `slow` test into `_slow_results`."""
+    if os.environ.get("GEN3AI_SKIP_SLOW_STATUS_RECORD"):
+        return
+    if "slow" not in report.keywords:
+        return
+    try:
+        from utils.slow_tier_status import classify, merge_outcome
+        text = "" if report.passed else str(getattr(report, "longreprtext", "") or report.longrepr)
+        status = classify(bool(report.failed), bool(report.skipped), text)
+        prev = _slow_results.get(report.nodeid)
+        merged = merge_outcome(prev["status"] if prev else None, status)
+        detail = (prev or {}).get("detail", "")
+        if status in ("fail", "inconclusive") and merged == status:
+            # Prefer pytest's own "E   <exception>" line over the trailing "<file>:<line>: <type>"
+            # one: the gate's message is read by someone who has NOT got the traceback in front of
+            # them, and "AssertionError" alone tells them nothing.
+            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            errs = [ln[1:].strip() for ln in lines if ln.startswith("E ")]
+            detail = (errs[0] if errs else (lines[-1] if lines else "no detail"))
+        _slow_results[report.nodeid] = {
+            "status": merged,
+            "duration_s": (prev or {}).get("duration_s", 0.0) + float(report.duration),
+            "detail": detail,
+        }
+    except Exception as exc:            # never let the recorder break a test run
+        _slow_write_note.append(f"slow-tier status NOT recorded for {report.nodeid}: {exc!r}")
+        return
+    # BANK IT AS SOON AS THE TEST IS OVER, not only at session finish. The slow tier is ~2 hours
+    # beside a live run, and a session that is interrupted at test 79 of 80 must not throw away 79
+    # verdicts — an artifact you only get by not pressing Ctrl-C is an artifact nobody will have.
+    # One flock + rewrite of a ~20 KB JSON per slow test is free next to the test itself.
+    if report.when == "teardown":
+        _write_slow_results([report.nodeid])
+
+
+def _write_slow_results(nodeids=None):
+    """Merge slow results (all of them, or just ``nodeids``) into the committed status artifact."""
+    if not _slow_results or os.environ.get("GEN3AI_SKIP_SLOW_STATUS_RECORD"):
+        return
+    try:
+        from utils.git import get_git_hash
+        from utils.slow_tier_status import make_row, record_results
+        commit = get_git_hash()
+        factor = _contention_factor()
+        wanted = _slow_results if nodeids is None else {
+            n: _slow_results[n] for n in nodeids if n in _slow_results}
+        rows = {nodeid: make_row(r["status"], commit=commit, duration_s=r["duration_s"],
+                                 contention=factor, detail=r.get("detail", ""))
+                for nodeid, r in wanted.items()}
+        if not rows:
+            return
+        path = record_results(rows)
+        if nodeids is None:
+            _slow_write_note.append(f"slow-tier status: {len(_slow_results)} row(s) recorded "
+                                    f"into {path}")
+    except Exception as exc:
+        _slow_write_note.append(
+            f"slow-tier status COULD NOT BE WRITTEN ({exc!r}) — the rows this run measured are "
+            "lost, so the routine gate will keep reading the previous verdict.")
+
+
 def _tier_budget_seconds():
     try:
         from utils.contention import cpu_contention_factor
@@ -107,7 +208,8 @@ def _tier_budget_seconds():
 
 
 def pytest_runtest_logreport(report):
-    """Record any default-tier test whose CALL phase overran the budget."""
+    """Two jobs: the tier-budget overrun above, and the slow-tier status recording below."""
+    _record_slow_result(report)         # every phase, so a setup/teardown error is not lost
     if os.environ.get("GEN3AI_SKIP_TIER_BUDGET") or report.when != "call" or report.skipped:
         return
     if any(m in report.keywords for m in _COST_MARKERS):
@@ -148,6 +250,8 @@ def _box_is_idle():
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    for note in _slow_write_note:
+        terminalreporter.write_line(note)
     if not _over_budget:
         return
     try:
@@ -184,6 +288,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    _write_slow_results()
     # Fail ONLY on a trustworthy measurement. Scaling the budget is not enough on its own: the
     # factor is loadavg/cpus (~1.4 at load 22), while the actual slowdown on a core-hungry test is
     # multiples of that, so a scaled budget still false-fails beside a live training run — the

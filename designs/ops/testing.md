@@ -2,12 +2,12 @@
 
 Moved verbatim out of the root `CLAUDE.md` on **2026-09-07**, when the root was reduced to a
 constitution + command card + map (~10k tokens, loaded into EVERY session including every
-subagent's). **The root keeps the command table, the tier markers, the four static gates and the
-binding hazards; this file is the detail behind them.**
+subagent's). **The root keeps the command table, the tier markers, the STATIC-GATE TABLE (seven rows — that
+table is the complete list) and the binding hazards; this file is the detail behind them.**
 
 Covers: running beside a live training run (contention-scaled timeouts), the two-axis tier system,
-file-naming conventions, which command to run, the four static gates, the fuzz-test pattern and its
-reproducibility rules, and the benchmarks.
+file-naming conventions, which command to run, the static gates, the fuzz-test pattern and its
+reproducibility rules, the reward golden, and the benchmarks.
 
 ---
 
@@ -251,6 +251,99 @@ live surface fails too. External tools' flags (`pytest`, `ruff`, `pip`, `cargo`,
 in the test's own allowlist, **each named with its tool**, so it cannot quietly absorb one of ours.
 The census behind it — what each big `CLAUDE.md` is made of and what size is right — is
 `designs/research_state/claude_md_census_2026-09-06.md`.
+
+### The SLOW-TIER LAST-KNOWN-STATUS gate (`src/slow_tier_status_gate_test.py`)
+
+**The routine gate is `-m "not slow and not e2e"`, so a `slow` test is DESELECTED — and a
+deselected test cannot fail.** A red one is therefore invisible until the next 31-minute full-suite
+run, which happens at most once before a ship. Measured, not imagined: on **2026-09-07**
+`tb_relevance_test::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag` was red on main for a
+day behind that marker, unrecorded in both the ledger and the backlog. It is the same shape as the
+obs-golden linchpin riding main RED three separate times behind the old `-m "not integration"` cut —
+one marker further out. **A gate that reads GREEN while a test is red is the GIGO class itself.**
+
+So the tier that RUNS the slow tests writes its verdict, and the gate that runs on every commit
+reads it:
+
+* **Writer** — the root `conftest.py`. Every phase report of every `slow` test that actually RAN is
+  folded into one verdict per test id, and merged into the artifact at session finish. It **merges,
+  never replaces**: running one slow test does not erase the other rows, and two `xdist` workers
+  finishing together cannot lose each other's results (an exclusive `flock` plus an atomic rename).
+  A run in which no slow test executed writes **nothing** — the routine gate never touches the file.
+  Each verdict is **banked at that test's teardown**, not only at session finish: the slow tier is
+  ~2 hours beside a live run, and a session interrupted at test 79 of 80 must not throw away 79
+  verdicts. An artifact you only get by not pressing Ctrl-C is an artifact nobody will have.
+* **Artifact** — `designs/ops/slow_tier_status.json`, **committed**.
+* **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~0.03 s plus one
+  `git rev-list` per distinct recorded commit.
+
+| class | meaning | gate |
+|---|---|---|
+| `fail` | the tier ran it and it failed | **FAILS the routine gate**, naming the test id and the commit it failed at |
+| `inconclusive` | it failed with a TIMEOUT signature | reported — *a timeout is never a semantic outcome* |
+| unrecorded | collected as `slow` this session, no row | reported — a new slow test is not a regression |
+| stale | the row is >25 commits behind HEAD, or its commit is unknown | reported |
+
+The three non-fatal classes are emitted as **warnings**, so they survive `-q` in the warnings
+summary, plus a one-line census on `-s`.
+
+**WHY ONLY A RECORDED RED IS FATAL.** Staleness is a statement about the *schedule*, not about the
+code. Failing on it would make "nobody has run the tier for 25 commits" indistinguishable from "a
+test is red" — precisely the conflation this gate exists to remove, and the same rule as *a TIMEOUT
+is never a semantic outcome*. It would also breed a reflex `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, which
+costs the real signal too.
+
+⚠️ **THE HONEST LIMITATION, stated rather than hidden: a slow test that broke SINCE the last
+recorded run still reads `pass` here.** Nothing short of running the tier closes that. The staleness
+report is what says how much a green is worth, and the full refresh is one command:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/ -m slow -q -n 2
+```
+
+**WHY THE ARTIFACT IS COMMITTED and not gitignored.** The worktree workflow decides it: a gitignored
+file is per-worktree, and a fresh worktree — where essentially all work here happens — would have
+none, so the gate would be dead exactly where it is needed. That is the `models/` failure mode
+(`utils.paths.main_models_dir()` returns `None` in a worktree and every caller must turn it into a
+skip); a gate that skips in every worktree is not a gate. Committed, it also puts a red slow test in
+the **diff**, a second human-readable channel that costs nothing, and it keeps the pre-ship
+full-suite run and the routine gate that follows it talking about the same measurements. The price
+is a merge conflict when two branches both run the tier — the rows are keyed by test id, so the
+resolution is always a **union** (keep both sides; where both edited one row, keep the newer `at`).
+
+**WHY A MISSING FILE FAILS RATHER THAN WARNS.** The house rule for a gate is that a missing artifact
+FAILS and never skips. Because the file is committed, "missing" cannot mean "fresh checkout" — it
+means a bad rebase or a stray delete, which is worth stopping for. The message names both the
+restore command and `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, so it can never strand anyone. A file that is
+*present but empty* fails the same way, with **NO SLOW-TIER STATUS RECORDED**: a gate reading zero
+rows is reading nothing at all.
+
+The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1` (a run whose
+verdict should not be banked — a deliberate experiment, a starved box). Ten meta-tests in the gate
+file plant each condition — a red, an inconclusive, an unrecorded, a stale row, an unknown commit,
+a merge that must not truncate — so the gate's behaviour is pinned rather than described. Contract:
+`src/utils/slow_tier_status.py`.
+
+### The REWARD GOLDEN (`src/agents/training/reward_golden_test.py`) — `sim`, ~20 s
+
+The reward stream, bit for bit: every field of every `RewardBreakdown` as `float.hex()`, for every
+decision of **30 real bridge battles** (5 battles x 6 reward COMPOSITIONS), sha256'd —
+`9463dc24…`, recorded in `src/agents/training/reward_golden.json` beside it with the commit it was
+produced at and a **per-sweep** hash, so a mismatch names the composition and battle that moved
+instead of only saying "the reward changed". It is the BEFORE/AFTER reference the `reward_manager.py`
+decomposition (`b0b3a253`) was proved on, promoted out of a scratch directory: a byte-identity
+reference that lives in one agent's tmp protects exactly one refactor.
+
+Reproducible by construction, all four clauses (see *What "fuzz test" means* below): fixed teams by
+pool index, a per-player RNG, a fixed sim PRNG seed, and **`concurrency=1`**. Verified: the hash
+reproduces bit-for-bit in a fresh worktree with an independently checked-out `data/`. The
+preconditions are ASSERTED, not branched on — a harness that errored or played a different number of
+decisions fails with *that* message, never as a reward change. Regenerate only for an INTENDED
+change, and record it in the ledger:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && python3 src/agents/training/reward_golden_test.py --write
+```
 
 ### Unit tests only (the fast inner loop)
 ```bash

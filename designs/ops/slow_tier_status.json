@@ -1,0 +1,646 @@
+{
+ "schema": "gen3_slow_tier_status_v1",
+ "tests": {
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
+   "status": "inconclusive",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.22,
+   "contention": 1.9,
+   "detail": "subprocess.TimeoutExpired: Command '['/home/goodlad/.local/bin/chrome', '--headless', '--no-sandbox', '--disable-gpu', '--virtual-time-budget=15000', '--dump-dom', 'file:///tmp/pytest-of-goodlad/pytest-1733/popen-gw1/viewer0/architecture_viewer.html']' timed out after 180 seconds"
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_desktop_keeps_the_side_panel_in_flow": {
+   "status": "inconclusive",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.12,
+   "contention": 1.9,
+   "detail": "subprocess.TimeoutExpired: Command '['/home/goodlad/.local/bin/chrome', '--headless', '--no-sandbox', '--disable-gpu', '--allow-file-access-from-files', '--virtual-time-budget=25000', '--dump-dom', '--window-size=1280,900', 'file:///tmp/tmpmdhjhzao/harness.html']' timed out after 180 seconds"
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_landscape_phone_keeps_the_compact_chrome": {
+   "status": "inconclusive",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.12,
+   "contention": 1.9,
+   "detail": "subprocess.TimeoutExpired: Command '['/home/goodlad/.local/bin/chrome', '--headless', '--no-sandbox', '--disable-gpu', '--allow-file-access-from-files', '--virtual-time-budget=25000', '--dump-dom', '--window-size=844,560', 'file:///tmp/tmpmr2y30hk/harness.html']' timed out after 180 seconds"
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_page_renders_and_the_theme_reaches_the_canvas[dark]": {
+   "status": "inconclusive",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.22,
+   "contention": 1.9,
+   "detail": "subprocess.TimeoutExpired: Command '['/home/goodlad/.local/bin/chrome', '--headless', '--no-sandbox', '--disable-gpu', '--virtual-time-budget=15000', '--dump-dom', 'file:///tmp/pytest-of-goodlad/pytest-1733/popen-gw0/viewer0/architecture_viewer.html#theme=dark']' timed out after 180 seconds"
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_page_renders_and_the_theme_reaches_the_canvas[light]": {
+   "status": "inconclusive",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.12,
+   "contention": 1.9,
+   "detail": "subprocess.TimeoutExpired: Command '['/home/goodlad/.local/bin/chrome', '--headless', '--no-sandbox', '--disable-gpu', '--virtual-time-budget=15000', '--dump-dom', 'file:///tmp/pytest-of-goodlad/pytest-1733/popen-gw0/viewer0/architecture_viewer.html#theme=light']' timed out after 180 seconds"
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_phone_viewport_fits_and_is_usable": {
+   "status": "inconclusive",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.11,
+   "contention": 1.9,
+   "detail": "subprocess.TimeoutExpired: Command '['/home/goodlad/.local/bin/chrome', '--headless', '--no-sandbox', '--disable-gpu', '--allow-file-access-from-files', '--virtual-time-budget=25000', '--dump-dom', '--window-size=520,844', 'file:///tmp/tmpn2de63v9/harness.html']' timed out after 180 seconds"
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_serve_answers_every_route": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 0.4,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/agents/model/build_arch_viewer_render_integration_test.py::test_vendored_copy_renders_with_no_network": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 1.55,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/agents/model/compile_prewarm_test.py::test_preload_compiles_single_threaded_end_to_end": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 7.33,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/agents/model/extractor_compiles_test.py::test_cpu_backward_still_does_not_compile": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 81.6,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 57.47,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 54.97,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 383.18,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_a_wide_table_scrolls_inside_its_wrapper_not_the_page": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 325.98,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_chart_text_is_legible_on_whichever_palette_is_live": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 275.05,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_charts_still_draw_at_a_narrow_width": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 269.88,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 262.31,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/analyze]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 255.13,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/battle]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 300.97,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/battles]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 327.06,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/calibration]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 327.07,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/falsify]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 262.33,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/scan]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 269.44,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_every_page_boots_with_its_vendored_libraries[/triage]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 214.99,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_form_controls_are_large_enough_not_to_trap_ios_zoom": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 275.06,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_links_follow_the_theme_rather_than_the_browser_default[/]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 398.21,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_links_follow_the_theme_rather_than_the_browser_default[/battle]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 211.51,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_links_follow_the_theme_rather_than_the_browser_default[/battles]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 348.19,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 285.86,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/analyze]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 288.96,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/battle]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.11,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/battles]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 380.12,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/calibration]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 383.17,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/falsify]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 266.23,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/scan]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 390.13,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_no_page_scrolls_sideways_on_a_narrow_viewport[/triage]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 269.85,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_api_answers_over_the_real_socket": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 0.17,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_battle_replay_is_side_by_side_on_a_desktop": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 390.15,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 285.87,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_battles_page_arrives_already_populated": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.07,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_browsers_own_widgets_are_told_which_palette_is_live": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 398.1,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_copy_button_actually_copies": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.33,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_dark_palette_is_actually_painted[/]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 269.88,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_dark_palette_is_actually_painted[/battle]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 211.51,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_dark_palette_is_actually_painted[/battles]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 348.24,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_desktop_layout_does_not_inherit_the_phone_rules[/]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 227.43,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_desktop_layout_does_not_inherit_the_phone_rules[/calibration]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 180.12,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_desktop_layout_does_not_inherit_the_phone_rules[/scan]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 269.85,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_job_pages_render_before_anything_is_submitted[/calibration]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 266.2,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_job_pages_render_before_anything_is_submitted[/falsify]": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 288.96,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_narrow_header_stays_compact_and_hides_nothing": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 227.44,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_pages_reference_no_remote_asset": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 325.98,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_replay_metrics_are_tappable_in_the_browser": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 380.11,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_run_page_draws_its_chart": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 269.35,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_run_page_fetches_its_awareness_panel_over_htmx": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 300.96,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_scan_page_fetches_its_table_and_chart_over_htmx": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 214.99,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/prober/web/render_integration_test.py::test_the_triage_page_arrives_already_populated": {
+   "status": "skip",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T08:35:37Z",
+   "duration_s": 255.12,
+   "contention": 1.9,
+   "detail": ""
+  },
+  "src/main/untaught_meter_reproducibility_integration_test.py::test_two_sharded_runs_of_the_meter_are_byte_identical": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 56.61,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[node]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 2.39,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_a_forfeited_battles_record_logs_the_forcelose_command[rust]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 1.89,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_parity_battle_timeout_is_scaled_by_contention": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err[default-node]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 10.73,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err[default-rust]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 9.79,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err[pass-node]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 10.2,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_poke_env_fallback_choice_tokens_never_produce_a_fatal_err[pass-rust]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 10.35,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_rust_node_bridge_parity": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 24.83,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_seed_forms_reproduce_the_same_battle_on_rust_and_node[1,2,3,4]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.59,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_seed_forms_reproduce_the_same_battle_on_rust_and_node[gen5,0001000200030004]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.85,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_seed_forms_reproduce_the_same_battle_on_rust_and_node[seed0]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.86,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_seed_forms_reproduce_the_same_battle_on_rust_and_node[sodium,deadbeef]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.75,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_seedless_rust_battles_are_distinct_and_recorded": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.28,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_starvation_threshold_is_a_fraction_not_a_count": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_starvation_verdict_is_silent_when_nothing_timed_out": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_starvation_verdict_refuses_a_starved_sample": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_starvation_verdict_tolerates_an_isolated_timeout": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child[forfeit-node]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 5.66,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child[forfeit-rust]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 4.91,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child[natural-node]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 5.98,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_stray_choose_after_battle_end_is_ignored_on_a_persistent_child[natural-rust]": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 4.93,
+   "contention": 2.22,
+   "detail": ""
+  },
+  "src/utils/bridge/bridge_impl_parity_test.py::test_timeouts_do_not_inflate_the_unmodeled_skip_count": {
+   "status": "pass",
+   "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
+   "at": "2026-09-08T06:39:19Z",
+   "duration_s": 0.0,
+   "contention": 2.22,
+   "detail": ""
+  }
+ },
+ "last_written": "2026-09-08T08:35:37Z"
+}

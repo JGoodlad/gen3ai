@@ -10,13 +10,28 @@ publishing, as confident constants and byte-identical duplicates, on the first a
 |---|---|---|
 | `train/scaffolding_{gauge,rho,n}` | ρ = 1.0, gauge = 5.5e-13, both flat | V IS `sigmoid(win_prob_logit)`; a rank gauge between a quantity and itself is a tautology |
 | `grad/win_prob_{share,norm_shared,policy_cosine}` | equal to `grad/value_*` to the last bit | the critic loss IS the win-prob BCE — the SAME tensor, reported twice AND double-counted in the shared denominator |
-| `win_prob/{brier,acc}_contested`, `contested_{frac,label_mean}`, `brier_material`, `skill_vs_material` | copies of the pooled tags, plus a flat 1.0 and a flat 0.25 | `win_margin` is a MATERIAL-potential by-product, identically 0.0 with no material PBRS term, so nothing stratifies |
+| `win_prob/{brier,acc}_contested`, `contested_{frac,label_mean}`, `brier_material`, `skill_vs_material` | *(RECLASSIFIED 2026-09-07 — see below; these are LIVE)* | — |
 | `reward/{bias_refund,class_refund}_*` | six flat zeros | the refund is the BIAS class's mechanism and the composition has no bias term |
 
 The rule these tests pin is one rule, applied four times: **the gate is on the SOURCE, never on the
 value**, and turning a source off must leave a GAP in the curve rather than a confident number. Each
 test therefore comes in a pair — the degenerate case is silent, the live case is unchanged — because
 a gate that fires too widely is the same defect pointing the other way.
+
+🚨 **THE CONTESTED FAMILY WAS RECLASSIFIED ON 2026-09-07: it is LIVE on a win-prob run, and this
+file's own NOISE list was the stale half.** The classification above landed in `fc10fbb4`
+(2026-09-06 15:42) against the margin as it then was. `b87604cd` (`gen3_obs_margin_unconditional_v1`,
+later the same day, and IN the live arm's pin `f971caf2`) then repaired the SOURCE: Φ_mat is
+computed above the PBRS gate, so `win_margin` is an OBSERVATION feature again rather than a
+by-product of the reward composition, and it spreads under `--no-hand-shaping`. The six tags
+therefore stratify something real. Measured on the live arm `ai_v12_02_winprob_critic` (515
+rollouts, 2026-09-07): `contested_frac` **0.444–0.844** — never the degenerate 1.0 —
+`brier_contested` differs from its pooled twin `brier` on **515 of 515** rows, `brier_material`
+runs 0.138–0.222 rather than the flat 0.25, and `skill_vs_material` averages **+0.323**. Nothing
+was suppressed at the emitter: `_win_prob_loss`'s spread predicate is retained as the
+CONSUMER-SIDE guard against any future flat margin (the G3 block below is what pins it), and it
+simply no longer fires on this composition. ⚠️ A run pinned BEFORE `b87604cd` still carries the
+degenerate series — read those six as absent there, per the training leaf's era column.
 
 The two `slow` smokes at the bottom are the end-to-end statement: a real `--critic winprob` debug run
 writes none of the NOISE tags and all of the LIVE ones, and a real `shaped` run's tag set is
@@ -177,7 +192,13 @@ def _win_prob_metrics(margin):
 
 
 def test_a_constant_zero_margin_publishes_no_contested_split():
-    """No material PBRS term ⇒ `_last_material_margin` never moves ⇒ margin is identically 0."""
+    """A flat margin cannot stratify — the guard, kept as DEFENCE rather than as a description.
+
+    This WAS the win-prob composition's own shape until `gen3_obs_margin_unconditional_v1`
+    (`b87604cd`) moved Φ_mat's compute above the PBRS gate; the margin now spreads there and this
+    predicate does not fire on any production composition. It stays because the predicate is on the
+    COLUMN, not on the mode: any future path that pins `win_margin` must leave a gap in the curve
+    rather than publish six copies of the pooled tags."""
     m = _win_prob_metrics(th.zeros(64, 1))
     for k in _CONTESTED_KEYS:
         assert k not in m, f"{k} published against a margin with no spread"
@@ -261,13 +282,22 @@ def test_an_unexpected_refund_now_reaches_the_GIGO_guard():
 # ═══════════════════════════════════════════ THE SMOKES — real runs, real tfevents ══
 
 #: Emitted on a `--critic winprob` run before `gen3_tb_relevance_v1` and content-free there.
+#: 🚨 The six `win_prob/*contested*` / `*material*` tags were on this list until 2026-09-07 and are
+#: NOT any more — `b87604cd` repaired their source; see the module docstring. They are asserted
+#: PRESENT below, on both critic modes, as `MARGIN_TAGS`.
 NOISE_TAGS = (
     "train/scaffolding_gauge", "train/scaffolding_rho", "train/scaffolding_n",
     "grad/win_prob_share", "grad/win_prob_norm_shared", "grad/win_prob_policy_cosine",
-    "win_prob/brier_contested", "win_prob/acc_contested", "win_prob/contested_frac",
-    "win_prob/contested_label_mean", "win_prob/brier_material", "win_prob/skill_vs_material",
     "reward/bias_refund_mean", "reward/bias_refund_abs_mean", "reward/bias_refund_abs_share",
     "reward/class_refund_mean", "reward/class_refund_abs_mean", "reward/class_refund_abs_share",
+)
+
+#: The margin-stratified family. LIVE on BOTH critic modes since `gen3_obs_margin_unconditional_v1`
+#: made `win_margin` independent of the reward composition, so its absence on either mode means the
+#: obs feature regressed to a reward by-product — which is the bug that commit fixed.
+MARGIN_TAGS = (
+    "win_prob/brier_contested", "win_prob/acc_contested", "win_prob/contested_frac",
+    "win_prob/contested_label_mean", "win_prob/brier_material", "win_prob/skill_vs_material",
 )
 
 #: The reader's floor on EITHER critic mode — tags that must survive whatever the gates do.
@@ -321,16 +351,30 @@ def _run_smoke(tmp_path, name, extra):
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
     acc = EventAccumulator(str(tmp_path / "models" / name / "tb"), size_guidance={"scalars": 0})
     acc.Reload()
-    return set(acc.Tags()["scalars"])
+    tags = set(acc.Tags()["scalars"])
+    return tags, {t: [e.value for e in acc.Scalars(t)] for t in tags}
 
 
 @pytest.mark.slow
 def test_a_winprob_run_emits_no_noise_tag_and_every_live_tag(tmp_path):
-    tags = _run_smoke(tmp_path, "tbrel_wp", _WINPROB_ARGV)
+    tags, series = _run_smoke(tmp_path, "tbrel_wp", _WINPROB_ARGV)
     leaked = sorted(t for t in NOISE_TAGS if t in tags)
     assert not leaked, f"content-free tags published on a winprob run: {leaked}"
     missing = sorted(t for t in LIVE_TAGS + CRITIC_MODE_TAGS if t not in tags)
     assert not missing, f"the gate swallowed tags that are LIVE on a winprob run: {missing}"
+    # The margin family, and the SOURCE behind it. Presence alone catches a revert of
+    # `gen3_obs_margin_unconditional_v1` (a flat margin ⇒ `_win_prob_loss` suppresses all six);
+    # the spread check catches the worse case where the source AND the consumer guard both go,
+    # which republishes the six as the degenerate constants that started all of this.
+    absent = sorted(t for t in MARGIN_TAGS if t not in tags)
+    assert not absent, (
+        "the margin-stratified family is missing on a winprob run: "
+        f"{absent} — `win_margin` has no spread, i.e. Φ_mat is being computed BELOW the PBRS gate "
+        "again (gen3_obs_margin_unconditional_v1)")
+    frac = series["win_prob/contested_frac"]
+    assert frac and min(frac) < 1.0, (
+        f"contested_frac never leaves 1.0 (min {min(frac) if frac else 'n/a'}) — every decision "
+        "read as 'contested', which is what a CONSTANT win_margin looks like")
 
 
 @pytest.mark.slow
@@ -340,11 +384,9 @@ def test_a_shaped_run_keeps_every_tag_the_gates_touch(tmp_path):
     Byte-identical was verified by measurement (2026-09-06: 172 tags, empty diff before/after);
     this pins the half that could regress, which is a gate firing where its source is live.
     """
-    tags = _run_smoke(tmp_path, "tbrel_shaped", _SHAPED_ARGV)
+    tags, _series = _run_smoke(tmp_path, "tbrel_shaped", _SHAPED_ARGV)
     for tag in ("train/scaffolding_gauge", "train/scaffolding_rho", "train/scaffolding_n",
-                "win_prob/brier_contested", "win_prob/acc_contested", "win_prob/contested_frac",
-                "win_prob/contested_label_mean", "win_prob/brier_material",
-                "win_prob/skill_vs_material",
+                *MARGIN_TAGS,
                 "reward/bias_refund_mean", "reward/bias_refund_abs_mean",
                 "reward/class_refund_mean", "reward/class_refund_abs_mean"):
         assert tag in tags, f"{tag} lost on a SHAPED run — a gate fired where its source is live"

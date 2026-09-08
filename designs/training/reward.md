@@ -36,6 +36,15 @@ points here. **This file is the owner of the detail.**
 > `9463dc24…`). The ORDER `process_turn_reward` folds those terms in is a CONTRACT and stays one
 > straight line there.
 >
+> 🚨 **THAT HASH IS NOW A COLLECTED TEST, not a one-off** — `src/agents/training/reward_golden_test.py`
+> (`gen3_reward_golden_v1`, tier `sim`, ~20 s, in the ROUTINE gate). It replays the same 30 battles
+> under the same six compositions and compares against `src/agents/training/reward_golden.json`,
+> which carries the whole-body sha256, a PER-SWEEP hash (so a mismatch names the composition and
+> battle that moved) and the commit it was produced at. A reward change that is INTENDED is
+> regenerated with `python3 src/agents/training/reward_golden_test.py --write` **and a ledger
+> entry saying which term moved** — a golden hash that changes without a ledger line is a golden
+> nobody can audit.
+>
 > 🚨 **A PATCH TARGET FOLLOWS THE SYMBOL.** `_encode_incoming_block` is read in
 > `reward_potentials`, not `reward_manager`; a stub naming the old module would stub NOTHING and
 > the test would assert about the real code path. `src/test_stub_vacuity_gate_test.py` fails that
