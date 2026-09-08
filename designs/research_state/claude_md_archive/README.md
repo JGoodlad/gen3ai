@@ -31,7 +31,7 @@ to the leaf every session that touches `designs/` loads:
 | `designs_version_map_ai_v9_stages_and_forward_designs.md` | the **ai_v9** state-table cell (20.8 KB in one cell) |
 | `designs_version_map_state_table_2026-09-07.md` | the remaining long cells — the active run and its generation history, and the ai_v12 / ai_v10 / ai_v11 chapter cells |
 
-**Added 2026-09-08 (third pass), from `src/agents/training/CLAUDE.md`** — 3,183 → 739 lines, the
+**Added 2026-09-08 (third pass), from `src/agents/training/CLAUDE.md`** — 3,183 → 740 lines, the
 same rule applied to the leaf every session that touches `src/agents/training/` loads:
 
 | file | lifted from |
