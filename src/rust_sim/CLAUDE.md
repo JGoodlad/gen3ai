@@ -25,12 +25,26 @@ was.** They are round-scoped history — do not read one as today's number. The 
 answer is the tool:
 
 ```bash
-cd src/rust_sim/harness && SCAN_UNIVERSE=1 node scan_move_coverage.js   # exits non-zero if any MISMODELED
+# THE UNIVERSE COUNT — the ENGINE is the oracle (all four gen3 universes)
+cd src/rust_sim && cargo build --release --bin scan_move_probe
+PROBE_KIND=move|species|item|ability ./target/release/scan_move_probe < ids.txt   # JSON verdict per id
+# the POOL report + the 0-MISMODELED invariant gate — a DIFFERENT question, keep both
+cd src/rust_sim/harness && SCAN_UNIVERSE=1 SCAN_UNIVERSE_LIST=1 node scan_move_coverage.js
 cd src/rust_sim/harness && node scan_move_coverage.js                   # the 762-team pool report
 ```
 
-**Measured 2026-08-23, re-run 2026-09-07: 369 gen3-legal moves → 309 MODELED · 60 FAIL-LOUD ·
-0 MISMODELED**, pool **762/762** fully engine-playable (813 `.txt` files, 51 validate-fail — the
+🚨 **THE UNIVERSE COUNT IS THE PROBE'S TO STATE, NOT THE JS SCAN'S.** `scan_move_coverage.js`
+computes its verdict from modeled-move sets **mirrored BY HAND** from `turn.rs`, and on 2026-09-08
+those mirrors were three moves stale (ROUND 51's `defensecurl`, ROUND 52's `minimize` + `imprison`) —
+it said 309/60 where the engine itself runs **312/57**. `scan_move_probe` cannot drift, because it
+*is* the engine running. The JS scan keeps the two jobs the probe cannot do: the team-pool report and
+the `0 MISMODELED` invariant gate.
+
+**Measured 2026-09-08 by `scan_move_probe`: 369 gen3-legal moves → 312 MODELED · 57 FAIL-LOUD ·
+0 MISMODELED**; **abilities 76/76 and species 392/392 are CLOSED**; **items 102/106** (the four
+fail-loud: `shellbell` / `machobrace` / `mentalherb` / `mail`). The full ranked gap, by family and by
+legal-learner count, is [`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](../../designs/rust_sim/gen3_coverage_census_2026-09-08.md) —
+a dated SNAPSHOT, not a current number. Pool **762/762** fully engine-playable (813 `.txt` files, 51 validate-fail — the
 count MOVES as the pool grows, and it read 722/722 when the pool was 40 teams smaller). ⚠️ **This
 is NOT the root `CLAUDE.md`'s 719-team pool and the two must not be "reconciled".** 762 is what
 `Teams.import` + `TeamValidator('gen3ou')` accept out of `data/teams/*.txt`; **719** is what

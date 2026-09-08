@@ -5782,3 +5782,61 @@ no-op on any board without a Trick cast). The handler-audit manifest grew 940 �
 `onTryImmunity` + `onHit` + the `ignoreImmunity` metadata, all implemented). Probes kept:
 `harness/probe_batch89_trick_edges.js`, `probe_batch89_haze_trick_yawn.js` (TRICK section),
 `probe_trick_open_qs{,2}.js`, `probe_batch89_trick_regression_rng.js`.
+### ROUND 56 (MEASURE) — the census beyond OU: the engine runs 312 moves, and the tool that said 309 was a hand-mirrored copy
+
+`gen3_coverage_census_v1`. **A measurement round — zero engine change.** The owner widened the
+target from gen3 **OU** to *all gen3*, which is a different question from every earlier coverage
+record: not "can the port play the 762-team OU pool" (it can, 762/762) but "can the port execute
+every move / ability / item / species legal in ANY gen3 format".
+
+**The instrument is now the ENGINE, across all four universes.** `src/bin/scan_move_probe.rs` gains
+`PROBE_KIND=move|species|item|ability` — the candidate id goes into a minimal `gen3customgame`
+battle driven through the unchanged public engine under `catch_unwind`. Its verdict cannot drift
+from `turn.rs` because it *is* `turn.rs` running. The species/item/ability arms put **Tackle** in
+slot 0 rather than Splash, deliberately: an item or ability whose only handler sits on the
+damage/contact path would otherwise never be reached and would read `ran` while wholly unexercised.
+
+**⚠️ THE FINDING IS THE DRIFT, NOT THE COUNT.** `harness/scan_move_coverage.js` computes its
+universe verdict from modeled-move sets **mirrored BY HAND** from `turn.rs`, and those mirrors had
+not been updated for ROUND 51's `defensecurl` or ROUND 52's `minimize` + `imprison`. It reported
+**309 MODELED / 60 FAIL-LOUD**; the engine runs **312 / 57**. Both `src/rust_sim/CLAUDE.md` and
+`src/utils/bridge/README.md` carry a "recount rather than quote" warning — and both had recounted
+with the tool that was itself stale. **A hand-mirrored predicate that gates a census silently
+shrinks that census** (ROUND 42's picker lesson, ROUND 31's allowlist lesson, one more time). The
+three moves were never broken; only the map was. The JS scan keeps the two jobs the probe cannot do
+— the 762-team pool report and the `0 MISMODELED` invariant gate — and gained `SCAN_UNIVERSE_LIST=1`
+so it prints *which* moves it calls unmodeled instead of only how many, which is the only reason the
+drift became visible.
+
+**THE CENSUS (2026-09-08).** Moves **312/369** modeled, 57 fail-loud. **Abilities 76/76 CLOSED**
+(ROUND 35's Forecast was the last). **Species 392/392 CLOSED** (ROUND 38's forme rows were the last).
+**Items 102/106** — the four are `shellbell` / `machobrace` / `mentalherb` / `mail`, exactly
+`state.rs::UNMODELED_FAILLOUD_ITEMS` minus `berryjuice` (not in the gen3-legal dex universe).
+`machobrace` is the DRAW-relevant one: `onModifySpe` halves Speed, so a silent miss desyncs the
+speed-tie shuffle.
+
+**GATE EXPOSURE IS THREE TIERS, NOT TWO.** Of the 312 implemented moves: **205** are named in a
+hand-written Rust gate (`tests/*.rs`), **57** only in a hand-written JS golden generator, **50** only
+in an emitted sweep corpus (`tests/vectors/*`), and **0** in nothing at all. Tier C is the honest
+weak spot — fifty moves whose only evidence is that a sweep happened to play them — but the ROUND-40
+`0 MISMODELED` invariant means none of them can desync silently. ⚠️ **The first draft of this
+measure said "312/312 gated" and was worthless**: a bare substring search matches a move id inside
+any taxonomy list or comment. The tiers use a token match and separate hand-written gates from
+emitted corpora.
+
+**RANKED BY LEGAL LEARNERS, and the ranking metric is itself the finding.** The only usage data this
+repo commits is `gen3ou-1500` — and OU usage is exactly the axis the census is trying to see past.
+The OU column is kept so its near-zero values make the point: **the largest remaining gap is
+invisible from OU**, which is why it survived 55 rounds. Three families are cheap because their hard
+half already exists — **confusion** (the volatile is modelled: `confuseray`, ROUND 44), **attraction**
+(the volatile is modelled: Cute Charm), **target stat-drops** (the `TryBoost`→`boost` path is
+modelled: Intimidate, Screech, ROUND 55) — 11 moves and 1,004 learner-slots behind three entry paths.
+The **move-callers** (metronome / assist / mirrormove / naturepower / sketch) must be LAST: each
+dispatches another move, so each one's correctness is a function of the whole rest of the census.
+
+Full table, per-family and per-move:
+[`designs/rust_sim/gen3_coverage_census_2026-09-08.md`](gen3_coverage_census_2026-09-08.md) — a dated
+SNAPSHOT, never the current number.
+
+**Gates:** nothing to re-run — no engine file changed. The probe extension is additive and links only
+existing lib APIs.

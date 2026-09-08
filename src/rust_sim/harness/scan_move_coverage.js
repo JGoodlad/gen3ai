@@ -398,6 +398,14 @@ if (process.env.SCAN_UNIVERSE) {
   const total = buckets.MODELED.length + buckets.MISMODELED.length + buckets.UNMODELED.length;
   console.log(`=== FULL gen3-legal MOVE UNIVERSE (${total} moves) ===`);
   console.log(`MODELED: ${buckets.MODELED.length}  UNMODELED (fail-loud): ${buckets.UNMODELED.length}  MISMODELED (silent desync): ${buckets.MISMODELED.length}`);
+  // SCAN_UNIVERSE_LIST=1 — print the UNMODELED bucket itself. Without this the universe scan
+  // reports a COUNT and the reader has to re-derive WHICH moves it is; the 2026-09-08 gen3
+  // coverage census needed exactly that list and there was no way to ask for it.
+  if (process.env.SCAN_UNIVERSE_LIST) {
+    console.log('');
+    console.log('=== UNMODELED (fail-loud) — the remaining gen3 move gap ===');
+    for (const r of buckets.UNMODELED.slice().sort()) console.log('  ' + r);
+  }
   if (buckets.MISMODELED.length) {
     console.log('MISMODELED — the round-40 no-silent-desync invariant is BROKEN:');
     for (const r of buckets.MISMODELED) console.log('  ' + r);

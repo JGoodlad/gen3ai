@@ -14882,3 +14882,58 @@ Also landed: the P2 backlog row for the `entity_seats_test` / `scaffolding_gauge
 flake seen at the rust-leaf landing (a test that flakes under contention is a timeout or
 shared-state defect, not noise). Gates: the four static gates green; the routine gate green.
 Tag: DOCS / TECH DEBT. **No measurement about the model changed and no run was touched.**
+
+## 2026-09-08 · RUST SIM · gen3 parity round 0: the coverage census beyond OU — the engine runs 312/369 moves, not the 309 three docs claimed (369 moves 309→312 measured · abilities 76/76 · species 392/392 · items 102/106)
+
+**MEASUREMENT ROUND — no engine change.** The owner's directive widened the port's target from
+gen3 **OU** to *all gen3*: "we believe we have all gen3 OU, but let's drive all gen3 if we can."
+That is a different question from every earlier coverage record, which asked whether the port could
+play the 762-team OU pool (it can, 762/762). The census asks whether the port can execute every
+move, ability, item and species Showdown's gen3 data makes legal in ANY gen3 format.
+
+**The instrument is now the ENGINE, for all four universes.** `src/rust_sim/src/bin/scan_move_probe.rs`
+gains `PROBE_KIND=move|species|item|ability`: it drops the candidate id into a minimal
+`gen3customgame` battle and drives it through the unchanged public engine under `catch_unwind`, so
+its verdict cannot drift away from `turn.rs` — it *is* `turn.rs` running.
+
+**THE FINDING THAT MATTERS IS THE DRIFT.** `harness/scan_move_coverage.js`'s universe verdict is
+computed from modeled-move sets **mirrored BY HAND** from `turn.rs`, and those mirrors had not been
+updated for ROUND 51's `defensecurl` or ROUND 52's `minimize` / `imprison`. It reported **309
+MODELED / 60 FAIL-LOUD**; the engine runs **312 / 57**. 309 was the number carried by
+`src/rust_sim/CLAUDE.md` and `src/utils/bridge/README.md`, both of which say "recount rather than
+quote" — and both recounted with the tool that was itself stale. **A hand-mirrored predicate that
+gates a census silently shrinks that census**, the same shape as the ROUND-42 picker lesson. The
+three moves were never broken; only the map was. The JS scan keeps the two jobs the probe cannot do
+— the team-pool report and the `0 MISMODELED` invariant gate — and gained `SCAN_UNIVERSE_LIST=1` so
+it can print *which* moves it calls unmodeled rather than only how many, which is what made the
+drift visible at all.
+
+**THE CENSUS:** moves **312/369** (57 fail-loud, 15.4% gap); **abilities 76/76 CLOSED** (ROUND 35
+closed the last one, Forecast); **species 392/392 CLOSED** (ROUND 38 closed the last data gap);
+**items 102/106** — the four are `shellbell` / `machobrace` / `mentalherb` / `mail`, exactly the
+`state.rs::UNMODELED_FAILLOUD_ITEMS` guarded set, of which `machobrace` is the DRAW-relevant one
+(`onModifySpe` halves Speed, so a silent miss would desync the speed-tie shuffle).
+
+**Gate exposure of the 312 implemented moves is stated in three tiers, not two**: 205 named in a
+hand-written Rust gate, 57 only in a hand-written JS golden generator, 50 only in an emitted sweep
+corpus, **0 with no committed gate artifact at all**. ⚠️ A first attempt at this measure reported
+"312/312 gated" and was worthless — a bare substring search matches a move id inside any taxonomy
+list or comment.
+
+**RANKED BY LEGAL LEARNERS, because the only usage data this repo commits is gen3 OU** — and OU
+usage is exactly the axis the census is trying to see past. The OU column is kept precisely so its
+near-zero values make the point: **the largest remaining gap is invisible from OU**, which is why it
+survived 55 rounds. Three families are cheap because their hard half already exists — confusion
+(the volatile is modelled, `confuseray`), attraction (the volatile is modelled, Cute Charm), and
+target stat-drops (the `TryBoost`→`boost` path is modelled) — 11 moves and 1,004 learner-slots for
+three entry paths. One family should be done LAST: the move-callers each dispatch *another* move, so
+each one's correctness is a function of the whole rest of the census.
+
+Census: `designs/rust_sim/gen3_coverage_census_2026-09-08.md` (a dated SNAPSHOT, never the current
+number). Tag: RUST SIM / CENSUS. **No engine behaviour changed, no gate moved, no run was touched.**
+
+**Also fixed, unrelated and box-wide:** `/tmp` (a 45 GB tmpfs) was at its quota because of a stray
+**29.9 GB `/tmp/allflags2.txt`** — a runaway `--flag` string dump written at 07:37, held open by no
+process. Every redirect on the box was silently producing 0-byte files ("Disk quota exceeded"),
+which broke tooling in this session and would corrupt any other agent's captured output the same
+way. Removed; `/tmp` went 80% → 18%, returning ~30 GB of RAM on a box carrying a live training run.
