@@ -15604,3 +15604,13 @@ The privileged-critic CEILING PROBE (a training-only true-team channel on the va
 **RULE OF EVIDENCE 17 (from test 3):** *any statistic on the eval-trace tree is reweighted by each cycle's recorded capture rate, or it is not a measurement* — the tree is loss-enriched by design, and selecting on the outcome breaks every outcome-conditional property; read raw, test 3 returned the OPPOSITE answer with a confident interval. `eval_manifest.json`'s per-opponent `capture_rate_win/loss` are the weights; a tree without a manifest is SELECTION UNKNOWN.
 
 Tag: REGISTRATION. Nothing measured yet.
+
+---
+
+### 2026-09-08 · OPS · The PFSP fork `ai_v12_04_pfsp_fork25M` is PAUSED at 30,457,344 steps, resumable, to free the GPU for the critic ladder
+
+Paused per the ladder registration above (`2026-09-08 · REGISTRATION`). `kill -TERM` to launcher pid 3751439 at 12:58:35 (explicit PID, never `pkill -f`); the launcher exited in ~10 s and the child with it. **The resume point is `final_model_interrupted.zip` at `num_timesteps` 30,457,344** — `latest.txt` points at it, so the SIGTERM save captured the full step count and the last periodic checkpoint (`checkpoint_29654016_steps.zip`, 12:34) is the fallback rung, not the resume point. Nothing was deleted.
+
+**State at the pause (descriptive; no verdict is drawn — the run is 5.0M steps past its 25M fork and its own read is not due):** ~592 fps, `win_rate_vs_bots` 0.872 at 28M (2 cycles), and the self-play pool still holds exactly the 20 snapshots seeded from the fork parent — **no promotion ever occurred**, so the "first promotion" line this run owed was never due. PFSP is an opponent-curriculum question and does not move the critic; it resumes when the ladder is read, or earlier if the owner reorders.
+
+Tag: OPS.
