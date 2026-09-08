@@ -730,6 +730,8 @@ z=−1.40" rules out >4.5pp, not >0.
 
 ---
 
+17. **A statistic on the eval-trace tree is reweighted by each cycle's recorded capture rate, or it is not a measurement.** The tree is loss-enriched by design; selecting on the outcome breaks every outcome-conditional property (the martingale test, bias by V-level, overdispersion). Read raw, the 75M bootstrap-consistency test returned the opposite answer with a confident interval; reweighted by `eval_manifest.json`'s per-opponent `capture_rate_win/loss` it inverted and the calibration CLI's raw bias of +0.31 collapsed to ~0. A tree without a manifest is SELECTION UNKNOWN. [MEASURED, 73c929e1; ledger 2026-09-08 *test 3*]
+
 ## 8. Pointers
 
 | what | where |

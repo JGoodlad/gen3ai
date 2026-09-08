@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,586-line file. **The ledger itself is append-only and is never edited by this**;
+15,607-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**455 headings · 415 dated · 2026-08-01 → 2026-09-08 · ledger 15,586 lines.**
+**456 headings · 416 dated · 2026-08-01 → 2026-09-08 · ledger 15,607 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -475,3 +475,4 @@ rename.
   - `L15365` · `2026-09-08` · 75M READ · test 1 IDENTITY (cf_audit, no --checkpoint): OFFSET DETECTED, RESOLUTION STILL DOMINATES — V − p̂ = +0.0965 [+0.0671, +0.1268], reproduction 142/142
   - `L15420` · `2026-09-08` · D2 VERDICT · the win-prob-only critic FAILS its primary critic-quality bar at 75M; sparse is WITHIN FLOOR on the one clean strength read (26M); the run-end strength read is NOT COMPARABLE (pool grooming) — orchestrator's read of tests 1 + 2 together
   - `L15491` · `2026-09-08` · 75M READ · test 3 BOOTSTRAP CONSISTENCY: mean TD residual +0.0072 [+0.0058, +0.0085] (late +0.0021 [−0.0024, +0.0062], NOT DETECTED), terminal |V − outcome| 0.0719 [0.0564, 0.0913] (0.3050 [0.2587, 0.3558] on decisive losses); trend over 4 cycles FLAT — reads as TARGET
+  - `L15587` · `2026-09-08` · REGISTRATION · THE CRITIC LADDER — four fresh 10M arms, one lever each, read by the CRITIC meters against a fresh control (owner direction: an ACCURATE win-prob value function; hand-crafted shaping is a suboptimal implementation)
