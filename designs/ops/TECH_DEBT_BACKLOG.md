@@ -30,7 +30,6 @@ commit.
 | tier | item | why | size | done when |
 |---|---|---|---|---|
 | P0 | **Mode-flag doc gate.** A test that every MODE-flag value `designs/ARCHITECTURE.md` states in prose (`belief_grad_mode`, `opp_intent_grad_mode`, `critic`, `hp_belief_mode`, each head's on/off coefficient, `hand_shaping`, `terminal_indicator`) equals the value in `designs/production_config.json`, and that every key the mirror marks INERT is called INERT where the doc names it. | "What is the baseline?" — the architecture doc said belief heads run `label_only` while its own flag table, the mirror and the live arm say `shaping` (hand-fixed, `22e757db`). A doc read as fact must not drift from the mirror. | S (~1 day) | unmarked in the routine suite; fails on a planted contradiction; passes on main |
-| P0 | **Anti-vacuity audit of test stubs.** For every `monkeypatch.setattr` / `patch(...)` target under `src/**/*_test.py`, assert the patched symbol is referenced by the code under test, so a stub that stubs nothing FAILS; then fix what it finds. | The `ppo.py` decomposition found four sites in one file family where the stub stubbed nothing and a byte-identity test compared two identical arms and PASSED (`ccd08003`). Green for the wrong reason is the GIGO class the owner named. | M (~2 days) | the audit runs in the routine suite; every finding fixed or allow-listed with a reason |
 
 ## 2. PROPOSED — the orchestrator adds rows; only the owner moves one to §1 (or the week-end burn-down reaches it)
 
@@ -63,4 +62,5 @@ commit.
 | item | commit |
 |---|---|
 | `instrumented_ppo/ppo.py` decomposed around the fold sequence (1998 → 1331) + the contested-mask guard | `ccd08003` |
+| **Anti-vacuity audit of test stubs** — `gen3_stub_vacuity_gate_v1`, unmarked in the routine gate (3.6 s). Census 407 patch sites / 70 files: 267 ok (44 of them cleared only by the consumer search), 139 skipped with reasons, **1 vacuous, 0 tests green for the wrong reason**; allowlist EMPTY. The finding was `dry_run_test.py`'s `_launch_child` booby trap, installed on the defining module while `run.py` calls its own module-level import — the trap whose tripping means `--dry-run` spawned a real training child. Census: `designs/research_state/measurements/stub_vacuity_audit_2026-09-07.md` | `83478fcd` |
 | Shaped-era timeout comparator — **CLOSED, no comparator** (owner, 2026-09-06); the stripped arm's curve is the only one and the kill bar is registered against it | — |
