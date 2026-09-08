@@ -15204,3 +15204,31 @@ doing nothing.
 facade ignores `statDropBoosts`); `--mode pool --protocol --format gen3ou` byte fuzz **GREEN-GATE
 PASS** (300 battles, ok=296, 0 non-allowlisted, 4 correctly allowlisted turn-0 artifacts).
 Tag: RUST SIM / FIX. **No model measurement changed and no run was touched.**
+
+### 2026-09-08 · ARM C REGISTRATION · `ai_v12_04_pfsp_fork25M` — the PFSP fork of arm A at 24,854,016, launched as A finishes at 75M
+
+**Arm A (`ai_v12_02_winprob_critic`) finished 2026-09-08 09:43 PT** (final_model.zip 09:41, launcher
+exited 09:44, "Training complete", final bot aggregate 94.8%, 20 ladder nodes, last eval-trace dir
+`step_74000016`). The three registered 75M value tests (identity / critic gate / bootstrap
+consistency; registration 44e3a7f5) run as three offline agents and land beside this entry.
+
+**Arm C, registered before its data.** Argv = A's recorded `original_command` with exactly these
+substitutions: `--run-name ai_v12_04_pfsp_fork25M` · `--model models/ai_v12_02_winprob_critic/checkpoints/checkpoint_24854016_steps.zip`
+· `--pfsp-scale 2.5` · `--team-pfsp onesided` · `--eval-sentinel-greedy` · `--sync-to-main` (A's
+`--pin-commit` removed — mutually exclusive, and the fork must run at HEAD to receive the
+greedy-sentinel recipe `b7896476` and the ladder fit fix `3e6875a5`) · `--steps 75000000` (C at 75M
+matches A at 75M in step count). Validated by `main.checkargs`: 130 accepted, 0 unrecognized, 42
+flags inherited from A's config, ARCH SURFACE = production mirror, launches. **PFSP value 2.5 taken
+under the 15-minute rule**: the v8 line's value (28 runs incl. `ai_v8_14_distill3`'s +69 with
+`--team-pfsp onesided` + `--stable-opponent-pfsp`; C has no stable-opponent slice so that third
+flag is inert), owner notified 02:25 with the default, no objection by launch.
+
+**Registered read.** (1) Anchored ladder at MATCHED SNAPSHOT COUNT and MATCHED FIT SIZE vs A's own
+nodes past 25M (A's post-fork nodes are the comparator: same parent, same steps, the only
+difference the PFSP pair + the eval regime), delta with its interval against the 38-Elo floor —
+WITHIN FLOOR / INFERIOR / SUPERIOR; (2) G1–G4 per stratum, bot vs pool, noting C's pool stratum is
+GREEDY-symmetric while A's was handicapped, so the pool column is cross-regime and DESCRIPTIVE
+(rule 15); (3) the plateau signal at each node; (4) the bot-vs-pool split. **Expectation, stated:**
+the gen-16 shape — pure PFSP over a homogeneous fresh self-pool cost 26–33 Elo (ledger L1159) —
+unless the win-prob critic changes it; v8's +69 came against a DIVERSE, ANCHORED pool, which C does
+not have. A WITHIN FLOOR read is the honest prior. Tag: REGISTRATION.
