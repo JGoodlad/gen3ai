@@ -501,6 +501,14 @@ class ModelVersionFields:
     # mid-run with nothing saying so.
     eval_sentinel_greedy: bool = True
     promote_threshold: float = 0.55
+    # ---- gen3_teacher_scan_limit_flag_v1 (config v113) — THE SEARCH-TEACHER SCAN WIDTH ---------
+    # How many loss traces of the newest eval cycle a `crater` teacher cycle falsify-gates looking
+    # for candidates. TRAINING-only, in the `capacity_telemetry` mould: no forward reads it, no
+    # weight shape depends on it, `check_compatible` never sees it. It is RECORDED because it is
+    # the selection half's cost AND its supply — two runs at 10 and at 200 draw their corrections
+    # from differently-sized crater pools, and a flagless resume that silently reset to the default
+    # would change the teacher's diet mid-run with nothing on disk saying so.
+    teacher_scan_limit: int = 60
     # ---- gen3_capacity_telemetry_v1 (config v101) — LIVE CAPACITY TELEMETRY --------------------
     # Four TRAINING-only diagnostic knobs (the plasticity canary / half-batch trunk cosine /
     # feature velocity). They are the td_aux_coef class and then some: td_aux_coef at least scales

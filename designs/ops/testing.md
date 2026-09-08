@@ -105,7 +105,7 @@ leaves behind — never on "it did not crash".
 
 | Gate | The composition it closes | Tier · measured |
 |---|---|---|
-| `src/main/train/search_teacher_composition_test.py` (`gen3_search_teacher_composition_rust_v1`) | **>= 2 search-teacher cycles on `--use-bridge rust`**, end to end: eval traces → falsify-gated selection → frozen trainee → worker subprocess on the rust `search_driver` → confirm rollouts → shard → `CorrectionBuffer` → the AWR aux loss inside `train()`, across a cycle boundary. Asserts the per-cycle markers, the worker config's `"impl": "rust"`, the status histogram (no `worker_no_shard`, no `error:*`) and the TB scalars (`teacher/corrections_per_cycle`, `teacher/loss`, `teacher/n`, `grad/searchteacher_share`) | `sim` + `slow` · **10 m 38 s** (2026-09-07, 16-core box, contention factor 1.32; 8 cycles, 34 candidate-shots, 4 corrections) |
+| `src/main/train/search_teacher_composition_test.py` (`gen3_search_teacher_composition_rust_v1`) | **>= 2 search-teacher cycles on `--use-bridge rust`**, end to end: eval traces → the falsify-gated selection CHILD → frozen trainee → worker subprocess on the rust `search_driver` → confirm rollouts → shard → `CorrectionBuffer` → the AWR aux loss inside `train()`, across a cycle boundary. Asserts the per-cycle markers, the worker config's `"impl": "rust"`, the status histogram (no `worker_no_shard`, no `error:*`, no `error:selection`) and the TB scalars (`teacher/corrections_per_cycle`, `teacher/loss`, `teacher/n`, `grad/searchteacher_share`) | `sim` + `slow` · **7 m 52 s** (2026-09-08, 16-core box, contention factor 1.10; 30,000 steps, 4-6 cycles, 7-8 corrections). It also asserts and prints what the teacher cost the TRAINING STEP — 0.26 s over the whole run, against the 30-350 s **per cycle** its first run measured |
 
 **They are `slow` by DECLARATION, not by measurement.** A live training run normally shares this
 box, so a duration recorded beside one is a note for planning, never a bound to assert against.
@@ -121,6 +121,16 @@ Three rules every composition gate here follows, each of them a project rule app
 - **A missing precondition FAILS, it never skips** — an unbuilt rust binary fails with the exact
   `cargo build` line, and a run that reaches "Training complete" having launched fewer than two
   cycles fails as NO-CYCLE rather than passing green on a run that did nothing.
+
+**What the first one actually found, and it was not a crash.** The search-teacher composition gate's
+opening run produced no failed assertion; what it produced was a MEASUREMENT nobody had — the
+candidate SELECTION ran inline in `_on_step` for **48 s over 9 traces and 350 s over the default
+60-trace `scan_limit`** (measured 2026-09-08 over a real run's copied traces; the gate's own
+smaller run read ~30 s / ~100 s), on the training step, every cycle, while the callback was documented
+everywhere as "non-blocking (subprocess workers)". That is the argument for this shape of gate: a
+leg-level test measures a leg's correctness, and only a whole run can tell you what a join COSTS.
+Where a composition gate can cheaply record such a cost as a scalar (`teacher/step_block_ms`), do —
+a number in the run's own events survives the next person's assumptions better than a comment.
 
 ### Test file naming conventions
 

@@ -2891,12 +2891,45 @@ byte-identical). The "expert" is the prober's `better_line` beam + the rollout-c
   (with its own forward) on each rollout minibatch inside `train()`. **STANDALONE, not the rollout buffer** — the searched states are
   off-policy (older eval traces), so they must never enter GAE / the clip objective. Lives on
   `model._correction_buffer`.
-- **`callback.py`** (`SearchTeacherCallback`) + **`src/main/search_teacher_worker.py`** — the
-  non-blocking driver mirrors the eval cadence: freeze the trainee, spawn frozen-snapshot worker
-  subprocesses (own POKE_LOOP, spare cores — the live trunk mutates, so a thread is unsafe; isolation
-  is why eval uses subprocesses too), each runs the search + confirm over a candidate slice (ONE warm
-  `SearchSession` reused → the Node spawn is amortized), publishes a shard (obs `.npz` + scalars
-  `.json`); the parent polls and fills the buffer. Skip-while-running, watchdog, crash-logged.
+- **`callback.py`** (`SearchTeacherCallback`) + **`src/main/search_teacher_select_worker.py`** +
+  **`src/main/search_teacher_worker.py`** — the non-blocking driver mirrors the eval cadence.
+  🚨 **A CYCLE HAS TWO PHASES AND BOTH RUN IN CHILDREN** (`_pending["phase"]`): **select** spawns
+  `search_teacher_select_worker`, which runs `select_for_mode` over the run's eval traces and writes
+  `teacher_cycle/candidates.json`; **search** then freezes the trainee and spawns the per-cycle
+  worker subprocesses (own POKE_LOOP, spare cores — the live trunk mutates, so a thread is unsafe;
+  isolation is why eval uses subprocesses too), each running the search + confirm over a candidate
+  slice (ONE warm `SearchSession` reused → the Node spawn is amortized) and publishing a shard (obs
+  `.npz` + scalars `.json`); the parent polls and fills the buffer. Skip-while-running, a per-phase
+  watchdog, crash-logged.
+  - 🚨 **SELECTION USED TO RUN INLINE IN `_on_step`, and "non-blocking" was half true for a year.**
+    `_launch` called `select_for_mode` on the training step, falsify-gating every loss trace of the
+    newest eval cycle through the re-roll driver — measured by the composition gate on 2026-09-07 at
+    **48.1 s over 9 traces and 350.2 s over 60** (2026-09-08, a loaded 16-core box, over a copied
+    123-loss-trace directory; ~5.5 s per trace, so it scales with exactly the thing a long run has
+    most of — the gate's own smaller run measured ~30 s / ~100 s on 9 traces of a 6k-step policy) — while the search workers it then spawned
+    cost the loop nothing. Selection is **pure over files** (its `ProbeSession` loads no model; it
+    reads `eval_traces/` and the `*_reconstruction.json` siblings and nothing from the live process),
+    which is what makes a child the right shape rather than a thread. The training step now returns
+    in **at most 3.9 ms** at a select launch, 83.5 ms at the worker spawn and 1.0 ms at the collect
+    (composition gate, 2026-09-08, worst of a whole 30,000-step run: **0.26 s of training-step time
+    for the entire run**, against 30-350 s PER CYCLE before). The 83.5 ms is `model.save` freezing
+    the trainee, and it is the same save the cycle always paid.
+    **`teacher/step_block_ms` / `teacher/step_block_ms_total` record it**, so the claim is a series
+    in the run's own TensorBoard rather than a comment. The selected candidate list is byte-identical
+    before and after (proved on a copied 123-loss-trace directory at `scan_limit` 9 and 60).
+  - **A FAILED SELECTION IS A REPORTED CYCLE, not a silence.** It used to be a bare
+    `except Exception` + an optional print, so a teacher that had selected nothing for a week looked
+    exactly like a policy with no craters. A selection error (or a child that dies without writing a
+    result) now emits BOTH the `[SearchTeacher] selection failed:` marker and a collect marker
+    carrying `status={'error:selection': 1}`, plus `teacher/selection_failures_total` — the same two
+    artifacts a worker crash uses, which is what lets the composition gate see it. An EMPTY candidate
+    list is not an error and deliberately emits no `cycle @ N: M candidates` marker.
+  - ⚠️ **The selection half's re-rolls run on NODE even on a `--use-bridge rust` run** —
+    `select_candidates` calls `falsify_battle` with no `impl`. Left exactly as it was (changing the
+    engine changes which craters survive the falsify gate, which is a different claim needing its own
+    measurement) and recorded in `designs/ops/TECH_DEBT_BACKLOG.md`. It is why the select child's
+    config is `select_config.json` and NOT `config_*.json`: the composition gate globs the latter and
+    asserts every match records `"impl": "rust"`, which is true of the SEARCH workers only.
 - **SUPPLY+POOL mode (`--teacher-persistent`)** — `teacher/generate.py` +
   `src/main/search_teacher_persistent_worker.py`. The per-cycle mode reads eval traces (a trickle every
   ~2M steps); the persistent mode is a LONG-LIVED worker pool that GENERATES its own fresh losses (the
@@ -2931,7 +2964,9 @@ policy forward (`get_distribution`); weight `w = clamp(exp(advantage/β), w_clip
 CONFIRMED win-rate improvement (NOT a critic advantage — the soundness point). The shared-trunk pull
 rides `grad/searchteacher_share` / `_policy_cosine` (the live "is the teacher fighting the actor"
 signal). `teacher/*` metrics: `agree_rate` (π ↔ A*, should RISE), `mean_adv`, `mean_w`, `loss`, `n`,
-`buffer_size`, `corrections_per_cycle`, `yield`, `mean_confirmed_dwin`.
+`buffer_size`, `corrections_per_cycle`, `yield`, `mean_confirmed_dwin`, `selection_failures_total`,
+`step_block_ms` / `step_block_ms_total` (what the teacher cost the TRAINING STEP — see the two-phase
+cycle above).
 
 **On-policy self-distillation (OPD) — the KL upgrade of AWR (`--opd-coef`).** AWR distils only the
 single verified-better action A*; OPD upgrades the distillation TARGET to the FULL improved distribution
@@ -2972,6 +3007,7 @@ caveat is **RETRACTED** — model-judged recoverability is circular; treat those
 | `--teacher-confirm-rollouts` | `8` | Monte-Carlo confirm games (the CI gate) |
 | `--teacher-search-workers` | `3` | worker subprocesses per cycle |
 | `--teacher-search-freq` | `0` | steps between cycles (0 = eval freq) |
+| `--teacher-scan-limit` | `60` | loss traces the SELECTION child falsify-gates per cycle — its cost (~4.2 s/trace, in the child) **and** its supply (the crater pool). Config **v113**: recorded in `model_config.json` and `_resolve`-inherited on a flagless resume, so a launcher restart cannot silently reset a run's scan width. Ignored by `--search-teacher-mode winprob_oneply` |
 
 **Sim engine (`impl`, no flag of its own).** Every child the teacher spawns — the generation
 battles (`teacher/generate.py` → `run_local_battles`), the searches (`SearchSession`) and the

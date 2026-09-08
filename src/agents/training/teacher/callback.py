@@ -3,6 +3,21 @@ the trainee, spawn search workers, and collect their verified-better corrections
 ``CorrectionBuffer`` (which the AWR aux loss samples each ``train()``). Mirrors the eval callback's
 freeze → spawn → poll → collect lifecycle (``spawn_eval_workers``), so it NEVER blocks training: a
 trigger while a cycle is still running is skipped, a hung worker is timed out, a crash is logged.
+
+**A CYCLE HAS TWO PHASES, AND BOTH RUN IN CHILDREN.** ``_pending["phase"]`` is ``"select"`` then
+``"search"``; ``_on_step`` only ever spawns, polls, and reads small JSON, so it returns in
+milliseconds at every point of a cycle. Until 2026-09-07 the SELECT phase ran INLINE — ``_launch``
+called ``select_for_mode`` from ``_on_step``, falsifying every loss trace of the newest eval cycle
+on the trainer: **~30 s over 9 traces and ~100 s at the default 60-trace ``scan_limit``**, measured
+by the composition gate, every cycle, scaling with the trace count a long run has most of. The
+callback was advertised as non-blocking throughout. Selection is pure over files (see
+``main/search_teacher_select_worker.py`` for the verification), so it is now a child like every
+other expensive thing here, and a cycle whose selection fails reports
+``status={'error:selection': 1}`` through the SAME per-cycle histogram a worker crash uses instead
+of being swallowed.
+
+``teacher/step_block_ms`` records what each spawn/collect actually cost the training step, so the
+claim in the paragraph above is a series in the run's own TensorBoard rather than a comment.
 """
 
 from __future__ import annotations
@@ -19,10 +34,20 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.training.teacher.buffer import Correction
+from agents.training.teacher.selection import Candidate
 from utils.contention import describe_contention, scale_timeout
 
 _CYCLE_TIMEOUT_SEC = 3600.0     # a search cycle can be long (Node searches + confirm games); watchdog
 _RESPAWN_BACKOFF_STEPS = 5000   # persistent mode: don't tight-loop respawning a worker that keeps dying
+
+#: The SELECTION child. A dotted module name rather than an import, because nothing in this process
+#: may call selection any more — that is the property `callback_test` traps.
+_SELECT_WORKER_MODULE = "main.search_teacher_select_worker"
+#: The two cycle-dir artifacts of the select phase. `select_config.json` deliberately does NOT match
+#: the composition gate's `config_*.json` glob (which asserts `"impl": "rust"` on every match, a
+#: statement true of the SEARCH workers and not of selection — see the select worker's docstring).
+_SELECT_CONFIG = "select_config.json"
+_SELECT_RESULT = "candidates.json"
 
 # gen3_contention_robust_timeouts_v1 — the two child-REAP bounds. Both are wall-clock waits on a
 # subprocess, so on a loaded box they measure the box rather than the worker, and these run inside
@@ -113,6 +138,11 @@ class SearchTeacherCallback(BaseCallback):
         self._opponents_cached: Optional[list] = None
         self._respawn_step: dict = {}        # wid → num_timesteps of its last (re)spawn (backoff)
         self._respawns_total = 0
+        # What the teacher has actually cost the TRAINING STEP, cumulative ms. The whole point of
+        # the two-phase cycle is that this stays in the milliseconds; a number is the only form of
+        # that claim that cannot rot.
+        self._step_block_ms_total = 0.0
+        self._selection_failures = 0
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -128,13 +158,35 @@ class SearchTeacherCallback(BaseCallback):
             return True
         if self._pending is not None:
             if self._all_done():
-                self._collect()
+                # ONE list of children, two meanings — `phase` says which. Absent ⇒ "search", so a
+                # hand-built `_pending` (the collect/abort unit tests) still reads as it always did.
+                if self._pending.get("phase") == "select":
+                    self._finish_selection()
+                else:
+                    self._collect()
             elif time.time() - self._pending["launched_at"] > _CYCLE_TIMEOUT_SEC:
                 self._abort()
             return True
         if self.num_timesteps - self._last_launch_step >= self.freq_steps:
-            self._launch()
+            self._launch_selection()
         return True
+
+    # -- the step-cost instrument -------------------------------------------
+
+    def _record_step_block(self, label: str, t0: float) -> None:
+        """Record (and print) what a launch/collect path cost the TRAINING STEP it ran inside.
+
+        This exists because "non-blocking (subprocess workers)" was a prose claim for a year while
+        one half of the cycle blocked for a minute and a half. A claim about cost belongs in the
+        run's own scalars, where the next person reads it instead of trusting it.
+        """
+        ms = (time.perf_counter() - t0) * 1000.0
+        self._step_block_ms_total += ms
+        self.logger.record("teacher/step_block_ms", float(ms))
+        self.logger.record("teacher/step_block_ms_total", float(self._step_block_ms_total))
+        if self.verbose:
+            print(f"[SearchTeacher] step-block {label}: {ms:.1f} ms "
+                  f"(run total {self._step_block_ms_total / 1000.0:.2f} s)")
 
     # -- persistent (supply + pool) -----------------------------------------
 
@@ -339,36 +391,136 @@ class SearchTeacherCallback(BaseCallback):
     def _all_done(self) -> bool:
         return all(w["proc"].poll() is not None for w in self._pending["workers"])
 
-    # -- launch -------------------------------------------------------------
+    # -- launch: phase 1, SELECT (a child) ----------------------------------
 
-    def _launch(self) -> None:
-        self._last_launch_step = self.num_timesteps
-        try:
-            from agents.training.teacher.modes import select_for_mode
-            cands = select_for_mode(
-                self.mode, self.run_dir, budget=self.budget, scan_limit=self.scan_limit,
-                falsify_gate=self.falsify_gate, window=2, wp_band=self.wp_band)
-        except Exception as e:  # noqa: BLE001 — selection must never crash training
-            if self.verbose:
-                print(f"[SearchTeacher] selection failed: {e}")
-            return
-        if not cands:
-            return
+    def _worker_env(self) -> dict:
+        """The environment every teacher child gets. CPU-only on purpose (see ``_spawn_worker``)."""
+        env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
+        env["CUDA_VISIBLE_DEVICES"] = ""
+        return env
 
-        # Fresh cycle dir (no stale shards) + freeze the live trainee to a snapshot the workers load.
-        if os.path.isdir(self._cycle_dir):
-            for fn in os.listdir(self._cycle_dir):
-                try:
-                    os.remove(os.path.join(self._cycle_dir, fn))
-                except OSError:
-                    pass
+    def _clear_cycle_artifacts(self, *prefixes: str) -> None:
+        """Remove this phase's OWN leftovers from the cycle dir, and nothing else.
+
+        🚨 The wipe is PER PHASE, not per cycle, and the difference is observability. A single wipe
+        at the top of the cycle (what the one-phase version did, harmlessly, because it wrote the
+        worker configs microseconds later) now runs a whole SELECTION earlier — long enough that a
+        run ending mid-selection leaves a cycle dir with no ``config_*.json`` in it at all, which is
+        the artifact the composition gate reads to prove the workers ran on rust. Caught by that
+        gate on the first run of this change. Each phase therefore clears only what it is about to
+        rewrite, and the previous cycle's worker configs, shards and logs survive until new workers
+        actually replace them.
+        """
         os.makedirs(self._cycle_dir, exist_ok=True)
+        for fn in os.listdir(self._cycle_dir):
+            if not fn.startswith(prefixes):
+                continue
+            try:
+                os.remove(os.path.join(self._cycle_dir, fn))
+            except OSError:
+                pass
+
+    def _launch_selection(self) -> None:
+        """Spawn the SELECTION child. Everything here is a mkdir, a small JSON write and a fork.
+
+        🚨 This used to be the whole of ``_launch``, selection INCLUDED, and it is the reason this
+        method is now three: the scan is 30-100 s of falsify re-rolls and it ran on the trainer.
+        """
+        t0 = time.perf_counter()
+        self._last_launch_step = self.num_timesteps
+        self._clear_cycle_artifacts(_SELECT_RESULT, _SELECT_CONFIG, "select.log")
+        out_path = os.path.join(self._cycle_dir, _SELECT_RESULT)
+        cfg = {
+            "run_dir": self.run_dir, "out_path": out_path, "mode": self.mode,
+            "budget": self.budget, "scan_limit": self.scan_limit,
+            "falsify_gate": self.falsify_gate, "window": 2, "wp_band": self.wp_band,
+        }
+        cfg_path = os.path.join(self._cycle_dir, _SELECT_CONFIG)
+        with open(cfg_path, "w") as f:
+            json.dump(cfg, f)
+        logf = open(os.path.join(self._cycle_dir, "select.log"), "w")
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, "-m", _SELECT_WORKER_MODULE, cfg_path],
+                stdout=logf, stderr=subprocess.STDOUT, env=self._worker_env())
+        except Exception as e:  # noqa: BLE001 — a spawn failure is a CYCLE failure, never a crash
+            logf.close()
+            self._pending = {"phase": "select", "workers": [], "launched_at": time.time(),
+                             "step": self.num_timesteps, "out_path": out_path, "n_candidates": 0}
+            self._report_selection_failure(f"spawn failed: {type(e).__name__}: {e}")
+            return
+        self._pending = {"phase": "select", "workers": [{"proc": proc, "log": logf}],
+                         "launched_at": time.time(), "step": self.num_timesteps,
+                         "out_path": out_path, "n_candidates": 0}
+        self._record_step_block("select-launch", t0)
+
+    def _finish_selection(self) -> None:
+        """The selection child exited: read its candidates and start phase 2 (or end the cycle).
+
+        Three outcomes, and each is REPORTED rather than inferred from silence: a result file with
+        an ``error`` (or no file at all — a hard death writes nothing) becomes an
+        ``error:selection`` cycle; an empty candidate list ends the cycle quietly, which is the
+        ordinary "this eval cycle offered nothing" case and was never an error; a non-empty list
+        spawns the search workers.
+        """
+        t0 = time.perf_counter()
+        pending = self._pending
+        rc = None
+        for w in pending["workers"]:
+            rc = w["proc"].poll()
+            try:
+                w["log"].close()
+            except Exception:  # noqa: BLE001
+                pass
+        try:
+            with open(pending["out_path"]) as f:
+                payload = json.load(f)
+        except (OSError, ValueError):
+            payload = None
+        if payload is None or "error" in payload:
+            detail = ((payload or {}).get("error")
+                      or f"the selection worker exited {rc} without writing a result")
+            self._report_selection_failure(detail)
+            return
+        cands = [Candidate(**c) for c in (payload.get("candidates") or [])]
+        if not cands:
+            # NOT a marker matching `cycle @ N: M candidates` — the composition gate asserts every
+            # such marker carries M > 0, and "the newest eval cycle had no falsify-gated crater" is
+            # a fact about the policy, not a defect.
+            if self.verbose:
+                print(f"[SearchTeacher] selection @ {pending['step']:,}: no candidates")
+            self._pending = None
+            return
+        self._spawn_search_workers(cands)
+        self._record_step_block("worker-spawn", t0)
+
+    def _report_selection_failure(self, detail: str) -> None:
+        """A failed selection is a ZERO-YIELD CYCLE, reported in both artifacts the gate reads.
+
+        It used to be a bare ``except`` + an optional print, so a run whose teacher selected nothing
+        for a week looked exactly like a run whose policy had no craters. Both the marker line and
+        the per-cycle status histogram now carry it, and ``teacher/corrections_per_cycle`` gets its
+        point so the TB series and the collect markers stay one-to-one.
+        """
+        self._selection_failures += 1
+        if self.verbose:
+            print(f"[SearchTeacher] selection failed: {detail}")
+        self.logger.record("teacher/selection_failures_total", float(self._selection_failures))
+        self._publish_cycle([], {"error:selection": 1})
+
+    # -- launch: phase 2, SEARCH (the workers) -------------------------------
+
+    def _spawn_search_workers(self, cands: List[Candidate]) -> None:
+        """Freeze the trainee and spawn the per-cycle search/confirm workers over ``cands``."""
+        # No stale shards: a leftover `shard_N.json` from a previous cycle would be COLLECTED as if
+        # this cycle's worker had written it. This is the wipe the one-phase `_launch` did, moved to
+        # the moment it is actually about, so it no longer erases the last cycle's evidence.
+        self._clear_cycle_artifacts("shard_", "config_", "worker_", "trainee.zip")
         snap = os.path.join(self._cycle_dir, "trainee.zip")
         self.model.save(snap)
 
-        worker_env = {k: v for k, v in os.environ.items() if k != "LAUNCHER_METRICS_FD"}
-        worker_env["CUDA_VISIBLE_DEVICES"] = ""   # CPU-only teacher (see _spawn_worker) — never contend the learner's GPU
-        workers, result_bases = [], []
+        worker_env = self._worker_env()
+        workers = []
         n = min(self.n_workers, len(cands))
         for wid in range(n):
             slice_cands = cands[wid::n]      # round-robin partition (priority-balanced across workers)
@@ -396,10 +548,13 @@ class SearchTeacherCallback(BaseCallback):
                 logf.close()
                 raise
             workers.append({"proc": proc, "log": logf, "rbase": rbase})
-            result_bases.append(rbase)
         if not workers:
+            self._pending = None
             return
-        self._pending = {"workers": workers, "n_candidates": len(cands),
+        # The SEARCH phase gets its own watchdog window: the two phases have unrelated failure
+        # modes (a wedged re-roll driver vs a wedged confirm worker) and sharing one budget would
+        # let a slow-but-healthy selection eat the search's.
+        self._pending = {"phase": "search", "workers": workers, "n_candidates": len(cands),
                          "launched_at": time.time(), "step": self.num_timesteps}
         if self.verbose:
             print(f"[SearchTeacher] cycle @ {self.num_timesteps:,}: {len(cands)} candidates → "
@@ -408,6 +563,7 @@ class SearchTeacherCallback(BaseCallback):
     # -- collect ------------------------------------------------------------
 
     def _collect(self) -> None:
+        t0 = time.perf_counter()
         corrections: List[Correction] = []
         status: dict = {}
         for w in self._pending["workers"]:
@@ -439,13 +595,25 @@ class SearchTeacherCallback(BaseCallback):
                     step_produced=int(sc["step_produced"]), opponent=sc["opponent"],
                     pi_target=_pi_target_row(pit_arr, i)))
 
+        self._publish_cycle(corrections, status)
+        self._record_step_block("collect", t0)
+
+    def _publish_cycle(self, corrections: List[Correction], status: dict) -> None:
+        """The tail every finished cycle shares: buffer, metrics, the marker line, clear pending.
+
+        Shared with ``_report_selection_failure`` on purpose — a cycle that failed in SELECTION and
+        one that failed in the WORKERS must be reported through the same two artifacts (the
+        ``collected N/M ...; status={...}`` marker and ``teacher/corrections_per_cycle``), or the
+        histogram silently means "worker failures only" and the gate that reads it is narrower than
+        it claims.
+        """
         buf = getattr(self.model, "_correction_buffer", None)
         if buf is not None and corrections:
             buf.extend(corrections)
 
-        n_cand = max(1, self._pending["n_candidates"])
+        n_cand = (self._pending or {}).get("n_candidates", 0)
         self.logger.record("teacher/corrections_per_cycle", float(len(corrections)))
-        self.logger.record("teacher/yield", float(len(corrections)) / n_cand)
+        self.logger.record("teacher/yield", float(len(corrections)) / max(1, n_cand))
         if corrections:
             self.logger.record("teacher/mean_confirmed_dwin",
                                float(np.mean([c.advantage for c in corrections])))

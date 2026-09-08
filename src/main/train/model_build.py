@@ -483,6 +483,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             distill_beta=args.distill_beta,
             rank_tripwire=args.rank_tripwire,
             rank_tripwire_drop=args.rank_tripwire_drop,
+            teacher_scan_limit=args.teacher_scan_limit,
         )
 
         print(f"Loading existing model from {model_path}")
@@ -846,6 +847,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             distill_beta=args.distill_beta,
             rank_tripwire=args.rank_tripwire,
             rank_tripwire_drop=args.rank_tripwire_drop,
+            teacher_scan_limit=args.teacher_scan_limit,
         )
         # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
         # The reward manager is built before the model (in the env factory), so assert here where both

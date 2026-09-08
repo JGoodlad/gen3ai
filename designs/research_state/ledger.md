@@ -14430,3 +14430,87 @@ key to `--json`; nothing counted them before.
 against a first TB scalar at 148,401,356. That is defect 2 of the review — a hand edit of an
 IMMUTABLE block, filed for the owner. It now prints `[recorded ⚠ DERIVED from original_command]`,
 which states the provenance of the claim without changing the claim.
+
+## 2026-09-08 · TECH DEBT · search-teacher selection moved off the training step (350 s → 0.004 s per cycle; corrections identical)
+
+**The claim that was false.** `SearchTeacherCallback` is described as *"the non-blocking driver"* in
+its own docstring, as *"non-blocking subprocess workers"* in `main/train/callbacks.py`, and the
+`--use-bridge=rust` startup banner said the same. One half of it was: the search/confirm workers are
+subprocesses and cost the training loop nothing. The other half — the candidate SELECTION — ran
+INLINE in `_on_step`. `_launch` called `select_for_mode`, which falsify-gates every loss trace of the
+newest eval cycle through the re-roll driver, and the SB3 loop waited. The composition gate
+(`49fb43ce`) found it as a side effect of watching a real run, which is the argument for that shape
+of gate: a leg-level test measures a leg's correctness and only a whole run can say what a join
+COSTS.
+
+**MEASURED, not estimated.** Over a copied 123-loss-trace directory from `ai_v9_172_G1SHORT_0905`
+(job tmp, never under `models/`), on this box with the production run live:
+
+| `scan_limit` | inline `select_for_mode` | candidates |
+|---|---|---|
+| 9 | **48.1 s** | 7 |
+| 60 (the default) | **350.2 s** | 58 |
+
+~5.5 s per trace — so the cost scales with the quantity a long run accumulates most of, and the
+composition gate's own smaller reading (~30 s / ~100 s on a 6k-step policy's 9 traces) was the low
+end, not the typical one.
+
+**THE FIX: a cycle is two phases and both are children.** `_pending["phase"]` is `select` then
+`search`. `main/search_teacher_select_worker.py` runs `select_for_mode` and publishes
+`teacher_cycle/candidates.json` atomically (`os.replace`, because the parent polls the PROCESS and
+must never read a torn file); the search/confirm workers spawn exactly as before once it lands.
+Option (a) from the row — selection inside a child rather than a thread — was taken only after
+VERIFYING the precondition it rests on: selection is pure over files. Its `ProbeSession` loads a
+model lazily and is never asked for one, it reads `eval_traces/` and the `*_reconstruction.json`
+siblings, and it touches nothing on the live process but the run-dir string. The winprob-oneply
+selector is the same shape and explicitly model-free.
+
+**THE ACCEPTANCE TEST, run before anything was written down: the selected list is IDENTICAL.** Old
+in-process path vs new child, same trace directory, `asdict`-compared field by field — 7/7 candidates
+at `scan_limit` 9 and 58/58 at 60, in the same order. Selection is deterministic given the traces,
+and this change did not perturb it.
+
+**What the training step now pays** (composition gate, 30,000 steps, 4 cycles): select-launch **3.9
+ms** worst, worker-spawn **83.5 ms** worst (that one is `model.save` freezing the trainee — the same
+save the cycle always paid), collect **1.0 ms** worst; **0.26 s for the entire run**. It is a series,
+not a sentence: `teacher/step_block_ms` and `teacher/step_block_ms_total`, and the composition gate
+ASSERTS the worst single step against 5 s × contention scale — two orders of magnitude above the
+measurement and two below the defect, so it can be crossed by a regression and never by a starved
+box.
+
+**A failed selection is now a REPORTED zero-yield cycle.** It used to be `except Exception` plus a
+verbose-only print, so a teacher that had selected nothing for a week was indistinguishable from a
+policy with no craters. A selection error — or a child that dies without writing a result — emits the
+`[SearchTeacher] selection failed:` marker AND a collect marker carrying
+`status={'error:selection': 1}`, through the same `_publish_cycle` a worker crash uses, plus
+`teacher/selection_failures_total`. An EMPTY candidate list is deliberately NOT an error and emits no
+`cycle @ N: M candidates` marker (the gate asserts every such marker carries M > 0).
+
+**`--teacher-scan-limit`, config v113.** The 60 was hard-coded in the callback and reachable by no
+flag, while being both the selection half's COST and its SUPPLY (the crater pool a cycle draws from).
+It follows the `capacity_telemetry`/`eval_sentinel_greedy` contract: argparse default `None`,
+`_resolve`-inherited on a flagless resume, recorded in `model_config.json`, never gated by
+`check_compatible`. A pre-v113 config migrates to 60, which is a record rather than a guess — nothing
+could set it to anything else.
+
+**THE GATE CAUGHT A REGRESSION IN THIS CHANGE, on its first run.** The cycle-dir wipe was harmless
+when `_launch` wrote the worker configs microseconds after it; moving selection out put a whole
+selection between the two, and a run that ended mid-selection left a cycle dir with no
+`config_*.json` in it — the artifact the gate reads to prove the workers ran on rust. The wipe is now
+PER PHASE (each phase clears only what it is about to rewrite) and a unit test pins it, proved to
+fail on the full-wipe form.
+
+**The gate was re-sized, and is now cheaper.** With the trainer no longer stalling, steps advance
+DURING a selection, so a cycle spans ~4,800 steps instead of ~2,200: the same 18,000 steps that
+bought 8 collects now buy 3, which puts the "total corrections > 0" bar at a ~3% flake. `--steps`
+goes to **30,000**, giving 4-6 cycles and 7-8 corrections in **472 s at contention factor 1.10** —
+2.4× the steps in 74% of the old 638 s.
+
+**ONE FINDING RECORDED, NOT FIXED** (backlog §2, P2): `select_candidates` calls `falsify_battle`
+without an `impl`, so the SELECTION half's re-rolls run on **node** even under `--use-bridge rust`,
+while the search/confirm workers run on rust and the composition gate asserts exactly that about
+them. Not fixed here on purpose — changing the engine changes which craters survive the falsify gate,
+which would have voided this pass's identical-selection proof and is a different claim needing its
+own measurement. It is also why the select child's config is named `select_config.json` rather than
+`config_*.json`: the gate globs the latter and asserts `"impl": "rust"` on every match, and a name
+that pulled selection into that glob would have made the gate assert something false.

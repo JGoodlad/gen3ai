@@ -14,9 +14,14 @@ the loss, and surviving a cycle boundary. ``designs/ops/TECH_DEBT_BACKLOG.md`` c
 
 The seam it would catch is exactly the one no leg-level test can: the legs are exercised with fake
 sessions, hand-built shards and pre-recorded fixtures, so a defect that lives in the *joins* —
-the callback's inline selection blocking the SB3 loop, the worker subprocess's environment, the
+the callback's selection blocking the SB3 loop, the worker subprocess's environment, the
 shard hand-off, the second cycle's directory wipe, the buffer surviving a ``train()`` boundary —
-is invisible to all of them and visible only here.
+is invisible to all of them and visible only here. **It found one on its first run:** the candidate
+SELECTION ran INLINE in ``_on_step`` (~30 s over this run's 9 traces; 48.1 s / 350.2 s over 9 and
+60 traces of a real run's archive, 2026-09-08) while the
+callback was documented, everywhere, as non-blocking. That is fixed — a cycle is now ``select``
+(a child) then ``search`` (the workers) — and the per-step cost is a scalar this run writes,
+``teacher/step_block_ms``.
 
 THE ARGV, and why each value (a run of 6,000 timesteps, one env, CPU, no Showdown server)::
 
@@ -31,7 +36,18 @@ THE ARGV, and why each value (a run of 6,000 timesteps, one env, CPU, no Showdow
                                    workers hide CUDA from themselves anyway).
       --use-bridge rust            THE POINT OF THE TEST. Passed explicitly rather than relying on
                                    the default, so a change of default cannot silently retarget it.
-      --steps 18000                🚨 SIZED BY THE COLLECT, NOT BY THE LAUNCH, AND BY THE YIELD.
+      --steps 30000                🚨 SIZED BY THE COLLECT, NOT BY THE LAUNCH, AND BY THE YIELD.
+                                   RE-SIZED 2026-09-08 when selection moved off the training step:
+                                   the trainer no longer stalls 30-100 s per cycle, so the SAME
+                                   18,000 steps that bought 8 collects / 34 candidate-shots now
+                                   buy 3 collects / 21 shots (the run finished in 284 s instead of
+                                   638 s — steps now advance DURING a selection, so a cycle spans
+                                   ~4,800 steps instead of ~2,200). 21 shots at the pooled 15%
+                                   per-candidate conversion leaves the "total > 0" bar a ~3% flake;
+                                   30,000 restores 4-6 collects and 24-40 shots (measured over two
+                                   runs: 6 cycles / 8 corrections and 4 cycles / 7) and still runs
+                                   well inside the pre-change duration. The rest of this note is
+                                   the original sizing, and its reasoning is unchanged:
                                    Measured: the first eval cycle's traces land ~step 1500-2000
                                    (eval is non-blocking), the first cycle with candidates launches
                                    at 3000, and a launch while a cycle is pending is SKIPPED, so
@@ -61,8 +77,9 @@ THE ARGV, and why each value (a run of 6,000 timesteps, one env, CPU, no Showdow
                                    composition would go ungated.
       --teacher-search-freq 1500   MINIMUM steps between cycle launches (a launch is skipped while
                                    a cycle is pending, so the realized cadence is longer). Selection
-                                   runs INLINE in `_on_step`, so this is also the run's dominant
-                                   BLOCKING cost, ~30 s per launch.
+                                   is a CHILD, so this cadence costs the training loop only the
+                                   spawn; it still bounds how much wall-clock a cycle has, because
+                                   the select child must finish before the search workers start.
       --teacher-search-budget 8    🚨 SIZED TO THE COLLECT, NOT TO THE SUPPLY. Selection offers
                                    9-16 candidates here, and taking all of them is what a
                                    production run wants — but the CONFIRM games are
@@ -97,10 +114,13 @@ that searches 9 candidates, runs every confirm rollout on rust, writes its shard
 ``> 0`` would be a ~2%-flaky assertion about a 6k-step policy. The run's TOTAL being ``> 0`` is the
 composition claim — labels reach the buffer and the AWR term folds — and it is the one asserted.
 
-**MEASURED DURATION: 638 s (10 m 38 s) at contention factor 1.32, 2026-09-07, 16-core box with a
-production run live** — 8 launched cycles, 8 collected, 34 candidate-shots, 4 corrections. Under a
-minute of that is training; the rest is eval, the inline selection passes and the async worker
-searches. It is marked ``slow`` regardless of what any future measurement says, per the root
+**MEASURED DURATION: 472 s (7 m 52 s) at contention factor 1.10, 2026-09-08, 16-core box with a
+production run live** — 30,000 steps, 4-6 collected cycles and 7-8 corrections across two runs.
+(Before selection moved off the training step: 638 s for 18,000 steps at factor 1.32 — 2.4x the
+steps in 74% of the wall clock, because the trainer no longer stalls 30-350 s per cycle.) Under two
+minutes of that is training; the rest is eval and the async selection/search children — the whole
+run now costs the TRAINING STEP **0.26 s**, which the run asserts and prints. It is marked ``slow``
+regardless of what any future measurement says, per the root
 ``CLAUDE.md``: a live training run normally shares this box, so a duration measured here is not a
 measurement, and the marker is a DECLARATION of cost, not an inference from one.
 
@@ -129,7 +149,7 @@ from typing import Dict, List, Tuple
 import pytest
 
 from utils.contention import (
-    ProgressDeadline, ProgressTimeout, cpu_contention_factor, describe_contention)
+    ProgressDeadline, ProgressTimeout, cpu_contention_factor, describe_contention, scale_timeout)
 from utils.paths import repo_path, src_path
 
 pytestmark = [pytest.mark.sim, pytest.mark.slow]
@@ -139,15 +159,24 @@ _CARGO_BUILD = ("cargo build --release --bin sim_bridge --bin search_driver "
                 "--manifest-path src/rust_sim/Cargo.toml")
 
 #: No output at all for this long (contention-SCALED) means the child is wedged, not slow. Sized to
-#: the longest silent stretch the run legitimately has: a cycle's ``select_candidates`` runs INLINE
-#: in ``_on_step`` and falsifies every loss trace of the newest eval cycle before printing anything
-#: (measured 30 s over 9 traces on a loaded box; 900 s is 30x that).
+#: the longest silent stretch the run legitimately has: a cycle's SELECTION child falsifies every
+#: loss trace of the newest eval cycle before anything is printed (measured 48 s over 9 traces on a
+#: loaded box; 900 s is ~19x that). Training keeps stepping meanwhile — the selection is no longer
+#: on the training step — but at this scale the run prints little else, so the bound still holds.
 _IDLE_BUDGET_S = 900.0
 #: Livelock backstop only — a child that chatters forever without converging keeps resetting the
 #: idle bound. Deliberately generous; it is not the detector.
 _TOTAL_BUDGET_S = 5400.0
 
+#: THE PER-STEP COST BOUND, and why it is loose. Selection used to block ``_on_step`` for 30-350 s;
+#: the two-phase cycle's worst step is a spawn plus ``model.save`` (measured 0.1-76 ms across a whole
+#: run). 5 s is two orders of magnitude above the measurement and two orders BELOW the defect, so it
+#: cannot flake on a starved box — a bound that can only be crossed by a regression, never by
+#: contention, which is the only kind of duration assertion this project allows.
+_STEP_BLOCK_BOUND_S = 5.0
+
 _CYCLE_RE = re.compile(r"\[SearchTeacher\] cycle @ ([\d,]+): (\d+) candidates")
+_STEP_BLOCK_RE = re.compile(r"\[SearchTeacher\] step-block ([a-z-]+): ([\d.]+) ms")
 _COLLECT_RE = re.compile(r"\[SearchTeacher\] collected (\d+)/(\d+) corrections; status=(\{.*\})")
 
 
@@ -181,7 +210,7 @@ def _run_child(run_dir: Path, log_path: Path) -> subprocess.Popen:
         "--debug", "--debug-eval",
         "--device", "cpu",
         "--use-bridge", "rust",
-        "--steps", "18000",
+        "--steps", "30000",
         "--n-steps", "512", "--batch-size", "128", "--n-epochs", "2",
         "--run-dir", str(run_dir),
         "--eval-freq", "500", "--eval-games", "1", "--eval-battles", "1",
@@ -356,8 +385,10 @@ def test_search_teacher_runs_multiple_cycles_end_to_end_on_rust(tmp_path):
         "a search-teacher cycle hit the 3600 s hung-cycle watchdog and was aborted — the "
         "composition wedged at the worker.\n" + _markers_tail(log_path))
     assert "[SearchTeacher] selection failed" not in text, (
-        "selection raised inside the training loop (it is caught and swallowed, so this marker is "
-        "the only evidence).\n" + _markers_tail(log_path))
+        "the SELECTION child failed (or died without writing a result). Since 2026-09-07 this also "
+        "lands as `error:selection` in that cycle's status histogram, which the per-collect check "
+        "below catches independently — both are asserted because a failure that reaches only one "
+        "of the two is a reporting bug in its own right.\n" + _markers_tail(log_path))
     assert len(collects) >= 2, (
         f"{len(cycles)} cycles launched but only {len(collects)} COLLECTED — the cycle boundary is "
         f"the property under test, and a launch is not a boundary. Two causes look alike here and "
@@ -380,6 +411,23 @@ def test_search_teacher_runs_multiple_cycles_end_to_end_on_rust(tmp_path):
         f"nothing, so the loss half is untested — this is the seam, not a flake.\n"
         + _markers_tail(log_path))
 
+    # -- the teacher never blocked the TRAINING STEP -------------------------------------------
+    # This is the finding this gate produced on its first run, turned into an assertion: selection
+    # ran inline in `_on_step` for 30-350 s per cycle while every document called the callback
+    # non-blocking. The callback now times its own launch/collect paths.
+    blocks = [(m.group(1), float(m.group(2))) for m in _STEP_BLOCK_RE.finditer(text)]
+    assert blocks, (
+        "no `[SearchTeacher] step-block` markers in a run that completed "
+        f"{len(collects)} cycles — the per-step cost instrument is not wired, so the "
+        "non-blocking claim is once again only a claim.\n" + _markers_tail(log_path))
+    worst_label, worst_ms = max(blocks, key=lambda b: b[1])
+    bound_ms = scale_timeout(_STEP_BLOCK_BOUND_S) * 1000.0
+    assert worst_ms < bound_ms, (
+        f"the teacher blocked one training step for {worst_ms:.0f} ms in the `{worst_label}` path "
+        f"(bound {bound_ms:.0f} ms = {_STEP_BLOCK_BOUND_S:.0f} s x contention scale). Both phases "
+        f"of a cycle are supposed to be children: `_on_step` may spawn, poll and read small JSON, "
+        f"and nothing else. {describe_contention()}\n" + _markers_tail(log_path))
+
     tb = _teacher_scalars(run_dir)
     per_cycle = tb.get("teacher/corrections_per_cycle", [])
     assert len(per_cycle) >= 2, (
@@ -394,5 +442,11 @@ def test_search_teacher_runs_multiple_cycles_end_to_end_on_rust(tmp_path):
     assert max(v for _, v in tb["teacher/n"]) > 0, (
         "teacher/n is 0 at every point — the AWR fold sampled an empty batch every time.")
 
+    by_label: Dict[str, List[float]] = {}
+    for label, ms in blocks:
+        by_label.setdefault(label, []).append(ms)
+    cost = "  ".join(f"{k} n={len(v)} max={max(v):.1f}ms" for k, v in sorted(by_label.items()))
     print(f"\n[search-teacher composition] {len(steps)} cycles at {steps}, "
-          f"{total} corrections, {elapsed:.0f}s wall at contention factor {factor:.2f}")
+          f"{total} corrections, {elapsed:.0f}s wall at contention factor {factor:.2f}"
+          f"\n[search-teacher composition] training-step cost: {cost} "
+          f"(total {sum(ms for _, ms in blocks) / 1000.0:.2f} s over the whole run)")

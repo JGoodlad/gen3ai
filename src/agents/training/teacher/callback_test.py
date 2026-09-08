@@ -4,9 +4,11 @@ subprocess, no model; hand-written shards mimic what a worker publishes."""
 import json
 import os
 import subprocess
+import time
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from agents.training.teacher.buffer import CorrectionBuffer
 from agents.training.teacher import callback as cb_mod
@@ -325,3 +327,259 @@ def test_abort_still_closes_the_log_on_the_clean_reap_path(tmp_path):
     cb._pending = {"workers": [w], "step": 3}
     cb._abort()
     assert w["log"].closed
+
+
+# --- THE TWO-PHASE CYCLE: selection runs in a CHILD, never on the training step ---------------
+#
+# The defect these pin (2026-09-07, found by the composition gate): `_launch` called
+# `select_for_mode` INLINE from `_on_step`, falsifying every loss trace of the newest eval cycle on
+# the trainer — measured ~30 s over 9 traces and ~100 s at the default 60-trace `scan_limit` —
+# while the callback's docstring, `src/agents/training/CLAUDE.md` and the `--use-bridge=rust`
+# startup banner all described it as non-blocking. A cycle is now `select` (a child) then `search`
+# (the workers), and `_on_step` only ever spawns, polls and reads small JSON.
+
+
+class _FakePopen:
+    """A Popen stand-in that records its argv and is already finished."""
+
+    def __init__(self, argv, **kw):
+        self.argv, self.kwargs, self.killed = list(argv), kw, 0
+
+    def poll(self):
+        return 0
+
+    def kill(self):
+        self.killed += 1
+
+    def wait(self, timeout=None):
+        return 0
+
+
+def _trap_selection(monkeypatch):
+    """Booby-trap the ONLY definition of the candidate scan.
+
+    Patched on `agents.training.teacher.modes` — the defining module — which is also where
+    `main/search_teacher_select_worker.py` READS it (`modes.select_for_mode`, qualified, resolved at
+    call time), so this is a live target rather than a definition-site no-op. It is a trap, not a
+    stub: nothing in THIS process may reach it, and the whole point of the test is that it doesn't.
+    """
+    from agents.training.teacher import modes
+
+    def _boom(*a, **kw):                       # pragma: no cover - tripping it IS the failure
+        raise AssertionError(
+            "select_for_mode ran IN THE TRAINING PROCESS. Selection is 30-100 s of falsify "
+            "re-rolls and belongs in the selection worker subprocess; `_on_step` must return in "
+            "milliseconds at a cycle boundary.")
+
+    monkeypatch.setattr(modes, "select_for_mode", _boom)
+
+
+def test_a_cycle_boundary_spawns_the_SELECT_CHILD_and_never_scans_in_process(tmp_path, monkeypatch):
+    """The step at a cycle boundary: a spawn, and nothing else."""
+    _trap_selection(monkeypatch)
+    spawned = []
+    monkeypatch.setattr(cb_mod.subprocess, "Popen",
+                        lambda argv, **kw: spawned.append(_FakePopen(argv, **kw)) or spawned[-1])
+    cb = _callback(tmp_path)
+    cb.scan_limit = 37
+    cb.num_timesteps = 5000
+
+    t0 = time.perf_counter()
+    assert cb._on_step() is True
+    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+
+    assert len(spawned) == 1, "a cycle boundary spawns exactly one selection child"
+    assert spawned[0].argv[1:3] == ["-m", "main.search_teacher_select_worker"], spawned[0].argv
+    assert cb._pending["phase"] == "select"
+    assert elapsed_ms < 1000.0, f"_on_step blocked {elapsed_ms:.0f} ms at a cycle boundary"
+    # the child got the run's scan width, and the cycle dir carries a config it can read
+    cfg = json.load(open(os.path.join(cb._cycle_dir, "select_config.json")))
+    assert cfg["scan_limit"] == 37 and cfg["run_dir"] == str(tmp_path)
+    assert cfg["out_path"] == os.path.join(cb._cycle_dir, "candidates.json")
+    # and the cost of that step is a RECORDED number, not a claim
+    assert cb.logger.records["teacher/step_block_ms"] < 1000.0
+
+
+def _select_pending(cb, payload):
+    """A finished select phase whose child wrote `payload` (or nothing, when payload is None)."""
+    os.makedirs(cb._cycle_dir, exist_ok=True)
+    out = os.path.join(cb._cycle_dir, "candidates.json")
+    if payload is not None:
+        with open(out, "w") as f:
+            json.dump(payload, f)
+    cb._pending = {"phase": "select", "step": 4000, "launched_at": 0.0, "out_path": out,
+                   "n_candidates": 0,
+                   "workers": [{"proc": SimpleNamespace(poll=lambda: 3),
+                                "log": SimpleNamespace(close=lambda: None)}]}
+
+
+@pytest.mark.parametrize("payload,why", [
+    ({"error": "RuntimeError: the re-roll driver died"}, "the child reported an error"),
+    (None, "the child died hard and wrote nothing"),
+])
+def test_a_failed_SELECTION_lands_in_the_status_histogram(tmp_path, capsys, payload, why):
+    """It used to be a bare `except Exception` + an optional print.
+
+    A run whose teacher selected nothing for a week then looked exactly like a run whose policy had
+    no craters. The failure now reaches BOTH artifacts the composition gate reads — the
+    `selection failed` marker AND an `error:selection` key in the per-cycle status histogram — and
+    `teacher/corrections_per_cycle` gets its point so the TB series and the collect markers stay
+    one-to-one.
+    """
+    cb = _callback(tmp_path)
+    cb.verbose = 1
+    _select_pending(cb, payload)
+
+    cb._finish_selection()
+
+    out = capsys.readouterr().out
+    assert "[SearchTeacher] selection failed" in out, why
+    assert "error:selection" in out, f"the histogram swallowed the failure ({why}): {out!r}"
+    assert cb.logger.records["teacher/corrections_per_cycle"] == 0.0
+    assert cb.logger.records["teacher/selection_failures_total"] == 1.0
+    assert cb._pending is None, "a failed selection must not wedge the cycle slot forever"
+
+
+def test_an_EMPTY_selection_ends_the_cycle_without_a_cycle_marker(tmp_path, capsys):
+    """No candidates is a fact about the policy, not a defect — and the composition gate asserts
+    every `cycle @ N: M candidates` marker carries M > 0, so this path must not emit one."""
+    cb = _callback(tmp_path)
+    cb.verbose = 1
+    _select_pending(cb, {"candidates": [], "n_candidates": 0})
+
+    cb._finish_selection()
+
+    out = capsys.readouterr().out
+    assert "cycle @" not in out and "collected" not in out
+    assert "no candidates" in out
+    assert cb._pending is None
+
+
+def test_the_SELECTED_candidates_reach_the_search_workers_verbatim(tmp_path, monkeypatch):
+    """Phase 2: the child's candidate list is what the workers are configured with, round-robin."""
+    _trap_selection(monkeypatch)
+    spawned = []
+    monkeypatch.setattr(cb_mod.subprocess, "Popen",
+                        lambda argv, **kw: spawned.append(_FakePopen(argv, **kw)) or spawned[-1])
+    cb = _callback(tmp_path)
+    cb.verbose = 0
+    cb.n_workers = 2
+    cb.num_timesteps = 9000
+    cb.model.save = lambda p: open(p, "wb").close()
+    cands = [{"summary_path": f"/t/{i}_summary.json", "recon_path": f"/t/{i}_reconstruction.json",
+              "inv_index": i, "turn": i, "opponent": "sentinel_1", "step": 500,
+              "anchor_delta": 1.0 - i / 10.0, "verdict": "MISTAKE"} for i in range(3)]
+    _select_pending(cb, {"candidates": cands, "n_candidates": len(cands)})
+
+    cb._finish_selection()
+
+    assert cb._pending["phase"] == "search"
+    assert cb._pending["n_candidates"] == 3
+    assert len(spawned) == 2 and all(p.argv[2] == "main.search_teacher_worker" for p in spawned)
+    got = []
+    for wid in range(2):
+        got += json.load(open(os.path.join(cb._cycle_dir, f"config_{wid}.json")))["candidates"]
+    assert sorted(c["inv_index"] for c in got) == [0, 1, 2]
+
+
+def test_the_select_config_is_NOT_globbed_by_the_composition_gate(tmp_path, monkeypatch):
+    """`config_*.json` in the cycle dir means "a SEARCH worker's config", and the composition gate
+    asserts every one of them records `"impl": "rust"`. Selection's own config must stay outside
+    that glob: `select_candidates` calls `falsify_battle` with no `impl`, so its re-rolls run on
+    node even on a rust run — a real gap, recorded in the backlog rather than papered over by a
+    file name that would make the gate assert something false."""
+    _trap_selection(monkeypatch)
+    monkeypatch.setattr(cb_mod.subprocess, "Popen", lambda argv, **kw: _FakePopen(argv, **kw))
+    cb = _callback(tmp_path)
+    cb.num_timesteps = 5000
+    cb._on_step()
+    import glob as _glob
+    assert _glob.glob(os.path.join(cb._cycle_dir, "config_*.json")) == []
+    assert os.path.exists(os.path.join(cb._cycle_dir, "select_config.json"))
+
+
+# --- the selection worker itself ---------------------------------------------------------------
+
+def test_the_select_worker_publishes_candidates_atomically(tmp_path, monkeypatch):
+    from agents.training.teacher import modes
+    from agents.training.teacher.selection import Candidate
+    from main import search_teacher_select_worker as sw
+
+    seen = {}
+
+    def _fake(mode, run_dir, **kw):
+        seen.update(kw, mode=mode, run_dir=run_dir)
+        return [Candidate("/t/a_summary.json", "/t/a_reconstruction.json", 4, 7, "heuristic",
+                          500, 0.9, "MISTAKE")]
+
+    monkeypatch.setattr(modes, "select_for_mode", _fake)
+    out = tmp_path / "candidates.json"
+    cfg = tmp_path / "select_config.json"
+    cfg.write_text(json.dumps({"run_dir": "/runs/x", "out_path": str(out), "mode": "crater",
+                               "budget": 8, "scan_limit": 12, "falsify_gate": True,
+                               "window": 2, "wp_band": 0.15}))
+
+    assert sw.run(str(cfg)) == 0
+    assert seen["scan_limit"] == 12 and seen["budget"] == 8 and seen["mode"] == "crater"
+    payload = json.loads(out.read_text())
+    assert payload["n_candidates"] == 1 and payload["candidates"][0]["inv_index"] == 4
+    assert not (tmp_path / "candidates.json.tmp").exists(), "the temp file must be os.replace'd away"
+
+
+def test_the_select_worker_reports_a_raise_as_an_ERROR_PAYLOAD_and_a_nonzero_exit(tmp_path,
+                                                                                 monkeypatch):
+    """A selection crash must arrive as data. The parent polls the PROCESS, so an exception that
+    only reached stderr would be indistinguishable from an empty candidate list."""
+    from agents.training.teacher import modes
+    from main import search_teacher_select_worker as sw
+
+    def _boom(*a, **kw):
+        raise RuntimeError("the re-roll driver wedged")
+
+    monkeypatch.setattr(modes, "select_for_mode", _boom)
+    out = tmp_path / "candidates.json"
+    cfg = tmp_path / "select_config.json"
+    cfg.write_text(json.dumps({"run_dir": "/runs/x", "out_path": str(out), "mode": "crater",
+                               "budget": 8, "scan_limit": 12, "falsify_gate": True}))
+
+    assert sw.run(str(cfg)) == 3
+    payload = json.loads(out.read_text())
+    assert payload["error"] == "RuntimeError: the re-roll driver wedged"
+    assert "Traceback" in payload["traceback"]
+
+
+def test_a_cycles_worker_CONFIGS_survive_the_next_cycles_select_launch(tmp_path, monkeypatch):
+    """The regression the composition gate caught on this change's first run.
+
+    The one-phase `_launch` wiped the cycle dir and wrote the worker configs microseconds later, so
+    the wipe was invisible. Moving selection out put a whole SELECTION between the two, and a run
+    that ended mid-selection left a cycle dir with no `config_*.json` at all — the artifact the
+    composition gate reads to prove the workers ran on rust. Each phase now clears only what it is
+    about to rewrite.
+    """
+    _trap_selection(monkeypatch)
+    monkeypatch.setattr(cb_mod.subprocess, "Popen", lambda argv, **kw: _FakePopen(argv, **kw))
+    cb = _callback(tmp_path)
+    cb.verbose = 0
+    cb.n_workers = 1
+    cb.num_timesteps = 5000
+    cb.model.save = lambda p: open(p, "wb").close()
+    cands = [{"summary_path": "/t/a_summary.json", "recon_path": "/t/a_reconstruction.json",
+              "inv_index": 0, "turn": 3, "opponent": "heuristic", "step": 500,
+              "anchor_delta": 0.5, "verdict": "MISTAKE"}]
+
+    cb._on_step()                                   # cycle 1: select
+    _select_pending(cb, {"candidates": cands})
+    cb._finish_selection()                          # cycle 1: workers spawned
+    worker_cfg = os.path.join(cb._cycle_dir, "config_0.json")
+    assert os.path.exists(worker_cfg)
+
+    cb._pending = None
+    cb.num_timesteps = 20000
+    cb._on_step()                                   # cycle 2: select launched
+
+    assert os.path.exists(worker_cfg), (
+        "the next cycle's SELECT launch erased the last cycle's worker config — the run's only "
+        "on-disk evidence of which engine its search workers used")
+    assert not os.path.exists(os.path.join(cb._cycle_dir, "candidates.json")), (
+        "a stale candidates.json would be read as THIS cycle's selection result")

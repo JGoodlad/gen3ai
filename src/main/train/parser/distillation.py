@@ -161,6 +161,19 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--teacher-confirm-rollouts", "--teacher_confirm_rollouts",
                         dest="teacher_confirm_rollouts", type=int, default=8,
                         help="Monte-Carlo confirm games per candidate for the Wilson-CI strictly-better gate.")
+    parser.add_argument("--teacher-scan-limit", "--teacher_scan_limit", dest="teacher_scan_limit",
+                        type=int, default=None,
+                        help="Loss traces of the newest eval cycle a `crater` search-teacher cycle "
+                             "SCANS for candidates (default 60). THE COST KNOB of the selection "
+                             "half: each scanned trace is falsify-gated through the re-roll driver "
+                             "(measured ~3 s per trace, so ~100 s per cycle at 60), which runs in "
+                             "the selection worker subprocess and NOT on the training step. "
+                             "Lowering it bounds a cycle's selection latency (and so how fresh the "
+                             "frozen trainee is when the search starts); raising it widens the "
+                             "crater pool a cycle can draw from. Ignored by "
+                             "--search-teacher-mode winprob_oneply, which scans every battle and "
+                             "spreads its budget with max_per_battle instead. Recorded in "
+                             "model_config and INHERITED on a flagless resume.")
     parser.add_argument("--teacher-search-workers", "--teacher_search_workers",
                         dest="teacher_search_workers", type=int, default=3,
                         help="Search-teacher worker subprocesses per cycle (default 3).")

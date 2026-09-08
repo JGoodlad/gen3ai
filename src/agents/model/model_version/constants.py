@@ -212,7 +212,17 @@ from typing import Any, Dict
 #   recorded and inherited: without it, every resume of a v9-era run on this code would silently
 #   cross an opponent-regime boundary mid-run (rule of evidence 15). A pre-v112 config defaults to
 #   False and derives its gate from that — see the migration for why that is a record, not a guess.
-MODEL_CONFIG_VERSION = 112
+# v113 (gen3_teacher_scan_limit_flag_v1): `teacher_scan_limit` — how many loss traces of the newest
+#   eval cycle the search-teacher's SELECTION half falsify-gates per cycle. The v101/v112 mould:
+#   TRAINING-only, RECORDED for provenance + flagless-resume read-back, NEVER gated. No forward
+#   reads it, no state_dict key depends on it, so there is NO ARCH_SIGNATURE bump and a frozen
+#   eval/pool/distill opponent (which runs no teacher cycle) passes trivially.
+#   The bump exists because the value was a HARD-CODED 60 inside `SearchTeacherCallback` with no
+#   flag at all, and it is simultaneously the selection half's COST (~3 s of re-rolls per trace,
+#   ~100 s per cycle at 60 — which is what the same commit moves off the training step) and its
+#   SUPPLY (the crater pool a cycle's candidates are drawn from). A pre-v113 config defaults to 60,
+#   which is not a guess: no run could set anything else, because nothing could set it.
+MODEL_CONFIG_VERSION = 113
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

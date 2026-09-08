@@ -384,8 +384,10 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         from agents.training.team_winrate_callback import TeamWinRateCallback
         callbacks.append(TeamWinRateCallback(run_dir=model_dir))
     # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
-    # corrections into model._correction_buffer (the AWR aux loss samples it). Non-blocking subprocess
-    # workers; off by default (the buffer fills nothing → coef-0 loss is byte-identical regardless).
+    # corrections into model._correction_buffer (the AWR aux loss samples it). Off by default (the
+    # buffer fills nothing → coef-0 loss is byte-identical regardless). BOTH halves of a cycle are
+    # subprocesses — the candidate SELECTION as well as the search/confirm workers; until 2026-09-07
+    # selection ran inline in _on_step and blocked the training loop for 48-250 s per cycle.
     if args.search_teacher:
         from agents.training.teacher.callback import SearchTeacherCallback
         callbacks.append(SearchTeacherCallback(
@@ -393,6 +395,10 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             freq_steps=(args.teacher_search_freq if args.teacher_search_freq > 0 else 2_000_000),
             budget=args.teacher_search_budget, n_workers=args.teacher_search_workers,
             confirm_rollouts=args.teacher_confirm_rollouts,
+            # --teacher-scan-limit: how many loss traces the SELECTION child falsify-gates. It was
+            # hard-coded at the callback's own default until v113; it is the cost knob of the half
+            # that used to block the training step.
+            scan_limit=args.teacher_scan_limit,
             persistent=args.teacher_persistent, refresh_steps=args.teacher_refresh_steps,
             n_battles=args.teacher_gen_battles,
             # OPD: when --opd-coef>0 the workers ALSO build the improved distribution π' (the KL target).

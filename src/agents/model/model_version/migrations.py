@@ -475,4 +475,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("promote_threshold",
                         0.55 if data.get("eval_sentinel_greedy") else 0.65)
         data["config_version"] = 112
+    # v113 (gen3_teacher_scan_limit_flag_v1) — the search-teacher SELECTION scan width. 60 is a
+    # RECORD, not a default chosen for old configs: the number was hard-coded in
+    # `SearchTeacherCallback.__init__` and reachable by no flag, so every run this migration can
+    # touch ran at exactly 60 or ran no teacher cycle at all.
+    if version < 113:
+        data.setdefault("teacher_scan_limit", 60)
+        data["config_version"] = 113
     return data

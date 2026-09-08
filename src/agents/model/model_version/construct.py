@@ -60,6 +60,7 @@ class ModelVersionConstruction(ModelVersionFields):
         distill_beta: float = 1.0,
         rank_tripwire: str = "warn",
         rank_tripwire_drop: float = 0.20,
+        teacher_scan_limit: int = 60,
         q_winprob_coef: float = 0.0,
         q_winprob_onpolicy_coef: float = 0.0,
     ) -> Self:
@@ -317,6 +318,7 @@ class ModelVersionConstruction(ModelVersionFields):
             distill_beta=float(distill_beta),
             rank_tripwire=str(rank_tripwire),
             rank_tripwire_drop=float(rank_tripwire_drop),
+            teacher_scan_limit=int(teacher_scan_limit),
             q_winprob_coef=float(q_winprob_coef),
             q_winprob_onpolicy_coef=float(q_winprob_onpolicy_coef),
             value_tail_weight=float(value_tail_weight),

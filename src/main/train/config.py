@@ -677,6 +677,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("search_teacher_value_coef", 0.0)  # training-only off-policy value term (default OFF)
     _resolve("search_teacher_beta", 1.0)       # training-only AWR temperature
     _resolve("search_teacher_batch_size", 256)  # training-only per-train() correction sample
+    # gen3_teacher_scan_limit_flag_v1 (v113) — the selection half's COST knob. The
+    # `capacity_telemetry` class: TRAINING-only, recorded for provenance + flagless-resume
+    # read-back, never gated. 60 is the value the callback hard-coded before the flag existed.
+    _resolve("teacher_scan_limit", 60)         # v113 training-only (search-teacher selection scan)
     _resolve("opd_coef", 0.0)                  # training-only OPD KL weight (inherited on flagless resume)
     _resolve("distill_coef", 0.0)              # training-only exploiter-distillation KL weight (inherited on resume)
     _resolve("distill_value_coef", 0.0)        # training-only exploiter VALUE-distillation MSE weight (inherited on resume)
@@ -1104,13 +1108,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
             # record renders exactly. The real blocker was always the missing DRIVER, and that is
             # what got built.
             if getattr(args, "search_teacher", False) or getattr(args, "teacher_persistent", False):
-                emit("🦀 [BRIDGE=rust] search-teacher on the RUST offline drivers "
-                     "(search_driver binary serves open_root/expand_many + replay/reroll/"
+                emit("🦀 [BRIDGE=rust] search-teacher SEARCH/CONFIRM workers on the RUST offline "
+                     "drivers (search_driver binary serves open_root/expand_many + replay/reroll/"
                      "reroll_many). Gated by: better_line node≡rust candidate values bit-identical, "
                      "search_clone_parity (clone ≡ reroll_many at the obs), the counterfactual "
                      "confirm leg, AND the COMPOSITION itself — "
                      "src/main/train/search_teacher_composition_test.py runs >=2 cycles end-to-end "
-                     "on rust. Fall back with --use-bridge=node if a cycle misbehaves.")
+                     "on rust. Fall back with --use-bridge=node if a cycle misbehaves. "
+                     "⚠️ The SELECTION half is NOT on rust: select_candidates falsify-gates its "
+                     "traces through the NODE re-roll driver regardless of --use-bridge "
+                     "(designs/ops/TECH_DEBT_BACKLOG.md). It runs in its own child "
+                     "(main.search_teacher_select_worker), so it costs the training step nothing "
+                     "either way — see teacher/step_block_ms.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
 
