@@ -706,6 +706,16 @@ resolution and for the head/mixture defect, both present at 10M. Two 10M lever a
 +0.015 on bot resolution with CIs over zero; the replicate floor (`ctrl10M_b`, next) says whether that is
 the control's shortfall.
 
+**Ladder arm `cflabels` read (2026-09-09, cf continuation labels vs the control, pinned 10M):** [MEASURED,
+`measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/`] the first conditioning row any arm has
+moved — turn-1 own-team decode of V Δ **+0.084 [+0.032, +0.183]** (arm +0.060, control −0.024), DETECTED
+against zero, no floor yet, and pending a matched-quota re-read (the arm's trace frame is 2.4× the control's
+in teams). The opponent axis did not move (spread ratio Δ −0.115 [−0.523, +0.088]); resolution nothing. The
+label is a state-conditional CONTINUATION label, so the own-team axis (in the state) is the one it can carry
+and the opponent axis (needs identity averaged over episodes) is the one it cannot — evidence for the
+target-variance CLASS, not for the cell label the refit used. The head is unbiased against its own
+continuation where the control's is pessimistic (Δ +0.040 [+0.007, +0.071]).
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,150-line file. **The ledger itself is append-only and is never edited by this**;
+16,160-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**480 headings · 440 dated · 2026-08-01 → 2026-09-09 · ledger 16,150 lines.**
+**481 headings · 441 dated · 2026-08-01 → 2026-09-09 · ledger 16,160 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -500,3 +500,4 @@ rename.
   - `L16071` · `2026-09-09` · VERDICT · the increment `377a5aa1→f871e79f` is TRAINING-SEMANTICS-NEUTRAL at `--win-prob-strata-weight 0` — arm 7 cleared to launch against `ctrl10M`
   - `L16075` · `2026-09-09` · ROOT CAUSE · the rust-binary incident was `resolve_config`'s automatic `cargo build` through a worktree whose `target/` was a symlink to main's — not a hand-run build
 - `L16079` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_12_ladder_cflabels` COMPLETE (`--cf-records --cf-winprob-coef 0.5`, 10,027,008 steps, 4.30 h, 0 crashes, G7 below bar on both halves; the FIRST arm carrying the value sidecar)
+  - `L16151` · `2026-09-09` · READ · critic ladder arm `ai_v12_12_ladder_cflabels` (cf continuation labels) vs the control at pinned 10M — the FIRST conditioning row any arm has moved: own-team R² Δ +0.084 [+0.032, +0.183] DETECTED (no floor); spread ratio and resolution NOT DETECTED
