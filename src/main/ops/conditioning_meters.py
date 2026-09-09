@@ -44,7 +44,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 

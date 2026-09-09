@@ -23,7 +23,7 @@ Pure unit, unmarked (runs in every tier): no ``models/``, no subprocess, no mode
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Optional
 
 import numpy as np
 import pytest
