@@ -633,7 +633,13 @@ goes.
    quota match corrects a difference in capture RATE between two frames of the same shape, not a
    difference in the shape itself. Two generated frames must further agree on games / opponent set
    / capture rule / sentinel regime; a differing SEED is deliberately NOT checked, being two draws
-   from one population.
+   from one population. It also records `battles_expected` beside `battles_played` and a
+   `complete` flag, and `critic_read` REFUSES a side that is incomplete **or** whose completeness
+   is UNRECORDED. A truncated cycle is otherwise indistinguishable from a finished one — same
+   nominal games, same opponents, same `selection`, same capture rates — while being a smaller
+   frame. (2026-09-09: `scripts/land.sh` removed the worktree a generation was running out of;
+   all four workers died with `failed to make path absolute` and the cycle landed at 71%. Run a
+   long generation from the MAIN checkout.)
 
 **Sentinels are CLAMPED, never padded.** `--sentinels K` draws from the run's own `snapshots/`,
 evenly spaced across the step range (hence the rating range, both endpoints kept), excluding any

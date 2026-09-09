@@ -8864,3 +8864,19 @@ offline-vs-live and spec-mismatch refusals, the fingerprint separation, and the 
 markers all UNMARKED (a rule that only runs in the slow tier is a rule that rides main RED); one
 `slow`+`sim` test generates a real 2-game cycle from the run archive and pins the npz keys, the
 `selection_schema` 2 capture rates and the shadow-dir layout.
+
+**Amendment, same day — a generated cycle now records whether it FINISHED.** The first real
+generation run exposed the gap: `scripts/land.sh` removed the git worktree the generation was
+running out of, all four eval workers died at once with `OSError: failed to make path absolute`,
+and the cycle landed at **71% of its plan** (3,425 of 4,800 battles) carrying a perfectly
+well-formed manifest — nominal `n_games` 400, all 12 opponents, `selection` recorded, capture rates
+1.0. It compared EQUAL to a complete cycle under every field `spec_of` checked, while being a
+materially smaller frame, and the read against the complete control had already started. That is
+the 2026-09-09 RETRACTION's frame-size artefact arriving through the provenance block instead of
+the quota. `generated_by` now carries `battles_expected`, `complete` and `shortfall`; the generator
+prints a loud INCOMPLETE line; `population_of` leads with it; and `check_comparable` REFUSES an
+incomplete side **and** one whose completeness is UNRECORDED — `completeness()` returns `None`
+rather than `True` for a cycle written before the field existed, so a caller that forgets the third
+value gets the safe answer from `bool(None)` rather than the flattering one. Operational rule, now
+in the SOP: **run a long generation from the MAIN checkout, never from a worktree you intend to
+land and remove.**

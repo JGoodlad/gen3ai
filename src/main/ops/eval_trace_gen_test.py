@@ -39,8 +39,18 @@ def _gen_manifest(**over):
         "eval_sentinel_greedy": True, "seed": 1, "workers": 4, "concurrency": 1,
         "bots": ["random", "heuristic", "staller"],
         "population": "OFFLINE-GENERATED cycle: 5 opponents x 400 games, ALL battles traced",
+        "battles_played": 2000, "battles_expected": 2000, "complete": True, "shortfall": 0,
     }
     m.update(over)
+    return m
+
+
+def _partial_manifest(played=1425):
+    """A cycle whose workers died part-way — the shape the 2026-09-09 worktree-removal produced."""
+    m = _gen_manifest()
+    m[ETG.GENERATED_KEY] = {**m[ETG.GENERATED_KEY], "battles_played": played,
+                            "battles_expected": 2000, "complete": False,
+                            "shortfall": 2000 - played}
     return m
 
 
@@ -229,6 +239,60 @@ def test_two_offline_frames_must_share_the_spec_but_not_the_seed():
     assert exc.value.code == 2
 
 
+def test_an_incomplete_cycle_is_refused_and_says_so_in_its_population():
+    """🚨 THE CASE THE SPEC CHECK CANNOT CATCH ALONE, and the one that actually happened.
+
+    On 2026-09-09 the worktree a generation was running out of was removed under it by
+    `land.sh`; all four workers died with `failed to make path absolute`, and the cycle landed at
+    71% of its plan with a perfectly well-formed manifest — nominal `n_games` 400, all 12
+    opponents present, `selection` recorded, capture rates 1.0. It compares EQUAL to a complete
+    cycle under every other field, while carrying two thirds of the battles. Frame size moves
+    every fitted conditioning row on its own, which is the whole content of the RETRACTION.
+    """
+    from main.ops.critic_read import check_comparable
+    partial = _partial_manifest()
+
+    assert ETG.completeness(partial)["complete"] is False
+    assert ETG.completeness(partial)["shortfall"] == 575
+    assert ETG.completeness(_gen_manifest())["complete"] is True
+    # a LIVE cycle carries no provenance block and is not judged incomplete by its absence
+    assert ETG.completeness(_live_manifest())["complete"] is True
+
+    # the population string LEADS with it, so it cannot be read as the nominal cycle
+    text = ETG.population_of(partial)
+    assert text.startswith("INCOMPLETE"), text
+    assert "1,425 of 2,000" in text
+
+    # and the read refuses, whichever side it is on
+    for pair in ((partial, _gen_manifest()), (_gen_manifest(), partial)):
+        with pytest.raises(SystemExit) as exc:
+            check_comparable(_readout(pair[0]), _readout(pair[1]))
+        assert exc.value.code == 2
+    # two COMPLETE cycles at one spec still pass
+    check_comparable(_readout(_gen_manifest()), _readout(_gen_manifest()))
+
+
+def test_a_cycle_that_records_no_battle_plan_is_UNKNOWN_not_complete():
+    """🚨 The third value, and why `bool()` of it must be the safe answer.
+
+    A cycle generated before `battles_expected` existed cannot be certified finished by anything
+    on disk — a truncated cycle and a complete one write the same well-formed manifest otherwise.
+    Reading that as True would be the flattering guess; it is UNKNOWN, and it is refused.
+    """
+    from main.ops.critic_read import check_comparable
+    legacy = _gen_manifest()
+    legacy[ETG.GENERATED_KEY] = {k: v for k, v in legacy[ETG.GENERATED_KEY].items()
+                                 if k not in ("complete", "battles_expected", "shortfall")}
+    comp = ETG.completeness(legacy)
+    assert comp["complete"] is None, "UNKNOWN — never True, and never a bare False either"
+    assert bool(comp["complete"]) is False, "a caller that forgets gets the SAFE answer"
+    assert "COMPLETENESS UNRECORDED" in ETG.population_of(legacy)
+
+    with pytest.raises(SystemExit) as exc:
+        check_comparable(_readout(legacy), _readout(_gen_manifest()))
+    assert exc.value.code == 2
+
+
 def test_read_root_accepts_both_spellings(tmp_path):
     """The shadow RUN dir and the eval_traces/step_<N> inside it are both natural things to
     paste, and both normalise to the run-shaped root cf_audit needs."""
@@ -363,6 +427,8 @@ def test_a_generated_cycle_is_shaped_like_a_live_one(tmp_path):
     assert gen["tool"] == ETG.GENERATOR_TAG
     assert gen["games_per_opponent"] == 2 and gen["sentinels_used"] == 1
     assert gen["capture"] == "ALL" and gen["reproducible"] is True
+    assert gen["battles_expected"] == 2 * 3 and gen["battles_played"] == 6
+    assert gen["complete"] is True and gen["shortfall"] == 0
     assert gen["checkpoint_sha"] and gen["source_run"] == run.name
     assert gen["eval_sentinel_greedy"] == json.loads(
         (run / "model_config.json").read_text())["eval_sentinel_greedy"], \

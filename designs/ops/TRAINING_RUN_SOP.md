@@ -303,6 +303,19 @@ on a 10M arm that kept four snapshots (one of them at the read step, excluded as
 so on these runs the power comes from games and full capture, not from more cells. The manifest
 records `sentinels_requested` beside `sentinels_used`; report the gap rather than the request.
 
+🚨 **A GENERATED CYCLE MUST SAY IT FINISHED, AND `critic_read` REFUSES ONE THAT DOES NOT.** A
+cycle whose workers die part-way still writes a perfectly well-formed manifest — nominal
+`--games`, the full opponent set, a recorded `selection`, capture rates of 1.0 — so nothing else
+on disk separates a finished cycle from a truncated one, while the truncated one is a SMALLER
+FRAME and frame size moves every fitted conditioning row on its own. The generator therefore
+records `battles_expected` beside `battles_played` and a `complete` flag, prints a loud INCOMPLETE
+line, and `critic_read` refuses both an incomplete side and one whose completeness is UNRECORDED
+(an older producer — unknown is never read as yes). ⚠️ **This is not hypothetical: it happened on
+2026-09-09.** A generation was running out of a git worktree, `scripts/land.sh` removed that
+worktree on landing, and all four workers died at once with `OSError: failed to make path
+absolute`; the cycle landed at 71% of its plan and read as nominal. **Run a long generation from
+the MAIN checkout, never from a worktree you intend to land and remove.**
+
 ⚠️ **REPRODUCIBILITY IS `--concurrency 1`, NOT `--workers 1`.** A shard's streams are keyed on
 `(seed, opponent, shard index)` — deliberately not on the worker id, which work-stealing decides in
 a race — so the worker count does not enter the result. Above concurrency 1 several battles of one

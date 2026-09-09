@@ -145,6 +145,36 @@ def check_comparable(arm: Dict[str, Any], ctl: Dict[str, Any]) -> None:
             "--arm-traces and --control-traces. Nothing is read and nothing is concluded.")
     if not a_gen:
         return
+    # 🚨 AN INCOMPLETE CYCLE IS A SMALLER FRAME, whatever its `n_games` says. This is the case the
+    # spec check below CANNOT catch on its own: a cycle whose workers died mid-plan still records
+    # the nominal games and the full opponent set, so it compares EQUAL to a complete one while
+    # carrying 71% of its battles. That is precisely the frame-size artefact the 2026-09-09
+    # RETRACTION was about, arriving through the provenance block instead of the quota.
+    for role, man in (("arm", a_man), ("control", c_man)):
+        comp = ETG.completeness(man)
+        if comp["complete"] is None:
+            refuse(
+                f"REFUSING: the {role} cycle does not record its own battle plan, so it cannot "
+                "be certified COMPLETE.",
+                "  It was generated before `battles_expected` / `complete` existed. A cycle whose "
+                "workers died part-way still writes a well-formed manifest — nominal games, the "
+                "full opponent set, a recorded `selection` — so nothing else on disk separates a "
+                "finished cycle from a truncated one.",
+                f"  THE FIX: re-generate the {role} cycle with the current tool "
+                "(`python -m main.ops.eval_trace_gen … --force`). Nothing is read and nothing is "
+                "concluded.")
+        if comp["complete"] is False:
+            refuse(
+                f"REFUSING: the {role} cycle is INCOMPLETE — "
+                f"{comp['battles_played']:,} of {comp['battles_expected']:,} battles played "
+                f"({comp['shortfall']:,} short).",
+                "  Its workers died, or it was killed, part-way through the plan. The frame is "
+                "therefore SMALLER than its games-per-opponent spec advertises, and a fitted "
+                "conditioning row's expectation moves with frame size — so a delta against a "
+                "complete cycle would be partly the difference between the two frames.",
+                f"  THE FIX: re-generate the {role} cycle "
+                "(`python -m main.ops.eval_trace_gen … --force`) and check its log ends without "
+                "an INCOMPLETE line. Nothing is read and nothing is concluded.")
     a_spec, c_spec = ETG.spec_of(a_man), ETG.spec_of(c_man)
     diff = {k: (a_spec[k], c_spec[k]) for k in a_spec if a_spec[k] != c_spec[k]}
     if diff:

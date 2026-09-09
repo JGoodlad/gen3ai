@@ -95,7 +95,21 @@ def population_of(manifest: Optional[dict]) -> str:
     man = manifest or {}
     gen = man.get(GENERATED_KEY)
     if isinstance(gen, dict) and gen.get("population"):
-        return str(gen["population"])
+        text = str(gen["population"])
+        # 🚨 INCOMPLETE LEADS. A cycle whose workers died mid-plan is a SMALLER frame than the one
+        # its `n_games` advertises, and frame size moves every fitted conditioning row on its own.
+        # Saying so at the front of the population string is what stops it being read as the
+        # nominal cycle. (2026-09-09: the worktree hosting a generation was removed under it by
+        # `land.sh`; all four workers died, the cycle landed at 71% with a correct manifest, and
+        # nothing in the provenance said the frame had shrunk.)
+        if gen.get("complete") is False:
+            played, want = gen.get("battles_played") or 0, gen.get("battles_expected") or 0
+            text = (f"INCOMPLETE ({played:,} of {want:,} battles played — workers died or the "
+                    f"cycle was killed) " + text)
+        elif "complete" not in gen or gen.get("battles_expected") is None:
+            text = ("COMPLETENESS UNRECORDED (generated before the cycle recorded its own "
+                    "battle plan — it cannot be certified complete) " + text)
+        return text
     opponents = man.get("opponents") or []
     n_games = man.get("n_games")
     if not opponents or not n_games:
@@ -105,6 +119,32 @@ def population_of(manifest: Optional[dict]) -> str:
     return (f"LIVE cycle: {len(opponents)} opponents ({n_bot} scripted bots + {n_sent} pool "
             f"sentinels) x {n_games} games, traced under the per-opponent OUTCOME QUOTA "
             f"(loss-enriched, not a random subsample)")
+
+
+def completeness(manifest: Optional[dict]) -> Dict[str, Any]:
+    """Did this generated cycle play every battle its plan called for?
+
+    Returns ``{complete, battles_played, battles_expected, shortfall}``; a LIVE cycle (no
+    provenance block) answers ``complete: True`` with no counts, because a live cycle's own
+    partial-coverage warning is the trainer's business and its frame is whatever it is.
+    """
+    gen = (manifest or {}).get(GENERATED_KEY)
+    if not isinstance(gen, dict):
+        return {"complete": True, "battles_played": None, "battles_expected": None,
+                "shortfall": 0}
+    played = gen.get("battles_played")
+    want = gen.get("battles_expected")
+    if "complete" not in gen or want is None:
+        # 🚨 UNKNOWN, and deliberately NOT True. A cycle written before this field existed does
+        # not record how many battles its plan called for, so nothing on disk can certify that it
+        # finished — and "it looks fine" is exactly the reading that let a 71% frame through.
+        # None is a third value every caller must handle, which is the point: `bool(None)` is
+        # False, so a caller that forgets gets the SAFE answer rather than the flattering one.
+        return {"complete": None, "battles_played": played, "battles_expected": want,
+                "shortfall": None}
+    played, want = int(played or 0), int(want)
+    return {"complete": bool(gen.get("complete")), "battles_played": played,
+            "battles_expected": want, "shortfall": max(0, want - played)}
 
 
 def spec_of(manifest: Optional[dict]) -> Dict[str, Any]:
@@ -123,6 +163,11 @@ def spec_of(manifest: Optional[dict]) -> Dict[str, Any]:
         "opponents": sorted(str(o) for o in (man.get("opponents") or [])),
         "capture": (gen or {}).get("capture", "quota"),
         "eval_sentinel_greedy": (gen or {}).get("eval_sentinel_greedy"),
+        # Completeness, not the raw battle count: two cycles at one spec that both COMPLETED have
+        # equal realized frames by construction, and comparing the counts would refuse a pair over
+        # a single timed-out battle. An incomplete side is refused outright by `check_comparable`,
+        # which is the stronger statement.
+        "complete": (gen or {}).get("complete", True),
     }
 
 
@@ -465,6 +510,7 @@ def generate(args) -> Dict[str, Any]:
 
     n_battles = sum(v.get("battles_played", 0)
                     for v in (selection.get("opponents") or {}).values())
+    expected_battles = len(names) * args.games
     manifest_path = step_dir / "eval_manifest.json"
     manifest = json.loads(manifest_path.read_text())
     manifest[GENERATED_KEY] = {
@@ -497,6 +543,14 @@ def generate(args) -> Dict[str, Any]:
                                     f"concurrency {args.concurrency} > 1 races the scripted bots' "
                                     "shared `random` stream within a shard")),
         "battles_played": n_battles,
+        "battles_expected": expected_battles,
+        # 🚨 The frame's own completeness, recorded rather than left to be inferred from two other
+        # numbers. A cycle can end short for reasons that have nothing to do with the model — a
+        # worker crash, a kill for overrunning, or (2026-09-09) the WORKTREE the generation was
+        # running out of being removed under it — and a short frame is a different population from
+        # the one `n_games` advertises.
+        "complete": n_battles >= expected_battles,
+        "shortfall": max(0, expected_battles - n_battles),
         "wall_seconds": round(elapsed, 1),
         "games_per_sec": round(n_battles / elapsed, 3) if elapsed > 0 else None,
         "environment": env_note,
@@ -511,6 +565,13 @@ def generate(args) -> Dict[str, Any]:
     _log(f"DONE in {elapsed / 60:.1f} min — {n_battles:,} battles, "
          f"{n_battles / elapsed:.2f} games/sec, "
          f"{sum(1 for _ in glob.glob(str(step_dir / '*' / '*_states.npz'))):,} traces")
+    if n_battles < expected_battles:
+        _log(f"🚨 INCOMPLETE: {n_battles:,} of {expected_battles:,} battles "
+             f"({n_battles / expected_battles * 100:.0f}%). This cycle is a SMALLER FRAME than "
+             f"its {args.games}-game spec advertises, and frame size moves every fitted "
+             f"conditioning row on its own — `main.ops.critic_read` will REFUSE to read it "
+             f"against a complete one. Re-generate before reading. Worker logs: "
+             f"{step_dir}/worker_*.log")
     _log(f"cycle: {step_dir}")
     return manifest
 
