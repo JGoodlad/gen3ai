@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,840-line file. **The ledger itself is append-only and is never edited by this**;
+15,855-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**466 headings · 426 dated · 2026-08-01 → 2026-09-09 · ledger 15,840 lines.**
+**467 headings · 427 dated · 2026-08-01 → 2026-09-09 · ledger 15,855 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -486,3 +486,4 @@ rename.
   - `L15791` · `2026-09-09` · MEASUREMENT · MIXTURE DIAGNOSTIC on `ai_v12_02_winprob_critic` — DETECTED: the head emits close to one marginal win probability regardless of opponent, and conditions on its OWN team even worse
   - `L15827` · `2026-09-09` · INSTRUMENT + AMENDMENT · the training-side VALUE SIDECAR lands (`377a5aa1`), eval traces keep every cycle (`b07c42bf`), and the critic ladder's remaining arms re-pin to `377a5aa1` with a 4× trace quota
   - `L15837` · `2026-09-09` · AMENDMENT · which commit span each critic-ladder delta crosses — "arm 5 is the cross-commit one" is no longer true
+  - `L15841` · `2026-09-09` · CORRECTION · the span entry above named arms by NUMBER, and two numberings are live — the runs, by name; and what the span does to the REPLICATE FLOOR
