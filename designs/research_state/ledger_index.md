@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,074-line file. **The ledger itself is append-only and is never edited by this**;
+16,078-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**478 headings · 438 dated · 2026-08-01 → 2026-09-09 · ledger 16,074 lines.**
+**479 headings · 439 dated · 2026-08-01 → 2026-09-09 · ledger 16,078 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -498,3 +498,4 @@ rename.
   - `L16050` · `2026-09-09` · INSTRUMENT + READ · the CONDITIONING meters are registered rows of `main.ops.critic_read` (`33f6f48a`, tool v2) — and neither `vf15` nor `tdaux` moves any of them against the control
   - `L16063` · `2026-09-09` · BUILT + REGISTRATION · critic ladder arm 7 `ai_v12_17_ladder_strata` — `--win-prob-strata-weight 1.0`, opponent-CLASS-stratified weighting of the win-prob BCE (`f871e79f`, MODEL_CONFIG_VERSION 115)
   - `L16071` · `2026-09-09` · VERDICT · the increment `377a5aa1→f871e79f` is TRAINING-SEMANTICS-NEUTRAL at `--win-prob-strata-weight 0` — arm 7 cleared to launch against `ctrl10M`
+  - `L16075` · `2026-09-09` · ROOT CAUSE · the rust-binary incident was `resolve_config`'s automatic `cargo build` through a worktree whose `target/` was a symlink to main's — not a hand-run build
