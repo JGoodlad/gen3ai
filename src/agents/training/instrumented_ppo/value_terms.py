@@ -1,7 +1,9 @@
 """The three CRITIC-side loss terms.
 
 * `_win_prob_loss` — the auxiliary win-probability BCE, with the contested-band readout that is
-  the term's actual information content (a blowout's P(win) is recoverable from material).
+  the term's actual information content (a blowout's P(win) is recoverable from material), and the
+  optional OPPONENT-STRATIFIED per-row weight (`gen3_winprob_strata_weight_v1`).
+* `_win_prob_strata_weights` — that weight vector, computed ONCE per rollout over the whole buffer.
 * `_value_dist_loss` — the distributional head's HL-Gauss cross-entropy.
 * `_value_loss_from_se` — the tail-weighted (CVaR-blended) value loss, used at all THREE value
   sites in `train()`. At `value_tail_weight == 0` it is `se.mean()`, byte-identical to
@@ -10,14 +12,119 @@
 import torch as th
 from torch.nn import functional as F
 
-from agents.training.instrumented_ppo.constants import _VALUE_TAIL_FRAC, _WIN_CONTESTED_TAU
+from agents.training.instrumented_ppo.constants import (
+    _STRATA_WEIGHT_CAP, _VALUE_TAIL_FRAC, _WIN_CONTESTED_TAU,
+)
 
 
 class ValueTerms:
     """The win-prob, value-distribution and tail-weighted value losses."""
 
     @staticmethod
-    def _win_prob_loss(logits, target, mask, margin=None):
+    def _win_prob_strata_weights(opp_class, mask, strata_weight, cap=_STRATA_WEIGHT_CAP):
+        """OPPONENT-STRATIFIED weights for the win-prob BCE (`gen3_winprob_strata_weight_v1`).
+
+        **THE DEFECT THIS EXISTS FOR** (`designs/research_state/measurements/winprob_head_refit_2026-09-09/`
+        §6, §11). Only **10.2 % / 14.4 %** of the terminal 0/1 label's variance lies BETWEEN
+        (cycle, opponent) cells, so a head minimising a proper scoring rule buys its resolution
+        from the board and from its own team — which is cheaper — and never conditions on the
+        opponent. The refit proved the failure is the TARGET, not the head: the same architecture
+        refit on the same frozen features against the terminal label reproduces the online failure
+        exactly, while the same head on a target with the per-episode draw removed conditions. The
+        operative quantity is the between-cell SHARE OF THE OBJECTIVE, and a per-class weight
+        raises that share DIRECTLY — no new labels, no new machinery, no rollout cost.
+
+        **THE VOCABULARY IS THE FOUR `opp_class` CODES** — `bot` / `pool` / `stable` / `exploiter`
+        (`agents.model.opp_intent.OPP_CLASS_NAMES`), which is ALL the env knows per step. Per-BOT
+        identity is not available and its absence is a design decision, not an oversight: the bot
+        archetype is drawn per EPISODE inside `MaskableAgentWrapper._select_episode_opponent` and
+        never reaches the observation (`value_sidecar.py` declines it for the same reason). So this
+        lever balances the between-CLASS share, and the residual heterogeneity WITHIN the bot class
+        is left in episode proportion — stated here because it bounds what the arm can move.
+
+        **THE ARITHMETIC.** Over the rollout buffer's KNOWN rows (`mask` = 1) with class counts
+        `n_c` and frequencies `f_c = n_c / N`:
+
+            raw_c = min(f_c ** (-s), cap)          s = `strata_weight` in [0, 1]
+            w_c   = raw_c / Z,   Z = (sum_c n_c * raw_c) / N
+
+        `Z` is exactly the mean of `raw` over the known rows, so **the mean weight is 1 by
+        construction and the loss SCALE does not move** — `s` re-prices the mix without also
+        rescaling the value gradient, which would confound the two. At `s = 1` and no clipping
+        every class contributes `N / C` to the objective (`n_c * w_c` is constant in `c`); at
+        `s = 0` every weight is 1 — and that case returns **None** rather than a vector of ones, so
+        the caller takes the unweighted expression UNCHANGED and the loss is bit-identical.
+
+        **Returns `(w, metrics)` whenever the flag is ON, with `w` = None where no weighting
+        applies** — no labels yet, or fewer than two classes present (with one class every weight
+        is 1 anyway, and a None keeps the loss bit-identical). `metrics` is published EITHER WAY,
+        carrying `strata_active` 0/1: an absent `strata_*` family must mean "the flag is off", and
+        nothing else. 🚨 This is not decoration. Under `--debug` (and on any run before the
+        self-play pool seeds) every opponent is a bot, so ONE class is present and the lever
+        legitimately does nothing — and with the metrics suppressed that is indistinguishable in
+        TB from a flag that was never passed, from a critic that is not `winprob`, and from a
+        plumbing break. It cost this build one smoke to learn.
+
+        Returns `None` outright ONLY when `strata_weight <= 0`, so an OFF run's TB is unchanged.
+        Pure + static: it unit-tests on a synthetic buffer with no PPO. Accepts numpy or torch.
+        """
+        s = float(strata_weight)
+        if s <= 0.0:                                   # OFF -> publish nothing, weigh nothing
+            return None
+        idle = {"strata_weight": s, "strata_active": 0.0, "strata_rows": 0.0,
+                "strata_n_classes": 0.0}
+        if opp_class is None or mask is None:
+            return None, idle
+        from agents.model.opp_intent import OPP_CLASS_NAMES
+        n_classes = len(OPP_CLASS_NAMES)
+        c = th.as_tensor(opp_class).reshape(-1).long()
+        m = th.as_tensor(mask).reshape(-1).to(th.float64)
+        if c.numel() != m.numel() or c.numel() == 0:
+            return None, idle
+        n_known = float(m.sum())
+        if n_known <= 0.0:
+            return None, idle
+        c = c.clamp(0, n_classes - 1)
+        counts = th.zeros(n_classes, dtype=th.float64).scatter_add_(0, c, m)
+        present = counts > 0.0
+        idle["strata_rows"] = n_known
+        idle["strata_n_classes"] = float(int(present.sum()))
+        if int(present.sum()) < 2:
+            # ONE class -> every weight would be 1. Reported, not silent: this is the state a
+            # bot-only curriculum (any `--debug` run, and any run before the pool seeds) sits in.
+            return None, idle
+        freq = counts / n_known
+        raw = th.where(present, freq.clamp_min(1e-12).pow(-s), th.zeros_like(freq))
+        capped = present & (raw > float(cap))
+        raw = th.where(capped, th.full_like(raw, float(cap)), raw)
+        z = float((counts * raw).sum() / n_known)      # == mean(raw) over the KNOWN rows
+        w = raw / z                                    # mean(w) == 1 exactly
+        share = counts * w / n_known                   # each class's share of the objective
+        sp = share[present]
+        # Normalised entropy of the post-weight class MASS: 1.0 = perfectly balanced, and the
+        # single number that says whether the lever LANDED. Read it against `strata_share_*`.
+        ent = float(-(sp * sp.clamp_min(1e-12).log()).sum() / th.tensor(float(int(present.sum()))).log())
+        wp = w[present]
+        metrics = {
+            "strata_weight": s,
+            "strata_active": 1.0,
+            "strata_rows": n_known,
+            "strata_n_classes": float(int(present.sum())),
+            "strata_capped": float(int(capped.sum())),
+            "strata_w_min": float(wp.min()),
+            "strata_w_max": float(wp.max()),
+            "strata_w_entropy": ent,
+        }
+        for code, name in OPP_CLASS_NAMES.items():
+            if bool(present[code]):
+                metrics[f"strata_w_{name}"] = float(w[code])
+                metrics[f"strata_frac_{name}"] = float(freq[code])
+                metrics[f"strata_share_{name}"] = float(share[code])
+        return w.to(th.float32), metrics
+
+
+    @staticmethod
+    def _win_prob_loss(logits, target, mask, margin=None, strata_w=None, opp_class=None):
         """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
 
         ``target`` [B,1] = the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to every step of
@@ -35,7 +142,16 @@ class ValueTerms:
         material), and a Brier SKILL SCORE vs a material-only baseline (``P_mat = clip(0.5 + 0.5·margin)``):
         ``skill_vs_material`` > 0 ⇒ the head beats 'just count the mons'. **A margin with no SPREAD
         is treated as absent** (`gen3_tb_relevance_v1`) — it cannot stratify, and the six tags it
-        would produce are then copies of their pooled siblings plus two constants."""
+        would produce are then copies of their pooled siblings plus two constants.
+
+        ``strata_w`` [C] + ``opp_class`` [B,1] enable the OPPONENT-STRATIFIED weighting
+        (`gen3_winprob_strata_weight_v1`): the per-row BCE is multiplied by its class's weight from
+        `_win_prob_strata_weights`, whose mean over the buffer's known rows is 1, and the DENOMINATOR
+        stays `n_known` — dividing by the weighted count instead would renormalise per minibatch and
+        undo the buffer-level balance the weights were computed to give. Either argument absent takes
+        the unweighted expression UNCHANGED (bit-identical), which is what `--win-prob-strata-weight 0`
+        produces and what every counterfactual/twin caller of this loss gets: they score FOREIGN
+        recorded states whose opponent mix is the label factory's, not the rollout's."""
         if logits is None or target is None or mask is None:
             return None
         logits = logits.reshape(-1)
@@ -45,7 +161,14 @@ class ValueTerms:
         if float(n_known) == 0.0:
             return None
         per = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
-        loss = (per * mask).sum() / n_known
+        row_w = None
+        if strata_w is not None and opp_class is not None:
+            sw = strata_w.to(logits.device)
+            row_w = sw[opp_class.to(logits.device).reshape(-1).long().clamp(0, sw.numel() - 1)]
+        if row_w is None:
+            loss = (per * mask).sum() / n_known
+        else:
+            loss = (per * mask * row_w).sum() / n_known
         with th.no_grad():
             p = th.sigmoid(logits)
             sq = (p - target) ** 2
@@ -62,6 +185,13 @@ class ValueTerms:
             "label_mean": float(label_mean.item()),
             "coverage": float((n_known / mask.numel()).item()),             # fraction of minibatch labeled
         }
+        if row_w is not None:
+            # The two reads that let a reader CONFIRM the lever was live rather than assume it:
+            # what the objective actually minimised, and what it would have been unweighted. They
+            # separate "the weights moved the loss" from "the head got better".
+            with th.no_grad():
+                metrics["loss_unweighted"] = float(((per.detach() * mask).sum() / n_known).item())
+                metrics["strata_row_w_mean"] = float(((row_w * mask).sum() / n_known).item())
         # Information value the aggregate Brier hides (only when the material margin is available): the
         # head's skill on CLOSE games + a skill score beyond a material-only baseline.
         # gen3_tb_relevance_v1: a CONSTANT margin cannot stratify anything, and publishing the

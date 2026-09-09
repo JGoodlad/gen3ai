@@ -466,6 +466,17 @@ class ModelVersionFields:
     # so it is recorded for PROVENANCE and for flagless-resume read-back (`_resolve` reads this
     # field) and is never compared by check_compatible or any check_*.
     intent_label_bot_weight: float = 1.0
+    # gen3_winprob_strata_weight_v1 (config v115): OPPONENT-STRATIFIED weighting of the WIN-PROB
+    # BCE — each state's BCE term is multiplied by its opponent CLASS's inverse-frequency weight
+    # (capped, renormalised to mean 1 over the rollout buffer), so classes contribute to the
+    # objective in balanced rather than episode proportion. 0.0 = OFF (the unweighted masked mean
+    # is taken unchanged, so the loss is bit-identical). The td_aux_coef class exactly: it
+    # reweights a loss, touches no forward pass and no weight shape, so it is recorded for
+    # PROVENANCE and for flagless-resume read-back (`_resolve` reads this field) and is never
+    # compared by check_compatible or any check_*. RECORDED rather than left to `cli_args` for the
+    # v100 reason: an arm resumed without re-typing it would keep training and silently stop
+    # applying the only thing it was launched to measure.
+    win_prob_strata_weight: float = 0.0
     # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
     # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
     # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:

@@ -231,6 +231,28 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
         cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
         q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
+        # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
+        # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
+        # every epoch and minibatch of this call. Per-BUFFER and not per-minibatch on purpose: the
+        # normalisation that makes the mean weight 1 is only meaningful over the population the
+        # frequencies were measured on, and a per-minibatch recomputation would make the class
+        # balance itself a sampling-noise term. Read here rather than in `_resolve_fold_flags`
+        # because it needs the buffer, and `_align_opp_intent_labels` above has already run — the
+        # only writer of `opp_class` in this call (a semantic no-op: the class is constant within
+        # an episode). Under `--critic winprob` only; every other configuration passed None and
+        # takes the unweighted expression unchanged.
+        strata_w = None
+        if win_prob_on and critic_winprob and float(getattr(self, "win_prob_strata_weight", 0.0)) > 0.0:
+            _sb = self.rollout_buffer.observations
+            _sout = self._win_prob_strata_weights(
+                _sb.get("opp_class"), _sb.get("win_mask"), float(self.win_prob_strata_weight))
+            if _sout is not None:
+                # `_smetrics` arrives even when no weighting applies (one class present, labels
+                # not filled yet), carrying `strata_active` 0/1 — so an ABSENT `win_prob/strata_*`
+                # family means the flag is off and cannot be confused with a plumbing break.
+                strata_w, _smetrics = _sout
+                for _sk, _sv in _smetrics.items():
+                    win_prob_metrics.setdefault(_sk, []).append(float(_sv))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
@@ -630,6 +652,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         rollout_data.observations.get("win_target"),
                         rollout_data.observations.get("win_mask"),
                         rollout_data.observations.get("win_margin"),
+                        strata_w,
+                        rollout_data.observations.get("opp_class") if strata_w is not None else None,
                     )
                     if wp_out is not None:
                         wp_loss, wp_m = wp_out

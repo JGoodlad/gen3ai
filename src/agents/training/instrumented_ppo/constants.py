@@ -14,6 +14,18 @@ _VALUE_TAIL_FRAC = 0.1
 # margin ∈ [−1,1] = Φ_mat/bound; bound ≈ 19.5, so 0.25 ≈ a material lead of up to ~1.5 mons.
 _WIN_CONTESTED_TAU = 0.25
 
+# gen3_winprob_strata_weight_v1 — the CAP on a single opponent CLASS's inverse-frequency weight in
+# the stratified win-prob BCE (`--win-prob-strata-weight`). The weight before renormalisation is
+# `freq ** (-s)`, so a class holding 1/1000 of the buffer would ask for 1000x and one rollout's
+# handful of rows would carry the whole value gradient; the cap is what makes the lever a
+# RE-PRICING rather than a variance bomb. It binds at `freq < 1/cap` when s = 1.
+# 🚨 IT BINDS AT THE PRODUCTION MIX, DELIBERATELY, AND THE ARITHMETIC IS WORTH KNOWING: at the
+# measured ~10% bot / ~90% self-play episode mix, s = 1 asks for 10x on the bot stratum, the cap
+# holds it at 8x, and after renormalisation the objective splits 44/56 rather than 50/50 — a 4.4x
+# re-pricing of the between-class signal instead of 5x. The bound on per-row gradient weight is
+# worth more than the last 0.6x. `designs/training/critic_and_value_losses.md` carries the table.
+_STRATA_WEIGHT_CAP = 8.0
+
 # `win_prob/start_*` — cap on the episode-start rows forwarded once per `train()`. At production
 # `n_envs` a rollout holds thousands of episode starts and the read is a MEAN, so a bounded prefix
 # is the same measurement at a fixed cost. Taken as a deterministic prefix in env-major order,

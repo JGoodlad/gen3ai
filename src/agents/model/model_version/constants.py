@@ -232,7 +232,17 @@ from typing import Any, Dict
 #   and the readout is built LAST — so an OFF run on this code is bit-identical to the same run on
 #   v113 and every existing checkpoint still resumes. A pre-v114 config defaults to False, which is
 #   not a guess: no run could set anything else, because nothing could set it.
-MODEL_CONFIG_VERSION = 114
+# v115 (gen3_winprob_strata_weight_v1): `win_prob_strata_weight` — OPPONENT-STRATIFIED weighting
+#   of the win-prob BCE, arm 7 of the critic ladder
+#   (designs/research_state/measurements/winprob_head_refit_2026-09-09/ §11). ONE TRAINING-only
+#   loss weight, the td_aux_coef / v97 shape exactly: it multiplies each state's BCE term by its
+#   opponent CLASS's inverse-frequency weight, so it reweights a loss computed in the PPO step and
+#   touches no forward pass and no weight shape — a default (0.0) build is bit-identical and there
+#   is nothing for `check_compatible` to compare. RECORDED anyway, for v100's reason: a resume that
+#   dropped it would keep training and silently stop applying the only thing the arm exists to
+#   measure. A pre-v115 config defaults to 0.0 = OFF, which is not a guess but the only possible
+#   past — the field did not exist. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 115
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

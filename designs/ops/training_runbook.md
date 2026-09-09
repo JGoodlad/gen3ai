@@ -248,6 +248,17 @@ potential — `γφ(s′) − φ(s)` reaches the POLICY's advantages and nothing
 regressing the unshaped terminal indicator and `V ≡ P(win)` survives bit-for-bit. No coefficient
 (φ is already in the value currency). **`--critic` is STRUCTURAL and resume-immutable.**
 
+**`--win-prob-strata-weight <0..1>`** (default `0.0` = OFF, bit-identical; **requires
+`--critic winprob`**) re-prices WHICH OPPONENTS the value loss is bought from: each state's BCE term
+is weighted by its opponent CLASS's inverse frequency (`bot` / `pool` / `stable` / `exploiter`),
+capped at 8× and renormalised so the mean weight over the buffer is 1 — the mix moves, the loss
+scale does not. It exists because only ~10–14 % of the terminal label's variance lies BETWEEN
+(cycle, opponent) cells, so the head buys its resolution from the board instead. ⚠️ **The cap BINDS
+at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_prob/strata_share_*`,
+`strata_w_entropy` and **`strata_active`** — the family is published whenever the flag is on, so
+`strata_active 0` means "on but idle" (one opponent class present) and an ABSENT family means off. Mechanics:
+[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+
 Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md);
 flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.

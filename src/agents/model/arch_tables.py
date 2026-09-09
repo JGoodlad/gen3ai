@@ -111,6 +111,14 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # td_aux_coef there is nothing that could render it INERT. (It was recorded from v97 but
     # missing here, so the generated table simply did not show it.)
     "intent_label_bot_weight": None,
+    # v115 gen3_winprob_strata_weight_v1 — the OPPONENT-STRATIFIED weight on the win-prob BCE.
+    # Named to `win_head` rather than None because it CAN be inert in the way this column exists to
+    # show: a live weight with no win-prob head reweights a loss that is not being computed. (The
+    # cross-flag half — it also needs `--critic winprob` — is a `combination_checks` REFUSAL, so it
+    # cannot reach a config; the head is the part a config can get wrong.) Declared here rather
+    # than relying on the `*_coef` suffix, which is exactly how `intent_label_bot_weight` above
+    # stayed out of every generated table from v97.
+    "win_prob_strata_weight": "win_head",
     # v100 gen3_cf_coef_provenance_v1 — the counterfactual family's coefficients. Each one IS
     # gated by a module, and naming that module is what lets the table mark it INERT: a live
     # coefficient whose head was never built does nothing, and that is precisely the confusion

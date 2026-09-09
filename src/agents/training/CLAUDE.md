@@ -459,6 +459,33 @@ a cap forfeit used to arrive as `truncated`, so SB3 bootstrapped `V(s_last)` ont
 `wrappers.resolve_episode_end`, under `winprob` only. **`--gamma` is a flag now and is INERT ON A
 RESUME like `--lr`.**
 
+### `--win-prob-strata-weight` — the BCE's opponent MIX (`gen3_winprob_strata_weight_v1`, v115)
+
+**Default `0.0` = OFF and the loss is BIT-identical; `--critic winprob` is REQUIRED** (refused
+otherwise — under `shaped` that BCE is an auxiliary diagnostic, not the value loss). Each state's
+BCE term is multiplied by its opponent CLASS's weight `w_c ∝ freq_c ** (−s)`, capped at **8×** and
+renormalised so the **mean weight over the rollout buffer is exactly 1** — it re-prices the MIX
+without moving the loss SCALE, so an arm cannot confound "re-weighted the classes" with "raised the
+critic's learning rate". At `s = 1` every class contributes equally; `s` interpolates.
+
+🚨 **WHY, and it is arithmetic rather than a hunch.** Only **10.2 % / 14.4 %** of the terminal 0/1
+label's variance lies BETWEEN (cycle, opponent) cells, so a head minimising BCE buys its resolution
+from the board and its own team — which is cheaper — and never conditions on the opponent. The head
+refit proved the fault is the TARGET, not the head, on both substrates
+([`winprob_head_refit_2026-09-09`](../../../designs/research_state/measurements/winprob_head_refit_2026-09-09/README.md)
+§6/§11). This raises that share directly, with **no new labels and no rollout cost**.
+
+🚨 **THE VOCABULARY IS THE FOUR `opp_class` CODES** — `bot` / `pool` / `stable` / `exploiter` — and
+per-BOT identity is **not available**: the archetype is drawn per EPISODE in
+`MaskableAgentWrapper._select_episode_opponent` and never reaches the observation. So the lever
+balances the between-CLASS share and leaves within-class heterogeneity in episode proportion.
+⚠️ **THE CAP BINDS AT THE PRODUCTION MIX, deliberately**: at ~10 % bots / ~90 % self-play, `s = 1`
+asks for 10× and gets 8×, so the objective splits **44/56, not 50/50** — a 4.4× re-pricing with a
+bounded per-row weight. Read `win_prob/strata_share_*`, `strata_w_entropy` (1.0 = balanced) and
+`loss` vs `loss_unweighted`. 🚨 **`strata_active` 0 vs an ABSENT family are different facts**: the
+family is published whenever the flag is on, so 0 means "on, but one class present / no labels yet"
+(every `--debug` run and any run before the pool seeds) and ABSENT means the flag is off.
+
 **Full detail — the currency argument, the cap-terminal measurement, the `--vf-coef` BCE
 announcement and every value-side flag below — is in
 [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).**

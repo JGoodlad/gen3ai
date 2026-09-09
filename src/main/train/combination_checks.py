@@ -347,6 +347,23 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "NOTE --vf-coef now multiplies a BCE rather than an MSE over a shaped return, so 0.5 does "
         "not transfer between the two loss families; re-tune it on this arm."),
     CombinationCheck(
+        # The one check in this family pointing the OTHER way: not "winprob refuses X" but
+        # "X requires winprob". Refused rather than ignored because the flag's whole premise is
+        # that the BCE it reweights IS the value loss. Under `--critic shaped` that BCE is an
+        # auxiliary readout at `--win-prob-coef`, so a stratified weight there would re-price a
+        # DIAGNOSTIC and leave the actual critic untouched — a silent no-op wearing the name of
+        # the experiment, which is exactly what this module exists to end.
+        "winprob_strata_needs_the_winprob_critic",
+        ("win_prob_strata_weight", "critic"),
+        lambda a: float(_val(a, "win_prob_strata_weight", 0.0) or 0.0) > 0.0 and not _winprob(a),
+        "--win-prob-strata-weight > 0 requires --critic winprob. It reweights the win-prob BCE "
+        "per OPPONENT CLASS so the between-class share of the objective rises (the head refit's "
+        "§6 mechanism: only ~10-14% of the terminal label's variance lies between (cycle, "
+        "opponent) cells). Under --critic shaped that BCE is an AUXILIARY readout and the critic "
+        "is the scalar value net, so the weight would re-price a diagnostic and change nothing "
+        "about the value function — and the `opp_class` label key it strata-fies on is declared "
+        "under the win-prob label gate. Pass --critic winprob, or drop the flag."),
+    CombinationCheck(
         "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
         lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
         "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "

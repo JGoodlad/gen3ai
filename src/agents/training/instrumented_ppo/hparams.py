@@ -249,6 +249,15 @@ class PpoHyperparameters:
     # resume-mutable. Applies to the INTENT losses only — never to the BeliefBank rows, which are
     # team truth rather than behaviour. See `agents.model.opp_intent.intent_losses`.
     intent_label_bot_weight: float = 1.0
+    # gen3_winprob_strata_weight_v1: OPPONENT-STRATIFIED weighting of the WIN-PROB BCE, in [0, 1].
+    # 0.0 = OFF and the loss is bit-identical (the unweighted masked mean is taken unchanged);
+    # 1.0 = each opponent CLASS contributes to the objective in equal proportion rather than in
+    # episode proportion (inverse-frequency `f ** -s`, capped, renormalised so the mean weight over
+    # the buffer is 1). It exists because only ~10-14% of the terminal label's variance lies BETWEEN
+    # (cycle, opponent) cells, so the head buys its resolution from the board instead
+    # (`winprob_head_refit_2026-09-09`). Requires `--critic winprob` (refused otherwise, never a
+    # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
+    win_prob_strata_weight: float = 0.0
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee

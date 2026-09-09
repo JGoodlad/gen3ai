@@ -217,6 +217,10 @@ ARGVS: dict[str, list[str]] = {
     "winprob_critic_refuses_value_from_dist": _WP + ["--value-from-dist"],
     "winprob_critic_refuses_win_prob_coef": _WP + ["--win-prob-coef", "1.0"],
     "winprob_critic_refuses_value_tail_weight": _WP + ["--value-tail-weight", "0.3"],
+    # gen3_winprob_strata_weight_v1 — the one row in this family pointing the OTHER way ("X
+    # REQUIRES winprob"), so it deliberately does NOT carry `_WP`: the default `shaped` critic is
+    # exactly the configuration it refuses.
+    "winprob_strata_needs_the_winprob_critic": ["--win-prob-strata-weight", "1.0"],
     "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
     "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob", "--no-hand-shaping",

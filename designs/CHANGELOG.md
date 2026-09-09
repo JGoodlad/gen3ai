@@ -8598,3 +8598,100 @@ REFUSED and the row omitted; a mismatched sentinel map REFUSES rather than guess
 weighted 1.0; and every declared meter is either reported or omitted with a reason.
 `critic_read_test.py` gains the `--step` pin, its refusal on a missing step, and the why-was-this-
 cycle-chosen sentence.
+
+---
+
+## v115 — `--win-prob-strata-weight`: the win-prob BCE's opponent MIX (`gen3_winprob_strata_weight_v1`)
+
+**2026-09-09. Arm 7 of the critic ladder. ONE training-only loss weight; default `0.0` = OFF and
+the loss is BIT-identical.**
+
+### Why
+
+[`designs/research_state/measurements/winprob_head_refit_2026-09-09/`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
+refit the win head alone on a FROZEN `value_pooled`, out of fold under battle-grouped CV and
+HT-reweighted, on `ai_v12_02_winprob_critic` @74M and the ladder control `ai_v12_11_ladder_ctrl10M`
+@10M. Against the **terminal 0/1 target the online head actually trains on** it reproduced the
+online failure exactly — turn-1–3 between-opponent spread ratio 0.149 → 0.000 (Δ [−0.055, +0.234])
+and 0.066 → 0.068 (Δ [−0.044, +0.042]), turn-1 opponent-class decode 0.532 → 0.546 against
+`value_pooled`'s own 0.846. Against the same label with its per-episode variance removed the SAME
+head on the SAME features recovered a DETECTED part (0.149 → 0.323, 0.066 → 0.259). A head
+initialised FROM the online weights lands where a scratch head lands under both targets, so the
+online head is **not in a basin** and the head-side-optimisation treatment class is RULED OUT.
+
+The mechanism is arithmetic: only **10.2 % / 14.4 %** of the terminal label's variance lies BETWEEN
+(cycle, opponent) cells, so a head minimising a proper scoring rule buys its resolution from the
+board and its own team — which is cheaper — and the opponent component is ~10 % of the objective at
+*any* sample size. §11 names opponent-stratified weighting of the win-prob loss as the highest
+expected-effect-to-cost lever on the list: it raises the between-cell share **directly**, with no
+new labels, no new machinery and no extra rollout cost.
+
+### What it is
+
+Each state's BCE term is multiplied by its opponent CLASS's weight, computed ONCE per rollout over
+the whole buffer's KNOWN rows and held constant for every epoch and minibatch:
+
+```
+raw_c = min(f_c ** (-s), 8.0)                    s = --win-prob-strata-weight in [0, 1]
+w_c   = raw_c / Z,   Z = (Σ_c n_c · raw_c) / N   ⇒ mean(w) over the known rows == 1 exactly
+```
+
+`s = 0` returns no vector at all, so the caller takes the original masked mean unchanged (bit-
+identical, not approximately equal). At `s = 1` and no clipping each class contributes `N / C` to
+the objective; `s` interpolates the exponent monotonically. The mean-weight-1 normalisation is what
+keeps `s` a re-pricing of the MIX rather than a rescaling of the value gradient — without it an arm
+could not tell "balanced the classes" from "raised the critic's step size". The denominator stays
+`N` and not `Σ mask·w`: dividing by the weighted count would renormalise per minibatch and undo the
+buffer-level balance the weights were computed to produce.
+
+**Vocabulary: the four `opp_class` codes** — `bot` / `pool` / `stable` / `exploiter`. One class per
+BOT NAME plus a single `selfplay` class was considered and is **not available**: the archetype and
+the pool snapshot's step are drawn per EPISODE inside `MaskableAgentWrapper._select_episode_opponent`
+and never reach the observation (`value_sidecar.py` declined it for the same reason). So the lever
+balances the between-CLASS share and leaves within-bot heterogeneity in episode proportion — stated
+because it bounds what the arm can move.
+
+🚨 **THE 8× CAP BINDS AT THE PRODUCTION MIX, DELIBERATELY.** At the measured ~10 % bot / ~90 %
+self-play post-promotion mix, `s = 1` asks for 10× on the bot stratum and gets 8×, so the objective
+splits **44/56 rather than 50/50** — a 4.4× re-pricing of the between-class signal with a hard bound
+on the per-row gradient weight, instead of 5× with an unbounded one. Pinned by test, and tabulated in
+`designs/training/critic_and_value_losses.md`, so a reader comparing `strata_share_*` against parity
+finds the reason rather than a discrepancy.
+
+**`--critic winprob` is REQUIRED** (`combination_checks.winprob_strata_needs_the_winprob_critic`),
+never a silent no-op: under `shaped` that BCE is an auxiliary readout and the critic is the scalar
+value net, so a stratified weight there would re-price a DIAGNOSTIC and leave the value function
+untouched. The counterfactual and twin-head callers of `_win_prob_loss` stay unweighted and a test
+pins it — they score foreign recorded states whose opponent mix belongs to the label factory.
+
+### The read
+
+`win_prob/strata_*`, once per rollout: `strata_w_<class>` (the weight vector itself),
+`strata_frac_<class>` (the before), `strata_share_<class>` (the after), `strata_w_entropy`
+(normalised, 1.0 = balanced — the one number that says the lever landed), `strata_w_min/max`,
+`strata_capped`, `strata_n_classes`, `strata_rows`; per minibatch `loss` vs `loss_unweighted` and
+`strata_row_w_mean`. A flat or absent family means the lever never fired.
+
+### Version + gates
+
+`win_prob_strata_weight` is a **v115 `ModelVersion` field of the `td_aux_coef` class** — recorded
+for provenance and flagless-resume read-back, never compared by `check_compatible` (it reweights a
+loss and touches no forward pass or weight shape, and gating a frozen eval/pool/distill opponent on
+it would be a false rejection). A pre-v115 config migrates to `0.0`, a RECORD and not a guess: the
+field did not exist. **No `ARCH_SIGNATURE` bump, no `MIGRATION_FLOOR` change, and not a
+`flag_registry.py` row** — that registry declares EXTRACTOR toggles and this builds no module. It IS
+declared in `arch_tables._COEF_MODULE` (→ `win_head`) so a production config that ever adopts it
+cannot be silently dropped from the generated table the way `intent_label_bot_weight` was from v97.
+
+`agents/training/winprob_strata_weight_test.py` (37: OFF returning no vector and the loss being
+bit-identical; a half-present pair taking the unweighted path; exact per-class parity at `s = 1`;
+monotone interpolation; a single present class returning None; unlabeled rows excluded from the
+frequencies; mean-weight-1 across four mixes × three exponents; the live minibatch read-back; the
+cap binding, being reported, and the 44/56 production arithmetic; no class exceeding the cap ratio;
+the refusal firing under `shaped` and staying silent under `winprob`, when off, and on an unset
+namespace; the range check; argparse defaulting to None so `_resolve` is reachable; the `_resolve`
+line; the dataclass field and its default; the pre-v115 migration; the writer, the snapshot rebuild
+and BOTH `ModelVersion` construction sites; absence from `check_compatible`; the PPO hparam default;
+`train()` computing the weights once from the BUFFER and gating on the winprob critic; the
+counterfactual callers staying unweighted; every documented metric key being emitted; and the
+gradient itself moving the bot stratum's share of the value gradient from 0.10 to 0.444).

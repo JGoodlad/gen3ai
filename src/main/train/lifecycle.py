@@ -93,6 +93,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         td_aux_coef=float(getattr(model, "td_aux_coef", 0.0)),
         policy_grad_coef=float(getattr(model, "policy_grad_coef", 1.0)),
         intent_label_bot_weight=float(getattr(model, "intent_label_bot_weight", 1.0)),
+        win_prob_strata_weight=float(getattr(model, "win_prob_strata_weight", 0.0)),
         cf_records=bool(getattr(model, "cf_records", False)),
         cf_records_keep=int(getattr(model, "cf_records_keep", 512)),
         cf_winprob_coef=float(getattr(model, "cf_winprob_coef", 0.0)),

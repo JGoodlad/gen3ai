@@ -489,4 +489,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 114:
         data.setdefault("value_true_team", False)
         data["config_version"] = 114
+    # v115 (gen3_winprob_strata_weight_v1) — ONE TRAINING-only loss weight, v100's shape exactly.
+    # 0.0 is not a default chosen for old configs, it is a RECORD: the flag did not exist, so no
+    # pre-v115 run can have weighted its win-prob BCE by opponent class. Not version-locked and not
+    # in check_compatible — it reweights a loss, never a forward pass or a weight shape.
+    if version < 115:
+        data.setdefault("win_prob_strata_weight", 0.0)
+        data["config_version"] = 115
     return data

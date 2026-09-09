@@ -622,6 +622,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
     _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like win_prob_coef)
+    # gen3_winprob_strata_weight_v1 (v115) training-only, inherited for the reason every loss
+    # coefficient here is: a launcher RESTART re-invokes the original argv, and a flagless resume
+    # that dropped this would silently return the arm to the un-stratified objective it exists to
+    # contest, under the same run name and the same TB series.
+    _resolve("win_prob_strata_weight", 0.0)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
     #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
@@ -832,6 +837,15 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # of "train on them less". 0.0 (ignore bot rows entirely) is the intended floor.
         # Training-only (not version-locked), so this parser check is the only gate.
         parser.error("--intent-label-bot-weight must be >= 0 (0 = train on no bot rows; 1 = off)")
+    if args.win_prob_strata_weight is not None and not (0.0 <= args.win_prob_strata_weight <= 1.0):
+        # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
+        # owns the cross-flag half — `winprob_strata_needs_the_winprob_critic`). The bounds are the
+        # exponent's meaning: 0 = episode proportion (OFF), 1 = equal per class. Above 1 would
+        # INVERT the mix, paying the rarest class more than parity, which is not a stronger version
+        # of the lever but a different and unmotivated one; below 0 upweights what is already
+        # dominant, i.e. the defect this flag exists to remove.
+        parser.error("--win-prob-strata-weight must be in [0, 1] "
+                     "(0 = off / episode proportion; 1 = every opponent class weighted equally)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the

@@ -773,6 +773,22 @@ parent cannot inherit that parent's `use_popart` / `win_prob_mode` and break the
 nobody typed. Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
 
+**`--win-prob-strata-weight` re-prices this BCE's opponent MIX** (`gen3_winprob_strata_weight_v1`,
+config v115, the critic ladder's arm 7). Default **`0.0` = OFF and the loss is BIT-identical**;
+`--critic winprob` is REQUIRED. Each state's BCE term is multiplied by its opponent CLASS's weight
+`w_c ∝ freq_c ** (−s)`, capped at 8× and renormalised so the mean weight over the rollout buffer is
+exactly 1 — so it moves the mix and not the loss SCALE. It exists because only **10.2 % / 14.4 %**
+of the terminal 0/1 label's variance lies BETWEEN (cycle, opponent) cells
+([`winprob_head_refit_2026-09-09`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
+§6), so a head minimising a proper scoring rule buys its resolution from the board and its own team
+and never conditions on the opponent — a TARGET defect, not a head defect, and the same head on a
+target with a higher between-cell share does condition. The vocabulary is the four `opp_class` codes
+(`bot` / `pool` / `stable` / `exploiter`), which is all the env knows per step; per-BOT identity is
+drawn per episode inside the wrapper and never reaches the observation. It is a training-only loss
+weight — no forward pass, no weight shape, no `check_compatible` compare, **not** a
+`flag_registry.py` row — so it does not appear in §6's flag table until a production config adopts
+it. Mechanics: `designs/training/critic_and_value_losses.md`.
+
 The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
 `coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
 would add the advantage to the reward and take the advantage of that. The FROZEN-φ route
