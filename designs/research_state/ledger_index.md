@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,921-line file. **The ledger itself is append-only and is never edited by this**;
+15,964-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**471 headings · 431 dated · 2026-08-01 → 2026-09-09 · ledger 15,921 lines.**
+**472 headings · 432 dated · 2026-08-01 → 2026-09-09 · ledger 15,964 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -491,3 +491,4 @@ rename.
   - `L15860` · `2026-09-09` · MEASUREMENT · THE PROBE READ — the value features CARRY the opponent and the own team; the win head DISCARDS them (reading iii on every target, both substrates)
   - `L15910` · `2026-09-09` · VERDICT · the span `f3502568→377a5aa1` is TRAINING-SEMANTICS-NEUTRAL — by a pinned-input functional test, because the end-to-end method is VOID: two runs of the SAME commit at the SAME seed diverge at rollout 1
   - `L15918` · `2026-09-09` · CORRECTION + SCOPE · `ctrl10M`-vs-`ctrl10M_b` is total run-to-run variance, not a "seed-only contrast"; and one replicate difference is a SCALE, never a significance threshold
+- `L15922` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_13_ladder_tdaux` COMPLETE (`--td-aux-coef 1.0`, 10,027,008 steps, 4.67 h, 0 crashes, G7 below bar on both halves)

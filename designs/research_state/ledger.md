@@ -15918,3 +15918,46 @@ Measurement: `designs/research_state/measurements/winprob_probe_read_2026-09-09/
 ### 2026-09-09 · CORRECTION + SCOPE · `ctrl10M`-vs-`ctrl10M_b` is total run-to-run variance, not a "seed-only contrast"; and one replicate difference is a SCALE, never a significance threshold
 
 Two amendments, both raised by the Training Run session. (1) **Correction to its own earlier record:** when `ctrl10M_b` was validated it was reported as a "genuine seed-only contrast" from a token diff (run name + `--seed 1001`) and a trace of `args.seed` to its one consumer (`model_build.py:795`). The configuration claim stands; the inference — that the pair therefore isolates the seed term — is withdrawn: the battle stream is not seeded (the rollout-1 divergence above), so the pair measures TOTAL run-to-run variance, environment included. That is the floor every lever delta actually carries, and the more useful one; it is not what it was called. (2) **Scope of the floor:** the pair is ONE draw of a difference — a single degree of freedom, a scale with no interval of its own. It can say a delta of 0.002 is inside the noise and a delta of 0.15 is nowhere near it; it cannot underwrite a marginal call. **The critic meters' bootstrap CIs remain the inference; the floor can only DEMOTE (a delta whose CI clears zero but whose magnitude sits inside the replicate difference reads WITHIN FLOOR), never PROMOTE — a delta is not DETECTED for exceeding the one replicate difference we happened to draw.** That is how `main.ops.critic_read --floor-json` labels (DETECTED / WITHIN FLOOR / NOT DETECTED), and this entry fixes the reading of those labels so the replicate difference is never quoted as a threshold. Tag: CORRECTION.
+
+## 2026-09-09 · OPS · CRITIC LADDER — `ai_v12_13_ladder_tdaux` COMPLETE (`--td-aux-coef 1.0`, 10,027,008 steps, 4.67 h, 0 crashes, G7 below bar on both halves)
+
+The TD-auxiliary lever arm, pinned `f3502568b5fa8133bb360979755ca6787ed008aa` — the SAME commit as the
+control `ai_v12_11_ladder_ctrl10M`. It is therefore the one lever arm in the ladder whose delta
+against the control crosses **no commit span at all**; `cflabels`, `ctrl10M_b` and `truevalue` all sit
+at `377a5aa1` (that span was separately settled NEUTRAL and is not a confound, but tdaux does not need
+the argument). It is also the only arm with **neither** the value sidecar **nor** the raised eval-trace
+quota — `models/ai_v12_13_ladder_tdaux/value_sidecar/` does not exist, as expected at this pin.
+
+**Run:** 10,027,008 steps in **4.67 h** wall, 48 envs, **1 periodic restart** (two TB event files;
+merge them or the series reads truncated). **0 crashes**, `Training complete`, `final_model.zip`
+written. Marginal fps **523.5** over a 119-min in-regime window; the launcher's exit line said 529.
+
+**G7 (within-arm, `$P/g7_ladder.py`)** — `eval/mean_ep_len_vs_bots` against its OWN frozen
+first-two-cycle reference (2,000,016=24.581, 4,000,032=25.029 → **24.805**), bar 1.25:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 24.055 | 0.970 | 0.8888 | under bar |
+| 8,000,016 | 25.391 | 1.024 | 0.9062 | under bar |
+| 10,000,032 | 23.545 | 0.949 | 0.8850 | under bar |
+
+Worst ratio **1.024 = 81.9% of the bar**. Stall half (`signal/draw_rate`, n=101): peak **0.0180**,
+last 0.0039, bar 0.05 → under bar. **G7 below bar on both halves.** Each arm's ratio is normalised by
+its own early cycles, so the three worst-ratios so far (vf15 1.086, ctrl10M 1.035, tdaux 1.024) are
+NOT comparable to one another — only each to its own bar.
+
+**Descriptive trajectory** (NOT a strength read — strength is not the ladder's endpoint):
+`eval/win_rate_vs_bots` 0.5013 → 0.7350 → 0.8888 → 0.9062 → 0.8850; `eval/elo` 1588 → 1767 → 1974 →
+2021 → 2035; `snapshot_ladder/ladder.json` converged, 6/6 pairs: 4M=1738.7±12.1, 6M=1929.7±14.7,
+8M=1987.7±16.0, 10M=2034.7±17.1. Final post-training aggregate across the nine bots 90.6%.
+🚨 The newest BT node is systematically inflated; these are for the matched-count comparison only.
+
+**Rule-15 regime boundaries: `train/selfplay_fraction` 0.0000 → 0.7491 at 4,000,032 → 0.9000 at
+6,000,000** — the same two step locations as every ladder arm so far, and a first jump close to the
+control's 0.7278 (vf15's 0.156 remains the outlier).
+
+The registered read is the critic meters at 10M as a delta against `ai_v12_11_ladder_ctrl10M`,
+dispatched by the orchestrator. Nothing about the lever is claimed here. Next: `cflabels`, then
+`ctrl10M_b` (the replicate floor), then `truevalue`.
+
+Tag: OPS. Nothing measured about the critic by this entry.
