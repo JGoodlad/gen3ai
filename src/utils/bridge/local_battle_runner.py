@@ -21,6 +21,7 @@ it triggers) before the next is read.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import base64
 import itertools
 import json
@@ -171,6 +172,7 @@ async def run_local_battles(
     *,
     battle_format: Optional[str] = None,
     seed: Optional[List[int]] = None,
+    seed_base: Optional[int] = None,
     concurrency: int = 1,
     start_extra: "Optional[dict]" = None,
     chunk_sink: "Optional[list]" = None,
@@ -181,6 +183,14 @@ async def run_local_battles(
     ``player1`` is sim side p1, ``player2`` is p2. ``seed`` is an optional
     ``[s0,s1,s2,s3]`` Gen-5 PRNG seed for reproducible battles (note: teams must
     also be fixed for full determinism).
+
+    ``seed_base`` is the OTHER spelling of the same wish, and the one a MEASUREMENT wants:
+    one seed for the whole call, from which battle ``i`` derives its OWN 4-int seed
+    (``blake2b(f"{seed_base}:{i}")``). A single ``seed`` runs every battle on the identical dice
+    stream — reproducible, but N copies of one battle rather than a sample of N. ``seed_base``
+    keeps the dice VARIED across the call and REPRODUCIBLE across calls, which is what an offline
+    eval cycle needs. Mutually exclusive with ``seed``; ``None`` (both) is the unchanged default
+    where the child mints and reports its own.
 
     ``concurrency`` > 1 plays up to that many battles at once (each its own bridge
     subprocess), mirroring poke-env's server ``battle_against``: the per-battle
@@ -207,7 +217,7 @@ async def run_local_battles(
     no-ops under ``rust`` — callers that need the forensic/counterfactual layer must use ``node``.
     """
     runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed, start_extra,
-                                chunk_sink, impl)
+                                chunk_sink, impl, seed_base=seed_base)
     await handle_threaded_coroutines(runner.run(n_battles, concurrency), POKE_LOOP)
 
 
@@ -221,6 +231,7 @@ class _LocalBattleRunner:
         start_extra: Optional[dict] = None,
         chunk_sink: Optional[list] = None,
         impl: str = "node",
+        seed_base: Optional[int] = None,
     ):
         self.p1 = player1
         self.p2 = player2
@@ -233,7 +244,13 @@ class _LocalBattleRunner:
         if start_extra and isinstance(start_extra.get("resumeReseed"), dict):
             validate_seed_spec(start_extra["resumeReseed"].get("seed"),
                                what="resumeReseed.seed")
+        if seed is not None and seed_base is not None:
+            raise ValueError(
+                "run_local_battles: pass `seed` OR `seed_base`, never both — they are two "
+                "different dice regimes (one stream for every battle vs a derived stream per "
+                "battle), and silently preferring one would make the label a lie.")
         self.seed = seed
+        self.seed_base = seed_base
         self.start_extra = start_extra
         self.chunk_sink = chunk_sink
         # Which bridge child to spawn per battle: "node" or "rust". Resolve to an argv list
@@ -295,6 +312,20 @@ class _LocalBattleRunner:
         player.ps_client = client
         return client
 
+    def _seed_for(self, index: int) -> Optional[List[int]]:
+        """This battle's sim PRNG seed: the fixed ``seed``, or one DERIVED from ``seed_base``.
+
+        The derivation is a hash rather than an increment so that adjacent indices (and adjacent
+        ``seed_base`` values, i.e. adjacent shards of one offline eval cycle) get unrelated dice
+        streams — an LCG seeded with n and n+1 is not two independent battles. Four 16-bit words
+        is the ``[m,n,o,p]`` form :mod:`utils.bridge.seed_spec` already validates, so nothing
+        downstream learns a new spelling.
+        """
+        if self.seed_base is None:
+            return self.seed
+        digest = hashlib.blake2b(f"{self.seed_base}:{index}".encode(), digest_size=8).digest()
+        return [int.from_bytes(digest[i * 2:i * 2 + 2], "big") for i in range(4)]
+
     async def _one_battle(self, index: int, start_lock=None) -> None:
         # Unique across the whole process (see ``_BATTLE_SEQ`` above) — never reuse a tag,
         # or poke-env hands back the prior battle's object for it and its team overflows.
@@ -336,8 +367,9 @@ class _LocalBattleRunner:
                 "p1": {"name": self.p1.username, "team": team1},
                 "p2": {"name": self.p2.username, "team": team2},
             }
-            if self.seed:
-                start["seed"] = self.seed
+            battle_seed = self._seed_for(index)
+            if battle_seed:
+                start["seed"] = battle_seed
             if self.start_extra:
                 start.update(self.start_extra)
             proc.stdin.write((f"START {json.dumps(start)}\n").encode())

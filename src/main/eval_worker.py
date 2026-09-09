@@ -36,7 +36,9 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import sys
 import json
+import random
 import asyncio
+import hashlib
 import functools
 import traceback
 from datetime import datetime
@@ -57,7 +59,7 @@ from agents.training.eval_sharding import ShardedEvalPool, ShardResult, BOT, SEN
 from agents.training.reward_manager import Gen3RewardManager, RewardConfig
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.team_loader import TeamLoader
-from utils.teambuilder import Gen3Teambuilder
+from utils.teambuilder import Gen3Teambuilder, _install_team_rng
 
 
 def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
@@ -142,11 +144,55 @@ def _get_opponent_model(cache: dict, path: str, loader, compile_extractor: bool 
     return cache[path]
 
 
-async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl="node"):
+def unit_seed(seed_base: int, item_key: str, shard_index: int) -> int:
+    """This shard UNIT's seed — a pure function of ``(seed_base, opponent, shard index)``.
+
+    🚨 DELIBERATELY NOT a function of the worker id or the claim order. Work-stealing decides
+    WHICH worker plays a shard, and that is a race: keying the dice off the worker would make a
+    seeded cycle depend on the worker count, which is the one thing a seed exists to remove.
+    Keyed this way, a shard's whole byte stream — its team draws, its scripted-bot rolls and its
+    sim dice — is fixed by the PLAN, so ``--workers 1`` and ``--workers 8`` produce the identical
+    cycle. What is NOT fixed is battle INTERLEAVE: at ``concurrency > 1`` several battles of one
+    unit share the process-global `random` stream, and the order they draw from it is a timing
+    race. Reproducibility therefore needs ``concurrency == 1``; the worker count is free.
+
+    Only ever set by an OFFLINE generator (``main.ops.eval_trace_gen``). A live training eval
+    passes no seed and is byte-identical to the pre-seed behaviour.
+    """
+    digest = hashlib.blake2b(f"{seed_base}:{item_key}:{shard_index}".encode(),
+                             digest_size=8).digest()
+    return int.from_bytes(digest, "big") & ((1 << 62) - 1)
+
+
+def seed_unit_streams(seed_base, item_key, shard_index, trainee_tb, opp_tb):
+    """Pin every RNG a shard unit draws from, and return its bridge ``seed_base`` (or None).
+
+    Three streams, because eval draws from three: the process-global `random` (the SCRIPTED bots'
+    move choice), the two teambuilders' draw RNGs (which team each side pilots), and the sim's own
+    PRNG (the dice), which is pinned per battle inside the bridge runner. The trainee and the
+    greedy sentinel are argmax, so no torch stream needs pinning for them to repeat.
+    """
+    if seed_base is None:
+        return None
+    us = unit_seed(int(seed_base), item_key, shard_index)
+    random.seed(us)
+    # Distinct derived seeds so the two sides do not draw the same team sequence. (In the
+    # SYMMETRIC greedy regime `_sentinel_tb` hands the sentinel the trainee's builder OBJECT, so
+    # both sides then share one stream — unchanged, and still deterministic.)
+    _install_team_rng(trainee_tb, us ^ 0x7472616E65650001)
+    _install_team_rng(opp_tb, us ^ 0x6F70706F6E656E74)
+    return us
+
+
+async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl="node",
+                seed_base=None):
     if use_bridge:
         await run_local_battles(trainee, opponent, n_games, concurrency=concurrency,
-                                impl=bridge_impl)
+                                impl=bridge_impl, seed_base=seed_base)
     else:
+        if seed_base is not None:
+            raise ValueError("seeded eval needs the in-process bridge — a Showdown SERVER mints "
+                             "its own dice and no client can pin them.")
         await trainee.battle_against(opponent, n_battles=n_games)
 
 
@@ -154,7 +200,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
                mappings, server_config, concurrency, device, model_dir, step, tag, wid,
                use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory,
                bridge_impl="node", compile_extractor=False,
-               forensic_quota: "ForensicQuota | None" = None) -> ShardResult:
+               forensic_quota: "ForensicQuota | None" = None,
+               seed_base=None) -> ShardResult:
     """Play one shard unit and return its RAW (additive) result.
 
     A fresh trainee + opponent are built per unit so the measurement (win count, reward sum, δ
@@ -163,6 +210,11 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
     is the run's reward (from ``model_config.json``) so eval MEASURES with the trained reward."""
     item = unit.item
     n_games = unit.n_games
+
+    # Pin this unit's dice FIRST — before any player is built, because construction itself draws
+    # (a scripted bot's setup, a teambuilder's first pick). Returns None for a live eval, which
+    # sets nothing and leaves every stream exactly where it was.
+    unit_seed_base = seed_unit_streams(seed_base, item.key, unit.shard_index, trainee_tb, opp_tb)
 
     # One EvalRLPlayer (greedy trainee, reward + forensic tracking), account unique per claim.
     trainee = build_eval_players(
@@ -215,7 +267,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         win_quota=per_unit.win, loss_quota=per_unit.loss, draw_quota=per_unit.draw)
 
     start = datetime.now()
-    asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl))
+    asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl,
+                      seed_base=unit_seed_base))
     dur = (datetime.now() - start).total_seconds()
 
     res = ShardResult(
@@ -265,6 +318,9 @@ def _run(cfg: dict) -> None:
     # recorded per run). `False` is the pre-2026-09-07 shape and is kept only so a cfg written
     # by an older tree still parses.
     sentinel_greedy = cfg.get("eval_sentinel_greedy", False)
+    # OFFLINE generation only (`main.ops.eval_trace_gen`). ABSENT — the live case — means every
+    # stream is left alone and this worker is byte-identical to the pre-seed one.
+    seed_base = cfg.get("seed_base")
     claim_dir = cfg["claim_dir"]
     result_dir = cfg["result_dir"]
     wid = cfg["worker_id"]
@@ -280,6 +336,15 @@ def _run(cfg: dict) -> None:
     compile_extractor = bool(cfg.get("compile_extractor", False))
     maybe_compile_extractor(model, compile_extractor, label="eval-trainee",
                             hide_cuda=str(device).startswith("cpu"))
+    # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a multi-KB
+    # DEEP TRACE banner from inside the forward. A live cycle plays ~1.2k battles and the noise is
+    # someone's debugging aid; an OFFLINE read cycle plays tens of thousands and it is pure cost —
+    # string building on the hot path, and a worker log that buries the per-shard result lines.
+    # OPT-IN, so live eval keeps whatever the checkpoint was saved with.
+    if cfg.get("disable_obs_debugger"):
+        for mod in model.policy.modules():
+            if hasattr(mod, "_debugger"):
+                mod._debugger = None
 
     # The trainee's reward factory — built from the RUN's model_config.json (the single source of
     # truth the version check already records), so eval MEASURES with the same reward the policy was
@@ -322,7 +387,7 @@ def _run(cfg: dict) -> None:
             unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
             mappings, server_config, concurrency, device, model_dir, step, tag, wid,
             use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory, bridge_impl,
-            compile_extractor, forensic_quota)
+            compile_extractor, forensic_quota, seed_base=seed_base)
         pool.publish(result_dir, res)
 
 
