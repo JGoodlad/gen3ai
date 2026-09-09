@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,826-line file. **The ledger itself is append-only and is never edited by this**;
+15,836-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**464 headings · 424 dated · 2026-08-01 → 2026-09-09 · ledger 15,826 lines.**
+**465 headings · 425 dated · 2026-08-01 → 2026-09-09 · ledger 15,836 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -484,3 +484,4 @@ rename.
 - `L15728` · `2026-09-08` · OPS · CRITIC LADDER arm 2 of 6 COMPLETE — `ai_v12_11_ladder_ctrl10M`, the CONTROL (10,027,008 steps, 4.26 h, 0 crashes, G7 below bar on both halves)
   - `L15775` · `2026-09-08` · READ · critic ladder arm 1 `ai_v12_10_ladder_vf15` (`--vf-coef 1.5`) vs the control at matched 10M — all four registered deltas NOT DETECTED; the head reads MORE optimistic than the control, not less
   - `L15791` · `2026-09-09` · MEASUREMENT · MIXTURE DIAGNOSTIC on `ai_v12_02_winprob_critic` — DETECTED: the head emits close to one marginal win probability regardless of opponent, and conditions on its OWN team even worse
+  - `L15827` · `2026-09-09` · INSTRUMENT + AMENDMENT · the training-side VALUE SIDECAR lands (`377a5aa1`), eval traces keep every cycle (`b07c42bf`), and the critic ladder's remaining arms re-pin to `377a5aa1` with a 4× trace quota
