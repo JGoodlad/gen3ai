@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,855-line file. **The ledger itself is append-only and is never edited by this**;
+15,859-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**467 headings · 427 dated · 2026-08-01 → 2026-09-09 · ledger 15,855 lines.**
+**468 headings · 428 dated · 2026-08-01 → 2026-09-09 · ledger 15,859 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -487,3 +487,4 @@ rename.
   - `L15827` · `2026-09-09` · INSTRUMENT + AMENDMENT · the training-side VALUE SIDECAR lands (`377a5aa1`), eval traces keep every cycle (`b07c42bf`), and the critic ladder's remaining arms re-pin to `377a5aa1` with a 4× trace quota
   - `L15837` · `2026-09-09` · AMENDMENT · which commit span each critic-ladder delta crosses — "arm 5 is the cross-commit one" is no longer true
   - `L15841` · `2026-09-09` · CORRECTION · the span entry above named arms by NUMBER, and two numberings are live — the runs, by name; and what the span does to the REPLICATE FLOOR
+  - `L15856` · `2026-09-09` · CORRECTION · the DIVERGENT branch of the replicate-floor rule was wrong — `ctrl10M_b` carries the only non-default seed, so it cannot be anyone's control
