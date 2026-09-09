@@ -154,12 +154,12 @@ def check_comparable(arm: Dict[str, Any], ctl: Dict[str, Any]) -> None:
         comp = ETG.completeness(man)
         if comp["complete"] is None:
             refuse(
-                f"REFUSING: the {role} cycle does not record its own battle plan, so it cannot "
-                "be certified COMPLETE.",
-                "  It was generated before `battles_expected` / `complete` existed. A cycle whose "
-                "workers died part-way still writes a well-formed manifest — nominal games, the "
-                "full opponent set, a recorded `selection` — so nothing else on disk separates a "
-                "finished cycle from a truncated one.",
+                f"REFUSING: the {role} cycle cannot be certified COMPLETE — its manifest records "
+                "neither the battle plan it was given nor the battles it played.",
+                "  A cycle whose workers died part-way still writes a well-formed manifest — "
+                "nominal games, the full opponent set, capture rates of 1.0 — so without those "
+                "counts nothing on disk separates a finished cycle from a truncated one, and a "
+                "truncated one is a SMALLER FRAME whose fitted rows do not compare.",
                 f"  THE FIX: re-generate the {role} cycle with the current tool "
                 "(`python -m main.ops.eval_trace_gen … --force`). Nothing is read and nothing is "
                 "concluded.")

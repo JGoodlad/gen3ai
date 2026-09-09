@@ -272,24 +272,57 @@ def test_an_incomplete_cycle_is_refused_and_says_so_in_its_population():
     check_comparable(_readout(_gen_manifest()), _readout(_gen_manifest()))
 
 
-def test_a_cycle_that_records_no_battle_plan_is_UNKNOWN_not_complete():
-    """🚨 The third value, and why `bool()` of it must be the safe answer.
+def _strip_completeness(man):
+    man = json.loads(json.dumps(man))
+    man[ETG.GENERATED_KEY] = {k: v for k, v in man[ETG.GENERATED_KEY].items()
+                              if k not in ("complete", "battles_expected", "shortfall",
+                                           "battles_played")}
+    return man
 
-    A cycle generated before `battles_expected` existed cannot be certified finished by anything
-    on disk — a truncated cycle and a complete one write the same well-formed manifest otherwise.
-    Reading that as True would be the flattering guess; it is UNKNOWN, and it is refused.
+
+def test_completeness_is_DERIVED_when_it_was_not_recorded():
+    """A cycle written before the field existed still records everything the number is made of.
+
+    The plan is `n_games` games against each of `opponents`; the `selection` block counts what was
+    played. Deriving beats answering UNKNOWN — the same arithmetic would have caught the 71%
+    frame — and it is arithmetic on the manifest's OWN fields, not an assumption about them.
     """
     from main.ops.critic_read import check_comparable
-    legacy = _gen_manifest()
-    legacy[ETG.GENERATED_KEY] = {k: v for k, v in legacy[ETG.GENERATED_KEY].items()
-                                 if k not in ("complete", "battles_expected", "shortfall")}
-    comp = ETG.completeness(legacy)
+    man = _strip_completeness(_gen_manifest())
+    # 5 opponents x 400 games = 2000 expected; give the selection block exactly that many played
+    man["selection"] = {"opponents": {o: {"battles_played": 400} for o in man["opponents"]}}
+    comp = ETG.completeness(man)
+    assert comp["battles_expected"] == 2000 and comp["battles_played"] == 2000
+    assert comp["complete"] is True and comp["shortfall"] == 0
+    check_comparable(_readout(man), _readout(man))
+
+    # ... and the same derivation CATCHES a truncated one, which is the point
+    short = _strip_completeness(_gen_manifest())
+    short["selection"] = {"opponents": {o: {"battles_played": 285} for o in short["opponents"]}}
+    comp = ETG.completeness(short)
+    assert comp["complete"] is False and comp["shortfall"] == 2000 - 1425
+    assert ETG.population_of(short).startswith("INCOMPLETE")
+    with pytest.raises(SystemExit):
+        check_comparable(_readout(short), _readout(man))
+
+
+def test_a_manifest_that_cannot_answer_is_UNKNOWN_not_complete():
+    """🚨 The third value, and why `bool()` of it must be the safe answer.
+
+    When neither the recorded fields nor the derivable ones are there, nothing on disk can certify
+    the cycle finished. Reading that as True would be the flattering guess.
+    """
+    from main.ops.critic_read import check_comparable
+    man = _strip_completeness(_gen_manifest())
+    man.pop("n_games", None)
+    man["selection"] = {"opponents": {}}
+    comp = ETG.completeness(man)
     assert comp["complete"] is None, "UNKNOWN — never True, and never a bare False either"
     assert bool(comp["complete"]) is False, "a caller that forgets gets the SAFE answer"
-    assert "COMPLETENESS UNRECORDED" in ETG.population_of(legacy)
+    assert "COMPLETENESS UNKNOWN" in ETG.population_of(man)
 
     with pytest.raises(SystemExit) as exc:
-        check_comparable(_readout(legacy), _readout(_gen_manifest()))
+        check_comparable(_readout(man), _readout(_gen_manifest()))
     assert exc.value.code == 2
 
 

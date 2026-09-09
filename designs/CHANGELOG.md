@@ -8876,7 +8876,13 @@ the 2026-09-09 RETRACTION's frame-size artefact arriving through the provenance 
 the quota. `generated_by` now carries `battles_expected`, `complete` and `shortfall`; the generator
 prints a loud INCOMPLETE line; `population_of` leads with it; and `check_comparable` REFUSES an
 incomplete side **and** one whose completeness is UNRECORDED — `completeness()` returns `None`
-rather than `True` for a cycle written before the field existed, so a caller that forgets the third
-value gets the safe answer from `bool(None)` rather than the flattering one. Operational rule, now
+rather than `True` when nothing on disk can answer, so a caller that forgets the third value gets
+the safe answer from `bool(None)` rather than the flattering one. **It first DERIVES the counts
+from the manifest's own fields** — the plan is `n_games` games against each of `opponents`, and the
+`selection` block counts what was played — because that information was always there: the same
+arithmetic would have caught the 71% frame, and it is arithmetic on the manifest rather than an
+assumption about it. So a cycle generated before the explicit fields existed is still certified
+(or convicted) rather than refused, and UNKNOWN is reserved for a manifest that genuinely cannot
+say. Operational rule, now
 in the SOP: **run a long generation from the MAIN checkout, never from a worktree you intend to
 land and remove.**

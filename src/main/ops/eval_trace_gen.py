@@ -102,13 +102,16 @@ def population_of(manifest: Optional[dict]) -> str:
         # nominal cycle. (2026-09-09: the worktree hosting a generation was removed under it by
         # `land.sh`; all four workers died, the cycle landed at 71% with a correct manifest, and
         # nothing in the provenance said the frame had shrunk.)
-        if gen.get("complete") is False:
-            played, want = gen.get("battles_played") or 0, gen.get("battles_expected") or 0
-            text = (f"INCOMPLETE ({played:,} of {want:,} battles played — workers died or the "
-                    f"cycle was killed) " + text)
-        elif "complete" not in gen or gen.get("battles_expected") is None:
-            text = ("COMPLETENESS UNRECORDED (generated before the cycle recorded its own "
-                    "battle plan — it cannot be certified complete) " + text)
+        # Both branches ask :func:`completeness`, never the raw key — it DERIVES the counts from
+        # the manifest's own `n_games` / `opponents` / `selection` when they were not recorded,
+        # and a branch that read the key directly would call a derived-INCOMPLETE cycle UNKNOWN.
+        comp = completeness(man)
+        if comp["complete"] is False:
+            text = (f"INCOMPLETE ({comp['battles_played']:,} of {comp['battles_expected']:,} "
+                    f"battles played — workers died or the cycle was killed) " + text)
+        elif comp["complete"] is None:
+            text = ("COMPLETENESS UNKNOWN (the manifest records neither its battle plan nor the "
+                    "battles played, so it cannot be certified complete) " + text)
         return text
     opponents = man.get("opponents") or []
     n_games = man.get("n_games")
@@ -134,16 +137,30 @@ def completeness(manifest: Optional[dict]) -> Dict[str, Any]:
                 "shortfall": 0}
     played = gen.get("battles_played")
     want = gen.get("battles_expected")
-    if "complete" not in gen or want is None:
-        # 🚨 UNKNOWN, and deliberately NOT True. A cycle written before this field existed does
-        # not record how many battles its plan called for, so nothing on disk can certify that it
-        # finished — and "it looks fine" is exactly the reading that let a 71% frame through.
-        # None is a third value every caller must handle, which is the point: `bool(None)` is
-        # False, so a caller that forgets gets the SAFE answer rather than the flattering one.
+    if want is None:
+        # DERIVED, not guessed. A cycle written before `battles_expected` existed still records
+        # everything the number is made of: the plan is `n_games` games against each of
+        # `opponents`, and the `selection` block counts what was actually played. Deriving it is
+        # strictly better than answering UNKNOWN — the same arithmetic would have caught the 71%
+        # frame — and it is arithmetic on the manifest's OWN fields, not an assumption about them.
+        man = manifest or {}
+        n_games, opponents = man.get("n_games"), man.get("opponents")
+        if n_games and opponents:
+            want = int(n_games) * len(opponents)
+        if played is None:
+            per = ((man.get("selection") or {}).get("opponents") or {})
+            if per:
+                played = sum(int(v.get("battles_played", 0)) for v in per.values())
+    if want is None or played is None:
+        # 🚨 UNKNOWN, and deliberately NOT True. Nothing on disk can certify this cycle finished,
+        # and "it looks fine" is exactly the reading that let the 71% frame through. None is a
+        # third value every caller must handle, which is the point: `bool(None)` is False, so a
+        # caller that forgets gets the SAFE answer rather than the flattering one.
         return {"complete": None, "battles_played": played, "battles_expected": want,
                 "shortfall": None}
-    played, want = int(played or 0), int(want)
-    return {"complete": bool(gen.get("complete")), "battles_played": played,
+    played, want = int(played), int(want)
+    complete = bool(gen["complete"]) if "complete" in gen else (played >= want > 0)
+    return {"complete": complete, "battles_played": played,
             "battles_expected": want, "shortfall": max(0, want - played)}
 
 
