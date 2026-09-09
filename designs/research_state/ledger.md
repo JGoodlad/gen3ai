@@ -15652,3 +15652,23 @@ read, every ladder delta is labelled against ZERO only (DETECTED if the CI clear
 against a floor. Both argvs validated by `main.checkargs` (0 unrecognized, ARCH SURFACE = production
 mirror, launches). Queue order: vf15 → ctrl10M → cflabels → tdaux → truevalue → ctrl10M_b, ~4 h
 each. Tag: REGISTRATION.
+
+---
+
+### 2026-09-08 · OPS · CRITIC LADDER arm 1 `ai_v12_10_ladder_vf15` (`--vf-coef 1.5`) COMPLETED 10M clean; the control `ai_v12_11_ladder_ctrl10M` is launched
+
+**Arm 1 completed**: 10,027,008 steps in 4h09m, `Training complete`, **zero crashes**, `final_model.zip` written, 3 checkpoints retained. Pin f3502568 throughout.
+
+**G7 (within-arm) — below bar on BOTH halves.** `g7_report.py` is structurally inapplicable to a fresh arm (it quotes `main.critic_gate --parent v9_fold_parent`; these arms have no parent, and that gate emits NO G7 section — reporting "clean" from that silence is the incident of `391df12c`). New `$P/g7_ladder.py` measures `eval/mean_ep_len_vs_bots` against the arm's OWN frozen first-2-cycle reference (21.659), bar 1.25, plus the stall half (`signal/draw_rate`, bar 0.05); it EXITS 2 below 3 cycles rather than emit a trivially-1.0 ratio. Result: ratios 1.086 / 1.078 / 1.031 at 6M / 8M / 10M, **worst 1.086 = 86.9% of the bar**; stall peak 0.0223, last 0.0007. Both planted cases (ep bar→1.0, stall bar→0.0) flip the verdict, and on arm A it returns worst 1.129 against a 21.341 reference — the same underlying maximum (24.09) as `g7_report.py`'s 1.099 against 21.911, so the two tools agree on the data and differ only in the frozen window.
+
+**Trajectory (DESCRIPTIVE — no verdict; the registered read is the critic meters at 10M as a DELTA against the control, which does not exist yet):** bots 0.4288 → 0.6162 → 0.8200 → 0.8462 → 0.8800; `eval/elo` 1539.6 → 1999.4. **TWO rule-15 regime boundaries on this arm: `selfplay_fraction` stepped 0.0 → 0.156 at step 4,000,032 and 0.156 → 0.900 at 6,000,000.** No window may be pooled across either. Throughput 930.5 fps pre-regime, ~590-630 fps after — ~4 h/arm, so the six-arm ladder is ~24 h of GPU.
+
+**PINS ARE NOW EXPLICIT ON EVERY QUEUED ARM, and this was not precautionary** — the main checkout advanced TWICE while arm 1 ran (f3502568 → 50d443bf → eb1a7aba), so any unpinned arm would have taken a third distinct commit. vf15 / ctrl10M / cflabels / tdaux / ctrl10M_b at **f3502568**; `truevalue` at **d94de2e3**, which it cannot avoid because `--value-true-team` landed there. **The arm-5 delta is therefore CROSS-COMMIT**; the confound is bounded, not ignored: every runtime change in `f3502568..d94de2e3` sits behind the default-off `value_true_team`/`emit_opp_true_team` guard, the sole unconditional edit being two attribute assignments in `local_battle_runner.py` (`p1._opp_player`/`p2._opp_player`) that nothing reads with the flag off. That is a diff-reading argument, NOT a measurement, and it does not cover `prober/model.py` or the model_version files.
+
+**⚠️ `--dry-run`'s ARCH-SURFACE check reads the LIVE CHECKOUT's registry, not the pinned commit's.** Two dry-runs at the SAME pin f3502568 printed 49 toggles / 7 critic readouts and then 50 / 8, because the checkout moved between them. A count difference across dry-runs is therefore evidence about the working tree, never about the pin.
+
+**Reader hazards found the hard way, all three now in the watch cron:** (a) `metadata.json`'s `num_timesteps` only advances on a SAVE — it read 0 for the first ~40 min of this healthy run, so the current step comes from TB (`rollout/ep_len_mean`); (b) `eval_results.jsonl` has NO top-level `win_rate_vs_bots`/`elo`/`ep_len` keys — per-opponent rates nest under `bots`, so `.get(key, 0)` returns a confident 0.0 (this briefly read a healthy cycle as all zeros); (c) `win_rate_vs_bots` EXCLUDES `random` — it is the mean over the other 8 bots.
+
+**Arm 2 launched**: `ai_v12_11_ladder_ctrl10M`, launcher pid 3926752, pin f3502568, `--vf-coef 0.5` confirmed in its startup CRITIC line (the control carries no lever). Order: vf15 ✅ → ctrl10M (running) → cflabels → tdaux → truevalue → ctrl10M_b.
+
+Tag: OPS. Arm 1's critic-meter read is NOT in this entry — it is dispatched separately once the control exists.
