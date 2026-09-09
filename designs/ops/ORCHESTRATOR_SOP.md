@@ -397,6 +397,16 @@ a session's wall clock more than the compute did.
   no watcher. Re-verify (`pgrep -af train_rl_agent | grep "bin/python3"`) before arming, and prefer
   watching the LOG for a success/failure token over watching a pid.
 
+### 7.x — 2026-09-09 · THE STALLS ARE FIRST-BYTE HANGS, AND THE 09-06 FIX NEVER COVERED THAT PATH (measured)
+
+~35 subagent deaths in 36 h, every one "Agent stalled: no progress for 600s (stream watchdog did not recover)", every one AT A MODEL REQUEST (after a prompt or a tool result), never inside a tool. Over 5,174 subagent turns + 373 parent turns from the transcripts: a hard spike at **300–320 s** (171 turns); of turns with ≥600 output tokens, **95 of 175 took ≥295 s**; the parent (Fable) shows the same wall on 10 % of its turns — not model-specific. Stall rate per request ~4–6 % flat across idle gaps, **14 % after a >600 s idle** (stale keep-alive contributes a minority).
+
+**Three timers in the 2.1.263 binary, and only one was disabled:** `CLAUDE_ENABLE_BYTE_WATCHDOG=0` (the 09-06 fix) turns off the mid-stream BYTE watchdog only. The **first-byte window** is separate (`StreamNoResponse`): 300 s by default (`max(CLAUDE_STREAM_IDLE_TIMEOUT_MS, 300000)` floor), on fire a SILENT retry once with a window up to 599 s — so a hung first attempt costs exactly ~300 s and the retry succeeds in 10–20 s (the 310–320 s quantization). The **agent stall watchdog** is 600 s unless `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` is set — a hung retry kills the agent. `CLAUDE_STREAM_FIRST_BYTE_TIMEOUT_MS` is honoured directly (clamped 10 s … 30 min).
+
+**Applied 2026-09-09 in `~/.claude/settings.json` env:** `CLAUDE_STREAM_FIRST_BYTE_TIMEOUT_MS=60000` and `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS=1800000`. Takes effect in NEW sessions only — restart the orchestrator and Training Run sessions to inherit it. Verify by re-running the transcript latency histogram: the 300–320 s spike should move to ~60–80 s and the deaths should stop.
+
+**Corrections to this section's earlier advice:** "background long tool calls because silent foreground calls trip the watchdog" was the wrong mechanism — stalls are at API requests, not tools. Backgrounding stays good hygiene (it keeps the agent responsive to a resume) but is not a stall fix. **RESUME still works and is still the first move** (every resumed agent continued from where it stopped); with the 30-min agent timeout it should rarely be needed.
+
 ## 8. Long-running jobs the orchestrator launches itself
 
 - Any long job launched from HERE gets the four layers of `TRAINING_RUN_SOP.md` §2 — OS watcher, OS
