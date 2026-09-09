@@ -16219,3 +16219,81 @@ Raised by the Training Run session from the argvs and the disk, accepted. (1) **
 **The rule.** Each conditioning meter now DECLARES `frame_sensitive` with its evidence; five are: the three out-of-fold decoder scores (`own_team_r2.t1`, `own_team_r2.all`, and `opp_class_auc.t1` — included because it is a fit, which is the brief's own criterion; exempting a fit on an observation is what produced the retraction) and the two UNCORRECTED second moments (`spread_ratio_raw.*`). The realized per-opponent capture profile is read from the manifest AND counted on disk (disk wins, disagreement reported); each side's cap = per-class max over opponents of the realized traced counts, matched caps = elementwise min, so a richer CONTROL is cut too (the floor path). The richer cycle is subsampled in memory over 21 seeds (odd ⇒ the median is an exact order statistic and the printed point and interval are one draw), capture rates recomputed per draw (rule 17 on the view actually read), the row reported as the across-seed median, the 2.5/97.5 across-seed spread, the median seed's battle-clustered CI differenced against the other side, and the label decided on the MATCHED delta; a decoder-matched rung (caps searched to equalise the decoder frame) prints beside the battle rung; the unmatched value prints marked UNMATCHED, never labelled. `--no-quota-match` replaces every frame-sensitive label with "UNMATCHED — not a reading". ~8 s CPU per pair; no cached readout invalidated (`TOOL_VERSION` 2→3, fingerprint untouched). 22 tests incl. the planted artefact (DETECTED unmatched → NOT DETECTED matched, fails on revert) and control-richer symmetry; routine gate green (10,302 passed).
 
 **Regenerated.** `vf15` and `tdaux` vs `ctrl10M`: SYMMETRIC (cap 8/12 every side; 205 / 210 / 204 traced) — v3 rows bit-for-bit equal to v2. `cflabels` MATCHED (arm cap 40/35 → 8/12; 632 → 197 battles, decoder rung 11/16 → 247): own-team R² t1 Δ **+0.0077 [−0.1353, +0.0816]** (decoder rung +0.0287 [−0.0808, +0.1327]) NOT DETECTED; own-team R² all Δ −0.0283 [−0.3414, +0.0904] NOT DETECTED; class AUC t1 Δ +0.0873 [−0.0616, +0.2356] NOT DETECTED; raw spread ratios NOT DETECTED at both rungs — all three withdrawn detections reproduce from inside the tool (points differ from the measurement in the third decimal: 21 seeds vs 30). **The floor may now be read**: `ctrl10M_b` vs `ctrl10M` matches automatically, and the floor JSON's magnitude must be taken from the row's MATCHED delta, which is now `critic_read.json`'s top-level `delta`. Judgement to review: matching on the per-class CAP rather than per-opponent minima (a strict min would cut both sides of a symmetric pair for no power gain and make "identical to before" unreachable on any real pair); the residual below-cap differences are the two runs' own outcome mixes and are reported, not matched. Tag: INSTRUMENT.
+
+## 2026-09-09 · OPS · CRITIC LADDER — `ai_v12_15_ladder_ctrl10M_b` COMPLETE: the REPLICATE FLOOR exists (10,027,008 steps, 4.17 h, 0 crashes, G7 below bar on both halves)
+
+The floor arm. Same argv as the control except the run name and `--seed 1001`, pinned
+`377a5aa170bef8bf37be2af7217bb4d4f1b20b36`. Its job is not to test a lever — it is to say how far
+apart two runs of the SAME configuration land, so that every lever delta in the ladder has a scale.
+
+🚨 **IT IS NOT A SEED CONTRAST, AND THE DISTINCTION IS THE POINT.** `--seed` reaches only the SB3
+constructor; it does NOT seed the battle stream, and two `--debug` smokes at the same commit and the
+same seed diverge at rollout 1. So ctrl10M-vs-ctrl10M_b measures **TOTAL run-to-run variance** —
+seed plus environment stochasticity — which is the right floor precisely because every lever arm
+carries the same environment variance. An earlier description of this arm as a "genuine seed-only
+contrast" was withdrawn: the argv claim was true, the inference from it was not.
+
+🚨 **HOW THE FLOOR MAY AND MAY NOT BE USED.** It is ONE draw of a difference — a scale with a single
+degree of freedom and no confidence interval of its own. It can **DEMOTE** a detection to WITHIN
+FLOOR; it can **NEVER PROMOTE** one. A lever delta is not "detected" because it exceeds the one
+replicate difference we happened to draw; the meters' bootstrap CIs remain the inference tool and a
+delta's own CI must still clear zero.
+
+**Run:** 10,027,008 steps in **4.17 h**, 48 envs, **1 periodic restart**, **0 crashes**, `Training
+complete`. Marginal fps **559.4** over a 100-min in-regime window; the launcher's exit line said 564.
+Sidecar **155,137 rows / 42 MB** — identical to cflabels' count, as it must be, since the row rate is
+1,536 per rollout and both ran the same number of rollouts. All **5** trace cycles retained.
+
+**G7 (within-arm)** — reference = first two cycles (2,000,016=26.192, 4,000,032=29.121) → **27.657**:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 25.626 | 0.927 | 0.8637 | under bar |
+| 8,000,016 | 25.105 | 0.908 | 0.8838 | under bar |
+| 10,000,032 | 23.240 | 0.840 | 0.8800 | under bar |
+
+Worst **0.927 = 74.1% of the bar**. Stall half peak **0.0156**, last 0.0031 → under bar. **G7 below
+bar on both halves.** ⚠️ Its reference is the HIGHEST of any arm (27.657 vs the control's 23.207)
+because its own 4M cycle came in at 29.121, so its ratios read low for a denominator reason that has
+nothing to do with any lever. This is the clearest demonstration yet that **cross-arm worst-ratios
+are not comparable** — two runs of the SAME configuration produced references 4.45 apart.
+
+**WHAT THE REPLICATE PAIR ALREADY SHOWS, descriptively.** ctrl10M_b vs ctrl10M at matched steps:
+
+| step | ctrl10M_b | ctrl10M | Δ |
+|---|---|---|---|
+| bots 2,000,016 | 0.3713 | 0.4913 | −0.1200 |
+| bots 4,000,032 | 0.7000 | 0.7300 | −0.0300 |
+| bots 6,000,000 | 0.8637 | 0.8813 | −0.0176 |
+| bots 8,000,016 | 0.8838 | 0.8925 | −0.0087 |
+| bots 10,000,032 | 0.8800 | 0.8988 | −0.0188 |
+| `selfplay_fraction` first jump | 0.5832 | 0.7278 | −0.1446 |
+| ladder 10M | 1973.7±15.6 | 2018.7±16.7 | −45.0 |
+| eval/elo 10M | 1974 | 2019 | −45 |
+| G7 reference | 27.657 | 23.207 | +4.450 |
+| final aggregate | 92.6% | 93.0% | −0.4 pp |
+
+**The spread is LARGE early and NARROWS as both saturate the bot pool** — 0.12 on bots at 2M down to
+0.019 at 10M. That shape matters for how the floor is read: a row measured early is priced against a
+much wider floor than a row measured at 10M, and the registered rows are at 10M. The **45-point
+ladder gap at matched snapshot count between two identically-configured runs** is the number to
+remember the next time a 45-point difference is offered as a result.
+
+**Rule-15 regime boundaries: 0.0000 → 0.5832 at 4,000,032 → 0.9000 at 6,000,000.** Same step
+locations as every arm; the first jump is the SMALLEST of the five (ctrl10M 0.7278, tdaux 0.7491,
+cflabels 0.8983, vf15 0.156 — vf15 remains the outlier at the other end). Since ctrl10M_b and
+ctrl10M differ ONLY by seed, the 0.5832-vs-0.7278 spread is direct evidence that the promotion
+crossing's size is itself a run-to-run quantity and must never be read as a lever effect.
+
+**The floor read is UNBLOCKED and is the orchestrator's next action.** It waited on the
+quota-matched `critic_read` (tool v3, landed `6778d561`): ctrl10M_b carries the 40/40/10 forensic
+quota against the control's default, the SAME asymmetry that produced — and then retracted — the
+cflabels own-team R² detection, and an unmatched floor would come back INFLATED, which fails in the
+dangerous direction by demoting real effects across every arm the floor prices. Decoder rows are now
+read on frames matched to the poorer side's REALIZED per-opponent profile.
+
+⚠️ The read is CROSS-COMMIT (377a5aa1 vs the control's f3502568); that span is separately settled
+NEUTRAL, but state it rather than imply it.
+
+Tag: OPS. Nothing measured about the critic by this entry. Next: `ai_v12_17_ladder_strata`, then
+`truevalue`.
