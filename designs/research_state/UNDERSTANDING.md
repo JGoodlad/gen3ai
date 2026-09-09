@@ -617,6 +617,16 @@ as an actor-only potential on a fresh run (the D3 upper-bound arm), sequenced af
 read. Arm C (`ai_v12_04_pfsp_fork25M`, PFSP 2.5 one-sided, greedy sentinels) is LIVE on the GPU
 since 2026-09-08 10:12, pinned at `ef981a89` [MEASURED, pin_history].
 
+**Ladder arm 1 read (2026-09-08, `--vf-coef 1.5` vs the fresh 10M control):** [MEASURED · NOT DETECTED,
+`measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/`] resolution Δ bot +0.0140 [−0.0080,
++0.0389], late identity bias Δ +0.0486 [−0.0305, +0.1311], turn-contrast Δ +0.1634 [−0.0807, +0.3733] —
+none detected; the registered identity bias on ALL states reads +0.048 [+0.014, +0.082] MORE optimistic
+than the control (no replicate floor yet). The fresh control reproduces A's 10M G1 failure on every
+stratum (bot 0.0187 vs 0.0337). Tripling the critic's gradient share is not the large effect the
+starvation reading predicts; the separate-value-trunk build is HELD pending the replicate floor.
+Arm 3 (cf labels) refused itself at launch — duty cycle 6.2 % vs a 25 % floor at 48 envs — and is
+amended to `--checkpoint-every-steps 500000` [ledger 2026-09-08 · *READ · critic ladder arm 1*].
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

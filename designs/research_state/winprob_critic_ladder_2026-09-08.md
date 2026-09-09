@@ -293,6 +293,17 @@ stripped-architecture failure mode cannot recur here. Argv files:
 
 ---
 
+## 2b. READS — one row per arm as it lands (`main.ops.critic_read`, ARM − CONTROL, control = `ai_v12_11_ladder_ctrl10M`@10M)
+
+| arm | lever | G1 resolution · bot Δ | identity bias · late Δ | turn-contrast Δ | verdict | where |
+|---|---|---|---|---|---|---|
+| `ai_v12_10_ladder_vf15` | `--vf-coef 1.5` | +0.0140 [−0.0080, +0.0389] | +0.0486 [−0.0305, +0.1311] | +0.1634 [−0.0807, +0.3733] | **NOT DETECTED** on all four; identity bias on ALL states +0.048 [+0.014, +0.082] MORE optimistic (vs ZERO, no floor) | `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/` · ledger 2026-09-08 *READ · critic ladder arm 1* |
+| `ai_v12_12_ladder_cflabels` | `--cf-records --cf-winprob-coef 0.5` | — | — | — | REFUSED ITSELF at launch (cf duty cycle 6.2 % vs floor 25 % at 48 envs); AMENDED to add `--checkpoint-every-steps 500000`, relaunches after tdaux | ledger, same entry |
+
+No replicate floor exists until `ai_v12_15_ladder_ctrl10M_b` lands; every DETECTED before then is against zero.
+
+---
+
 ## 3. THE FIRST PAIR
 
 **Launch B, then C — sequentially, both at `--n-envs 48`.**
