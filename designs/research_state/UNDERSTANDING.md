@@ -633,6 +633,30 @@ the D-ladder's conditioning arm, sketched in the measurement dir §12. **Caveat:
 slope is NOT DETECTED once the nine pinned bots are themselves resampled; the detection rests
 on the 14-opponent set and, more strongly, on the spread identity, which needs no strength axis.
 
+**The conditioning failure is a HEAD failure, not a representation failure.**
+[MEASURED, `winprob_probe_read_2026-09-09`] On turn-1 states of `ai_v12_02_winprob_critic` @74M,
+`stash.value_pooled` — the tensor the win head reads, with `V = sigmoid(head(value_pooled))` —
+linearly decodes the opponent's class at AUC 0.846 [0.811, 0.877], the trainee's team identity at
+macro AUC 0.974 [0.966, 0.981], the team's leave-one-out win rate at R² 0.671 [0.527, 0.790] and the
+opponent's Elo at R² 0.177 [0.112, 0.234], each clear of a permutation null run through the identical
+pipeline. `V` itself reads 0.532 (inside its null), 0.631, 0.010 and 0.006 on the same four; every
+paired V−pooled delta CI excludes zero. The raw-obs → value-path loss exists but is 4.3–8.7× smaller
+than the value-path → V loss at that decision point. The ladder's own control substrate
+(`ai_v12_11_ladder_ctrl10M` @10M) agrees, with `V` inside its null on opponent class at every bucket
+past turn 1. A 64-unit MLP probe recovers MORE from `value_pooled` than the linear probe (own-team
+win rate R² 0.746 vs 0.585), so non-linear coding is not the escape. **Consequence:** the
+value-side opponent-CONDITIONING arm sketched in the mixture diagnostic's §12 targets a gap that is
+not binding; the binding one is between `value_pooled` and the head's output, i.e. the TARGET the head
+is trained on. Where `V` does clear its own null (opponent class and Elo from turn 3 on, team identity
+throughout) it still sits far below the tensor it reads, every V−pooled delta CI excluding zero. **Open:** whether refitting the win head alone on a frozen `value_pooled` against a
+conditional target (per-(opponent, team) empirical win rate, or an MC continuation) recovers the
+between-opponent spread — an offline CPU test, not a GPU arm. **Caveat:** a proper scoring rule with
+one 0/1 label per episode makes shrinking toward the marginal the variance-minimising response, so
+"has it and does not use it" is a statement about what the head is PAID to do, not about what it can
+represent.
+
+---
+
 **Ladder arm 1 read (2026-09-08, `--vf-coef 1.5` vs the fresh 10M control):** [MEASURED · NOT DETECTED,
 `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/`] resolution Δ bot +0.0140 [−0.0080,
 +0.0389], late identity bias Δ +0.0486 [−0.0305, +0.1311], turn-contrast Δ +0.1634 [−0.0807, +0.3733] —

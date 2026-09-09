@@ -15856,3 +15856,53 @@ The Training Run session's correction, accepted: since `cflabels` refused at con
 ### 2026-09-09 · CORRECTION · the DIVERGENT branch of the replicate-floor rule was wrong — `ctrl10M_b` carries the only non-default seed, so it cannot be anyone's control
 
 The Training Run session's second correction, accepted, and the orchestrator's error: `ctrl10M`, `tdaux`, `cflabels` and `truevalue` all run at the parser-default seed (42, verified across the five pinned argvs); only `ai_v12_15_ladder_ctrl10M_b` carries `--seed 1001` — by design, that is what makes it a replicate. Reading `cflabels` / `truevalue` against it would make every delta lever+seed, subtracting the noise estimate INTO the signal. **Replacement rule for the DIVERGENT branch:** launch a matched-commit control at the DEFAULT seed — `ai_v12_16_ladder_ctrl10M_c`, `ctrl10M_b`'s argv minus `--seed 1001`, pinned `377a5aa1` (one extra ~4 h arm, spent only in that branch). Then `377a5aa1` has a control (seed 42) and a replicate (seed 1001): `cflabels` and `truevalue` read against `ctrl10M_c`; `ctrl10M_c`-vs-`ctrl10M_b` is the clean same-commit seed floor; `ctrl10M`-vs-`ctrl10M_c` is banked as the span's own read (descriptive). The IDENTICAL branch is unchanged: floor intact, everything reads against `ctrl10M`. Rejected alternatives, recorded: reading across the span against `ctrl10M` with the span stated (defensible only if the divergence is small and characterised — kept as the fallback if the GPU cannot be spared); re-pinning `cflabels` / `truevalue` back to `f3502568` (rejected — it gives up the sidecar, the instrument the ladder is being built to read). Tag: CORRECTION.
+
+### 2026-09-09 · MEASUREMENT · THE PROBE READ — the value features CARRY the opponent and the own team; the win head DISCARDS them (reading iii on every target, both substrates)
+
+Follow-up to the mixture diagnostic, dispatched to decide between an auxiliary decoding loss (signal discarded by the trunk), a conditioning input (signal absent early) and a head/target defect (signal present in the value features, unused). Commit `a2ce4853`; `measurements/winprob_probe_read_2026-09-09/`. The agent's paragraph, verbatim:
+
+**2026-09-09 · PROBE READ on the win-prob critic — the mechanism is (iii): THE HEAD HAS THE
+INFORMATION AND DOES NOT USE IT.** Following the mixture diagnostic, linear probes (weighted ridge,
+grouped-by-battle nested CV, battle-clustered bootstrap, permutation null through the identical
+pipeline, every fit and score HT-reweighted by the manifest capture rates) were fit on four feature
+sets from ONE frozen forward — the raw 2501-dim obs, the trunk `pi`, the value `vf`, and
+`stash.value_pooled`, the tensor the win head literally reads (`V = sigmoid(head(value_pooled))`) —
+plus `V` itself as a fifth decoder. Two substrates, both loading at HEAD unmodified:
+`ai_v12_02_winprob_critic` @74M (29,495 states / 951 battles / 216 teams / 14 opponents, 4 cycles,
+re-forward reproduces the recorded win prob to 8.9e-07 on the exact cycle) and the ladder pin
+`ai_v12_11_ladder_ctrl10M` @10M (25,564 / 873 / 180 / 12, 5 cycles, 3.8e-06). On TURN-1 states of
+arm A, `value_pooled` decodes the opponent's CLASS at **AUC 0.846 [0.811, 0.877]** and the trainee's
+TEAM IDENTITY at **macro AUC 0.974 [0.966, 0.981]**, and explains **R² 0.671 [0.527, 0.790]** of the
+team's leave-one-out win rate and **R² 0.177 [0.112, 0.234]** of the opponent's Elo — every one clear
+of its permutation null. `V`, one MLP downstream, reads **AUC 0.532 [0.486, 0.574]** on class (inside
+its null), **AUC 0.631** on team identity, **R² 0.010 [−0.011, 0.027]** on team win rate and **R²
+0.006** on Elo. The paired deltas V−pooled are **[−0.372, −0.258]** (class), **[−0.361, −0.315]**
+(team identity), **[−0.779, −0.521]** (team win rate) and **[−0.231, −0.109]** (Elo), all clear of
+zero. The RAW→POOLED representation loss is real but SMALLER at the decision point (−0.036 class,
+−0.155 team WR, −0.105 Elo) — the head gap is 4.3–8.7× it — though it WIDENS late on the own-team
+axis (−0.155 at turn 1 → −0.655 at turn ≥25). CTRL agrees: `V` is inside its own null on opponent
+class at every bucket past turn 1 while `value_pooled` reads 0.835–0.895. A 64-unit MLP probe moves
+the numbers AGAINST the "non-linear coding was missed" counter-hypothesis (pooled → own-team WR R²
+0.746 vs the linear 0.585). **Reading (i) — the network discards it — is REFUTED; reading (ii) — not
+observable early — is REFUTED (the opponent is readable at turn 1 from the lead and the team it
+implies, contrary to the pre-registered expectation).** Therefore the mixture diagnostic's §12 FiLM
+conditioning arm addresses a gap that is not binding, and the first move is head-side and offline:
+refit ONLY the win head on a frozen `value_pooled` against a conditional target, then target-variance
+levers (cf-labelled twins / search leaves, opponent-stratified value-loss weighting) and head
+capacity. One cell dissents under the linear rule — CTRL's opponent ELO reads (ii) at turn 1 and (i)
+at turns 1–3 — and it is an underpowered-axis plus linear-probe artefact rather than a
+counter-example: CTRL has three sentinels in three of five cycles so even `raw` is not detected there
+at turn 1 (R² 0.077 [−0.022, 0.162]), the axis-free `opp_class` question reads (iii) on that substrate
+at every bucket, and the MLP probe recovers opponent Elo from `value_pooled` at R² 0.130 [0.014,
+0.238], clear of its null. Where `V` does clear its own null it is still far below what it is handed:
+every "(iii-partial)" cell carries a V−pooled delta CI entirely below zero. Four tooling hazards
+recorded, each of which produced a wrong number before it was caught:
+standardising near-constant obs columns (OOF R² −1.05), rare-value columns exploding the d>n dual
+ridge (R² −1221, invisible to the inner CV), a one-vs-rest null that permuted the label LIST and so
+equalled the measurement exactly, and a group-level permutation used as a chance level when it is an
+identity-mediation reference (it read 0.98 against a true 0.83).
+Measurement: `designs/research_state/measurements/winprob_probe_read_2026-09-09/`.
+
+---
+
+**Orchestrator's reading and what it changes.** The pre-registration was wrong in the useful direction: Gen 3 has no team preview, yet the opponent is readable from the lead at turn 1 and `value_pooled` keeps it (class AUC 0.85, own-team win rate R² 0.67, own-team identity AUC 0.97) while V reads 0.53 / 0.01 / 0.63 on the same states — one MLP, the win head, separates those columns, and the control at the ladder's pin agrees at every turn bucket. So: (1) the owner's auxiliary-loss-on-Elo idea is NOT indicated — the representation already carries what the loss would teach; (2) the mixture diagnostic's FiLM conditioning arm is DE-PRIORITISED to a falsifier — it would inject a code the features already hold; (3) the privileged true-team arm (`truevalue`) is weakened for the same reason: it adds information into `value_pooled`, and the head is the thing discarding information from `value_pooled`. The defect is in what the head is paid to do or how it was optimised. Dispatched next, offline and GPU-free: refit ONLY the win head on frozen `value_pooled` against (a) the terminal 0/1 label, (b) the conditional per-(opponent, team) win rate, with the online head as the reference and a fine-tune-vs-scratch check — separating an online-optimisation defect from label variance from head capacity, each with its treatment class named in advance. Queue reorder relayed: `cflabels` (the one target-side arm queued) stays next; `ctrl10M_b` moves ahead of `truevalue`. Tag: **MEASURED · DETECTED (iii)**.
