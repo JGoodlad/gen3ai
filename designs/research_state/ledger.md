@@ -15672,3 +15672,55 @@ each. Tag: REGISTRATION.
 **Arm 2 launched**: `ai_v12_11_ladder_ctrl10M`, launcher pid 3926752, pin f3502568, `--vf-coef 0.5` confirmed in its startup CRITIC line (the control carries no lever). Order: vf15 ✅ → ctrl10M (running) → cflabels → tdaux → truevalue → ctrl10M_b.
 
 Tag: OPS. Arm 1's critic-meter read is NOT in this entry — it is dispatched separately once the control exists.
+
+---
+
+### 2026-09-08 · INSTRUMENT · `main.ops.critic_read` — the critic ladder's registered read as ONE command (identity + G1 + turn-contrast, ARM − CONTROL with CIs and labels; refuses over silence)
+
+**The problem.** The ladder registration (`2026-09-08 · REGISTRATION · THE CRITIC LADDER`) specifies a read that is three separate agent efforts per arm — today's tests 1–3 at 75M took **2–7 h each** and produced three differently-shaped reports whose statistics lived as loose scripts in one session's temporary directory. Six arms at ~4 h of GPU each would have cost more agent-hours in READING than in training, and two arms read by two different scripts are not comparable by construction.
+
+**What landed.** `python -m main.ops.critic_read <arm> --control <control-arm> --out <dir>` produces the whole registered read in one invocation:
+
+1. Resolves both runs read-only through `utils.paths.main_models_dir()` (`main.ops.run_ref`), and picks each run's **last COMPLETE eval cycle**. Complete = `eval_manifest.json` exists **and carries its `selection` block** — the manifest is written *before* a single battle is played with `selection: null` and PATCHED at COLLECT (`eval_callback.record_eval_selection`), so the manifest alone (rule 16's letter) says only that the cycle STARTED. `--on-live {skip-newest,refuse,use}` decides what to do when a launcher for that run is still alive; live PIDs are read from `/proc` by exact `--run-name` / `--run-dir` token, never by a pattern that could match the tool's own argv.
+2. **IDENTITY** — `cf_audit` on that cycle with **no `--checkpoint`** (ledger `1a1ad063`), `--impl rust`, `--states 800 --anchors 150` as flags with the 75M read's defaults, explicit `--out` under `<out>/identity/`. Then the readout: reproduction rate, bias `V − p̂` overall / by turn bucket (≤10, 11–24, ≥25) / by stratum (bot, pool), Murphy with the **base-rate cap** (RES/UNC), and the `corr(turn,V) − corr(turn,MC)` contrast — every interval a battle-clustered bootstrap.
+3. **RESOLUTION** — `main.critic_gate` with `--parent v9_fold_parent --famine-comparator off --skip-meter` and explicit `--json`/`--md` under `<out>/gate/`. **A fresh arm has no parent**; the flag is only what the tool's argparse requires, the G1–G4 bars come from the committed calibration baseline, and the ladder / famine / **G7** sections that would use a parent are not reported. Strength is not read. (This is the same fresh-arm gap `g7_report` hit on arm 1 — sidestepped by not quoting a section a fresh arm cannot fill.)
+4. **THE DELTA** — every quantity as **ARM − CONTROL** with the **difference of the two runs' INDEPENDENT battle-clustered bootstraps**, labelled `DETECTED` / `WITHIN FLOOR` / `NOT DETECTED` exactly as registered. `--floor-json` supplies the replicate floor; **absent, the report prints "NO REPLICATE FLOOR — deltas are NOT DETECTED unless their CI clears zero, and never DETECTED against a floor"** and every detection carries the qualifier *vs ZERO — NO FLOOR*. Arm 6 (`ai_v12_15_ladder_ctrl10M_b`) will supply the floor file.
+5. **Output** — `<out>/critic_read.md` (the four headline deltas first, then the full tables, then every command and every path) and `<out>/critic_read.json`. `--ledger-line` prints the one-line QUOTE in the registered form, numbers only.
+
+**REWEIGHTING — which statistics reweight and which do not, because three different selections stack here and conflating them is how test 3 first returned the opposite answer.** Every number is reported under all three, with the registered one starred:
+
+| correction | what it fixes | where it applies |
+|---|---|---|
+| `pop` | `cf_audit` draws a STRATIFIED sample (decile × outcome × turn tercile, 4× boost on high-confidence-from-lost); recombined at the frame's own (decile, outcome) mass | the SAMPLER, against the trace tree |
+| `ipw` | `1 / capture_rate(opponent, outcome)` from the cycle's `eval_manifest.json` — **RULE OF EVIDENCE 17** | the loss-enriched TREE, against the eval population. **The REGISTERED weighting for every bias and every Murphy term** (`pop × ipw`) |
+| `raw` | none | the **turn-contrast only**, because arm A's committed `+0.3089 [+0.0828, +0.5101]` is the POOLED UNWEIGHTED Pearson pair and the ladder is compared against that estimand |
+
+**Two places reweighting does NOT apply, stated rather than assumed.** (a) **The ANCHOR arm** — its frame is a CENSUS of the bot battles it draws from and its estimand is the offline REPLAY DRIVER's fidelity, not a property of the eval population; reweighting it would answer a question nobody asked, and none is applied. (b) **The GATE rows** carry no weighting column because the scaffolding gauge applies the capture-rate correction itself from the same manifest rates — there is no unweighted variant of a gate row. A stratum whose opponents the manifest cannot weight comes through at **weight 0 with its coverage printed**, never at weight 1 beside corrected rows.
+
+**REFUSALS (exit 2, cause named, no partial table).** No manifest · a cycle that has not COLLECTED · no complete cycle at all · state npz without a `win_probs` column (`--allow-missing-winprob`, default 0.0 — this is the check that the privileged arm's channel was present **at eval**, since both meters take V and P(win) from these npz) · anchor reproduction below the label-trust gate (`--anchor-tolerance`, default 0.90) · a draw/timeout share above 25% (`--max-draw-share`) · a malformed floor file · `main.critic_gate` exiting 2 (overridable by `--allow-gate-refusal`, which then says in print that the G1–G4 rows are missing and why).
+
+**Verification.** `src/main/ops/critic_read_test.py` — 42 pure-unit tests on synthetic input, no `models/` read: each of DETECTED / WITHIN FLOOR / NOT DETECTED planted in both directions with and without a floor (including the one that matters — a CI that clears ZERO but sits inside the floor is WITHIN FLOOR, not DETECTED); the delta interval must be WIDER than either arm's own; every refusal path; and the cache reusing only on a matching fingerprint. The promoted statistics reproduce the 75M read's committed numbers **exactly** from `identity_labels.json`: bias `+0.0965`, Murphy resolution `0.0476`, skill `0.166`, turn-contrast `+0.3089`.
+
+**Two smokes on real data**, both under `/home/goodlad/.claude/jobs/9ab51de6/tmp/critic_read_smoke/`, nothing written under `models/`:
+
+**Two smokes on real data**, both under `/home/goodlad/.claude/jobs/9ab51de6/tmp/critic_read_smoke/`, nothing written under `models/`:
+
+**(a) THE ZERO-DELTA PLANT** — `ai_v12_10_ladder_vf15` read against ITSELF. **45 delta rows, all exactly 0.0, every label `NOT DETECTED`.** Headline:
+
+> `ai_v12_10_ladder_vf15 vs ai_v12_10_ladder_vf15 at 10M: G1 bot Δ +0.0000 [-0.0286, +0.0258] NOT DETECTED · identity bias late Δ +0.0000 [-0.0681, +0.0665] NOT DETECTED · turn-contrast Δ +0.0000 [-0.1909, +0.1861] NOT DETECTED`
+
+The intervals are non-zero and that is correct: an arm resampled against an independent resample of ITSELF has a real sampling spread. Only the POINT must vanish, and it does — 15.9 s, entirely off the cache.
+
+**(b) A NON-ZERO DELTA** — ladder arm 1 `ai_v12_10_ladder_vf15`@10M against `ai_v12_02_winprob_critic`@74M. **DESCRIPTIVE, NOT a ladder read**: it is CROSS-STEP (10M vs 74M) and cross-regime (A ran stochastic sentinels and the older sim), and the tool's ledger line says so in the quote. The registered delta is against `ai_v12_11_ladder_ctrl10M` at matched 10M, which does not exist yet.
+
+> `ai_v12_10_ladder_vf15 vs ai_v12_02_winprob_critic at 10M vs 74M (CROSS-STEP): G1 bot Δ +0.0070 [-0.0142, +0.0310] NOT DETECTED · identity bias late Δ -0.0270 [-0.0979, +0.0413] NOT DETECTED · turn-contrast Δ -0.2396 [-0.4764, +0.0277] NOT DETECTED`
+
+plus `gate.skill.bot Δ +0.0734 [-0.0777, +0.2075] NOT DETECTED`. 36 min cold (2,170 s, both `cf_audit` runs + both gates); **31 s warm off the cache** — the whole point, since the ladder's control is read once and reused by every arm. 12 of the 45 rows do clear zero, all of them on `pool` or on a non-registered weighting, and every one carries the qualifier *vs ZERO — NO FLOOR*.
+
+**The instrument reproduces the committed 75M measurement, value for value.** Arm A's `cf_audit` re-run returned **142/142 anchors** and its own population-weighted gap **+0.0979** — the exact numbers in `measurements/winprob_critic_75M_read_2026-09-08/identity_test.md`. vf15's returned 141/142 (0.993). And the promoted statistics recomputed from the committed `identity_labels.json` give bias **+0.0965**, Murphy resolution **0.0476**, skill **0.166**, turn-contrast **+0.3089** — the ledger's own figures.
+
+**⚠️ Arm A's own 10M eval traces are GONE** — `--keep-eval-trace-steps 20` trimmed them and A's tree now starts at 36M. A matched-10M delta against A **cannot be recomputed from traces**; the committed numbers in `measurements/winprob_critic_10M_read_2026-09-07/` are the record, and a fresh read against A resolves to A@74M, which is a CROSS-STEP, cross-regime comparison and is labelled as one. The ladder's real control is `ai_v12_11_ladder_ctrl10M`.
+
+`main.ops.critic_readouts` holds the promoted statistics as a library; the 75M measurement directory KEEPS its own copies, because a committed measurement has to stay reproducible from the artifacts beside it. Docs: `scripts/ops/README.md`, `designs/ops/TRAINING_RUN_SOP.md` §2, and the design note's read section ("THE READ IS ONE COMMAND").
+
+Tag: INSTRUMENT. Nothing measured about the critic by this entry beyond the two smokes, which are labelled descriptive.

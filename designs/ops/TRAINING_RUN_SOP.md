@@ -193,6 +193,7 @@ with what it measures.
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
+| **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --out <dir>` — identity + G1 + the turn-contrast as ARM − CONTROL with the delta's CI and its label, one invocation, one report |
 
 A session may still keep a scratch copy while an arm is live; the repo copies are the durable
 ones and are what this document names.

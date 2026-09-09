@@ -42,9 +42,12 @@ holds that line for the shell layer (`bash -n`, `--help`, bare-invocation refusa
 | `perbot_r` | Pearson `r(base, skill)` across opponents with a battle-clustered bootstrap — the cap account predicts a NEGATIVE sign. |
 | `perbot_rank` | The same claim as an ORDERING: Spearman rho, bootstrap clustered by OPPONENT. |
 | `negskill_null` | The null for a count of negative-skill cells: a perfectly calibrated critic with the head's OWN forecasts scores negatives by chance at these n. |
+| `critic_read` | **The CRITIC LADDER's registered read, as ONE command.** identity (`cf_audit`, no `--checkpoint`) + G1-G4 (`main.critic_gate`) + the `corr(turn,V) - corr(turn,MC)` contrast, every quantity as **ARM - CONTROL** with a battle-clustered difference of INDEPENDENT bootstraps and the registered DETECTED / WITHIN FLOOR / NOT DETECTED label. Refuses on a missing manifest, an uncollected cycle, npz without `win_probs`, an anchor rate under the label-trust gate, or a draw/timeout share over 25%. |
+| `critic_readouts` | Shared: the ladder's statistics — the three selection weightings (sampler, capture-rate/rule-17, none), the battle-clustered bootstraps, Murphy with the base-rate cap, the delta label. Promoted from the 75M read's measurement directory. |
+| `critic_read_render` | Shared: `critic_read`'s report — the markdown and the one-line ledger QUOTE. Pure; reads nothing, writes nothing. |
 | `run_ref` | Shared: a run NAME or DIRECTORY -> the directory, refusing when there is no archive. |
 
-Every module is `python -m main.ops.<name>`; every one prints its contract on `--help`.
+Every ENTRY POINT is `python -m main.ops.<name>` and prints its contract on `--help`. `run_ref`, `critic_readouts` and `critic_read_render` are LIBRARY modules — imported, never invoked — and have no `--help` of their own; their table rows say so.
 
 ## Two carried-over notes
 

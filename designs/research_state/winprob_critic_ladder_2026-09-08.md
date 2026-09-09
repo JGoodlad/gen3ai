@@ -328,15 +328,41 @@ python -m main.launcher $(cat /home/goodlad/.claude/jobs/9ab51de6/tmp/argv_C_vf.
 `python -m main.checkargs --argv "$(cat …)"` immediately before launching — HEAD may have moved since
 this note was written, and a fresh arm is judged by the CURRENT parser.
 
-**How each is read at 10M** (both meters, never strength):
+**How each is read at 10M** — 🚨 **THE READ IS ONE COMMAND** (built 2026-09-08, ledger
+*INSTRUMENT · main.ops.critic_read*):
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m main.ops.critic_read <arm> --control ai_v12_11_ladder_ctrl10M \
+    --out <outside models/> --ledger-line          # add --floor-json when a floor exists
+```
+
+It resolves each run's LAST COMPLETE eval cycle (a manifest whose `selection` block is written —
+i.e. the cycle has COLLECTED), runs both meters, and emits `critic_read.md` + `critic_read.json`
+with every registered quantity as **ARM − CONTROL** and the delta's own battle-clustered CI. It
+REFUSES rather than emit a partial table: no manifest, an uncollected cycle, npz without
+`win_probs`, an anchor rate under 0.90, or a draw/timeout share over 25% exits 2 naming the cause.
+The control's readout is cached per run, so the second arm read against the same control costs
+only its own half. What it composes, unchanged:
 
 1. **Identity test** — `python -m agents.training.cf_audit <run> --step <10M step dir> --impl rust
    --rollouts 8 --states 800 --anchors 150 --seed 0 --out <outside models/>`, **no `--checkpoint`**
-   (ledger `1a1ad063`). Read: population-weighted `V − p̂` with its battle-clustered CI, by turn
+   (ledger `1a1ad063`). Read: `V − p̂` with its battle-clustered CI, by turn
    bucket (early ≤ 10 / mid 11–24 / late ≥ 25), and the `corr(turn,V) − corr(turn,MC)` contrast
-   against A's **+0.3089 [+0.0828, +0.5101]**.
+   against A's **+0.3089 [+0.0828, +0.5101]**. Reported under three selection weightings, with
+   the registered one starred: capture-rate reweighted for the biases (rule 17), and the POOLED
+   UNWEIGHTED pair for the turn-contrast, because that is the estimand A's +0.3089 is.
 2. **G1 resolution at matched strata** — `python -m main.critic_gate`, `all` / `bot` / `pool`,
-   against A@10M's own rows from `measurements/winprob_critic_10M_read_2026-09-07/`.
+   against A@10M's own rows from `measurements/winprob_critic_10M_read_2026-09-07/`. A FRESH arm
+   has no parent, so the tool passes `--parent v9_fold_parent --famine-comparator off
+   --skip-meter`: G1–G4 read their bars from the committed calibration baseline, and the ladder /
+   famine / G7 sections that would use a parent are not reported — **strength is not read.**
+
+🚨 **Arm A's own 10M eval traces are GONE** (`--keep-eval-trace-steps 20` trimmed them; A's tree
+now starts at 36M). A matched-10M delta against A cannot be recomputed from traces — the committed
+numbers in `measurements/winprob_critic_10M_read_2026-09-07/` are the record, and a fresh read
+against A resolves to A@74M, which is a CROSS-STEP, cross-regime comparison and must be labelled
+as one.
 
 🚨 **The bar is stated as a DELTA with a CI, not two overlapping bars.** Per the standing rule, an
 "improved" or "equivalent" sentence requires the *difference's* interval; A@10M and the new arm are
