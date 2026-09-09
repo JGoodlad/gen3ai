@@ -657,6 +657,35 @@ represent.
 
 ---
 
+**The head's failure is a TARGET failure, and the target's defect is the SHARE of the objective
+the opponent holds.** [MEASURED, `winprob_head_refit_2026-09-09`] Refitting the win head alone on
+a frozen `value_pooled`, out of fold under battle-grouped CV and HT-reweighted, against the
+TERMINAL 0/1 outcome the online head actually trains on reproduces the online failure exactly on
+both `ai_v12_02_winprob_critic` @74M and the ladder control `ai_v12_11_ladder_ctrl10M` @10M: the
+turn-1–3 between-opponent spread ratio moves 0.149 → 0.000 (Δ [−0.055, +0.234]) and 0.066 → 0.068
+(Δ [−0.044, +0.042]), and the prediction's turn-1 opponent-class decode moves 0.532 → 0.546
+(Δ [−0.049, +0.081]). Swapping ONLY the target for the per-(cycle, opponent) × own-team
+leave-one-battle-out win rate recovers a DETECTED part: 0.149 → 0.323 (Δ [+0.063, +0.296]) and
+0.066 → 0.259 (Δ [+0.051, +0.192]), class AUC 0.532 → 0.646 (Δ [+0.059, +0.170]), own-team
+win-rate R² 0.010 → 0.569 and 0.028 → 0.467 against `value_pooled`'s 0.671 / 0.628 — while
+forecasting the real outcome BETTER on turns 1–3 (Brier 0.1608 → 0.1190, Δ [−0.0495, −0.0344]).
+The mechanism is that only 10.2 % / 14.4 % of the terminal label's variance lies between (cycle,
+opponent) cells, so a head minimising a proper scoring rule buys its resolution from the board and
+its own team instead; the conditional target raises that share to 24.0 % / 58.8 %. **A head
+initialised from the online weights lands where a scratch head lands, under both targets and on
+both substrates**, so the online head is NOT in a basin and the head-side-optimisation treatment
+class (value replay, periodic head refit, head-specific lr) is RULED OUT. Capacity is a real
+second-order term: the MLP beats a linear head only under the conditional target. **The online
+win-prob critic's turn-1–3 Brier skill against the base rate is −0.129 on arm A** — in the window
+where the mixture defect lives it forecasts worse than a constant. **Consequence:** the treatment
+is target-side (counterfactual / MC labels, search leaves, and above all opponent-stratified
+weighting of the value loss, which raises the between-cell share with no new labels). **Open:**
+whether an online arm with a lower-variance target moves the same two meters, and whether a head
+that conditions plays better — the identity test against an MC continuation remains the arbiter.
+**Caveat:** the recovery is PARTIAL (46 % / 29 % of the conditional target's own ceiling; 31 % / 23 % of the gap to it), and
+the offline head saw ~2,500× fewer distinct episodes than the online one, so the size of the
+recovery does not transfer even though the variance-share mechanism, being scale-free, does.
+
 **Ladder arm 1 read (2026-09-08, `--vf-coef 1.5` vs the fresh 10M control):** [MEASURED · NOT DETECTED,
 `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/`] resolution Δ bot +0.0140 [−0.0080,
 +0.0389], late identity bias Δ +0.0486 [−0.0305, +0.1311], turn-contrast Δ +0.1634 [−0.0807, +0.3733] —

@@ -15979,3 +15979,70 @@ plus `gate.skill.bot Δ +0.1141 [-0.0649, +0.2685] NOT DETECTED`. Every register
 **The finding that matters more than the null.** The TD-consistency arm was the registration's top-ranked lever because its mechanism was *directly* implicated: arm A's head read the clock BACKWARDS at 74M (`corr(turn,V) − corr(turn,MC)` = **+0.309** [+0.083, +0.510]). At 10M the fresh control reads **−0.094** and the arm **−0.085**: the head tracks the clock in the RIGHT direction at 10M, and there is no inversion for a Bellman term to fix. So the late-optimism / clock defect (L4) is a LATE-TRAINING phenomenon — it emerges somewhere between 10M and 50M (arm A's four-cycle read had it fully formed at 50M) — and **a 10M ladder cannot see any lever's effect on it.** The ladder's 10M reads remain valid for RESOLUTION (present at 10M: the control fails G1 on every stratum) and for the mixture/head defect (present at 10M per the probe read on this very control). Consequence for the plan: the L4 levers (`tdaux`, and any target-form lever aimed at late optimism) need a longer read — a resume of the arm to ~30M, or a read of the lever on a fork of arm A — and `tdaux` at 10M is NOT a null on its mechanism, only a null on resolution. Tag: **MEASURED · NOT DETECTED (resolution) · MECHANISM UNTESTABLE AT 10M (clock)**.
 
 **Ops corrections banked from the Training Run session, same hour.** (1) The rust-binary incident's blast radius was smaller than recorded: a pinned launcher run builds its OWN `sim_bridge` in its run worktree and publishes the path to every child (`🦀 [BRIDGE=rust] sim_bridge binary (prebuilt, published to children): /tmp/launcher-377a5aa1-…/src/rust_sim/target/release/sim_bridge`), so training arms are structurally immune to main's target dir — `tdaux` was never at risk; the exposed population is everything that runs from the MAIN checkout (offline meters, the prober, fuzz scripts, pytest). Mirror hazard: that binary bakes the launcher temp dir, so a pruned run worktree kills the arm with the same panic. `cflabels` launched 03:2x after the rebuild; no dead start. (2) The sidecar is NOT one row per rollout: one WRITE per rollout of `fraction × env-steps` sampled decision points — **1,536 rows per rollout at 48 envs × 2048 steps, ≈157k rows / ~43 MB at 10M**; the 19.3 ms overhead is per rollout WRITE of 1,536 rows. Confirmed writing from rollout 0 on `cflabels`; `tdaux` (pin `f3502568`) has none, as expected. (3) `main.ops.critic_read` exposes no `--step`: `pick_cycle` accepts one, the CLI does not — backlog row. Tag: CORRECTION.
+
+### 2026-09-09 · MEASUREMENT · THE HEAD REFIT — reading (2) PARTIAL on both substrates: the win head is not failing to learn, it is being paid to predict something else; head-side optimisation RULED OUT; the cf-label arm is the right next arm and an opponent-stratified loss weighting is the highest-value unbuilt lever
+
+Follow-up to the probe read; commit `62368ec2` (WIP `69af8ddf`); `measurements/winprob_head_refit_2026-09-09/`. The agent's paragraph, verbatim:
+
+**2026-09-09 · HEAD REFIT on the win-prob critic — reading (2), PARTIAL, on BOTH substrates: the
+head is not failing to learn, it is being paid to predict something else.** Following the probe
+read, the win head alone was refit on a FROZEN `value_pooled` (the probe read's own extraction;
+`dump_head.py` REFUSES unless `sigmoid(win_head(value_pooled))` reproduces the frozen forward's V
+— 2.3e-07 on A, 2.8e-07 on CTRL). Seven conditions on one tensor, every prediction OUT OF FOLD
+under battle-grouped 5-fold CV with a grouped early-stopping split, every fit and score HT-
+reweighted by the manifest capture rates, every interval a battle-clustered bootstrap resampling
+battles WITHIN their (cycle, opponent) cell with the outcome side's 100-game binomial redrawn, and
+every claim on the DELTA's own CI. Substrates `ai_v12_02_winprob_critic` @74M (29,495 states / 951
+battles / 216 teams / 14 opponents) and the ladder control `ai_v12_11_ladder_ctrl10M` @10M (25,564
+/ 873 / 180 / 12). **(a) THE TERMINAL 0/1 TARGET — the one the online head actually trains on —
+REPRODUCES THE ONLINE FAILURE EXACTLY**, from scratch, to convergence, with no non-stationarity:
+turn-1–3 between-opponent spread ratio 0.149 → 0.000 on A (Δ [−0.055, +0.234]) and 0.066 → 0.068
+on CTRL (Δ [−0.044, +0.042]); turn-1 opponent-class decode of the prediction 0.532 → 0.546 on A
+(Δ [−0.049, +0.081]) against `value_pooled`'s 0.846, and FALLING on CTRL. **(b) THE SAME HEAD ON
+THE SAME FEATURES, TRAINED ON THE PER-(CYCLE, OPPONENT) × OWN-TEAM LEAVE-ONE-BATTLE-OUT WIN RATE,
+RECOVERS A DETECTED PART OF IT**: ratio 0.149 → 0.323 on A (Δ **[+0.063, +0.296]**) and 0.066 →
+0.259 on CTRL (Δ **[+0.051, +0.192]**); turn-1 class AUC 0.532 → 0.646 on A (Δ [+0.059, +0.170]);
+own-team LOO win-rate R² 0.010 → 0.569 on A and 0.028 → 0.467 on CTRL, against `value_pooled`'s
+0.671 / 0.628 — and it forecasts the REAL outcome better where the defect lives (turns 1–3 Brier
+0.1608 → 0.1190 on A, Δ [−0.0495, −0.0344]; 0.1611 → 0.1415 on CTRL, Δ [−0.0260, −0.0131]). 🚨 **The
+online head's turn-1–3 Brier SKILL against the base rate is −0.129 on arm A: in the window where
+the mixture defect lives it forecasts worse than a constant, reliability 0.0231 against resolution
+0.0054, and every refit including the linear floor beats it.** **THE ORDER HAZARD IS ELIMINATED:**
+a head initialised FROM the online weights lands in the same place as one trained from scratch
+under BOTH targets on both substrates (7 of 8 ratio deltas straddle zero; the one that does not
+favours scratch by 0.046) — the online head is not in a basin, so treatment class 1 (a value
+replay / periodic head refit / head-specific lr) is RULED OUT, not merely deprioritised.
+**CAPACITY is a real but second-order term**: the MLP beats the linear floor only under the
+conditional target (A Δ +0.323 [+0.136, +0.337]; CTRL +0.136 [+0.095, +0.201]) and not under the
+terminal one. **The mechanism is arithmetic**: only 10.2 % (A) / 14.4 % (CTRL) of the terminal
+label's variance lies between (cycle, opponent) cells, so a head minimising BCE buys resolution
+from the board and its own team instead — the terminal refit lifts held-out Brier resolution
+0.0323 → 0.0513 while moving the opponent meter not at all; the conditional target raises the
+between-cell share to 24.0 % / 58.8 % and the head then conditions. That statement is scale-free,
+which is what carries it across the 2,500× gap between the offline 951 battles and the online
+head's ~2.4M episodes: a pure sample-size account predicts the online head should have averaged
+the noise down and it did not. The recovery is PARTIAL — 46 % (A) and 29 % (CTRL) of the
+conditional target's OWN ceiling, i.e. 31 % and 23 % of the gap from the online head to it (0.702 [0.652, 0.894] and 0.898 [0.822, 0.984]), and the ceiling
+is set by the shrinkage a well-estimated conditional label requires, not by the head.
+Counter-hypotheses: overfitting SURVIVES on the Brier column only (in-fold 0.0842 vs held-out
+0.1148 for the terminal refit — which also closes "it lacked capacity" as an account of (a));
+leakage ELIMINATED (closed-form LOO; the literal per-(cycle, opponent, team) cell target at ≥3
+battles reads 0.291 against 0.323); the HT weights SURVIVE as a hazard in the usual direction —
+UNWEIGHTED, (a) reads 0.217 with a delta clear of zero, i.e. the naive read manufactures a
+success. **Consequence:** the mixture diagnostic's §12 FiLM conditioning arm is doubly ruled out,
+the head-side-optimisation class is ruled out, and the next ladder arm is the QUEUED cf-label arm
+`ai_v12_12_ladder_cflabels` (`--cf-records --cf-winprob-coef 0.5`), read on the turn-1–3 spread
+ratio and the turn-1 own-team R² rather than on strength; `ai_v12_13_ladder_tdaux` is DEMOTED (a
+bootstrap lowers variance but at turn 1 regresses on the head's own unconditioned V, so it need
+not raise the between-cell share) and `ai_v12_14_ladder_truevalue` is DEMOTED as a representation
+probe. The highest-value UNBUILT lever this identifies is opponent-stratified weighting of the
+win-prob loss — it raises the between-cell share directly, with no new labels and no rollout cost.
+Three tooling hazards recorded, each of which produced a wrong number before it was caught: a
+clamped noise-corrected ratio sits BELOW its own bootstrap interval (0.000 with CI [0.211, 0.533]);
+a conditional target with no CYCLE term is unreadable on a rapidly improving run (CTRL's ceiling
+read 0.420 instead of 0.898); and the RECORDED per-cycle V is a different object from the frozen
+forward's — on CTRL they read 1.079 and 0.066, so quoting the recorded one would have said the
+ladder control's head conditions perfectly.
+Measurement: `designs/research_state/measurements/winprob_head_refit_2026-09-09/`.
+
+**Orchestrator's decisions from it.** (1) **Treatment class 1 is closed** — no value replay, no periodic head refit, no head-specific learning rate; the idealised version was run here and reproduced the failure from scratch and from the online weights alike. (2) **The separate value trunk stays HELD** — capacity is second-order and appears only under the conditional target. (3) **`cflabels` (running since 03:2x) is the arm that matters**; its read adds the turn-1–3 spread ratio and the turn-1 own-team R² beside the registered rows (the mixture and refit scripts compute them; promotion into `critic_read` is a follow-on). (4) **Arm 7 is registered as a BUILD: opponent-stratified weighting of the win-prob BCE** — per-(opponent-class) balancing of each state's loss weight so the between-cell share of the objective rises with no new labels and no rollout cost, one flag in the CRITIC family, OFF by default; dispatched now; it takes the slot after `ctrl10M_b`, ahead of `truevalue`, which is DEMOTED to last (a representation probe on a head that ignores its representation). (5) The FiLM conditioning arm is struck. Tag: **MEASURED · DETECTED (partial)**.

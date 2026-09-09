@@ -305,6 +305,23 @@ No replicate floor exists until `ai_v12_15_ladder_ctrl10M_b` lands; every DETECT
 
 ---
 
+## 2c. STATUS after the probe read and the head refit (2026-09-09)
+
+The three offline reads (`winprob_mixture_diagnostic_2026-09-09`, `winprob_probe_read_2026-09-09`, `winprob_head_refit_2026-09-09`) re-rank the ladder without a GPU-hour:
+
+| arm | status | why |
+|---|---|---|
+| `cflabels` (`--cf-records --cf-winprob-coef 0.5`) | **PROMOTED — the arm that matters**; running | the only queued arm in the supported class (target variance / conditional label); read on the turn-1–3 spread ratio and turn-1 own-team R² beside the registered rows |
+| **arm 7 — opponent-stratified win-prob loss weighting** | **REGISTERED as a BUILD**; after `ctrl10M_b` | raises the between-cell share of the objective directly; no new labels, no rollout cost |
+| `ctrl10M_b` | unchanged — the replicate floor, next | two lever arms lean +0.014 / +0.015 on bot resolution; the floor says whether that is the control's shortfall |
+| `tdaux` | read NOT DETECTED; **DEMOTED** | a bootstrap regresses on the head's own unconditioned V at turn 1; and the clock inversion it targets is absent at 10M |
+| `truevalue` | **DEMOTED to last** | a representation probe on a head that discards its representation |
+| `vf15` | read NOT DETECTED | capacity is second-order and appears only under the conditional target; the separate value trunk stays HELD |
+| §12 FiLM conditioning (mixture sketch) | **STRUCK** | `value_pooled` already carries the opponent and the own team |
+| head-side optimisation (value replay, periodic refit, head lr) | **RULED OUT** | the idealised version reproduced the failure offline from scratch and from the online weights |
+
+---
+
 ## 3. THE FIRST PAIR
 
 **Launch B, then C — sequentially, both at `--n-envs 48`.**
