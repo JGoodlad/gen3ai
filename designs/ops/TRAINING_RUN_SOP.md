@@ -194,6 +194,7 @@ with what it measures.
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
 | **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --step <N> --out <dir>` — identity + G1 + the turn-contrast + **CONDITIONING** as ARM − CONTROL with the delta's CI and its label, one invocation, one report; **QUOTA-MATCHED by default** |
+| **a HIGH-POWER offline re-read** | `python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` on EACH side, then `main.ops.critic_read … --arm-traces DIR --control-traces DIR` — for when the ladder read's binding constraint is POWER, not effect size |
 | **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
 
 🚨 **PIN `critic_read`'s CYCLE WITH `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.**
@@ -242,6 +243,73 @@ decoder row bakes the artefact into every later arm's bar. The cost of getting t
 measured: `cond.own_team_r2.t1` read **+0.084 [+0.032, +0.183] DETECTED** as traced and **+0.008
 [−0.135, +0.082] NOT DETECTED** matched, and the first was WITHDRAWN (ledger 2026-09-09 ·
 RETRACTION).
+
+🚨 **WHEN THE BINDING CONSTRAINT IS POWER, RE-READ THE CHECKPOINT — DO NOT RETRAIN** (2026-09-09).
+A live eval cycle is sized for a training run, not for a measurement: 100 games against 12
+opponents, of which the outcome quota persists ~200 traced battles a side. Five 10M arms were read
+that way and registered **zero** detected rows, and the floor read showed why — the turn-1-3
+spread ratio's battle-clustered CI is ~±0.4 around a control value of ~0.12 (only 12 opponent
+cells), resolution rows resolve only deltas above ~0.03, and the run-to-run floor on the
+low-variance rows (bot resolution 0.010, own-team R² 0.012, spread ratio t1-3 0.028) sits **below**
+the battle-level CI width. That last fact is the diagnosis: the read was limited by how many
+battles it saw, not by how similar the arms are.
+
+Every finished arm still has its 10M checkpoint, so the fix costs CPU and no GPU:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && export CUDA_VISIBLE_DEVICES=""
+# per side — OFFLINE, CPU, niced; a training arm normally shares the box, so cap the workers
+nice -n 15 python -m main.ops.eval_trace_gen <run>@10000032 --games 400 --sentinels 6 \
+    --out <tmp>/hp_eval/<run> --workers 4 --concurrency 1 --seed 20260909
+# then the read, with BOTH sides pointed at generated cycles
+python -m main.ops.critic_read <arm> --control <control> --step 10000032 \
+    --arm-traces <tmp>/hp_eval/<arm> --control-traces <tmp>/hp_eval/<control> --out <dir>
+```
+
+**The four things that make this a measurement and not just a bigger number.**
+
+1. **It is not a re-implementation of eval.** It drives the same `main.eval_worker` over a
+   `ShardedEvalPool` plan, so the same LocalBattleRunner / EvalRLPlayer / BattleRecorder path
+   writes the same npz keys and the same `selection_schema` 2 manifest. The eval REGIME is READ
+   from the run's `eval_sentinel_greedy`, never assumed — that key names an opponent-regime
+   boundary worth ~8.9 pp to the trainee, and a run that recorded none is REFUSED.
+2. **Capture is ALL by default.** The live quota exists to bound a training run's disk; here the
+   traces ARE the measurement, and a loss-enriched subsample is exactly what costs the
+   low-variance rows their power. 400 games × 12 opponents fully captured is ~4,800 traced
+   battles against a live cycle's ~200.
+3. 🚨 **AN OFFLINE FRAME AND A LIVE FRAME ARE DIFFERENT POPULATIONS, and `critic_read` REFUSES to
+   difference them.** They differ in games, possibly in opponent count, and decisively in whether
+   the traced battles are a random sample or the outcome quota's loss-enriched slice — and every
+   conditioning row is a statistic OF its frame. The v3 quota match corrects a difference in
+   capture RATE between two frames of the same shape; it cannot turn a 400-game full-capture frame
+   into a 100-game quota one. Both sides offline, or both live. Two offline frames must further
+   agree on games / opponent set / capture rule / sentinel regime; a differing **seed** is fine and
+   is deliberately unchecked, being two draws from one population.
+4. **The report says which population it read, and so does the ledger quote.** The header states
+   both sides' populations in words — the live one too, because a header that describes only the
+   unusual side invites the reader to treat the other as the neutral default — and the one-line
+   quote carries an `OFFLINE-GENERATED` marker beside its games/opponent spec, for the same reason
+   `CROSS-STEP` exists.
+
+🚨 **NEVER PUT THE HIGH-POWER ROWS IN A TABLE BESIDE THE 100-GAME DELTAS.** They are a different
+number of games, possibly a different number of opponent cells, and a different capture rule. Write
+them as their own table, against **their own floor pair** — a control-vs-control read generated at
+the identical spec. Without that floor a high-power DETECTED is a detection against zero, and the
+lesson of the 2026-09-09 RETRACTION is precisely that a bigger frame moves fitted rows on its own.
+
+⚠️ **THE SENTINEL COUNT IS CLAMPED BY WHAT THE RUN SAVED, and is never padded.** `--sentinels 6`
+on a 10M arm that kept four snapshots (one of them at the read step, excluded as a
+50%-by-construction self-mirror) yields **three** — the same opponent-cell count as the live cycle,
+so on these runs the power comes from games and full capture, not from more cells. The manifest
+records `sentinels_requested` beside `sentinels_used`; report the gap rather than the request.
+
+⚠️ **REPRODUCIBILITY IS `--concurrency 1`, NOT `--workers 1`.** A shard's streams are keyed on
+`(seed, opponent, shard index)` — deliberately not on the worker id, which work-stealing decides in
+a race — so the worker count does not enter the result. Above concurrency 1 several battles of one
+shard share the process-global `random` stream the scripted bots draw from, and the order they draw
+in is a timing race; the manifest records both numbers and marks the cycle NOT reproducible rather
+than letting a number wander without saying so.
+
 
 🚨 **`critic_read` AND `value_sidecar_read` ANSWER DIFFERENT QUESTIONS AND NEITHER SUPERSEDES THE
 OTHER** (`gen3_value_sidecar_v1`, 2026-09-08). `critic_read` reads EVAL battles — a greedy trainee,

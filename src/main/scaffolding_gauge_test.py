@@ -554,10 +554,26 @@ def test_a_LEGACY_tree_is_labelled_SELECTION_UNKNOWN_and_its_NUMBERS_DO_NOT_MOVE
 
     # EVERY number, byte for byte (serialized — an under-populated bin publishes NaN, and
     # NaN != NaN would make an `==` comparison pass for the wrong reason). Only provenance differs.
+    #
+    # 🚨 `meta.runtime_sec` IS NOT ONE OF THOSE NUMBERS. It is how long the gauge took to run,
+    # rounded to 0.1 s (`scaffolding_gauge.py:837`) — so the COLD first call and the warm second one straddle the rounding
+    # boundary (0.1 vs 0.0) and this assertion failed deterministically on main, on a difference
+    # that is not a result. A timing field inside a byte-for-byte comparison of RESULTS is a
+    # defect in the comparison, not a finding about the gauge; drop it the way `trace_selection`
+    # is dropped, and keep every other key of `meta` pinned.
+    def _stable(doc):
+        out = dict(doc)
+        if isinstance(out.get("meta"), dict):
+            out["meta"] = {k: v for k, v in out["meta"].items() if k != "runtime_sec"}
+        return out
+
+    legacy_cmp, recorded_cmp = _stable(legacy), _stable(recorded)
     for key in set(legacy) | set(recorded):
         if key == "trace_selection":
             continue
-        assert json.dumps(recorded.get(key)) == json.dumps(legacy.get(key)), key
+        assert json.dumps(recorded_cmp.get(key)) == json.dumps(legacy_cmp.get(key)), key
+    assert "runtime_sec" in (legacy.get("meta") or {}), \
+        "the field is still published; only its comparison is dropped"
     assert recorded["trace_selection"] != legacy["trace_selection"]
     assert "SELECTION RECORDED" in recorded_text and "SELECTION UNKNOWN" not in recorded_text
     assert recorded["trace_selection"]["steps"]["7000000"]["per_opponent"]["heuristic"][

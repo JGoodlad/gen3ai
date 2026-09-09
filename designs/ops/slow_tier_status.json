@@ -97,6 +97,14 @@
    "contention": 2.22,
    "detail": ""
   },
+  "src/main/ops/eval_trace_gen_test.py::test_a_generated_cycle_is_shaped_like_a_live_one": {
+   "status": "pass",
+   "commit": "b170e65b926911bd87edeb189dc5f78e0cfa4026",
+   "at": "2026-09-09T21:37:16Z",
+   "duration_s": 23.07,
+   "contention": 1.5,
+   "detail": ""
+  },
   "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
    "status": "skip",
    "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
@@ -642,5 +650,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-08T08:35:37Z"
+ "last_written": "2026-09-09T21:37:16Z"
 }

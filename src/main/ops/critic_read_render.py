@@ -91,6 +91,15 @@ def ledger_line(doc: Dict[str, Any]) -> str:
     # were the registered one.
     at = (f"{a_step / 1e6:.0f}M" if a_step == c_step
           else f"{a_step / 1e6:.0f}M vs {c_step / 1e6:.0f}M (CROSS-STEP)")
+    # 🚨 An OFFLINE-GENERATED read carries its own marker for the same reason CROSS-STEP does: the
+    # registered read is the LIVE 100-game cycle, and a quote of a 400-game replay pasted into the
+    # ledger without this would be read as that. The games/sentinel spec rides along, because
+    # "high power" is not a magnitude anyone can check later.
+    gen = doc["arm"].get("generated_by") or {}
+    if doc["arm"].get("generated"):
+        at += (f" [OFFLINE-GENERATED: {gen.get('games_per_opponent', '?')} games x "
+               f"{len(gen.get('bots') or [])}+{gen.get('sentinels_used', '?')} opponents, "
+               f"{'full capture' if gen.get('capture') == 'ALL' else gen.get('capture')}]")
     return (f"{doc['arm']['run']} vs {doc['control']['run']} at {at}: " +
             " · ".join([part("gate.resolution.bot", "G1 bot"),
                         part("identity.bias.late (turn>=25)", "identity bias late"),
@@ -243,6 +252,47 @@ def _matched_detail(doc: Dict[str, Any]) -> str:
     return "\n".join(L)
 
 
+def _population_block(doc: Dict[str, Any]) -> str:
+    """What POPULATION each side's numbers describe, in words.
+
+    🚨 Stated for a LIVE cycle too. "12 opponents x 100 games, traced under the outcome quota" is
+    every bit as much a design choice as a generated cycle's, and a header that describes only the
+    unusual side invites the reader to treat the other as the neutral default — which is how a
+    frame difference gets read as a result.
+
+    An OFFLINE-GENERATED side is called that in the header, and the block carries the warning that
+    its rows do not belong in a table beside a 100-game read. `critic_read` REFUSES to form a delta
+    across the boundary at all, so a report can only ever be all-live or all-offline; this says
+    which, and says out loud that the two kinds of report are not rows of one table.
+    """
+    arm, ctl = doc["arm"], doc["control"]
+    lines = ["**The POPULATION these numbers describe** — every conditioning and identity row "
+             "is a statistic OF the traced frame, so the frame is part of the reading.", ""]
+    lines.append("| role | population |")
+    lines.append("|---|---|")
+    for role, d in (("arm", arm), ("control", ctl)):
+        lines.append(f"| {role} | {d.get('population', 'UNKNOWN')} |")
+    if arm.get("generated") or ctl.get("generated"):
+        gen = arm.get("generated_by") or ctl.get("generated_by") or {}
+        lines.append("")
+        lines.append(
+            "> 🚨 **OFFLINE-GENERATED.** Both cycles were replayed from their saved checkpoints "
+            f"by `main.ops.eval_trace_gen` — {gen.get('games_per_opponent', '?')} games per "
+            f"opponent against {gen.get('sentinels_used', '?')} pool sentinels, "
+            f"{'every battle traced' if gen.get('capture') == 'ALL' else gen.get('capture')}. "
+            "**These rows are NOT comparable with a live 100-game read and must never sit in one "
+            "table beside it**: they are a different number of games, possibly a different number "
+            "of opponent cells, and a random sample rather than the live outcome quota's "
+            "loss-enriched slice. Report them as their own table, against their own floor pair.")
+        note = gen.get("reproducibility_note")
+        if note:
+            lines.append("")
+            lines.append(f"> Reproducibility: {note}"
+                         f" (seed {gen.get('seed')}, {gen.get('workers')} worker(s), "
+                         f"concurrency {gen.get('concurrency')}).")
+    return "\n".join(lines)
+
+
 def render_md(doc: Dict[str, Any]) -> str:
     arm, ctl = doc["arm"], doc["control"]
     L: List[str] = []
@@ -265,6 +315,8 @@ def render_md(doc: Dict[str, Any]) -> str:
         nb = d["gate"]["strata"].get("all", {}).get("n_battles", "—")
         A(f"| {role} | `{d['run']}` | `step_{d['step']}` | {nb} | {share} | "
           f"{an['reproduced']}/{an['issued']} ({an['rate'] * 100:.1f}%) | {live} |")
+    A("")
+    A(_population_block(doc))
     A("")
     A("**Which cycle, and WHY** — a read that silently took the previous cycle is a read of a "
       "different model than the caller believes (backlog 2026-09-09: an arm whose launcher "

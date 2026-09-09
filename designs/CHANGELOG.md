@@ -8763,3 +8763,104 @@ matched: `cond.own_team_r2.t1` **+0.0077 [−0.1353, +0.0816] NOT DETECTED** (ba
 `block_version` are UNCHANGED and `METER_KEYS` is unchanged, so no cached readout is invalidated —
 the identity half costs a ~25-minute `cf_audit` run and a report-shape change must never throw it
 away. Tests: `src/main/ops/quota_match_test.py`.
+
+---
+
+## 2026-09-09 — `main.ops.eval_trace_gen`: an eval cycle REGENERATED offline, and the population gate on `critic_read`
+
+**The diagnosis first, because the tool only makes sense against it.** The critic ladder reads each
+10M arm against a control from ONE live eval cycle: 100 games × 12 opponents, of which the
+per-opponent outcome quota persists ~200 traced battles a side. Five arms in, the ladder had
+registered **zero** detected rows, and the replicate floor (`ctrl10M_b` vs `ctrl10M` — two draws
+from the *same configuration*; the seed does not reach the battle stream, so it is not a seed
+sweep) put every DETECTED-vs-zero WITHIN FLOOR. The floor read also showed the binding constraint
+was **POWER, not effect size**: the turn-1-3 spread ratio's battle-clustered CI is ~±0.4 around a
+control value of ~0.12 (12 opponent cells), resolution rows resolve only deltas above ~0.03, and the
+run-to-run floor on the low-variance rows (bot resolution 0.010, own-team R² 0.012, spread ratio
+t1-3 0.028) sits BELOW the battle-level CI width. A read whose floor is smaller than its own error
+bar is measuring how few battles it saw.
+
+Every finished arm still holds its 10M checkpoint, so the read can be retaken for CPU and no GPU.
+
+**`python -m main.ops.eval_trace_gen <run>[@<step>] --games N --sentinels K --out DIR`** replays an
+eval cycle offline. It is **not** a re-implementation of eval: it builds the same `EvalItem` list
+and `ShardedEvalPool` plan and spawns the same `python -m main.eval_worker`, so the same
+LocalBattleRunner / EvalRLPlayer / BattleRecorder path writes the same npz keys, the same
+`*_summary.json` and an `eval_manifest.json` at `selection_schema` 2 with the per-opponent capture
+rates rule 17 asks for. Capture defaults to **ALL** — the live quota bounds a *trainer's* disk,
+while here the traces ARE the measurement and a loss-enriched subsample is what costs the
+low-variance rows their power (400 games × 12 opponents fully captured ≈ 4,800 traced battles
+against a live cycle's ~200).
+
+**The regime is READ, never assumed.** `eval_sentinel_greedy` comes from the run's
+`model_config.json` and a run that recorded none is REFUSED — that key names the 2026-09-07
+opponent-regime boundary worth +8.9 pp to the trainee, and generating under the other regime would
+produce numbers indistinguishable from a result.
+
+**Nothing is ever written under `models/`.** The output is a self-contained SHADOW RUN DIR:
+`model_config.json` and `metadata.json` copied (with `latest_eval.pool.sentinels` rewritten to this
+cycle's sentinels so `cf_audit.sentinel_snapshots` pins the right networks), `snapshots/` symlinked
+back read-only, and the checkpoint copied to `eval_traces/step_<N>/snapshot.zip` — exactly where
+`cf_audit` and the prober's `resolve_model_for_step` look for the network that played the traces.
+That layout is what lets `cf_audit` (which takes a run dir positionally and has no `--traces` flag)
+resolve against a generated cycle with no special-casing. An `--out` inside the run archive is
+refused.
+
+**Sentinels are CLAMPED, never padded** — drawn from the run's own `snapshots/`, evenly spaced
+across the step range with both endpoints kept, excluding any snapshot at or above the read step (a
+live pool holds only snapshots older than the trainee; a self-mirror is a 50%-by-construction cell,
+and `--include-current-snapshot` opts in). Repeating one to reach the requested count would inflate
+the between-opponent SPREAD with a duplicated cell, which is the quantity being measured. Unlike a
+live cycle, the chosen snapshot steps ARE recorded in `opponent_pins`.
+
+**The provenance block, and the refusal it exists for.** The manifest gains `generated_by`
+(`gen3_offline_eval_cycle_v1`): tool, schema, source run, checkpoint sha, games, bots,
+`sentinels_requested` beside `sentinels_used`, capture rule, seed, workers, concurrency, whether the
+cycle is reproducible, and the POPULATION in words. 🚨 **`main.ops.critic_read` now REFUSES to form
+a delta between an offline-generated frame and a live one.** They differ in games, possibly in
+opponent count, and decisively in whether the traced battles are a random sample or the outcome
+quota's loss-enriched slice — and every conditioning and identity row is a statistic OF its frame.
+The v3 quota match corrects a difference in capture RATE between two frames of the same shape; it
+cannot turn a 400-game full-capture frame into a 100-game quota one. Two offline frames must further
+agree on games / opponent set / capture rule / sentinel regime; a differing **seed** is deliberately
+NOT checked, being two draws from one population.
+
+**`critic_read` gains `--arm-traces DIR` / `--control-traces DIR`.** Either spelling — the shadow
+run dir, or the `eval_traces/step_<N>` inside it — normalises to the run-shaped root. The override
+follows every CYCLE-derived consumer (`cf_audit`, `capture_weights`, the gauge's calibration arrays,
+the conditioning meters, the quota match) and **not** `main.critic_gate`, which reads the run's
+ladder, `eval_results.jsonl` and TensorBoard — run-level history an offline cycle neither has nor
+could have, so the registered G1-G4 rows keep coming from the real run and the report says so. The
+read root is part of both cache fingerprints and of the per-run stamp directory name; without that,
+an offline read of `(run, step)` fingerprinted identically to the LIVE read of the same `(run,
+step)` and would have been served the live read's artifacts in silence. The report header states
+each side's population in words — the live one too, since a header that describes only the unusual
+side invites the reader to treat the other as the neutral default — and the one-line ledger quote
+carries an `OFFLINE-GENERATED` marker beside its games/opponent spec, for the same reason
+`CROSS-STEP` does.
+
+**Reproducibility, and its honest limit.** `--seed S` pins every stream a shard unit draws from: the
+process-global `random` the scripted bots use, both teambuilders' draw RNGs, and the sim PRNG per
+battle. The last needed a new `run_local_battles(seed_base=…)`, which derives battle *i*'s own
+`[m,n,o,p]` from `blake2b(f"{seed_base}:{i}")` — a hash rather than an increment, so adjacent
+indices and adjacent shards get unrelated streams — keeping the dice VARIED within a call and
+IDENTICAL across calls (one fixed `seed` runs N copies of one battle, which is not a sample of N).
+The unit seed is keyed on `(seed, opponent, shard index)` and **deliberately not on the worker id**,
+which work-stealing decides in a race: `--workers 1` and `--workers 8` therefore give the identical
+cycle. `--concurrency > 1` does not — several battles of one unit then share the bots' global
+`random` stream and the order they draw in is a timing race. The tool prints that caveat, records
+both numbers, and marks the cycle NOT reproducible rather than emitting a number that wanders
+silently.
+
+**Two additive changes to the live path, both default-off and byte-identical when unused.**
+`run_local_battles` gains `seed_base` (mutually exclusive with `seed`, which raises rather than
+silently preferring one dice regime over the other); `main.eval_worker` gains `seed_base` and
+`disable_obs_debugger` — a `--log-level periodic` checkpoint print()s a multi-KB DEEP TRACE banner
+from inside the forward, which at read-cycle volume is cost and noise rather than a debugging aid.
+
+Tests: `src/main/ops/eval_trace_gen_test.py` — the provenance vocabulary, the regime refusal, the
+sentinel clamp, the seed derivation's worker-independence, the read-root spellings, the
+offline-vs-live and spec-mismatch refusals, the fingerprint separation, and the header/ledger
+markers all UNMARKED (a rule that only runs in the slow tier is a rule that rides main RED); one
+`slow`+`sim` test generates a real 2-game cycle from the run archive and pins the npz keys, the
+`selection_schema` 2 capture rates and the shadow-dir layout.

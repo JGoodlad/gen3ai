@@ -325,6 +325,41 @@ The three offline reads (`winprob_mixture_diagnostic_2026-09-09`, `winprob_probe
 
 ---
 
+## 2d. THE HIGH-POWER OFFLINE RE-READ (2026-09-09) — when the constraint is POWER, not effect size
+
+Five arms read at 100 games, **zero detected registered rows**, and the replicate floor
+(`ctrl10M_b` vs `ctrl10M` — two draws from the SAME configuration, never a seed sweep: the seed does
+not reach the battle stream) showing every DETECTED-vs-zero on `vf15` / `cflabels` to be WITHIN
+FLOOR. The floor read also named the reason, and it is not "the arms are identical": the
+battle-clustered CI on the turn-1-3 spread ratio is ~±0.4 around a control value of ~0.12 with only
+12 opponent cells, resolution rows resolve only deltas above ~0.03, and the run-to-run floor on the
+low-variance rows (bot resolution 0.010, own-team R² 0.012, spread ratio t1-3 0.028) sits **below**
+the battle-level CI width. A read whose floor is smaller than its own error bar is not measuring the
+arms; it is measuring how few battles it saw.
+
+Every arm keeps its 10M checkpoint (`eval_traces/step_10000032/snapshot.zip`), so the read can be
+retaken at any size for CPU and no GPU. `python -m main.ops.eval_trace_gen <run>@10000032 --games
+400 --sentinels 6 --out DIR` replays the cycle offline through the same `main.eval_worker` path,
+capturing EVERY battle instead of the live outcome quota's ~200 — ~4,800 traced battles a side.
+`main.ops.critic_read … --arm-traces DIR --control-traces DIR` then reads the pair from those
+cycles, taking the registered G1-G4 rows from the real run's ladder (which an offline cycle has
+none of, and cannot have).
+
+🚨 **THE HIGH-POWER ROWS ARE A SEPARATE TABLE WITH A SEPARATE FLOOR.** They are a different number
+of games and a different capture rule from the 100-game reads in §2b, so they are not rows of that
+table and must never be pasted into it. `critic_read` enforces the half of this it can — it REFUSES
+to difference an offline frame against a live one at all, so no single report can mix them — and
+the reporting rule covers the rest. The floor for the hp table is its own pair: `ctrl10M_b` vs
+`ctrl10M`, generated at the identical spec. Without it, a high-power DETECTED is a detection against
+zero, and the 2026-09-09 RETRACTION is exactly what a bigger frame does to a fitted row on its own.
+
+⚠️ **The sentinel count did NOT rise on these runs.** `--sentinels 6` asks for six; each ladder arm
+saved four snapshots, one of them at the read step (excluded as a self-mirror), so the cycles carry
+**three** pool sentinels — the same 12 opponent cells as the live read. The power here comes from
+4× the games and ~24× the traced battles, not from more cells, and the between-opponent spread
+ratio's cell count is therefore unchanged. Closing that would need a run that snapshots more often;
+it is not something the generator can supply after the fact.
+
 ## 3. THE FIRST PAIR
 
 **Launch B, then C — sequentially, both at `--n-envs 48`.**

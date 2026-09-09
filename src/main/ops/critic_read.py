@@ -53,6 +53,7 @@ under ``--out``.
 from __future__ import annotations
 
 import argparse
+import re
 import glob
 import json
 import os
@@ -72,6 +73,88 @@ from main.ops.run_ref import interpreter, refuse, resolve_run_dir
 from main.ops.critic_read_render import (HEADLINES, IDENTITY_STRATA,  # noqa: E402
                                          TOOL, TOOL_VERSION, WEIGHTING_NOTE, WEIGHTINGS,
                                          ledger_line, render_md)
+
+
+# --------------------------------------------------------------------------- read roots
+
+from main.ops import eval_trace_gen as ETG  # noqa: E402  (the provenance vocabulary, one copy)
+
+
+def resolve_read_root(run_dir: Path, override: Optional[str], *, role: str) -> Path:
+    """Where this side's TRACES are read from — the run itself, or an override.
+
+    An override may be spelled either way, because both are natural: the SHADOW RUN DIR that
+    ``main.ops.eval_trace_gen --out`` produced, or the ``eval_traces/step_<N>`` cycle inside it.
+    Both normalise to the run-shaped root, because that is what every consumer downstream wants:
+    ``cf_audit`` takes a run dir positionally and has no ``--traces`` flag, and the generated dir
+    is laid out to satisfy it (its own ``model_config.json``, ``metadata.json``, a read-only
+    ``snapshots/`` symlink, and the cycle's own ``snapshot.zip``).
+
+    🚨 The override does NOT redirect ``main.critic_gate``. That reads the run's LADDER,
+    ``eval_results.jsonl`` and TensorBoard — run-level history that an offline cycle neither has
+    nor could have — so the registered G1-G4 rows keep coming from the real run and the report
+    says so. Everything that is a function of the CYCLE (cf_audit's identity labels, the capture
+    weights, the gauge's calibration arrays, the conditioning meters, the quota match) follows
+    the override.
+    """
+    if not override:
+        return run_dir
+    d = Path(override).resolve()
+    if not d.is_dir():
+        refuse(f"REFUSING: --{role}-traces {d} is not a directory.")
+    if (d / "eval_traces").is_dir():
+        return d
+    if re.match(r"^step_\d+$", d.name) and (d.parent.parent / "eval_traces").is_dir():
+        return d.parent.parent
+    refuse(f"REFUSING: --{role}-traces {d} is not a generated cycle.",
+           "  Pass either the directory `main.ops.eval_trace_gen --out` wrote (it holds an "
+           "`eval_traces/` subdirectory), or the `eval_traces/step_<N>` cycle inside it.")
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
+def check_comparable(arm: Dict[str, Any], ctl: Dict[str, Any]) -> None:
+    """REFUSE a delta between two cycles that are not samples of the same population.
+
+    🚨 THIS IS THE WHOLE POINT OF THE PROVENANCE BLOCK. An offline cycle and a live one differ in
+    games per opponent, in how many pool sentinels there are, and — decisively — in whether the
+    traced battles are a random sample or the live outcome QUOTA's loss-enriched slice. Every
+    conditioning row is a statistic OF that frame. Differencing one against the other produces a
+    number that is mostly the difference between the two designs, and it would carry a CI that
+    describes neither. The v3 quota match corrects a difference in capture RATE between two frames
+    of the same shape; it cannot turn a 400-game full-capture frame into a 100-game quota one.
+
+    Two OFFLINE frames must additionally agree on the spec — games, opponent set, capture, and
+    the sentinel regime — for the same reason, and for none of the reasons a seed differs: two
+    seeds are two draws from one population, which is exactly what a delta wants.
+    """
+    a_man, c_man = arm.get("manifest") or {}, ctl.get("manifest") or {}
+    a_gen, c_gen = ETG.is_generated(a_man), ETG.is_generated(c_man)
+    if a_gen != c_gen:
+        off, live = ("arm", "control") if a_gen else ("control", "arm")
+        refuse(
+            "REFUSING: the two sides are DIFFERENT POPULATIONS — "
+            f"the {off} cycle is OFFLINE-GENERATED and the {live} cycle is LIVE.",
+            f"  {off:8s} {ETG.population_of(a_man if a_gen else c_man)}",
+            f"  {live:8s} {ETG.population_of(c_man if a_gen else a_man)}",
+            "  A delta across that boundary is mostly the difference between the two eval "
+            "DESIGNS — more games, a different sentinel count, and a random sample against the "
+            "live outcome quota's loss-enriched slice — and its CI describes neither side.",
+            "  THE FIX: read both sides from the same kind of cycle. Generate the missing one "
+            f"with `python -m main.ops.eval_trace_gen <{live} run>@<step> --games N --sentinels K "
+            "--out DIR` at the SAME --games/--sentinels as the other side, then pass both "
+            "--arm-traces and --control-traces. Nothing is read and nothing is concluded.")
+    if not a_gen:
+        return
+    a_spec, c_spec = ETG.spec_of(a_man), ETG.spec_of(c_man)
+    diff = {k: (a_spec[k], c_spec[k]) for k in a_spec if a_spec[k] != c_spec[k]}
+    if diff:
+        refuse("REFUSING: both cycles are offline-generated, but to DIFFERENT specs — they are "
+               "not two draws from one population.",
+               *[f"  {k}: arm={av!r}  control={cv!r}" for k, (av, cv) in sorted(diff.items())],
+               "  A differing --seed is fine and is deliberately not checked: two seeds are two "
+               "draws from the SAME population. Games, the opponent set, the capture rule and "
+               "the sentinel regime are not.",
+               "  Regenerate the two sides at one spec. Nothing is read and nothing is concluded.")
 
 
 # --------------------------------------------------------------------------- cycle selection
@@ -239,7 +322,13 @@ READOUT_FINGERPRINT_VERSION = 1
 
 
 def _fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
-    return {"run_dir": str(cycle["run_dir"]), "step": cycle["step"],
+    return {"run_dir": str(cycle["run_dir"]),
+            # 🚨 The READ ROOT is part of the key. Without it an offline read of (run, step) has a
+            # fingerprint identical to the LIVE read of the same (run, step), and the second
+            # invocation silently serves the first one's artifacts — a 400-game cycle reported
+            # under a 100-game readout, with nothing in the output saying so.
+            "read_root": str(cycle.get("read_root") or cycle["run_dir"]),
+            "step": cycle["step"],
             "states": args.states, "anchors": args.anchors, "rollouts": args.rollouts,
             "impl": args.impl, "seed": args.seed,
             "anchor_tolerance": args.anchor_tolerance, "bins": args.bins,
@@ -254,7 +343,9 @@ def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
     (~25 min); folding a new parameter into its key would invalidate every readout already on
     disk and re-pay that for a statistic that costs seconds. Two keys, two caches.
     """
-    return {"run_dir": str(cycle["run_dir"]), "step": cycle["step"],
+    return {"run_dir": str(cycle["run_dir"]),
+            "read_root": str(cycle.get("read_root") or cycle["run_dir"]),
+            "step": cycle["step"],
             "boot": args.cond_boot, "seed": args.seed, "ladder": args.cond_ladder,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
             "meters": list(CM.METER_KEYS), "block_version": 1}
@@ -392,10 +483,19 @@ def cache_hit(dirs: Sequence[Path], fp: Dict[str, Any]) -> Optional[Path]:
 
 
 def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] = None,
-             alt_dirs: Sequence[Path] = ()) -> Dict[str, Any]:
-    """One run's whole readout — cached on the (run, cycle, parameters) fingerprint."""
-    cycle = pick_cycle(run_dir, on_live=args.on_live, step=step)
+             alt_dirs: Sequence[Path] = (), read_root: Optional[Path] = None) -> Dict[str, Any]:
+    """One run's whole readout — cached on the (run, read root, cycle, parameters) fingerprint.
+
+    ``read_root`` overrides where the CYCLE is read from (see :func:`resolve_read_root`); it
+    defaults to the run itself, which is every live read. ``run_dir`` still names the real run,
+    and is what ``main.critic_gate`` is pointed at, because the registered G1-G4 rows are a
+    function of the run's ladder and history rather than of any one cycle.
+    """
+    source = Path(read_root) if read_root is not None else run_dir
+    cycle = pick_cycle(source, on_live=args.on_live, step=step)
     cycle["run_dir"] = str(run_dir)
+    cycle["read_root"] = str(source)
+    cycle["traces_overridden"] = source != run_dir
     cycle["pinned_step"] = step
     cycle["why_read"] = _cycle_why(cycle, step)
     fp = _fingerprint(cycle, args)
@@ -435,7 +535,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
 
     # ---- (1) identity: cf_audit + the readout
     if not reused:
-        argv = [interpreter(), "-m", "agents.training.cf_audit", str(run_dir),
+        argv = [interpreter(), "-m", "agents.training.cf_audit", str(source),
                 "--step", str(cycle["step"]), "--impl", args.impl,
                 "--rollouts", str(args.rollouts), "--states", str(args.states),
                 "--anchors", str(args.anchors), "--seed", str(args.seed),
@@ -444,7 +544,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
         if args.deadline_min:
             argv += ["--deadline-min", str(args.deadline_min)]
         commands.append(" ".join(argv))
-        say(f"cf_audit on {run_dir.name} step_{cycle['step']} "
+        say(f"cf_audit on {source.name} step_{cycle['step']} "
             f"({args.states} states / {args.anchors} anchors) -> {identity_dir}")
         log = str(identity_dir / "cf_audit.log")
         rc = _run(argv, log, nice=args.nice)
@@ -484,7 +584,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
     if not rows:
         refuse(f"REFUSING: the cf_audit label join produced 0 rows for {run_dir.name}.")
 
-    cap = R.capture_weights(str(run_dir), cycle["step"])
+    cap = R.capture_weights(str(source), cycle["step"])
     identity = identity_block(rows, payload, cap, boot=args.boot, seed=args.seed, bins=args.bins)
     identity["anchor"] = {"issued": acct.get("anchors_issued"),
                           "reproduced": acct.get("anchors_reproduced"),
@@ -503,7 +603,9 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
                 "--reliability-bins", str(args.bins),
                 "--json", str(gate_json), "--md", str(gate_dir / "critic_gate.md")]
         commands.append(" ".join(argv))
-        say(f"main.critic_gate on {run_dir.name} -> {gate_dir}")
+        say(f"main.critic_gate on {run_dir.name} -> {gate_dir}"
+            + ("  (the REAL run, not the generated cycle — the registered G1-G4 rows are a "
+               "function of the run's ladder and history)" if source != run_dir else ""))
         log = str(gate_dir / "critic_gate.log")
         # exit 1 == a MIXED/failing VERDICT, which is a RESULT. Only 2 (GateRefusal) is a refusal.
         rc = _run(argv, log, nice=args.nice)
@@ -528,7 +630,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
     gate_rows = next((c for c in gate_doc.get("calibration", {}).get("checkpoints", [])
                       if int(c["step"]) == cycle["step"]), None)
 
-    gate = gate_block(run_dir, cycle["step"], boot=args.gate_boot, bins=args.bins,
+    gate = gate_block(source, cycle["step"], boot=args.gate_boot, bins=args.bins,
                       seed=args.seed, say=say)
     gate["critic_gate_verdict"] = gate_doc.get("calibration", {}).get("verdict")
     gate["critic_gate_rows_at_step"] = ({s["stratum"]: {
@@ -564,7 +666,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
             say(f"conditioning meters on {run_dir.name} step_{cycle['step']} "
                 f"({args.cond_boot} battle-clustered draws, ladder={args.cond_ladder})")
             try:
-                cond = CM.conditioning_block(str(run_dir), cycle["step"], boot=args.cond_boot,
+                cond = CM.conditioning_block(str(source), cycle["step"], boot=args.cond_boot,
                                              seed=args.seed, ladder=args.cond_ladder, say=say)
             except CM.ConditioningRefusal as exc:
                 cond, cond_refusal = None, str(exc)
@@ -589,8 +691,17 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
             cond = {"points": {}, "ci": {}, "_draws": {}, "omitted": {}, "frame": {},
                     "refusal": cond_refusal}
 
+    manifest = cycle.get("manifest") or {}
     doc = {"fingerprint": fp, "artifact_dir": str(work),
            "run": run_dir.name, "run_dir": str(run_dir),
+           "read_root": str(source), "traces_overridden": source != run_dir,
+           # The population IN WORDS, for both kinds of cycle. A header that describes only the
+           # unusual side invites the reader to treat the other as the neutral default.
+           "population": ETG.population_of(manifest),
+           "generated": ETG.is_generated(manifest),
+           "generated_by": manifest.get(ETG.GENERATED_KEY),
+           "spec": ETG.spec_of(manifest),
+           "manifest": manifest,
            "step": cycle["step"], "trace_dir": cycle["trace_dir"],
            "cycle": {k: v for k, v in cycle.items() if k != "manifest"},
            "npz_coverage": cov, "draw_share": ds,
@@ -871,6 +982,15 @@ def build_parser() -> argparse.ArgumentParser:
                          "yet exited is read at 8M and the report names 8M while the caller "
                          "believes it read 10M. That happened to the tdaux read (backlog "
                          "2026-09-09). A run with no step_N REFUSES, naming the steps it has.")
+    ap.add_argument("--arm-traces", default=None, metavar="DIR",
+                    help="read the ARM's cycle from this OFFLINE-GENERATED directory (what "
+                         "`main.ops.eval_trace_gen --out` wrote, or the eval_traces/step_<N> "
+                         "inside it) instead of from the run. The registered G1-G4 rows still "
+                         "come from the REAL run's ladder. Both sides must be the same KIND of "
+                         "cycle — an offline-vs-live delta is REFUSED, and two offline frames "
+                         "must share games / opponent set / capture rule / sentinel regime.")
+    ap.add_argument("--control-traces", default=None, metavar="DIR",
+                    help="the same, for the CONTROL side")
     ap.add_argument("--control-step", type=int, default=None, metavar="N",
                     help="pin ONLY the control's cycle (default: --step if given, else the "
                          "control's own last complete cycle). The registered read is "
@@ -972,25 +1092,46 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     arm_dir = resolve_run_dir(args.arm)
     ctl_dir = resolve_run_dir(args.control)
+    arm_root = resolve_read_root(arm_dir, args.arm_traces, role="arm")
+    ctl_root = resolve_read_root(ctl_dir, args.control_traces, role="control")
     out = Path(args.out).resolve()
     cache_root = out.parent
     floor = load_floors(args.floor_json)
 
     ctl_step = args.control_step if args.control_step is not None else args.step
+
+    def stamp_dir(run_d: Path, root: Path) -> Path:
+        """This side's per-run cache directory.
+
+        An OFFLINE read gets its own, because the stamp is what the NEXT pair picks up as a free
+        control — and a 400-game readout filed under the plain run name would be handed to a pair
+        that asked for the live one, with nothing in its output saying so."""
+        return cache_root / (run_d.name if root == run_d else f"{run_d.name}__offline")
+
+    arm_cache, ctl_cache = stamp_dir(arm_dir, arm_root), stamp_dir(ctl_dir, ctl_root)
+    same_side = arm_dir == ctl_dir and arm_root == ctl_root
+
     if args.dry_run:
-        for role, d, st in (("arm", arm_dir, args.step), ("control", ctl_dir, ctl_step)):
-            c = pick_cycle(d, on_live=args.on_live, step=st)
+        for role, d, root, st in (("arm", arm_dir, arm_root, args.step),
+                                  ("control", ctl_dir, ctl_root, ctl_step)):
+            c = pick_cycle(root, on_live=args.on_live, step=st)
             print(f"{role:8s} {d.name}  ->  step_{c['step']}  ({_cycle_why(c, st)}; "
                   f"live pids {c['live_pids'] or 'none'}; "
                   f"policy {c['on_live']}{'; newest dropped' if c['dropped_newest_because_live'] else ''})")
+            print(f"{'':8s} population: {ETG.population_of(c.get('manifest'))}")
+            if root != d:
+                print(f"{'':8s} traces READ FROM {root}")
+                print(f"{'':8s} (the REAL run still supplies the registered G1-G4 rows — an "
+                      f"offline cycle has no ladder)")
         print(f"out      {out}")
-        print(f"cache    {cache_root / arm_dir.name}  |  {cache_root / ctl_dir.name}")
+        print(f"cache    {arm_cache}  |  {ctl_cache}")
         print(f"floor    {floor['path'] or 'NONE — ' + R.NO_FLOOR_NOTE}")
         return 0
 
-    if arm_dir == ctl_dir:
-        say("arm and control are the SAME run — this is the zero-delta self-consistency plant; "
-            "every delta must be exactly 0.0 and every label NOT DETECTED.")
+    if same_side:
+        say("arm and control are the SAME run AND the same cycle — this is the zero-delta "
+            "self-consistency plant; every delta must be exactly 0.0 and every label NOT "
+            "DETECTED.")
 
     out.mkdir(parents=True, exist_ok=True)
     # The ARM's artifacts go under --out, as the read registers them; a STAMP is also dropped in
@@ -999,16 +1140,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     # 🚨 The chosen cycle and WHY are printed BEFORE anything expensive runs, and land in the
     # report header — the tdaux read silently took the previous cycle because the launcher
     # process was still alive, and nothing in the output said so until the artifacts were read.
-    for role, d, st in (("arm", arm_dir, args.step), ("control", ctl_dir, ctl_step)):
-        c = pick_cycle(d, on_live=args.on_live, step=st)
+    # 🚨 THE POPULATION CHECK RUNS BEFORE ANYTHING EXPENSIVE. A cross-population pair is refused
+    # here, not after a ~25-minute cf_audit has already been paid for on each side.
+    picked = {}
+    for role, d, root, st in (("arm", arm_dir, arm_root, args.step),
+                              ("control", ctl_dir, ctl_root, ctl_step)):
+        c = pick_cycle(root, on_live=args.on_live, step=st)
+        picked[role] = c
         say(f"CYCLE  {role:8s} {d.name} -> step_{c['step']}  ({_cycle_why(c, st)})")
+        say(f"POP    {role:8s} {ETG.population_of(c.get('manifest'))}")
+    check_comparable(picked["arm"], picked["control"])
 
     arm = read_run(arm_dir, out, args, say=say, step=args.step,
-                   alt_dirs=[cache_root / arm_dir.name])
-    _stamp(cache_root / arm_dir.name, arm)
-    ctl = (arm if arm_dir == ctl_dir and ctl_step in (None, arm["step"])
-           else read_run(ctl_dir, cache_root / ctl_dir.name, args, say=say, step=ctl_step,
-                         alt_dirs=[out]))
+                   alt_dirs=[arm_cache], read_root=arm_root)
+    _stamp(arm_cache, arm)
+    ctl = (arm if same_side and ctl_step in (None, arm["step"])
+           else read_run(ctl_dir, ctl_cache, args, say=say, step=ctl_step,
+                         alt_dirs=[out], read_root=ctl_root))
 
     qm = QM.build_quota_match(arm, ctl, args, say=say)
     deltas = compute_deltas(arm, ctl, floor["floors"], seed=args.seed, qm=qm)
@@ -1023,7 +1171,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     "gate_boot", "bins", "seed", "on_live", "max_draw_share",
                     "allow_missing_winprob", "parent", "famine_comparator", "baseline_arm",
                     "step", "control_step", "cond_boot", "cond_ladder", "no_conditioning",
-                    "no_quota_match", "quota_match_seeds", "quota_match_boot")},
+                    "no_quota_match", "quota_match_seeds", "quota_match_boot",
+                    "arm_traces", "control_traces")},
         "registration": ("ledger 2026-09-08 · REGISTRATION · THE CRITIC LADDER; design note "
                          "designs/research_state/winprob_critic_ladder_2026-09-08.md"),
         "quota_match": QM.serialisable(qm),

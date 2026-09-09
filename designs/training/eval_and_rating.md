@@ -592,6 +592,69 @@ trainee + opponent per unit → independent measurement) + a per-worker model ca
 `eval_sharding_test.py` (partition + aggregation-exactness property + claim-once + coverage),
 `eval_sharding_fuzz_test.py` (real bridge battles through the real worker → exact pooled result).
 
+### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
+
+A live eval cycle is sized for a training run: `--eval-battles` games (100 by default) per opponent,
+with a per-opponent OUTCOME QUOTA persisting only ~200 traced battles a side. That is right for a
+run — the traces are a loss-forensics sample and the disk is the trainer's — and wrong for a
+MEASUREMENT, because every conditioning and identity row an offline read computes is a statistic of
+that frame. When a read's binding constraint turns out to be POWER rather than effect size,
+`python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` plays the cycle
+again from the saved checkpoint, offline and on CPU, at whatever size is worth paying for.
+
+**It reuses this chapter's machinery rather than restating it.** The generator builds the same
+`EvalItem` list, the same `ShardedEvalPool` plan, and spawns the same `python -m main.eval_worker`
+processes — so the sentinel construction, the `_sentinel_tb` regime, the reward built from
+`model_config.json`, the forensic quota, the shard-namespaced `trace_tag` and the
+`record_eval_selection` collect are all the code documented above, not a parallel copy. What it
+supplies is the WHAT: which checkpoint, how many games, which pool snapshots, and where the output
+goes.
+
+**Four contracts are worth stating here, because they are what make a generated cycle safe to read.**
+
+1. **The REGIME is read, never assumed.** `eval_sentinel_greedy` is taken from the run's
+   `model_config.json`; a run that recorded none is REFUSED. That key names the 2026-09-07
+   opponent-regime boundary worth **+8.9 pp** to the trainee, and generating a cycle under the
+   other regime would produce numbers that look exactly like a result.
+2. **Capture defaults to ALL.** `--quota` restores a live-shaped outcome quota for parity work, but
+   the default writes a trace for every battle played, and the manifest's `selection_rule` says
+   which was used. Full capture is why the low-variance rows gain power and not merely precision.
+3. **Nothing is written under `models/`.** The output is a self-contained SHADOW RUN DIR: the run's
+   `model_config.json` and `metadata.json` copied (with `latest_eval.pool.sentinels` REWRITTEN to
+   this cycle's sentinels, so `cf_audit.sentinel_snapshots` pins the right networks), `snapshots/`
+   symlinked back read-only, and the checkpoint copied to `eval_traces/step_<N>/snapshot.zip` —
+   which is where `cf_audit` and the prober's `resolve_model_for_step` look for the network that
+   played the traces. `--out` inside the run archive is refused.
+4. 🚨 **The manifest carries a `generated_by` block, and a reader may not ignore it.** It records
+   the tool, schema, source run, checkpoint sha, games, the bot list, `sentinels_requested` beside
+   `sentinels_used`, the capture rule, the seed, the worker count, the concurrency, whether the
+   cycle is REPRODUCIBLE, and the POPULATION in words. `main.ops.critic_read` **REFUSES** to form a
+   delta between a generated frame and a live one — they are different populations, and the v3
+   quota match corrects a difference in capture RATE between two frames of the same shape, not a
+   difference in the shape itself. Two generated frames must further agree on games / opponent set
+   / capture rule / sentinel regime; a differing SEED is deliberately NOT checked, being two draws
+   from one population.
+
+**Sentinels are CLAMPED, never padded.** `--sentinels K` draws from the run's own `snapshots/`,
+evenly spaced across the step range (hence the rating range, both endpoints kept), excluding any
+snapshot at or above the read step — a live pool holds only snapshots older than the trainee, and a
+self-mirror is a 50%-by-construction cell (`--include-current-snapshot` opts in). A run with fewer
+than K keeps what it has and records the gap: repeating a snapshot to reach the requested count
+would inflate the between-opponent SPREAD with a duplicated cell, which is the quantity being
+measured. Unlike a live cycle, the chosen snapshot steps ARE recorded (a live cycle leaves
+`opponent_pins` empty for pool sentinels).
+
+**Reproducibility, and its honest limit.** `--seed S` pins every stream a shard unit draws from —
+the process-global `random` the scripted bots use, both teambuilders' draw RNGs, and the sim PRNG
+per battle via `run_local_battles(seed_base=…)`, which derives battle *i*'s own `[m,n,o,p]` from a
+hash so the dice stay VARIED within a call and IDENTICAL across calls (one fixed `seed` would run N
+copies of one battle, which is not a sample of N). The unit seed is keyed on
+`(seed, opponent, shard index)` and **deliberately not on the worker id**, which work-stealing
+decides in a race — so `--workers 1` and `--workers 8` give the same cycle. `--concurrency > 1`
+does not: several battles of one unit then share the bots' global `random` stream and the order
+they draw in is a timing race. The tool prints the caveat, records both numbers, and marks the
+cycle NOT reproducible rather than emitting a number that wanders silently.
+
 ### Rating-model seam (`rating.py`) — extensibility for Glicko-2 / TrueSkill
 
 The live skill rating is anchored Bradley-Terry (`elo.py`), a *global batch* fit. `rating.py` is the
