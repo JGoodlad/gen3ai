@@ -128,11 +128,14 @@ def materialize(trace_dir: str, kept: Dict[str, List[str]], man: Dict[str, Any],
     for opp, bases in kept.items():
         odir = os.path.join(dest, opp)
         os.makedirs(odir, exist_ok=True)
+        srcdir = os.path.join(os.path.abspath(trace_dir), opp)
         for base in bases:
-            for suf in ("_states.npz", "_summary.json"):
-                src = os.path.join(os.path.abspath(trace_dir), opp, base + suf)
-                if os.path.exists(src):
-                    os.symlink(src, os.path.join(odir, base + suf))
+            # EVERY sibling of the battle, not just the npz + summary the conditioning meters
+            # read: `cf_audit.build_frame` refuses a battle with no `_reconstruction.json`, and a
+            # view missing them yields an EMPTY frame and a silent all-zero `pop` weight.
+            for fn in os.listdir(srcdir):
+                if fn.startswith(base):
+                    os.symlink(os.path.join(srcdir, fn), os.path.join(odir, fn))
     with open(os.path.join(dest, "eval_manifest.json"), "w") as fh:
         json.dump(man, fh)
     return dest
