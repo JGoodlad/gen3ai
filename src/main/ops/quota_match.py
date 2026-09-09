@@ -425,7 +425,11 @@ def match(*, arm_profile: Profile, control_profile: Profile,
     out: Dict[str, Any] = {"plan": p, "profiles": {
         "arm": _profile_doc(arm_profile), "control": _profile_doc(control_profile)},
         "rungs": {}, "seeds": int(seeds), "boot": int(boot), "block_seed": int(block_seed),
-        "keys": list(keys)}
+        "keys": list(keys),
+        # reaching :func:`match` at all means matching is ENABLED — the opt-out never gets here.
+        # Set on the document itself so a caller that composes it directly (a test, a measurement
+        # script) renders the same header the CLI does.
+        "enabled": True}
     if not p["needed"]:
         return out
     target = {"arm": control_profile, "control": arm_profile}

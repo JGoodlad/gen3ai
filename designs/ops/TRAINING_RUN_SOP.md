@@ -193,7 +193,7 @@ with what it measures.
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
-| **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --step <N> --out <dir>` — identity + G1 + the turn-contrast + **CONDITIONING** as ARM − CONTROL with the delta's CI and its label, one invocation, one report |
+| **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --step <N> --out <dir>` — identity + G1 + the turn-contrast + **CONDITIONING** as ARM − CONTROL with the delta's CI and its label, one invocation, one report; **QUOTA-MATCHED by default** |
 | **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
 
 🚨 **PIN `critic_read`'s CYCLE WITH `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.**
@@ -214,6 +214,34 @@ calibrated critic's is **1.0**) and the **turn-1 own-team leave-one-battle-out w
 CLAMPED and can sit at or below its own interval's lower bound — **the interval is the read**, and
 the unclamped companion is printed beside it. ⚠️ The Elo-slope row is OMITTED WITH A REASON when
 the run's snapshot-ladder refit is not bot-anchored; it is never reported on two scales.
+
+🚨 **THE READ IS QUOTA-MATCHED BY DEFAULT, AND `UNMATCHED` IS A REFUSAL TO LABEL** (2026-09-09).
+The ladder's arms are traced at different outcome quotas — 40/40/10 against the control's 5/10/5 —
+so their read frames differ by 2-4x, and a conditioning row whose estimator is a **FIT on the
+frame** (`cond.own_team_r2.*`, `cond.opp_class_auc.t1`) or an **UNCORRECTED second moment**
+(`cond.spread_ratio_raw.*`) has an expectation that moves with frame SIZE. Rule 17's
+capture-rate reweighting corrects the loss-ENRICHMENT and does **not** correct that. So
+`main.ops.critic_read` prints both cycles' **REALIZED per-opponent capture profiles** in its
+header — always, matched or not — and where the caps differ it subsamples the RICHER side to the
+poorer side's cap (`main.ops.quota_match`, ~8 s), over 21 seeded IN-MEMORY draws with the capture
+rates recomputed per draw, and decides that row's label on the **MATCHED** delta. The as-traced
+value is printed beside it marked **UNMATCHED** and is never labelled, and a second
+**decoder-matched** rung is printed because equal battle counts do not give equal DECODER frames.
+Every other row — the noise-corrected spread ratio, the spread delta, the Elo slope, every gate row
+and every identity row — is a weighted mean or a regression on cell means, is unaffected by frame
+size given correct weights, and is read AS TRACED.
+
+**What to do with each marker.** *Header says SYMMETRIC* — both sides carry the same realized cap;
+the report is what the tool printed before matching existed, and nothing needs saying. *A row says
+MATCHED* — quote the matched Δ, and never quote the UNMATCHED number beside it as a result.
+*A row says `UNMATCHED — not a reading`* — `--no-quota-match` was passed on an unequal pair; on an
+unequal frame neither DETECTED nor NOT DETECTED is a claim the report may make, so **re-run without
+the flag** rather than reading the row. 🚨 **Match a CONTROL-vs-CONTROL read too**: the replicate
+floor carries the same asymmetry with the same sign, and a floor magnitude read off an unmatched
+decoder row bakes the artefact into every later arm's bar. The cost of getting this wrong is
+measured: `cond.own_team_r2.t1` read **+0.084 [+0.032, +0.183] DETECTED** as traced and **+0.008
+[−0.135, +0.082] NOT DETECTED** matched, and the first was WITHDRAWN (ledger 2026-09-09 ·
+RETRACTION).
 
 🚨 **`critic_read` AND `value_sidecar_read` ANSWER DIFFERENT QUESTIONS AND NEITHER SUPERSEDES THE
 OTHER** (`gen3_value_sidecar_v1`, 2026-09-08). `critic_read` reads EVAL battles — a greedy trainee,

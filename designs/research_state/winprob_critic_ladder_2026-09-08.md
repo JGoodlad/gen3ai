@@ -299,9 +299,11 @@ stripped-architecture failure mode cannot recur here. Argv files:
 |---|---|---|---|---|---|---|
 | `ai_v12_10_ladder_vf15` | `--vf-coef 1.5` | +0.0140 [−0.0080, +0.0389] | +0.0486 [−0.0305, +0.1311] | +0.1634 [−0.0807, +0.3733] | **NOT DETECTED** on all four; identity bias on ALL states +0.048 [+0.014, +0.082] MORE optimistic (vs ZERO, no floor) | `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/` · ledger 2026-09-08 *READ · critic ladder arm 1* |
 | `ai_v12_13_ladder_tdaux` | `--td-aux-coef 1.0` | +0.0149 [−0.0045, +0.0343] | −0.0151 [−0.0977, +0.0654] | +0.0092 [−0.2117, +0.2030] | **NOT DETECTED** on all four; G2/G3 worse on points (n.d.); **the clock inversion is absent at 10M** (control −0.094), so the lever's mechanism is untestable at this length | `measurements/critic_ladder_reads/tdaux_vs_ctrl10M_2026-09-09/` · ledger 2026-09-09 *READ · critic ladder arm tdaux* |
-| `ai_v12_12_ladder_cflabels` | `--cf-records --cf-winprob-coef 0.5` (+ `--checkpoint-every-steps 500000`) | +0.0054 [−0.0121, +0.0191] | +0.0380 [−0.0382, +0.1122] | +0.1928 [−0.0549, +0.4084] | **NOT DETECTED** on every registered row; the own-team R² +0.084 detection was a DECODER-POWER ARTEFACT of the 4× quota (WITHDRAWN, `matched_quota/`); head unbiased vs its continuation (Δ +0.040 [+0.007, +0.071], stands vs zero) | `measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/` · ledger 2026-09-09 *READ* + *RETRACTION* |
+| `ai_v12_12_ladder_cflabels` | `--cf-records --cf-winprob-coef 0.5` (+ `--checkpoint-every-steps 500000`) | +0.0054 [−0.0121, +0.0191] | +0.0380 [−0.0382, +0.1122] | +0.1928 [−0.0549, +0.4084] | **NOT DETECTED** on every registered row; the own-team R² +0.084 detection was a DECODER-POWER ARTEFACT of the 4× quota (WITHDRAWN, `matched_quota/`; re-read by the quota-matched tool in `critic_read_v3.md` as **+0.0077 [−0.1353, +0.0816] NOT DETECTED**); head unbiased vs its continuation (Δ +0.040 [+0.007, +0.071], stands vs zero) | `measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/` · ledger 2026-09-09 *READ* + *RETRACTION* |
 
 No replicate floor exists until `ai_v12_15_ladder_ctrl10M_b` lands; every DETECTED before then is against zero.
+
+All three rows above were regenerated on 2026-09-09 by the quota-matched tool (`critic_read_v3.md/json` beside each `critic_read.md`). **`vf15` and `tdaux` are SYMMETRIC pairs** — they and the control all ran the default quota, realized cap 8/12 on every side — so their v3 delta rows are **bit-for-bit identical to v2**; only `cflabels` was matched, and only its five frame-sensitive rows moved.
 
 ---
 
@@ -374,6 +376,32 @@ cycle, npz without `win_probs`, an anchor rate under 0.90, or a draw/timeout sha
 2 naming the cause. The control's readout is cached per run, so the second arm read against the
 same control costs only its own half — with both halves cached, a full pair re-read including the
 whole conditioning section is **~40 s**.
+
+🚨 **THE READ IS QUOTA-MATCHED BY DEFAULT (2026-09-09), AND THAT IS NOT COSMETIC.** The arms run
+at trace quota **40/40/10** against the control's **5/10/5**, so the arm's read frame is 2–4× the
+control's — and a conditioning row whose estimator is a **FIT on the frame** (`cond.own_team_r2.*`,
+`cond.opp_class_auc.t1`) or an **UNCORRECTED second moment** (`cond.spread_ratio_raw.*`) has an
+expectation that moves with frame SIZE. Horvitz-Thompson reweighting corrects the loss-ENRICHMENT;
+it does not correct that. `main.ops.quota_match` therefore subsamples the RICHER side to the
+poorer side's **realized** per-opponent capture profile (the cap on disk — a nominal 5/10/5 lands
+as **8/12** under shard rounding, and matching the nominal numbers over-shrinks by ~35%) over 21
+seeded in-memory draws with the capture rates recomputed per draw, and the row's label is decided
+on the **matched** delta. The as-traced number is printed beside it marked **UNMATCHED** and
+carries **no label**; a second **decoder-matched** rung is searched for and printed, because
+`MIN_TEAM_BATTLES = 4` makes the own-team decoder's frame a nonlinear function of team diversity
+and equal battle counts can leave the richer arm's decoder with FEWER battles than the control's.
+`--no-quota-match` opts out and then those rows print `UNMATCHED — not a reading` INSTEAD of a
+label — on an unequal frame neither DETECTED nor NOT DETECTED is a claim the report may make. Every
+other row (the noise-corrected spread ratio, the spread delta, the Elo slope, the gate rows, the
+identity rows) is a weighted mean or a regression on cell means and is read AS TRACED. The
+2026-09-09 RETRACTION is what this prevents: `cond.own_team_r2.t1` read **+0.0841 [+0.0323,
++0.1825] DETECTED** as traced and **+0.008 [−0.135, +0.082] NOT DETECTED** matched. Matching a pair
+costs **~8 s of CPU** and reproduces `cflabels_vs_ctrl10M_2026-09-09/matched_quota/` — including
+finding the same 11/16 decoder rung that measurement hand-picked. The two realized profiles are
+printed in the report header whether or not anything was matched, so a symmetric pair says so in
+print. 🚨 **This applies to a CONTROL-vs-CONTROL read too** — the replicate floor
+(`ctrl10M_b` vs `ctrl10M`) carries the same asymmetry with the same sign, and a floor magnitude
+read off an unmatched decoder row would bake the artefact into every later arm's bar.
 
 🚨 **PASS `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.** `--on-live skip-newest` is the
 default and it DROPS the newest cycle when any process still names the run, so a finished 10M arm

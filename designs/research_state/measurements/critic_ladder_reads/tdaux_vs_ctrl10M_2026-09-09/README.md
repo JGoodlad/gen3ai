@@ -43,3 +43,5 @@ excluded. No row was omitted on either side.
 its own [0.2117, 0.6061]**, i.e. below its own interval too, from the upward bias of a resampled
 between-group variance. **The interval is the read**, and the delta is the quantity least disturbed
 by either, because both effects hit arm and control alike.
+
+**`critic_read_v3.md/json` (2026-09-09, tool v3 — QUOTA MATCHING now default).** `main.ops.critic_read` now equalises the two trace frames before it reads any FRAME-SENSITIVE conditioning row (`main.ops.quota_match`). This pair is **SYMMETRIC** — both sides carry the same realized cap, **8/12 traced wins/losses per opponent** (tdaux 210 traced battles, ctrl10M 204) — so nothing is subsampled and **every delta row in v3 is bit-for-bit identical to v2**. v3 is kept only because the report now prints the realized capture profiles in its header, which is the evidence that this read was never affected.

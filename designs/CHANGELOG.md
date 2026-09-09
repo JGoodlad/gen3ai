@@ -8695,3 +8695,71 @@ and BOTH `ModelVersion` construction sites; absence from `check_compatible`; the
 `train()` computing the weights once from the BUFFER and gating on the winprob critic; the
 counterfactual callers staying unweighted; every documented metric key being emitted; and the
 gradient itself moving the bot stratum's share of the value gradient from 0.10 to 0.444).
+
+---
+
+## 2026-09-09 — INSTRUMENT: the critic ladder's read is QUOTA-MATCHED (`main.ops.quota_match`, `critic_read` v3)
+
+**What went wrong first.** The 2026-09-09 read of `ai_v12_12_ladder_cflabels` reported
+`cond.own_team_r2.t1` **Δ +0.0841 [+0.0323, +0.1825] DETECTED** — the first conditioning row any
+ladder arm had moved. It was WITHDRAWN the same day (ledger 2026-09-09 · RETRACTION): the arm was
+traced at outcome quota 40/40/10 and the control at 5/10/5, so the arm's own-team decoder was fit
+on **429 battles against the control's 104**, and cut to the control's realized profile the arm read
+**−0.025** — the control's own value — with the delta **−0.0013 [−0.2436, +0.3461] NOT DETECTED**.
+The arm's value was a monotone function of its decoder's battle count (62 → −0.025, 102 → +0.004,
+176 → +0.037, 353 → +0.068, 429 → +0.060), which is a decoder-power artefact's signature and not an
+effect's. Horvitz-Thompson reweighting (rule of evidence 17) corrects the eval quota's
+loss-ENRICHMENT; it does not correct the frame's SIZE.
+
+**The fix, in the tool rather than in the reader's memory.** `main.ops.quota_match` is imported by
+`main.ops.critic_read` and runs BY DEFAULT (`--no-quota-match` opts out):
+
+* **Frame sensitivity is DECLARED, not name-matched.** `conditioning_meters.METER_SPECS` is now a
+  tuple of `Meter(key, quantity, stratum, frame_sensitive, why)`, each carrying its evidence. Two
+  mechanisms qualify: an out-of-fold score of a decoder **FIT** on the frame (`own_team_r2.t1`,
+  `own_team_r2.all`, `opp_class_auc.t1` — every row that goes through `grouped_oof_scalar`) and an
+  **UNCORRECTED** second moment (`spread_ratio_raw.t1_3`, `.all`). The noise-corrected ratios, the
+  spread deltas, the Elo slope, every gate row and every identity row are weighted means or
+  regressions on cell means and are read AS TRACED. `METERS` / `METER_KEYS` keep their old 3-tuple
+  shape so the committed measurement scripts that import them still run.
+* **The REALIZED profile, cross-checked against the disk.** A nominal quota is not a realized one:
+  under battle-level work-stealing each shard unit carries `max(1, ceil(quota / n_shards))`, so a
+  nominal 5/10/5 lands as **8 wins / 12 losses per opponent**. The profile is read from the
+  manifest's `selection` block AND counted on disk; the disk wins and a disagreement is reported.
+  Both profiles are printed in the report header whether or not anything is matched.
+* **The cap is what is matched.** Each side's cap is the per-class maximum over opponents; the
+  matched caps are the elementwise minimum, so a richer **CONTROL** is the side that gets cut — the
+  replicate-floor read (`ctrl10M_b` vs `ctrl10M`) carries the same asymmetry with the same sign.
+  Residual per-opponent differences BELOW the cap are the runs' own outcome mixes, not a selection
+  asymmetry, and are reported rather than equalised.
+* **Subsampling is IN MEMORY.** `conditioning_block` takes an injected `frame=(arr, meta)`; the
+  richer cycle is extracted once and each draw keeps at most `cap` traced wins/losses per opponent
+  with the **capture rates RECOMPUTED** against the manifest's own denominators, so rule 17 holds
+  on the view actually read. Nothing is copied, symlinked or written; the 2026-09-09 measurement
+  materialised symlink trees and this does not.
+* **Two rungs, and only the matched ones carry a label.** `battle` matches the battle count;
+  `decoder` is SEARCHED for, because `MIN_TEAM_BATTLES = 4` makes the fitted frame a nonlinear
+  function of team diversity and equal battle counts left the arm's decoder with 62 battles against
+  the control's 104. The row's point is the across-seed median over 21 seeds (odd, so it is an exact
+  order statistic) with the 2.5/97.5 across-seed spread and the **median seed's own** battle-clustered
+  CI. The as-traced value rides along marked UNMATCHED and is never labelled; `--no-quota-match`
+  replaces the label with `UNMATCHED — not a reading`, because on an unequal frame neither DETECTED
+  nor NOT DETECTED is a claim the report may make. The ledger quote tags the frame it quotes.
+
+**Cost and fidelity.** ~8 s of CPU per pair (extraction 0.5 s; 21 seeds scanned without a bootstrap,
+then only the median seeds bootstrapped). It reproduces the committed
+`measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/matched_quota/` read — 197 battles
+/ 62 decoder battles at caps 8/12, and the search lands on **11/16**, the same decoder rung that
+measurement hand-picked.
+
+**Re-reads.** All three landed pairs were regenerated as `critic_read_v3.md/json` beside their
+existing artifacts. `vf15` and `tdaux` ran the DEFAULT quota, so those pairs are SYMMETRIC (cap
+8/12 on every side) and their v3 delta rows are **bit-for-bit identical to v2**. Only `cflabels` was
+matched: `cond.own_team_r2.t1` **+0.0077 [−0.1353, +0.0816] NOT DETECTED** (battle) and **+0.0287
+[−0.0808, +0.1327] NOT DETECTED** (decoder), `cond.own_team_r2.all` −0.0283 / +0.0070, and both
+`spread_ratio_raw` companions lose the detections they had as traced.
+
+`TOOL_VERSION` 2 → 3. 🚨 `READOUT_FINGERPRINT_VERSION` and the conditioning block's own
+`block_version` are UNCHANGED and `METER_KEYS` is unchanged, so no cached readout is invalidated —
+the identity half costs a ~25-minute `cf_audit` run and a report-shape change must never throw it
+away. Tests: `src/main/ops/quota_match_test.py`.
