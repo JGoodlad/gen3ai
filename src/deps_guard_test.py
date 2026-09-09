@@ -27,7 +27,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
 from utils.paths import repo_root
 
