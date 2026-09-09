@@ -15724,3 +15724,50 @@ plus `gate.skill.bot Δ +0.0734 [-0.0777, +0.2075] NOT DETECTED`. 36 min cold (2
 `main.ops.critic_readouts` holds the promoted statistics as a library; the 75M measurement directory KEEPS its own copies, because a committed measurement has to stay reproducible from the artifacts beside it. Docs: `scripts/ops/README.md`, `designs/ops/TRAINING_RUN_SOP.md` §2, and the design note's read section ("THE READ IS ONE COMMAND").
 
 Tag: INSTRUMENT. Nothing measured about the critic by this entry beyond the two smokes, which are labelled descriptive.
+
+## 2026-09-08 · OPS · CRITIC LADDER arm 2 of 6 COMPLETE — `ai_v12_11_ladder_ctrl10M`, the CONTROL (10,027,008 steps, 4.26 h, 0 crashes, G7 below bar on both halves)
+
+The ladder's control arm — no lever, `--vf-coef 0.5`, everything else identical to the registered
+ladder argv — ran to completion pinned at `f3502568b5fa8133bb360979755ca6787ed008aa`. It is the
+comparator every other arm's critic-meter delta is read against at matched 10M.
+
+**Run:** 10,027,008 steps in **4.26 h** wall (TB `rollout/ep_len_mean` first→last), 48 envs,
+**1 periodic restart** (the 3 h `--restart-interval-hours` boundary; the child resumed from
+`final_model_interrupted.zip`, so the run has two TB event files and the step series is continuous
+across them — a reader that opens only the newest file sees a truncated run). **0 crashes**,
+`Training complete` in `launcher_child.log`, `final_model.zip` written 21:53. Marginal fps over the
+post-regime window read **564.9** across 116 min; the launcher's own exit line reported 569.
+
+**G7 (within-arm, `$P/g7_ladder.py`)** — endpoint `eval/mean_ep_len_vs_bots` against the arm's OWN
+frozen first-two-cycle reference (2,000,016=22.785, 4,000,032=23.630 → **23.207**), bar 1.25:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 23.449 | 1.010 | 0.8813 | under bar |
+| 8,000,016 | 22.200 | 0.957 | 0.8925 | under bar |
+| 10,000,032 | 24.010 | 1.035 | 0.8988 | under bar |
+
+Worst ratio **1.035 = 82.8% of the bar**. Stall half (`signal/draw_rate`, n=101): peak **0.0176**,
+last 0.0038, bar 0.05 → under bar. **G7 below bar on both halves.** Arm 1 (`vf15`) for comparison
+was worst 1.086 on its own reference — both clean, and neither ratio is comparable to the other's
+because each is normalised by its own arm's early cycles.
+
+**Descriptive trajectory** (NOT a strength read — strength is not read on these arms):
+`eval/win_rate_vs_bots` 0.4913 → 0.7300 → 0.8813 → 0.8925 → 0.8988; `eval/elo` 1583 → 1762 → 1940
+→ 2020 → 2019; `snapshot_ladder/ladder.json` (converged, 6/6 pairs) 4M=1742.2±12.1, 6M=1895.6±14.1,
+8M=2004.5±16.4, 10M=2018.7±16.7. Final post-training aggregate across all nine bots 93.0%.
+🚨 The newest BT node is systematically inflated and a rating is only final once the run is — these
+are recorded for the ladder's matched-count comparison, not as a headline.
+
+**Rule-15 regime boundaries: `train/selfplay_fraction` 0.0000 → 0.7278 at 4,000,032 → 0.9000 at
+6,000,000.** Same two step locations as arm 1, but a much larger first jump (arm 1 went to 0.156).
+No window may be pooled across either boundary.
+
+**The ordering ctrl10M > vf15 at matched step on bots** (0.4913/0.7300/0.8813 vs
+0.4288/0.6162/0.8200) is recorded and is **NOT a finding** — single-cycle orderings are hypotheses
+(rule (d)), the two arms differ in their 4M selfplay fraction by a factor of ~4.7, and strength is
+explicitly not the ladder's endpoint. The registered read is the critic meters at 10M.
+
+Arm 3 (`ai_v12_12_ladder_cflabels`, `--cf-records --cf-winprob-coef 0.5`, same pin) launches next.
+
+Tag: OPS. Nothing measured about the critic by this entry.
