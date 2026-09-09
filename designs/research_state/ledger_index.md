@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,070-line file. **The ledger itself is append-only and is never edited by this**;
+16,074-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**477 headings · 437 dated · 2026-08-01 → 2026-09-09 · ledger 16,070 lines.**
+**478 headings · 438 dated · 2026-08-01 → 2026-09-09 · ledger 16,074 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -497,3 +497,4 @@ rename.
   - `L15983` · `2026-09-09` · MEASUREMENT · THE HEAD REFIT — reading (2) PARTIAL on both substrates: the win head is not failing to learn, it is being paid to predict something else; head-side optimisation RULED OUT; the cf-label arm is the right next arm and an opponent-stratified loss weighting is the highest-value unbuilt lever
   - `L16050` · `2026-09-09` · INSTRUMENT + READ · the CONDITIONING meters are registered rows of `main.ops.critic_read` (`33f6f48a`, tool v2) — and neither `vf15` nor `tdaux` moves any of them against the control
   - `L16063` · `2026-09-09` · BUILT + REGISTRATION · critic ladder arm 7 `ai_v12_17_ladder_strata` — `--win-prob-strata-weight 1.0`, opponent-CLASS-stratified weighting of the win-prob BCE (`f871e79f`, MODEL_CONFIG_VERSION 115)
+  - `L16071` · `2026-09-09` · VERDICT · the increment `377a5aa1→f871e79f` is TRAINING-SEMANTICS-NEUTRAL at `--win-prob-strata-weight 0` — arm 7 cleared to launch against `ctrl10M`
