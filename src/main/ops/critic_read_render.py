@@ -5,25 +5,31 @@ subprocesses and bootstraps, and the thing that turns its numbers into sentences
 sharing a file with them. Everything here is pure — it takes the finished document and returns
 text, reads nothing and writes nothing.
 
-**The report's shape is load-bearing.** The four headline deltas come FIRST, each with its
-interval and its registered label; then the full tables under all three selection weightings with
-the registered one starred; then each run on its own; then the ledger QUOTE; then every command
-and every path. A reader who stops after the summary has the answer, and a reader who does not
-stop can check it.
+**The report's shape is load-bearing.** The headline deltas come FIRST, each with its interval
+and its registered label; then the full tables under all three selection weightings with the
+registered one starred; then the CONDITIONING section (added 2026-09-09 — the spread identity and
+the two decodes-from-`V`); then each run on its own; then the ledger QUOTE; then every command and
+every path. A reader who stops after the summary has the answer, and a reader who does not stop
+can check it.
 """
 from __future__ import annotations
 
 import json
 from typing import Any, Dict, List, Optional, Sequence
 
+from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
 
 TOOL = "critic_read"
-TOOL_VERSION = 1
+TOOL_VERSION = 2
 
-#: the four the summary table leads with — the registration's headline quantities.
+#: the summary table's headline quantities. The first four are the 2026-09-08 registration's;
+#: the last two are the CONDITIONING primaries added 2026-09-09, after three offline reads
+#: established that the critic's defect is a conditioning failure in the win head — it emits one
+#: near-marginal win probability regardless of opponent AND of its own team. An arm built against
+#: that defect has to be read on the meters that measure it.
 HEADLINES = ("gate.resolution.bot", "identity.bias.late (turn>=25)", "identity.turn_contrast",
-             "gate.skill.bot")
+             "gate.skill.bot", "cond.spread_ratio.t1_3", "cond.own_team_r2.t1")
 #: identity strata, in report order. `ALL` first, then the turn buckets, then the opponent split.
 IDENTITY_STRATA = ("ALL",) + R.TURN_BUCKETS + ("bot", "pool")
 #: the three selection corrections every identity quantity is reported under.
@@ -81,7 +87,9 @@ def ledger_line(doc: Dict[str, Any]) -> str:
     return (f"{doc['arm']['run']} vs {doc['control']['run']} at {at}: " +
             " · ".join([part("gate.resolution.bot", "G1 bot"),
                         part("identity.bias.late (turn>=25)", "identity bias late"),
-                        part("identity.turn_contrast", "turn-contrast")]))
+                        part("identity.turn_contrast", "turn-contrast"),
+                        part("cond.spread_ratio.t1_3", "spread ratio t1-3"),
+                        part("cond.own_team_r2.t1", "own-team R2 t1")]))
 
 
 def render_md(doc: Dict[str, Any]) -> str:
@@ -107,6 +115,14 @@ def render_md(doc: Dict[str, Any]) -> str:
         A(f"| {role} | `{d['run']}` | `step_{d['step']}` | {nb} | {share} | "
           f"{an['reproduced']}/{an['issued']} ({an['rate'] * 100:.1f}%) | {live} |")
     A("")
+    A("**Which cycle, and WHY** — a read that silently took the previous cycle is a read of a "
+      "different model than the caller believes (backlog 2026-09-09: an arm whose launcher "
+      "process was still alive was read one cycle back, and nothing said so). `--step N` pins it.")
+    A("")
+    for role, d in (("arm", arm), ("control", ctl)):
+        A(f"- **{role}** `{d['run']}` → `step_{d['step']}`: "
+          f"{d['cycle'].get('why_read', d['cycle'].get('why', '—'))}")
+    A("")
     if doc["floor"]["path"] is None:
         A(f"> 🚨 **{R.NO_FLOOR_NOTE}.** The ladder's replicate floor is the control-vs-control "
           "difference and does not exist until a second control replicate does. Every DETECTED "
@@ -116,7 +132,7 @@ def render_md(doc: Dict[str, Any]) -> str:
           f"{len(doc['floor']['floors'] or {})} keyed magnitudes.")
     A("")
 
-    A("## SUMMARY — the four headline deltas")
+    A("## SUMMARY — the headline deltas")
     A("")
     A("| quantity | arm | control | **Δ (arm − control)** | 95% CI | verdict |")
     A("|---|---|---|---|---|---|")
@@ -133,7 +149,11 @@ def render_md(doc: Dict[str, Any]) -> str:
       "is better; **identity bias** is `V − p̂`, so POSITIVE means the head is OPTIMISTIC "
       "against its own Monte-Carlo continuation and a NEGATIVE delta is an improvement; the "
       "**turn-contrast** is `corr(turn,V) − corr(turn,MC)` and its target is ZERO, so a "
-      "negative delta from a positive control moves toward the clock.")
+      "negative delta from a positive control moves toward the clock. The **spread ratio**'s "
+      "target is ONE (for any calibrated critic the between-opponent spread of `V` equals that "
+      "of the outcome), so a POSITIVE delta from a control below 1.0 is an improvement; the "
+      "**own-team R²** and the **opponent-class AUC** are decodes FROM `V`, higher is better, "
+      "with 0.0 and 0.5 the respective chance levels.")
     A("")
 
     for family, title in (("gate", "## 1. RESOLUTION — the calibration gate's metrics, per stratum"),
@@ -167,7 +187,84 @@ def render_md(doc: Dict[str, Any]) -> str:
       f"unweighted variant of a gate row. And {R.anchor_note()}")
     A("")
 
-    A("## 3. Each run on its own — the registered G1–G4 rows at the read cycle")
+    A("## 3. CONDITIONING — does the head know WHO it is playing and WHOSE TEAM it holds?")
+    A("")
+    A("Promoted 2026-09-09 from two committed measurements — "
+      "`measurements/winprob_mixture_diagnostic_2026-09-09/` (the between-opponent SPREAD "
+      "IDENTITY and the bias-on-Elo slope) and `measurements/winprob_probe_read_2026-09-09/` "
+      "(the own-team leave-one-battle-out win-rate target, battle-grouped folds, HT reweighting) "
+      "— and computed here by `main.ops.conditioning_meters`, which both measurement directories "
+      "can import.")
+    A("")
+    A("> 🚨 **The spread ratio's target is 1.0.** For ANY calibrated critic "
+      "`E[V | opponent] = E[y | opponent]` exactly, so the between-opponent spread of `V` must "
+      "EQUAL the between-opponent spread of the outcome. A head emitting one marginal win "
+      "probability regardless of opponent reads near ZERO. The identity needs no strength axis, "
+      "which is why it is the primary row and the Elo slope the secondary one.")
+    A("")
+    A("> 🚨 **The noise-corrected ratio is CLAMPED, and a clamped ratio can sit BELOW its own "
+      "interval.** Each side's sampling variance is subtracted and a negative result floored at "
+      "zero — a biased, non-monotone operator, so a point estimate of 0.000 routinely carries a "
+      "CI like [0.21, 0.53] (`winprob_head_refit_2026-09-09` §12 hazard 1). **THE INTERVAL IS "
+      "THE READ.** The unclamped, uncorrected `ratio_raw` is printed beside it as the monotone "
+      "companion — never as a substitute.")
+    A("")
+    for role, d in (("arm", arm), ("control", ctl)):
+        c = d.get("conditioning") or {}
+        fr = c.get("frame") or {}
+        if not c:
+            A(f"> **{role} — `{d['run']}`: the conditioning block was NOT computed.**")
+            A("")
+            continue
+        A(f"**{role} — `{d['run']}` @ `step_{d['step']}`**: {fr.get('n_states', '—')} states / "
+          f"{fr.get('n_battles', '—')} battles / {fr.get('n_opponents', '—')} opponents / "
+          f"{fr.get('n_teams', '—')} trainee teams · manifest `selection_schema` "
+          f"{fr.get('selection_schema')} · `max|values − win_probs|` = "
+          f"{fr.get('max_abs_values_minus_winprobs')} · {fr.get('n_draw_battles_excluded', 0)} "
+          f"draw/timeout battles excluded (no binary outcome) · strength axis: "
+          f"{(c.get('strength') or {}).get('note', '—')}")
+        A("")
+    A("| quantity | stratum | arm | control | **Δ** | 95% CI | n draws | verdict |")
+    A("|---|---|---|---|---|---|---|---|")
+    cond_rows = [r for r in doc["deltas"] if r["family"] == "conditioning"]
+    if not cond_rows:
+        A("| — | — | — | — | — | — | — | **NOT COMPUTED** |")
+    for r in cond_rows:
+        star = " ⭐" if r["registered"] else ""
+        A(f"| {r['quantity']}{star} | `{r['stratum']}` | {_f(r['arm'])} | {_f(r['control'])} | "
+          f"**{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | {_label(r)} |")
+    A("")
+    A("Each run's OWN point and interval, so a delta is never the only number on the page:")
+    A("")
+    A("| quantity | arm | 95% CI | control | 95% CI |")
+    A("|---|---|---|---|---|")
+    ac, cc = (arm.get("conditioning") or {}), (ctl.get("conditioning") or {})
+    for key, quantity, stratum in CM.METERS:
+        ap, cp = (ac.get("points") or {}), (cc.get("points") or {})
+        aci, cci = (ac.get("ci") or {}), (cc.get("ci") or {})
+        if key not in ap and key not in cp:
+            continue
+        A(f"| {quantity} · `{stratum}` | {_f(ap.get(key))} | {_ci(aci.get(key))} | "
+          f"{_f(cp.get(key))} | {_ci(cci.get(key))} |")
+    A("")
+    om = {role: (d.get("conditioning") or {}).get("omitted") or {}
+          for role, d in (("arm", arm), ("control", ctl))}
+    if any(om.values()):
+        A("**Rows OMITTED, with the reason** — an unsupported meter is never emitted as a NaN "
+          "that reads like a measurement:")
+        A("")
+        for role, entries in om.items():
+            for key, why in sorted(entries.items()):
+                A(f"- `{key}` · {role}: {why}")
+        A("")
+    A(f"⚠️ **Recorded `V`, one cycle.** {CM.recorded_v_note()}")
+    A("")
+    A("⚠️ **No permutation null is run here.** The probe read's nulls on these very targets sit "
+      "at R² ≈ 0.00 and AUC ≈ 0.50, so a near-zero own-team R² is a head that cannot be told "
+      "from chance; but the DELTA is what this report licenses, and a per-run *detection* claim "
+      "needs that measurement's own null, not this table.")
+    A("")
+    A("## 4. Each run on its own — the registered G1–G4 rows at the read cycle")
     A("")
     for role, d in (("arm", arm), ("control", ctl)):
         rows = d["gate"].get("critic_gate_rows_at_step")
@@ -209,13 +306,13 @@ def render_md(doc: Dict[str, Any]) -> str:
           f"{d['identity']['turn']['raw']['corr_turn_mc']:+.4f}")
         A("")
 
-    A("## 4. THE LEDGER LINE")
+    A("## 5. THE LEDGER LINE")
     A("")
     A("```")
     A(ledger_line(doc))
     A("```")
     A("")
-    A("## 5. Provenance — every command and every path")
+    A("## 6. Provenance — every command and every path")
     A("")
     A("```bash")
     A("export PYTHONPATH=$PYTHONPATH:src")

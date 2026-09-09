@@ -19,7 +19,12 @@ comparable by construction.
    clock-tracking contrast.
 2. **RESOLUTION** — ``python -m main.critic_gate`` for the registered G1-G4 rows against the
    committed calibration baseline.
-3. **THE DELTA** — every quantity recomputed as ARM - CONTROL with a battle-clustered
+3. **CONDITIONING** (added 2026-09-09) — :mod:`main.ops.conditioning_meters`, promoted from the
+   mixture diagnostic and the probe read: the between-opponent SPREAD IDENTITY of ``V`` against
+   the outcome (target 1.0), the bias-on-opponent-Elo slope, the own-team leave-one-battle-out
+   win-rate R² of ``V`` and the opponent-class AUC of ``V``. Computed on the RECORDED ``V`` of
+   the read cycle, so no model forward is needed.
+4. **THE DELTA** — every quantity recomputed as ARM - CONTROL with a battle-clustered
    **difference of independent bootstraps**, labelled DETECTED / WITHIN FLOOR / NOT DETECTED.
 
 **REFUSALS OVER SILENCE.** A missing manifest, a cycle that has not collected, a trace dir whose
@@ -47,6 +52,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
 from main.ops.run_ref import interpreter, refuse, resolve_run_dir
 
@@ -213,13 +219,34 @@ def _tail(path: str, n: int = 25) -> str:
 
 # --------------------------------------------------------------------------- per-run read
 
+#: the IDENTITY + GATE readout's cache-key version. 🚨 DELIBERATELY DECOUPLED from
+#: ``TOOL_VERSION``: the identity half costs a ~25-minute ``cf_audit`` run, and folding the
+#: REPORT's version into its key throws every readout on disk away whenever a new SECTION is
+#: added — which is not a change to any number this key covers. Bump this one only when something
+#: that changes the identity or gate NUMBERS changes.
+READOUT_FINGERPRINT_VERSION = 1
+
+
 def _fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
     return {"run_dir": str(cycle["run_dir"]), "step": cycle["step"],
             "states": args.states, "anchors": args.anchors, "rollouts": args.rollouts,
             "impl": args.impl, "seed": args.seed,
             "anchor_tolerance": args.anchor_tolerance, "bins": args.bins,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
-            "tool_version": TOOL_VERSION}
+            "tool_version": READOUT_FINGERPRINT_VERSION}
+
+
+def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
+    """The CONDITIONING block's own cache key.
+
+    Deliberately SEPARATE from :func:`_fingerprint`. The identity half costs a `cf_audit` run
+    (~25 min); folding a new parameter into its key would invalidate every readout already on
+    disk and re-pay that for a statistic that costs seconds. Two keys, two caches.
+    """
+    return {"run_dir": str(cycle["run_dir"]), "step": cycle["step"],
+            "boot": args.cond_boot, "seed": args.seed, "ladder": args.cond_ladder,
+            "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
+            "meters": list(CM.METER_KEYS), "block_version": 1}
 
 
 def identity_block(rows: List[dict], payload: dict, cap, *, boot: int,
@@ -353,11 +380,13 @@ def cache_hit(dirs: Sequence[Path], fp: Dict[str, Any]) -> Optional[Path]:
     return None
 
 
-def read_run(run_dir: Path, cache_dir: Path, args, *, say,
+def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] = None,
              alt_dirs: Sequence[Path] = ()) -> Dict[str, Any]:
     """One run's whole readout — cached on the (run, cycle, parameters) fingerprint."""
-    cycle = pick_cycle(run_dir, on_live=args.on_live, step=None)
+    cycle = pick_cycle(run_dir, on_live=args.on_live, step=step)
     cycle["run_dir"] = str(run_dir)
+    cycle["pinned_step"] = step
+    cycle["why_read"] = _cycle_why(cycle, step)
     fp = _fingerprint(cycle, args)
     cache_dir.mkdir(parents=True, exist_ok=True)
     commands: List[str] = []
@@ -499,6 +528,56 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say,
     gate["baseline_artifact"] = gate_doc.get("calibration", {}).get("artifact")
     gate["critic_gate_refusal"] = gate_refusal
 
+    # ---- (3) CONDITIONING, on the RECORDED V of this cycle. Its own cache file, so a new meter
+    # never invalidates the cf_audit half.
+    cond: Optional[Dict[str, Any]] = None
+    cond_refusal: Optional[str] = None
+    if not args.no_conditioning:
+        cfp = _cond_fingerprint(cycle, args)
+        cond_path = work / "cond_readout.json"
+        cached = None
+        if not args.no_cache and cond_path.exists():
+            try:
+                prior = json.loads(cond_path.read_text())
+                if prior.get("fingerprint") == cfp and prior.get("draws"):
+                    cached = prior
+            except (OSError, ValueError):
+                cached = None
+        if cached is not None:
+            say(f"REUSING {run_dir.name}'s conditioning block at step_{cycle['step']} "
+                f"from {cond_path}")
+            cond = cached["block"]
+            cond["_draws"] = {k: __import__("numpy").asarray(v, dtype=float)
+                              for k, v in cached["draws"].items()}
+        else:
+            say(f"conditioning meters on {run_dir.name} step_{cycle['step']} "
+                f"({args.cond_boot} battle-clustered draws, ladder={args.cond_ladder})")
+            try:
+                cond = CM.conditioning_block(str(run_dir), cycle["step"], boot=args.cond_boot,
+                                             seed=args.seed, ladder=args.cond_ladder, say=say)
+            except CM.ConditioningRefusal as exc:
+                cond, cond_refusal = None, str(exc)
+                if not args.allow_conditioning_refusal:
+                    refuse(f"REFUSING: the CONDITIONING block cannot be computed on "
+                           f"{run_dir.name} step_{cycle['step']}.", f"  {exc}",
+                           "  Pass --allow-conditioning-refusal to emit the report WITHOUT the "
+                           "conditioning rows; it will say in print that they are missing and "
+                           "why. Pass --no-conditioning to skip them deliberately.")
+            if cond is not None:
+                cond_path.parent.mkdir(parents=True, exist_ok=True)
+                cond_path.write_text(json.dumps(
+                    {"fingerprint": cfp,
+                     "block": {k: v for k, v in cond.items() if k != "_draws"},
+                     "draws": {k: [float(x) for x in v] for k, v in cond["_draws"].items()}},
+                    indent=1, default=float))
+        if cond is not None:
+            cond["ci"] = {k: R.ci_of(cond["points"][k], cond["_draws"].get(k, __import__(
+                "numpy").empty(0))) for k in cond["points"]}
+            cond["refusal"] = None
+        else:
+            cond = {"points": {}, "ci": {}, "_draws": {}, "omitted": {}, "frame": {},
+                    "refusal": cond_refusal}
+
     doc = {"fingerprint": fp, "artifact_dir": str(work),
            "run": run_dir.name, "run_dir": str(run_dir),
            "step": cycle["step"], "trace_dir": cycle["trace_dir"],
@@ -506,6 +585,8 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say,
            "npz_coverage": cov, "draw_share": ds,
            "identity": _serialisable(identity),
            "gate": {k: v for k, v in gate.items() if k != "_draws"},
+           "conditioning": (None if cond is None else
+                            {k: v for k, v in cond.items() if k != "_draws"}),
            "commands": commands, "reused": reused,
            "paths": {"identity": str(identity_dir), "gate": str(gate_dir),
                      "identity_payload": str(payload_path)}}
@@ -518,12 +599,34 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say,
         for k, v in (entry.get("_draws") or {}).items():
             doc["_identity_draws"][f"{name}|{k}"] = v
     doc["_gate_draws"] = gate["_draws"]
+    doc["_cond_draws"] = (cond or {}).get("_draws", {})
     doc["_identity_points"] = identity
     doc["_gate_points"] = gate
     return doc
 
 
 # --------------------------------------------------------------------------- the delta
+
+def _cycle_why(cycle: Dict[str, Any], pinned: Optional[int]) -> str:
+    """One sentence naming WHY this cycle was read — printed in the log and in the report header.
+
+    The tdaux read (backlog 2026-09-09) took the PREVIOUS cycle because the arm's launcher
+    process was still alive and `--on-live skip-newest` dropped the newest one; the report named
+    the step it actually read, but nothing said the newest had been dropped or why. It does now.
+    """
+    if pinned is not None:
+        return f"PINNED by --step {pinned}"
+    live = cycle.get("live_pids") or []
+    if cycle.get("dropped_newest_because_live"):
+        return (f"last complete cycle AFTER DROPPING THE NEWEST — the run is LIVE "
+                f"(pid {', '.join(map(str, live))}) and --on-live is `{cycle['on_live']}`; "
+                f"steps on disk: {', '.join(str(x) for x in cycle.get('steps_on_disk') or [])}. "
+                f"🚨 Pin --step to read the newest anyway.")
+    if live:
+        return (f"last complete cycle; the run is LIVE (pid {', '.join(map(str, live))}) and "
+                f"--on-live is `{cycle['on_live']}` — {cycle['why']}")
+    return f"last complete cycle, run not live — {cycle['why']}"
+
 
 def _floor_for(key: str, floors: Optional[Dict[str, float]]) -> Optional[float]:
     return None if not floors else floors.get(key)
@@ -550,6 +653,8 @@ def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
                    floors: Optional[Dict[str, float]], *, seed: int) -> List[Dict[str, Any]]:
     """Every registered quantity as ARM - CONTROL, each with the difference of the two runs'
     INDEPENDENT battle-clustered bootstraps and the registration's three-way label."""
+    import numpy as np
+
     rows: List[Dict[str, Any]] = []
 
     def add(key: str, family: str, quantity: str, stratum: str, weighting: Optional[str],
@@ -599,6 +704,16 @@ def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
                 arm["_identity_draws"][k],
                 ctl["_identity_points"]["murphy"]["ci"][f"{term}.{wname}"]["point"],
                 ctl["_identity_draws"][k], registered=(wname == "ipw"))
+
+    a_cond = (arm.get("conditioning") or {}).get("points") or {}
+    c_cond = (ctl.get("conditioning") or {}).get("points") or {}
+    for key, quantity, stratum in CM.METERS:
+        if key not in a_cond or key not in c_cond:
+            continue
+        add(key, "conditioning", quantity, stratum, None,
+            a_cond[key], arm["_cond_draws"].get(key, np.empty(0)),
+            c_cond[key], ctl["_cond_draws"].get(key, np.empty(0)),
+            registered=(key in ("cond.spread_ratio.t1_3", "cond.own_team_r2.t1")))
 
     for wname in WEIGHTINGS:
         k = f"turn_contrast.{wname}"
@@ -651,6 +766,19 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the control arm every delta is taken against "
                          "(the ladder's is `ai_v12_11_ladder_ctrl10M`)")
     ap.add_argument("--out", required=True, help="output directory for THIS pair's report")
+    ap.add_argument("--step", type=int, default=None, metavar="N",
+                    help="PIN the eval cycle read for BOTH runs to eval_traces/step_N, instead of "
+                         "resolving each run's last COMPLETE cycle. 🚨 Pin it whenever the arm's "
+                         "launcher process is still alive: `--on-live skip-newest` (the default) "
+                         "drops the newest cycle, so a finished 10M arm whose launcher had not "
+                         "yet exited is read at 8M and the report names 8M while the caller "
+                         "believes it read 10M. That happened to the tdaux read (backlog "
+                         "2026-09-09). A run with no step_N REFUSES, naming the steps it has.")
+    ap.add_argument("--control-step", type=int, default=None, metavar="N",
+                    help="pin ONLY the control's cycle (default: --step if given, else the "
+                         "control's own last complete cycle). The registered read is "
+                         "arm@10M vs control@10M; a cross-step pair is labelled CROSS-STEP in "
+                         "the ledger quote.")
     ap.add_argument("--baseline-arm", default=None,
                     help="the historical arm whose committed measurement supplies the "
                          "matched-stratum comparator when the fresh arm has no parent "
@@ -691,6 +819,23 @@ def build_parser() -> argparse.ArgumentParser:
                          "(default 0.25 — a timeout is never a semantic outcome)")
     ap.add_argument("--allow-missing-winprob", type=float, default=0.0,
                     help="tolerated share of state npz with no `win_probs` column (default 0.0)")
+    ap.add_argument("--cond-boot", type=int, default=CM.N_BOOT,
+                    help=f"CONDITIONING battle-clustered bootstrap draws (default {CM.N_BOOT}). "
+                         "Battles are resampled WITHIN their opponent cell — the roster is a "
+                         "fixed pinned set, not a sample — and the outcome side is redrawn from "
+                         "its own Binomial(battles_played, true win rate).")
+    ap.add_argument("--cond-ladder", choices=("refit", "off"), default="refit",
+                    help="the CONDITIONING strength axis: `refit` builds it from the bot anchors "
+                         "plus an all-steps bot-anchored refit of the run's snapshot ladder and "
+                         "REFUSES an unanchored fit; `off` skips it and the Elo-slope row is "
+                         "omitted with that reason. Every other conditioning row is unaffected — "
+                         "the spread identity needs no strength axis.")
+    ap.add_argument("--no-conditioning", action="store_true",
+                    help="skip the CONDITIONING section entirely")
+    ap.add_argument("--allow-conditioning-refusal", action="store_true",
+                    help="proceed when the conditioning block REFUSES (a cycle with no manifest "
+                         "selection block, or no usable states). The report says in print that "
+                         "the rows are missing, and why.")
     ap.add_argument("--nice", type=int, default=10, help="niceness for the subprocesses")
     ap.add_argument("--allow-gate-refusal", action="store_true",
                     help="proceed when main.critic_gate REFUSES (typically a fresh arm whose "
@@ -718,10 +863,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     cache_root = out.parent
     floor = load_floors(args.floor_json)
 
+    ctl_step = args.control_step if args.control_step is not None else args.step
     if args.dry_run:
-        for role, d in (("arm", arm_dir), ("control", ctl_dir)):
-            c = pick_cycle(d, on_live=args.on_live, step=None)
-            print(f"{role:8s} {d.name}  ->  step_{c['step']}  ({c['why']}; "
+        for role, d, st in (("arm", arm_dir, args.step), ("control", ctl_dir, ctl_step)):
+            c = pick_cycle(d, on_live=args.on_live, step=st)
+            print(f"{role:8s} {d.name}  ->  step_{c['step']}  ({_cycle_why(c, st)}; "
                   f"live pids {c['live_pids'] or 'none'}; "
                   f"policy {c['on_live']}{'; newest dropped' if c['dropped_newest_because_live'] else ''})")
         print(f"out      {out}")
@@ -737,10 +883,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     # The ARM's artifacts go under --out, as the read registers them; a STAMP is also dropped in
     # the per-run sibling `<out>/../<run>/`, which is where the next pair's cache looks. So the
     # control of one invocation is the free arm of the next without anything being copied.
-    arm = read_run(arm_dir, out, args, say=say, alt_dirs=[cache_root / arm_dir.name])
+    # 🚨 The chosen cycle and WHY are printed BEFORE anything expensive runs, and land in the
+    # report header — the tdaux read silently took the previous cycle because the launcher
+    # process was still alive, and nothing in the output said so until the artifacts were read.
+    for role, d, st in (("arm", arm_dir, args.step), ("control", ctl_dir, ctl_step)):
+        c = pick_cycle(d, on_live=args.on_live, step=st)
+        say(f"CYCLE  {role:8s} {d.name} -> step_{c['step']}  ({_cycle_why(c, st)})")
+
+    arm = read_run(arm_dir, out, args, say=say, step=args.step,
+                   alt_dirs=[cache_root / arm_dir.name])
     _stamp(cache_root / arm_dir.name, arm)
-    ctl = (arm if arm_dir == ctl_dir
-           else read_run(ctl_dir, cache_root / ctl_dir.name, args, say=say,
+    ctl = (arm if arm_dir == ctl_dir and ctl_step in (None, arm["step"])
+           else read_run(ctl_dir, cache_root / ctl_dir.name, args, say=say, step=ctl_step,
                          alt_dirs=[out]))
 
     deltas = compute_deltas(arm, ctl, floor["floors"], seed=args.seed)
@@ -753,7 +907,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "params": {k: getattr(args, k) for k in
                    ("states", "anchors", "rollouts", "impl", "anchor_tolerance", "boot",
                     "gate_boot", "bins", "seed", "on_live", "max_draw_share",
-                    "allow_missing_winprob", "parent", "famine_comparator", "baseline_arm")},
+                    "allow_missing_winprob", "parent", "famine_comparator", "baseline_arm",
+                    "step", "control_step", "cond_boot", "cond_ladder", "no_conditioning")},
         "registration": ("ledger 2026-09-08 · REGISTRATION · THE CRITIC LADDER; design note "
                          "designs/research_state/winprob_critic_ladder_2026-09-08.md"),
         "arm": {k: v for k, v in arm.items() if not k.startswith("_")},

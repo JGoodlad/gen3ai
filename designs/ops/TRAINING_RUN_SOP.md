@@ -193,8 +193,27 @@ with what it measures.
 | the kill bars · the vf_coef framings | `python -m main.ops.killbar` · `python -m main.ops.vf_framings` |
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
-| **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --out <dir>` — identity + G1 + the turn-contrast as ARM − CONTROL with the delta's CI and its label, one invocation, one report |
+| **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --step <N> --out <dir>` — identity + G1 + the turn-contrast + **CONDITIONING** as ARM − CONTROL with the delta's CI and its label, one invocation, one report |
 | **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
+
+🚨 **PIN `critic_read`'s CYCLE WITH `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.**
+`--on-live skip-newest` is the default and it DROPS the newest cycle when any process still names
+the run — so a finished 10M arm whose launcher had not yet exited is read at **8M**, and the
+2026-09-09 tdaux read did exactly that. The report now prints WHICH cycle was chosen and WHY, for
+both runs, in its header and on stdout before anything expensive runs; `--step N` pins both runs
+and `--control-step N` pins the control alone. A run with no `step_N` REFUSES, naming the steps it
+has.
+
+🚨 **THE CONDITIONING ROWS ARE THE ONES THE CURRENT LADDER IS READ ON** (2026-09-09). Three offline
+reads established that the critic's defect is a CONDITIONING failure in the win head — it emits one
+near-marginal win probability regardless of opponent AND of its own team — so the arms built
+against it are read on the meters that measure that, not on strength and not only on G1. The two
+primaries are the **turn-1-3 between-opponent SPREAD RATIO** of `V` against the outcome (a
+calibrated critic's is **1.0**) and the **turn-1 own-team leave-one-battle-out win-rate R²** of
+`V`. Both are HEADLINE rows and both appear in the ledger quote. ⚠️ The noise-corrected ratio is
+CLAMPED and can sit at or below its own interval's lower bound — **the interval is the read**, and
+the unclamped companion is printed beside it. ⚠️ The Elo-slope row is OMITTED WITH A REASON when
+the run's snapshot-ladder refit is not bot-anchored; it is never reported on two scales.
 
 🚨 **`critic_read` AND `value_sidecar_read` ANSWER DIFFERENT QUESTIONS AND NEITHER SUPERSEDES THE
 OTHER** (`gen3_value_sidecar_v1`, 2026-09-08). `critic_read` reads EVAL battles — a greedy trainee,
