@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,049-line file. **The ledger itself is append-only and is never edited by this**;
+16,062-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**475 headings · 435 dated · 2026-08-01 → 2026-09-09 · ledger 16,049 lines.**
+**476 headings · 436 dated · 2026-08-01 → 2026-09-09 · ledger 16,062 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -495,3 +495,4 @@ rename.
   - `L15965` · `2026-09-09` · INCIDENT · MAIN's rust binaries were rebuilt from a deleted worktree and panicked at startup for ~1 h 45 min (01:30–03:15) — the dex data path is baked at COMPILE time
   - `L15971` · `2026-09-09` · READ · critic ladder arm `ai_v12_13_ladder_tdaux` (`--td-aux-coef 1.0`) vs the control at matched 10M — NOT DETECTED on every registered row; and the clock-inversion it was built to fix is ABSENT at 10M
   - `L15983` · `2026-09-09` · MEASUREMENT · THE HEAD REFIT — reading (2) PARTIAL on both substrates: the win head is not failing to learn, it is being paid to predict something else; head-side optimisation RULED OUT; the cf-label arm is the right next arm and an opponent-stratified loss weighting is the highest-value unbuilt lever
+  - `L16050` · `2026-09-09` · INSTRUMENT + READ · the CONDITIONING meters are registered rows of `main.ops.critic_read` (`33f6f48a`, tool v2) — and neither `vf15` nor `tdaux` moves any of them against the control
