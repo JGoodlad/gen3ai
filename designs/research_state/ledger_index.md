@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,166-line file. **The ledger itself is append-only and is never edited by this**;
+16,212-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**482 headings · 442 dated · 2026-08-01 → 2026-09-09 · ledger 16,166 lines.**
+**484 headings · 444 dated · 2026-08-01 → 2026-09-09 · ledger 16,212 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -502,3 +502,5 @@ rename.
 - `L16079` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_12_ladder_cflabels` COMPLETE (`--cf-records --cf-winprob-coef 0.5`, 10,027,008 steps, 4.30 h, 0 crashes, G7 below bar on both halves; the FIRST arm carrying the value sidecar)
   - `L16151` · `2026-09-09` · READ · critic ladder arm `ai_v12_12_ladder_cflabels` (cf continuation labels) vs the control at pinned 10M — the FIRST conditioning row any arm has moved: own-team R² Δ +0.084 [+0.032, +0.183] DETECTED (no floor); spread ratio and resolution NOT DETECTED
   - `L16161` · `2026-09-09` · VERIFIED · the privileged true-team channel's EVAL path, by a live `--debug-eval` cycle — PASS on all five items; four hazards for the `truevalue` arm's read
+  - `L16167` · `2026-09-09` · RETRACTION (partial) · the `cflabels` own-team R² detection is a DECODER-POWER ARTEFACT of the quota asymmetry — the DETECTED of the same day is WITHDRAWN; the lever is neither confirmed nor refuted
+  - `L16171` · `2026-09-09` · RETRACTION (partial) · the cflabels own-team R² detection is a DECODER-POWER ARTEFACT of the quota asymmetry, not a lever effect — matched-frame Δ −0.001 [−0.244, +0.346] NOT DETECTED

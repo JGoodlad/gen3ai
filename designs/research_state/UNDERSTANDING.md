@@ -706,15 +706,15 @@ resolution and for the head/mixture defect, both present at 10M. Two 10M lever a
 +0.015 on bot resolution with CIs over zero; the replicate floor (`ctrl10M_b`, next) says whether that is
 the control's shortfall.
 
-**Ladder arm `cflabels` read (2026-09-09, cf continuation labels vs the control, pinned 10M):** [MEASURED,
-`measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/`] the first conditioning row any arm has
-moved — turn-1 own-team decode of V Δ **+0.084 [+0.032, +0.183]** (arm +0.060, control −0.024), DETECTED
-against zero, no floor yet, and pending a matched-quota re-read (the arm's trace frame is 2.4× the control's
-in teams). The opponent axis did not move (spread ratio Δ −0.115 [−0.523, +0.088]); resolution nothing. The
-label is a state-conditional CONTINUATION label, so the own-team axis (in the state) is the one it can carry
-and the opponent axis (needs identity averaged over episodes) is the one it cannot — evidence for the
-target-variance CLASS, not for the cell label the refit used. The head is unbiased against its own
-continuation where the control's is pessimistic (Δ +0.040 [+0.007, +0.071]).
+**Ladder arm `cflabels` read (2026-09-09, cf continuation labels vs the control, pinned 10M):** [MEASURED · NOT
+DETECTED, `measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/` + `matched_quota/`] the own-team
+decode delta +0.084 [+0.032, +0.183] first read as DETECTED was a DECODER-POWER ARTEFACT of the arm's 4× trace
+quota (arm R² −0.025 on the battle-matched frame; a monotone frame-size curve) and is WITHDRAWN; every
+conditioning row is NOT DETECTED, like `vf15` and `tdaux`; resolution nothing. The head reads unbiased against
+its own continuation where the control is pessimistic (Δ +0.040 [+0.007, +0.071], a mean, not a fit — stands
+vs zero, floor pending). The label is a state-conditional CONTINUATION label, so a null here is evidence about
+the class only at 10M and at this power. Instrument consequence: the decoder-based rows must be read on
+quota-matched frames — fix in flight before the `strata` and `truevalue` reads.
 
 ### 4.3 What is UNVERIFIED in this era
 

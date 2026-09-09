@@ -16163,3 +16163,49 @@ Tag: OPS. Nothing measured about the critic by this entry.
 The build (`d94de2e3`) had proven the eval path structurally, never by a live cycle; the arm `ai_v12_14_ladder_truevalue` is last in the queue, so it was checked on CPU first (two `--debug --debug-eval` smokes of the arm's own argv, run dirs under the job tmp dir, nothing under `models/`, main's `sim_bridge` verified worktree-free). (a) Round-trip smoke PASSED, training completes. (b) A real eval cycle runs in worker subprocesses and writes `eval_traces/step_*/eval_manifest.json` (`selection_schema` 2, `config_version` 115). (c) Every trace npz carries real `win_probs`; **`opp_true_team` is NOT recorded** (`battle_recorder.states_arrays()` stacks only the flat obs) — the ladder read is NOT blocked because the recorded `values` / `win_probs` were computed WITH the key at eval time and every registered reader takes them from the npz; `cf_audit` completes (anchor 20/20) because its rollouts are played live on the bridge; the prober's `analyze` correctly REFUSES with `ArchDriftError` naming `--value-true-team`. (d) The eval-time block is NON-ZERO: 2,843 firings across the trainer PID and four worker PIDs, 0 zero-norm, via a throwaway `sitecustomize` hook. (e) The value sidecar writes and its reader renders.
 
 **Hazards for the arm.** (1) On the OPENING decision of every battle the block carries only the opponent's lead (72 of 2,843 firings, 2.5 %) — poke-env's opponent-side `battle.team` is not fully populated at the first request; the training path reads the same moment, so there is no train/eval skew, but the privilege is absent at t = 0 — say so before quoting an opening V. (2) `compile_extractor` is silently DISABLED for this arm in every prober / `cf_audit` session (the compile warm-up forward has no `opp_true_team`, the readout raises, the wrapper catches it) — every offline read of this arm runs eager; budget the wall time and do not read the warning as a failure. (3) `cf_audit` escapes `ProbeModel._pin` only because it plays live, not because the guard is loose. (4) The smoke's pool was empty (bots only), so the sentinel leg is exercised structurally, not by battle. Tag: VERIFIED.
+
+### 2026-09-09 · RETRACTION (partial) · the `cflabels` own-team R² detection is a DECODER-POWER ARTEFACT of the quota asymmetry — the DETECTED of the same day is WITHDRAWN; the lever is neither confirmed nor refuted
+
+Commit `02e785d0`; `measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/matched_quota/`. The agent's paragraph, verbatim:
+
+### 2026-09-09 · RETRACTION (partial) · the cflabels own-team R² detection is a DECODER-POWER ARTEFACT of the quota asymmetry, not a lever effect — matched-frame Δ −0.001 [−0.244, +0.346] NOT DETECTED
+
+The 2026-09-09 READ of `ai_v12_12_ladder_cflabels` reported `cond.own_team_r2.t1` Δ +0.0841
+[+0.0323, +0.1825] DETECTED and flagged the quota asymmetry (arm 40/40/10, control 5/10/5) as an
+uncovered power/decoder confound with a matched re-read dispatched. It is now read
+(`measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/matched_quota/`, same
+`conditioning_meters` code, seed 0, boot 2000, **30 subsample seeds**, capture rates RECOMPUTED
+for each subsample so rule 17 still holds, nothing written under `models/`). Subsampled to the
+control's REALIZED per-opponent capture profile (8 wins / 12 losses — the nominal 5/10 inflates
+under shard work-stealing), the arm's frame is 197 battles against the control's 198 and its
+turn-1 own-team R² falls from **+0.060 to a median −0.025** [−0.140, +0.249], i.e. onto the
+control's own **−0.024**; the delta is **−0.0013 [−0.2436, +0.3461] NOT DETECTED**, positive on
+exactly 15 of 30 seeds. Battle-matching is if anything unfair to the arm — it carries more
+distinct teams per battle, so only 62 of its battles clear `MIN_TEAM_BATTLES` against the
+control's 104 — so a DECODER-MATCHED rung (11/16/5, 102 decoder battles) was read too: arm
++0.0038 [−0.0770, +0.2352], Δ **+0.0275 [−0.1162, +0.3785] NOT DETECTED**, 3/30 seeds clearing
+zero upward. The frame-size curve is monotone in the decoder's own battle count (62 → −0.025,
+102 → +0.004, 176 → +0.037, 353 → +0.068, 429 → +0.060), which is the artefact's signature and
+not an effect's. `cond.own_team_r2.all` behaves identically (Δ +0.0935 → −0.0369 battle-matched,
++0.0063 decoder-matched, both NOT DETECTED). **Two unregistered companion detections also fail
+to survive**, for different reasons: `cond.spread_ratio_raw.t1_3` (Δ −0.2256 → −0.1079) because
+the UNCORRECTED, unclamped ratio is itself frame-size dependent — the arm's own value moves
++0.1177 [+0.0131, +0.3546] between its full and matched frames — and `cond.spread_ratio_raw.all`
+(Δ −0.2945 → −0.2597) purely through power, its point barely moving. The registered
+`cond.spread_ratio.t1_3`, `cond.spread_delta.*`, `cond.elo_slope` and `cond.opp_class_auc.t1` are
+stable in point and label. **The identity row is NOT implicated**: `identity.bias` is a weighted
+MEAN, not a fit, so frame size moves its variance and not its expectation; restricting the arm's
+payload to the matched battles with the frame mass and capture rates recomputed leaves the
+registered `ipw` point inside its across-seed interval in every stratum (ALL −0.0016 → +0.0108
+[−0.0193, +0.0398]) while the un-reweighted `pop`/`raw` companions move 0.05–0.10 — but the
+control's labelled payload is not held here, so **no matched identity delta or CI is computed**
+and none is claimed. **Standing consequence: a DECODER-BASED conditioning row (`own_team_r2.*`,
+and any future fitted row) may not be compared across arms traced at different quotas.** The
+ladder must equalise the frame before the decoder rows are read — subsample the richer arm to the
+poorer one's realized profile, over ≥20 seeds, and report the across-seed spread beside the
+battle-clustered CI. Tag: **MEASURED · NOT DETECTED (own-team, matched frame) · the 2026-09-09
+DETECTED is WITHDRAWN.** No claim is made about the cf-label lever in either direction: the
+matched read is under-powered by construction, and a lever effect of the published size would not
+be visible at 104 decoder battles.
+
+**Orchestrator's reading and the instrument consequence.** The arm's own-team R² climbs monotonically with its decoder frame (62 → 102 → 176 → 353 → 429 decoder battles: −0.025 → +0.004 → +0.037 → +0.068 → +0.060) and reads −0.025 [−0.140, +0.249] on the battle-matched frame against the control's −0.024 — the artefact's signature, not the effect's. Two unregistered companion detections die with it. The registered rows (`spread_ratio.t1_3`, `spread_delta`, `elo_slope`, `opp_class_auc.t1`) are stable. The `cflabels` verdict is therefore **NOT DETECTED on every conditioning row**, like `vf15` and `tdaux`; the head-unbiased-vs-continuation delta (+0.040 [+0.007, +0.071]) is a weighted mean, not a fit, and is NOT implicated — it stands, vs zero, floor pending. **The defect is in the instrument and it is live for every remaining arm**: `strata` and `truevalue` also run at 40/40/10 against the control's realized 8/12/5, so their decoder-based rows would inherit the same upward bias. `critic_read` must subsample the richer side to the poorer side's REALIZED per-opponent capture profile over ≥20 seeds for the decoder-based rows and print the across-seed spread beside the battle-clustered CI — dispatched as an instrument fix before the next read. Nominal ≠ realized quota (shard work-stealing rounds `ceil(quota / n_shards)` per shard): match on what is on disk. Tag: **RETRACTION · NOT DETECTED**.
