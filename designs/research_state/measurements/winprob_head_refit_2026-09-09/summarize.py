@@ -205,7 +205,8 @@ def main(a):
     reads = {}
     for tag, fn in (("A", "read_A.json"), ("CTRL", "read_CTRL.json"),
                     ("A_train", "read_A_train.json"), ("A_raw", "read_A_raw.json"),
-                    ("A_cell", "read_A_cell.json")):
+                    ("A_cell", "read_A_cell.json"), ("A_pool", "read_A_pool.json"),
+                    ("CTRL_pool", "read_CTRL_pool.json")):
         p = os.path.join(a.tmp, fn)
         if os.path.exists(p):
             reads[tag] = json.load(open(p))
@@ -217,7 +218,7 @@ def main(a):
         if tag in reads:
             stats["substrates"][tag] = reads[tag]
             stats["verdict"][tag] = verdict(reads[tag])
-    for tag in ("A_train", "A_raw", "A_cell"):
+    for tag in ("A_train", "A_raw", "A_cell", "A_pool", "CTRL_pool"):
         if tag in reads:
             r = reads[tag]
             stats["counter_hypotheses"][tag] = {
@@ -251,8 +252,12 @@ def main(a):
         md += decode_table(r, title)
     for tag, title in (("A_train", "Arm A — IN-FOLD columns (the overfitting counter-hypothesis)"),
                        ("A_raw", "Arm A — UNWEIGHTED (the HT-weight counter-hypothesis)"),
-                       ("A_cell", "Arm A — raw per-(opponent, team) LOO cell target "
-                                  "(the leakage counter-hypothesis)")):
+                       ("A_cell", "Arm A — raw per-(cycle, opponent, team) LOO cell target "
+                                  "(the leakage counter-hypothesis)"),
+                       ("A_pool", "Arm A — conditional target keyed by OPPONENT, not "
+                                  "(cycle, opponent) (the cycle-drift sensitivity)"),
+                       ("CTRL_pool", "CTRL — conditional target keyed by OPPONENT, not "
+                                     "(cycle, opponent) (the cycle-drift sensitivity)")):
         if tag not in reads:
             continue
         r = reads[tag]

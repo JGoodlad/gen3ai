@@ -118,7 +118,20 @@ def conditional_target(bl, kind, cell_min, seed):
     removed, and nothing else changed. Additive in (opponent, own team) on the win-rate scale;
     every ingredient leave-one-battle-out and IPW-weighted."""
     y, w = bl["y"], bl["w"]
-    ocode = np.unique(bl["opponent"], return_inverse=True)[1]
+    # 🚨 THE OPPONENT FACTOR IS KEYED BY (CYCLE, OPPONENT), NOT BY OPPONENT. The identity the
+    # readout scores is computed over (cycle, opponent) CELLS — that is the unit the manifest
+    # reports a 100-game win rate for — and a trainee's own strength moves between cycles. On the
+    # ladder CONTROL it moves enormously (its per-cycle mean true win rate runs 0.547 at 2M to
+    # 0.896 at 8M), so a target with no cycle term cannot reproduce the cell means however well it
+    # is fitted, and its CEILING reads ~0.42 for a reason that has nothing to do with the head.
+    # Keying the factor by the cell removes that confound and leaves (a) untouched — the terminal
+    # target has no factors at all. `--cond additive_pooled` restores the opponent-only key as the
+    # sensitivity, and the two differ by almost nothing on arm A, whose four cycles are flat.
+    if kind == "additive_pooled":
+        okey = bl["opponent"].astype("U40")
+    else:
+        okey = np.array([f"{c}|{o}" for c, o in zip(bl["cycle"], bl["opponent"])])
+    ocode = np.unique(okey, return_inverse=True)[1]
     tcode = np.unique(bl["team"], return_inverse=True)[1]
     # LOO base rate: the overall IPW win rate with this battle removed.
     sw, swy = w.sum(), (w * y).sum()
@@ -146,11 +159,13 @@ def conditional_target(bl, kind, cell_min, seed):
                 best, best_k = ll, (ko, kt)
     p = build(*best_k)
     info = {"k_opp": best_k[0], "k_team": best_k[1], "logloss": round(best, 6),
+            "opponent_key": "opponent" if kind == "additive_pooled" else "(cycle, opponent)",
+            "n_opponent_cells": int(ocode.max() + 1),
             "logloss_marginal": float(-(w * (y * np.log(base) + (1 - y) * np.log(1 - base))).sum()
                                       / w.sum()),
             "grid": grid, "kind": "additive_loo"}
 
-    if kind == "raw_cell":
+    if kind == "raw_cell":                 # per-(cycle, opponent, team) once okey carries the cycle
         # SENSITIVITY: the literal per-(opponent, team) LOO cell mean where the cell is big enough.
         ccode = np.unique(np.stack([ocode, tcode], 1), axis=0, return_inverse=True)[1]
         c_wr, c_n = _loo_group_wr(ccode, y, w, ccode.max() + 1)
@@ -333,7 +348,8 @@ if __name__ == "__main__":
     ap.add_argument("--dir", required=True, help="the probe read's extract dir")
     ap.add_argument("--head", required=True, help="head.npz from dump_head.py (fine-tune init)")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--cond", default="additive", choices=("additive", "raw_cell"))
+    ap.add_argument("--cond", default="additive",
+                    choices=("additive", "additive_pooled", "raw_cell"))
     ap.add_argument("--cell-min", type=int, default=3)
     ap.add_argument("--k", type=int, default=5)
     ap.add_argument("--val-frac", type=float, default=0.2)

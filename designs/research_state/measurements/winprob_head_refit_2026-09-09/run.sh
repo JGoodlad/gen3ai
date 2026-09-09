@@ -48,12 +48,22 @@ $NICE $PY readout.py --dir "$PROBE/A" --preds "$TMP/preds_A.npz" --train --no-de
 $NICE $PY refit.py --dir "$PROBE/A" --head "$TMP/head_A.npz" --no-ipw --out "$TMP/preds_A_raw.npz"
 $NICE $PY readout.py --dir "$PROBE/A" --preds "$TMP/preds_A_raw.npz" --no-decode \
     --out "$TMP/read_A_raw.json"
-#    (c) label leakage through the conditional target: the literal per-(opponent, team) LOO cell
-#        mean wherever the cell has >= 3 battles, in place of the additive one
+#    (c) label leakage through the conditional target: the literal per-(cycle, opponent, team) LOO
+#        cell mean wherever the cell has >= 3 battles, in place of the additive one
 $NICE $PY refit.py --dir "$PROBE/A" --head "$TMP/head_A.npz" --cond raw_cell \
     --out "$TMP/preds_A_cell.npz"
 $NICE $PY readout.py --dir "$PROBE/A" --preds "$TMP/preds_A_cell.npz" --no-decode \
     --out "$TMP/read_A_cell.json"
+#    (d) the CYCLE key: the conditional target's opponent factor keyed by OPPONENT rather than by
+#        (cycle, opponent). Flat on arm A; it is what makes the CTRL ceiling readable at all.
+$NICE $PY refit.py --dir "$PROBE/A" --head "$TMP/head_A.npz" --cond additive_pooled \
+    --out "$TMP/preds_A_pool.npz"
+$NICE $PY readout.py --dir "$PROBE/A" --preds "$TMP/preds_A_pool.npz" --no-decode \
+    --out "$TMP/read_A_pool.json"
+$NICE $PY refit.py --dir "$PROBE/CTRL" --head "$TMP/head_CTRL.npz" --cond additive_pooled \
+    --out "$TMP/preds_CTRL_pool.npz"
+$NICE $PY readout.py --dir "$PROBE/CTRL" --preds "$TMP/preds_CTRL_pool.npz" --no-decode \
+    --out "$TMP/read_CTRL_pool.json"
 
 # 5. the committed summary (small JSON + the tables; no prediction or feature arrays)
 $NICE $PY summarize.py --tmp "$TMP" --out-dir .

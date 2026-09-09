@@ -1,0 +1,30 @@
+{
+ "A": {
+  "terminal_y": {
+   "eta2_cycle_opponent": 0.1023,
+   "btw_cellvar": 0.01687,
+   "total_var": 0.16486,
+   "eta2_team": 0.4604
+  },
+  "conditional_y": {
+   "eta2_cycle_opponent": 0.2395,
+   "btw_cellvar": 0.0088,
+   "total_var": 0.03673,
+   "eta2_team": 0.9313
+  }
+ },
+ "CTRL": {
+  "terminal_y": {
+   "eta2_cycle_opponent": 0.1443,
+   "btw_cellvar": 0.02302,
+   "total_var": 0.15949,
+   "eta2_team": 0.3822
+  },
+  "conditional_y": {
+   "eta2_cycle_opponent": 0.5876,
+   "btw_cellvar": 0.02005,
+   "total_var": 0.03412,
+   "eta2_team": 0.7168
+  }
+ }
+}
