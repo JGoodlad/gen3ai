@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,639-line file. **The ledger itself is append-only and is never edited by this**;
+15,655-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**458 headings · 418 dated · 2026-08-01 → 2026-09-08 · ledger 15,639 lines.**
+**459 headings · 419 dated · 2026-08-01 → 2026-09-08 · ledger 15,655 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -478,3 +478,4 @@ rename.
   - `L15587` · `2026-09-08` · REGISTRATION · THE CRITIC LADDER — four fresh 10M arms, one lever each, read by the CRITIC meters against a fresh control (owner direction: an ACCURATE win-prob value function; hand-crafted shaping is a suboptimal implementation)
   - `L15610` · `2026-09-08` · OPS · The PFSP fork `ai_v12_04_pfsp_fork25M` is PAUSED at 30,457,344 steps, resumable, to free the GPU for the critic ladder
   - `L15618` · `2026-09-08` · BUILT · the privileged (true-team) value channel `--value-true-team` (gen3_value_true_team_v1) — arm 5 of the critic ladder; ARCH surface unchanged when OFF
+  - `L15640` · `2026-09-08` · REGISTRATION · critic ladder arms 5 and 6 queued — `ai_v12_14_ladder_truevalue` (the privileged value channel, built d94de2e3) and `ai_v12_15_ladder_ctrl10M_b` (a second control at `--seed 1001`: THE REPLICATE FLOOR)

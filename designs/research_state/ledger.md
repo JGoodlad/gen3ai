@@ -15636,3 +15636,19 @@ Tag: OPS.
 **The arm's argv** (arm A's recorded `original_command`, `--pin-commit` removed, `--steps 10000000 --run-name ai_v12_14_ladder_truevalue`, plus the lever): `/home/goodlad/.claude/jobs/9ab51de6/tmp/argv_E_truevalue.txt`. `python -m main.checkargs --argv "$(cat …)"` → exit 0, 129 flags, **0 unrecognized**, clean ARCH SURFACE, `✓ this command still launches`. NOT LAUNCHED — the ladder's first pair (B then C) is registered ahead of it and this arm is the ceiling probe, to be run after B/C/D have located the residual.
 
 Tag: BUILT. Nothing measured about the critic; no GPU committed.
+
+### 2026-09-08 · REGISTRATION · critic ladder arms 5 and 6 queued — `ai_v12_14_ladder_truevalue` (the privileged value channel, built d94de2e3) and `ai_v12_15_ladder_ctrl10M_b` (a second control at `--seed 1001`: THE REPLICATE FLOOR)
+
+Arm 5 = the control argv + `--value-true-team` (gen3_value_true_team_v1, MODEL_CONFIG_VERSION 114; the
+true opponent party enters the VALUE path only, the policy path is proven independent in both
+directions; the obs vector is unchanged; a `--debug --debug-eval` smoke on HEAD passed with the
+final eval running through the local runner with the key present). It is the CEILING PROBE: how
+much of the resolution gap is information the observation hides. Its first eval cycle must show
+`win_probs` in the trace npz (the critic meters refuse without it) — the Training Run quotes that
+line once. Arm 6 = the control argv with `--seed 1001` (every run so far used the parser default 42
+— verified: no argv in the archive names `--seed`; `operational.py:98`). Two controls at the same
+code and different seeds give the critic meters the run-to-run floor they lack; until arm 6 is
+read, every ladder delta is labelled against ZERO only (DETECTED if the CI clears zero) and never
+against a floor. Both argvs validated by `main.checkargs` (0 unrecognized, ARCH SURFACE = production
+mirror, launches). Queue order: vf15 → ctrl10M → cflabels → tdaux → truevalue → ctrl10M_b, ~4 h
+each. Tag: REGISTRATION.
