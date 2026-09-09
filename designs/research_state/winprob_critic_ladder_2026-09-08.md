@@ -298,6 +298,7 @@ stripped-architecture failure mode cannot recur here. Argv files:
 | arm | lever | G1 resolution · bot Δ | identity bias · late Δ | turn-contrast Δ | verdict | where |
 |---|---|---|---|---|---|---|
 | `ai_v12_10_ladder_vf15` | `--vf-coef 1.5` | +0.0140 [−0.0080, +0.0389] | +0.0486 [−0.0305, +0.1311] | +0.1634 [−0.0807, +0.3733] | **NOT DETECTED** on all four; identity bias on ALL states +0.048 [+0.014, +0.082] MORE optimistic (vs ZERO, no floor) | `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/` · ledger 2026-09-08 *READ · critic ladder arm 1* |
+| `ai_v12_13_ladder_tdaux` | `--td-aux-coef 1.0` | +0.0149 [−0.0045, +0.0343] | −0.0151 [−0.0977, +0.0654] | +0.0092 [−0.2117, +0.2030] | **NOT DETECTED** on all four; G2/G3 worse on points (n.d.); **the clock inversion is absent at 10M** (control −0.094), so the lever's mechanism is untestable at this length | `measurements/critic_ladder_reads/tdaux_vs_ctrl10M_2026-09-09/` · ledger 2026-09-09 *READ · critic ladder arm tdaux* |
 | `ai_v12_12_ladder_cflabels` | `--cf-records --cf-winprob-coef 0.5` | — | — | — | REFUSED ITSELF at launch (cf duty cycle 6.2 % vs floor 25 % at 48 envs); AMENDED to add `--checkpoint-every-steps 500000`, relaunches after tdaux | ledger, same entry |
 
 No replicate floor exists until `ai_v12_15_ladder_ctrl10M_b` lands; every DETECTED before then is against zero.

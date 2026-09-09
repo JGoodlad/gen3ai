@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-15,970-line file. **The ledger itself is append-only and is never edited by this**;
+15,982-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**473 headings · 433 dated · 2026-08-01 → 2026-09-09 · ledger 15,970 lines.**
+**474 headings · 434 dated · 2026-08-01 → 2026-09-09 · ledger 15,982 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -493,3 +493,4 @@ rename.
   - `L15918` · `2026-09-09` · CORRECTION + SCOPE · `ctrl10M`-vs-`ctrl10M_b` is total run-to-run variance, not a "seed-only contrast"; and one replicate difference is a SCALE, never a significance threshold
 - `L15922` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_13_ladder_tdaux` COMPLETE (`--td-aux-coef 1.0`, 10,027,008 steps, 4.67 h, 0 crashes, G7 below bar on both halves)
   - `L15965` · `2026-09-09` · INCIDENT · MAIN's rust binaries were rebuilt from a deleted worktree and panicked at startup for ~1 h 45 min (01:30–03:15) — the dex data path is baked at COMPILE time
+  - `L15971` · `2026-09-09` · READ · critic ladder arm `ai_v12_13_ladder_tdaux` (`--td-aux-coef 1.0`) vs the control at matched 10M — NOT DETECTED on every registered row; and the clock-inversion it was built to fix is ABSENT at 10M

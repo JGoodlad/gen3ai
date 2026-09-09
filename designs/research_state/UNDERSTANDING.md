@@ -667,6 +667,16 @@ starvation reading predicts; the separate-value-trunk build is HELD pending the 
 Arm 3 (cf labels) refused itself at launch — duty cycle 6.2 % vs a 25 % floor at 48 envs — and is
 amended to `--checkpoint-every-steps 500000` [ledger 2026-09-08 · *READ · critic ladder arm 1*].
 
+**Ladder arm `tdaux` read (2026-09-09, `--td-aux-coef 1.0` vs the control, no span):** [MEASURED · NOT
+DETECTED, `measurements/critic_ladder_reads/tdaux_vs_ctrl10M_2026-09-09/`] resolution Δ bot +0.0149
+[−0.0045, +0.0343], late bias Δ −0.0151 [−0.0977, +0.0654], turn-contrast Δ +0.0092 [−0.2117, +0.2030];
+calibration on points worse (G2/G3 fail on `all` and `bot`, n.d.). **The clock inversion (L4) is ABSENT at
+10M** — control −0.094, arm −0.085 against arm A's +0.309 at 74M — so it is a late-training phenomenon
+(formed by 50M) and no 10M read can see a lever's effect on it; the ladder's 10M reads stay valid for
+resolution and for the head/mixture defect, both present at 10M. Two 10M lever arms now lean +0.014 /
++0.015 on bot resolution with CIs over zero; the replicate floor (`ctrl10M_b`, next) says whether that is
+the control's shortfall.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

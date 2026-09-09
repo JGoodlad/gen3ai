@@ -1,0 +1,3 @@
+# Critic ladder read — `ai_v12_13_ladder_tdaux` (`--td-aux-coef 1.0`) vs control `ai_v12_11_ladder_ctrl10M`, both at `step_10000032`
+
+`python -m main.ops.critic_read ai_v12_13_ladder_tdaux --control ai_v12_11_ladder_ctrl10M --no-cache --out <job tmp>/read_tdaux2`, 2026-09-09 ~03:35–04:05 PT. A first attempt at 03:03 is DISCARDED: it picked `step_8000016` (the launcher process was still alive, `--on-live skip-newest`) and its `cf_audit` refused with 0/135 anchors because main's `search_driver` was the broken worktree build (ledger 2026-09-09 · *INCIDENT*). This read ran after the 03:15 rebuild; the arm's anchors reproduced normally. Same file layout as `../vf15_vs_ctrl10M_2026-09-08/`. Verdict: ledger 2026-09-09 · *READ · critic ladder arm `tdaux`*.
