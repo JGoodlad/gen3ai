@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,316-line file. **The ledger itself is append-only and is never edited by this**;
+16,320-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**489 headings · 449 dated · 2026-08-01 → 2026-09-09 · ledger 16,316 lines.**
+**490 headings · 450 dated · 2026-08-01 → 2026-09-09 · ledger 16,320 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -509,3 +509,4 @@ rename.
 - `L16223` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_15_ladder_ctrl10M_b` COMPLETE: the REPLICATE FLOOR exists (10,027,008 steps, 4.17 h, 0 crashes, G7 below bar on both halves)
   - `L16301` · `2026-09-09` · THE FLOOR · `ctrl10M_b` vs `ctrl10M` at pinned 10M, quota-matched — two identical configurations differ by 0.070 on the registered identity bias and by 45 Elo; every DETECTED-vs-zero on the ladder is now WITHIN FLOOR; zero detected registered rows on any arm
   - `L16313` · `2026-09-09` · AMENDMENT · the ladder is re-headlined on its LOW-FLOOR rows, and POWER comes before a sixth lever — the floor's own CI excludes zero, so "clears zero" is retired as sufficient on the identity-bias row
+  - `L16317` · `2026-09-09` · LIVE FINDING (pre-read) · `strata`'s treatment is DOSE-VARYING and DECREASING — exact parity for ~0.4M steps, then a capped approximation decaying to a 0.44 bot share — and the dose moves with the regime
