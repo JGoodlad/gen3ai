@@ -617,6 +617,22 @@ as an actor-only potential on a fresh run (the D3 upper-bound arm), sequenced af
 read. Arm C (`ai_v12_04_pfsp_fork25M`, PFSP 2.5 one-sided, greedy sentinels) is LIVE on the GPU
 since 2026-09-08 10:12, pinned at `ef981a89` [MEASURED, pin_history].
 
+**The resolution failure has a named component: the head does not condition on the opponent.**
+[MEASURED, `winprob_mixture_diagnostic_2026-09-09`] Over the last four trace cycles the
+between-opponent spread of `V` on turn-1–3 states is 0.334× [0.318, 0.451] the between-opponent
+spread of the outcome, where a calibrated critic's must be 1.0; over all states, 0.573
+[0.509, 0.689]. Bias `V` − true win rate rises with opponent Elo at +0.0171 [+0.0131, +0.0209]
+per 100 Elo (14 opponents; +0.0094, +0.0300 with opponents resampled), running −0.092 against
+`random` to +0.106 against the strongest sentinel. The loss-preferring capture rate and the
+greedy-sentinel handicap both work AGAINST the finding, and the effect is largest on early
+states and reverses late. **A second conditioning failure, larger, was found in passing: the
+trainee's OWN team explains ~9× more of the critic's residual than the opponent does**
+(+0.0246 [+0.0202, +0.0385] vs +0.0027 [+0.0013, +0.0074], both in excess of a permutation
+null). **Open:** whether feeding the value path an opponent-strength scalar closes any of it —
+the D-ladder's conditioning arm, sketched in the measurement dir §12. **Caveat:** the bot-only
+slope is NOT DETECTED once the nine pinned bots are themselves resampled; the detection rests
+on the 14-opponent set and, more strongly, on the spread identity, which needs no strength axis.
+
 **Ladder arm 1 read (2026-09-08, `--vf-coef 1.5` vs the fresh 10M control):** [MEASURED · NOT DETECTED,
 `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/`] resolution Δ bot +0.0140 [−0.0080,
 +0.0389], late identity bias Δ +0.0486 [−0.0305, +0.1311], turn-contrast Δ +0.1634 [−0.0807, +0.3733] —

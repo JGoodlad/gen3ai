@@ -15787,3 +15787,39 @@ plus `gate.skill.bot Δ +0.1219 [-0.0681, +0.2941] NOT DETECTED`.
 **Reading against the ladder's registration** (*REGISTRATION · THE CRITIC LADDER*, arm 2 "capacity control": *"a null is a positive result that kills the starvation reading"*): the null is NOT clean enough to kill it — the resolution point estimates lean the starvation way and the CIs are wide — but it is enough to say the lever is not the large effect the 0.44 → 0.10 gradient-share collapse would predict if starvation were THE defect. The separate-value-trunk build (the stronger form of the same lever) is HELD pending the replicate floor, not scheduled. Tag: **MEASURED · NOT DETECTED**.
 
 **Two ops events banked alongside, from the Training Run session's report.** (1) Arm 2 `ai_v12_11_ladder_ctrl10M` completed 10,027,008 steps in 4.26 h, 0 crashes, 1 periodic restart, G7 below bar on both halves (worst ratio 1.035 = 83 % of bar, stall peak 0.0176); bots 0.4913 / 0.7300 / 0.8813 / 0.8925 / 0.8988 by cycle; ladder.json converged 10M = 2018.7 ± 16.7; rule-15 boundaries at 4,000,032 (→ 0.7278) and 6,000,000 (→ 0.9000). (2) **Arm 3 `ai_v12_12_ladder_cflabels` REFUSED ITSELF at config validation** (`FATAL_CONFIG`, 2 s after launch at 22:12): the cf-label duty cycle would have been **6.2 % against a 25 % floor** — `--cf-label-lag-steps` at its 150,000 default against a checkpoint interval of 2,400,000 env steps (50,000 vec-calls × 48 envs), so 93.8 % of the arm's labels would have expired on arrival and the arm would have measured a lever INERT BY CONSTRUCTION. The refusal is correct, the check is child-only (a dry run cannot see it), and the trap is `--n-envs`-dependent. **AMENDMENT to the arm's registration:** it relaunches with `--checkpoint-every-steps 500000` (duty cycle 30.0 %; the label-freshness definition of the lever is untouched; checkpoints feed only the label producer and `latest.txt`, never the self-play pool, so the control comparison holds; cost 20 checkpoints instead of 4). The alternative — stretching the lag to 600,000 — was rejected because it degrades the thing the arm measures. Queue order is now tdaux (launched 22:19, pin `f3502568`) → cflabels → truevalue → ctrl10M_b. The dead run dir is moved aside, not deleted. Hazard for the runbook: **the cf-label duty-cycle floor couples `--checkpoint-every-steps` to `--n-envs`; any `--cf-records` argv at 48 envs needs the interval named.**
+
+### 2026-09-09 · MEASUREMENT · MIXTURE DIAGNOSTIC on `ai_v12_02_winprob_critic` — DETECTED: the head emits close to one marginal win probability regardless of opponent, and conditions on its OWN team even worse
+
+Owner's question (2026-09-08, verbatim in spirit): *are we falling victim to "the average that doesn't exist" — one V marginalised over opponents that fits none of them?* Dispatched as an offline, CPU-only read over the last four trace cycles; commit `261707cf` carries the measurement dir with four seeded scripts and `run.sh`. The agent's paragraph, verbatim:
+
+**2026-09-09 · MIXTURE DIAGNOSTIC on `ai_v12_02_winprob_critic` — DETECTED.** The win-prob
+critic emits close to one marginal win probability regardless of opponent. Over the last four
+trace cycles (50/60/70/74M; 29,495 states, 951 battles, 56 opponent-cycle cells, every cycle
+carrying a schema-1 manifest so nothing is SELECTION UNKNOWN, all statistics HT-reweighted by
+the capture rates), the between-opponent spread of `V` on turn-1–3 states is **0.334×
+[0.318, 0.451]** the between-opponent spread of the outcome — delta **−0.0731
+[−0.0840, −0.0588]**, battle-clustered, clear of zero — where for any calibrated critic the two
+must be EQUAL. Over all states the ratio is 0.573 [0.509, 0.689]. The bias `V` − true win rate
+runs **−0.092** vs `random` (true WR 1.000, V 0.908) to **+0.106** vs `sentinel_1` (0.635,
+0.741), and regresses on opponent Elo at **+0.0171 [+0.0131, +0.0209] per 100 Elo**
+(14 opponents, cycle fixed effects; **+0.0094, +0.0300** with opponents resampled too). The
+bot-only slope is +0.0098 [+0.0059, +0.0127] with the nine pinned bots held fixed but
+**NOT DETECTED** [−0.0177, +0.0447] once the bots are themselves resampled — eight of nine sit
+within 127 Elo, so that stratum is underpowered by construction. Counter-hypotheses:
+loss-preferring capture ELIMINATED (reweighting SHRINKS the effect 6×; the raw bot slope is
++0.0607); the greedy-sentinel handicap ELIMINATED and CONSERVATIVE (correcting it raises the
+slope to +0.0300 [+0.0261, +0.0338]); late-game dominance ELIMINATED (the bot slope is +0.0169
+early and −0.0095 late — strongest where the board says least). A per-TEAM effect SURVIVES as a
+SEPARATE finding: excess between-group residual variance is +0.0246 [+0.0202, +0.0385] for the
+trainee's team against +0.0027 [+0.0013, +0.0074] for the opponent, ~9×, so the critic fails to
+condition on its own team more badly than on the opponent — but teams are drawn independently
+of the opponent queue, so this adds noise to the slope rather than causing it. The head is not
+merely flat: at turn 1–3 its within-opponent spread is 0.0948 against a between-opponent 0.0229
+(4.1×). This is a quantified account of §4.2b's resolution failure (`sd_true_excess` 0.2550,
+low resolution in EVERY stratum): part of what the head is failing to resolve is simply *who it
+is playing*. Two tooling hazards recorded: `fit_ladder` silently returns an unanchored ladder
+from the wrong cwd, and a cluster-bootstrap draw is the same length as its source so a size test
+cannot detect an unresampled index (both cost a wrong interval before they were caught).
+Measurement: `designs/research_state/measurements/winprob_mixture_diagnostic_2026-09-09/`.
+
+**Orchestrator's reading.** Two defects, one measured for the first time and one found in passing, and the second is the larger: the head under-uses information it CAN see (its own team is in the observation from turn 1) as well as information it partly cannot (who it is playing). That moves weight from the hidden-information levers toward the target/capacity levers, and it changes the first conditioning arm: an own-team code beside the opponent code, not the opponent alone. Before either is built, a linear-probe read decides the mechanism — whether the trunk DISCARDS the opponent/team signal the observation carries (⇒ an auxiliary decoding loss is the treatment) or the signal is simply not there early (⇒ a conditioning input is). Dispatched. The Elo-scalar + class-bit FiLM route into `value_pooled` (sketch: measurement dir §12) is the SHIPPABLE form, because the rating is a known knob at ladder play, unlike the true team. Tag: **MEASURED · DETECTED** (14-opponent slope and the spread identity; the bot-only slope alone is NOT DETECTED under bot resampling, and the entry says so).
