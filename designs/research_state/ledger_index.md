@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,212-line file. **The ledger itself is append-only and is never edited by this**;
+16,216-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**484 headings · 444 dated · 2026-08-01 → 2026-09-09 · ledger 16,212 lines.**
+**485 headings · 445 dated · 2026-08-01 → 2026-09-09 · ledger 16,216 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -504,3 +504,4 @@ rename.
   - `L16161` · `2026-09-09` · VERIFIED · the privileged true-team channel's EVAL path, by a live `--debug-eval` cycle — PASS on all five items; four hazards for the `truevalue` arm's read
   - `L16167` · `2026-09-09` · RETRACTION (partial) · the `cflabels` own-team R² detection is a DECODER-POWER ARTEFACT of the quota asymmetry — the DETECTED of the same day is WITHDRAWN; the lever is neither confirmed nor refuted
   - `L16171` · `2026-09-09` · RETRACTION (partial) · the cflabels own-team R² detection is a DECODER-POWER ARTEFACT of the quota asymmetry, not a lever effect — matched-frame Δ −0.001 [−0.244, +0.346] NOT DETECTED
+  - `L16213` · `2026-09-09` · CORRECTION + STANDING · the quota defect touched exactly ONE of the three completed reads; the floor is its next victim in the dangerous direction; four arms complete, zero detected conditioning rows
