@@ -716,6 +716,15 @@ vs zero, floor pending). The label is a state-conditional CONTINUATION label, so
 the class only at 10M and at this power. Instrument consequence: the decoder-based rows must be read on
 quota-matched frames — fix in flight before the `strata` and `truevalue` reads.
 
+**THE REPLICATE FLOOR (2026-09-09, `ctrl10M_b` vs `ctrl10M`, pinned 10M, quota-matched):** [MEASURED,
+`measurements/critic_ladder_reads/ctrl10M_b_vs_ctrl10M_2026-09-09_FLOOR/`, `replicate_floor_10M.json`] two
+identical configurations differ by 0.070 [+0.036, +0.101] on the registered identity bias (the SIGN of the
+10M head's bias vs its own continuation is a draw), 0.010 on bot resolution, 0.028 on the turn-1–3 spread
+ratio, 0.39 on the all-states spread ratio, and **45 Elo** at matched count; the floor narrows with step
+(bots 0.12 apart at 2M, 0.02 at 10M). Relabelled: every DETECTED-vs-zero on `vf15` and `cflabels` is WITHIN
+FLOOR. **Standing: five runs, three levers, ZERO detected registered rows.** The floor is one draw — the
+meters' CIs remain the inference; it can only demote.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
