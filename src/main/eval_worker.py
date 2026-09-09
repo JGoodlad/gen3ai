@@ -36,7 +36,6 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import sys
 import json
-import math
 import asyncio
 import functools
 import traceback
@@ -52,7 +51,7 @@ from agents.model.snapshot import (current_model_version, load_model_snapshot,
 from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import (
     BATTLE_FORMAT, build_eval_opponents, build_eval_players, episode_length_sum,
-    _FORENSIC_WIN_QUOTA, _FORENSIC_LOSS_QUOTA, _FORENSIC_DRAW_QUOTA,
+    ForensicQuota,
 )
 from agents.training.eval_sharding import ShardedEvalPool, ShardResult, BOT, SENTINEL, FIXED
 from agents.training.reward_manager import Gen3RewardManager, RewardConfig
@@ -154,7 +153,8 @@ async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl
 def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
                mappings, server_config, concurrency, device, model_dir, step, tag, wid,
                use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory,
-               bridge_impl="node", compile_extractor=False) -> ShardResult:
+               bridge_impl="node", compile_extractor=False,
+               forensic_quota: "ForensicQuota | None" = None) -> ShardResult:
     """Play one shard unit and return its RAW (additive) result.
 
     A fresh trainee + opponent are built per unit so the measurement (win count, reward sum, δ
@@ -209,11 +209,10 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
     forensic_dir = (os.path.join(model_dir, "eval_traces", f"step_{step}", item.key)
                     if model_dir else None)
     n_shards = pool.shard_count(item.key)
+    per_unit = ForensicQuota.coerce(forensic_quota).per_shard(n_shards)
     trainee.begin_forensic_cycle(
         forensic_dir, step, trace_tag=f"s{unit.shard_index}_",
-        win_quota=max(1, math.ceil(_FORENSIC_WIN_QUOTA / n_shards)),
-        loss_quota=max(1, math.ceil(_FORENSIC_LOSS_QUOTA / n_shards)),
-        draw_quota=max(1, math.ceil(_FORENSIC_DRAW_QUOTA / n_shards)))
+        win_quota=per_unit.win, loss_quota=per_unit.loss, draw_quota=per_unit.draw)
 
     start = datetime.now()
     asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl))
@@ -298,6 +297,9 @@ def _run(cfg: dict) -> None:
 
     # The shard plan (items + shard_games) is the parent's single source of truth — read it, don't
     # rebuild it. Build a current-code version only if some item needs an arch check on load.
+    # The run's capture quota, as the parent configured it. ABSENT means an older parent, which
+    # is the DEFAULT quota — never zero, which would silently capture nothing.
+    forensic_quota = ForensicQuota.coerce(cfg.get("forensic_quota"))
     pool = ShardedEvalPool.from_plan(result_dir)
     needs_version = any(it.kind in (SENTINEL, FIXED) for it in pool.items)
     # Gate snapshot loads against THIS run's arch (belief-ON / popart / …), threaded from the parent
@@ -320,7 +322,7 @@ def _run(cfg: dict) -> None:
             unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
             mappings, server_config, concurrency, device, model_dir, step, tag, wid,
             use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory, bridge_impl,
-            compile_extractor)
+            compile_extractor, forensic_quota)
         pool.publish(result_dir, res)
 
 

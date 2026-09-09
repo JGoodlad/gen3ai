@@ -37,6 +37,15 @@ import os
 KEEP_STALLS_DEFAULT = 50
 KEEP_CRASHES_DEFAULT = 10
 
+# 🚨 EVAL TRACES ARE KEPT FOREVER BY DEFAULT (`gen3_keep_all_eval_traces_v1`, 2026-09-08).
+# This was 20 step dirs, and the cost of that default was a DELETED COMPARATOR: arm A
+# (`ai_v12_02_winprob_critic`) ran to 75M under it, so its 10M-step traces were groomed off disk
+# and the registered A@10M control of the win-prob critic ladder became UNCOMPUTABLE — the one
+# read the whole ladder is scored against. A cycle is ~55 MB and a 75M run's full set ~3 GB;
+# disk is recoverable and a matched-step comparator is not. `python -m main.prober.groom` is the
+# manual fallback for a finished run, and a run that genuinely wants a cap still passes one.
+KEEP_EVAL_TRACE_STEPS_DEFAULT = 0
+
 # (subdir, filename-prefix, filename-suffix) for each artifact kind. The prefix+suffix
 # guard means a stray file in the dir is left alone — we only ever delete what the
 # producer wrote (StallLogger -> stall_*.html, launcher -> restart_err_*.txt).

@@ -6,7 +6,10 @@ keep their original relative order, which is the order `--help` renders.
 """
 import argparse
 
-from agents.training.eval_callback import _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES
+from agents.training.artifact_retention import KEEP_EVAL_TRACE_STEPS_DEFAULT
+from agents.training.eval_callback import (
+    _EVAL_SUBPROCESS_CONCURRENCY, EVAL_SHARD_GAMES,
+    _FORENSIC_WIN_QUOTA, _FORENSIC_LOSS_QUOTA, _FORENSIC_DRAW_QUOTA)
 from agents.training.snapshot_pool import (
     EVAL_SENTINEL_GREEDY_DEFAULT, HEURISTIC_FLOOR, PROMOTE_THRESHOLD_GREEDY,
     PROMOTE_THRESHOLD_STOCHASTIC, SELF_PLAY_FULL, SELF_PLAY_START)
@@ -79,6 +82,35 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "appends to <run>/snapshot_ladder/games.jsonl (measured once, kept "
                              "forever) — a dense, high-resolution internal ladder the saturated "
                              "bots can't provide. Off the training path.")
+    # ── The forensic CAPTURE QUOTA (`gen3_forensic_quota_flag_v1`, 2026-09-08) ─────────────────
+    # These were module constants with no way to set them, so every arm ever run captured the same
+    # ~190 traces per cycle and every trace-based read was power-limited at that n. The DEFAULTS
+    # ARE THE SHIPPED CONTROL'S and do not move: `ai_v12_11_ladder_ctrl10M` ran to completion at
+    # 5/10/5, so a default change would put later arms on a different capture regime than the
+    # control they are differenced against. An arm that wants more says so, and the manifest then
+    # states the raised rule (`selection_rule`) so a consumer reweights by what actually happened.
+    # ⚠️ Only CAPTURED battles pay the heavy eval path (predict_values + per-decision probs), so a
+    # raise buys traces at eval-cycle wall-clock — off the training path, but a cycle that overruns
+    # the next eval is SKIPPED, not queued.
+    parser.add_argument("--forensic-win-quota", "--forensic_win_quota", dest="forensic_win_quota",
+                        type=int, default=_FORENSIC_WIN_QUOTA,
+                        help=f"Forensic traces kept per opponent per eval cycle from WON battles "
+                             f"(default {_FORENSIC_WIN_QUOTA}). 0 = capture no wins. The per-shard "
+                             f"enforcement is max(1, ceil(q / n_shards)), so the realised count "
+                             f"overshoots this slightly; the manifest states this global number.")
+    parser.add_argument("--forensic-loss-quota", "--forensic_loss_quota", dest="forensic_loss_quota",
+                        type=int, default=_FORENSIC_LOSS_QUOTA,
+                        help=f"Forensic traces kept per opponent per eval cycle from LOST battles "
+                             f"(default {_FORENSIC_LOSS_QUOTA}). The quota PREFERS LOSSES by "
+                             f"design — the traces are a loss-forensics sample, never a random "
+                             f"subsample — and the manifest's capture rates are what a consumer "
+                             f"reweights by (rule 17).")
+    parser.add_argument("--forensic-draw-quota", "--forensic_draw_quota", dest="forensic_draw_quota",
+                        type=int, default=_FORENSIC_DRAW_QUOTA,
+                        help=f"Forensic traces kept per opponent per eval cycle from DRAWS — a tie "
+                             f"or a 250-turn timeout (default {_FORENSIC_DRAW_QUOTA}). Its OWN "
+                             f"bucket, independent of the other two, so a stall storm cannot evict "
+                             f"the decisive losses.")
     parser.add_argument("--keep-eval-snapshots", "--keep_eval_snapshots", dest="keep_eval_snapshots",
                         type=int, default=10,
                         help="Retain the N most-recent eval weight snapshots in eval_traces/step_<N>/snapshot.zip "
@@ -86,9 +118,13 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "(~27MB each; default 10 ≈ 270MB). 0 only writes the identity manifest; the prober "
                              "then falls back to the nearest persisted checkpoint.")
     parser.add_argument("--keep-eval-trace-steps", "--keep_eval_trace_steps", dest="keep_eval_trace_steps",
-                        type=int, default=20,
+                        type=int, default=KEEP_EVAL_TRACE_STEPS_DEFAULT,
                         help="The trainer grooms the forensic traces it writes: after each eval cycle it "
-                             "keeps only the N most-recent eval step dirs under eval_traces/ (0 = keep all). "
+                             "keeps only the N most-recent eval step dirs under eval_traces/. "
+                             f"DEFAULT {KEEP_EVAL_TRACE_STEPS_DEFAULT} = KEEP ALL — the old cap of 20 "
+                             "deleted the win-prob ladder's own A@10M comparator off disk before it was "
+                             "ever read (gen3_keep_all_eval_traces_v1). A cycle is ~55MB, a 75M run's "
+                             "full set ~3GB; pass a positive N to cap it again. "
                              "`python -m main.prober.groom` is the manual fallback for finished runs.")
     parser.add_argument("--keep-stalls", "--keep_stalls", dest="keep_stalls", type=int, default=50,
                         help="Bound the run's stalls/ dir: each eval cycle keep only the N most-recent "

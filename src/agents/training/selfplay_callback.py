@@ -43,6 +43,7 @@ from agents.training.eval_callback import (
     EVAL_FREQ_STEPS,
     EVAL_GAMES,
     EVAL_SHARD_GAMES,
+    ForensicQuota,
     RANDOM_OPPONENT_NAME,
     _b36,
     bot_mean,
@@ -67,6 +68,7 @@ from agents.training.eval_callback import (
 )
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
+    KEEP_EVAL_TRACE_STEPS_DEFAULT,
 )
 from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTINEL, FIXED
 from agents.training.snapshot_pool import (
@@ -158,8 +160,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         eval_shard_games: int = EVAL_SHARD_GAMES,
         eval_games: int | None = None,
         eval_freq: int | None = None,
+        forensic_quota: "ForensicQuota | dict | None" = None,
         keep_eval_snapshots: int = 10,
-        keep_eval_trace_steps: int = 20,
+        keep_eval_trace_steps: int = KEEP_EVAL_TRACE_STEPS_DEFAULT,
         keep_stalls: int = KEEP_STALLS_DEFAULT,
         keep_crashes: int = KEEP_CRASHES_DEFAULT,
         resume_eval_metadata: str | None = None,
@@ -240,6 +243,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self._eval_concurrency = eval_concurrency
         # Games per work-steal shard unit (battle-level work-stealing); see EVAL_SHARD_GAMES.
         self._eval_shard_games = max(1, eval_shard_games)
+        self._forensic_quota = ForensicQuota.coerce(forensic_quota).clamped()
         self._keep_eval_snapshots = max(0, keep_eval_snapshots)
         self._keep_eval_trace_steps = max(0, keep_eval_trace_steps)
         # Bound the per-run stalls/ + crashes/ dirs each cycle (0 = keep all).
@@ -429,7 +433,8 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         write_eval_manifest(self._model_dir, step,
                             opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games,
                             trainee_team_str=self._trainee_team_str,
-                            opponent_pins={e.label: e.team_str for e in self._fixed_opponents})
+                            opponent_pins={e.label: e.team_str for e in self._fixed_opponents},
+                            quota=self._forensic_quota)
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided
         # across restarts and hung a worker on a lingering challenge (wedging eval forever).
@@ -456,6 +461,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             # Run's discount → the recorder's δ uses the real γ; live td-residual tail matches
             # the prober's offline _td at the same γ.
             "gamma": float(self.model.gamma),
+            # The forensic capture quota crosses the process boundary HERE, so the worker
+            # enforces the run's quota rather than the module default.
+            "forensic_quota": self._forensic_quota._asdict(),
             # This run's arch toggles → the worker's current_model_version gates SENTINEL snapshots
             # (loaded via check_compatible) against the RUN's real arch; without it a belief-ON / popart
             # self-play run FATALs on its own sentinels (current_version would default toggle-OFF).
@@ -824,7 +832,8 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
 
         # State the trace SELECTION in this cycle's own manifest (the loss-preferring forensic
         # quota), BEFORE pruning — a pruned step dir takes its manifest with it.
-        record_eval_selection(self._model_dir, step, merged)
+        record_eval_selection(self._model_dir, step, merged,
+                                    quota=self._forensic_quota)
         # Retain the bit-exact snapshot for the prober, groom traces, then drop the scratch.
         persist_eval_snapshot(self._model_dir, step, pending["snapshot"], self._keep_eval_snapshots)
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)

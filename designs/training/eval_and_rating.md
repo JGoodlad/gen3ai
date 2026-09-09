@@ -408,10 +408,17 @@ they're retained: `--keep-eval-snapshots N` copies the snapshot into
 `eval_traces/step_<N>/snapshot.zip` (keeping the N most-recent) and points the manifest at it.
 The prober consumes the manifest to load the exact model, falling back to the nearest
 checkpoint. **The trainer grooms the traces it writes**: after each cycle
-`_prune_eval_traces` keeps only the `--keep-eval-trace-steps` (default 20) most-recent eval
-step dirs, and `_prune_eval_snapshots` keeps the `--keep-eval-snapshots` (default 10)
-most-recent snapshots — so `eval_traces/` stays bounded without any external task
-(`python -m main.prober.groom` is the manual fallback). **The same cycle also bounds the run's
+`_prune_eval_traces` keeps only the `--keep-eval-trace-steps` most-recent eval
+step dirs — **default `0` = KEEP ALL since 2026-09-08** (`gen3_keep_all_eval_traces_v1`) — and
+`_prune_eval_snapshots` keeps the `--keep-eval-snapshots` (default 10)
+most-recent snapshots (`python -m main.prober.groom` is the manual fallback).
+🚨 **THE OLD CAP OF 20 DELETED A REGISTERED COMPARATOR.** Arm A
+(`ai_v12_02_winprob_critic`) ran to 75M under it, so its 10M-step traces were groomed off disk
+and the win-prob critic ladder's own **A@10M control became uncomputable** — the matched-step
+read every ladder arm is scored against. A cycle is ~55 MB and a 75M run's full set ~3 GB: disk
+is recoverable, a matched-step comparator is not. The weight snapshots stay capped at 10 because
+those are ~27 MB *each* and the prober falls back to the nearest checkpoint; only the TRACES,
+which nothing can reconstruct, are now kept forever. **The same cycle also bounds the run's
 two append-only debug dirs** via `_prune_run_artifacts` (`artifact_retention.py`, a dedicated
 module — not bolted onto this busy callback): keep the `--keep-stalls` (default 50) most-recent
 `stalls/stall_*.html` replays and the `--keep-crashes` (default 10) most-recent
@@ -509,7 +516,7 @@ in the trainer). Behaviors:
 | `--eval-device` | `cpu` | Device for eval-worker inference. `cpu` decouples eval from the training GPU. |
 | `--eval-concurrency-per-worker` | `1` | Battles each worker overlaps **within** its claimed opponent (single-thread asyncio latency-hiding — NOT multi-core). `1` = today's sequential play. Threaded to the constructor's `eval_concurrency` → `cfg["concurrency"]` → `run_local_battles(concurrency=)` (bridge) / the player's `max_concurrent_battles` (websocket). See the concurrency note below. |
 | `--keep-eval-snapshots` | `10` | Retain the N most-recent eval weight snapshots in `eval_traces/step_<N>/snapshot.zip` (~27MB each; default ≈270MB) for bit-exact prober replay. `0` writes the identity manifest only; the prober then loads the nearest persisted checkpoint. The trainer auto-prunes to this cap each cycle. |
-| `--keep-eval-trace-steps` | `20` | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle (`0` = keep all), so forensic data stays bounded. `python -m main.prober.groom` is the manual fallback. |
+| `--keep-eval-trace-steps` | `0` (= **KEEP ALL**) | The trainer keeps only the N most-recent eval **step dirs** under `eval_traces/` after each cycle. 🚨 **Was `20`, and that default deleted arm A's 10M traces — the ladder's registered A@10M comparator — before anyone read them** (`gen3_keep_all_eval_traces_v1`, 2026-09-08). ~55 MB/cycle, ~3 GB for a 75M run. Pass a positive N to cap it again; `python -m main.prober.groom` is the manual fallback. |
 | `--keep-stalls` | `50` | Each cycle keep only the N most-recent `stalls/stall_*.html` replays (`0` = keep all). A self-play run writes thousands (~80 KB each); this caps the dir. `artifact_retention.py`; CLI fallback `python -m agents.training.artifact_retention`. |
 | `--keep-crashes` | `10` | Each cycle keep only the N most-recent `crashes/restart_err_*.txt` launcher diagnostics (`0` = keep all). Same module/CLI as `--keep-stalls`. |
 

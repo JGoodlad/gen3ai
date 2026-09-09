@@ -15,7 +15,7 @@ from typing import Any, List, Optional
 
 from agents.model.snapshot import read_checkpoint_metadata
 from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLRCallback
-from agents.training.eval_callback import PerOpponentEvalCallback
+from agents.training.eval_callback import PerOpponentEvalCallback, ForensicQuota
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from agents.training.signal_callback import SignalMetricsCallback
@@ -481,6 +481,9 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             eval_device=args.eval_device,
             eval_concurrency=args.eval_concurrency_per_worker,
             eval_shard_games=args.eval_shard_games,
+            forensic_quota=ForensicQuota(win=args.forensic_win_quota,
+                                         loss=args.forensic_loss_quota,
+                                         draw=args.forensic_draw_quota),
             keep_eval_snapshots=args.keep_eval_snapshots,
             keep_eval_trace_steps=args.keep_eval_trace_steps,
             keep_stalls=args.keep_stalls,
@@ -519,6 +522,9 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             eval_device=args.eval_device,
             eval_concurrency=args.eval_concurrency_per_worker,
             eval_shard_games=args.eval_shard_games,
+            forensic_quota=ForensicQuota(win=args.forensic_win_quota,
+                                         loss=args.forensic_loss_quota,
+                                         draw=args.forensic_draw_quota),
             showdown_port=args.showdown_port,
             use_showdown_bridge=args.use_showdown_bridge,
             compile_extractor=args.compile_opponents,

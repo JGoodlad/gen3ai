@@ -670,9 +670,11 @@ report (`removed_steps`, `dropped_snapshots`, `mb_reclaimed`); pass `--apply` to
 delete.
 
 This CLI is a **manual fallback**. The producer grooms its own data: the **trainer**
-(rl_agent eval callback) prunes after every cycle — `_prune_eval_traces`
-(`--keep-eval-trace-steps`, default 20) and `_prune_eval_snapshots`
-(`--keep-eval-snapshots`, default 10) — so a live run stays bounded on its own. The
+(rl_agent eval callback) prunes after every cycle — `_prune_eval_snapshots`
+(`--keep-eval-snapshots`, default 10) — so a live run's ~27 MB weight snapshots stay bounded on
+its own. 🚨 **`--keep-eval-trace-steps` now defaults to `0` = KEEP ALL** (2026-09-08): the old
+cap of 20 groomed arm A's 10M-step traces off disk and made the win-prob ladder's registered
+A@10M comparator uncomputable, so the TRACES are no longer auto-pruned at all. The
 prober is read-only and **never** grooms. Use this CLI for finished runs, a
 different retention, or a one-off deep clean.
 
