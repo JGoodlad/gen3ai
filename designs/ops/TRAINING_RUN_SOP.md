@@ -194,6 +194,21 @@ with what it measures.
 | G7, QUOTED never inferred · the plateau signal | `python -m main.ops.g7_report` · `python -m main.ops.plateau_signal` |
 | stall vs sawtooth · per-bot calibration | `python -m main.ops.stall_exhibit` · `main.ops.perbot_r` / `perbot_rank` / `negskill_null` |
 | **a CRITIC LADDER arm's whole read** | `python -m main.ops.critic_read <arm> --control <control-arm> --out <dir>` — identity + G1 + the turn-contrast as ARM − CONTROL with the delta's CI and its label, one invocation, one report |
+| **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
+
+🚨 **`critic_read` AND `value_sidecar_read` ANSWER DIFFERENT QUESTIONS AND NEITHER SUPERSEDES THE
+OTHER** (`gen3_value_sidecar_v1`, 2026-09-08). `critic_read` reads EVAL battles — a greedy trainee,
+a fixed roster, a quota that prefers losses — and asks whether the critic is calibrated on the
+**eval** distribution. `value_sidecar_read` reads the run's own **training buffer**, scored against
+`win_target`, the label the BCE actually minimises, and asks whether it is calibrated on the
+distribution it is being **fit to**. Every probe this project owned before the sidecar read eval
+battles, so the second question was simply unmeasurable. A disagreement between the two is a
+finding about GENERALISATION, not a defect in either instrument — report it as one.
+
+⚠️ **The sidecar cannot be reconstructed after the fact.** It reads the rollout buffer, which is
+gone the moment `train()` returns; a run launched without `--value-sidecar` has no training-side
+read available at any later date. It is ON by default under `--critic winprob`, which is the only
+regime where `v` is a probability at all.
 
 A session may still keep a scratch copy while an arm is live; the repo copies are the durable
 ones and are what this document names.

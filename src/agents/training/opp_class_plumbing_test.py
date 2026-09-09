@@ -10,6 +10,7 @@ The property that matters at each hop is the PAIRING, not the presence: row i's 
 still be row i's opponent after the label shift and after `get()`'s shuffle. A key that survives
 but decouples from its label would weight the wrong rows and look completely healthy.
 """
+import types
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -231,3 +232,83 @@ def test_only_the_intent_loss_takes_the_weight():
     assert "bot_label_weight" not in inspect.getsource(belief_bank)
     assert "opp_class" not in inspect.getsource(belief_bank)
     assert inspect.getsource(InstrumentedMaskablePPO.train).count("bot_label_weight") == 1
+
+
+# ── hop 0: WHICH RUNS emit the key at all ──────────────────────────────────────────────────
+#
+# `gen3_value_sidecar_v1` (2026-09-08) widened the gate. `opp_class` used to be declared only
+# under the opponent-intent labels — and a win-prob arm normally runs with NO intent loss, so the
+# value sidecar's by-opponent-class calibration slice was empty on exactly the runs it exists for.
+# It is a LABEL key the network never reads, so widening it cannot change a forward pass.
+
+class _MergeStub:
+    """The minimum `Gen3Env._merge_training_keys` reads on a WIN-PROB-only run.
+
+    Every other emit gate is off, which is the configuration under test: a win-prob arm with no
+    belief, spread, item, HP-type or intent supervision. If `opp_class` only appeared because some
+    OTHER gate was open, this stub would not produce it.
+    """
+
+    _emit_belief_labels = False
+    _emit_spread_labels = False
+    _emit_hp_type_labels = False
+    _emit_item_labels = False
+    _emit_opp_intent_labels = False
+    _emit_opp_true_team = False
+    _emit_defensive_opportunity = False
+    _emit_bait_opportunity = False
+    _emit_distill_mask = False
+    _emit_win_target = True
+
+    def __init__(self, cls_code):
+        self._opponent_class = cls_code
+        self.reward_manager = types.SimpleNamespace(_last_material_margin=0.25)
+
+
+@pytest.mark.parametrize("code", sorted(OPP_CLASS_NAMES))
+def test_a_WIN_PROB_run_emits_opp_class_with_NO_intent_labels(code):
+    """THE property the value sidecar's opponent slice rests on."""
+    from agents.training.gen3_env import Gen3Env
+    stub = _MergeStub(code)
+    agent_obs = {"observation": np.zeros(4, dtype=np.float32)}
+    Gen3Env._merge_training_keys(stub, agent_obs)
+    assert "win_target" in agent_obs and "win_mask" in agent_obs   # the gate really was win-prob's
+    assert "opp_action_kind" not in agent_obs                      # and the intent gate stayed shut
+    assert agent_obs["opp_class"].dtype == np.int64
+    assert agent_obs["opp_class"].shape == (1,)
+    assert int(agent_obs["opp_class"][0]) == code
+
+
+def test_the_win_prob_gate_does_not_OVERWRITE_the_intent_labels_class():
+    """Both gates open: `_opp_intent_labels` supplies the key and the win-prob block must leave it
+    alone. The two compute the same value today, so a clobber would be invisible — which is
+    precisely why it is pinned rather than trusted."""
+    from agents.training.gen3_env import Gen3Env
+
+    class _Both(_MergeStub):
+        _emit_opp_intent_labels = True
+        _intent_delta = None
+        _opp_slot_map_prev: dict = {}
+        _species_num: dict = {}
+        # The REAL emission point, bound onto the stub — a re-implementation here could agree with
+        # itself while disagreeing with the env, which is the whole failure this file guards.
+        _opp_intent_labels = Gen3Env._opp_intent_labels
+
+    stub = _Both(MaskableAgentWrapper.OPP_CLASS_STABLE)
+    agent_obs = {"observation": np.zeros(4, dtype=np.float32)}
+    Gen3Env._merge_training_keys(stub, agent_obs)
+    assert int(agent_obs["opp_class"][0]) == MaskableAgentWrapper.OPP_CLASS_STABLE
+    assert "opp_action_kind" in agent_obs      # the intent labels really did run
+
+
+def test_a_run_with_NEITHER_gate_emits_no_class_at_all():
+    """The key is not unconditional. A shaped-critic run with no intent loss has no consumer for
+    it, and an obs key nothing reads is still an obs key every resume has to tolerate."""
+    from agents.training.gen3_env import Gen3Env
+
+    class _Neither(_MergeStub):
+        _emit_win_target = False
+
+    agent_obs = {"observation": np.zeros(4, dtype=np.float32)}
+    Gen3Env._merge_training_keys(_Neither(0), agent_obs)
+    assert "opp_class" not in agent_obs

@@ -9,6 +9,7 @@ keep their original relative order, which is the order `--help` renders.
 import argparse
 
 from agents.model.critic_mode import CRITIC_MODES
+from agents.training.value_sidecar import DEFAULT_SIDECAR_FRACTION
 from main.train.constants import CLIP_RANGE_DEFAULT
 from main.train.parser.base import BoolFlag, optional_float
 
@@ -37,6 +38,36 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "subsumes -- see the refusals `python -m main.checkargs` prints. "
                              "STRUCTURAL + resume-IMMUTABLE (a different set of heads carries the "
                              "value, so a mid-run flip is a different training problem).")
+    # --- gen3_value_sidecar_v1 (2026-09-08): the TRAINING-SIDE value read. Declared here because
+    #     it is only meaningful relative to --critic above: `v` is a probability under `winprob`
+    #     and a shaped return under `shaped`, and the sidecar's header records which. ---
+    parser.add_argument("--value-sidecar", "--value_sidecar", dest="value_sidecar",
+                        type=str, choices=("auto", "on", "off"), default="auto",
+                        help="Log the critic against its OWN TRAINING TARGET. Once per rollout a "
+                             "seeded fraction of buffer states is appended to "
+                             "<run>/value_sidecar/rows.jsonl (value, derived win logit, back-filled "
+                             "win target, opponent class, turn, episode extent, timeout flag). "
+                             "'auto' (the DEFAULT) = ON under --critic winprob, OFF otherwise: "
+                             "every probe this project owns reads EVAL battles, so on a win-prob "
+                             "arm the training distribution's calibration was simply never "
+                             "measured. Read it with `python -m main.ops.value_sidecar_read <run>`. "
+                             "Pure observability -- no forward pass, no extra battle, no env call, "
+                             "no gradient path; every column is sliced out of arrays the rollout "
+                             "buffer already holds.")
+    parser.add_argument("--value-sidecar-fraction", "--value_sidecar_fraction",
+                        dest="value_sidecar_fraction", type=float,
+                        default=DEFAULT_SIDECAR_FRACTION,
+                        help=f"Share of each rollout's buffer states sampled into the sidecar "
+                             f"(default {DEFAULT_SIDECAR_FRACTION:.6g} = 1/64, ~2,048 rows and "
+                             f"~0.6MB per rollout at --n-steps 2048 --n-envs 64). The sample is "
+                             f"UNIFORM OVER BUFFER CELLS, so a long episode contributes more rows "
+                             f"-- the right weighting for a per-decision calibration question, "
+                             f"which is why the reader clusters its bootstrap by EPISODE.")
+    parser.add_argument("--value-sidecar-seed", "--value_sidecar_seed",
+                        dest="value_sidecar_seed", type=int, default=0,
+                        help="Seed for the sidecar sampler (default 0). Seeded per (seed, rollout "
+                             "index), not as one stream, so a restart re-draws the same states an "
+                             "uninterrupted run would.")
     parser.add_argument("--arm-no-progress-tax", "--arm_no_progress_tax",
                         dest="no_progress_tax_armed", action=BoolFlag, default=False,
                         help="Keep the anti-stall `no_progress_tax` BIAS term ARMED even under "

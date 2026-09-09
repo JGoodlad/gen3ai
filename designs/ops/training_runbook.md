@@ -458,6 +458,35 @@ two `--workers 2` runs being byte-identical is a standing `sim`+`slow` gate. Tim
 bucket and a run above 25% is INCONCLUSIVE. The recipe, the seed table and the sharding rule are in
 `src/agents/training/CLAUDE.md` → *The untaught meter*.
 
+### The TRAINING-SIDE VALUE SIDECAR (`--value-sidecar`, `gen3_value_sidecar_v1`)
+
+**Full topic: [`../training/value_sidecar.md`](../training/value_sidecar.md).**
+
+Every other critic instrument in this runbook reads **eval** battles. The sidecar reads the
+**training buffer** — the value PPO actually used, against `win_target`, the label the BCE actually
+minimises. Once per rollout a seeded 1/64 of buffer states is appended to
+`<run>/value_sidecar/rows.jsonl`; read it with `python -m main.ops.value_sidecar_read <run>
+[--out DIR]`.
+
+| Flag | Default |
+|---|---|
+| `--value-sidecar {auto,on,off}` | `auto` — **ON under `--critic winprob`**, off otherwise |
+| `--value-sidecar-fraction` | `0.015625` (1/64 of buffer states) |
+| `--value-sidecar-seed` | `0` (the sample is a function of *(seed, rollout index)*) |
+
+It costs **19.3 ms per rollout** at production shape (measured 2026-09-08; 0.016% of a hostile 120 s
+rollout, 0.57 MB per rollout) and writes nothing under `models/` beyond the run's own directory.
+None of the three flags reaches `model_config.json`.
+
+🚨 **It cannot be added later.** The sidecar reads the rollout buffer, which is gone the moment
+`train()` returns — a launched arm either has it or has no training-side read for the rest of its
+life. On a win-prob arm you have to opt OUT, which is the intended asymmetry.
+
+🚨 **`main.critic_gate` / `main.ops.critic_read` and `value_sidecar_read` are not substitutes.** The
+first two ask whether the critic is calibrated on the **eval** distribution (greedy trainee, fixed
+roster, loss-preferring quota); the sidecar asks whether it is calibrated on the distribution it is
+being **fit to**. A disagreement is a GENERALISATION finding, not a defect in either.
+
 ### The CRITIC GATE — a whole pre-registered read in one command (`python -m main.critic_gate`)
 
 The win-prob-critic arm's read (`designs/ai_v12/design_winprob_only_critic.md` §5.5) is four

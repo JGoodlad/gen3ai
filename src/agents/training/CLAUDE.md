@@ -23,6 +23,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | team-side PFSP, per-team win-rate tracking | [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md) |
 | `--critic`, PopArt, the value-tail weight, TD-aux, the value-dist head, the 250-turn cap | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
 | the win-prob head, win-prob PBRS, either frozen-φ route | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
+| the training-side value sidecar, its two flags, its cost, `main.ops.value_sidecar_read` | [`designs/training/value_sidecar.md`](../../../designs/training/value_sidecar.md) |
 | any supervised belief loss, or the opponent-class label weight | [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md) |
 | gradient accumulation, the noise scale, the DOSE, `--fork-lr`, `--adaptive-batch` | [`designs/training/step_size_and_batch.md`](../../../designs/training/step_size_and_batch.md) |
 | the MatchupSpec, run-spec resolution provenance, LINEAGE, TB inheritance | [`designs/training/matchup_and_lineage.md`](../../../designs/training/matchup_and_lineage.md) |
@@ -520,6 +521,38 @@ with EPISODE LENGTH — measured 2.1–3.1× off — and it reads `NaN`, never `
 stream); **`train/pbrs_episode_dose` is the meter the ladder is sized in**, the shaping's whole
 per-episode budget priced against one win.
 **Full detail — in [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md).**
+
+## The training-side VALUE SIDECAR (`--value-sidecar`, `gen3_value_sidecar_v1`)
+
+**Detail: [`designs/training/value_sidecar.md`](../../../designs/training/value_sidecar.md).**
+
+Every other instrument that reads the critic reads **eval** battles. This one reads the **training
+buffer** — the value PPO actually used, against `win_target`, the label the BCE actually minimises.
+Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appended to
+`<run>/value_sidecar/rows.jsonl`. Read it with `python -m main.ops.value_sidecar_read <run>`.
+
+- **`--value-sidecar {auto,on,off}` (default `auto` = ON under `--critic winprob`)**, plus
+  `--value-sidecar-fraction` (1/64) and `--value-sidecar-seed` (0). None of the three reaches
+  `model_config.json`, so there is no `MODEL_CONFIG_VERSION` implication.
+- 🚨 **CALLBACK ORDER IS LOAD-BEARING AND SILENT IF WRONG.** It MUST be appended after
+  `WinProbLabelCallback` — that callback's `_on_rollout_end` is what replaces the `win_target` /
+  `win_mask` placeholders with the Monte-Carlo label. Registered earlier it reads ZEROS and writes a
+  file that looks exactly like a critic scoring an unbroken run of losses. `main.train.callbacks`
+  appends them in that order, `value_sidecar_test.py` pins it, and at runtime an all-zero mask over
+  a whole rollout is REPORTED (`labels_unfilled`) rather than written as data.
+- 🚨 **It cannot be reconstructed after the fact.** It reads the rollout buffer, which is gone the
+  moment `train()` returns. A run launched without it has no training-side read, ever.
+- 🚨 **`critic_read` (eval) and `value_sidecar_read` (training) answer DIFFERENT questions.**
+  Neither supersedes the other; a disagreement is a finding about GENERALISATION.
+- ⚠️ **`opp_class` now rides the win-prob gate too**, not just the intent labels — a win-prob arm
+  normally has no intent loss, so the by-opponent-class slice was otherwise empty on exactly the
+  runs the sidecar exists for. It stays a label key the network never reads
+  (`designs/ARCHITECTURE.md` §7). There is no opponent NAME, snapshot STEP or ladder RATING: the
+  first two never reach the observation and the third does not exist at training time.
+- **Cost, measured 2026-09-08 at production shape: 19.3 ms median per rollout, 0.57 MB — 0.016% of
+  a hostile 120 s rollout.** 🚨 A `--debug` smoke A/B CANNOT measure this (the ON arm came out 6.5 s
+  *faster*); use `src/agents/training/value_sidecar_benchmark.py`, which measures the numerator
+  directly and warns on contention rather than rescaling.
 
 ## Step size, batch size and THE DOSE (`--grad-accum-steps` · `--fork-lr` · `--adaptive-batch`)
 

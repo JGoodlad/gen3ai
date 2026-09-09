@@ -8434,3 +8434,86 @@ back-reference on both sides, and `RLPlayer`'s two branches), plus `value_route_
 extended to cover the new route in the seam. Obs-build benchmark: unchanged, and structurally so —
 no file on the `encode` path is touched. `--debug --steps 10000 --value-true-team` trains to
 `Training complete` on the rust bridge and records `config_version 114` / `value_true_team true`.
+
+---
+
+## `gen3_value_sidecar_v1` — the critic against its OWN TRAINING TARGET (no config bump, 2026-09-08)
+
+**The hole.** Every instrument this project owned that reads the critic read **eval** battles —
+`main.critic_gate`, `main.ops.critic_read`, the prober's `calibration`, the scaffolding gauge, the
+whole win-prob ladder. Nothing had ever logged the value estimate against the label the loss
+actually minimises. That matters for three separate reasons: eval is a *greedy* trainee on a
+*fixed* roster under a quota that **prefers losses**, while training is a *stochastic* policy on a
+*moving* self-play curriculum; the eval read is 8 cycles wide where training produces a labelled
+state every step; and calibration against `win_target` is the objective's own residual, where
+calibration against an eval battle is a generalisation question. A critic can pass one and fail the
+other, and only the second was ever measurable.
+
+**The writer** (`agents/training/value_sidecar.py`). Once per rollout at `_on_rollout_end`, a seeded
+1/64 of buffer states is appended to `<run>/value_sidecar/rows.jsonl` — step, rollout, env, episode
+id, turn, `v`, the derived `win_logit`, the back-filled `target` + `target_known`, `opp_class`,
+`win_margin`, `ep_len`, `ep_complete`, `timeout`. `_on_step` is EMPTY: every column is already in
+the buffer at rollout end, so there is no per-step capture to do and the cost is a slice rather than
+a branch on 131,072 steps. One append per rollout, never one per row.
+
+🚨 **The callback ORDER is load-bearing and silent if wrong.** It must run after
+`WinProbLabelCallback`, whose `_on_rollout_end` replaces the `win_target` / `win_mask` placeholders
+with the Monte-Carlo label. Registered earlier it reads placeholder ZEROS and writes a file full of
+`target: 0.0` — indistinguishable from a critic scoring an unbroken run of losses. `train/callbacks`
+appends them in that order, a test pins it, and at runtime an all-zero mask over a whole rollout is
+REPORTED (`labels_unfilled`) rather than written as data: a plausible wrong number is worse than a
+gap.
+
+**Flags:** `--value-sidecar {auto,on,off}` (default `auto` = ON under `--critic winprob`, off
+otherwise — under `shaped`, `v` is a PopArt-normalised return whose scale moves over the run, so a
+Brier decomposition of it is a category error), `--value-sidecar-fraction` (1/64),
+`--value-sidecar-seed` (0, and the sample is a function of *(seed, rollout index)* rather than of a
+running stream, so a restart re-draws the same states). **No `MODEL_CONFIG_VERSION` bump**:
+`model_config.json` is an explicit whitelist of weight-shape/architecture keys, not an argv dump, so
+none of the three lands in it and no checkpoint's compatibility can change.
+
+**One gate widened.** `opp_class` used to be declared only under the opponent-intent labels — and a
+win-prob arm normally runs with no intent loss, so the sidecar's by-opponent-class slice was empty
+on exactly the runs it exists for. `gen3_env` now declares it under the win-prob label gate as well.
+It remains a LABEL key `ObsUnpack` never reads, so no forward pass can change; `train()`'s one-ahead
+intent SHIFT is still gated on `opp_intent_coef > 0` **and** runs after every `_on_rollout_end`, so
+the sidecar reads the env's own per-episode value, unshifted, in both regimes. `ARCHITECTURE.md` §7
+gains the row (and the four intent keys, which were missing from that table entirely).
+
+**What is deliberately NOT collected:** the bot's archetype name and the pool snapshot's step are
+chosen per EPISODE and never reach the observation; an opponent **ladder rating does not exist at
+training time at all** — bots are unrated and a snapshot's Elo is a post-hoc quantity `main.elo`
+derives from the finished run's ladder. A rating column would be null on every row of every run,
+which is a worse artifact than its absence.
+
+**The reader** (`python -m main.ops.value_sidecar_read <run> [--out DIR]`). Mean V vs mean target,
+the Murphy decomposition and skill, pooled and sliced by turn bucket / opponent class / outcome /
+1M step bucket, each with an **episode-clustered** bootstrap CI (sampling is uniform over buffer
+cells, so a long episode contributes proportionally more rows and a row-level interval would
+understate its width by exactly that correlation). Resolution is printed first and named as the
+meter. Slicing by OUTCOME is labelled NOT a calibration check — conditioning on the outcome makes
+the target constant by construction. Refuses: no sidecar, no header, a `shaped` sidecar without
+`--allow-shaped`, nothing labelled; a cell under the floor is MARKED, never averaged.
+
+**Cost, measured 2026-09-08** at production shape (2048×64, 1/64 → 2,048 rows), on a box carrying a
+live arm: **19.3 ms median** per rollout (32.8 ms worst of 20), 0.57 MB — **0.016%** of a hostile
+120 s rollout, inside the 1% budget. 🚨 **A smoke A/B cannot measure this and was not used as if it
+could**: two `--debug --steps 10000` runs differing only in the flag came out at 2:39.10 (ON) and
+2:45.60 (OFF), i.e. the arm WITH the sidecar ran 6.5 s faster — run-to-run spread on a
+simulation-bound smoke, orders of magnitude wider than the quantity. The numerator is measured
+directly by `value_sidecar_benchmark.py`, which warns on contention and does not rescale.
+
+### Gates
+
+`agents/training/value_sidecar_test.py` (21: the clock inversion and its saturation, the row schema
+and header currency, the exact inverse link under winprob and `null` under shaped, a saturated value
+staying valid JSON, the sampling fraction, seed determinism, rollout-index independence, the refusal
+of an unfilled rollout, a missing `opp_class` reading `null` and never the bot code, timeout inferred
+from the clock, an incomplete trailing episode MARKED not dropped, one append per rollout, a disabled
+sidecar writing nothing, the documented default, ON-by-default under winprob, registration AFTER the
+back-fill — plus the reader recovering a KNOWN calibration from a synthetic sidecar, the episode
+clustering, the under-floor marking, and the three refusals). `opp_class_plumbing_test.py` gains 6
+for the widened gate (a win-prob run with no intent labels emitting the class, both gates open not
+clobbering it, and neither gate emitting nothing). Smoke: `--debug --steps 10000 --critic winprob`
+trains to `Training complete` writing 160 rows over 5 rollouts with `opp_class` populated, and
+`--value-sidecar off` writes no directory at all.

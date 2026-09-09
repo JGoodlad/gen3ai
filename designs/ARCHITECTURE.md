@@ -1196,6 +1196,8 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
 | `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ✅ emitted and consumed (`item_belief_coef` 0.05) |
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
+| `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_labels` | ❌ (no intent loss in this config) |
+| `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_labels` **or** `win_prob_mode != none` | ✅ emitted (win-prob gate), consumed by the sidecar, not by any loss |
 | `defensive_opportunity` | f32 `[1]` | state-conditioned entropy boost | `--defensive-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `bait_opportunity` | f32 `[1]` | state-conditioned entropy boost (bait) | `--bait-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `distill_mask` | f32 `[1]` | exploiter-distillation KL gate | `--distill-coef > 0` with teacher teams | ❌ |
@@ -1212,6 +1214,15 @@ emit gates and the loss coefficients are separate conditions, and a config that 
 to 0 keeps paying the buffer cost while training nothing — which reads identically in every metric.
 `--defensive-entropy-boost`, `--bait-entropy-boost` and `--distill-coef` are off, so their three
 keys are not emitted at all.
+
+🚨 **`opp_class` IS EMITTED UNDER TWO GATES, AND THAT IS DELIBERATE** (`gen3_value_sidecar_v1`,
+2026-09-08). It used to ride the intent labels alone. A win-prob arm normally runs with no intent
+loss, so the one instrument that reads the class per state — the training-side value sidecar — had
+an empty by-opponent-class table on precisely the runs it exists for. Widening the gate cannot
+change a forward pass (the key is never read by `ObsUnpack`), and `train()`'s one-ahead intent
+SHIFT is still gated on `opp_intent_coef > 0`, so a win-prob-only run carries the env's own
+per-episode value with no shift applied. This is the one row in the table whose production consumer
+is a DIAGNOSTIC rather than a loss.
 
 Only the **trainee** `Gen3Env` emits any of these. Eval and self-play opponents play through
 `RLPlayer`, which never constructs them.

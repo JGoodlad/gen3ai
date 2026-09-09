@@ -15,6 +15,7 @@ from typing import Any, List, Optional
 
 from agents.model.snapshot import read_checkpoint_metadata
 from agents.training.adaptive_lr_callback import AdaptivePPOCallback, TwoPhaseLRCallback
+from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
 from agents.training.eval_callback import PerOpponentEvalCallback, ForensicQuota
 from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
@@ -38,6 +39,26 @@ class CallbackBundle:
     effective_max_lr: float
     run_eval: bool
 
+
+
+def _value_sidecar_on(args) -> bool:
+    """Is the training-side value sidecar on for this run? (`gen3_value_sidecar_v1`.)
+
+    `auto` — the default — means ON under `--critic winprob` and OFF otherwise, and the asymmetry
+    is deliberate rather than a convenience. Under `winprob` the buffer's `values` ARE `P(win|s)`
+    and `win_target` is the objective's own label, so a row is a calibration measurement of the
+    thing being optimised. Under `shaped` the value is a PopArt-normalised shaped return whose
+    scale moves over the run and whose target is not an outcome at all; the same file would carry a
+    column named `v` in a different currency every rollout, which is the four-currencies confusion
+    the training leaf warns about. `on` overrides for a shaped run that wants the raw pairs anyway
+    — the header records the mode either way, so a consumer is never guessing.
+    """
+    mode = getattr(args, "value_sidecar", "auto")
+    if mode == "off":
+        return False
+    if mode == "on":
+        return True
+    return is_winprob(getattr(args, "critic", None) or CRITIC_DEFAULT)
 
 
 def _arg_or(args, name, default):
@@ -371,6 +392,18 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     if args.win_prob_mode != "none":
         from agents.training.win_prob_callback import WinProbLabelCallback
         callbacks.append(WinProbLabelCallback())
+    # THE TRAINING-SIDE VALUE SIDECAR (gen3_value_sidecar_v1). Appended IMMEDIATELY AFTER
+    # WinProbLabelCallback and the order is LOAD-BEARING: that callback's _on_rollout_end is what
+    # overwrites the win_target/win_mask placeholders with the MC label, and SB3 runs
+    # _on_rollout_end in list order. Registered before it, the sidecar reads placeholder ZEROS and
+    # writes a file full of target=0.0 that looks exactly like a critic facing a run of losses.
+    # `value_sidecar_test.py` pins this ordering; at runtime an all-zero mask is REPORTED rather
+    # than written, because a plausible wrong number is worse than a gap.
+    if _value_sidecar_on(args):
+        from agents.training.value_sidecar import ValueSidecarCallback
+        callbacks.append(ValueSidecarCallback(
+            model_dir, fraction=args.value_sidecar_fraction,
+            seed=args.value_sidecar_seed, critic_mode=(args.critic or CRITIC_DEFAULT)))
     # Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate. Registered ONLY when on
     # → an off run adds no callback and makes no env_method calls (byte-identical). Training-only.
     if args.team_pfsp != "off":

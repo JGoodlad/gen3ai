@@ -258,6 +258,19 @@ class Gen3Env(SinglesEnv):
             # loss time against the model's own believed-slot posterior (there is no valid slot
             # index for an anonymous query — see opp_intent_labels).
             base_obs["opp_switch_species"] = spaces.Box(low=0, high=_imax, shape=(1,), dtype=np.int64)
+        # gen3_opp_class_v1 — WHICH KIND of opponent this episode faces (bot / pool / stable /
+        # exploiter). Declared for TWO consumers, which is why it is not inside either gate:
+        #   * the opponent-intent losses, which it SPLITS (one pooled intent accuracy over random
+        #     bots, heuristics and frozen selves cannot be read — see `_select_episode_opponent`);
+        #   * the training-side value sidecar (`gen3_value_sidecar_v1`), whose by-opponent-class
+        #     calibration slice is otherwise EMPTY on the exact runs it exists for. A win-prob arm
+        #     normally runs with no intent loss at all, so gating this key on the intent labels made
+        #     the sidecar's opponent slice unreachable in practice.
+        # It is a LABEL key: the network never reads it, so widening the gate cannot change a
+        # forward pass. `train()`'s one-ahead intent SHIFT stays gated on `opp_intent_coef > 0` and
+        # runs AFTER every callback's `_on_rollout_end`, so the sidecar reads the env's own
+        # per-episode value, unshifted, either way.
+        if self._emit_opp_intent_labels or self._emit_win_target:
             base_obs["opp_class"] = spaces.Box(low=0, high=3, shape=(1,), dtype=np.int64)
         if self._emit_spread_labels:
             # SPREAD-belief label (gen3_unified_spread_belief_v1): the TRUE derived stats {atk,def,spa,spd,spe}
@@ -774,6 +787,12 @@ class Gen3Env(SinglesEnv):
             # step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
             agent_obs["win_margin"] = np.array(
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
+        # The same key, for a win-prob run with no intent labels (`_opp_intent_labels` above is
+        # what supplies it otherwise, and sets the identical value). Guarded rather than ordered so
+        # neither block has to know whether the other ran.
+        if (self._emit_opp_intent_labels or self._emit_win_target) and "opp_class" not in agent_obs:
+            agent_obs["opp_class"] = np.array(
+                [getattr(self, "_opponent_class", 0)], dtype=np.int64)
         if self._emit_opp_true_team:
             agent_obs[TRUE_TEAM_KEY] = self._true_team_block()
         if self._emit_defensive_opportunity:
