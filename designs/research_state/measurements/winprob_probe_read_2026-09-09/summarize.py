@@ -39,12 +39,16 @@ def read(cells, bucket, target):
     return None
 
 
-def verdict(cells, target):
-    c = read(cells, "t1_3", target)
+def verdict(cells, target, bucket="t1"):
+    """The rule is applied to BOTH early buckets and both are reported. `t1` is the sharpest window
+    (the board has said nothing and every battle contributes exactly one state, so the two columns
+    condition on the same event); `t1_3` is the mixture diagnostic's own window, by which the
+    opponent has moved twice and `V` has had a chance to react to the board."""
+    c = read(cells, bucket, target)
     if c is None:
-        return "INCONCLUSIVE (no turn-1–3 cell)"
+        return f"INCONCLUSIVE (no {bucket} cell)"
     d_raw, d_pool, d_V = decodes(c, "raw"), decodes(c, "pooled"), decodes(c, "V")
-    dlo, dhi = (c.get("delta_ci") or {}).get("pooled-raw", [None, None])
+    _dlo, dhi = (c.get("delta_ci") or {}).get("pooled-raw", [None, None])
     late = any(decodes(x, k) for k in FSETS
                for x in [read(cells, b, target) for b in ("t11_24", "t25p")] if x)
     if d_pool and not d_V:
@@ -95,8 +99,10 @@ def main(a):
                "n_teams": ext["n_teams"], "n_draw_excluded": ext["n_draw_excluded"],
                "qc_exact_max_abs_Vfwd_minus_Vrec": ext.get("qc_exact_max_abs_Vfwd_minus_Vrec"),
                "refusals": ext["refusals"], "cells": cells,
-               "verdict": {t: verdict(cells, t)
-                           for t in ("opp_elo", "opp_class", "own_team_wr", "own_team_id")},
+               "verdict_turn1": {t: verdict(cells, t, "t1")
+                                 for t in ("opp_elo", "opp_class", "own_team_wr", "own_team_id")},
+               "verdict_turn1_3": {t: verdict(cells, t, "t1_3")
+                                   for t in ("opp_elo", "opp_class", "own_team_wr", "own_team_id")},
                "mlp": (mlp or {}).get("cells")}
         small["substrates"][name] = sub
         md.append(f"\n## {tag}\n")
@@ -108,7 +114,8 @@ def main(a):
                        ("own_team_wr", "own team's LOO win rate (R²)"),
                        ("own_team_id", "own team identity, macro one-vs-rest (AUC)")):
             md.append(table(cells, t, ttl))
-            md.append(f"\n**Reading: {sub['verdict'][t]}**\n")
+            md.append(f"\n**Reading at turn 1: {sub['verdict_turn1'][t]}** · "
+                      f"at turns 1–3: {sub['verdict_turn1_3'][t]}\n")
         if mlp:
             md.append("\n### MLP check (turns 1–3)\n")
             md.append("| target | RAW | TRUNK | VALUE | POOLED |")

@@ -18,8 +18,9 @@ import json
 
 import numpy as np
 
-from decode import (BUCKETS, FSETS, _fold_map, _score, build_targets, cap_per_battle,
-                    first_of_group)
+from decode import (BUCKETS, FSETS, MIN_TEAM_BATTLES_WR, _fold_map, _loo_team_wr,
+                    _perm_labels, _score, build_targets, cap_per_battle, first_of_group,
+                    shuffle_team_assignment)
 
 HIDDEN = 64
 EPOCHS = 300
@@ -92,12 +93,18 @@ def main(a):
             sel = np.concatenate([members[i] for i in pick])
             for k in sets:
                 draws[k].append(_score(y[sel], preds[k][sel], w[sel], tgt["task"]))
-        from decode import _perm_labels
         b_team = meta["team"][idx][first_of_group(inv, len(uq))]
+        b_y = meta["y"][idx][first_of_group(inv, len(uq))]
+        b_w = meta["w"][idx][first_of_group(inv, len(uq))].astype(float)
         rngp = np.random.default_rng(a.seed + 77)
         nulls = {k: [] for k in sets}
         for _ in range(a.perm):
-            yp = _perm_labels(y, inv, b_team, tgt["perm"], rngp)
+            if tgt["null_kind"] == "team_assign":
+                lab_b = _loo_team_wr(shuffle_team_assignment(b_team, rngp), b_y, b_w,
+                                     MIN_TEAM_BATTLES_WR)
+                yp = np.nan_to_num(lab_b, nan=float(np.nanmean(lab_b)))[inv]
+            else:
+                yp = _perm_labels(y, inv, "battle", None, rngp)
             for k in sets:
                 nulls[k].append(_score(yp, oof_mlp(np.asarray(feats[k])[idx].astype(np.float64),
                                                    yp, w, g, tgt["task"], a.seed), w, tgt["task"]))

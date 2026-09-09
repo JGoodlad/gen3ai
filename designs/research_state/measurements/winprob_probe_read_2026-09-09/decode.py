@@ -239,10 +239,12 @@ def build_targets(meta):
 
     out = {}
     out["opp_elo"] = {"task": "r2", "y": meta["strength"].astype(float),
-                      "mask": np.ones(len(meta), bool), "group": meta["opponent"],
+                      "mask": np.ones(len(meta), bool), "null_kind": "label",
+                      "group": meta["opponent"],
                       "note": "opponent rating on the bot-anchored scale (battle-level constant)"}
     out["opp_class"] = {"task": "auc", "y": (meta["opp_class"] == "sentinel").astype(float),
-                        "mask": np.ones(len(meta), bool), "group": meta["opponent"],
+                        "mask": np.ones(len(meta), bool), "null_kind": "label",
+                        "group": meta["opponent"],
                         "note": "opponent CLASS: self-play snapshot (1) vs scripted bot (0)"}
 
     # own team's expected win rate, LEAVE-ONE-BATTLE-OUT and IPW-weighted, so the label cannot
@@ -259,14 +261,14 @@ def build_targets(meta):
             loo[i] = (twy[t] - b_w[i] * b_y[i]) / den
     y_wr = loo[binv]
     out["own_team_wr"] = {"task": "r2", "y": np.nan_to_num(y_wr), "mask": ~np.isnan(y_wr),
-                          "group": meta["team"],
+                          "null_kind": "team_assign", "group": meta["team"],
                           "note": (f"the trainee team's LEAVE-ONE-BATTLE-OUT IPW win rate, teams "
                                    f"with >={MIN_TEAM_BATTLES_WR} battles")}
 
     # own team IDENTITY: one-vs-rest over every team with enough battles, scored macro-AUC.
     keep_t = [teams[i] for i in range(len(teams)) if tn[i] >= MIN_TEAM_BATTLES_ID]
     out["own_team_id"] = {"task": "auc", "ovr": keep_t, "mask": np.ones(len(meta), bool),
-                          "group": None,
+                          "null_kind": "team_assign", "group": None,
                           "note": (f"own-team IDENTITY, one-vs-rest macro AUC over the "
                                    f"{len(keep_t)} teams with >={MIN_TEAM_BATTLES_ID} battles")}
     return out, battles, binv, b_team
@@ -279,6 +281,35 @@ def first_of_group(inv, n_groups):
     order = np.arange(len(inv))[::-1]
     first[inv[::-1]] = order
     return first
+
+
+def _loo_team_wr(b_team, b_y, b_w, min_battles):
+    """Per-battle LEAVE-ONE-OUT IPW win rate of that battle's team; NaN under `min_battles`."""
+    teams, tinv = np.unique(b_team, return_inverse=True)
+    tw = np.bincount(tinv, weights=b_w, minlength=len(teams))
+    twy = np.bincount(tinv, weights=b_w * b_y, minlength=len(teams))
+    tn = np.bincount(tinv, minlength=len(teams)).astype(float)
+    den = tw[tinv] - b_w
+    ok = (tn[tinv] >= min_battles) & (den > 0)
+    return np.where(ok, (twy[tinv] - b_w * b_y) / np.where(den > 0, den, 1.0), np.nan)
+
+
+def shuffle_team_assignment(b_team, rng):
+    """Permute WHICH BATTLE HOLDS WHICH TEAM. Every other column of every state is untouched, and
+    the multiset of team sizes is preserved exactly, so the permuted problem is the same shape as
+    the real one. This is the null for both own-team targets: `own_team_id`'s one-vs-rest labels
+    are rebuilt from the shuffled assignment, and `own_team_wr`'s leave-one-out IPW win rates are
+    RECOMPUTED from it.
+
+    🚨 The first revision got both wrong, in opposite directions. For `own_team_id` it permuted the
+    LIST of one-vs-rest label vectors, which is a re-ordering of the same set — so the macro AUC was
+    identical to the observed score and the null was vacuous by construction. For `own_team_wr` it
+    permuted the TEAM->win-rate map while keeping the label constant within the real team; a decoder
+    that identifies the team then recovers any per-team labelling, so the "null" read 0.98 against a
+    real score of 0.83 and convicted a genuine decode of being chance. That second quantity is worth
+    having, but as the IDENTITY-MEDIATION reference below — never as the chance level.
+    """
+    return b_team[rng.permutation(len(b_team))]
 
 
 def _perm_labels(y_state, binv, kind, grp_of_battle, rng):
@@ -399,15 +430,15 @@ def run_cell(feats, meta, idx, tgt, name, seed, n_perm, n_boot):
         ci, dci = {k: q(v) for k, v in cis.items()}, {k: q(v) for k, v in dd.items()}
         nulls = {k: [] for k in FSETS}
         rngp = np.random.default_rng(seed + 991)
-        for _ in range(max(4, n_perm // 4)):
-            perm_t = {t: t2 for t, t2 in zip(tgt["ovr"],
-                                             rngp.permutation(np.array(tgt["ovr"])))}
-            plabs = [(meta["team"][idx] == perm_t[t]).astype(float) for t in tgt["ovr"]]
+        for _ in range(max(4, n_perm // 5)):
+            pteam = shuffle_team_assignment(b_team, rngp)[binv]
+            plabs = [(pteam == t).astype(float) for t in tgt["ovr"]]
             plabs = [ly for ly in plabs if 0 < ly.sum() < len(ly)]
             pp = [fit_all(ly) for ly in plabs]
             for k in FSETS:
                 nulls[k].append(float(np.nanmean(
                     [_score(ly, pp[i][k], w, task) for i, ly in enumerate(plabs)])))
+        nulls2 = None
     else:
         yv = y_full[idx].astype(float)
         preds = fit_all(yv)
@@ -417,11 +448,27 @@ def run_cell(feats, meta, idx, tgt, name, seed, n_perm, n_boot):
                                  ("pooled", "raw"), ("pooled", "vf"), ("V", "pooled")])
         nulls = {k: [] for k in FSETS}
         rngp = np.random.default_rng(seed + 991)
+        b_y = meta["y"][idx][first_of_group(binv, len(b_team))]
+        b_w = meta["w"][idx][first_of_group(binv, len(b_team))].astype(float)
         for _ in range(n_perm):
-            yp = _perm_labels(yv, binv, b_team, tgt["perm"], rngp)
+            if tgt["null_kind"] == "team_assign":
+                pt_team = shuffle_team_assignment(b_team, rngp)
+                lab_b = _loo_team_wr(pt_team, b_y, b_w, MIN_TEAM_BATTLES_WR)
+                yp = np.nan_to_num(lab_b, nan=float(np.nanmean(lab_b)))[binv]
+            else:
+                yp = _perm_labels(yv, binv, "battle", None, rngp)
             pn = fit_all(yp)
             for k in FSETS:
                 nulls[k].append(_score(yp, pn[k], w, task))
+        # the IDENTITY-MEDIATION reference (not a chance level — see shuffle_team_assignment)
+        nulls2 = {k: [] for k in FSETS}
+        rng2 = np.random.default_rng(seed + 1993)
+        for _ in range(max(4, n_perm // 4)):
+            yp = _perm_labels(yv, binv, "group", tgt["group"][idx][first_of_group(
+                binv, len(b_team))] if tgt["group"] is not None else None, rng2)
+            pn = fit_all(yp)
+            for k in FSETS:
+                nulls2[k].append(_score(yp, pn[k], w, task))
 
     null_stat = {k: {"mean": round(float(np.nanmean(v)), 4),
                      "p95": round(float(np.nanpercentile(v, 95)), 4),
@@ -431,6 +478,10 @@ def run_cell(feats, meta, idx, tgt, name, seed, n_perm, n_boot):
             "score": {k: (None if pt[k] is None or np.isnan(pt[k]) else round(float(pt[k]), 4))
                       for k in FSETS},
             "ci": ci, "null": null_stat, "delta_ci": dci,
+            "null_identity_mediated": (None if nulls2 is None else
+                                       {k: {"mean": round(float(np.nanmean(v)), 4),
+                                            "p95": round(float(np.nanpercentile(v, 95)), 4),
+                                            "n": len(v)} for k, v in nulls2.items()}),
             "detected": {k: bool(pt[k] is not None and not np.isnan(pt[k])
                                  and ci[k][0] is not None
                                  and ci[k][0] > null_stat[k]["p95"]) for k in FSETS}}
