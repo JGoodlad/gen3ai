@@ -312,7 +312,7 @@ The three offline reads (`winprob_mixture_diagnostic_2026-09-09`, `winprob_probe
 | arm | status | why |
 |---|---|---|
 | `cflabels` (`--cf-records --cf-winprob-coef 0.5`) | **PROMOTED — the arm that matters**; running | the only queued arm in the supported class (target variance / conditional label); read on the turn-1–3 spread ratio and turn-1 own-team R² beside the registered rows |
-| **arm 7 — opponent-stratified win-prob loss weighting** | **REGISTERED as a BUILD**; after `ctrl10M_b` | raises the between-cell share of the objective directly; no new labels, no rollout cost |
+| **arm 7 — `ai_v12_17_ladder_strata`, `--win-prob-strata-weight 1.0`** | **BUILT `f871e79f`**, pin it; after `ctrl10M_b` (launch gated on the increment's functional test) | balances the win-prob BCE across the four opponent CLASSES (per-name unavailable — the id never reaches the buffer); 8× cap ⇒ 44/56 at the production mix; read on `cond.spread_ratio.t1_3` + `cond.own_team_r2.t1` |
 | `ctrl10M_b` | unchanged — the replicate floor, next | two lever arms lean +0.014 / +0.015 on bot resolution; the floor says whether that is the control's shortfall |
 | `tdaux` | read NOT DETECTED; **DEMOTED** | a bootstrap regresses on the head's own unconditioned V at turn 1; and the clock inversion it targets is absent at 10M |
 | `truevalue` | **DEMOTED to last** | a representation probe on a head that discards its representation |
