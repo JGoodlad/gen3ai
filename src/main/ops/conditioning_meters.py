@@ -44,7 +44,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 
@@ -183,8 +183,15 @@ def extract_cycle(trace_dir: str) -> Tuple[np.ndarray, Dict[str, Any]]:
         else:
             refusals.append(f"{opp}: no trace directory")
         per_opp[opp] = {"class": cls, "battles_played": played, "battles_won": won,
+                        "battles_drawn": int(rec.get("battles_drawn", 0)),
                         "true_win_rate": true_wr, "capture_rate_win": crw,
-                        "capture_rate_loss": crl, "battles_loaded": n_b}
+                        "capture_rate_loss": crl, "battles_loaded": n_b,
+                        # the manifest's OWN realized capture profile, carried through so a
+                        # subsample can recompute the rates against the same denominators the
+                        # trainer used (main.ops.quota_match)
+                        "traces_written": int(rec.get("traces_written", 0)),
+                        "traces_won": int(rec.get("traces_won", 0)),
+                        "traces_drawn": int(rec.get("traces_drawn", 0))}
 
     arr = np.array(rows, dtype=STATE_DTYPE)
     if arr.size == 0:
@@ -533,23 +540,87 @@ def strength_axis(run_dir: str, step: int, per_opp: Dict[str, Any], *,
 
 # --------------------------------------------------------------------------- the block
 
-#: every conditioning meter: key -> (human quantity, stratum, "higher is" direction note).
-METERS: Tuple[Tuple[str, str, str], ...] = (
-    ("cond.spread_ratio.t1_3", "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected",
-     "turn 1-3"),
-    ("cond.spread_ratio_raw.t1_3", "the same ratio UNCORRECTED and unclamped", "turn 1-3"),
-    ("cond.spread_delta.t1_3", "sd(V) - sd(outcome), noise-corrected", "turn 1-3"),
-    ("cond.spread_ratio.all", "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected",
-     "all states"),
-    ("cond.spread_ratio_raw.all", "the same ratio UNCORRECTED and unclamped", "all states"),
-    ("cond.spread_delta.all", "sd(V) - sd(outcome), noise-corrected", "all states"),
-    ("cond.elo_slope", "slope of bias (V - true win rate) on opponent Elo, per 100 Elo",
-     "all states"),
-    ("cond.own_team_r2.t1", "own-team leave-one-battle-out win-rate R^2 of V", "turn 1"),
-    ("cond.own_team_r2.all", "own-team leave-one-battle-out win-rate R^2 of V", "all states"),
-    ("cond.opp_class_auc.t1", "opponent-CLASS (pool vs bot) AUC of V", "turn 1"),
+class Meter(NamedTuple):
+    """One conditioning meter's DEFINITION, including whether its expectation depends on the SIZE
+    of the frame it is computed on.
+
+    🚨 ``frame_sensitive`` is the flag :mod:`main.ops.quota_match` dispatches on, and it is
+    DECLARED here rather than inferred from the key. Two ladder arms traced at different outcome
+    quotas hold frames of different sizes, and a statistic whose expectation moves with frame size
+    is then not comparable between them however the selection is reweighted — Horvitz-Thompson
+    reweighting corrects the loss-ENRICHMENT, never the frame's SIZE. That is the defect the
+    2026-09-09 RETRACTION convicted: ``cond.own_team_r2.t1`` read +0.084 DETECTED between an arm
+    at 40/40/10 and a control at 5/10/5, and −0.001 NOT DETECTED once the arm was cut to the
+    control's realized profile.
+
+    Two mechanisms make a row frame-sensitive, and both are marked:
+
+    * an out-of-fold score of a model **FIT** on the frame (``own_team_r2.*``,
+      ``opp_class_auc.t1`` — every row that goes through :func:`grouped_oof_scalar`): its
+      expectation rises with the number of battles the decoder is fit on;
+    * an **UNCORRECTED** second moment (``spread_ratio_raw.*``): the sampling noise it does not
+      subtract grows as the cells shrink.
+
+    A noise-CORRECTED spread row, the spread delta and the Elo slope are weighted means and
+    regressions on cell means whose expectation does not move with frame size given correct
+    weights, so they are read as traced.
+    """
+
+    key: str
+    quantity: str
+    stratum: str
+    frame_sensitive: bool
+    why: str
+
+
+#: every conditioning meter, with its frame-size sensitivity DECLARED (see :class:`Meter`).
+METER_SPECS: Tuple[Meter, ...] = (
+    Meter("cond.spread_ratio.t1_3",
+          "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected", "turn 1-3",
+          False, "a ratio of NOISE-CORRECTED between-cell variances: each side's sampling "
+                 "variance is subtracted, so a smaller frame inflates the correction rather "
+                 "than the estimate"),
+    Meter("cond.spread_ratio_raw.t1_3", "the same ratio UNCORRECTED and unclamped", "turn 1-3",
+          True, "UNCORRECTED: the noise it does not subtract grows as the cells shrink — the "
+                "cflabels arm's own value moved +0.1177 [+0.0131, +0.3546] between its full and "
+                "its matched frame (2026-09-09 matched-quota read)"),
+    Meter("cond.spread_delta.t1_3", "sd(V) - sd(outcome), noise-corrected", "turn 1-3",
+          False, "a difference of noise-corrected spreads; stable in point and label across "
+                 "every frame size measured"),
+    Meter("cond.spread_ratio.all",
+          "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected", "all states",
+          False, "as `cond.spread_ratio.t1_3`"),
+    Meter("cond.spread_ratio_raw.all", "the same ratio UNCORRECTED and unclamped", "all states",
+          True, "as `cond.spread_ratio_raw.t1_3`"),
+    Meter("cond.spread_delta.all", "sd(V) - sd(outcome), noise-corrected", "all states",
+          False, "as `cond.spread_delta.t1_3`"),
+    Meter("cond.elo_slope", "slope of bias (V - true win rate) on opponent Elo, per 100 Elo",
+          "all states", False,
+          "an OLS over the CELLS, of which there are as many as the pinned roster has "
+          "opponents — a number no trace quota changes (it moved by 0.0001 across every rung of "
+          "the 2026-09-09 frame-size curve)"),
+    Meter("cond.own_team_r2.t1", "own-team leave-one-battle-out win-rate R^2 of V", "turn 1",
+          True, "an out-of-fold score of a ridge FIT on the frame: measured at 62 / 102 / 176 / "
+                "353 / 429 decoder battles on ONE arm it reads -0.025 / +0.004 / +0.037 / "
+                "+0.068 / +0.060"),
+    Meter("cond.own_team_r2.all", "own-team leave-one-battle-out win-rate R^2 of V", "all states",
+          True, "as `cond.own_team_r2.t1`"),
+    Meter("cond.opp_class_auc.t1", "opponent-CLASS (pool vs bot) AUC of V", "turn 1",
+          True, "also an out-of-fold FIT (`grouped_oof_scalar`, task=auc). It was STABLE across "
+                "every rung of the 2026-09-09 curve — a 1-D monotone decoder's AUC is nearly the "
+                "AUC of V itself — but it is a fit on the frame, so it is matched by the same "
+                "rule rather than exempted by an observation"),
 )
-METER_KEYS = tuple(k for k, _q, _s in METERS)
+#: the legacy 3-tuple view, kept so the committed measurement scripts that import ``METERS``
+#: (``measurements/critic_ladder_reads/.../matched_quota/analyze.py``) keep working unchanged — a
+#: committed measurement must stay reproducible from the artifacts beside it.
+METERS: Tuple[Tuple[str, str, str], ...] = tuple(
+    (m.key, m.quantity, m.stratum) for m in METER_SPECS)
+METER_KEYS = tuple(m.key for m in METER_SPECS)
+#: the rows a quota-matched read must recompute on an equalised frame.
+FRAME_SENSITIVE_KEYS: Tuple[str, ...] = tuple(
+    m.key for m in METER_SPECS if m.frame_sensitive)
+METER_BY_KEY: Dict[str, Meter] = {m.key: m for m in METER_SPECS}
 
 
 def _cap_states(arr: np.ndarray, mask: np.ndarray, cap: int, seed: int) -> np.ndarray:
@@ -570,15 +641,22 @@ def _cap_states(arr: np.ndarray, mask: np.ndarray, cap: int, seed: int) -> np.nd
 
 def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int = BOOT_SEED,
                        ladder: str = "refit",
+                       frame: Optional[Tuple[np.ndarray, Dict[str, Any]]] = None,
                        say: Callable[[str], None] = lambda _m: None) -> Dict[str, Any]:
     """Every conditioning meter for ONE run at ONE cycle, with its raw bootstrap draws.
 
     Returns ``{"points": {key: value}, "_draws": {key: ndarray}, "frame": …, "omitted": …}``. A
     meter this cycle cannot support (no sentinel, no strength axis, one opponent class) is listed
     in ``omitted`` with the REASON — never emitted as a NaN row that reads like a measurement.
+
+    ``frame`` injects an ALREADY-EXTRACTED ``(arr, meta)`` instead of reading the trace tree —
+    which is how :mod:`main.ops.quota_match` reads a SUBSAMPLE of this cycle without copying or
+    symlinking a single file. ``run_dir`` still names the real run, so the strength axis (a
+    function of the snapshot ladder and the manifest's true win rates, neither of which a
+    subsample touches) is unaffected.
     """
     trace_dir = os.path.join(run_dir, "eval_traces", f"step_{int(step)}")
-    arr, meta = extract_cycle(trace_dir)
+    arr, meta = extract_cycle(trace_dir) if frame is None else frame
     b = rollup(arr)
     opps, cid = cell_index(b)
     n_cells = len(opps)

@@ -26,6 +26,16 @@ comparable by construction.
    the read cycle, so no model forward is needed.
 4. **THE DELTA** — every quantity recomputed as ARM - CONTROL with a battle-clustered
    **difference of independent bootstraps**, labelled DETECTED / WITHIN FLOOR / NOT DETECTED.
+5. **QUOTA MATCHING** (added 2026-09-09, ON by default) — :mod:`main.ops.quota_match`. The ladder's
+   arms are traced at different outcome quotas, and a conditioning row whose estimator is a FIT on
+   the frame (or an uncorrected second moment) has an expectation that moves with the frame's
+   SIZE — which Horvitz-Thompson reweighting does not touch. Those rows are recomputed on the
+   richer side subsampled to the poorer side's REALIZED per-opponent capture profile, over
+   `--quota-match-seeds` seeded draws, and the label is decided on the MATCHED delta. The
+   as-traced value is printed beside it, marked UNMATCHED and never labelled. `--no-quota-match`
+   opts out and then those rows carry a hard `UNMATCHED — not a reading` marker INSTEAD of a
+   label: the 2026-09-09 RETRACTION withdrew a DETECTED that was entirely this artefact, and the
+   tool does not print that label again on an unequal frame.
 
 **REFUSALS OVER SILENCE.** A missing manifest, a cycle that has not collected, a trace dir whose
 npz carries no ``win_probs`` (the privileged arm's channel must be present AT EVAL — that is what
@@ -54,6 +64,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
+from main.ops import quota_match as QM
 from main.ops.run_ref import interpreter, refuse, resolve_run_dir
 
 # The report's own constants live with the report; re-exported here so `main.ops.critic_read`
@@ -650,9 +661,17 @@ def _stamp(cache_dir: Path, doc: Dict[str, Any]) -> None:
 
 
 def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
-                   floors: Optional[Dict[str, float]], *, seed: int) -> List[Dict[str, Any]]:
+                   floors: Optional[Dict[str, float]], *, seed: int,
+                   qm: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """Every registered quantity as ARM - CONTROL, each with the difference of the two runs'
-    INDEPENDENT battle-clustered bootstraps and the registration's three-way label."""
+    INDEPENDENT battle-clustered bootstraps and the registration's three-way label.
+
+    ``qm`` is :func:`main.ops.quota_match.match`'s document. When it reports the two frames
+    UNEQUAL, every FRAME-SENSITIVE conditioning row (the flag is declared on the meter, not
+    matched on its name) is re-read on the equalised frames and the label is decided there; the
+    as-traced value rides along under ``quota_match.unmatched`` and is never labelled. With
+    ``qm`` absent or its plan not needed, every row is exactly what the tool printed before.
+    """
     import numpy as np
 
     rows: List[Dict[str, Any]] = []
@@ -707,13 +726,91 @@ def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
 
     a_cond = (arm.get("conditioning") or {}).get("points") or {}
     c_cond = (ctl.get("conditioning") or {}).get("points") or {}
-    for key, quantity, stratum in CM.METERS:
+    qm_plan = (qm or {}).get("plan") or {}
+    qm_rungs = (qm or {}).get("rungs") or {}
+    for m in CM.METER_SPECS:
+        key = m.key
         if key not in a_cond or key not in c_cond:
             continue
-        add(key, "conditioning", quantity, stratum, None,
-            a_cond[key], arm["_cond_draws"].get(key, np.empty(0)),
-            c_cond[key], ctl["_cond_draws"].get(key, np.empty(0)),
-            registered=(key in ("cond.spread_ratio.t1_3", "cond.own_team_r2.t1")))
+        registered = key in ("cond.spread_ratio.t1_3", "cond.own_team_r2.t1")
+        a_pt, a_dr = a_cond[key], arm["_cond_draws"].get(key, np.empty(0))
+        c_pt, c_dr = c_cond[key], ctl["_cond_draws"].get(key, np.empty(0))
+        if not (m.frame_sensitive and qm_plan.get("needed")):
+            add(key, "conditioning", m.quantity, m.stratum, None,
+                a_pt, a_dr, c_pt, c_dr, registered=registered)
+            if m.frame_sensitive and qm_plan:
+                # SYMMETRIC: the frames are already equal, so the row is the as-traced one and
+                # is bit-for-bit what the pre-matching tool printed.
+                rows[-1]["quota_match"] = {"status": "SYMMETRIC", "why": qm_plan.get("why")}
+            continue
+
+        # ---- frame-sensitive AND the two frames are unequal.
+        base = R.independent_delta(a_pt, a_dr, c_pt, c_dr, seed=seed)
+        unmatched = {"arm": a_pt, "control": c_pt, **base}
+        if not qm_rungs:
+            # --no-quota-match. 🚨 NO LABEL. The 2026-09-09 RETRACTION withdrew a DETECTED that
+            # was entirely this artefact; a row read on an unequal frame is not a reading, and
+            # printing NOT DETECTED here would be just as much of a claim as printing DETECTED.
+            rows.append({"key": key, "family": "conditioning", "quantity": m.quantity,
+                         "stratum": m.stratum, "weighting": None, "registered": registered,
+                         "arm": a_pt, "control": c_pt, **base,
+                         "label": QM.UNMATCHED_LABEL,
+                         "qualifier": (f"{qm_plan.get('why')}; this row's estimator is "
+                                       f"frame-size dependent ({m.why}). Re-run WITHOUT "
+                                       "--no-quota-match."),
+                         "floor": _floor_for(key, floors), "clears_zero": False,
+                         "clears_floor": False,
+                         "quota_match": {"status": "UNMATCHED", "unmatched": unmatched,
+                                         "why": qm_plan.get("why"), "reason": m.why},
+                         "headline": key in HEADLINES})
+            continue
+
+        variants: Dict[str, Any] = {}
+        for rung_name in ("battle", "decoder"):
+            aa_pt, aa_dr, cc_pt, cc_dr = a_pt, a_dr, c_pt, c_dr
+            sides: Dict[str, Any] = {}
+            ok = True
+            for side, rr in qm_rungs.items():
+                r = (rr.get(rung_name) or {}).get("rows", {}).get(key)
+                if r is None:
+                    ok = False
+                    break
+                if side == "arm":
+                    aa_pt, aa_dr = r["point"], r["_draws"]
+                else:
+                    cc_pt, cc_dr = r["point"], r["_draws"]
+                sides[side] = {"spread": r["spread"], "median_seed": r["median_seed"],
+                               "caps": rr[rung_name]["caps"],
+                               "n_seeds": rr[rung_name]["n_seeds"],
+                               "median_battles": rr[rung_name]["median_battles"],
+                               "median_decoder_battles":
+                                   rr[rung_name]["median_decoder_battles"]}
+            if not ok:
+                continue
+            d = R.independent_delta(aa_pt, aa_dr, cc_pt, cc_dr, seed=seed)
+            variants[rung_name] = {"arm": aa_pt, "control": cc_pt, **d,
+                                   **R.label_delta(d["delta"], d["ci"],
+                                                   _floor_for(key, floors)),
+                                   "sides": sides}
+        primary = variants.get("battle") or variants.get("decoder")
+        if primary is None:
+            add(key, "conditioning", m.quantity, m.stratum, None,
+                a_pt, a_dr, c_pt, c_dr, registered=registered)
+            rows[-1]["label"] = QM.UNMATCHED_LABEL
+            rows[-1]["qualifier"] = ("the matched rungs produced no usable value for this row "
+                                     "(too few battles after the cut) — not a reading")
+            rows[-1]["quota_match"] = {"status": "UNMATCHED", "unmatched": unmatched,
+                                       "why": qm_plan.get("why"), "reason": m.why}
+            continue
+        rows.append({"key": key, "family": "conditioning", "quantity": m.quantity,
+                     "stratum": m.stratum, "weighting": None, "registered": registered,
+                     **{k: v for k, v in primary.items() if k != "sides"},
+                     "quota_match": {"status": "MATCHED", "rung": "battle",
+                                     "variants": variants, "unmatched": unmatched,
+                                     "why": qm_plan.get("why"), "reason": m.why,
+                                     "caps": qm_plan.get("caps"),
+                                     "sides": qm_plan.get("sides")},
+                     "headline": key in HEADLINES})
 
     for wname in WEIGHTINGS:
         k = f"turn_contrast.{wname}"
@@ -832,6 +929,22 @@ def build_parser() -> argparse.ArgumentParser:
                          "the spread identity needs no strength axis.")
     ap.add_argument("--no-conditioning", action="store_true",
                     help="skip the CONDITIONING section entirely")
+    ap.add_argument("--no-quota-match", action="store_true",
+                    help="do NOT equalise the two trace frames before reading the FRAME-SENSITIVE "
+                         "conditioning rows (the fitted decoders and the uncorrected spread "
+                         "ratios). Matching is ON by default because a decoder's out-of-fold "
+                         "score rises with the frame it was fit on and the ladder's arms are "
+                         "traced at different quotas — that is what produced, and then withdrew, "
+                         "the 2026-09-09 own-team detection. With this flag those rows are "
+                         "printed with a hard `UNMATCHED — not a reading` marker INSTEAD of a "
+                         "label; no DETECTED is ever printed on an unequal frame.")
+    ap.add_argument("--quota-match-seeds", type=int, default=QM.DEFAULT_SEEDS, metavar="N",
+                    help=f"subsample seeds per matched rung (default {QM.DEFAULT_SEEDS}; the "
+                         "standing consequence asks for >= 20). ODD by default so the reported "
+                         "median is an exact order statistic and the interval printed beside it "
+                         "is that same draw's own battle-clustered bootstrap.")
+    ap.add_argument("--quota-match-boot", type=int, default=None, metavar="N",
+                    help="bootstrap draws for the matched rows (default: --cond-boot)")
     ap.add_argument("--allow-conditioning-refusal", action="store_true",
                     help="proceed when the conditioning block REFUSES (a cycle with no manifest "
                          "selection block, or no usable states). The report says in print that "
@@ -897,7 +1010,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
            else read_run(ctl_dir, cache_root / ctl_dir.name, args, say=say, step=ctl_step,
                          alt_dirs=[out]))
 
-    deltas = compute_deltas(arm, ctl, floor["floors"], seed=args.seed)
+    qm = QM.build_quota_match(arm, ctl, args, say=say)
+    deltas = compute_deltas(arm, ctl, floor["floors"], seed=args.seed, qm=qm)
     doc = {
         "tool": TOOL, "tool_version": TOOL_VERSION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -908,9 +1022,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                    ("states", "anchors", "rollouts", "impl", "anchor_tolerance", "boot",
                     "gate_boot", "bins", "seed", "on_live", "max_draw_share",
                     "allow_missing_winprob", "parent", "famine_comparator", "baseline_arm",
-                    "step", "control_step", "cond_boot", "cond_ladder", "no_conditioning")},
+                    "step", "control_step", "cond_boot", "cond_ladder", "no_conditioning",
+                    "no_quota_match", "quota_match_seeds", "quota_match_boot")},
         "registration": ("ledger 2026-09-08 · REGISTRATION · THE CRITIC LADDER; design note "
                          "designs/research_state/winprob_critic_ladder_2026-09-08.md"),
+        "quota_match": QM.serialisable(qm),
         "arm": {k: v for k, v in arm.items() if not k.startswith("_")},
         "control": {k: v for k, v in ctl.items() if not k.startswith("_")},
         "deltas": deltas,

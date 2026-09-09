@@ -19,9 +19,10 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
+from main.ops import quota_match as QM
 
 TOOL = "critic_read"
-TOOL_VERSION = 2
+TOOL_VERSION = 3
 
 #: the summary table's headline quantities. The first four are the 2026-09-08 registration's;
 #: the last two are the CONDITIONING primaries added 2026-09-09, after three offline reads
@@ -77,7 +78,13 @@ def ledger_line(doc: Dict[str, Any]) -> str:
         r = by.get(key)
         if r is None:
             return f"{name} Δ — (not computed)"
-        return f"{name} Δ {_f(r['delta'])} {_ci(r['ci'])} {r['label']}"
+        # A frame-sensitive row's quote says WHICH frame it was read on. A matched number and an
+        # as-traced one are different measurements, and the 2026-09-09 retraction is exactly what
+        # happens when a ledger line does not say which one it quotes.
+        qm = r.get("quota_match") or {}
+        tag = {"MATCHED": " [QUOTA-MATCHED]", "UNMATCHED": " [FRAMES UNMATCHED]"}.get(
+            qm.get("status"), "")
+        return f"{name} Δ {_f(r['delta'])} {_ci(r['ci'])} {r['label']}{tag}"
     a_step, c_step = doc["arm"]["step"], doc["control"]["step"]
     # A CROSS-STEP pair says so in the quote. The registered read is arm@10M vs control@10M; a
     # read against a different step is a different comparison and must never be quoted as if it
@@ -90,6 +97,150 @@ def ledger_line(doc: Dict[str, Any]) -> str:
                         part("identity.turn_contrast", "turn-contrast"),
                         part("cond.spread_ratio.t1_3", "spread ratio t1-3"),
                         part("cond.own_team_r2.t1", "own-team R2 t1")]))
+
+
+# --------------------------------------------------------------------------- the frame profiles
+
+def _profiles_block(doc: Dict[str, Any]) -> str:
+    """The two cycles' REALIZED per-opponent capture profiles, and what the read did about them.
+
+    Printed in the HEADER, before a single number, because it decides whether the frame-sensitive
+    conditioning rows below are a reading at all. A nominal quota is not a realized one: under
+    battle-level work-stealing each shard unit carries ``max(1, ceil(quota / n_shards))``, so a
+    nominal 5/10/5 lands on disk as 8 traced wins and up to 12 traced losses per opponent. These
+    are the counts ON DISK.
+    """
+    qm = doc.get("quota_match")
+    L: List[str] = []
+    A = L.append
+    A("### REALIZED capture profile — what is actually on disk, per opponent")
+    A("")
+    if not qm:
+        A("> The conditioning block was not computed for both runs, so no frame profile is read "
+          "and no row is quota-matched.")
+        return "\n".join(L)
+    A("| role | run | cap W/L/D per opponent | traced battles | W / L / D | opponents |")
+    A("|---|---|---|---|---|---|")
+    for role in ("arm", "control"):
+        pr = (qm.get("profiles") or {}).get(role) or {}
+        t = pr.get("totals") or {}
+        A(f"| {role} | `{pr.get('run')}` | **{'/'.join(str(c) for c in pr.get('cap') or [])}** | "
+          f"{pr.get('n_traced')} | {t.get('wins')} / {t.get('losses')} / {t.get('draws')} | "
+          f"{len(pr.get('opponents') or {})} |")
+    A("")
+    plan = qm.get("plan") or {}
+    A(f"**Frames:** {plan.get('why')}")
+    A("")
+    for note in plan.get("notes") or []:
+        A(f"- {note}")
+    if plan.get("notes"):
+        A("")
+    if not plan.get("needed"):
+        A("> ✅ **SYMMETRIC.** Both sides carry the same realized cap, so every conditioning row "
+          "is read AS TRACED and this report is what the tool printed before quota matching "
+          "existed. Residual per-opponent differences below the cap are the two runs' own outcome "
+          "mixes, not a selection asymmetry — matching them would shrink both frames for no "
+          "power gain.")
+    elif not qm.get("enabled"):
+        A("> 🚨 **UNEQUAL FRAMES, AND `--no-quota-match` WAS PASSED.** Every FRAME-SENSITIVE "
+          "conditioning row below is printed with a hard `UNMATCHED — not a reading` marker and "
+          "**NO label**. A fitted decoder's out-of-fold score rises with the frame it was fit on, "
+          "so on unequal frames neither DETECTED nor NOT DETECTED is a claim this report may "
+          "make. Re-run without the flag.")
+    else:
+        caps = "/".join(str(c) for c in plan.get("caps") or [])
+        A(f"> ⚖️ **UNEQUAL FRAMES — MATCHED.** The {' and '.join(plan.get('sides') or [])} side "
+          f"is subsampled to caps **{caps}** per opponent over "
+          f"{qm.get('seeds')} seeded draws, with the capture rates RECOMPUTED for each subsample "
+          "so rule 17 still holds on the view actually read. The FRAME-SENSITIVE rows' labels are "
+          "decided on the MATCHED delta; the as-traced value is printed beside them marked "
+          "UNMATCHED and is never labelled. Nothing is copied or written — the subsamples are "
+          "in-memory battle lists.")
+    A("")
+    return "\n".join(L)
+
+
+def _frame_note(row: Dict[str, Any]) -> str:
+    """The one-cell frame marker a conditioning row carries in every table it appears in."""
+    qm = row.get("quota_match")
+    if not qm:
+        return "as traced"
+    st = qm.get("status")
+    if st == "MATCHED":
+        v = (qm.get("variants") or {}).get("battle") or {}
+        sides = (v.get("sides") or {})
+        caps = next((s["caps"] for s in sides.values()), qm.get("caps")) or []
+        return f"MATCHED {'/'.join(str(c) for c in caps)}"
+    if st == "UNMATCHED":
+        return "🚨 UNMATCHED"
+    return "as traced (frames equal)"
+
+
+def _matched_detail(doc: Dict[str, Any]) -> str:
+    """The FRAME-SENSITIVE rows in full: both matched rungs, and the as-traced value beside them.
+
+    Three lines per row, and only the two MATCHED ones carry a label. The UNMATCHED line is the
+    number the tool would have printed before 2026-09-09 and is kept visible precisely so the size
+    of the artefact is on the page rather than in a ledger entry.
+    """
+    rows = [r for r in doc["deltas"]
+            if r["family"] == "conditioning" and (r.get("quota_match") or {}).get("status")
+            in ("MATCHED", "UNMATCHED")]
+    if not rows:
+        return ""
+    L: List[str] = []
+    A = L.append
+    A("### The FRAME-SENSITIVE rows, on the equalised frames")
+    A("")
+    A("A row is matched because its ESTIMATOR moves with the size of the frame it is computed on, "
+      "not because of anything in its name — the flag is declared on the meter "
+      "(`main.ops.conditioning_meters.Meter.frame_sensitive`). Two mechanisms qualify: an "
+      "out-of-fold score of a decoder **FIT** on the frame, and an **UNCORRECTED** second moment "
+      "whose unsubtracted noise grows as the cells shrink. Everything else in the section above "
+      "is a weighted mean, a difference of noise-corrected spreads, or an OLS over the pinned "
+      "opponent roster — statistics whose expectation does not move with frame size given correct "
+      "weights — and is read AS TRACED.")
+    A("")
+    A("| row | frame | arm | control | **Δ** | 95% CI | verdict |")
+    A("|---|---|---|---|---|---|---|")
+    for r in rows:
+        qm = r["quota_match"]
+        key = r["key"]
+        if qm["status"] == "UNMATCHED":
+            u = qm["unmatched"]
+            A(f"| `{key}` | 🚨 UNMATCHED (as traced) | {_f(u['arm'])} | {_f(u['control'])} | "
+              f"**{_f(u['delta'])}** | {_ci(u['ci'])} | **{QM.UNMATCHED_LABEL}** |")
+            continue
+        for rung, title in (("battle", "MATCHED · battle"), ("decoder", "MATCHED · decoder")):
+            v = (qm.get("variants") or {}).get(rung)
+            if v is None:
+                continue
+            sides = v.get("sides") or {}
+            caps = next((s["caps"] for s in sides.values()), [])
+            spread = next((s["spread"] for s in sides.values()), [float("nan")] * 2)
+            nb = next((s["median_battles"] for s in sides.values()), float("nan"))
+            db = next((s["median_decoder_battles"] for s in sides.values()), float("nan"))
+            n_seeds = next((s["n_seeds"] for s in sides.values()), 0)
+            A(f"| `{key}` | {title} {'/'.join(str(c) for c in caps)} "
+              f"({nb:.0f} battles, {db:.0f} decoder battles, {n_seeds} seeds) | "
+              f"{_f(v['arm'])} {_ci(spread)} | {_f(v['control'])} | **{_f(v['delta'])}** | "
+              f"{_ci(v['ci'])} | {_label(v)} |")
+        u = qm["unmatched"]
+        A(f"| `{key}` | UNMATCHED (as traced) | {_f(u['arm'])} | {_f(u['control'])} | "
+          f"**{_f(u['delta'])}** | {_ci(u['ci'])} | *no label — not a reading* |")
+    A("")
+    A("The subsampled side's value is the **across-seed median** and the bracket beside it is the "
+      "**2.5/97.5 across-seed spread**, i.e. how much the answer depends on WHICH battles the cut "
+      "kept. The Δ's interval is the **median seed's own battle-clustered bootstrap** differenced "
+      "against the other side's — the seed count is odd, so the median is an exact order "
+      "statistic and the point and the interval describe the same draw. The label is decided on "
+      "the BATTLE-matched rung; the DECODER-matched rung is printed beside it because "
+      f"`MIN_TEAM_BATTLES = {CM.MIN_TEAM_BATTLES}` makes the own-team decoder's frame a nonlinear "
+      "function of team diversity, so equal battle counts can leave the richer side's decoder "
+      "with FEWER battles than the poorer side's (62 against 104 in the 2026-09-09 read) — "
+      "battle-matching is then unfair to it.")
+    A("")
+    return "\n".join(L)
 
 
 def render_md(doc: Dict[str, Any]) -> str:
@@ -123,6 +274,7 @@ def render_md(doc: Dict[str, Any]) -> str:
         A(f"- **{role}** `{d['run']}` → `step_{d['step']}`: "
           f"{d['cycle'].get('why_read', d['cycle'].get('why', '—'))}")
     A("")
+    A(_profiles_block(doc))
     if doc["floor"]["path"] is None:
         A(f"> 🚨 **{R.NO_FLOOR_NOTE}.** The ladder's replicate floor is the control-vs-control "
           "difference and does not exist until a second control replicate does. Every DETECTED "
@@ -134,16 +286,17 @@ def render_md(doc: Dict[str, Any]) -> str:
 
     A("## SUMMARY — the headline deltas")
     A("")
-    A("| quantity | arm | control | **Δ (arm − control)** | 95% CI | verdict |")
-    A("|---|---|---|---|---|---|")
+    A("| quantity | frame | arm | control | **Δ (arm − control)** | 95% CI | verdict |")
+    A("|---|---|---|---|---|---|---|")
     by = {r["key"]: r for r in doc["deltas"]}
     for key in HEADLINES:
         r = by.get(key)
         if r is None:
-            A(f"| `{key}` | — | — | — | — | **NOT COMPUTED** |")
+            A(f"| `{key}` | — | — | — | — | — | **NOT COMPUTED** |")
             continue
-        A(f"| {r['quantity']} · `{r['stratum']}` | {_f(r['arm'])} | {_f(r['control'])} | "
-          f"**{_f(r['delta'])}** | {_ci(r['ci'])} | {_label(r)} |")
+        A(f"| {r['quantity']} · `{r['stratum']}` | "
+          f"{_frame_note(r) if r['family'] == 'conditioning' else '—'} | {_f(r['arm'])} | "
+          f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {_label(r)} |")
     A("")
     A("Direction, stated so a sign cannot be misread: **resolution** and **skill** are HIGHER "
       "is better; **identity bias** is `V − p̂`, so POSITIVE means the head is OPTIMISTIC "
@@ -230,16 +383,20 @@ def render_md(doc: Dict[str, Any]) -> str:
           f"draw/timeout battles excluded (no binary outcome) · strength axis: "
           f"{(c.get('strength') or {}).get('note', '—')}")
         A("")
-    A("| quantity | stratum | arm | control | **Δ** | 95% CI | n draws | verdict |")
-    A("|---|---|---|---|---|---|---|---|")
+    A("| quantity | stratum | frame | arm | control | **Δ** | 95% CI | n draws | verdict |")
+    A("|---|---|---|---|---|---|---|---|---|")
     cond_rows = [r for r in doc["deltas"] if r["family"] == "conditioning"]
     if not cond_rows:
-        A("| — | — | — | — | — | — | — | **NOT COMPUTED** |")
+        A("| — | — | — | — | — | — | — | — | **NOT COMPUTED** |")
     for r in cond_rows:
         star = " ⭐" if r["registered"] else ""
-        A(f"| {r['quantity']}{star} | `{r['stratum']}` | {_f(r['arm'])} | {_f(r['control'])} | "
-          f"**{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | {_label(r)} |")
+        A(f"| {r['quantity']}{star} | `{r['stratum']}` | {_frame_note(r)} | {_f(r['arm'])} | "
+          f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | "
+          f"{_label(r)} |")
     A("")
+    detail = _matched_detail(doc)
+    if detail:
+        A(detail)
     A("Each run's OWN point and interval, so a delta is never the only number on the page:")
     A("")
     A("| quantity | arm | 95% CI | control | 95% CI |")
@@ -264,6 +421,14 @@ def render_md(doc: Dict[str, Any]) -> str:
                 A(f"- `{key}` · {role}: {why}")
         A("")
     A(f"⚠️ **Recorded `V`, one cycle.** {CM.recorded_v_note()}")
+    A("")
+    A("⚠️ **The rows above that are NOT frame-sensitive are read AS TRACED, and that is not an "
+      "oversight.** The noise-corrected spread ratio, the spread delta, the Elo slope, every gate "
+      "row and every identity row are weighted MEANS, differences of noise-corrected spreads, or "
+      "an OLS over the pinned opponent roster. A weighted mean's expectation does not depend on "
+      "how many states entered it given correct weights — which rule 17's capture-rate IPW "
+      "supplies — so frame SIZE moves their variance and not their expectation, and equalising "
+      "the frames would cost power without removing a bias.")
     A("")
     A("⚠️ **No permutation null is run here.** The probe read's nulls on these very targets sit "
       "at R² ≈ 0.00 and AUC ≈ 0.50, so a near-zero own-team R² is a head that cannot be told "
