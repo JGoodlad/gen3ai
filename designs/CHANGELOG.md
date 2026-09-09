@@ -8517,3 +8517,84 @@ for the widened gate (a win-prob run with no intent labels emitting the class, b
 clobbering it, and neither gate emitting nothing). Smoke: `--debug --steps 10000 --critic winprob`
 trains to `Training complete` writing 160 rows over 5 rollouts with `opp_class` populated, and
 `--value-sidecar off` writes no directory at all.
+
+---
+
+## `gen3_conditioning_meters_v1` — the CRITIC LADDER's read gains a CONDITIONING section (no config bump, 2026-09-09)
+
+**The ladder was being read on meters that do not measure its defect.** Three offline reads over
+2026-09-08/09 — the mixture diagnostic, the probe read and the head refit — established that the
+win-prob critic's failure is a **CONDITIONING failure in the head**: it emits one near-marginal win
+probability regardless of the opponent AND regardless of its own team. `main.ops.critic_read`
+reported identity, G1–G4 and the clock-tracking contrast, none of which is that quantity. The two
+meters that are it lived as scripts in two measurement directories and were run by hand.
+
+**`main.ops.conditioning_meters`** promotes them, so the ladder and both measurement dirs share one
+implementation rather than two copies. Ten rows, computed on ONE eval cycle:
+
+| row | what it is | a calibrated head reads |
+|---|---|---|
+| `cond.spread_ratio.t1_3` ⭐ | between-opponent spread of `V` ÷ that of the outcome, turn 1–3, each side corrected for its own sampling noise | **1.0** — it is an identity, `E[V\|opp] = E[y\|opp]` |
+| `cond.spread_ratio_raw.t1_3` | the same, UNCORRECTED and UNCLAMPED — the monotone companion | — |
+| `cond.spread_delta.t1_3` | `sd(V) − sd(outcome)`, corrected | 0.0 |
+| `cond.spread_{ratio,ratio_raw,delta}.all` | the same three over ALL states | 1.0 / — / 0.0 |
+| `cond.elo_slope` | slope of bias (`V` − true win rate) on opponent Elo, per 100 Elo | 0.0 |
+| `cond.own_team_r2.t1` ⭐ | own-team **leave-one-battle-out** win-rate R² decoded from `V` alone, turn 1 | high; the head's is ~0.01 against ~0.67 available in `value_pooled` |
+| `cond.own_team_r2.all` | the same over all turns | — |
+| `cond.opp_class_auc.t1` | opponent-CLASS (pool vs bot) AUC of `V`, turn 1 | high; chance is 0.5 |
+
+The two ⭐ rows join the report's HEADLINES and the one-line ledger quote (`TOOL_VERSION` 1 → 2).
+
+**Every row is computed on the RECORDED `win_probs` of the read cycle — no model forward.** Within
+one cycle that column IS the cycle's own model. 🚨 The frozen-forward-vs-recorded distinction
+matters only ACROSS cycles: a recorded `V` pooled over several carries the trainee's own
+improvement between cells and reads as separation the head does not have (CTRL: 1.079 pooled
+against 0.066 frozen). This module never pools cycles, and says so in the report.
+
+**Selection.** Horvitz–Thompson reweighted by each cycle's own `capture_rate_win` /
+`capture_rate_loss` (rule 17); a cycle with no `selection` block is SELECTION UNKNOWN and REFUSES.
+Intervals resample battles **within their opponent cell** — the roster is a fixed pinned set, not a
+sample — and redraw the outcome side from its own Binomial(`battles_played`, true win rate), so
+the 100-game noise in the thing `V` is compared against is priced.
+
+**Two hazards are printed in the report rather than worked around.** A spread ratio can sit below
+its own interval for two independent reasons: the corrected ratio is CLAMPED (a biased,
+non-monotone operator — a 0.000 routinely carries a CI like [0.21, 0.53]), and a resampled
+between-group variance is UPWARD BIASED (so even the unclamped companion can). Both were observed
+in the regenerated tdaux read. The Elo-slope row is OMITTED WITH A REASON — never reported on two
+scales — when the snapshot-ladder refit is not bot-anchored; `fit_ladder` returns an unanchored
+ladder from the wrong cwd with no error, so the axis chdirs to the repo root, asserts
+`anchored_to_bots`, and verifies the positional `sentinel_k` → snapshot map against the manifest's
+own win counts.
+
+### `--step`, and the cycle the report actually read
+
+🚨 **`--on-live skip-newest` (the default) DROPS the newest cycle when any process still names the
+run**, so a finished 10M arm whose launcher had not yet exited is read at 8M. That happened to the
+2026-09-09 tdaux read and nothing in the output said so. Now: `--step N` pins BOTH runs
+(`--control-step N` pins the control alone), and the tool prints WHICH cycle it chose and WHY —
+on stdout before anything expensive runs, and again in the report header. A run with no `step_N`
+REFUSES, naming the steps it has.
+
+### The cache
+
+The conditioning block has its OWN cache file (`cond_readout.json`) and its own key. The identity
+half costs a ~25-minute `cf_audit` run, and folding a report-shape version into its key would throw
+every readout on disk away for a change to no number it covers — so `_fingerprint` now carries
+`READOUT_FINGERPRINT_VERSION`, deliberately decoupled from `TOOL_VERSION`. With both halves cached
+a full pair re-read including the whole conditioning section is **~42 s** (measured on both ladder
+pairs, 2026-09-09).
+
+### Gates
+
+`src/main/ops/conditioning_meters_test.py` (21, pure unit, no `models/`): a synthetic trace tree
+planted twice from one skeleton — once with a `V` that reproduces each opponent's true win rate and
+once with a `V` that is the same number everywhere — recovers a spread ratio of ~1 and ~0
+respectively, with intervals that do not overlap; the clamped ratio reads exactly 0.000 while its
+unclamped companion does not, and sits at or below its own interval; the leave-one-out label
+excludes the battle it labels; a grouped fold map never splits a battle; an unanchored refit is
+REFUSED and the row omitted; a mismatched sentinel map REFUSES rather than guesses; a cycle with no
+`selection` block REFUSES; a battle whose outcome class has no capture rate is DROPPED, never
+weighted 1.0; and every declared meter is either reported or omitted with a reason.
+`critic_read_test.py` gains the `--step` pin, its refusal on a missing step, and the why-was-this-
+cycle-chosen sentence.

@@ -320,6 +320,11 @@ class _Args:
     on_live, max_draw_share, allow_missing_winprob = "skip-newest", 0.25, 0.0
     parent, famine_comparator = "v9_fold_parent", "off"
     allow_gate_refusal = False
+    # The synthetic tree has npz but no `_summary.json`, so it carries no CONDITIONING frame at
+    # all; the default here keeps the cache/delta tests about the halves they are testing, and
+    # the conditioning path has its own tests below and in `conditioning_meters_test.py`.
+    no_conditioning, allow_conditioning_refusal = True, False
+    cond_boot, cond_ladder = 50, "off"
 
 
 def _plant_run(tmp_path, name="arm", *, anchor_rate=1.0, manifest=None, npz_winprob=True):
@@ -449,8 +454,21 @@ def test_the_report_renders_and_the_ledger_line_is_the_registered_form(
     assert line.startswith(f"{run.name} vs {run.name} at ")
     assert "G1 bot" in line and "turn-contrast" in line
     md = CR.render_md(full)
-    assert "SUMMARY — the four headline deltas" in md
+    assert "SUMMARY — the headline deltas" in md
     assert "NO REPLICATE FLOOR" in md
+
+
+def _with_conditioning(doc: dict) -> dict:
+    """Graft a synthetic CONDITIONING block onto a readout, so the delta engine's conditioning
+    family can be exercised without a trace tree."""
+    from main.ops import conditioning_meters as CM
+
+    rng = np.random.default_rng(0)
+    pts = {k: 0.3 for k in CM.METER_KEYS}
+    doc = dict(doc)
+    doc["conditioning"] = {"points": pts, "ci": {}, "omitted": {}, "frame": {}, "refusal": None}
+    doc["_cond_draws"] = {k: 0.3 + rng.normal(0, 0.05, 400) for k in CM.METER_KEYS}
+    return doc
 
 
 def test_every_headline_key_is_produced_by_compute_deltas(tmp_path, monkeypatch) -> None:
@@ -458,9 +476,43 @@ def test_every_headline_key_is_produced_by_compute_deltas(tmp_path, monkeypatch)
     names are strings and nothing else checks that they still line up."""
     run = _plant_run(tmp_path)
     _install_stubs(monkeypatch, [])
-    doc = CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None)
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
     keys = {d["key"] for d in CR.compute_deltas(doc, doc, None, seed=0)}
     assert set(CR.HEADLINES) <= keys, set(CR.HEADLINES) - keys
+
+
+def test_the_conditioning_family_is_a_zero_delta_against_itself(tmp_path, monkeypatch) -> None:
+    """The self-consistency plant, extended to the new family: an arm read against ITSELF must
+    produce exactly 0.0 on every conditioning row, with an interval covering zero."""
+    from main.ops import conditioning_meters as CM
+
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    rows = [r for r in CR.compute_deltas(doc, doc, None, seed=0)
+            if r["family"] == "conditioning"]
+    assert {r["key"] for r in rows} == set(CM.METER_KEYS)
+    for r in rows:
+        assert r["delta"] == 0.0
+        assert r["ci"][0] < 0.0 < r["ci"][1]
+        assert r["label"] == "NOT DETECTED"
+
+
+def test_a_conditioning_meter_missing_from_one_side_is_dropped_not_compared(tmp_path,
+                                                                           monkeypatch) -> None:
+    """An arm whose cycle supports the Elo slope and a control whose cycle does not must not be
+    compared on it — a delta against a row that does not exist is not a measurement."""
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    base = CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None)
+    arm, ctl = _with_conditioning(base), _with_conditioning(base)
+    ctl["conditioning"] = dict(ctl["conditioning"])
+    ctl["conditioning"]["points"] = {k: v for k, v in ctl["conditioning"]["points"].items()
+                                     if k != "cond.elo_slope"}
+    keys = {r["key"] for r in CR.compute_deltas(arm, ctl, None, seed=0)
+            if r["family"] == "conditioning"}
+    assert "cond.elo_slope" not in keys
+    assert "cond.spread_ratio.t1_3" in keys
 
 
 def test_the_parser_requires_a_control_and_an_out() -> None:
@@ -514,3 +566,118 @@ def test_a_stamp_beside_its_own_artifacts_is_not_written_twice(tmp_path, monkeyp
     doc = CR.read_run(run, d, _Args(), say=lambda _m: None)
     CR._stamp(d, doc)          # same directory: a no-op, never a self-referential rewrite
     assert json.loads((d / "run_readout.json").read_text())["artifact_dir"] == str(d)
+
+
+# --------------------------------------------------------------------------- the --step pin
+
+def test_step_pins_the_cycle_even_when_a_newer_complete_one_exists(tmp_path) -> None:
+    """🚨 backlog 2026-09-09. `--on-live skip-newest` is the default and it DROPS the newest
+    cycle when any process still names the run, so a finished 10M arm whose launcher had not yet
+    exited is read at 8M. `--step` is the pin, and it must beat both the recency rule and the
+    live-drop rule."""
+    for s in (100, 200, 300):
+        _cycle(tmp_path, s, manifest=_OK_MANIFEST)
+    assert CR.pick_cycle(tmp_path, on_live="skip-newest", step=None)["step"] == 300
+    assert CR.pick_cycle(tmp_path, on_live="skip-newest", step=100)["step"] == 100
+    assert CR.pick_cycle(tmp_path, on_live="use", step=200)["step"] == 200
+
+
+def test_step_refuses_a_cycle_the_run_does_not_have_and_names_the_ones_it_does(tmp_path) -> None:
+    _cycle(tmp_path, 100, manifest=_OK_MANIFEST)
+    _cycle(tmp_path, 200, manifest=_OK_MANIFEST)
+    with pytest.raises(SystemExit) as exc:
+        CR.pick_cycle(tmp_path, on_live="skip-newest", step=999)
+    assert exc.value.code == 2
+
+
+def test_a_pinned_step_must_still_be_a_COMPLETE_cycle(tmp_path) -> None:
+    """A pin is not a licence to read a cycle that has not COLLECTED — traces may still be
+    arriving into it, and a partially-written cycle is not a measurement."""
+    _cycle(tmp_path, 100, manifest=_OK_MANIFEST)
+    _cycle(tmp_path, 200, manifest={"selection": None})
+    with pytest.raises(SystemExit) as exc:
+        CR.pick_cycle(tmp_path, on_live="skip-newest", step=200)
+    assert exc.value.code == 2
+
+
+def test_the_why_sentence_names_the_pin(tmp_path) -> None:
+    _cycle(tmp_path, 100, manifest=_OK_MANIFEST)
+    c = CR.pick_cycle(tmp_path, on_live="skip-newest", step=100)
+    assert CR._cycle_why(c, 100) == "PINNED by --step 100"
+
+
+def test_the_why_sentence_says_when_the_newest_cycle_was_DROPPED(tmp_path) -> None:
+    """The failure that motivated all of this was SILENT. The sentence that would have caught it
+    has to name the drop, the pids and the fix."""
+    why = CR._cycle_why({"live_pids": [4242], "on_live": "skip-newest",
+                         "dropped_newest_because_live": True,
+                         "steps_on_disk": [100, 200], "why": "manifest + selection recorded"},
+                        None)
+    assert "DROPPING THE NEWEST" in why and "4242" in why and "--step" in why
+
+
+def test_the_why_sentence_says_when_the_run_is_simply_not_live(tmp_path) -> None:
+    why = CR._cycle_why({"live_pids": [], "on_live": "skip-newest",
+                         "dropped_newest_because_live": False, "steps_on_disk": [100],
+                         "why": "manifest + selection recorded"}, None)
+    assert "not live" in why
+
+
+# --------------------------------------------------------------------------- the two caches
+
+def test_the_readout_fingerprint_is_decoupled_from_the_report_version() -> None:
+    """🚨 The identity half costs a ~25-minute `cf_audit`. Folding the REPORT's version into its
+    cache key threw every readout on disk away the first time a new SECTION was added — which
+    changes no number that key covers. Caught while regenerating the two committed ladder reads."""
+    from main.ops import critic_read_render as RR
+
+    assert CR.READOUT_FINGERPRINT_VERSION == 1
+    assert RR.TOOL_VERSION > CR.READOUT_FINGERPRINT_VERSION
+
+
+def test_the_conditioning_meters_are_all_in_the_delta_table_or_none_of_them_are() -> None:
+    """The conditioning family is emitted from `CM.METERS`, so a meter added to the library and
+    forgotten in the report is the failure this asserts against."""
+    from main.ops import conditioning_meters as CM
+    from main.ops import critic_read_render as RR
+
+    assert {k for k, _q, _s in CM.METERS} == set(CM.METER_KEYS)
+    assert set(RR.HEADLINES) & set(CM.METER_KEYS) == {"cond.spread_ratio.t1_3",
+                                                      "cond.own_team_r2.t1"}
+
+
+def test_a_cycle_with_no_usable_conditioning_frame_refuses_by_default(tmp_path,
+                                                                     monkeypatch) -> None:
+    """A trace tree whose npz carry no battle summaries yields no conditioning rows. The default
+    is to REFUSE naming the cause — a report missing its headline conditioning rows would read
+    exactly like one whose arm did not move them."""
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+
+    class WithCond(_Args):
+        no_conditioning = False
+
+    with pytest.raises(SystemExit) as exc:
+        CR.read_run(run, tmp_path / "c1", WithCond(), say=lambda _m: None)
+    assert exc.value.code == 2
+
+
+def test_allow_conditioning_refusal_emits_the_report_saying_what_is_missing(tmp_path,
+                                                                           monkeypatch) -> None:
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+
+    class WithCond(_Args):
+        no_conditioning, allow_conditioning_refusal = False, True
+
+    doc = CR.read_run(run, tmp_path / "c2", WithCond(), say=lambda _m: None)
+    assert doc["conditioning"]["points"] == {}
+    assert "0 usable states" in doc["conditioning"]["refusal"]
+
+
+def test_no_conditioning_produces_no_conditioning_deltas(tmp_path, monkeypatch) -> None:
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = CR.read_run(run, tmp_path / "c3", _Args(), say=lambda _m: None)
+    rows = CR.compute_deltas(doc, doc, None, seed=0)
+    assert not [r for r in rows if r["family"] == "conditioning"]

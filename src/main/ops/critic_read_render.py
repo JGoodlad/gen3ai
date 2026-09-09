@@ -202,12 +202,18 @@ def render_md(doc: Dict[str, Any]) -> str:
       "probability regardless of opponent reads near ZERO. The identity needs no strength axis, "
       "which is why it is the primary row and the Elo slope the secondary one.")
     A("")
-    A("> 🚨 **The noise-corrected ratio is CLAMPED, and a clamped ratio can sit BELOW its own "
-      "interval.** Each side's sampling variance is subtracted and a negative result floored at "
-      "zero — a biased, non-monotone operator, so a point estimate of 0.000 routinely carries a "
-      "CI like [0.21, 0.53] (`winprob_head_refit_2026-09-09` §12 hazard 1). **THE INTERVAL IS "
-      "THE READ.** The unclamped, uncorrected `ratio_raw` is printed beside it as the monotone "
-      "companion — never as a substitute.")
+    A("> 🚨 **A SPREAD RATIO CAN SIT BELOW ITS OWN INTERVAL, for TWO independent reasons, and "
+      "neither is a defect in the bootstrap.** (1) The noise-corrected ratio is **CLAMPED** — "
+      "each side's sampling variance is subtracted and a negative result floored at zero, a "
+      "biased non-monotone operator — so a point estimate of 0.000 routinely carries a CI like "
+      "[0.21, 0.53] (`winprob_head_refit_2026-09-09` §12 hazard 1). (2) A **resampled "
+      "between-group variance is UPWARD BIASED**, so even the unclamped `ratio_raw`'s draws can "
+      "centre above its point (the mixture diagnostic reports the same shape on its η² rows). "
+      "**THE INTERVAL IS THE READ, and a 0.000 is not \"no spread\".** The unclamped, "
+      "uncorrected `ratio_raw` is printed beside the clamped one as the monotone companion — "
+      "never as a substitute. Both effects hit the arm and the control alike, so the DELTA is "
+      "the quantity least disturbed by either; the per-run points below are the ones to read "
+      "with the caveat in hand.")
     A("")
     for role, d in (("arm", arm), ("control", ctl)):
         c = d.get("conditioning") or {}

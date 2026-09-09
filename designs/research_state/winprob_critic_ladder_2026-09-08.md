@@ -363,16 +363,26 @@ this note was written, and a fresh arm is judged by the CURRENT parser.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
 python -m main.ops.critic_read <arm> --control ai_v12_11_ladder_ctrl10M \
-    --out <outside models/> --ledger-line          # add --floor-json when a floor exists
+    --step 10000032 --out <outside models/> --ledger-line   # --floor-json when a floor exists
 ```
 
 It resolves each run's LAST COMPLETE eval cycle (a manifest whose `selection` block is written —
-i.e. the cycle has COLLECTED), runs both meters, and emits `critic_read.md` + `critic_read.json`
-with every registered quantity as **ARM − CONTROL** and the delta's own battle-clustered CI. It
-REFUSES rather than emit a partial table: no manifest, an uncollected cycle, npz without
-`win_probs`, an anchor rate under 0.90, or a draw/timeout share over 25% exits 2 naming the cause.
-The control's readout is cached per run, so the second arm read against the same control costs
-only its own half. What it composes, unchanged:
+i.e. the cycle has COLLECTED), runs all three meters, and emits `critic_read.md` +
+`critic_read.json` with every registered quantity as **ARM − CONTROL** and the delta's own
+battle-clustered CI. It REFUSES rather than emit a partial table: no manifest, an uncollected
+cycle, npz without `win_probs`, an anchor rate under 0.90, or a draw/timeout share over 25% exits
+2 naming the cause. The control's readout is cached per run, so the second arm read against the
+same control costs only its own half — with both halves cached, a full pair re-read including the
+whole conditioning section is **~40 s**.
+
+🚨 **PASS `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.** `--on-live skip-newest` is the
+default and it DROPS the newest cycle when any process still names the run, so a finished 10M arm
+whose launcher had not yet exited is read at **8M**. That happened to the 2026-09-09 tdaux read.
+The tool now prints WHICH cycle it chose and WHY — for both runs, on stdout before anything
+expensive runs and again in the report header — and `--step N` pins both runs (`--control-step N`
+pins the control alone). A run with no `step_N` REFUSES, naming the steps it has.
+
+What it composes:
 
 1. **Identity test** — `python -m agents.training.cf_audit <run> --step <10M step dir> --impl rust
    --rollouts 8 --states 800 --anchors 150 --seed 0 --out <outside models/>`, **no `--checkpoint`**
@@ -386,6 +396,54 @@ only its own half. What it composes, unchanged:
    has no parent, so the tool passes `--parent v9_fold_parent --famine-comparator off
    --skip-meter`: G1–G4 read their bars from the committed calibration baseline, and the ladder /
    famine / G7 sections that would use a parent are not reported — **strength is not read.**
+3. **CONDITIONING** (added 2026-09-09) — `main.ops.conditioning_meters`, promoted out of
+   `measurements/winprob_mixture_diagnostic_2026-09-09/` (the spread identity, the Elo slope) and
+   `measurements/winprob_probe_read_2026-09-09/` (the own-team leave-one-battle-out target, the
+   battle-grouped folds, the HT reweighting), so the ladder and those measurements share ONE
+   implementation. **These are the rows the current ladder is read on**, because three offline
+   reads established that the critic's defect is a conditioning failure in the win head — it
+   emits one near-marginal win probability regardless of opponent AND of its own team. Ten rows:
+
+   | row | what it is | a calibrated head reads |
+   |---|---|---|
+   | `cond.spread_ratio.t1_3` ⭐ | between-opponent spread of `V` ÷ that of the outcome, turn 1–3, each side corrected for its own sampling noise | **1.0** (it is an identity: `E[V\|opp] = E[y\|opp]`) |
+   | `cond.spread_ratio_raw.t1_3` | the same, UNCORRECTED and UNCLAMPED — the monotone companion | — |
+   | `cond.spread_delta.t1_3` | `sd(V) − sd(outcome)`, corrected | 0.0 |
+   | `cond.spread_ratio{,_raw}.all`, `cond.spread_delta.all` | the same three over ALL states | 1.0 / — / 0.0 |
+   | `cond.elo_slope` | slope of bias (`V` − true win rate) on opponent Elo, per 100 Elo | 0.0 |
+   | `cond.own_team_r2.t1` ⭐ | own-team **leave-one-battle-out** win-rate R² decoded from `V` alone, turn 1 | high; the head's is ~0.01 against ~0.67 available in `value_pooled` |
+   | `cond.own_team_r2.all` | the same over all turns | — |
+   | `cond.opp_class_auc.t1` | opponent-CLASS (pool vs bot) AUC of `V`, turn 1 | high; chance is 0.5 |
+
+   Every row is computed on the **RECORDED** `win_probs` of the read cycle — that column IS the
+   cycle's own model, so **no model forward is done** — HT-reweighted by that cycle's capture
+   rates, with the interval resampling battles WITHIN their opponent cell (the roster is a fixed
+   pinned set) and redrawing the outcome side from its own Binomial(`battles_played`, true win
+   rate). The two ⭐ rows are HEADLINES and appear in the ledger quote.
+
+   🚨 **The frozen-forward-vs-recorded distinction matters only ACROSS cycles, and this reads
+   one.** A recorded `V` pooled over several cycles carries the trainee's own improvement between
+   cells and reads as separation the head does not have — CTRL's pooled recorded ratio is 1.079
+   against 0.066 for a frozen forward (`winprob_head_refit_2026-09-09` §12 hazard 3). This module
+   never pools cycles.
+
+   🚨 **A SPREAD RATIO CAN SIT BELOW ITS OWN INTERVAL, for two independent reasons.** (1) The
+   noise-corrected ratio is **CLAMPED** — each side's sampling variance is subtracted and a
+   negative result floored at zero, a biased non-monotone operator — so a 0.000 routinely carries
+   a CI like [0.21, 0.53] (`winprob_head_refit_2026-09-09` §12 hazard 1); the tdaux arm reads
+   exactly that, 0.0000 [0.0000, 0.5489], against an unclamped 0.1984. (2) A **resampled
+   between-group variance is UPWARD BIASED**, so even the UNCLAMPED `ratio_raw` can sit below its
+   own draws (tdaux: 0.1984 against [0.2117, 0.6061]); the mixture diagnostic reports the same
+   shape on its η² rows. **The interval is the read**, and both effects hit arm and control
+   alike, so the DELTA is the quantity least disturbed by either.
+
+   🚨 **The Elo-slope row is OMITTED WITH A REASON, never reported on two scales.**
+   `fit_ladder` silently returns an UNANCHORED ladder when called from the wrong cwd — ratings
+   near 1000 instead of near 2000, `anchored_to_bots: false`, no error (mixture-diagnostic hazard
+   1). The strength axis chdirs to the repo root, REFUSES an unanchored refit, and verifies the
+   positional `sentinel_k` → snapshot map against the manifest's own win counts. `--cond-ladder
+   off` skips the axis; every other conditioning row is unaffected, because the spread identity
+   needs no strength axis at all.
 
 🚨 **Arm A's own 10M eval traces are GONE** (`--keep-eval-trace-steps 20` trimmed them; A's tree
 now starts at 36M). A matched-10M delta against A cannot be recomputed from traces — the committed
