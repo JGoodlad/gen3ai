@@ -16075,3 +16075,75 @@ Same pinned-input functional method as the first span, this time through the REA
 ### 2026-09-09 · ROOT CAUSE · the rust-binary incident was `resolve_config`'s automatic `cargo build` through a worktree whose `target/` was a symlink to main's — not a hand-run build
 
 Reframed by the Training Run session from the increment verdict's hazard, and accepted: the 01:30 and 03:03 rebuilds of main's `sim_bridge` / `search_driver` were two calls of `resolve_and_publish_sim_bridge_bin()` from `resolve_config` on a rust-bridge argv, made from the detached worktree `gen3ai-wt/eq-old` whose `src/rust_sim/target` had been symlinked to MAIN's (an option the orchestrator's brief offered). Cargo built from the worktree's manifest (baking `CARGO_MANIFEST_DIR` = the worktree) into main's shared target; the worktree was then removed. Nothing else needs to have gone wrong. **Three ingredients, all needed:** an automatic build inside config resolution; a compile-time data path; a shared target directory. Removing any one closes the class: `CARGO_TARGET_DIR` per worktree (a worktree build physically cannot write into main's target), or a startup assertion in the binary that its baked data dir exists — failing with the fix, not a raw io error — or `resolve_and_publish_sim_bridge_bin` refusing to build outside the launcher. Filed on the P1 backlog row with the incident attached; not landed mid-ladder (tech debt, not an arm). Standing rules until then: never symlink main's `target/` from a worktree; set `POKESIM_SIM_BRIDGE_BIN` to main's verified binary before resolving a rust argv from any other checkout; `bootstrap.sh`'s optional cargo build in a worktree recreates the exposure exactly. The orchestrator's brief offering the symlink is the proximate error. Tag: ROOT CAUSE.
+
+## 2026-09-09 · OPS · CRITIC LADDER — `ai_v12_12_ladder_cflabels` COMPLETE (`--cf-records --cf-winprob-coef 0.5`, 10,027,008 steps, 4.30 h, 0 crashes, G7 below bar on both halves; the FIRST arm carrying the value sidecar)
+
+The counterfactual-label arm, pinned `377a5aa170bef8bf37be2af7217bb4d4f1b20b36`. It is the arm the
+head-refit read made central: that read RULED OUT head-side optimisation (replay, periodic refit,
+head lr) and convicted the TARGET — the terminal 0/1 label reproduces the online failure offline
+from scratch, and a conditional label recovers a detected part of it. cflabels is the only arm in
+the ladder that changes what the critic is asked to predict rather than how it is fitted.
+
+🚨 **WHAT ITS LABEL IS, precisely, because the distinction decides what the read can claim.**
+`--cf-records` supervises the win-prob head with the **R-rollout Monte-Carlo win fraction from the
+CURRENT policy at the state** — a CONTINUATION label, conditioned on the state (which already
+carries the lead and the own team). That is **NOT** the per-(cycle, opponent, own-team) CELL label
+the offline head refit used. So this arm is evidence for the **CLASS** — a lower-variance,
+state-conditional target — and **not** for that particular label. A read that says "cflabels
+helped, therefore the conditional label helps" would be sliding between two different objects.
+
+**IT LAUNCHED ONLY BECAUSE THE FIRST ATTEMPT REFUSED.** The registered argv was starved by
+construction and the refusal is banked separately; the fix `--checkpoint-every-steps 500000` rides
+in this run (interval 500,016 env steps, cf label duty cycle **30.0%** against the 25% floor). No
+`expired`/`starved` line appears anywhere in its child log — the first live evidence the fix holds.
+
+**Run:** 10,027,008 steps in **4.30 h** wall, 48 envs, **1 periodic restart** (two TB event files).
+**0 crashes**, `Training complete`, `final_model.zip` written. Marginal fps **555.2** over a 118-min
+in-regime window; the launcher's exit line said 564.
+
+**G7 (within-arm, `$P/g7_ladder.py`)** — reference = first two cycles (2,000,016=25.236,
+4,000,032=24.064) → **24.650**, bar 1.25:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 23.209 | 0.942 | 0.8450 | under bar |
+| 8,000,016 | 23.274 | 0.944 | 0.8838 | under bar |
+| 10,000,032 | 23.716 | 0.962 | 0.8988 | under bar |
+
+Worst ratio **0.962 = 77.0% of the bar** — the lowest worst-ratio of any ladder arm, and every
+measured cycle sits BELOW its own reference (episodes shortening, not inflating). Stall half
+(`signal/draw_rate`, n=101): peak **0.0196**, last 0.0034 → under bar. **G7 below bar on both
+halves.** As always each arm is normalised by its own early cycles, so the worst-ratios across arms
+(vf15 1.086, ctrl10M 1.035, tdaux 1.024, cflabels 0.962) are NOT comparable to one another.
+
+**VALUE SIDECAR — first arm to carry it, and the "one row per rollout" gloss is WRONG.** It is
+**1,536 rows PER ROLLOUT**: the header records `"fraction": 0.015625` (= 1/64) and 98,304 env steps
+/ 64 = 1,536, verified exactly 1536 at each of steps 98,304 / 196,608 / 294,912 / 393,216 and
+holding to the end. Final: **155,137 rows, 42 MB**. A row is one SAMPLED DECISION POINT carrying
+`step, rollout, env, episode, t, turn, v, win_logit, target, target_known, opp_class, win_margin,
+ep_len, ep_complete, timeout`. Anyone quoting the sidecar's cost per rollout is quoting the cost of
+1,536 rows, not of one. `--keep-eval-trace-steps 0` held too: all **5** eval-trace cycles retained.
+
+**Descriptive trajectory** (NOT a strength read): `eval/win_rate_vs_bots` 0.4925 → 0.7937 → 0.8450
+→ 0.8838 → 0.8988; `eval/elo` 1580 → 1823 → 1903 → 1987 → 2021; `snapshot_ladder/ladder.json`
+converged, 6/6 pairs: 4M=1779.9±12.4, 6M=1883.6±13.8, 8M=1975.9±15.6, 10M=2021.1±16.7. Final
+post-training aggregate 92.6%. 🚨 The newest BT node is systematically inflated.
+
+**Rule-15 regime boundaries: `train/selfplay_fraction` 0.0000 → 0.8983 at 4,000,032 → 0.9000 at
+6,000,000.** Same step locations as every arm; the first jump (0.8983) is the LARGEST of the four
+(ctrl10M 0.7278, tdaux 0.7491, vf15 0.156). Recorded, not read — it is a promotion-threshold
+crossing, not a lever effect, and no window may be pooled across it.
+
+⚠️ **The read is CROSS-COMMIT.** cflabels sits at 377a5aa1, the control at f3502568. That span was
+separately settled NEUTRAL by a pinned-input functional test (230 = 230 parameter tensors, 0
+differing; bit-identical pi/vf feature hashes; identical TB tag set), and the rust diff over it is
+empty — so it is not a confound, but the read should say which span it crosses rather than imply
+none. cflabels also carries the raised forensic quota (40/40/10 vs the control's 5/10/5), so per
+rule 17 the capture rates differ between the two sides and every trace statistic must be reweighted.
+
+The registered read is the critic meters at 10M as a delta against `ai_v12_11_ladder_ctrl10M`, plus
+the newly promoted conditioning rows (turn-1–3 spread ratio, turn-1 own-team R²), dispatched by the
+orchestrator. Nothing about the lever is claimed here. Next: `ctrl10M_b` (the replicate floor), then
+`ai_v12_17_ladder_strata`, then `truevalue`.
+
+Tag: OPS. Nothing measured about the critic by this entry.
