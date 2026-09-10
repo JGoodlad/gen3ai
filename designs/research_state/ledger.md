@@ -16604,3 +16604,91 @@ Raised by the Training Run session: late bias is where a bias ORIGINATES, not ev
 ### 2026-09-10 · CORRECTION · the gradient floor was the 10M pair's, mixed into a 4M claim — restated: at 4M the gradient effect clears the 4M three-control spread (0.070) against two of three controls; the regime story is ruled out by non-monotonicity; the 10M registration reads against the 10M gradient floor and all three controls
 
 Raised by the Training Run session, accepted. **Which floor was which:** the −0.038 / −0.015 gradient draws quoted in the previous entry are the 10M floor pair (`ctrl10M_b` − `ctrl10M`, `ctrl10M_c` − `ctrl10M`, live 100-game cycles at `step_10000032`) — the right bar for the 10M read, and the wrong one for a 4M claim, since the floor is step-dependent (bots 0.120 → 0.019 from 2M to 10M). **The 4M spread on the gradient itself**, from the three controls' own 4M values (+0.086 / +0.016 / +0.077), is 0.070 / 0.009 / 0.061 pairwise — wider bar **0.070**. Against it the arm's 4M gradient deltas read: vs `ctrl10M` −0.129 CLEARS, vs `ctrl10M_c` −0.120 CLEARS, vs `ctrl10M_b` −0.059 does NOT. So the honest 4M statement is "exceeds the 4M replicate spread against two of three controls", not "against every control". **The regime story is ruled out at 4M by non-monotonicity:** crossing gaps 0.32 / 0.17 / 0.10 (b / base / c) against gradient deltas −0.059 / −0.129 / −0.120 — the control furthest from the arm in regime shows the smallest effect, so the effect does not scale with the mismatch. The early-optimistic claim is withdrawn by its author (it held against two controls, not three); the shape claim stands. **Registration as it now stands for 10M:** the identity-bias gradient (late − early), arm 8 − `ctrl10M` at 10M, against the **10M gradient floor (the wider of the two 10M draws, 0.038)**, with the deltas against `ctrl10M_b` and `ctrl10M_c` at 10M reported beside it so "clears against one" cannot be read as "clears"; DETECTED needs the CI clear of the floor against `ctrl10M` AND the same sign against the other two; "clears against two" is written as two. Tag: CORRECTION · PRE-REGISTRATION.
+
+## 2026-09-10 · OPS · CRITIC LADDER — `ai_v12_19_ladder_lambda09` COMPLETE (`--win-prob-lambda 0.9`, 10,027,008 steps, 5.12 h, 0 crashes, G7 below bar on both halves), and the λ dose test is VOID BY PREMISE
+
+λ-return targets in probability space, pinned `28ece02a54d382f1073922f86ac3da85ca0cb7cd` — the
+ladder's eighth arm and the first at that commit. The whole chain
+f3502568→377a5aa1→f871e79f→d11386dc→28ece02a is verified NEUTRAL by pinned-input functional tests
+through the REAL build path, including a three-hop 113→114→115→116 load of ctrl10M's checkpoint with
+values and win logits identical to the digit. Verified here on the last leg: rust diff EMPTY,
+`ARCH_SIGNATURE` `gen3_critic_route_wave_v1` both sides, `arch_constants.py` untouched.
+
+**Run:** 10,027,008 steps in **5.12 h** (the slowest arm), 48 envs, 1 periodic restart, **0 crashes**,
+`Training complete`. Final aggregate **94.1%** — the highest of any arm. Sidecar **155,137 rows /
+44 MB**, the fifth arm to land on exactly that count. All **5** trace cycles retained.
+
+**THE LEVER IS LIVE AND THE FIRST ROLLOUT PROVED IT.** Sidecar header carries `schema 2`,
+`win_prob_lambda 0.9` and `win_prob_lambda_truncated "bootstrap"` — the truncation policy is named
+in the file, so a later reader cannot mistake which convention produced the targets. At rollout 0:
+`lambda_bootstrap_frac` 0.7922, `lambda_bootstrap_fallback` **0.0000 on every one of 100 rollouts**,
+`lambda_unmasked` 1,447 of `lambda_rows` 98,304 = 1.47%. The λ path had never run under
+`--compile-trainer` or the forkserver preload before this launch; its first two minutes were the only
+possible test of that, and it passed.
+
+⚠️ **TWO READING HAZARDS, both of which cost real confusion here.** (i) `hparams/gae_lambda` = 0.8000
+is PPO's POLICY GAE λ, a different quantity from `win_prob/lambda` = 0.9000, the critic's λ-return.
+A bare "lambda 0.8" beside an arm named lambda09 reads like the lever failed to apply. Always quote
+the full tag path. (ii) `lambda_unmasked` is a **COUNT**, not a fraction — divide by `lambda_rows`
+before comparing it to any percentage bar, or it reads 1447x over.
+
+🚨 **THE PRE-REGISTERED DOSE TEST IS VOID BY PREMISE — not resolved, and not evidence either way.**
+The prediction, fixed in the ledger BEFORE the crossing: before 4,000,032 every episode is vs bots
+whose outcomes become predictable, so V → y and |G − y| falls; at the self-play crossing outcomes
+become coin flips, so `win_prob/lambda_target_shift` should RISE. Bars agreed in advance: window mean
+≥ 0.30 RISE CONFIRMED, ≤ 0.22 OVERCONFIDENCE, between AMBIGUOUS. Both windows closed:
+
+| window | mean | n | verdict under the bars |
+|---|---|---|---|
+| [4,000,032, 6,000,000) | **0.1804** | 21 | ≤ 0.22 |
+| [6,000,000, 8,000,016) | **0.1666** | 18 | ≤ 0.22 |
+
+There was no rise: pre-crossing plateau 0.2123, post-crossing 0.1804, and the meter ends at 0.1507.
+**But the premise fails, so neither branch is claimable.** `signal/outcome_win_rate_pool` over the
+first window is **0.7410** (n=10, range 0.6750–0.8100) against a coin-flip class of 0.40–0.60;
+`eval/win_rate_vs_pool` @4M is 0.7400; `signal/outcome_entropy_pool` 0.1893, i.e. LOW. Self-play at
+this stage is not a coin flip — the trainee beats its own snapshot pool about three times in four —
+so |G − y| stays low because y is genuinely predictable, which is the honest explanation and not a
+statement about the lever.
+
+**AND THE OVERCONFIDENCE BRANCH IS INDEPENDENTLY REFUTED**, by a meter that cannot be dominated by
+late states because it is measured at episode START: `win_prob/start_pred_mean_pool` **0.7788** vs
+`win_prob/start_realized_mean_pool` **0.7662**, a gap of **+0.0126** over ~7,400 episodes. The critic
+predicts 0.779 where 0.766 is realized. That is well calibrated, not sharp-on-uncertain.
+
+**THE REUSABLE RESULT, worth more than the λ verdict would have been: the intuition that self-play
+makes outcomes coin flips is WRONG at this stage of training.** Any future test resting on it must
+check the pool win rate first. That correction is the durable output of this arm.
+
+**G7 (within-arm)** — reference = first two cycles (33.599, 24.626) → **29.113**:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 23.420 | 0.804 | 0.8338 | under bar |
+| 8,000,016 | 23.976 | 0.824 | 0.8875 | under bar |
+| 10,000,032 | 22.274 | 0.765 | 0.8788 | under bar |
+
+Worst **0.824 = 65.9% of the bar**; stall peak **0.0109**, the lowest of any arm. ⚠️ Its reference of
+**29.113** is by far the highest in the ladder (others span 22.739–27.657) because its 2M cycle came
+in at 33.599 against 22.1–26.2 elsewhere. That inflated denominator is why the ratios read low. Given
+three identical control draws produced references spanning 4.918 and worst-ratios spanning 0.139, this
+says nothing about λ.
+
+**Descriptive:** bots 0.5775 → 0.8112 → 0.8338 → 0.8875 → 0.8788; elo 1641 → 2004; ladder converged
+**10/10 pairs** (the only arm with a 2M node): 2M 1630.4±11.1, 4M 1800.6±12.0, 6M 1872.5±13.0,
+8M 1978.6±14.9, 10M **2003.5±15.5**. Rule-15 boundaries 2,000,016 → 0.0303 and 4,000,032 → **0.9000**
+— the largest first jump of any arm, and note this arm is the only one whose 2M cycle was NOT at
+exactly zero self-play.
+
+⚠️ **A THROUGHPUT CLAIM WITHDRAWN.** A 34-minute in-regime window read 384.6 fps and I reported this
+as the slowest arm, consistent with the λ computation costing work. On a widened window the slices
+read 463 / 404 / 543 / 551, cumulative 458.6 over 68 min — inside every other arm's range. The
+narrow window caught a slow patch. Third time this campaign a narrow window produced a retractable
+number; the 20-minute slicing rule caught it each time.
+
+The registered read is the critic meters at 10M vs `ai_v12_11_ladder_ctrl10M`, with the pre-registered
+watch item: the identity-bias GRADIENT (late − early), arm − ctrl10M, against the 10M gradient floor
+0.038, DETECTED requiring the CI clear of the floor against ctrl10M and the same sign against
+ctrl10M_b and ctrl10M_c.
+
+Tag: OPS. Nothing measured about the critic by this entry.
