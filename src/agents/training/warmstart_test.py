@@ -3,6 +3,8 @@
 Only the pure numpy target construction is tested here (no models/bridge) — the "aligned parts" logic:
 consensus + pairwise-JS disagreement + the temperature gate that SHARPENS agreement / FLATTENS forks.
 """
+import types
+
 import numpy as np
 import pytest
 
@@ -106,6 +108,12 @@ class _DeviceProbeModel:
             def __init__(self, dev):
                 self._p = th.nn.Parameter(th.zeros(1, device=dev))
                 self.seen_devices = []
+                # A real SB3 policy always has one, and `masked_action_probs` reads it to top the
+                # obs dict up with the flag-gated Dict keys the extractor's forward demands
+                # (`agents.model.extra_obs_keys`). A bare object is the honest stand-in for this
+                # probe: no route attribute is set, so the registry asks for no extra key — which
+                # is the configuration a device probe is about.
+                self.features_extractor = types.SimpleNamespace()
 
             def parameters(self):
                 return iter([self._p])

@@ -155,6 +155,21 @@ Rules to preserve:
 | the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` · `pair_value_route.py` |
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` |
 | versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` · `popart.py` |
+| the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
+
+🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
+`forward` is normally a pure function of `obs["observation"]` — but a route may read a flag-gated
+Dict key of its own and **RAISE** when it is absent (a silent skip reads exactly like a route that
+learned nothing). `--value-true-team`'s `opp_true_team` is the first. That mapping is DECLARED once
+in `extra_obs_keys.py` as `(extractor attribute -> key, shape, canonical zero block)`, keyed on the
+ATTRIBUTE the forward itself tests, and every synthetic-obs caller on a TRAINING path builds from it
+via `zero_extra_obs` / `synthetic_obs`: `compile_preload`, `main/train/lifecycle.py`'s round-trip
+smoke, `compile_trainer`, `compile_opponents`, `agents/training/warmstart.py`. **Never hand-build
+`{"observation": zeros(1, D)}` on a path a run reaches** — that literal is what killed
+`ai_v12_14_ladder_truevalue` two minutes into its launch, and `extra_obs_keys_test.py` reproduces
+it plus an AST gate that fails on any obs key the table does not declare. The ~17 OFFLINE audit /
+probe CLIs still hand-build (they fail at a terminal, not on the GPU) — see
+[`designs/ops/TECH_DEBT_BACKLOG.md`](../../../designs/ops/TECH_DEBT_BACKLOG.md).
 
 🚨 **The table layering only ever points DOWN** (`damage_tables` → `belief_tables` → `dex_ids`), and
 **an import back closes a cycle Python resolves only for whichever module was imported first** — it

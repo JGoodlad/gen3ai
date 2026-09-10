@@ -87,12 +87,32 @@ opponent's team? A critic that needs privileged inputs is not the critic that sh
    all-zero "unknown" block, and the policy — which never reads the key — runs unchanged.
 4. **The route RAISES on a missing key rather than skipping.** A silent skip reads exactly like a
    route that learned nothing, which is the gen-12 dead-tail bug the seam exists to prevent. Every
-   caller that builds its own obs dict therefore owes the key: `lifecycle._run_roundtrip_test`
-   supplies the zero block, and `ProbeModel._pin` — the prober's one offline-forward seam —
-   REFUSES on such a checkpoint instead, because a V computed from the recorded observation vector
-   alone is V stripped of the privilege, a different quantity. The arm's V is the one the eval
-   traces RECORDED (computed with the key, on the bridge), which is what `cf_audit` and
-   `main.critic_gate` already read — both take V and P(win) from the npz, never from a re-forward.
+   caller that builds its own obs dict therefore owes the key, and `ProbeModel._pin` — the
+   prober's one offline-forward seam — REFUSES on such a checkpoint instead, because a V computed
+   from the recorded observation vector alone is V stripped of the privilege, a different
+   quantity. The arm's V is the one the eval traces RECORDED (computed with the key, on the
+   bridge), which is what `cf_audit` and `main.critic_gate` already read — both take V and P(win)
+   from the npz, never from a re-forward.
+
+🚨 **SYNTHETIC-OBS COMPATIBILITY, and the launch it cost.** "Every caller owes the key" was
+enforced by nobody, at four sites that each hand-built `{"observation": zeros(1, D)}`. The first
+launch to combine `--value-true-team` with them — `ai_v12_14_ladder_truevalue` at 377a5aa1 — died
+two minutes in at env init, exit 1: the forkserver compile preload traced on its one-key dict, the
+route raised, and the raise killed the forkserver bootstrap so `SubprocVecEnv` construction failed
+in the parent. The same argv's `--compile-trainer`, `--compile-opponents` and `--warmstart-battles`
+carried the identical dict, so the crash would simply have moved.
+
+The mapping is now DECLARED once — `agents.model.extra_obs_keys` — as
+`(extractor attribute -> obs key, shape, canonical zero block)`, and the five training-run
+synthetic-obs sites build from it (`compile_preload`, `lifecycle._run_roundtrip_test`,
+`compile_trainer`, `compile_opponents`, `warmstart`). The enable condition is the ATTRIBUTE
+(`true_team_value is not None`), the same expression the seam tests, so the two cannot drift; an
+AST gate over `extractor_forward` fails on any obs key the table does not declare. **A new route
+that reads a new Dict key needs a row there and nothing else.** The all-zero block those callers
+supply is the same "no privileged view" encoding a real emitter uses at ladder play, so the traced
+graph is the workers' graph. Adoption is partial by design: the offline audit / probe CLIs still
+hand-build, and fail in the first second at a terminal rather than costing a GPU-hour
+(`designs/ops/TECH_DEBT_BACKLOG.md`).
 
 ## `WinProbHead`, `CfEvidentialHead` and the three v99 additions
 

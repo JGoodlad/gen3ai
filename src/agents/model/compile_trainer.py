@@ -291,6 +291,12 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
     # structurally legal, and it was ALSO what turned a mystifying `CUDA error: invalid configuration
     # argument` into the honest `OutOfMemoryError` underneath it when this was being debugged.
     obs = {"observation": torch.zeros(batch, obs_dim, device=device)}
+    # …and every FLAG-GATED Dict key this extractor's forward reads, from the declared registry.
+    # dynamo guards on a dict's KEY SET, so an under-built warmup is either a crash (the privileged
+    # value route RAISES on a missing `opp_true_team` — the ai_v12_14_ladder_truevalue launch) or a
+    # full re-trace on the first live batch. Never add a key here by hand.
+    from agents.model.extra_obs_keys import zero_extra_obs
+    obs.update(zero_extra_obs(fe, batch=batch, device=device))
 
     original = fe.forward
     try:

@@ -8886,3 +8886,65 @@ assumption about it. So a cycle generated before the explicit fields existed is 
 say. Operational rule, now
 in the SOP: **run a long generation from the MAIN checkout, never from a worktree you intend to
 land and remove.**
+
+---
+
+## The DECLARED extra-obs-key registry (`gen3_extra_obs_keys_v1`, 2026-09-09)
+
+**Not an architecture change — no `ARCH_SIGNATURE` bump, no weight or forward change.** A launch
+defect and the mechanism that makes its class unrepeatable.
+
+`ai_v12_14_ladder_truevalue` was launched at 377a5aa1 with `--critic winprob --value-true-team` and
+died two minutes in at env init, exit code 1:
+
+```
+RuntimeError: value_true_team is ON but this forward received no 'opp_true_team' obs key …
+              an absent key means the caller built its own obs dict and forgot.
+```
+
+Two independently-correct facts that had never been exercised together. `gen3_value_true_team_v1`'s
+privileged value route reads its own training-and-eval-only Dict key and **RAISES** rather than
+skipping when it is missing — deliberately, because a silent skip reads exactly like a route that
+learned nothing (the gen-12 dead-tail bug). `gen3_forkserver_preload_v1` traces the compiled
+extractor ONCE on a synthetic obs so 48 workers inherit the graph, and that obs was the literal
+`{"observation": torch.zeros(1, layout["total_dim"])}`. Inside the forkserver the raise kills the
+bootstrap, so `SubprocVecEnv` construction fails in the parent — a loud failure, as designed, but
+of a launch that should have run.
+
+**Fixing the preload alone would have moved the crash, not removed it.** The same argv carried
+`--compile-trainer` (on by default for cuda), `--compile-opponents` and `--warmstart-battles`, and
+all three hand-built the same dict. Four sites, one defect, and every future obs-key-adding flag
+re-arms it at all of them.
+
+`agents/model/extra_obs_keys.py` is the fix: ONE declaration of every Dict obs key the extractor's
+forward reads beyond `observation`, as `(extractor attribute -> key, shape, canonical zero block)`.
+The enable condition is the **attribute** (`true_team_value is not None`) — the same expression the
+seam itself tests, so the registry and the seam cannot disagree the way two readings of a flag name
+can. `zero_extra_obs` / `synthetic_obs` build from it, and the five training-run sites now call
+them: `compile_preload`, `lifecycle._run_roundtrip_test`, `compile_trainer`, `compile_opponents`,
+`warmstart` (both its scoring pass and its BC loop). The all-zero block is `empty_true_team_block()`
+— the same "no privileged view" encoding a real emitter supplies at ladder play — so the traced
+graph is the workers' graph, and warmstart's policy logits are bit-identical because the routes
+that read these keys inject into `value_pooled`, which pi never sees.
+
+`compile_preload` also grew two named entry points, `build_preload_extractor` and
+`preload_trace_obs`, so the trace input is testable without paying a `torch.compile` — the crash is
+in the obs dict, not the codegen, and a 30-second regression test is one nobody runs.
+
+**Gates** (`src/agents/model/extra_obs_keys_test.py`, all unmarked): an AST scan of
+`extractor_forward` for every `obs.get(...)` / `obs[...]` read, failing on any key the table does
+not declare **and** on any declared key nothing reads; a per-configuration forward over the
+synthetic obs; a key-set comparison against a real `Gen3Env`'s Dict observation space (restricted
+to the keys the extractor reads — the env also emits privileged LABEL keys that only the PPO loss
+consumes); the batch/device path; a source pin on the five call sites; and the regression itself,
+which reproduces the launch crash on the pre-fix one-key dict and then asserts the shipped trace
+input does not raise (that half fails on a revert).
+
+**Adoption is partial and the boundary is deliberate.** The offline audit / probe CLIs
+(`critic_route_audit`, `edge_ablation_audit`, `op_block_split_audit`, `capacity_probes`,
+`concat_readout_probe`, `feature_coverage/_support`, `cf_terms`, `cf_producer_snapshot`,
+`capacity_telemetry`, `instrumented_ppo/rollout_probes`, `teacher/buffer`,
+`search_dividend/{perf,search,ab_racing}`, `harvest`, `visualize_arch`,
+`rust_sim/harness/g1_bakeoff`) still hand-build. They fail in the first second at a terminal with
+the seam's own message naming the fix — a retype, not a GPU-hour — and are queued in
+`designs/ops/TECH_DEBT_BACKLOG.md`.

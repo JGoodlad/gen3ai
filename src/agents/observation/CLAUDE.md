@@ -38,6 +38,14 @@ have **different** gates:
 > **zero** cost to the obs build (benchmark confirmed: no file on the `encode` path changed).
 > The consumer slices it with the SAME `slice_pokemon_categoricals` `ObsUnpack` uses, which is what
 > makes "one layout, one encoder" checkable rather than asserted.
+>
+> 🚨 **A SYNTHETIC obs owes this key too.** The value route RAISES on a missing `opp_true_team`
+> rather than skipping, so every caller that builds its own obs dict — a compile trace, a warmup, a
+> round-trip smoke — must supply the block. `empty_true_team_block()` is what they supply, and it is
+> the RIGHT input rather than a stand-in: it is exactly what a real emitter writes when no
+> privileged view exists. The (flag -> key, shape) mapping is declared in
+> `src/agents/model/extra_obs_keys.py` and those callers build from it; hand-building a one-key
+> dict is what killed `ai_v12_14_ladder_truevalue` two minutes into its launch.
 
 ---
 

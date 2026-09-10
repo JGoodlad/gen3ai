@@ -350,6 +350,16 @@ graph breaks, max|Δ| vs eager 5.07e-07), and **+33.3% marginal training FPS at 
 (3.6× → 6.53×) moved end-to-end only ~31% → ~33%, so the opponent forward is no longer the rollout
 bottleneck and further compiler work on this path is spent effort.
 
+🚨 **The preload traces on a SYNTHETIC obs, and it must carry every Dict key the extractor reads.**
+`ai_v12_14_ladder_truevalue` (377a5aa1) died two minutes in at env init, exit 1, because the trace
+input was a hand-built one-key dict and `--value-true-team`'s value route RAISES on a missing
+`opp_true_team` — inside the forkserver that raise kills the bootstrap and fails `SubprocVecEnv`
+construction. The trace input is now built from the declared registry
+(`agents.model.extra_obs_keys`), as are `--compile-trainer`'s and `--compile-opponents`' warmups and
+`--warmstart-battles`' behaviour-cloning forwards, which carried the same defect on the same argv.
+A new obs-key flag needs one row in that table; adding a key by hand at any of those sites is the
+bug coming back.
+
 Startup: **`--compile-opponents-preload`** (`gen3_forkserver_preload_v1`, 2026-08-16) compiles ONCE in
 the forkserver so every worker inherits the traced graph (~0.12 s each instead of ~30 s). It
 **follows `--compile-opponents`**, so it is on by default too; `--no-compile-opponents-preload`

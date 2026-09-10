@@ -33,6 +33,17 @@ Config arrives as DATA via `GEN3AI_PRELOAD_ARCH` (JSON of `arch_kwargs_to_plain(
 forkserver is a fresh interpreter that never parsed argv, which is exactly why
 `extractor_arch.ARCH_ARG_KEYS` exists as a table. No env var ⇒ importing this module is a no-op
 (safe against an accidental import outside the forkserver).
+
+## The TRACE INPUT is a contract, not a placeholder
+
+🚨 It was `{"observation": torch.zeros(1, layout["total_dim"])}` — one key — until 2026-09-09, and
+that literal killed `ai_v12_14_ladder_truevalue` (377a5aa1) two minutes into its launch, at env
+init, exit 1. `--value-true-team`'s privileged value route reads its own Dict key `opp_true_team`
+and RAISES rather than skipping when it is absent; inside the forkserver that raise kills the
+bootstrap, so `SubprocVecEnv` construction fails in the parent. `preload_trace_obs` now builds from
+the DECLARED registry (`agents.model.extra_obs_keys`), which is also what `compile_trainer`,
+`compile_opponents` and `warmstart` use — all three carried the identical defect on the same argv,
+so fixing only this module would have moved the crash rather than removed it.
 """
 from __future__ import annotations
 
@@ -41,6 +52,51 @@ import os
 import sys
 import threading
 import time
+from typing import Any, Dict, Tuple
+
+
+def build_preload_extractor(cfg: Dict[str, Any]) -> Tuple[Any, Dict[str, Any]]:
+    """`GEN3AI_PRELOAD_ARCH`'s parsed config -> `(the extractor the workers will build, its layout)`.
+
+    Factored out of `_preload` so a test can exercise the object the trace runs against without
+    paying a `torch.compile` — the crash this seam guards against
+    (`ai_v12_14_ladder_truevalue` @ 377a5aa1) is in the OBS DICT, not in the codegen, and a
+    30-second regression test is one nobody runs.
+    """
+    import gymnasium as gym
+    import numpy as np
+
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    mappings = load_mappings()
+    layout = Gen3ObservationEncoder(mappings).get_layout()
+    space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
+    import inspect
+    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
+    kwargs = {k: v for k, v in cfg.items() if k in sig}
+    # `Gen3FeaturesExtractor` never READS `observation_space` (its annotation says so —
+    # `spaces.Space`, deliberately unread); every serverless probe path passes the flat
+    # `Box` the encoder describes.
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs)
+    fe.eval()
+    fe.disable_observation_debugger()                   # dynamo cannot trace its numpy asserts
+    return fe, layout
+
+
+def preload_trace_obs(fe: Any, layout: Dict[str, Any]) -> Dict[str, Any]:
+    """The synthetic obs the trace runs on — `observation` PLUS every flag-gated Dict key THIS
+    extractor's forward reads, built from the declared registry rather than by hand.
+
+    🚨 This used to be a literal one-key dict, and that is exactly how the first
+    `--value-true-team` + preload launch died at env init two minutes in: the privileged value
+    route RAISES on a missing `opp_true_team` (a silent skip is the gen-12 dead-tail bug), the
+    raise killed the forkserver bootstrap, and `SubprocVecEnv` construction failed in the parent.
+    The all-zero blocks `agents.model.extra_obs_keys` supplies are the same "no privileged view"
+    encoding a real env emits when it has none, so the traced graph IS the workers' graph.
+    """
+    from agents.model.extra_obs_keys import synthetic_obs
+    return synthetic_obs(fe, int(layout["total_dim"]))
 
 
 def _preload() -> None:
@@ -63,29 +119,10 @@ def _preload() -> None:
     # diagnosis named; a single compile thread never creates it.
     torch._inductor.config.compile_threads = 1
 
-    import gymnasium as gym
-    import numpy as np
-
-    from agents.model.features_extractor import Gen3FeaturesExtractor
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-
-    cfg = json.loads(cfg_json)
-    mappings = load_mappings()
-    layout = Gen3ObservationEncoder(mappings).get_layout()
-    space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
-    import inspect
-    sig = set(inspect.signature(Gen3FeaturesExtractor.__init__).parameters)
-    kwargs = {k: v for k, v in cfg.items() if k in sig}
-    # `Gen3FeaturesExtractor` never READS `observation_space` (its annotation says so —
-    # `spaces.Space`, deliberately unread); every serverless probe path passes the flat
-    # `Box` the encoder describes.
-    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs)
-    fe.eval()
-    fe.disable_observation_debugger()                   # dynamo cannot trace its numpy asserts
+    fe, layout = build_preload_extractor(json.loads(cfg_json))
     compiled = torch.compile(fe.forward)
     with torch.no_grad():
-        obs = {"observation": torch.zeros(1, layout["total_dim"])}
-        compiled(obs)                                   # trace + codegen happen HERE, once
+        compiled(preload_trace_obs(fe, layout))         # trace + codegen happen HERE, once
     # keep the compiled artifact alive for the fork: workers' torch.compile of the SAME code
     # object hits the in-memory caches this populated.
     globals()["_preloaded"] = (fe, compiled)

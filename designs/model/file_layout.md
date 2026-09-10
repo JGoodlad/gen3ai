@@ -125,6 +125,17 @@ preference:**
    `inspect.signature(Gen3FeaturesExtractor.__init__).parameters` as the flag set (`compile_prewarm`,
    `compile_preload`, `ctor_kwarg_snapshot_test`, `config_only_pattern_test`, `delivery_graph`, …).
    An inherited `__init__` IS that function, so every one of them is unchanged.
+
+> 🚨 **A second public surface of the forward: the obs DICT's key set.** `forward` is normally a
+> pure function of `obs["observation"]`, but a route may read a flag-gated Dict key of its own
+> (`--value-true-team`'s `opp_true_team` is the first) and RAISE when it is absent. That mapping is
+> DECLARED in **`extra_obs_keys.py`** — `(extractor attribute -> key, shape, canonical zero block)`
+> — and every synthetic-obs caller on a training path builds from it (`compile_preload`,
+> `lifecycle._run_roundtrip_test`, `compile_trainer`, `compile_opponents`, `warmstart`). The enable
+> condition is the ATTRIBUTE the forward itself tests, so the table cannot drift from the seam, and
+> an AST gate over `extractor_forward` fails on an undeclared key. Hand-building
+> `{"observation": zeros(1, D)}` is what killed `ai_v12_14_ladder_truevalue` two minutes into its
+> launch; `extra_obs_keys_test.py` reproduces it.
 3. **Every body keeps its `self.` spelling**, so the split is checkable as a pure relocation — all
    44 members are source-hash identical to the pre-split class.
 4. **mypy needs no declarations.** Each mixin's `self.<attr>` resolves against the `__init__` that

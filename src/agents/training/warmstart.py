@@ -38,6 +38,8 @@ from typing import Optional
 import numpy as np
 import torch as th
 
+from agents.model.extra_obs_keys import zero_extra_obs
+
 _JS_EPS = 1e-12
 _CHUNK = 512
 _NEG_INF = -1e9
@@ -114,6 +116,11 @@ def masked_action_probs(model, obs: np.ndarray, mask: np.ndarray,
     for i in range(0, len(obs), chunk):
         mb = th.tensor(mask[i:i + chunk], device=dev)
         ob = {"observation": th.tensor(obs[i:i + chunk], device=dev), "action_mask": mb}
+        # Behaviour cloning reads POLICY logits, but the forward still runs the whole extractor —
+        # including any vf-only route that reads its own Dict key and RAISES when it is missing.
+        # All-zero blocks are correct here as well as sufficient: those routes inject into
+        # `value_pooled`, which pi never sees, so the logits are bit-identical either way.
+        ob.update(zero_extra_obs(model.policy.features_extractor, batch=len(mb), device=dev))
         with th.no_grad():
             logits = model.policy.get_distribution(ob).distribution.logits
         out.append(th.softmax(logits + (mb - 1.0) * 1e9, dim=-1).cpu().numpy())
@@ -201,8 +208,10 @@ async def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
     n, ema, first, last = len(obs), None, None, None
     for step in range(bc_steps):
         idx = th.randint(0, n, (batch,), device=dev)
-        logits = student.policy.get_distribution(
-            {"observation": O[idx], "action_mask": M[idx]}).distribution.logits
+        bc_obs = {"observation": O[idx], "action_mask": M[idx]}
+        bc_obs.update(zero_extra_obs(student.policy.features_extractor,
+                                     batch=int(idx.shape[0]), device=dev))
+        logits = student.policy.get_distribution(bc_obs).distribution.logits
         logp = th.log_softmax(logits + (M[idx] - 1.0) * 1e9, dim=-1)
         tgt, anc = Tt[idx], An[idx]
         kl_gated = (tgt * (th.log(tgt + 1e-12) - logp)).sum(-1).mean()
