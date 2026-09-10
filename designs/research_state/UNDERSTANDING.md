@@ -718,8 +718,9 @@ quota-matched frames — fix in flight before the `strata` and `truevalue` reads
 
 **THE REPLICATE FLOOR (2026-09-09, `ctrl10M_b` vs `ctrl10M`, pinned 10M, quota-matched):** [MEASURED,
 `measurements/critic_ladder_reads/ctrl10M_b_vs_ctrl10M_2026-09-09_FLOOR/`, `replicate_floor_10M.json`] two
-identical configurations differ by 0.070 [+0.036, +0.101] on the registered identity bias (the SIGN of the
-10M head's bias vs its own continuation is a draw), 0.010 on bot resolution, 0.028 on the turn-1–3 spread
+identical configurations differ by 0.070 [+0.036, +0.101] on the registered identity bias on the FIRST draw and
+by 0.015 [−0.020, +0.049] on the second — a single draw's CI position is not a property of the quantity (the SIGN
+of the 10M head's bias vs its own continuation is a draw; the 0.070 is one outlier head), 0.010 on bot resolution, 0.028 on the turn-1–3 spread
 ratio, 0.39 on the all-states spread ratio, and **45 Elo** at matched count; the floor narrows with step
 (bots 0.12 apart at 2M, 0.02 at 10M). Relabelled: every DETECTED-vs-zero on `vf15` and `cflabels` is WITHIN
 FLOOR. **Standing: five runs, three levers, ZERO detected registered rows.** The floor is one draw — the
@@ -727,9 +728,9 @@ meters' CIs remain the inference; it can only demote.
 
 **THE FLOOR AT 400 GAMES (2026-09-09, offline-generated cycles, 4,800 battles a side):** [MEASURED · MAJOR]
 the replicate difference on bot resolution collapses to **+0.0004 [−0.007, +0.007]** (its 100-game floor was
-battle noise — the row is now instrument-grade), while identity bias (+0.074 [+0.051, +0.096]) and the turn-1–3
-spread ratio (−0.066 [−0.107, −0.031]) stay clear of zero between two draws of ONE configuration — run noise
-that more eval cannot remove. Consequence: levers are read on bot resolution / own-team R² / class AUC from an
+battle noise — the row is now instrument-grade), while identity bias (+0.074 [+0.051, +0.096] on the `ctrl10M_b` draw; the `ctrl10M_c` draw reads +0.015 live —
+the first draw is an outlier head) and the turn-1–3 spread ratio (−0.066 [−0.107, −0.031]) do not collapse with
+more battles — run noise that more eval cannot remove, sized by the wider draw and typified by the narrower. Consequence: levers are read on bot resolution / own-team R² / class AUC from an
 offline 400-game cycle (no retraining), and on identity bias / spread ratio only with replicates per condition.
 
 **Ladder arm 7 `strata` read (2026-09-09, class-stratified win-prob BCE, realized bot share 0.473 vs 0.5):**

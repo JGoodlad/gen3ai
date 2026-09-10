@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,555-line file. **The ledger itself is append-only and is never edited by this**;
+16,561-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**502 headings · 462 dated · 2026-08-01 → 2026-09-09 · ledger 16,555 lines.**
+**503 headings · 463 dated · 2026-08-01 → 2026-09-10 · ledger 16,561 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -522,3 +522,4 @@ rename.
   - `L16468` · `2026-09-09` · VERDICT ×2 · `f871e79f→d11386dc` and `d11386dc→28ece02a` are both TRAINING-SEMANTICS-NEUTRAL — the whole span `f3502568→28ece02a` is verified; arm 8 and the fixed `truevalue` are cleared to launch
 - `L16472` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_16_ladder_ctrl10M_c` COMPLETE: the floor gets a SECOND DRAW (10,027,008 steps, 4.98 h, G7 below bar on both halves, 1 post-training crash that contaminated nothing)
   - `L16544` · `2026-09-09` · THE FLOOR, SECOND DRAW · `ctrl10M_c` vs `ctrl10M` at pinned 10M — the replicate floor is now a RANGE per row; identity bias 0.015–0.070; three draws of one configuration span 45 Elo, 0.12 in early bot win rate, 0.21 in the first self-play jump and 0.93–1.07 on the G7 statistic itself
+  - `L16556` · `2026-09-10` · CORRECTION + PRE-REGISTRATION · the "floor's own CI excludes zero" headline did NOT reproduce on the second draw — the lesson is restated on the FAILURE to replicate; and arm 8's dose decays before the self-play crossing, with a prediction for what it does after
