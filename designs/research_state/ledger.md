@@ -16468,3 +16468,75 @@ Reports `critic_read_hp400.md/json` beside each pair's live read; floor `replica
 ### 2026-09-09 · VERDICT ×2 · `f871e79f→d11386dc` and `d11386dc→28ece02a` are both TRAINING-SEMANTICS-NEUTRAL — the whole span `f3502568→28ece02a` is verified; arm 8 and the fixed `truevalue` are cleared to launch
 
 Same pinned-input method through the real build path (`build_parser → resolve_config → InstrumentedMaskablePPO → apply_training_hparams → _model_hparams → _run_roundtrip_test`), one comparable argv (byte-identical to the previous verdicts' input). **`f871e79f→d11386dc`** (26 commits, not the one fix commit — including `eval_worker.py` and `local_battle_runner.py` on the live eval path, proven inert by execution: the new seed / obs-debugger paths are unreachable from training): flag OFF 712 = 712 policy tensors (extractor 230), 0 differing, kwargs diff EMPTY, all hashes identical, no version hop (115 both), rust diff empty, `ctrl10M`'s checkpoint loads with identical forward hashes; flag ON 736 = 736 with the key present, the old tree's round-trip passing through its own hand-rolled branch, the one-key forward raising the identical message in both trees — the fix moved the callers, not the seam. **`d11386dc→28ece02a`**: 251 = 251 policy tensors (229 extractor), 0 differing, kwargs diff EMPTY (no kwarg, no label key added), `pi` / `vf` / `value_pooled` / win-logit / `predict_values` hashes identical; the rewritten `WinProbLabelCallback._on_rollout_end` driven on a seeded synthetic buffer with truncated episodes gives byte-identical `win_target` / `win_mask` with the flag absent and at an explicit 1.0 (trailing rows stay masked), `_win_prob_loss` bit-identical (`0.82531923055648804`, the same figure as the previous increment); λ live at 0.9 against an independently hand-coded recursion (exact once cast to float32; `bootstrap` used, not the fallback; `mask` mode byte-identical to the default's mask); **the three-hop load 113→114→115→116 of `ctrl10M`'s checkpoint passes `check_compatible` with values and win logits identical to the digit** — the path every future read of the control takes. Rust diff empty both. **Hazards.** (1) `SIDECAR_SCHEMA` 1 → 2 is declarative only — no reader enforces it (the refusal is being built). (2) `_on_rollout_start` now writes `model._win_prob_lambda_metrics = None` on every rollout including λ = 1.0 — a default-path write with no semantic effect, named rather than elided. (3) Meter comparability across the `critic_read` v2 → v3 change is a separate question, already handled by regenerating every read on one tool version. (4) Scope as before: no rollout, no live collector. Tag: **VERIFIED · NEUTRAL ×2**.
+
+## 2026-09-09 · OPS · CRITIC LADDER — `ai_v12_16_ladder_ctrl10M_c` COMPLETE: the floor gets a SECOND DRAW (10,027,008 steps, 4.98 h, G7 below bar on both halves, 1 post-training crash that contaminated nothing)
+
+The third draw of the control configuration — same argv as `ctrl10M_b` but for the run name and
+`--seed 1002`, pinned `377a5aa170bef8bf37be2af7217bb4d4f1b20b36`. Its job is to turn the replicate
+floor from a MAGNITUDE (one difference, one degree of freedom) into something with a SPREAD.
+
+🚨 **THESE THREE ARE NOT A SEED SWEEP.** `--seed` reaches only the SB3 constructor and never the
+battle stream, so ctrl10M / ctrl10M_b / ctrl10M_c are **three draws from the same configuration**;
+distinct seeds are hygiene, not the mechanism. They would show much the same spread at one seed.
+
+**THE CRASH IS COSMETIC AND THE ARM IS CLEAN — verified, not assumed.** The launcher reports
+`Restarts: 2, Crashes: 1`. The crash is at **22:48:11**, AFTER the 10M eval cycle ran all nine bots,
+AFTER `Final aggregate win rate: 92.8%` printed, and AFTER `Training complete`: a worker died with
+`exitcode=-15` (SIGTERM) during teardown. The auto-restart from `final_model.zip` started a child
+that wrote **nothing**. Checked on disk: exactly **two** TB event files (the 20:46 periodic restart),
+covering 98,304–6,684,672 and 6,881,280–10,027,008, carrying **3 + 2 = 5 eval cycles with no
+duplicates**; exactly **five** `eval_traces/step_*` dirs at the expected steps; sidecar **155,137
+rows / 42 MB**, the same count as every other sidecar arm. So the arm's artifacts are indistinguishable
+from a 0-crash run and it is a valid third draw. A crash COUNT is not a verdict — read where it fell.
+
+**Run:** 10,027,008 steps in **4.98 h** (the slowest arm), 48 envs, 1 periodic restart + 1 post-hoc
+auto-restart, `Training complete`. Final aggregate 92.8%.
+
+**G7 (within-arm)** — reference = first two cycles (22.211, 23.266) → **22.739**:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 24.235 | 1.066 | 0.8888 | under bar |
+| 8,000,016 | 22.833 | 1.004 | 0.8913 | under bar |
+| 10,000,032 | 23.692 | 1.042 | 0.8963 | under bar |
+
+Worst **1.066 = 85.3% of the bar**; stall peak **0.0177**, last 0.0045. **Below bar on both halves.**
+
+🚨 **THE THREE-DRAW SPREAD — the point of the arm.** Same configuration, three times:
+
+| | ctrl10M | ctrl10M_b | ctrl10M_c | spread |
+|---|---|---|---|---|
+| bots @2M | 0.4913 | 0.3713 | 0.4737 | **0.120** |
+| bots @10M | 0.8988 | 0.8800 | 0.8963 | 0.019 |
+| ladder 10M | 2018.7±16.7 | 1973.7±15.6 | 1983.4±15.7 | **45.0 points** |
+| eval/elo 10M | 2019 | 1974 | 1983 | 45 |
+| G7 reference | 23.207 | 27.657 | 22.739 | **4.918** |
+| G7 worst ratio | 1.035 | 0.927 | 1.066 | **0.139** |
+| first selfplay jump | 0.7278 | 0.5832 | 0.7976 | **0.214** |
+| final aggregate | 93.0% | 92.6% | 92.8% | 0.4 pp |
+
+Every one of those is a run-to-run quantity. **The G7 STATISTIC ITSELF spans 0.927–1.066 across
+identical configurations** — so a single arm's worst-ratio says nothing about its lever, which is the
+same lesson the references already carried (they span 4.918) in a second meter. And the first
+self-play jump spans 0.214, which retires any reading of that number as a lever effect for good.
+
+**Descriptive:** bots 0.4737 → 0.7475 → 0.8888 → 0.8913 → 0.8963; elo 1570 → 1983; ladder converged
+6/6: 4M 1771.2±12.3, 6M 1942.3±14.8, 8M 1956.2±15.1, 10M 1983.4±15.7. Rule-15 boundaries 4,000,032 →
+0.7976 and 6,000,000 → 0.9000.
+
+**WHAT THIS UNBLOCKS.** The identity-bias floor — 0.070 [+0.036, +0.101] from the first pair, whose
+own CI EXCLUDES ZERO — is the one row the offline 400/800-game re-reads cannot touch, because
+`cf_audit` samples 800 states regardless of the game count. Only replicates move it. With a second
+draw the floor stops being a single magnitude and acquires a range, and the pending 800-game
+equivalence claim on bot resolution is written against THAT bar rather than against the one-draw
+±0.007. Two draws is still two: it bounds the floor, it does not give it a confidence interval.
+
+⚠️ CROSS-COMMIT: 377a5aa1 vs the control's f3502568, a span separately settled NEUTRAL. And
+ctrl10M_c carries the 40/40/10 forensic quota against ctrl10M's default, so tool v3's matched frames
+are required — the same asymmetry that produced and then retracted the cflabels detection.
+
+Next: `ai_v12_19_ladder_lambda09` (`--win-prob-lambda 0.9`, pin `28ece02a`), whose whole span
+f3502568→28ece02a is now verified neutral, including a three-hop 113→114→115→116 load of ctrl10M's
+checkpoint with values and win logits identical to the digit.
+
+Tag: OPS. Nothing measured about the critic by this entry.
