@@ -16978,3 +16978,100 @@ Same checkpoints, a new offline draw of the eval (both sides regenerated at 800 
 | `cflabels` − `ctrl10M` | +0.0063 → **+0.0026** [−0.003, +0.007] | +0.001 → −0.002 | −0.026 → −0.041 | −0.012 → −0.012 | +0.040 → +0.031 | — → −0.055 |
 
 **Reading.** (1) **The floor pair's own eval-draw variation:** bot resolution +0.0036 → −0.0004 (a 0.004 swing between two eval draws of the SAME two runs); own-team R² −0.004 → −0.036 (a 0.032 swing — rule 18's row again, and the second replicate control's own-team decode is now DETECTED below the base control's on one draw and not on the other); the spread ratio −0.043 → −0.067 and the slope +0.200 — the base control's higher spread and lower slope are confirmed against `ctrl10M_b` on a third read. (2) **`vf15`'s bot-resolution lean is the one that survives two eval draws with the same sign** (+0.0068, +0.0090; both CIs clear of zero; the second clears the `ctrl10M_b` draw's bar of 0.0036 by a hair) — but the floor's wider offline draw on that row is 0.0074 (`ctrl10M_c` − `ctrl10M` at 800), which the CI does not clear; and `vf15` was never registered on that standard. A consistent lean; not a detection. `cflabels`' lean did not repeat (+0.0063 → +0.0026). (3) Amplitude rows: every lever's spread ratio sits inside the floor on draw 2 as on draw 1. `tdaux` and `strata` missed the second draw (a mid-run edit of the queue script did not take) and are queued behind `truevalue`'s cycles. Rule 19 in one table: the gauge rows' eval-draw swings (0.004) are the size of the effects being chased, and the decoder/amplitude rows' swings (0.03 / 0.02) are larger than their CIs. Tag: MEASURED · NOT DETECTED (levers) · floor eval-draw variation measured.
+
+---
+
+## 2026-09-10 — OPS: arm 9 `denseaux` (`--win-prob-dense-aux 1.0`) COMPLETE at 10,027,008 steps — G7 under bar on both halves; the aux instruments are the read, and TWO of them are NOT cross-arm comparable
+
+**Run** `ai_v12_20_ladder_denseaux` · pin `46ca68ef5d09bad4618db516e08cb1afae15b7e7` · 48 envs · 6 h 04 m
+wall · **2 restarts, both SCHEDULED** (`Restart interval (180.0m) elapsed`, at 13:21 and again later) · **0
+crashes — `crashes/` was never created** · `Training complete` present once · FPS 397 (cumulative; not a
+throughput measurement, see rule (d)).
+
+**Endpoints.** bots by cycle 0.4150 / 0.8112 / 0.8637 / 0.9175 / **0.8963** @10,000,032. The 10M value
+sits INSIDE the three-draw @10M range 0.8988 / 0.8800 / 0.8963 — it is numerically identical to
+`ctrl10M_c`'s. **WITHIN FLOOR**; the floor demotes and never promotes.
+
+**G7 (within-arm, `g7_ladder.py`, NOT `g7_report.py`).** Reference FROZEN at the mean of the first two
+cycles (25.605, 27.436) = 26.521. Ratios 0.908 / 0.983 / 0.952 — **worst 0.983, i.e. 78.6 % of the 1.25
+bar**. Stall half: `signal/draw_rate` peak 0.0202, last 0.0065, bar 0.05. **Under bar on both halves.**
+Episodes got SHORTER than the reference at every measured cycle.
+
+**Ladder.** 10M node **2044.6 ± 17.3** (converged, anchored, 6 frozen pairs; nodes at 4M/6M/8M/10M).
+Above all three controls' 10M nodes (2018.7 / 1973.7 / 1983.4, spread 45.0) — **but this is NOT reported
+as a strength result**: strength is not read on these arms, the newest BT node is systematically
+inflated, and a cross-run comparison wants matched snapshot COUNT.
+
+**Self-play crossing at 4,000,032** (`selfplay_fraction` 0.0000 → 0.9000; `pool_snapshot_count` 0 → 1,
+and every `*_pool` tag first appears at 4,128k). Rule 15 binds across it. Pool reached 3 snapshots.
+
+### The dose rows, quoted at each 2M cycle as registered
+
+| step | masked_frac | coverage | auc_own | auc_opp | dense_aux_share |
+|---|---|---|---|---|---|
+| 2,000,016 | 0.2147 | 0.9860 | 0.7952 | 0.8796 | 0.0873 |
+| 4,000,032 | 0.1796 | 0.9846 | 0.7473 | 0.9235 | 0.0525 |
+| 6,000,000 | 0.1175 | 0.9909 | 0.7591 | 0.8530 | 0.1262 |
+| 8,000,016 | 0.1192 | 0.9908 | 0.7294 | 0.8360 | 0.1088 |
+| 10,000,032 | 0.1181 | 0.9899 | 0.7457 | 0.8419 | 0.1695 |
+
+### Four things the instruments say, and the limits on each
+
+1. **`grad/dense_aux_share` reads 0.0000 at the FIRST update (196,608), then 0.3315 at 294,912.** That
+   zero is **ZERO BY CONSTRUCTION** — a zero-init output head cannot produce a gradient before it has a
+   weight. Same for `dense_aux_norm_shared` (0 → 0.0579) and `dense_aux_policy_cosine` (0 → 0.0282).
+   Never report it as a dead route. Over the run the share is noisy across 0.05–0.33 with no trend,
+   mean ≈ 0.18 — a live route carrying a real share of gradient norm.
+
+2. **`aux_auc_own > aux_auc_opp` is FALSIFIED as a persistent property.** It held only while the
+   opponent head was still learning: own plateaued ~0.82 from 589,824, opp climbed 0.493 → 0.92, the
+   two crossed at 1,081,344 and the gap then widened the other way. **The limit that matters: the two
+   AUCs score DIFFERENT label sets and were never commensurable**, so the crossing says the two decode
+   problems ordered differently over training — not that own-side decoding degraded. This observation
+   is DROPPED from the arm's rationale; it was the smoke's observation, never a mechanism.
+
+3. **The own-side decline is real, PRE-CROSSING, and it arrested at the regime change.** own fell −0.050
+   from 1.97M to 0.747 at 4.0M, then went flat ~0.75 for the rest of the run. **The rule-15 explanation
+   was checked and does NOT apply**: self-play opponents entered only at ~4.0M, so the whole decline
+   happened inside the bots-only regime. The shape is not the simple "dense-aux crowds out own-side
+   decoding" reading either — the crowding pressure did not change at 4.0M but the trend did. The
+   composition confound (`masked_frac` falling) survives only in a NONLINEAR form: a LARGER mask
+   decline over 0.59M→1.97M (−19.9 %) produced NO AUC decline, while a smaller one over 1.97M→3.44M
+   (−16.3 %) accompanied −0.0499.
+
+4. 🚨 **TWO ROWS ARE NOT CROSS-ARM COMPARABLE, because the lever itself changes them.**
+   - **`aux_masked_frac` was registered as a constant ≈0.3 and is not one.** It drifts monotonically
+     0.3036 → 0.1796 pre-crossing (−41 %), steps discontinuously to 0.1293 at the crossing, then
+     SETTLES ~0.118. Reported as realized dose beside the read, not used as a covariate (the decision
+     rows are eval-frame rows the training-time mask does not enter).
+   - **`train/noise_scale_ratio` is contaminated on this arm.** The launcher's own `[NOISE] TOTAL vs
+     POLICY-TERM DISAGREE` warning fired at every checkpoint: total 0.00204 → 0.00729 while the
+     policy-term ratio ran 0.114 → 0.229, a ~30x gap throughout. The dense supervised aux heads have
+     far lower gradient noise than the clipped surrogate, so the TOTAL is deflated by terms only this
+     arm has. Both readings agree "over-batched", so nothing about the arm's conduct changes — but any
+     cross-arm use of that row needs the `_policy` variant or it reports pure composition as an effect.
+
+### Sidecar — the first MULTI-HEADER file in the campaign
+
+153,603 lines, **3 header lines** (one per launcher start: initial + 2 restarts), so **153,600 rows =
+1,536 x exactly 100 rollouts**. The six previous arms are 155,137 lines = 1 header + 155,136 rows =
+1,536 x 101. 🚨 **A naive `wc -l` comparison reports denseaux as short by 1,534 when it is short by
+exactly ONE ROLLOUT** (a rollout in flight at a restart boundary is not flushed) and carries two extra
+header lines. `main.ops.value_sidecar_read` handles it correctly — it reports 153,600 rows (151,891
+labelled). Header declares **schema 2 with `win_prob_lambda 1.0`**, carries `outcome`/`outcome_known`,
+and `target == outcome` on every labelled row checked (4,561/4,561 in the early sample). Poolable with
+the λ-off files under the reader's QUANTITY rule, but the poolability rule keys on the declared
+`schema` FIELD, so say so explicitly whenever pooled.
+
+**Span.** `46ca68ef`, the last hop of the chain f3502568 → 377a5aa1 → f871e79f → d11386dc → 28ece02a →
+46ca68ef, verified neutral by pinned-input functional tests through the real build path. denseaux also
+PASSED the first-two-minutes test of the compile/preload/warmstart layer that `--debug` cannot reach —
+the layer that killed truevalue's first attempt — with this pin adding a THIRD obs key.
+
+**Monitor false positive, second of its kind.** The only `FAILURE-SIGNATURE` hit was the watcher's own
+grep matching the pin's commit SUBJECT line ("the label callback guards all THREE obs keys, not two"),
+not an error; real error signatures 0, crashes 0. The first was `opp_true_team` on truevalue. **Anchor a
+failure pattern to ERROR CONTEXT — a `RuntimeError:` prefix, or exclude the launcher's `↳`
+pin-annotation marker — never to a bare phrase that the commit message also contains.**
+
+**Standing result after ten runs, six levers: still ZERO detected REGISTERED rows.**
