@@ -68,10 +68,16 @@ the network never reads, and `train()`'s one-ahead intent SHIFT is still gated o
 `opp_intent_coef > 0` **and** runs after every `_on_rollout_end`, so what is read here is the env's
 own per-episode value in both regimes.
 
-⚠️ **`target` IS THE EPISODE'S FINAL OUTCOME, not a per-state quantity.** `WinProbLabelCallback`
-back-fills the terminal win/loss to every step of the episode that produced it, so `target` is
-constant within an episode and `target_known` marks exactly the episodes that FINISHED inside the
-buffer. There is no separate outcome column because it would be the same number.
+⚠️ **`target` IS THE EPISODE'S FINAL OUTCOME, not a per-state quantity — UNLESS `--win-prob-lambda`
+IS LIVE.** `WinProbLabelCallback` back-fills the terminal win/loss to every step of the episode that
+produced it, so `target` is constant within an episode and `target_known` marks exactly the episodes
+that FINISHED inside the buffer. There is no separate outcome column because it would be the same
+number. 🚨 Under `--win-prob-lambda < 1` (`gen3_winprob_lambda_v1`) that same callback then
+OVERWRITES `win_target` with the λ-RETURN — a per-state probability that varies within the episode —
+and, under the default `bootstrap` truncation branch, sets `win_mask = 1` on the trailing in-progress
+episode as well. This callback runs immediately after it and therefore reads the λ-return. The
+header's **`win_prob_lambda`** field says which quantity a file holds; a reader that assumes the
+outcome on a λ file is measuring the critic against a moving target and will not know it.
 
 ⚠️ **`win_logit` IS NOT AN INDEPENDENT MEASUREMENT.** Under `--critic winprob` the head IS the
 critic, so `v = sigmoid(logit)` exactly and the logit is recoverable by inverting it — but it
@@ -118,7 +124,13 @@ SIDECAR_DIRNAME = "value_sidecar"
 SIDECAR_FILENAME = "rows.jsonl"
 #: The header line's schema tag. Bump when a column changes MEANING; a purely additive column does
 #: not, so an older reader keeps working on a newer file (the `trace_selection` convention).
-SIDECAR_SCHEMA = 1
+#: v2 (gen3_winprob_lambda_v1): the header gained `win_prob_lambda` / `win_prob_lambda_truncated`,
+#: and with them the `target` column's meaning became HEADER-DEPENDENT — the episode outcome at
+#: λ = 1.0 (every v1 file), the λ-return below it. That is a meaning change under this file's own
+#: rule, so the tag moves: a v1 reader meeting a v2 file can refuse rather than quietly average a
+#: quantity it thinks is a 0/1 outcome. A v2 file at λ = 1.0 is byte-identical to a v1 one apart
+#: from the two header fields.
+SIDECAR_SCHEMA = 2
 
 #: Sample one state in this many, by default. 1/64 of a production rollout is ~2,048 rows —
 #: enough for a per-turn-bucket calibration table within a single rollout, small enough that the
@@ -231,6 +243,13 @@ class ValueSidecarCallback(BaseCallback):
             "schema": SIDECAR_SCHEMA,
             "tag": "gen3_value_sidecar_v1",
             "critic_mode": self._critic_mode,
+            # gen3_winprob_lambda_v1: WHICH quantity the `target` column holds. 1.0 = the episode's
+            # terminal outcome (every file before this flag); below 1.0 = the λ-return, which
+            # varies within an episode and covers the truncated rows the bootstrap branch unmasks.
+            # Written from the live model so it cannot disagree with what actually ran.
+            "win_prob_lambda": float(getattr(self.model, "win_prob_lambda", 1.0) or 1.0),
+            "win_prob_lambda_truncated": str(
+                getattr(self.model, "win_prob_lambda_truncated", "bootstrap")),
             "v_is_probability": bool(is_winprob(self._critic_mode)),
             "fraction": self._fraction,
             "seed": self._seed,

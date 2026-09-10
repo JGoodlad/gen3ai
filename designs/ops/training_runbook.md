@@ -259,6 +259,21 @@ at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_
 `strata_active 0` means "on but idle" (one opponent class present) and an ABSENT family means off. Mechanics:
 [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
+**`--win-prob-lambda <0..1>`** (default `1.0` = OFF, bit-identical; **requires `--critic winprob`**)
+re-aims WHAT the value loss regresses toward: below 1.0 a state's target is no longer its episode's
+terminal 0/1 bit but the λ-return `(1−λ)·V(s[t+1]) + λ·G[t+1]` over the collector's RECORDED values,
+anchored at the outcome on the state that ends the episode — so a state `d` steps out keeps weight
+`λ^d` on the outcome. It exists because one bit copied to ~30 states is a noisy objective (only
+~10–14 % of its variance lies between (cycle, opponent) cells), while mid- and late-game values
+already separate opponents (~0.5–0.8) where turn-1 values do not (~0.1). **`--win-prob-lambda-truncated
+{bootstrap,mask}`** (default `bootstrap`) decides whether an episode still running at the rollout
+boundary is targeted at `V(s_T)` — which UNMASKS rows that carry no target today — or left excluded;
+INERT at λ = 1.0. Read `win_prob/lambda_target_shift`, `lambda_bootstrap_frac`, **`lambda_unmasked`**
+(read this BEFORE attributing an effect to λ) and `lambda_loss` vs `lambda_loss_terminal`. 🚨 An
+ABSENT `win_prob/lambda_*` family means the flag is off. ⚠️ Under λ < 1 the value sidecar's `target`
+column is the λ-return, not the raw outcome. Mechanics:
+[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+
 Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md);
 flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.

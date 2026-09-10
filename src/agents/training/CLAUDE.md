@@ -486,6 +486,49 @@ bounded per-row weight. Read `win_prob/strata_share_*`, `strata_w_entropy` (1.0 
 family is published whenever the flag is on, so 0 means "on, but one class present / no labels yet"
 (every `--debug` run and any run before the pool seeds) and ABSENT means the flag is off.
 
+### `--win-prob-lambda` — the BCE's TARGET (`gen3_winprob_lambda_v1`, v116)
+
+**Default `1.0` = OFF and BIT-identical; `--critic winprob` is REQUIRED** (refused otherwise — under
+`shaped` the buffer's `values` are a PopArt-normalised shaped return, not a probability, so blending
+them into a BCE target is a category error). Below 1.0 each state's target stops being its episode's
+terminal bit and becomes a **λ-return over the collector's RECORDED values**:
+
+```
+row t ENDS its episode   ⇒  G[t] = y                       (the outcome, exactly)
+otherwise                ⇒  G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]
+```
+
+γ = 1 and the clean-world stream is terminal-only, so an n-step return **is** `V(s[t+n])` and the
+λ-average collapses to that one backward pass. A state `d` steps from its terminal keeps weight
+**λ^d** on the outcome. The loss is unchanged — the same masked-mean BCE, now against a SOFT target,
+which is exactly what a proper scoring rule generalises to.
+
+🚨 **WHY.** The strata flag's mechanism from the other side. One terminal bit copied to ~30 states is
+a very noisy objective, only **10.2 % / 14.4 %** of whose variance lies BETWEEN (cycle, opponent)
+cells, so the weak axes shrink toward the marginal — the critic barely separates opponents at turn 1
+(spread ratio **~0.1**) although **mid- and late-game values already separate them at ~0.5–0.8**. The
+information exists inside the episode; λ moves it backward along a far less noisy channel than the
+terminal draw ([`winprob_head_refit_2026-09-09`](../../../designs/research_state/measurements/winprob_head_refit_2026-09-09/README.md) §6/§11).
+
+🚨 **`V` IS THE RECORDED, PRE-UPDATE VALUE** (`rollout_buffer.values`, which under this critic *is*
+`sigmoid(win logit)`), not a re-forward inside `train()`: a target recomputed from the current
+weights would move under its own gradient across the 10 epochs. **`--win-prob-lambda-truncated
+{bootstrap,mask}`** picks the buffer-boundary convention for an episode with no terminal inside the
+rollout — `bootstrap` (the default) targets `V(s_T)` from the same `model._last_obs` forward SB3's
+GAE bootstrap uses and **UNMASKS** rows that carry no target today, `mask` leaves them excluded. It
+is a flag so a read can separate "the targets moved" from "there are more rows"
+(`win_prob/lambda_unmasked` counts them), and it is INERT at λ = 1.0 because the recursion is
+skipped whole. An episode that ended with **no recorded outcome** is never unmasked — it would train
+the head against a fabricated label.
+
+Read `win_prob/lambda_target_shift`, `lambda_bootstrap_frac` and **`lambda_loss` vs
+`lambda_loss_terminal`** (both scored on the SAME recorded predictions, so their difference is the
+target change and not a step of learning). 🚨 **An ABSENT `win_prob/lambda_*` family means λ = 1.0**,
+and nothing else. ⚠️ The value SIDECAR's `target` column follows the flag: under λ < 1 it holds the
+λ-return, not the raw outcome. Composes with `--win-prob-strata-weight` (that one weights ROWS, this
+one re-aims them) and with the cf labels (disjoint state sets — the cf term never touches
+`win_target`).
+
 **Full detail — the currency argument, the cap-terminal measurement, the `--vf-coef` BCE
 announcement and every value-side flag below — is in
 [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).**

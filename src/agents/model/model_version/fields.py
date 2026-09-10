@@ -477,6 +477,19 @@ class ModelVersionFields:
     # v100 reason: an arm resumed without re-typing it would keep training and silently stop
     # applying the only thing it was launched to measure.
     win_prob_strata_weight: float = 0.0
+    # gen3_winprob_lambda_v1 (config v116): λ-RETURN targets for the WIN-PROB BCE. `win_prob_lambda`
+    # 1.0 = OFF (every state is trained against its episode's terminal 0/1 outcome, the pre-flag
+    # behaviour, bit-identical); below 1.0 each non-terminal state's target becomes
+    # `(1-λ)·V(s[t+1]) + λ·G[t+1]` over the collector's RECORDED values, so the outcome keeps
+    # weight `λ**d` at distance `d` from the terminal. `win_prob_lambda_truncated` picks the
+    # buffer-boundary convention for an episode with no terminal inside the rollout — "bootstrap"
+    # (target `V(s_T)`, which UNMASKS those rows) or "mask" (excluded, as today); it is INERT at
+    # λ = 1.0 because the whole recursion is skipped. The td_aux_coef class exactly: they change a
+    # LOSS TARGET computed post-collection, touch no forward pass and no weight shape, so they are
+    # recorded for PROVENANCE and for flagless-resume read-back (`_resolve` reads these fields) and
+    # are never compared by check_compatible or any check_*.
+    win_prob_lambda: float = 1.0
+    win_prob_lambda_truncated: str = "bootstrap"
     # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
     # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
     # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:

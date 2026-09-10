@@ -119,6 +119,12 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # than relying on the `*_coef` suffix, which is exactly how `intent_label_bot_weight` above
     # stayed out of every generated table from v97.
     "win_prob_strata_weight": "win_head",
+    # v116 gen3_winprob_lambda_v1 — the λ-RETURN target for the win-prob BCE. Named to `win_head`
+    # for strata's reason: a λ below 1 with no win-prob head re-aims a loss that is not being
+    # computed, which is exactly the INERT the column exists to show. (`win_prob_lambda_truncated`
+    # is a MODE string rather than a coefficient and is deliberately not a row here — it is inert
+    # at the default λ and is reported through `win_prob/lambda_truncated_bootstrap`.)
+    "win_prob_lambda": "win_head",
     # v100 gen3_cf_coef_provenance_v1 — the counterfactual family's coefficients. Each one IS
     # gated by a module, and naming that module is what lets the table mark it INERT: a live
     # coefficient whose head was never built does nothing, and that is precisely the confusion

@@ -431,6 +431,46 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "auxiliary readout under `shaped`, not the objective the measurement "
                              "indicts). Watch win_prob/strata_share_*, strata_w_entropy and "
                              "loss vs loss_unweighted. TRAINING-only, resume-inherited.")
+    # --- gen3_winprob_lambda_v1 (2026-09-09, the critic ladder's arm 8): λ-RETURN targets for the
+    #     win-prob BCE. The third knob on the SAME loss — one scales it, `--win-prob-strata-weight`
+    #     re-prices its MIX, and this one changes what it REGRESSES TOWARD. ---
+    parser.add_argument("--win-prob-lambda", "--win_prob_lambda",
+                        dest="win_prob_lambda", type=float, default=None,
+                        help="λ-RETURN targets for the win-prob BCE, in [0, 1]. 1.0 (the DEFAULT) "
+                             "= OFF and BIT-identical: every state of an episode is trained "
+                             "against the episode's terminal 0/1 outcome, as today. Below 1.0 the "
+                             "target becomes a backward blend of the network's OWN recorded "
+                             "later estimates -- G[t] = (1-lambda)*V(s[t+1]) + lambda*G[t+1], "
+                             "anchored at G = y on the state that ENDS the episode (gamma = 1 and "
+                             "the clean-world stream is terminal-only, so an n-step return IS "
+                             "V(s[t+n])); a state d steps from its terminal keeps weight "
+                             "lambda**d on the outcome. WHY: one bit copied to ~30 states is a "
+                             "very noisy target, and the head refit showed the win-prob critic's "
+                             "conditional miscalibration is a TARGET defect -- only 10-14%% of "
+                             "that label's variance lies BETWEEN (cycle, opponent) cells, so an "
+                             "on-policy learner shrinks the weak axes toward the marginal and the "
+                             "turn-1 value barely separates opponents (spread ratio ~0.1 at turn "
+                             "1 vs ~0.5-0.8 over all states). Later values already separate them, "
+                             "so this moves that information BACKWARD within the episode along a "
+                             "far less noisy channel "
+                             "(designs/research_state/measurements/winprob_head_refit_2026-09-09/). "
+                             "REQUIRES --critic winprob (refused otherwise -- under `shaped` the "
+                             "buffer's values are a shaped return in PopArt units, not a "
+                             "probability). Watch win_prob/lambda_target_shift, "
+                             "lambda_bootstrap_frac and lambda_loss vs lambda_loss_terminal. "
+                             "TRAINING-only, resume-inherited.")
+    parser.add_argument("--win-prob-lambda-truncated", "--win_prob_lambda_truncated",
+                        dest="win_prob_lambda_truncated", choices=("bootstrap", "mask"),
+                        default=None,
+                        help="How a TRUNCATED episode (still running when the rollout buffer "
+                             "filled) is targeted under --win-prob-lambda < 1. `bootstrap` (the "
+                             "DEFAULT) gives its states the bootstrap value V(s_T) from the same "
+                             "post-rollout forward SB3's own GAE bootstrap uses, which UNMASKS "
+                             "rows that carry no target today; `mask` leaves them excluded exactly "
+                             "as they are now. It is a FLAG rather than a constant so a read can "
+                             "attribute an effect to the target change rather than to the extra "
+                             "rows -- win_prob/lambda_unmasked counts them per rollout. INERT at "
+                             "--win-prob-lambda 1.0 (the recursion is skipped whole).")
     parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
                         type=float, default=None,
                         help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "

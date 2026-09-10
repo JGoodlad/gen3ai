@@ -8948,3 +8948,100 @@ input does not raise (that half fails on a revert).
 `rust_sim/harness/g1_bakeoff`) still hand-build. They fail in the first second at a terminal with
 the seam's own message naming the fix — a retype, not a GPU-hour — and are queued in
 `designs/ops/TECH_DEBT_BACKLOG.md`.
+
+---
+
+## v116 — `--win-prob-lambda`: λ-RETURN targets for the win-prob BCE (`gen3_winprob_lambda_v1`)
+
+**2026-09-09, the critic ladder's arm 8.** v115 re-priced *which states* the win-prob value loss is
+bought from. This one changes *what those states regress toward*, and it comes out of the same
+measurement.
+
+**THE FINDING.** Under `--critic winprob` the value loss is a BCE against **one terminal bit copied
+to every state of the episode** (`WinProbLabelCallback`). The head refit
+(`designs/research_state/measurements/winprob_head_refit_2026-09-09/`) proved the win-prob critic's
+conditional miscalibration is a **TARGET** defect and not a head defect: only **10.2 % / 14.4 %** of
+that label's variance lies BETWEEN (cycle, opponent) cells, so an early-stopped on-policy learner
+minimising a proper scoring rule shrinks the weak axes toward the marginal. The shape of that is the
+turn-1 read — the critic barely separates opponents or its own team at turn 1 (between-opponent
+spread ratio **~0.1**) although its features carry both, while **mid- and late-game values already
+separate opponents at ~0.5–0.8 over all states**. The information exists inside the episode and
+never reaches turn 1.
+
+**THE FLAG.** `--win-prob-lambda <0..1>`, default **`1.0` = OFF and BIT-identical** — and bit-identical
+by SKIPPING the recursion whole rather than by computing an identity, which is also what keeps the
+truncation convention unchanged at the default. Below 1.0, per episode inside each rollout buffer:
+
+```
+row t ENDS its episode   ⇒  G[t] = y                       (the outcome, exactly)
+otherwise                ⇒  G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]
+```
+
+γ = 1 and the clean-world stream is terminal-only (`--no-hand-shaping --terminal-indicator`), so an
+n-step return carries no intermediate reward term at all and **IS** `V(s[t+n])`; the λ-weighted
+average over n collapses to that single backward pass. A state `d` steps from its terminal keeps
+weight **λ^d** on the outcome. The loss is unchanged — the same masked-mean
+`binary_cross_entropy_with_logits`, now against a SOFT target in [0,1], which is exactly what a
+proper scoring rule generalises to (it scores the target's expectation).
+
+**`V` IS THE RECORDED, PRE-UPDATE VALUE** — `rollout_buffer.values`, which under this critic *is*
+`sigmoid(win logit)` (`policy._critic_value`) — and not a re-forward inside `train()`. A target
+recomputed from the current weights would move under its own gradient across the ten epochs; the
+collection-time values are a fixed point of this rollout by construction.
+
+**THE BUFFER BOUNDARY IS ITS OWN FLAG.** `--win-prob-lambda-truncated {bootstrap,mask}`, default
+`bootstrap`. A rollout ends mid-episode in every env column; those states have no outcome and carry
+`win_mask = 0` today. Their successor is `s_T`, so the recursion needs no special case —
+`G = (1−λ)·V(s_T) + λ·V(s_T) = V(s_T)` — with `V(s_T)` from the same `model._last_obs` forward SB3's
+own GAE bootstrap and `winprob_pbrs` use. `bootstrap` gives them that target and **UNMASKS** them;
+`mask` leaves them excluded. It is a FLAG rather than a constant so a read can attribute an effect to
+*the target change* rather than to *the extra rows*, and `win_prob/lambda_unmasked` counts them per
+rollout (measured on the `--debug` smoke: 7–92 rows of 2,048). It is INERT at λ = 1.0.
+🚨 An episode that ended with **no recorded outcome** is never unmasked: the trailing segment is
+computed from `episode_starts` and `model._last_episode_starts` rather than inferred from
+`win_mask == 0`, because an episode that finished without a `win_outcome` in its info is also
+unlabelled and its rows would anchor at `y = 0` — a fabricated label.
+
+**WHERE IT RUNS, AND WHY NOT IN `train()`.** In `WinProbLabelCallback._on_rollout_end`, immediately
+after the back-fill it replaces. It needs the buffer's `[n_steps, n_envs]` shape — `get()` flattens
+and shuffles it — and it needs the post-rollout observation. The metrics are stashed on the model and
+folded into `win_prob_metrics` at the top of `train()` so they ride the ordinary `win_prob/` prefix.
+
+**THE TB FAMILY**, once per rollout: `lambda`, `lambda_rows`, `lambda_unmasked`,
+`lambda_bootstrap_frac` (share of scored rows whose target is mostly later values, λ^d < 0.5),
+`lambda_weight_mean`, `lambda_target_shift` (mean |G − y| on rows that HAVE an outcome),
+`lambda_loss` / `lambda_loss_terminal`, `lambda_truncated_bootstrap`, `lambda_bootstrap_fallback`.
+🚨 **`lambda_loss` and `lambda_loss_terminal` are scored on the SAME states with the SAME recorded
+predictions**, so their difference isolates the target change and cannot be a step of learning — a
+post-update per-minibatch pair was rejected because the recursion overwrites `win_target` in place
+and `y` does not survive the shuffle. An ABSENT `win_prob/lambda_*` family means λ = 1.0.
+
+**COMPOSITION.** Orthogonal to `--win-prob-strata-weight` (that one weights ROWS, this one re-aims
+them; neither reads the other). **Disjoint** from the counterfactual labels: `cf_winprob_term`
+re-applies the head to FOREIGN recorded states from `<run>/cf_labels/` with their own tight-MC
+labels and never touches `win_target`, so no precedence rule is needed and the two losses are simply
+added. ⚠️ The **value sidecar's `target` column follows the flag** — it runs immediately after this
+callback, so under λ < 1 it holds the λ-return rather than the outcome. `SIDECAR_SCHEMA` moves to
+**2** and the header gains `win_prob_lambda` / `win_prob_lambda_truncated`, so a v1 reader can refuse
+rather than quietly average a quantity it believes is a 0/1 outcome.
+
+**RECORDED at config v116**, the `td_aux_coef` class: provenance + flagless-resume read-back, never
+compared by `check_compatible` (they re-aim a loss target computed in a post-collection callback and
+touch no forward pass or weight shape, and gating a frozen eval/pool/distill opponent on them would
+be a false rejection). Pre-v116 migrates to `1.0` / `"bootstrap"` — a RECORD, not a guess: λ = 1.0
+**is** the terminal-bit target every prior run trained against, and the truncation mode is inert at
+that λ. No `ARCH_SIGNATURE` bump, no `MIGRATION_FLOOR` change, and NOT a `flag_registry.py` row —
+but `win_prob_lambda` IS declared in `arch_tables._COEF_MODULE` → `win_head`, so a production config
+that ever adopts it cannot be silently dropped from the generated table.
+
+`--critic winprob` is REQUIRED and the refusal lives in `combination_checks`, so both
+`resolve_config` and `python -m main.checkargs` report it: under `shaped` the BCE is an auxiliary
+readout **and** `rollout_buffer.values` holds a PopArt-normalised shaped return rather than a
+probability, so the blend would be a category error fed into a BCE.
+
+GATES: `winprob_lambda_test.py` (35) + a `combination_checks` ARGVS row. Smoke:
+`--debug --steps 10000 --critic winprob --win-prob-lambda 0.9` (clean-world composition) trains to
+`Training complete`, publishes the whole family (`lambda_bootstrap_frac` 0.77–0.80,
+`lambda_target_shift` 0.13–0.26, `lambda_unmasked` 7–92, `lambda_bootstrap_fallback` 0.0) and records
+`win_prob_lambda 0.9` at `config_version` 116; the same argv at `--win-prob-lambda 1.0` publishes NO
+`lambda_*` family at all.

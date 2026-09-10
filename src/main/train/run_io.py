@@ -123,6 +123,8 @@ def _model_hparams(model) -> dict:
         "policy_grad_coef": float(getattr(model, "policy_grad_coef", 1.0)),
         "intent_label_bot_weight": float(getattr(model, "intent_label_bot_weight", 1.0)),
         "win_prob_strata_weight": float(getattr(model, "win_prob_strata_weight", 0.0)),
+        "win_prob_lambda": float(getattr(model, "win_prob_lambda", 1.0)),
+        "win_prob_lambda_truncated": str(getattr(model, "win_prob_lambda_truncated", "bootstrap")),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),

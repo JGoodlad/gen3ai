@@ -496,4 +496,13 @@ def _migrate_config(data: dict) -> dict:
     if version < 115:
         data.setdefault("win_prob_strata_weight", 0.0)
         data["config_version"] = 115
+    # v116 (gen3_winprob_lambda_v1) — TWO TRAINING-only target-shape fields, v115's shape exactly.
+    # 1.0 is not a default chosen for old configs, it is a RECORD: λ = 1.0 IS the terminal-outcome
+    # target every pre-v116 run trained against, and it is the identity of the recursion. The
+    # truncation mode is inert at that λ, so "bootstrap" records no behaviour either way. Not
+    # version-locked and not in check_compatible — they re-aim a loss, never a forward pass.
+    if version < 116:
+        data.setdefault("win_prob_lambda", 1.0)
+        data.setdefault("win_prob_lambda_truncated", "bootstrap")
+        data["config_version"] = 116
     return data

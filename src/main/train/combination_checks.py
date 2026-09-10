@@ -364,6 +364,23 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "about the value function — and the `opp_class` label key it strata-fies on is declared "
         "under the win-prob label gate. Pass --critic winprob, or drop the flag."),
     CombinationCheck(
+        # The strata check's twin, and refused for the same reason: under `--critic shaped` the
+        # win-prob BCE is an AUXILIARY readout at `--win-prob-coef`, so a λ-return target there
+        # would re-aim a diagnostic and leave the value function untouched. Worse than for strata,
+        # in fact — the quantity the recursion blends is `rollout_buffer.values`, which under
+        # `shaped` is a PopArt-normalised shaped return, not a probability, so the blend would be
+        # a category error fed into a BCE.
+        "winprob_lambda_needs_the_winprob_critic",
+        ("win_prob_lambda", "critic"),
+        lambda a: float(_val(a, "win_prob_lambda", 1.0) or 1.0) < 1.0 and not _winprob(a),
+        "--win-prob-lambda < 1 requires --critic winprob. It replaces the win-prob BCE's TARGET "
+        "with a λ-return that blends the critic's own recorded later values backward through the "
+        "episode (the head refit's §6 mechanism: one terminal bit copied to ~30 states is a noisy "
+        "objective whose between-(cycle, opponent) share is only ~10-14%). Under --critic shaped "
+        "that BCE is an auxiliary readout AND `rollout_buffer.values` holds a PopArt-normalised "
+        "shaped return rather than a probability, so the blend would be a category error. Pass "
+        "--critic winprob, or drop the flag."),
+    CombinationCheck(
         "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
         lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
         "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "

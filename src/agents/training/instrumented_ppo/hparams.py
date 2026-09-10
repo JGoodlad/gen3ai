@@ -258,6 +258,18 @@ class PpoHyperparameters:
     # (`winprob_head_refit_2026-09-09`). Requires `--critic winprob` (refused otherwise, never a
     # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
     win_prob_strata_weight: float = 0.0
+    # gen3_winprob_lambda_v1: λ-RETURN targets for the WIN-PROB BCE, in [0, 1]. 1.0 = OFF and
+    # BIT-identical (the `WinProbLabelCallback` skips the recursion whole, so even the truncation
+    # convention is unchanged); below 1.0 each non-terminal state's target is
+    # `(1-λ)·V(s[t+1]) + λ·G[t+1]` over the collector's RECORDED values, anchored at the outcome on
+    # the state that ends the episode. It exists because one terminal bit copied to ~30 states is a
+    # noisy objective whose between-(cycle, opponent) share is only ~10-14%, so the weak axes
+    # shrink toward the marginal (`winprob_head_refit_2026-09-09`). Requires `--critic winprob`
+    # (refused otherwise, never a silent no-op). `win_prob_lambda_truncated` picks the
+    # buffer-boundary convention ("bootstrap" | "mask"). Training-only, resume-mutable; the targets
+    # are built in a CALLBACK before `train()`, so nothing here touches a forward pass.
+    win_prob_lambda: float = 1.0
+    win_prob_lambda_truncated: str = "bootstrap"
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee

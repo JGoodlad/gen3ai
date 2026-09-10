@@ -242,7 +242,18 @@ from typing import Any, Dict
 #   dropped it would keep training and silently stop applying the only thing the arm exists to
 #   measure. A pre-v115 config defaults to 0.0 = OFF, which is not a guess but the only possible
 #   past — the field did not exist. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 115
+# v116 (gen3_winprob_lambda_v1): `win_prob_lambda` + `win_prob_lambda_truncated` — λ-RETURN
+#   targets for the win-prob BCE, arm 8 of the critic ladder
+#   (designs/research_state/measurements/winprob_head_refit_2026-09-09/ §11). TRAINING-only, the
+#   td_aux_coef / v115 shape exactly: the pair changes what the BCE regresses TOWARD, computed in a
+#   post-collection callback over the rollout buffer, and touches no forward pass and no weight
+#   shape — a default (1.0) build is bit-identical and there is nothing for `check_compatible` to
+#   compare. RECORDED anyway, for v100's reason: a resume that dropped them would keep training and
+#   silently return the arm to the terminal-bit target it exists to contest. A pre-v116 config
+#   defaults to 1.0 / "bootstrap", which is not a guess but the only possible past — λ = 1.0 IS the
+#   terminal-bit target every prior run used, and the truncation mode is inert at that λ. No
+#   ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 116
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

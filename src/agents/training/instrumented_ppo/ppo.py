@@ -253,6 +253,21 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 strata_w, _smetrics = _sout
                 for _sk, _sv in _smetrics.items():
                     win_prob_metrics.setdefault(_sk, []).append(float(_sv))
+        # +WIN-PROB λ-RETURN (gen3_winprob_lambda_v1) — the family is COMPUTED in
+        # `WinProbLabelCallback._on_rollout_end` (it needs the buffer's [n_steps, n_envs] shape,
+        # before `get()` shuffles it flat, and the same `model._last_obs` forward SB3's own GAE
+        # bootstrap takes) and stashed on the model. Folded in here so it rides the ordinary
+        # `win_prob/` prefix, and only when the recursion actually RAN: an absent
+        # `win_prob/lambda_*` family means λ = 1.0 (off, and the targets are the terminal bit) and
+        # nothing else. Cleared at every `_on_rollout_start`, so it can never be a stale rollout's.
+        _lam_metrics = getattr(self, "_win_prob_lambda_metrics", None)
+        if _lam_metrics:
+            for _lk, _lv in _lam_metrics.items():
+                # A NaN is what an empty slice reports (no scored rows at all); it is a real state
+                # and it is REPORTED by omitting the tag, never by logging a NaN that TensorBoard
+                # renders as a gap in a series that also has honest gaps.
+                if float(_lv) == float(_lv):
+                    win_prob_metrics.setdefault(_lk, []).append(float(_lv))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)

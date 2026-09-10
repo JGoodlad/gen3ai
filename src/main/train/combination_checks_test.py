@@ -221,6 +221,9 @@ ARGVS: dict[str, list[str]] = {
     # REQUIRES winprob"), so it deliberately does NOT carry `_WP`: the default `shaped` critic is
     # exactly the configuration it refuses.
     "winprob_strata_needs_the_winprob_critic": ["--win-prob-strata-weight", "1.0"],
+    # gen3_winprob_lambda_v1 — the same shape: the λ-return target only means anything when the
+    # win-prob BCE IS the value loss, and under `shaped` the values it blends are not probabilities.
+    "winprob_lambda_needs_the_winprob_critic": ["--win-prob-lambda", "0.9"],
     "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
     "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob", "--no-hand-shaping",

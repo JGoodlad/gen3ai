@@ -789,6 +789,25 @@ weight — no forward pass, no weight shape, no `check_compatible` compare, **no
 `flag_registry.py` row — so it does not appear in §6's flag table until a production config adopts
 it. Mechanics: `designs/training/critic_and_value_losses.md`.
 
+**`--win-prob-lambda` re-aims this BCE's TARGET** (`gen3_winprob_lambda_v1`, config v116, the critic
+ladder's **arm 8**). Default **`1.0` = OFF and the loss is BIT-identical**; `--critic winprob` is
+REQUIRED. Below 1.0 a state's target stops being its episode's terminal bit and becomes the
+λ-return `G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]`, anchored at `G = y` on the state that ENDS the episode,
+over the collector's **RECORDED** values (`rollout_buffer.values`, which under this critic *is*
+`sigmoid(win logit)`); γ = 1 and the clean-world stream is terminal-only, so an n-step return IS
+`V(s[t+n])`. A state `d` steps from its terminal keeps weight `λ^d` on the outcome. It exists for
+the same measurement the strata weight does — only **10.2 % / 14.4 %** of the terminal label's
+variance lies BETWEEN (cycle, opponent) cells
+([`winprob_head_refit_2026-09-09`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
+§6) — approached from the other side: **mid- and late-game values already separate opponents
+(~0.5–0.8) where turn-1 values do not (~0.1)**, so the λ-return moves that information backward
+within the episode along a far less noisy channel. **`--win-prob-lambda-truncated
+{bootstrap,mask}`** (default `bootstrap`, INERT at λ = 1.0) picks the buffer-boundary convention for
+an episode with no terminal inside the rollout and is the only part that changes WHICH rows are
+scored. Both are training-only — no forward pass, no weight shape, no `check_compatible` compare,
+**not** a `flag_registry.py` row — so they do not appear in §6's flag table until a production config
+adopts them. Mechanics: `designs/training/critic_and_value_losses.md`.
+
 The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
 `coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
 would add the advantage to the reward and take the advantage of that. The FROZEN-φ route

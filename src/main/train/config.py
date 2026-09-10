@@ -627,6 +627,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # that dropped this would silently return the arm to the un-stratified objective it exists to
     # contest, under the same run name and the same TB series.
     _resolve("win_prob_strata_weight", 0.0)
+    # gen3_winprob_lambda_v1 (v116) training-only, inherited for the same reason: a launcher
+    # RESTART re-invokes the original argv, and a flagless resume that dropped these would silently
+    # return the arm to the terminal-bit target it exists to contest, under the same run name and
+    # the same TB series.
+    _resolve("win_prob_lambda", 1.0)
+    _resolve("win_prob_lambda_truncated", "bootstrap")
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
     #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
@@ -846,6 +852,15 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # dominant, i.e. the defect this flag exists to remove.
         parser.error("--win-prob-strata-weight must be in [0, 1] "
                      "(0 = off / episode proportion; 1 = every opponent class weighted equally)")
+    if args.win_prob_lambda is not None and not (0.0 <= args.win_prob_lambda <= 1.0):
+        # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
+        # owns the cross-flag half — `winprob_lambda_needs_the_winprob_critic`). The bounds are the
+        # parameter's meaning: 1 = the terminal outcome at every state (OFF, bit-identical), 0 =
+        # a pure one-step bootstrap on the network's own next value. Outside [0, 1] the backward
+        # recursion is not an average of n-step returns at all — it either diverges (λ > 1) or
+        # alternates sign (λ < 0), and neither is a stronger version of this lever.
+        parser.error("--win-prob-lambda must be in [0, 1] "
+                     "(1 = off / the terminal outcome at every state; 0 = pure one-step bootstrap)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the
