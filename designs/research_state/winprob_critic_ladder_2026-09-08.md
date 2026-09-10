@@ -370,6 +370,98 @@ Offline 4,800-battle cycles on both sides (`main.ops.eval_trace_gen`), quota-mat
 
 ---
 
+## 2e. THE CALIBRATION SLOPE (2026-09-10, `critic_read` v5) — is arm 8's `V` SHRUNK?
+
+**The question this row was built for.** Hypothesis **(C) SHRINKAGE**: a λ-return target blends
+the bootstrapped `V` into the label, so the fitted target is compressed toward the base rate, and
+fitting a compressed target is a shrinkage estimator — variance down, rank order can improve,
+emitted amplitude falls. Pre-registered signature: regress the realized outcome on `logit(V)`
+(weighted logistic, the Cox 1958 recalibration pair); **`b > 1` is UNDER-dispersed (shrunk)**,
+`b ≈ 1` correct, `b < 1` over-dispersed.
+
+🚨 **This section was built and read in parallel with the offline 400/800-game read, and (C) was
+RE-SPECIFIED between them** (ledger 2026-09-10 · *READ · arm 8 on the OFFLINE frames* and
+*RE-SPECIFICATION + RULE 18*). The premise it was commissioned under — *alignment up, amplitude
+down* — lost its first half: the live-frame own-team decode does NOT replicate offline and the
+alignment candidate is WITHDRAWN. What survives is amplitude DOWN (between-opponent spread 0.05 vs
+0.15–0.18, DETECTED past the floor at both offline sizes), resolution slightly UP, and the best
+calibration of any run — shrinkage that removed mostly NOISE. That makes the slope decisive with
+**no middle story: `b ≈ 1` with lower spread ⇒ the critic simply got BETTER; `b > 1` ⇒ the
+shrinkage OVERSHOT and the amplitude loss is a genuine defect.** The rows below are read against
+that rule.
+
+**The rows, at 10M, all three controls** (arm `slope` is one number — the arm is the same read in
+every column; floor = the wider of the two control-vs-control draws):
+
+| row | arm 8 | `ctrl10M` | `ctrl10M_b` | `ctrl10M_c` | Δ vs each | floor |
+|---|---|---|---|---|---|---|
+| slope · all states | **1.579** | 1.441 | 1.313 | 1.240 | +0.138 / +0.266 / +0.339 | 0.201 |
+| slope · turn 1–3 | **1.426** | 0.761 | 0.803 | 0.979 | +0.665 / +0.624 / +0.448 | 0.217 |
+| slope · COMMON SUPPORT | 1.60 / 1.57 / 1.57 | 1.358 | 1.288 | 1.157 | +0.244 / +0.284 / +0.417 | 0.168 |
+| slope · within stratum | 1.844 / 1.429 / 1.429 | 1.508 | 1.239 | 0.971 | +0.336 / +0.190 / +0.458 | 0.371 |
+| intercept · all states | −0.761 | +0.013 | −0.746 | −0.060 | −0.773 / −0.015 / −0.700 | 0.758 |
+
+**Reading, in the two halves the rule needs kept apart.**
+
+**(i) LEVEL — arm 8's slope is NOT ≈ 1.** 1.579 pooled, 1.426 at turn 1–3, where the three controls
+read 0.76 / 0.80 / 0.98 early — *correctly dispersed*. On its face that is the OVERSHOOT branch.
+Pooled, though, EVERY head reads above 1 (1.12–1.58): the whole population is shrunk late whatever
+λ is, so the pooled level describes an era-wide defect and only the turn-1–3 contrast carries a
+level reading.
+
+**(ii) DELTA — UNREADABLE at 100 games, direction uniform.** Twelve of twelve slope deltas are
+POSITIVE. But the replicate floor is the size of the effect — 0.20 pooled against deltas of
+0.14–0.34 — and **no row's CI clears its floor on any pair**. SUPPORTED is not written. **NOT
+SUPPORTED is not written either**, per the registered rule: it would require showing the arm was
+not simply underpowered by its own effect, and it may have been (the lever arm below).
+
+**Consequence for the dose curve.** The restated (C) needs this row MONOTONE across {1.0, 0.95,
+0.9}. A 0.20 floor against a controls-to-arm range of 0.34 cannot support that, so **the dose test
+belongs on the offline frames**, where the surviving rows' floors are 3–8× tighter. Running the
+slope on the existing 400/800-game cycles is the next call, before `lambda095`.
+
+🚨 **THE LEVER ARM, and why the arm's interval is wide by construction.** The slope's standard
+error scales as `1/sd(logit V)`, and (C)'s own prediction is that the arm's `sd(logit V)` is the
+smaller one — so the arm is handed the wider interval BY THE EFFECT UNDER TEST. It is: at turn 1–3
+arm `sd(logit V)` = **0.442** against 0.573 / 0.573 / 0.693 for the controls. Two things are
+therefore printed with every slope row and neither is optional: the per-side `sd(V)` / `sd(logit V)`
+table, and the **COMMON-SUPPORT** companion — both sides re-fitted on the intersection of their
+central 95% of `V`, where the lever arm cannot differ. The companion keeps the same sign and the
+same order of magnitude (+0.24 / +0.28 / +0.42), so the pooled difference is not the support.
+
+**The other four levers, on the same rows** (all vs `ctrl10M`, all against the same 1.441) — this
+is the row's own null distribution, and it is the most useful thing in this section:
+
+| arm | slope · all | Δ | slope · turn 1–3 | Δ |
+|---|---|---|---|---|
+| `vf15` (`--vf-coef 1.5`) | 1.425 | −0.016 | 1.269 | +0.508 |
+| `tdaux` (`--td-aux-coef 1.0`) | 1.263 | −0.178 | 1.030 | +0.269 |
+| `cflabels` (`--cf-winprob-coef 0.5`) | 1.123 | −0.319 | 0.829 | +0.067 |
+| `strata` (`--win-prob-strata-weight 1.0`) | 1.171 | −0.270 | 0.768 | +0.006 |
+| **arm 8 (`--win-prob-lambda 0.9`)** | **1.579** | **+0.138** | **1.426** | **+0.665** |
+
+**Arm 8 has the HIGHEST slope of all eight 10M runs read, on both rows** — and it is the only arm
+whose POOLED slope delta is positive at all (every other lever reads −0.02 to −0.32). But the other
+seven runs span **1.12–1.44** pooled and **0.76–1.27** at turn 1–3, so arm 8's margin over the top
+of that range is +0.14 and +0.16: a RANK statement the population spread does not certify. That is
+the same conclusion the floor reaches, arrived at without it.
+
+**FRAME SENSITIVITY, declared and then CHECKED.** A weighted logistic coefficient is an M-estimator
+— the root of a weighted score equation — so its expectation is the population coefficient at every
+frame size given correct weights: no held-out optimism, no unsubtracted noise, no
+threshold-selected cell set. Declared `frame_sensitive = False`, then verified on the most extreme
+cut this ladder has: `ctrl10M`'s 8/12 cap forces arm 8's own frame from 651 battles to ~104, a
+**6.3×** reduction, and the four base rows move +0.087 / +0.118 / −0.143 / −0.171 — every one
+INSIDE its own as-traced 95% CI. The **within-stratum** companion moves **+0.415, OUTSIDE** its CI,
+which is exactly the third mechanism (its strata exist only over teams clearing
+`MIN_TEAM_BATTLES`), and it is the one calibration row declared `frame_sensitive` and quota-matched.
+
+**Artifacts:** `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/vs_*/critic_read_v5.md`
+and the two `…_FLOOR*/critic_read_v5.md`; floors in `replicate_floor_10M.json` (v5 block). Ledger
+2026-09-10 · *INSTRUMENT + READ · the calibration slope*.
+
+---
+
 ## 3. THE FIRST PAIR
 
 **Launch B, then C — sequentially, both at `--n-envs 48`.**

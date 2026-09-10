@@ -1,5 +1,12 @@
 {
  "floors": {
+  "cond.calibration_intercept.all": 0.7584480258235756,
+  "cond.calibration_intercept.common_support": 0.8902270481172692,
+  "cond.calibration_intercept.t1_3": 0.6844875237106722,
+  "cond.calibration_slope.all": 0.20119159025916988,
+  "cond.calibration_slope.common_support": 0.16825765409889915,
+  "cond.calibration_slope.t1_3": 0.21723017125429755,
+  "cond.calibration_slope.within_stratum": 0.37054269338113843,
   "cond.elo_slope": 0.01532317171095824,
   "cond.opp_class_auc.t1": 0.07728518964974013,
   "cond.own_team_r2.all": 0.031190730255350685,
@@ -190,7 +197,7 @@
    "identity.turn_contrast.ipw": 0.02690139556867683
   }
  },
- "provenance": "REPLICATE FLOOR = the WIDER |\u0394| of two draws of the control configuration vs ai_v12_11_ladder_ctrl10M at step_10000032 (ctrl10M_b seed 1001, ctrl10M_c seed 1002), critic_read v4 (within-team rows included), live 100-game cycles. Two draws are a RANGE, not a distribution: demote-only. Rows declared PROVISIONAL carry no floor by construction.",
+ "provenance": "REPLICATE FLOOR = the WIDER |\u0394| of two draws of the control configuration vs ai_v12_11_ladder_ctrl10M at step_10000032 (ctrl10M_b seed 1001, ctrl10M_c seed 1002), critic_read v4 (within-team rows included), live 100-game cycles. Two draws are a RANGE, not a distribution: demote-only. Rows declared PROVISIONAL carry no floor by construction.  |  2026-09-10, tool v5: the seven CALIBRATION-SLOPE rows added, the wider of the SAME two live control-vs-control draws per key (ctrl10M_b vs ctrl10M, ctrl10M_c vs ctrl10M, both pinned to step_10000032). Every pre-existing key was recomputed on v5 and reproduced its v4 value exactly, so this file's earlier entries are unchanged.",
  "step": 10000032,
  "tool_version": 4
 }

@@ -762,6 +762,24 @@ the floor at both 400 and 800 games: V spreads LESS across opponents (turn-1–3
 (bot +0.010 at 800 only; all +0.009 on both) and the best calibration of any run. (C) is decided by the
 calibration-slope read; the λ dose curve {1.0, 0.95, 0.9} is the follow-up if it holds.
 
+**The CALIBRATION SLOPE is BUILT and read on the LIVE frames (2026-09-10, tool v5):** [MEASURED · LEVEL says
+OVERSHOOT, DELTA UNREADABLE, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/vs_*/critic_read_v5.md`;
+ledger 2026-09-10 *INSTRUMENT + READ · the CALIBRATION SLOPE is BUILT*] The row the restated (C) turns on — the
+outcome regressed on `logit(V)`, the Cox recalibration pair; **>1 = UNDER-dispersed (shrunk)**, and the registered
+rule is *slope ≈ 1 with lower spread ⇒ the critic simply got BETTER; slope > 1 ⇒ the shrinkage OVERSHOT*. Two halves,
+kept apart. **LEVEL:** arm 8 reads **1.579** pooled and **1.426** at turn 1–3 — not ≈ 1 — where the three controls sit
+at 0.76 / 0.80 / 0.98 early; that is the OVERSHOOT branch on its face. Pooled, *every* head reads above 1 (1.12–1.58),
+so the pooled level describes an era-wide defect and only the turn-1–3 contrast carries a level reading.
+**DELTA: UNREADABLE at 100 games.** Arm 8 has the highest slope of all eight 10M runs on both rows and is the only
+arm with a positive pooled delta (12/12 positive), but the other seven span 1.12–1.44 and 0.76–1.27, and the
+replicate floor (0.20 / 0.22) is the size of the effect — no row's CI clears its floor on any pair. **NOT SUPPORTED
+is not written**, per the registered rule: at turn 1–3 the arm's lever arm IS the smallest (`sd(logit V)` 0.442 vs
+0.573–0.693) and the slope's SE scales as `1/sd(logit V)`, so it may be underpowered by its own effect — though the
+COMMON-SUPPORT companion keeps the sign and magnitude on the pooled row, so that difference is not the support.
+🚨 **These are LIVE frames, and the restated dose curve needs this row MONOTONE across {1.0, 0.95, 0.9} — which a
+0.20 floor cannot support. The decisive read is the 400/800-game offline pair** (3–8× tighter floors on the
+surviving rows), and it is the next call before `lambda095`.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

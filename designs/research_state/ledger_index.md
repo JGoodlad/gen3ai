@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,855-line file. **The ledger itself is append-only and is never edited by this**;
+16,878-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**520 headings · 480 dated · 2026-08-01 → 2026-09-10 · ledger 16,855 lines.**
+**521 headings · 481 dated · 2026-08-01 → 2026-09-10 · ledger 16,878 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -540,3 +540,4 @@ rename.
   - `L16769` · `2026-09-10` · READ · arm 8 on the OFFLINE 400- and 800-game frames — the live-frame own-team effect does NOT replicate; what replicates is a DECREASED between-opponent spread of V, past the floor at both sizes — the shrinkage signature; the alignment candidate is WITHDRAWN and (C) becomes the arm's story pending the slope
   - `L16787` · `2026-09-10` · RE-SPECIFICATION + RULE 18 · the λ dose curve is restated on its SURVIVING rows before `lambda095` runs; (C) is a cleaner test than proposed; own-team R² is never read on live frames again
 - `L16791` · `2026-09-10` · OPS · CRITIC LADDER — `ai_v12_14_ladder_truevalue` COMPLETE at the SECOND attempt (`--value-true-team`, 10,027,008 steps, 5.24 h, 0 crashes, G7 below bar on both halves)
+  - `L16855` · `2026-09-10` · INSTRUMENT + READ · the CALIBRATION SLOPE is BUILT (`main.ops.calibration_slope`, tool v5) and answers the pre-registration on the LIVE frames: arm 8's slope is **1.58 pooled / 1.43 at turn 1–3 — well ABOVE 1**, the highest of all eight 10M runs, and the only arm with a positive pooled delta (12/12 deltas positive) — the OVERSHOOT reading in LEVEL; but the DELTA is inside the live replicate floor (0.20 / 0.22), so the comparative claim is **UNREADABLE at 100 games** and the decisive read is the offline 400/800 frames. The frame-sensitivity declaration was CHECKED at a 6.3× frame cut and holds

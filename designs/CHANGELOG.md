@@ -9269,3 +9269,73 @@ Verified on arm 8 vs `ctrl10M`: every pre-existing delta is bit-identical to the
 GATES: `conditioning_meters_test.py` (33, up from 21 — the three planted regimes, team-mean-only /
 team-and-board / marginal, each recovered with the right signs), `critic_read_test.py` (58, up from
 56), `quota_match_test.py` (26, up from 25).
+
+---
+
+## 2026-09-10 — INSTRUMENT: the CALIBRATION SLOPE — is `V` correctly DISPERSED, or SHRUNK? (`main.ops.calibration_slope`, `critic_read` v5)
+
+The (A)/(B) rows above produced a pattern neither reading anticipates: arm 8
+(`ai_v12_19_ladder_lambda09`, λ-return targets at 0.9) has a `V` that is better ORDERED by own-team
+strength than every control while emitting a SMALLER spread across teams. **Alignment up, amplitude
+down.** One account is SHRINKAGE — a λ-return (any bootstrapped) target blends the critic's own `V`
+into the label, so the fitted target is compressed toward the base rate, and fitting a compressed
+target IS a shrinkage estimator: better rank order, smaller amplitude. Nothing on the ladder could
+see that. A monotone out-of-fold decode is invariant to scale and cannot see compression at all; a
+spread ratio sees it mixed with every other reason a spread moves.
+
+**BUILT — seven meters, one estimator.** A weighted logistic regression of the realized outcome on
+the forecast's own logit, `logit P(y=1) = a + b·logit(V)`: the Cox (1958) **recalibration pair**,
+`a` calibration-in-the-large and `b` the calibration slope. **`b > 1` is UNDER-dispersed (SHRUNK)**
+— where the head says 0.7 the realized rate is *above* 0.7; `b < 1` is over-dispersed; 1 is
+correct. Pooled and at turn 1–3 (`cond.calibration_slope.{all,t1_3}` + the two intercepts), WITHIN
+own-team strength strata (a shared slope with a free intercept per stratum), and on the two sides'
+COMMON SUPPORT. HT-reweighted like every other conditioning row, battle-clustered bootstrap
+resampling battles within their opponent cell, `V` clipped at 1e-3 before the logit with the
+clipped SHARE reported.
+
+🚨 **THE SLOPE'S SE SCALES AS `1/sd(logit V)`, AND (C) PREDICTS THE ARM'S IS THE SMALLER ONE** — so
+a shrunk arm is handed a WIDER interval by the very effect under test. The bias is conservative
+(it hides a real difference, it cannot manufacture one), but a conservative bias that is invisible
+reads exactly like a null. Two answers, both mandatory and both in the report: the per-side
+`sd(V)` / `sd(logit V)` / support / clipped-share table printed beside the rows exactly as the cell
+census is, and the **COMMON-SUPPORT** companion — both sides re-fitted on the intersection of their
+central 95% of `V`, where the lever arm cannot differ by construction. Disjoint central masses are
+REFUSED with a reason rather than widened into an extrapolation.
+
+**A THIRD `Meter` FLAG: `pair_level`.** The common-support window names BOTH sides, so no single
+run's block can compute that row. It is fitted by `main.ops.critic_read` from each side's CACHED
+per-state columns once both readouts exist — no second extraction — and the flag is declared, not
+matched on a name, so the block's "every meter is reported or omitted with a reason" invariant
+excludes it instead of filing a false reason a pair would then contradict.
+
+🚨 **FRAME SENSITIVITY: DECLARED `False`, THEN CHECKED ON THE MOST EXTREME CUT ON THIS LADDER.** A
+weighted logistic coefficient is an M-estimator — the root of a weighted score equation — whose
+expectation is the population coefficient at every frame size given correct weights. It is not an
+out-of-fold score whose optimism grows with the fitting set (there is no held-out evaluation), not
+an uncorrected second moment (a coefficient is a ratio of moments, consistent), and not a
+threshold-selected cell set. The argument was then MEASURED: `ctrl10M`'s 8/12 cap forces arm 8's
+frame from 651 battles to ~104 — a **6.3×** reduction — and the four base rows move +0.087 /
++0.118 / −0.143 / −0.171, every one INSIDE its own as-traced 95% CI (the control side of the
+`ctrl10M_b` pair moves +0.050 / 0.000 / −0.123 / −0.001). The **within-stratum** companion moves
+**+0.415, OUTSIDE** its CI — the third mechanism exactly (its strata exist only over teams clearing
+`MIN_TEAM_BATTLES`) — and it is the one calibration row declared `frame_sensitive` and
+quota-matched.
+
+`READOUT_FINGERPRINT_VERSION` untouched: the rows are computed from the trace tree and the
+conditioning cache's own key already carries `METER_KEYS`, so the ~25-minute `cf_audit` half stays
+cached. `TOOL_VERSION` 4 → 5, and the conditioning cache's `block_version` 1 → 2 (the block now
+carries the per-state columns). Verified across five pairs: every pre-existing delta reproduces its
+v4 value exactly, and the replicate floor file's 63 pre-existing keys recompute bit-for-bit.
+
+GATES: `conditioning_meters_test.py` (56, up from 33 — the three planted regimes recovered with
+CIs: `V` = the truth → slope 1, shrunk → > 1, stretched → < 1, all three sharing a rank order so
+only the slope separates them; separation and one-class REFUSALS; the weighted fit; the
+between-stratum offset absorbed; a no-variation stratum dropped; the lever arm; the window; the
+JSON round trip), `critic_read_test.py` (63, up from 58 — the pair-level pass, its two refusals and
+the render), `quota_match_test.py` (25, up from 23 — the declaration pinned both ways). 30 new tests.
+
+**The READ it was built for is in `designs/research_state/winprob_critic_ladder_2026-09-08.md`
+§2e.** On the live frames arm 8's slope LEVEL is 1.579 pooled / 1.426 at turn 1–3 where the three
+controls sit at 0.76 / 0.80 / 0.98 — the OVERSHOOT branch of the registered rule — while the DELTA
+is UNREADABLE, twelve of twelve positive but with a replicate floor (0.20 / 0.22) the size of the
+effect. The decisive read is the 400/800-game offline pair.
