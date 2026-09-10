@@ -877,6 +877,8 @@ z=−1.40" rules out >4.5pp, not >0.
 
 17. **A statistic on the eval-trace tree is reweighted by each cycle's recorded capture rate, or it is not a measurement.** The tree is loss-enriched by design; selecting on the outcome breaks every outcome-conditional property (the martingale test, bias by V-level, overdispersion). Read raw, the 75M bootstrap-consistency test returned the opposite answer with a confident interval; reweighted by `eval_manifest.json`'s per-opponent `capture_rate_win/loss` it inverted and the calibration CLI's raw bias of +0.31 collapsed to ~0. A tree without a manifest is SELECTION UNKNOWN. [MEASURED, 73c929e1; ledger 2026-09-08 *test 3*]
 
+18. **Own-team R² of V is NEVER read on live frames** — a leave-one-battle-out decode target over 719 teams is unstable on any frame with few battles per team, and a genuinely-zero row and a too-noisy-to-estimate row look identical (the controls reading ≈ 0 is the tell). It produced three spurious detections in the critic ladder (2026-09-09/10). It needs ≥ 2 offline full-capture draws per checkpoint, or it is not a measurement. [ledger 2026-09-10 · *RE-SPECIFICATION + RULE 18*]
+
 ## 8. Pointers
 
 | what | where |

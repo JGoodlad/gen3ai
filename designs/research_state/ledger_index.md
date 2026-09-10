@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,786-line file. **The ledger itself is append-only and is never edited by this**;
+16,790-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**518 headings · 478 dated · 2026-08-01 → 2026-09-10 · ledger 16,786 lines.**
+**519 headings · 479 dated · 2026-08-01 → 2026-09-10 · ledger 16,790 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -538,3 +538,4 @@ rename.
   - `L16759` · `2026-09-10` · PRE-REGISTRATION · hypothesis (C) SHRINKAGE for arm 8, its calibration-slope test with the three geometry guards, and the λ DOSE CURVE {1.0, 0.95, 0.9} with its direction fixed before any read
   - `L16765` · `2026-09-10` · VERDICT · the increment `28ece02a→46ca68ef` is TRAINING-SEMANTICS-NEUTRAL at the dense-aux and λ defaults — the first increment whose kwargs diff is NOT empty and the first that CAN reject a checkpoint; the structural gate bites in both directions; arm 9 cleared
   - `L16769` · `2026-09-10` · READ · arm 8 on the OFFLINE 400- and 800-game frames — the live-frame own-team effect does NOT replicate; what replicates is a DECREASED between-opponent spread of V, past the floor at both sizes — the shrinkage signature; the alignment candidate is WITHDRAWN and (C) becomes the arm's story pending the slope
+  - `L16787` · `2026-09-10` · RE-SPECIFICATION + RULE 18 · the λ dose curve is restated on its SURVIVING rows before `lambda095` runs; (C) is a cleaner test than proposed; own-team R² is never read on live frames again
