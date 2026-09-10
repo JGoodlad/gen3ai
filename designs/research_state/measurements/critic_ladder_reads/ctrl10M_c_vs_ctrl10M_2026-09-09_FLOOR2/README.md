@@ -1,3 +1,5 @@
 # THE FLOOR, SECOND DRAW — `ai_v12_16_ladder_ctrl10M_c` (seed 1002, pin 377a5aa1, 40/40/10) vs `ai_v12_11_ladder_ctrl10M`, both pinned to `step_10000032`, quota-matched (tool v3)
 
 The third draw of the control configuration read against the first. With `../ctrl10M_b_vs_ctrl10M_2026-09-09_FLOOR/` this gives the replicate floor TWO differences per row — a RANGE, not a distribution. `../replicate_floor_10M.json` is regenerated as the CONSERVATIVE bar (the wider |Δ| of the two draws per row), with both draws recorded beside it. Ledger 2026-09-09 · *THE FLOOR, SECOND DRAW*.
+
+**`critic_read_v4.md/json` (2026-09-10):** the SECOND FLOOR DRAW of the (A)/(B) rows (tool v4; pre-existing deltas bit-identical). `|Δ|`: within-team resolution **0.0050**, within-stratum **0.0116**, between-team spread ratio **0.1542** (raw 0.1395), `own_team_r2.late` **0.0405**, `t1 − late` **0.0060**. With the first draw the conservative bar on the between-team spread is **0.185** — larger than every arm-8 delta on that row, so a spread-ratio move is not readable at 100 games until a tighter floor exists.

@@ -449,6 +449,41 @@ print. 🚨 **This applies to a CONTROL-vs-CONTROL read too** — the replicate 
 (`ctrl10M_b` vs `ctrl10M`) carries the same asymmetry with the same sign, and a floor magnitude
 read off an unmatched decoder row would bake the artefact into every later arm's bar.
 
+🚨 **THE (A)/(B) ROWS — WHAT AN OWN-TEAM DECODE ACTUALLY MEANS (v4, 2026-09-10).** Arm 8 is the
+first arm to move `cond.own_team_r2.t1` (≈ 0.15 against ≈ 0 on every control), and that row alone
+cannot say which of two things it is: **(A)** the critic CONDITIONS on its team — teams differ in
+strength, knowing which one you hold predicts better, and inside a team it still reads the board;
+or **(B)** the critic SUBSTITUTES team identity for board state — right on average per team, blind
+INSIDE one. **(B) is a WORSE critic that reads as a better one on that row**, so the read now
+decomposes it into a BETWEEN-team part and a WITHIN-team part, plus a clock contrast:
+
+| row | (A) predicts | (B) predicts |
+|---|---|---|
+| `cond.within_team_resolution.all` — Murphy resolution inside own-team cells (teams with ≥ `MIN_TEAM_BATTLES` battles) | not lower, ideally higher | **DOWN** |
+| `cond.within_stratum_resolution.all` — the same over 5 team-STRENGTH strata (the coarse companion) | not lower | **DOWN** |
+| `cond.team_spread_ratio.t1_3` (+ `_raw`) — `sd(per-team mean V) / sd(per-team win rate)` | UP | UP |
+| `cond.own_team_r2.late` and `cond.own_team_r2.t1_minus_late` | the decode FALLS as the board fills in | it does not |
+
+🚨 **READ EVERY WITHIN-CELL ROW WITH ITS CENSUS, WHICH THE REPORT PRINTS BESIDE IT.** The pool
+carries 719 teams, so a few-thousand-battle frame leaves ~7 episodes per team cell, and a binned
+resolution that small is largely the binning's own **positively biased** noise — read raw it would
+look like (B) by construction. Only qualifying cells are used, the cell / battle / state counts and
+the median per-cell N are printed, and the **stratum row is the check on the team row**: hundreds
+of episodes per cell, the same sign logic. Where the two disagree, believe the stratum row.
+
+🚨 **THE SPREAD RATIO IS AN AMPLITUDE; THE OWN-TEAM R² IS AN ALIGNMENT.** The R² is a monotone
+out-of-fold decode and is invariant to scale, so a head can ORDER its teams better than the control
+while emitting a SMALLER between-team spread — which is what arm 8 does. The R² row is never read
+alone.
+
+🚨 **`cond.own_team_r2.t1_minus_late` IS PROVISIONAL AND IS NEVER LABELLED DETECTED.** No control
+can supply it a floor — they all read ≈ 0 at turn 1, so there is nothing for the row to FALL from
+and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A large
+move either way is informative; a small one is not. All six new rows are `frame_sensitive` and are
+quota-matched like every other fitted row; the own-team rows added a THIRD sensitivity mechanism to
+the declaration — a row whose CELLS are chosen by a battle-count threshold has a cell SET that is
+itself a function of frame size.
+
 🚨 **PASS `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.** `--on-live skip-newest` is the
 default and it DROPS the newest cycle when any process still names the run, so a finished 10M arm
 whose launcher had not yet exited is read at **8M**. That happened to the 2026-09-09 tdaux read.

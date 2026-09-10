@@ -9201,3 +9201,71 @@ complete`, publishes the whole `win_prob/aux_*` family (`aux_coverage` 0.94–1.
 `aux_turns_mae` 0.13) with `grad/dense_aux_share` rising 0.0 → 0.23, and records `dense_aux true` /
 `win_prob_dense_aux 1.0` at config_version 117; the same argv at 0 publishes NO `aux_*` tag at all
 and records `false` / `0.0`.
+
+---
+
+## 2026-09-10 — INSTRUMENT: the (A)/(B) rows — does the critic CONDITION on its team, or SUBSTITUTE it for the board? (`main.ops.team_conditioning`, `critic_read` v4)
+
+Arm 8 (`ai_v12_19_ladder_lambda09`, λ-return targets) is the first ladder arm whose `V` decodes its
+OWN TEAM at turn 1 — R² ≈ 0.15 against ≈ 0 on every control (ledger 2026-09-10 · *READ · critic
+ladder arm 8*). **Two readings fit that fact and the existing rows separate neither:** (A) the
+critic CONDITIONS on its team — teams differ in strength, so knowing which one it holds predicts
+better, and inside a team it still reads the board; (B) the critic SUBSTITUTES team identity for
+board state — right on average per team, blind INSIDE one. (B) would be a *worse* critic that reads
+as a better one on the own-team row, so the distinction decides whether the arm's finding is the
+lever working.
+
+Six new declared `Meter`s decompose the own-team decode into a BETWEEN-team part and a WITHIN-team
+part, plus the clock contrast:
+
+| row | what it is |
+|---|---|
+| `cond.within_team_resolution.all` | Murphy resolution of `V` computed INSIDE each own-team cell against that cell's own base rate, battle-weighted over cells (cells = teams with ≥ `MIN_TEAM_BATTLES` battles) |
+| `cond.within_stratum_resolution.all` | the COARSE companion — the same estimator over 5 team-STRENGTH strata (quantiles of the team's leave-one-battle-out win rate, cut at equal battle mass) |
+| `cond.team_spread_ratio.t1_3` (+ `_raw`) | the own-team analogue of the opponent SPREAD IDENTITY: `sd(per-team mean V) / sd(per-team win rate)`, noise-corrected and clamped, with the uncorrected monotone companion |
+| `cond.own_team_r2.late` | the own-team decode at turn ≥ 25 |
+| `cond.own_team_r2.t1_minus_late` | the contrast — a conditioning critic's team R² FALLS as board information takes over |
+
+**The sign logic:** (A) predicts within-team resolution not lower with the between-team spread up;
+(B) predicts within-team resolution DOWN with between-team up. The report prints the sign table,
+the three deltas and a reading of them — never a verdict, which stays with the registered
+DETECTED / WITHIN FLOOR / NOT DETECTED machinery.
+
+🚨 **THE CELLS ARE SMALL AND THE CENSUS IS PART OF THE ROW.** The pool carries 719 teams, so a
+few-thousand-battle frame leaves ~7 episodes per team, and a binned resolution inside a cell that
+size is largely the binning's own **positively biased** noise — it would read like (B) by
+construction if it were read raw. Only cells clearing `MIN_TEAM_BATTLES` are used, and every
+within-cell row is printed WITH its census (cells, battles, states, median and min–max per-cell N).
+The stratum row is the check on the team row: hundreds of episodes per cell, the same sign logic,
+and where the two disagree the report says to believe the stratum row.
+
+🚨 **ALL SIX ARE `frame_sensitive`,** so `main.ops.quota_match` equalises them like every other
+fitted row. Two of the mechanisms were already declared (an out-of-fold FIT on the frame, an
+UNCORRECTED second moment); the own-team rows added a THIRD, now documented on `Meter`: a row whose
+CELLS are chosen by a battle-count threshold has a cell SET that is itself a function of frame size
+— a smaller frame keeps only the busiest teams, a different population of cells rather than a
+noisier estimate of the same ones. The opponent rows have no such mechanism, their roster being a
+pinned set.
+
+🚨 **`cond.own_team_r2.t1_minus_late` is PROVISIONAL and is NEVER labelled DETECTED.** No control
+supplies a floor for it — they all read own-team R² ≈ 0 at turn 1, so there is nothing for the row
+to FALL from and the two-draw replicate floor cannot be formed. `Meter.provisional` is a declared
+flag with its own reason, applied AFTER the matched/unmatched machinery so it cannot be lost down a
+branch, and it is the ABSENCE of a verdict rather than a weaker one: a large move either way is
+informative, a small one is not, and the report says exactly that in place of a label.
+
+**A NUANCE THE FIRST READ FORCED INTO THE REPORT:** the spread ratio is an **AMPLITUDE** and the
+own-team R² is an **ALIGNMENT** (a monotone out-of-fold decode, invariant to scale). A head can
+order its teams better than the control while emitting a *smaller* between-team spread — which is
+exactly what arm 8 does — so the R² row is never read alone, and `reading_of` names that pattern
+instead of forcing it into (A) or (B).
+
+The arithmetic lives in a new `main.ops.team_conditioning` (the METERS stay declared in
+`conditioning_meters`, which is where `quota_match` and `critic_read` read them). **No
+`READOUT_FINGERPRINT_VERSION` bump** — the rows are computed from the trace tree, not from a cached
+readout, and the conditioning block's own key already carries `METER_KEYS`, so the ~25-minute
+`cf_audit` half stays cached and only the seconds-cheap half recomputes. `TOOL_VERSION` 3 → 4.
+Verified on arm 8 vs `ctrl10M`: every pre-existing delta is bit-identical to the committed v3 read.
+GATES: `conditioning_meters_test.py` (33, up from 21 — the three planted regimes, team-mean-only /
+team-and-board / marginal, each recovered with the right signs), `critic_read_test.py` (58, up from
+56), `quota_match_test.py` (26, up from 25).

@@ -270,11 +270,15 @@ def _ab_block(doc: Dict[str, Any]) -> str:
     L.extend(_cell_census_table(doc))
     A("| row | frame | arm | control | **Δ** | 95% CI | verdict |")
     A("|---|---|---|---|---|---|---|")
-    for r in rows + ([diff] if diff is not None else []):
+    context = [by[k] for k in ("cond.own_team_r2.t1", "cond.own_team_r2.late") if k in by]
+    for r in rows + context + ([diff] if diff is not None else []):
         A(f"| {r['quantity']} · `{r['stratum']}` | {_frame_note(r)} | {_f(r['arm'])} | "
           f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {_label(r)} |")
     A("")
     d = {k: (by[k]["delta"] if k in by else None) for k in AB_ROWS}
+    A("The two own-team R² rows are printed with them: the contrast is their difference, and it "
+      "cannot be read without seeing which end moved.")
+    A("")
     A(f"**Reading of the three signs:** {TC.reading_of(d[AB_ROWS[0]], d[AB_ROWS[1]], d[AB_ROWS[2]])}.")
     A("")
     A("> 🚨 **The between-team spread is an AMPLITUDE; the own-team R² is an ALIGNMENT.** The "

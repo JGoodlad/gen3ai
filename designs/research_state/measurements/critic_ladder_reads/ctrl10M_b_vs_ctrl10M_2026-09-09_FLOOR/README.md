@@ -5,3 +5,5 @@
 **400-game OFFLINE read (2026-09-09):** `critic_read_hp400.md/json` — both sides 400-game offline-generated cycles (`main.ops.eval_trace_gen`, seed 20260909, 12 opponents, full capture); NOT comparable to the 100-game rows above (different population); ledger 2026-09-09 · *THE FLOOR AT 400 GAMES* and *THE ARMS AT 400 GAMES*.
 
 **800-game OFFLINE read (2026-09-10):** `critic_read_hp800.md/json` — both sides 800-game offline cycles (seed 20260910); its own floor `../replicate_floor_10M_hp800.json`; ledger 2026-09-10 · *THE ARMS AT 800 GAMES*.
+
+**`critic_read_v4.md/json` (2026-09-10):** the same pair re-read by tool **v4** for the FIRST FLOOR DRAW of the (A)/(B) rows. Pre-existing deltas bit-identical. `|Δ|` on the new rows: within-team resolution **0.0071**, within-stratum **0.0146**, between-team spread ratio **0.1848** (raw 0.1740), `own_team_r2.late` **0.0320**, `t1 − late` **0.0380** (PROVISIONAL — that row can never be given a floor from a control pair; both sides read ≈ 0 at turn 1).
