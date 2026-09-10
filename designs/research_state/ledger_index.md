@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,455-line file. **The ledger itself is append-only and is never edited by this**;
+16,459-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**497 headings · 457 dated · 2026-08-01 → 2026-09-09 · ledger 16,455 lines.**
+**498 headings · 458 dated · 2026-08-01 → 2026-09-09 · ledger 16,459 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -517,3 +517,4 @@ rename.
   - `L16431` · `2026-09-09` · READ · critic ladder arm 7 `ai_v12_17_ladder_strata` (class-stratified win-prob BCE) vs the control at pinned 10M, floored — NOTHING on any registered row; the realized dose was 95 % of target
   - `L16439` · `2026-09-09` · THE ARMS AT 400 GAMES · three levers read on offline 4,800-battle cycles against the offline control — none moves bot resolution by more than ~0.01, none moves the turn-1–3 spread ratio by more than ~0.05; at this power the levers are DEAD AT 10M, not unresolved
   - `L16452` · `2026-09-09` · BUILT · the synthetic-obs registry (`extra_obs_keys.py`, `d11386dc`) — the preload defect that killed `truevalue` was one of FOUR hand-built synthetic-obs sites on the same argv; all five call sites now build from one declared table keyed on the extractor ATTRIBUTE the seam itself tests
+  - `L16456` · `2026-09-09` · ADDENDUM to THE ARMS AT 400 GAMES · `strata` at 400 games — the fourth lever is in the same class: bot resolution Δ +0.0013 [−0.0057, +0.0090]
