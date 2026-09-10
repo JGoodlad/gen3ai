@@ -16787,3 +16787,68 @@ The pre-registered decision rows, both sides offline-generated (sentinels pinned
 ### 2026-09-10 · RE-SPECIFICATION + RULE 18 · the λ dose curve is restated on its SURVIVING rows before `lambda095` runs; (C) is a cleaner test than proposed; own-team R² is never read on live frames again
 
 Raised by the Training Run session, accepted on all three. **(1) The dose curve had a dead component.** It was registered as monotone across {1.0, 0.95, 0.9} on three quantities jointly, one of which — the own-team ALIGNMENT gain — was just withdrawn as a thin-frame artefact. Carrying it forward would test a dead quantity or let two-of-three read as confirmation. **Restated on the rows that replicated at both offline frame sizes:** monotone across {1.0 (controls), 0.95, 0.9} on the **between-opponent spread ratio** (larger at 0.95 than at 0.9) and on the **calibration slope** (nearer 1 at 0.95 than at 0.9); **bot resolution / resolution-all REPORTED beside them, NOT a monotonicity requirement** (its own 400-vs-800 disagreement, +0.002 then +0.010, says it is not stable enough to carry a registered prediction). Two components; non-monotone on either REFUTES (C). **(2) (C) is cleaner than proposed.** It was "alignment up AND amplitude down = shrinkage buying ordering by paying amplitude". Alignment up is gone. What survives — amplitude down, resolution up, skill up, calibration the best of any run — is shrinkage that removed mostly NOISE: textbook beneficial bias–variance, not a trade. So the slope read is decisive in a way it was not: **slope ≈ 1 with lower spread and higher resolution ⇒ the critic simply got BETTER; slope > 1 ⇒ the shrinkage overshot and the amplitude loss is a genuine defect.** There is no middle story. **(3) RULE OF EVIDENCE 18, banked beside rule 17:** own-team R² of V has produced THREE spurious detections in this campaign — `cflabels`' +0.084 (trace-frame asymmetry), arm 8's live +0.15 (thin loss-enriched frames), and it is the row whose eval-draw variance (±0.02–0.03) exceeds its own CI (±0.015). Three failures on one row is a property, not luck: a leave-one-battle-out decode target over 719 teams is unstable on any frame with few battles per team, and the controls reading ≈ 0 is itself the tell — a genuinely-zero row and a too-noisy-to-estimate row look identical. **Own-team R² is NEVER read on live frames; it needs ≥ 2 offline full-capture draws or it is not a measurement.** Tag: PRE-REGISTRATION · RULE.
+
+## 2026-09-10 · OPS · CRITIC LADDER — `ai_v12_14_ladder_truevalue` COMPLETE at the SECOND attempt (`--value-true-team`, 10,027,008 steps, 5.24 h, 0 crashes, G7 below bar on both halves)
+
+The privileged-information arm and the ladder's FALSIFICATION TEST: if a critic handed the
+opponent's actual party conditions no better than the controls, the target-only account of the
+critic's limits is as strong as it can be; if it conditions well, the earlier probe missed
+something. Pinned `d11386dc3afc577a5e4351a8f270c7e3a87d700b`.
+
+🚨 **IT SURVIVED THE LAYER THAT KILLED ITS FIRST ATTEMPT, WHICH IS THE FIVE-SITE FIX'S ONLY REAL
+TEST.** The 09-09 attempt died at env init on `RuntimeError: value_true_team is ON but this forward
+received no 'opp_true_team' obs key`, raised from `compile_preload`'s one-key synthetic obs. This
+launch: **zero** occurrences of `opp_true_team` anywhere in the launcher log outside the pin's own
+commit subject, zero failure signatures, warm at 98,304 in ~2 min. 🚨 `--debug` BYPASSES the
+preload (DummyVecEnv, one env, no forkserver), so NOTHING in the compile/preload/warmstart layer is
+reachable by a debug smoke — the first two minutes of a REAL launch are the only test that layer
+ever gets, and this is the first time it has been passed with an obs-key-adding flag on.
+
+**The registered check PASSES.** The trace npz carries `win_probs`, so the critic meters will read
+this arm: keys are `action_mask, actions, has_state, logits, move_logits, obs, spread_belief,
+values, win_probs`; of the first 40 of 433 `*_states.npz` opened at the first cycle, ZERO were
+missing it. `opp_true_team` is absent and that is BY DESIGN — it is a training-and-eval-only Dict
+key, never written to traces, so its absence is expected and is not a finding.
+
+**Run:** 10,027,008 steps in **5.24 h**, 48 envs, 1 periodic restart, **0 crashes**, `Training
+complete`. Sidecar **155,137 rows / 42 MB** (schema 1, λ off — correct), the sixth arm to land on
+exactly that count. All **5** trace cycles retained. Final aggregate 91.8%.
+
+**G7 (within-arm)** — reference = first two cycles (24.371, 23.552) → **23.962**:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 23.272 | 0.971 | 0.8813 | under bar |
+| 8,000,016 | 22.511 | 0.939 | 0.9000 | under bar |
+| 10,000,032 | 25.225 | 1.053 | 0.9013 | under bar |
+
+Worst **1.053 = 84.2% of the bar**; stall peak **0.0183**, last 0.0030. ⚠️ Unlike `lambda09`, this
+arm's reference (23.962) sits INSIDE the three control draws' 22.739–27.657 band, so its ratios
+carry no denominator artefact and are directly readable against its own bar.
+
+**Descriptive** (NOT a strength read): bots 0.5200 → 0.8512 → 0.8813 → 0.9000 → 0.9013; elo 1600 →
+2054; ladder converged 6/6, 10M **2054.0±17.4** — the highest 10M ladder rating of any arm, against
+a three-draw control floor of **45 points**, so the gap is inside the replicate spread and is not a
+result. Rule-15 boundaries: 2,000,016 → 0.0000 and 4,000,032 → **0.9000**.
+⚠️ Its 2M bots (0.5200) is the highest any arm posted at that step and its 8M/10M likewise — a level
+difference present from the FIRST cycle, before the lever could plausibly have acted, so it is a
+draw-level property rather than something the flag produced late.
+
+The registered read is the critic meters at 10M vs `ai_v12_11_ladder_ctrl10M`.
+
+⚠️ **CONTEXT THIS ARM LANDS INTO, banked the same day.** `lambda09`'s own-team R² candidate — the
+ladder's first apparent lever effect at +0.146/+0.148 past a 0.039 floor — was **WITHDRAWN** on
+full-capture offline frames: arm 0.036/0.062 vs control 0.039/0.046, a tenth of the live figure and
+inside that row's eval-draw variance. The live effect was a property of ~200-battle loss-enriched
+frames on which a leave-one-out decode over 719 teams is unstable, and where the controls reading
+≈0 was itself the tell — a genuinely zero row and a too-noisy-to-estimate row look identical.
+**That is the THIRD spurious detection on own-team R² in this campaign**, which is why it is now
+rule 18: own-team R² is never read on live frames; ≥2 offline full-capture draws or it is not a
+measurement. What DOES replicate for `lambda09` at both frame sizes is the between-OPPONENT spread
+ratio being DOWN (Δ −0.124 and −0.098 against floors 0.066 / 0.043) — amplitude down, with
+resolution, skill and calibration all up.
+
+Tag: OPS. Nothing measured about the critic by this entry. Next: `denseaux` at `46ca68ef`
+(increment cleared — 712 = 712 tensors flag-off, +9,881 params flag-on = Linear(128,64) 8,256 +
+Linear(64,25) 1,625, four-hop 113→117 control load passing, structural gate refusing both
+directions), then `lambda095` on the (C) slope read, then `lambda09_b` last and optional.
