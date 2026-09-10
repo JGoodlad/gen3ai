@@ -732,6 +732,11 @@ spread ratio (−0.066 [−0.107, −0.031]) stay clear of zero between two draw
 that more eval cannot remove. Consequence: levers are read on bot resolution / own-team R² / class AUC from an
 offline 400-game cycle (no retraining), and on identity bias / spread ratio only with replicates per condition.
 
+**Ladder arm 7 `strata` read (2026-09-09, class-stratified win-prob BCE, realized bot share 0.473 vs 0.5):**
+[MEASURED · NOT DETECTED, `measurements/critic_ladder_reads/strata_vs_ctrl10M_2026-09-09/`] nothing on any
+registered row at 10M (bot resolution +0.005 [−0.012, +0.016], spread ratio t1–3 −0.049 n.d., own-team R²
+−0.054 n.d.); six runs, four levers, zero detected registered rows; the 400-game read decides the slot.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
