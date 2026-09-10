@@ -737,6 +737,13 @@ offline 400-game cycle (no retraining), and on identity bias / spread ratio only
 registered row at 10M (bot resolution +0.005 [−0.012, +0.016], spread ratio t1–3 −0.049 n.d., own-team R²
 −0.054 n.d.); six runs, four levers, zero detected registered rows; the 400-game read decides the slot.
 
+**THE ARMS AT 400 GAMES (2026-09-09):** [MEASURED · NOT DETECTED at ±0.01] on offline 4,800-battle cycles both
+sides, `vf15` / `tdaux` / `cflabels` move bot resolution by +0.003 / −0.002 / +0.001 with intervals inside about
+±0.010 against a replicate pair agreeing to ±0.007, and the turn-1–3 spread ratio by less than the replicate
+difference. The four 10M levers are dead at this length and power, not unresolved. No replicate is spent; the
+next arm is a target-side lever with literature behind it — λ-return targets (`--win-prob-lambda 0.9`, arm 8,
+in build), then KataGo-style dense auxiliary targets.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

@@ -45,3 +45,5 @@ between-group variance. **The interval is the read**, and the delta is the quant
 by either, because both effects hit arm and control alike.
 
 **`critic_read_v3.md/json` (2026-09-09, tool v3 — QUOTA MATCHING now default).** `main.ops.critic_read` now equalises the two trace frames before it reads any FRAME-SENSITIVE conditioning row (`main.ops.quota_match`). This pair is **SYMMETRIC** — both sides carry the same realized cap, **8/12 traced wins/losses per opponent** (tdaux 210 traced battles, ctrl10M 204) — so nothing is subsampled and **every delta row in v3 is bit-for-bit identical to v2**. v3 is kept only because the report now prints the realized capture profiles in its header, which is the evidence that this read was never affected.
+
+**400-game OFFLINE read (2026-09-09):** `critic_read_hp400.md/json` — both sides 400-game offline-generated cycles (`main.ops.eval_trace_gen`, seed 20260909, 12 opponents, full capture); NOT comparable to the 100-game rows above (different population); ledger 2026-09-09 · *THE FLOOR AT 400 GAMES* and *THE ARMS AT 400 GAMES*.

@@ -361,6 +361,12 @@ saved four snapshots, one of them at the read step (excluded as a self-mirror), 
 ratio's cell count is therefore unchanged. Closing that would need a run that snapshots more often;
 it is not something the generator can supply after the fact.
 
+## 2d. THE ARMS AT 400 GAMES (2026-09-09) — the slot decision
+
+Offline 4,800-battle cycles on both sides (`main.ops.eval_trace_gen`), quota-matched; the replicate pair agrees to ±0.007 on bot resolution. `vf15` +0.003 [−0.005, +0.010], `tdaux` −0.002 [−0.010, +0.005], `cflabels` +0.001 [−0.006, +0.009]; spread ratio t1–3 all inside ±0.06 (replicate difference 0.066). **No lever moves the decision rows at 10M. No replicate is spent (`cflabels_b` dropped). Arm 8 = `--win-prob-lambda 0.9` (λ-return targets), then dense auxiliary targets.** Ledger 2026-09-09 · *THE ARMS AT 400 GAMES*.
+
+---
+
 ## 3. THE FIRST PAIR
 
 **Launch B, then C — sequentially, both at `--n-envs 48`.**
