@@ -17,21 +17,27 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional, Sequence
 
+from main.ops import calibration_slope as CS
 from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
 from main.ops import team_conditioning as TC
 from main.ops import quota_match as QM
 
 TOOL = "critic_read"
-TOOL_VERSION = 4
+TOOL_VERSION = 5
 
 #: the summary table's headline quantities. The first four are the 2026-09-08 registration's;
 #: the last two are the CONDITIONING primaries added 2026-09-09, after three offline reads
 #: established that the critic's defect is a conditioning failure in the win head — it emits one
 #: near-marginal win probability regardless of opponent AND of its own team. An arm built against
 #: that defect has to be read on the meters that measure it.
+#: The seventh (added 2026-09-10, tool v5) is the CALIBRATION SLOPE: the ladder's first arm to
+#: move the own-team decode moved it while EMITTING A SMALLER SPREAD, and the slope is the row that
+#: says whether that is SHRINKAGE (a compressed target fitted as a shrinkage estimator) rather
+#: than an unexplained pairing of "alignment up, amplitude down".
 HEADLINES = ("gate.resolution.bot", "identity.bias.late (turn>=25)", "identity.turn_contrast",
-             "gate.skill.bot", "cond.spread_ratio.t1_3", "cond.own_team_r2.t1")
+             "gate.skill.bot", "cond.spread_ratio.t1_3", "cond.own_team_r2.t1",
+             CM.CALIB_SLOPE_ALL)
 #: identity strata, in report order. `ALL` first, then the turn buckets, then the opponent split.
 IDENTITY_STRATA = ("ALL",) + R.TURN_BUCKETS + ("bot", "pool")
 #: the three selection corrections every identity quantity is reported under.
@@ -106,7 +112,8 @@ def ledger_line(doc: Dict[str, Any]) -> str:
                         part("identity.bias.late (turn>=25)", "identity bias late"),
                         part("identity.turn_contrast", "turn-contrast"),
                         part("cond.spread_ratio.t1_3", "spread ratio t1-3"),
-                        part("cond.own_team_r2.t1", "own-team R2 t1")]))
+                        part("cond.own_team_r2.t1", "own-team R2 t1"),
+                        part(CM.CALIB_SLOPE_ALL, "calib slope")]))
 
 
 # --------------------------------------------------------------------------- the frame profiles
@@ -300,6 +307,132 @@ def _ab_block(doc: Dict[str, Any]) -> str:
         A(f"> 🚨 **`{CM.OWN_TEAM_R2_DIFF}` is PROVISIONAL and is never labelled DETECTED.** "
           f"{CM.METER_BY_KEY[CM.OWN_TEAM_R2_DIFF].provisional_why}.")
         A("")
+    return "\n".join(L)
+
+
+#: the calibration rows, in report order: the pooled pair, the turn-1-3 pair, the WITHIN-stratum
+#: companion, then the COMMON-SUPPORT companion that removes the lever-arm difference.
+CALIB_ROWS = (CM.CALIB_SLOPE_ALL, CM.CALIB_INTERCEPT_ALL,
+              CM.CALIB_SLOPE_T13, CM.CALIB_INTERCEPT_T13,
+              CM.CALIB_SLOPE_WITHIN,
+              CM.CALIB_SLOPE_COMMON, CM.CALIB_INTERCEPT_COMMON)
+
+
+def _support_table(doc: Dict[str, Any]) -> List[str]:
+    """The LEVER ARM each slope is fitted on — printed beside the rows for the same reason the
+    cell census is printed beside the within-cell rows.
+
+    🚨 The slope's standard error scales as ``1/sd(logit V)``. A head whose predictions are
+    COMPRESSED therefore buys a WIDER interval from the very effect under test — conservative, but
+    invisible unless the two sds are on the page. ``clipped share`` says how much of the column the
+    logit's clip touched: a row fitted on a heavily clipped column is a statement about the clip.
+    """
+    L: List[str] = ["**The LEVER ARM these slopes are fitted on** — the slope's SE scales as "
+                    "`1/sd(logit V)`, so the side with the more compressed `V` is handed the wider "
+                    "interval by the effect under test:", ""]
+    L.append("| role | frame | states | battles | mean V | **sd(V)** | **sd(logit V)** | "
+             f"central {CS.SUPPORT_Q[0]}–{CS.SUPPORT_Q[1]}% of V | clipped share |")
+    L.append("|---|---|---|---|---|---|---|---|---|")
+    cs = doc.get("common_support") or {}
+    for role in ("arm", "control"):
+        sup = (((doc[role].get("conditioning") or {}).get("frame") or {})
+               .get("calibration_support") or {})
+        entries = [(b, sup.get(b)) for b in CS.BUCKETS]
+        entries.append(("common support", ((cs.get("sides") or {}).get(role) or {}).get(
+            "support")))
+        for name, c in entries:
+            if not c:
+                L.append(f"| {role} · {name} | — | — | — | — | — | — | — | (not computed) |")
+                continue
+            L.append(f"| {role} · {name} | `{name}` | {c.get('n_states')} | "
+                     f"{c.get('n_battles')} | {_f(c.get('mean_V'), 4, sign=False)} | "
+                     f"**{_f(c.get('sd_V'), 4, sign=False)}** | "
+                     f"**{_f(c.get('sd_logit_V'), 4, sign=False)}** | "
+                     f"[{_f(c.get('q_lo'), 3, sign=False)}, {_f(c.get('q_hi'), 3, sign=False)}] | "
+                     f"{_f(c.get('clipped_share'), 4, sign=False)} |")
+    L.append("")
+    if cs.get("status") == "FITTED":
+        w = cs["window"]
+        L.append(f"The COMMON-SUPPORT window is `V ∈ [{w[0]:.4f}, {w[1]:.4f}]` — the intersection "
+                 f"of the two sides' central {CS.SUPPORT_Q[1] - CS.SUPPORT_Q[0]:.0f}% of `V`. "
+                 "Both sides are re-fitted inside it, so the lever arm cannot differ between them "
+                 "and a surviving slope difference is not the support.")
+    else:
+        L.append(f"> ⚠️ **The COMMON-SUPPORT row is {cs.get('status') or 'NOT COMPUTED'}.** "
+                 f"{cs.get('why') or 'The pass did not run.'}")
+    L.append("")
+    return L
+
+
+def _calibration_block(doc: Dict[str, Any]) -> str:
+    """The CALIBRATION SLOPE — is the head's `V` correctly DISPERSED, or shrunk toward the base
+    rate?
+
+    The row exists because the ladder produced a pattern neither of the (A)/(B) readings
+    anticipates: an arm whose `V` is better ORDERED by own-team strength than every control while
+    emitting a SMALLER spread across teams. An out-of-fold decode is scale-invariant and cannot see
+    compression; a spread ratio sees it mixed with every other reason a spread moves. The
+    calibration slope sees it directly, in the units it happens in.
+    """
+    by = {r["key"]: r for r in doc["deltas"]}
+    rows = [by[k] for k in CALIB_ROWS if k in by]
+    if not rows:
+        return ""
+    L: List[str] = []
+    A = L.append
+    A("### The CALIBRATION SLOPE — is `V` correctly DISPERSED, or SHRUNK toward the base rate?")
+    A("")
+    A("Regress the realized outcome on the forecast, in the forecast's own logit — a weighted "
+      "logistic regression `logit P(y=1) = a + b · logit(V)`. `(a, b)` is the classic Cox (1958) "
+      "recalibration pair: **`a` is calibration-in-the-large** (0 when the average forecast is "
+      "right) and **`b` is the calibration slope** (1 when the forecast is correctly dispersed).")
+    A("")
+    A("| slope `b` | what it says | what would fix it |")
+    A("|---|---|---|")
+    A("| **> 1** | **UNDER-dispersed — SHRUNK.** Where the head says 0.7 the realized rate is "
+      "*above* 0.7, and where it says 0.3 it is *below*. | stretch the predictions AWAY from the "
+      "base rate |")
+    A("| ≈ 1 | correctly dispersed | nothing |")
+    A("| < 1 | OVER-dispersed — the opinions are more extreme than the evidence behind them | "
+      "shrink the predictions TOWARD the base rate |")
+    A("")
+    A("**Why it is the sharp test of a bootstrapped target.** A λ-return (or any bootstrapped) "
+      "target blends the critic's own `V` into the label, so the thing being fitted is compressed "
+      "toward the base rate relative to a raw 0/1 outcome. Fitting a compressed target IS a "
+      "shrinkage estimator: it can improve the rank ORDER of what is emitted while reducing its "
+      "AMPLITUDE. The own-team R² row is a monotone out-of-fold decode and is invariant to scale, "
+      "so it cannot see that at all; the spread ratio sees it mixed with everything else. The "
+      "slope sees it directly, and a shrunk head reads `b > 1`.")
+    A("")
+    L.extend(_support_table(doc))
+    A("| row | frame | arm | control | **Δ** | 95% CI | replicate floor | verdict |")
+    A("|---|---|---|---|---|---|---|---|")
+    for r in rows:
+        fl = r.get("floor")
+        floor_cell = ("—" if fl is None else f"{abs(float(fl)):.4f}")
+        A(f"| {r['quantity'].split(' — ')[0]} · `{r['stratum']}` | {_frame_note(r)} | "
+          f"{_f(r['arm'])} | {_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | "
+          f"{floor_cell} | {_label(r)} |")
+    A("")
+    A("> 🚨 **A WIDE REPLICATE FLOOR IS 'UNREADABLE AT THIS FRAME SIZE', NOT A NULL.** The floor "
+      "column is the wider of the two control-vs-control draws for that row — total run-to-run "
+      "variance between two identically-configured runs. Where it is larger than the arm's own "
+      "delta the row says the frame cannot resolve the question; it does not say the effect is "
+      "absent. A `—` means the floor file carries no entry for the row and no detection against a "
+      "floor is possible.")
+    A("")
+    A(f"> 🚨 **{CS.support_note()}**")
+    A("")
+    A("> The **within-stratum** row is the same fit with a free intercept per own-team strength "
+      "stratum. Shrinkage ACROSS teams and shrinkage INSIDE one are different statements: a head "
+      "compressed only between strata moves the pooled row alone, while one compressed everywhere "
+      "moves both. A stratum whose outcomes are all wins or all losses is DROPPED rather than "
+      "fitted — its own dummy would diverge and take the shared slope's convergence with it.")
+    A("")
+    A(f"> `V` is clipped into `[{CS.CALIB_EPS}, {1 - CS.CALIB_EPS}]` before the logit — "
+      "`logit(0)` is not a number, and a forecast at 0.9999 is a leverage point worth several "
+      "ordinary states on a logit x-axis. The clipped SHARE is in the lever-arm table above.")
+    A("")
     return "\n".join(L)
 
 
@@ -571,6 +704,9 @@ def render_md(doc: Dict[str, Any]) -> str:
     ab = _ab_block(doc)
     if ab:
         A(ab)
+    calib = _calibration_block(doc)
+    if calib:
+        A(calib)
     detail = _matched_detail(doc)
     if detail:
         A(detail)

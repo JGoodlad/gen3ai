@@ -28,6 +28,7 @@ from typing import Dict, Optional
 import numpy as np
 import pytest
 
+from main.ops import calibration_slope as CS
 from main.ops import conditioning_meters as CM
 from main.ops import team_conditioning as TC
 
@@ -324,6 +325,12 @@ def test_every_declared_meter_is_either_reported_or_omitted_with_a_reason(tmp_pa
     _plant(tmp_path, wr_by_opp=_WRS, v_of=_separating, seed=15)
     blk = CM.conditioning_block(str(tmp_path), 100, boot=100, ladder="off", seed=15)
     for key in CM.METER_KEYS:
+        if key in CM.PAIR_LEVEL_KEYS:
+            # a PAIR-level row (the common-support slope) is fitted by `main.ops.critic_read` once
+            # both sides exist; a single-run block neither reports nor omits it, because an
+            # omission reason here would still be sitting there after the pair filled it in.
+            assert key not in blk["points"] and key not in blk["omitted"], key
+            continue
         assert (key in blk["points"]) ^ (key in blk["omitted"]), key
 
 
@@ -567,3 +574,333 @@ def test_the_provisional_contrast_row_declares_why_it_can_have_no_floor() -> Non
     assert m.provisional is True and m.frame_sensitive is True
     assert "floor" in m.provisional_why.lower()
     assert CM.PROVISIONAL_KEYS == (CM.OWN_TEAM_R2_DIFF,)
+
+
+# --------------------------------------------------------- the CALIBRATION SLOPE (SHRINKAGE)
+#
+# Arm 8 reads "alignment up, amplitude down": its ``V`` is better ORDERED by own-team strength
+# than every control while its between-team SPREAD is smaller. One account of that pairing is
+# SHRINKAGE — a bootstrapped (λ-return) target blends the critic's own ``V`` into the label, so
+# the fitted target is compressed toward the base rate, and fitting a compressed target is a
+# shrinkage estimator: better rank order, smaller amplitude. The sharp signature is the
+# CALIBRATION SLOPE, and the tests below plant all three regimes with a known answer:
+#
+#   V == the true probability     -> slope ~ 1   (correctly dispersed)
+#   V shrunk toward the base rate -> slope > 1   (UNDER-dispersed: 0.7 is followed by MORE than 0.7)
+#   V stretched away from it      -> slope < 1   (over-dispersed)
+#
+# The middle row is the whole hypothesis, and the third is here because a test that only separates
+# "1" from "big" cannot tell a slope estimator from a magnitude one.
+
+_CAL_TURNS = (1, 2, 3, 9, 18, 30)
+_CAL_OPPS = ("heuristic", "staller", "aggressive", "sentinel_0")
+
+
+def _true(p):
+    """A forecast that IS the probability — the calibrated reference, slope 1."""
+    return p
+
+
+def _shrunk(p, k: float = 0.5):
+    """(C) SHRINKAGE planted exactly: every forecast pulled a fraction ``k`` of the way to 0.5.
+    The rank ORDER is untouched (the map is monotone), only the AMPLITUDE is — which is precisely
+    why a scale-invariant decode cannot see it and the slope can."""
+    return 0.5 + k * (np.asarray(p, dtype=float) - 0.5)
+
+
+def _stretched(p, k: float = 1.8):
+    """The opposite defect: opinions more extreme than the evidence behind them, slope < 1."""
+    x = np.log(np.asarray(p, dtype=float)) - np.log1p(-np.asarray(p, dtype=float))
+    return 1.0 / (1.0 + np.exp(-k * x))
+
+
+def _draw(n: int, seed: int, lo: float = 0.08, hi: float = 0.92):
+    """``(p, y, w)`` — true probabilities, outcomes drawn from them, and unit weights."""
+    rng = np.random.default_rng(seed)
+    p = rng.uniform(lo, hi, n)
+    return p, (rng.random(n) < p).astype(float), np.ones(n)
+
+
+def test_a_forecast_that_is_the_true_probability_reads_a_slope_of_one() -> None:
+    p, y, w = _draw(40000, 3)
+    fit = CS.slope_intercept(_true(p), y, w)
+    assert abs(fit["slope"] - 1.0) < 0.06, fit
+    assert abs(fit["intercept"]) < 0.06, fit
+
+
+def test_a_shrunk_forecast_reads_a_slope_ABOVE_one() -> None:
+    """🚨 THE HYPOTHESIS. A forecast squeezed toward the base rate is UNDER-dispersed: where it
+    says 0.7 the realized rate is above 0.7. The slope is the reciprocal of the squeeze on the
+    logit scale, so it is well above 1 and the sign is not a matter of interpretation."""
+    p, y, w = _draw(40000, 4)
+    fit = CS.slope_intercept(_shrunk(p), y, w)
+    assert fit["slope"] > 1.5, fit
+    assert abs(fit["intercept"]) < 0.06, fit
+
+
+def test_an_over_dispersed_forecast_reads_a_slope_BELOW_one() -> None:
+    p, y, w = _draw(40000, 5)
+    fit = CS.slope_intercept(_stretched(p), y, w)
+    assert fit["slope"] < 0.75, fit
+
+
+def test_the_three_regimes_are_ordered_and_only_the_slope_separates_them() -> None:
+    """The decisive contrast: all three forecasts carry the SAME rank order (each map is strictly
+    monotone in ``p``), so every scale-invariant statistic reads them identically. The slope does
+    not — which is the entire reason this row was added beside the out-of-fold decodes."""
+    p, y, w = _draw(40000, 6)
+    slopes = [CS.slope_intercept(f(p), y, w)["slope"] for f in (_stretched, _true, _shrunk)]
+    assert slopes[0] < slopes[1] < slopes[2], slopes
+    aucs = [CM.w_auc(y, f(p), w) for f in (_stretched, _true, _shrunk)]
+    assert max(aucs) - min(aucs) < 1e-9, aucs
+
+
+def test_a_separated_fit_returns_nan_rather_than_a_diverging_coefficient() -> None:
+    """Perfect separation drives the coefficient to infinity. A diverging slope reported as a
+    number is a wrong reading with no tell, so the fit REFUSES."""
+    p = np.linspace(0.05, 0.95, 400)
+    y = (p > 0.5).astype(float)
+    assert not np.isfinite(CS.slope_intercept(p, y, np.ones(p.size))["slope"])
+
+
+def test_one_outcome_class_or_too_few_states_returns_nan() -> None:
+    p, _y, w = _draw(200, 7)
+    assert not np.isfinite(CS.slope_intercept(p, np.ones(200), w)["slope"])
+    assert not np.isfinite(CS.slope_intercept(p[:3], np.array([1.0, 0.0, 1.0]), w[:3])["slope"])
+
+
+def test_the_weights_are_honoured_by_the_fit() -> None:
+    """The rows are Horvitz-Thompson reweighted, so a fit that ignored ``w`` would read the
+    LOSS-ENRICHED tree. Duplicating a subset must equal doubling its weight, exactly."""
+    p, y, w = _draw(3000, 8)
+    half = np.arange(0, 3000, 2)
+    dup = CS.slope_intercept(np.concatenate([p, p[half]]), np.concatenate([y, y[half]]),
+                             np.ones(3000 + half.size))
+    wt = w.copy()
+    wt[half] = 2.0
+    assert abs(dup["slope"] - CS.slope_intercept(p, y, wt)["slope"]) < 1e-6
+
+
+# ---- the WITHIN-STRATUM companion
+
+def test_the_within_stratum_slope_absorbs_a_between_stratum_offset() -> None:
+    """Shrinkage ACROSS cells and shrinkage INSIDE one are different statements. Plant a forecast
+    that is correctly dispersed INSIDE every stratum but whose per-stratum level is compressed
+    between them: the pooled slope reads high and the within-stratum slope reads ~1."""
+    rng = np.random.default_rng(9)
+    n_s, per = 5, 9000
+    strat = np.repeat(np.arange(n_s), per)
+    centre = np.linspace(-1.4, 1.4, n_s)[strat]
+    x = centre + rng.normal(0, 0.35, n_s * per)          # true logit
+    p = 1.0 / (1.0 + np.exp(-x))
+    y = (rng.random(x.size) < p).astype(float)
+    v = 1.0 / (1.0 + np.exp(-(0.4 * centre + (x - centre))))   # levels squeezed, within intact
+    w = np.ones(x.size)
+    assert CS.slope_intercept(v, y, w)["slope"] > 1.3
+    assert abs(CS.within_stratum_slope(v, y, w, strat) - 1.0) < 0.12
+
+
+def test_a_stratum_with_no_outcome_variation_is_dropped_rather_than_diverging() -> None:
+    """A stratum that is all wins would diverge on its OWN dummy and take the shared slope's
+    convergence with it — the fit would return NaN for a reason with nothing to do with the
+    slope. It is dropped, and the surviving strata still produce the slope."""
+    p, y, w = _draw(9000, 10)
+    strat = np.zeros(p.size, dtype=int)
+    strat[: p.size // 3] = 1
+    y[: p.size // 3] = 1.0                                # stratum 1 is all wins
+    s = CS.within_stratum_slope(p, y, w, strat)
+    assert np.isfinite(s) and abs(s - 1.0) < 0.15, s
+    assert not np.isfinite(CS.within_stratum_slope(p, np.ones(p.size), w, strat))
+
+
+def test_states_outside_every_stratum_are_excluded() -> None:
+    p, y, w = _draw(6000, 11)
+    strat = np.full(p.size, -1, dtype=int)
+    strat[: 3000] = 0
+    assert np.isfinite(CS.within_stratum_slope(p, y, w, strat))
+    assert not np.isfinite(CS.within_stratum_slope(p, y, w, np.full(p.size, -1)))
+
+
+# ---- the LEVER ARM and the COMMON SUPPORT
+
+def test_the_support_stats_report_a_shorter_lever_arm_for_the_shrunk_forecast() -> None:
+    """🚨 The conservative bias that must never be silent: the slope's SE scales as
+    1/sd(logit V), and the shrunk arm's sd is smaller BY CONSTRUCTION. The number that says so is
+    printed beside every slope row."""
+    p, _y, w = _draw(20000, 12)
+    a = CS.support_stats(_shrunk(p), w)
+    c = CS.support_stats(_true(p), w)
+    assert a["sd_logit_V"] < c["sd_logit_V"] * 0.75, (a, c)
+    assert a["sd_V"] < c["sd_V"]
+    assert a["q_lo"] > c["q_lo"] and a["q_hi"] < c["q_hi"]
+
+
+def test_the_shrunk_arms_interval_is_the_wider_one_at_equal_n() -> None:
+    """The bias stated as an outcome, not as an argument: the same battles, the same outcomes, a
+    monotone re-map of the forecast — and the compressed side gets the wider interval."""
+    rng = np.random.default_rng(13)
+    p, y, w = _draw(4000, 14)
+
+    def width(f):
+        d = [CS.slope_intercept(f(p[i]), y[i], w[i])["slope"]
+             for i in (rng.integers(0, p.size, p.size) for _ in range(120))]
+        lo, hi = np.percentile([x for x in d if np.isfinite(x)], [2.5, 97.5])
+        return hi - lo
+
+    assert width(_shrunk) > width(_true)
+
+
+def test_the_common_window_is_the_intersection_and_a_disjoint_pair_is_refused() -> None:
+    a = {"q_lo": 0.2, "q_hi": 0.8}
+    c = {"q_lo": 0.3, "q_hi": 0.9}
+    assert CS.common_window(a, c) == (0.3, 0.8)
+    assert CS.common_window({"q_lo": 0.1, "q_hi": 0.2}, {"q_lo": 0.5, "q_hi": 0.9}) is None
+    assert CS.common_window({"q_lo": float("nan"), "q_hi": 0.8}, c) is None
+
+
+def test_the_clip_is_reported_as_a_share_of_the_column() -> None:
+    v = np.concatenate([np.full(90, 0.5), np.full(10, 0.0)])
+    st = CS.support_stats(v, np.ones(v.size))
+    assert abs(st["clipped_share"] - 0.10) < 1e-9
+    assert np.isfinite(st["sd_logit_V"])
+
+
+# ---- the BLOCK, on a planted trace tree
+
+def _plant_calib(tmp_path, *, distort, n_teams: int = 12, per_team: int = 40, step: int = 100,
+                 seed: int = 0):
+    """A cycle whose per-battle TRUE win probability is known and whose ``V`` is a planted
+    distortion of it. Teams differ in strength (so the strata are real) and the probability varies
+    INSIDE a team (so the within-stratum slope has something to regress on)."""
+    rng = np.random.default_rng(seed)
+    cyc = tmp_path / "eval_traces" / f"step_{step}"
+    tally = {o: [0, 0] for o in _CAL_OPPS}
+    for o in _CAL_OPPS:
+        (cyc / o).mkdir(parents=True, exist_ok=True)
+    bases = np.linspace(0.28, 0.72, n_teams)
+    for ti in range(n_teams):
+        for k in range(per_team):
+            p = float(np.clip(bases[ti] + rng.normal(0, 0.14), 0.05, 0.95))
+            y = 1.0 if rng.random() < p else 0.0
+            v = float(np.clip(distort(p), 1e-4, 1 - 1e-4))
+            opp = _CAL_OPPS[(ti * per_team + k) % len(_CAL_OPPS)]
+            tally[opp][0] += 1
+            tally[opp][1] += int(y)
+            base = f"t{ti}_b{k}"
+            n = len(_CAL_TURNS)
+            np.savez(cyc / opp / f"{base}_states.npz", values=np.full(n, v),
+                     win_probs=np.full(n, v), has_state=np.ones(n, dtype=np.int64))
+            (cyc / opp / f"{base}_summary.json").write_text(json.dumps({
+                "meta": {"result": "WIN" if y else "LOSS", "step": step},
+                "teams": {"ours": [{"species": f"mon{ti * 6 + j}"} for j in range(6)]},
+                "invocations": [{"i": i, "turn": t} for i, t in enumerate(_CAL_TURNS)]}))
+    sel = {o: {"battles_played": tally[o][0], "battles_won": tally[o][1], "battles_drawn": 0,
+               "traces_written": tally[o][0], "traces_won": tally[o][1],
+               "capture_rate_win": 1.0, "capture_rate_loss": 1.0} for o in _CAL_OPPS}
+    (cyc / "eval_manifest.json").write_text(json.dumps(
+        {"step": step, "selection_schema": 1, "opponents": list(_CAL_OPPS),
+         "selection": {"opponents": sel}}))
+    return str(tmp_path)
+
+
+def _cal(tmp_path, distort, *, boot: int = 120, seed: int = 5, **kw):
+    _plant_calib(tmp_path, distort=distort, seed=seed, **kw)
+    return CM.conditioning_block(str(tmp_path), 100, boot=boot, ladder="off", seed=seed)
+
+
+def test_the_block_recovers_a_calibrated_head_at_a_slope_of_one(tmp_path) -> None:
+    blk = _cal(tmp_path, _true)
+    p = blk["points"]
+    assert 0.7 < p[CM.CALIB_SLOPE_ALL] < 1.4, p[CM.CALIB_SLOPE_ALL]
+    assert abs(p[CM.CALIB_INTERCEPT_ALL]) < 0.3, p[CM.CALIB_INTERCEPT_ALL]
+
+
+def test_the_block_recovers_a_shrunk_head_ABOVE_one_and_a_stretched_head_BELOW(tmp_path) -> None:
+    """The three planted regimes through the whole pipeline — extraction, HT weights, the per
+    battle state cap and the fit — not just through the estimator."""
+    shrunk = _cal(tmp_path / "s", _shrunk)["points"]
+    true = _cal(tmp_path / "t", _true)["points"]
+    stretched = _cal(tmp_path / "o", _stretched)["points"]
+    assert shrunk[CM.CALIB_SLOPE_ALL] > 1.5, shrunk[CM.CALIB_SLOPE_ALL]
+    assert stretched[CM.CALIB_SLOPE_ALL] < 0.8, stretched[CM.CALIB_SLOPE_ALL]
+    assert (stretched[CM.CALIB_SLOPE_ALL] < true[CM.CALIB_SLOPE_ALL]
+            < shrunk[CM.CALIB_SLOPE_ALL])
+
+
+def test_every_calibration_row_carries_battle_clustered_draws_and_an_interval(tmp_path) -> None:
+    blk = _cal(tmp_path, _shrunk, boot=200)
+    for key in (CM.CALIB_SLOPE_ALL, CM.CALIB_SLOPE_T13, CM.CALIB_SLOPE_WITHIN,
+                CM.CALIB_INTERCEPT_ALL, CM.CALIB_INTERCEPT_T13):
+        d = blk["_draws"][key]
+        assert d.size > 100, key
+        lo, hi = np.percentile(d, [2.5, 97.5])
+        assert lo < blk["points"][key] < hi, key
+    lo, _hi = np.percentile(blk["_draws"][CM.CALIB_SLOPE_ALL], [2.5, 97.5])
+    assert lo > 1.0, "a planted shrunk head's interval must sit clear of the calibrated 1.0"
+
+
+def test_a_calibrated_head_interval_covers_one_and_a_shrunk_one_does_not(tmp_path) -> None:
+    """The interval is what a verdict is read from, so the SEPARATION has to be at the interval
+    and not only at the point."""
+    cal = _cal(tmp_path / "c", _true, boot=200)
+    shr = _cal(tmp_path / "s", _shrunk, boot=200)
+    clo, chi = np.percentile(cal["_draws"][CM.CALIB_SLOPE_ALL], [2.5, 97.5])
+    slo, _shi = np.percentile(shr["_draws"][CM.CALIB_SLOPE_ALL], [2.5, 97.5])
+    assert clo < 1.0 < chi, (clo, chi)
+    assert slo > chi, (slo, chi)
+
+
+def test_the_lever_arm_is_reported_in_the_frame_beside_every_slope_row(tmp_path) -> None:
+    """🚨 The support is not an appendix. Without sd(logit V) on the page a wider interval on the
+    shrunk side reads as a null instead of as the conservative bias it is."""
+    shr = _cal(tmp_path / "s", _shrunk)["frame"]["calibration_support"]
+    cal = _cal(tmp_path / "c", _true)["frame"]["calibration_support"]
+    for bucket in CS.BUCKETS:
+        for k in ("sd_V", "sd_logit_V", "q_lo", "q_hi", "clipped_share", "n_states",
+                  "n_battles"):
+            assert k in shr[bucket], (bucket, k)
+    assert shr["all"]["sd_logit_V"] < cal["all"]["sd_logit_V"]
+
+
+def test_the_within_stratum_row_is_reported_beside_the_pooled_one(tmp_path) -> None:
+    blk = _cal(tmp_path, _shrunk)
+    assert np.isfinite(blk["points"][CM.CALIB_SLOPE_WITHIN])
+    assert blk["points"][CM.CALIB_SLOPE_WITHIN] > 1.2, blk["points"]
+
+
+def test_the_common_support_rows_are_never_emitted_by_a_single_run(tmp_path) -> None:
+    """A PAIR-level row has no single-run value: its window is the intersection of two sides."""
+    blk = _cal(tmp_path, _true)
+    for key in CM.PAIR_LEVEL_KEYS:
+        assert key not in blk["points"] and key not in blk["_draws"]
+
+
+def test_the_common_support_fit_equalises_the_lever_arm(tmp_path) -> None:
+    """Re-fitting both sides inside their shared window removes the lever-arm difference BY
+    CONSTRUCTION — which is the whole point of the companion row, and is asserted rather than
+    argued."""
+    a = _cal(tmp_path / "s", _shrunk, boot=40)
+    c = _cal(tmp_path / "c", _true, boot=40)
+    sa = a["frame"]["calibration_support"]["all"]
+    sc = c["frame"]["calibration_support"]["all"]
+    win = CS.common_window(sa, sc)
+    assert win is not None
+    blocks = {r: CS.block(b["_calib"], names=CM.CALIB_COMMON_NAMES, window=win, boot=40, seed=1)
+              for r, b in (("arm", a), ("control", c))}
+    wide = [blocks[r]["support"]["all"] for r in ("arm", "control")]
+    assert max(s["q_hi"] for s in wide) <= win[1] + 1e-9
+    assert min(s["q_lo"] for s in wide) >= win[0] - 1e-9
+    assert blocks["arm"]["points"][CM.CALIB_SLOPE_COMMON] > \
+        blocks["control"]["points"][CM.CALIB_SLOPE_COMMON]
+
+
+def test_the_calibration_payload_round_trips_through_json(tmp_path) -> None:
+    """`main.ops.critic_read` CACHES these columns so the common-support companion costs no second
+    extraction. A round trip that lost a column would silently disable the row on every reuse."""
+    blk = _cal(tmp_path, _true, boot=20)
+    back = CS.from_json(json.loads(json.dumps(CS.to_json(blk["_calib"]))))
+    assert back["n_battles"] == blk["_calib"]["n_battles"]
+    for bucket in blk["_calib"]["buckets"]:
+        for col, v in blk["_calib"]["buckets"][bucket].items():
+            assert np.allclose(np.asarray(v, dtype=float), back["buckets"][bucket][col]), col
+    assert back["buckets"]["all"]["stratum"].dtype.kind == "i"

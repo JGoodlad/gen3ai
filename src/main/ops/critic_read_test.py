@@ -698,7 +698,11 @@ def test_the_conditioning_meters_are_all_in_the_delta_table_or_none_of_them_are(
 
     assert {k for k, _q, _s in CM.METERS} == set(CM.METER_KEYS)
     assert set(RR.HEADLINES) & set(CM.METER_KEYS) == {"cond.spread_ratio.t1_3",
-                                                      "cond.own_team_r2.t1"}
+                                                      "cond.own_team_r2.t1",
+                                                      CM.CALIB_SLOPE_ALL}
+    # every calibration row the report's own section names is a declared meter — the section is
+    # written from `CALIB_ROWS`, and a row listed there but never declared renders as a blank line
+    assert set(RR.CALIB_ROWS) <= set(CM.METER_KEYS)
 
 
 def test_a_cycle_with_no_usable_conditioning_frame_refuses_by_default(tmp_path,
@@ -736,3 +740,132 @@ def test_no_conditioning_produces_no_conditioning_deltas(tmp_path, monkeypatch) 
     doc = CR.read_run(run, tmp_path / "c3", _Args(), say=lambda _m: None)
     rows = CR.compute_deltas(doc, doc, None, seed=0)
     assert not [r for r in rows if r["family"] == "conditioning"]
+
+
+# ------------------------------------------------- the COMMON-SUPPORT pass (the lever-arm fix)
+#
+# The calibration slope's standard error scales as 1/sd(logit V), and the SHRINKAGE hypothesis the
+# row exists to test predicts the arm's sd is the smaller one — so the arm is handed a wider
+# interval by the very effect under test. The common-support companion re-fits both sides inside
+# the intersection of their central 95% of V, where the lever arm cannot differ. It is a PAIR-level
+# pass because that window names both sides, and these tests hold it to that.
+
+def _calib_side(*, distort, n_battles: int = 400, seed: int = 0):
+    """A per-state calibration payload with a known true probability per battle, `V` a planted
+    distortion of it, and one state per battle in each bucket."""
+    from main.ops import calibration_slope as CS
+
+    rng = np.random.default_rng(seed)
+    p = rng.uniform(0.1, 0.9, n_battles)
+    y = (rng.random(n_battles) < p).astype(float)
+    v = np.clip(distort(p), 1e-4, 1 - 1e-4)
+    b = np.arange(n_battles)
+    col = {"v": v, "y": y, "w": np.ones(n_battles), "battle": b,
+           "stratum": (b % 5).astype(int)}
+    return CS.payload(n_battles=n_battles, opp_of_battle=(b % 4).astype(int),
+                      buckets={"all": dict(col), "t1_3": dict(col)})
+
+
+def _side_doc(payload):
+    """A minimal readout doc carrying a calibration payload and the support the pass reads."""
+    from main.ops import calibration_slope as CS
+
+    sup = {b: dict(CS.support_stats(payload["buckets"][b]["v"], payload["buckets"][b]["w"]),
+                   n_battles=payload["n_battles"]) for b in CS.BUCKETS}
+    return {"run": "r", "step": 1, "_calib": payload, "_cond_draws": {},
+            "conditioning": {"points": {}, "ci": {}, "omitted": {},
+                             "frame": {"calibration_support": sup}, "refusal": None}}
+
+
+def test_the_common_support_pass_fits_both_sides_inside_one_window() -> None:
+    """🚨 The lever arm is equalised BY CONSTRUCTION, and the row lands on both readouts with its
+    own interval — a companion that only reported the window would not be a reading."""
+    from main.ops import conditioning_meters as CM
+
+    arm = _side_doc(_calib_side(distort=lambda p: 0.5 + 0.5 * (p - 0.5), seed=1))
+    ctl = _side_doc(_calib_side(distort=lambda p: p, seed=2))
+    doc = CR.apply_common_support(arm, ctl, boot=120, seed=0)
+    assert doc["status"] == "FITTED"
+    lo, hi = doc["window"]
+    assert lo < hi
+    for side in (arm, ctl):
+        for key in CM.PAIR_LEVEL_KEYS:
+            assert key in side["conditioning"]["points"], key
+            assert len(side["conditioning"]["ci"][key]) == 2
+            assert side["_cond_draws"][key].size > 50
+    # the shrunk side still reads the higher slope INSIDE the shared window
+    assert (arm["conditioning"]["points"][CM.CALIB_SLOPE_COMMON]
+            > ctl["conditioning"]["points"][CM.CALIB_SLOPE_COMMON])
+    # and the supports the row was fitted on are now the same range
+    for role in ("arm", "control"):
+        s = doc["sides"][role]["support"]
+        assert s["q_lo"] >= lo - 1e-9 and s["q_hi"] <= hi + 1e-9, role
+
+
+def test_the_common_support_pass_names_the_reason_when_a_side_has_no_payload() -> None:
+    """A cache written before this row existed carries no columns. That must produce a REASON, not
+    a missing row a reader would read as a null."""
+    arm = _side_doc(_calib_side(distort=lambda p: p, seed=3))
+    ctl = _side_doc(_calib_side(distort=lambda p: p, seed=4))
+    ctl["_calib"] = None
+    doc = CR.apply_common_support(arm, ctl, boot=20, seed=0)
+    assert doc["status"] == "NOT COMPUTED"
+    assert "control" in doc["why"] and "--no-cache" in doc["why"]
+    assert not arm["conditioning"]["points"]
+
+
+def test_a_disjoint_pair_is_refused_rather_than_extrapolated() -> None:
+    """Two heads whose central masses do not meet have NO common support. Widening the window to
+    make a number appear would compare two extrapolations."""
+    arm = _side_doc(_calib_side(distort=lambda p: 0.02 + 0.06 * p, seed=5))
+    ctl = _side_doc(_calib_side(distort=lambda p: 0.80 + 0.15 * p, seed=6))
+    doc = CR.apply_common_support(arm, ctl, boot=20, seed=0)
+    assert doc["status"] == "NO OVERLAP"
+    assert "extrapolation" in doc["why"]
+    assert not arm["conditioning"]["points"] and not ctl["conditioning"]["points"]
+
+
+def test_the_report_renders_the_calibration_slope_with_its_lever_arm(tmp_path,
+                                                                    monkeypatch) -> None:
+    """🚨 The slope and the support it was fitted on are ONE object in the report: a wider
+    interval on the compressed side reads as a null unless sd(logit V) is on the same page."""
+    from main.ops import calibration_slope as CS
+    from main.ops import conditioning_meters as CM
+
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    doc["conditioning"]["frame"] = {"calibration_support": {
+        b: {"n_states": 900, "n_battles": 450, "mean_V": 0.5, "sd_V": 0.11,
+            "sd_logit_V": 0.44, "q_lo": 0.31, "q_hi": 0.69, "clipped_share": 0.0}
+        for b in CS.BUCKETS}}
+    full = {"arm": doc, "control": doc, "generated_at": "now", "out": str(tmp_path),
+            "floor": CR.load_floors(None), "invocation": "python -m main.ops.critic_read …",
+            "params": {"boot": 60, "gate_boot": 40, "seed": 0},
+            "common_support": {"status": "FITTED", "window": [0.31, 0.69], "sides": {}},
+            "deltas": CR.compute_deltas(doc, doc, None, seed=0)}
+    md = CR.render_md(full)
+    assert "The CALIBRATION SLOPE" in md
+    assert "SHRUNK" in md and "UNDER-dispersed" in md
+    assert "The LEVER ARM these slopes are fitted on" in md
+    assert "sd(logit V)" in md
+    assert "0.4400" in md, "the lever arm must be printed, not merely mentioned"
+    assert "COMMON-SUPPORT window is `V ∈ [0.3100, 0.6900]`" in md
+    assert "replicate floor" in md
+    assert CM.CALIB_SLOPE_ALL in [r["key"] for r in full["deltas"]]
+
+
+def test_the_report_says_so_when_the_common_support_row_could_not_be_fitted(tmp_path,
+                                                                           monkeypatch) -> None:
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    full = {"arm": doc, "control": doc, "generated_at": "now", "out": str(tmp_path),
+            "floor": CR.load_floors(None), "invocation": "python -m main.ops.critic_read …",
+            "params": {"boot": 60, "gate_boot": 40, "seed": 0},
+            "common_support": {"status": "NO OVERLAP", "window": None, "sides": {},
+                               "why": "the two sides' central 95% of V do not overlap"},
+            "deltas": CR.compute_deltas(doc, doc, None, seed=0)}
+    md = CR.render_md(full)
+    assert "The COMMON-SUPPORT row is NO OVERLAP" in md
+    assert "do not overlap" in md

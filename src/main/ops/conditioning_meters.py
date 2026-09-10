@@ -48,6 +48,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 
+from main.ops import calibration_slope as CS
 from main.ops import team_conditioning as TC
 
 #: turn windows the meters are reported on. ``t1`` is the sharpest (nothing has happened, every
@@ -68,6 +69,28 @@ LATE_TURN = 25
 #: identity for the board: board information should take over as the game unfolds, so a
 #: conditioning critic's team R^2 FALLS from turn 1 to late and a substituting one's does not.
 OWN_TEAM_R2_DIFF = "cond.own_team_r2.t1_minus_late"
+#: the CALIBRATION SLOPE rows — the sharp test of SHRINKAGE. A target that blends a bootstrapped
+#: V into the label is compressed toward the base rate, and fitting a compressed target is a
+#: shrinkage estimator: better rank ORDER, smaller AMPLITUDE. The out-of-fold decodes above are
+#: scale-invariant and cannot see that; the spread rows see it mixed with everything else; the
+#: slope sees it directly, in the units it happens in. >1 is UNDER-dispersed (shrunk). Arithmetic
+#: and the lever-arm hazard: :mod:`main.ops.calibration_slope`.
+CALIB_SLOPE_ALL = "cond.calibration_slope.all"
+CALIB_SLOPE_T13 = "cond.calibration_slope.t1_3"
+CALIB_SLOPE_WITHIN = "cond.calibration_slope.within_stratum"
+CALIB_SLOPE_COMMON = "cond.calibration_slope.common_support"
+CALIB_INTERCEPT_ALL = "cond.calibration_intercept.all"
+CALIB_INTERCEPT_T13 = "cond.calibration_intercept.t1_3"
+CALIB_INTERCEPT_COMMON = "cond.calibration_intercept.common_support"
+#: how :mod:`main.ops.calibration_slope` names each fit -> the meter key it lands under. The
+#: AS-TRACED rows and the COMMON-SUPPORT companion are the same estimator under two name maps.
+CALIB_NAMES: Dict[str, str] = {"slope.all": CALIB_SLOPE_ALL,
+                               "intercept.all": CALIB_INTERCEPT_ALL,
+                               "slope.t1_3": CALIB_SLOPE_T13,
+                               "intercept.t1_3": CALIB_INTERCEPT_T13,
+                               "slope.within_stratum": CALIB_SLOPE_WITHIN}
+CALIB_COMMON_NAMES: Dict[str, str] = {"slope.all": CALIB_SLOPE_COMMON,
+                                      "intercept.all": CALIB_INTERCEPT_COMMON}
 #: the label a PROVISIONAL row carries INSTEAD of a registered verdict.
 PROVISIONAL_LABEL = "PROVISIONAL — no floor; never DETECTED"
 N_BOOT = 2000
@@ -588,6 +611,14 @@ class Meter(NamedTuple):
     It is not a weaker version of the label — it is the absence of one: the row has no replicate
     floor and cannot be given one from the controls (see ``provisional_why``), so a large move is
     informative, a small one is not, and the report says exactly that in place of a verdict.
+
+    ``pair_level`` marks a row that a SINGLE run's block cannot compute at all, because its
+    definition names both sides — the COMMON-SUPPORT calibration slope, whose window is the
+    intersection of the two sides' central 95% of ``V``. :mod:`main.ops.critic_read` fits it from
+    each side's cached per-state columns once both readouts exist. It is DECLARED rather than
+    matched on a name for the same reason the other two flags are, and it is why the block's
+    "every meter is reported or omitted with a reason" invariant excludes it: a single-run block
+    listing it as omitted would put a false reason on a row that the pair then fills in.
     """
 
     key: str
@@ -597,6 +628,7 @@ class Meter(NamedTuple):
     why: str
     provisional: bool = False
     provisional_why: str = ""
+    pair_level: bool = False
 
 
 #: every conditioning meter, with its frame-size sensitivity DECLARED (see :class:`Meter`).
@@ -672,6 +704,55 @@ METER_SPECS: Tuple[Meter, ...] = (
           "own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw "
           "replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move "
           "either way is informative; a small one is not; and this row is never DETECTED"),
+    # ---- the CALIBRATION SLOPE pair, added 2026-09-10 (the SHRINKAGE hypothesis for arm 8's
+    # "alignment up, amplitude down"). Arithmetic and the lever-arm hazard: `main.ops.
+    # calibration_slope`.
+    Meter(CALIB_SLOPE_ALL,
+          "calibration SLOPE — weighted logistic regression of the outcome on logit(V) "
+          "(1 = correctly dispersed, >1 = SHRUNK, <1 = over-dispersed)",
+          f"all states, <={STATES_PER_BATTLE_CAP} per battle", False,
+          "an M-estimator — the root of a weighted score equation over the states, whose "
+          "expectation is the population coefficient at every frame size given correct weights. "
+          "It is not an out-of-fold score whose optimism grows with the fitting set (there is no "
+          "held-out evaluation), not an uncorrected second moment (a coefficient is a ratio of "
+          "moments, consistent, not a variance with unsubtracted noise), and its states are not a "
+          "threshold-selected cell set (every state with a finite V qualifies). The MLE's own "
+          "O(1/n) small-sample bias is the one mechanism that touches it, and it is two orders "
+          "below the frame differences on this ladder — CHECKED on a real pair, arm 8 vs "
+          "ctrl10M_b, matched against unmatched (see the ledger entry)"),
+    Meter(CALIB_INTERCEPT_ALL,
+          "calibration-in-the-large — the INTERCEPT of that regression (0 = calibrated)",
+          f"all states, <={STATES_PER_BATTLE_CAP} per battle", False,
+          f"as `{CALIB_SLOPE_ALL}` — the other coefficient of the same fit"),
+    Meter(CALIB_SLOPE_T13,
+          "calibration SLOPE — weighted logistic regression of the outcome on logit(V)",
+          f"turn 1-3, <={STATES_PER_BATTLE_CAP} per battle", False,
+          f"as `{CALIB_SLOPE_ALL}`"),
+    Meter(CALIB_INTERCEPT_T13,
+          "calibration-in-the-large — the INTERCEPT of that regression",
+          f"turn 1-3, <={STATES_PER_BATTLE_CAP} per battle", False,
+          f"as `{CALIB_SLOPE_ALL}`"),
+    Meter(CALIB_SLOPE_WITHIN,
+          "calibration SLOPE with a free intercept PER own-team STRENGTH STRATUM — the "
+          "dispersion reading INSIDE a stratum rather than across teams",
+          f"all states, <={STATES_PER_BATTLE_CAP} per battle, stratum fixed effects", True,
+          "the estimator itself is frame-size neutral, but its STATES are the ones sitting in a "
+          f"stratum, and a stratum exists only over teams clearing MIN_TEAM_BATTLES="
+          f"{MIN_TEAM_BATTLES} — the third mechanism (a threshold-selected cell set, so frame "
+          "size decides WHICH teams contribute at all), exactly as for the within-stratum "
+          "resolution row"),
+    Meter(CALIB_SLOPE_COMMON,
+          "calibration SLOPE on the COMMON SUPPORT — both sides restricted to the intersection "
+          "of their central 95% of V, so the lever arm sd(logit V) cannot differ between them",
+          f"all states, <={STATES_PER_BATTLE_CAP} per battle, common V window", False,
+          f"as `{CALIB_SLOPE_ALL}`. It is additionally a PAIR-level row: the window is a function "
+          "of BOTH sides, so it is fitted by `main.ops.critic_read` from the cached per-state "
+          "columns after both readouts exist, and there is no single-run frame for a quota match "
+          "to subsample", pair_level=True),
+    Meter(CALIB_INTERCEPT_COMMON,
+          "calibration-in-the-large on the COMMON SUPPORT",
+          f"all states, <={STATES_PER_BATTLE_CAP} per battle, common V window", False,
+          f"as `{CALIB_SLOPE_COMMON}` — the other coefficient of the same fit", pair_level=True),
 )
 #: the legacy 3-tuple view, kept so the committed measurement scripts that import ``METERS``
 #: (``measurements/critic_ladder_reads/.../matched_quota/analyze.py``) keep working unchanged — a
@@ -684,6 +765,8 @@ FRAME_SENSITIVE_KEYS: Tuple[str, ...] = tuple(
     m.key for m in METER_SPECS if m.frame_sensitive)
 #: the rows that may never carry a registered verdict (see :class:`Meter`).
 PROVISIONAL_KEYS: Tuple[str, ...] = tuple(m.key for m in METER_SPECS if m.provisional)
+#: the rows only a PAIR can compute (see :class:`Meter`) — a single-run block never emits them.
+PAIR_LEVEL_KEYS: Tuple[str, ...] = tuple(m.key for m in METER_SPECS if m.pair_level)
 METER_BY_KEY: Dict[str, Meter] = {m.key: m for m in METER_SPECS}
 
 
@@ -808,6 +891,31 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                             "cell": code_b[binv[idx]],
                             "census": TC.cell_census(code_b[binv[idx]], arr["battle"][idx], n_c)}
 
+    # ---- THE CALIBRATION SLOPE frames. Per-state columns for the two turn windows, capped per
+    # battle exactly as the within-cell rows are, plus each state's own-team STRENGTH STRATUM (for
+    # the within-stratum companion) and each battle's OPPONENT cell (the bootstrap resamples
+    # battles WITHIN the pinned roster, as every other interval here does). The payload is
+    # returned on the block so `main.ops.critic_read` can re-fit the COMMON-SUPPORT companion for
+    # a PAIR without re-reading either trace tree — that window is a function of both sides.
+    calib_buckets: Dict[str, Dict[str, np.ndarray]] = {}
+    for bucket, bmask in (("all", np.ones(arr.size, bool)), ("t1_3", arr["turn"] <= 3)):
+        idx = _cap_states(arr, bmask & np.isfinite(arr["V"]), STATES_PER_BATTLE_CAP, seed)
+        n_b_cal = int(np.unique(arr["battle"][idx]).size) if idx.size else 0
+        if idx.size < 20 or n_b_cal < 5:
+            continue
+        calib_buckets[bucket] = {"v": arr["V"][idx], "y": arr["y"][idx], "w": arr["w"][idx],
+                                 "battle": binv[idx], "stratum": strat_code_b[binv[idx]]}
+    calib_payload = (CS.payload(n_battles=int(b["y"].size), opp_of_battle=cid,
+                                buckets=calib_buckets) if calib_buckets else None)
+    calib = CS.block(calib_payload, names=CALIB_NAMES, boot=boot, seed=seed)
+    for key in (CALIB_SLOPE_ALL, CALIB_SLOPE_T13, CALIB_SLOPE_WITHIN,
+                CALIB_INTERCEPT_ALL, CALIB_INTERCEPT_T13):
+        if key not in calib["points"]:
+            omitted.setdefault(key, (
+                "the weighted logistic fit of the outcome on logit(V) is degenerate on this cycle "
+                "— one outcome class, too few states, or a separated fit whose coefficient "
+                "diverges. A diverging slope is never reported as a number."))
+
     def _cell_weight(res: Dict[str, Any], battles: np.ndarray) -> np.ndarray:
         """Per-cell BATTLE count over ``battles`` (battle row indices, duplicates counted) — the
         weight the mean over cells uses, so a team with more episodes counts for more."""
@@ -851,6 +959,7 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                          keep_cell=team_ok)
     points["cond.team_spread_ratio.t1_3"] = ts0["ratio"]
     points["cond.team_spread_ratio_raw.t1_3"] = ts0["ratio_raw"]
+    points.update(calib["points"])
 
     # ---- battle-clustered bootstrap: battles are resampled WITHIN their opponent cell (the
     # roster is a fixed pinned set), and the outcome side is redrawn from its own Binomial so the
@@ -932,13 +1041,20 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
 
     out_draws = {k: np.asarray([d for d in v if np.isfinite(d)], dtype=float)
                  for k, v in draws.items() if k in points and np.isfinite(points.get(k, np.nan))}
+    out_draws.update(calib["draws"])
     for k in METER_KEYS:
+        # 🚨 the COMMON-SUPPORT rows are PAIR-level and are fitted by `main.ops.critic_read` after
+        # both sides exist. Listing them as omitted here would put a false reason in every
+        # single-run block, and the reason would still be there after the pair filled them in.
+        if k in PAIR_LEVEL_KEYS:
+            continue
         if k not in points or not np.isfinite(points[k]):
             omitted.setdefault(k, "the point estimate is undefined on this cycle "
                                   "(too few cells or a degenerate column).")
     return {
         "points": {k: float(v) for k, v in points.items() if np.isfinite(v)},
         "_draws": out_draws,
+        "_calib": calib_payload,
         "omitted": omitted,
         "frame": {**{k: v for k, v in meta.items() if k != "opponents"},
                   "n_cells": int(keep0.sum()), "boot": int(boot), "seed": int(seed),
@@ -955,6 +1071,10 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                   # quotable without these counts beside it.
                   "cell_frames": {k: dict(r["census"], n_cells_declared=int(r["n_cells"]))
                                   for k, r in resolutions.items()},
+                  # 🚨 the LEVER ARM every calibration-slope row is read WITH: the slope's SE
+                  # scales as 1/sd(logit V), so a compressed head buys a wider interval from the
+                  # very effect under test. Never printed without it.
+                  "calibration_support": calib["support"],
                   "team_spread_frame": {k: v for k, v in ts0.items()
                                         if k in ("n_cells", "n_battles",
                                                  "median_battles_per_cell", "sd_V", "sd_y",

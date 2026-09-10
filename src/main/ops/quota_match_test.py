@@ -357,7 +357,44 @@ def test_every_meter_declares_its_frame_sensitivity_with_a_reason() -> None:
         # battle-count threshold — every one of them moves with the frame's size.
         "cond.own_team_r2.late", CM.OWN_TEAM_R2_DIFF,
         "cond.within_team_resolution.all", "cond.within_stratum_resolution.all",
-        "cond.team_spread_ratio.t1_3", "cond.team_spread_ratio_raw.t1_3"}
+        "cond.team_spread_ratio.t1_3", "cond.team_spread_ratio_raw.t1_3",
+        # the CALIBRATION SLOPE rows (2026-09-10) are NOT here except one: a weighted logistic
+        # coefficient is an M-estimator whose expectation is the population coefficient at every
+        # frame size given correct weights — no held-out optimism, no unsubtracted noise, no
+        # threshold-selected cell set. The WITHIN-STRATUM companion is the exception, and for the
+        # third mechanism only: a stratum exists only over teams clearing MIN_TEAM_BATTLES, so
+        # frame size decides which teams contribute at all.
+        CM.CALIB_SLOPE_WITHIN}
+
+
+def test_the_calibration_slope_is_read_as_traced_and_only_its_stratum_row_is_matched() -> None:
+    """🚨 The declaration that the (C) SHRINKAGE read stands on, stated as a test.
+
+    The pooled and turn-1-3 slopes, their intercepts and the common-support companion are read AS
+    TRACED — they are roots of a weighted score equation, not out-of-fold scores and not
+    uncorrected second moments. The within-stratum companion is matched, because its STATES are
+    the ones sitting in a threshold-selected stratum. A future edit that flips either side of that
+    has to come here and say why.
+    """
+    for key in (CM.CALIB_SLOPE_ALL, CM.CALIB_SLOPE_T13, CM.CALIB_INTERCEPT_ALL,
+                CM.CALIB_INTERCEPT_T13, CM.CALIB_SLOPE_COMMON, CM.CALIB_INTERCEPT_COMMON):
+        assert CM.METER_BY_KEY[key].frame_sensitive is False, key
+        assert key not in CM.FRAME_SENSITIVE_KEYS, key
+    assert CM.METER_BY_KEY[CM.CALIB_SLOPE_WITHIN].frame_sensitive is True
+    assert "MIN_TEAM_BATTLES" in CM.METER_BY_KEY[CM.CALIB_SLOPE_WITHIN].why
+
+
+def test_a_pair_level_row_is_declared_and_is_never_quota_matched() -> None:
+    """The COMMON-SUPPORT rows name BOTH sides in their definition, so no single run's block can
+    produce one — which also means the quota match has no per-side frame to subsample. Declared,
+    not inferred, and the two flags must not contradict each other."""
+    assert set(CM.PAIR_LEVEL_KEYS) == {CM.CALIB_SLOPE_COMMON, CM.CALIB_INTERCEPT_COMMON}
+    for key in CM.PAIR_LEVEL_KEYS:
+        assert CM.METER_BY_KEY[key].frame_sensitive is False, key
+        assert key not in CM.FRAME_SENSITIVE_KEYS, key
+    for m in CM.METER_SPECS:
+        if not m.pair_level:
+            assert m.key not in CM.PAIR_LEVEL_KEYS
 
 
 def test_the_provisional_row_is_declared_and_carries_its_reason() -> None:

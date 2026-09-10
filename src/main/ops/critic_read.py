@@ -63,6 +63,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from main.ops import calibration_slope as CS
 from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
 from main.ops import quota_match as QM
@@ -378,7 +379,7 @@ def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
             "step": cycle["step"],
             "boot": args.cond_boot, "seed": args.seed, "ladder": args.cond_ladder,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
-            "meters": list(CM.METER_KEYS), "block_version": 1}
+            "meters": list(CM.METER_KEYS), "block_version": 2}
 
 
 def identity_block(rows: List[dict], payload: dict, cap, *, boot: int,
@@ -692,6 +693,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
             cond = cached["block"]
             cond["_draws"] = {k: __import__("numpy").asarray(v, dtype=float)
                               for k, v in cached["draws"].items()}
+            cond["_calib"] = CS.from_json(cached.get("calib"))
         else:
             say(f"conditioning meters on {run_dir.name} step_{cycle['step']} "
                 f"({args.cond_boot} battle-clustered draws, ladder={args.cond_ladder})")
@@ -710,16 +712,21 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
                 cond_path.parent.mkdir(parents=True, exist_ok=True)
                 cond_path.write_text(json.dumps(
                     {"fingerprint": cfp,
-                     "block": {k: v for k, v in cond.items() if k != "_draws"},
-                     "draws": {k: [float(x) for x in v] for k, v in cond["_draws"].items()}},
+                     "block": {k: v for k, v in cond.items() if not k.startswith("_")},
+                     "draws": {k: [float(x) for x in v] for k, v in cond["_draws"].items()},
+                     # the per-state columns the COMMON-SUPPORT companion is re-fitted from. They
+                     # are cached with the block because that row's window is a property of the
+                     # PAIR: without them a second pair would have to re-read the trace tree to
+                     # fit a row this side has already paid the extraction for.
+                     "calib": CS.to_json(cond.get("_calib"))},
                     indent=1, default=float))
         if cond is not None:
             cond["ci"] = {k: R.ci_of(cond["points"][k], cond["_draws"].get(k, __import__(
                 "numpy").empty(0))) for k in cond["points"]}
             cond["refusal"] = None
         else:
-            cond = {"points": {}, "ci": {}, "_draws": {}, "omitted": {}, "frame": {},
-                    "refusal": cond_refusal}
+            cond = {"points": {}, "ci": {}, "_draws": {}, "_calib": None, "omitted": {},
+                    "frame": {}, "refusal": cond_refusal}
 
     manifest = cycle.get("manifest") or {}
     doc = {"fingerprint": fp, "artifact_dir": str(work),
@@ -738,7 +745,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
            "identity": _serialisable(identity),
            "gate": {k: v for k, v in gate.items() if k != "_draws"},
            "conditioning": (None if cond is None else
-                            {k: v for k, v in cond.items() if k != "_draws"}),
+                            {k: v for k, v in cond.items() if not k.startswith("_")}),
            "commands": commands, "reused": reused,
            "paths": {"identity": str(identity_dir), "gate": str(gate_dir),
                      "identity_payload": str(payload_path)}}
@@ -752,6 +759,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
             doc["_identity_draws"][f"{name}|{k}"] = v
     doc["_gate_draws"] = gate["_draws"]
     doc["_cond_draws"] = (cond or {}).get("_draws", {})
+    doc["_calib"] = (cond or {}).get("_calib")
     doc["_identity_points"] = identity
     doc["_gate_points"] = gate
     return doc
@@ -799,6 +807,74 @@ def _stamp(cache_dir: Path, doc: Dict[str, Any]) -> None:
     (cache_dir / "run_readout.json").write_text(
         json.dumps({k: v for k, v in doc.items() if not k.startswith("_")},
                    indent=1, default=float))
+
+
+def apply_common_support(arm: Dict[str, Any], ctl: Dict[str, Any], *, boot: int, seed: int,
+                         say=lambda _m: None) -> Dict[str, Any]:
+    """Fit the COMMON-SUPPORT calibration slope on BOTH sides and graft it onto each readout.
+
+    🚨 **WHY THIS IS A PAIR-LEVEL PASS AND NOT A METER.** The calibration slope's standard error
+    scales as ``1 / sd(logit V)``. An arm that is SHRUNK — the hypothesis these rows exist to test
+    — has a shorter lever arm by construction, so it is handed a wider interval by the very effect
+    under test. The bias is conservative (it hides a real difference; it cannot invent one), but a
+    conservative bias that is invisible reads exactly like a null. This row removes it: both sides
+    are restricted to the intersection of their central 95% of ``V`` and re-fitted there, so the
+    supports are equal by construction and a surviving slope difference is not the lever arm.
+
+    The window is a function of BOTH sides, so no single run's block can compute it. Each side's
+    per-state columns come from its own (cached) conditioning block, and nothing is re-extracted.
+
+    Returns the pass's own document — status, the window, and each side's support before and
+    after — for the report. A side with no payload, or two sides whose central masses do not
+    overlap, produce a REASON and no row: an extrapolated slope is not a weaker reading, it is a
+    different quantity.
+    """
+    import numpy as np
+
+    doc: Dict[str, Any] = {"status": None, "window": None, "why": None, "sides": {}}
+    pays = {"arm": arm.get("_calib"), "control": ctl.get("_calib")}
+    sup = {role: (((d.get("conditioning") or {}).get("frame") or {})
+                  .get("calibration_support") or {}).get(CS.PRIMARY_BUCKET)
+           for role, d in (("arm", arm), ("control", ctl))}
+    doc["as_traced"] = sup
+    missing = [r for r in ("arm", "control") if not pays[r] or not sup.get(r)]
+    if missing:
+        doc["status"] = "NOT COMPUTED"
+        doc["why"] = (f"no per-state calibration columns for the {', '.join(missing)} side "
+                      "(the conditioning block was skipped, refused, or came from a cache "
+                      "written before this row existed — re-run without --no-cache).")
+        say(f"common support: NOT COMPUTED — {doc['why']}")
+        return doc
+    win = CS.common_window(sup["arm"], sup["control"])
+    if win is None:
+        doc["status"] = "NO OVERLAP"
+        doc["why"] = ("the two sides' central 95% of V do not overlap "
+                      f"(arm [{sup['arm']['q_lo']:.3f}, {sup['arm']['q_hi']:.3f}], control "
+                      f"[{sup['control']['q_lo']:.3f}, {sup['control']['q_hi']:.3f}]) — there is "
+                      "no common support, and a slope compared across disjoint ranges is an "
+                      "extrapolation, not a reading.")
+        say(f"common support: NO OVERLAP — {doc['why']}")
+        return doc
+    doc["status"] = "FITTED"
+    doc["window"] = [float(win[0]), float(win[1])]
+    say(f"common support: V in [{win[0]:.4f}, {win[1]:.4f}] — re-fitting the calibration slope "
+        "on both sides so the lever arm sd(logit V) cannot differ between them")
+    for role, d in (("arm", arm), ("control", ctl)):
+        blk = CS.block(pays[role], names=CM.CALIB_COMMON_NAMES, window=win, boot=boot, seed=seed)
+        cond = d.get("conditioning") or {}
+        cond.setdefault("points", {}).update(blk["points"])
+        cond.setdefault("ci", {}).update(
+            {k: R.ci_of(v, blk["draws"].get(k, np.empty(0))) for k, v in blk["points"].items()})
+        d.setdefault("_cond_draws", {}).update(blk["draws"])
+        for key in CM.CALIB_COMMON_NAMES.values():
+            if key not in blk["points"]:
+                cond.setdefault("omitted", {}).setdefault(
+                    key, "the weighted logistic fit on the common support is degenerate on this "
+                         "side (too few states inside the window, one outcome class there, or a "
+                         "separated fit whose coefficient diverges).")
+        doc["sides"][role] = {"support": blk["support"].get(CS.PRIMARY_BUCKET),
+                              "points": blk["points"]}
+    return doc
 
 
 def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
@@ -1208,6 +1284,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
            else read_run(ctl_dir, ctl_cache, args, say=say, step=ctl_step,
                          alt_dirs=[out], read_root=ctl_root))
 
+    common = apply_common_support(arm, ctl, boot=args.cond_boot, seed=args.seed, say=say)
     qm = QM.build_quota_match(arm, ctl, args, say=say)
     deltas = compute_deltas(arm, ctl, floor["floors"], seed=args.seed, qm=qm)
     doc = {
@@ -1226,6 +1303,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "registration": ("ledger 2026-09-08 · REGISTRATION · THE CRITIC LADDER; design note "
                          "designs/research_state/winprob_critic_ladder_2026-09-08.md"),
         "quota_match": QM.serialisable(qm),
+        "common_support": common,
         "arm": {k: v for k, v in arm.items() if not k.startswith("_")},
         "control": {k: v for k, v in ctl.items() if not k.startswith("_")},
         "deltas": deltas,
