@@ -725,6 +725,13 @@ ratio, 0.39 on the all-states spread ratio, and **45 Elo** at matched count; the
 FLOOR. **Standing: five runs, three levers, ZERO detected registered rows.** The floor is one draw — the
 meters' CIs remain the inference; it can only demote.
 
+**THE FLOOR AT 400 GAMES (2026-09-09, offline-generated cycles, 4,800 battles a side):** [MEASURED · MAJOR]
+the replicate difference on bot resolution collapses to **+0.0004 [−0.007, +0.007]** (its 100-game floor was
+battle noise — the row is now instrument-grade), while identity bias (+0.074 [+0.051, +0.096]) and the turn-1–3
+spread ratio (−0.066 [−0.107, −0.031]) stay clear of zero between two draws of ONE configuration — run noise
+that more eval cannot remove. Consequence: levers are read on bot resolution / own-team R² / class AUC from an
+offline 400-game cycle (no retraining), and on identity bias / spread ratio only with replicates per condition.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.

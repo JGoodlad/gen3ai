@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,408-line file. **The ledger itself is append-only and is never edited by this**;
+16,426-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**492 headings · 452 dated · 2026-08-01 → 2026-09-09 · ledger 16,408 lines.**
+**493 headings · 453 dated · 2026-08-01 → 2026-09-09 · ledger 16,426 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -512,3 +512,4 @@ rename.
   - `L16317` · `2026-09-09` · LIVE FINDING (pre-read) · `strata`'s treatment is DOSE-VARYING and DECREASING — exact parity for ~0.4M steps, then a capped approximation decaying to a 0.44 bot share — and the dose moves with the regime
   - `L16321` · `2026-09-09` · INSTRUMENT · the HIGH-POWER OFFLINE READ — `main.ops.eval_trace_gen` generates a 400-game eval cycle for any saved checkpoint on CPU (`935d978b` … `d78b8999`); `critic_read` reads it and REFUSES to pair an offline frame with a live one
 - `L16325` · `2026-09-09` · OPS · CRITIC LADDER — `ai_v12_17_ladder_strata` COMPLETE, and its lever is a DOSE THAT VARIES (`--win-prob-strata-weight 1.0`, 10,027,008 steps, 4.78 h, 0 crashes, G7 below bar on both halves)
+  - `L16409` · `2026-09-09` · THE FLOOR AT 400 GAMES · two draws of one configuration, 4,800 battles a side — the floor did NOT shrink where it matters: identity bias and the spread ratios are RUN-NOISE, the resolution rows were BATTLE-NOISE; two populations of rows that need opposite treatments

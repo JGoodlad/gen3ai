@@ -16405,3 +16405,21 @@ the control's default, so rule 17 reweighting AND tool v3's matched frames are b
 `truevalue`, then `ctrl10M_c` (the third replicate).
 
 Tag: OPS. Nothing measured about the critic by this entry.
+
+### 2026-09-09 · THE FLOOR AT 400 GAMES · two draws of one configuration, 4,800 battles a side — the floor did NOT shrink where it matters: identity bias and the spread ratios are RUN-NOISE, the resolution rows were BATTLE-NOISE; two populations of rows that need opposite treatments
+
+The offline read of the floor pair (`ctrl10M_b` vs `ctrl10M`, both at `step_10000032`, both 400-game / 12-opponent / 3-sentinel OFFLINE-GENERATED cycles, full capture, quota-matched at caps 398/186/5; report `critic_read_hp400.md` beside the floor pair's live read once the reads landing lands). 23.5× the battles, CIs 1.5–7.7× narrower — and the replicate DIFFERENCES did not follow:
+
+| row | live 100-game Δ | **offline 400-game Δ [CI]** |
+|---|---|---|
+| resolution · bot | +0.0102 | **+0.0004 [−0.0070, +0.0073]** |
+| resolution · all | +0.0127 | −0.0001 [−0.0073, +0.0074] |
+| class AUC · t1 | +0.0666 | −0.0070 [−0.0337, +0.0201] |
+| own-team R² · t1 | −0.0123 | −0.0146 [−0.0289, +0.0002] |
+| spread ratio · t1–3 | −0.0281 | **−0.0664 [−0.1069, −0.0307] clear of zero** |
+| spread ratio · all | −0.3898 | −0.2403 [−0.3488, −0.1419] clear of zero |
+| identity bias · ALL | +0.0696 | **+0.0735 [+0.0512, +0.0955] clear of zero** |
+| identity bias · late | +0.0558 | +0.1024 [+0.0503, +0.1553] clear of zero |
+| ECE · bot | +0.0032 | −0.0286 [−0.0420, −0.0119] clear of zero |
+
+**Reading.** The RESOLUTION rows and the class AUC collapsed toward zero: their 100-game floor was battle-sampling noise, and bot resolution is now an instrument reading **±0.007 between replicates** — a lever that moves bot resolution by 0.015 is readable at this power without retraining anything. The IDENTITY-BIAS and SPREAD-RATIO rows did the opposite: at high power two draws of one configuration differ DETECTABLY (identity bias late grew 0.056 → 0.102 as its CI tightened). More eval cannot rescue those rows — sharpening the instrument only makes the floor itself significant. **They need REPLICATES PER CONDITION** (a lever arm read as the mean of ≥2 draws against ≥2 control draws), not more games; that is a change to the ladder's design, not a bigger number, and it is why `ctrl10M_c` (queued after `truevalue`) is the right next spend on that axis. Caveats: the identity rows' 1.5× comes from clean full-capture weighting, not more states (`cf_audit` samples 800 regardless); sentinels clamped 6 → 3 (four snapshots, the read-step one excluded), so opponent cells stayed 12; two draws are one draw of a difference — this floor can only demote. A circular relabel (scoring the floor pair against a floor built from itself) was caught and the floor pair keeps detection-vs-zero labels. Tag: **MEASURED · MAJOR** — the ladder's decision rows at 400 games are bot resolution, own-team R² and class AUC; identity bias and the spread ratios are replicate-only.
