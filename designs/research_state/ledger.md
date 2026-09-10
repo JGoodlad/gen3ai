@@ -16321,3 +16321,87 @@ From the Training Run session's TensorBoard read at 6.7M (26 weighted rollouts),
 ### 2026-09-09 · INSTRUMENT · the HIGH-POWER OFFLINE READ — `main.ops.eval_trace_gen` generates a 400-game eval cycle for any saved checkpoint on CPU (`935d978b` … `d78b8999`); `critic_read` reads it and REFUSES to pair an offline frame with a live one
 
 **The generator** builds the same `EvalItem` / `ShardedEvalPool` plan and spawns the same `main.eval_worker` a live cycle uses, so the same recorder writes the same nine npz keys (`opp_true_team` absent, as live), the same summaries, and a `selection_schema` 2 manifest — plus `generated_by` (tool, checkpoint sha, games, sentinels requested vs used, capture rule, seed, workers, concurrency, `battles_expected` / `battles_played` / `complete`, the population in words). Regime READ from the run's `eval_sentinel_greedy` (none ⇒ refused). Capture defaults to ALL (HT weights exactly 1). Output is a self-contained shadow run dir under `--out` (config + metadata copied, `snapshots/` symlinked read-only, the checkpoint copied to `eval_traces/step_N/snapshot.zip` where `cf_audit` looks); `--out` inside `models/` is refused. **Measured: 2.0–2.2 games/s** at 4 workers, nice 15, beside the live arm — 4,800 battles in ~37–39 min, ~810 MB a cycle; reproducible at `--concurrency 1` for any worker count (streams keyed on seed/opponent/shard, never the worker id); above concurrency 1 the manifest marks the cycle NOT reproducible. **Power:** vs the live 100-game cycle, 149,141 states / 4,800 battles against 6,932 / 204 — **23.5× the battles, ≈4.8× narrower** battle-clustered CIs on the gate and conditioning rows; the identity rows do NOT gain (`cf_audit` samples 800 states regardless). Sentinels clamp 6 → 3 on every ladder arm (four snapshots, the read-step one excluded as a self-mirror), so opponent cells stay 12 — the power is games and capture, not cells. `cond.elo_slope` omits itself on an offline cycle (no live ladder results to join without mixing populations). **`critic_read --arm-traces / --control-traces`** reads a generated cycle and REFUSES an offline-vs-live delta (different populations — the quota match fixes capture RATE, not frame SHAPE), two offline frames at differing specs (a differing seed is deliberately allowed: two draws from one population), and an incomplete or uncertifiable cycle (completeness derived from the manifest's own fields after a 71 %-complete cycle passed a nominal check). Header states both populations; the ledger quote carries `OFFLINE-GENERATED`. Routine gate green at each landing. **Two incidents.** `land.sh` removed the worktree a generation was running out of — four workers died mid-cycle; rule: generations run from the MAIN checkout, never a worktree that will be landed. And `scaffolding_gauge_test` was RED on main independently (a wall-clock field inside a byte-for-byte assertion) — fixed in passing. **In flight** (detached stages, self-completing): 400-game cycles for `ctrl10M`, `ctrl10M_b` (done), `vf15`, `tdaux`, `cflabels`; the floor pair's offline read → `hp400_floor.json` → every arm relabelled against it → reports as `critic_read_hp400.md/json` beside each existing read (a separate landing, `hp-eval-reads`). The floor pair's offline read is the test of whether 0.070 on identity bias was thin-frame noise — except that the identity rows do not gain power here, so that specific question is answered only for the gate and conditioning rows; the identity floor needs replicates. Tag: INSTRUMENT.
+
+## 2026-09-09 · OPS · CRITIC LADDER — `ai_v12_17_ladder_strata` COMPLETE, and its lever is a DOSE THAT VARIES (`--win-prob-strata-weight 1.0`, 10,027,008 steps, 4.78 h, 0 crashes, G7 below bar on both halves)
+
+Opponent-stratified weighting of the win-prob BCE, pinned
+`f871e79fdca64d25238beb0f005c97f96c8890b6` — the only arm at that commit. Its increment over
+`377a5aa1` was separately settled NEUTRAL by a pinned-input functional test built through the real
+path (`build_parser → resolve_config → InstrumentedMaskablePPO → model_build.apply_training_hparams →
+run_io._model_hparams → lifecycle._run_roundtrip_test`), 251 = 251 policy tensors and 229 = 229
+extractor tensors with 0 differing, `_win_prob_loss` bit-identical at strata weight 0, and ctrl10M's
+v113 checkpoint loading two hops 113→114→115 with identical logits. Verified here independently: the
+rust diff over the increment is EMPTY, `ARCH_SIGNATURE` is `gen3_critic_route_wave_v1` on both sides,
+and `arch_constants.py` is untouched.
+
+🚨 **THE LEVER IS NOT A CONSTANT TREATMENT, AND THE READ MUST SAY SO.** `--win-prob-strata-weight 1.0`
+names a TARGET, not a delivered dose. The realized dose over all **59** weighted rollouts:
+
+| | n | `strata_share_bot` |
+|---|---|---|
+| uncapped | 15 | **exactly 0.5000** on every one (verified to 1e-6) — full parity |
+| capped | 44 | mean **0.4642**, range 0.4364–0.4998 |
+| all | 59 | mean **0.4733**, against a 0.5 target |
+
+The mechanism is visible in the tags: the weight clamp begins binding at step **4,620,288** and binds
+on **75%** of weighted rollouts thereafter. While the bot class held ~0.145 of rows, the weight needed
+for parity (~3.4–3.8) sat inside the clamp and the achieved share was exact; as self-play crowded bots
+down to ~0.097, the required weight exceeded the clamp, `strata_w_bot` pinned near 4.47, and the
+achieved share fell short. `strata_frac_bot` over the run: mean 0.1146, range 0.0968–0.1454.
+
+**Three things follow, and the third is the one that matters.** (i) The honest description is "exact
+parity on 25% of weighted rollouts, a capped approximation averaging 0.464 on the other 75%, overall
+realized share 0.473" — not "stratification at 1.0 for 10M steps". (ii) The cap binds INTERMITTENTLY,
+not permanently — capped values reach 0.4998 — so this is a dose fluctuating rollout-by-rollout with
+the bot fraction, not a clean two-phase story. (iii) **The realized dose is 95% of target on average,
+so this is a MILD dilution, not a crippled lever.** An earlier framing of this session — "decaying
+toward 0.44" — OVERSTATED it: the decay stalled and the mean never fell below 0.464 even among capped
+rollouts. If this arm reads NOT DETECTED, "the dose was too small" is a weak excuse and should not be
+leaned on. **The defensible caveat is the CONFOUND: the lever weakens precisely BECAUSE
+`selfplay_fraction` rises, so dose and regime move together and cannot be separated within this arm.**
+
+None of this is a fault. The clamp exists to stop a vanishing class from dominating the BCE, and
+`strata_capped` is emitted exactly so the dilution is legible rather than silent.
+
+**The tag family appears only when there is something to weight.** Before the pool seeds:
+`strata_active` 0.0, `strata_n_classes` 1, `strata_weight` 1.0, and only four tags exist. At
+**4,227,072** — 227k steps after `selfplay_fraction` stepped at 4,000,032 — `strata_active` flips to
+1, `n_classes` to 2, and eleven further tags materialise at that instant. The crossing readings:
+`share_bot`/`share_pool` **0.5000/0.5000**, `frac_bot`/`frac_pool` 0.1406/0.8594, `w_bot`/`w_pool`
+3.5552/0.5818, `w_entropy` 1.0000, `row_w_mean` 1.0000, `capped` 0.0000. The arithmetic checks:
+0.1406 × 3.5552 = 0.4999. `row_w_mean` 1.0 means the reweighting is MEAN-PRESERVING — the loss scale
+is unchanged, only its allocation across classes. ⚠️ A pre-registered expectation of
+`strata_share_bot ≈ 0.44` was carried into this arm; the crossing is **0.5000 exactly**, and 0.44 in
+fact describes the CAPPED STEADY STATE reached later. Both numbers are real and they describe
+different moments.
+
+**Run:** 10,027,008 steps in **4.78 h** (the slowest arm), 48 envs, 1 periodic restart, **0 crashes**,
+`Training complete`. Sidecar **155,137 rows / 42 MB** — the third arm to land on exactly that count,
+as it must at 1,536 rows per rollout for the same rollout count. All **5** trace cycles retained.
+
+**G7 (within-arm)** — reference = first two cycles (22.106, 25.464) → **23.785**:
+
+| step | ep_len | ratio | bots_wr | verdict |
+|---|---|---|---|---|
+| 6,000,000 | 21.815 | 0.917 | 0.8213 | under bar |
+| 8,000,016 | 22.978 | 0.966 | 0.8775 | under bar |
+| 10,000,032 | 24.005 | 1.009 | 0.8925 | under bar |
+
+Worst **1.009 = 80.7% of the bar**; stall half peak **0.0166**, last 0.0023. **G7 below bar on both
+halves.**
+
+**Descriptive** (NOT a strength read): bots 0.5150 → 0.7763 → 0.8213 → 0.8775 → 0.8925; elo 1597 →
+1986; ladder converged 6/6, 10M **1986.1±15.8**; final aggregate 92.0%. Regime steps 4,000,032 →
+0.8772 and 6,000,000 → 0.9000.
+
+⚠️ **THROUGHPUT UNDER CONTENTION.** An offline 400-game trace generator ran on the box during this
+arm's final ~2 h. Sliced into 20-minute buckets, the post-6M window read 459.5 / 459.1 / 394.4 /
+442.5 / 495.2 / 458.0 fps — the buckets overlapping the generator are at or ABOVE the pre-generator
+baseline, so no contention effect is detectable. A CUMULATIVE fps figure would have hidden this;
+slicing is what makes the absence of an effect a measurement rather than an assumption.
+
+The read is CROSS-COMMIT (f871e79f vs the control's f3502568) and carries the 40/40/10 quota against
+the control's default, so rule 17 reweighting AND tool v3's matched frames are both required. Next:
+`truevalue`, then `ctrl10M_c` (the third replicate).
+
+Tag: OPS. Nothing measured about the critic by this entry.
