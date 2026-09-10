@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,946-line file. **The ledger itself is append-only and is never edited by this**;
+16,965-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**528 headings · 488 dated · 2026-08-01 → 2026-09-10 · ledger 16,946 lines.**
+**529 headings · 489 dated · 2026-08-01 → 2026-09-10 · ledger 16,965 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -548,3 +548,4 @@ rename.
   - `L16929` · `2026-09-10` · VERDICT · hypothesis (C) SHRINKAGE for arm 8 is NOT SUPPORTED and is dropped — its calibration slope equals the λ = 1.0 replicate control's; the slope's own floor is RUN-LEVEL (0.19–0.25, clear of zero, growing with eval); every 10M run but `ctrl10M` is under-dispersed by 25–40 %; the λ dose curve loses its second component
   - `L16939` · `2026-09-10` · RULE 19 + two notes · a replicate floor that GROWS with eval size is between-run variance dominating — more eval games are the WRONG lever for such rows; two draws BOUND a floor and never give it a CI; the side-marker gap is filed
   - `L16943` · `2026-09-10` · CORRECTION · rule 19 rescoped — two NESTED variance components, and the remedy follows the component: eval re-draws for the resolution rows, run replicates for identity bias / the spread ratios / the slope
+  - `L16947` · `2026-09-10` · READ · arm 8 against ALL THREE controls on the offline 400/800 frames, with the offline floor now a TWO-DRAW bound — one row clears it against every control at both sizes (overall resolution, +0.009 to +0.011); the amplitude effect sits AT the replicate bound against the replicate controls; the base control is the roster's outlier on the amplitude rows

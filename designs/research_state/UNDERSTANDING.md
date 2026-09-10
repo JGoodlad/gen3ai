@@ -753,14 +753,14 @@ configuration span 45 Elo, 0.12 in early bot win rate, 0.21 in the first self-pl
 worst-ratio itself — none of those is a lever signal. Arm 8 (λ = 0.9) is live with `lambda_target_shift` 0.59 as
 its dose meter.
 
-**Arm 8 `lambda09` (2026-09-10, λ-return targets at 0.9):** [MEASURED · CANDIDATE WITHDRAWN,
-`measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/` + hp400/hp800] the live-frame own-team
-decode (+0.15) did NOT replicate on the full-capture offline frames (arm 0.04–0.06 vs control 0.04–0.05) —
-a property of ~200-battle loss-enriched frames, caught by the ≥2-offline-draws rule. What replicates past
-the floor at both 400 and 800 games: V spreads LESS across opponents (turn-1–3 spread ratio 0.05 vs
-0.15–0.18, Δ −0.12 / −0.10) — amplitude DOWN, the shrinkage signature (C); beside it a modest resolution lean
-(bot +0.010 at 800 only; all +0.009 on both) and the best calibration of any run. (C) is decided by the
-calibration-slope read; the λ dose curve {1.0, 0.95, 0.9} is the follow-up if it holds.
+**Arm 8 `lambda09` (2026-09-10, λ-return targets at 0.9), on the offline frames vs ALL THREE controls with two-draw
+floors:** [MEASURED, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/`] the live-frame own-team
++0.15 did not replicate (rule 18). ONE row clears the two-draw bound against every control at both eval draws:
+overall calibration-gate resolution **+0.009 to +0.011** (arm 0.047–0.050 vs 0.038–0.040; two identical controls
+agree to 0.001) — small, DETECTED. The between-opponent spread is the lowest of any run (0.05 vs 0.09–0.18) but
+sits AT the replicate bound against the replicate controls (−0.045 to −0.057 vs bars 0.053–0.066); the base
+control is the roster's outlier on the amplitude rows. Slope the highest of any run, inside the run-level floor;
+calibration vs its own continuation the best. (C) shrinkage is dropped; `lambda09_b` is the run-level replicate.
 
 **The CALIBRATION SLOPE is BUILT and read on the LIVE frames (2026-09-10, tool v5):** [MEASURED · LEVEL says
 OVERSHOOT, DELTA UNREADABLE, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/vs_*/critic_read_v5.md`;

@@ -1,0 +1,7334 @@
+{
+ "tool": "critic_read",
+ "tool_version": 5,
+ "generated_at": "2026-09-10T13:23:38",
+ "elapsed_sec": 587.9,
+ "invocation": "python -m main.ops.critic_read ai_v12_19_ladder_lambda09 --control ai_v12_16_ladder_ctrl10M_c --step 10000032 --arm-traces /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09 --control-traces /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c --floor-json /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/hp800_floor.json --out /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_19_ladder_lambda09_vs_ctrl10M_c --nice 15 --ledger-line",
+ "out": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_19_ladder_lambda09_vs_ctrl10M_c",
+ "floor": {
+  "path": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/hp800_floor.json",
+  "floors": {
+   "cond.calibration_intercept.all": 0.2642000648290569,
+   "cond.calibration_intercept.common_support": 0.2777573960298801,
+   "cond.calibration_intercept.t1_3": 0.35136619917854817,
+   "cond.calibration_slope.all": 0.10853952110246534,
+   "cond.calibration_slope.common_support": 0.11947741729466044,
+   "cond.calibration_slope.t1_3": 0.1801874169853125,
+   "cond.calibration_slope.within_stratum": 0.13630604833062598,
+   "cond.opp_class_auc.t1": 0.004002865130148581,
+   "cond.own_team_r2.all": 0.0025413987136354566,
+   "cond.own_team_r2.late": 0.001150639907963824,
+   "cond.own_team_r2.t1": 0.010949249434611619,
+   "cond.own_team_r2.t1_minus_late": 0.010189282798021337,
+   "cond.spread_delta.all": 0.02177987517665704,
+   "cond.spread_delta.t1_3": 0.007061454755024538,
+   "cond.spread_ratio.all": 0.19729247726723204,
+   "cond.spread_ratio.t1_3": 0.05325746258803386,
+   "cond.spread_ratio_raw.all": 0.1968990197887781,
+   "cond.spread_ratio_raw.t1_3": 0.05349369495731161,
+   "cond.team_spread_ratio.t1_3": 0.43244960587652814,
+   "cond.team_spread_ratio_raw.t1_3": 0.2507189871374366,
+   "cond.within_stratum_resolution.all": 0.002107042313299591,
+   "cond.within_team_resolution.all": 0.0044173552119750395,
+   "gate.ece.all": 0.014356374784226841,
+   "gate.ece.bot": 0.02974282803837702,
+   "gate.ece.pool": 0.08217086264712642,
+   "gate.reliability.all": 0.002102537768548686,
+   "gate.reliability.bot": 0.004729848910917086,
+   "gate.reliability.pool": 0.016663867947377675,
+   "gate.resolution.all": 0.0003347246905683124,
+   "gate.resolution.bot": 0.0074382630040941145,
+   "gate.resolution.pool": 0.014071247779923232,
+   "gate.skill.all": 0.007116701177802387,
+   "gate.skill.bot": 0.10036527725774747,
+   "gate.skill.pool": 0.1108285525191055,
+   "identity.bias.ALL": 0.06812096452030197,
+   "identity.bias.ALL.pop": 0.06812096452030197,
+   "identity.bias.ALL.raw": 0.0828749104434246,
+   "identity.bias.bot": 0.041701931454852605,
+   "identity.bias.bot.pop": 0.041701931454852605,
+   "identity.bias.bot.raw": 0.05749574345473747,
+   "identity.bias.early (turn<=10)": 0.07645104326017,
+   "identity.bias.early (turn<=10).pop": 0.07645104326017,
+   "identity.bias.early (turn<=10).raw": 0.09481732686964167,
+   "identity.bias.late (turn>=25)": 0.06811869976229004,
+   "identity.bias.late (turn>=25).pop": 0.06811869976229004,
+   "identity.bias.late (turn>=25).raw": 0.08209067695013202,
+   "identity.bias.mid (11-24)": 0.05558021015065524,
+   "identity.bias.mid (11-24).pop": 0.05558021015065524,
+   "identity.bias.mid (11-24).raw": 0.07483970741666332,
+   "identity.bias.pool": 0.119599260892719,
+   "identity.bias.pool.pop": 0.119599260892719,
+   "identity.bias.pool.raw": 0.11644120092029392,
+   "identity.reliability": 0.0022272262834236553,
+   "identity.reliability.pop": 0.0022272262834236527,
+   "identity.reliability.raw": 0.011892087708012856,
+   "identity.resolution": 0.0007648869660469224,
+   "identity.resolution.pop": 0.0007648869660469362,
+   "identity.resolution.raw": 0.007030556842568078,
+   "identity.resolution_cap_share": 0.017678009478718226,
+   "identity.resolution_cap_share.pop": 0.01767800947871867,
+   "identity.resolution_cap_share.raw": 0.018775815093151682,
+   "identity.skill_score": 0.004217792543543486,
+   "identity.skill_score.pop": 0.004217792543544152,
+   "identity.skill_score.raw": 0.036962720076519684,
+   "identity.turn_contrast": 0.10824124835340262,
+   "identity.turn_contrast.ipw": 0.09841091468479951,
+   "identity.turn_contrast.pop": 0.09841091468479951
+  },
+  "provenance": "800-game OFFLINE floor = the WIDER |\u0394| of two draws (ctrl10M_b\u2212ctrl10M, ctrl10M_c\u2212ctrl10M), tool v5; two draws BOUND a floor, no CI; demote-only"
+ },
+ "params": {
+  "states": 800,
+  "anchors": 150,
+  "rollouts": 8,
+  "impl": "rust",
+  "anchor_tolerance": 0.9,
+  "boot": 4000,
+  "gate_boot": 400,
+  "bins": 10,
+  "seed": 0,
+  "on_live": "skip-newest",
+  "max_draw_share": 0.25,
+  "allow_missing_winprob": 0.0,
+  "parent": "v9_fold_parent",
+  "famine_comparator": "off",
+  "baseline_arm": null,
+  "step": 10000032,
+  "control_step": null,
+  "cond_boot": 2000,
+  "cond_ladder": "refit",
+  "no_conditioning": false,
+  "no_quota_match": false,
+  "quota_match_seeds": 21,
+  "quota_match_boot": null,
+  "arm_traces": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09",
+  "control_traces": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c"
+ },
+ "registration": "ledger 2026-09-08 \u00b7 REGISTRATION \u00b7 THE CRITIC LADDER; design note designs/research_state/winprob_critic_ladder_2026-09-08.md",
+ "quota_match": {
+  "plan": {
+   "needed": true,
+   "caps": [
+    797,
+    330,
+    6
+   ],
+   "sides": [
+    "arm"
+   ],
+   "arm_cap": [
+    797,
+    348,
+    6
+   ],
+   "control_cap": [
+    797,
+    330,
+    8
+   ],
+   "arm_traced": 9600,
+   "control_traced": 9600,
+   "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+   "notes": []
+  },
+  "profiles": {
+   "arm": {
+    "run": "ai_v12_19_ladder_lambda09",
+    "step": 10000032,
+    "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09/eval_traces/step_10000032",
+    "cap": [
+     797,
+     348,
+     6
+    ],
+    "n_traced": 9600,
+    "totals": {
+     "wins": 8273,
+     "losses": 1296,
+     "draws": 31
+    },
+    "opponents": {
+     "aggressive": {
+      "wins": 734,
+      "losses": 60,
+      "draws": 6,
+      "battles_played": 800,
+      "battles_won": 734,
+      "battles_drawn": 6,
+      "battles_lost": 60,
+      "manifest_wins": 734,
+      "manifest_losses": 60,
+      "manifest_draws": 6
+     },
+     "aggressive_v2": {
+      "wins": 697,
+      "losses": 101,
+      "draws": 2,
+      "battles_played": 800,
+      "battles_won": 697,
+      "battles_drawn": 2,
+      "battles_lost": 101,
+      "manifest_wins": 697,
+      "manifest_losses": 101,
+      "manifest_draws": 2
+     },
+     "heuristic": {
+      "wins": 715,
+      "losses": 79,
+      "draws": 6,
+      "battles_played": 800,
+      "battles_won": 715,
+      "battles_drawn": 6,
+      "battles_lost": 79,
+      "manifest_wins": 715,
+      "manifest_losses": 79,
+      "manifest_draws": 6
+     },
+     "heuristic2": {
+      "wins": 700,
+      "losses": 97,
+      "draws": 3,
+      "battles_played": 800,
+      "battles_won": 700,
+      "battles_drawn": 3,
+      "battles_lost": 97,
+      "manifest_wins": 700,
+      "manifest_losses": 97,
+      "manifest_draws": 3
+     },
+     "random": {
+      "wins": 797,
+      "losses": 3,
+      "draws": 0,
+      "battles_played": 800,
+      "battles_won": 797,
+      "battles_drawn": 0,
+      "battles_lost": 3,
+      "manifest_wins": 797,
+      "manifest_losses": 3,
+      "manifest_draws": 0
+     },
+     "sentinel_0": {
+      "wins": 738,
+      "losses": 62,
+      "draws": 0,
+      "battles_played": 800,
+      "battles_won": 738,
+      "battles_drawn": 0,
+      "battles_lost": 62,
+      "manifest_wins": 738,
+      "manifest_losses": 62,
+      "manifest_draws": 0
+     },
+     "sentinel_1": {
+      "wins": 545,
+      "losses": 254,
+      "draws": 1,
+      "battles_played": 800,
+      "battles_won": 545,
+      "battles_drawn": 1,
+      "battles_lost": 254,
+      "manifest_wins": 545,
+      "manifest_losses": 254,
+      "manifest_draws": 1
+     },
+     "sentinel_2": {
+      "wins": 451,
+      "losses": 348,
+      "draws": 1,
+      "battles_played": 800,
+      "battles_won": 451,
+      "battles_drawn": 1,
+      "battles_lost": 348,
+      "manifest_wins": 451,
+      "manifest_losses": 348,
+      "manifest_draws": 1
+     },
+     "setup_sweep": {
+      "wins": 725,
+      "losses": 73,
+      "draws": 2,
+      "battles_played": 800,
+      "battles_won": 725,
+      "battles_drawn": 2,
+      "battles_lost": 73,
+      "manifest_wins": 725,
+      "manifest_losses": 73,
+      "manifest_draws": 2
+     },
+     "setup_sweep_v2": {
+      "wins": 707,
+      "losses": 89,
+      "draws": 4,
+      "battles_played": 800,
+      "battles_won": 707,
+      "battles_drawn": 4,
+      "battles_lost": 89,
+      "manifest_wins": 707,
+      "manifest_losses": 89,
+      "manifest_draws": 4
+     },
+     "staller": {
+      "wins": 740,
+      "losses": 57,
+      "draws": 3,
+      "battles_played": 800,
+      "battles_won": 740,
+      "battles_drawn": 3,
+      "battles_lost": 57,
+      "manifest_wins": 740,
+      "manifest_losses": 57,
+      "manifest_draws": 3
+     },
+     "staller_v2": {
+      "wins": 724,
+      "losses": 73,
+      "draws": 3,
+      "battles_played": 800,
+      "battles_won": 724,
+      "battles_drawn": 3,
+      "battles_lost": 73,
+      "manifest_wins": 724,
+      "manifest_losses": 73,
+      "manifest_draws": 3
+     }
+    },
+    "disk_mismatches": []
+   },
+   "control": {
+    "run": "ai_v12_16_ladder_ctrl10M_c",
+    "step": 10000032,
+    "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c/eval_traces/step_10000032",
+    "cap": [
+     797,
+     330,
+     8
+    ],
+    "n_traced": 9600,
+    "totals": {
+     "wins": 8164,
+     "losses": 1382,
+     "draws": 54
+    },
+    "opponents": {
+     "aggressive": {
+      "wins": 730,
+      "losses": 63,
+      "draws": 7,
+      "battles_played": 800,
+      "battles_won": 730,
+      "battles_drawn": 7,
+      "battles_lost": 63,
+      "manifest_wins": 730,
+      "manifest_losses": 63,
+      "manifest_draws": 7
+     },
+     "aggressive_v2": {
+      "wins": 683,
+      "losses": 109,
+      "draws": 8,
+      "battles_played": 800,
+      "battles_won": 683,
+      "battles_drawn": 8,
+      "battles_lost": 109,
+      "manifest_wins": 683,
+      "manifest_losses": 109,
+      "manifest_draws": 8
+     },
+     "heuristic": {
+      "wins": 707,
+      "losses": 87,
+      "draws": 6,
+      "battles_played": 800,
+      "battles_won": 707,
+      "battles_drawn": 6,
+      "battles_lost": 87,
+      "manifest_wins": 707,
+      "manifest_losses": 87,
+      "manifest_draws": 6
+     },
+     "heuristic2": {
+      "wins": 708,
+      "losses": 85,
+      "draws": 7,
+      "battles_played": 800,
+      "battles_won": 708,
+      "battles_drawn": 7,
+      "battles_lost": 85,
+      "manifest_wins": 708,
+      "manifest_losses": 85,
+      "manifest_draws": 7
+     },
+     "random": {
+      "wins": 797,
+      "losses": 2,
+      "draws": 1,
+      "battles_played": 800,
+      "battles_won": 797,
+      "battles_drawn": 1,
+      "battles_lost": 2,
+      "manifest_wins": 797,
+      "manifest_losses": 2,
+      "manifest_draws": 1
+     },
+     "sentinel_0": {
+      "wins": 684,
+      "losses": 115,
+      "draws": 1,
+      "battles_played": 800,
+      "battles_won": 684,
+      "battles_drawn": 1,
+      "battles_lost": 115,
+      "manifest_wins": 684,
+      "manifest_losses": 115,
+      "manifest_draws": 1
+     },
+     "sentinel_1": {
+      "wins": 503,
+      "losses": 293,
+      "draws": 4,
+      "battles_played": 800,
+      "battles_won": 503,
+      "battles_drawn": 4,
+      "battles_lost": 293,
+      "manifest_wins": 503,
+      "manifest_losses": 293,
+      "manifest_draws": 4
+     },
+     "sentinel_2": {
+      "wins": 466,
+      "losses": 330,
+      "draws": 4,
+      "battles_played": 800,
+      "battles_won": 466,
+      "battles_drawn": 4,
+      "battles_lost": 330,
+      "manifest_wins": 466,
+      "manifest_losses": 330,
+      "manifest_draws": 4
+     },
+     "setup_sweep": {
+      "wins": 712,
+      "losses": 81,
+      "draws": 7,
+      "battles_played": 800,
+      "battles_won": 712,
+      "battles_drawn": 7,
+      "battles_lost": 81,
+      "manifest_wins": 712,
+      "manifest_losses": 81,
+      "manifest_draws": 7
+     },
+     "setup_sweep_v2": {
+      "wins": 711,
+      "losses": 87,
+      "draws": 2,
+      "battles_played": 800,
+      "battles_won": 711,
+      "battles_drawn": 2,
+      "battles_lost": 87,
+      "manifest_wins": 711,
+      "manifest_losses": 87,
+      "manifest_draws": 2
+     },
+     "staller": {
+      "wins": 727,
+      "losses": 67,
+      "draws": 6,
+      "battles_played": 800,
+      "battles_won": 727,
+      "battles_drawn": 6,
+      "battles_lost": 67,
+      "manifest_wins": 727,
+      "manifest_losses": 67,
+      "manifest_draws": 6
+     },
+     "staller_v2": {
+      "wins": 736,
+      "losses": 63,
+      "draws": 1,
+      "battles_played": 800,
+      "battles_won": 736,
+      "battles_drawn": 1,
+      "battles_lost": 63,
+      "manifest_wins": 736,
+      "manifest_losses": 63,
+      "manifest_draws": 1
+     }
+    },
+    "disk_mismatches": []
+   }
+  },
+  "seeds": 21,
+  "boot": 2000,
+  "block_seed": 0,
+  "keys": [
+   "cond.spread_ratio_raw.t1_3",
+   "cond.spread_ratio_raw.all",
+   "cond.own_team_r2.t1",
+   "cond.own_team_r2.all",
+   "cond.opp_class_auc.t1",
+   "cond.within_team_resolution.all",
+   "cond.within_stratum_resolution.all",
+   "cond.team_spread_ratio.t1_3",
+   "cond.team_spread_ratio_raw.t1_3",
+   "cond.own_team_r2.late",
+   "cond.own_team_r2.t1_minus_late",
+   "cond.calibration_slope.within_stratum"
+  ],
+  "enabled": true,
+  "elapsed_sec": 356.3,
+  "rungs": {
+   "arm": {
+    "battle": {
+     "caps": [
+      797,
+      330,
+      6
+     ],
+     "n_seeds": 21,
+     "frames": [
+      {
+       "seed": 0,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287729,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 1,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287743,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 2,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287805,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 3,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287754,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 4,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287720,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 5,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287711,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 6,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287763,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 7,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287829,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 8,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287598,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 9,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287747,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 10,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287755,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 11,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287580,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 12,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287549,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 13,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287750,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 14,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287487,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 15,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287872,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 16,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287709,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 17,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287708,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 18,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287757,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 19,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287682,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 20,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287616,
+       "decoder_battles": 9545
+      }
+     ],
+     "median_battles": 9551.0,
+     "median_teams": 602.0,
+     "median_decoder_battles": 9545.0,
+     "target_decoder_battles": null,
+     "rows": {
+      "cond.spread_ratio_raw.t1_3": {
+       "point": 0.050127216662851186,
+       "spread": [
+        0.049302527349165015,
+        0.05078605508399982
+       ],
+       "median_seed": 17,
+       "points": [
+        0.050169598476163174,
+        0.050209215594737594,
+        0.0497018057401291,
+        0.05008448283808965,
+        0.04986619116534166,
+        0.05018925931854758,
+        0.05016863970482804,
+        0.050194332928989775,
+        0.04973866720889069,
+        0.050354446737509065,
+        0.04912031066878934,
+        0.05090958434435975,
+        0.05009729242993821,
+        0.049770318489565146,
+        0.05063109260780368,
+        0.049523273515702904,
+        0.049484744029540687,
+        0.050127216662851186,
+        0.050404386334896155,
+        0.0500105410826295,
+        0.05066252582363989
+       ]
+      },
+      "cond.spread_ratio_raw.all": {
+       "point": 0.5593266549564897,
+       "spread": [
+        0.5569213560122189,
+        0.5618554249143117
+       ],
+       "median_seed": 12,
+       "points": [
+        0.5595276772550077,
+        0.5606987869207151,
+        0.5604563378296598,
+        0.5605384118052299,
+        0.5588931056830055,
+        0.5586619888985646,
+        0.5576672937830625,
+        0.5584475294554212,
+        0.5598795148431236,
+        0.5620049941656403,
+        0.5572315552518415,
+        0.5596722159583902,
+        0.5593266549564897,
+        0.5567679349080407,
+        0.5580679073872964,
+        0.5583015621238403,
+        0.5579871510776803,
+        0.5602010774167305,
+        0.5617058556629833,
+        0.5570747771163972,
+        0.5606148758808666
+       ]
+      },
+      "cond.own_team_r2.t1": {
+       "point": 0.06180916738139419,
+       "spread": [
+        0.05788757689355167,
+        0.06317723911268175
+       ],
+       "median_seed": 5,
+       "points": [
+        0.061604846221610554,
+        0.062239705843544546,
+        0.062114242088875615,
+        0.0625866098797413,
+        0.05891218275257093,
+        0.06180916738139419,
+        0.06193339600157688,
+        0.0637678683456222,
+        0.06000352376250018,
+        0.0608856760242662,
+        0.05686297103453242,
+        0.062427786213492986,
+        0.05934056095807094,
+        0.06103879267442247,
+        0.06227957982611554,
+        0.05937212960309979,
+        0.06028079484828186,
+        0.06038937004620082,
+        0.0622074579047488,
+        0.06253129177861105,
+        0.062043937400382054
+       ]
+      },
+      "cond.own_team_r2.all": {
+       "point": 0.008078114708468753,
+       "spread": [
+        0.00777734850255829,
+        0.00889516701487364
+       ],
+       "median_seed": 12,
+       "points": [
+        0.007754850746656383,
+        0.007994862972290462,
+        0.007948851669863699,
+        0.008374361797255592,
+        0.008434943621212776,
+        0.008955062262202773,
+        0.007967022537814339,
+        0.007844115391547057,
+        0.007802785041095994,
+        0.008238852559424803,
+        0.008039832492941046,
+        0.008791459856786199,
+        0.008078114708468753,
+        0.008166746588022078,
+        0.008835271767544506,
+        0.007820488581218976,
+        0.008444299599693061,
+        0.00801319836264347,
+        0.00813407786027509,
+        0.007799846258460197,
+        0.008111173342213784
+       ]
+      },
+      "cond.opp_class_auc.t1": {
+       "point": 0.4901031481021944,
+       "spread": [
+        0.4842675033830507,
+        0.4915713674569059
+       ],
+       "median_seed": 0,
+       "points": [
+        0.4901031481021944,
+        0.4892385875942677,
+        0.4902857871067592,
+        0.49136921708017284,
+        0.48842212314229727,
+        0.4917735178336389,
+        0.4865853795376254,
+        0.4876003242474595,
+        0.4902995126488435,
+        0.4908362895665119,
+        0.4892697560426532,
+        0.4829078665570296,
+        0.4912375352219246,
+        0.4910629301932564,
+        0.48562714020907183,
+        0.4893180103735967,
+        0.49096836459670506,
+        0.4904740215691876,
+        0.49105868937153274,
+        0.4900985210013371,
+        0.48919244066546735
+       ]
+      },
+      "cond.within_team_resolution.all": {
+       "point": 0.05570042243384798,
+       "spread": [
+        0.055077502904488075,
+        0.05632836435563057
+       ],
+       "median_seed": 13,
+       "points": [
+        0.055883289568810106,
+        0.055611362814605395,
+        0.055989904445914555,
+        0.05571695872403134,
+        0.05554701461524264,
+        0.055039518901316906,
+        0.055796865549698094,
+        0.055992088254280065,
+        0.05581111574885408,
+        0.05630219720205065,
+        0.05577085723694519,
+        0.05550149908066546,
+        0.05577989109170799,
+        0.05570042243384798,
+        0.055115486907659245,
+        0.05559515041110831,
+        0.05546622017390018,
+        0.055511261597163616,
+        0.05635453150921049,
+        0.055637113893387484,
+        0.05557176332613681
+       ]
+      },
+      "cond.within_stratum_resolution.all": {
+       "point": 0.03527698279298602,
+       "spread": [
+        0.03489696296204764,
+        0.03586829192457786
+       ],
+       "median_seed": 16,
+       "points": [
+        0.035239536008172506,
+        0.03541988191402654,
+        0.035608942601877185,
+        0.035301740970696036,
+        0.035538626795320515,
+        0.034838662116063034,
+        0.03495526380803225,
+        0.03559849161330278,
+        0.035483471603803586,
+        0.03591648802393037,
+        0.0353403022784527,
+        0.03512447541670021,
+        0.03541779843928153,
+        0.035181428616559804,
+        0.035050086337131574,
+        0.035192257298782254,
+        0.03527698279298602,
+        0.035097533840528376,
+        0.035820095825225357,
+        0.035228438500553884,
+        0.03510722712961513
+       ]
+      },
+      "cond.team_spread_ratio.t1_3": {
+       "point": 0.9506830050850493,
+       "spread": [
+        0.9204566053556573,
+        1.0101494768602874
+       ],
+       "median_seed": 12,
+       "points": [
+        0.957832200599483,
+        1.0009353919581738,
+        0.9606049313224423,
+        0.9677422849433291,
+        0.934864222996126,
+        0.9183641631944623,
+        0.9625562898183901,
+        0.9450758433764993,
+        0.9463007774608996,
+        0.9320967082578925,
+        0.9225490475168523,
+        0.9367008170781808,
+        0.9506830050850493,
+        0.9278939202912873,
+        0.9292337754080323,
+        0.9577476425645964,
+        0.9318027738542368,
+        0.9913103736915841,
+        0.9680709788581353,
+        1.0193635617624013,
+        0.9836310645354474
+       ]
+      },
+      "cond.team_spread_ratio_raw.t1_3": {
+       "point": 0.3987008101675157,
+       "spread": [
+        0.39662101014994344,
+        0.4021765321201616
+       ],
+       "median_seed": 15,
+       "points": [
+        0.3988878322760955,
+        0.40156323514755976,
+        0.39967058903805713,
+        0.3993866892951357,
+        0.3978676975892297,
+        0.3964047282070126,
+        0.39868249740145034,
+        0.39816084564632853,
+        0.39841646706674305,
+        0.3976409850935803,
+        0.3973916358875692,
+        0.3987593863655403,
+        0.3988542948429718,
+        0.39741745460899586,
+        0.3977039194696317,
+        0.3987008101675157,
+        0.3968372920928742,
+        0.40068349209163573,
+        0.39985572793081253,
+        0.4027898290927634,
+        0.4002820377696877
+       ]
+      },
+      "cond.own_team_r2.late": {
+       "point": 0.003102693860404404,
+       "spread": [
+        0.0015768164939887197,
+        0.0051735166670804356
+       ],
+       "median_seed": 17,
+       "points": [
+        0.003234534339120687,
+        0.003639996476544005,
+        0.002548217864226987,
+        0.0028660276477407987,
+        0.004091349829816626,
+        0.003639167817791611,
+        0.0030515850484867935,
+        0.0018563175644261687,
+        0.003366496142051867,
+        0.0032014701934965917,
+        0.003924890006264836,
+        0.005307400179981325,
+        0.0028911934154111085,
+        0.0038089615728973403,
+        0.0027207398132440552,
+        0.002596057074510605,
+        0.005039633154179546,
+        0.003102693860404404,
+        0.002688964294259577,
+        0.0029122946199695576,
+        0.0012973154235512707
+       ]
+      },
+      "cond.own_team_r2.t1_minus_late": {
+       "point": 0.05816999956360258,
+       "spread": [
+        0.05387945697551094,
+        0.06132908637901341
+       ],
+       "median_seed": 5,
+       "points": [
+        0.05837031188248987,
+        0.05859970936700054,
+        0.05956602422464863,
+        0.059720582232000496,
+        0.0548208329227543,
+        0.05816999956360258,
+        0.058881810953090086,
+        0.061911550781196034,
+        0.05663702762044831,
+        0.05768420583076961,
+        0.05293808102826758,
+        0.05712038603351166,
+        0.056449367542659834,
+        0.05722983110152513,
+        0.05955884001287148,
+        0.05677607252858918,
+        0.055241161694102314,
+        0.057286676185796415,
+        0.05951849361048922,
+        0.059618997158641496,
+        0.060746621976830784
+       ]
+      },
+      "cond.calibration_slope.within_stratum": {
+       "point": 1.329345488442541,
+       "spread": [
+        1.3192769934924415,
+        1.3387319489309473
+       ],
+       "median_seed": 12,
+       "points": [
+        1.3264402148271401,
+        1.3235133517309063,
+        1.3321202925810147,
+        1.333738923071445,
+        1.3263528485476865,
+        1.323908886548699,
+        1.3360661292097589,
+        1.3251334401080097,
+        1.336356295612871,
+        1.3269855704749065,
+        1.3366325331420355,
+        1.3310341472349065,
+        1.329345488442541,
+        1.3339394168071388,
+        1.3314370005619613,
+        1.3170326627325222,
+        1.3253627562628842,
+        1.3348850461286093,
+        1.3408313647198589,
+        1.321521324252361,
+        1.3254567809740434
+       ]
+      }
+     }
+    },
+    "decoder": {
+     "caps": [
+      797,
+      330,
+      6
+     ],
+     "n_seeds": 21,
+     "frames": [
+      {
+       "seed": 0,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287729,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 1,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287743,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 2,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287805,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 3,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287754,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 4,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287720,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 5,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287711,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 6,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287763,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 7,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287829,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 8,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287598,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 9,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287747,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 10,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287755,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 11,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287580,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 12,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287549,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 13,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287750,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 14,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287487,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 15,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287872,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 16,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287709,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 17,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287708,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 18,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287757,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 19,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287682,
+       "decoder_battles": 9545
+      },
+      {
+       "seed": 20,
+       "n_battles": 9551,
+       "n_teams": 602,
+       "n_states": 287616,
+       "decoder_battles": 9545
+      }
+     ],
+     "median_battles": 9551.0,
+     "median_teams": 602.0,
+     "median_decoder_battles": 9545.0,
+     "target_decoder_battles": 9540,
+     "rows": {
+      "cond.spread_ratio_raw.t1_3": {
+       "point": 0.050127216662851186,
+       "spread": [
+        0.049302527349165015,
+        0.05078605508399982
+       ],
+       "median_seed": 17,
+       "points": [
+        0.050169598476163174,
+        0.050209215594737594,
+        0.0497018057401291,
+        0.05008448283808965,
+        0.04986619116534166,
+        0.05018925931854758,
+        0.05016863970482804,
+        0.050194332928989775,
+        0.04973866720889069,
+        0.050354446737509065,
+        0.04912031066878934,
+        0.05090958434435975,
+        0.05009729242993821,
+        0.049770318489565146,
+        0.05063109260780368,
+        0.049523273515702904,
+        0.049484744029540687,
+        0.050127216662851186,
+        0.050404386334896155,
+        0.0500105410826295,
+        0.05066252582363989
+       ]
+      },
+      "cond.spread_ratio_raw.all": {
+       "point": 0.5593266549564897,
+       "spread": [
+        0.5569213560122189,
+        0.5618554249143117
+       ],
+       "median_seed": 12,
+       "points": [
+        0.5595276772550077,
+        0.5606987869207151,
+        0.5604563378296598,
+        0.5605384118052299,
+        0.5588931056830055,
+        0.5586619888985646,
+        0.5576672937830625,
+        0.5584475294554212,
+        0.5598795148431236,
+        0.5620049941656403,
+        0.5572315552518415,
+        0.5596722159583902,
+        0.5593266549564897,
+        0.5567679349080407,
+        0.5580679073872964,
+        0.5583015621238403,
+        0.5579871510776803,
+        0.5602010774167305,
+        0.5617058556629833,
+        0.5570747771163972,
+        0.5606148758808666
+       ]
+      },
+      "cond.own_team_r2.t1": {
+       "point": 0.06180916738139419,
+       "spread": [
+        0.05788757689355167,
+        0.06317723911268175
+       ],
+       "median_seed": 5,
+       "points": [
+        0.061604846221610554,
+        0.062239705843544546,
+        0.062114242088875615,
+        0.0625866098797413,
+        0.05891218275257093,
+        0.06180916738139419,
+        0.06193339600157688,
+        0.0637678683456222,
+        0.06000352376250018,
+        0.0608856760242662,
+        0.05686297103453242,
+        0.062427786213492986,
+        0.05934056095807094,
+        0.06103879267442247,
+        0.06227957982611554,
+        0.05937212960309979,
+        0.06028079484828186,
+        0.06038937004620082,
+        0.0622074579047488,
+        0.06253129177861105,
+        0.062043937400382054
+       ]
+      },
+      "cond.own_team_r2.all": {
+       "point": 0.008078114708468753,
+       "spread": [
+        0.00777734850255829,
+        0.00889516701487364
+       ],
+       "median_seed": 12,
+       "points": [
+        0.007754850746656383,
+        0.007994862972290462,
+        0.007948851669863699,
+        0.008374361797255592,
+        0.008434943621212776,
+        0.008955062262202773,
+        0.007967022537814339,
+        0.007844115391547057,
+        0.007802785041095994,
+        0.008238852559424803,
+        0.008039832492941046,
+        0.008791459856786199,
+        0.008078114708468753,
+        0.008166746588022078,
+        0.008835271767544506,
+        0.007820488581218976,
+        0.008444299599693061,
+        0.00801319836264347,
+        0.00813407786027509,
+        0.007799846258460197,
+        0.008111173342213784
+       ]
+      },
+      "cond.opp_class_auc.t1": {
+       "point": 0.4901031481021944,
+       "spread": [
+        0.4842675033830507,
+        0.4915713674569059
+       ],
+       "median_seed": 0,
+       "points": [
+        0.4901031481021944,
+        0.4892385875942677,
+        0.4902857871067592,
+        0.49136921708017284,
+        0.48842212314229727,
+        0.4917735178336389,
+        0.4865853795376254,
+        0.4876003242474595,
+        0.4902995126488435,
+        0.4908362895665119,
+        0.4892697560426532,
+        0.4829078665570296,
+        0.4912375352219246,
+        0.4910629301932564,
+        0.48562714020907183,
+        0.4893180103735967,
+        0.49096836459670506,
+        0.4904740215691876,
+        0.49105868937153274,
+        0.4900985210013371,
+        0.48919244066546735
+       ]
+      },
+      "cond.within_team_resolution.all": {
+       "point": 0.05570042243384798,
+       "spread": [
+        0.055077502904488075,
+        0.05632836435563057
+       ],
+       "median_seed": 13,
+       "points": [
+        0.055883289568810106,
+        0.055611362814605395,
+        0.055989904445914555,
+        0.05571695872403134,
+        0.05554701461524264,
+        0.055039518901316906,
+        0.055796865549698094,
+        0.055992088254280065,
+        0.05581111574885408,
+        0.05630219720205065,
+        0.05577085723694519,
+        0.05550149908066546,
+        0.05577989109170799,
+        0.05570042243384798,
+        0.055115486907659245,
+        0.05559515041110831,
+        0.05546622017390018,
+        0.055511261597163616,
+        0.05635453150921049,
+        0.055637113893387484,
+        0.05557176332613681
+       ]
+      },
+      "cond.within_stratum_resolution.all": {
+       "point": 0.03527698279298602,
+       "spread": [
+        0.03489696296204764,
+        0.03586829192457786
+       ],
+       "median_seed": 16,
+       "points": [
+        0.035239536008172506,
+        0.03541988191402654,
+        0.035608942601877185,
+        0.035301740970696036,
+        0.035538626795320515,
+        0.034838662116063034,
+        0.03495526380803225,
+        0.03559849161330278,
+        0.035483471603803586,
+        0.03591648802393037,
+        0.0353403022784527,
+        0.03512447541670021,
+        0.03541779843928153,
+        0.035181428616559804,
+        0.035050086337131574,
+        0.035192257298782254,
+        0.03527698279298602,
+        0.035097533840528376,
+        0.035820095825225357,
+        0.035228438500553884,
+        0.03510722712961513
+       ]
+      },
+      "cond.team_spread_ratio.t1_3": {
+       "point": 0.9506830050850493,
+       "spread": [
+        0.9204566053556573,
+        1.0101494768602874
+       ],
+       "median_seed": 12,
+       "points": [
+        0.957832200599483,
+        1.0009353919581738,
+        0.9606049313224423,
+        0.9677422849433291,
+        0.934864222996126,
+        0.9183641631944623,
+        0.9625562898183901,
+        0.9450758433764993,
+        0.9463007774608996,
+        0.9320967082578925,
+        0.9225490475168523,
+        0.9367008170781808,
+        0.9506830050850493,
+        0.9278939202912873,
+        0.9292337754080323,
+        0.9577476425645964,
+        0.9318027738542368,
+        0.9913103736915841,
+        0.9680709788581353,
+        1.0193635617624013,
+        0.9836310645354474
+       ]
+      },
+      "cond.team_spread_ratio_raw.t1_3": {
+       "point": 0.3987008101675157,
+       "spread": [
+        0.39662101014994344,
+        0.4021765321201616
+       ],
+       "median_seed": 15,
+       "points": [
+        0.3988878322760955,
+        0.40156323514755976,
+        0.39967058903805713,
+        0.3993866892951357,
+        0.3978676975892297,
+        0.3964047282070126,
+        0.39868249740145034,
+        0.39816084564632853,
+        0.39841646706674305,
+        0.3976409850935803,
+        0.3973916358875692,
+        0.3987593863655403,
+        0.3988542948429718,
+        0.39741745460899586,
+        0.3977039194696317,
+        0.3987008101675157,
+        0.3968372920928742,
+        0.40068349209163573,
+        0.39985572793081253,
+        0.4027898290927634,
+        0.4002820377696877
+       ]
+      },
+      "cond.own_team_r2.late": {
+       "point": 0.003102693860404404,
+       "spread": [
+        0.0015768164939887197,
+        0.0051735166670804356
+       ],
+       "median_seed": 17,
+       "points": [
+        0.003234534339120687,
+        0.003639996476544005,
+        0.002548217864226987,
+        0.0028660276477407987,
+        0.004091349829816626,
+        0.003639167817791611,
+        0.0030515850484867935,
+        0.0018563175644261687,
+        0.003366496142051867,
+        0.0032014701934965917,
+        0.003924890006264836,
+        0.005307400179981325,
+        0.0028911934154111085,
+        0.0038089615728973403,
+        0.0027207398132440552,
+        0.002596057074510605,
+        0.005039633154179546,
+        0.003102693860404404,
+        0.002688964294259577,
+        0.0029122946199695576,
+        0.0012973154235512707
+       ]
+      },
+      "cond.own_team_r2.t1_minus_late": {
+       "point": 0.05816999956360258,
+       "spread": [
+        0.05387945697551094,
+        0.06132908637901341
+       ],
+       "median_seed": 5,
+       "points": [
+        0.05837031188248987,
+        0.05859970936700054,
+        0.05956602422464863,
+        0.059720582232000496,
+        0.0548208329227543,
+        0.05816999956360258,
+        0.058881810953090086,
+        0.061911550781196034,
+        0.05663702762044831,
+        0.05768420583076961,
+        0.05293808102826758,
+        0.05712038603351166,
+        0.056449367542659834,
+        0.05722983110152513,
+        0.05955884001287148,
+        0.05677607252858918,
+        0.055241161694102314,
+        0.057286676185796415,
+        0.05951849361048922,
+        0.059618997158641496,
+        0.060746621976830784
+       ]
+      },
+      "cond.calibration_slope.within_stratum": {
+       "point": 1.329345488442541,
+       "spread": [
+        1.3192769934924415,
+        1.3387319489309473
+       ],
+       "median_seed": 12,
+       "points": [
+        1.3264402148271401,
+        1.3235133517309063,
+        1.3321202925810147,
+        1.333738923071445,
+        1.3263528485476865,
+        1.323908886548699,
+        1.3360661292097589,
+        1.3251334401080097,
+        1.336356295612871,
+        1.3269855704749065,
+        1.3366325331420355,
+        1.3310341472349065,
+        1.329345488442541,
+        1.3339394168071388,
+        1.3314370005619613,
+        1.3170326627325222,
+        1.3253627562628842,
+        1.3348850461286093,
+        1.3408313647198589,
+        1.321521324252361,
+        1.3254567809740434
+       ]
+      }
+     }
+    },
+    "poorer_decoder_battles": 9540
+   }
+  }
+ },
+ "common_support": {
+  "status": "FITTED",
+  "window": [
+   0.2711440876126289,
+   0.9959122538566589
+  ],
+  "why": null,
+  "sides": {
+   "arm": {
+    "support": {
+     "n_states": 18080,
+     "sd_V": 0.13098490606668717,
+     "sd_logit_V": 1.263962501907485,
+     "mean_V": 0.8655874485001628,
+     "q_lo": 0.46655339002609253,
+     "q_hi": 0.9935148656368256,
+     "clipped_share": 0.0,
+     "n_battles": 9467
+    },
+    "points": {
+     "cond.calibration_slope.common_support": 1.369828718004721,
+     "cond.calibration_intercept.common_support": -0.3544265006908452
+    }
+   },
+   "control": {
+    "support": {
+     "n_states": 18086,
+     "sd_V": 0.14460511649715901,
+     "sd_logit_V": 1.3341768906021498,
+     "mean_V": 0.8421519572714663,
+     "q_lo": 0.4385426342487335,
+     "q_hi": 0.9933547884225845,
+     "clipped_share": 0.0,
+     "n_battles": 9447
+    },
+    "points": {
+     "cond.calibration_slope.common_support": 1.1841386393037006,
+     "cond.calibration_intercept.common_support": 0.07383961771547043
+    }
+   }
+  },
+  "as_traced": {
+   "arm": {
+    "n_states": 19138,
+    "sd_V": 0.17353263471262287,
+    "sd_logit_V": 1.5568921130499083,
+    "mean_V": 0.8512586956783001,
+    "q_lo": 0.2711440876126289,
+    "q_hi": 0.9964187979698181,
+    "clipped_share": 0.00041801651165221024,
+    "n_battles": 9569
+   },
+   "control": {
+    "n_states": 19092,
+    "sd_V": 0.18379447084041484,
+    "sd_logit_V": 1.5942518395105574,
+    "mean_V": 0.826720403453254,
+    "q_lo": 0.24693871140480042,
+    "q_hi": 0.9959122538566589,
+    "clipped_share": 0.0004714016341923319,
+    "n_battles": 9546
+   }
+  }
+ },
+ "arm": {
+  "fingerprint": {
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09",
+   "read_root": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09",
+   "step": 10000032,
+   "states": 800,
+   "anchors": 150,
+   "rollouts": 8,
+   "impl": "rust",
+   "seed": 0,
+   "anchor_tolerance": 0.9,
+   "bins": 10,
+   "saved_at": "2026-09-10T15:03:29.325434+00:00",
+   "tool_version": 1
+  },
+  "artifact_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_19_ladder_lambda09_vs_ctrl10M",
+  "run": "ai_v12_19_ladder_lambda09",
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09",
+  "read_root": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09",
+  "traces_overridden": true,
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution",
+  "generated": true,
+  "generated_by": {
+   "tool": "eval_trace_gen",
+   "schema": 1,
+   "generated_at": "2026-09-10T16:15:51.891831+00:00",
+   "source_run": "ai_v12_19_ladder_lambda09",
+   "source_run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09",
+   "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09/eval_traces/step_10000032/snapshot.zip",
+   "checkpoint_sha": "1671981d4ba25838",
+   "games_per_opponent": 800,
+   "bots": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2"
+   ],
+   "sentinels_requested": 3,
+   "sentinels_used": 3,
+   "sentinel_steps": [
+    2000016,
+    6000000,
+    8000016
+   ],
+   "sentinel_notes": [],
+   "capture": "ALL",
+   "quota": {
+    "win": 800,
+    "loss": 800,
+    "draw": 800
+   },
+   "eval_sentinel_greedy": true,
+   "seed": 20260910,
+   "workers": 4,
+   "concurrency": 1,
+   "shard_games": 25,
+   "impl": "rust",
+   "reproducible": true,
+   "reproducibility_note": "seeded, concurrency 1 \u2014 the whole cycle is a pure function of (seed, plan); the worker count does not enter it",
+   "battles_played": 9600,
+   "battles_expected": 9600,
+   "complete": true,
+   "shortfall": 0,
+   "wall_seconds": 4340.2,
+   "games_per_sec": 2.212,
+   "environment": {
+    "CUDA_VISIBLE_DEVICES": "",
+    "nice": 15,
+    "OMP_NUM_THREADS": "1"
+   },
+   "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution"
+  },
+  "spec": {
+   "generated": true,
+   "n_games": 800,
+   "opponents": [
+    "aggressive",
+    "aggressive_v2",
+    "heuristic",
+    "heuristic2",
+    "random",
+    "sentinel_0",
+    "sentinel_1",
+    "sentinel_2",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "staller",
+    "staller_v2"
+   ],
+   "capture": "ALL",
+   "eval_sentinel_greedy": true,
+   "complete": true
+  },
+  "manifest": {
+   "step": 10000032,
+   "num_timesteps": 10000032,
+   "git_hash": "28ece02a54d382f1073922f86ac3da85ca0cb7cd",
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "config_version": 116,
+   "saved_at": "2026-09-10T15:03:29.325434+00:00",
+   "snapshot": "snapshot.zip",
+   "opponents": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "sentinel_0",
+    "sentinel_1",
+    "sentinel_2"
+   ],
+   "n_games": 800,
+   "matchup_hash": "ef5242cffd",
+   "trainee_team_sha": null,
+   "opponent_pins": {},
+   "selection_schema": 2,
+   "selection_rule": "per-opponent per-cycle OUTCOME QUOTA: the first 800 losses, the first 800 DRAWS (a tie, or a 250-turn timeout \u2014 its OWN bucket, so a stall storm cannot evict the decisive losses), and the first 800 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+   "selection": {
+    "schema": 2,
+    "win_quota": 800,
+    "loss_quota": 800,
+    "opponents": {
+     "aggressive": {
+      "battles_played": 800,
+      "battles_won": 734,
+      "battles_drawn": 6,
+      "traces_written": 800,
+      "traces_won": 734,
+      "traces_drawn": 6,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "aggressive_v2": {
+      "battles_played": 800,
+      "battles_won": 697,
+      "battles_drawn": 2,
+      "traces_written": 800,
+      "traces_won": 697,
+      "traces_drawn": 2,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "heuristic": {
+      "battles_played": 800,
+      "battles_won": 715,
+      "battles_drawn": 6,
+      "traces_written": 800,
+      "traces_won": 715,
+      "traces_drawn": 6,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "heuristic2": {
+      "battles_played": 800,
+      "battles_won": 700,
+      "battles_drawn": 3,
+      "traces_written": 800,
+      "traces_won": 700,
+      "traces_drawn": 3,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "random": {
+      "battles_played": 800,
+      "battles_won": 797,
+      "battles_drawn": 0,
+      "traces_written": 800,
+      "traces_won": 797,
+      "traces_drawn": 0,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": null
+     },
+     "sentinel_0": {
+      "battles_played": 800,
+      "battles_won": 738,
+      "battles_drawn": 0,
+      "traces_written": 800,
+      "traces_won": 738,
+      "traces_drawn": 0,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": null
+     },
+     "sentinel_1": {
+      "battles_played": 800,
+      "battles_won": 545,
+      "battles_drawn": 1,
+      "traces_written": 800,
+      "traces_won": 545,
+      "traces_drawn": 1,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "sentinel_2": {
+      "battles_played": 800,
+      "battles_won": 451,
+      "battles_drawn": 1,
+      "traces_written": 800,
+      "traces_won": 451,
+      "traces_drawn": 1,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "setup_sweep": {
+      "battles_played": 800,
+      "battles_won": 725,
+      "battles_drawn": 2,
+      "traces_written": 800,
+      "traces_won": 725,
+      "traces_drawn": 2,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "setup_sweep_v2": {
+      "battles_played": 800,
+      "battles_won": 707,
+      "battles_drawn": 4,
+      "traces_written": 800,
+      "traces_won": 707,
+      "traces_drawn": 4,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "staller": {
+      "battles_played": 800,
+      "battles_won": 740,
+      "battles_drawn": 3,
+      "traces_written": 800,
+      "traces_won": 740,
+      "traces_drawn": 3,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "staller_v2": {
+      "battles_played": 800,
+      "battles_won": 724,
+      "battles_drawn": 3,
+      "traces_written": 800,
+      "traces_won": 724,
+      "traces_drawn": 3,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     }
+    },
+    "draw_quota": 800
+   },
+   "generated_by": {
+    "tool": "eval_trace_gen",
+    "schema": 1,
+    "generated_at": "2026-09-10T16:15:51.891831+00:00",
+    "source_run": "ai_v12_19_ladder_lambda09",
+    "source_run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09/eval_traces/step_10000032/snapshot.zip",
+    "checkpoint_sha": "1671981d4ba25838",
+    "games_per_opponent": 800,
+    "bots": [
+     "random",
+     "heuristic",
+     "heuristic2",
+     "staller",
+     "staller_v2",
+     "aggressive",
+     "aggressive_v2",
+     "setup_sweep",
+     "setup_sweep_v2"
+    ],
+    "sentinels_requested": 3,
+    "sentinels_used": 3,
+    "sentinel_steps": [
+     2000016,
+     6000000,
+     8000016
+    ],
+    "sentinel_notes": [],
+    "capture": "ALL",
+    "quota": {
+     "win": 800,
+     "loss": 800,
+     "draw": 800
+    },
+    "eval_sentinel_greedy": true,
+    "seed": 20260910,
+    "workers": 4,
+    "concurrency": 1,
+    "shard_games": 25,
+    "impl": "rust",
+    "reproducible": true,
+    "reproducibility_note": "seeded, concurrency 1 \u2014 the whole cycle is a pure function of (seed, plan); the worker count does not enter it",
+    "battles_played": 9600,
+    "battles_expected": 9600,
+    "complete": true,
+    "shortfall": 0,
+    "wall_seconds": 4340.2,
+    "games_per_sec": 2.212,
+    "environment": {
+     "CUDA_VISIBLE_DEVICES": "",
+     "nice": 15,
+     "OMP_NUM_THREADS": "1"
+    },
+    "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution"
+   }
+  },
+  "step": 10000032,
+  "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09/eval_traces/step_10000032",
+  "cycle": {
+   "run": "ai_v12_19_ladder_lambda09",
+   "step": 10000032,
+   "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09/eval_traces/step_10000032",
+   "live_pids": [],
+   "on_live": "skip-newest",
+   "dropped_newest_because_live": false,
+   "steps_on_disk": [
+    10000032
+   ],
+   "why": "manifest + selection recorded",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09",
+   "read_root": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09",
+   "traces_overridden": true,
+   "pinned_step": 10000032,
+   "why_read": "PINNED by --step 10000032"
+  },
+  "npz_coverage": {
+   "n_npz": 9600,
+   "n_with_winprob": 9600,
+   "n_missing": 0
+  },
+  "draw_share": 0.0032291666666666666,
+  "identity": {
+   "strata": {
+    "ALL": {
+     "n": 800,
+     "n_battles": 738,
+     "mean_v": 0.834808237273246,
+     "mean_mc": 0.78140625,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9994393014401719,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.05340198727324605,
+       "ci": [
+        0.03554230281436324,
+        0.07255400611967582
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.004496195757154051,
+       "ci": [
+        -0.010163703583821921,
+        0.019729521398175215
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.004496195757154051,
+       "ci": [
+        -0.010163703583821921,
+        0.019729521398175215
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "early (turn<=10)": {
+     "n": 286,
+     "n_battles": 277,
+     "mean_v": 0.8496149261514624,
+     "mean_mc": 0.8037587412587412,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9950958897786804,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.04585618489272111,
+       "ci": [
+        0.017226949426297596,
+        0.07387597878512585
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": -0.007035933873172445,
+       "ci": [
+        -0.03101559865831024,
+        0.017504902550163827
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": -0.00703593387317244,
+       "ci": [
+        -0.03101559865831023,
+        0.01750490255016383
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "mid (11-24)": {
+     "n": 304,
+     "n_battles": 299,
+     "mean_v": 0.8521658656628508,
+     "mean_mc": 0.805921052631579,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9970740399509977,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.046244813031271884,
+       "ci": [
+        0.01977800885491122,
+        0.07385014661949371
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.00557557146024906,
+       "ci": [
+        -0.01611215484450711,
+        0.028189150366783284
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.00557557146024906,
+       "ci": [
+        -0.01611215484450711,
+        0.028189150366783284
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "late (turn>=25)": {
+     "n": 210,
+     "n_battles": 192,
+     "mean_v": 0.789515703703676,
+     "mean_mc": 0.7154761904761905,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9985202425078298,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.07403951322748548,
+       "ci": [
+        0.03698621718448737,
+        0.11383852742804154
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.02026771096451215,
+       "ci": [
+        -0.010105308776658283,
+        0.05141718276301845
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.020267710964512152,
+       "ci": [
+        -0.010105308776658285,
+        0.05141718276301845
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "bot": {
+     "n": 523,
+     "n_battles": 488,
+     "mean_v": 0.8651006461208398,
+     "mean_mc": 0.8322179732313576,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9990094578870424,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.032882672889482226,
+       "ci": [
+        0.01254046175472269,
+        0.054137644750739906
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": -0.013724359629137735,
+       "ci": [
+        -0.028637652244863074,
+        0.0017092460679007733
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": -0.013724359629137735,
+       "ci": [
+        -0.028637652244863074,
+        0.0017092460679007733
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "pool": {
+     "n": 277,
+     "n_battles": 250,
+     "mean_v": 0.7776135447559481,
+     "mean_mc": 0.6854693140794224,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9941683627964416,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.09214423067652577,
+       "ci": [
+        0.058250643475232684,
+        0.12734225514594574
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.031118297539606172,
+       "ci": [
+        0.0017297299954446422,
+        0.06111824446436262
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.03111829753960617,
+       "ci": [
+        0.0017297299954446422,
+        0.06111824446436262
+       ],
+       "n_draws": 4000
+      }
+     }
+    }
+   },
+   "n_labels": 800,
+   "n_battles": 738,
+   "n_rollouts": 6400,
+   "murphy": {
+    "raw": {
+     "brier": 0.13712085418397787,
+     "reliability": 0.005581719442094954,
+     "resolution": 0.036960298765170735,
+     "uncertainty": 0.17081052246093753,
+     "base_rate": 0.78140625,
+     "within_bin_forecast_var": 0.0008381429569906282,
+     "residual": -0.003149231910874517,
+     "skill_score": 0.1972341503999796,
+     "resolution_cap_share": 0.21638186121480393
+    },
+    "pop": {
+     "brier": 0.09588632830736087,
+     "reliability": 0.001098673400828426,
+     "resolution": 0.04300080642214753,
+     "uncertainty": 0.13917376212722773,
+     "base_rate": 0.8329057492335815,
+     "within_bin_forecast_var": 0.0007986169672355804,
+     "residual": -0.002183917765783361,
+     "skill_score": 0.3110315705937088,
+     "resolution_cap_share": 0.30897207753022954
+    },
+    "ipw": {
+     "brier": 0.09588632830736087,
+     "reliability": 0.001098673400828426,
+     "resolution": 0.04300080642214753,
+     "uncertainty": 0.13917376212722773,
+     "base_rate": 0.8329057492335815,
+     "within_bin_forecast_var": 0.0007986169672355804,
+     "residual": -0.002183917765783361,
+     "skill_score": 0.3110315705937088,
+     "resolution_cap_share": 0.30897207753022954
+    },
+    "ci": {
+     "resolution.raw": {
+      "point": 0.036960298765170735,
+      "ci": [
+       0.029778898700732966,
+       0.04631242909134929
+      ]
+     },
+     "resolution.pop": {
+      "point": 0.04300080642214753,
+      "ci": [
+       0.03325280474605898,
+       0.055147559016930574
+      ]
+     },
+     "resolution.ipw": {
+      "point": 0.04300080642214753,
+      "ci": [
+       0.03325280474605898,
+       0.055147559016930574
+      ]
+     },
+     "skill_score.raw": {
+      "point": 0.1972341503999796,
+      "ci": [
+       0.15527162263894148,
+       0.2403733429233178
+      ]
+     },
+     "skill_score.pop": {
+      "point": 0.3110315705937088,
+      "ci": [
+       0.2524577289337726,
+       0.364933904381434
+      ]
+     },
+     "skill_score.ipw": {
+      "point": 0.3110315705937088,
+      "ci": [
+       0.2524577289337726,
+       0.364933904381434
+      ]
+     },
+     "resolution_cap_share.raw": {
+      "point": 0.21638186121480393,
+      "ci": [
+       0.18116978916279725,
+       0.26448170463604304
+      ]
+     },
+     "resolution_cap_share.pop": {
+      "point": 0.30897207753022954,
+      "ci": [
+       0.2555238699402431,
+       0.3746010807978527
+      ]
+     },
+     "resolution_cap_share.ipw": {
+      "point": 0.30897207753022954,
+      "ci": [
+       0.2555238699402431,
+       0.3746010807978527
+      ]
+     },
+     "reliability.raw": {
+      "point": 0.005581719442094954,
+      "ci": [
+       0.003372060993672361,
+       0.01059157729698427
+      ]
+     },
+     "reliability.pop": {
+      "point": 0.001098673400828426,
+      "ci": [
+       0.0006972164531029762,
+       0.004332446504570164
+      ]
+     },
+     "reliability.ipw": {
+      "point": 0.001098673400828426,
+      "ci": [
+       0.0006972164531029762,
+       0.004332446504570164
+      ]
+     }
+    }
+   },
+   "turn": {
+    "raw": {
+     "corr_turn_v": -0.15853980610780574,
+     "corr_turn_mc": -0.09761212345561399,
+     "contrast": -0.060927682652191756,
+     "ci": [
+      -0.12410285407397652,
+      0.004266794231411837
+     ]
+    },
+    "pop": {
+     "corr_turn_v": -0.163715358670983,
+     "corr_turn_mc": -0.13350714721312198,
+     "contrast": -0.03020821145786101,
+     "ci": [
+      -0.08754194985297863,
+      0.02794024050192161
+     ]
+    },
+    "ipw": {
+     "corr_turn_v": -0.163715358670983,
+     "corr_turn_mc": -0.13350714721312198,
+     "contrast": -0.03020821145786101,
+     "ci": [
+      -0.08754194985297863,
+      0.02794024050192161
+     ]
+    }
+   },
+   "reliability_cells": [
+    {
+     "bin": "[0.0,0.1)",
+     "n_states": 8,
+     "n_rollouts": 64,
+     "mean_v_pop": 0.05963612627238035,
+     "mc_pop": 0.0,
+     "wilson_lo": 0.0,
+     "wilson_hi": 0.056626022971156334,
+     "gap_pop": 0.05963612627238035
+    },
+    {
+     "bin": "[0.1,0.2)",
+     "n_states": 7,
+     "n_rollouts": 56,
+     "mean_v_pop": 0.15480295725113957,
+     "mc_pop": 0.0872340425531915,
+     "wilson_lo": 0.05003867458119088,
+     "wilson_hi": 0.214686867516614,
+     "gap_pop": 0.06756891469794807
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n_states": 7,
+     "n_rollouts": 56,
+     "mean_v_pop": 0.23798674686218346,
+     "mc_pop": 0.1512158054711246,
+     "wilson_lo": 0.0742070004258528,
+     "wilson_hi": 0.25736167420851525,
+     "gap_pop": 0.08677094139105887
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n_states": 9,
+     "n_rollouts": 72,
+     "mean_v_pop": 0.3557731948121872,
+     "mc_pop": 0.39979550102249484,
+     "wilson_lo": 0.32257723366453145,
+     "wilson_hi": 0.5455690079759403,
+     "gap_pop": -0.044022306210307616
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n_states": 13,
+     "n_rollouts": 104,
+     "mean_v_pop": 0.45720616342487397,
+     "mc_pop": 0.44440844481605346,
+     "wilson_lo": 0.3688084282037568,
+     "wilson_hi": 0.5570086961712525,
+     "gap_pop": 0.012797718608820507
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n_states": 19,
+     "n_rollouts": 152,
+     "mean_v_pop": 0.5533996101586905,
+     "mc_pop": 0.4902439391204958,
+     "wilson_lo": 0.41508719576899217,
+     "wilson_hi": 0.572079260427556,
+     "gap_pop": 0.06315567103819475
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n_states": 31,
+     "n_rollouts": 248,
+     "mean_v_pop": 0.6606982165331781,
+     "mc_pop": 0.5559339034812654,
+     "wilson_lo": 0.4982541880757494,
+     "wilson_hi": 0.6208683079693836,
+     "gap_pop": 0.1047643130519127
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n_states": 129,
+     "n_rollouts": 1032,
+     "mean_v_pop": 0.7596674012962459,
+     "mc_pop": 0.7253294084305266,
+     "wilson_lo": 0.583292281554793,
+     "wilson_hi": 0.642610983963796,
+     "gap_pop": 0.03433799286571926
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n_states": 243,
+     "n_rollouts": 1944,
+     "mean_v_pop": 0.8588327310672323,
+     "mc_pop": 0.8724840369342585,
+     "wilson_lo": 0.7645761329717788,
+     "wilson_hi": 0.8011782897697828,
+     "gap_pop": -0.01365130586702612
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n_states": 334,
+     "n_rollouts": 2672,
+     "mean_v_pop": 0.957610773263644,
+     "mc_pop": 0.9673900753438265,
+     "wilson_lo": 0.940909627350342,
+     "wilson_hi": 0.9574993068705774,
+     "gap_pop": -0.009779302080182517
+    }
+   ],
+   "anchor": {
+    "issued": 150,
+    "reproduced": 150,
+    "errors": 0,
+    "rate": 1.0,
+    "tolerance": 0.9,
+    "note": "the anchor (label-trust) arm is a CENSUS of the bot battles it draws from and its estimand is the REPLAY DRIVER's fidelity, not a property of the eval population \u2014 capture-rate reweighting does NOT apply to it and none is applied."
+   },
+   "capture_weights_available": true
+  },
+  "gate": {
+   "coverage": {
+    "per_step": {
+     "n_battles": 9600,
+     "n_states": 290668
+    },
+    "n_traces_seen": 9600,
+    "n_traces_read": 9600,
+    "n_traces_no_npz": 0,
+    "n_traces_no_winprob": 0,
+    "selection_note": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.9175,
+       "captured_win_rate": 0.9175,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.87125,
+       "captured_win_rate": 0.87125,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "heuristic": {
+       "true_win_rate": 0.89375,
+       "captured_win_rate": 0.89375,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "heuristic2": {
+       "true_win_rate": 0.875,
+       "captured_win_rate": 0.875,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "random": {
+       "true_win_rate": 0.99625,
+       "captured_win_rate": 0.99625,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "sentinel_0": {
+       "true_win_rate": 0.9225,
+       "captured_win_rate": 0.9225,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "sentinel_1": {
+       "true_win_rate": 0.68125,
+       "captured_win_rate": 0.68125,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "sentinel_2": {
+       "true_win_rate": 0.56375,
+       "captured_win_rate": 0.56375,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.90625,
+       "captured_win_rate": 0.90625,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.88375,
+       "captured_win_rate": 0.88375,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "staller": {
+       "true_win_rate": 0.925,
+       "captured_win_rate": 0.925,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "staller_v2": {
+       "true_win_rate": 0.905,
+       "captured_win_rate": 0.905,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      }
+     },
+     "dropped": {},
+     "n_rows_zeroed": 0
+    }
+   },
+   "strata": {
+    "all": {
+     "n_states": 290668,
+     "n_battles": 9600,
+     "resolution": {
+      "point": 0.047378875333547454,
+      "ci": [
+       0.043608185162464966,
+       0.051340471229122796
+      ]
+     },
+     "reliability": {
+      "point": 0.001300725351069852,
+      "ci": [
+       0.0007666523845375744,
+       0.0021723442655033043
+      ]
+     },
+     "ece": {
+      "point": 0.022492703910394034,
+      "ci": [
+       0.017777310036764124,
+       0.029420479494654265
+      ]
+     },
+     "skill": {
+      "point": 0.31222164811246267,
+      "ci": [
+       0.29580843491821485,
+       0.3284755270066442
+      ]
+     }
+    },
+    "bot": {
+     "n_states": 192897,
+     "n_battles": 7200,
+     "resolution": {
+      "point": 0.026511935689649227,
+      "ci": [
+       0.023182631704011143,
+       0.03047339051983307
+      ]
+     },
+     "reliability": {
+      "point": 0.0005271215548934666,
+      "ci": [
+       0.0003592220804542778,
+       0.0009481484649242444
+      ]
+     },
+     "ece": {
+      "point": 0.020154973498901545,
+      "ci": [
+       0.015136242414832581,
+       0.026930348157534246
+      ]
+     },
+     "skill": {
+      "point": 0.25462769890409864,
+      "ci": [
+       0.23377800414049218,
+       0.27847549198361954
+      ]
+     }
+    },
+    "pool": {
+     "n_states": 97771,
+     "n_battles": 2400,
+     "resolution": {
+      "point": 0.06818998743949034,
+      "ci": [
+       0.06116935577862363,
+       0.0753663855736943
+      ]
+     },
+     "reliability": {
+      "point": 0.00783553660408099,
+      "ci": [
+       0.004746244539723987,
+       0.011840388395652976
+      ]
+     },
+     "ece": {
+      "point": 0.07132368161036043,
+      "ci": [
+       0.0549738574747907,
+       0.08754423693776191
+      ]
+     },
+     "skill": {
+      "point": 0.2855459332211078,
+      "ci": [
+       0.25841306847179646,
+       0.31301202550368856
+      ]
+     }
+    }
+   },
+   "critic_gate_verdict": {
+    "G1": false,
+    "G2": false,
+    "G3": false,
+    "G4": false,
+    "n_gated_rows": 9
+   },
+   "critic_gate_rows_at_step": {
+    "all": {
+     "resolution": 0.059732949486797055,
+     "resolution_ci": [
+      0.04777327289777722,
+      0.072661858229918
+     ],
+     "baseline_resolution": 0.061831093984661495,
+     "delta_resolution": -0.0020981444978644403,
+     "reliability": 0.008280009226724977,
+     "ece": 0.055220275871976594,
+     "skill": 0.3259438803756439,
+     "skill_ci": [
+      0.28851097995231784,
+      0.3666926717641925
+     ],
+     "G1_resolution": false,
+     "G2_reliability": false,
+     "G3_ece": false,
+     "G4_skill": true,
+     "gated": false
+    },
+    "bot": {
+     "resolution": 0.038019403859215414,
+     "resolution_ci": [
+      0.027304550377601544,
+      0.051523603198113874
+     ],
+     "baseline_resolution": 0.0336555473769196,
+     "delta_resolution": 0.004363856482295814,
+     "reliability": 0.002939319428567881,
+     "ece": 0.03245032871664905,
+     "skill": 0.2737738861508908,
+     "skill_ci": [
+      0.222290523342045,
+      0.3239734418976094
+     ],
+     "G1_resolution": false,
+     "G2_reliability": true,
+     "G3_ece": true,
+     "G4_skill": true,
+     "gated": true
+    },
+    "pool": {
+     "resolution": 0.08261592551782726,
+     "resolution_ci": [
+      0.06383835585668432,
+      0.10724828374503999
+     ],
+     "baseline_resolution": 0.07109546545561542,
+     "delta_resolution": 0.011520460062211843,
+     "reliability": 0.016859411827548784,
+     "ece": 0.08320238284146518,
+     "skill": 0.3493600026931657,
+     "skill_ci": [
+      0.2945503975975452,
+      0.4073114244933149
+     ],
+     "G1_resolution": false,
+     "G2_reliability": true,
+     "G3_ece": true,
+     "G4_skill": true,
+     "gated": true
+    }
+   },
+   "baseline_artifact": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/winprob_critic_baseline_2026-09-06/selection_reweighted.json",
+   "critic_gate_refusal": null
+  },
+  "conditioning": {
+   "points": {
+    "cond.spread_ratio.t1_3": 0.047514347392903444,
+    "cond.spread_ratio_raw.t1_3": 0.049951029217021096,
+    "cond.spread_delta.t1_3": -0.11286014703029622,
+    "cond.spread_ratio.all": 0.5598311397271968,
+    "cond.spread_ratio_raw.all": 0.5583308074318024,
+    "cond.spread_delta.all": -0.05215566465759523,
+    "cond.own_team_r2.t1": 0.06156930063814814,
+    "cond.own_team_r2.late": 0.0038606030917334166,
+    "cond.own_team_r2.all": 0.008433760781958677,
+    "cond.opp_class_auc.t1": 0.49350483889475466,
+    "cond.own_team_r2.t1_minus_late": 0.05770869754641472,
+    "cond.within_team_resolution.all": 0.05500026605049554,
+    "cond.within_stratum_resolution.all": 0.03527974373873621,
+    "cond.team_spread_ratio.t1_3": 0.958397639642999,
+    "cond.team_spread_ratio_raw.t1_3": 0.40048526333079437,
+    "cond.calibration_slope.all": 1.3426573575072922,
+    "cond.calibration_intercept.all": -0.3109782961426338,
+    "cond.calibration_slope.within_stratum": 1.3057829626581623,
+    "cond.calibration_slope.t1_3": 0.9496477488510774,
+    "cond.calibration_intercept.t1_3": 0.28668206478978925,
+    "cond.calibration_slope.common_support": 1.369828718004721,
+    "cond.calibration_intercept.common_support": -0.3544265006908452
+   },
+   "omitted": {
+    "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+   },
+   "frame": {
+    "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_19_ladder_lambda09/eval_traces/step_10000032",
+    "step": 10000032,
+    "selection_schema": 2,
+    "n_states": 288564,
+    "n_battles": 9569,
+    "n_opponents": 12,
+    "n_teams": 602,
+    "n_draw_battles_excluded": 31,
+    "max_abs_values_minus_winprobs": 0.0,
+    "refusals": [],
+    "n_cells": 12,
+    "boot": 2000,
+    "seed": 0,
+    "states_per_battle_cap": 2,
+    "min_team_battles": 4,
+    "late_turn": 25,
+    "n_team_cells": 600,
+    "n_teams_seen": 602,
+    "team_strata": 5,
+    "score_frames": {
+     "cond.own_team_r2.t1": {
+      "n_states": 10032,
+      "n_battles": 9563
+     },
+     "cond.own_team_r2.late": {
+      "n_states": 7278,
+      "n_battles": 3794
+     },
+     "cond.own_team_r2.all": {
+      "n_states": 19126,
+      "n_battles": 9563
+     },
+     "cond.opp_class_auc.t1": {
+      "n_states": 10038,
+      "n_battles": 9569
+     }
+    },
+    "cell_frames": {
+     "cond.within_team_resolution.all": {
+      "n_cells": 600,
+      "n_battles": 9563,
+      "n_states": 19126,
+      "median_battles_per_cell": 13.0,
+      "median_states_per_cell": 26.0,
+      "min_battles_per_cell": 4.0,
+      "max_battles_per_cell": 94.0,
+      "n_cells_declared": 602
+     },
+     "cond.within_stratum_resolution.all": {
+      "n_cells": 5,
+      "n_battles": 9563,
+      "n_states": 19126,
+      "median_battles_per_cell": 1899.0,
+      "median_states_per_cell": 3798.0,
+      "min_battles_per_cell": 1894.0,
+      "max_battles_per_cell": 1944.0,
+      "n_cells_declared": 5
+     }
+    },
+    "calibration_support": {
+     "all": {
+      "n_states": 19138,
+      "sd_V": 0.17353263471262287,
+      "sd_logit_V": 1.5568921130499083,
+      "mean_V": 0.8512586956783001,
+      "q_lo": 0.2711440876126289,
+      "q_hi": 0.9964187979698181,
+      "clipped_share": 0.00041801651165221024,
+      "n_battles": 9569
+     },
+     "t1_3": {
+      "n_states": 19138,
+      "sd_V": 0.06222529312727036,
+      "sd_logit_V": 0.45119913391272354,
+      "mean_V": 0.8392000145169184,
+      "q_lo": 0.6853080809116363,
+      "q_hi": 0.9315518260002136,
+      "clipped_share": 0.0,
+      "n_battles": 9569
+     }
+    },
+    "team_spread_frame": {
+     "sd_V": 0.04136972748072371,
+     "sd_y": 0.04316551478166604,
+     "noise_V": 0.010623174650700387,
+     "noise_y": 0.09752454890152848,
+     "n_cells": 600.0,
+     "n_battles": 9563.0,
+     "median_battles_per_cell": 13.0
+    },
+    "recorded_v_note": "every conditioning row is computed on ONE eval cycle from the `win_probs` the trace npz RECORDED, which within a cycle IS that cycle's own model \u2014 no model forward is done. Pooling a recorded V across cycles would import the trainee's own improvement as between-opponent spread (head-refit hazard 3: CTRL reads 1.079 pooled against 0.066 frozen); this module never pools cycles."
+   },
+   "spread": {
+    "t1_3": {
+     "sd_V": 0.005629981111141937,
+     "sd_y": 0.11849012814143815,
+     "ratio": 0.047514347392903444,
+     "delta": -0.11286014703029622,
+     "sd_V_raw": 0.005946600983888658,
+     "sd_y_raw": 0.11904861775825672,
+     "ratio_raw": 0.049951029217021096,
+     "noise_V": 0.0019145171583902162,
+     "noise_y": 0.011517939189676396,
+     "n_cells": 12.0
+    },
+    "all": {
+     "sd_V": 0.06633446348384292,
+     "sd_y": 0.11849012814143815,
+     "ratio": 0.5598311397271968,
+     "delta": -0.05215566465759523,
+     "sd_V_raw": 0.06646851087660749,
+     "sd_y_raw": 0.11904861775825672,
+     "ratio_raw": 0.5583308074318024,
+     "noise_V": 0.00421922889452562,
+     "noise_y": 0.011517939189676396,
+     "n_cells": 12.0
+    },
+    "team_t1_3": {
+     "sd_V": 0.04136972748072371,
+     "sd_y": 0.04316551478166604,
+     "ratio": 0.958397639642999,
+     "ratio_raw": 0.40048526333079437,
+     "delta": -0.0017957873009423267,
+     "noise_V": 0.010623174650700387,
+     "noise_y": 0.09752454890152848,
+     "n_cells": 600.0,
+     "n_battles": 9563.0,
+     "median_battles_per_cell": 13.0
+    }
+   },
+   "strength": {
+    "note": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED.",
+    "ratings": null
+   },
+   "opponents": {
+    "aggressive": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 734,
+     "battles_drawn": 6,
+     "true_win_rate": 0.9175,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 794,
+     "traces_written": 800,
+     "traces_won": 734,
+     "traces_drawn": 6,
+     "mean_V": 0.8900168017284721,
+     "mean_V_t1_3": 0.8461238435199783,
+     "elo": null
+    },
+    "aggressive_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 697,
+     "battles_drawn": 2,
+     "true_win_rate": 0.87125,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 798,
+     "traces_written": 800,
+     "traces_won": 697,
+     "traces_drawn": 2,
+     "mean_V": 0.8703120632270098,
+     "mean_V_t1_3": 0.8420078638103875,
+     "elo": null
+    },
+    "heuristic": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 715,
+     "battles_drawn": 6,
+     "true_win_rate": 0.89375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 794,
+     "traces_written": 800,
+     "traces_won": 715,
+     "traces_drawn": 6,
+     "mean_V": 0.8752716217089156,
+     "mean_V_t1_3": 0.8382941006400525,
+     "elo": null
+    },
+    "heuristic2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 700,
+     "battles_drawn": 3,
+     "true_win_rate": 0.875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797,
+     "traces_written": 800,
+     "traces_won": 700,
+     "traces_drawn": 3,
+     "mean_V": 0.8598677096499658,
+     "mean_V_t1_3": 0.8412383278279504,
+     "elo": null
+    },
+    "random": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 797,
+     "battles_drawn": 0,
+     "true_win_rate": 0.99625,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 800,
+     "traces_written": 800,
+     "traces_won": 797,
+     "traces_drawn": 0,
+     "mean_V": 0.9119676649310849,
+     "mean_V_t1_3": 0.8389397353020795,
+     "elo": null
+    },
+    "sentinel_0": {
+     "class": "pool",
+     "battles_played": 800,
+     "battles_won": 738,
+     "battles_drawn": 0,
+     "true_win_rate": 0.9225,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 800,
+     "traces_written": 800,
+     "traces_won": 738,
+     "traces_drawn": 0,
+     "mean_V": 0.8718918019335142,
+     "mean_V_t1_3": 0.8421285639728113,
+     "elo": null
+    },
+    "sentinel_1": {
+     "class": "pool",
+     "battles_played": 800,
+     "battles_won": 545,
+     "battles_drawn": 1,
+     "true_win_rate": 0.68125,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 799,
+     "traces_written": 800,
+     "traces_won": 545,
+     "traces_drawn": 1,
+     "mean_V": 0.7402741817331098,
+     "mean_V_t1_3": 0.8264547922242471,
+     "elo": null
+    },
+    "sentinel_2": {
+     "class": "pool",
+     "battles_played": 800,
+     "battles_won": 451,
+     "battles_drawn": 1,
+     "true_win_rate": 0.56375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 799,
+     "traces_written": 800,
+     "traces_won": 451,
+     "traces_drawn": 1,
+     "mean_V": 0.6875906016257239,
+     "mean_V_t1_3": 0.82789619136252,
+     "elo": null
+    },
+    "setup_sweep": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 725,
+     "battles_drawn": 2,
+     "true_win_rate": 0.90625,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 798,
+     "traces_written": 800,
+     "traces_won": 725,
+     "traces_drawn": 2,
+     "mean_V": 0.8816361393618058,
+     "mean_V_t1_3": 0.8405268168781773,
+     "elo": null
+    },
+    "setup_sweep_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 707,
+     "battles_drawn": 4,
+     "true_win_rate": 0.88375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 796,
+     "traces_written": 800,
+     "traces_won": 707,
+     "traces_drawn": 4,
+     "mean_V": 0.8731986723875834,
+     "mean_V_t1_3": 0.8422156378389699,
+     "elo": null
+    },
+    "staller": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 740,
+     "battles_drawn": 3,
+     "true_win_rate": 0.925,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797,
+     "traces_written": 800,
+     "traces_won": 740,
+     "traces_drawn": 3,
+     "mean_V": 0.8888250334853424,
+     "mean_V_t1_3": 0.8433787387766534,
+     "elo": null
+    },
+    "staller_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 724,
+     "battles_drawn": 3,
+     "true_win_rate": 0.905,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797,
+     "traces_written": 800,
+     "traces_won": 724,
+     "traces_drawn": 3,
+     "mean_V": 0.8586006151017809,
+     "mean_V_t1_3": 0.8402404507281684,
+     "elo": null
+    }
+   },
+   "ci": {
+    "cond.spread_ratio.t1_3": [
+     0.039299960200639916,
+     0.06050965587879156
+    ],
+    "cond.spread_ratio_raw.t1_3": [
+     0.04211822188148392,
+     0.062425477674232
+    ],
+    "cond.spread_delta.t1_3": [
+     -0.12263583999616197,
+     -0.10374636596912924
+    ],
+    "cond.spread_ratio.all": [
+     0.5087488030753965,
+     0.6160192156050084
+    ],
+    "cond.spread_ratio_raw.all": [
+     0.5078081528403587,
+     0.6139446209814403
+    ],
+    "cond.spread_delta.all": [
+     -0.06277598270531372,
+     -0.042573706957664104
+    ],
+    "cond.own_team_r2.t1": [
+     0.05177885202671911,
+     0.07148307116435927
+    ],
+    "cond.own_team_r2.late": [
+     -0.0007947862765905311,
+     0.00779929323188965
+    ],
+    "cond.own_team_r2.all": [
+     0.004878394675008199,
+     0.011788221959278755
+    ],
+    "cond.opp_class_auc.t1": [
+     0.4802451018798113,
+     0.5070779080136578
+    ],
+    "cond.own_team_r2.t1_minus_late": [
+     0.047064748699145315,
+     0.06869202565442642
+    ],
+    "cond.within_team_resolution.all": [
+     0.05410040711788826,
+     0.05992505144276101
+    ],
+    "cond.within_stratum_resolution.all": [
+     0.03303499965479658,
+     0.0382703388058632
+    ],
+    "cond.team_spread_ratio.t1_3": [
+     0.3618517531240714,
+     0.4519406646757936
+    ],
+    "cond.team_spread_ratio_raw.t1_3": [
+     0.28594563150977015,
+     0.3242727524758608
+    ],
+    "cond.calibration_slope.all": [
+     1.2861388798612179,
+     1.4074053260565706
+    ],
+    "cond.calibration_intercept.all": [
+     -0.4159789464081348,
+     -0.20925391969755192
+    ],
+    "cond.calibration_slope.within_stratum": [
+     1.248865537041849,
+     1.3712296882042319
+    ],
+    "cond.calibration_slope.t1_3": [
+     0.8360559875544177,
+     1.0682733256951
+    ],
+    "cond.calibration_intercept.t1_3": [
+     0.09690143790973468,
+     0.4718427039723846
+    ],
+    "cond.calibration_slope.common_support": [
+     1.3097551053230805,
+     1.4359203871139223
+    ],
+    "cond.calibration_intercept.common_support": [
+     -0.46682029268529945,
+     -0.24726647663539922
+    ]
+   },
+   "refusal": null
+  },
+  "commands": [],
+  "reused": true,
+  "paths": {
+   "identity": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_19_ladder_lambda09_vs_ctrl10M/identity",
+   "gate": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_19_ladder_lambda09_vs_ctrl10M/gate",
+   "identity_payload": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_19_ladder_lambda09_vs_ctrl10M/identity_payload.json"
+  }
+ },
+ "control": {
+  "fingerprint": {
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c",
+   "read_root": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c",
+   "step": 10000032,
+   "states": 800,
+   "anchors": 150,
+   "rollouts": 8,
+   "impl": "rust",
+   "seed": 0,
+   "anchor_tolerance": 0.9,
+   "bins": 10,
+   "saved_at": "2026-09-10T17:54:10.124322+00:00",
+   "tool_version": 1
+  },
+  "artifact_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_16_ladder_ctrl10M_c_vs_ctrl10M",
+  "run": "ai_v12_16_ladder_ctrl10M_c",
+  "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c",
+  "read_root": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c",
+  "traces_overridden": true,
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution",
+  "generated": true,
+  "generated_by": {
+   "tool": "eval_trace_gen",
+   "schema": 1,
+   "generated_at": "2026-09-10T19:18:28.383150+00:00",
+   "source_run": "ai_v12_16_ladder_ctrl10M_c",
+   "source_run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c",
+   "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c/eval_traces/step_10000032/snapshot.zip",
+   "checkpoint_sha": "792bbe2f277d3b85",
+   "games_per_opponent": 800,
+   "bots": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2"
+   ],
+   "sentinels_requested": 3,
+   "sentinels_used": 3,
+   "sentinel_steps": [
+    4000032,
+    6000000,
+    8000016
+   ],
+   "sentinel_notes": [],
+   "capture": "ALL",
+   "quota": {
+    "win": 800,
+    "loss": 800,
+    "draw": 800
+   },
+   "eval_sentinel_greedy": true,
+   "seed": 20260910,
+   "workers": 4,
+   "concurrency": 1,
+   "shard_games": 25,
+   "impl": "rust",
+   "reproducible": true,
+   "reproducibility_note": "seeded, concurrency 1 \u2014 the whole cycle is a pure function of (seed, plan); the worker count does not enter it",
+   "battles_played": 9600,
+   "battles_expected": 9600,
+   "complete": true,
+   "shortfall": 0,
+   "wall_seconds": 5056.0,
+   "games_per_sec": 1.899,
+   "environment": {
+    "CUDA_VISIBLE_DEVICES": "",
+    "nice": 15,
+    "OMP_NUM_THREADS": "1"
+   },
+   "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution"
+  },
+  "spec": {
+   "generated": true,
+   "n_games": 800,
+   "opponents": [
+    "aggressive",
+    "aggressive_v2",
+    "heuristic",
+    "heuristic2",
+    "random",
+    "sentinel_0",
+    "sentinel_1",
+    "sentinel_2",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "staller",
+    "staller_v2"
+   ],
+   "capture": "ALL",
+   "eval_sentinel_greedy": true,
+   "complete": true
+  },
+  "manifest": {
+   "step": 10000032,
+   "num_timesteps": 10000032,
+   "git_hash": "377a5aa170bef8bf37be2af7217bb4d4f1b20b36",
+   "arch_signature": "gen3_critic_route_wave_v1",
+   "config_version": 114,
+   "saved_at": "2026-09-10T17:54:10.124322+00:00",
+   "snapshot": "snapshot.zip",
+   "opponents": [
+    "random",
+    "heuristic",
+    "heuristic2",
+    "staller",
+    "staller_v2",
+    "aggressive",
+    "aggressive_v2",
+    "setup_sweep",
+    "setup_sweep_v2",
+    "sentinel_0",
+    "sentinel_1",
+    "sentinel_2"
+   ],
+   "n_games": 800,
+   "matchup_hash": "ef5242cffd",
+   "trainee_team_sha": null,
+   "opponent_pins": {},
+   "selection_schema": 2,
+   "selection_rule": "per-opponent per-cycle OUTCOME QUOTA: the first 800 losses, the first 800 DRAWS (a tie, or a 250-turn timeout \u2014 its OWN bucket, so a stall storm cannot evict the decisive losses), and the first 800 wins of each opponent are persisted as traces; every later battle is played (and counts toward the win rate) but is NOT traced. Under battle-level work-stealing each shard unit carries max(1, ceil(quota / n_shards)), so the per-opponent totals are approximately these. LOSS-ENRICHED BY DESIGN \u2014 the traces are a loss-forensics sample, never a random subsample of the cycle.",
+   "selection": {
+    "schema": 2,
+    "win_quota": 800,
+    "loss_quota": 800,
+    "opponents": {
+     "aggressive": {
+      "battles_played": 800,
+      "battles_won": 730,
+      "battles_drawn": 7,
+      "traces_written": 800,
+      "traces_won": 730,
+      "traces_drawn": 7,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "aggressive_v2": {
+      "battles_played": 800,
+      "battles_won": 683,
+      "battles_drawn": 8,
+      "traces_written": 800,
+      "traces_won": 683,
+      "traces_drawn": 8,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "heuristic": {
+      "battles_played": 800,
+      "battles_won": 707,
+      "battles_drawn": 6,
+      "traces_written": 800,
+      "traces_won": 707,
+      "traces_drawn": 6,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "heuristic2": {
+      "battles_played": 800,
+      "battles_won": 708,
+      "battles_drawn": 7,
+      "traces_written": 800,
+      "traces_won": 708,
+      "traces_drawn": 7,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "random": {
+      "battles_played": 800,
+      "battles_won": 797,
+      "battles_drawn": 1,
+      "traces_written": 800,
+      "traces_won": 797,
+      "traces_drawn": 1,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "sentinel_0": {
+      "battles_played": 800,
+      "battles_won": 684,
+      "battles_drawn": 1,
+      "traces_written": 800,
+      "traces_won": 684,
+      "traces_drawn": 1,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "sentinel_1": {
+      "battles_played": 800,
+      "battles_won": 503,
+      "battles_drawn": 4,
+      "traces_written": 800,
+      "traces_won": 503,
+      "traces_drawn": 4,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "sentinel_2": {
+      "battles_played": 800,
+      "battles_won": 466,
+      "battles_drawn": 4,
+      "traces_written": 800,
+      "traces_won": 466,
+      "traces_drawn": 4,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "setup_sweep": {
+      "battles_played": 800,
+      "battles_won": 712,
+      "battles_drawn": 7,
+      "traces_written": 800,
+      "traces_won": 712,
+      "traces_drawn": 7,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "setup_sweep_v2": {
+      "battles_played": 800,
+      "battles_won": 711,
+      "battles_drawn": 2,
+      "traces_written": 800,
+      "traces_won": 711,
+      "traces_drawn": 2,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "staller": {
+      "battles_played": 800,
+      "battles_won": 727,
+      "battles_drawn": 6,
+      "traces_written": 800,
+      "traces_won": 727,
+      "traces_drawn": 6,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     },
+     "staller_v2": {
+      "battles_played": 800,
+      "battles_won": 736,
+      "battles_drawn": 1,
+      "traces_written": 800,
+      "traces_won": 736,
+      "traces_drawn": 1,
+      "capture_rate_win": 1.0,
+      "capture_rate_loss": 1.0,
+      "capture_rate_draw": 1.0
+     }
+    },
+    "draw_quota": 800
+   },
+   "generated_by": {
+    "tool": "eval_trace_gen",
+    "schema": 1,
+    "generated_at": "2026-09-10T19:18:28.383150+00:00",
+    "source_run": "ai_v12_16_ladder_ctrl10M_c",
+    "source_run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c",
+    "checkpoint": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c/eval_traces/step_10000032/snapshot.zip",
+    "checkpoint_sha": "792bbe2f277d3b85",
+    "games_per_opponent": 800,
+    "bots": [
+     "random",
+     "heuristic",
+     "heuristic2",
+     "staller",
+     "staller_v2",
+     "aggressive",
+     "aggressive_v2",
+     "setup_sweep",
+     "setup_sweep_v2"
+    ],
+    "sentinels_requested": 3,
+    "sentinels_used": 3,
+    "sentinel_steps": [
+     4000032,
+     6000000,
+     8000016
+    ],
+    "sentinel_notes": [],
+    "capture": "ALL",
+    "quota": {
+     "win": 800,
+     "loss": 800,
+     "draw": 800
+    },
+    "eval_sentinel_greedy": true,
+    "seed": 20260910,
+    "workers": 4,
+    "concurrency": 1,
+    "shard_games": 25,
+    "impl": "rust",
+    "reproducible": true,
+    "reproducibility_note": "seeded, concurrency 1 \u2014 the whole cycle is a pure function of (seed, plan); the worker count does not enter it",
+    "battles_played": 9600,
+    "battles_expected": 9600,
+    "complete": true,
+    "shortfall": 0,
+    "wall_seconds": 5056.0,
+    "games_per_sec": 1.899,
+    "environment": {
+     "CUDA_VISIBLE_DEVICES": "",
+     "nice": 15,
+     "OMP_NUM_THREADS": "1"
+    },
+    "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution"
+   }
+  },
+  "step": 10000032,
+  "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c/eval_traces/step_10000032",
+  "cycle": {
+   "run": "ai_v12_16_ladder_ctrl10M_c",
+   "step": 10000032,
+   "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c/eval_traces/step_10000032",
+   "live_pids": [],
+   "on_live": "skip-newest",
+   "dropped_newest_because_live": false,
+   "steps_on_disk": [
+    10000032
+   ],
+   "why": "manifest + selection recorded",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c",
+   "read_root": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c",
+   "traces_overridden": true,
+   "pinned_step": 10000032,
+   "why_read": "PINNED by --step 10000032"
+  },
+  "npz_coverage": {
+   "n_npz": 9600,
+   "n_with_winprob": 9600,
+   "n_missing": 0
+  },
+  "draw_share": 0.005625,
+  "identity": {
+   "strata": {
+    "ALL": {
+     "n": 800,
+     "n_battles": 736,
+     "mean_v": 0.8298421575175599,
+     "mean_mc": 0.7928125,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9994195098510331,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.03702965751755983,
+       "ci": [
+        0.018956034117931116,
+        0.05588256341493564
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": -0.014704023713637344,
+       "ci": [
+        -0.02904996411003454,
+        -0.0005574620535582554
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": -0.014704023713637344,
+       "ci": [
+        -0.02904996411003454,
+        -0.0005574620535582554
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "early (turn<=10)": {
+     "n": 264,
+     "n_battles": 262,
+     "mean_v": 0.8211082218948639,
+     "mean_mc": 0.8451704545454546,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.996406244583367,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": -0.024062232650590664,
+       "ci": [
+        -0.048863003491104104,
+        0.002278411616357995
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": -0.06213834227115752,
+       "ci": [
+        -0.0833373100674499,
+        -0.03857802697860885
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": -0.06213834227115752,
+       "ci": [
+        -0.08333731006744993,
+        -0.038578026978608855
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "mid (11-24)": {
+     "n": 304,
+     "n_battles": 298,
+     "mean_v": 0.8474194203797532,
+     "mean_mc": 0.7890625,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9982828406721452,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.05835692037975317,
+       "ci": [
+        0.032152776770731986,
+        0.08616221985309432
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.002098717710832061,
+       "ci": [
+        -0.019160145671782196,
+        0.023533736491781858
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.002098717710832061,
+       "ci": [
+        -0.019160145671782196,
+        0.023533736491781858
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "late (turn>=25)": {
+     "n": 232,
+     "n_battles": 213,
+     "mean_v": 0.8167484984412019,
+     "mean_mc": 0.7381465517241379,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9984686468646865,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.07860194671706393,
+       "ci": [
+        0.03868893171111744,
+        0.12089376322304701
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.013754357330363615,
+       "ci": [
+        -0.015919024468068074,
+        0.04576761848231647
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.013754357330363615,
+       "ci": [
+        -0.015919024468068074,
+        0.04576761848231647
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "bot": {
+     "n": 509,
+     "n_battles": 478,
+     "mean_v": 0.8534976497351069,
+     "mean_mc": 0.8536345776031434,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.999655736779728,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": -0.00013692786803648374,
+       "ci": [
+        -0.021684459277548192,
+        0.02174185848511894
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": -0.039154371445859384,
+       "ci": [
+        -0.053613308877979264,
+        -0.025113647379091827
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": -0.039154371445859384,
+       "ci": [
+        -0.05361330887797927,
+        -0.025113647379091823
+       ],
+       "n_draws": 4000
+      }
+     }
+    },
+    "pool": {
+     "n": 291,
+     "n_battles": 258,
+     "mean_v": 0.7884653687246681,
+     "mean_mc": 0.686426116838488,
+     "coverage": {
+      "raw": 1.0,
+      "pop": 0.9962862482667149,
+      "ipw": 1.0
+     },
+     "bias": {
+      "raw": {
+       "point": 0.10203925188618018,
+       "ci": [
+        0.0695308485104873,
+        0.1348276150559541
+       ],
+       "n_draws": 4000
+      },
+      "pop": {
+       "point": 0.04214935909374981,
+       "ci": [
+        0.010299409091966876,
+        0.07337638850598933
+       ],
+       "n_draws": 4000
+      },
+      "ipw": {
+       "point": 0.04214935909374982,
+       "ci": [
+        0.010299409091966876,
+        0.07337638850598933
+       ],
+       "n_draws": 4000
+      }
+     }
+    }
+   },
+   "n_labels": 800,
+   "n_battles": 736,
+   "n_rollouts": 6400,
+   "murphy": {
+    "raw": {
+     "brier": 0.1372784419249527,
+     "reliability": 0.0027240969887393873,
+     "resolution": 0.02842759054834197,
+     "uncertainty": 0.16426083984374998,
+     "base_rate": 0.7928125,
+     "within_bin_forecast_var": 0.0008328877401352788,
+     "residual": -0.00211179209932999,
+     "skill_score": 0.16426555437354262,
+     "resolution_cap_share": 0.17306371120093614
+    },
+    "pop": {
+     "brier": 0.097301992199145,
+     "reliability": 0.0007692501085652957,
+     "resolution": 0.03514210506575215,
+     "uncertainty": 0.13226565824971231,
+     "base_rate": 0.8431243823313751,
+     "within_bin_forecast_var": 0.000813531934664951,
+     "residual": -0.0014043430280454156,
+     "skill_score": 0.26434424863752093,
+     "resolution_cap_share": 0.2656933442194439
+    },
+    "ipw": {
+     "brier": 0.097301992199145,
+     "reliability": 0.0007692501085652957,
+     "resolution": 0.03514210506575215,
+     "uncertainty": 0.13226565824971231,
+     "base_rate": 0.8431243823313751,
+     "within_bin_forecast_var": 0.000813531934664951,
+     "residual": -0.0014043430280454156,
+     "skill_score": 0.26434424863752093,
+     "resolution_cap_share": 0.2656933442194439
+    },
+    "ci": {
+     "resolution.raw": {
+      "point": 0.02842759054834197,
+      "ci": [
+       0.02202365575427264,
+       0.03708993417806804
+      ]
+     },
+     "resolution.pop": {
+      "point": 0.03514210506575215,
+      "ci": [
+       0.026018063105546968,
+       0.04675635701629125
+      ]
+     },
+     "resolution.ipw": {
+      "point": 0.03514210506575215,
+      "ci": [
+       0.026018063105546968,
+       0.04675635701629125
+      ]
+     },
+     "skill_score.raw": {
+      "point": 0.16426555437354262,
+      "ci": [
+       0.11631858990481476,
+       0.20912573458976902
+      ]
+     },
+     "skill_score.pop": {
+      "point": 0.26434424863752093,
+      "ci": [
+       0.19638417717465978,
+       0.32382009299331715
+      ]
+     },
+     "skill_score.ipw": {
+      "point": 0.26434424863752093,
+      "ci": [
+       0.19638417717465978,
+       0.32382009299331715
+      ]
+     },
+     "resolution_cap_share.raw": {
+      "point": 0.17306371120093614,
+      "ci": [
+       0.13850928062661438,
+       0.2206128676052339
+      ]
+     },
+     "resolution_cap_share.pop": {
+      "point": 0.2656933442194439,
+      "ci": [
+       0.2116180304362759,
+       0.33261016562312806
+      ]
+     },
+     "resolution_cap_share.ipw": {
+      "point": 0.2656933442194439,
+      "ci": [
+       0.2116180304362759,
+       0.33261016562312806
+      ]
+     },
+     "reliability.raw": {
+      "point": 0.0027240969887393873,
+      "ci": [
+       0.0016544598698830034,
+       0.006654670794108076
+      ]
+     },
+     "reliability.pop": {
+      "point": 0.0007692501085652957,
+      "ci": [
+       0.0006537832518741706,
+       0.004009911480043053
+      ]
+     },
+     "reliability.ipw": {
+      "point": 0.0007692501085652957,
+      "ci": [
+       0.0006537832518741706,
+       0.004009911480043053
+      ]
+     }
+    }
+   },
+   "turn": {
+    "raw": {
+     "corr_turn_v": -0.08331520939299233,
+     "corr_turn_mc": -0.15476548503846924,
+     "contrast": 0.0714502756454769,
+     "ci": [
+      -0.03290863089810077,
+      0.17254282952904043
+     ]
+    },
+    "pop": {
+     "corr_turn_v": -0.11052631536084923,
+     "corr_turn_mc": -0.14070299607749004,
+     "contrast": 0.030176680716640814,
+     "ci": [
+      -0.06179408560499249,
+      0.11647528573721473
+     ]
+    },
+    "ipw": {
+     "corr_turn_v": -0.11052631536084923,
+     "corr_turn_mc": -0.14070299607749004,
+     "contrast": 0.030176680716640814,
+     "ci": [
+      -0.06179408560499249,
+      0.11647528573721473
+     ]
+    }
+   },
+   "reliability_cells": [
+    {
+     "bin": "[0.0,0.1)",
+     "n_states": 6,
+     "n_rollouts": 48,
+     "mean_v_pop": 0.06001439628501734,
+     "mc_pop": 0.04166666666666667,
+     "wilson_lo": 0.01150165207896561,
+     "wilson_hi": 0.13975911147771475,
+     "gap_pop": 0.01834772961835067
+    },
+    {
+     "bin": "[0.1,0.2)",
+     "n_states": 7,
+     "n_rollouts": 56,
+     "mean_v_pop": 0.14669139744059742,
+     "mc_pop": 0.23393085044668754,
+     "wilson_lo": 0.12705780314744497,
+     "wilson_hi": 0.33819713656004946,
+     "gap_pop": -0.08723945300609012
+    },
+    {
+     "bin": "[0.2,0.3)",
+     "n_states": 8,
+     "n_rollouts": 64,
+     "mean_v_pop": 0.2467566524080872,
+     "mc_pop": 0.20356594020676166,
+     "wilson_lo": 0.12273302562695813,
+     "wilson_hi": 0.31713867551216596,
+     "gap_pop": 0.04319071220132553
+    },
+    {
+     "bin": "[0.3,0.4)",
+     "n_states": 11,
+     "n_rollouts": 88,
+     "mean_v_pop": 0.3539855095492039,
+     "mc_pop": 0.4294073828836284,
+     "wilson_lo": 0.3333250852294768,
+     "wilson_hi": 0.5360151701667708,
+     "gap_pop": -0.07542187333442452
+    },
+    {
+     "bin": "[0.4,0.5)",
+     "n_states": 16,
+     "n_rollouts": 128,
+     "mean_v_pop": 0.45860565643529155,
+     "mc_pop": 0.5064056079284506,
+     "wilson_lo": 0.4146507236438,
+     "wilson_hi": 0.5853492763562,
+     "gap_pop": -0.04779995149315902
+    },
+    {
+     "bin": "[0.5,0.6)",
+     "n_states": 24,
+     "n_rollouts": 192,
+     "mean_v_pop": 0.5551265301008553,
+     "mc_pop": 0.5222801584771619,
+     "wilson_lo": 0.4607429214450904,
+     "wilson_hi": 0.6005310877541808,
+     "gap_pop": 0.032846371623693416
+    },
+    {
+     "bin": "[0.6,0.7)",
+     "n_states": 39,
+     "n_rollouts": 312,
+     "mean_v_pop": 0.652637607011234,
+     "mc_pop": 0.6544648434424294,
+     "wilson_lo": 0.5994736452209105,
+     "wilson_hi": 0.7044761827941451,
+     "gap_pop": -0.0018272364311954226
+    },
+    {
+     "bin": "[0.7,0.8)",
+     "n_states": 139,
+     "n_rollouts": 1112,
+     "mean_v_pop": 0.7584439135831111,
+     "mc_pop": 0.8154416315073841,
+     "wilson_lo": 0.6738850202864628,
+     "wilson_hi": 0.7276056572433943,
+     "gap_pop": -0.056997717924272995
+    },
+    {
+     "bin": "[0.8,0.9)",
+     "n_states": 209,
+     "n_rollouts": 1672,
+     "mean_v_pop": 0.8564153283376553,
+     "mc_pop": 0.8700064225428885,
+     "wilson_lo": 0.7477222599341049,
+     "wilson_hi": 0.7881279063345925,
+     "gap_pop": -0.01359109420523319
+    },
+    {
+     "bin": "[0.9,1.0)",
+     "n_states": 341,
+     "n_rollouts": 2728,
+     "mean_v_pop": 0.961567376311175,
+     "mc_pop": 0.9678349454619911,
+     "wilson_lo": 0.9342475774113645,
+     "wilson_hi": 0.9516017339103462,
+     "gap_pop": -0.006267569150816166
+    }
+   ],
+   "anchor": {
+    "issued": 150,
+    "reproduced": 150,
+    "errors": 0,
+    "rate": 1.0,
+    "tolerance": 0.9,
+    "note": "the anchor (label-trust) arm is a CENSUS of the bot battles it draws from and its estimand is the REPLAY DRIVER's fidelity, not a property of the eval population \u2014 capture-rate reweighting does NOT apply to it and none is applied."
+   },
+   "capture_weights_available": true
+  },
+  "gate": {
+   "coverage": {
+    "per_step": {
+     "n_battles": 9600,
+     "n_states": 303712
+    },
+    "n_traces_seen": 9600,
+    "n_traces_read": 9600,
+    "n_traces_no_npz": 0,
+    "n_traces_no_winprob": 0,
+    "selection_note": {
+     "per_opponent": {
+      "aggressive": {
+       "true_win_rate": 0.9125,
+       "captured_win_rate": 0.9125,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "aggressive_v2": {
+       "true_win_rate": 0.85375,
+       "captured_win_rate": 0.85375,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "heuristic": {
+       "true_win_rate": 0.88375,
+       "captured_win_rate": 0.88375,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "heuristic2": {
+       "true_win_rate": 0.885,
+       "captured_win_rate": 0.885,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "random": {
+       "true_win_rate": 0.99625,
+       "captured_win_rate": 0.99625,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "sentinel_0": {
+       "true_win_rate": 0.855,
+       "captured_win_rate": 0.855,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "sentinel_1": {
+       "true_win_rate": 0.62875,
+       "captured_win_rate": 0.62875,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "sentinel_2": {
+       "true_win_rate": 0.5825,
+       "captured_win_rate": 0.5825,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "setup_sweep": {
+       "true_win_rate": 0.89,
+       "captured_win_rate": 0.89,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "setup_sweep_v2": {
+       "true_win_rate": 0.88875,
+       "captured_win_rate": 0.88875,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "staller": {
+       "true_win_rate": 0.90875,
+       "captured_win_rate": 0.90875,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      },
+      "staller_v2": {
+       "true_win_rate": 0.92,
+       "captured_win_rate": 0.92,
+       "w_win": 1.0,
+       "w_loss": 1.0,
+       "n_battles": 800
+      }
+     },
+     "dropped": {},
+     "n_rows_zeroed": 0
+    }
+   },
+   "strata": {
+    "all": {
+     "n_states": 303712,
+     "n_battles": 9600,
+     "resolution": {
+      "point": 0.038902376184671406,
+      "ci": [
+       0.03524473587085544,
+       0.04306268108784479
+      ]
+     },
+     "reliability": {
+      "point": 0.0001010574173999445,
+      "ci": [
+       5.578760852306364e-05,
+       0.0004208464655301701
+      ]
+     },
+     "ece": {
+      "point": 0.009348743694298722,
+      "ci": [
+       0.005856218545535585,
+       0.017248454522122238
+      ]
+     },
+     "skill": {
+      "point": 0.2547145009472145,
+      "ci": [
+       0.23485925357486878,
+       0.2770636198911414
+      ]
+     }
+    },
+    "bot": {
+     "n_states": 207486,
+     "n_battles": 7200,
+     "resolution": {
+      "point": 0.02443596186753494,
+      "ci": [
+       0.020407911679164094,
+       0.02890436709479833
+      ]
+     },
+     "reliability": {
+      "point": 0.0017020143048585663,
+      "ci": [
+       0.0010733868163578452,
+       0.0026957449363253783
+      ]
+     },
+     "ece": {
+      "point": 0.030073995080736837,
+      "ci": [
+       0.02273042052664598,
+       0.03848969501547863
+      ]
+     },
+     "skill": {
+      "point": 0.21528130241212073,
+      "ci": [
+       0.17930391843146065,
+       0.2510452827434968
+      ]
+     }
+    },
+    "pool": {
+     "n_states": 96226,
+     "n_battles": 2400,
+     "resolution": {
+      "point": 0.04729782062967411,
+      "ci": [
+       0.039808689033346056,
+       0.05392581975500977
+      ]
+     },
+     "reliability": {
+      "point": 0.007533004834413495,
+      "ci": [
+       0.004511070520814671,
+       0.011902442035706371
+      ]
+     },
+     "ece": {
+      "point": 0.0844564567760333,
+      "ci": [
+       0.06366401544134728,
+       0.10708034334027298
+      ]
+     },
+     "skill": {
+      "point": 0.18202472661524216,
+      "ci": [
+       0.1375548573425075,
+       0.21586717926659912
+      ]
+     }
+    }
+   },
+   "critic_gate_verdict": {
+    "G1": false,
+    "G2": false,
+    "G3": false,
+    "G4": false,
+    "n_gated_rows": 8
+   },
+   "critic_gate_rows_at_step": {
+    "all": {
+     "resolution": 0.04590013354491031,
+     "resolution_ci": [
+      0.03526754794912101,
+      0.0597999434716473
+     ],
+     "baseline_resolution": 0.061831093984661495,
+     "delta_resolution": -0.015930960439751188,
+     "reliability": 0.00039282567973090754,
+     "ece": 0.012528115856679812,
+     "skill": 0.28168578898578356,
+     "skill_ci": [
+      0.23375423779351304,
+      0.33075534446329297
+     ],
+     "G1_resolution": false,
+     "G2_reliability": true,
+     "G3_ece": true,
+     "G4_skill": true,
+     "gated": false
+    },
+    "bot": {
+     "resolution": 0.017714056395920393,
+     "resolution_ci": [
+      0.011290640815162728,
+      0.025514976814763144
+     ],
+     "baseline_resolution": 0.0336555473769196,
+     "delta_resolution": -0.015941490980999208,
+     "reliability": 0.005090126213080465,
+     "ece": 0.05493115173153845,
+     "skill": 0.14673821075687465,
+     "skill_ci": [
+      -0.007520222859164356,
+      0.2392580065741645
+     ],
+     "G1_resolution": false,
+     "G2_reliability": false,
+     "G3_ece": false,
+     "G4_skill": false,
+     "gated": true
+    },
+    "pool": {
+     "resolution": 0.05964836339342044,
+     "resolution_ci": [
+      0.04531726806012801,
+      0.07754247759540656
+     ],
+     "baseline_resolution": 0.07109546545561542,
+     "delta_resolution": -0.011447102062194979,
+     "reliability": 0.010980593568368523,
+     "ece": 0.09490952169863297,
+     "skill": 0.21438070742472004,
+     "skill_ci": [
+      0.12243513711035621,
+      0.2921444014311236
+     ],
+     "G1_resolution": false,
+     "G2_reliability": true,
+     "G3_ece": true,
+     "G4_skill": true,
+     "gated": true
+    }
+   },
+   "baseline_artifact": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/winprob_critic_baseline_2026-09-06/selection_reweighted.json",
+   "critic_gate_refusal": null
+  },
+  "conditioning": {
+   "points": {
+    "cond.spread_ratio.t1_3": 0.09212507583776187,
+    "cond.spread_ratio_raw.t1_3": 0.09419601981958743,
+    "cond.spread_delta.t1_3": -0.10883871774021484,
+    "cond.spread_ratio.all": 0.498021587428547,
+    "cond.spread_ratio_raw.all": 0.4969722638683927,
+    "cond.spread_delta.all": -0.0601786493970641,
+    "cond.own_team_r2.t1": 0.03578611300465917,
+    "cond.own_team_r2.late": 0.0036098914704295604,
+    "cond.own_team_r2.all": 0.007463232792212171,
+    "cond.opp_class_auc.t1": 0.4992468624339541,
+    "cond.own_team_r2.t1_minus_late": 0.03217622153422961,
+    "cond.within_team_resolution.all": 0.05568136687334863,
+    "cond.within_stratum_resolution.all": 0.03350788056360865,
+    "cond.team_spread_ratio.t1_3": 1.1224622109645277,
+    "cond.team_spread_ratio_raw.t1_3": 0.4973048907571972,
+    "cond.calibration_slope.all": 1.1780495554229602,
+    "cond.calibration_intercept.all": 0.08288124321560582,
+    "cond.calibration_slope.within_stratum": 1.1301129182643053,
+    "cond.calibration_slope.t1_3": 0.9126217270455765,
+    "cond.calibration_intercept.t1_3": 0.6313184334906019,
+    "cond.calibration_slope.common_support": 1.1841386393037006,
+    "cond.calibration_intercept.common_support": 0.07383961771547043
+   },
+   "omitted": {
+    "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+   },
+   "frame": {
+    "trace_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/ai_v12_16_ladder_ctrl10M_c/eval_traces/step_10000032",
+    "step": 10000032,
+    "selection_schema": 2,
+    "n_states": 297960,
+    "n_battles": 9546,
+    "n_opponents": 12,
+    "n_teams": 602,
+    "n_draw_battles_excluded": 54,
+    "max_abs_values_minus_winprobs": 0.0,
+    "refusals": [],
+    "n_cells": 12,
+    "boot": 2000,
+    "seed": 0,
+    "states_per_battle_cap": 2,
+    "min_team_battles": 4,
+    "late_turn": 25,
+    "n_team_cells": 600,
+    "n_teams_seen": 602,
+    "team_strata": 5,
+    "score_frames": {
+     "cond.own_team_r2.t1": {
+      "n_states": 10231,
+      "n_battles": 9540
+     },
+     "cond.own_team_r2.late": {
+      "n_states": 6891,
+      "n_battles": 3584
+     },
+     "cond.own_team_r2.all": {
+      "n_states": 19080,
+      "n_battles": 9540
+     },
+     "cond.opp_class_auc.t1": {
+      "n_states": 10237,
+      "n_battles": 9546
+     }
+    },
+    "cell_frames": {
+     "cond.within_team_resolution.all": {
+      "n_cells": 600,
+      "n_battles": 9540,
+      "n_states": 19080,
+      "median_battles_per_cell": 13.0,
+      "median_states_per_cell": 26.0,
+      "min_battles_per_cell": 4.0,
+      "max_battles_per_cell": 94.0,
+      "n_cells_declared": 602
+     },
+     "cond.within_stratum_resolution.all": {
+      "n_cells": 5,
+      "n_battles": 9540,
+      "n_states": 19080,
+      "median_battles_per_cell": 1911.0,
+      "median_states_per_cell": 3822.0,
+      "min_battles_per_cell": 1895.0,
+      "max_battles_per_cell": 1915.0,
+      "n_cells_declared": 5
+     }
+    },
+    "calibration_support": {
+     "all": {
+      "n_states": 19092,
+      "sd_V": 0.18379447084041484,
+      "sd_logit_V": 1.5942518395105574,
+      "mean_V": 0.826720403453254,
+      "q_lo": 0.24693871140480042,
+      "q_hi": 0.9959122538566589,
+      "clipped_share": 0.0004714016341923319,
+      "n_battles": 9546
+     },
+     "t1_3": {
+      "n_states": 19092,
+      "sd_V": 0.08598459419615291,
+      "sd_logit_V": 0.5308800030664759,
+      "mean_V": 0.7802339808696562,
+      "q_lo": 0.5826191544532776,
+      "q_hi": 0.9228719711303711,
+      "clipped_share": 0.0,
+      "n_battles": 9546
+     }
+    },
+    "team_spread_frame": {
+     "sd_V": 0.05181012239280645,
+     "sd_y": 0.04615756493778637,
+     "noise_V": 0.015872203585226015,
+     "noise_y": 0.09870150755803003,
+     "n_cells": 600.0,
+     "n_battles": 9540.0,
+     "median_battles_per_cell": 13.0
+    },
+    "recorded_v_note": "every conditioning row is computed on ONE eval cycle from the `win_probs` the trace npz RECORDED, which within a cycle IS that cycle's own model \u2014 no model forward is done. Pooling a recorded V across cycles would import the trainee's own improvement as between-opponent spread (head-refit hazard 3: CTRL reads 1.079 pooled against 0.066 frozen); this module never pools cycles."
+   },
+   "spread": {
+    "t1_3": {
+     "sd_V": 0.011044225211038273,
+     "sd_y": 0.11988294295125311,
+     "ratio": 0.09212507583776187,
+     "delta": -0.10883871774021484,
+     "sd_V_raw": 0.0113482942674268,
+     "sd_y_raw": 0.12047530552949115,
+     "ratio_raw": 0.09419601981958743,
+     "noise_V": 0.0026093815872690173,
+     "noise_y": 0.011932276889631473,
+     "n_cells": 12.0
+    },
+    "all": {
+     "sd_V": 0.05970429355418901,
+     "sd_y": 0.11988294295125311,
+     "ratio": 0.498021587428547,
+     "delta": -0.0601786493970641,
+     "sd_V_raw": 0.05987288532922751,
+     "sd_y_raw": 0.12047530552949115,
+     "ratio_raw": 0.4969722638683927,
+     "noise_V": 0.004489958668189559,
+     "noise_y": 0.011932276889631473,
+     "n_cells": 12.0
+    },
+    "team_t1_3": {
+     "sd_V": 0.05181012239280645,
+     "sd_y": 0.04615756493778637,
+     "ratio": 1.1224622109645277,
+     "ratio_raw": 0.4973048907571972,
+     "delta": 0.00565255745502008,
+     "noise_V": 0.015872203585226015,
+     "noise_y": 0.09870150755803003,
+     "n_cells": 600.0,
+     "n_battles": 9540.0,
+     "median_battles_per_cell": 13.0
+    }
+   },
+   "strength": {
+    "note": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED.",
+    "ratings": null
+   },
+   "opponents": {
+    "aggressive": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 730,
+     "battles_drawn": 7,
+     "true_win_rate": 0.9125,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 793,
+     "traces_written": 800,
+     "traces_won": 730,
+     "traces_drawn": 7,
+     "mean_V": 0.8608262281928099,
+     "mean_V_t1_3": 0.7896484990018954,
+     "elo": null
+    },
+    "aggressive_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 683,
+     "battles_drawn": 8,
+     "true_win_rate": 0.85375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 792,
+     "traces_written": 800,
+     "traces_won": 683,
+     "traces_drawn": 8,
+     "mean_V": 0.8295398571383004,
+     "mean_V_t1_3": 0.7847521484588028,
+     "elo": null
+    },
+    "heuristic": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 707,
+     "battles_drawn": 6,
+     "true_win_rate": 0.88375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 794,
+     "traces_written": 800,
+     "traces_won": 707,
+     "traces_drawn": 6,
+     "mean_V": 0.8421958017916444,
+     "mean_V_t1_3": 0.784556704829037,
+     "elo": null
+    },
+    "heuristic2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 708,
+     "battles_drawn": 7,
+     "true_win_rate": 0.885,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 793,
+     "traces_written": 800,
+     "traces_won": 708,
+     "traces_drawn": 7,
+     "mean_V": 0.8460300497656864,
+     "mean_V_t1_3": 0.7856652059672559,
+     "elo": null
+    },
+    "random": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 797,
+     "battles_drawn": 1,
+     "true_win_rate": 0.99625,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 799,
+     "traces_written": 800,
+     "traces_won": 797,
+     "traces_drawn": 1,
+     "mean_V": 0.8969027015678541,
+     "mean_V_t1_3": 0.7679887769107383,
+     "elo": null
+    },
+    "sentinel_0": {
+     "class": "pool",
+     "battles_played": 800,
+     "battles_won": 684,
+     "battles_drawn": 1,
+     "true_win_rate": 0.855,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 799,
+     "traces_written": 800,
+     "traces_won": 684,
+     "traces_drawn": 1,
+     "mean_V": 0.823921893579917,
+     "mean_V_t1_3": 0.7763870023492478,
+     "elo": null
+    },
+    "sentinel_1": {
+     "class": "pool",
+     "battles_played": 800,
+     "battles_won": 503,
+     "battles_drawn": 4,
+     "true_win_rate": 0.62875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 796,
+     "traces_written": 800,
+     "traces_won": 503,
+     "traces_drawn": 4,
+     "mean_V": 0.7212937644054546,
+     "mean_V_t1_3": 0.7593957216739408,
+     "elo": null
+    },
+    "sentinel_2": {
+     "class": "pool",
+     "battles_played": 800,
+     "battles_won": 466,
+     "battles_drawn": 4,
+     "true_win_rate": 0.5825,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 796,
+     "traces_written": 800,
+     "traces_won": 466,
+     "traces_drawn": 4,
+     "mean_V": 0.6905440978930679,
+     "mean_V_t1_3": 0.7596817482013257,
+     "elo": null
+    },
+    "setup_sweep": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 712,
+     "battles_drawn": 7,
+     "true_win_rate": 0.89,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 793,
+     "traces_written": 800,
+     "traces_won": 712,
+     "traces_drawn": 7,
+     "mean_V": 0.852074610362283,
+     "mean_V_t1_3": 0.787996083446551,
+     "elo": null
+    },
+    "setup_sweep_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 711,
+     "battles_drawn": 2,
+     "true_win_rate": 0.88875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 798,
+     "traces_written": 800,
+     "traces_won": 711,
+     "traces_drawn": 2,
+     "mean_V": 0.8495653280952696,
+     "mean_V_t1_3": 0.7899660129619819,
+     "elo": null
+    },
+    "staller": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 727,
+     "battles_drawn": 6,
+     "true_win_rate": 0.90875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 794,
+     "traces_written": 800,
+     "traces_won": 727,
+     "traces_drawn": 6,
+     "mean_V": 0.8618037671483978,
+     "mean_V_t1_3": 0.7888187633828893,
+     "elo": null
+    },
+    "staller_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 736,
+     "battles_drawn": 1,
+     "true_win_rate": 0.92,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 799,
+     "traces_written": 800,
+     "traces_won": 736,
+     "traces_drawn": 1,
+     "mean_V": 0.8525030257047356,
+     "mean_V_t1_3": 0.7835467237076212,
+     "elo": null
+    }
+   },
+   "ci": {
+    "cond.spread_ratio.t1_3": [
+     0.07987274004071995,
+     0.1094367418829534
+    ],
+    "cond.spread_ratio_raw.t1_3": [
+     0.08229635411836662,
+     0.11121570763420648
+    ],
+    "cond.spread_delta.t1_3": [
+     -0.11823275329374318,
+     -0.09967225267865097
+    ],
+    "cond.spread_ratio.all": [
+     0.4535628040591611,
+     0.5461145386864281
+    ],
+    "cond.spread_ratio_raw.all": [
+     0.452945545654616,
+     0.5445578792822471
+    ],
+    "cond.spread_delta.all": [
+     -0.07056860977987728,
+     -0.05071893212965412
+    ],
+    "cond.own_team_r2.t1": [
+     0.027540805315015446,
+     0.044033857856460364
+    ],
+    "cond.own_team_r2.late": [
+     -0.0012892317291671729,
+     0.007855475646399135
+    ],
+    "cond.own_team_r2.all": [
+     0.004040258710073024,
+     0.010548368550177713
+    ],
+    "cond.opp_class_auc.t1": [
+     0.48636823655112715,
+     0.5121904160717506
+    ],
+    "cond.own_team_r2.t1_minus_late": [
+     0.023142405945096818,
+     0.04150632312744409
+    ],
+    "cond.within_team_resolution.all": [
+     0.0558633675831189,
+     0.062091659727579886
+    ],
+    "cond.within_stratum_resolution.all": [
+     0.03122324910529414,
+     0.03646639926580222
+    ],
+    "cond.team_spread_ratio.t1_3": [
+     0.44486793168413014,
+     0.5652435988179476
+    ],
+    "cond.team_spread_ratio_raw.t1_3": [
+     0.3587338778996924,
+     0.41079729994082026
+    ],
+    "cond.calibration_slope.all": [
+     1.1271939647954037,
+     1.2312508727863176
+    ],
+    "cond.calibration_intercept.all": [
+     -0.004891130924623152,
+     0.16758274641852058
+    ],
+    "cond.calibration_slope.within_stratum": [
+     1.079934394693366,
+     1.1830758576773017
+    ],
+    "cond.calibration_slope.t1_3": [
+     0.8124628203589402,
+     1.0166156042121088
+    ],
+    "cond.calibration_intercept.t1_3": [
+     0.5011950778841725,
+     0.7642334540693322
+    ],
+    "cond.calibration_slope.common_support": [
+     1.124403134576875,
+     1.2443938212184753
+    ],
+    "cond.calibration_intercept.common_support": [
+     -0.023586052789029574,
+     0.1665212168501325
+    ]
+   },
+   "refusal": null
+  },
+  "commands": [],
+  "reused": true,
+  "paths": {
+   "identity": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_16_ladder_ctrl10M_c_vs_ctrl10M/identity",
+   "gate": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_16_ladder_ctrl10M_c_vs_ctrl10M/gate",
+   "identity_payload": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800/reads/ai_v12_16_ladder_ctrl10M_c_vs_ctrl10M/identity_payload.json"
+  }
+ },
+ "deltas": [
+  {
+   "key": "gate.resolution.all",
+   "family": "gate",
+   "quantity": "resolution",
+   "stratum": "all",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.047378875333547454,
+   "control": 0.038902376184671406,
+   "delta": 0.008476499148876049,
+   "ci": [
+    0.003026058400706131,
+    0.014214954462466662
+   ],
+   "n_draws": 400,
+   "label": "DETECTED",
+   "qualifier": "CI clears the floor +0.0003",
+   "floor": 0.0003347246905683124,
+   "clears_zero": true,
+   "clears_floor": true,
+   "headline": false
+  },
+  {
+   "key": "gate.resolution.bot",
+   "family": "gate",
+   "quantity": "resolution",
+   "stratum": "bot",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.026511935689649227,
+   "control": 0.02443596186753494,
+   "delta": 0.002075973822114288,
+   "ci": [
+    -0.0038223023178084316,
+    0.007954969071458862
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0074",
+   "floor": 0.0074382630040941145,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": true
+  },
+  {
+   "key": "gate.resolution.pool",
+   "family": "gate",
+   "quantity": "resolution",
+   "stratum": "pool",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.06818998743949034,
+   "control": 0.04729782062967411,
+   "delta": 0.02089216680981623,
+   "ci": [
+    0.012496030299180996,
+    0.031702180283069266
+   ],
+   "n_draws": 400,
+   "label": "NOT DETECTED",
+   "qualifier": "CI does not clear the floor 0.0141",
+   "floor": 0.014071247779923232,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.reliability.all",
+   "family": "gate",
+   "quantity": "reliability",
+   "stratum": "all",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.001300725351069852,
+   "control": 0.0001010574173999445,
+   "delta": 0.0011996679336699074,
+   "ci": [
+    0.0004851393433569969,
+    0.0019721444795568798
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0021",
+   "floor": 0.002102537768548686,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.reliability.bot",
+   "family": "gate",
+   "quantity": "reliability",
+   "stratum": "bot",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.0005271215548934666,
+   "control": 0.0017020143048585663,
+   "delta": -0.0011748927499650997,
+   "ci": [
+    -0.0020813238610597447,
+    -0.00040586374962979835
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0047",
+   "floor": 0.004729848910917086,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.reliability.pool",
+   "family": "gate",
+   "quantity": "reliability",
+   "stratum": "pool",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.00783553660408099,
+   "control": 0.007533004834413495,
+   "delta": 0.0003025317696674955,
+   "ci": [
+    -0.005051739537739524,
+    0.005069341475542922
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0167",
+   "floor": 0.016663867947377675,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.ece.all",
+   "family": "gate",
+   "quantity": "ece",
+   "stratum": "all",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.022492703910394034,
+   "control": 0.009348743694298722,
+   "delta": 0.013143960216095311,
+   "ci": [
+    0.0035695901623870557,
+    0.020757565734549063
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0144",
+   "floor": 0.014356374784226841,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.ece.bot",
+   "family": "gate",
+   "quantity": "ece",
+   "stratum": "bot",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.020154973498901545,
+   "control": 0.030073995080736837,
+   "delta": -0.009919021581835292,
+   "ci": [
+    -0.01921979208506231,
+    0.0005064844332449696
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0297",
+   "floor": 0.02974282803837702,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.ece.pool",
+   "family": "gate",
+   "quantity": "ece",
+   "stratum": "pool",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.07132368161036043,
+   "control": 0.0844564567760333,
+   "delta": -0.013132775165672878,
+   "ci": [
+    -0.04075906396088646,
+    0.010923548478565383
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0822",
+   "floor": 0.08217086264712642,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "gate.skill.all",
+   "family": "gate",
+   "quantity": "skill",
+   "stratum": "all",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.31222164811246267,
+   "control": 0.2547145009472145,
+   "delta": 0.057507147165248185,
+   "ci": [
+    0.030578636725726797,
+    0.08631543491059324
+   ],
+   "n_draws": 400,
+   "label": "DETECTED",
+   "qualifier": "CI clears the floor +0.0071",
+   "floor": 0.007116701177802387,
+   "clears_zero": true,
+   "clears_floor": true,
+   "headline": false
+  },
+  {
+   "key": "gate.skill.bot",
+   "family": "gate",
+   "quantity": "skill",
+   "stratum": "bot",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.25462769890409864,
+   "control": 0.21528130241212073,
+   "delta": 0.03934639649197791,
+   "ci": [
+    -0.0029720204498070793,
+    0.08605055392288762
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1004",
+   "floor": 0.10036527725774747,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": true
+  },
+  {
+   "key": "gate.skill.pool",
+   "family": "gate",
+   "quantity": "skill",
+   "stratum": "pool",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.2855459332211078,
+   "control": 0.18202472661524216,
+   "delta": 0.10352120660586561,
+   "ci": [
+    0.0620948688631348,
+    0.1478131234064482
+   ],
+   "n_draws": 400,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1108",
+   "floor": 0.1108285525191055,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.ALL.raw",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "ALL",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.05340198727324605,
+   "control": 0.03702965751755983,
+   "delta": 0.01637232975568622,
+   "ci": [
+    -0.009371400527255049,
+    0.042046643197853055
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0829",
+   "floor": 0.0828749104434246,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.ALL.pop",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "ALL",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.004496195757154051,
+   "control": -0.014704023713637344,
+   "delta": 0.019200219470791396,
+   "ci": [
+    -0.0008681147074930055,
+    0.03987511851893498
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0681",
+   "floor": 0.06812096452030197,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.ALL",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "ALL",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.004496195757154051,
+   "control": -0.014704023713637344,
+   "delta": 0.019200219470791396,
+   "ci": [
+    -0.0008681147074930055,
+    0.03987511851893498
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0681",
+   "floor": 0.06812096452030197,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.early (turn<=10).raw",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "early (turn<=10)",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.04585618489272111,
+   "control": -0.024062232650590664,
+   "delta": 0.06991841754331177,
+   "ci": [
+    0.031026419951069768,
+    0.10693903494293656
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0948",
+   "floor": 0.09481732686964167,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.early (turn<=10).pop",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "early (turn<=10)",
+   "weighting": "pop",
+   "registered": false,
+   "arm": -0.007035933873172445,
+   "control": -0.06213834227115752,
+   "delta": 0.055102408397985074,
+   "ci": [
+    0.022274709074174913,
+    0.08804766803316993
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0765",
+   "floor": 0.07645104326017,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.early (turn<=10)",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "early (turn<=10)",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": -0.00703593387317244,
+   "control": -0.06213834227115752,
+   "delta": 0.05510240839798508,
+   "ci": [
+    0.02227470907417492,
+    0.08804766803316992
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0765",
+   "floor": 0.07645104326017,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.mid (11-24).raw",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "mid (11-24)",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.046244813031271884,
+   "control": 0.05835692037975317,
+   "delta": -0.01211210734848129,
+   "ci": [
+    -0.05045089011367593,
+    0.02706554919881992
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0748",
+   "floor": 0.07483970741666332,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.mid (11-24).pop",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "mid (11-24)",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.00557557146024906,
+   "control": 0.002098717710832061,
+   "delta": 0.0034768537494169987,
+   "ci": [
+    -0.026844783288406712,
+    0.03369631838125174
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0556",
+   "floor": 0.05558021015065524,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.mid (11-24)",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "mid (11-24)",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.00557557146024906,
+   "control": 0.002098717710832061,
+   "delta": 0.0034768537494169987,
+   "ci": [
+    -0.026844783288406712,
+    0.03369631838125174
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0556",
+   "floor": 0.05558021015065524,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.late (turn>=25).raw",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "late (turn>=25)",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.07403951322748548,
+   "control": 0.07860194671706393,
+   "delta": -0.004562433489578452,
+   "ci": [
+    -0.06064809998992931,
+    0.052403545817602724
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0821",
+   "floor": 0.08209067695013202,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.late (turn>=25).pop",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "late (turn>=25)",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.02026771096451215,
+   "control": 0.013754357330363615,
+   "delta": 0.0065133536341485335,
+   "ci": [
+    -0.037148871517591865,
+    0.0498384491636742
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0681",
+   "floor": 0.06811869976229004,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.late (turn>=25)",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "late (turn>=25)",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.020267710964512152,
+   "control": 0.013754357330363615,
+   "delta": 0.006513353634148537,
+   "ci": [
+    -0.037148871517591865,
+    0.04983844916367421
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0681",
+   "floor": 0.06811869976229004,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": true
+  },
+  {
+   "key": "identity.bias.bot.raw",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "bot",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.032882672889482226,
+   "control": -0.00013692786803648374,
+   "delta": 0.03301960075751871,
+   "ci": [
+    0.002442777403741309,
+    0.06360665203695544
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0575",
+   "floor": 0.05749574345473747,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.bot.pop",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "bot",
+   "weighting": "pop",
+   "registered": false,
+   "arm": -0.013724359629137735,
+   "control": -0.039154371445859384,
+   "delta": 0.02543001181672165,
+   "ci": [
+    0.004536126591231969,
+    0.04628818682184834
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0417",
+   "floor": 0.041701931454852605,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.bot",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "bot",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": -0.013724359629137735,
+   "control": -0.039154371445859384,
+   "delta": 0.02543001181672165,
+   "ci": [
+    0.004536126591231969,
+    0.046288186821848355
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0417",
+   "floor": 0.041701931454852605,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.pool.raw",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "pool",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.09214423067652577,
+   "control": 0.10203925188618018,
+   "delta": -0.009895021209654409,
+   "ci": [
+    -0.05613972762643029,
+    0.03756697451455253
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1164",
+   "floor": 0.11644120092029392,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.pool.pop",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "pool",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.031118297539606172,
+   "control": 0.04214935909374981,
+   "delta": -0.011031061554143639,
+   "ci": [
+    -0.05239138825664641,
+    0.033365866068774154
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1196",
+   "floor": 0.119599260892719,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.bias.pool",
+   "family": "identity",
+   "quantity": "bias V - p_hat",
+   "stratum": "pool",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.03111829753960617,
+   "control": 0.04214935909374982,
+   "delta": -0.01103106155414365,
+   "ci": [
+    -0.05239138825664639,
+    0.033365866068774154
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1196",
+   "floor": 0.119599260892719,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.resolution.raw",
+   "family": "identity",
+   "quantity": "Murphy resolution",
+   "stratum": "ALL",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.036960298765170735,
+   "control": 0.02842759054834197,
+   "delta": 0.008532708216828763,
+   "ci": [
+    -0.0024199603349394872,
+    0.019507783350835316
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.007030556842568078,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.resolution.pop",
+   "family": "identity",
+   "quantity": "Murphy resolution",
+   "stratum": "ALL",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.04300080642214753,
+   "control": 0.03514210506575215,
+   "delta": 0.007858701356395381,
+   "ci": [
+    -0.007330711788856864,
+    0.022738976376654545
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.0007648869660469362,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.resolution",
+   "family": "identity",
+   "quantity": "Murphy resolution",
+   "stratum": "ALL",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.04300080642214753,
+   "control": 0.03514210506575215,
+   "delta": 0.007858701356395381,
+   "ci": [
+    -0.007330711788856864,
+    0.022738976376654545
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.0007648869660469224,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.skill_score.raw",
+   "family": "identity",
+   "quantity": "Murphy skill_score",
+   "stratum": "ALL",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.1972341503999796,
+   "control": 0.16426555437354262,
+   "delta": 0.03296859602643698,
+   "ci": [
+    -0.02709334235432937,
+    0.09719394626697865
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0370",
+   "floor": 0.036962720076519684,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.skill_score.pop",
+   "family": "identity",
+   "quantity": "Murphy skill_score",
+   "stratum": "ALL",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.3110315705937088,
+   "control": 0.26434424863752093,
+   "delta": 0.046687321956187855,
+   "ci": [
+    -0.03382658070431311,
+    0.13267145064397748
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.004217792543544152,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.skill_score",
+   "family": "identity",
+   "quantity": "Murphy skill_score",
+   "stratum": "ALL",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.3110315705937088,
+   "control": 0.26434424863752093,
+   "delta": 0.046687321956187855,
+   "ci": [
+    -0.03382658070431311,
+    0.13267145064397748
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.004217792543543486,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.resolution_cap_share.raw",
+   "family": "identity",
+   "quantity": "Murphy resolution_cap_share",
+   "stratum": "ALL",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.21638186121480393,
+   "control": 0.17306371120093614,
+   "delta": 0.043318150013867796,
+   "ci": [
+    -0.01441588330848182,
+    0.10090040865359932
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.018775815093151682,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.resolution_cap_share.pop",
+   "family": "identity",
+   "quantity": "Murphy resolution_cap_share",
+   "stratum": "ALL",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.30897207753022954,
+   "control": 0.2656933442194439,
+   "delta": 0.04327873331078563,
+   "ci": [
+    -0.040223534234924814,
+    0.12573917659022527
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.01767800947871867,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.resolution_cap_share",
+   "family": "identity",
+   "quantity": "Murphy resolution_cap_share",
+   "stratum": "ALL",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.30897207753022954,
+   "control": 0.2656933442194439,
+   "delta": 0.04327873331078563,
+   "ci": [
+    -0.040223534234924814,
+    0.12573917659022527
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.017678009478718226,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.reliability.raw",
+   "family": "identity",
+   "quantity": "Murphy reliability",
+   "stratum": "ALL",
+   "weighting": "raw",
+   "registered": false,
+   "arm": 0.005581719442094954,
+   "control": 0.0027240969887393873,
+   "delta": 0.002857622453355567,
+   "ci": [
+    -0.0015074142595102062,
+    0.007353792683980426
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0119",
+   "floor": 0.011892087708012856,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.reliability.pop",
+   "family": "identity",
+   "quantity": "Murphy reliability",
+   "stratum": "ALL",
+   "weighting": "pop",
+   "registered": false,
+   "arm": 0.001098673400828426,
+   "control": 0.0007692501085652957,
+   "delta": 0.0003294232922631304,
+   "ci": [
+    -0.0024236150043404673,
+    0.002846807152931658
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0022",
+   "floor": 0.0022272262834236527,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.reliability",
+   "family": "identity",
+   "quantity": "Murphy reliability",
+   "stratum": "ALL",
+   "weighting": "ipw",
+   "registered": true,
+   "arm": 0.001098673400828426,
+   "control": 0.0007692501085652957,
+   "delta": 0.0003294232922631304,
+   "ci": [
+    -0.0024236150043404673,
+    0.002846807152931658
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0022",
+   "floor": 0.0022272262834236553,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.spread_ratio.t1_3",
+   "family": "conditioning",
+   "quantity": "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected",
+   "stratum": "turn 1-3",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.047514347392903444,
+   "control": 0.09212507583776187,
+   "delta": -0.04461072844485843,
+   "ci": [
+    -0.06296867260866604,
+    -0.0258995269075091
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0533",
+   "floor": 0.05325746258803386,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": true
+  },
+  {
+   "key": "cond.spread_ratio_raw.t1_3",
+   "family": "conditioning",
+   "quantity": "the same ratio UNCORRECTED and unclamped",
+   "stratum": "turn 1-3",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.050127216662851186,
+   "control": 0.09419601981958743,
+   "delta": -0.044068803156736246,
+   "ci": [
+    -0.06154290982373986,
+    -0.026538628573945105
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0535",
+   "floor": 0.05349369495731161,
+   "clears_zero": true,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.050127216662851186,
+      "control": 0.09419601981958743,
+      "delta": -0.044068803156736246,
+      "ci": [
+       -0.06154290982373986,
+       -0.026538628573945105
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0535",
+      "floor": 0.05349369495731161,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.049302527349165015,
+         0.05078605508399982
+        ],
+        "median_seed": 17,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.050127216662851186,
+      "control": 0.09419601981958743,
+      "delta": -0.044068803156736246,
+      "ci": [
+       -0.06154290982373986,
+       -0.026538628573945105
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0535",
+      "floor": 0.05349369495731161,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.049302527349165015,
+         0.05078605508399982
+        ],
+        "median_seed": 17,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.049951029217021096,
+     "control": 0.09419601981958743,
+     "delta": -0.044244990602566335,
+     "ci": [
+      -0.06250359657084313,
+      -0.026137696040326987
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "UNCORRECTED: the noise it does not subtract grows as the cells shrink \u2014 the cflabels arm's own value moved +0.1177 [+0.0131, +0.3546] between its full and its matched frame (2026-09-09 matched-quota read)",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.spread_delta.t1_3",
+   "family": "conditioning",
+   "quantity": "sd(V) - sd(outcome), noise-corrected",
+   "stratum": "turn 1-3",
+   "weighting": null,
+   "registered": false,
+   "arm": -0.11286014703029622,
+   "control": -0.10883871774021484,
+   "delta": -0.0040214292900813825,
+   "ci": [
+    -0.017238993279236572,
+    0.009838447753066842
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0071",
+   "floor": 0.007061454755024538,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.spread_ratio.all",
+   "family": "conditioning",
+   "quantity": "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected",
+   "stratum": "all states",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.5598311397271968,
+   "control": 0.498021587428547,
+   "delta": 0.06180955229864976,
+   "ci": [
+    -0.00866980747004625,
+    0.13325100417490102
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1973",
+   "floor": 0.19729247726723204,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.spread_ratio_raw.all",
+   "family": "conditioning",
+   "quantity": "the same ratio UNCORRECTED and unclamped",
+   "stratum": "all states",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.5593266549564897,
+   "control": 0.4969722638683927,
+   "delta": 0.06235439108809698,
+   "ci": [
+    -0.003606061408495861,
+    0.12775607709778758
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1969",
+   "floor": 0.1968990197887781,
+   "clears_zero": false,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.5593266549564897,
+      "control": 0.4969722638683927,
+      "delta": 0.06235439108809698,
+      "ci": [
+       -0.003606061408495861,
+       0.12775607709778758
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.1969",
+      "floor": 0.1968990197887781,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.5569213560122189,
+         0.5618554249143117
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.5593266549564897,
+      "control": 0.4969722638683927,
+      "delta": 0.06235439108809698,
+      "ci": [
+       -0.003606061408495861,
+       0.12775607709778758
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.1969",
+      "floor": 0.1968990197887781,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.5569213560122189,
+         0.5618554249143117
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.5583308074318024,
+     "control": 0.4969722638683927,
+     "delta": 0.061358543563409695,
+     "ci": [
+      -0.008313675150559606,
+      0.1320140901991248
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "as `cond.spread_ratio_raw.t1_3`",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.spread_delta.all",
+   "family": "conditioning",
+   "quantity": "sd(V) - sd(outcome), noise-corrected",
+   "stratum": "all states",
+   "weighting": null,
+   "registered": false,
+   "arm": -0.05215566465759523,
+   "control": -0.0601786493970641,
+   "delta": 0.008022984739468865,
+   "ci": [
+    -0.006035238320037838,
+    0.02220720677014723
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0218",
+   "floor": 0.02177987517665704,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.own_team_r2.t1",
+   "family": "conditioning",
+   "quantity": "own-team leave-one-battle-out win-rate R^2 of V",
+   "stratum": "turn 1",
+   "weighting": null,
+   "registered": true,
+   "arm": 0.06180916738139419,
+   "control": 0.03578611300465917,
+   "delta": 0.026023054376735022,
+   "ci": [
+    0.012863238622078152,
+    0.03953703273726695
+   ],
+   "n_draws": 2000,
+   "label": "DETECTED",
+   "qualifier": "CI clears the floor +0.0109",
+   "floor": 0.010949249434611619,
+   "clears_zero": true,
+   "clears_floor": true,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.06180916738139419,
+      "control": 0.03578611300465917,
+      "delta": 0.026023054376735022,
+      "ci": [
+       0.012863238622078152,
+       0.03953703273726695
+      ],
+      "n_draws": 2000,
+      "label": "DETECTED",
+      "qualifier": "CI clears the floor +0.0109",
+      "floor": 0.010949249434611619,
+      "clears_zero": true,
+      "clears_floor": true,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.05788757689355167,
+         0.06317723911268175
+        ],
+        "median_seed": 5,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.06180916738139419,
+      "control": 0.03578611300465917,
+      "delta": 0.026023054376735022,
+      "ci": [
+       0.012863238622078152,
+       0.03953703273726695
+      ],
+      "n_draws": 2000,
+      "label": "DETECTED",
+      "qualifier": "CI clears the floor +0.0109",
+      "floor": 0.010949249434611619,
+      "clears_zero": true,
+      "clears_floor": true,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.05788757689355167,
+         0.06317723911268175
+        ],
+        "median_seed": 5,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.06156930063814814,
+     "control": 0.03578611300465917,
+     "delta": 0.02578318763348897,
+     "ci": [
+      0.013072259250737642,
+      0.038916351487296
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "an out-of-fold score of a ridge FIT on the frame: measured at 62 / 102 / 176 / 353 / 429 decoder battles on ONE arm it reads -0.025 / +0.004 / +0.037 / +0.068 / +0.060",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": true
+  },
+  {
+   "key": "cond.own_team_r2.all",
+   "family": "conditioning",
+   "quantity": "own-team leave-one-battle-out win-rate R^2 of V",
+   "stratum": "all states",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.008078114708468753,
+   "control": 0.007463232792212171,
+   "delta": 0.0006148819162565822,
+   "ci": [
+    -0.004127488750264965,
+    0.005062838812722489
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0025",
+   "floor": 0.0025413987136354566,
+   "clears_zero": false,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.008078114708468753,
+      "control": 0.007463232792212171,
+      "delta": 0.0006148819162565822,
+      "ci": [
+       -0.004127488750264965,
+       0.005062838812722489
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0025",
+      "floor": 0.0025413987136354566,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.00777734850255829,
+         0.00889516701487364
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.008078114708468753,
+      "control": 0.007463232792212171,
+      "delta": 0.0006148819162565822,
+      "ci": [
+       -0.004127488750264965,
+       0.005062838812722489
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0025",
+      "floor": 0.0025413987136354566,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.00777734850255829,
+         0.00889516701487364
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.008433760781958677,
+     "control": 0.007463232792212171,
+     "delta": 0.0009705279897465058,
+     "ci": [
+      -0.0037650610581110577,
+      0.005663575799509328
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "as `cond.own_team_r2.t1`",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.opp_class_auc.t1",
+   "family": "conditioning",
+   "quantity": "opponent-CLASS (pool vs bot) AUC of V",
+   "stratum": "turn 1",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.4901031481021944,
+   "control": 0.4992468624339541,
+   "delta": -0.0091437143317597,
+   "ci": [
+    -0.02801816120679347,
+    0.010101043866869063
+   ],
+   "n_draws": 2000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI covers zero",
+   "floor": 0.004002865130148581,
+   "clears_zero": false,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.4901031481021944,
+      "control": 0.4992468624339541,
+      "delta": -0.0091437143317597,
+      "ci": [
+       -0.02801816120679347,
+       0.010101043866869063
+      ],
+      "n_draws": 2000,
+      "label": "NOT DETECTED",
+      "qualifier": "CI covers zero",
+      "floor": 0.004002865130148581,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.4842675033830507,
+         0.4915713674569059
+        ],
+        "median_seed": 0,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.4901031481021944,
+      "control": 0.4992468624339541,
+      "delta": -0.0091437143317597,
+      "ci": [
+       -0.02801816120679347,
+       0.010101043866869063
+      ],
+      "n_draws": 2000,
+      "label": "NOT DETECTED",
+      "qualifier": "CI covers zero",
+      "floor": 0.004002865130148581,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.4842675033830507,
+         0.4915713674569059
+        ],
+        "median_seed": 0,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.49350483889475466,
+     "control": 0.4992468624339541,
+     "delta": -0.005742023539199448,
+     "ci": [
+      -0.024123342076578767,
+      0.01347235063805769
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "also an out-of-fold FIT (`grouped_oof_scalar`, task=auc). It was STABLE across every rung of the 2026-09-09 curve \u2014 a 1-D monotone decoder's AUC is nearly the AUC of V itself \u2014 but it is a fit on the frame, so it is matched by the same rule rather than exempted by an observation",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.within_team_resolution.all",
+   "family": "conditioning",
+   "quantity": "WITHIN-own-team Murphy resolution of V (cells >= MIN_TEAM_BATTLES battles, battle-weighted over teams)",
+   "stratum": "all states, <=2 per battle",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.05570042243384798,
+   "control": 0.05568136687334863,
+   "delta": 1.9055560499345314e-05,
+   "ci": [
+    -0.005497450376831307,
+    0.0027102913540894644
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0044",
+   "floor": 0.0044173552119750395,
+   "clears_zero": false,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.05570042243384798,
+      "control": 0.05568136687334863,
+      "delta": 1.9055560499345314e-05,
+      "ci": [
+       -0.005497450376831307,
+       0.0027102913540894644
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0044",
+      "floor": 0.0044173552119750395,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.055077502904488075,
+         0.05632836435563057
+        ],
+        "median_seed": 13,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.05570042243384798,
+      "control": 0.05568136687334863,
+      "delta": 1.9055560499345314e-05,
+      "ci": [
+       -0.005497450376831307,
+       0.0027102913540894644
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0044",
+      "floor": 0.0044173552119750395,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.055077502904488075,
+         0.05632836435563057
+        ],
+        "median_seed": 13,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.05500026605049554,
+     "control": 0.05568136687334863,
+     "delta": -0.0006811008228530951,
+     "ci": [
+      -0.006005936359965889,
+      0.0025600617957540765
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "a BINNED second moment computed INSIDE cells of a handful of episodes: each bin's observed rate departs from its cell's base rate by chance alone, and that inflation grows as the cells shrink \u2014 the same mechanism that makes an UNCORRECTED spread frame-sensitive, plus the threshold-selected cell set",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.within_stratum_resolution.all",
+   "family": "conditioning",
+   "quantity": "the same resolution WITHIN team-STRENGTH strata (quantiles of the team's LOO win rate)",
+   "stratum": "all states, <=2 per battle",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.03527698279298602,
+   "control": 0.03350788056360865,
+   "delta": 0.0017691022293773728,
+   "ci": [
+    -0.0019203626303950208,
+    0.005460336760748238
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0021",
+   "floor": 0.002107042313299591,
+   "clears_zero": false,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.03527698279298602,
+      "control": 0.03350788056360865,
+      "delta": 0.0017691022293773728,
+      "ci": [
+       -0.0019203626303950208,
+       0.005460336760748238
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0021",
+      "floor": 0.002107042313299591,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.03489696296204764,
+         0.03586829192457786
+        ],
+        "median_seed": 16,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.03527698279298602,
+      "control": 0.03350788056360865,
+      "delta": 0.0017691022293773728,
+      "ci": [
+       -0.0019203626303950208,
+       0.005460336760748238
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0021",
+      "floor": 0.002107042313299591,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.03489696296204764,
+         0.03586829192457786
+        ],
+        "median_seed": 16,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.03527974373873621,
+     "control": 0.03350788056360865,
+     "delta": 0.0017718631751275637,
+     "ci": [
+      -0.0019407040515724884,
+      0.005560001903627049
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "the COARSE companion: hundreds of episodes per cell make the small-cell inflation far smaller, but it is the same estimator on the same threshold-selected teams and is matched by the same rule rather than exempted by an argument",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.team_spread_ratio.t1_3",
+   "family": "conditioning",
+   "quantity": "BETWEEN-team spread ratio sd(mean V) / sd(team win rate), noise-corrected",
+   "stratum": "turn 1-3",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.9506830050850493,
+   "control": 1.1224622109645277,
+   "delta": -0.17177920587947837,
+   "ci": [
+    -0.17896447890313022,
+    -0.024563814864441813
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.4324",
+   "floor": 0.43244960587652814,
+   "clears_zero": true,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.9506830050850493,
+      "control": 1.1224622109645277,
+      "delta": -0.17177920587947837,
+      "ci": [
+       -0.17896447890313022,
+       -0.024563814864441813
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.4324",
+      "floor": 0.43244960587652814,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.9204566053556573,
+         1.0101494768602874
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.9506830050850493,
+      "control": 1.1224622109645277,
+      "delta": -0.17177920587947837,
+      "ci": [
+       -0.17896447890313022,
+       -0.024563814864441813
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.4324",
+      "floor": 0.43244960587652814,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.9204566053556573,
+         1.0101494768602874
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.958397639642999,
+     "control": 1.1224622109645277,
+     "delta": -0.16406457132152874,
+     "ci": [
+      -0.17563498069176886,
+      -0.025026508021026947
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "its CELLS are chosen by a battle-count threshold (MIN_TEAM_BATTLES), so frame size decides WHICH teams are cells at all \u2014 the third mechanism, which the pinned opponent roster does not have",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.team_spread_ratio_raw.t1_3",
+   "family": "conditioning",
+   "quantity": "the same ratio UNCORRECTED and unclamped",
+   "stratum": "turn 1-3",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.3987008101675157,
+   "control": 0.4973048907571972,
+   "delta": -0.09860408058968151,
+   "ci": [
+    -0.1145101436826831,
+    -0.047968185224513314
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.2507",
+   "floor": 0.2507189871374366,
+   "clears_zero": true,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.3987008101675157,
+      "control": 0.4973048907571972,
+      "delta": -0.09860408058968151,
+      "ci": [
+       -0.1145101436826831,
+       -0.047968185224513314
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.2507",
+      "floor": 0.2507189871374366,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.39662101014994344,
+         0.4021765321201616
+        ],
+        "median_seed": 15,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.3987008101675157,
+      "control": 0.4973048907571972,
+      "delta": -0.09860408058968151,
+      "ci": [
+       -0.1145101436826831,
+       -0.047968185224513314
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.2507",
+      "floor": 0.2507189871374366,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.39662101014994344,
+         0.4021765321201616
+        ],
+        "median_seed": 15,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.40048526333079437,
+     "control": 0.4973048907571972,
+     "delta": -0.09681962742640282,
+     "ci": [
+      -0.11249271175699888,
+      -0.04732602453232851
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "UNCORRECTED *and* on a threshold-selected cell set \u2014 both mechanisms at once",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.own_team_r2.late",
+   "family": "conditioning",
+   "quantity": "own-team leave-one-battle-out win-rate R^2 of V",
+   "stratum": "turn >= 25",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.003102693860404404,
+   "control": 0.0036098914704295604,
+   "delta": -0.0005071976100251563,
+   "ci": [
+    -0.006954216521422182,
+    0.005594692043270825
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0012",
+   "floor": 0.001150639907963824,
+   "clears_zero": false,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.003102693860404404,
+      "control": 0.0036098914704295604,
+      "delta": -0.0005071976100251563,
+      "ci": [
+       -0.006954216521422182,
+       0.005594692043270825
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0012",
+      "floor": 0.001150639907963824,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.0015768164939887197,
+         0.0051735166670804356
+        ],
+        "median_seed": 17,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.003102693860404404,
+      "control": 0.0036098914704295604,
+      "delta": -0.0005071976100251563,
+      "ci": [
+       -0.006954216521422182,
+       0.005594692043270825
+      ],
+      "n_draws": 2000,
+      "label": "WITHIN FLOOR",
+      "qualifier": "|delta| <= floor 0.0012",
+      "floor": 0.001150639907963824,
+      "clears_zero": false,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.0015768164939887197,
+         0.0051735166670804356
+        ],
+        "median_seed": 17,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.0038606030917334166,
+     "control": 0.0036098914704295604,
+     "delta": 0.00025071162130385627,
+     "ci": [
+      -0.005907399029077362,
+      0.006716123447198996
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "as `cond.own_team_r2.t1` \u2014 an out-of-fold score of a ridge FIT on the frame",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.own_team_r2.t1_minus_late",
+   "family": "conditioning",
+   "quantity": "own-team R^2 at turn 1 MINUS own-team R^2 late",
+   "stratum": "turn 1 - turn >= 25",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.05816999956360258,
+   "control": 0.03217622153422961,
+   "delta": 0.02599377802937297,
+   "ci": [
+    0.01205797944303715,
+    0.04033558129035971
+   ],
+   "n_draws": 2000,
+   "label": "PROVISIONAL \u2014 no floor; never DETECTED",
+   "qualifier": "NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE \u2014 every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED",
+   "floor": null,
+   "clears_zero": true,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 0.05816999956360258,
+      "control": 0.03217622153422961,
+      "delta": 0.02599377802937297,
+      "ci": [
+       0.01205797944303715,
+       0.04033558129035971
+      ],
+      "n_draws": 2000,
+      "label": "PROVISIONAL \u2014 no floor; never DETECTED",
+      "qualifier": "NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE \u2014 every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED",
+      "floor": null,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.05387945697551094,
+         0.06132908637901341
+        ],
+        "median_seed": 5,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 0.05816999956360258,
+      "control": 0.03217622153422961,
+      "delta": 0.02599377802937297,
+      "ci": [
+       0.01205797944303715,
+       0.04033558129035971
+      ],
+      "n_draws": 2000,
+      "label": "PROVISIONAL \u2014 no floor; never DETECTED",
+      "qualifier": "NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE \u2014 every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED",
+      "floor": null,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         0.05387945697551094,
+         0.06132908637901341
+        ],
+        "median_seed": 5,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 0.05770869754641472,
+     "control": 0.03217622153422961,
+     "delta": 0.025532476012185112,
+     "ci": [
+      0.011369696269992366,
+      0.03933434795489393
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "a difference of two out-of-fold FITS on the same frame; both move with frame size, so the difference is matched rather than assumed to cancel",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false,
+   "provisional": true
+  },
+  {
+   "key": "cond.calibration_slope.all",
+   "family": "conditioning",
+   "quantity": "calibration SLOPE \u2014 weighted logistic regression of the outcome on logit(V) (1 = correctly dispersed, >1 = SHRUNK, <1 = over-dispersed)",
+   "stratum": "all states, <=2 per battle",
+   "weighting": null,
+   "registered": false,
+   "arm": 1.3426573575072922,
+   "control": 1.1780495554229602,
+   "delta": 0.164607802084332,
+   "ci": [
+    0.08968218261797896,
+    0.24833513393070134
+   ],
+   "n_draws": 2000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI does not clear the floor 0.1085",
+   "floor": 0.10853952110246534,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": true
+  },
+  {
+   "key": "cond.calibration_intercept.all",
+   "family": "conditioning",
+   "quantity": "calibration-in-the-large \u2014 the INTERCEPT of that regression (0 = calibrated)",
+   "stratum": "all states, <=2 per battle",
+   "weighting": null,
+   "registered": false,
+   "arm": -0.3109782961426338,
+   "control": 0.08288124321560582,
+   "delta": -0.3938595393582396,
+   "ci": [
+    -0.5309775344362067,
+    -0.2589226435023091
+   ],
+   "n_draws": 2000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI does not clear the floor 0.2642",
+   "floor": 0.2642000648290569,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.calibration_slope.t1_3",
+   "family": "conditioning",
+   "quantity": "calibration SLOPE \u2014 weighted logistic regression of the outcome on logit(V)",
+   "stratum": "turn 1-3, <=2 per battle",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.9496477488510774,
+   "control": 0.9126217270455765,
+   "delta": 0.03702602180550085,
+   "ci": [
+    -0.10999418844115234,
+    0.19179597047678182
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.1802",
+   "floor": 0.1801874169853125,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.calibration_intercept.t1_3",
+   "family": "conditioning",
+   "quantity": "calibration-in-the-large \u2014 the INTERCEPT of that regression",
+   "stratum": "turn 1-3, <=2 per battle",
+   "weighting": null,
+   "registered": false,
+   "arm": 0.28668206478978925,
+   "control": 0.6313184334906019,
+   "delta": -0.34463636870081266,
+   "ci": [
+    -0.5809218955188634,
+    -0.11711986236947704
+   ],
+   "n_draws": 2000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.3514",
+   "floor": 0.35136619917854817,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.calibration_slope.within_stratum",
+   "family": "conditioning",
+   "quantity": "calibration SLOPE with a free intercept PER own-team STRENGTH STRATUM \u2014 the dispersion reading INSIDE a stratum rather than across teams",
+   "stratum": "all states, <=2 per battle, stratum fixed effects",
+   "weighting": null,
+   "registered": false,
+   "arm": 1.329345488442541,
+   "control": 1.1301129182643053,
+   "delta": 0.1992325701782358,
+   "ci": [
+    0.11922967023875113,
+    0.2862616112422367
+   ],
+   "n_draws": 2000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI does not clear the floor 0.1363",
+   "floor": 0.13630604833062598,
+   "clears_zero": true,
+   "clears_floor": false,
+   "quota_match": {
+    "status": "MATCHED",
+    "rung": "battle",
+    "variants": {
+     "battle": {
+      "arm": 1.329345488442541,
+      "control": 1.1301129182643053,
+      "delta": 0.1992325701782358,
+      "ci": [
+       0.11922967023875113,
+       0.2862616112422367
+      ],
+      "n_draws": 2000,
+      "label": "NOT DETECTED",
+      "qualifier": "CI does not clear the floor 0.1363",
+      "floor": 0.13630604833062598,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         1.3192769934924415,
+         1.3387319489309473
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     },
+     "decoder": {
+      "arm": 1.329345488442541,
+      "control": 1.1301129182643053,
+      "delta": 0.1992325701782358,
+      "ci": [
+       0.11922967023875113,
+       0.2862616112422367
+      ],
+      "n_draws": 2000,
+      "label": "NOT DETECTED",
+      "qualifier": "CI does not clear the floor 0.1363",
+      "floor": 0.13630604833062598,
+      "clears_zero": true,
+      "clears_floor": false,
+      "sides": {
+       "arm": {
+        "spread": [
+         1.3192769934924415,
+         1.3387319489309473
+        ],
+        "median_seed": 12,
+        "caps": [
+         797,
+         330,
+         6
+        ],
+        "n_seeds": 21,
+        "median_battles": 9551.0,
+        "median_decoder_battles": 9545.0
+       }
+      }
+     }
+    },
+    "unmatched": {
+     "arm": 1.3057829626581623,
+     "control": 1.1301129182643053,
+     "delta": 0.17567004439385703,
+     "ci": [
+      0.09937071293753343,
+      0.259850177010637
+     ],
+     "n_draws": 2000
+    },
+    "why": "the realized per-opponent caps differ \u2014 arm 797/348/6, control 797/330/8 (traced W/L/D per opponent, counted on disk); arm cut to 797/330/6",
+    "reason": "the estimator itself is frame-size neutral, but its STATES are the ones sitting in a stratum, and a stratum exists only over teams clearing MIN_TEAM_BATTLES=4 \u2014 the third mechanism (a threshold-selected cell set, so frame size decides WHICH teams contribute at all), exactly as for the within-stratum resolution row",
+    "caps": [
+     797,
+     330,
+     6
+    ],
+    "sides": [
+     "arm"
+    ]
+   },
+   "headline": false
+  },
+  {
+   "key": "cond.calibration_slope.common_support",
+   "family": "conditioning",
+   "quantity": "calibration SLOPE on the COMMON SUPPORT \u2014 both sides restricted to the intersection of their central 95% of V, so the lever arm sd(logit V) cannot differ between them",
+   "stratum": "all states, <=2 per battle, common V window",
+   "weighting": null,
+   "registered": false,
+   "arm": 1.369828718004721,
+   "control": 1.1841386393037006,
+   "delta": 0.1856900787010205,
+   "ci": [
+    0.10068481430695586,
+    0.2748702489183598
+   ],
+   "n_draws": 2000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI does not clear the floor 0.1195",
+   "floor": 0.11947741729466044,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "cond.calibration_intercept.common_support",
+   "family": "conditioning",
+   "quantity": "calibration-in-the-large on the COMMON SUPPORT",
+   "stratum": "all states, <=2 per battle, common V window",
+   "weighting": null,
+   "registered": false,
+   "arm": -0.3544265006908452,
+   "control": 0.07383961771547043,
+   "delta": -0.4282661184063156,
+   "ci": [
+    -0.5757825878660628,
+    -0.28718506198080623
+   ],
+   "n_draws": 2000,
+   "label": "DETECTED",
+   "qualifier": "CI clears the floor +0.2778",
+   "floor": 0.2777573960298801,
+   "clears_zero": true,
+   "clears_floor": true,
+   "headline": false
+  },
+  {
+   "key": "identity.turn_contrast",
+   "family": "identity",
+   "quantity": "corr(turn,V) - corr(turn,MC)",
+   "stratum": "ALL",
+   "weighting": "raw",
+   "registered": true,
+   "arm": -0.060927682652191756,
+   "control": 0.0714502756454769,
+   "delta": -0.13237795829766866,
+   "ci": [
+    -0.25057773763145064,
+    -0.011476514508955685
+   ],
+   "n_draws": 4000,
+   "label": "NOT DETECTED",
+   "qualifier": "CI does not clear the floor 0.1082",
+   "floor": 0.10824124835340262,
+   "clears_zero": true,
+   "clears_floor": false,
+   "headline": true
+  },
+  {
+   "key": "identity.turn_contrast.pop",
+   "family": "identity",
+   "quantity": "corr(turn,V) - corr(turn,MC)",
+   "stratum": "ALL",
+   "weighting": "pop",
+   "registered": false,
+   "arm": -0.03020821145786101,
+   "control": 0.030176680716640814,
+   "delta": -0.060384892174501825,
+   "ci": [
+    -0.16211319013647463,
+    0.05046283817906449
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0984",
+   "floor": 0.09841091468479951,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  },
+  {
+   "key": "identity.turn_contrast.ipw",
+   "family": "identity",
+   "quantity": "corr(turn,V) - corr(turn,MC)",
+   "stratum": "ALL",
+   "weighting": "ipw",
+   "registered": false,
+   "arm": -0.03020821145786101,
+   "control": 0.030176680716640814,
+   "delta": -0.060384892174501825,
+   "ci": [
+    -0.16211319013647463,
+    0.05046283817906449
+   ],
+   "n_draws": 4000,
+   "label": "WITHIN FLOOR",
+   "qualifier": "|delta| <= floor 0.0984",
+   "floor": 0.09841091468479951,
+   "clears_zero": false,
+   "clears_floor": false,
+   "headline": false
+  }
+ ],
+ "headlines": [
+  "gate.resolution.bot",
+  "identity.bias.late (turn>=25)",
+  "identity.turn_contrast",
+  "gate.skill.bot",
+  "cond.spread_ratio.t1_3",
+  "cond.own_team_r2.t1",
+  "cond.calibration_slope.all"
+ ],
+ "notes": {
+  "weightings": {
+   "raw": "unweighted over the cf_audit draw \u2014 the estimand arm A's committed +0.3089 was computed under, kept for comparability",
+   "pop": "cf_audit's stratified draw recombined at the frame's own (decile, outcome) mass \u2014 corrects the SAMPLER against the trace tree",
+   "ipw": "`pop` times 1/capture_rate(opponent, outcome) from the cycle's eval_manifest \u2014 RULE OF EVIDENCE 17, correcting the loss-enriched TREE against the eval population"
+  },
+  "anchor": "the anchor (label-trust) arm is a CENSUS of the bot battles it draws from and its estimand is the REPLAY DRIVER's fidelity, not a property of the eval population \u2014 capture-rate reweighting does NOT apply to it and none is applied.",
+  "no_floor": "NO REPLICATE FLOOR \u2014 deltas are NOT DETECTED unless their CI clears zero, and never DETECTED against a floor"
+ },
+ "ledger_line": "ai_v12_19_ladder_lambda09 vs ai_v12_16_ladder_ctrl10M_c at 10M [OFFLINE-GENERATED: 800 games x 9+3 opponents, full capture]: G1 bot \u0394 +0.0021 [-0.0038, +0.0080] WITHIN FLOOR \u00b7 identity bias late \u0394 +0.0065 [-0.0371, +0.0498] WITHIN FLOOR \u00b7 turn-contrast \u0394 -0.1324 [-0.2506, -0.0115] NOT DETECTED \u00b7 spread ratio t1-3 \u0394 -0.0446 [-0.0630, -0.0259] WITHIN FLOOR \u00b7 own-team R2 t1 \u0394 +0.0260 [+0.0129, +0.0395] DETECTED [QUOTA-MATCHED] \u00b7 calib slope \u0394 +0.1646 [+0.0897, +0.2483] NOT DETECTED"
+}
