@@ -48,3 +48,5 @@ hazard again; read the interval and the unclamped +0.3333 beside it.
 **400-game OFFLINE read (2026-09-09):** `critic_read_hp400.md/json` — both sides 400-game offline-generated cycles (`main.ops.eval_trace_gen`, seed 20260909, 12 opponents, full capture); NOT comparable to the 100-game rows above (different population); ledger 2026-09-09 · *THE FLOOR AT 400 GAMES* and *THE ARMS AT 400 GAMES*.
 
 **800-game OFFLINE read (2026-09-10):** `critic_read_hp800.md/json` — both sides 800-game offline cycles (seed 20260910); its own floor `../replicate_floor_10M_hp800.json`; ledger 2026-09-10 · *THE ARMS AT 800 GAMES*.
+
+**Second 800-game eval draw (seed 20260911, 2026-09-10):** `critic_read_hp800b.md/json`. Ledger 2026-09-10 · *the second eval draw*.

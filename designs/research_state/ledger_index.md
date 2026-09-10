@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,969-line file. **The ledger itself is append-only and is never edited by this**;
+16,981-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**530 headings · 490 dated · 2026-08-01 → 2026-09-10 · ledger 16,969 lines.**
+**531 headings · 491 dated · 2026-08-01 → 2026-09-10 · ledger 16,981 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -550,3 +550,4 @@ rename.
   - `L16943` · `2026-09-10` · CORRECTION · rule 19 rescoped — two NESTED variance components, and the remedy follows the component: eval re-draws for the resolution rows, run replicates for identity bias / the spread ratios / the slope
   - `L16947` · `2026-09-10` · READ · arm 8 against ALL THREE controls on the offline 400/800 frames, with the offline floor now a TWO-DRAW bound — one row clears it against every control at both sizes (overall resolution, +0.009 to +0.011); the amplitude effect sits AT the replicate bound against the replicate controls; the base control is the roster's outlier on the amplitude rows
   - `L16966` · `2026-09-10` · CORRECTION + PRE-REGISTRATION · arm 8's overall-resolution detection is POST HOC — the registered decision rows were bot resolution and own-team R²; "zero detected REGISTERED rows" still stands; the row is pre-registered for `lambda09_b` NOW, before its first eval cycle exists
+  - `L16970` · `2026-09-10` · READ · the SECOND 800-game eval draw (seed 20260911) — the floor pair's eval-draw variation is now measured directly, `vf15`'s bot-resolution lean is consistent across eval draws but inside the wider floor draw, and the base control's outlier status on the amplitude rows is confirmed a third time
