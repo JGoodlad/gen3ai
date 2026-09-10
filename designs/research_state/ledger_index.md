@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,603-line file. **The ledger itself is append-only and is never edited by this**;
+16,607-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**508 headings · 468 dated · 2026-08-01 → 2026-09-10 · ledger 16,603 lines.**
+**509 headings · 469 dated · 2026-08-01 → 2026-09-10 · ledger 16,607 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -528,3 +528,4 @@ rename.
   - `L16570` · `2026-09-10` · arm 8's first registered window CLOSED — mean 0.1804, VOID BY PREMISE as pre-registered; the 4M interim's resolution lean is the base-rate ceiling, nothing pre-registered for 10M
   - `L16576` · `2026-09-10` · the 4M interim against the THREE-CONTROL SPREAD — the resolution lean does not track the crossing (it is the base-rate ceiling); one row is consistent across all three and is PRE-REGISTERED as a watch item for 10M: the λ head is more PESSIMISTIC late than every control
   - `L16591` · `2026-09-10` · PRE-REGISTRATION (sharpened) · the bucket table says the λ arm's identity-bias GRADIENT steepens, not that pessimism propagated — the gradient (late − early) is registered beside late bias for the 10M read
+  - `L16604` · `2026-09-10` · CORRECTION · the gradient floor was the 10M pair's, mixed into a 4M claim — restated: at 4M the gradient effect clears the 4M three-control spread (0.070) against two of three controls; the regime story is ruled out by non-monotonicity; the 10M registration reads against the 10M gradient floor and all three controls
