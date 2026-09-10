@@ -921,6 +921,8 @@ z=−1.40" rules out >4.5pp, not >0.
 
 18. **Own-team R² of V is NEVER read on live frames** — a leave-one-battle-out decode target over 719 teams is unstable on any frame with few battles per team, and a genuinely-zero row and a too-noisy-to-estimate row look identical (the controls reading ≈ 0 is the tell). It produced three spurious detections in the critic ladder (2026-09-09/10). It needs ≥ 2 offline full-capture draws per checkpoint, or it is not a measurement. [ledger 2026-09-10 · *RE-SPECIFICATION + RULE 18*]
 
+19. **A replicate floor that GROWS with eval size is between-run variance dominating sampling variance — more eval games are the WRONG lever for that row; run replicates are the only one.** The calibration slope's control-vs-control difference grew from 0.19 to 0.25 as games doubled, and the doubling moved two levers' bot-resolution points by 69–93 % of their new half-widths: one mechanism, two instruments. Rows in the family: identity bias, the spread ratios, the calibration slope. Rows not in it: the gauge resolution rows (their floor collapsed with eval). And two draws BOUND a floor; they never give it a CI. [ledger 2026-09-10 · *RULE 19*]
+
 ## 8. Pointers
 
 | what | where |
