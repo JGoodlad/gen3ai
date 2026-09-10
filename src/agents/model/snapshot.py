@@ -1256,6 +1256,7 @@ def current_model_version(
     cf_shadow_critic: bool = False,
     q_winprob_mode: str = "none",
     value_true_team: bool = False,
+    dense_aux: bool = False,
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -1317,6 +1318,11 @@ def current_model_version(
     # mismatch — a frozen eval/pool opponent's gate must see the toggle or a privileged run FATALs
     # loading its OWN sentinels.
     ext_kwargs["value_true_team"] = value_true_team
+    # gen3_dense_aux_v1 (v117): same category — the head's params are in the state_dict and its
+    # only output is a training-side loss, so the recorded toggle is all a load gate can compare,
+    # and a frozen eval/pool opponent's gate must see it or a dense-aux run FATALs loading its OWN
+    # sentinels.
+    ext_kwargs["dense_aux"] = dense_aux
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1414,6 +1420,9 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_value_true_team_v1 (v114): same category — params in the state_dict, additive into
         # value_pooled, so the recorded toggle is all a load gate can compare.
         "value_true_team": bool(getattr(fe, "value_true_team", False)),
+        # gen3_dense_aux_v1 (v117): same category again — params in the state_dict whose only
+        # output is a training-side loss, so the recorded toggle is all a load gate can compare.
+        "dense_aux": bool(getattr(fe, "dense_aux", False)),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

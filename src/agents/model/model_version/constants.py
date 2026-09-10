@@ -253,7 +253,21 @@ from typing import Any, Dict
 #   defaults to 1.0 / "bootstrap", which is not a guess but the only possible past — λ = 1.0 IS the
 #   terminal-bit target every prior run used, and the truncation mode is inert at that λ. No
 #   ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 116
+# v117 (gen3_dense_aux_v1): `dense_aux` (STRUCTURAL bool) + `win_prob_dense_aux` (its training
+#   COEFFICIENT) — the DENSE AUXILIARY head, arm 9 of the critic ladder. The `opp_belief_slots` /
+#   `opp_intent` SPLIT: one CLI flag, `--win-prob-dense-aux <coef>`, whose positivity BUILDS the
+#   head and whose magnitude doses its loss. The BOOL is the value_true_team mould exactly —
+#   structural, recorded, gated by a bool compare in check_compatible because the head's params are
+#   the whole state_dict delta and its only output is a training-side loss, so no shape error
+#   anywhere would catch a flipped flag. The COEFFICIENT is the td_aux_coef class — recorded for
+#   provenance and flagless-resume read-back, never compared — which is what makes a resume free to
+#   RE-DOSE the arm but not to add or drop its parameters. NO ARCH_SIGNATURE bump, for
+#   `value_true_team`'s reasons: the 2501-dim observation VECTOR is unchanged (the labels ride
+#   SEPARATE Dict keys, the win_target precedent), no existing module moves, the head is built LAST
+#   and is not called by the forward at all — so an OFF run on this code is bit-identical to the
+#   same run on v116 and every existing checkpoint still resumes. A pre-v117 config defaults to
+#   False / 0.0, which is not a guess: no run could set anything else, because nothing could.
+MODEL_CONFIG_VERSION = 117
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

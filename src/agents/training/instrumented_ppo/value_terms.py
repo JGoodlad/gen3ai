@@ -4,6 +4,8 @@
   the term's actual information content (a blowout's P(win) is recoverable from material), and the
   optional OPPONENT-STRATIFIED per-row weight (`gen3_winprob_strata_weight_v1`).
 * `_win_prob_strata_weights` — that weight vector, computed ONCE per rollout over the whole buffer.
+* `_dense_aux_loss` — the DENSE AUXILIARY head's three masked BCE terms (`gen3_dense_aux_v1`):
+  per-slot survival, per-slot final HP and turns-left, all end-of-battle facts.
 * `_value_dist_loss` — the distributional head's HL-Gauss cross-entropy.
 * `_value_loss_from_se` — the tail-weighted (CVaR-blended) value loss, used at all THREE value
   sites in `train()`. At `value_tail_weight == 0` it is `se.mean()`, byte-identical to
@@ -15,6 +17,10 @@ from torch.nn import functional as F
 from agents.training.instrumented_ppo.constants import (
     _STRATA_WEIGHT_CAP, _VALUE_TAIL_FRAC, _WIN_CONTESTED_TAU,
 )
+from agents.model.dense_aux_head import (
+    DENSE_AUX_HP, DENSE_AUX_LAYOUT, DENSE_AUX_SURVIVAL, DENSE_AUX_TURNS,
+)
+from agents.observation.constants import TEAM_SIZE
 
 
 class ValueTerms:
@@ -224,6 +230,125 @@ class ValueTerms:
                 metrics["brier_material"] = float(brier_mat.item())
                 metrics["skill_vs_material"] = (
                     float((1.0 - brier / brier_mat).item()) if float(brier_mat) > 0.0 else 0.0)
+        return loss, metrics
+
+    @staticmethod
+    def _masked_auc(scores, labels, mask):
+        """Mann-Whitney AUC of `scores` against binary `labels`, over `mask` > 0.5.
+
+        `float('nan')` when either class is empty over the mask — which is a REAL state (an early
+        rollout in which nothing on our side ever fainted), and is REPORTED by omitting the tag
+        rather than by logging a number TensorBoard would draw as a measurement. Ties get their
+        average rank, so a zero-init head (every score identical) reads exactly 0.5 rather than an
+        artefact of sort order.
+        """
+        m = mask.reshape(-1) > 0.5
+        if not bool(m.any()):
+            return float("nan")
+        y = labels.reshape(-1)[m]
+        x = scores.reshape(-1)[m]
+        n_pos = float((y > 0.5).sum())
+        n_neg = float(y.numel() - n_pos)
+        if n_pos == 0.0 or n_neg == 0.0:
+            return float("nan")
+        order = th.argsort(x)
+        xs = x[order]
+        ranks = th.empty_like(xs)
+        # AVERAGE ranks within each run of equal scores: `unique_consecutive` on the sorted values
+        # gives the run lengths, and a run spanning positions [a, b) takes rank (a + b + 1) / 2.
+        _vals, counts = th.unique_consecutive(xs, return_counts=True)
+        pos = 0
+        for c in counts.tolist():
+            ranks[pos:pos + c] = (pos + 1 + pos + c) / 2.0
+            pos += c
+        r = th.empty_like(ranks)
+        r[order] = ranks
+        sum_pos = float(r[y > 0.5].sum())
+        return float((sum_pos - n_pos * (n_pos + 1.0) / 2.0) / (n_pos * n_neg))
+
+    @staticmethod
+    def _dense_aux_loss(logits, target, mask):
+        """The DENSE AUXILIARY loss (`gen3_dense_aux_v1`) — KataGo's dense-target answer to a
+        one-bit terminal signal, in this tree's vocabulary.
+
+        `logits` [B, 25] from `DenseAuxHead` over the minibatch's `value_pooled`; `target` [B, 25]
+        the episode's END-OF-BATTLE facts back-filled to every state exactly as the win bit is;
+        `mask` [B, 25] the three-way AND the label callback wrote (episode finished inside the
+        buffer AND the slot has a terminal fact AND the slot names an entity this state's own
+        observation carries). Returns `(loss, metrics)`, or `None` when nothing is scorable.
+
+        **THREE TERMS, ONE LOSS FAMILY.** Every output is a sigmoid logit scored by binary
+        cross-entropy against a target in [0, 1] — survival (targets in {0, 1}), final HP fraction
+        and scaled turns-left (soft targets). The uniformity is deliberate: a sigmoid keeps a
+        bounded target in range BY CONSTRUCTION, BCE with a soft target is a proper scoring rule
+        for a [0, 1] mean (the same family as the win head's own loss), its gradient is `(p - y)`
+        rather than MSE-through-a-sigmoid's vanishing one at 0 and 1 — which is exactly where the
+        HP mass sits — and one family puts all three terms in the same NATS scale, so the single
+        `--win-prob-dense-aux` coefficient means one thing across them. ⚠️ A BCE against a soft
+        target has a non-zero floor (the target's own entropy), so `aux_hp_loss` and
+        `aux_turns_loss` do not approach 0 for a perfect predictor; `aux_hp_mae` / `aux_turns_mae`
+        are the interpretable reads and are published beside them for exactly that reason.
+
+        **THE TOTAL IS THE MEAN OF THE TERMS PRESENT**, each a masked mean over its own block, so
+        the twelve survival outputs do not outvote the one turns output twelve to one and a
+        minibatch in which a block is entirely masked simply drops that block instead of
+        contributing a zero.
+        """
+        if logits is None or target is None or mask is None:
+            return None
+        logits = logits.reshape(logits.shape[0], -1)
+        target = target.to(logits.device).reshape(logits.shape)
+        mask = mask.to(logits.device).reshape(logits.shape)
+        if float(mask.sum()) == 0.0:
+            return None
+        per = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
+        terms, metrics = [], {}
+        for name, (a, b) in DENSE_AUX_LAYOUT.items():
+            m = mask[:, a:b]
+            n = m.sum()
+            if float(n) == 0.0:
+                continue
+            t = (per[:, a:b] * m).sum() / n
+            terms.append(t)
+            metrics[f"aux_{name}_loss"] = float(t.item())
+        if not terms:
+            return None
+        loss = th.stack(terms).mean()
+        with th.no_grad():
+            p = th.sigmoid(logits)
+            metrics["aux_loss"] = float(loss.item())
+            metrics["aux_scored_frac"] = float((mask.sum() / mask.numel()).item())
+            sa, sb = DENSE_AUX_SURVIVAL
+            ha, hb = DENSE_AUX_HP
+            ta, _tb = DENSE_AUX_TURNS
+            half = TEAM_SIZE
+            # SURVIVAL AUC, our side and theirs SEPARATELY — the arm's whole claim is that a dense
+            # per-entity target reaches the axes the pooled win bit cannot, and a pooled AUC over
+            # all twelve slots would hide exactly the asymmetry that would show it.
+            for tag, lo, hi in (("own", sa, sa + half), ("opp", sa + half, sb)):
+                auc = ValueTerms._masked_auc(p[:, lo:hi], target[:, lo:hi], mask[:, lo:hi])
+                if auc == auc:                                   # NaN ⇒ omit, never log
+                    metrics[f"aux_auc_{tag}"] = auc
+            hm = mask[:, ha:hb]
+            if float(hm.sum()) > 0.0:
+                metrics["aux_hp_mae"] = float(
+                    (((p[:, ha:hb] - target[:, ha:hb]).abs() * hm).sum() / hm.sum()).item())
+            tm = mask[:, ta:ta + 1]
+            if float(tm.sum()) > 0.0:
+                metrics["aux_turns_mae"] = float(
+                    (((p[:, ta:ta + 1] - target[:, ta:ta + 1]).abs() * tm).sum() / tm.sum()).item())
+            # KO COUNTS, DERIVED from the survival block over its UNMASKED slots rather than
+            # predicted: a count is a sum over slots some of which are masked, so it is the one
+            # target that could not honour the mask, and a separate output would be linearly
+            # dependent on twelve that already exist.
+            for tag, lo, hi in (("own", sa, sa + half), ("opp", sa + half, sb)):
+                mm = mask[:, lo:hi]
+                pred_ko = ((1.0 - p[:, lo:hi]) * mm).sum(dim=1)
+                true_ko = ((1.0 - target[:, lo:hi]) * mm).sum(dim=1)
+                rows = (mm.sum(dim=1) > 0)
+                if bool(rows.any()):
+                    metrics[f"aux_ko_mae_{tag}"] = float(
+                        (pred_ko[rows] - true_ko[rows]).abs().mean().item())
         return loss, metrics
 
     @staticmethod

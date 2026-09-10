@@ -45,6 +45,7 @@ from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
 from agents.model.pools import CLSPool, HiddenOppBeliefPool
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
+from agents.model.dense_aux_head import DenseAuxHead
 from agents.model.q_winprob_head import Q_WINPROB_MODES, QWinProbHead
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
@@ -106,6 +107,7 @@ class ExtractorBuild(torch.nn.Module):
                  cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
                  q_winprob_mode: str = "none",
                  value_true_team: bool = False,
+                 dense_aux: bool = False,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -991,6 +993,17 @@ class ExtractorBuild(torch.nn.Module):
         self.value_true_team = bool(value_true_team)
         self.true_team_value = (
             TrueTeamValueReadout(layout) if self.value_true_team else None)
+
+        # gen3_dense_aux_v1 (v117) — the DENSE AUXILIARY readout off `value_pooled`, arm 9 of the
+        # critic ladder. Built LAST (the append-never-insert rule: SB3 restores optimizer state
+        # positionally, and appending also leaves every earlier module's init RNG draw untouched,
+        # which is what makes OFF byte-identical rather than merely equal in shape). It is NOT
+        # CALLED by the forward — the training term applies it to the stashed `value_pooled` — so
+        # pi/vf are bit-identical at an ARBITRARY weight in this module, and a rollout, an eval and
+        # the prober all pay exactly nothing for it. Its input is deliberately NOT detached in that
+        # term; see `dense_aux_head`'s docstring for why that IS the arm.
+        self.dense_aux = bool(dense_aux)
+        self.dense_aux_head = DenseAuxHead() if self.dense_aux else None
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

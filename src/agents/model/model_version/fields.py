@@ -490,6 +490,19 @@ class ModelVersionFields:
     # are never compared by check_compatible or any check_*.
     win_prob_lambda: float = 1.0
     win_prob_lambda_truncated: str = "bootstrap"
+    # ---- gen3_dense_aux_v1 (config v117) — THE DENSE AUXILIARY HEAD ---------------------------
+    # ONE CLI flag, TWO recorded fields, because they are gated differently.
+    # `dense_aux` is STRUCTURAL (the value_true_team pattern): ON builds a `DenseAuxHead` whose
+    # params ARE the state_dict delta; OFF builds nothing and is byte-for-byte the baseline. Its
+    # only output is a training-side loss, so no width changes anywhere and a bool compare in
+    # check_compatible is the ONLY thing that could reject a flipped flag.
+    # `win_prob_dense_aux` is the td_aux_coef class: it doses that loss, is recorded for provenance
+    # and for flagless-resume read-back (`_resolve` reads it), and is never compared — so a resume
+    # may change the DOSE freely while the head's existence stays fixed for the run's lifetime.
+    # NO ARCH_SIGNATURE bump: the observation vector is unchanged (the labels ride separate Dict
+    # keys), no existing module moves, the head is built LAST and the forward never calls it.
+    dense_aux: bool = False
+    win_prob_dense_aux: float = 0.0
     # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
     # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
     # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:

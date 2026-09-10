@@ -633,6 +633,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # the same TB series.
     _resolve("win_prob_lambda", 1.0)
     _resolve("win_prob_lambda_truncated", "bootstrap")
+    # gen3_dense_aux_v1 (v117): the CLI surface of a DERIVED structural toggle, so the resolve line
+    # carries BOTH roles — the dose for the loss, and (through `extractor_arch._DERIVED`) whether
+    # the head is built at all. A flagless resume that dropped it would not merely stop dosing the
+    # arm: it would fail `check_compatible` on `dense_aux`, which is the loud half working.
+    _resolve("win_prob_dense_aux", 0.0)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
     #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
@@ -861,6 +866,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # alternates sign (λ < 0), and neither is a stronger version of this lever.
         parser.error("--win-prob-lambda must be in [0, 1] "
                      "(1 = off / the terminal outcome at every state; 0 = pure one-step bootstrap)")
+    if args.win_prob_dense_aux is not None and args.win_prob_dense_aux < 0.0:
+        # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
+        # owns the cross-flag half — `dense_aux_needs_the_winprob_critic`). There is no upper
+        # bound: the three terms are masked-mean BCEs in nats, the same units as the win-prob loss
+        # this arm sits beside, so a dose is read against `vf_coef` rather than against a cap. A
+        # NEGATIVE coefficient would ASCEND the auxiliary loss — the head would be trained to
+        # mispredict every slot — which is not a weaker version of this lever.
+        parser.error("--win-prob-dense-aux must be >= 0 (0 = off; the head is not built)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the

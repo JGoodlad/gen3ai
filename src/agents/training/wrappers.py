@@ -1,6 +1,12 @@
 import random
 
 from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.training.dense_aux import terminal_facts as dense_aux_terminal_facts
+from agents.training.dense_aux_callback import (
+    INFO_MASK as DENSE_AUX_INFO_MASK,
+    INFO_TARGET as DENSE_AUX_INFO_TARGET,
+    INFO_TURN as DENSE_AUX_INFO_TURN,
+)
 from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 
 # Stable cross-run opponents are a CAPPED minority of the self-play (challenge) bucket — the pool
@@ -592,6 +598,19 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             # the info dict (SB3 reads only `episode`/`terminal_observation`/`TimeLimit.truncated`),
             # so nothing downstream changes; the class is the one selected for THIS episode at reset.
             info["opponent_class"] = int(getattr(self, "_opponent_class", self.OPP_CLASS_BOT))
+            # gen3_dense_aux_v1: the END-OF-BATTLE per-slot facts the DENSE AUXILIARY head is
+            # trained on — survival and final HP of all twelve slots, plus the terminal turn — from
+            # the SAME `battle1` and the SAME seam `win_outcome` is published from, for the same
+            # reason: the trainee's battle is finished here, before the VecEnv auto-resets.
+            # Published only when the env is emitting the keys, so a run without the head pays
+            # nothing. The opponent's UNREVEALED slots carry no fact and the mask says so — this
+            # side never fabricates one (`agents.training.dense_aux`).
+            if getattr(self.env, "_emit_dense_aux", False):
+                _daux = dense_aux_terminal_facts(b)
+                if _daux is not None:
+                    info[DENSE_AUX_INFO_TARGET] = _daux[0]
+                    info[DENSE_AUX_INFO_MASK] = _daux[1]
+                    info[DENSE_AUX_INFO_TURN] = _daux[2]
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
             self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
             self._maybe_record_team_wr(won)       # per-team win-rate tracking (all classes, default ON)

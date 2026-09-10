@@ -51,6 +51,11 @@ _DERIVED = {
     "opp_belief_slots": lambda a: getattr(a, "opp_belief_aux_coef", 0.0) > 0.0,
     # v67 gen3_opp_intent_v1 — same shape: the COEF is the training hparam, the BOOL builds the heads.
     "opp_intent": lambda a: getattr(a, "opp_intent_coef", 0.0) > 0.0,
+    # v117 gen3_dense_aux_v1 — the same shape again: `--win-prob-dense-aux` IS the CLI surface, the
+    # COEF is the training hparam, and the BOOL is what builds `DenseAuxHead` and what
+    # check_compatible gates. `> 0.0` and not `!= 0.0`: a negative coefficient is refused by the
+    # parser, so this reads as "on" only for the values that can reach it.
+    "dense_aux": lambda a: float(getattr(a, "win_prob_dense_aux", 0.0) or 0.0) > 0.0,
 }
 
 

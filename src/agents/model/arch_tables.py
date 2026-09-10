@@ -125,6 +125,12 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # is a MODE string rather than a coefficient and is deliberately not a row here — it is inert
     # at the default λ and is reported through `win_prob/lambda_truncated_bootstrap`.)
     "win_prob_lambda": "win_head",
+    # v117 gen3_dense_aux_v1 — the DENSE AUXILIARY loss's dose. Named to `dense_aux_head` (its
+    # OWN module, not `win_head`): unlike strata and lambda, which re-price and re-aim the win
+    # head's existing BCE, this coefficient supervises a head of its own — and because that head
+    # is BUILT from the same flag, "live coefficient, no module" is reachable only on a
+    # hand-assembled config, which is precisely the state the column exists to name.
+    "win_prob_dense_aux": "dense_aux_head",
     # v100 gen3_cf_coef_provenance_v1 — the counterfactual family's coefficients. Each one IS
     # gated by a module, and naming that module is what lets the table mark it INERT: a live
     # coefficient whose head was never built does nothing, and that is precisely the confusion

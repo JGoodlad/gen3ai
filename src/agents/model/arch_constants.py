@@ -166,3 +166,12 @@ PAIR_VALUE_ROUTE_DIM = _PAIR_OUTCOME_RAW
 # indirect route as dead). VALUE_INTENT_DIM — the published α (K seats + SWITCH, belief-sorted
 # canonical order) and β (6 team slots) posteriors as probabilities; the critic finally reads
 # WHAT WE EXPECT THEM TO DO directly rather than only through the α-weighted physics cells.
+
+
+# gen3_dense_aux_v1 (v117, `--win-prob-dense-aux`): the DENSE AUXILIARY head, arm 9 of the critic
+# ladder. KataGo's (Wu 2019) answer to a one-bit terminal signal — auxiliary targets that share the
+# win's CAUSE, dense along the axes the win bit cannot carry. One hidden layer over `value_pooled`
+# (the SAME tensor the win head reads) into `DENSE_AUX_DIM_OUT` sigmoid logits. The hidden width is
+# TTV_DIM's, deliberately: the ladder's arms are meant to differ in what they SEE, not in how much
+# capacity they were handed.
+DENSE_AUX_HIDDEN = 64

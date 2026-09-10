@@ -381,6 +381,23 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "shaped return rather than a probability, so the blend would be a category error. Pass "
         "--critic winprob, or drop the flag."),
     CombinationCheck(
+        # The strata/lambda check's third sibling, refused for a reason of its own on top of
+        # theirs. Under `--critic shaped` the win-prob BCE is an AUXILIARY readout, so dense
+        # targets bolted to it would improve a diagnostic's features and leave the value function
+        # — the scalar `value_net`, reading its own PopArt-normalised shaped return — untouched.
+        # The arm's whole claim is about what the CRITIC's trunk conditions on, and under `shaped`
+        # this term cannot reach that claim at all.
+        "dense_aux_needs_the_winprob_critic",
+        ("win_prob_dense_aux", "critic"),
+        lambda a: float(_val(a, "win_prob_dense_aux", 0.0) or 0.0) > 0.0 and not _winprob(a),
+        "--win-prob-dense-aux > 0 requires --critic winprob. It adds 25 dense END-OF-BATTLE "
+        "targets (per-slot survival, per-slot final HP, turns-left) on the SAME `value_pooled` "
+        "the win head reads, so that the critic's trunk gets gradient along the per-entity axes "
+        "one terminal bit cannot carry (~10%% of that bit's variance lies between opponents; "
+        "KataGo, Wu 2019). Under --critic shaped the win-prob head is an auxiliary readout and "
+        "the value function is the scalar net, so the dense targets would enrich a diagnostic "
+        "and change nothing about V. Pass --critic winprob, or drop the flag."),
+    CombinationCheck(
         "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
         lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
         "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "

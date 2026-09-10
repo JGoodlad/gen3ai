@@ -471,6 +471,39 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "attribute an effect to the target change rather than to the extra "
                              "rows -- win_prob/lambda_unmasked counts them per rollout. INERT at "
                              "--win-prob-lambda 1.0 (the recursion is skipped whole).")
+    # --- gen3_dense_aux_v1 (2026-09-10, the critic ladder's arm 9): DENSE AUXILIARY targets. The
+    #     fourth knob on the same objective — one scales it, strata re-prices its MIX, lambda
+    #     re-aims it, and this one ADDS 25 dense targets beside it that share the win's cause. ---
+    parser.add_argument("--win-prob-dense-aux", "--win_prob_dense_aux",
+                        dest="win_prob_dense_aux", type=float, default=None,
+                        help="DENSE AUXILIARY targets for the win-prob critic's trunk, coefficient "
+                             ">= 0. 0.0 (the DEFAULT) = OFF and BIT-identical: the head is not "
+                             "BUILT, so there is no module, no obs key, no callback and no loss "
+                             "term. Above 0 it builds a small MLP on `value_pooled` -- the SAME "
+                             "tensor the win head reads -- predicting, for every state, the "
+                             "episode's END-OF-BATTLE facts back-filled the way the win bit is: "
+                             "SURVIVAL of each of the 12 slots (our 6 then theirs, in the "
+                             "observation's own team order), each slot's FINAL HP FRACTION, and "
+                             "the scaled TURNS LEFT -- 25 sigmoid outputs, three masked-mean BCE "
+                             "terms averaged, folded at this coefficient. The per-side KO counts "
+                             "are DERIVED from survival and published as meters, never predicted. "
+                             "WHY: one terminal bit copied to ~30 states carries only ~10%% of its "
+                             "variance BETWEEN opponents, so the head shrinks the weak axes "
+                             "(opponent, own team) toward the marginal although its features "
+                             "carry them, and four 10M levers moved nothing at +-0.01. The "
+                             "literature's answer to a one-bit terminal signal is KataGo's (Wu "
+                             "2019 section 3): dense auxiliary targets that share the win's CAUSE "
+                             "-- ownership of every point and the final score beside the win -- "
+                             "reported as a large gain in learning efficiency. Per-Pokemon "
+                             "end-of-battle outcomes are our analogue, and each one is a fact "
+                             "about a NAMED ENTITY, so its gradient runs along exactly the axes "
+                             "the pooled bit cannot separate. An opponent slot that was never "
+                             "revealed, and any slot the state's own observation does not carry, "
+                             "is MASKED rather than fabricated. REQUIRES --critic winprob "
+                             "(refused otherwise). Watch win_prob/aux_auc_own vs aux_auc_opp, "
+                             "aux_hp_mae, aux_masked_frac and grad/dense_aux_share. STRUCTURAL: "
+                             "the head is fixed for a run's lifetime (a resume may re-dose it, "
+                             "not add or remove it); the dose is resume-inherited.")
     parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
                         type=float, default=None,
                         help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "

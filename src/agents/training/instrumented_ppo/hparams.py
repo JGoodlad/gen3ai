@@ -270,6 +270,15 @@ class PpoHyperparameters:
     # are built in a CALLBACK before `train()`, so nothing here touches a forward pass.
     win_prob_lambda: float = 1.0
     win_prob_lambda_truncated: str = "bootstrap"
+    # gen3_dense_aux_v1: the DENSE AUXILIARY loss's weight, >= 0. 0.0 = OFF and BIT-identical --
+    # the head is not BUILT at all, so there is no module, no obs key, no callback and no term.
+    # Above 0 it folds `coef * mean(survival BCE, final-HP BCE, turns-left BCE)` over the
+    # END-OF-BATTLE facts of all twelve slots, back-filled to every state the way the win bit is.
+    # It exists because one terminal bit carries almost no BETWEEN-opponent variance (~10%), so
+    # the win-prob head shrinks the weak axes toward the marginal; 25 per-entity targets put
+    # gradient on those axes directly (KataGo, Wu 2019 §3). Requires `--critic winprob` (refused
+    # otherwise, never a silent no-op). The DOSE is resume-mutable; the head's EXISTENCE is not.
+    win_prob_dense_aux: float = 0.0
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee

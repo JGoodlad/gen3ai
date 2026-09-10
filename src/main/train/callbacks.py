@@ -392,6 +392,14 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     if args.win_prob_mode != "none":
         from agents.training.win_prob_callback import WinProbLabelCallback
         callbacks.append(WinProbLabelCallback())
+    # DENSE AUXILIARY labels (gen3_dense_aux_v1): the same three-step bridge for the 25
+    # end-of-battle per-slot targets. Registered AFTER WinProbLabelCallback — order is not
+    # load-bearing between them (the key sets are disjoint, and the λ recursion touches only
+    # win_target/win_mask), but keeping the win callback first keeps the value sidecar's own
+    # ordering contract, which is stated against it, unambiguous.
+    if float(getattr(args, "win_prob_dense_aux", 0.0) or 0.0) > 0.0:
+        from agents.training.dense_aux_callback import DenseAuxLabelCallback
+        callbacks.append(DenseAuxLabelCallback())
     # THE TRAINING-SIDE VALUE SIDECAR (gen3_value_sidecar_v1). Appended IMMEDIATELY AFTER
     # WinProbLabelCallback and the order is LOAD-BEARING: that callback's _on_rollout_end is what
     # overwrites the win_target/win_mask placeholders with the MC label, and SB3 runs

@@ -242,6 +242,12 @@ def collect_rollouts_async(
                 _win_scr = getattr(model, "_win_terminal_scratch", None)
                 if _win_scr is not None and "win_outcome" in info:
                     _win_scr[t, i] = float(info["win_outcome"])
+                # gen3_dense_aux_v1: the DENSE AUXILIARY terminal facts, captured at the same
+                # row for the same reason. No-op unless the head is on (the scratch is allocated
+                # only then, by DenseAuxLabelCallback.on_rollout_start, run just above).
+                _daux_scr = getattr(model, "_dense_aux_scratch", None)
+                if _daux_scr is not None:
+                    _daux_scr.record(t, i, info)
 
             # Advance this env's current obs/episode-start for its NEXT action. On a done step the
             # worker auto-reset, so new_obs is already the fresh episode's first obs (mask included).

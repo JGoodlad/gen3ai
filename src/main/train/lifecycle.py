@@ -96,6 +96,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         win_prob_strata_weight=float(getattr(model, "win_prob_strata_weight", 0.0)),
         win_prob_lambda=float(getattr(model, "win_prob_lambda", 1.0)),
         win_prob_lambda_truncated=str(getattr(model, "win_prob_lambda_truncated", "bootstrap")),
+        win_prob_dense_aux=float(getattr(model, "win_prob_dense_aux", 0.0)),
         cf_records=bool(getattr(model, "cf_records", False)),
         cf_records_keep=int(getattr(model, "cf_records_keep", 512)),
         cf_winprob_coef=float(getattr(model, "cf_winprob_coef", 0.0)),

@@ -23,6 +23,10 @@ from agents.observation.belief_labels import (
 from agents.observation.true_team import (
     TRUE_TEAM_KEY, TRUE_TEAM_SHAPE, build_true_team_block, empty_true_team_block,
 )
+from agents.model.dense_aux_head import DENSE_AUX_DIM_OUT
+from agents.training.dense_aux import (
+    AUX_MASK_KEY, AUX_TARGET_KEY, AUX_TURN_KEY, state_visibility,
+)
 from agents.model.damage_tables import invert_nature_evs, _hp_typed_nums, HIDDEN_POWER_NUM
 from agents import gen3_data
 from agents.action.mask_generator import Gen3ActionMasker
@@ -78,6 +82,7 @@ class Gen3Env(SinglesEnv):
                  move_belief_mode: str = "off",
                  emit_win_target: bool = False, emit_spread_labels: bool = False,
                  emit_opp_true_team: bool = False,
+                 emit_dense_aux: bool = False,
                  emit_opp_intent_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_item_labels: bool = False,
                  emit_defensive_opportunity: bool = False,
@@ -176,6 +181,15 @@ class Gen3Env(SinglesEnv):
         # --value-true-team (threaded as emit_opp_true_team from train_rl_agent). It is the critic
         # ladder's arm-5 CEILING PROBE, not a shippable channel.
         self._emit_opp_true_team = emit_opp_true_team
+        # DENSE-AUXILIARY label keys (TRAINING-ONLY, gen3_dense_aux_v1): when on, the obs Dict
+        # carries `aux_target` [25] (PLACEHOLDER zeros; the DenseAuxLabelCallback overwrites them
+        # post-collection with the episode's END-OF-BATTLE per-slot facts), `aux_mask` [25] (a REAL
+        # present-state value — which of the 25 outputs names an entity THIS state's observation
+        # carries; the callback ANDs it with terminal availability) and `aux_turn` [1] (this
+        # state's turn number, the half of `turns_left` only the env knows). Read ONLY by the
+        # dense-aux loss; the model forward reads only obs["observation"]. Enabled by
+        # --win-prob-dense-aux > 0 (threaded as emit_dense_aux from train_rl_agent).
+        self._emit_dense_aux = emit_dense_aux
         # DEFENSIVE-EXPLORATION flag (TRAINING-ONLY, gen3_defensive_entropy_v1): when on, the obs Dict carries
         # `defensive_opportunity` [1] = 1.0 on decisions where the active mon has a PRODUCTIVE defensive option
         # (a legal HP-recovery move with HP to restore, OR a legal self/team status-cure with a status to
@@ -324,6 +338,16 @@ class Gen3Env(SinglesEnv):
                 low=0.0, high=float(max(self.observation_encoder.get_layout()["max_species"],
                                         self.observation_encoder.get_layout()["max_moves"])),
                 shape=TRUE_TEAM_SHAPE, dtype=np.float32)
+        if self._emit_dense_aux:
+            # gen3_dense_aux_v1: the DENSE AUXILIARY targets + their two-part mask. `aux_target` is
+            # a placeholder (back-filled post-collection); `aux_mask` and `aux_turn` are REAL
+            # present-state values. All three are LABEL keys — the network never reads them.
+            base_obs[AUX_TARGET_KEY] = spaces.Box(
+                low=0.0, high=1.0, shape=(DENSE_AUX_DIM_OUT,), dtype=np.float32)
+            base_obs[AUX_MASK_KEY] = spaces.Box(
+                low=0.0, high=1.0, shape=(DENSE_AUX_DIM_OUT,), dtype=np.float32)
+            base_obs[AUX_TURN_KEY] = spaces.Box(
+                low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
         if self._emit_defensive_opportunity:
             # gen3_defensive_entropy_v1: 1.0 = a productive defensive move (recovery/cure) is legal this
             # decision. A REAL per-step value; read ONLY by the state-conditioned entropy boost in the PPO loss.
@@ -795,6 +819,15 @@ class Gen3Env(SinglesEnv):
                 [getattr(self, "_opponent_class", 0)], dtype=np.int64)
         if self._emit_opp_true_team:
             agent_obs[TRUE_TEAM_KEY] = self._true_team_block()
+        if self._emit_dense_aux:
+            # gen3_dense_aux_v1. The TARGET is a placeholder; the MASK is this state's own
+            # visibility (our occupied slots + the opponent slots revealed SO FAR), which the
+            # callback ANDs with the terminal facts' availability; the TURN is a real value.
+            b1 = getattr(self, "battle1", None)
+            agent_obs[AUX_TARGET_KEY] = np.zeros(DENSE_AUX_DIM_OUT, dtype=np.float32)
+            agent_obs[AUX_MASK_KEY] = state_visibility(b1)
+            agent_obs[AUX_TURN_KEY] = np.array(
+                [float(getattr(b1, "turn", 0) or 0)], dtype=np.float32)
         if self._emit_defensive_opportunity:
             agent_obs["defensive_opportunity"] = np.array([self._defensive_opportunity()], dtype=np.float32)
         if self._emit_bait_opportunity:
@@ -937,6 +970,7 @@ class Gen3Env(SinglesEnv):
                     or self._emit_bait_opportunity
                     or self._emit_distill_mask
                     or self._emit_opp_true_team
+                    or self._emit_dense_aux
                     or self._emit_opp_intent_labels):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
@@ -964,6 +998,7 @@ class Gen3Env(SinglesEnv):
                     or self._emit_bait_opportunity
                     or self._emit_distill_mask
                     or self._emit_opp_true_team
+                    or self._emit_dense_aux
                     or self._emit_opp_intent_labels):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)

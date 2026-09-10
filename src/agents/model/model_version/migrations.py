@@ -505,4 +505,13 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("win_prob_lambda", 1.0)
         data.setdefault("win_prob_lambda_truncated", "bootstrap")
         data["config_version"] = 116
+    # v117 (gen3_dense_aux_v1) — ONE STRUCTURAL bool + ONE training coefficient, defaulted rather
+    # than refused for v114's reason: False / 0.0 is not a guess about an old run, it is the only
+    # value a pre-v117 run could have had, because neither field existed and neither could be set.
+    # The bool IS in check_compatible (a state_dict delta with no shape error to catch it); the
+    # coefficient is not (it doses a loss).
+    if version < 117:
+        data.setdefault("dense_aux", False)
+        data.setdefault("win_prob_dense_aux", 0.0)
+        data["config_version"] = 117
     return data

@@ -548,6 +548,32 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "scalar critic reads the same `value_pooled`, so a shaped-critic arm remains "
                    "available as a control.",
               family=Family.CRITIC),
+    ModelFlag("dense_aux", False, Tier.CLI, Klass.STRUCTURAL, 117,
+              "the DENSE AUXILIARY head off value_pooled: per-slot survival + final HP for all 12 "
+              "slots and turns-left, every one an END-OF-BATTLE fact back-filled to every state",
+              derived=True, source_arg="win_prob_dense_aux", on_value=1.0,
+              note="Arm 9 of the critic ladder, and KataGo's (Wu 2019) answer to a one-bit "
+                   "terminal signal: only ~10% of the win label's variance lies BETWEEN "
+                   "opponents, so the win-prob head shrinks the weak axes toward the marginal "
+                   "although its features carry them, and four 10M levers moved nothing at "
+                   "+-0.01 (ledger THE ARMS AT 400 GAMES). 25 per-ENTITY targets put gradient on "
+                   "those axes directly. DERIVED like `opp_belief_slots`: coef>0 is the enable "
+                   "signal, the COEF is a training hparam set on the model, the BOOL is the "
+                   "version-checked arch toggle -- and check_compatible compares the BOOL, so a "
+                   "resume may re-dose the coefficient freely but may not add or drop the head's "
+                   "parameters. NOT called by the forward and built LAST (the CfEvidentialHead "
+                   "contract), so OFF is byte-identical and ON is bit-identical in pi/vf at an "
+                   "ARBITRARY weight. Its input is NOT detached in the training term, unlike "
+                   "every cf readout: the dense gradient into the shared trunk IS the arm, and "
+                   "`grad/dense_aux_share` is its verification. It REQUIRES `win_prob_mode` "
+                   "(declared rather than left to the CLI, so `checkargs` refuses the argv "
+                   "instead of the child refusing the launch); the cross-flag half -- it also "
+                   "needs `--critic winprob` -- is a combination_checks REFUSAL. family=CRITIC "
+                   "for `value_true_team`'s reason: it is exactly the quantity an experiment "
+                   "varies, so putting it on the ARCH surface would make the guard refuse the arm "
+                   "it exists to protect.",
+              requires=("win_prob_mode",),
+              family=Family.CRITIC),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

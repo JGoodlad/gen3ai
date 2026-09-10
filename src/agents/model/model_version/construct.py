@@ -40,6 +40,7 @@ class ModelVersionConstruction(ModelVersionFields):
         win_prob_strata_weight: float = 0.0,
         win_prob_lambda: float = 1.0,
         win_prob_lambda_truncated: str = "bootstrap",
+        win_prob_dense_aux: float = 0.0,
         cf_records: bool = False,
         cf_records_keep: int = 512,
         cf_winprob_coef: float = 0.0,
@@ -266,6 +267,11 @@ class ModelVersionConstruction(ModelVersionFields):
             value_true_team=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_true_team", False)
             ),
+            # gen3_dense_aux_v1 (v117): the STRUCTURAL half of `--win-prob-dense-aux`, read from
+            # the extractor kwargs the same way — it is a DERIVED toggle, so the CLI coefficient
+            # has already been turned into this bool by `extractor_arch._DERIVED`.
+            dense_aux=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("dense_aux", False)),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
             ),
@@ -304,6 +310,7 @@ class ModelVersionConstruction(ModelVersionFields):
             win_prob_strata_weight=float(win_prob_strata_weight),
             win_prob_lambda=float(win_prob_lambda),
             win_prob_lambda_truncated=str(win_prob_lambda_truncated or "bootstrap"),
+            win_prob_dense_aux=float(win_prob_dense_aux),
             cf_records=bool(cf_records),
             cf_records_keep=int(cf_records_keep),
             cf_winprob_coef=float(cf_winprob_coef),

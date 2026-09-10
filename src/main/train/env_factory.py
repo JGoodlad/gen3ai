@@ -66,6 +66,11 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 # unconditionally would put a key in the observation_space that no consumer reads
                 # and that every non-local path would then have to fabricate.
                 emit_opp_true_team=bool(getattr(args, "value_true_team", False)),
+                # DENSE AUXILIARY labels (gen3_dense_aux_v1): emit the 25 end-of-battle targets
+                # and their two-part mask only when the head that consumes them was built — the
+                # same coef>0 signal `extractor_arch._DERIVED` turns into the `dense_aux` toggle,
+                # so the key set and the module cannot disagree.
+                emit_dense_aux=(float(getattr(args, "win_prob_dense_aux", 0.0) or 0.0) > 0.0),
                 # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
                 # true-spread label only when the loss will consume it (coef>0; the CLI guards that
                 # --spread-belief-coef requires --spread-belief, so the head is present to supervise).

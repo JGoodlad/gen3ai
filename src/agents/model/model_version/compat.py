@@ -596,6 +596,22 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "mid-flight would not be one experiment.\n"
                 "Resume with the matching --value-true-team setting, or start a fresh training run."
             )
+        # gen3_dense_aux_v1 (v117): the DENSE AUXILIARY head's params are the state_dict delta and
+        # its ONLY output is a training-side loss — nothing downstream consumes its numbers, so no
+        # shape error and no NaN anywhere would catch a flipped flag. A resume that DROPPED it
+        # would load "successfully" and silently delete the trained head; one that ADDED it would
+        # begin supervising a freshly zero-init head inside a trained trunk and call the result the
+        # same arm. A bool compare is the only gate. The COEFFICIENT is deliberately NOT compared:
+        # re-dosing an existing head is a legitimate resume, adding or removing one is not.
+        if self.dense_aux != saved.dense_aux:
+            raise ModelVersionError(
+                f"dense_aux mismatch: saved={saved.dense_aux!r}, current={self.dense_aux!r}.\n"
+                "The DENSE AUXILIARY head is fixed for a run's lifetime: building it changes the "
+                "state_dict, and because its only output is a training-side loss there is no "
+                "shape error downstream that would catch the mismatch.\n"
+                "Resume with a matching --win-prob-dense-aux (any value > 0 keeps the head; 0 "
+                "removes it), or start a fresh training run."
+            )
         if self.value_dist_bins != saved.value_dist_bins:
             raise ModelVersionError(
                 f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"

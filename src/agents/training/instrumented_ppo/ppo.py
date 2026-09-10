@@ -230,6 +230,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         distill_rows_in_buffer, policy_grad_coef = _f.distill_rows_in_buffer, _f.policy_grad_coef
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
         cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
+        dense_aux_on = _f.dense_aux_on
         q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
         # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
         # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
@@ -268,6 +269,17 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # renders as a gap in a series that also has honest gaps.
                 if float(_lv) == float(_lv):
                     win_prob_metrics.setdefault(_lk, []).append(float(_lv))
+        # +DENSE-AUX (gen3_dense_aux_v1) — the PLUMBING half of the `win_prob/aux_*` family is
+        # COMPUTED in `DenseAuxLabelCallback._on_rollout_end` (it needs the buffer's
+        # [n_steps, n_envs] shape, before `get()` shuffles it flat) and stashed on the model.
+        # Folded in here so it rides the ordinary `win_prob/` prefix. Cleared at every
+        # `_on_rollout_start`, so it can never be a stale rollout's; an absent `win_prob/aux_*`
+        # family means the head is off, and nothing else.
+        _daux_metrics = getattr(self, "_dense_aux_metrics", None)
+        if _daux_metrics:
+            for _dk, _dv in _daux_metrics.items():
+                if float(_dv) == float(_dv):      # a NaN is REPORTED by omission, never logged
+                    win_prob_metrics.setdefault(_dk, []).append(float(_dv))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
@@ -683,6 +695,38 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         for _wk, _wv in wp_m.items():
                             win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
+                # +DENSE-AUX (gen3_dense_aux_v1, v117): the DENSE AUXILIARY loss — per-slot
+                # survival, per-slot final HP and turns-left, all END-OF-BATTLE facts back-filled
+                # to every state the way the win bit is. It is arm 9 of the critic ladder and
+                # KataGo's (Wu 2019) answer to a one-bit terminal signal: ~10% of that bit's
+                # variance lies between opponents, so the head shrinks the weak axes toward the
+                # marginal; 25 per-ENTITY targets put gradient on those axes directly.
+                #
+                # The head is NOT in the forward (the `CfEvidentialHead` contract), so it is
+                # applied here to the `value_pooled` this minibatch's `evaluate_actions` stashed.
+                # 🚨 That tensor is NOT detached, and that is the arm: the aux gradient reaches
+                # the shared trunk exactly as the win-prob loss does under `shaping` (which
+                # `--critic winprob` implies). `pi` is untouched in the only sense that matters
+                # for a readout — the head's OUTPUT never enters the policy path, at any weight.
+                # Folded as an `aux` term at `--win-prob-dense-aux`, never at `vf_coef`: there is
+                # one critic and these are not it.
+                dense_aux_term = None
+                if dense_aux_on:
+                    _fe = self.policy.features_extractor
+                    _pooled = _fe.last_value_pooled
+                    if _pooled is not None:
+                        _da_out = self._dense_aux_loss(
+                            _fe.dense_aux_head(_pooled),
+                            rollout_data.observations.get("aux_target"),
+                            rollout_data.observations.get("aux_mask"),
+                        )
+                        if _da_out is not None:
+                            _da_loss, _da_m = _da_out
+                            dense_aux_term = self.win_prob_dense_aux * _da_loss
+                            loss = loss + _ntg.add("aux", dense_aux_term)
+                            for _dk, _dv in _da_m.items():
+                                win_prob_metrics.setdefault(_dk, []).append(float(_dv))
+
                 # +SCAFFOLDING GAUGE (registered 2026-08-29): the two value readouts this tree
                 # carries answer DIFFERENT questions — the critic estimates the SHAPED return (in
                 # PopArt units, discounted), the win-prob head estimates the GAME. Their divergence
@@ -1093,6 +1137,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
                 if item_belief_term is not None:   aux_probe_terms["item_belief"] = item_belief_term
                 if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
+                # gen3_dense_aux_v1: `grad/dense_aux_share` is the VERIFICATION that the dense
+                # targets actually pull the shared trunk — the one number that separates "the arm
+                # ran" from "the arm did what it was built to do". It is a live (un-detached)
+                # readout, so unlike `grad/cf_evidential_share` it must NOT read 0.
+                if dense_aux_term is not None:     aux_probe_terms["dense_aux"] = dense_aux_term
                 if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
                 # +DISTILL-SHARE (gen3_grad_distill_share_v1): the exploiter-distillation KL's own

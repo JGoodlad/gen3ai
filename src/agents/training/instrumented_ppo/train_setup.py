@@ -55,6 +55,7 @@ class FoldFlags(NamedTuple):
     q_winprob_on: Any
     q_onpolicy_on: Any
     cf_any_on: Any
+    dense_aux_on: Any
 
 
 class ProbeSetup(NamedTuple):
@@ -250,6 +251,16 @@ class TrainSetup:
             float(getattr(self, "q_winprob_onpolicy_coef", 0.0)) != 0.0
             and cf_buffer is not None and q_head_built
         )
+        # +DENSE-AUX (gen3_dense_aux_v1, v117): the DENSE AUXILIARY head — per-slot survival, per-
+        # slot final HP and turns-left, KataGo's dense-target answer to a one-bit terminal signal.
+        # Needs BOTH the STRUCTURAL head (built when `--win-prob-dense-aux > 0` at launch) and a
+        # live coefficient, so a resume that lowered the coefficient to 0 keeps the head's
+        # parameters in the state_dict and simply stops training it — which is what makes the
+        # coefficient resume-mutable while the BUILD is not.
+        dense_aux_on = (
+            float(getattr(self, "win_prob_dense_aux", 0.0)) > 0.0
+            and getattr(self.policy.features_extractor, "dense_aux_head", None) is not None
+        )
         cf_any_on = (cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
                      or q_winprob_on or q_onpolicy_on)
         if cf_any_on:
@@ -265,7 +276,7 @@ class TrainSetup:
             policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on, cf_buffer=cf_buffer,
             cf_winprob_on=cf_winprob_on, cf_evid_on=cf_evid_on, cf_twin_on=cf_twin_on,
             cf_shadow_on=cf_shadow_on, q_winprob_on=q_winprob_on, q_onpolicy_on=q_onpolicy_on,
-            cf_any_on=cf_any_on,
+            cf_any_on=cf_any_on, dense_aux_on=dense_aux_on,
         )
 
     def _train_probe_setup(self, distill_metrics: dict) -> ProbeSetup:
