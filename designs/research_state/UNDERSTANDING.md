@@ -753,6 +753,15 @@ configuration span 45 Elo, 0.12 in early bot win rate, 0.21 in the first self-pl
 worst-ratio itself — none of those is a lever signal. Arm 8 (λ = 0.9) is live with `lambda_target_shift` 0.59 as
 its dose meter.
 
+**Arm 8 `lambda09` read (2026-09-10, λ-return targets at 0.9, vs all three controls at 10M) — THE FIRST CANDIDATE
+LEVER EFFECT:** [MEASURED · CANDIDATE, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/`] V decodes
+its own team at turn 1 at R² ≈ 0.15 where every control reads ≈ 0 — +0.146 [+0.064, +0.228] and +0.148 [+0.069,
++0.229] against the two 40/40/10 controls (DETECTED past the wider live floor 0.039), +0.197 [−0.012, +0.445]
+against the base control (n.d. by frame width only); bot resolution leans +0.01–0.02; the opponent axis did not
+move; calibration vs its own continuation the best of any run (−0.008). Exactly the row the head refit predicted a
+lower-variance target would move first. Pending: ≥2 offline eval draws (queued first on the generator) and a
+replicate arm (seed 1002) before the label hardens.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
