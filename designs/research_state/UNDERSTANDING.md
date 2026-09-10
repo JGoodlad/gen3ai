@@ -776,9 +776,20 @@ replicate floor (0.20 / 0.22) is the size of the effect — no row's CI clears i
 is not written**, per the registered rule: at turn 1–3 the arm's lever arm IS the smallest (`sd(logit V)` 0.442 vs
 0.573–0.693) and the slope's SE scales as `1/sd(logit V)`, so it may be underpowered by its own effect — though the
 COMMON-SUPPORT companion keeps the sign and magnitude on the pooled row, so that difference is not the support.
-🚨 **These are LIVE frames, and the restated dose curve needs this row MONOTONE across {1.0, 0.95, 0.9} — which a
-0.20 floor cannot support. The decisive read is the 400/800-game offline pair** (3–8× tighter floors on the
-surviving rows), and it is the next call before `lambda095`.
+**The offline 400/800-game read then settled it — (C) is NOT SUPPORTED and DROPPED:** [MEASURED · (C) NOT
+SUPPORTED, `…/critic_read_hp{400,800}_v5.md`; ledger 2026-09-10 *READ · the calibration slope on the OFFLINE
+frames*] the three slope levels at 800 games are `ctrl10M` **1.070**, `ctrl10M_b` **1.324**, arm 8 **1.343** —
+**arm 8 sits on top of the λ = 1.0 replicate control**, and arm − `ctrl10M_b` is +0.117 at 400 and +0.019 at 800,
+inside one control-to-control draw. The apparent +0.27/+0.31 against `ctrl10M` is that control being the roster's
+outlier at ≈ 1. The guards do not rescue it — the lever-arm-neutral COMMON-SUPPORT row agrees (+0.031 at 800) and
+against `ctrl10M_b` arm 8 is the LESS compressed side — so NOT SUPPORTED is written rather than UNREADABLE, and (C)
+is dropped per its own registration. **What survives is what survived before: amplitude DOWN** (between-opponent
+spread Δ −0.124 / −0.098 past the floor at both sizes) — real and replicated, but not explained by shrinkage that
+overshot. 🚨 **The slope's replicate floor is RUN-LEVEL and GROWS with eval** (+0.191 at 400 games, +0.254 at 800,
+both CIs clear of zero), so this row cannot be read as an arm-vs-one-control delta at any eval size; the λ dose
+curve's slope component is dead on those grounds unless `lambda09_b` runs first to price it. 🚨 **Slope LEVELS are
+not comparable across the live/offline boundary** — the two controls' order FLIPS (`ctrl10M` 1.441 live / 1.070
+offline; `ctrl10M_b` 1.313 / 1.324).
 
 **Arm 5 `truevalue` read (2026-09-10, the PRIVILEGED critic vs all three controls at 10M):** [MEASURED · NOT
 DETECTED, `measurements/critic_ladder_reads/truevalue_vs_ctrl10M_2026-09-10/`] giving the value path the opponent's
@@ -786,6 +797,12 @@ TRUE team does not make V separate opponents (turn-1–3 spread ratio 0.00 vs th
 +0.10 lean) — hidden information is not the limit, as the probe read predicted; the privileged head is OPTIMISTIC
 against its own continuation (+0.040 all, +0.088 late vs ≈0 on every control — clear of zero, not of the floor)
 and resolves the pool stratum worse. The information family is closed for this era pending the offline frames.
+
+**An ERA-LEVEL defect the slope exposed, not an arm's:** [MEASURED · LEVEL, not a delta] on the offline frames
+every 10M run except `ctrl10M` reads a pooled calibration slope of **1.26–1.38** — the critics are UNDER-dispersed
+by 25–40% on the logit scale whatever λ is, i.e. where the head says 0.7 the realized rate is materially above 0.7.
+`ctrl10M` at 1.07 is the exception. This is a statement about the era's critics rather than about any lever, it has
+no floor (a level, not a delta), and no arm on the ladder has moved it.
 
 ### 4.3 What is UNVERIFIED in this era
 

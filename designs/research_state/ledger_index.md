@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,908-line file. **The ledger itself is append-only and is never edited by this**;
+16,928-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**524 headings · 484 dated · 2026-08-01 → 2026-09-10 · ledger 16,908 lines.**
+**525 headings · 485 dated · 2026-08-01 → 2026-09-10 · ledger 16,928 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -544,3 +544,4 @@ rename.
   - `L16879` · `2026-09-10` · READ · critic ladder arm 5 `ai_v12_14_ladder_truevalue` (the PRIVILEGED critic) vs the three controls at pinned 10M — hidden information is NOT the limit: the opponent axis did not move; the privileged head is more OPTIMISTIC against its own continuation than every control
   - `L16901` · `2026-09-10` · CORRECTION · two clauses in arm 5's read are narrowed — a clamped 0.000 carries no sign, and a two-of-three-by-point lean is the shape that already failed once
   - `L16905` · `2026-09-10` · LIVE FINDING (pre-read) · arm 9's dose meters — `aux_auc_own > aux_auc_opp` is FALSIFIED as a persistent property (own plateaus ≈ 0.82, opponent climbs past it to 0.875); `aux_masked_frac` DRIFTS 0.30 → 0.23; coverage is a REPORTED number at the read, not a covariate
+  - `L16909` · `2026-09-10` · READ · the calibration slope on the OFFLINE 400- and 800-game frames — **(C) SHRINKAGE is NOT SUPPORTED at the registered bar**: arm 8's slope (1.34–1.38) is NOT separable from the λ = 1.0 replicate control `ctrl10M_b` (1.26–1.32); the apparent detection is `ctrl10M` being the outlier at ≈ 1.07. And the row's replicate floor is RUN-LEVEL — it GROWS from 0.191 at 400 games to 0.254 at 800, both CIs clear of zero, so it cannot be read on one arm against one control at any eval size

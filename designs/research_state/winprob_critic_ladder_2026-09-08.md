@@ -417,9 +417,50 @@ SUPPORTED is not written either**, per the registered rule: it would require sho
 not simply underpowered by its own effect, and it may have been (the lever arm below).
 
 **Consequence for the dose curve.** The restated (C) needs this row MONOTONE across {1.0, 0.95,
-0.9}. A 0.20 floor against a controls-to-arm range of 0.34 cannot support that, so **the dose test
-belongs on the offline frames**, where the surviving rows' floors are 3–8× tighter. Running the
-slope on the existing 400/800-game cycles is the next call, before `lambda095`.
+0.9}. A 0.20 floor against a controls-to-arm range of 0.34 cannot support that, so the dose test
+belongs on the offline frames. **That read was run the same day and settled it — see §2f.**
+
+## 2f. THE SLOPE ON THE OFFLINE FRAMES — (C) is NOT SUPPORTED and DROPPED
+
+Both sides offline-generated to one spec, quota-matched, tool v5. **Cross-check:** the tool
+reproduces the committed v4 offline figures exactly on the shared rows (`spread_ratio.t1_3`
+Δ −0.124 @400 / −0.098 @800; `own_team_r2.t1` −0.003 / +0.015).
+
+| row | @400 arm / `ctrl10M` / Δ | @800 arm / `ctrl10M` / Δ | floor 400 / 800 |
+|---|---|---|---|
+| **slope · all** | 1.380 / 1.072 / **+0.308 [+0.204, +0.416]** | 1.343 / 1.070 / **+0.273 [+0.197, +0.353]** | **0.191 / 0.254** |
+| slope · turn 1–3 | 1.148 / 0.838 / +0.310 | 0.950 / 0.732 / +0.217 | 0.128 / 0.031 |
+| slope · COMMON SUPPORT | 1.406 / 1.047 / +0.359 | 1.370 / 1.055 / +0.315 | 0.221 / 0.292 |
+| slope · within stratum | 1.350 / 1.010 / +0.341 | 1.306 / 1.002 / +0.304 | 0.151 / 0.273 |
+
+🚨 **THE FLOOR IS THE FINDING.** Two identically-configured controls (`ctrl10M_b` seed 1001 vs
+`ctrl10M` seed 42, both λ = 1.0) differ on the pooled slope by **+0.191 [+0.088, +0.296] at 400
+games and +0.254 [+0.175, +0.331] at 800** — CIs clear of zero at both sizes, and the magnitude
+GREW with eval instead of shrinking. That is a RUN-LEVEL difference, not sampling noise. **The
+pooled slope cannot be read as an arm-vs-one-control delta at any eval size.**
+
+**Verdict: NOT SUPPORTED, and the reason is the control roster, not the power.** The three levels
+at 800 games are `ctrl10M` **1.070**, `ctrl10M_b` **1.324**, arm 8 **1.343**; at 400, 1.072 /
+1.263 / 1.380. **Arm 8 sits on top of the λ = 1.0 replicate control** — arm − `ctrl10M_b` is
++0.117 at 400 and **+0.019 at 800**, inside one control-to-control draw. Arm 8 clears the bar
+against `ctrl10M` alone, and `ctrl10M` is the roster's outlier, the one control reading ≈ 1. The
+guards do not rescue it — the lever-arm-neutral COMMON-SUPPORT row gives the same picture (+0.031
+at 800) and against `ctrl10M_b` arm 8 is the LESS compressed side (`sd(logit V)` 1.557 vs 1.387) —
+so **NOT SUPPORTED is written rather than UNREADABLE, and (C) is DROPPED per its own
+registration.**
+
+**What survives is unchanged:** arm 8's `V` spreads LESS across opponents, past the floor at both
+offline sizes (Δ −0.124 / −0.098 against floors 0.066 / 0.043). Amplitude down is real. What (C)
+claimed about it — that the compression is shrinkage that OVERSHOT — is not supported, because the
+arm's slope is where a λ = 1.0 replicate's slope already is.
+
+**Two things to carry forward.** (1) **An ERA-LEVEL defect, not an arm's:** every 10M run except
+`ctrl10M` reads a pooled slope of 1.26–1.38 — the critics are under-dispersed by 25–40% on the
+logit scale whatever λ is. It is a LEVEL, has no floor, and no lever on this ladder has moved it.
+(2) **The dose curve's slope component is dead** on the same grounds the alignment component died.
+Either restate the curve on the spread ratio alone, or run `lambda09_b` FIRST to price the
+run-level floor on both rows. 🚨 **Slope LEVELS do not compare across the live/offline boundary** —
+the two controls' order FLIPS (`ctrl10M` 1.441 live / 1.070 offline; `ctrl10M_b` 1.313 / 1.324).
 
 🚨 **THE LEVER ARM, and why the arm's interval is wide by construction.** The slope's standard
 error scales as `1/sd(logit V)`, and (C)'s own prediction is that the arm's `sd(logit V)` is the
