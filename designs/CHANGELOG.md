@@ -9045,3 +9045,58 @@ GATES: `winprob_lambda_test.py` (35) + a `combination_checks` ARGVS row. Smoke:
 `lambda_target_shift` 0.13–0.26, `lambda_unmasked` 7–92, `lambda_bootstrap_fallback` 0.0) and records
 `win_prob_lambda 0.9` at `config_version` 116; the same argv at `--win-prob-lambda 1.0` publishes NO
 `lambda_*` family at all.
+
+
+---
+
+## The value sidecar's SCHEMA GUARD (`gen3_value_sidecar_schema_guard_v1`, 2026-09-09)
+
+**A reader-side fix for a defect that had no symptom.** Every arm so far wrote `SIDECAR_SCHEMA` 1,
+in which `<run>/value_sidecar/rows.jsonl`'s `target` column is the episode's terminal 0/1 OUTCOME —
+and three of them landed on exactly **155,137 rows**, which invites treating the files as
+interchangeable. Arm 8 (`--win-prob-lambda 0.9`, `gen3_winprob_lambda_v1`) writes schema 2, where
+the SAME column holds a soft λ-return. A reader that pooled the two, or compared two runs'
+calibration tables across the boundary, would have averaged two different quantities under one
+column name and reported the result as a calibration. Nothing on disk said so.
+
+**THE READER** (`main.ops.value_sidecar_read`, tool version 2) now reads the header FIRST and opens
+its report with `schema` · `critic_mode` · `win_prob_lambda` · `win_prob_lambda_truncated` · the
+writer-segment count, plus one sentence saying **in words** what `target` IS. Every table carries
+the quantity it scored in its heading. On a λ file there are TWO labelled readings — against the
+λ-RETURN (the objective's own residual) and against the OUTCOME (the only reading that compares
+across the boundary) — and their `n` columns are deliberately different, because a
+`bootstrap`-unmasked row has a λ target and no outcome. The λ reading OMITS the `won` / `lost`
+split: a soft target has no such rows, and splitting on `target == 1.0` would read proximity to a
+terminal while looking like a reading of the win/loss asymmetry.
+
+**THE OUTCOME IS NOW ITS OWN COLUMN, because it is otherwise GONE.**
+`WinProbLabelCallback._apply_lambda` overwrites `win_target` in place; afterwards the terminal bit
+is unrecoverable from the rows — the λ-return holds it at weight **λ^d** for a distance `d` no
+column records, **`win_margin` is the per-turn normalised MATERIAL margin** (a `Φ_mat` by-product,
+not an outcome), and `target_known` under `bootstrap` marks rows whose episode never finished. So
+that callback publishes the pre-overwrite `(y, mask)` on the model — cleared at `_on_rollout_start`
+so a stale array cannot label the next rollout's states — and the sidecar writes it as `outcome` /
+`outcome_known`. At λ = 1.0 the columns are the target itself; when λ < 1 and the stash is absent or
+the wrong shape they are `null`, never inferred. **`ep_complete` now follows that terminal mask**
+rather than `target_known`, which the `bootstrap` branch widens onto episodes that never finished.
+
+**ONE HEADER PER WRITER SESSION, not per file.** The header used to be skipped whenever the file was
+already non-empty, so a RESUME appended its rows under the first process's header — a run resumed
+across the flag change held one header saying `win_prob_lambda: 1.0` above a tail of λ-returns. A
+header per session (`resumed: false` on the first, `true` after) makes the change visible at the
+exact row, which is what lets `read_sidecar_segments` refuse it. `read_sidecar` REFUSES a mid-file
+change of meaning with `MixedSchemaError`, naming every segment's header and the ROW INDEX of the
+change; the CLI renders that plus the fix. A plain restart at the same λ is not a refusal.
+
+**`--compare RUN2`** reads a second run beside the first — the two pooled cells and the delta with
+its OWN episode-clustered CI — and REFUSES two runs that disagree about what `target` is, naming
+both headers. **The comparison is on the QUANTITY, not the version number**: `critic_mode`,
+`win_prob_lambda` and `win_prob_lambda_truncated` must agree and both schemas must sit in the
+declared `SCHEMA_EQUIVALENCE` set, so a schema-1 file and a schema-2 file at λ = 1.0 compare EQUAL
+on purpose (`SIDECAR_SCHEMA`'s own rule is that they are byte-identical apart from two header
+fields) while an undeclared schema refuses even at an identical λ.
+
+No `SIDECAR_SCHEMA` bump: `outcome` / `outcome_known` are ADDITIVE columns, which that constant's
+own rule says do not move the tag. No `MODEL_CONFIG_VERSION` implication — none of this reaches
+`model_config.json`. GATES: `src/main/ops/value_sidecar_read_test.py` (14, new) +
+`value_sidecar_test.py` (31, up from 22).

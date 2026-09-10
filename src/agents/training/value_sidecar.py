@@ -40,6 +40,7 @@ mistaken for a measurement it is not:
 | `v` | READ — `rollout_buffer.values`, the value PPO actually used |
 | `win_logit` | DERIVED — the exact inverse link of `v` under `--critic winprob`, `null` otherwise |
 | `target` / `target_known` | READ — the back-filled `win_target` / `win_mask` obs keys |
+| `outcome` / `outcome_known` | READ — the PRE-λ terminal bit and its mask; identical to `target` at λ = 1.0, `null` when λ < 1 and the writer's stash is missing |
 | `opp_class` | READ — the `opp_class` obs key (bot / pool / stable / exploiter), `null` if absent |
 | `turn` | DERIVED — inverted from the observation's linear deadline-clock channel |
 | `win_margin` | READ — the `win_margin` obs key, `null` when absent |
@@ -78,6 +79,26 @@ and, under the default `bootstrap` truncation branch, sets `win_mask = 1` on the
 episode as well. This callback runs immediately after it and therefore reads the λ-return. The
 header's **`win_prob_lambda`** field says which quantity a file holds; a reader that assumes the
 outcome on a λ file is measuring the critic against a moving target and will not know it.
+
+🚨 **SO THE OUTCOME IS WRITTEN AS ITS OWN COLUMN, and it has to be, because it is otherwise gone.**
+`_apply_lambda` overwrites `win_target` IN PLACE; the λ-return carries the outcome at weight `λ^d`
+for a distance `d` nothing records, and `win_margin` is a per-turn MATERIAL margin (a by-product of
+Φ_mat) whose sign is a material lead, not a win. Nothing downstream can invert either. So that
+callback publishes the pre-overwrite `(y, mask)` on the model and this one reads it into
+`outcome` / `outcome_known` — which is what lets the reader score a λ file against BOTH quantities
+and label each. When the stash is absent under λ < 1 the columns are `null`, never inferred.
+
+🚨 **`ep_complete` FOLLOWS THE TERMINAL MASK, NOT `target_known`.** Under the default `bootstrap`
+truncation the λ recursion UNMASKS the trailing in-progress episode, so `win_mask` stops meaning
+"this episode finished inside the buffer". Read through it, a straddling episode would read
+COMPLETE and every length statistic that filters on `ep_complete` would quietly include a
+truncated head.
+
+🚨 **THE HEADER IS WRITTEN ONCE PER PROCESS, NOT ONCE PER FILE.** It used to be skipped whenever
+the file was non-empty, so a RESUME appended its rows under the first process's header — a run
+resumed across a flag change then held one header saying `win_prob_lambda: 1.0` above a tail of
+λ-returns, with nothing on disk to say so. A header per writer session makes the change visible at
+the exact row it happens, which is what `read_sidecar_segments` refuses by index.
 
 ⚠️ **`win_logit` IS NOT AN INDEPENDENT MEASUREMENT.** Under `--critic winprob` the head IS the
 critic, so `v = sigmoid(logit)` exactly and the logit is recoverable by inverting it — but it
@@ -225,18 +246,27 @@ class ValueSidecarCallback(BaseCallback):
 
     # ── the write ────────────────────────────────────────────────────────────────────────────
     def _ensure_header(self) -> None:
-        """Write the one-line header describing the file, if this is a fresh sidecar.
+        """Write this WRITER SESSION's header row, once per process.
 
         The header is a ROW like any other (`{"kind": "header", ...}`) rather than a separate
         format, so the file stays a plain JSONL a consumer can `for line in f` without a special
         case for line 1. It records the schema, the critic mode and the sampling parameters —
         without the critic mode a reader cannot tell whether `v` is a probability, and without the
         fraction it cannot turn a row count back into a state count.
+
+        🚨 **ONCE PER PROCESS, NOT ONCE PER FILE — and the difference is a whole class of silent
+        defect.** This used to skip whenever the file was non-empty, so a RESUME appended its rows
+        under the FIRST process's header. A run resumed across a flag change then held one header
+        saying `win_prob_lambda: 1.0` above a tail of rows whose `target` is a λ-RETURN, and
+        nothing on disk said so: every consumer would pool a 0/1 outcome with a soft return and
+        report the average as a calibration. A header per session makes the change VISIBLE at the
+        exact row it happens, which is what lets `read_sidecar_segments` refuse it by index.
+        A restart appends a few hundred bytes; the cost is not a consideration.
         """
-        path = sidecar_path(self._run_dir)
-        if os.path.exists(path) and os.path.getsize(path) > 0:
-            self._header_written = True
+        if self._header_written:
             return
+        path = sidecar_path(self._run_dir)
+        resumed = os.path.exists(path) and os.path.getsize(path) > 0
         os.makedirs(os.path.dirname(path), exist_ok=True)
         header = {
             "kind": "header",
@@ -254,7 +284,10 @@ class ValueSidecarCallback(BaseCallback):
             "fraction": self._fraction,
             "seed": self._seed,
             "max_turns": int(MAX_TURNS),
+            # This SEGMENT's start. `resumed` is True for every header after the first, so a
+            # reader can say "the file changed here" rather than "the file is inconsistent".
             "started_at": datetime.now(timezone.utc).isoformat(),
+            "resumed": bool(resumed),
         }
         with open(path, "a") as f:
             f.write(json.dumps(header) + "\n")
@@ -299,10 +332,24 @@ class ValueSidecarCallback(BaseCallback):
         opp = (np.asarray(obs["opp_class"])[..., 0] if "opp_class" in obs else None)
         margin = (np.asarray(obs["win_margin"])[..., 0] if "win_margin" in obs else None)
 
+        # 🚨 THE OUTCOME, WHICH UNDER λ < 1 IS NO LONGER `target`. `WinProbLabelCallback` publishes
+        # the PRE-λ terminal bit and its mask before overwriting `win_target` in place; at λ = 1.0
+        # the recursion is skipped whole and `target` IS the outcome, so the two arrays are the
+        # ones already read. When λ < 1 and the stash is absent or the wrong shape (a hand-built
+        # model, a callback-order defect), the columns are `null` — the λ-return carries the
+        # outcome at weight λ^d for a `d` nothing records, so there is nothing to recover and a
+        # guess would be exactly the plausible wrong number this file exists to avoid.
+        y_arr, y_mask = self._terminal_outcome(wt, wm, (n_steps, n_envs))
+
         # Per-env episode index within this rollout, and each episode's extent. `cumsum` over the
         # episode-start flags is the same boundary signal the win-target back-fill uses.
         ep_index = np.cumsum(starts >= 0.5, axis=0)       # [n_steps, n_envs]
-        ep_len, ep_complete = _episode_extents(starts, wm)
+        # 🚨 COMPLETENESS IS THE TERMINAL MASK, NEVER THE TARGET MASK. Under
+        # `--win-prob-lambda-truncated bootstrap` the λ recursion UNMASKS the trailing in-progress
+        # episode, so `win_mask` stops meaning "this episode finished inside the buffer" — read
+        # through it, `ep_complete` would call a straddling episode complete and every length
+        # statistic that filters on it would silently include a truncated head.
+        ep_len, ep_complete = _episode_extents(starts, y_mask if y_mask is not None else wm)
 
         rows = self._sample(rollout, n_steps, n_envs)
         if rows[0].size == 0:
@@ -333,6 +380,10 @@ class ValueSidecarCallback(BaseCallback):
                 "win_logit": (float(logits[k]) if winprob else None),
                 "target": float(wt[t, e]),
                 "target_known": bool(wm[t, e] >= 0.5),
+                # The episode's 0/1 OUTCOME, always — identical to `target` at λ = 1.0 and the
+                # only route to it below 1.0. `null` when unrecoverable; never inferred.
+                "outcome": (float(y_arr[t, e]) if y_arr is not None else None),
+                "outcome_known": (bool(y_mask[t, e] >= 0.5) if y_mask is not None else False),
                 "opp_class": (int(opp[t, e]) if opp is not None else None),
                 "win_margin": (float(margin[t, e]) if margin is not None else None),
                 "ep_len": int(ep_len[t, e]),
@@ -347,6 +398,34 @@ class ValueSidecarCallback(BaseCallback):
         with open(sidecar_path(self._run_dir), "a") as f:
             f.write("\n".join(out) + "\n")
         self.rows_written += len(out)
+
+    # ── the outcome, under either λ regime ───────────────────────────────────────────────────
+    def _terminal_outcome(self, wt, wm, shape):
+        """``(outcome, outcome_mask)`` as ``[n_steps, n_envs]`` arrays, or ``(None, None)``.
+
+        Three cases, and only the first two produce a number:
+
+        * **λ = 1.0** (every file before `gen3_winprob_lambda_v1`, and every unflagged run since):
+          the back-fill wrote the terminal bit into `win_target` and nothing overwrote it, so the
+          target IS the outcome and the arrays are returned as they are.
+        * **λ < 1.0 with the stash present**: `WinProbLabelCallback._apply_lambda` published the
+          pre-overwrite `(y, mask)` on the model immediately before replacing them.
+        * **λ < 1.0 with no stash**: ``(None, None)``. The λ-return is
+          ``G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]``, so the outcome enters row `t` at weight `λ^d`
+          for a distance `d` this file does not record, and `win_margin` is a per-turn MATERIAL
+          margin (a by-product of Φ_mat), not an outcome. Nothing here can be inverted.
+        """
+        lam = float(getattr(self.model, "win_prob_lambda", 1.0) or 1.0)
+        stash = getattr(self.model, "_win_prob_terminal_outcome", None)
+        if stash is not None:
+            y, mask = stash
+            y, mask = np.asarray(y), np.asarray(mask)
+            if y.shape == shape and mask.shape == shape:
+                return y, mask
+            return None, None
+        if lam >= 1.0:
+            return wt, wm
+        return None, None
 
     # ── the sampler ──────────────────────────────────────────────────────────────────────────
     def _sample(self, rollout: int, n_steps: int, n_envs: int):
@@ -391,12 +470,115 @@ def _episode_extents(starts: np.ndarray, mask: np.ndarray):
     return length, complete
 
 
-def read_sidecar(run_dir: str):
-    """Load a run's sidecar as ``(header, rows)``.
+#: The header fields that decide WHAT `target` IS. Two files (or two segments of one file) that
+#: disagree on any of them hold two different quantities under one column name, and pooling them
+#: is the defect this tuple exists to make detectable. `critic_mode` is here because it decides
+#: whether `v` is a probability at all; the two λ fields because they decide whether `target` is
+#: the terminal outcome or a λ-return over the collector's own values.
+TARGET_IDENTITY_FIELDS = ("schema", "critic_mode", "win_prob_lambda", "win_prob_lambda_truncated")
+
+
+def target_identity(header) -> dict:
+    """The subset of a header that says what `target` MEANS, with the pre-λ defaults filled in.
+
+    A schema-1 header has neither λ field. Both defaults are the values the flag's OFF position
+    writes, so a v1 file and a v2 file at λ = 1.0 compare EQUAL here — which is exactly right:
+    `gen3_winprob_lambda_v1` states that a v2 file at λ = 1.0 is byte-identical to a v1 one apart
+    from the two header fields, so refusing to compare them would be a false alarm.
+    """
+    h = header or {}
+    return {
+        "schema": int(h.get("schema", 1)),
+        "critic_mode": str(h.get("critic_mode")),
+        "win_prob_lambda": float(h.get("win_prob_lambda", 1.0) or 1.0),
+        "win_prob_lambda_truncated": str(h.get("win_prob_lambda_truncated", "bootstrap")),
+    }
+
+
+#: The schema versions whose `target` column holds the SAME quantity whenever the three λ/critic
+#: fields agree — i.e. between which a difference in the version NUMBER alone is not a difference
+#: in meaning. `SIDECAR_SCHEMA`'s own comment states this for the 1↔2 pair: a v2 file at λ = 1.0 is
+#: byte-identical to a v1 one apart from the two header fields, so refusing to compare them would
+#: be a false alarm on every arm before arm 8.
+#: 🚨 **A NEW SCHEMA IS NOT ADDED HERE BY DEFAULT.** Leaving it out means a v3 file refuses to be
+#: pooled with a v2 one until somebody states, here, why the two columns are the same quantity —
+#: which is the direction this subsystem errs in everywhere else.
+SCHEMA_EQUIVALENCE = frozenset({1, 2})
+
+#: The header fields that decide what QUANTITY `target` holds, independent of the version number.
+QUANTITY_FIELDS = ("critic_mode", "win_prob_lambda", "win_prob_lambda_truncated")
+
+
+def same_quantity(a_header, b_header) -> bool:
+    """Do these two headers' `target` columns hold the SAME quantity?
+
+    The three λ/critic fields must agree, AND both schemas must be in the declared
+    :data:`SCHEMA_EQUIVALENCE` set (or be equal). That is the split the rest of this module rests
+    on: a version NUMBER that moved without the meaning moving is not a reason to refuse, and a
+    version number nobody has reasoned about is.
+    """
+    a, b = target_identity(a_header), target_identity(b_header)
+    if any(a[k] != b[k] for k in QUANTITY_FIELDS):
+        return False
+    if a["schema"] == b["schema"]:
+        return True
+    return a["schema"] in SCHEMA_EQUIVALENCE and b["schema"] in SCHEMA_EQUIVALENCE
+
+
+def target_is_outcome(header) -> bool:
+    """Does this file's `target` column hold the episode's terminal 0/1 outcome?
+
+    True at λ = 1.0 — including every schema-1 file, which predates the flag — and False below it,
+    where the column holds a λ-return that varies WITHIN an episode.
+    """
+    return target_identity(header)["win_prob_lambda"] >= 1.0
+
+
+def describe_target(header) -> str:
+    """What `target` IS, in words, for THIS file. One sentence, for a report header.
+
+    🚨 The whole defect this exists for is that the column has one NAME and two MEANINGS. A reader
+    that prints a calibration table without saying which one it scored has produced a number
+    nobody can interpret and everybody can pool.
+    """
+    idn = target_identity(header)
+    if idn["win_prob_lambda"] >= 1.0:
+        return ("the episode's TERMINAL 0/1 OUTCOME, back-filled to every state of the episode "
+                "that produced it (constant within an episode)")
+    return (f"the λ-RETURN, λ = {idn['win_prob_lambda']:g} — a per-state SOFT probability that "
+            f"varies within an episode, blending the outcome with the collector's own recorded "
+            f"V(s); truncated episodes are handled `{idn['win_prob_lambda_truncated']}`"
+            + (", so trailing in-progress rows are BOOTSTRAPPED and carry no outcome at all"
+               if idn["win_prob_lambda_truncated"] == "bootstrap" else ""))
+
+
+class MixedSchemaError(ValueError):
+    """A single `rows.jsonl` whose `target` column changes MEANING part-way through.
+
+    Carries the segments so a caller can name both headers and the exact row index of the change
+    rather than reporting "inconsistent file".
+    """
+
+    def __init__(self, message, segments, change_at):
+        super().__init__(message)
+        self.segments = segments
+        self.change_at = change_at
+
+
+def read_sidecar_segments(run_dir: str):
+    """Load a run's sidecar as a list of ``{"header", "rows", "row_index"}`` SEGMENTS.
+
+    One segment per writer session — the sidecar writes a header row per process, so a resumed run
+    contributes one segment per restart. ``row_index`` is the segment's first row's index in the
+    POOLED row list, which is what a refusal quotes.
 
     🚨 **REFUSES rather than returning an empty result** — a run with no sidecar and a run whose
     sidecar is empty are different facts from a run whose critic was well calibrated, and every
     caller here is a measurement.
+
+    ⚠️ Rows appearing BEFORE any header (a file written by a pre-`gen3_value_sidecar_v1` writer, or
+    a truncated head) are refused rather than attributed to the first header that follows them:
+    guessing which config produced them is the exact move this whole subsystem forbids.
     """
     path = sidecar_path(run_dir)
     if not os.path.exists(path):
@@ -404,7 +586,8 @@ def read_sidecar(run_dir: str):
             f"no value sidecar at {path} — this run was trained without one "
             "(--value-sidecar off, or before gen3_value_sidecar_v1). Nothing is read and "
             "nothing is concluded.")
-    header, rows = None, []
+    segments: list = []
+    n_rows = 0
     with open(path) as f:
         for line in f:
             line = line.strip()
@@ -415,11 +598,35 @@ def read_sidecar(run_dir: str):
             except ValueError:
                 continue  # a torn final line from a killed run — skip it, never guess it
             if obj.get("kind") == "header":
-                header = obj
+                segments.append({"header": obj, "rows": [], "row_index": n_rows})
             else:
-                rows.append(obj)
-    if header is None:
+                if not segments:
+                    raise ValueError(
+                        f"{path} begins with DATA rows and no header row precedes them, so the "
+                        "critic mode and the λ regime that produced them are UNKNOWN. Refusing.")
+                segments[-1]["rows"].append(obj)
+                n_rows += 1
+    if not segments:
         raise ValueError(
             f"{path} has no header row, so the critic mode and sampling fraction are UNKNOWN "
             "and `v` cannot be read as a probability or as a shaped return. Refusing.")
-    return header, rows
+    return segments
+
+
+def read_sidecar(run_dir: str):
+    """Load a run's sidecar as ``(header, rows)`` — the pooled read, which REFUSES a mixed file.
+
+    🚨 **POOLING IS ONLY LEGAL WHEN EVERY SEGMENT MEANS THE SAME THING BY `target`.** A run resumed
+    across the `gen3_winprob_lambda_v1` boundary holds terminal 0/1 outcomes in its head and
+    λ-returns in its tail under one column name; averaging the two produces a number that is
+    neither. ``MixedSchemaError`` names both headers and the row index of the change.
+    """
+    segments = read_sidecar_segments(run_dir)
+    first = segments[0]["header"]
+    for seg in segments[1:]:
+        if not same_quantity(first, seg["header"]):
+            raise MixedSchemaError(
+                f"{sidecar_path(run_dir)} changes what `target` MEANS at row "
+                f"{seg['row_index']:,}", segments, seg["row_index"])
+    rows = [r for seg in segments for r in seg["rows"]]
+    return segments[0]["header"], rows

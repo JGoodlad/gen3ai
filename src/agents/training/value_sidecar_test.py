@@ -7,8 +7,9 @@ import numpy as np
 import pytest
 
 from agents.training.value_sidecar import (
-    CLOCK_LINEAR_INDEX, DEFAULT_SIDECAR_FRACTION, SIDECAR_SCHEMA, ValueSidecarCallback,
-    read_sidecar, sidecar_path, turn_from_observation,
+    CLOCK_LINEAR_INDEX, DEFAULT_SIDECAR_FRACTION, SIDECAR_SCHEMA, MixedSchemaError,
+    ValueSidecarCallback, read_sidecar, read_sidecar_segments, sidecar_path,
+    turn_from_observation,
 )
 from agents.observation.constants import MAX_TURNS
 
@@ -100,13 +101,23 @@ def test_the_row_schema_is_complete_and_the_header_declares_the_currency(tmp_pat
     assert header["fraction"] == 1.0 and header["max_turns"] == MAX_TURNS
 
     assert len(rows) == 8 * 4
+    # 🚨 `outcome` / `outcome_known` are their OWN columns and not a copy of `target` for the sake
+    # of it: under `--win-prob-lambda < 1` the λ recursion overwrites `win_target` in place, and
+    # the terminal bit exists nowhere else in the file afterwards.
     expected = {"step", "rollout", "env", "episode", "t", "turn", "v", "win_logit", "target",
-                "target_known", "opp_class", "win_margin", "ep_len", "ep_complete", "timeout"}
+                "target_known", "outcome", "outcome_known", "opp_class", "win_margin",
+                "ep_len", "ep_complete", "timeout"}
     for r in rows:
         assert set(r) == expected, set(r) ^ expected
         assert 0.0 <= r["v"] <= 1.0
         assert r["opp_class"] == 1               # POOL, as the fake env emitted
         assert r["ep_complete"] is True and r["ep_len"] == 8
+        # At λ = 1.0 the target IS the outcome, so the two columns agree exactly.
+        assert r["outcome"] == r["target"] and r["outcome_known"] is True
+    # The header states the λ regime even when the flag is off — its ABSENCE was the defect.
+    assert header["win_prob_lambda"] == 1.0
+    assert header["win_prob_lambda_truncated"] == "bootstrap"
+    assert header["resumed"] is False
 
 
 def test_the_win_logit_is_the_EXACT_inverse_link_under_winprob_and_NULL_under_shaped(tmp_path):
@@ -362,3 +373,128 @@ def test_a_torn_final_line_is_SKIPPED_not_guessed(tmp_path):
         f.write('{"step": 1, "v": 0.5, "targ')
     header, rows = read_sidecar(str(tmp_path))
     assert header is not None and len(rows) == 8
+
+
+# ── THE λ REGIME: what `target` means, and where the OUTCOME lives ─────────────────────────────
+def _lambda_model(n_steps=8, n_envs=4, *, lam=0.9, stash=True, unmask_tail=False):
+    """A rollout AFTER `WinProbLabelCallback._apply_lambda` has run.
+
+    That callback overwrites `win_target` / `win_mask` in place with the λ-return and its
+    (possibly wider) mask, then publishes the pre-overwrite pair on the model. This fixture
+    reproduces both halves, because the sidecar's whole job here is to read the second one.
+    """
+    m = _model(n_steps, n_envs)
+    obs = m.rollout_buffer.observations
+    y = obs["win_target"][:, :, 0].copy()          # the terminal bit, as back-filled
+    mask = obs["win_mask"][:, :, 0].copy()
+    if unmask_tail:
+        # `--win-prob-lambda-truncated bootstrap`: the trailing in-progress episode gains a
+        # λ target and keeps NO outcome. Here the last two steps are that tail.
+        mask[-2:, :] = 0.0                         # never finished → no outcome
+        obs["win_mask"][-2:, :, 0] = 1.0           # …but the λ target covers them
+    # The λ-return: a soft blend, deliberately different from every terminal bit.
+    obs["win_target"][:, :, 0] = 0.5 * y + 0.25
+    m.win_prob_lambda = lam
+    m.win_prob_lambda_truncated = "bootstrap"
+    if stash:
+        m._win_prob_terminal_outcome = (y, mask)
+    return m, y, mask
+
+
+def test_under_LAMBDA_the_target_is_the_RETURN_and_the_OUTCOME_is_its_own_column(tmp_path):
+    """🚨 The defect in one assertion: `target` and `outcome` are DIFFERENT numbers here."""
+    cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    model, y, _ = _lambda_model()
+    _run(cb, model)
+    header, rows = read_sidecar(str(tmp_path))
+    assert header["win_prob_lambda"] == 0.9
+    for r in rows:
+        assert r["target"] == pytest.approx(0.5 * r["outcome"] + 0.25)
+        assert r["outcome"] in (0.0, 1.0)          # the terminal bit, not a blend
+        assert r["outcome"] != r["target"]
+
+
+def test_a_BOOTSTRAP_UNMASKED_row_has_a_TARGET_but_NO_OUTCOME(tmp_path):
+    """The row sets differ on purpose — a trailing episode never produced an outcome at all."""
+    cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    model, _, _ = _lambda_model(unmask_tail=True)
+    _run(cb, model)
+    rows = _rows(tmp_path)
+    tail = [r for r in rows if r["t"] >= 6]
+    assert tail and all(r["target_known"] and not r["outcome_known"] for r in tail)
+    # 🚨 …and the episode is NOT reported complete. Reading completeness off the λ-widened
+    # `win_mask` would call a straddling episode finished.
+    assert all(r["ep_complete"] is False for r in tail)
+    head = [r for r in rows if r["t"] < 6]
+    assert head and all(r["outcome_known"] for r in head)
+
+
+def test_with_NO_stash_under_LAMBDA_the_outcome_is_NULL_rather_than_GUESSED(tmp_path):
+    """The λ-return holds the outcome at weight λ^d for a `d` nothing records. So: nothing."""
+    cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    model, _, _ = _lambda_model(stash=False)
+    _run(cb, model)
+    for r in _rows(tmp_path):
+        assert r["outcome"] is None and r["outcome_known"] is False
+
+
+def test_a_STALE_stash_from_a_DIFFERENT_shaped_rollout_is_REFUSED_not_used(tmp_path):
+    """A wrong-shape stash would label these states with another rollout's outcomes."""
+    cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    model, _, _ = _lambda_model(stash=False)
+    model._win_prob_terminal_outcome = (np.zeros((3, 3)), np.ones((3, 3)))
+    _run(cb, model)
+    assert all(r["outcome"] is None for r in _rows(tmp_path))
+
+
+def test_the_callback_CLEARS_the_stash_at_ROLLOUT_START(tmp_path):
+    """🚨 A stash surviving into the next rollout is the plausible wrong number, exactly."""
+    from agents.training.win_prob_callback import WinProbLabelCallback
+
+    cb = WinProbLabelCallback()
+    cb.model = types.SimpleNamespace(n_steps=4, n_envs=2, _win_terminal_scratch=None,
+                                     _win_prob_terminal_outcome=("stale", "stale"))
+    cb._on_rollout_start()
+    assert cb.model._win_prob_terminal_outcome is None
+
+
+# ── the header is per WRITER SESSION, and a mixed file is refused by ROW INDEX ─────────────────
+def test_a_RESUME_writes_its_OWN_header_rather_than_riding_the_first_one(tmp_path):
+    """🚨 The silent defect: a resumed run's rows used to sit under the first process's header."""
+    for _ in range(2):                             # two processes, one file
+        cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+        _run(cb, _model(4, 2))
+    segments = read_sidecar_segments(str(tmp_path))
+    assert len(segments) == 2
+    assert segments[0]["header"]["resumed"] is False
+    assert segments[1]["header"]["resumed"] is True
+    assert segments[0]["row_index"] == 0 and segments[1]["row_index"] == 8
+
+
+def test_the_header_is_written_ONCE_per_process_not_once_per_ROLLOUT(tmp_path):
+    cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    for _ in range(3):
+        _run(cb, _model(4, 2))
+    assert len(read_sidecar_segments(str(tmp_path))) == 1
+
+
+def test_read_sidecar_REFUSES_a_file_whose_target_CHANGES_MEANING_mid_way(tmp_path):
+    """A resume across the `gen3_winprob_lambda_v1` boundary — outcomes, then λ-returns."""
+    cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    _run(cb, _model(4, 2))                         # λ = 1.0: targets are the outcome
+    cb2 = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+    model, _, _ = _lambda_model(4, 2)
+    _run(cb2, model)                               # λ = 0.9: targets are λ-returns
+    with pytest.raises(MixedSchemaError) as e:
+        read_sidecar(str(tmp_path))
+    assert e.value.change_at == 8                  # the exact row the meaning changes at
+    assert len(e.value.segments) == 2
+
+
+def test_a_RESUME_at_the_SAME_lambda_is_NOT_refused(tmp_path):
+    """🚨 Not a false alarm: a plain restart must still read as one file."""
+    for _ in range(2):
+        cb = ValueSidecarCallback(str(tmp_path), fraction=1.0, critic_mode="winprob")
+        _run(cb, _model(4, 2))
+    header, rows = read_sidecar(str(tmp_path))
+    assert len(rows) == 16 and header["resumed"] is False

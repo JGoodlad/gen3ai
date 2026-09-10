@@ -60,6 +60,14 @@ class WinProbLabelCallback(BaseCallback):
         # A STALE `win_prob/lambda_*` family would read as a live measurement of the rollout that
         # did not produce it. Cleared here, published only by a recursion that actually ran.
         self.model._win_prob_lambda_metrics = None
+        # 🚨 THE PRE-λ TERMINAL BIT, cleared for the same reason and published by the same
+        # recursion. `_apply_lambda` OVERWRITES `win_target` in place, so once it has run the
+        # episode's 0/1 outcome is gone from the buffer and no downstream reader can recover it
+        # (the λ-return carries it at weight λ^d for a `d` nothing records). The value sidecar is
+        # the reader that needs it, and a stale array from the PREVIOUS rollout would label this
+        # rollout's states with another rollout's outcomes — a plausible wrong number, which is
+        # the one thing this subsystem refuses to emit.
+        self.model._win_prob_terminal_outcome = None
 
     def _on_step(self) -> bool:
         # SYNC capture only — the async collector records terminals inline (it owns the per-env buffer
@@ -179,6 +187,11 @@ class WinProbLabelCallback(BaseCallback):
         metrics = lambda_metrics(values, wt[:, :, 0], wm[:, :, 0], target, weight, new_mask,
                                  n_unmasked, lam, mode)
         metrics["lambda_bootstrap_fallback"] = fallback
+        # 🚨 PUBLISH THE OUTCOME BEFORE DESTROYING IT. `wt`/`wm` still hold the back-filled
+        # terminal bit and the "this episode finished inside the buffer" mask; the two lines below
+        # replace both with the λ-return and its (possibly UNMASKED) coverage. Copied, never
+        # aliased — the very next statement writes through these same arrays.
+        self.model._win_prob_terminal_outcome = (wt[:, :, 0].copy(), wm[:, :, 0].copy())
         wt[:, :, 0] = target.astype(wt.dtype)
         wm[:, :, 0] = new_mask.astype(wm.dtype)
         self.model._win_prob_lambda_metrics = metrics

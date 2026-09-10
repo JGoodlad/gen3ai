@@ -612,6 +612,19 @@ Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appende
   a whole rollout is REPORTED (`labels_unfilled`) rather than written as data.
 - 🚨 **It cannot be reconstructed after the fact.** It reads the rollout buffer, which is gone the
   moment `train()` returns. A run launched without it has no training-side read, ever.
+- 🚨 **`target` HAS ONE NAME AND TWO MEANINGS, and only the header says which** — the terminal 0/1
+  OUTCOME at `--win-prob-lambda 1.0` (every arm before arm 8), a soft **λ-RETURN** below it
+  (`SIDECAR_SCHEMA` 2). Three arms landed on exactly 155,137 rows each; **matching row counts are
+  not evidence of a matching quantity.** The outcome is written as its OWN `outcome` /
+  `outcome_known` column — the λ recursion overwrites `win_target` in place, and the bit is
+  otherwise gone (the λ-return holds it at weight λ^d for an unrecorded `d`, and **`win_margin` is
+  a per-turn MATERIAL margin, not an outcome**). `ep_complete` follows the terminal mask, never
+  `target_known`, which `bootstrap` truncation widens.
+- 🚨 **ONE HEADER PER WRITER SESSION, not per file** — a resume used to append its rows under the
+  first process's header, hiding a mid-file change of meaning. `value_sidecar_read` reads the
+  header FIRST, labels every table with the quantity it scored, and REFUSES a mid-file change by
+  ROW INDEX and a `--compare` across a quantity boundary. A schema-1 file and a schema-2 file at
+  λ = 1.0 compare EQUAL on purpose.
 - 🚨 **`critic_read` (eval) and `value_sidecar_read` (training) answer DIFFERENT questions.**
   Neither supersedes the other; a disagreement is a finding about GENERALISATION.
 - ⚠️ **`opp_class` now rides the win-prob gate too**, not just the intent labels — a win-prob arm
