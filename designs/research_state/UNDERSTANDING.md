@@ -753,14 +753,14 @@ configuration span 45 Elo, 0.12 in early bot win rate, 0.21 in the first self-pl
 worst-ratio itself — none of those is a lever signal. Arm 8 (λ = 0.9) is live with `lambda_target_shift` 0.59 as
 its dose meter.
 
-**Arm 8 `lambda09` read (2026-09-10, λ-return targets at 0.9, vs all three controls at 10M) — THE FIRST CANDIDATE
-LEVER EFFECT:** [MEASURED · CANDIDATE, `measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/`] V decodes
-its own team at turn 1 at R² ≈ 0.15 where every control reads ≈ 0 — +0.146 [+0.064, +0.228] and +0.148 [+0.069,
-+0.229] against the two 40/40/10 controls (DETECTED past the wider live floor 0.039), +0.197 [−0.012, +0.445]
-against the base control (n.d. by frame width only); bot resolution leans +0.01–0.02; the opponent axis did not
-move; calibration vs its own continuation the best of any run (−0.008). Exactly the row the head refit predicted a
-lower-variance target would move first. Pending: ≥2 offline eval draws (queued first on the generator) and a
-replicate arm (seed 1002) before the label hardens.
+**Arm 8 `lambda09` (2026-09-10, λ-return targets at 0.9):** [MEASURED · CANDIDATE WITHDRAWN,
+`measurements/critic_ladder_reads/lambda09_vs_ctrl10M_2026-09-10/` + hp400/hp800] the live-frame own-team
+decode (+0.15) did NOT replicate on the full-capture offline frames (arm 0.04–0.06 vs control 0.04–0.05) —
+a property of ~200-battle loss-enriched frames, caught by the ≥2-offline-draws rule. What replicates past
+the floor at both 400 and 800 games: V spreads LESS across opponents (turn-1–3 spread ratio 0.05 vs
+0.15–0.18, Δ −0.12 / −0.10) — amplitude DOWN, the shrinkage signature (C); beside it a modest resolution lean
+(bot +0.010 at 800 only; all +0.009 on both) and the best calibration of any run. (C) is decided by the
+calibration-slope read; the λ dose curve {1.0, 0.95, 0.9} is the follow-up if it holds.
 
 ### 4.3 What is UNVERIFIED in this era
 
