@@ -74,7 +74,7 @@ class DenseAuxScratch:
 
 def _scale_turns_left_array(dt: np.ndarray) -> np.ndarray:
     """The vectorised `dense_aux.scale_turns_left`. Kept as one expression rather than a python
-    loop over ~130k rows; `dense_aux_targets_test` asserts the two agree elementwise, because two
+    loop over ~130k rows; `dense_aux_test` asserts the two agree elementwise, because two
     spellings of one scale is exactly how a target and its documentation drift apart."""
     return np.minimum(1.0, np.log1p(np.maximum(0.0, dt)) / math.log1p(DENSE_AUX_MAX_TURNS))
 
@@ -120,14 +120,18 @@ class DenseAuxLabelCallback(BaseCallback):
     def _on_rollout_end(self) -> None:
         buf = self.model.rollout_buffer
         obs = buf.observations
-        if not isinstance(obs, dict) or AUX_TARGET_KEY not in obs or AUX_MASK_KEY not in obs:
+        # All THREE keys, not two: `aux_turn` is the only source of the per-state half of
+        # `turns_left`, and reaching the recursion without it would raise inside a callback rather
+        # than skip. The env emits them together, so an absent one IS a config mismatch.
+        if not isinstance(obs, dict) or any(
+                k not in obs for k in (AUX_TARGET_KEY, AUX_MASK_KEY, AUX_TURN_KEY)):
             return          # head on but env not emitting the keys (config mismatch) — skip
         scratch = getattr(self.model, "_dense_aux_scratch", None)
         if scratch is None:
             return
         at = obs[AUX_TARGET_KEY]                       # [n_steps, n_envs, 25] — placeholder zeros
         am = obs[AUX_MASK_KEY]                         # [n_steps, n_envs, 25] — per-state VISIBILITY
-        turn_now = np.asarray(obs.get(AUX_TURN_KEY), dtype=np.float32)
+        turn_now = np.asarray(obs[AUX_TURN_KEY], dtype=np.float32)
         es = buf.episode_starts                        # [n_steps, n_envs]
         n_steps, n_envs = scratch.shape
         # The env's per-state visibility, taken BEFORE the mask column is overwritten. A copy, not
