@@ -141,6 +141,41 @@ rollout pays nothing. Built LAST in `__init__`, so ON-at-coefficient-0 is BIT-id
 — not merely equal in shape, which is all the two heads above claim. Training half + the pre-registered
 read: `designs/training/cf_grounding.md` → *The EVIDENTIAL Beta head*.
 
+## `DenseAuxHead` — the one readout with a LIVE input (`--win-prob-dense-aux`, v117)
+
+`gen3_dense_aux_v1`, the critic ladder's **arm 9**. `Linear(D_MODEL, 64) → ReLU → Linear(64, 25)`
+over the same `value_pooled` the win head reads, zero-init output, built LAST, **not called by the
+forward** — so the count off `value_pooled` is now SEVEN heads and the forward still calls only
+`win_head` / `value_dist_head` / (per-action) `QWinProbHead`. What it predicts, for every state, is
+the episode's **END-OF-BATTLE** facts, back-filled the way the win bit is: survival of each of the
+12 slots (our 6 then theirs, in the observation's own team order), each slot's final HP fraction,
+and the scaled turns-left. 25 sigmoid outputs, three masked-mean BCE terms averaged.
+
+**It exists because four 10M levers on the win bit itself moved nothing** at ±0.01 on bot resolution
+(ledger *THE ARMS AT 400 GAMES*), while only ~10 % of that bit's variance lies BETWEEN opponents.
+KataGo's (Wu 2019 §3) answer to a one-bit terminal signal is not to fix the bit but to add auxiliary
+targets that share its CAUSE — ownership of every point, the final score — for a large reported gain
+in learning efficiency. Per-Pokémon end-of-battle outcomes are our analogue, and each is a fact
+about a NAMED ENTITY, so the gradient runs along the axes a pooled bit cannot separate.
+
+**It breaks the cf readouts' pattern in exactly one place, and that place is the arm.** Every other
+head here that is absent from the forward (`CfEvidentialHead`, the twins, the shadow critic) takes
+an UNCONDITIONALLY DETACHED input and reads `grad/*_share` 0.0 by construction. This one takes the
+live stashed `value_pooled`, so its gradient reaches the shared trunk exactly as the win-prob loss
+does under `shaping` — and `grad/dense_aux_share` must NOT read 0. "Never touches `pi`" still holds
+in the sense that matters for a readout: the head's OUTPUT never enters the pi path, at any weight,
+because the forward does not call it — a strictly stronger statement than `WinProbHead`'s, which is
+in the forward and relies on the assembler.
+
+`dense_aux` is a STRUCTURAL `flag_registry` row, `derived=True` off the coefficient
+`win_prob_dense_aux` (the `opp_belief_slots` pattern: coef > 0 builds the head, the coefficient
+doses the loss), `family=CRITIC`, `requires=("win_prob_mode",)`, gated by a bool compare in
+`check_compatible` — so a resume may re-dose the arm but may not add or drop its parameters. No
+`ARCH_SIGNATURE` bump: the observation vector is unchanged (the three LABEL keys ride separate Dict
+keys and are deliberately NOT `extra_obs_keys` rows, because the extractor never reads them), no
+module moves, the head is built last. Targets, the two masks, the λ precedence and every TB tag:
+[`../training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+
 ## `QWinProbHead` — the one readout that is NOT off `value_pooled`
 
 ### `QWinProbHead` (`--q-winprob-mode`, v107) — the one readout that is NOT off `value_pooled`

@@ -437,6 +437,156 @@ migrates to `1.0` / `"bootstrap"`, which is a RECORD and not a guess: λ = 1.0 *
 terminal-bit target every prior run trained against. Not a `flag_registry.py` row (no extractor
 module); `win_prob_lambda` IS declared in `arch_tables._COEF_MODULE` (→ `win_head`).
 
+## `--win-prob-dense-aux` — DENSE AUXILIARY targets beside the win-prob BCE
+
+`gen3_dense_aux_v1` (config **v117**, the critic ladder's **arm 9**). Default
+**`0.0` = OFF and BIT-identical** — bit-identical by not BUILDING the head at all, so there is no
+module, no obs key, no callback and no term. **`--critic winprob` is REQUIRED** (refused in
+`combination_checks`), and `--win-prob-mode != none` is a `flag_registry` `requires` the extractor
+constructor enforces.
+
+The three flags above all act on ONE loss — one scales it, strata re-prices its MIX, λ re-aims it.
+This one does not touch that loss at all. It **adds 25 targets beside it**, on the same
+`value_pooled`.
+
+### The defect it targets, and the literature's answer
+
+The same measurement, taken to its conclusion. Under `--critic winprob` the value loss is a BCE
+against one terminal bit copied to every state, and only **~10 %** of that label's variance lies
+BETWEEN opponents
+([`winprob_head_refit_2026-09-09`](../research_state/measurements/winprob_head_refit_2026-09-09/README.md)
+§6), so the head shrinks the weak axes — opponent, own team — toward the marginal although its
+features carry them. **Four 10M levers moved nothing at ±0.01 on bot resolution** (ledger *THE ARMS
+AT 400 GAMES*). Every one of them re-weighted, re-aimed or re-priced the SAME one bit.
+
+KataGo (Wu 2019, §3) answers a one-bit terminal signal differently: keep the win target and add
+**auxiliary targets that share the win's CAUSE** — ownership of every point of the board, and the
+final score — reported there as a large gain in learning efficiency. Our analogue of "ownership of
+every point" is **per-Pokémon end-of-battle outcomes**. That is 25 numbers per state instead of one
+bit, and 24 of them are facts about a NAMED ENTITY the state's own observation also carries, so the
+gradient they deliver runs along exactly the per-entity axes a pooled bit cannot separate.
+
+### The head and its 25 outputs
+
+`DenseAuxHead` (`agents/model/dense_aux_head.py`): `Linear(D_MODEL, 64) → ReLU → Linear(64, 25)`,
+output layer ZERO-INIT, reading the same `value_pooled` the win head reads.
+
+| outputs | target | scored by |
+|---|---|---|
+| `0..11` | SURVIVAL of slot k (our 6, then theirs 6) — 1 if un-fainted at termination | BCE, targets in {0,1} |
+| `12..23` | slot k's FINAL HP FRACTION at termination, in [0,1] | BCE against the soft target |
+| `24` | TURNS LEFT: `log1p(terminal_turn − this_turn) / log1p(250)`, clipped | BCE against the soft target |
+
+`aux_loss = coef × mean(the three masked-mean terms present)` — a mean of TERMS, not a pooled mean
+over 25 columns, so twelve survival outputs cannot outvote the one turns output twelve to one, and a
+minibatch in which a block is entirely masked DROPS that block rather than contributing a zero.
+
+🚨 **Every output is a sigmoid logit scored by BCE, including the two that are not Bernoulli means**,
+and that uniformity is a decision with three reasons. (1) A sigmoid keeps a bounded-in-[0,1] target
+in range BY CONSTRUCTION — no clamping, and no MSE-through-a-saturating-sigmoid vanishing gradient
+at 0 and 1, which is exactly where the HP mass sits (a fainted mon is exactly 0). (2) BCE with a
+soft target is a proper scoring rule for a [0,1] mean, the same family as the win head's own loss.
+(3) One family puts all three terms in the same NATS scale, so the single coefficient means one
+thing across them. ⚠️ **The price: a BCE against a soft target has a non-zero floor** (the target's
+own entropy), so `aux_hp_loss` and `aux_turns_loss` never approach 0 even for a perfect predictor —
+`aux_hp_mae` and `aux_turns_mae` are the interpretable reads and are published beside them.
+
+🚨 **THE PER-SIDE KO COUNTS ARE DERIVED, NEVER PREDICTED.** `6 − Σ survived` per side is a linear
+function of the survival block, so a separate output would be a linearly-dependent target adding no
+information — and it is the ONE target that could not honour the mask, because a count is a sum over
+slots some of which are unscored. It is published as a meter (`win_prob/aux_ko_mae_*`) computed from
+the survival head over the UNMASKED slots.
+
+### The targets, and the TWO masks that are ANDed
+
+`agents/training/dense_aux.py` builds them from the trainee's own finished `battle1` at the done
+step — the same seam `info["win_outcome"]` is published from, so the opponent's HP here is the
+PUBLICLY known percentage, which is what actually happened. `DenseAuxLabelCallback` back-fills them
+to every state of the episode exactly as `WinProbLabelCallback` back-fills the win bit, and masks
+the trailing in-progress episode for exactly the same reason.
+
+Slot order is the OBSERVATION's own: our slots are `battle.team` order, theirs are
+`battle.opponent_team` REVEAL order — read through the encoder's own
+`ObservationEncoder.get_team_list`, never re-derived, so the target and the features cannot disagree.
+
+A slot is scored only where all three hold:
+
+1. **the episode finished inside this rollout buffer** (the `win_mask` condition, verbatim);
+2. **TERMINAL AVAILABILITY** — the slot has an end-of-battle fact at all. 🚨 A battle can end with
+   three of the opponent's party never revealed; those slots have no observed fainted flag and no
+   observed HP and are MASKED, never fabricated as "alive at full HP". That label would be wrong in
+   a DIRECTION — the un-revealed mons of a team we beat are disproportionately the ones it never got
+   to send out;
+3. **PER-STATE VISIBILITY** — the slot names an entity THIS state's observation carries. Reveal
+   order makes the final opponent order a prefix-stable extension of every earlier state's, so slot
+   i at turn t is the same mon as slot i at termination for every i below the reveal count and is an
+   all-zero absent block above it. 🚨 Scoring an unrevealed slot would anchor a label to a feature
+   block encoding nothing — the same "target with no feature correspondence" defect this arm exists
+   to remove, one level down. The env emits the visibility as a REAL present-state value in the
+   `aux_mask` placeholder and the callback ANDs it in.
+
+The turns output names no slot, so it is masked by (1) alone.
+
+### Where the gradient goes — and why it is NOT detached
+
+The head is **not called by the forward at all** (the `CfEvidentialHead` contract), so pi and vf are
+BIT-IDENTICAL at an ARBITRARY weight in it and a rollout, an eval and the prober pay nothing. The
+term (`ppo.train()`, folded as an `aux` term at `--win-prob-dense-aux`, never at `vf_coef` — there
+is one critic and these are not it) applies it to the `value_pooled` the minibatch's
+`evaluate_actions` stashed, **live and undetached**. That is the arm and not a leak: the point of a
+dense auxiliary target is gradient into the shared trunk along axes the pooled bit cannot carry,
+exactly as the win-prob loss does under `shaping` (which `--critic winprob` implies).
+`grad/dense_aux_share` is the verification, and unlike `grad/cf_evidential_share` it must NOT read 0.
+
+### λ, and the precedence rule
+
+🚨 **`--win-prob-lambda` DOES NOT REACH THESE TARGETS, and must not.** They are TERMINAL FACTS, not
+returns: there is no recorded per-state estimate of "slot 4's final HP" for a recursion to blend, and
+blending would make the target a mixture of an outcome and a prediction of a different quantity. The
+precedence is STRUCTURAL rather than conventional — the λ recursion overwrites `win_target` /
+`win_mask` in place and names no `aux_*` key — and `dense_aux_test` pins it with a source scan.
+Under λ < 1 the two simply coexist: the win term regresses toward a soft λ-return, the aux terms
+toward the battle's own ending.
+
+Orthogonal to `--win-prob-strata-weight` (that one weights rows of a different loss) and disjoint
+from the counterfactual labels (foreign states, own labels, no shared key).
+
+### TensorBoard
+
+All under `win_prob/aux_*`, so an ABSENT family means the flag is off and nothing else. From the
+label callback: `aux_active`, `aux_coverage` (rows whose episode finished inside the buffer),
+**`aux_masked_frac`** (the fraction of the 25 outputs NOT scored — the honest size of the opponent's
+unrevealed party, and the number to read before any aux loss). From the loss: `aux_loss`,
+`aux_survival_loss`, `aux_hp_loss`, `aux_turns_loss`, `aux_scored_frac`, **`aux_auc_own` vs
+`aux_auc_opp`** (survival AUC per SIDE — a pooled AUC would hide exactly the asymmetry the arm is
+built to move; ties take their average rank, so a zero-init head reads exactly 0.5, and a side with
+one class absent is OMITTED rather than logged), `aux_hp_mae`, `aux_turns_mae`,
+`aux_ko_mae_own` / `aux_ko_mae_opp`.
+
+### Recording and resume
+
+ONE flag, TWO recorded v117 fields, because they are gated differently.
+
+* **`dense_aux` (bool) is STRUCTURAL** — the `value_true_team` mould. ON builds a head whose params
+  ARE the state_dict delta; its only output is a training-side loss, so no width changes anywhere
+  and **a bool compare in `check_compatible` is the only thing that could reject a flipped flag**. A
+  resume that dropped it would silently delete a trained head; one that added it would begin
+  supervising a fresh zero-init head inside a trained trunk and call the result the same arm. It is
+  a `flag_registry.py` row, `derived=True` off `win_prob_dense_aux` (the `opp_belief_slots` /
+  `opp_intent` pattern), `family=CRITIC`, `requires=("win_prob_mode",)`.
+* **`win_prob_dense_aux` (float) is the `td_aux_coef` class** — recorded for provenance and
+  flagless-resume read-back, never compared. So **a resume may RE-DOSE the arm freely and may not
+  add or remove its parameters**, which is the honest split. Declared in
+  `arch_tables._COEF_MODULE` → `dense_aux_head`.
+
+**NO ARCH_SIGNATURE bump**, for `value_true_team`'s reasons: the 2501-dim observation VECTOR is
+unchanged (the three label keys ride SEPARATE Dict keys, the `win_target` precedent — and none of
+them is an `extra_obs_keys` row, because the extractor never reads them), no existing module moves,
+the head is built LAST and the forward never calls it. So an OFF run on this code is bit-identical
+to the same run on v116 and every existing checkpoint still resumes. `family=CRITIC` keeps it off
+the ARCH surface, so `--arch production --win-prob-dense-aux 1.0` is the documented launch and
+`checkargs` reports ARCH SURFACE = production mirror.
+
 ## PopArt value-target normalization (`--use-popart`)
 
 The fix for the swamping the diagnostics above reveal. `train()` reads `self.popart =

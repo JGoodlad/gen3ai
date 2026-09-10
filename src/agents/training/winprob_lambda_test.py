@@ -384,7 +384,7 @@ def test_a_pre_v116_config_migrates_to_OFF():
     from agents.model.model_version.constants import MODEL_CONFIG_VERSION
     out = _migrate_config({"config_version": 115})
     assert out["win_prob_lambda"] == 1.0 and out["win_prob_lambda_truncated"] == "bootstrap"
-    assert out["config_version"] == MODEL_CONFIG_VERSION == 116
+    assert out["config_version"] == MODEL_CONFIG_VERSION
 
 
 def test_it_is_NOT_gated_by_check_compatible():

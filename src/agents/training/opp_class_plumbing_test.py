@@ -255,6 +255,7 @@ class _MergeStub:
     _emit_item_labels = False
     _emit_opp_intent_labels = False
     _emit_opp_true_team = False
+    _emit_dense_aux = False
     _emit_defensive_opportunity = False
     _emit_bait_opportunity = False
     _emit_distill_mask = False

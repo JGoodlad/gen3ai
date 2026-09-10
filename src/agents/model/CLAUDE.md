@@ -120,6 +120,17 @@ shared observation. Detail — including why it AUGMENTS rather than replaces th
 view, why it RAISES on a missing key, and why the prober's offline forwards REFUSE on such a
 checkpoint — is in [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
 
+**The SEVENTH readout off `value_pooled`** (`--win-prob-dense-aux`, v117, `gen3_dense_aux_v1`) — the
+DENSE AUXILIARY head, the critic ladder's arm 9. `Linear(D_MODEL, 64) → ReLU → Linear(64, 25)`,
+zero-init output, built LAST and **not called by the forward at all** (the `CfEvidentialHead`
+contract), predicting the episode's END-OF-BATTLE facts: survival and final HP of all twelve slots,
+plus the scaled turns-left. It breaks the cf readouts' pattern in exactly one place — its input is
+**NOT detached** in the training term, because the whole point is gradient into the shared trunk
+along the per-entity axes one terminal bit cannot carry. `pi`/`vf` are still bit-identical at any
+weight in it (the forward never calls it), and `grad/dense_aux_share` is the read that separates
+"the arm ran" from "the arm did what it was built to do". Targets, masks and the λ precedence:
+[`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
+
 ### Phase-by-phase data flow
 The per-phase walkthrough and the static-width arithmetic:
 [`designs/model/phase_pipeline.md`](../../../designs/model/phase_pipeline.md). Two things stay here.

@@ -274,6 +274,33 @@ ABSENT `win_prob/lambda_*` family means the flag is off. ⚠️ Under λ < 1 the
 column is the λ-return, not the raw outcome. Mechanics:
 [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
+**`--win-prob-dense-aux <coef>`** (default `0.0` = OFF and bit-identical — the head is not BUILT;
+**requires `--critic winprob`** and a win head) adds **25 DENSE TARGETS BESIDE** the win-prob BCE
+rather than changing it: for every state, the episode's END-OF-BATTLE facts back-filled the way the
+win bit is — **survival of all 12 slots** (our 6 then theirs, in the observation's own team order),
+**each slot's final HP fraction**, and the **scaled turns-left**. 25 sigmoid outputs off the same
+`value_pooled`, three masked-mean BCE terms averaged, folded at this coefficient. The per-side KO
+counts are DERIVED from survival and published as meters.
+
+🚨 **WHY.** The other three knobs on this loss all re-price, re-weight or re-aim the SAME one bit,
+and four 10M levers moved nothing at ±0.01 on bot resolution (ledger *THE ARMS AT 400 GAMES*). Only
+~10 % of that bit's variance lies BETWEEN opponents. KataGo's answer (Wu 2019 §3) is not to fix the
+bit but to add auxiliary targets that share its CAUSE — ownership of every point, and the final
+score. Per-Pokémon end-of-battle outcomes are our analogue, and each is a fact about a NAMED ENTITY,
+so the gradient runs along the axes the pooled bit cannot separate.
+
+🚨 **An opponent slot that was never revealed is MASKED, not fabricated** — and so is any slot the
+state's own observation does not carry (opponent order is REVEAL order, so an early state simply has
+fewer). Read `win_prob/aux_masked_frac` before reading any aux loss. `--win-prob-lambda` does NOT
+reach these targets: they are terminal FACTS, not returns. Watch **`aux_auc_own` vs `aux_auc_opp`**
+(the per-side survival AUC — a pooled one would hide the asymmetry the arm is built to move),
+`aux_hp_mae`, `aux_turns_mae` and **`grad/dense_aux_share`**, which must NOT read 0 (the head's input
+is deliberately not detached — that pull is the arm). ⚠️ **STRUCTURAL**: the head is fixed for a
+run's lifetime, so a resume may re-dose the coefficient but not add or drop it; a mismatch is a hard
+`[ModelVersion] FATAL`. `family=CRITIC`, so `--arch production --win-prob-dense-aux 1.0` is the
+documented launch and `checkargs` still reports ARCH SURFACE = production mirror. Mechanics:
+[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+
 Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md);
 flag mechanics in `src/agents/model/CLAUDE.md` → *The CRITIC MODE*.

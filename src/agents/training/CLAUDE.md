@@ -529,6 +529,58 @@ and nothing else. ⚠️ The value SIDECAR's `target` column follows the flag: u
 one re-aims them) and with the cf labels (disjoint state sets — the cf term never touches
 `win_target`).
 
+### `--win-prob-dense-aux` — 25 DENSE TARGETS BESIDE the BCE (`gen3_dense_aux_v1`, v117)
+
+**Default `0.0` = OFF and BIT-identical** — bit-identical by not BUILDING the head, so there is no
+module, no obs key, no callback and no term. **`--critic winprob` is REQUIRED**, and
+`--win-prob-mode != none` is a `flag_registry` `requires` the extractor constructor enforces.
+
+The three flags above all act on ONE loss. This one does not touch it: it adds a small MLP on
+`value_pooled` — the same tensor the win head reads — predicting for every state the episode's
+END-OF-BATTLE facts, back-filled the way the win bit is.
+
+| outputs | target | scored by |
+|---|---|---|
+| `0..11` | SURVIVAL of slot k (our 6, then theirs 6, in the OBSERVATION's own team order) | BCE |
+| `12..23` | slot k's FINAL HP FRACTION at termination | BCE against the soft target |
+| `24` | TURNS LEFT, `log1p(terminal_turn − this_turn) / log1p(250)` | BCE against the soft target |
+
+`aux_loss = coef × mean(the three masked-mean terms)` — a mean of TERMS, so twelve survival outputs
+cannot outvote the one turns output. The per-side KO counts are **DERIVED** from survival
+(`6 − Σ survived`) and published as meters, never predicted: a count is a sum over slots some of
+which are masked, so it is the one target that could not honour the mask.
+
+🚨 **WHY.** Four 10M levers on the same one bit moved nothing at ±0.01 on bot resolution (ledger
+*THE ARMS AT 400 GAMES*), and only ~10 % of that bit's variance lies BETWEEN opponents. KataGo (Wu
+2019 §3) answers a one-bit terminal signal by ADDING targets that share its cause — ownership of
+every point, and the final score — for a large reported gain in learning efficiency. Per-Pokémon
+end-of-battle outcomes are our analogue, and each is a fact about a NAMED ENTITY the state's own
+observation carries, so the gradient runs along exactly the axes a pooled bit cannot separate.
+
+🚨 **TWO MASKS, ANDed with the episode-known bit.** A slot is scored only where it HAS an
+end-of-battle fact (an opponent mon never revealed has none — MASKED, never fabricated as "alive at
+full HP", a label that would be wrong in a DIRECTION) **and** where it names an entity THIS state's
+observation carries (opponent slot order is REVEAL order, so an early state simply has fewer;
+scoring an unrevealed slot would anchor a label to a feature block encoding nothing — this arm's own
+defect, one level down). Read `win_prob/aux_masked_frac` before reading any aux loss.
+
+🚨 **THE HEAD'S INPUT IS NOT DETACHED, and that IS the arm.** It is not called by the forward at all
+(the `CfEvidentialHead` contract), so pi/vf are bit-identical at an ARBITRARY weight in it; the
+training term applies it to the stashed, LIVE `value_pooled`, so its gradient reaches the shared
+trunk exactly as the win-prob loss does under `shaping`. **`grad/dense_aux_share` must NOT read 0**
+— unlike `grad/cf_evidential_share`, whose 0 is the verification.
+
+🚨 **λ DOES NOT REACH THESE TARGETS.** They are terminal FACTS, not returns, and there is no recorded
+per-state estimate of "slot 4's final HP" to blend. Structural, not conventional: the λ recursion
+overwrites `win_target`/`win_mask` and names no `aux_*` key. Under λ < 1 the two coexist.
+
+Read **`aux_auc_own` vs `aux_auc_opp`** (survival AUC per SIDE — a pooled one would hide the
+asymmetry the arm is built to move; a side with one class absent is OMITTED, never logged),
+`aux_hp_mae` / `aux_turns_mae` (⚠️ the interpretable reads — a BCE against a SOFT target has a
+non-zero entropy floor, so the loss numbers alone cannot say whether the head is good),
+`aux_coverage` and `aux_ko_mae_*`. ⚠️ **STRUCTURAL**: `dense_aux` is gated by a bool compare in
+`check_compatible`, so a resume may RE-DOSE the coefficient but may not add or drop the head.
+
 **Full detail — the currency argument, the cap-terminal measurement, the `--vf-coef` BCE
 announcement and every value-side flag below — is in
 [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).**

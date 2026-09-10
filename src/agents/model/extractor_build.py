@@ -1003,6 +1003,20 @@ class ExtractorBuild(torch.nn.Module):
         # the prober all pay exactly nothing for it. Its input is deliberately NOT detached in that
         # term; see `dense_aux_head`'s docstring for why that IS the arm.
         self.dense_aux = bool(dense_aux)
+        if self.dense_aux and self.win_head is None:
+            # DECLARED in flag_registry (`requires=("win_prob_mode",)`) and enforced here, the
+            # registry's contract: a dependency only the CLI knows is invisible to `checkargs`, so
+            # an operator validating a recorded launcher_command would get exit 0 on a command the
+            # child then refuses. The arm is defined against the WIN-PROB critic's trunk — it exists
+            # to give `value_pooled` gradient along the axes that critic's one-bit target cannot
+            # carry — and `win_prob_mode='none'` builds no `win_head`, so there would be no critic
+            # for the dense targets to be auxiliary TO. (`--critic winprob` is the stronger form and
+            # is a `combination_checks` refusal; this is the part the constructor can see.)
+            raise ValueError(
+                "dense_aux requires win_prob_mode != 'none': the DENSE AUXILIARY targets exist to "
+                "shape the trunk the WIN-PROB critic reads, and win_prob_mode='none' builds no "
+                "win head at all. Set --win-prob-mode read_only|shaping (--critic winprob implies "
+                "shaping), or drop --win-prob-dense-aux.")
         self.dense_aux_head = DenseAuxHead() if self.dense_aux else None
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See

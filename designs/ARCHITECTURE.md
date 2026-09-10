@@ -808,6 +808,54 @@ scored. Both are training-only — no forward pass, no weight shape, no `check_c
 **not** a `flag_registry.py` row — so they do not appear in §6's flag table until a production config
 adopts them. Mechanics: `designs/training/critic_and_value_losses.md`.
 
+**`--win-prob-dense-aux` adds 25 DENSE TARGETS BESIDE this BCE** (`gen3_dense_aux_v1`, config v117,
+the critic ladder's **arm 9**). Default **`0.0` = OFF and BIT-identical** — the head is not BUILT, so
+there is no module, no obs key, no callback and no term; `--critic winprob` is REQUIRED and
+`win_prob_mode != none` is a registry `requires` the extractor constructor enforces. The three flags
+above all act on the SAME one-bit loss; this one does not touch it. It builds a small MLP on
+`value_pooled` — the same tensor the win head reads, NOT in the forward, built LAST, zero-init
+output — predicting for every state the episode's END-OF-BATTLE facts, back-filled the way the win
+bit is: **survival of all 12 slots (our 6 then theirs, in the observation's own team order), each
+slot's final HP fraction, and the scaled turns-left** — 25 sigmoid outputs, three masked-mean BCE
+terms averaged. The per-side KO counts are DERIVED from survival and published as meters, never
+predicted. It exists because four 10M levers on the one bit moved nothing at ±0.01 (ledger *THE ARMS
+AT 400 GAMES*) while only ~10 % of that bit's variance lies BETWEEN opponents, and because the
+literature's answer to a one-bit terminal signal is KataGo's (Wu 2019 §3) — dense auxiliary targets
+that share the win's CAUSE. 🚨 Its input is **NOT detached**: the gradient into the shared trunk is
+the arm, and `grad/dense_aux_share` is the verification. An opponent slot never revealed, and any
+slot the state's own observation does not carry, is MASKED rather than fabricated. `--win-prob-lambda`
+does NOT reach these targets — they are terminal FACTS, not returns. `dense_aux` is a STRUCTURAL
+`flag_registry` row (`derived` off the coefficient, `family=CRITIC`, gated by a bool compare in
+`check_compatible`); the COEFFICIENT is training-only and resume-mutable, so a resume may re-dose the
+arm but not add or remove its head. **No `ARCH_SIGNATURE` bump** — the observation vector is
+unchanged, no module moves, the head is built last and the forward never calls it. `family=CRITIC`
+keeps it off the ARCH surface, so it does not appear in §6's flag table. Mechanics:
+`designs/training/critic_and_value_losses.md`.
+
+**`--win-prob-dense-aux` adds 25 DENSE TARGETS BESIDE this BCE** (`gen3_dense_aux_v1`, config v117,
+the critic ladder's **arm 9**). Default **`0.0` = OFF and BIT-identical** — the head is not BUILT, so
+there is no module, no obs key, no callback and no term; `--critic winprob` is REQUIRED and
+`win_prob_mode != none` is a registry `requires` the extractor constructor enforces. The three flags
+above all act on the SAME one-bit loss; this one does not touch it. It builds a small MLP on
+`value_pooled` — the same tensor the win head reads, NOT in the forward, built LAST, zero-init
+output — predicting for every state the episode's END-OF-BATTLE facts, back-filled the way the win
+bit is: **survival of all 12 slots (our 6 then theirs, in the observation's own team order), each
+slot's final HP fraction, and the scaled turns-left** — 25 sigmoid outputs, three masked-mean BCE
+terms averaged. The per-side KO counts are DERIVED from survival and published as meters, never
+predicted. It exists because four 10M levers on the one bit moved nothing at ±0.01 (ledger *THE ARMS
+AT 400 GAMES*) while only ~10 % of that bit's variance lies BETWEEN opponents, and because the
+literature's answer to a one-bit terminal signal is KataGo's (Wu 2019 §3) — dense auxiliary targets
+that share the win's CAUSE. 🚨 Its input is **NOT detached**: the gradient into the shared trunk is
+the arm, and `grad/dense_aux_share` is the verification. An opponent slot never revealed, and any
+slot the state's own observation does not carry, is MASKED rather than fabricated. `--win-prob-lambda`
+does NOT reach these targets — they are terminal FACTS, not returns. `dense_aux` is a STRUCTURAL
+`flag_registry` row (`derived` off the coefficient, `family=CRITIC`, gated by a bool compare in
+`check_compatible`); the COEFFICIENT is training-only and resume-mutable, so a resume may re-dose the
+arm but not add or remove its head. **No `ARCH_SIGNATURE` bump** — the observation vector is
+unchanged, no module moves, the head is built last and the forward never calls it. `family=CRITIC`
+keeps it off the ARCH surface, so it does not appear in §6's flag table. Mechanics:
+`designs/training/critic_and_value_losses.md`.
+
 The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
 `coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
 would add the advantage to the reward and take the advantage of that. The FROZEN-φ route
