@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,758-line file. **The ledger itself is append-only and is never edited by this**;
+16,764-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**515 headings · 475 dated · 2026-08-01 → 2026-09-10 · ledger 16,758 lines.**
+**516 headings · 476 dated · 2026-08-01 → 2026-09-10 · ledger 16,764 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -535,3 +535,4 @@ rename.
   - `L16732` · `2026-09-10` · ADDENDUM to THE ARMS AT 800 GAMES · `strata` at 800 games — the same lean: bot resolution Δ +0.0055 [+0.0006, +0.0106]; three of the four 10M levers now lean +0.005–0.007 on that row at the floor's edge
   - `L16736` · `2026-09-10` · BUILT + REGISTRATION · critic ladder arm 9 `ai_v12_20_ladder_denseaux` — `--win-prob-dense-aux 1.0`, KataGo-style dense auxiliary targets on the value path (`46ca68ef`, `gen3_dense_aux_v1`, MODEL_CONFIG_VERSION 117)
   - `L16742` · `2026-09-10` · INSTRUMENT + READ · the within-own-team rows (`322acaee`, tool v4) — arm 8's own-team decode is real and PERSISTS LATE, but the (A)/(B) question is NOT resolved by one arm: the decode does not fall with the clock, the coarse within-team resolution is flat, and the between-team SPREAD is down and below its own floor; the floor file is regenerated with the new keys
+  - `L16759` · `2026-09-10` · PRE-REGISTRATION · hypothesis (C) SHRINKAGE for arm 8, its calibration-slope test with the three geometry guards, and the λ DOSE CURVE {1.0, 0.95, 0.9} with its direction fixed before any read
