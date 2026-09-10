@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,731-line file. **The ledger itself is append-only and is never edited by this**;
+16,735-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**512 headings · 472 dated · 2026-08-01 → 2026-09-10 · ledger 16,731 lines.**
+**513 headings · 473 dated · 2026-08-01 → 2026-09-10 · ledger 16,735 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -532,3 +532,4 @@ rename.
 - `L16608` · `2026-09-10` · OPS · CRITIC LADDER — `ai_v12_19_ladder_lambda09` COMPLETE (`--win-prob-lambda 0.9`, 10,027,008 steps, 5.12 h, 0 crashes, G7 below bar on both halves), and the λ dose test is VOID BY PREMISE
   - `L16696` · `2026-09-10` · THE ARMS AT 800 GAMES · the equivalence claim does NOT close — two levers LEAN +0.006–0.007 on bot resolution with CIs clear of zero but not of the floor; and two offline draws of the SAME checkpoint move the own-team decoder row by ±0.02–0.03, so that row's CI understates its eval-draw variance
   - `L16708` · `2026-09-10` · READ · critic ladder arm 8 `ai_v12_19_ladder_lambda09` (λ-return targets, λ = 0.9) vs the three controls at pinned 10M — THE FIRST CANDIDATE LEVER EFFECT: own-team R² of V +0.15 DETECTED against two controls (the third n.d. only by frame width), bot resolution leaning +0.01–0.02, the late-pessimism watch item resolved INSIDE the floor
+  - `L16732` · `2026-09-10` · ADDENDUM to THE ARMS AT 800 GAMES · `strata` at 800 games — the same lean: bot resolution Δ +0.0055 [+0.0006, +0.0106]; three of the four 10M levers now lean +0.005–0.007 on that row at the floor's edge
