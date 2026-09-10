@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,569-line file. **The ledger itself is append-only and is never edited by this**;
+16,575-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**505 headings · 465 dated · 2026-08-01 → 2026-09-10 · ledger 16,569 lines.**
+**506 headings · 466 dated · 2026-08-01 → 2026-09-10 · ledger 16,575 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -525,3 +525,4 @@ rename.
   - `L16556` · `2026-09-10` · CORRECTION + PRE-REGISTRATION · the "floor's own CI excludes zero" headline did NOT reproduce on the second draw — the lesson is restated on the FAILURE to replicate; and arm 8's dose decays before the self-play crossing, with a prediction for what it does after
   - `L16562` · `2026-09-10` · PRE-REGISTRATION (numbers) · arm 8's dose prediction gets a falsifiable bar before the crossing
   - `L16566` · `2026-09-10` · VOID BY PREMISE · arm 8's dose-rise test is VOID, not resolved — self-play at this stage is ~74 % predictable, not a coin flip; the critic is well calibrated at episode start (+0.013 gap); the provisional OVERCONFIDENCE reading is withdrawn; "self-play makes outcomes coin flips" is retired as a shared intuition until the win rate is checked
+  - `L16570` · `2026-09-10` · arm 8's first registered window CLOSED — mean 0.1804, VOID BY PREMISE as pre-registered; the 4M interim's resolution lean is the base-rate ceiling, nothing pre-registered for 10M
