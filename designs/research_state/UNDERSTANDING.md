@@ -744,6 +744,14 @@ difference. The four 10M levers are dead at this length and power, not unresolve
 next arm is a target-side lever with literature behind it — λ-return targets (`--win-prob-lambda 0.9`, arm 8,
 in build), then KataGo-style dense auxiliary targets.
 
+**THE FLOOR, SECOND DRAW (2026-09-09, `ctrl10M_c` vs `ctrl10M`):** [MEASURED] the replicate floor is a RANGE per row —
+identity bias 0.015–0.070 (the first draw clear of zero, the second not; the three heads read −0.042 / +0.028 /
+−0.027 against their own continuation, so the sign at 10M is a draw), bot resolution 0.001–0.010, spread ratio
+t1–3 0.026–0.028, own-team R² 0.012–0.039; the bar is the wider draw, demote-only. Three draws of one
+configuration span 45 Elo, 0.12 in early bot win rate, 0.21 in the first self-play jump and 0.93–1.07 on the G7
+worst-ratio itself — none of those is a lever signal. Arm 8 (λ = 0.9) is live with `lambda_target_shift` 0.59 as
+its dose meter.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
