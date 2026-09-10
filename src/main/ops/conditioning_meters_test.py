@@ -29,6 +29,7 @@ import numpy as np
 import pytest
 
 from main.ops import conditioning_meters as CM
+from main.ops import team_conditioning as TC
 
 _TURNS = (1, 2, 3, 6, 12, 30)
 
@@ -324,3 +325,245 @@ def test_every_declared_meter_is_either_reported_or_omitted_with_a_reason(tmp_pa
     blk = CM.conditioning_block(str(tmp_path), 100, boot=100, ladder="off", seed=15)
     for key in CM.METER_KEYS:
         assert (key in blk["points"]) ^ (key in blk["omitted"]), key
+
+
+# ------------------------------------------------- (A) CONDITIONING vs (B) SUBSTITUTION
+#
+# Arm 8's ``V`` decodes its OWN TEAM at turn 1 where every control reads ~0, and the existing rows
+# cannot say WHICH of two things that is: the critic CONDITIONING on its team (teams differ in
+# strength; inside a team it still reads the board) or SUBSTITUTING team identity for board state
+# (right per team, blind inside one). The rows below decompose it. Each regime is PLANTED with a
+# known answer and recovered:
+#
+#   (a) team-mean-only    -> within-team resolution ~0, team spread ~1, late team R2 == t1
+#   (b) team AND board    -> within-team resolution HIGH, team spread ~1, late team R2 << t1
+#   (c) marginal-only     -> every component ~0
+#
+# (a) and (b) are the decisive pair: they are IDENTICAL between teams and opposite within one, so
+# any row that separates them is measuring the within-team part and nothing else.
+
+_TEAM_RATES = (0.20, 0.35, 0.45, 0.55, 0.65, 0.80)
+_TURNS_LONG = (1, 2, 3, 8, 14, 22, 30, 38)
+_TEAM_OPPS = ("heuristic", "staller", "aggressive", "sentinel_0")
+
+
+def _plant_teams(tmp_path, *, v_of, team_rates=_TEAM_RATES, per_team: int = 30,
+                 step: int = 100, seed: int = 0):
+    """A cycle whose TEAMS differ in strength, with ``V`` planted as a function of the team's win
+    rate, the battle's outcome and the TURN.
+
+    Each team's win count is exact (``round(rate * per_team)``) and its battles are dealt
+    round-robin across the opponents, so the team axis carries all the structure and the opponent
+    axis carries none — the reverse of :func:`_plant`, and what makes these rows testable
+    independently of the opponent identity.
+    """
+    rng = np.random.default_rng(seed)
+    cyc = tmp_path / "eval_traces" / f"step_{step}"
+    tally = {o: [0, 0] for o in _TEAM_OPPS}
+    for o in _TEAM_OPPS:
+        (cyc / o).mkdir(parents=True, exist_ok=True)
+    for ti, p in enumerate(team_rates):
+        wins = int(round(p * per_team))
+        for k in range(per_team):
+            opp = _TEAM_OPPS[(ti * per_team + k) % len(_TEAM_OPPS)]
+            y = 1.0 if k < wins else 0.0
+            tally[opp][0] += 1
+            tally[opp][1] += int(y)
+            vs = [float(np.clip(v_of(p, y, t, rng), 0.001, 0.999)) for t in _TURNS_LONG]
+            base = f"t{ti}_b{k}"
+            np.savez(cyc / opp / f"{base}_states.npz", values=np.array(vs),
+                     win_probs=np.array(vs), has_state=np.ones(len(vs), dtype=np.int64))
+            (cyc / opp / f"{base}_summary.json").write_text(json.dumps({
+                "meta": {"result": "WIN" if y else "LOSS", "step": step},
+                "teams": {"ours": [{"species": f"mon{ti * 6 + j}"} for j in range(6)]},
+                "invocations": [{"i": i, "turn": t} for i, t in enumerate(_TURNS_LONG)]}))
+    sel = {o: {"battles_played": tally[o][0], "battles_won": tally[o][1], "battles_drawn": 0,
+               "traces_written": tally[o][0], "traces_won": tally[o][1],
+               "capture_rate_win": 1.0, "capture_rate_loss": 1.0} for o in _TEAM_OPPS}
+    (cyc / "eval_manifest.json").write_text(json.dumps(
+        {"step": step, "selection_schema": 1, "opponents": list(_TEAM_OPPS),
+         "selection": {"opponents": sel}}))
+    return str(tmp_path)
+
+
+def _board_weight(turn: int) -> float:
+    """How much of ``V`` the BOARD carries at this turn — small at turn 1, dominant late. This is
+    what a critic that reads the board is supposed to do, and it is what makes a conditioning
+    critic's own-team decode FALL from turn 1 to late."""
+    return 0.15 + 0.65 * min(1.0, (turn - 1) / 30.0)
+
+
+def _team_mean_only(p, y, turn, rng):
+    """(B) SUBSTITUTION planted exactly: one number per TEAM, whatever the board says."""
+    return p
+
+
+def _team_and_board(p, y, turn, rng):
+    """(A) CONDITIONING planted exactly: the team's rate, plus a board term that is mean-zero
+    GIVEN the team (wins move up by ``d(1-p)``, losses down by ``dp``) and grows with the clock.
+    ``E[V | team] = p`` identically, so the two regimes share a between-team spread by
+    construction and differ ONLY within a team."""
+    return p + _board_weight(turn) * ((1 - p) if y else -p)
+
+
+def _team_marginal(p, y, turn, rng):
+    return 0.5 + rng.normal(0, 0.02)
+
+
+def _ab(tmp_path, v_of, *, boot: int = 200, seed: int = 5, **kw):
+    _plant_teams(tmp_path, v_of=v_of, seed=seed, **kw)
+    return CM.conditioning_block(str(tmp_path), 100, boot=boot, ladder="off", seed=seed)
+
+
+def test_a_team_mean_only_head_has_no_within_team_resolution(tmp_path) -> None:
+    """(B) SUBSTITUTION. `V` is one number per team, so inside a team it separates nothing —
+    both within-cell rows read ~0 — while the BETWEEN-team spread is a perfect 1.0 and the
+    own-team decode is just as strong late as at turn 1."""
+    blk = _ab(tmp_path, _team_mean_only)
+    p = blk["points"]
+    assert p["cond.within_team_resolution.all"] < 0.01, p
+    assert p["cond.within_stratum_resolution.all"] < 0.01, p
+    assert 0.80 < p["cond.team_spread_ratio.t1_3"] < 1.30, p
+    assert p["cond.own_team_r2.t1"] > 0.8 and p["cond.own_team_r2.late"] > 0.8, p
+    assert abs(p[CM.OWN_TEAM_R2_DIFF]) < 0.05, p
+
+
+def test_a_team_conditioned_board_discriminating_head_resolves_within_the_team(tmp_path) -> None:
+    """(A) CONDITIONING. The same between-team spread, but `V` also moves with the board, so the
+    within-team resolution is high AND the own-team decode FALLS from turn 1 to late as board
+    information takes over."""
+    blk = _ab(tmp_path, _team_and_board)
+    p = blk["points"]
+    assert p["cond.within_team_resolution.all"] > 0.15, p
+    assert p["cond.within_stratum_resolution.all"] > 0.15, p
+    assert 0.80 < p["cond.team_spread_ratio.t1_3"] < 1.30, p
+    assert p["cond.own_team_r2.late"] < p["cond.own_team_r2.t1"] - 0.30, p
+    assert p[CM.OWN_TEAM_R2_DIFF] > 0.30, p
+
+
+def test_a_marginal_head_moves_neither_component(tmp_path) -> None:
+    """(c) NEITHER. One number for everything: no within-team resolution, no between-team spread,
+    no own-team decode — the shape every control on the ladder reads."""
+    blk = _ab(tmp_path, _team_marginal)
+    p = blk["points"]
+    assert p["cond.within_team_resolution.all"] < 0.02, p
+    assert p["cond.within_stratum_resolution.all"] < 0.02, p
+    assert p["cond.team_spread_ratio.t1_3"] < 0.15, p
+    assert p["cond.own_team_r2.t1"] < 0.05 and p["cond.own_team_r2.late"] < 0.05, p
+
+
+def test_the_two_readings_are_separated_by_the_within_team_row_alone(tmp_path) -> None:
+    """🚨 THE DECISIVE CONTRAST. (a) and (b) are planted with the SAME per-team mean `V`, so their
+    between-team spreads agree — and any separation between them is the within-team component and
+    nothing else. That is the whole reason the row exists: the own-team R² row alone reads (a) and
+    (b) as the same finding."""
+    sub = _ab(tmp_path / "sub", _team_mean_only)["points"]
+    cond = _ab(tmp_path / "cond", _team_and_board)["points"]
+    assert abs(sub["cond.team_spread_ratio.t1_3"] - cond["cond.team_spread_ratio.t1_3"]) < 0.05
+    assert cond["cond.within_team_resolution.all"] - sub["cond.within_team_resolution.all"] > 0.15
+    assert (cond["cond.within_stratum_resolution.all"]
+            - sub["cond.within_stratum_resolution.all"]) > 0.15
+    assert cond[CM.OWN_TEAM_R2_DIFF] - sub[CM.OWN_TEAM_R2_DIFF] > 0.30
+
+
+def test_the_new_rows_carry_battle_clustered_draws_and_an_interval(tmp_path) -> None:
+    blk = _ab(tmp_path, _team_and_board, boot=200)
+    for key in ("cond.within_team_resolution.all", "cond.within_stratum_resolution.all",
+                "cond.team_spread_ratio.t1_3", "cond.team_spread_ratio_raw.t1_3",
+                "cond.own_team_r2.late", CM.OWN_TEAM_R2_DIFF):
+        d = blk["_draws"][key]
+        assert d.size > 150 and np.isfinite(d).all(), key
+
+
+def test_the_contrast_row_is_the_difference_of_its_two_scores(tmp_path) -> None:
+    """The point is exactly `t1 − late`, and its draws are PAIRED — the two scores come from the
+    same resampled battles, so the interval carries their covariance instead of pretending they
+    are independent draws."""
+    blk = _ab(tmp_path, _team_and_board, boot=120)
+    p = blk["points"]
+    assert p[CM.OWN_TEAM_R2_DIFF] == pytest.approx(
+        p["cond.own_team_r2.t1"] - p["cond.own_team_r2.late"])
+    d = blk["_draws"]
+    assert d[CM.OWN_TEAM_R2_DIFF].size == d["cond.own_team_r2.t1"].size
+    assert np.allclose(d[CM.OWN_TEAM_R2_DIFF],
+                       d["cond.own_team_r2.t1"] - d["cond.own_team_r2.late"])
+
+
+def test_the_cell_census_is_reported_beside_every_within_cell_row(tmp_path) -> None:
+    """🚨 A within-cell resolution is not readable without its census: on cells of a handful of
+    episodes the number is largely the binning's own (positively biased) noise. The counts are
+    part of the block, not an appendix."""
+    blk = _ab(tmp_path, _team_and_board, boot=60)
+    cf = blk["frame"]["cell_frames"]
+    for key in ("cond.within_team_resolution.all", "cond.within_stratum_resolution.all"):
+        c = cf[key]
+        assert c["n_cells"] > 0 and c["n_battles"] == 180 and c["n_states"] > 0
+        assert c["median_battles_per_cell"] > 0 and c["median_states_per_cell"] > 0
+    assert cf["cond.within_team_resolution.all"]["n_cells"] == 6
+    assert cf["cond.within_stratum_resolution.all"]["n_cells"] == TC.TEAM_STRATA
+    assert blk["frame"]["n_team_cells"] == 6 and blk["frame"]["team_strata"] == TC.TEAM_STRATA
+    assert blk["frame"]["team_spread_frame"]["n_cells"] == 6
+
+
+def test_a_team_under_the_minimum_is_never_a_cell(tmp_path) -> None:
+    """The same threshold the leave-one-battle-out label uses. A team with too few battles has no
+    trustworthy win rate, so it is not a cell, is not in a stratum, and is in no census count."""
+    blk = _ab(tmp_path, _team_and_board, per_team=CM.MIN_TEAM_BATTLES - 1, boot=0,
+              team_rates=(0.3, 0.5, 0.7, 0.9))
+    assert blk["frame"]["n_team_cells"] == 0
+    for key in ("cond.within_team_resolution.all", "cond.within_stratum_resolution.all",
+                "cond.team_spread_ratio.t1_3"):
+        assert key in blk["omitted"], key
+        assert key not in blk["points"], key
+
+
+def test_the_within_cell_resolution_reduces_to_the_ordinary_murphy_resolution(tmp_path) -> None:
+    """ONE cell means the within-cell construction IS Murphy's resolution — checked against the
+    ladder's own implementation in `critic_readouts`, so the two cannot drift apart."""
+    from main.ops import critic_readouts as CRO
+
+    rng = np.random.default_rng(3)
+    v = rng.random(400)
+    y = (rng.random(400) < v).astype(float)
+    w = rng.random(400) + 0.5
+    got = TC.cellwise_resolution(v, y, w, np.zeros(400, dtype=int), np.array([1.0]), 1)
+    want = CRO.murphy_arrays(v, y, np.ones(400), w, TC.RESOLUTION_BINS)["resolution"]
+    assert got == pytest.approx(want, abs=1e-12)
+
+
+def test_the_strata_are_cut_at_equal_battle_mass_not_equal_team_count() -> None:
+    """A stratum of five rarely-drawn teams has the same small-cell problem the per-team row has,
+    so the cut is on BATTLES. One very heavy weak team must not swallow two strata."""
+    rate = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95])
+    # EQUAL battle counts: five strata of two teams each, which equal-team-count cutting would
+    # also produce — the case where the two rules agree.
+    st = TC.strata_of(rate, np.full(10, 10.0), np.ones(10, dtype=bool), 5)
+    assert st.tolist() == [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
+    # ONE VERY HEAVY TEAM: equal-team-count cutting would put it in a stratum with a much lighter
+    # neighbour; cutting on battle mass leaves it in a stratum of its own, and no team is ever
+    # split across two.
+    nb = np.array([100.0, 4, 4, 4, 4, 4, 4, 4, 4, 4])
+    st = TC.strata_of(rate, nb, np.ones(10, dtype=bool), 5)
+    assert (st >= 0).all() and (np.diff(st) >= 0).all()    # monotone in strength
+    assert (st == st[0]).sum() == 1                        # the heavy team is alone
+    assert TC.strata_of(rate, nb, np.zeros(10, dtype=bool), 5).tolist() == [-1] * 10
+
+
+def test_the_reading_helper_names_the_reading_each_sign_pattern_supports() -> None:
+    """The (A)/(B) sentence is a reading of three SIGNS — never a verdict, which comes from the
+    registered label machinery."""
+    assert TC.reading_of(-0.1, -0.1, +0.2).startswith("(B) SUBSTITUTION")
+    assert TC.reading_of(+0.1, +0.1, +0.2).startswith("(A) CONDITIONING")
+    assert TC.reading_of(0.0, 0.0, +0.2).startswith("(A) CONDITIONING")
+    assert TC.reading_of(0.0, 0.0, 0.0).startswith("neither")
+    assert TC.reading_of(None, None, None).startswith("neither")
+
+
+def test_the_provisional_contrast_row_declares_why_it_can_have_no_floor() -> None:
+    """The controls read own-team R² ~0 at turn 1, so there is nothing for the contrast to FALL
+    from and no two-draw replicate floor can be formed for it. The row therefore carries no
+    verdict at all — which is a property of the METER, declared beside it."""
+    m = CM.METER_BY_KEY[CM.OWN_TEAM_R2_DIFF]
+    assert m.provisional is True and m.frame_sensitive is True
+    assert "floor" in m.provisional_why.lower()
+    assert CM.PROVISIONAL_KEYS == (CM.OWN_TEAM_R2_DIFF,)

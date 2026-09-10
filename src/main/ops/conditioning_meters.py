@@ -48,6 +48,8 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 
+from main.ops import team_conditioning as TC
+
 #: turn windows the meters are reported on. ``t1`` is the sharpest (nothing has happened, every
 #: battle contributes exactly one state, and the two sides of the identity condition on the same
 #: event); ``t1_3`` is the mixture diagnostic's own registered window.
@@ -55,8 +57,19 @@ BUCKETS = ("t1", "t1_3", "all")
 #: at most this many states per battle per bucket enter a SCORE meter (the probe read's cap) —
 #: it keeps every battle represented while bounding how much within-battle correlation rides in.
 STATES_PER_BATTLE_CAP = 2
-#: a team needs this many battles before its leave-one-battle-out win rate is a label at all.
+#: a team needs this many battles before its leave-one-battle-out win rate is a label at all,
+#: and before it is a CELL of the within-team rows.
 MIN_TEAM_BATTLES = 4
+#: the turn from which a state is LATE. The identity's own `late` bucket, so `own_team_r2.late`
+#: and `identity.bias.late` are cut at the same clock.
+LATE_TURN = 25
+#: the own-team decode at turn 1 MINUS the same decode late. Registered as its own row because it
+#: is the contrast that separates a critic CONDITIONING on its team from one SUBSTITUTING team
+#: identity for the board: board information should take over as the game unfolds, so a
+#: conditioning critic's team R^2 FALLS from turn 1 to late and a substituting one's does not.
+OWN_TEAM_R2_DIFF = "cond.own_team_r2.t1_minus_late"
+#: the label a PROVISIONAL row carries INSTEAD of a registered verdict.
+PROVISIONAL_LABEL = "PROVISIONAL — no floor; never DETECTED"
 N_BOOT = 2000
 BOOT_SEED = 20260909
 RIDGE_ALPHAS = (0.0, 1e-3, 1e-2, 1e-1, 1.0)
@@ -564,6 +577,17 @@ class Meter(NamedTuple):
     A noise-CORRECTED spread row, the spread delta and the Elo slope are weighted means and
     regressions on cell means whose expectation does not move with frame size given correct
     weights, so they are read as traced.
+
+    A THIRD mechanism arrived with the own-team rows (2026-09-10) and is marked the same way: a
+    row whose CELLS are chosen by a battle-count threshold (``MIN_TEAM_BATTLES``) has a cell SET
+    that is itself a function of frame size — a smaller frame keeps only the busiest teams, which
+    is a different population of cells and not merely a noisier estimate of the same ones. The
+    opponent rows have no such mechanism, their roster being a pinned set.
+
+    ``provisional`` marks a row that must NEVER be labelled DETECTED, whatever its interval does.
+    It is not a weaker version of the label — it is the absence of one: the row has no replicate
+    floor and cannot be given one from the controls (see ``provisional_why``), so a large move is
+    informative, a small one is not, and the report says exactly that in place of a verdict.
     """
 
     key: str
@@ -571,6 +595,8 @@ class Meter(NamedTuple):
     stratum: str
     frame_sensitive: bool
     why: str
+    provisional: bool = False
+    provisional_why: str = ""
 
 
 #: every conditioning meter, with its frame-size sensitivity DECLARED (see :class:`Meter`).
@@ -610,6 +636,42 @@ METER_SPECS: Tuple[Meter, ...] = (
                 "every rung of the 2026-09-09 curve — a 1-D monotone decoder's AUC is nearly the "
                 "AUC of V itself — but it is a fit on the frame, so it is matched by the same "
                 "rule rather than exempted by an observation"),
+    # ---- the (A)/(B) separation, added 2026-09-10 (arm 8's own-team decode). Detail and the
+    # sign table: `main.ops.team_conditioning`.
+    Meter("cond.within_team_resolution.all",
+          "WITHIN-own-team Murphy resolution of V (cells >= MIN_TEAM_BATTLES battles, "
+          "battle-weighted over teams)", "all states, <=2 per battle", True,
+          "a BINNED second moment computed INSIDE cells of a handful of episodes: each bin's "
+          "observed rate departs from its cell's base rate by chance alone, and that inflation "
+          "grows as the cells shrink — the same mechanism that makes an UNCORRECTED spread "
+          "frame-sensitive, plus the threshold-selected cell set"),
+    Meter("cond.within_stratum_resolution.all",
+          "the same resolution WITHIN team-STRENGTH strata (quantiles of the team's LOO win rate)",
+          "all states, <=2 per battle", True,
+          "the COARSE companion: hundreds of episodes per cell make the small-cell inflation far "
+          "smaller, but it is the same estimator on the same threshold-selected teams and is "
+          "matched by the same rule rather than exempted by an argument"),
+    Meter("cond.team_spread_ratio.t1_3",
+          "BETWEEN-team spread ratio sd(mean V) / sd(team win rate), noise-corrected",
+          "turn 1-3", True,
+          "its CELLS are chosen by a battle-count threshold (MIN_TEAM_BATTLES), so frame size "
+          "decides WHICH teams are cells at all — the third mechanism, which the pinned opponent "
+          "roster does not have"),
+    Meter("cond.team_spread_ratio_raw.t1_3", "the same ratio UNCORRECTED and unclamped",
+          "turn 1-3", True,
+          "UNCORRECTED *and* on a threshold-selected cell set — both mechanisms at once"),
+    Meter("cond.own_team_r2.late", "own-team leave-one-battle-out win-rate R^2 of V",
+          f"turn >= {LATE_TURN}", True,
+          "as `cond.own_team_r2.t1` — an out-of-fold score of a ridge FIT on the frame"),
+    Meter(OWN_TEAM_R2_DIFF, "own-team R^2 at turn 1 MINUS own-team R^2 late",
+          f"turn 1 - turn >= {LATE_TURN}", True,
+          "a difference of two out-of-fold FITS on the same frame; both move with frame size, so "
+          "the difference is matched rather than assumed to cancel",
+          True,
+          "NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE — every control reads "
+          "own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw "
+          "replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move "
+          "either way is informative; a small one is not; and this row is never DETECTED"),
 )
 #: the legacy 3-tuple view, kept so the committed measurement scripts that import ``METERS``
 #: (``measurements/critic_ladder_reads/.../matched_quota/analyze.py``) keep working unchanged — a
@@ -620,6 +682,8 @@ METER_KEYS = tuple(m.key for m in METER_SPECS)
 #: the rows a quota-matched read must recompute on an equalised frame.
 FRAME_SENSITIVE_KEYS: Tuple[str, ...] = tuple(
     m.key for m in METER_SPECS if m.frame_sensitive)
+#: the rows that may never carry a registered verdict (see :class:`Meter`).
+PROVISIONAL_KEYS: Tuple[str, ...] = tuple(m.key for m in METER_SPECS if m.provisional)
 METER_BY_KEY: Dict[str, Meter] = {m.key: m for m in METER_SPECS}
 
 
@@ -683,10 +747,30 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     b_wr = loo_team_wr(b["team"], b["y"], b["w"])
     y_wr_state = b_wr[binv]
     y_cls_state = (b["opp_class"][binv] == "pool").astype(float)
+
+    # ---- OWN-TEAM CELLS. Which teams are cells at all (>= MIN_TEAM_BATTLES battles), their
+    # strength strata, and the per-battle code every within-cell row is computed on. The cell SET
+    # is fixed HERE, on the full frame, and the bootstrap below resamples the states inside it —
+    # the same convention the out-of-fold decoders follow, which price the sampling noise in a
+    # held-out score rather than the variability of refitting.
+    teams_u, tinv_b = np.unique(b["team"], return_inverse=True)
+    n_teams_all = int(teams_u.size)
+    tW = np.bincount(tinv_b, weights=b["w"], minlength=n_teams_all)
+    tWy = np.bincount(tinv_b, weights=b["w"] * b["y"], minlength=n_teams_all)
+    tN = np.bincount(tinv_b, minlength=n_teams_all).astype(float)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        team_rate = np.where(tW > 0, tWy / np.where(tW > 0, tW, 1.0), np.nan)
+    team_ok = (tN >= MIN_TEAM_BATTLES) & np.isfinite(team_rate)
+    team_code_b = np.where(team_ok[tinv_b], tinv_b, -1)
+    strat_of_team = TC.strata_of(team_rate, tN, team_ok, TC.TEAM_STRATA)
+    strat_code_b = np.where(team_ok[tinv_b], strat_of_team[tinv_b], -1)
+
     scores: Dict[str, Dict[str, Any]] = {}
     for key, task, y_state, mask in (
             ("cond.own_team_r2.t1", "r2", y_wr_state,
              (arr["turn"] == 1) & np.isfinite(y_wr_state)),
+            ("cond.own_team_r2.late", "r2", y_wr_state,
+             (arr["turn"] >= LATE_TURN) & np.isfinite(y_wr_state)),
             ("cond.own_team_r2.all", "r2", y_wr_state, np.isfinite(y_wr_state)),
             ("cond.opp_class_auc.t1", "auc", y_cls_state, arr["turn"] == 1)):
         idx = _cap_states(arr, mask, STATES_PER_BATTLE_CAP, seed)
@@ -704,6 +788,32 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
         scores[key] = {"idx": idx, "y": yv, "w": wv, "pred": pred, "task": task,
                        "n_states": int(idx.size),
                        "n_battles": int(np.unique(arr["battle"][idx]).size)}
+
+    # ---- WITHIN-CELL RESOLUTION frames: the states of the qualifying cells, capped per battle.
+    resolutions: Dict[str, Dict[str, Any]] = {}
+    for key, code_b, n_c, what in (
+            ("cond.within_team_resolution.all", team_code_b, n_teams_all, "own-team"),
+            ("cond.within_stratum_resolution.all", strat_code_b, TC.TEAM_STRATA,
+             "team-strength stratum")):
+        mask = code_b[binv] >= 0
+        idx = _cap_states(arr, mask, STATES_PER_BATTLE_CAP, seed)
+        n_b_cells = int(np.unique(arr["battle"][idx]).size) if idx.size else 0
+        if idx.size < 20 or n_b_cells < 5:
+            omitted[key] = (f"only {idx.size} states / {n_b_cells} battles sit in a {what} cell "
+                            f"clearing MIN_TEAM_BATTLES={MIN_TEAM_BATTLES} at this cycle — too "
+                            "few for a within-cell resolution.")
+            continue
+        resolutions[key] = {"idx": idx, "code_b": code_b, "n_cells": n_c,
+                            "v": arr["V"][idx], "y": arr["y"][idx], "w": arr["w"][idx],
+                            "cell": code_b[binv[idx]],
+                            "census": TC.cell_census(code_b[binv[idx]], arr["battle"][idx], n_c)}
+
+    def _cell_weight(res: Dict[str, Any], battles: np.ndarray) -> np.ndarray:
+        """Per-cell BATTLE count over ``battles`` (battle row indices, duplicates counted) — the
+        weight the mean over cells uses, so a team with more episodes counts for more."""
+        codes = res["code_b"][battles]
+        codes = codes[codes >= 0]
+        return np.bincount(codes, minlength=res["n_cells"]).astype(float)
 
     # ---- point estimates
     sel0 = np.arange(b["y"].size)
@@ -723,6 +833,24 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     }
     for key, s in scores.items():
         points[key] = score(s["y"], s["pred"], s["w"], s["task"])
+    if all(np.isfinite(points.get(k, np.nan))
+           for k in ("cond.own_team_r2.t1", "cond.own_team_r2.late")):
+        points[OWN_TEAM_R2_DIFF] = (points["cond.own_team_r2.t1"]
+                                    - points["cond.own_team_r2.late"])
+    else:
+        omitted.setdefault(OWN_TEAM_R2_DIFF,
+                           "one side of the contrast is missing at this cycle — the turn-1 and "
+                           "the late own-team decode must BOTH exist for their difference to "
+                           "mean anything.")
+    for key, res in resolutions.items():
+        points[key] = TC.cellwise_resolution(res["v"], res["y"], res["w"], res["cell"],
+                                             _cell_weight(res, np.unique(binv[res["idx"]])),
+                                             res["n_cells"])
+    ts0 = TC.team_spread(w=b["w"][sel0], n_states=b["n_t1_3"][sel0], sum_v=b["sV_t1_3"][sel0],
+                         y=b["y"][sel0], cell=team_code_b[sel0], n_cells=n_teams_all,
+                         keep_cell=team_ok)
+    points["cond.team_spread_ratio.t1_3"] = ts0["ratio"]
+    points["cond.team_spread_ratio_raw.t1_3"] = ts0["ratio_raw"]
 
     # ---- battle-clustered bootstrap: battles are resampled WITHIN their opponent cell (the
     # roster is a fixed pinned set), and the outcome side is redrawn from its own Binomial so the
@@ -744,7 +872,7 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     # bootstrap gathers ~2,000 x 950 battles three times over; a python loop over `sel` made that
     # the whole cost of the read, and the repeat/cumsum form below is the same gather vectorised.
     gathers: Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
-    for key, s in scores.items():
+    for key, s in list(scores.items()) + list(resolutions.items()):
         bi = binv[s["idx"]]
         o = np.argsort(bi, kind="stable")
         cnt = np.bincount(bi, minlength=b["y"].size).astype(np.int64)
@@ -772,7 +900,13 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
         draws["cond.spread_ratio_raw.all"].append(sa["ratio_raw"])
         draws["cond.spread_delta.all"].append(sa["delta"])
         draws["cond.elo_slope"].append(ols_slope(st_a["bias"], strength, kp))
-        for key, s in scores.items():
+        ts = TC.team_spread(w=b["w"][sel], n_states=b["n_t1_3"][sel], sum_v=b["sV_t1_3"][sel],
+                            y=b["y"][sel], cell=team_code_b[sel], n_cells=n_teams_all,
+                            keep_cell=team_ok)
+        draws["cond.team_spread_ratio.t1_3"].append(ts["ratio"])
+        draws["cond.team_spread_ratio_raw.t1_3"].append(ts["ratio_raw"])
+        cur: Dict[str, float] = {}
+        for key, s in list(scores.items()) + list(resolutions.items()):
             flat, start, cnt = gathers[key]
             c = cnt[sel]
             tot = int(c.sum())
@@ -781,7 +915,20 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
             base = np.repeat(start[sel], c)
             within = np.arange(tot) - np.repeat(np.cumsum(c) - c, c)
             g = flat[base + within]
-            draws[key].append(score(s["y"][g], s["pred"][g], s["w"][g], s["task"]))
+            if key in scores:
+                cur[key] = score(s["y"][g], s["pred"][g], s["w"][g], s["task"])
+            else:
+                # the cell weights are the DRAWN battle instances per cell, so a team drawn twice
+                # counts twice — the resample's own composition, not the original frame's.
+                cur[key] = TC.cellwise_resolution(
+                    s["v"][g], s["y"][g], s["w"][g], s["cell"][g],
+                    _cell_weight(s, sel[c > 0]), s["n_cells"])
+            draws[key].append(cur[key])
+        if ("cond.own_team_r2.t1" in cur) and ("cond.own_team_r2.late" in cur):
+            # PAIRED: both scores come from the SAME resampled battles, so the difference carries
+            # their covariance instead of pretending the two are independent draws.
+            draws[OWN_TEAM_R2_DIFF].append(cur["cond.own_team_r2.t1"]
+                                           - cur["cond.own_team_r2.late"])
 
     out_draws = {k: np.asarray([d for d in v if np.isfinite(d)], dtype=float)
                  for k, v in draws.items() if k in points and np.isfinite(points.get(k, np.nan))}
@@ -797,10 +944,23 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                   "n_cells": int(keep0.sum()), "boot": int(boot), "seed": int(seed),
                   "states_per_battle_cap": STATES_PER_BATTLE_CAP,
                   "min_team_battles": MIN_TEAM_BATTLES,
+                  "late_turn": LATE_TURN,
+                  "n_team_cells": int(team_ok.sum()),
+                  "n_teams_seen": n_teams_all,
+                  "team_strata": TC.TEAM_STRATA,
                   "score_frames": {k: {"n_states": s["n_states"], "n_battles": s["n_battles"]}
                                    for k, s in scores.items()},
+                  # 🚨 the CENSUS every within-cell row is read WITH: cells of a handful of
+                  # episodes make a binned resolution mostly its own noise, so the row is not
+                  # quotable without these counts beside it.
+                  "cell_frames": {k: dict(r["census"], n_cells_declared=int(r["n_cells"]))
+                                  for k, r in resolutions.items()},
+                  "team_spread_frame": {k: v for k, v in ts0.items()
+                                        if k in ("n_cells", "n_battles",
+                                                 "median_battles_per_cell", "sd_V", "sd_y",
+                                                 "noise_V", "noise_y")},
                   "recorded_v_note": recorded_v_note()},
-        "spread": {"t1_3": sc_t13_0, "all": sc_all0},
+        "spread": {"t1_3": sc_t13_0, "all": sc_all0, "team_t1_3": ts0},
         "strength": {"note": strength_note,
                      "ratings": ({o: float(strength_map[o]) for o in sorted(strength_map)}
                                  if strength_map else None)},

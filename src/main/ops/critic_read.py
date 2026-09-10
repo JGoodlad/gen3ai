@@ -953,6 +953,26 @@ def compute_deltas(arm: Dict[str, Any], ctl: Dict[str, Any],
                                      "sides": qm_plan.get("sides")},
                      "headline": key in HEADLINES})
 
+    # 🚨 A PROVISIONAL ROW NEVER CARRIES A VERDICT. The flag is declared on the meter
+    # (`Meter.provisional`), not matched on a name, and it is applied AFTER the matched/unmatched
+    # machinery so it cannot be lost down one of those branches. `UNMATCHED — not a reading` is
+    # the STRONGER statement and stands where it was set: a row read on an unequal frame is not
+    # provisional, it is nothing.
+    for r in rows:
+        m = CM.METER_BY_KEY.get(r["key"])
+        if m is None or not m.provisional or r.get("label") == QM.UNMATCHED_LABEL:
+            continue
+        r["provisional"] = True
+        r["floor"] = None
+        r["clears_floor"] = False
+        r["label"] = CM.PROVISIONAL_LABEL
+        r["qualifier"] = m.provisional_why
+        for v in ((r.get("quota_match") or {}).get("variants") or {}).values():
+            v["label"] = CM.PROVISIONAL_LABEL
+            v["qualifier"] = m.provisional_why
+            v["floor"] = None
+            v["clears_floor"] = False
+
     for wname in WEIGHTINGS:
         k = f"turn_contrast.{wname}"
         if k not in arm["_identity_draws"] or k not in ctl["_identity_draws"]:

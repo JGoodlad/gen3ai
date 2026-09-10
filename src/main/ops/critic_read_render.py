@@ -19,10 +19,11 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
+from main.ops import team_conditioning as TC
 from main.ops import quota_match as QM
 
 TOOL = "critic_read"
-TOOL_VERSION = 3
+TOOL_VERSION = 4
 
 #: the summary table's headline quantities. The first four are the 2026-09-08 registration's;
 #: the last two are the CONDITIONING primaries added 2026-09-09, after three offline reads
@@ -183,6 +184,119 @@ def _frame_note(row: Dict[str, Any]) -> str:
     if st == "UNMATCHED":
         return "🚨 UNMATCHED"
     return "as traced (frames equal)"
+
+
+#: the three rows the (A)/(B) separation is read from, in the order the sign table lists them.
+AB_ROWS = ("cond.within_team_resolution.all", "cond.within_stratum_resolution.all",
+           "cond.team_spread_ratio.t1_3")
+
+
+def _cell_census_table(doc: Dict[str, Any]) -> List[str]:
+    """Each side's OWN-TEAM CELL CENSUS — how many cells, and how much is inside them.
+
+    🚨 Printed BESIDE the rows, not in an appendix, because a within-cell resolution cannot be
+    read without it. The pool carries 719 teams, so a few-thousand-battle frame averages a handful
+    of episodes per team; a binned resolution on cells that size is largely the binning's own
+    (positively biased) noise. `n_cells`, the battles and states inside them and the MEDIAN
+    per-cell N are what say whether the number is a measurement.
+    """
+    L: List[str] = ["**The OWN-TEAM CELL CENSUS** — the cells these rows are computed on "
+                    f"(a team is a cell only with >= {CM.MIN_TEAM_BATTLES} battles; the strata "
+                    f"are {TC.TEAM_STRATA} quantiles of the team's leave-one-battle-out win rate, "
+                    "cut at equal battle mass):", ""]
+    L.append("| role | cells | teams seen | battles in cells | states | median battles/cell | "
+             "median states/cell | min–max battles/cell |")
+    L.append("|---|---|---|---|---|---|---|---|")
+    for role in ("arm", "control"):
+        fr = ((doc[role].get("conditioning") or {}).get("frame") or {})
+        cf = fr.get("cell_frames") or {}
+        for key, name in (("cond.within_team_resolution.all", "team"),
+                          ("cond.within_stratum_resolution.all", "stratum")):
+            c = cf.get(key)
+            if not c:
+                L.append(f"| {role} · {name} | — | {fr.get('n_teams_seen', '—')} | — | — | — | "
+                         "— | (row omitted) |")
+                continue
+            L.append(f"| {role} · {name} | {c.get('n_cells')} | {fr.get('n_teams_seen', '—')} | "
+                     f"{c.get('n_battles')} | {c.get('n_states')} | "
+                     f"{_f(c.get('median_battles_per_cell'), 1, sign=False)} | "
+                     f"{_f(c.get('median_states_per_cell'), 1, sign=False)} | "
+                     f"{_f(c.get('min_battles_per_cell'), 0, sign=False)}–"
+                     f"{_f(c.get('max_battles_per_cell'), 0, sign=False)} |")
+        ts = fr.get("team_spread_frame") or {}
+        if ts:
+            L.append(f"| {role} · between-team spread | {_f(ts.get('n_cells'), 0, sign=False)} | "
+                     f"{fr.get('n_teams_seen', '—')} | "
+                     f"{_f(ts.get('n_battles'), 0, sign=False)} | — | "
+                     f"{_f(ts.get('median_battles_per_cell'), 1, sign=False)} | — | — |")
+    L.append("")
+    return L
+
+
+def _ab_block(doc: Dict[str, Any]) -> str:
+    """The (A) CONDITIONING vs (B) SUBSTITUTION separation — the whole reason these rows exist.
+
+    Arm 8's ``V`` decodes its OWN TEAM at turn 1 where every control reads ~0. Two readings fit
+    that: the critic CONDITIONS on its team (teams differ in strength; knowing which one you hold
+    predicts better) or it SUBSTITUTES team identity for board state (right per team, blind inside
+    one). They are told apart by decomposing the skill into a BETWEEN-team part and a WITHIN-team
+    part — and by whether the team decode FALLS as the board fills in.
+    """
+    by = {r["key"]: r for r in doc["deltas"]}
+    rows = [by[k] for k in AB_ROWS if k in by]
+    diff = by.get(CM.OWN_TEAM_R2_DIFF)
+    if not rows and diff is None:
+        return ""
+    L: List[str] = []
+    A = L.append
+    A("### (A) CONDITIONING or (B) SUBSTITUTION — the within/between decomposition of the "
+      "own-team decode")
+    A("")
+    A("A critic whose `V` decodes its OWN TEAM can be doing either of two things, and the "
+      "own-team R² row alone cannot tell them apart: **(A)** it CONDITIONS on its team — teams "
+      "differ in strength, so knowing which one it holds predicts better, and inside a team it "
+      "still discriminates by the board; or **(B)** it SUBSTITUTES team identity for board "
+      "state — right on average per team, blind INSIDE one. The separation is the classic "
+      "between/within decomposition of a forecast's skill, with the own team as the cell:")
+    A("")
+    A("| | within-team resolution | between-team spread | own-team R² t1 − late |")
+    A("|---|---|---|---|")
+    A("| **(A) conditioning** | not lower, ideally higher | UP | NEGATIVE — the board takes over "
+      "as the game unfolds |")
+    A("| **(B) substitution** | **DOWN** | UP | ~0 or POSITIVE — team identity still carries the "
+      "forecast late |")
+    A("| neither | flat | flat | flat |")
+    A("")
+    L.extend(_cell_census_table(doc))
+    A("| row | frame | arm | control | **Δ** | 95% CI | verdict |")
+    A("|---|---|---|---|---|---|---|")
+    for r in rows + ([diff] if diff is not None else []):
+        A(f"| {r['quantity']} · `{r['stratum']}` | {_frame_note(r)} | {_f(r['arm'])} | "
+          f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {_label(r)} |")
+    A("")
+    d = {k: (by[k]["delta"] if k in by else None) for k in AB_ROWS}
+    A(f"**Reading of the three signs:** {TC.reading_of(d[AB_ROWS[0]], d[AB_ROWS[1]], d[AB_ROWS[2]])}.")
+    A("")
+    A("> 🚨 **The between-team spread is an AMPLITUDE; the own-team R² is an ALIGNMENT.** The "
+      "spread ratio compares `sd(mean V per team)` with `sd(that team's win rate)` — how far "
+      "apart the head's per-team opinions are. The own-team R² is an out-of-fold MONOTONE decode, "
+      "invariant to scale — whether those opinions are in the right ORDER. The two can move in "
+      "opposite directions (a head that orders its teams correctly but under-disperses reads R² "
+      "UP and spread DOWN), so the sign table above is read with both rows in hand and the R² "
+      "row is never read alone.")
+    A("")
+    A("> 🚨 **The per-TEAM cells are small and the coarse row is the check on them.** With ~719 "
+      "teams in the pool a few-thousand-battle frame leaves a handful of episodes per team, and a "
+      "binned resolution inside a cell that size is largely the binning's own noise — which is "
+      "*positively* biased, so a small per-team number is evidence of neither reading. The "
+      "STRATUM row is the same estimator on cells hundreds of episodes deep. **Where the two "
+      "disagree, believe the stratum row and say so.**")
+    A("")
+    if diff is not None:
+        A(f"> 🚨 **`{CM.OWN_TEAM_R2_DIFF}` is PROVISIONAL and is never labelled DETECTED.** "
+          f"{CM.METER_BY_KEY[CM.OWN_TEAM_R2_DIFF].provisional_why}.")
+        A("")
+    return "\n".join(L)
 
 
 def _matched_detail(doc: Dict[str, Any]) -> str:
@@ -358,7 +472,11 @@ def render_md(doc: Dict[str, Any]) -> str:
       "target is ONE (for any calibrated critic the between-opponent spread of `V` equals that "
       "of the outcome), so a POSITIVE delta from a control below 1.0 is an improvement; the "
       "**own-team R²** and the **opponent-class AUC** are decodes FROM `V`, higher is better, "
-      "with 0.0 and 0.5 the respective chance levels.")
+      "with 0.0 and 0.5 the respective chance levels. The **within-team / within-stratum "
+      "resolution** is DISCRIMINATION INSIDE a cell — higher is better, 0.0 is a forecast that "
+      "says the same thing about every state of a team — and the **between-team spread ratio** "
+      "is the own-team analogue of the opponent identity, target ONE. Their signs are read "
+      "TOGETHER, in the (A)/(B) table of section 3.")
     A("")
 
     for family, title in (("gate", "## 1. RESOLUTION — the calibration gate's metrics, per stratum"),
@@ -446,6 +564,9 @@ def render_md(doc: Dict[str, Any]) -> str:
           f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | "
           f"{_label(r)} |")
     A("")
+    ab = _ab_block(doc)
+    if ab:
+        A(ab)
     detail = _matched_detail(doc)
     if detail:
         A(detail)

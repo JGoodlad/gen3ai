@@ -458,6 +458,59 @@ def test_the_report_renders_and_the_ledger_line_is_the_registered_form(
     assert "NO REPLICATE FLOOR" in md
 
 
+def test_the_report_renders_the_ab_separation_with_its_cell_census(tmp_path, monkeypatch) -> None:
+    """🚨 The (A)/(B) block and the CELL CENSUS are one object: a within-cell resolution read
+    without the counts beside it is a number, not a measurement."""
+    from main.ops import conditioning_meters as CM
+
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    doc["conditioning"]["frame"] = {
+        "n_teams_seen": 40, "team_strata": 5,
+        "cell_frames": {"cond.within_team_resolution.all": {
+            "n_cells": 12, "n_battles": 96, "n_states": 180,
+            "median_battles_per_cell": 7.0, "median_states_per_cell": 14.0,
+            "min_battles_per_cell": 4.0, "max_battles_per_cell": 21.0}},
+        "team_spread_frame": {"n_cells": 12.0, "n_battles": 96.0,
+                              "median_battles_per_cell": 7.0}}
+    full = {"arm": doc, "control": doc, "generated_at": "now", "out": str(tmp_path),
+            "floor": CR.load_floors(None), "invocation": "python -m main.ops.critic_read …",
+            "params": {"boot": 60, "gate_boot": 40, "seed": 0},
+            "deltas": CR.compute_deltas(doc, doc, None, seed=0)}
+    md = CR.render_md(full)
+    assert "(A) CONDITIONING or (B) SUBSTITUTION" in md
+    assert "OWN-TEAM CELL CENSUS" in md
+    assert "| arm · team | 12 | 40 | 96 | 180 | 7.0 | 14.0 | 4–21 |" in md
+    assert CM.PROVISIONAL_LABEL in md
+    assert "Reading of the three signs:" in md
+
+
+def test_a_provisional_row_never_carries_a_verdict_however_large_its_delta(
+        tmp_path, monkeypatch) -> None:
+    """🚨 The turn-1-vs-late contrast has NO floor and the controls cannot supply one — they read
+    own-team R² ~0 at turn 1, so there is nothing for it to fall from. A huge, tight delta must
+    still print PROVISIONAL: a large move is informative, a small one is not, and neither is a
+    detection."""
+    from main.ops import conditioning_meters as CM
+
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    arm = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    ctl = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    rng = np.random.default_rng(1)
+    arm["conditioning"]["points"][CM.OWN_TEAM_R2_DIFF] = 0.9
+    arm["_cond_draws"][CM.OWN_TEAM_R2_DIFF] = 0.9 + rng.normal(0, 0.01, 400)
+    rows = {r["key"]: r for r in CR.compute_deltas(arm, ctl, {CM.OWN_TEAM_R2_DIFF: 0.001},
+                                                   seed=0)}
+    r = rows[CM.OWN_TEAM_R2_DIFF]
+    assert r["delta"] > 0.5 and r["ci"][0] > 0.0      # it would otherwise be DETECTED
+    assert r["label"] == CM.PROVISIONAL_LABEL
+    assert r["provisional"] is True and r["floor"] is None and r["clears_floor"] is False
+    # every OTHER conditioning row still gets its registered verdict
+    assert rows["cond.own_team_r2.t1"]["label"] in ("DETECTED", "NOT DETECTED", "WITHIN FLOOR")
+
+
 def _with_conditioning(doc: dict) -> dict:
     """Graft a synthetic CONDITIONING block onto a readout, so the delta engine's conditioning
     family can be exercised without a trace tree."""
@@ -495,7 +548,9 @@ def test_the_conditioning_family_is_a_zero_delta_against_itself(tmp_path, monkey
     for r in rows:
         assert r["delta"] == 0.0
         assert r["ci"][0] < 0.0 < r["ci"][1]
-        assert r["label"] == "NOT DETECTED"
+        # a PROVISIONAL row carries no verdict at all — not even the zero-delta one.
+        assert r["label"] == (CM.PROVISIONAL_LABEL if r["key"] in CM.PROVISIONAL_KEYS
+                              else "NOT DETECTED")
 
 
 def test_a_conditioning_meter_missing_from_one_side_is_dropped_not_compared(tmp_path,

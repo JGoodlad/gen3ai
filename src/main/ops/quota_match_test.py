@@ -283,7 +283,11 @@ def test_the_richer_sides_matched_frame_is_the_size_of_the_poorer_sides(artefact
 def test_the_opt_out_prints_a_marker_and_never_a_label(artefact) -> None:
     """🚨 On an unequal frame neither DETECTED nor NOT DETECTED is a claim this report may make."""
     rows = _delta_rows(artefact["rich"], artefact["poor"], _qm(artefact, enabled=False))
-    for key in CM.FRAME_SENSITIVE_KEYS:
+    # a meter this small synthetic frame cannot support is OMITTED upstream and never reaches the
+    # delta engine; the ones that do reach it must all carry the marker.
+    present = [k for k in CM.FRAME_SENSITIVE_KEYS if k in rows]
+    assert {"cond.own_team_r2.t1", "cond.opp_class_auc.t1"} <= set(present)
+    for key in present:
         r = rows[key]
         assert r["label"] == QM.UNMATCHED_LABEL, key
         assert r["clears_zero"] is False
@@ -347,7 +351,25 @@ def test_every_meter_declares_its_frame_sensitivity_with_a_reason() -> None:
                                       if o.key != m.key), m.key
     assert set(CM.FRAME_SENSITIVE_KEYS) == {
         "cond.spread_ratio_raw.t1_3", "cond.spread_ratio_raw.all",
-        "cond.own_team_r2.t1", "cond.own_team_r2.all", "cond.opp_class_auc.t1"}
+        "cond.own_team_r2.t1", "cond.own_team_r2.all", "cond.opp_class_auc.t1",
+        # the (A)/(B) rows (2026-09-10): two out-of-fold fits and their difference, a binned
+        # second moment computed inside cells, and a spread whose CELL SET is chosen by a
+        # battle-count threshold — every one of them moves with the frame's size.
+        "cond.own_team_r2.late", CM.OWN_TEAM_R2_DIFF,
+        "cond.within_team_resolution.all", "cond.within_stratum_resolution.all",
+        "cond.team_spread_ratio.t1_3", "cond.team_spread_ratio_raw.t1_3"}
+
+
+def test_the_provisional_row_is_declared_and_carries_its_reason() -> None:
+    """A PROVISIONAL row is the ABSENCE of a verdict, not a weaker one, so the reason it can never
+    have a floor is declared beside the flag rather than left to the report to remember."""
+    assert set(CM.PROVISIONAL_KEYS) == {CM.OWN_TEAM_R2_DIFF}
+    for key in CM.PROVISIONAL_KEYS:
+        m = CM.METER_BY_KEY[key]
+        assert m.provisional is True and len(m.provisional_why) > 60, key
+    for m in CM.METER_SPECS:
+        if not m.provisional:
+            assert m.provisional_why == "", m.key
 
 
 def test_every_row_that_goes_through_the_out_of_fold_decoder_is_frame_sensitive() -> None:
@@ -357,8 +379,8 @@ def test_every_row_that_goes_through_the_out_of_fold_decoder_is_frame_sensitive(
     src = __import__("inspect").getsource(CM.conditioning_block)
     fitted = [m.key for m in CM.METER_SPECS
               if f'("{m.key}", "r2"' in src or f'("{m.key}", "auc"' in src]
-    assert set(fitted) == {"cond.own_team_r2.t1", "cond.own_team_r2.all",
-                           "cond.opp_class_auc.t1"}
+    assert set(fitted) == {"cond.own_team_r2.t1", "cond.own_team_r2.late",
+                           "cond.own_team_r2.all", "cond.opp_class_auc.t1"}
     assert all(CM.METER_BY_KEY[k].frame_sensitive for k in fitted)
 
 
