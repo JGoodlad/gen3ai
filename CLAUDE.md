@@ -212,6 +212,8 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 Look for `[ModelVersion] Round-trip smoke test PASSED`, `🏁 Episode Finished` throughout, and `Training complete`. A hang after `[STALL LOGGED]` or a crash before completion is a regression in the env/stall/forfeit pipeline; `[ModelVersion] FATAL` means the checkpoint's architecture ≠ current code.
 
+🚨 **`--debug` exercises a STRICTLY SMALLER surface than a real launch.** It is one `DummyVecEnv` with no forkserver, and it BYPASSES the forkserver preload, `--compile-trainer`, `--compile-opponents` and the warm-start layer. A defect that lives there is invisible to this smoke — on 2026-09-09 the `--value-true-team` arm passed it and died two minutes into its real launch in the preload. **The first two minutes of a real launch are the only test of that layer**; the synthetic-obs registry (`src/agents/model/extra_obs_keys.py`) and its AST gate are what stand in for a smoke there.
+
 ---
 
 ## Training + the Launcher

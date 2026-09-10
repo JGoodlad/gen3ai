@@ -598,3 +598,5 @@ trusted — the recorded-vs-derived-key defect class has cost this program dearl
 background: `designs/research_state/learning_notes/2026-08-28_nash_exploitability_psro.md`.
 
 ---
+
+> 🚨 **`--debug` bypasses the forkserver preload, `--compile-trainer`, `--compile-opponents` and warm-start.** No `--debug` smoke can catch a defect in that layer (2026-09-09: the true-team arm passed the smoke and died in the preload). Watch a real launch's first two minutes as the test; the synthetic-obs registry `extra_obs_keys.py` + its AST gate are the standing guard.
