@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-16,900-line file. **The ledger itself is append-only and is never edited by this**;
+16,904-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**522 headings · 482 dated · 2026-08-01 → 2026-09-10 · ledger 16,900 lines.**
+**523 headings · 483 dated · 2026-08-01 → 2026-09-10 · ledger 16,904 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -542,3 +542,4 @@ rename.
 - `L16791` · `2026-09-10` · OPS · CRITIC LADDER — `ai_v12_14_ladder_truevalue` COMPLETE at the SECOND attempt (`--value-true-team`, 10,027,008 steps, 5.24 h, 0 crashes, G7 below bar on both halves)
   - `L16855` · `2026-09-10` · INSTRUMENT + READ · the CALIBRATION SLOPE is BUILT (`main.ops.calibration_slope`, tool v5) and answers the pre-registration on the LIVE frames: arm 8's slope is **1.58 pooled / 1.43 at turn 1–3 — well ABOVE 1**, the highest of all eight 10M runs, and the only arm with a positive pooled delta (12/12 deltas positive) — the OVERSHOOT reading in LEVEL; but the DELTA is inside the live replicate floor (0.20 / 0.22), so the comparative claim is **UNREADABLE at 100 games** and the decisive read is the offline 400/800 frames. The frame-sensitivity declaration was CHECKED at a 6.3× frame cut and holds
   - `L16879` · `2026-09-10` · READ · critic ladder arm 5 `ai_v12_14_ladder_truevalue` (the PRIVILEGED critic) vs the three controls at pinned 10M — hidden information is NOT the limit: the opponent axis did not move; the privileged head is more OPTIMISTIC against its own continuation than every control
+  - `L16901` · `2026-09-10` · CORRECTION · two clauses in arm 5's read are narrowed — a clamped 0.000 carries no sign, and a two-of-three-by-point lean is the shape that already failed once
