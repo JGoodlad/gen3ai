@@ -780,6 +780,13 @@ COMMON-SUPPORT companion keeps the sign and magnitude on the pooled row, so that
 0.20 floor cannot support. The decisive read is the 400/800-game offline pair** (3–8× tighter floors on the
 surviving rows), and it is the next call before `lambda095`.
 
+**Arm 5 `truevalue` read (2026-09-10, the PRIVILEGED critic vs all three controls at 10M):** [MEASURED · NOT
+DETECTED, `measurements/critic_ladder_reads/truevalue_vs_ctrl10M_2026-09-10/`] giving the value path the opponent's
+TRUE team does not make V separate opponents (turn-1–3 spread ratio 0.00 vs the controls' 0.09–0.12; class decode
++0.10 lean) — hidden information is not the limit, as the probe read predicted; the privileged head is OPTIMISTIC
+against its own continuation (+0.040 all, +0.088 late vs ≈0 on every control — clear of zero, not of the floor)
+and resolves the pool stratum worse. The information family is closed for this era pending the offline frames.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
