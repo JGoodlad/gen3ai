@@ -283,6 +283,15 @@ class PpoHyperparameters:
     win_prob_rollout_target: float = 0.0
     win_prob_rollout_r: int = 8
     win_prob_rollout_mode: str = "replace"
+    # gen3_winprob_rollout_weight_v1: the per-row LOSS WEIGHT on the rollout-ANCHORED rows, >= 1.0.
+    # 1.0 = OFF and BIT-identical (the obs key is not declared, so the loss takes its unweighted
+    # expression unchanged). It is the ARITHMETIC half of arm 10: at the fraction that costs 1x the
+    # run's own simulation budget the anchored rows are ~0.12%% of the BCE's mass, so the head
+    # cannot move whatever the new labels say — this buys mass at FIXED simulation cost. The
+    # vector is renormalised to mean 1 over the scored rows, so the loss SCALE does not move.
+    # Requires `--win-prob-rollout-target > 0` (refused otherwise, never a silent no-op).
+    # Training-only, resume-inherited; the weights are built in a CALLBACK before `train()`.
+    win_prob_rollout_weight: float = 1.0
     # gen3_dense_aux_v1: the DENSE AUXILIARY loss's weight, >= 0. 0.0 = OFF and BIT-identical --
     # the head is not BUILT at all, so there is no module, no obs key, no callback and no term.
     # Above 0 it folds `coef * mean(survival BCE, final-HP BCE, turns-left BCE)` over the

@@ -99,6 +99,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         win_prob_rollout_target=float(getattr(model, "win_prob_rollout_target", 0.0)),
         win_prob_rollout_r=int(getattr(model, "win_prob_rollout_r", 8)),
         win_prob_rollout_mode=str(getattr(model, "win_prob_rollout_mode", "replace")),
+        win_prob_rollout_weight=float(getattr(model, "win_prob_rollout_weight", 1.0)),
         win_prob_dense_aux=float(getattr(model, "win_prob_dense_aux", 0.0)),
         cf_records=bool(getattr(model, "cf_records", False)),
         cf_records_keep=int(getattr(model, "cf_records_keep", 512)),

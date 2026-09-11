@@ -321,6 +321,13 @@ class _Model:
         self._win_prob_rollout_metrics = None
         for k, v in kw.items():
             setattr(self, k, v)
+        # gen3_winprob_rollout_weight_v1: the env declares `win_row_w` under EXACTLY this
+        # predicate (`env_factory`), so the fake buffer does too — a harness that carried the key
+        # unconditionally would hide the "flag on, key absent" path the callback must survive.
+        if (float(getattr(self, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
+                and float(getattr(self, "win_prob_rollout_target", 0.0) or 0.0) > 0.0):
+            self.rollout_buffer.observations["win_row_w"] = np.ones(
+                (n_steps, n_envs, 1), dtype=np.float32)
 
     def save(self, path):
         with open(path, "w") as f:

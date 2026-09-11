@@ -425,6 +425,19 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "fail to resolve and the arm would train against the terminal bit it exists to replace. "
         "Pass --cf-records, or drop the flag."),
     CombinationCheck(
+        # THE CHEAP SILENT NO-OP's twin. With no fraction there are no ANCHORED rows, so the weight
+        # has nothing to multiply and the run is the unflagged one — while its argv, its
+        # model_config and its ledger line all say it was the weighted arm.
+        "winprob_rollout_weight_needs_the_rollout_target",
+        ("win_prob_rollout_weight", "win_prob_rollout_target"),
+        lambda a: (float(_val(a, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
+                   and float(_val(a, "win_prob_rollout_target", 0.0) or 0.0) <= 0.0),
+        "--win-prob-rollout-weight > 1 requires --win-prob-rollout-target > 0. The weight "
+        "multiplies the per-row BCE of the rows the rollout target ANCHORED; with no fraction "
+        "there are no anchored rows, the weight vector would be a vector of ones, and the run "
+        "would be the unflagged one under a flagged name. Pass --win-prob-rollout-target (the "
+        "fraction that costs 1x the run's simulation budget is ~1/(R*104)), or drop the weight."),
+    CombinationCheck(
         "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
         lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
         "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "

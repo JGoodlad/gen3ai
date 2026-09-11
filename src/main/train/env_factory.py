@@ -61,6 +61,14 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
                 move_belief_mode=args.move_belief_mode,
                 emit_win_target=(args.win_prob_mode != "none"),
+                # gen3_winprob_rollout_weight_v1: the per-row BCE WEIGHT key, declared only when
+                # there is something to weigh — the weight above 1.0 AND a rollout fraction above
+                # 0.0 (the two are already bound to each other by `combination_checks`, and this
+                # is the same predicate spelled where the obs space is decided rather than
+                # inferred from one half of it).
+                emit_win_row_weight=(
+                    float(getattr(args, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
+                    and float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0),
                 # PRIVILEGED TRUE-TEAM channel (gen3_value_true_team_v1): emit the opponent's
                 # actual party only when the value route that reads it was built. Emitting it
                 # unconditionally would put a key in the observation_space that no consumer reads

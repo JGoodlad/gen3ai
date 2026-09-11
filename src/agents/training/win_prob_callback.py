@@ -39,6 +39,13 @@ become ANCHORS the recursion passes through (`_apply_rollout`, and the precedenc
 At the default `0.0` the whole path is skipped and everything above is unchanged. The selection,
 the cost identity and the ecology approximation live in
 :mod:`agents.training.win_prob_rollout`.
+
+**`--win-prob-rollout-weight` (`gen3_winprob_rollout_weight_v1`) gives those anchored rows a
+per-row LOSS WEIGHT**, written into a third obs key (`win_row_w`) by `_apply_rollout_weight` after
+both treatments above have finished. It exists because the feasible fraction puts ~0.12 % of the
+BCE's mass on the treatment, which no head can respond to by arithmetic; the weight buys mass at
+FIXED simulation cost. Mean 1 over the scored rows, so the loss SCALE is unchanged. At the default
+`1.0` the key is not even declared and everything above is unchanged.
 """
 
 from __future__ import annotations
@@ -48,7 +55,9 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
 from agents.training.win_prob_rollout import (BANKED_CONTINUATION_DECISIONS, DEFAULT_ROLLOUT_R,
-                                              ROLLOUT_MODES, ROLLOUT_OFF, apply_rollout_labels,
+                                              ROLLOUT_MODES, ROLLOUT_OFF, ROLLOUT_WEIGHT_KEY,
+                                              ROLLOUT_WEIGHT_OFF, anchor_row_weights,
+                                              weight_metrics, apply_rollout_labels,
                                               eligible_mask, index_records, n_states_for,
                                               rollout_metrics, select_rows)
 
@@ -191,8 +200,12 @@ class WinProbLabelCallback(BaseCallback):
         terminal_y = wt[:, :, 0].copy()
         terminal_m = wm[:, :, 0].copy()
         anchor_mask, anchor_value = self._apply_rollout(buf, wt, wm, terminal_y)
-        self._apply_lambda(buf, wt, wm, terminal_y, terminal_m,
-                           anchor_mask=anchor_mask, anchor_value=anchor_value)
+        anchor_share = self._apply_lambda(buf, wt, wm, terminal_y, terminal_m,
+                                          anchor_mask=anchor_mask, anchor_value=anchor_value)
+        # LAST, on purpose: λ may RE-MASK rows (`--win-prob-lambda-truncated bootstrap` unmasks the
+        # trailing episode), and the weight's mean-1 normaliser has to be computed over exactly the
+        # rows the BCE will end up scoring.
+        self._apply_rollout_weight(buf, wm, anchor_mask, anchor_share)
 
     # ── R-ROLLOUT MC TARGETS (`gen3_winprob_rollout_target_v1`) ────────────────────────────────
     def _rollout_config(self):
@@ -311,6 +324,47 @@ class WinProbLabelCallback(BaseCallback):
             records_missing=missing, n_steps=n_steps, n_envs=n_envs)
         return anchor_mask, anchor_value
 
+    # ── ANCHOR LOSS WEIGHT (`gen3_winprob_rollout_weight_v1`) ──────────────────────────────────
+    def _apply_rollout_weight(self, buf, wm, anchor_mask, anchor_share) -> None:
+        """Write the per-row BCE weight into the buffer's ``win_row_w`` key, IN PLACE.
+
+        **THE PROBLEM IT SOLVES IS ARITHMETIC, NOT OPTIMISATION.** At the fraction that costs 1x
+        the run's own simulation budget the anchored rows are ~0.12 % of the win-prob BCE's rows,
+        so the treatment carries ~0.12 % of the loss mass and the head cannot move whatever the new
+        labels say. This multiplies the anchored rows' per-row BCE by `--win-prob-rollout-weight`
+        and renormalises to mean 1 over the scored rows (`win_prob_rollout.anchor_row_weights`),
+        which buys mass at FIXED simulation cost — no extra continuations, no changed labels.
+
+        🚨 **ONLY THE ANCHORS.** Under `--win-prob-lambda < 1` the rows before an anchor blend
+        toward it, but their target is a MIXTURE of the anchor, the network's own later values and
+        the copied bit — up-weighting them would up-weight arm 8's channel under arm 10's flag, and
+        would make the delivered dose depend on the episode-length distribution. Their λ^k
+        influence is measured (`win_prob/rollout_influence_lambda`) rather than dosed.
+
+        Silent no-ops, all of which leave the loss bit-identical: the flag at 1.0, the env not
+        emitting the key (a config mismatch — skip, never crash, the same rule
+        ``_on_rollout_end`` keeps for ``win_target``), or no row anchored this rollout.
+        """
+        w = float(getattr(self.model, "win_prob_rollout_weight", ROLLOUT_WEIGHT_OFF)
+                  or ROLLOUT_WEIGHT_OFF)
+        if w <= ROLLOUT_WEIGHT_OFF or anchor_mask is None:
+            return
+        obs = buf.observations
+        if not isinstance(obs, dict) or ROLLOUT_WEIGHT_KEY not in obs:
+            return
+        row_w = anchor_row_weights(anchor_mask, wm[:, :, 0], w)
+        if row_w is None:
+            return
+        obs[ROLLOUT_WEIGHT_KEY][:, :, 0] = row_w.astype(obs[ROLLOUT_WEIGHT_KEY].dtype)
+        # The three dose meters join the `win_prob/rollout_*` family the labelling already
+        # published, so a reader sees the ASK (the fraction, the flag) and the DELIVERY (the
+        # weighted mass) on one prefix. `_win_prob_rollout_metrics` is non-None here whenever the
+        # labelling ran, and the labelling is what produced the anchors.
+        metrics = getattr(self.model, "_win_prob_rollout_metrics", None)
+        if metrics is not None:
+            metrics.update(weight_metrics(anchor_mask=anchor_mask, new_mask=wm[:, :, 0],
+                                          row_w=row_w, weight=w, anchor_share=anchor_share))
+
     # ── λ-RETURN TARGETS (`gen3_winprob_lambda_v1`) ────────────────────────────────────────────
     def _lambda_config(self):
         """`(λ, truncated_mode)` for this run, or `None` when the recursion must NOT run.
@@ -361,10 +415,14 @@ class WinProbLabelCallback(BaseCallback):
         with and what `lambda_target_shift` is measured against, so the two readings stay about the
         OUTCOME even on a run where the rollout target has already moved some rows. ``anchor_*``
         are the rollout-labelled rows, which the recursion terminates on — see `_apply_rollout`.
+
+        Returns the ``[n_steps, n_envs]`` λ^k ANCHOR SHARE (`gen3_winprob_rollout_weight_v1`) when
+        the recursion ran and there were anchors, else ``None`` — `_apply_rollout_weight` turns it
+        into `win_prob/rollout_influence_lambda`.
         """
         cfg = self._lambda_config()
         if cfg is None:
-            return
+            return None
         lam, mode = cfg
         values = np.asarray(buf.values, dtype=np.float64)
         n_steps, n_envs = values.shape
@@ -382,10 +440,15 @@ class WinProbLabelCallback(BaseCallback):
             fallback = 0.0
         y_pre = wt[:, :, 0] if terminal_y is None else np.asarray(terminal_y, dtype=np.float64)
         m_pre = wm[:, :, 0] if terminal_m is None else np.asarray(terminal_m, dtype=np.float64)
+        # Allocated only when there is an anchor to be a share OF — an unflagged run (and a
+        # flagged one whose labelling produced nothing) hands the recursion `None` and it computes
+        # its share into a local it then drops.
+        share_out = (np.zeros((n_steps, n_envs), dtype=np.float64)
+                     if anchor_mask is not None and np.asarray(anchor_mask).any() else None)
         target, weight, new_mask, n_unmasked = lambda_return_targets(
             values, wt[:, :, 0], wm[:, :, 0], np.asarray(buf.episode_starts, dtype=np.float64),
             last_values, last_dones, lam, mode,
-            anchor_mask=anchor_mask, anchor_value=anchor_value)
+            anchor_mask=anchor_mask, anchor_value=anchor_value, anchor_share_out=share_out)
         metrics = lambda_metrics(values, y_pre, m_pre, target, weight, new_mask,
                                  n_unmasked, lam, mode)
         metrics["lambda_bootstrap_fallback"] = fallback
@@ -398,6 +461,7 @@ class WinProbLabelCallback(BaseCallback):
         wt[:, :, 0] = target.astype(wt.dtype)
         wm[:, :, 0] = new_mask.astype(wm.dtype)
         self.model._win_prob_lambda_metrics = metrics
+        return share_out
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -418,7 +482,8 @@ LAMBDA_OFF = 1.0
 
 
 def lambda_return_targets(values, y, mask, episode_starts, last_values, last_dones,
-                          lam, truncated="bootstrap", *, anchor_mask=None, anchor_value=None):
+                          lam, truncated="bootstrap", *, anchor_mask=None, anchor_value=None,
+                          anchor_share_out=None):
     """The per-state λ-return target for the win-prob BCE. Pure numpy — no torch, no PPO.
 
     **THE DEFECT THIS EXISTS FOR.** Under `--critic winprob` every state of an episode is trained
@@ -463,6 +528,15 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
     same episode then blend toward the measured probability instead of toward the copied terminal
     bit, which is the whole composition between the two levers.
 
+    **`anchor_share_out`** (`gen3_winprob_rollout_weight_v1`, default `None` ⇒ nothing computed and
+    nothing written) is a caller-allocated `[n_steps, n_envs]` float array this fills IN PLACE with
+    each row's **λ^k share of an anchor** — 1.0 on an anchor itself, `λ · share[t+1]` on a row that
+    blends toward its successor, and 0.0 on a row whose target is the copied terminal bit or the
+    out-of-buffer bootstrap. It is an out-parameter rather than a fifth return value so the
+    recursion stays the ONE place that defines "ends", and so every existing caller is unchanged:
+    a second copy of this loop written elsewhere would drift from it silently, and the quantity it
+    feeds (`win_prob/rollout_influence_lambda`) is a dose meter a read quotes.
+
     Args are all `[n_steps, n_envs]` float arrays except `last_values` / `last_dones`, `[n_envs]`.
     `last_dones` is `model._last_episode_starts` — 1.0 where the buffer's final row ENDED its
     episode. Returns `(target, weight, new_mask, n_unmasked)`.
@@ -492,6 +566,10 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
 
     target = np.zeros((n_steps, n_envs), dtype=np.float64)
     weight = np.zeros((n_steps, n_envs), dtype=np.float64)
+    # The λ^k ANCHOR SHARE, computed in the same backward pass (see `anchor_share_out`). Local
+    # even when nobody asked for it: it costs two vectorised ops per step and keeps the branch out
+    # of the loop body, where a divergence between the "asked" and "not asked" paths could hide.
+    share = np.zeros((n_steps, n_envs), dtype=np.float64)
     known = mask >= 0.5
     for t in range(n_steps - 1, -1, -1):
         if t == n_steps - 1:
@@ -499,17 +577,24 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
             v_succ = last_values
             g_succ = last_values          # beyond the buffer: the bootstrap IS the successor return
             w_succ = np.zeros(n_envs)     # ...and it carries no weight on any outcome
+            s_succ = np.zeros(n_envs)     # ...and no anchor of this buffer is behind it
         else:
             ends = episode_starts[t + 1] >= 0.5
             v_succ = values[t + 1]
             g_succ = target[t + 1]
             w_succ = weight[t + 1]
+            s_succ = share[t + 1]
         target[t] = np.where(ends, y[t], (1.0 - lam) * v_succ + lam * g_succ)
         weight[t] = np.where(ends, 1.0, lam * w_succ)
+        # The successor return enters this row's target at exactly λ, so whatever share of the
+        # SUCCESSOR's target came from an anchor enters this one at λ times that. A row that ends
+        # its episode takes the terminal bit and carries no anchor at all.
+        share[t] = np.where(ends, 0.0, lam * s_succ)
         # An ANCHOR overrides both branches: it is a measurement OF this state, so the recursion
         # terminates on it rather than passing through it.
         target[t] = np.where(anchors[t], anchor_v[t], target[t])
         weight[t] = np.where(anchors[t], 1.0, weight[t])
+        share[t] = np.where(anchors[t], 1.0, share[t])
 
     # THE TRAILING IN-PROGRESS EPISODE, per env — the rows the back-fill left unlabelled BECAUSE
     # the rollout ended, and the only rows a bootstrap may legitimately unmask. Computed rather
@@ -535,6 +620,10 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
     scored = new_mask >= 0.5
     target = np.where(scored, target, 0.0)
     weight = np.where(scored, weight, 0.0)
+    if anchor_share_out is not None:
+        # Same zeroing rule as `target` / `weight`: an unscored row carries no objective mass, so
+        # it can carry no share of one either.
+        anchor_share_out[...] = np.where(scored, share, 0.0)
     return target, weight, new_mask, n_unmasked
 
 

@@ -132,6 +132,11 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # is a coefficient, both are inert at fraction 0, and both are reported through
     # `win_prob/rollout_r` and `win_prob/rollout_mode_blend`.)
     "win_prob_rollout_target": "win_head",
+    # v119 gen3_winprob_rollout_weight_v1 — the ANCHOR loss weight. Named to `win_head` for the
+    # same reason as the fraction above it: a weight above 1.0 with no win-prob head re-prices
+    # rows of a loss that is not being computed. It is inert at fraction 0 (there are no anchors
+    # to weigh) and reported through `win_prob/rollout_weight`.
+    "win_prob_rollout_weight": "win_head",
     # v117 gen3_dense_aux_v1 — the DENSE AUXILIARY loss's dose. Named to `dense_aux_head` (its
     # OWN module, not `win_head`): unlike strata and lambda, which re-price and re-aim the win
     # head's existing BCE, this coefficient supervises a head of its own — and because that head

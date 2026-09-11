@@ -254,6 +254,19 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 strata_w, _smetrics = _sout
                 for _sk, _sv in _smetrics.items():
                     win_prob_metrics.setdefault(_sk, []).append(float(_sv))
+        # +WIN-PROB ANCHOR WEIGHT (gen3_winprob_rollout_weight_v1) — the per-ROW weight on the
+        # rollout-ANCHORED rows of the win-prob BCE. The vector itself is built per rollout by
+        # `WinProbLabelCallback._apply_rollout_weight` and rides the buffer's own `win_row_w` obs
+        # key (the only carrier that survives `get()`'s shuffle aligned to its row), so all that is
+        # decided here is WHETHER to read it. Both halves of the predicate: the weight above 1.0,
+        # and the rollout fraction that produces the anchors it weighs — a weight with no anchors
+        # would be a vector of ones, and reading it would cost a gather per minibatch to change
+        # nothing. Under `--critic winprob` only, exactly like the strata weight.
+        rollout_weight_on = (
+            win_prob_on and critic_winprob
+            and float(getattr(self, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
+            and float(getattr(self, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
+            and "win_row_w" in self.rollout_buffer.observations)
         # +WIN-PROB λ-RETURN (gen3_winprob_lambda_v1) — the family is COMPUTED in
         # `WinProbLabelCallback._on_rollout_end` (it needs the buffer's [n_steps, n_envs] shape,
         # before `get()` shuffles it flat, and the same `model._last_obs` forward SB3's own GAE
@@ -693,6 +706,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         rollout_data.observations.get("win_margin"),
                         strata_w,
                         rollout_data.observations.get("opp_class") if strata_w is not None else None,
+                        rollout_data.observations.get("win_row_w") if rollout_weight_on else None,
                     )
                     if wp_out is not None:
                         wp_loss, wp_m = wp_out

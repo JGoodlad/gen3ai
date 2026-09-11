@@ -80,7 +80,8 @@ class Gen3Env(SinglesEnv):
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off",
-                 emit_win_target: bool = False, emit_spread_labels: bool = False,
+                 emit_win_target: bool = False, emit_win_row_weight: bool = False,
+                 emit_spread_labels: bool = False,
                  emit_opp_true_team: bool = False,
                  emit_dense_aux: bool = False,
                  emit_opp_intent_labels: bool = False,
@@ -172,6 +173,11 @@ class Gen3Env(SinglesEnv):
         # labels). Read ONLY by the win-prob aux loss; the model forward reads only obs["observation"].
         # Enabled by --win-prob-mode != none (threaded as emit_win_target from train_rl_agent).
         self._emit_win_target = emit_win_target
+        # gen3_winprob_rollout_weight_v1: the per-row BCE WEIGHT key (`win_row_w`), a third
+        # PLACEHOLDER label key on the same plumbing as `win_target` / `win_mask`. Declared ONLY
+        # when `--win-prob-rollout-weight > 1`, so an unflagged run's observation space, its
+        # rollout buffer and its loss are all untouched.
+        self._emit_win_row_weight = bool(emit_win_row_weight and emit_win_target)
         # PRIVILEGED TRUE-TEAM key (TRAINING+EVAL-only, gen3_value_true_team_v1): when on, the obs
         # Dict carries `opp_true_team` [6, POKEMON_FULL_DIM] — the opponent's ACTUAL six mons in the
         # obs's OWN per-mon layout, built from `battle2.team` (agent2's own view, where every
@@ -329,6 +335,15 @@ class Gen3Env(SinglesEnv):
             # placeholder), used by the win-prob loss to stratify P(win) skill by how decided the game
             # is (value lives in close games, |margin|≈0) + a material-baseline skill score.
             base_obs["win_margin"] = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
+        if self._emit_win_row_weight:
+            # gen3_winprob_rollout_weight_v1: the per-row BCE weight. A PLACEHOLDER of 1.0 (not 0.0
+            # like the two above) because it is a MULTIPLIER, not a label — a path that somehow
+            # reached the loss before `WinProbLabelCallback._on_rollout_end` overwrote it would
+            # zero the entire win-prob term on a zero placeholder, and read as a dead head rather
+            # than as a plumbing break. `high` is unbounded because the ceiling is the flag's own
+            # value divided by a normaliser, and coupling the space to the flag would make an obs
+            # space that a resume at a different weight could not reload.
+            base_obs["win_row_w"] = spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
         if self._emit_opp_true_team:
             # gen3_value_true_team_v1: the opponent's TRUE party in the obs's own per-mon layout.
             # The bounds are the per-mon block's own: it carries embedding NUMS (up to the species
@@ -811,6 +826,11 @@ class Gen3Env(SinglesEnv):
             # step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
             agent_obs["win_margin"] = np.array(
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
+        if self._emit_win_row_weight:
+            # gen3_winprob_rollout_weight_v1. ONES, not zeros: this key is a MULTIPLIER on the
+            # per-row BCE, so "not yet written" must mean "weigh this row normally". The callback
+            # overwrites the whole plane post-collection.
+            agent_obs["win_row_w"] = np.ones(1, dtype=np.float32)
         # The same key, for a win-prob run with no intent labels (`_opp_intent_labels` above is
         # what supplies it otherwise, and sets the identical value). Guarded rather than ordered so
         # neither block has to know whether the other ran.

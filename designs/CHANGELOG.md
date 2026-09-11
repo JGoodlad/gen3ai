@@ -9459,3 +9459,70 @@ labelled per rollout over 4 rollouts, 244 continuations each, 0 failed, 0 record
 `rollout_arm_decisions` 66-95, `rollout_seconds` 24-47, `rollout_budget_multiple` 7.9-10.3,
 `rollout_shift` 0.27-0.40, `rollout_capped_frac` 0-0.025, and `win_prob_rollout_target 0.03` recorded
 at `config_version 118`.
+
+## v119 — `--win-prob-rollout-weight`: the ANCHOR loss weight (`gen3_winprob_rollout_weight_v1`)
+
+2026-09-10. Arm 10's **arithmetic half**. `--win-prob-rollout-target` (v118) buys measured `wins/R`
+targets for a subsample of the buffer, but the fraction that costs 1× the run's own simulation
+budget is `1/(R × 104) ≈ 0.0012`, so at R = 8 the anchored rows are **~0.12 % of the win-prob BCE's
+mass**. A treatment carrying 0.12 % of an objective **cannot move the head by arithmetic**, whatever
+its labels say — a null at that dose is a fact about the dose. Raising the fraction is unaffordable
+(cost is exactly linear in it). This flag is the only lever that raises the treatment's share of the
+objective **at fixed simulation cost**: it multiplies the ANCHORED rows' per-row BCE by `k` and
+renormalises the vector to mean 1 over the SCORED rows, so the loss SCALE does not move.
+
+    Z = 1 + f·(k − 1);  w_anchor = k/Z, w_other = 1/Z;  anchored share = f·k/Z
+
+At `f = 0.0012`: `k = 32` → 3.7 %, **`k = 64` → 7.1 %** (the registered operating point; the arm's
+dose bar is 5–15 % of the mass once λ propagation is counted).
+
+**Default `1.0` = OFF and BIT-identical** — the obs key is not even declared, so the loss takes its
+unweighted expression unchanged. **Requires `--win-prob-rollout-target > 0`** (refused in
+`combination_checks`: with no anchors the weight vector is a vector of ones and the run is the
+unflagged one under a flagged name). Below 1.0 is refused rather than clamped — it is a
+coherent-looking instruction for the opposite of this lever.
+
+**COMPOSITION.** With `--win-prob-strata-weight` the two **MULTIPLY** (an overwrite would silently
+disable whichever was applied second); each is mean-1 over the buffer and the product is mean-1 up
+to a selection/opponent covariance the uniform sampler makes ~0, published as `win_prob/row_w_mean`
+rather than assumed. 🚨 Under `--win-prob-lambda < 1` **only the ANCHORS are weighted**, never the
+rows that bootstrap toward them: those targets are a MIXTURE of the anchor, the network's own later
+values and the copied bit, so weighting them would dose arm 8's channel under arm 10's flag and
+would make the delivered dose a function of the episode-length distribution. The λ^k reach is
+MEASURED instead — `lambda_return_targets` fills an anchor-SHARE array in its own backward pass (an
+out-parameter, so the recursion stays the one place that defines "ends").
+
+**THE CARRIER.** A per-row weight must survive `RolloutBuffer.get()`'s shuffle aligned to its row, so
+it rides a third LABEL obs key, **`win_row_w`**, declared by `Gen3Env` only when the flag is above
+1.0 and emitted as a placeholder of **1.0, not 0.0** — it is a MULTIPLIER, and a zero placeholder
+reaching the loss would zero the whole win-prob term and read as a dead head.
+`_apply_rollout_weight` runs AFTER both target treatments, because λ may re-mask rows and the mean-1
+normaliser must be computed over exactly the rows the BCE will score.
+
+**NEW TB:** `win_prob/rollout_weight` (the ask), **`rollout_mass_weighted`** (the anchors' share of
+the WEIGHTED mass — the DELIVERED dose a read quotes), **`rollout_influence_lambda`** (anchors plus
+every row whose λ-target received an anchor contribution, each counted by its λ^k share), and
+`win_prob/row_w_mean` (the realised composed row weight).
+
+**RECORDED at config v119**, the `td_aux_coef` class: provenance + flagless-resume read-back, never
+compared by `check_compatible`. Pre-v119 migrates to `1.0` — a RECORD, not a guess: no run could
+weigh a row it had no flag to weigh with. The read-back matters as much as the fraction's: a restart
+that dropped the WEIGHT would keep paying for every continuation while delivering ~1/50th of the
+registered dose. No `ARCH_SIGNATURE` bump, no `MIGRATION_FLOOR` change, NOT a `flag_registry.py` row
+— but `win_prob_rollout_weight` IS declared in `arch_tables._COEF_MODULE` → `win_head`.
+
+🚨 **The value SIDECAR is deliberately unchanged — no schema bump, not in `QUANTITY_FIELDS`.** That
+tuple's rule is "does it change what the `target` COLUMN HOLDS?", not "is it a new flag". A per-row
+LOSS WEIGHT changes no row's target, so a v3 file at weight 64 holds the same per-row quantity as
+one at 1.0; adding it would refuse to pool two genuinely poolable files.
+
+**GATES:** `winprob_rollout_weight_test.py` (26) + one `combination_checks` ARGVS row. **SMOKE**
+(`--debug --steps 10000 --critic winprob --no-hand-shaping --terminal-indicator --victory-value 1.0
+--draw-penalty 0 --cf-records --cf-records-keep 4096 --win-prob-rollout-target 0.03
+--win-prob-rollout-r 4 --win-prob-rollout-weight 64 --win-prob-lambda 0.9`, rust bridge, CPU):
+`Training complete`; 4 rollouts, 52–61 states labelled each, `rollout_weight` 64,
+**`rollout_mass` 0.0265–0.0301 → `rollout_mass_weighted` 0.625–0.663** (the closed form
+`f·k/(1+f(k−1))` gives 0.664 at f = 0.03, so the meter and the arithmetic agree),
+`rollout_influence_lambda` 0.682–0.727 (λ = 0.9 propagation, above the anchors' own share as it must
+be), `row_w_mean` 1.000 through the shuffle, and `win_prob_rollout_weight 64.0` recorded at
+`config_version 119`.

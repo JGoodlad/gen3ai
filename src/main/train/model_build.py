@@ -152,6 +152,7 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("win_prob_rollout_target",       _PLAIN),   # gen3_winprob_rollout_target_v1 (0.0 = bit-identical)
     ("win_prob_rollout_r",            _PLAIN),   # ...continuations per sampled state (inert at 0.0)
     ("win_prob_rollout_mode",         _PLAIN),   # ...replace | blend (inert at 0.0)
+    ("win_prob_rollout_weight",       _PLAIN),   # gen3_winprob_rollout_weight_v1 (1.0 = bit-identical)
     ("win_prob_dense_aux",            _PLAIN),   # gen3_dense_aux_v1 (0.0 = head not built)
     # SEARCH-TEACHER (coef 0 / flag absent = byte-identical). The buffer is filled by the
     # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -468,6 +469,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             win_prob_rollout_target=args.win_prob_rollout_target,
             win_prob_rollout_r=args.win_prob_rollout_r,
             win_prob_rollout_mode=args.win_prob_rollout_mode,
+            win_prob_rollout_weight=args.win_prob_rollout_weight,
             win_prob_dense_aux=args.win_prob_dense_aux,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,
@@ -839,6 +841,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             win_prob_rollout_target=args.win_prob_rollout_target,
             win_prob_rollout_r=args.win_prob_rollout_r,
             win_prob_rollout_mode=args.win_prob_rollout_mode,
+            win_prob_rollout_weight=args.win_prob_rollout_weight,
             win_prob_dense_aux=args.win_prob_dense_aux,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,

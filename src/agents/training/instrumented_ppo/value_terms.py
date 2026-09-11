@@ -130,7 +130,8 @@ class ValueTerms:
 
 
     @staticmethod
-    def _win_prob_loss(logits, target, mask, margin=None, strata_w=None, opp_class=None):
+    def _win_prob_loss(logits, target, mask, margin=None, strata_w=None, opp_class=None,
+                       rollout_w=None):
         """Supervised BCE loss for the auxiliary WIN-PROBABILITY head (``last_win_prob_logits`` [B,1]).
 
         ``target`` [B,1] = the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to every step of
@@ -157,7 +158,19 @@ class ValueTerms:
         undo the buffer-level balance the weights were computed to give. Either argument absent takes
         the unweighted expression UNCHANGED (bit-identical), which is what `--win-prob-strata-weight 0`
         produces and what every counterfactual/twin caller of this loss gets: they score FOREIGN
-        recorded states whose opponent mix is the label factory's, not the rollout's."""
+        recorded states whose opponent mix is the label factory's, not the rollout's.
+
+        ``rollout_w`` [B,1] is the ANCHOR LOSS WEIGHT (`gen3_winprob_rollout_weight_v1`) — the
+        buffer's ``win_row_w`` obs key, written per row by `WinProbLabelCallback` and already
+        normalised to mean 1 over the buffer's scored rows. It **MULTIPLIES** with the strata
+        weight rather than replacing it: the two price different axes of the same mix (strata the
+        OPPONENT class, this the rollout-ANCHORED rows), and an overwrite would silently disable
+        whichever flag was passed second. The denominator stays ``n_known`` for both, so the
+        buffer-level mean-1 normalisation each weight was built with is what reaches the loss;
+        their PRODUCT has mean 1 up to the covariance between the anchor selection and the opponent
+        mix, which the uniform selection makes ~0 and which ``row_w_mean`` publishes rather than
+        assumes. Absent ⇒ the unweighted expression, unchanged, which is what
+        ``--win-prob-rollout-weight 1.0`` produces."""
         if logits is None or target is None or mask is None:
             return None
         logits = logits.reshape(-1)
@@ -171,6 +184,10 @@ class ValueTerms:
         if strata_w is not None and opp_class is not None:
             sw = strata_w.to(logits.device)
             row_w = sw[opp_class.to(logits.device).reshape(-1).long().clamp(0, sw.numel() - 1)]
+        if rollout_w is not None:
+            # MULTIPLY, never overwrite — see the `rollout_w` paragraph above.
+            rw = rollout_w.to(logits.device).reshape(-1).to(per.dtype)
+            row_w = rw if row_w is None else row_w * rw
         if row_w is None:
             loss = (per * mask).sum() / n_known
         else:
@@ -197,7 +214,14 @@ class ValueTerms:
             # separate "the weights moved the loss" from "the head got better".
             with th.no_grad():
                 metrics["loss_unweighted"] = float(((per.detach() * mask).sum() / n_known).item())
-                metrics["strata_row_w_mean"] = float(((row_w * mask).sum() / n_known).item())
+                # The REALISED mean of the composed row weight over this minibatch's scored rows.
+                # Each factor is normalised to mean 1 over the BUFFER, so this reads ~1.0 and a
+                # drift from it is the sampling/covariance term made visible rather than assumed.
+                metrics["row_w_mean"] = float(((row_w * mask).sum() / n_known).item())
+                if strata_w is not None and opp_class is not None:
+                    # The historical name, kept for the strata arm's own series; it is the COMPOSED
+                    # mean whenever both flags are live, which is what the loss actually used.
+                    metrics["strata_row_w_mean"] = metrics["row_w_mean"]
         # Information value the aggregate Brier hides (only when the material margin is available): the
         # head's skill on CLOSE games + a skill score beyond a material-only baseline.
         # gen3_tb_relevance_v1: a CONSTANT margin cannot stratify anything, and publishing the

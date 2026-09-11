@@ -529,6 +529,23 @@ and nothing else. ⚠️ The value SIDECAR's `target` column follows the flag: u
 one re-aims them) and with the cf labels (disjoint state sets — the cf term never touches
 `win_target`).
 
+### `--win-prob-rollout-weight` — the ANCHOR loss weight (`gen3_winprob_rollout_weight_v1`, v119)
+
+**Default `1.0` = OFF and BIT-identical** (the `win_row_w` obs key is not even declared); **requires
+`--win-prob-rollout-target > 0`**. It multiplies the per-row BCE of the rows the rollout target
+ANCHORED and renormalises the vector to **mean 1 over the scored rows**, so the loss SCALE does not
+move. 🚨 **WHY: the treatment could not otherwise carry mass.** At the fraction that costs 1× the
+run's simulation budget (~0.0012) the anchored rows are **~0.12 % of the BCE's mass** — the head
+cannot move BY ARITHMETIC whatever the labels say. At weight 64 they are **~7.1 %**. It is the only
+lever that raises the treatment's share of the objective at FIXED simulation cost. Composes with
+`--win-prob-strata-weight` by **MULTIPLYING** (that one prices the opponent CLASS, this one the
+anchored ROWS). 🚨 **Only the ANCHORS are weighted, never the rows that bootstrap toward them under
+λ < 1** — their target is a MIXTURE of the anchor and the network's own later values, so weighting
+them would dose arm 8's channel under arm 10's flag. That reach is MEASURED instead: read
+**`win_prob/rollout_mass_weighted`** (the anchors' share of the weighted mass — the delivered dose)
+and **`win_prob/rollout_influence_lambda`** (anchors + their λ^k reach). Detail:
+[`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
+
 ### `--win-prob-rollout-target` — R-ROLLOUT MC targets (`gen3_winprob_rollout_target_v1`, v118)
 
 **Default `0.0` = OFF and BIT-identical** (the whole path is skipped, including the per-decision

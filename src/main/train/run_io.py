@@ -128,6 +128,7 @@ def _model_hparams(model) -> dict:
         "win_prob_rollout_target": float(getattr(model, "win_prob_rollout_target", 0.0)),
         "win_prob_rollout_r": int(getattr(model, "win_prob_rollout_r", 8)),
         "win_prob_rollout_mode": str(getattr(model, "win_prob_rollout_mode", "replace")),
+        "win_prob_rollout_weight": float(getattr(model, "win_prob_rollout_weight", 1.0)),
         "win_prob_dense_aux": float(getattr(model, "win_prob_dense_aux", 0.0)),
         "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
         "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),

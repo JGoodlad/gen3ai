@@ -230,6 +230,10 @@ ARGVS: dict[str, list[str]] = {
     # ...and the ring is where the replayable episode lives, so `_WP` (which does NOT carry
     # --cf-records) is exactly the argv this one refuses.
     "winprob_rollout_needs_cf_records": _WP + ["--win-prob-rollout-target", "0.01"],
+    # gen3_winprob_rollout_weight_v1 — the weight with no fraction has no anchored row to weigh,
+    # so the argv that trips it is the weight ALONE on an otherwise complete win-prob argv.
+    "winprob_rollout_weight_needs_the_rollout_target":
+        _WP + ["--cf-records", "--win-prob-rollout-weight", "64"],
     # gen3_dense_aux_v1 — the same shape a third time: dense targets on the win-prob head only
     # move the value function when that head IS the value function.
     "dense_aux_needs_the_winprob_critic": ["--win-prob-dense-aux", "1.0"],

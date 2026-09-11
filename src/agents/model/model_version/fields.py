@@ -502,6 +502,16 @@ class ModelVersionFields:
     win_prob_rollout_target: float = 0.0
     win_prob_rollout_r: int = 8
     win_prob_rollout_mode: str = "replace"
+    # gen3_winprob_rollout_weight_v1 (config v119): the per-row LOSS WEIGHT on the rows the flag
+    # above ANCHORED. 1.0 = OFF (every scored row weighs the same, the pre-flag behaviour,
+    # bit-identical); above 1.0 the anchored rows' per-row BCE is multiplied by it and the whole
+    # vector renormalised to mean 1 over the scored rows, so the loss SCALE does not move. It
+    # exists because at the fraction that costs 1x the run's simulation budget the anchored rows
+    # are ~0.12%% of the BCE's mass and no head can respond to that by arithmetic. INERT at
+    # `win_prob_rollout_target` 0.0. Same class as the three above: a LOSS WEIGHT applied
+    # post-collection, no forward pass and no weight shape, so recorded for PROVENANCE and
+    # flagless-resume read-back and never compared by check_compatible or any check_*.
+    win_prob_rollout_weight: float = 1.0
     # ---- gen3_dense_aux_v1 (config v117) — THE DENSE AUXILIARY HEAD ---------------------------
     # ONE CLI flag, TWO recorded fields, because they are gated differently.
     # `dense_aux` is STRUCTURAL (the value_true_team pattern): ON builds a `DenseAuxHead` whose

@@ -523,4 +523,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("win_prob_rollout_r", 8)
         data.setdefault("win_prob_rollout_mode", "replace")
         data["config_version"] = 118
+    # v119 (gen3_winprob_rollout_weight_v1) — ONE TRAINING-only loss weight, v116's shape exactly.
+    # 1.0 is a RECORD, not a chosen default: every scored row of every pre-v119 run weighed the
+    # same, because there was no flag that could make one weigh more. Not version-locked and not in
+    # check_compatible — it re-prices a loss, never a forward pass.
+    if version < 119:
+        data.setdefault("win_prob_rollout_weight", 1.0)
+        data["config_version"] = 119
     return data

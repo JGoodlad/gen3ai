@@ -641,6 +641,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("win_prob_rollout_target", 0.0)
     _resolve("win_prob_rollout_r", 8)
     _resolve("win_prob_rollout_mode", "replace")
+    # gen3_winprob_rollout_weight_v1 (v119) training-only, inherited for a sharper version of the
+    # same reason: a flagless resume that dropped the WEIGHT would keep paying for every
+    # continuation (the fraction is inherited) while delivering ~1/50th of the registered dose —
+    # the arm's cost with none of its treatment, and nothing in the cost profile would show it.
+    _resolve("win_prob_rollout_weight", 1.0)
     # gen3_dense_aux_v1 (v117): the CLI surface of a DERIVED structural toggle, so the resolve line
     # carries BOTH roles — the dose for the loss, and (through `extractor_arch._DERIVED`) whether
     # the head is built at all. A flagless resume that dropped it would not merely stop dosing the
@@ -891,6 +896,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                      "(0 = off / the terminal bit at every state; it is a fraction of the buffer)")
     if args.win_prob_rollout_r is not None and args.win_prob_rollout_r < 1:
         parser.error("--win-prob-rollout-r must be >= 1 (continuations per sampled state)")
+    if args.win_prob_rollout_weight is not None and args.win_prob_rollout_weight < 1.0:
+        # A single-value RANGE check (the cross-flag half is in `combination_checks`). BELOW 1 is
+        # refused rather than clamped because it is a coherent-looking instruction for the opposite
+        # of this lever: it would make the rows that cost thousands of continuations count for LESS
+        # than the copied bits they were bought to replace. If down-weighting a treatment is ever
+        # the experiment, it needs its own flag and its own registered reason.
+        parser.error("--win-prob-rollout-weight must be >= 1.0 "
+                     "(1.0 = off; it MULTIPLIES the rollout-anchored rows' share of the BCE)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the

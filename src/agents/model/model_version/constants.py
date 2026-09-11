@@ -278,7 +278,16 @@ from typing import Any, Dict
 #   which is not a guess but the only possible past — the terminal bit IS what every prior run
 #   trained against, and the other two are inert at that fraction. No ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 118
+# v119 (gen3_winprob_rollout_weight_v1): `win_prob_rollout_weight` — the per-row LOSS WEIGHT on
+#   the rows v118's fraction ANCHORED, and the arithmetic half of arm 10. v118's shape exactly: it
+#   re-prices rows of a loss computed in a post-collection callback, touches no forward pass and no
+#   weight shape, and a default (1.0) build is bit-identical — the obs key it rides is not even
+#   declared. RECORDED for v100's reason and for v118's: a resume that dropped it would keep paying
+#   for every continuation while delivering ~1/50th of the dose the arm was registered at, which is
+#   the most expensive way to read a null. A pre-v119 config defaults to 1.0, which is not a guess
+#   but the only possible past — no run could weigh a row it had no flag to weigh with. No
+#   ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 119
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

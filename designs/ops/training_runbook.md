@@ -302,6 +302,18 @@ means the flag is off. ⚠️ The value sidecar moves to schema 3; its `target` 
 on most rows and a measured win fraction on the sampled ones. Mechanics:
 [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
+**`--win-prob-rollout-weight <k>`** (default `1.0` = OFF, bit-identical; **requires
+`--win-prob-rollout-target > 0`**) multiplies the per-row BCE of the rows the rollout target
+ANCHORED, renormalised to mean 1 over the scored rows so the loss scale does not move. 🚨 **Pass it
+whenever you pass the fraction.** At the 1× fraction the anchored rows are ~0.12 % of the BCE's
+mass, and **a treatment on 0.12 % of an objective cannot move the head by arithmetic** — the null
+would be a fact about the dose. The anchored share is `f·k / (1 + f·(k−1))`: at `f = 0.0012`,
+**`k = 64` ⇒ 7.1 %**. Read **`win_prob/rollout_mass_weighted`** (the delivered dose — quote THIS,
+not the flag) and **`win_prob/rollout_influence_lambda`** (anchors plus their λ^k reach, the honest
+total under `--win-prob-lambda < 1`). It MULTIPLIES with `--win-prob-strata-weight` rather than
+replacing it, and it weights **only the anchors**, never the rows that bootstrap toward them.
+⚠️ It does NOT change the value sidecar — no schema bump, because it changes no row's target.
+
 **`--win-prob-dense-aux <coef>`** (default `0.0` = OFF and bit-identical — the head is not BUILT;
 **requires `--critic winprob`** and a win head) adds **25 DENSE TARGETS BESIDE** the win-prob BCE
 rather than changing it: for every state, the episode's END-OF-BATTLE facts back-filled the way the

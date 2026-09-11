@@ -533,6 +533,14 @@ def target_identity(header) -> dict:
 SCHEMA_EQUIVALENCE = frozenset({1, 2, 3})
 
 #: The header fields that decide what QUANTITY `target` holds, independent of the version number.
+#: 🚨 **`win_prob_rollout_weight` IS DELIBERATELY ABSENT, and so is a schema bump for it.** The
+#: rule for this tuple is "does it change what the `target` COLUMN HOLDS?", not "is it a new flag".
+#: `gen3_winprob_rollout_weight_v1` changes how much a row COUNTS IN THE LOSS; it changes no row's
+#: target, and this file records targets, not loss weights — a v3 file written at weight 64 holds
+#: the same per-row quantity as one written at weight 1.0, row for row. Adding it here would refuse
+#: to pool two files that are genuinely poolable, which is the false alarm `SCHEMA_EQUIVALENCE`
+#: exists to name. (Were the sidecar ever to record a per-row WEIGHT column, that column's identity
+#: would need its own field here — this reasoning is about `target` and nothing else.)
 QUANTITY_FIELDS = ("critic_mode", "win_prob_lambda", "win_prob_lambda_truncated",
                    "win_prob_rollout_target", "win_prob_rollout_r", "win_prob_rollout_mode")
 

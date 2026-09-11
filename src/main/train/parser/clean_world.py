@@ -544,6 +544,28 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "record carries no opponent identity, so every continuation plays a "
                              "self-like opponent; see win_prob/rollout_bot_share). INERT at "
                              "--win-prob-rollout-target 0.")
+    parser.add_argument("--win-prob-rollout-weight", "--win_prob_rollout_weight",
+                        dest="win_prob_rollout_weight", type=float, default=None,
+                        help="Per-row LOSS WEIGHT on the rows --win-prob-rollout-target anchored, "
+                             ">= 1.0. 1.0 (the DEFAULT) = OFF and BIT-identical. WHY: the fraction "
+                             "that costs 1x the run's own simulation budget is ~0.0012, so the "
+                             "rollout-labelled rows are ~0.12%% of the win-prob BCE's mass and the "
+                             "head cannot move BY ARITHMETIC, whatever the new labels say. This is "
+                             "the only lever that raises the treatment's share of the objective at "
+                             "FIXED simulation cost -- no extra continuations, no changed labels. "
+                             "The weight vector is renormalised to mean 1 over the scored rows, so "
+                             "the loss SCALE does not move (the same convention "
+                             "--win-prob-strata-weight uses, and it MULTIPLIES with it rather than "
+                             "replacing it). At fraction 0.0012 a weight of 64 puts the anchors at "
+                             "~7.1%% of the weighted mass. 🚨 ONLY THE ANCHOR ROWS are weighted, "
+                             "never the rows that bootstrap toward them under "
+                             "--win-prob-lambda < 1: their target is a MIXTURE of the anchor and "
+                             "the network's own later values, so weighting them would dose arm 8's "
+                             "channel under arm 10's flag. That propagated influence is MEASURED "
+                             "instead -- read win_prob/rollout_mass_weighted (the anchors' share) "
+                             "and win_prob/rollout_influence_lambda (anchors + their lambda^k "
+                             "reach). REQUIRES --win-prob-rollout-target > 0. TRAINING-only, "
+                             "resume-inherited.")
     parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
                         type=float, default=None,
                         help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "

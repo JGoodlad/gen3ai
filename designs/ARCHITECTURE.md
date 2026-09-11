@@ -879,6 +879,22 @@ pass, no weight shape, no `check_compatible` compare, **not** `flag_registry.py`
 not appear in §6's flag table until a production config adopts them. Mechanics:
 `designs/training/critic_and_value_losses.md`.
 
+**`--win-prob-rollout-weight` gives those rows MASS** (`gen3_winprob_rollout_weight_v1`, config
+v119). Default **`1.0` = OFF and the loss is BIT-identical**; requires `--win-prob-rollout-target >
+0`. The fraction above buys high-quality labels for ~0.12 % of the objective's rows, and **a
+treatment carrying 0.12 % of a loss cannot move the head by arithmetic** — so this multiplies the
+ANCHORED rows' per-row BCE by a constant and renormalises the vector to mean 1 over the scored rows
+(the convention `--win-prob-strata-weight` already keeps, and the two MULTIPLY rather than
+overwrite), leaving the loss SCALE unmoved. The anchored share of the weighted mass is
+`f·k / (1 + f·(k−1))`: at `f = 0.0012`, `k = 64` that is **7.1 %**. 🚨 **Only the anchors are
+weighted, never the rows that bootstrap toward them under λ < 1** — those targets are a MIXTURE of
+the anchor, the network's own later values and the copied bit, so weighting them would dose arm 8's
+channel under arm 10's flag and would make the delivered dose a function of the episode-length
+distribution. The λ^k reach is MEASURED (`win_prob/rollout_influence_lambda`) instead of dosed. It
+is a per-row LOSS WEIGHT and changes no row's TARGET, so the value sidecar's schema and its
+`QUANTITY_FIELDS` are deliberately unchanged. Training-only, no forward pass, no weight shape, no
+`check_compatible` compare, not a `flag_registry.py` row.
+
 The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
 `coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
 would add the advantage to the reward and take the advantage of that. The FROZEN-φ route

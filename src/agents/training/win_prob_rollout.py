@@ -126,6 +126,90 @@ BANKED_CONTINUATION_DECISIONS = 104.0
 #: `MaskableAgentWrapper.OPP_CLASS_*`; used only to NAME the per-class metrics.
 OPP_CLASS_NAMES = ("bot", "pool", "stable", "exploiter")
 
+#: ``--win-prob-rollout-weight 1.0`` is OFF, and OFF is bit-identical by not building the weight
+#: vector at all — the loss then takes its unweighted expression UNCHANGED, the same discipline
+#: `--win-prob-strata-weight 0` and `--win-prob-lambda 1.0` keep.
+ROLLOUT_WEIGHT_OFF = 1.0
+
+#: The obs Dict key the per-row BCE weight rides (`gen3_winprob_rollout_weight_v1`). A LABEL key
+#: like `win_target` / `win_mask`: the env emits a placeholder every step and the
+#: `WinProbLabelCallback` overwrites it post-collection, which is the only carrier that survives
+#: `RolloutBuffer.get()`'s shuffle aligned to its own row. Declared ONLY when the flag is above
+#: 1.0, so an unflagged run's obs space is untouched.
+ROLLOUT_WEIGHT_KEY = "win_row_w"
+
+
+def anchor_row_weights(anchor_mask, win_mask, weight: float):
+    """``[n_steps, n_envs]`` float32 per-row BCE weight for `gen3_winprob_rollout_weight_v1`.
+
+    **WHY THE FLAG EXISTS — the mass arithmetic.** At the fraction that costs 1x the run's own
+    simulation budget (``1 / (R x ~104)``, i.e. ~0.0012 at R = 8) the rollout-labelled rows are
+    ~0.12 % of the win-prob BCE's rows. A treatment carrying 0.12 % of the objective cannot move
+    the head BY ARITHMETIC, whatever the labels say — so the read of `--win-prob-rollout-target`
+    at a feasible fraction is a read of nothing. The weight buys MASS at FIXED simulation cost:
+    it is the one lever on this loss that changes the anchored rows' share of the objective
+    without changing how many continuations get played.
+
+    **THE NORMALISATION IS THE SAME CONVENTION `_win_prob_strata_weights` USES**: the returned
+    weight has mean exactly 1 over the buffer's SCORED rows, so the loss SCALE does not move with
+    the fraction and the value gradient is not rescaled by a lever that is supposed to re-price a
+    mix. With ``a`` anchored rows among ``N`` scored ones (``f = a / N``) and a flag value ``k``::
+
+        Z        = 1 + f * (k - 1)          # the raw mean of {k on anchors, 1 elsewhere}
+        w_anchor = k / Z ,  w_other = 1 / Z
+        anchored share of the weighted mass = f * k / Z
+
+    At ``f = 0.0012`` and ``k = 64`` that is ``0.0768 / 1.0756 = 7.1 %`` — from 0.12 %.
+
+    🚨 **ONLY THE ANCHOR ROWS ARE WEIGHTED, never the rows that bootstrap toward them.** Under
+    ``--win-prob-lambda < 1`` an anchor TERMINATES the recursion and the earlier rows of its
+    episode blend toward it at ``λ^k`` (`win_prob_callback.lambda_return_targets`). Those rows are
+    a DIFFERENT quantity: their target is a λ-mixture of the anchor, the network's own later
+    values and — past the next anchor or terminal — the copied outcome bit. Up-weighting them
+    would up-weight the network's own estimates in the same stroke, which is arm 8's lever and not
+    this one, and it would make the delivered dose a function of the episode-length distribution.
+    The λ-propagated influence is MEASURED instead, and published as
+    ``win_prob/rollout_influence_lambda``.
+
+    ``anchor_mask`` is the ``[n_steps, n_envs]`` bool `apply_rollout_labels` returned; ``win_mask``
+    is the buffer's FINAL ``win_mask[:, :, 0]`` (after λ's own re-masking, so the normaliser is
+    computed over exactly the rows the BCE will score). Returns ``None`` — and the caller then
+    writes nothing and the loss stays bit-identical — when the flag is at 1.0, when no row was
+    anchored, or when nothing is scored.
+    """
+    k = float(weight)
+    if k <= ROLLOUT_WEIGHT_OFF:
+        return None
+    anchors = np.asarray(anchor_mask, dtype=bool) if anchor_mask is not None else None
+    if anchors is None or not anchors.any():
+        return None
+    scored = np.asarray(win_mask, dtype=np.float64) >= 0.5
+    if scored.shape != anchors.shape:
+        raise ValueError("anchor_mask and win_mask must have the same [n_steps, n_envs] shape")
+    n_scored = float(scored.sum())
+    if n_scored <= 0.0:
+        return None
+    raw = np.where(anchors & scored, k, 1.0).astype(np.float64)
+    # `z` is exactly the mean of `raw` over the SCORED rows, so mean(w) == 1 there by construction.
+    # An anchor that λ somehow left unscored contributes to neither side of the ratio.
+    z = float((raw * scored).sum() / n_scored)
+    if not np.isfinite(z) or z <= 0.0:
+        return None
+    return (raw / z).astype(np.float32)
+
+
+def weighted_mass(anchor_fraction: float, weight: float) -> float:
+    """The anchored rows' share of the WEIGHTED objective: ``f * k / (1 + f * (k - 1))``.
+
+    The closed form of what :func:`anchor_row_weights` produces, so a design doc, a test and a
+    pre-launch cost calculation can all quote the same number without a buffer. ``f`` is
+    ``rollout_mass`` (anchored rows / scored rows) and ``k`` the flag.
+    """
+    f = float(anchor_fraction)
+    k = float(weight)
+    z = 1.0 + f * (k - 1.0)
+    return float("nan") if z <= 0.0 else float(f * k / z)
+
 
 def record_key(pid: int, battle_tag: Optional[str]) -> str:
     """The handle that joins a BUFFER ROW to a reconstruction record on disk.
@@ -299,6 +383,45 @@ def fraction_for_unit_budget(rollouts: int, arm_decisions: float) -> float:
     """
     d = float(rollouts) * float(arm_decisions)
     return float("nan") if d <= 0.0 else 1.0 / d
+
+
+def weight_metrics(*, anchor_mask, new_mask, row_w, weight: float, anchor_share=None
+                   ) -> Dict[str, float]:
+    """The `win_prob/rollout_weight` + `rollout_mass_weighted` + `rollout_influence_lambda` meters.
+
+    These three are the DELIVERED DOSE, and the read quotes them rather than the flag — the flag
+    is what was asked for, these are what the objective actually carried.
+
+    * ``rollout_weight`` — the flag value, so an absent-vs-1.0 reading is never a guess.
+    * ``rollout_mass_weighted`` — ``(sum of the row weight over the ANCHOR rows) / (sum of the row
+      weight over every row the BCE scores)``. An unscored row is in neither sum because it
+      contributes nothing to the loss at ANY weight. Equals :func:`weighted_mass` of
+      ``rollout_mass``; both are computed so a drift between them is a bug, not a convention.
+    * ``rollout_influence_lambda`` — the same ratio over the anchor rows PLUS every row whose
+      λ-target received an anchor contribution, each such row counted by its **λ^k SHARE** of that
+      target rather than as a whole row (the share is exact and free: the recursion already walks
+      the buffer backward, so `lambda_return_targets` fills it in the same pass). It is the honest
+      TOTAL treatment mass under `--win-prob-lambda < 1`, where an anchor's information reaches
+      the ~``1/(1-λ)`` rows before it. With λ off (``anchor_share=None``) there is no propagation
+      and it equals ``rollout_mass_weighted`` — published anyway, because an absent tag must mean
+      "the weight is off" and nothing else.
+    """
+    out: Dict[str, float] = {"rollout_weight": float(weight)}
+    if row_w is None or anchor_mask is None:
+        return out
+    w = np.asarray(row_w, dtype=np.float64)
+    scored = np.asarray(new_mask, dtype=np.float64) >= 0.5
+    anchors = np.asarray(anchor_mask, dtype=bool)
+    denom = float((w * scored).sum())
+    if denom <= 0.0:
+        return out
+    out["rollout_mass_weighted"] = float((w * (anchors & scored)).sum() / denom)
+    share = (np.asarray(anchor_share, dtype=np.float64) if anchor_share is not None
+             else np.zeros(w.shape, dtype=np.float64))
+    # An anchor row is its own full share; every other row carries the λ^k it inherited.
+    share = np.where(anchors, 1.0, np.clip(share, 0.0, 1.0))
+    out["rollout_influence_lambda"] = float((w * scored * share).sum() / denom)
+    return out
 
 
 def rollout_metrics(*, applied, picks, labels, eligible, terminal_y, new_mask, opp_class,
