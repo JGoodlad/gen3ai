@@ -17471,3 +17471,106 @@ change is in the opponent-decodable part or the residual is NOT determined by th
 ### 2026-09-11 · ADDENDUM to the λ-0.9 replicate's read · the verdict is NON-CONFIRMATION, not absence; "same sign, half the size, CIs covering zero" is the SHAPE OF SELECTION INFLATION and is recorded as a diagnostic (rule 21); the standing headline
 
 Raised by the Training Run session, accepted. (1) **Two accounts survive the negative**, and the entry names both: a true zero with arm 8's +0.009–0.011 inflated by selection (a row picked post hoc from ~60 per read is selected partly ON its estimate, so a fresh draw regresses — the observed halving is exactly that), OR a small positive effect both draws are underpowered for (the replicate's half-widths are ≥ 0.005, so "half the size" is within noise of "the same size"). What is RESOLVED is that the candidate does not clear the registered bar; the selection-inflation account is offered as the more likely, not as the finding. The word is **NOT CONFIRMED at the registered standard**, never "refuted". (2) **Rule 21 (UNDERSTANDING §7):** a post-hoc candidate that replicates at roughly half its magnitude with CIs covering zero has the canonical shape of selection inflation (the winner's curse), not of a real-but-small effect; it is a reason to stop, not to run a third draw on the same row. (3) **The machinery is the result.** A row was spotted post hoc, labelled post hoc, given a confirmatory test registered before its data existed, and the test returned a clean negative that cannot be re-litigated. **Standing headline: twelve 10M runs, six levers plus the privileged critic, ZERO detected registered rows — and the one candidate that looked like an exception has now been tested at its registered standard and did not survive.** (4) For arm 10's verdict, stated in advance: the λ family does not improve `cond.opp_class_auc.t4_10` either (both λ-0.9 draws at or below every control), so a null on that row for arm 10 is "neither lever moved it", never "the rollout lever failed where λ succeeded". (5) The pair is crossing-mismatched internally (2.16M vs 4.13M) while each member is matched to a different reference — rule 19's family, and why the pair's bounds are wider than the controls'. Tag: ADDENDUM · RULE 21.
+
+---
+
+## 2026-09-11 — OPS: arm 10 `rollout` (`--win-prob-rollout-target 0.0012 --win-prob-rollout-r 8 --win-prob-rollout-mode replace --win-prob-rollout-weight 64`) COMPLETE at 10,027,008 steps — the dose was delivered EXACTLY as registered and held constant for the whole run
+
+**Run** `ai_v12_23_ladder_rollout` · pin **`40bf23d9`** (`source: pin_commit`, isolated worktree) · λ 0.9
+inherited, `--seed 1003`, `--cf-records --cf-records-keep 4096`, `--value-sidecar-fraction 0.015625`
+· 48 envs · ~7 h wall · **2 restarts, both SCHEDULED** (`Restart interval` ×2, `Child crashed` ×0) ·
+**0 crashes — `crashes/` was never created** · `Training complete` present once · FPS 387 cumulative.
+
+🚨 **THE PIN WAS NEARLY WRONG.** The delivered argv carried NO `--pin-commit`; a dry-run resolved it
+to `source: head`, and main had already moved three commits past the verified hash. Caught before
+launch, fixed upstream (option (a)), re-verified: token diff adds exactly `--pin-commit 40bf23d9`
+(243 → 245), and the launch line read `pin : 40bf23d97cdc… (source: pin_commit)`. **A registration
+that names a hash and an argv that does not pin one are two different things.**
+
+🚨 **IT SURVIVED THE FIRST TWO MINUTES WITH A NEW `win_row_w` OBS KEY** — WARMUP-OK at 98,304 TB
+steps, 0 error signatures. `--debug` cannot reach the compile/preload/warmstart layer by
+construction, so the real launch was that key's only test. Third arm to pass it (truevalue, denseaux,
+this).
+
+### The registered dose — delivered to the last field, and CONSTANT
+
+| | predicted | delivered |
+|---|---|---|
+| `rollout_mass_weighted` | 0.07140 | **0.07086** |
+| total treatment mass | ~0.0814 | **0.0778–0.0782** |
+| anchors per rollout | 118 (0.0012 × 98,304) | **117** (the implementation floors 117.96) |
+
+🚨 **`rollout_mass_weighted` read 0.07086 at ALL 98 UPDATES — min = max, constant to five decimals**,
+never leaving the registered 5–15 % band. **The VOID CONDITION was never approached.** This is
+denseaux's lesson answered: that arm's dose was registered as a constant and was not one; this one
+was registered as a constant and is.
+`rollout_records_missing` = **0.00000 at all 98 updates** (ring keep=4096 correctly sized; the >25 %
+selection-bias line never fired). `rollout_failed` and `rollout_capped_frac` likewise 0.
+**`rollout_budget_multiple` ran 0.751 → 0.329–0.404, i.e. well UNDER 1× the simulation budget** and
+falling as episodes cheapened — the measured refutation of the ~26× arithmetic that killed the
+original design before launch.
+
+**DOSE TABLE by cycle** (`mass_weighted` / `influence_lambda` / `shift` / `label_std` / `bot_share` /
+`records_missing` / `budget_multiple`):
+
+| step | mass_w | infl_λ | shift | label_std | bot_share | miss | budget |
+|---|---|---|---|---|---|---|---|
+| 2,000,016 | 0.07086 | 0.07765 | 0.27831 | 0.36589 | 1.00000 | 0 | 0.34281 |
+| 4,000,032 | 0.07086 | 0.07759 | 0.23237 | 0.34594 | 0.82051 | 0 | 0.32886 |
+| 6,000,000 | 0.07086 | 0.07763 | 0.22703 | 0.31310 | 0.16239 | 0 | 0.37441 |
+| 8,000,016 | 0.07086 | 0.07818 | 0.23344 | 0.34480 | 0.09402 | 0 | 0.36009 |
+| 10,000,032 | 0.07086 | 0.07795 | 0.22489 | 0.31633 | 0.07692 | 0 | 0.36943 |
+
+### 🚨 THE `rollout_bot_share` LAG RULE — a cycle-boundary value describes the PREVIOUS window
+
+At the 4M cycle `bot_share` read 0.8205 against `selfplay_fraction` 0.9000, an apparent **8.2×**
+over-representation of bot episodes among the anchors. **It is not a selection bias.** The next update
+read 0.0855. `selfplay_fraction` is an eval-cycle tag reporting the fraction GOING FORWARD, while the
+buffer at that step still holds episodes from the ramp; anchors describe the buffer, not the tag.
+**A `bot_share` value at a cycle boundary must be compared against the PREVIOUS cycle's
+`selfplay_fraction`, never the current one.** Post-4.3M the run-long picture is mean **0.1087** over 56
+updates (min 0.034, max 0.188) — the ~10 % mix, with binomial noise of ~0.028 on ~117 anchors binned
+two ways. No stratification was needed. 🚨 Neither a single high reading nor a single low one is the
+number: I called it "settled at 0.0769" and then "back up to 0.188" from one update each, and both
+were single draws of a noisy quantity.
+
+**Endpoints.** bots by cycle 0.6100 / 0.8238 / 0.8487 / 0.8838 / **0.9100** @10,000,032 — above the
+three-draw @10M floor 0.8988 / 0.8800 / 0.8963, and above both λ-0.9 draws (0.8788 / 0.9038); **NOT a
+strength claim** (strength is not read on these arms, the floor demotes and never promotes, and the
+comparison wants matched snapshot count). Final aggregate **91.2 %**. Ladder 10M node **2067.1 ± 17.2**
+(5 nodes, converged) — reported, not claimed.
+
+**G7.** Reference FROZEN at the mean of the first two cycles (26.061, 24.465) = 25.263. Ratios
+**0.945 / 0.946 / 0.941 — worst 0.946, i.e. 75.7 % of the 1.25 bar**, flat and below 1.0 at every
+cycle. Stall half peak 0.0161, last 0.0023, bar 0.05. **Under bar on both halves.**
+
+**Crossing: 2,162,688** — `eval/pool_snapshot_count` 1 at the 2M cycle, first `*_pool` tag at
+2,162,688. **The THIRD early crosser**, at bots@2M **0.6100**, the highest 2M value in the campaign.
+🚨 bots@2M is a REPORTED row only — it already existed at 0.61 when the question was asked, so it
+cannot be registered, and it is not a claim about the rollout lever on one draw inside a 0.12-wide
+floor. 🚨 And arm 10 is **λ-plus-rollout**, so it is NOT a third independent λ point: the λ-only
+early-crossing tally stays **2 of 3**, with 3 of 4 across the λ family.
+
+**Sidecar.** 153,603 lines, **3 headers** (counted, not assumed — this pin postdates the per-restart
+header change, unlike the λ arms) ⇒ **153,600 rows = 1,536 × exactly 100 rollouts**. Declares
+**schema 3** with `win_prob_rollout_target 0.0012`, `r 8`, `mode replace`, `fraction 0.015625`. **A v3
+at target > 0, so it correctly refuses to pool with arm 8's file by the QUANTITY rule** — the
+poolability discriminator is `QUANTITY_FIELDS`, not the schema integer.
+
+**Strata descriptor, NOT the bias term:** `rollout_win_rate_bot` 0.8875 vs `rollout_win_rate_pool`
+0.5432. 🚨 That 0.34 gap is mostly the BOARDS — states reached against bots are favourable — not the
+self-like-continuation term. The bias term is the difference between a self-like and a true-bot
+continuation from the SAME board, which these meters cannot see; its sign is "low on bot rows" and its
+size is unmeasured. **A difference between groups is not an effect within a group.**
+
+**Span** `40bf23d9`, increment `46ca68ef → 40bf23d9` verified NEUTRAL (0/230 tensors differ).
+
+🚨 **THE REGISTERED READ IS NOT IN THIS ENTRY.** Primary rows `cond.opp_class_auc.t4_10` +
+`gate.resolution.bot/all` on the offline 400/800 frames (critic_read v6); late-window spread rows
+REPORTED ONLY (their two-draw floors 0.218 / 0.192 exceed every arm delta on the campaign); comparator
+= BOTH λ-0.9 draws with the 0.6 pp crossing mismatch stated, plus BOTH single-draw reads with no
+selection on the observed crossing. **A null on the class-AUC row means "neither lever moved it",
+never "rollout failed where λ succeeded" — lambda09_b's registered test already came back NOT
+CONFIRMED, and both λ draws sit at or below every control on that row.**
+
+**Standing result after thirteen runs, seven levers: still ZERO detected REGISTERED rows.**
