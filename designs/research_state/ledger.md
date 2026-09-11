@@ -17138,3 +17138,100 @@ Raised by the Training Run session while syncing over `f0948d46`; the retraction
 **Hazards from the build, all standing:** (1) the `cf_records` ring (`--cf-records-keep 512`) is smaller than a production rollout (~2,400 episodes) — only LATE episodes would resolve, a selection bias; the argv carries `--cf-records-keep 4096` and the callback announces >25 % unresolved once; (2) opponent policy self-like on bot rows (above); (3) the ~12 % stall is before `train()`, so a `time/fps` drop is expected, not a regression; (4) the async collector path is patched by source-order test only — the arm uses the sync path; (5) rollout worker parallelism is 8-way against 48-way collection, so a 1× DECISION budget is not a 1× WALL budget.
 
 **Decision (orchestrator, owner notified under the 15-minute rule; default in force):** registration REOPENED. (a) Build `--win-prob-rollout-weight` — a per-row BCE weight on the ANCHORED rows only (default 1.0 = bit-identical; composes multiplicatively with the strata weight; a `rollout_mass_weighted` meter is the dose) — dispatched; at weight 32 the anchored share of the weighted loss is ~4 %, at fixed simulation cost. (b) Arm 10 moves onto ARM 8's argv (`--win-prob-lambda 0.9`, seed 1003; `argv_J_rollout_l09.txt`), because λ < 1 is where an anchor propagates backward into the episode and because the λ-0.9 REPLICATE PAIR (`lambda09`, `lambda09_b`) exists — the comparator becomes that pair, not `ctrl10M`. (c) Pre-registered read, offline 400/800 frames vs both λ-0.9 draws: `gate.resolution.bot`, `cond.spread_ratio.t1_3`, `cond.own_team_r2.t1`, the identity test as guard; the arm's `rollout_shift`, `label_std` and `rollout_mass_weighted` quoted at each 2M line as the dose. (d) Launch only on a hash + increment verdict (`46ca68ef → <landed>`, the pinned-input functional test) sent to the Training Run session; sidecar sampling fraction pinned at 1/64. Slot: after `lambda095`. If the owner picks the unweighted arm instead, it runs the same argv at weight 1.0 and is read as a PIPELINE + LABEL measurement (`rollout_shift` 0.27–0.40 on the smoke is itself the label-variance number), not as a head test. Tag: **BUILT · COST FINDING (MAJOR) · REGISTRATION REOPENED**.
+
+---
+
+## 2026-09-10 — OPS: arm 8's RUN-LEVEL REPLICATE `lambda09_b` COMPLETE at 10,027,008 steps — the λ-0.9 pair now has two-point bounds; "Crashes: 1" fell at TEARDOWN again; and my "one sidecar header per launcher start" rule is PIN-DEPENDENT and wrong as stated
+
+**Run** `ai_v12_21_ladder_lambda09_b` (`--win-prob-lambda 0.9 --seed 1002`) · pin
+`28ece02a54d382f1073922f86ac3da85ca0cb7cd` — IDENTICAL to `lambda09`'s · 48 envs · 5 h 17 m wall ·
+**2 restarts** (one scheduled at the 3 h mark, one auto-restart after the crash below) · FPS 447
+cumulative.
+
+**A GENUINE DRAW, verified by execution before launch:** whole-file token-multiset diff against
+`argv_lambda09_pinned.txt` adds exactly `--seed 1002` and changes `--run-name` — nothing else, 230 vs
+232 tokens. `--seed` reaches only the SB3 constructor, never the battle stream, so this is a DRAW of
+the same configuration, not a seed sweep.
+
+### "Crashes: 1" — read WHERE IT FELL, and it is the ctrl10M_c pattern exactly
+
+The crash log's own header says `last step: 10,027,008` and its tail is unambiguous:
+
+```
+🪜 [LADDER] spawned round-robin update for promoted snapshot @10000032
+Training complete. Model saved to …/final_model
+Final Evaluation (Session 220927, Battles: 100, Concurrency: 100)…
+  … Final aggregate win rate: 94.4%
+🛑 [train_env] Worker PID 1698139 died (exitcode=-15). Exiting.
+```
+
+`Training complete`, the full 900-battle final evaluation, AND the ladder update all completed first;
+the "crash" is a worker taking **SIGTERM (exitcode −15) during normal teardown**. The launcher
+auto-restarted #2 from `final_model.zip`; that child found the target already met, exited without
+writing a third TB file, and the session ended. **Max TB step is still 10,027,008 and there is no
+contamination** — verified on disk, not inferred. Second instance of this shape; a crash COUNT
+remains not a verdict.
+
+### The arm's actual product: the λ-0.9 pair's two-point bounds
+
+| quantity | draw 1 `lambda09` | draw 2 `lambda09_b` | bound |
+|---|---|---|---|
+| bots @10M | 0.8788 | 0.9038 | **0.025** |
+| ladder @10M | 2003.5 ± 15.5 | 2030.5 ± 16.7 | **27.0 apart** |
+| G7 reference (frozen) | 29.113 | 23.184 | **5.93** |
+| G7 worst ratio | 0.824 | 1.028 | **0.204** |
+| first-cycle bots | 0.5775 | 0.5238 | 0.054 |
+
+🚨 **The ladder pair is NOT a matched comparison**: draw 1 has FIVE ladder nodes, draw 2 has FOUR. A
+cross-run rating comparison wants matched snapshot COUNT, so 27.0 is an upper bound on that row's
+two-draw spread, not the spread itself.
+
+🚨 **TWO DRAWS BOUND A FLOOR; THEY DO NOT GIVE IT A CI.** Every number above is a two-point bound and
+must be said that way. The G7 worst-ratio bound (0.204) is wider than the three-control bound (0.139)
+on the same derived quantity — further confirmation that a single arm's worst ratio says nothing
+about its lever.
+
+**Endpoints.** bots by cycle 0.5238 / 0.8612 / 0.9000 / 0.9112 / **0.9038** @10,000,032. G7 (frozen
+reference 23.184 from the first two cycles): ratios 0.962 / 1.028 / 0.998, **worst 1.028 = 82.2 % of
+the 1.25 bar**; stall half peak 0.0133, last 0.0008, bar 0.05. **Under bar on both halves.** Final
+aggregate 94.4 %; crossing at 4,000,032 as on every other arm; pool reached 4 snapshots.
+
+🚨 **THE PRE-REGISTERED TEST IS NOT REPORTED HERE.** `gate.resolution.all` vs each of the three
+controls, on the offline 400/800 frames, DETECTED only if the CI clears zero at both draws against all
+three — that read runs on the offline generator and its verdict belongs to that read, not to this
+completion entry. Nothing in this entry bears on it.
+
+### 🚨 CORRECTION TO MY OWN RULE: the sidecar header count is PIN-DEPENDENT
+
+I banked (af8696ee) that "a multi-restart file has multiple headers — one per launcher start", from
+denseaux's 3 headers across 3 starts. **lambda09_b has 2 restarts and exactly ONE header.** So does
+`lambda09` (1 header, single start). The mechanism sentence is wrong as a general rule: denseaux is
+pinned `46ca68ef` and lambda09_b `28ece02a`, and the per-restart header is a property of the NEWER
+pin, not of restarting.
+
+**What survives, and is the only part that was ever operational: COUNT THE HEADERS, NEVER ASSUME.**
+rows = lines − headers. lambda09_b: 155,137 lines − 1 header = **155,136 rows = 1,536 × exactly 101
+rollouts**, matching draw 1 exactly — so the two draws' sidecars are the same size as well as the same
+configuration. denseaux's 153,600 = 1,536 × 100 stands.
+
+This is the third time this campaign I have generalised a true observation about structure into a
+claim about mechanism without checking whether the mechanism was conditional. The failure mode is
+consistent: the generalisation feels like compression rather than inference.
+
+### A baseline that corrects an attribution in arm 9's entry
+
+lambda09_b fires the same `[NOISE] TOTAL vs POLICY-TERM DISAGREE` warning as denseaux, at a **~4.7x
+gap** (total 0.081 vs policy-term 0.383) — and it has NO auxiliary heads; its only non-policy term is
+the win-prob BCE. Its own per-term shares confirm it: `noise_scale_share_value` 0.686 against
+`share_policy` 0.19. So the disagreement is a property of **any** arm whose value term is quieter than
+its clipped surrogate. arm 9's entry says `train/noise_scale_ratio` "is deflated ~30x by the dense aux
+heads"; the honest reading is that the aux heads AMPLIFY an existing ~4.7x deflation to ~30x, roughly
+6x further. **The operational conclusion is unchanged — any cross-arm use of that row needs the
+`_policy` variant — but the attribution needed the baseline beside it.**
+
+**Span** `28ece02a`, shared with `lambda09` and (next) `lambda095`. Sidecar: **schema 2, λ 0.9, NO
+`outcome` column** — correct, since those columns landed at `46ca68ef`, after this pin. arm 8 and its
+replicate are the two files unrecoverable for outcome reads; this does not touch the offline-frame
+test.
+
+**Standing result after eleven runs, six levers: still ZERO detected REGISTERED rows.**

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,141-line file. **The ledger itself is append-only and is never edited by this**;
+17,238-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**544 headings · 501 dated · 2026-08-01 → 2026-09-10 · ledger 17,141 lines.**
+**549 headings · 502 dated · 2026-08-01 → 2026-09-10 · ledger 17,238 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -564,3 +564,8 @@ rename.
   - `L17124` · `2026-09-10` · CORRECTION to arm 5's offline read · `ECE all +0.041` was NOT a registered row — it is a POST-HOC LEAN, not a detection; no second truevalue draw exists or is proposed, so it cannot be promoted; the optimism/ECE split is consistent under rule 19 but moot; and a standing rule: a LIVE-frame lean is not evidence about the OFFLINE population
   - `L17128` · `2026-09-10` · ADDENDUM · the sidecar POOLABILITY rule keys on the QUANTITY FIELDS, never on the `schema` integer (the banked caveat under arm 9's sidecar note is withdrawn); and arm 10's sidecar is a DIFFERENT QUANTITY from all ten banked files BY CONSTRUCTION — the rollout-target FRACTION is a quantity field, the sidecar SAMPLING fraction is not
   - `L17132` · `2026-09-10` · BUILT + COST FINDING · `--win-prob-rollout-target` (arm 10's lever, `aa6822b2`, config v118) — R-rollout Monte-Carlo win-fraction targets on the buffer's OWN states; the requested 1/32 fraction is ~26× the run's ENTIRE simulation budget, the 1×-budget fraction is 1/832 and carries 0.12 % of the loss mass — the arm as registered is a null by arithmetic; registration REOPENED
+- `L17144` · `2026-09-10` · OPS: arm 8's RUN-LEVEL REPLICATE `lambda09_b` COMPLETE at 10,027,008 steps — the λ-0.9 pair now has two-point bounds; "Crashes: 1" fell at TEARDOWN again; and my "one sidecar header per launcher start" rule is PIN-DEPENDENT and wrong as stated
+  - `L17156` · "Crashes: 1" — read WHERE IT FELL, and it is the ctrl10M_c pattern exactly
+  - `L17175` · The arm's actual product: the λ-0.9 pair's two-point bounds
+  - `L17204` · 🚨 CORRECTION TO MY OWN RULE: the sidecar header count is PIN-DEPENDENT
+  - `L17221` · A baseline that corrects an attribution in arm 9's entry
