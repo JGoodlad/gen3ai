@@ -232,13 +232,50 @@ def resolve_checkpoint(run_dir: Path, step: Optional[int]) -> Tuple[Path, int]:
     raise AssertionError("unreachable")  # pragma: no cover
 
 
-def read_regime(run_dir: Path) -> Dict[str, Any]:
-    """The run's RECORDED eval regime. Refuses rather than assuming one.
+def recoverable_regime(run_dir: Path) -> Optional[bool]:
+    """What the run's ``metadata.json`` says its eval regime was, or ``None``.
+
+    ``model_config.json`` only began carrying ``eval_sentinel_greedy`` at config_version 111
+    (2026-09-07, the boundary itself). A PRE-BOUNDARY run therefore records the regime nowhere
+    that ``read_regime`` looks — but it does record its whole resolved argparse namespace in
+    ``metadata.json``'s ``cli_args``, written by the run itself at its own pin. That is a
+    recovery, not a guess, and naming it in the refusal is what lets a caller DECLARE the regime
+    knowingly instead of inventing one.
+
+    It is deliberately NOT used as a silent fallback: ``cli_args`` is a large, weakly-typed blob
+    and the value it carries for a flag whose DEFAULT moved is exactly the kind of thing that
+    should be read by a human once and then stated out loud on the command line.
+    """
+    meta_path = run_dir / "metadata.json"
+    if not meta_path.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text())
+    except ValueError:
+        return None
+    cli = meta.get("cli_args")
+    if not isinstance(cli, dict) or "eval_sentinel_greedy" not in cli:
+        return None
+    val = cli["eval_sentinel_greedy"]
+    return None if val is None else bool(val)
+
+
+def read_regime(run_dir: Path, declared: Optional[bool] = None) -> Dict[str, Any]:
+    """The run's RECORDED eval regime, or the one the caller DECLARED for a pre-boundary run.
 
     🚨 ``eval_sentinel_greedy`` carries an OPPONENT-REGIME BOUNDARY (2026-09-07) worth ~8.9 pp to
     the trainee. Guessing it would silently generate the cycle under the OTHER regime from the one
     the arm was measured in, and every number would look like a result. A run that recorded no
     regime is refused; there is no default that is not a lie.
+
+    A PRE-BOUNDARY run records none — ``model_config.json`` only gained the key at the boundary —
+    and such a run is not unreadable, it is undeclared. ``--eval-sentinel-greedy`` /
+    ``--no-eval-sentinel-greedy`` is how the caller says which, and the refusal NAMES the value
+    recoverable from ``metadata.json``'s ``cli_args`` so the declaration is informed rather than
+    invented. The source ("recorded" or "declared") is returned, logged and written into the
+    manifest, so no reader can mistake one for the other. A declaration that CONTRADICTS a recorded
+    regime is refused outright: the run's own record wins, and a caller who disagrees with it is
+    confused about which run they are reading.
     """
     cfg_path = run_dir / "model_config.json"
     if not cfg_path.exists():
@@ -248,15 +285,43 @@ def read_regime(run_dir: Path) -> Dict[str, Any]:
         cfg = json.loads(cfg_path.read_text())
     except ValueError as exc:
         refuse(f"REFUSING: {cfg_path} is unreadable: {exc}")
-    if "eval_sentinel_greedy" not in cfg:
+    source = "recorded"
+    if "eval_sentinel_greedy" in cfg:
+        recorded = bool(cfg["eval_sentinel_greedy"])
+        if declared is not None and declared != recorded:
+            refuse(
+                f"REFUSING: --{'' if declared else 'no-'}eval-sentinel-greedy CONTRADICTS "
+                f"{run_dir.name}'s own record (`eval_sentinel_greedy` = {recorded}).",
+                "  The run's model_config.json is the record of the regime it was EVALUATED "
+                "under; a declaration exists only for a pre-boundary run that recorded none.",
+                "  Drop the flag to generate under the recorded regime. Nothing is generated.")
+        greedy = recorded
+    elif declared is None:
+        rec = recoverable_regime(run_dir)
+        hint = (["  ITS OWN metadata.json RECORDS `cli_args.eval_sentinel_greedy` = "
+                 f"{rec} — the resolved namespace the run saved at its own pin. If that is the "
+                 f"regime you mean, say so: pass "
+                 f"--{'' if rec else 'no-'}eval-sentinel-greedy."]
+                if rec is not None else
+                ["  Its metadata.json records no `cli_args.eval_sentinel_greedy` either, so "
+                 "nothing on disk answers the question. Do not generate this cycle."])
         refuse(f"REFUSING: {run_dir.name}'s model_config.json records no `eval_sentinel_greedy`.",
                "  That key names an OPPONENT-REGIME BOUNDARY (2026-09-07): greedy sentinels "
                "drawing the trainee's own teams, or the old asymmetric pair. The two differ by "
                "~8.9 pp to the trainee at equal skill.",
                "  A pre-boundary run cannot be re-read under either regime without saying which, "
-               "so nothing is generated. Nothing is read and nothing is concluded.")
+               "so nothing is generated by default.",
+               *hint,
+               "  The cycle is then marked `eval_sentinel_greedy_source: declared` in its "
+               "manifest, and `critic_read` still refuses a delta against a frame at the other "
+               "regime. Nothing is read and nothing is concluded.")
+        raise AssertionError("unreachable")  # pragma: no cover
+    else:
+        greedy = bool(declared)
+        source = "declared"
     return {
-        "eval_sentinel_greedy": bool(cfg["eval_sentinel_greedy"]),
+        "eval_sentinel_greedy": greedy,
+        "eval_sentinel_greedy_source": source,
         "self_play_temp": float(cfg.get("self_play_temp", 1.0) or 1.0),
         "gamma": float(cfg.get("gamma") or 0.99),
         "trainee_team_str": cfg.get("trainee_team_str"),
@@ -402,7 +467,7 @@ def generate(args) -> Dict[str, Any]:
 
     run_dir, pinned = parse_run_ref(args.run)
     ckpt, step = resolve_checkpoint(run_dir, pinned)
-    regime = read_regime(run_dir)
+    regime = read_regime(run_dir, declared=getattr(args, "eval_sentinel_greedy", None))
     out_dir = Path(args.out).resolve()
     if out_dir.exists() and any(out_dir.iterdir()) and not args.force:
         refuse(f"REFUSING: {out_dir} exists and is not empty.",
@@ -462,6 +527,8 @@ def generate(args) -> Dict[str, Any]:
                    if regime["eval_sentinel_greedy"] else
                    "sentinels ASYMMETRIC (stochastic, flat pool builder — the pre-2026-09-07 "
                    "regime, worth ~+8.9 pp to the trainee)")
+    if regime["eval_sentinel_greedy_source"] == "declared":
+        sent_regime += " [regime DECLARED on the command line — the run recorded none]"
     population = (
         f"OFFLINE-GENERATED cycle: {len(names)} opponents ({len(bots)} scripted bots + "
         f"{len(sentinels)} pool sentinels) x {args.games} games, {traced}; {sent_regime}")
@@ -496,7 +563,11 @@ def generate(args) -> Dict[str, Any]:
          f"= {len(names) * args.games:,} battles, {pool.n_units} shard units, "
          f"{n_workers} worker(s), concurrency {args.concurrency}, capture {capture}")
     _log(f"checkpoint: {ckpt}  (sha {sha256_of(ckpt)})")
-    _log(f"regime: eval_sentinel_greedy={regime['eval_sentinel_greedy']} (RECORDED, not assumed)")
+    _src = regime["eval_sentinel_greedy_source"]
+    _log(f"regime: eval_sentinel_greedy={regime['eval_sentinel_greedy']} "
+         + ("(RECORDED, not assumed)" if _src == "recorded" else
+            "(DECLARED on the command line — this run's model_config.json records none; the "
+            "declaration is written into the manifest and bounds every delta this cycle enters)"))
     if not reproducible:
         _log("⚠️  NOT REPRODUCIBLE: " + (
             "no --seed was given, so every stream is unseeded."
@@ -547,6 +618,7 @@ def generate(args) -> Dict[str, Any]:
         "capture": capture,
         "quota": quota._asdict(),
         "eval_sentinel_greedy": regime["eval_sentinel_greedy"],
+        "eval_sentinel_greedy_source": regime["eval_sentinel_greedy_source"],
         "seed": args.seed,
         "workers": n_workers,
         "concurrency": args.concurrency,
@@ -685,6 +757,18 @@ def build_parser() -> argparse.ArgumentParser:
                         "is traced, because here the traces ARE the measurement.")
     p.add_argument("--include-current-snapshot", action="store_true",
                    help="allow a pool snapshot at or above the read step (a self-mirror cell)")
+    greedy = p.add_mutually_exclusive_group()
+    greedy.add_argument("--eval-sentinel-greedy", "--eval_sentinel_greedy",
+                        dest="eval_sentinel_greedy", action="store_true", default=None,
+                        help="DECLARE the sentinel regime for a PRE-BOUNDARY run whose "
+                             "model_config.json records none (config_version < 111). Refused when "
+                             "the run DOES record one — the run's record wins. The cycle is marked "
+                             "`eval_sentinel_greedy_source: declared`, and critic_read still "
+                             "refuses a delta against a frame at the other regime.")
+    greedy.add_argument("--no-eval-sentinel-greedy", "--no_eval_sentinel_greedy",
+                        dest="eval_sentinel_greedy", action="store_false", default=None,
+                        help="the same declaration, for the PRE-2026-09-07 asymmetric regime "
+                             "(stochastic sentinels, the flat pool teambuilder).")
     p.add_argument("--timeout-min", type=float, default=0.0,
                    help="kill the workers after this many minutes (0 = no bound)")
     p.add_argument("--force", action="store_true", help="replace a non-empty --out")

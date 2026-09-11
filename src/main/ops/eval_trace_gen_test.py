@@ -94,14 +94,18 @@ def test_parse_run_ref_splits_the_step(tmp_path):
 
 # --------------------------------------------------------------------------- the refusals
 
-def _fake_run(tmp_path: Path, *, regime=True, snapshots=(4_000_000, 6_000_000, 8_000_000)):
+def _fake_run(tmp_path: Path, *, regime=True, snapshots=(4_000_000, 6_000_000, 8_000_000),
+              cli_regime="absent"):
     run = tmp_path / "fake_run"
     (run / "snapshots").mkdir(parents=True)
     cfg = {"arch_signature": "x", "config_version": 1}
     if regime:
         cfg["eval_sentinel_greedy"] = True
     (run / "model_config.json").write_text(json.dumps(cfg))
-    (run / "metadata.json").write_text(json.dumps({"git_hash": "deadbeef"}))
+    meta = {"git_hash": "deadbeef"}
+    if cli_regime != "absent":
+        meta["cli_args"] = {"eval_sentinel_greedy": cli_regime}
+    (run / "metadata.json").write_text(json.dumps(meta))
     for s in snapshots:
         (run / "snapshots" / f"snapshot_{s:012d}.zip").write_bytes(b"not-a-real-zip")
     return run
@@ -119,6 +123,78 @@ def test_a_run_without_a_recorded_eval_regime_is_refused(tmp_path):
     assert exc.value.code == 2
 
     assert ETG.read_regime(_fake_run(tmp_path / "b", regime=True))["eval_sentinel_greedy"] is True
+
+
+def test_a_preboundary_regime_may_be_DECLARED_but_never_defaulted(tmp_path, capsys):
+    """A pre-boundary run is not unreadable — it is UNDECLARED, and the two are different.
+
+    ``model_config.json`` only gained ``eval_sentinel_greedy`` at the 2026-09-07 boundary, so a
+    run from before it records the regime nowhere the generator looks. Refusing is still right:
+    there is no default that is not a lie. But the refusal must NAME the value recoverable from
+    the run's own ``metadata.json`` so the caller can DECLARE it knowingly, and the declared
+    cycle must be marked as declared — an assumed regime and a stated one are not the same
+    evidence, and `spec_of` bounds every delta the cycle can enter either way.
+    """
+    run = _fake_run(tmp_path, regime=False, cli_regime=False)
+    assert ETG.recoverable_regime(run) is False
+
+    with pytest.raises(SystemExit) as exc:
+        ETG.read_regime(run)
+    assert exc.value.code == 2
+    msg = capsys.readouterr().out + capsys.readouterr().err
+    # the refusal names the recovered value AND the flag that would declare it
+    assert "--no-eval-sentinel-greedy" in msg
+    assert "cli_args.eval_sentinel_greedy" in msg
+
+    declared = ETG.read_regime(run, declared=False)
+    assert declared["eval_sentinel_greedy"] is False
+    assert declared["eval_sentinel_greedy_source"] == "declared"
+
+    # a run that records the regime keeps saying so, and a CONTRADICTING declaration is refused:
+    # the run's own record wins over a caller who disagrees with it.
+    recorded = ETG.read_regime(_fake_run(tmp_path / "b", regime=True))
+    assert recorded["eval_sentinel_greedy"] is True
+    assert recorded["eval_sentinel_greedy_source"] == "recorded"
+    with pytest.raises(SystemExit) as exc2:
+        ETG.read_regime(_fake_run(tmp_path / "c", regime=True), declared=False)
+    assert exc2.value.code == 2
+
+
+def test_a_run_with_no_regime_anywhere_is_refused_with_no_flag_offered(tmp_path, capsys):
+    """Nothing on disk answers the question ⇒ the refusal offers no declaration to make.
+
+    The declaration exists to let a caller state a regime they can VERIFY from the run's own
+    record. A run that records it in neither place gives them nothing to verify, so the refusal
+    must say "do not generate this cycle" rather than hand over a flag.
+    """
+    run = _fake_run(tmp_path, regime=False)          # cli_args absent too
+    assert ETG.recoverable_regime(run) is None
+    with pytest.raises(SystemExit):
+        ETG.read_regime(run)
+    out = capsys.readouterr().out
+    assert "nothing on disk answers the question" in out
+    assert "--no-eval-sentinel-greedy" not in out
+
+
+def test_a_declared_regime_still_bounds_the_delta(tmp_path):
+    """🚨 A DECLARATION IS NOT A LICENCE TO DIFFERENCE ACROSS THE BOUNDARY.
+
+    Declaring the regime tells the generator which population to PLAY; it does not make a
+    stochastic-sentinel frame comparable to a greedy-sentinel one. `spec_of` keys on the regime
+    VALUE, not on how it was learned, so a pre-boundary run's declared cycle is still refused
+    against a post-boundary control — which is the whole reason the 75M run cannot be read
+    against the 10M ladder's controls.
+    """
+    pre = _gen_manifest()
+    pre[ETG.GENERATED_KEY]["eval_sentinel_greedy"] = False
+    pre[ETG.GENERATED_KEY]["eval_sentinel_greedy_source"] = "declared"
+    post = _gen_manifest()                            # recorded greedy=True
+    assert ETG.spec_of(pre) != ETG.spec_of(post)
+    assert ETG.spec_of(pre)["eval_sentinel_greedy"] is False
+    # and how it was learned is NOT part of the spec: two declared cycles at one regime compare
+    pre2 = _gen_manifest()
+    pre2[ETG.GENERATED_KEY]["eval_sentinel_greedy"] = False
+    assert ETG.spec_of(pre) == ETG.spec_of(pre2)
 
 
 def test_sentinels_are_clamped_never_padded(tmp_path):
