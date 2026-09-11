@@ -17393,3 +17393,59 @@ Raised by the Training Run session, accepted. The attenuation that refutes the r
 | ECE all (800) | −0.013 within floor | — | — |
 
 **Reading.** (1) Every registered row is WITHIN FLOOR or NOT DETECTED against every control at both sizes; the sign of the spread and own-team rows flips between controls and between draws, i.e. noise. The live read's UP-lean on the t1–3 spread (0.151 vs 0.09–0.12) is not on the offline frames (−0.05 to +0.03). Dense supervision at a delivered dose that rose 27 % over the run moved nothing the critic is read on — confirmed offline, against three controls, at two eval sizes. (2) The one row with a floor tight enough to matter, `cond.opp_class_auc.t4_10`, reads 0.714 for the arm against 0.709 / 0.707 / 0.688 — the highest point on the roster, and inside the 0.022 two-draw floor against all three (the +0.027 against `ctrl10M_c` is that control being the roster's low point; its CI does not clear the floor). A lean, same class as `strata`'s bot-resolution lean. (3) The calibration slope reads 1.21 against 1.07 / 1.32 / 1.10 — inside the control spread; the 400-game "DETECTED" is a run-level row read against a 400-game floor and does not stand (rule 19). (4) The decomposition term at t4–10 reads 0.111 vs 0.126 (n.d., a lower bound per the correction above) — reported only. Arm 9 is CLOSED: dense auxiliary targets are not the lever at 10M. Its v6 400-game re-read is queued behind the v6 batch. Tag: **MEASURED · NOT DETECTED (all registered rows, three controls, two sizes) · arm CLOSED**.
+
+---
+
+## 2026-09-11 — OPS: arm 11 `lambda095` (`--win-prob-lambda 0.95`) COMPLETE at 10,027,008 steps — G7 under bar on both halves, and it is the SECOND arm to cross self-play EARLY
+
+**Run** `ai_v12_22_ladder_lambda095` · pin `28ece02a54d382f1073922f86ac3da85ca0cb7cd` — the same pin as
+both λ-0.9 draws · 48 envs · ~5 h 10 m wall · **1 scheduled restart** · **0 crashes — `crashes/` was
+never created** · `Training complete` present once · FPS 510 cumulative (not a throughput measurement).
+
+**Verified by execution before launch:** the argv differs from `argv_lambda09_pinned.txt` by EXACTLY
+TWO TOKENS — `0.9` → `0.95` and the run-name; 230 tokens each.
+
+### 🚨 CROSSING STEP: ~2,162,688 — the SECOND EARLY CROSSER
+
+`eval/pool_snapshot_count` reads **1 at the 2M cycle** (every 4M-crosser reads 0 there) and the first
+`*_pool` tag appears at **2,162,688**. bots@2M was **0.5788**, above the `SELF_PLAY_START` 0.55 seed
+threshold — so this arm seeded at 2M like `lambda09` draw 1 (0.5775) and unlike the five arms that
+crossed at ~4,128,768. **The crossing is a per-arm lottery and this is its second independent
+instance**; it is reported here as a field, it selects nothing, and the 0.55 threshold still sits
+inside the 2M bots floor.
+
+**Endpoints by cycle.** bots 0.5788 / 0.8625 / 0.8637 / 0.8763 / **0.9038** @10,000,032 — the 10M value
+sits INSIDE the three-draw @10M floor 0.8988 / 0.8800 / 0.8963 (**WITHIN FLOOR**; the floor demotes and
+never promotes). `selfplay_fraction` 0.0330 / 0.9000 / 0.9000 / 0.9000 / 0.9000. Pool reached 4
+snapshots. Final aggregate **91.2 %**.
+
+**G7 (within-arm, `g7_ladder.py`).** Reference FROZEN at the mean of the first two cycles (25.321,
+24.120) = 24.721. Ratios **0.916 / 0.905 / 0.894 — worst 0.916, i.e. 73.3 % of the 1.25 bar**, and
+MONOTONICALLY FALLING: episodes got shorter at every measured cycle, the opposite direction from the
+kill condition. Stall half: peak 0.0135, last 0.0046, bar 0.05. **Under bar on both halves.**
+
+**Ladder.** 10M node **2029.8 ± 16.0** (converged, 5 nodes). Not reported as a strength result —
+strength is not read on these arms, the newest BT node is systematically inflated, and a cross-run
+comparison wants matched snapshot COUNT.
+
+**Sidecar.** 155,137 lines, **1 header** (counted, not assumed — the per-restart header is a property
+of the newer pin `46ca68ef`, not of restarting, and this arm is at `28ece02a`) ⇒ **155,136 rows =
+1,536 × exactly 101 rollouts**, identical to both λ-0.9 draws. Declares **schema 2, λ 0.95, fraction
+1/64**; **no `outcome` column**, correct for this pin — so the λ family now has THREE files
+unrecoverable for outcome reads, not two. This does not touch the registered test, which reads offline
+frames.
+
+### The registered test is NOT reported here
+
+lambda095's pass/fail — `cond.spread_ratio.t1_3` BELOW each control on the SAME draw, six deltas each
+with a CI below zero, PASS only if all six hold — runs on the offline 400/800 frames and its verdict
+belongs to that read. Nothing in this completion entry bears on it. 🚨 And its **interpretation**, not
+its bar, changed after the N-curve refit: the row's optimal level is small but NOT zero at t1–3 (class
+AUC 0.67, against 0.50 at t1), and the `cond.spread_ratio_optimal.*` reference is a **LOWER BOUND**
+(a conditional mean attenuates), so the verdict sentence is **"less/more early spread; whether the
+change is in the opponent-decodable part or the residual is NOT determined by this row."**
+
+**Span** `28ece02a`. The λ ladder is now complete at three points — 0.9 (two draws), 0.95, and the
+λ=1.0 controls — all at one pin.
+
+**Standing result after twelve runs, six levers: still ZERO detected REGISTERED rows.**
