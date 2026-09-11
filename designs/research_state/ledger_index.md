@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,611-line file. **The ledger itself is append-only and is never edited by this**;
+17,615-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**569 headings · 518 dated · 2026-08-01 → 2026-09-11 · ledger 17,611 lines.**
+**570 headings · 519 dated · 2026-08-01 → 2026-09-11 · ledger 17,615 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -589,3 +589,4 @@ rename.
   - `L17524` · 🚨 THE `rollout_bot_share` LAG RULE — a cycle-boundary value describes the PREVIOUS window
   - `L17578` · `2026-09-11` · READ · arm 11 `ai_v12_22_ladder_lambda095` (λ 0.95, the dose point) on the OFFLINE 400/800 frames — the registered directional claim FAILS at its standard (3 of 6 CIs below zero; the point below every control on both draws); the 1.0 / 0.95 / 0.9 curve is monotone by points, and only the 0.9 rung is distinguishable from the controls; the λ family leans DOWN on the turns-4–10 class row at every dose
   - `L17595` · `2026-09-11` · READ (MAJOR) · v6 re-reads of the five earlier levers on the 800-game frames — the FIRST DETECTIONS ON A DECISION ROW: `strata` (class-balanced BCE) conditions on the opponent at turns 4–10 at **+0.050 [+0.036, +0.064]** against a 0.022 floor, and `vf15` (value coefficient 1.5) at **−0.082 [−0.096, −0.066]** — one draw each, on a row declared the decision row BEFORE these reads ran; second eval draws running; a run-level replicate of `strata` is the next GPU arm
+  - `L17612` · `2026-09-11` · ADDENDUM + GO · `strata`'s second eval draw keeps the sign (+0.033 [+0.012, +0.053] on the 400 frames); the 0.022 floor is RUN-LEVEL, so the replicate CONFIRMS rather than establishes; `vf15`'s down-detection is of EQUAL STANDING and unreplicated by priority, not evidence; `strata_b` launched
