@@ -1,24 +1,18 @@
 # CRITIC READ — `ai_v12_17_ladder_strata` vs `ai_v12_11_ladder_ctrl10M`
 
-The critic ladder's registered read (ledger 2026-09-08 *REGISTRATION · THE CRITIC LADDER*), produced by `python -m main.ops.critic_read` v6 at 2026-09-11T12:32:46. Every number is a DELTA, **arm − control**, with the difference of the two runs' independent battle-clustered bootstraps. Strength is NOT read.
-
-**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Descriptive — no floor, no verdict.
+The critic ladder's registered read (ledger 2026-09-08 *REGISTRATION · THE CRITIC LADDER*), produced by `python -m main.ops.critic_read` v3 at 2026-09-09T18:16:23. Every number is a DELTA, **arm − control**, with the difference of the two runs' independent battle-clustered bootstraps. Strength is NOT read.
 
 | role | run | cycle | battles | draw/timeout share | anchors | live |
 |---|---|---|---|---|---|---|
-| arm | `ai_v12_17_ladder_strata` | `step_10000032` | 4800 | 0.8% | 150/150 (100.0%) | no |
-| control | `ai_v12_11_ladder_ctrl10M` | `step_10000032` | 4800 | 0.5% | 150/150 (100.0%) | no |
+| arm | `ai_v12_17_ladder_strata` | `step_10000032` | 648 | 0.3% | 150/150 (100.0%) | no |
+| control | `ai_v12_11_ladder_ctrl10M` | `step_10000032` | 204 | 0.5% | 140/140 (100.0%) | no |
 
 **The POPULATION these numbers describe** — every conditioning and identity row is a statistic OF the traced frame, so the frame is part of the reading.
 
 | role | population |
 |---|---|
-| arm | OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution |
-| control | OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution |
-
-> 🚨 **OFFLINE-GENERATED.** Both cycles were replayed from their saved checkpoints by `main.ops.eval_trace_gen` — 400 games per opponent against 3 pool sentinels, every battle traced. **These rows are NOT comparable with a live 100-game read and must never sit in one table beside it**: they are a different number of games, possibly a different number of opponent cells, and a random sample rather than the live outcome quota's loss-enriched slice. Report them as their own table, against their own floor pair.
-
-> Reproducibility: seeded, concurrency 1 — the whole cycle is a pure function of (seed, plan); the worker count does not enter it (seed 20260909, 4 worker(s), concurrency 1).
+| arm | LIVE cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 100 games, traced under the per-opponent OUTCOME QUOTA (loss-enriched, not a random subsample) |
+| control | LIVE cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 100 games, traced under the per-opponent OUTCOME QUOTA (loss-enriched, not a random subsample) |
 
 **Which cycle, and WHY** — a read that silently took the previous cycle is a read of a different model than the caller believes (backlog 2026-09-09: an arm whose launcher process was still alive was read one cycle back, and nothing said so). `--step N` pins it.
 
@@ -29,83 +23,82 @@ The critic ladder's registered read (ledger 2026-09-08 *REGISTRATION · THE CRIT
 
 | role | run | cap W/L/D per opponent | traced battles | W / L / D | opponents |
 |---|---|---|---|---|---|
-| arm | `ai_v12_17_ladder_strata` | **400/195/6** | 4800 | 4056 / 707 / 37 | 12 |
-| control | `ai_v12_11_ladder_ctrl10M` | **400/188/5** | 4800 | 4143 / 634 / 23 | 12 |
+| arm | `ai_v12_17_ladder_strata` | **40/40/2** | 648 | 480 / 164 / 4 | 12 |
+| control | `ai_v12_11_ladder_ctrl10M` | **8/12/3** | 204 | 96 / 102 / 6 | 12 |
 
-**Frames:** the realized per-opponent caps differ — arm 400/195/6, control 400/188/5 (traced W/L/D per opponent, counted on disk); arm cut to 400/188/5
+**Frames:** the realized per-opponent caps differ — arm 40/40/2, control 8/12/3 (traced W/L/D per opponent, counted on disk); arm cut to 8/12/2
 
-> ⚖️ **UNEQUAL FRAMES — MATCHED.** The arm side is subsampled to caps **400/188/5** per opponent over 21 seeded draws, with the capture rates RECOMPUTED for each subsample so rule 17 still holds on the view actually read. The FRAME-SENSITIVE rows' labels are decided on the MATCHED delta; the as-traced value is printed beside them marked UNMATCHED and is never labelled. Nothing is copied or written — the subsamples are in-memory battle lists.
+> ⚖️ **UNEQUAL FRAMES — MATCHED.** The arm side is subsampled to caps **8/12/2** per opponent over 21 seeded draws, with the capture rates RECOMPUTED for each subsample so rule 17 still holds on the view actually read. The FRAME-SENSITIVE rows' labels are decided on the MATCHED delta; the as-traced value is printed beside them marked UNMATCHED and is never labelled. Nothing is copied or written — the subsamples are in-memory battle lists.
 
-> Floor: `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/hp400_floor.json` — 60 keyed magnitudes.
+> Floor: `/home/goodlad/.claude/jobs/9ab51de6/tmp/replicate_floor_10M.json` — 55 keyed magnitudes.
 
 ## SUMMARY — the headline deltas
 
 | quantity | frame | arm | control | **Δ (arm − control)** | 95% CI | verdict |
 |---|---|---|---|---|---|---|
-| resolution · `bot` | — | +0.0216 | +0.0202 | **+0.0013** | [-0.0057, +0.0090] | **WITHIN FLOOR** (|delta| <= floor 0.0024) |
-| bias V - p_hat · `late (turn>=25)` | — | -0.0008 | -0.0308 | **+0.0300** | [-0.0210, +0.0820] | **WITHIN FLOOR** (|delta| <= floor 0.1024) |
-| corr(turn,V) - corr(turn,MC) · `ALL` | — | +0.0430 | +0.0124 | **+0.0306** | [-0.1333, +0.1911] | **WITHIN FLOOR** (|delta| <= floor 0.0440) |
-| skill · `bot` | — | +0.1788 | +0.1636 | **+0.0152** | [-0.0526, +0.0919] | **WITHIN FLOOR** (|delta| <= floor 0.0327) |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `turn 1-3` | as traced | +0.1365 | +0.1774 | **-0.0409** | [-0.0812, -0.0042] | **WITHIN FLOOR** (|delta| <= floor 0.0664) |
-| own-team leave-one-battle-out win-rate R^2 of V · `turn 1` | MATCHED 400/188/5 | +0.0249 | +0.0376 | **-0.0127** | [-0.0273, +0.0020] | **WITHIN FLOOR** (|delta| <= floor 0.0164) |
-| calibration SLOPE — weighted logistic regression of the outcome on logit(V) (1 = correctly dispersed, >1 = SHRUNK, <1 = over-dispersed) · `all states, <=2 per battle` | as traced | +1.0247 | +1.0719 | **-0.0472** | [-0.1380, +0.0479] | **NOT DETECTED** (CI covers zero) |
+| resolution · `bot` | — | +0.0239 | +0.0187 | **+0.0052** | [-0.0121, +0.0161] | **WITHIN FLOOR** (|delta| <= floor 0.0102) |
+| bias V - p_hat · `late (turn>=25)` | — | -0.0351 | -0.0198 | **-0.0153** | [-0.0929, +0.0585] | **WITHIN FLOOR** (|delta| <= floor 0.0558) |
+| corr(turn,V) - corr(turn,MC) · `ALL` | — | -0.0987 | -0.0940 | **-0.0047** | [-0.2340, +0.1806] | **WITHIN FLOOR** (|delta| <= floor 0.0153) |
+| skill · `bot` | — | +0.2260 | +0.1372 | **+0.0888** | [-0.0560, +0.2292] | **NOT DETECTED** (CI covers zero) |
+| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `turn 1-3` | as traced | +0.0660 | +0.1152 | **-0.0493** | [-0.5238, +0.0806] | **NOT DETECTED** (CI covers zero) |
+| own-team leave-one-battle-out win-rate R^2 of V · `turn 1` | MATCHED 8/12/2 | -0.0777 | -0.0237 | **-0.0540** | [-0.2076, +0.0699] | **NOT DETECTED** (CI covers zero) |
 
-Direction, stated so a sign cannot be misread: **resolution** and **skill** are HIGHER is better; **identity bias** is `V − p̂`, so POSITIVE means the head is OPTIMISTIC against its own Monte-Carlo continuation and a NEGATIVE delta is an improvement; the **turn-contrast** is `corr(turn,V) − corr(turn,MC)` and its target is ZERO, so a negative delta from a positive control moves toward the clock. The **spread ratio**'s target is ONE (for any calibrated critic the between-opponent spread of `V` equals that of the outcome), so a POSITIVE delta from a control below 1.0 is an improvement; the **own-team R²** and the **opponent-class AUC** are decodes FROM `V`, higher is better, with 0.0 and 0.5 the respective chance levels. The **within-team / within-stratum resolution** is DISCRIMINATION INSIDE a cell — higher is better, 0.0 is a forecast that says the same thing about every state of a team — and the **between-team spread ratio** is the own-team analogue of the opponent identity, target ONE. Their signs are read TOGETHER, in the (A)/(B) table of section 3.
+Direction, stated so a sign cannot be misread: **resolution** and **skill** are HIGHER is better; **identity bias** is `V − p̂`, so POSITIVE means the head is OPTIMISTIC against its own Monte-Carlo continuation and a NEGATIVE delta is an improvement; the **turn-contrast** is `corr(turn,V) − corr(turn,MC)` and its target is ZERO, so a negative delta from a positive control moves toward the clock. The **spread ratio**'s target is ONE (for any calibrated critic the between-opponent spread of `V` equals that of the outcome), so a POSITIVE delta from a control below 1.0 is an improvement; the **own-team R²** and the **opponent-class AUC** are decodes FROM `V`, higher is better, with 0.0 and 0.5 the respective chance levels.
 
 ## 1. RESOLUTION — the calibration gate's metrics, per stratum
 
 | quantity | stratum | weighting | arm | control | **Δ** | 95% CI | n draws | verdict |
 |---|---|---|---|---|---|---|---|---|
-| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0467 | +0.0395 | **+0.0072** | [-0.0026, +0.0155] | 400 | **NOT DETECTED** (CI covers zero) |
-| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0216 | +0.0202 | **+0.0013** | [-0.0057, +0.0090] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0024) |
-| resolution ⭐ | `pool` | `capture-rate (gauge)` | +0.0599 | +0.0544 | **+0.0054** | [-0.0092, +0.0210] | 400 | **NOT DETECTED** (CI covers zero) |
-| reliability | `all` | `capture-rate (gauge)` | +0.0007 | +0.0013 | **-0.0005** | [-0.0019, +0.0007] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0037) |
-| reliability | `bot` | `capture-rate (gauge)` | +0.0015 | +0.0036 | **-0.0021** | [-0.0047, +0.0003] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0032) |
-| reliability | `pool` | `capture-rate (gauge)` | +0.0057 | +0.0022 | **+0.0034** | [-0.0014, +0.0091] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0247) |
-| ece | `all` | `capture-rate (gauge)` | +0.0259 | +0.0206 | **+0.0053** | [-0.0103, +0.0186] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0373) |
-| ece | `bot` | `capture-rate (gauge)` | +0.0183 | +0.0394 | **-0.0211** | [-0.0366, -0.0035] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0286) |
-| ece | `pool` | `capture-rate (gauge)` | +0.0703 | +0.0379 | **+0.0324** | [-0.0050, +0.0651] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.1171) |
-| skill ⭐ | `all` | `capture-rate (gauge)` | +0.2715 | +0.2535 | **+0.0179** | [-0.0373, +0.0650] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0307) |
-| skill ⭐ | `bot` | `capture-rate (gauge)` | +0.1788 | +0.1636 | **+0.0152** | [-0.0526, +0.0919] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0327) |
-| skill ⭐ | `pool` | `capture-rate (gauge)` | +0.2344 | +0.2446 | **-0.0102** | [-0.0883, +0.0733] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.1324) |
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0483 | +0.0419 | **+0.0064** | [-0.0222, +0.0284] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0127) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0239 | +0.0187 | **+0.0052** | [-0.0121, +0.0161] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0102) |
+| resolution ⭐ | `pool` | `capture-rate (gauge)` | +0.0656 | +0.0720 | **-0.0064** | [-0.0538, +0.0368] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0073) |
+| reliability | `all` | `capture-rate (gauge)` | +0.0003 | +0.0022 | **-0.0020** | [-0.0081, +0.0001] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0084) |
+| reliability | `bot` | `capture-rate (gauge)` | +0.0013 | +0.0033 | **-0.0020** | [-0.0111, +0.0014] | 400 | **NOT DETECTED** (CI covers zero) |
+| reliability | `pool` | `capture-rate (gauge)` | +0.0040 | +0.0025 | **+0.0015** | [-0.0136, +0.0128] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0215) |
+| ece | `all` | `capture-rate (gauge)` | +0.0106 | +0.0351 | **-0.0245** | [-0.0562, -0.0018] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0383) |
+| ece | `bot` | `capture-rate (gauge)` | +0.0248 | +0.0425 | **-0.0177** | [-0.0574, +0.0115] | 400 | **NOT DETECTED** (CI covers zero) |
+| ece | `pool` | `capture-rate (gauge)` | +0.0501 | +0.0407 | **+0.0094** | [-0.0578, +0.0551] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0770) |
+| skill ⭐ | `all` | `capture-rate (gauge)` | +0.3085 | +0.2668 | **+0.0417** | [-0.0836, +0.1843] | 400 | **NOT DETECTED** (CI covers zero) |
+| skill ⭐ | `bot` | `capture-rate (gauge)` | +0.2260 | +0.1372 | **+0.0888** | [-0.0560, +0.2292] | 400 | **NOT DETECTED** (CI covers zero) |
+| skill ⭐ | `pool` | `capture-rate (gauge)` | +0.2840 | +0.3592 | **-0.0752** | [-0.2458, +0.1042] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0910) |
 
 ## 2. IDENTITY — V against the Monte-Carlo continuation
 
 | quantity | stratum | weighting | arm | control | **Δ** | 95% CI | n draws | verdict |
 |---|---|---|---|---|---|---|---|---|
-| bias V - p_hat | `ALL` | `raw` | +0.0174 | +0.0055 | **+0.0119** | [-0.0176, +0.0431] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1029) |
-| bias V - p_hat | `ALL` | `pop` | -0.0218 | -0.0391 | **+0.0173** | [-0.0057, +0.0401] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0735) |
-| bias V - p_hat ⭐ | `ALL` | `ipw` | -0.0218 | -0.0391 | **+0.0173** | [-0.0057, +0.0401] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0735) |
-| bias V - p_hat | `early (turn<=10)` | `raw` | +0.0041 | -0.0196 | **+0.0237** | [-0.0180, +0.0647] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1085) |
-| bias V - p_hat | `early (turn<=10)` | `pop` | -0.0387 | -0.0675 | **+0.0288** | [-0.0047, +0.0646] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0812) |
-| bias V - p_hat ⭐ | `early (turn<=10)` | `ipw` | -0.0387 | -0.0675 | **+0.0288** | [-0.0047, +0.0646] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0812) |
-| bias V - p_hat | `mid (11-24)` | `raw` | +0.0083 | +0.0143 | **-0.0060** | [-0.0444, +0.0335] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0707) |
-| bias V - p_hat | `mid (11-24)` | `pop` | -0.0248 | -0.0228 | **-0.0020** | [-0.0330, +0.0297] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0501) |
-| bias V - p_hat ⭐ | `mid (11-24)` | `ipw` | -0.0248 | -0.0228 | **-0.0020** | [-0.0330, +0.0297] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0501) |
-| bias V - p_hat | `late (turn>=25)` | `raw` | +0.0417 | +0.0241 | **+0.0176** | [-0.0481, +0.0858] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1434) |
-| bias V - p_hat | `late (turn>=25)` | `pop` | -0.0008 | -0.0308 | **+0.0300** | [-0.0210, +0.0820] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1024) |
-| bias V - p_hat ⭐ | `late (turn>=25)` | `ipw` | -0.0008 | -0.0308 | **+0.0300** | [-0.0210, +0.0820] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1024) |
-| bias V - p_hat | `bot` | `raw` | +0.0092 | -0.0033 | **+0.0125** | [-0.0227, +0.0488] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0639) |
-| bias V - p_hat | `bot` | `pop` | -0.0321 | -0.0473 | **+0.0152** | [-0.0098, +0.0399] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0449) |
-| bias V - p_hat ⭐ | `bot` | `ipw` | -0.0321 | -0.0473 | **+0.0152** | [-0.0098, +0.0399] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0449) |
-| bias V - p_hat | `pool` | `raw` | +0.0313 | +0.0210 | **+0.0103** | [-0.0383, +0.0606] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1594) |
-| bias V - p_hat | `pool` | `pop` | +0.0038 | -0.0230 | **+0.0268** | [-0.0203, +0.0747] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1256) |
-| bias V - p_hat ⭐ | `pool` | `ipw` | +0.0038 | -0.0230 | **+0.0268** | [-0.0203, +0.0747] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1256) |
-| Murphy resolution | `ALL` | `raw` | +0.0333 | +0.0263 | **+0.0070** | [-0.0045, +0.0186] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy resolution | `ALL` | `pop` | +0.0410 | +0.0315 | **+0.0095** | [-0.0045, +0.0237] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy resolution ⭐ | `ALL` | `ipw` | +0.0410 | +0.0315 | **+0.0095** | [-0.0045, +0.0237] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy skill_score | `ALL` | `raw` | +0.1986 | +0.1567 | **+0.0419** | [-0.0340, +0.1196] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0596) |
-| Murphy skill_score | `ALL` | `pop` | +0.2866 | +0.2213 | **+0.0653** | [-0.0323, +0.1672] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy skill_score ⭐ | `ALL` | `ipw` | +0.2866 | +0.2213 | **+0.0653** | [-0.0323, +0.1672] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy resolution_cap_share | `ALL` | `raw` | +0.2061 | +0.1683 | **+0.0379** | [-0.0292, +0.1027] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy resolution_cap_share | `ALL` | `pop` | +0.2942 | +0.2448 | **+0.0495** | [-0.0319, +0.1323] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy resolution_cap_share ⭐ | `ALL` | `ipw` | +0.2942 | +0.2448 | **+0.0495** | [-0.0319, +0.1323] | 4000 | **NOT DETECTED** (CI covers zero) |
-| Murphy reliability | `ALL` | `raw` | +0.0020 | +0.0031 | **-0.0010** | [-0.0051, +0.0026] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0111) |
-| Murphy reliability | `ALL` | `pop` | +0.0014 | +0.0036 | **-0.0022** | [-0.0067, +0.0017] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0031) |
-| Murphy reliability ⭐ | `ALL` | `ipw` | +0.0014 | +0.0036 | **-0.0022** | [-0.0067, +0.0017] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0031) |
-| corr(turn,V) - corr(turn,MC) ⭐ | `ALL` | `raw` | +0.0430 | +0.0124 | **+0.0306** | [-0.1333, +0.1911] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0440) |
-| corr(turn,V) - corr(turn,MC) | `ALL` | `pop` | +0.0454 | -0.0212 | **+0.0667** | [-0.0691, +0.1948] | 4000 | **NOT DETECTED** (CI covers zero) |
-| corr(turn,V) - corr(turn,MC) | `ALL` | `ipw` | +0.0454 | -0.0212 | **+0.0667** | [-0.0691, +0.1948] | 4000 | **NOT DETECTED** (CI covers zero) |
+| bias V - p_hat | `ALL` | `raw` | +0.0772 | +0.0917 | **-0.0145** | [-0.0682, +0.0392] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0758) |
+| bias V - p_hat | `ALL` | `pop` | +0.0003 | +0.0306 | **-0.0303** | [-0.0715, +0.0094] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0390) |
+| bias V - p_hat ⭐ | `ALL` | `ipw` | -0.0248 | -0.0418 | **+0.0171** | [-0.0159, +0.0487] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0696) |
+| bias V - p_hat | `early (turn<=10)` | `raw` | +0.0732 | +0.0987 | **-0.0255** | [-0.0856, +0.0367] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0599) |
+| bias V - p_hat | `early (turn<=10)` | `pop` | -0.0105 | +0.0134 | **-0.0240** | [-0.0749, +0.0265] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0499) |
+| bias V - p_hat ⭐ | `early (turn<=10)` | `ipw` | -0.0407 | -0.0703 | **+0.0295** | [-0.0252, +0.0820] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0940) |
+| bias V - p_hat | `mid (11-24)` | `raw` | +0.1048 | +0.0889 | **+0.0159** | [-0.0383, +0.0733] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0785) |
+| bias V - p_hat | `mid (11-24)` | `pop` | +0.0216 | +0.0498 | **-0.0282** | [-0.0715, +0.0166] | 4000 | **NOT DETECTED** (CI covers zero) |
+| bias V - p_hat ⭐ | `mid (11-24)` | `ipw` | -0.0031 | -0.0286 | **+0.0255** | [-0.0081, +0.0577] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0518) |
+| bias V - p_hat | `late (turn>=25)` | `raw` | +0.0340 | +0.0818 | **-0.0478** | [-0.1906, +0.0921] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0979) |
+| bias V - p_hat | `late (turn>=25)` | `pop` | -0.0160 | +0.0297 | **-0.0457** | [-0.1516, +0.0614] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0487) |
+| bias V - p_hat ⭐ | `late (turn>=25)` | `ipw` | -0.0351 | -0.0198 | **-0.0153** | [-0.0929, +0.0585] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0558) |
+| bias V - p_hat | `bot` | `raw` | +0.0977 | +0.1259 | **-0.0282** | [-0.0986, +0.0459] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0332) |
+| bias V - p_hat | `bot` | `pop` | +0.0063 | +0.0535 | **-0.0472** | [-0.0966, +0.0026] | 4000 | **NOT DETECTED** (CI covers zero) |
+| bias V - p_hat ⭐ | `bot` | `ipw` | -0.0235 | -0.0456 | **+0.0221** | [-0.0141, +0.0572] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0579) |
+| bias V - p_hat | `pool` | `raw` | +0.0468 | +0.0277 | **+0.0191** | [-0.0570, +0.0928] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1500) |
+| bias V - p_hat | `pool` | `pop` | -0.0052 | -0.0134 | **+0.0082** | [-0.0681, +0.0829] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.1049) |
+| bias V - p_hat ⭐ | `pool` | `ipw` | -0.0250 | -0.0382 | **+0.0132** | [-0.0504, +0.0718] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0945) |
+| Murphy resolution | `ALL` | `raw` | +0.0300 | +0.0364 | **-0.0064** | [-0.0250, +0.0105] | 4000 | **NOT DETECTED** (CI covers zero) |
+| Murphy resolution | `ALL` | `pop` | +0.0483 | +0.0650 | **-0.0167** | [-0.0394, +0.0046] | 4000 | **NOT DETECTED** (CI covers zero) |
+| Murphy resolution ⭐ | `ALL` | `ipw` | +0.0349 | +0.0300 | **+0.0049** | [-0.0133, +0.0200] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0091) |
+| Murphy skill_score | `ALL` | `raw` | +0.1137 | +0.1172 | **-0.0034** | [-0.1227, +0.1203] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0765) |
+| Murphy skill_score | `ALL` | `pop` | +0.2839 | +0.2892 | **-0.0054** | [-0.1137, +0.1009] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0102) |
+| Murphy skill_score ⭐ | `ALL` | `ipw` | +0.2653 | +0.2296 | **+0.0357** | [-0.0902, +0.1652] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0496) |
+| Murphy resolution_cap_share | `ALL` | `raw` | +0.1483 | +0.1606 | **-0.0123** | [-0.0974, +0.0691] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0345) |
+| Murphy resolution_cap_share | `ALL` | `pop` | +0.2830 | +0.2935 | **-0.0105** | [-0.1121, +0.0838] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0365) |
+| Murphy resolution_cap_share ⭐ | `ALL` | `ipw` | +0.2733 | +0.2482 | **+0.0251** | [-0.0885, +0.1176] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0551) |
+| Murphy reliability | `ALL` | `raw` | +0.0089 | +0.0113 | **-0.0024** | [-0.0149, +0.0080] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0247) |
+| Murphy reliability | `ALL` | `pop` | +0.0010 | +0.0022 | **-0.0012** | [-0.0073, +0.0021] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0077) |
+| Murphy reliability ⭐ | `ALL` | `ipw` | +0.0016 | +0.0038 | **-0.0022** | [-0.0091, +0.0019] | 4000 | **NOT DETECTED** (CI covers zero) |
+| corr(turn,V) - corr(turn,MC) ⭐ | `ALL` | `raw` | -0.0987 | -0.0940 | **-0.0047** | [-0.2340, +0.1806] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0153) |
+| corr(turn,V) - corr(turn,MC) | `ALL` | `pop` | -0.0472 | -0.0990 | **+0.0518** | [-0.1681, +0.2240] | 4000 | **NOT DETECTED** (CI covers zero) |
+| corr(turn,V) - corr(turn,MC) | `ALL` | `ipw` | -0.0363 | +0.0004 | **-0.0367** | [-0.2630, +0.1784] | 4000 | **WITHIN FLOOR** (|delta| <= floor 0.0835) |
 
 ⭐ = the REGISTERED estimand for that quantity. The others are the same statistic under a different selection correction, printed so the registered number is never the only one on the page.
 
@@ -127,141 +120,22 @@ Promoted 2026-09-09 from two committed measurements — `measurements/winprob_mi
 
 > 🚨 **A SPREAD RATIO CAN SIT BELOW ITS OWN INTERVAL, for TWO independent reasons, and neither is a defect in the bootstrap.** (1) The noise-corrected ratio is **CLAMPED** — each side's sampling variance is subtracted and a negative result floored at zero, a biased non-monotone operator — so a point estimate of 0.000 routinely carries a CI like [0.21, 0.53] (`winprob_head_refit_2026-09-09` §12 hazard 1). (2) A **resampled between-group variance is UPWARD BIASED**, so even the unclamped `ratio_raw`'s draws can centre above its point (the mixture diagnostic reports the same shape on its η² rows). **THE INTERVAL IS THE READ, and a 0.000 is not "no spread".** The unclamped, uncorrected `ratio_raw` is printed beside the clamped one as the monotone companion — never as a substitute. Both effects hit the arm and the control alike, so the DELTA is the quantity least disturbed by either; the per-run points below are the ones to read with the caveat in hand.
 
-**arm — `ai_v12_17_ladder_strata` @ `step_10000032`**: 156288 states / 4763 battles / 12 opponents / 601 trainee teams · manifest `selection_schema` 2 · `max|values − win_probs|` = 0.0 · 37 draw/timeout battles excluded (no binary outcome) · strength axis: 3 sentinel opponents and no eval_results.jsonl — the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED.
+**arm — `ai_v12_17_ladder_strata` @ `step_10000032`**: 20247 states / 644 battles / 12 opponents / 187 trainee teams · manifest `selection_schema` 2 · `max|values − win_probs|` = 0.0 · 4 draw/timeout battles excluded (no binary outcome) · strength axis: bot anchors + an ALL-STEPS bot-anchored refit of the run's snapshot ladder (4 nodes rated, anchored_to_bots=true), the positional sentinel map verified against the manifest's own win counts
 
-**control — `ai_v12_11_ladder_ctrl10M` @ `step_10000032`**: 147339 states / 4777 battles / 12 opponents / 601 trainee teams · manifest `selection_schema` 2 · `max|values − win_probs|` = 0.0 · 23 draw/timeout battles excluded (no binary outcome) · strength axis: 3 sentinel opponents and no eval_results.jsonl — the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED.
+**control — `ai_v12_11_ladder_ctrl10M` @ `step_10000032`**: 6080 states / 198 battles / 12 opponents / 76 trainee teams · manifest `selection_schema` 2 · `max|values − win_probs|` = 0.0 · 6 draw/timeout battles excluded (no binary outcome) · strength axis: bot anchors + an ALL-STEPS bot-anchored refit of the run's snapshot ladder (4 nodes rated, anchored_to_bots=true), the positional sentinel map verified against the manifest's own win counts
 
 | quantity | stratum | frame | arm | control | **Δ** | 95% CI | n draws | verdict |
 |---|---|---|---|---|---|---|---|---|
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected ⭐ | `turn 1-3` | as traced | +0.1365 | +0.1774 | **-0.0409** | [-0.0812, -0.0042] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0664) |
-| the same ratio UNCORRECTED and unclamped | `turn 1-3` | MATCHED 400/188/5 | +0.1376 | +0.1804 | **-0.0428** | [-0.0833, -0.0080] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0682) |
-| sd(V) - sd(outcome), noise-corrected | `turn 1-3` | as traced | -0.1135 | -0.0987 | **-0.0148** | [-0.0337, +0.0049] | 2000 | **NOT DETECTED** (CI covers zero) |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected | `all states` | as traced | +0.6505 | +0.6680 | **-0.0175** | [-0.1349, +0.1003] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.2403) |
-| the same ratio UNCORRECTED and unclamped | `all states` | MATCHED 400/188/5 | +0.6469 | +0.6644 | **-0.0175** | [-0.1299, +0.0960] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.2385) |
-| sd(V) - sd(outcome), noise-corrected | `all states` | as traced | -0.0459 | -0.0398 | **-0.0061** | [-0.0266, +0.0148] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0332) |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected | `turn 4-10` | as traced | +0.4888 | +0.5451 | **-0.0563** | [-0.1487, +0.0357] | 2000 | **NOT DETECTED** (CI covers zero) |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected | `turn 11-24` | as traced | +0.7272 | +0.7482 | **-0.0211** | [-0.1554, +0.1140] | 2000 | **NOT DETECTED** (CI covers zero) |
-| own-team leave-one-battle-out win-rate R^2 of V ⭐ | `turn 1` | MATCHED 400/188/5 | +0.0249 | +0.0376 | **-0.0127** | [-0.0273, +0.0020] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0164) |
-| own-team leave-one-battle-out win-rate R^2 of V | `all states` | MATCHED 400/188/5 | +0.0075 | +0.0048 | **+0.0027** | [-0.0043, +0.0089] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0081) |
-| opponent-CLASS (pool vs bot) AUC of V | `turn 1` | MATCHED 400/188/5 | +0.4735 | +0.5137 | **-0.0401** | [-0.0660, -0.0140] | 2000 | **DETECTED** (CI clears the floor +0.0118) |
-| opponent-CLASS (pool vs bot) AUC of V | `turn 1-3` | MATCHED 400/188/5 | +0.6218 | +0.6005 | **+0.0213** | [-0.0021, +0.0445] | 2000 | **NOT DETECTED** (CI covers zero) |
-| opponent-CLASS (pool vs bot) AUC of V | `turn 4-10` | MATCHED 400/188/5 | +0.7501 | +0.7169 | **+0.0332** | [+0.0124, +0.0534] | 2000 | **DETECTED** (vs ZERO — NO FLOOR) |
-| OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above) | `turn 1-3` | MATCHED 400/188/5 | +0.0357 | +0.0268 | **+0.0089** | [+0.0014, +0.0159] | 2000 | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above) | `turn 4-10` | MATCHED 400/188/5 | +0.1594 | +0.1354 | **+0.0240** | [-0.0002, +0.0485] | 2000 | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above) | `turn 11-24` | MATCHED 400/188/5 | +0.2075 | +0.2009 | **+0.0066** | [-0.0277, +0.0401] | 2000 | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| WITHIN-own-team Murphy resolution of V (cells >= MIN_TEAM_BATTLES battles, battle-weighted over teams) | `all states, <=2 per battle` | MATCHED 400/188/5 | +0.0655 | +0.0595 | **+0.0060** | [-0.0010, +0.0107] | 2000 | **NOT DETECTED** (CI covers zero) |
-| the same resolution WITHIN team-STRENGTH strata (quantiles of the team's LOO win rate) | `all states, <=2 per battle` | MATCHED 400/188/5 | +0.0366 | +0.0305 | **+0.0061** | [+0.0010, +0.0115] | 2000 | **NOT DETECTED** (CI does not clear the floor 0.0028) |
-| BETWEEN-team spread ratio sd(mean V) / sd(team win rate), noise-corrected | `turn 1-3` | MATCHED 400/188/5 | +0.6544 | +2.0616 | **-1.4072** | [-0.3824, -0.1831] | 2000 | **NOT DETECTED** (CI does not clear the floor 1.3970) |
-| the same ratio UNCORRECTED and unclamped | `turn 1-3` | MATCHED 400/188/5 | +0.3031 | +0.5732 | **-0.2701** | [-0.2368, -0.1571] | 2000 | **NOT DETECTED** (CI does not clear the floor 0.2470) |
-| own-team leave-one-battle-out win-rate R^2 of V | `turn >= 25` | MATCHED 400/188/5 | +0.0093 | +0.0028 | **+0.0066** | [-0.0048, +0.0176] | 2000 | **NOT DETECTED** (CI covers zero) |
-| own-team R^2 at turn 1 MINUS own-team R^2 late | `turn 1 - turn >= 25` | MATCHED 400/188/5 | +0.0151 | +0.0348 | **-0.0197** | [-0.0372, -0.0026] | 2000 | **PROVISIONAL — no floor; never DETECTED** (NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE — every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED) |
-| calibration SLOPE — weighted logistic regression of the outcome on logit(V) (1 = correctly dispersed, >1 = SHRUNK, <1 = over-dispersed) | `all states, <=2 per battle` | as traced | +1.0247 | +1.0719 | **-0.0472** | [-0.1380, +0.0479] | 2000 | **NOT DETECTED** (CI covers zero) |
-| calibration-in-the-large — the INTERCEPT of that regression (0 = calibrated) | `all states, <=2 per battle` | as traced | +0.2003 | +0.4257 | **-0.2254** | [-0.3795, -0.0684] | 2000 | **DETECTED** (vs ZERO — NO FLOOR) |
-| calibration SLOPE — weighted logistic regression of the outcome on logit(V) | `turn 1-3, <=2 per battle` | as traced | +0.9017 | +0.8379 | **+0.0638** | [-0.1013, +0.2287] | 2000 | **NOT DETECTED** (CI covers zero) |
-| calibration-in-the-large — the INTERCEPT of that regression | `turn 1-3, <=2 per battle` | as traced | +0.1772 | +0.9122 | **-0.7350** | [-0.9860, -0.4847] | 2000 | **DETECTED** (vs ZERO — NO FLOOR) |
-| calibration SLOPE with a free intercept PER own-team STRENGTH STRATUM — the dispersion reading INSIDE a stratum rather than across teams | `all states, <=2 per battle, stratum fixed effects` | MATCHED 400/188/5 | +0.9621 | +1.0067 | **-0.0446** | [-0.1434, +0.0537] | 2000 | **NOT DETECTED** (CI covers zero) |
-| calibration SLOPE on the COMMON SUPPORT — both sides restricted to the intersection of their central 95% of V, so the lever arm sd(logit V) cannot differ between them | `all states, <=2 per battle, common V window` | as traced | +1.0291 | +1.0558 | **-0.0267** | [-0.1290, +0.0798] | 2000 | **NOT DETECTED** (CI covers zero) |
-| calibration-in-the-large on the COMMON SUPPORT | `all states, <=2 per battle, common V window` | as traced | +0.1926 | +0.4441 | **-0.2515** | [-0.4213, -0.0769] | 2000 | **DETECTED** (vs ZERO — NO FLOOR) |
-
-### HOW MUCH OF THE SPREAD IS OPPONENT IDENTITY — `V` against its opponent-decodable part
-
-| side | window | ratio of `V` | opponent-decodable part | `V` / decodable |
-|---|---|---|---|---|
-| arm `ai_v12_17_ladder_strata` | `t1_3` | +0.1365 | +0.0357 | 3.819 |
-| arm `ai_v12_17_ladder_strata` | `t4_10` | +0.4888 | +0.1596 | 3.063 |
-| arm `ai_v12_17_ladder_strata` | `t11_24` | +0.7272 | +0.2076 | 3.503 |
-| control `ai_v12_11_ladder_ctrl10M` | `t1_3` | +0.1774 | +0.0268 | 6.625 |
-| control `ai_v12_11_ladder_ctrl10M` | `t4_10` | +0.5451 | +0.1354 | 4.025 |
-| control `ai_v12_11_ladder_ctrl10M` | `t11_24` | +0.7482 | +0.2009 | 3.725 |
-
-`V_opt(s) = Σ_o q(o | V(s)) · p_o` — an out-of-fold, battle-grouped, binned posterior over the pinned opponent roster from this side's own recorded `V`, times each opponent's manifest win rate, put through the SAME noise-corrected between-opponent spread the row above it uses. It is the between-opponent spread a head conditioning ONLY on which opponent its own output reveals would emit.
-
-> 🚨 **IT IS NOT AN UPPER BOUND, AND `V` ROUTINELY EXCEEDS IT.** `E[p_o | V]` is a per-state CONDITIONAL MEAN, and a conditional mean ATTENUATES: the between-cell spread of a shrinking transform of `V` is smaller than the between-cell spread of `V` itself. So the excess in the last column is not a paradox — it is between-opponent spread riding on **BOARD STATE** that differs by opponent (you are ahead by turn 12 against a weak bot, and `V` says so without recognising the bot) rather than on opponent IDENTITY. Read the two columns as a DECOMPOSITION; never quote the decodable part as "the maximum".
-
-> ⚠️ **Decoded from the head's OUTPUT, not its information set.** The block does no model forward, so the posterior is `q(o | V)` and not `q(o | value_pooled)`: this is a LOWER bound on how much opponent identity the head's FEATURES carry. **Descriptive: never a pass/fail bar, and the delta between two sides is never DETECTED.**
-
-### (A) CONDITIONING or (B) SUBSTITUTION — the within/between decomposition of the own-team decode
-
-A critic whose `V` decodes its OWN TEAM can be doing either of two things, and the own-team R² row alone cannot tell them apart: **(A)** it CONDITIONS on its team — teams differ in strength, so knowing which one it holds predicts better, and inside a team it still discriminates by the board; or **(B)** it SUBSTITUTES team identity for board state — right on average per team, blind INSIDE one. The separation is the classic between/within decomposition of a forecast's skill, with the own team as the cell:
-
-| | within-team resolution | between-team spread | own-team R² t1 − late |
-|---|---|---|---|
-| **(A) conditioning** | not lower, ideally higher | UP | NEGATIVE — the board takes over as the game unfolds |
-| **(B) substitution** | **DOWN** | UP | ~0 or POSITIVE — team identity still carries the forecast late |
-| neither | flat | flat | flat |
-
-**The OWN-TEAM CELL CENSUS** — the cells these rows are computed on (a team is a cell only with >= 4 battles; the strata are 5 quantiles of the team's leave-one-battle-out win rate, cut at equal battle mass):
-
-| role | cells | teams seen | battles in cells | states | median battles/cell | median states/cell | min–max battles/cell |
-|---|---|---|---|---|---|---|---|
-| arm · team | 534 | 601 | 4604 | 9208 | 7.0 | 14.0 | 4–51 |
-| arm · stratum | 5 | 601 | 4604 | 9208 | 921.0 | 1842.0 | 912–930 |
-| arm · between-team spread | 534 | 601 | 4604 | — | 7.0 | — | — |
-| control · team | 535 | 601 | 4622 | 9244 | 7.0 | 14.0 | 4–51 |
-| control · stratum | 5 | 601 | 4622 | 9244 | 926.0 | 1852.0 | 905–937 |
-| control · between-team spread | 535 | 601 | 4622 | — | 7.0 | — | — |
-
-| row | frame | arm | control | **Δ** | 95% CI | verdict |
-|---|---|---|---|---|---|---|
-| WITHIN-own-team Murphy resolution of V (cells >= MIN_TEAM_BATTLES battles, battle-weighted over teams) · `all states, <=2 per battle` | MATCHED 400/188/5 | +0.0655 | +0.0595 | **+0.0060** | [-0.0010, +0.0107] | **NOT DETECTED** (CI covers zero) |
-| the same resolution WITHIN team-STRENGTH strata (quantiles of the team's LOO win rate) · `all states, <=2 per battle` | MATCHED 400/188/5 | +0.0366 | +0.0305 | **+0.0061** | [+0.0010, +0.0115] | **NOT DETECTED** (CI does not clear the floor 0.0028) |
-| BETWEEN-team spread ratio sd(mean V) / sd(team win rate), noise-corrected · `turn 1-3` | MATCHED 400/188/5 | +0.6544 | +2.0616 | **-1.4072** | [-0.3824, -0.1831] | **NOT DETECTED** (CI does not clear the floor 1.3970) |
-| own-team leave-one-battle-out win-rate R^2 of V · `turn 1` | MATCHED 400/188/5 | +0.0249 | +0.0376 | **-0.0127** | [-0.0273, +0.0020] | **WITHIN FLOOR** (|delta| <= floor 0.0164) |
-| own-team leave-one-battle-out win-rate R^2 of V · `turn >= 25` | MATCHED 400/188/5 | +0.0093 | +0.0028 | **+0.0066** | [-0.0048, +0.0176] | **NOT DETECTED** (CI covers zero) |
-| own-team R^2 at turn 1 MINUS own-team R^2 late · `turn 1 - turn >= 25` | MATCHED 400/188/5 | +0.0151 | +0.0348 | **-0.0197** | [-0.0372, -0.0026] | **PROVISIONAL — no floor; never DETECTED** (NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE — every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED) |
-
-The two own-team R² rows are printed with them: the contrast is their difference, and it cannot be read without seeing which end moved.
-
-**Reading of the three signs:** neither cleanly — the WITHIN-team discrimination is up without a between-team spread to go with it, which is a board-reading gain, not a conditioning one.
-
-> 🚨 **The between-team spread is an AMPLITUDE; the own-team R² is an ALIGNMENT.** The spread ratio compares `sd(mean V per team)` with `sd(that team's win rate)` — how far apart the head's per-team opinions are. The own-team R² is an out-of-fold MONOTONE decode, invariant to scale — whether those opinions are in the right ORDER. The two can move in opposite directions (a head that orders its teams correctly but under-disperses reads R² UP and spread DOWN), so the sign table above is read with both rows in hand and the R² row is never read alone.
-
-> 🚨 **The per-TEAM cells are small and the coarse row is the check on them.** With ~719 teams in the pool a few-thousand-battle frame leaves a handful of episodes per team, and a binned resolution inside a cell that size is largely the binning's own noise — which is *positively* biased, so a small per-team number is evidence of neither reading. The STRATUM row is the same estimator on cells hundreds of episodes deep. **Where the two disagree, believe the stratum row and say so.**
-
-> 🚨 **`cond.own_team_r2.t1_minus_late` is PROVISIONAL and is never labelled DETECTED.** NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE — every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED.
-
-### The CALIBRATION SLOPE — is `V` correctly DISPERSED, or SHRUNK toward the base rate?
-
-Regress the realized outcome on the forecast, in the forecast's own logit — a weighted logistic regression `logit P(y=1) = a + b · logit(V)`. `(a, b)` is the classic Cox (1958) recalibration pair: **`a` is calibration-in-the-large** (0 when the average forecast is right) and **`b` is the calibration slope** (1 when the forecast is correctly dispersed).
-
-| slope `b` | what it says | what would fix it |
-|---|---|---|
-| **> 1** | **UNDER-dispersed — SHRUNK.** Where the head says 0.7 the realized rate is *above* 0.7, and where it says 0.3 it is *below*. | stretch the predictions AWAY from the base rate |
-| ≈ 1 | correctly dispersed | nothing |
-| < 1 | OVER-dispersed — the opinions are more extreme than the evidence behind them | shrink the predictions TOWARD the base rate |
-
-**Why it is the sharp test of a bootstrapped target.** A λ-return (or any bootstrapped) target blends the critic's own `V` into the label, so the thing being fitted is compressed toward the base rate relative to a raw 0/1 outcome. Fitting a compressed target IS a shrinkage estimator: it can improve the rank ORDER of what is emitted while reducing its AMPLITUDE. The own-team R² row is a monotone out-of-fold decode and is invariant to scale, so it cannot see that at all; the spread ratio sees it mixed with everything else. The slope sees it directly, and a shrunk head reads `b > 1`.
-
-**The LEVER ARM these slopes are fitted on** — the slope's SE scales as `1/sd(logit V)`, so the side with the more compressed `V` is handed the wider interval by the effect under test:
-
-| role | frame | states | battles | mean V | **sd(V)** | **sd(logit V)** | central 2.5–97.5% of V | clipped share |
-|---|---|---|---|---|---|---|---|---|
-| arm · all | `all` | 9526 | 4763 | 0.8305 | **0.2085** | **1.9093** | [0.137, 0.998] | 0.0082 |
-| arm · t1_3 | `t1_3` | 9526 | 4763 | 0.8494 | **0.0798** | **0.6127** | [0.647, 0.954] | 0.0000 |
-| arm · common support | `common support` | 8667 | 4646 | 0.8466 | **0.1604** | **1.4355** | [0.368, 0.995] | 0.0000 |
-| control · all | `all` | 9554 | 4777 | 0.8200 | **0.2003** | **1.7478** | [0.199, 0.996] | 0.0000 |
-| control · t1_3 | `t1_3` | 9554 | 4777 | 0.7641 | **0.1120** | **0.6466** | [0.477, 0.932] | 0.0000 |
-| control · common support | `common support` | 9076 | 4720 | 0.8342 | **0.1664** | **1.5094** | [0.359, 0.995] | 0.0000 |
-
-The COMMON-SUPPORT window is `V ∈ [0.1994, 0.9964]` — the intersection of the two sides' central 95% of `V`. Both sides are re-fitted inside it, so the lever arm cannot differ between them and a surviving slope difference is not the support.
-
-| row | frame | arm | control | **Δ** | 95% CI | replicate floor | verdict |
-|---|---|---|---|---|---|---|---|
-| calibration SLOPE · `all states, <=2 per battle` | as traced | +1.0247 | +1.0719 | **-0.0472** | [-0.1380, +0.0479] | — | **NOT DETECTED** (CI covers zero) |
-| calibration-in-the-large · `all states, <=2 per battle` | as traced | +0.2003 | +0.4257 | **-0.2254** | [-0.3795, -0.0684] | — | **DETECTED** (vs ZERO — NO FLOOR) |
-| calibration SLOPE · `turn 1-3, <=2 per battle` | as traced | +0.9017 | +0.8379 | **+0.0638** | [-0.1013, +0.2287] | — | **NOT DETECTED** (CI covers zero) |
-| calibration-in-the-large · `turn 1-3, <=2 per battle` | as traced | +0.1772 | +0.9122 | **-0.7350** | [-0.9860, -0.4847] | — | **DETECTED** (vs ZERO — NO FLOOR) |
-| calibration SLOPE with a free intercept PER own-team STRENGTH STRATUM · `all states, <=2 per battle, stratum fixed effects` | MATCHED 400/188/5 | +0.9621 | +1.0067 | **-0.0446** | [-0.1434, +0.0537] | — | **NOT DETECTED** (CI covers zero) |
-| calibration SLOPE on the COMMON SUPPORT · `all states, <=2 per battle, common V window` | as traced | +1.0291 | +1.0558 | **-0.0267** | [-0.1290, +0.0798] | — | **NOT DETECTED** (CI covers zero) |
-| calibration-in-the-large on the COMMON SUPPORT · `all states, <=2 per battle, common V window` | as traced | +0.1926 | +0.4441 | **-0.2515** | [-0.4213, -0.0769] | — | **DETECTED** (vs ZERO — NO FLOOR) |
-
-> 🚨 **A WIDE REPLICATE FLOOR IS 'UNREADABLE AT THIS FRAME SIZE', NOT A NULL.** The floor column is the wider of the two control-vs-control draws for that row — total run-to-run variance between two identically-configured runs. Where it is larger than the arm's own delta the row says the frame cannot resolve the question; it does not say the effect is absent. A `—` means the floor file carries no entry for the row and no detection against a floor is possible.
-
-> 🚨 **the calibration slope's standard error scales as 1/sd(logit V), so a head whose predictions are COMPRESSED gets a wider interval from the very effect under test — a conservative bias, never a manufacturing one. sd(V) and sd(logit V) are printed per side for exactly that reason, and the COMMON-SUPPORT row re-fits both sides on the intersection of their central 95% of V, which removes the lever-arm difference by construction.**
-
-> The **within-stratum** row is the same fit with a free intercept per own-team strength stratum. Shrinkage ACROSS teams and shrinkage INSIDE one are different statements: a head compressed only between strata moves the pooled row alone, while one compressed everywhere moves both. A stratum whose outcomes are all wins or all losses is DROPPED rather than fitted — its own dummy would diverge and take the shared slope's convergence with it.
-
-> `V` is clipped into `[0.001, 0.999]` before the logit — `logit(0)` is not a number, and a forecast at 0.9999 is a leverage point worth several ordinary states on a logit x-axis. The clipped SHARE is in the lever-arm table above.
+| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected ⭐ | `turn 1-3` | as traced | +0.0660 | +0.1152 | **-0.0493** | [-0.5238, +0.0806] | 2000 | **NOT DETECTED** (CI covers zero) |
+| the same ratio UNCORRECTED and unclamped | `turn 1-3` | MATCHED 8/12/2 | +0.1728 | +0.3333 | **-0.1605** | [-0.4637, -0.0230] | 2000 | **NOT DETECTED** (CI does not clear the floor 0.1327) |
+| sd(V) - sd(outcome), noise-corrected | `turn 1-3` | as traced | -0.1079 | -0.0886 | **-0.0193** | [-0.0813, +0.0064] | 2000 | **NOT DETECTED** (CI covers zero) |
+| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected | `all states` | as traced | +0.6308 | +0.7895 | **-0.1587** | [-0.5852, +0.1230] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.3898) |
+| the same ratio UNCORRECTED and unclamped | `all states` | MATCHED 8/12/2 | +0.6225 | +0.8053 | **-0.1828** | [-0.5451, +0.1526] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.3852) |
+| sd(V) - sd(outcome), noise-corrected | `all states` | as traced | -0.0426 | -0.0211 | **-0.0216** | [-0.0689, +0.0180] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0410) |
+| slope of bias (V - true win rate) on opponent Elo, per 100 Elo | `all states` | as traced | +0.0167 | +0.0098 | **+0.0070** | [-0.0050, +0.0203] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0153) |
+| own-team leave-one-battle-out win-rate R^2 of V ⭐ | `turn 1` | MATCHED 8/12/2 | -0.0777 | -0.0237 | **-0.0540** | [-0.2076, +0.0699] | 2000 | **NOT DETECTED** (CI covers zero) |
+| own-team leave-one-battle-out win-rate R^2 of V | `all states` | MATCHED 8/12/2 | -0.0509 | -0.0098 | **-0.0411** | [-0.2561, +0.0424] | 2000 | **NOT DETECTED** (CI covers zero) |
+| opponent-CLASS (pool vs bot) AUC of V | `turn 1` | MATCHED 8/12/2 | +0.4276 | +0.4619 | **-0.0343** | [-0.1697, +0.1018] | 2000 | **WITHIN FLOOR** (|delta| <= floor 0.0666) |
 
 ### The FRAME-SENSITIVE rows, on the equalised frames
 
@@ -269,57 +143,21 @@ A row is matched because its ESTIMATOR moves with the size of the frame it is co
 
 | row | frame | arm | control | **Δ** | 95% CI | verdict |
 |---|---|---|---|---|---|---|
-| `cond.spread_ratio_raw.t1_3` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.1376 [+0.1360, +0.1386] | +0.1804 | **-0.0428** | [-0.0833, -0.0080] | **WITHIN FLOOR** (|delta| <= floor 0.0682) |
-| `cond.spread_ratio_raw.t1_3` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.1376 [+0.1376, +0.1376] | +0.1804 | **-0.0428** | [-0.0822, -0.0070] | **WITHIN FLOOR** (|delta| <= floor 0.0682) |
-| `cond.spread_ratio_raw.t1_3` | UNMATCHED (as traced) | +0.1376 | +0.1804 | **-0.0428** | [-0.0822, -0.0070] | *no label — not a reading* |
-| `cond.spread_ratio_raw.all` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.6469 [+0.6445, +0.6504] | +0.6644 | **-0.0175** | [-0.1299, +0.0960] | **WITHIN FLOOR** (|delta| <= floor 0.2385) |
-| `cond.spread_ratio_raw.all` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.6474 [+0.6474, +0.6474] | +0.6644 | **-0.0170** | [-0.1318, +0.0985] | **WITHIN FLOOR** (|delta| <= floor 0.2385) |
-| `cond.spread_ratio_raw.all` | UNMATCHED (as traced) | +0.6474 | +0.6644 | **-0.0170** | [-0.1318, +0.0985] | *no label — not a reading* |
-| `cond.own_team_r2.t1` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0249 [+0.0228, +0.0266] | +0.0376 | **-0.0127** | [-0.0273, +0.0020] | **WITHIN FLOOR** (|delta| <= floor 0.0164) |
-| `cond.own_team_r2.t1` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0249 [+0.0249, +0.0249] | +0.0376 | **-0.0127** | [-0.0271, +0.0013] | **WITHIN FLOOR** (|delta| <= floor 0.0164) |
-| `cond.own_team_r2.t1` | UNMATCHED (as traced) | +0.0249 | +0.0376 | **-0.0127** | [-0.0271, +0.0013] | *no label — not a reading* |
-| `cond.own_team_r2.all` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0075 [+0.0061, +0.0088] | +0.0048 | **+0.0027** | [-0.0043, +0.0089] | **WITHIN FLOOR** (|delta| <= floor 0.0081) |
-| `cond.own_team_r2.all` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0063 [+0.0063, +0.0063] | +0.0048 | **+0.0015** | [-0.0046, +0.0072] | **WITHIN FLOOR** (|delta| <= floor 0.0081) |
-| `cond.own_team_r2.all` | UNMATCHED (as traced) | +0.0063 | +0.0048 | **+0.0015** | [-0.0046, +0.0072] | *no label — not a reading* |
-| `cond.opp_class_auc.t1` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.4735 [+0.4691, +0.4769] | +0.5137 | **-0.0401** | [-0.0660, -0.0140] | **DETECTED** (CI clears the floor +0.0118) |
-| `cond.opp_class_auc.t1` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.4731 [+0.4731, +0.4731] | +0.5137 | **-0.0406** | [-0.0667, -0.0145] | **DETECTED** (CI clears the floor +0.0118) |
-| `cond.opp_class_auc.t1` | UNMATCHED (as traced) | +0.4731 | +0.5137 | **-0.0406** | [-0.0667, -0.0145] | *no label — not a reading* |
-| `cond.opp_class_auc.t1_3` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.6218 [+0.6167, +0.6231] | +0.6005 | **+0.0213** | [-0.0021, +0.0445] | **NOT DETECTED** (CI covers zero) |
-| `cond.opp_class_auc.t1_3` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.6239 [+0.6239, +0.6239] | +0.6005 | **+0.0234** | [+0.0001, +0.0463] | **DETECTED** (vs ZERO — NO FLOOR) |
-| `cond.opp_class_auc.t1_3` | UNMATCHED (as traced) | +0.6239 | +0.6005 | **+0.0234** | [+0.0001, +0.0463] | *no label — not a reading* |
-| `cond.opp_class_auc.t4_10` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.7501 [+0.7490, +0.7511] | +0.7169 | **+0.0332** | [+0.0124, +0.0534] | **DETECTED** (vs ZERO — NO FLOOR) |
-| `cond.opp_class_auc.t4_10` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.7590 [+0.7590, +0.7590] | +0.7169 | **+0.0421** | [+0.0209, +0.0620] | **DETECTED** (vs ZERO — NO FLOOR) |
-| `cond.opp_class_auc.t4_10` | UNMATCHED (as traced) | +0.7590 | +0.7169 | **+0.0421** | [+0.0209, +0.0620] | *no label — not a reading* |
-| `cond.spread_ratio_optimal.t1_3` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0357 [+0.0348, +0.0365] | +0.0268 | **+0.0089** | [+0.0014, +0.0159] | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| `cond.spread_ratio_optimal.t1_3` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0357 [+0.0357, +0.0357] | +0.0268 | **+0.0090** | [+0.0014, +0.0164] | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| `cond.spread_ratio_optimal.t1_3` | UNMATCHED (as traced) | +0.0357 | +0.0268 | **+0.0090** | [+0.0014, +0.0164] | *no label — not a reading* |
-| `cond.spread_ratio_optimal.t4_10` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.1594 [+0.1585, +0.1605] | +0.1354 | **+0.0240** | [-0.0002, +0.0485] | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| `cond.spread_ratio_optimal.t4_10` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.1596 [+0.1596, +0.1596] | +0.1354 | **+0.0242** | [-0.0003, +0.0500] | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| `cond.spread_ratio_optimal.t4_10` | UNMATCHED (as traced) | +0.1596 | +0.1354 | **+0.0242** | [-0.0003, +0.0500] | *no label — not a reading* |
-| `cond.spread_ratio_optimal.t11_24` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.2075 [+0.2064, +0.2084] | +0.2009 | **+0.0066** | [-0.0277, +0.0401] | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| `cond.spread_ratio_optimal.t11_24` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.2076 [+0.2076, +0.2076] | +0.2009 | **+0.0067** | [-0.0285, +0.0413] | **PROVISIONAL — no floor; never DETECTED** (a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE `cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's 0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is between-opponent spread that rides on BOARD STATE correlated with the opponent rather than on opponent identity. A delta between two sides is a difference in how much opponent IDENTITY each side's output carries; it is reported, and it is never DETECTED) |
-| `cond.spread_ratio_optimal.t11_24` | UNMATCHED (as traced) | +0.2076 | +0.2009 | **+0.0067** | [-0.0285, +0.0413] | *no label — not a reading* |
-| `cond.within_team_resolution.all` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0655 [+0.0642, +0.0665] | +0.0595 | **+0.0060** | [-0.0010, +0.0107] | **NOT DETECTED** (CI covers zero) |
-| `cond.within_team_resolution.all` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0652 [+0.0652, +0.0652] | +0.0595 | **+0.0057** | [-0.0012, +0.0109] | **NOT DETECTED** (CI covers zero) |
-| `cond.within_team_resolution.all` | UNMATCHED (as traced) | +0.0652 | +0.0595 | **+0.0057** | [-0.0012, +0.0109] | *no label — not a reading* |
-| `cond.within_stratum_resolution.all` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0366 [+0.0348, +0.0370] | +0.0305 | **+0.0061** | [+0.0010, +0.0115] | **NOT DETECTED** (CI does not clear the floor 0.0028) |
-| `cond.within_stratum_resolution.all` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0353 [+0.0353, +0.0353] | +0.0305 | **+0.0048** | [-0.0002, +0.0101] | **NOT DETECTED** (CI covers zero) |
-| `cond.within_stratum_resolution.all` | UNMATCHED (as traced) | +0.0353 | +0.0305 | **+0.0048** | [-0.0002, +0.0101] | *no label — not a reading* |
-| `cond.team_spread_ratio.t1_3` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.6544 [+0.6319, +0.6887] | +2.0616 | **-1.4072** | [-0.3824, -0.1831] | **NOT DETECTED** (CI does not clear the floor 1.3970) |
-| `cond.team_spread_ratio.t1_3` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.6553 [+0.6553, +0.6553] | +2.0616 | **-1.4063** | [-0.3831, -0.1814] | **NOT DETECTED** (CI does not clear the floor 1.3970) |
-| `cond.team_spread_ratio.t1_3` | UNMATCHED (as traced) | +0.6553 | +2.0616 | **-1.4063** | [-0.3831, -0.1814] | *no label — not a reading* |
-| `cond.team_spread_ratio_raw.t1_3` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.3031 [+0.2999, +0.3059] | +0.5732 | **-0.2701** | [-0.2368, -0.1571] | **NOT DETECTED** (CI does not clear the floor 0.2470) |
-| `cond.team_spread_ratio_raw.t1_3` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.3041 [+0.3041, +0.3041] | +0.5732 | **-0.2691** | [-0.2356, -0.1541] | **NOT DETECTED** (CI does not clear the floor 0.2470) |
-| `cond.team_spread_ratio_raw.t1_3` | UNMATCHED (as traced) | +0.3041 | +0.5732 | **-0.2691** | [-0.2356, -0.1541] | *no label — not a reading* |
-| `cond.own_team_r2.late` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0093 [+0.0068, +0.0117] | +0.0028 | **+0.0066** | [-0.0048, +0.0176] | **NOT DETECTED** (CI covers zero) |
-| `cond.own_team_r2.late` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0107 [+0.0107, +0.0107] | +0.0028 | **+0.0080** | [-0.0032, +0.0193] | **NOT DETECTED** (CI covers zero) |
-| `cond.own_team_r2.late` | UNMATCHED (as traced) | +0.0107 | +0.0028 | **+0.0080** | [-0.0032, +0.0193] | *no label — not a reading* |
-| `cond.own_team_r2.t1_minus_late` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.0151 [+0.0133, +0.0187] | +0.0348 | **-0.0197** | [-0.0372, -0.0026] | **PROVISIONAL — no floor; never DETECTED** (NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE — every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED) |
-| `cond.own_team_r2.t1_minus_late` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +0.0141 [+0.0141, +0.0141] | +0.0348 | **-0.0207** | [-0.0384, -0.0038] | **PROVISIONAL — no floor; never DETECTED** (NO FLOOR EXISTS FOR THIS ROW AND THE CONTROLS CANNOT SUPPLY ONE — every control reads own-team R^2 ~= 0 at turn 1, so there is nothing for it to FALL from and the two-draw replicate floor cannot be formed. The first replicate arm supplies it. A LARGE move either way is informative; a small one is not; and this row is never DETECTED) |
-| `cond.own_team_r2.t1_minus_late` | UNMATCHED (as traced) | +0.0141 | +0.0348 | **-0.0207** | [-0.0384, -0.0038] | *no label — not a reading* |
-| `cond.calibration_slope.within_stratum` | MATCHED · battle 400/188/5 (4756 battles, 4597 decoder battles, 21 seeds) | +0.9621 [+0.9515, +0.9694] | +1.0067 | **-0.0446** | [-0.1434, +0.0537] | **NOT DETECTED** (CI covers zero) |
-| `cond.calibration_slope.within_stratum` | MATCHED · decoder 450/212/5 (4763 battles, 4604 decoder battles, 21 seeds) | +1.0040 [+1.0040, +1.0040] | +1.0067 | **-0.0027** | [-0.1029, +0.0937] | **NOT DETECTED** (CI covers zero) |
-| `cond.calibration_slope.within_stratum` | UNMATCHED (as traced) | +1.0040 | +1.0067 | **-0.0027** | [-0.1029, +0.0937] | *no label — not a reading* |
+| `cond.spread_ratio_raw.t1_3` | MATCHED · battle 8/12/2 (206 battles, 57 decoder battles, 21 seeds) | +0.1728 [+0.1277, +0.2174] | +0.3333 | **-0.1605** | [-0.4637, -0.0230] | **NOT DETECTED** (CI does not clear the floor 0.1327) |
+| `cond.spread_ratio_raw.t1_3` | MATCHED · decoder 12/18/2 (278 battles, 109 decoder battles, 21 seeds) | +0.1401 [+0.0920, +0.1915] | +0.3333 | **-0.1932** | [-0.4954, -0.0642] | **NOT DETECTED** (CI does not clear the floor 0.1327) |
+| `cond.spread_ratio_raw.t1_3` | UNMATCHED (as traced) | +0.0960 | +0.3333 | **-0.2373** | [-0.5543, -0.1464] | *no label — not a reading* |
+| `cond.spread_ratio_raw.all` | MATCHED · battle 8/12/2 (206 battles, 57 decoder battles, 21 seeds) | +0.6225 [+0.5226, +0.7842] | +0.8053 | **-0.1828** | [-0.5451, +0.1526] | **WITHIN FLOOR** (|delta| <= floor 0.3852) |
+| `cond.spread_ratio_raw.all` | MATCHED · decoder 12/18/2 (278 battles, 109 decoder battles, 21 seeds) | +0.6455 [+0.5604, +0.7254] | +0.8053 | **-0.1598** | [-0.5392, +0.1634] | **WITHIN FLOOR** (|delta| <= floor 0.3852) |
+| `cond.spread_ratio_raw.all` | UNMATCHED (as traced) | +0.6205 | +0.8053 | **-0.1849** | [-0.5624, +0.0749] | *no label — not a reading* |
+| `cond.own_team_r2.t1` | MATCHED · battle 8/12/2 (206 battles, 57 decoder battles, 21 seeds) | -0.0777 [-0.2131, +0.1347] | -0.0237 | **-0.0540** | [-0.2076, +0.0699] | **NOT DETECTED** (CI covers zero) |
+| `cond.own_team_r2.t1` | MATCHED · decoder 12/18/2 (278 battles, 109 decoder battles, 21 seeds) | -0.0280 [-0.0854, +0.0461] | -0.0237 | **-0.0043** | [-0.0677, +0.0724] | **WITHIN FLOOR** (|delta| <= floor 0.0123) |
+| `cond.own_team_r2.t1` | UNMATCHED (as traced) | +0.0018 | -0.0237 | **+0.0255** | [+0.0003, +0.1125] | *no label — not a reading* |
+| `cond.own_team_r2.all` | MATCHED · battle 8/12/2 (206 battles, 57 decoder battles, 21 seeds) | -0.0509 [-0.1664, +0.2548] | -0.0098 | **-0.0411** | [-0.2561, +0.0424] | **NOT DETECTED** (CI covers zero) |
+| `cond.own_team_r2.all` | MATCHED · decoder 12/18/2 (278 battles, 109 decoder battles, 21 seeds) | +0.0575 [-0.0508, +0.1252] | -0.0098 | **+0.0673** | [-0.0625, +0.1964] | **NOT DETECTED** (CI covers zero) |
+| `cond.own_team_r2.all` | UNMATCHED (as traced) | +0.0850 | -0.0098 | **+0.0948** | [+0.0269, +0.1756] | *no label — not a reading* |
+| `cond.opp_class_auc.t1` | MATCHED · battle 8/12/2 (206 battles, 57 decoder battles, 21 seeds) | +0.4276 [+0.3723, +0.5626] | +0.4619 | **-0.0343** | [-0.1697, +0.1018] | **WITHIN FLOOR** (|delta| <= floor 0.0666) |
+| `cond.opp_class_auc.t1` | MATCHED · decoder 12/18/2 (278 battles, 109 decoder battles, 21 seeds) | +0.4812 [+0.3881, +0.5781] | +0.4619 | **+0.0193** | [-0.1106, +0.1487] | **WITHIN FLOOR** (|delta| <= floor 0.0666) |
+| `cond.opp_class_auc.t1` | UNMATCHED (as traced) | +0.5082 | +0.4619 | **+0.0463** | [-0.0646, +0.1511] | *no label — not a reading* |
 
 The subsampled side's value is the **across-seed median** and the bracket beside it is the **2.5/97.5 across-seed spread**, i.e. how much the answer depends on WHICH battles the cut kept. The Δ's interval is the **median seed's own battle-clustered bootstrap** differenced against the other side's — the seed count is odd, so the median is an exact order statistic and the point and the interval describe the same draw. The label is decided on the BATTLE-matched rung; the DECODER-matched rung is printed beside it because `MIN_TEAM_BATTLES = 4` makes the own-team decoder's frame a nonlinear function of team diversity, so equal battle counts can leave the richer side's decoder with FEWER battles than the poorer side's (62 against 104 in the 2026-09-09 read) — battle-matching is then unfair to it.
 
@@ -327,40 +165,16 @@ Each run's OWN point and interval, so a delta is never the only number on the pa
 
 | quantity | arm | 95% CI | control | 95% CI |
 |---|---|---|---|---|
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `turn 1-3` | +0.1365 | [+0.1175, +0.1601] | +0.1774 | [+0.1491, +0.2145] |
-| the same ratio UNCORRECTED and unclamped · `turn 1-3` | +0.1376 | [+0.1190, +0.1609] | +0.1804 | [+0.1527, +0.2168] |
-| sd(V) - sd(outcome), noise-corrected · `turn 1-3` | -0.1135 | [-0.1277, -0.1004] | -0.0987 | [-0.1130, -0.0855] |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `all states` | +0.6505 | [+0.5774, +0.7347] | +0.6680 | [+0.5832, +0.7618] |
-| the same ratio UNCORRECTED and unclamped · `all states` | +0.6474 | [+0.5757, +0.7298] | +0.6644 | [+0.5812, +0.7564] |
-| sd(V) - sd(outcome), noise-corrected · `all states` | -0.0459 | [-0.0614, -0.0318] | -0.0398 | [-0.0549, -0.0259] |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `turn 4-10` | +0.4888 | [+0.4340, +0.5548] | +0.5451 | [+0.4783, +0.6200] |
-| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `turn 11-24` | +0.7272 | [+0.6436, +0.8262] | +0.7482 | [+0.6573, +0.8546] |
-| own-team leave-one-battle-out win-rate R^2 of V · `turn 1` | +0.0249 | [+0.0155, +0.0329] | +0.0376 | [+0.0259, +0.0493] |
-| own-team leave-one-battle-out win-rate R^2 of V · `all states` | +0.0063 | [+0.0019, +0.0103] | +0.0048 | [+0.0003, +0.0090] |
-| opponent-CLASS (pool vs bot) AUC of V · `turn 1` | +0.4731 | [+0.4543, +0.4920] | +0.5137 | [+0.4959, +0.5325] |
-| opponent-CLASS (pool vs bot) AUC of V · `turn 1-3` | +0.6239 | [+0.6083, +0.6403] | +0.6005 | [+0.5844, +0.6181] |
-| opponent-CLASS (pool vs bot) AUC of V · `turn 4-10` | +0.7590 | [+0.7450, +0.7731] | +0.7169 | [+0.7025, +0.7312] |
-| OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above) · `turn 1-3` | +0.0357 | [+0.0310, +0.0420] | +0.0268 | [+0.0226, +0.0326] |
-| OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above) · `turn 4-10` | +0.1596 | [+0.1422, +0.1799] | +0.1354 | [+0.1192, +0.1537] |
-| OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above) · `turn 11-24` | +0.2076 | [+0.1848, +0.2336] | +0.2009 | [+0.1781, +0.2283] |
-| WITHIN-own-team Murphy resolution of V (cells >= MIN_TEAM_BATTLES battles, battle-weighted over teams) · `all states, <=2 per battle` | +0.0652 | [+0.0593, +0.0679] | +0.0595 | [+0.0543, +0.0629] |
-| the same resolution WITHIN team-STRENGTH strata (quantiles of the team's LOO win rate) · `all states, <=2 per battle` | +0.0353 | [+0.0320, +0.0399] | +0.0305 | [+0.0277, +0.0347] |
-| BETWEEN-team spread ratio sd(mean V) / sd(team win rate), noise-corrected · `turn 1-3` | +0.6553 | [+0.2702, +0.3554] | +2.0616 | [+0.5026, +0.6841] |
-| the same ratio UNCORRECTED and unclamped · `turn 1-3` | +0.3041 | [+0.2311, +0.2683] | +0.5732 | [+0.4093, +0.4831] |
-| own-team leave-one-battle-out win-rate R^2 of V · `turn >= 25` | +0.0107 | [+0.0009, +0.0197] | +0.0028 | [-0.0038, +0.0079] |
-| own-team R^2 at turn 1 MINUS own-team R^2 late · `turn 1 - turn >= 25` | +0.0141 | [+0.0013, +0.0266] | +0.0348 | [+0.0229, +0.0473] |
-| calibration SLOPE — weighted logistic regression of the outcome on logit(V) (1 = correctly dispersed, >1 = SHRUNK, <1 = over-dispersed) · `all states, <=2 per battle` | +1.0247 | [+0.9623, +1.0900] | +1.0719 | [+1.0083, +1.1389] |
-| calibration-in-the-large — the INTERCEPT of that regression (0 = calibrated) · `all states, <=2 per battle` | +0.2003 | [+0.0792, +0.3114] | +0.4257 | [+0.3162, +0.5278] |
-| calibration SLOPE — weighted logistic regression of the outcome on logit(V) · `turn 1-3, <=2 per battle` | +0.9017 | [+0.7902, +1.0160] | +0.8379 | [+0.7197, +0.9623] |
-| calibration-in-the-large — the INTERCEPT of that regression · `turn 1-3, <=2 per battle` | +0.1772 | [-0.0205, +0.3671] | +0.9122 | [+0.7647, +1.0621] |
-| calibration SLOPE with a free intercept PER own-team STRENGTH STRATUM — the dispersion reading INSIDE a stratum rather than across teams · `all states, <=2 per battle, stratum fixed effects` | +1.0040 | [+0.9374, +1.0795] | +1.0067 | [+0.9405, +1.0788] |
-| calibration SLOPE on the COMMON SUPPORT — both sides restricted to the intersection of their central 95% of V, so the lever arm sd(logit V) cannot differ between them · `all states, <=2 per battle, common V window` | +1.0291 | [+0.9572, +1.1046] | +1.0558 | [+0.9821, +1.1356] |
-| calibration-in-the-large on the COMMON SUPPORT · `all states, <=2 per battle, common V window` | +0.1926 | [+0.0616, +0.3176] | +0.4441 | [+0.3246, +0.5577] |
-
-**Rows OMITTED, with the reason** — an unsupported meter is never emitted as a NaN that reads like a measurement:
-
-- `cond.elo_slope` · arm: 3 sentinel opponents and no eval_results.jsonl — the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED.
-- `cond.elo_slope` · control: 3 sentinel opponents and no eval_results.jsonl — the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED.
+| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `turn 1-3` | +0.0660 | [+0.0362, +0.1487] | +0.1152 | [+0.0000, +0.6098] |
+| the same ratio UNCORRECTED and unclamped · `turn 1-3` | +0.0960 | [+0.0751, +0.1616] | +0.3333 | [+0.2703, +0.6582] |
+| sd(V) - sd(outcome), noise-corrected · `turn 1-3` | -0.1079 | [-0.1350, -0.0822] | -0.0886 | [-0.1059, -0.0353] |
+| between-opponent spread ratio sd(V)/sd(outcome), noise-corrected · `all states` | +0.6308 | [+0.4790, +0.8245] | +0.7895 | [+0.5725, +1.1703] |
+| the same ratio UNCORRECTED and unclamped · `all states` | +0.6205 | [+0.4785, +0.7933] | +0.8053 | [+0.6030, +1.1480] |
+| sd(V) - sd(outcome), noise-corrected · `all states` | -0.0426 | [-0.0735, -0.0168] | -0.0211 | [-0.0534, +0.0144] |
+| slope of bias (V - true win rate) on opponent Elo, per 100 Elo · `all states` | +0.0167 | [+0.0090, +0.0249] | +0.0098 | [-0.0006, +0.0193] |
+| own-team leave-one-battle-out win-rate R^2 of V · `turn 1` | +0.0018 | [-0.0194, +0.0169] | -0.0237 | [-0.1122, -0.0067] |
+| own-team leave-one-battle-out win-rate R^2 of V · `all states` | +0.0850 | [+0.0385, +0.1210] | -0.0098 | [-0.0867, +0.0421] |
+| opponent-CLASS (pool vs bot) AUC of V · `turn 1` | +0.5082 | [+0.4578, +0.5538] | +0.4619 | [+0.3675, +0.5582] |
 
 ⚠️ **Recorded `V`, one cycle.** every conditioning row is computed on ONE eval cycle from the `win_probs` the trace npz RECORDED, which within a cycle IS that cycle's own model — no model forward is done. Pooling a recorded V across cycles would import the trainee's own improvement as between-opponent spread (head-refit hazard 3: CTRL reads 1.079 pooled against 0.066 frozen); this module never pools cycles.
 
@@ -378,7 +192,7 @@ Each run's OWN point and interval, so a delta is never the only number on the pa
 | `bot` | yes | 0.0239 [+0.0168, +0.0334] | 0.0337 | -0.0098 | +0.2260 [+0.1499, +0.2848] | ❌ | ✅ | ✅ | ✅ |
 | `pool` | yes | 0.0656 [+0.0431, +0.0923] | 0.0711 | -0.0055 | +0.2840 [+0.1694, +0.3722] | ❌ | ✅ | ✅ | ✅ |
 
-Identity, capture-rate reweighted: 800 labels / 689 battles / 6400 rollouts · Brier 0.0995 = REL 0.0014 − RES 0.0410 + UNC 0.1394 + WBV 0.0008 (resid -1.10e-03) · base rate 0.8325 · **resolution is 29.4% of the base-rate cap** · corr(turn,V) -0.0935 vs corr(turn,MC) -0.1365
+Identity, capture-rate reweighted: 800 labels / 396 battles / 6400 rollouts · Brier 0.0938 = REL 0.0016 − RES 0.0349 + UNC 0.1277 + WBV 0.0008 (resid -1.39e-03) · base rate 0.8498 · **resolution is 27.3% of the base-rate cap** · corr(turn,V) -0.2290 vs corr(turn,MC) -0.1303
 
 **control — `ai_v12_11_ladder_ctrl10M` @ step_10000032** (`main.critic_gate` verdict: `{"G1": false, "G2": false, "G3": false, "G4": false, "n_gated_rows": 8}`)
 
@@ -388,39 +202,41 @@ Identity, capture-rate reweighted: 800 labels / 689 battles / 6400 rollouts · B
 | `bot` | yes | 0.0187 [+0.0106, +0.0333] | 0.0337 | -0.0149 | +0.1372 [+0.0059, +0.2536] | ❌ | ❌ | ✅ | ✅ |
 | `pool` | yes | 0.0720 [+0.0436, +0.1127] | 0.0711 | +0.0009 | +0.3592 [+0.1599, +0.4649] | ❌ | ✅ | ✅ | ✅ |
 
-Identity, capture-rate reweighted: 800 labels / 678 battles / 6400 rollouts · Brier 0.1002 = REL 0.0036 − RES 0.0315 + UNC 0.1287 + WBV 0.0008 (resid -1.32e-03) · base rate 0.8482 · **resolution is 24.5% of the base-rate cap** · corr(turn,V) -0.1044 vs corr(turn,MC) -0.1168
+Identity, capture-rate reweighted: 800 labels / 185 battles / 6400 rollouts · Brier 0.0930 = REL 0.0038 − RES 0.0300 + UNC 0.1208 + WBV 0.0008 (resid -2.34e-03) · base rate 0.8595 · **resolution is 24.8% of the base-rate cap** · corr(turn,V) -0.1227 vs corr(turn,MC) -0.0286
 
 ## 5. THE LEDGER LINE
 
 ```
-ai_v12_17_ladder_strata vs ai_v12_11_ladder_ctrl10M at 10M [OFFLINE-GENERATED: 400 games x 9+3 opponents, full capture]: G1 bot Δ +0.0013 [-0.0057, +0.0090] WITHIN FLOOR · identity bias late Δ +0.0300 [-0.0210, +0.0820] WITHIN FLOOR · turn-contrast Δ +0.0306 [-0.1333, +0.1911] WITHIN FLOOR · spread ratio t1-3 Δ -0.0409 [-0.0812, -0.0042] WITHIN FLOOR · own-team R2 t1 Δ -0.0127 [-0.0273, +0.0020] WITHIN FLOOR [QUOTA-MATCHED] · calib slope Δ -0.0472 [-0.1380, +0.0479] NOT DETECTED
+ai_v12_17_ladder_strata vs ai_v12_11_ladder_ctrl10M at 10M: G1 bot Δ +0.0052 [-0.0121, +0.0161] WITHIN FLOOR · identity bias late Δ -0.0153 [-0.0929, +0.0585] WITHIN FLOOR · turn-contrast Δ -0.0047 [-0.2340, +0.1806] WITHIN FLOOR · spread ratio t1-3 Δ -0.0493 [-0.5238, +0.0806] NOT DETECTED · own-team R2 t1 Δ -0.0540 [-0.2076, +0.0699] NOT DETECTED [QUOTA-MATCHED]
 ```
 
 ## 6. Provenance — every command and every path
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
-python -m main.ops.critic_read ai_v12_17_ladder_strata --control ai_v12_11_ladder_ctrl10M --step 10000032 --arm-traces /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/ai_v12_17_ladder_strata --control-traces /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/ai_v12_11_ladder_ctrl10M --floor-json /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/hp400_floor.json --out /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_17_ladder_strata_vs_ctrl10M_v6 --nice 15 --ledger-line
+python -m main.ops.critic_read ai_v12_17_ladder_strata --control ai_v12_11_ladder_ctrl10M --step 10000032 --floor-json /home/goodlad/.claude/jobs/9ab51de6/tmp/replicate_floor_10M.json --out /home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata
 
-# arm — ai_v12_17_ladder_strata  [READOUT REUSED FROM CACHE]
-  (no subprocess: the cached readout was reused)
-# control — ai_v12_11_ladder_ctrl10M  [READOUT REUSED FROM CACHE]
-  (no subprocess: the cached readout was reused)
+# arm — ai_v12_17_ladder_strata
+  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m agents.training.cf_audit /home/goodlad/dev/gen3ai/models/ai_v12_17_ladder_strata --step 10000032 --impl rust --rollouts 8 --states 800 --anchors 150 --seed 0 --anchor-tolerance 0.9 --out /home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/identity
+  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.critic_gate /home/goodlad/dev/gen3ai/models/ai_v12_17_ladder_strata --parent v9_fold_parent --famine-comparator off --skip-meter --boot 400 --seed 0 --reliability-bins 10 --json /home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/gate/critic_gate.json --md /home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/gate/critic_gate.md
+# control — ai_v12_11_ladder_ctrl10M
+  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m agents.training.cf_audit /home/goodlad/dev/gen3ai/models/ai_v12_11_ladder_ctrl10M --step 10000032 --impl rust --rollouts 8 --states 800 --anchors 150 --seed 0 --anchor-tolerance 0.9 --out /home/goodlad/.claude/jobs/9ab51de6/tmp/ai_v12_11_ladder_ctrl10M/identity
+  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.critic_gate /home/goodlad/dev/gen3ai/models/ai_v12_11_ladder_ctrl10M --parent v9_fold_parent --famine-comparator off --skip-meter --boot 400 --seed 0 --reliability-bins 10 --json /home/goodlad/.claude/jobs/9ab51de6/tmp/ai_v12_11_ladder_ctrl10M/gate/critic_gate.json --md /home/goodlad/.claude/jobs/9ab51de6/tmp/ai_v12_11_ladder_ctrl10M/gate/critic_gate.md
 ```
 
 | what | path |
 |---|---|
 | arm run dir (READ-ONLY) | `/home/goodlad/dev/gen3ai/models/ai_v12_17_ladder_strata` |
-| arm trace dir | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/ai_v12_17_ladder_strata/eval_traces/step_10000032` |
-| arm identity | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_17_ladder_strata_vs_ctrl10M/identity` |
-| arm gate | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_17_ladder_strata_vs_ctrl10M/gate` |
-| arm identity_payload | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_17_ladder_strata_vs_ctrl10M/identity_payload.json` |
+| arm trace dir | `/home/goodlad/dev/gen3ai/models/ai_v12_17_ladder_strata/eval_traces/step_10000032` |
+| arm identity | `/home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/identity` |
+| arm gate | `/home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/gate` |
+| arm identity_payload | `/home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/identity_payload.json` |
 | control run dir (READ-ONLY) | `/home/goodlad/dev/gen3ai/models/ai_v12_11_ladder_ctrl10M` |
-| control trace dir | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/ai_v12_11_ladder_ctrl10M/eval_traces/step_10000032` |
-| control identity | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_11_ladder_ctrl10M__offline/identity` |
-| control gate | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_11_ladder_ctrl10M__offline/gate` |
-| control identity_payload | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_11_ladder_ctrl10M__offline/identity_payload.json` |
-| this report | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_17_ladder_strata_vs_ctrl10M_v6/critic_read.md` |
-| machine-readable | `/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/reads/ai_v12_17_ladder_strata_vs_ctrl10M_v6/critic_read.json` |
+| control trace dir | `/home/goodlad/dev/gen3ai/models/ai_v12_11_ladder_ctrl10M/eval_traces/step_10000032` |
+| control identity | `/home/goodlad/.claude/jobs/9ab51de6/tmp/ai_v12_11_ladder_ctrl10M/identity` |
+| control gate | `/home/goodlad/.claude/jobs/9ab51de6/tmp/ai_v12_11_ladder_ctrl10M/gate` |
+| control identity_payload | `/home/goodlad/.claude/jobs/9ab51de6/tmp/ai_v12_11_ladder_ctrl10M/identity_payload.json` |
+| this report | `/home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/critic_read.md` |
+| machine-readable | `/home/goodlad/.claude/jobs/9ab51de6/tmp/read_strata/critic_read.json` |
 
 Bootstraps: identity 4000 draws, gate 400 draws, seed 0, unit = BATTLE, deltas = difference of INDEPENDENT bootstraps. Nothing was written under `models/`.
