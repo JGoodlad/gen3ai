@@ -248,46 +248,69 @@ def main(a):
     # ── THE READING RULE, in code ────────────────────────────────────────────
     oracle_ci = sp["ci"].get(f"{ns[-1]}|cond_oracle|t1_3|ratio") or [None, None]
     guard_ok = bool(oracle_ci[0] is not None and oracle_ci[0] >= 0.80)
-    tr_ratio = trend.get("ratio|t1_3|mlp_term")
-    tr_ratio_mid = trend.get("ratio|mid|mlp_term")
+    mid_n = [n for n in ns if n <= 8000][-1]
+
+    def pos(d):
+        """DETECTED and in the RIGHT DIRECTION. The registered rule said only `detected`, which
+        is satisfied by a CI clear of zero on the WRONG side — and on this frame the conditional
+        arm is detected BELOW the online head on most buckets, so the sign has to be in the rule."""
+        return bool(d and detected(d["ci"]) and (d["point"] or 0) > 0)
+
+    tr = {bk: trend.get(f"ratio|{bk}|mlp_term") for bk in ("t1", "t1_3", "mid", "all")}
     tr_class = trend.get("t4_10|opp_class|mlp_term")
     tr_team = trend.get("t1|own_team_wr|mlp_term")
-    rise_ratio = bool((tr_ratio and detected(tr_ratio["ci"]) and tr_ratio["point"] > 0)
-                      or (tr_ratio_mid and detected(tr_ratio_mid["ci"])
-                          and tr_ratio_mid["point"] > 0))
-    rise_class = bool(tr_class and detected(tr_class["ci"]) and tr_class["point"] > 0)
-    rise_team = bool(tr_team and detected(tr_team["ci"]) and tr_team["point"] > 0)
-    # is mlp_cond detected above `online` at EVERY N?
-    cond_every_n = all(detected((sp["delta"].get(f"{n}|mlp_cond-online|t1_3|ratio") or {})
-                                .get("ci")) for n in ns)
-    # the EARLY vs LATE segment, for the (iii) branch
-    mid = [n for n in ns if n <= 8000][-1]
-    seg_early = sp["delta"].get(f"{mid}|mlp_term-{ns[0]}|mlp_term|t1_3|ratio")
-    seg_late = sp["delta"].get(f"{ns[-1]}|mlp_term-{mid}|mlp_term|t1_3|ratio")
-    if rise_ratio or rise_class:
-        if (seg_early and not detected(seg_early["ci"])) and (seg_late
-                                                              and detected(seg_late["ci"])):
-            verdict = "(iii) LATE RISE"
-        else:
-            verdict = "(i) RISE"
-    elif cond_every_n:
+    rise_buckets = [bk for bk in ("t1_3", "mid", "all") if pos(tr[bk])]
+    rise = bool(rise_buckets) or pos(tr_class)
+    seg_early = sp["delta"].get(f"{mid_n}|mlp_term-{ns[0]}|mlp_term|mid|ratio")
+    seg_late = sp["delta"].get(f"{ns[-1]}|mlp_term-{mid_n}|mlp_term|mid|ratio")
+    # the row that separates "the curve climbs toward the run's OWN head" from "stationary data
+    # buys conditioning the online head does not have"
+    vs_online = {bk: sp["delta"].get(f"{ns[-1]}|mlp_term-online|{bk}|ratio")
+                 for bk in ("t1", "t1_3", "mid", "all")}
+    exceeds = [bk for bk, d in vs_online.items() if pos(d)]
+
+    if rise and pos(seg_early) and not pos(seg_late):
+        verdict = "(i) RISE, SATURATED by N=%d" % mid_n
+    elif rise and not pos(seg_early) and pos(seg_late):
+        verdict = "(iii) LATE RISE"
+    elif rise:
+        verdict = "(i) RISE, still climbing at N_max"
+    elif guard_ok:
         verdict = "(ii) FLAT"
     else:
-        verdict = "MIXED"
-    reading = {"verdict": verdict, "n_doublings": round(n_doub, 3), "guard_cond_oracle_ge_0.80": guard_ok,
+        verdict = "MIXED — no trend AND the meter is not shown to be movable on this frame"
+
+    # what the REGISTERED rule (PREDICTION.md) would have emitted, reported beside the amended
+    # one rather than quietly replaced. Its (ii) clause required `mlp_cond` to be DETECTED above
+    # `online` at every N as a liveness check; on this frame the conditional target is detected
+    # BELOW the online head, which the registered wording could not express.
+    cond_every_n = all(detected((sp["delta"].get(f"{n}|mlp_cond-online|t1_3|ratio") or {})
+                                .get("ci")) for n in ns)
+    reg_rise = bool((tr["t1_3"] and detected(tr["t1_3"]["ci"]) and tr["t1_3"]["point"] > 0)
+                    or (tr_class and detected(tr_class["ci"]) and tr_class["point"] > 0))
+    verdict_registered = ("(i) RISE" if reg_rise else
+                          ("(ii) FLAT" if cond_every_n else "MIXED"))
+
+    reading = {"verdict": verdict, "verdict_as_registered": verdict_registered,
+               "n_doublings": round(n_doub, 3),
+               "guard_cond_oracle_ge_0.80": guard_ok,
                "cond_oracle_t1_3_ratio_ci_at_Nmax": oracle_ci,
-               "trend_ratio_t1_3_mlp_term": tr_ratio,
-               "trend_ratio_mid_mlp_term": tr_ratio_mid,
+               "trend_ratio_mlp_term": tr,
                "trend_opp_class_t4_10_mlp_term": tr_class,
-               "trend_own_team_wr_mlp_term": tr_team,
-               "rise_ratio": rise_ratio, "rise_opp_class": rise_class,
-               "rise_own_team_wr": rise_team,
-               "mlp_cond_detected_at_every_N": cond_every_n,
-               "segment_early": seg_early, "segment_late": seg_late,
+               "trend_own_team_wr_t1_mlp_term": tr_team,
+               "rise_buckets": rise_buckets, "rise": rise,
+               "segment_1k_to_%d_mid" % mid_n: seg_early,
+               "segment_%d_to_Nmax_mid" % mid_n: seg_late,
+               "mlp_term_at_Nmax_vs_online": vs_online,
+               "mlp_term_EXCEEDS_online_at_Nmax_in": exceeds,
+               "online_ratio": {bk: sp["point"].get(f"online|{bk}|ratio")
+                                for bk in ("t1", "t1_3", "mid", "all")},
+               "mlp_cond_detected_at_every_N_either_sign": cond_every_n,
                "more_optimisation": longres}
     out.append("## 6. THE READING — emitted by the rule, not by the author")
     out.append("")
-    out.append(f"**{verdict}**" + ("" if guard_ok else
+    out.append(f"**{verdict}**  ·  as the PRE-REGISTERED wording would have emitted it: "
+               f"**{verdict_registered}**" + ("" if guard_ok else
                                    "  ⚠️ the `cond_oracle` guard is NOT met — the (b) column is "
                                    "INCONCLUSIVE and is not folded into this reading"))
     out.append("")

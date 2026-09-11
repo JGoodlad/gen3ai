@@ -114,6 +114,12 @@ def calib_slope(p, y, w, iters=50):
         beta = beta + step
         if np.max(np.abs(step)) < 1e-9:
             break
+    # 🚨 A SATURATED PREDICTION MAKES THIS DIVERGE, AND IT DID. The 5x-steps no-early-stop arm
+    # pushes some held-out predictions to 0/1 at machine precision; `logit(p)` then hits the
+    # +-13.8 clip, the design matrix separates, and IRLS runs |beta| off to ~1e9. A slope of
+    # -6.0e9 is not a calibration reading, so it is REFUSED rather than printed.
+    if not np.isfinite(beta[1]) or abs(beta[1]) > 50.0:
+        return np.nan
     return float(beta[1])
 
 
@@ -336,6 +342,13 @@ def main(a):
         if N != ns[0] and f"{N}|mlp_term" in preds:
             pairs.append((f"{N}|mlp_term", f"{ns[0]}|mlp_term"))   # the N-TREND row
             pairs.append((f"{N}|mlp_cond", f"{ns[0]}|mlp_cond"))
+            prev = ns[ns.index(N) - 1]                             # the CONSECUTIVE segment:
+            for c in ("mlp_term", "mlp_cond"):                     # where in N the rise happens
+                pairs.append((f"{N}|{c}", f"{prev}|{c}"))
+    mid_n = [n for n in ns if n <= 8000][-1]
+    for c in ("mlp_term", "mlp_cond"):                             # the EARLY / LATE split
+        pairs.append((f"{mid_n}|{c}", f"{ns[0]}|{c}"))
+        pairs.append((f"{ns[-1]}|{c}", f"{mid_n}|{c}"))
     for c in ("mlp_term", "mlp_cond"):
         k = f"{ns[-1]}|{c}_long"
         if k in preds:

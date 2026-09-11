@@ -1,0 +1,99 @@
+{
+ "verdict": "(i) RISE",
+ "n_doublings": 4.425,
+ "guard_cond_oracle_ge_0.80": true,
+ "cond_oracle_t1_3_ratio_ci_at_Nmax": [
+  0.9256,
+  1.0231
+ ],
+ "trend_ratio_t1_3_mlp_term": {
+  "point": 0.0805,
+  "ci": [
+   0.064,
+   0.0961
+  ]
+ },
+ "trend_ratio_mid_mlp_term": {
+  "point": 0.1816,
+  "ci": [
+   0.1575,
+   0.2089
+  ]
+ },
+ "trend_opp_class_t4_10_mlp_term": {
+  "point": 0.0345,
+  "ci": [
+   0.0259,
+   0.0441
+  ]
+ },
+ "trend_own_team_wr_mlp_term": {
+  "point": 0.0443,
+  "ci": [
+   0.0298,
+   0.0605
+  ]
+ },
+ "rise_ratio": true,
+ "rise_opp_class": true,
+ "rise_own_team_wr": true,
+ "mlp_cond_detected_at_every_N": false,
+ "segment_early": {
+  "point": 0.0613,
+  "ci": [
+   0.0511,
+   0.0773
+  ]
+ },
+ "segment_late": null,
+ "more_optimisation": {
+  "mlp_term": {
+   "ratio_t1_3": {
+    "point": 0.0165,
+    "ci": [
+     -0.0033,
+     0.0795
+    ]
+   },
+   "opp_class": [
+    -0.0669,
+    -0.0297
+   ],
+   "own_team_wr": [
+    -0.059,
+    -0.0063
+   ],
+   "brier": {
+    "point": 0.01864,
+    "ci": [
+     0.01376,
+     0.02331
+    ]
+   }
+  },
+  "mlp_cond": {
+   "ratio_t1_3": {
+    "point": 0.0255,
+    "ci": [
+     0.0164,
+     0.0364
+    ]
+   },
+   "opp_class": [
+    -0.0017,
+    0.0159
+   ],
+   "own_team_wr": [
+    0.0305,
+    0.072
+   ],
+   "brier": {
+    "point": 0.00068,
+    "ci": [
+     -0.00074,
+     0.00222
+    ]
+   }
+  }
+ }
+}

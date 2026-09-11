@@ -1,0 +1,99 @@
+{
+ "verdict": "MIXED",
+ "n_doublings": 4.426,
+ "guard_cond_oracle_ge_0.80": true,
+ "cond_oracle_t1_3_ratio_ci_at_Nmax": [
+  0.9413,
+  1.045
+ ],
+ "trend_ratio_t1_3_mlp_term": {
+  "point": 0.0053,
+  "ci": [
+   -0.0119,
+   0.0158
+  ]
+ },
+ "trend_ratio_mid_mlp_term": {
+  "point": -0.0004,
+  "ci": [
+   -0.0202,
+   0.0214
+  ]
+ },
+ "trend_opp_class_t4_10_mlp_term": {
+  "point": -0.0045,
+  "ci": [
+   -0.0115,
+   0.0018
+  ]
+ },
+ "trend_own_team_wr_mlp_term": {
+  "point": 0.0185,
+  "ci": [
+   0.0064,
+   0.0302
+  ]
+ },
+ "rise_ratio": false,
+ "rise_opp_class": false,
+ "rise_own_team_wr": true,
+ "mlp_cond_detected_at_every_N": false,
+ "segment_early": {
+  "point": -0.0081,
+  "ci": [
+   -0.0276,
+   0.005
+  ]
+ },
+ "segment_late": null,
+ "more_optimisation": {
+  "mlp_term": {
+   "ratio_t1_3": {
+    "point": 0.0663,
+    "ci": [
+     0.0353,
+     0.1262
+    ]
+   },
+   "opp_class": [
+    -0.0986,
+    -0.0567
+   ],
+   "own_team_wr": [
+    -0.0531,
+    0.004
+   ],
+   "brier": {
+    "point": 0.02397,
+    "ci": [
+     0.01821,
+     0.03006
+    ]
+   }
+  },
+  "mlp_cond": {
+   "ratio_t1_3": {
+    "point": 0.0496,
+    "ci": [
+     0.0385,
+     0.063
+    ]
+   },
+   "opp_class": [
+    -0.0188,
+    0.0055
+   ],
+   "own_team_wr": [
+    -0.0293,
+    0.0307
+   ],
+   "brier": {
+    "point": -3e-05,
+    "ci": [
+     -0.00191,
+     0.00172
+    ]
+   }
+  }
+ }
+}
