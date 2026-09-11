@@ -5,3 +5,5 @@
 **400-game OFFLINE read (2026-09-09):** `critic_read_hp400.md/json` — both sides 400-game offline-generated cycles, floored by `replicate_floor_10M_hp400.json`; NOT comparable to the 100-game rows above; ledger 2026-09-09 · *THE ARMS AT 400 GAMES* (addendum).
 
 **800-game OFFLINE read (2026-09-10):** `critic_read_hp800.md/json` (seed 20260910; its own floor `../replicate_floor_10M_hp800.json`); ledger 2026-09-10 · *THE ARMS AT 800 GAMES* (addendum).
+
+**Second 800-game eval draw (2026-09-10, seed 20260911):** `critic_read_hp800b.md/json`, floors from `../replicate_floor_10M_hp800b.json`; the bar is the WIDER of the two offline draws (rule 19). Ledger 2026-09-10 · *second eval draw for tdaux and strata*.
