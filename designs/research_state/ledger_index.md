@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,577-line file. **The ledger itself is append-only and is never edited by this**;
+17,594-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**567 headings · 516 dated · 2026-08-01 → 2026-09-11 · ledger 17,577 lines.**
+**568 headings · 517 dated · 2026-08-01 → 2026-09-11 · ledger 17,594 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -587,3 +587,4 @@ rename.
 - `L17477` · `2026-09-11` · OPS: arm 10 `rollout` (`--win-prob-rollout-target 0.0012 --win-prob-rollout-r 8 --win-prob-rollout-mode replace --win-prob-rollout-weight 64`) COMPLETE at 10,027,008 steps — the dose was delivered EXACTLY as registered and held constant for the whole run
   - `L17495` · The registered dose — delivered to the last field, and CONSTANT
   - `L17524` · 🚨 THE `rollout_bot_share` LAG RULE — a cycle-boundary value describes the PREVIOUS window
+  - `L17578` · `2026-09-11` · READ · arm 11 `ai_v12_22_ladder_lambda095` (λ 0.95, the dose point) on the OFFLINE 400/800 frames — the registered directional claim FAILS at its standard (3 of 6 CIs below zero; the point below every control on both draws); the 1.0 / 0.95 / 0.9 curve is monotone by points, and only the 0.9 rung is distinguishable from the controls; the λ family leans DOWN on the turns-4–10 class row at every dose

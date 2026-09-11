@@ -17574,3 +17574,20 @@ never "rollout failed where λ succeeded" — lambda09_b's registered test alrea
 CONFIRMED, and both λ draws sit at or below every control on that row.**
 
 **Standing result after thirteen runs, seven levers: still ZERO detected REGISTERED rows.**
+
+### 2026-09-11 · READ · arm 11 `ai_v12_22_ladder_lambda095` (λ 0.95, the dose point) on the OFFLINE 400/800 frames — the registered directional claim FAILS at its standard (3 of 6 CIs below zero; the point below every control on both draws); the 1.0 / 0.95 / 0.9 curve is monotone by points, and only the 0.9 rung is distinguishable from the controls; the λ family leans DOWN on the turns-4–10 class row at every dose
+
+`measurements/critic_ladder_reads/lambda095_vs_ctrl10M_2026-09-11/`. The arm seeded self-play at 2,162,688 against the controls' 4,128,768 — CROSSING MISMATCH printed on every pair (exposure difference of the λ-0.9 kind, ~0.6 pp).
+
+**The registered row, `cond.spread_ratio.t1_3`, ARM − CONTROL (arm 0.0875 at 400, 0.0837 at 800):**
+
+| draw | vs `ctrl10M` | vs `ctrl10M_b` | vs `ctrl10M_c` |
+|---|---|---|---|
+| 400 (controls 0.177 / 0.111 / 0.128) | −0.090 [−0.128, −0.054] ✓ | −0.024 [−0.048, +0.003] ✗ | −0.041 [−0.069, −0.011] ✓ |
+| 800 (controls 0.145 / 0.103 / 0.092) | −0.062 [−0.089, −0.038] ✓ | −0.019 [−0.038, +0.001] ✗ | −0.009 [−0.029, +0.011] ✗ |
+
+**Verdict: FAIL at the registered standard** (six CIs below zero required; three hold). The point ordering holds six of six — the arm reads below every control on both draws — but against the two replicate controls' lower values (0.09–0.11) the gap is 0.009–0.024, inside the row's own two-draw floor (0.053 / 0.066), so the arm is NOT DISTINGUISHABLE from those controls at one draw. **The dose curve on the 800 frames:** λ 1.0 → 0.145 / 0.103 / 0.092 (three controls); **λ 0.95 → 0.084**; λ 0.9 → 0.048 / 0.052 (two draws, both clear of every control by CI). Monotone by points; the 0.95 rung sits at the bottom of the controls' floor band, the 0.9 rung below it. Per the corrections of 2026-09-11 this row is AMPLITUDE on a window where the decodable part is a lower bound: what is established is that λ 0.9 compresses the early between-opponent spread and λ 0.95 does so at most weakly; whether the compression is in the opponent-decodable part or the residual is not determined by this row.
+
+**Other rows:** resolution bot +0.004 / +0.001 / −0.003 within floor; resolution all +0.005 n.d.; identity bias late +0.015 / −0.053 / −0.017 within floor; own-team R² t1 −0.011 / −0.009 / −0.001 n.d. (rule 18, one draw pair); calibration slope +0.16 vs `ctrl10M_c` n.d., ≈0 vs `ctrl10M_b` (run-level); ECE within floor. **v6 decision row `cond.opp_class_auc.t4_10` (800, matched): 0.697 vs 0.713, Δ −0.016 [−0.031, −0.002] — inside the 0.022 floor by its CI.** With `lambda09` −0.006 and `lambda09_b` −0.022, **all three λ arms sit at or below every control on the one conditioning row with a usable floor** — a family lean DOWN, n.d. at each arm, in the direction the amplitude story predicts (λ buys calibration and gives up opponent conditioning at turns 4–10). Not a claim at n = 3 inside a 0.022 floor; the pattern is recorded for arm 10's read and for any future λ arm.
+
+**Standing:** thirteen runs, seven levers plus the privileged critic, zero detected registered rows; two registered confirmatory tests run to completion, both negative (`lambda09_b` NOT CONFIRMED, `lambda095` FAIL). The λ family is CLOSED as a conditioning lever; it remains the campaign's one measured amplitude/calibration knob, dose-monotone by points. Tag: **MEASURED · REGISTERED CLAIM FAILED · dose curve recorded · λ family closed for conditioning**.
