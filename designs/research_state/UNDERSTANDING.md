@@ -712,9 +712,7 @@ online head DOES condition (class AUC 0.723 / 0.700, null 0.52). The CONDITIONAL
 opponent ORDERING (0.830 / 0.854, above `value_pooled`'s own 0.812 / 0.848) and loses the
 AMPLITUDE (ratio 0.465 / 0.439, Brier 0.1275 / 0.1258 against the terminal refit's 0.0972 /
 0.0988) — so the cf-label arm must be read on turns-4–10 class AUC and Brier/resolution, not on
-the turn-1–3 spread ratio. **Open:** whether a TRAINING rollout assigns the trainee's team
-independently of the opponent; if not, every turn-1 meter on this campaign carries the same
-own-team mediation term.
+the turn-1–3 spread ratio. **Closed (2026-09-11):** a TRAINING rollout assigns the trainee's team independently of the opponent — by construction (two draws off separate RNGs, `wrappers.py:495` / `teambuilder.py:208`) and measured at |AUC − 0.5| ≤ 0.0042 over ~1.5M episodes, 717/717 teams facing both classes [MEASURED, `team_assignment_independence_2026-09-10`]; the live-frame confound was the CAPTURE QUOTA (few sentinel traces ⇒ ~58 distinct teams), not the pairing rule. The turn-1 registered rows carry no mediation term. The conditioning row with a usable floor is `cond.opp_class_auc.t4_10` (two-draw floor 0.022, tool v6); the late-window spread rows carry run-level floors of 0.19–0.22; and the "optimal spread" reference is a DECOMPOSITION term, not a ceiling — V's early spread exceeds it 4–8×, so the t1–3 spread is board-state-driven, not opponent decoding [ledger 2026-09-11 · *MEASUREMENT ×2*].
 
 ---
 
