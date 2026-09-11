@@ -686,6 +686,38 @@ that conditions plays better — the identity test against an MC continuation re
 the offline head saw ~2,500× fewer distinct episodes than the online one, so the size of the
 recovery does not transfer even though the variance-share mechanism, being scale-free, does.
 
+**More stationary data does not buy the win head opponent conditioning, and the probe read's
+turn-1 opponent decode was an own-team confound.** [MEASURED,
+`winprob_refit_ncurve_2026-09-10`] The win head was refit on frozen `value_pooled` at N =
+1k → ~21.5k battles drawn from ONE checkpoint (`step_10000032`, three md5-identical eval trees,
+~24,000 battles / ~720,000 states per substrate, full capture so every HT weight is 1.0), on an
+identical gradient-STEP budget at every N, scored on one fixed held-out set of 2,400 battles.
+Under the TERMINAL 0/1 label the head converges to a substrate-independent level — turns-11–24
+between-opponent spread ratio **0.693 / 0.665**, all-states **0.609 / 0.557** — and reaches it by
+**N ≈ 4,000 battles ≈ 1.25 PPO rollouts** (48 × 2,048 = 98,304 states ≈ 3,170 episodes). On
+`ai_v12_11_ladder_ctrl10M`, whose ONLINE head already reads 0.759 / 0.652, the curve is FLAT
+(Δ at turns 11–24 −0.000 [−0.020, +0.021]) and its last segment is detected NEGATIVE; on
+`ai_v12_15_ladder_ctrl10M_b` (online 0.464 / 0.388) it rises +0.182 [+0.158, +0.209] and
+saturates by 8k. **Removing non-stationarity is therefore worth at most the gap between two
+identically-configured control runs' own heads, and an online head already receives that much
+data inside one policy iteration: a slower policy, a value replay or a stationary window is NOT a
+lever.** 🚨 **On a matched-team frame the opponent is UNOBSERVABLE at turn 1** — `value_pooled` →
+opponent class reads AUC **0.502 / 0.508** against the probe read's 0.846 / 0.861, because in the
+probe read's frames the TRAINEE'S OWN TEAM alone predicts the class at **0.856 / 0.877** (only
+37 of 180 and 47 of 216 teams ever faced a sentinel there, against 602 of 602 here). The opponent
+becomes observable as it plays (0.50 → 0.67 → 0.82 by turns 4–10), **so a turn-1 spread ratio of 0
+is Bayes-optimal, not a defect**, and the probe read's headline "the head is handed the answer and
+does not use it" does not hold at turn 1. In the window where the question has an answer the
+online head DOES condition (class AUC 0.723 / 0.700, null 0.52). The CONDITIONAL target wins the
+opponent ORDERING (0.830 / 0.854, above `value_pooled`'s own 0.812 / 0.848) and loses the
+AMPLITUDE (ratio 0.465 / 0.439, Brier 0.1275 / 0.1258 against the terminal refit's 0.0972 /
+0.0988) — so the cf-label arm must be read on turns-4–10 class AUC and Brier/resolution, not on
+the turn-1–3 spread ratio. **Open:** whether a TRAINING rollout assigns the trainee's team
+independently of the opponent; if not, every turn-1 meter on this campaign carries the same
+own-team mediation term.
+
+---
+
 **Ladder arm 1 read (2026-09-08, `--vf-coef 1.5` vs the fresh 10M control):** [MEASURED · NOT DETECTED,
 `measurements/critic_ladder_reads/vf15_vs_ctrl10M_2026-09-08/`] resolution Δ bot +0.0140 [−0.0080,
 +0.0389], late identity bias Δ +0.0486 [−0.0305, +0.1311], turn-contrast Δ +0.1634 [−0.0807, +0.3733] —

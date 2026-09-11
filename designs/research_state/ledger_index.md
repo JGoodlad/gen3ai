@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,238-line file. **The ledger itself is append-only and is never edited by this**;
+17,314-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**549 headings · 502 dated · 2026-08-01 → 2026-09-10 · ledger 17,238 lines.**
+**550 headings · 503 dated · 2026-08-01 → 2026-09-10 · ledger 17,314 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -569,3 +569,4 @@ rename.
   - `L17175` · The arm's actual product: the λ-0.9 pair's two-point bounds
   - `L17204` · 🚨 CORRECTION TO MY OWN RULE: the sidecar header count is PIN-DEPENDENT
   - `L17221` · A baseline that corrects an attribution in arm 9's entry
+  - `L17240` · `2026-09-10` · MEASUREMENT (MAJOR) · THE N-CURVE — more STATIONARY data does NOT buy the win head opponent conditioning past ~4,000 battles (1.25 rollouts): the slow-policy / value-replay lever is CLOSED; and 🚨 the probe read's turn-1 opponent decode was an OWN-TEAM CONFOUND — on a matched-team frame the opponent is UNOBSERVABLE at turn 1, so the ladder's `t1_3` conditioning rows measured a Bayes-optimal zero

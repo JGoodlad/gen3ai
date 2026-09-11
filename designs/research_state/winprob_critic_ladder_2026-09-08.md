@@ -314,6 +314,9 @@ All three rows above were regenerated on 2026-09-09 by the quota-matched tool (`
 
 ---
 
+
+> **2026-09-10 · RE-REGISTRATION OF THE CONDITIONING DECISION ROWS (N-curve, `ea771c7f`).** `cond.spread_ratio.t1_3` and `cond.opp_class_auc.t1` are RETIRED as defect meters — on a matched-team frame the opponent's class is unobservable at turn 1 (no team preview; revealed by play, pooled → class AUC 0.50 → 0.67 → 0.82 by turns 4–10), so a near-zero level is Bayes-optimal. Decision rows from here: **turns-4–10 opponent-class AUC of V, resolution/Brier, turns-11–24 spread ratio** (critic_read v6), plus own-team R² t1 (rule 18) and the identity guard. The slow-policy / value-replay / stationary-window lever is CLOSED (the terminal head saturates by ~4,000 battles ≈ 1.25 rollouts). Every past `t1_3` NOT DETECTED stands as a fact about a row that could not move; `lambda095`'s bar stands as a bar but a pass is amplitude on a near-zero-optimal row. Ledger 2026-09-10 · *MEASUREMENT (MAJOR) · THE N-CURVE*.
+
 ## 2c. STATUS after the probe read and the head refit (2026-09-09)
 
 The three offline reads (`winprob_mixture_diagnostic_2026-09-09`, `winprob_probe_read_2026-09-09`, `winprob_head_refit_2026-09-09`) re-rank the ladder without a GPU-hour:
