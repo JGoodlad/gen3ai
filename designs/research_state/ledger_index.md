@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,329-line file. **The ledger itself is append-only and is never edited by this**;
+17,337-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**551 headings · 504 dated · 2026-08-01 → 2026-09-10 · ledger 17,329 lines.**
+**552 headings · 505 dated · 2026-08-01 → 2026-09-10 · ledger 17,337 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -571,3 +571,4 @@ rename.
   - `L17221` · A baseline that corrects an attribution in arm 9's entry
   - `L17240` · `2026-09-10` · MEASUREMENT (MAJOR) · THE N-CURVE — more STATIONARY data does NOT buy the win head opponent conditioning past ~4,000 battles (1.25 rollouts): the slow-policy / value-replay lever is CLOSED; and 🚨 the probe read's turn-1 opponent decode was an OWN-TEAM CONFOUND — on a matched-team frame the opponent is UNOBSERVABLE at turn 1, so the ladder's `t1_3` conditioning rows measured a Bayes-optimal zero
   - `L17315` · `2026-09-10` · READ · the SECOND 800-game eval draw for `tdaux` and `strata` (the two arms the mid-run script edit had skipped) — nothing on any registered row; `strata`'s bot resolution is a CONSISTENT LEAN (+0.0055 on both draws, inside the wider-draw bar), and `tdaux`'s own-team row flips sign between draws
+  - `L17330` · `2026-09-10` · FINDING (MAJOR) · THE SELF-PLAY CROSSING STEP IS A DRAW-LEVEL COIN FLIP, not a property of the ladder — `--promote-threshold 0.55` sits INSIDE the 2M-bots replicate floor, so an arm crosses at ~2.16M or ~4.13M by lottery; the λ-0.9 PAIR is MISMATCHED across it (draw 1 at 2M, draw 2 at 4M); "every arm crosses at 4,000,032" is RETRACTED
