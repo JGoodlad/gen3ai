@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,098-line file. **The ledger itself is append-only and is never edited by this**;
+17,102-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**539 headings · 496 dated · 2026-08-01 → 2026-09-10 · ledger 17,098 lines.**
+**540 headings · 497 dated · 2026-08-01 → 2026-09-10 · ledger 17,102 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -559,3 +559,4 @@ rename.
   - `L17083` · `2026-09-10` · CLARIFICATION · the `lambda095` bar, by row and number: `cond.spread_ratio.t1_3` on the OFFLINE frames, below EACH control's own value on the SAME draw
   - `L17087` · `2026-09-10` · READ · critic ladder arm 9 `ai_v12_20_ladder_denseaux` (dense auxiliary targets on the value path) vs the three controls at pinned 10M — NOTHING on any row against any control; the opponent spread leans UP (the opposite sign to λ), not detected
   - `L17095` · `2026-09-10` · ADDENDUM to arm 9's read · the dose actually delivered was ~40 % of the registered one; the spread lean is rule-19 family on ONE draw and cannot be promoted at any eval size
+  - `L17099` · `2026-09-10` · CORRECTION to arm 9's addendum · the dose ROSE, not fell — the scored fraction went 0.69 → 0.87 (+27 % relative), so the null holds at MORE supervision than registered, not less
