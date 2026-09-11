@@ -796,7 +796,7 @@ DETECTED, `measurements/critic_ladder_reads/truevalue_vs_ctrl10M_2026-09-10/`] g
 TRUE team does not make V separate opponents (turn-1–3 spread ratio 0.00 vs the controls' 0.09–0.12; class decode
 +0.10 lean) — hidden information is not the limit, as the probe read predicted; the privileged head is OPTIMISTIC
 against its own continuation (+0.040 all, +0.088 late vs ≈0 on every control — clear of zero, not of the floor)
-and resolves the pool stratum worse. The information family is closed for this era pending the offline frames.
+and resolves the pool stratum worse. **Offline 400/800-game frames (2026-09-10, `critic_read_hp400/hp800.md`):** the same on three eval draws — bot resolution +0.000 / +0.003 inside the floor (the live lean is gone), spread ratio and own-team decode both DOWN inside the floor, the privileged head +0.08–0.09 MORE OPTIMISTIC on every draw (run-level, unpromotable) and WORSE calibrated (ECE all +0.04, DETECTED at 800; pool ECE +0.11). **The information family is CLOSED for this era.** Hypothesis only: a critic conditioned on information the policy never sees is confidently wrong about what the policy will do (the asymmetric-critic failure); one run, no replicate.
 
 **An ERA-LEVEL defect the slope exposed, not an arm's:** [MEASURED · LEVEL, not a delta] on the offline frames
 every 10M run except `ctrl10M` reads a pooled calibration slope of **1.26–1.38** — the critics are UNDER-dispersed
