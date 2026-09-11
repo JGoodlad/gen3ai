@@ -1,0 +1,202 @@
+{
+ "stationary_ctrl10M": {
+  "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/ncurve/ai_v12_11_ladder_ctrl10M",
+  "n_states": 732626,
+  "own_team_leak": {
+   "battles": 23891,
+   "teams": 602,
+   "median_battles_per_team": 32.0,
+   "sentinel_fraction": 0.2501,
+   "teams_seen_vs_bots": 602,
+   "teams_seen_vs_sentinels": 602,
+   "own_team_LOO_to_opp_class_AUC": 0.5085
+  },
+  "observability": {
+   "t1": {
+    "n_states": 4203,
+    "pooled_to_opp_class_AUC": 0.5023,
+    "V_to_opp_class_AUC": 0.4689,
+    "pooled_to_own_team_wr_R2": 0.2594,
+    "V_to_own_team_wr_R2": 0.1163
+   },
+   "t1_3": {
+    "n_states": 8000,
+    "pooled_to_opp_class_AUC": 0.671,
+    "V_to_opp_class_AUC": 0.5815,
+    "pooled_to_own_team_wr_R2": 0.2185,
+    "V_to_own_team_wr_R2": 0.086
+   },
+   "t4_10": {
+    "n_states": 8000,
+    "pooled_to_opp_class_AUC": 0.8189,
+    "V_to_opp_class_AUC": 0.7126,
+    "pooled_to_own_team_wr_R2": 0.1805,
+    "V_to_own_team_wr_R2": 0.0489
+   },
+   "t11_24": {
+    "n_states": 7867,
+    "pooled_to_opp_class_AUC": 0.8014,
+    "V_to_opp_class_AUC": 0.7198,
+    "pooled_to_own_team_wr_R2": 0.121,
+    "V_to_own_team_wr_R2": 0.0227
+   },
+   "t25p": {
+    "n_states": 3000,
+    "pooled_to_opp_class_AUC": 0.7893,
+    "V_to_opp_class_AUC": 0.7213,
+    "pooled_to_own_team_wr_R2": 0.093,
+    "V_to_own_team_wr_R2": 0.0127
+   }
+  }
+ },
+ "stationary_ctrl10M_b": {
+  "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/ncurve/ai_v12_15_ladder_ctrl10M_b",
+  "n_states": 716727,
+  "own_team_leak": {
+   "battles": 23877,
+   "teams": 602,
+   "median_battles_per_team": 32.0,
+   "sentinel_fraction": 0.2502,
+   "teams_seen_vs_bots": 602,
+   "teams_seen_vs_sentinels": 602,
+   "own_team_LOO_to_opp_class_AUC": 0.5074
+  },
+  "observability": {
+   "t1": {
+    "n_states": 4167,
+    "pooled_to_opp_class_AUC": 0.5083,
+    "V_to_opp_class_AUC": 0.4668,
+    "pooled_to_own_team_wr_R2": 0.2403,
+    "V_to_own_team_wr_R2": 0.0617
+   },
+   "t1_3": {
+    "n_states": 8000,
+    "pooled_to_opp_class_AUC": 0.6991,
+    "V_to_opp_class_AUC": 0.5849,
+    "pooled_to_own_team_wr_R2": 0.1887,
+    "V_to_own_team_wr_R2": 0.0421
+   },
+   "t4_10": {
+    "n_states": 8000,
+    "pooled_to_opp_class_AUC": 0.8512,
+    "V_to_opp_class_AUC": 0.6945,
+    "pooled_to_own_team_wr_R2": 0.1249,
+    "V_to_own_team_wr_R2": 0.0263
+   },
+   "t11_24": {
+    "n_states": 7835,
+    "pooled_to_opp_class_AUC": 0.8007,
+    "V_to_opp_class_AUC": 0.7014,
+    "pooled_to_own_team_wr_R2": 0.0795,
+    "V_to_own_team_wr_R2": 0.0145
+   },
+   "t25p": {
+    "n_states": 2761,
+    "pooled_to_opp_class_AUC": 0.7766,
+    "V_to_opp_class_AUC": 0.6761,
+    "pooled_to_own_team_wr_R2": 0.0568,
+    "V_to_own_team_wr_R2": 0.0067
+   }
+  }
+ },
+ "probe_read_CTRL": {
+  "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/probe/CTRL",
+  "n_states": 25564,
+  "own_team_leak": {
+   "battles": 873,
+   "teams": 180,
+   "median_battles_per_team": 2.0,
+   "sentinel_fraction": 0.1329,
+   "teams_seen_vs_bots": 169,
+   "teams_seen_vs_sentinels": 37,
+   "own_team_LOO_to_opp_class_AUC": 0.8559
+  },
+  "observability": {
+   "t1": {
+    "n_states": 985,
+    "pooled_to_opp_class_AUC": 0.8448,
+    "V_to_opp_class_AUC": 0.5858,
+    "pooled_to_own_team_wr_R2": 0.6118,
+    "V_to_own_team_wr_R2": 0.0285
+   },
+   "t1_3": {
+    "n_states": 1746,
+    "pooled_to_opp_class_AUC": 0.8282,
+    "V_to_opp_class_AUC": 0.4819,
+    "pooled_to_own_team_wr_R2": 0.3797,
+    "V_to_own_team_wr_R2": 0.0548
+   },
+   "t4_10": {
+    "n_states": 1746,
+    "pooled_to_opp_class_AUC": 0.9216,
+    "V_to_opp_class_AUC": 0.5576,
+    "pooled_to_own_team_wr_R2": 0.2542,
+    "V_to_own_team_wr_R2": 0.0821
+   },
+   "t11_24": {
+    "n_states": 1712,
+    "pooled_to_opp_class_AUC": 0.8868,
+    "V_to_opp_class_AUC": 0.4577,
+    "pooled_to_own_team_wr_R2": 0.1467,
+    "V_to_own_team_wr_R2": 0.0704
+   },
+   "t25p": {
+    "n_states": 541,
+    "pooled_to_opp_class_AUC": 0.8419,
+    "V_to_opp_class_AUC": 0.4484,
+    "pooled_to_own_team_wr_R2": -0.0168,
+    "V_to_own_team_wr_R2": -0.0304
+   }
+  }
+ },
+ "probe_read_A": {
+  "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/probe/A",
+  "n_states": 29495,
+  "own_team_leak": {
+   "battles": 951,
+   "teams": 216,
+   "median_battles_per_team": 2.0,
+   "sentinel_fraction": 0.4206,
+   "teams_seen_vs_bots": 202,
+   "teams_seen_vs_sentinels": 47,
+   "own_team_LOO_to_opp_class_AUC": 0.8767
+  },
+  "observability": {
+   "t1": {
+    "n_states": 1010,
+    "pooled_to_opp_class_AUC": 0.8534,
+    "V_to_opp_class_AUC": 0.4867,
+    "pooled_to_own_team_wr_R2": 0.6018,
+    "V_to_own_team_wr_R2": 0.0027
+   },
+   "t1_3": {
+    "n_states": 1902,
+    "pooled_to_opp_class_AUC": 0.8861,
+    "V_to_opp_class_AUC": 0.6478,
+    "pooled_to_own_team_wr_R2": 0.5088,
+    "V_to_own_team_wr_R2": 0.0008
+   },
+   "t4_10": {
+    "n_states": 1902,
+    "pooled_to_opp_class_AUC": 0.9277,
+    "V_to_opp_class_AUC": 0.7831,
+    "pooled_to_own_team_wr_R2": 0.344,
+    "V_to_own_team_wr_R2": 0.0246
+   },
+   "t11_24": {
+    "n_states": 1879,
+    "pooled_to_opp_class_AUC": 0.9191,
+    "V_to_opp_class_AUC": 0.7969,
+    "pooled_to_own_team_wr_R2": 0.2817,
+    "V_to_own_team_wr_R2": 0.0644
+   },
+   "t25p": {
+    "n_states": 862,
+    "pooled_to_opp_class_AUC": 0.8724,
+    "V_to_opp_class_AUC": 0.7514,
+    "pooled_to_own_team_wr_R2": 0.126,
+    "V_to_own_team_wr_R2": 0.0646
+   }
+  }
+ }
+}

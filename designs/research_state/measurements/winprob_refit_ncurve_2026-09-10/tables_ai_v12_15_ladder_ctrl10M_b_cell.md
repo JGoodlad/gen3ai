@@ -168,7 +168,7 @@ The span is **4.42 doublings** (1,000 -> 21,477 battles), so the per-doubling co
 | linear . conditional | 0.1310 / 0.0156 / 2.20 | 0.1282 / 0.0193 / 2.71 | 0.1279 / 0.0147 / 2.15 | 0.1258 / 0.0160 / 1.97 | 0.1245 / 0.0173 / 2.01 | 0.1239 / 0.0176 / 2.01 | |
 | MLP . conditional (b) | 0.1325 / 0.0157 / 2.84 | 0.1295 / 0.0125 / 1.86 | 0.1281 / 0.0123 / 1.54 | 0.1255 / 0.0145 / 1.60 | 0.1250 / 0.0150 / 1.50 | 0.1258 / 0.0135 / 1.38 | |
 | the conditional TARGET (ceiling) | 0.1289 / 0.0123 / 0.79 | 0.1263 / 0.0146 / 0.98 | 0.1243 / 0.0145 / 1.04 | 0.1241 / 0.0149 / 0.92 | 0.1239 / 0.0151 / 0.90 | 0.1238 / 0.0157 / 0.89 | |
-| MLP . terminal, 5x steps, NO early stop | · | · | · | · | · | 0.1174 / 0.0285 / 22832193189.85 | |
+| MLP . terminal, 5x steps, NO early stop | · | · | · | · | · | 0.1174 / 0.0285 / — | |
 | MLP . conditional, 5x steps, NO early stop | · | · | · | · | · | 0.1265 / 0.0131 / 1.19 | |
 
 ## 5. The MORE-OPTIMISATION control at the largest N
@@ -180,30 +180,47 @@ The span is **4.42 doublings** (1,000 -> 21,477 battles), so the per-doubling co
 
 ## 6. THE READING — emitted by the rule, not by the author
 
-**(i) RISE**
+**(i) RISE, SATURATED by N=8000**  ·  as the PRE-REGISTERED wording would have emitted it: **(i) RISE**
 
 ```json
 {
- "verdict": "(i) RISE",
+ "verdict": "(i) RISE, SATURATED by N=8000",
+ "verdict_as_registered": "(i) RISE",
  "n_doublings": 4.425,
  "guard_cond_oracle_ge_0.80": true,
  "cond_oracle_t1_3_ratio_ci_at_Nmax": [
   0.9256,
   1.0231
  ],
- "trend_ratio_t1_3_mlp_term": {
-  "point": 0.0805,
-  "ci": [
-   0.064,
-   0.0961
-  ]
- },
- "trend_ratio_mid_mlp_term": {
-  "point": 0.1816,
-  "ci": [
-   0.1575,
-   0.2089
-  ]
+ "trend_ratio_mlp_term": {
+  "t1": {
+   "point": 0.0246,
+   "ci": [
+    0.0003,
+    0.0413
+   ]
+  },
+  "t1_3": {
+   "point": 0.0805,
+   "ci": [
+    0.064,
+    0.0961
+   ]
+  },
+  "mid": {
+   "point": 0.1816,
+   "ci": [
+    0.1575,
+    0.2089
+   ]
+  },
+  "all": {
+   "point": 0.151,
+   "ci": [
+    0.1333,
+    0.175
+   ]
+  }
  },
  "trend_opp_class_t4_10_mlp_term": {
   "point": 0.0345,
@@ -212,25 +229,75 @@ The span is **4.42 doublings** (1,000 -> 21,477 battles), so the per-doubling co
    0.0441
   ]
  },
- "trend_own_team_wr_mlp_term": {
+ "trend_own_team_wr_t1_mlp_term": {
   "point": 0.0443,
   "ci": [
    0.0298,
    0.0605
   ]
  },
- "rise_ratio": true,
- "rise_opp_class": true,
- "rise_own_team_wr": true,
- "mlp_cond_detected_at_every_N": false,
- "segment_early": {
-  "point": 0.0613,
+ "rise_buckets": [
+  "t1_3",
+  "mid",
+  "all"
+ ],
+ "rise": true,
+ "segment_1k_to_8000_mid": {
+  "point": 0.1761,
   "ci": [
-   0.0511,
-   0.0773
+   0.1546,
+   0.2019
   ]
  },
- "segment_late": null,
+ "segment_8000_to_Nmax_mid": {
+  "point": 0.0055,
+  "ci": [
+   -0.0082,
+   0.0167
+  ]
+ },
+ "mlp_term_at_Nmax_vs_online": {
+  "t1": {
+   "point": 0.0261,
+   "ci": [
+    -0.0163,
+    0.0364
+   ]
+  },
+  "t1_3": {
+   "point": 0.0548,
+   "ci": [
+    0.0334,
+    0.0705
+   ]
+  },
+  "mid": {
+   "point": 0.2012,
+   "ci": [
+    0.1779,
+    0.232
+   ]
+  },
+  "all": {
+   "point": 0.1692,
+   "ci": [
+    0.1503,
+    0.193
+   ]
+  }
+ },
+ "mlp_term_EXCEEDS_online_at_Nmax_in": [
+  "t1_3",
+  "mid",
+  "all"
+ ],
+ "online_ratio": {
+  "t1": 0.0215,
+  "t1_3": 0.0965,
+  "mid": 0.4637,
+  "all": 0.3877
+ },
+ "mlp_cond_detected_at_every_N_either_sign": false,
  "more_optimisation": {
   "mlp_term": {
    "ratio_t1_3": {

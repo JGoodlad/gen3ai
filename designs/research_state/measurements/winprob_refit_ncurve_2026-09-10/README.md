@@ -17,7 +17,7 @@ is scored in §8.
 
 ## VERDICT
 
-**Two findings, and the second is larger than the one the measurement was commissioned for.**
+**Four findings. The second is larger than the one the measurement was commissioned for.**
 
 **1 — On the owner's question: (ii) FLAT on `ctrl10M`, (i) RISE-THEN-SATURATE on `ctrl10M_b`, and
 the two agree once you look at where each curve LANDS.** The terminal-label head converges to the
@@ -41,7 +41,7 @@ frames the **trainee's OWN TEAM alone** predicts the opponent's class at **AUC 0
 sentinel there. The own team is in the observation verbatim at turn 1. On these matched-team
 frames all **602/602** teams face every opponent, the own-team channel carries nothing about the
 class (**0.508**) — and neither does `value_pooled` (**0.502 / 0.508** against the probe read's
-0.861). **The opponent is genuinely unobservable at turn 1** (Gen 3 has no team preview) and
+published 0.861 / 0.846, which re-runs here at 0.845 / 0.853 on its own extraction). **The opponent is genuinely unobservable at turn 1** (Gen 3 has no team preview) and
 becomes observable only as it plays: `value_pooled` → class **0.50 (t1) → 0.67 (t1–3) → 0.82
 (t4–10)**. So on a matched-team frame a turn-1 spread ratio of 0 is **BAYES-OPTIMAL, not a
 defect** — the probe read's own PRE-REGISTERED expectation (ii), which it believed it had
@@ -109,7 +109,10 @@ four or five different policies — which is what made "non-stationarity" imposs
 "too little data" there. Here the cycle index is an **eval seed**, so the three cells of one
 opponent are **replicates**: a free noise check, and the head refit's hazard 2 (a conditional
 target with no cycle term is unreadable on a rapidly improving run) cannot bite. Both cell keyings
-are run — 36 (seed, opponent) cells and 12 opponent cells with the seeds pooled — and they agree.
+are run — 36 (seed, opponent) cells at 400/800 games each, and 12 opponent cells with the seeds
+pooled at 2,000 games each — and they agree on the quantity the reading turns on: the turns-11–24
+trend of the terminal refit reads **−0.000 [−0.020, +0.021]** vs **+0.003 [−0.014, +0.021]** on
+`ctrl10M` and **+0.182 [+0.158, +0.209]** vs **+0.184 [+0.160, +0.209]** on `ctrl10M_b`.
 
 **The outcome side of the identity is the MANIFEST's win rate at that cell's own game count (400 or
 800), not the held-out subsample's.** The outcome's true between-opponent spread is a property of
@@ -144,8 +147,8 @@ extraction dirs, including the probe read's own, which survives on disk.
 
 | frame | battles | teams | teams ever facing a sentinel | **own-team LOO → opp_class AUC** | `value_pooled` → opp_class @t1 |
 |---|---|---|---|---|---|
-| probe read `A` @74M | 951 | 216 | **47 / 216** | **0.877** | 0.853 |
-| probe read `CTRL` @10M | 873 | 180 | **37 / 180** | **0.856** | 0.845 |
+| probe read `A` @74M | 951 | 216 | **47 / 216** | **0.877** | 0.853 (published 0.846) |
+| probe read `CTRL` @10M | 873 | 180 | **37 / 180** | **0.856** | 0.845 (published 0.861) |
 | this frame, `ctrl10M` | 23,891 | 602 | **602 / 602** | **0.508** | **0.502** |
 | this frame, `ctrl10M_b` | 23,877 | 602 | **602 / 602** | **0.507** | **0.508** |
 
@@ -227,12 +230,12 @@ At N_max, `ctrl10M` (`ctrl10M_b` in brackets):
 
 | | online | MLP · terminal | MLP · conditional | `cond_oracle` (ceiling) | `value_pooled` |
 |---|---|---|---|---|---|
-| spread ratio @t11–24 | **0.759** (0.464) | 0.693 (0.665) | **0.465** (0.439) | 0.998 (0.994) | — |
-| spread ratio @all | **0.652** (0.388) | 0.609 (0.557) | **0.409** (0.382) | 0.998 (0.994) | — |
-| opp-class AUC @t4–10 | 0.723 (0.700) | 0.730 (0.738) | **0.830** (0.854) | 0.964 (0.968) | 0.812 (0.848) |
-| own-team R² @t1 | 0.114 (0.062) | 0.131 (0.104) | 0.136 (0.058) | 0.056 (0.051) | 0.266 (0.224) |
-| Brier @all | 0.1012 (0.1045) | **0.0972** (0.0988) | 0.1275 (0.1258) | 0.1235 (0.1240) | — |
-| calibration slope @all | 0.96 (1.12) | 1.02 (0.97) | 1.30 (1.38) | 0.93 (0.95) | — |
+| spread ratio @t11–24 | **0.759** (0.464) | 0.693 (0.665) | **0.465** (0.439) | 0.998 (0.978) | — |
+| spread ratio @all | **0.652** (0.388) | 0.609 (0.557) | **0.409** (0.382) | 0.998 (0.978) | — |
+| opp-class AUC @t4–10 | 0.723 (0.700) | 0.730 (0.738) | **0.830** (0.854) | 0.964 (0.979) | 0.812 (0.848) |
+| own-team R² @t1 | 0.114 (0.062) | 0.131 (0.104) | 0.136 (0.058) | 0.056 (0.040) | 0.266 (0.224) |
+| Brier @all | 0.1012 (0.1045) | **0.0972** (0.0988) | 0.1275 (0.1258) | 0.1235 (0.1238) | — |
+| calibration slope @all | 0.96 (1.12) | 1.02 (0.97) | 1.30 (1.38) | 0.93 (0.89) | — |
 
 **The conditional target wins the ORDERING and loses the AMPLITUDE.** Its prediction ranks
 opponents better than anything except the target itself — 0.830 / 0.854 against `value_pooled`'s
@@ -243,11 +246,20 @@ to it regresses hard toward the base rate (calibration slope 1.30–1.38, i.e. *
 and keeps only the component it can see. The head refit could not see this trade because its frame's
 features leaked the opponent through the team.
 
-### (c) where in N the rise happens, on the substrate that has one
+### (c) where in N the movement happens — the segment split
 
-`ctrl10M_b`, turns 11–24: 0.483 → 0.572 → **0.669** → 0.659 → 0.754 → 0.665. The 1k → 8k segment
-carries **+0.176**; the 8k → 21.5k segment carries **+0.006**. The curve is done by N ≈ 4,000
-battles — **1.25 rollouts of episodes** — and the last 13,500 battles add nothing.
+Turns 11–24, `mlp_term`, each segment with its own battle-clustered CI:
+
+| substrate | 1k → 8k | 8k → 21.5k |
+|---|---|---|
+| `ctrl10M` | **+0.028 [+0.004, +0.054]** | **−0.029 [−0.045, −0.012]** |
+| `ctrl10M_b` | **+0.176 [+0.155, +0.202]** | +0.006 [−0.008, +0.017] |
+
+`ctrl10M_b`'s rise — 0.483 → 0.572 → **0.669** → 0.659 → 0.754 → 0.665 — is complete by N ≈ 4,000
+battles (**1.25 rollouts of episodes**) and the last 13,500 battles add nothing. `ctrl10M`'s tiny
+early gain is **given back** over the same span: its last segment is detected and NEGATIVE. Neither
+substrate is still climbing at N_max, and neither has a threshold anywhere near 10,000 battles — so
+reading **(iii)** is refused on both.
 
 ---
 
@@ -415,3 +427,111 @@ sustained**: the 8k → 21.5k segment adds +0.006. On `ctrl10M` it is not met at
    ratio 0.759 vs 0.464, two runs of the same configuration). Rule 19's family: this is a
    run-level component, and a single-substrate read of any amplitude row here would have been
    wrong in one direction or the other.
+
+---
+
+## 11. Recommendation — one paragraph
+
+**Do not build the slower-policy / value-replay / stationary-window lever, and re-read the queued
+cf-label arm on different meters before judging it.** The N-curve bounds what removing
+non-stationarity is worth: the terminal-label head converges to a turns-11–24 between-opponent
+spread ratio of 0.665–0.693 and an all-states ratio of 0.557–0.609 on both substrates, reaches that
+level by ~4,000 battles (1.25 PPO rollouts at this run's geometry), and then stops — one substrate's
+last segment is flat and the other's is detected NEGATIVE. Since an online head already receives
+that much data inside a single policy iteration and carries its weights across iterations on top,
+there is no data deficit for a slower policy to fill; the whole available gain is the distance
+between the two control runs' own online heads (0.464 vs 0.759), which is a run-level variance term
+(rule 19's family), not a lever. Spend the GPU instead on **opponent-stratified weighting of the
+win-prob loss** — it raises the between-cell share of the objective without asking the head to
+predict information its features do not carry, which is precisely how the conditional target fails
+here (best opponent ORDERING of any condition at 0.830/0.854 AUC, worst AMPLITUDE at 0.439/0.465
+spread ratio, and +0.03 of Brier). And spend one cheap CPU hour first on the question §3 opens:
+whether a TRAINING rollout assigns the trainee's team independently of the opponent — because if it
+does not, every turn-1 opponent meter on this campaign has the own-team mediation term sitting
+inside it, exactly as the probe read's did.
+
+---
+
+## 12. Ledger paragraph (for the orchestrator to append — this file does NOT edit the ledger)
+
+> **2026-09-10 · MEASUREMENT · THE N-CURVE — more stationary data does NOT buy the win head
+> opponent conditioning past ~4,000 battles (1.25 rollouts), and the probe read's turn-1 opponent
+> decode was an OWN-TEAM confound.** The owner asked whether the win head would improve if the
+> policy moved slower, i.e. if non-stationarity were removed so the head could accumulate data on a
+> fixed target; the head refit had argued its own null was scale-free, which was an argument, not a
+> measurement. Measured: `ai_v12_11_ladder_ctrl10M` and `ai_v12_15_ladder_ctrl10M_b` @
+> `step_10000032`, three offline `eval_trace_gen` trees each (seeds 20260909/20260910/20260911 ×
+> 400+800+800 games × 12 opponents) whose `snapshot.zip` files are **md5-identical** (refused
+> otherwise) — **732,626 states / 23,891 battles / 602 teams** and **716,727 / 23,877 / 602**, FULL
+> capture so every HT weight is exactly 1.0, frozen-forward QC max |V_fwd−V_rec| 2.2e-06 / 1.9e-06.
+> The win head alone was refit from scratch on frozen `value_pooled` against (a) the terminal 0/1
+> label and (b) the per-cell × own-team LOO conditional label, on nested-by-battle subsets at N =
+> 1k/2k/4k/8k/16k/~21.5k, **an identical GRADIENT-STEP budget at every N** (not epochs — an epoch
+> budget scales the optimisation with N), scored OUT OF SAMPLE on ONE fixed held-out set of 2,400
+> battles / ~74k states, every interval a battle-clustered bootstrap and every claim on the delta's
+> own CI. **(1) THE TERMINAL-LABEL HEAD CONVERGES TO A SUBSTRATE-INDEPENDENT LEVEL AND GETS THERE
+> BY N ≈ 4,000 BATTLES ≈ 1.25 PPO ROLLOUTS** (48 envs × 2,048 steps = 98,304 states ≈ 3,170
+> episodes): turns-11–24 spread ratio **0.693** and **0.665** at N_max, all-states **0.609** and
+> **0.557**. On `ctrl10M`, whose ONLINE head already reads 0.759 / 0.652, the curve is FLAT — Δ(21.5k
+> − 1k) at turns 11–24 **−0.000 [−0.020, +0.021]**, all states **−0.001 [−0.017, +0.014]**,
+> turns-4–10 opponent-class AUC **−0.004 [−0.011, +0.002]** — and its 8k → 21.5k segment is
+> detected NEGATIVE (−0.029 [−0.045, −0.012]). On `ctrl10M_b`, whose online head reads 0.464 /
+> 0.388, it RISES **+0.182 [+0.158, +0.209]** at turns 11–24 and SATURATES: 1k→8k +0.176 [+0.155,
+> +0.202], 8k→21.5k +0.006 [−0.008, +0.017]. **Reading: (ii) FLAT on `ctrl10M`, (i) RISE-SATURATED
+> on `ctrl10M_b`; (iii) refused on both. The owner's hypothesis is REFUTED as a route past the
+> current ceiling** — the whole available gain is the gap between two identically-configured control
+> runs' own heads (rule 19's run-level family), and an online head gets 1.25 rollouts of data inside
+> one policy iteration. **(2) 🚨 THE PROBE READ'S TURN-1 OPPONENT DECODE IS AN OWN-TEAM CONFOUND.**
+> `frame_check.py`: in the probe read's frames the TRAINEE'S OWN TEAM alone predicts the opponent's
+> class at **AUC 0.856** (CTRL) / **0.877** (A), because only **37 of 180** and **47 of 216** teams
+> ever face a sentinel there; the own team is in the observation verbatim at turn 1. On these
+> matched-team frames all 602/602 teams face every opponent, own-team → class reads **0.508**, and
+> `value_pooled` → class reads **0.502 / 0.508** against the probe read's 0.846/0.861. **The
+> opponent is genuinely UNOBSERVABLE at turn 1** (no team preview) and becomes observable as it
+> plays — pooled → class 0.50 (t1) → 0.67 (t1–3) → **0.82 (t4–10)** — so **a turn-1 spread ratio of
+> 0 is BAYES-OPTIMAL on a matched-team frame, not a defect**, and the probe read's own
+> PRE-REGISTERED expectation (ii), which it believed refuted, was right. In the window where the
+> question has an answer the ONLINE head already conditions: class AUC **0.723 / 0.700** (null 0.52,
+> `value_pooled` 0.812 / 0.848), turns-11–24 ratio 0.759 / 0.464. This does not touch the head
+> refit's target-vs-target result; it retires the probe read's "the head is handed the answer"
+> framing at turn 1 and makes the turn-1–3 spread ratio the WRONG registered meter for the cf-label
+> arm. **(3) THE CONDITIONAL TARGET IS HARMFUL ON A MATCHED-TEAM FRAME ON EVERY METER BUT THE
+> ORDERING**: at N_max it wins the turns-4–10 class AUC (**0.830 / 0.854**, above `value_pooled`'s
+> own 0.812 / 0.848 and the online head's 0.723 / 0.700, delta CIs clear of zero) while taking the
+> turns-11–24 ratio DOWN to 0.465 / 0.439 and Brier over all states from 0.1012 / 0.1045 to **0.1275
+> / 0.1258** (the terminal refit reads 0.0972 / 0.0988), calibration slope 1.30 / 1.38
+> (under-dispersed). A target built partly from information the features do not carry teaches the
+> ORDER and destroys the AMPLITUDE. **(4) "NOT ENOUGH PASSES" IS REFUSED A SECOND TIME AT 23× THE
+> SCALE**: 5× the gradient steps with NO early stopping lowers the turns-4–10 class AUC by **[−0.099,
+> −0.057]** and **[−0.067, −0.030]** and raises Brier by **[+0.018, +0.030]** and **[+0.014,
+> +0.023]** — with the head refit's basin elimination, treatment class 1 is closed from both sides.
+> Counter-hypotheses: the eval-vs-training POPULATION gap SURVIVES as the principal limit (these are
+> eval battles against a fixed 12-opponent panel, and whether a TRAINING rollout assigns the
+> trainee's team independently of the opponent is NOT established — the single largest open
+> question); "the meter is dead on this frame" ELIMINATED (`cond_oracle` reaches 0.998 [0.941,
+> 1.045] and `ctrl10M_b` moves +0.182 under the same code); early stopping ELIMINATED (step budget
+> identical at every N, patience 10,000 steps against best-steps of 75–825, plus §6). Hazards: a
+> saturated prediction makes the calibration slope DIVERGE (−6.0e9 printed before a ±50 refusal was
+> added); an EPOCH budget silently scales optimisation with N; **a rise in an N-curve can be a
+> small-N artefact — the END POINT, not the slope, is the quantity**, since `ctrl10M`'s fits start
+> where `ctrl10M_b`'s end. **Consequence:** do NOT build the slower-policy / value-replay /
+> stationary-window lever; re-register `ai_v12_12_ladder_cflabels` on the turns-4–10 opponent-class
+> AUC and Brier/resolution rather than the turn-1–3 spread ratio; opponent-stratified weighting of
+> the win-prob loss remains the highest-value unbuilt lever and is now better motivated; and run the
+> cheap CPU check of the TRAINING-rollout team assignment before any further turn-1 meter is read.
+> Measurement: `designs/research_state/measurements/winprob_refit_ncurve_2026-09-10/`.
+
+---
+
+## 13. Files
+
+[`PREDICTION.md`](PREDICTION.md) (registered before any curve existed) · `extract.py` (three trees,
+one md5-verified frozen forward, `value_pooled` + meta only) · `ncurve.py` (the held-out draw, the
+nested subsets, the conditional target per subset, the step-budgeted fits, the 5× no-early-stop
+control) · `readout.py` (the mixture identity with a per-cell `n_games`, the turn-bucketed decodes,
+Brier, the calibration slope, every delta's CI) · `frame_check.py` (the own-team → opponent-class
+leak and the observability ladder) · `summarize.py` (the reading rule in code, amended and
+registered verdicts side by side) · `run.sh` (end to end, ~40 min per substrate) ·
+`tables_<run>_<key>.md` · `reading_<run>_<key>.json` · `ncurve_stats_<run>.json` ·
+`frame_check.json` · `extract_meta_<run>.json`. The 128-dim feature tensors and the prediction
+columns are NOT committed; `run.sh` regenerates them.
