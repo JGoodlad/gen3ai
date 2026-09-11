@@ -1,0 +1,13 @@
+checked 137 flags from --argv
+  parser                         : the CURRENT tree's (no --model and no --pin-commit — this argv would run on HEAD)
+  accepted by the trainer parser : 132
+  launcher-owned (not forwarded) : 1
+  unrecognized                   : 4  ✗ WOULD FAIL AT LAUNCH
+      --win-prob-rollout-target 0.0012
+      --win-prob-rollout-r 8
+      --win-prob-rollout-mode replace
+      --win-prob-rollout-weight 64
+
+  These are not in the current parser — most likely deleted by a version bump.
+  Check designs/CHANGELOG.md for which version removed each one, and whether a
+  replacement flag exists, before you drop it from the command.

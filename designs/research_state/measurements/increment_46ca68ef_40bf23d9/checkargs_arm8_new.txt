@@ -1,0 +1,14 @@
+checked 130 flags from --argv
+  parser                         : the PINNED commit 28ece02a's — --pin-commit in the argv
+  ✗ argv questioned by the PINNED parser @28ece02a via a best-effort STATIC scan of the pinned add_argument() calls (NOT authoritative) [mode=ast_scan]
+      unconsumed value '/home/goodlad/dev/gen3ai/src/main/launcher/__main__.py' — a flag's ARITY differs at this commit
+      (a STATIC scan can be incomplete, so this is a warning, not a refusal — the child's own parser is the authority)
+      (why not the real parser: the pinned tree's main.train_rl_agent will not import here (BaselineError: no baseline registry at '/tmp/pinned-argv-28ece02a-whytmdo9/designs/baselines.json' — this file is committed; a checkout without it is broken, not merely unconfigured.); running the pinned entry point reached no parse_args() (BaselineError: no baseline registry at '/tmp/pinned-argv-28ece02a-whytmdo9/designs/baselines.json' — this file is committed; a checkout without it is broken, not merely unconfigured.))
+  accepted by the PINNED parser  : 128
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@360f8378dd90]
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ⚠️  the pinned static scan questioned it — see above; not a refusal

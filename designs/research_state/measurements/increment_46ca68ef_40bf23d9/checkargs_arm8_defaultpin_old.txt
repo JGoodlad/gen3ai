@@ -1,0 +1,12 @@
+checked 130 flags from --argv
+  parser                         : the PINNED commit 28ece02a's — --pin-commit in the argv
+  ✅ argv validated against PINNED parser @28ece02a via a best-effort STATIC scan of the pinned add_argument() calls (NOT authoritative) [mode=ast_scan, 274 options, 3.7s]
+      (why not the real parser: the pinned tree's main.train_rl_agent will not import here (BaselineError: no baseline registry at '/tmp/pinned-argv-28ece02a-dqxelz0s/designs/baselines.json' — this file is committed; a checkout without it is broken, not merely unconfigured.); running the pinned entry point reached no parse_args() (BaselineError: no baseline registry at '/tmp/pinned-argv-28ece02a-dqxelz0s/designs/baselines.json' — this file is committed; a checkout without it is broken, not merely unconfigured.))
+  accepted by the PINNED parser  : 128
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@360f8378dd90]
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ this command still launches (its own commit's parser accepts every flag)

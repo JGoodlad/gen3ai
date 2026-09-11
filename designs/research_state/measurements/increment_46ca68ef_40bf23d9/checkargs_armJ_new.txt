@@ -1,0 +1,10 @@
+checked 137 flags from --argv
+  parser                         : the CURRENT tree's (no --model and no --pin-commit — this argv would run on HEAD)
+  accepted by the trainer parser : 136
+  launcher-owned (not forwarded) : 1
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@360f8378dd90]
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ this command still launches

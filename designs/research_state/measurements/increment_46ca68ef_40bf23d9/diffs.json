@@ -1,0 +1,422 @@
+[
+ {
+  "path": ".arch_tables.coef_module_keys",
+  "old": "only-old=[]",
+  "new": "only-new=[\"'win_prob_rollout_target'\", \"'win_prob_rollout_weight'\"]"
+ },
+ {
+  "path": ".check_compatible.current_config_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".check_compatible.saved_migrated_config_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".combination_checks",
+  "old": "only-old=[]",
+  "new": "only-new=[\"'winprob_rollout_needs_cf_records'\", \"'winprob_rollout_needs_the_winprob_critic'\", \"'winprob_rollout_weight_needs_the_rollout_target'\"]"
+ },
+ {
+  "path": ".configs.arm8_lambda09.args._explicit_flags",
+  "old": "\"frozenset({'warmstart_battles', 'log_level', 'opd_beta', 'adaptive_batch_band', 'distill_coef', 'drop_redundant_bias', 'damage_op', 'search_teacher_coef', 'edge_bias_families', 'terminal_indicator', 'self_play_use_cpu', 'unified_damage', 'move_candidate_floor', 'exploiter_temp_anneal_frac', 't0_species_prior', 'value_threat_inject', 'win_prob_mode', 'opp_intent_coef', 'eval_workers', 'device', 'run_name', 'stable_opponent_mastered_wr', 'opp_belief_moves_weight', 'eval_battles', 'fork_lr_freeze', 'belief_grad_mode', 'teacher_confirm_rollouts', 'grad_accum_steps', 'self_ko_hp_penalty', 'conditional_threat_cell', 'team_pfsp_cap', 'teacher_search_budget', 'pool_spread', 'defensive_entropy_boost', 'teacher_search_workers', 'no_progress_penalty', 'winprob_teacher_band', 'damage_candidate_k', 'spread_belief_coef', 'intent_conditional', 'pfsp_scale', 'eval_shard_games', 'move_belief_mode', 'n_sentinels', 'damage_topk_k', 'weight_decay', 'move_belief_coef', 'damage_matrices', 'search_teacher_beta', 'hand_shaping', 'progress_decision_tense', 'exploiter_bot_fraction', 'history_events', 'distill_value_feat_coef', 'move_belief_latent_coef', 'exploiter_temp_ratchet_factor', 'stall_pbrs', 'value_entity_pool', 'bait_entropy_boost', 'allow_empty_pool', 'exploiter_ladder_window', 'forensic_win_quota', 'search_teacher_batch_size', 'value_sidecar', 'allow_nonproduction_arch', 'clip_range', 'intent_move_cell', 'forensic_loss_quota', 'opd_coef', 'beta_setvalued_coef', 'stable_opponent_temp', 'exploiter_temp_ratchet_wr', 'teacher_search_freq', 'allow_nonsample_trainee', 'team_pfsp', 'species_prior_fusion', 'spread_belief', 'bias_additivity', 'exploiter_ladder_gate', 'op_drop_renders', 'value_sidecar_fraction', 'spread_belief_nature', 'hp_type_belief_coef', 'distill_value_coef', 'grad_checkpointing', 'hp_belief_mode', 'search_teacher_value_coef', 'exploiter_temp_end', 'pbrs_material', 'adaptive_batch_max_accum', 'teacher_gen_battles', 'damage_outgoing', 'intent_threshold', 'eval_concurrency_per_worker', 'pair_outcome_switch', 'bait_bot_p', 'snapshot_ladder_games', 'progress_switch_freeze', 'warmstart_bc_steps', 'opp_belief_cls_k', 'compile_trainer', 'winprob_teacher_margin', 'entity_tail_seats', 'n_envs', 'intent_label_bot_weight', 'switch_branch_cell', 'move_latent', 'allow_belief_grad_mode_change', 'consequence_topk', 'seed', 'exploiter_ladder_rungs', 'n_epochs', 'all_shaping_pbrs', 'compile_opponents_strict', 'entity_topk_seats', 'adaptive_batch_every', 'keep_eval_snapshots', 'team_pfsp_floor', 'teacher_refresh_steps', 'value_tail_weight', 'adaptive_batch_target', 'mat_alive_weight', 'vf_coef', 'search_teacher_buffer_size', 'op_believed_lean', 'steps', 'victory_value', 'critic', 'pbrs_belief', 'adaptive_batch', 'search_teacher', 'keep_eval_trace_steps', 'drop_switch_bias', 'teacher_persistent', 'value_sidecar_seed', 'fork_pool_seed', 'eval_concurrency', 'allow_value_from_dist_change', 'debug_eval', 'move_prior_fusion', 'exploiter_temp_ratchet_games', 'bias_redesign', 'async_rollout', 'use_bridge', 'batch_size', 'n_steps', 'bait_bot_share', 'team_wr_tracking', 'value_entity_pool_full', 'eval_device', 'no_progress_tax_armed', 'search_teacher_mode', 'item_belief', 'adaptive_batch_min_accum', 'eval_only', 'stable_opponent_selfplay_share', 'compile_opponents', 'switch_bias_weight', 'tb_inherit', 'ent_coef', 'stable_opponent_pfsp', 'unified_moves', 'draw_penalty', 'exploiter_temp_mode', 'defensive_entropy_anneal_frac', 'pair_outcome_cell', 'forensic_draw_quota', 'opp_belief_aux_coef', 'self_play', 'keep_crashes', 'debug', 'win_prob_lambda', 'run_dir', 'keep_stalls', 'self_play_temp', 'min_lr', 'team_block_episodes', 'bait_entropy_anneal_frac', 'lr', 'exploiter_keep_bots'})\"",
+  "new": "\"frozenset({'pool_spread', 'opd_coef', 'critic', 'distill_value_feat_coef', 'team_pfsp_floor', 'stable_opponent_mastered_wr', 'move_prior_fusion', 'search_teacher_beta', 'move_belief_latent_coef', 'hp_belief_mode', 'allow_belief_grad_mode_change', 'team_pfsp_cap', 'bias_additivity', 'forensic_loss_quota', 'opp_intent_coef', 'debug_eval', 'search_teacher_mode', 'spread_belief_nature', 'value_threat_inject', 'warmstart_battles', 'forensic_win_quota', 'n_sentinels', 'allow_empty_pool', 'species_prior_fusion', 'victory_value', 'damage_matrices', 'edge_bias_families', 'allow_value_from_dist_change', 'intent_threshold', 'device', 'value_entity_pool', 'unified_damage', 'pbrs_material', 'belief_grad_mode', 'search_teacher_coef', 'exploiter_temp_end', 'teacher_gen_battles', 'ent_coef', 'search_teacher_buffer_size', 'keep_stalls', 'pbrs_belief', 'eval_concurrency', 'draw_penalty', 'opp_belief_cls_k', 'teacher_search_budget', 'exploiter_temp_anneal_frac', 'eval_concurrency_per_worker', 'min_lr', 'clip_range', 'move_belief_coef', 'win_prob_mode', 'teacher_persistent', 'bait_bot_share', 'teacher_search_freq', 'intent_label_bot_weight', 'seed', 'adaptive_batch_min_accum', 'grad_checkpointing', 'stable_opponent_pfsp', 'use_bridge', 'distill_coef', 'op_believed_lean', 'pair_outcome_switch', 'snapshot_ladder_games', 'all_shaping_pbrs', 'async_rollout', 'eval_only', 'teacher_search_workers', 'warmstart_bc_steps', 'drop_switch_bias', 'mat_alive_weight', 'exploiter_ladder_window', 'hp_type_belief_coef', 'hand_shaping', 'adaptive_batch_max_accum', 'consequence_topk', 'progress_decision_tense', 'compile_opponents', 'search_teacher_batch_size', 'vf_coef', 'tb_inherit', 'terminal_indicator', 'compile_trainer', 'exploiter_ladder_gate', 'value_sidecar_seed', 'opp_belief_aux_coef', 'opd_beta', 'eval_battles', 'opp_belief_moves_weight', 'entity_topk_seats', 'bait_entropy_anneal_frac', 'stable_opponent_selfplay_share', 'exploiter_temp_ratchet_wr', 'drop_redundant_bias', 'n_steps', 'value_sidecar', 'defensive_entropy_boost', 'stall_pbrs', 'bait_entropy_boost', 'keep_eval_snapshots', 'adaptive_batch_target', 'move_belief_mode', 'winprob_teacher_margin', 'no_progress_tax_armed', 'item_belief', 'batch_size', 'search_teacher', 'allow_nonsample_trainee', 'value_sidecar_fraction', 'distill_value_coef', 'intent_move_cell', 'switch_branch_cell', 'teacher_confirm_rollouts', 'switch_bias_weight', 'allow_nonproduction_arch', 'value_entity_pool_full', 'bait_bot_p', 'damage_topk_k', 'history_events', 'compile_opponents_strict', 'team_pfsp', 'conditional_threat_cell', 'team_wr_tracking', 'fork_lr_freeze', 'run_name', 'defensive_entropy_anneal_frac', 'winprob_teacher_band', 'spread_belief_coef', 'steps', 'teacher_refresh_steps', 'self_play_temp', 'eval_device', 'log_level', 'intent_conditional', 'adaptive_batch_every', 'self_play_use_cpu', 'grad_accum_steps', 'progress_switch_freeze', 'search_teacher_value_coef', 'no_progress_penalty', 'value_tail_weight', 'beta_setvalued_coef', 'exploiter_temp_mode', 'keep_crashes', 'exploiter_ladder_rungs', 'fork_pool_seed', 'move_candidate_floor', 'bias_redesign', 'self_ko_hp_penalty', 'entity_tail_seats', 'debug', 'exploiter_temp_ratchet_games', 'damage_op', 'exploiter_temp_ratchet_factor', 'n_envs', 'adaptive_batch_band', 'keep_eval_trace_steps', 'stable_opponent_temp', 'lr', 'team_block_episodes', 'self_play', 'weight_decay', 'adaptive_batch', 't0_species_prior', 'unified_moves', 'forensic_draw_quota', 'move_latent', 'pair_outcome_cell', 'exploiter_keep_bots', 'op_drop_renders', 'spread_belief', 'damage_candidate_k', 'pfsp_scale', 'eval_shard_games', 'damage_outgoing', 'win_prob_lambda', 'exploiter_bot_fraction', 'run_dir', 'n_epochs', 'eval_workers'})\""
+ },
+ {
+  "path": ".configs.arm8_lambda09.args.win_prob_rollout_mode",
+  "old": "<ABSENT>",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".configs.arm8_lambda09.args.win_prob_rollout_r",
+  "old": "<ABSENT>",
+  "new": "'8'"
+ },
+ {
+  "path": ".configs.arm8_lambda09.args.win_prob_rollout_target",
+  "old": "<ABSENT>",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".configs.arm8_lambda09.args.win_prob_rollout_weight",
+  "old": "<ABSENT>",
+  "new": "'1.0'"
+ },
+ {
+  "path": ".configs.arm8_lambda09.n_args",
+  "old": "286",
+  "new": "290"
+ },
+ {
+  "path": ".configs.control.args._explicit_flags",
+  "old": "\"frozenset({'warmstart_battles', 'log_level', 'opd_beta', 'adaptive_batch_band', 'distill_coef', 'drop_redundant_bias', 'damage_op', 'search_teacher_coef', 'edge_bias_families', 'terminal_indicator', 'self_play_use_cpu', 'unified_damage', 'move_candidate_floor', 'exploiter_temp_anneal_frac', 't0_species_prior', 'value_threat_inject', 'win_prob_mode', 'opp_intent_coef', 'eval_workers', 'device', 'run_name', 'stable_opponent_mastered_wr', 'opp_belief_moves_weight', 'eval_battles', 'fork_lr_freeze', 'belief_grad_mode', 'teacher_confirm_rollouts', 'grad_accum_steps', 'self_ko_hp_penalty', 'conditional_threat_cell', 'team_pfsp_cap', 'teacher_search_budget', 'pool_spread', 'defensive_entropy_boost', 'teacher_search_workers', 'no_progress_penalty', 'winprob_teacher_band', 'damage_candidate_k', 'spread_belief_coef', 'intent_conditional', 'pfsp_scale', 'eval_shard_games', 'move_belief_mode', 'n_sentinels', 'damage_topk_k', 'weight_decay', 'move_belief_coef', 'damage_matrices', 'search_teacher_beta', 'hand_shaping', 'progress_decision_tense', 'exploiter_bot_fraction', 'history_events', 'distill_value_feat_coef', 'move_belief_latent_coef', 'exploiter_temp_ratchet_factor', 'stall_pbrs', 'value_entity_pool', 'bait_entropy_boost', 'allow_empty_pool', 'exploiter_ladder_window', 'forensic_win_quota', 'search_teacher_batch_size', 'value_sidecar', 'allow_nonproduction_arch', 'clip_range', 'intent_move_cell', 'forensic_loss_quota', 'opd_coef', 'beta_setvalued_coef', 'stable_opponent_temp', 'exploiter_temp_ratchet_wr', 'teacher_search_freq', 'allow_nonsample_trainee', 'team_pfsp', 'species_prior_fusion', 'spread_belief', 'bias_additivity', 'exploiter_ladder_gate', 'op_drop_renders', 'value_sidecar_fraction', 'spread_belief_nature', 'hp_type_belief_coef', 'distill_value_coef', 'grad_checkpointing', 'hp_belief_mode', 'search_teacher_value_coef', 'exploiter_temp_end', 'pbrs_material', 'adaptive_batch_max_accum', 'teacher_gen_battles', 'damage_outgoing', 'intent_threshold', 'eval_concurrency_per_worker', 'pair_outcome_switch', 'bait_bot_p', 'snapshot_ladder_games', 'progress_switch_freeze', 'warmstart_bc_steps', 'opp_belief_cls_k', 'compile_trainer', 'winprob_teacher_margin', 'entity_tail_seats', 'n_envs', 'intent_label_bot_weight', 'switch_branch_cell', 'move_latent', 'allow_belief_grad_mode_change', 'consequence_topk', 'seed', 'exploiter_ladder_rungs', 'n_epochs', 'all_shaping_pbrs', 'compile_opponents_strict', 'entity_topk_seats', 'adaptive_batch_every', 'keep_eval_snapshots', 'team_pfsp_floor', 'teacher_refresh_steps', 'value_tail_weight', 'adaptive_batch_target', 'mat_alive_weight', 'vf_coef', 'search_teacher_buffer_size', 'op_believed_lean', 'steps', 'victory_value', 'critic', 'pbrs_belief', 'adaptive_batch', 'search_teacher', 'keep_eval_trace_steps', 'drop_switch_bias', 'teacher_persistent', 'value_sidecar_seed', 'fork_pool_seed', 'eval_concurrency', 'allow_value_from_dist_change', 'debug_eval', 'move_prior_fusion', 'exploiter_temp_ratchet_games', 'bias_redesign', 'async_rollout', 'use_bridge', 'batch_size', 'n_steps', 'bait_bot_share', 'team_wr_tracking', 'value_entity_pool_full', 'eval_device', 'no_progress_tax_armed', 'search_teacher_mode', 'item_belief', 'adaptive_batch_min_accum', 'eval_only', 'stable_opponent_selfplay_share', 'compile_opponents', 'switch_bias_weight', 'tb_inherit', 'ent_coef', 'stable_opponent_pfsp', 'unified_moves', 'draw_penalty', 'exploiter_temp_mode', 'defensive_entropy_anneal_frac', 'pair_outcome_cell', 'forensic_draw_quota', 'opp_belief_aux_coef', 'self_play', 'keep_crashes', 'debug', 'run_dir', 'keep_stalls', 'self_play_temp', 'min_lr', 'team_block_episodes', 'bait_entropy_anneal_frac', 'lr', 'exploiter_keep_bots'})\"",
+  "new": "\"frozenset({'pool_spread', 'opd_coef', 'critic', 'distill_value_feat_coef', 'team_pfsp_floor', 'stable_opponent_mastered_wr', 'move_prior_fusion', 'search_teacher_beta', 'move_belief_latent_coef', 'hp_belief_mode', 'allow_belief_grad_mode_change', 'team_pfsp_cap', 'bias_additivity', 'forensic_loss_quota', 'opp_intent_coef', 'debug_eval', 'search_teacher_mode', 'spread_belief_nature', 'value_threat_inject', 'warmstart_battles', 'forensic_win_quota', 'n_sentinels', 'allow_empty_pool', 'species_prior_fusion', 'victory_value', 'damage_matrices', 'edge_bias_families', 'allow_value_from_dist_change', 'intent_threshold', 'device', 'value_entity_pool', 'unified_damage', 'pbrs_material', 'belief_grad_mode', 'search_teacher_coef', 'exploiter_temp_end', 'teacher_gen_battles', 'ent_coef', 'search_teacher_buffer_size', 'keep_stalls', 'pbrs_belief', 'eval_concurrency', 'draw_penalty', 'opp_belief_cls_k', 'teacher_search_budget', 'exploiter_temp_anneal_frac', 'eval_concurrency_per_worker', 'min_lr', 'clip_range', 'move_belief_coef', 'win_prob_mode', 'teacher_persistent', 'bait_bot_share', 'teacher_search_freq', 'intent_label_bot_weight', 'seed', 'adaptive_batch_min_accum', 'grad_checkpointing', 'stable_opponent_pfsp', 'use_bridge', 'distill_coef', 'op_believed_lean', 'pair_outcome_switch', 'snapshot_ladder_games', 'all_shaping_pbrs', 'async_rollout', 'eval_only', 'teacher_search_workers', 'warmstart_bc_steps', 'drop_switch_bias', 'mat_alive_weight', 'exploiter_ladder_window', 'hp_type_belief_coef', 'hand_shaping', 'adaptive_batch_max_accum', 'consequence_topk', 'progress_decision_tense', 'compile_opponents', 'search_teacher_batch_size', 'vf_coef', 'tb_inherit', 'terminal_indicator', 'compile_trainer', 'exploiter_ladder_gate', 'value_sidecar_seed', 'opp_belief_aux_coef', 'opd_beta', 'eval_battles', 'opp_belief_moves_weight', 'entity_topk_seats', 'bait_entropy_anneal_frac', 'stable_opponent_selfplay_share', 'exploiter_temp_ratchet_wr', 'drop_redundant_bias', 'n_steps', 'value_sidecar', 'defensive_entropy_boost', 'stall_pbrs', 'bait_entropy_boost', 'keep_eval_snapshots', 'adaptive_batch_target', 'move_belief_mode', 'winprob_teacher_margin', 'no_progress_tax_armed', 'item_belief', 'batch_size', 'search_teacher', 'allow_nonsample_trainee', 'value_sidecar_fraction', 'distill_value_coef', 'intent_move_cell', 'switch_branch_cell', 'teacher_confirm_rollouts', 'switch_bias_weight', 'allow_nonproduction_arch', 'value_entity_pool_full', 'bait_bot_p', 'damage_topk_k', 'history_events', 'compile_opponents_strict', 'team_pfsp', 'conditional_threat_cell', 'team_wr_tracking', 'fork_lr_freeze', 'run_name', 'defensive_entropy_anneal_frac', 'winprob_teacher_band', 'spread_belief_coef', 'steps', 'teacher_refresh_steps', 'self_play_temp', 'eval_device', 'log_level', 'intent_conditional', 'adaptive_batch_every', 'self_play_use_cpu', 'grad_accum_steps', 'progress_switch_freeze', 'search_teacher_value_coef', 'no_progress_penalty', 'value_tail_weight', 'beta_setvalued_coef', 'exploiter_temp_mode', 'keep_crashes', 'exploiter_ladder_rungs', 'fork_pool_seed', 'move_candidate_floor', 'bias_redesign', 'self_ko_hp_penalty', 'entity_tail_seats', 'debug', 'exploiter_temp_ratchet_games', 'damage_op', 'exploiter_temp_ratchet_factor', 'n_envs', 'adaptive_batch_band', 'keep_eval_trace_steps', 'stable_opponent_temp', 'lr', 'team_block_episodes', 'self_play', 'weight_decay', 'adaptive_batch', 't0_species_prior', 'unified_moves', 'forensic_draw_quota', 'move_latent', 'pair_outcome_cell', 'exploiter_keep_bots', 'op_drop_renders', 'spread_belief', 'damage_candidate_k', 'pfsp_scale', 'eval_shard_games', 'damage_outgoing', 'exploiter_bot_fraction', 'run_dir', 'n_epochs', 'eval_workers'})\""
+ },
+ {
+  "path": ".configs.control.args.win_prob_rollout_mode",
+  "old": "<ABSENT>",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".configs.control.args.win_prob_rollout_r",
+  "old": "<ABSENT>",
+  "new": "'8'"
+ },
+ {
+  "path": ".configs.control.args.win_prob_rollout_target",
+  "old": "<ABSENT>",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".configs.control.args.win_prob_rollout_weight",
+  "old": "<ABSENT>",
+  "new": "'1.0'"
+ },
+ {
+  "path": ".configs.control.n_args",
+  "old": "286",
+  "new": "290"
+ },
+ {
+  "path": ".env_space._forced_win_row_weight.error",
+  "old": "\"SinglesEnv.__init__() got an unexpected keyword argument 'emit_win_row_weight'\"",
+  "new": "<ABSENT>"
+ },
+ {
+  "path": ".env_space._forced_win_row_weight.keys",
+  "old": "<ABSENT>",
+  "new": "['action_mask', 'observation', 'opp_class', 'win_margin', 'win_mask', 'win_row_w', 'win_target']"
+ },
+ {
+  "path": ".env_space._forced_win_row_weight.spaces",
+  "old": "<ABSENT>",
+  "new": "{'action_mask': {'dtype': 'int8', 'high': 1.0, 'low': 0.0, 'shape': [11]}, 'observation': {'dtype': 'float32', 'high': inf, 'low': -inf, 'shape': [2501]}, 'opp_class': {'dtype': 'int64', 'high': 3.0, 'low': 0.0, 'shape': [1]}, 'win_margin': {'dtype': 'float32', 'high': 1.0, 'low': -1.0, 'shape': [1]}, 'win_mask': {'dtype': 'float32', 'high': 1.0, 'low': 0.0, 'shape': [1]}, 'win_row_w': {'dtype': 'float32', 'high': inf, 'low': 0.0, 'shape': [1]}, 'win_target': {'dtype': 'float32', 'high': 1.0, 'low': 0.0, 'shape': [1]}}"
+ },
+ {
+  "path": ".env_space._forced_win_row_weight.supported",
+  "old": "False",
+  "new": "True"
+ },
+ {
+  "path": ".factory_emit.arm8_lambda09.emit_win_row_weight",
+  "old": "<ABSENT>",
+  "new": "'False'"
+ },
+ {
+  "path": ".factory_emit.control.emit_win_row_weight",
+  "old": "<ABSENT>",
+  "new": "'False'"
+ },
+ {
+  "path": ".label_callback.lam0.95_bootstrap.rollout_metrics",
+  "old": "\"'ABSENT'\"",
+  "new": "'None'"
+ },
+ {
+  "path": ".label_callback.lam0.95_bootstrap.terminal_outcome",
+  "old": "only-old=[\"'40b16fe55d8fda64'\", \"'58f979deb50b358a'\"]",
+  "new": "only-new=[\"'149d03a43ad92871'\", \"'df97fd35718ff46b'\"]"
+ },
+ {
+  "path": ".label_callback.lam0.95_bootstrap.terminal_outcome_dtype",
+  "old": "only-old=[\"'float32'\"]",
+  "new": "only-new=[\"'float64'\"]"
+ },
+ {
+  "path": ".label_callback.lam0.9_bootstrap.rollout_metrics",
+  "old": "\"'ABSENT'\"",
+  "new": "'None'"
+ },
+ {
+  "path": ".label_callback.lam0.9_bootstrap.terminal_outcome",
+  "old": "only-old=[\"'40b16fe55d8fda64'\", \"'58f979deb50b358a'\"]",
+  "new": "only-new=[\"'149d03a43ad92871'\", \"'df97fd35718ff46b'\"]"
+ },
+ {
+  "path": ".label_callback.lam0.9_bootstrap.terminal_outcome_dtype",
+  "old": "only-old=[\"'float32'\"]",
+  "new": "only-new=[\"'float64'\"]"
+ },
+ {
+  "path": ".label_callback.lam0.9_mask.rollout_metrics",
+  "old": "\"'ABSENT'\"",
+  "new": "'None'"
+ },
+ {
+  "path": ".label_callback.lam0.9_mask.terminal_outcome",
+  "old": "only-old=[\"'40b16fe55d8fda64'\", \"'58f979deb50b358a'\"]",
+  "new": "only-new=[\"'149d03a43ad92871'\", \"'df97fd35718ff46b'\"]"
+ },
+ {
+  "path": ".label_callback.lam0.9_mask.terminal_outcome_dtype",
+  "old": "only-old=[\"'float32'\"]",
+  "new": "only-new=[\"'float64'\"]"
+ },
+ {
+  "path": ".label_callback.lam1.0_bootstrap.rollout_metrics",
+  "old": "\"'ABSENT'\"",
+  "new": "'None'"
+ },
+ {
+  "path": ".lambda.lam0.9_bootstrap_ANCHORNONE.error",
+  "old": "\"lambda_return_targets() got an unexpected keyword argument 'anchor_mask'\"",
+  "new": "<ABSENT>"
+ },
+ {
+  "path": ".lambda.lam0.9_bootstrap_ANCHORNONE.n_unmasked",
+  "old": "<ABSENT>",
+  "new": "4"
+ },
+ {
+  "path": ".lambda.lam0.9_bootstrap_ANCHORNONE.new_mask",
+  "old": "<ABSENT>",
+  "new": "'f516d58c23fed492'"
+ },
+ {
+  "path": ".lambda.lam0.9_bootstrap_ANCHORNONE.supported",
+  "old": "False",
+  "new": "True"
+ },
+ {
+  "path": ".lambda.lam0.9_bootstrap_ANCHORNONE.target",
+  "old": "<ABSENT>",
+  "new": "'49bbdfd293d72be9'"
+ },
+ {
+  "path": ".lambda.lam0.9_bootstrap_ANCHORNONE.weight",
+  "old": "<ABSENT>",
+  "new": "'7d90ea7c453abef5'"
+ },
+ {
+  "path": ".migration._synthetic_v117.out_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".migration._synthetic_v117.rollout_fields.win_prob_rollout_mode",
+  "old": "\"'ABSENT'\"",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".migration._synthetic_v117.rollout_fields.win_prob_rollout_r",
+  "old": "\"'ABSENT'\"",
+  "new": "'8'"
+ },
+ {
+  "path": ".migration._synthetic_v117.rollout_fields.win_prob_rollout_target",
+  "old": "\"'ABSENT'\"",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".migration._synthetic_v117.rollout_fields.win_prob_rollout_weight",
+  "old": "\"'ABSENT'\"",
+  "new": "'1.0'"
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.full_hash",
+  "old": "'46959dd329ea3d37'",
+  "new": "'d2cf1c2138cef7dd'"
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.migrated_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.n_fields",
+  "old": "139",
+  "new": "143"
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.rollout_fields.win_prob_rollout_mode",
+  "old": "\"'ABSENT'\"",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.rollout_fields.win_prob_rollout_r",
+  "old": "\"'ABSENT'\"",
+  "new": "'8'"
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.rollout_fields.win_prob_rollout_target",
+  "old": "\"'ABSENT'\"",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".migration.ai_v12_11_ladder_ctrl10M.rollout_fields.win_prob_rollout_weight",
+  "old": "\"'ABSENT'\"",
+  "new": "'1.0'"
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.full_hash",
+  "old": "'4aa91d5e17ece826'",
+  "new": "'c3e834fbc94b224a'"
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.migrated_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.n_fields",
+  "old": "139",
+  "new": "143"
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.rollout_fields.win_prob_rollout_mode",
+  "old": "\"'ABSENT'\"",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.rollout_fields.win_prob_rollout_r",
+  "old": "\"'ABSENT'\"",
+  "new": "'8'"
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.rollout_fields.win_prob_rollout_target",
+  "old": "\"'ABSENT'\"",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".migration.ai_v12_19_ladder_lambda09.rollout_fields.win_prob_rollout_weight",
+  "old": "\"'ABSENT'\"",
+  "new": "'1.0'"
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.full_hash",
+  "old": "'40888505e41a13be'",
+  "new": "'e87a465a5d80cffe'"
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.migrated_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.n_fields",
+  "old": "139",
+  "new": "143"
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.rollout_fields.win_prob_rollout_mode",
+  "old": "\"'ABSENT'\"",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.rollout_fields.win_prob_rollout_r",
+  "old": "\"'ABSENT'\"",
+  "new": "'8'"
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.rollout_fields.win_prob_rollout_target",
+  "old": "\"'ABSENT'\"",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".migration.ai_v12_20_ladder_denseaux.rollout_fields.win_prob_rollout_weight",
+  "old": "\"'ABSENT'\"",
+  "new": "'1.0'"
+ },
+ {
+  "path": ".model_config_version",
+  "old": "117",
+  "new": "119"
+ },
+ {
+  "path": ".sidecar.QUANTITY_FIELDS",
+  "old": "only-old=[]",
+  "new": "only-new=[\"'win_prob_rollout_mode'\", \"'win_prob_rollout_r'\", \"'win_prob_rollout_target'\"]"
+ },
+ {
+  "path": ".sidecar.SCHEMA_EQUIVALENCE",
+  "old": "only-old=[]",
+  "new": "only-new=['3']"
+ },
+ {
+  "path": ".sidecar.SIDECAR_SCHEMA",
+  "old": "2",
+  "new": "3"
+ },
+ {
+  "path": ".sidecar.TARGET_IDENTITY_FIELDS",
+  "old": "only-old=[]",
+  "new": "only-new=[\"'win_prob_rollout_mode'\", \"'win_prob_rollout_r'\", \"'win_prob_rollout_target'\"]"
+ },
+ {
+  "path": ".sidecar.arm8_identity.win_prob_rollout_mode",
+  "old": "<ABSENT>",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".sidecar.arm8_identity.win_prob_rollout_r",
+  "old": "<ABSENT>",
+  "new": "'8'"
+ },
+ {
+  "path": ".sidecar.arm8_identity.win_prob_rollout_target",
+  "old": "<ABSENT>",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".sidecar.identity_new_off.schema",
+  "old": "'2'",
+  "new": "'3'"
+ },
+ {
+  "path": ".sidecar.identity_new_off.win_prob_rollout_mode",
+  "old": "<ABSENT>",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".sidecar.identity_new_off.win_prob_rollout_r",
+  "old": "<ABSENT>",
+  "new": "'8'"
+ },
+ {
+  "path": ".sidecar.identity_new_off.win_prob_rollout_target",
+  "old": "<ABSENT>",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".sidecar.identity_v2.win_prob_rollout_mode",
+  "old": "<ABSENT>",
+  "new": "\"'replace'\""
+ },
+ {
+  "path": ".sidecar.identity_v2.win_prob_rollout_r",
+  "old": "<ABSENT>",
+  "new": "'8'"
+ },
+ {
+  "path": ".sidecar.identity_v2.win_prob_rollout_target",
+  "old": "<ABSENT>",
+  "new": "'0.0'"
+ },
+ {
+  "path": ".win_prob_loss.rollout_error",
+  "old": "'ValueTerms._win_prob_loss() takes from 3 to 6 positional arguments but 7 were given'",
+  "new": "<ABSENT>"
+ },
+ {
+  "path": ".win_prob_loss.rollout_supported",
+  "old": "False",
+  "new": "True"
+ },
+ {
+  "path": ".win_prob_loss.rollout_w_None",
+  "old": "<ABSENT>",
+  "new": "{'loss': '1.2312099933624268', 'loss_bits': 'a97e49f47e696982', 'metrics': {'acc': '0.4966292083263397', 'acc_contested': '0.5405405163764954', 'brier': '0.3854827880859375', 'brier_contested': '0.3711611032485962', 'brier_material': '0.33699744939804077', 'contested_frac': '0.24943819642066956', 'contested_label_mean': '0.45045045018196106', 'coverage': '0.869140625', 'label_mean': '0.4876404404640198', 'loss': '1.2312099933624268', 'pred_mean': '0.5114126205444336', 'skill_vs_material': '-0.14387452602386475'}}"
+ },
+ {
+  "path": ".win_prob_loss.rollout_w_ones",
+  "old": "<ABSENT>",
+  "new": "{'loss': '1.2312099933624268', 'loss_bits': 'a97e49f47e696982', 'metrics': {'acc': '0.4966292083263397', 'acc_contested': '0.5405405163764954', 'brier': '0.3854827880859375', 'brier_contested': '0.3711611032485962', 'brier_material': '0.33699744939804077', 'contested_frac': '0.24943819642066956', 'contested_label_mean': '0.45045045018196106', 'coverage': '0.869140625', 'label_mean': '0.4876404404640198', 'loss': '1.2312099933624268', 'loss_unweighted': '1.2312099933624268', 'pred_mean': '0.5114126205444336', 'row_w_mean': '1.0', 'skill_vs_material': '-0.14387452602386475'}}"
+ },
+ {
+  "path": ".win_prob_loss.with_strata.metrics.row_w_mean",
+  "old": "<ABSENT>",
+  "new": "'0.25'"
+ }
+]

@@ -1,0 +1,85 @@
+{
+ "span": "46ca68ef..40bf23d9",
+ "old_commit": "46ca68ef",
+ "new_commit": "40bf23d9",
+ "method": "pinned-input functional test (same argv, same seed, same fixture bytes) in two worktrees",
+ "verdict": {
+  "control_configured_run": "TRAINING-SEMANTICS-NEUTRAL",
+  "arm8_lambda_0.9_configuration": "TRAINING-SEMANTICS-NEUTRAL"
+ },
+ "extractor": {
+  "n_state_dict_tensors": "230 = 230",
+  "n_named_parameters": "229 = 229",
+  "n_params": "1950003 = 1950003",
+  "differing_tensor_byte_hashes": 0,
+  "pi_hash": "a2032b7d4742df22 (both)",
+  "vf_hash": "1456ec43788494d8 (both)",
+  "pi_sum": 917.5859788386151,
+  "vf_sum": 905.7699173854198,
+  "extractor_kwargs_diff": "EMPTY (51 keys, all values equal) -- both configs"
+ },
+ "lambda_return_targets": {
+  "fixture": "n_steps=24 n_envs=6, np.random.default_rng(20260910)",
+  "cells_compared": ["lam1.0_bootstrap", "lam1.0_mask", "lam0.95_bootstrap", "lam0.95_mask",
+                     "lam0.9_bootstrap", "lam0.9_mask"],
+  "all_target_weight_newmask_n_unmasked_identical": true,
+  "lam0.9_bootstrap_target_hash": "49bbdfd293d72be9 (both)",
+  "anchor_mask_None_equals_old_positional_call": true
+ },
+ "win_prob_loss": {
+  "fixture": "B=512, torch.Generator().manual_seed(777)",
+  "plain": "1.2312099933624268 (both), bits a97e49f47e696982",
+  "with_margin": "1.2312099933624268 (both), bits a97e49f47e696982",
+  "with_strata": "0.3078024983406067 (both), bits fb62a7b537a48df0",
+  "rollout_w_None_equals_plain": true,
+  "rollout_w_all_ones_equals_plain": true,
+  "metric_key_sets_identical_when_row_w_is_None": true,
+  "new_metric_key_when_row_w_live": "row_w_mean (strata_row_w_mean preserved at the same value 0.25)"
+ },
+ "label_callback": {
+  "fixture": "n_steps=24 n_envs=6, rng(555), 26 finite terminals, policy._critic_mode=winprob",
+  "lam1.0_bootstrap": "win_target 40b16fe55d8fda64 / win_mask 58f979deb50b358a (both)",
+  "lam0.9_bootstrap": "win_target e8ca4f8cf19c7ec1 / win_mask 64e140dac713e7a8 (both)",
+  "lam0.9_mask": "win_target 5455da0b7b41e93a / win_mask 58f979deb50b358a (both)",
+  "lam0.95_bootstrap": "win_target 6bce44b6091c1b4d / win_mask 64e140dac713e7a8 (both)",
+  "lambda_metrics_identical": true,
+  "non_vacuity": "lam0.9 target != lam1.0 target (asserted)",
+  "only_difference": "_win_prob_terminal_outcome stash dtype float32 -> float64; values bit-identical after normalisation (149d03a43ad92871 / df97fd35718ff46b both trees)"
+ },
+ "env_observation_space": {
+  "control_keys": 23,
+  "arm8_keys": 23,
+  "key_sets_and_bounds_identical": true,
+  "win_row_w_present_at_default": false,
+  "win_row_w_present_when_forced": "new tree only: Box(0, inf, (1,), float32); old tree raises TypeError on the kwarg",
+  "env_factory_predicate": "emit_win_row_weight=False for BOTH the control and arm-8 argv"
+ },
+ "model_config": {
+  "MODEL_CONFIG_VERSION": "117 -> 119",
+  "ARCH_SIGNATURE": "gen3_critic_route_wave_v1 (unchanged)",
+  "synthetic_v117_migrates_to": 119,
+  "migrated_off_record": {"win_prob_rollout_target": 0.0, "win_prob_rollout_r": 8,
+                          "win_prob_rollout_mode": "replace", "win_prob_rollout_weight": 1.0},
+  "recorded_fields": "139 -> 143",
+  "check_compatible": {
+   "current_vs_arm8_saved": "PASS in both trees",
+   "arm8_saved_vs_current": "PASS in both trees",
+   "current_vs_ctrl10M_saved": "PASS in both trees"
+  }
+ },
+ "sidecar": {
+  "SIDECAR_SCHEMA": "2 -> 3",
+  "SCHEMA_EQUIVALENCE": "{1,2} -> {1,2,3}",
+  "QUANTITY_FIELDS_added": ["win_prob_rollout_target", "win_prob_rollout_r", "win_prob_rollout_mode"],
+  "win_prob_rollout_weight_deliberately_absent_from_QUANTITY_FIELDS": true,
+  "arm8_v2_file_pools_with_a_v3_at_target_0": true,
+  "smoke_row_key_sets_identical": true
+ },
+ "debug_smokes": {
+  "arm8_lambda09_config": {"old": "Training complete", "new": "Training complete",
+                           "tb_scalar_tags": "153 = 153, no tag added or removed"},
+  "control_lambda1.0_config": {"old": "Training complete", "new": "Training complete",
+                               "tb_scalar_tags": "143 = 143, no tag added or removed"}
+ },
+ "rust_diff": "EMPTY (git diff --stat 46ca68ef..40bf23d9 -- src/rust_sim/ prints nothing)"
+}
