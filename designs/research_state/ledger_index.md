@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,123-line file. **The ledger itself is append-only and is never edited by this**;
+17,127-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**541 headings · 498 dated · 2026-08-01 → 2026-09-10 · ledger 17,123 lines.**
+**542 headings · 499 dated · 2026-08-01 → 2026-09-10 · ledger 17,127 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -561,3 +561,4 @@ rename.
   - `L17095` · `2026-09-10` · ADDENDUM to arm 9's read · the dose actually delivered was ~40 % of the registered one; the spread lean is rule-19 family on ONE draw and cannot be promoted at any eval size
   - `L17099` · `2026-09-10` · CORRECTION to arm 9's addendum · the dose ROSE, not fell — the scored fraction went 0.69 → 0.87 (+27 % relative), so the null holds at MORE supervision than registered, not less
   - `L17103` · `2026-09-10` · READ · arm 5 `ai_v12_14_ladder_truevalue` (the PRIVILEGED critic) on the OFFLINE 400/800-game frames — the ceiling probe closes: hidden information buys NO resolution and NO opponent conditioning; the privileged head is MORE OPTIMISTIC and WORSE CALIBRATED than the control on every eval draw (ECE detected at 800; optimism run-level, unpromotable)
+  - `L17124` · `2026-09-10` · CORRECTION to arm 5's offline read · `ECE all +0.041` was NOT a registered row — it is a POST-HOC LEAN, not a detection; no second truevalue draw exists or is proposed, so it cannot be promoted; the optimism/ECE split is consistent under rule 19 but moot; and a standing rule: a LIVE-frame lean is not evidence about the OFFLINE population
