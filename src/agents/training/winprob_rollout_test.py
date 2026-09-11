@@ -552,3 +552,41 @@ def test_the_three_flags_are_INHERITED_on_a_flagless_resume():
 
 def test_the_defaults_are_the_OFF_position():
     assert ROLLOUT_OFF == 0.0 and DEFAULT_ROLLOUT_R == 8 and ROLLOUT_MODES[0] == "replace"
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+# THE HANDLE IS CAPTURED AT DECISION TIME — the off-by-one that would label the wrong state.
+# ──────────────────────────────────────────────────────────────────────────────────────────────
+
+def test_the_wrapper_publishes_the_handle_only_when_the_flag_threaded_it_on():
+    """A run without `--win-prob-rollout-target` must not even build the tuple."""
+    import inspect
+
+    from agents.training.wrappers import MaskableAgentWrapper
+
+    src = inspect.getsource(MaskableAgentWrapper.step)
+    assert '_emit_wp_rollout_handle' in src
+    # The capture must happen BEFORE the step, or the handle names the turn the step LANDED on and
+    # the label describes a state one turn downstream of the buffer row.
+    i_capture = src.index("_wp_handle = record_key")
+    i_step = src.index("obs, reward, term, trunc, info = super().step(action)")
+    assert i_capture < i_step, (
+        "the reconstruction handle must be read BEFORE super().step() — the buffer row holds the "
+        "observation the decision was made FROM, so the handle must name the turn we were ASKED "
+        "at, not the turn the step landed on")
+    i_publish = src.index('info["wp_handle"]')
+    assert i_publish > i_step, "it is published onto the info the step returned"
+
+
+def test_the_async_collector_records_the_handle_on_EVERY_row_not_only_a_done_one():
+    """The async collector owns the per-env buffer row, so it records inline — and unlike
+    `win_outcome`, a handle exists at every decision, not only at a terminal."""
+    import inspect
+
+    from agents.training import async_vec_env
+
+    src = inspect.getsource(async_vec_env)
+    i_handle = src.index('_wp_keys[t, i] = str(info["wp_handle"])')
+    i_done = src.index('_win_scr[t, i] = float(info["win_outcome"])')
+    assert i_handle < i_done, (
+        "the handle capture must sit OUTSIDE the `if done:` block the outcome capture is inside")
