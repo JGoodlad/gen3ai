@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,341-line file. **The ledger itself is append-only and is never edited by this**;
+17,353-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**553 headings · 506 dated · 2026-08-01 → 2026-09-11 · ledger 17,341 lines.**
+**554 headings · 507 dated · 2026-08-01 → 2026-09-11 · ledger 17,353 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -573,3 +573,4 @@ rename.
   - `L17315` · `2026-09-10` · READ · the SECOND 800-game eval draw for `tdaux` and `strata` (the two arms the mid-run script edit had skipped) — nothing on any registered row; `strata`'s bot resolution is a CONSISTENT LEAN (+0.0055 on both draws, inside the wider-draw bar), and `tdaux`'s own-team row flips sign between draws
   - `L17330` · `2026-09-10` · FINDING (MAJOR) · THE SELF-PLAY CROSSING STEP IS A DRAW-LEVEL COIN FLIP, not a property of the ladder — `--promote-threshold 0.55` sits INSIDE the 2M-bots replicate floor, so an arm crosses at ~2.16M or ~4.13M by lottery; the λ-0.9 PAIR is MISMATCHED across it (draw 1 at 2M, draw 2 at 4M); "every arm crosses at 4,000,032" is RETRACTED
   - `L17338` · `2026-09-11` · CORRECTION to the crossing-step finding · the first crossing is the SEED path on `win_rate_vs_bots` against `SELF_PLAY_START = 0.55` (`--self-play-start-wr`), NOT the promotion line and NOT `--promote-threshold`; the mismatch is a RAMP from ~3 %, smaller than "two curricula"; and decision (b) is amended — BOTH secondary comparators are reported, none selected by the post-treatment crossing
+  - `L17342` · `2026-09-11` · ADDENDUM to the crossing-step finding · the λ-0.9 pair's self-play EXPOSURE differs by 0.6 percentage points of training (63.6 % vs 63.0 %), not by a third; the G7-reference-gap attribution is RETRACTED; the ladder-node asymmetry and the rule-15 amendment stand
