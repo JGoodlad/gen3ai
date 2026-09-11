@@ -529,6 +529,65 @@ and nothing else. ⚠️ The value SIDECAR's `target` column follows the flag: u
 one re-aims them) and with the cf labels (disjoint state sets — the cf term never touches
 `win_target`).
 
+### `--win-prob-rollout-target` — R-ROLLOUT MC targets (`gen3_winprob_rollout_target_v1`, v118)
+
+**Default `0.0` = OFF and BIT-identical** (the whole path is skipped, including the per-decision
+handle capture); **`--critic winprob` AND `--cf-records` are BOTH REQUIRED** — the second because a
+sampled state is labelled by REPLAYING its episode, and the replayable record only exists in the
+ring that flag switches on. Detail: [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
+
+🚨 **WHY — bits per state.** The terminal label is **one outcome bit copied to ~30 states**: at most
+1 bit about the GAME and none about the individual STATE, which is the arithmetic behind the
+10.2 % / 14.4 % between-cell variance share. λ moves information that is already inside the episode
+backward (a self-referential channel); this one **buys NEW BITS** — it plays `R` continuations
+forward from a sampled state and makes `wins / R` that state's target. It **replaces the buffer's OWN
+target**, which is the whole distinction from `cf_winprob_coef` (that one is an auxiliary loss on
+FOREIGN recorded states and read null).
+
+🚨 **THE COST IS LINEAR, LARGE, AND PAID AS A STALL.**
+`budget / collection = fraction × R × ~104 decisions per continuation`, against the trainee's own
+`n_steps × n_envs`. So **`1/32` at R = 8 is ~26×** a production rollout's entire simulation budget,
+and **the fraction that costs `1×` is `1/(R × 104) ≈ 1/832`** — which is the number an arm registers.
+At that fraction the rollout-derived share of the objective is ~0.12 % (`rollout_mass`): a
+HIGH-QUALITY, LOW-MASS treatment, and a null must be priced against the dose before it is attributed
+to the idea. `MAX_STATES_PER_ROLLOUT = 256` caps the bill whatever the fraction asks for.
+
+The labelling is **SYNCHRONOUS** and it BLOCKS between `_on_rollout_end` and `train()`: the buffer is
+a ring refilled every iteration, so a label that landed one rollout late would have no row to write
+into and could only become the foreign-state aux loss that already failed. One `model.save` snapshot
+per rollout (into `TMPDIR`, never the run dir), a fan-out of short-lived child processes
+(poke-env's single `POKE_LOOP`, a mutating trunk, and crash isolation — eval's three reasons), a
+contention-scaled wall bound whose overrun KILLS by pid and leaves those states their terminal bit,
+and `torch.compile` decided by arithmetic (~40 s vs 6.4×/decision ⇒ break-even at 18 continuations).
+
+**Selection `winprob_rollout_select_v1`:** UNIFORM over eligible rows, **≤ 1 per EPISODE SLICE**,
+seeded from the run seed and the rollout index. Uniform rather than priority-ranked because a
+priority sampler re-weights which states carry the new target — a distribution-shift confound for
+the read itself. Eligible = `win_mask == 1` (so the `__RECON__` record exists) **and** a captured
+`<pid>_<battle_tag>` handle **and** `turn >= 2` **and** a MOVE ROUND read off the buffer's own
+`action_mask`. The handle is published by the wrapper **BEFORE** the step, because the buffer row
+holds the observation the decision was made FROM.
+
+🚨 **ECOLOGY — the arm's largest caveat.** Continuations play the CURRENT policy on BOTH sides at
+temperature 1.0. The trainee side is exact and the opponent's TEAM is exact, but a training
+`__RECON__` record **carries no opponent identity**, so the opponent's POLICY is self-like: right for
+the ~90 % self-play share, **biased LOW** on the rest. Priced by `rollout_bot_share` and the
+per-class win rates, never hidden.
+
+**λ PRECEDENCE:** a labelled row is an **ANCHOR** — the recursion terminates on it at outcome-weight
+1.0, because a Monte-Carlo win fraction is a MEASUREMENT of that state, not a bootstrap. Earlier rows
+then blend toward a measured probability instead of a copied bit, so the two levers are additive.
+Orthogonal to `--win-prob-strata-weight`, disjoint from `--win-prob-dense-aux` and the cf family.
+`--win-prob-rollout-mode blend` averages the rollout fraction with the terminal bit (half the shift,
+keeps some of the RECORDED ecology).
+
+Read **`rollout_budget_multiple`** (the cost), **`rollout_mass`** (the dose's reach) and
+**`rollout_shift`** (the dose itself — 0 means the new target agreed with the bit it replaced and the
+arm is buying nothing), plus `rollout_seconds` for the stall. 🚨 **An ABSENT `win_prob/rollout_*`
+family means the fraction is 0.0** (or there is no ring, which announces itself once) and nothing
+else. ⚠️ The value SIDECAR moves to schema **3** and its `target` column is now the outcome on most
+rows and a measured win fraction on the sampled ones.
+
 ### `--win-prob-dense-aux` — 25 DENSE TARGETS BESIDE the BCE (`gen3_dense_aux_v1`, v117)
 
 **Default `0.0` = OFF and BIT-identical** — bit-identical by not BUILDING the head, so there is no

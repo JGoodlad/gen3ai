@@ -69,6 +69,7 @@ class WinProbLabelCallback(BaseCallback):
         self._impl = str(impl or "rust")
         self._rollout_calls = 0
         self._said_no_records = False
+        self._said_ring_too_small = False
 
     def _scratch(self) -> np.ndarray:
         n_steps = self.model.n_steps
@@ -263,6 +264,22 @@ class WinProbLabelCallback(BaseCallback):
             states.append({"record": path, "turn": int(turns[t, e]),
                            "salt": f"{keys[t, e]}:{int(turns[t, e])}:{self._rollout_calls}"})
             kept.append((t, e))
+        # 🚨 THE RING IS SMALLER THAN A ROLLOUT, AND THAT IS A SELECTION BIAS, NOT A SHORTFALL.
+        # `cf_records` keeps the newest `--cf-records-keep` records GLOBALLY (512 by default) while a
+        # production rollout finishes ~2,400 episodes, so the records of the rollout's EARLY
+        # episodes are pruned before the labelling runs — and what survives is the LATE ones. The
+        # labels would then be drawn from the end of the buffer rather than uniformly over it,
+        # which is exactly the distribution-shift confound the uniform sampler exists to avoid. So
+        # it announces itself, once, and names the flag that fixes it.
+        if picks and missing > 0.25 * len(picks) and not self._said_ring_too_small:
+            self._said_ring_too_small = True
+            print(f"⚠️  [win_prob_rollout] {missing} of {len(picks)} sampled states had NO record "
+                  f"left in the cf_records ring. The ring is pruned to the newest "
+                  f"--cf-records-keep GLOBALLY while this rollout finished far more episodes than "
+                  f"that, so the states that DO resolve are the rollout's LATE ones — a selection "
+                  f"bias, not just a shortfall. Raise --cf-records-keep above "
+                  f"n_envs x n_steps / mean_episode_length (~2,400 at the production shape). "
+                  f"Said once; watch win_prob/rollout_records_missing.", flush=True)
         labels, stats = ([], {"seconds": 0.0, "arms": 0.0, "arms_capped": 0.0,
                               "arm_decisions": 0.0})
         if states:

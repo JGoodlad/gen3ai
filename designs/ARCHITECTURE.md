@@ -856,6 +856,29 @@ unchanged, no module moves, the head is built last and the forward never calls i
 keeps it off the ARCH surface, so it does not appear in §6's flag table. Mechanics:
 `designs/training/critic_and_value_losses.md`.
 
+**`--win-prob-rollout-target` BUYS NEW BITS for this BCE** (`gen3_winprob_rollout_target_v1`, config
+v118, the critic ladder's **arm 10**). Default **`0.0` = OFF and the loss is BIT-identical**;
+`--critic winprob` **and** `--cf-records` are both REQUIRED. Above 0.0 it is the FRACTION of the
+rollout buffer whose states are replayed out of the `cf_records` ring to their own turn, played
+forward `--win-prob-rollout-r` times (default 8) by the CURRENT policy on both sides at temperature
+1.0, and given `wins / R` as their target — the buffer's OWN rows, not the foreign recorded states
+`cf_winprob_coef` folds. The same measurement as arms 7 and 8, taken to its root: the terminal label
+is **one outcome bit copied to ~30 states**, at most 1 bit about the GAME and none about the
+individual STATE, which is why only **10.2 % / 14.4 %** of its variance lies BETWEEN (cycle,
+opponent) cells
+([`winprob_head_refit_2026-09-09`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
+§6); R continuations give R bits about THAT state.
+
+🚨 **Its cost is linear in the fraction and it is paid as a STALL on the training loop**:
+`budget / collection = fraction × R × ~104 decisions per continuation`, so `1/32` at R = 8 is ~26× a
+production rollout's entire simulation budget and the fraction that costs 1× is **`1/(R × 104) ≈
+1/832`** — at which the rollout-derived share of the objective is ~0.12 %. `MAX_STATES_PER_ROLLOUT`
+caps the bill regardless. `--win-prob-rollout-mode {replace,blend}` picks whether the target BECOMES
+the win fraction or is averaged with the terminal bit. The three are training-only — no forward
+pass, no weight shape, no `check_compatible` compare, **not** `flag_registry.py` rows — so they do
+not appear in §6's flag table until a production config adopts them. Mechanics:
+`designs/training/critic_and_value_losses.md`.
+
 The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
 `coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
 would add the advantage to the reward and take the advantage of that. The FROZEN-φ route

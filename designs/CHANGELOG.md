@@ -9339,3 +9339,123 @@ the render), `quota_match_test.py` (25, up from 23 — the declaration pinned bo
 controls sit at 0.76 / 0.80 / 0.98 — the OVERSHOOT branch of the registered rule — while the DELTA
 is UNREADABLE, twelve of twelve positive but with a replicate floor (0.20 / 0.22) the size of the
 effect. The decisive read is the 400/800-game offline pair.
+
+---
+
+## v118 — `--win-prob-rollout-target`: R-ROLLOUT MONTE-CARLO targets for the win-prob BCE (`gen3_winprob_rollout_target_v1`)
+
+**2026-09-10, the critic ladder's arm 10.** Arms 7 and 8 re-priced and re-aimed the win-prob BCE.
+This one **buys new bits**.
+
+**THE FINDING, as an information budget.** Under `--critic winprob` the value loss is a BCE against
+**one terminal bit copied to ~30 states**. That bit carries at most 1 bit about the GAME and nothing
+at all about the individual STATE — which is the arithmetic underneath the head refit's
+(`winprob_head_refit_2026-09-09` §6) measurement that only **10.2 % / 14.4 %** of the label's
+variance lies BETWEEN (cycle, opponent) cells, so a learner minimising a proper scoring rule shrinks
+the weak axes toward the marginal. `--win-prob-lambda` attacked that by moving the network's OWN
+later estimates backward — a cheaper channel, but a self-referential one. **R rollouts from a state
+give R bits about THAT state's own win probability.**
+
+**THE FLAG.** `--win-prob-rollout-target <0..1>`, default `0.0` = OFF and BIT-identical — and
+bit-identical by SKIPPING the whole path, including the per-decision handle capture, so an unflagged
+run does not even allocate the scratch. Above 0.0, once per rollout, a seeded subsample of the
+buffer's own states is replayed out of the `cf_records` ring to its own turn and played forward
+`--win-prob-rollout-r` times (default 8) by the CURRENT policy on both sides at temperature 1.0; the
+state's target becomes `wins / R` and its mask goes to 1. `--win-prob-rollout-mode {replace,blend}`
+picks whether the target BECOMES the win fraction or is averaged with the terminal bit.
+
+🚨 **IT REPLACES THE BUFFER'S OWN TARGET, and that is the whole distinction from the counterfactual
+label factory.** `cf_winprob_term` applies the head to FOREIGN recorded states from
+`<run>/cf_labels/` with their own tight-MC labels and never touches `win_target` — an auxiliary loss
+on someone else's states, and that arm read NULL. Here the labelled row is a row of THIS rollout
+buffer, inside the ordinary PPO objective, at the ordinary `win_prob_coef`.
+
+🚨 **THE COST IDENTITY, which is what the flag is actually governed by.** A continuation is a real
+battle played by a real policy: ~104 live `choose_move` calls each, 93 % of the wall in those
+forwards (`cf_producer`'s profile, 2026-08-23). So
+
+    labelling budget / collection budget  =  fraction x R x mean_continuation_decisions
+
+against the trainee's own `n_steps x n_envs`. **`1/32` at R = 8 is ~26x a production rollout's entire
+simulation budget**; the fraction that costs exactly `1x` is `1 / (R x 104) ~ 1/832`, independent of
+the buffer shape. That is the number an arm registers, and at it the rollout-derived share of the
+objective's scored rows is **~0.12 %** — a HIGH-QUALITY, LOW-MASS treatment, and a null must be
+priced against the dose before it is attributed to the idea. `MAX_STATES_PER_ROLLOUT = 256` caps the
+bill whatever the fraction asks for. Published every rollout as `win_prob/rollout_budget_multiple`.
+
+**IT IS SYNCHRONOUS, AND THAT IS FORCED.** The label must land on the buffer row it describes, and
+the rollout buffer is a ring refilled from scratch every iteration — a label arriving one rollout
+late (the `cf_records` producer pattern, which ages labels onto disk for a later consumer) has no row
+left to write into and could only become the foreign-state auxiliary loss that already failed. So the
+labelling runs between `_on_rollout_end` and `train()`, it BLOCKS, and the stall is MEASURED
+(`win_prob/rollout_seconds`) rather than hidden. Short and bounded instead: one `model.save` snapshot
+per rollout into `TMPDIR` (never the run directory) so every continuation is measured under ONE
+policy; a fan-out of short-lived CHILD PROCESSES (poke-env's single global `POKE_LOOP`, a trunk that
+mutates during `train()`, and crash isolation — eval's three reasons); `torch.compile` decided by
+arithmetic (~40 s once against 6.4x per decision ⇒ break-even at 18 continuations); and a
+contention-scaled wall bound whose overrun KILLS by that child's own pid and leaves its states their
+terminal bit. Nothing raises into the training loop: every failure path means "no label for that
+state", never a fabricated one.
+
+**THE SELECTION IS DECLARED** (`winprob_rollout_select_v1`): UNIFORM over eligible rows, at most ONE
+per EPISODE SLICE, seeded from the run seed and the rollout index. Uniform rather than
+priority-ranked because a `cf_producer`-shaped priority sampler re-weights WHICH states carry the new
+target — a distribution-shift confound for exactly the read the arm exists to make. One per episode
+is the bits-per-state argument applied to the sample itself. Eligible = the episode TERMINATED inside
+the buffer (so the `__RECON__` record exists) AND a `<pid>_<battle_tag>` handle was captured AND
+`turn >= 2` (`cf_producer`'s `MIN_LABELABLE_TURN`) AND it is a MOVE ROUND read off the buffer's own
+`action_mask` — a counterfactual replay cuts at a TURN boundary, so labelling a mid-turn forced
+switch would label that turn's move decision instead. The handle is published by the wrapper BEFORE
+the step, because the buffer row holds the observation the decision was made FROM.
+`substitute_choice=None` at the divergence turn, so our side plays LIVE there and the label is
+**V(s)** and not `Q(s, a_recorded)` — which is what `cf_producer` measures by passing the recorded
+choice. Draw-at-cap scores 0.5 through `cf_producer.rollout_outcome_score` verbatim.
+
+⚠️ **THE RING IS SMALLER THAN A ROLLOUT BY DEFAULT, and that is a SELECTION BIAS rather than a
+shortfall.** `cf_records` keeps the newest `--cf-records-keep` records GLOBALLY (512) while a
+production rollout finishes ~2,400 episodes, so the early episodes' records are pruned before the
+labelling runs and what survives is the LATE ones. The arm's argv therefore carries
+`--cf-records-keep 4096`, and the callback announces the condition once, naming the flag.
+
+⚠️ **THE ECOLOGY APPROXIMATION, inherited from `cf_producer` and declared here too.** The trainee side
+is exact (temperature 1.0 — a GREEDY rollout biases every label LOW, measured +0.037 [+0.007, +0.066]
+over 477 sentinel states) and the opponent's TEAM is exact, but a training `__RECON__` record carries
+**no opponent identity at all**, so the opponent's POLICY is self-like: right for the ~90 % self-play
+share of the mixture, biased LOW on the rest. Not hidden — `win_prob/rollout_bot_share` and the
+per-class win rates price it. Restricting eligibility to self-play rows was REJECTED: it would move
+the labelled distribution away from the buffer's own.
+
+**λ PRECEDENCE.** A labelled row is an **ANCHOR**: the recursion terminates on it at outcome-weight
+1.0, exactly as a terminal row does, because a Monte-Carlo win fraction is a MEASUREMENT of that
+state and not a bootstrap off the network. Earlier rows of the same episode then blend toward a
+measured probability instead of toward a copied bit, so the two levers are additive by construction.
+`lambda_return_targets` gained `anchor_mask` / `anchor_value` kwargs, default `None` ⇒ byte-identical.
+Orthogonal to `--win-prob-strata-weight` (that one weights ROWS); disjoint from `--win-prob-dense-aux`
+and the whole cf family.
+
+The value SIDECAR follows the flag: `SIDECAR_SCHEMA` moves to **3**, the header gains the three
+fields, and `target_is_outcome` is False whenever the fraction is above 0 — the column is then the
+outcome on most rows and a measured win fraction on the sampled ones, which is a nastier ambiguity
+than λ's and is refused rather than averaged.
+
+**RECORDED at config v118**, the `td_aux_coef` class: provenance + flagless-resume read-back, never
+compared by `check_compatible`. Pre-v118 migrates to `0.0` / `8` / `"replace"` — a RECORD, not a
+guess: the terminal bit IS what every prior run trained against. The read-back matters more here than
+for λ, because a restart that dropped the flag would return the arm to its own control under the same
+run name **and the run would get faster**, which reads as a speed-up. No `ARCH_SIGNATURE` bump, no
+`MIGRATION_FLOOR` change, NOT a `flag_registry.py` row — but `win_prob_rollout_target` IS declared in
+`arch_tables._COEF_MODULE` → `win_head`.
+
+Both `--critic winprob` and `--cf-records` are REQUIRED, refused in `combination_checks` so both
+`resolve_config` and `python -m main.checkargs` report them. Under `shaped` the BCE is an auxiliary
+readout, so measured labels there would re-aim a diagnostic while still paying for every
+continuation; without the ring there is no replayable episode, so the flag would label ZERO states in
+silence on a run whose whole purpose was the treatment.
+
+**GATES:** `winprob_rollout_test.py` (37) + two `combination_checks` ARGVS rows. **SMOKE**
+(`--debug --steps 10000 --critic winprob` clean-world `--cf-records --win-prob-rollout-target 0.03
+--win-prob-rollout-r 4`, rust bridge, CPU, on a box at load ~36): `Training complete`, **61 states
+labelled per rollout over 4 rollouts, 244 continuations each, 0 failed, 0 records missing**,
+`rollout_arm_decisions` 66-95, `rollout_seconds` 24-47, `rollout_budget_multiple` 7.9-10.3,
+`rollout_shift` 0.27-0.40, `rollout_capped_frac` 0-0.025, and `win_prob_rollout_target 0.03` recorded
+at `config_version 118`.

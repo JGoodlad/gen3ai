@@ -274,6 +274,34 @@ ABSENT `win_prob/lambda_*` family means the flag is off. ⚠️ Under λ < 1 the
 column is the λ-return, not the raw outcome. Mechanics:
 [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
+**`--win-prob-rollout-target <0..1>`** (default `0.0` = OFF, bit-identical; **requires `--critic
+winprob` AND `--cf-records`**) replaces the terminal bit on a seeded subsample of the buffer's own
+states with a **measured** `wins / R` win fraction: each sampled state is replayed out of the
+`cf_records` ring to its own turn and played forward **`--win-prob-rollout-r`** times (default 8) by
+the current policy on both sides at temperature 1.0. It exists because one outcome bit copied to ~30
+states carries 1 bit about the GAME and none about the STATE, while R continuations carry R bits
+about that state. **`--win-prob-rollout-mode {replace,blend}`** (default `replace`) picks whether the
+target becomes the win fraction or is averaged with the terminal bit.
+
+🚨 **THIS FLAG COSTS REAL WALL, AND IT BLOCKS THE TRAINING LOOP.** The labelling runs between
+collection and `train()` (the buffer is a ring — a late label has no row to land on), on a fan-out of
+short-lived child processes. The budget identity is
+**`fraction × R × ~104 decisions per continuation`** against the trainee's own `n_steps × n_envs`:
+**`1/32` at R = 8 is ~26×** a production rollout's whole simulation budget, and **the fraction that
+costs `1×` is `1/(R × 104) ≈ 1/832`**. Read **`win_prob/rollout_budget_multiple`** (what it is
+costing), **`rollout_seconds`** (the stall it is adding), **`rollout_mass`** (~0.12 % at the 1×
+fraction — the honest reach of the treatment) and **`rollout_shift`** (the dose: 0 means the new
+target agreed with the bit it replaced and the arm is buying nothing). `rollout_bot_share` prices the
+one declared approximation — a training record carries no opponent identity, so continuations play a
+self-like opponent and a bot episode's label is biased LOW. ⚠️ **Raise `--cf-records-keep` with it.** The ring keeps the newest 512 records GLOBALLY while a
+production rollout finishes ~2,400 episodes, so at the default the only states that resolve are the
+rollout's LATE ones — a selection bias, not just a shortfall. The registered argv uses
+`--cf-records-keep 4096`; the trainer says so once when more than a quarter of the sample fails to
+resolve. 🚨 An ABSENT `win_prob/rollout_*` family
+means the flag is off. ⚠️ The value sidecar moves to schema 3; its `target` column is then the outcome
+on most rows and a measured win fraction on the sampled ones. Mechanics:
+[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+
 **`--win-prob-dense-aux <coef>`** (default `0.0` = OFF and bit-identical — the head is not BUILT;
 **requires `--critic winprob`** and a win head) adds **25 DENSE TARGETS BESIDE** the win-prob BCE
 rather than changing it: for every state, the episode's END-OF-BATTLE facts back-filled the way the
