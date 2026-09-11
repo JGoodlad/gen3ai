@@ -1,0 +1,295 @@
+{
+ "generated_at": "2026-09-11T00:02:47-0700",
+ "n_all_teams": 719,
+ "n_sample_teams": 72,
+ "config": {
+  "workers": 48,
+  "episodes_per_worker": 4000,
+  "perm": 400,
+  "seed": 20260910,
+  "argv_source": "models/ai_v12_11_ladder_ctrl10M/metadata.json original_command (self-play, team-pfsp off, team-block-episodes 1, no trainee-team pin)",
+  "episodes_per_generation": 500,
+  "n_heuristics": 9
+ },
+ "heuristic_fraction_reference": {
+  "0.30": 1.0,
+  "0.50": 1.0,
+  "0.70": 0.4168000000000004,
+  "0.90": 0.1,
+  "0.99": 0.1
+ },
+ "arms": {
+  "self_play_fraction=0.0": {
+   "n_episodes": 192000,
+   "n_distinct_teams": 717,
+   "n_teams_facing_pool": 0,
+   "n_teams_facing_bot": 717,
+   "pool_share": 0.0,
+   "class_counts": {
+    "bot": 192000
+   },
+   "degenerate": "this configuration draws a SINGLE opponent class, so every class-conditional statistic is undefined. Reported as a frame census only \u2014 never as an independence result.",
+   "seconds": 194.6
+  },
+  "self_play_fraction=0.25": {
+   "n_episodes": 192000,
+   "n_distinct_teams": 717,
+   "n_teams_facing_pool": 717,
+   "n_teams_facing_bot": 717,
+   "pool_share": 0.249828125,
+   "class_counts": {
+    "bot": 144033,
+    "pool": 47967
+   },
+   "i_own_team_to_opp_class": {
+    "loo_auc": 0.5020711464333593,
+    "loo_auc_null": {
+     "mean": 0.49922834109870723,
+     "sd": 0.0022240491393236933,
+     "p2.5": 0.4945173706339822,
+     "p97.5": 0.5036250082354925,
+     "n": 400
+    },
+    "mutual_information_bits": 0.002783992182311545,
+    "mutual_information_null": {
+     "mean": 0.0027022048630694438,
+     "sd": 0.00014020784309555617,
+     "p2.5": 0.00243624284379451,
+     "p97.5": 0.002973884749749215,
+     "n": 400
+    }
+   },
+   "ii_own_team_to_opp_identity": {
+    "n_distinct_opponents": 393,
+    "mutual_information_bits": 0.6811445242056255,
+    "mutual_information_null": {
+     "mean": 0.6817159292042112,
+     "sd": 0.0008363366762448019,
+     "p2.5": 0.6801482687892978,
+     "p97.5": 0.6835351190065037,
+     "n": 400
+    },
+    "entropy_of_opponent_bits": 5.332696419621307
+   },
+   "iii_team_distribution_by_class": {
+    "chi_square": {
+     "chi2": 741.7526102570757,
+     "dof": 716,
+     "min_expected": 46.46803125,
+     "chi2_over_dof": 1.035967332761279,
+     "mc_null": {
+      "mean": 717.7580274372021,
+      "sd": 38.1039362698143,
+      "p2.5": 645.9442869333581,
+      "p97.5": 790.4289540877129,
+      "n": 200
+     }
+    },
+    "ks_on_team_index": {
+     "D": 0.004275282607554692,
+     "p": 0.5944753998378945,
+     "n_pool": 43118,
+     "n_bot": 129565
+    },
+    "bias_draw_share_pool": 0.10109033293722768,
+    "bias_draw_share_bot": 0.10044920261329
+   },
+   "seconds": 250.4
+  },
+  "self_play_fraction=0.5": {
+   "n_episodes": 192000,
+   "n_distinct_teams": 717,
+   "n_teams_facing_pool": 717,
+   "n_teams_facing_bot": 717,
+   "pool_share": 0.5006927083333333,
+   "class_counts": {
+    "bot": 95867,
+    "pool": 96133
+   },
+   "i_own_team_to_opp_class": {
+    "loo_auc": 0.5007697746437222,
+    "loo_auc_null": {
+     "mean": 0.49940756884513193,
+     "sd": 0.0018961602165781476,
+     "p2.5": 0.4951107218181487,
+     "p97.5": 0.5027514770516902,
+     "n": 400
+    },
+    "mutual_information_bits": 0.0028957405950872767,
+    "mutual_information_null": {
+     "mean": 0.0026930470151690583,
+     "sd": 0.0001366791075425312,
+     "p2.5": 0.0024594371478323714,
+     "p97.5": 0.0029851440530950747,
+     "n": 400
+    }
+   },
+   "ii_own_team_to_opp_identity": {
+    "n_distinct_opponents": 393,
+    "mutual_information_bits": 0.9274795772250592,
+    "mutual_information_null": {
+     "mean": 0.928421055429171,
+     "sd": 0.0012202306681004275,
+     "p2.5": 0.9261698344908187,
+     "p97.5": 0.9307357913842459,
+     "n": 400
+    },
+    "entropy_of_opponent_bits": 6.880455740993406
+   },
+   "iii_team_distribution_by_class": {
+    "chi_square": {
+     "chi2": 769.0178245823722,
+     "dof": 716,
+     "min_expected": 98.86284375,
+     "chi2_over_dof": 1.0740472410368327,
+     "mc_null": {
+      "mean": 714.2425961327352,
+      "sd": 37.8086334114809,
+      "p2.5": 636.8145157875061,
+      "p97.5": 784.552744262236,
+      "n": 200
+     }
+    },
+    "ks_on_team_index": {
+     "D": 0.003228489748051233,
+     "p": 0.7586245329221799,
+     "n_pool": 86459,
+     "n_bot": 86185
+    },
+    "bias_draw_share_pool": 0.100631416891182,
+    "bias_draw_share_bot": 0.10099408555603075
+   },
+   "seconds": 259.4
+  },
+  "self_play_fraction=0.75": {
+   "n_episodes": 192000,
+   "n_distinct_teams": 717,
+   "n_teams_facing_pool": 717,
+   "n_teams_facing_bot": 717,
+   "pool_share": 0.7492916666666667,
+   "class_counts": {
+    "bot": 48136,
+    "pool": 143864
+   },
+   "i_own_team_to_opp_class": {
+    "loo_auc": 0.5014825235955863,
+    "loo_auc_null": {
+     "mean": 0.49922288204224285,
+     "sd": 0.0024207481612703993,
+     "p2.5": 0.49429016050964913,
+     "p97.5": 0.5040916434526359,
+     "n": 400
+    },
+    "mutual_information_bits": 0.002904277591554499,
+    "mutual_information_null": {
+     "mean": 0.00270027962907002,
+     "sd": 0.00013628329004920108,
+     "p2.5": 0.002436792146839907,
+     "p97.5": 0.002959862937825787,
+     "n": 400
+    }
+   },
+   "ii_own_team_to_opp_identity": {
+    "n_distinct_opponents": 393,
+    "mutual_information_bits": 1.0652119572616516,
+    "mutual_information_null": {
+     "mean": 1.0592721474457278,
+     "sd": 0.0016235165188692587,
+     "p2.5": 1.0565026989836497,
+     "p97.5": 1.0625016642900609,
+     "n": 400
+    },
+    "entropy_of_opponent_bits": 8.039310365619489
+   },
+   "iii_team_distribution_by_class": {
+    "chi_square": {
+     "chi2": 771.7536837080793,
+     "dof": 716,
+     "min_expected": 49.64025,
+     "chi2_over_dof": 1.0778682733353062,
+     "mc_null": {
+      "mean": 715.1976012855515,
+      "sd": 36.98643626026315,
+      "p2.5": 643.3595550865568,
+      "p97.5": 781.8792444756526,
+      "n": 200
+     }
+    },
+    "ks_on_team_index": {
+     "D": 0.007131627338616109,
+     "p": 0.07313586170655839,
+     "n_pool": 129346,
+     "n_bot": 43375
+    },
+    "bias_draw_share_pool": 0.10091475282210977,
+    "bias_draw_share_bot": 0.09890726275552601
+   },
+   "seconds": 255.5
+  },
+  "self_play_fraction=0.9": {
+   "n_episodes": 192000,
+   "n_distinct_teams": 717,
+   "n_teams_facing_pool": 717,
+   "n_teams_facing_bot": 717,
+   "pool_share": 0.8995052083333334,
+   "class_counts": {
+    "pool": 172705,
+    "bot": 19295
+   },
+   "i_own_team_to_opp_class": {
+    "loo_auc": 0.49453776737972177,
+    "loo_auc_null": {
+     "mean": 0.49897749391177243,
+     "sd": 0.0031494544942665126,
+     "p2.5": 0.4931219923836021,
+     "p97.5": 0.5052287747181845,
+     "n": 400
+    },
+    "mutual_information_bits": 0.0024902355509009468,
+    "mutual_information_null": {
+     "mean": 0.0027179172361174813,
+     "sd": 0.00014238504957197798,
+     "p2.5": 0.002470339445437602,
+     "p97.5": 0.0030051235368148137,
+     "n": 400
+    }
+   },
+   "ii_own_team_to_opp_identity": {
+    "n_distinct_opponents": 393,
+    "mutual_information_bits": 1.107138772673701,
+    "mutual_information_null": {
+     "mean": 1.110549496044286,
+     "sd": 0.001801644057992447,
+     "p2.5": 1.1069169927143863,
+     "p97.5": 1.114294707023803,
+     "n": 400
+    },
+    "entropy_of_opponent_bits": 8.511183225661922
+   },
+   "iii_team_distribution_by_class": {
+    "chi_square": {
+     "chi2": 659.7063393322708,
+     "dof": 716,
+     "min_expected": 20.098958333333332,
+     "chi2_over_dof": 0.9213775688998195,
+     "mc_null": {
+      "mean": 716.5050379726265,
+      "sd": 37.777143967491185,
+      "p2.5": 653.1730102681313,
+      "p97.5": 798.2380914544165,
+      "n": 200
+     }
+    },
+    "ks_on_team_index": {
+     "D": 0.006740104796108315,
+     "p": 0.4772875042673802,
+     "n_pool": 155379,
+     "n_bot": 17319
+    },
+    "bias_draw_share_pool": 0.10032135722764252,
+    "bias_draw_share_bot": 0.10240995076444674
+   },
+   "seconds": 272.7
+  }
+ }
+}
