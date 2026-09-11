@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,375-line file. **The ledger itself is append-only and is never edited by this**;
+17,379-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**557 headings · 510 dated · 2026-08-01 → 2026-09-11 · ledger 17,375 lines.**
+**558 headings · 511 dated · 2026-08-01 → 2026-09-11 · ledger 17,379 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -577,3 +577,4 @@ rename.
   - `L17354` · `2026-09-11` · VERDICT + REGISTRATION · `46ca68ef → 40bf23d9` is TRAINING-SEMANTICS-NEUTRAL for the control AND for arm 8's λ-0.9 configuration; `--win-prob-rollout-weight` BUILT (`40bf23d9`, v119); ARM 10 `ai_v12_23_ladder_rollout` is REGISTERED and CLEARED to launch after `lambda095`, W = 64 pinned from a target mass share before any data exists
   - `L17362` · `2026-09-11` · AMENDMENT to arm 10's registration · the argv file lacked `--pin-commit`; the launcher would have resolved `source: head` (already three commits past `40bf23d9`) — caught by the Training Run session's DRY-RUN, fixed by regenerating the argv with `--pin-commit 40bf23d9`
   - `L17366` · `2026-09-11` · MEASUREMENT ×2 · (A) a TRAINING rollout assigns the trainee's team INDEPENDENTLY of the opponent — by construction and measured at |AUC − 0.5| ≤ 0.0042 over ~1.5M episodes; the N-curve's largest open question is ELIMINATED and the live-frame confound is the CAPTURE QUOTA, not the pairing rule · (B) `critic_read` v6 (`fc3ce2fb`): the turns-4–10 class-AUC row is the low-noise conditioning row (floor 0.022); the late-window SPREAD rows carry run-level floors of 0.19–0.22; and the "Bayes-optimal spread" reference is NOT a ceiling — V's spread EXCEEDS it at every window, so the t1–3 spread is board-state, not opponent decoding
+  - `L17376` · `2026-09-11` · CORRECTION to the v6 read · "the t1–3 spread rides on BOARD STATE, not opponent decoding" was too strong — the `spread_ratio_optimal` term is a LOWER BOUND on the decode-attributable spread (a fitted posterior attenuates by an unmeasured factor), and at turns 1–3 the board IS the channel the class is read through; the residual may be opponent information the decoder could not extract
