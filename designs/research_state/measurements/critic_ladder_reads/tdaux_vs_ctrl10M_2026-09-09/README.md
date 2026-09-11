@@ -51,3 +51,5 @@ by either, because both effects hit arm and control alike.
 **800-game OFFLINE read (2026-09-10):** `critic_read_hp800.md/json` — both sides 800-game offline cycles (seed 20260910); its own floor `../replicate_floor_10M_hp800.json`; ledger 2026-09-10 · *THE ARMS AT 800 GAMES*.
 
 **Second 800-game eval draw (2026-09-10, seed 20260911):** `critic_read_hp800b.md/json`, floors from `../replicate_floor_10M_hp800b.json`; the bar is the WIDER of the two offline draws (rule 19). Ledger 2026-09-10 · *second eval draw for tdaux and strata*.
+
+**v6 re-read of the 800-game frames (2026-09-11):** `critic_read_hp800_v6.md/json` — adds `cond.opp_class_auc.{t1_3,t4_10}`, the late spread rows, the optimal-spread decomposition and the crossing step; floors `../replicate_floor_10M_hp800.json` + the v6 two-draw floors (class AUC t4–10: 0.022). Ledger 2026-09-11 · *v6 re-reads of the five earlier levers*.
