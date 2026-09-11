@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,361-line file. **The ledger itself is append-only and is never edited by this**;
+17,365-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**555 headings · 508 dated · 2026-08-01 → 2026-09-11 · ledger 17,361 lines.**
+**556 headings · 509 dated · 2026-08-01 → 2026-09-11 · ledger 17,365 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -575,3 +575,4 @@ rename.
   - `L17338` · `2026-09-11` · CORRECTION to the crossing-step finding · the first crossing is the SEED path on `win_rate_vs_bots` against `SELF_PLAY_START = 0.55` (`--self-play-start-wr`), NOT the promotion line and NOT `--promote-threshold`; the mismatch is a RAMP from ~3 %, smaller than "two curricula"; and decision (b) is amended — BOTH secondary comparators are reported, none selected by the post-treatment crossing
   - `L17342` · `2026-09-11` · ADDENDUM to the crossing-step finding · the λ-0.9 pair's self-play EXPOSURE differs by 0.6 percentage points of training (63.6 % vs 63.0 %), not by a third; the G7-reference-gap attribution is RETRACTED; the ladder-node asymmetry and the rule-15 amendment stand
   - `L17354` · `2026-09-11` · VERDICT + REGISTRATION · `46ca68ef → 40bf23d9` is TRAINING-SEMANTICS-NEUTRAL for the control AND for arm 8's λ-0.9 configuration; `--win-prob-rollout-weight` BUILT (`40bf23d9`, v119); ARM 10 `ai_v12_23_ladder_rollout` is REGISTERED and CLEARED to launch after `lambda095`, W = 64 pinned from a target mass share before any data exists
+  - `L17362` · `2026-09-11` · AMENDMENT to arm 10's registration · the argv file lacked `--pin-commit`; the launcher would have resolved `source: head` (already three commits past `40bf23d9`) — caught by the Training Run session's DRY-RUN, fixed by regenerating the argv with `--pin-commit 40bf23d9`
