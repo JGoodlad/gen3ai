@@ -224,6 +224,12 @@ ARGVS: dict[str, list[str]] = {
     # gen3_winprob_lambda_v1 — the same shape: the λ-return target only means anything when the
     # win-prob BCE IS the value loss, and under `shaped` the values it blends are not probabilities.
     "winprob_lambda_needs_the_winprob_critic": ["--win-prob-lambda", "0.9"],
+    # gen3_winprob_rollout_target_v1 — the same shape again: a measured MC target only means
+    # anything when the win-prob BCE IS the value loss.
+    "winprob_rollout_needs_the_winprob_critic": ["--win-prob-rollout-target", "0.01"],
+    # ...and the ring is where the replayable episode lives, so `_WP` (which does NOT carry
+    # --cf-records) is exactly the argv this one refuses.
+    "winprob_rollout_needs_cf_records": _WP + ["--win-prob-rollout-target", "0.01"],
     # gen3_dense_aux_v1 — the same shape a third time: dense targets on the win-prob head only
     # move the value function when that head IS the value function.
     "dense_aux_needs_the_winprob_critic": ["--win-prob-dense-aux", "1.0"],

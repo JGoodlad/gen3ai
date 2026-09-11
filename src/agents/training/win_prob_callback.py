@@ -30,6 +30,15 @@ Only added to the callback list when the win-prob head is on, so a default run p
 written into the same two obs keys and read by the same BCE — see `lambda_return_targets` below for
 the recursion, the buffer-boundary convention and why the values it blends are the RECORDED ones.
 At the default `1.0` the recursion is skipped entirely and everything above is unchanged.
+
+**`--win-prob-rollout-target` (`gen3_winprob_rollout_target_v1`) replaces the copied bit on a
+SUBSAMPLE of the buffer's own states with an R-ROLLOUT Monte-Carlo win fraction** — new bits bought
+by playing the state forward, rather than the network's own later estimates moved backward. It runs
+between the back-fill and the λ recursion, writes the same two obs keys, and the labelled rows
+become ANCHORS the recursion passes through (`_apply_rollout`, and the precedence note there).
+At the default `0.0` the whole path is skipped and everything above is unchanged. The selection,
+the cost identity and the ecology approximation live in
+:mod:`agents.training.win_prob_rollout`.
 """
 
 from __future__ import annotations
@@ -38,11 +47,28 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.training.win_prob_rollout import (BANKED_CONTINUATION_DECISIONS, DEFAULT_ROLLOUT_R,
+                                              ROLLOUT_MODES, ROLLOUT_OFF, apply_rollout_labels,
+                                              eligible_mask, index_records, n_states_for,
+                                              rollout_metrics, select_rows)
 
 
 class WinProbLabelCallback(BaseCallback):
     """Captures per-episode win/loss outcomes during rollout collection and back-fills the rollout
     buffer's ``win_target`` / ``win_mask`` obs keys with the Monte-Carlo label before ``train()``."""
+
+    def __init__(self, records_dir=None, impl: str = "rust") -> None:
+        """``records_dir`` is the `cf_records` ring (``<run>/cf_records``) the rollout labeller
+        resolves a sampled state's reconstruction record out of; ``None`` (the default, and every
+        run without ``--cf-records``) disables the rollout-target path with a message rather than
+        silently labelling nothing. ``impl`` is the sim transport the continuations play on — the
+        same ``--use-bridge`` the training battles use, so a label is measured on the engine the
+        run is being trained on."""
+        super().__init__()
+        self._records_dir = records_dir
+        self._impl = str(impl or "rust")
+        self._rollout_calls = 0
+        self._said_no_records = False
 
     def _scratch(self) -> np.ndarray:
         n_steps = self.model.n_steps
@@ -52,6 +78,24 @@ class WinProbLabelCallback(BaseCallback):
             scr = np.full((n_steps, n_envs), np.nan, dtype=np.float32)
             self.model._win_terminal_scratch = scr
         return scr
+
+    def _handle_scratch(self):
+        """``(keys, turns)`` — the per-row RECONSTRUCTION HANDLE, [n_steps, n_envs] each.
+
+        ``keys`` is an object array of ``"<pid>_<battle_tag>"`` (or None) and ``turns`` an int array
+        (-1 = none). Captured at DECISION time: the env publishes the turn it was ASKED at, not the
+        turn the step landed on, because the buffer row holds the observation the decision was made
+        from. Allocated only when the rollout target is on — a default run never touches this."""
+        n_steps = self.model.n_steps
+        n_envs = self.model.n_envs
+        keys = getattr(self.model, "_win_handle_keys", None)
+        turns = getattr(self.model, "_win_handle_turns", None)
+        if keys is None or keys.shape != (n_steps, n_envs):
+            keys = np.empty((n_steps, n_envs), dtype=object)
+            turns = np.full((n_steps, n_envs), -1, dtype=np.int64)
+            self.model._win_handle_keys = keys
+            self.model._win_handle_turns = turns
+        return keys, turns
 
     def _on_rollout_start(self) -> None:
         # Fresh scratch each rollout: NaN = "no terminal captured at this (step, env)". The async
@@ -68,6 +112,18 @@ class WinProbLabelCallback(BaseCallback):
         # rollout's states with another rollout's outcomes — a plausible wrong number, which is
         # the one thing this subsystem refuses to emit.
         self.model._win_prob_terminal_outcome = None
+        # The same staleness rule for the rollout family and the handles it selects from: a handle
+        # left over from the PREVIOUS rollout names an episode this buffer never contained.
+        self.model._win_prob_rollout_metrics = None
+        if self._rollout_on():
+            keys, turns = self._handle_scratch()
+            keys.fill(None)
+            turns.fill(-1)
+
+    def _rollout_on(self) -> bool:
+        """True when `--win-prob-rollout-target` is live for this run. Checked before ANY of the
+        handle capture allocates or runs, so an unflagged run pays exactly nothing."""
+        return float(getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0) > ROLLOUT_OFF
 
     def _on_step(self) -> bool:
         # SYNC capture only — the async collector records terminals inline (it owns the per-env buffer
@@ -85,9 +141,18 @@ class WinProbLabelCallback(BaseCallback):
         if t >= self.model.n_steps:
             return True  # defensive: never index past the buffer
         scratch = self._scratch()
+        keys = turns = None
+        if self._rollout_on():
+            keys, turns = self._handle_scratch()
         for env_i, done in enumerate(dones):
-            if done and infos[env_i] is not None and "win_outcome" in infos[env_i]:
-                scratch[t, env_i] = float(infos[env_i]["win_outcome"])
+            info = infos[env_i]
+            if info is None:
+                continue
+            if done and "win_outcome" in info:
+                scratch[t, env_i] = float(info["win_outcome"])
+            if keys is not None and info.get("wp_handle"):
+                keys[t, env_i] = str(info["wp_handle"])
+                turns[t, env_i] = int(info.get("wp_turn", -1))
         return True
 
     def _on_rollout_end(self) -> None:
@@ -118,7 +183,108 @@ class WinProbLabelCallback(BaseCallback):
             starts = es[t] >= 0.5
             known = known & ~starts
             val = np.where(starts, 0.0, val).astype(np.float32)
-        self._apply_lambda(buf, wt, wm)
+        # 🚨 THE TERMINAL BIT, COPIED BEFORE ANYTHING OVERWRITES IT. Two consumers need the
+        # pre-treatment label — the value sidecar (which must not describe a λ-return as an
+        # outcome) and the rollout dose meter (`|rollout label − terminal bit|`) — and both of the
+        # treatments below write `wt`/`wm` IN PLACE.
+        terminal_y = wt[:, :, 0].copy()
+        terminal_m = wm[:, :, 0].copy()
+        anchor_mask, anchor_value = self._apply_rollout(buf, wt, wm, terminal_y)
+        self._apply_lambda(buf, wt, wm, terminal_y, terminal_m,
+                           anchor_mask=anchor_mask, anchor_value=anchor_value)
+
+    # ── R-ROLLOUT MC TARGETS (`gen3_winprob_rollout_target_v1`) ────────────────────────────────
+    def _rollout_config(self):
+        """``(fraction, R, mode)`` for this run, or ``None`` when the labelling must NOT run.
+
+        ``None`` means BIT-IDENTICAL, and there are three ways to get it: the default fraction
+        ``0.0``; a critic that is not ``winprob`` (`combination_checks` refuses that argv — this is
+        belt-and-braces for a hand-built model, and the reason is the same as λ's: under ``shaped``
+        the win-prob BCE is a diagnostic readout, so a new target there re-aims nothing); and no
+        ``cf_records`` ring, which is where a sampled state's replayable episode lives. The last one
+        ANNOUNCES itself once rather than labelling zero states in silence."""
+        frac = float(getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0)
+        if frac <= ROLLOUT_OFF:
+            return None
+        if not is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
+                                  CRITIC_DEFAULT)):
+            return None
+        if not self._records_dir:
+            if not self._said_no_records:
+                self._said_no_records = True
+                print("⚠️  [win_prob_rollout] --win-prob-rollout-target is set but this run has no "
+                      "cf_records ring — a sampled state's replayable episode lives there, so NO "
+                      "state can be labelled. Pass --cf-records. Said once.", flush=True)
+            return None
+        mode = str(getattr(self.model, "win_prob_rollout_mode", "replace") or "replace")
+        if mode not in ROLLOUT_MODES:
+            mode = "replace"
+        return frac, int(getattr(self.model, "win_prob_rollout_r", DEFAULT_ROLLOUT_R)
+                         or DEFAULT_ROLLOUT_R), mode
+
+    def _apply_rollout(self, buf, wt, wm, terminal_y):
+        """Label a seeded subsample of THIS buffer's states with an R-rollout MC win fraction.
+
+        Returns the ``(anchor_mask, anchor_value)`` pair the λ recursion consumes, or
+        ``(None, None)`` when the path is off.
+
+        🚨 **PRECEDENCE WITH `--win-prob-lambda`.** A labelled row is an ANCHOR: its target IS the
+        rollout fraction and the recursion runs THROUGH it, so the states before it in the same
+        episode blend toward a measured win probability instead of toward a copied bit. That is the
+        composition that makes the two levers additive rather than rival — λ moves information
+        backward, this puts better information there to move. The anchor carries outcome-weight
+        1.0 in `lambda_return_targets`' accounting, exactly as a terminal row does, because it IS a
+        measurement of that state and not a bootstrap off the network.
+        """
+        cfg = self._rollout_config()
+        if cfg is None:
+            return None, None
+        frac, R, mode = cfg
+        obs = buf.observations
+        self._rollout_calls += 1
+        keys, turns = self._handle_scratch()
+        n_steps, n_envs = wt.shape[0], wt.shape[1]
+        has_handle = np.array([[keys[t, e] is not None for e in range(n_envs)]
+                               for t in range(n_steps)], dtype=bool)
+        el = eligible_mask(wm[:, :, 0], turns, has_handle, obs["action_mask"])
+        want = n_states_for(frac, n_steps, n_envs)
+        # Seeded from the RUN's seed and the rollout INDEX, so the same argv replays the same
+        # sample — and so two different rollouts of one run never draw the same stream.
+        rng = np.random.default_rng(
+            [int(getattr(self.model, "seed", 0) or 0), int(self._rollout_calls)])
+        picks = select_rows(el, buf.episode_starts, want, rng)
+        index = index_records(self._records_dir)
+        states, kept, missing = [], [], 0
+        for (t, e) in picks:
+            path = index.get(str(keys[t, e]))
+            if path is None:
+                missing += 1
+                continue
+            states.append({"record": path, "turn": int(turns[t, e]),
+                           "salt": f"{keys[t, e]}:{int(turns[t, e])}:{self._rollout_calls}"})
+            kept.append((t, e))
+        labels, stats = ([], {"seconds": 0.0, "arms": 0.0, "arms_capped": 0.0,
+                              "arm_decisions": 0.0})
+        if states:
+            from agents.training.win_prob_rollout_labeller import label_states
+            labels, stats = label_states(model=self.model, states=states, rollouts=R,
+                                         impl=self._impl)
+        anchor_mask, anchor_value, applied = apply_rollout_labels(
+            wt, wm, kept, labels, mode, terminal_y)
+        opp = obs.get("opp_class")
+        opp_cls = (np.asarray(opp)[:, :, 0] if opp is not None
+                   else np.zeros((n_steps, n_envs), dtype=np.int64))
+        self.model._win_prob_rollout_metrics = rollout_metrics(
+            applied=applied, picks=picks, labels=labels, eligible=el, terminal_y=terminal_y,
+            new_mask=wm[:, :, 0], opp_class=opp_cls, fraction=frac, rollouts=R, mode=mode,
+            seconds=float(stats.get("seconds", 0.0)), arms_played=int(stats.get("arms", 0)),
+            arms_capped=int(stats.get("arms_capped", 0)),
+            # The MEASURED mean live decisions per continuation when there were any, and the
+            # banked `cf_producer` profile when there were none — never 0, which would render the
+            # cost meter as "free".
+            arm_decisions=float(stats.get("arm_decisions") or BANKED_CONTINUATION_DECISIONS),
+            records_missing=missing, n_steps=n_steps, n_envs=n_envs)
+        return anchor_mask, anchor_value
 
     # ── λ-RETURN TARGETS (`gen3_winprob_lambda_v1`) ────────────────────────────────────────────
     def _lambda_config(self):
@@ -161,8 +327,16 @@ class WinProbLabelCallback(BaseCallback):
                   f"V(s_last) at the buffer boundary", flush=True)
             return None
 
-    def _apply_lambda(self, buf, wt, wm):
-        """Overwrite the just-back-filled `win_target` / `win_mask` with the λ-return, in place."""
+    def _apply_lambda(self, buf, wt, wm, terminal_y=None, terminal_m=None, *,
+                      anchor_mask=None, anchor_value=None):
+        """Overwrite the just-back-filled `win_target` / `win_mask` with the λ-return, in place.
+
+        ``terminal_y`` / ``terminal_m`` are the PRE-treatment terminal bit and its mask, copied by
+        the caller before the rollout labels were written: they are what the sidecar is published
+        with and what `lambda_target_shift` is measured against, so the two readings stay about the
+        OUTCOME even on a run where the rollout target has already moved some rows. ``anchor_*``
+        are the rollout-labelled rows, which the recursion terminates on — see `_apply_rollout`.
+        """
         cfg = self._lambda_config()
         if cfg is None:
             return
@@ -181,17 +355,21 @@ class WinProbLabelCallback(BaseCallback):
             fallback = 1.0
         else:
             fallback = 0.0
+        y_pre = wt[:, :, 0] if terminal_y is None else np.asarray(terminal_y, dtype=np.float64)
+        m_pre = wm[:, :, 0] if terminal_m is None else np.asarray(terminal_m, dtype=np.float64)
         target, weight, new_mask, n_unmasked = lambda_return_targets(
             values, wt[:, :, 0], wm[:, :, 0], np.asarray(buf.episode_starts, dtype=np.float64),
-            last_values, last_dones, lam, mode)
-        metrics = lambda_metrics(values, wt[:, :, 0], wm[:, :, 0], target, weight, new_mask,
+            last_values, last_dones, lam, mode,
+            anchor_mask=anchor_mask, anchor_value=anchor_value)
+        metrics = lambda_metrics(values, y_pre, m_pre, target, weight, new_mask,
                                  n_unmasked, lam, mode)
         metrics["lambda_bootstrap_fallback"] = fallback
         # 🚨 PUBLISH THE OUTCOME BEFORE DESTROYING IT. `wt`/`wm` still hold the back-filled
         # terminal bit and the "this episode finished inside the buffer" mask; the two lines below
         # replace both with the λ-return and its (possibly UNMASKED) coverage. Copied, never
         # aliased — the very next statement writes through these same arrays.
-        self.model._win_prob_terminal_outcome = (wt[:, :, 0].copy(), wm[:, :, 0].copy())
+        self.model._win_prob_terminal_outcome = (np.asarray(y_pre).copy(),
+                                                 np.asarray(m_pre).copy())
         wt[:, :, 0] = target.astype(wt.dtype)
         wm[:, :, 0] = new_mask.astype(wm.dtype)
         self.model._win_prob_lambda_metrics = metrics
@@ -215,7 +393,7 @@ LAMBDA_OFF = 1.0
 
 
 def lambda_return_targets(values, y, mask, episode_starts, last_values, last_dones,
-                          lam, truncated="bootstrap"):
+                          lam, truncated="bootstrap", *, anchor_mask=None, anchor_value=None):
     """The per-state λ-return target for the win-prob BCE. Pure numpy — no torch, no PPO.
 
     **THE DEFECT THIS EXISTS FOR.** Under `--critic winprob` every state of an episode is trained
@@ -253,6 +431,13 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
     outcome — so `truncated` decides whether they now carry that bootstrap target (`bootstrap`,
     which UNMASKS them and returns the count) or stay excluded (`mask`, byte-identical to today).
 
+    **ANCHORS** (`gen3_winprob_rollout_target_v1`, default `None` ⇒ byte-identical). A row flagged
+    in `anchor_mask` takes `anchor_value` as its target and STOPS the recursion there, exactly as a
+    row that ends its episode does — with outcome weight 1.0, because an R-rollout Monte-Carlo win
+    fraction IS a measurement of that state and not a bootstrap off the network. Earlier rows of the
+    same episode then blend toward the measured probability instead of toward the copied terminal
+    bit, which is the whole composition between the two levers.
+
     Args are all `[n_steps, n_envs]` float arrays except `last_values` / `last_dones`, `[n_envs]`.
     `last_dones` is `model._last_episode_starts` — 1.0 where the buffer's final row ENDED its
     episode. Returns `(target, weight, new_mask, n_unmasked)`.
@@ -273,6 +458,13 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
     if last_values.shape != (n_envs,) or last_dones.shape != (n_envs,):
         raise ValueError("last_values and last_dones must both be [n_envs]")
 
+    anchors = (np.zeros((n_steps, n_envs), dtype=bool) if anchor_mask is None
+               else np.asarray(anchor_mask, dtype=bool))
+    anchor_v = (np.zeros((n_steps, n_envs), dtype=np.float64) if anchor_value is None
+                else np.asarray(anchor_value, dtype=np.float64))
+    if anchors.shape != (n_steps, n_envs) or anchor_v.shape != (n_steps, n_envs):
+        raise ValueError("anchor_mask and anchor_value must both match values' shape")
+
     target = np.zeros((n_steps, n_envs), dtype=np.float64)
     weight = np.zeros((n_steps, n_envs), dtype=np.float64)
     known = mask >= 0.5
@@ -289,6 +481,10 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
             w_succ = weight[t + 1]
         target[t] = np.where(ends, y[t], (1.0 - lam) * v_succ + lam * g_succ)
         weight[t] = np.where(ends, 1.0, lam * w_succ)
+        # An ANCHOR overrides both branches: it is a measurement OF this state, so the recursion
+        # terminates on it rather than passing through it.
+        target[t] = np.where(anchors[t], anchor_v[t], target[t])
+        weight[t] = np.where(anchors[t], 1.0, weight[t])
 
     # THE TRAILING IN-PROGRESS EPISODE, per env — the rows the back-fill left unlabelled BECAUSE
     # the rollout ended, and the only rows a bootstrap may legitimately unmask. Computed rather

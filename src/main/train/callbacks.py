@@ -391,7 +391,14 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
     if args.win_prob_mode != "none":
         from agents.training.win_prob_callback import WinProbLabelCallback
-        callbacks.append(WinProbLabelCallback())
+        # gen3_winprob_rollout_target_v1: the callback needs the `cf_records` RING (a sampled
+        # state's replayable episode) and the sim TRANSPORT the continuations play on — the same
+        # `--use-bridge` the training battles use, so a label is measured on the engine the run is
+        # trained on. Both are None/inert unless `--win-prob-rollout-target` is set.
+        callbacks.append(WinProbLabelCallback(
+            records_dir=(os.path.join(model_dir, "cf_records")
+                         if getattr(args, "cf_records", False) else None),
+            impl=str(getattr(args, "bridge_impl", "rust") or "rust")))
     # DENSE AUXILIARY labels (gen3_dense_aux_v1): the same three-step bridge for the 25
     # end-of-battle per-slot targets. Registered AFTER WinProbLabelCallback — order is not
     # load-bearing between them (the key sets are disjoint, and the λ recursion touches only

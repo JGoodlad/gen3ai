@@ -633,6 +633,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # the same TB series.
     _resolve("win_prob_lambda", 1.0)
     _resolve("win_prob_lambda_truncated", "bootstrap")
+    # gen3_winprob_rollout_target_v1 (v118) training-only, inherited for the same reason: a
+    # launcher RESTART re-invokes the original argv, and a flagless resume that dropped these would
+    # silently return the arm to the copied terminal bit it exists to contest — and would do it
+    # while the run's cost profile silently halved, which reads as a speed-up rather than a lost
+    # treatment.
+    _resolve("win_prob_rollout_target", 0.0)
+    _resolve("win_prob_rollout_r", 8)
+    _resolve("win_prob_rollout_mode", "replace")
     # gen3_dense_aux_v1 (v117): the CLI surface of a DERIVED structural toggle, so the resolve line
     # carries BOTH roles — the dose for the loss, and (through `extractor_arch._DERIVED`) whether
     # the head is built at all. A flagless resume that dropped it would not merely stop dosing the
@@ -874,6 +882,15 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # NEGATIVE coefficient would ASCEND the auxiliary loss — the head would be trained to
         # mispredict every slot — which is not a weaker version of this lever.
         parser.error("--win-prob-dense-aux must be >= 0 (0 = off; the head is not built)")
+    if args.win_prob_rollout_target is not None and not (0.0 <= args.win_prob_rollout_target <= 1.0):
+        # A single-value RANGE check (the cross-flag half is in `combination_checks`). The bounds
+        # are the parameter's meaning: it is a FRACTION OF THE BUFFER. 1.0 is legal and absurd —
+        # ~832x the run's simulation budget at R = 8 — and the hard per-rollout cap
+        # (`win_prob_rollout.MAX_STATES_PER_ROLLOUT`) is what actually keeps the bill finite.
+        parser.error("--win-prob-rollout-target must be in [0, 1] "
+                     "(0 = off / the terminal bit at every state; it is a fraction of the buffer)")
+    if args.win_prob_rollout_r is not None and args.win_prob_rollout_r < 1:
+        parser.error("--win-prob-rollout-r must be >= 1 (continuations per sampled state)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the

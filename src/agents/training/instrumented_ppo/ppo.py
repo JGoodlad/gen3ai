@@ -280,6 +280,18 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             for _dk, _dv in _daux_metrics.items():
                 if float(_dv) == float(_dv):      # a NaN is REPORTED by omission, never logged
                     win_prob_metrics.setdefault(_dk, []).append(float(_dv))
+        # +WIN-PROB R-ROLLOUT TARGETS (gen3_winprob_rollout_target_v1) — computed in
+        # `WinProbLabelCallback._on_rollout_end` (it needs the buffer's [n_steps, n_envs] shape and
+        # it has to BLOCK on the continuations before the epochs begin) and stashed on the model.
+        # Folded in here so it rides the ordinary `win_prob/` prefix, and only when the labelling
+        # actually RAN: an absent `win_prob/rollout_*` family means the fraction is 0.0 (or the run
+        # has no cf_records ring, which announces itself once) and nothing else. Cleared at every
+        # `_on_rollout_start`, so it can never be a stale rollout's.
+        _roll_metrics = getattr(self, "_win_prob_rollout_metrics", None)
+        if _roll_metrics:
+            for _rk, _rv in _roll_metrics.items():
+                if float(_rv) == float(_rv):      # a NaN is an empty slice; omit, never log it
+                    win_prob_metrics.setdefault(_rk, []).append(float(_rv))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)

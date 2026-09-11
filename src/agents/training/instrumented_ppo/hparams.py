@@ -270,6 +270,19 @@ class PpoHyperparameters:
     # are built in a CALLBACK before `train()`, so nothing here touches a forward pass.
     win_prob_lambda: float = 1.0
     win_prob_lambda_truncated: str = "bootstrap"
+    # gen3_winprob_rollout_target_v1: R-ROLLOUT MONTE-CARLO targets for the WIN-PROB BCE.
+    # `win_prob_rollout_target` is the FRACTION of the rollout buffer whose states get a measured
+    # `wins / R` target instead of the episode's copied terminal bit; 0.0 = OFF and BIT-identical
+    # (`WinProbLabelCallback` skips the whole path). It exists because one outcome bit copied to
+    # ~30 states carries one bit about the GAME and none about the STATE, while R continuations
+    # from a state carry R bits about that state. Requires `--critic winprob` AND `--cf-records`
+    # (both refused otherwise, never a silent no-op). 🚨 The cost is `fraction x R x ~104` policy
+    # decisions against the trainee's own `n_steps x n_envs`, paid as a STALL between collection
+    # and `train()` — read `win_prob/rollout_budget_multiple` before raising either.
+    # Training-only, resume-mutable; the targets are built in a CALLBACK before `train()`.
+    win_prob_rollout_target: float = 0.0
+    win_prob_rollout_r: int = 8
+    win_prob_rollout_mode: str = "replace"
     # gen3_dense_aux_v1: the DENSE AUXILIARY loss's weight, >= 0. 0.0 = OFF and BIT-identical --
     # the head is not BUILT at all, so there is no module, no obs key, no callback and no term.
     # Above 0 it folds `coef * mean(survival BCE, final-HP BCE, turns-left BCE)` over the

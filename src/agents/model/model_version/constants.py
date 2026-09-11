@@ -267,7 +267,18 @@ from typing import Any, Dict
 #   and is not called by the forward at all — so an OFF run on this code is bit-identical to the
 #   same run on v116 and every existing checkpoint still resumes. A pre-v117 config defaults to
 #   False / 0.0, which is not a guess: no run could set anything else, because nothing could.
-MODEL_CONFIG_VERSION = 117
+# v118 (gen3_winprob_rollout_target_v1): `win_prob_rollout_target` + `win_prob_rollout_r` +
+#   `win_prob_rollout_mode` — R-ROLLOUT MONTE-CARLO targets for the win-prob BCE, arm 10 of the
+#   critic ladder. TRAINING-only, the v116 shape exactly: the three change what a SUBSAMPLE of the
+#   buffer's states regresses toward, computed in a post-collection callback, and touch no forward
+#   pass and no weight shape — a default (0.0) build is bit-identical and there is nothing for
+#   `check_compatible` to compare. RECORDED anyway, for v100's reason, and with an extra edge here:
+#   the treatment also carries a large WALL-CLOCK cost, so a resume that dropped it would look like
+#   a speed-up rather than like a lost arm. A pre-v118 config defaults to 0.0 / 8 / "replace",
+#   which is not a guess but the only possible past — the terminal bit IS what every prior run
+#   trained against, and the other two are inert at that fraction. No ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 118
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

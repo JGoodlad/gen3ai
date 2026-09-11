@@ -504,6 +504,46 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "aux_hp_mae, aux_masked_frac and grad/dense_aux_share. STRUCTURAL: "
                              "the head is fixed for a run's lifetime (a resume may re-dose it, "
                              "not add or remove it); the dose is resume-inherited.")
+    # --- gen3_winprob_rollout_target_v1 (2026-09-10, the critic ladder's arm 10): R-ROLLOUT
+    #     MONTE-CARLO targets for the win-prob BCE. The fourth knob on the SAME loss — one scales
+    #     it, `--win-prob-strata-weight` re-prices its MIX, `--win-prob-lambda` re-aims it at the
+    #     network's own later estimates, and this one BUYS NEW BITS by playing the state forward. ---
+    parser.add_argument("--win-prob-rollout-target", "--win_prob_rollout_target",
+                        dest="win_prob_rollout_target", type=float, default=None,
+                        help="Fraction of the rollout buffer's states whose win-prob target is "
+                             "replaced by an R-ROLLOUT MONTE-CARLO win fraction, in [0, 1]. 0.0 "
+                             "(the DEFAULT) = OFF and BIT-identical. WHY: the terminal label is ONE "
+                             "outcome bit copied to ~30 states -- one bit about the GAME and none "
+                             "about the STATE -- and the head refit showed that is a TARGET defect "
+                             "(only 10-14%% of the label's variance lies BETWEEN (cycle, opponent) "
+                             "cells). R continuations from a state give R bits about THAT state. "
+                             "Each sampled state is replayed to its own turn from the "
+                             "--cf-records ring and played forward R times by the CURRENT policy on "
+                             "both sides at temperature 1.0; the target becomes wins/R. "
+                             "🚨 COST IS LINEAR AND LARGE: fraction x R x ~104 decisions per "
+                             "continuation, against the n_envs x n_steps decisions the trainee "
+                             "itself makes, so 1/32 at R=8 is ~26x the run's whole simulation "
+                             "budget and the fraction that costs 1x is ~1/(R*104). Watch "
+                             "win_prob/rollout_budget_multiple, rollout_seconds and rollout_mass. "
+                             "REQUIRES --critic winprob AND --cf-records. TRAINING-only, "
+                             "resume-inherited.")
+    parser.add_argument("--win-prob-rollout-r", "--win_prob_rollout_r",
+                        dest="win_prob_rollout_r", type=int, default=None,
+                        help="Continuations per sampled state under --win-prob-rollout-target "
+                             "(default 8). The label's standard error is ~0.5/sqrt(R) at p = 0.5, "
+                             "and the COST is exactly linear in it -- R and the fraction trade "
+                             "against each other at constant budget, so raising R means lowering "
+                             "the fraction. INERT at --win-prob-rollout-target 0.")
+    parser.add_argument("--win-prob-rollout-mode", "--win_prob_rollout_mode",
+                        dest="win_prob_rollout_mode", choices=("replace", "blend"), default=None,
+                        help="What a labelled state's target BECOMES. `replace` (the DEFAULT): the "
+                             "rollout win fraction, full stop. `blend`: the mean of the rollout "
+                             "fraction and the episode's terminal bit -- half the target shift, and "
+                             "it keeps some of the RECORDED ecology, because the terminal bit was "
+                             "played against the real opponent while the continuation was not (the "
+                             "record carries no opponent identity, so every continuation plays a "
+                             "self-like opponent; see win_prob/rollout_bot_share). INERT at "
+                             "--win-prob-rollout-target 0.")
     parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
                         type=float, default=None,
                         help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "

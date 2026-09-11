@@ -514,4 +514,13 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("dense_aux", False)
         data.setdefault("win_prob_dense_aux", 0.0)
         data["config_version"] = 117
+    # v118 (gen3_winprob_rollout_target_v1) — THREE TRAINING-only target-shape fields, v116's shape
+    # exactly. 0.0 is not a default chosen for old configs, it is a RECORD: the terminal bit IS the
+    # target every pre-v118 run trained against, and R / mode are inert at that fraction. Not
+    # version-locked and not in check_compatible — they re-aim a loss, never a forward pass.
+    if version < 118:
+        data.setdefault("win_prob_rollout_target", 0.0)
+        data.setdefault("win_prob_rollout_r", 8)
+        data.setdefault("win_prob_rollout_mode", "replace")
+        data["config_version"] = 118
     return data

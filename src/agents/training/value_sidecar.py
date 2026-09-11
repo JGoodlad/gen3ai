@@ -151,7 +151,14 @@ SIDECAR_FILENAME = "rows.jsonl"
 #: rule, so the tag moves: a v1 reader meeting a v2 file can refuse rather than quietly average a
 #: quantity it thinks is a 0/1 outcome. A v2 file at λ = 1.0 is byte-identical to a v1 one apart
 #: from the two header fields.
-SIDECAR_SCHEMA = 2
+#: v3 (gen3_winprob_rollout_target_v1): the header gained `win_prob_rollout_target` /
+#: `win_prob_rollout_r` / `win_prob_rollout_mode`, and with them `target` acquired a THIRD meaning —
+#: on a SUBSAMPLE of the rows it is now an R-rollout Monte-Carlo win fraction measured by replaying
+#: that state and playing it forward, not a copied bit and not a λ-return. That is a meaning change
+#: under this file's own rule (and a nastier one than λ's, because it applies to SOME rows and not
+#: all), so the tag moves again. A v3 file at target 0.0 is byte-identical to a v2 one apart from
+#: the three header fields.
+SIDECAR_SCHEMA = 3
 
 #: Sample one state in this many, by default. 1/64 of a production rollout is ~2,048 rows —
 #: enough for a per-turn-bucket calibration table within a single rollout, small enough that the
@@ -280,6 +287,17 @@ class ValueSidecarCallback(BaseCallback):
             "win_prob_lambda": float(getattr(self.model, "win_prob_lambda", 1.0) or 1.0),
             "win_prob_lambda_truncated": str(
                 getattr(self.model, "win_prob_lambda_truncated", "bootstrap")),
+            # gen3_winprob_rollout_target_v1: whether SOME of the `target` column is a MEASURED
+            # win fraction rather than the copied bit / λ-return the two fields above describe.
+            # 0.0 = none of it. The per-row flag is deliberately NOT written: the sidecar samples
+            # its own 1/64 of the buffer and the labeller samples its own, so the two rarely
+            # intersect, and a column that is "usually" one quantity is exactly what this header
+            # exists to warn about.
+            "win_prob_rollout_target": float(
+                getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0),
+            "win_prob_rollout_r": int(getattr(self.model, "win_prob_rollout_r", 8) or 8),
+            "win_prob_rollout_mode": str(
+                getattr(self.model, "win_prob_rollout_mode", "replace") or "replace"),
             "v_is_probability": bool(is_winprob(self._critic_mode)),
             "fraction": self._fraction,
             "seed": self._seed,
@@ -475,7 +493,9 @@ def _episode_extents(starts: np.ndarray, mask: np.ndarray):
 #: is the defect this tuple exists to make detectable. `critic_mode` is here because it decides
 #: whether `v` is a probability at all; the two λ fields because they decide whether `target` is
 #: the terminal outcome or a λ-return over the collector's own values.
-TARGET_IDENTITY_FIELDS = ("schema", "critic_mode", "win_prob_lambda", "win_prob_lambda_truncated")
+TARGET_IDENTITY_FIELDS = ("schema", "critic_mode", "win_prob_lambda", "win_prob_lambda_truncated",
+                          "win_prob_rollout_target", "win_prob_rollout_r",
+                          "win_prob_rollout_mode")
 
 
 def target_identity(header) -> dict:
@@ -492,6 +512,9 @@ def target_identity(header) -> dict:
         "critic_mode": str(h.get("critic_mode")),
         "win_prob_lambda": float(h.get("win_prob_lambda", 1.0) or 1.0),
         "win_prob_lambda_truncated": str(h.get("win_prob_lambda_truncated", "bootstrap")),
+        "win_prob_rollout_target": float(h.get("win_prob_rollout_target", 0.0) or 0.0),
+        "win_prob_rollout_r": int(h.get("win_prob_rollout_r", 8) or 8),
+        "win_prob_rollout_mode": str(h.get("win_prob_rollout_mode", "replace") or "replace"),
     }
 
 
@@ -503,10 +526,15 @@ def target_identity(header) -> dict:
 #: 🚨 **A NEW SCHEMA IS NOT ADDED HERE BY DEFAULT.** Leaving it out means a v3 file refuses to be
 #: pooled with a v2 one until somebody states, here, why the two columns are the same quantity —
 #: which is the direction this subsystem errs in everywhere else.
-SCHEMA_EQUIVALENCE = frozenset({1, 2})
+#: 3 JOINS the set for the same measured reason 2 did: a v3 file at `win_prob_rollout_target` 0.0
+#: is byte-identical to a v2 one apart from the three header fields, and the QUANTITY_FIELDS below
+#: carry the actual distinction — so refusing on the NUMBER would be a false alarm on every arm
+#: before arm 10, exactly as it would have been on every arm before arm 8.
+SCHEMA_EQUIVALENCE = frozenset({1, 2, 3})
 
 #: The header fields that decide what QUANTITY `target` holds, independent of the version number.
-QUANTITY_FIELDS = ("critic_mode", "win_prob_lambda", "win_prob_lambda_truncated")
+QUANTITY_FIELDS = ("critic_mode", "win_prob_lambda", "win_prob_lambda_truncated",
+                   "win_prob_rollout_target", "win_prob_rollout_r", "win_prob_rollout_mode")
 
 
 def same_quantity(a_header, b_header) -> bool:
@@ -531,7 +559,11 @@ def target_is_outcome(header) -> bool:
     True at λ = 1.0 — including every schema-1 file, which predates the flag — and False below it,
     where the column holds a λ-return that varies WITHIN an episode.
     """
-    return target_identity(header)["win_prob_lambda"] >= 1.0
+    idn = target_identity(header)
+    # A rollout-labelled file's column is the outcome on MOST rows and a measured win fraction on
+    # the sampled ones. "Mostly the outcome" is not the outcome, and a reader that treats it as one
+    # is doing the exact pooling this module refuses everywhere else.
+    return idn["win_prob_lambda"] >= 1.0 and idn["win_prob_rollout_target"] <= 0.0
 
 
 def describe_target(header) -> str:
@@ -542,14 +574,20 @@ def describe_target(header) -> str:
     nobody can interpret and everybody can pool.
     """
     idn = target_identity(header)
+    roll = ""
+    if idn["win_prob_rollout_target"] > 0.0:
+        roll = (f" — EXCEPT on a seeded ~{idn['win_prob_rollout_target']:.4g} subsample of the "
+                f"buffer, where it is an R = {idn['win_prob_rollout_r']} Monte-Carlo win fraction "
+                f"measured by replaying that state and playing it forward "
+                f"(`{idn['win_prob_rollout_mode']}`)")
     if idn["win_prob_lambda"] >= 1.0:
         return ("the episode's TERMINAL 0/1 OUTCOME, back-filled to every state of the episode "
-                "that produced it (constant within an episode)")
+                "that produced it (constant within an episode)" + roll)
     return (f"the λ-RETURN, λ = {idn['win_prob_lambda']:g} — a per-state SOFT probability that "
             f"varies within an episode, blending the outcome with the collector's own recorded "
             f"V(s); truncated episodes are handled `{idn['win_prob_lambda_truncated']}`"
             + (", so trailing in-progress rows are BOOTSTRAPPED and carry no outcome at all"
-               if idn["win_prob_lambda_truncated"] == "bootstrap" else ""))
+               if idn["win_prob_lambda_truncated"] == "bootstrap" else "") + roll)
 
 
 class MixedSchemaError(ValueError):

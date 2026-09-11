@@ -1,3 +1,4 @@
+import os
 import random
 
 from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
@@ -546,10 +547,26 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         return super().reset(seed=seed, options=options)
 
     def step(self, action):
+        # gen3_winprob_rollout_target_v1 — the per-decision RECONSTRUCTION HANDLE, captured BEFORE
+        # the step. The rollout buffer's row t holds the observation this decision was made FROM,
+        # so the handle must name the turn we were ASKED at; reading it after the step would name
+        # the turn the step landed on and label a state one turn downstream of the row. Two cheap
+        # attribute reads, and only when the flag threaded `_emit_wp_rollout_handle` on — a run
+        # without `--win-prob-rollout-target` does not even build the tuple.
+        _wp_handle = _wp_turn = None
+        if getattr(self.env, "_emit_wp_rollout_handle", False):
+            _b0 = getattr(self.env, "battle1", None)
+            if _b0 is not None:
+                from agents.training.win_prob_rollout import record_key
+                _wp_handle = record_key(os.getpid(), getattr(_b0, "battle_tag", None))
+                _wp_turn = int(getattr(_b0, "turn", 0) or 0)
         obs, reward, term, trunc, info = super().step(action)
         while not self.env.agent1_to_move and not term and not trunc:
             obs, r, term, trunc, info = super().step(0)
             reward += r
+        if _wp_handle is not None:
+            info["wp_handle"] = _wp_handle
+            info["wp_turn"] = _wp_turn
         if term or trunc:
             # Expose the battle OUTCOME for the win-probability label plumbing (win=1 / not-win=0).
             # The trainee's battle is finished here (before the VecEnv auto-resets), so battle1.won

@@ -238,6 +238,14 @@ def collect_rollouts_async(
             # async collector owns the per-env row, so it records it inline; the WinProbLabelCallback's
             # wave-batched on_step can't recover (env→row). No-op unless the win-prob head is on (the
             # scratch is allocated only then by the callback's on_rollout_start, run just above).
+            # gen3_winprob_rollout_target_v1: the per-decision RECONSTRUCTION HANDLE, recorded on
+            # EVERY row (not only a done one) and inline for the same env→row reason. No-op unless
+            # `--win-prob-rollout-target` is on — the scratch is allocated only then, by
+            # WinProbLabelCallback.on_rollout_start, and the env publishes the key only then.
+            _wp_keys = getattr(model, "_win_handle_keys", None)
+            if _wp_keys is not None and info.get("wp_handle"):
+                _wp_keys[t, i] = str(info["wp_handle"])
+                model._win_handle_turns[t, i] = int(info.get("wp_turn", -1))
             if done:
                 _win_scr = getattr(model, "_win_terminal_scratch", None)
                 if _win_scr is not None and "win_outcome" in info:

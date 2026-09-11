@@ -278,7 +278,9 @@ def test_the_sidecar_is_registered_AFTER_the_win_prob_backfill():
     import main.train.callbacks as mod
 
     src = inspect.getsource(mod.build_callbacks)
-    i_win = src.index("WinProbLabelCallback()")
+    # The constructor now takes arguments (gen3_winprob_rollout_target_v1 threads the cf_records
+    # ring and the bridge impl into it), so the probe is the NAME, not a bare call.
+    i_win = src.index("WinProbLabelCallback(")
     i_side = src.index("ValueSidecarCallback(")
     assert i_win < i_side, (
         "ValueSidecarCallback must be appended AFTER WinProbLabelCallback — before it, the "

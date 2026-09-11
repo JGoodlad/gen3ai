@@ -260,6 +260,15 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 critic=getattr(args, "critic", CRITIC_DEFAULT),
             )
 
+            # gen3_winprob_rollout_target_v1: tell the wrapper to publish a per-decision
+            # RECONSTRUCTION HANDLE (`<pid>_<battle_tag>` + the turn we were ASKED at) into the
+            # step info, which `WinProbLabelCallback` records per buffer row and the rollout
+            # labeller resolves against the `cf_records` ring. Set on the ENV (the wrapper reads it
+            # through `self.env`, the same direction `_opponent_class` and `_emit_dense_aux` go),
+            # and OFF by default — a run without the flag never builds the tuple.
+            env._emit_wp_rollout_handle = bool(
+                float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0)
+
             # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
             # Also ensure it propagates our Dict observation space natively.
             wrapped.action_space = env.action_space

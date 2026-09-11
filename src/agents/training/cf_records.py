@@ -185,8 +185,18 @@ class CfRecordRing:
             print(f"⚠️  [cf_records] {msg} (further warnings suppressed)", flush=True)
 
 
-def _safe_tag(battle_tag: Optional[str]) -> str:
-    """A filename-safe battle tag. Tags look like ``battle-gen3ou-17``; be defensive anyway."""
+def safe_tag(battle_tag: Optional[str]) -> str:
+    """A filename-safe battle tag. Tags look like ``battle-gen3ou-17``; be defensive anyway.
+
+    PUBLIC because the ring's filename is a JOIN KEY, not just a name: `win_prob_rollout.record_key`
+    builds the same ``<pid>_<tag>`` handle in the env worker so a rollout-buffer row can be matched
+    back to its record here. Two spellings of the sanitiser would make that join silently miss on
+    exactly the tags that needed sanitising.
+    """
     if not battle_tag:
         return "untagged"
     return "".join(c if (c.isalnum() or c in "-_") else "_" for c in str(battle_tag))[:80]
+
+
+#: The historical private name, kept so nothing that imported it moved.
+_safe_tag = safe_tag

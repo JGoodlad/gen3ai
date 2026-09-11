@@ -125,6 +125,13 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # is a MODE string rather than a coefficient and is deliberately not a row here — it is inert
     # at the default λ and is reported through `win_prob/lambda_truncated_bootstrap`.)
     "win_prob_lambda": "win_head",
+    # v118 gen3_winprob_rollout_target_v1 — the R-rollout MC target's FRACTION. Named to `win_head`
+    # for λ's reason: a fraction above 0 with no win-prob head pays for thousands of continuations
+    # and re-aims a loss that is not being computed, which is the most expensive INERT this column
+    # can show. (`win_prob_rollout_r` is a COUNT and `win_prob_rollout_mode` a MODE string; neither
+    # is a coefficient, both are inert at fraction 0, and both are reported through
+    # `win_prob/rollout_r` and `win_prob/rollout_mode_blend`.)
+    "win_prob_rollout_target": "win_head",
     # v117 gen3_dense_aux_v1 — the DENSE AUXILIARY loss's dose. Named to `dense_aux_head` (its
     # OWN module, not `win_head`): unlike strata and lambda, which re-price and re-aim the win
     # head's existing BCE, this coefficient supervises a head of its own — and because that head

@@ -398,6 +398,33 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "the value function is the scalar net, so the dense targets would enrich a diagnostic "
         "and change nothing about V. Pass --critic winprob, or drop the flag."),
     CombinationCheck(
+        # λ's twin, and refused for λ's reason: under `--critic shaped` the win-prob BCE is an
+        # AUXILIARY readout, so a measured MC target there would re-aim a diagnostic and leave the
+        # value function untouched — while still paying for every continuation.
+        "winprob_rollout_needs_the_winprob_critic",
+        ("win_prob_rollout_target", "critic"),
+        lambda a: float(_val(a, "win_prob_rollout_target", 0.0) or 0.0) > 0.0 and not _winprob(a),
+        "--win-prob-rollout-target > 0 requires --critic winprob. It replaces the win-prob BCE's "
+        "TARGET on a subsample of the buffer with an R-rollout Monte-Carlo win fraction (the head "
+        "refit's §6 mechanism: one terminal bit copied to ~30 states carries one bit about the GAME "
+        "and none about the STATE). Under --critic shaped that BCE is an auxiliary readout, so the "
+        "new labels would re-aim a diagnostic while still paying for every continuation. Pass "
+        "--critic winprob, or drop the flag."),
+    CombinationCheck(
+        # THE EXPENSIVE SILENT NO-OP. Without the ring there is no replayable episode for a sampled
+        # state, so the flag would label ZERO states — and it would do it quietly, on a run whose
+        # whole purpose was the treatment.
+        "winprob_rollout_needs_cf_records",
+        ("win_prob_rollout_target", "cf_records"),
+        lambda a: (float(_val(a, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
+                   and not bool(_val(a, "cf_records", False))),
+        "--win-prob-rollout-target > 0 requires --cf-records. A sampled state is labelled by "
+        "REPLAYING its episode to that turn and playing forward, and the replayable record lives "
+        "in the `<run>/cf_records/` ring that --cf-records switches on; training otherwise keeps a "
+        "single-slot stash it overwrites every episode. Without the ring every sampled state would "
+        "fail to resolve and the arm would train against the terminal bit it exists to replace. "
+        "Pass --cf-records, or drop the flag."),
+    CombinationCheck(
         "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
         lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
         "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "

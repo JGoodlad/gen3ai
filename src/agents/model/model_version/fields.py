@@ -490,6 +490,18 @@ class ModelVersionFields:
     # are never compared by check_compatible or any check_*.
     win_prob_lambda: float = 1.0
     win_prob_lambda_truncated: str = "bootstrap"
+    # gen3_winprob_rollout_target_v1 (config v118): R-ROLLOUT MONTE-CARLO targets for the WIN-PROB
+    # BCE. `win_prob_rollout_target` 0.0 = OFF (every state keeps its episode's terminal 0/1 bit,
+    # the pre-flag behaviour, bit-identical); above 0.0 it is the FRACTION of the rollout buffer
+    # whose states are replayed from the `cf_records` ring and played forward `win_prob_rollout_r`
+    # times by the current policy, their target becoming `wins / R`. `win_prob_rollout_mode` picks
+    # `replace` (the rollout fraction) or `blend` (its mean with the terminal bit); both are INERT
+    # at fraction 0. The td_aux_coef class exactly: a LOSS TARGET computed post-collection, no
+    # forward pass and no weight shape, so recorded for PROVENANCE and flagless-resume read-back
+    # and never compared by check_compatible or any check_*.
+    win_prob_rollout_target: float = 0.0
+    win_prob_rollout_r: int = 8
+    win_prob_rollout_mode: str = "replace"
     # ---- gen3_dense_aux_v1 (config v117) — THE DENSE AUXILIARY HEAD ---------------------------
     # ONE CLI flag, TWO recorded fields, because they are gated differently.
     # `dense_aux` is STRUCTURAL (the value_true_team pattern): ON builds a `DenseAuxHead` whose
