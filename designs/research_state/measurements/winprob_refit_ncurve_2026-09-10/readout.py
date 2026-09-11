@@ -54,7 +54,10 @@ import analyze as MIX          # noqa: E402
 import decode as DEC           # noqa: E402
 import readout as HR           # noqa: E402  (only `brier`, the Murphy decomposition)
 
-BUCKETS = ("t1", "t1_3", "all")
+#: `mid` (turns 11-24) is added to the head refit's three because it is the window
+#: where the opponent is FULLY observable on this frame (`value_pooled` decodes its
+#: class at AUC 0.80 there against 0.51 at turn 1) — see the README's hazard 1.
+BUCKETS = ("t1", "t1_3", "mid", "all")
 FITS = ("lin_term", "mlp_term", "lin_cond", "mlp_cond", "cond_oracle")
 
 
@@ -124,16 +127,15 @@ def spread_block(meta, preds, key, n_boot, seed):
     cell on the outcome side; the head refit could not run it (its cycles were training steps).
     """
     conds = list(preds)
-    proto = MIX.rollup(as_states(meta, preds[conds[0]]))
-    # the OUTCOME side, straight from the manifest: won / played at the cell's OWN game count.
-    # manifest rows are constant within a (cycle, opponent) pair
-    seen, won, played = {}, {}, {}
-    for c, o, twr, ng in zip(proto["cycle"], proto["opponent"], proto["true_wr"],
-                             proto["n_games"]):
+    # the OUTCOME side, straight from the MANIFEST (not from the held-out subsample): won /
+    # played at the cell's OWN game count. `MIX.rollup` does not carry `n_games`, so this reads
+    # the STATE table, where both columns are constant within a (cycle, opponent) pair.
+    seen, won, played = set(), {}, {}
+    for c, o, twr, ng in zip(meta["cycle"], meta["opponent"], meta["true_wr"], meta["n_games"]):
         k = (int(c), o)
         if k in seen:
             continue
-        seen[k] = True
+        seen.add(k)
         ck = f"{0 if key == 'opponent' else int(c)}|{o}"
         won[ck] = won.get(ck, 0.0) + twr * ng
         played[ck] = played.get(ck, 0.0) + ng
@@ -249,7 +251,8 @@ def scalar_block(meta, preds, n_boot, seed):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-def decode_block(meta_full, held_states, preds, pooled_full, seed, n_perm, n_boot, pairs):
+def decode_block(meta_full, held_states, preds, pooled_full, seed, n_perm, n_boot, pairs,
+                 buckets=("t1", "t4_10")):
     """The probe read's decode, run on each condition's PREDICTION as a one-column feature set.
 
     🚨 The own-team win-rate LABEL is built on the FULL pooled dataset (leave-one-battle-out), not
@@ -260,47 +263,49 @@ def decode_block(meta_full, held_states, preds, pooled_full, seed, n_perm, n_boo
     tgts, _b, _bi, _bt = DEC.build_targets(meta_full)
     conds = list(preds)
     out = {}
-    for tname in ("opp_class", "own_team_wr"):
-        tgt = tgts[tname]
-        sub = np.zeros(len(meta_full), bool)
-        sub[held_states] = True
-        mask = sub & (meta_full["turn"] == 1) & tgt["mask"]
-        idx = DEC.cap_per_battle(meta_full, mask, 2, seed)
-        pos = np.searchsorted(held_states, idx)       # held_states is sorted
-        y = tgt["y"][idx].astype(float)
-        w = meta_full["w"][idx].astype(float)
-        g = meta_full["battle"][idx]
-        feats = {c: preds[c][pos][:, None] for c in conds}
-        feats["pooled"] = pooled_full[idx].astype(np.float64)
-        cv = {k: DEC.GroupedRidgeCV(np.asarray(v, np.float64), w, g, seed=seed)
-              for k, v in feats.items()}
-        oof = {k: cv[k].oof(y, w, tgt["task"])[0] for k in feats}
-        pt = {k: DEC._score(y, oof[k], w, tgt["task"]) for k in feats}
-        pp = pairs + [(c, "pooled") for c in conds]
-        ci, dci = DEC.boot_ci(y, oof, w, g, tgt["task"], n_boot, seed + 5, extra=pp)
-        _, binv = np.unique(g, return_inverse=True)
-        nb = int(binv.max()) + 1
-        fo = DEC.first_of_group(binv, nb)
-        b_team, b_y = meta_full["team"][idx][fo], meta_full["y"][idx][fo]
-        b_w = meta_full["w"][idx][fo].astype(float)
-        rngp = np.random.default_rng(seed + 77)
-        nulls = {k: [] for k in feats}
-        for _ in range(n_perm):
-            if tgt["null_kind"] == "team_assign":
-                lab_b = DEC._loo_team_wr(DEC.shuffle_team_assignment(b_team, rngp), b_y, b_w,
-                                         DEC.MIN_TEAM_BATTLES_WR)
-                yp = np.nan_to_num(lab_b, nan=float(np.nanmean(lab_b)))[binv]
-            else:
-                yp = DEC._perm_labels(y, binv, "battle", None, rngp)
-            for k in feats:
-                nulls[k].append(DEC._score(yp, cv[k].oof(yp, w, tgt["task"])[0], w, tgt["task"]))
-        out[tname] = {"task": tgt["task"], "n_states": int(len(idx)), "n_battles": nb,
-                      "score": {k: round(float(pt[k]), 4) for k in feats},
-                      "ci": ci, "delta_ci": dci,
-                      "null_p95": {k: round(float(np.nanpercentile(v, 95)), 4)
-                                   for k, v in nulls.items()}}
-        print(f"  decode {tname}: pooled={pt['pooled']:.3f} online={pt['online']:.3f}",
-              flush=True)
+    sub = np.zeros(len(meta_full), bool)
+    sub[held_states] = True
+    for bname in buckets:
+        lo, hi = DEC.BUCKETS[bname]
+        for tname in ("opp_class", "own_team_wr"):
+            tgt = tgts[tname]
+            mask = (sub & (meta_full["turn"] >= lo) & (meta_full["turn"] <= hi) & tgt["mask"])
+            idx = DEC.cap_per_battle(meta_full, mask, 2, seed)
+            pos = np.searchsorted(held_states, idx)       # held_states is sorted
+            y = tgt["y"][idx].astype(float)
+            w = meta_full["w"][idx].astype(float)
+            g = meta_full["battle"][idx]
+            feats = {c: preds[c][pos][:, None] for c in conds}
+            feats["pooled"] = pooled_full[idx].astype(np.float64)
+            cv = {k: DEC.GroupedRidgeCV(np.asarray(v, np.float64), w, g, seed=seed)
+                  for k, v in feats.items()}
+            oof = {k: cv[k].oof(y, w, tgt["task"])[0] for k in feats}
+            pt = {k: DEC._score(y, oof[k], w, tgt["task"]) for k in feats}
+            pp = pairs + [(c, "pooled") for c in conds]
+            ci, dci = DEC.boot_ci(y, oof, w, g, tgt["task"], n_boot, seed + 5, extra=pp)
+            _, binv = np.unique(g, return_inverse=True)
+            nb = int(binv.max()) + 1
+            fo = DEC.first_of_group(binv, nb)
+            b_team, b_y = meta_full["team"][idx][fo], meta_full["y"][idx][fo]
+            b_w = meta_full["w"][idx][fo].astype(float)
+            rngp = np.random.default_rng(seed + 77)
+            nulls = {k: [] for k in feats}
+            for _ in range(n_perm):
+                if tgt["null_kind"] == "team_assign":
+                    lab_b = DEC._loo_team_wr(DEC.shuffle_team_assignment(b_team, rngp), b_y, b_w,
+                                             DEC.MIN_TEAM_BATTLES_WR)
+                    yp = np.nan_to_num(lab_b, nan=float(np.nanmean(lab_b)))[binv]
+                else:
+                    yp = DEC._perm_labels(y, binv, "battle", None, rngp)
+                for k in feats:
+                    nulls[k].append(DEC._score(yp, cv[k].oof(yp, w, tgt["task"])[0], w, tgt["task"]))
+            out[f"{bname}|{tname}"] = {"task": tgt["task"], "n_states": int(len(idx)), "n_battles": nb,
+                          "score": {k: round(float(pt[k]), 4) for k in feats},
+                          "ci": ci, "delta_ci": dci,
+                          "null_p95": {k: round(float(np.nanpercentile(v, 95)), 4)
+                                       for k, v in nulls.items()}}
+            print(f"  decode {bname}/{tname}: pooled={pt['pooled']:.3f} online={pt['online']:.3f}",
+                  flush=True)
     return out
 
 

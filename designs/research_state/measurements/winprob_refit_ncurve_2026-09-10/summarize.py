@@ -26,6 +26,10 @@ import json
 import numpy as np
 
 FITS = ("lin_term", "mlp_term", "lin_cond", "mlp_cond", "cond_oracle")
+DECLAB = {"t1|opp_class": "turn-1 opponent class (AUC) — ⚠️ UNOBSERVABLE window",
+          "t1|own_team_wr": "turn-1 own-team LOO win rate (R²)",
+          "t4_10|opp_class": "turns 4-10 opponent class (AUC)",
+          "t4_10|own_team_wr": "turns 4-10 own-team LOO win rate (R²)"}
 LABEL = {"lin_term": "linear . terminal", "mlp_term": "MLP . terminal (a)",
          "lin_cond": "linear . conditional", "mlp_cond": "MLP . conditional (b)",
          "cond_oracle": "the conditional TARGET (ceiling)",
@@ -69,7 +73,11 @@ def main(a):
     out.append("")
     out.append("Bold = the delta vs `online` has its own battle-clustered CI clear of zero.")
     out.append("")
-    for bk, title in (("t1", "turn 1"), ("t1_3", "turns 1-3"), ("all", "all states")):
+    for bk, title in (("t1", "turn 1 — ⚠️ the opponent is UNOBSERVABLE here (README hazard 1); "
+                       "ratio 0 is Bayes-optimal, not a defect"),
+                      ("t1_3", "turns 1-3 — the head refit's headline window"),
+                      ("mid", "turns 11-24 — the opponent IS observable here"),
+                      ("all", "all states")):
         out.append(f"### {title}")
         out.append("")
         out.append("| condition | " + " | ".join(f"N={n:,}" for n in ns) + " |")
@@ -107,10 +115,16 @@ def main(a):
     out.append("")
     out.append(f"Delta between N={ns[-1]:,} and N={ns[0]:,}, with the delta's OWN battle-clustered CI.")
     out.append("")
-    out.append("| meter | condition | N_min | N_max | Δ (N_max − N_min) | detected |")
-    out.append("|---|---|---|---|---|---|")
+    n_doub = float(np.log2(ns[-1] / ns[0]))
+    out.append(f"The span is **{n_doub:.2f} doublings** ({ns[0]:,} -> {ns[-1]:,} battles), so the "
+               f"per-doubling column is the delta and its CI divided by {n_doub:.2f} — a "
+               f"linear-in-log2(N) summary, which is what an extrapolation to an online run's "
+               f"data volume would use.")
+    out.append("")
+    out.append("| meter | condition | N_min | N_max | Δ (N_max − N_min) | per doubling | detected |")
+    out.append("|---|---|---|---|---|---|---|")
     trend = {}
-    for bk in ("t1", "t1_3", "all"):
+    for bk in ("t1", "t1_3", "mid", "all"):
         for c in ("mlp_term", "mlp_cond", "lin_term", "cond_oracle"):
             d = sp["delta"].get(f"{ns[-1]}|{c}-{ns[0]}|{c}|{bk}|ratio")
             if not d:
@@ -120,11 +134,10 @@ def main(a):
             trend[f"ratio|{bk}|{c}"] = d
             out.append(f"| spread ratio @{bk} | {LABEL[c]} | {fmt(lo)} | {fmt(hi)} | "
                        f"{fmt(d['point'])} {ci_s(d['ci'])} | "
+                       f"{fmt((d['point'] or 0) / n_doub)} "
+                       f"{ci_s([x / n_doub for x in d['ci']] if d['ci'][0] is not None else None)} | "
                        f"{'**YES**' if detected(d['ci']) else 'no'} |")
-    for tname, lab in (("opp_class", "turn-1 opponent-class AUC"),
-                       ("own_team_wr", "turn-1 own-team LOO win-rate R²")):
-        if tname not in dec:
-            continue
+    for tname, lab in sorted((k, DECLAB.get(k, k)) for k in dec):
         dd = dec[tname]["delta_ci"]
         for c in ("mlp_term", "mlp_cond", "lin_term", "cond_oracle"):
             k = f"{ns[-1]}|{c}-{ns[0]}|{c}"
@@ -133,10 +146,13 @@ def main(a):
             trend[f"{tname}|{c}"] = {"point": round(dec[tname]["score"][f"{ns[-1]}|{c}"]
                                                     - dec[tname]["score"][f"{ns[0]}|{c}"], 4),
                                      "ci": dd[k]}
+            pv = trend[f"{tname}|{c}"]["point"]
             out.append(f"| {lab} | {LABEL[c]} | "
                        f"{fmt(dec[tname]['score'][f'{ns[0]}|{c}'])} | "
                        f"{fmt(dec[tname]['score'][f'{ns[-1]}|{c}'])} | "
-                       f"{fmt(trend[f'{tname}|{c}']['point'])} {ci_s(dd[k])} | "
+                       f"{fmt(pv)} {ci_s(dd[k])} | "
+                       f"{fmt((pv or 0) / n_doub)} "
+                       f"{ci_s([x / n_doub for x in dd[k]] if dd[k][0] is not None else None)} | "
                        f"{'**YES**' if detected(dd[k]) else 'no'} |")
     out.append("")
 
@@ -144,10 +160,7 @@ def main(a):
     if dec:
         out.append("## 3. What the PREDICTION decodes at turn 1")
         out.append("")
-        for tname, lab in (("opp_class", "opponent class (AUC)"),
-                           ("own_team_wr", "own-team LOO win rate (R²)")):
-            if tname not in dec:
-                continue
+        for tname, lab in sorted((k, DECLAB.get(k, k)) for k in dec):
             D = dec[tname]
             out.append(f"### {lab} — n = {D['n_states']} states / {D['n_battles']} battles, "
                        f"null p95 (pooled) {fmt(D['null_p95']['pooled'])}")
@@ -215,7 +228,8 @@ def main(a):
     # ── the MORE-OPTIMISATION control ────────────────────────────────────────
     out.append("## 5. The MORE-OPTIMISATION control at the largest N")
     out.append("")
-    out.append("| contrast | Δ ratio @t1-3 | Δ opp-class AUC @t1 | Δ own-team R² @t1 | Δ Brier @all |")
+    out.append("| contrast | Δ ratio @t1-3 | Δ opp-class AUC @t4-10 | Δ own-team R² @t1 | "
+               "Δ Brier @all |")
     out.append("|---|---|---|---|---|")
     longres = {}
     for c in ("mlp_term", "mlp_cond"):
@@ -223,8 +237,8 @@ def main(a):
         d = sp["delta"].get(f"{k}|t1_3|ratio")
         if not d:
             continue
-        da = dec.get("opp_class", {}).get("delta_ci", {}).get(k)
-        dt = dec.get("own_team_wr", {}).get("delta_ci", {}).get(k)
+        da = dec.get("t4_10|opp_class", {}).get("delta_ci", {}).get(k)
+        dt = dec.get("t1|own_team_wr", {}).get("delta_ci", {}).get(k)
         db = R["scalar"]["all"]["delta"].get(f"{k}|brier")
         longres[c] = {"ratio_t1_3": d, "opp_class": da, "own_team_wr": dt, "brier": db}
         out.append(f"| {LABEL[c + '_long']} − {LABEL[c]} | {fmt(d['point'])} {ci_s(d['ci'])} | "
@@ -235,9 +249,12 @@ def main(a):
     oracle_ci = sp["ci"].get(f"{ns[-1]}|cond_oracle|t1_3|ratio") or [None, None]
     guard_ok = bool(oracle_ci[0] is not None and oracle_ci[0] >= 0.80)
     tr_ratio = trend.get("ratio|t1_3|mlp_term")
-    tr_class = trend.get("opp_class|mlp_term")
-    tr_team = trend.get("own_team_wr|mlp_term")
-    rise_ratio = bool(tr_ratio and detected(tr_ratio["ci"]) and tr_ratio["point"] > 0)
+    tr_ratio_mid = trend.get("ratio|mid|mlp_term")
+    tr_class = trend.get("t4_10|opp_class|mlp_term")
+    tr_team = trend.get("t1|own_team_wr|mlp_term")
+    rise_ratio = bool((tr_ratio and detected(tr_ratio["ci"]) and tr_ratio["point"] > 0)
+                      or (tr_ratio_mid and detected(tr_ratio_mid["ci"])
+                          and tr_ratio_mid["point"] > 0))
     rise_class = bool(tr_class and detected(tr_class["ci"]) and tr_class["point"] > 0)
     rise_team = bool(tr_team and detected(tr_team["ci"]) and tr_team["point"] > 0)
     # is mlp_cond detected above `online` at EVERY N?
@@ -257,9 +274,11 @@ def main(a):
         verdict = "(ii) FLAT"
     else:
         verdict = "MIXED"
-    reading = {"verdict": verdict, "guard_cond_oracle_ge_0.80": guard_ok,
+    reading = {"verdict": verdict, "n_doublings": round(n_doub, 3), "guard_cond_oracle_ge_0.80": guard_ok,
                "cond_oracle_t1_3_ratio_ci_at_Nmax": oracle_ci,
-               "trend_ratio_t1_3_mlp_term": tr_ratio, "trend_opp_class_mlp_term": tr_class,
+               "trend_ratio_t1_3_mlp_term": tr_ratio,
+               "trend_ratio_mid_mlp_term": tr_ratio_mid,
+               "trend_opp_class_t4_10_mlp_term": tr_class,
                "trend_own_team_wr_mlp_term": tr_team,
                "rise_ratio": rise_ratio, "rise_opp_class": rise_class,
                "rise_own_team_wr": rise_team,
