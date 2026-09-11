@@ -862,7 +862,7 @@ v118, the critic ladder's **arm 10**). Default **`0.0` = OFF and the loss is BIT
 rollout buffer whose states are replayed out of the `cf_records` ring to their own turn, played
 forward `--win-prob-rollout-r` times (default 8) by the CURRENT policy on both sides at temperature
 1.0, and given `wins / R` as their target — the buffer's OWN rows, not the foreign recorded states
-`cf_winprob_coef` folds. The same measurement as arms 7 and 8, taken to its root: the terminal label
+the counterfactual label factory's win-prob term folds. The same measurement as arms 7 and 8, taken to its root: the terminal label
 is **one outcome bit copied to ~30 states**, at most 1 bit about the GAME and none about the
 individual STATE, which is why only **10.2 % / 14.4 %** of its variance lies BETWEEN (cycle,
 opponent) cells

@@ -25,13 +25,17 @@ from main.ops import value_sidecar_read as R
 N_EPISODES, EP_LEN = 24, 6
 
 
-def _header(schema=1, lam=None, truncated=None, critic="winprob"):
+def _header(schema=1, lam=None, truncated=None, critic="winprob", rollout=None):
     h = {"kind": "header", "schema": schema, "tag": "gen3_value_sidecar_v1",
          "critic_mode": critic, "v_is_probability": critic == "winprob",
          "fraction": 1.0, "seed": 0, "max_turns": 250, "started_at": "2026-09-09T00:00:00+00:00"}
     if lam is not None:
         h["win_prob_lambda"] = lam
         h["win_prob_lambda_truncated"] = truncated or "bootstrap"
+    if rollout is not None:
+        h["win_prob_rollout_target"] = rollout
+        h["win_prob_rollout_r"] = 8
+        h["win_prob_rollout_mode"] = "replace"
     return h
 
 
@@ -259,5 +263,12 @@ def test_SAME_QUANTITY_ignores_the_VERSION_but_never_the_MEANING():
     assert same_quantity(_header(1), _header(2, 0.9)) is False
     assert same_quantity(_header(2, 0.9, "bootstrap"), _header(2, 0.9, "mask")) is False
     assert same_quantity(_header(1), _header(1, critic="shaped")) is False
-    # An UNDECLARED schema is refused even at an identical λ — the direction this errs in.
-    assert same_quantity(_header(2, 1.0), _header(3, 1.0)) is False
+    # v3 (gen3_winprob_rollout_target_v1) JOINED the declared set, for v2's measured reason: a v3
+    # file at `win_prob_rollout_target` 0.0 is byte-identical to a v2 one apart from three header
+    # fields. The DISTINCTION moved into QUANTITY_FIELDS, where it belongs.
+    assert same_quantity(_header(2, 1.0), _header(3, 1.0)) is True
+    assert same_quantity(_header(3, 1.0), _header(3, 1.0, rollout=0.0012)) is False, (
+        "a rollout-labelled file's `target` is a MEASURED win fraction on part of its rows; "
+        "pooling it with a terminal-bit file is the defect this guard exists for")
+    # An UNDECLARED schema is still refused even at an identical λ — the direction this errs in.
+    assert same_quantity(_header(3, 1.0), _header(4, 1.0)) is False

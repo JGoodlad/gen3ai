@@ -242,17 +242,25 @@ class WinProbLabelCallback(BaseCallback):
             return None, None
         frac, R, mode = cfg
         obs = buf.observations
+        if "action_mask" not in obs:
+            # The MOVE-ROUND filter reads the buffer's own mask; without it every row would look
+            # labelable, including mid-turn forced switches a counterfactual replay cannot anchor
+            # at. Skip rather than label the wrong states.
+            return None, None
         self._rollout_calls += 1
         keys, turns = self._handle_scratch()
         n_steps, n_envs = wt.shape[0], wt.shape[1]
-        has_handle = np.array([[keys[t, e] is not None for e in range(n_envs)]
-                               for t in range(n_steps)], dtype=bool)
-        el = eligible_mask(wm[:, :, 0], turns, has_handle, obs["action_mask"])
+        # `turns` is written only where a handle was captured, so `>= 0` IS "has a handle" — and it
+        # is one vectorised compare rather than 98,304 Python iterations at the production shape.
+        el = eligible_mask(wm[:, :, 0], turns, turns >= 0, obs["action_mask"])
         want = n_states_for(frac, n_steps, n_envs)
-        # Seeded from the RUN's seed and the rollout INDEX, so the same argv replays the same
-        # sample — and so two different rollouts of one run never draw the same stream.
+        # Seeded from the RUN's seed and `num_timesteps`, so the same argv replays the same sample.
+        # `num_timesteps` and not a per-process counter: it is MONOTONIC ACROSS A LAUNCHER RESTART,
+        # and a counter that restarted at 0 would make the first rollouts after every restart draw
+        # the same stream as the first rollouts of the run.
         rng = np.random.default_rng(
-            [int(getattr(self.model, "seed", 0) or 0), int(self._rollout_calls)])
+            [int(getattr(self.model, "seed", 0) or 0),
+             int(getattr(self.model, "num_timesteps", 0) or 0), int(self._rollout_calls)])
         picks = select_rows(el, buf.episode_starts, want, rng)
         index = index_records(self._records_dir)
         states, kept, missing = [], [], 0
