@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,619-line file. **The ledger itself is append-only and is never edited by this**;
+17,633-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**571 headings · 520 dated · 2026-08-01 → 2026-09-11 · ledger 17,619 lines.**
+**572 headings · 521 dated · 2026-08-01 → 2026-09-11 · ledger 17,633 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -591,3 +591,4 @@ rename.
   - `L17595` · `2026-09-11` · READ (MAJOR) · v6 re-reads of the five earlier levers on the 800-game frames — the FIRST DETECTIONS ON A DECISION ROW: `strata` (class-balanced BCE) conditions on the opponent at turns 4–10 at **+0.050 [+0.036, +0.064]** against a 0.022 floor, and `vf15` (value coefficient 1.5) at **−0.082 [−0.096, −0.066]** — one draw each, on a row declared the decision row BEFORE these reads ran; second eval draws running; a run-level replicate of `strata` is the next GPU arm
   - `L17612` · `2026-09-11` · ADDENDUM + GO · `strata`'s second eval draw keeps the sign (+0.033 [+0.012, +0.053] on the 400 frames); the 0.022 floor is RUN-LEVEL, so the replicate CONFIRMS rather than establishes; `vf15`'s down-detection is of EQUAL STANDING and unreplicated by priority, not evidence; `strata_b` launched
   - `L17616` · `2026-09-11` · PRE-REGISTRATION ADDENDUM · `strata_b` LAUNCHED (pid 2472905, pin `f871e79f`, `source: pin_commit`); the FAILURE branch is worded now, before data: a miss at the registered bar reads "NOT CONFIRMED at a standard the effect's own size and the measured eval-draw component make demanding", never "the strata effect did not replicate"
+  - `L17620` · `2026-09-11` · READ · the second (and third) eval draws on the v6 decision row — `strata` holds on THREE independent draws (+0.050 / +0.033 / +0.044, two of three clearing the 0.022 run-level floor by CI); `vf15` repeats almost exactly (−0.082 / −0.080); `denseaux` and `lambda09` null on the 400 frames; the λ family's EARLY-window class AUC leans DOWN on both draws
