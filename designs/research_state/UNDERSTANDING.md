@@ -804,6 +804,12 @@ by 25–40% on the logit scale whatever λ is, i.e. where the head says 0.7 the 
 `ctrl10M` at 1.07 is the exception. This is a statement about the era's critics rather than about any lever, it has
 no floor (a level, not a delta), and no arm on the ladder has moved it.
 
+**Arm 9 `denseaux` read (2026-09-10, dense auxiliary targets vs all three controls at 10M, live frames):** [MEASURED ·
+NOT DETECTED, `measurements/critic_ladder_reads/denseaux_vs_ctrl10M_2026-09-10/`] nothing on any row — bot resolution
+inside the 0.010 floor against all three, calibration unchanged, the opponent spread leaning UP (0.15 vs 0.09–0.12,
+n.d.) rather than compressing as under λ. Twenty-five terminal facts per game beside the win bit did not move what the
+critic is read on at 10M; offline reads pending. Eleven runs, six levers, no lever past a two-draw floor.
+
 ### 4.3 What is UNVERIFIED in this era
 
 - **`--vf-coef` was NOT retuned.** 0.5 multiplied an MSE/CE over 51 atoms; it now multiplies a BCE.
