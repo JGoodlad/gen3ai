@@ -116,3 +116,30 @@ error, the cell is INCONCLUSIVE and reported as such**, not as a win rate.
 * The **grid vs defensive** contrast separates "the leaf is bad" from "the leaf is bad *and* needs
   a gate to be survivable": if grid still loses badly while defensive sits on the null, the gate is
   doing all the work and the leaf carries no exploitable signal at all.
+
+---
+
+## 6. AMENDMENT — the extension rule, registered 2026-09-11 19:59 UTC *mid-cell*
+
+**Declared while rung B was 58% played (230 of 400 pairs per head) and after that partial read was
+seen.** Stating it here rather than acting on it silently is the whole point: an extension decided
+*after* a completed result is optional stopping, and an extension decided *on* a partial result is
+optional stopping too unless its RULE and its FINAL n are fixed in advance and both reads are
+published.
+
+What was seen at 230 pairs: ctrl10M 0.5250 [0.4952, 0.5548], lambda09 0.5216 [0.4911, 0.5522],
+wp73M 0.4947 [0.4634, 0.5260] — the two 10M heads sit above the null with intervals that just
+contain it.
+
+**THE RULE, fixed now:** when rung B completes at its registered 400 pairs, if a head's paired CI
+still straddles 0.50 with a point estimate ≥ 0.51, that head's cell is **extended to exactly 800
+pairs** (fresh game indices 400–799; no index is replayed) and the README reports **both**:
+
+* the **pre-registered 400-pair read** — the primary, the one the bar in §3 is scored against; and
+* the **800-pair extended read**, labelled a SECOND LOOK, with the multiplicity stated plainly:
+  two looks at the same hypothesis means the nominal 95% interval on the extended read is
+  optimistic, so a lower bound that clears 0.50 by a hair on the second look is reported as
+  *suggestive*, and only a lower bound clearing it by more than the first look's own half-width is
+  read as **SEARCH PAYS**.
+
+No head is extended on any other trigger, and no cell is stopped early for any reason.
