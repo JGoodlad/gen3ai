@@ -358,6 +358,11 @@ def test_every_meter_declares_its_frame_sensitivity_with_a_reason() -> None:
         "cond.own_team_r2.late", CM.OWN_TEAM_R2_DIFF,
         "cond.within_team_resolution.all", "cond.within_stratum_resolution.all",
         "cond.team_spread_ratio.t1_3", "cond.team_spread_ratio_raw.t1_3",
+        # v6 (2026-09-10): the two late-window class AUCs are the same out-of-fold FIT as
+        # `cond.opp_class_auc.t1`, and the OPTIMAL-spread family fits a binned posterior on the
+        # frame — both the first mechanism. The late-window SPREAD rows are noise-corrected and
+        # are NOT here, exactly as their `t1_3` / `all` siblings are not.
+        CM.OPP_CLASS_AUC_T1_3, CM.OPP_CLASS_AUC_T4_10, *CM.OPT_RATIO.values(),
         # the CALIBRATION SLOPE rows (2026-09-10) are NOT here except one: a weighted logistic
         # coefficient is an M-estimator whose expectation is the population coefficient at every
         # frame size given correct weights — no held-out optimism, no unsubtracted noise, no
@@ -400,7 +405,7 @@ def test_a_pair_level_row_is_declared_and_is_never_quota_matched() -> None:
 def test_the_provisional_row_is_declared_and_carries_its_reason() -> None:
     """A PROVISIONAL row is the ABSENCE of a verdict, not a weaker one, so the reason it can never
     have a floor is declared beside the flag rather than left to the report to remember."""
-    assert set(CM.PROVISIONAL_KEYS) == {CM.OWN_TEAM_R2_DIFF}
+    assert set(CM.PROVISIONAL_KEYS) == {CM.OWN_TEAM_R2_DIFF, *CM.OPT_RATIO.values()}
     for key in CM.PROVISIONAL_KEYS:
         m = CM.METER_BY_KEY[key]
         assert m.provisional is True and len(m.provisional_why) > 60, key

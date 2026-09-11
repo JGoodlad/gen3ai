@@ -869,3 +869,89 @@ def test_the_report_says_so_when_the_common_support_row_could_not_be_fitted(tmp_
     md = CR.render_md(full)
     assert "The COMMON-SUPPORT row is NO OVERLAP" in md
     assert "do not overlap" in md
+
+
+# ------------------------------------------------- v6: the late windows + the optimal reference
+
+def test_a_new_v6_row_reads_vs_ZERO_NO_FLOOR_until_a_floor_json_carries_it(
+        tmp_path, monkeypatch) -> None:
+    """🚨 The hp800 floor json was built from the v5 rows and carries none of the v6 ones. A new
+    row must therefore say in print that its detection is against ZERO — the registration's label
+    is a claim about a replicate floor and quoting it without one is a stronger sentence than the
+    number supports."""
+    from main.ops import conditioning_meters as CM
+
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    arm = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    ctl = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    rng = np.random.default_rng(3)
+    arm["conditioning"]["points"][CM.OPP_CLASS_AUC_T4_10] = 0.8
+    arm["_cond_draws"][CM.OPP_CLASS_AUC_T4_10] = 0.8 + rng.normal(0, 0.01, 400)
+    # a v5 floor file: every pre-v6 key, and nothing new
+    v5_floor = {k: 0.001 for k in CM.METER_KEYS
+                if k not in (CM.OPP_CLASS_AUC_T1_3, CM.OPP_CLASS_AUC_T4_10,
+                             CM.SPREAD_RATIO_T4_10, CM.SPREAD_RATIO_T11_24,
+                             *CM.OPT_RATIO.values())}
+    rows = {r["key"]: r for r in CR.compute_deltas(arm, ctl, v5_floor, seed=0)}
+    new = rows[CM.OPP_CLASS_AUC_T4_10]
+    assert new["label"] == "DETECTED" and new["qualifier"] == "vs ZERO — NO FLOOR"
+    assert new["floor"] is None
+    # ...while a row the file DOES carry is judged against its floor, unchanged
+    assert rows["cond.opp_class_auc.t1"]["floor"] == 0.001
+
+
+def test_the_report_prints_the_opponent_identity_split_with_both_ratios(
+        tmp_path, monkeypatch) -> None:
+    """A spread ratio has only two reference points without this block — 1.0 and the control — and
+    1.0 is the WRONG one at early turns. The table must carry `V`'s ratio and its opponent-
+    decodable part in the same row, and must say IN PRINT that the second is not a bound on the
+    first — the first real read had `V` above it at every window."""
+    from main.ops import conditioning_meters as CM
+
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    doc["conditioning"]["frame"] = {"optimal_reference": {
+        w: {"ratio_V": 0.30, "ratio_optimal": 0.05, "n_bins": CM.OPT_BINS,
+            "n_folds": CM.OPT_FOLDS, "sd_V": 0.01, "sd_y": 0.2}
+        for w, _row in CM.OPT_WINDOWS}}
+    full = {"arm": doc, "control": doc, "generated_at": "now", "out": str(tmp_path),
+            "floor": CR.load_floors(None), "invocation": "python -m main.ops.critic_read …",
+            "params": {"boot": 60, "gate_boot": 40, "seed": 0},
+            "deltas": CR.compute_deltas(doc, doc, None, seed=0)}
+    md = CR.render_md(full)
+    assert "HOW MUCH OF THE SPREAD IS OPPONENT IDENTITY" in md
+    assert "| `t4_10` | +0.3000 | +0.0500 | 6.000 |" in md
+    # 🚨 the first read of this row had V ABOVE the "ceiling" at every window; the report must
+    # say in print that it is a decomposition and not a bound, or the next reader repeats it.
+    assert "IT IS NOT AN UPPER BOUND, AND `V` ROUTINELY EXCEEDS IT" in md
+    assert "never a pass/fail bar" in md
+
+
+def test_the_optimal_block_is_absent_rather_than_empty_when_the_frame_has_no_reference(
+        tmp_path, monkeypatch) -> None:
+    """An old cached readout has no `optimal_reference`. The block must vanish, not render an
+    empty table that reads like a measured zero."""
+    run = _plant_run(tmp_path)
+    _install_stubs(monkeypatch, [])
+    doc = _with_conditioning(CR.read_run(run, tmp_path / "c", _Args(), say=lambda _m: None))
+    full = {"arm": doc, "control": doc, "generated_at": "now", "out": str(tmp_path),
+            "floor": CR.load_floors(None), "invocation": "x",
+            "params": {"boot": 60, "gate_boot": 40, "seed": 0},
+            "deltas": CR.compute_deltas(doc, doc, None, seed=0)}
+    assert "HOW MUCH OF THE SPREAD IS OPPONENT IDENTITY" not in CR.render_md(full)
+
+
+def test_the_conditioning_cache_key_moves_when_the_meter_set_does() -> None:
+    """🚨 The conditioning block is CACHED on its own fingerprint. v6 adds rows, so a v5 cache
+    must MISS — otherwise a re-read of a landed pair would serve the old block and silently report
+    the new rows as absent. The identity half's key is deliberately NOT bumped: it costs a ~25-min
+    `cf_audit` and none of its numbers changed."""
+    assert CR.READOUT_FINGERPRINT_VERSION == 1
+    cycle = {"run_dir": "/r", "read_root": "/r", "step": 10, "manifest": {"saved_at": "t"}}
+    fp = CR._cond_fingerprint(cycle, _Args())
+    assert fp["block_version"] == 3
+    from main.ops import conditioning_meters as CM
+    for key in (CM.SPREAD_RATIO_T4_10, CM.OPP_CLASS_AUC_T4_10, *CM.OPT_RATIO.values()):
+        assert key in fp["meters"], key

@@ -74,6 +74,80 @@ def load(run_dir: Path, tags: Sequence[str] = tuple(TAGS)) -> Series:
     return series
 
 
+#: the two scalars that DEFINE the self-play crossing. `eval/pool_snapshot_count` is the count of
+#: promoted snapshots the pool holds; `train/selfplay_fraction` is the share of episodes drawn
+#: against one. Either moving off zero means the run has started facing itself.
+CROSSING_TAGS: Tuple[str, str] = ("eval/pool_snapshot_count", "train/selfplay_fraction")
+
+
+def selfplay_crossing_step(run_dir: Path) -> Dict[str, object]:
+    """The first step at which a run carries a POOL opponent at all — read-only, run dir untouched.
+
+    🚨 **WHY A READ NEEDS THIS.** The first crossing is a draw-level coin flip. It is the SEED
+    path, not the promotion line (ledger 2026-09-11 CORRECTION): with an empty pool
+    `win_rate_vs_pool` is 0.0, so `selfplay_callback.py:651` seeds the frozen eval snapshot as soon
+    as `heuristic_fraction(win_rate_vs_bots, start=SELF_PLAY_START)` leaves zero — the deciding
+    quantity is **BOTS against `SELF_PLAY_START = 0.55`** (`--self-play-start-wr`), and
+    `--promote-threshold` (a different constant that coincides numerically at 0.55) governs only
+    LATER promotions. 0.55 sits inside the 2M-bots replicate floor (roster 0.37-0.58), so two
+    identically-configured arms cross a whole restart interval apart: six of eight 10M arms at
+    **4,128,768**, two (`lambda09`, `lambda095`) at **2,162,688** — the λ-0.9 replicate pair is
+    itself mismatched. ⚠️ **The mismatch is a RAMP, not a step**: the self-play fraction smoothsteps
+    from `start` to `SELF_PLAY_FULL = 0.80`, so an early crosser spends its extra 2M steps at a
+    fraction rising from ~0.03 (`lambda09` 0.0303), not at 0.9. The field is DESCRIPTIVE and
+    selects nothing — the observed crossing is a POST-TREATMENT variable that may be a mediator of
+    the lever under test, so a read states it and never picks a comparator by it.
+
+    🚨 **TWO DEFINITIONS, AND THEY ARE NOT THE SAME STEP — BOTH ARE REPORTED.** ``step`` is the
+    registered one: the first step carrying ANY ``*_pool`` scalar, i.e. the first time a pool
+    opponent actually appeared in a rollout. ``promotion_step`` is the first step at which
+    ``eval/pool_snapshot_count`` or ``train/selfplay_fraction`` rose above zero — the PROMOTION
+    itself, which is logged at the EVAL step that decided it. The promotion lands one eval→rollout
+    lag earlier: measured on the 10M ladder, 2,000,016 vs **2,162,688** and 4,000,032 vs
+    **4,128,768**. Quoting one as the other moves the boundary by ~130-160k steps, so the field
+    carries both and names which is which.
+
+    Returns ``{"step": int | None, "promotion_step": int | None, "by_tag": {tag: step | None},
+    "note": …}``. DESCRIPTIVE: no floor, no verdict. ``None`` means the run never logged a pool
+    scalar — which is what a pure-bot arm looks like, and is reported as such rather than as a
+    zero.
+    """
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+    by_tag: Dict[str, object] = {t: None for t in CROSSING_TAGS}
+    first_pool = None
+    for d in event_dirs(run_dir):
+        ea = EventAccumulator(d, size_guidance={"scalars": 0})
+        ea.Reload()
+        avail = set(ea.Tags().get("scalars", []))
+        for t in CROSSING_TAGS:
+            if t not in avail:
+                continue
+            hits = [int(sc.step) for sc in ea.Scalars(t) if sc.value > 0]
+            if hits:
+                cur = by_tag[t]
+                by_tag[t] = min(hits) if cur is None else min(int(cur), min(hits))
+        # the REGISTERED definition: any `*_pool` scalar existing at all, which is the first
+        # rollout that actually contained a pool opponent. It lands AFTER the promotion scalar
+        # above, by one eval->rollout lag; both are returned because they are different events.
+        for t in avail:
+            if not (t.endswith("_pool") or t.endswith("_vs_pool")):
+                continue
+            steps = [int(sc.step) for sc in ea.Scalars(t)]
+            if steps:
+                m = min(steps)
+                first_pool = m if first_pool is None else min(first_pool, m)
+    live = [int(v) for v in by_tag.values() if v is not None]
+    return {"step": first_pool,
+            "promotion_step": min(live) if live else None,
+            "by_tag": by_tag,
+            "note": ("`step` = the first step carrying any `*_pool` scalar (the first pool "
+                     "opponent in a rollout); `promotion_step` = the first step at which "
+                     "`eval/pool_snapshot_count` or `train/selfplay_fraction` rose above zero "
+                     "(the promotion, logged at the EVAL step that decided it, one eval->rollout "
+                     "lag earlier). DESCRIPTIVE: no floor and no verdict.")}
+
+
 def report(run_dir: Path, series: Series, tags: Sequence[str], n: int) -> int:
     """Print the read. Returns the number of tags that had NO SCALAR — 0 means a full read."""
     missing = 0

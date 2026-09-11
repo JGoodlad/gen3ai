@@ -24,6 +24,14 @@ comparable by construction.
    the outcome (target 1.0), the bias-on-opponent-Elo slope, the own-team leave-one-battle-out
    win-rate R² of ``V`` and the opponent-class AUC of ``V``. Computed on the RECORDED ``V`` of
    the read cycle, so no model forward is needed.
+   **v6 (2026-09-10) adds the LATE WINDOWS and an OPTIMAL reference**, both following the N-curve
+   (``measurements/winprob_refit_ncurve_2026-09-10/`` §3): the opponent is UNOBSERVABLE at turn 1
+   on a matched-team frame — Gen 3 has no team preview — so the turn-1/1-3 rows ask a question
+   whose Bayes-optimal answer is ~0, and the windows where it HAS an answer are turns 4-10 and
+   11-24. Those rows are added BESIDE the registered ones, which stay bit-identical. The
+   ``cond.spread_ratio_optimal.*`` family prints the ratio the best RECALIBRATION of each side's
+   own ``V`` would reach, so a reader sees position relative to ATTAINABLE and not only relative
+   to the control.
 4. **THE DELTA** — every quantity recomputed as ARM - CONTROL with a battle-clustered
    **difference of independent bootstraps**, labelled DETECTED / WITHIN FLOOR / NOT DETECTED.
 5. **QUOTA MATCHING** (added 2026-09-09, ON by default) — :mod:`main.ops.quota_match`. The ladder's
@@ -67,6 +75,7 @@ from main.ops import calibration_slope as CS
 from main.ops import conditioning_meters as CM
 from main.ops import critic_readouts as R
 from main.ops import quota_match as QM
+from main.ops import tb_read as TB
 from main.ops.run_ref import interpreter, refuse, resolve_run_dir
 
 # The report's own constants live with the report; re-exported here so `main.ops.critic_read`
@@ -379,7 +388,7 @@ def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
             "step": cycle["step"],
             "boot": args.cond_boot, "seed": args.seed, "ladder": args.cond_ladder,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
-            "meters": list(CM.METER_KEYS), "block_version": 2}
+            "meters": list(CM.METER_KEYS), "block_version": 3}
 
 
 def identity_block(rows: List[dict], payload: dict, cap, *, boot: int,
@@ -729,7 +738,17 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
                     "frame": {}, "refusal": cond_refusal}
 
     manifest = cycle.get("manifest") or {}
+    # ---- the SELF-PLAY CROSSING. Read from the REAL run's TensorBoard (never the read root — an
+    # offline shadow cycle has no event files), read-only, and DESCRIPTIVE: no floor, no verdict.
+    # It is on the readout because the first promotion is a draw-level coin flip and two
+    # identically-configured arms routinely cross a whole restart interval apart.
+    try:
+        crossing = TB.selfplay_crossing_step(run_dir)
+    except Exception as exc:                                   # noqa: BLE001
+        crossing = {"step": None, "promotion_step": None, "by_tag": {},
+                    "note": f"UNREADABLE — {exc}"}
     doc = {"fingerprint": fp, "artifact_dir": str(work),
+           "selfplay_crossing": crossing,
            "run": run_dir.name, "run_dir": str(run_dir),
            "read_root": str(source), "traces_overridden": source != run_dir,
            # The population IN WORDS, for both kinds of cycle. A header that describes only the

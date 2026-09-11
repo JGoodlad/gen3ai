@@ -24,7 +24,7 @@ from main.ops import team_conditioning as TC
 from main.ops import quota_match as QM
 
 TOOL = "critic_read"
-TOOL_VERSION = 5
+TOOL_VERSION = 6
 
 #: the summary table's headline quantities. The first four are the 2026-09-08 registration's;
 #: the last two are the CONDITIONING primaries added 2026-09-09, after three offline reads
@@ -238,6 +238,103 @@ def _cell_census_table(doc: Dict[str, Any]) -> List[str]:
                      f"{_f(ts.get('median_battles_per_cell'), 1, sign=False)} | — | — |")
     L.append("")
     return L
+
+
+def _fmt_step(v: Optional[int]) -> str:
+    return "—" if v is None else f"{int(v):,}"
+
+
+def _crossing_line(doc: Dict[str, Any]) -> str:
+    """The SELF-PLAY CROSSING for both sides, and a mismatch said OUT LOUD.
+
+    🚨 The first crossing is a draw-level coin flip on the SEED path — `SELF_PLAY_START = 0.55`
+    (`--self-play-start-wr`) read against `win_rate_vs_bots`, which sits inside the 2M-bots
+    replicate floor — so two identically-configured arms cross a whole restart interval apart: six
+    of the eight 10M ladder arms at 4,128,768 and two (`lambda09`, `lambda095`) at 2,162,688, which
+    puts the λ-0.9 REPLICATE PAIR itself on opposite sides. The report states it on its own line.
+    ⚠️ DESCRIPTIVE, and it SELECTS NOTHING: the observed crossing is a POST-TREATMENT variable that
+    may be a mediator of the lever under test, so conditioning a comparison on it would remove part
+    of the effect (ledger 2026-09-11 CORRECTION).
+    """
+    a = (doc["arm"].get("selfplay_crossing") or {})
+    c = (doc["control"].get("selfplay_crossing") or {})
+    if not a and not c:
+        return ""
+    L = [f"**SELF-PLAY CROSSING** — arm {_fmt_step(a.get('step'))} · control "
+         f"{_fmt_step(c.get('step'))} (first step carrying any `*_pool` scalar; the PROMOTION "
+         f"scalar itself lands one eval→rollout lag earlier, at "
+         f"{_fmt_step(a.get('promotion_step'))} / {_fmt_step(c.get('promotion_step'))}). "
+         "Descriptive — no floor, no verdict."]
+    if a.get("step") is not None and c.get("step") is not None and a["step"] != c["step"]:
+        L.append("")
+        L.append(f"> 🚨 **CROSSING MISMATCH: arm {_fmt_step(a['step'])} vs control "
+                 f"{_fmt_step(c['step'])}.** The two runs seeded self-play at different steps, so "
+                 "the rows below compare heads fitted against opponent distributions that differ "
+                 "over the span between them. The first crossing is a coin flip on the SEED path "
+                 "— `SELF_PLAY_START = 0.55` (`--self-play-start-wr`) against "
+                 "`win_rate_vs_bots`, inside the 2M-bots replicate floor — so this is a property "
+                 "of the DRAW, not of the lever under test. ⚠️ It is a RAMP, not a step: the "
+                 "early crosser's extra span runs at a self-play fraction rising from ~0.03, not "
+                 "at 0.9, so the size of the mismatch is the integral of `selfplay_fraction` over "
+                 "the span and not the span itself. This line SELECTS NOTHING — the crossing is "
+                 "POST-TREATMENT and may be a mediator (ledger 2026-09-11 CORRECTION).")
+    L.append("")
+    return "\n".join(L)
+
+
+def _optimal_block(doc: Dict[str, Any]) -> str:
+    """HOW MUCH OF THE BETWEEN-OPPONENT SPREAD IS OPPONENT IDENTITY — `V`'s spread ratio split
+    against the part a head decoding only WHICH OPPONENT it faces from its own `V` would produce.
+
+    Added 2026-09-10 (tool v6). Without it a spread ratio has only two reference points, 1.0 and
+    the control, and 1.0 is the WRONG one at early turns: the N-curve measured that on a
+    matched-team frame the opponent is unobservable at turn 1 (Gen 3 has no team preview), so the
+    opponent channel there is empty by construction.
+
+    🚨 **IT IS NOT A CEILING.** It was commissioned as one and the first pair refuted that: `V`'s
+    own ratio EXCEEDS it at every window. `main.ops.conditioning_meters.oof_opt_value` carries the
+    mechanism. The two rows are a DECOMPOSITION, and the ratio column says how many times `V`'s
+    between-opponent spread exceeds what opponent identity alone accounts for.
+    """
+    sides = [(role, (d.get("conditioning") or {}).get("frame", {}).get("optimal_reference"), d)
+             for role, d in (("arm", doc["arm"]), ("control", doc["control"]))]
+    if not any(ref for _r, ref, _d in sides):
+        return ""
+    L: List[str] = []
+    A = L.append
+    A("### HOW MUCH OF THE SPREAD IS OPPONENT IDENTITY — `V` against its opponent-decodable part")
+    A("")
+    A("| side | window | ratio of `V` | opponent-decodable part | `V` / decodable |")
+    A("|---|---|---|---|---|")
+    for role, ref, d in sides:
+        if not ref:
+            continue
+        for window, _row in CM.OPT_WINDOWS:
+            e = ref.get(window) or {}
+            v, o = e.get("ratio_V"), e.get("ratio_optimal")
+            frac = (f"{v / o:.3f}" if (v is not None and o not in (None, 0.0)) else "—")
+            A(f"| {role} `{d['run']}` | `{window}` | {_f(v)} | {_f(o)} | {frac} |")
+    A("")
+    A("`V_opt(s) = Σ_o q(o | V(s)) · p_o` — an out-of-fold, battle-grouped, binned posterior over "
+      "the pinned opponent roster from this side's own recorded `V`, times each opponent's "
+      "manifest win rate, put through the SAME noise-corrected between-opponent spread the row "
+      "above it uses. It is the between-opponent spread a head conditioning ONLY on which "
+      "opponent its own output reveals would emit.")
+    A("")
+    A("> 🚨 **IT IS NOT AN UPPER BOUND, AND `V` ROUTINELY EXCEEDS IT.** `E[p_o | V]` is a "
+      "per-state CONDITIONAL MEAN, and a conditional mean ATTENUATES: the between-cell spread of "
+      "a shrinking transform of `V` is smaller than the between-cell spread of `V` itself. So the "
+      "excess in the last column is not a paradox — it is between-opponent spread riding on "
+      "**BOARD STATE** that differs by opponent (you are ahead by turn 12 against a weak bot, and "
+      "`V` says so without recognising the bot) rather than on opponent IDENTITY. Read the two "
+      "columns as a DECOMPOSITION; never quote the decodable part as \"the maximum\".")
+    A("")
+    A("> ⚠️ **Decoded from the head's OUTPUT, not its information set.** The block does no model "
+      "forward, so the posterior is `q(o | V)` and not `q(o | value_pooled)`: this is a LOWER "
+      "bound on how much opponent identity the head's FEATURES carry. **Descriptive: never a "
+      "pass/fail bar, and the delta between two sides is never DETECTED.**")
+    A("")
+    return "\n".join(L)
 
 
 def _ab_block(doc: Dict[str, Any]) -> str:
@@ -555,6 +652,7 @@ def render_md(doc: Dict[str, Any]) -> str:
       f"{doc['generated_at']}. Every number is a DELTA, **arm − control**, with the difference "
       "of the two runs' independent battle-clustered bootstraps. Strength is NOT read.")
     A("")
+    A(_crossing_line(doc))
     A("| role | run | cycle | battles | draw/timeout share | anchors | live |")
     A("|---|---|---|---|---|---|---|")
     for role, d in (("arm", arm), ("control", ctl)):
@@ -701,6 +799,9 @@ def render_md(doc: Dict[str, Any]) -> str:
           f"{_f(r['control'])} | **{_f(r['delta'])}** | {_ci(r['ci'])} | {r['n_draws']} | "
           f"{_label(r)} |")
     A("")
+    opt = _optimal_block(doc)
+    if opt:
+        A(opt)
     ab = _ab_block(doc)
     if ab:
         A(ab)

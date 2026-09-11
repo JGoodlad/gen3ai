@@ -54,7 +54,30 @@ from main.ops import team_conditioning as TC
 #: turn windows the meters are reported on. ``t1`` is the sharpest (nothing has happened, every
 #: battle contributes exactly one state, and the two sides of the identity condition on the same
 #: event); ``t1_3`` is the mixture diagnostic's own registered window.
-BUCKETS = ("t1", "t1_3", "all")
+#:
+#: 🚨 ``t4_10`` and ``t11_24`` were added 2026-09-10 because the N-curve
+#: (``measurements/winprob_refit_ncurve_2026-09-10/`` §3) established that **on a matched-team
+#: frame the opponent is UNOBSERVABLE at turn 1** — Gen 3 has no team preview, and the trainee's
+#: own team is the only thing in the observation at that point. Measured there, `value_pooled`
+#: decodes the opponent CLASS at AUC 0.502 / 0.508 at turn 1, 0.67 over turns 1-3 and 0.82 over
+#: turns 4-10 against a permutation null of ~0.52. **A turn-1 spread ratio of 0 is therefore
+#: BAYES-OPTIMAL on such a frame, not a defect**, and the window in which "does the head condition
+#: on the opponent" HAS an answer is turns >= 4. The registered `t1` / `t1_3` rows are kept
+#: unchanged and bit-identical — they are what three landed reads were registered on — and the
+#: late windows are added BESIDE them.
+BUCKETS = ("t1", "t1_3", "t4_10", "t11_24", "all")
+#: the turn window the opponent first becomes observable in (N-curve §3).
+OBSERVABLE_TURNS = (4, 10)
+#: the MID window — the N-curve's own headline window for the spread ratio, where both the head
+#: and the outcome have had time to separate.
+MID_TURNS = (11, 24)
+#: how many quantile bins the OPTIMAL-spread reference estimates its posterior `q(o | V)` over.
+#: Enough that a 12-opponent roster is separable, few enough that each training bin holds many
+#: battles at the frame sizes this ladder reads (~800-24,000).
+OPT_BINS = 20
+#: folds of the OUT-OF-FOLD posterior behind the optimal-spread reference, grouped by battle —
+#: the same k the decode rows use, for the same reason.
+OPT_FOLDS = 5
 #: at most this many states per battle per bucket enter a SCORE meter (the probe read's cap) —
 #: it keeps every battle represented while bounding how much within-battle correlation rides in.
 STATES_PER_BATTLE_CAP = 2
@@ -75,6 +98,35 @@ OWN_TEAM_R2_DIFF = "cond.own_team_r2.t1_minus_late"
 #: scale-invariant and cannot see that; the spread rows see it mixed with everything else; the
 #: slope sees it directly, in the units it happens in. >1 is UNDER-dispersed (shrunk). Arithmetic
 #: and the lever-arm hazard: :mod:`main.ops.calibration_slope`.
+#: the LATE-WINDOW rows, added 2026-09-10 (N-curve §3 — the opponent is unobservable at turn 1).
+#: `t4_10` is the window the opponent BECOMES observable in; `t11_24` is the window the N-curve
+#: reports the head's own spread ratio at (0.759 on `ctrl10M`, 0.464 on `ctrl10M_b`).
+SPREAD_RATIO_T4_10 = "cond.spread_ratio.t4_10"
+SPREAD_RATIO_T11_24 = "cond.spread_ratio.t11_24"
+OPP_CLASS_AUC_T1_3 = "cond.opp_class_auc.t1_3"
+OPP_CLASS_AUC_T4_10 = "cond.opp_class_auc.t4_10"
+#: the OPPONENT-DECODABLE component of the spread — the between-opponent spread ratio a head that
+#: conditioned ONLY on what its own output reveals about WHICH opponent it faces would exhibit.
+#: 🚨 **NOT an upper bound on `cond.spread_ratio.*`** — see :func:`oof_opt_value`. DESCRIPTIVE.
+OPT_RATIO = {"t1_3": "cond.spread_ratio_optimal.t1_3",
+             "t4_10": "cond.spread_ratio_optimal.t4_10",
+             "t11_24": "cond.spread_ratio_optimal.t11_24"}
+#: the windows the optimal reference is computed on, and the row each is compared against.
+OPT_WINDOWS = (("t1_3", "cond.spread_ratio.t1_3"),
+               ("t4_10", SPREAD_RATIO_T4_10),
+               ("t11_24", SPREAD_RATIO_T11_24))
+OPT_PROVISIONAL_WHY = (
+    "a DESCRIPTIVE DECOMPOSITION TERM, never a pass/fail bar and never a treatment effect. It is "
+    "the between-opponent spread ratio a head conditioning ONLY on WHICH OPPONENT its own `V` "
+    "reveals would exhibit — `sum_o q(o|V)*p_o` — and it is read BESIDE "
+    "`cond.spread_ratio.<window>` to split that row into an OPPONENT-IDENTITY part and a "
+    "remainder. 🚨 IT IS NOT AN UPPER BOUND ON THAT ROW AND `V` ROUTINELY EXCEEDS IT: measured "
+    "on the hp800 lambda09/ctrl10M pair, V reads 0.647 / 0.704 at turns 11-24 against this row's "
+    "0.214 / 0.187. A per-state conditional mean is an ATTENUATING transform, so the cell-mean "
+    "spread of `E[p_o | V]` is smaller than the cell-mean spread of `V` itself; the excess is "
+    "between-opponent spread that rides on BOARD STATE correlated with the opponent rather than "
+    "on opponent identity. A delta between two sides is a difference in how much opponent "
+    "IDENTITY each side's output carries; it is reported, and it is never DETECTED")
 CALIB_SLOPE_ALL = "cond.calibration_slope.all"
 CALIB_SLOPE_T13 = "cond.calibration_slope.t1_3"
 CALIB_SLOPE_WITHIN = "cond.calibration_slope.within_stratum"
@@ -254,7 +306,9 @@ def rollup(arr: np.ndarray) -> Dict[str, np.ndarray]:
     battles, first, inv = np.unique(arr["battle"], return_index=True, return_inverse=True)
     n_b = battles.size
     turn, V = arr["turn"], arr["V"]
-    masks = {"all": np.ones(arr.size, bool), "t1_3": turn <= 3, "t1": turn == 1}
+    masks = {"all": np.ones(arr.size, bool), "t1_3": turn <= 3, "t1": turn == 1,
+             "t4_10": (turn >= OBSERVABLE_TURNS[0]) & (turn <= OBSERVABLE_TURNS[1]),
+             "t11_24": (turn >= MID_TURNS[0]) & (turn <= MID_TURNS[1])}
     b: Dict[str, np.ndarray] = {
         "battle": arr["battle"][first], "opponent": arr["opponent"][first],
         "opp_class": arr["opp_class"][first], "y": arr["y"][first],
@@ -275,9 +329,15 @@ def cell_index(b: Dict[str, np.ndarray]) -> Tuple[List[str], np.ndarray]:
 
 
 def cell_stats(b: Dict[str, np.ndarray], sel: np.ndarray, cid_of_sel: np.ndarray,
-               n_cells: int, bucket: str, wr: Optional[np.ndarray]) -> Dict[str, np.ndarray]:
+               n_cells: int, bucket: str, wr: Optional[np.ndarray],
+               cols: Optional[Tuple[np.ndarray, np.ndarray]] = None) -> Dict[str, np.ndarray]:
     """Per-cell IPW battle-level mean ``V``, its squared standard error, and the bias against the
     cell's TRUE win rate.
+
+    ``cols`` substitutes a DIFFERENT per-battle ``(n, sum)`` pair for the bucket's own — the one
+    hook the OPTIMAL-spread reference needs, since its ``V_opt`` is a second per-state column over
+    the same battles. Absent (every registered row), the bucket's own columns are read and the
+    arithmetic is bit-for-bit what it was.
 
     🚨 ``cid_of_sel`` is the cell code of each SELECTED battle, aligned 1:1 with ``sel`` — never a
     per-battle table to be indexed here. A cluster bootstrap draw has exactly as many entries as
@@ -287,8 +347,9 @@ def cell_stats(b: Dict[str, np.ndarray], sel: np.ndarray, cid_of_sel: np.ndarray
     their own point estimates.
     """
     w = b["w"][sel]
-    ns = b[f"n_{bucket}"][sel]
-    sV = b[f"sV_{bucket}"][sel]
+    n_col, sV_col = cols if cols is not None else (b[f"n_{bucket}"], b[f"sV_{bucket}"])
+    ns = n_col[sel]
+    sV = sV_col[sel]
     y = b["y"][sel]
     c = cid_of_sel
     has = ns > 0
@@ -469,6 +530,68 @@ def grouped_oof_scalar(x: np.ndarray, y: np.ndarray, w: np.ndarray, groups: np.n
         b0, b1 = _ridge_1d(xt, yt, wt, best)
         pred[te] = b0 + b1 * x[te]
     return pred
+
+
+def oof_opt_value(v: np.ndarray, z: np.ndarray, w: np.ndarray, groups: np.ndarray, *,
+                  bins: int = OPT_BINS, k: int = OPT_FOLDS, seed: int = 0) -> np.ndarray:
+    """``V_opt(s) = sum_o q(o | V(s)) * p_o`` — the OPPONENT-DECODABLE component of ``V``.
+
+    🚨 **THIS IS NOT A CEILING, AND THE FIRST READ OF IT PROVED THAT.** It was commissioned as
+    "the spread an optimally-conditioned `V` would exhibit", and on the very first pair `V`'s own
+    ratio EXCEEDED it at every window (hp800, turns 11-24: 0.647 / 0.704 against 0.214 / 0.187).
+    The mechanism is not a defect: ``E[p_o | V]`` is a per-state CONDITIONAL MEAN, which attenuates
+    — the between-cell spread of a shrinking transform of ``V`` is smaller than the between-cell
+    spread of ``V``. So the row is a DECOMPOSITION TERM, not a bound: it is the part of
+    ``cond.spread_ratio.<window>`` attributable to the head's output REVEALING WHICH OPPONENT it
+    faces, and the excess is spread riding on BOARD STATE that happens to differ by opponent (you
+    are ahead by turn 12 against a weak bot, and `V` says so without recognising the bot). Read
+    the two together; never quote this one as "the maximum".
+
+    ``z`` is each state's ``p_o``: the empirical win rate of the opponent that state's battle was
+    played against. Because ``p_o`` is a per-opponent scalar, the sum over opponents collapses
+    exactly — ``sum_o q(o | v) * p_o`` IS the conditional expectation of ``z`` given ``v`` — so the
+    estimator is a conditional mean of ``z`` on ``V`` and needs no explicit 12-way posterior. It
+    is computed NON-PARAMETRICALLY, by quantile bins of ``V`` fitted on the training folds only:
+    a bin's weighted mean of ``z`` is *literally* ``sum_o q_hat(o | bin) * p_o``, the weighted
+    opponent shares inside the bin being ``q_hat``. Bin EDGES come from the unweighted training
+    ``V`` (a partition, not an estimate); the mean INSIDE a bin is HT-weighted, because that is
+    the quantity being estimated. A test row landing in a bin with no training mass takes the
+    training grand mean rather than a NaN.
+
+    🚨 **DECODED FROM THE HEAD'S OWN OUTPUT, NOT FROM ITS INFORMATION SET.** The conditioning
+    block does NO model forward by construction (see the module docstring) — the only per-state
+    signal it holds is the recorded scalar ``V``. So the opponent posterior is ``q(o | V)`` and
+    not ``q(o | value_pooled)``: this measures how much opponent identity the head's EMITTED
+    NUMBER carries, which is a LOWER bound on how much its features carry. A version at the true
+    information set needs a forward over ``value_pooled`` and is a different, more expensive
+    instrument.
+
+    Folds are grouped by BATTLE for the same reason every other decode here is: a posterior fitted
+    on the same battle it scores is partly the answer.
+    """
+    n = v.size
+    out = np.full(n, np.nan)
+    if n == 0:
+        return out
+    outer = _fold_of(groups, k, seed)
+    for f in range(k):
+        te, tr = outer == f, outer != f
+        if not te.any() or not tr.any() or w[tr].sum() <= 0:
+            continue
+        vt, zt, wt = v[tr], z[tr], w[tr]
+        grand = float(np.average(zt, weights=wt))
+        edges = np.unique(np.quantile(vt, np.linspace(0.0, 1.0, int(bins) + 1)[1:-1]))
+        if edges.size == 0:
+            out[te] = grand
+            continue
+        n_bin = edges.size + 1
+        bt = np.searchsorted(edges, vt, side="right")
+        Wb = np.bincount(bt, weights=wt, minlength=n_bin)
+        Zb = np.bincount(bt, weights=wt * zt, minlength=n_bin)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            mb = np.where(Wb > 0, Zb / np.where(Wb > 0, Wb, 1.0), grand)
+        out[te] = mb[np.searchsorted(edges, v[te], side="right")]
+    return out
 
 
 def score(y: np.ndarray, p: np.ndarray, w: np.ndarray, task: str) -> float:
@@ -652,6 +775,20 @@ METER_SPECS: Tuple[Meter, ...] = (
           True, "as `cond.spread_ratio_raw.t1_3`"),
     Meter("cond.spread_delta.all", "sd(V) - sd(outcome), noise-corrected", "all states",
           False, "as `cond.spread_delta.t1_3`"),
+    # ---- the LATE WINDOWS, added 2026-09-10 (tool v6). The N-curve established that the
+    # opponent is UNOBSERVABLE at turn 1 on a matched-team frame, so a turn-1(-3) ratio is a
+    # weak question; these are the windows where the question has an answer.
+    Meter(SPREAD_RATIO_T4_10,
+          "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected",
+          f"turn {OBSERVABLE_TURNS[0]}-{OBSERVABLE_TURNS[1]}", False,
+          "as `cond.spread_ratio.t1_3` — the same noise-corrected estimator on the window the "
+          "opponent first becomes OBSERVABLE in (N-curve §3: pooled -> class AUC 0.50 at t1, "
+          "0.67 over t1-3, 0.82 over t4-10)"),
+    Meter(SPREAD_RATIO_T11_24,
+          "between-opponent spread ratio sd(V)/sd(outcome), noise-corrected",
+          f"turn {MID_TURNS[0]}-{MID_TURNS[1]}", False,
+          "as `cond.spread_ratio.t1_3` — the same noise-corrected estimator on the N-curve's own "
+          "headline window"),
     Meter("cond.elo_slope", "slope of bias (V - true win rate) on opponent Elo, per 100 Elo",
           "all states", False,
           "an OLS over the CELLS, of which there are as many as the pinned roster has "
@@ -668,6 +805,30 @@ METER_SPECS: Tuple[Meter, ...] = (
                 "every rung of the 2026-09-09 curve — a 1-D monotone decoder's AUC is nearly the "
                 "AUC of V itself — but it is a fit on the frame, so it is matched by the same "
                 "rule rather than exempted by an observation"),
+    Meter(OPP_CLASS_AUC_T1_3, "opponent-CLASS (pool vs bot) AUC of V",
+          "turn 1-3", True, "as `cond.opp_class_auc.t1`"),
+    Meter(OPP_CLASS_AUC_T4_10, "opponent-CLASS (pool vs bot) AUC of V",
+          f"turn {OBSERVABLE_TURNS[0]}-{OBSERVABLE_TURNS[1]}", True,
+          "as `cond.opp_class_auc.t1`. 🚨 THIS IS THE ROW THE QUESTION HAS AN ANSWER ON: the "
+          "N-curve measured the opponent to be unobservable at turn 1 (class AUC 0.502 / 0.508 "
+          "from `value_pooled` itself on a matched-team frame) and observable by turns 4-10 "
+          "(0.82), where the ONLINE head already reads 0.723 / 0.700 against a null of 0.52"),
+    # ---- the OPTIMAL-SPREAD reference family, added 2026-09-10 (tool v6). Descriptive.
+    Meter(OPT_RATIO["t1_3"],
+          "OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above)",
+          "turn 1-3", True,
+          "an out-of-fold binned posterior FIT on the frame (`oof_opt_value`), so its expectation "
+          "moves with the number of battles the bins are estimated from — the first mechanism, "
+          "exactly as for `cond.opp_class_auc.t1`",
+          True, OPT_PROVISIONAL_WHY),
+    Meter(OPT_RATIO["t4_10"],
+          "OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above)",
+          f"turn {OBSERVABLE_TURNS[0]}-{OBSERVABLE_TURNS[1]}", True,
+          f"as `{OPT_RATIO['t1_3']}`", True, OPT_PROVISIONAL_WHY),
+    Meter(OPT_RATIO["t11_24"],
+          "OPPONENT-DECODABLE between-opponent spread ratio — sum_o q(o|V)*p_o, noise-corrected (NOT a bound on the row above)",
+          f"turn {MID_TURNS[0]}-{MID_TURNS[1]}", True,
+          f"as `{OPT_RATIO['t1_3']}`", True, OPT_PROVISIONAL_WHY),
     # ---- the (A)/(B) separation, added 2026-09-10 (arm 8's own-team decode). Detail and the
     # sign table: `main.ops.team_conditioning`.
     Meter("cond.within_team_resolution.all",
@@ -855,7 +1016,10 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
             ("cond.own_team_r2.late", "r2", y_wr_state,
              (arr["turn"] >= LATE_TURN) & np.isfinite(y_wr_state)),
             ("cond.own_team_r2.all", "r2", y_wr_state, np.isfinite(y_wr_state)),
-            ("cond.opp_class_auc.t1", "auc", y_cls_state, arr["turn"] == 1)):
+            ("cond.opp_class_auc.t1", "auc", y_cls_state, arr["turn"] == 1),
+            (OPP_CLASS_AUC_T1_3, "auc", y_cls_state, arr["turn"] <= 3),
+            (OPP_CLASS_AUC_T4_10, "auc", y_cls_state,
+             (arr["turn"] >= OBSERVABLE_TURNS[0]) & (arr["turn"] <= OBSERVABLE_TURNS[1]))):
         idx = _cap_states(arr, mask, STATES_PER_BATTLE_CAP, seed)
         if idx.size < 20 or np.unique(arr["battle"][idx]).size < 5:
             omitted[key] = (f"only {idx.size} usable states / "
@@ -890,6 +1054,41 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                             "v": arr["V"][idx], "y": arr["y"][idx], "w": arr["w"][idx],
                             "cell": code_b[binv[idx]],
                             "census": TC.cell_census(code_b[binv[idx]], arr["battle"][idx], n_c)}
+
+    # ---- THE OPTIMAL-SPREAD REFERENCE. One out-of-fold posterior per window, FIT ONCE on the
+    # full frame exactly as the decoders above are (the bootstrap then resamples the battles
+    # inside the fitted columns, pricing the sampling noise in a held-out quantity rather than
+    # the variability of refitting). `p_o` is the cell's own manifest TRUE win rate — the same
+    # quantity the DENOMINATOR of every spread ratio is built from, so the reference and the row
+    # it is read beside sit on one footing.
+    opt_cols: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+    n_b_all = int(b["y"].size)
+    for window, _row in OPT_WINDOWS:
+        wmask = np.isfinite(arr["V"]) & np.isfinite(arr["true_wr"])
+        wmask &= {"t1_3": arr["turn"] <= 3,
+                  "t4_10": ((arr["turn"] >= OBSERVABLE_TURNS[0])
+                            & (arr["turn"] <= OBSERVABLE_TURNS[1])),
+                  "t11_24": ((arr["turn"] >= MID_TURNS[0])
+                             & (arr["turn"] <= MID_TURNS[1]))}[window]
+        widx = np.where(wmask)[0]
+        if widx.size < 20 or np.unique(arr["battle"][widx]).size < 5:
+            omitted[OPT_RATIO[window]] = (
+                f"only {widx.size} states / "
+                f"{np.unique(arr['battle'][widx]).size if widx.size else 0} battles sit in turns "
+                f"{window.replace('t', '').replace('_', '-')} at this cycle — too few for a "
+                "grouped out-of-fold posterior.")
+            continue
+        vopt = oof_opt_value(arr["V"][widx], arr["true_wr"][widx], arr["w"][widx],
+                             arr["battle"][widx], seed=seed)
+        ok = np.isfinite(vopt)
+        if int(ok.sum()) < 20:
+            omitted[OPT_RATIO[window]] = ("the out-of-fold posterior produced no usable column "
+                                          "on this cycle.")
+            continue
+        keep_idx = widx[ok]
+        opt_cols[window] = (
+            np.bincount(binv[keep_idx], minlength=n_b_all).astype(float),
+            np.bincount(binv[keep_idx], weights=vopt[ok], minlength=n_b_all))
 
     # ---- THE CALIBRATION SLOPE frames. Per-state columns for the two turn windows, capped per
     # battle exactly as the within-cell rows are, plus each state's own-team STRENGTH STRATUM (for
@@ -930,6 +1129,11 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     keep0 = st_all0["n_battles"] > 0
     sc_all0 = spread_corrected(st_all0, keep0, true_wr, n_games)
     sc_t13_0 = spread_corrected(st_t13_0, keep0, true_wr, n_games)
+    sc_late0 = {w: spread_corrected(cell_stats(b, sel0, cid, n_cells, w, true_wr),
+                                    keep0, true_wr, n_games) for w in ("t4_10", "t11_24")}
+    sc_opt0 = {w: spread_corrected(
+        cell_stats(b, sel0, cid, n_cells, w, true_wr, cols=opt_cols[w]),
+        keep0, true_wr, n_games) for w in opt_cols}
     points: Dict[str, float] = {
         "cond.spread_ratio.t1_3": sc_t13_0["ratio"],
         "cond.spread_ratio_raw.t1_3": sc_t13_0["ratio_raw"],
@@ -938,7 +1142,11 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
         "cond.spread_ratio_raw.all": sc_all0["ratio_raw"],
         "cond.spread_delta.all": sc_all0["delta"],
         "cond.elo_slope": ols_slope(st_all0["bias"], strength, keep0),
+        SPREAD_RATIO_T4_10: sc_late0["t4_10"]["ratio"],
+        SPREAD_RATIO_T11_24: sc_late0["t11_24"]["ratio"],
     }
+    for w in opt_cols:
+        points[OPT_RATIO[w]] = sc_opt0[w]["ratio"]
     for key, s in scores.items():
         points[key] = score(s["y"], s["pred"], s["w"], s["task"])
     if all(np.isfinite(points.get(k, np.nan))
@@ -1006,6 +1214,14 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
         draws["cond.spread_ratio_raw.t1_3"].append(stt["ratio_raw"])
         draws["cond.spread_delta.t1_3"].append(stt["delta"])
         draws["cond.spread_ratio.all"].append(sa["ratio"])
+        for w in ("t4_10", "t11_24"):
+            draws[f"cond.spread_ratio.{w}"].append(
+                spread_corrected(cell_stats(b, sel, cid_sel, n_cells, w, wr),
+                                 kp, wr, n_games)["ratio"])
+        for w in opt_cols:
+            draws[OPT_RATIO[w]].append(spread_corrected(
+                cell_stats(b, sel, cid_sel, n_cells, w, wr, cols=opt_cols[w]),
+                kp, wr, n_games)["ratio"])
         draws["cond.spread_ratio_raw.all"].append(sa["ratio_raw"])
         draws["cond.spread_delta.all"].append(sa["delta"])
         draws["cond.elo_slope"].append(ols_slope(st_a["bias"], strength, kp))
@@ -1075,12 +1291,27 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                   # scales as 1/sd(logit V), so a compressed head buys a wider interval from the
                   # very effect under test. Never printed without it.
                   "calibration_support": calib["support"],
+                  # 🚨 the OPTIMAL reference is read WITH its own ratio's partner: V's ratio in
+                  # the same window. `optimal` carries both, so "0.05 optimal" is never quoted
+                  # without the number it is the ceiling for.
+                  "optimal_reference": {
+                      w: {"ratio_V": (float(points[row]) if np.isfinite(points.get(row, np.nan))
+                                      else None),
+                          "ratio_optimal": (float(points[OPT_RATIO[w]])
+                                            if np.isfinite(points.get(OPT_RATIO[w], np.nan))
+                                            else None),
+                          "n_bins": OPT_BINS, "n_folds": OPT_FOLDS,
+                          "sd_V": (float(sc_opt0[w]["sd_V"]) if w in sc_opt0 else None),
+                          "sd_y": (float(sc_opt0[w]["sd_y"]) if w in sc_opt0 else None)}
+                      for w, row in OPT_WINDOWS},
                   "team_spread_frame": {k: v for k, v in ts0.items()
                                         if k in ("n_cells", "n_battles",
                                                  "median_battles_per_cell", "sd_V", "sd_y",
                                                  "noise_V", "noise_y")},
                   "recorded_v_note": recorded_v_note()},
-        "spread": {"t1_3": sc_t13_0, "all": sc_all0, "team_t1_3": ts0},
+        "spread": {"t1_3": sc_t13_0, "all": sc_all0, "team_t1_3": ts0,
+                   **{w: sc_late0[w] for w in sc_late0},
+                   "optimal": {w: sc_opt0[w] for w in sc_opt0}},
         "strength": {"note": strength_note,
                      "ratings": ({o: float(strength_map[o]) for o in sorted(strength_map)}
                                  if strength_map else None)},

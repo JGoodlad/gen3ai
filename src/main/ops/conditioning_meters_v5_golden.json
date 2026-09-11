@@ -1,0 +1,194 @@
+{
+ "plant_separating": {
+  "points": {
+   "cond.spread_ratio.t1_3": 1.0371912216150374,
+   "cond.spread_ratio_raw.t1_3": 0.9926580743273876,
+   "cond.spread_delta.t1_3": 0.011249960325153296,
+   "cond.spread_ratio.all": 1.0371912216150374,
+   "cond.spread_ratio_raw.all": 0.9926580743273874,
+   "cond.spread_delta.all": 0.011249960325153296,
+   "cond.own_team_r2.t1": -0.01382639545427189,
+   "cond.own_team_r2.late": -0.01382639545427189,
+   "cond.own_team_r2.all": -0.013826395454272111,
+   "cond.opp_class_auc.t1": 1.0,
+   "cond.own_team_r2.t1_minus_late": 0.0,
+   "cond.within_team_resolution.all": 0.14333333333333334,
+   "cond.within_stratum_resolution.all": 0.14333333333333334,
+   "cond.team_spread_ratio_raw.t1_3": 0.0354251741789199,
+   "cond.calibration_slope.all": 0.8702254558995416,
+   "cond.calibration_intercept.all": -0.007219587430034164,
+   "cond.calibration_slope.within_stratum": 0.8912669033636843,
+   "cond.calibration_slope.t1_3": 0.8702254558995416,
+   "cond.calibration_intercept.t1_3": -0.007219587430034164
+  },
+  "ci": {
+   "cond.spread_ratio.t1_3": [
+    0.8158691203470974,
+    1.3492265865004793
+   ],
+   "cond.spread_ratio_raw.t1_3": [
+    0.7988926994062066,
+    1.2435799865771695
+   ],
+   "cond.spread_delta.t1_3": [
+    -0.07053403491947693,
+    0.08189278676366663
+   ],
+   "cond.spread_ratio.all": [
+    0.8158691203470972,
+    1.3492265865004793
+   ],
+   "cond.spread_ratio_raw.all": [
+    0.7988926994062066,
+    1.2435799865771695
+   ],
+   "cond.spread_delta.all": [
+    -0.07053403491947698,
+    0.08189278676366663
+   ],
+   "cond.own_team_r2.t1": [
+    -0.08583877275651562,
+    0.028498451339646343
+   ],
+   "cond.own_team_r2.all": [
+    -0.08583877275651562,
+    0.02849845133964612
+   ],
+   "cond.opp_class_auc.t1": [
+    1.0,
+    1.0
+   ],
+   "cond.within_team_resolution.all": [
+    0.14278585921325052,
+    0.198028378010243
+   ],
+   "cond.within_stratum_resolution.all": [
+    0.14278585921325054,
+    0.198028378010243
+   ],
+   "cond.team_spread_ratio_raw.t1_3": [
+    0.1536594183989968,
+    1.3675993499880317
+   ],
+   "cond.own_team_r2.late": [
+    -0.08583877275651562,
+    0.028498451339646343
+   ],
+   "cond.own_team_r2.t1_minus_late": [
+    0.0,
+    0.0
+   ],
+   "cond.calibration_slope.all": [
+    0.5860871756532005,
+    1.4846441530569245
+   ],
+   "cond.calibration_intercept.all": [
+    -0.45298746504940757,
+    0.3754966096063201
+   ],
+   "cond.calibration_slope.t1_3": [
+    0.5860871756532005,
+    1.4846441530569245
+   ],
+   "cond.calibration_intercept.t1_3": [
+    -0.45298746504940757,
+    0.3754966096063201
+   ],
+   "cond.calibration_slope.within_stratum": [
+    0.6431810573356331,
+    1.5452229405451532
+   ]
+  }
+ },
+ "plant_teams": {
+  "points": {
+   "cond.spread_ratio_raw.t1_3": 0.15966666666666618,
+   "cond.spread_delta.t1_3": 0.0,
+   "cond.spread_ratio_raw.all": 0.20054166666666667,
+   "cond.spread_delta.all": 0.0,
+   "cond.own_team_r2.t1": 0.8311516408064236,
+   "cond.own_team_r2.late": 0.12490528638338683,
+   "cond.own_team_r2.all": 0.35192757923273177,
+   "cond.opp_class_auc.t1": 0.40699588477366255,
+   "cond.own_team_r2.t1_minus_late": 0.7062463544230367,
+   "cond.within_team_resolution.all": 0.2103703703703704,
+   "cond.within_stratum_resolution.all": 0.21074074074074076,
+   "cond.team_spread_ratio.t1_3": 1.0686144830520237,
+   "cond.team_spread_ratio_raw.t1_3": 0.9860225714569812,
+   "cond.calibration_slope.all": 3.616875534937548,
+   "cond.calibration_intercept.all": -0.03971103444187442,
+   "cond.calibration_slope.t1_3": 2.7050255976446644,
+   "cond.calibration_intercept.t1_3": -0.001449308502546663
+  },
+  "ci": {
+   "cond.spread_ratio_raw.t1_3": [
+    0.137105010280348,
+    1.3137837588910237
+   ],
+   "cond.spread_delta.t1_3": [
+    -0.09458397525823471,
+    0.044716906047825106
+   ],
+   "cond.spread_ratio_raw.all": [
+    0.17144672718483128,
+    2.0639424294634057
+   ],
+   "cond.spread_delta.all": [
+    -0.096746363322251,
+    0.06283830960547054
+   ],
+   "cond.own_team_r2.t1": [
+    0.7943516911568426,
+    0.8609722597356433
+   ],
+   "cond.own_team_r2.all": [
+    0.24603016315453347,
+    0.45738701953149896
+   ],
+   "cond.opp_class_auc.t1": [
+    0.3194753086419753,
+    0.5110020576131687
+   ],
+   "cond.within_team_resolution.all": [
+    0.17915498785068026,
+    0.22395819480245596
+   ],
+   "cond.within_stratum_resolution.all": [
+    0.17963342004227031,
+    0.22465693023842534
+   ],
+   "cond.team_spread_ratio.t1_3": [
+    0.807213295580099,
+    1.389252324900228
+   ],
+   "cond.team_spread_ratio_raw.t1_3": [
+    0.7763357501398817,
+    1.1926588200207897
+   ],
+   "cond.own_team_r2.late": [
+    0.041184585348958205,
+    0.22385028174881152
+   ],
+   "cond.own_team_r2.t1_minus_late": [
+    0.6343076383274454,
+    0.7648889883664247
+   ],
+   "cond.calibration_slope.all": [
+    3.003068691970752,
+    4.892556601617295
+   ],
+   "cond.calibration_intercept.all": [
+    -0.6234902196909908,
+    0.48485445026767926
+   ],
+   "cond.calibration_slope.t1_3": [
+    2.2332287647908227,
+    3.6744256118023104
+   ],
+   "cond.calibration_intercept.t1_3": [
+    -0.47914662263011093,
+    0.42654392242410116
+   ]
+  }
+ }
+}

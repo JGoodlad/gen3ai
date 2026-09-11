@@ -146,3 +146,54 @@ def test_a_run_with_no_tb_directory_is_a_refusal_not_an_empty_read(tmp_path, cap
     rc = tb_read.main([str(empty), "--tag", "m/x"])
     assert rc == 1
     assert "NO SCALAR FOUND" in capsys.readouterr().out
+
+
+# ------------------------------------------------- the SELF-PLAY CROSSING (2026-09-10, v6)
+#
+# The first crossing is a draw-level coin flip on the SEED path — `SELF_PLAY_START = 0.55`
+# (`--self-play-start-wr`) against `win_rate_vs_bots`, inside the 2M-bots replicate floor, NOT
+# `--promote-threshold` (ledger 2026-09-11 CORRECTION) — so six of the eight 10M ladder arms
+# crossed at 4,128,768 and two at 2,162,688, and the λ-0.9 replicate pair straddles its own
+# boundary. `critic_read` prints the field so a pair read across it is not silently compared; it
+# is DESCRIPTIVE and selects nothing, the crossing being post-treatment.
+
+
+def _crossing_run(tmp_path, *, promote_step, pool_scalar_step, name="x"):
+    run = tmp_path / name
+    _write_events(run / "tb", {
+        # the PROMOTION scalars: zero before the crossing, positive at and after it
+        "eval/pool_snapshot_count": [(promote_step - 1000, 0.0), (promote_step, 1.0)],
+        "train/selfplay_fraction": [(promote_step - 1000, 0.0), (promote_step, 0.9)],
+        # the first rollout that actually CONTAINED a pool opponent, one eval->rollout lag later
+        "eval/win_rate_vs_pool": [(pool_scalar_step, 0.5)],
+    })
+    return run
+
+
+def test_the_crossing_reports_BOTH_definitions_and_they_are_not_the_same_step(tmp_path):
+    """🚨 The promotion scalar is logged at the EVAL step that decided it; the first `*_pool`
+    scalar lands one eval->rollout lag later. On the real ladder that is 2,000,016 vs 2,162,688 —
+    ~160k steps. Quoting one as the other moves the boundary, so both are returned and named."""
+    run = _crossing_run(tmp_path, promote_step=2_000_016, pool_scalar_step=2_162_688)
+    got = tb_read.selfplay_crossing_step(run)
+    assert got["step"] == 2_162_688
+    assert got["promotion_step"] == 2_000_016
+    assert got["by_tag"]["eval/pool_snapshot_count"] == 2_000_016
+    assert got["by_tag"]["train/selfplay_fraction"] == 2_000_016
+
+
+def test_a_scalar_logged_at_ZERO_is_not_a_promotion(tmp_path):
+    """`train/selfplay_fraction` is emitted from the first rollout at 0.0. A crossing read off
+    tag PRESENCE rather than tag VALUE would put every run's crossing at step 1."""
+    run = _crossing_run(tmp_path, promote_step=4_000_032, pool_scalar_step=4_128_768)
+    assert tb_read.selfplay_crossing_step(run)["promotion_step"] == 4_000_032
+
+
+def test_a_run_that_never_crossed_reports_None_never_zero(tmp_path):
+    """A pure-bot arm has no crossing. `None` says that; `0` would read as "crossed immediately"
+    and is the wrong answer to a different question."""
+    run = tmp_path / "botonly"
+    _write_events(run / "tb", {"train/selfplay_fraction": [(1, 0.0), (2, 0.0)],
+                               "grad/value_policy_logratio": [(1, 0.5)]})
+    got = tb_read.selfplay_crossing_step(run)
+    assert got["step"] is None and got["promotion_step"] is None
