@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,078-line file. **The ledger itself is append-only and is never edited by this**;
+17,082-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**535 headings · 492 dated · 2026-08-01 → 2026-09-10 · ledger 17,078 lines.**
+**536 headings · 493 dated · 2026-08-01 → 2026-09-10 · ledger 17,082 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -555,3 +555,4 @@ rename.
   - `L17008` · The dose rows, quoted at each 2M cycle as registered
   - `L17018` · Four things the instruments say, and the limits on each
   - `L17054` · Sidecar — the first MULTI-HEADER file in the campaign
+  - `L17079` · `2026-09-10` · RE-REGISTRATION · `lambda095` — the one-row "between" band was narrower than the row's own three-draw floor and could not fail; replaced by a DIRECTIONAL claim with a bar at least as wide as the floor, plus a descriptive dose curve
