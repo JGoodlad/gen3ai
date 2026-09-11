@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,452-line file. **The ledger itself is append-only and is never edited by this**;
+17,470-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**562 headings · 513 dated · 2026-08-01 → 2026-09-11 · ledger 17,452 lines.**
+**563 headings · 514 dated · 2026-08-01 → 2026-09-11 · ledger 17,470 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -582,3 +582,4 @@ rename.
 - `L17399` · `2026-09-11` · OPS: arm 11 `lambda095` (`--win-prob-lambda 0.95`) COMPLETE at 10,027,008 steps — G7 under bar on both halves, and it is the SECOND arm to cross self-play EARLY
   - `L17408` · 🚨 CROSSING STEP: ~2,162,688 — the SECOND EARLY CROSSER
   - `L17438` · The registered test is NOT reported here
+  - `L17453` · `2026-09-11` · READ · `ai_v12_21_ladder_lambda09_b` (arm 8's run-level replicate) on the OFFLINE 400/800 frames — the PRE-REGISTERED test FAILS: overall resolution +0.004–0.006 against all three controls with every CI covering zero (arm 8: +0.009–0.011, all clear); the λ-0.9 candidate on resolution is NOT CONFIRMED; what the pair shares is amplitude DOWN vs the base control, a small own-team lean UP, and the turns-4–10 class AUC at or below the controls
