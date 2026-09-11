@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,633-line file. **The ledger itself is append-only and is never edited by this**;
+17,651-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**572 headings · 521 dated · 2026-08-01 → 2026-09-11 · ledger 17,633 lines.**
+**573 headings · 522 dated · 2026-08-01 → 2026-09-11 · ledger 17,651 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -592,3 +592,4 @@ rename.
   - `L17612` · `2026-09-11` · ADDENDUM + GO · `strata`'s second eval draw keeps the sign (+0.033 [+0.012, +0.053] on the 400 frames); the 0.022 floor is RUN-LEVEL, so the replicate CONFIRMS rather than establishes; `vf15`'s down-detection is of EQUAL STANDING and unreplicated by priority, not evidence; `strata_b` launched
   - `L17616` · `2026-09-11` · PRE-REGISTRATION ADDENDUM · `strata_b` LAUNCHED (pid 2472905, pin `f871e79f`, `source: pin_commit`); the FAILURE branch is worded now, before data: a miss at the registered bar reads "NOT CONFIRMED at a standard the effect's own size and the measured eval-draw component make demanding", never "the strata effect did not replicate"
   - `L17620` · `2026-09-11` · READ · the second (and third) eval draws on the v6 decision row — `strata` holds on THREE independent draws (+0.050 / +0.033 / +0.044, two of three clearing the 0.022 run-level floor by CI); `vf15` repeats almost exactly (−0.082 / −0.080); `denseaux` and `lambda09` null on the 400 frames; the λ family's EARLY-window class AUC leans DOWN on both draws
+  - `L17634` · `2026-09-11` · READ · arm 10 `ai_v12_23_ladder_rollout` (R-rollout Monte-Carlo anchors, W = 64, ~8 % of the BCE mass on eightfold-better labels, on the λ-0.9 argv) vs the λ-0.9 PAIR on the OFFLINE 400/800 frames — NULL on every primary row at both draws against both draws of the pair; the richer-label family is CLOSED at 10M
