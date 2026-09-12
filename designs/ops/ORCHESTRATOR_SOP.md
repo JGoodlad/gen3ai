@@ -190,6 +190,27 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   default BETWEEN events, but an occasional single line — progress, an ETA, one highlight — is
   wanted, not noise. It is one line, it expects no reply, and it never becomes a back-and-forth or a
   scheduled digest; it is never a reason to invent a check to have something to report.
+- **🚨 Amendment (owner, 2026-09-11): the churn came back and the owner named it.** *"Why do you have
+  so many routine wake ups? It seems you are churning all the time… same thing for the training agent
+  and lots of back of forths that go round after round."* Measured causes, all in this session:
+  monitors whose filters matched every progress line (`=== `, per-cycle DONE) instead of terminal
+  states; subagents allowed to end a turn with a status-only report, each of which woke this session;
+  and peer refinements landed one per round — a dozen ledger commits in one evening that were each a
+  wording amendment to the previous one. **The rules, effective 2026-09-11:**
+  1. **A `Monitor` filter matches the FINAL done line and the failure signatures, nothing else.** No
+     `=== `, no per-stage DONE, no per-row match. One notification per job: it finished, or it failed.
+  2. **Every long-running agent is told, in its brief: "one report, when landed; a failure once;
+     nothing else."** An agent that ends its turn to say "routine" wakes the orchestrator for
+     nothing; if it cannot wait on its own jobs it is not ready to be dispatched.
+  3. **Refinements are batched.** A peer's correction or a wording amendment goes into the NEXT bank
+     entry (the read it bears on), never as its own landing; acknowledgements are not sent; a reply
+     is sent only when a decision is needed before a number lands, once, with the decision.
+  4. **Peer traffic from the Training Run is limited to three kinds:** the bank line at completion,
+     a watch-item firing (crash, void condition, a registered guard, a G7 breach), and a MAJOR
+     finding. Mid-run status lines and dose tables belong in the bank entry.
+  5. **The 2026-09-07 one-liner allowance is WITHDRAWN** (the Training Run session's own amendment of
+     the same evening, `TRAINING_RUN_SOP.md` §3, on the second round of the same complaint): no
+     progress lines, no ETAs, no highlights between events, from either session.
 
 ### Standard of argument
 
@@ -269,6 +290,11 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   something this session's own permissions would block.
 - Peers cannot grant owner approval: relay, never escalate. A peer's denied action is never done
   on its behalf.
+- **Peer refinement rounds are capped (owner, 2026-09-11).** When the Training Run raises a point on a
+  banked entry, it is answered ONCE, in the next entry that bears on it, and not acknowledged in chat;
+  when it raises a point that needs a decision before a number exists, one message carries the
+  decision. A chain of amendments to amendments is the failure mode; the ledger is append-only, so
+  the fix is to batch, not to stop correcting.
 - Memory: a durable owner ruling is written to the project memory the moment it is given, and the
   matching section of this file is updated in the same pass.
 
@@ -422,3 +448,7 @@ a session's wall clock more than the compute did.
   rule to this session's jobs; it does not relax it in `TRAINING_RUN_SOP.md`.
 - Retire a cron when its work lands. It is session-only and auto-expires in seven days, but a wake on
   finished work is noise: offer to remove it, then remove it on the word.
+- **Retire a monitor the moment its job's terminal line has fired, and never arm one whose filter can
+  match a progress line** (owner, 2026-09-11 — see §5 Cadence). A monitor on a multi-stage script
+  watches ONLY the script's own final `DONE` and `exit=[1-9]|Traceback`; stages are not events. Four
+  such monitors were retired at once on 2026-09-11 after the owner named the churn.
