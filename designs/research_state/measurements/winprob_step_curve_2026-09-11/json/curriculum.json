@@ -1,0 +1,143 @@
+{
+ "windows": [
+  "0-10M",
+  "10M-20M",
+  "20M-40M",
+  "40M-73M"
+ ],
+ "tags": {
+  "train/selfplay_fraction": {
+   "windows": [
+    0.6749999821186066,
+    0.8999999761581421,
+    0.8999999761581421,
+    0.8999999761581421
+   ],
+   "n_points": 37,
+   "first_step": 2000016,
+   "last_step": 74000016
+  },
+  "train/nonbot_fraction": {
+   "windows": [
+    0.6749999821186066,
+    0.8999999761581421,
+    0.8999999761581421,
+    0.8999999761581421
+   ],
+   "n_points": 37,
+   "first_step": 2000016,
+   "last_step": 74000016
+  },
+  "train/stable_fraction": {
+   "windows": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "n_points": 37,
+   "first_step": 2000016,
+   "last_step": 74000016
+  },
+  "signal/outcome_n_bots": {
+   "windows": [
+    200.0,
+    200.0,
+    200.0,
+    200.0
+   ],
+   "n_points": 751,
+   "first_step": 98304,
+   "last_step": 75005952,
+   "CAVEAT": "constant at a fixed sample cap across the whole run \u2014 a diagnostic sample size, NOT the buffer's opponent mix; its ratio is 0.5 by construction and must not be read as a share"
+  },
+  "signal/outcome_n_pool": {
+   "windows": [
+    200.0,
+    200.0,
+    200.0,
+    200.0
+   ],
+   "n_points": 710,
+   "first_step": 4128768,
+   "last_step": 75005952,
+   "CAVEAT": "constant at a fixed sample cap across the whole run \u2014 a diagnostic sample size, NOT the buffer's opponent mix; its ratio is 0.5 by construction and must not be read as a share"
+  },
+  "signal/outcome_win_rate_bots": {
+   "windows": [
+    0.6309500012919307,
+    0.876666667132542,
+    0.8945067260297425,
+    0.8955279499847696
+   ],
+   "n_points": 751,
+   "first_step": 98304,
+   "last_step": 75005952
+  },
+  "signal/outcome_win_rate_pool": {
+   "windows": [
+    0.7222881347446118,
+    0.7247126424449614,
+    0.7089013459971133,
+    0.6632142855513911
+   ],
+   "n_points": 710,
+   "first_step": 4128768,
+   "last_step": 75005952
+  },
+  "opp_intent/label_bot_frac": {
+   "windows": [
+    0.46468721223729,
+    0.07287877399561017,
+    0.0720846940678629,
+    0.07116568040501021
+   ],
+   "n_points": 741,
+   "first_step": 196608,
+   "last_step": 75005952
+  },
+  "eval/pool_snapshot_count": {
+   "windows": [
+    1.0,
+    5.0,
+    13.0,
+    19.9375
+   ],
+   "n_points": 37,
+   "first_step": 2000016,
+   "last_step": 74000016
+  },
+  "eval/win_rate_vs_bots": {
+   "windows": [
+    0.7653125077486038,
+    0.8950000047683716,
+    0.9039772748947144,
+    0.9046874940395355
+   ],
+   "n_points": 37,
+   "first_step": 2000016,
+   "last_step": 74000016
+  },
+  "eval/win_rate_vs_pool": {
+   "windows": [
+    0.8050000071525574,
+    0.7515333294868469,
+    0.7365454489534552,
+    0.7048749998211861
+   ],
+   "n_points": 35,
+   "first_step": 6000000,
+   "last_step": 74000016
+  }
+ },
+ "bot_share_of_training_episodes": [
+  0.32500001788139343,
+  0.10000002384185791,
+  0.10000002384185791,
+  0.10000002384185791
+ ],
+ "pool_cap": {
+  "cap": 20.0,
+  "first_step_at_cap": 44000016
+ }
+}

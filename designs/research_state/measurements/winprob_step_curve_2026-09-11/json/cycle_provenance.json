@@ -1,0 +1,138 @@
+{
+ "9969408_draw1": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260909,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "9b4933bdc8d1ba5c",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "9969408_draw2": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260910,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "9b4933bdc8d1ba5c",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "18660864_draw1": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260909,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "253866cdb3d48659",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "18660864_draw2": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260910,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "253866cdb3d48659",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "40935168_draw1": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260909,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "9671df4f9d896c02",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "40935168_draw2": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260910,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "9671df4f9d896c02",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "73121280_draw1": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260909,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "fba5a5766b3b4dab",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ },
+ "73121280_draw2": {
+  "sentinel_steps": [
+   36000000,
+   56000016,
+   74000016
+  ],
+  "eval_sentinel_greedy": false,
+  "eval_sentinel_greedy_source": "declared",
+  "seed": 20260910,
+  "battles_played": 4800,
+  "battles_expected": 4800,
+  "complete": true,
+  "checkpoint_sha": "fba5a5766b3b4dab",
+  "games_per_opponent": 400,
+  "capture": "ALL",
+  "population": "OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder \u2014 the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line \u2014 the run recorded none]"
+ }
+}

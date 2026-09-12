@@ -145,3 +145,63 @@ an axis that costs GPU rather than ideas.
   the spread ratios and the calibration slope are REPORTED).
 - No verdict from a single draw, and no verdict from a rise smaller than the draw spread.
 - No strength claim. ELO is not read here.
+
+---
+
+## AMENDMENT — the sentinel panel, 2026-09-11
+
+**Written while the FIRST cycle was still playing and before any cycle was read.** It is recorded
+here rather than silently applied, because it changes a named confound and the bar must be fixed
+before the numbers are.
+
+**What forced it.** The task specified `--sentinels 3`, which draws the run's own pool snapshots
+*below* the read step. The 75M run's retained pool starts at **36,000,000** — its bounded
+self-play pool evicted everything earlier during training — so:
+
+- at **10M** and **20M** there is NO snapshot below the read step, and `eval_trace_gen` REFUSES
+  ("no pool snapshot below step 9969408 to use as a sentinel");
+- at **40M** only 36M / 38M / 40M are eligible;
+- at **73M** all 23 are.
+
+The specified command therefore cannot produce the curve at all. Worse, if it could, the opponent
+panel would be a *different set of policies at every x*, and `cond.opp_class_auc.*` is the
+**pool-vs-bot** class AUC — a row whose very definition names the pool cells. A bots-only cycle
+(`--sentinels 0`) is not a fallback either: with no pool cells the class has one level and the
+decision row does not exist.
+
+**What is done instead.** `--include-current-snapshot --sentinels 3`, which draws three snapshots
+spread across the run's whole retained range. Verified before launch: this selects the **identical
+panel at all four checkpoints** —
+
+| checkpoint | sentinel_0 | sentinel_1 | sentinel_2 |
+|---|---|---|---|
+| 10M / 20M / 40M / 73M | 36,000,000 | 56,000,016 | 74,000,016 |
+
+— with identical opponent labels, so `spec_of` matches across the curve and the four cycles are
+four draws of one population in everything but the checkpoint under test.
+
+**What this does to the confounds, in both directions.**
+
+1. **Sentinel-strength drift is ELIMINATED, not merely named.** Confound 1 above said three of the
+   twelve cells change with the x-axis. They no longer do: every checkpoint faces the same three
+   policies and the same nine bots. This is a strictly better frame than the one registered.
+2. **A NEW confound replaces it, and it is CONSERVATIVE for (i).** The panel is fixed at
+   *late-run* strength, so the 10M checkpoint faces three opponents far stronger than itself while
+   the 73M checkpoint faces near-peers. The pool cells' outcome base rate therefore rises with the
+   x-axis while the bot cells' does not, and two classes whose outcomes converge are *harder* to
+   separate. The expected direction of this bias on `cond.opp_class_auc.t4_10` is **DOWNWARD with
+   steps** — i.e. against hypothesis (i). **A rise observed anyway is therefore stronger evidence
+   than the registered design would have given; a fall is confounded and will be reported as
+   UNDECIDED on that row, never as evidence for (ii).** That asymmetry is registered here, before
+   the data.
+3. **The clean row is unchanged.** The nine scripted bots are fixed and identical at every
+   checkpoint under either design, so `gate.resolution.bot` carries a reading that no sentinel
+   choice touches. Where the pool-bearing row and the bot row disagree, the bot row is the one
+   without this confound and is quoted as such.
+4. **One sentinel (74,000,016) sits marginally ABOVE the 73M read step.** It is a later self, not
+   the same weights — not a self-mirror — but `--include-current-snapshot` is what permits it, and
+   it is named here rather than discovered in the report.
+
+**The bar is unchanged.** A rise counts only if every consecutive gap exceeds the larger of the two
+checkpoints' own two-draw spreads, on both draws. Adding a confound that pushes the decision row
+DOWN does not license a smaller rise to count.

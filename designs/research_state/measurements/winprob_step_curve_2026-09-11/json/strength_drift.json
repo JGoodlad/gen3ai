@@ -1,0 +1,106 @@
+{
+ "9969408": {
+  "draw1": {
+   "battles": 4800,
+   "complete": true,
+   "win": 3835,
+   "loss": 940,
+   "draw": 25,
+   "win_rate": 0.7989583333333333,
+   "base_rate_variance": 0.16062391493055556,
+   "bot_win_rate": 0.9055555555555556,
+   "pool_win_rate": 0.4791666666666667,
+   "class_outcome_gap": 0.4263888888888889
+  },
+  "draw2": {
+   "battles": 4800,
+   "complete": true,
+   "win": 3782,
+   "loss": 984,
+   "draw": 34,
+   "win_rate": 0.7879166666666667,
+   "base_rate_variance": 0.16710399305555554,
+   "bot_win_rate": 0.8988888888888888,
+   "pool_win_rate": 0.455,
+   "class_outcome_gap": 0.44388888888888883
+  }
+ },
+ "18660864": {
+  "draw1": {
+   "battles": 4800,
+   "complete": true,
+   "win": 3997,
+   "loss": 774,
+   "draw": 29,
+   "win_rate": 0.8327083333333334,
+   "base_rate_variance": 0.13930516493055553,
+   "bot_win_rate": 0.9216666666666666,
+   "pool_win_rate": 0.5658333333333333,
+   "class_outcome_gap": 0.35583333333333333
+  },
+  "draw2": {
+   "battles": 4800,
+   "complete": true,
+   "win": 3976,
+   "loss": 784,
+   "draw": 40,
+   "win_rate": 0.8283333333333334,
+   "base_rate_variance": 0.1421972222222222,
+   "bot_win_rate": 0.9225,
+   "pool_win_rate": 0.5458333333333333,
+   "class_outcome_gap": 0.3766666666666667
+  }
+ },
+ "40935168": {
+  "draw1": {
+   "battles": 4800,
+   "complete": true,
+   "win": 3996,
+   "loss": 771,
+   "draw": 33,
+   "win_rate": 0.8325,
+   "base_rate_variance": 0.13944374999999998,
+   "bot_win_rate": 0.9141666666666667,
+   "pool_win_rate": 0.5875,
+   "class_outcome_gap": 0.32666666666666666
+  },
+  "draw2": {
+   "battles": 4800,
+   "complete": true,
+   "win": 4006,
+   "loss": 765,
+   "draw": 29,
+   "win_rate": 0.8345833333333333,
+   "base_rate_variance": 0.13805399305555555,
+   "bot_win_rate": 0.9147222222222222,
+   "pool_win_rate": 0.5941666666666666,
+   "class_outcome_gap": 0.3205555555555556
+  }
+ },
+ "73121280": {
+  "draw1": {
+   "battles": 4800,
+   "complete": true,
+   "win": 4024,
+   "loss": 747,
+   "draw": 29,
+   "win_rate": 0.8383333333333334,
+   "base_rate_variance": 0.13553055555555552,
+   "bot_win_rate": 0.9130555555555555,
+   "pool_win_rate": 0.6141666666666666,
+   "class_outcome_gap": 0.29888888888888887
+  },
+  "draw2": {
+   "battles": 4800,
+   "complete": true,
+   "win": 4049,
+   "loss": 715,
+   "draw": 36,
+   "win_rate": 0.8435416666666666,
+   "base_rate_variance": 0.13197912326388891,
+   "bot_win_rate": 0.9083333333333333,
+   "pool_win_rate": 0.6491666666666667,
+   "class_outcome_gap": 0.25916666666666666
+  }
+ }
+}
