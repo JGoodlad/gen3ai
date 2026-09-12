@@ -360,6 +360,29 @@ BETWEEN events; an occasional single line — progress, an ETA, one highlight �
 reply expected, no back-and-forth, no scheduled digest, and never a reason to invent a check so there
 is something to report.
 
+**🚨 AMENDMENT (owner, 2026-09-11) — THE 2026-09-07 ONE-LINER ALLOWANCE IS WITHDRAWN, AND THE ROUNDS
+BETWEEN SESSIONS ARE CAPPED.** *"why do you have so many routine wake ups? It seems you are churning
+all the time… same thing for the training agent and lots of back of forths that go round after
+round."* The per-cycle progress line was read as churn, not as the welcome highlight the 09-07
+amendment intended, because it fired on a schedule rather than on an event. **The Training Run
+session now sends exactly four things and nothing else:**
+
+1. **the bank line at completion** — and the FULL dose table goes in the ledger entry, not in a
+   message;
+2. **a watch item firing** — a crash, a void condition, the >25 % timeout line, a G7 breach;
+3. **a MAJOR finding**;
+4. **a point that needs a DECISION before a number lands** — sent ONCE, carrying the decision it
+   needs, and answered once.
+
+No per-cycle status lines. No mid-run dose tables unless a watch item fires. No acknowledgements —
+an "accepted" message is itself a round. **The orchestrator's half:** refinements and corrections are
+folded into the next read entry rather than landed one per round, and receipt is not acknowledged.
+
+🚨 **A POLLING CRON WITH NOTHING RUNNING IS PURE CHURN — DELETE IT, do not slow it.** The wake itself
+is the cost the owner named, so a cron survives only while an arm is live AND only to catch the four
+items above; in REPORT-AND-WAIT there is nothing to poll, and the orchestrator's next message is the
+wake. Re-create it on the next GO, written to this contract.
+
 - **Pre-registered kill conditions are executed, not debated.** Under `--critic winprob` stall rate
   and mean episode length are standing KILL conditions (a [0,1] critic cannot rank a timeout below a
   loss). The famine pre-test compares against the named comparator at matched SNAPSHOT COUNT with
