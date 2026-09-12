@@ -219,3 +219,20 @@ are in no cell.
 * **Shard counts are unequal** (denseaux 5, strata 2, anchor 1) because the heads' per-battle cost
   differs ~3× — strata forces 96% of decisions and therefore searches almost nothing. Every shard
   is `nice 15`, below the live training run's `nice 10`, which outranks this measurement by design.
+
+### 7b. STOPPING RULE — registered 2026-09-12 01:57 UTC, blind to every outcome
+
+The box is carrying a live training run and a stepcurve campaign; each of this battery's shards is
+getting **~50–70% of one core**, so the registered 800 pairs/head may not complete in a reasonable
+session. Registered now, **before any win rate from these cells has been looked at**:
+
+* **The cells run until 07:30 UTC.** Whatever swap-pairs are complete at that instant constitute the
+  cell, and the achieved pair count is published beside every number.
+* **The stop is a WALL CLOCK and nothing else.** No cell is stopped early, extended, or resized on
+  the basis of any outcome; the rule is outcome-blind by construction, which is what keeps it from
+  being optional stopping.
+* **The extension rule of §6 does NOT apply to these cells** — it was a rule for a completed
+  pre-registered n, and these cells may not reach one. A cell that stops short is reported at its
+  own width with its own CI, and "unresolved" is a legitimate result.
+* Shard counts were rebalanced at 01:56 UTC (strata 2 → 4 shards over disjoint 200-game windows,
+  resuming the rows already written) purely for throughput. No flag, seed, index or head changed.
