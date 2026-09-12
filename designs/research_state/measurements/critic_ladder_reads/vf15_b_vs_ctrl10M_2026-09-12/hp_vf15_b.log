@@ -1,0 +1,54 @@
+=== GEN ai_v12_16_ladder_ctrl10M_c -> /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800b seed 20260911 2026-09-12T06:38:32-07:00
+=== GEN ai_v12_25_ladder_vf15_b -> /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800 seed 20260910 2026-09-12T06:38:32-07:00
+=== GEN ai_v12_25_ladder_vf15_b -> /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800b seed 20260911 2026-09-12T06:38:32-07:00
+GEN ai_v12_25_ladder_vf15_b -> hp800 exit=0
+GEN ai_v12_25_ladder_vf15_b -> hp800b exit=0
+GEN ai_v12_16_ladder_ctrl10M_c -> hp800b exit=0
+=== FLOORPAIR ai_v12_15_ladder_ctrl10M_b vs ctrl10M 2026-09-12T08:21:11-07:00
+FLOORPAIR ai_v12_15_ladder_ctrl10M_b exit=0
+=== FLOORPAIR ai_v12_16_ladder_ctrl10M_c vs ctrl10M 2026-09-12T08:40:21-07:00
+FLOORPAIR ai_v12_16_ladder_ctrl10M_c exit=0
+hp800b_floor_v6 t4_10: 0.024507105686229713 t1_3: 0.009069612585975717 n keys 74
+=== READ hp800 ai_v12_25_ladder_vf15_b vs ai_v12_11_ladder_ctrl10M 2026-09-12T09:19:00-07:00
+READ hp800 vs ai_v12_11_ladder_ctrl10M exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0383 | +0.0386 | **-0.0002** | [-0.0063, +0.0062] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0281 | +0.0170 | **+0.0111** | [+0.0051, +0.0178] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 795/306/9 (9493 battles, 9487 decoder battles, 21 seeds) | +0.5630 [+0.5796, +0.5825] | +0.5810 | **-0.0180** | [-0.0348, -0.0015] | **NOT DETECTED** (C
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 795/306/9 (9493 battles, 9487 decoder battles, 21 seeds) | +0.6385 [+0.7127, +0.7149] | +0.7137 | **-0.0752** | [-0.0907, -0.0606] | **DETECTED** (CI c
+=== READ hp800 ai_v12_25_ladder_vf15_b vs ai_v12_15_ladder_ctrl10M_b 2026-09-12T09:53:10-07:00
+READ hp800 vs ai_v12_15_ladder_ctrl10M_b exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0383 | +0.0384 | **-0.0000** | [-0.0063, +0.0055] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0281 | +0.0206 | **+0.0075** | [+0.0013, +0.0148] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 795/306/8 (9542 battles, 9536 decoder battles, 21 seeds) | +0.5630 [+0.5938, +0.5959] | +0.5948 | **-0.0318** | [-0.0474, -0.0154] | **DETECTED** (CI cl
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 795/306/8 (9542 battles, 9536 decoder battles, 21 seeds) | +0.6385 [+0.7051, +0.7069] | +0.7060 | **-0.0675** | [-0.0827, -0.0521] | **DETECTED** (CI c
+=== READ hp800 ai_v12_25_ladder_vf15_b vs ai_v12_16_ladder_ctrl10M_c 2026-09-12T10:06:42-07:00
+READ hp800 vs ai_v12_16_ladder_ctrl10M_c exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0383 | +0.0389 | **-0.0006** | [-0.0068, +0.0052] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0281 | +0.0244 | **+0.0036** | [-0.0035, +0.0106] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 795/306/8 (9520 battles, 9514 decoder battles, 21 seeds) | +0.5630 [+0.5701, +0.5729] | +0.5715 | **-0.0085** | [-0.0250, +0.0081] | **WITHIN FLOOR** (|
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 795/306/8 (9520 battles, 9514 decoder battles, 21 seeds) | +0.6385 [+0.6902, +0.6927] | +0.6914 | **-0.0529** | [-0.0682, -0.0374] | **DETECTED** (CI c
+=== READ hp800b ai_v12_25_ladder_vf15_b vs ai_v12_11_ladder_ctrl10M 2026-09-12T10:16:00-07:00
+READ hp800b vs ai_v12_11_ladder_ctrl10M exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0368 | +0.0391 | **-0.0023** | [-0.0084, +0.0034] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0024) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0254 | +0.0188 | **+0.0066** | [+0.0016, +0.0116] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0051) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 794/302/8 (9490 battles, 9487 decoder battles, 21 seeds) | +0.5539 [+0.5794, +0.5830] | +0.5813 | **-0.0274** | [-0.0441, -0.0093] | **DETECTED** (CI cl
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 794/302/8 (9490 battles, 9487 decoder battles, 21 seeds) | +0.6254 [+0.7110, +0.7139] | +0.7125 | **-0.0871** | [-0.1022, -0.0714] | **DETECTED** (CI c
+=== READ hp800b ai_v12_25_ladder_vf15_b vs ai_v12_15_ladder_ctrl10M_b 2026-09-12T10:45:35-07:00
+READ hp800b vs ai_v12_15_ladder_ctrl10M_b exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0368 | +0.0367 | **+0.0001** | [-0.0056, +0.0056] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0024) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0254 | +0.0184 | **+0.0070** | [+0.0018, +0.0123] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0051) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 794/302/8 (9493 battles, 9490 decoder battles, 21 seeds) | +0.5539 [+0.5814, +0.5845] | +0.5828 | **-0.0289** | [-0.0454, -0.0125] | **DETECTED** (CI cl
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 794/302/8 (9493 battles, 9490 decoder battles, 21 seeds) | +0.6254 [+0.6881, +0.6929] | +0.6913 | **-0.0658** | [-0.0814, -0.0505] | **DETECTED** (CI c
+=== READ hp800b ai_v12_25_ladder_vf15_b vs ai_v12_16_ladder_ctrl10M_c 2026-09-12T10:56:27-07:00
+READ hp800b vs ai_v12_16_ladder_ctrl10M_c exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0368 | +0.0398 | **-0.0030** | [-0.0086, +0.0029] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0254 | +0.0239 | **+0.0015** | [-0.0041, +0.0072] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0051) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 794/302/7 (9517 battles, 9514 decoder battles, 21 seeds) | +0.5539 [+0.5635, +0.5662] | +0.5650 | **-0.0110** | [-0.0270, +0.0062] | **NOT DETECTED** (C
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 794/302/7 (9517 battles, 9514 decoder battles, 21 seeds) | +0.6254 [+0.6883, +0.6901] | +0.6889 | **-0.0635** | [-0.0788, -0.0470] | **DETECTED** (CI c
+VF15_B HP DONE 2026-09-12T11:05:31-07:00

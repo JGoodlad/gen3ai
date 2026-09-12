@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,009-line file. **The ledger itself is append-only and is never edited by this**;
+18,019-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**592 headings · 541 dated · 2026-08-01 → 2026-09-12 · ledger 18,009 lines.**
+**593 headings · 542 dated · 2026-08-01 → 2026-09-12 · ledger 18,019 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -612,3 +612,4 @@ rename.
   - `L17872` · `2026-09-12` · MEASUREMENT · THE CRITIC LADDER READ ON STRENGTH — fifteen 10M arms at matched snapshot count: **no arm outside the 45.0-Elo floor**, the floor REPRODUCED from an independent refit, two DOWNWARD candidates (`vf15_b`, `strata_b`) neither of which is a detection, and the ladder at four nodes shown unable to resolve its own floor (se(Δ) 21–24 ⇒ CI95 ±43–48)
   - `L17929` · `2026-09-12` · MEASUREMENT · ENTROPY FORENSICS, v8 vs ours — our arms end 0.24–0.40 nats BELOW v8's entropy plateau (3.3–5.4× the replicate floor); v8's `--ent-coef 0.05` is perfectly collinear with its era; the dose premise was WRONG (grad_accum); staleness NOT supported; the isolating arm is one 10M run at `--ent-coef 0.05` read on H_end
   - `L17996` · `2026-09-12` · OPS + 🚨 VOID CONTROL · `ai_v12_26_ladder_ctrl10M_shaped` COMPLETE at 10,027,008 but **NEVER CROSSED** — it trained against BOTS for its entire 10M steps, so it is NOT a matched comparator for the conditioning row; and G7 is shown to be BLIND to a run that starts pathological and improves
+  - `L18010` · `2026-09-12` · VERDICT · `vf15_b` PASSES the registered confirmatory read — `--vf-coef 1.5` REMOVES opponent-class information from V, DETECTED downward on all six pair-draws (−0.053 to −0.087, every CI clear of the −0.022/−0.0245 floors), replicating `vf15`'s −0.082 / −0.080 at run level: **the campaign's FIRST CONFIRMED detection on the decision row**, and its direction is that MORE value gradient makes the critic WORSE at the thing the week's goal named; V's outcome resolution is unchanged on every pair; plus the `ctrl10M_shaped` correction and its training-dynamics finding

@@ -815,9 +815,15 @@ representation-level finding (`repr_class_decode_2026-09-11`, branch A: `strata`
 `value_pooled → class` decode past the floor on both draws, Δpooled/ΔV 0.97–1.27 for `strata`, 0.50–0.59 for
 `vf15` with NOTHING at turns 1–3) stands for the runs it measured — `ai_v12_17` and `ai_v12_10` — and licenses no
 family claim. **Ladder standing (2026-09-12): fourteen 10M runs, seven levers + the privileged critic, ZERO
-confirmed detections on a decision row;** `vf15`'s DOWN detection (−0.082 / −0.080) is the only candidate left
-and is at n = 1; its replicate `vf15_b` is the next arm, registered (PASS = Δ CI clears −0.022 at both draws
-against all three controls) before launch. [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
+confirmed detections on a decision row;** **`vf15` is CONFIRMED (2026-09-12, `critic_ladder_reads/vf15_b_vs_ctrl10M_2026-09-12/`): its seed
+replicate `vf15_b` reads −0.053 to −0.087 against the three controls on both draws, six of six CIs clear of the
+floor — the campaign's first confirmed detection on the decision row, and its direction is DOWN: 1.5× the
+value coefficient strips opponent-class information from V while `gate.resolution` stays within floor on every
+pair.** Whether a LOWER coefficient raises the row is untested (`vf 0.25` queued); nothing here moves strength at
+10M. A sixteenth arm, `ctrl10M_shaped` (scalar-MSE critic on the same terminal-only signal), never crossed into
+self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, but is the first
+direct evidence that the critic objective changes how fast PPO learns (confounded by gamma 0.9999 and the head's
+coefficient; n = 1). [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
 REPRESENTATION-level opponent-class decode*]
 
 **THE LADDER READ ON STRENGTH (2026-09-12, `ladder_strength_table_2026-09-12`):** [MEASURED · NOT DETECTED] the
