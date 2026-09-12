@@ -216,6 +216,49 @@ clears it **downward on both independent draws**. And it is a **step change, not
 to 20M, a real drop in 20M–40M, flat again to 73M — so a smooth step-response is refuted alongside
 (i).
 
+### 5.2b 🚨 A PEER's independently measured FLOOR makes the one bar-clearing gap MARGINAL
+
+`measurements/repr_class_decode_2026-09-11` (landed on main while this was generating, and found
+on the rebase) ran the SAME `pooled → class` row on five ladder checkpoints and priced its
+**run-level control-pair floor at 0.023 (hp800) / 0.031 (hp800b)** — larger than the `max W = 0.0124`
+this measurement derives from its own re-draws.
+
+**Both bars are right about different things, and the difference is rule 19.** `W(s)` is the
+EVAL-DRAW component, fixed by re-drawing one checkpoint — which is what the registered bar names and
+what two draws buy. The peer's 0.023–0.031 is the RUN-TO-RUN component, measured between two
+DIFFERENT control runs. Four checkpoints of ONE run are not four runs, so the run-level floor does
+not straightforwardly apply here; but it is the honest upper bar, and against it:
+
+| | the 20M→40M gap | vs `max W` = 0.0124 | vs the peer's run-level floor 0.023 / 0.031 |
+|---|---|---|---|
+| draw1 | −0.0385 | clears (3.1×) | clears 0.023, clears 0.031 |
+| draw2 | −0.0249 | clears (2.0×) | **marginal at 0.023, INSIDE 0.031** |
+
+**So the fall is unambiguous on the registered eval-draw bar and MARGINAL on the stricter
+run-level one.** The direction is unaffected — nothing here rises on any bar, so **(i) stays
+refuted either way** — but the strength of "a real drop between 20M and 40M" is bar-dependent and
+is stated as such rather than at its most favourable reading. Pricing it properly would need a
+second 75M run, which is not scheduled.
+
+**An unlooked-for cross-instrument validation, reproduced here independently.** The peer notes
+`frame_check.py`'s `V_to_opp_class_AUC` agreeing with `critic_read`'s tool-v6
+`cond.opp_class_auc.t4_10` to ±0.005 on five ladder checkpoints. The same holds on these frames,
+between two differently-built fitters on differently-matched frames:
+
+| | `frame_check` V→class | `critic_read` v6 | diff |
+|---|---|---|---|
+| 10M draw1 | 0.7976 | 0.7965 | 0.0011 |
+| 73M draw1 | 0.7363 | 0.7370 | 0.0007 |
+| 10M draw2 | 0.7835 | 0.7815 | 0.0020 |
+| 73M draw2 | 0.7382 | 0.7443 | 0.0061 |
+
+Note the peer's finding that the representation row is **noisier, slower and tells the same story**
+as the V row on the ladder's arms. That is consistent with what happens here — except that on THIS
+question the two rows do NOT tell the same story, and that is the whole point of §5.3: across a
+strength gradient the V row acquires a confound the representation row does not have. The rows are
+redundant when comparing equal-strength arms and are not redundant when comparing checkpoints of
+one run.
+
 ### 5.3 The mechanism — why the V-based rows fall, measured not assumed
 
 The panel is fixed, so the panel does not move; the TRAINEE does, and two registered rows are
@@ -378,7 +421,7 @@ row. What improves is calibration, and it improves a lot.
 > chance 0.474–0.496 at every checkpoint) reads **0.898/0.886 → 0.896/0.892 → 0.857/0.867 →
 > 0.862/0.855**. No gap is up-and-past-the-bar; the ONE gap that clears the bar is **20M→40M, DOWN
 > on both draws** (−0.0385 / −0.0249 against 0.0101); 10M→73M = −0.036 / −0.031 against max W
-> 0.0124. **(i) "the representation keeps improving with steps" is REFUTED directionally; (ii)
+> 0.0124 — though against the PEER's independently measured run-level floor for this row (0.023/0.031, `measurements/repr_class_decode_2026-09-11`) the 20M→40M fall is MARGINAL on draw2, so its STRENGTH is bar-dependent while its DIRECTION is not. **(i) "the representation keeps improving with steps" is REFUTED directionally; (ii)
 > "flat" is not met either; formally UNDECIDED between the registered pair — and it is a STEP
 > CHANGE in one interval, not a slope, so a smooth step-response is refuted too.** 🚨 **What DOES
 > improve is CALIBRATION:** `gate.ece.all` 0.1023 → 0.0170 (−0.085 / −0.091), the only row moving
