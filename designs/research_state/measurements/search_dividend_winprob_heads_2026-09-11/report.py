@@ -156,12 +156,12 @@ def main() -> None:
         d = r["defensive"] or {}
         ci = ("-" if not r["paired_ci95"] else
               f"[{r['paired_ci95'][0]:.4f},{r['paired_ci95'][1]:.4f}]")
-        print(f"{k:26} {r['n_pairs']:6d} "
-              f"{(r['paired_win_rate'] if r['paired_win_rate'] is not None else float('nan')):7.4f} "
+        pw = "-" if r["paired_win_rate"] is None else f"{r['paired_win_rate']:.4f}"
+        print(f"{k:26} {r['n_pairs']:6d} {pw:>7} "
               f"{ci:>18} {r['verdict']:24} "
-              f"{d.get('forced_rate', float('nan')) if d else float('nan'):7} "
-              f"{d.get('overrule_rate', float('nan')) if d else float('nan'):>9} "
-              f"{r['change_rate']:6} {r['unfinished']:6d}")
+              f"{str(d.get('forced_rate', '-')):>7} "
+              f"{str(d.get('overrule_rate', '-')):>9} "
+              f"{str(r['change_rate']):>6} {r['unfinished']:6d}")
     print()
     for k, d in out["deltas"].items():
         if d["delta"] is None:
