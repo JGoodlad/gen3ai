@@ -234,6 +234,25 @@ Two consequences:
 composition and opponent ecology. Step counts are not commensurable across architectures with
 different sample efficiency. [UNVERIFIED as a cause]
 
+**A second confounded candidate — the OPTIMIZER REGIME (2026-09-12, `entropy_forensics_v8_vs_ours_2026-09-12`):**
+[MEASURED as a descriptor · NOT ISOLATED] v8's line ran `--ent-coef 0.05` (58 runs, all v6–v8 signatures);
+every run since v9 runs 0.02 (147 runs) — perfectly collinear with architecture, obs, reward composition,
+clip-range (0.10 vs 0.15) and ecology, never varied in any arm. Policy entropy (`train/entropy_loss`, nats,
+action space unchanged since 2026-05-22) ends at 0.71–0.83 on our fresh arms against v8's plateau 1.07–1.11:
+a 0.24–0.40 nat gap, 3.3–5.4× the three-seed replicate floor (0.074), no overlap; our arms halve their initial
+entropy by 4–9M steps and the 75M run is still FALLING at its end (−0.0011 ± 0.0003 nats/M) where
+`ai_v8_03` was RISING at 268M. **The dose premise was wrong:** with `grad_accum_steps` included (`main.dose`)
+our fresh arms sit INSIDE v8's dose range (3.2–6.0e-8 vs 2.1–7.4e-8); only the gen-era fold `ai_v9_59`
+(grad-accum 2) is the 6.6× outlier. **Self-play staleness is NOT supported, sign reversed:** we promote every
+~2.1M steps and trail the pool by 1–4 %; v8's parent promoted every ~10M and trailed by 17 %. And the
+"still learning" asymmetry of §2.1/§2.2 is an UNTAUGHT-METER fact — on the dense ladder the 75M win-prob run
+rose twice as fast as `ai_v8_03` and neither decelerates detectably. **Isolating arm (registered before launch):**
+one 10M fresh arm = `ctrl10M`'s argv with only `--ent-coef 0.05`, endpoint H_end against the 0.074 floor
+(≥1.00 reproduces v8's regime; 0.71–0.83 refutes, and the clip-range leg inherits); strength at 10M is NOT an
+endpoint. `--ent-coef` is live on a resume (`model_build.py:543`), unlike `--lr`. Hazards: a fork's TB dir and
+`ladder.json` carry the parent's whole history (read the own span only); `main.lineage` `role=fresh` means
+"records no parent", not "trained from init". [ledger 2026-09-12 · *MEASUREMENT · ENTROPY FORENSICS*]
+
 ### 2.3 What a gen-era fold actually does
 
 Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose

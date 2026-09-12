@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,928-line file. **The ledger itself is append-only and is never edited by this**;
+17,995-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**590 headings · 539 dated · 2026-08-01 → 2026-09-12 · ledger 17,928 lines.**
+**591 headings · 540 dated · 2026-08-01 → 2026-09-12 · ledger 17,995 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -610,3 +610,4 @@ rename.
   - `L17848` · `2026-09-12` · READ · `strata_b` at the REPRESENTATION: **BRANCH TRUNK on both draws** — the two `strata` seeds differ in the tensor the head reads (`pooled → class` t4–10 **−0.042 / −0.048**, 1.81× / 1.56× the control floor), so `strata`'s RESTORED representation claim is now ALSO a one-run statement that does NOT replicate; but `strata_b`'s representation sits **AT** the controls (**+0.007 / +0.016**, 0.28× / 0.51× floor, NOT DETECTED) while only its **V** sits BELOW them (−0.032 / −0.034, 1.63× / 1.44×) — **the class-decode deficit against the controls is a HEAD deficit, not a trunk one**, and the seed-to-seed difference is ~half trunk, ~half head (Δpooled/ΔV **0.51 / 0.57**) against the 0.97 / 1.27 the same lever's arm-vs-control contrast showed
   - `L17852` · `2026-09-12` · OPS · `ai_v12_25_ladder_vf15_b` COMPLETE at 10,027,008 — the vf15 replicate banked; G7 below bar on both halves (worst 1.084); the crossing lands at 4,128,768 for a SEVENTH arm; no sidecar exists by construction at this pin; and `eval/win_rate_vs_bots` is shown to EXCLUDE the `random` bot
   - `L17872` · `2026-09-12` · MEASUREMENT · THE CRITIC LADDER READ ON STRENGTH — fifteen 10M arms at matched snapshot count: **no arm outside the 45.0-Elo floor**, the floor REPRODUCED from an independent refit, two DOWNWARD candidates (`vf15_b`, `strata_b`) neither of which is a detection, and the ladder at four nodes shown unable to resolve its own floor (se(Δ) 21–24 ⇒ CI95 ±43–48)
+  - `L17929` · `2026-09-12` · MEASUREMENT · ENTROPY FORENSICS, v8 vs ours — our arms end 0.24–0.40 nats BELOW v8's entropy plateau (3.3–5.4× the replicate floor); v8's `--ent-coef 0.05` is perfectly collinear with its era; the dose premise was WRONG (grad_accum); staleness NOT supported; the isolating arm is one 10M run at `--ent-coef 0.05` read on H_end

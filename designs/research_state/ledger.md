@@ -17925,3 +17925,70 @@ decision row. Strength adds no arm to the queue and removes none; what it adds i
 scale on the family's own yardstick and a measured bound on the yardstick's resolution.
 Tag: **MEASURED · NO ARM OUTSIDE THE FLOOR · rule 22 reproduced on strength · the four-node
 ladder cannot resolve a 45-Elo question**.
+
+### 2026-09-12 · MEASUREMENT · ENTROPY FORENSICS, v8 vs ours — our arms end 0.24–0.40 nats BELOW v8's entropy plateau (3.3–5.4× the replicate floor); v8's `--ent-coef 0.05` is perfectly collinear with its era; the dose premise was WRONG (grad_accum); staleness NOT supported; the isolating arm is one 10M run at `--ent-coef 0.05` read on H_end
+
+This file does NOT edit `ledger.md`, `UNDERSTANDING.md` or any design note. The paragraph below is
+offered for a separate, deliberate append; if it lands, `ledger_index.md` must be regenerated with
+`python -m main.ledger_index` (`src/ledger_index_gate_test.py` fails otherwise).
+
+```markdown
+### 🔬 ENTROPY FORENSICS — our policies end 0.24–0.40 nats BELOW v8's plateau (3.3–5.4× the floor); the STALENESS leg is REVERSED; the dose premise was WRONG; ent-coef is PERFECTLY COLLINEAR with the era (2026-09-12, zero GPU)
+
+Owner's hypothesis — our entropy collapses, self-play goes stale, and that is why our parents stop
+learning while v8's did not — read off the TensorBoard events of ten arms (`main.ops.tb_read`, the
+project reader; `H = -train/entropy_loss` in nats over the unchanged 11-way masked categorical,
+`ACTION_SPACE_SIZE = 11` verified back to `f02e633a`). **ENTROPY LEG SUPPORTED, and the separation is
+complete**: every v8-line arm ends at **1.068–1.110 nats** (internal spread 0.042) and every fresh arm
+of ours at **0.713–0.825**, the gen-era fold at **0.529** — smallest gap **0.243 nats = 3.3×** the
+**0.0737-nat** replicate floor measured free on three same-recipe seeds (`ai_v12_11`/`_15_b`/`_16_c`;
+the `H_start` control agrees to 0.007 nats, so this is not scatter). Where the slope is powered the
+signs are OPPOSITE: `ai_v12_02` **−0.0011 ± 0.00034 nats/M FALLING** at 75M against `ai_v8_03`
+**+0.0010 ± 0.00017 RISING** at 268M (n = 741 / 1178 rollouts). At 10M the slope is BELOW the floor —
+three seeds, three verdicts — so "still declining" is only claimable on the 75M arm.
+**STALENESS LEG NOT SUPPORTED, SIGN REVERSED**: `train/selfplay_promoted_steps` shows our runs
+promoting every **~2.1M** steps and ending **1–4%** of the run behind their newest snapshot, while
+`ai_v8_03` promoted every **10.3M** and ended **20.4M steps / 17%** behind, and **`ai_v8_04` — the
+277M parent — made ZERO promotions in its 8.8M-step life**. `win_rate_vs_pool` (v8 0.52 vs ours
+0.69–0.78) points the owner's way but is cut twice: the 2026-09-07 sentinel-regime boundary (+8.9pp,
+and only `ai_v12_11` records a regime at all) and pool size 10 vs 3 — UNDER-DETERMINED, not refuted.
+**THE PREMISE'S DOSE ARITHMETIC WAS WRONG** — it omitted `grad_accum_steps`. `main.dose`: the v8 line
+spans **2.14e-8 – 7.44e-8** and our two FRESH win-prob arms sit at **3.18e-8 / 6.04e-8, inside it**;
+only `ai_v9_59` (grad-accum 2, a fold) is the 6.6× outlier. The realised `lr_median` also overlaps
+(v8's controller drove 7e-5 UP to 1.0–1.7e-4; ours drives 3e-4 DOWN to 0.6–2.1e-4). **Dose is not the
+cross-era difference.** **THE CAUSAL CLAIM IS NOT TESTABLE OFFLINE**: across 212 runs the archive
+holds `--ent-coef 0.05` on 58 runs (all v6–v8 signatures) and 0.02 on 147 (all v9+), and **NO
+architecture carries both** — the coefficient is perfectly collinear with architecture, obs space,
+reward composition, clip-range (0.10 → 0.15, with a measured 40% larger end-state `approx_kl`),
+ecology and maturity. The only non-0.02 gen-era arm, `ai_v9_50_fdF_p1c_0826` (`--ent-coef 0.0`), runs
+`--policy-grad-coef 0` + `--distill-coef 1.0` and isolates nothing (ARM F, voided 2026-08-26). Grep
+confirms no ledger entry has ever isolated the coefficient or reported a policy-entropy trajectory;
+it appears only as a Probe C candidate (2026-08-28) and as the still-open gap **"G3/G4 = vf-coef and
+ent-coef sizing open"** (2026-08-30). **⚠️ AND THE PREMISE'S OWN FRAMING DOES NOT REPRODUCE ON THE
+DENSE LADDER**: within-run, `ai_v12_02` rises **+1.50 ± 0.21 Elo/M** over 36→74M against
+`ai_v8_03`'s **+0.68 ± 0.22** over 151→242M, and NEITHER shows a detectable late deceleration
+(late−middle +0.08 ± 1.47 and −0.60 ± 0.70). Our era is not the plateaued one on strength — the
+§2.1/§2.2 asymmetry is an **untaught-meter** fact, and "our parents stop learning" and "our entropy
+is 0.35 nats lower" are two true statements this evidence does not join. **Bonus cross-era
+contrast**: both v8 folds RAISE entropy at the fork (**+0.112 / +0.104 nats**) and finish at or above
+their parent, while `ai_v9_59` LOWERS it (**−0.072**) and finishes **−0.218** below — mechanistically
+consistent with TARGET FORM (full-distribution KL onto a high-entropy teacher pulls H up; the
+`--distill-target action --distill-topk 1` argmax CE pulls it down), n = 1 per fold, suggestive only.
+**FOUR HAZARDS BANKED**: (1) a fork's TB dir carries its PARENT's history and `tb_read.load()` reads
+all of it — a naive read gives `ai_v9_59` `H_start` 1.65 instead of 0.675 and INVERTS the fork
+discontinuity; split at `fork_step`, always; (2) the same hazard reaches `ladder.json` — `ai_v9_59`'s
+14 nodes are 12 inherited + 2 own, all twelve sharing the fork-seeding mtime; (3) `main.lineage`
+`role=fresh` means *records no parent*, NOT *trained from init* — `ai_v8_01`'s own first rollout is at
+step 148,401,357 and its `original_command` is `tmp/fork_zarch_v8.py`, so **v8's entropy before 148M
+is unrecoverable**; (4) that same run's `--ent-coef` is UNRECOVERABLE from its argv and reads 0.05 in
+`hparams/ent_coef` — an argv survey that defaulted it to 0.02 would have destroyed the collinearity
+finding. **NEXT, AND CHEAP: ONE fresh 10M arm, `ai_v12_11`'s argv with only `--ent-coef 0.05`, ~4.3
+GPU-h** (measured 4.22–5.03 h/10M over four arms; the n=3 control is already banked). Primary
+endpoint **H_end at 10M** against the 0.0737-nat floor, pre-registered: **≥1.00 ⇒ the coefficient
+reproduces v8's regime; inside 0.71–0.83 ⇒ REFUTED at 2.5× the bonus and the clip-range leg
+inherits.** Strength at 10M is NOT an endpoint (45-Elo floor, 58–83-Elo seed spread). The causal
+"does it keep the parent learning" version needs the G5 continuation cell at ~**75 GPU-h** and must
+not be funded before rung 1 answers. Note `--ent-coef` is NOT inert on a resume
+(`model_build.py:543`), unlike `--lr`. Measurement:
+`designs/research_state/measurements/entropy_forensics_v8_vs_ours_2026-09-12/`.
+```
