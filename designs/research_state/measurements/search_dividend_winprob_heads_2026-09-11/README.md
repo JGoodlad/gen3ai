@@ -50,6 +50,10 @@ structurally off — **so the interval below IS the dividend's own CI.** All cel
 | *verdict against the registered bar* | **NO DIVIDEND DETECTED** | **NO DIVIDEND DETECTED** | **NO DIVIDEND DETECTED** |
 | `base` — both sides unsearched (the exact-50 control) | 0.5000, 8 pairs | 0.5000, 10 pairs | 0.5556, 9 pairs |
 
+> **Three more heads (`strata`, `denseaux`, `cflabels`) were measured on 2026-09-12 against the
+> L1/L2 leaf-quality bar registered that day — see [§11](#11-phase-23--three-more-heads-and-the-axes-question).
+> They do not change anything below; they extend it, and they convict the L1 row as an instrument.**
+
 n per head: 100 pairs (`grid`), 150 (`defA`), 400 → 800 (`defB`), 8–10 (`base`, stopped early — §7).
 `grid` and `defA` spend 1 s per decision; `defB` grants 3 s to a *contested* decision only.
 
@@ -296,3 +300,202 @@ look.
 > DICE but no longer the same TEAMS (every cross-era mirror comparison is independent-sample, not
 > paired); and `--arm base` costs ~2.5 s/decision while searching nothing, which is why the
 > exact-50 control was stopped at 27 pooled pairs (0.5185 [0.4822, 0.5548], 26/27 split).
+
+---
+
+## 11. PHASE 2/3 — three more heads, and the AXES question
+
+*Measured 2026-09-12 01:35–08:22 UTC · **6,000 further battles / 285,081 decisions** (11,556 and
+528,278 across both batteries) · same protocol, same `--games-seed 7`, same game indices, so every
+contrast is paired · **zero timeouts, zero errors, zero unfinished games** · registered in
+[`PREDICTION.md`](PREDICTION.md) §7 (the two heads), §7b (an outcome-blind stopping rule), §7c/§7d
+(the third head and the L1/L2 bar). Scripts [`run_battery2.sh`](run_battery2.sh),
+[`run_battery3.sh`](run_battery3.sh); scoring [`report2.py`](report2.py) and
+[`l1_width_matched.py`](l1_width_matched.py); data [`results2.json`](results2.json).*
+
+**The heads, and the question.** The critic ladder measures CONDITIONING (does `V` move with the
+opponent and the team); the mirror measures LEAF QUALITY (does ranking actions on `V` beat the
+policy). Are they the same axis?
+
+| head | lever | ladder's conditioning row |
+|---|---|---|
+| `ai_v12_17_ladder_strata` @10M | class-balanced BCE | **the one lever that moved it** |
+| `ai_v12_20_ladder_denseaux` @10M | dense within-game auxiliary targets | null |
+| `ai_v12_12_ladder_cflabels` @10M | counterfactual Q-labels (`--cf-winprob-coef 0.5`) | null; the closest trained thing to a **successor-discrimination** objective |
+
+### 11.1 L2 — the outcome row. No lever moves it.
+
+| head | L2 paired (800 pairs) | vs its CONTEMPORANEOUS ctrl10M anchor (150 shared pairs) |
+|---|---|---|
+| `strata` | **0.5066** [0.4924, 0.5207] | −0.0233 [−0.0638, +0.0172] NOT DETECTED |
+| `denseaux` | **0.4941** [0.4826, 0.5056] | −0.0167 [−0.0565, +0.0231] NOT DETECTED |
+| `cflabels` | **0.4853** [0.4664, 0.5042] | −0.0183 [−0.0802, +0.0435] NOT DETECTED |
+| *anchor-1 `ctrl10M`* (150 pairs, 01:35–05:00) | 0.5133 [0.4827, 0.5440] | — |
+| *anchor-2 `ctrl10M`* (150 pairs, 05:00–08:22) | 0.5283 [0.4860, 0.5707] | — |
+
+Head-to-head at 800 shared pairs, every CI straddling zero: ctrl10M − strata **−0.0006** [−0.0210,
++0.0197] · ctrl10M − denseaux **+0.0119** [−0.0072, +0.0309] · ctrl10M − cflabels **+0.0206**
+[−0.0036, +0.0448] · strata − cflabels **+0.0213** [−0.0020, +0.0445].
+
+**Six win-prob heads now sit on the structural null**, and each new head is at or slightly *below*
+its own same-window control. **L2 bar: not cleared by any lever. Prediction 1 (both) and prediction 2
+(cflabels) HELD.**
+
+### 11.2 L1 — the mechanism row is NOT a head property. It is a width meter.
+
+**The anchors convict it.** The `ctrl10M` control — same checkpoint, same cell, same flags, same
+battles — was run three times in three contention regimes:
+
+| the SAME control, three windows | realized K (worlds / contested decision) | **L1 = separation-of-raced** |
+|---|---|---|
+| 2026-09-11, quiet box | 5.06 | **0.128** |
+| 2026-09-12 anchor-1, box at load ~30–76 | 3.63 | **0.058** |
+| 2026-09-12 anchor-2, box quieting to ~11 | 8.87 | **0.365** |
+
+**One head, one cell, one set of battles: L1 spans 0.058 → 0.365, a 6.3× range, ordered exactly by
+how much width the wall clock bought.** The registered bar (> 0.181, with ≤ 0.20 PROVISIONAL) was
+built from three quiet-box heads at K 4.85–5.48; it is not portable to a cell measured at another K.
+
+That is what happened to `cflabels`, and applying the rule as written would have produced a false
+positive:
+
+| head | pooled L1 | K | the bar as written | **read against its contemporaneous anchor** |
+|---|---|---|---|---|
+| `strata` | 0.115 | 4.78 | below bar | anchor-1 0.058 at K 3.63 — *not width-matched* |
+| `denseaux` | 0.061 | 3.80 | below bar | anchor-1 0.058 at K 3.63 — matched, **no difference** |
+| `cflabels` | **0.303** | **10.08** | **"CLEARS (0.303)", not even provisional (≳ 0.25)** | anchor-2 **0.365** at K 8.87 — **the CONTROL clears it by more** |
+
+**Width-matched L1** (recomputed from each battle's own realized K; a head is comparable to another
+head only inside a band):
+
+| cell/head | K 3–4.5 | K 4.5–6 | K 6–8 | K 8+ |
+|---|---|---|---|---|
+| `ctrl10M` (quiet box) | 0.054 [0.050, 0.060] | 0.209 [0.195, 0.223] | 0.337 [0.316, 0.359] | 0.269 [0.239, 0.301] |
+| `ctrl10M` anchor-1 | 0.054 [0.042, 0.068] | 0.252 [0.204, 0.306] | — | — |
+| `ctrl10M` anchor-2 | — | 0.373 [0.324, 0.425] | 0.430 [0.398, 0.462] | 0.346 [0.320, 0.373] |
+| `lambda09` | 0.056 [0.051, 0.062] | 0.262 [0.244, 0.280] | 0.312 [0.289, 0.336] | 0.261 [0.227, 0.299] |
+| `wp73M` | 0.057 [0.049, 0.066] | 0.232 [0.211, 0.254] | 0.330 [0.302, 0.358] | 0.288 [0.253, 0.327] |
+| **`strata`** | 0.056 [0.049, 0.062] | 0.283 [0.265, 0.301] | 0.341 [0.317, 0.366] | 0.345 [0.314, 0.376] |
+| **`denseaux`** | 0.040 [0.035, 0.046] | 0.212 [0.194, 0.231] | 0.288 [0.259, 0.318] | 0.325 [0.269, 0.387] |
+| **`cflabels`** | 0.126 [0.103, 0.153] | 0.285 [0.265, 0.305] | 0.336 [0.321, 0.351] | 0.319 [0.308, 0.330] |
+
+**The band moves L1 by 5–60×; the heads inside a band span at most ~1.7×, and the CONTROL's own
+three measurements (0.209 / 0.252 / 0.373 at K 4.5–6) span more than any head differs from any
+other.** `cflabels` sits *below* its contemporaneous anchor in both bands where they overlap
+(0.285 vs 0.373, 0.336 vs 0.430). `strata` leads the quiet-box `ctrl10M` at K 4.5–6 (0.283 vs 0.209,
+CIs disjoint) but not anchor-1 (0.252, overlapping) — a weak, unreplicated lead, reported as a lead
+and nothing more.
+
+**Consequence for the meter, stated plainly: L1 as registered cannot be compared across measurement
+windows, and its 18.1% bar is a statement about the box as much as about the head.** Any future L1
+read needs either a contemporaneous control or width-matched bands — both are cheap, and
+[`l1_width_matched.py`](l1_width_matched.py) does the second from rows that already exist.
+
+### 11.3 The `grid` row is the SENSITIVE leaf row
+
+Unguarded search, 100 pairs per head, no gate to hide behind — and unlike L1 it *does* separate
+heads with detected deltas:
+
+| head | `grid` paired | action changed |
+|---|---|---|
+| `strata` | **0.3150** [0.2565, 0.3735] | 57.8% |
+| `denseaux` | **0.3025** [0.2367, 0.3683] | 60.5% |
+| `ctrl10M` / `lambda09` | 0.2600 / 0.2600 | 56.4% / 59.9% |
+| `wp73M` | 0.2025 | 60.0% |
+| **`cflabels`** | **0.1875** [0.1325, 0.2425] | **68.0%** |
+
+Paired on the 100 shared indices: strata − cflabels **+0.1275** [+0.0573, +0.1977] **DETECTED** ·
+denseaux − cflabels **+0.1150** [+0.0367, +0.1933] **DETECTED** · wp73M − strata **−0.1125**
+[−0.1883, −0.0367] **DETECTED**. Against `ctrl10M` the two new levers are ahead by +0.055 / +0.043,
+NOT DETECTED at 100 pairs.
+
+**`cflabels` — the successor-discrimination head — is the WORST leaf of the six, detectably.** It
+also overrules the most (3.2% vs 0.6–1.6%) and changes the most actions under `grid` (68%): it is
+the most *confident* re-ranker and the most *wrong* one. ⚠️ The new heads' `grid` cells ran at
+K 1.64–1.74 against the earlier three's 1.18–1.27, so the +0.04–0.06 leads over `ctrl10M` are not
+width-matched; the detected cflabels deltas are between cells that ran in the same window.
+
+### 11.4 The axes question — answered, in the branch registered as "neither pays"
+
+* **A lever that MOVED the conditioning row (`strata`) does not move either leaf row** — L2
+  −0.0233 vs its own control, L1 inside the control's own between-window spread.
+* **Two levers that are NULL on the conditioning row (`denseaux`, `cflabels`) do not move them
+  either** — and `cflabels` moves the unguarded row *backwards*, detectably.
+* So the registered branch is **"neither pays"**: the axes question is **not settled** by this pair
+  (a null on both is consistent with separate-but-unmoved and with same-axis-unmoved), and what IS
+  settled is sharper than the branch predicted — **no trained lever in the ladder moves leaf
+  quality, including the one lever the ladder itself certifies.** A row that moves under a lever
+  which changes nothing behavioural is not yet shown to be the row the search path should be steered
+  by.
+* **Dose caveat, registered UNREAD and still unread:** `cflabels` ran `--cf-winprob-coef 0.5`,
+  `cf_head_only`, a 150k-step label lag, and a sibling run was retired as
+  `…DEAD_fatal_config_cf_duty_cycle_6pct`. Its realized cf duty cycle was never read, so its null is
+  **dose-unread**, not a verdict on counterfactual labels as a class.
+
+### 11.5 The scored phase-2/3 predictions
+
+| registered prediction | outcome |
+|---|---|
+| §7.1 neither strata nor denseaux clears the bar | **HELD** — 0.5066 and 0.4941, both CIs straddling 0.50 |
+| §7.2 denseaux is the better LEAF of the two on the mechanism rates | **REFUTED** — denseaux has the LOWEST L1 (0.061) and the lowest overrule rate (0.6%) of every head measured; strata leads it in every width band |
+| §7.3 strata's `grid` is no better than the three already measured, and may be worse | **REFUTED** — it is the BEST of six (0.3150), though the delta vs ctrl10M is not detected |
+| §7.4 denseaux's `grid` is the best of five, 0.28–0.40 | **NEARLY HELD** — 0.3025, inside the band, but second to strata |
+| §7c.1 cflabels has the highest L1 of the three new heads | **HELD as stated, but VOID as evidence** — its pooled L1 is highest (0.303) and it does clear 18.1% decisively, yet width-matching and its own contemporaneous anchor both overturn it |
+| §7c.2 cflabels does not clear L2 | **HELD** — 0.4853 [0.4664, 0.5042] |
+| §7c.3 cflabels' `grid` lands in 0.20–0.32 | **REFUTED, low: 0.1875** — below the band and the worst of six |
+
+### 11.6 Further hazards
+
+10. **L1 is contention-coupled** (§11.2) — the single most important instrument finding here, and it
+    was only visible because a contemporaneous anchor was run. A meter defined as a rate under a
+    wall-clock budget inherits the box's load.
+11. **A cell run across a load transition is not homogeneous.** `cflabels` began at K ≈ 6.6 and
+    finished near K ≈ 12 as the box emptied; its pooled K of 10.08 describes no part of the run
+    well. The width-matched table is the honest read, and `report2.py` publishes pooled K beside
+    every L1 so a reader can see when this applies.
+12. **Shard rebalancing mid-cell is safe but must resume, not restart.** Two `strata` shards were
+    stopped by explicit PID at 01:56 and relaunched over narrower disjoint windows onto their OWN
+    existing out files, so the battery's resume logic skipped the games already played; a relaunch
+    onto a *new* file name would have replayed them and `report.py`'s overlap guard would have
+    refused the pooled read.
+
+## 10b. Ready-to-append ledger paragraph — phase 2/3 (three more heads, and the L1 instrument)
+
+> ### 🔬 THE AXES QUESTION ANSWERED IN THE "NEITHER PAYS" BRANCH — no trained ladder lever moves leaf quality, including the one the ladder certifies; and L1 is convicted as a WIDTH meter (2026-09-12)
+>
+> Record `designs/research_state/measurements/search_dividend_winprob_heads_2026-09-11/` §11
+> (predictions registered before each head in PREDICTION.md §7/§7b/§7c, including an outcome-blind
+> wall-clock stopping rule; **6,000 battles / 285,081 decisions, zero timeouts, zero errors**;
+> same `--games-seed 7`, same game indices as the first three heads, so every contrast is paired).
+> Heads: `strata@10M` (class-balanced BCE — **the one lever that moved the ladder's conditioning
+> row**), `denseaux@10M` (dense within-game targets, null on conditioning), `cflabels@10M`
+> (`--cf-winprob-coef 0.5`, the closest trained thing to a successor-discrimination objective, null
+> on conditioning). **L2 — the outcome row — is not moved by any of them: 0.5066 [0.4924, 0.5207] ·
+> 0.4941 [0.4826, 0.5056] · 0.4853 [0.4664, 0.5042], and each is at or slightly BELOW its own
+> CONTEMPORANEOUS `ctrl10M` anchor (−0.0233 · −0.0167 · −0.0183, all NOT DETECTED).** Six win-prob
+> heads now sit on the structural null. **The registered branch is "neither pays": the axes question
+> is NOT settled, and what is settled is sharper — a lever that moves the conditioning row leaves
+> leaf quality where it was, so that row is not yet shown to be the row the search path should be
+> steered by.**
+>
+> **L1 IS CONVICTED AS AN INSTRUMENT, and only a contemporaneous control could have caught it.** The
+> same `ctrl10M` checkpoint, same cell, same flags, same battles, run in three contention regimes,
+> reads **L1 = 0.058 / 0.128 / 0.365 at realized K = 3.63 / 5.06 / 8.87 worlds** — a 6.3× range
+> ordered by how much width the wall clock bought. `cflabels` pooled **0.303 at K = 10.08** would
+> have "CLEARED (≳ 0.25, not even provisional)" against the 18.1 % bar — while its own same-window
+> anchor read **0.365**, i.e. the CONTROL clears by more. **Width-matched** (each battle binned on
+> its own realized K), the band moves L1 by 5–60× while heads inside a band span ≤ 1.7×, and the
+> control's three measurements at K 4.5–6 (0.209 / 0.252 / 0.373) span more than any head differs
+> from any other; `cflabels` sits BELOW its anchor in both overlapping bands. **The 18.1 % bar is a
+> statement about the box as much as about the head; every future L1 read needs a contemporaneous
+> control or width-matched bands** (`l1_width_matched.py`, from rows that already exist).
+> **The `grid` cell is the sensitive leaf row instead** — unguarded, no gate to hide behind, and it
+> separates heads with DETECTED deltas where L1 cannot: strata **0.3150** [0.2565, 0.3735] and
+> denseaux **0.3025** are the best of six, **cflabels 0.1875 [0.1325, 0.2425] the worst**
+> (strata − cflabels +0.1275 [+0.0573, +0.1977] DETECTED; denseaux − cflabels +0.1150 [+0.0367,
+> +0.1933] DETECTED). **The successor-discrimination head is the most confident re-ranker (68 % of
+> actions changed, 3.2 % overrules — the highest of any head) and the most wrong one.** Its null is
+> reported **dose-unread**: `cf_head_only`, a 150k-step label lag, and a sibling retired as
+> `…DEAD_fatal_config_cf_duty_cycle_6pct`, with the realized duty cycle never read — so this is not
+> a verdict on counterfactual labels as a class. Four of seven phase-2/3 predictions refuted, and the
+> one that "held" (cflabels highest L1) is void as evidence by the instrument finding above.
