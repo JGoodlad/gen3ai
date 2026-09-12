@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,720-line file. **The ledger itself is append-only and is never edited by this**;
+17,740-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**582 headings · 531 dated · 2026-08-01 → 2026-09-11 · ledger 17,720 lines.**
+**583 headings · 532 dated · 2026-08-01 → 2026-09-11 · ledger 17,740 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -602,3 +602,4 @@ rename.
   - `L17709` · `2026-09-11` · PRE-REGISTRATION ADDENDUM · the decision row `cond.opp_class_auc.t4_10` is a statement about V's SCALAR OUTPUT; `strata_b`'s verdict is worded at V-level before its number exists; the scalar-conditioned reference is a far weaker bound than argued; the representation question has its own pending measurement and its own branch named in advance
   - `L17713` · `2026-09-11` · RESOLUTION + INSTRUMENT · the `strata_b` dose exit condition resolves — matched-step `share_bot` differs by +0.36 pp (bar ~1 pp): doses EQUAL for the read, the "cannot be read as under-treatment" sentence is WITHDRAWN; and `strata_share_bot` is a DETERMINISTIC function of `strata_frac_bot` that saturates at 0.5 above 12.5 % bot rows — it is a delivery check with no dynamic range, never a dose row
   - `L17717` · `2026-09-11` · AMENDMENT to the strata dose rule · `strata_frac_bot` is an OUTCOME of the curriculum, not a dose — the dose is the declared `win_prob_strata_weight` (s), matched between `strata` and `strata_b` by construction; `frac_bot` → `share_bot` is DELIVERY; the 2.7 pp `frac_bot` gap is curriculum variation between identically-dosed arms, a nuisance term of the replicate-floor family
+  - `L17721` · `2026-09-11` · OPS · `ai_v12_24_ladder_strata_b` COMPLETE at 10,027,008 — the strata replicate banked; G7's 8M excursion did NOT continue (worst 1.149 at 8M, back to 1.109 at 10M, below bar on both halves); the dose exit condition holds at the completion number (+0.47 pp); and the 10M bots cycle lands BELOW the three controls' band, recorded as a descriptor and claimed as nothing
