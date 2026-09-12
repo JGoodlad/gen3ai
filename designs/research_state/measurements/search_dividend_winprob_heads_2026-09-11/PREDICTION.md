@@ -236,3 +236,72 @@ session. Registered now, **before any win rate from these cells has been looked 
   own width with its own CI, and "unresolved" is a legitimate result.
 * Shard counts were rebalanced at 01:56 UTC (strata 2 → 4 shards over disjoint 200-game windows,
   resuming the rows already written) purely for throughput. No flag, seed, index or head changed.
+
+---
+
+## 7c. ADDITION — a third head: `cflabels`, and the L1/L2 bar this is now read against (registered 2026-09-12 ~04:25 UTC, before its first cell)
+
+Ordered by the coordinator while the strata/denseaux cells were mid-flight. **Registered before any
+win rate from ANY phase-2 cell has been looked at** — up to this moment only row counts and realized
+widths have been read, deliberately.
+
+### The head
+
+`ai_v12_12_ladder_cflabels` @10000032 — `--cf-records --cf-winprob-coef 0.5`, pinned `f3502568`
+(the SAME pin as the `ctrl10M` anchor, so the anchor is a same-commit control). Null on the ladder's
+conditioning row, **but it is the closest thing already trained to a SUCCESSOR-DISCRIMINATION
+objective**: its auxiliary labels are the outcomes of the move taken versus an alternative from the
+same state — which is, structurally, the quantity a one-ply leaf is asked to rank.
+
+### The bar it is read against (ledger 2026-09-11, "THE LEAF-QUALITY METER")
+
+* **L1 = separation-of-raced** — the mechanism row. Bar: **> 18.1 %** (the win-prob family's maximum
+  15.0 % plus the 3.1 pp within-family floor).
+* **L2 = the paired mirror win rate** — the outcome row, null 0.50 STRUCTURAL. Bar: **paired CI
+  lower bound > 0.50**.
+* A lever clearing L1 but not L2 reads *"mechanism moved, outcome not yet"* — reported, not a pass.
+* **The ≤ ~20 % provisional rule (ledger addendum, same day):** the L1 floor is the RANGE of three
+  points, so it is biased small and the 18.1 % bar is probably permissive. **An L1 clear at ≤ ~20 %
+  is PROVISIONAL**, pending a fourth win-prob head — which this battery itself supplies; **a clear
+  at ≳ 25 % is not provisional.** The floor demotes, never promotes.
+
+### What each outcome means — named in advance
+
+* **cflabels pays where strata and denseaux did not** ⇒ **a within-game LABEL objective moves leaf
+  quality, and the axes separate**: a lever that is null on the conditioning row moves the leaf, so
+  the ladder's conditioning row is not the meter the search path should be steered by. It would also
+  name the *kind* of target that works — successor discrimination, not calibration and not class
+  balance — which is the most actionable result available from the five-head set.
+* **cflabels null too** ⇒ **counterfactual auxiliaries AT THIS COEFFICIENT (0.5, `cf_head_only`,
+  a 150k-step label lag) do not move the leaf either.** Combined with the other two, no lever in the
+  trained ladder moves L1/L2, and the constraint is the objective's SHARE/FORM rather than the
+  presence of a counterfactual signal. That is a dose-limited null, not a refutation of successor
+  discrimination — stated now so it cannot be over-read later.
+
+### Registered predictions
+
+1. **cflabels has the highest L1 of the three new heads** — it is the only one whose auxiliary is a
+   successor contrast. Confidence ~45% that it is highest of the three; **~30% that it clears
+   18.1%**; ~12% that it clears it decisively (≳ 25%).
+2. **cflabels does not clear L2.** Confidence ~85%, for the same reason as the other heads: `grid`
+   is catastrophic on every win-prob head measured, and the defensive gate buys that back to the
+   null rather than past it.
+3. **Its `grid` cell lands in the 0.20–0.32 band** with the other four — i.e. no head yet measured
+   makes unguarded search survivable.
+
+### Dose caveat, registered UNREAD
+
+A sibling run of this arm was retired as `…DEAD_fatal_config_cf_duty_cycle_6pct`, i.e. a cf duty
+cycle of ~6% was once a fatal config. **The live arm's realized cf duty cycle has NOT been read**
+and is not asserted here; if this head reads null on L1, the null is reported as *dose-unread*
+rather than as a verdict on counterfactual labels.
+
+### 7d. DEADLINE AMENDMENT (registered here, still outcome-blind)
+
+§7b set an outcome-blind 07:30 UTC stop. A third head arrived after that rule, so **the deadline for
+every phase-2/3 cell moves to 09:00 UTC**, fixed now and still blind to every win rate. The stop
+remains a wall clock and nothing else; a cell that stops short is reported at its achieved pair count
+with its own CI, and "unresolved" stays a legitimate result. `cflabels` gets its OWN contemporaneous
+`ctrl10M` anchor window (indices 150–299), because its cell runs in a later contention regime than
+the strata/denseaux cells and the anchor is what makes the cross-head L1 comparison a statement about
+heads rather than about the box.
