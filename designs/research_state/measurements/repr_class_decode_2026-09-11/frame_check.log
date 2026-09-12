@@ -1,0 +1,64 @@
+== ai_v12_17_ladder_strata@hp800
+  [hp800] t1: pooled->class 0.512 V->class 0.482 pooled->teamWR 0.200 V->teamWR 0.043
+  [hp800] t1_3: pooled->class 0.760 V->class 0.623 pooled->teamWR 0.160 V->teamWR 0.024
+  [hp800] t4_10: pooled->class 0.879 V->class 0.761 pooled->teamWR 0.120 V->teamWR 0.016
+  [hp800] t11_24: pooled->class 0.820 V->class 0.735 pooled->teamWR 0.088 V->teamWR 0.007
+  [hp800] t25p: pooled->class 0.779 V->class 0.696 pooled->teamWR 0.065 V->teamWR 0.002
+== ai_v12_17_ladder_strata@hp800b
+  [hp800b] t1: pooled->class 0.509 V->class 0.508 pooled->teamWR 0.168 V->teamWR 0.039
+  [hp800b] t1_3: pooled->class 0.754 V->class 0.621 pooled->teamWR 0.127 V->teamWR 0.025
+  [hp800b] t4_10: pooled->class 0.889 V->class 0.760 pooled->teamWR 0.094 V->teamWR 0.021
+  [hp800b] t11_24: pooled->class 0.813 V->class 0.728 pooled->teamWR 0.069 V->teamWR 0.010
+  [hp800b] t25p: pooled->class 0.787 V->class 0.693 pooled->teamWR 0.051 V->teamWR 0.001
+== ai_v12_10_ladder_vf15@hp800
+  [hp800] t1: pooled->class 0.520 V->class 0.493 pooled->teamWR 0.259 V->teamWR 0.073
+  [hp800] t1_3: pooled->class 0.672 V->class 0.561 pooled->teamWR 0.202 V->teamWR 0.050
+  [hp800] t4_10: pooled->class 0.778 V->class 0.624 pooled->teamWR 0.149 V->teamWR 0.023
+  [hp800] t11_24: pooled->class 0.734 V->class 0.611 pooled->teamWR 0.096 V->teamWR 0.009
+  [hp800] t25p: pooled->class 0.715 V->class 0.607 pooled->teamWR 0.089 V->teamWR 0.002
+== ai_v12_10_ladder_vf15@hp800b
+  [hp800b] t1: pooled->class 0.490 V->class 0.502 pooled->teamWR 0.208 V->teamWR 0.077
+  [hp800b] t1_3: pooled->class 0.663 V->class 0.554 pooled->teamWR 0.175 V->teamWR 0.064
+  [hp800b] t4_10: pooled->class 0.780 V->class 0.620 pooled->teamWR 0.140 V->teamWR 0.028
+  [hp800b] t11_24: pooled->class 0.738 V->class 0.606 pooled->teamWR 0.105 V->teamWR 0.016
+  [hp800b] t25p: pooled->class 0.726 V->class 0.601 pooled->teamWR 0.099 V->teamWR 0.011
+== ai_v12_11_ladder_ctrl10M@hp800
+  [hp800] t1: pooled->class 0.497 V->class 0.497 pooled->teamWR 0.189 V->teamWR 0.047
+  [hp800] t1_3: pooled->class 0.684 V->class 0.580 pooled->teamWR 0.146 V->teamWR 0.035
+  [hp800] t4_10: pooled->class 0.830 V->class 0.711 pooled->teamWR 0.120 V->teamWR 0.020
+  [hp800] t11_24: pooled->class 0.803 V->class 0.715 pooled->teamWR 0.089 V->teamWR 0.010
+  [hp800] t25p: pooled->class 0.809 V->class 0.730 pooled->teamWR 0.077 V->teamWR 0.005
+== ai_v12_11_ladder_ctrl10M@hp800b
+  [hp800b] t1: pooled->class 0.488 V->class 0.495 pooled->teamWR 0.160 V->teamWR 0.062
+  [hp800b] t1_3: pooled->class 0.667 V->class 0.583 pooled->teamWR 0.134 V->teamWR 0.043
+  [hp800b] t4_10: pooled->class 0.824 V->class 0.710 pooled->teamWR 0.099 V->teamWR 0.022
+  [hp800b] t11_24: pooled->class 0.798 V->class 0.716 pooled->teamWR 0.059 V->teamWR 0.009
+  [hp800b] t25p: pooled->class 0.794 V->class 0.714 pooled->teamWR 0.047 V->teamWR 0.006
+== ai_v12_15_ladder_ctrl10M_b@hp800
+  [hp800] t1: pooled->class 0.501 V->class 0.504 pooled->teamWR 0.196 V->teamWR 0.043
+  [hp800] t1_3: pooled->class 0.707 V->class 0.595 pooled->teamWR 0.145 V->teamWR 0.030
+  [hp800] t4_10: pooled->class 0.853 V->class 0.705 pooled->teamWR 0.095 V->teamWR 0.016
+  [hp800] t11_24: pooled->class 0.821 V->class 0.714 pooled->teamWR 0.060 V->teamWR 0.010
+  [hp800] t25p: pooled->class 0.808 V->class 0.711 pooled->teamWR 0.042 V->teamWR 0.008
+== ai_v12_15_ladder_ctrl10M_b@hp800b
+  [hp800b] t1: pooled->class 0.489 V->class 0.481 pooled->teamWR 0.130 V->teamWR 0.025
+  [hp800b] t1_3: pooled->class 0.712 V->class 0.579 pooled->teamWR 0.099 V->teamWR 0.018
+  [hp800b] t4_10: pooled->class 0.855 V->class 0.686 pooled->teamWR 0.068 V->teamWR 0.011
+  [hp800b] t11_24: pooled->class 0.822 V->class 0.708 pooled->teamWR 0.046 V->teamWR 0.010
+  [hp800b] t25p: pooled->class 0.805 V->class 0.706 pooled->teamWR 0.026 V->teamWR 0.002
+== ai_v12_16_ladder_ctrl10M_c@hp800
+  [hp800] t1: pooled->class 0.519 V->class 0.502 pooled->teamWR 0.157 V->teamWR 0.036
+  [hp800] t1_3: pooled->class 0.686 V->class 0.567 pooled->teamWR 0.116 V->teamWR 0.027
+  [hp800] t4_10: pooled->class 0.822 V->class 0.692 pooled->teamWR 0.071 V->teamWR 0.013
+  [hp800] t11_24: pooled->class 0.801 V->class 0.705 pooled->teamWR 0.050 V->teamWR 0.006
+  [hp800] t25p: pooled->class 0.801 V->class 0.722 pooled->teamWR 0.035 V->teamWR 0.006
+wrote /home/goodlad/dev/gen3ai-wt/repdecode/designs/research_state/measurements/repr_class_decode_2026-09-11/frame_check.json
+ai_v12_17_ladder_strata@hp800 own-team -> opp_class AUC 0.492 (585/602 teams ever face a sentinel)
+ai_v12_17_ladder_strata@hp800b own-team -> opp_class AUC 0.498 (576/602 teams ever face a sentinel)
+ai_v12_10_ladder_vf15@hp800 own-team -> opp_class AUC 0.496 (585/602 teams ever face a sentinel)
+ai_v12_10_ladder_vf15@hp800b own-team -> opp_class AUC 0.495 (576/602 teams ever face a sentinel)
+ai_v12_11_ladder_ctrl10M@hp800 own-team -> opp_class AUC 0.495 (585/602 teams ever face a sentinel)
+ai_v12_11_ladder_ctrl10M@hp800b own-team -> opp_class AUC 0.496 (576/602 teams ever face a sentinel)
+ai_v12_15_ladder_ctrl10M_b@hp800 own-team -> opp_class AUC 0.493 (585/602 teams ever face a sentinel)
+ai_v12_15_ladder_ctrl10M_b@hp800b own-team -> opp_class AUC 0.497 (574/602 teams ever face a sentinel)
+ai_v12_16_ladder_ctrl10M_c@hp800 own-team -> opp_class AUC 0.494 (585/602 teams ever face a sentinel)

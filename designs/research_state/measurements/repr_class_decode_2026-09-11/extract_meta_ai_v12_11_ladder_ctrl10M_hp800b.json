@@ -1,0 +1,149 @@
+{
+ "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800b/ai_v12_11_ladder_ctrl10M/eval_traces/step_10000032/snapshot.zip",
+ "snapshot_md5": "55087290a1a5d0a394fea0673b7ddacf",
+ "trees": {
+  "hp800b": {
+   "step": 10000032,
+   "seed": 20260911,
+   "checkpoint_sha": "0698886bc9c01fa4",
+   "n_games": 800,
+   "sentinel_steps": [
+    4000032,
+    6000000,
+    8000016
+   ],
+   "opponents": {
+    "random": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 797,
+     "battles_drawn": 0,
+     "true_win_rate": 0.99625,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 800
+    },
+    "heuristic": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 727,
+     "battles_drawn": 1,
+     "true_win_rate": 0.90875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 799
+    },
+    "heuristic2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 701,
+     "battles_drawn": 3,
+     "true_win_rate": 0.87625,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797
+    },
+    "staller": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 732,
+     "battles_drawn": 10,
+     "true_win_rate": 0.915,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 790
+    },
+    "staller_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 739,
+     "battles_drawn": 0,
+     "true_win_rate": 0.92375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 800
+    },
+    "aggressive": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 735,
+     "battles_drawn": 3,
+     "true_win_rate": 0.91875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797
+    },
+    "aggressive_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 703,
+     "battles_drawn": 3,
+     "true_win_rate": 0.87875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797
+    },
+    "setup_sweep": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 716,
+     "battles_drawn": 3,
+     "true_win_rate": 0.895,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 797
+    },
+    "setup_sweep_v2": {
+     "class": "bot",
+     "battles_played": 800,
+     "battles_won": 711,
+     "battles_drawn": 7,
+     "true_win_rate": 0.88875,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 793
+    },
+    "sentinel_0": {
+     "class": "sentinel",
+     "battles_played": 800,
+     "battles_won": 675,
+     "battles_drawn": 4,
+     "true_win_rate": 0.84375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 796
+    },
+    "sentinel_1": {
+     "class": "sentinel",
+     "battles_played": 800,
+     "battles_won": 614,
+     "battles_drawn": 5,
+     "true_win_rate": 0.7675,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 795
+    },
+    "sentinel_2": {
+     "class": "sentinel",
+     "battles_played": 800,
+     "battles_won": 430,
+     "battles_drawn": 4,
+     "true_win_rate": 0.5375,
+     "capture_rate_win": 1.0,
+     "capture_rate_loss": 1.0,
+     "battles_loaded": 796
+    }
+   },
+   "overall_true_wr": 0.8625
+  }
+ },
+ "refusals": [],
+ "n_draw_excluded": 43,
+ "capture_rates_seen": [],
+ "dropped_kwargs": [],
+ "qc_max_abs_Vfwd_minus_Vrec": 1.8477439880371094e-06,
+ "n_states": 293683,
+ "n_battles": 9557,
+ "n_teams": 602,
+ "seconds": 1438.3
+}
