@@ -17868,3 +17868,60 @@ lever**.
 **Two descriptors, recorded and NEITHER claimed.** (1) The 10M bots cycle **0.8388 is below the three controls' band** (0.8800 / 0.8963 / 0.8988) and below `vf15`'s own 0.8800 — the second consecutive arm to land under that band. Strength is not the registered read and one eval cycle has no CI. (2) **FPS 570 against `strata_b`'s 248.** An FPS window containing eval cycles and warmup is not a throughput measurement, and the box carried offline generators during `strata_b` and none during this arm; the number is logged, and no throughput claim is made from it. (3) Restart read: `grad/value_policy_logratio` median of the last 20 rollouts is **+0.0898** (`vf15`: −0.0738) — |x| ≤ 0.5, **KEEP**, as registered.
 
 **What is NOT decided here.** `vf15_b`'s registered test — `cond.opp_class_auc.t4_10` at both 800-game draws (seeds 20260910 / 20260911) vs all three controls, PASS = Δ CI clearing **−0.022 DOWNWARD** at both draws against all three — is an OFFLINE read on `final_model.zip`, dispatched by the orchestrator. `vf15` read −0.082 / −0.080 at n = 1, and `strata_b` has just shown a detection of that size reversing under a seed. Tag: **OPS · COMPLETE · fifteenth run · G7 below bar · crossing 4,128,768 (7th) · INSTRUMENT (win_rate_vs_bots excludes random)**.
+
+### 2026-09-12 · MEASUREMENT · THE CRITIC LADDER READ ON STRENGTH — fifteen 10M arms at matched snapshot count: **no arm outside the 45.0-Elo floor**, the floor REPRODUCED from an independent refit, two DOWNWARD candidates (`vf15_b`, `strata_b`) neither of which is a detection, and the ladder at four nodes shown unable to resolve its own floor (se(Δ) 21–24 ⇒ CI95 ±43–48)
+
+`measurements/ladder_strength_table_2026-09-12/`, pre-registered at `937775b6` (with a disclosure
+that the committed ratings had been seen during the roster survey, so the registration's value is
+the DECISION RULE, not blindness). Zero GPU; nothing written under `models/`.
+**The instrument.** `main.elo` has no matched-count cross-run mode and writes under `models/`;
+`main.critic_gate --at-snapshots` implements the rule but only pairwise. This read calls the
+function both sit on — `snapshot_ladder.fit_ladder(first_n=4, steps=COMMON, write=False)` — on all
+fifteen arms. **Matched count = 4 over the COMMON step set `{4.0M, 6.0M, 8.0M, 10.0M}`**: three
+arms (`lambda09`, `lambda095`, `rollout`) rate a FIFTH, EARLIER node at 2M (the self-play crossing
+lottery, rule 15), so a naive `first_n=4` would have read their **8M** node against everyone
+else's 10M — matched count, un-matched steps, and nothing in the tree warns about it (hazard 1).
+The correction moves those three by −6.3 / +3.1 / −4.8; the twelve four-node arms reproduce their
+committed numbers exactly. All fifteen finished at 10,027,008 steps, so the newest-node inflation
+is common-mode; the 8M node of the same fit is the registered cross-check (Spearman 0.775).
+**The floor.** Max pairwise |Δ| over the three controls = **45.0 Elo** (pairs 45.0 / 35.3 / 9.7),
+reproducing the 2026-09-09 figure exactly from an independent refit. 8M floor 54.9.
+**The read.** Range 145.5 Elo, `rollout` 2062.3 top to `vf15_b` 1916.8 bottom. On the registered
+rule (all three |Δ| past the floor, same sign, each Δ's own CI excluding the floor) **NO ARM is
+outside the floor.** `vf15_b` (−101.9 / −56.9 / −66.6) and `strata_b` (−90.7 / −45.7 / −55.4)
+satisfy the first two clauses and fail the third ⇒ CANDIDATES, per rule 22. On the 8M node
+`strata_b`'s lean COLLAPSES (−48.9 / +6.0 / −0.6; it is also the one arm whose rating falls 8M →
+10M) and is reported INCONCLUSIVE; `vf15_b`'s GROWS (−133.4 / −78.5 / −85.1, past the 54.9 floor
+on all three) and is the family's only node-robust lean. `rollout` is first at 10M and sixth at
+8M — the cleanest demonstration on this table that one node is not a reading.
+**THE INSTRUMENT'S OWN LIMIT, registered as P3 before the read.** `se(Δ)` = 21–24 Elo at four
+nodes ⇒ CI95 ±43–48, the size of the floor itself, so the delta-CI clause can essentially never
+fire here. **A ladder-strength question on 10M arms needs more PROMOTIONS, not more arms.**
+**RULE 22 REPRODUCED ON STRENGTH.** Same-pin seed replicate pairs: `vf15` − `vf15_b` = **+82.6
+[+39.5, +125.7]**, 1.84× the floor, CI clear of zero; `strata` − `strata_b` = **+58.1 [+16.2,
++100.0]**, 1.29×; against the same-configuration control pair's 9.7 [−53.1, +33.7], 0.22×. The
+control triple bounds the CONTROL's variance, not the lever's — and on strength the understatement
+is a factor of 6–8.
+**Descriptors (not the read).** All fifteen carry `eval_sentinel_greedy: true` with
+`sentinel_regime {greedy, symmetric_teams}` recorded on every 10M row, so the whole family is
+post-boundary and comparable within itself only. `win_rate_vs_bots` @10M spans **0.839–0.910**
+(800 games, 8 bots, `random` excluded per `eval_callback.py:363`; every `random` row 0.99–1.00),
+i.e. compressed but NOT saturated — P4's 0.93–1.00 was wrong on level. 🚨 **That row is an INPUT
+to the headline, not an independent descriptor of it**: `fit_ladder` folds each snapshot's bot
+edges in as the anchor, so the Pearson 0.889 / Spearman 0.768 against Elo is partly mechanical
+(hazard 3). Pins span seven commits (`f3502568`, `377a5aa1`, `f871e79f`, `28ece02a`, `46ca68ef`,
+`40bf23d9`, `d11386dc`), each a single `pin_commit` span from step 0; seeds 42 / 1001 / 1002 /
+1003. **The floor's two widest control pairs CROSS the `f3502568` → `377a5aa1` boundary and the
+one same-pin pair does not** (45.0 / 35.3 vs 9.7) — an OBSERVATION only, since se(Δ) = 22.9 cannot
+separate 9.7 from 45.0, and it makes the 45.0 bar conservative for a same-pin comparison.
+**Other hazards as findings:** non-transitivity is material (`fit_quality.max_abs_err` to 0.194 on
+`lambda09`); `ai_v12_26_ladder_ctrl10M_shaped` was LIVE with no `snapshot_ladder/` at all and is
+EXCLUDED, not read (rule 16) — it is this family's sixteenth arm and the table must be re-read,
+not patched, when it lands; `strata_b` and `vf15_b` share a bit-identical 0.83875 bot rate on
+completely different per-bot rows (coincidence, verified).
+**Consequence.** The strength read agrees with the critic read: after fifteen 10M arms and seven
+levers the campaign has **zero detections on strength** as well as zero confirmed detections on a
+decision row. Strength adds no arm to the queue and removes none; what it adds is the floor's
+scale on the family's own yardstick and a measured bound on the yardstick's resolution.
+Tag: **MEASURED · NO ARM OUTSIDE THE FLOOR · rule 22 reproduced on strength · the four-node
+ladder cannot resolve a 45-Elo question**.
