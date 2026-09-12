@@ -17656,3 +17656,40 @@ Raised by the Training Run session, accepted. (1) **The family split is post hoc
 ### 2026-09-11 · PRE-REGISTRATION ADDENDUM · `strata_b` is receiving a FULLER realized dose than `strata` (uncapped, `share_bot` 0.5 exactly at every update so far), and the asymmetry runs the way that makes a miss HARDER to excuse — stated before the number
 
 Raised by the Training Run session, accepted, recorded before `strata_b`'s read exists. `strata`'s balancing was capped on 44 of 59 post-crossing updates (mean `share_bot` 0.464 when capped, 0.473 overall); `strata_b` at 5.1M reads `capped` 0 at all eight updates, `share_bot` 0.5000, `w_bot` 2.6–2.9 under the 4.5 clamp, `frac_bot` 0.17–0.19 (its weaker 4M bots hold more bot episodes in the ramp). So the replicate is identical in CONFIGURATION and receives MORE of the treatment than the original. **Consequence for the two branches, under the assumption that the effect is monotone in delivered balancing — which is UNTESTED (no dose curve exists for this lever; too much up-weighting of a small class could in principle hurt):** if `strata_b` HITS, the dose difference is in the same direction as the result and the confirmation stands; if it MISSES with a smaller point, "it got less treatment" is not available as an account, which STRENGTHENS the selection-inflation reading and keeps the half-the-point discriminator meaningful. A realized-dose difference between draws would normally be a third account beside power and selection; here it is asymmetric in the helpful direction, and it is written down now so it reads as a property of the test rather than an explanation found later. Dose rows at matched steps: `strata_frac_bot`, `strata_w_bot`, `strata_capped`; `share_bot` as the delivery check; a late cap-bind as `strata_b`'s bots climb is realized dose, not a fault. Tag: PRE-REGISTRATION ADDENDUM.
+
+
+### 2026-09-11 · MEASUREMENT (MAJOR) · THE MIRROR METER RE-READ AT THE WIN-PROB MILESTONE — the promoted head is a WORSE leaf than the shaped critic it replaced; no dividend on any head (2026-09-11)
+
+Record `designs/research_state/measurements/search_dividend_winprob_heads_2026-09-11/`
+(PREDICTION.md registered before the first cell; **5,556 mirror battles / 243,197 decisions, zero
+timeouts, zero errors**, `--games-seed 7`, CPU, 9 shards, all three heads playing the SAME
+battles). Discharges the 2026-08-24 standing order ("re-run this probe after each critic
+milestone; the mirror table IS the critic-resolution meter in behavioural units").
+**Naive `grid` search on the win-prob head is a catastrophe and is NO BETTER than the shaped
+critic it replaced: paired 0.2600 / 0.2600 / 0.2025 (ctrl10M @10M / λ0.9 @10M / winprob_critic
+@73M) against the v9 shaped cell's 0.2929, changing 56–60% of actions and losing BOTH orientations
+in 55–62% of pairs.** **At iteration 2's exact 3 s defensive operating point the dividend is
+ABSENT: 0.5059 [0.4914, 0.5205] · 0.5031 [0.4894, 0.5169] · 0.4950 [0.4740, 0.5160].** The two 10M
+heads read 0.5206 / 0.5150 at the pre-registered 400 pairs (ctrl10M's lower bound 0.4999 — one
+ten-thousandth from "search pays"); **the extension registered mid-cell, before that read, put 400
+FRESH pairs on each and both came back at 0.4913** — the positive was noise, and it is a statement
+only because the second look was committed to in advance. **The mechanism says why:
+separation-of-raced 11.9–15.0% against iteration 2's 45.4%, overrules 1.1–1.6% against 5.82% —
+the promoted head certifies four to five times FEWER overrules than the auxiliary win-prob head on
+a shaped-critic checkpoint, and `futility_genuine` is 0 in 38,671 stops (still clock-limited).**
+Four of five registered predictions refuted, all in the same direction; head-to-head the 73M head
+is the WORST leaf and the best-calibrated head is not the best (no pairwise delta CI excludes
+zero; ctrl10M − wp73M +0.0256 [−0.0024, +0.0536]). **Rung A (1 s uniform) is an accidental
+PLACEBO — 0 overrules in 37,909 decisions — and still reads 0.4933 / 0.5133 / 0.5100, the standing
+demonstration of what a "0.51" means at n=150.** **Consequence: the search-and-distill path is NOT
+open at this leaf** (a teacher that overrules ~1% of decisions has ~nothing to distill, and
+distillation recovers a fraction of a measured dividend); the binding constraint is the critic
+OBJECTIVE, and leaf quality is bought neither with training steps nor with calibration. Three
+instrument findings banked: a results row records neither the CHECKPOINT nor
+`--defensive-contested-deadline-s`, so cells are distinguishable by FILE NAME only; `31cd5e3a`
+grew the team pool 679 → 719 after every historical cell, so a game index still names the same
+DICE but no longer the same TEAMS (every cross-era mirror comparison is independent-sample, not
+paired); and `--arm base` costs ~2.5 s/decision while searching nothing, which is why the
+exact-50 control was stopped at 27 pooled pairs (0.5185 [0.4822, 0.5548], 26/27 split).
+
+**Orchestrator's reading and decisions.** (1) **The week goal's path is BLOCKED at the current head.** "Validate the value net as win-prob → search + distillation" required the head to pay as a leaf; on three checkpoints (the ladder control at 10M, the λ-0.9 head at 10M, the 75M run at 73M) it does not, and naive search on it loses three games in four to its own unsearched self. The distillation stage has nothing to distil from a teacher that overrules 1 % of decisions. (2) **Leaf quality is a DIFFERENT property from the ladder's conditioning row.** Search needs within-game discrimination among successor states — the ordering of moves from one position — where the conditioning row measures between-game ordering of opponents. The shaped-critic checkpoint, trained on dense within-game returns, separated raced candidates 45 % of the time; the win-prob head, trained on a terminal bit copied to every state, separates 12–15 %. Steps did not buy it (the 73M head is the worst leaf) and calibration did not buy it (the best-calibrated head is not the best leaf). **The ladder has no decision row for leaf quality; the mirror battery is that meter in behavioural units at ~2 h CPU per head, and a cheap proxy row belongs in `critic_read`** (backlog: a one-ply successor-ranking AUC against label-factory rollouts, or the prober's better-line agreement). (3) **Both fork-deciding experiments now point the same way: the OBJECTIVE is the lever.** The rollout, dense, counterfactual and privileged levers were null on conditioning; the two objective-composition levers moved it; and here neither steps nor calibration bought leaf quality. (4) **Immediate follow-up, CPU only:** the same defensive battery on `strata@10M` (the objective lever that moved conditioning) and `denseaux@10M` (dense within-game targets — null on the conditioning row, but that row does not measure what search needs; the shaped critic's advantage was exactly dense within-game supervision) — dispatched. If `denseaux` pays as a leaf where it did nothing for conditioning, the two axes separate cleanly and the hybrid objective (win-prob head + dense within-game targets) becomes the design. (5) The step curve (running) answers the last fork question, whether steps buy CONDITIONING; the search result already says they do not buy leaf quality. (6) GPU plan unchanged for tonight: `strata_b` banks, then the value-gradient-share arms (vf 0.25, a stop-gradient head) registered on BOTH the conditioning row and, once it exists, the leaf proxy. Tag: **MEASURED · MAJOR · NO DIVIDEND · search-and-distill BLOCKED at this leaf · leaf quality ≠ conditioning**.
