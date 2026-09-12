@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,696-line file. **The ledger itself is append-only and is never edited by this**;
+17,700-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**576 headings · 525 dated · 2026-08-01 → 2026-09-11 · ledger 17,696 lines.**
+**577 headings · 526 dated · 2026-08-01 → 2026-09-11 · ledger 17,700 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -596,3 +596,4 @@ rename.
   - `L17652` · `2026-09-11` · ADDENDUM · the "richer-label family CLOSED" sentence is a RESOURCE-ALLOCATION statement and a PREDICTION, not a mechanism claim — the grouping was recognised after the results, and rests on six unreplicated runs; and the `strata` "0.473" is `win_prob/strata_share_bot` (a delivery check that reads 0.5 by construction unless the cap binds), so the between-draw dose row is `strata_frac_bot` at matched steps
   - `L17656` · `2026-09-11` · PRE-REGISTRATION ADDENDUM · `strata_b` is receiving a FULLER realized dose than `strata` (uncapped, `share_bot` 0.5 exactly at every update so far), and the asymmetry runs the way that makes a miss HARDER to excuse — stated before the number
   - `L17661` · `2026-09-11` · MEASUREMENT (MAJOR) · THE MIRROR METER RE-READ AT THE WIN-PROB MILESTONE — the promoted head is a WORSE leaf than the shaped critic it replaced; no dividend on any head (2026-09-11)
+  - `L17697` · `2026-09-11` · REGISTRATION · THE LEAF-QUALITY METER, defined, floored and barred BEFORE any arm is read on it; the search-dividend result is a DIRECTION-LEVEL finding (the pivot to win-prob cost measurably on the axis the goal names); the 3 pp within-family vs 30 pp cross-family contrast is the gap's own floor
