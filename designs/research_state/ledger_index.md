@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,708-line file. **The ledger itself is append-only and is never edited by this**;
+17,712-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**579 headings · 528 dated · 2026-08-01 → 2026-09-11 · ledger 17,708 lines.**
+**580 headings · 529 dated · 2026-08-01 → 2026-09-11 · ledger 17,712 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -599,3 +599,4 @@ rename.
   - `L17697` · `2026-09-11` · REGISTRATION · THE LEAF-QUALITY METER, defined, floored and barred BEFORE any arm is read on it; the search-dividend result is a DIRECTION-LEVEL finding (the pivot to win-prob cost measurably on the axis the goal names); the 3 pp within-family vs 30 pp cross-family contrast is the gap's own floor
   - `L17701` · `2026-09-11` · PRE-REGISTRATION ADDENDUM · L1's 18.1 % bar rests on a THREE-POINT RANGE that bounds the floor rather than estimating it — a marginal clear (≤ ~20 %) is PROVISIONAL, a decisive clear (≳ 25 %) is not; L2's null is STRUCTURAL; and the `strata_b` "fuller dose" sentence gets its exit condition now
   - `L17705` · `2026-09-11` · CORRECTION · `cond.spread_ratio_optimal` is fitted from V (the head's scalar OUTPUT), not from `value_pooled` — the two entries that described it as "E[p_o | value_pooled]" / "at the head's information set" were wrong, and the two claims that a lever changed "the representation's class information" (`strata` up, `vf15` down) are DOWNGRADED to claims about V's output until the representation-level decode lands
+  - `L17709` · `2026-09-11` · PRE-REGISTRATION ADDENDUM · the decision row `cond.opp_class_auc.t4_10` is a statement about V's SCALAR OUTPUT; `strata_b`'s verdict is worded at V-level before its number exists; the scalar-conditioned reference is a far weaker bound than argued; the representation question has its own pending measurement and its own branch named in advance
