@@ -1,0 +1,3244 @@
+{
+ "read": "ladder_strength_table_2026-09-12",
+ "instrument": "agents.training.snapshot_ladder.fit_ladder(first_n=N, steps=COMMON, write=False)",
+ "why_not_main_elo": "main.elo takes one positional run_dir, has no matched-count cross-run mode, and writes <run_dir>/elo/. main.critic_gate --at-snapshots implements the rule but only pairwise (run vs --parent).",
+ "matched_count": 4,
+ "common_steps": [
+  4000032,
+  6000000,
+  8000016,
+  10000032
+ ],
+ "headline_step": 10000032,
+ "crosscheck_step": 8000016,
+ "n_arms": 15,
+ "excluded": [
+  {
+   "label": "ctrl10M_shaped",
+   "run": "ai_v12_26_ladder_ctrl10M_shaped",
+   "why": "LIVE on the GPU at read time; no snapshot_ladder/ directory exists. Excluded, not read."
+  }
+ ],
+ "floors": {
+  "headline": {
+   "pairs": [
+    {
+     "pair": "ctrl10M - ctrl10M_b",
+     "delta": 45.0,
+     "abs": 45.0,
+     "se": 22.9,
+     "ci95": [
+      0.2,
+      89.8
+     ]
+    },
+    {
+     "pair": "ctrl10M - ctrl10M_c",
+     "delta": 35.3,
+     "abs": 35.3,
+     "se": 22.9,
+     "ci95": [
+      -9.6,
+      80.2
+     ]
+    },
+    {
+     "pair": "ctrl10M_b - ctrl10M_c",
+     "delta": -9.7,
+     "abs": 9.7,
+     "se": 22.1,
+     "ci95": [
+      -53.1,
+      33.7
+     ]
+    }
+   ],
+   "floor": 45.0,
+   "mean_abs": 30.0
+  },
+  "crosscheck": {
+   "pairs": [
+    {
+     "pair": "ctrl10M - ctrl10M_b",
+     "delta": 54.9,
+     "abs": 54.9,
+     "se": 22.2,
+     "ci95": [
+      11.3,
+      98.5
+     ]
+    },
+    {
+     "pair": "ctrl10M - ctrl10M_c",
+     "delta": 48.3,
+     "abs": 48.3,
+     "se": 22.3,
+     "ci95": [
+      4.6,
+      92.0
+     ]
+    },
+    {
+     "pair": "ctrl10M_b - ctrl10M_c",
+     "delta": -6.6,
+     "abs": 6.6,
+     "se": 21.3,
+     "ci95": [
+      -48.3,
+      35.1
+     ]
+    }
+   ],
+   "floor": 54.9,
+   "mean_abs": 36.6
+  }
+ },
+ "spearman_headline_vs_crosscheck": 0.775,
+ "elo_range_headline": 145.5,
+ "elo_range_crosscheck": 161.1,
+ "arms": [
+  {
+   "label": "vf15",
+   "run": "ai_v12_10_ladder_vf15",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_10_ladder_vf15",
+   "lever": "--vf-coef 1.5 (capacity: triple the critic's share of the shared trunk)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.925973+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1652.5,
+     "6000000": 1815.0,
+     "8000016": 1910.2,
+     "10000032": 1999.4
+    },
+    "se": {
+     "4000032": 11.4,
+     "6000000": 12.7,
+     "8000016": 14.4,
+     "10000032": 16.6
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0957,
+     "max_abs_err": 0.1563,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 1999.4,
+    "se": 16.6,
+    "committed_elo": 1999.4
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1910.2,
+    "se": 14.4,
+    "committed_elo": 1910.2
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0957,
+    "max_abs_err": 0.1563,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "f3502568b5fa8133bb360979755ca6787ed008aa",
+      "pin_source": "head",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "f3502568",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.88,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8575,
+     0.9025
+    ],
+    "win_rate_random_excluded": 0.99,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 0.99,
+     "heuristic": 0.92,
+     "heuristic2": 0.86,
+     "staller": 0.91,
+     "staller_v2": 0.89,
+     "aggressive": 0.85,
+     "aggressive_v2": 0.86,
+     "setup_sweep": 0.89,
+     "setup_sweep_v2": 0.86
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -19.3,
+      "se": 23.5,
+      "ci95": [
+       -65.5,
+       26.9
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 25.7,
+      "se": 22.8,
+      "ci95": [
+       -18.9,
+       70.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 16.0,
+      "se": 22.8,
+      "ci95": [
+       -28.8,
+       60.8
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -94.3,
+      "se": 21.8,
+      "ci95": [
+       -137.1,
+       -51.5
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": -39.4,
+      "se": 20.8,
+      "ci95": [
+       -80.2,
+       1.4
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -46.0,
+      "se": 20.9,
+      "ci95": [
+       -86.9,
+       -5.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "ctrl10M",
+   "run": "ai_v12_11_ladder_ctrl10M",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_11_ladder_ctrl10M",
+   "lever": "CONTROL \u2014 arm A's command at 10M, seed 42",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.942624+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1742.2,
+     "6000000": 1895.6,
+     "8000016": 2004.5,
+     "10000032": 2018.7
+    },
+    "se": {
+     "4000032": 12.1,
+     "6000000": 14.1,
+     "8000016": 16.4,
+     "10000032": 16.7
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0851,
+     "max_abs_err": 0.1682,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 2018.7,
+    "se": 16.7,
+    "committed_elo": 2018.7
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 2004.5,
+    "se": 16.4,
+    "committed_elo": 2004.5
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0851,
+    "max_abs_err": 0.1682,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "f3502568b5fa8133bb360979755ca6787ed008aa",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "f3502568",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.89875,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8778,
+     0.9197
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.91,
+     "heuristic2": 0.88,
+     "staller": 0.93,
+     "staller_v2": 0.89,
+     "aggressive": 0.92,
+     "aggressive_v2": 0.92,
+     "setup_sweep": 0.86,
+     "setup_sweep_v2": 0.88
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M_b",
+      "delta": 45.0,
+      "se": 22.9,
+      "ci95": [
+       0.2,
+       89.8
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 35.3,
+      "se": 22.9,
+      "ci95": [
+       -9.6,
+       80.2
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M_b",
+      "delta": 54.9,
+      "se": 22.2,
+      "ci95": [
+       11.3,
+       98.5
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 48.3,
+      "se": 22.3,
+      "ci95": [
+       4.6,
+       92.0
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "cflabels",
+   "run": "ai_v12_12_ladder_cflabels",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_12_ladder_cflabels",
+   "lever": "--cf-records --cf-winprob-coef 0.5 (R-rollout MC win-fraction labels)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.949224+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1779.9,
+     "6000000": 1883.6,
+     "8000016": 1975.9,
+     "10000032": 2021.1
+    },
+    "se": {
+     "4000032": 12.4,
+     "6000000": 13.8,
+     "8000016": 15.6,
+     "10000032": 16.7
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0828,
+     "max_abs_err": 0.1445,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 2021.1,
+    "se": 16.7,
+    "committed_elo": 2021.1
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1975.9,
+    "se": 15.6,
+    "committed_elo": 1975.9
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0828,
+    "max_abs_err": 0.1445,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "377a5aa170bef8bf37be2af7217bb4d4f1b20b36",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "377a5aa1",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.89875,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8778,
+     0.9197
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.87,
+     "heuristic2": 0.86,
+     "staller": 0.97,
+     "staller_v2": 0.93,
+     "aggressive": 0.94,
+     "aggressive_v2": 0.81,
+     "setup_sweep": 0.91,
+     "setup_sweep_v2": 0.9
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 2.4,
+      "se": 23.6,
+      "ci95": [
+       -43.9,
+       48.7
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 47.4,
+      "se": 22.9,
+      "ci95": [
+       2.6,
+       92.2
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 37.7,
+      "se": 22.9,
+      "ci95": [
+       -7.2,
+       82.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -28.6,
+      "se": 22.6,
+      "ci95": [
+       -73.0,
+       15.8
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 26.3,
+      "se": 21.6,
+      "ci95": [
+       -16.1,
+       68.7
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 19.7,
+      "se": 21.7,
+      "ci95": [
+       -22.9,
+       62.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "tdaux",
+   "run": "ai_v12_13_ladder_tdaux",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_13_ladder_tdaux",
+   "lever": "--td-aux-coef 1.0 (Bellman residual in probability space)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.957577+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1738.7,
+     "6000000": 1929.7,
+     "8000016": 1987.7,
+     "10000032": 2034.7
+    },
+    "se": {
+     "4000032": 12.1,
+     "6000000": 14.7,
+     "8000016": 16.0,
+     "10000032": 17.1
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.1066,
+     "max_abs_err": 0.1734,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 2034.7,
+    "se": 17.1,
+    "committed_elo": 2034.7
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1987.7,
+    "se": 16.0,
+    "committed_elo": 1987.7
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.1066,
+    "max_abs_err": 0.1734,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "f3502568b5fa8133bb360979755ca6787ed008aa",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "f3502568",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.885,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8629,
+     0.9071
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.89,
+     "heuristic2": 0.89,
+     "staller": 0.89,
+     "staller_v2": 0.89,
+     "aggressive": 0.88,
+     "aggressive_v2": 0.82,
+     "setup_sweep": 0.91,
+     "setup_sweep_v2": 0.91
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 16.0,
+      "se": 23.9,
+      "ci95": [
+       -30.8,
+       62.8
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 61.0,
+      "se": 23.1,
+      "ci95": [
+       15.6,
+       106.4
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 51.3,
+      "se": 23.2,
+      "ci95": [
+       5.8,
+       96.8
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -16.8,
+      "se": 22.9,
+      "ci95": [
+       -61.7,
+       28.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 38.1,
+      "se": 21.9,
+      "ci95": [
+       -4.9,
+       81.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 31.5,
+      "se": 22.0,
+      "ci95": [
+       -11.6,
+       74.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "truevalue",
+   "run": "ai_v12_14_ladder_truevalue",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_14_ladder_truevalue",
+   "lever": "--value-true-team (PRIVILEGED critic \u2014 ceiling probe)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.963900+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1831.7,
+     "6000000": 1944.8,
+     "8000016": 1992.3,
+     "10000032": 2054.0
+    },
+    "se": {
+     "4000032": 13.2,
+     "6000000": 15.0,
+     "8000016": 15.9,
+     "10000032": 17.4
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0878,
+     "max_abs_err": 0.1676,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 2054.0,
+    "se": 17.4,
+    "committed_elo": 2054.0
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1992.3,
+    "se": 15.9,
+    "committed_elo": 1992.3
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0878,
+    "max_abs_err": 0.1676,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "d11386dc3afc577a5e4351a8f270c7e3a87d700b",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "d11386dc",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.90125,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8806,
+     0.9219
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.88,
+     "heuristic2": 0.86,
+     "staller": 0.95,
+     "staller_v2": 0.92,
+     "aggressive": 0.93,
+     "aggressive_v2": 0.9,
+     "setup_sweep": 0.89,
+     "setup_sweep_v2": 0.88
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 35.3,
+      "se": 24.1,
+      "ci95": [
+       -12.0,
+       82.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 80.3,
+      "se": 23.4,
+      "ci95": [
+       34.5,
+       126.1
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 70.6,
+      "se": 23.4,
+      "ci95": [
+       24.7,
+       116.5
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -12.2,
+      "se": 22.8,
+      "ci95": [
+       -57.0,
+       32.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 42.7,
+      "se": 21.9,
+      "ci95": [
+       -0.1,
+       85.5
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 36.1,
+      "se": 21.9,
+      "ci95": [
+       -6.9,
+       79.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "ctrl10M_b",
+   "run": "ai_v12_15_ladder_ctrl10M_b",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_15_ladder_ctrl10M_b",
+   "lever": "CONTROL replicate \u2014 seed 1001",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.970250+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1720.0,
+     "6000000": 1900.8,
+     "8000016": 1949.6,
+     "10000032": 1973.7
+    },
+    "se": {
+     "4000032": 11.8,
+     "6000000": 14.0,
+     "8000016": 15.0,
+     "10000032": 15.6
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0536,
+     "max_abs_err": 0.1066,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 1973.7,
+    "se": 15.6,
+    "committed_elo": 1973.7
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1949.6,
+    "se": 15.0,
+    "committed_elo": 1949.6
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0536,
+    "max_abs_err": 0.1066,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "377a5aa170bef8bf37be2af7217bb4d4f1b20b36",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "377a5aa1",
+    "seed_in_command": "1001",
+    "seed_cli_args": 1001,
+    "seed": "1001",
+    "seed_source": "--seed in original_command",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.88,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8575,
+     0.9025
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.88,
+     "heuristic2": 0.83,
+     "staller": 0.86,
+     "staller_v2": 0.88,
+     "aggressive": 0.94,
+     "aggressive_v2": 0.85,
+     "setup_sweep": 0.89,
+     "setup_sweep_v2": 0.91
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -45.0,
+      "se": 22.9,
+      "ci95": [
+       -89.8,
+       -0.2
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -9.7,
+      "se": 22.1,
+      "ci95": [
+       -53.1,
+       33.7
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -54.9,
+      "se": 22.2,
+      "ci95": [
+       -98.5,
+       -11.3
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -6.6,
+      "se": 21.3,
+      "ci95": [
+       -48.3,
+       35.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "ctrl10M_c",
+   "run": "ai_v12_16_ladder_ctrl10M_c",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_16_ladder_ctrl10M_c",
+   "lever": "CONTROL replicate \u2014 seed 1002",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.975955+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1771.2,
+     "6000000": 1942.3,
+     "8000016": 1956.2,
+     "10000032": 1983.4
+    },
+    "se": {
+     "4000032": 12.3,
+     "6000000": 14.8,
+     "8000016": 15.1,
+     "10000032": 15.7
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0522,
+     "max_abs_err": 0.0877,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 1983.4,
+    "se": 15.7,
+    "committed_elo": 1983.4
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1956.2,
+    "se": 15.1,
+    "committed_elo": 1956.2
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0522,
+    "max_abs_err": 0.0877,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "377a5aa170bef8bf37be2af7217bb4d4f1b20b36",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "377a5aa1",
+    "seed_in_command": "1002",
+    "seed_cli_args": 1002,
+    "seed": "1002",
+    "seed_source": "--seed in original_command",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.89625,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8751,
+     0.9174
+    ],
+    "win_rate_random_excluded": 0.99,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 0.99,
+     "heuristic": 0.92,
+     "heuristic2": 0.86,
+     "staller": 0.93,
+     "staller_v2": 0.96,
+     "aggressive": 0.89,
+     "aggressive_v2": 0.87,
+     "setup_sweep": 0.88,
+     "setup_sweep_v2": 0.86
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -35.3,
+      "se": 22.9,
+      "ci95": [
+       -80.2,
+       9.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 9.7,
+      "se": 22.1,
+      "ci95": [
+       -33.7,
+       53.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -48.3,
+      "se": 22.3,
+      "ci95": [
+       -92.0,
+       -4.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 6.6,
+      "se": 21.3,
+      "ci95": [
+       -35.1,
+       48.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "strata",
+   "run": "ai_v12_17_ladder_strata",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_17_ladder_strata",
+   "lever": "--win-prob-strata-weight 1.0 (class-balanced win-prob BCE)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:08.982273+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1779.5,
+     "6000000": 1847.2,
+     "8000016": 1956.4,
+     "10000032": 1986.1
+    },
+    "se": {
+     "4000032": 12.3,
+     "6000000": 13.1,
+     "8000016": 15.1,
+     "10000032": 15.8
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0522,
+     "max_abs_err": 0.08,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 1986.1,
+    "se": 15.8,
+    "committed_elo": 1986.1
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1956.4,
+    "se": 15.1,
+    "committed_elo": 1956.4
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0522,
+    "max_abs_err": 0.08,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "f871e79fdca64d25238beb0f005c97f96c8890b6",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "f871e79f",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.8925,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.871,
+     0.914
+    ],
+    "win_rate_random_excluded": 0.99,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 0.99,
+     "heuristic": 0.92,
+     "heuristic2": 0.87,
+     "staller": 0.9,
+     "staller_v2": 0.94,
+     "aggressive": 0.93,
+     "aggressive_v2": 0.88,
+     "setup_sweep": 0.79,
+     "setup_sweep_v2": 0.91
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -32.6,
+      "se": 23.0,
+      "ci95": [
+       -77.7,
+       12.5
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 12.4,
+      "se": 22.2,
+      "ci95": [
+       -31.1,
+       55.9
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 2.7,
+      "se": 22.3,
+      "ci95": [
+       -41.0,
+       46.4
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -48.1,
+      "se": 22.3,
+      "ci95": [
+       -91.8,
+       -4.4
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 6.8,
+      "se": 21.3,
+      "ci95": [
+       -34.9,
+       48.5
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 0.2,
+      "se": 21.4,
+      "ci95": [
+       -41.7,
+       42.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "lambda09",
+   "run": "ai_v12_19_ladder_lambda09",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_19_ladder_lambda09",
+   "lever": "--win-prob-lambda 0.9 (lambda-return win-prob targets)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.004807+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1797.4,
+     "6000000": 1864.9,
+     "8000016": 1972.1,
+     "10000032": 1997.2
+    },
+    "se": {
+     "4000032": 12.5,
+     "6000000": 13.4,
+     "8000016": 15.4,
+     "10000032": 16.0
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.1125,
+     "max_abs_err": 0.194,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 5,
+   "dropped_nodes": [
+    2000016
+   ],
+   "headline": {
+    "step": 10000032,
+    "elo": 1997.2,
+    "se": 16.0,
+    "committed_elo": 2003.5
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1972.1,
+    "se": 15.4,
+    "committed_elo": 1978.6
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.1125,
+    "max_abs_err": 0.194,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "28ece02a54d382f1073922f86ac3da85ca0cb7cd",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "28ece02a",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.87875,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8561,
+     0.9014
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.88,
+     "heuristic2": 0.84,
+     "staller": 0.84,
+     "staller_v2": 0.92,
+     "aggressive": 0.91,
+     "aggressive_v2": 0.87,
+     "setup_sweep": 0.86,
+     "setup_sweep_v2": 0.91
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -21.5,
+      "se": 23.1,
+      "ci95": [
+       -66.8,
+       23.8
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 23.5,
+      "se": 22.3,
+      "ci95": [
+       -20.3,
+       67.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 13.8,
+      "se": 22.4,
+      "ci95": [
+       -30.1,
+       57.7
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -32.4,
+      "se": 22.5,
+      "ci95": [
+       -76.5,
+       11.7
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 22.5,
+      "se": 21.5,
+      "ci95": [
+       -19.6,
+       64.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 15.9,
+      "se": 21.6,
+      "ci95": [
+       -26.4,
+       58.2
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "denseaux",
+   "run": "ai_v12_20_ladder_denseaux",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_20_ladder_denseaux",
+   "lever": "--win-prob-dense-aux 1.0 (dense within-game auxiliary targets)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.011065+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1784.2,
+     "6000000": 1918.1,
+     "8000016": 2032.2,
+     "10000032": 2044.6
+    },
+    "se": {
+     "4000032": 12.6,
+     "6000000": 14.5,
+     "8000016": 17.0,
+     "10000032": 17.3
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.1086,
+     "max_abs_err": 0.1863,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 2044.6,
+    "se": 17.3,
+    "committed_elo": 2044.6
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 2032.2,
+    "se": 17.0,
+    "committed_elo": 2032.2
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.1086,
+    "max_abs_err": 0.1863,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "46ca68ef5d09bad4618db516e08cb1afae15b7e7",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "46ca68ef",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.89625,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8751,
+     0.9174
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.85,
+     "heuristic2": 0.87,
+     "staller": 0.92,
+     "staller_v2": 0.9,
+     "aggressive": 0.87,
+     "aggressive_v2": 0.89,
+     "setup_sweep": 0.93,
+     "setup_sweep_v2": 0.94
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 25.9,
+      "se": 24.0,
+      "ci95": [
+       -21.2,
+       73.0
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 70.9,
+      "se": 23.3,
+      "ci95": [
+       25.2,
+       116.6
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 61.2,
+      "se": 23.4,
+      "ci95": [
+       15.4,
+       107.0
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 27.7,
+      "se": 23.6,
+      "ci95": [
+       -18.6,
+       74.0
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 82.6,
+      "se": 22.7,
+      "ci95": [
+       38.2,
+       127.0
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 76.0,
+      "se": 22.7,
+      "ci95": [
+       31.4,
+       120.6
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "lambda09_b",
+   "run": "ai_v12_21_ladder_lambda09_b",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_21_ladder_lambda09_b",
+   "lever": "lambda-0.9 RUN-LEVEL replicate \u2014 seed 1002",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.017793+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1860.0,
+     "6000000": 1965.4,
+     "8000016": 2014.4,
+     "10000032": 2030.5
+    },
+    "se": {
+     "4000032": 13.6,
+     "6000000": 15.3,
+     "8000016": 16.3,
+     "10000032": 16.7
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0768,
+     "max_abs_err": 0.1213,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 2030.5,
+    "se": 16.7,
+    "committed_elo": 2030.5
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 2014.4,
+    "se": 16.3,
+    "committed_elo": 2014.4
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0768,
+    "max_abs_err": 0.1213,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "28ece02a54d382f1073922f86ac3da85ca0cb7cd",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "28ece02a",
+    "seed_in_command": "1002",
+    "seed_cli_args": 1002,
+    "seed": "1002",
+    "seed_source": "--seed in original_command",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.90375,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8833,
+     0.9242
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.89,
+     "heuristic2": 0.91,
+     "staller": 0.92,
+     "staller_v2": 0.89,
+     "aggressive": 0.95,
+     "aggressive_v2": 0.9,
+     "setup_sweep": 0.87,
+     "setup_sweep_v2": 0.9
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 11.8,
+      "se": 23.6,
+      "ci95": [
+       -34.5,
+       58.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 56.8,
+      "se": 22.9,
+      "ci95": [
+       12.0,
+       101.6
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 47.1,
+      "se": 22.9,
+      "ci95": [
+       2.2,
+       92.0
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 9.9,
+      "se": 23.1,
+      "ci95": [
+       -35.4,
+       55.2
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 64.8,
+      "se": 22.2,
+      "ci95": [
+       21.4,
+       108.2
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 58.2,
+      "se": 22.2,
+      "ci95": [
+       14.7,
+       101.7
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "lambda095",
+   "run": "ai_v12_22_ladder_lambda095",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_22_ladder_lambda095",
+   "lever": "--win-prob-lambda 0.95 (the middle dose rung)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.024570+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1842.8,
+     "6000000": 1917.2,
+     "8000016": 1958.5,
+     "10000032": 2032.9
+    },
+    "se": {
+     "4000032": 13.2,
+     "6000000": 14.3,
+     "8000016": 15.1,
+     "10000032": 16.8
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0949,
+     "max_abs_err": 0.1546,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 5,
+   "dropped_nodes": [
+    2000016
+   ],
+   "headline": {
+    "step": 10000032,
+    "elo": 2032.9,
+    "se": 16.8,
+    "committed_elo": 2029.8
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1958.5,
+    "se": 15.1,
+    "committed_elo": 1960.1
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0949,
+    "max_abs_err": 0.1546,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "28ece02a54d382f1073922f86ac3da85ca0cb7cd",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "28ece02a",
+    "seed_in_command": null,
+    "seed_cli_args": 42,
+    "seed": 42,
+    "seed_source": "cli_args (flagless: parser default)",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.90375,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8833,
+     0.9242
+    ],
+    "win_rate_random_excluded": 0.99,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 0.99,
+     "heuristic": 0.95,
+     "heuristic2": 0.85,
+     "staller": 0.9,
+     "staller_v2": 0.93,
+     "aggressive": 0.94,
+     "aggressive_v2": 0.87,
+     "setup_sweep": 0.92,
+     "setup_sweep_v2": 0.87
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 14.2,
+      "se": 23.7,
+      "ci95": [
+       -32.2,
+       60.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 59.2,
+      "se": 22.9,
+      "ci95": [
+       14.3,
+       104.1
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 49.5,
+      "se": 23.0,
+      "ci95": [
+       4.4,
+       94.6
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -46.0,
+      "se": 22.3,
+      "ci95": [
+       -89.7,
+       -2.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 8.9,
+      "se": 21.3,
+      "ci95": [
+       -32.8,
+       50.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 2.3,
+      "se": 21.4,
+      "ci95": [
+       -39.6,
+       44.2
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "rollout",
+   "run": "ai_v12_23_ladder_rollout",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_23_ladder_rollout",
+   "lever": "--win-prob-rollout-target --win-prob-rollout-weight 64 (anchored rollout labels)",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.031015+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1806.4,
+     "6000000": 1883.2,
+     "8000016": 1977.9,
+     "10000032": 2062.3
+    },
+    "se": {
+     "4000032": 12.8,
+     "6000000": 13.8,
+     "8000016": 15.6,
+     "10000032": 17.8
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.1117,
+     "max_abs_err": 0.1712,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 5,
+   "dropped_nodes": [
+    2000016
+   ],
+   "headline": {
+    "step": 10000032,
+    "elo": 2062.3,
+    "se": 17.8,
+    "committed_elo": 2067.1
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1977.9,
+    "se": 15.6,
+    "committed_elo": 1989.0
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.1117,
+    "max_abs_err": 0.1712,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "40bf23d97cdc7f1d2a9d569891d56f909bdf9902",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "40bf23d9",
+    "seed_in_command": "1003",
+    "seed_cli_args": 1003,
+    "seed": "1003",
+    "seed_source": "--seed in original_command",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.91,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8902,
+     0.9298
+    ],
+    "win_rate_random_excluded": 0.99,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 0.99,
+     "heuristic": 0.91,
+     "heuristic2": 0.9,
+     "staller": 0.9,
+     "staller_v2": 0.92,
+     "aggressive": 0.97,
+     "aggressive_v2": 0.89,
+     "setup_sweep": 0.91,
+     "setup_sweep_v2": 0.88
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": 43.6,
+      "se": 24.4,
+      "ci95": [
+       -4.2,
+       91.4
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 88.6,
+      "se": 23.7,
+      "ci95": [
+       42.2,
+       135.0
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 78.9,
+      "se": 23.7,
+      "ci95": [
+       32.4,
+       125.4
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -26.6,
+      "se": 22.6,
+      "ci95": [
+       -71.0,
+       17.8
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 28.3,
+      "se": 21.6,
+      "ci95": [
+       -14.1,
+       70.7
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": 21.7,
+      "se": 21.7,
+      "ci95": [
+       -20.9,
+       64.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "strata_b",
+   "run": "ai_v12_24_ladder_strata_b",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_24_ladder_strata_b",
+   "lever": "strata RUN-LEVEL replicate \u2014 seed 1002",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.037438+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1754.7,
+     "6000000": 1880.1,
+     "8000016": 1955.6,
+     "10000032": 1928.0
+    },
+    "se": {
+     "4000032": 12.0,
+     "6000000": 13.6,
+     "8000016": 15.0,
+     "10000032": 14.4
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.085,
+     "max_abs_err": 0.1216,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 1928.0,
+    "se": 14.4,
+    "committed_elo": 1928.0
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1955.6,
+    "se": 15.0,
+    "committed_elo": 1955.6
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.085,
+    "max_abs_err": 0.1216,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "f871e79fdca64d25238beb0f005c97f96c8890b6",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "f871e79f",
+    "seed_in_command": "1002",
+    "seed_cli_args": 1002,
+    "seed": "1002",
+    "seed_source": "--seed in original_command",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.83875,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8133,
+     0.8642
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.87,
+     "heuristic2": 0.78,
+     "staller": 0.79,
+     "staller_v2": 0.88,
+     "aggressive": 0.89,
+     "aggressive_v2": 0.85,
+     "setup_sweep": 0.84,
+     "setup_sweep_v2": 0.81
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -90.7,
+      "se": 22.1,
+      "ci95": [
+       -133.9,
+       -47.5
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": true
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": -45.7,
+      "se": 21.2,
+      "ci95": [
+       -87.3,
+       -4.1
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -55.4,
+      "se": 21.3,
+      "ci95": [
+       -97.2,
+       -13.6
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": true,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "CANDIDATE (point clears all three, no delta CI does)"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -48.9,
+      "se": 22.2,
+      "ci95": [
+       -92.5,
+       -5.3
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": 6.0,
+      "se": 21.2,
+      "ci95": [
+       -35.6,
+       47.6
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -0.6,
+      "se": 21.3,
+      "ci95": [
+       -42.3,
+       41.1
+      ],
+      "abs_gt_floor": false,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": false,
+    "clause2_same_sign": false,
+    "clause3_delta_ci": false,
+    "verdict": "WITHIN FLOOR \u2014 NOT DETECTED"
+   }
+  },
+  {
+   "label": "vf15_b",
+   "run": "ai_v12_25_ladder_vf15_b",
+   "run_dir": "/home/goodlad/dev/gen3ai/models/ai_v12_25_ladder_vf15_b",
+   "lever": "vf-1.5 RUN-LEVEL replicate \u2014 seed 1001",
+   "refit": {
+    "version": 1,
+    "computed_at": "2026-09-12T15:09:09.054610+00:00",
+    "base": 1000.0,
+    "anchored_to_bots": true,
+    "converged": true,
+    "n_frozen_pairs_measured": 6,
+    "first_n": 4,
+    "eval_sentinel_edges_dropped": 6,
+    "pairs_by_source": {
+     "eval_cycle": 6
+    },
+    "n_pairs_possible": 6,
+    "ratings": {
+     "4000032": 1663.6,
+     "6000000": 1777.0,
+     "8000016": 1871.1,
+     "10000032": 1916.8
+    },
+    "se": {
+     "4000032": 11.2,
+     "6000000": 12.0,
+     "8000016": 13.4,
+     "10000032": 14.4
+    },
+    "fit_quality": {
+     "mean_abs_err": 0.0416,
+     "max_abs_err": 0.099,
+     "n_frozen_pairs": 6
+    }
+   },
+   "n_nodes_committed": 4,
+   "dropped_nodes": [],
+   "headline": {
+    "step": 10000032,
+    "elo": 1916.8,
+    "se": 14.4,
+    "committed_elo": 1916.8
+   },
+   "crosscheck": {
+    "step": 8000016,
+    "elo": 1871.1,
+    "se": 13.4,
+    "committed_elo": 1871.1
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0416,
+    "max_abs_err": 0.099,
+    "n_frozen_pairs": 6
+   },
+   "n_frozen_pairs": 6,
+   "n_pairs_possible": 6,
+   "eval_sentinel_edges_dropped": 6,
+   "desc": {
+    "eval_sentinel_greedy": true,
+    "pin": [
+     {
+      "git_hash": "f3502568b5fa8133bb360979755ca6787ed008aa",
+      "pin_source": "pin_commit",
+      "first_step": 0,
+      "last_step": 10027008
+     }
+    ],
+    "pin_short": "f3502568",
+    "seed_in_command": "1001",
+    "seed_cli_args": 1001,
+    "seed": "1001",
+    "seed_source": "--seed in original_command",
+    "num_timesteps": 10027008,
+    "eval_row_step": 10000032,
+    "win_rate_vs_bots": 0.83875,
+    "win_rate_vs_bots_n_games": 800,
+    "win_rate_vs_bots_n_bots": 8,
+    "win_rate_vs_bots_ci95": [
+     0.8133,
+     0.8642
+    ],
+    "win_rate_random_excluded": 1.0,
+    "sentinel_regime_row": {
+     "greedy": true,
+     "symmetric_teams": true
+    },
+    "bots_at_10M": {
+     "random": 1.0,
+     "heuristic": 0.78,
+     "heuristic2": 0.84,
+     "staller": 0.89,
+     "staller_v2": 0.82,
+     "aggressive": 0.93,
+     "aggressive_v2": 0.77,
+     "setup_sweep": 0.83,
+     "setup_sweep_v2": 0.85
+    }
+   },
+   "verdict_headline": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -101.9,
+      "se": 22.1,
+      "ci95": [
+       -145.1,
+       -58.7
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": true
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": -56.9,
+      "se": 21.2,
+      "ci95": [
+       -98.5,
+       -15.3
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -66.6,
+      "se": 21.3,
+      "ci95": [
+       -108.4,
+       -24.8
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": true,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "CANDIDATE (point clears all three, no delta CI does)"
+   },
+   "verdict_crosscheck": {
+    "deltas": [
+     {
+      "control": "ctrl10M",
+      "delta": -133.4,
+      "se": 21.2,
+      "ci95": [
+       -174.9,
+       -91.9
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": true
+     },
+     {
+      "control": "ctrl10M_b",
+      "delta": -78.5,
+      "se": 20.1,
+      "ci95": [
+       -117.9,
+       -39.1
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     },
+     {
+      "control": "ctrl10M_c",
+      "delta": -85.1,
+      "se": 20.2,
+      "ci95": [
+       -124.7,
+       -45.5
+      ],
+      "abs_gt_floor": true,
+      "ci_clears_floor": false
+     }
+    ],
+    "clause1_all_three_points": true,
+    "clause2_same_sign": true,
+    "clause3_delta_ci": false,
+    "verdict": "CANDIDATE (point clears all three, no delta CI does)"
+   }
+  }
+ ],
+ "committed_ladders": {
+  "vf15": {
+   "version": 1,
+   "computed_at": "2026-09-09T00:20:41.705854+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1652.5,
+    "6000000": 1815.0,
+    "8000016": 1910.2,
+    "10000032": 1999.4
+   },
+   "se": {
+    "4000032": 11.4,
+    "6000000": 12.7,
+    "8000016": 14.4,
+    "10000032": 16.6
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0957,
+    "max_abs_err": 0.1563,
+    "n_frozen_pairs": 6
+   }
+  },
+  "ctrl10M": {
+   "version": 1,
+   "computed_at": "2026-09-09T04:51:22.067814+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1742.2,
+    "6000000": 1895.6,
+    "8000016": 2004.5,
+    "10000032": 2018.7
+   },
+   "se": {
+    "4000032": 12.1,
+    "6000000": 14.1,
+    "8000016": 16.4,
+    "10000032": 16.7
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0851,
+    "max_abs_err": 0.1682,
+    "n_frozen_pairs": 6
+   }
+  },
+  "cflabels": {
+   "version": 1,
+   "computed_at": "2026-09-09T14:53:29.764080+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1779.9,
+    "6000000": 1883.6,
+    "8000016": 1975.9,
+    "10000032": 2021.1
+   },
+   "se": {
+    "4000032": 12.4,
+    "6000000": 13.8,
+    "8000016": 15.6,
+    "10000032": 16.7
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0828,
+    "max_abs_err": 0.1445,
+    "n_frozen_pairs": 6
+   }
+  },
+  "tdaux": {
+   "version": 1,
+   "computed_at": "2026-09-09T10:02:18.646362+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1738.7,
+    "6000000": 1929.7,
+    "8000016": 1987.7,
+    "10000032": 2034.7
+   },
+   "se": {
+    "4000032": 12.1,
+    "6000000": 14.7,
+    "8000016": 16.0,
+    "10000032": 17.1
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.1066,
+    "max_abs_err": 0.1734,
+    "n_frozen_pairs": 6
+   }
+  },
+  "truevalue": {
+   "version": 1,
+   "computed_at": "2026-09-10T16:47:46.083072+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1831.7,
+    "6000000": 1944.8,
+    "8000016": 1992.3,
+    "10000032": 2054.0
+   },
+   "se": {
+    "4000032": 13.2,
+    "6000000": 15.0,
+    "8000016": 15.9,
+    "10000032": 17.4
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0878,
+    "max_abs_err": 0.1676,
+    "n_frozen_pairs": 6
+   }
+  },
+  "ctrl10M_b": {
+   "version": 1,
+   "computed_at": "2026-09-09T19:12:03.939681+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1720.0,
+    "6000000": 1900.8,
+    "8000016": 1949.6,
+    "10000032": 1973.7
+   },
+   "se": {
+    "4000032": 11.8,
+    "6000000": 14.0,
+    "8000016": 15.0,
+    "10000032": 15.6
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0536,
+    "max_abs_err": 0.1066,
+    "n_frozen_pairs": 6
+   }
+  },
+  "ctrl10M_c": {
+   "version": 1,
+   "computed_at": "2026-09-10T05:45:32.617811+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1771.2,
+    "6000000": 1942.3,
+    "8000016": 1956.2,
+    "10000032": 1983.4
+   },
+   "se": {
+    "4000032": 12.3,
+    "6000000": 14.8,
+    "8000016": 15.1,
+    "10000032": 15.7
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0522,
+    "max_abs_err": 0.0877,
+    "n_frozen_pairs": 6
+   }
+  },
+  "strata": {
+   "version": 1,
+   "computed_at": "2026-09-10T00:11:04.971355+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1779.5,
+    "6000000": 1847.2,
+    "8000016": 1956.4,
+    "10000032": 1986.1
+   },
+   "se": {
+    "4000032": 12.3,
+    "6000000": 13.1,
+    "8000016": 15.1,
+    "10000032": 15.8
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0522,
+    "max_abs_err": 0.08,
+    "n_frozen_pairs": 6
+   }
+  },
+  "lambda09": {
+   "version": 1,
+   "computed_at": "2026-09-10T11:07:06.806991+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 10,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 10,
+   "pairs_by_source": {
+    "eval_cycle": 10
+   },
+   "n_pairs_possible": 10,
+   "ratings": {
+    "2000016": 1630.4,
+    "4000032": 1800.6,
+    "6000000": 1872.5,
+    "8000016": 1978.6,
+    "10000032": 2003.5
+   },
+   "se": {
+    "2000016": 11.1,
+    "4000032": 12.0,
+    "6000000": 13.0,
+    "8000016": 14.9,
+    "10000032": 15.5
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.079,
+    "max_abs_err": 0.1879,
+    "n_frozen_pairs": 10
+   }
+  },
+  "denseaux": {
+   "version": 1,
+   "computed_at": "2026-09-10T23:38:56.286143+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1784.2,
+    "6000000": 1918.1,
+    "8000016": 2032.2,
+    "10000032": 2044.6
+   },
+   "se": {
+    "4000032": 12.6,
+    "6000000": 14.5,
+    "8000016": 17.0,
+    "10000032": 17.3
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.1086,
+    "max_abs_err": 0.1863,
+    "n_frozen_pairs": 6
+   }
+  },
+  "lambda09_b": {
+   "version": 1,
+   "computed_at": "2026-09-11T05:09:28.024167+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1860.0,
+    "6000000": 1965.4,
+    "8000016": 2014.4,
+    "10000032": 2030.5
+   },
+   "se": {
+    "4000032": 13.6,
+    "6000000": 15.3,
+    "8000016": 16.3,
+    "10000032": 16.7
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0768,
+    "max_abs_err": 0.1213,
+    "n_frozen_pairs": 6
+   }
+  },
+  "lambda095": {
+   "version": 1,
+   "computed_at": "2026-09-11T10:29:41.953445+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 10,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 10,
+   "pairs_by_source": {
+    "eval_cycle": 10
+   },
+   "n_pairs_possible": 10,
+   "ratings": {
+    "2000016": 1636.3,
+    "4000032": 1847.8,
+    "6000000": 1922.2,
+    "8000016": 1960.1,
+    "10000032": 2029.8
+   },
+   "se": {
+    "2000016": 11.2,
+    "4000032": 12.7,
+    "6000000": 13.8,
+    "8000016": 14.5,
+    "10000032": 16.0
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0735,
+    "max_abs_err": 0.1546,
+    "n_frozen_pairs": 10
+   }
+  },
+  "rollout": {
+   "version": 1,
+   "computed_at": "2026-09-11T17:46:56.699231+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 10,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 10,
+   "pairs_by_source": {
+    "eval_cycle": 10
+   },
+   "n_pairs_possible": 10,
+   "ratings": {
+    "2000016": 1644.2,
+    "4000032": 1821.1,
+    "6000000": 1892.8,
+    "8000016": 1989.0,
+    "10000032": 2067.1
+   },
+   "se": {
+    "2000016": 11.2,
+    "4000032": 12.4,
+    "6000000": 13.4,
+    "8000016": 15.2,
+    "10000032": 17.2
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.095,
+    "max_abs_err": 0.1783,
+    "n_frozen_pairs": 10
+   }
+  },
+  "strata_b": {
+   "version": 1,
+   "computed_at": "2026-09-12T03:43:21.348150+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1754.7,
+    "6000000": 1880.1,
+    "8000016": 1955.6,
+    "10000032": 1928.0
+   },
+   "se": {
+    "4000032": 12.0,
+    "6000000": 13.6,
+    "8000016": 15.0,
+    "10000032": 14.4
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.085,
+    "max_abs_err": 0.1216,
+    "n_frozen_pairs": 6
+   }
+  },
+  "vf15_b": {
+   "version": 1,
+   "computed_at": "2026-09-12T13:22:42.076619+00:00",
+   "base": 1000.0,
+   "anchored_to_bots": true,
+   "converged": true,
+   "n_frozen_pairs_measured": 6,
+   "first_n": null,
+   "eval_sentinel_edges_dropped": 6,
+   "pairs_by_source": {
+    "eval_cycle": 6
+   },
+   "n_pairs_possible": 6,
+   "ratings": {
+    "4000032": 1663.6,
+    "6000000": 1777.0,
+    "8000016": 1871.1,
+    "10000032": 1916.8
+   },
+   "se": {
+    "4000032": 11.2,
+    "6000000": 12.0,
+    "8000016": 13.4,
+    "10000032": 14.4
+   },
+   "fit_quality": {
+    "mean_abs_err": 0.0416,
+    "max_abs_err": 0.099,
+    "n_frozen_pairs": 6
+   }
+  }
+ }
+}

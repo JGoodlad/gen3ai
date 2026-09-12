@@ -1,0 +1,46 @@
+MATCHED COUNT 4 over the COMMON step set [4000032, 6000000, 8000016, 10000032]
+headline node = 10000032   cross-check node = 8000016
+FLOOR (headline) = 45.0 Elo   |   FLOOR (cross-check) = 54.9 Elo
+   control pair ctrl10M - ctrl10M_b        Δ   +45.0  se 22.9  CI [0.2, 89.8]
+   control pair ctrl10M - ctrl10M_c        Δ   +35.3  se 22.9  CI [-9.6, 80.2]
+   control pair ctrl10M_b - ctrl10M_c      Δ    -9.7  se 22.1  CI [-53.1, 33.7]
+
+arm           Elo@10M    se committed |   Δ ctrl  Δ ctrl_b  Δ ctrl_c  se(Δ) CI95 halfwidth |  Elo@8M | wr_bots greedy       pin  seed  verdict
+----------------------------------------------------------------------------------------------------------------------------------------------
+rollout        2062.3  17.8    2067.1 |    +43.6     +88.6     +78.9   24.4           +-48 |  1977.9 |   0.910   True  40bf23d9  1003  WITHIN FLOOR — NOT DETECTED
+truevalue      2054.0  17.4    2054.0 |    +35.3     +80.3     +70.6   24.1           +-47 |  1992.3 |   0.901   True  d11386dc    42  WITHIN FLOOR — NOT DETECTED
+denseaux       2044.6  17.3    2044.6 |    +25.9     +70.9     +61.2   24.0           +-47 |  2032.2 |   0.896   True  46ca68ef    42  WITHIN FLOOR — NOT DETECTED
+tdaux          2034.7  17.1    2034.7 |    +16.0     +61.0     +51.3   23.9           +-47 |  1987.7 |   0.885   True  f3502568    42  WITHIN FLOOR — NOT DETECTED
+lambda095      2032.9  16.8    2029.8 |    +14.2     +59.2     +49.5   23.7           +-46 |  1958.5 |   0.904   True  28ece02a    42  WITHIN FLOOR — NOT DETECTED
+lambda09_b     2030.5  16.7    2030.5 |    +11.8     +56.8     +47.1   23.6           +-46 |  2014.4 |   0.904   True  28ece02a  1002  WITHIN FLOOR — NOT DETECTED
+cflabels       2021.1  16.7    2021.1 |     +2.4     +47.4     +37.7   23.6           +-46 |  1975.9 |   0.899   True  377a5aa1    42  WITHIN FLOOR — NOT DETECTED
+ctrl10M        2018.7  16.7    2018.7 |      —       +45.0     +35.3   22.9           +-45 |  2004.5 |   0.899   True  f3502568    42  WITHIN FLOOR — NOT DETECTED
+vf15           1999.4  16.6    1999.4 |    -19.3     +25.7     +16.0   23.5           +-46 |  1910.2 |   0.880   True  f3502568    42  WITHIN FLOOR — NOT DETECTED
+lambda09       1997.2  16.0    2003.5 |    -21.5     +23.5     +13.8   23.1           +-45 |  1972.1 |   0.879   True  28ece02a    42  WITHIN FLOOR — NOT DETECTED
+strata         1986.1  15.8    1986.1 |    -32.6     +12.4      +2.7   23.0           +-45 |  1956.4 |   0.892   True  f871e79f    42  WITHIN FLOOR — NOT DETECTED
+ctrl10M_c      1983.4  15.7    1983.4 |    -35.3      +9.7       —     22.9           +-45 |  1956.2 |   0.896   True  377a5aa1  1002  WITHIN FLOOR — NOT DETECTED
+ctrl10M_b      1973.7  15.6    1973.7 |    -45.0       —        -9.7   22.9           +-45 |  1949.6 |   0.880   True  377a5aa1  1001  WITHIN FLOOR — NOT DETECTED
+strata_b       1928.0  14.4    1928.0 |    -90.7     -45.7     -55.4   22.1           +-43 |  1955.6 |   0.839   True  f871e79f  1002  CANDIDATE (point clears all three, no delta CI does)
+vf15_b         1916.8  14.4    1916.8 |   -101.9     -56.9     -66.6   22.1           +-43 |  1871.1 |   0.839   True  f3502568  1001  CANDIDATE (point clears all three, no delta CI does)
+
+CROSS-CHECK ROW — the 8000016 node of the SAME four-node fit (second-newest; floor 54.9 Elo)
+arm            Elo@8M    se |   Δ ctrl  Δ ctrl_b  Δ ctrl_c  se(Δ) |  verdict
+----------------------------------------------------------------------------
+denseaux       2032.2  17.0 |    +27.7     +82.6     +76.0   23.6 |  WITHIN FLOOR — NOT DETECTED
+lambda09_b     2014.4  16.3 |     +9.9     +64.8     +58.2   23.1 |  WITHIN FLOOR — NOT DETECTED
+ctrl10M        2004.5  16.4 |      —       +54.9     +48.3   22.2 |  WITHIN FLOOR — NOT DETECTED
+truevalue      1992.3  15.9 |    -12.2     +42.7     +36.1   22.8 |  WITHIN FLOOR — NOT DETECTED
+tdaux          1987.7  16.0 |    -16.8     +38.1     +31.5   22.9 |  WITHIN FLOOR — NOT DETECTED
+rollout        1977.9  15.6 |    -26.6     +28.3     +21.7   22.6 |  WITHIN FLOOR — NOT DETECTED
+cflabels       1975.9  15.6 |    -28.6     +26.3     +19.7   22.6 |  WITHIN FLOOR — NOT DETECTED
+lambda09       1972.1  15.4 |    -32.4     +22.5     +15.9   22.5 |  WITHIN FLOOR — NOT DETECTED
+lambda095      1958.5  15.1 |    -46.0      +8.9      +2.3   22.3 |  WITHIN FLOOR — NOT DETECTED
+strata         1956.4  15.1 |    -48.1      +6.8      +0.2   22.3 |  WITHIN FLOOR — NOT DETECTED
+ctrl10M_c      1956.2  15.1 |    -48.3      +6.6       —     22.3 |  WITHIN FLOOR — NOT DETECTED
+strata_b       1955.6  15.0 |    -48.9      +6.0      -0.6   22.2 |  WITHIN FLOOR — NOT DETECTED
+ctrl10M_b      1949.6  15.0 |    -54.9       —        -6.6   22.2 |  WITHIN FLOOR — NOT DETECTED
+vf15           1910.2  14.4 |    -94.3     -39.4     -46.0   21.8 |  WITHIN FLOOR — NOT DETECTED
+vf15_b         1871.1  13.4 |   -133.4     -78.5     -85.1   21.2 |  CANDIDATE (point clears all three, no delta CI does)
+
+Elo range across the fifteen arms: 145.5 (10M) / 161.1 (8M)
+Spearman rank corr (10M row vs 8M row, n=15): 0.775

@@ -1,0 +1,219 @@
+{
+ "note": "POST-HOC observations, not pre-registered rows",
+ "A_bot_row_is_an_input": {
+  "pearson_elo_vs_win_rate_vs_bots": 0.8893,
+  "spearman_elo_vs_win_rate_vs_bots": 0.7677,
+  "win_rate_vs_bots_range": [
+   0.83875,
+   0.91
+  ],
+  "mechanism": "snapshot_ladder.fit_ladder folds each snapshot's HISTORICAL BOT EDGES into the fit as source (2) \u2014 they are what pins the absolute scale. So a run's bot performance is not an independent descriptor of its ladder rating; it is one of the two inputs the rating is solved from (the other being the dense frozen-vs-frozen matrix). A high correlation here is partly MECHANICAL and must never be read as two instruments agreeing."
+ },
+ "B_within_lever_spread": {
+  "floor": 45.0,
+  "pairs": [
+   {
+    "pair": "vf15 - vf15_b",
+    "delta": 82.6,
+    "abs": 82.6,
+    "x_over_floor": 1.84,
+    "se": 22.0,
+    "ci95": [
+     39.5,
+     125.7
+    ],
+    "same_pin": true,
+    "pins": [
+     "f3502568",
+     "f3502568"
+    ],
+    "seeds": [
+     42,
+     "1001"
+    ]
+   },
+   {
+    "pair": "strata - strata_b",
+    "delta": 58.1,
+    "abs": 58.1,
+    "x_over_floor": 1.29,
+    "se": 21.4,
+    "ci95": [
+     16.2,
+     100.0
+    ],
+    "same_pin": true,
+    "pins": [
+     "f871e79f",
+     "f871e79f"
+    ],
+    "seeds": [
+     42,
+     "1002"
+    ]
+   },
+   {
+    "pair": "lambda09 - lambda09_b",
+    "delta": -33.3,
+    "abs": 33.3,
+    "x_over_floor": 0.74,
+    "se": 23.1,
+    "ci95": [
+     -78.6,
+     12.0
+    ],
+    "same_pin": true,
+    "pins": [
+     "28ece02a",
+     "28ece02a"
+    ],
+    "seeds": [
+     42,
+     "1002"
+    ]
+   },
+   {
+    "pair": "ctrl10M_b - ctrl10M_c",
+    "delta": -9.7,
+    "abs": 9.7,
+    "x_over_floor": 0.22,
+    "se": 22.1,
+    "ci95": [
+     -53.1,
+     33.7
+    ],
+    "same_pin": true,
+    "pins": [
+     "377a5aa1",
+     "377a5aa1"
+    ],
+    "seeds": [
+     "1001",
+     "1002"
+    ]
+   }
+  ]
+ },
+ "C_control_pairs_by_pin": [
+  {
+   "pair": "ctrl10M - ctrl10M_b",
+   "abs": 45.0,
+   "se": 22.9,
+   "same_pin": false,
+   "pins": [
+    "f3502568",
+    "377a5aa1"
+   ],
+   "seeds": [
+    42,
+    "1001"
+   ]
+  },
+  {
+   "pair": "ctrl10M - ctrl10M_c",
+   "abs": 35.3,
+   "se": 22.9,
+   "same_pin": false,
+   "pins": [
+    "f3502568",
+    "377a5aa1"
+   ],
+   "seeds": [
+    42,
+    "1002"
+   ]
+  },
+  {
+   "pair": "ctrl10M_b - ctrl10M_c",
+   "abs": 9.7,
+   "se": 22.1,
+   "same_pin": true,
+   "pins": [
+    "377a5aa1",
+    "377a5aa1"
+   ],
+   "seeds": [
+    "1001",
+    "1002"
+   ]
+  }
+ ],
+ "C_note": "The two control pairs that CROSS the f3502568 -> 377a5aa1 pin boundary read 35.3 and 45.0; the one SAME-PIN pair (ctrl10M_b vs ctrl10M_c, seeds 1001/1002) reads 9.7. With se(Delta) = 22.9 on every pair, 9.7 and 45.0 are NOT distinguishable, so this is an OBSERVATION with the seed lottery fully open, never a pin effect. It does say the 45.0 floor bounds run-to-run variance INCLUDING a code increment, which makes it conservative for a same-pin comparison - and rule 3 (max pairwise) wants exactly that bar.",
+ "pins_by_arm": {
+  "vf15": {
+   "pin": "f3502568",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "ctrl10M": {
+   "pin": "f3502568",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "cflabels": {
+   "pin": "377a5aa1",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "tdaux": {
+   "pin": "f3502568",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "truevalue": {
+   "pin": "d11386dc",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "ctrl10M_b": {
+   "pin": "377a5aa1",
+   "seed": "1001",
+   "seed_source": "--seed in original_command"
+  },
+  "ctrl10M_c": {
+   "pin": "377a5aa1",
+   "seed": "1002",
+   "seed_source": "--seed in original_command"
+  },
+  "strata": {
+   "pin": "f871e79f",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "lambda09": {
+   "pin": "28ece02a",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "denseaux": {
+   "pin": "46ca68ef",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "lambda09_b": {
+   "pin": "28ece02a",
+   "seed": "1002",
+   "seed_source": "--seed in original_command"
+  },
+  "lambda095": {
+   "pin": "28ece02a",
+   "seed": 42,
+   "seed_source": "cli_args (flagless: parser default)"
+  },
+  "rollout": {
+   "pin": "40bf23d9",
+   "seed": "1003",
+   "seed_source": "--seed in original_command"
+  },
+  "strata_b": {
+   "pin": "f871e79f",
+   "seed": "1002",
+   "seed_source": "--seed in original_command"
+  },
+  "vf15_b": {
+   "pin": "f3502568",
+   "seed": "1001",
+   "seed_source": "--seed in original_command"
+  }
+ }
+}
