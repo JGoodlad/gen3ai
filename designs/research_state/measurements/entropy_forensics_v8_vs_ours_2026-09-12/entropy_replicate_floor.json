@@ -1,0 +1,32 @@
+{
+  "recipe": "ai_v12_11 / _15_b / _16_c \u2014 the 10M win-prob ladder CONTROL, seed replicates",
+  "arms": [
+    {
+      "run": "ai_v12_11_ladder_ctrl10M",
+      "H_start": 1.6723,
+      "H_end": 0.7513,
+      "H_min": 0.6966,
+      "step_last": 10027008,
+      "late_slope": 0.002689
+    },
+    {
+      "run": "ai_v12_15_ladder_ctrl10M_b",
+      "H_start": 1.6649,
+      "H_end": 0.825,
+      "H_min": 0.7611,
+      "step_last": 10027008,
+      "late_slope": 0.01513
+    },
+    {
+      "run": "ai_v12_16_ladder_ctrl10M_c",
+      "H_start": 1.6706,
+      "H_end": 0.7719,
+      "H_min": 0.7281,
+      "step_last": 10027008,
+      "late_slope": 0.005105
+    }
+  ],
+  "floor_H_start_nats": 0.0074,
+  "floor_H_end_nats": 0.0737,
+  "floor_H_min_nats": 0.0645
+}

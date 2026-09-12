@@ -1,0 +1,736 @@
+[
+  {
+    "run": "ai_v8_01_zarch_film_0717",
+    "status": "NO ladder.json \u2014 this run has no dense ladder"
+  },
+  {
+    "run": "ai_v8_03_zarch_control_0718",
+    "era": "v8",
+    "status": "OK",
+    "ladder_version": 1,
+    "base": 1000.0,
+    "converged": true,
+    "anchored_to_bots": true,
+    "n_frozen_pairs_measured": 45,
+    "eval_sentinel_edges_dropped": null,
+    "fork_step": 148401356,
+    "n_nodes_in_file": 10,
+    "n_nodes_own": 10,
+    "n_nodes_inherited_from_parent": 0,
+    "nodes": [
+      {
+        "step": 150858957,
+        "rating": 1976.7,
+        "se": 4.8
+      },
+      {
+        "step": 176000001,
+        "rating": 1949.0,
+        "se": 5.2
+      },
+      {
+        "step": 184000012,
+        "rating": 1956.8,
+        "se": 5.3
+      },
+      {
+        "step": 192000006,
+        "rating": 1981.6,
+        "se": 5.4
+      },
+      {
+        "step": 198000000,
+        "rating": 1996.7,
+        "se": 5.5
+      },
+      {
+        "step": 208000004,
+        "rating": 1997.6,
+        "se": 5.7
+      },
+      {
+        "step": 210000012,
+        "rating": 2007.1,
+        "se": 5.7
+      },
+      {
+        "step": 224000022,
+        "rating": 2014.8,
+        "se": 6.0
+      },
+      {
+        "step": 242000001,
+        "rating": 2017.6,
+        "se": 6.0
+      },
+      {
+        "step": 248000024,
+        "rating": 2026.7,
+        "se": 6.2
+      }
+    ],
+    "slopes": {
+      "with_newest": {
+        "n_nodes": 10,
+        "step_span_M": [
+          150.86,
+          248.0
+        ],
+        "full": {
+          "n": 10,
+          "slope_elo_per_Mstep": 0.7,
+          "se": 0.176,
+          "se_analytic": 0.061,
+          "se_resid": 0.176,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 4,
+          "slope_elo_per_Mstep": 0.436,
+          "se": 0.197,
+          "se_analytic": 0.197,
+          "se_resid": 0.111,
+          "verdict": "RISING"
+        },
+        "late_window": [
+          210000012,
+          248000024
+        ],
+        "middle": {
+          "n": 4,
+          "slope_elo_per_Mstep": 1.118,
+          "se": 0.394,
+          "se_analytic": 0.377,
+          "se_resid": 0.394,
+          "verdict": "RISING"
+        },
+        "middle_window": [
+          192000006,
+          210000012
+        ],
+        "late_minus_middle": {
+          "delta": -0.682,
+          "se": 0.44,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "total_elo_change": 50.0
+      },
+      "drop_newest": {
+        "n_nodes": 9,
+        "step_span_M": [
+          150.86,
+          242.0
+        ],
+        "full": {
+          "n": 9,
+          "slope_elo_per_Mstep": 0.679,
+          "se": 0.217,
+          "se_analytic": 0.071,
+          "se_resid": 0.217,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 3,
+          "slope_elo_per_Mstep": 0.324,
+          "se": 0.258,
+          "se_analytic": 0.258,
+          "se_resid": 0.11,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "late_window": [
+          210000012,
+          242000001
+        ],
+        "middle": {
+          "n": 3,
+          "slope_elo_per_Mstep": 0.926,
+          "se": 0.653,
+          "se_analytic": 0.488,
+          "se_resid": 0.653,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "middle_window": [
+          192000006,
+          208000004
+        ],
+        "late_minus_middle": {
+          "delta": -0.602,
+          "se": 0.702,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "total_elo_change": 40.9
+      }
+    }
+  },
+  {
+    "run": "ai_v8_04_distill_4teacher_0722",
+    "status": "NO ladder.json \u2014 this run has no dense ladder"
+  },
+  {
+    "run": "ai_v8_14_distill3_0725",
+    "era": "v8",
+    "status": "OK",
+    "ladder_version": 1,
+    "base": 1000.0,
+    "converged": true,
+    "anchored_to_bots": true,
+    "n_frozen_pairs_measured": 1,
+    "eval_sentinel_edges_dropped": null,
+    "fork_step": 277583267,
+    "n_nodes_in_file": 2,
+    "n_nodes_own": 2,
+    "n_nodes_inherited_from_parent": 0,
+    "nodes": [
+      {
+        "step": 278000007,
+        "rating": 2015.6,
+        "se": 9.0
+      },
+      {
+        "step": 292000005,
+        "rating": 2049.1,
+        "se": 13.7
+      }
+    ],
+    "slopes": {
+      "status": "REFUSED \u2014 2 own node(s); a slope needs >= 4 (3 after the newest is dropped for \u00a73.2 rule 2)"
+    }
+  },
+  {
+    "run": "ai_v9_29_rev1_0823",
+    "era": "gen",
+    "status": "OK",
+    "ladder_version": 1,
+    "base": 1000.0,
+    "converged": true,
+    "anchored_to_bots": true,
+    "n_frozen_pairs_measured": 66,
+    "eval_sentinel_edges_dropped": null,
+    "fork_step": 0,
+    "n_nodes_in_file": 12,
+    "n_nodes_own": 12,
+    "n_nodes_inherited_from_parent": 0,
+    "nodes": [
+      {
+        "step": 2000016,
+        "rating": 1692.5,
+        "se": 9.1
+      },
+      {
+        "step": 4000032,
+        "rating": 1879.0,
+        "se": 9.4
+      },
+      {
+        "step": 6000000,
+        "rating": 1917.3,
+        "se": 9.1
+      },
+      {
+        "step": 8000016,
+        "rating": 1957.9,
+        "se": 9.4
+      },
+      {
+        "step": 10000032,
+        "rating": 2016.4,
+        "se": 9.6
+      },
+      {
+        "step": 12000000,
+        "rating": 2032.6,
+        "se": 9.5
+      },
+      {
+        "step": 14000016,
+        "rating": 2044.9,
+        "se": 9.9
+      },
+      {
+        "step": 16000032,
+        "rating": 2066.9,
+        "se": 10.0
+      },
+      {
+        "step": 18000000,
+        "rating": 2057.8,
+        "se": 9.9
+      },
+      {
+        "step": 20000016,
+        "rating": 2068.9,
+        "se": 10.2
+      },
+      {
+        "step": 22000032,
+        "rating": 2083.2,
+        "se": 10.3
+      },
+      {
+        "step": 24000000,
+        "rating": 2098.4,
+        "se": 10.6
+      }
+    ],
+    "slopes": {
+      "with_newest": {
+        "n_nodes": 12,
+        "step_span_M": [
+          2.0,
+          24.0
+        ],
+        "full": {
+          "n": 12,
+          "slope_elo_per_Mstep": 14.578,
+          "se": 2.649,
+          "se_analytic": 0.409,
+          "se_resid": 2.649,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 4,
+          "slope_elo_per_Mstep": 6.785,
+          "se": 2.291,
+          "se_analytic": 2.291,
+          "se_resid": 0.336,
+          "verdict": "RISING"
+        },
+        "late_window": [
+          18000000,
+          24000000
+        ],
+        "middle": {
+          "n": 4,
+          "slope_elo_per_Mstep": 8.174,
+          "se": 2.189,
+          "se_analytic": 2.189,
+          "se_resid": 0.657,
+          "verdict": "RISING"
+        },
+        "middle_window": [
+          10000032,
+          16000032
+        ],
+        "late_minus_middle": {
+          "delta": -1.389,
+          "se": 3.169,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "total_elo_change": 405.9
+      },
+      "drop_newest": {
+        "n_nodes": 11,
+        "step_span_M": [
+          2.0,
+          22.0
+        ],
+        "full": {
+          "n": 11,
+          "slope_elo_per_Mstep": 15.89,
+          "se": 3.01,
+          "se_analytic": 0.462,
+          "se_resid": 3.01,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 4,
+          "slope_elo_per_Mstep": 2.97,
+          "se": 2.267,
+          "se_analytic": 2.267,
+          "se_resid": 1.969,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "late_window": [
+          16000032,
+          22000032
+        ],
+        "middle": {
+          "n": 4,
+          "slope_elo_per_Mstep": 14.041,
+          "se": 3.919,
+          "se_analytic": 2.155,
+          "se_resid": 3.919,
+          "verdict": "RISING"
+        },
+        "middle_window": [
+          8000016,
+          14000016
+        ],
+        "late_minus_middle": {
+          "delta": -11.071,
+          "se": 4.527,
+          "verdict": "FALLING"
+        },
+        "total_elo_change": 390.7
+      }
+    }
+  },
+  {
+    "run": "ai_v9_59_R2ACTION_0827",
+    "era": "gen",
+    "status": "OK",
+    "ladder_version": 1,
+    "base": 1000.0,
+    "converged": true,
+    "anchored_to_bots": true,
+    "n_frozen_pairs_measured": 21,
+    "eval_sentinel_edges_dropped": null,
+    "fork_step": 25067760,
+    "n_nodes_in_file": 14,
+    "n_nodes_own": 2,
+    "n_nodes_inherited_from_parent": 12,
+    "nodes": [
+      {
+        "step": 26000016,
+        "rating": 1939.2,
+        "se": 14.8
+      },
+      {
+        "step": 28000032,
+        "rating": 1957.4,
+        "se": 15.0
+      }
+    ],
+    "slopes": {
+      "status": "REFUSED \u2014 2 own node(s); a slope needs >= 4 (3 after the newest is dropped for \u00a73.2 rule 2)"
+    }
+  },
+  {
+    "run": "ai_v12_02_winprob_critic",
+    "era": "v12",
+    "status": "OK",
+    "ladder_version": 1,
+    "base": 1000.0,
+    "converged": true,
+    "anchored_to_bots": true,
+    "n_frozen_pairs_measured": 494,
+    "eval_sentinel_edges_dropped": null,
+    "fork_step": 0,
+    "n_nodes_in_file": 20,
+    "n_nodes_own": 20,
+    "n_nodes_inherited_from_parent": 0,
+    "nodes": [
+      {
+        "step": 36000000,
+        "rating": 1996.6,
+        "se": 6.2
+      },
+      {
+        "step": 38000016,
+        "rating": 2013.8,
+        "se": 6.2
+      },
+      {
+        "step": 40000032,
+        "rating": 2014.2,
+        "se": 6.2
+      },
+      {
+        "step": 42000000,
+        "rating": 2013.0,
+        "se": 6.2
+      },
+      {
+        "step": 44000016,
+        "rating": 2008.1,
+        "se": 6.2
+      },
+      {
+        "step": 46000032,
+        "rating": 2011.3,
+        "se": 6.3
+      },
+      {
+        "step": 48000000,
+        "rating": 2030.5,
+        "se": 6.4
+      },
+      {
+        "step": 50000016,
+        "rating": 2025.1,
+        "se": 6.4
+      },
+      {
+        "step": 52000032,
+        "rating": 2047.0,
+        "se": 6.5
+      },
+      {
+        "step": 54000000,
+        "rating": 2044.4,
+        "se": 6.6
+      },
+      {
+        "step": 56000016,
+        "rating": 2022.1,
+        "se": 6.6
+      },
+      {
+        "step": 58000032,
+        "rating": 2051.4,
+        "se": 6.8
+      },
+      {
+        "step": 60000000,
+        "rating": 2036.2,
+        "se": 6.8
+      },
+      {
+        "step": 62000016,
+        "rating": 2046.4,
+        "se": 6.9
+      },
+      {
+        "step": 64000032,
+        "rating": 2061.9,
+        "se": 7.1
+      },
+      {
+        "step": 66000000,
+        "rating": 2037.6,
+        "se": 7.1
+      },
+      {
+        "step": 68000016,
+        "rating": 2049.2,
+        "se": 7.2
+      },
+      {
+        "step": 70000032,
+        "rating": 2060.4,
+        "se": 7.4
+      },
+      {
+        "step": 72000000,
+        "rating": 2047.1,
+        "se": 7.4
+      },
+      {
+        "step": 74000016,
+        "rating": 2057.3,
+        "se": 7.7
+      }
+    ],
+    "slopes": {
+      "with_newest": {
+        "n_nodes": 20,
+        "step_span_M": [
+          36.0,
+          74.0
+        ],
+        "full": {
+          "n": 20,
+          "slope_elo_per_Mstep": 1.466,
+          "se": 0.193,
+          "se_analytic": 0.131,
+          "se_resid": 0.193,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 7,
+          "slope_elo_per_Mstep": 0.448,
+          "se": 0.899,
+          "se_analytic": 0.687,
+          "se_resid": 0.899,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "late_window": [
+          62000016,
+          74000016
+        ],
+        "middle": {
+          "n": 7,
+          "slope_elo_per_Mstep": 0.809,
+          "se": 1.114,
+          "se_analytic": 0.623,
+          "se_resid": 1.114,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "middle_window": [
+          48000000,
+          60000000
+        ],
+        "late_minus_middle": {
+          "delta": -0.36,
+          "se": 1.431,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "total_elo_change": 60.7
+      },
+      "drop_newest": {
+        "n_nodes": 19,
+        "step_span_M": [
+          36.0,
+          72.0
+        ],
+        "full": {
+          "n": 19,
+          "slope_elo_per_Mstep": 1.496,
+          "se": 0.212,
+          "se_analytic": 0.141,
+          "se_resid": 0.212,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 7,
+          "slope_elo_per_Mstep": 0.89,
+          "se": 0.957,
+          "se_analytic": 0.672,
+          "se_resid": 0.957,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "late_window": [
+          60000000,
+          72000000
+        ],
+        "middle": {
+          "n": 7,
+          "slope_elo_per_Mstep": 0.809,
+          "se": 1.114,
+          "se_analytic": 0.623,
+          "se_resid": 1.114,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "middle_window": [
+          48000000,
+          60000000
+        ],
+        "late_minus_middle": {
+          "delta": 0.082,
+          "se": 1.469,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "total_elo_change": 50.5
+      }
+    }
+  },
+  {
+    "run": "ai_v12_11_ladder_ctrl10M",
+    "era": "v12",
+    "status": "OK",
+    "ladder_version": 1,
+    "base": 1000.0,
+    "converged": true,
+    "anchored_to_bots": true,
+    "n_frozen_pairs_measured": 6,
+    "eval_sentinel_edges_dropped": 6,
+    "fork_step": 0,
+    "n_nodes_in_file": 4,
+    "n_nodes_own": 4,
+    "n_nodes_inherited_from_parent": 0,
+    "nodes": [
+      {
+        "step": 4000032,
+        "rating": 1742.2,
+        "se": 12.1
+      },
+      {
+        "step": 6000000,
+        "rating": 1895.6,
+        "se": 14.1
+      },
+      {
+        "step": 8000016,
+        "rating": 2004.5,
+        "se": 16.4
+      },
+      {
+        "step": 10000032,
+        "rating": 2018.7,
+        "se": 16.7
+      }
+    ],
+    "slopes": {
+      "with_newest": {
+        "n_nodes": 4,
+        "step_span_M": [
+          4.0,
+          10.0
+        ],
+        "full": {
+          "n": 4,
+          "slope_elo_per_Mstep": 49.48,
+          "se": 10.624,
+          "se_analytic": 3.225,
+          "se_resid": 10.624,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 3,
+          "slope_elo_per_Mstep": 31.995,
+          "se": 13.071,
+          "se_analytic": 5.44,
+          "se_resid": 13.071,
+          "verdict": "RISING"
+        },
+        "late_window": [
+          6000000,
+          10000032
+        ],
+        "middle": {
+          "n": 3,
+          "slope_elo_per_Mstep": 66.701,
+          "se": 6.419,
+          "se_analytic": 5.019,
+          "se_resid": 6.419,
+          "verdict": "RISING"
+        },
+        "middle_window": [
+          4000032,
+          8000016
+        ],
+        "late_minus_middle": {
+          "delta": -34.706,
+          "se": 14.562,
+          "verdict": "FALLING"
+        },
+        "total_elo_change": 276.5
+      },
+      "drop_newest": {
+        "n_nodes": 3,
+        "step_span_M": [
+          4.0,
+          8.0
+        ],
+        "full": {
+          "n": 3,
+          "slope_elo_per_Mstep": 66.701,
+          "se": 6.419,
+          "se_analytic": 5.019,
+          "se_resid": 6.419,
+          "verdict": "RISING"
+        },
+        "late": {
+          "n": 3,
+          "slope_elo_per_Mstep": 66.701,
+          "se": 6.419,
+          "se_analytic": 5.019,
+          "se_resid": 6.419,
+          "verdict": "RISING"
+        },
+        "late_window": [
+          4000032,
+          8000016
+        ],
+        "middle": {
+          "n": 3,
+          "slope_elo_per_Mstep": 66.701,
+          "se": 6.419,
+          "se_analytic": 5.019,
+          "se_resid": 6.419,
+          "verdict": "RISING"
+        },
+        "middle_window": [
+          4000032,
+          8000016
+        ],
+        "late_minus_middle": {
+          "delta": 0.0,
+          "se": 9.078,
+          "verdict": "NOT DETECTED (interval spans zero)"
+        },
+        "total_elo_change": 262.3
+      }
+    }
+  }
+]

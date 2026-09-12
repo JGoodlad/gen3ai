@@ -1,0 +1,117 @@
+{
+  "cross_tab": {
+    "gen3_critic_route_wave_v1": {
+      "0.02": 124,
+      "0.0": 1,
+      "unstated (no argv / flag absent \u2014 read TB hparams/ent_coef)": 4
+    },
+    "gen3_ctx_dedup_v1": {
+      "0.02": 6
+    },
+    "gen3_deadline_clock_v1": {
+      "0.02": 1
+    },
+    "gen3_edge_bias_trunk_v1": {
+      "0.02": 4
+    },
+    "gen3_entity_rehome_v1": {
+      "0.02": 1
+    },
+    "gen3_event_semantics_v1": {
+      "0.02": 6
+    },
+    "gen3_frame_deletion_v1": {
+      "0.02": 1
+    },
+    "gen3_no_concat_v1": {
+      "0.02": 4
+    },
+    "gen3_op_move_align_v1": {
+      "0.05": 1
+    },
+    "gen3_opp_hp_typed_candidates_v1": {
+      "0.05": 56,
+      "0.13": 1,
+      "unstated (no argv / flag absent \u2014 read TB hparams/ent_coef)": 1
+    },
+    "gen3_rest_loop_stall_v1": {
+      "0.05": 1
+    }
+  },
+  "totals": {
+    "0.02": 147,
+    "0.0": 1,
+    "unstated (no argv / flag absent \u2014 read TB hparams/ent_coef)": 5,
+    "0.05": 58,
+    "0.13": 1
+  },
+  "archs_with_both_0_02_and_0_05": [],
+  "examples": {
+    "gen3_event_semantics_v1|0.02": [
+      "DISCARDED_tdaux_control_n16_0818",
+      "ai_v9_16_gen14_framedel_v91_0817",
+      "ai_v9_17_tdaux_control_0818",
+      "ai_v9_17_tdaux_lam1_0818"
+    ],
+    "gen3_ctx_dedup_v1|0.02": [
+      "RETIRED_c5fork_control_gen13base_0817",
+      "ai_v9_11_gen10_intentfull_compiled_0814",
+      "ai_v9_12_gen10_t0prior_0814",
+      "ai_v9_13_gen11_labelonly_winprob_0815"
+    ],
+    "gen3_frame_deletion_v1|0.02": [
+      "RETIRED_gen14_framedel_v90_0817"
+    ],
+    "gen3_critic_route_wave_v1|0.02": [
+      "ai_v12_01_winprob_critic",
+      "ai_v12_02_winprob_critic.OOM_4096",
+      "ai_v12_02_winprob_critic",
+      "ai_v12_04_pfsp_fork25M"
+    ],
+    "gen3_rest_loop_stall_v1|0.05": [
+      "ai_v6_10_unified_obs_0618"
+    ],
+    "gen3_opp_hp_typed_candidates_v1|0.05": [
+      "ai_v6_11_typed_hp_0619",
+      "ai_v6_13_outgoing_dmg_0620",
+      "ai_v6_13_outgoing_dmg_0620_exp_v1",
+      "ai_v6_13_outgoing_dmg_0620_exploiter_v1"
+    ],
+    "gen3_op_move_align_v1|0.05": [
+      "ai_v6_11_unified_obs_fixed_0618"
+    ],
+    "gen3_opp_hp_typed_candidates_v1|0.13": [
+      "ai_v6_13_outgoing_dmg_0620_exploiter_v2"
+    ],
+    "gen3_opp_hp_typed_candidates_v1|unstated (no argv / flag absent \u2014 read TB hparams/ent_coef)": [
+      "ai_v8_01_zarch_film_0717"
+    ],
+    "gen3_edge_bias_trunk_v1|0.02": [
+      "ai_v9_01_gen1_edges6_40m_0804",
+      "ai_v9_02_gen2_full11_40m_0805",
+      "ai_v9_03_gen25_consequence_25m_0806",
+      "ai_v9_04_gen3_k6_recency_40m_0807"
+    ],
+    "gen3_entity_rehome_v1|0.02": [
+      "ai_v9_05_gen4_rehome_25m_0808"
+    ],
+    "gen3_no_concat_v1|0.02": [
+      "ai_v9_06_gen5_no_concat_0809",
+      "ai_v9_07_gen6_seed_vicreg_0810",
+      "ai_v9_08_gen7_seed_quantile_0811",
+      "ai_v9_09_gen8_beliefs_threat_inject_0811"
+    ],
+    "gen3_deadline_clock_v1|0.02": [
+      "ai_v9_10_gen9_intent_distcritic_0813"
+    ],
+    "gen3_critic_route_wave_v1|0.0": [
+      "ai_v9_50_fdF_p1c_0826"
+    ],
+    "gen3_critic_route_wave_v1|unstated (no argv / flag absent \u2014 read TB hparams/ent_coef)": [
+      "run_20260830_180409",
+      "run_20260830_183828",
+      "run_20260830_184043",
+      "run_20260906_083317"
+    ]
+  }
+}

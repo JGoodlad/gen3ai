@@ -1,0 +1,32 @@
+[
+  {
+    "fold": "ai_v8_04_distill_4teacher_0722",
+    "parent": "ai_v8_03_zarch_control_0718",
+    "era": "v8",
+    "parent_H_end": 1.068,
+    "fold_H_start": 1.1802,
+    "delta_nats": 0.1122,
+    "fold_H_end": 1.0996,
+    "fold_end_minus_parent_end": 0.0316
+  },
+  {
+    "fold": "ai_v8_14_distill3_0725",
+    "parent": "ai_v8_04_distill_4teacher_0722",
+    "era": "v8",
+    "parent_H_end": 1.0996,
+    "fold_H_start": 1.2041,
+    "delta_nats": 0.1045,
+    "fold_H_end": 1.0943,
+    "fold_end_minus_parent_end": -0.0053
+  },
+  {
+    "fold": "ai_v9_59_R2ACTION_0827",
+    "parent": "ai_v9_29_rev1_0823",
+    "era": "gen",
+    "parent_H_end": 0.7477,
+    "fold_H_start": 0.6754,
+    "delta_nats": -0.0723,
+    "fold_H_end": 0.5292,
+    "fold_end_minus_parent_end": -0.2185
+  }
+]
