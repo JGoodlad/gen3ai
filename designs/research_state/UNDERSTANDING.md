@@ -821,9 +821,13 @@ floor — the campaign's first confirmed detection on the decision row, and its 
 value coefficient strips opponent-class information from V while `gate.resolution` stays within floor on every
 pair.** Whether a LOWER coefficient raises the row is untested (`vf 0.25` queued); nothing here moves strength at
 10M. A sixteenth arm, `ctrl10M_shaped` (scalar-MSE critic on the same terminal-only signal), never crossed into
-self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, but is the first
-direct evidence that the critic objective changes how fast PPO learns (confounded by gamma 0.9999 and the head's
-coefficient; n = 1). [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
+self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, and its dense sibling
+`ctrl10M_shaped_dense` never crossed either (0.53 vs bots at 10M) and breached G7. **Neither is a verdict on the
+shaped head: the era's own shaped fresh run `ai_v9_29_rev1` crossed at 2,000,016.** The failure belongs to the
+ladder's argv with the critic mode flipped (terminal indicator on, the BIAS class zeroed, gamma 0.9999, the head as
+an auxiliary) — which of those carries it is not identified. The flywheel pair's shaped arm therefore runs the
+era's shaped configuration, not a one-flag flip. [ledger 2026-09-12 · *READ · the shaped-critic family at the
+LADDER argv*] [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
 REPRESENTATION-level opponent-class decode*]
 
 **THE LADDER READ ON STRENGTH (2026-09-12, `ladder_strength_table_2026-09-12`):** [MEASURED · NOT DETECTED] the
