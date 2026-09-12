@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,847-line file. **The ledger itself is append-only and is never edited by this**;
+17,851-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**587 headings · 536 dated · 2026-08-01 → 2026-09-12 · ledger 17,847 lines.**
+**588 headings · 537 dated · 2026-08-01 → 2026-09-12 · ledger 17,851 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -607,3 +607,4 @@ rename.
   - `L17745` · `2026-09-12` · MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3 — the axes question answered IN THE "NEITHER PAYS" BRANCH — no trained ladder lever moves leaf quality, including the one the ladder certifies; and L1 is convicted as a WIDTH meter (2026-09-12)
   - `L17784` · `2026-09-12` · MEASUREMENT · THE STEP CURVE — the win-prob critic's opponent conditioning does NOT improve past 10M; seven-fold more steps buy CALIBRATION, not DISCRIMINATION
   - `L17836` · `2026-09-12` · VERDICT · `strata_b` FAILS the registered confirmatory read — the replicate's `cond.opp_class_auc.t4_10` sits BELOW all three controls on both offline draws (0.673–0.680 vs 0.688–0.716); `strata`'s DETECTED +0.050 was ONE RUN, the two seeds of the same lever differ by 0.08 (3.6× the control floor), the class-balanced BCE lever is NOT CONFIRMED, and the campaign again holds ZERO confirmed detections on a decision row; GO `vf15_b` by default under the 15-minute rule
+  - `L17848` · `2026-09-12` · READ · `strata_b` at the REPRESENTATION: **BRANCH TRUNK on both draws** — the two `strata` seeds differ in the tensor the head reads (`pooled → class` t4–10 **−0.042 / −0.048**, 1.81× / 1.56× the control floor), so `strata`'s RESTORED representation claim is now ALSO a one-run statement that does NOT replicate; but `strata_b`'s representation sits **AT** the controls (**+0.007 / +0.016**, 0.28× / 0.51× floor, NOT DETECTED) while only its **V** sits BELOW them (−0.032 / −0.034, 1.63× / 1.44×) — **the class-decode deficit against the controls is a HEAD deficit, not a trunk one**, and the seed-to-seed difference is ~half trunk, ~half head (Δpooled/ΔV **0.51 / 0.57**) against the 0.97 / 1.27 the same lever's arm-vs-control contrast showed

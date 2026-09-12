@@ -784,7 +784,12 @@ before the read) `ai_v12_17_ladder_strata` read +0.050 / +0.033 / +0.044 on thre
 lever read +0.05, its replicate −0.03: the lever's mean effect is inside the floor and the WITHIN-LEVER spread
 (0.08) is 3.6× the control-replicate floor, which bounds the CONTROL's variance only (rule 19, amended). Whether
 class-balanced BCE inflates run-to-run variance on the row or one of the two runs is atypical is not separable at
-n = 2. What the replicate adds: its `gate.resolution.all` is +0.009–0.010 above every control (CIs clear zero)
+n = 2. At the representation (`repr_class_decode_strata_b_2026-09-12`, both draws) `strata_b`'s
+`value_pooled → class` decode sits AT the controls (+0.007 / +0.016, inside the floor) while `strata`'s sat
+0.048 / 0.064 above — so the lever is NOT CONFIRMED at the representation either, and `strata_b`'s
+control-relative deficit is HEAD-side (its trunk is control-grade, its V is below). Seed-to-seed the split is ~half
+trunk, ~half head (Δpooled/ΔV 0.51 / 0.57) against the lever's one-for-one arm-vs-control ratio — run-to-run
+variance concentrates at the head, one more reason the V row stays the decision row. What the replicate adds: its `gate.resolution.all` is +0.009–0.010 above every control (CIs clear zero)
 while its class decode is below every control — **resolution and opponent-class discrimination dissociate within
 one run**, as calibration and discrimination dissociate across steps on the 75M run (below). The
 representation-level finding (`repr_class_decode_2026-09-11`, branch A: `strata` raises and `vf15` lowers the
