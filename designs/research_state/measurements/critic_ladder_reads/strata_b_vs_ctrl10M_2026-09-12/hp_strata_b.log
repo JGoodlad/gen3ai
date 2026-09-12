@@ -1,0 +1,47 @@
+=== GEN400 ai_v12_24_ladder_strata_b 2026-09-11T20:52:01-07:00
+GEN400 exit=0
+=== READ400 ai_v12_24_ladder_strata_b vs ai_v12_11_ladder_ctrl10M 2026-09-11T21:49:37-07:00
+READ400 vs ai_v12_11_ladder_ctrl10M exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0463 | +0.0395 | **+0.0068** | [-0.0016, +0.0148] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0302 | +0.0202 | **+0.0100** | [+0.0023, +0.0182] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0024) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 398/188/4 (4775 battles, 4620 decoder battles, 21 seeds) | +0.5991 [+0.6055, +0.6068] | +0.6060 | **-0.0069** | [-0.0307, +0.0163] | **NOT DETECTED** (C
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 398/188/4 (4775 battles, 4620 decoder battles, 21 seeds) | +0.6798 [+0.7158, +0.7169] | +0.7163 | **-0.0364** | [-0.0576, -0.0149] | **DETECTED** (vs Z
+=== READ400 ai_v12_24_ladder_strata_b vs ai_v12_15_ladder_ctrl10M_b 2026-09-11T22:31:28-07:00
+READ400 vs ai_v12_15_ladder_ctrl10M_b exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0463 | +0.0394 | **+0.0069** | [-0.0004, +0.0144] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0302 | +0.0207 | **+0.0096** | [+0.0021, +0.0179] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0024) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 398/186/4 (4782 battles, 4626 decoder battles, 21 seeds) | +0.5993 [+0.5985, +0.6006] | +0.6043 | **-0.0050** | [-0.0286, +0.0179] | **NOT DETECTED** (C
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 398/186/4 (4782 battles, 4626 decoder battles, 21 seeds) | +0.6798 [+0.6786, +0.6806] | +0.7121 | **-0.0323** | [-0.0539, -0.0126] | **DETECTED** (vs Z
+=== READ400 ai_v12_24_ladder_strata_b vs ai_v12_16_ladder_ctrl10M_c 2026-09-11T22:42:09-07:00
+READ400 vs ai_v12_16_ladder_ctrl10M_c exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0463 | +0.0384 | **+0.0079** | [+0.0011, +0.0162] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0011) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0302 | +0.0178 | **+0.0124** | [+0.0056, +0.0195] | 400 | **DETECTED** (CI clears the floor +0.0024) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 398/177/4 (4773 battles, 4617 decoder battles, 21 seeds) | +0.5950 [+0.5930, +0.6010] | +0.5924 | **+0.0026** | [-0.0198, +0.0250] | **NOT DETECTED** (C
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 398/177/4 (4773 battles, 4617 decoder battles, 21 seeds) | +0.6803 [+0.6793, +0.6823] | +0.7041 | **-0.0239** | [-0.0447, -0.0030] | **DETECTED** (vs Z
+=== GEN800 ai_v12_24_ladder_strata_b 2026-09-11T22:51:52-07:00
+GEN800 exit=0
+=== READ800 ai_v12_24_ladder_strata_b vs ai_v12_11_ladder_ctrl10M 2026-09-12T00:05:16-07:00
+READ800 vs ai_v12_11_ladder_ctrl10M exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0483 | +0.0386 | **+0.0098** | [+0.0044, +0.0161] | 400 | **DETECTED** (CI clears the floor +0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0313 | +0.0170 | **+0.0143** | [+0.0082, +0.0202] | 400 | **DETECTED** (CI clears the floor +0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 797/368/9 (9551 battles, 9545 decoder battles, 21 seeds) | +0.5798 [+0.5787, +0.5806] | +0.5796 | **+0.0002** | [-0.0168, +0.0172] | **WITHIN FLOOR** (|
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 797/368/9 (9551 battles, 9545 decoder battles, 21 seeds) | +0.6792 [+0.6781, +0.6815] | +0.7086 | **-0.0294** | [-0.0444, -0.0147] | **NOT DETECTED** (
+=== READ800 ai_v12_24_ladder_strata_b vs ai_v12_15_ladder_ctrl10M_b 2026-09-12T00:41:16-07:00
+READ800 vs ai_v12_15_ladder_ctrl10M_b exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0483 | +0.0384 | **+0.0100** | [+0.0041, +0.0160] | 400 | **DETECTED** (CI clears the floor +0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0313 | +0.0206 | **+0.0107** | [+0.0046, +0.0167] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 797/325/8 (9508 battles, 9502 decoder battles, 21 seeds) | +0.5805 [+0.5790, +0.5827] | +0.5948 | **-0.0142** | [-0.0312, +0.0022] | **WITHIN FLOOR** (|
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 797/325/8 (9508 battles, 9502 decoder battles, 21 seeds) | +0.6731 [+0.6709, +0.6774] | +0.7069 | **-0.0338** | [-0.0493, -0.0191] | **NOT DETECTED** (
+=== READ800 ai_v12_24_ladder_strata_b vs ai_v12_16_ladder_ctrl10M_c 2026-09-12T00:50:48-07:00
+READ800 vs ai_v12_16_ladder_ctrl10M_c exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0483 | +0.0389 | **+0.0094** | [+0.0034, +0.0153] | 400 | **DETECTED** (CI clears the floor +0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0313 | +0.0244 | **+0.0068** | [+0.0000, +0.0133] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 797/330/8 (9513 battles, 9507 decoder battles, 21 seeds) | +0.5812 [+0.5804, +0.5826] | +0.5676 | **+0.0136** | [-0.0030, +0.0304] | **WITHIN FLOOR** (|
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 797/330/8 (9513 battles, 9507 decoder battles, 21 seeds) | +0.6804 [+0.6782, +0.6811] | +0.6878 | **-0.0075** | [-0.0225, +0.0073] | **WITHIN FLOOR** (
+STRATA_B HP DONE 2026-09-12T01:02:52-07:00

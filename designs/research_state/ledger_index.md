@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-17,740-line file. **The ledger itself is append-only and is never edited by this**;
+17,847-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**583 headings · 532 dated · 2026-08-01 → 2026-09-11 · ledger 17,740 lines.**
+**587 headings · 536 dated · 2026-08-01 → 2026-09-12 · ledger 17,847 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -603,3 +603,7 @@ rename.
   - `L17713` · `2026-09-11` · RESOLUTION + INSTRUMENT · the `strata_b` dose exit condition resolves — matched-step `share_bot` differs by +0.36 pp (bar ~1 pp): doses EQUAL for the read, the "cannot be read as under-treatment" sentence is WITHDRAWN; and `strata_share_bot` is a DETERMINISTIC function of `strata_frac_bot` that saturates at 0.5 above 12.5 % bot rows — it is a delivery check with no dynamic range, never a dose row
   - `L17717` · `2026-09-11` · AMENDMENT to the strata dose rule · `strata_frac_bot` is an OUTCOME of the curriculum, not a dose — the dose is the declared `win_prob_strata_weight` (s), matched between `strata` and `strata_b` by construction; `frac_bot` → `share_bot` is DELIVERY; the 2.7 pp `frac_bot` gap is curriculum variation between identically-dosed arms, a nuisance term of the replicate-floor family
   - `L17721` · `2026-09-11` · OPS · `ai_v12_24_ladder_strata_b` COMPLETE at 10,027,008 — the strata replicate banked; G7's 8M excursion did NOT continue (worst 1.149 at 8M, back to 1.109 at 10M, below bar on both halves); the dose exit condition holds at the completion number (+0.47 pp); and the 10M bots cycle lands BELOW the three controls' band, recorded as a descriptor and claimed as nothing
+  - `L17741` · `2026-09-11` · READ · the REPRESENTATION-level opponent-class decode lands: **BRANCH A** — `strata` (+0.048 / +0.064) and `vf15` (−0.052 / −0.045) BOTH move `pooled → class` at t4–10 past the run-level floor on both eval draws, with the same signs as their V-level deltas, so the two rows are REDUNDANT and `cond.opp_class_auc.t4_10` REMAINS the decision row; the two DOWNGRADED sentences are RESTORED, `strata`'s as an understatement (Δpooled/ΔV = 0.97 and 1.27; at t1–3 the representation gains nearly TWICE what V shows) and `vf15`'s as half an account (Δpooled/ΔV = 0.59 and 0.50 at t4–10, and NOTHING at t1–3 while V still falls)
+  - `L17745` · `2026-09-12` · MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3 — the axes question answered IN THE "NEITHER PAYS" BRANCH — no trained ladder lever moves leaf quality, including the one the ladder certifies; and L1 is convicted as a WIDTH meter (2026-09-12)
+  - `L17784` · `2026-09-12` · MEASUREMENT · THE STEP CURVE — the win-prob critic's opponent conditioning does NOT improve past 10M; seven-fold more steps buy CALIBRATION, not DISCRIMINATION
+  - `L17836` · `2026-09-12` · VERDICT · `strata_b` FAILS the registered confirmatory read — the replicate's `cond.opp_class_auc.t4_10` sits BELOW all three controls on both offline draws (0.673–0.680 vs 0.688–0.716); `strata`'s DETECTED +0.050 was ONE RUN, the two seeds of the same lever differ by 0.08 (3.6× the control floor), the class-balanced BCE lever is NOT CONFIRMED, and the campaign again holds ZERO confirmed detections on a decision row; GO `vf15_b` by default under the 15-minute rule

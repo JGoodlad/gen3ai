@@ -17737,3 +17737,110 @@ Raised by the Training Run session, accepted; the rule in `2d6caa73` promoted `f
 **Two descriptors, both recorded and NEITHER claimed.** (1) The **10M bots cycle is 0.8388**, below the three controls' 10M band (0.8800 / 0.8963 / 0.8988) and below its own previous cycle (0.8838). Strength is not the registered read on these arms and a single eval cycle has no CI, so this is a number outside a band and nothing more; it is banked because a reader who finds it later should not have to wonder whether it was noticed. (2) **Live-frame critic meters at the last update** — ECE 0.0728 (`strata`) vs 0.0306 (`strata_b`), resolution 0.0435 vs 0.0545, Brier 0.1298 vs 0.1397, skill 0.2139 vs 0.2802, reliability 0.0087 vs 0.0011. These are **single-update LIVE-frame reads**, and **RULE 20 applies**: a live-frame lean is not evidence about the offline population in either direction. They are descriptors of the training frame, not a preview of the registered offline read, and must not be cited as one.
 
 **What is NOT decided here.** `strata_b`'s registered test — `cond.opp_class_auc.t4_10`'s CI clearing 0.022 at BOTH offline draws against ALL THREE controls — is an OFFLINE read on `final_model.zip`, dispatched by the orchestrator, and none of it is in this entry. Both failure branches and the half-the-point discriminator stand as registered (`a435a496`, `68ee68fe`), and the verdict is worded at V-level per `3f1e9c27`: a pass says V's OUTPUT discriminates opponent class better, with no representation reading attached pending `pooled → class`. Tag: **OPS · COMPLETE · fourteenth run · G7 excursion did not continue · exit condition holds at completion**.
+
+### 2026-09-11 · READ · the REPRESENTATION-level opponent-class decode lands: **BRANCH A** — `strata` (+0.048 / +0.064) and `vf15` (−0.052 / −0.045) BOTH move `pooled → class` at t4–10 past the run-level floor on both eval draws, with the same signs as their V-level deltas, so the two rows are REDUNDANT and `cond.opp_class_auc.t4_10` REMAINS the decision row; the two DOWNGRADED sentences are RESTORED, `strata`'s as an understatement (Δpooled/ΔV = 0.97 and 1.27; at t1–3 the representation gains nearly TWICE what V shows) and `vf15`'s as half an account (Δpooled/ΔV = 0.59 and 0.50 at t4–10, and NOTHING at t1–3 while V still falls)
+
+`measurements/repr_class_decode_2026-09-11/`; `winprob_refit_ncurve_2026-09-10/{extract,frame_check}.py` run UNMODIFIED over `value_pooled` (the win head's literal input) for `strata`, `vf15`, `ctrl10M`, `ctrl10M_b` and `ctrl10M_c` at `step_10000032`, on both offline 800-game draws (seed 20260910 for all five; seed 20260911 for all but `ctrl10M_c`, which has no such tree). Registered in `PREDICTION.md` before any number existed, with the branch, the bar (`sign(Δpooled) == sign(ΔV)` AND `|Δpooled| >` the widest control-pair difference on that draw), the mixed-outcome rule (mixed ⇒ branch B) and the draw-disagreement rule all fixed; applied in code by `tabulate.py`. **Floors** (rule 19, no CI): pooled 0.0232 (hp800, two pairs) / 0.0310 (hp800b, ONE pair); V 0.0197 / 0.0234. **Both arms MOVE WITH on both draws** — `strata` at 2.09× / 2.07× the pooled floor against 2.53× / 2.16× the V floor, `vf15` at 2.23× / 1.45× against 4.46× / 3.82×. **(1) The restored sentences.** `strata`'s "the representation carries more class information, not only the head" is CONFIRMED and was too weak: Δpooled/ΔV is 0.97 and 1.27 at t4–10, and at t1–3 the representation moves +0.076 / +0.087 against V's +0.043 / +0.039 — the head cashes in about half of what the trunk gains early. `vf15`'s "raising the value coefficient REMOVED opponent information from the shared representation" is CONFIRMED at t4–10 and t11–24 but at HALF the V effect (0.59, 0.50), and at t1–3 the representation is unmoved (−0.012 / −0.004, inside every floor) while V falls (−0.020 / −0.028) — so roughly half of `vf15`'s V-level damage is the head making worse use of an only-partly-degraded tensor, a split the V row cannot make. **(2) The decision row is reinforced, not merely survived.** The representation row's run-level floor is 15–35 % WIDER than the V row's, its between-draw spread on `strata` is 5–10× larger, and it costs a ~25-CPU-minute forward pass and a 300 MB tensor per frame against a `critic_read` invocation. Noisier, slower, same story. `strata_b`'s V-level verdict needs no amendment and a PASS there may carry the representation reading **for `strata` specifically**, since on that lever the two rows are one statement; `vf15` shows the licence does not generalise. **(3) A free cross-instrument validation:** `frame_check.py`'s V column, a different fitter on an unmatched frame, reproduces tool-v6 `cond.opp_class_auc.t4_10` to ±0.005 on all five checkpoints (0.7613/0.760, 0.7114/0.710, 0.7052/0.707, 0.6917/0.688, 0.6235/0.628) — stronger evidence for the row's validity than either instrument's own CI. **Frame QC, all nine frames:** own-team → class leak **0.492–0.498** (the N-curve's hazard-1 confound is absent), frozen-forward max |V_fwd − V_rec| **1.0e-06 to 2.5e-06**, battles 9,536–9,563, 602 teams each. **Hazards:** a ONE-pair floor (hp800b) printed ×floor values of 8.6–14.7 on the non-decision buckets and those are luck, not precision; `frame_check.py` labels its progress rows with `basename(dir)` = the DRAW, so nine frames all print as `[hp800]`/`[hp800b]` (JSON keys are correct; the script was left unmodified because another agent was running it concurrently); every decode is on that run's OWN trajectories, so the claim is "the representation on the states this policy reaches", and the clean common-state version is named as the next increment; **the pre-registered prior was WRONG on both arms in opposite directions** and is kept unedited. **Standing:** the representation row is a MECHANISM instrument, not a gate — no bar is promoted to it. Tag: **MEASURED · BRANCH A · claims RESTORED · decision row UNCHANGED**.
+
+### 2026-09-12 · MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3 — the axes question answered IN THE "NEITHER PAYS" BRANCH — no trained ladder lever moves leaf quality, including the one the ladder certifies; and L1 is convicted as a WIDTH meter (2026-09-12)
+
+Record `designs/research_state/measurements/search_dividend_winprob_heads_2026-09-11/` §11
+(predictions registered before each head in PREDICTION.md §7/§7b/§7c, including an outcome-blind
+wall-clock stopping rule; **6,000 battles / 285,081 decisions, zero timeouts, zero errors**;
+same `--games-seed 7`, same game indices as the first three heads, so every contrast is paired).
+Heads: `strata@10M` (class-balanced BCE — **the one lever that moved the ladder's conditioning
+row**), `denseaux@10M` (dense within-game targets, null on conditioning), `cflabels@10M`
+(`--cf-winprob-coef 0.5`, the closest trained thing to a successor-discrimination objective, null
+on conditioning). **L2 — the outcome row — is not moved by any of them: 0.5066 [0.4924, 0.5207] ·
+0.4941 [0.4826, 0.5056] · 0.4853 [0.4664, 0.5042], and each is at or slightly BELOW its own
+CONTEMPORANEOUS `ctrl10M` anchor (−0.0233 · −0.0167 · −0.0183, all NOT DETECTED).** Six win-prob
+heads now sit on the structural null. **The registered branch is "neither pays": the axes question
+is NOT settled, and what is settled is sharper — a lever that moves the conditioning row leaves
+leaf quality where it was, so that row is not yet shown to be the row the search path should be
+steered by.**
+
+**L1 IS CONVICTED AS AN INSTRUMENT, and only a contemporaneous control could have caught it.** The
+same `ctrl10M` checkpoint, same cell, same flags, same battles, run in three contention regimes,
+reads **L1 = 0.058 / 0.128 / 0.365 at realized K = 3.63 / 5.06 / 8.87 worlds** — a 6.3× range
+ordered by how much width the wall clock bought. `cflabels` pooled **0.303 at K = 10.08** would
+have "CLEARED (≳ 0.25, not even provisional)" against the 18.1 % bar — while its own same-window
+anchor read **0.365**, i.e. the CONTROL clears by more. **Width-matched** (each battle binned on
+its own realized K), the band moves L1 by 5–60× while heads inside a band span ≤ 1.7×, and the
+control's three measurements at K 4.5–6 (0.209 / 0.252 / 0.373) span more than any head differs
+from any other; `cflabels` sits BELOW its anchor in both overlapping bands. **The 18.1 % bar is a
+statement about the box as much as about the head; every future L1 read needs a contemporaneous
+control or width-matched bands** (`l1_width_matched.py`, from rows that already exist).
+**The `grid` cell is the sensitive leaf row instead** — unguarded, no gate to hide behind, and it
+separates heads with DETECTED deltas where L1 cannot: strata **0.3150** [0.2565, 0.3735] and
+denseaux **0.3025** are the best of six, **cflabels 0.1875 [0.1325, 0.2425] the worst**
+(strata − cflabels +0.1275 [+0.0573, +0.1977] DETECTED; denseaux − cflabels +0.1150 [+0.0367,
++0.1933] DETECTED). **The successor-discrimination head is the most confident re-ranker (68 % of
+actions changed, 3.2 % overrules — the highest of any head) and the most wrong one.** Its null is
+reported **dose-unread**: `cf_head_only`, a 150k-step label lag, and a sibling retired as
+`…DEAD_fatal_config_cf_duty_cycle_6pct`, with the realized duty cycle never read — so this is not
+a verdict on counterfactual labels as a class. Four of seven phase-2/3 predictions refuted, and the
+one that "held" (cflabels highest L1) is void as evidence by the instrument finding above.
+
+### 2026-09-12 · MEASUREMENT · THE STEP CURVE — the win-prob critic's opponent conditioning does NOT improve past 10M; seven-fold more steps buy CALIBRATION, not DISCRIMINATION
+
+`measurements/winprob_step_curve_2026-09-11/`. The completed 75M run `ai_v12_02_winprob_critic`
+read at 10M / 20M / 40M / 73M against its OWN 10M checkpoint, **two independent offline draws per
+checkpoint** (400 games × 12 opponents, full capture, seeds 20260909/20260910, all 8 cycles
+complete at 4,800 battles), so every point carries its own eval-draw width `W(s)` and the
+registered bar is "the between-checkpoint gap must exceed the within-checkpoint draw spread on
+both draws" (`PREDICTION.md`, registered before generation; amended before any read).
+**Registered decision rows: not one rises.** `gate.resolution.bot` — the clean row (nine FIXED
+bots, a weighted mean over cell means, not quota-matched, untouched by the sentinel panel) — is
+**FLAT**: 0.0190 → 0.0185, Δ −0.0004 / −0.0010 against max W 0.0069, both CIs covering zero.
+`cond.opp_class_auc.t1_3` flat; `cond.opp_class_auc.t4_10` and `gate.resolution.all` fall, and
+both falls are CONFOUNDED by the trainee getting stronger against a fixed panel (the bot−pool
+outcome gap closes 0.426 → 0.299; base-rate variance drops 16% while `resolution.all` drops 21%;
+`identity.resolution_cap_share` NOT DETECTED). **The strength-robust row settles it:**
+`value_pooled → opponent class` at turns 4–10 (out-of-fold, battle-grouped, reusing the N-curve's
+own `extract.py` + `frame_check.py`; forward QC `max|V_fwd−V_rec| = 1.01e-06`; own-team leak at
+chance 0.474–0.496 at every checkpoint) reads **0.898/0.886 → 0.896/0.892 → 0.857/0.867 →
+0.862/0.855**. No gap is up-and-past-the-bar; the ONE gap that clears the bar is **20M→40M, DOWN
+on both draws** (−0.0385 / −0.0249 against 0.0101); 10M→73M = −0.036 / −0.031 against max W
+0.0124 — though against the PEER's independently measured run-level floor for this row (0.023/0.031, `measurements/repr_class_decode_2026-09-11`) the 20M→40M fall is MARGINAL on draw2, so its STRENGTH is bar-dependent while its DIRECTION is not. **(i) "the representation keeps improving with steps" is REFUTED directionally; (ii)
+"flat" is not met either; formally UNDECIDED between the registered pair — and it is a STEP
+CHANGE in one interval, not a slope, so a smooth step-response is refuted too.** 🚨 **What DOES
+improve is CALIBRATION:** `gate.ece.all` 0.1023 → 0.0170 (−0.085 / −0.091), the only row moving
+monotonically past its own bar at EVERY step on BOTH draws, with the calibration slope near 1 at
+both ends (1.02 → 1.09) and identity bias 0.1125 → 0.0062. In Murphy terms reliability improves
+~6× while resolution does not move. **Consequence for the ladder: its ten 10M arms' null is NOT a
+statement about 10M only — more steps do not move the conditioning rows either, so "train
+longer" is not the untested lever it looked like.** A curriculum explanation for the 20M–40M step
+was sought in the run's own TB and NOT found: the bot share of training is a constant 0.100
+across all three intervals (the 0.325 → 0.100 shift predates the curve) and the pool cap/eviction
+begins at 44,000,016, inside the interval where the row is flat. **Confounds:** the registered
+`--sentinels 3` spec was IMPOSSIBLE (the run's pool retains only ≥36M, so 10M/20M have no
+sentinel below them) and was replaced by `--include-current-snapshot`, giving an identical panel
+(36,000,000 / 56,000,016 / 74,000,016) at all four checkpoints — this ELIMINATES sentinel drift
+and introduces a bias CONSERVATIVE for (i); one run; the quota match matches on the outcome mix,
+which is what steps change; eval-vs-training population. **The cross-run read vs
+`ai_v12_11_ladder_ctrl10M` is REFUSED and no delta is quoted** — the two pins straddle the
+2026-09-07 boundary (`--eval-sentinel-greedy` default False→True, neither run passing it) and
+`spec_of` differs on exactly that key; the LEVELS are not comparable either (0.74–0.80 here vs
+the roster's 0.688–0.714, the fixed late panel being an easier separation). **Tooling:**
+`bab72428` lets a PRE-BOUNDARY run's regime be DECLARED (its `model_config.json`, cv 110, records
+none; the refusal now names the value recoverable from `metadata.json` and a contradicting
+declaration is refused) — without it this run could not be re-read at all. **Hazards:**
+`critic_read`'s `stamp_dir` keys on the run NAME so a WITHIN-RUN pair recomputes the identity +
+gate blocks every pair (~2× cost, never a wrong readout); `signal/outcome_n_bots`/`_pool` are a
+fixed sample cap at exactly 200 and their ratio is 0.5 by construction, NOT the training mix;
+every offline cycle in this campaign is generated at γ 0.99 while the runs trained at γ 1.0
+(reaches only `_td_residuals`, which no `main.ops` row consumes). Tag: **MEASURED · (i) REFUTED
+directionally · calibration IMPROVES ~6× · resolution FLAT · steps are NOT the ladder's missing
+lever**.
+
+### 2026-09-12 · VERDICT · `strata_b` FAILS the registered confirmatory read — the replicate's `cond.opp_class_auc.t4_10` sits BELOW all three controls on both offline draws (0.673–0.680 vs 0.688–0.716); `strata`'s DETECTED +0.050 was ONE RUN, the two seeds of the same lever differ by 0.08 (3.6× the control floor), the class-balanced BCE lever is NOT CONFIRMED, and the campaign again holds ZERO confirmed detections on a decision row; GO `vf15_b` by default under the 15-minute rule
+
+`measurements/critic_ladder_reads/strata_b_vs_ctrl10M_2026-09-12/` (six `critic_read` v6 pairs: 400-game seed-20260909 and 800-game seed-20260910 draws of `ai_v12_24_ladder_strata_b@10000032` against `ctrl10M` / `ctrl10M_b` / `ctrl10M_c` on the SAME draws; the pipeline and its log are in the dir). **The registered test** (`a435a496`, `68ee68fe`, worded before the run completed): PASS = the Δ CI on `cond.opp_class_auc.t4_10` clears the 0.022 two-draw floor at BOTH 800-game draws against ALL THREE controls; MISS worded as NOT CONFIRMED; the selection-inflation shape named only if the replicate's point falls below half of `strata`'s; verdict at V-level; doses equal by declaration (ledger 2026-09-11 · *AMENDMENT to the strata dose rule*). **The pair is genuine:** both runs on `f871e79f`, argv identical except `--seed 1002` and the run name (`strata` ran at the default seed), verified from `metadata.json`.
+
+**The read.** Arm level 0.6792 / 0.6798 on the two draws (eval-draw spread 0.0006) against `strata`'s 0.7501 / 0.7590 / 0.7599 on its three. At 800 games: Δ vs `ctrl10M` **−0.0294 [−0.0444, −0.0147]**, vs `ctrl10M_b` **−0.0338 [−0.0493, −0.0191]**, vs `ctrl10M_c` **−0.0075 [−0.0225, +0.0073]** (the first two clear ZERO downward and do not clear the 0.0219 floor; the third is within floor). At 400 games (descriptive — `hp400_floor.json` carries no v6 rows, so the tool labels the row "vs ZERO — NO FLOOR"): −0.0364 [−0.0576, −0.0149], −0.0323 [−0.0539, −0.0126], −0.0239 [−0.0447, −0.0030]. `t1_3`: +0.0002 / −0.0142 / +0.0136, all within its 0.0153 floor. **VERDICT: MISS on every one of the six pair-draws — NOT CONFIRMED.** The half-the-point discriminator fires by a margin — the replicate's point is on the other side of zero — but rule 21's shape (a post-hoc row regressing to half) does not fit either: this row was pre-specified for this run and the replicate is DETECTED-vs-zero DOWNWARD on two controls. The family-level statement that survives is exact: **one run of the lever read +0.05 on the row, its seed replicate read −0.03; the lever's mean effect (+0.010) is inside the floor and its WITHIN-LEVER spread (0.08) is 3.6× the control replicate floor (0.022).**
+
+**What the spread means, and what it does not.** The run-level floor (rule 19) is measured on CONTROL replicates and bounds the control's run-to-run variance; nothing says a lever leaves that variance where it found it. Two readings fit and n = 2 cannot separate them: (a) class-balanced BCE INFLATES run-to-run variance on the conditioning row (the per-class weights re-scale whatever the stochastic bot-share path delivers — though `share_bot` was matched by delivery to +0.36 pp, so the obvious channel is not open), or (b) one of the two `strata` runs is atypical and the other is the lever's true reading. **Descriptors, recorded and NOT evidence (rule 20):** `strata_b`'s 10M bots cycle 0.8388 sits below the controls' 0.880–0.899 band, and its live-frame ECE at the last update was 0.0306 against `strata`'s 0.0728. **Evidence that DISAGREES with "strata_b is a weak or broken run":** its gate rows — `gate.resolution.all` +0.0094 / +0.0100 / +0.0098 vs the three controls at 800 games, each CI clear of zero (the printed floor 0.0003 is a one-pair floor and that small is luck, not precision — the same hazard `07d42a51` §7 names), and `gate.resolution.bot` +0.0068 / +0.0107 / +0.0143 (within floor / n.d. / DETECTED). **`strata_b`'s V resolves outcomes at least as well as every control while decoding opponent class WORSE than every control — the two rows dissociate within one run, as calibration and discrimination dissociated across steps on the 75M run in the entry above.** That dissociation is the one thing this replicate adds beyond the miss.
+
+**Consequences.** (1) `07d42a51`'s licence — "a `strata_b` PASS may carry the representation reading for `strata` specifically" — is not exercised; the representation finding (Δpooled/ΔV 0.97–1.27, understatement) stands for run `ai_v12_17` alone. The cheap next increment is named: the same `pooled → class` decode on `strata_b`'s two frames (~50 CPU-min), which says whether the two `strata` runs differ in the TRUNK or only at the head. (2) The ladder's standing: fourteen 10M runs, seven levers + the privileged critic; on the decision row, `strata` NOT CONFIRMED at n = 2, `vf15` DETECTED DOWN at n = 1 (−0.082 / −0.080, UNREPLICATED, and `strata` has just shown a single-run detection of that size can reverse under a seed), every other lever within floor; steps do not move the row (the step-curve entry); no lever moves leaf quality (the leaf-battery entry). **Zero confirmed detections on a decision row.** (3) **DECISION — GO `vf15_b`, by default under the 15-minute rule, launch no earlier than 01:45 PT 2026-09-12:** `vf15`'s recorded argv verbatim (`--vf-coef 1.5` is its last token of that flag) plus `--pin-commit f3502568` (`vf15` and `ctrl10M` ran on `f3502568`; `ctrl10M_b/_c` on `377a5aa1`, a span the pinned-input functional test of 2026-09-09 found neutral), `--seed 1001`, run name `ai_v12_25_ladder_vf15_b`. **Registered read, fixed here before launch:** `cond.opp_class_auc.t4_10` at both 800-game draws (seeds 20260910 / 20260911) against all three controls; PASS = the Δ CI clears −0.022 DOWNWARD at both draws against all three; MISS = NOT CONFIRMED, and a replicate point above −0.041 (half of `vf15`'s) names the same reversal shape. **Why `vf15_b` and not `vf 0.25` or the stop-gradient head:** both of those arms are built on `vf15`'s direction — "more value gradient strips opponent information from the shared trunk", which `07d42a51` gave a representation reading at n = 1 — and the owner's detached-head question (2026-09-11) rests on the same mechanism; five GPU-hours decide whether it exists before two arms are spent exploiting it. `vf 0.25` follows if `vf15_b` confirms; if it reverses as `strata_b` did, the ladder's decision row has had no lever at all and the next arm is a control of a different kind (a matched-pin SHAPED-critic 10M arm, read on the same rows and the `grid` leaf row — a CONTROL, named as such, not a proposal to re-admit shaping).
+
+**Tooling hazards (findings).** (1) `critic_read` v6's `cond.opp_class_auc.*` ARM column prints a bracket that is NOT the arm's CI on some pairs — `+0.6798 [+0.7158, +0.7169]` (hp400 vs `ctrl10M`), and `strata`'s own 800-game read prints `+0.7599 [+0.7094, +0.7111]`; the point and the Δ CI are right (Δ = arm − control reproduces to 1e-4), the bracket appears to be the CONTROL's; backlog row. (2) `hp400_floor.json` predates v6 and carries no class-AUC rows, so every 400-game class-AUC read is labelled "vs ZERO — NO FLOOR" — descriptive only; the 800-game draw with `hp800_floor_v6.json` is the registered read, and a 400-game floor file needs regenerating before a 400-game read is quoted on this row again. Tag: **VERDICT · strata NOT CONFIRMED · within-lever spread 3.6× the floor · resolution ↔ class-decode DISSOCIATE within a run · GO vf15_b (default, 15-min rule)**.

@@ -775,6 +775,42 @@ difference. The four 10M levers are dead at this length and power, not unresolve
 next arm is a target-side lever with literature behind it — λ-return targets (`--win-prob-lambda 0.9`, arm 8,
 in build), then KataGo-style dense auxiliary targets.
 
+**`strata` on the decision row, and its replicate (2026-09-11/12):** [MEASURED · NOT CONFIRMED,
+`critic_ladder_reads/strata_b_vs_ctrl10M_2026-09-12/`] on `cond.opp_class_auc.t4_10` (declared the decision row
+before the read) `ai_v12_17_ladder_strata` read +0.050 / +0.033 / +0.044 on three eval draws against `ctrl10M`
+(0.760 vs 0.710; floor 0.022) — the campaign's first detection on a decision row. Its seed replicate
+`ai_v12_24_ladder_strata_b` (same pin `f871e79f`, argv identical but `--seed 1002`) read **−0.029 / −0.034 /
+−0.008** against the three controls at 800 games and 0.679 on both draws — BELOW every control. One run of the
+lever read +0.05, its replicate −0.03: the lever's mean effect is inside the floor and the WITHIN-LEVER spread
+(0.08) is 3.6× the control-replicate floor, which bounds the CONTROL's variance only (rule 19, amended). Whether
+class-balanced BCE inflates run-to-run variance on the row or one of the two runs is atypical is not separable at
+n = 2. What the replicate adds: its `gate.resolution.all` is +0.009–0.010 above every control (CIs clear zero)
+while its class decode is below every control — **resolution and opponent-class discrimination dissociate within
+one run**, as calibration and discrimination dissociate across steps on the 75M run (below). The
+representation-level finding (`repr_class_decode_2026-09-11`, branch A: `strata` raises and `vf15` lowers the
+`value_pooled → class` decode past the floor on both draws, Δpooled/ΔV 0.97–1.27 for `strata`, 0.50–0.59 for
+`vf15` with NOTHING at turns 1–3) stands for the runs it measured — `ai_v12_17` and `ai_v12_10` — and licenses no
+family claim. **Ladder standing (2026-09-12): fourteen 10M runs, seven levers + the privileged critic, ZERO
+confirmed detections on a decision row;** `vf15`'s DOWN detection (−0.082 / −0.080) is the only candidate left
+and is at n = 1; its replicate `vf15_b` is the next arm, registered (PASS = Δ CI clears −0.022 at both draws
+against all three controls) before launch. [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
+REPRESENTATION-level opponent-class decode*]
+
+**THE STEP CURVE (2026-09-12, `winprob_step_curve_2026-09-11`):** [MEASURED · (i) REFUTED directionally] the
+75M run read at 10M / 20M / 40M / 73M against its own 10M, two offline draws per checkpoint, an identical
+sentinel panel at all four (`--include-current-snapshot`; the registered `--sentinels 3` was impossible, the pool
+retains only ≥36M). Not one registered decision row rises: `gate.resolution.bot` FLAT (−0.0004 / −0.0010, max W
+0.0069); `cond.opp_class_auc.t4_10` and `gate.resolution.all` FALL, confounded by the trainee's strength closing
+the bot−pool outcome gap (0.426 → 0.299); the strength-robust `value_pooled → class` decode at turns 4–10 reads
+0.898/0.886 → 0.896/0.892 → 0.857/0.867 → 0.862/0.855 — the one gap clearing its bar is 20M→40M, DOWN on both
+draws (marginal on draw 2 against the peer-measured run-level floor), a step change and not a slope. **What
+seven-fold more steps buy is CALIBRATION:** `gate.ece.all` 0.1023 → 0.0170, monotone past its bar at every step
+on both draws; reliability ~6× better, resolution unmoved. A curriculum account of the 20–40M step was sought and
+not found (bot share a constant 0.100 across the intervals). **Consequence: the ladder's 10M nulls are not a
+statement about 10M — "train longer" is not the missing lever.** The cross-run read against `ctrl10M` is REFUSED
+(the pins straddle the 2026-09-07 eval-regime boundary on exactly the differing key). [ledger 2026-09-12 ·
+*MEASUREMENT · THE STEP CURVE*]
+
 **THE FLOOR, SECOND DRAW (2026-09-09, `ctrl10M_c` vs `ctrl10M`):** [MEASURED] the replicate floor is a RANGE per row —
 identity bias 0.015–0.070 (the first draw clear of zero, the second not; the three heads read −0.042 / +0.028 /
 −0.027 against their own continuation, so the sign at 10M is a draw), bot resolution 0.001–0.010, spread ratio
@@ -960,10 +996,14 @@ z=−1.40" rules out >4.5pp, not >0.
 19. **Identify which variance component dominates a row, then replicate at THAT level.** Two components are nested above sampling noise: eval-draw variance WITHIN a run (two offline draws of the same checkpoint moved two levers' bot-resolution points by 69–93 % of their new half-widths) and run-to-run variance (the calibration slope's control-vs-control difference grew from 0.19 to 0.25 as games doubled). They share one abstract fact — a component above sampling noise dominates, so adding games to a single draw is the wrong lever — and they differ in the remedy, which is the part that costs GPU: eval-draw variance is fixed by more DRAWS of the same checkpoint (cheap, offline, no training); run-level variance only by RUN replicates (a full arm each). Rows whose floor grows with eval size are run-level (identity bias, the spread ratios, the calibration slope); the gauge resolution rows are eval-draw-level (their run floor collapsed with eval; their instability is between draws) and get re-draws, never an arm. Two draws BOUND a floor at either level; they never give it a CI. [ledger 2026-09-10 · *RULE 19*, scoped by the Training Run session's correction]
 20. **A LIVE-frame lean is not evidence about the OFFLINE population, in either direction, and neither frame type's controls may bar the other.** The live cycle is loss-enriched, ~200 battles, three sentinels of the run's own snapshots; the offline cycle is full-capture, 4,800–9,600 battles. Two live leans vanished on the offline frames the same day (arm 8's own-team +0.15; arm 5's bot-resolution +0.014), and an offline test's bar was nearly set from a live control number (`lambda095`). A claim is registered on one frame type, read on it, and floored by its controls. [ledger 2026-09-10 · *CORRECTION to arm 5's offline read · RULE 20*]
 21. **A post-hoc candidate that replicates at about half its magnitude with CIs covering zero has the shape of SELECTION INFLATION, not of a real-but-small effect.** A row picked post hoc from ~60 per read is selected partly on its estimate, so a fresh draw regresses; the λ-0.9 overall-resolution candidate went +0.009–0.011 (six CIs clear) → +0.004–0.006 (six CIs covering zero) on its pre-registered replicate. The verdict on such a test is NOT CONFIRMED at the registered standard — never "refuted" (a small true effect both draws are underpowered for also fits) — and the shape is a reason to stop, not to buy a third draw on the same row. [ledger 2026-09-11 · *ADDENDUM to the λ-0.9 replicate's read · RULE 21*]
+22. **A control-replicate floor bounds the CONTROL's run-to-run variance, not the lever's; a single-arm detection is a CANDIDATE until its own seed replicate agrees.** `strata` read +0.050 on the decision row (three eval draws agreeing, 2.3× the floor) and its same-pin seed replicate read −0.03; the within-lever spread was 3.6× the floor measured on three control replicates. A lever may change the variance it is read against, so the replicate that promotes a detection to a family claim is a replicate OF THE ARM, and the eval-draw component (rule 19) never substitutes for it. [ledger 2026-09-12 · *VERDICT · strata_b FAILS*]
+23. **A meter whose value depends on the box's throughput needs a CONTEMPORANEOUS control or width matching, never a fixed bar.** The mirror battery's L1 (separation-of-raced) read 0.058 / 0.128 / 0.365 on the SAME checkpoint, cell, flags and battles at realized search widths K = 3.6 / 5.1 / 8.9 — a 6.3× range set by wall-clock contention — while heads inside one width band differ by ≤1.7×; a head that "cleared" the 18.1 % bar at K = 10 sat below its own same-window control. The `grid` cell (unguarded) is the leaf row that separates heads. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
 
 ### 4.x · The search dividend at the win-prob milestone (2026-09-11)
 
 [MEASURED, `search_dividend_winprob_heads_2026-09-11`, 5,556 mirror battles, zero timeouts] **No head pays as a leaf**: at the registered 3 s defensive operating point the paired mirror win rate is 0.506 / 0.503 / 0.495 (ladder control @10M / λ-0.9 @10M / the 75M run @73M), none clear of 0.50; naive search loses 74–80 % of games to its own unsearched self. The promoted win-prob head is a WORSE leaf than the shaped critic it replaced (separation-of-raced 12–15 % vs 45 %, overrules 1–1.6 % vs 5.8 %). Steps do not buy leaf quality (the 73M head is the worst leaf) and calibration does not (the best-calibrated head is not the best leaf). **Leaf quality is within-game successor discrimination, a different property from the between-game opponent conditioning the ladder's decision row measures; the ladder has no row for it yet.** The search-and-distill path is blocked at this leaf; the binding constraint is the critic objective. Follow-up: the same battery on `strata` and `denseaux` (dense within-game targets) to test whether the two axes separate. [ledger 2026-09-11 · *MEASUREMENT (MAJOR) · THE MIRROR METER*]
+
+[MEASURED, phase 2/3, 6,000 more battles, zero timeouts] **The follow-up ran: `strata`, `denseaux` and `cflabels` @10M — L2 is 0.507 / 0.494 / 0.485, none clear of 0.50, each at or slightly below its own CONTEMPORANEOUS `ctrl10M` anchor (all NOT DETECTED). Six win-prob heads sit on the structural null.** The registered branch is "neither pays": a lever that moved the conditioning row (`strata`, before its replicate failed) leaves leaf quality where it was, and two levers null on conditioning leave it too — so the ladder's decision row is not yet shown to be the row the search path should be steered by, and the axes question is not settled. **L1 is CONVICTED as a width meter** (rule 23) and its 18.1 % bar is withdrawn as a fixed bar. **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
 
 ## 8. Pointers
 
