@@ -143,3 +143,79 @@ pairs** (fresh game indices 400–799; no index is replayed) and the README repo
   read as **SEARCH PAYS**.
 
 No head is extended on any other trigger, and no cell is stopped early for any reason.
+
+---
+
+## 7. ADDITION — two more heads, and the AXES question (registered 2026-09-12 ~01:35 UTC, before the first cell)
+
+Ordered by the coordinator after the three-head read landed. **The bar is unchanged**: paired CI
+lower bound > 0.50 in the mirror, on the delta's own CI, at 800 pairs of the registered rung-B
+cell; `grid` @1 s at 100 pairs beside it as the unguarded reference. Same protocol, same
+`--games-seed 7`, same game indices, so **the two new heads play the same battles as the three
+already read** and every contrast is paired.
+
+### The two heads, and why these two
+
+| head | lever | what the CRITIC LADDER said about it |
+|---|---|---|
+| `ai_v12_17_ladder_strata` @10000032 | class-balanced BCE (`win_prob_strata_weight` 1.0) | **the one lever that moved the ladder's conditioning row** |
+| `ai_v12_20_ladder_denseaux` @10000032 | dense within-game auxiliary targets (`win_prob_dense_aux` 1.0) | **null on the conditioning row** — but dense within-game supervision is exactly what the SHAPED critic had, and the shaped critic is the better leaf (the 2026-09-11 finding) |
+
+**The question they jointly answer: are LEAF QUALITY and CONDITIONING separate axes?** The ladder
+measures conditioning (does `V` move with the opponent / the team); the mirror measures leaf quality
+(does ranking actions on `V` beat the policy). Nothing so far has tested whether a lever that moves
+one moves the other.
+
+### What each outcome means — named in advance
+
+* **denseaux pays, strata does not** ⇒ **the axes are SEPARATE, and dense within-game supervision is
+  the leaf lever.** The conditioning row would then be the wrong meter to steer the leaf by, and the
+  search-and-distill path reopens on a denseaux-style target (next step: a rung-B cell at a larger
+  dense-aux coefficient, then a teacher cell).
+* **strata pays, denseaux does not** ⇒ **conditioning IS leaf quality**, the ladder's conditioning
+  row is a valid behavioural proxy, and the cheap offline meter can steer the search programme.
+* **neither pays** ⇒ neither lever touches the leaf; the axes question is not *settled* by this pair
+  (a null on both is consistent with "separate but neither moved" and with "same axis, neither
+  moved"), and what the cells then decide is narrower but still useful: whether either lever moves
+  the MECHANISM rates (separation-of-raced, overrule rate) even with the win rate on the null.
+  **That secondary read is pre-registered here as the fallback**, because it is the quantity that
+  separated the shaped critic from the win-prob head on 2026-09-11 (45.4% vs 11.9–15.0%).
+* **both pay** ⇒ the leaf is improvable by more than one route, and the programme's constraint is
+  neither lever but their absence to date.
+
+### Registered predictions
+
+1. **Neither head clears the bar.** Both paired CIs straddle 0.50 at 800 pairs; confidence ~70%,
+   for the reason the three-head read gives: `grid` is catastrophic on every win-prob head measured
+   so far, and the defensive gate's job is to buy that back to the null, not past it.
+2. **denseaux is the better LEAF of the two on the mechanism rates** — higher separation-of-raced
+   and a higher overrule rate than strata — because dense within-game supervision is what the leaf
+   needs to rank ACTIONS at one ply. Registered directionally; scored on the delta's CI.
+3. **strata's `grid` cell is no better than the three already measured (0.2025–0.2600), and may be
+   worse.** A class-balanced target sharpens P(win) toward the extremes, and a sharper leaf that is
+   still mis-ranked is a worse ranker, not a better one.
+4. **denseaux's `grid` cell is the best of the five heads** — the one place a dense-supervision head
+   could show a leaf advantage without the gate hiding it. Predicted 0.28–0.40; still below 0.50.
+5. The **triage-forced fraction** differs sharply between the two heads (see the disclosure below).
+
+**DISCLOSURE — what was seen before this was written.** Two 4-battle plumbing smokes (timing +
+leaf resolution) ran before this section: strata forced **95.8%** of decisions and raced 4.2%;
+denseaux forced **67.4%** and raced 32.6% — the extremes of the five heads measured (the other three
+sit at 75–80%). Prediction 5 is therefore *informed*, not blind, and is recorded as such;
+predictions 1–4 concern win rates and separation, which those 8 battles do not resolve. Smoke rows
+are in no cell.
+
+### Two protocol notes, registered because they are deviations
+
+* **THE BOX IS NO LONGER QUIET.** The three-head battery ran at load ~14; a GPU training run and a
+  stepcurve eval campaign are now live and the load is ~33. **A budget is a WALL CLOCK**, so a
+  second buys less width now: the denseaux smoke realized K = 4.0–4.25 worlds against the earlier
+  heads' 4.85–5.48. Therefore a **CONTEMPORANEOUS ANCHOR** is added — `ai_v12_11_ladder_ctrl10M`
+  @10000032, the same rung-B cell, 150 pairs, running *alongside* the two new heads. Its job is the
+  MECHANISM calibration (at ~11k decisions the separation and overrule rates resolve to ~1% even
+  though its win-rate CI is only ±0.035), so that "strata separates less than ctrl10M" is a
+  statement about the head rather than about the box. **Cross-contention comparisons without the
+  anchor are reported as caveated; comparisons through the anchor are not.**
+* **Shard counts are unequal** (denseaux 5, strata 2, anchor 1) because the heads' per-battle cost
+  differs ~3× — strata forces 96% of decisions and therefore searches almost nothing. Every shard
+  is `nice 15`, below the live training run's `nice 10`, which outranks this measurement by design.
