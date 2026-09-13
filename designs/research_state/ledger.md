@@ -18069,3 +18069,88 @@ Training Run's bank `c4d6f06d` holds the run (3 h 04 m, zero crashes; compositio
 Training Run's bank `0870ceb2` holds the run (`ai_v12_28_ladder_ent05` = `ctrl10M`'s argv with only `--ent-coef 0.05`, seed 1001, pin `f3502568`; 4 h 17 m; crossing 4,128,768, matched to every healthy arm; `pool_snapshot_count` 0/1/1/2/3; G7 1.020 worst off an in-family 25.6 reference; final bots 0.8813 INSIDE the controls' 0.880–0.899 band; `approx_kl` end 0.021; realised lr median 3.0e-4, never annealed). **The registered endpoint** (this ledger, *MEASUREMENT · ENTROPY FORENSICS*; the median-of-last-20 window pinned before the number existed): H_end ≥ 1.00 reproduces v8's regime; 0.71–0.83 refutes. **Read: H_end 1.0861 (last value 1.1162) against `ctrl10M` / `_b` / `_c` 0.747 / 0.799 / 0.771 — PASS, +0.287 above the widest control, 3.9× the three-seed floor (0.074), and inside v8's plateau.** The part to build on is the SLOPE: +0.0253 nats/M over the last 2M (se 0.0085) — entropy is climbing at 10M, where every 0.02 control falls 0.08–0.10 between 5M and 10M; the 10M endpoint is a floor on the effect, not a summary of it. Training Run's correction, recorded: at 5M it declined to project H_end, guarding against decay toward the bar; declining was right and the stated reason was wrong — the truth ran the other way. Crash #1 at TEARDOWN (third occurrence of the SIGTERM-after-final-eval shape); `latest.txt` → `final_model.zip` this time, a per-run property, still tested.
 
 **What is established.** The 2.5× entropy coefficient is a sufficient cause of the cross-era entropy gap measured in the forensics; v8's plateau is reproduced by that one flag at 10M on this architecture, obs, reward and ecology, so the collinearity is broken on this axis. **Not established, and not claimed:** that the higher entropy buys strength (not an endpoint; the 45-Elo floor), conditioning (the free read is running: `hp_ent05.sh`, both 800-game draws vs all three controls, registered PASS either direction = the Δ CI on `cond.opp_class_auc.t4_10` clears ±0.022 at both draws vs all three, else NOT DETECTED), leaf quality, or the "still learning at 277M" property — that one needs length. **DECISION (owner direction 2026-09-12 · *PIVOT*): the flywheel-era pair runs at `--ent-coef 0.05` in BOTH arms** (win-prob critic vs the era's shaped configuration, same pin, dose, length, seed, eval regime), so the critic comparison is clean and the v8 comparison is no longer confounded on the entropy axis; the clip-range difference (0.10 vs 0.15) remains the one untested regime leg and stays at our value in both arms. The existing 75M win-prob run at 0.02 is the pair's third leg for free. Tag: **VERDICT · ent05 PASS · v8's entropy regime REPRODUCED by one flag · slope POSITIVE at 10M · pair at 0.05**.
+
+### 2026-09-12 · READ · `ent05`'s conditioning row — NOT DETECTED at the registered standard, an UPWARD CANDIDATE (six of six points positive, mean +0.033, one of six pair-draws past the floor); plus the SIX-difference correction on the void shaped controls (they license NO statement about the shaped objective) and the pointer to the flywheel-pair registration
+
+`measurements/critic_ladder_reads/ent05_vs_ctrl10M_2026-09-12/` (six `critic_read` v6 pairs, both 800-game draws vs all three controls). Registered (this ledger, *VERDICT · ent05 PASSES*): PASS either direction = the Δ CI on `cond.opp_class_auc.t4_10` clears ±0.022 at both draws vs all three controls. **Read:** arm 0.7348 / 0.7272; Δ draw 1 **+0.024 [+0.009, +0.038] / +0.028 [+0.014, +0.043] / +0.057 [+0.043, +0.073]**, draw 2 **+0.014 [−0.001, +0.029] / +0.035 [+0.020, +0.051] / +0.037 [+0.022, +0.051]** — one of six clears the floor, four of six clear zero, six of six positive. **NOT DETECTED at the registered standard; recorded as an UPWARD CANDIDATE** (rule 22: n = 1, and `strata` read +0.050 on three draws before its replicate reversed). If it is real it is the first lever with a positive sign on the row — more exploration, a wider state distribution, a head that reads the opponent slightly better — but the point (+0.033) is below `strata`'s and a replicate is not being bought: the flywheel pair runs at 0.05 in both arms and its critic rows will carry the family read at length. Gate rows: resolution within floor everywhere on draw 1; `resolution.bot` DETECTED up on draw 2 vs two controls (+0.011 / +0.012, floor 0.0051), n.d. vs the third — reported, not claimed. Crossing 4,128,768 both sides of every pair.
+
+**CORRECTION (Training Run, validating arm S): the void shaped controls differ from the era's shaped critic in SIX resolved settings, not three.** Beside critic `winprob → shaped`, gamma 1.0 → 0.9999 and the head promoted from critic to auxiliary: **`use_popart` True (era) → False; `value_dist_mode` `shaping` (the distributional E[Z] readout, era) → `none` (a plain scalar `value_net`); `win_prob_coef` 0.05 (era) → 1.0 (20× heavier).** All six arrive from one mechanism — `ctrl10M`'s argv never named these flags, so flipping `--critic` re-resolved them to defaults without picking up the era's explicit choices. A PopArt-OFF scalar MSE regression onto raw shaped-return units is a badly conditioned target (that is what PopArt exists for), and the era avoided it twice over, with normalisation AND a distributional head; "an unnormalised scalar regression onto raw shaped returns learns slowly" fits the two void controls as well as "the shaped objective learns slowly", and the two are not separable from what ran. **The narrowed statement: the flip controls are not the era's shaped critic and license NO statement about the shaped OBJECTIVE** — my *VERDICT · vf15_b PASSES* (c) and *READ · the shaped-critic family at the LADDER argv* are read under this narrowing. The era precedent for arm S is sharper than I wrote: `v9_long_baseline` crossed at 2,000,016 with **0.7425 vs bots at its 2M cycle** (above any win-prob control's ~0.49 at 2M), so arm S's watch item is a non-crossing by its FIRST eval cycle, fire at 4M, not 6M.
+
+**REGISTRATION POINTER.** The flywheel-era pair is registered at `designs/research_state/flywheel_era_pair_2026-09-12.md` (`ce570fec`); its ledger paragraph follows as the next entry, verbatim. Owner 2026-09-12: *"Lgtm! Excited for our next flywheel era."* Tag: **READ · ent05 conditioning NOT DETECTED · upward CANDIDATE · shaped controls narrowed to NO objective statement · pair registered**.
+
+### 2026-09-12 · REGISTRATION · THE FLYWHEEL-ERA PAIR — two 75M arms, `--critic shaped` (the ERA's configuration, transplanted) vs `--critic winprob`, matched on pin / dose / length / seed / eval regime / architecture; the resolved-config diff is **16 keys of 283, fifteen of them the treatment or forced by it and one the run name — ZERO confounds**; and the strength read is computed to need **20 ladder nodes** (se(Δ) 12.0, CI95 ±23.6 ⇒ smallest claimable |Δ| ≈ 69 Elo)
+
+`designs/research_state/flywheel_era_pair_2026-09-12.md`, written before either arm started.
+**Owner direction 2026-09-12 (*PIVOT*):** search wound down, PPO effectiveness is the object,
+`--value-true-team` stays OFF, a full-length pair approved. **The arms.**
+`ai_v13_01_flywheel_shaped` (arm S — the era's shaped configuration) and
+`ai_v13_02_flywheel_winprob` (arm W — the win-prob critic), both `--pin-commit 6eb9c776`
+(main HEAD; all four 2026-09-12 landings are on it), `--steps 75000000`, `--seed 1001`,
+`--ent-coef 0.05`, `--clip-range 0.15`, `--clip-range-vf none`, `--eval-sentinel-greedy` and
+`--no-value-true-team` typed on both, `--restart-interval-hours 3`, dose **4.578e-8 by
+declaration** (`3e-4 × 10 / (2048 × 32)`, the four inputs identical tokens in both argvs).
+**Arm S is NOT `ctrl10M` with the mode flipped** — that configuration was run twice on 2026-09-12
+and both arms are VOID (never crossed; `ctrl10M_shaped_dense` also breached G7 at 1.522) while the
+era's own shaped fresh run crossed at 2,000,016. Arm S therefore carries the registered baseline
+`v9_long_baseline`'s (`ai_v9_29_rev1_0823`, commit `d78aa810`, config v101) reward and critic
+block, resolved from its `model_config.json` and **verified key-by-key: all 17 reward/critic keys
+the v101 schema records match EXACTLY** (PopArt ON, `value_dist shaping/51/±12/coef 1.0`,
+`value_from_dist`, `value_tail_weight 0.3`, `win_prob_mode shaping` at coef 0.05,
+`draw_penalty −35.0`, the whole BIAS class), with the five fields v101 did not record
+(`critic`, `hand_shaping`, `terminal_indicator`, `victory_value`, `gamma`) typed explicitly at
+their era values rather than left to defaults that have since moved. **Flag drift, tested by
+EXECUTION:** the era's 229-token recorded argv replays through the current parser with
+**0 unrecognized** and a clean ARCH surface; not one reward-family flag was deleted, renamed or
+changed arity; the single refusal is `--distill-team-bias 0.4` without a teacher (a new guard on a
+flag the era ran as a silent no-op, and not transplanted). **Validation:** `checkargs` exit 0 on
+both (141 / 132 flags, 0 unrecognized, 0 refused, ARCH SURFACE clean against
+`production_config@360f8378dd90`); `--dry-run` `role: FRESH` on both; `--debug --steps 10000`
+smokes of both from the main checkout into tmp, arm S reaching `Training complete` with the banner
+`[CRITIC] shaped — V(s) = the distributional E[Z] in raw shaped-return units (PopArt ON),
+gamma=0.9999; the win-prob head is an auxiliary at --win-prob-coef 0.05` and composition
+`1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)` — **both arms reached `Training complete` at
+10,240 steps with no FATAL and no traceback**, arm W's composition reading
+`1 TERMINAL + 0 PBRS + 0 BIAS (none — fully policy-invariant)`, the treatment stated by the code
+itself. **REGISTERED READ, fixed before launch:**
+strength at matched snapshot COUNT on `snapshot_ladder/ladder.json` refit over the COMMON step
+set at **n = 20** — derived by refitting `ai_v12_02_winprob_critic`'s ladder at increasing
+`first_n`, which reproduces the four-node se(Δ) 22.2 / CI95 ±43.5 exactly and falls to
+**se(Δ) 12.0 / CI95 ±23.6 at twenty**, so the smallest claimable |Δ| is 45.0 + 23.6 ≈ **69 Elo**
+and n ≥ 12 is the floor below which the read is not reported; the second-newest node as the
+inflation cross-check; the within-run late slope (no bar); policy entropy H against v8's 1.07–1.11
+plateau and the 0.074 replicate floor, **a difference between the arms being a FINDING, not a
+bar**; `cond.opp_class_auc.t4_10` on two offline 800-game draws, 🚨 **read BOTH ways on arm S and
+both labelled** — `values` (the actual shaped critic) and `win_probs` (the auxiliary head at 0.05)
+are different tensors there, the v6 tool defaults to the latter, and
+`max_abs_values_minus_winprobs` will be large BY CONSTRUCTION and is not a defect; **stall rate and
+`rollout/ep_len_mean` as PRIMARY endpoints**, promoted by arm W's own `[CRITIC]` banner (a `[0,1]`
+critic cannot express "a timeout is worse than a loss"; `--arm-no-progress-tax` is the contingency
+and stays OFF), read under rule 12 — a timeout is never a semantic outcome and an arm above 25 %
+is INCONCLUSIVE; the untaught meter at run end under both the registry config and `--config auto`.
+**Bars, stated honestly:**
+there is **no run-to-run floor at 75M and none is affordable** — one seed per arm — so every floor
+quoted (45.0 Elo, 0.0220/0.0245, 0.074 nats) is imported from 10M four-node depth, the only
+within-pair proxy is each arm's node-to-node spread (which bounds within-run wobble, not run-to-run
+variance), and **rule 22 binds: any Δ is a CANDIDATE, never a family verdict** — the two same-pin
+seed pairs in hand differ by 83 and 58 Elo against a control pair's 10. A null is reported
+**NOT DETECTED, never "equivalent"** (rule 6: the delta's own CI must sit inside the bar, and
+±23.6 inside an imported 45.0 makes that clause unavailable). **Comparisons and their confounds:**
+vs `ai_v12_02_winprob_critic` (the 0.02 leg) is **ladder-only** — it spans the 2026-09-07
+opponent-regime boundary, so `win_rate_vs_pool` / `eval/elo` are not comparable across it (+8.9 pp
+[+7.0, +10.7] to the trainee under the old asymmetry) while `ladder.json` and every bot edge are
+unaffected; vs the v8 line (`ai_v8_03_zarch_control_0718`, 10 nodes over 150.9M–248.0M) is
+**SHAPE ONLY** absent a direct match (rule 4). **Sequencing:** single GPU, `vf025` → arm S → arm W;
+~31–38 GPU-h each (the only 75M precedent realized 1.995 M steps/h ⇒ 37.6 h; the 10M arms 2.16–2.43
+M/h ⇒ 31–35 h; arm S's rate is the less certain, and the two void shaped controls' 3.1–3.3 M/h must
+NOT be used for it because they never crossed into self-play). Arm S first — it carries the
+transplant, and its first eval cycle answers whether the era's composition still crosses.
+**No cross-projection of that crossing from two eval cycles will be made.** Hazards recorded:
+a design-doc command block is not a launch command (launch from the argv files);
+`--vf-coef 0.5` multiplies a BCE on W and a PopArt-normalised MSE on S and is deliberately NOT
+re-tuned; `--debug` does **not** fence the GPU when the argv names `--device cuda` (one smoke
+attempt OOMed beside the live `vf025` arm — the live arm was verified unharmed, still writing TB
+events 9 s later — and every subsequent smoke ran `--device cpu` with `CUDA_VISIBLE_DEVICES=""`);
+the smoke bypasses the forkserver preload and the compile layer, so **the first two minutes of each
+real launch remain the only test of it**; triggers test `latest.txt`, never a fixed filename.
+Tag: **REGISTRATION · flywheel-era pair · era composition VERIFIED key-by-key · 16/283 keys differ,
+zero confounds · read at 20 nodes, ~69 Elo resolution · n=1 per arm ⇒ CANDIDATE at best**.

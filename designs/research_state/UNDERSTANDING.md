@@ -829,8 +829,10 @@ pair.** Whether a LOWER coefficient raises the row is untested (`vf 0.25` queued
 self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, and its dense sibling
 `ctrl10M_shaped_dense` never crossed either (0.53 vs bots at 10M) and breached G7. **Neither is a verdict on the
 shaped head: the era's own shaped fresh run `ai_v9_29_rev1` crossed at 2,000,016.** The failure belongs to the
-ladder's argv with the critic mode flipped (terminal indicator on, the BIAS class zeroed, gamma 0.9999, the head as
-an auxiliary) — which of those carries it is not identified. The flywheel pair's shaped arm therefore runs the
+ladder's argv with the critic mode flipped — SIX resolved settings differ from the era's shaped critic (PopArt OFF,
+no distributional readout, a 20× heavier auxiliary head, gamma 0.9999, the head's role, the critic itself), and an
+unnormalised scalar regression onto raw shaped returns is a badly conditioned target in its own right — so the
+two controls license NO statement about the shaped objective; which setting carries the failure is not identified. The flywheel pair's shaped arm therefore runs the
 era's shaped configuration, not a one-flag flip. [ledger 2026-09-12 · *READ · the shaped-critic family at the
 LADDER argv*] [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
 REPRESENTATION-level opponent-class decode*]

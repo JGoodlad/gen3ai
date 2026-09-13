@@ -1,0 +1,48 @@
+latest.txt -> final_model.zip
+=== GEN ai_v12_28_ladder_ent05 -> /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800b seed 20260911 2026-09-12T18:51:12-07:00
+=== GEN ai_v12_28_ladder_ent05 -> /home/goodlad/.claude/jobs/9ab51de6/tmp/hp_eval/hp800 seed 20260910 2026-09-12T18:51:12-07:00
+GEN ai_v12_28_ladder_ent05 -> hp800 exit=0
+GEN ai_v12_28_ladder_ent05 -> hp800b exit=0
+=== READ hp800 ai_v12_28_ladder_ent05 vs ai_v12_11_ladder_ctrl10M 2026-09-12T20:13:01-07:00
+READ hp800 vs ai_v12_11_ladder_ctrl10M exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0385 | +0.0386 | **-0.0001** | [-0.0054, +0.0062] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0209 | +0.0170 | **+0.0039** | [-0.0012, +0.0092] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 797/284/6 (9569 battles, 9563 decoder battles, 21 seeds) | +0.6141 [+0.6139, +0.6153] | +0.5807 | **+0.0334** | [+0.0168, +0.0486] | **DETECTED** (CI cl
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 797/284/6 (9569 battles, 9563 decoder battles, 21 seeds) | +0.7348 [+0.7342, +0.7352] | +0.7109 | **+0.0239** | [+0.0094, +0.0379] | **NOT DETECTED** (
+=== READ hp800 ai_v12_28_ladder_ent05 vs ai_v12_15_ladder_ctrl10M_b 2026-09-12T20:56:15-07:00
+READ hp800 vs ai_v12_15_ladder_ctrl10M_b exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0385 | +0.0384 | **+0.0001** | [-0.0052, +0.0061] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0003) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0209 | +0.0206 | **+0.0003** | [-0.0049, +0.0059] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 797/284/6 (9569 battles, 9563 decoder battles, 21 seeds) | +0.6141 [+0.6139, +0.6153] | +0.5946 | **+0.0196** | [+0.0042, +0.0354] | **NOT DETECTED** (C
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 797/284/6 (9569 battles, 9563 decoder battles, 21 seeds) | +0.7348 [+0.7342, +0.7352] | +0.7064 | **+0.0284** | [+0.0141, +0.0433] | **NOT DETECTED** (
+=== READ hp800 ai_v12_28_ladder_ent05 vs ai_v12_16_ladder_ctrl10M_c 2026-09-12T21:19:35-07:00
+READ hp800 vs ai_v12_16_ladder_ctrl10M_c exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0385 | +0.0389 | **-0.0004** | [-0.0060, +0.0052] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0209 | +0.0244 | **-0.0035** | [-0.0088, +0.0016] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0074) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 797/284/6 (9569 battles, 9563 decoder battles, 21 seeds) | +0.6141 [+0.6139, +0.6153] | +0.5670 | **+0.0472** | [+0.0311, +0.0637] | **DETECTED** (CI cl
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 797/284/6 (9569 battles, 9563 decoder battles, 21 seeds) | +0.7348 [+0.7342, +0.7352] | +0.6775 | **+0.0573** | [+0.0429, +0.0726] | **DETECTED** (CI c
+=== READ hp800b ai_v12_28_ladder_ent05 vs ai_v12_11_ladder_ctrl10M 2026-09-12T21:43:12-07:00
+READ hp800b vs ai_v12_11_ladder_ctrl10M exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0420 | +0.0391 | **+0.0029** | [-0.0034, +0.0089] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0302 | +0.0188 | **+0.0114** | [+0.0052, +0.0172] | 400 | **DETECTED** (CI clears the floor +0.0051) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 794/324/10 (9512 battles, 9509 decoder battles, 21 seeds) | +0.5953 [+0.5807, +0.5835] | +0.5821 | **+0.0132** | [-0.0031, +0.0293] | **NOT DETECTED** (
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 794/324/10 (9512 battles, 9509 decoder battles, 21 seeds) | +0.7272 [+0.7117, +0.7148] | +0.7130 | **+0.0143** | [-0.0007, +0.0287] | **WITHIN FLOOR** 
+=== READ hp800b ai_v12_28_ladder_ent05 vs ai_v12_15_ladder_ctrl10M_b 2026-09-12T22:23:33-07:00
+READ hp800b vs ai_v12_15_ladder_ctrl10M_b exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0420 | +0.0367 | **+0.0053** | [-0.0007, +0.0114] | 400 | **NOT DETECTED** (CI covers zero) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0302 | +0.0184 | **+0.0119** | [+0.0052, +0.0180] | 400 | **DETECTED** (CI clears the floor +0.0051) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 794/324/10 (9515 battles, 9512 decoder battles, 21 seeds) | +0.5953 [+0.5819, +0.5862] | +0.5848 | **+0.0105** | [-0.0054, +0.0274] | **NOT DETECTED** (
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 794/324/10 (9515 battles, 9512 decoder battles, 21 seeds) | +0.7272 [+0.6901, +0.6933] | +0.6919 | **+0.0353** | [+0.0201, +0.0508] | **NOT DETECTED** 
+=== READ hp800b ai_v12_28_ladder_ent05 vs ai_v12_16_ladder_ctrl10M_c 2026-09-12T22:35:19-07:00
+READ hp800b vs ai_v12_16_ladder_ctrl10M_c exit=0
+**SELF-PLAY CROSSING** — arm 4,128,768 · control 4,128,768 (first step carrying any `*_pool` scalar; the PROMOTION scalar itself lands one eval→rollout lag earlier, at 4,000,032 / 4,000,032). Des
+| resolution ⭐ | `all` | `capture-rate (gauge)` | +0.0420 | +0.0398 | **+0.0022** | [-0.0029, +0.0081] | 400 | **WITHIN FLOOR** (|delta| <= floor 0.0024) |
+| resolution ⭐ | `bot` | `capture-rate (gauge)` | +0.0302 | +0.0239 | **+0.0063** | [+0.0002, +0.0124] | 400 | **NOT DETECTED** (CI does not clear the floor 0.0051) |
+| `cond.opp_class_auc.t1_3` | MATCHED · battle 794/324/7 (9539 battles, 9536 decoder battles, 21 seeds) | +0.5953 [+0.5647, +0.5667] | +0.5660 | **+0.0293** | [+0.0135, +0.0456] | **DETECTED** (CI cl
+| `cond.opp_class_auc.t4_10` | MATCHED · battle 794/324/7 (9539 battles, 9536 decoder battles, 21 seeds) | +0.7272 [+0.6888, +0.6920] | +0.6907 | **+0.0365** | [+0.0222, +0.0506] | **NOT DETECTED** (
+ENT05 HP DONE 2026-09-12T22:47:40-07:00
