@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,191-line file. **The ledger itself is append-only and is never edited by this**;
+18,205-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**601 headings · 550 dated · 2026-08-01 → 2026-09-12 · ledger 18,191 lines.**
+**602 headings · 551 dated · 2026-08-01 → 2026-09-13 · ledger 18,205 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -621,3 +621,4 @@ rename.
   - `L18081` · `2026-09-12` · REGISTRATION · THE FLYWHEEL-ERA PAIR — two 75M arms, `--critic shaped` (the ERA's configuration, transplanted) vs `--critic winprob`, matched on pin / dose / length / seed / eval regime / architecture; the resolved-config diff is **16 keys of 283, fifteen of them the treatment or forced by it and one the run name — ZERO confounds**; and the strength read is computed to need **20 ladder nodes** (se(Δ) 12.0, CI95 ±23.6 ⇒ smallest claimable |Δ| ≈ 69 Elo)
   - `L18158` · `2026-09-12` · OPS · `ai_v12_29_ladder_vf025` COMPLETE at 10,027,008 — the cleanest arm of the campaign (crossing matched, G7 falling, bots 0.9112 ABOVE the controls' band); and the vf_coef ladder now has a MEASURED dose-delivery curve with a tight three-seed floor
   - `L18181` · `2026-09-12` · OPS · LAUNCH · `ai_v13_01_flywheel_shaped` (ARM S of the flywheel-era pair) is live — the era's shaped configuration CONFIRMED from the banner, not inferred
+  - `L18192` · `2026-09-13` · METHOD + 🚨 MY ERROR · `model_config.json` is BLIND to the entire optimisation block, so "verified key-by-key against model_config" certifies only the reward/critic block — and I raised that true finding wrapped in a false one, because I did not read the registration doc that had already declared the dose gap
