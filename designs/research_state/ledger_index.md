@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,066-line file. **The ledger itself is append-only and is never edited by this**;
+18,072-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**596 headings · 545 dated · 2026-08-01 → 2026-09-12 · ledger 18,066 lines.**
+**597 headings · 546 dated · 2026-08-01 → 2026-09-12 · ledger 18,072 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -616,3 +616,4 @@ rename.
   - `L18020` · `2026-09-12` · OPS + 🚨 G7 BREACH + 🚨 SECOND VOID CONTROL · `ai_v12_27_ladder_ctrl10M_shaped_dense` reached 10,027,008 but **NEVER CROSSED** and is the campaign's **FIRST G7 BREACH** (worst 1.522, 121.7 % of bar) — the shaped-critic family is now 0-for-2 on reaching the self-play gate, and my own cross-projection for this arm was WRONG
   - `L18038` · `2026-09-12` · READ · the shaped-critic family at the LADDER argv is a curriculum failure, not a head verdict — `ctrl10M_shaped_dense` also NEVER CROSSED (0.531 vs bots at 10M, pool count 0 at every cycle) and breached G7 (1.52 at 10M, the campaign's first breach, with the anti-stall tax ACTIVE); but the era's own shaped-critic fresh run `ai_v9_29_rev1` crossed at 2,000,016 on its first cycle — so the two void controls indict `ctrl10M`'s argv with the mode flipped (terminal-indicator ON, most BIAS terms zeroed, gamma 0.9999, the head as an auxiliary), NOT the shaped head as the era ran it; the long pair's shaped arm must run the ERA's shaped configuration
   - `L18044` · `2026-09-12` · OPS + 🚨 PASS · `ai_v12_28_ladder_ent05` COMPLETE at 10,027,008 — **H_end 1.0861, clearing the registered 1.00 bar and landing INSIDE v8's 1.07–1.11 plateau**; the late slope is POSITIVE (+0.025 nats/M, ~3 se), so entropy is still RISING at 10M; and the arm crossed, held G7, and finished inside the controls' bots band
+  - `L18067` · `2026-09-12` · VERDICT · `ent05` PASSES — `--ent-coef 0.05` REPRODUCES v8's entropy regime at 10M (H_end 1.086, inside v8's 1.07–1.11 plateau, +0.29 nats = 3.9× the floor above the widest control) and the entropy is STILL RISING at 10M (+0.025 nats/M, ~3 se) where every control falls; bot win rate lands inside the controls' band; DECISION: the flywheel-era pair runs at `--ent-coef 0.05` in both arms, and `ent05`'s free offline conditioning read is running

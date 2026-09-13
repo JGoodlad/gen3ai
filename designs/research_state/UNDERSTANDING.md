@@ -249,7 +249,12 @@ our fresh arms sit INSIDE v8's dose range (3.2–6.0e-8 vs 2.1–7.4e-8); only t
 rose twice as fast as `ai_v8_03` and neither decelerates detectably. **Isolating arm (registered before launch):**
 one 10M fresh arm = `ctrl10M`'s argv with only `--ent-coef 0.05`, endpoint H_end against the 0.074 floor
 (≥1.00 reproduces v8's regime; 0.71–0.83 refutes, and the clip-range leg inherits); strength at 10M is NOT an
-endpoint. `--ent-coef` is live on a resume (`model_build.py:543`), unlike `--lr`. Hazards: a fork's TB dir and
+endpoint. **RAN (2026-09-12, `ai_v12_28_ladder_ent05`): PASS — H_end 1.086, inside v8's 1.07–1.11 plateau,
++0.29 nats above the widest control (3.9× the floor), and the entropy is still RISING at 10M (+0.025 nats/M,
+~3 se) where every 0.02 control falls; crossing, G7 and bot win rate all in family. One flag reproduces the
+cross-era entropy regime on this architecture, so the collinearity is broken on that axis. Strength,
+conditioning (read running) and the "still learning" property are NOT claimed. The flywheel pair runs at 0.05 in
+both arms. [ledger 2026-09-12 · *VERDICT · ent05 PASSES*] `--ent-coef` is live on a resume (`model_build.py:543`), unlike `--lr`. Hazards: a fork's TB dir and
 `ladder.json` carry the parent's whole history (read the own span only); `main.lineage` `role=fresh` means
 "records no parent", not "trained from init". [ledger 2026-09-12 · *MEASUREMENT · ENTROPY FORENSICS*]
 
