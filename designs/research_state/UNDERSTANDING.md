@@ -824,8 +824,10 @@ confirmed detections on a decision row;** **`vf15` is CONFIRMED (2026-09-12, `cr
 replicate `vf15_b` reads −0.053 to −0.087 against the three controls on both draws, six of six CIs clear of the
 floor — the campaign's first confirmed detection on the decision row, and its direction is DOWN: 1.5× the
 value coefficient strips opponent-class information from V while `gate.resolution` stays within floor on every
-pair.** Whether a LOWER coefficient raises the row is untested (`vf 0.25` queued); nothing here moves strength at
-10M. A sixteenth arm, `ctrl10M_shaped` (scalar-MSE critic on the same terminal-only signal), never crossed into
+pair.** A LOWER coefficient does NOT raise it: `vf025` reads −0.034 to +0.003 against the three controls on both
+draws, five of six within floor — the lever is non-monotone, flat from 0.25 to 0.5 and falling at 1.5, so the
+control's 0.5 sits on a plateau and the confirmed effect is one-sided damage above it [ledger 2026-09-13 ·
+*VERDICT · vf025 NOT DETECTED*]. Nothing here moves strength at 10M. A sixteenth arm, `ctrl10M_shaped` (scalar-MSE critic on the same terminal-only signal), never crossed into
 self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, and its dense sibling
 `ctrl10M_shaped_dense` never crossed either (0.53 vs bots at 10M) and breached G7. **Neither is a verdict on the
 shaped head: the era's own shaped fresh run `ai_v9_29_rev1` crossed at 2,000,016.** The failure belongs to the
