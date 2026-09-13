@@ -18154,3 +18154,37 @@ the smoke bypasses the forkserver preload and the compile layer, so **the first 
 real launch remain the only test of it**; triggers test `latest.txt`, never a fixed filename.
 Tag: **REGISTRATION · flywheel-era pair · era composition VERIFIED key-by-key · 16/283 keys differ,
 zero confounds · read at 20 nodes, ~69 Elo resolution · n=1 per arm ⇒ CANDIDATE at best**.
+
+### 2026-09-12 · OPS · `ai_v12_29_ladder_vf025` COMPLETE at 10,027,008 — the cleanest arm of the campaign (crossing matched, G7 falling, bots 0.9112 ABOVE the controls' band); and the vf_coef ladder now has a MEASURED dose-delivery curve with a tight three-seed floor
+
+**Run.** `ai_v12_29_ladder_vf025` — `ctrl10M`'s argv with `--vf-coef 0.5 → 0.25`, run-name swapped, `--seed 1001` appended (227 → 229 tokens; exactly ONE `--vf-coef` in this argv so no last-wins ambiguity, and `--exploiter-bot-fraction 0.5` verified untouched since `0.5` occurs more than once). Span **`f3502568`**. checkargs 128 accepted / 2 launcher-owned / 0 unrecognized, ARCH clean, dry-run FRESH. 18:27 → 23:25 PT, **4 h 58 m**, FPS 537, **Restarts 1, zero crashes** (no `crashes/`). `final_model.zip` written, `latest.txt` points to it. **NINETEEN complete.**
+
+**Everything healthy.** Crossing **LOCATED at 4,128,768** (`pool_snapshot_count` 0→1 at 4,000,032; first `*_pool` tag 4,128,768) — matched. `pool_snapshot_count` 0/1/1/2/3; `selfplay_fraction` 0.000/0.789/0.900/0.900/0.900. **`eval/win_rate_vs_bots` 0.4837 / 0.7450 / 0.8200 / 0.8813 / 0.9112 — the final value is ABOVE the three controls' 10M band (0.8800–0.8988)**, the highest 10M bots reading of the campaign; recorded as a descriptor, not a claim, since strength is not an endpoint here and one eval cycle has no CI. **G7 below bar on both halves** off an IN-FAMILY frozen reference of 25.954 — ratios 0.958 / 0.945 / 0.920, a FALLING series, worst **0.958 = 76.6 % of bar**; stall half peak 0.0168, last 0.0022. H_start 1.6670, H_end 0.7979 (median-20) — **inside the controls' band (0.7473–0.7990)**, so the entropy regime is ordinary here, in contrast to `ent05`. Live-frame critic meters at the last update: ECE 0.0125, resolution 0.0435, skill 0.2748, Brier 0.1156 — **RULE 20: live-frame, single-update, not evidence about the offline population.**
+
+🚨 **THE DOSE IS DELIVERED, AND `grad/value_policy_logratio` IS THE ROW THAT SHOWS IT.** Median of the last 20 rollouts (log10 of the value/policy gradient-norm ratio), across the whole `vf_coef` ladder:
+
+| `vf_coef` | run | log10 | linear |
+|---|---|---|---|
+| **0.25** | `vf025` | **−1.0205** | **0.095×** |
+| 0.5 | `ctrl10M` | −0.6146 | 0.243× |
+| 0.5 | `ctrl10M_b` | −0.5746 | 0.266× |
+| 0.5 | `ctrl10M_c` | −0.6044 | 0.249× |
+| 1.5 | `vf15` | −0.0738 | 0.844× |
+| 1.5 | `vf15_b` | +0.0898 | 1.230× |
+
+**The three controls at `vf_coef` 0.5 cluster to a spread of 0.023 in linear terms (0.243–0.266)** — a genuinely tight three-seed floor for this row — while both treated levels sit far outside it in the expected direction. **So this is a delivery row with a real floor, unlike `strata_share_bot`, which saturated and carried no dose information.** Note the response is **SUPER-linear**: 0.25 → 0.5 multiplies the ratio by 2.66, and 0.5 → 1.5 by 4.1, because the value gradient's own norm grows as the head is trained harder. A reader should not expect the ratio to scale with `vf_coef`.
+
+🚨 **A TENSION WORTH NAMING: the registered `vf_coef` restart rule would FLAG this arm.** That rule keeps `vf_coef` when |log10 ratio| ≤ 0.5 (ledger `cfc72ad0`); `vf025` reads **−1.02**, twice outside the band, which the rule would read as "the value term is starved, raise `vf_coef`". That is correct as a description and wrong as an instruction here, because starving the value term IS the treatment. **The restart rule is a controller for production runs and must not be applied to an arm whose whole purpose is to move the quantity it regulates** — stated now so no future reader applies it to a `vf_coef` arm and "corrects" the experiment away.
+
+**What is NOT decided here.** The registered read — `cond.opp_class_auc.t4_10` at both 800-game draws vs all three controls, **PASS = Δ CI clears +0.022 UPWARD at both draws against all three, anything else NOT DETECTED** — is an offline read dispatched by the orchestrator. **Monotonicity is the HYPOTHESIS, not an assumption:** `vf15_b` confirmed that 1.5 pushes the row DOWN, and that does not entail 0.25 pushes it UP. No `value_sidecar/` — structural at this pin. Tag: **OPS · COMPLETE · nineteenth run · dose-delivery curve MEASURED with a tight three-seed floor · restart-rule tension named**.
+
+### 2026-09-12 · OPS · LAUNCH · `ai_v13_01_flywheel_shaped` (ARM S of the flywheel-era pair) is live — the era's shaped configuration CONFIRMED from the banner, not inferred
+
+Launched 23:25 PT, launcher pid 3505060, child 3505094, pin **`6eb9c776`** (deliberately NOT bumped to `ce570fec` — same code, and `6eb9c776` is what every validation ran against). Registered in `designs/research_state/flywheel_era_pair_2026-09-12.md`, owner-approved. Pre-launch on this box: 247 tokens, checkargs **139 accepted / 2 launcher-owned / 0 unrecognized**, ARCH surface clean, `--dry-run` FRESH, `--steps 75,000,000`, restarts every 3.0 h. **Dose recomputed from the argv: 0.0003 × 10 / (2048 × 32) = 4.5776e-8.** ETA at 2.0–2.4 M steps/h ⇒ **~31–38 h**.
+
+**The banners confirm the era configuration key-for-key, which matters because the two flip controls did not:**
+- `[CRITIC] shaped — V(s) = the distributional E[Z] in raw shaped-return units (PopArt ON), gamma=0.9999; the win-prob head is an auxiliary at --win-prob-coef 0.05.`
+- `[Reward] composition: 1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)`
+- `⚖️ [EVAL REGIME] eval sentinels GREEDY + symmetric teams (--eval-sentinel-greedy, source=argv); promote_threshold=0.55 (source=default)`
+
+**PopArt ON, distributional `E[Z]`, auxiliary head at 0.05** — the three keys that separate this from `ctrl10M_shaped` / `_dense`, now verified live rather than assumed. **Registered watch item, with a sharper threshold than the one proposed:** the era run `ai_v9_29_rev1_0823` crossed at **2,000,016** with **0.7425 bots at its 2M cycle** — higher than any win-prob control's ~0.49 — so **arm S should cross at its FIRST eval cycle, and "not crossed by 4M" is the fire**, not 6M; waiting to 6M spends two GPU-hours confirming what two cycles already say. The first two minutes are the only test of the preload/compile layer (the pre-launch smokes ran compile-off on CPU) and they passed. Tag: **OPS · LAUNCH · era config CONFIRMED from banners**.

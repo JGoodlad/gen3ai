@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,157-line file. **The ledger itself is append-only and is never edited by this**;
+18,191-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**599 headings · 548 dated · 2026-08-01 → 2026-09-12 · ledger 18,157 lines.**
+**601 headings · 550 dated · 2026-08-01 → 2026-09-12 · ledger 18,191 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -619,3 +619,5 @@ rename.
   - `L18067` · `2026-09-12` · VERDICT · `ent05` PASSES — `--ent-coef 0.05` REPRODUCES v8's entropy regime at 10M (H_end 1.086, inside v8's 1.07–1.11 plateau, +0.29 nats = 3.9× the floor above the widest control) and the entropy is STILL RISING at 10M (+0.025 nats/M, ~3 se) where every control falls; bot win rate lands inside the controls' band; DECISION: the flywheel-era pair runs at `--ent-coef 0.05` in both arms, and `ent05`'s free offline conditioning read is running
   - `L18073` · `2026-09-12` · READ · `ent05`'s conditioning row — NOT DETECTED at the registered standard, an UPWARD CANDIDATE (six of six points positive, mean +0.033, one of six pair-draws past the floor); plus the SIX-difference correction on the void shaped controls (they license NO statement about the shaped objective) and the pointer to the flywheel-pair registration
   - `L18081` · `2026-09-12` · REGISTRATION · THE FLYWHEEL-ERA PAIR — two 75M arms, `--critic shaped` (the ERA's configuration, transplanted) vs `--critic winprob`, matched on pin / dose / length / seed / eval regime / architecture; the resolved-config diff is **16 keys of 283, fifteen of them the treatment or forced by it and one the run name — ZERO confounds**; and the strength read is computed to need **20 ladder nodes** (se(Δ) 12.0, CI95 ±23.6 ⇒ smallest claimable |Δ| ≈ 69 Elo)
+  - `L18158` · `2026-09-12` · OPS · `ai_v12_29_ladder_vf025` COMPLETE at 10,027,008 — the cleanest arm of the campaign (crossing matched, G7 falling, bots 0.9112 ABOVE the controls' band); and the vf_coef ladder now has a MEASURED dose-delivery curve with a tight three-seed floor
+  - `L18181` · `2026-09-12` · OPS · LAUNCH · `ai_v13_01_flywheel_shaped` (ARM S of the flywheel-era pair) is live — the era's shaped configuration CONFIRMED from the banner, not inferred
