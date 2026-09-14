@@ -1,0 +1,3 @@
+{"agent":"SmallRL","regime":"greedy","team_set":"away","challenger":"metamon",
+ "n_requested":50,"our_rc":0,"metamon_rc":1,"model":"models/ai_v12_02_winprob_critic/final_model.zip","port":9350,
+ "our_temperature":0.0,"our_team_seed":20261214,"their_team_seed":20271214,"tag":"S3"}

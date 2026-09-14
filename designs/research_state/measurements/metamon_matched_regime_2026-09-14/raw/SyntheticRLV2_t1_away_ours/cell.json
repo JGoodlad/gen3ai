@@ -1,0 +1,3 @@
+{"agent":"SyntheticRLV2","regime":"t1","team_set":"away","challenger":"ours",
+ "n_requested":50,"our_rc":0,"metamon_rc":1,"model":"models/ai_v12_02_winprob_critic/final_model.zip","port":9350,
+ "our_temperature":1.0,"our_team_seed":20261514,"their_team_seed":20271514,"tag":"Y6"}

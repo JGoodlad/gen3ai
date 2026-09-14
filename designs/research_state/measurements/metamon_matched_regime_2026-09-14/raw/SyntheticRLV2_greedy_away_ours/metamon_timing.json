@@ -1,0 +1,24 @@
+{
+ "n_decisions": 2483,
+ "mean_s": 0.12275934190535487,
+ "median_s": 0.11256333068013191,
+ "p90_s": 0.21465424913913012,
+ "max_s": 2.2662537638098,
+ "sample_kwarg_values": [
+  false
+ ],
+ "argmax_checked": 2483,
+ "argmax_matched": 2483,
+ "argmax_match_rate": 1.0,
+ "wall_s": 364.44818925857544,
+ "agent": "SyntheticRLV2",
+ "checkpoint": null,
+ "backend": "poke-env",
+ "regime": "greedy",
+ "role": "acceptor",
+ "team_set": "competitive",
+ "team_seed": 20271114,
+ "action_temperature": null,
+ "n_team_draws": 50,
+ "regime_check_ok": true
+}

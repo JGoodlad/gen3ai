@@ -1,0 +1,20 @@
+{
+ "n_decisions": 2197,
+ "wall_s": 143.15312886238098,
+ "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+ "device": "cpu",
+ "series": "SmallRL",
+ "stochastic_kwarg_values": [
+  false
+ ],
+ "temperature_flag": 0.0,
+ "team_dir": null,
+ "team_seed": 20261014,
+ "mode": "accept",
+ "n_team_draws": 50,
+ "mean_s": 0.04328359733452248,
+ "median_s": 0.02379735093563795,
+ "p90_s": 0.08397198794409633,
+ "max_s": 0.21184593718498945,
+ "regime_check_ok": true
+}

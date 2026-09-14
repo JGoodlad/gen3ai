@@ -1,0 +1,3 @@
+{"agent":"SmallRL","regime":"t1","team_set":"home","challenger":"ours",
+ "n_requested":50,"our_rc":0,"metamon_rc":0,"model":"models/ai_v12_02_winprob_critic/final_model.zip","port":9350,
+ "our_temperature":1.0,"our_team_seed":20261314,"their_team_seed":20271314,"tag":"S4"}

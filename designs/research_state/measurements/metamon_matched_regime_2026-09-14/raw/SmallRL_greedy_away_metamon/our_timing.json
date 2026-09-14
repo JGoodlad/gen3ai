@@ -1,0 +1,20 @@
+{
+ "n_decisions": 2728,
+ "wall_s": 186.83853793144226,
+ "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+ "device": "cpu",
+ "series": "SmallRL",
+ "stochastic_kwarg_values": [
+  false
+ ],
+ "temperature_flag": 0.0,
+ "team_dir": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+ "team_seed": 20261214,
+ "mode": "accept",
+ "n_team_draws": 50,
+ "mean_s": 0.05243746918056685,
+ "median_s": 0.027867699041962624,
+ "p90_s": 0.11267776973545551,
+ "max_s": 0.5210943389683962,
+ "regime_check_ok": true
+}

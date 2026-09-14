@@ -1,0 +1,24 @@
+{
+ "n_decisions": 2313,
+ "mean_s": 0.013435572649320443,
+ "median_s": 0.012208560947328806,
+ "p90_s": 0.015760155860334635,
+ "max_s": 1.332638959866017,
+ "sample_kwarg_values": [
+  true
+ ],
+ "argmax_checked": 2313,
+ "argmax_matched": 1440,
+ "argmax_match_rate": 0.622568093385214,
+ "wall_s": 63.761849880218506,
+ "agent": "SmallRL",
+ "checkpoint": null,
+ "backend": "poke-env",
+ "regime": "t1",
+ "role": "challenger",
+ "team_set": "competitive",
+ "team_seed": 20271614,
+ "action_temperature": 1.0,
+ "n_team_draws": 50,
+ "regime_check_ok": true
+}

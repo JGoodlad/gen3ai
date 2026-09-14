@@ -1,0 +1,24 @@
+{
+ "n_decisions": 2199,
+ "mean_s": 0.023180640159660156,
+ "median_s": 0.012802135199308395,
+ "p90_s": 0.06240830011665821,
+ "max_s": 2.15384244825691,
+ "sample_kwarg_values": [
+  false
+ ],
+ "argmax_checked": 2199,
+ "argmax_matched": 2199,
+ "argmax_match_rate": 1.0,
+ "wall_s": 109.27682375907898,
+ "agent": "SmallRL",
+ "checkpoint": null,
+ "backend": "poke-env",
+ "regime": "greedy",
+ "role": "challenger",
+ "team_set": "gen3ai_pool",
+ "team_seed": 20271014,
+ "action_temperature": null,
+ "n_team_draws": 50,
+ "regime_check_ok": true
+}
