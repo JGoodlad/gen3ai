@@ -18301,3 +18301,58 @@ Artifact: `designs/research_state/measurements/foul_play_derisk_2026-09-14/`.
 ### 2026-09-14 · OPS · LAUNCH · `ai_v13_02_flywheel_winprob` (ARM W) is live — the pair's matched comparator
 
 Launched 13:07 PT, launcher pid 19704, child 19748, pin **`6eb9c776`**. Re-validated on the box immediately before launch: 231 tokens, checkargs **130 accepted / 2 launcher-owned / 0 unrecognized**, ARCH surface clean, `--dry-run` FRESH, `--steps 75,000,000`, restarts every 3.0 h. **Dose 4.5776e-8 — identical to arm S**, and `--ent-coef 0.05`, `--seed 1001`, same pin, same obs, same ladder ecology. Banners: `[Reward] composition: 1 TERMINAL + 0 PBRS + 0 BIAS (none — fully policy-invariant)`; `[CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1] … weighted by --vf-coef 0.5`; `⚖️ [EVAL REGIME] eval sentinels GREEDY + symmetric teams (source=argv); promote_threshold=0.55`. **The treatment pair is the critic objective and nothing else.** Tag: **OPS · COMPLETE (arm S) · era composition CROSSES · G7 held 75M · LAUNCH (arm W)**.
+
+### 2026-09-14 · MEASUREMENT · THE METAMON BASELINE AT A MATCHED REGIME — pre-registered 2×2 (sampling regime × team set, 100 games a cell, 800 games): on the primary row, greedy-vs-greedy on Metamon's own 20-team gen3ou set, the 75M win-prob run reads **0.420 [0.328, 0.518] vs `SyntheticRLV2` — NOT DETECTED as better, point on the losing side** — and **0.650 [0.553, 0.736] vs `SmallRL` — BETTER**; the de-risk's 0.742 / 0.583 do NOT survive (like-for-like −22 pp / −8 pp) and are never quoted again without their regime; the recurring baseline runs GREEDY-vs-GREEDY
+
+Pre-registered 2×2
+(`PREDICTION.md` committed at `80be38f7` before the first game): sampling regime {greedy·greedy,
+T=1.0·T=1.0, BOTH sides matched} × team set {our 719-team pool, Metamon's own 20-team
+`competitive` gen3ou set — the set its README names as the paper's human-ladder set and says
+Metamon has overfit to}, 100 games per cell, role balanced inside every cell, 800 games on our
+pinned Showdown (`e0551883f`, port 9350), Metamon @ `0a00a759`, CPU-only.
+**PRIMARY ROW (greedy-vs-greedy on THEIR teams): `ai_v12_02_winprob_critic` @ 75M is NOT BETTER
+than `SyntheticRLV2` — 0.420, Wilson 95% [0.328, 0.518], the registered LB > 0.50 bar NOT
+cleared** (predicted 0.42–0.52 and not cleared; called correctly in advance). Against `SmallRL`
+the same row is **0.650 [0.553, 0.736] — BETTER**, bar cleared. `SyntheticRLV2` leads us in three
+of four cells (0.500 / 0.420 / 0.410 / 0.310); `SmallRL` trails in all four (0.520 / 0.650 /
+0.630 / 0.560). **The de-risk's mixed-regime reads were inflated: −22.2 pp [−34.1, −9.4] against
+`SmallRL`** on the like-for-like greedy home cell (0.742 → 0.520) and −8.3 pp [−23.4, +7.5]
+against `SyntheticRLV2` (0.583 → 0.500); **quote those two numbers only with their regime
+attached.** **THE TRANSFERABLE FINDING:** our own +8.9 pp eval-regime figure is an ASYMMETRY term
+and does NOT transfer to a symmetric regime change — the matched temperature effect is
+−0.010 [−0.105, +0.086] for `SmallRL` (NOT DETECTED) and +0.100 [+0.004, +0.194] for
+`SyntheticRLV2` (detected, double the pre-registered bound). The signs differ because **"T = 1.0"
+is a different amount of noise per model**: measured over 14,085 sampled decisions, `SmallRL` plays its own
+argmax 64.7% of the time at T=1.0 and `SyntheticRLV2` 88.0%, so the same nominal setting perturbs 35%
+vs 12% of decisions. **SURPRISE / PRE-REGISTRATION MISS: the team-set effect is NOT DETECTED for
+either model** (`SmallRL` −0.030 [−0.125, +0.066], point estimate on the AWAY side;
+`SyntheticRLV2` +0.090 [−0.006, +0.184]) — our 719-team training pool buys no detectable home
+advantage over a 20-team set we have never trained on, a free-standing corroboration of
+count-dominates-conditioning. Role (challenger = p1) is NOT DETECTED either (+0.050 / −0.020).
+Regimes were VERIFIED per decision on both sides, never assumed: Metamon greedy is
+`Agent.get_actions(sample=False)` with `argmax_match_rate` = 1.0000 in every greedy half-cell and
+0.62–0.88 in the sampling half-cells as the positive control. **TWO NEW HAZARDS.** (H-A) **OUR
+vendored poke-env fork makes an EMPTY 7th Pokémon out of a trailing blank line**
+(`teambuilder.py:43` skips a split chunk only when it is exactly `""`, and every Metamon
+`competitive` file ends `"\n\n\n"`); Showdown rejects the team and the series **HANGS** —
+`validate_teams_locally` passes it because the defect is created by the PACK, and upstream
+poke-env 0.8.3.3 parses the same file correctly. This is de-risk H1 with the parsers' roles
+REVERSED: two disagreements between the packages on team FILES, in opposite directions. The
+one-line fix is `if not ps_mon.strip(): continue`; not applied here (tech debt). (H-B) **OUR
+250-turn forfeit desynchronises Metamon's challenge stream and Metamon answers it with UNBOUNDED
+RECURSION** (`metamon_to_amago.py:321` catches "Battle is already finished", force-resets and calls
+itself; ~985 levels then `RecursionError`), killing the process and breaking the positional join.
+4 forfeits in 800 games hit 3 of 16 half-cells; **the join is otherwise exact — 690 games before
+any forfeit produced exactly ONE side-disagreement, and that one is the tie Metamon's boolean
+field cannot express** — and the 3 desynchronised half-cells match their clean role-partners at
++0.020 [−0.092, +0.131], so the result stands. Also: `MetamonDiscrete` clips probabilities to
+[0.001, 0.99] AFTER the temperature division, so **no temperature can express greedy** (~0.992
+argmax ceiling). Cost under load 25–31 on 16 cores: **3.0 s/game (`SmallRL`), 6.1 s/game
+(`SyntheticRLV2`)**, CPU-only. **RECOMMENDATION: the recurring Metamon baseline runs
+GREEDY-vs-GREEDY** — it is the protocol `ladder.json` and every other strength number use, and
+T=1.0 is not a fixed yardstick across opponents; `SmallRL` every milestone (both team sets),
+`SyntheticRLV2` as the milestone reference, one T=1.0 cell as a standing check, and H-B closed
+first. Full measurement:
+`designs/research_state/measurements/metamon_matched_regime_2026-09-14/`.
+
+**Orchestrator's reading.** Superseding the de-risk entry's numbers: the 75M win-prob policy is ABOVE Metamon's 15M model and roughly LEVEL with its 200M model at home (0.500) and below it away (0.420), at matched greedy play. "Temperature 1.0" is not one regime across models (SmallRL plays its argmax 65 % of the time at T = 1, SyntheticRLV2 88 %), which is why the temperature effect has opposite signs for the two — a reason the greedy protocol is the only comparable one. Our 719-team pool bought NO detectable home advantage over twenty teams we never trained on (pre-registered as the largest expected effect; missed) — a datum for the opponent-team-diversity question. Tag: **MEASURED · NOT BETTER than SynRLV2 · BETTER than SmallRL · greedy baseline · de-risk numbers SUPERSEDED**.

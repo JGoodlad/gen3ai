@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,304-line file. **The ledger itself is append-only and is never edited by this**;
+18,359-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**607 headings · 556 dated · 2026-08-01 → 2026-09-14 · ledger 18,304 lines.**
+**608 headings · 557 dated · 2026-08-01 → 2026-09-14 · ledger 18,359 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -627,3 +627,4 @@ rename.
   - `L18248` · `2026-09-14` · MEASUREMENT (MAJOR) · FOUL PLAY DE-RISKED as a gen3ou eval opponent — GO, and it BEATS the 75M win-prob arm: our win rate **0.388 [0.288, 0.497]** over 80 games on our pinned server, a hand-evaluated MCTS at ~1.4M visits and 2.1 s per decision against our 50 ms search-free policy; zero parse failures, zero timeouts, zero forfeits; NO iteration budget exists (wall-clock only ⇒ a width meter, rule 23 — every read carries its realized visit count); the websocket shim is a half-day
   - `L18287` · `2026-09-14` · OPS · `ai_v13_01_flywheel_shaped` (ARM S) COMPLETE at 75,005,952 — the era's shaped composition CROSSED at 4,128,768 and held G7 under bar across all 37 cycles; ARM W launched behind it
   - `L18301` · `2026-09-14` · OPS · LAUNCH · `ai_v13_02_flywheel_winprob` (ARM W) is live — the pair's matched comparator
+  - `L18305` · `2026-09-14` · MEASUREMENT · THE METAMON BASELINE AT A MATCHED REGIME — pre-registered 2×2 (sampling regime × team set, 100 games a cell, 800 games): on the primary row, greedy-vs-greedy on Metamon's own 20-team gen3ou set, the 75M win-prob run reads **0.420 [0.328, 0.518] vs `SyntheticRLV2` — NOT DETECTED as better, point on the losing side** — and **0.650 [0.553, 0.736] vs `SmallRL` — BETTER**; the de-risk's 0.742 / 0.583 do NOT survive (like-for-like −22 pp / −8 pp) and are never quoted again without their regime; the recurring baseline runs GREEDY-vs-GREEDY
