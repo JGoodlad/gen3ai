@@ -18208,3 +18208,39 @@ It also carries a detail I did not have (the era annealed to a 3× lower LR), an
 `measurements/critic_ladder_reads/vf025_vs_ctrl10M_2026-09-13/` (six `critic_read` v6 pairs, both 800-game draws vs all three controls). Registered (this ledger, *VERDICT · vf15_b PASSES*): PASS = the Δ CI on `cond.opp_class_auc.t4_10` clears +0.022 UPWARD at both draws vs all three; monotonicity named as the hypothesis, not an assumption. **Read:** arm 0.6914 / 0.6788; Δ draw 1 **−0.019 [−0.033, −0.004] / −0.016 [−0.030, −0.001] / +0.003 [−0.012, +0.018]**, draw 2 **−0.034 [−0.049, −0.019] / −0.014 [−0.030, +0.001] / −0.009 [−0.023, +0.006]** — none clears the floor upward, five of six are within floor, the lean is slightly NEGATIVE. **NOT DETECTED; the monotone reading is refuted directionally.** Together with `vf15`/`vf15_b`: the row is FLAT from 0.25 to 0.5 and falls at 1.5 — the control's coefficient sits on a plateau, and the lever's confirmed effect is one-sided damage above it, not a dial. **The flywheel pair keeps 0.5** (already fixed in the registration). Gate rows within floor / n.d. everywhere; crossing 4,128,768 both sides of every pair; the run itself the cleanest of the campaign (Training Run `879cd051`: matched crossing, G7 0.958 worst off an in-family reference, H_end 0.798 in band, final bots 0.9112 — above the controls' 0.880–0.899 band, the campaign's highest, a descriptor with no CI). **Delivery row (Training Run):** `grad/value_policy_logratio` median-20 = **0.095× at 0.25, 0.243 / 0.266 / 0.249× at 0.5, 0.844 / 1.230× at 1.5** — a three-seed floor of 0.023 linear with both treated levels far outside it; the response is SUPER-linear in `vf_coef` (×2.66 for 0.25→0.5, ×4.1 for 0.5→1.5) because the value gradient's own norm grows as the head trains harder — never read the ratio as scaling with the coefficient. **Controller tension (Training Run):** the registered `vf_coef` restart rule (`cfc72ad0`, keep when |log10 ratio| ≤ 0.5) would flag `vf025` (−1.02) as starved and raise it; correct as description, wrong as instruction — **that controller must never be applied to an arm whose purpose is to move the quantity it regulates.**
 
 **Arm S, first cycle (Training Run, 00:30 PT), and the decision.** `ai_v13_01_flywheel_shaped` read **0.4262 vs bots at 2,000,016, pool 0, no crossing** — against the era run's 0.7425-and-crossed at the same step. Training Run located the two optimisation-block differences: arm S runs `--grad-accum-steps 32` (dose 4.5776e-8) against the era's 8 (1.8311e-7), i.e. a quarter of the era's dose, and `--ent-coef 0.05` against the era's 0.02. **Both were DECLARED** (the registration's dose section states the grad-accum gap as a confound; 0.05 is the owner's pair setting) — but the method finding is real and reusable: **`model_config.json` records the architecture, reward and critic block and is BLIND to the optimisation block** (`grad_accum_steps`, `batch_size`, `n_epochs`, `lr`, `ent_coef`, `n_steps`, `n_envs` all absent), so "verified key-by-key against `model_config`" verifies exactly what that file holds and silently passes the rest; the optimisation block lives only in `metadata.json`'s `original_command`. **DECISION: LET IT RUN; the era-reproduction framing is DROPPED.** The S-vs-W pair is internally matched (same dose, same entropy) and is the experiment; the era is not an available comparator for this pair, and arm S's 0.426 at 2M is IN FAMILY with the win-prob arm at the same entropy (`ent05` 0.403 at 2M; the 0.02 controls ~0.49), so against its actual comparator there is no shortfall yet. The 4M void watch item stands as registered. A same-code arm at the era's dose is the only way to buy the era comparison; not prepared, not requested. Tag: **VERDICT · vf025 NOT DETECTED · vf lever NON-MONOTONE, plateau at 0.5 · arm S runs, era framing dropped · model_config is blind to the optimisation block**.
+
+### 2026-09-14 · MEASUREMENT · METAMON DE-RISKED as a gen3ou baseline opponent — GO: the 73M win-prob run beats Metamon's 15M `SmallRL` 0.742 [0.657, 0.812] over 120 games and its 200M `SyntheticRLV2` 0.583 [0.457, 0.699] over 60, on OUR pinned server, CPU only, zero parse failures either way; `play.py --forfeit-turn-limit` (the trainer's own stall threshold) landed; three hazards that would each have corrupted the read
+
+180 head-to-head gen3ou games on our own pinned Showdown server
+(`deps/pokemon-showdown` @ `e0551883f`, port 9217), Metamon @ `0a00a759` in its own conda env,
+CPU-only, both sides drawing from OUR 719-team pool. `ai_v12_02_winprob_critic`'s final snapshot
+(75,005,952 steps) beats **`SmallRL` (15M) at 0.742, Wilson 95% [0.657, 0.812], n=120** and
+**`SyntheticRLV2` (200M) at 0.583 [0.457, 0.699], n=60**; the CIs overlap, so the ordering is
+suggestive, not established. **Protocol compatibility is CLEAN in both directions** — 0 parse
+failures, 0 timeouts, 0 tracebacks, 0 illegal-action fallbacks on our side, and our 250-turn
+forfeit limit never fired (longest game 178 turns). **Metamon's own evaluator, computing the same
+games independently, reported 0.2500 and 0.4167 for itself — complementing to 0.75 (our 89 wins
+plus the one tie, which its boolean result field books as its own loss) and to 0.5833 exactly.** Cost, under a load average of 22.6 on 16
+cores: **2.3 s/game vs SmallRL (14 ms/move median), 8.5 s/game vs SyntheticRLV2 (120 ms/move)** —
+`SmallRL` is the practical recurring baseline, `SyntheticRLV2` the milestone reference. The
+registry name `production` could NOT be used: it resolves to `ai_v9_21_gen17_pfspoff_0820` @
+`config_version=97` and no longer loads at HEAD (`ExtractorBuild.__init__() got an unexpected
+keyword argument 'threat_prob_outspeed'`). **THREE HAZARDS.** (1) Metamon runs UPSTREAM poke-env
+0.8.3.3 while we vendor a fork, and on a nickname line with no item (`Airmure (Skarmory)`) upstream
+packs an EMPTY species field; Showdown rejects the team as `airmureskarmory` and **the match
+STALLS rather than erroring** — it killed the first 120-game attempt at game 8. Any team file
+handed to a third-party poke-env must be nickname-free. (2) Every Metamon transformer policy is
+unrunnable on CPU as shipped: `amago` defaults to `FlashAttention`, a CUDA-only wheel;
+`VanillaAttention` via `gin_overrides` is the same exact math. (3) Metamon's per-battle CSV
+generates a RANDOM `Battle ID` (no join key with the Showdown room) and records a tie as a loss, so
+the two sides' logs can only be joined POSITIONALLY. A serverless integration is mechanically
+close — `_LocalBattleRunner._attach` needs four attributes that Metamon's `MetamonPlayer` inherits
+from `poke_env.player.Player`, and `OpenAIGymEnv` accepts `start_listening=False` — but is blocked
+by the two poke-env packages: their player subclasses upstream, our `BattleStreamClient`
+subclasses the fork, and one process resolves `import poke_env` to exactly one. Recommendation:
+keep the websocket harness. Action spaces do not map by permutation either — theirs is 9 (0–3
+moves, 4–8 switches), ours is 11 (0–5 switches, 6–9 moves, 10 struggle) with an explicit Struggle
+they have no slot for. Full measurement:
+`designs/research_state/measurements/metamon_derisk_2026-09-14/`.
+
+**Orchestrator's note.** The `production` registry name resolves to `ai_v9_21_gen17_pfspoff_0820` (config v97) and FAILS to load at HEAD (`ExtractorBuild.__init__() got an unexpected keyword argument 'threat_prob_outspeed'`) — the registered production baseline is not loadable by current code; `ai_v12_02_winprob_critic/final_model.zip` stood in. A registry entry that cannot load is a backlog row (below), not a silent substitution. Asymmetry recorded: our side greedy, Metamon at its own eval default (temperature 1.0), so the numbers are a first anchor, not a matched-regime rating. Tag: **MEASURED · GO · external anchor exists · production registry entry STALE**.

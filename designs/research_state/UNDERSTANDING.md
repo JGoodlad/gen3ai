@@ -391,6 +391,20 @@ containing the ladder's +91.7, the head-to-head's +94.9 **and zero**. 560 direct
 to ±30; 720 bot games cannot establish which model is better.
 [meas: `cross_era_head_to_head/`]
 
+**An EXTERNAL anchor exists (2026-09-14, `metamon_derisk_2026-09-14/`):** [MEASURED] the 73M win-prob run
+(`ai_v12_02_winprob_critic`, greedy) beats Metamon's paper-era policies on our own pinned Showdown server in
+gen3ou — **0.742 [0.657, 0.812]** over 120 games vs `SmallRL` (15M) and **0.583 [0.457, 0.699]** over 60 vs
+`SyntheticRLV2` (200M, the paper's best Gens 1–4 model, which reached the top 10 % of human players in Gen1).
+Metamon's own evaluator reports the complements exactly. Zero protocol failures either way; 2.3 / 8.5 s per game on
+CPU; Metamon sampled at its default temperature 1.0 while ours was greedy, so this is a first anchor, not a
+matched-regime rating. `SmallRL` is the recurring baseline, `SyntheticRLV2` the milestone reference; both live
+outside our lineage and do not move with it. Serverless integration is blocked by the two poke-env packages (theirs
+subclasses upstream, our bridge transport subclasses the fork) — the websocket harness stays. Three hazards:
+upstream poke-env mis-parses nicknamed team entries into an empty species and the match STALLS rather than
+erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hardcodes `ws://localhost:8000`. The
+`production` registry name resolves to a v9 checkpoint that does not load at HEAD. [ledger 2026-09-14 ·
+*MEASUREMENT · METAMON DE-RISKED*]
+
 ### 3.2 Reading an ELO — five rules
 
 1. The headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), never `eval/elo` (±29).
