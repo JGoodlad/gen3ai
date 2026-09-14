@@ -1,0 +1,27 @@
+# The EXACT Foul Play invocation used for every game in games.jsonl.
+# (Emitted by scripts/run_session.sh; reproduced here so the config is readable
+#  without reading the shell.)
+
+cd /home/goodlad/dev/foul-play
+PYTHONUNBUFFERED=1 ./.conda/bin/python -u run.py \
+  --websocket-uri ws://localhost:9317/showdown/websocket \
+  --ps-username FpD914s<SESSION> \
+  --bot-mode challenge_user --user-to-challenge G3aiD914s<SESSION> \
+  --pokemon-format gen3ou \
+  --team-name gen3/ou/gen3ai_pool \
+  --search-time-ms 1000 \
+  --search-parallelism 1 \
+  --search-threads 1 \
+  --run-count 10 \
+  --log-level INFO
+
+# Everything else is a Foul Play default (fp/config.py):
+#   --smogon-stats-format  -> defaults to --pokemon-format, i.e. gen3ou
+#   --team-preview-search-time-ms / --team-preview-search-parallelism
+#                          -> default to the non-preview values (moot: gen3 has no team preview)
+#   --save-replay never, --ps-password unset (guest login), --ps-avatar unset,
+#   --team-list unset, --room-name unset, --log-to-file off
+#
+# NO password: both clients guest-login. Even against a --no-security LOCAL server the
+# guest assertion is fetched from Smogon's action.php, which is why the usernames must be
+# under 19 characters (see README "Hazards", H1).

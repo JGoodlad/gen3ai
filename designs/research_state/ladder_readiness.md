@@ -102,7 +102,28 @@ episode's would; lowering it is for a deliberately shorter series, raising it me
 else. Pinned by `src/main/play_forfeit_limit_test.py` (default == `StallConfig().threshold` ==
 `MAX_TURNS`, and the flag REACHES the player's `stall_config`). Second corpus, 2026-09-14: over 180
 gen3ou games against Metamon's `SmallRL` and `SyntheticRLV2` pretrained policies, **mean 36-38
-turns, max 178, and 0/180 reached 250** — consistent with the replay corpus above.
+turns, max 178, and 0/180 reached 250** — consistent with the replay corpus above. Third corpus,
+same day: 80 gen3ou games against **Foul Play** (MCTS, 1000 ms/decision), **mean 34.2 turns,
+median 28, max 110, 0/80 reached 250**
+([`measurements/foul_play_derisk_2026-09-14/`](measurements/foul_play_derisk_2026-09-14/README.md)).
+
+### Two more third-party-client hazards, measured against Foul Play (2026-09-14)
+
+🚨 **Our team pastes are only complete under OUR teambuilder.** `data/teams/**/*.txt` omits the
+`IVs:` line for Hidden Power users; `Gen3Teambuilder` injects it from `utils.gen3_utils.GEN3_HP_IVS`
+at pack time. Any client that packs the paste verbatim — Foul Play's
+`fp/teams/team_converter.py` does — turns `Hidden Power [Grass]` into 31/31/31/31/31/31, i.e.
+Hidden Power **Dark**, and the team either fails validation or plays a different move. Hand a
+third party an EXPANDED paste, and validate its packed output against the pinned Showdown
+`TeamValidator` before trusting a single game.
+
+🚨 **A username of 19+ characters is refused by `action.php` — which even a `--no-security` LOCAL
+server consults — and the refusal is a `;`-prefixed string, not an error.** A client that does not
+parse the assertion (Foul Play's guest path does not) `/trn`s the refusal, reports success, and
+hangs forever. Our own client is immune (`_parse_login_assertion` + `LoginError`, gap #10 above),
+but any head-to-head harness must preflight BOTH names. Detail:
+[`measurements/foul_play_derisk_2026-09-14/`](measurements/foul_play_derisk_2026-09-14/README.md)
+hazards H1-H2.
 
 ### A third-party poke-env will not read our nicknamed team files
 
