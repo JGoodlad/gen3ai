@@ -1,0 +1,116 @@
+[
+ {
+  "series": "SmallRL",
+  "n_games": 120,
+  "our_wins": 89,
+  "our_losses": 30,
+  "ties": 1,
+  "our_win_rate": 0.7416666666666667,
+  "wilson95_lo": 0.6567146993963795,
+  "wilson95_hi": 0.8116260368277621,
+  "mean_turns": 36.333333333333336,
+  "max_turns": 178,
+  "forfeit_limit_fired": 0,
+  "sides_disagree": 1,
+  "metamon_rows_missing": 0,
+  "our_defaults_total": 0,
+  "our_redecides_total": 0,
+  "distinct_metamon_teams": 97,
+  "our_inference": {
+   "n_decisions": 4806,
+   "mean_s": 0.050486710286864724,
+   "median_s": 0.027177194133400917,
+   "p90_s": 0.11733292788267136,
+   "max_s": 0.7616629120893776,
+   "wall_s": 276.5697913169861,
+   "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+   "device": "cpu",
+   "series": "SmallRL"
+  },
+  "metamon_inference": {
+   "n_decisions": 4938,
+   "mean_s": 0.03020886832981345,
+   "median_s": 0.014225087128579617,
+   "p90_s": 0.07252522790804505,
+   "max_s": 2.0085416631773114,
+   "wall_s": 282.74367785453796,
+   "agent": "SmallRL",
+   "checkpoint": null,
+   "backend": "poke-env"
+  },
+  "our_wall_s": 276.5697913169861,
+  "sec_per_game": 2.304748260974884,
+  "failures": {
+   "our_tracebacks": 0,
+   "classify_raises": 0,
+   "metamon_tracebacks": 0,
+   "our_connection_errors": 0,
+   "signatures": []
+  },
+  "series_meta": {
+   "agent": "SmallRL",
+   "n_requested": 120,
+   "our_rc": 0,
+   "metamon_rc": 0,
+   "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+   "port": 9217
+  }
+ },
+ {
+  "series": "SyntheticRLV2",
+  "n_games": 60,
+  "our_wins": 35,
+  "our_losses": 25,
+  "ties": 0,
+  "our_win_rate": 0.5833333333333334,
+  "wilson95_lo": 0.4572808101974486,
+  "wilson95_hi": 0.6993572144411129,
+  "mean_turns": 38.38333333333333,
+  "max_turns": 130,
+  "forfeit_limit_fired": 0,
+  "sides_disagree": 0,
+  "metamon_rows_missing": 0,
+  "our_defaults_total": 0,
+  "our_redecides_total": 0,
+  "distinct_metamon_teams": 48,
+  "our_inference": {
+   "n_decisions": 2544,
+   "mean_s": 0.1572385842859915,
+   "median_s": 0.11030867602676153,
+   "p90_s": 0.3087673932313919,
+   "max_s": 1.6425119610503316,
+   "wall_s": 508.2780694961548,
+   "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+   "device": "cpu",
+   "series": "SyntheticRLV2"
+  },
+  "metamon_inference": {
+   "n_decisions": 2580,
+   "mean_s": 0.1717597153012518,
+   "median_s": 0.11978744529187679,
+   "p90_s": 0.3200945509597659,
+   "max_s": 10.1561908419244,
+   "wall_s": 514.0777027606964,
+   "agent": "SyntheticRLV2",
+   "checkpoint": null,
+   "backend": "poke-env"
+  },
+  "our_wall_s": 508.2780694961548,
+  "sec_per_game": 8.471301158269247,
+  "failures": {
+   "our_tracebacks": 0,
+   "classify_raises": 0,
+   "metamon_tracebacks": 0,
+   "our_connection_errors": 0,
+   "signatures": []
+  },
+  "series_meta": {
+   "agent": "SyntheticRLV2",
+   "n_requested": 60,
+   "our_rc": 0,
+   "metamon_rc": 0,
+   "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+   "port": 9217
+  }
+ }
+]

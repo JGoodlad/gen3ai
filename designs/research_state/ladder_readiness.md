@@ -94,6 +94,27 @@ normaliser (`gen3_deadline_clock_v1`), so moving it for the ladder would put the
 deadline scalars out of distribution. Revisit only if a stall-vs-stall matchup is ever
 observed running long.
 
+**The limit is now NAMED rather than implied.** `play.py --forfeit-turn-limit` defaults to
+`StallConfig().threshold` — read from the trainer, not restated — and is printed at startup, so
+every websocket session states the turn at which it will forfeit. It exists because a head-to-head
+against an OUTSIDE agent only measures the agent we train if a stalled game ends where a training
+episode's would; lowering it is for a deliberately shorter series, raising it measures something
+else. Pinned by `src/main/play_forfeit_limit_test.py` (default == `StallConfig().threshold` ==
+`MAX_TURNS`, and the flag REACHES the player's `stall_config`). Second corpus, 2026-09-14: over 180
+gen3ou games against Metamon's `SmallRL` and `SyntheticRLV2` pretrained policies, **mean 36-38
+turns, max 178, and 0/180 reached 250** — consistent with the replay corpus above.
+
+### A third-party poke-env will not read our nicknamed team files
+
+🚨 Measured 2026-09-14 against Metamon (upstream poke-env 0.8.3.3 vs our vendored fork). On a team
+line with a nickname and NO item — `Airmure (Skarmory)` — upstream packs an **empty species field**
+and the whole string as the nickname; Showdown rejects the team (`The Pokemon "airmureskarmory" does
+not exist`) and **the challenge STALLS rather than erroring**. Our fork parses the same line
+correctly, and `validate_teams_locally` passes the file, so nothing on our side flags it. Any team
+file handed to a poke-env we do not control must be **nickname-free**; the exporter in
+`designs/research_state/measurements/metamon_derisk_2026-09-14/export_pool_teams.py` strips them
+(3,270 lines across our 719-team pool).
+
 ---
 
 ## Gap list

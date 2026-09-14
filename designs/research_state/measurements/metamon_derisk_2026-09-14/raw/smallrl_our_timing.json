@@ -1,0 +1,11 @@
+{
+ "n_decisions": 4806,
+ "mean_s": 0.050486710286864724,
+ "median_s": 0.027177194133400917,
+ "p90_s": 0.11733292788267136,
+ "max_s": 0.7616629120893776,
+ "wall_s": 276.5697913169861,
+ "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+ "device": "cpu",
+ "series": "SmallRL"
+}

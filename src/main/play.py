@@ -46,6 +46,7 @@ from poke_env.ps_client.server_configuration import (
     ShowdownServerConfiguration,
     localhost_server_configuration,
 )
+from agents.training.stall import StallConfig
 from utils.teambuilder import Gen3Teambuilder
 
 # Ports this process must NEVER touch. 8001 carries the live training run (dropping it
@@ -53,6 +54,14 @@ from utils.teambuilder import Gen3Teambuilder
 # client has no business on either, so the refusal is in CODE rather than in a docs
 # warning — see the root CLAUDE.md § Showdown Server.
 RESERVED_PORTS = {8000: "the shared DEV server", 8001: "the live TRAINING server"}
+
+# THE FORFEIT DEADLINE, read from the TRAINER rather than restated. `StallConfig.threshold`
+# defaults to `agents.observation.constants.MAX_TURNS` (250) and is the turn at which a training
+# episode's player returns a `ForfeitBattleOrder` — `gen3_deadline_clock_v1`, the same number the
+# observation's turn clock normalises by. A websocket game that ran to a DIFFERENT limit would not
+# be measuring the agent we train, so this entry point inherits the constant instead of owning a
+# second one. Pinned by `src/main/play_forfeit_limit_test.py`.
+DEFAULT_FORFEIT_TURN_LIMIT = StallConfig().threshold
 
 # Team from https://pokepast.es/f6229d2c867e21d6
 STAR_TSS_TEAM = """
@@ -172,6 +181,12 @@ def build_model_player(args, teambuilder, server_config, account):
     return RLPlayer(
         model=model,
         team=teambuilder,
+        # THE FORFEIT LIMIT. `RLPlayer.choose_move` already forfeits at
+        # `StallConfig.threshold`; naming it here makes the number VISIBLE and overridable
+        # (`--forfeit-turn-limit`) instead of an invisible class default, which is what a
+        # head-to-head against a third-party bot needs — the two clients must agree on when a
+        # stalled game ends, and the answer has to be OUR trainer's number.
+        stall_config=StallConfig(threshold=args.forfeit_turn_limit),
         battle_format=args.format,
         server_configuration=server_config,
         mappings=load_mappings(),
@@ -215,6 +230,8 @@ async def main(args) -> int:
     player = build_model_player(args, teambuilder, server_config, account)
     print(f"[play] {args.mode}: {args.n_battles} {args.format} battle(s) as "
           f"{player.username} on {server_config.websocket_url}")
+    print(f"[play] forfeit turn limit: {args.forfeit_turn_limit} "
+          f"(trainer default {DEFAULT_FORFEIT_TURN_LIMIT})")
     print(f"[play] connect-or-raise deadline: "
           f"{'none (waits forever)' if not player.connect_timeout_s else f'{player.connect_timeout_s:g}s'}")
 
@@ -277,6 +294,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "registered upstream, which even a --no-security local server refuses, "
                         "since localhost auth still goes to Smogon's action.php — otherwise "
                         "waits out the whole battle deadline in silence.")
+    p.add_argument("--forfeit-turn-limit", type=int, default=DEFAULT_FORFEIT_TURN_LIMIT,
+                   metavar="TURNS",
+                   help="forfeit a battle once it reaches this turn, the way a TRAINING episode "
+                        f"does (default {DEFAULT_FORFEIT_TURN_LIMIT}, read from "
+                        "agents.training.stall.StallConfig.threshold — do not restate it). Lower "
+                        "it only for a deliberately shorter head-to-head; raising it above the "
+                        "trainer's number measures an agent we do not train.")
     p.add_argument("--proxy", type=str, default=None, metavar="SOCKS5_URL",
                    help="SOCKS5 proxy URL, e.g. socks5h://127.0.0.1:1080")
     return p

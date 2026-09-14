@@ -1,0 +1,11 @@
+{
+ "n_decisions": 2544,
+ "mean_s": 0.1572385842859915,
+ "median_s": 0.11030867602676153,
+ "p90_s": 0.3087673932313919,
+ "max_s": 1.6425119610503316,
+ "wall_s": 508.2780694961548,
+ "model": "models/ai_v12_02_winprob_critic/final_model.zip",
+ "device": "cpu",
+ "series": "SyntheticRLV2"
+}

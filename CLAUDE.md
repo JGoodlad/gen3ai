@@ -275,6 +275,8 @@ PS_PASSWORD=… python3 src/main/play.py --mode ladder --server official \
 python3 src/main/ladder_drift_scan.py --n 200               # 🚨 RUN BEFORE ANY LIVE SESSION
 ```
 
+🚨 **A WEBSOCKET GAME MUST END WHERE A TRAINING EPISODE ENDS.** `play.py --forfeit-turn-limit` defaults to `agents.training.stall.StallConfig().threshold` (== `MAX_TURNS`, `gen3_deadline_clock_v1`) and is PRINTED at startup — an outside opponent that stalls past it is forfeited exactly as the trainer would, so a head-to-head measures the agent we train. Lower it for a deliberately shorter series; raising it does not. Pinned by `src/main/play_forfeit_limit_test.py`.
+
 🚨 **NO `--proxy` for laddering** — Showdown auto-locks accounts on datacenter/VPS/proxy IPs (`#hostfilter`), and the GCP tunnel's egress is exactly that class. 🚨 **Run the drift gate first**: `deps/pokemon-showdown` is pinned, the public server runs master, and `battle_event.classify` raises on an unknown keyword **by design** — on a live battle that kills the parse task, sends no choice, and loses on the timer. Full audit: [`designs/research_state/ladder_readiness.md`](designs/research_state/ladder_readiness.md).
 
 ---

@@ -1,0 +1,11 @@
+{
+ "n_decisions": 2580,
+ "mean_s": 0.1717597153012518,
+ "median_s": 0.11978744529187679,
+ "p90_s": 0.3200945509597659,
+ "max_s": 10.1561908419244,
+ "wall_s": 514.0777027606964,
+ "agent": "SyntheticRLV2",
+ "checkpoint": null,
+ "backend": "poke-env"
+}
