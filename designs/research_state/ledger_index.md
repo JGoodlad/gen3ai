@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,247-line file. **The ledger itself is append-only and is never edited by this**;
+18,286-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**604 headings · 553 dated · 2026-08-01 → 2026-09-14 · ledger 18,247 lines.**
+**605 headings · 554 dated · 2026-08-01 → 2026-09-14 · ledger 18,286 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -624,3 +624,4 @@ rename.
   - `L18192` · `2026-09-13` · METHOD + 🚨 MY ERROR · `model_config.json` is BLIND to the entire optimisation block, so "verified key-by-key against model_config" certifies only the reward/critic block — and I raised that true finding wrapped in a false one, because I did not read the registration doc that had already declared the dose gap
   - `L18206` · `2026-09-13` · VERDICT · `vf025` NOT DETECTED — a quarter of the control's value coefficient leaves the decision row where 0.5 leaves it (Δ −0.034 to +0.003, five of six pair-draws within floor, mean −0.015), so the value-gradient lever is NOT MONOTONE: 1.5 strips opponent-class information (confirmed), 0.25 restores nothing; the coefficient stays at 0.5 for the flywheel pair; plus the delivery row, the controller tension, and arm S's first cycle (era framing DROPPED, the pair intact)
   - `L18212` · `2026-09-14` · MEASUREMENT · METAMON DE-RISKED as a gen3ou baseline opponent — GO: the 73M win-prob run beats Metamon's 15M `SmallRL` 0.742 [0.657, 0.812] over 120 games and its 200M `SyntheticRLV2` 0.583 [0.457, 0.699] over 60, on OUR pinned server, CPU only, zero parse failures either way; `play.py --forfeit-turn-limit` (the trainer's own stall threshold) landed; three hazards that would each have corrupted the read
+  - `L18248` · `2026-09-14` · MEASUREMENT (MAJOR) · FOUL PLAY DE-RISKED as a gen3ou eval opponent — GO, and it BEATS the 75M win-prob arm: our win rate **0.388 [0.288, 0.497]** over 80 games on our pinned server, a hand-evaluated MCTS at ~1.4M visits and 2.1 s per decision against our 50 ms search-free policy; zero parse failures, zero timeouts, zero forfeits; NO iteration budget exists (wall-clock only ⇒ a width meter, rule 23 — every read carries its realized visit count); the websocket shim is a half-day

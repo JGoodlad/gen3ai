@@ -18244,3 +18244,42 @@ they have no slot for. Full measurement:
 `designs/research_state/measurements/metamon_derisk_2026-09-14/`.
 
 **Orchestrator's note.** The `production` registry name resolves to `ai_v9_21_gen17_pfspoff_0820` (config v97) and FAILS to load at HEAD (`ExtractorBuild.__init__() got an unexpected keyword argument 'threat_prob_outspeed'`) — the registered production baseline is not loadable by current code; `ai_v12_02_winprob_critic/final_model.zip` stood in. A registry entry that cannot load is a backlog row (below), not a silent substitution. Asymmetry recorded: our side greedy, Metamon at its own eval default (temperature 1.0), so the numbers are a first anchor, not a matched-regime rating. Tag: **MEASURED · GO · external anchor exists · production registry entry STALE**.
+
+### 2026-09-14 · MEASUREMENT (MAJOR) · FOUL PLAY DE-RISKED as a gen3ou eval opponent — GO, and it BEATS the 75M win-prob arm: our win rate **0.388 [0.288, 0.497]** over 80 games on our pinned server, a hand-evaluated MCTS at ~1.4M visits and 2.1 s per decision against our 50 ms search-free policy; zero parse failures, zero timeouts, zero forfeits; NO iteration budget exists (wall-clock only ⇒ a width meter, rule 23 — every read carries its realized visit count); the websocket shim is a half-day
+
+Foul Play (`6c467c08`) + poke-engine `0.0.48` built `--features poke-engine/gen3` played
+**80** complete gen3ou games against `ai_v12_02_winprob_critic@75,005,952` over a local pinned
+Showdown server on :9317, both sides drawing from our 72-team sample pool. **Our win rate 0.388
+(31/80), Wilson 95% [0.288, 0.497]** at `--search-time-ms 1000 --search-parallelism 1` — i.e. the
+external bot is AHEAD of the 75M win-prob arm at that budget, and the interval excludes parity.
+Mean 34.2 turns, median 28, max 110; **0/80 reached the 250-turn forfeit**, 0 timeouts, 0 ties.
+**Protocol: clean both ways** — our `battle_event.classify` tripwire never fired over 3,040
+decisions, Foul Play raised nothing, and the two clients agreed on the winner 80/80; note the
+postures are OPPOSITE (we raise on an unknown keyword, Foul Play silently ignores it), so a pinned
+local server exercises neither and `ladder_drift_scan` stays the instrument for live drift.
+**Cost: ~80 core-seconds and ~88 s wall clock per game, ~17x ours.** 🚨 **There is NO iteration
+budget** — `--search-time-ms` is wall clock only (`fp/search/main.py:53`), which makes the opponent
+a width meter (rule 23): realized search was 1.40 M MCTS visits/decision, session means
+1.21-1.53 M at a CONSTANT nominal budget, so every future win rate against Foul Play must carry
+its realized visit count. **gen3 is a first-class poke-engine compile target** (its own 6.4k-line
+`src/gen3/` module, a `gen3` cargo feature, a Makefile target) but is **lightly pinned**: under
+`--features gen3` the 709-test `test_battle_mechanics.rs` and the damage/last-used-move suites are
+compiled OUT, leaving 19 gen3 tests (all pass) — fine as an OPPONENT, not yet a mechanics ORACLE.
+**A websocket shim is feasible and small** (0.5-1 day): Foul Play's entire network surface is one
+163-line class, `fp/websocket_client.py::PSWebsocketClient`, which every other module receives as a
+parameter; a fake socket must fabricate `|challstr|`, the `>battle-` room framing, `|player|`,
+`|start`, the turn stream, `|win|`/`|deinit|` and — decisively — `|request|` with its `rqid`, since
+`fp/battle/protocol.py:2279` makes the request the DECISION TRIGGER. It buys determinism, not
+throughput: at this budget the search dominates the server by two orders of magnitude.
+**Three hazards, each a finding:** (1) a **19-character username** gets a `;`-prefixed refusal from
+`action.php` — which even a `--no-security` LOCAL server consults — and Foul Play's guest path
+accepts it verbatim, logs "Successfully logged in" and hangs forever (our own gap #10, unfixed
+upstream); (2) **our pool pastes are only complete under our teambuilder** — Foul Play packs the
+paste verbatim, so a Hidden Power user with no `IVs:` line becomes Hidden Power Dark, fixed by
+writing `GEN3_HP_IVS` into the exported paste (72/72 then validate clean); (3) **`main` moved under
+a running campaign** — the parallel Metamon pass landed `--forfeit-turn-limit` mid-run and an
+`AttributeError` killed session 4 silently after 40 games, which is the standing argument for a
+long job importing a PINNED checkout rather than `main`.
+Artifact: `designs/research_state/measurements/foul_play_derisk_2026-09-14/`.
+
+**Orchestrator's reading.** Two external anchors now bracket the 75M win-prob policy: BELOW it, Metamon's 200M search-free policy (0.583 for us, regime unmatched); ABOVE it, Foul Play's search with a hand-written evaluator (0.388 for us, 17× our compute per game). That is the existence proof for stage three of the end state measured on OUR simulator and OUR teams: a search with a good-enough leaf beats no search at this strength, and the leaf that does it is hand-crafted. It does not say our own heads can be that leaf — the mirror battery said they cannot, yet — and it does not say the gap is search rather than the evaluator's opponent-set knowledge (Foul Play determinises from Smogon usage + published sets; its author names team knowledge as its binding input). Both are readable next: Foul Play at a smaller wall-clock budget (the width axis) and with its set prediction disabled (the knowledge axis). Neither is dispatched. Tag: **MEASURED · GO · Foul Play ABOVE the 75M policy · width meter · shim half a day**.

@@ -405,6 +405,16 @@ erroring; Metamon's transformers need `VanillaAttention` on CPU; its client hard
 `production` registry name resolves to a v9 checkpoint that does not load at HEAD. [ledger 2026-09-14 ·
 *MEASUREMENT · METAMON DE-RISKED*]
 
+**And a second anchor ABOVE us (2026-09-14, `foul_play_derisk_2026-09-14/`):** [MEASURED] Foul Play — MCTS with
+decoupled UCT over a hand-written evaluator on the Rust poke-engine, determinising the opponent's sets from Smogon
+usage — beats the same 75M policy: our win rate **0.388 [0.288, 0.497]** over 80 games, at ~1.4M visits and 2.1 s
+per decision (17× our compute per game), zero protocol failures either way. Its budget is wall-clock only, so it
+is a WIDTH METER (rule 23) and every read carries its realized visit count. Together the two anchors bracket the
+policy: a 200M search-free model below it, a hand-evaluated search above it. That is the end state's stage-three
+existence proof on our own simulator and teams, with the caveat that Foul Play's edge may be its opponent-set
+knowledge as much as its search — the two axes are separable (smaller budget; set prediction off) and unread.
+[ledger 2026-09-14 · *MEASUREMENT (MAJOR) · FOUL PLAY DE-RISKED*]
+
 ### 3.2 Reading an ELO — five rules
 
 1. The headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), never `eval/elo` (±29).
