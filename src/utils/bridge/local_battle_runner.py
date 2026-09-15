@@ -21,7 +21,6 @@ it triggers) before the next is read.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import base64
 import itertools
 import json
@@ -33,7 +32,7 @@ from poke_env.concurrency import POKE_LOOP, handle_threaded_coroutines
 from poke_env.player.player import Player
 
 from utils.bridge.battle_stream_client import BattleStreamClient
-from utils.bridge.seed_spec import validate_seed_spec
+from utils.bridge.seed_spec import derive_seed_from_base, validate_seed_spec
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.bridge import reconstruction
 from contextlib import suppress
@@ -323,8 +322,7 @@ class _LocalBattleRunner:
         """
         if self.seed_base is None:
             return self.seed
-        digest = hashlib.blake2b(f"{self.seed_base}:{index}".encode(), digest_size=8).digest()
-        return [int.from_bytes(digest[i * 2:i * 2 + 2], "big") for i in range(4)]
+        return derive_seed_from_base(self.seed_base, index)
 
     async def _one_battle(self, index: int, start_lock=None) -> None:
         # Unique across the whole process (see ``_BATTLE_SEQ`` above) — never reuse a tag,

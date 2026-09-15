@@ -83,3 +83,24 @@ def validate_seed_spec(seed: SeedSpec, *, what: str = "seed") -> Optional[str]:
         f"bridge {what}={seed!r} has type {type(seed).__name__}; expected a seed string, "
         f"a 4-int list, or None."
     )
+
+
+def derive_seed_from_base(seed_base: int, index: int) -> list:
+    """Battle ``index``'s own 4-int seed, derived from one ``seed_base``.
+
+    A single fixed ``seed`` runs every battle on the identical dice stream — reproducible,
+    but N copies of one battle rather than a sample of N. A ``seed_base`` keeps the dice
+    VARIED across a series and REPRODUCIBLE across runs of it, which is what a measurement
+    wants. The derivation is a HASH rather than an increment so that adjacent indices (and
+    adjacent bases, i.e. adjacent shards of one series) get unrelated streams — an LCG
+    seeded with n and n+1 is not two independent battles.
+
+    Four 16-bit words is the ``[m,n,o,p]`` form :func:`validate_seed_spec` already accepts,
+    so nothing downstream learns a new spelling. Shared by ``local_battle_runner`` (the
+    poke-env driver) and ``ws_frontend`` (the websocket server) so a series replays the
+    same dice through either transport.
+    """
+    import hashlib
+
+    digest = hashlib.blake2b(f"{seed_base}:{index}".encode(), digest_size=8).digest()
+    return [int.from_bytes(digest[i * 2:i * 2 + 2], "big") for i in range(4)]

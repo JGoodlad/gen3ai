@@ -111,12 +111,13 @@ read the row you are about to edit.**
 
 ## The callable surface (battle.rs) maps to the existing bridge
 
-`battle.rs` deliberately mirrors the FIVE ways `src/utils/bridge/` already drives
+`battle.rs` deliberately mirrors the SIX ways `src/utils/bridge/` already drives
 Showdown, so a finished core is a drop-in:
 
 | Bridge today (Node)                     | Rust surface |
 |---|---|
 | streaming battle (`local_sim_bridge.js`) | `BattleStream::write_line` |
+| websocket server for an OUTSIDE client (`ws_frontend.py`) | the SAME `src/bin/sim_bridge.rs` — one child per battle. The front end adds only the `>battle-…` room framing and the `rqid` the SERVER injects (`server/room-battle.ts:796`), never an engine line; byte-gated against `local_sim_bridge.js` by `ws_frontend_replay.py` (40 battles / 44,034 lines, 2026-09-14). Surface + deferrals: [`designs/rust_sim/ws_frontend.md`](../../designs/rust_sim/ws_frontend.md) |
 | mid-battle RNG swap (counterfactual/search) | `Battle::reseed` |
 | clone-and-branch (`State.serialize…`)    | `BridgeSession::snapshot` (a derived `Clone`; PRNG continuity is automatic) |
 | search server (`search_driver.js`)       | `src/bin/search_driver.rs` over `src/search.rs` (`gen3_rust_search_driver_v1`) |

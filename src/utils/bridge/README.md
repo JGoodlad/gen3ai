@@ -680,6 +680,51 @@ which caught the alias case on its first run). Replay/re-roll never decode at al
 strings go back to the sim verbatim, so counterfactuals always run with the true hidden details
 (exact Hidden Power types, speed stats, damage ranges).
 
+### Websocket front end (`ws_frontend.py`) — the bridge as a Showdown *server* for OUTSIDE clients
+
+**The transport for an opponent we do not own.** `BridgeSession` and `run_local_battles` are
+*library* seams: both assign a `BattleStreamClient` onto a poke-env `Player` **in this process**.
+That is closed to a third party for the reason the metamon de-risk recorded as its verdict (d) —
+their player subclasses *upstream* poke-env, ours subclasses the *vendored fork*, and one process
+resolves `import poke_env` to exactly one of them. So the integration point cannot be an import; it
+has to be a **socket**, with the opponent in its own process and its own poke-env.
+
+`ws_frontend.py` is that socket: an asyncio websocket server speaking just enough of the Showdown
+*client* protocol (`|challstr|`, a no-op `/trn`, `|updateuser|`, `/utm`, `/challenge`+`/accept`,
+the `>battle-…` room framing, `|request|` **with an `rqid`**, `/choose`, `|win|`/`|tie|`,
+`|deinit|`, `|pm|`/`|popup|`) for a poke-env-style client to log in, challenge and play — with each
+battle backed by ONE `sim_bridge` child. No Showdown server, no port 8000/8001, no ladder.
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src
+python -m utils.bridge.ws_frontend --port 9601 --impl rust        # ws://127.0.0.1:9601/showdown/websocket
+python -m utils.bridge.ws_frontend --port 9601 --impl rust \
+    --seed-base 914001 --capture-dir /tmp/caps                    # reproducible + replayable
+```
+
+🚨 **The sim does NOT emit an `rqid`, and the `rqid` is the decision trigger.** `Side.emitRequest`
+sends the bare request object; the SERVER injects the id (`server/room-battle.ts:796-801`, one
+counter shared by both slots). A client that never sees one never moves — Foul Play literally
+cannot, since every choice it sends echoes the id back. The front end therefore splices
+`,"rqid":N` onto each `|request|` at exactly that point, and reproduces the two `sideupdate` state
+transitions that go with it (an `[Invalid choice]` reopens the slot; an `[Unavailable choice]` does
+not). The splice is a string operation, not a JSON round trip, so the rest of the line stays the
+sim's own bytes.
+
+**The gate is a byte differential, not "it ran".** `ws_frontend_replay.py` replays a seeded
+battle's recorded command stream into the Node `local_sim_bridge.js` and compares the per-side
+protocol TEXT byte for byte, with exactly two normalizations (`|t:|`, and the injected `rqid`).
+Measured 2026-09-14 against `local_sim_bridge.js`, with the front end on `--impl rust`: **40 / 40
+battles byte-identical, 44,034 protocol lines, 3,597 `|request|`s** — 20 vs Metamon `SmallRL`
+(greedy) and 20 vs Foul Play (`--search-time-ms 300`), both against
+`ai_v12_02_winprob_critic`@75M, with zero protocol errors on any side.
+
+**The protocol surface and the full deferral list — no timer, no ladder, no auth, no replays, no
+spectators — live in [`designs/rust_sim/ws_frontend.md`](../../../designs/rust_sim/ws_frontend.md),
+which OWNS them.** Hazards worth knowing before you start one: a username longer than **18
+characters** is refused and a client that ignores `|nametaken|` then HANGS; a `--capture-dir`
+without a `--seed-base` is not replayable; and the **challenger is p1**, as on a real server.
+
 ## Why use a Bridge?
 - **Serverless**: No need to start or manage a Pokémon Showdown server process.
 - **No contention**: Each call/battle is fully isolated — no shared server lifecycle, no
