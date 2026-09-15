@@ -31,6 +31,7 @@ from main.anchors.peers import PeerPlan
 from main.anchors.session import (
     BattleRecord,
     OurSideState,
+    install_our_side,
     SeriesFailure,
     await_peer_ready,
     build_team_source,
@@ -210,3 +211,246 @@ def test_a_battle_record_reads_a_tie_as_a_tie_and_not_a_loss(tmp_path: Path) -> 
     assert rec.result == "win"
     assert BattleRecord(**{**rec.__dict__, "won": None}).result == "tie"
     assert BattleRecord(**{**rec.__dict__, "won": False}).result == "loss"
+
+
+# ───────────────────────────── our side is a BOT, or a snapshot that needs the foreign loader ───
+# Both of these were added for the 2026-09-14 external-anchor CALIBRATION, and both exist because
+# the failure they prevent is silent or near-silent:
+#
+#   * the per-battle observer assumed `battle.strict_view()`, which is our vendored fork's
+#     `Gen3Battle`. A roster bot is a plain poke-env `Player` and gets a plain `Battle`, so the
+#     observer raised inside the finished-callback and the read came back "0/4 games completed"
+#     while the server log showed `finished=2`. Games that happened, recorded as games that did not.
+#   * a cross-run frozen snapshot FAILS a bare `MaskablePPO.load` — the extractor is rebuilt from
+#     the zip's own `policy_kwargs` and handed to the CURRENT `ExtractorBuild`. Every
+#     `ai_v9_29_rev1_0823` node dies with `unexpected keyword argument 'threat_prob_outspeed'`
+#     while every `ai_v12`/`ai_v13` node loads fine, so a campaign that spans eras hits it on
+#     SOME cells only — the worst shape of bug to find by running the whole thing.
+class _PlainBattle:
+    """A poke-env `Battle` as a roster bot sees it: NO `strict_view`."""
+
+    def __init__(self, tag: str = "battle-gen3ou-1", turn: int = 17) -> None:
+        self.battle_tag = tag
+        self.turn = turn
+        self.won = True
+        self.finished = True
+
+
+class _ForkBattle(_PlainBattle):
+    """Our fork's `Gen3Battle`: the observer must prefer the strict view when it exists."""
+
+    def strict_view(self):
+        return _PlainBattle(self.battle_tag, self.turn)
+
+
+def test_the_observer_records_a_BOT_battle_which_has_no_strict_view() -> None:
+    """🚨 THE BOT-SIDE REGRESSION, in the exact pairing that produced it: a roster bot instance
+    and a plain poke-env `Battle`. Before the fix the observer raised inside the finished-callback
+    and the read came back `0/4 games completed` while the server had played them all."""
+    from agents.training.eval_callback import eval_opponent_class
+
+    cls = eval_opponent_class("staller")
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object(), our_side="bot:staller")
+    try:
+        bot = object.__new__(cls)
+        cls._battle_finished_callback(bot, _PlainBattle("battle-gen3ou-42", 23))
+    finally:
+        undo()
+    assert len(state.records) == 1
+    rec = state.records[0]
+    assert (rec.battle_tag, rec.turns, rec.result) == ("battle-gen3ou-42", 23, "win")
+    assert rec.hit_forfeit_limit is False
+
+
+def test_the_observer_still_prefers_the_strict_view_for_our_own_player() -> None:
+    """The other half of the same pairing — the fix must not have quietly stopped using the fork's
+    read-model for `RLPlayer`, which is where the turn count is server-authoritative."""
+    from agents.inference.player import RLPlayer
+
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object())
+    try:
+        dummy = object.__new__(RLPlayer)
+        dummy._stall_loggers = {}
+        dummy._trackers = {}
+        dummy._battles = {}
+        seen = {}
+        battle = _ForkBattle("battle-gen3ou-9", 251)
+        battle.strict_view = lambda: seen.setdefault("v", _PlainBattle("battle-gen3ou-9", 251))
+        RLPlayer._battle_finished_callback(dummy, battle)
+    finally:
+        undo()
+    assert "v" in seen, "the strict view was not consulted for an RLPlayer battle"
+    assert state.records[0].turns == 251
+    # 251 >= the 250-turn trainer forfeit limit: a cap forfeit reads as an ordinary loss to the
+    # server, and only the turn count separates it.
+    assert state.records[0].hit_forfeit_limit is True
+
+
+def test_the_observer_is_installed_on_the_bot_class_and_removed_again() -> None:
+    """The patch must reach the class the BOT instances resolve through, and the undo must restore
+    the INHERITED lookup — a bot subclass defines no callback of its own, so writing the base
+    method onto it would leave a permanent attribute behind."""
+    import main.play as play
+    from agents.training.eval_callback import eval_opponent_class
+
+    cls = eval_opponent_class("staller")
+    before_owns = "_battle_finished_callback" in cls.__dict__
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object(),
+                            our_side="bot:staller")
+    try:
+        assert "_battle_finished_callback" in cls.__dict__
+        assert play.build_model_player.__name__ == "build_bot_player"
+    finally:
+        undo()
+    assert ("_battle_finished_callback" in cls.__dict__) is before_owns
+
+
+@pytest.mark.parametrize("mode, expected", [("bare", "bare"), ("auto", "bare")])
+def test_a_successful_bare_load_is_recorded_as_bare(monkeypatch, mode, expected) -> None:
+    import main.play as play
+
+    monkeypatch.setattr(play, "load_policy", lambda path, device: ("model", path, device))
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object(), model_loader=mode)
+    try:
+        out = play.load_policy("/some/snapshot.zip", "cpu")
+    finally:
+        undo()
+    assert out == ("model", "/some/snapshot.zip", "cpu")
+    assert state.model_loader == expected
+
+
+def test_auto_falls_back_to_the_foreign_loader_and_says_which_one_ran(monkeypatch, capsys) -> None:
+    """🚨 A fallback nobody can see is a cell whose policy nobody can identify. The row carries
+    `model_loader`, and this is the test that it is set from what HAPPENED, not from the flag."""
+    import main.play as play
+    from main.anchors import session as session_mod
+
+    def bare(path, device):
+        raise TypeError("ExtractorBuild.__init__() got an unexpected keyword argument "
+                        "'threat_prob_outspeed'")
+
+    monkeypatch.setattr(play, "load_policy", bare)
+    monkeypatch.setattr(session_mod, "foreign_loader", lambda path, device: "foreign-model")
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object(), model_loader="auto")
+    try:
+        assert play.load_policy("/some/snapshot.zip", "cpu") == "foreign-model"
+    finally:
+        undo()
+    assert state.model_loader == "foreign"
+    out = capsys.readouterr().out
+    assert "bare load failed" in out and "threat_prob_outspeed" in out
+
+
+def test_bare_mode_does_NOT_silently_fall_back(monkeypatch) -> None:
+    """`--model-load bare` is the LADDER's semantics: play the model you were handed, or refuse."""
+    import main.play as play
+    from main.anchors import session as session_mod
+
+    def bare(path, device):
+        raise TypeError("unexpected keyword argument 'threat_prob_outspeed'")
+
+    called = []
+    monkeypatch.setattr(play, "load_policy", bare)
+    monkeypatch.setattr(session_mod, "foreign_loader",
+                        lambda path, device: called.append(path) or "nope")
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object(), model_loader="bare")
+    try:
+        with pytest.raises(TypeError):
+            play.load_policy("/some/snapshot.zip", "cpu")
+    finally:
+        undo()
+    assert called == []
+
+
+# ─────────────────────────────────── the per-game view when NEITHER side is ours to observe ───
+_PEER_CSV = (
+    "Player Username, Team File, Opponent Username, Result, Turn Count, Battle ID\n"
+    "MetaSynthRLV21,/teams/aaa.gen3ou_team,MetaSmallRL1,WIN,20,1969304393\n"
+    "MetaSynthRLV21,/teams/bbb.gen3ou_team,MetaSmallRL1,LOSS,30,0968496524\n"
+    "MetaSynthRLV21,/teams/ccc.gen3ou_team,MetaSmallRL1,WIN,24,9600367016\n"
+)
+
+
+def test_a_peer_pair_cell_reads_its_games_from_metamons_own_battle_log(tmp_path: Path) -> None:
+    from main.anchors.session import read_peer_battles
+
+    (tmp_path / "battle_log_MetaSynthRLV21_gen3ou.csv").write_text(_PEER_CSV)
+    recs = read_peer_battles(tmp_path)
+    assert [r.result for r in recs] == ["win", "loss", "win"]
+    assert [r.turns for r in recs] == [20, 30, 24]
+    assert recs[0].our_team == "aaa.gen3ou_team"
+    assert recs[0].battle_tag == "battle-1969304393"
+
+
+def test_an_absent_battle_log_is_zero_games_and_not_an_exception(tmp_path: Path) -> None:
+    """The watchdog polls this file while the pair is still coming up; an empty answer must mean
+    'nothing yet', so that the NAMED no_first_game failure is what fires rather than a traceback."""
+    from main.anchors.session import read_peer_battles
+
+    assert read_peer_battles(tmp_path) == []
+
+
+@pytest.mark.asyncio
+async def test_a_peer_pair_that_both_exit_short_is_named_not_silence(tmp_path: Path) -> None:
+    """Both peers can exit rc=0 having played fewer games than asked — a dropped challenge ends
+    the acceptor's wait cleanly. That must be `short_series`, never a quiet partial n."""
+    from main.anchors.session import watch_peer_pair
+
+    (tmp_path / "battle_log_x_gen3ou.csv").write_text(_PEER_CSV)
+    plans = [PeerPlan(label=f"p{i}", argv=[], cwd=tmp_path, env={}, ready_pattern="x",
+                      log_path=tmp_path / f"p{i}.log") for i in (1, 2)]
+    procs = [_DeadProc(0), _DeadProc(0)]
+    state = OurSideState()
+    with pytest.raises(SeriesFailure) as excinfo:
+        await watch_peer_pair(procs, plans, tmp_path, state, expected=10,
+                              first_game_timeout_s=60, progress_timeout_s=60, poll_s=0.01)
+    assert excinfo.value.cause == "short_series"
+    assert "3/10" in excinfo.value.detail
+
+
+@pytest.mark.asyncio
+async def test_a_peer_pair_that_reaches_the_count_is_never_failed(tmp_path: Path) -> None:
+    from main.anchors.session import watch_peer_pair
+
+    (tmp_path / "battle_log_x_gen3ou.csv").write_text(_PEER_CSV)
+    plans = [PeerPlan(label=f"p{i}", argv=[], cwd=tmp_path, env={}, ready_pattern="x",
+                      log_path=tmp_path / f"p{i}.log") for i in (1, 2)]
+    state = OurSideState()
+    await watch_peer_pair([_LiveProc(), _LiveProc()], plans, tmp_path, state, expected=3,
+                          first_game_timeout_s=60, progress_timeout_s=60, poll_s=0.01)
+    assert len(state.records) == 3
+
+
+@pytest.mark.asyncio
+async def test_a_dead_peer_in_a_pair_is_peer_exited_with_its_rc(tmp_path: Path) -> None:
+    from main.anchors.session import watch_peer_pair
+
+    plans = [PeerPlan(label=f"p{i}", argv=[], cwd=tmp_path, env={}, ready_pattern="x",
+                      log_path=tmp_path / f"p{i}.log") for i in (1, 2)]
+    state = OurSideState()
+    with pytest.raises(SeriesFailure) as excinfo:
+        await watch_peer_pair([_LiveProc(), _DeadProc(1)], plans, tmp_path, state, expected=10,
+                              first_game_timeout_s=60, progress_timeout_s=60, poll_s=0.01)
+    assert excinfo.value.cause == "peer_exited"
+    assert "rc=1" in excinfo.value.detail
+
+
+class _DeadProc:
+    def __init__(self, rc: int) -> None:
+        self.returncode = rc
+
+    def poll(self):
+        return self.returncode
+
+
+class _LiveProc:
+    returncode = None
+
+    def poll(self):
+        return None

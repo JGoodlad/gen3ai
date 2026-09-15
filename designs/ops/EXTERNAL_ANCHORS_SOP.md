@@ -129,10 +129,47 @@ the right side of even.
 ## 2. The exact command, and what it does
 
 ```
-python -m main.anchors --model <run dir | .zip | run@step> \
+python -m main.anchors [--model <run dir | .zip | run@step> | --our-side <who>] \
     --opponent {metamon:SmallRL | metamon:SyntheticRLV2 | foulplay} \
     --regime {greedy | t1} --teamset {home | away} --games N --out <dir>
 ```
+
+### `--our-side` — WHO plays our half
+
+An anchor read does not have to put one of our checkpoints on the board. Three values:
+
+| `--our-side` | our half is | why it exists |
+|---|---|---|
+| `model` (default) | the `--model` checkpoint, through `main.play` | the ordinary read |
+| `bot:<name>` | one of the **nine PINNED eval bots** | it puts an external anchor on the **ABSOLUTE** scale without routing through any checkpoint of ours: the bots carry fixed ratings from the bot-vs-bot round robin, so an anchor-vs-bot edge is an edge to a pinned node |
+| `metamon:<Agent>` | a SECOND external peer | anchor-vs-anchor — the transitivity check on the fit |
+
+🚨 **A bot cell is stamped `regime_matched = false`, and that is the honest label rather than a
+defect.** A bot has no sampling knob to set to the peer's regime — the same shape as Foul Play —
+and its policy IS the one the round robin pinned. `--regime t1` with a bot our-side is REFUSED.
+`our_regime` on those rows reads `bot:<name>`.
+
+An anchor-vs-anchor cell IS matched (both peers take `--regime` and both verify it per decision),
+and its per-game record comes from **Metamon's own battle CSV** rather than from our poke-env
+flags, because there is no player of ours in the process. That instrument books a TIE as a LOSS
+(its `won` field is a boolean), so the rows say so; ties ran 0–1 per 100 games in the 2026-09-14
+batteries.
+
+### `--model-load {auto,bare,foreign}` — HOW the checkpoint is loaded
+
+🚨 **A cross-run frozen snapshot FAILS a bare `MaskablePPO.load`.** The extractor is rebuilt from
+the zip's own `policy_kwargs` and handed to the CURRENT `ExtractorBuild`, so every
+`ai_v9_29_rev1_0823` node dies with `unexpected keyword argument 'threat_prob_outspeed'` while
+every `ai_v12`/`ai_v13` node loads fine — a campaign spanning eras hits it on SOME cells only.
+`foreign` uses `load_foreign_opponent`, which reads the zip's own `model_config.json` and checks
+the **`arch_signature`** (observation-family compatibility, the property that actually matters for
+a frozen opponent). `auto` tries `bare`, falls back, and PRINTS which ran; the winner is stamped as
+`model_loader` on every row.
+
+⚠️ **`MIGRATION_FLOOR` is a hard wall, not a hint.** A checkpoint below it — every `ai_v8` snapshot,
+config version 44/45 under `ARCH_SIGNATURE = gen3_opp_hp_typed_candidates_v1` — is refused as
+PRE-GENERATION by BOTH loaders. There is no way to play a pre-generation node with current code, so
+an era-spanning campaign's oldest reachable node is whatever the floor admits.
 
 | step | what happens |
 |---|---|
@@ -179,6 +216,14 @@ nothing here touches the GPU.
 | `metamon:SyntheticRLV2` | **6.1** | **~10 min** | 56–113 ms/decision, **plus a multi-minute build per half** (200M params, 804 MB) |
 | `foulplay` @ 1000 ms | **~88** | **~2.5 h** | **~80 core-seconds/game** — ~17× ours; cost is linear in `--search-time-ms` × `--search-parallelism` × the ×2 world multiplier while the opponent's active has <3 revealed moves |
 
+🚨 **ONE THREAD PER PEER, and it is worth ~20×.** Measured 2026-09-14 on a box at load 63: each
+Metamon peer was burning **210% CPU** on B = 1 CPU inference — two cores of thread synchronisation
+per peer, buying nothing — and three parallel cells ran at **33 s/game**. With
+`OMP_NUM_THREADS = 1` (now set in the peer env, and defensively inside `metamon_side.py` before
+torch imports) the same three lanes run a 100-game cell in **~150 s, i.e. ~1.5 s/game**. Put the
+parallelism ACROSS cells, never inside one forward pass. `src/main/anchors/peers_test.py` asserts
+the pin on the env the plan actually carries.
+
 ---
 
 ## 3. The known hazards — every one has cost a session
@@ -196,6 +241,7 @@ nothing here touches the GPU.
 | **H9** | **unflushed prints** (Metamon) | the readiness banner never lands and the peer looks dead | `PYTHONUNBUFFERED=1` in the peer env |
 | **H10** | **a lingering websocket between halves**. Our half-1 client still holds the name when half 2 logs in; Showdown answers `|nametaken|` and the fork **continues as a guest**, so the peer's `/challenge` is addressed to a user that no longer exists | **a HANG** until the peer's own timeout (~8 min) | the socket is closed between halves AND each half plays under its own username suffix |
 | **H11** | **two `poke_env` packages**. Metamon subclasses UPSTREAM poke-env; our `BattleStreamClient` subclasses the vendored fork. One process resolves `import poke_env` to exactly one of them and the other half breaks **silently** | wrong behaviour, no error | the peers are SUBPROCESSES with `PYTHONPATH=""`; nothing in this repo imports Metamon |
+| **H13** | **thread oversubscription**. Torch's default pool on B = 1 inference; 210% CPU per peer, ~20× slower than necessary on a shared box | a campaign that projects at 18 h instead of 1 h | `OMP_NUM_THREADS=1` (+ MKL/OpenBLAS/numexpr/torch) in the peer env and in `metamon_side.py` before torch |
 | **H12** | **the Showdown pin**. Ours is `e0551883f`, 13 commits behind Metamon's bundled submodule | — | irrelevant while BOTH clients play on ours, which the tool guarantees; it becomes relevant the moment anyone compares against numbers a third party produced on its own server. The pin is recorded on every row |
 
 **One more, and it is about US, not them:** ⚠️ a long campaign that imports the MAIN checkout is not

@@ -382,6 +382,20 @@ def eval_opponent_names() -> list[str]:
     return list(_EVAL_ROSTER)
 
 
+def eval_opponent_class(name: str) -> type:
+    """The player CLASS for one roster bot name — the single lookup, so a caller that needs to
+    build a bot with its OWN account (e.g. an external-anchor read, where the peer must be told
+    our username up front) does not re-derive the name->class table and drift from this one.
+
+    Raises ``KeyError`` naming the roster, because a silently-unknown bot name is a cell that
+    quietly measures a different opponent.
+    """
+    by_name = {n: cls for (n, cls, _prefix) in _EVAL_OPPONENT_SPECS}
+    if name not in by_name:
+        raise KeyError(f"unknown eval bot {name!r}; the roster is {_EVAL_ROSTER}")
+    return by_name[name]
+
+
 def build_eval_opponents(server_config, teambuilder, names, tag="", *, start_listening=True):
     """Construct the opponent players for `names`.
 

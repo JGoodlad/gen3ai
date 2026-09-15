@@ -46,6 +46,29 @@ OPPONENT_HELP = ("metamon:SmallRL | metamon:SyntheticRLV2 | foulplay "
                  "(metamon agents come from designs/ops/anchors.json)")
 
 
+def parse_our_side(spec: str) -> str:
+    """Validate ``--our-side`` here, where a bad name is a refusal — never at game 1, where it is
+    a hang. The roster lookup raises KeyError naming the nine."""
+    if spec == "model":
+        return spec
+    if spec.startswith("metamon:"):
+        # An ANCHOR-vs-ANCHOR cell: both sides are external peers and nothing of ours plays.
+        # The agent still has to be PINNED in designs/ops/anchors.json, which `peer_plan` checks.
+        if not spec.partition(":")[2]:
+            raise SystemExit("--our-side metamon needs an agent, e.g. --our-side metamon:SmallRL")
+        return spec
+    if not spec.startswith("bot:"):
+        raise SystemExit(
+            f"--our-side {spec!r}: expected 'model', 'bot:<name>' or 'metamon:<Agent>'")
+    from agents.training.eval_callback import eval_opponent_class
+
+    try:
+        eval_opponent_class(spec.split(":", 1)[1])
+    except KeyError as exc:
+        raise SystemExit(f"--our-side {spec!r}: {exc}") from exc
+    return spec
+
+
 def parse_opponent(spec: str) -> "tuple[str, str]":
     kind, _, agent = spec.partition(":")
     kind = kind.strip().lower()
@@ -68,6 +91,22 @@ def build_parser() -> argparse.ArgumentParser:
                         "agents.training.fixed_opponent_pool.resolve_model_ref, so a BARE RUN DIR "
                         "means that run's LAST SNAPSHOT. Name the .zip or @step to pin a file.")
     p.add_argument("--opponent", default="metamon:SmallRL", help=OPPONENT_HELP)
+    p.add_argument("--our-side", dest="our_side", default="model",
+                   help="'model' (a checkpoint, the default) or 'bot:<name>' — one of the NINE "
+                        "PINNED eval bots (random, heuristic, heuristic2, staller, staller_v2, "
+                        "aggressive, aggressive_v2, setup_sweep, setup_sweep_v2). A bot cell is "
+                        "what puts an external anchor on the ABSOLUTE scale without routing "
+                        "through one of our own checkpoints: the bots carry fixed ratings from "
+                        "the bot-vs-bot round robin. A bot has no sampling knob, so such a cell "
+                        "is stamped regime_matched=false and our_regime='bot:<name>'.")
+    p.add_argument("--model-load", dest="model_load", default="auto",
+                   choices=("auto", "bare", "foreign"),
+                   help="how to load --model. 'bare' is MaskablePPO.load, what a ladder session "
+                        "uses. 'foreign' is load_foreign_opponent, which reads the zip's OWN "
+                        "model_config.json and checks the arch_signature — REQUIRED for a frozen "
+                        "snapshot from an older run (a bare load dies on an unexpected "
+                        "ExtractorBuild kwarg). 'auto' tries bare, falls back to foreign, and "
+                        "PRINTS which ran; the winner is stamped on every row.")
     p.add_argument("--regime", choices=("greedy", "t1"), default="greedy",
                    help="BOTH sides move together. greedy is the recurring protocol: it is what "
                         "ladder.json and every other strength number here is taken under, and "
@@ -161,11 +200,30 @@ def showdown_pin() -> str:
 def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                ) -> runner_mod.SeriesPlan:
     kind, agent = parse_opponent(args.opponent)
+    our_side = parse_our_side(args.our_side)
+
+    # A bot plays its own fixed policy and there is no temperature to turn down, so `t1` against
+    # a bot our-side would name a regime that only one side is at while pretending both are.
+    if our_side == args.opponent:
+        raise SystemExit(
+            f"--our-side {our_side} equals --opponent: a cell of a policy against ITSELF measures "
+            "nothing about the scale, and both sides would try to log in under names derived "
+            "from the same agent.")
+    if our_side.startswith("bot:") and args.regime != "greedy":
+        raise SystemExit(
+            f"--regime {args.regime} with --our-side {our_side}: a bot has no sampling knob, so "
+            "only the PEER would move. Use --regime greedy; the cell is stamped "
+            "regime_matched=false either way because the two sides are not at one nominal "
+            "regime, and that is the honest label for a bot edge.")
 
     # Foul Play searches; it has no temperature and no sampling knob, so `t1` cannot be MATCHED
     # against it. Refusing is the point of the tool: an unmatched cell reported as a matched one is
     # the exact mistake the 2026-09-14 battery was run to correct.
-    matched = True
+    # A bot our-side is never "matched": it plays its own fixed policy and has no knob to set to
+    # the peer's regime. Same shape as Foul Play, and stamped the same way.
+    # An anchor-vs-anchor cell IS matched — both peers take the same `--regime` and both verify
+    # it per decision. A BOT our-side is not, because a bot has no knob to set.
+    matched = not our_side.startswith("bot:")
     if kind == "foulplay" and args.regime != "greedy":
         if not args.allow_unmatched_regime:
             raise SystemExit(
@@ -186,7 +244,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         uri = server_mod.server_uri(port)
         started = True
 
-    if args.model:
+    if args.model and our_side == "model":  # noqa: SIM108 - a peer/bot our-side has no zip
         zip_path, step, rung = resolve_model(args.model)
     else:
         zip_path, step, rung = "", None, ""
@@ -212,7 +270,11 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         server_port=port,
         started_server=started,
         out_dir=out_dir,
-        our_username=args.username,
+        # A peer our-side is named after ITS OWN agent: Metamon keys its per-battle CSV by the
+        # player's username, and "Gen3AIAnchor" on an anchor-vs-anchor row would name a client
+        # that is not ours at all. 18 characters is Showdown's ceiling and the suffix costs one.
+        our_username=(_default_peer_username("metamon", our_side.partition(":")[2])[:17]
+                      if our_side.startswith("metamon:") else args.username),
         peer_username=args.peer_username or _default_peer_username(kind, agent),
         team_seed=args.team_seed,
         search_time_ms=args.search_time_ms if kind == "foulplay" else None,
@@ -225,6 +287,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         nice=args.nice,
         showdown_pin=showdown_pin(),
         our_team_spec=cfg.our_team_source(args.teamset),
+        our_side=our_side,
+        model_loader=args.model_load,
     )
 
 
@@ -236,7 +300,9 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         f"  regime            {plan.regime}  (both sides; matched={plan.regime_matched})",
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}",
         f"  games             {plan.games}  ->  {plan.half_sizes()}",
-        f"  our model         {plan.model_zip or '(none given)'}"
+        f"  our side          {plan.our_side}"
+        + (f"  (loader={plan.model_loader})" if plan.our_side == "model" else ""),
+        f"  our model         {plan.model_zip or '(none — our side is not a checkpoint)'}"
         + (f"  @ step {plan.model_step} (via {plan.model_rung})" if plan.model_step else ""),
         f"  device            {plan.device}",
         f"  server            {plan.server_uri}"
@@ -266,11 +332,21 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         except Exception as exc:                     # noqa: BLE001 - a plan must still PRINT
             peer_cmd = f"<unavailable: {type(exc).__name__}: {exc}>"
             teams = "<unavailable>"
+        if plan.our_side_is_peer:
+            # Our side is a SECOND external process, not `main.play`. Printing the play.py argv
+            # here would name a command this cell never runs — a plan a human cannot execute is
+            # worse than no plan at all.
+            try:
+                ours_cmd = runner_mod.our_peer_plan(plan, cfg, role, n, half).command_line()
+            except Exception as exc:                 # noqa: BLE001 - a plan must still PRINT
+                ours_cmd = f"<unavailable: {type(exc).__name__}: {exc}>"
+        else:
+            ours_cmd = ("python -m main.play "
+                        + " ".join(runner_mod.our_argv(plan, mode, n, our_name, peer_name)))
         lines += [
             "",
             f"  --- half {half} ({n} games; we {mode}, peer is {role}) ---",
-            "    ours: python -m main.play "
-            + " ".join(runner_mod.our_argv(plan, mode, n, our_name, peer_name)),
+            f"    ours: {ours_cmd}",
             f"    peer: {peer_cmd}",
             f"    peer teams: {teams}",
         ]
@@ -292,7 +368,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(render_plan(plan, cfg))
         return 0
 
-    if not args.model:
+    if not args.model and plan.our_side == "model":
         raise SystemExit("--model is required for a real read (only --dry-run/--show-config "
                          "work without it)")
 

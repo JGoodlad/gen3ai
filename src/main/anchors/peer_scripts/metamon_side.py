@@ -63,6 +63,12 @@ import time
 
 # Before torch: a GPU this process can see is a GPU it may grab, and a training arm owns it.
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# ...and before torch for the same reason: the thread count is read at import. B=1 CPU inference
+# with the default thread pool measured 210% CPU per peer on a shared box, which is two cores of
+# synchronisation buying nothing. The driver also sets these in the peer env; this is the second
+# lock, for anyone running the script by hand.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 RESERVED_PORTS = {8000: "the shared DEV server", 8001: "the live TRAINING server"}
 

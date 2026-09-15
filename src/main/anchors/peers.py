@@ -168,6 +168,17 @@ class MetamonPeer(Peer):
         env.update({
             "PYTHONUNBUFFERED": "1",                    # H5
             "CUDA_VISIBLE_DEVICES": "",                 # a training arm owns the GPU
+            # 🚨 ONE THREAD. Measured 2026-09-14 on a box at load 63: each Metamon peer was
+            # burning **210% CPU** on B=1 CPU inference, i.e. two cores of thread-sync overhead
+            # per peer, and three parallel cells took 33 s/game against the SOP's 3.0. A batch of
+            # one has no intra-op parallelism worth having; the same defensive
+            # `torch.set_num_threads(1)` is already in `snapshot_ladder._play_pair` for exactly
+            # this shape of work. The parallelism belongs ACROSS cells, not inside one forward.
+            "OMP_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "NUMEXPR_NUM_THREADS": "1",
+            "TORCH_NUM_THREADS": "1",
             "METAMON_CACHE_DIR": str(cfg.cache_dir),
             # The metamon env runs UPSTREAM poke-env; our src/ must not reach its sys.path or the
             # two packages named `poke_env` fight and the loser is silent.

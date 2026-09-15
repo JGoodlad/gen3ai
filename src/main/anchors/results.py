@@ -96,6 +96,16 @@ class CellSpec:
     forfeit_turn_limit: int
     server_uri: str
     showdown_pin: str
+    #: WHO our side is — "model" (a checkpoint through `main.play`) or "bot:<name>" (one of the
+    #: nine pinned eval bots). A bot has no sampling knob at all, exactly like Foul Play, so a
+    #: bot cell is stamped `regime_matched = False` and `our_regime = "bot:<name>"`; that is the
+    #: honest label, not a defect, and it is the reason this field is on the ROW.
+    our_side: str = "model"
+    #: HOW the checkpoint was loaded: "bare" (`MaskablePPO.load`) or "foreign"
+    #: (`load_foreign_opponent`, which verifies the arch_signature and reads the zip's own config).
+    #: A cross-run frozen snapshot FAILS a bare load, so which loader ran is part of what the row
+    #: says about the policy that played.
+    model_loader: str = ""
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)
@@ -155,6 +165,7 @@ class GameRow:
 #: file" once anyone writes a second producer.
 REQUIRED_ROW_FIELDS = (
     "opponent", "opponent_version", "opponent_commit",
+    "our_side", "model_loader",
     "our_regime", "their_regime", "regime_matched",
     "teamset", "our_team_count", "their_team_count",
     "model_zip", "model_step", "model_rung",
@@ -253,8 +264,11 @@ def render(summary: Dict[str, Any]) -> str:
         f"matched={cell['regime_matched']}",
         f"  team set    {cell['teamset']}  (ours {cell['our_team_count']} teams / "
         f"theirs {cell['their_team_count']})",
-        f"  our model   {cell['model_zip']} @ step {cell['model_step']} "
-        f"(resolved via {cell['model_rung']})",
+        f"  our side    {cell.get('our_side', 'model')}"
+        + (f"  loader={cell['model_loader']}" if cell.get("model_loader") else ""),
+        f"  our model   {cell['model_zip'] or '(none — our side is not a checkpoint)'}"
+        + (f" @ step {cell['model_step']} (resolved via {cell['model_rung']})"
+           if cell['model_zip'] else ""),
     ]
     if cell.get("search_time_ms"):
         v = summary.get("realized_visits_per_decision_mean")

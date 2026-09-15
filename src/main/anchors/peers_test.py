@@ -222,3 +222,27 @@ def test_both_anchors_are_registered_under_the_names_the_cli_accepts() -> None:
     assert set(PEERS) == {"metamon", "foulplay"}
     assert PEERS["metamon"].kind == "metamon"
     assert PEERS["foulplay"].kind == "foulplay"
+
+
+def test_the_metamon_peer_env_pins_ONE_thread(tmp_path) -> None:
+    """🚨 B=1 CPU INFERENCE WANTS ONE THREAD. Measured 2026-09-14 on a box at load 63: each peer
+    burned 210% CPU — two cores of thread synchronisation per peer — and a three-lane campaign ran
+    at 33 s/game against the SOP's measured 3.0. The parallelism belongs ACROSS cells.
+
+    Asserted on the ENV the plan actually carries, not on the module that sets it, because the
+    knob only bites if it is in the child's environment before torch imports."""
+    from main.anchors.config import load_config
+    from main.anchors.peers import MetamonPeer
+
+    plan = MetamonPeer().plan(
+        cfg=load_config().opponent("metamon"), agent="SmallRL", regime="greedy",
+        teamset="home", battle_format="gen3ou",
+        server_uri="ws://localhost:9500/showdown/websocket",
+        username="A1", opponent_username="B1", role="acceptor", n_games=2,
+        team_seed=1, out_dir=tmp_path)
+    for key in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
+                "NUMEXPR_NUM_THREADS", "TORCH_NUM_THREADS"):
+        assert plan.env[key] == "1", f"{key} is not pinned to one thread"
+    # and the two that were already load-bearing
+    assert plan.env["CUDA_VISIBLE_DEVICES"] == ""      # a training arm owns the GPU
+    assert plan.env["PYTHONPATH"] == ""                # two `poke_env` packages must not meet

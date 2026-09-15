@@ -163,13 +163,29 @@ def build_account(username: Optional[str], password: Optional[str], server: str,
     return AccountConfiguration(f"{username}{suffix}", password)
 
 
+def load_policy(path: str, device: str):
+    """Load a checkpoint for INFERENCE — the one seam a measurement harness can replace.
+
+    A bare ``MaskablePPO.load`` rebuilds the extractor from the zip's own ``policy_kwargs``, so it
+    only works for a checkpoint whose flag set the CURRENT ``ExtractorBuild`` still accepts: a
+    frozen snapshot from an older run in the same observation family dies here with
+    ``ExtractorBuild.__init__() got an unexpected keyword argument ...``. That is correct for a
+    LADDER session (it should play the model it was handed, or refuse), and wrong for an
+    external-anchor read across our own history — which is why this is a function and not an
+    inline call. ``main.anchors`` swaps in ``agents.model.snapshot.load_foreign_opponent``, which
+    verifies the ``arch_signature`` instead of trusting the kwargs.
+    """
+    from sb3_contrib import MaskablePPO
+
+    return MaskablePPO.load(path, env=None, device=device)
+
+
 def build_model_player(args, teambuilder, server_config, account):
     """Load the checkpoint and wrap it in the same RLPlayer eval uses."""
-    from sb3_contrib import MaskablePPO
     from agents.inference.player import RLPlayer
     from agents.observation.state_encoder import load_mappings
 
-    model = MaskablePPO.load(args.model, env=None, device=args.device)
+    model = load_policy(args.model, args.device)
     if not args.debug_obs:
         # A checkpoint trained with --log-level periodic carries a live
         # ObservationDebugger that print()s a full 12-mon board dump on forward

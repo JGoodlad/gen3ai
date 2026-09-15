@@ -167,15 +167,60 @@ class OurSideState:
     player: Any = None
     last_progress: float = field(default_factory=time.time)
     error: Optional[str] = None
+    #: Which loader actually built our policy — "bare" / "foreign" / "" (our side is a bot).
+    model_loader: str = ""
+
+
+def foreign_loader(zip_path: str, device: str):
+    """Load a frozen snapshot from ANOTHER run — the loader a cross-run anchor read needs.
+
+    🚨 A bare ``MaskablePPO.load`` rebuilds the extractor from the zip's own ``policy_kwargs`` and
+    hands every one of them to the CURRENT ``ExtractorBuild``. A snapshot from an older run in the
+    SAME observation family therefore dies with ``got an unexpected keyword argument
+    'threat_prob_outspeed'`` — measured 2026-09-14 on every ``ai_v9_29_rev1_0823`` node, while
+    ``ai_v12``/``ai_v13`` nodes load fine. ``load_foreign_opponent`` is the path the snapshot
+    ladder and the fixed-opponent pool already use for exactly this: it reads the zip's OWN
+    ``model_config.json``, checks the ``arch_signature`` (observation-family compatibility, which
+    is the property that actually matters for a frozen opponent), and refuses a PRE-GENERATION
+    checkpoint below ``MIGRATION_FLOOR`` rather than loading it wrong.
+    """
+    import os
+
+    from agents.model.snapshot import current_model_version, load_foreign_opponent
+    from agents.observation.state_encoder import load_mappings
+
+    cfg = None
+    d = os.path.dirname(os.path.abspath(zip_path))
+    for cand_dir in (d, os.path.dirname(d)):
+        cand = os.path.join(cand_dir, "model_config.json")
+        if os.path.exists(cand):
+            cfg = cand
+            break
+    model, _foreign = load_foreign_opponent(
+        zip_path, current_version=current_model_version(load_mappings()),
+        device=device, config_path=cfg)
+    return model
 
 
 def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: Optional[int],
-                     forfeit_limit: int, server_config: Any) -> Callable[[], None]:
+                     forfeit_limit: int, server_config: Any, *, our_side: str = "model",
+                     model_loader: str = "auto") -> Callable[[], None]:
     """Patch `main.play` + `RLPlayer` for one half-series. Returns the undo.
 
     Patching the RLPlayer CLASS (not a module global) is what makes the observers reach the code
     under test: `play.build_model_player` constructs the instance itself, so there is no other
     seam, and a class attribute is resolved at call time by every instance.
+
+    ``our_side`` is ``"model"`` or ``"bot:<name>"``. **A bot as our side is what connects an
+    external anchor to the PINNED frame**: the nine eval bots carry fixed ratings from the
+    bot-vs-bot round robin, so a Metamon-vs-bot edge places Metamon on our absolute scale without
+    going through any of our own checkpoints. A bot is an ordinary poke-env ``Player``, so it
+    speaks ``send_challenges`` / ``accept_challenges`` exactly like ``RLPlayer`` does and the rest
+    of the harness is unchanged — only the construction and the observer target differ.
+
+    ``model_loader`` is ``"auto"`` (bare, falling back to foreign and SAYING which ran),
+    ``"bare"`` or ``"foreign"``. Whichever ran is recorded in ``state.model_loader`` and stamped
+    on every row.
     """
     import main.play as play
     from agents.inference.player import RLPlayer
@@ -183,8 +228,11 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
     saved_build_tb = play.build_teambuilder
     saved_resolve = play.resolve_server
     saved_build_player = play.build_model_player
+    saved_load_policy = play.load_policy
     saved_finish = RLPlayer._battle_finished_callback
     saved_predict = RLPlayer._predict_best_action
+    bot_cls = None
+    saved_bot_finish = None
 
     seen: set = set()
 
@@ -194,6 +242,52 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
     def resolve_server(server, port):
         return server_config
 
+    def load_policy(path, device):
+        """THE LOADER, and it announces which one ran. ``auto`` tries the bare load first so an
+        ordinary ladder-shaped checkpoint keeps the exact path `main.play` uses, and falls back
+        only on the kwarg mismatch a cross-run snapshot produces — a fallback that is silent is
+        a cell whose policy nobody can identify."""
+        if model_loader == "foreign":
+            state.model_loader = "foreign"
+            return foreign_loader(path, device)
+        try:
+            model = saved_load_policy(path, device)
+            state.model_loader = "bare"
+            return model
+        except Exception as exc:                          # noqa: BLE001 - the CAUSE is reported
+            if model_loader != "auto":
+                raise
+            print(f"[anchors] bare load failed ({type(exc).__name__}: {str(exc)[:140]}) — "
+                  "retrying through load_foreign_opponent, which verifies the arch_signature",
+                  flush=True)
+            model = foreign_loader(path, device)
+            state.model_loader = "foreign"
+            return model
+
+    def build_bot_player(args, teambuilder, cfg, account):
+        """Our side is one of the nine PINNED eval bots, with the anchors account so the peer's
+        `/challenge` is addressed to a name that exists."""
+        from poke_env.ps_client import AccountConfiguration
+
+        from agents.training.eval_callback import BATTLE_FORMAT, eval_opponent_class
+
+        name = our_side.split(":", 1)[1]
+        cls = eval_opponent_class(name)
+        player = cls(
+            battle_format=args.format or BATTLE_FORMAT, team=teambuilder,
+            server_configuration=cfg,
+            account_configuration=account or AccountConfiguration(args.username, "password"),
+            max_concurrent_battles=args.concurrency,
+        )
+        # `play.main` prints the connect-or-raise deadline off the player it was handed; a roster
+        # bot is a plain poke-env Player and has no such field. None = "no extra guard", which is
+        # the bots' actual behaviour — they are built the same way `bot_elo_calibration` builds
+        # them, and nothing about the anchor edge should differ from the calibrated policy.
+        if not hasattr(player, "connect_timeout_s"):
+            player.connect_timeout_s = None
+        state.player = player
+        return player
+
     def build_model_player(args, teambuilder, cfg, account):
         player = saved_build_player(args, teambuilder, cfg, account)
         # Stashed so the driver can wait on a REAL login rather than a sleep — the acceptor must
@@ -202,8 +296,18 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
         state.player = player
         return player
 
+    # class -> the callback it had before we touched it. RLPlayer is always in here; a bot class
+    # is added below when our side is a bot.
+    originals: Dict[type, Callable] = {RLPlayer: saved_finish}
+
     def finished(self, battle):
-        view = battle.strict_view()
+        # 🚨 `strict_view()` belongs to our vendored fork's `Gen3Battle`, which `RLPlayer` asks for.
+        # A ROSTER BOT is a plain poke-env `Player` and gets a plain `Battle` — no strict view, and
+        # an observer that assumed one recorded ZERO games while the battles themselves finished
+        # fine (measured here 2026-09-14: `finished=2 won=0`, `0/4 games completed`). The two
+        # fields this observer actually needs exist on both objects, so read them off whichever it
+        # has rather than requiring the richer one.
+        view = battle.strict_view() if hasattr(battle, "strict_view") else battle
         tag = view.battle_tag
         if tag not in seen:
             seen.add(tag)
@@ -226,7 +330,11 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
             rec = state.records[-1]
             print(f"[anchors] game {n}: {rec.result} in {rec.turns} turns "
                   f"(cap={rec.hit_forfeit_limit}, team={rec.our_team})", flush=True)
-        return saved_finish(self, battle)
+        # The ORIGINAL callback for whichever class this instance really is. Resolved from the
+        # table built at patch time rather than with `super()`, because `finished` is installed on
+        # two unrelated classes at once and a `super(type(self), self)` inside a function that is
+        # itself the class attribute recurses forever the moment anyone subclasses either one.
+        return originals[type(self)](self, battle)
 
     def predict(self, *a, **k):
         # THE REGIME VERIFICATION for our half: the `stochastic` keyword the decision REALLY
@@ -244,18 +352,137 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
 
     play.build_teambuilder = build_teambuilder
     play.resolve_server = resolve_server
-    play.build_model_player = build_model_player
+    play.load_policy = load_policy
     RLPlayer._battle_finished_callback = finished
     RLPlayer._predict_best_action = predict
+    if our_side.startswith("bot:"):
+        from agents.training.eval_callback import eval_opponent_class
+
+        bot_cls = eval_opponent_class(our_side.split(":", 1)[1])
+        # The bot classes inherit `_battle_finished_callback` from poke-env's Player, so the
+        # subclass may not define one of its own; `undo` therefore restores the INHERITED
+        # attribute by deleting ours rather than writing the base method onto the subclass.
+        saved_bot_finish = bot_cls.__dict__.get("_battle_finished_callback")
+        originals[bot_cls] = bot_cls._battle_finished_callback
+        bot_cls._battle_finished_callback = finished
+        play.build_model_player = build_bot_player
+    else:
+        play.build_model_player = build_model_player
 
     def undo() -> None:
         play.build_teambuilder = saved_build_tb
         play.resolve_server = saved_resolve
         play.build_model_player = saved_build_player
+        play.load_policy = saved_load_policy
         RLPlayer._battle_finished_callback = saved_finish
         RLPlayer._predict_best_action = saved_predict
+        if bot_cls is not None:
+            if saved_bot_finish is None:
+                # It was INHERITED; deleting our override restores the inherited lookup.
+                try:
+                    delattr(bot_cls, "_battle_finished_callback")
+                except AttributeError:
+                    pass
+            else:
+                bot_cls._battle_finished_callback = saved_bot_finish
 
     return undo
+
+
+# ------------------------------------------------------ a PEER as our side (anchor vs anchor)
+#: Metamon's own per-battle log, written under ``--results-dir``. The header is
+#: ``Player Username, Team File, Opponent Username, Result, Turn Count, Battle ID``.
+PEER_RESULT_GLOB = "battle_log_*.csv"
+
+
+def read_peer_battles(results_dir: Path) -> "list[BattleRecord]":
+    """Metamon's OWN per-battle CSV, as :class:`BattleRecord`s.
+
+    This is the only per-game view available when BOTH sides are external peers — there is no
+    `RLPlayer` in the process to observe. It is a weaker instrument than our own side's poke-env
+    flags and the difference is NAMED rather than smoothed over: Metamon books a result as
+    ``WIN``/``LOSS`` off a BOOLEAN, so a TIE is recorded as its own LOSS. Ties ran 0-1 per 100
+    games in the 2026-09-14 batteries, so the bias is small — but it is a bias, and a head-to-head
+    edge built from this source says so.
+
+    🚨 The file is APPENDED to across runs of the same ``--results-dir``. A retry must write to a
+    fresh directory or it inherits the previous attempt's games; the campaign driver retires a
+    failed cell directory rather than reusing it, which is what makes that true here.
+    """
+    import csv
+
+    out: List[BattleRecord] = []
+    for path in sorted(results_dir.glob(PEER_RESULT_GLOB)):
+        with open(path, newline="") as fh:
+            for row in csv.DictReader(fh, skipinitialspace=True):
+                result = (row.get("Result") or "").strip().upper()
+                try:
+                    turns = int(row.get("Turn Count") or 0)
+                except ValueError:
+                    turns = 0
+                team = os.path.basename((row.get("Team File") or "").strip()) or None
+                out.append(BattleRecord(
+                    battle_tag=f"battle-{(row.get('Battle ID') or '').strip()}",
+                    turns=turns,
+                    won=True if result == "WIN" else (False if result == "LOSS" else None),
+                    finished=True,
+                    hit_forfeit_limit=False,
+                    our_team=team,
+                    n_decisions=None, n_defaults=None, n_redecides=None,
+                    t_finished=time.time(),
+                ))
+    return out
+
+
+async def watch_peer_pair(procs: "list[subprocess.Popen]", plans: "list[PeerPlan]",
+                          results_dir: Path, state: OurSideState, expected: int,
+                          first_game_timeout_s: float, progress_timeout_s: float,
+                          poll_s: float = 5.0) -> None:
+    """The watchdog for a cell with NO side of ours in it.
+
+    Progress is the row count in our peer's own battle CSV — the same signal `watch` takes from
+    `state.records`, read from disk instead of from an observer. Both processes are watched,
+    because either one dying leaves the other waiting on a challenge that will never come.
+    """
+    started = time.time()
+    seen = 0
+    while True:
+        await asyncio.sleep(poll_s)
+        state.records = read_peer_battles(results_dir)
+        done = len(state.records)
+        while seen < done:
+            # The same per-game line the observed path prints. Without it an anchor-vs-anchor cell
+            # looks IDENTICAL to a hung one from outside — the watchdog knows it is progressing and
+            # nobody watching the log does.
+            rec = state.records[seen]
+            seen += 1
+            print(f"[anchors] game {seen}: {rec.result} in {rec.turns} turns "
+                  f"(team={rec.our_team})", flush=True)
+            state.last_progress = time.time()
+        if done:
+            state.last_progress = max(state.last_progress, started)
+        if done >= expected:
+            return
+        for proc, plan in zip(procs, plans):
+            if proc.poll() is not None and proc.returncode != 0:
+                raise SeriesFailure(
+                    "peer_exited",
+                    f"{plan.label} exited rc={proc.returncode} after {done}/{expected} games. "
+                    + log_tail(plan.log_path))
+        if all(p.poll() is not None for p in procs):
+            if done >= expected:
+                return
+            raise SeriesFailure(
+                "short_series",
+                f"both peers exited cleanly with only {done}/{expected} games in "
+                f"{results_dir}. " + log_tail(plans[0].log_path))
+        idle = time.time() - (state.last_progress if done else started)
+        budget = progress_timeout_s if done else first_game_timeout_s
+        if idle > budget:
+            raise SeriesFailure(
+                "no_progress" if done else "no_first_game",
+                f"{done}/{expected} games finished and nothing has completed for {idle:.0f}s "
+                f"(budget {budget:.0f}s). " + log_tail(plans[0].log_path))
 
 
 # --------------------------------------------------------------------------------- the watchdog

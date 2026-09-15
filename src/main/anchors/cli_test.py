@@ -199,3 +199,189 @@ def test_a_real_read_without_a_model_is_refused(cfg) -> None:
     assert "--model is required" in str(excinfo.value)
     assert main(["--opponent", "metamon:SmallRL", "--games", "2", "--dry-run"]) == 0
     assert main(["--show-config"]) == 0
+
+
+# ------------------------------------------------------------------- our side: a PINNED eval bot
+# A bot as our side is what places an EXTERNAL anchor on the ABSOLUTE scale without routing through
+# one of our own checkpoints: the nine roster bots carry fixed ratings from the bot-vs-bot round
+# robin (`data/gen3_bot_elo_anchors.json`), so a Metamon-vs-bot edge is an edge to a PINNED node.
+# The refusals below exist because each failure mode presents as a HANG at game 1, not an error.
+def test_our_side_defaults_to_the_model(cfg) -> None:
+    plan = build_plan(_args("--dry-run"), cfg)
+    assert plan.our_side == "model"
+    assert plan.our_side_is_bot is False
+
+
+@pytest.mark.parametrize("name", [
+    "random", "heuristic", "heuristic2", "staller", "staller_v2",
+    "aggressive", "aggressive_v2", "setup_sweep", "setup_sweep_v2",
+])
+def test_every_roster_bot_is_a_legal_our_side(cfg, name: str) -> None:
+    """All NINE, by name — the set that is pinned is the set that must be playable, and a roster
+    rename that silently drops one would otherwise only show up as a missing anchor edge."""
+    plan = build_plan(_args("--our-side", f"bot:{name}", "--dry-run"), cfg)
+    assert plan.our_side == f"bot:{name}"
+    assert plan.our_side_is_bot
+
+
+def test_an_unknown_bot_name_is_refused_before_anything_starts(cfg) -> None:
+    from main.anchors.cli import parse_our_side
+
+    with pytest.raises(SystemExit) as excinfo:
+        parse_our_side("bot:kakuna")
+    # The message must NAME the roster: a bad bot name is otherwise indistinguishable from a
+    # server that never answered.
+    assert "heuristic2" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("spec", ["bot", "heuristic", "bot:", "foulplay", "metamon"])
+def test_a_malformed_our_side_is_refused(spec: str) -> None:
+    from main.anchors.cli import parse_our_side
+
+    with pytest.raises(SystemExit):
+        parse_our_side(spec)
+
+
+def test_a_bot_cell_is_stamped_unmatched_because_a_bot_has_no_knob(cfg) -> None:
+    """🚨 The honest label. A bot plays its own fixed policy — the SAME policy the round robin
+    pinned — and there is no temperature to set to the peer's regime. Same shape as Foul Play."""
+    plan = build_plan(_args("--our-side", "bot:staller", "--dry-run"), cfg)
+    assert plan.regime_matched is False
+    cell = runner_mod.cell_spec(plan, {}, 719)
+    assert cell.our_regime == "bot:staller"
+    assert cell.regime_matched is False
+    assert cell.our_side == "bot:staller"
+
+
+def test_t1_against_a_bot_our_side_is_refused(cfg) -> None:
+    """Only the PEER would move, which is exactly the mixed-regime read the 2026-09-14 battery
+    exists to correct."""
+    with pytest.raises(SystemExit) as excinfo:
+        build_plan(_args("--our-side", "bot:heuristic", "--regime", "t1", "--dry-run"), cfg)
+    assert "no sampling knob" in str(excinfo.value)
+
+
+def test_a_bot_our_side_needs_no_model_and_says_so_in_the_plan(cfg) -> None:
+    plan = build_plan(build_parser().parse_args(
+        ["--our-side", "bot:aggressive", "--dry-run"]), cfg)
+    assert plan.model_zip == ""
+    text = render_plan(plan, cfg)
+    assert "our side          bot:aggressive" in text
+    # `play.main` refuses --mode challenge/accept without a --model, so the SPEC stands in — and
+    # it must be VISIBLE in the plan rather than an invisible placeholder.
+    assert "--model bot:aggressive" in text
+
+
+def test_a_bot_our_side_argv_still_parses_through_plays_own_parser(cfg) -> None:
+    import main.play as play
+
+    plan = build_plan(_args("--our-side", "bot:setup_sweep", "--dry-run"), cfg)
+    args = play.build_parser().parse_args(
+        runner_mod.our_argv(plan, "challenge", 4, "A1", "B1"))
+    assert args.model == "bot:setup_sweep"
+
+
+# ------------------------------------------------------------- which loader built our checkpoint
+@pytest.mark.parametrize("mode", ["auto", "bare", "foreign"])
+def test_the_model_loader_is_a_declared_choice_carried_onto_the_plan(cfg, mode: str) -> None:
+    plan = build_plan(_args("--model-load", mode, "--dry-run"), cfg)
+    assert plan.model_loader == mode
+
+
+def test_the_loader_default_is_auto_and_the_plan_says_which_one(cfg) -> None:
+    """A cross-run frozen snapshot FAILS a bare `MaskablePPO.load` with an unexpected
+    `ExtractorBuild` kwarg, so `auto` exists — but a fallback nobody can see is a cell whose
+    policy nobody can identify, which is why the plan prints the mode and the row carries it."""
+    plan = build_plan(_args("--dry-run"), cfg)
+    assert plan.model_loader == "auto"
+    assert "loader=auto" in render_plan(plan, cfg)
+
+
+# ───────────────────────────────────────────── our side is ANOTHER anchor (anchor vs anchor) ───
+# The two external anchors are connected to our scale through 19 shared opponents, but the DIRECT
+# edge between them is the transitivity check on the whole joint fit: if the fit orders them one
+# way and 200 head-to-head games order them the other, that disagreement is the finding.
+def test_a_metamon_our_side_is_a_peer_not_a_model(cfg) -> None:
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2",
+                            "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    assert plan.our_side_is_peer and not plan.our_side_is_bot
+    assert plan.model_zip == ""
+    # Both peers take the same --regime and both verify it per decision, so this cell IS matched —
+    # unlike a bot cell, where one side has no knob at all.
+    assert plan.regime_matched is True
+
+
+def test_an_agentless_metamon_our_side_is_refused() -> None:
+    from main.anchors.cli import parse_our_side
+
+    with pytest.raises(SystemExit):
+        parse_our_side("metamon:")
+
+
+def test_a_policy_against_itself_is_refused(cfg) -> None:
+    """Both sides would derive their username from the same agent, and the cell would measure
+    nothing about the scale anyway."""
+    with pytest.raises(SystemExit) as excinfo:
+        build_plan(_args("--our-side", "metamon:SmallRL",
+                         "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    assert "against ITSELF" in str(excinfo.value)
+
+
+def test_the_two_peers_take_opposite_roles_and_name_each_other(cfg) -> None:
+    """🚨 Showdown DROPS a challenge aimed at a user who is not online, and each side must address
+    the other by the name it will actually log in under — the failure is a hang, not an error."""
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2",
+                            "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    for half, their_role in (("ours_challenge", "acceptor"), ("peer_challenge", "challenger")):
+        ours = runner_mod.our_peer_plan(plan, cfg, their_role, 2, half)
+        theirs = runner_mod.peer_plan(plan, cfg, their_role, 2, half)
+        our_name, peer_name = runner_mod.half_usernames(plan, half)
+        assert f"--role {'challenger' if their_role == 'acceptor' else 'acceptor'}" \
+            in ours.command_line()
+        assert f"--role {their_role}" in theirs.command_line()
+        assert f"--opponent-username {peer_name}" in ours.command_line()
+        assert f"--opponent-username {our_name}" in theirs.command_line()
+
+
+def test_the_two_peers_write_to_DIFFERENT_report_and_results_paths(cfg) -> None:
+    """Metamon APPENDS to its battle CSV. Two peers sharing one results dir would interleave two
+    players' games into one file and the head-to-head edge would count both sides as wins."""
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2",
+                            "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    ours = runner_mod.our_peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
+    theirs = runner_mod.peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
+    assert ours.report_path != theirs.report_path
+    assert str(ours.report_path.parent) != str(theirs.report_path.parent)
+
+
+def test_our_peer_side_draws_from_its_own_team_set_and_a_different_seed(cfg) -> None:
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2",
+                            "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    ours = runner_mod.our_peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
+    theirs = runner_mod.peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
+    assert f"--team-seed {plan.team_seed}" in ours.command_line()
+    assert f"--team-seed {plan.team_seed + 1}" in theirs.command_line()
+    assert ours.team_dir == theirs.team_dir     # the SAME set; a different draw
+
+
+def test_the_plan_prints_OUR_peers_command_not_a_play_py_line(cfg) -> None:
+    """A plan a human cannot execute is worse than no plan: `main.play` never runs in this cell."""
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2",
+                            "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    text = render_plan(plan, cfg)
+    assert "python -m main.play" not in text
+    assert "--agent SyntheticRLV2" in text and "--agent SmallRL" in text
+
+
+def test_our_peer_username_names_its_own_agent_and_fits_showdowns_ceiling(cfg) -> None:
+    """Metamon keys its per-battle CSV by the player's username, so an anchor-vs-anchor row must
+    name the agent that played it — and 19+ characters is a REFUSAL that presents as a hang."""
+    from main.anchors.peers import MAX_USERNAME_LEN, check_username
+
+    plan = build_plan(_args("--our-side", "metamon:SyntheticRLV2",
+                            "--opponent", "metamon:SmallRL", "--dry-run"), cfg)
+    for half in ("ours_challenge", "peer_challenge"):
+        for name in runner_mod.half_usernames(plan, half):
+            assert len(name) <= MAX_USERNAME_LEN
+            check_username(name, "test")
+    assert plan.our_username.startswith("MetaSynthetic")

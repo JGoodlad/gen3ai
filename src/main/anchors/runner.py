@@ -33,9 +33,11 @@ from main.anchors.session import (
     await_peer_ready,
     disconnect_our_side,
     install_our_side,
+    read_peer_battles,
     start_peer,
     stop_peer,
     watch,
+    watch_peer_pair,
 )
 
 #: ``(our play.py mode, the peer's role, the username suffix)`` for each half. The names say who
@@ -97,6 +99,20 @@ class SeriesPlan:
     nice: int
     showdown_pin: str
     our_team_spec: Dict[str, Any] = None  # type: ignore[assignment]
+    #: "model" or "bot:<name>" — see :func:`main.anchors.session.install_our_side`.
+    our_side: str = "model"
+    #: "auto" / "bare" / "foreign" — which loader builds our checkpoint.
+    model_loader: str = "auto"
+
+    @property
+    def our_side_is_bot(self) -> bool:
+        return self.our_side.startswith("bot:")
+
+    @property
+    def our_side_is_peer(self) -> bool:
+        """Our side is ANOTHER external agent — an anchor-vs-anchor cell, with no player of ours
+        in the process at all."""
+        return self.our_side.startswith("metamon:") or self.our_side == "foulplay"
 
     def half_sizes(self) -> Dict[str, int]:
         """``games`` split across the two roles; an odd game goes to the first half and is
@@ -117,7 +133,11 @@ def our_argv(plan: SeriesPlan, mode: str, n_games: int, our_name: str = "",
         # the parser honest and the reserved-port refusal reachable.
         "--port", str(plan.server_port or 9500),
         "--format", plan.battle_format,
-        "--model", plan.model_zip,
+        # A bot our-side has no checkpoint, but `play.main` refuses --mode challenge/accept
+        # without a --model, so the SPEC goes here and the patched `build_model_player` ignores
+        # it. It is printed by --dry-run and stamped as `model_spec` on every row, so nothing
+        # about which policy played is hidden by the placeholder.
+        "--model", plan.model_zip or plan.our_side,
         "--device", plan.device,
         "--username", our_name or plan.our_username,
         "--opponent", peer_name or plan.peer_username,
@@ -152,6 +172,98 @@ def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str) ->
     )
 
 
+def our_peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str) -> Any:
+    """The plan for OUR side when our side is itself an external peer. Mirrors :func:`peer_plan`
+    with the two usernames and the two roles swapped, and its own team seed."""
+    our_name, peer_name = half_usernames(plan, half)
+    kind, _, agent = plan.our_side.partition(":")
+    adapter = peers_mod.PEERS[kind]
+    return adapter.plan(
+        cfg=cfg.opponent(kind),
+        agent=agent,
+        regime=plan.regime,
+        teamset=plan.teamset,
+        battle_format=plan.battle_format,
+        server_uri=plan.server_uri,
+        username=our_name,
+        opponent_username=peer_name,
+        # The roles are OPPOSITE the opponent's: one side challenges, the other accepts.
+        role="challenger" if role == "acceptor" else "acceptor",
+        n_games=n_games,
+        team_seed=plan.team_seed,
+        search_time_ms=plan.search_time_ms,
+        search_parallelism=plan.search_parallelism,
+        out_dir=plan.out_dir / half / "ours",
+    )
+
+
+async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
+                             ) -> Tuple[List[Any], Dict[str, Any], Optional[SeriesFailure]]:
+    """One half of an ANCHOR-vs-ANCHOR cell — two external peers, nothing of ours in the middle.
+
+    🚨 **Role order is the same load-bearing fact as everywhere else**: Showdown drops a challenge
+    aimed at a user who is not online, so the ACCEPTOR must have printed its banner before the
+    CHALLENGER starts. For the 200M `SyntheticRLV2` that banner is minutes away — it builds the
+    network and loads 804 MB before its client connects — which is why the acceptor is started and
+    awaited first rather than both being launched together.
+
+    The per-game record comes from the acting side's own battle CSV (`read_peer_battles`); there
+    is no `RLPlayer` here to observe, and the weaker instrument is NAMED on the rows it produces.
+    """
+    mode, their_role, _suffix = HALVES[half]
+    our_name, peer_name = half_usernames(plan, half)
+    peers_mod.check_username(our_name, "our")
+    peers_mod.check_username(peer_name, "peer")
+
+    ours = our_peer_plan(plan, cfg, their_role, n_games, half)
+    theirs = peer_plan(plan, cfg, their_role, n_games, half)
+    for pp in (ours, theirs):
+        pp.log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    results_dir = Path(str(ours.argv[ours.argv.index("--results-dir") + 1]))
+    state = OurSideState()
+    procs: List[Any] = []
+    failure: Optional[SeriesFailure] = None
+    try:
+        first, second = ((theirs, ours) if their_role == "acceptor" else (ours, theirs))
+        p1 = start_peer(first, nice=plan.nice)
+        procs.append(p1)
+        await await_peer_ready(p1, first, plan.peer_ready_timeout_s)
+        p2 = start_peer(second, nice=plan.nice)
+        procs.append(p2)
+        await await_peer_ready(p2, second, plan.peer_ready_timeout_s)
+        await watch_peer_pair(procs, [first, second], results_dir, state, n_games,
+                              plan.first_game_timeout_s, plan.progress_timeout_s)
+    except SeriesFailure as exc:
+        failure = exc
+        print(f"[anchors] 🚨 {half} FAILED — {exc.cause}: {exc.detail}", flush=True)
+    except Exception as exc:                            # noqa: BLE001 - any death must be NAMED
+        failure = SeriesFailure("our_side_error", f"{type(exc).__name__}: {exc}")
+        print(f"[anchors] 🚨 {half} FAILED — {exc}", flush=True)
+    finally:
+        for proc in procs:
+            await await_peer_exit(proc, timeout_s=180.0 if failure is None else 15.0)
+        for proc in procs:
+            stop_peer(proc)
+    state.records = read_peer_battles(results_dir)
+
+    adapter = peers_mod.PEERS[plan.opponent_kind]
+    report = adapter.read_report(theirs)
+    our_report = adapter.read_report(ours)
+    report["peer_rc"] = procs[-1].returncode if procs else None
+    report["team_count"] = peers_mod.team_source_count(theirs)
+    report["version"] = theirs.version
+    report["commit"] = theirs.commit
+    report["their_regime"] = theirs.their_regime
+    # OUR side is a peer too, so its regime needs the same verification theirs gets — an
+    # anchor-vs-anchor cell with only one side verified is half a measurement.
+    report["our_argmax_match_rate"] = our_report.get("argmax_match_rate")
+    report["our_regime_verified"] = our_report.get("regime_verified")
+    report["our_stochastic_kwargs"] = list(our_report.get("sample_kwargs") or [])
+    report["model_loader"] = ""
+    return state.records, report, failure
+
+
 async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
                    ) -> Tuple[List[Any], Dict[str, Any], Optional[SeriesFailure]]:
     """One half-series. Returns ``(records, peer_report, failure_or_None)``.
@@ -160,6 +272,9 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     its first ``/challenge``: Showdown drops a challenge aimed at a user who is not online, and the
     challenger then waits forever with nothing in either log to say why.
     """
+    if plan.our_side_is_peer:
+        return await run_peer_pair_half(plan, cfg, half, n_games)
+
     import main.play as play
 
     mode, role, _suffix = HALVES[half]
@@ -173,7 +288,8 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     server_config = server_mod_config(plan)
     state = OurSideState()
     undo = install_our_side(state, plan.our_team_spec, plan.team_seed,
-                            plan.forfeit_turn_limit, server_config)
+                            plan.forfeit_turn_limit, server_config,
+                            our_side=plan.our_side, model_loader=plan.model_loader)
     args = play.build_parser().parse_args(our_argv(plan, mode, n_games, our_name, peer_name))
 
     proc = None
@@ -242,6 +358,7 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     report["commit"] = pplan.commit
     report["their_regime"] = pplan.their_regime
     report["our_stochastic_kwargs"] = list(state.stochastic_kwargs)
+    report["model_loader"] = state.model_loader
     return state.records, report, failure
 
 
@@ -260,9 +377,15 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         opponent_agent=plan.opponent_agent,
         opponent_version=str(report.get("version") or ""),
         opponent_commit=str(report.get("commit") or ""),
-        our_regime=plan.regime,
+        # 🚨 A BOT HAS NO SAMPLING KNOB, exactly like Foul Play. Its policy IS the one the
+        # bot-vs-bot round robin pinned, so the cell is a real measurement — but the two sides
+        # are NOT at one nominal regime and the row says so rather than borrowing the peer's
+        # label. `regime_matched` is False here by construction, and that is the honest stamp.
+        our_regime=(plan.our_side if plan.our_side_is_bot
+                    else (f"{plan.regime} ({plan.our_side})" if plan.our_side_is_peer
+                          else plan.regime)),
         their_regime=str(report.get("their_regime") or plan.regime),
-        regime_matched=plan.regime_matched,
+        regime_matched=plan.regime_matched and not plan.our_side_is_bot,
         teamset=plan.teamset,
         our_team_source=str(plan.our_team_spec.get("path", plan.our_team_spec.get("kind"))),
         our_team_count=our_team_count,
@@ -278,6 +401,8 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         forfeit_turn_limit=plan.forfeit_turn_limit,
         server_uri=plan.server_uri,
         showdown_pin=plan.showdown_pin,
+        our_side=plan.our_side,
+        model_loader=str(report.get("model_loader") or ""),
     )
 
 
@@ -318,9 +443,15 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
 
     # Counted through the SAME allowlist both sides use, so `team_source_asymmetry` in the summary
     # means a real difference in what the two sides draw from and not a stray bookkeeping file.
-    our_team_count = (len(TeamLoader().get_all_teams())
-                      if plan.our_team_spec.get("kind") == "pool"
-                      else len(load_team_texts(Path(plan.our_team_spec["path"]))))
+    if plan.our_side_is_peer:
+        # Our side draws through the PEER's own team set, not our team source — count what it
+        # will actually draw from, so `team_source_asymmetry` stays a real check.
+        our_team_count = peers_mod.team_source_count(
+            our_peer_plan(plan, cfg, "acceptor", 1, "ours_challenge"))
+    else:
+        our_team_count = (len(TeamLoader().get_all_teams())
+                          if plan.our_team_spec.get("kind") == "pool"
+                          else len(load_team_texts(Path(plan.our_team_spec["path"]))))
 
     all_rows: List[GameRow] = []
     last_report: Dict[str, Any] = {}
