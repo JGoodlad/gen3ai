@@ -95,6 +95,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="live battle bridge child")
     p.add_argument("--search-impl", default="node", choices=["node", "rust"],
                    help="search-driver child (node is the validated default for open_root)")
+    p.add_argument("--leaf-head", default=None, metavar="PATH",
+                   help="replace the WIN-PROB head's weights with a state_dict from PATH after "
+                        "loading the checkpoint. The win head is a leak-safe SIDE readout (never "
+                        "in pi/vf), so this changes the SEARCH LEAF and nothing about how either "
+                        "side plays unsearched — in the mirror cell the null stays 0.50 by "
+                        "construction and the contrast is the leaf. Refused unless the resolved "
+                        "leaf is `winprob`. See leaf_head.py.")
     p.add_argument("--score", default="auto", choices=["auto", "value", "win_prob"],
                    help="which readout scores a leaf. On a `--critic winprob` checkpoint there is "
                         "only one, so `auto` RESOLVES to win_prob (announced at startup) and an "
@@ -377,6 +384,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         raise SystemExit(f"[search_dividend] {exc}")
     for _n in _critic_notes:
         print(f"[search_dividend] critic={_critic_mode}: {_n}", flush=True)
+    if args.leaf_head:
+        from main.search_dividend.leaf_head import install_leaf_head
+        try:
+            _lh = install_leaf_head(model, args.leaf_head, score=args.score)
+        except ValueError as exc:
+            raise SystemExit(f"[search_dividend] {exc}")
+        # A results ROW cannot name the head that produced it (hazard 1 of the 2026-09-11
+        # battery), so the startup line is where a swapped leaf is said out loud.
+        print(f"[search_dividend] 🔁 LEAF HEAD REPLACED from {_lh['leaf_head']} "
+              f"(sha1 {_lh['leaf_head_sha1']}) — the unsearched side is UNTOUCHED", flush=True)
     if args.compile_extractor:
         from main.search_dividend.perf import compile_b1_extractor
         ok = compile_b1_extractor(model, enabled=True)
