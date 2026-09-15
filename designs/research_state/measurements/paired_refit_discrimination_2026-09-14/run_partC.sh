@@ -8,18 +8,24 @@
 # structural. The `orig` cell runs `--leaf-head head_original.pt` rather than no flag at all, so
 # both cells take the identical code path and a difference cannot be the hook.
 set -uo pipefail
-ROOT=/home/goodlad/dev/gen3ai
+# 🚨 Part C runs from the WORKTREE, not the main checkout: `--leaf-head` is new code and main's
+# `src/` does not have it (the first launch died on `unrecognized arguments: --leaf-head`). The
+# checkpoint is named by ABSOLUTE path so nothing depends on which tree we stand in, and
+# POKESIM_SIM_BRIDGE_BIN still points at the binary built in the MAIN checkout (never build into
+# main's target from a worktree).
+ROOT=/home/goodlad/dev/gen3ai-wt/pairedrefit
+MAIN=/home/goodlad/dev/gen3ai
 OUT=${1:-/home/goodlad/.claude/jobs/9ab51de6/tmp/paired_refit/partC}
 HEADS=${2:-/home/goodlad/.claude/jobs/9ab51de6/tmp/paired_refit/refit}
 BEST=${3:?usage: run_partC.sh <out> <refit_dir> <best_head_file>}
 PY=/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
 export PYTHONPATH=$ROOT/src
-export POKESIM_SIM_BRIDGE_BIN=$ROOT/src/rust_sim/target/release/sim_bridge
+export POKESIM_SIM_BRIDGE_BIN=$MAIN/src/rust_sim/target/release/sim_bridge
 export CUDA_VISIBLE_DEVICES=""
 cd "$ROOT" || exit 1
 mkdir -p "$OUT/logs"
 
-ckpt=models/ai_v12_11_ladder_ctrl10M/snapshots/snapshot_000010000032.zip
+ckpt=$MAIN/models/ai_v12_11_ladder_ctrl10M/snapshots/snapshot_000010000032.zip
 COMMON="--arm honest --budget 1 --opponents self --games-seed 7 --battle-timeout-s 1800 --battle-idle-s 120"
 DEF="--root-strategy defensive --defensive-leaf winprob --defensive-wp-margin 0.15 --defensive-confirm 0 --defensive-contested-deadline-s 3.0"
 
