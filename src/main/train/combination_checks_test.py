@@ -232,6 +232,17 @@ ARGVS: dict[str, list[str]] = {
     "winprob_rollout_needs_cf_records": _WP + ["--win-prob-rollout-target", "0.01"],
     # gen3_winprob_rollout_weight_v1 — the weight with no fraction has no anchored row to weigh,
     # so the argv that trips it is the weight ALONE on an otherwise complete win-prob argv.
+    # gen3_fork_v1 — the fork arm's five. The first two are the `winprob_rollout_*` shapes again
+    # (a treatment that means nothing without the critic it re-aims, and one that resolves nothing
+    # without the record ring); the last three are obs keys a branch row cannot honestly fill.
+    "fork_needs_the_winprob_critic": ["--fork-fraction", "0.02"],
+    "fork_needs_cf_records": _WP + ["--fork-fraction", "0.02"],
+    "fork_refuses_value_true_team":
+        _WP + ["--cf-records", "--fork-fraction", "0.02", "--value-true-team"],
+    "fork_refuses_dense_aux":
+        _WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-dense-aux", "0.1"],
+    "fork_refuses_strata_weight":
+        _WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
     "winprob_rollout_weight_needs_the_rollout_target":
         _WP + ["--cf-records", "--win-prob-rollout-weight", "64"],
     # gen3_dense_aux_v1 — the same shape a third time: dense targets on the win-prob head only

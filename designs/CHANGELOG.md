@@ -9526,3 +9526,110 @@ one at 1.0; adding it would refuse to pool two genuinely poolable files.
 `rollout_influence_lambda` 0.682–0.727 (λ = 0.9 propagation, above the anchors' own share as it must
 be), `row_w_mean` 1.000 through the shuffle, and `win_prob_rollout_weight 64.0` recorded at
 `config_version 119`.
+
+---
+
+## v120 — THE FORK ARM: contested-state exploring starts into the PPO buffer (`gen3_fork_v1`)
+
+**`--fork-fraction`** (default `0.0` = OFF and BIT-identical), plus `--fork-branches {2,3}` (3),
+`--fork-contested-gap` (0.40), `--fork-contested-absv` (0.0 = off), `--fork-max-per-battle` (1) and
+`--fork-crn {dice,dice_and_draws}` (`dice_and_draws`). **`--critic winprob` AND `--cf-records` are
+both REQUIRED**; `--value-true-team`, `--win-prob-dense-aux` and `--win-prob-strata-weight` are
+REFUSED alongside it. Registered by
+`designs/research_state/measurements/paired_refit_discrimination_2026-09-14/`.
+
+**THE MEASUREMENT THAT REGISTERS IT.** The promoted win-prob critic's held-out PAIRWISE ACCURACY on
+successors ONE MOVE APART — does `sign(V(s'_a) − V(s'_b))` agree with which branch actually wins, on
+the same dice — is **0.5169 [0.4800, 0.5524]**: a coin. With the trunk FROZEN and only
+`WinProbHead`'s four tensors moving, ordinary BCE on counterfactual successor states reaches
+**0.6032 [0.5690, 0.6374]** (+0.0863 [+0.0384, +0.1347], DETECTED), and adding a pairwise RANKING
+term to the same rows buys **nothing** (−0.0107 [−0.0249, +0.0028], NOT DETECTED, negative on points
+at coefficients 0.1 / 0.3 / 1.0). Pairwise accuracy is a RANK statistic, invariant to any monotone
+recalibration, so the ordering was inside `value_pooled` all along and the on-policy PPO stream
+never asked the head for it. **The DATA is the lever, not the loss form** — and the data the refit
+used does not exist in a rollout, which visits exactly ONE successor per decision.
+
+**WHAT IT DOES.** At a CONTESTED decision (a move round, turn 2–40, ≥3 legal actions, top-2
+masked-logit gap at or below the `--fork-contested-gap` QUANTILE of this rollout's own candidate
+pool — the offline builder's `--gap-quantile 0.40` rule verbatim) the episode is replayed out of the
+`cf_records` ring to that turn and three branches are played to a terminal by the CURRENT policy on
+both sides at temperature 1.0: the policy's **top-1**, its **top-2**, and **one uniformly random
+legal alternative**. Their transitions enter the SAME PPO buffer, each branch carrying its own
+GAE/λ-return and its own outcome as `win_target`. Plain BCE; **no ranking term**.
+
+**The random branch is where the new information is.** On the 5,076 measured forks the policy's
+top-1 and top-2 were outcome-INTERCHANGEABLE (0.7082 vs 0.7078, a gap of 0.0004), a uniformly random
+legal alternative won 0.6795 (throwing the decision away costs 2.9 pp), and in **4.5 %
+[3.99, 5.16]** of forks that random alternative beat **BOTH** policy candidates. `--fork-branches 2`
+is the control that isolates that 4.5 %, and `fork/random_wins` is the meter that says whether the
+third branch earned its simulation. **79.7 % of branch pairs are TIED** — the structural tax, and
+`fork/tie_rate` publishes the per-fork version.
+
+**THE MASK RULE IS UNIFORM, AND THAT IS A CHOICE.** The fork step is excluded from the clipped
+policy term for EVERY branch, the top-2 included. Masking only `rand` (whose action the policy
+down-ranked) and letting the clip handle the top-2 was the alternative; it is rejected because an
+exclusion criterion that depends on WHICH branch a row came from re-weights the policy gradient by
+the branch MIX — it would leave `top1`/`top2` as the only fork-step rows in the term, silently
+up-weighting the policy's own candidates at exactly the contested states the arm selects for. The
+masked term is **renormalised over the kept rows**, never just zeroed: a masked `.mean()` over the
+full row count would lower the effective policy learning rate by the fork rate. The fork step stays
+FULLY in the value terms. Carrier: the `fork_pg_m` obs key, declared only when the flag is on.
+
+**THE PREFIX IS COUNTED ONCE.** A branch's rows begin AT the fork step; the turns before it are the
+parent's and are already in the buffer. The fork STATE appears once per branch with a DIFFERENT
+action — the exploring start, not a duplicate.
+
+**CRN — the `cf_q_labels` account, made testable.** `--fork-crn dice_and_draws` pairs the sim DICE
+(one seed for the whole line) **and** both sides' policy sampling streams (`RLPlayer`'s
+`policy_seed`, seeded per fork and per side, identical across branches), so branches differ in
+exactly one thing: the action at the fork. `dice` alone is the `cf_q_labels` regime — that factory
+paired the dice and left both sides sampling at temperature 1.0 — and is kept as the control.
+Verified on the real bridge: identical actions ⇒ **byte-identical protocol**; same dice with
+unpaired draws ⇒ the lines diverge.
+
+**Why the critic is REQUIRED, not merely recommended.** A branch is built outside the env, and only
+under `winprob` is its reward stream reconstructible from its outcome bit (the terminal indicator,
+`--victory-value 1.0`, `--no-hand-shaping`). Under `shaped` the per-turn reward is a PBRS/bias
+composition the env's `RewardManager` folds from a `TurnDelta` no branch has, and every injected row
+would silently carry a zero reward it did not earn.
+
+**The ecology approximation, declared.** A training `__RECON__` record carries NO opponent identity,
+so a branch is played against a SELF-LIKE opponent — right for the ~90 % self-play share of the
+mixture and biased for the rest. Injected rows are labelled `opp_class = POOL` for that reason;
+`fork/branch_share` and `fork/bot_share` price it.
+
+**COST, AND ITS THREE BOUNDS.** `forks × branches × remaining decisions` against the trainee's own
+`n_steps × n_envs`, published as `fork/sim_steps_share`. A fork cap, a ROW BUDGET (the injection may
+at most DOUBLE the buffer; over it, forks are dropped **WHOLE**, never partially) and — because a
+fork dropped at that budget has ALREADY BEEN PLAYED — a cap on the ASK derived from the previous
+rollout's MEASURED `fork/rows_per_fork`.
+
+**NEW OBS KEY:** `fork_pg_m` [1], a LABEL key (read only by the loss), declared only at
+`--fork-fraction > 0`. **NEW BUFFER:** `ForkRolloutBuffer`, a mixin whose `get()` yields minibatches
+over the collected rows PLUS the injected ones; `reset()` drops them and an empty fork set makes
+`get()` upstream's own generator, called. **NEW TB:** the `fork/` family — `rate`, `branch_share`,
+`tie_rate`, `random_wins`, `pairwise_acc`, `sim_steps_share` and the plumbing beside them.
+`install_scripted_prefix` gained a CALLABLE `substitute_choice` (default-identical) so an action
+INDEX can be resolved through the player's own `action_to_order` against the LIVE legal set.
+
+RECORDED at config v120 (all six fields, because the arm's endpoint is a comparison against an
+offline baseline measured at one particular selector quantile and one particular CRN regime, so a
+run that cannot say which it used cannot be read against it); a pre-v120 config migrates to
+`0.0 / 3 / 0.40 / 0.0 / 1 / "dice_and_draws"` — the only possible past. No `ARCH_SIGNATURE` bump, no
+`MIGRATION_FLOOR` change, not a `flag_registry.py` row.
+
+**GATES:** `fork_arm_test.py` (28), `fork_buffer_test.py` (21), `fork_crn_test.py` (9),
+`fork_callback_test.py` (11), `fork_flags_test.py` (33) and `fork_crn_sim_test.py` (3, `sim`).
+
+**SMOKE** (`--debug --steps 10000 --fork-fraction 0.05 --cf-records --cf-records-keep 4096`, CPU,
+rust bridge, one `DummyVecEnv` at `n_steps` 2048): **Training complete**, 0 worker failures, 0
+`records_missing`. `fork/rate` 0.98 → 0.21 forks/battle, `fork/branch_share` 0.50 → 0.47,
+`fork/tie_rate` 0.57 / 0.75 / 0.47, `fork/random_wins` 0.136 / 0 / 0.2, `fork/pairwise_acc` 0.583 /
+0.500 / 0.250 over 12 / 8 / 16 pairs, `fork/rows_per_fork` 125–132.
+🚨 **The cost meter and its bound, both working:** `fork/sim_steps_share` **7.64 → 2.02 → 1.65** with
+`fork/dropped_forks` **48 → 2 → 0** — the first rollout asks for more forks than the row budget can
+take and pays for them, the measured rows-per-fork bounds every ask after it. ⚠️ `fork/gap_threshold`
+reads **0.0** on the first rollout: an untrained policy's masked logits are near-identical, so the
+0.40 quantile lands at ~0 and the whole pool is admitted — honest (every decision really is
+contested there), but it means an early rollout's population is set by `--fork-max-per-battle` and
+the fraction rather than by contestedness.

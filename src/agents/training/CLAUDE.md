@@ -30,6 +30,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the TB census detail, capacity telemetry, grad balance, `signal/`, the scaffolding gauge | [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md) |
 | the counterfactual audit, the cf label plumbing, the prefix-sharing materializer | [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md) |
 | search-as-teacher, OPD, the win-prob one-ply teacher | [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md) |
+| the FORK ARM — contested-state forks, the branch rows, the CRN, the `fork/` family | [`designs/training/forks.md`](../../../designs/training/forks.md) |
 | the stall-tail harvest / head-repair pipeline | [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md) |
 | either `--compile-*` flag, BLAS pinning | [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md) |
 | `stats.py`, the replay-imputation probe | [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md) |
@@ -528,6 +529,49 @@ and nothing else. ⚠️ The value SIDECAR's `target` column follows the flag: u
 λ-return, not the raw outcome. Composes with `--win-prob-strata-weight` (that one weights ROWS, this
 one re-aims them) and with the cf labels (disjoint state sets — the cf term never touches
 `win_target`).
+
+### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
+
+**Default `0.0` = OFF and BIT-identical** — no module imported, no obs key declared, no callback
+attached, no buffer installed, no row injected. **`--critic winprob` AND `--cf-records` are BOTH
+REQUIRED**, and three more flags are REFUSED alongside it (`--value-true-team`,
+`--win-prob-dense-aux`, `--win-prob-strata-weight`). Detail:
+[`designs/training/forks.md`](../../../designs/training/forks.md).
+
+🚨 **WHY — the head ranks siblings at CHANCE.** `paired_refit_discrimination_2026-09-14` measured
+the promoted win-prob critic's pairwise accuracy on successors ONE MOVE APART at **0.5169
+[0.4800, 0.5524]**, while a FROZEN trunk with only the head's four tensors refit on counterfactual
+successors reaches **0.6032** (+0.0863, DETECTED) and a pairwise RANKING term buys **nothing**
+(−0.0107, NOT DETECTED). Pairwise accuracy is a RANK statistic, so the ordering was in
+`value_pooled` all along and the on-policy stream never asked for it: **the DATA is the lever, not
+the loss form.** A rollout visits exactly ONE successor per decision; this manufactures the
+siblings. At a contested decision the battle is forked, three branches (the policy's top-2 + ONE
+uniformly random legal action) are played to a terminal by the CURRENT policy, and their
+transitions enter the SAME PPO buffer. **Plain BCE, NO ranking term — closed as a lever.**
+
+🚨 **THE MASK RULE IS UNIFORM: the FORK STEP is out of the policy term for EVERY branch**, the
+top-2 included, and the term is RENORMALISED over the kept rows (not just zeroed — a masked
+`.mean()` would silently lower the effective policy LR by the fork rate). Masking only the random
+branch would re-weight the policy gradient by the branch MIX. The fork step stays fully in the
+VALUE terms. Carrier: the `fork_pg_m` obs key.
+
+🚨 **THE PREFIX IS COUNTED ONCE** — a branch's rows begin AT the fork step. The fork STATE appears
+once per branch with a DIFFERENT action; that is the exploring start, not a duplicate.
+
+🚨 **`--fork-crn dice_and_draws` (default) pairs the DICE *and* the policy draws.** `cf_q_labels`
+paired only the dice — a concrete, testable account of its null — and `fork_crn_sim_test` proves
+byte-identical protocol on identical actions through the real bridge.
+
+⚠️ **The ecology approximation is the arm's largest caveat:** a `__RECON__` record carries no
+opponent identity, so a branch is played against a SELF-LIKE opponent. Injected rows are labelled
+`opp_class = POOL` for that reason; `fork/branch_share` and `fork/bot_share` price it.
+
+⚠️ **RAISE `--cf-records-keep`** (the ring is pruned globally to the newest N while a rollout
+finishes ~2,400 episodes, so at 512 the forks that resolve are the LATE ones — a selection bias).
+🚨 **A fork dropped at the row budget has ALREADY BEEN PLAYED**, so the ask is bounded by the
+previous rollout's MEASURED `fork/rows_per_fork`. Read **`fork/rate`**, **`fork/branch_share`**,
+**`fork/tie_rate`**, **`fork/random_wins`**, **`fork/pairwise_acc`** (IN-SAMPLE; the endpoint is a
+held-out read) and **`fork/sim_steps_share`** (the cost).
 
 ### `--win-prob-rollout-weight` — the ANCHOR loss weight (`gen3_winprob_rollout_weight_v1`, v119)
 

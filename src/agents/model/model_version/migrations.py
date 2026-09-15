@@ -530,4 +530,16 @@ def _migrate_config(data: dict) -> dict:
     if version < 119:
         data.setdefault("win_prob_rollout_weight", 1.0)
         data["config_version"] = 119
+    # v120 (gen3_fork_v1) — SIX TRAINING-only fork knobs, v118's shape exactly. Every default is a
+    # RECORD, not a choice: no pre-v120 run could fork a decision, because there was no flag that
+    # could fork one, and the other five are inert at fraction 0. Not version-locked and not in
+    # check_compatible — they steer a post-collection callback, never a forward pass.
+    if version < 120:
+        data.setdefault("fork_fraction", 0.0)
+        data.setdefault("fork_branches", 3)
+        data.setdefault("fork_contested_gap", 0.40)
+        data.setdefault("fork_contested_absv", 0.0)
+        data.setdefault("fork_max_per_battle", 1)
+        data.setdefault("fork_crn", "dice_and_draws")
+        data["config_version"] = 120
     return data

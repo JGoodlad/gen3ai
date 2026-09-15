@@ -287,7 +287,23 @@ from typing import Any, Dict
 #   the most expensive way to read a null. A pre-v119 config defaults to 1.0, which is not a guess
 #   but the only possible past — no run could weigh a row it had no flag to weigh with. No
 #   ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 119
+# v120 (gen3_fork_v1): `fork_fraction` + `fork_branches` + `fork_contested_gap` +
+#   `fork_contested_absv` + `fork_max_per_battle` + `fork_crn` — the FORK ARM, registered by
+#   `designs/research_state/measurements/paired_refit_discrimination_2026-09-14/`. TRAINING-only,
+#   the v118 shape exactly: they steer a post-collection callback that plays contested-state
+#   branches and injects their transitions into the rollout buffer, and touch no forward pass and
+#   no weight shape — a default (0.0) build is bit-identical (no module imported, no obs key
+#   declared, no callback attached, no row injected), and there is nothing for `check_compatible`
+#   to compare. RECORDED for v100's reason and for v118's — the arm carries a ~1.5-2x WALL-CLOCK
+#   cost, so a resume that dropped it would look like a speed-up rather than like a lost arm — and
+#   for one more that is specific to this arm: its registered endpoint is a comparison against an
+#   OFFLINE baseline measured at one particular selector quantile and one particular CRN regime, so
+#   all six are recorded and a run that cannot say which it used cannot be read against that
+#   baseline. A pre-v120 config defaults to 0.0 / 3 / 0.40 / 0.0 / 1 / "dice_and_draws", which is
+#   not a guess but the only possible past — no run could fork a decision it had no flag to fork
+#   with, and the other five are inert at fraction 0. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR
+#   change.
+MODEL_CONFIG_VERSION = 120
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -895,6 +895,50 @@ is a per-row LOSS WEIGHT and changes no row's TARGET, so the value sidecar's sch
 `QUANTITY_FIELDS` are deliberately unchanged. Training-only, no forward pass, no weight shape, no
 `check_compatible` compare, not a `flag_registry.py` row.
 
+**`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
+FORK ARM). Default **`0.0` = OFF and BIT-identical**: no module is imported, no obs key is declared,
+no callback is attached, the stock rollout buffer is used and no row is injected. `--critic winprob`
+**and** `--cf-records` are both REQUIRED, and `--value-true-team`, `--win-prob-dense-aux` and
+`--win-prob-strata-weight` are REFUSED alongside it. Above 0.0 it is the FRACTION of the buffer's
+decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
+masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
+episode is replayed out of the `cf_records` ring to that turn and `--fork-branches` continuations —
+the policy's top-2 candidates plus ONE uniformly random legal action — are played to a terminal by
+the CURRENT policy on both sides at temperature 1.0. Their transitions enter the SAME PPO buffer,
+with the branch's own GAE/λ-return and its own outcome as `win_target`. **Plain BCE, no ranking
+term.**
+
+🚨 **The measurement that registers it:** the promoted win-prob critic's held-out PAIRWISE ACCURACY
+on successors ONE MOVE APART is **0.5169 [0.4800, 0.5524]** — a coin — while a FROZEN trunk with
+only `WinProbHead`'s four tensors refit on counterfactual successors reaches **0.6032
+[0.5690, 0.6374]** (+0.0863 [+0.0384, +0.1347], DETECTED), and a pairwise RANKING term on the same
+rows buys **nothing** (−0.0107 [−0.0249, +0.0028], NOT DETECTED, negative on points). Pairwise
+accuracy is a RANK statistic and is invariant to monotone recalibration, so the ordering was in
+`value_pooled` all along — **the DATA is the lever, not the loss form**
+([`paired_refit_discrimination_2026-09-14`](research_state/measurements/paired_refit_discrimination_2026-09-14/README.md)).
+The RANDOM branch is where the new information is: on 5,076 measured forks the policy's top-1 and
+top-2 were outcome-INTERCHANGEABLE (0.7082 vs 0.7078) while a uniformly random legal alternative
+beat BOTH candidates in **4.5 % [3.99, 5.16]** of forks.
+
+🚨 **THE FORK STEP IS MASKED OUT OF THE POLICY TERM FOR EVERY BRANCH**, the top-2 included, and the
+term is RENORMALISED over the kept rows — an exclusion that depended on WHICH branch a row came from
+would re-weight the policy gradient by the branch mix, and a masked `.mean()` would lower the
+effective policy learning rate by the fork rate. The carrier is the `fork_pg_m` obs key, declared
+only when the flag is on. **The shared PREFIX is counted ONCE** — a branch's rows begin AT the fork
+step; the fork STATE appears once per branch with a DIFFERENT action, which is the exploring start.
+🚨 **`--fork-crn dice_and_draws` (the default) pairs the sim dice AND both sides' policy sampling
+streams**, so branches differ in exactly the action at the fork; `dice` alone is the `cf_q_labels`
+regime and is kept as the control. ⚠️ A `__RECON__` record carries NO opponent identity, so every
+branch is played against a SELF-LIKE opponent — the arm's largest declared caveat, labelled on the
+row (`opp_class = POOL`) and priced by `fork/branch_share` / `fork/bot_share`. 🚨 **Cost is
+`forks × branches × remaining decisions`** — ~1.5-2× a plain run's simulation at fraction 0.02 with
+3 branches — published as `fork/sim_steps_share`, and bounded by a fork cap, a row budget
+(the injection may at most DOUBLE the buffer) and, because a fork dropped at that budget has already
+been PLAYED, by the previous rollout's measured `fork/rows_per_fork`. The six are training-only — no
+forward pass, no weight shape, no `check_compatible` compare, **not** `flag_registry.py` rows — so
+they do not appear in §6's flag table until a production config adopts them. Mechanics:
+`designs/training/forks.md`.
+
 The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
 `coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
 would add the advantage to the reward and take the advantage of that. The FROZEN-φ route

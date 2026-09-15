@@ -424,6 +424,65 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "single-slot stash it overwrites every episode. Without the ring every sampled state would "
         "fail to resolve and the arm would train against the terminal bit it exists to replace. "
         "Pass --cf-records, or drop the flag."),
+    # --- gen3_fork_v1: the FORK ARM's five refusals. ---------------------------------------
+    CombinationCheck(
+        # 🚨 THE ONE THAT IS NOT A CONVENTION. Under `winprob` the reward stream is the TERMINAL
+        # WIN INDICATOR alone, so a branch's ENTIRE reward sequence is reconstructible from its
+        # outcome bit — which is the only reason `fork_buffer.branch_rewards` can build one outside
+        # the env. Under `shaped` a reward is a per-turn PBRS/bias composition the env's
+        # RewardManager folds from a TurnDelta, and a branch has no env: the injected rows would
+        # silently carry zero reward, i.e. would teach the critic that a third of the buffer is
+        # inert.
+        "fork_needs_the_winprob_critic", ("fork_fraction", "critic"),
+        lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _winprob(a),
+        "--fork-fraction > 0 requires --critic winprob. A forked branch's transitions are built "
+        "OUTSIDE the env, and only under this critic is a branch's reward sequence reconstructible "
+        "from its outcome (the terminal win indicator, --victory-value 1.0, --no-hand-shaping). "
+        "Under `shaped` the per-turn reward is a PBRS/bias composition the env's RewardManager "
+        "folds from a TurnDelta that no branch has, so every injected row would carry a zero "
+        "reward it did not earn. Pass --critic winprob, or drop the flag."),
+    CombinationCheck(
+        # THE EXPENSIVE SILENT NO-OP, in the shape `winprob_rollout_needs_cf_records` already has.
+        "fork_needs_cf_records", ("fork_fraction", "cf_records"),
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
+                   and not bool(_val(a, "cf_records", False))),
+        "--fork-fraction > 0 requires --cf-records. A fork REPLAYS its episode to the forked turn "
+        "and diverges there, and the replayable record lives in the `<run>/cf_records/` ring that "
+        "--cf-records switches on; training otherwise keeps a single-slot stash it overwrites "
+        "every episode. Without the ring every fork would fail to resolve and the run would be the "
+        "unforked one under a forked name. ⚠️ Raise --cf-records-keep too: the ring is pruned "
+        "GLOBALLY to the newest N while a production rollout finishes ~2,400 episodes, so at the "
+        "default 512 the forks that DO resolve are the rollout's LATE ones — a selection bias, not "
+        "just a shortfall. Pass --cf-records, or drop the flag."),
+    CombinationCheck(
+        "fork_refuses_value_true_team", ("fork_fraction", "value_true_team"),
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
+                   and bool(_val(a, "value_true_team", False))),
+        "--fork-fraction > 0 is incompatible with --value-true-team. That flag declares the "
+        "`opp_true_team` obs key, which the extractor's value route READS and RAISES on when it is "
+        "missing; a branch is played by two RLPlayers with no env, so there is no `battle2` to "
+        "build the opponent's TRUE party from and a zero block would be a fabricated privileged "
+        "input rather than an absent one. --value-true-team is a ceiling PROBE, not a shippable "
+        "channel. Run one arm or the other."),
+    CombinationCheck(
+        "fork_refuses_dense_aux", ("fork_fraction", "win_prob_dense_aux"),
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
+                   and float(_val(a, "win_prob_dense_aux", 0.0) or 0.0) > 0.0),
+        "--fork-fraction > 0 is incompatible with --win-prob-dense-aux > 0. The dense head's "
+        "targets are the END-OF-BATTLE per-slot facts of the episode, back-filled from `battle1` "
+        "at the terminal — a battle the trainer process never held for a branch. Masking every "
+        "injected row out of the head would make its dose a function of the fork rate; supplying "
+        "one would need the branch's own terminal facts threaded back from the fork worker, which "
+        "is not built. Drop one of the two."),
+    CombinationCheck(
+        "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
+                   and float(_val(a, "win_prob_strata_weight", 0.0) or 0.0) != 0.0),
+        "--fork-fraction > 0 is incompatible with --win-prob-strata-weight != 0. The strata weight "
+        "prices rows by `win_margin`, the normalised material margin the env's reward manager "
+        "computes; a branch has no env, so every injected row carries the 0.0 FILL and would land "
+        "in one stratum. The delivered strata dose would then be a function of the fork rate "
+        "rather than of the flag. Drop one of the two."),
     CombinationCheck(
         # THE CHEAP SILENT NO-OP's twin. With no fraction there are no ANCHORED rows, so the weight
         # has nothing to multiply and the run is the unflagged one — while its argv, its

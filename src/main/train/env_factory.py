@@ -69,6 +69,12 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 emit_win_row_weight=(
                     float(getattr(args, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
                     and float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0),
+                # gen3_fork_v1: the per-row POLICY-TERM mask key (`fork_pg_m`), declared only when
+                # the arm is on. It is the carrier for THE MASK RULE — the fork step is out of the
+                # policy term for every branch — and an injected row is the only row that ever
+                # holds anything but the 1.0 placeholder, so an unflagged run's observation space,
+                # its rollout buffer and its policy loss are all untouched.
+                emit_fork_pg_mask=(float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0),
                 # PRIVILEGED TRUE-TEAM channel (gen3_value_true_team_v1): emit the opponent's
                 # actual party only when the value route that reads it was built. Emitting it
                 # unconditionally would put a key in the observation_space that no consumer reads
@@ -274,8 +280,11 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
             # labeller resolves against the `cf_records` ring. Set on the ENV (the wrapper reads it
             # through `self.env`, the same direction `_opponent_class` and `_emit_dense_aux` go),
             # and OFF by default — a run without the flag never builds the tuple.
+            # gen3_fork_v1 reads the SAME handle for the same reason (a fork REPLAYS its
+            # episode to the forked turn), so either flag arms it.
             env._emit_wp_rollout_handle = bool(
-                float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0)
+                float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
+                or float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0)
 
             # FORCE OVERRIDE: SingleAgentWrapper hardcodes 10 for gen3ou. We need 11.
             # Also ensure it propagates our Dict observation space natively.

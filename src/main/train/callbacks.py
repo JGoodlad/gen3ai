@@ -419,6 +419,20 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         callbacks.append(ValueSidecarCallback(
             model_dir, fraction=args.value_sidecar_fraction,
             seed=args.value_sidecar_seed, critic_mode=(args.critic or CRITIC_DEFAULT)))
+    # THE FORK ARM (gen3_fork_v1). Appended LAST of the buffer-touching callbacks, and the order
+    # against WinProbLabelCallback is LOAD-BEARING: the fork selector reads `win_mask` to mean
+    # "this episode TERMINATED inside the buffer" (which is also what makes the state replayable —
+    # the __RECON__ record is written at episode END), and that plane is a PLACEHOLDER OF ZEROS
+    # until the win callback back-fills it. Registered first, the arm would find nothing eligible,
+    # every rollout, in silence. It is after the value sidecar too, though nothing depends on that:
+    # the arm APPENDS rows and never writes the collected [n_steps, n_envs] planes the sidecar
+    # reads, so the sidecar's file describes the rollout the trainee actually played either way.
+    if float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0:
+        from agents.training.fork_callback import ForkArmCallback
+        callbacks.append(ForkArmCallback(
+            records_dir=(os.path.join(model_dir, "cf_records")
+                         if getattr(args, "cf_records", False) else None),
+            impl=str(getattr(args, "bridge_impl", "rust") or "rust")))
     # Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate. Registered ONLY when on
     # → an off run adds no callback and makes no env_method calls (byte-identical). Training-only.
     if args.team_pfsp != "off":

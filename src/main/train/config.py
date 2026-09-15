@@ -646,6 +646,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # continuation (the fraction is inherited) while delivering ~1/50th of the registered dose —
     # the arm's cost with none of its treatment, and nothing in the cost profile would show it.
     _resolve("win_prob_rollout_weight", 1.0)
+    # gen3_fork_v1 — the FORK ARM. TRAINING-only and inherited, for the sharpest version of that
+    # reason yet: the fraction is what the run COSTS, and a flagless restart that dropped it would
+    # halve the run's simulation bill mid-arm while every argv, model_config and ledger line still
+    # said it was the forked arm. The four knobs below it are inherited so a restart cannot change
+    # WHICH decisions are forked or WHAT the branches share — either would be a distribution shift
+    # inside a single registered arm.
+    _resolve("fork_fraction", 0.0)
+    _resolve("fork_branches", 3)
+    _resolve("fork_contested_gap", 0.40)
+    _resolve("fork_contested_absv", 0.0)
+    _resolve("fork_max_per_battle", 1)
+    _resolve("fork_crn", "dice_and_draws")
     # gen3_dense_aux_v1 (v117): the CLI surface of a DERIVED structural toggle, so the resolve line
     # carries BOTH roles — the dose for the loss, and (through `extractor_arch._DERIVED`) whether
     # the head is built at all. A flagless resume that dropped it would not merely stop dosing the
@@ -904,6 +916,21 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # the experiment, it needs its own flag and its own registered reason.
         parser.error("--win-prob-rollout-weight must be >= 1.0 "
                      "(1.0 = off; it MULTIPLIES the rollout-anchored rows' share of the BCE)")
+    if args.fork_fraction is not None and not (0.0 <= args.fork_fraction <= 1.0):
+        parser.error("--fork-fraction must be in [0, 1] "
+                     "(0 = off; it is a fraction of the buffer's decisions)")
+    if args.fork_contested_gap is not None and not (0.0 < args.fork_contested_gap <= 1.0):
+        # A single-value RANGE check (the cross-flag half is in `combination_checks`). It is a
+        # QUANTILE, so 0 would select nothing and a value above 1 is not a quantile at all — both
+        # are refused rather than clamped, because a clamp would let a fat-fingered "40" run as
+        # "fork everything" under a flag whose registered value is 0.40.
+        parser.error("--fork-contested-gap must be in (0, 1] — it is the QUANTILE of the top-2 "
+                     "logit gap, not an absolute gap (0.40 is the registered value)")
+    if args.fork_contested_absv is not None and not (0.0 <= args.fork_contested_absv <= 0.5):
+        parser.error("--fork-contested-absv must be in [0, 0.5] (|V - 0.5| cannot exceed 0.5; "
+                     "0 = off, and off is what the registered endpoint assumes)")
+    if args.fork_max_per_battle is not None and args.fork_max_per_battle < 1:
+        parser.error("--fork-max-per-battle must be >= 1 (forks per episode slice)")
     if args.opd_coef is not None and args.opd_coef < 0.0:
         parser.error("--opd-coef must be >= 0 (0 = off)")
     # gen3_winprob_oneply_teacher_v1 (ai_v12 routes 2+3). The mode selects WHICH teacher fills the

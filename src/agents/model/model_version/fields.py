@@ -512,6 +512,25 @@ class ModelVersionFields:
     # post-collection, no forward pass and no weight shape, so recorded for PROVENANCE and
     # flagless-resume read-back and never compared by check_compatible or any check_*.
     win_prob_rollout_weight: float = 1.0
+
+    # gen3_fork_v1 (config v120): the FORK ARM — contested-state EXPLORING STARTS whose branch
+    # continuations enter the SAME PPO buffer. `fork_fraction` 0.0 = OFF and a default build is
+    # BIT-identical (no module imported, no obs key declared, no callback attached, no row
+    # injected); the five below it are INERT at 0.0. Same class as the four above — the
+    # `td_aux_coef` class: they steer a post-collection callback and a buffer injection, touch no
+    # forward pass and no weight shape, so they are recorded for PROVENANCE and flagless-resume
+    # read-back and never compared by check_compatible or any check_*.
+    #
+    # 🚨 Recorded ALL SIX, including the ones a reader might call cosmetic. `fork_contested_gap`
+    # and `fork_crn` decide WHICH states were forked and WHAT the branches shared, and the arm's
+    # registered endpoint is a comparison against an offline baseline measured at one particular
+    # setting of both — so a run that cannot say which it used cannot be read against it.
+    fork_fraction: float = 0.0
+    fork_branches: int = 3
+    fork_contested_gap: float = 0.40
+    fork_contested_absv: float = 0.0
+    fork_max_per_battle: int = 1
+    fork_crn: str = "dice_and_draws"
     # ---- gen3_dense_aux_v1 (config v117) — THE DENSE AUXILIARY HEAD ---------------------------
     # ONE CLI flag, TWO recorded fields, because they are gated differently.
     # `dense_aux` is STRUCTURAL (the value_true_team pattern): ON builds a `DenseAuxHead` whose

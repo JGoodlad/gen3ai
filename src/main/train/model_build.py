@@ -153,6 +153,14 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("win_prob_rollout_r",            _PLAIN),   # ...continuations per sampled state (inert at 0.0)
     ("win_prob_rollout_mode",         _PLAIN),   # ...replace | blend (inert at 0.0)
     ("win_prob_rollout_weight",       _PLAIN),   # gen3_winprob_rollout_weight_v1 (1.0 = bit-identical)
+    # gen3_fork_v1 — the FORK ARM. All six _PLAIN: they are read off the model by
+    # `ForkArmCallback` once per rollout and never enter a forward pass or a weight shape.
+    ("fork_fraction",                 _PLAIN),   # 0.0 = OFF and bit-identical
+    ("fork_branches",                 _PLAIN),   # 3 = top-2 + one uniformly random legal action
+    ("fork_contested_gap",            _PLAIN),   # the top-2 logit-gap QUANTILE (inert at 0.0)
+    ("fork_contested_absv",           _PLAIN),   # the |V-0.5| band; 0.0 = off (see the flag)
+    ("fork_max_per_battle",           _PLAIN),   # forks per episode slice (inert at 0.0)
+    ("fork_crn",                      _PLAIN),   # dice | dice_and_draws (inert at 0.0)
     ("win_prob_dense_aux",            _PLAIN),   # gen3_dense_aux_v1 (0.0 = head not built)
     # SEARCH-TEACHER (coef 0 / flag absent = byte-identical). The buffer is filled by the
     # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
@@ -234,6 +242,14 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
 
     # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
     attach_cf_labels(model)
+
+    # gen3_fork_v1: the FORK ARM injects branch transitions into the rollout buffer, which the
+    # stock buffer has nowhere to put — `get()` iterates exactly `buffer_size * n_envs`. Installed
+    # HERE because this function is the one place both build paths meet and it runs AFTER
+    # `_setup_model` built the buffer being replaced. OFF ⇒ not even imported.
+    if float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0:
+        from agents.training.fork_buffer import install_fork_buffer
+        install_fork_buffer(model)
 
     # gen3_exploiter_distill_v1: attach the frozen per-team teachers (foreign exploiters) on the
     # training device. OFF (coef 0 / no teacher) → the list stays empty so the loss block is
@@ -470,6 +486,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             win_prob_rollout_r=args.win_prob_rollout_r,
             win_prob_rollout_mode=args.win_prob_rollout_mode,
             win_prob_rollout_weight=args.win_prob_rollout_weight,
+            fork_fraction=args.fork_fraction,
+            fork_branches=args.fork_branches,
+            fork_contested_gap=args.fork_contested_gap,
+            fork_contested_absv=args.fork_contested_absv,
+            fork_max_per_battle=args.fork_max_per_battle,
+            fork_crn=args.fork_crn,
             win_prob_dense_aux=args.win_prob_dense_aux,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,
@@ -842,6 +864,12 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             win_prob_rollout_r=args.win_prob_rollout_r,
             win_prob_rollout_mode=args.win_prob_rollout_mode,
             win_prob_rollout_weight=args.win_prob_rollout_weight,
+            fork_fraction=args.fork_fraction,
+            fork_branches=args.fork_branches,
+            fork_contested_gap=args.fork_contested_gap,
+            fork_contested_absv=args.fork_contested_absv,
+            fork_max_per_battle=args.fork_max_per_battle,
+            fork_crn=args.fork_crn,
             win_prob_dense_aux=args.win_prob_dense_aux,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,

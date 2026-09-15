@@ -88,7 +88,7 @@ def install_scripted_prefix(
     side: str,
     record: ReconstructionRecord,
     divergence_turn: Optional[int],
-    substitute_choice: Optional[str],
+    substitute_choice: "Optional[str | Callable[[Any, Any], str]]",
     is_our_side: bool,
     obs_sink: Optional[list] = None,
     on_scripted_decision: Optional[Callable[[Any, Optional[dict], str], None]] = None,
@@ -108,6 +108,19 @@ def install_scripted_prefix(
     (the 2026-08-23 anchor-refusal hunt measured it empty on 274 healthy replays; the class it
     actually found — a forfeit race — consumes no script and does not set it).
 
+    ``substitute_choice`` is normally the sim choice STRING to send at the divergence turn. It may
+    instead be a **callable** ``(player, battle) -> str``, resolved ONCE at that decision and
+    reported back as ``state["substitute_resolved"]`` (`gen3_fork_v1`). That exists because a
+    caller who knows the substitute as an ACTION INDEX — which is what a rollout buffer row and an
+    action mask are written in — cannot turn it into a choice string without the LIVE battle: the
+    index→order mapping is a function of the current legal set, and re-deriving it from the record
+    would be a second implementation of `action_to_order` that could disagree with the one the
+    trainee itself used. The callable is invoked at exactly the point the string would have been
+    used, with the same battle the obs was built from, so the two cannot describe different states.
+    A callable that raises is NOT swallowed: a substitute that could not be resolved would
+    otherwise fall through to replaying the RECORDED move, i.e. silently produce a line that is not
+    the counterfactual the caller asked for.
+
     ``on_scripted_decision(battle, obs_dict, choice_str)`` is called for every decision this side
     takes on the SCRIPTED path, immediately before the choice is returned. It exists for exactly one
     consumer (`gen3_cf_twin_heads_v1`, the shadow critic's `mc_return` labels) and one fact: the
@@ -122,7 +135,8 @@ def install_scripted_prefix(
     script = deque(c for (s, c) in record.commands if s == side)
     is_gen3 = hasattr(player, "embed_battle")
     original_choose = player.choose_move          # bound method = the live policy / bot
-    state = {"live": False, "substituted": False, "exhausted": False}
+    state = {"live": False, "substituted": False, "exhausted": False,
+             "substitute_resolved": (None if callable(substitute_choice) else substitute_choice)}
 
     def _advance_tracker(battle, choice_str: str) -> None:
         if not is_gen3:
@@ -182,10 +196,16 @@ def install_scripted_prefix(
                 and not state["substituted"] and not _force_switch(battle)
                 and substitute_choice is not None):
             state["substituted"] = True
-            _advance_tracker(battle, substitute_choice)
+            # A callable substitute is resolved HERE, against the live battle whose obs was just
+            # built — see the docstring. Deliberately unguarded: a raise must not degrade into
+            # replaying the recorded move.
+            choice = (substitute_choice(player, battle) if callable(substitute_choice)
+                      else substitute_choice)
+            state["substitute_resolved"] = choice
+            _advance_tracker(battle, choice)
             if on_scripted_decision is not None:
-                on_scripted_decision(battle, obs_dict, substitute_choice)
-            return _passthrough(substitute_choice)
+                on_scripted_decision(battle, obs_dict, choice)
+            return _passthrough(choice)
 
         # Replay this side's next recorded choice.
         if not script:                            # exhausted before the divergence → defer to live
@@ -340,7 +360,7 @@ def replay_counterfactual(
     trainee,
     opponent,
     divergence_turn: Optional[int],
-    substitute_choice: Optional[str] = None,
+    substitute_choice: "Optional[str | Callable[[Any, Any], str]]" = None,
     seed=None,
     post_t_seed=None,
     timeout: float = 180.0,
@@ -357,6 +377,9 @@ def replay_counterfactual(
 
     ``trainee`` / ``opponent`` are pre-built poke-env players (the caller sets the policy / reloads the
     opponent); this runner forces their teams to the RECORDED packed teams and scripts the prefix.
+    ``substitute_choice`` may be a callable ``(player, battle) -> str`` resolved at the divergence
+    decision (see :func:`install_scripted_prefix`); ``result["substitute"]`` is then the RESOLVED
+    string.
     ``seed`` defaults to the record's resolved START seed (so the prefix reproduces the real board);
     pass an explicit ``[s0,s1,s2,s3]`` / ``"sodium,<hex>"`` to vary the WHOLE line's dice.
     ``post_t_seed`` (with a ``divergence_turn``) swaps the sim PRNG at the START of the divergence turn
@@ -405,7 +428,10 @@ def replay_counterfactual(
 
     result = _battle_outcome(trainee, record.username(our_side),
                              turn_cap=turn_cap_of(trainee, opponent))
-    result.update(divergence_turn=divergence_turn, substitute=substitute_choice)
+    # The RESOLVED substitute, so a callable substitute reports the string that was actually sent
+    # rather than a repr of the function (`gen3_fork_v1`).
+    result.update(divergence_turn=divergence_turn,
+                  substitute=our_state.get("substitute_resolved"))
     # Which sides ran OUT of recorded commands and finished on the live policy. Expected past a
     # real ``divergence_turn``; a DEFECT when ``divergence_turn is None``, where nothing is
     # supposed to be played by a policy at all — see `install_scripted_prefix`'s ``exhausted``.

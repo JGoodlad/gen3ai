@@ -566,6 +566,85 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "and win_prob/rollout_influence_lambda (anchors + their lambda^k "
                              "reach). REQUIRES --win-prob-rollout-target > 0. TRAINING-only, "
                              "resume-inherited.")
+    # --- gen3_fork_v1 (2026-09-14, the FORK ARM): CONTESTED-STATE EXPLORING STARTS. Fork a
+    #     contested decision, play the branches to a terminal under common random numbers, and put
+    #     their transitions in the SAME PPO buffer. Registered by
+    #     designs/research_state/measurements/paired_refit_discrimination_2026-09-14/ --- 
+    parser.add_argument("--fork-fraction", "--fork_fraction", dest="fork_fraction",
+                        type=float, default=None,
+                        help="Fraction of the rollout buffer's decisions that are FORKED, in "
+                             "[0, 1]. 0.0 (the DEFAULT) = OFF and BIT-identical -- no module "
+                             "imported, no obs key declared, no callback attached, no row "
+                             "injected. WHY: the promoted win-prob critic ranks two successors ONE "
+                             "MOVE APART at CHANCE (pairwise accuracy 0.5169 [0.4800, 0.5524]), "
+                             "while a frozen-trunk refit on COUNTERFACTUAL SUCCESSOR states "
+                             "reaches 0.6032 -- so the trunk already holds the ordering and the "
+                             "DATA is what the on-policy stream never supplies. A rollout visits "
+                             "exactly ONE successor per decision; this manufactures the siblings. "
+                             "At a contested decision the battle is cloned, each branch is played "
+                             "to a terminal by the CURRENT policy, and the branch's transitions "
+                             "enter the buffer with the FORK STEP masked out of the policy term "
+                             "and the shared prefix counted ONCE. The value target is the ordinary "
+                             "GAE/lambda-return of that branch -- plain BCE, NO ranking term "
+                             "(CLOSED as a lever: -0.0107 [-0.0249, +0.0028], NOT DETECTED). "
+                             "🚨 COST IS LINEAR AND LARGE: fraction x branches x remaining "
+                             "decisions, so 0.02 at 3 branches ASKS for ~2.1x the run's own "
+                             "simulation. 🚨 BUT THE ROW BUDGET BINDS FIRST: the injection is "
+                             "capped at one buffer's worth of rows (~790 forks at the production "
+                             "shape), so above ~0.008 this flag is INERT and the delivered count "
+                             "is the budget's -- read fork/requested against fork/forks. Watch "
+                             "fork/sim_steps_share, fork/branch_share, fork/rate and "
+                             "fork/pairwise_acc. REQUIRES --critic winprob AND --cf-records, and "
+                             "REFUSES --value-true-team, --win-prob-dense-aux and "
+                             "--win-prob-strata-weight. TRAINING-only, resume-inherited.")
+    parser.add_argument("--fork-branches", "--fork_branches", dest="fork_branches",
+                        type=int, choices=(2, 3), default=None,
+                        help="How many branches a fork plays (default 3). 3 = the policy's top-2 "
+                             "candidates + ONE uniformly random legal action. The random branch is "
+                             "where the new information is: on 5,076 measured forks top-1 and "
+                             "top-2 were outcome-INTERCHANGEABLE (0.7082 vs 0.7078, a gap of "
+                             "0.0004), throwing the decision away cost 2.9 pp, and in 4.5%% "
+                             "[3.99, 5.16] of forks the random alternative beat BOTH policy "
+                             "candidates. 2 = the top-2 alone, the CONTROL that isolates that "
+                             "4.5%%; expected to buy little, and fork/random_wins is the meter "
+                             "that says so. INERT at --fork-fraction 0.")
+    parser.add_argument("--fork-contested-gap", "--fork_contested_gap",
+                        dest="fork_contested_gap", type=float, default=None,
+                        help="The QUANTILE, over this rollout's own candidate pool, of the "
+                             "policy's top-2 masked-logit gap below which a decision counts as "
+                             "CONTESTED (default 0.40). Taken verbatim from the paired-refit "
+                             "dataset's --gap-quantile so the arm forks the population its 0.5169 "
+                             "baseline was measured on. 🚨 A QUANTILE and not an absolute gap: the "
+                             "gap's SCALE moves as a run's logits sharpen, so a fixed threshold "
+                             "would fork 40%% of decisions early and ~0%% late -- the treatment "
+                             "would anneal itself off in silence. INERT at --fork-fraction 0.")
+    parser.add_argument("--fork-contested-absv", "--fork_contested_absv",
+                        dest="fork_contested_absv", type=float, default=None,
+                        help="ALSO admit a decision whose |V - 0.5| is below this (default 0.0 = "
+                             "OFF). 🚨 OFF ON PURPOSE. The paired-refit selector never reads V, in "
+                             "its own words because 'selecting on V would make the held-out read "
+                             "partly a measurement of the selector' -- and this arm's registered "
+                             "endpoint is held-out pairwise accuracy AGAINST that baseline. "
+                             "Turning this on forfeits the comparison. INERT at --fork-fraction 0.")
+    parser.add_argument("--fork-max-per-battle", "--fork_max_per_battle",
+                        dest="fork_max_per_battle", type=int, default=None,
+                        help="At most this many forks per EPISODE SLICE (default 1). Two forks of "
+                             "one game share a prefix, an opponent and a team draw, so they are "
+                             "far more correlated than two forks of different games -- the "
+                             "bits-per-state argument applied to the sample itself. INERT at "
+                             "--fork-fraction 0.")
+    parser.add_argument("--fork-crn", "--fork_crn", dest="fork_crn",
+                        choices=("dice", "dice_and_draws"), default=None,
+                        help="WHAT the branches share after the fork. `dice_and_draws` (the "
+                             "DEFAULT): one sim seed for the whole line AND both players' policy "
+                             "sampling streams seeded identically per branch, so the k-th decision "
+                             "of every branch consumes the SAME uniform and the branches differ in "
+                             "exactly one thing -- the action at the fork. `dice`: the sim seed "
+                             "only, which is the `cf_q_labels` regime and the CONTROL. That "
+                             "distinction is a concrete, testable account of the cf-labels null: "
+                             "that factory paired the dice and left both sides sampling at "
+                             "temperature 1.0, so it may have been teaching the head noise. "
+                             "INERT at --fork-fraction 0.")
     parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
                         type=float, default=None,
                         help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "

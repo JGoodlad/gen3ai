@@ -16,6 +16,7 @@ import numpy as np
 import torch as th
 
 from agents.model.critic_mode import is_winprob
+from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.grad_balance import shared_trunk_parameters
 from agents.training.instrumented_ppo.constants import _NOISE_PER_TERM_EVERY
 from agents.training.instrumented_ppo.distill_grad_project import make_projector
@@ -56,6 +57,7 @@ class FoldFlags(NamedTuple):
     q_onpolicy_on: Any
     cf_any_on: Any
     dense_aux_on: Any
+    fork_pg_mask_on: Any
 
 
 class ProbeSetup(NamedTuple):
@@ -261,6 +263,15 @@ class TrainSetup:
             float(getattr(self, "win_prob_dense_aux", 0.0)) > 0.0
             and getattr(self.policy.features_extractor, "dense_aux_head", None) is not None
         )
+        # +FORK-MASK (gen3_fork_v1): is the fork step's POLICY-TERM mask live for this call? The
+        # predicate is the OBS KEY's presence and not the flag's value, deliberately: the key is
+        # declared only when `--fork-fraction > 0`, and reading it is what the fold actually
+        # depends on. A run whose flag is on but whose env never declared the key (a config
+        # mismatch) then takes the unmasked expression instead of a KeyError three frames into the
+        # loss.
+        fork_pg_mask_on = (
+            isinstance(self.rollout_buffer.observations, dict)
+            and FORK_PG_MASK_KEY in self.rollout_buffer.observations)
         cf_any_on = (cf_winprob_on or cf_evid_on or cf_twin_on or cf_shadow_on
                      or q_winprob_on or q_onpolicy_on)
         if cf_any_on:
@@ -276,7 +287,7 @@ class TrainSetup:
             policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on, cf_buffer=cf_buffer,
             cf_winprob_on=cf_winprob_on, cf_evid_on=cf_evid_on, cf_twin_on=cf_twin_on,
             cf_shadow_on=cf_shadow_on, q_winprob_on=q_winprob_on, q_onpolicy_on=q_onpolicy_on,
-            cf_any_on=cf_any_on, dense_aux_on=dense_aux_on,
+            cf_any_on=cf_any_on, dense_aux_on=dense_aux_on, fork_pg_mask_on=fork_pg_mask_on,
         )
 
     def _train_probe_setup(self, distill_metrics: dict) -> ProbeSetup:

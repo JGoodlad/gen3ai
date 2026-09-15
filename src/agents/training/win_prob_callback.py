@@ -131,9 +131,19 @@ class WinProbLabelCallback(BaseCallback):
             turns.fill(-1)
 
     def _rollout_on(self) -> bool:
-        """True when `--win-prob-rollout-target` is live for this run. Checked before ANY of the
-        handle capture allocates or runs, so an unflagged run pays exactly nothing."""
-        return float(getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0) > ROLLOUT_OFF
+        """True when a per-decision RECONSTRUCTION HANDLE must be captured for this run. Checked
+        before ANY of the handle capture allocates or runs, so an unflagged run pays exactly
+        nothing.
+
+        TWO flags need the same handle, and they SHARE this one scratch rather than each keeping
+        its own: `--win-prob-rollout-target` (which replays a sampled state's episode to label it)
+        and `--fork-fraction` (`gen3_fork_v1`, which replays a contested decision's episode to
+        FORK it). The async collector writes the handle inline into `model._win_handle_keys`
+        (`async_vec_env`) and there is exactly one such array, so a second scratch would be a
+        second thing that could silently fail to be filled on that path.
+        """
+        return (float(getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0) > ROLLOUT_OFF
+                or float(getattr(self.model, "fork_fraction", 0.0) or 0.0) > 0.0)
 
     def _on_step(self) -> bool:
         # SYNC capture only — the async collector records terminals inline (it owns the per-env buffer

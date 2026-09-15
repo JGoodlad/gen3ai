@@ -49,6 +49,7 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     contested_mask as _calib_contested_mask,                  # cycle `ppo` sits at the end of
     sigmoid as _calib_sigmoid,                                # (pinned by the hub-contract test).
 )
+from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
@@ -230,7 +231,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         distill_rows_in_buffer, policy_grad_coef = _f.distill_rows_in_buffer, _f.policy_grad_coef
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
         cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
-        dense_aux_on = _f.dense_aux_on
+        dense_aux_on, fork_pg_mask_on = _f.dense_aux_on, _f.fork_pg_mask_on
         q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
         # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
         # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
@@ -305,6 +306,19 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             for _rk, _rv in _roll_metrics.items():
                 if float(_rv) == float(_rv):      # a NaN is an empty slice; omit, never log it
                     win_prob_metrics.setdefault(_rk, []).append(float(_rv))
+        # +FORK ARM (gen3_fork_v1) — computed in `ForkArmCallback._on_rollout_end` (it needs the
+        # buffer's [n_steps, n_envs] shape and it BLOCKS on the branch continuations before the
+        # epochs begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
+        # folded into `win_prob/`: these are facts about the COLLECTION, not about the head's loss,
+        # and the two families are read at different times by different people. Only when a pass
+        # actually RAN: an absent `fork/*` family means --fork-fraction is 0.0 (or the arm
+        # disabled itself, which announces itself once) and nothing else. Cleared at every
+        # `_on_rollout_start`, so it can never be a stale rollout's.
+        _fork_metrics = getattr(self, "_fork_metrics", None)
+        if _fork_metrics:
+            for _fk, _fv in _fork_metrics.items():
+                if float(_fv) == float(_fv):      # a NaN is an empty slice; omit, never log it
+                    self.logger.record(f"fork/{_fk}", float(_fv))
         cf_metrics: dict[str, list[float]] = {}
         cf_evid_metrics: dict[str, list[float]] = {}
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
@@ -368,6 +382,29 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 policy_loss_1 = advantages * ratio
                 policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
+
+                # +FORK-MASK (gen3_fork_v1): drop the FORK STEP of every injected branch from the
+                # clipped policy term. A fork step's action is the ARM's choice, not the policy's —
+                # for the random branch it is an action the policy actively down-ranked — so a
+                # policy gradient through it would be training on a decision the agent did not
+                # make. The rule is UNIFORM across branches (the top-2 fork steps are masked too);
+                # `agents.training.fork_buffer`'s THE MASK RULE owns the reasoning, and the short
+                # version is that an exclusion depending on WHICH branch a row came from would
+                # re-weight the policy gradient by the branch mix.
+                #
+                # 🚨 RENORMALISED, never just zeroed. A masked `.mean()` over the full row count
+                # would shrink the policy term by the masked fraction — i.e. silently lower the
+                # effective policy learning rate by a number that moves with the fork rate. This
+                # divides by the KEPT rows, so the term's scale is what it would be with the fork
+                # steps simply absent. `fork_pg_m` is 1.0 on every COLLECTED row and on every
+                # post-fork branch row, so a rollout that injected nothing is arithmetically the
+                # `.mean()` above (and pays nothing: the key is not even declared).
+                if fork_pg_mask_on:
+                    _fk_m = rollout_data.observations.get(FORK_PG_MASK_KEY)
+                    if _fk_m is not None:
+                        _fk_m = _fk_m.reshape(-1)
+                        policy_loss = -((th.min(policy_loss_1, policy_loss_2) * _fk_m).sum()
+                                        / _fk_m.sum().clamp(min=1.0))
 
                 # Logging
                 pg_losses.append(policy_loss.item())

@@ -314,6 +314,33 @@ total under `--win-prob-lambda < 1`). It MULTIPLIES with `--win-prob-strata-weig
 replacing it, and it weights **only the anchors**, never the rows that bootstrap toward them.
 ⚠️ It does NOT change the value sidecar — no schema bump, because it changes no row's target.
 
+**`--fork-fraction <0..1>`** (default `0.0` = OFF and bit-identical — no module, no obs key, no
+callback, no row; **requires `--critic winprob` AND `--cf-records`**, and REFUSES
+`--value-true-team`, `--win-prob-dense-aux` and `--win-prob-strata-weight`) is **THE FORK ARM**: the
+fraction of the buffer's decisions that are FORKED. At a contested decision the episode is replayed
+out of the `cf_records` ring to that turn and `--fork-branches` continuations — the policy's top-2
+plus ONE uniformly random legal action — are played to a terminal by the current policy; their
+transitions enter the SAME buffer, the fork step masked out of the policy term and the shared prefix
+counted once. It is the ONLY knob on this loss that adds STATES rather than re-pricing, re-weighting
+or re-aiming the ones collection happened to visit — registered because the promoted head ranks two
+successors one move apart at **0.5169**, a coin, while a frozen-trunk refit on exactly this data
+reaches **0.6032**.
+
+🚨 **PASS `--cf-records-keep` WELL ABOVE THE DEFAULT 512.** The ring is pruned GLOBALLY while a
+production rollout finishes ~2,400 episodes, so at 512 the forks that resolve are the rollout's LATE
+ones — a SELECTION BIAS, not just a shortfall. Watch `fork/records_missing`. 🚨 **The cost is real, and the ROW BUDGET is what actually caps it:**
+`fork/sim_steps_share` is `forks × branches × remaining decisions` over the trainee's own decisions,
+paid as a STALL between collection and `train()` (`fork/seconds`). Fraction 0.02 ASKS for ~2.1×, but
+the injection is capped at one buffer's worth of rows (~790 forks at the production shape), so above
+~0.008 the fraction is **INERT** — read **`fork/requested` against `fork/forks`** before concluding
+anything from a flat `fork/rate`. Read **`fork/rate`** (forks per battle), **`fork/branch_share`** (how
+much of the objective is now branch rows played against a SELF-LIKE opponent — the arm's largest
+caveat), **`fork/tie_rate`**, **`fork/random_wins`** (the blind-spot rate) and **`fork/pairwise_acc`**
+with `fork/pairwise_pairs` beside it (IN-SAMPLE; the registered endpoint is a HELD-OUT read on fresh
+forks whose bar is a CI clearing 0.60). `--fork-crn` defaults to `dice_and_draws` and should stay
+there; `dice` is the `cf_q_labels` control. Full chapter:
+[`designs/training/forks.md`](../training/forks.md).
+
 **`--win-prob-dense-aux <coef>`** (default `0.0` = OFF and bit-identical — the head is not BUILT;
 **requires `--critic winprob`** and a win head) adds **25 DENSE TARGETS BESIDE** the win-prob BCE
 rather than changing it: for every state, the episode's END-OF-BATTLE facts back-filled the way the

@@ -265,6 +265,7 @@ class _MergeStub:
     # because `_merge_training_keys` reads every emit flag as a plain attribute and a stub that
     # omits one fails with an AttributeError rather than by exercising the branch.
     _emit_win_row_weight = False
+    _emit_fork_pg_mask = False
 
     def __init__(self, cls_code):
         self._opponent_class = cls_code

@@ -32,6 +32,7 @@ from agents import gen3_data
 from agents.action.mask_generator import Gen3ActionMasker
 from agents.action.mapper import Gen3ActionMapper
 from agents.battle.live_view import LegalActions
+from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.reward_function import RewardFunction
 from agents.training.episode_tracker import EpisodeTracker
@@ -81,6 +82,7 @@ class Gen3Env(SinglesEnv):
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off",
                  emit_win_target: bool = False, emit_win_row_weight: bool = False,
+                 emit_fork_pg_mask: bool = False,
                  emit_spread_labels: bool = False,
                  emit_opp_true_team: bool = False,
                  emit_dense_aux: bool = False,
@@ -178,6 +180,13 @@ class Gen3Env(SinglesEnv):
         # when `--win-prob-rollout-weight > 1`, so an unflagged run's observation space, its
         # rollout buffer and its loss are all untouched.
         self._emit_win_row_weight = bool(emit_win_row_weight and emit_win_target)
+        # gen3_fork_v1: the per-row POLICY-TERM mask key (`fork_pg_m`), a PLACEHOLDER label
+        # key on the same plumbing as `win_row_w`. Declared ONLY when `--fork-fraction > 0`,
+        # so an unflagged run's observation space, its rollout buffer and its policy loss are
+        # all untouched. Unlike `win_row_w` it is never overwritten by a callback: a
+        # COLLECTED row is always fully in the policy term, and only the rows the fork arm
+        # INJECTS carry anything else.
+        self._emit_fork_pg_mask = bool(emit_fork_pg_mask)
         # PRIVILEGED TRUE-TEAM key (TRAINING+EVAL-only, gen3_value_true_team_v1): when on, the obs
         # Dict carries `opp_true_team` [6, POKEMON_FULL_DIM] — the opponent's ACTUAL six mons in the
         # obs's OWN per-mon layout, built from `battle2.team` (agent2's own view, where every
@@ -344,6 +353,13 @@ class Gen3Env(SinglesEnv):
             # value divided by a normaliser, and coupling the space to the flag would make an obs
             # space that a resume at a different weight could not reload.
             base_obs["win_row_w"] = spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
+        if self._emit_fork_pg_mask:
+            # gen3_fork_v1: 1.0 = this row is in the clipped policy term, 0.0 = it is not.
+            # Bounded in [0, 1] because it is a MASK and not a dose — the fork arm does not
+            # re-weight the policy gradient, it excludes exactly the fork step (see
+            # `agents.training.fork_buffer`, THE MASK RULE).
+            base_obs[FORK_PG_MASK_KEY] = spaces.Box(
+                low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         if self._emit_opp_true_team:
             # gen3_value_true_team_v1: the opponent's TRUE party in the obs's own per-mon layout.
             # The bounds are the per-mon block's own: it carries embedding NUMS (up to the species
@@ -831,6 +847,11 @@ class Gen3Env(SinglesEnv):
             # per-row BCE, so "not yet written" must mean "weigh this row normally". The callback
             # overwrites the whole plane post-collection.
             agent_obs["win_row_w"] = np.ones(1, dtype=np.float32)
+        if self._emit_fork_pg_mask:
+            # gen3_fork_v1. ONES: a COLLECTED row is the trainee's own on-policy decision and
+            # is always fully in the policy term. A zero here would delete the policy gradient
+            # on that row and read as a dead run rather than as a plumbing break.
+            agent_obs[FORK_PG_MASK_KEY] = np.ones(1, dtype=np.float32)
         # The same key, for a win-prob run with no intent labels (`_opp_intent_labels` above is
         # what supplies it otherwise, and sets the identical value). Guarded rather than ordered so
         # neither block has to know whether the other ran.

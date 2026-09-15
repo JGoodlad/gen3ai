@@ -137,6 +137,14 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # rows of a loss that is not being computed. It is inert at fraction 0 (there are no anchors
     # to weigh) and reported through `win_prob/rollout_weight`.
     "win_prob_rollout_weight": "win_head",
+    # v120 gen3_fork_v1 — the FORK FRACTION. Named to `win_head` for the same reason as the two
+    # above: an injected branch row carries a `win_target` of its own branch's outcome, so with
+    # no win-prob head the arm would pay its whole simulation bill to add rows to a loss that is
+    # not being computed — the most expensive INERT this column can show. (`fork_branches` and
+    # `fork_max_per_battle` are COUNTS, `fork_crn` a MODE string and `fork_contested_gap` /
+    # `fork_contested_absv` SELECTOR thresholds; none is a coefficient, all five are inert at
+    # fraction 0, and all five are reported through the `fork/` family.)
+    "fork_fraction": "win_head",
     # v117 gen3_dense_aux_v1 — the DENSE AUXILIARY loss's dose. Named to `dense_aux_head` (its
     # OWN module, not `win_head`): unlike strata and lambda, which re-price and re-aim the win
     # head's existing BCE, this coefficient supervises a head of its own — and because that head

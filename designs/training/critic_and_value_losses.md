@@ -831,6 +831,20 @@ show.
 | where it runs, and the λ anchors | `agents/training/win_prob_callback.py` |
 | the gates | `agents/training/winprob_rollout_test.py` |
 
+## THE FORK ARM (`--fork-fraction`) lives in its own doc
+
+`--fork-fraction` (`gen3_fork_v1`, config v120) is the next knob on this loss and the only one that
+adds **STATES** rather than re-pricing, re-weighting or re-aiming the ones collection happened to
+visit: contested decisions are FORKED, the branches are played to a terminal by the current policy,
+and their transitions enter the same PPO buffer with their own GAE/λ-returns and their own outcomes
+as `win_target`. **Plain BCE, no ranking term** — the pairwise ranking loss is CLOSED as a lever at
+this depth (−0.0107 [−0.0249, +0.0028], NOT DETECTED). It also touches the POLICY term (the fork
+step is masked out of it) and the BUFFER (injected rows), which is why it does not live here:
+[`designs/training/forks.md`](forks.md).
+
+🚨 It REFUSES `--win-prob-strata-weight` — that flag prices rows by `win_margin`, which the env's
+reward manager computes and an injected row cannot supply.
+
 ## `--win-prob-rollout-weight` — the ANCHOR loss weight
 
 `gen3_winprob_rollout_weight_v1` (config **v119**). Default **`1.0` = OFF and BIT-identical**;
