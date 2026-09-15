@@ -18356,3 +18356,128 @@ first. Full measurement:
 `designs/research_state/measurements/metamon_matched_regime_2026-09-14/`.
 
 **Orchestrator's reading.** Superseding the de-risk entry's numbers: the 75M win-prob policy is ABOVE Metamon's 15M model and roughly LEVEL with its 200M model at home (0.500) and below it away (0.420), at matched greedy play. "Temperature 1.0" is not one regime across models (SmallRL plays its argmax 65 % of the time at T = 1, SyntheticRLV2 88 %), which is why the temperature effect has opposite signs for the two — a reason the greedy protocol is the only comparable one. Our 719-team pool bought NO detectable home advantage over twenty teams we never trained on (pre-registered as the largest expected effect; missed) — a datum for the opponent-team-diversity question. Tag: **MEASURED · NOT BETTER than SynRLV2 · BETTER than SmallRL · greedy baseline · de-risk numbers SUPERSEDED**.
+
+### 2026-09-14 · MEASUREMENT · ARM S's RUN-END READS — every row the flywheel-pair registration fixed before launch, taken on the SHAPED arm alone: 20 ladder nodes at **2036.6**, entropy **FLAT for 71M steps** at `--ent-coef 0.05`, the decision row read BOTH WAYS with the auxiliary head matching the actual critic, and 🚨 a **+73 Elo STALE-RECIPE trap** in `ai_v12_02_winprob_critic`'s committed `ladder.json` that would have flipped the sign of the free third leg
+
+`designs/research_state/measurements/flywheel_armS_reads_2026-09-14/`. `ai_v13_01_flywheel_shaped`
+(**arm S — the flywheel pair's SHAPED arm**, the era's reward/critic composition transplanted onto
+the current pin) COMPLETE at 75,005,952, pin `6eb9c776`, config v119, `eval_sentinel_greedy: true`.
+**Nothing here is the pair's read** — `ai_v13_02_flywheel_winprob` (**arm W — the win-prob critic**)
+was live at ~4M steps throughout and is not compared to anywhere; it was verified unharmed
+mid-session (crossed into self-play at 4,000,032, the same step as arm S's 4,128,768). Everything
+ran CPU-only, `nice`, from the main checkout, nothing written under `models/`; two Showdown
+servers on :9417 and :9450, started and stopped by their own PIDs, :8000/:8001 untouched.
+🚨 **THE TRAP, and it is the most transferable thing here: a committed `ladder.json` can be at a
+STALE RECIPE.** `ai_v12_02_winprob_critic`'s file was computed 2026-09-08 with **494 pairs against
+190 possible** and `eval_sentinel_edges_dropped: null` — before `3e6875a5` dropped the
+eval-sentinel edges (a greedy trainee vs a *stochastic* sentinel on an asymmetric builder, worth
++8.9 pp to the newer snapshot and +21..+29 Elo on the newest nodes). Its newest node reads
+**2057.3** committed and **1984.2** on a current-code refit of the same 20 nodes: **+73.1 Elo of
+stale-recipe inflation.** Quoting the two committed files gives arm S − the 0.02 leg = **−20.7**;
+refitting both gives **+52.4**. *The sign flips.* Arm S's own committed file and its refit agree to
+**0.0** (computed 2026-09-14, 190 of 190 pairs, 51 sentinel edges dropped), and the v8 control's
+differ by 4.4. **When arm W lands its ladder will be current-recipe, so any comparison to
+`ai_v12_02` must REFIT that run.** **STRENGTH.** 20 nodes, 22.0M → 72.0M, per-node se 8.7–8.9;
+headline **2036.6** at 72.0M with the registered second-newest cross-check at **2042.3** (no
+visible newest-node inflation in this fit). The registration's node-count table **reproduces
+exactly** on a refit of the 0.02 leg (n=4 → se 15.70 / se(Δ) 22.20 / CI95 ±43.5; n=20 → 8.50 /
+12.02 / ±23.6); on arm S's own se, n=20 gives se(Δ) **12.59**, CI95 **±24.7**, so the smallest
+claimable |Δ| against the imported 45.0 Elo floor is **≈ 70**. **n = 20 clears the registered
+n ≥ 12 floor.** Against the 0.02 leg (refit): **+52.4 [+28.3, +76.5]** at the newest node and
+**+62.0 [+37.9, +86.1]** at the second-newest — same sign, both under the bar, **NOT DETECTED**,
+never "equivalent" (rule 6), and confounded by pin, `--ent-coef` (0.05 vs 0.02) and the critic
+objective. **The within-run late slope (no bar attaches): arm S is +1.14 ± 0.44 Elo/M over
+48–68M with the newest node dropped — ~2.6 se clear of zero, i.e. still gaining at 75M** — against
+the 0.02 leg's +0.15 ± 1.23 and the v8 control's +0.32 ± 0.11 at 210–242M; the v8 row is SHAPE
+ONLY (rule 4) and no Elo gap to it is quoted. **ENTROPY.** H = −`train/entropy_loss`, TB events,
+own span verified (741 points, 196,608 → 75,005,952, crossing 4,128,768). H_start (median-20)
+1.4679, peak 1.6724, **H_end 1.0292** — **0.057 below `ent05`'s 1.0861 and 0.041 below v8's
+1.07–1.11 plateau, BOTH inside the 0.074-nat replicate floor, so NOT READ in either direction**;
+the pre-registered prediction is not contradicted. 🚨 **The row that is not noise: arm S holds
+entropy FLAT across the whole post-crossing span — slope −3e-5 ± 5e-5 nats/M (t = −0.57) over
+4M→75M** — while the 0.02 leg falls at −6.9e-4 (t = −9.6) and sits 0.32 nats lower throughout
+(4.3× the floor). `--ent-coef` is live on a resume, so 0.05 held across all 13 restarts. Arm S's
+last third does decay gently (−0.0021 nats/M, t = −11.3, 51.7–75.0M, ~0.049 nats total — itself
+under the floor as a level change). **CRITIC ROWS, BOTH WAYS, BOTH LABELLED.** Two independent
+offline full-capture draws, seeds 20260910 / 20260911, 800 games × 12 opponents = **9,600 battles
+each, complete, shortfall 0**, sentinels GREEDY (regime **recorded**, not declared), replayed from
+the bit-exact `eval_traces/step_74000016/snapshot.zip` — 🚨 **the critic rows are at 74,000,016,
+the last EVALUATED step, because the run has no eval cycle at its final 75,005,952 and
+`eval_trace_gen` refuses a step with no weights of its own**; every other row here is at the true
+final model. 🚨 **THE REGISTERED CONTROL IS UNUSABLE AND THE TOOL SAYS SO:**
+`main.ops.critic_read` REFUSES the existing 73M win-prob trees on two counts at once —
+`eval_sentinel_greedy: arm=True control=False` (those trees were generated at the **DECLARED
+pre-2026-09-07 asymmetric** regime, pin `f971caf2`, config v110, which records none) and
+`n_games: arm=800 control=400`. **So arm S's critic rows are LEVELS ONLY**, with the 73M levels
+printed beside them as context and never as a delta. `max_abs_values_minus_winprobs` reads
+**75.12 / 119.06** against **0.0** on the win-prob control — **large BY CONSTRUCTION, the
+treatment and not a defect** (hazard H5). **The decision row `cond.opp_class_auc.t4_10`: S-V (the
+ACTUAL critic, the distributional E[Z]) 0.7683 / 0.7579; S-WP (the AUXILIARY win-prob head at
+coef 0.05) 0.7671 / 0.7494** — the two columns differ by 0.0012 and 0.0085, inside every interval
+and far inside the imported 0.0220 / 0.0245 floors: **on arm S the 0.05-coefficient diagnostic
+ranks opponent class as well as the fully-weighted critic does.** Turn 1 reads ≈0.50 on both
+columns in both draws. Supporting rows (S-WP, see below): `gate.resolution.bot` 0.0189 / 0.0213,
+`gate.resolution.all` 0.0551 / 0.0581, `gate.ece.all` 0.0178 / 0.0154, calibration slope
+**1.310 / 1.274** against the win-prob trees' ~1.07 — i.e. the auxiliary head is
+**under-confident**, the expected shape for a 5 %-weight readout. Eval-draw spread on the decision
+row is **0.0104 (S-V) / 0.0177 (S-WP)**, both inside the floors, so the row is stable enough to
+carry the pair read; its `t1_3` sibling spreads 0.0227 / 0.0218, *at* the floor, and must not carry
+a claim. 🚨 **A CONSTRAINT THE REGISTRATION DID NOT ANTICIPATE:** only the RANK-based rows can be
+read both ways. The calibration family regresses on `logit(V)` and every `gate.*` row is a Murphy
+decomposition of a PROBABILITY forecast, neither of which is defined on a raw shaped-return
+column — and the scaffolding gauge computes `gate.*` from `win_probs` unconditionally. **Those rows
+are S-WP only and are labelled so.** The engineering item the registration named is built:
+**`--v-column {win_probs,values}`** on `main.ops.critic_read`, threaded into
+`conditioning_meters.conditioning_block`/`extract_cycle`, defaulting to `win_probs` so every banked
+read is byte-identical; 134 tests pass. **UNTAUGHT METER at run end**, registry opponent
+`untaught_meter_opponent` (= `ai_v9_29_rev1_0823@24,000,000`), 200 games/team over the untaught 8,
+concurrency 1, **3,200 battles, 0 timeouts**: arm S **54.50 pp [52.25, 56.62]** against the 75M
+win-prob run's **58.25 pp [56.44, 60.44]** — **IDENTICAL to the last win under BOTH config
+resolutions** (the registry `untaught_meter_config` and `--config auto`, whose JSONs confirm each
+ref really loaded against its own file), which is the condition §8.5 set for the level counting as
+a level. Paired team-clustered contrast **−3.75 pp [−6.37, −1.06]**, 7 of 8 teams — past the
+1.19 pp END-depth replicate floor, well inside the 4.27 pp controller-live one, **reported as a
+DESCRIPTOR, not an endpoint**, and a run-level CANDIDATE at n=1 per arm carrying three confounds.
+⚠️ **It points the opposite way to the strength row**, which is a reason to hold that row loosely.
+**EXTERNAL ANCHORS, each quoted inside its own regime and never across one.** vs Metamon `SmallRL`
+(ckpt 40, 13.9M, VanillaAttention, CPU) on our pinned Showdown with both sides drawing our 719-team
+pool, 100 games per regime as two role-balanced 50-game half-cells: **greedy-vs-greedy 0.630
+[0.532, 0.718]** against the matched-regime 2×2's **0.520** for the 75M win-prob run — Δ +0.110,
+Newcombe **[−0.027, +0.241], NOT DETECTED**; **ours greedy vs Metamon's own t = 1.0 default 0.840
+[0.756, 0.899]** against the de-risk's **0.742** — Δ +0.098 **[−0.011, +0.202], NOT DETECTED**.
+Regime VERIFIED per decision, not assumed: `argmax_match_rate` **1.0000** in both greedy half-cells
+and **0.6586** in the sampling one (inside the 2×2's 0.623–0.680 band for `SmallRL`), our
+`stochastic` kwarg `[false]` everywhere; 0 ties in 200 games. The 21-point gap between arm S's two
+rows is the OPPONENT's regime moving, not ours — the 2×2's finding that "temperature 1.0" is not a
+comparable setting across models, reproduced. vs **Foul Play** (`6c467c08` + poke-engine 0.0.48
+`--features gen3`) at `--search-time-ms 1000 --search-parallelism 1`, 80 games over the same 8
+pinned pool teams: **our win rate 0.450 [0.346, 0.559]** against the de-risk's **0.388** for the
+75M win-prob run — Δ +0.063 **[−0.089, +0.210], NOT DETECTED**; 0/80 hit the 250-turn forfeit, 0
+error lines. 🚨 **AND THE WIDTHS ARE NOT MATCHED, in the direction that flatters arm S:** realized
+search was **1.249 M MCTS visits/decision (sessions 1.05–1.65 M)** against the de-risk's **1.40 M**
+— ~11 % narrower, because this campaign ran beside the live arm W plus two other CPU jobs (load
+26–37 vs 22.6), and our own decision time moved 37 → 481 ms for the same reason. Under rule 23
+Foul Play is a WIDTH meter and every read carries its visit count, so **+6.3 pp is an upper
+bound**; the honest statement is that **both 75M arms sit BELOW Foul Play by a margin this
+experiment cannot separate**, and the two external anchors continue to bracket the policy.
+**Hazards, each a finding:** the stale-recipe ladder trap above; the 74,000,016-vs-75,005,952 step
+deviation, declared; the tool's double refusal of the registered critic control; the rank-vs-scale
+constraint on reading a shaped arm both ways; Foul Play's width; and on the Metamon side one
+half-cell lost its Metamon-side record to a `RecursionError` *after* its last game (the de-risk's
+H-B shape) making that half-cell's POSITIONAL join unreliable (`sides_disagree` 7 there, **0 in
+every other half-cell**) — only our own side's complete 50-game record feeds the win rate — plus
+one 250-turn forfeit in 200 games (0.5 %, far under rule 12's 25 %), two of our own
+`Decision context is missing at turn 1` tracebacks in that same half-cell, and the still-stale
+`production` registry name. The arm's crash-at-teardown shape (4th occurrence) is **already banked
+and was not re-investigated**. **No `critic_read` pair report was produced** — the one registered
+control refuses, and a complete pair costs ~9,700 s of which nearly all is the `cf_audit` identity
+half, which is not among these registered rows; the levels come from the same library functions
+`critic_read` itself calls. **Nothing is claimed about the critic objective:** every row above is
+arm S alone or arm S against a confounded third leg, n = 1 per arm, rule 22 binding. Tag:
+**MEASURED · arm S run-end reads COMPLETE · n=20 nodes · stale-recipe ladder trap (+73 Elo) ·
+entropy FLAT 71M · decision row BOTH WAYS, aux ≈ critic · anchors NOT DETECTED, widths unmatched ·
+the pair read is one diff away**.
+
+---
+
+**Orchestrator's note.** Standing rule from finding 1: **a committed `ladder.json` is quoted only if its recipe matches the current `fit_ladder`** (`eval_sentinel_edges_dropped` present) — otherwise REFIT; when arm W lands, `ai_v12_02` is refit, never read from its file. Backlog row added for a recipe stamp + a gate. Nothing about the critic objective is claimed until W.

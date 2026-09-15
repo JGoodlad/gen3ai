@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,359-line file. **The ledger itself is append-only and is never edited by this**;
+18,484-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**608 headings · 557 dated · 2026-08-01 → 2026-09-14 · ledger 18,359 lines.**
+**609 headings · 558 dated · 2026-08-01 → 2026-09-14 · ledger 18,484 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -628,3 +628,4 @@ rename.
   - `L18287` · `2026-09-14` · OPS · `ai_v13_01_flywheel_shaped` (ARM S) COMPLETE at 75,005,952 — the era's shaped composition CROSSED at 4,128,768 and held G7 under bar across all 37 cycles; ARM W launched behind it
   - `L18301` · `2026-09-14` · OPS · LAUNCH · `ai_v13_02_flywheel_winprob` (ARM W) is live — the pair's matched comparator
   - `L18305` · `2026-09-14` · MEASUREMENT · THE METAMON BASELINE AT A MATCHED REGIME — pre-registered 2×2 (sampling regime × team set, 100 games a cell, 800 games): on the primary row, greedy-vs-greedy on Metamon's own 20-team gen3ou set, the 75M win-prob run reads **0.420 [0.328, 0.518] vs `SyntheticRLV2` — NOT DETECTED as better, point on the losing side** — and **0.650 [0.553, 0.736] vs `SmallRL` — BETTER**; the de-risk's 0.742 / 0.583 do NOT survive (like-for-like −22 pp / −8 pp) and are never quoted again without their regime; the recurring baseline runs GREEDY-vs-GREEDY
+  - `L18360` · `2026-09-14` · MEASUREMENT · ARM S's RUN-END READS — every row the flywheel-pair registration fixed before launch, taken on the SHAPED arm alone: 20 ladder nodes at **2036.6**, entropy **FLAT for 71M steps** at `--ent-coef 0.05`, the decision row read BOTH WAYS with the auxiliary head matching the actual critic, and 🚨 a **+73 Elo STALE-RECIPE trap** in `ai_v12_02_winprob_critic`'s committed `ladder.json` that would have flipped the sign of the free third leg

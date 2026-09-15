@@ -861,7 +861,14 @@ shaped head: the era's own shaped fresh run `ai_v9_29_rev1` crossed at 2,000,016
 ladder's argv with the critic mode flipped — SIX resolved settings differ from the era's shaped critic (PopArt OFF,
 no distributional readout, a 20× heavier auxiliary head, gamma 0.9999, the head's role, the critic itself), and an
 unnormalised scalar regression onto raw shaped returns is a badly conditioned target in its own right — so the
-two controls license NO statement about the shaped objective; which setting carries the failure is not identified. The flywheel pair's shaped arm therefore runs the
+two controls license NO statement about the shaped objective; which setting carries the failure is not identified. **Arm S of the flywheel pair
+(`ai_v13_01_flywheel_shaped`, the era's shaped configuration at ent 0.05, 75M) crossed at 4,128,768 like every
+win-prob arm, held episode length for 75M, ended at 2036.6 Elo on 20 nodes with a late slope of +1.14 ± 0.44 Elo/M,
+entropy FLAT for 71M steps at 1.03 nats, its decision row read both ways (shaped critic 0.768 / auxiliary head
+0.767 — the 0.05-coefficient auxiliary ranks opponent class as well as the critic), untaught meter 54.5 pp against
+the 75M win-prob run's 58.25 (−3.75 [−6.4, −1.1], a descriptor), and on the anchors 0.630 vs SmallRL greedy and
+0.450 vs Foul Play at 1.25M visits (both n.d. vs the win-prob run's 0.520 / 0.388). Nothing about the objective is
+claimed until arm W lands. [ledger 2026-09-14 · *MEASUREMENT · ARM S's RUN-END READS*] The flywheel pair's shaped arm therefore runs the
 era's shaped configuration, not a one-flag flip. [ledger 2026-09-12 · *READ · the shaped-critic family at the
 LADDER argv*] [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
 REPRESENTATION-level opponent-class decode*]
@@ -1082,6 +1089,7 @@ z=−1.40" rules out >4.5pp, not >0.
 21. **A post-hoc candidate that replicates at about half its magnitude with CIs covering zero has the shape of SELECTION INFLATION, not of a real-but-small effect.** A row picked post hoc from ~60 per read is selected partly on its estimate, so a fresh draw regresses; the λ-0.9 overall-resolution candidate went +0.009–0.011 (six CIs clear) → +0.004–0.006 (six CIs covering zero) on its pre-registered replicate. The verdict on such a test is NOT CONFIRMED at the registered standard — never "refuted" (a small true effect both draws are underpowered for also fits) — and the shape is a reason to stop, not to buy a third draw on the same row. [ledger 2026-09-11 · *ADDENDUM to the λ-0.9 replicate's read · RULE 21*]
 22. **A control-replicate floor bounds the CONTROL's run-to-run variance, not the lever's; a single-arm detection is a CANDIDATE until its own seed replicate agrees.** `strata` read +0.050 on the decision row (three eval draws agreeing, 2.3× the floor) and its same-pin seed replicate read −0.03; the within-lever spread was 3.6× the floor measured on three control replicates. A lever may change the variance it is read against, so the replicate that promotes a detection to a family claim is a replicate OF THE ARM, and the eval-draw component (rule 19) never substitutes for it. Reproduced on STRENGTH the same day: the two same-pin seed-replicate pairs differ by 83 and 58 Elo (CIs clear of zero) against a control-pair difference of 10 — a lever arm's variance is not the control's. [ledger 2026-09-12 · *VERDICT · strata_b FAILS*; *THE CRITIC LADDER READ ON STRENGTH*]
 23. **A meter whose value depends on the box's throughput needs a CONTEMPORANEOUS control or width matching, never a fixed bar.** The mirror battery's L1 (separation-of-raced) read 0.058 / 0.128 / 0.365 on the SAME checkpoint, cell, flags and battles at realized search widths K = 3.6 / 5.1 / 8.9 — a 6.3× range set by wall-clock contention — while heads inside one width band differ by ≤1.7×; a head that "cleared" the 18.1 % bar at K = 10 sat below its own same-window control. The `grid` cell (unguarded) is the leaf row that separates heads. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
+24. **A committed `ladder.json` carries the RECIPE it was fitted with, and a recipe change silently moves every rating.** `ai_v12_02_winprob_critic`'s committed file (2026-09-08, 494 pairs, eval-sentinel edges folded in) reads 2057 at its newest node; the current recipe (`3e6875a5`, sentinel edges dropped) refits the same 20 nodes to 1984 — a +73 difference that flips the sign of a cross-run delta. Quote a committed file only if `eval_sentinel_edges_dropped` is present (the recipe stamp); otherwise refit. Arm S's own file and refit agree to 0.0. [ledger 2026-09-14 · *MEASUREMENT · ARM S's RUN-END READS*]
 
 ### 4.x · The search dividend at the win-prob milestone (2026-09-11)
 
