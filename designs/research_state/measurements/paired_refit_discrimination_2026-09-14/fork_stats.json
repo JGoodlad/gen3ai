@@ -1,0 +1,63 @@
+{
+ "n_shards_finished": 0,
+ "n_forks": 5076,
+ "battles": 961,
+ "by_opponent": {
+  "sentinel_2": 1789,
+  "sentinel_0": 1601,
+  "sentinel_1": 1686
+ },
+ "turn_median": 15,
+ "branch_outcomes": {
+  "top1": {
+   "win": 3593,
+   "loss": 1483
+  },
+  "top2": {
+   "win": 3581,
+   "loss": 1485,
+   "tie": 5,
+   "capped": 5
+  },
+  "rand": {
+   "loss": 1621,
+   "win": 3440,
+   "capped": 8,
+   "tie": 7
+  }
+ },
+ "branch_win_rate": {
+  "top1": 0.7078408195429472,
+  "top2": 0.7068693249111725,
+  "rand": 0.6797075676743727
+ },
+ "pairs": {
+  "total": 14764,
+  "tied": 11777,
+  "non_tied": 2987,
+  "non_tied_rate": 0.20231644540774857
+ },
+ "blind_spot": {
+  "complete_forks": 4902,
+  "rand_beats_both": 223,
+  "rate": 0.045491636066911464,
+  "wilson_ci": [
+   0.04000553476661193,
+   0.0516895578755965
+  ]
+ },
+ "shard_stats_from_logs": {
+  "forks": 5040,
+  "errors": 0,
+  "no_successor": 317,
+  "capped": 13,
+  "det_checks": 104,
+  "det_fail": 0,
+  "no_rand": 0
+ },
+ "CRN_determinism": {
+  "checks": 104,
+  "failures": 0,
+  "verdict": "PAIRING HOLDS"
+ }
+}

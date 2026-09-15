@@ -1,0 +1,9 @@
+{
+ "n": 40,
+ "reproduced": 40,
+ "mismatched": 0,
+ "script_exhausted": 0,
+ "rate": 1.0,
+ "failures": [],
+ "verdict": "ANCHOR PASSES"
+}

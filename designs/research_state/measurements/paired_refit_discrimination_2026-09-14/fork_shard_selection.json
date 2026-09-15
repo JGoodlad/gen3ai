@@ -1,0 +1,50 @@
+{
+ "shard_0": {
+  "candidates": 10820,
+  "gap_threshold": 0.8617,
+  "selected": 4328,
+  "selection_rate": 0.4,
+  "picked": 1530,
+  "battles_with_picks": 399
+ },
+ "shard_1": {
+  "candidates": 11018,
+  "gap_threshold": 0.812,
+  "selected": 4407,
+  "selection_rate": 0.4,
+  "picked": 1509,
+  "battles_with_picks": 396
+ },
+ "shard_2": {
+  "candidates": 11019,
+  "gap_threshold": 0.833,
+  "selected": 4408,
+  "selection_rate": 0.4,
+  "picked": 1520,
+  "battles_with_picks": 397
+ },
+ "shard_3": {
+  "candidates": 10965,
+  "gap_threshold": 0.8478,
+  "selected": 4386,
+  "selection_rate": 0.4,
+  "picked": 1499,
+  "battles_with_picks": 397
+ },
+ "shard_4": {
+  "candidates": 11047,
+  "gap_threshold": 0.8415,
+  "selected": 4419,
+  "selection_rate": 0.4,
+  "picked": 1530,
+  "battles_with_picks": 397
+ },
+ "shard_5": {
+  "candidates": 10887,
+  "gap_threshold": 0.8511,
+  "selected": 4355,
+  "selection_rate": 0.4,
+  "picked": 1524,
+  "battles_with_picks": 397
+ }
+}
