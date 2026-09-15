@@ -120,6 +120,27 @@ class Gen3Teambuilder(Teambuilder):
             self.packed_teams.append(self.join_team(fixed_team))
             self._pool_keys.append(hashlib.sha1(team_str.strip().encode()).hexdigest()[:10])
 
+        # 🚨 A THROWING GUARD ON THE PACK, because the failure it catches is a HANG.
+        # Showdown answers a packed team carrying more than six Pokemon with
+        #   |popup|Your team was rejected ... - You may only bring up to 6 Pokemon (your team has 7)
+        # and the rejected challenge NEVER BECOMES A BATTLE — the series simply sits there with
+        # nothing to read. `validate_teams_locally` above CANNOT see it: it validates the PASTE,
+        # and a seventh entry is created by the PACK (a trailing blank line used to become an
+        # empty Pokemon in `Teambuilder.parse_showdown_team`; fixed 2026-09-14, and this guard is
+        # what makes any future member of that class an ERROR instead of a hang). Measured in
+        # designs/research_state/measurements/metamon_matched_regime_2026-09-14/ hazard H-A.
+        # Under-six is legal (Showdown accepts 1-6) and is deliberately NOT refused here.
+        oversize = [(i, len(packed.split("]")))
+                    for i, packed in enumerate(self.packed_teams) if len(packed.split("]")) > 6]
+        if oversize:
+            raise ValueError(
+                "packed team(s) carry more than 6 Pokemon — Showdown will REJECT them and the "
+                "match will HANG rather than error. Pool index -> packed count: "
+                + ", ".join(f"{i}->{n}" for i, n in oversize[:5])
+                + (f" (+{len(oversize) - 5} more)" if len(oversize) > 5 else "")
+                + ". A trailing blank line in a Showdown paste is the usual cause."
+            )
+
         # Reverse map packed-team → pool index, so the LEGACY uniform draw
         # (``random.choice(self.packed_teams)``, which returns the team and not its index) can still
         # say WHICH team it yielded. A dict lookup consumes no RNG, so the off path stays

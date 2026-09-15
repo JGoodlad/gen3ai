@@ -41,7 +41,18 @@ class Teambuilder(ABC):
         mons = []
 
         for ps_mon in team.split("\n\n"):
-            if ps_mon == "":
+            # 🚨 `not ps_mon.strip()`, NOT `ps_mon == ""`. A Showdown paste that ends with a
+            # blank line (every Metamon `competitive` gen3ou file ends "\n\n\n") splits into a
+            # final chunk of "\n" — which is not "", so the old check let it through and
+            # `TeambuilderPokemon.from_showdown` turned it into an EMPTY 7th Pokemon. Showdown
+            # then answers the packed team with
+            #   |popup|... - You may only bring up to 6 Pokemon (your team has 7).
+            # and the rejected challenge NEVER BECOMES A BATTLE: the symptom is a HANG, not an
+            # error, and `validate_teams_locally` cannot see it because it validates the PASTE
+            # and the defect is created by the PACK. Upstream poke-env 0.8.3.3 parses the same
+            # file correctly, so this was OUR fork's defect. Measured 2026-09-14,
+            # designs/research_state/measurements/metamon_matched_regime_2026-09-14/ hazard H-A.
+            if not ps_mon.strip():
                 continue
             mons.append(TeambuilderPokemon.from_showdown(ps_mon))
 
