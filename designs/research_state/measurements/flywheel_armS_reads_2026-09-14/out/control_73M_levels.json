@@ -1,0 +1,66 @@
+{
+ "draw1": {
+  "cond": {
+   "cond.opp_class_auc.t4_10": 0.73777,
+   "cond.opp_class_auc.t1_3": 0.5882,
+   "cond.opp_class_auc.t1": 0.5094,
+   "cond.calibration_slope.all": 1.06952,
+   "cond.calibration_intercept.all": 0.11937,
+   "cond.calibration_slope.t1_3": 0.83837,
+   "cond.spread_ratio.t4_10": 0.36836,
+   "cond.spread_ratio.all": 0.44844
+  },
+  "gate": {
+   "gate.resolution.all": 0.0417,
+   "gate.resolution.bot": 0.01852,
+   "gate.resolution.pool": 0.0519,
+   "gate.ece.all": 0.01698,
+   "gate.ece.bot": 0.04422,
+   "gate.ece.pool": 0.11832,
+   "gate.skill.all": 0.25763,
+   "gate.skill.bot": 0.15327,
+   "gate.skill.pool": 0.15645,
+   "gate.reliability.all": 0.00059,
+   "gate.reliability.bot": 0.00448,
+   "gate.reliability.pool": 0.01563
+  },
+  "frame": {
+   "n_states": 147464,
+   "n_battles": 4771,
+   "max_abs_values_minus_winprobs": 0.0,
+   "v_column": "win_probs"
+  }
+ },
+ "draw2": {
+  "cond": {
+   "cond.opp_class_auc.t4_10": 0.74444,
+   "cond.opp_class_auc.t1_3": 0.58718,
+   "cond.opp_class_auc.t1": 0.49241,
+   "cond.calibration_slope.all": 1.06319,
+   "cond.calibration_intercept.all": 0.1556,
+   "cond.calibration_slope.t1_3": 0.80707,
+   "cond.spread_ratio.t4_10": 0.41334,
+   "cond.spread_ratio.all": 0.46108
+  },
+  "gate": {
+   "gate.resolution.all": 0.0371,
+   "gate.resolution.bot": 0.01711,
+   "gate.resolution.pool": 0.04485,
+   "gate.ece.all": 0.01921,
+   "gate.ece.bot": 0.03485,
+   "gate.ece.pool": 0.1051,
+   "gate.skill.all": 0.22676,
+   "gate.skill.bot": 0.14244,
+   "gate.skill.pool": 0.14475,
+   "gate.reliability.all": 0.00053,
+   "gate.reliability.bot": 0.00314,
+   "gate.reliability.pool": 0.01221
+  },
+  "frame": {
+   "n_states": 144740,
+   "n_battles": 4764,
+   "max_abs_values_minus_winprobs": 0.0,
+   "v_column": "win_probs"
+  }
+ }
+}

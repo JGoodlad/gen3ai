@@ -1,0 +1,114 @@
+{
+ "registry": {
+  "config": "the REGISTRY `untaught_meter_config` (ai_v9_29_rev1_0823's snapshots/model_config.json)",
+  "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+  "levels_pp": {
+   "armS": 54.5,
+   "winprob75M": 58.25
+  },
+  "n_finished": {
+   "armS": 1600,
+   "winprob75M": 1600
+  },
+  "per_team_pp": {
+   "armS": {
+    "U_61590463": 56.5,
+    "U_92832108": 49.5,
+    "U_ce35b736": 56.0,
+    "U_9909f2e9": 54.5,
+    "U_9d5f8458": 55.5,
+    "U_f7ba5702": 55.0,
+    "U_90b94599": 49.5,
+    "U_dbf81d8e": 59.5
+   },
+   "winprob75M": {
+    "U_61590463": 61.0,
+    "U_92832108": 59.0,
+    "U_ce35b736": 64.5,
+    "U_9909f2e9": 55.5,
+    "U_9d5f8458": 57.5,
+    "U_f7ba5702": 57.0,
+    "U_90b94599": 55.0,
+    "U_dbf81d8e": 56.5
+   }
+  },
+  "paired_delta_armS_minus_winprob75M_pp": -3.75,
+  "ci95_pp": [
+   -6.37,
+   -1.06
+  ],
+  "teams_where_armS_higher": 1,
+  "n_teams": 8,
+  "timeouts": {
+   "attempted": 3200,
+   "timeouts": 0,
+   "fraction": 0.0,
+   "inconclusive_above": 0.25,
+   "inconclusive": false
+  },
+  "floors_pp_in_evidence": {
+   "frozen_dose_folds_six_draws": 1.66,
+   "controller_live_folds": 4.27,
+   "TC_replicate_pairs_END_depth": 1.19,
+   "TC_replicate_pairs_p1M_depth": 4.0,
+   "G5_three_continuation_arms": 1.0
+  },
+  "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor"
+ },
+ "auto": {
+  "config": "--config auto (each model's OWN model_config.json)",
+  "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+  "levels_pp": {
+   "armS": 54.5,
+   "winprob75M": 58.25
+  },
+  "n_finished": {
+   "armS": 1600,
+   "winprob75M": 1600
+  },
+  "per_team_pp": {
+   "armS": {
+    "U_61590463": 56.5,
+    "U_92832108": 49.5,
+    "U_ce35b736": 56.0,
+    "U_9909f2e9": 54.5,
+    "U_9d5f8458": 55.5,
+    "U_f7ba5702": 55.0,
+    "U_90b94599": 49.5,
+    "U_dbf81d8e": 59.5
+   },
+   "winprob75M": {
+    "U_61590463": 61.0,
+    "U_92832108": 59.0,
+    "U_ce35b736": 64.5,
+    "U_9909f2e9": 55.5,
+    "U_9d5f8458": 57.5,
+    "U_f7ba5702": 57.0,
+    "U_90b94599": 55.0,
+    "U_dbf81d8e": 56.5
+   }
+  },
+  "paired_delta_armS_minus_winprob75M_pp": -3.75,
+  "ci95_pp": [
+   -6.37,
+   -1.06
+  ],
+  "teams_where_armS_higher": 1,
+  "n_teams": 8,
+  "timeouts": {
+   "attempted": 3200,
+   "timeouts": 0,
+   "fraction": 0.0,
+   "inconclusive_above": 0.25,
+   "inconclusive": false
+  },
+  "floors_pp_in_evidence": {
+   "frozen_dose_folds_six_draws": 1.66,
+   "controller_live_folds": 4.27,
+   "TC_replicate_pairs_END_depth": 1.19,
+   "TC_replicate_pairs_p1M_depth": 4.0,
+   "G5_three_continuation_arms": 1.0
+  },
+  "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor"
+ }
+}

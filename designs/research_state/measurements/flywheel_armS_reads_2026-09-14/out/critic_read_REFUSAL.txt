@@ -1,0 +1,9 @@
+[critic_read] CYCLE  arm      ai_v13_01_flywheel_shaped -> step_74000016  (PINNED by --step 74000016)
+[critic_read] POP    arm      OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 800 games, ALL battles traced (no capture quota); sentinels GREEDY, drawing the trainee's own team distribution
+[critic_read] CYCLE  control  ai_v12_02_winprob_critic -> step_73121280  (PINNED by --step 73121280)
+[critic_read] POP    control  OFFLINE-GENERATED cycle: 12 opponents (9 scripted bots + 3 pool sentinels) x 400 games, ALL battles traced (no capture quota); sentinels ASYMMETRIC (stochastic, flat pool builder — the pre-2026-09-07 regime, worth ~+8.9 pp to the trainee) [regime DECLARED on the command line — the run recorded none]
+REFUSING: both cycles are offline-generated, but to DIFFERENT specs — they are not two draws from one population.
+  eval_sentinel_greedy: arm=True  control=False
+  n_games: arm=800  control=400
+  A differing --seed is fine and is deliberately not checked: two seeds are two draws from the SAME population. Games, the opponent set, the capture rule and the sentinel regime are not.
+  Regenerate the two sides at one spec. Nothing is read and nothing is concluded.

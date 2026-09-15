@@ -388,6 +388,7 @@ def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
             "step": cycle["step"],
             "boot": args.cond_boot, "seed": args.seed, "ladder": args.cond_ladder,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
+            "v_column": getattr(args, "v_column", "win_probs"),
             "meters": list(CM.METER_KEYS), "block_version": 3}
 
 
@@ -708,7 +709,9 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
                 f"({args.cond_boot} battle-clustered draws, ladder={args.cond_ladder})")
             try:
                 cond = CM.conditioning_block(str(source), cycle["step"], boot=args.cond_boot,
-                                             seed=args.seed, ladder=args.cond_ladder, say=say)
+                                             seed=args.seed, ladder=args.cond_ladder,
+                                             v_column=getattr(args, "v_column", "win_probs"),
+                                             say=say)
             except CM.ConditioningRefusal as exc:
                 cond, cond_refusal = None, str(exc)
                 if not args.allow_conditioning_refusal:
@@ -1192,6 +1195,16 @@ def build_parser() -> argparse.ArgumentParser:
                          "REFUSES an unanchored fit; `off` skips it and the Elo-slope row is "
                          "omitted with that reason. Every other conditioning row is unaffected — "
                          "the spread identity needs no strength axis.")
+    ap.add_argument("--v-column", choices=("win_probs", "values"), default="win_probs",
+                    help="which npz column the CONDITIONING rows read as V. 🚨 On a `--critic "
+                         "shaped` run the two are DIFFERENT READOUTS: `values` is the actual "
+                         "critic (the distributional E[Z] in raw shaped-return units) and "
+                         "`win_probs` is the AUXILIARY head at --win-prob-coef. On a `--critic "
+                         "winprob` run they are the same tensor. The default is `win_probs`, "
+                         "which keeps every banked read byte-identical. Only the RANK-based rows "
+                         "(the AUCs) are valid under `values`; the calibration family is not "
+                         "defined on a raw shaped-return scale, and the gate.* reliability rows "
+                         "are computed by the scaffolding gauge on `win_probs` regardless.")
     ap.add_argument("--no-conditioning", action="store_true",
                     help="skip the CONDITIONING section entirely")
     ap.add_argument("--no-quota-match", action="store_true",
@@ -1318,7 +1331,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     "allow_missing_winprob", "parent", "famine_comparator", "baseline_arm",
                     "step", "control_step", "cond_boot", "cond_ladder", "no_conditioning",
                     "no_quota_match", "quota_match_seeds", "quota_match_boot",
-                    "arm_traces", "control_traces")},
+                    "arm_traces", "control_traces", "v_column")},
         "registration": ("ledger 2026-09-08 · REGISTRATION · THE CRITIC LADDER; design note "
                          "designs/research_state/winprob_critic_ladder_2026-09-08.md"),
         "quota_match": QM.serialisable(qm),

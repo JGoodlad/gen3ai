@@ -1,0 +1,21 @@
+{
+ "games": 80,
+ "our_wins": 36,
+ "our_win_rate": 0.45,
+ "wilson95": [
+  0.3458,
+  0.5588
+ ],
+ "mean_turns": 32.5,
+ "median_turns": 29,
+ "max_turns": 92,
+ "our_forfeit_fired_n": 0,
+ "our_think_ms_mean": 480.9895408607255,
+ "our_think_ms_max": 3006.200769916177,
+ "fp_think_s_mean": 2.098103269864005,
+ "fp_think_s_max": 2.671999931335449,
+ "fp_mcts_visits_per_decision_mean": 1248937.752639406,
+ "fp_decisions_total": 2902,
+ "fp_error_lines_total": 0,
+ "games_without_a_matched_fp_log": 0
+}

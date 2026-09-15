@@ -1,0 +1,409 @@
+{
+ "halfcells": [
+  {
+   "agent": "SmallRL",
+   "regime": "greedy",
+   "team_set": "home",
+   "challenger": "metamon",
+   "n_requested": 50,
+   "our_rc": 0,
+   "metamon_rc": 0,
+   "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+   "port": 9450,
+   "our_temperature": 0.0,
+   "metamon_regime": "greedy",
+   "our_team_seed": 20261014,
+   "their_team_seed": 20271014,
+   "tag": "A1",
+   "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/anchors/metamon/cells/SmallRL_greedy_home_metamon",
+   "our_timing": {
+    "n_decisions": 1714,
+    "wall_s": 377.7115366458893,
+    "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+    "device": "cpu",
+    "series": "SmallRL",
+    "stochastic_kwarg_values": [
+     false
+    ],
+    "temperature_flag": 0.0,
+    "team_dir": null,
+    "team_seed": 20261014,
+    "mode": "accept",
+    "n_team_draws": 50,
+    "mean_s": 0.18947208463594692,
+    "median_s": 0.11383757973089814,
+    "p90_s": 0.4263160857371986,
+    "max_s": 1.4784668791107833,
+    "regime_check_ok": true
+   },
+   "metamon_timing": {
+    "n_decisions": 1754,
+    "mean_s": 0.1596589918652424,
+    "median_s": 0.08044779114425182,
+    "p90_s": 0.3958992646075785,
+    "max_s": 2.277771714143455,
+    "sample_kwarg_values": [
+     false
+    ],
+    "argmax_checked": 1754,
+    "argmax_matched": 1754,
+    "argmax_match_rate": 1.0,
+    "wall_s": 348.443523645401,
+    "agent": "SmallRL",
+    "checkpoint": null,
+    "backend": "poke-env",
+    "regime": "greedy",
+    "role": "challenger",
+    "team_set": "gen3ai_pool",
+    "team_seed": 20271014,
+    "action_temperature": null,
+    "n_team_draws": 50,
+    "regime_check_ok": true
+   },
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   },
+   "n_games": 50
+  },
+  {
+   "agent": "SmallRL",
+   "regime": "greedy",
+   "team_set": "home",
+   "challenger": "ours",
+   "n_requested": 50,
+   "our_rc": 0,
+   "metamon_rc": 0,
+   "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+   "port": 9450,
+   "our_temperature": 0.0,
+   "metamon_regime": "greedy",
+   "our_team_seed": 20260914,
+   "their_team_seed": 20270914,
+   "tag": "A0",
+   "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/anchors/metamon/cells/SmallRL_greedy_home_ours",
+   "our_timing": {
+    "n_decisions": 1902,
+    "wall_s": 413.3774268627167,
+    "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+    "device": "cpu",
+    "series": "SmallRL",
+    "stochastic_kwarg_values": [
+     false
+    ],
+    "temperature_flag": 0.0,
+    "team_dir": null,
+    "team_seed": 20260914,
+    "mode": "challenge",
+    "n_team_draws": 50,
+    "mean_s": 0.19893009527086952,
+    "median_s": 0.10949895903468132,
+    "p90_s": 0.46680021937936544,
+    "max_s": 1.3984414311125875,
+    "regime_check_ok": true
+   },
+   "metamon_timing": {
+    "n_decisions": 1904,
+    "mean_s": 0.172854465643529,
+    "median_s": 0.08174284128472209,
+    "p90_s": 0.4331568628549576,
+    "max_s": 2.266380626708269,
+    "sample_kwarg_values": [
+     false
+    ],
+    "argmax_checked": 1904,
+    "argmax_matched": 1904,
+    "argmax_match_rate": 1.0,
+    "wall_s": 415.52974462509155,
+    "agent": "SmallRL",
+    "checkpoint": null,
+    "backend": "poke-env",
+    "regime": "greedy",
+    "role": "acceptor",
+    "team_set": "gen3ai_pool",
+    "team_seed": 20270914,
+    "action_temperature": null,
+    "n_team_draws": 50,
+    "regime_check_ok": true
+   },
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   },
+   "n_games": 50
+  },
+  {
+   "agent": "SmallRL",
+   "regime": "mixed",
+   "team_set": "home",
+   "challenger": "metamon",
+   "n_requested": 50,
+   "our_rc": 0,
+   "metamon_rc": 1,
+   "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+   "port": 9450,
+   "our_temperature": 0.0,
+   "metamon_regime": "t1",
+   "our_team_seed": 20261214,
+   "their_team_seed": 20271214,
+   "tag": "A3",
+   "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/anchors/metamon/cells/SmallRL_mixed_home_metamon",
+   "our_timing": {
+    "n_decisions": 2186,
+    "wall_s": 477.58675622940063,
+    "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+    "device": "cpu",
+    "series": "SmallRL",
+    "stochastic_kwarg_values": [
+     false
+    ],
+    "temperature_flag": 0.0,
+    "team_dir": null,
+    "team_seed": 20261214,
+    "mode": "accept",
+    "n_team_draws": 50,
+    "mean_s": 0.1919749527200392,
+    "median_s": 0.107425507158041,
+    "p90_s": 0.45958113111555576,
+    "max_s": 2.251578678842634,
+    "regime_check_ok": true
+   },
+   "metamon_timing": null,
+   "failures": {
+    "our_tracebacks": 2,
+    "classify_raises": 0,
+    "metamon_tracebacks": 988,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": [
+     "metamon: RecursionError: maximum recursion depth exceeded",
+     "metamon: RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "metamon: RuntimeError: Battle is already finished, call reset",
+     "our: RuntimeError: Decision context is missing at turn 1. get_mask() / embed_battle() must run before action_to_order()."
+    ]
+   },
+   "n_games": 50
+  },
+  {
+   "agent": "SmallRL",
+   "regime": "mixed",
+   "team_set": "home",
+   "challenger": "ours",
+   "n_requested": 50,
+   "our_rc": 0,
+   "metamon_rc": 0,
+   "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+   "port": 9450,
+   "our_temperature": 0.0,
+   "metamon_regime": "t1",
+   "our_team_seed": 20261114,
+   "their_team_seed": 20271114,
+   "tag": "A2",
+   "dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/anchors/metamon/cells/SmallRL_mixed_home_ours",
+   "our_timing": {
+    "n_decisions": 1798,
+    "wall_s": 368.0223219394684,
+    "model": "models/ai_v13_01_flywheel_shaped/final_model.zip",
+    "device": "cpu",
+    "series": "SmallRL",
+    "stochastic_kwarg_values": [
+     false
+    ],
+    "temperature_flag": 0.0,
+    "team_dir": null,
+    "team_seed": 20261114,
+    "mode": "challenge",
+    "n_team_draws": 50,
+    "mean_s": 0.18842753527159736,
+    "median_s": 0.09807763481512666,
+    "p90_s": 0.45560493040829897,
+    "max_s": 1.470649829134345,
+    "regime_check_ok": true
+   },
+   "metamon_timing": {
+    "n_decisions": 1854,
+    "mean_s": 0.16091651677811053,
+    "median_s": 0.07275116723030806,
+    "p90_s": 0.42389811761677265,
+    "max_s": 2.291066823992878,
+    "sample_kwarg_values": [
+     true
+    ],
+    "argmax_checked": 1854,
+    "argmax_matched": 1221,
+    "argmax_match_rate": 0.6585760517799353,
+    "wall_s": 374.1013388633728,
+    "agent": "SmallRL",
+    "checkpoint": null,
+    "backend": "poke-env",
+    "regime": "t1",
+    "role": "acceptor",
+    "team_set": "gen3ai_pool",
+    "team_seed": 20271114,
+    "action_temperature": 1.0,
+    "n_team_draws": 50,
+    "regime_check_ok": true
+   },
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   },
+   "n_games": 50
+  }
+ ],
+ "models": {
+  "SmallRL": {
+   "cells": {
+    "greedy|home": {
+     "n": 100,
+     "wins": 63,
+     "losses": 37,
+     "ties": 0,
+     "win_rate": 0.63,
+     "wilson95_lo": 0.5322052957861855,
+     "wilson95_hi": 0.7181763946756509,
+     "mean_turns": 31.94,
+     "max_turns": 106,
+     "forfeit_limit_fired": 0,
+     "phantom_games": 0,
+     "sensitivity_excl_timeouts": {
+      "n": 100,
+      "wins": 63,
+      "win_rate": 0.63,
+      "lo": 0.5322052957861855,
+      "hi": 0.7181763946756509,
+      "n_removed": 0
+     },
+     "sides_disagree": 0,
+     "metamon_rows_missing": 0,
+     "distinct_our_teams": 94,
+     "distinct_metamon_teams": 80,
+     "distinct_team_pairs": 100,
+     "draw_alignment_ok": true,
+     "by_role": {
+      "metamon": {
+       "n": 50,
+       "wins": 33,
+       "losses": 17,
+       "ties": 0,
+       "win_rate": 0.66,
+       "wilson95_lo": 0.5215382604694402,
+       "wilson95_hi": 0.7756305077979341,
+       "mean_turns": 30.26,
+       "max_turns": 75,
+       "forfeit_limit_fired": 0,
+       "phantom_games": 0,
+       "sensitivity_excl_timeouts": {
+        "n": 50,
+        "wins": 33,
+        "win_rate": 0.66,
+        "lo": 0.5215382604694402,
+        "hi": 0.7756305077979341,
+        "n_removed": 0
+       },
+       "sides_disagree": 0,
+       "metamon_rows_missing": 0,
+       "distinct_our_teams": 48,
+       "distinct_metamon_teams": 40,
+       "distinct_team_pairs": 50,
+       "draw_alignment_ok": true
+      },
+      "ours": {
+       "n": 50,
+       "wins": 30,
+       "losses": 20,
+       "ties": 0,
+       "win_rate": 0.6,
+       "wilson95_lo": 0.46181437744413967,
+       "wilson95_hi": 0.723916102722969,
+       "mean_turns": 33.62,
+       "max_turns": 106,
+       "forfeit_limit_fired": 0,
+       "phantom_games": 0,
+       "sensitivity_excl_timeouts": {
+        "n": 50,
+        "wins": 30,
+        "win_rate": 0.6,
+        "lo": 0.46181437744413967,
+        "hi": 0.723916102722969,
+        "n_removed": 0
+       },
+       "sides_disagree": 0,
+       "metamon_rows_missing": 0,
+       "distinct_our_teams": 49,
+       "distinct_metamon_teams": 44,
+       "distinct_team_pairs": 50,
+       "draw_alignment_ok": true
+      }
+     }
+    }
+   },
+   "effects": {
+    "temperature_greedy_minus_t1@home": {
+     "delta": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_greedy": 100,
+     "n_t1": 0
+    },
+    "temperature_greedy_minus_t1@away": {
+     "delta": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_greedy": 0,
+     "n_t1": 0
+    },
+    "temperature_greedy_minus_t1@pooled": {
+     "delta": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_greedy": 100,
+     "n_t1": 0
+    },
+    "teamset_home_minus_away@greedy": {
+     "delta": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_home": 100,
+     "n_away": 0
+    },
+    "teamset_home_minus_away@t1": {
+     "delta": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_home": 0,
+     "n_away": 0
+    },
+    "teamset_home_minus_away@pooled": {
+     "delta": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_home": 200,
+     "n_away": 0
+    },
+    "role_ourschallenge_minus_metamonchallenge": {
+     "delta": -0.09000000000000008,
+     "lo": -0.20901386349464252,
+     "hi": 0.03241106603454939,
+     "n_ours": 100,
+     "n_metamon": 100
+    }
+   },
+   "primary_row": "greedy|away",
+   "primary": {},
+   "primary_verdict": "NOT DETECTED"
+  }
+ }
+}

@@ -1,0 +1,726 @@
+{
+ "generated_at": "2026-09-14T13:52:36.926390-07:00",
+ "instrument": "snapshot_ladder/ladder.json (dense, +/-10); refits via fit_ladder(write=False)",
+ "floor_elo": 45.0,
+ "floor_provenance": "MAX pairwise |Delta| over the three same-argv 10M controls (45.0 / 35.3 / 9.7) \u2014 a 10M four-node floor imported to 75M",
+ "runs": {
+  "armS": {
+   "run": "ai_v13_01_flywheel_shaped",
+   "human_description": "arm S \u2014 the flywheel pair's SHAPED arm (the era's reward/critic composition, 75M)",
+   "committed_ladder_json": {
+    "computed_at": "2026-09-14T18:23:58.766850+00:00",
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "n_pairs_possible": 190,
+    "eval_sentinel_edges_dropped": 51,
+    "pairs_by_source": {
+     "eval_cycle": 51,
+     "ladder": 139
+    },
+    "newest_node_step": 72000000,
+    "newest_node_elo": 2036.6,
+    "second_newest_elo": 2042.3
+   },
+   "current_code_refit": {
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "eval_sentinel_edges_dropped": 51,
+    "pairs_by_source": {
+     "eval_cycle": 51,
+     "ladder": 139
+    },
+    "newest_node_step": 72000000,
+    "newest_node_elo": 2036.6,
+    "se_newest": 8.9,
+    "second_newest_step": 68000016,
+    "second_newest_elo": 2042.3,
+    "se_second_newest": 8.9,
+    "span_steps": [
+     22000032,
+     72000000
+    ]
+   },
+   "committed_minus_refit_newest": 0.0,
+   "nodes_current_code_refit": [
+    {
+     "step": 22000032,
+     "elo": 1982.7
+    },
+    {
+     "step": 24000000,
+     "elo": 1967.8
+    },
+    {
+     "step": 26000016,
+     "elo": 2005.6
+    },
+    {
+     "step": 28000032,
+     "elo": 1991.3
+    },
+    {
+     "step": 30000000,
+     "elo": 1988.9
+    },
+    {
+     "step": 32000016,
+     "elo": 2016.2
+    },
+    {
+     "step": 34000032,
+     "elo": 2025.2
+    },
+    {
+     "step": 36000000,
+     "elo": 2020.9
+    },
+    {
+     "step": 38000016,
+     "elo": 2038.5
+    },
+    {
+     "step": 40000032,
+     "elo": 2020.2
+    },
+    {
+     "step": 42000000,
+     "elo": 2040.0
+    },
+    {
+     "step": 44000016,
+     "elo": 2017.7
+    },
+    {
+     "step": 46000032,
+     "elo": 2025.6
+    },
+    {
+     "step": 48000000,
+     "elo": 2022.4
+    },
+    {
+     "step": 50000016,
+     "elo": 2019.6
+    },
+    {
+     "step": 54000000,
+     "elo": 2039.1
+    },
+    {
+     "step": 56000016,
+     "elo": 2041.9
+    },
+    {
+     "step": 62000016,
+     "elo": 2043.5
+    },
+    {
+     "step": 68000016,
+     "elo": 2042.3
+    },
+    {
+     "step": 72000000,
+     "elo": 2036.6
+    }
+   ],
+   "resolution_curve": [
+    {
+     "nodes": 4,
+     "newest_node_step": 28000032,
+     "newest_node_elo": 2012.3,
+     "se": 16.4,
+     "se_delta": 23.19,
+     "ci95_delta": 45.5,
+     "n_frozen_pairs": 6
+    },
+    {
+     "nodes": 6,
+     "newest_node_step": 32000016,
+     "newest_node_elo": 2041.7,
+     "se": 14.7,
+     "se_delta": 20.79,
+     "ci95_delta": 40.7,
+     "n_frozen_pairs": 15
+    },
+    {
+     "nodes": 8,
+     "newest_node_step": 36000000,
+     "newest_node_elo": 2034.3,
+     "se": 13.1,
+     "se_delta": 18.53,
+     "ci95_delta": 36.3,
+     "n_frozen_pairs": 28
+    },
+    {
+     "nodes": 10,
+     "newest_node_step": 40000032,
+     "newest_node_elo": 2026.3,
+     "se": 11.9,
+     "se_delta": 16.83,
+     "ci95_delta": 33.0,
+     "n_frozen_pairs": 45
+    },
+    {
+     "nodes": 12,
+     "newest_node_step": 44000016,
+     "newest_node_elo": 2023.9,
+     "se": 11.0,
+     "se_delta": 15.56,
+     "ci95_delta": 30.5,
+     "n_frozen_pairs": 66
+    },
+    {
+     "nodes": 16,
+     "newest_node_step": 54000000,
+     "newest_node_elo": 2045.6,
+     "se": 9.8,
+     "se_delta": 13.86,
+     "ci95_delta": 27.2,
+     "n_frozen_pairs": 120
+    },
+    {
+     "nodes": 20,
+     "newest_node_step": 72000000,
+     "newest_node_elo": 2036.6,
+     "se": 8.9,
+     "se_delta": 12.59,
+     "ci95_delta": 24.7,
+     "n_frozen_pairs": 190
+    }
+   ],
+   "slopes_newest_node_dropped": {
+    "nodes_used": 19,
+    "late_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 1.1435,
+     "se": 0.4357,
+     "t": 2.62,
+     "resid_rms": 7.334,
+     "span_Mstep": [
+      48.0,
+      68.0
+     ]
+    },
+    "middle_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 0.0214,
+     "se": 1.3016,
+     "t": 0.02,
+     "resid_rms": 10.89,
+     "span_Mstep": [
+      34.0,
+      44.0
+     ]
+    },
+    "all_nodes": {
+     "n": 19,
+     "slope_elo_per_Mstep": 1.3708,
+     "se": 0.2417,
+     "t": 5.67,
+     "resid_rms": 13.368,
+     "span_Mstep": [
+      22.0,
+      68.0
+     ]
+    },
+    "late_minus_middle": {
+     "delta": 1.1221,
+     "se": 1.3726,
+     "ci95": [
+      -1.568,
+      3.812
+     ],
+     "covers_zero": true
+    }
+   },
+   "adjacent_node_spread": {
+    "n": 19,
+    "max_abs_delta": 37.8,
+    "median_abs_delta": 9.0,
+    "mean_abs_delta": 12.2,
+    "caveat": "bounds WITHIN-run wobble only \u2014 it is dominated by early LEARNING and is NOT a run-to-run floor (registration sec 9.1)"
+   }
+  },
+  "winprob75M": {
+   "run": "ai_v12_02_winprob_critic",
+   "human_description": "the 75M win-prob run at --ent-coef 0.02 (the ' 0.02 leg'; pin f971caf2)",
+   "committed_ladder_json": {
+    "computed_at": "2026-09-08T16:22:37.250737+00:00",
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 494,
+    "n_pairs_possible": 190,
+    "eval_sentinel_edges_dropped": null,
+    "pairs_by_source": null,
+    "newest_node_step": 74000016,
+    "newest_node_elo": 2057.3,
+    "second_newest_elo": 2047.1
+   },
+   "current_code_refit": {
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "eval_sentinel_edges_dropped": 47,
+    "pairs_by_source": {
+     "ladder": 190
+    },
+    "newest_node_step": 74000016,
+    "newest_node_elo": 1984.2,
+    "se_newest": 8.5,
+    "second_newest_step": 72000000,
+    "second_newest_elo": 1980.3,
+    "se_second_newest": 8.5,
+    "span_steps": [
+     36000000,
+     74000016
+    ]
+   },
+   "committed_minus_refit_newest": 73.1,
+   "nodes_current_code_refit": [
+    {
+     "step": 36000000,
+     "elo": 1954.5
+    },
+    {
+     "step": 38000016,
+     "elo": 1957.8
+    },
+    {
+     "step": 40000032,
+     "elo": 1966.9
+    },
+    {
+     "step": 42000000,
+     "elo": 1961.4
+    },
+    {
+     "step": 44000016,
+     "elo": 1969.9
+    },
+    {
+     "step": 46000032,
+     "elo": 1962.0
+    },
+    {
+     "step": 48000000,
+     "elo": 1977.2
+    },
+    {
+     "step": 50000016,
+     "elo": 1969.3
+    },
+    {
+     "step": 52000032,
+     "elo": 1993.5
+    },
+    {
+     "step": 54000000,
+     "elo": 1995.0
+    },
+    {
+     "step": 56000016,
+     "elo": 1965.4
+    },
+    {
+     "step": 58000032,
+     "elo": 1989.8
+    },
+    {
+     "step": 60000000,
+     "elo": 1983.3
+    },
+    {
+     "step": 62000016,
+     "elo": 1985.2
+    },
+    {
+     "step": 64000032,
+     "elo": 2000.2
+    },
+    {
+     "step": 66000000,
+     "elo": 1969.6
+    },
+    {
+     "step": 68000016,
+     "elo": 1987.3
+    },
+    {
+     "step": 70000032,
+     "elo": 1995.0
+    },
+    {
+     "step": 72000000,
+     "elo": 1980.3
+    },
+    {
+     "step": 74000016,
+     "elo": 1984.2
+    }
+   ],
+   "resolution_curve": [
+    {
+     "nodes": 4,
+     "newest_node_step": 42000000,
+     "newest_node_elo": 1989.8,
+     "se": 15.7,
+     "se_delta": 22.2,
+     "ci95_delta": 43.5,
+     "n_frozen_pairs": 6
+    },
+    {
+     "nodes": 6,
+     "newest_node_step": 46000032,
+     "newest_node_elo": 1979.7,
+     "se": 13.6,
+     "se_delta": 19.23,
+     "ci95_delta": 37.7,
+     "n_frozen_pairs": 15
+    },
+    {
+     "nodes": 8,
+     "newest_node_step": 50000016,
+     "newest_node_elo": 1993.5,
+     "se": 12.5,
+     "se_delta": 17.68,
+     "ci95_delta": 34.6,
+     "n_frozen_pairs": 28
+    },
+    {
+     "nodes": 10,
+     "newest_node_step": 54000000,
+     "newest_node_elo": 2007.5,
+     "se": 11.6,
+     "se_delta": 16.4,
+     "ci95_delta": 32.2,
+     "n_frozen_pairs": 45
+    },
+    {
+     "nodes": 12,
+     "newest_node_step": 58000032,
+     "newest_node_elo": 2002.3,
+     "se": 10.7,
+     "se_delta": 15.13,
+     "ci95_delta": 29.7,
+     "n_frozen_pairs": 66
+    },
+    {
+     "nodes": 16,
+     "newest_node_step": 66000000,
+     "newest_node_elo": 1973.9,
+     "se": 9.3,
+     "se_delta": 13.15,
+     "ci95_delta": 25.8,
+     "n_frozen_pairs": 120
+    },
+    {
+     "nodes": 20,
+     "newest_node_step": 74000016,
+     "newest_node_elo": 1984.2,
+     "se": 8.5,
+     "se_delta": 12.02,
+     "ci95_delta": 23.6,
+     "n_frozen_pairs": 190
+    }
+   ],
+   "slopes_newest_node_dropped": {
+    "nodes_used": 19,
+    "late_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": -0.32,
+     "se": 1.4378,
+     "t": -0.22,
+     "resid_rms": 12.029,
+     "span_Mstep": [
+      62.0,
+      72.0
+     ]
+    },
+    "middle_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 0.7543,
+     "se": 1.6708,
+     "t": 0.45,
+     "resid_rms": 13.979,
+     "span_Mstep": [
+      48.0,
+      58.0
+     ]
+    },
+    "all_nodes": {
+     "n": 19,
+     "slope_elo_per_Mstep": 0.8748,
+     "se": 0.2182,
+     "t": 4.01,
+     "resid_rms": 10.419,
+     "span_Mstep": [
+      36.0,
+      72.0
+     ]
+    },
+    "late_minus_middle": {
+     "delta": -1.0743,
+     "se": 2.2043,
+     "ci95": [
+      -5.395,
+      3.246
+     ],
+     "covers_zero": true
+    }
+   },
+   "adjacent_node_spread": {
+    "n": 19,
+    "max_abs_delta": 30.6,
+    "median_abs_delta": 8.5,
+    "mean_abs_delta": 12.4,
+    "caveat": "bounds WITHIN-run wobble only \u2014 it is dominated by early LEARNING and is NOT a run-to-run floor (registration sec 9.1)"
+   }
+  },
+  "v8control": {
+   "run": "ai_v8_03_zarch_control_0718",
+   "human_description": "the v8-line control (different architecture/obs/action era \u2014 SHAPE only, rule 4)",
+   "committed_ladder_json": {
+    "computed_at": "2026-07-22T04:04:17.307983+00:00",
+    "n_nodes": 10,
+    "n_frozen_pairs_measured": 45,
+    "n_pairs_possible": 45,
+    "eval_sentinel_edges_dropped": null,
+    "pairs_by_source": null,
+    "newest_node_step": 248000024,
+    "newest_node_elo": 2026.7,
+    "second_newest_elo": 2017.6
+   },
+   "current_code_refit": {
+    "n_nodes": 10,
+    "n_frozen_pairs_measured": 45,
+    "eval_sentinel_edges_dropped": 45,
+    "pairs_by_source": {
+     "ladder": 45
+    },
+    "newest_node_step": 248000024,
+    "newest_node_elo": 2022.3,
+    "se_newest": 8.9,
+    "second_newest_step": 242000001,
+    "second_newest_elo": 2007.0,
+    "se_second_newest": 8.8,
+    "span_steps": [
+     150858957,
+     248000024
+    ]
+   },
+   "committed_minus_refit_newest": 4.4,
+   "nodes_current_code_refit": [
+    {
+     "step": 150858957,
+     "elo": 1964.5
+    },
+    {
+     "step": 176000001,
+     "elo": 1962.9
+    },
+    {
+     "step": 184000012,
+     "elo": 1946.2
+    },
+    {
+     "step": 192000006,
+     "elo": 1988.6
+    },
+    {
+     "step": 198000000,
+     "elo": 1994.8
+    },
+    {
+     "step": 208000004,
+     "elo": 1987.7
+    },
+    {
+     "step": 210000012,
+     "elo": 2010.0
+    },
+    {
+     "step": 224000022,
+     "elo": 2012.8
+    },
+    {
+     "step": 242000001,
+     "elo": 2007.0
+    },
+    {
+     "step": 248000024,
+     "elo": 2022.3
+    }
+   ],
+   "resolution_curve": [
+    {
+     "nodes": 4,
+     "newest_node_step": 192000006,
+     "newest_node_elo": 2020.0,
+     "se": 14.5,
+     "se_delta": 20.51,
+     "ci95_delta": 40.2,
+     "n_frozen_pairs": 6
+    },
+    {
+     "nodes": 6,
+     "newest_node_step": 208000004,
+     "newest_node_elo": 2021.5,
+     "se": 12.3,
+     "se_delta": 17.39,
+     "ci95_delta": 34.1,
+     "n_frozen_pairs": 15
+    },
+    {
+     "nodes": 8,
+     "newest_node_step": 224000022,
+     "newest_node_elo": 2022.5,
+     "se": 10.9,
+     "se_delta": 15.41,
+     "ci95_delta": 30.2,
+     "n_frozen_pairs": 28
+    },
+    {
+     "nodes": 10,
+     "newest_node_step": 248000024,
+     "newest_node_elo": 2022.3,
+     "se": 8.9,
+     "se_delta": 12.59,
+     "ci95_delta": 24.7,
+     "n_frozen_pairs": 45
+    }
+   ],
+   "slopes_newest_node_dropped": {
+    "nodes_used": 9,
+    "late_third": {
+     "n": 3,
+     "slope_elo_per_Mstep": -0.1044,
+     "se": 0.1476,
+     "t": -0.71,
+     "resid_rms": 3.349,
+     "span_Mstep": [
+      210.0,
+      242.0
+     ]
+    },
+    "middle_third": {
+     "n": 3,
+     "slope_elo_per_Mstep": -0.123,
+     "se": 0.4622,
+     "t": -0.27,
+     "resid_rms": 5.283,
+     "span_Mstep": [
+      192.0,
+      208.0
+     ]
+    },
+    "all_nodes": {
+     "n": 9,
+     "slope_elo_per_Mstep": 0.6885,
+     "se": 0.2021,
+     "t": 3.41,
+     "resid_rms": 15.379,
+     "span_Mstep": [
+      150.859,
+      242.0
+     ]
+    },
+    "late_minus_middle": {
+     "delta": 0.0186,
+     "se": 0.4852,
+     "ci95": [
+      -0.932,
+      0.97
+     ],
+     "covers_zero": true
+    }
+   },
+   "adjacent_node_spread": {
+    "n": 9,
+    "max_abs_delta": 42.4,
+    "median_abs_delta": 7.1,
+    "mean_abs_delta": 13.4,
+    "caveat": "bounds WITHIN-run wobble only \u2014 it is dominated by early LEARNING and is NOT a run-to-run floor (registration sec 9.1)"
+   }
+  }
+ },
+ "cross_run": {
+  "armS_vs_winprob75M": {
+   "newest": {
+    "delta_elo": 52.4,
+    "se_delta": 12.31,
+    "ci95": [
+     28.3,
+     76.5
+    ],
+    "smallest_claimable_abs_delta": 69.1,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "second_newest": {
+    "delta_elo": 62.0,
+    "se_delta": 12.31,
+    "ci95": [
+     37.9,
+     86.1
+    ],
+    "smallest_claimable_abs_delta": 69.1,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "matched_count": [
+    20,
+    20
+   ],
+   "step_spans": [
+    [
+     22000032,
+     72000000
+    ],
+    [
+     36000000,
+     74000016
+    ]
+   ],
+   "label": "arm S minus the 0.02 leg",
+   "confounds": "DIFFERENT pin (6eb9c776 vs f971caf2), DIFFERENT --ent-coef (0.05 vs 0.02), DIFFERENT critic objective, and DIFFERENT step spans at the same node count (22-72M vs 36-74M). ladder.json is UNAFFECTED by the 2026-09-07 eval-sentinel regime boundary; eval/elo and win_rate_vs_pool are NOT and are not read here. This is NOT the pair's read."
+  },
+  "armS_vs_v8control": {
+   "newest": {
+    "delta_elo": 14.3,
+    "se_delta": 12.59,
+    "ci95": [
+     -10.4,
+     39.0
+    ],
+    "smallest_claimable_abs_delta": 69.7,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "second_newest": {
+    "delta_elo": 35.3,
+    "se_delta": 12.52,
+    "ci95": [
+     10.8,
+     59.8
+    ],
+    "smallest_claimable_abs_delta": 69.5,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "matched_count": [
+    20,
+    10
+   ],
+   "step_spans": [
+    [
+     22000032,
+     72000000
+    ],
+    [
+     150858957,
+     248000024
+    ]
+   ],
+   "label": "arm S minus the v8 control",
+   "confounds": "SHAPE ONLY (rule 4): different architecture, obs dim, action-space era, reward composition, clip range (0.10 vs 0.15) and ecology; 20 nodes over 22-72M against 10 nodes over 150.9-248.0M \u2014 a different DEPTH and a different COUNT. Both are far above the bot anchors, so a direct match is required before any gap is quoted as a difference. The Elo row below is printed for completeness and must NOT be quoted."
+  }
+ }
+}

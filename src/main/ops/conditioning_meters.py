@@ -180,17 +180,30 @@ STATE_DTYPE = np.dtype([("opponent", "U32"), ("opp_class", "U8"), ("battle", "U8
                         ("team", "U12"), ("true_wr", "f8"), ("n_games", "f8")])
 
 
-def extract_cycle(trace_dir: str) -> Tuple[np.ndarray, Dict[str, Any]]:
+def extract_cycle(trace_dir: str, *, v_column: str = "win_probs") -> Tuple[np.ndarray, Dict[str, Any]]:
     """One eval cycle -> a tidy per-STATE table, plus what was refused and why.
 
     One row per traced decision point that has a state and a real turn:
     ``opponent, opp_class, battle, y, turn, V, w, team, true_wr, n_games``.
 
-    ``V`` is the npz's ``win_probs`` (the QC below asserts it is the same column as ``values`` and
-    reports the largest disagreement); ``w`` is ``1 / capture_rate`` for that battle's outcome
-    class; ``true_wr`` is the manifest's own ``battles_won / battles_played`` — the cycle's TRUE
-    100-game win rate, not the loss-enriched traced one.
+    ``V`` is the npz column named by ``v_column``; ``w`` is ``1 / capture_rate`` for that battle's
+    outcome class; ``true_wr`` is the manifest's own ``battles_won / battles_played`` — the cycle's
+    TRUE 100-game win rate, not the loss-enriched traced one.
+
+    🚨 ``v_column`` exists because ON A SHAPED-CRITIC RUN ``values`` AND ``win_probs`` ARE DIFFERENT
+    READOUTS. On every win-prob arm they are the same tensor and
+    ``max_abs_values_minus_winprobs`` reads ~0; under ``--critic shaped`` the critic is the
+    distributional E[Z] in raw shaped-return units (``values``) while ``win_probs`` is the
+    AUXILIARY head at ``--win-prob-coef``, and that QC scalar is large BY CONSTRUCTION. The
+    default is ``win_probs``, which keeps every banked read byte-identical; pass ``values`` to read
+    a shaped arm's ACTUAL critic.
+
+    ⚠️ Only RANK-based rows (the AUCs) survive the switch unchanged. Anything that needs V on a
+    probability scale — the calibration slope/intercept, and every ``gate.*`` reliability row —
+    is undefined on a raw shaped-return column, and the returned meta says so.
     """
+    if v_column not in ("win_probs", "values"):
+        raise ConditioningRefusal(f"v_column must be 'win_probs' or 'values', got {v_column!r}")
     from main.scaffolding_gauge import opponent_class
 
     man_path = os.path.join(trace_dir, "eval_manifest.json")
@@ -247,9 +260,11 @@ def extract_cycle(trace_dir: str) -> Tuple[np.ndarray, Dict[str, Any]]:
                         if "win_probs" not in z:
                             refusals.append(f"{opp}/{base}: npz carries no win_probs column")
                             continue
-                        wp = np.asarray(z["win_probs"], dtype=float)
+                        wp_rec = np.asarray(z["win_probs"], dtype=float)
                         hs = np.asarray(z["has_state"])
-                        vals = np.asarray(z["values"], dtype=float) if "values" in z else wp
+                        vals = np.asarray(z["values"], dtype=float) if "values" in z else wp_rec
+                        # `wp` is the column the ROWS are built from; `wp_rec`/`vals` stay the QC pair.
+                        wp = vals if v_column == "values" else wp_rec
                 except (OSError, ValueError) as exc:
                     refusals.append(f"{opp}/{base}: npz unreadable ({exc})")
                     continue
@@ -258,8 +273,8 @@ def extract_cycle(trace_dir: str) -> Tuple[np.ndarray, Dict[str, Any]]:
                     refusals.append(f"{opp}/{base}: npz/invocation length mismatch "
                                     f"({wp.size} vs {len(invs)})")
                     continue
-                if wp.size:
-                    vmax = max(vmax, float(np.max(np.abs(vals - wp))))
+                if wp_rec.size:
+                    vmax = max(vmax, float(np.max(np.abs(vals - wp_rec))))
                 turns = np.array([int(i.get("turn", -1)) for i in invs])
                 keep = (np.asarray(hs) == 1) & (turns > 0)
                 tid = team_id(summ)
@@ -293,6 +308,16 @@ def extract_cycle(trace_dir: str) -> Tuple[np.ndarray, Dict[str, Any]]:
             "n_teams": int(np.unique(arr["team"]).size),
             "n_draw_battles_excluded": n_draw_battles,
             "max_abs_values_minus_winprobs": vmax,
+            "v_column": v_column,
+            "v_column_note": (
+                "V was read from the npz's `values` column — the ACTUAL critic on a --critic "
+                "shaped run (distributional E[Z] in raw shaped-return units). Rank-based rows "
+                "(the AUCs) are valid; the calibration family and every gate.* reliability row "
+                "are NOT defined on this scale and must not be read from this frame."
+                if v_column == "values" else
+                "V was read from the npz's `win_probs` column. On a --critic winprob run that IS "
+                "the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the "
+                "value function."),
             "opponents": per_opp, "refusals": refusals}
     return arr, meta
 
@@ -950,6 +975,7 @@ def _cap_states(arr: np.ndarray, mask: np.ndarray, cap: int, seed: int) -> np.nd
 def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int = BOOT_SEED,
                        ladder: str = "refit",
                        frame: Optional[Tuple[np.ndarray, Dict[str, Any]]] = None,
+                       v_column: str = "win_probs",
                        say: Callable[[str], None] = lambda _m: None) -> Dict[str, Any]:
     """Every conditioning meter for ONE run at ONE cycle, with its raw bootstrap draws.
 
@@ -964,7 +990,7 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     subsample touches) is unaffected.
     """
     trace_dir = os.path.join(run_dir, "eval_traces", f"step_{int(step)}")
-    arr, meta = extract_cycle(trace_dir) if frame is None else frame
+    arr, meta = extract_cycle(trace_dir, v_column=v_column) if frame is None else frame
     b = rollup(arr)
     opps, cid = cell_index(b)
     n_cells = len(opps)
@@ -1308,7 +1334,9 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
                                         if k in ("n_cells", "n_battles",
                                                  "median_battles_per_cell", "sd_V", "sd_y",
                                                  "noise_V", "noise_y")},
-                  "recorded_v_note": recorded_v_note()},
+                  "recorded_v_note": recorded_v_note(),
+                  "v_column": meta.get("v_column", "win_probs"),
+                  "v_column_note": meta.get("v_column_note", "")},
         "spread": {"t1_3": sc_t13_0, "all": sc_all0, "team_t1_3": ts0,
                    **{w: sc_late0[w] for w in sc_late0},
                    "optimal": {w: sc_opt0[w] for w in sc_opt0}},

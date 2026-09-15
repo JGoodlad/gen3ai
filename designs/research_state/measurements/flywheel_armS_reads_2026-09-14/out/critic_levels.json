@@ -1,0 +1,808 @@
+{
+ "generated_at": "2026-09-14T16:36:32.270091-07:00",
+ "arm": "ai_v13_01_flywheel_shaped (arm S \u2014 the flywheel pair's SHAPED arm)",
+ "step_read": 74000016,
+ "step_note": "the run's LAST EVALUATED step. The final weights are at 75,005,952 but the run has no eval_traces cycle there, and eval_trace_gen deliberately replays the bit-exact `eval_traces/step_<N>/snapshot.zip` that played the live cycle rather than a checkpoint that merely shares a step.",
+ "floors": {
+  "first_draw": 0.022,
+  "second_draw": 0.0245
+ },
+ "floor_provenance": "v6 two-pair control-vs-control floors measured at 10M, four-node era; imported to 75M for want of anything at this depth",
+ "draws": {
+  "draw1": {
+   "manifest": {
+    "seed": 20260910,
+    "games_per_opponent": 800,
+    "sentinels_used": 3,
+    "sentinel_steps": [
+     22000032,
+     42000000,
+     72000000
+    ],
+    "capture": "ALL",
+    "battles_played": 9600,
+    "complete": true,
+    "eval_sentinel_greedy": true,
+    "eval_sentinel_greedy_source": "recorded",
+    "checkpoint_sha": "1f08931fb04ad151",
+    "reproducible": true,
+    "wall_seconds": 5051.5,
+    "impl": "rust"
+   },
+   "S-WP": {
+    "label": "S-WP \u2014 the AUXILIARY win-prob head at --win-prob-coef 0.05 (a DIAGNOSTIC, not the value function); this is the column the v6 tool reads by DEFAULT",
+    "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/traces/draw1",
+    "step": 74000016,
+    "v_column": "win_probs",
+    "conditioning": {
+     "cond.opp_class_auc.t4_10": {
+      "value": 0.76709,
+      "ci": [
+       0.75694,
+       0.77634
+      ]
+     },
+     "cond.opp_class_auc.t1_3": {
+      "value": 0.57566,
+      "ci": [
+       0.56383,
+       0.58679
+      ]
+     },
+     "cond.opp_class_auc.t1": {
+      "value": 0.49078,
+      "ci": [
+       0.47761,
+       0.50467
+      ]
+     },
+     "cond.calibration_slope.all": {
+      "value": 1.30969,
+      "ci": [
+       1.24613,
+       1.37247
+      ]
+     },
+     "cond.calibration_intercept.all": {
+      "value": 0.04481,
+      "ci": [
+       -0.03305,
+       0.12539
+      ]
+     },
+     "cond.calibration_slope.t1_3": {
+      "value": 1.008,
+      "ci": [
+       0.89964,
+       1.12796
+      ]
+     },
+     "cond.spread_ratio.t4_10": {
+      "value": 0.30555,
+      "ci": [
+       0.28588,
+       0.32676
+      ]
+     },
+     "cond.spread_ratio.all": {
+      "value": 0.49047,
+      "ci": [
+       0.45959,
+       0.52209
+      ]
+     }
+    },
+    "frame": {
+     "n_states": 274789,
+     "n_battles": 9549,
+     "n_teams_seen": 602,
+     "max_abs_values_minus_winprobs": 75.12425882881507,
+     "v_column": "win_probs",
+     "v_column_note": "V was read from the npz's `win_probs` column. On a --critic winprob run that IS the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the value function.",
+     "n_team_cells": 600
+    },
+    "omitted": {
+     "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+    },
+    "gate": {
+     "gate.resolution.bot": {
+      "value": 0.01891,
+      "ci": [
+       0.01542,
+       0.02242
+      ],
+      "n_states": 184441,
+      "n_battles": 7200
+     },
+     "gate.resolution.all": {
+      "value": 0.05505,
+      "ci": [
+       0.0514,
+       0.05935
+      ],
+      "n_states": 277139,
+      "n_battles": 9600
+     },
+     "gate.resolution.pool": {
+      "value": 0.05877,
+      "ci": [
+       0.05329,
+       0.06526
+      ],
+      "n_states": 92698,
+      "n_battles": 2400
+     },
+     "gate.ece.all": {
+      "value": 0.01777,
+      "ci": [
+       0.01311,
+       0.02317
+      ],
+      "n_states": 277139,
+      "n_battles": 9600
+     },
+     "gate.ece.bot": {
+      "value": 0.07237,
+      "ci": [
+       0.06569,
+       0.07914
+      ],
+      "n_states": 184441,
+      "n_battles": 7200
+     },
+     "gate.skill.bot": {
+      "value": 0.1219,
+      "ci": [
+       0.06797,
+       0.16524
+      ],
+      "n_states": 184441,
+      "n_battles": 7200
+     },
+     "gate.reliability.all": {
+      "value": 0.00053,
+      "ci": [
+       0.00032,
+       0.0009
+      ],
+      "n_states": 277139,
+      "n_battles": 9600
+     }
+    },
+    "gate_note": "\ud83d\udea8 the gate family is computed by the scaffolding gauge on the npz's `win_probs` column ALWAYS \u2014 a Murphy decomposition of a probability forecast has no meaning on a raw shaped-return column. On arm S every gate row is therefore an S-WP row (the AUXILIARY head), whatever the conditioning block was asked to read.",
+    "gate_coverage": {
+     "per_step": {
+      "n_battles": 9600,
+      "n_states": 277139
+     },
+     "n_traces_seen": 9600,
+     "n_traces_read": 9600,
+     "n_traces_no_npz": 0,
+     "n_traces_no_winprob": 0,
+     "selection_note": {
+      "per_opponent": {
+       "aggressive": {
+        "true_win_rate": 0.915,
+        "captured_win_rate": 0.915,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "aggressive_v2": {
+        "true_win_rate": 0.90125,
+        "captured_win_rate": 0.90125,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "heuristic": {
+        "true_win_rate": 0.91375,
+        "captured_win_rate": 0.91375,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "heuristic2": {
+        "true_win_rate": 0.9,
+        "captured_win_rate": 0.9,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "sentinel_0": {
+        "true_win_rate": 0.5775,
+        "captured_win_rate": 0.5775,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "sentinel_1": {
+        "true_win_rate": 0.52625,
+        "captured_win_rate": 0.52625,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "sentinel_2": {
+        "true_win_rate": 0.495,
+        "captured_win_rate": 0.495,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "setup_sweep": {
+        "true_win_rate": 0.92875,
+        "captured_win_rate": 0.92875,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "setup_sweep_v2": {
+        "true_win_rate": 0.91,
+        "captured_win_rate": 0.91,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "staller": {
+        "true_win_rate": 0.9325,
+        "captured_win_rate": 0.9325,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "staller_v2": {
+        "true_win_rate": 0.94375,
+        "captured_win_rate": 0.94375,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       }
+      },
+      "dropped": {
+       "random": "the quota captured only one outcome class (800 wins of 800 battles) \u2014 nothing to reweight"
+      },
+      "n_rows_zeroed": 20040
+     }
+    }
+   },
+   "S-V": {
+    "label": "S-V \u2014 the ACTUAL critic: the distributional E[Z] in raw shaped-return units (PopArt ON, gamma 0.9999). The treatment's own row",
+    "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/traces/draw1",
+    "step": 74000016,
+    "v_column": "values",
+    "conditioning": {
+     "cond.opp_class_auc.t4_10": {
+      "value": 0.76832,
+      "ci": [
+       0.75875,
+       0.77749
+      ]
+     },
+     "cond.opp_class_auc.t1_3": {
+      "value": 0.58936,
+      "ci": [
+       0.57739,
+       0.60053
+      ]
+     },
+     "cond.opp_class_auc.t1": {
+      "value": 0.49591,
+      "ci": [
+       0.48317,
+       0.5098
+      ]
+     },
+     "cond.calibration_slope.all": {
+      "value": 0.16297,
+      "ci": [
+       0.15579,
+       0.17002
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.calibration_intercept.all": {
+      "value": 1.39759,
+      "ci": [
+       1.34392,
+       1.44864
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.calibration_slope.t1_3": {
+      "value": 0.05725,
+      "ci": [
+       0.04961,
+       0.06572
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.spread_ratio.t4_10": {
+      "value": 16.67129,
+      "ci": [
+       15.65111,
+       17.75735
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.spread_ratio.all": {
+      "value": 19.7163,
+      "ci": [
+       18.43125,
+       21.01728
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     }
+    },
+    "frame": {
+     "n_states": 274789,
+     "n_battles": 9549,
+     "n_teams_seen": 602,
+     "max_abs_values_minus_winprobs": 75.12425882881507,
+     "v_column": "values",
+     "v_column_note": "V was read from the npz's `values` column \u2014 the ACTUAL critic on a --critic shaped run (distributional E[Z] in raw shaped-return units). Rank-based rows (the AUCs) are valid; the calibration family and every gate.* reliability row are NOT defined on this scale and must not be read from this frame.",
+     "n_team_cells": 600
+    },
+    "omitted": {
+     "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+    }
+   }
+  },
+  "draw2": {
+   "manifest": {
+    "seed": 20260911,
+    "games_per_opponent": 800,
+    "sentinels_used": 3,
+    "sentinel_steps": [
+     22000032,
+     42000000,
+     72000000
+    ],
+    "capture": "ALL",
+    "battles_played": 9600,
+    "complete": true,
+    "eval_sentinel_greedy": true,
+    "eval_sentinel_greedy_source": "recorded",
+    "checkpoint_sha": "1f08931fb04ad151",
+    "reproducible": true,
+    "wall_seconds": 4976.2,
+    "impl": "rust"
+   },
+   "S-WP": {
+    "label": "S-WP \u2014 the AUXILIARY win-prob head at --win-prob-coef 0.05 (a DIAGNOSTIC, not the value function); this is the column the v6 tool reads by DEFAULT",
+    "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/traces/draw2",
+    "step": 74000016,
+    "v_column": "win_probs",
+    "conditioning": {
+     "cond.opp_class_auc.t4_10": {
+      "value": 0.74943,
+      "ci": [
+       0.73908,
+       0.75947
+      ]
+     },
+     "cond.opp_class_auc.t1_3": {
+      "value": 0.55389,
+      "ci": [
+       0.54229,
+       0.56508
+      ]
+     },
+     "cond.opp_class_auc.t1": {
+      "value": 0.51284,
+      "ci": [
+       0.5,
+       0.52599
+      ]
+     },
+     "cond.calibration_slope.all": {
+      "value": 1.27427,
+      "ci": [
+       1.21784,
+       1.33558
+      ]
+     },
+     "cond.calibration_intercept.all": {
+      "value": 0.0697,
+      "ci": [
+       -0.00568,
+       0.14774
+      ]
+     },
+     "cond.calibration_slope.t1_3": {
+      "value": 0.91552,
+      "ci": [
+       0.80219,
+       1.02519
+      ]
+     },
+     "cond.spread_ratio.t4_10": {
+      "value": 0.28976,
+      "ci": [
+       0.27061,
+       0.31124
+      ]
+     },
+     "cond.spread_ratio.all": {
+      "value": 0.47946,
+      "ci": [
+       0.4507,
+       0.51132
+      ]
+     }
+    },
+    "frame": {
+     "n_states": 275207,
+     "n_battles": 9542,
+     "n_teams_seen": 602,
+     "max_abs_values_minus_winprobs": 119.05630125105381,
+     "v_column": "win_probs",
+     "v_column_note": "V was read from the npz's `win_probs` column. On a --critic winprob run that IS the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the value function.",
+     "n_team_cells": 601
+    },
+    "omitted": {
+     "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+    },
+    "gate": {
+     "gate.resolution.bot": {
+      "value": 0.02129,
+      "ci": [
+       0.01732,
+       0.02622
+      ],
+      "n_states": 182985,
+      "n_battles": 7200
+     },
+     "gate.resolution.all": {
+      "value": 0.05812,
+      "ci": [
+       0.05403,
+       0.06347
+      ],
+      "n_states": 278912,
+      "n_battles": 9600
+     },
+     "gate.resolution.pool": {
+      "value": 0.05965,
+      "ci": [
+       0.05387,
+       0.06635
+      ],
+      "n_states": 95927,
+      "n_battles": 2400
+     },
+     "gate.ece.all": {
+      "value": 0.01537,
+      "ci": [
+       0.01191,
+       0.02131
+      ],
+      "n_states": 278912,
+      "n_battles": 9600
+     },
+     "gate.ece.bot": {
+      "value": 0.07386,
+      "ci": [
+       0.06739,
+       0.08138
+      ],
+      "n_states": 182985,
+      "n_battles": 7200
+     },
+     "gate.skill.bot": {
+      "value": 0.14183,
+      "ci": [
+       0.08733,
+       0.19208
+      ],
+      "n_states": 182985,
+      "n_battles": 7200
+     },
+     "gate.reliability.all": {
+      "value": 0.00048,
+      "ci": [
+       0.00025,
+       0.00098
+      ],
+      "n_states": 278912,
+      "n_battles": 9600
+     }
+    },
+    "gate_note": "\ud83d\udea8 the gate family is computed by the scaffolding gauge on the npz's `win_probs` column ALWAYS \u2014 a Murphy decomposition of a probability forecast has no meaning on a raw shaped-return column. On arm S every gate row is therefore an S-WP row (the AUXILIARY head), whatever the conditioning block was asked to read.",
+    "gate_coverage": {
+     "per_step": {
+      "n_battles": 9600,
+      "n_states": 278912
+     },
+     "n_traces_seen": 9600,
+     "n_traces_read": 9600,
+     "n_traces_no_npz": 0,
+     "n_traces_no_winprob": 0,
+     "selection_note": {
+      "per_opponent": {
+       "aggressive": {
+        "true_win_rate": 0.93625,
+        "captured_win_rate": 0.93625,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "aggressive_v2": {
+        "true_win_rate": 0.88375,
+        "captured_win_rate": 0.88375,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "heuristic": {
+        "true_win_rate": 0.9225,
+        "captured_win_rate": 0.9225,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "heuristic2": {
+        "true_win_rate": 0.88375,
+        "captured_win_rate": 0.88375,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "sentinel_0": {
+        "true_win_rate": 0.58375,
+        "captured_win_rate": 0.58375,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "sentinel_1": {
+        "true_win_rate": 0.5475,
+        "captured_win_rate": 0.5475,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "sentinel_2": {
+        "true_win_rate": 0.475,
+        "captured_win_rate": 0.475,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "setup_sweep": {
+        "true_win_rate": 0.915,
+        "captured_win_rate": 0.915,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "setup_sweep_v2": {
+        "true_win_rate": 0.90625,
+        "captured_win_rate": 0.90625,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "staller": {
+        "true_win_rate": 0.9225,
+        "captured_win_rate": 0.9225,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       },
+       "staller_v2": {
+        "true_win_rate": 0.9425,
+        "captured_win_rate": 0.9425,
+        "w_win": 1.0,
+        "w_loss": 1.0,
+        "n_battles": 800
+       }
+      },
+      "dropped": {
+       "random": "the quota captured only one outcome class (800 wins of 800 battles) \u2014 nothing to reweight"
+      },
+      "n_rows_zeroed": 19478
+     }
+    }
+   },
+   "S-V": {
+    "label": "S-V \u2014 the ACTUAL critic: the distributional E[Z] in raw shaped-return units (PopArt ON, gamma 0.9999). The treatment's own row",
+    "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/armS_reads/traces/draw2",
+    "step": 74000016,
+    "v_column": "values",
+    "conditioning": {
+     "cond.opp_class_auc.t4_10": {
+      "value": 0.75791,
+      "ci": [
+       0.74779,
+       0.76794
+      ]
+     },
+     "cond.opp_class_auc.t1_3": {
+      "value": 0.56668,
+      "ci": [
+       0.5546,
+       0.57802
+      ]
+     },
+     "cond.opp_class_auc.t1": {
+      "value": 0.50851,
+      "ci": [
+       0.49567,
+       0.52232
+      ]
+     },
+     "cond.calibration_slope.all": {
+      "value": 0.16094,
+      "ci": [
+       0.15459,
+       0.16801
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.calibration_intercept.all": {
+      "value": 1.38697,
+      "ci": [
+       1.33766,
+       1.44152
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.calibration_slope.t1_3": {
+      "value": 0.05086,
+      "ci": [
+       0.04269,
+       0.05903
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.spread_ratio.t4_10": {
+      "value": 15.66511,
+      "ci": [
+       14.6948,
+       16.73268
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     },
+     "cond.spread_ratio.all": {
+      "value": 19.2463,
+      "ci": [
+       18.02244,
+       20.55994
+      ],
+      "NOT_READABLE": "this row needs V on a PROBABILITY scale \u2014 the calibration family regresses on logit(V) and the spread rows are in V's own units. On the raw shaped-return column the number is arithmetic, not a measurement. Read the S-WP row instead."
+     }
+    },
+    "frame": {
+     "n_states": 275207,
+     "n_battles": 9542,
+     "n_teams_seen": 602,
+     "max_abs_values_minus_winprobs": 119.05630125105381,
+     "v_column": "values",
+     "v_column_note": "V was read from the npz's `values` column \u2014 the ACTUAL critic on a --critic shaped run (distributional E[Z] in raw shaped-return units). Rank-based rows (the AUCs) are valid; the calibration family and every gate.* reliability row are NOT defined on this scale and must not be read from this frame.",
+     "n_team_cells": 601
+    },
+    "omitted": {
+     "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+    }
+   }
+  }
+ },
+ "eval_draw_spread": {
+  "S-WP|cond.opp_class_auc.t4_10": {
+   "draw1": 0.76709,
+   "draw2": 0.74943,
+   "abs_draw_spread": 0.01766
+  },
+  "S-WP|cond.opp_class_auc.t1_3": {
+   "draw1": 0.57566,
+   "draw2": 0.55389,
+   "abs_draw_spread": 0.02177
+  },
+  "S-WP|cond.opp_class_auc.t1": {
+   "draw1": 0.49078,
+   "draw2": 0.51284,
+   "abs_draw_spread": 0.02206
+  },
+  "S-WP|cond.calibration_slope.all": {
+   "draw1": 1.30969,
+   "draw2": 1.27427,
+   "abs_draw_spread": 0.03542
+  },
+  "S-WP|cond.calibration_intercept.all": {
+   "draw1": 0.04481,
+   "draw2": 0.0697,
+   "abs_draw_spread": 0.02489
+  },
+  "S-WP|cond.calibration_slope.t1_3": {
+   "draw1": 1.008,
+   "draw2": 0.91552,
+   "abs_draw_spread": 0.09248
+  },
+  "S-WP|cond.spread_ratio.t4_10": {
+   "draw1": 0.30555,
+   "draw2": 0.28976,
+   "abs_draw_spread": 0.01579
+  },
+  "S-WP|cond.spread_ratio.all": {
+   "draw1": 0.49047,
+   "draw2": 0.47946,
+   "abs_draw_spread": 0.01101
+  },
+  "S-WP|gate.resolution.bot": {
+   "draw1": 0.01891,
+   "draw2": 0.02129,
+   "abs_draw_spread": 0.00238
+  },
+  "S-WP|gate.resolution.all": {
+   "draw1": 0.05505,
+   "draw2": 0.05812,
+   "abs_draw_spread": 0.00307
+  },
+  "S-WP|gate.resolution.pool": {
+   "draw1": 0.05877,
+   "draw2": 0.05965,
+   "abs_draw_spread": 0.00088
+  },
+  "S-WP|gate.ece.all": {
+   "draw1": 0.01777,
+   "draw2": 0.01537,
+   "abs_draw_spread": 0.0024
+  },
+  "S-WP|gate.ece.bot": {
+   "draw1": 0.07237,
+   "draw2": 0.07386,
+   "abs_draw_spread": 0.00149
+  },
+  "S-WP|gate.skill.bot": {
+   "draw1": 0.1219,
+   "draw2": 0.14183,
+   "abs_draw_spread": 0.01993
+  },
+  "S-WP|gate.reliability.all": {
+   "draw1": 0.00053,
+   "draw2": 0.00048,
+   "abs_draw_spread": 5e-05
+  },
+  "S-V|cond.opp_class_auc.t4_10": {
+   "draw1": 0.76832,
+   "draw2": 0.75791,
+   "abs_draw_spread": 0.01041
+  },
+  "S-V|cond.opp_class_auc.t1_3": {
+   "draw1": 0.58936,
+   "draw2": 0.56668,
+   "abs_draw_spread": 0.02268
+  },
+  "S-V|cond.opp_class_auc.t1": {
+   "draw1": 0.49591,
+   "draw2": 0.50851,
+   "abs_draw_spread": 0.0126
+  },
+  "S-V|cond.calibration_slope.all": {
+   "draw1": 0.16297,
+   "draw2": 0.16094,
+   "abs_draw_spread": 0.00203
+  },
+  "S-V|cond.calibration_intercept.all": {
+   "draw1": 1.39759,
+   "draw2": 1.38697,
+   "abs_draw_spread": 0.01062
+  },
+  "S-V|cond.calibration_slope.t1_3": {
+   "draw1": 0.05725,
+   "draw2": 0.05086,
+   "abs_draw_spread": 0.00639
+  },
+  "S-V|cond.spread_ratio.t4_10": {
+   "draw1": 16.67129,
+   "draw2": 15.66511,
+   "abs_draw_spread": 1.00618
+  },
+  "S-V|cond.spread_ratio.all": {
+   "draw1": 19.7163,
+   "draw2": 19.2463,
+   "abs_draw_spread": 0.47
+  }
+ }
+}
