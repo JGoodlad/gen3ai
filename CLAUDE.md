@@ -249,7 +249,7 @@ python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoi
 
 **Defaults worth knowing:** `--use-bridge` is **`rust`** (serverless — no Showdown server needed for training or eval); `--compile-opponents` and `--compile-trainer` are **ON** (the latter auto-on for cuda, and it **drops the ObservationDebugger**); `--critic` is `shaped`. Checkpoints land in `models/run_<ts>/checkpoints/`.
 
-**Offline meters** (no training, nothing written under `models/`): `main.elo` · `main.untaught_meter` · `main.critic_gate` · `main.exploitability` · `main.scaffolding_gauge` · `main.capacity` · `main.lineage` · `main.dose` · `main.sidecar_audit` · `main.baselines` · `main.tb_curate`.
+**Offline meters** (no training, nothing written under `models/`): `main.elo` · `main.untaught_meter` · `main.critic_gate` · `main.exploitability` · `main.scaffolding_gauge` · `main.capacity` · `main.lineage` · `main.dose` · `main.sidecar_audit` · `main.baselines` · `main.tb_curate` · `main.anchors` *(this one PLAYS — see the LADDER block)*.
 
 **LIVE-run instruments are a different tier — `main.ops.*` and `scripts/ops/`**, and reading a live
 arm through an offline meter is not the same operation: they read TensorBoard events, the launcher
@@ -273,7 +273,11 @@ python3 src/main/play.py --mode selfplay --port 9017        # 8000/8001 are REFU
 PS_PASSWORD=… python3 src/main/play.py --mode ladder --server official \
   --model models/<run>/final_model.zip --username <acct> --n-battles 20
 python3 src/main/ladder_drift_scan.py --n 200               # 🚨 RUN BEFORE ANY LIVE SESSION
+python -m main.anchors --model models/<run> --opponent metamon:SmallRL \
+  --regime greedy --teamset away --games 100 --out <dir>   # an EXTERNAL-ANCHOR read
 ```
+
+🚨 **An EXTERNAL-ANCHOR read is `python -m main.anchors`, and its procedure is [`designs/ops/EXTERNAL_ANCHORS_SOP.md`](designs/ops/EXTERNAL_ANCHORS_SOP.md)** — the three tiers, the greedy-vs-greedy rule and why (T = 1.0 perturbs `SmallRL` at 35% of decisions and `SyntheticRLV2` at 12%, so it is not one regime), and the standing numbers. It starts its OWN Showdown server on a 9500–9599 port (8000/8001 refused in code) and stops it by PID. **A number never leaves it without its regime.**
 
 🚨 **A WEBSOCKET GAME MUST END WHERE A TRAINING EPISODE ENDS.** `play.py --forfeit-turn-limit` defaults to `agents.training.stall.StallConfig().threshold` (== `MAX_TURNS`, `gen3_deadline_clock_v1`) and is PRINTED at startup — an outside opponent that stalls past it is forfeited exactly as the trainer would, so a head-to-head measures the agent we train. Lower it for a deliberately shorter series; raising it does not. Pinned by `src/main/play_forfeit_limit_test.py`.
 

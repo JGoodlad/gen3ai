@@ -1,0 +1,43 @@
+{
+  "_README": [
+    "WHERE THE EXTERNAL ANCHOR OPPONENTS LIVE ON THIS BOX.",
+    "Read by src/main/anchors/config.py; every value is overridable by an env var (the env var",
+    "name for each key is printed by `python -m main.anchors --show-config`). This file exists",
+    "because `src/utils/paths_test.py` forbids a /home/... literal anywhere under src/ — an",
+    "absolute path that is TRUE ON ONE BOX belongs in a config, not in a module.",
+    "Neither checkout is inside this repo and neither is ours to pin: record the commit that",
+    "answered, which `python -m main.anchors` does on every row it writes.",
+    "Full procedure: designs/ops/EXTERNAL_ANCHORS_SOP.md"
+  ],
+  "showdown": {
+    "node": "node",
+    "port_range": [9500, 9599]
+  },
+  "opponents": {
+    "metamon": {
+      "checkout": "/home/goodlad/dev/metamon",
+      "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
+      "cache_dir": "/home/goodlad/dev/metamon/cache",
+      "agents": {
+        "SmallRL": {"checkpoint": 40, "params": 13938567},
+        "SyntheticRLV2": {"checkpoint": 48, "params": 200894911}
+      },
+      "team_sets": {
+        "home": "gen3ai_pool",
+        "away": "competitive"
+      }
+    },
+    "foulplay": {
+      "checkout": "/home/goodlad/dev/foul-play",
+      "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+      "team_dirs": {
+        "home": "gen3/ou/gen3ai_pool",
+        "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+      }
+    }
+  },
+  "our_team_sources": {
+    "home": {"kind": "pool"},
+    "away": {"kind": "dir", "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"}
+  }
+}
