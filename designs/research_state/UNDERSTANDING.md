@@ -418,7 +418,7 @@ existence proof on our own simulator and teams, with the caveat that Foul Play's
 knowledge as much as its search — the two axes are separable (smaller budget; set prediction off) and unread.
 [ledger 2026-09-14 · *MEASUREMENT (MAJOR) · FOUL PLAY DE-RISKED*]
 
-### 3.2 Reading an ELO — five rules
+### 3.2 Reading an ELO — six rules
 
 1. The headline is `<run>/snapshot_ladder/ladder.json` (dense, ±10), never `eval/elo` (±29).
 2. A rating is only final once the run is — BT re-solves every node on every add and the newest is
@@ -441,6 +441,7 @@ knowledge as much as its search — the two axes are separable (smaller budget; 
    entirely. Evidence: VERIFIED (ledger 2026-09-07 · *dense_reuse*, and the RECIPE CHANGE entry of
    the same date). Under the new regime the ladder also REUSES the pairs a cycle already measured
    (≈500 battles/promotion) — provenance rides in `games.jsonl` as `source: "eval_cycle"`.
+6. **The bot frame is PRECISE and WRONG near the frontier.** [MEASURED, `elo_calibration_external_anchors_2026-09-14`, 4,000 games] The nine pinned bots' individual edges to one external opponent imply ratings from 1775 to 2049 — 274 Elo of disagreement against a fitted se of 9.5 — and the bot frame alone orders Metamon's 15M model ABOVE its 200M model while 200 direct games say the opposite by +96. External anchors on the scale (`SmallRL` 1940 ± 9.5, `SyntheticRLV2` 1983 ± 9.7, level with the 75M win-prob run's refit 1984.6 and below arm S's 2034.6) buy no precision (se −8.6 %; newest-node inflation unchanged — it is a property of BT re-solving as nodes are added) but buy ACCURACY where the frame lies: the least-connected node, a 10M control with 6 dense pairs, moved −42 Elo. Consequence: `metamon:SmallRL` (100 games, ~2.5 min, one torch thread per peer) is a standing per-promotion FALSIFICATION read beside the ladder headline; `SyntheticRLV2` at era gates; a bot-anchored number on a SHORT run is the least trustworthy number the scale produces. The 2026-06-06 bot calibration itself is corroborated (largest move 15.4 Elo).
 
 ### 3.3 The untaught meter
 

@@ -18572,3 +18572,46 @@ byte-exact on the real checkpoint.
 ---
 
 **Orchestrator's reading and DECISION.** Three things are now established that were guesses this morning. (1) **The head is the deficit, not the trunk:** pairwise accuracy is a rank statistic, so a frozen trunk lifting it from chance to 0.60 under a plain BCE on counterfactual successors means the ordering was in `value_pooled` and the on-policy PPO stream never asked the head for it. (2) **The loss form is not the lever** — the pairwise ranking term is inside its interval at every coefficient and negative on points; the DATA (successor states one move apart, with outcomes, under shared dice) is. (3) **0.60 on recorded states does not pay as a leaf** on 100-pair cells, and the cell itself cannot resolve a 4-point effect (its own control moved +0.040 between windows), so "does not transfer" and "not enough" are not separated. **The next GPU arm after `ai_v13_02_flywheel_winprob` is the FORK arm:** contested-state forks at ~2 % of decisions, THREE branches (top-2 policy candidates + one uniformly random legal action — the policy's top-1/top-2 are outcome-interchangeable at 0.708/0.708 and the random branch costs 2.9 pp with a 4.5 % blind-spot rate, so the random branch is where the new information is), common random numbers on dice AND policy draws (the `cflabels` factory paired only the dice — a concrete account of its null), continuations INTO the PPO buffer with the fork step masked and the prefix counted once, plain BCE, NO ranking term. **Registered endpoints, in order:** held-out pairwise accuracy on fresh contested forks vs `ctrl10M`'s 0.517 (bar: the CI clears 0.60, the refit's level, since a head trained on-stream should at least match an offline refit); the mirror battery at ≥400 pairs with a contemporaneous control (the 100-pair cell is retired for L2 claims); `cond.opp_class_auc.t4_10` as the guard. The paired ranking loss is CLOSED as a lever at this depth. Tag: **MEASURED (MAJOR) · head ranks at CHANCE · trunk holds the ordering · data is the fix · nine heads, no leaf · FORK ARM registered**.
+
+### 2026-09-14 · MEASUREMENT (MAJOR) · TWO EXTERNAL ANCHORS ON THE BOT-ANCHORED SCALE — `metamon:SmallRL` **1940.0 ± 9.5**, `metamon:SyntheticRLV2` **1983.4 ± 9.7** (level with `ai_v12_02`@74M refit 1984.6; below arm S 2034.6), 4,000 games, 39/39 cells regime-verified; the registered precision benefits FALSIFIED (se −8.6 %, newest-node inflation unchanged) — and the finding the registration did not ask for: **the bot frame is PRECISE and WRONG** (nine bots' edges to one opponent imply 1775–2049, 274 Elo of disagreement against a fitted se of 9.5; the bot frame alone orders SmallRL ABOVE SyntheticRLV2 while 200 direct games say the opposite by +96)
+
+**MEASUREMENT (MAJOR) · TWO EXTERNAL ANCHORS ON THE BOT-ANCHORED SCALE — the bot frame is PRECISE
+AND WRONG, and the scale itself barely moves.** 4,000 games, pre-registered before the first one
+(`d655843f`), greedy-vs-greedy on the HOME 719-team pool, both regimes verified per decision on
+both sides, 39/39 cells `status: OK` on our pinned Showdown `e0551883f` against Metamon
+`0a00a759`: each of the NINE PINNED eval bots and TEN frozen snapshots spanning
+`ai_v9_29_rev1_0823` → `ai_v13_01_flywheel_shaped` played 100 games against both
+`metamon:SmallRL` (ckpt 40) and `metamon:SyntheticRLV2` (ckpt 48), plus a 200-game head-to-head.
+In a joint Bradley–Terry fit over 995 edges the anchors land at **`SmallRL` 1940.0 ± 9.5** and
+**`SyntheticRLV2` 1983.4 ± 9.7**, straddling `ai_v12_02_winprob_critic`'s 74M node (1984.6) and
+below `ai_v13_01`'s 72M (2034.6). 🚨 **THE FINDING: the nine pinned bots' individual edges to
+`SmallRL` imply ratings from 1775 to 2049 — 274 Elo of disagreement about one opponent — against a
+fitted se of 9.5**, and the bot frame alone orders `SmallRL` ABOVE `SyntheticRLV2` while 200 direct
+games say `SyntheticRLV2` wins **0.635 [0.566, 0.699]** (+96 Elo the other way). The anchors ARE
+unsaturated where the bots are not: median |win rate − 0.5| is **0.070** over the 20 snapshot cells
+against **0.340** over the bot cells. But the pre-registered benefits did NOT land: frontier se
+fell only **8.6%** (bar ≥ 15%, FALSIFIED) and the newest-node inflation did not move (+11.1→+10.3,
++9.8→+10.0, FALSIFIED) — a frontier node already carries ~25 bot edges at 500 games plus ~19 dense
+edges, so two 100-game edges cannot move its variance, and the inflation is a property of BT
+re-solving as nodes are ADDED, which no external edge touches. The scale moved **−3.0 Elo** on
+average (−8.2 over the ten played nodes), with one exception that confirms the mechanism:
+`ai_v12_11_ladder_ctrl10M` @ 10M, the least-connected node in the campaign (6 dense pairs against
+190), fell **−42.4** — **a short control run is where the bot-only scale is least trustworthy.**
+The external edges are the WORST-fitting family in the model (mean|err| **0.0542** against the bot
+edges' 0.0239, unchanged by their addition), which is the same non-transitivity seen from the other
+side. **METHOD ERROR, self-caught:** the registered "would the pinned bots move" arm freed the eight
+bots but left their OWN 36-pair, 86,000-game round robin out of the edge set, so they were held
+only by `random`'s pin — whose edges are perfect scores the prior resolves — and every bot read
+133–225 Elo low; with the round robin restored the largest move is **15.4 Elo**, inside the
+registered 40-Elo bar, so **the 2026-06-06 bot calibration is CORROBORATED**. RECOMMENDATION:
+adopt `metamon:SmallRL` as a standing per-promotion anchor (100 games, **~2.5 min**) as a
+FALSIFICATION instrument rather than a precision one; keep `SyntheticRLV2` at era gates only
+(**~21 min** per cell, ~8 h per run); change nothing in `data/`. Also landed: `main.anchors` can now
+play an external anchor against a pinned BOT (`--our-side bot:<name>`), against a cross-run
+snapshot (`--model-load auto|foreign` — every `ai_v9_29` node FAILS a bare `MaskablePPO.load`), and
+against another anchor (`--our-side metamon:<Agent>`); and **one torch thread per peer is worth
+~20×** — each Metamon peer was burning 210% CPU on B=1 inference and the campaign projected at 18 h
+before `OMP_NUM_THREADS=1` brought a 100-game cell to ~150 s. Artifact:
+`designs/research_state/measurements/elo_calibration_external_anchors_2026-09-14/`.
+
+**Orchestrator's reading and DEFAULT.** (1) The external anchors do not buy precision — a frontier node already carries ~25 bot edges at 500 games plus ~19 dense edges, and the newest-node inflation is a property of Bradley–Terry re-solving as nodes are added, which no edge touches. They buy ACCURACY where the bot frame lies: the least-connected node (`ctrl10M`@10M, 6 dense pairs) moved −42 Elo, which is where every short 10M read of this campaign sat. (2) SmallRL is adopted as a FALSIFICATION instrument, not a precision one: ~2.5 min per read at 100 games with one torch thread per peer (hazard H13: `OMP_NUM_THREADS=1` is worth ~20×). **Default under the 15-minute rule: from the fork arm onward, the Training Run session runs `main.anchors --opponent metamon:SmallRL --regime greedy --teamset away --games 100` as an OFFLINE read at each promotion (an ops-layer read beside the ladder, not a trainer change), and the number lands in the bank line beside the ladder headline; `SyntheticRLV2` at era gates only.** The three-commit adoption diff in README §10 (the anchor set with its recipe stamp) is NOT applied — it changes the scale every committed `ladder.json` is on, so it is the owner's call and, if taken, is taken with a recipe bump under rule 24. (3) The 2026-06-06 bot calibration is CORROBORATED (largest move 15.4 Elo with the bots' own round robin restored; the first arm that read them 133–225 low had omitted it — a self-caught method error, both arms reported). Tag: **MEASURED (MAJOR) · anchors placed · precision benefit FALSIFIED · bot frame PRECISE AND WRONG · SmallRL per promotion as falsification**.

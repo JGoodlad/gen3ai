@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,575-line file. **The ledger itself is append-only and is never edited by this**;
+18,618-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**611 headings · 560 dated · 2026-08-01 → 2026-09-14 · ledger 18,575 lines.**
+**612 headings · 561 dated · 2026-08-01 → 2026-09-14 · ledger 18,618 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -631,3 +631,4 @@ rename.
   - `L18360` · `2026-09-14` · MEASUREMENT · ARM S's RUN-END READS — every row the flywheel-pair registration fixed before launch, taken on the SHAPED arm alone: 20 ladder nodes at **2036.6**, entropy **FLAT for 71M steps** at `--ent-coef 0.05`, the decision row read BOTH WAYS with the auxiliary head matching the actual critic, and 🚨 a **+73 Elo STALE-RECIPE trap** in `ai_v12_02_winprob_critic`'s committed `ladder.json` that would have flipped the sign of the free third leg
   - `L18485` · `2026-09-14` · OPS · EXTERNAL OPPONENTS NO LONGER NEED NODE — the websocket FRONT-END over the Rust bridge landed (`49cec11e`) after its spike PASSED: Metamon `SmallRL` (own process, upstream poke-env) and Foul Play each completed 20/20 gen3ou battles on it, and every battle's per-side protocol was BYTE-IDENTICAL to the Node path (45 battles, ~56k lines, 4,545 requests, zero divergences); the anchors CLI (`748fe02b`) and the external-anchors SOP landed the same day
   - `L18489` · `2026-09-14` · MEASUREMENT (MAJOR) · SIBLING DISCRIMINATION MEASURED DIRECTLY FOR THE FIRST TIME — the promoted win-prob head ranks siblings AT CHANCE (0.517), the FROZEN trunk already holds the ordering (+0.086 from plain BCE on counterfactual successors, DETECTED), and the pairwise RANKING term buys NOTHING (2026-09-14)
+  - `L18576` · `2026-09-14` · MEASUREMENT (MAJOR) · TWO EXTERNAL ANCHORS ON THE BOT-ANCHORED SCALE — `metamon:SmallRL` **1940.0 ± 9.5**, `metamon:SyntheticRLV2` **1983.4 ± 9.7** (level with `ai_v12_02`@74M refit 1984.6; below arm S 2034.6), 4,000 games, 39/39 cells regime-verified; the registered precision benefits FALSIFIED (se −8.6 %, newest-node inflation unchanged) — and the finding the registration did not ask for: **the bot frame is PRECISE and WRONG** (nine bots' edges to one opponent imply 1775–2049, 274 Elo of disagreement against a fitted se of 9.5; the bot frame alone orders SmallRL ABOVE SyntheticRLV2 while 200 direct games say the opposite by +96)
