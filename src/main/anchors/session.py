@@ -459,8 +459,6 @@ async def watch_peer_pair(procs: "list[subprocess.Popen]", plans: "list[PeerPlan
             print(f"[anchors] game {seen}: {rec.result} in {rec.turns} turns "
                   f"(team={rec.our_team})", flush=True)
             state.last_progress = time.time()
-        if done:
-            state.last_progress = max(state.last_progress, started)
         if done >= expected:
             return
         for proc, plan in zip(procs, plans):

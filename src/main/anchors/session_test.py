@@ -454,3 +454,39 @@ class _LiveProc:
 
     def poll(self):
         return None
+
+
+@pytest.mark.asyncio
+async def test_a_peer_pair_making_progress_does_NOT_trip_the_progress_deadline(
+        tmp_path: Path) -> None:
+    """🚨 THE REGRESSION THAT KILLED A 200-GAME CELL AT GAME 41. `OurSideState.last_progress` is
+    initialised to `time.time()` at construction, and the first version of this watchdog folded it
+    with `max(last_progress, started)` — which never advances. Both peers were alive and mid-turn,
+    41 games were on disk, and `no_progress` fired at exactly the 900 s budget measured from the
+    START of the half. A watchdog that cannot tell a stalled pair from a slow one is worse than
+    none: it converts a finished measurement into a FAILED one.
+
+    The test drives the failing branch by advancing the file WHILE the deadline elapses.
+    """
+    from main.anchors.session import watch_peer_pair
+
+    csv = tmp_path / "battle_log_x_gen3ou.csv"
+    header = "Player Username, Team File, Opponent Username, Result, Turn Count, Battle ID\n"
+    csv.write_text(header)
+    plans = [PeerPlan(label=f"p{i}", argv=[], cwd=tmp_path, env={}, ready_pattern="x",
+                      log_path=tmp_path / f"p{i}.log") for i in (1, 2)]
+    state = OurSideState()
+
+    async def feed():
+        for i in range(5):
+            await asyncio.sleep(0.05)
+            with open(csv, "a") as fh:
+                fh.write(f"x,/teams/t{i}.gen3ou_team,y,WIN,20,{i}\n")
+
+    task = asyncio.create_task(feed())
+    # A progress budget SHORTER than the whole series takes: only a watchdog that resets the
+    # clock on each new game can survive it.
+    await watch_peer_pair([_LiveProc(), _LiveProc()], plans, tmp_path, state, expected=5,
+                          first_game_timeout_s=5.0, progress_timeout_s=0.12, poll_s=0.01)
+    await task
+    assert len(state.records) == 5
