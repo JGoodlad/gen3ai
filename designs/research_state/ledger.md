@@ -18485,3 +18485,90 @@ the pair read is one diff away**.
 ### 2026-09-14 · OPS · EXTERNAL OPPONENTS NO LONGER NEED NODE — the websocket FRONT-END over the Rust bridge landed (`49cec11e`) after its spike PASSED: Metamon `SmallRL` (own process, upstream poke-env) and Foul Play each completed 20/20 gen3ou battles on it, and every battle's per-side protocol was BYTE-IDENTICAL to the Node path (45 battles, ~56k lines, 4,545 requests, zero divergences); the anchors CLI (`748fe02b`) and the external-anchors SOP landed the same day
 
 `src/utils/bridge/ws_frontend.py` (`python -m utils.bridge.ws_frontend --port 96NN`; topic doc `designs/rust_sim/ws_frontend.md` owns the protocol surface and the deferral list): an asyncio websocket server speaking enough of the Showdown CLIENT protocol (login, `/utm`, challenge/accept, room framing, `|request|` with `rqid`, `/choose`, `|win|`/`|deinit|`) for a third-party poke-env-style client IN ITS OWN PROCESS to play complete battles, each backed by one `sim_bridge` child, seeded and parallel. **The finding that made it work:** the sim emits no `rqid` — the Showdown SERVER injects it from one counter shared by both slots (`server/room-battle.ts:796-801`), and Foul Play cannot move without it; the front end splices it in at that point as a string splice so the rest of the line stays the sim's bytes. Throughput on a contended box: 5.8 battles/s single-stream (3.1× the Node server single-stream), 0.66–0.82× at 4–8 concurrent (single-process harness; bounds, not measurements) — **it buys determinism and the removal of a server, not throughput.** 40 tests (34 unit with a scripted client, 3 `sim` end-to-end, 3 `sim` byte-differential); routine gate 10,643 passed. `derive_seed_from_base()` moved to `seed_spec.py` and is shared with the local battle runner, so a seeded series replays the same dice through either transport. **Beside it:** `python -m main.anchors` (`748fe02b`) — the external-anchor read as one command that owns its server on 9500–9599 (or takes `--server-uri`, the seam for this front end), verifies the regime per decision on both sides, and stamps regime / team set / opponent version / step / search budget / realized visits on EVERY row; the vendored teambuilder's trailing-blank-line bug fixed with a throwing >6-mon guard (`9a189de8`); `designs/ops/EXTERNAL_ANCHORS_SOP.md` (three tiers, the greedy rule, "never a number without its regime", 12 hazards). **Hazards (findings):** a >18-char username HANGS a third-party client rather than erroring (now logged by name); blasting a recorded command stream at the Node bridge makes it emit NOTHING (synchronous `handleLine` vs `for await` pumps — replay paces behind a quiescence settle); a client seeing `|win|` is not the battle being over server-side (`await front.drain()`); the challenger is p1, as on a real server. **Next:** point `main.anchors --server-uri` at the front end by default once one full SOP milestone read has been run through it and matches the Node numbers within the cells' CIs. Tag: **OPS · spike PASS · byte-identical · Node optional for external opponents**.
+
+### 2026-09-14 · MEASUREMENT (MAJOR) · SIBLING DISCRIMINATION MEASURED DIRECTLY FOR THE FIRST TIME — the promoted win-prob head ranks siblings AT CHANCE (0.517), the FROZEN trunk already holds the ordering (+0.086 from plain BCE on counterfactual successors, DETECTED), and the pairwise RANKING term buys NOTHING (2026-09-14)
+
+Record `designs/research_state/measurements/paired_refit_discrimination_2026-09-14/`
+(`PREDICTION.md` registered at 901ae5d7 before any number existed; the rung-B wall-clock stopping
+rule registered separately at 60d3d02b with those cells at 3–6 pairs). **5,076 three-branch
+common-random-number forks (15,228 rollouts) over 957 recorded battles of
+`ai_v12_11_ladder_ctrl10M@10000032`'s offline full-capture eval tree, plus 2,400 mirror
+battles; CPU only, zero errors, zero timeouts.** Each fork replays a contested recorded decision
+(move round, turn 2–40, ≥3 legal actions, policy top-2 logit gap under the shard's 40th
+percentile — **the selector never reads V**) and plays THREE branches — the policy's argmax, its
+runner-up, and one uniformly-random legal alternative — to a terminal on ONE dice stream, GREEDY
+on both sides against the recorded pool sentinel reloaded from its exact snapshot. **The pairing
+is asserted, not assumed: 40/40 `divergence_turn=None` full replays reproduced the recorded
+winner with zero script exhaustions, and 104 re-runs of a branch returned the identical outcome.**
+
+**THE BASELINE IS THE FINDING: the promoted win-prob critic's held-out PAIRWISE ACCURACY is
+0.5169 [0.4800, 0.5524] — the CI straddles 0.50, i.e. at this width it ranks two states one move
+apart no better than a coin.** That is the first direct measurement of the property the one-ply
+test consumes, and it is the arithmetic under every behavioural result on this leaf.
+**With the trunk FROZEN and only `WinProbHead`'s four tensors moving, ordinary BCE on the fork
+outcomes reaches 0.6032 [0.5690, 0.6374] — +0.0863 [+0.0384, +0.1347] over the original,
+DETECTED. Pairwise accuracy is a RANK statistic, invariant to any monotone recalibration, so the
+trunk's `value_pooled` carried the ordering all along and the online head simply did not read it.**
+**Adding a pairwise ranking term to the same rows buys NOTHING: −0.0107 [−0.0249, +0.0028] NOT
+DETECTED, point estimate negative at coefficients 0.1 / 0.3 / 1.0.** The cheap fix is the DATA,
+not the loss form. Calibration came WITH the ranking rather than being traded for it (ECE
+0.1246 → 0.0520 → 0.0398; Brier 0.2154 → 0.1417) and the conditioning guard barely moves
+(`cond.opp_class_auc.t4_10` 0.711 → 0.706 → 0.699, orientation-matched raw AUC; `main.ops.critic_read`
+**cannot take an external head**, so the N-curve `frame_check` decode is the instrument).
+
+****PART C — the refit head does NOT pay at the leaf.** Plugged in as the search leaf (new
+`--leaf-head` flag) against the ORIGINAL head as its CONTEMPORANEOUS control on the same battles:
+rung B **0.5225 [0.4869, 0.5581]** vs 0.5350, `grid` **0.2400 [0.1818, 0.2982]** vs 0.2525 —
+**−0.0125 on both rows, NOT DETECTED, point estimates the wrong way.** The width-matched
+separation row does move: **0.049 vs 0.031 at K 3–4.5, Wilson CIs disjoint (1.58×)**, and 1.05×
+(overlapping) at K 4.5–6. **NONE of the four registered branches fires as written — branches 1
+and 2 were both conditioned on the ranking term working, and branch 3 (the trunk lacks it) is
+refuted by (i). The outcome is a fifth case: branch 1's PREMISE with branch 2's CONCLUSION — the
+trunk holds it, the DATA extracts it, and it does not transfer, so FORKS MUST GO INTO TRAINING
+and the producer is the thing to change, not the objective.** ⚠️ Part C cannot separate
+"mis-covered for search-time states" from "0.60 pairwise accuracy is not good enough to pay".
+
+🚨 **THE INSTRUMENT'S OWN REPLICATE IS WIDER THAN EVERY EFFECT IN PARTS A AND C, and this battery
+got it for free.** Part C's control is the SAME checkpoint, cell, flags and game indices as Part
+A's anchor, run in a different window at matched K (4.35 vs 4.40) — and it reads **0.5350
+[0.5002, 0.5698] against 0.4950 [0.4595, 0.5305], a paired +0.0400 [−0.0010, +0.0810]**, the
+higher of which mechanically prints "SEARCH PAYS" on a lower bound of 0.5002. That is the
+2026-09-11 lesson (0.5206 with lower bound 0.4999 at 400 pairs → 0.4913 on a fresh 400) reproduced
+at a quarter of the width. **A 100-pair L2 cell has a same-configuration replicate spread of
+±0.04–0.05; the one "SEARCH PAYS" in this record is reported as NOISE by its own control, and
+every "NOT DETECTED" here is not detected at a width the instrument cannot beat.****
+
+**Part A — nine win-prob heads now sit on the mirror instrument and none is a usable leaf.** Three
+arms never read there, each @10M with a CONTEMPORANEOUS `ctrl10M` anchor in the same window
+(rule 23): unguarded `grid` reads **`rollout` 0.2450 [0.1819, 0.3081] · `ent05` 0.2725
+[0.2113, 0.3337] · `vf025` 0.2825 [0.2265, 0.3385]** against the anchor's **0.2975
+[0.2353, 0.3597]** — all four SEARCH HARMS, no arm beating its anchor with a CI clear of zero, and
+the rollout-target lever LAST of the three. At the registered 3 s defensive point, 100 pairs each: **`ent05` 0.4675 [0.4366,
+0.4984] · `rollout` 0.5000 [0.4721, 0.5279] · `vf025` 0.5000 [0.4659, 0.5341]** against the
+anchor's 0.4950 [0.4595, 0.5305] — none clearing the bar, every paired delta NOT DETECTED,
+overrules 0.85–1.27 % and forced 73–85 %, right where the previous six sat.
+
+**Three facts about the POLICY fell out of the dataset before any head was fitted.** On contested
+decisions, on identical dice, **top-1 and top-2 are outcome-interchangeable: 0.7082 vs 0.7078, a
+gap of 0.0004**; a uniformly random legal alternative wins 0.6795, so throwing the decision away
+costs **2.9 pp**; and in **4.5 % [3.99, 5.16]** of forks that random alternative beat BOTH policy
+candidates. **79.7 % of branch pairs are TIED** — the structural tax on any terminal-outcome
+sibling objective. **A concrete account of the `cflabels` null is now available and is testable:
+`cf_q_labels` pairs only the SIM DICE and leaves both sides sampling at temperature 1.0 (its own
+recorded caveat), while these forks are greedy on both sides — which is the only reason 104
+determinism re-runs came back identical. A label factory that pairs the dice but not the policy
+draws may be teaching the head noise.** Instrument findings banked: `ai_v12_22_ladder_rollout`
+does not exist (the arm is **23**); `main.ops.critic_read` cannot read an external head; the
+published `cond.opp_class_auc` row's ORIENTATION is load-bearing (the head that "reads 0.711"
+reads 0.289 on the raw AUC with the labels the meter declares); a greedy-vs-greedy continuation
+stalls on recorded DRAWS (five of six branches capped in the first smoke, fixed to 0.09 % by
+excluding draws and bounding the divergence turn at 40); and a fork shard stopped by the clock
+must be shuffled by BATTLE, because this tree's filenames sort `draw_ < loss_ < win_` and an
+alphabetical prefix is a sample of LOSSES. New code: `--leaf-head` on `main.search_dividend`
+(`src/main/search_dividend/leaf_head.py`, 11 tests) — the win head is a leak-safe SIDE readout, so
+swapping it changes the SEARCH LEAF and nothing about how either side plays unsearched; verified
+byte-exact on the real checkpoint.
+
+---
+
+**Orchestrator's reading and DECISION.** Three things are now established that were guesses this morning. (1) **The head is the deficit, not the trunk:** pairwise accuracy is a rank statistic, so a frozen trunk lifting it from chance to 0.60 under a plain BCE on counterfactual successors means the ordering was in `value_pooled` and the on-policy PPO stream never asked the head for it. (2) **The loss form is not the lever** — the pairwise ranking term is inside its interval at every coefficient and negative on points; the DATA (successor states one move apart, with outcomes, under shared dice) is. (3) **0.60 on recorded states does not pay as a leaf** on 100-pair cells, and the cell itself cannot resolve a 4-point effect (its own control moved +0.040 between windows), so "does not transfer" and "not enough" are not separated. **The next GPU arm after `ai_v13_02_flywheel_winprob` is the FORK arm:** contested-state forks at ~2 % of decisions, THREE branches (top-2 policy candidates + one uniformly random legal action — the policy's top-1/top-2 are outcome-interchangeable at 0.708/0.708 and the random branch costs 2.9 pp with a 4.5 % blind-spot rate, so the random branch is where the new information is), common random numbers on dice AND policy draws (the `cflabels` factory paired only the dice — a concrete account of its null), continuations INTO the PPO buffer with the fork step masked and the prefix counted once, plain BCE, NO ranking term. **Registered endpoints, in order:** held-out pairwise accuracy on fresh contested forks vs `ctrl10M`'s 0.517 (bar: the CI clears 0.60, the refit's level, since a head trained on-stream should at least match an offline refit); the mirror battery at ≥400 pairs with a contemporaneous control (the 100-pair cell is retired for L2 claims); `cond.opp_class_auc.t4_10` as the guard. The paired ranking loss is CLOSED as a lever at this depth. Tag: **MEASURED (MAJOR) · head ranks at CHANCE · trunk holds the ordering · data is the fix · nine heads, no leaf · FORK ARM registered**.
