@@ -1,0 +1,267 @@
+{
+ "n_games_total": 200,
+ "model": "ai_v13_02_flywheel_winprob/final_model.zip @75,005,952 (arm W)",
+ "opponent": "Metamon SmallRL (ckpt 40, 13.9M), VanillaAttention, CPU",
+ "team_set": "home \u2014 our 719-team gen3ou pool on both sides (the de-risk's nickname-free export)",
+ "cells": {
+  "greedy|metamon": {
+   "n": 50,
+   "W": 33,
+   "L": 17,
+   "T": 0,
+   "win_rate": 0.66,
+   "wilson95": [
+    0.5215,
+    0.7756
+   ],
+   "mean_turns": 33.2,
+   "max_turns": 136,
+   "hit_forfeit_limit": 0,
+   "sides_disagree": 0,
+   "metamon_row_missing": 0
+  },
+  "greedy|ours": {
+   "n": 50,
+   "W": 32,
+   "L": 18,
+   "T": 0,
+   "win_rate": 0.64,
+   "wilson95": [
+    0.5014,
+    0.7586
+   ],
+   "mean_turns": 36.8,
+   "max_turns": 135,
+   "hit_forfeit_limit": 0,
+   "sides_disagree": 0,
+   "metamon_row_missing": 0
+  },
+  "mixed|metamon": {
+   "n": 50,
+   "W": 39,
+   "L": 10,
+   "T": 1,
+   "win_rate": 0.78,
+   "wilson95": [
+    0.6476,
+    0.8725
+   ],
+   "mean_turns": 46.9,
+   "max_turns": 250,
+   "hit_forfeit_limit": 1,
+   "sides_disagree": 6,
+   "metamon_row_missing": 2
+  },
+  "mixed|ours": {
+   "n": 50,
+   "W": 37,
+   "L": 13,
+   "T": 0,
+   "win_rate": 0.74,
+   "wilson95": [
+    0.6045,
+    0.8413
+   ],
+   "mean_turns": 36.3,
+   "max_turns": 117,
+   "hit_forfeit_limit": 0,
+   "sides_disagree": 0,
+   "metamon_row_missing": 0
+  }
+ },
+ "regime_rows": {
+  "greedy|POOLED": {
+   "n": 100,
+   "W": 65,
+   "L": 35,
+   "T": 0,
+   "win_rate": 0.65,
+   "wilson95": [
+    0.5525,
+    0.7364
+   ],
+   "mean_turns": 35.0,
+   "max_turns": 136,
+   "hit_forfeit_limit": 0,
+   "sides_disagree": 0,
+   "metamon_row_missing": 0,
+   "comparators": {
+    "armS": {
+     "label": "arm S (ai_v13_01_flywheel_shaped) @75,005,952, greedy-vs-greedy, home pool",
+     "source": "designs/research_state/measurements/flywheel_armS_reads_2026-09-14",
+     "win_rate": 0.63,
+     "wilson95": [
+      0.5322,
+      0.7182
+     ],
+     "n": 100,
+     "comparator_minus_armW": -0.02,
+     "newcombe95": [
+      -0.1505,
+      0.1114
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    },
+    "winprob75M": {
+     "label": "ai_v12_02_winprob_critic@75M, greedy-vs-greedy, home pool",
+     "source": "designs/research_state/measurements/metamon_matched_regime_2026-09-14",
+     "win_rate": 0.52,
+     "wilson95": [
+      0.4232,
+      0.6154
+     ],
+     "n": 100,
+     "comparator_minus_armW": -0.13,
+     "newcombe95": [
+      -0.2597,
+      0.0063
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    }
+   }
+  },
+  "mixed|POOLED": {
+   "n": 100,
+   "W": 76,
+   "L": 23,
+   "T": 1,
+   "win_rate": 0.76,
+   "wilson95": [
+    0.6677,
+    0.8331
+   ],
+   "mean_turns": 41.6,
+   "max_turns": 250,
+   "hit_forfeit_limit": 1,
+   "sides_disagree": 6,
+   "metamon_row_missing": 2,
+   "comparators": {
+    "armS": {
+     "label": "arm S @75,005,952, ours greedy vs SmallRL t1.0, home pool",
+     "source": "designs/research_state/measurements/flywheel_armS_reads_2026-09-14",
+     "win_rate": 0.84,
+     "wilson95": [
+      0.7558,
+      0.899
+     ],
+     "n": 100,
+     "comparator_minus_armW": 0.08,
+     "newcombe95": [
+      -0.0315,
+      0.1896
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    },
+    "winprob75M": {
+     "label": "ai_v12_02_winprob_critic@75M, ours greedy vs SmallRL t1.0, home pool",
+     "source": "designs/research_state/measurements/metamon_derisk_2026-09-14",
+     "win_rate": 0.7417,
+     "wilson95": [
+      0.6567,
+      0.8116
+     ],
+     "n": 120,
+     "comparator_minus_armW": -0.0183,
+     "newcombe95": [
+      -0.1304,
+      0.0975
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    }
+   }
+  }
+ },
+ "regime_verification": [
+  {
+   "cell": "greedy|metamon",
+   "our_stochastic_kwarg": [
+    false
+   ],
+   "our_temperature_flag": 0.0,
+   "metamon_sample_kwarg": [
+    false
+   ],
+   "metamon_argmax_match_rate": 1.0,
+   "metamon_regime_declared": "greedy",
+   "metamon_rc": 0,
+   "metamon_record": "present",
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   }
+  },
+  {
+   "cell": "greedy|ours",
+   "our_stochastic_kwarg": [
+    false
+   ],
+   "our_temperature_flag": 0.0,
+   "metamon_sample_kwarg": [
+    false
+   ],
+   "metamon_argmax_match_rate": 1.0,
+   "metamon_regime_declared": "greedy",
+   "metamon_rc": 0,
+   "metamon_record": "present",
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   }
+  },
+  {
+   "cell": "mixed|metamon",
+   "our_stochastic_kwarg": [
+    false
+   ],
+   "our_temperature_flag": 0.0,
+   "metamon_sample_kwarg": null,
+   "metamon_argmax_match_rate": null,
+   "metamon_regime_declared": "t1",
+   "metamon_rc": 1,
+   "metamon_record": "MISSING \u2014 the Metamon process died after its last game; our side's 50 results are complete and the regime was set at process start, but the per-decision argmax check for this half-cell is n/a",
+   "failures": {
+    "our_tracebacks": 2,
+    "classify_raises": 0,
+    "metamon_tracebacks": 988,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": [
+     "metamon: RecursionError: maximum recursion depth exceeded",
+     "metamon: RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "metamon: RuntimeError: Battle is already finished, call reset",
+     "our: RuntimeError: Decision context is missing at turn 1. get_mask() / embed_battle() must run before action_to_order()."
+    ]
+   }
+  },
+  {
+   "cell": "mixed|ours",
+   "our_stochastic_kwarg": [
+    false
+   ],
+   "our_temperature_flag": 0.0,
+   "metamon_sample_kwarg": [
+    true
+   ],
+   "metamon_argmax_match_rate": 0.6407766990291263,
+   "metamon_regime_declared": "t1",
+   "metamon_rc": 0,
+   "metamon_record": "present",
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   }
+  }
+ ]
+}

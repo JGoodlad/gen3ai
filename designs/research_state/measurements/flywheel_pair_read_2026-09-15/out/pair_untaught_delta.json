@@ -1,0 +1,176 @@
+{
+ "floors_pp_in_evidence": {
+  "frozen_dose_folds_six_draws": 1.66,
+  "controller_live_folds": 4.27,
+  "TC_replicate_pairs_END_depth": 1.19,
+  "TC_replicate_pairs_p1M_depth": 4.0,
+  "G5_three_continuation_arms": 1.0
+ },
+ "floor_note": "a floor is a property of the DEPTH and of the REGIME (UNDERSTANDING sec 3.3); every floor here is a FOLD floor at ~1M depth and neither arm is a fold \u2014 they are quoted, not applied as a bar",
+ "configs": {
+  "registry": {
+   "config": "the REGISTRY `untaught_meter_config` (ai_v9_29_rev1_0823's snapshots/model_config.json)",
+   "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+   "levels_pp": {
+    "armW": 46.19,
+    "armS": 54.5
+   },
+   "n_finished": {
+    "armW": 1600,
+    "armS": 1600
+   },
+   "per_team_pp": {
+    "armW": {
+     "U_61590463": 48.5,
+     "U_92832108": 39.0,
+     "U_ce35b736": 49.5,
+     "U_9909f2e9": 38.0,
+     "U_9d5f8458": 47.0,
+     "U_f7ba5702": 48.0,
+     "U_90b94599": 48.0,
+     "U_dbf81d8e": 51.5
+    },
+    "armS": {
+     "U_61590463": 56.5,
+     "U_92832108": 49.5,
+     "U_ce35b736": 56.0,
+     "U_9909f2e9": 54.5,
+     "U_9d5f8458": 55.5,
+     "U_f7ba5702": 55.0,
+     "U_90b94599": 49.5,
+     "U_dbf81d8e": 59.5
+    }
+   },
+   "n_teams": 8,
+   "timeouts": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   },
+   "contrasts": {
+    "armS_minus_armW": {
+     "label": "THE PAIR \u2014 arm S (shaped) minus arm W (win-prob), both measured in ONE invocation on the identical teams and games",
+     "delta_pp": 8.31,
+     "ci95_pp": [
+      5.69,
+      11.19
+     ],
+     "teams_where_armS_higher": 8,
+     "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor \u2014 but the meter's axes and floors are established at ~1M fold depths and NEITHER arm is a fold, so this is a DESCRIPTOR, not an endpoint (registration sec 8.5); at n=1 per arm rule 22 makes it a run-level CANDIDATE"
+    },
+    "winprob75M_minus_armW": {
+     "label": "the 0.02 leg (ai_v12_02_winprob_critic@75M) minus arm W \u2014 SAME critic objective, so this row is the ENTROPY-COEFFICIENT axis; confounded by pin (f971caf2 vs 6eb9c776) and by --ent-coef (0.02 vs 0.05)",
+     "delta_pp": 12.06,
+     "ci95_pp": [
+      8.81,
+      15.5
+     ],
+     "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor \u2014 but the meter's axes and floors are established at ~1M fold depths and NEITHER arm is a fold, so this is a DESCRIPTOR, not an endpoint (registration sec 8.5); at n=1 per arm rule 22 makes it a run-level CANDIDATE"
+    },
+    "armS_minus_winprob75M_banked": {
+     "label": "arm S minus the 0.02 leg \u2014 REPRODUCED from the banked file for the three-way table (arm S's own 2026-09-14 read reported -3.75 pp)",
+     "delta_pp": -3.75,
+     "ci95_pp": [
+      -6.37,
+      -1.12
+     ],
+     "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor \u2014 but the meter's axes and floors are established at ~1M fold depths and NEITHER arm is a fold, so this is a DESCRIPTOR, not an endpoint (registration sec 8.5); at n=1 per arm rule 22 makes it a run-level CANDIDATE"
+    }
+   },
+   "third_leg": {
+    "source": "designs/research_state/measurements/flywheel_armS_reads_2026-09-14/out/untaught/untaught_registry.json",
+    "join": "the SAME deterministic meter (seed 0, concurrency 1, identical 8 teams, identical registry opponent) run on 2026-09-14; joined here team by team",
+    "winprob75M_level_pp": 58.25,
+    "armS_level_pp_banked": 54.5,
+    "armS_level_pp_here": 54.5,
+    "armS_reproduction_delta_pp": 0.0
+   }
+  },
+  "auto": {
+   "config": "--config auto (each model's OWN model_config.json)",
+   "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+   "levels_pp": {
+    "armW": 46.19,
+    "armS": 54.5
+   },
+   "n_finished": {
+    "armW": 1600,
+    "armS": 1600
+   },
+   "per_team_pp": {
+    "armW": {
+     "U_61590463": 48.5,
+     "U_92832108": 39.0,
+     "U_ce35b736": 49.5,
+     "U_9909f2e9": 38.0,
+     "U_9d5f8458": 47.0,
+     "U_f7ba5702": 48.0,
+     "U_90b94599": 48.0,
+     "U_dbf81d8e": 51.5
+    },
+    "armS": {
+     "U_61590463": 56.5,
+     "U_92832108": 49.5,
+     "U_ce35b736": 56.0,
+     "U_9909f2e9": 54.5,
+     "U_9d5f8458": 55.5,
+     "U_f7ba5702": 55.0,
+     "U_90b94599": 49.5,
+     "U_dbf81d8e": 59.5
+    }
+   },
+   "n_teams": 8,
+   "timeouts": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   },
+   "contrasts": {
+    "armS_minus_armW": {
+     "label": "THE PAIR \u2014 arm S (shaped) minus arm W (win-prob), both measured in ONE invocation on the identical teams and games",
+     "delta_pp": 8.31,
+     "ci95_pp": [
+      5.69,
+      11.19
+     ],
+     "teams_where_armS_higher": 8,
+     "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor \u2014 but the meter's axes and floors are established at ~1M fold depths and NEITHER arm is a fold, so this is a DESCRIPTOR, not an endpoint (registration sec 8.5); at n=1 per arm rule 22 makes it a run-level CANDIDATE"
+    },
+    "winprob75M_minus_armW": {
+     "label": "the 0.02 leg (ai_v12_02_winprob_critic@75M) minus arm W \u2014 SAME critic objective, so this row is the ENTROPY-COEFFICIENT axis; confounded by pin (f971caf2 vs 6eb9c776) and by --ent-coef (0.02 vs 0.05)",
+     "delta_pp": 12.06,
+     "ci95_pp": [
+      8.81,
+      15.5
+     ],
+     "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor \u2014 but the meter's axes and floors are established at ~1M fold depths and NEITHER arm is a fold, so this is a DESCRIPTOR, not an endpoint (registration sec 8.5); at n=1 per arm rule 22 makes it a run-level CANDIDATE"
+    },
+    "armS_minus_winprob75M_banked": {
+     "label": "arm S minus the 0.02 leg \u2014 REPRODUCED from the banked file for the three-way table (arm S's own 2026-09-14 read reported -3.75 pp)",
+     "delta_pp": -3.75,
+     "ci95_pp": [
+      -6.37,
+      -1.12
+     ],
+     "verdict": "DETECTED at 95% and past the 1.19pp END-depth replicate floor \u2014 but the meter's axes and floors are established at ~1M fold depths and NEITHER arm is a fold, so this is a DESCRIPTOR, not an endpoint (registration sec 8.5); at n=1 per arm rule 22 makes it a run-level CANDIDATE"
+    }
+   },
+   "third_leg": {
+    "source": "designs/research_state/measurements/flywheel_armS_reads_2026-09-14/out/untaught/untaught_auto.json",
+    "join": "the SAME deterministic meter (seed 0, concurrency 1, identical 8 teams, identical registry opponent) run on 2026-09-14; joined here team by team",
+    "winprob75M_level_pp": 58.25,
+    "armS_level_pp_banked": 54.5,
+    "armS_level_pp_here": 54.5,
+    "armS_reproduction_delta_pp": 0.0
+   }
+  }
+ },
+ "both_resolutions_agree": {
+  "levels_identical": true,
+  "note": "registration sec 8.5: a level that only exists under ONE config resolution is not a level. Neither arm is architecture-identical to the meter's registry config, so both resolutions are read and both are reported."
+ }
+}

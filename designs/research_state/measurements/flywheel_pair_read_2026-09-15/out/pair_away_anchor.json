@@ -1,0 +1,96 @@
+{
+ "cell": "metamon:SmallRL, regime greedy (BOTH sides, verified per decision), teamset away (Metamon's own 20-team competitive gen3ou export), 100 games split evenly across the two challenge roles",
+ "tool": "python -m main.anchors",
+ "arms": {
+  "armS": {
+   "run": "ai_v13_01_flywheel_shaped",
+   "human_description": "arm S \u2014 the pair's SHAPED arm",
+   "model_step": 75005952,
+   "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_01_flywheel_shaped/final_model.zip",
+   "n": 100,
+   "wins": 52,
+   "losses": 48,
+   "ties": 0,
+   "win_rate": 0.52,
+   "wilson95": [
+    0.4232,
+    0.6154
+   ],
+   "by_half": {
+    "ours_challenge": {
+     "n": 50,
+     "wins": 21,
+     "win_rate": 0.42
+    },
+    "peer_challenge": {
+     "n": 50,
+     "wins": 31,
+     "win_rate": 0.62
+    }
+   },
+   "mean_turns": 40.34,
+   "max_turns": 250,
+   "hit_forfeit_limit": 1,
+   "regime_verified": {
+    "ours": "greedy",
+    "theirs": "greedy",
+    "regime_matched": true,
+    "peer_argmax_match_rate": 1.0
+   },
+   "opponent": {
+    "version": "SmallRL@ckpt40",
+    "commit": "0a00a759"
+   },
+   "showdown_pin": "e0551883f"
+  },
+  "armW": {
+   "run": "ai_v13_02_flywheel_winprob",
+   "human_description": "arm W \u2014 the pair's WIN-PROB arm",
+   "model_step": 75005952,
+   "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+   "n": 100,
+   "wins": 50,
+   "losses": 50,
+   "ties": 0,
+   "win_rate": 0.5,
+   "wilson95": [
+    0.4038,
+    0.5962
+   ],
+   "by_half": {
+    "ours_challenge": {
+     "n": 50,
+     "wins": 24,
+     "win_rate": 0.48
+    },
+    "peer_challenge": {
+     "n": 50,
+     "wins": 26,
+     "win_rate": 0.52
+    }
+   },
+   "mean_turns": 46.54,
+   "max_turns": 196,
+   "hit_forfeit_limit": 0,
+   "regime_verified": {
+    "ours": "greedy",
+    "theirs": "greedy",
+    "regime_matched": true,
+    "peer_argmax_match_rate": 1.0
+   },
+   "opponent": {
+    "version": "SmallRL@ckpt40",
+    "commit": "0a00a759"
+   },
+   "showdown_pin": "e0551883f"
+  }
+ },
+ "pair_delta_S_minus_W": {
+  "delta": 0.02,
+  "newcombe95": [
+   -0.1165,
+   0.1554
+  ],
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero. Rule 6: never 'equal'; equivalence needs the delta's own CI inside a bar and no bar exists for this row"
+ }
+}
