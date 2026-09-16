@@ -18655,3 +18655,159 @@ Launched 04:30 PT, launcher pid 990210, child 990234, pin **`a5a649a5`** (`↳ T
 🚨 **`--fork-crn` WAS ADDED DELIBERATELY AND IS A VERIFIED NO-OP.** The GO's spec named `--fork-crn dice_and_draws`; **the delivered argv did not contain it.** Its argparse default is `None` — the help text's "(the DEFAULT)" is prose, not the declared default — and the value resolves downstream at `config.py:660` (`_resolve("fork_crn", "dice_and_draws")`) and again at `fork_callback.py:180` via `DEFAULT_CRN = "dice_and_draws"`. So the regime is identical either way. It was added because **`dice_and_draws` vs `dice` is exactly the treatment-vs-control distinction the registration turns on**, and an argv should STATE its experiment rather than inherit it. **Generalised instrument: any flag the argv does not NAME re-resolves, and a help string's claim about a default is not a declaration** — the same family as the `--critic` flip re-resolving six keys.
 
 Banners: `[Reward] composition: 1 TERMINAL + 0 PBRS + 0 BIAS (none — fully policy-invariant)`; `[CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1] … --vf-coef 0.5`; `⚖️ [EVAL REGIME] eval sentinels GREEDY + symmetric teams (source=default); promote_threshold=0.55`; `🧾 [CF] reconstruction-record tap ON → models/ai_v13_03_fork/cf_records (newest 4096)`. **The fork DOSE is DELIVERED, not declared** — the row budget binds at production, so `fork/forks`, `fork/requested`, `fork/branch_share` and `fork/sim_steps_share` go in the first-cycle check and the bank line, never the flag value. Watch items: `fork/forks` = 0, `fork/sim_steps_share` > 2.5 after the ask cap settles, no crossing by 4M, a G7 breach against an in-family reference. Tag: **OPS · COMPLETE (arm W) · PAIR COMPLETE and operationally matched · LAUNCH (fork arm)**.
+
+### 2026-09-16 · MEASUREMENT (MAJOR) · THE FLYWHEEL-ERA PAIR READ — `--critic shaped` vs `--critic winprob` at 75M on one pin, one dose-by-declaration, one seed slot and one eval regime: **NOT DETECTED on strength (+17.5 Elo, claimable ≈ 69), on the registered critic guard, and on all four external-anchor cells**; the rows that DO move are ones the registration had already ruled could not be endpoints — entropy **FLAT vs DECAYING**, the untaught meter **+8.31 pp to arm S (8 of 8 teams)**, and **~4× the ECE on arm W's critic at indistinguishable resolution**; plus a **realized-dose gap of 1.44× the registration did not price** and a **tool defect that makes `--v-column` silently miss every quota-matched row**
+
+`designs/research_state/measurements/flywheel_pair_read_2026-09-15/`. **THE PAIR.**
+`ai_v13_01_flywheel_shaped` (**arm S — the era's SHAPED reward/critic composition transplanted onto
+the current pin**) and `ai_v13_02_flywheel_winprob` (**arm W — the WIN-PROB critic, V(s) = P(win|s)
+with the value loss the win-prob head's BCE**), both COMPLETE at **75,005,952**, both pin
+`6eb9c776` for all 75M steps (`pin_history` one row each), both `role: fresh`, both config v119 /
+`gen3_critic_route_wave_v1`, both `--seed 1001` / `--ent-coef 0.05` /
+`--eval-sentinel-greedy` (RECORDED) / `--no-value-true-team`, both crossed self-play at the
+**identical 4,128,768**, both 20 ladder nodes. Everything CPU-only, `nice`, from the main checkout,
+nothing written under `models/`; the live `ai_v13_03_fork` arm held the GPU throughout and was not
+touched; Showdown on :9450 / :9417 / :9500 started and stopped by their own PIDs, **:8000 and
+:8001 untouched**. **STRENGTH (the primary endpoint).** Both committed `ladder.json` files carry
+the recipe stamp (`eval_sentinel_edges_dropped` 51 / 48) and **reproduce their current-code refits
+to 0.0** — rule 24 satisfied on both sides, unlike the third leg. Headline at matched COUNT (20
+nodes), newest node **at the same 72,000,000 on both**: arm S **2036.6** (se 8.9), arm W **2019.1**
+(se 8.7), **Δ(S − W) = +17.5 [−6.9, +41.9]**; second-newest +10.2 [−14.2, +34.6]. se(Δ) = 12.45,
+CI95 ±24.4, so the smallest claimable |Δ| against the imported 45.0 Elo floor is **69.4** ⇒
+**NOT DETECTED, never "equivalent"** (rule 6: ±24.4 inside a floor imported from 10M four-node
+depth makes the equivalence clause unavailable). 🚨 **The registration's §8.1 correction 1 bites:
+the two node sets share only 16 of 20 STEPS**, so the matched-COUNT table compares different steps
+at 19 of 20 ordinals; the **COMMON-STEP refit** (16 nodes ≥ the registered n ≥ 12 report floor)
+gives **arm S 2032.3 vs arm W 2025.6, Δ +6.7 [−20.2, +33.6], NOT DETECTED**. **The SHAPE the
+registration asked to see is there: arm S leads at ALL 16 shared steps, by +25 to +57 Elo through
+26–42M, narrowing to +6.7 at the shared 72.0M node** — no single gap claimable (smallest claimable
+71.9 on that fit), the 16 points not independent, reported as a description. Late slopes, newest
+node dropped, **no bar attaches**: arm S **+1.14 ± 0.44** Elo/M (48–68M, t = 2.62), arm W
+**+0.78 ± 1.33** (52–70M, t = 0.59) with its steepest segment in the MIDDLE third
+(+3.31 ± 0.83); both still gaining at 75M, neither late−middle difference clear of zero. Third leg
+`ai_v12_02_winprob_critic` **REFIT** (1984.2; its committed 2057.3 never quoted): arm S +52.4
+[+28.3, +76.5], arm W +34.9 [+10.9, +58.7], **both NOT DETECTED**, both carrying pin and
+`--ent-coef` confounds, ladder-only across the 2026-09-07 regime boundary. v8 line **SHAPE ONLY**
+(rule 4) and the bot frame is precise-and-wrong near the frontier (rule 6): its own late third
+refits to **−0.10 ± 0.15** over 210–242M, not distinguishable from flat. **ENTROPY.** Both spans
+verified own (741 / 740 points, 196,608 → 75,005,952), both crossings at 4,128,768 so every
+post-crossing window is genuinely matched. H_end (median-20) **1.0292 (S) vs 1.0648 (W)**, Δ
+−0.0356 — **inside the 0.074-nat three-seed floor, NOT READ**; both arms' distances from `ent05`'s
+1.0861 (−0.057 / −0.021) and from v8's 1.07–1.11 plateau (−0.041 / −0.005) are inside it too, so
+**the pre-registered prediction is not contradicted by either arm**. 🚨 **The row that is a
+FINDING (§8.3 makes an H difference a finding, never a bar): the TRAJECTORIES differ. Arm S holds
+entropy FLAT across the whole post-crossing span — −3e-5 ± 5e-5 nats/M, t = −0.57 over 71M steps —
+while arm W DECAYS at −1.36e-3 nats/M, t = −23.6, ≈ −0.097 nats total, which clears the floor as a
+level change even though the endpoint difference does not.** The coefficient is matched at 0.05 and
+is live on a resume, so it held across all 13 restarts on both: the difference is downstream of the
+reward composition, which is the localisation §8.3 said this row could buy. The matched-step gap is
+largest at the 5M bucket (−0.153) and inside the floor from 25M on. **CRITIC ROWS.** 🚨 **The
+control arm S could not have now exists and `main.ops.critic_read` ACCEPTED it** — where arm S's
+read was REFUSED on two counts at once (`eval_sentinel_greedy` arm=True/control=False, `n_games`
+800/400), the pair is comparable by construction: two independent offline full-capture draws per
+arm, seeds 20260910 / 20260911, **9,600 battles each, complete, shortfall 0**, sentinels GREEDY
+(regime RECORDED), draw/timeout share 0.4 % / 0.5 %, anchors 150/150 on both. 🚨 **Both arms are
+read at 74,000,016 and it is the SAME step — 1,005,936 (1.34 %) short of each arm's end, an exactly
+matched distance**, which is the check arm S's note asked the pair read to make; neither run has an
+eval cycle at its final step. Frames quota-MATCHED to caps 799/392/7 before any frame-sensitive row
+was labelled. `max|values − win_probs|` = **0.0 on arm W** (one tensor) and **75.12 / 119.06 on arm
+S** (the treatment, hazard H5, reproducing arm S's own numbers). **The registered guard
+`cond.opp_class_auc.t4_10`, ROW A (arm S's AUXILIARY head at coef 0.05 vs arm W's CRITIC), matched
+frame: 0.7686 vs 0.7431, Δ(S − W) +0.0254 [+0.0120, +0.0396] against the imported 0.02451 floor —
+NOT DETECTED**, reproducing on both draws (+0.0223 / +0.0211 as traced). **ROW B (arm S's ACTUAL
+shaped critic vs arm W's critic, rank rows ONLY) SPLITS: +0.0236 on draw1 and +0.0297 on draw2** —
+inside the floor on one and outside on the other, with `critic_read`'s own as-traced computation at
++0.0290 — the shape rule 19 assigns to a row at its eval-draw noise and rule 21 calls **NOT
+CONFIRMED, never refuted**. Turn 1 reads ≈0.50 on every column and draw; the `t1_3` sibling's own
+draw spread (0.0218–0.0227) sits at or above its 0.0153 floor and cannot carry a claim. **Where the
+objectives DO come apart is CALIBRATION, not resolution.** `gate.resolution.all / bot / pool` are
+NOT DETECTED on every stratum (Δ(W − S) +0.0043 / +0.0028 / +0.0046), while **`gate.ece.all`
++0.0510 [+0.0415, +0.0595] against a 0.0245 floor, `gate.ece.bot` +0.0614, `gate.reliability.all`
++0.0046 and `gate.reliability.bot` +0.0152 are all DETECTED in the arm-W-is-worse direction and all
+reproduce on the second draw** (per-arm eval-draw spreads 0.0008–0.0028 against floors of
+0.0245–0.0449). Arm W's ECE is ~4× arm S's head's overall (0.069 vs 0.018) and ~2× against bots,
+with calibration-in-the-large +0.58 vs +0.03 and `V − p̂` −0.110 vs −0.049 — **the same dispersion**
+(calibration slope 1.350 vs 1.346, Δ inside floor) **shifted in LEVEL: arm W is systematically
+pessimistic.** 🚨 **This is a CRITIC against a DIAGNOSTIC and must never be quoted as
+critic-vs-critic**: arm S's `win_probs` head carries 5 % of the value weight, is fit by a pure BCE
+and is not the baseline any advantage is taken against, while arm W's head IS the value function,
+consumed by GAE, with `--vf-coef 0.5` multiplying a BCE rather than a PopArt-normalised MSE
+(hazard H4, deliberately not re-tuned). Arm S's actual critic lives on a shaped-return scale where
+ECE is not defined. **UNTAUGHT METER.** Registry opponent `untaught_meter_opponent` (=
+`ai_v9_29_rev1_0823@24,000,000`), 200 games/team over the untaught 8, seed 0, concurrency 1, both
+arms in ONE invocation, **3,200 battles per config, 0 timeouts**: arm S **54.50 pp [52.25, 56.62]**,
+arm W **46.19 pp [42.81, 49.12]**, **IDENTICAL to the last win under BOTH config resolutions**
+(the condition §8.5 sets for a level counting as a level), and **arm S reproduces its banked
+2026-09-14 level EXACTLY (Δ 0.00 pp, 872/1600 both times)**, confirming the meter is deterministic
+at seed 0 / concurrency 1. Paired team-clustered **Δ(S − W) = +8.31 pp [+5.69, +11.19], 8 of 8
+teams** — past **every** floor in evidence including the 4.27 pp controller-live one, but **a
+DESCRIPTOR and not an endpoint** (§8.5: the meter's axes and floors are established at ~1M FOLD
+depths and neither arm is a fold) and a **run-level CANDIDATE at n = 1 per arm**. The 0.02 leg
+joins at 58.25 pp (0.02 leg − arm W = +12.06 pp), so the three-way order is **0.02 leg > arm S >
+arm W on the meter while the ladder orders arm S > arm W > 0.02 leg** — the two instruments are not
+measuring one quantity, and **arm W is the only one of the three that is low on both**. **EXTERNAL
+ANCHORS, each inside its own regime.** vs Metamon `SmallRL` (ckpt 40, 13.9M, VanillaAttention, CPU,
+`@0a00a759`), arm S's own cell scripts reused verbatim with **the same team seeds**, 100 games per
+cell as two role-balanced half-cells: **greedy·home 0.630 vs 0.650, Δ(S − W) −0.020 [−0.151,
++0.111]**; **greedy·AWAY (`python -m main.anchors`, the tool of record, on BOTH arms) 0.520 vs
+0.500, Δ +0.020 [−0.117, +0.155]**; **mixed (ours greedy / theirs t = 1.0) ·home 0.840 vs 0.760,
+Δ +0.080 [−0.032, +0.190]** — **all three NOT DETECTED**. Regime VERIFIED per decision:
+`argmax_match_rate` **1.0000** in every greedy half-cell and **0.6408** in the sampling one (inside
+the 2×2's 0.623–0.680 band), our `stochastic` kwarg `[false]` everywhere; 1 tie in 300 home games,
+0 in 200 away. Both arms drop ~13–15 pp from the home set to the away set, so the SOP's
+report-both-team-sets rule earns itself again. vs **Foul Play** (`6c467c08` + poke-engine 0.0.48,
+`--features gen3`) at `--search-time-ms 1000 --search-parallelism 1`, 80 games over the same 8
+pinned pool teams: **arm W 0.475 [0.369, 0.583] against arm S's 0.450 [0.346, 0.559], Δ(S − W)
+−0.025 [−0.175, +0.127], NOT DETECTED**; 0/80 forfeits, 0 error lines. 🚨 **AND THE WIDTHS ARE NOT
+MATCHED — this time in ARM W's favour**: realized **1.153 M MCTS visits/decision (sessions
+0.86–1.33 M)** against arm S's **1.249 M** and the de-risk's **1.40 M**, because this campaign ran
+at load 15–25 against arm S's 26–37. **Across the three campaigns the win rates order EXACTLY
+inversely to realized search width (1.40 M → 0.388, 1.249 M → 0.450, 1.153 M → 0.475)** — rule 23's
+prediction for a WIDTH meter under a moving machine, and the reason **no difference among the three
+may be attributed to a model**. The honest statement: all three 75M policies sit **BELOW** Foul
+Play by a margin these experiments cannot separate, and the two external anchors continue to
+bracket the policy. **OPERATIONAL ROWS** (§8.4b, PRIMARY on arm W by its own `[CRITIC]` banner):
+`rollout/ep_len_mean` post-crossing mean **40.48 (S) vs 44.53 (W)**, post-crossing max 53.3 vs
+63.9 — arm W's episodes run ~4 turns longer, the direction the banner warned of — **but neither arm
+is near rule 12's 25 % threshold, neither breached G7 (worst 1.070 vs 1.131, both under bar off
+in-family references) and arm W's stall half-peak is LOWER (0.0145 vs 0.0237)**. The mode's warning
+is visible as a shift in episode length and not as a pathology; `--arm-no-progress-tax` stays OFF.
+🚨 **TWO HAZARDS THE REGISTRATION DID NOT PRICE.** (1) **THE REALIZED DOSE CAME OUT UNMATCHED.**
+The four dose inputs are identical tokens in both argvs so the dose is equal BY DECLARATION (§5),
+but the KL controller annealed the arms differently: `lr_median` **4.32e-4 (S)** vs **3.00e-4 (W)**,
+dose_rate **6.592e-08 vs 4.578e-08** — a **1.44× realized-dose gap in arm S's favour**. The
+registration anticipated the mechanism in words and no arm-to-arm number existed until now. Step
+size here is downstream of the objective, in the same class as `gamma` and PopArt — FORCED, not
+chosen — so it is not a design confound; it IS a reason no row on which arm S leads may be read as
+if the optimiser had been held fixed. (2) **A TOOL DEFECT: `--v-column` does not reach the
+quota-matched rows.** `main.ops.quota_match._scan` and its bootstrap pass call
+`conditioning_meters.conditioning_block(...)` **without `v_column`**, so every MATCHED row is
+computed on `win_probs` whatever the flag says — on a shaped arm, the AUXILIARY head rather than
+the critic. `critic_read --v-column values` returns matched rows byte-identical to the `win_probs`
+run while its own as-traced table correctly reads the shaped column: **the two halves of one report
+disagree about which tensor `V` is, and nothing in the output says so**, and the matched delta is
+the label-bearing one by design. ROW B is therefore reported AS TRACED only. **The `win_probs`
+default means no banked read is affected**; the fix is one keyword argument at two call sites and
+belongs on the tech-debt backlog. **Nothing under `src/` was changed by this read.** **Other
+hazards, each a finding:** the arm-S note's late-slope row for its two COMPARATOR runs does not
+reproduce from its own committed `strength_read.json` (it prints +0.15 / +0.32 where the JSON and a
+fresh refit both say −0.32 / −0.104; **arm S's own row reproduces exactly at +1.1435 ± 0.4357**, so
+its headline stands and only the comparator row is wrong); the Metamon `mixed · Metamon challenges`
+half-cell failed **for the third time in three independent campaigns, in the same cell, with the
+same `RecursionError` signature** *after* its last game, making that half-cell's positional join
+unreliable (`sides_disagree` 6, `metamon_row_missing` 2, **0 in every other half-cell**) — only our
+own complete 50-game record feeds the win rate; the two arms' three pool SENTINELS are different
+checkpoints (26/46/72M vs 22/42/72M) because the retained pools differ, so the frames are matched
+in KIND but not in the identity of three of twelve opponents; and `critic_read`'s delta orientation
+is arm − control (W − S) where every other row here is S − W. **The mirror battery was NOT run**
+(rule 25 retired the 100-pair cells; a ≥400-pair leaf read is a separate job). **NOTHING IS
+CLAIMED ABOUT THE CRITIC OBJECTIVE IN GENERAL**: n = 1 per arm, no seed replicate exists and none
+is affordable (~35 GPU-h), rule 22 binding — and the named next increment is **a seed replicate of
+arm W**, not a further offline read of these two. Tag: **MEASURED · the flywheel pair read COMPLETE
+· strength NOT DETECTED (+17.5, claimable ≈ 69; +6.7 on the common-step refit) · critic guard NOT
+DETECTED · anchors NOT DETECTED ×4, Foul Play's widths unmatched in arm W's favour · entropy FLAT
+vs DECAYING (a FINDING) · untaught +8.31 pp to arm S, 8/8 teams (a DESCRIPTOR) · ECE ~4× on arm W
+at equal resolution, CRITIC-vs-DIAGNOSTIC · realized dose 1.44× unmatched · `--v-column` misses
+every quota-matched row**.
+
+**Orchestrator's reading and DECISION.** (1) **The premise the era rests on holds at the standard it could be tested at:** the win-prob critic costs nothing detectable on strength or on any external anchor at 75M against the era's shaped configuration, on a matched pair with no operational confound. That is NOT DETECTED, never "equivalent" (one seed per arm; the claimable gap is ~69 Elo; a ±25-Elo difference is invisible here by design). (2) **Three rows the registration pre-designated as findings, not endpoints, all lean the same way:** arm S's entropy stays flat for 71M steps where arm W's decays; arm S is +8.3 pp on the untaught meter (8 of 8 teams, a run-level CANDIDATE); arm W's critic is ~4× worse calibrated at indistinguishable resolution — and the realized dose ran 1.44× in arm S's favour (its KL controller annealed less, forced by the objective), so none of the three can be read as if the optimiser were held fixed. **Together they are the shape of "the dense signal helps the generalist generalise and stay exploratory, at no strength cost either way", and one seed cannot promote that above CANDIDATE.** (3) The critic guard: the shaped arm's auxiliary head reads the opponent slightly better than the win-prob critic (+0.025, inside the imported floor), and the critic-vs-critic row splits across draws — NOT CONFIRMED. **DECISION:** the era proceeds on the win-prob critic (the owner's direction; the premise held); the next full-length spend is NOT a second pair but the seed replicate of arm W ONLY IF a later fold needs the entropy/untaught rows as a family claim — otherwise the 75M budget goes to the first flywheel revolution on arm W, read on the anchors and the untaught meter against arm S's levels as the standing comparators. The `--v-column` matched-row defect (H-L) and the recurring Metamon `mixed · Metamon challenges` half-cell failure (H-H) are backlog rows; the Foul Play inverse ordering by realized width (H-E) is rule 23's signature and closes any cross-campaign Foul Play comparison until the width is pinned. Tag: **VERDICT (MAJOR) · pair NOT DETECTED on every endpoint · three pre-designated findings lean shaped · realized dose 1.44× · era proceeds on win-prob**.

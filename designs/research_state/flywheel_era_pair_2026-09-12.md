@@ -750,6 +750,10 @@ such, not as a verdict on the critic.
 
 Arm S (`1750680d`) crossed at 4,128,768, G7 under bar for 37 cycles, 20 ladder nodes, `final_model.zip` at 75,005,952. Its standalone reads are in `measurements/flywheel_armS_reads_2026-09-14/` (`04e13eae`): Elo 2036.6 (se 8.9) at 20 nodes; late slope +1.14 ± 0.44 Elo/M; H flat at 1.03; decision row 0.768 (critic) / 0.767 (auxiliary head); untaught 54.5 pp; anchors 0.630 (SmallRL greedy) / 0.450 (Foul Play @1.25M visits). **Two amendments to the read: (1) the 0.02 leg `ai_v12_02` is REFIT under the current recipe (1984.2), never quoted from its committed file (2057.3, stale recipe — +73 Elo); (2) the registered critic control for arm S is refused by `critic_read` (regime + game-count mismatch) — critic rows are LEVELS, read at 74,000,016 (no eval cycle at the final step); arm W's are read at its last evaluated step and the distance from the end checked. `--v-column {win_probs,values}` exists for the both-ways read; calibration and `gate.*` rows are defined only on the probability column.** Arm W launched 13:07 PT 2026-09-14; the pair read is S vs W on these rows.
 
+## 9c. VERDICT 2026-09-16 — NOT DETECTED on every endpoint; three pre-designated findings lean shaped
+
+`measurements/flywheel_pair_read_2026-09-15/` (`986ed5f5`). Strength Δ(S − W) +17.5 [−6.9, +41.9] at 20 refit nodes (claimable ≈ 69) and +6.7 [−20.2, +33.6] on the 16-shared-step refit — NOT DETECTED. Anchors all NOT DETECTED. Critic guard +0.025 inside the floor. Findings (§8.3 / §8.5, not endpoints): arm S entropy FLAT 71M vs arm W decaying −0.097 nats; untaught +8.31 pp to S (8/8 teams); arm W critic ECE 0.069 vs 0.018 at equal resolution; realized dose 1.44× in S's favour (H-F). One seed per arm; rule 22 binds; the named next increment is a seed replicate of arm W if a family claim on the findings is ever needed. The era proceeds on the win-prob critic.
+
 ## 10. Sequencing and ETA
 
 **The GPU is single.** Order: `vf025` (live) → **arm S** → **arm W**.

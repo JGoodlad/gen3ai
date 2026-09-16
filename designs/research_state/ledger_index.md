@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,658-line file. **The ledger itself is append-only and is never edited by this**;
+18,814-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**615 headings · 564 dated · 2026-08-01 → 2026-09-16 · ledger 18,658 lines.**
+**616 headings · 565 dated · 2026-08-01 → 2026-09-16 · ledger 18,814 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -635,3 +635,4 @@ rename.
   - `L18619` · `2026-09-14` · REGISTRATION (amendment) · THE FORK ARM IS BUILT (`a5a649a5`, `gen3_fork_v1`, config v120) — two forced deviations from the registered argv, one dose fact, and the launch order
   - `L18625` · `2026-09-16` · OPS · `ai_v13_02_flywheel_winprob` (ARM W) COMPLETE at 75,005,952 — **the flywheel pair is now COMPLETE at matched dose, pin, entropy, obs and ecology**, and the two arms are indistinguishable on every operational row; the FORK arm launched behind it
   - `L18651` · `2026-09-16` · OPS · LAUNCH · `ai_v13_03_fork` — the fork arm is live
+  - `L18659` · `2026-09-16` · MEASUREMENT (MAJOR) · THE FLYWHEEL-ERA PAIR READ — `--critic shaped` vs `--critic winprob` at 75M on one pin, one dose-by-declaration, one seed slot and one eval regime: **NOT DETECTED on strength (+17.5 Elo, claimable ≈ 69), on the registered critic guard, and on all four external-anchor cells**; the rows that DO move are ones the registration had already ruled could not be endpoints — entropy **FLAT vs DECAYING**, the untaught meter **+8.31 pp to arm S (8 of 8 teams)**, and **~4× the ECE on arm W's critic at indistinguishable resolution**; plus a **realized-dose gap of 1.44× the registration did not price** and a **tool defect that makes `--v-column` silently miss every quota-matched row**

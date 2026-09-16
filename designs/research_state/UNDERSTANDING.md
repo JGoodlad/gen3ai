@@ -868,8 +868,24 @@ win-prob arm, held episode length for 75M, ended at 2036.6 Elo on 20 nodes with 
 entropy FLAT for 71M steps at 1.03 nats, its decision row read both ways (shaped critic 0.768 / auxiliary head
 0.767 — the 0.05-coefficient auxiliary ranks opponent class as well as the critic), untaught meter 54.5 pp against
 the 75M win-prob run's 58.25 (−3.75 [−6.4, −1.1], a descriptor), and on the anchors 0.630 vs SmallRL greedy and
-0.450 vs Foul Play at 1.25M visits (both n.d. vs the win-prob run's 0.520 / 0.388). Nothing about the objective is
-claimed until arm W lands. [ledger 2026-09-14 · *MEASUREMENT · ARM S's RUN-END READS*] The flywheel pair's shaped arm therefore runs the
+0.450 vs Foul Play at 1.25M visits (both n.d. vs the win-prob run's 0.520 / 0.388). [ledger 2026-09-14 · *MEASUREMENT · ARM S's RUN-END READS*]
+
+**THE FLYWHEEL-ERA PAIR READ (2026-09-16, `flywheel_pair_read_2026-09-15/`):** [MEASURED (MAJOR) · NOT DETECTED on every
+endpoint] arm W (`ai_v13_02_flywheel_winprob`, the win-prob critic) against arm S (the era's shaped configuration),
+75M each, one pin, one declared dose, one seed slot, one eval regime, operationally matched (same crossing step
+4,128,768, 20 snapshots each, G7 clean on both). Strength: 2036.6 vs 2019.1 at 20 refit nodes, Δ +17.5 [−6.9, +41.9]
+against a claimable ~69 — NOT DETECTED, never "equivalent" (n = 1 per arm). Anchors: SmallRL greedy home 0.630 vs
+0.650, away 0.520 vs 0.500, Foul Play 0.450 vs 0.475 at unmatched widths — all NOT DETECTED. Critic guard
+`cond.opp_class_auc.t4_10`: +0.025 to the shaped arm's auxiliary head, inside the imported floor; critic-vs-critic
+splits across draws (NOT CONFIRMED). **Three pre-designated FINDINGS, not endpoints, all leaning shaped:** entropy FLAT
+for 71M on arm S vs DECAYING on arm W (−0.097 nats, t −23.6); untaught meter 54.5 vs 46.2 pp (+8.3, 8 of 8 teams,
+run-level CANDIDATE); arm W's critic ~4× worse calibrated (ECE 0.069 vs 0.018) at indistinguishable resolution — and
+the REALIZED dose ran 1.44× in arm S's favour (its KL controller annealed to lr 4.3e-4 vs 3.0e-4, forced by the
+objective), so none of the three is read as if the optimiser were held fixed. **The premise the era rests on holds at
+the standard it could be tested at: the win-prob critic costs nothing detectable on strength or on any external
+anchor.** Era proceeds on win-prob; arm S's levels are the standing comparators for the first revolution. Tool defect
+H-L: `critic_read --v-column` silently reads `win_probs` on every quota-matched row (backlog). [ledger 2026-09-16 ·
+*MEASUREMENT (MAJOR) · THE FLYWHEEL-ERA PAIR READ*] The flywheel pair's shaped arm therefore runs the
 era's shaped configuration, not a one-flag flip. [ledger 2026-09-12 · *READ · the shaped-critic family at the
 LADDER argv*] [ledger 2026-09-12 · *VERDICT · strata_b FAILS*, *READ · the
 REPRESENTATION-level opponent-class decode*]
