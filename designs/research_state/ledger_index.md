@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,624-line file. **The ledger itself is append-only and is never edited by this**;
+18,658-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**613 headings · 562 dated · 2026-08-01 → 2026-09-14 · ledger 18,624 lines.**
+**615 headings · 564 dated · 2026-08-01 → 2026-09-16 · ledger 18,658 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -633,3 +633,5 @@ rename.
   - `L18489` · `2026-09-14` · MEASUREMENT (MAJOR) · SIBLING DISCRIMINATION MEASURED DIRECTLY FOR THE FIRST TIME — the promoted win-prob head ranks siblings AT CHANCE (0.517), the FROZEN trunk already holds the ordering (+0.086 from plain BCE on counterfactual successors, DETECTED), and the pairwise RANKING term buys NOTHING (2026-09-14)
   - `L18576` · `2026-09-14` · MEASUREMENT (MAJOR) · TWO EXTERNAL ANCHORS ON THE BOT-ANCHORED SCALE — `metamon:SmallRL` **1940.0 ± 9.5**, `metamon:SyntheticRLV2` **1983.4 ± 9.7** (level with `ai_v12_02`@74M refit 1984.6; below arm S 2034.6), 4,000 games, 39/39 cells regime-verified; the registered precision benefits FALSIFIED (se −8.6 %, newest-node inflation unchanged) — and the finding the registration did not ask for: **the bot frame is PRECISE and WRONG** (nine bots' edges to one opponent imply 1775–2049, 274 Elo of disagreement against a fitted se of 9.5; the bot frame alone orders SmallRL ABOVE SyntheticRLV2 while 200 direct games say the opposite by +96)
   - `L18619` · `2026-09-14` · REGISTRATION (amendment) · THE FORK ARM IS BUILT (`a5a649a5`, `gen3_fork_v1`, config v120) — two forced deviations from the registered argv, one dose fact, and the launch order
+  - `L18625` · `2026-09-16` · OPS · `ai_v13_02_flywheel_winprob` (ARM W) COMPLETE at 75,005,952 — **the flywheel pair is now COMPLETE at matched dose, pin, entropy, obs and ecology**, and the two arms are indistinguishable on every operational row; the FORK arm launched behind it
+  - `L18651` · `2026-09-16` · OPS · LAUNCH · `ai_v13_03_fork` — the fork arm is live
