@@ -1,0 +1,177 @@
+{
+ "alignment": {
+  "n_forks": 5040,
+  "n_successors": 14803,
+  "n_branch_rows": 14780,
+  "b_idx_equals_arange": false,
+  "first_mismatch_row": 1880,
+  "max_offset": 23,
+  "n_rows_misindexed": 12900
+ },
+ "split": {
+  "test_rows": 3049,
+  "test_pairs": 3033,
+  "test_nontied": 562
+ },
+ "as_published": {
+  "original": {
+   "head": "original(as published, mis-indexed)",
+   "n_pairs": 3033,
+   "n_nontied": 562,
+   "pairwise_acc": 0.5169039368629456,
+   "pairwise_acc_ci": [
+    0.47993978932499887,
+    0.5524188607931136
+   ],
+   "sep_nontied": 0.08140764969195574,
+   "sep_tied": 0.07978113669090241,
+   "sep_ratio": 1.0203871876049468,
+   "ece": 0.12455608494800006,
+   "brier": 0.21535424691483857,
+   "mean_V": 0.7240623683330706,
+   "base_rate": 0.7293924689292908
+  }
+ },
+ "corrected": {
+  "original": {
+   "head": "original",
+   "n_pairs": 3033,
+   "n_nontied": 562,
+   "pairwise_acc": 0.5871886014938354,
+   "pairwise_acc_ci": [
+    0.5525587663054466,
+    0.622482444345951
+   ],
+   "sep_nontied": 0.06704086662531959,
+   "sep_tied": 0.03738557389107782,
+   "sep_ratio": 1.79322823345288,
+   "ece": 0.028703898554193766,
+   "brier": 0.1412075001150895,
+   "mean_V": 0.7426816521025889,
+   "base_rate": 0.7293924689292908
+  },
+  "control_bce": {
+   "head": "control_bce",
+   "n_pairs": 3033,
+   "n_nontied": 562,
+   "pairwise_acc": 0.6032028198242188,
+   "pairwise_acc_ci": [
+    0.5689596861600876,
+    0.6373999401926994
+   ],
+   "sep_nontied": 0.06750116497278214,
+   "sep_tied": 0.039447810500860214,
+   "sep_ratio": 1.7111511162656334,
+   "ece": 0.052028320067025416,
+   "brier": 0.14173449575901031,
+   "mean_V": 0.6850655674934387,
+   "base_rate": 0.7293924689292908
+  },
+  "rank_0.1": {
+   "head": "rank_0.1",
+   "n_pairs": 3033,
+   "n_nontied": 562,
+   "pairwise_acc": 0.5925266742706299,
+   "pairwise_acc_ci": [
+    0.5574700683355331,
+    0.6277793347835541
+   ],
+   "sep_nontied": 0.06449969857931137,
+   "sep_tied": 0.037433136254549026,
+   "sep_ratio": 1.7230642428864908,
+   "ece": 0.04205806945620354,
+   "brier": 0.139815092086792,
+   "mean_V": 0.7086367011070251,
+   "base_rate": 0.7293924689292908
+  }
+ },
+ "deltas_corrected": {
+  "control_minus_original": {
+   "delta": 0.0160142183303833,
+   "ci": [
+    0.0,
+    0.03125222474336623
+   ],
+   "detected": false
+  },
+  "bestrank_minus_original": {
+   "delta": 0.005338072776794434,
+   "ci": [
+    -0.008287884294986725,
+    0.016949176788330078
+   ],
+   "detected": false
+  },
+  "bestrank_minus_control": {
+   "delta": -0.010676145553588867,
+   "ci": [
+    -0.02486187219619751,
+    0.0028171151876449575
+   ],
+   "detected": false
+  }
+ },
+ "deltas_as_published": {
+  "control_minus_original": {
+   "delta": 0.0862988829612732,
+   "ci": [
+    0.038353370130062105,
+    0.13468016982078546
+   ],
+   "detected": true
+  }
+ },
+ "corrected_all_pairs": {
+  "original": {
+   "head": "original",
+   "n_pairs": 14656,
+   "n_nontied": 2979,
+   "pairwise_acc": 0.5773749351501465,
+   "pairwise_acc_ci": [
+    0.5613373637199401,
+    0.5935347855091094
+   ],
+   "sep_nontied": 0.07033724296861806,
+   "sep_tied": 0.04130811573498234,
+   "sep_ratio": 1.7027463421443843,
+   "ece": 0.03600776563493168,
+   "brier": 0.15821356823814178,
+   "mean_V": 0.7327888752945091,
+   "base_rate": 0.6975669264793396
+  },
+  "control_bce": {
+   "head": "control_bce",
+   "n_pairs": 14656,
+   "n_nontied": 2979,
+   "pairwise_acc": 0.5897952318191528,
+   "pairwise_acc_ci": [
+    0.5739672616124153,
+    0.6058355569839478
+   ],
+   "sep_nontied": 0.07187069207429886,
+   "sep_tied": 0.043593570590019226,
+   "sep_ratio": 1.6486534849419674,
+   "ece": 0.024351926703974822,
+   "brier": 0.15219023823738098,
+   "mean_V": 0.6733223795890808,
+   "base_rate": 0.6975669264793396
+  },
+  "rank_0.1": {
+   "head": "rank_0.1",
+   "n_pairs": 14656,
+   "n_nontied": 2979,
+   "pairwise_acc": 0.5904666185379028,
+   "pairwise_acc_ci": [
+    0.5747606351971626,
+    0.6066896975040436
+   ],
+   "sep_nontied": 0.06921792030334473,
+   "sep_tied": 0.04112890735268593,
+   "sep_ratio": 1.682950624235935,
+   "ece": 0.010705353392843998,
+   "brier": 0.1528668850660324,
+   "mean_V": 0.6988438963890076,
+   "base_rate": 0.6975669264793396
+  }
+ }
+}

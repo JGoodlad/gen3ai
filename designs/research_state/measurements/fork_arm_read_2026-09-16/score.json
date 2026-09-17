@@ -1,0 +1,184 @@
+{
+ "snapshots": {
+  "arm": "models/ai_v13_03_fork/snapshots/snapshot_000010000032.zip",
+  "ctrl": "models/ai_v12_11_ladder_ctrl10M/snapshots/snapshot_000010000032.zip"
+ },
+ "datasets": {
+  "arm_states": {
+   "n_forks": 5040,
+   "n_branch_rows": 14809,
+   "capped_branches": 14,
+   "no_successor_branches": 280,
+   "branch_win_rate": {
+    "top1": 0.617813766002655,
+    "top2": 0.6238308548927307,
+    "rand": 0.5891739130020142
+   },
+   "branch_n": {
+    "top1": 4940,
+    "top2": 4918,
+    "rand": 4951
+   },
+   "blind_spot": {
+    "n_complete_forks": 5010,
+    "rand_beats_both": 277,
+    "rate": 0.05528942115768463,
+    "wilson": [
+     0.049294813633037116,
+     0.061965502209409926
+    ]
+   },
+   "turn_median": 14.0,
+   "opp_mix": {
+    "sentinel_0": 1689,
+    "sentinel_1": 1595,
+    "sentinel_2": 1756
+   },
+   "n_pairs": 14694,
+   "n_nontied_pairs": 3745,
+   "tie_rate": 0.7451340683272084
+  },
+  "ctrl_states": {
+   "n_forks": 5040,
+   "n_branch_rows": 14806,
+   "capped_branches": 21,
+   "no_successor_branches": 283,
+   "branch_win_rate": {
+    "top1": 0.7154174447059631,
+    "top2": 0.7106815576553345,
+    "rand": 0.6821658611297607
+   },
+   "branch_n": {
+    "top1": 4923,
+    "top2": 4915,
+    "rand": 4968
+   },
+   "blind_spot": {
+    "n_complete_forks": 5011,
+    "rand_beats_both": 228,
+    "rate": 0.04549990021951706,
+    "wilson": [
+     0.04006963046124908,
+     0.05162650606278389
+    ]
+   },
+   "turn_median": 15.0,
+   "opp_mix": {
+    "sentinel_0": 1681,
+    "sentinel_1": 1584,
+    "sentinel_2": 1775
+   },
+   "n_pairs": 14673,
+   "n_nontied_pairs": 2849,
+   "tie_rate": 0.8058338444762488
+  }
+ },
+ "reads": {
+  "arm_states": {
+   "arm": {
+    "head": "arm",
+    "n_pairs": 14694,
+    "n_nontied": 3745,
+    "pairwise_acc": 0.5754339098930359,
+    "pairwise_acc_ci": [
+     0.5607792466878891,
+     0.5896798759698868
+    ],
+    "sep_nontied": 0.06624170703607025,
+    "sep_tied": 0.04656573322017509,
+    "sep_ratio": 1.4225419091515634,
+    "ece": 0.059680586531574105,
+    "brier": 0.1848228255966166,
+    "mean_V": 0.6689116866346432,
+    "base_rate": 0.6096321940422058
+   },
+   "ctrl": {
+    "head": "ctrl",
+    "n_pairs": 14694,
+    "n_nontied": 3745,
+    "pairwise_acc": 0.5757009387016296,
+    "pairwise_acc_ci": [
+     0.561409829556942,
+     0.5893024802207947
+    ],
+    "sep_nontied": 0.074209284881386,
+    "sep_tied": 0.04961704295296152,
+    "sep_ratio": 1.4956410230198258,
+    "ece": 0.05645069181484445,
+    "brier": 0.18940286460625463,
+    "mean_V": 0.6650654642093513,
+    "base_rate": 0.6096321940422058
+   }
+  },
+  "ctrl_states": {
+   "arm": {
+    "head": "arm",
+    "n_pairs": 14673,
+    "n_nontied": 2849,
+    "pairwise_acc": 0.5745875835418701,
+    "pairwise_acc_ci": [
+     0.5590491697192193,
+     0.5919769108295441
+    ],
+    "sep_nontied": 0.06624699896413973,
+    "sep_tied": 0.04148708889670468,
+    "sep_ratio": 1.596810013088234,
+    "ece": 0.01881163267455004,
+    "brier": 0.14599103273845693,
+    "mean_V": 0.7049755625317919,
+    "base_rate": 0.7022113800048828
+   },
+   "ctrl": {
+    "head": "ctrl",
+    "n_pairs": 14673,
+    "n_nontied": 2849,
+    "pairwise_acc": 0.5679185390472412,
+    "pairwise_acc_ci": [
+     0.5514911219477654,
+     0.584258933365345
+    ],
+    "sep_nontied": 0.06877953683445541,
+    "sep_tied": 0.04045856085697917,
+    "sep_ratio": 1.6999995891497663,
+    "ece": 0.03008380877240058,
+    "brier": 0.14725282872882386,
+    "mean_V": 0.7288777347371523,
+    "base_rate": 0.7022113800048828
+   }
+  }
+ },
+ "head_deltas": {
+  "arm_states": {
+   "delta": -0.00026702880859375,
+   "ci": [
+    -0.014774610102176667,
+    0.01359457671642303
+   ],
+   "detected": false
+  },
+  "ctrl_states": {
+   "delta": 0.006669044494628906,
+   "ci": [
+    -0.009648440778255463,
+    0.023062907159328443
+   ],
+   "detected": false
+  }
+ },
+ "alignment": {
+  "arm_states": {
+   "n_branch_rows": 14809,
+   "n_successors": 14840,
+   "rows_where_branch_index_differs_from_position": 14751,
+   "max_offset": 31,
+   "note": "a non-zero count is exactly the condition under which the 2026-09-14 record's original-head row is mis-scored"
+  },
+  "ctrl_states": {
+   "n_branch_rows": 14806,
+   "n_successors": 14837,
+   "rows_where_branch_index_differs_from_position": 14614,
+   "max_offset": 31,
+   "note": "a non-zero count is exactly the condition under which the 2026-09-14 record's original-head row is mis-scored"
+  }
+ }
+}
