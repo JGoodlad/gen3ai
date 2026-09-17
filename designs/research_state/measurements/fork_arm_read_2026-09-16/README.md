@@ -1,8 +1,9 @@
 # THE FORK ARM'S REGISTERED READ — did putting contested-state forks into the PPO buffer teach the win-prob head to rank siblings?
 
-*Measured 2026-09-17 00:17 – 03:35 UTC · **10,080 three-branch common-random-number forks
+*Measured 2026-09-17 00:17 – 05:10 UTC · **10,080 three-branch common-random-number forks
 (30,240 rollouts)** over two policies' own offline eval trees, **two fresh 9,600-battle
-full-capture eval trees** generated for the arm, and the conditioning guard on both draws ·
+full-capture eval trees** generated for the arm, the conditioning guard on both draws, and a
+**3,200-battle mirror battery at 400 paired games per cell** ·
 CPU only (`CUDA_VISIBLE_DEVICES=""`), `nice 15`, rust sim bridge, `models/` READ-ONLY, nothing
 written under `models/` · **zero errors, zero determinism failures** · the GPU was free and
 untouched; ports 8000/8001 untouched.*
@@ -57,7 +58,16 @@ against the control's **0.81–0.89**), which is the same sharpening its entropy
 **Training on forks moved the policy's own decision population; it did not move the head's ability
 to order two states one move apart.**
 
-**7 — the GUARD holds.** `cond.opp_class_auc.t4_10`, matched frame, draw 1 (seed 20260910):
+**7 — THE BATTERY DOES NOT PAY EITHER.** At 400 paired mirror games with a contemporaneous
+control in the same window (rule 25): rung-B **L2 0.4844 [0.4570, 0.5117] against the control's
+0.5019 [0.4781, 0.5257]**, paired **−0.0175 [−0.0531, +0.0181] NOT DETECTED**, neither lower bound
+clearing 0.50; `grid` **0.2925 vs 0.2731**, both SEARCH HARMS. **BAR 2 is not met.** The mechanism
+row does move, and it splits by width: the arm separates **0.80×** the control's rate where the
+race is most starved (K 3–4.5, intervals disjoint) and **1.13–1.32×** from K 4.5 upward (all
+disjoint) — **more separation at width, no outcome**, which is the shape Part C found for the
+offline refit head.
+
+**8 — the GUARD holds.** `cond.opp_class_auc.t4_10`, matched frame, draw 1 (seed 20260910):
 **arm 0.7224 vs control 0.7097, Δ +0.0127 [−0.0021, +0.0277], WITHIN FLOOR** — the arm reads the
 opponent's class slightly *better*, inside the imported floor. Draw 2 in §6.
 
@@ -240,12 +250,61 @@ a row at its eval-draw noise and rule 21 calls **NOT CONFIRMED, never refuted**;
 registered row, and it is recorded rather than promoted. The turn-1 row sits at ~0.50 on draw 2 on
 both sides — a decode that has nothing to read that early, as it has on every previous arm.
 
-## 7. THE MIRROR BATTERY (part 2, rule 25)
+## 7. THE MIRROR BATTERY at 400 pairs (part 2, rule 25)
 
-Registered at ≥ 400 paired mirror games per cell with a CONTEMPORANEOUS `ctrl10M` control in the
-same window on the same `--games-seed 7` game indices. **Run and reported in §7.1 after this
-record's part 1 was landed**, so that a battery failure could never block or colour the primary
-read.
+Run **after part 1 was landed** (`e90ce7e4`), so a battery failure could never block or colour the
+primary read. The 2026-09-11 registered operating point, unchanged, `--games-seed 7`, so these
+cells join the nine heads already on this instrument — with the fork arm and a **CONTEMPORANEOUS
+`ctrl10M` control in the same window, in the same 4-shard geometry, on the same 400 game
+indices**. 3,200 battles, **0 unfinished, 0 errors**, 1–5 ties per cell. The box was otherwise
+idle (load 0.18 at launch).
+
+### 7.1 The outcome rows
+
+| cell | **fork arm** | **`ctrl10M`** (contemporaneous) | paired Δ (fork − ctrl), 400 shared indices |
+|---|---|---|---|
+| **rung B** @3 s contested — **L2** | **0.4844 [0.4570, 0.5117]** | 0.5019 [0.4781, 0.5257] | **−0.0175 [−0.0531, +0.0181] NOT DETECTED** |
+| **`grid`** @1 s (unguarded) | 0.2925 [0.2607, 0.3243] | 0.2731 [0.2432, 0.3031] | **+0.0194 [−0.0237, +0.0624] NOT DETECTED** |
+| action changed (`grid`) | 62.3 % | 57.9 % | — |
+| overruled (rung B, all decisions) | 3.45 % | 2.53 % | — |
+| forced (rung B) | 71.5 % | 76.5 % | — |
+| realized **K worlds** (rung B) | **6.19** | **5.68** | *not matched — see §7.2* |
+
+**BAR 2 IS NOT MET. Neither cell's L2 lower bound clears 0.50, and the fork arm's point estimate is
+BELOW its own contemporaneous control.** `grid` is SEARCH HARMS on both heads, as it has been on
+every one of the eleven win-prob heads now on this instrument. **No dividend; branch (a) does not
+fire, and part 1 had already settled the primary against it.**
+
+The control's own cell is a useful replicate: it reads **0.5019** here where the 2026-09-11 battery
+read `ctrl10M` at **0.5206** on its first 400 pairs and **0.4913** on its pre-registered fresh 400.
+Three 400-pair cells of one configuration spanning 0.491–0.521 is the width this instrument
+actually has, and it brackets everything measured above.
+
+### 7.2 The mechanism, width-matched (rule 23 — never pooled)
+
+🚨 **The pooled L1 must NOT be read here: the two cells did not race at the same width.** The fork
+arm's rung-B cell realized **K = 6.19 worlds** against the control's **5.68** — the arm's leaf is
+cheaper per world for its own policy — so its pooled separation-of-raced (0.2751 vs 0.2401) is
+exactly the comparison rule 23 forbids. `l1_width_matched.py` (the 2026-09-11 battery's, unmodified)
+recomputes it inside bands of realized width:
+
+| L1 = separated / raced | K 0–3 | K 3–4.5 | K 4.5–6 | K 6–8 | K 8+ |
+|---|---|---|---|---|---|
+| **`ctrl10M`** | — | **0.095 [0.082, 0.109]** | 0.254 [0.236, 0.273] | 0.339 [0.320, 0.358] | 0.257 [0.229, 0.287] |
+| **fork arm** | 0.051 [0.031, 0.083] | **0.076 [0.065, 0.089]** | 0.291 [0.272, 0.311] | 0.383 [0.366, 0.401] | 0.339 [0.316, 0.363] |
+| ratio (fork / ctrl) | — | **0.80×** | 1.15× | 1.13× | **1.32×** |
+
+**The mechanism row SPLITS BY WIDTH, and the split has a sign change in it.** Where the race is
+most starved (K 3–4.5) the fork arm separates **LESS** than its control, 0.80×, Wilson intervals
+disjoint. From K 4.5 upward it separates **MORE** — 1.15× / 1.13× / 1.32×, every pair of intervals
+disjoint. **More separation at width did not become an outcome**: the same cell's L2 is the one
+that reads 0.4844 against 0.5019.
+
+🚨 **And the absolute level is not comparable to any earlier campaign.** These cells raced at
+K 5.7–6.2 on an idle box against the 2026-09-11 battery's 4.85–5.48 and the 2026-09-14 battery's
+4.16–4.59, and their L1 is correspondingly 0.24–0.28 against 0.083–0.150. That is rule 23's width
+effect at full size, and it is why the only reading taken here is between two cells from the same
+window.
 
 ## 8. THE RECHECK OF THE 2026-09-14 RECORD, in full
 
@@ -315,7 +374,10 @@ at the time; the correction lives here and in the ledger.
 | **P8** | top-1/top-2 interchangeable, \|Δ\| < **0.01** | **HELD on both.** 0.0060 and 0.0047. |
 | **P9** | the arm's ECE **0.02–0.08**, Brier **0.12–0.18**; not worse than the control's by > 0.03 | **HELD on the arm's states** (0.0597 / 0.1848 — Brier 0.0048 over the band's top, called as held at the band's edge and reported) **and on the control's** (0.0188 / 0.1460). The arm is 0.0032 worse on one set, 0.0113 better on the other. |
 | **P10** | the guard: \|Δ\| < **0.0245**, NOT DETECTED, same sign on both draws | **HELD on all three clauses.** +0.0127 [−0.0021, +0.0277] and +0.0086 [−0.0058, +0.0244], both WITHIN FLOOR, both positive. |
-| P11–P14 | the battery | §7.1 |
+| **P11** | rung-B L2 for the arm in **[0.48, 0.53]**, lower bound NOT clearing 0.50 — NO DIVIDEND | **HELD on both clauses.** 0.4844 [0.4570, 0.5117]. |
+| **P12** | `grid` for the arm in **[0.22, 0.42]** — SEARCH HARMS | **HELD.** 0.2925 [0.2607, 0.3243], upper bound far below 0.50. |
+| **P13** | separation-of-raced at matched K (band 3–4.5) is **1.0–1.8×** the control's, Wilson intervals **not** predicted disjoint | **REFUTED on both clauses, and in the opposite direction:** 0.076 vs 0.095 = **0.80×**, intervals **disjoint**. The arm separates MORE than the control only from K 4.5 upward (1.15× / 1.13× / 1.32×, all disjoint) — a band-dependent split the prediction did not anticipate. |
+| **P14** | the paired Δ on rung-B L2 is NOT DETECTED, \|Δ\| < **0.04** | **HELD.** −0.0175 [−0.0531, +0.0181]. |
 
 **Two predictions were wrong in the way that matters: P1 and P2, which were the read.** P1 was
 registered at ~50 % by its own text and the read came in below even the train-frame meter's level;
@@ -412,6 +474,23 @@ Every one of these is a finding.
 > Top-1 and top-2 stay outcome-interchangeable on both policies (|Δ| 0.0060 / 0.0047) and the
 > random branch still costs ~3 pp (2.86 / 3.32).
 >
+> **THE BATTERY DOES NOT PAY EITHER (rule 25, ≥400 pairs, run only after part 1 landed at
+> `e90ce7e4`).** 3,200 battles, 0 unfinished, the 2026-09-11 operating point with a
+> CONTEMPORANEOUS `ctrl10M` control in the same window on the same 400 game indices:
+> **rung-B L2 0.4844 [0.4570, 0.5117] against the control's 0.5019 [0.4781, 0.5257], paired
+> −0.0175 [−0.0531, +0.0181] NOT DETECTED**, neither lower bound clearing 0.50; unguarded `grid`
+> **0.2925 [0.2607, 0.3243] vs 0.2731 [0.2432, 0.3031]**, paired +0.0194 NOT DETECTED, **both
+> SEARCH HARMS** — eleven win-prob heads on this instrument and none is a usable leaf.
+> 🚨 **The two cells did NOT race at the same width (K 6.19 vs 5.68), so the pooled L1 is the
+> comparison rule 23 forbids; width-matched, the mechanism row SPLITS WITH A SIGN CHANGE:** the arm
+> separates **0.80×** the control's rate at K 3–4.5 and **1.15× / 1.13× / 1.32×** at K 4.5–6 / 6–8 /
+> 8+, **every one of those four bands with the Wilson intervals disjoint**. More separation at
+> width, no outcome — the shape Part C found for the offline refit head, now reproduced by a
+> TRAINED head. (These cells raced at K 5.7–6.2 on an idle box against 4.2–5.5 in the two previous
+> batteries, with L1 0.24–0.28 against 0.083–0.150; no cross-campaign L1 comparison is available.)
+> The control's own 400-pair cell reads 0.5019 here where the 2026-09-11 battery read 0.5206 and
+> then 0.4913 on a fresh 400 — a 0.491–0.521 span that brackets every number in this paragraph.
+>
 > **THE GUARD HOLDS.** `cond.opp_class_auc.t4_10`, matched frame, arm vs control, draw 20260910:
 > **+0.7224 vs +0.7097, Δ +0.0127 [−0.0021, +0.0277], WITHIN FLOOR**; draw 20260911 **+0.7218 vs
 > +0.7131, Δ +0.0086 [−0.0058, +0.0244], WITHIN FLOOR** — same sign on both draws, the arm
@@ -429,7 +508,9 @@ Every one of these is a finding.
 > ~0.016 available and this experiment could not resolve it"** — both predict what was measured.
 > Descriptors, not endpoints: `fork/pairwise_acc` 0.5817 (rule 20, live frame); `H_end` 0.5052 vs
 > `ctrl10M`'s 0.7473 at the same `--ent-coef 0.02`, a single draw each; the SmallRL anchor 0.530
-> [0.433, 0.625] with **no 10M comparator cell in the campaign**; and STRENGTH is **UNREADABLE**
+> [0.433, 0.625] — **and the 10M comparator cell was built the same evening** (ledger `6cc9f397`:
+> three win-prob controls read 0.440 / 0.380 / 0.330, an **eleven-point three-seed floor**), so the
+> arm's +0.090 over the best control is **INSIDE the floor — no fire, NOT separated**; and STRENGTH is **UNREADABLE**
 > here — the two 4-node ladders read 1995.4 ± 15.8 against 2018.7 ± 16.7 on six dense pairs each,
 > and the 2026-09-14 external-anchor campaign moved exactly this class of node by −42.4 Elo by
 > adding two edges. Instrument notes: `eval_trace_gen`'s `<run>@<step>` resolves through
@@ -437,7 +518,8 @@ Every one of these is a finding.
 > arm at `final_model.zip` would have given it FOUR sentinels against the control's three and made
 > the guard's frame unmatched. Tag: **MEASURED (MAJOR) · fork arm branch (d), NOT DETECTED · the
 > registered comparator REFUTED as an indexing artifact · two 2026-09-14 DETECTED rows collapse ·
-> the ranking-term null STANDS · state distribution moved, the head did not · guard WITHIN FLOOR**.
+> the ranking-term null STANDS · state distribution moved, the head did not · battery NO DIVIDEND
+> at 400 pairs with the L1 splitting by width and changing sign · guard WITHIN FLOOR**.
 
 ## 12. Files
 
@@ -448,6 +530,6 @@ Every one of these is a finding.
 | [`score_forks.py`](score_forks.py) · [`score.json`](score.json) | the primary read: two heads × two state sets, the paired deltas, every descriptor |
 | [`recheck_paired_refit.py`](recheck_paired_refit.py) · [`recheck_paired_refit.json`](recheck_paired_refit.json) | §8 — the 2026-09-14 record re-scored with the original head correctly indexed |
 | [`run_guard.sh`](run_guard.sh) | `main.ops.critic_read` on both offline draws against their v6 floors |
-| [`run_battery.sh`](run_battery.sh) | the 400-pair mirror battery (§7) |
+| [`run_battery.sh`](run_battery.sh) · [`battery_report.json`](battery_report.json) · [`battery_deltas.json`](battery_deltas.json) · `rows_<cell>__<head>.jsonl.gz` | the 400-pair mirror battery (§7), scored by the 2026-09-14 `report.py` and the 2026-09-11 `l1_width_matched.py`, both unmodified; every row archived |
 | `guard_hp800_critic_read.json` · `guard_hp800b_critic_read.json` | the two guard reads, as `critic_read` wrote them |
-| not committed | the forks, successor tensors, eval trees and battery rows, under `/home/goodlad/.claude/jobs/9ab51de6/tmp/fork_read/` and `.../tmp/hp_eval/hp800{,b}/ai_v13_03_fork/` |
+| not committed | the forks, the successor tensors and the two eval trees, under `/home/goodlad/.claude/jobs/9ab51de6/tmp/fork_read/` and `.../tmp/hp_eval/hp800{,b}/ai_v13_03_fork/` |

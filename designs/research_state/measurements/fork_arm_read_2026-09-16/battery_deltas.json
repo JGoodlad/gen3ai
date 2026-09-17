@@ -1,0 +1,20 @@
+{
+ "defB": {
+  "shared_games": 400,
+  "paired_delta": -0.0175,
+  "ci": [
+   -0.05309147591621824,
+   0.018091475916218236
+  ],
+  "detected": false
+ },
+ "grid": {
+  "shared_games": 400,
+  "paired_delta": 0.019375,
+  "ci": [
+   -0.023686611435081776,
+   0.06243661143508178
+  ],
+  "detected": false
+ }
+}

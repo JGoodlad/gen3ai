@@ -1,0 +1,292 @@
+{
+  "cells": {
+    "defB/ctrl": {
+      "INCONCLUSIVE": false,
+      "L1_realized_k": null,
+      "L1_sep_of_raced": 0.2401,
+      "L1_verdict": "read vs contemporaneous control @ matched K",
+      "L2_verdict": "below bar",
+      "attempted": 800,
+      "cell": "defB",
+      "change_rate": 0.1075,
+      "decisions": 34338,
+      "defensive": {
+        "banked_s": 25872.68,
+        "banked_s_per_decision": 0.848,
+        "confirm_attempted": 0,
+        "confirm_declined": 0,
+        "confirm_error": 0,
+        "confirm_inconclusive": 0,
+        "confirm_no_budget": 0,
+        "confirm_reject_rate": null,
+        "confirm_reversed": 0,
+        "confirm_s": 0.0,
+        "confirm_s_per_attempt": null,
+        "confirmed": 0,
+        "decisions": 30495,
+        "forced": 23326,
+        "forced_n_legal": 0,
+        "forced_rate": 0.7649,
+        "forced_wp": 23326,
+        "futility": 5448,
+        "futility_deadline": 5448,
+        "futility_deadline_frac": 1.0,
+        "futility_genuine": 0,
+        "futility_rate": 0.7599,
+        "kept": 950,
+        "no_win_prob": 0,
+        "overrule_rate": 0.0253,
+        "overrule_rate_raced": 0.1075,
+        "overruled": 771,
+        "race_rate": 0.2351,
+        "raced": 7169,
+        "separated": 1721,
+        "separation_rate": 0.2401
+      },
+      "dividend": 0.0019,
+      "dividend_ci95": [
+        -0.0219,
+        0.0257
+      ],
+      "errors": 0,
+      "fallbacks": {
+        "defensive_forced": 23326,
+        "not_move_selection": 3476,
+        "prefix_gate_failed": 112,
+        "root_failed": 222,
+        "search_error": 33
+      },
+      "finished": 800,
+      "head": "ctrl",
+      "n_pairs": 400,
+      "paired_ci95": [
+        0.4781,
+        0.5257
+      ],
+      "paired_win_rate": 0.5019,
+      "realized_mean": {
+        "arms_scored": 232.245,
+        "beam": null,
+        "depth": 1.0,
+        "dice": 1.0,
+        "opp_candidates": 5.791,
+        "search_s": 2.614,
+        "worlds": 6.59
+      },
+      "root_strategy": [
+        "defensive"
+      ],
+      "score_mode": [
+        "win_prob"
+      ],
+      "searched": 7169,
+      "ties": 1,
+      "unfinished": 0,
+      "unfinished_frac": 0.0,
+      "unpaired_ci95": [
+        0.4673,
+        0.5365
+      ],
+      "unpaired_win_rate": 0.5019,
+      "verdict": "NO DIVIDEND DETECTED"
+    },
+    "defB/fork": {
+      "INCONCLUSIVE": false,
+      "L1_realized_k": null,
+      "L1_sep_of_raced": 0.2751,
+      "L1_verdict": "read vs contemporaneous control @ matched K",
+      "L2_verdict": "below bar",
+      "attempted": 800,
+      "cell": "defB",
+      "change_rate": 0.1212,
+      "decisions": 34474,
+      "defensive": {
+        "banked_s": 25079.36,
+        "banked_s_per_decision": 0.825,
+        "confirm_attempted": 0,
+        "confirm_declined": 0,
+        "confirm_error": 0,
+        "confirm_inconclusive": 0,
+        "confirm_no_budget": 0,
+        "confirm_reject_rate": null,
+        "confirm_reversed": 0,
+        "confirm_s": 0.0,
+        "confirm_s_per_attempt": null,
+        "confirmed": 0,
+        "decisions": 30393,
+        "forced": 21730,
+        "forced_n_legal": 0,
+        "forced_rate": 0.715,
+        "forced_wp": 21730,
+        "futility": 6280,
+        "futility_deadline": 6280,
+        "futility_deadline_frac": 1.0,
+        "futility_genuine": 0,
+        "futility_rate": 0.7249,
+        "kept": 1333,
+        "no_win_prob": 0,
+        "overrule_rate": 0.0345,
+        "overrule_rate_raced": 0.1212,
+        "overruled": 1050,
+        "race_rate": 0.285,
+        "raced": 8663,
+        "separated": 2383,
+        "separation_rate": 0.2751
+      },
+      "dividend": -0.0156,
+      "dividend_ci95": [
+        -0.043,
+        0.0117
+      ],
+      "errors": 0,
+      "fallbacks": {
+        "defensive_forced": 21730,
+        "not_move_selection": 3435,
+        "prefix_gate_failed": 261,
+        "root_failed": 347,
+        "search_error": 38
+      },
+      "finished": 800,
+      "head": "fork",
+      "n_pairs": 400,
+      "paired_ci95": [
+        0.457,
+        0.5117
+      ],
+      "paired_win_rate": 0.4844,
+      "realized_mean": {
+        "arms_scored": 241.368,
+        "beam": null,
+        "depth": 1.0,
+        "dice": 1.0,
+        "opp_candidates": 5.802,
+        "search_s": 2.588,
+        "worlds": 6.925
+      },
+      "root_strategy": [
+        "defensive"
+      ],
+      "score_mode": [
+        "win_prob"
+      ],
+      "searched": 8663,
+      "ties": 5,
+      "unfinished": 0,
+      "unfinished_frac": 0.0,
+      "unpaired_ci95": [
+        0.4497,
+        0.519
+      ],
+      "unpaired_win_rate": 0.4843,
+      "verdict": "below null, unresolved"
+    },
+    "grid/ctrl": {
+      "INCONCLUSIVE": false,
+      "attempted": 800,
+      "cell": "grid",
+      "change_rate": 0.5785,
+      "decisions": 33470,
+      "defensive": null,
+      "dividend": -0.2269,
+      "dividend_ci95": [
+        -0.2568,
+        -0.1969
+      ],
+      "errors": 0,
+      "fallbacks": {
+        "not_move_selection": 3908,
+        "prefix_gate_failed": 648,
+        "root_failed": 1449,
+        "search_error": 91
+      },
+      "finished": 800,
+      "head": "ctrl",
+      "n_pairs": 400,
+      "paired_ci95": [
+        0.2432,
+        0.3031
+      ],
+      "paired_win_rate": 0.2731,
+      "realized_mean": {
+        "arms_scored": 64.677,
+        "beam": 0.137,
+        "depth": 1.007,
+        "dice": 1.081,
+        "opp_candidates": 5.772,
+        "search_s": 0.708,
+        "worlds": 1.508
+      },
+      "root_strategy": [
+        "grid"
+      ],
+      "score_mode": [
+        "win_prob"
+      ],
+      "searched": 27374,
+      "ties": 5,
+      "unfinished": 0,
+      "unfinished_frac": 0.0,
+      "unpaired_ci95": [
+        0.2419,
+        0.3037
+      ],
+      "unpaired_win_rate": 0.2717,
+      "verdict": "SEARCH HARMS"
+    },
+    "grid/fork": {
+      "INCONCLUSIVE": false,
+      "attempted": 800,
+      "cell": "grid",
+      "change_rate": 0.623,
+      "decisions": 31999,
+      "defensive": null,
+      "dividend": -0.2075,
+      "dividend_ci95": [
+        -0.2393,
+        -0.1757
+      ],
+      "errors": 0,
+      "fallbacks": {
+        "no_scored_arm": 1,
+        "not_move_selection": 3692,
+        "prefix_gate_failed": 506,
+        "root_failed": 1627,
+        "search_error": 71
+      },
+      "finished": 800,
+      "head": "fork",
+      "n_pairs": 400,
+      "paired_ci95": [
+        0.2607,
+        0.3243
+      ],
+      "paired_win_rate": 0.2925,
+      "realized_mean": {
+        "arms_scored": 62.965,
+        "beam": 0.167,
+        "depth": 1.01,
+        "dice": 1.073,
+        "opp_candidates": 5.744,
+        "search_s": 0.692,
+        "worlds": 1.502
+      },
+      "root_strategy": [
+        "grid"
+      ],
+      "score_mode": [
+        "win_prob"
+      ],
+      "searched": 26102,
+      "ties": 2,
+      "unfinished": 0,
+      "unfinished_frac": 0.0,
+      "unpaired_ci95": [
+        0.2615,
+        0.3245
+      ],
+      "unpaired_win_rate": 0.292,
+      "verdict": "SEARCH HARMS"
+    }
+  },
+  "deltas": {}
+}
