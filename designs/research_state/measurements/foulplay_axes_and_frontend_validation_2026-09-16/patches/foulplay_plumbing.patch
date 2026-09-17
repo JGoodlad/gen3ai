@@ -1,0 +1,134 @@
+diff --git a/fp/modes/base.py b/fp/modes/base.py
+index 3d2c4dc..9c5975a 100644
+--- a/fp/modes/base.py
++++ b/fp/modes/base.py
+@@ -7,6 +7,7 @@ from copy import copy, deepcopy
+ 
+ from fp import constants
+ from fp.battle.state import Battle, Battler, LastUsedMove, Pokemon
++from fp.battle.helpers import normalize_name
+ from fp.config import FoulPlayConfig
+ from fp.constants import BattleType
+ from fp.data.sets import SmogonSets
+@@ -140,12 +141,29 @@ class BattleMode:
+         # e.g.
+         # '>battle-gen9randombattle-44733
+         # |player|p1|OpponentName|2|'
+-        while True:
++        # 🚨 SCAN LINE BY LINE AND MATCH THE NAME FIELD EXACTLY. Unpatched, this tests
++        # `account_name in msg` over the whole FRAME and then takes `msg.split("|")[2]` — the
++        # FIRST player id in the frame. The server batches both |player| lines into one websocket
++        # frame under load, so Foul Play then always concludes the opponent is p1: correct by luck
++        # when it is the ACCEPTOR (it is p2), wrong when it is the CHALLENGER (it is p1), after
++        # which `battle.opponent.active` is never set and `search_params` dies on turn 1 with
++        # `AttributeError: 'NoneType' object has no attribute 'moves'`. A substring name (the peer
++        # called `FpFoo` against an opponent called `Foo`) trips the same test. Measured with a
++        # debug dump on 2026-09-16: `user='p1' opponent='p1'`.
++        while battle.opponent.name is None:
+             msg = await ps_websocket_client.receive_message()
+-            if "|player|" in msg and battle.opponent.account_name in msg:
+-                battle.opponent.name = msg.split("|")[2]
+-                battle.user.name = constants.ID_LOOKUP[battle.opponent.name]
+-                break
++            if "|player|" not in msg:
++                continue
++            for line in msg.split("\n"):
++                parts = line.split("|")
++                if (
++                    len(parts) >= 4
++                    and parts[1] == "player"
++                    and normalize_name(parts[3]) == normalize_name(battle.opponent.account_name)
++                ):
++                    battle.opponent.name = parts[2]
++                    battle.user.name = constants.ID_LOOKUP[battle.opponent.name]
++                    break
+ 
+         return battle, msg
+ 
+diff --git a/fp/modes/standard_battle.py b/fp/modes/standard_battle.py
+index 4923fdd..6ff8908 100644
+--- a/fp/modes/standard_battle.py
++++ b/fp/modes/standard_battle.py
+@@ -2,7 +2,7 @@ import logging
+ 
+ from fp import constants
+ from fp.battle.inference import is_opponent
+-from fp.battle.protocol import process_battle_updates
++from fp.battle.protocol import process_battle_updates, async_update_battle
+ from fp.battle.helpers import maximum_ev
+ from fp.config import FoulPlayConfig
+ from fp.constants import BattleType
+@@ -70,6 +70,14 @@ class StandardBattleMode(BattleMode):
+             # apply the messages that were held onto
+             process_battle_updates(battle)
+ 
++            # 🚨 The held frame does not always carry the OPPONENT's lead switch: only the frame
++            # that carried |start is kept above, and the server may end a frame at |start. The
++            # first search then dies with `'NoneType' object has no attribute 'moves'`. Read on,
++            # through Foul Play's OWN update path, until the opponent has an active Pokemon.
++            while battle.opponent.active is None:
++                more = await ps_websocket_client.receive_message()
++                await async_update_battle(battle, more)
++
+             best_move = await async_pick_move(battle)
+             await ps_websocket_client.send_message(battle.battle_tag, best_move)
+ 
+diff --git a/fp/websocket_client.py b/fp/websocket_client.py
+index d49b726..a47244f 100644
+--- a/fp/websocket_client.py
++++ b/fp/websocket_client.py
+@@ -45,9 +45,39 @@ class PSWebsocketClient:
+         await self.send_message("", [message])
+         logger.debug("Joined room '{}'".format(room_name))
+ 
++    def _remember_challenge(self, message):
++        """Record a `/challenge` PM addressed to us so that it is not LOST.
++
++        Unpatched, a challenge PM that arrives while this client is inside a battle (or inside
++        `leave_battle`, which drains and DISCARDS until |deinit) is handed to the battle parser,
++        which ignores it. The server sends it exactly once, so the challenge is gone and the next
++        `accept_challenge` blocks forever. poke-env's `send_challenges` PIPELINES — it releases on
++        battle START (player.py:363) and sends the next `/challenge` immediately — so every game
++        after the first lands in exactly that window. Measured 2026-09-16: the ours_challenge half
++        of a `main.anchors --opponent foulplay` cell died at game 2, three times out of three.
++        """
++        split_msg = message.split("|")
++        if (
++            len(split_msg) == 9
++            and split_msg[1] == "pm"
++            and split_msg[3].strip().replace("!", "").replace("\u203d", "") == self.username
++            and split_msg[4].startswith("/challenge")
++        ):
++            if not hasattr(self, "_pending_challenges"):
++                self._pending_challenges = []
++            challenger = split_msg[2].strip()
++            if split_msg[5]:
++                self._pending_challenges.append((split_msg[5], challenger))
++            else:
++                # an empty format field is a CANCELLED / consumed challenge
++                self._pending_challenges = [
++                    c for c in self._pending_challenges if c[1] != challenger
++                ]
++
+     async def receive_message(self):
+         message = await self.websocket.recv()
+         logger.debug("Received message from websocket: {}".format(message))
++        self._remember_challenge(message)
+         return message
+ 
+     async def send_message(self, room, message_list):
+@@ -147,6 +177,14 @@ class PSWebsocketClient:
+ 
+         logger.info("Waiting for a {} challenge".format(battle_format))
+         username = None
++        # A challenge that arrived while we were busy was remembered rather than dropped.
++        pending = getattr(self, "_pending_challenges", [])
++        for i, (fmt, user) in enumerate(pending):
++            if fmt == battle_format:
++                username = user
++                pending.pop(i)
++                logger.info("Using a challenge from {} that arrived while busy".format(user))
++                break
+         while username is None:
+             msg = await self.receive_message()
+             split_msg = msg.split("|")

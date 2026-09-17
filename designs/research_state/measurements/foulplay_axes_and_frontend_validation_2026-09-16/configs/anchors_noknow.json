@@ -1,0 +1,63 @@
+{
+  "_README": [
+    "Campaign config for foulplay_axes_and_frontend_validation_2026-09-16.",
+    "Deviations from designs/ops/anchors.json: (1) port range 9700-9799;",
+    "(2) our_team_sources.home is the 72-team data/teams/sample dir rather than the 719-team",
+    "    pool, so BOTH sides draw from the SAME set and team_source_asymmetry is false.",
+    "(3) the foulplay checkout is a copy of /home/goodlad/dev/foul-play @6c467c0 carrying ONE",
+    "    plumbing patch: PSWebsocketClient.leave_battle PUTS BACK the messages it drains while",
+    "    waiting for |deinit instead of discarding them. Unpatched, our side's next /challenge PM",
+    "    is eaten in that window and accept_challenge blocks forever (measured: the ours_challenge",
+    "    half dies at game 2, twice out of two). No search or knowledge code is touched.",
+    "(4) KNOWLEDGE-DEGRADED: this copy's TeamDatasets caches",
+    "    fp/data/pkmn_sets_cache/gen3ou/{pokemon_full_sets,replay_moves,showdown_sets}.json are each {},",
+    "    so fp.data.sets.base.get_sets_file returns an empty dict for all three and the ONLY surviving",
+    "    set-prediction source is the Smogon chaos usage file fp/data/smogon_stats_cache/gen3ou-0.json."
+  ],
+  "showdown": {
+    "node": "node",
+    "port_range": [
+      9700,
+      9799
+    ]
+  },
+  "opponents": {
+    "metamon": {
+      "checkout": "/home/goodlad/dev/metamon",
+      "python": "/home/goodlad/miniconda3/envs/metamon/bin/python",
+      "cache_dir": "/home/goodlad/dev/metamon/cache",
+      "agents": {
+        "SmallRL": {
+          "checkpoint": 40,
+          "params": 13938567
+        },
+        "SyntheticRLV2": {
+          "checkpoint": 48,
+          "params": 200894911
+        }
+      },
+      "team_sets": {
+        "home": "gen3ai_pool",
+        "away": "competitive"
+      }
+    },
+    "foulplay": {
+      "checkout": "/home/goodlad/dev/foul-play-noknow",
+      "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+      "team_dirs": {
+        "home": "gen3/ou/gen3ai_pool",
+        "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+      }
+    }
+  },
+  "our_team_sources": {
+    "home": {
+      "kind": "dir",
+      "path": "/home/goodlad/dev/gen3ai/data/teams/sample"
+    },
+    "away": {
+      "kind": "dir",
+      "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+    }
+  }
+}
