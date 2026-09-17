@@ -1,0 +1,6 @@
+=== CELL w100 START 2026-09-17T01:04:43-07:00 load: 39.37 27.89 23.01 head: ea296538
+=== CELL w100 END 2026-09-17T01:22:08-07:00 load: 31.68 25.39 23.83 rc=0
+  search budget     100 ms x 1 world(s) — WALL CLOCK, so the realized visit count is recorded per cell
+  search      100 ms/decision nominal, realized 83,171 visits/decision
+  status      OK
+  WIN RATE    0.388   Wilson 95% [0.288, 0.497]   n=80 (W31/L49/T0)

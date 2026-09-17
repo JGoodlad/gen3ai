@@ -1,0 +1,4 @@
+--- ndaway (away) START 2026-09-17T06:31:17-07:00 load: 24.93 21.64 21.90
+--- ndaway END 2026-09-17T06:34:19-07:00 rc=0 wall_s=182 load: 36.08 24.89 22.90
+  status      OK
+  WIN RATE    0.550   Wilson 95% [0.452, 0.644]   n=100 (W55/L44/T1)

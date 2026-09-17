@@ -1,0 +1,90 @@
+{
+ "by_half": {
+  "ours_challenge": {
+   "n": 40,
+   "wilson_hi": 0.6017090820441275,
+   "wilson_lo": 0.3070530780793532,
+   "win_rate": 0.45,
+   "wins": 18
+  },
+  "peer_challenge": {
+   "n": 40,
+   "wilson_hi": 0.5780493146143285,
+   "wilson_lo": 0.28509392557089264,
+   "win_rate": 0.425,
+   "wins": 17
+  }
+ },
+ "cell": {
+  "battle_format": "gen3ou",
+  "forfeit_turn_limit": 250,
+  "model_loader": "bare",
+  "model_rung": "explicit_zip",
+  "model_spec": "models/ai_v12_02_winprob_critic/final_model.zip",
+  "model_step": 75005952,
+  "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/final_model.zip",
+  "opponent": "foulplay",
+  "opponent_agent": "",
+  "opponent_commit": "6c467c0",
+  "opponent_kind": "foulplay",
+  "opponent_version": "poke-engine gen3 @ 100ms x1",
+  "our_regime": "greedy",
+  "our_side": "model",
+  "our_team_count": 72,
+  "our_team_source": "/home/goodlad/dev/gen3ai/data/teams/sample",
+  "regime_matched": true,
+  "search_parallelism": 1,
+  "search_time_ms": 100,
+  "server_uri": "ws://localhost:9745/showdown/websocket",
+  "showdown_pin": "e0551883f",
+  "teamset": "home",
+  "their_regime": "search:100ms",
+  "their_team_count": 72,
+  "their_team_source": ""
+ },
+ "distinct_our_teams": 31,
+ "hit_forfeit_limit": 0,
+ "losses": 44,
+ "max_turns": 165,
+ "mean_turns": 40.5375,
+ "median_turns": 32,
+ "n": 80,
+ "n_defaults": 0,
+ "n_redecides": 0,
+ "provenance": {
+  "anchors_config": "/home/goodlad/.claude/jobs/9ab51de6/tmp/fp_axes/cfg/anchors_noknow.json",
+  "games_path": "/home/goodlad/.claude/jobs/9ab51de6/tmp/fp_axes/cells/k100/games.jsonl",
+  "peer_report": {
+   "argmax_match_rate": null,
+   "commit": "6c467c0",
+   "errors": 0,
+   "model_loader": "bare",
+   "our_stochastic_kwargs": [
+    false
+   ],
+   "peer_rc": 0,
+   "regime_verified": true,
+   "sample_kwargs": [],
+   "team_count": 72,
+   "their_regime": "search:100ms",
+   "version": "poke-engine gen3 @ 100ms x1",
+   "visits_max": 1300000.0,
+   "visits_mean": 84875.75351640991,
+   "visits_min": 1000.0,
+   "visits_n": 5972,
+   "wall_s": 891.3440792560577
+  }
+ },
+ "realized_visits_per_decision_mean": 92093.90147499161,
+ "realized_visits_samples": 80,
+ "status": "OK",
+ "team_source_asymmetry": false,
+ "their_argmax_match_rates": [],
+ "ties": 1,
+ "wilson95": [
+  0.3341386091389176,
+  0.5465886570555882
+ ],
+ "win_rate": 0.4375,
+ "wins": 35
+}

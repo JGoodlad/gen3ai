@@ -1,0 +1,6 @@
+=== CELL k1000 START 2026-09-17T04:12:41-07:00 load: 24.63 24.55 23.79 head: ea296538
+=== CELL k1000 END 2026-09-17T06:19:50-07:00 load: 24.29 23.21 22.97 rc=0
+  search budget     1000 ms x 1 world(s) — WALL CLOCK, so the realized visit count is recorded per cell
+  search      1000 ms/decision nominal, realized 746,206 visits/decision
+  status      OK
+  WIN RATE    0.450   Wilson 95% [0.346, 0.559]   n=80 (W36/L44/T0)

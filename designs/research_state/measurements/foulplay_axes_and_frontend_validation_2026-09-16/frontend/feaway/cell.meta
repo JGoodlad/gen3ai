@@ -1,0 +1,4 @@
+--- feaway (away) START 2026-09-17T06:25:41-07:00 load: 21.78 22.17 22.38
+--- feaway END 2026-09-17T06:28:38-07:00 rc=0 wall_s=177 load: 21.31 22.14 22.27
+  status      OK
+  WIN RATE    0.520   Wilson 95% [0.423, 0.615]   n=100 (W52/L48/T0)

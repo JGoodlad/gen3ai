@@ -1,3 +1,28 @@
+diff --git a/fp/data/sets/smogon.py b/fp/data/sets/smogon.py
+index 7959972..5485566 100644
+--- a/fp/data/sets/smogon.py
++++ b/fp/data/sets/smogon.py
+@@ -289,9 +289,17 @@ class SmogonSets(PokemonSets):
+     def move_usage_rates(self, pkmn: Pokemon) -> list[tuple[str, float]]:
+         # (move, usage_rate) pairs sorted by usage; smogon stats carry no
+         # move associations so this is the only moveset information available
+-        return self.get_pkmn_by_name_in_dict(pkmn, self.raw_pkmn_sets).get(
+-            MOVES_STRING, []
+-        )
++        # 🚨 `get_pkmn_by_name_in_dict` returns the LIST `[]` when it finds nothing
++        # (`base.py:507`), so the unguarded `.get` below raised
++        # `AttributeError: 'list' object has no attribute 'get'` for a Pokemon that is in
++        # `pkmn_sets` but not in `raw_pkmn_sets`. Reached only when set sampling falls through
++        # to SmogonSets, i.e. when TeamDatasets is empty — never in the standard configuration
++        # (0 occurrences in 240 standard-knowledge games here), always in the degraded one.
++        # "No data" is an empty usage list, not a crash.
++        entry = self.get_pkmn_by_name_in_dict(pkmn, self.raw_pkmn_sets)
++        if not isinstance(entry, dict):
++            return []
++        return entry.get(MOVES_STRING, [])
+ 
+     def get_raw_count(self, pkmn_name) -> int | None:
+         if pkmn_name not in self.all_pkmn_counts:
 diff --git a/fp/modes/base.py b/fp/modes/base.py
 index 3d2c4dc..9c5975a 100644
 --- a/fp/modes/base.py

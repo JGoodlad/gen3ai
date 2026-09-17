@@ -1,0 +1,53 @@
+## Per-cell
+
+| cell | status | n | W/L/T | win rate | Wilson 95% | realized visits/dec (mean) | median | turns mean/med/max | forfeits | asym |
+|---|---|---:|---|---:|---|---:|---:|---|---:|---|
+| `w100` | OK | 80 | 31/49/0 | **0.388** | [0.288, 0.497] | 83,031 | 56,000 | 47.5/33/222 | 0 | False |
+| `w300` | OK | 80 | 23/57/0 | **0.287** | [0.200, 0.395] | 259,513 | 150,000 | 38.1/33/119 | 0 | False |
+| `w1000` | OK | 80 | 36/44/0 | **0.450** | [0.346, 0.559] | 779,604 | 445,000 | 42.9/33/250 | 1 | False |
+| `k1000` | OK | 80 | 36/44/0 | **0.450** | [0.346, 0.559] | 747,189 | 447,000 | 42.8/35/250 | 1 | False |
+| `k100` | OK | 80 | 35/44/1 | **0.438** | [0.334, 0.547] | 92,005 | 61,000 | 40.5/32/165 | 0 | False |
+
+## Width slope (standard-knowledge cells only: w100, w300, w1000)
+
+  w100: ln(visits)=11.3270 (=83,031)  win rate=0.388
+  w300: ln(visits)=12.4666 (=259,513)  win rate=0.287
+  w1000: ln(visits)=13.5665 (=779,604)  win rate=0.450
+
+  **slope = +0.0272 win rate per ln-unit of visits**, game-bootstrap 95% [-0.0450, +0.0945]
+  (= +0.0189 per DOUBLING of realized width); intercept +0.0361
+
+## Width contrast  w100 - w1000 = **-0.062**  Newcombe 95% [-0.210, +0.089] — **NOT DETECTED**
+
+## Knowledge contrast  k1000 - w1000 = **+0.000**  Newcombe 95% [-0.151, +0.151] — **NOT DETECTED** (uncorrected)
+
+  realized ln-width: k1000 13.5241 (747,189), w1000 13.5665 (779,604); the width slope predicts -0.0012 of that difference from width alone
+
+  **width-corrected knowledge residual = +0.001  95% [-0.150, +0.152] — NOT DETECTED**
+
+## EXPLORATORY knowledge contrast at 100 ms  k100 - w100 = **+0.050**  Newcombe 95% [-0.101, +0.197] — **NOT DETECTED** (NOT pre-registered)
+  pooled over the two matched widths: degraded 71/160 = 0.444 vs standard 67/160 = 0.419; delta +0.025 [-0.083, +0.132] — NOT DETECTED
+
+## Paired games (same our-team index across cells)
+
+  w100 vs w1000: 80 matched-team game slots, 31 vs 36 wins, paired Δ = -0.062; discordant 16/21 (m=37, se≈0.076)
+  k1000 vs w1000: 80 matched-team game slots, 36 vs 36 wins, paired Δ = +0.000; discordant 15/15 (m=30, se≈0.068)
+  k100 vs w100: 80 matched-team game slots, 35 vs 31 wins, paired Δ = +0.050; discordant 23/19 (m=42, se≈0.081)
+
+## Provenance
+
+  w100: opponent_commit=6c467c0 showdown_pin=e0551883f model_step=75005952 loader=bare their_argmax=[] wall_s=1039.9985642433167
+    === CELL w100 START 2026-09-17T01:04:43-07:00 load: 39.37 27.89 23.01 head: ea296538 | === CELL w100 END 2026-09-17T01:22:08-07:00 load: 31.68 25.39 23.83 rc=0
+    visits by half: ours_challenge=87,383, peer_challenge=78,960
+  w300: opponent_commit=6c467c0 showdown_pin=e0551883f model_step=75005952 loader=bare their_argmax=[] wall_s=2233.1225357055664
+    === CELL w300 START 2026-09-17T01:22:08-07:00 load: 31.68 25.39 23.83 head: ea296538 | === CELL w300 END 2026-09-17T01:59:24-07:00 load: 20.01 20.27 20.88 rc=0
+    visits by half: ours_challenge=256,207, peer_challenge=262,594
+  w1000: opponent_commit=6c467c0 showdown_pin=e0551883f model_step=75005952 loader=bare their_argmax=[] wall_s=7486.641263246536
+    === CELL w1000 START 2026-09-17T01:59:24-07:00 load: 20.01 20.27 20.88 head: ea296538 | === CELL w1000 END 2026-09-17T04:04:14-07:00 load: 21.79 23.19 22.52 rc=0
+    visits by half: ours_challenge=750,245, peer_challenge=816,294
+  k1000: opponent_commit=6c467c0 showdown_pin=e0551883f model_step=75005952 loader=bare their_argmax=[] wall_s=7626.818376541138
+    === CELL k1000 START 2026-09-17T04:12:41-07:00 load: 24.63 24.55 23.79 head: ea296538 | === CELL k1000 END 2026-09-17T06:19:50-07:00 load: 24.29 23.21 22.97 rc=0
+    visits by half: ours_challenge=759,328, peer_challenge=733,084
+  k100: opponent_commit=6c467c0 showdown_pin=e0551883f model_step=75005952 loader=bare their_argmax=[] wall_s=891.3440792560577
+    === CELL k100 START 2026-09-17T06:36:09-07:00 load: 24.02 22.10 22.02 head: ea296538 | === CELL k100 END 2026-09-17T06:51:03-07:00 load: 21.81 22.12 21.43 rc=0
+    visits by half: ours_challenge=99,312, peer_challenge=84,876

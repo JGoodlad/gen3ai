@@ -1,0 +1,28 @@
+| cell | transport | team set | status | n | W/L/T | win rate | Wilson 95% | their argmax | our forfeits | defaults/redecides | distinct our teams | wall s | games/s |
+|---|---|---|---|---:|---|---:|---|---|---:|---|---:|---:|---:|
+| `fehome` | ws_frontend | home | OK | 100 | 63/35/2 | **0.630** | [0.532, 0.718] | [1.0] | 0 | 0/0 | 48 | 174 | 0.575 |
+| `ndhome` | Node showdown | home | OK | 100 | 58/42/0 | **0.580** | [0.482, 0.672] | [1.0] | 0 | 0/0 | 48 | 159 | 0.629 |
+| `feaway` | ws_frontend | away | OK | 100 | 52/48/0 | **0.520** | [0.423, 0.615] | [1.0] | 2 | 0/0 | 17 | 177 | 0.565 |
+| `ndaway` | Node showdown | away | OK | 100 | 55/44/1 | **0.550** | [0.452, 0.644] | [1.0] | 0 | 0/0 | 17 | 182 | 0.549 |
+
+home: front end - Node = +0.050  Newcombe 95% [-0.084, +0.182] -> AGREE (CI covers 0)
+away: front end - Node = -0.030  Newcombe 95% [-0.165, +0.106] -> AGREE (CI covers 0)
+
+pooled:
+  front end 115/200 = 0.575  vs  Node 113/200 = 0.565; delta +0.010 [-0.086, +0.106]
+
+per-game comparability (same half+index, same our_team):
+  home: 100 shared slots, 100 with the SAME our-team, outcome agreement on those 56/100 (0.56)
+  away: 100 shared slots, 100 with the SAME our-team, outcome agreement on those 58/100 (0.58)
+
+turns:
+  fehome: mean 37.2 median 32 max 202
+  ndhome: mean 42.3 median 35 max 158
+  feaway: mean 50.1 median 33 max 250
+  ndaway: mean 47.8 median 30 max 241
+
+provenance:
+  fehome: server=ws://localhost:9751/showdown/websocket opponent=metamon:SmallRL:SmallRL commit=0a00a759 pin=e0551883f step=75005952 teams ours=719 theirs=719 asym=False
+  ndhome: server=ws://localhost:9752/showdown/websocket opponent=metamon:SmallRL:SmallRL commit=0a00a759 pin=e0551883f step=75005952 teams ours=719 theirs=719 asym=False
+  feaway: server=ws://localhost:9751/showdown/websocket opponent=metamon:SmallRL:SmallRL commit=0a00a759 pin=e0551883f step=75005952 teams ours=20 theirs=20 asym=False
+  ndaway: server=ws://localhost:9753/showdown/websocket opponent=metamon:SmallRL:SmallRL commit=0a00a759 pin=e0551883f step=75005952 teams ours=20 theirs=20 asym=False

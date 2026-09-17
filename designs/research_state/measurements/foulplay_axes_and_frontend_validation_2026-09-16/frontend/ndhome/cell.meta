@@ -1,0 +1,4 @@
+--- ndhome (home) START 2026-09-17T06:28:38-07:00 load: 21.31 22.14 22.27
+--- ndhome END 2026-09-17T06:31:17-07:00 rc=0 wall_s=159 load: 24.93 21.64 21.90
+  status      OK
+  WIN RATE    0.580   Wilson 95% [0.482, 0.672]   n=100 (W58/L42/T0)
