@@ -358,3 +358,11 @@ and its Wilson interval — and for a search opponent the realized visit count.
   Foul Play silently ignores it. A green anchor read says nothing about either on the public
   server; `python src/main/ladder_drift_scan.py` remains the instrument for that, and
   `designs/research_state/ladder_readiness.md` the audit.
+
+## Amendment 2026-09-16 — the per-promotion read is BUDGET-CONDITIONAL, and the anchor `--model` spelling
+
+**Standing per-promotion read (from `ai_v13_03_fork` on):** `python -m main.anchors --model models/<run>/snapshots/snapshot_<12-digit step>.zip --opponent metamon:SmallRL --regime greedy --teamset away --games 100 --device cpu` with `OMP_NUM_THREADS=1`, ONE cell at a time in the foreground (batched anchor runs were killed by a session harness's memory accounting with 67 GB free). 🚨 `--model <run>@<promoted step>` FAILS — `resolve_model_ref` does not search `snapshots/`, and checkpoint steps are on a different cadence from promotions (backlog row).
+
+**Floors, measured 2026-09-16 on this cell:** three-seed RUN-level floor **0.110** (`ctrl10M` / `_b` / `_c` read 0.440 / 0.380 / 0.330, each ±0.095); **eval-draw floor 0.020** (four team-seed draws of the same `fork@10M` snapshot: 0.530 / 0.510 / 0.530 / 0.510). The run-level variance on this cell belongs to the RUN, not the draw.
+
+**The re-registered fire rule:** (1) WITHIN-RUN — the newest promoted node's Wilson upper bound falls below the previous node's point by more than **0.02 + the CI half-width** (≈ 12 pp at n=100), a drop the eval draw cannot explain; (2) the ABSOLUTE bar (upper bound < 0.50 fires; lower bound > 0.50 is BETTER) applies at ≥ 75M only, where the 0.63–0.65 band lives — at 10M an unremarkable control (`ctrl10M_c`, upper 0.427) trips it; (3) every 10M anchor number is banked beside the three-seed band **0.33–0.44** with the words "not separated" unless it clears 0.110 against ALL THREE controls. **The budget effect on this cell (~0.38 at 10M → ~0.64 at 75M) dwarfs every lever the ladder measured**; never compare a 10M arm's anchor to a 75M arm's.

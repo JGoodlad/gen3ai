@@ -18863,3 +18863,100 @@ every quota-matched row**.
 🚨 **AND THE REGISTERED FIRE THRESHOLD WOULD HAVE FIRED ON `ctrl10M_c`.** The standing rule is *a promoted node whose UPPER bound falls below 0.50 is a watch-item fire*. `ctrl10M_c` reads **[0.246, 0.427] — upper bound 0.427, below 0.50.** It is a perfectly ordinary control: it completed 10,027,008 steps, crossed at 4,128,768, held G7, and is one of the three runs every conditioning delta in the campaign is measured against. **So the threshold's operating point is one an unremarkable 10M run can trip.** It is not being applied retroactively and `ctrl10M_c` is not "fired" — but the next time it fires on a live arm, **the correct first question is whether the arm is bad or the arm is 10M**, and the answer is now on the record in advance. At 75M the same instrument reads 0.650 / 0.630, so the budget effect on this cell (~0.38 → ~0.64) dwarfs every lever the ladder has measured.
 
 **What is NOT claimed.** These are single draws per run at n = 100 on one opponent, one regime, one team set; they are a FALSIFICATION cell, not a precision instrument, exactly as registered. Nothing here says a 10M win-prob run is weak in general — SmallRL sits at 1940 ± 9.5 on our scale and the bot frame near the frontier is precise and wrong. The cell's use is to bound what an anchor read can say about a 10M arm, and the answer is: **±11 pp, three seeds, and no less.** Tag: **MEASUREMENT · 10M anchor cell BUILT (3 seeds) · floor 0.110 · fork arm NOT SEPARATED · the fire threshold can trip an ordinary control**.
+
+### 2026-09-16 · VERDICT + CORRECTION (MAJOR) · THE FORK ARM'S REGISTERED READ — forks into the PPO buffer did NOT teach the head to rank siblings (branch d: −0.0003 [−0.0148, +0.0136] paired, NOT DETECTED, and the CI does not clear the registered 0.60) — and 🚨 **the registered comparator was an INDEXING ARTIFACT: the promoted win-prob head never ranked siblings at chance (0.5872, not 0.5169), which collapses BOTH of the 2026-09-14 record's DETECTED rows** (2026-09-16)
+
+Record `designs/research_state/measurements/fork_arm_read_2026-09-16/` (`PREDICTION.md`
+registered at `55cf08a7` before a single fork existed, including the defect below, which was
+found first). **10,080 fresh three-branch common-random-number forks (30,240 rollouts) over two
+policies' own offline full-capture eval trees, plus two new 9,600-battle trees generated for the
+arm; CPU only, zero errors, 204/204 determinism re-runs identical, 0.09 %/0.14 % stall-capped.**
+
+🚨 **THE COMPARATOR FIRST. `paired_refit_discrimination_2026-09-14/refit.py` scores the ORIGINAL
+head with a successor-indexed `V` read at BRANCH-ROW positions; every refit head in the same
+script is scored correctly. On that record's own banked dataset the two index spaces diverge from
+branch row 1,880 and 12,900 of 14,780 rows are mis-scored.** Re-scored on the identical held-out
+split and the identical 562 non-tied pairs, the promoted win-prob critic reads
+**0.5872 [0.5526, 0.6225], not 0.5169** — the CI clears 0.50 — with **ECE 0.0287, not 0.1246**.
+**"The promoted head ranks siblings AT CHANCE" is REFUTED**, and the record's two DETECTED rows
+collapse with it: the frozen-trunk BCE refit's **+0.0863 [+0.0384, +0.1347] DETECTED becomes
++0.0160 [+0.0000, +0.0313] NOT DETECTED**, the ranking refit's +0.0756 becomes +0.0053, and
+**"calibration came WITH the ranking" INVERTS** (the refits made ECE worse, 0.0287 → 0.0520 →
+0.0421). **What STANDS untouched is the one delta taken between two correctly-scored heads: the
+pairwise ranking term buys nothing, −0.0107 [−0.0249, +0.0028].** The failure mode is worth its
+own line: mis-indexing a monotone value function against nearby rows does not produce garbage, it
+produces **an exact null on a rank statistic**. ⚠️ **UNDERSTANDING rule 25 and
+`designs/training/forks.md` §1 both quote the 0.517 and need amending.** Nothing in the
+2026-09-14 record is edited — a record is what was believed at the time.
+
+**THE ARM'S READ, against that corrected frame.** `ai_v13_03_fork` at its final promoted node
+**10,000,032** (the declared deviation from `final_model.zip` at 10,027,008: step-matched to the
+control, and matched at THREE sentinels where the final model would carry four) against
+`ai_v12_11_ladder_ctrl10M@10000032`, both heads scored on BOTH policies' fork sets:
+**on its own states the arm reads 0.5754 [0.5608, 0.5897] — the registered bar was that the CI
+CLEAR 0.60 and the whole interval is below it — and the paired Δ against the control on the same
+forks and the same pairs is −0.0003 [−0.0148, +0.0136], with +0.0067 [−0.0096, +0.0231] on the
+control's forks. BOTH NOT DETECTED, the two point estimates on opposite sides of zero. BRANCH
+(d): forks did not teach the head.** The puzzle branch (d) reserved — the train-frame
+`fork/pairwise_acc` of 0.5817 — **dissolves**: the offline recorded-state read of 0.5754
+reproduces the on-stream meter to within 0.006. **The number that never reproduced is the 0.517
+the arm was aimed at**; both heads sat at ~0.575 all along.
+
+**THE TREATMENT DID MOVE SOMETHING, AND IT IS THE STATE DISTRIBUTION.** From the same 5,040
+forks the arm's own contested states yield **3,745 non-tied pairs against the control's 2,849
+(+31 %)**, a tie rate of **0.745 vs 0.806**, a blind-spot rate of **5.53 % [4.93, 6.20] vs
+4.55 % [4.01, 5.16]** (Wilson intervals disjoint), and a contested-gap threshold of **1.45–1.63
+against 0.81–0.89** — the selector's 40th percentile bites at roughly twice the absolute logit
+gap, the same sharpening `H_end` 0.5052 vs 0.7473 shows. **Training on forks moved the policy's
+decision population; it did not move the head's ability to order two states one move apart.**
+Top-1 and top-2 stay outcome-interchangeable on both policies (|Δ| 0.0060 / 0.0047) and the
+random branch still costs ~3 pp (2.86 / 3.32).
+
+**THE BATTERY DOES NOT PAY EITHER (rule 25, ≥400 pairs, run only after part 1 landed at
+`e90ce7e4`).** 3,200 battles, 0 unfinished, the 2026-09-11 operating point with a
+CONTEMPORANEOUS `ctrl10M` control in the same window on the same 400 game indices:
+**rung-B L2 0.4844 [0.4570, 0.5117] against the control's 0.5019 [0.4781, 0.5257], paired
+−0.0175 [−0.0531, +0.0181] NOT DETECTED**, neither lower bound clearing 0.50; unguarded `grid`
+**0.2925 [0.2607, 0.3243] vs 0.2731 [0.2432, 0.3031]**, paired +0.0194 NOT DETECTED, **both
+SEARCH HARMS** — eleven win-prob heads on this instrument and none is a usable leaf.
+🚨 **The two cells did NOT race at the same width (K 6.19 vs 5.68), so the pooled L1 is the
+comparison rule 23 forbids; width-matched, the mechanism row SPLITS WITH A SIGN CHANGE:** the arm
+separates **0.80×** the control's rate at K 3–4.5 and **1.15× / 1.13× / 1.32×** at K 4.5–6 / 6–8 /
+8+, **every one of those four bands with the Wilson intervals disjoint**. More separation at
+width, no outcome — the shape Part C found for the offline refit head, now reproduced by a
+TRAINED head. (These cells raced at K 5.7–6.2 on an idle box against 4.2–5.5 in the two previous
+batteries, with L1 0.24–0.28 against 0.083–0.150; no cross-campaign L1 comparison is available.)
+The control's own 400-pair cell reads 0.5019 here where the 2026-09-11 battery read 0.5206 and
+then 0.4913 on a fresh 400 — a 0.491–0.521 span that brackets every number in this paragraph.
+
+**THE GUARD HOLDS.** `cond.opp_class_auc.t4_10`, matched frame, arm vs control, draw 20260910:
+**+0.7224 vs +0.7097, Δ +0.0127 [−0.0021, +0.0277], WITHIN FLOOR**; draw 20260911 **+0.7218 vs
++0.7131, Δ +0.0086 [−0.0058, +0.0244], WITHIN FLOOR** — same sign on both draws, the arm
+marginally ahead. ⚠️ The sibling `t1_3` SPLITS (−0.0036 WITHIN FLOOR on one draw,
+−0.0179 [−0.0351, −0.0005] on the other), the shape rule 19 assigns to a row at its eval-draw
+noise; it is not the registered row. Both trees are
+9,600 traces, zero shortfall, 12 opponents with the SAME three sentinel steps (4,000,032 /
+6,000,000 / 8,000,016), quota-matched before any frame-sensitive row was labelled.
+
+🚨 **AND THE DESIGN FINDING THAT OUTLASTS THE ARM: with the baseline corrected, the gap this arm
+was built to close is ~0.016 wide, not ~0.086 — inside the ±0.015 width of the instrument that
+reads it.** The corrected frozen-trunk refit (+0.0160 [+0.0000, +0.0313]) is the best available
+estimate of what fork data can buy this head, and no arm aimed at it can report a detection at
+this width. **This read therefore cannot separate "forks do not teach the head" from "there was
+~0.016 available and this experiment could not resolve it"** — both predict what was measured.
+Descriptors, not endpoints: `fork/pairwise_acc` 0.5817 (rule 20, live frame); `H_end` 0.5052 vs
+`ctrl10M`'s 0.7473 at the same `--ent-coef 0.02`, a single draw each; the SmallRL anchor 0.530
+[0.433, 0.625] — **and the 10M comparator cell was built the same evening** (ledger `6cc9f397`:
+three win-prob controls read 0.440 / 0.380 / 0.330, an **eleven-point three-seed floor**), so the
+arm's +0.090 over the best control is **INSIDE the floor — no fire, NOT separated**; and STRENGTH is **UNREADABLE**
+here — the two 4-node ladders read 1995.4 ± 15.8 against 2018.7 ± 16.7 on six dense pairs each,
+and the 2026-09-14 external-anchor campaign moved exactly this class of node by −42.4 Elo by
+adding two edges. Instrument notes: `eval_trace_gen`'s `<run>@<step>` resolves through
+`eval_traces/step_N/snapshot.zip` and does NOT share `main.anchors`' snapshot defect; reading the
+arm at `final_model.zip` would have given it FOUR sentinels against the control's three and made
+the guard's frame unmatched. Tag: **MEASURED (MAJOR) · fork arm branch (d), NOT DETECTED · the
+registered comparator REFUTED as an indexing artifact · two 2026-09-14 DETECTED rows collapse ·
+the ranking-term null STANDS · state distribution moved, the head did not · battery NO DIVIDEND
+at 400 pairs with the L1 splitting by width and changing sign · guard WITHIN FLOOR**.
+
+**Orchestrator's CORRECTION and reading.** (1) **The 2026-09-14 *SIBLING DISCRIMINATION* entry is corrected here, not edited:** its baseline 0.517 was an indexing artifact in `refit.py` (the original head scored with successor-indexed V read at branch-row positions; 12,900 of 14,780 rows mis-scored). Corrected on the identical split and pairs: the promoted head ranks siblings at **0.587 [0.553, 0.623]**, the plain-BCE refit's gain is +0.016 [+0.000, +0.031] NOT DETECTED, the ranking-term null stands, and "calibration came with the ranking" inverts. The sentences "the head ranks at CHANCE", "the trunk holds the ordering and the loss never asked for it" and "the data is the fix" are WITHDRAWN; rule 25's quoted numbers and `designs/training/forks.md` §1 are amended in this landing. The orchestrator built the fork arm on that number. (2) **The fork arm: NOT DETECTED, branch (d)** — 0.5754 vs 0.5757 on its own states, paired Δ −0.0003 [−0.0148, +0.0136]; the offline number reproduces the on-stream `fork/pairwise_acc` (0.582) to 0.006, so the arm did exactly what it was built to do and the target had already moved. The guard is within floor. The 400-pair battery: no dividend, `grid` harms on both heads. **(3) What stands as a finding:** the promoted win-prob critic ranks contested siblings at ~0.58 on 10k fresh CRN forks — a real but modest discrimination that no lever, refit or fork has moved by more than the ±0.015 instrument width; forks move the STATE DISTRIBUTION (+31 % non-tied pairs, tie 0.745 vs 0.806, blind spot 5.5 % vs 4.6 %, disjoint) without moving the head. **The gap the fork arm was built to close is ~0.016 wide, inside the instrument.** (4) **DECISION:** the fork line is CLOSED at this depth (no sweep); `--fork-*` stays as built at 0 = OFF. The leaf question returns to the offline fit on branched self-play with a FROZEN policy (the end-state's stage two) — the one design that changes the target's stationarity rather than the data's coverage — and it is NOT dispatched tonight: it is the owner's coaching item. The GPU holds the arm-W seed replicate. Tag: **CORRECTION (MAJOR) · 0.517 was an artifact, 0.587 stands · fork arm NOT DETECTED · fork line CLOSED · leaf returns to the offline fit**.

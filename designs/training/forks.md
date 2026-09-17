@@ -14,8 +14,8 @@ of two successors **one move apart** actually wins, on the **same dice**?
 
 | row | pairwise accuracy | read |
 |---|---|---|
-| the promoted win-prob critic (`ctrl10M@10M`) | **0.5169 [0.4800, 0.5524]** | **a coin.** The CI straddles 0.50 |
-| a FROZEN trunk, only `WinProbHead`'s four tensors refit, plain BCE on counterfactual successors | **0.6032 [0.5690, 0.6374]** | **+0.0863 [+0.0384, +0.1347], DETECTED** |
+| the promoted win-prob critic (`ctrl10M@10M`) | ~~0.5169 [0.4800, 0.5524]~~ **0.5872 [0.5526, 0.6225]** (CORRECTED 2026-09-16: the 0.5169 was an indexing artifact in `refit.py`; `fork_arm_read_2026-09-16/`) | **a modest ranker, not a coin.** |
+| a FROZEN trunk, only `WinProbHead`'s four tensors refit, plain BCE on counterfactual successors | **0.6032 [0.5690, 0.6374]** | vs the CORRECTED baseline **+0.0160 [+0.0000, +0.0313], NOT DETECTED** |
 | the same rows plus a pairwise RANKING term (coef 0.1 / 0.3 / 1.0) | −0.0107 [−0.0249, +0.0028] | **NOT DETECTED**, negative on points |
 
 Pairwise accuracy is a **rank** statistic — invariant to any monotone recalibration — so a frozen
@@ -33,6 +33,9 @@ this depth.
 shipping the offline refit: the producer is the thing to change.
 
 ---
+
+
+> **STATUS 2026-09-16 — the arm ran and read NOT DETECTED** (`ai_v13_03_fork`, `fork_arm_read_2026-09-16/`): 0.5754 vs 0.5757 on 10,080 fresh forks, paired Δ −0.0003 [−0.0148, +0.0136]; guard within floor; 400-pair battery no dividend. The delivered dose was ~1,060 forks/rollout with zero drops, governed by `fork/gap_threshold` (→1.99), not the row budget — the §on-cost prediction that the budget binds at ~790 was WRONG. Forks move the state distribution (+31 % non-tied pairs) without moving the head. **The line is CLOSED at this depth; `--fork-fraction` stays 0 = OFF.**
 
 ## 2. THE THREE BRANCHES, and why the random one is the point
 

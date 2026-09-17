@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,866-line file. **The ledger itself is append-only and is never edited by this**;
+18,963-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**618 headings · 567 dated · 2026-08-01 → 2026-09-16 · ledger 18,866 lines.**
+**619 headings · 568 dated · 2026-08-01 → 2026-09-16 · ledger 18,963 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -638,3 +638,4 @@ rename.
   - `L18659` · `2026-09-16` · MEASUREMENT (MAJOR) · THE FLYWHEEL-ERA PAIR READ — `--critic shaped` vs `--critic winprob` at 75M on one pin, one dose-by-declaration, one seed slot and one eval regime: **NOT DETECTED on strength (+17.5 Elo, claimable ≈ 69), on the registered critic guard, and on all four external-anchor cells**; the rows that DO move are ones the registration had already ruled could not be endpoints — entropy **FLAT vs DECAYING**, the untaught meter **+8.31 pp to arm S (8 of 8 teams)**, and **~4× the ECE on arm W's critic at indistinguishable resolution**; plus a **realized-dose gap of 1.44× the registration did not price** and a **tool defect that makes `--v-column` silently miss every quota-matched row**
   - `L18815` · `2026-09-16` · OPS · `ai_v13_03_fork` COMPLETE at 10,027,008 — the fork dose was DELIVERED WITHOUT THE ROW BUDGET EVER BINDING (0 dropped across 97 updates) and ran ~35 % ABOVE the predicted ~790/rollout; G7 is the cleanest of the campaign; and 🚨 **the standing anchor command's `<run>@<step>` form CANNOT resolve a promoted snapshot**
   - `L18846` · `2026-09-16` · MEASUREMENT · the missing **10M-BUDGET ANCHOR CELL**, built from the three win-prob controls — it has an **11 pp three-seed floor**, which puts the fork arm's 0.530 INSIDE the floor and NOT separated; and 🚨 **the registered fire threshold would have FIRED on one of our own controls**
+  - `L18867` · `2026-09-16` · VERDICT + CORRECTION (MAJOR) · THE FORK ARM'S REGISTERED READ — forks into the PPO buffer did NOT teach the head to rank siblings (branch d: −0.0003 [−0.0148, +0.0136] paired, NOT DETECTED, and the CI does not clear the registered 0.60) — and 🚨 **the registered comparator was an INDEXING ARTIFACT: the promoted win-prob head never ranked siblings at chance (0.5872, not 0.5169), which collapses BOTH of the 2026-09-14 record's DETECTED rows** (2026-09-16)
