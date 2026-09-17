@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-18,963-line file. **The ledger itself is append-only and is never edited by this**;
+18,989-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**619 headings · 568 dated · 2026-08-01 → 2026-09-16 · ledger 18,963 lines.**
+**621 headings · 569 dated · 2026-08-01 → 2026-09-17 · ledger 18,989 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -639,3 +639,5 @@ rename.
   - `L18815` · `2026-09-16` · OPS · `ai_v13_03_fork` COMPLETE at 10,027,008 — the fork dose was DELIVERED WITHOUT THE ROW BUDGET EVER BINDING (0 dropped across 97 updates) and ran ~35 % ABOVE the predicted ~790/rollout; G7 is the cleanest of the campaign; and 🚨 **the standing anchor command's `<run>@<step>` form CANNOT resolve a promoted snapshot**
   - `L18846` · `2026-09-16` · MEASUREMENT · the missing **10M-BUDGET ANCHOR CELL**, built from the three win-prob controls — it has an **11 pp three-seed floor**, which puts the fork arm's 0.530 INSIDE the floor and NOT separated; and 🚨 **the registered fire threshold would have FIRED on one of our own controls**
   - `L18867` · `2026-09-16` · VERDICT + CORRECTION (MAJOR) · THE FORK ARM'S REGISTERED READ — forks into the PPO buffer did NOT teach the head to rank siblings (branch d: −0.0003 [−0.0148, +0.0136] paired, NOT DETECTED, and the CI does not clear the registered 0.60) — and 🚨 **the registered comparator was an INDEXING ARTIFACT: the promoted win-prob head never ranked siblings at chance (0.5872, not 0.5169), which collapses BOTH of the 2026-09-14 record's DETECTED rows** (2026-09-16)
+  - `L18964` · `2026-09-17` · MEASUREMENT · THE FOUL PLAY AXES + THE FRONT-END VALIDATION — width and opponent knowledge are NOT SEPARABLE at n = 80 (width slope +0.027/ln-visit, CI covers zero; knowledge delta +0.000 at matched width); the inverse width ordering (H-E) is RETIRED as a law; the websocket front-end MAY be the default anchors transport (four cells agree within CIs, 0 errors)
+  - `L18973` · JOB 2 — **"front-end MAY be the DEFAULT transport for the anchors CLI"**

@@ -415,8 +415,7 @@ per decision (17× our compute per game), zero protocol failures either way. Its
 is a WIDTH METER (rule 23) and every read carries its realized visit count. Together the two anchors bracket the
 policy: a 200M search-free model below it, a hand-evaluated search above it. That is the end state's stage-three
 existence proof on our own simulator and teams, with the caveat that Foul Play's edge may be its opponent-set
-knowledge as much as its search — the two axes are separable (smaller budget; set prediction off) and unread.
-[ledger 2026-09-14 · *MEASUREMENT (MAJOR) · FOUL PLAY DE-RISKED*]
+knowledge as much as its search — the two axes were read 2026-09-16 (`foulplay_axes_and_frontend_validation_2026-09-16/`) and are NOT SEPARABLE at n = 80: the width slope is +0.027 per ln-visit with a CI covering zero across a 9.4× visit range on one checkpoint (retiring the "inverse width ordering" as a law — rule 23 still binds), and the knowledge delta at matched width is +0.000 [−0.15, +0.15] with the sets source forced from full team datasets to Smogon sets only ("no prediction" is unreachable in gen3ou). The remaining candidates for the edge are the hand-written evaluator and the search's shape. [ledger 2026-09-14 · *FOUL PLAY DE-RISKED*; 2026-09-17 · *THE FOUL PLAY AXES*]
 
 ### 3.2 Reading an ELO — six rules
 

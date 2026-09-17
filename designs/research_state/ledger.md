@@ -18960,3 +18960,29 @@ the ranking-term null STANDS · state distribution moved, the head did not · ba
 at 400 pairs with the L1 splitting by width and changing sign · guard WITHIN FLOOR**.
 
 **Orchestrator's CORRECTION and reading.** (1) **The 2026-09-14 *SIBLING DISCRIMINATION* entry is corrected here, not edited:** its baseline 0.517 was an indexing artifact in `refit.py` (the original head scored with successor-indexed V read at branch-row positions; 12,900 of 14,780 rows mis-scored). Corrected on the identical split and pairs: the promoted head ranks siblings at **0.587 [0.553, 0.623]**, the plain-BCE refit's gain is +0.016 [+0.000, +0.031] NOT DETECTED, the ranking-term null stands, and "calibration came with the ranking" inverts. The sentences "the head ranks at CHANCE", "the trunk holds the ordering and the loss never asked for it" and "the data is the fix" are WITHDRAWN; rule 25's quoted numbers and `designs/training/forks.md` §1 are amended in this landing. The orchestrator built the fork arm on that number. (2) **The fork arm: NOT DETECTED, branch (d)** — 0.5754 vs 0.5757 on its own states, paired Δ −0.0003 [−0.0148, +0.0136]; the offline number reproduces the on-stream `fork/pairwise_acc` (0.582) to 0.006, so the arm did exactly what it was built to do and the target had already moved. The guard is within floor. The 400-pair battery: no dividend, `grid` harms on both heads. **(3) What stands as a finding:** the promoted win-prob critic ranks contested siblings at ~0.58 on 10k fresh CRN forks — a real but modest discrimination that no lever, refit or fork has moved by more than the ±0.015 instrument width; forks move the STATE DISTRIBUTION (+31 % non-tied pairs, tie 0.745 vs 0.806, blind spot 5.5 % vs 4.6 %, disjoint) without moving the head. **The gap the fork arm was built to close is ~0.016 wide, inside the instrument.** (4) **DECISION:** the fork line is CLOSED at this depth (no sweep); `--fork-*` stays as built at 0 = OFF. The leaf question returns to the offline fit on branched self-play with a FROZEN policy (the end-state's stage two) — the one design that changes the target's stationarity rather than the data's coverage — and it is NOT dispatched tonight: it is the owner's coaching item. The GPU holds the arm-W seed replicate. Tag: **CORRECTION (MAJOR) · 0.517 was an artifact, 0.587 stands · fork arm NOT DETECTED · fork line CLOSED · leaf returns to the offline fit**.
+
+### 2026-09-17 · MEASUREMENT · THE FOUL PLAY AXES + THE FRONT-END VALIDATION — width and opponent knowledge are NOT SEPARABLE at n = 80 (width slope +0.027/ln-visit, CI covers zero; knowledge delta +0.000 at matched width); the inverse width ordering (H-E) is RETIRED as a law; the websocket front-end MAY be the default anchors transport (four cells agree within CIs, 0 errors)
+
+Neither axis moves our win rate detectably. Realized search width was manipulated over a **9.4×
+range** (83 k → 780 k MCTS visits/decision) and the win-rate contrast is **−0.062 [−0.210, +0.089]
+— NOT DETECTED**, with a fitted slope of **+0.027 [−0.045, +0.095] win rate per ln-unit of
+visits**, i.e. the WRONG SIGN and covering zero. Foul Play's set-prediction knowledge was degraded
+to a Smogon-usage floor and the contrast at matched width is **+0.000 [−0.151, +0.151] — NOT
+DETECTED**, width-corrected residual **+0.001 [−0.150, +0.152]**.
+
+### JOB 2 — **"front-end MAY be the DEFAULT transport for the anchors CLI"**
+Both team sets agree inside the delta's own CI (home **+0.050 [−0.084, +0.182]**, away **−0.030
+[−0.165, +0.106]**, pooled **+0.010 [−0.086, +0.106]**), **zero protocol failures** on either
+path over 200 front-end battles, `their_argmax_match_rates == [1.0]` in all four cells, and
+throughput within 10 % (0.575 vs 0.629 games/s home; 0.565 vs 0.549 away). The one peer death was
+Metamon's own known forfeit-desync recursion (SOP hazard H5), after its half's last game.
+
+🚨 **What "not separable" does NOT mean.** It is not "the two axes are equal", and it is not
+"search does not matter" (rule 6). It means that at n = 80 per cell, on this checkpoint, this box
+and this team pool, **neither manipulation produced a win-rate change this instrument can see** —
+and the more interesting half of that is that the SEARCH manipulation is the one that should have
+been easy.
+
+---
+
+**Orchestrator's reading.** Foul Play's edge over the 75M policy is not attributable to search width or to its set-prediction sources at this n — the remaining candidates are its hand-written evaluator and the search's SHAPE (decoupled UCT over likelihood-weighted chance nodes), which are the two things a search-on-our-value-net would also need. "No set prediction at all" is unreachable in gen3ou (no team preview), so the knowledge axis is bounded from below, not measured to zero. The front-end becomes the default transport for `main.anchors` once Foul Play is validated over it (`--server-uri` stays the seam). Four Foul Play client bugs are recorded in the measurement, patched only in copies — every banked Foul Play number came from the one challenge direction the pipelined-PM bug spares. Tag: **MEASURED · not separable · H-E retired · front-end default-eligible**.
