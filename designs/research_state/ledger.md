@@ -18986,3 +18986,41 @@ been easy.
 ---
 
 **Orchestrator's reading.** Foul Play's edge over the 75M policy is not attributable to search width or to its set-prediction sources at this n — the remaining candidates are its hand-written evaluator and the search's SHAPE (decoupled UCT over likelihood-weighted chance nodes), which are the two things a search-on-our-value-net would also need. "No set prediction at all" is unreachable in gen3ou (no team preview), so the knowledge axis is bounded from below, not measured to zero. The front-end becomes the default transport for `main.anchors` once Foul Play is validated over it (`--server-uri` stays the seam). Four Foul Play client bugs are recorded in the measurement, patched only in copies — every banked Foul Play number came from the one challenge direction the pipelined-PM bug spares. Tag: **MEASURED · not separable · H-E retired · front-end default-eligible**.
+
+### 2026-09-18 · OPS · `ai_v13_04_flywheel_winprob_b` COMPLETE at 75,005,952 — **the 75M RUN-LEVEL FLOOR is now measured**: two seeds of one config agree to the step on crossing and snapshot count, differ by 1.1 pp on final bots, and by 2–4× that (relatively) on the live critic rows; the exploiter launched behind it
+
+**Run.** `ai_v13_04_flywheel_winprob_b`, the seed replicate of arm W. Build = arm W's argv with the **token-set diff exactly `1001 → 1002` plus the run name** (231 → 231 tokens) — verified as a multiset difference, because a seed replicate's entire value is that nothing else moved. Pin **`6eb9c776`**, checkargs 130 accepted / 2 launcher-owned / **0 unrecognized**, ARCH surface clean, dry-run FRESH. 09-16 21:18 → 09-18 10:29 PT, **39 h 11 m**, FPS 547, **Restarts 12, ZERO crashes** (no `crashes/` directory was ever created). `final_model.zip` written, `latest.txt` points to it. Final aggregate **93.2 %**. **TWENTY-THREE complete.**
+
+🚨 **THE RUN-LEVEL FLOOR AT 75M, WHICH IS WHAT THIS ARM WAS FOR.** Same config, same pin, same dose (4.5776e-8), same `--ent-coef 0.05`, same eval regime **declared** (`source=argv` on both, not inherited) — differing only by `--seed`, which reaches the SB3 constructor and never the battle stream:
+
+| row | **W** (seed 1001) | **W_b** (seed 1002) | Δ |
+|---|---|---|---|
+| steps | 75,005,952 | 75,005,952 | — |
+| **crossing** | **4,128,768** | **4,128,768** | **0** |
+| pool snapshots | 20 | 20 | 0 |
+| `bots8` final | 0.9100 | 0.9212 | **+0.0112** |
+| final aggregate | 94.2 % | 93.2 % | −1.0 pp |
+| H_start → H_end (med-20) | 1.6654 → 1.0658 | 1.6761 → 1.0468 | −0.0190 |
+| G7 worst ratio | 1.131 | 1.160 | +0.029 |
+| G7 frozen reference | 25.327 | 22.330 | −2.997 |
+| `critic_ece` (live, last) | 0.0276 | 0.0149 | −0.0127 |
+| `critic_resolution` | 0.0596 | 0.0674 | +0.0078 |
+| `critic_skill` | 0.2539 | 0.2946 | **+0.0407** |
+| `critic_brier` | 0.1754 | 0.1629 | −0.0125 |
+| `approx_kl` (last) | 0.0138 | 0.0183 | +0.0045 |
+
+**The structural rows are identical and the scalar rows are not.** Crossing step and snapshot count agree exactly — so the curriculum is reproducible to the rollout — while `bots8` moves 1.1 pp, H_end 1.9 pp, and the **live critic rows move by 2–4× that in relative terms** (`critic_skill` +16 % of its own value, `critic_ece` −46 %). 🚨 **RULE 20 applies to the critic block: those are LIVE-FRAME, single-update reads and are not evidence about the offline population** — but the point of the floor is exactly that a 0.04 `critic_skill` gap between two seeds of one config is NOISE, and any future claim on that row must clear it. **The G7 reference itself moved 3.0 steps between seeds (25.327 → 22.330)**, which is the third measurement this campaign that the frozen reference is a draw-level quantity and a ratio is comparable only WITHIN an arm.
+
+🚨 **AND THE G7 EXCURSION REPRODUCED.** W_b's worst ratio **1.160 (92.8 % of bar)** landed at ~30M and was never approached across the following 45M steps (the final cycle reads 0.993). **W did the same thing at the same place** — 1.047 → 1.087 → 1.111 at 30M, back to 0.989 by 54M. Two seeds, same shape, same step range: **a property of the 75M win-prob trajectory, not of either seed.** I flagged W_b's rise at the 30M check as a number under watch and explicitly refused to call it a trend; it reversed, as W's had. Both arms held G7 under bar on both halves for the full run.
+
+**ANCHOR CELL — NOT RUN HERE, HANDED OVER.** The final-node SmallRL read (`snapshots/snapshot_000074000016.zip`, the last promoted node) was attempted with `--out` into job tmp and **killed by this session's harness as "low memory" with 51 GB available** — the fifth such kill of an anchor run from this session, against zero from the orchestrator's. Per the standing rule (stop after two, hand the design over) it was not retried, particularly with the exploiter now training and CPU contention a real cost. **The cell is the orchestrator's to run**; the arm is otherwise complete and nothing else is blocked on it. `anchors_out/` housekeeping: the stray left in the MAIN checkout on 09-16 was **moved** (not deleted) to `…/1046b1d6/tmp/anchors_out_20260916`, and `git status --porcelain` on main is empty.
+
+### 2026-09-18 · OPS · LAUNCH · `ai_v13_05_exploit_big5starmie` — the era's first WIN-PROB EXPLOITER, and a `--steps` defect caught in the dry run
+
+Launched 10:29 PT, launcher pid 3104975, child 3105011, pin **`6eb9c776`**, **role `FORK of models/ai_v13_02_flywheel_winprob`**. 227 tokens, checkargs **127 accepted / 2 launcher-owned / 0 unrecognized**, ARCH surface clean.
+
+🚨 **`--steps` IS A TOTAL ON A FORK, NOT AN INCREMENT — the GO's value would have produced an instantly-complete run.** The registration said "`--steps 8000000` from the fork point"; the launcher's dry run resolved that as **`8,000,000 vs checkpoint at 75,005,952 → −67,005,952 steps`**. Corrected to **`--steps 83005952`**, which the dry run confirms as **`+8,000,000 steps`**. This is the same shape as `_dense`'s *"Training already complete (10,027,008 / 10,000,000)"* and it is now a standing check: **always read the dry run's `→ ±N steps` line on any resume or fork.**
+
+🚨 **RESOLVED DIFF vs arm W's argv (231 → 227), from the doc rather than guessed.** REMOVED: `--self-play` ×2, `--self-play-temp 1.0`, `--self-play-use-cpu`, `--stable-opponent-mastered-wr 0.8`, `--stable-opponent-selfplay-share 0.2`, `--stable-opponent-temp 1.0` — **`--exploiter` is MUTUALLY EXCLUSIVE with `--self-play` (an arg-parse error)** and needs no pool or stable machinery (`designs/training/exploiter_and_distillation.md` §Exploiter mode, lines 17 and 82). ADDED: `--model` and `--exploiter` both `models/ai_v13_02_flywheel_winprob/final_model.zip` (arm W is **parent AND target**, the AlphaStar exploiter-init recipe), `--trainee-team data/teams/sample/f6229d2c867e21d6.txt`, `--exploiter-keep-bots`. `--fork-lr` UNSET, so the fork inherits the parent's annealed lr.
+
+**Banners, verified live:** `🧭 [MATCHUP d49857daf4] trainee teams: PINNED data/teams/sample/f6229d2c867e21d6.txt | opponent teams: full pool | mix: exploiter` · `exploiter target: …/final_model.zip (stochastic@1) | bots mixed in 50%` · `🎯 [SPECIALIST] trainee pinned to ONE team: Skarmory, Blissey, Tyranitar, Swampert, Gengar, Starmie` · `[EVAL REGIME] GREEDY + symmetric teams (source=argv)`. 🚨 **The launcher also DECLARES a side effect worth recording:** `eval_trainee_teams: {'kind': 'default_biased', 'bias_prob': 0.1, 'pin_sha': None} → {'kind': 'pinned', 'pin_file': …, 'bias_prob': 0.0, 'pin_sha': '4c01c7bbbb'}` — **pinning the trainee's team also re-sources the EVAL trainee teams**, which is the same class of silent re-resolution as the `--critic` flip's six keys, except here it is announced. Watch items: vs-target win rate by cycle (the fork-vs-scratch record is 0.57 → 0.84 in ~2M), the temperature ratchet, G7 against its own reference. Tag: **OPS · COMPLETE (W_b) · 75M RUN-LEVEL FLOOR MEASURED · G7 excursion REPRODUCED across seeds · LAUNCH (first win-prob exploiter) · `--steps` total-not-increment caught pre-launch**.
