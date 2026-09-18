@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,027-line file. **The ledger itself is append-only and is never edited by this**;
+19,063-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**623 headings · 571 dated · 2026-08-01 → 2026-09-18 · ledger 19,027 lines.**
+**624 headings · 572 dated · 2026-08-01 → 2026-09-18 · ledger 19,063 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -643,3 +643,4 @@ rename.
   - `L18973` · JOB 2 — **"front-end MAY be the DEFAULT transport for the anchors CLI"**
   - `L18990` · `2026-09-18` · OPS · `ai_v13_04_flywheel_winprob_b` COMPLETE at 75,005,952 — **the 75M RUN-LEVEL FLOOR is now measured**: two seeds of one config agree to the step on crossing and snapshot count, differ by 1.1 pp on final bots, and by 2–4× that (relatively) on the live critic rows; the exploiter launched behind it
   - `L19018` · `2026-09-18` · OPS · LAUNCH · `ai_v13_05_exploit_big5starmie` — the era's first WIN-PROB EXPLOITER, and a `--steps` defect caught in the dry run
+  - `L19028` · `2026-09-18` · OPS · `ai_v13_05_exploit_big5starmie` COMPLETE at 83,066,880 — the era's first win-prob exploiter took arm W from 0.500 to **0.740** on its pinned team in 8M; and 🚨 **G7 IS STRUCTURALLY WRONG ON A FORK** — it froze its reference on the PARENT's infancy

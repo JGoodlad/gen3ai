@@ -19024,3 +19024,39 @@ Launched 10:29 PT, launcher pid 3104975, child 3105011, pin **`6eb9c776`**, **ro
 🚨 **RESOLVED DIFF vs arm W's argv (231 → 227), from the doc rather than guessed.** REMOVED: `--self-play` ×2, `--self-play-temp 1.0`, `--self-play-use-cpu`, `--stable-opponent-mastered-wr 0.8`, `--stable-opponent-selfplay-share 0.2`, `--stable-opponent-temp 1.0` — **`--exploiter` is MUTUALLY EXCLUSIVE with `--self-play` (an arg-parse error)** and needs no pool or stable machinery (`designs/training/exploiter_and_distillation.md` §Exploiter mode, lines 17 and 82). ADDED: `--model` and `--exploiter` both `models/ai_v13_02_flywheel_winprob/final_model.zip` (arm W is **parent AND target**, the AlphaStar exploiter-init recipe), `--trainee-team data/teams/sample/f6229d2c867e21d6.txt`, `--exploiter-keep-bots`. `--fork-lr` UNSET, so the fork inherits the parent's annealed lr.
 
 **Banners, verified live:** `🧭 [MATCHUP d49857daf4] trainee teams: PINNED data/teams/sample/f6229d2c867e21d6.txt | opponent teams: full pool | mix: exploiter` · `exploiter target: …/final_model.zip (stochastic@1) | bots mixed in 50%` · `🎯 [SPECIALIST] trainee pinned to ONE team: Skarmory, Blissey, Tyranitar, Swampert, Gengar, Starmie` · `[EVAL REGIME] GREEDY + symmetric teams (source=argv)`. 🚨 **The launcher also DECLARES a side effect worth recording:** `eval_trainee_teams: {'kind': 'default_biased', 'bias_prob': 0.1, 'pin_sha': None} → {'kind': 'pinned', 'pin_file': …, 'bias_prob': 0.0, 'pin_sha': '4c01c7bbbb'}` — **pinning the trainee's team also re-sources the EVAL trainee teams**, which is the same class of silent re-resolution as the `--critic` flip's six keys, except here it is announced. Watch items: vs-target win rate by cycle (the fork-vs-scratch record is 0.57 → 0.84 in ~2M), the temperature ratchet, G7 against its own reference. Tag: **OPS · COMPLETE (W_b) · 75M RUN-LEVEL FLOOR MEASURED · G7 excursion REPRODUCED across seeds · LAUNCH (first win-prob exploiter) · `--steps` total-not-increment caught pre-launch**.
+
+### 2026-09-18 · OPS · `ai_v13_05_exploit_big5starmie` COMPLETE at 83,066,880 — the era's first win-prob exploiter took arm W from 0.500 to **0.740** on its pinned team in 8M; and 🚨 **G7 IS STRUCTURALLY WRONG ON A FORK** — it froze its reference on the PARENT's infancy
+
+**Run.** `ai_v13_05_exploit_big5starmie`, a FORK of `ai_v13_02_flywheel_winprob` (arm W as **both parent and target**, the AlphaStar exploiter-init recipe). Pin **`6eb9c776`**, 227 tokens, checkargs 127 accepted / 2 launcher-owned / **0 unrecognized**, ARCH clean, dry-run role **FORK**. 10:29 → 15:10 PT, **4 h 41 m**, FPS 550, **Restarts 1, ZERO crashes** (no `crashes/` directory). `final_model.zip` written, `latest.txt` points to it. Final aggregate **99.8 %**. **TWENTY-FOUR complete.**
+
+🚨 **`--steps` IS A TOTAL ON A FORK — the registered value would have produced an instantly-complete run.** The GO said "`--steps 8000000` from the fork point"; the dry run resolved that as `8,000,000 vs checkpoint at 75,005,952 → **−67,005,952 steps**`. Corrected to **`--steps 83005952`**, confirmed as `+8,000,000`, and the run ended at 83,066,880 — i.e. the full 8M plus a partial rollout. **Standing check: read the dry run's `→ ±N steps` line on every resume and fork.**
+
+**The resolved diff (231 → 227), from the doc rather than guessed.** REMOVED `--self-play` ×2, `--self-play-temp 1.0`, `--self-play-use-cpu`, `--stable-opponent-mastered-wr 0.8`, `--stable-opponent-selfplay-share 0.2`, `--stable-opponent-temp 1.0`: **`--exploiter` is mutually exclusive with `--self-play` (an arg-parse error)** and needs no pool or stable machinery (`designs/training/exploiter_and_distillation.md` §Exploiter mode, lines 17 and 82). ADDED `--model` and `--exploiter` both `…/ai_v13_02_flywheel_winprob/final_model.zip`, `--trainee-team data/teams/sample/f6229d2c867e21d6.txt`, `--exploiter-keep-bots`. Banners confirmed live: `mix: exploiter` · `exploiter target: …final_model.zip (stochastic@1) | bots mixed in 50%` · `🎯 [SPECIALIST] trainee pinned to ONE team: Skarmory, Blissey, Tyranitar, Swampert, Gengar, Starmie` · `[EVAL REGIME] GREEDY + symmetric (source=argv)`.
+
+**DOSE — delivered, not declared.** `python -m main.dose` reads **3.815e-8, 1.78× the v8 reference**, at `lr_median 0.00025`. `--fork-lr` was left UNSET, so the fork inherited arm W's **annealed** 2.5e-4 rather than the 3e-4 a fresh run starts at — which is why this differs from the parent launch's 4.5776e-8. **On a fork the dose must be read from the run, never computed from the argv.**
+
+🚨 **THE RESULT: THE EXPLOITER BEATS ITS OWN PARENT ON THE PINNED TEAM.** `eval/win_rate_vs_ext_ai_v13_02_flywheel_winprob`, post-fork only:
+
+| +steps | vs-target WR | ep_len vs target | vs-bots |
+|---|---|---|---|
+| +1M | 0.640 | 50.53 | 0.9712 |
+| +3M | 0.680 | 49.94 | 0.9787 |
+| +5M | 0.730 | 48.07 | 0.9887 |
+| +7M | **0.740** | 45.41 | 0.9875 |
+
+A fork of X starts at 0.500 against X by construction, so **+24 pp in 8M**, monotone, with the episodes against the target shortening throughout (50.5 → 45.4 turns — it is closing games faster, not stalling into them). Against bots it is at **0.9875–0.9887**, near ceiling, as expected once pinned to one team. 🚨 **The fork-vs-scratch record's 0.57 → 0.84 in ~2M is NOT this arm's comparator** — that was against *a distilled generalist*, and this target is a 75M win-prob run that took the pair's own ladder. Read against its own baseline of 0.500, not against 0.84.
+
+🚨 **INSTRUMENT DEFECT — `g7_ladder` IS STRUCTURALLY WRONG ON A FORK.** It reported `cycles=41`, `reference = mean of the first 2 cycles (2,000,016 = 24.575, 4,000,032 = 26.079) = 25.327`, worst ratio **1.187 (95.0 % of bar)**. **Those two cycles are ARM W's, at 2M and 4M** — the fork inherits the parent's TensorBoard, so the tool freezes its reference on **the parent's infancy** and then measures the fork against it. That is not a within-arm ratio and the 1.187 does not mean what the verdict line implies. **The fork-appropriate reference is the parent's FINAL cycle, 26.350**, against which the post-fork series reads:
+
+| +steps | ep_len | ratio vs parent-final |
+|---|---|---|
+| +1M | 28.784 | 1.092 |
+| +3M | 28.462 | 1.080 |
+| +5M | 28.246 | 1.072 |
+| +7M | 30.067 | **1.141** |
+
+**Under bar either way**, and the post-fork `signal/draw_rate` peaks at 0.0050 against the 0.05 bar — so the arm is clean on both halves however it is referenced. But the tool's own number is not interpretable for a fork, and **every future fork will hit this**: the reference must be taken from the parent's final cycle (or the fork's own first), never from `cycles=1,2` of an inherited series. This joins the standing G7 caveat that the instrument is blind to a run whose early cycles are pathological — both are failures of the FROZEN-REFERENCE assumption, which holds only when the first two cycles belong to the arm being measured.
+
+⚠️ **AND THE SAME INHERITANCE TRAPS `eval/win_rate_vs_bots`:** its series carries all 37 of arm W's cycles before the four that belong to this run. **Only steps > 75,005,952 are this arm's.** The same applies to every inherited row on any fork.
+
+**Not claimed.** The 99.8 % final aggregate is a descriptor and this arm is a SPECIALIST pinned to one team — it is not comparable to a generalist's aggregate, and no strength claim transfers off the Big-5 slice. The registered read is the orchestrator's (CPU): pairwise sibling accuracy of this head on its OWN forked states vs arm W's head on the same states, then the leaf battery on the Big-5 slice. Tag: **OPS · COMPLETE · twenty-fourth run · first win-prob exploiter, +24 pp vs its own parent in 8M · 🚨 G7 STRUCTURALLY WRONG ON A FORK (parent-infancy reference) · `--steps` total-not-increment caught pre-launch**.
