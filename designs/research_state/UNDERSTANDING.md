@@ -882,7 +882,7 @@ run-level CANDIDATE); arm W's critic ~4× worse calibrated (ECE 0.069 vs 0.018) 
 the REALIZED dose ran 1.44× in arm S's favour (its KL controller annealed to lr 4.3e-4 vs 3.0e-4, forced by the
 objective), so none of the three is read as if the optimiser were held fixed. **The premise the era rests on holds at
 the standard it could be tested at: the win-prob critic costs nothing detectable on strength or on any external
-anchor.** Era proceeds on win-prob; arm S's levels are the standing comparators for the first revolution. Tool defect
+anchor.** **Against the 75M run-level floor (`flywheel_wb_floor_read_2026-09-18/`, W vs its seed replicate W_b):** strength WITHIN floor on every frame (+17.5 vs 25.2; W_b leads W at 15/15 shared steps); ECE RETIRED (within floor both draws — win-prob calibration is a run-level draw with a ≈0.05 ECE floor at 75M, while resolution reproduces to 1e-5); entropy refuted as worded (all three arms decay); the untaught +8.31 pp is OUTSIDE its 3.69 pp floor and remains the one CANDIDATE, confounded by the 1.44× realized dose. The 30M episode-length excursion is a property of all three 75M arms. Era proceeds on win-prob; arm S's levels are the standing comparators for the first revolution. Tool defect
 H-L: `critic_read --v-column` silently reads `win_probs` on every quota-matched row (backlog). [ledger 2026-09-16 ·
 *MEASUREMENT (MAJOR) · THE FLYWHEEL-ERA PAIR READ*] The flywheel pair's shaped arm therefore runs the
 era's shaped configuration, not a one-flag flip. [ledger 2026-09-12 · *READ · the shaped-critic family at the

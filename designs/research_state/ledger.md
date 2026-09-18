@@ -19060,3 +19060,165 @@ A fork of X starts at 0.500 against X by construction, so **+24 pp in 8M**, mono
 ⚠️ **AND THE SAME INHERITANCE TRAPS `eval/win_rate_vs_bots`:** its series carries all 37 of arm W's cycles before the four that belong to this run. **Only steps > 75,005,952 are this arm's.** The same applies to every inherited row on any fork.
 
 **Not claimed.** The 99.8 % final aggregate is a descriptor and this arm is a SPECIALIST pinned to one team — it is not comparable to a generalist's aggregate, and no strength claim transfers off the Big-5 slice. The registered read is the orchestrator's (CPU): pairwise sibling accuracy of this head on its OWN forked states vs arm W's head on the same states, then the leaf battery on the Big-5 slice. Tag: **OPS · COMPLETE · twenty-fourth run · first win-prob exploiter, +24 pp vs its own parent in 8M · 🚨 G7 STRUCTURALLY WRONG ON A FORK (parent-infancy reference) · `--steps` total-not-increment caught pre-launch**.
+
+### 2026-09-18 · MEASUREMENT (MAJOR) · **THE 75M RUN-LEVEL FLOOR IS MEASURED**, and it swallows two of the flywheel pair's four headline rows: strength (+17.5 Elo vs a **25.2** seed floor, **53.1** on the common-step frame) and **`gate.ece.all` (0.051 vs a 0.049–0.059 seed floor — the pair's ONE decisive DETECTED row, retired)**; the untaught meter (+8.31 vs **3.69 pp**) and the entropy trajectory (0.00133 vs **0.00103** nats/M) clear it, the latter by 23 % and with its "FLAT vs DECAYING" form REFUTED — all three arms decay; plus **W_b leads arm W at 15 of 15 shared ladder steps**, which is the same monotone shape the pair read had described for arm S and refused to claim
+
+`designs/research_state/measurements/flywheel_wb_floor_read_2026-09-18/`. Bars pre-registered in
+`PREDICTION.md` and committed BEFORE any W_b number existed. **THE FLOOR ARM.**
+`ai_v13_04_flywheel_winprob_b` (**W_b**, `--seed 1002`) is `ai_v13_02_flywheel_winprob`'s
+(**arm W**, `--seed 1001`) TOKEN-EXACT seed replicate — the argv multiset difference verified here
+as exactly `1001 → 1002` plus the run name (232 → 232 tokens), same pin `6eb9c776` for all
+75,005,952 steps, `role: fresh`, config v119 / `gen3_critic_route_wave_v1`, `--ent-coef 0.05`,
+`--eval-sentinel-greedy` RECORDED, crossing at the **identical 4,128,768**, 20 ladder nodes.
+Every row produced by exactly the code paths that produced arm W's and arm S's — same scripts with
+the third arm added, same harness, same seeds (20260910 / 20260911), same cells, same team seeds
+(`BASE_OURS 20260914`), same ports. Everything CPU-only (`CUDA_VISIBLE_DEVICES=""`), `nice`,
+`OMP_NUM_THREADS=1` for peers, from the main checkout, **nothing written under `models/`**; Showdown
+on :9450 and :9417 started and stopped by their own **node** PIDs and `main.anchors` on its own
+:9500, **:8000 and :8001 never touched**. 🚨 **THE RULE, fixed in advance: a finding is OUTSIDE THE
+75M FLOOR only if `|S − W| > |W − W_b|` AND the `S − W` CI excludes the `|W − W_b|` POINT; else
+WITHIN FLOOR at n = 2 — and ONE PAIR BOUNDS A FLOOR, IT DOES NOT ESTIMATE ONE (rules 19/22), so
+there is no CI on the floor, WITHIN FLOOR is never "equivalent" (rule 6), and a row that CLEARS it
+is a candidate that has survived ONE replicate, not a family verdict.** **STRENGTH.** All three
+committed `ladder.json` files carry the recipe stamp (`eval_sentinel_edges_dropped` 51 / 48 / 47)
+and reproduce their current-code refits to **0.0** (rule 24 satisfied three times). At matched
+COUNT, newest node: arm S 2036.6 @72.0M, arm W 2019.1 @72.0M, **W_b 2044.3 @74.0M** (se 8.9 / 8.7 /
+8.9) ⇒ **finding 17.5 [−6.9, +41.9] against a floor of 25.2 ⇒ WITHIN FLOOR**; second-newest 10.2
+against 17.6 ⇒ WITHIN. On the **COMMON-STEP refits** — the frame the registration itself calls the
+honest one — the finding is 6.7 [−20.2, +33.6] and **the floor is 53.1, eight times it**.
+🚨 **AND THE SHAPE ARGUMENT COLLAPSES: W_b leads arm W at 15 of 15 shared steps, by 22–70 Elo, and
+the lead does NOT narrow at the end** — the pair read's "arm S leads at all 16 shared steps,
+narrowing to +6.7" was offered as the pattern worth replicating, and the replicate reproduces it
+larger and more monotone with the treatment held fixed. **A monotone sign across a run's shared
+ladder nodes is not evidence of a treatment at this depth.** ⚠️ The imported 45.0-Elo control floor
+is NOT superseded: 45.0 is a MAX over three same-argv 10M four-node controls, 25.2/53.1 is one
+pairwise |Δ| at 75M/20 nodes, and rule 3 makes a floor a MAX over replicates — both are reported,
+the smallest claimable |Δ| stays 69.4. Late slopes (no bar attaches): S **+1.14 ± 0.44**, W
+**+0.78 ± 1.33**, **W_b +1.82 ± 0.89** — a **1.04 Elo/M seed spread**, so the pair's slope contrast
+is inside its own floor; all three still gaining at 75M. W_b's node-to-node adjacent spread is the
+tightest of the three (max 24.1 vs 37.8 / 56.9). ⚠️ W_b's pool starts 10M later (36.0M → 74.0M), so
+matched-COUNT ordinals differ by up to 14M and the three-way common set is **n = 11, below the
+registered n ≥ 12 report floor** and carries no verdict. **ENTROPY.** All three arms 740–741 points
+over 196,608 → 75,005,952 and all three crossed at 4,128,768, so every post-crossing window is
+matched. Post-crossing slopes: arm S **−0.00003 ± 0.00005** (t = −0.57, **−0.002 nats** total), arm
+W **−0.00136 ± 0.00006** (t = −23.6, **−0.096 nats**), **W_b −0.00033 ± 0.00006 (t = −5.62,
+−0.023 nats)**. Finding 0.00133 [0.00118, 0.00148] vs floor **0.00103 ⇒ OUTSIDE THE 75M FLOOR —
+by 23 %.** 🚨 **The rule passes and the description fails: W_b DECAYS TOO, at a quarter of arm W's
+rate, and the contrast against that seed (0.00030) is a THIRD of the floor. "Arm S holds entropy
+FLAT while arm W decays" is a statement about one seed; the config-level statement is a MAGNITUDE
+ordering S < W_b < W.** Clause (b) is near-vacuous on this row and is reported as such — its CI is
+an OLS residual se over ~700 autocorrelated points on two single trajectories, i.e. line-fit
+uncertainty, not run-to-run movement. H_end 1.0292 / 1.0648 / **1.0445**: finding 0.0356, floor
+0.0203, both far inside the 0.074-nat imported three-seed floor, and W_b sits BETWEEN S and W at 14
+of 16 matched-step buckets. **CRITIC ROWS — the first LIKE-FOR-LIKE pair in the campaign.** Both
+sides are `--critic winprob`, so `max|values − win_probs|` = **0.0 on both** and every row
+including the whole calibration family is CRITIC-vs-CRITIC; the pair read's calibration rows were
+necessarily ROW A (arm S's AUXILIARY win-prob head at coef 0.05 against arm W's value function),
+and **that caveat belongs to the finding — no floor removes it.** Two offline full-capture draws
+per arm, **9,600 battles each, complete, shortfall 0**, sentinels GREEDY (RECORDED), draws 0.4–0.5 %,
+anchors 150/150, all three arms read at **74,000,016 — 1,005,936 steps (1.34 %) short of each end,
+an exactly matched distance**; frames quota-MATCHED (caps 799/392/7 and 797/395/9) before any
+frame-sensitive row was labelled. 🚨 **`gate.ece.all`: arm S's aux head 0.0178, arm W's critic
+0.0688 / 0.0715, W_b's critic 0.0101 / 0.0222. Finding 0.0510 [0.0415, 0.0596]; FLOOR 0.0587
+(draw 1) / 0.0493 (draw 2) ⇒ WITHIN FLOOR at n = 2 ON BOTH DRAWS. The pair's one decisive DETECTED
+row does not survive its own seed floor, and the direction flips — W_b's critic is BETTER
+calibrated than arm S's diagnostic head.** `gate.reliability.all` falls the same way (finding
+0.0046, floor 0.0050 / 0.0051, WITHIN on both draws). `gate.ece.bot` clears at 1.3× (0.0614 vs
+0.0467 / 0.0452); the calibration-in-the-large INTERCEPT clears at 1.8–2.7× (0.5469 vs 0.2044 /
+0.3123), so **the SIGN of the win-prob critics' pessimism survives and its SIZE does not**
+(+0.58 on arm W, +0.38 / +0.27 on W_b, +0.03 on arm S, at a shared slope 1.28–1.39). ✅ **The
+dissociation the pair drew SURVIVES and sharpens: RESOLUTION reproduces across seeds and
+CALIBRATION does not** — `gate.resolution.all` 0.0593 / 0.0593 / 0.0551 (a 0.00001 seed floor on
+draw 1) while ECE moves 0.059 between seeds. 🚨 **STANDING CONSEQUENCE: `--critic winprob`'s
+calibration is a RUN-LEVEL quantity with a ≈ 0.05 ECE floor at 75M, and no banked read clears it.**
+The registered guard `cond.opp_class_auc.t4_10` (finding 0.0254, **NOT DETECTED** against the
+imported 0.02451 floor to begin with) has a floor of 0.0014 / 0.0172 — **SPLIT across draws ⇒ NOT
+CONFIRMED** (rule 21); no verdict moves. **Rule 19 is now measured at 75M**: on the calibration
+family the RUN component is **4–56×** the eval-draw component (ECE draw spreads 0.0028 / 0.0121
+against a 0.049–0.059 run floor), while on resolution and the conditioning guard the two are the
+same size — so more DRAWS of one checkpoint buy nothing on calibration and everything must be an
+arm. **UNTAUGHT METER.** Registry opponent `untaught_meter_opponent` (= `ai_v9_29_rev1_0823
+@24,000,000`), 200 games/team over the untaught 8, seed 0, concurrency 1, **W_b and arm W in ONE
+invocation**, 3,200 battles per config, **0 timeouts**, levels IDENTICAL under BOTH config
+resolutions: arm S **54.50**, arm W **46.19**, **W_b 49.88 pp**. ✅ **Arm W reproduces its banked
+2026-09-16 level EXACTLY (Δ 0.00 pp, 739/1600 both times)** — a second confirmation that the meter
+is deterministic at seed 0 / concurrency 1. Paired team-clustered: finding **+8.31 pp
+[+5.69, +11.19], 8/8 teams**; **FLOOR |W − W_b| = 3.69 pp** (6 of 8 teams favour W_b) ⇒ **OUTSIDE
+THE 75M FLOOR at n = 2** — 🚨 **but the same contrast against the OTHER seed is +4.62 pp
+[+0.69, +8.56] on 5 of 8 teams**, so the defensible statement is *the shaped arm is ahead of BOTH
+win-prob seeds by 4.6–8.3 pp against a 3.7 pp seed floor*, still a DESCRIPTOR and not an endpoint
+(§8.5). **This is the meter's first RUN-LEVEL floor at any depth, and at 3.69 pp it sits between
+the 1.66 pp frozen-dose and 4.27 pp controller-live FOLD floors** — the fold floors were not badly
+wrong in magnitude. **EXTERNAL ANCHORS, each in its own regime, all WITHIN FLOOR.** vs Metamon
+`SmallRL` (ckpt 40, 13.9M, `VanillaAttention`, CPU, `@0a00a759`), greedy-vs-greedy verified per
+decision (`argmax_match_rate` 1.0000 everywhere it was recorded), 100 games per cell as two
+role-balanced half-cells: **home 0.630 / 0.650 / W_b 0.590** ⇒ finding 0.020, **floor 0.060**;
+**away (`python -m main.anchors`) 0.520 / 0.500 / W_b 0.590** ⇒ finding 0.020, **floor 0.090**.
+✅ **The away floor lands INSIDE the anchors SOP's own three-seed run-level floor for this exact
+cell — 0.090 against 0.110 — the first 75M corroboration of a bar the SOP had to import from 10M**,
+and 4.5× the SOP's 0.020 eval-draw floor, which is rule 19's point again. vs **Foul Play**
+(`6c467c08` + poke-engine 0.0.48, `--features gen3`) at `--search-time-ms 1000
+--search-parallelism 1`, 80 games over the same 8 pinned pool teams: **W_b 0.400 [0.300, 0.510] at
+1.134 M realized visits/decision** against arm W's 0.475 at 1.153 M and arm S's 0.450 at 1.249 M ⇒
+finding 0.025, **floor 0.075 ⇒ WITHIN FLOOR**. 🚨 **W and W_b are WIDTH-MATCHED to 1.6 % (ratio
+0.984) — the first width-matched Foul Play pair in the programme — and at matched width the SEED
+alone moves the cell 7.5 pp.** 🚨 **And the "win rates order exactly inversely to realized width"
+observation is BROKEN by the fourth point: 1.400 M → 0.388, 1.249 M → 0.450, 1.153 M → 0.475,
+1.134 M → 0.400.** Rule 23 is untouched — a width meter still needs width matching — but that
+specific three-point inverse ordering must not be carried forward as evidence for it. All four 75M
+policies remain BELOW Foul Play at this budget; the external anchors continue to bracket us.
+**THE G7 EXCURSION.** The AMENDMENT-6 frozen references computed here REPRODUCE the banked ones to
+the third decimal (arm W 25.327, W_b 22.330), which is the check that this is the series the tool
+quoted. Inside a 24M–34M window pinned before either arm was read, **the excursion peaks at
+EXACTLY 30,000,000 on ALL THREE ARMS** — arm S 24.95 turns (ratio 1.070, 85.6 % of bar), arm W
+28.14 (1.111, 88.9 %), W_b 25.90 (1.160, 92.8 %) — rises over the preceding 2–4M and is back inside
+each arm's own median by 32–34M, with amplitudes over each arm's own median of **+2.18 / +1.79 /
++2.27 turns**. 🚨 **The completion entry called it a property of the 75M WIN-PROB trajectory; the
+third arm extends it — arm S, a different critic objective and a different reward composition, does
+the same thing at the same step with the same amplitude. It is a property of this recipe's
+curriculum at ~30M.** It is not a pathology: no arm breached G7, stall half-peaks 0.0237 / 0.0145,
+rule 12's 25 % threshold nowhere near. ⚠️ The frozen reference moved **3.0 turns between two seeds**
+(25.327 → 22.330), so a RATIO is comparable only WITHIN an arm and the raw turns only across them —
+W_b's 1.160 reads larger than arm W's 1.111 entirely because its reference is lower.
+`rollout/ep_len_mean` post-crossing mean 40.48 (S) / 44.53 (W) / **43.75 (W_b)**: the pair's
+"+4 turns on the win-prob arm" survives with a **0.78-turn** floor. **THE REALIZED DOSE — a floor on
+the pair's own hazard H-F.** The pair found the KL controller had annealed arm S to `lr_median`
+4.32e-4 against arm W's 3.00e-4, a **1.44×** realized-dose gap on identical dose tokens. **W_b's is
+3.30e-4 — a 1.10× gap on the SAME argv**, so about a quarter of the S-vs-W gap (on a log scale) is
+reproduced by changing nothing but the seed. H-F is not dissolved (1.44× > 1.10×) but it now has a
+floor, and **clearing any floor in this read does not clear the dose**, which W_b does not measure.
+**HAZARDS, each a finding.** (1) 🚨 **The Metamon `RecursionError` is about WHO CHALLENGES, not
+about sampling.** The pair's H-H recorded three occurrences, all in *ours greedy / Metamon SAMPLING
+/ Metamon challenging*, and called it a property of that configuration; **this one is in a
+GREEDY-vs-GREEDY cell** — the fourth, same 988-frame signature out of `metamon_to_amago.py::step`
+after its last game. The common factor is **Metamon CHALLENGING**. Our side's 50 results are
+complete and feed the win rate; that half-cell's positional join is unreliable (`sides_disagree` 22,
+`metamon_row_missing` 2) against 1 in the other half. (2) 🚨 **A Foul Play session died silently and
+would have cost a pinned team**: session 5 ran its full 2400 s timeout logged in and challenging with
+**zero battles initialised** (the H10 class); undetected the campaign would have been 70 games over
+7 of 8 teams and not team-matched with arm S's and arm W's. Caught by counting rows per team file and
+**re-run to completion** (failed logs kept); the retry ran at a lighter load and its realized width
+(1.314 M) is recorded rather than smoothed. (3) ⚠️ W_b's home anchor cell carries a **26 pp role
+split whose Newcombe CI excludes zero** (0.72 Metamon-challenges vs 0.46 we-challenge), against
+0.66/0.64 on arm W — a standing reason this cell's run floor is ~0.09–0.11 and not ~0.02. (4) ⚠️ The
+three arms' pool SENTINELS are different checkpoints (36/54/72M vs 26/46/72M vs 22/42/72M), so the
+offline frames are matched in KIND but not in the identity of three of twelve opponents. (5) ⚠️ Six
+`Decision context is missing at turn 1` tracebacks on our side in the away cell and 2/100 games at
+the 250-turn forfeit; `status: OK`, 100/100 recorded, far under rule 12's threshold. (6) ⚠️ The live
+GPU arm `ai_v13_05_exploit_big5starmie` **completed on its own at 15:10 PT** during this read (final
+aggregate 99.8 %) and was never touched; this read was CPU-only throughout, box load 13–43.
+**NOTHING UNDER `src/` WAS CHANGED**, and the pair read's `--v-column` quota-match defect (H-L) is
+untouched and irrelevant here (both columns are `win_probs` by construction). **WHAT IS NOT
+CLAIMED:** that the floor is known (one pair bounds it; n = 2); that a row clearing it is a family
+verdict; that WITHIN FLOOR means equivalent (rule 6); that the ECE row was ever a critic-vs-critic
+comparison (it was a CRITIC against a DIAGNOSTIC and the floor only says it was unresolvable at
+n = 1); anything about the critic objective in general, at 277M, in a fold, or after a
+distillation. Tag: **MEASURED · THE 75M RUN-LEVEL FLOOR · strength WITHIN FLOOR (17.5 vs 25.2; 6.7
+vs 53.1) · `gate.ece.all` WITHIN FLOOR on both draws — the pair's one DETECTED row RETIRED ·
+`gate.reliability.all` WITHIN FLOOR · untaught +8.31 vs 3.69 pp OUTSIDE (but +4.62 vs the other
+seed) · entropy slope OUTSIDE by 23 % with "flat vs decaying" REFUTED · anchors ×3 WITHIN FLOOR,
+away 0.090 corroborating the SOP's 0.110 · first WIDTH-MATCHED Foul Play pair, seed moves it 7.5 pp
+· G7 excursion peaks at exactly 30.0M on ALL THREE arms · realized-dose gap has a 1.10× seed floor ·
+Metamon RecursionError is the CHALLENGE role, not sampling**.
+
+**Orchestrator's reading.** Of the three pair findings that leaned shaped, one survives a run-level floor (the untaught meter, +8.31 vs a 3.69 pp floor, still a CANDIDATE at n = 2 with the 1.44× realized-dose confound), one is retired (ECE — W_b is better calibrated than arm S's diagnostic head; the direction flips with the seed), and one is refuted as worded (entropy — every arm decays; the S-vs-W slope gap clears the floor by 23 % on an autocorrelated OLS se, which is not a claim). Strength is within floor on every frame, and the seed replicate LEADS arm W at every shared step by 22–70 Elo, the exact shape the pair read refused to read for arm S — vindicating the refusal. **Standing: the era's premise holds (win-prob costs nothing detectable on strength), calibration of the win-prob critic is a per-run draw at 75M, and the untaught meter is the one row where the dense signal may still be paying.** Tag: **MEASURED (MAJOR) · 75M floor bounded · ECE retired · untaught survives · entropy refuted as worded**.
