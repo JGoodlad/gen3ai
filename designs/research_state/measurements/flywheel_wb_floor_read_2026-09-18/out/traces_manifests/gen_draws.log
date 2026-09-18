@@ -1,0 +1,59 @@
+=== GEN armWb draw1 seed 20260910  2026-09-18T10:55:23-07:00 ===
+[eval_trace_gen] ai_v13_04_flywheel_winprob_b @ 74,000,016: 12 opponents x 800 games = 9,600 battles, 384 shard units, 4 worker(s), concurrency 1, capture ALL
+[eval_trace_gen] checkpoint: /home/goodlad/dev/gen3ai/models/ai_v13_04_flywheel_winprob_b/eval_traces/step_74000016/snapshot.zip  (sha ef1575f3dd140b24)
+[eval_trace_gen] regime: eval_sentinel_greedy=True (RECORDED, not assumed)
+[eval_trace_gen] reproducible: seed 20260910 at concurrency 1 (the worker count is free — a shard's streams are keyed on the PLAN, not on which worker claimed it)
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] DONE in 118.7 min — 9,600 battles, 1.35 games/sec, 9,600 traces
+[eval_trace_gen] cycle: /home/goodlad/.claude/jobs/9ab51de6/tmp/wb_read/traces/draw1/eval_traces/step_74000016
+=== EXIT 0 for draw1  2026-09-18T12:54:11-07:00 ===
+=== GEN armWb draw2 seed 20260911  2026-09-18T12:54:11-07:00 ===
+[eval_trace_gen] ai_v13_04_flywheel_winprob_b @ 74,000,016: 12 opponents x 800 games = 9,600 battles, 384 shard units, 4 worker(s), concurrency 1, capture ALL
+[eval_trace_gen] checkpoint: /home/goodlad/dev/gen3ai/models/ai_v13_04_flywheel_winprob_b/eval_traces/step_74000016/snapshot.zip  (sha ef1575f3dd140b24)
+[eval_trace_gen] regime: eval_sentinel_greedy=True (RECORDED, not assumed)
+[eval_trace_gen] reproducible: seed 20260911 at concurrency 1 (the worker count is free — a shard's streams are keyed on the PLAN, not on which worker claimed it)
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] ... 4/4 worker(s) alive
+[eval_trace_gen] DONE in 86.0 min — 9,600 battles, 1.86 games/sec, 9,600 traces
+[eval_trace_gen] cycle: /home/goodlad/.claude/jobs/9ab51de6/tmp/wb_read/traces/draw2/eval_traces/step_74000016
+=== EXIT 0 for draw2  2026-09-18T14:20:17-07:00 ===
+=== ARM Wb DRAWS DONE 2026-09-18T14:20:17-07:00 ===

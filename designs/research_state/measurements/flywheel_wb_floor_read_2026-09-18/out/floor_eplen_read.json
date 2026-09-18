@@ -1,0 +1,958 @@
+{
+ "generated_at": "2026-09-18T11:17:55.156984-07:00",
+ "instrument": "TensorBoard events via main.ops.tb_read",
+ "amendment": "READ AMENDMENT 6: the ep_bots half is referenced to the arm's OWN first 2M inside the self-play regime, bar 1.25x, and a breach is a REPORT, never a kill. The ep_pool half is DESCRIPTIVE with NO BAR.",
+ "runs": {
+  "ai_v13_02_flywheel_winprob": {
+   "run": "ai_v13_02_flywheel_winprob",
+   "human_description": "arm W -- the WIN-PROB arm, seed 1001",
+   "selfplay_crossing": {
+    "step": 4128768,
+    "promotion_step": 4000032,
+    "by_tag": {
+     "eval/pool_snapshot_count": 4000032,
+     "train/selfplay_fraction": 4000032
+    },
+    "note": "`step` = the first step carrying any `*_pool` scalar (the first pool opponent in a rollout); `promotion_step` = the first step at which `eval/pool_snapshot_count` or `train/selfplay_fraction` rose above zero (the promotion, logged at the EVAL step that decided it, one eval->rollout lag earlier). DESCRIPTIVE: no floor and no verdict."
+   },
+   "ep_bots": {
+    "tag": "eval/mean_ep_len_vs_bots",
+    "n_cycles": 37,
+    "frozen_reference_turns": 25.327,
+    "frozen_reference_cycles": 2,
+    "frozen_reference_n_cycles": 2,
+    "frozen_reference_cycle_steps": [
+     2000016,
+     4000032
+    ],
+    "bar": 1.25,
+    "worst_ratio": 1.131,
+    "worst_ratio_step": 6000000,
+    "worst_ratio_turns": 28.65,
+    "pct_of_bar": 90.5,
+    "final_ratio": 1.04,
+    "final_turns": 26.35,
+    "post_crossing_mean_turns": 26.19,
+    "series": [
+     {
+      "step": 2000016,
+      "turns": 24.58,
+      "ratio": 0.97
+     },
+     {
+      "step": 4000032,
+      "turns": 26.08,
+      "ratio": 1.03
+     },
+     {
+      "step": 6000000,
+      "turns": 28.65,
+      "ratio": 1.131
+     },
+     {
+      "step": 8000016,
+      "turns": 26.9,
+      "ratio": 1.062
+     },
+     {
+      "step": 10000032,
+      "turns": 26.67,
+      "ratio": 1.053
+     },
+     {
+      "step": 12000000,
+      "turns": 26.96,
+      "ratio": 1.065
+     },
+     {
+      "step": 14000016,
+      "turns": 24.78,
+      "ratio": 0.978
+     },
+     {
+      "step": 16000032,
+      "turns": 26.01,
+      "ratio": 1.027
+     },
+     {
+      "step": 18000000,
+      "turns": 27.33,
+      "ratio": 1.079
+     },
+     {
+      "step": 20000016,
+      "turns": 26.96,
+      "ratio": 1.065
+     },
+     {
+      "step": 22000032,
+      "turns": 25.96,
+      "ratio": 1.025
+     },
+     {
+      "step": 24000000,
+      "turns": 26.58,
+      "ratio": 1.049
+     },
+     {
+      "step": 26000016,
+      "turns": 26.51,
+      "ratio": 1.047
+     },
+     {
+      "step": 28000032,
+      "turns": 27.52,
+      "ratio": 1.087
+     },
+     {
+      "step": 30000000,
+      "turns": 28.14,
+      "ratio": 1.111
+     },
+     {
+      "step": 32000016,
+      "turns": 26.69,
+      "ratio": 1.054
+     },
+     {
+      "step": 34000032,
+      "turns": 25.03,
+      "ratio": 0.988
+     },
+     {
+      "step": 36000000,
+      "turns": 26.07,
+      "ratio": 1.029
+     },
+     {
+      "step": 38000016,
+      "turns": 26.51,
+      "ratio": 1.047
+     },
+     {
+      "step": 40000032,
+      "turns": 27.43,
+      "ratio": 1.083
+     },
+     {
+      "step": 42000000,
+      "turns": 25.26,
+      "ratio": 0.997
+     },
+     {
+      "step": 44000016,
+      "turns": 25.08,
+      "ratio": 0.99
+     },
+     {
+      "step": 46000032,
+      "turns": 24.99,
+      "ratio": 0.987
+     },
+     {
+      "step": 48000000,
+      "turns": 23.72,
+      "ratio": 0.937
+     },
+     {
+      "step": 50000016,
+      "turns": 25.35,
+      "ratio": 1.001
+     },
+     {
+      "step": 52000032,
+      "turns": 24.11,
+      "ratio": 0.952
+     },
+     {
+      "step": 54000000,
+      "turns": 25.05,
+      "ratio": 0.989
+     },
+     {
+      "step": 56000016,
+      "turns": 24.58,
+      "ratio": 0.97
+     },
+     {
+      "step": 58000032,
+      "turns": 26.71,
+      "ratio": 1.055
+     },
+     {
+      "step": 60000000,
+      "turns": 27.48,
+      "ratio": 1.085
+     },
+     {
+      "step": 62000016,
+      "turns": 26.35,
+      "ratio": 1.04
+     },
+     {
+      "step": 64000032,
+      "turns": 26.74,
+      "ratio": 1.056
+     },
+     {
+      "step": 66000000,
+      "turns": 26.88,
+      "ratio": 1.061
+     },
+     {
+      "step": 68000016,
+      "turns": 25.3,
+      "ratio": 0.999
+     },
+     {
+      "step": 70000032,
+      "turns": 25.64,
+      "ratio": 1.012
+     },
+     {
+      "step": 72000000,
+      "turns": 26.42,
+      "ratio": 1.043
+     },
+     {
+      "step": 74000016,
+      "turns": 26.35,
+      "ratio": 1.04
+     }
+    ],
+    "excursion_24M_34M": {
+     "definition": "the LOCAL maximum of eval/mean_ep_len_vs_bots inside a 24M-34M window pinned before either arm was read \u2014 the span the completion entry quotes. A DESCRIPTOR on the arm's own series, never a bar.",
+     "rise_from_step": 26000016,
+     "rise_from_turns": 26.51,
+     "peak_step": 30000000,
+     "peak_turns": 28.14,
+     "peak_ratio": 1.111,
+     "pct_of_bar_at_peak": 88.9,
+     "recovered_at_step": 34000032,
+     "recovered_turns": 25.03,
+     "recovered_ratio": 0.988,
+     "arm_median_turns": 26.35,
+     "arm_median_ratio": 1.04,
+     "amplitude_turns_over_arm_median": 1.79,
+     "amplitude_turns_over_rise_start": 1.63,
+     "ratio_series_26_34M": [
+      {
+       "step": 26000016,
+       "turns": 26.51,
+       "ratio": 1.047
+      },
+      {
+       "step": 28000032,
+       "turns": 27.52,
+       "ratio": 1.087
+      },
+      {
+       "step": 30000000,
+       "turns": 28.14,
+       "ratio": 1.111
+      },
+      {
+       "step": 32000016,
+       "turns": 26.69,
+       "ratio": 1.054
+      }
+     ]
+    },
+    "global_worst": {
+     "step": 6000000,
+     "turns": 28.65,
+     "ratio": 1.131,
+     "note": "the run's WORST ratio anywhere \u2014 not necessarily the 30M excursion"
+    }
+   },
+   "ep_pool_DESCRIPTIVE_NO_BAR": {
+    "n_cycles": 35,
+    "final_turns": 43.64,
+    "max_turns": 45.26,
+    "max_step": 60000000,
+    "note": "non-stationary by construction (the sentinel pool gains a stronger self every 2M) \u2014 no bar, no verdict"
+   },
+   "rollout_ep_len_mean": {
+    "n_points": 751,
+    "post_crossing_mean": 44.53,
+    "post_crossing_max": 63.92,
+    "post_crossing_max_step": 64290816,
+    "median20_at_end": 45.43,
+    "last_value": 40.9,
+    "note": "~90% self-play on both arms; never comparable to the bot-eval series. The arm-to-arm comparison is rollout-vs-rollout, which IS matched, and no bar attaches to it."
+   }
+  },
+  "ai_v13_04_flywheel_winprob_b": {
+   "run": "ai_v13_04_flywheel_winprob_b",
+   "human_description": "W_b -- arm W's TOKEN-EXACT SEED REPLICATE, seed 1002",
+   "selfplay_crossing": {
+    "step": 4128768,
+    "promotion_step": 4000032,
+    "by_tag": {
+     "eval/pool_snapshot_count": 4000032,
+     "train/selfplay_fraction": 4000032
+    },
+    "note": "`step` = the first step carrying any `*_pool` scalar (the first pool opponent in a rollout); `promotion_step` = the first step at which `eval/pool_snapshot_count` or `train/selfplay_fraction` rose above zero (the promotion, logged at the EVAL step that decided it, one eval->rollout lag earlier). DESCRIPTIVE: no floor and no verdict."
+   },
+   "ep_bots": {
+    "tag": "eval/mean_ep_len_vs_bots",
+    "n_cycles": 37,
+    "frozen_reference_turns": 22.33,
+    "frozen_reference_cycles": 2,
+    "frozen_reference_n_cycles": 2,
+    "frozen_reference_cycle_steps": [
+     2000016,
+     4000032
+    ],
+    "bar": 1.25,
+    "worst_ratio": 1.16,
+    "worst_ratio_step": 30000000,
+    "worst_ratio_turns": 25.9,
+    "pct_of_bar": 92.8,
+    "final_ratio": 0.993,
+    "final_turns": 22.18,
+    "post_crossing_mean_turns": 23.82,
+    "series": [
+     {
+      "step": 2000016,
+      "turns": 22.12,
+      "ratio": 0.991
+     },
+     {
+      "step": 4000032,
+      "turns": 22.54,
+      "ratio": 1.009
+     },
+     {
+      "step": 6000000,
+      "turns": 22.47,
+      "ratio": 1.006
+     },
+     {
+      "step": 8000016,
+      "turns": 23.15,
+      "ratio": 1.037
+     },
+     {
+      "step": 10000032,
+      "turns": 23.63,
+      "ratio": 1.058
+     },
+     {
+      "step": 12000000,
+      "turns": 23.5,
+      "ratio": 1.053
+     },
+     {
+      "step": 14000016,
+      "turns": 22.88,
+      "ratio": 1.024
+     },
+     {
+      "step": 16000032,
+      "turns": 23.0,
+      "ratio": 1.03
+     },
+     {
+      "step": 18000000,
+      "turns": 23.77,
+      "ratio": 1.064
+     },
+     {
+      "step": 20000016,
+      "turns": 22.42,
+      "ratio": 1.004
+     },
+     {
+      "step": 22000032,
+      "turns": 23.3,
+      "ratio": 1.043
+     },
+     {
+      "step": 24000000,
+      "turns": 23.68,
+      "ratio": 1.061
+     },
+     {
+      "step": 26000016,
+      "turns": 25.38,
+      "ratio": 1.137
+     },
+     {
+      "step": 28000032,
+      "turns": 25.2,
+      "ratio": 1.128
+     },
+     {
+      "step": 30000000,
+      "turns": 25.9,
+      "ratio": 1.16
+     },
+     {
+      "step": 32000016,
+      "turns": 23.61,
+      "ratio": 1.057
+     },
+     {
+      "step": 34000032,
+      "turns": 23.59,
+      "ratio": 1.056
+     },
+     {
+      "step": 36000000,
+      "turns": 22.81,
+      "ratio": 1.021
+     },
+     {
+      "step": 38000016,
+      "turns": 22.77,
+      "ratio": 1.02
+     },
+     {
+      "step": 40000032,
+      "turns": 24.52,
+      "ratio": 1.098
+     },
+     {
+      "step": 42000000,
+      "turns": 23.31,
+      "ratio": 1.044
+     },
+     {
+      "step": 44000016,
+      "turns": 23.58,
+      "ratio": 1.056
+     },
+     {
+      "step": 46000032,
+      "turns": 25.74,
+      "ratio": 1.153
+     },
+     {
+      "step": 48000000,
+      "turns": 24.82,
+      "ratio": 1.112
+     },
+     {
+      "step": 50000016,
+      "turns": 23.8,
+      "ratio": 1.066
+     },
+     {
+      "step": 52000032,
+      "turns": 24.76,
+      "ratio": 1.109
+     },
+     {
+      "step": 54000000,
+      "turns": 24.5,
+      "ratio": 1.097
+     },
+     {
+      "step": 56000016,
+      "turns": 23.95,
+      "ratio": 1.072
+     },
+     {
+      "step": 58000032,
+      "turns": 24.58,
+      "ratio": 1.101
+     },
+     {
+      "step": 60000000,
+      "turns": 24.54,
+      "ratio": 1.099
+     },
+     {
+      "step": 62000016,
+      "turns": 25.37,
+      "ratio": 1.136
+     },
+     {
+      "step": 64000032,
+      "turns": 24.02,
+      "ratio": 1.076
+     },
+     {
+      "step": 66000000,
+      "turns": 24.15,
+      "ratio": 1.081
+     },
+     {
+      "step": 68000016,
+      "turns": 22.89,
+      "ratio": 1.025
+     },
+     {
+      "step": 70000032,
+      "turns": 24.09,
+      "ratio": 1.079
+     },
+     {
+      "step": 72000000,
+      "turns": 21.97,
+      "ratio": 0.984
+     },
+     {
+      "step": 74000016,
+      "turns": 22.18,
+      "ratio": 0.993
+     }
+    ],
+    "excursion_24M_34M": {
+     "definition": "the LOCAL maximum of eval/mean_ep_len_vs_bots inside a 24M-34M window pinned before either arm was read \u2014 the span the completion entry quotes. A DESCRIPTOR on the arm's own series, never a bar.",
+     "rise_from_step": 28000032,
+     "rise_from_turns": 25.2,
+     "peak_step": 30000000,
+     "peak_turns": 25.9,
+     "peak_ratio": 1.16,
+     "pct_of_bar_at_peak": 92.8,
+     "recovered_at_step": 32000016,
+     "recovered_turns": 23.61,
+     "recovered_ratio": 1.057,
+     "arm_median_turns": 23.63,
+     "arm_median_ratio": 1.058,
+     "amplitude_turns_over_arm_median": 2.27,
+     "amplitude_turns_over_rise_start": 0.7,
+     "ratio_series_26_34M": [
+      {
+       "step": 26000016,
+       "turns": 25.38,
+       "ratio": 1.137
+      },
+      {
+       "step": 28000032,
+       "turns": 25.2,
+       "ratio": 1.128
+      },
+      {
+       "step": 30000000,
+       "turns": 25.9,
+       "ratio": 1.16
+      },
+      {
+       "step": 32000016,
+       "turns": 23.61,
+       "ratio": 1.057
+      }
+     ]
+    },
+    "global_worst": {
+     "step": 30000000,
+     "turns": 25.9,
+     "ratio": 1.16,
+     "note": "the run's WORST ratio anywhere \u2014 not necessarily the 30M excursion"
+    }
+   },
+   "ep_pool_DESCRIPTIVE_NO_BAR": {
+    "n_cycles": 35,
+    "final_turns": 40.95,
+    "max_turns": 43.0,
+    "max_step": 62000016,
+    "note": "non-stationary by construction (the sentinel pool gains a stronger self every 2M) \u2014 no bar, no verdict"
+   },
+   "rollout_ep_len_mean": {
+    "n_points": 751,
+    "post_crossing_mean": 43.75,
+    "post_crossing_max": 60.39,
+    "post_crossing_max_step": 68419584,
+    "median20_at_end": 45.47,
+    "last_value": 49.58,
+    "note": "~90% self-play on both arms; never comparable to the bot-eval series. The arm-to-arm comparison is rollout-vs-rollout, which IS matched, and no bar attaches to it."
+   }
+  },
+  "ai_v13_01_flywheel_shaped": {
+   "run": "ai_v13_01_flywheel_shaped",
+   "human_description": "arm S -- the SHAPED arm, seed 1001 (context only)",
+   "selfplay_crossing": {
+    "step": 4128768,
+    "promotion_step": 4000032,
+    "by_tag": {
+     "eval/pool_snapshot_count": 4000032,
+     "train/selfplay_fraction": 4000032
+    },
+    "note": "`step` = the first step carrying any `*_pool` scalar (the first pool opponent in a rollout); `promotion_step` = the first step at which `eval/pool_snapshot_count` or `train/selfplay_fraction` rose above zero (the promotion, logged at the EVAL step that decided it, one eval->rollout lag earlier). DESCRIPTIVE: no floor and no verdict."
+   },
+   "ep_bots": {
+    "tag": "eval/mean_ep_len_vs_bots",
+    "n_cycles": 37,
+    "frozen_reference_turns": 23.323,
+    "frozen_reference_cycles": 2,
+    "frozen_reference_n_cycles": 2,
+    "frozen_reference_cycle_steps": [
+     2000016,
+     4000032
+    ],
+    "bar": 1.25,
+    "worst_ratio": 1.07,
+    "worst_ratio_step": 30000000,
+    "worst_ratio_turns": 24.95,
+    "pct_of_bar": 85.6,
+    "final_ratio": 0.971,
+    "final_turns": 22.64,
+    "post_crossing_mean_turns": 22.72,
+    "series": [
+     {
+      "step": 2000016,
+      "turns": 23.66,
+      "ratio": 1.014
+     },
+     {
+      "step": 4000032,
+      "turns": 22.99,
+      "ratio": 0.986
+     },
+     {
+      "step": 6000000,
+      "turns": 22.9,
+      "ratio": 0.982
+     },
+     {
+      "step": 8000016,
+      "turns": 22.33,
+      "ratio": 0.958
+     },
+     {
+      "step": 10000032,
+      "turns": 22.17,
+      "ratio": 0.951
+     },
+     {
+      "step": 12000000,
+      "turns": 23.62,
+      "ratio": 1.013
+     },
+     {
+      "step": 14000016,
+      "turns": 23.86,
+      "ratio": 1.023
+     },
+     {
+      "step": 16000032,
+      "turns": 23.05,
+      "ratio": 0.988
+     },
+     {
+      "step": 18000000,
+      "turns": 21.8,
+      "ratio": 0.935
+     },
+     {
+      "step": 20000016,
+      "turns": 22.76,
+      "ratio": 0.976
+     },
+     {
+      "step": 22000032,
+      "turns": 21.56,
+      "ratio": 0.924
+     },
+     {
+      "step": 24000000,
+      "turns": 22.77,
+      "ratio": 0.976
+     },
+     {
+      "step": 26000016,
+      "turns": 23.01,
+      "ratio": 0.986
+     },
+     {
+      "step": 28000032,
+      "turns": 22.82,
+      "ratio": 0.978
+     },
+     {
+      "step": 30000000,
+      "turns": 24.95,
+      "ratio": 1.07
+     },
+     {
+      "step": 32000016,
+      "turns": 22.38,
+      "ratio": 0.959
+     },
+     {
+      "step": 34000032,
+      "turns": 21.89,
+      "ratio": 0.938
+     },
+     {
+      "step": 36000000,
+      "turns": 23.32,
+      "ratio": 1.0
+     },
+     {
+      "step": 38000016,
+      "turns": 21.35,
+      "ratio": 0.916
+     },
+     {
+      "step": 40000032,
+      "turns": 21.59,
+      "ratio": 0.926
+     },
+     {
+      "step": 42000000,
+      "turns": 21.6,
+      "ratio": 0.926
+     },
+     {
+      "step": 44000016,
+      "turns": 22.07,
+      "ratio": 0.946
+     },
+     {
+      "step": 46000032,
+      "turns": 23.9,
+      "ratio": 1.025
+     },
+     {
+      "step": 48000000,
+      "turns": 21.93,
+      "ratio": 0.94
+     },
+     {
+      "step": 50000016,
+      "turns": 22.81,
+      "ratio": 0.978
+     },
+     {
+      "step": 52000032,
+      "turns": 22.93,
+      "ratio": 0.983
+     },
+     {
+      "step": 54000000,
+      "turns": 22.98,
+      "ratio": 0.985
+     },
+     {
+      "step": 56000016,
+      "turns": 21.69,
+      "ratio": 0.93
+     },
+     {
+      "step": 58000032,
+      "turns": 23.38,
+      "ratio": 1.002
+     },
+     {
+      "step": 60000000,
+      "turns": 23.47,
+      "ratio": 1.006
+     },
+     {
+      "step": 62000016,
+      "turns": 24.7,
+      "ratio": 1.059
+     },
+     {
+      "step": 64000032,
+      "turns": 22.09,
+      "ratio": 0.947
+     },
+     {
+      "step": 66000000,
+      "turns": 22.5,
+      "ratio": 0.965
+     },
+     {
+      "step": 68000016,
+      "turns": 22.63,
+      "ratio": 0.97
+     },
+     {
+      "step": 70000032,
+      "turns": 22.54,
+      "ratio": 0.967
+     },
+     {
+      "step": 72000000,
+      "turns": 23.05,
+      "ratio": 0.988
+     },
+     {
+      "step": 74000016,
+      "turns": 22.64,
+      "ratio": 0.971
+     }
+    ],
+    "excursion_24M_34M": {
+     "definition": "the LOCAL maximum of eval/mean_ep_len_vs_bots inside a 24M-34M window pinned before either arm was read \u2014 the span the completion entry quotes. A DESCRIPTOR on the arm's own series, never a bar.",
+     "rise_from_step": 28000032,
+     "rise_from_turns": 22.82,
+     "peak_step": 30000000,
+     "peak_turns": 24.95,
+     "peak_ratio": 1.07,
+     "pct_of_bar_at_peak": 85.6,
+     "recovered_at_step": 32000016,
+     "recovered_turns": 22.38,
+     "recovered_ratio": 0.959,
+     "arm_median_turns": 22.77,
+     "arm_median_ratio": 0.976,
+     "amplitude_turns_over_arm_median": 2.18,
+     "amplitude_turns_over_rise_start": 2.13,
+     "ratio_series_26_34M": [
+      {
+       "step": 26000016,
+       "turns": 23.01,
+       "ratio": 0.986
+      },
+      {
+       "step": 28000032,
+       "turns": 22.82,
+       "ratio": 0.978
+      },
+      {
+       "step": 30000000,
+       "turns": 24.95,
+       "ratio": 1.07
+      },
+      {
+       "step": 32000016,
+       "turns": 22.38,
+       "ratio": 0.959
+      }
+     ]
+    },
+    "global_worst": {
+     "step": 30000000,
+     "turns": 24.95,
+     "ratio": 1.07,
+     "note": "the run's WORST ratio anywhere \u2014 not necessarily the 30M excursion"
+    }
+   },
+   "ep_pool_DESCRIPTIVE_NO_BAR": {
+    "n_cycles": 35,
+    "final_turns": 38.33,
+    "max_turns": 41.11,
+    "max_step": 58000032,
+    "note": "non-stationary by construction (the sentinel pool gains a stronger self every 2M) \u2014 no bar, no verdict"
+   },
+   "rollout_ep_len_mean": {
+    "n_points": 751,
+    "post_crossing_mean": 40.48,
+    "post_crossing_max": 53.32,
+    "post_crossing_max_step": 62226432,
+    "median20_at_end": 43.31,
+    "last_value": 46.51,
+    "note": "~90% self-play on both arms; never comparable to the bot-eval series. The arm-to-arm comparison is rollout-vs-rollout, which IS matched, and no bar attaches to it."
+   }
+  }
+ },
+ "excursion_across_seeds": {
+  "question": "same STEP RANGE? same MAGNITUDE?",
+  "armW": {
+   "definition": "the LOCAL maximum of eval/mean_ep_len_vs_bots inside a 24M-34M window pinned before either arm was read \u2014 the span the completion entry quotes. A DESCRIPTOR on the arm's own series, never a bar.",
+   "rise_from_step": 26000016,
+   "rise_from_turns": 26.51,
+   "peak_step": 30000000,
+   "peak_turns": 28.14,
+   "peak_ratio": 1.111,
+   "pct_of_bar_at_peak": 88.9,
+   "recovered_at_step": 34000032,
+   "recovered_turns": 25.03,
+   "recovered_ratio": 0.988,
+   "arm_median_turns": 26.35,
+   "arm_median_ratio": 1.04,
+   "amplitude_turns_over_arm_median": 1.79,
+   "amplitude_turns_over_rise_start": 1.63,
+   "ratio_series_26_34M": [
+    {
+     "step": 26000016,
+     "turns": 26.51,
+     "ratio": 1.047
+    },
+    {
+     "step": 28000032,
+     "turns": 27.52,
+     "ratio": 1.087
+    },
+    {
+     "step": 30000000,
+     "turns": 28.14,
+     "ratio": 1.111
+    },
+    {
+     "step": 32000016,
+     "turns": 26.69,
+     "ratio": 1.054
+    }
+   ]
+  },
+  "armWb": {
+   "definition": "the LOCAL maximum of eval/mean_ep_len_vs_bots inside a 24M-34M window pinned before either arm was read \u2014 the span the completion entry quotes. A DESCRIPTOR on the arm's own series, never a bar.",
+   "rise_from_step": 28000032,
+   "rise_from_turns": 25.2,
+   "peak_step": 30000000,
+   "peak_turns": 25.9,
+   "peak_ratio": 1.16,
+   "pct_of_bar_at_peak": 92.8,
+   "recovered_at_step": 32000016,
+   "recovered_turns": 23.61,
+   "recovered_ratio": 1.057,
+   "arm_median_turns": 23.63,
+   "arm_median_ratio": 1.058,
+   "amplitude_turns_over_arm_median": 2.27,
+   "amplitude_turns_over_rise_start": 0.7,
+   "ratio_series_26_34M": [
+    {
+     "step": 26000016,
+     "turns": 25.38,
+     "ratio": 1.137
+    },
+    {
+     "step": 28000032,
+     "turns": 25.2,
+     "ratio": 1.128
+    },
+    {
+     "step": 30000000,
+     "turns": 25.9,
+     "ratio": 1.16
+    },
+    {
+     "step": 32000016,
+     "turns": 23.61,
+     "ratio": 1.057
+    }
+   ]
+  },
+  "peak_step_gap_steps": 0,
+  "same_peak_step": true,
+  "rise_windows": {
+   "armW": [
+    26000016,
+    30000000
+   ],
+   "armWb": [
+    28000032,
+    30000000
+   ]
+  },
+  "peak_ratio_delta": 0.049,
+  "amplitude_turns_over_arm_median_delta": 0.48,
+  "amplitude_turns_over_rise_start_delta": -0.93,
+  "global_worst": {
+   "armW": {
+    "step": 6000000,
+    "turns": 28.65,
+    "ratio": 1.131,
+    "note": "the run's WORST ratio anywhere \u2014 not necessarily the 30M excursion"
+   },
+   "armWb": {
+    "step": 30000000,
+    "turns": 25.9,
+    "ratio": 1.16,
+    "note": "the run's WORST ratio anywhere \u2014 not necessarily the 30M excursion"
+   }
+  },
+  "frozen_reference_turns": {
+   "armW": 25.327,
+   "armWb": 22.33,
+   "delta": -2.997
+  },
+  "reading": "A DESCRIPTOR. The frozen reference is itself a draw-level quantity, so a RATIO is comparable only WITHIN an arm; the raw turns are printed beside it for the cross-arm read. No bar attaches, and rule 12 binds: a timeout is never a semantic outcome."
+ }
+}

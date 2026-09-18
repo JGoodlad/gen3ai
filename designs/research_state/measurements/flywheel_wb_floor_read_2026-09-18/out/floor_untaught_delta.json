@@ -1,0 +1,212 @@
+{
+ "floors_pp_fold_depth_quoted_not_applied": {
+  "frozen_dose_folds_six_draws": 1.66,
+  "controller_live_folds": 4.27,
+  "TC_replicate_pairs_END_depth": 1.19,
+  "TC_replicate_pairs_p1M_depth": 4.0,
+  "G5_three_continuation_arms": 1.0
+ },
+ "floor_note": "a floor is a property of the DEPTH and of the REGIME (UNDERSTANDING sec 3.3); every floor above is a FOLD floor at ~1M depth and none of these arms is a fold. The RUN-LEVEL 75M floor measured here is |arm W - W_b|.",
+ "configs": {
+  "registry": {
+   "config": "the REGISTRY `untaught_meter_config` (ai_v9_29_rev1_0823's snapshots/model_config.json)",
+   "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+   "levels_pp": {
+    "armWb": 49.88,
+    "armW": 46.19
+   },
+   "n_finished": {
+    "armWb": 1600,
+    "armW": 1600
+   },
+   "per_team_pp": {
+    "armWb": {
+     "U_61590463": 58.0,
+     "U_92832108": 53.0,
+     "U_ce35b736": 42.5,
+     "U_9909f2e9": 48.0,
+     "U_9d5f8458": 46.0,
+     "U_f7ba5702": 48.0,
+     "U_90b94599": 51.5,
+     "U_dbf81d8e": 52.0
+    },
+    "armW": {
+     "U_61590463": 48.5,
+     "U_92832108": 39.0,
+     "U_ce35b736": 49.5,
+     "U_9909f2e9": 38.0,
+     "U_9d5f8458": 47.0,
+     "U_f7ba5702": 48.0,
+     "U_90b94599": 48.0,
+     "U_dbf81d8e": 51.5
+    }
+   },
+   "n_teams": 8,
+   "timeouts": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   },
+   "contrasts": {
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "THE 75M RUN-LEVEL FLOOR -- arm W (seed 1001) minus W_b (seed 1002), both measured in ONE invocation on the identical teams and games",
+     "delta_pp": -3.69,
+     "abs_delta_pp": 3.69,
+     "ci95_pp": [
+      -8.19,
+      0.81
+     ],
+     "teams_where_armW_higher": 2,
+     "note": "this |delta| IS the floor. The CI printed is the CI of the FLOOR PAIR's own delta, not a CI on the floor as a quantity -- one pair bounds a floor and does not estimate one (rules 19/22)."
+    },
+    "THE_FINDING_armS_minus_armW": {
+     "label": "THE FINDING -- arm S minus arm W, recomputed from the pair read's own banked per-team rows by this same paired procedure and seed",
+     "delta_pp": 8.31,
+     "ci95_pp": [
+      5.69,
+      11.19
+     ],
+     "teams_where_armS_higher": 8
+    },
+    "armS_minus_armWb": {
+     "label": "arm S minus W_b -- the treatment contrast taken against the OTHER seed. \ud83d\udea8 arm S and W_b were measured in DIFFERENT invocations of the meter (2026-09-16 and 2026-09-18); the meter is deterministic at seed 0 / concurrency 1 and the arm-W reproduction check above is what licenses the join.",
+     "delta_pp": 4.62,
+     "ci95_pp": [
+      0.69,
+      8.56
+     ],
+     "teams_where_armS_higher": 5
+    }
+   },
+   "pair_read_join": {
+    "source": "designs/research_state/measurements/flywheel_pair_read_2026-09-15/out/untaught/untaught_registry.json",
+    "same_teams": true,
+    "armW_level_pp_banked": 46.19,
+    "armW_level_pp_here": 46.19,
+    "armW_reproduction_delta_pp": 0.0,
+    "armS_level_pp_banked": 54.5
+   },
+   "floor_verdict": {
+    "finding_abs_pp": 8.31,
+    "finding_ci95_pp": [
+     5.69,
+     11.19
+    ],
+    "floor_abs_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "caveats": [
+     "the meter is a DESCRIPTOR, not an endpoint (registration sec 8.5) -- clearing a floor does not promote it to one",
+     "one replicate pair BOUNDS a floor; no CI attaches to it (rules 19/22)",
+     "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+     "the 1.44x realized-dose gap (H-F) confounds arm S and is not measured here"
+    ]
+   }
+  },
+  "auto": {
+   "config": "--config auto (each model's OWN model_config.json)",
+   "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+   "levels_pp": {
+    "armWb": 49.88,
+    "armW": 46.19
+   },
+   "n_finished": {
+    "armWb": 1600,
+    "armW": 1600
+   },
+   "per_team_pp": {
+    "armWb": {
+     "U_61590463": 58.0,
+     "U_92832108": 53.0,
+     "U_ce35b736": 42.5,
+     "U_9909f2e9": 48.0,
+     "U_9d5f8458": 46.0,
+     "U_f7ba5702": 48.0,
+     "U_90b94599": 51.5,
+     "U_dbf81d8e": 52.0
+    },
+    "armW": {
+     "U_61590463": 48.5,
+     "U_92832108": 39.0,
+     "U_ce35b736": 49.5,
+     "U_9909f2e9": 38.0,
+     "U_9d5f8458": 47.0,
+     "U_f7ba5702": 48.0,
+     "U_90b94599": 48.0,
+     "U_dbf81d8e": 51.5
+    }
+   },
+   "n_teams": 8,
+   "timeouts": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   },
+   "contrasts": {
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "THE 75M RUN-LEVEL FLOOR -- arm W (seed 1001) minus W_b (seed 1002), both measured in ONE invocation on the identical teams and games",
+     "delta_pp": -3.69,
+     "abs_delta_pp": 3.69,
+     "ci95_pp": [
+      -8.19,
+      0.81
+     ],
+     "teams_where_armW_higher": 2,
+     "note": "this |delta| IS the floor. The CI printed is the CI of the FLOOR PAIR's own delta, not a CI on the floor as a quantity -- one pair bounds a floor and does not estimate one (rules 19/22)."
+    },
+    "THE_FINDING_armS_minus_armW": {
+     "label": "THE FINDING -- arm S minus arm W, recomputed from the pair read's own banked per-team rows by this same paired procedure and seed",
+     "delta_pp": 8.31,
+     "ci95_pp": [
+      5.69,
+      11.19
+     ],
+     "teams_where_armS_higher": 8
+    },
+    "armS_minus_armWb": {
+     "label": "arm S minus W_b -- the treatment contrast taken against the OTHER seed. \ud83d\udea8 arm S and W_b were measured in DIFFERENT invocations of the meter (2026-09-16 and 2026-09-18); the meter is deterministic at seed 0 / concurrency 1 and the arm-W reproduction check above is what licenses the join.",
+     "delta_pp": 4.62,
+     "ci95_pp": [
+      0.69,
+      8.56
+     ],
+     "teams_where_armS_higher": 5
+    }
+   },
+   "pair_read_join": {
+    "source": "designs/research_state/measurements/flywheel_pair_read_2026-09-15/out/untaught/untaught_auto.json",
+    "same_teams": true,
+    "armW_level_pp_banked": 46.19,
+    "armW_level_pp_here": 46.19,
+    "armW_reproduction_delta_pp": 0.0,
+    "armS_level_pp_banked": 54.5
+   },
+   "floor_verdict": {
+    "finding_abs_pp": 8.31,
+    "finding_ci95_pp": [
+     5.69,
+     11.19
+    ],
+    "floor_abs_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "caveats": [
+     "the meter is a DESCRIPTOR, not an endpoint (registration sec 8.5) -- clearing a floor does not promote it to one",
+     "one replicate pair BOUNDS a floor; no CI attaches to it (rules 19/22)",
+     "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+     "the 1.44x realized-dose gap (H-F) confounds arm S and is not measured here"
+    ]
+   }
+  }
+ },
+ "both_resolutions_agree": {
+  "levels_identical": true,
+  "note": "registration sec 8.5: a level that only exists under ONE config resolution is not a level. Neither arm is architecture-identical to the meter's registry config, so both resolutions are read and both are reported."
+ }
+}

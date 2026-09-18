@@ -1,0 +1,343 @@
+{
+ "instrument": "Foul Play @6c467c08 + poke-engine 0.0.48 (--features poke-engine/gen3), --search-time-ms 1000 --search-parallelism 1 --search-threads 1; 8 sessions x 10 games, our side pinning one pool team per session (the same 8 files, same sorted export, same stride on both arms), Foul Play drawing a random pool team per battle from the same export",
+ "rule_23": "Foul Play has NO iteration budget \u2014 --search-time-ms is WALL CLOCK (fp/search/main.py:53) \u2014 so it is a WIDTH meter and every read carries its realized visits/decision. A delta is quoted ONLY with the two realized widths beside it.",
+ "campaigns": {
+  "armWb": {
+   "label": "W_b (ai_v13_04_flywheel_winprob_b) @75,005,952, 2026-09-18",
+   "n": 80,
+   "our_wins": 32,
+   "win_rate": 0.4,
+   "wilson95": [
+    0.2996,
+    0.5095
+   ],
+   "mean_turns": 36.6,
+   "max_turns": 87,
+   "our_forfeit_fired_n": 0,
+   "our_think_ms_mean": 458.8,
+   "fp_think_s_mean": 2.07,
+   "fp_visits_per_decision_mean": 1133729.3,
+   "fp_visits_session_range": [
+    706746.9,
+    1561855.0
+   ],
+   "games_without_a_matched_fp_log": 0,
+   "fp_error_lines_total": 0,
+   "sessions": [
+    {
+     "our_team": "009e3d0244.txt",
+     "games": 10,
+     "our_wins": 2,
+     "win_rate": 0.2,
+     "mean_turns": 33.8,
+     "fp_visits_per_decision_mean": 1561855.0
+    },
+    {
+     "our_team": "4239fc5ba2.txt",
+     "games": 10,
+     "our_wins": 7,
+     "win_rate": 0.7,
+     "mean_turns": 39.0,
+     "fp_visits_per_decision_mean": 1154120.8
+    },
+    {
+     "our_team": "64a691c473.txt",
+     "games": 10,
+     "our_wins": 1,
+     "win_rate": 0.1,
+     "mean_turns": 38.8,
+     "fp_visits_per_decision_mean": 1070963.5
+    },
+    {
+     "our_team": "7d0337af97.txt",
+     "games": 10,
+     "our_wins": 5,
+     "win_rate": 0.5,
+     "mean_turns": 28.1,
+     "fp_visits_per_decision_mean": 1180172.9
+    },
+    {
+     "our_team": "9b454d9ea7.txt",
+     "games": 10,
+     "our_wins": 2,
+     "win_rate": 0.2,
+     "mean_turns": 44.6,
+     "fp_visits_per_decision_mean": 706746.9
+    },
+    {
+     "our_team": "a185b2d193.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 27.8,
+     "fp_visits_per_decision_mean": 1313842.1
+    },
+    {
+     "our_team": "b904dbe059.txt",
+     "games": 10,
+     "our_wins": 3,
+     "win_rate": 0.3,
+     "mean_turns": 46.3,
+     "fp_visits_per_decision_mean": 1011681.0
+    },
+    {
+     "our_team": "e11829f0561ef5a9.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 34.7,
+     "fp_visits_per_decision_mean": 1070451.9
+    }
+   ]
+  },
+  "armW": {
+   "label": "arm W (ai_v13_02_flywheel_winprob) @75,005,952, 2026-09-16",
+   "n": 80,
+   "our_wins": 38,
+   "win_rate": 0.475,
+   "wilson95": [
+    0.3692,
+    0.583
+   ],
+   "mean_turns": 37.3,
+   "max_turns": 119,
+   "our_forfeit_fired_n": 0,
+   "our_think_ms_mean": 473.9,
+   "fp_think_s_mean": 2.068,
+   "fp_visits_per_decision_mean": 1152569.4,
+   "fp_visits_session_range": [
+    862308.9,
+    1326646.7
+   ],
+   "games_without_a_matched_fp_log": 0,
+   "fp_error_lines_total": 0,
+   "sessions": [
+    {
+     "our_team": "009e3d0244.txt",
+     "games": 10,
+     "our_wins": 5,
+     "win_rate": 0.5,
+     "mean_turns": 21.4,
+     "fp_visits_per_decision_mean": 1326646.7
+    },
+    {
+     "our_team": "4239fc5ba2.txt",
+     "games": 10,
+     "our_wins": 4,
+     "win_rate": 0.4,
+     "mean_turns": 36.7,
+     "fp_visits_per_decision_mean": 1229897.7
+    },
+    {
+     "our_team": "64a691c473.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 31.4,
+     "fp_visits_per_decision_mean": 1266416.8
+    },
+    {
+     "our_team": "7d0337af97.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 34.1,
+     "fp_visits_per_decision_mean": 1000661.9
+    },
+    {
+     "our_team": "9b454d9ea7.txt",
+     "games": 10,
+     "our_wins": 3,
+     "win_rate": 0.3,
+     "mean_turns": 57.6,
+     "fp_visits_per_decision_mean": 862308.9
+    },
+    {
+     "our_team": "a185b2d193.txt",
+     "games": 10,
+     "our_wins": 3,
+     "win_rate": 0.3,
+     "mean_turns": 32.0,
+     "fp_visits_per_decision_mean": 1090032.5
+    },
+    {
+     "our_team": "b904dbe059.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 41.8,
+     "fp_visits_per_decision_mean": 1138365.2
+    },
+    {
+     "our_team": "e11829f0561ef5a9.txt",
+     "games": 10,
+     "our_wins": 5,
+     "win_rate": 0.5,
+     "mean_turns": 43.1,
+     "fp_visits_per_decision_mean": 1306225.4
+    }
+   ]
+  },
+  "armS": {
+   "label": "arm S (ai_v13_01_flywheel_shaped) @75,005,952, 2026-09-14",
+   "n": 80,
+   "our_wins": 36,
+   "win_rate": 0.45,
+   "wilson95": [
+    0.3458,
+    0.5588
+   ],
+   "mean_turns": 32.5,
+   "max_turns": 92,
+   "our_forfeit_fired_n": 0,
+   "our_think_ms_mean": 481.0,
+   "fp_think_s_mean": 2.098,
+   "fp_visits_per_decision_mean": 1248937.8,
+   "fp_visits_session_range": [
+    1054957.5,
+    1647351.0
+   ],
+   "games_without_a_matched_fp_log": 0,
+   "fp_error_lines_total": 0,
+   "sessions": [
+    {
+     "our_team": "009e3d0244.txt",
+     "games": 10,
+     "our_wins": 2,
+     "win_rate": 0.2,
+     "mean_turns": 28.9,
+     "fp_visits_per_decision_mean": 1248108.8
+    },
+    {
+     "our_team": "4239fc5ba2.txt",
+     "games": 10,
+     "our_wins": 4,
+     "win_rate": 0.4,
+     "mean_turns": 32.1,
+     "fp_visits_per_decision_mean": 1221530.6
+    },
+    {
+     "our_team": "64a691c473.txt",
+     "games": 10,
+     "our_wins": 5,
+     "win_rate": 0.5,
+     "mean_turns": 35.6,
+     "fp_visits_per_decision_mean": 1647351.0
+    },
+    {
+     "our_team": "7d0337af97.txt",
+     "games": 10,
+     "our_wins": 7,
+     "win_rate": 0.7,
+     "mean_turns": 31.6,
+     "fp_visits_per_decision_mean": 1192828.3
+    },
+    {
+     "our_team": "9b454d9ea7.txt",
+     "games": 10,
+     "our_wins": 1,
+     "win_rate": 0.1,
+     "mean_turns": 40.4,
+     "fp_visits_per_decision_mean": 1054957.5
+    },
+    {
+     "our_team": "a185b2d193.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 27.1,
+     "fp_visits_per_decision_mean": 1361878.9
+    },
+    {
+     "our_team": "b904dbe059.txt",
+     "games": 10,
+     "our_wins": 6,
+     "win_rate": 0.6,
+     "mean_turns": 31.3,
+     "fp_visits_per_decision_mean": 1146719.8
+    },
+    {
+     "our_team": "e11829f0561ef5a9.txt",
+     "games": 10,
+     "our_wins": 5,
+     "win_rate": 0.5,
+     "mean_turns": 33.0,
+     "fp_visits_per_decision_mean": 1118127.1
+    }
+   ]
+  }
+ },
+ "THE_FLOOR_W_minus_Wb": {
+  "label": "THE 75M RUN-LEVEL FLOOR on this cell \u2014 arm W (seed 1001) minus W_b (seed 1002). \ud83d\udea8 It is a floor on a WIDTH METER, measured at a DIFFERENT box load, so it bounds run-to-run-plus-width variation and not run-to-run variation alone.",
+  "delta": 0.075,
+  "abs_delta": 0.075,
+  "newcombe95": [
+   -0.0773,
+   0.2225
+  ],
+  "armW_realized_visits": 1152569.4,
+  "armWb_realized_visits": 1133729.3,
+  "width_ratio_b_over_a": 0.9837,
+  "width_matched": true,
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero; never 'equal' (rule 6)",
+  "rule_23": "a difference between two campaigns at UNMATCHED width may not be attributed to a model"
+ },
+ "THE_FINDING_S_minus_W": {
+  "label": "the pair's row \u2014 arm S minus arm W (the pair read reported -0.025 [-0.175, +0.127])",
+  "delta": -0.025,
+  "abs_delta": 0.025,
+  "newcombe95": [
+   -0.1751,
+   0.1267
+  ],
+  "armS_realized_visits": 1248937.8,
+  "armW_realized_visits": 1152569.4,
+  "width_ratio_b_over_a": 0.9228,
+  "width_matched": false,
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero; never 'equal' (rule 6)",
+  "rule_23": "a difference between two campaigns at UNMATCHED width may not be attributed to a model"
+ },
+ "S_minus_Wb": {
+  "label": "arm S minus W_b",
+  "delta": 0.05,
+  "abs_delta": 0.05,
+  "newcombe95": [
+   -0.1012,
+   0.198
+  ],
+  "armS_realized_visits": 1248937.8,
+  "armWb_realized_visits": 1133729.3,
+  "width_ratio_b_over_a": 0.9078,
+  "width_matched": false,
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero; never 'equal' (rule 6)",
+  "rule_23": "a difference between two campaigns at UNMATCHED width may not be attributed to a model"
+ },
+ "floor_verdict": {
+  "finding_abs": 0.025,
+  "finding_ci95": [
+   -0.1751,
+   0.1267
+  ],
+  "floor_abs": 0.075,
+  "clause_a_abs_delta_gt_floor": false,
+  "clause_b_ci_excludes_floor_point": false,
+  "verdict": "WITHIN FLOOR at n = 2",
+  "caveats": [
+   "\ud83d\udea8 rule 23 overrides the verdict either way: the widths are not matched and no difference among these campaigns may be attributed to a model",
+   "one replicate pair BOUNDS a floor; no CI attaches to it (rules 19/22)",
+   "WITHIN FLOOR is NEVER 'equivalent' (rule 6)"
+  ]
+ },
+ "third_leg_minus_armWb": {
+  "label": "ai_v12_02_winprob_critic@75M (the 0.02 leg), foul_play_derisk_2026-09-14",
+  "n": 80,
+  "win_rate": 0.3875,
+  "realized_visits": 1400000.0,
+  "delta": -0.0125,
+  "newcombe95": [
+   -0.1603,
+   0.1361
+  ],
+  "verdict": "NOT DETECTED"
+ }
+}

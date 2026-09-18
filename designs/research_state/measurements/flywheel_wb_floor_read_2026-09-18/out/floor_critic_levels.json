@@ -1,0 +1,1979 @@
+{
+ "generated_at": "2026-09-18T14:24:58.343349-07:00",
+ "step_read": 74000016,
+ "step_note": "Each arm's LAST EVALUATED step, and it is the SAME step on both: every run in this family has its final weights at 75,005,952 and no eval_traces cycle there, so all three (S, W, W_b) are read 1,005,936 steps (1.34%) short of the end \u2014 an exactly MATCHED distance from the end on every arm.",
+ "like_for_like_note": "BOTH columns here are the run's ACTUAL critic (on --critic winprob, `values` and `win_probs` are the same tensor). The pair read's calibration rows were a CRITIC against a DIAGNOSTIC; this floor is critic-vs-critic, which is what makes it a clean floor and NOT a substitute for the comparison the pair could not make.",
+ "floor_provenance_imported": "MAX over the two v6 two-pair CONTROL-vs-CONTROL floor files (hp800_floor_v6.json, hp800b_floor_v6.json), both measured at 10M in the four-node era and IMPORTED to 75M by the pair read for want of anything at this depth.",
+ "floors_used_imported": {
+  "cond.calibration_intercept.all": 1.02473,
+  "cond.calibration_slope.all": 0.20008,
+  "cond.calibration_slope.t1_3": 0.19148,
+  "cond.opp_class_auc.t1": 0.0227,
+  "cond.opp_class_auc.t1_3": 0.01532,
+  "cond.opp_class_auc.t4_10": 0.02451,
+  "cond.spread_ratio.all": 0.2399,
+  "cond.spread_ratio.t4_10": 0.28327,
+  "gate.ece.all": 0.02451,
+  "gate.ece.bot": 0.0449,
+  "gate.reliability.all": 0.00264,
+  "gate.resolution.all": 0.00239,
+  "gate.resolution.bot": 0.00744,
+  "gate.resolution.pool": 0.01407,
+  "gate.skill.bot": 0.10037
+ },
+ "arms": {
+  "armWb": {
+   "human_description": "ai_v13_04_flywheel_winprob_b (W_b \u2014 arm W's TOKEN-EXACT SEED REPLICATE, seed 1002)",
+   "draws": {
+    "draw1": {
+     "manifest": {
+      "seed": 20260910,
+      "games_per_opponent": 800,
+      "sentinels_used": 3,
+      "sentinel_steps": [
+       36000000,
+       54000000,
+       72000000
+      ],
+      "capture": "ALL",
+      "battles_played": 9600,
+      "battles_expected": 9600,
+      "complete": true,
+      "eval_sentinel_greedy": true,
+      "eval_sentinel_greedy_source": "recorded",
+      "checkpoint_sha": "ef1575f3dd140b24",
+      "reproducible": true,
+      "wall_seconds": 7124.8,
+      "impl": "rust"
+     },
+     "V": {
+      "label": "armWb V \u2014 the ACTUAL critic: V(s) = sigmoid(win-prob logit) in [0,1]; on a --critic winprob run `values` and `win_probs` are the SAME TENSOR",
+      "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/wb_read/traces/draw1",
+      "step": 74000016,
+      "v_column": "win_probs",
+      "conditioning": {
+       "cond.opp_class_auc.t4_10": {
+        "value": 0.74317,
+        "ci": [
+         0.7326,
+         0.75324
+        ]
+       },
+       "cond.opp_class_auc.t1_3": {
+        "value": 0.57155,
+        "ci": [
+         0.56,
+         0.58363
+        ]
+       },
+       "cond.opp_class_auc.t1": {
+        "value": 0.49556,
+        "ci": [
+         0.48166,
+         0.50987
+        ]
+       },
+       "cond.calibration_slope.all": {
+        "value": 1.26516,
+        "ci": [
+         1.21074,
+         1.32272
+        ]
+       },
+       "cond.calibration_intercept.all": {
+        "value": 0.38385,
+        "ci": [
+         0.3177,
+         0.45648
+        ]
+       },
+       "cond.calibration_slope.t1_3": {
+        "value": 0.67728,
+        "ci": [
+         0.59263,
+         0.76631
+        ]
+       },
+       "cond.spread_ratio.t4_10": {
+        "value": 0.34015,
+        "ci": [
+         0.31684,
+         0.36612
+        ]
+       },
+       "cond.spread_ratio.all": {
+        "value": 0.54129,
+        "ci": [
+         0.5085,
+         0.57984
+        ]
+       }
+      },
+      "frame": {
+       "n_states": 312348,
+       "n_battles": 9550,
+       "n_teams_seen": 602,
+       "max_abs_values_minus_winprobs": 0.0,
+       "v_column": "win_probs",
+       "v_column_note": "V was read from the npz's `win_probs` column. On a --critic winprob run that IS the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the value function.",
+       "n_team_cells": 600
+      },
+      "omitted": {
+       "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+      },
+      "gate": {
+       "gate.resolution.bot": {
+        "value": 0.02756,
+        "ci": [
+         0.02318,
+         0.03272
+        ],
+        "n_states": 200712,
+        "n_battles": 7200
+       },
+       "gate.resolution.all": {
+        "value": 0.05933,
+        "ci": [
+         0.05495,
+         0.06441
+        ],
+        "n_states": 317566,
+        "n_battles": 9600
+       },
+       "gate.resolution.pool": {
+        "value": 0.05162,
+        "ci": [
+         0.04469,
+         0.05903
+        ],
+        "n_states": 116854,
+        "n_battles": 2400
+       },
+       "gate.ece.all": {
+        "value": 0.01008,
+        "ci": [
+         0.00617,
+         0.01902
+        ],
+        "n_states": 317566,
+        "n_battles": 9600
+       },
+       "gate.ece.bot": {
+        "value": 0.08705,
+        "ci": [
+         0.07859,
+         0.09558
+        ],
+        "n_states": 200712,
+        "n_battles": 7200
+       },
+       "gate.skill.bot": {
+        "value": 0.15722,
+        "ci": [
+         0.10649,
+         0.19955
+        ],
+        "n_states": 200712,
+        "n_battles": 7200
+       },
+       "gate.reliability.all": {
+        "value": 0.00014,
+        "ci": [
+         6e-05,
+         0.0005
+        ],
+        "n_states": 317566,
+        "n_battles": 9600
+       }
+      },
+      "gate_note": "\ud83d\udea8 the gate family is computed by the scaffolding gauge on the npz's `win_probs` column ALWAYS \u2014 a Murphy decomposition of a probability forecast has no meaning on a raw shaped-return column. On arm S every gate row is therefore an S-WP row (the AUXILIARY head).",
+      "gate_coverage": {
+       "per_step": {
+        "n_battles": 9600,
+        "n_states": 317566
+       },
+       "n_traces_seen": 9600,
+       "n_traces_read": 9600,
+       "n_traces_no_npz": 0,
+       "n_traces_no_winprob": 0,
+       "selection_note": {
+        "per_opponent": {
+         "aggressive": {
+          "true_win_rate": 0.92,
+          "captured_win_rate": 0.92,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "aggressive_v2": {
+          "true_win_rate": 0.8675,
+          "captured_win_rate": 0.8675,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic": {
+          "true_win_rate": 0.88875,
+          "captured_win_rate": 0.88875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic2": {
+          "true_win_rate": 0.8875,
+          "captured_win_rate": 0.8875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_0": {
+          "true_win_rate": 0.5875,
+          "captured_win_rate": 0.5875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_1": {
+          "true_win_rate": 0.55,
+          "captured_win_rate": 0.55,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_2": {
+          "true_win_rate": 0.49125,
+          "captured_win_rate": 0.49125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep": {
+          "true_win_rate": 0.90375,
+          "captured_win_rate": 0.90375,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep_v2": {
+          "true_win_rate": 0.9075,
+          "captured_win_rate": 0.9075,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller": {
+          "true_win_rate": 0.915,
+          "captured_win_rate": 0.915,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller_v2": {
+          "true_win_rate": 0.92875,
+          "captured_win_rate": 0.92875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         }
+        },
+        "dropped": {
+         "random": "the quota captured only one outcome class (800 wins of 800 battles) \u2014 nothing to reweight"
+        },
+        "n_rows_zeroed": 20744
+       }
+      }
+     }
+    },
+    "draw2": {
+     "manifest": {
+      "seed": 20260911,
+      "games_per_opponent": 800,
+      "sentinels_used": 3,
+      "sentinel_steps": [
+       36000000,
+       54000000,
+       72000000
+      ],
+      "capture": "ALL",
+      "battles_played": 9600,
+      "battles_expected": 9600,
+      "complete": true,
+      "eval_sentinel_greedy": true,
+      "eval_sentinel_greedy_source": "recorded",
+      "checkpoint_sha": "ef1575f3dd140b24",
+      "reproducible": true,
+      "wall_seconds": 5160.5,
+      "impl": "rust"
+     },
+     "V": {
+      "label": "armWb V \u2014 the ACTUAL critic: V(s) = sigmoid(win-prob logit) in [0,1]; on a --critic winprob run `values` and `win_probs` are the SAME TENSOR",
+      "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/wb_read/traces/draw2",
+      "step": 74000016,
+      "v_column": "win_probs",
+      "conditioning": {
+       "cond.opp_class_auc.t4_10": {
+        "value": 0.74186,
+        "ci": [
+         0.73183,
+         0.75229
+        ]
+       },
+       "cond.opp_class_auc.t1_3": {
+        "value": 0.56412,
+        "ci": [
+         0.55182,
+         0.57596
+        ]
+       },
+       "cond.opp_class_auc.t1": {
+        "value": 0.50675,
+        "ci": [
+         0.49346,
+         0.52073
+        ]
+       },
+       "cond.calibration_slope.all": {
+        "value": 1.35031,
+        "ci": [
+         1.29426,
+         1.40871
+        ]
+       },
+       "cond.calibration_intercept.all": {
+        "value": 0.2477,
+        "ci": [
+         0.1786,
+         0.31926
+        ]
+       },
+       "cond.calibration_slope.t1_3": {
+        "value": 0.66581,
+        "ci": [
+         0.58204,
+         0.75681
+        ]
+       },
+       "cond.spread_ratio.t4_10": {
+        "value": 0.31979,
+        "ci": [
+         0.29853,
+         0.34305
+        ]
+       },
+       "cond.spread_ratio.all": {
+        "value": 0.51613,
+        "ci": [
+         0.48574,
+         0.54907
+        ]
+       }
+      },
+      "frame": {
+       "n_states": 309529,
+       "n_battles": 9540,
+       "n_teams_seen": 602,
+       "max_abs_values_minus_winprobs": 0.0,
+       "v_column": "win_probs",
+       "v_column_note": "V was read from the npz's `win_probs` column. On a --critic winprob run that IS the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the value function.",
+       "n_team_cells": 600
+      },
+      "omitted": {
+       "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+      },
+      "gate": {
+       "gate.resolution.bot": {
+        "value": 0.02037,
+        "ci": [
+         0.01725,
+         0.02398
+        ],
+        "n_states": 199213,
+        "n_battles": 7200
+       },
+       "gate.resolution.all": {
+        "value": 0.06224,
+        "ci": [
+         0.05792,
+         0.06622
+        ],
+        "n_states": 315440,
+        "n_battles": 9600
+       },
+       "gate.resolution.pool": {
+        "value": 0.06756,
+        "ci": [
+         0.05997,
+         0.07413
+        ],
+        "n_states": 116227,
+        "n_battles": 2400
+       },
+       "gate.ece.all": {
+        "value": 0.02219,
+        "ci": [
+         0.0147,
+         0.02971
+        ],
+        "n_states": 315440,
+        "n_battles": 9600
+       },
+       "gate.ece.bot": {
+        "value": 0.0878,
+        "ci": [
+         0.07953,
+         0.09605
+        ],
+        "n_states": 199213,
+        "n_battles": 7200
+       },
+       "gate.skill.bot": {
+        "value": 0.09179,
+        "ci": [
+         0.04418,
+         0.13589
+        ],
+        "n_states": 199213,
+        "n_battles": 7200
+       },
+       "gate.reliability.all": {
+        "value": 0.00059,
+        "ci": [
+         0.00035,
+         0.00105
+        ],
+        "n_states": 315440,
+        "n_battles": 9600
+       }
+      },
+      "gate_note": "\ud83d\udea8 the gate family is computed by the scaffolding gauge on the npz's `win_probs` column ALWAYS \u2014 a Murphy decomposition of a probability forecast has no meaning on a raw shaped-return column. On arm S every gate row is therefore an S-WP row (the AUXILIARY head).",
+      "gate_coverage": {
+       "per_step": {
+        "n_battles": 9600,
+        "n_states": 315440
+       },
+       "n_traces_seen": 9600,
+       "n_traces_read": 9600,
+       "n_traces_no_npz": 0,
+       "n_traces_no_winprob": 0,
+       "selection_note": {
+        "per_opponent": {
+         "aggressive": {
+          "true_win_rate": 0.925,
+          "captured_win_rate": 0.925,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "aggressive_v2": {
+          "true_win_rate": 0.87,
+          "captured_win_rate": 0.87,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic": {
+          "true_win_rate": 0.90625,
+          "captured_win_rate": 0.90625,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic2": {
+          "true_win_rate": 0.88,
+          "captured_win_rate": 0.88,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "random": {
+          "true_win_rate": 0.99875,
+          "captured_win_rate": 0.99875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_0": {
+          "true_win_rate": 0.53,
+          "captured_win_rate": 0.53,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_1": {
+          "true_win_rate": 0.49625,
+          "captured_win_rate": 0.49625,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_2": {
+          "true_win_rate": 0.51125,
+          "captured_win_rate": 0.51125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep": {
+          "true_win_rate": 0.89125,
+          "captured_win_rate": 0.89125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep_v2": {
+          "true_win_rate": 0.89875,
+          "captured_win_rate": 0.89875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller": {
+          "true_win_rate": 0.9225,
+          "captured_win_rate": 0.9225,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller_v2": {
+          "true_win_rate": 0.93,
+          "captured_win_rate": 0.93,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         }
+        },
+        "dropped": {},
+        "n_rows_zeroed": 0
+       }
+      }
+     }
+    }
+   }
+  },
+  "armW": {
+   "human_description": "ai_v13_02_flywheel_winprob (arm W \u2014 the pair's WIN-PROB arm, seed 1001)",
+   "draws": {
+    "draw1": {
+     "manifest": {
+      "seed": 20260910,
+      "games_per_opponent": 800,
+      "sentinels_used": 3,
+      "sentinel_steps": [
+       26000016,
+       46000032,
+       72000000
+      ],
+      "capture": "ALL",
+      "battles_played": 9600,
+      "battles_expected": 9600,
+      "complete": true,
+      "eval_sentinel_greedy": true,
+      "eval_sentinel_greedy_source": "recorded",
+      "checkpoint_sha": "7edc9f8e6aa82825",
+      "reproducible": true,
+      "wall_seconds": 4510.4,
+      "impl": "rust"
+     },
+     "V": {
+      "label": "armW V \u2014 the ACTUAL critic: V(s) = sigmoid(win-prob logit) in [0,1]; on a --critic winprob run `values` and `win_probs` are the SAME TENSOR",
+      "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/pair_read/traces/draw1",
+      "step": 74000016,
+      "v_column": "win_probs",
+      "conditioning": {
+       "cond.opp_class_auc.t4_10": {
+        "value": 0.74493,
+        "ci": [
+         0.7347,
+         0.75474
+        ]
+       },
+       "cond.opp_class_auc.t1_3": {
+        "value": 0.56028,
+        "ci": [
+         0.54819,
+         0.57243
+        ]
+       },
+       "cond.opp_class_auc.t1": {
+        "value": 0.50212,
+        "ci": [
+         0.48887,
+         0.51569
+        ]
+       },
+       "cond.calibration_slope.all": {
+        "value": 1.34062,
+        "ci": [
+         1.2796,
+         1.40281
+        ]
+       },
+       "cond.calibration_intercept.all": {
+        "value": 0.58507,
+        "ci": [
+         0.52034,
+         0.65623
+        ]
+       },
+       "cond.calibration_slope.t1_3": {
+        "value": 0.72802,
+        "ci": [
+         0.63293,
+         0.8241
+        ]
+       },
+       "cond.spread_ratio.t4_10": {
+        "value": 0.33012,
+        "ci": [
+         0.30789,
+         0.35456
+        ]
+       },
+       "cond.spread_ratio.all": {
+        "value": 0.54662,
+        "ci": [
+         0.51308,
+         0.58236
+        ]
+       }
+      },
+      "frame": {
+       "n_states": 312880,
+       "n_battles": 9557,
+       "n_teams_seen": 602,
+       "max_abs_values_minus_winprobs": 0.0,
+       "v_column": "win_probs",
+       "v_column_note": "V was read from the npz's `win_probs` column. On a --critic winprob run that IS the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the value function.",
+       "n_team_cells": 600
+      },
+      "omitted": {
+       "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+      },
+      "gate": {
+       "gate.resolution.bot": {
+        "value": 0.02174,
+        "ci": [
+         0.01789,
+         0.0261
+        ],
+        "n_states": 205047,
+        "n_battles": 7200
+       },
+       "gate.resolution.all": {
+        "value": 0.05931,
+        "ci": [
+         0.05478,
+         0.06405
+        ],
+        "n_states": 316586,
+        "n_battles": 9600
+       },
+       "gate.resolution.pool": {
+        "value": 0.06341,
+        "ci": [
+         0.05726,
+         0.06982
+        ],
+        "n_states": 111539,
+        "n_battles": 2400
+       },
+       "gate.ece.all": {
+        "value": 0.06875,
+        "ci": [
+         0.061,
+         0.07707
+        ],
+        "n_states": 316586,
+        "n_battles": 9600
+       },
+       "gate.ece.bot": {
+        "value": 0.13379,
+        "ci": [
+         0.12665,
+         0.1411
+        ],
+        "n_states": 205047,
+        "n_battles": 7200
+       },
+       "gate.skill.bot": {
+        "value": -0.01716,
+        "ci": [
+         -0.092,
+         0.04537
+        ],
+        "n_states": 205047,
+        "n_battles": 7200
+       },
+       "gate.reliability.all": {
+        "value": 0.00514,
+        "ci": [
+         0.00407,
+         0.00659
+        ],
+        "n_states": 316586,
+        "n_battles": 9600
+       }
+      },
+      "gate_note": "\ud83d\udea8 the gate family is computed by the scaffolding gauge on the npz's `win_probs` column ALWAYS \u2014 a Murphy decomposition of a probability forecast has no meaning on a raw shaped-return column. On arm S every gate row is therefore an S-WP row (the AUXILIARY head).",
+      "gate_coverage": {
+       "per_step": {
+        "n_battles": 9600,
+        "n_states": 316586
+       },
+       "n_traces_seen": 9600,
+       "n_traces_read": 9600,
+       "n_traces_no_npz": 0,
+       "n_traces_no_winprob": 0,
+       "selection_note": {
+        "per_opponent": {
+         "aggressive": {
+          "true_win_rate": 0.915,
+          "captured_win_rate": 0.915,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "aggressive_v2": {
+          "true_win_rate": 0.8725,
+          "captured_win_rate": 0.8725,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic": {
+          "true_win_rate": 0.89,
+          "captured_win_rate": 0.89,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic2": {
+          "true_win_rate": 0.895,
+          "captured_win_rate": 0.895,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "random": {
+          "true_win_rate": 0.99875,
+          "captured_win_rate": 0.99875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_0": {
+          "true_win_rate": 0.57875,
+          "captured_win_rate": 0.57875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_1": {
+          "true_win_rate": 0.52875,
+          "captured_win_rate": 0.52875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_2": {
+          "true_win_rate": 0.505,
+          "captured_win_rate": 0.505,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep": {
+          "true_win_rate": 0.89125,
+          "captured_win_rate": 0.89125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep_v2": {
+          "true_win_rate": 0.90375,
+          "captured_win_rate": 0.90375,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller": {
+          "true_win_rate": 0.91875,
+          "captured_win_rate": 0.91875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller_v2": {
+          "true_win_rate": 0.9425,
+          "captured_win_rate": 0.9425,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         }
+        },
+        "dropped": {},
+        "n_rows_zeroed": 0
+       }
+      }
+     }
+    },
+    "draw2": {
+     "manifest": {
+      "seed": 20260911,
+      "games_per_opponent": 800,
+      "sentinels_used": 3,
+      "sentinel_steps": [
+       26000016,
+       46000032,
+       72000000
+      ],
+      "capture": "ALL",
+      "battles_played": 9600,
+      "battles_expected": 9600,
+      "complete": true,
+      "eval_sentinel_greedy": true,
+      "eval_sentinel_greedy_source": "recorded",
+      "checkpoint_sha": "7edc9f8e6aa82825",
+      "reproducible": true,
+      "wall_seconds": 5366.3,
+      "impl": "rust"
+     },
+     "V": {
+      "label": "armW V \u2014 the ACTUAL critic: V(s) = sigmoid(win-prob logit) in [0,1]; on a --critic winprob run `values` and `win_probs` are the SAME TENSOR",
+      "shadow_run": "/home/goodlad/.claude/jobs/9ab51de6/tmp/pair_read/traces/draw2",
+      "step": 74000016,
+      "v_column": "win_probs",
+      "conditioning": {
+       "cond.opp_class_auc.t4_10": {
+        "value": 0.72841,
+        "ci": [
+         0.71799,
+         0.73818
+        ]
+       },
+       "cond.opp_class_auc.t1_3": {
+        "value": 0.5461,
+        "ci": [
+         0.53389,
+         0.55802
+        ]
+       },
+       "cond.opp_class_auc.t1": {
+        "value": 0.52064,
+        "ci": [
+         0.50754,
+         0.53399
+        ]
+       },
+       "cond.calibration_slope.all": {
+        "value": 1.34141,
+        "ci": [
+         1.28762,
+         1.40516
+        ]
+       },
+       "cond.calibration_intercept.all": {
+        "value": 0.59912,
+        "ci": [
+         0.52642,
+         0.66694
+        ]
+       },
+       "cond.calibration_slope.t1_3": {
+        "value": 0.60525,
+        "ci": [
+         0.51328,
+         0.69702
+        ]
+       },
+       "cond.spread_ratio.t4_10": {
+        "value": 0.3178,
+        "ci": [
+         0.29303,
+         0.34278
+        ]
+       },
+       "cond.spread_ratio.all": {
+        "value": 0.53773,
+        "ci": [
+         0.50118,
+         0.57538
+        ]
+       }
+      },
+      "frame": {
+       "n_states": 309044,
+       "n_battles": 9563,
+       "n_teams_seen": 602,
+       "max_abs_values_minus_winprobs": 0.0,
+       "v_column": "win_probs",
+       "v_column_note": "V was read from the npz's `win_probs` column. On a --critic winprob run that IS the critic; on a --critic shaped run it is the AUXILIARY win-prob head, not the value function.",
+       "n_team_cells": 601
+      },
+      "omitted": {
+       "cond.elo_slope": "3 sentinel opponents and no eval_results.jsonl \u2014 the sentinel->snapshot map cannot be built, so a bot-only axis would compare two different populations. Row OMITTED."
+      },
+      "gate": {
+       "gate.resolution.bot": {
+        "value": 0.02494,
+        "ci": [
+         0.02038,
+         0.0298
+        ],
+        "n_states": 204300,
+        "n_battles": 7200
+       },
+       "gate.resolution.all": {
+        "value": 0.05795,
+        "ci": [
+         0.05364,
+         0.06202
+        ],
+        "n_states": 312096,
+        "n_battles": 9600
+       },
+       "gate.resolution.pool": {
+        "value": 0.06522,
+        "ci": [
+         0.05938,
+         0.07094
+        ],
+        "n_states": 107796,
+        "n_battles": 2400
+       },
+       "gate.ece.all": {
+        "value": 0.07151,
+        "ci": [
+         0.06422,
+         0.07951
+        ],
+        "n_states": 312096,
+        "n_battles": 9600
+       },
+       "gate.ece.bot": {
+        "value": 0.13303,
+        "ci": [
+         0.12501,
+         0.14076
+        ],
+        "n_states": 204300,
+        "n_battles": 7200
+       },
+       "gate.skill.bot": {
+        "value": 0.01859,
+        "ci": [
+         -0.04693,
+         0.09087
+        ],
+        "n_states": 204300,
+        "n_battles": 7200
+       },
+       "gate.reliability.all": {
+        "value": 0.00565,
+        "ci": [
+         0.00455,
+         0.00706
+        ],
+        "n_states": 312096,
+        "n_battles": 9600
+       }
+      },
+      "gate_note": "\ud83d\udea8 the gate family is computed by the scaffolding gauge on the npz's `win_probs` column ALWAYS \u2014 a Murphy decomposition of a probability forecast has no meaning on a raw shaped-return column. On arm S every gate row is therefore an S-WP row (the AUXILIARY head).",
+      "gate_coverage": {
+       "per_step": {
+        "n_battles": 9600,
+        "n_states": 312096
+       },
+       "n_traces_seen": 9600,
+       "n_traces_read": 9600,
+       "n_traces_no_npz": 0,
+       "n_traces_no_winprob": 0,
+       "selection_note": {
+        "per_opponent": {
+         "aggressive": {
+          "true_win_rate": 0.91875,
+          "captured_win_rate": 0.91875,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "aggressive_v2": {
+          "true_win_rate": 0.90125,
+          "captured_win_rate": 0.90125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic": {
+          "true_win_rate": 0.895,
+          "captured_win_rate": 0.895,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "heuristic2": {
+          "true_win_rate": 0.89,
+          "captured_win_rate": 0.89,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "random": {
+          "true_win_rate": 0.99625,
+          "captured_win_rate": 0.99625,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_0": {
+          "true_win_rate": 0.60125,
+          "captured_win_rate": 0.60125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_1": {
+          "true_win_rate": 0.565,
+          "captured_win_rate": 0.565,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "sentinel_2": {
+          "true_win_rate": 0.49375,
+          "captured_win_rate": 0.49375,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep": {
+          "true_win_rate": 0.9075,
+          "captured_win_rate": 0.9075,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "setup_sweep_v2": {
+          "true_win_rate": 0.89125,
+          "captured_win_rate": 0.89125,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller": {
+          "true_win_rate": 0.90625,
+          "captured_win_rate": 0.90625,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         },
+         "staller_v2": {
+          "true_win_rate": 0.93375,
+          "captured_win_rate": 0.93375,
+          "w_win": 1.0,
+          "w_loss": 1.0,
+          "n_battles": 800
+         }
+        },
+        "dropped": {},
+        "n_rows_zeroed": 0
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "contrasts": {
+  "FLOOR_Wb_minus_W_draw1": {
+   "label": "THE 75M RUN-LEVEL FLOOR \u2014 W_b's CRITIC minus arm W's CRITIC. Two seeds of ONE config (the argv multiset differs by 1001 -> 1002 plus the run name), same pin, same declared dose, same eval regime. Both columns are the value function, so every row including the whole calibration family is defined on both sides. |delta| is the floor; the 'verdict' column below is the IMPORTED-floor verdict and is printed only to show what the 10M bar would have said.",
+   "rank_rows_only": false,
+   "rows": {
+    "cond.calibration_intercept.all": {
+     "delta": -0.20259,
+     "ci95": [
+      -0.29709,
+      -0.10856
+     ],
+     "floor_10M_imported": 1.02473,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.calibration_slope.all": {
+     "delta": -0.0753,
+     "ci95": [
+      -0.15742,
+      0.00868
+     ],
+     "floor_10M_imported": 0.20008,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.calibration_slope.t1_3": {
+     "delta": -0.05063,
+     "ci95": [
+      -0.17941,
+      0.08192
+     ],
+     "floor_10M_imported": 0.19148,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.opp_class_auc.t1": {
+     "delta": -0.00662,
+     "ci95": [
+      -0.02508,
+      0.01322
+     ],
+     "floor_10M_imported": 0.0227,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.opp_class_auc.t1_3": {
+     "delta": 0.01142,
+     "ci95": [
+      -0.00494,
+      0.02812
+     ],
+     "floor_10M_imported": 0.01532,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.opp_class_auc.t4_10": {
+     "delta": -0.00175,
+     "ci95": [
+      -0.0157,
+      0.01295
+     ],
+     "floor_10M_imported": 0.02451,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.spread_ratio.all": {
+     "delta": -0.00504,
+     "ci95": [
+      -0.05528,
+      0.04466
+     ],
+     "floor_10M_imported": 0.2399,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.spread_ratio.t4_10": {
+     "delta": 0.01016,
+     "ci95": [
+      -0.02321,
+      0.04357
+     ],
+     "floor_10M_imported": 0.28327,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.ece.all": {
+     "delta": -0.05709,
+     "ci95": [
+      -0.06548,
+      -0.04826
+     ],
+     "floor_10M_imported": 0.02451,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    },
+    "gate.ece.bot": {
+     "delta": -0.04681,
+     "ci95": [
+      -0.05453,
+      -0.0385
+     ],
+     "floor_10M_imported": 0.0449,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    },
+    "gate.reliability.all": {
+     "delta": -0.00502,
+     "ci95": [
+      -0.00625,
+      -0.00393
+     ],
+     "floor_10M_imported": 0.00264,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    },
+    "gate.resolution.all": {
+     "delta": 0.00016,
+     "ci95": [
+      -0.00638,
+      0.00596
+     ],
+     "floor_10M_imported": 0.00239,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.resolution.bot": {
+     "delta": 0.00566,
+     "ci95": [
+      0.0006,
+      0.01122
+     ],
+     "floor_10M_imported": 0.00744,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.resolution.pool": {
+     "delta": -0.01169,
+     "ci95": [
+      -0.02139,
+      -0.0024
+     ],
+     "floor_10M_imported": 0.01407,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.skill.bot": {
+     "delta": 0.1747,
+     "ci95": [
+      0.10378,
+      0.24221
+     ],
+     "floor_10M_imported": 0.10037,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    }
+   }
+  },
+  "FLOOR_Wb_minus_W_draw2": {
+   "label": "THE 75M RUN-LEVEL FLOOR \u2014 W_b's CRITIC minus arm W's CRITIC. Two seeds of ONE config (the argv multiset differs by 1001 -> 1002 plus the run name), same pin, same declared dose, same eval regime. Both columns are the value function, so every row including the whole calibration family is defined on both sides. |delta| is the floor; the 'verdict' column below is the IMPORTED-floor verdict and is printed only to show what the 10M bar would have said.",
+   "rank_rows_only": false,
+   "rows": {
+    "cond.calibration_intercept.all": {
+     "delta": -0.34997,
+     "ci95": [
+      -0.44089,
+      -0.24981
+     ],
+     "floor_10M_imported": 1.02473,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.calibration_slope.all": {
+     "delta": 0.00686,
+     "ci95": [
+      -0.07712,
+      0.08965
+     ],
+     "floor_10M_imported": 0.20008,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.calibration_slope.t1_3": {
+     "delta": 0.06156,
+     "ci95": [
+      -0.06456,
+      0.18072
+     ],
+     "floor_10M_imported": 0.19148,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.opp_class_auc.t1": {
+     "delta": -0.01414,
+     "ci95": [
+      -0.03328,
+      0.00541
+     ],
+     "floor_10M_imported": 0.0227,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.opp_class_auc.t1_3": {
+     "delta": 0.01823,
+     "ci95": [
+      0.00118,
+      0.0358
+     ],
+     "floor_10M_imported": 0.01532,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    },
+    "cond.opp_class_auc.t4_10": {
+     "delta": 0.01375,
+     "ci95": [
+      -0.00109,
+      0.02824
+     ],
+     "floor_10M_imported": 0.02451,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.spread_ratio.all": {
+     "delta": -0.02035,
+     "ci95": [
+      -0.06739,
+      0.02961
+     ],
+     "floor_10M_imported": 0.2399,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "cond.spread_ratio.t4_10": {
+     "delta": 0.00282,
+     "ci95": [
+      -0.0305,
+      0.03754
+     ],
+     "floor_10M_imported": 0.28327,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.ece.all": {
+     "delta": -0.04932,
+     "ci95": [
+      -0.05784,
+      -0.0409
+     ],
+     "floor_10M_imported": 0.02451,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    },
+    "gate.ece.bot": {
+     "delta": -0.04486,
+     "ci95": [
+      -0.05359,
+      -0.03668
+     ],
+     "floor_10M_imported": 0.0449,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.reliability.all": {
+     "delta": -0.00507,
+     "ci95": [
+      -0.00632,
+      -0.00386
+     ],
+     "floor_10M_imported": 0.00264,
+     "verdict": "CANDIDATE \u2014 clears the imported floor and the CI excludes zero; rule 22 binds, n=1 per arm"
+    },
+    "gate.resolution.all": {
+     "delta": 0.0043,
+     "ci95": [
+      -0.00038,
+      0.00943
+     ],
+     "floor_10M_imported": 0.00239,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.resolution.bot": {
+     "delta": -0.00481,
+     "ci95": [
+      -0.01012,
+      4e-05
+     ],
+     "floor_10M_imported": 0.00744,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.resolution.pool": {
+     "delta": 0.00206,
+     "ci95": [
+      -0.00696,
+      0.01206
+     ],
+     "floor_10M_imported": 0.01407,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    },
+    "gate.skill.bot": {
+     "delta": 0.0706,
+     "ci95": [
+      0.00439,
+      0.13608
+     ],
+     "floor_10M_imported": 0.10037,
+     "verdict": "NOT DETECTED \u2014 never 'equivalent' (rule 6: equivalence needs the delta's own CI INSIDE the bar, and this bar is imported from 10M)"
+    }
+   }
+  }
+ },
+ "eval_draw_spread": {
+  "armWb|V|cond.opp_class_auc.t4_10": {
+   "draw1": 0.74317,
+   "draw2": 0.74186,
+   "abs_draw_spread": 0.00131,
+   "floor_10M_imported": 0.02451
+  },
+  "armWb|V|cond.opp_class_auc.t1_3": {
+   "draw1": 0.57155,
+   "draw2": 0.56412,
+   "abs_draw_spread": 0.00743,
+   "floor_10M_imported": 0.01532
+  },
+  "armWb|V|cond.opp_class_auc.t1": {
+   "draw1": 0.49556,
+   "draw2": 0.50675,
+   "abs_draw_spread": 0.01119,
+   "floor_10M_imported": 0.0227
+  },
+  "armWb|V|cond.calibration_slope.all": {
+   "draw1": 1.26516,
+   "draw2": 1.35031,
+   "abs_draw_spread": 0.08515,
+   "floor_10M_imported": 0.20008
+  },
+  "armWb|V|cond.calibration_intercept.all": {
+   "draw1": 0.38385,
+   "draw2": 0.2477,
+   "abs_draw_spread": 0.13615,
+   "floor_10M_imported": 1.02473
+  },
+  "armWb|V|cond.calibration_slope.t1_3": {
+   "draw1": 0.67728,
+   "draw2": 0.66581,
+   "abs_draw_spread": 0.01147,
+   "floor_10M_imported": 0.19148
+  },
+  "armWb|V|cond.spread_ratio.t4_10": {
+   "draw1": 0.34015,
+   "draw2": 0.31979,
+   "abs_draw_spread": 0.02036,
+   "floor_10M_imported": 0.28327
+  },
+  "armWb|V|cond.spread_ratio.all": {
+   "draw1": 0.54129,
+   "draw2": 0.51613,
+   "abs_draw_spread": 0.02516,
+   "floor_10M_imported": 0.2399
+  },
+  "armWb|V|gate.resolution.bot": {
+   "draw1": 0.02756,
+   "draw2": 0.02037,
+   "abs_draw_spread": 0.00719,
+   "floor_10M_imported": 0.00744
+  },
+  "armWb|V|gate.resolution.all": {
+   "draw1": 0.05933,
+   "draw2": 0.06224,
+   "abs_draw_spread": 0.00291,
+   "floor_10M_imported": 0.00239
+  },
+  "armWb|V|gate.resolution.pool": {
+   "draw1": 0.05162,
+   "draw2": 0.06756,
+   "abs_draw_spread": 0.01594,
+   "floor_10M_imported": 0.01407
+  },
+  "armWb|V|gate.ece.all": {
+   "draw1": 0.01008,
+   "draw2": 0.02219,
+   "abs_draw_spread": 0.01211,
+   "floor_10M_imported": 0.02451
+  },
+  "armWb|V|gate.ece.bot": {
+   "draw1": 0.08705,
+   "draw2": 0.0878,
+   "abs_draw_spread": 0.00075,
+   "floor_10M_imported": 0.0449
+  },
+  "armWb|V|gate.skill.bot": {
+   "draw1": 0.15722,
+   "draw2": 0.09179,
+   "abs_draw_spread": 0.06543,
+   "floor_10M_imported": 0.10037
+  },
+  "armWb|V|gate.reliability.all": {
+   "draw1": 0.00014,
+   "draw2": 0.00059,
+   "abs_draw_spread": 0.00045,
+   "floor_10M_imported": 0.00264
+  },
+  "armW|V|cond.opp_class_auc.t4_10": {
+   "draw1": 0.74493,
+   "draw2": 0.72841,
+   "abs_draw_spread": 0.01652,
+   "floor_10M_imported": 0.02451
+  },
+  "armW|V|cond.opp_class_auc.t1_3": {
+   "draw1": 0.56028,
+   "draw2": 0.5461,
+   "abs_draw_spread": 0.01418,
+   "floor_10M_imported": 0.01532
+  },
+  "armW|V|cond.opp_class_auc.t1": {
+   "draw1": 0.50212,
+   "draw2": 0.52064,
+   "abs_draw_spread": 0.01852,
+   "floor_10M_imported": 0.0227
+  },
+  "armW|V|cond.calibration_slope.all": {
+   "draw1": 1.34062,
+   "draw2": 1.34141,
+   "abs_draw_spread": 0.00079,
+   "floor_10M_imported": 0.20008
+  },
+  "armW|V|cond.calibration_intercept.all": {
+   "draw1": 0.58507,
+   "draw2": 0.59912,
+   "abs_draw_spread": 0.01405,
+   "floor_10M_imported": 1.02473
+  },
+  "armW|V|cond.calibration_slope.t1_3": {
+   "draw1": 0.72802,
+   "draw2": 0.60525,
+   "abs_draw_spread": 0.12277,
+   "floor_10M_imported": 0.19148
+  },
+  "armW|V|cond.spread_ratio.t4_10": {
+   "draw1": 0.33012,
+   "draw2": 0.3178,
+   "abs_draw_spread": 0.01232,
+   "floor_10M_imported": 0.28327
+  },
+  "armW|V|cond.spread_ratio.all": {
+   "draw1": 0.54662,
+   "draw2": 0.53773,
+   "abs_draw_spread": 0.00889,
+   "floor_10M_imported": 0.2399
+  },
+  "armW|V|gate.resolution.bot": {
+   "draw1": 0.02174,
+   "draw2": 0.02494,
+   "abs_draw_spread": 0.0032,
+   "floor_10M_imported": 0.00744
+  },
+  "armW|V|gate.resolution.all": {
+   "draw1": 0.05931,
+   "draw2": 0.05795,
+   "abs_draw_spread": 0.00136,
+   "floor_10M_imported": 0.00239
+  },
+  "armW|V|gate.resolution.pool": {
+   "draw1": 0.06341,
+   "draw2": 0.06522,
+   "abs_draw_spread": 0.00181,
+   "floor_10M_imported": 0.01407
+  },
+  "armW|V|gate.ece.all": {
+   "draw1": 0.06875,
+   "draw2": 0.07151,
+   "abs_draw_spread": 0.00276,
+   "floor_10M_imported": 0.02451
+  },
+  "armW|V|gate.ece.bot": {
+   "draw1": 0.13379,
+   "draw2": 0.13303,
+   "abs_draw_spread": 0.00076,
+   "floor_10M_imported": 0.0449
+  },
+  "armW|V|gate.skill.bot": {
+   "draw1": -0.01716,
+   "draw2": 0.01859,
+   "abs_draw_spread": 0.03575,
+   "floor_10M_imported": 0.10037
+  },
+  "armW|V|gate.reliability.all": {
+   "draw1": 0.00514,
+   "draw2": 0.00565,
+   "abs_draw_spread": 0.00051,
+   "floor_10M_imported": 0.00264
+  }
+ },
+ "re_read_vs_pair": {
+  "source": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/flywheel_pair_read_2026-09-15/out/pair_critic_levels.json",
+  "rule": "OUTSIDE THE 75M FLOOR iff |S - W| > |W - W_b| AND the S-W CI excludes the |W - W_b| POINT (PREDICTION.md sec 2). Otherwise WITHIN FLOOR at n = 2, which is NEVER 'equivalent' (rule 6).",
+  "rows": {
+   "cond.calibration_intercept.all|draw1": {
+    "finding_S_minus_W_ROW_A": -0.54076,
+    "finding_ci95": [
+     -0.64319,
+     -0.43163
+    ],
+    "floor_abs_W_minus_Wb": 0.20259,
+    "floor_signed_Wb_minus_W": -0.20259,
+    "imported_10M_floor": 1.02473,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.calibration_slope.all|draw1": {
+    "finding_S_minus_W_ROW_A": -0.03133,
+    "finding_ci95": [
+     -0.11791,
+     0.057
+    ],
+    "floor_abs_W_minus_Wb": 0.0753,
+    "floor_signed_Wb_minus_W": -0.0753,
+    "imported_10M_floor": 0.20008,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.calibration_slope.t1_3|draw1": {
+    "finding_S_minus_W_ROW_A": 0.27905,
+    "finding_ci95": [
+     0.1261,
+     0.42664
+    ],
+    "floor_abs_W_minus_Wb": 0.05063,
+    "floor_signed_Wb_minus_W": -0.05063,
+    "imported_10M_floor": 0.19148,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.opp_class_auc.t1|draw1": {
+    "finding_S_minus_W_ROW_A": -0.01106,
+    "finding_ci95": [
+     -0.03038,
+     0.0082
+    ],
+    "floor_abs_W_minus_Wb": 0.00662,
+    "floor_signed_Wb_minus_W": -0.00662,
+    "imported_10M_floor": 0.0227,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.opp_class_auc.t1_3|draw1": {
+    "finding_S_minus_W_ROW_A": 0.01543,
+    "finding_ci95": [
+     -0.00045,
+     0.03297
+    ],
+    "floor_abs_W_minus_Wb": 0.01142,
+    "floor_signed_Wb_minus_W": 0.01142,
+    "imported_10M_floor": 0.01532,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.opp_class_auc.t4_10|draw1": {
+    "finding_S_minus_W_ROW_A": 0.02229,
+    "finding_ci95": [
+     0.00869,
+     0.03571
+    ],
+    "floor_abs_W_minus_Wb": 0.00175,
+    "floor_signed_Wb_minus_W": -0.00175,
+    "imported_10M_floor": 0.02451,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.spread_ratio.all|draw1": {
+    "finding_S_minus_W_ROW_A": -0.0566,
+    "finding_ci95": [
+     -0.10504,
+     -0.00996
+    ],
+    "floor_abs_W_minus_Wb": 0.00504,
+    "floor_signed_Wb_minus_W": -0.00504,
+    "imported_10M_floor": 0.2399,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.spread_ratio.t4_10|draw1": {
+    "finding_S_minus_W_ROW_A": -0.02519,
+    "finding_ci95": [
+     -0.05628,
+     0.00653
+    ],
+    "floor_abs_W_minus_Wb": 0.01016,
+    "floor_signed_Wb_minus_W": 0.01016,
+    "imported_10M_floor": 0.28327,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.ece.all|draw1": {
+    "finding_S_minus_W_ROW_A": -0.05068,
+    "finding_ci95": [
+     -0.05888,
+     -0.04259
+    ],
+    "floor_abs_W_minus_Wb": 0.05709,
+    "floor_signed_Wb_minus_W": -0.05709,
+    "imported_10M_floor": 0.02451,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.ece.bot|draw1": {
+    "finding_S_minus_W_ROW_A": -0.06138,
+    "finding_ci95": [
+     -0.06788,
+     -0.0543
+    ],
+    "floor_abs_W_minus_Wb": 0.04681,
+    "floor_signed_Wb_minus_W": -0.04681,
+    "imported_10M_floor": 0.0449,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.reliability.all|draw1": {
+    "finding_S_minus_W_ROW_A": -0.00466,
+    "finding_ci95": [
+     -0.00603,
+     -0.00331
+    ],
+    "floor_abs_W_minus_Wb": 0.00502,
+    "floor_signed_Wb_minus_W": -0.00502,
+    "imported_10M_floor": 0.00264,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.resolution.all|draw1": {
+    "finding_S_minus_W_ROW_A": -0.0043,
+    "finding_ci95": [
+     -0.00946,
+     0.00056
+    ],
+    "floor_abs_W_minus_Wb": 0.00016,
+    "floor_signed_Wb_minus_W": 0.00016,
+    "imported_10M_floor": 0.00239,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.resolution.bot|draw1": {
+    "finding_S_minus_W_ROW_A": -0.00306,
+    "finding_ci95": [
+     -0.00821,
+     0.00214
+    ],
+    "floor_abs_W_minus_Wb": 0.00566,
+    "floor_signed_Wb_minus_W": 0.00566,
+    "imported_10M_floor": 0.00744,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.resolution.pool|draw1": {
+    "finding_S_minus_W_ROW_A": -0.00443,
+    "finding_ci95": [
+     -0.01316,
+     0.00394
+    ],
+    "floor_abs_W_minus_Wb": 0.01169,
+    "floor_signed_Wb_minus_W": -0.01169,
+    "imported_10M_floor": 0.01407,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.skill.bot|draw1": {
+    "finding_S_minus_W_ROW_A": 0.13807,
+    "finding_ci95": [
+     0.07312,
+     0.2158
+    ],
+    "floor_abs_W_minus_Wb": 0.1747,
+    "floor_signed_Wb_minus_W": 0.1747,
+    "imported_10M_floor": 0.10037,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.calibration_intercept.all|draw2": {
+    "finding_S_minus_W_ROW_A": -0.52772,
+    "finding_ci95": [
+     -0.62743,
+     -0.42622
+    ],
+    "floor_abs_W_minus_Wb": 0.34997,
+    "floor_signed_Wb_minus_W": -0.34997,
+    "imported_10M_floor": 1.02473,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.calibration_slope.all|draw2": {
+    "finding_S_minus_W_ROW_A": -0.06796,
+    "finding_ci95": [
+     -0.15207,
+     0.01168
+    ],
+    "floor_abs_W_minus_Wb": 0.00686,
+    "floor_signed_Wb_minus_W": 0.00686,
+    "imported_10M_floor": 0.20008,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.calibration_slope.t1_3|draw2": {
+    "finding_S_minus_W_ROW_A": 0.30725,
+    "finding_ci95": [
+     0.16442,
+     0.44886
+    ],
+    "floor_abs_W_minus_Wb": 0.06156,
+    "floor_signed_Wb_minus_W": 0.06156,
+    "imported_10M_floor": 0.19148,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.opp_class_auc.t1|draw2": {
+    "finding_S_minus_W_ROW_A": -0.00769,
+    "finding_ci95": [
+     -0.02558,
+     0.01078
+    ],
+    "floor_abs_W_minus_Wb": 0.01414,
+    "floor_signed_Wb_minus_W": -0.01414,
+    "imported_10M_floor": 0.0227,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.opp_class_auc.t1_3|draw2": {
+    "finding_S_minus_W_ROW_A": 0.00764,
+    "finding_ci95": [
+     -0.00881,
+     0.02386
+    ],
+    "floor_abs_W_minus_Wb": 0.01823,
+    "floor_signed_Wb_minus_W": 0.01823,
+    "imported_10M_floor": 0.01532,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.opp_class_auc.t4_10|draw2": {
+    "finding_S_minus_W_ROW_A": 0.02113,
+    "finding_ci95": [
+     0.00664,
+     0.03531
+    ],
+    "floor_abs_W_minus_Wb": 0.01375,
+    "floor_signed_Wb_minus_W": 0.01375,
+    "imported_10M_floor": 0.02451,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.spread_ratio.all|draw2": {
+    "finding_S_minus_W_ROW_A": -0.05764,
+    "finding_ci95": [
+     -0.10569,
+     -0.00956
+    ],
+    "floor_abs_W_minus_Wb": 0.02035,
+    "floor_signed_Wb_minus_W": -0.02035,
+    "imported_10M_floor": 0.2399,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "cond.spread_ratio.t4_10|draw2": {
+    "finding_S_minus_W_ROW_A": -0.02743,
+    "finding_ci95": [
+     -0.05976,
+     0.00471
+    ],
+    "floor_abs_W_minus_Wb": 0.00282,
+    "floor_signed_Wb_minus_W": 0.00282,
+    "imported_10M_floor": 0.28327,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.ece.all|draw2": {
+    "finding_S_minus_W_ROW_A": -0.05509,
+    "finding_ci95": [
+     -0.06368,
+     -0.04623
+    ],
+    "floor_abs_W_minus_Wb": 0.04932,
+    "floor_signed_Wb_minus_W": -0.04932,
+    "imported_10M_floor": 0.02451,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.ece.bot|draw2": {
+    "finding_S_minus_W_ROW_A": -0.05882,
+    "finding_ci95": [
+     -0.06655,
+     -0.05125
+    ],
+    "floor_abs_W_minus_Wb": 0.04486,
+    "floor_signed_Wb_minus_W": -0.04486,
+    "imported_10M_floor": 0.0449,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "verdict": "OUTSIDE THE 75M FLOOR",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.reliability.all|draw2": {
+    "finding_S_minus_W_ROW_A": -0.00518,
+    "finding_ci95": [
+     -0.00668,
+     -0.00378
+    ],
+    "floor_abs_W_minus_Wb": 0.00507,
+    "floor_signed_Wb_minus_W": -0.00507,
+    "imported_10M_floor": 0.00264,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.resolution.all|draw2": {
+    "finding_S_minus_W_ROW_A": 0.00034,
+    "finding_ci95": [
+     -0.00485,
+     0.00514
+    ],
+    "floor_abs_W_minus_Wb": 0.0043,
+    "floor_signed_Wb_minus_W": 0.0043,
+    "imported_10M_floor": 0.00239,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.resolution.bot|draw2": {
+    "finding_S_minus_W_ROW_A": -0.00382,
+    "finding_ci95": [
+     -0.00898,
+     0.00193
+    ],
+    "floor_abs_W_minus_Wb": 0.00481,
+    "floor_signed_Wb_minus_W": -0.00481,
+    "imported_10M_floor": 0.00744,
+    "clause_a_abs_delta_gt_floor": false,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.resolution.pool|draw2": {
+    "finding_S_minus_W_ROW_A": -0.00537,
+    "finding_ci95": [
+     -0.01423,
+     0.00288
+    ],
+    "floor_abs_W_minus_Wb": 0.00206,
+    "floor_signed_Wb_minus_W": 0.00206,
+    "imported_10M_floor": 0.01407,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   },
+   "gate.skill.bot|draw2": {
+    "finding_S_minus_W_ROW_A": 0.12113,
+    "finding_ci95": [
+     0.057,
+     0.18608
+    ],
+    "floor_abs_W_minus_Wb": 0.0706,
+    "floor_signed_Wb_minus_W": 0.0706,
+    "imported_10M_floor": 0.10037,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "verdict": "WITHIN FLOOR at n = 2",
+    "standing_caveat": "the pair's ROW A is a CRITIC (arm W) against a DIAGNOSTIC (arm S's auxiliary win-prob head at coef 0.05). No floor converts it into a critic-vs-critic statement."
+   }
+  }
+ }
+}

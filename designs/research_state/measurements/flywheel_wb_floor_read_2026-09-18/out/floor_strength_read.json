@@ -1,0 +1,2029 @@
+{
+ "generated_at": "2026-09-18T11:01:56.101307-07:00",
+ "instrument": "snapshot_ladder/ladder.json (dense, +/-10); refits via fit_ladder(write=False)",
+ "imported_floor_elo": 45.0,
+ "imported_floor_provenance": "MAX pairwise |Delta| over the three same-argv 10M controls (45.0 / 35.3 / 9.7) -- a 10M FOUR-NODE floor imported to 75M; this read measures a 75M TWENTY-NODE one beside it",
+ "runs": {
+  "armS": {
+   "run": "ai_v13_01_flywheel_shaped",
+   "human_description": "arm S -- the flywheel pair's SHAPED arm (the era's reward/critic composition, 75M, seed 1001)",
+   "committed_ladder_json": {
+    "computed_at": "2026-09-14T18:23:58.766850+00:00",
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "n_pairs_possible": 190,
+    "eval_sentinel_edges_dropped": 51,
+    "recipe_stamp_present": true,
+    "newest_node_step": 72000000,
+    "newest_node_elo": 2036.6,
+    "second_newest_elo": 2042.3
+   },
+   "current_code_refit": {
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "eval_sentinel_edges_dropped": 51,
+    "newest_node_step": 72000000,
+    "newest_node_elo": 2036.6,
+    "se_newest": 8.9,
+    "second_newest_step": 68000016,
+    "second_newest_elo": 2042.3,
+    "se_second_newest": 8.9,
+    "span_steps": [
+     22000032,
+     72000000
+    ]
+   },
+   "committed_minus_refit_newest": 0.0,
+   "nodes_current_code_refit": [
+    {
+     "step": 22000032,
+     "elo": 1982.7,
+     "se": 8.7
+    },
+    {
+     "step": 24000000,
+     "elo": 1967.8,
+     "se": 8.7
+    },
+    {
+     "step": 26000016,
+     "elo": 2005.6,
+     "se": 8.8
+    },
+    {
+     "step": 28000032,
+     "elo": 1991.3,
+     "se": 8.7
+    },
+    {
+     "step": 30000000,
+     "elo": 1988.9,
+     "se": 8.7
+    },
+    {
+     "step": 32000016,
+     "elo": 2016.2,
+     "se": 8.8
+    },
+    {
+     "step": 34000032,
+     "elo": 2025.2,
+     "se": 8.8
+    },
+    {
+     "step": 36000000,
+     "elo": 2020.9,
+     "se": 8.8
+    },
+    {
+     "step": 38000016,
+     "elo": 2038.5,
+     "se": 8.9
+    },
+    {
+     "step": 40000032,
+     "elo": 2020.2,
+     "se": 8.8
+    },
+    {
+     "step": 42000000,
+     "elo": 2040.0,
+     "se": 8.9
+    },
+    {
+     "step": 44000016,
+     "elo": 2017.7,
+     "se": 8.8
+    },
+    {
+     "step": 46000032,
+     "elo": 2025.6,
+     "se": 8.8
+    },
+    {
+     "step": 48000000,
+     "elo": 2022.4,
+     "se": 8.8
+    },
+    {
+     "step": 50000016,
+     "elo": 2019.6,
+     "se": 8.8
+    },
+    {
+     "step": 54000000,
+     "elo": 2039.1,
+     "se": 8.9
+    },
+    {
+     "step": 56000016,
+     "elo": 2041.9,
+     "se": 8.9
+    },
+    {
+     "step": 62000016,
+     "elo": 2043.5,
+     "se": 8.9
+    },
+    {
+     "step": 68000016,
+     "elo": 2042.3,
+     "se": 8.9
+    },
+    {
+     "step": 72000000,
+     "elo": 2036.6,
+     "se": 8.9
+    }
+   ],
+   "resolution_curve": [
+    {
+     "nodes": 4,
+     "newest_node_step": 28000032,
+     "newest_node_elo": 2012.3,
+     "se": 16.4,
+     "se_delta": 23.19,
+     "ci95_delta": 45.5,
+     "n_frozen_pairs": 6
+    },
+    {
+     "nodes": 6,
+     "newest_node_step": 32000016,
+     "newest_node_elo": 2041.7,
+     "se": 14.7,
+     "se_delta": 20.79,
+     "ci95_delta": 40.7,
+     "n_frozen_pairs": 15
+    },
+    {
+     "nodes": 8,
+     "newest_node_step": 36000000,
+     "newest_node_elo": 2034.3,
+     "se": 13.1,
+     "se_delta": 18.53,
+     "ci95_delta": 36.3,
+     "n_frozen_pairs": 28
+    },
+    {
+     "nodes": 10,
+     "newest_node_step": 40000032,
+     "newest_node_elo": 2026.3,
+     "se": 11.9,
+     "se_delta": 16.83,
+     "ci95_delta": 33.0,
+     "n_frozen_pairs": 45
+    },
+    {
+     "nodes": 12,
+     "newest_node_step": 44000016,
+     "newest_node_elo": 2023.9,
+     "se": 11.0,
+     "se_delta": 15.56,
+     "ci95_delta": 30.5,
+     "n_frozen_pairs": 66
+    },
+    {
+     "nodes": 16,
+     "newest_node_step": 54000000,
+     "newest_node_elo": 2045.6,
+     "se": 9.8,
+     "se_delta": 13.86,
+     "ci95_delta": 27.2,
+     "n_frozen_pairs": 120
+    },
+    {
+     "nodes": 20,
+     "newest_node_step": 72000000,
+     "newest_node_elo": 2036.6,
+     "se": 8.9,
+     "se_delta": 12.59,
+     "ci95_delta": 24.7,
+     "n_frozen_pairs": 190
+    }
+   ],
+   "slopes_newest_node_dropped": {
+    "nodes_used": 19,
+    "late_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 1.1435,
+     "se": 0.4357,
+     "t": 2.62,
+     "resid_rms": 7.334,
+     "span_Mstep": [
+      48.0,
+      68.0
+     ]
+    },
+    "middle_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 0.0214,
+     "se": 1.3016,
+     "t": 0.02,
+     "resid_rms": 10.89,
+     "span_Mstep": [
+      34.0,
+      44.0
+     ]
+    },
+    "all_nodes": {
+     "n": 19,
+     "slope_elo_per_Mstep": 1.3708,
+     "se": 0.2417,
+     "t": 5.67,
+     "resid_rms": 13.368,
+     "span_Mstep": [
+      22.0,
+      68.0
+     ]
+    },
+    "late_minus_middle": {
+     "delta": 1.1221,
+     "se": 1.3726,
+     "ci95": [
+      -1.568,
+      3.812
+     ],
+     "covers_zero": true
+    }
+   },
+   "adjacent_node_spread": {
+    "n": 19,
+    "max_abs_delta": 37.8,
+    "median_abs_delta": 9.0,
+    "mean_abs_delta": 12.2,
+    "caveat": "bounds WITHIN-run wobble only \u2014 it is dominated by early LEARNING and is NOT a run-to-run floor (registration sec 9.1)"
+   }
+  },
+  "armW": {
+   "run": "ai_v13_02_flywheel_winprob",
+   "human_description": "arm W -- the flywheel pair's WIN-PROB arm (V(s) = P(win|s), BCE value loss, 75M, seed 1001)",
+   "committed_ladder_json": {
+    "computed_at": "2026-09-16T10:16:06.134630+00:00",
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "n_pairs_possible": 190,
+    "eval_sentinel_edges_dropped": 48,
+    "recipe_stamp_present": true,
+    "newest_node_step": 72000000,
+    "newest_node_elo": 2019.1,
+    "second_newest_elo": 2032.1
+   },
+   "current_code_refit": {
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "eval_sentinel_edges_dropped": 48,
+    "newest_node_step": 72000000,
+    "newest_node_elo": 2019.1,
+    "se_newest": 8.7,
+    "second_newest_step": 70000032,
+    "second_newest_elo": 2032.1,
+    "se_second_newest": 8.7,
+    "span_steps": [
+     26000016,
+     72000000
+    ]
+   },
+   "committed_minus_refit_newest": 0.0,
+   "nodes_current_code_refit": [
+    {
+     "step": 26000016,
+     "elo": 1972.8,
+     "se": 8.5
+    },
+    {
+     "step": 28000032,
+     "elo": 1950.6,
+     "se": 8.5
+    },
+    {
+     "step": 30000000,
+     "elo": 1950.0,
+     "se": 8.5
+    },
+    {
+     "step": 32000016,
+     "elo": 1967.6,
+     "se": 8.5
+    },
+    {
+     "step": 34000032,
+     "elo": 1978.9,
+     "se": 8.5
+    },
+    {
+     "step": 36000000,
+     "elo": 1965.2,
+     "se": 8.5
+    },
+    {
+     "step": 38000016,
+     "elo": 1971.9,
+     "se": 8.5
+    },
+    {
+     "step": 40000032,
+     "elo": 1977.1,
+     "se": 8.5
+    },
+    {
+     "step": 42000000,
+     "elo": 1999.2,
+     "se": 8.6
+    },
+    {
+     "step": 44000016,
+     "elo": 2000.4,
+     "se": 8.6
+    },
+    {
+     "step": 46000032,
+     "elo": 1999.2,
+     "se": 8.6
+    },
+    {
+     "step": 48000000,
+     "elo": 2004.8,
+     "se": 8.6
+    },
+    {
+     "step": 50000016,
+     "elo": 2000.4,
+     "se": 8.6
+    },
+    {
+     "step": 52000032,
+     "elo": 2007.3,
+     "se": 8.6
+    },
+    {
+     "step": 54000000,
+     "elo": 1993.9,
+     "se": 8.6
+    },
+    {
+     "step": 56000016,
+     "elo": 2008.2,
+     "se": 8.6
+    },
+    {
+     "step": 60000000,
+     "elo": 2000.7,
+     "se": 8.6
+    },
+    {
+     "step": 64000032,
+     "elo": 1975.2,
+     "se": 8.5
+    },
+    {
+     "step": 70000032,
+     "elo": 2032.1,
+     "se": 8.7
+    },
+    {
+     "step": 72000000,
+     "elo": 2019.1,
+     "se": 8.7
+    }
+   ],
+   "resolution_curve": [
+    {
+     "nodes": 4,
+     "newest_node_step": 32000016,
+     "newest_node_elo": 1996.8,
+     "se": 15.8,
+     "se_delta": 22.34,
+     "ci95_delta": 43.8,
+     "n_frozen_pairs": 6
+    },
+    {
+     "nodes": 6,
+     "newest_node_step": 36000000,
+     "newest_node_elo": 1974.9,
+     "se": 13.6,
+     "se_delta": 19.23,
+     "ci95_delta": 37.7,
+     "n_frozen_pairs": 15
+    },
+    {
+     "nodes": 8,
+     "newest_node_step": 40000032,
+     "newest_node_elo": 1978.6,
+     "se": 12.3,
+     "se_delta": 17.39,
+     "ci95_delta": 34.1,
+     "n_frozen_pairs": 28
+    },
+    {
+     "nodes": 10,
+     "newest_node_step": 44000016,
+     "newest_node_elo": 2011.1,
+     "se": 11.6,
+     "se_delta": 16.4,
+     "ci95_delta": 32.2,
+     "n_frozen_pairs": 45
+    },
+    {
+     "nodes": 12,
+     "newest_node_step": 48000000,
+     "newest_node_elo": 2011.2,
+     "se": 10.8,
+     "se_delta": 15.27,
+     "ci95_delta": 29.9,
+     "n_frozen_pairs": 66
+    },
+    {
+     "nodes": 16,
+     "newest_node_step": 56000016,
+     "newest_node_elo": 2020.9,
+     "se": 9.6,
+     "se_delta": 13.58,
+     "ci95_delta": 26.6,
+     "n_frozen_pairs": 120
+    },
+    {
+     "nodes": 20,
+     "newest_node_step": 72000000,
+     "newest_node_elo": 2019.1,
+     "se": 8.7,
+     "se_delta": 12.3,
+     "ci95_delta": 24.1,
+     "n_frozen_pairs": 190
+    }
+   ],
+   "slopes_newest_node_dropped": {
+    "nodes_used": 19,
+    "late_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 0.7797,
+     "se": 1.3264,
+     "t": 0.59,
+     "resid_rms": 20.086,
+     "span_Mstep": [
+      52.0,
+      70.0
+     ]
+    },
+    "middle_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 3.3143,
+     "se": 0.8348,
+     "t": 3.97,
+     "resid_rms": 6.984,
+     "span_Mstep": [
+      38.0,
+      48.0
+     ]
+    },
+    "all_nodes": {
+     "n": 19,
+     "slope_elo_per_Mstep": 1.3327,
+     "se": 0.2646,
+     "t": 5.04,
+     "resid_rms": 14.066,
+     "span_Mstep": [
+      26.0,
+      70.0
+     ]
+    },
+    "late_minus_middle": {
+     "delta": -2.5346,
+     "se": 1.5672,
+     "ci95": [
+      -5.606,
+      0.537
+     ],
+     "covers_zero": true
+    }
+   },
+   "adjacent_node_spread": {
+    "n": 19,
+    "max_abs_delta": 56.9,
+    "median_abs_delta": 11.3,
+    "mean_abs_delta": 13.1,
+    "caveat": "bounds WITHIN-run wobble only \u2014 it is dominated by early LEARNING and is NOT a run-to-run floor (registration sec 9.1)"
+   }
+  },
+  "armWb": {
+   "run": "ai_v13_04_flywheel_winprob_b",
+   "human_description": "W_b -- arm W's TOKEN-EXACT SEED REPLICATE (same argv but 1001 -> 1002 + the run name, 75M)",
+   "committed_ladder_json": {
+    "computed_at": "2026-09-18T17:07:04.046472+00:00",
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "n_pairs_possible": 190,
+    "eval_sentinel_edges_dropped": 47,
+    "recipe_stamp_present": true,
+    "newest_node_step": 74000016,
+    "newest_node_elo": 2044.3,
+    "second_newest_elo": 2049.7
+   },
+   "current_code_refit": {
+    "n_nodes": 20,
+    "n_frozen_pairs_measured": 190,
+    "eval_sentinel_edges_dropped": 47,
+    "newest_node_step": 74000016,
+    "newest_node_elo": 2044.3,
+    "se_newest": 8.9,
+    "second_newest_step": 72000000,
+    "second_newest_elo": 2049.7,
+    "se_second_newest": 8.9,
+    "span_steps": [
+     36000000,
+     74000016
+    ]
+   },
+   "committed_minus_refit_newest": 0.0,
+   "nodes_current_code_refit": [
+    {
+     "step": 36000000,
+     "elo": 1991.5,
+     "se": 8.8
+    },
+    {
+     "step": 38000016,
+     "elo": 1999.9,
+     "se": 8.8
+    },
+    {
+     "step": 40000032,
+     "elo": 2004.6,
+     "se": 8.8
+    },
+    {
+     "step": 42000000,
+     "elo": 2009.9,
+     "se": 8.8
+    },
+    {
+     "step": 44000016,
+     "elo": 2023.3,
+     "se": 8.9
+    },
+    {
+     "step": 46000032,
+     "elo": 2025.5,
+     "se": 8.9
+    },
+    {
+     "step": 48000000,
+     "elo": 2013.9,
+     "se": 8.8
+    },
+    {
+     "step": 50000016,
+     "elo": 2014.2,
+     "se": 8.8
+    },
+    {
+     "step": 52000032,
+     "elo": 2038.3,
+     "se": 8.9
+    },
+    {
+     "step": 54000000,
+     "elo": 2020.1,
+     "se": 8.8
+    },
+    {
+     "step": 56000016,
+     "elo": 2033.9,
+     "se": 8.9
+    },
+    {
+     "step": 58000032,
+     "elo": 2040.5,
+     "se": 8.9
+    },
+    {
+     "step": 60000000,
+     "elo": 2044.6,
+     "se": 8.9
+    },
+    {
+     "step": 62000016,
+     "elo": 2030.8,
+     "se": 8.9
+    },
+    {
+     "step": 64000032,
+     "elo": 2035.2,
+     "se": 8.9
+    },
+    {
+     "step": 66000000,
+     "elo": 2028.0,
+     "se": 8.9
+    },
+    {
+     "step": 68000016,
+     "elo": 2050.7,
+     "se": 8.9
+    },
+    {
+     "step": 70000032,
+     "elo": 2038.6,
+     "se": 8.9
+    },
+    {
+     "step": 72000000,
+     "elo": 2049.7,
+     "se": 8.9
+    },
+    {
+     "step": 74000016,
+     "elo": 2044.3,
+     "se": 8.9
+    }
+   ],
+   "resolution_curve": [
+    {
+     "nodes": 4,
+     "newest_node_step": 42000000,
+     "newest_node_elo": 2059.4,
+     "se": 17.4,
+     "se_delta": 24.61,
+     "ci95_delta": 48.2,
+     "n_frozen_pairs": 6
+    },
+    {
+     "nodes": 6,
+     "newest_node_step": 46000032,
+     "newest_node_elo": 2051.8,
+     "se": 15.0,
+     "se_delta": 21.21,
+     "ci95_delta": 41.6,
+     "n_frozen_pairs": 15
+    },
+    {
+     "nodes": 8,
+     "newest_node_step": 50000016,
+     "newest_node_elo": 2045.6,
+     "se": 13.3,
+     "se_delta": 18.81,
+     "ci95_delta": 36.9,
+     "n_frozen_pairs": 28
+    },
+    {
+     "nodes": 10,
+     "newest_node_step": 54000000,
+     "newest_node_elo": 2042.1,
+     "se": 12.2,
+     "se_delta": 17.25,
+     "ci95_delta": 33.8,
+     "n_frozen_pairs": 45
+    },
+    {
+     "nodes": 12,
+     "newest_node_step": 58000032,
+     "newest_node_elo": 2049.4,
+     "se": 11.3,
+     "se_delta": 15.98,
+     "ci95_delta": 31.3,
+     "n_frozen_pairs": 66
+    },
+    {
+     "nodes": 16,
+     "newest_node_step": 66000000,
+     "newest_node_elo": 2034.5,
+     "se": 9.8,
+     "se_delta": 13.86,
+     "ci95_delta": 27.2,
+     "n_frozen_pairs": 120
+    },
+    {
+     "nodes": 20,
+     "newest_node_step": 74000016,
+     "newest_node_elo": 2044.3,
+     "se": 8.9,
+     "se_delta": 12.59,
+     "ci95_delta": 24.7,
+     "n_frozen_pairs": 190
+    }
+   ],
+   "slopes_newest_node_dropped": {
+    "nodes_used": 19,
+    "late_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 1.82,
+     "se": 0.8908,
+     "t": 2.04,
+     "resid_rms": 7.453,
+     "span_Mstep": [
+      62.0,
+      72.0
+     ]
+    },
+    "middle_third": {
+     "n": 6,
+     "slope_elo_per_Mstep": 2.4843,
+     "se": 1.0495,
+     "t": 2.37,
+     "resid_rms": 8.781,
+     "span_Mstep": [
+      48.0,
+      58.0
+     ]
+    },
+    "all_nodes": {
+     "n": 19,
+     "slope_elo_per_Mstep": 1.3032,
+     "se": 0.18,
+     "t": 7.24,
+     "resid_rms": 8.596,
+     "span_Mstep": [
+      36.0,
+      72.0
+     ]
+    },
+    "late_minus_middle": {
+     "delta": -0.6643,
+     "se": 1.3766,
+     "ci95": [
+      -3.362,
+      2.034
+     ],
+     "covers_zero": true
+    }
+   },
+   "adjacent_node_spread": {
+    "n": 19,
+    "max_abs_delta": 24.1,
+    "median_abs_delta": 8.4,
+    "mean_abs_delta": 10.0,
+    "caveat": "bounds WITHIN-run wobble only \u2014 it is dominated by early LEARNING and is NOT a run-to-run floor (registration sec 9.1)"
+   }
+  }
+ },
+ "cross_run": {
+  "armW_vs_armWb_THE_FLOOR": {
+   "newest": {
+    "a_elo": 2019.1,
+    "b_elo": 2044.3,
+    "a_step": 72000000,
+    "b_step": 74000016,
+    "delta_elo": -25.2,
+    "se_delta": 12.45,
+    "ci95": [
+     -49.6,
+     -0.8
+    ],
+    "smallest_claimable_abs_delta": 69.4,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "second_newest": {
+    "a_elo": 2032.1,
+    "b_elo": 2049.7,
+    "a_step": 70000032,
+    "b_step": 72000000,
+    "delta_elo": -17.6,
+    "se_delta": 12.45,
+    "ci95": [
+     -42.0,
+     6.8
+    ],
+    "smallest_claimable_abs_delta": 69.4,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "matched_count": [
+    20,
+    20
+   ],
+   "step_spans": [
+    [
+     26000016,
+     72000000
+    ],
+    [
+     36000000,
+     74000016
+    ]
+   ],
+   "label": "THE 75M RUN-LEVEL FLOOR -- arm W minus W_b (seed 1001 minus seed 1002)",
+   "confounds": "TOKEN-EXACT seed replicate: the argv multiset differs by 1001 -> 1002 plus the run name (231 -> 231 tokens). Same pin 6eb9c776 for all 75,005,952 steps on both, same declared dose, same --ent-coef 0.05, same eval regime DECLARED source=argv on both, both role: fresh, both crossed self-play at the identical 4,128,768, both retain 20 nodes. |Delta| here IS the run-level floor for this row -- ONE realisation of it, with no CI."
+  },
+  "armS_vs_armW_THE_PAIR": {
+   "newest": {
+    "a_elo": 2036.6,
+    "b_elo": 2019.1,
+    "a_step": 72000000,
+    "b_step": 72000000,
+    "delta_elo": 17.5,
+    "se_delta": 12.45,
+    "ci95": [
+     -6.9,
+     41.9
+    ],
+    "smallest_claimable_abs_delta": 69.4,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "second_newest": {
+    "a_elo": 2042.3,
+    "b_elo": 2032.1,
+    "a_step": 68000016,
+    "b_step": 70000032,
+    "delta_elo": 10.2,
+    "se_delta": 12.45,
+    "ci95": [
+     -14.2,
+     34.6
+    ],
+    "smallest_claimable_abs_delta": 69.4,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "matched_count": [
+    20,
+    20
+   ],
+   "step_spans": [
+    [
+     22000032,
+     72000000
+    ],
+    [
+     26000016,
+     72000000
+    ]
+   ],
+   "label": "THE PAIR -- arm S (shaped) minus arm W (win-prob)",
+   "confounds": "MATCHED on pin, declared dose, length, seed slot, --ent-coef, eval regime, architecture and ecology; the treatment is the critic objective. UNMATCHED on REALIZED dose (H-F, 1.44x in arm S's favour). Reproduced here from the same code path as the pair read."
+  },
+  "armS_vs_armWb": {
+   "newest": {
+    "a_elo": 2036.6,
+    "b_elo": 2044.3,
+    "a_step": 72000000,
+    "b_step": 74000016,
+    "delta_elo": -7.7,
+    "se_delta": 12.59,
+    "ci95": [
+     -32.4,
+     17.0
+    ],
+    "smallest_claimable_abs_delta": 69.7,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "second_newest": {
+    "a_elo": 2042.3,
+    "b_elo": 2049.7,
+    "a_step": 68000016,
+    "b_step": 72000000,
+    "delta_elo": -7.4,
+    "se_delta": 12.59,
+    "ci95": [
+     -32.1,
+     17.3
+    ],
+    "smallest_claimable_abs_delta": 69.7,
+    "verdict": "NOT DETECTED",
+    "verdict_note": "NOT DETECTED is never 'equivalent' \u2014 rule 6: equivalence needs the delta's own CI INSIDE the bar, and the 45.0 floor is imported from 10M four-node depth"
+   },
+   "matched_count": [
+    20,
+    20
+   ],
+   "step_spans": [
+    [
+     22000032,
+     72000000
+    ],
+    [
+     36000000,
+     74000016
+    ]
+   ],
+   "label": "arm S minus W_b -- the pair's contrast taken against the OTHER seed",
+   "confounds": "The same treatment contrast as the pair row, but against arm W's seed replicate. If the sign or magnitude moves materially between armS_vs_armW and armS_vs_armWb, that IS the floor biting on the finding."
+  }
+ },
+ "common_step_refit": {
+  "armW_vs_armWb": {
+   "n_common": 15,
+   "common_steps": [
+    36000000,
+    38000016,
+    40000032,
+    42000000,
+    44000016,
+    46000032,
+    48000000,
+    50000016,
+    52000032,
+    54000000,
+    56000016,
+    60000000,
+    64000032,
+    70000032,
+    72000000
+   ],
+   "reportable": true,
+   "floor_note": "the registration says n >= 12 is the floor below which the read is not reported at all",
+   "fits": {
+    "a": {
+     "run": "ai_v13_02_flywheel_winprob",
+     "n_nodes": 15,
+     "nodes": [
+      {
+       "step": 36000000,
+       "elo": 1960.1,
+       "se": 9.6
+      },
+      {
+       "step": 38000016,
+       "elo": 1967.5,
+       "se": 9.6
+      },
+      {
+       "step": 40000032,
+       "elo": 1978.4,
+       "se": 9.7
+      },
+      {
+       "step": 42000000,
+       "elo": 1987.0,
+       "se": 9.7
+      },
+      {
+       "step": 44000016,
+       "elo": 1996.1,
+       "se": 9.7
+      },
+      {
+       "step": 46000032,
+       "elo": 1998.9,
+       "se": 9.7
+      },
+      {
+       "step": 48000000,
+       "elo": 1998.1,
+       "se": 9.7
+      },
+      {
+       "step": 50000016,
+       "elo": 1998.9,
+       "se": 9.7
+      },
+      {
+       "step": 52000032,
+       "elo": 1996.5,
+       "se": 9.7
+      },
+      {
+       "step": 54000000,
+       "elo": 1985.1,
+       "se": 9.7
+      },
+      {
+       "step": 56000016,
+       "elo": 2000.5,
+       "se": 9.7
+      },
+      {
+       "step": 60000000,
+       "elo": 1995.3,
+       "se": 9.7
+      },
+      {
+       "step": 64000032,
+       "elo": 1973.3,
+       "se": 9.6
+      },
+      {
+       "step": 70000032,
+       "elo": 2023.7,
+       "se": 9.9
+      },
+      {
+       "step": 72000000,
+       "elo": 2011.6,
+       "se": 9.8
+      }
+     ],
+     "newest_step": 72000000,
+     "newest_elo": 2011.6,
+     "se_newest": 9.8,
+     "second_newest_step": 70000032,
+     "second_newest_elo": 2023.7,
+     "se_second_newest": 9.9
+    },
+    "b": {
+     "run": "ai_v13_04_flywheel_winprob_b",
+     "n_nodes": 15,
+     "nodes": [
+      {
+       "step": 36000000,
+       "elo": 1998.5,
+       "se": 10.0
+      },
+      {
+       "step": 38000016,
+       "elo": 2013.7,
+       "se": 10.1
+      },
+      {
+       "step": 40000032,
+       "elo": 2018.6,
+       "se": 10.1
+      },
+      {
+       "step": 42000000,
+       "elo": 2013.7,
+       "se": 10.1
+      },
+      {
+       "step": 44000016,
+       "elo": 2041.6,
+       "se": 10.2
+      },
+      {
+       "step": 46000032,
+       "elo": 2037.2,
+       "se": 10.2
+      },
+      {
+       "step": 48000000,
+       "elo": 2019.8,
+       "se": 10.1
+      },
+      {
+       "step": 50000016,
+       "elo": 2029.5,
+       "se": 10.1
+      },
+      {
+       "step": 52000032,
+       "elo": 2054.8,
+       "se": 10.2
+      },
+      {
+       "step": 54000000,
+       "elo": 2033.5,
+       "se": 10.1
+      },
+      {
+       "step": 56000016,
+       "elo": 2048.6,
+       "se": 10.2
+      },
+      {
+       "step": 60000000,
+       "elo": 2049.8,
+       "se": 10.2
+      },
+      {
+       "step": 64000032,
+       "elo": 2043.7,
+       "se": 10.2
+      },
+      {
+       "step": 70000032,
+       "elo": 2046.5,
+       "se": 10.2
+      },
+      {
+       "step": 72000000,
+       "elo": 2064.7,
+       "se": 10.3
+      }
+     ],
+     "newest_step": 72000000,
+     "newest_elo": 2064.7,
+     "se_newest": 10.3,
+     "second_newest_step": 70000032,
+     "second_newest_elo": 2046.5,
+     "se_second_newest": 10.2
+    }
+   },
+   "newest": {
+    "delta_elo": -53.1,
+    "se_delta": 14.22,
+    "ci95": [
+     -81.0,
+     -25.2
+    ],
+    "smallest_claimable_abs_delta": 72.9,
+    "verdict": "NOT DETECTED"
+   },
+   "second_newest": {
+    "delta_elo": -22.8,
+    "se_delta": 14.21,
+    "ci95": [
+     -50.7,
+     5.1
+    ],
+    "smallest_claimable_abs_delta": 72.9,
+    "verdict": "NOT DETECTED"
+   }
+  },
+  "armS_vs_armW": {
+   "n_common": 16,
+   "common_steps": [
+    26000016,
+    28000032,
+    30000000,
+    32000016,
+    34000032,
+    36000000,
+    38000016,
+    40000032,
+    42000000,
+    44000016,
+    46000032,
+    48000000,
+    50000016,
+    54000000,
+    56000016,
+    72000000
+   ],
+   "reportable": true,
+   "floor_note": "the registration says n >= 12 is the floor below which the read is not reported at all",
+   "fits": {
+    "a": {
+     "run": "ai_v13_01_flywheel_shaped",
+     "n_nodes": 16,
+     "nodes": [
+      {
+       "step": 26000016,
+       "elo": 2003.9,
+       "se": 9.7
+      },
+      {
+       "step": 28000032,
+       "elo": 1985.4,
+       "se": 9.6
+      },
+      {
+       "step": 30000000,
+       "elo": 1987.7,
+       "se": 9.6
+      },
+      {
+       "step": 32000016,
+       "elo": 2012.2,
+       "se": 9.7
+      },
+      {
+       "step": 34000032,
+       "elo": 2020.5,
+       "se": 9.7
+      },
+      {
+       "step": 36000000,
+       "elo": 2023.9,
+       "se": 9.7
+      },
+      {
+       "step": 38000016,
+       "elo": 2039.3,
+       "se": 9.8
+      },
+      {
+       "step": 40000032,
+       "elo": 2012.2,
+       "se": 9.7
+      },
+      {
+       "step": 42000000,
+       "elo": 2039.3,
+       "se": 9.8
+      },
+      {
+       "step": 44000016,
+       "elo": 2022.4,
+       "se": 9.7
+      },
+      {
+       "step": 46000032,
+       "elo": 2020.5,
+       "se": 9.7
+      },
+      {
+       "step": 48000000,
+       "elo": 2018.6,
+       "se": 9.7
+      },
+      {
+       "step": 50000016,
+       "elo": 2011.4,
+       "se": 9.7
+      },
+      {
+       "step": 54000000,
+       "elo": 2033.5,
+       "se": 9.8
+      },
+      {
+       "step": 56000016,
+       "elo": 2040.4,
+       "se": 9.8
+      },
+      {
+       "step": 72000000,
+       "elo": 2032.3,
+       "se": 9.8
+      }
+     ],
+     "newest_step": 72000000,
+     "newest_elo": 2032.3,
+     "se_newest": 9.8,
+     "second_newest_step": 56000016,
+     "second_newest_elo": 2040.4,
+     "se_second_newest": 9.8
+    },
+    "b": {
+     "run": "ai_v13_02_flywheel_winprob",
+     "n_nodes": 16,
+     "nodes": [
+      {
+       "step": 26000016,
+       "elo": 1974.7,
+       "se": 9.4
+      },
+      {
+       "step": 28000032,
+       "elo": 1955.6,
+       "se": 9.3
+      },
+      {
+       "step": 30000000,
+       "elo": 1962.6,
+       "se": 9.3
+      },
+      {
+       "step": 32000016,
+       "elo": 1977.7,
+       "se": 9.4
+      },
+      {
+       "step": 34000032,
+       "elo": 1981.8,
+       "se": 9.4
+      },
+      {
+       "step": 36000000,
+       "elo": 1972.2,
+       "se": 9.4
+      },
+      {
+       "step": 38000016,
+       "elo": 1982.5,
+       "se": 9.4
+      },
+      {
+       "step": 40000032,
+       "elo": 1982.9,
+       "se": 9.4
+      },
+      {
+       "step": 42000000,
+       "elo": 2005.0,
+       "se": 9.5
+      },
+      {
+       "step": 44000016,
+       "elo": 2009.2,
+       "se": 9.5
+      },
+      {
+       "step": 46000032,
+       "elo": 2000.1,
+       "se": 9.5
+      },
+      {
+       "step": 48000000,
+       "elo": 2012.2,
+       "se": 9.5
+      },
+      {
+       "step": 50000016,
+       "elo": 2000.5,
+       "se": 9.5
+      },
+      {
+       "step": 54000000,
+       "elo": 1993.3,
+       "se": 9.5
+      },
+      {
+       "step": 56000016,
+       "elo": 2021.7,
+       "se": 9.6
+      },
+      {
+       "step": 72000000,
+       "elo": 2025.6,
+       "se": 9.6
+      }
+     ],
+     "newest_step": 72000000,
+     "newest_elo": 2025.6,
+     "se_newest": 9.6,
+     "second_newest_step": 56000016,
+     "second_newest_elo": 2021.7,
+     "se_second_newest": 9.6
+    }
+   },
+   "newest": {
+    "delta_elo": 6.7,
+    "se_delta": 13.72,
+    "ci95": [
+     -20.2,
+     33.6
+    ],
+    "smallest_claimable_abs_delta": 71.9,
+    "verdict": "NOT DETECTED"
+   },
+   "second_newest": {
+    "delta_elo": 18.7,
+    "se_delta": 13.72,
+    "ci95": [
+     -8.2,
+     45.6
+    ],
+    "smallest_claimable_abs_delta": 71.9,
+    "verdict": "NOT DETECTED"
+   }
+  },
+  "armS_vs_armWb": {
+   "n_common": 13,
+   "common_steps": [
+    36000000,
+    38000016,
+    40000032,
+    42000000,
+    44000016,
+    46000032,
+    48000000,
+    50000016,
+    54000000,
+    56000016,
+    62000016,
+    68000016,
+    72000000
+   ],
+   "reportable": true,
+   "floor_note": "the registration says n >= 12 is the floor below which the read is not reported at all",
+   "fits": {
+    "a": {
+     "run": "ai_v13_01_flywheel_shaped",
+     "n_nodes": 13,
+     "nodes": [
+      {
+       "step": 36000000,
+       "elo": 2009.1,
+       "se": 10.6
+      },
+      {
+       "step": 38000016,
+       "elo": 2033.7,
+       "se": 10.7
+      },
+      {
+       "step": 40000032,
+       "elo": 2003.7,
+       "se": 10.6
+      },
+      {
+       "step": 42000000,
+       "elo": 2030.9,
+       "se": 10.7
+      },
+      {
+       "step": 44000016,
+       "elo": 2011.4,
+       "se": 10.6
+      },
+      {
+       "step": 46000032,
+       "elo": 2014.6,
+       "se": 10.6
+      },
+      {
+       "step": 48000000,
+       "elo": 2008.2,
+       "se": 10.6
+      },
+      {
+       "step": 50000016,
+       "elo": 2008.7,
+       "se": 10.6
+      },
+      {
+       "step": 54000000,
+       "elo": 2026.4,
+       "se": 10.7
+      },
+      {
+       "step": 56000016,
+       "elo": 2032.3,
+       "se": 10.7
+      },
+      {
+       "step": 62000016,
+       "elo": 2036.5,
+       "se": 10.7
+      },
+      {
+       "step": 68000016,
+       "elo": 2030.5,
+       "se": 10.7
+      },
+      {
+       "step": 72000000,
+       "elo": 2030.0,
+       "se": 10.7
+      }
+     ],
+     "newest_step": 72000000,
+     "newest_elo": 2030.0,
+     "se_newest": 10.7,
+     "second_newest_step": 68000016,
+     "second_newest_elo": 2030.5,
+     "se_second_newest": 10.7
+    },
+    "b": {
+     "run": "ai_v13_04_flywheel_winprob_b",
+     "n_nodes": 13,
+     "nodes": [
+      {
+       "step": 36000000,
+       "elo": 1994.6,
+       "se": 10.6
+      },
+      {
+       "step": 38000016,
+       "elo": 2012.7,
+       "se": 10.7
+      },
+      {
+       "step": 40000032,
+       "elo": 2029.1,
+       "se": 10.8
+      },
+      {
+       "step": 42000000,
+       "elo": 2022.7,
+       "se": 10.7
+      },
+      {
+       "step": 44000016,
+       "elo": 2034.6,
+       "se": 10.8
+      },
+      {
+       "step": 46000032,
+       "elo": 2033.2,
+       "se": 10.8
+      },
+      {
+       "step": 48000000,
+       "elo": 2024.5,
+       "se": 10.7
+      },
+      {
+       "step": 50000016,
+       "elo": 2019.5,
+       "se": 10.7
+      },
+      {
+       "step": 54000000,
+       "elo": 2029.1,
+       "se": 10.8
+      },
+      {
+       "step": 56000016,
+       "elo": 2051.3,
+       "se": 10.9
+      },
+      {
+       "step": 62000016,
+       "elo": 2042.9,
+       "se": 10.8
+      },
+      {
+       "step": 68000016,
+       "elo": 2065.4,
+       "se": 11.0
+      },
+      {
+       "step": 72000000,
+       "elo": 2062.5,
+       "se": 10.9
+      }
+     ],
+     "newest_step": 72000000,
+     "newest_elo": 2062.5,
+     "se_newest": 10.9,
+     "second_newest_step": 68000016,
+     "second_newest_elo": 2065.4,
+     "se_second_newest": 11.0
+    }
+   },
+   "newest": {
+    "delta_elo": -32.5,
+    "se_delta": 15.27,
+    "ci95": [
+     -62.4,
+     -2.6
+    ],
+    "smallest_claimable_abs_delta": 74.9,
+    "verdict": "NOT DETECTED"
+   },
+   "second_newest": {
+    "delta_elo": -34.9,
+    "se_delta": 15.35,
+    "ci95": [
+     -65.0,
+     -4.8
+    ],
+    "smallest_claimable_abs_delta": 75.1,
+    "verdict": "NOT DETECTED"
+   }
+  }
+ },
+ "floor_verdicts": {
+  "strength_newest_node": {
+   "finding_delta_S_minus_W": 17.5,
+   "finding_ci95": [
+    -6.9,
+    41.9
+   ],
+   "floor_abs_W_minus_Wb": 25.2,
+   "floor_signed_Wb_minus_W": 25.2,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": false,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "caveats": [
+    "one replicate pair BOUNDS a floor; it does not estimate one (rules 19/22) -- no CI attaches to the floor",
+    "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+    "the 1.44x realized-dose gap (H-F) confounds S and is NOT measured by W_b, so clearing the floor does not clear the dose"
+   ]
+  },
+  "strength_second_newest_node": {
+   "finding_delta_S_minus_W": 10.2,
+   "finding_ci95": [
+    -14.2,
+    34.6
+   ],
+   "floor_abs_W_minus_Wb": 17.6,
+   "floor_signed_Wb_minus_W": 17.6,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": false,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "caveats": [
+    "one replicate pair BOUNDS a floor; it does not estimate one (rules 19/22) -- no CI attaches to the floor",
+    "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+    "the 1.44x realized-dose gap (H-F) confounds S and is NOT measured by W_b, so clearing the floor does not clear the dose"
+   ]
+  },
+  "strength_common_step_newest": {
+   "finding_delta_S_minus_W": 6.7,
+   "finding_ci95": [
+    -20.2,
+    33.6
+   ],
+   "floor_abs_W_minus_Wb": 53.1,
+   "floor_signed_Wb_minus_W": 53.1,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": true,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "caveats": [
+    "one replicate pair BOUNDS a floor; it does not estimate one (rules 19/22) -- no CI attaches to the floor",
+    "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+    "the 1.44x realized-dose gap (H-F) confounds S and is NOT measured by W_b, so clearing the floor does not clear the dose"
+   ]
+  }
+ },
+ "node_by_node_matched_count": [
+  {
+   "k": 1,
+   "armS_step": 22000032,
+   "armS_elo": 1982.7,
+   "armW_step": 26000016,
+   "armW_elo": 1972.8,
+   "armWb_step": 36000000,
+   "armWb_elo": 1991.5,
+   "S_minus_W": 9.9,
+   "W_minus_Wb": -18.7
+  },
+  {
+   "k": 2,
+   "armS_step": 24000000,
+   "armS_elo": 1967.8,
+   "armW_step": 28000032,
+   "armW_elo": 1950.6,
+   "armWb_step": 38000016,
+   "armWb_elo": 1999.9,
+   "S_minus_W": 17.2,
+   "W_minus_Wb": -49.3
+  },
+  {
+   "k": 3,
+   "armS_step": 26000016,
+   "armS_elo": 2005.6,
+   "armW_step": 30000000,
+   "armW_elo": 1950.0,
+   "armWb_step": 40000032,
+   "armWb_elo": 2004.6,
+   "S_minus_W": 55.6,
+   "W_minus_Wb": -54.6
+  },
+  {
+   "k": 4,
+   "armS_step": 28000032,
+   "armS_elo": 1991.3,
+   "armW_step": 32000016,
+   "armW_elo": 1967.6,
+   "armWb_step": 42000000,
+   "armWb_elo": 2009.9,
+   "S_minus_W": 23.7,
+   "W_minus_Wb": -42.3
+  },
+  {
+   "k": 5,
+   "armS_step": 30000000,
+   "armS_elo": 1988.9,
+   "armW_step": 34000032,
+   "armW_elo": 1978.9,
+   "armWb_step": 44000016,
+   "armWb_elo": 2023.3,
+   "S_minus_W": 10.0,
+   "W_minus_Wb": -44.4
+  },
+  {
+   "k": 6,
+   "armS_step": 32000016,
+   "armS_elo": 2016.2,
+   "armW_step": 36000000,
+   "armW_elo": 1965.2,
+   "armWb_step": 46000032,
+   "armWb_elo": 2025.5,
+   "S_minus_W": 51.0,
+   "W_minus_Wb": -60.3
+  },
+  {
+   "k": 7,
+   "armS_step": 34000032,
+   "armS_elo": 2025.2,
+   "armW_step": 38000016,
+   "armW_elo": 1971.9,
+   "armWb_step": 48000000,
+   "armWb_elo": 2013.9,
+   "S_minus_W": 53.3,
+   "W_minus_Wb": -42.0
+  },
+  {
+   "k": 8,
+   "armS_step": 36000000,
+   "armS_elo": 2020.9,
+   "armW_step": 40000032,
+   "armW_elo": 1977.1,
+   "armWb_step": 50000016,
+   "armWb_elo": 2014.2,
+   "S_minus_W": 43.8,
+   "W_minus_Wb": -37.1
+  },
+  {
+   "k": 9,
+   "armS_step": 38000016,
+   "armS_elo": 2038.5,
+   "armW_step": 42000000,
+   "armW_elo": 1999.2,
+   "armWb_step": 52000032,
+   "armWb_elo": 2038.3,
+   "S_minus_W": 39.3,
+   "W_minus_Wb": -39.1
+  },
+  {
+   "k": 10,
+   "armS_step": 40000032,
+   "armS_elo": 2020.2,
+   "armW_step": 44000016,
+   "armW_elo": 2000.4,
+   "armWb_step": 54000000,
+   "armWb_elo": 2020.1,
+   "S_minus_W": 19.8,
+   "W_minus_Wb": -19.7
+  },
+  {
+   "k": 11,
+   "armS_step": 42000000,
+   "armS_elo": 2040.0,
+   "armW_step": 46000032,
+   "armW_elo": 1999.2,
+   "armWb_step": 56000016,
+   "armWb_elo": 2033.9,
+   "S_minus_W": 40.8,
+   "W_minus_Wb": -34.7
+  },
+  {
+   "k": 12,
+   "armS_step": 44000016,
+   "armS_elo": 2017.7,
+   "armW_step": 48000000,
+   "armW_elo": 2004.8,
+   "armWb_step": 58000032,
+   "armWb_elo": 2040.5,
+   "S_minus_W": 12.9,
+   "W_minus_Wb": -35.7
+  },
+  {
+   "k": 13,
+   "armS_step": 46000032,
+   "armS_elo": 2025.6,
+   "armW_step": 50000016,
+   "armW_elo": 2000.4,
+   "armWb_step": 60000000,
+   "armWb_elo": 2044.6,
+   "S_minus_W": 25.2,
+   "W_minus_Wb": -44.2
+  },
+  {
+   "k": 14,
+   "armS_step": 48000000,
+   "armS_elo": 2022.4,
+   "armW_step": 52000032,
+   "armW_elo": 2007.3,
+   "armWb_step": 62000016,
+   "armWb_elo": 2030.8,
+   "S_minus_W": 15.1,
+   "W_minus_Wb": -23.5
+  },
+  {
+   "k": 15,
+   "armS_step": 50000016,
+   "armS_elo": 2019.6,
+   "armW_step": 54000000,
+   "armW_elo": 1993.9,
+   "armWb_step": 64000032,
+   "armWb_elo": 2035.2,
+   "S_minus_W": 25.7,
+   "W_minus_Wb": -41.3
+  },
+  {
+   "k": 16,
+   "armS_step": 54000000,
+   "armS_elo": 2039.1,
+   "armW_step": 56000016,
+   "armW_elo": 2008.2,
+   "armWb_step": 66000000,
+   "armWb_elo": 2028.0,
+   "S_minus_W": 30.9,
+   "W_minus_Wb": -19.8
+  },
+  {
+   "k": 17,
+   "armS_step": 56000016,
+   "armS_elo": 2041.9,
+   "armW_step": 60000000,
+   "armW_elo": 2000.7,
+   "armWb_step": 68000016,
+   "armWb_elo": 2050.7,
+   "S_minus_W": 41.2,
+   "W_minus_Wb": -50.0
+  },
+  {
+   "k": 18,
+   "armS_step": 62000016,
+   "armS_elo": 2043.5,
+   "armW_step": 64000032,
+   "armW_elo": 1975.2,
+   "armWb_step": 70000032,
+   "armWb_elo": 2038.6,
+   "S_minus_W": 68.3,
+   "W_minus_Wb": -63.4
+  },
+  {
+   "k": 19,
+   "armS_step": 68000016,
+   "armS_elo": 2042.3,
+   "armW_step": 70000032,
+   "armW_elo": 2032.1,
+   "armWb_step": 72000000,
+   "armWb_elo": 2049.7,
+   "S_minus_W": 10.2,
+   "W_minus_Wb": -17.6
+  },
+  {
+   "k": 20,
+   "armS_step": 72000000,
+   "armS_elo": 2036.6,
+   "armW_step": 72000000,
+   "armW_elo": 2019.1,
+   "armWb_step": 74000016,
+   "armWb_elo": 2044.3,
+   "S_minus_W": 17.5,
+   "W_minus_Wb": -25.2
+  }
+ ],
+ "three_way_common_steps": {
+  "n": 11,
+  "steps": [
+   36000000,
+   38000016,
+   40000032,
+   42000000,
+   44000016,
+   46000032,
+   48000000,
+   50000016,
+   54000000,
+   56000016,
+   72000000
+  ],
+  "fits": {
+   "armS": {
+    "nodes": [
+     {
+      "step": 36000000,
+      "elo": 2016.5,
+      "se": 11.4
+     },
+     {
+      "step": 38000016,
+      "elo": 2039.1,
+      "se": 11.5
+     },
+     {
+      "step": 40000032,
+      "elo": 2004.1,
+      "se": 11.3
+     },
+     {
+      "step": 42000000,
+      "elo": 2038.6,
+      "se": 11.5
+     },
+     {
+      "step": 44000016,
+      "elo": 2020.2,
+      "se": 11.4
+     },
+     {
+      "step": 46000032,
+      "elo": 2017.6,
+      "se": 11.4
+     },
+     {
+      "step": 48000000,
+      "elo": 2010.3,
+      "se": 11.4
+     },
+     {
+      "step": 50000016,
+      "elo": 2009.8,
+      "se": 11.4
+     },
+     {
+      "step": 54000000,
+      "elo": 2030.1,
+      "se": 11.5
+     },
+     {
+      "step": 56000016,
+      "elo": 2041.3,
+      "se": 11.6
+     },
+     {
+      "step": 72000000,
+      "elo": 2031.7,
+      "se": 11.5
+     }
+    ],
+    "newest_step": 72000000,
+    "newest_elo": 2031.7,
+    "se_newest": 11.5
+   },
+   "armW": {
+    "nodes": [
+     {
+      "step": 36000000,
+      "elo": 1968.4,
+      "se": 10.9
+     },
+     {
+      "step": 38000016,
+      "elo": 1981.0,
+      "se": 11.0
+     },
+     {
+      "step": 40000032,
+      "elo": 1987.1,
+      "se": 11.0
+     },
+     {
+      "step": 42000000,
+      "elo": 1991.7,
+      "se": 11.1
+     },
+     {
+      "step": 44000016,
+      "elo": 2007.1,
+      "se": 11.2
+     },
+     {
+      "step": 46000032,
+      "elo": 2000.4,
+      "se": 11.1
+     },
+     {
+      "step": 48000000,
+      "elo": 2006.6,
+      "se": 11.2
+     },
+     {
+      "step": 50000016,
+      "elo": 1998.9,
+      "se": 11.1
+     },
+     {
+      "step": 54000000,
+      "elo": 1982.0,
+      "se": 11.0
+     },
+     {
+      "step": 56000016,
+      "elo": 2017.0,
+      "se": 11.2
+     },
+     {
+      "step": 72000000,
+      "elo": 2018.5,
+      "se": 11.3
+     }
+    ],
+    "newest_step": 72000000,
+    "newest_elo": 2018.5,
+    "se_newest": 11.3
+   },
+   "armWb": {
+    "nodes": [
+     {
+      "step": 36000000,
+      "elo": 1997.0,
+      "se": 11.4
+     },
+     {
+      "step": 38000016,
+      "elo": 2021.0,
+      "se": 11.5
+     },
+     {
+      "step": 40000032,
+      "elo": 2038.4,
+      "se": 11.6
+     },
+     {
+      "step": 42000000,
+      "elo": 2026.2,
+      "se": 11.6
+     },
+     {
+      "step": 44000016,
+      "elo": 2046.9,
+      "se": 11.7
+     },
+     {
+      "step": 46000032,
+      "elo": 2041.0,
+      "se": 11.6
+     },
+     {
+      "step": 48000000,
+      "elo": 2029.9,
+      "se": 11.6
+     },
+     {
+      "step": 50000016,
+      "elo": 2035.7,
+      "se": 11.6
+     },
+     {
+      "step": 54000000,
+      "elo": 2036.8,
+      "se": 11.6
+     },
+     {
+      "step": 56000016,
+      "elo": 2060.4,
+      "se": 11.8
+     },
+     {
+      "step": 72000000,
+      "elo": 2069.1,
+      "se": 11.8
+     }
+    ],
+    "newest_step": 72000000,
+    "newest_elo": 2069.1,
+    "se_newest": 11.8
+   }
+  },
+  "reportable": false
+ }
+}

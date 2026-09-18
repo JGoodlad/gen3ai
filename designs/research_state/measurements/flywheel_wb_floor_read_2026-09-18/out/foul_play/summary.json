@@ -1,0 +1,88 @@
+{
+ "label": "W_b (ai_v13_04_flywheel_winprob_b) @75,005,952, 2026-09-18",
+ "n": 80,
+ "our_wins": 32,
+ "win_rate": 0.4,
+ "wilson95": [
+  0.2996,
+  0.5095
+ ],
+ "mean_turns": 36.6,
+ "max_turns": 87,
+ "our_forfeit_fired_n": 0,
+ "our_think_ms_mean": 458.8,
+ "fp_think_s_mean": 2.07,
+ "fp_visits_per_decision_mean": 1133729.3,
+ "fp_visits_session_range": [
+  706746.9,
+  1561855.0
+ ],
+ "games_without_a_matched_fp_log": 0,
+ "fp_error_lines_total": 0,
+ "sessions": [
+  {
+   "our_team": "009e3d0244.txt",
+   "games": 10,
+   "our_wins": 2,
+   "win_rate": 0.2,
+   "mean_turns": 33.8,
+   "fp_visits_per_decision_mean": 1561855.0
+  },
+  {
+   "our_team": "4239fc5ba2.txt",
+   "games": 10,
+   "our_wins": 7,
+   "win_rate": 0.7,
+   "mean_turns": 39.0,
+   "fp_visits_per_decision_mean": 1154120.8
+  },
+  {
+   "our_team": "64a691c473.txt",
+   "games": 10,
+   "our_wins": 1,
+   "win_rate": 0.1,
+   "mean_turns": 38.8,
+   "fp_visits_per_decision_mean": 1070963.5
+  },
+  {
+   "our_team": "7d0337af97.txt",
+   "games": 10,
+   "our_wins": 5,
+   "win_rate": 0.5,
+   "mean_turns": 28.1,
+   "fp_visits_per_decision_mean": 1180172.9
+  },
+  {
+   "our_team": "9b454d9ea7.txt",
+   "games": 10,
+   "our_wins": 2,
+   "win_rate": 0.2,
+   "mean_turns": 44.6,
+   "fp_visits_per_decision_mean": 706746.9
+  },
+  {
+   "our_team": "a185b2d193.txt",
+   "games": 10,
+   "our_wins": 6,
+   "win_rate": 0.6,
+   "mean_turns": 27.8,
+   "fp_visits_per_decision_mean": 1313842.1
+  },
+  {
+   "our_team": "b904dbe059.txt",
+   "games": 10,
+   "our_wins": 3,
+   "win_rate": 0.3,
+   "mean_turns": 46.3,
+   "fp_visits_per_decision_mean": 1011681.0
+  },
+  {
+   "our_team": "e11829f0561ef5a9.txt",
+   "games": 10,
+   "our_wins": 6,
+   "win_rate": 0.6,
+   "mean_turns": 34.7,
+   "fp_visits_per_decision_mean": 1070451.9
+  }
+ ]
+}

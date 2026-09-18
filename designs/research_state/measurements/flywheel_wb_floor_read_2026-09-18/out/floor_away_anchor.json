@@ -1,0 +1,178 @@
+{
+ "cell": "metamon:SmallRL, regime greedy (BOTH sides, verified per decision), teamset away (Metamon's own 20-team competitive gen3ou export), 100 games split evenly across the two challenge roles",
+ "tool": "python -m main.anchors",
+ "arms": {
+  "armWb": {
+   "run": "ai_v13_04_flywheel_winprob_b",
+   "human_description": "W_b \u2014 arm W's TOKEN-EXACT SEED REPLICATE (seed 1002)",
+   "model_step": 75005952,
+   "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_04_flywheel_winprob_b/final_model.zip",
+   "n": 100,
+   "wins": 59,
+   "losses": 41,
+   "ties": 0,
+   "win_rate": 0.59,
+   "wilson95": [
+    0.492,
+    0.6813
+   ],
+   "by_half": {
+    "ours_challenge": {
+     "n": 50,
+     "wins": 32,
+     "win_rate": 0.64
+    },
+    "peer_challenge": {
+     "n": 50,
+     "wins": 27,
+     "win_rate": 0.54
+    }
+   },
+   "mean_turns": 48.46,
+   "max_turns": 250,
+   "hit_forfeit_limit": 2,
+   "regime_verified": {
+    "ours": "greedy",
+    "theirs": "greedy",
+    "regime_matched": true,
+    "peer_argmax_match_rate": 1.0
+   },
+   "opponent": {
+    "version": "SmallRL@ckpt40",
+    "commit": "0a00a759"
+   },
+   "showdown_pin": "e0551883f"
+  },
+  "armW": {
+   "run": "ai_v13_02_flywheel_winprob",
+   "human_description": "arm W \u2014 the pair's WIN-PROB arm (seed 1001)",
+   "model_step": 75005952,
+   "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+   "n": 100,
+   "wins": 50,
+   "losses": 50,
+   "ties": 0,
+   "win_rate": 0.5,
+   "wilson95": [
+    0.4038,
+    0.5962
+   ],
+   "by_half": {
+    "ours_challenge": {
+     "n": 50,
+     "wins": 24,
+     "win_rate": 0.48
+    },
+    "peer_challenge": {
+     "n": 50,
+     "wins": 26,
+     "win_rate": 0.52
+    }
+   },
+   "mean_turns": 46.54,
+   "max_turns": 196,
+   "hit_forfeit_limit": 0,
+   "regime_verified": {
+    "ours": "greedy",
+    "theirs": "greedy",
+    "regime_matched": true,
+    "peer_argmax_match_rate": 1.0
+   },
+   "opponent": {
+    "version": "SmallRL@ckpt40",
+    "commit": "0a00a759"
+   },
+   "showdown_pin": "e0551883f"
+  },
+  "armS": {
+   "run": "ai_v13_01_flywheel_shaped",
+   "human_description": "arm S \u2014 the pair's SHAPED arm (seed 1001)",
+   "model_step": 75005952,
+   "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_01_flywheel_shaped/final_model.zip",
+   "n": 100,
+   "wins": 52,
+   "losses": 48,
+   "ties": 0,
+   "win_rate": 0.52,
+   "wilson95": [
+    0.4232,
+    0.6154
+   ],
+   "by_half": {
+    "ours_challenge": {
+     "n": 50,
+     "wins": 21,
+     "win_rate": 0.42
+    },
+    "peer_challenge": {
+     "n": 50,
+     "wins": 31,
+     "win_rate": 0.62
+    }
+   },
+   "mean_turns": 40.34,
+   "max_turns": 250,
+   "hit_forfeit_limit": 1,
+   "regime_verified": {
+    "ours": "greedy",
+    "theirs": "greedy",
+    "regime_matched": true,
+    "peer_argmax_match_rate": 1.0
+   },
+   "opponent": {
+    "version": "SmallRL@ckpt40",
+    "commit": "0a00a759"
+   },
+   "showdown_pin": "e0551883f"
+  }
+ },
+ "THE_FLOOR_W_minus_Wb": {
+  "label": "THE 75M RUN-LEVEL FLOOR on this cell \u2014 arm W (seed 1001) minus W_b (seed 1002)",
+  "delta": -0.09,
+  "abs_delta": 0.09,
+  "newcombe95": [
+   -0.2226,
+   0.0473
+  ],
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero. Rule 6: never 'equal'; equivalence needs the delta's own CI inside a bar",
+  "sop_three_seed_run_floor_at_10M": 0.11,
+  "sop_eval_draw_floor_at_10M": 0.02,
+  "inside_sop_run_floor": true
+ },
+ "THE_FINDING_S_minus_W": {
+  "label": "the pair's row \u2014 arm S minus arm W (the pair read reported +0.020 [-0.117, +0.155])",
+  "delta": 0.02,
+  "abs_delta": 0.02,
+  "newcombe95": [
+   -0.1165,
+   0.1554
+  ],
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero. Rule 6: never 'equal'; equivalence needs the delta's own CI inside a bar"
+ },
+ "S_minus_Wb": {
+  "label": "arm S minus W_b \u2014 the treatment contrast against the OTHER seed",
+  "delta": -0.07,
+  "abs_delta": 0.07,
+  "newcombe95": [
+   -0.2031,
+   0.0667
+  ],
+  "verdict": "NOT DETECTED \u2014 the difference interval covers zero. Rule 6: never 'equal'; equivalence needs the delta's own CI inside a bar"
+ },
+ "floor_verdict": {
+  "finding_abs": 0.02,
+  "finding_ci95": [
+   -0.1165,
+   0.1554
+  ],
+  "floor_abs": 0.09,
+  "clause_a_abs_delta_gt_floor": false,
+  "clause_b_ci_excludes_floor_point": false,
+  "verdict": "WITHIN FLOOR at n = 2",
+  "caveats": [
+   "one replicate pair BOUNDS a floor; no CI attaches to it (rules 19/22)",
+   "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+   "100 games resolves ~+/-10 pp at best; the SOP says every cell near even stays NOT DETECTED however the point estimate reads"
+  ]
+ }
+}

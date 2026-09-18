@@ -1,0 +1,172 @@
+{
+ "n_games_total": 100,
+ "model": "ai_v13_04_flywheel_winprob_b/final_model.zip @75,005,952 (W_b, seed 1002)",
+ "opponent": "Metamon SmallRL (ckpt 40, 13.9M), VanillaAttention, CPU",
+ "team_set": "home \u2014 our 719-team gen3ou pool on both sides (the de-risk's nickname-free export)",
+ "cells": {
+  "greedy|metamon": {
+   "n": 50,
+   "W": 36,
+   "L": 14,
+   "T": 0,
+   "win_rate": 0.72,
+   "wilson95": [
+    0.5833,
+    0.8253
+   ],
+   "mean_turns": 45.2,
+   "max_turns": 250,
+   "hit_forfeit_limit": 1,
+   "sides_disagree": 22,
+   "metamon_row_missing": 2
+  },
+  "greedy|ours": {
+   "n": 50,
+   "W": 23,
+   "L": 26,
+   "T": 1,
+   "win_rate": 0.46,
+   "wilson95": [
+    0.3297,
+    0.596
+   ],
+   "mean_turns": 35.5,
+   "max_turns": 227,
+   "hit_forfeit_limit": 0,
+   "sides_disagree": 1,
+   "metamon_row_missing": 0
+  }
+ },
+ "regime_rows": {
+  "greedy|POOLED": {
+   "n": 100,
+   "W": 59,
+   "L": 40,
+   "T": 1,
+   "win_rate": 0.59,
+   "wilson95": [
+    0.492,
+    0.6813
+   ],
+   "mean_turns": 40.3,
+   "max_turns": 250,
+   "hit_forfeit_limit": 1,
+   "sides_disagree": 23,
+   "metamon_row_missing": 2,
+   "comparators": {
+    "armW": {
+     "label": "arm W (ai_v13_02_flywheel_winprob) @75,005,952, greedy-vs-greedy, home pool \u2014 the FLOOR's other half",
+     "source": "designs/research_state/measurements/flywheel_pair_read_2026-09-15",
+     "win_rate": 0.65,
+     "wilson95": [
+      0.5525,
+      0.7364
+     ],
+     "n": 100,
+     "comparator_minus_armWb": 0.06,
+     "newcombe95": [
+      -0.0736,
+      0.1906
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    },
+    "armS": {
+     "label": "arm S (ai_v13_01_flywheel_shaped) @75,005,952, greedy-vs-greedy, home pool",
+     "source": "designs/research_state/measurements/flywheel_armS_reads_2026-09-14",
+     "win_rate": 0.63,
+     "wilson95": [
+      0.5322,
+      0.7182
+     ],
+     "n": 100,
+     "comparator_minus_armWb": 0.04,
+     "newcombe95": [
+      -0.0938,
+      0.1718
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    },
+    "winprob75M": {
+     "label": "ai_v12_02_winprob_critic@75M, greedy-vs-greedy, home pool",
+     "source": "designs/research_state/measurements/metamon_matched_regime_2026-09-14",
+     "win_rate": 0.52,
+     "wilson95": [
+      0.4232,
+      0.6154
+     ],
+     "n": 100,
+     "comparator_minus_armWb": -0.07,
+     "newcombe95": [
+      -0.2031,
+      0.0667
+     ],
+     "verdict": "NOT DETECTED \u2014 the difference interval covers zero (rule 6: this is never 'equal'; equivalence needs the delta's own CI inside a bar, and no bar exists for this row)"
+    }
+   }
+  }
+ },
+ "regime_verification": [
+  {
+   "cell": "greedy|metamon",
+   "our_stochastic_kwarg": [
+    false
+   ],
+   "our_temperature_flag": 0.0,
+   "metamon_sample_kwarg": null,
+   "metamon_argmax_match_rate": null,
+   "metamon_regime_declared": "greedy",
+   "metamon_rc": 1,
+   "metamon_record": "MISSING \u2014 the Metamon process died after its last game; our side's 50 results are complete and the regime was set at process start, but the per-decision argmax check for this half-cell is n/a",
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 988,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": [
+     "metamon: RecursionError: maximum recursion depth exceeded",
+     "metamon: RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "metamon: RuntimeError: Battle is already finished, call reset"
+    ]
+   }
+  },
+  {
+   "cell": "greedy|ours",
+   "our_stochastic_kwarg": [
+    false
+   ],
+   "our_temperature_flag": 0.0,
+   "metamon_sample_kwarg": [
+    false
+   ],
+   "metamon_argmax_match_rate": 1.0,
+   "metamon_regime_declared": "greedy",
+   "metamon_rc": 0,
+   "metamon_record": "present",
+   "failures": {
+    "our_tracebacks": 0,
+    "classify_raises": 0,
+    "metamon_tracebacks": 0,
+    "our_connection_errors": 0,
+    "team_rejected_popups": 0,
+    "signatures": []
+   }
+  }
+ ],
+ "floor_verdict": {
+  "THE_FLOOR_armW_minus_armWb": 0.06,
+  "THE_FINDING_armS_minus_armW": -0.02,
+  "finding_ci95": [
+   -0.1505,
+   0.1114
+  ],
+  "clause_a_abs_delta_gt_floor": false,
+  "clause_b_ci_excludes_floor_point": false,
+  "verdict": "WITHIN FLOOR at n = 2",
+  "caveats": [
+   "one replicate pair BOUNDS a floor; no CI attaches to it (rules 19/22)",
+   "WITHIN FLOOR is NEVER 'equivalent' (rule 6)",
+   "100 games resolves ~+/-10 pp at best (anchors SOP sec 6)"
+  ]
+ }
+}
