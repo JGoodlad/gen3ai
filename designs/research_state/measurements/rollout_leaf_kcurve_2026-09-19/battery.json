@@ -1,0 +1,283 @@
+{
+ "cells": {
+  "defB": {
+   "n_battles": 226,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 113,
+    "mean": 0.5243362831858407,
+    "ci_normal": [
+     0.4863827449748906,
+     0.5622898213967908
+    ],
+    "ci_boot": [
+     0.4889380530973451,
+     0.5641592920353983
+    ]
+   },
+   "L2_unpaired_wilson": {
+    "won": 118,
+    "decisive": 225,
+    "rate": 0.5244444444444445,
+    "ci": [
+     0.45932762417886,
+     0.5887405592283528
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 10390,
+    "n_searched": 3579,
+    "n_changed": 103,
+    "n_screen_decisive": 0,
+    "n_playoff": 0,
+    "n_playoff_inconclusive": 0,
+    "n_playoff_no_budget": 0,
+    "n_playoff_capped": 0,
+    "n_playoff_failed": 0,
+    "n_playoff_ran": 0,
+    "playoff_r_total": 0,
+    "n_defensive": 9312,
+    "n_defensive_forced": 5733,
+    "n_defensive_raced": 3579,
+    "n_defensive_separated": 289,
+    "n_defensive_overruled": 103
+   },
+   "rates": {
+    "changed_per_decision": 0.009913378248315688,
+    "screen_decisive_per_decision": 0.0,
+    "playoff_played_per_decision": 0.0,
+    "playoff_inconclusive_of_run": 0.0,
+    "mean_realized_R": 0.0,
+    "playoff_wall_s_per_ran_decision": 0.0,
+    "defensive_separated_of_raced": 0.08074881251746298,
+    "defensive_overruled_per_decision": 0.009913378248315688
+   },
+   "mean_wall_s_per_battle": 50.90848672566373,
+   "realized_mean": {
+    "m_opp": 6.0,
+    "k_worlds": 1.333,
+    "r_dice": 1.0,
+    "arms": 70.0,
+    "elapsed": 2.461,
+    "depth": 1.0,
+    "beam": 0.0
+   }
+  },
+  "pf4": {
+   "n_battles": 1,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 0,
+    "mean": null,
+    "ci_normal": null,
+    "ci_boot": null
+   },
+   "L2_unpaired_wilson": {
+    "won": 1,
+    "decisive": 1,
+    "rate": 1.0,
+    "ci": [
+     0.20654329147389294,
+     1.0
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 75,
+    "n_searched": 9,
+    "n_changed": 0,
+    "n_screen_decisive": 9,
+    "n_playoff": 0,
+    "n_playoff_inconclusive": 64,
+    "n_playoff_no_budget": 0,
+    "n_playoff_capped": 0,
+    "n_playoff_failed": 0,
+    "n_playoff_ran": 64,
+    "playoff_r_total": 64,
+    "n_defensive": 0,
+    "n_defensive_forced": 0,
+    "n_defensive_raced": 0,
+    "n_defensive_separated": 0,
+    "n_defensive_overruled": 0
+   },
+   "rates": {
+    "changed_per_decision": 0.0,
+    "screen_decisive_per_decision": 0.12,
+    "playoff_played_per_decision": 0.0,
+    "playoff_inconclusive_of_run": 1.0,
+    "mean_realized_R": 1.0,
+    "playoff_wall_s_per_ran_decision": 18.86225,
+    "defensive_separated_of_raced": 0.0,
+    "defensive_overruled_per_decision": 0.0
+   },
+   "mean_wall_s_per_battle": 1342.996,
+   "realized_mean": {
+    "m_opp": 4.889,
+    "k_worlds": 1.0,
+    "r_dice": 1.0,
+    "arms": 41.111,
+    "elapsed": 1.817,
+    "depth": 1.0,
+    "beam": 0.0
+   }
+  },
+  "pf4b": {
+   "n_battles": 6,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 3,
+    "mean": 0.5,
+    "ci_normal": [
+     0.5,
+     0.5
+    ],
+    "ci_boot": [
+     0.5,
+     0.5
+    ]
+   },
+   "L2_unpaired_wilson": {
+    "won": 3,
+    "decisive": 6,
+    "rate": 0.5,
+    "ci": [
+     0.1876128068994087,
+     0.8123871931005913
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 250,
+    "n_searched": 37,
+    "n_changed": 1,
+    "n_screen_decisive": 35,
+    "n_playoff": 2,
+    "n_playoff_inconclusive": 188,
+    "n_playoff_no_budget": 4,
+    "n_playoff_capped": 0,
+    "n_playoff_failed": 16,
+    "n_playoff_ran": 190,
+    "playoff_r_total": 760,
+    "n_defensive": 0,
+    "n_defensive_forced": 0,
+    "n_defensive_raced": 0,
+    "n_defensive_separated": 0,
+    "n_defensive_overruled": 0
+   },
+   "rates": {
+    "changed_per_decision": 0.004,
+    "screen_decisive_per_decision": 0.14,
+    "playoff_played_per_decision": 0.008,
+    "playoff_inconclusive_of_run": 0.9894736842105263,
+    "mean_realized_R": 4.0,
+    "playoff_wall_s_per_ran_decision": 43.32824210526316,
+    "defensive_separated_of_raced": 0.0,
+    "defensive_overruled_per_decision": 0.0
+   },
+   "mean_wall_s_per_battle": 1413.9080000000001,
+   "realized_mean": {
+    "m_opp": 6.0,
+    "k_worlds": 1.0,
+    "r_dice": 1.0,
+    "arms": 51.0,
+    "elapsed": 1.498,
+    "depth": 1.0,
+    "beam": 0.0
+   }
+  },
+  "pf8": {
+   "n_battles": 1,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 0,
+    "mean": null,
+    "ci_normal": null,
+    "ci_boot": null
+   },
+   "L2_unpaired_wilson": {
+    "won": 1,
+    "decisive": 1,
+    "rate": 1.0,
+    "ci": [
+     0.20654329147389294,
+     1.0
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 75,
+    "n_searched": 9,
+    "n_changed": 0,
+    "n_screen_decisive": 9,
+    "n_playoff": 0,
+    "n_playoff_inconclusive": 64,
+    "n_playoff_no_budget": 0,
+    "n_playoff_capped": 0,
+    "n_playoff_failed": 0,
+    "n_playoff_ran": 64,
+    "playoff_r_total": 64,
+    "n_defensive": 0,
+    "n_defensive_forced": 0,
+    "n_defensive_raced": 0,
+    "n_defensive_separated": 0,
+    "n_defensive_overruled": 0
+   },
+   "rates": {
+    "changed_per_decision": 0.0,
+    "screen_decisive_per_decision": 0.12,
+    "playoff_played_per_decision": 0.0,
+    "playoff_inconclusive_of_run": 1.0,
+    "mean_realized_R": 1.0,
+    "playoff_wall_s_per_ran_decision": 18.591359375,
+    "defensive_separated_of_raced": 0.0,
+    "defensive_overruled_per_decision": 0.0
+   },
+   "mean_wall_s_per_battle": 1333.883,
+   "realized_mean": {
+    "m_opp": 5.0,
+    "k_worlds": 1.0,
+    "r_dice": 1.0,
+    "arms": 41.444,
+    "elapsed": 1.543,
+    "depth": 1.0,
+    "beam": 0.0
+   }
+  }
+ },
+ "paired_deltas": {
+  "defB - pf4": {
+   "n_shared_pairs": 0,
+   "delta": null
+  },
+  "defB - pf4b": {
+   "n_shared_pairs": 3,
+   "delta": 0.0,
+   "ci_normal": [
+    0.0,
+    0.0
+   ],
+   "ci_boot": [
+    0.0,
+    0.0
+   ],
+   "detected": false
+  },
+  "defB - pf8": {
+   "n_shared_pairs": 0,
+   "delta": null
+  },
+  "pf4 - pf4b": {
+   "n_shared_pairs": 0,
+   "delta": null
+  },
+  "pf4 - pf8": {
+   "n_shared_pairs": 0,
+   "delta": null
+  },
+  "pf4b - pf8": {
+   "n_shared_pairs": 0,
+   "delta": null
+  }
+ }
+}

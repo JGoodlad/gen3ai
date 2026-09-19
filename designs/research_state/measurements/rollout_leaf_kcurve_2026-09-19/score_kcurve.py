@@ -224,6 +224,26 @@ def main(argv=None) -> int:
         metas = []
         for mp in sorted(glob.glob(os.path.join(d, "reroll*meta_s*.json"))):
             metas.append(json.load(open(mp)))
+        if not metas:
+            # A shard stopped by the CLOCK writes no meta (it is written after the fork loop), and
+            # the wall-clock cost is not optional — it is half the COST column. Fall back to the
+            # shard LOGS' own last progress line, which carries both numbers:
+            #   [s0] 15/167 forks (3083s, 205.5s/fork) {'forks': 15, 'rollouts': 732, ...}
+            import ast
+            import re
+            pat = re.compile(r"forks \((\d+(?:\.\d+)?)s, [\d.]+s/fork\) (\{.*\})")
+            for lp in sorted(glob.glob(os.path.join(d, "logs", "shard_*.log"))):
+                last = None
+                for line in open(lp, errors="replace"):
+                    m = pat.search(line)
+                    if m:
+                        last = m
+                if last is not None:
+                    metas.append({"wall_s": float(last.group(1)),
+                                  "stats": ast.literal_eval(last.group(2)),
+                                  "from": "log tail (shard stopped by the clock)"})
+            if metas:
+                out["cost"][f"{nm}_source"] = "shard log tail — no meta (stopped by the clock)"
         if metas:
             roll = sum(m["stats"]["rollouts"] for m in metas)
             wall = max(m["wall_s"] for m in metas)

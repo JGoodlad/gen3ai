@@ -1,0 +1,73 @@
+{
+ "n_forks": 665,
+ "se_multiple": 2.0,
+ "min_pairs": 4,
+ "rule_source": "main.search_dividend.playoff (imported, not re-implemented)",
+ "R": {
+  "1": {
+   "conclusive_rate": 0.0,
+   "conclusive_rate_ci": [
+    0.0,
+    0.0
+   ],
+   "n_conclusive": 0,
+   "overrule_rate_of_all": 0.0,
+   "kept_policy_when_conclusive": null,
+   "agrees_with_K8_label_when_conclusive": null,
+   "n_scored_against_label": 0,
+   "rollouts_per_decision": 2
+  },
+  "2": {
+   "conclusive_rate": 0.0,
+   "conclusive_rate_ci": [
+    0.0,
+    0.0
+   ],
+   "n_conclusive": 0,
+   "overrule_rate_of_all": 0.0,
+   "kept_policy_when_conclusive": null,
+   "agrees_with_K8_label_when_conclusive": null,
+   "n_scored_against_label": 0,
+   "rollouts_per_decision": 4
+  },
+  "4": {
+   "conclusive_rate": 0.045112781954887216,
+   "conclusive_rate_ci": [
+    0.03007518796992481,
+    0.061654135338345864
+   ],
+   "n_conclusive": 30,
+   "overrule_rate_of_all": 0.019548872180451128,
+   "kept_policy_when_conclusive": 0.5666666666666667,
+   "agrees_with_K8_label_when_conclusive": 0.8695652173913043,
+   "n_scored_against_label": 23,
+   "rollouts_per_decision": 8
+  },
+  "8": {
+   "conclusive_rate": 0.10676691729323308,
+   "conclusive_rate_ci": [
+    0.08417293233082707,
+    0.1293233082706767
+   ],
+   "n_conclusive": 71,
+   "overrule_rate_of_all": 0.057142857142857134,
+   "kept_policy_when_conclusive": 0.4647887323943662,
+   "agrees_with_K8_label_when_conclusive": 0.8333333333333334,
+   "n_scored_against_label": 60,
+   "rollouts_per_decision": 16
+  },
+  "16": {
+   "conclusive_rate": 0.12481203007518797,
+   "conclusive_rate_ci": [
+    0.09924812030075188,
+    0.15037593984962405
+   ],
+   "n_conclusive": 83,
+   "overrule_rate_of_all": 0.06466165413533835,
+   "kept_policy_when_conclusive": 0.4819277108433735,
+   "agrees_with_K8_label_when_conclusive": 0.922077922077922,
+   "n_scored_against_label": 77,
+   "rollouts_per_decision": 32
+  }
+ }
+}
