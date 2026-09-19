@@ -210,6 +210,11 @@ class PlayoffConfig:
     se_multiple: float = SE_MULTIPLE
     min_pairs: int = MIN_PAIRS
     impl: str = "node"
+    #: Opt OUT of :func:`short_r_refusal`. Off by default, because a cell that silently realized a
+    #: different R than it was asked for is a different experiment wearing the same name. Turn it
+    #: ON to measure the short-R behaviour DELIBERATELY — which is a legitimate thing to want, and
+    #: is how the defect below was characterised in the first place.
+    allow_short_r: bool = False
     #: Seeded EWMA of one rollout's measured wall cost, used to decide whether the NEXT pair fits
     #: the remaining budget. Starts pessimistic: over-planning a pair costs the deadline, and a
     #: decision that overruns badly enough trips the LIVE battle's own idle watchdog.
@@ -450,3 +455,51 @@ def fold_playoff(decisions: Sequence[dict]) -> dict:
             out["playoff_wall_s"] += float(p.get("wall_s", 0.0) or 0.0)
     out["playoff_wall_s"] = round(out["playoff_wall_s"], 3)
     return out
+
+
+#: How much of the requested R a cell must actually realize before its rows mean what they say.
+#: 0.9 rather than 1.0 because the LAST pair is declined by a deadline that is doing its job — a
+#: cell that buys 11 of 12 pairs is the cell that was asked for; one that buys 1 of 8 is not.
+SHORT_R_FLOOR = 0.9
+
+
+def short_r_refusal(row: dict, requested: int, *, floor: float = SHORT_R_FLOOR) -> Optional[str]:
+    """A refusal message when the per-decision budget did not buy the REQUESTED R, else ``None``.
+
+    🚨 **MEASURED 2026-09-19, and this is why the guard exists.** ``--playoff-rollouts`` is a CAP
+    that the per-decision :class:`~main.search_dividend.budget.Deadline` may cut short: the loop
+    declines the next pair whenever ``2 x rollout_cost_s`` does not fit what the screen left. On a
+    loaded box a live terminal rollout measured ~10 s, so at ``--budget 20`` the loop bought
+    exactly ONE pair — and ``MIN_PAIRS = 4`` then declined **every single playoff**. Two cells run
+    at ``--playoff-rollouts 4`` and ``--playoff-rollouts 8`` produced BYTE-IDENTICAL no-op
+    behaviour (realized R = 1.00, 64 of 64 playoffs inconclusive, ``n_changed`` exactly 0), and
+    nothing in the row, the log or the report said so. That is the worst shape a measurement can
+    have: an arm that reports a clean win rate for a mechanism that never ran.
+
+    The rule is a floor on the REALIZED mean R, not on any single decision, because the deadline
+    legitimately trims the last pair of a slow decision. A cell with no playoffs at all is not
+    short — it is a cell whose screen was decisive every time, which is a different (and reported)
+    outcome. ``requested <= 0`` and ``n_playoff_ran == 0`` therefore both return ``None``.
+
+    It is a ROW-level check on purpose: the caller raises on the FIRST game rather than after the
+    cell, so a mis-budgeted run costs one battle instead of a night.
+    """
+    requested = int(requested)
+    if requested <= 0:
+        return None
+    ran = int(row.get("n_playoff_ran", 0) or 0)
+    if ran <= 0:
+        return None
+    realized = float(row.get("playoff_r_total", 0) or 0) / ran
+    if realized >= float(floor) * requested:
+        return None
+    return (
+        f"REFUSED: --playoff-rollouts {requested} but the cell realized a mean R of "
+        f"{realized:.2f} over {ran} playoffs (floor {floor:g}x = {floor * requested:.2f}). The "
+        f"per-decision budget did not buy 2x{requested} rollouts, so `--playoff-rollouts` is "
+        f"INERT and this cell is NOT the experiment its flags name — at R below "
+        f"MIN_PAIRS={MIN_PAIRS} it cannot conclude at all and the arm is a silent no-op. Raise "
+        f"--budget (a live terminal rollout measured ~10 s on a loaded box, so a decision needs "
+        f"roughly the screen's cost + 2x{requested}x that), or pass --playoff-allow-short-r to "
+        f"measure the short-R behaviour deliberately."
+    )

@@ -38,7 +38,8 @@ from typing import Dict, List, Optional, Sequence
 
 from main.search_dividend.defensive import fold_defensive
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
-from main.search_dividend.playoff import PlayoffConfig, PlayoffRunner, fold_playoff
+from main.search_dividend.playoff import (PlayoffConfig, PlayoffRunner, fold_playoff,
+                                          short_r_refusal)
 from main.search_dividend.racing import fold_racing
 from main.search_dividend.record import install_choice_tap
 from main.search_dividend.search import SearchConfig, SearchEngine
@@ -434,6 +435,16 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
             played += 1
             if progress is not None:
                 progress(row)
+            # 🚨 THE REALIZED-R GUARD, on the FIRST game rather than after the cell. A playoff
+            # cell whose per-decision budget could not buy 2xR rollouts realizes a different R
+            # than its flags name and, below MIN_PAIRS, cannot conclude at all — measured
+            # 2026-09-19 as two cells at R=4 and R=8 producing byte-identical no-op behaviour.
+            # The row is APPENDED first so the evidence for the refusal is on disk.
+            if (playoff_cfg is not None and cfg.arm == "playoff"
+                    and not playoff_cfg.allow_short_r):
+                msg = short_r_refusal(row, int(playoff_cfg.rollouts))
+                if msg:
+                    raise SystemExit(f"[search_dividend] {msg}")
     finally:
         engine.close()
     return played

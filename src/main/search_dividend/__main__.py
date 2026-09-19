@@ -216,6 +216,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--playoff-min-pairs", type=int, default=MIN_PAIRS,
                    help=f"the fewest pairs that may produce a verdict (default {MIN_PAIRS}). A "
                         "sample too small to have a spread cannot certify one.")
+    p.add_argument("--playoff-allow-short-r", action="store_true",
+                   help="opt OUT of the realized-R refusal. By default a `playoff` cell whose "
+                        "per-decision budget did not buy 2x--playoff-rollouts rollouts FAILS on "
+                        "its first game: the flag would otherwise be INERT and the arm a silent "
+                        "no-op (measured 2026-09-19 — at --budget 20 both R=4 and R=8 realized "
+                        "R=1.00 and declined every playoff). Pass this to measure the short-R "
+                        "behaviour deliberately.")
     p.add_argument("--battle-timeout-s", type=float, default=None,
                    help="raise local_battle_runner's per-battle TOTAL livelock backstop (default "
                         "180 s, contention-scaled). A playoff cell legitimately spends tens of "
@@ -411,7 +418,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                                 screen_margin=args.playoff_screen_margin,
                                 se_multiple=args.playoff_se_k,
                                 min_pairs=args.playoff_min_pairs,
-                                impl=args.impl)
+                                impl=args.impl,
+                                allow_short_r=bool(args.playoff_allow_short_r))
     if args.battle_timeout_s or args.battle_idle_s:
         _raise_battle_backstop(args.battle_timeout_s, args.battle_idle_s)
 

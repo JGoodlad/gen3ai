@@ -277,3 +277,74 @@ def test_fold_playoff_is_additive_and_pools_sums():
     assert out["n_playoff_capped"] == 1 and out["n_playoff_failed"] == 2
     # A decision list with no playoff block at all folds to zeros — one schema, extended.
     assert P.fold_playoff([{"fallback": "no_search"}])["n_playoff"] == 0
+
+
+# -- the realized-R guard ------------------------------------------------------
+#
+# 🚨 The defect it stands for, measured 2026-09-19: `--playoff-rollouts` is a CAP the per-decision
+# deadline may cut short, and at `--budget 20` on a loaded box it bought exactly ONE pair. Two
+# cells asked for R=4 and R=8 produced byte-identical no-op behaviour (realized R=1.00, 64 of 64
+# playoffs inconclusive, n_changed exactly 0) and nothing said so.
+
+
+def _pfrow(requested_ran=64, r_total=64):
+    return {"n_playoff_ran": requested_ran, "playoff_r_total": r_total}
+
+
+def test_short_r_refusal_fires_on_the_measured_incident():
+    from main.search_dividend.playoff import short_r_refusal
+
+    # the row this guard was written from: 64 playoffs, 64 rollout PAIRS in total => R = 1.00
+    msg = short_r_refusal(_pfrow(64, 64), 4)
+    assert msg is not None
+    assert "1.00" in msg and "--playoff-rollouts 4" in msg
+    # and it is the SAME refusal when the same budget was asked for R = 8 — which is the point:
+    # the two cells were indistinguishable, and only the requested R tells them apart
+    assert short_r_refusal(_pfrow(64, 64), 8) is not None
+
+
+def test_short_r_refusal_is_silent_when_the_budget_bought_what_was_asked():
+    from main.search_dividend.playoff import short_r_refusal
+
+    assert short_r_refusal(_pfrow(10, 40), 4) is None          # exactly R = 4
+    assert short_r_refusal(_pfrow(10, 38), 4) is None          # 3.8 — the deadline trimmed a tail
+    assert short_r_refusal(_pfrow(10, 35), 4) is not None      # 3.5 — below the 0.9 floor
+
+
+def test_short_r_refusal_declines_to_judge_a_cell_with_no_playoffs():
+    """A cell whose screen was decisive every time ran no playoff, and "no playoff" is a reported
+    OUTCOME, not a short budget. Judging it would fail a perfectly good cell."""
+    from main.search_dividend.playoff import short_r_refusal
+
+    assert short_r_refusal({"n_playoff_ran": 0, "playoff_r_total": 0}, 4) is None
+    assert short_r_refusal({}, 4) is None
+    assert short_r_refusal(_pfrow(64, 64), 0) is None          # not a playoff cell at all
+
+
+def test_short_r_refusal_names_the_remedy_and_the_opt_out():
+    from main.search_dividend.playoff import short_r_refusal
+
+    msg = short_r_refusal(_pfrow(64, 64), 4)
+    assert "--budget" in msg and "--playoff-allow-short-r" in msg
+    assert "MIN_PAIRS" in msg                                  # why a short R cannot conclude
+
+
+def test_playoff_config_carries_the_opt_out_and_defaults_to_refusing():
+    from main.search_dividend.playoff import PlayoffConfig
+
+    assert PlayoffConfig().allow_short_r is False
+
+
+def test_run_cell_raises_on_a_short_r_row_rather_than_playing_the_cell():
+    """The wiring, asserted where it lives: `run_cell` consults the guard on every appended row of
+    a `playoff` cell and raises, and it reads `playoff_cfg.allow_short_r` to opt out."""
+    import inspect
+
+    from main.search_dividend import battery
+
+    src = inspect.getsource(battery.run_cell)
+    assert "short_r_refusal(row, int(playoff_cfg.rollouts))" in src
+    assert "allow_short_r" in src
+    assert "raise SystemExit" in src
+    # the row is appended BEFORE the refusal, so the evidence survives the raise
+    assert src.index("results.append(row)") < src.index("short_r_refusal")
