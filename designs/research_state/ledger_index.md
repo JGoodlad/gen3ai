@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,762-line file. **The ledger itself is append-only and is never edited by this**;
+19,766-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**636 headings · 583 dated · 2026-08-01 → 2026-09-19 · ledger 19,762 lines.**
+**637 headings · 584 dated · 2026-08-01 → 2026-09-19 · ledger 19,766 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -656,3 +656,4 @@ rename.
   - `L19663` · `2026-09-19` · MEASUREMENT (MAJOR) · THE LEAF CEILING IS THE LABEL, NOT THE HEAD AND NOT THE GAME — on the banked forks the single-rollout outcome mis-orders the top1|top2 sibling pair 39.7 % of the time (label ceiling ≈0.61, not 1.0, so every published pairwise level is compressed toward 0.5); no hand evaluator beats the head (nine tried; PBRS+belief matches a 75M critic pooled and beats it on top2|rand); the policy's own top-1 is NOT clear of its top-2 on average (+0.008) while the two successors' true values differ by E|gap| = 0.177 — much to re-rank, nothing claiming it; and a 4-ROLLOUT LEAF out-ranks the critic on a matched-noise read, +0.057 [+0.028, +0.083] DETECTED pooled (top1|top2 +0.028 ND) — the first thing in this campaign to out-rank the critic
 - `L19665` · 10. Ready-to-append ledger paragraph
   - `L19667` · `2026-09-19` · 🎯 IS THE 0.545 `top1|top2` SIBLING-RANKING LEVEL THE HEADS, THE LABELS, OR THE GAME? — **N × L: no hand evaluator beats the head, but 🚨 THE SINGLE-ROLLOUT LABEL MIS-ORDERS THE PAIR 39.7 % OF THE TIME and an 8-rollout estimate of the same states reads 0.61 where the head reads 0.54** — the campaign's metric was measuring a coin flip, the true sibling gap is **E|gap| = 0.177**, the policy's own top-1 is worth **+0.0079 [−0.0025, +0.0188] NOT CLEAR OF ZERO** over its top-2, and **a FOUR-ROLLOUT leaf beats the 75M-step critic by +0.057 [+0.028, +0.083] DETECTED** (2026-09-19)
+  - `L19763` · `2026-09-19` · OPS (MAJOR) · THE ONE-SIDED VIEW — the Rust search server now emits each successor's board PROJECTED onto what one side has observed (`gen3_one_sided_view_v1`, `4523a7cd`), Python's frozen read-models are built from it and the sub-encoders are UNCHANGED; the gate is zero divergences on 198 comparisons / 168 branch points across 10 fuzz battles (whole `LiveView` graph, `LegalActions`, and the 2501-dim vector by `np.array_equal`); per-successor materialisation **47× faster at B = 1 (46.6 → 0.99 ms), 6.4× at B = 33**; and the contract finding: half of `LivePokemon` is a poke-env FOLD over the protocol, not sim state
