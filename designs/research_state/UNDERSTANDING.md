@@ -1164,9 +1164,15 @@ top1|top2 pair 39.7 % of the time, so the metric's ceiling is ≈0.61 and every 
 potential matches a 75M critic pooled). The game is NOT near-tied case by case — E|gap| between the top-2 successors'
 true values is 0.177 while the policy's top-1 edge is +0.008 on average — so there is much to re-rank. **A 4-rollout
 leaf out-ranks the critic on a matched-noise read (+0.057 [+0.028, +0.083] pooled, DETECTED; top1|top2 +0.028 n.d.)**
-— AlphaGo's fast-rollout leaf, the first scorer to beat the critic here; its open question is K, not objective. Search
-is reopened on that leaf: the K-curve and a ≥400-pair battery with a rollout leaf are the next reads; rollouts are the
-currency, which is what the one-sided-view build buys. [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
+— AlphaGo's fast-rollout leaf, the first scorer to beat the critic here; its open question is K, not objective. **The K-curve (`rollout_leaf_kcurve_2026-09-19/`, 31,992 fresh rollouts on 665 banked forks, label independent):**
+on the leaf column a rollout leaf reads 0.543 / 0.580 / 0.613 / **0.652** / **0.671** at K = 1/2/4/8/16 against the
+75M critic's 0.574 — DETECTED at K ≥ 8 (+0.078 [+0.027, +0.128]); pooled, DETECTED at K = 4 (+0.068). Knee K = 4;
+cost 26 sim turns per rollout. **A rollout leaf out-ranks the critic. The battery still reads no dividend (branch b),
+and the mechanism is the playoff's ACTING RULE**: its gate (|mean d| ≥ 2·SE, MIN_PAIRS 4) resolves 4.5 % of decisions
+at R = 4 (1 of 250 changed live) and agrees with the label 0.83–0.92 when it does — the gate is far tighter than
+registered. Out-ranking is no longer the binding constraint; the gate's operating point is, and it is re-tuned for free
+on the banked dice. The 400-pair battery is unmet by arithmetic (1,222 CPU-h at R = 4) until the one-sided view's
+materializer flip lands (47× per successor). [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
 
 ## 8. Pointers
 

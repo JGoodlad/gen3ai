@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,880-line file. **The ledger itself is append-only and is never edited by this**;
+19,968-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**640 headings · 586 dated · 2026-08-01 → 2026-09-19 · ledger 19,880 lines.**
+**643 headings · 588 dated · 2026-08-01 → 2026-09-19 · ledger 19,968 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -660,3 +660,6 @@ rename.
   - `L19767` · `2026-09-19` · MEASUREMENT · THE ERA-1 FOLD AT CONVERGENCE (+12.09M, `ai_v13_08_fold1_cont`) — NO registered branch met; the fold paid on ONE of two taught slices, at the endpoint only, with that slice still rising: DDTar per-slice **+0.154 [+0.105, +0.201] vs a 0.085 cell floor — OUTSIDE (the first registered row this programme has cleared)** while Big-5 stays negative (−0.053); untaught +5.75 [+1.19, +11.06] at +12M (inside the bar's clause (b)); the clearing slice's teacher had nothing to teach (t2 +0.0075 over the parent, n.d.; the student ends +0.146 ABOVE its teacher); the +6M read stopped on a local minimum of the DDTar row; the sign split widened, which a scalar seniority term cannot produce
 - `L19769` · 12. Ledger paragraph — ready to append (nothing in `ledger.md`, `UNDERSTANDING.md` or any design note was edited from here)
   - `L19771` · `2026-09-19` · MEASUREMENT (MAJOR) · **THE ERA-1 FOLD AT CONVERGENCE — 🚨 THE FIRST REGISTERED ROW IN THIS PROGRAMME TO CLEAR ITS BAR (DDTar +0.1538 vs a 0.0850 MEASURED floor), on the slice whose teacher had +0.0075 (NOT DETECTED) to teach — while the OTHER taught slice is NEGATIVE at all six depths and the off-slice row is FLAT across the last 50 % of the budget; NO registered branch is met**
+  - `L19881` · `2026-09-19` · MEASUREMENT (MAJOR) · THE K-CURVE — a ROLLOUT LEAF beats the 75M critic on the leaf column at K = 8 (0.652 vs 0.574, +0.078 [+0.027, +0.128] DETECTED) and K = 16 (0.671, +0.097 DETECTED), knee at K = 4 (0.613, +0.039 n.d. on the leaf column, +0.068 DETECTED pooled); 31,992 fresh rollouts on 665 banked forks, independent of the K′ = 8 label; cost 26 sim turns per rollout ⇒ ~200 turns per top-2 decision at K = 4; and the battery is branch (b) with the mechanism NAMED — the leaf out-ranks but the playoff's ACTING RULE resolves only 4.5 % of decisions at R = 4 (1 of 250 decisions changed live), so out-ranking is no longer the binding constraint, the gate is
+- `L19883` · 9. Ready-to-append ledger paragraph
+  - `L19885` · `2026-09-19` · 🎯 HOW MANY ROLLOUTS DOES A LEAF NEED, AND DOES IT PAY IN GAMES? — **the dose is FOUR and the leaf WINS by +0.068 [+0.038, +0.101] DETECTED (pooled) / +0.078 [+0.027, +0.128] at K=8 on the LEAF column — and 🚨 IT BUYS NOTHING IN GAMES BECAUSE THE ARM'S OWN 2·SE GATE RESOLVES ONLY 4.5 % OF PAIRS AT R=4 AND 12.5 % AT R=16.** The binding constraint has moved from the leaf to the DECISION RULE (2026-09-19)

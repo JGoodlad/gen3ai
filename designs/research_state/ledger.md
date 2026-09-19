@@ -19877,3 +19877,91 @@ seniority cannot make one · ladder n = 0 at double the budget · NO registered 
 20,900 battles, 0 timeouts · five reproduction checks EXACT, per-team**.
 
 **Orchestrator's reading.** Three things. (1) The one row cleared is on the slice whose teacher was NOT detectably better than the parent, and the student ended well above that teacher — so "distillation transferred the teacher's skill" is not the account; what the fold delivered on DDTar is more likely the TEAM-BLOCKED extra training on that team (64-episode blocks at 40 % bias) than the teacher's argmax. That is a real effect and a different mechanism from the one the recipe assumes. (2) A scalar seniority term cannot make one slice rise and the other fall on the same checkpoint against the same opponent with the same dice — so the control `ai_v13_09_wcont` (banking ~18:00 PT) decides the untaught row, but the slice SPLIT is already not continuation. A team-differential continuation effect (the parent simply improving on DDTar-like teams by playing on) is the remaining confound, measurable on these two cells for ~1.5 h CPU — dispatched with the control's read. (3) Every registered read this fold produced was taken at a point that turned out to be a local extremum of some row (the +6M read at DDTar's minimum; `win_rate_vs_pool`'s fall bottomed) — the sixth and seventh vindications of refusing short-window trends; folds are read on their whole trajectory or not at all. Tag: **MEASURED · DDTar slice OUTSIDE the floor at convergence · Big-5 negative · teacher-skill transfer NOT the account · control decides the untaught row**.
+
+### 2026-09-19 · MEASUREMENT (MAJOR) · THE K-CURVE — a ROLLOUT LEAF beats the 75M critic on the leaf column at K = 8 (0.652 vs 0.574, +0.078 [+0.027, +0.128] DETECTED) and K = 16 (0.671, +0.097 DETECTED), knee at K = 4 (0.613, +0.039 n.d. on the leaf column, +0.068 DETECTED pooled); 31,992 fresh rollouts on 665 banked forks, independent of the K′ = 8 label; cost 26 sim turns per rollout ⇒ ~200 turns per top-2 decision at K = 4; and the battery is branch (b) with the mechanism NAMED — the leaf out-ranks but the playoff's ACTING RULE resolves only 4.5 % of decisions at R = 4 (1 of 250 decisions changed live), so out-ranking is no longer the binding constraint, the gate is
+
+## 9. Ready-to-append ledger paragraph
+
+### 🎯 HOW MANY ROLLOUTS DOES A LEAF NEED, AND DOES IT PAY IN GAMES? — **the dose is FOUR and the leaf WINS by +0.068 [+0.038, +0.101] DETECTED (pooled) / +0.078 [+0.027, +0.128] at K=8 on the LEAF column — and 🚨 IT BUYS NOTHING IN GAMES BECAUSE THE ARM'S OWN 2·SE GATE RESOLVES ONLY 4.5 % OF PAIRS AT R=4 AND 12.5 % AT R=16.** The binding constraint has moved from the leaf to the DECISION RULE (2026-09-19)
+
+Record `designs/research_state/measurements/rollout_leaf_kcurve_2026-09-19/` (`PREDICTION.md`
+landed on main at **`ca52dc7f`** before the first rollout; `AMENDMENT.md` at **`b477e74c`**,
+`AMENDMENT2.md` + the guard at **`cc065247`**). **JOB 1: 31,992 fresh post-divergence rollouts**
+over **665** of the 2026-09-19 control's banked held-out contested CRN forks (all three branches
+at FULL K = 16), read against the control's OWN banked **K′ = 8** label — one label for every K,
+the leaf an INDEPENDENT mean of dice the label has never seen (`fresh_seeds(24)` is a strict
+extension of `fresh_seeds(8)`), nested in K and declared. **0 errors, 36 capped (0.11 %), 24/24
+CRN reproduction checks EXACT, 0 salt mismatches, 0 index mismatches.** Arm W frozen; CPU only;
+nothing under `models/`.
+
+**THE K-CURVE, against the K′ = 8 label, with the label ceiling and the cost beside every level.**
+`top1|top2` (351 non-tied pairs): head **0.5741** · K=1 **0.5427** · K=2 **0.5798** · K=4
+**0.6125** · K=8 **0.6524** · K=16 **0.6709**. Paired Δ vs the head on identical pairs: K=4
+**+0.0385 [−0.0089, +0.0871] ND**, **K=8 +0.0783 [+0.0273, +0.1279] DETECTED**, K=16 **+0.0969
+[+0.0467, +0.1477] DETECTED**. Pooled (1,159 non-tied): head 0.5798, and **K=4 already DETECTS at
++0.0677 [+0.0382, +0.1006]**, K=16 at +0.1217. **BAR K1 (a CI lower bound above the head's point)
+is met at K = 4 on three of four columns; BAR K2 (above 0.60) at K = 4 pooled and K = 8 on the
+leaf column.** **COST, measured: a rollout runs 25.7 turns to a terminal, so a K-leaf evaluation
+is ~25.7K sim turns and a top-2 playoff decision twice that — 206 turns at K=4, 411 at K=8**;
+3.16 s per rollout per worker on a box at load 30–60. **The KNEE (marginal gain per rollout below
+the average bought so far) is K = 4 on three columns and K = 8 on `top1|top2`** — the policy's own
+two best moves need twice the dice a random legal move does. 🚨 **The MEASURED ceiling (a
+16-rollout independent estimator) is 0.7015 pooled / 0.6709 on the leaf column and EXCEEDS the
+label's split-half agreement (0.6480 / 0.6140)** — exactly the bias the 2026-09-19 control
+registered, so the split-half `q` (0.7387) stays a CROSS-CHECK and is never a bar; **49 % of the
+sibling-label difference's variance is STILL label noise at K′ = 8** on that column.
+
+🚨 **AND IT DOES NOT TRANSFER — branch (b), with the mechanism named. The `playoff` arm's own
+gate (`|mean(d)| ≥ 2·SE` over R CRN-paired rollouts, `MIN_PAIRS = 4`) resolves 0 % of pairs at
+R ∈ {1,2} (below MIN_PAIRS it CANNOT conclude), 4.51 % [3.01, 6.17] at R = 4, 10.68 % at R = 8
+and 12.48 % [9.92, 15.04] at R = 16** — measured by IMPORTING the production rule
+(`playoff.paired_stats` / `is_conclusive`) and applying it to all 665 forks' CRN pairs, a
+battery-proxy that costs nothing and scales with the dice. **When it DOES conclude it agrees with
+the K′ = 8 label 0.87 / 0.83 / 0.92** (a SELECTION effect, quoted only with its coverage).
+**LIVE: the first cell-level use of the arm** — `--budget 120`, realized **R = 4.00** exactly —
+**played 2 of 190 playoffs and changed 1 of 250 decisions**; its contemporaneous critic-leaf
+control read **L2 0.5243 [0.4864, 0.5623]** over 113 pairs, straddling 0.50 where six win-prob
+heads already sit. **The rollout-leaf cell's own L2 is 0.5000 over 3 pairs and is published as an
+UNDER-POWERED DESCRIPTOR, not evidence**: at a measured 1,414 s per battle, 400 pairs of it is
+**1,222 CPU-hours**, so rule 25's 400-pair bar is recorded UNMET with the arithmetic (registered
+in `AMENDMENT2.md` before the read). **The one-line consequence: out-ranking successors is no
+longer the binding constraint — the ACTING RULE is, and re-tuning `SE_MULTIPLE` / `MIN_PAIRS`
+against the banked dice costs nothing.**
+
+🚨 **THREE INSTRUMENT DEFECTS, all filed in `designs/ops/TECH_DEBT_BACKLOG.md`, one GUARDED.**
+(1) **`--impl rust` BREAKS the playoff's nested counterfactual rollouts and the failure is
+INVISIBLE in the row** — 63 of 75 decisions lost their playoff to `unresolvable choice for p1:
+MoveName("crunch") — active metagross has moves [...]` (250 failed rollouts) while the identical
+game under `--impl node` raised 0; `PlayoffResult.error` lands in `diag["playoff"]["error"]`,
+which NO row field carries, so the cell folds to `n_playoff_no_budget` and reports a clean win
+rate for an arm that never adjudicated. The same rust path is clean on this read's 31,992 offline
+rollouts, so the candidates are the LIVE partial record and its `sodium,<hex>` seed spelling —
+**neither proven**. (2) **`--playoff-rollouts` was INERT below a budget of 2R rollouts with no
+refusal**: a live terminal rollout measured ~10 s, so at `--budget 20` the deadline bought ONE
+pair and `MIN_PAIRS = 4` declined every playoff — **cells asked for R = 4 and R = 8 produced
+BYTE-IDENTICAL no-op behaviour (realized R = 1.00, 64/64 inconclusive, `n_changed` exactly 0)**.
+**GUARD LANDED**: `playoff.short_r_refusal` + `--playoff-allow-short-r`, raising on the FIRST game
+after the row is appended, six tests, routine gate green (10,973 passed); the OPEN half is that
+`rollout_cost_s` seeds at 1.0 s against a measured ~10 s. (3) `run_local_battles`' docstring
+claims rust degrades `resumeReseed` / `__RECON__` to no-ops — **STALE**, `sim_bridge.rs`
+implements both, which is why 31,992 reseeded rust rollouts produce real dice variation.
+**NINE of TEN JOB-1 predictions held** (K2 is a declared NEAR MISS: the head reads 0.5741 against
+the control's 0.5610 on `top1|top2`, +0.0131 outside the registered ±0.01, on a 665-fork subset
+read at the successor index rather than through `build_table`'s branch rows; K7's knee is K = 8
+on the leaf column, not K = 4). **A1 and A4 are REFUTED in the same direction** — the gate is far
+TIGHTER (12.5 % at R = 16 against a registered 25–55 %) and far MORE CORRECT (0.92 against a
+registered 0.60–0.80) than predicted, which is one fact stated twice and is the read's sharpest
+surprise. **B6 REFUTED low: the screen is decisive on only 14 % of decisions**, so the playoff
+runs on a majority of them and that is where the cell's cost comes from. **WHAT REMAINS:**
+(1) **re-tune the GATE on the banked dice — free**: sweep `SE_MULTIPLE` and `MIN_PAIRS` for the
+coverage/agreement ROC the proxy already prices; (2) the per-action **`q_winprob_head`** (built,
+OFF) as the AMORTIZER — 206 sim turns per top-2 decision is a teacher's budget, not an inference
+budget; (3) ⚠️ **NOT worth another arm: a 400-pair mirror cell of an arm that changes 0.4 % of
+decisions.** Tag: **MEASURED (MAJOR) · THE DOSE IS FOUR — a 4-rollout leaf DETECTS over the
+75M-step critic pooled and an 8-rollout leaf on the LEAF column (+0.078 [+0.027, +0.128]) · the
+measured label ceiling is 0.67–0.70, NOT the split-half 0.61 · 🚨 THE BINDING CONSTRAINT MOVED
+FROM THE LEAF TO THE DECISION RULE — 2·SE over 4 CRN pairs resolves 4.5 % of them and the arm
+acts on 1 % of decisions · `--impl rust` silently breaks the arm and `--playoff-rollouts` was
+inert below budget 2R (guard landed)**.
+
+**Orchestrator's reading and DECISION.** The leaf question, closed for learned heads three days ago, is now open on a different object: a rollout-averaged leaf that a search can consume today, at a dose we have measured (K = 8 on the leaf column; K = 4 pooled), at a cost we have measured (~200–400 sim turns per contested decision — affordable at inference on the current box for one decision at a time, and made ~50× cheaper per successor by the one-sided view once its materializer flip lands). The battery did not pay because the playoff's decision gate (|mean d| ≥ 2·SE, MIN_PAIRS 4) is far tighter than registered and acts on 4.5 % of decisions; re-tuning it against the banked dice is FREE, and that is the next read: the gate's operating curve (resolve rate vs agreement-with-label per SE multiple) on the 665 forks, then a ≥100-pair battery at the chosen operating point with the critic-leaf control. No GPU. The 400-pair bar is UNMET by arithmetic (1,222 CPU-h) and stays so until the materializer flip. Tag: **MEASURED (MAJOR) · rollout leaf DETECTED at K ≥ 8 · knee K = 4 · the acting rule is the constraint · gate operating curve next**.
