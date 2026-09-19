@@ -1,0 +1,238 @@
+{
+ "what": "the untaught meter -- the OFF-SLICE / collateral read of registered row 1 -- on ai_v13_07_fold1 at +1M / +3M / +6M against its parent arm W and the seed arm W_b",
+ "source": "/home/goodlad/.claude/jobs/9ab51de6/tmp/fold1_read/untaught/untaught_registry.json",
+ "teams_manifest": null,
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+ "config_resolution": "the REGISTRY `untaught_meter_config` (see README hazard D-M)",
+ "n_teams": 8,
+ "timeouts": {
+  "attempted": 8000,
+  "timeouts": 0,
+  "fraction": 0.0,
+  "inconclusive_above": 0.25,
+  "inconclusive": false
+ },
+ "levels_pp": {
+  "fold_p1M": 47.62,
+  "fold_p3M": 51.56,
+  "fold_p6M": 51.31,
+  "armW": 46.19,
+  "armWb": 49.88
+ },
+ "wins_over_finished": {
+  "fold_p1M": "762 / 1600",
+  "fold_p3M": "825 / 1600",
+  "fold_p6M": "821 / 1600",
+  "armW": "739 / 1600",
+  "armWb": "798 / 1600"
+ },
+ "per_team_pp": {
+  "fold_p1M": {
+   "U_61590463": 50.0,
+   "U_92832108": 43.5,
+   "U_ce35b736": 53.0,
+   "U_9909f2e9": 40.0,
+   "U_9d5f8458": 51.5,
+   "U_f7ba5702": 44.5,
+   "U_90b94599": 47.0,
+   "U_dbf81d8e": 51.5
+  },
+  "fold_p3M": {
+   "U_61590463": 44.5,
+   "U_92832108": 44.5,
+   "U_ce35b736": 58.5,
+   "U_9909f2e9": 39.0,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 52.5,
+   "U_90b94599": 63.0,
+   "U_dbf81d8e": 54.5
+  },
+  "fold_p6M": {
+   "U_61590463": 48.5,
+   "U_92832108": 37.5,
+   "U_ce35b736": 60.5,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 54.5,
+   "U_90b94599": 60.5,
+   "U_dbf81d8e": 47.5
+  },
+  "armW": {
+   "U_61590463": 48.5,
+   "U_92832108": 39.0,
+   "U_ce35b736": 49.5,
+   "U_9909f2e9": 38.0,
+   "U_9d5f8458": 47.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 48.0,
+   "U_dbf81d8e": 51.5
+  },
+  "armWb": {
+   "U_61590463": 58.0,
+   "U_92832108": 53.0,
+   "U_ce35b736": 42.5,
+   "U_9909f2e9": 48.0,
+   "U_9d5f8458": 46.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 51.5,
+   "U_dbf81d8e": 52.0
+  }
+ },
+ "imported_floor_pp": 3.69,
+ "imported_floor_caveat": "3.69 pp is |arm W - W_b|, a 75M FRESH-ARM seed pair. This arm is a FOLD. A floor is a property of the DEPTH and the REGIME (sec 3.3); the meter's own FOLD floors are {'TC_replicate_pairs_END_depth': 1.19, 'frozen_dose_folds_six_draws': 1.66, 'K6_cell_three_draws': 2.46, 'controller_live_folds': 4.27, 'G5_three_continuation_arms': 1.0, 'TC_replicate_pairs_p1M_depth': 4.0}. 3.69 sits between the frozen-dose 1.66 and the controller-live 4.27, which is why the GO chose it -- it is still an IMPORT.",
+ "fold_depth_floors_pp_for_reference": {
+  "TC_replicate_pairs_END_depth": 1.19,
+  "frozen_dose_folds_six_draws": 1.66,
+  "K6_cell_three_draws": 2.46,
+  "controller_live_folds": 4.27,
+  "G5_three_continuation_arms": 1.0,
+  "TC_replicate_pairs_p1M_depth": 4.0
+ },
+ "contrasts": {
+  "fold_p1M_minus_armW": {
+   "label": "THE FINDING at +1M -- fold minus PARENT",
+   "delta_pp": 1.44,
+   "ci95_pp": [
+    -0.44,
+    3.19
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "fold_p3M_minus_armW": {
+   "label": "THE FINDING at +3M -- fold minus PARENT",
+   "delta_pp": 5.38,
+   "ci95_pp": [
+    1.63,
+    9.19
+   ],
+   "teams_favouring_first": 7,
+   "n_teams": 8
+  },
+  "fold_p6M_minus_armW": {
+   "label": "THE FINDING at +6M -- fold minus PARENT",
+   "delta_pp": 5.13,
+   "ci95_pp": [
+    1.06,
+    9.0
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "fold_p1M_minus_armWb": {
+   "label": "+1M against the OTHER SEED",
+   "delta_pp": -2.25,
+   "ci95_pp": [
+    -6.44,
+    2.56
+   ],
+   "teams_favouring_first": 2,
+   "n_teams": 8
+  },
+  "fold_p3M_minus_armWb": {
+   "label": "+3M against the OTHER SEED",
+   "delta_pp": 1.69,
+   "ci95_pp": [
+    -5.44,
+    8.69
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "fold_p6M_minus_armWb": {
+   "label": "+6M against the OTHER SEED",
+   "delta_pp": 1.44,
+   "ci95_pp": [
+    -5.75,
+    8.75
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "armW_minus_armWb": {
+   "label": "\ud83d\udea8 THE FLOOR, re-measured on the identical games in THIS invocation",
+   "delta_pp": -3.69,
+   "ci95_pp": [
+    -8.19,
+    0.81
+   ],
+   "teams_favouring_first": 2,
+   "n_teams": 8
+  },
+  "fold_p6M_minus_fold_p1M": {
+   "label": "the fold's own trajectory, +6M minus +1M (within-arm)",
+   "delta_pp": 3.69,
+   "ci95_pp": [
+    -0.75,
+    8.13
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  }
+ },
+ "reproduction": {
+  "armW": {
+   "banked_2026-09-18_pp": 46.19,
+   "here_pp": 46.19,
+   "delta_pp": 0.0,
+   "reproduces_exactly": true
+  },
+  "armWb": {
+   "banked_2026-09-18_pp": 49.88,
+   "here_pp": 49.88,
+   "delta_pp": 0.0,
+   "reproduces_exactly": true
+  },
+  "same_team_set_as_floor_read": true,
+  "per_team_identical": {
+   "armW": true,
+   "armWb": true
+  }
+ },
+ "verdicts": {
+  "fold_p1M": {
+   "abs_delta_pp": 1.44,
+   "ci95_pp": [
+    -0.44,
+    3.19
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": true,
+   "direction": "fold ABOVE parent",
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "fold_p3M": {
+   "abs_delta_pp": 5.38,
+   "ci95_pp": [
+    1.63,
+    9.19
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "direction": "fold ABOVE parent",
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "fold_p6M": {
+   "abs_delta_pp": 5.13,
+   "ci95_pp": [
+    1.06,
+    9.0
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "direction": "fold ABOVE parent",
+   "verdict": "WITHIN FLOOR at n = 2"
+  }
+ },
+ "row1_branch_clauses": {
+  "n_checkpoints_reported": 3,
+  "checkpoints_OUTSIDE_upward": [],
+  "checkpoints_OUTSIDE_downward": [],
+  "branch_a_first_clause_untaught_clears_UPWARD_at_ge_2": false,
+  "branch_c_untaught_DOWN_past_the_floor": false,
+  "note": "read at all three checkpoints by registration: a fold's off-slice track is a HOLE-then-recovery shape (sec 2.3) and the endpoint alone reports whichever phase the budget happened to stop in."
+ }
+}

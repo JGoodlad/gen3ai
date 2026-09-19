@@ -1,0 +1,418 @@
+{
+ "what": "registered row 2 \u2014 per-slice piloting on the two TAUGHT teams (matched extraction)",
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000 \u2014 ONE frozen era-external checkpoint, the same for every ref. NOT arm W's pool sentinels: a sentinel is the trainee's OWN snapshot, so arm W's and W_b's differ (floor read hazard F-G) and the seed floor would then face different opponents from the treatment contrast.",
+ "games_per_cell": 800,
+ "teams": [
+  "U_f6229d2c",
+  "U_9eb3abdc"
+ ],
+ "team_pin_sha": {
+  "U_f6229d2c": "450fb83c20",
+  "U_9eb3abdc": "6212de2e8c"
+ },
+ "opponent_resolved": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+ "team_labels": {
+  "U_f6229d2c": "Big-5 (BALANCE) \u2014 t1 `ai_v13_05_exploit_big5starmie`'s pinned team data/teams/sample/f6229d2c867e21d6.txt",
+  "U_9eb3abdc": "DDTar/Spikes (OFFENSE) \u2014 t2 `ai_v13_06_exploit_ddtar_spikes`'s pinned team data/teams/sample/9eb3abdc52876a63.txt"
+ },
+ "shard_timeouts": [
+  {
+   "slice_A.json": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_B.json": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_C.json": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  }
+ ],
+ "interval_note": "Wilson per cell; Newcombe on every difference. CONSERVATIVE under CRN \u2014 the games are paired and the tool retains no per-battle outcomes.",
+ "seniority_caveat": "fold \u2212 W = seniority + extraction and this row cannot split them: the fold has +6,094,848 steps arm W does not, each teacher +8,060,928.",
+ "levels": {
+  "U_f6229d2c": {
+   "armW": {
+    "wins": 394,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.4925,
+    "wilson95": [
+     0.458,
+     0.5271
+    ]
+   },
+   "armWb": {
+    "wins": 432,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.54,
+    "wilson95": [
+     0.5054,
+     0.5743
+    ]
+   },
+   "fold_p3M": {
+    "wins": 374,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.4675,
+    "wilson95": [
+     0.4332,
+     0.5021
+    ]
+   },
+   "fold_p6M": {
+    "wins": 345,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.4313,
+    "wilson95": [
+     0.3973,
+     0.4658
+    ]
+   },
+   "t1_big5": {
+    "wins": 461,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.5763,
+    "wilson95": [
+     0.5417,
+     0.61
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 221,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.2762,
+    "wilson95": [
+     0.2464,
+     0.3082
+    ]
+   }
+  },
+  "U_9eb3abdc": {
+   "armW": {
+    "wins": 376,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.47,
+    "wilson95": [
+     0.4356,
+     0.5046
+    ]
+   },
+   "armWb": {
+    "wins": 444,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.555,
+    "wilson95": [
+     0.5204,
+     0.5891
+    ]
+   },
+   "fold_p3M": {
+    "wins": 475,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.5938,
+    "wilson95": [
+     0.5593,
+     0.6273
+    ]
+   },
+   "fold_p6M": {
+    "wins": 430,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.5375,
+    "wilson95": [
+     0.5029,
+     0.5718
+    ]
+   },
+   "t1_big5": {
+    "wins": 298,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.3725,
+    "wilson95": [
+     0.3397,
+     0.4065
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 382,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "win_rate": 0.4775,
+    "wilson95": [
+     0.4431,
+     0.5121
+    ]
+   }
+  }
+ },
+ "per_team": {
+  "U_f6229d2c": {
+   "label": "Big-5 (BALANCE) \u2014 t1 `ai_v13_05_exploit_big5starmie`'s pinned team data/teams/sample/f6229d2c867e21d6.txt",
+   "contrasts": {
+    "fold_p6M_minus_armW": {
+     "label": "THE FINDING at +6M \u2014 fold minus the zero-head-start PARENT",
+     "delta": -0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ]
+    },
+    "fold_p3M_minus_armW": {
+     "label": "THE FINDING at +3M",
+     "delta": -0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ]
+    },
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "\ud83d\udea8 THE SEED FLOOR ON THIS CELL \u2014 arm W minus W_b, same team, same opponent, same games",
+     "delta": -0.0475,
+     "newcombe95": [
+      -0.0961,
+      0.0015
+     ]
+    },
+    "teacher_minus_fold_p6M": {
+     "label": "THE TEACHER'S CEILING \u2014 t1_big5 on its OWN team minus the fold",
+     "delta": 0.145,
+     "newcombe95": [
+      0.0961,
+      0.1929
+     ]
+    },
+    "teacher_minus_armW": {
+     "label": "t1_big5 minus the parent it was forked from \u2014 the whole gap the fold was asked to close",
+     "delta": 0.0838,
+     "newcombe95": [
+      0.0349,
+      0.1321
+     ]
+    },
+    "other_teacher_minus_armW": {
+     "label": "DESCRIPTOR \u2014 the OTHER teacher (t2_ddtar) on a team it never trained on",
+     "delta": -0.2162,
+     "newcombe95": [
+      -0.262,
+      -0.1692
+     ]
+    }
+   },
+   "verdicts": {
+    "fold_p6M_minus_armW": {
+     "delta": -0.0612,
+     "abs_delta": 0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold BELOW parent"
+    },
+    "fold_p3M_minus_armW": {
+     "delta": -0.025,
+     "abs_delta": 0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold BELOW parent"
+    }
+   }
+  },
+  "U_9eb3abdc": {
+   "label": "DDTar/Spikes (OFFENSE) \u2014 t2 `ai_v13_06_exploit_ddtar_spikes`'s pinned team data/teams/sample/9eb3abdc52876a63.txt",
+   "contrasts": {
+    "fold_p6M_minus_armW": {
+     "label": "THE FINDING at +6M \u2014 fold minus the zero-head-start PARENT",
+     "delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ]
+    },
+    "fold_p3M_minus_armW": {
+     "label": "THE FINDING at +3M",
+     "delta": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ]
+    },
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "\ud83d\udea8 THE SEED FLOOR ON THIS CELL \u2014 arm W minus W_b, same team, same opponent, same games",
+     "delta": -0.085,
+     "newcombe95": [
+      -0.1334,
+      -0.036
+     ]
+    },
+    "teacher_minus_fold_p6M": {
+     "label": "THE TEACHER'S CEILING \u2014 t2_ddtar on its OWN team minus the fold",
+     "delta": -0.06,
+     "newcombe95": [
+      -0.1086,
+      -0.011
+     ]
+    },
+    "teacher_minus_armW": {
+     "label": "t2_ddtar minus the parent it was forked from \u2014 the whole gap the fold was asked to close",
+     "delta": 0.0075,
+     "newcombe95": [
+      -0.0413,
+      0.0563
+     ]
+    },
+    "other_teacher_minus_armW": {
+     "label": "DESCRIPTOR \u2014 the OTHER teacher (t1_big5) on a team it never trained on",
+     "delta": -0.0975,
+     "newcombe95": [
+      -0.1452,
+      -0.0491
+     ]
+    }
+   },
+   "verdicts": {
+    "fold_p6M_minus_armW": {
+     "delta": 0.0675,
+     "abs_delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold ABOVE parent"
+    },
+    "fold_p3M_minus_armW": {
+     "delta": 0.1238,
+     "abs_delta": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold ABOVE parent"
+    }
+   }
+  }
+ },
+ "the_divergence": {
+  "question": "the completion entry recorded the two teachers' gated shares diverging 2.5x (t1 Big-5 0.226 -> 0.305, t2 DDTar 0.210 -> 0.122). Registered: does the BIG-5 slice gain more than the DDTAR slice?",
+  "big5_gain": -0.0612,
+  "ddtar_gain": 0.0675,
+  "big5_minus_ddtar": -0.1287,
+  "big5_gained_more": false,
+  "note": "a difference of two independent differences on 800 games each; no interval is printed for it because the four cells are not a factorial design and an interval here would invite a verdict the design cannot carry. DESCRIPTOR."
+ },
+ "pooled_SECONDARY": {
+  "levels": {
+   "armW": {
+    "wins": 770,
+    "finished": 1600,
+    "win_rate": 0.4813,
+    "wilson95": [
+     0.4568,
+     0.5057
+    ]
+   },
+   "armWb": {
+    "wins": 876,
+    "finished": 1600,
+    "win_rate": 0.5475,
+    "wilson95": [
+     0.523,
+     0.5717
+    ]
+   },
+   "fold_p3M": {
+    "wins": 849,
+    "finished": 1600,
+    "win_rate": 0.5306,
+    "wilson95": [
+     0.5061,
+     0.555
+    ]
+   },
+   "fold_p6M": {
+    "wins": 775,
+    "finished": 1600,
+    "win_rate": 0.4844,
+    "wilson95": [
+     0.46,
+     0.5089
+    ]
+   },
+   "t1_big5": {
+    "wins": 759,
+    "finished": 1600,
+    "win_rate": 0.4744,
+    "wilson95": [
+     0.45,
+     0.4989
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 603,
+    "finished": 1600,
+    "win_rate": 0.3769,
+    "wilson95": [
+     0.3535,
+     0.4009
+    ]
+   }
+  },
+  "warning": "POOLED ACROSS TEAMS \u2014 secondary by the matched-extraction rule and by rule 10. A pooled rate and a team-clustered one have disagreed in SIGN on this programme's own data. Read the per-team rows above."
+ }
+}
