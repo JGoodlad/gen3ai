@@ -19614,3 +19614,48 @@ on a FROZEN pool while bots RISE · agreement and piloting came APART · anchor 
 17,600 battles, 0 timeouts · both comparators reproduce EXACTLY, per-team**.
 
 **Orchestrator's reading and DEFAULT.** (1) Not detected, and the bar's clause (b) is near-unsatisfiable at this n (team-clustered half-width ≈ 3.9 pp against a 3.69 floor ⇒ needs |Δ| ≳ 7.5 pp) — the lever is a second fold ARM, not more games; the untaught lean (+5.4 at +3M, 7/8 teams; +5.1 at +6M) is a CANDIDATE with the seniority confound unresolved (no continuation control). (2) **The inverted shape is the finding:** the gen-era fold taught on-slice and dug an off-slice hole; this fold, at 0.20× the frozen dose on a 75M parent with teachers that are forks of the parent, does the opposite — no hole, off-slice its best row, on-slice negative on Big-5. Two candidate accounts, not separable at n = 1: (i) the teachers had little to teach (t2 is +0.0075 over the parent on its own pin against a third party; the fold beats it), so the fold's off-slice lean is the continuation/extra-training effect the untaught meter has always been sensitive to; (ii) the low frozen dose keeps the collateral small enough that no hole forms, at the cost of extraction. (3) **The continuation `ai_v13_08_fold1_cont` (+12M, stop rule fired at +7.7M) is read on the same rows when it banks — it is the converged endpoint AND, against the +6M point, the within-fold trajectory.** **DEFAULT next GPU arm after it: the CONTINUATION CONTROL** — arm W resumed for +12M with NO teachers, same frozen dose 2.8e-5, same pool seeding, seed 1001 (`ai_v13_09_wcont`): it separates seniority from extraction on the untaught row (the G5 cell of this era), which every fold reading here needs and which the gen-era record says our parents do not gain from. Tag: **VERDICT · fold-1 NOT DETECTED at +6M · shape INVERTED vs the gen era · continuation control is the next arm**.
+
+### 2026-09-19 · OPS · `ai_v13_08_fold1_cont` COMPLETE at 87,097,344 (+12M post-fork) — **the stop rule FIRED at +7.67M, so the fold's convergence point is now MEASURED: teacher agreement saturates at ≈0.82–0.83 EMA**, which retrospectively makes fold-1's +6M read an unconverged one; and the continuation control launched behind it
+
+**Run.** `ai_v13_08_fold1_cont`, a **FORK of `ai_v13_07_fold1`** carrying the identical distill block. Argv = the fold's with the **token-set diff exactly `--model`, `--steps`, run name** (252 → 252). Pin `6eb9c776`, checkargs **141 accepted / 2 launcher-owned / 0 unrecognized**, ARCH clean. 01:28 → 07:04 PT, **5 h 36 m**, FPS 316, **Restarts 2, Crashes 1**. `latest.txt` → `final_model.zip`. Final aggregate 96.0 %. **TWENTY-SEVEN complete.**
+
+**The crash fell at TEARDOWN — the SEVENTH occurrence.** Child log 8893 `Training complete. Model saved` → 9302 `Final aggregate win rate: 96.0%` → 9304 `Worker PID 3782383 died (exitcode=-15)`.
+
+**Pool and era.** `🌱 [SELFPLAY] [pool] seeded 20 snapshots from **ai_v13_07_fold1** (wr 93.38 %)` — the FOLD's own pool by name, not a re-seed from arm W. `[MATCHUP 0a7b730a4d]` unchanged from the fold, so **no drift banner and the same era**: the inherited-row cut stays the fold's original fork point, 75,005,952. **Dose held: `[FROZEN; pinned 2.80e-05]` → 4.272e-9, 0.20× reference**, with post-resume `train/learning_rate` flat at 2.800e-05 across every point (read from the row, never from the resume banner, which again printed the checkpoint's 2.50e-04).
+
+🚨 **THE STOP RULE FIRED — THE EVENT THIS RUN EXISTED TO OBTAIN.** The launcher's own event:
+
+> `[03:09:18] 🛑 [DISTILL-STOP] FIRED at 82673664 steps: distill/teacher_agreement_on_slice EMA 0.8178 has PLATEAUED (improvement over 8 rollouts < 0.005) while distill/collateral_kl_vs_parent EMA 0.38416 is still RISING`
+
+First fire at **step 82,673,664 = +7.67M post-fork**, `stop_state` 3.0 (the three-rollout confirmation), and it held for **42 of the 57 post-resume points**. `--distill-stop warn` is log-only by the launcher's own default, so nothing annealed and nothing stopped — the arm ran to its full target, as registered.
+
+**So the convergence point is now measured rather than assumed: teacher agreement on the taught slice saturates at ≈0.82–0.83 EMA, reached around +7.7M post-fork.** At the fold's own end it was still climbing (0.7581 → 0.7964 → 0.8153 at +1/3/6M) with the signal flat at zero, which is why `0158dff4` recorded *"the budget ended the fold, not the rule."* **That is now confirmed from the other side, and it means fold-1's registered +6M read — NOT DETECTED on every row (`144d2f8c`) — was taken at ~75 % of the teaching this teacher set had to give.** Whether the remaining 25 % changes any row is the continuation's own read; the point banked here is only that the earlier read's endpoint was not the recipe's endpoint.
+
+**THE METERS, at +7.5M / +9M / +12M cumulative post-fork:**
+
+| row | +7.5M | +9M | +12M |
+|---|---|---|---|
+| `teacher_agreement_on_slice` | 0.8233 | 0.8209 | **0.8329** |
+| `collateral_kl_vs_parent` | 0.3721 | 0.4146 | 0.3966 |
+| `on_slice_kl` | 0.4168 | 0.4599 | 0.4408 |
+| `kl` (overall) | 0.4691 | 0.4721 | 0.4458 |
+| `gated_frac` | 0.3461 | 0.3248 | 0.4770 |
+| `off_slice_frac` | 0.6539 | 0.6752 | 0.5230 |
+| `t1_gated_frac` / `mean_w` | 0.1899 / 2.0421 | 0.2178 / 2.1904 | **0.2635** / 1.9784 |
+| `t2_gated_frac` / `mean_w` | 0.1562 / 2.4634 | 0.1070 / 2.6770 | **0.2135** / 2.7322 |
+| `n_teachers_active` | 2.0 | 2.0 | 2.0 |
+| `stop_signal` | 0.0 | **1.0** | **1.0** |
+
+🚨 **THE TEACHER DIVERGENCE DID NOT CONTINUE — AND THAT IS THE FIFTH SHORT-WINDOW READ THIS CAMPAIGN THAT WOULD HAVE BEEN CALLED WRONG.** At the fold's end t1/t2 stood at 0.3051 / 0.1222, **2.5× apart and separating**, and I banked it as a measurement with no account offered. Across the continuation the ratio narrowed to ~1.5×, then widened again, and ends at **0.2635 / 0.2135 — about 1.2× apart, with BOTH teachers gating MORE rows than at the fold's end while agreement stayed flat.** There is no monotone divergence: it is a wandering ratio. **Had the fold's 2.5× been read as a trend it would have been a false finding**, and the standing rule (*report the number and its window; refuse the trend*) is now 5-for-5 (`_dense`'s crossing from two cycles; arm W's G7 rise at 30M; the fork dose "settled" at 1412; W_b's G7 rise; this).
+
+**Other rows.** Post-resume bots **0.9250 → 0.9300 → 0.9325**; G7 against the CORRECTED reference (parent's final cycle **26.350**) reads **1.051 / 1.090 / 1.057**, under bar throughout; `signal/draw_rate` peaks **0.0045** against the 0.05 bar. `off_slice_frac` moved 0.65 → 0.52, so the taught share RISES late while `--distill-team-bias` is unchanged at 0.4 — a delivery observation, not a claim.
+
+### 2026-09-19 · OPS · LAUNCH · `ai_v13_09_wcont` — the CONTINUATION CONTROL (the era's G5 cell), the arm that separates seniority from extraction
+
+Launched 07:07 PT, launcher pid 3915968, child 3916003, pin `6eb9c776`, **role FORK of `ai_v13_02_flywheel_winprob`**, `--steps 87,005,952 → **+12,000,000 steps exactly**` — the same cumulative endpoint as the fold path. 238 tokens from **arm W's** argv; checkargs **134 accepted / 2 launcher-owned / 0 unrecognized**, ARCH clean. **`--fork-lr 2.8e-05 --fork-lr-freeze`**, so the two paths differ only by the distill block and the teachers-in-pool.
+
+**Why it exists:** fold-1's +6M read was NOT DETECTED on every row with the gen-era shape INVERTED — no off-slice hole, off-slice its best row at +5.4/+5.1 pp (inside the bar), on-slice NEGATIVE on Big-5 (−0.061) and positive on DDTar (+0.068). **The one confound no read can remove is seniority versus extraction**, and this control supplies it: if a plain +12M continuation of arm W gains the same off-slice amount, the fold's lean is continuation and not teaching.
+
+**Launch guards, all green.** `🌱 [SELFPLAY] [pool] seeded 20 snapshots from ai_v13_02_flywheel_winprob (wr 91.00 %)` — auto-seeded from arm W as a fork does. **`grep -c DISTILL` on the launcher log returns 0** — no teachers, no distill loss, exactly as the control requires. `[MATCHUP ef5242cffd]` — **arm W's own matchup, unchanged**, so no drift banner: the control is in the ladder era while the fold path moved to `0a7b730a4d`. `[Reward] 1 TERMINAL + 0 PBRS + 0 BIAS`; `[CRITIC] winprob … --vf-coef 0.5`.
+
+⚠️ **Two caveats for the eventual comparison, recorded before the numbers exist.** (1) The control runs **one continuous +12M** while the fold path is +6M then +5.9M **with a fork boundary between**; both land on the same cumulative endpoint and both are lr-frozen at 2.8e-5, but the fold path crossed one extra fork. (2) `--distill-target 'kl'` and `--distill-topk 1` appear in the dry run as **INHERITED** from arm W's checkpoint config — inert at `--distill-coef 0.0` with no teacher, but a visible instance of the standing rule that any flag the argv does not NAME re-resolves. Tag: **OPS · COMPLETE (fold continuation) · STOP RULE FIRED at +7.67M, agreement saturates ≈0.82–0.83 · fold-1's +6M read confirmed UNCONVERGED · teacher divergence did NOT continue (5th short-window refusal vindicated) · LAUNCH (continuation control)**.

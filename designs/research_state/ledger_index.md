@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,617-line file. **The ledger itself is append-only and is never edited by this**;
+19,662-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**631 headings · 579 dated · 2026-08-01 → 2026-09-19 · ledger 19,617 lines.**
+**633 headings · 581 dated · 2026-08-01 → 2026-09-19 · ledger 19,662 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -651,3 +651,5 @@ rename.
   - `L19354` · `2026-09-19` · OPS · `ai_v13_07_fold1` COMPLETE at 81,100,800 — the ERA-1 FOLD ran its full +6M with **both teachers active throughout, the stop signal never firing**, and teacher agreement still RISING at the end; the two teachers' contributions diverged steadily
   - `L19386` · `2026-09-19` · MEASUREMENT (MAJOR) · THE OFFLINE FROZEN-POLICY LEAF FIT — branch (c): seven fits on 17,904 AlphaGo-style branched positions from arm W's frozen self-play all read 0.567–0.576 on fresh contested CRN forks (bar 0.60 lower bound fails on every one); a head fitted from scratch in 1.1 s matches the head trained for 75M steps; the fit buys CALIBRATION (ECE 0.072 → 0.013, the frozen critic is over-confident by 7 points on its own forks) and NO resolution; and the pooled 0.575 is a MIXTURE — top1|random 0.594, top2|random 0.575, **top1|top2 0.545** — the column a re-ranking leaf actually consumes is the worst, which is why every battery read no dividend
   - `L19471` · `2026-09-19` · MEASUREMENT (MAJOR) · **THE ERA-1 FOLD's REGISTERED READ — branch (d) NOT DETECTED by the registered rule, and the SHAPE is the INVERSE of the gen-era fold**: the row that moved is the OFF-SLICE one (untaught **+5.4 / +5.1 pp** over the parent at +3M/+6M, 1.4× an imported 3.69 pp floor, CIs clear of zero) while the two TAUGHT slices split in SIGN (**−0.061** on Big-5, **+0.068** on DDTar) — 🚨 **no early off-slice HOLE at any depth**, 🚨 **the teacher's GATED SHARE anti-predicts the slice gain**, 🚨 **agreement and piloting came APART between +3M and +6M**, and 🚨 **the fold promoted ZERO snapshots, so the ladder row is n = 0 and `win_rate_vs_pool` fell 0.488 → 0.372 against a FROZEN pool**
+  - `L19618` · `2026-09-19` · OPS · `ai_v13_08_fold1_cont` COMPLETE at 87,097,344 (+12M post-fork) — **the stop rule FIRED at +7.67M, so the fold's convergence point is now MEASURED: teacher agreement saturates at ≈0.82–0.83 EMA**, which retrospectively makes fold-1's +6M read an unconverged one; and the continuation control launched behind it
+  - `L19653` · `2026-09-19` · OPS · LAUNCH · `ai_v13_09_wcont` — the CONTINUATION CONTROL (the era's G5 cell), the arm that separates seniority from extraction
