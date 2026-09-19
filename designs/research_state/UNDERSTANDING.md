@@ -260,6 +260,18 @@ both arms. [ledger 2026-09-12 · *VERDICT · ent05 PASSES*] `--ent-coef` is live
 
 ### 2.3 What a gen-era fold actually does
 
+**The era's FIRST fold does not reproduce this shape (2026-09-19, `fold1_read_2026-09-19/`, n = 1):** `ai_v13_07_fold1`
+(a fork of the 75M win-prob arm W taught by two of its own exploiter forks, action-form top-1 at coef 0.1761, frozen
+dose 0.20× v8, +6M, teacher agreement still climbing at the end — converged at ≈0.82 at +7.7M in its continuation)
+reads NOT DETECTED on every registered row: untaught +1.4 / +5.4 / +5.1 pp at +1/3/6M against a 3.69 floor (CI never
+excluding the floor point; the bar needs ≳7.5 pp at this n), per-slice Big-5 **−0.061** and DDTar +0.068 within their
+measured cell floors, SmallRL +0.040 within 0.090, ladder unreadable (zero promotions against a frozen pool). **No
+off-slice hole at any depth, off-slice its best row, on-slice negative on one taught team** — the inverse of every
+gen-era cell above; the teachers' gated share anti-predicts the slice gain; agreement and piloting came apart (agreement
+rose while both slices peaked at +3M). Accounts not separable at n = 1: the teachers had little to teach (DDTar is
++0.0075 over the parent on its own pin against a third party), or the low frozen dose prevents the hole at the cost of
+extraction. The continuation control (arm W +12M, no teachers) is the era's G5 cell and the next arm.
+
 Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose
 (`--fork-lr 2.8e-5 --fork-lr-freeze`), parent R2ACTION, 8 untaught teams, cluster-bootstrapped:
 

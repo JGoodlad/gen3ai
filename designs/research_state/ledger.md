@@ -19467,3 +19467,150 @@ NOT RESOLUTION · 🚨 the pooled 0.575 is a MIXTURE and the leaf-relevant `top1
 outcome-relevance selector**.
 
 **Orchestrator's reading and the DECISION.** Twelve heads now sit on 0.567–0.578, and the list of things varied is complete: head, loss form, data distribution, coverage, capacity, input width, target stationarity, and now the frozen-policy AlphaGo recipe itself. **The leaf question is CLOSED for learned win-prob heads at this depth**: the bound is not in the learner. The mixture finding names where it is — a head separates a played move from a random one at 0.59 and the policy's own two best moves at 0.545, on single-rollout labels — so the remaining hypotheses are (i) a label-noise floor from single rollouts at this game's stochasticity, and (ii) the game itself (near-tied top-2 moves genuinely being near-tied). Both are tested by ONE cheap control, dispatched: a hand-written evaluator (Foul Play's kind — HP, status, boosts, hazards, matchup) scored on the exact banked forks, plus rollout-averaged labels (K rollouts per branch) on a subset — if a heuristic also reads ~0.545 on top1|top2 and averaging the labels lifts every head equally, the ceiling is the game's noise and search-by-value is closed at this label budget; if the heuristic reads higher, the learned heads are missing something a hand evaluator has. Search stays wound down; the exploiter flywheel is unaffected. A reusable instrument came free: one pass of offline BCE on ~4.5 h of CPU forks removes the frozen critic's 7-point over-confidence without touching its ranking. Tag: **MEASURED (MAJOR) · branch (c) · leaf question CLOSED for learned heads · the metric is a mixture, top1|top2 = 0.545 · hand-evaluator control dispatched**.
+
+### 2026-09-19 · MEASUREMENT (MAJOR) · **THE ERA-1 FOLD's REGISTERED READ — branch (d) NOT DETECTED by the registered rule, and the SHAPE is the INVERSE of the gen-era fold**: the row that moved is the OFF-SLICE one (untaught **+5.4 / +5.1 pp** over the parent at +3M/+6M, 1.4× an imported 3.69 pp floor, CIs clear of zero) while the two TAUGHT slices split in SIGN (**−0.061** on Big-5, **+0.068** on DDTar) — 🚨 **no early off-slice HOLE at any depth**, 🚨 **the teacher's GATED SHARE anti-predicts the slice gain**, 🚨 **agreement and piloting came APART between +3M and +6M**, and 🚨 **the fold promoted ZERO snapshots, so the ladder row is n = 0 and `win_rate_vs_pool` fell 0.488 → 0.372 against a FROZEN pool**
+
+`designs/research_state/measurements/fold1_read_2026-09-19/`. Bars, branches and priors
+pre-registered in `PREDICTION.md` and committed BEFORE any registered number existed — including
+the two facts that were LOOKED AT while scoping and disclosed there rather than hidden (the
+missing ladder, and the `win_rate_vs_pool` series that explains it). **THE ARM.**
+`ai_v13_07_fold1`, a FORK of `ai_v13_02_flywheel_winprob` (**arm W**) at 75,005,952 distilling
+from the era's two win-prob exploiters — **t1 `ai_v13_05_exploit_big5starmie`** (BALANCE, pinned
+team `f6229d2c867e21d6`) and **t2 `ai_v13_06_exploit_ddtar_spikes`** (OFFENSE,
+`9eb3abdc52876a63`) — `--fork-lr 2.8e-5 --fork-lr-freeze`, `--distill-team-bias 0.4`, both
+teachers in the stable pool each piloting its own pin, +6,094,848 steps to **81,100,800**, pin
+`6eb9c776`, config v119, realized dose **4.272e-9 = 0.20× the v8 reference** (`main.dose`,
+re-read here). **THE RULE, fixed in advance and copied from the floor read so the two are
+commensurable: OUTSIDE THE FLOOR iff `|Δ| > floor` AND the Δ's CI excludes the floor POINT; else
+WITHIN FLOOR at n = 2 — one pair BOUNDS a floor and does not estimate one (rules 19/22), and
+WITHIN FLOOR is never "equivalent" (rule 6).** Sign convention `Δ = fold − arm W`. Everything
+CPU-only (`CUDA_VISIBLE_DEVICES=""`, `nice 15`), from the MAIN checkout, **nothing written under
+`models/`**, no file under `src/` changed; the only server was `main.anchors`' own on :9450,
+**:8000 and :8001 never touched**, and the live GPU arm `ai_v13_08_fold1_cont` never touched.
+**17,600 battles, 0 TIMEOUTS (0.0 %).** **ROW 1 — THE UNTAUGHT METER (and it IS the collateral
+read).** Registry opponent `untaught_meter_opponent` (= `ai_v9_29_rev1_0823@24,000,000`),
+untaught-8 in canonical order, 200 games/team, seed 0, concurrency 1, **all five refs in ONE
+invocation**. ✅ **arm W and W_b BOTH reproduce their banked 2026-09-18 levels EXACTLY — 46.19 pp
+(739/1600) and 49.88 pp (798/1600), Δ 0.00, and for the first time the check is on the PER-TEAM
+rows: all 8 identical on both arms** — a third independent confirmation that the meter is
+deterministic at seed 0 / concurrency 1, and the 3.69 pp floor re-measures at exactly −3.69 on the
+identical games. Fold levels **47.62 / 51.56 / 51.31 pp** at +1M / +3M / +6M ⇒ paired
+team-clustered (rule 10, 20,000 draws, one shared index set) **+1.44 [−0.44, +3.19] (5/8)**,
+**+5.38 [+1.63, +9.19] (7/8)**, **+5.13 [+1.06, +9.00] (5/8)**. Against the imported 3.69 pp
+floor: clause (a) passes at +3M and +6M at 1.4×, **clause (b) fails at all three ⇒ WITHIN FLOOR
+at n = 2 everywhere**, though both later CIs exclude ZERO. Against the OTHER seed the same
+contrasts are −2.25 / +1.69 / +1.44, so the defensible statement is *the fold is ahead of BOTH
+win-prob seeds off-slice by 1.4 to 5.1 pp against a 3.7 pp seed floor* — the same shape, and the
+same caveat, the floor read attached to arm S's +8.31. 🚨 **AND THE EARLY OFF-SLICE HOLE DID NOT
+HAPPEN.** §2.3's strongest fold law — every gen-era fold digs a ~3–4 pp hole by +1M regardless of
+teacher content, measured three times (−3.12 / −3.28 / −4.19, "indistinguishable") — puts the
+registered P(Δ at +1M negative) at 0.70. **It is +1.44, and the fold is above its parent at every
+depth measured.** Three differences from those cells could account for it and this read separates
+none: dose 0.20× and FROZEN, parent at 75M rather than ~28M and `--critic winprob`, and teachers
+that are 8M-step forks of the parent itself. **A failure to reproduce a law in a new regime at
+n = 1, NOT a refutation.** 🚨 **CLAUSE (b) IS NEAR-UNSATISFIABLE HERE AND THAT IS A BAR PROPERTY:**
+the team-clustered CI half-width is ≈ 3.8–4.0 pp against a 3.69 pp floor, so clause (b) needs
+`|Δ| ≳ 7.5 pp` — an effect the size of the floor cannot clear the rule at this n. The floor read
+logged clause (b) as near-VACUOUS on its entropy row; this is the opposite failure mode of the
+same fact, **clause (b) compares a SAMPLING interval to a RUN-LEVEL quantity**, and the lever is a
+second fold ARM (rules 19/22), never more games. **ROW 2 — PER-SLICE PILOTING, the
+matched-extraction row.** Same engine on a 2-team manifest, **800 games per cell, 12 cells, 9,600
+battles, 0 timeouts**, every ref piloting the SAME pinned team against the SAME fixed opponent
+drawing the SAME sequence under the SAME dice — the untaught meter's opponent and **NOT** arm W's
+pool sentinels, because a sentinel is the trainee's own snapshot and arm W's differ from W_b's
+(floor-read hazard F-G). Wilson per cell, **Newcombe on every difference, CONSERVATIVE under CRN**.
+🚨 **THE TWO SLICES SPLIT IN SIGN.** **BIG-5**: t1 **0.5763**, W_b 0.5400, **arm W 0.4925**, fold
++3M 0.4675, **fold +6M 0.4313**, t2 (off its pin) 0.2762 ⇒ **fold − W = −0.0612 [−0.1097, −0.0124]**
+against a **seed floor of 0.0475 measured on this very cell** — clause (a) ✅, (b) ❌, **WITHIN
+FLOOR, and NEGATIVE**; the teacher's ceiling is **+0.1450** above the fold and the gap the fold was
+asked to close (**t1 − arm W = +0.0838 [+0.0349, +0.1321]**) was not closed but crossed backwards.
+**DDTAR**: fold +3M **0.5938**, W_b 0.5550, **fold +6M 0.5375**, t2 **0.4775**, **arm W 0.4700**,
+t1 (off its pin) 0.3725 ⇒ **fold − W = +0.0675 [+0.0185, +0.1160]** against a **0.0850 seed floor
+on the same cell** — clause (a) ❌ ⇒ WITHIN FLOOR; at +3M it is +0.1238 [+0.0749, +0.1717], (a) ✅
+(b) ❌. 🚨 **AND THE FOLD BEATS ITS OWN TEACHER ON THAT SLICE (+0.0600 [+0.0110, +0.1086])** —
+because **t2's own edge over the parent on its own team is +0.0075 [−0.0413, +0.0563], NOT
+DETECTED**: there was almost nothing to teach. 🚨 **THE DIVERGENCE RUNS THE OPPOSITE WAY TO THE
+REGISTRATION.** The gated share rose 0.226 → 0.305 on Big-5 (where the fold ends −0.061) and fell
+0.210 → 0.122 on DDTar (where it ends +0.068): **Big-5 − DDTar = −0.1287** against a registered
+P = 0.60 that Big-5 would gain more. **The gated share ANTI-PREDICTS the slice gain on the one
+pair of slices in hand** — a DESCRIPTOR on two cells, with both readings stated and neither
+adopted (the gate may fire where the student is WRONG rather than where it is learning; or the two
+teachers are simply not equally worth copying). 🚨 **THE 0.740 HEADLINE DOES NOT TRANSFER:** both
+exploiters reached 0.740 vs their own parent on their own pin, but against a THIRD-PARTY opponent
+on the same pins t1 is +0.0838 (detected) and t2 is +0.0075 (not) — **a best-response edge against
+ONE target is not piloting skill**, and a fold inherits whichever of the two its teacher actually
+is. ⚠️ **A specialist is badly OOD off its own team** (t2 on Big-5 0.2762, −0.216 vs the parent;
+t1 on DDTar 0.3725, −0.098), both far below the generalist they were forked from. ⚠️ **Pooled over
+both teams the fold reads +0.003 over its parent — an exact null manufactured out of a −0.061 /
++0.068 split, each CI clear of zero.** Rule 10 demonstrating itself on 1,600 games; the pooled row
+is a footnote. **ROW 3 — THE LADDER IS n = 0.** 🚨 **The fold has NO `snapshot_ladder/` and
+promoted ZERO snapshots in 6,094,848 steps**; its `snapshots/` holds exactly the 20 files
+auto-seeded from arm W (26.0M → 72.0M, arm W's own mtimes). This is not "below the n ≥ 12 report
+floor" — there is no node to fit and no rating is quoted in either direction. **The reason is in
+the run's own eval rows: `win_rate_vs_pool` 0.488 → 0.446 → 0.412 (and 0.372 on the live
+continuation, whose pool is seeded from the fold, i.e. the SAME 20 files — verified), never near
+the 0.55 gate.** Because nothing was promoted, every point is against an IDENTICAL FROZEN opponent
+set, which makes the monotone fall unusually clean — 🚨 **and it dissociates from
+`win_rate_vs_bots`, which RISES 0.9238 → 0.9338 over the same span.** DESCRIPTOR, no bar attached,
+and not comparable across the 2026-09-07 regime boundary (every point is post-boundary and the
+regime is RECORDED). **ROW 4 — THE EXTERNAL ANCHOR.** `python -m main.anchors --opponent
+metamon:SmallRL --regime greedy --teamset away --games 100` on :9450 (its own server, started and
+stopped by the tool), `SmallRL` ckpt 40 / `VanillaAttention` / Metamon `@0a00a759`, Showdown pin
+`e0551883f`: the fold reads **0.540 [0.443, 0.634]** against arm W's **0.500** and W_b's 0.590 ⇒
+**+0.040 [−0.097, +0.175] against the 0.090 floor ⇒ WITHIN FLOOR at n = 2**, as registered in
+advance (P(clears) = 0.15). `status: OK`, **0 ties, 0 forfeits**, `regime_verified: true` with
+Metamon's `argmax_match_rate` **1.0000** over 2,732 decisions and our `stochastic` kwarg `[false]`,
+`distinct_our_teams` 19/20, role split 8 pp. **ROW 5 — COLLATERAL.** The untaught meter IS the
+off-slice read. 🚨 **`main.exploitability` is NOT APPLICABLE and was declared so BEFORE the first
+battle**: its own `--help` says *bookkeeping only* over `fleet_admission`-schema artifacts, of
+which this arm has produced none, and the committed ones are each the output of a separate
+800-games-per-arm battery carrying a fixed cross-era REFERENCE (`rev1final`) that row 2 does not
+have. **THE READING.** 🚨 **The inversion is the finding: §2.3's gen-era account is that a fold
+TEACHES on-slice (~+5 pp, every arm clearing zero) and DIGS A HOLE off-slice (~3–4 pp by +1M).
+This fold does NEITHER — no hole at any depth, its off-slice level is its best row, and on-slice it
+is NEGATIVE on one of its two taught teams.** One arm, n = 1, at a dose and a parent depth no
+gen-era cell occupied ⇒ a failure to reproduce in a new regime, and §2.3 is NOT edited from here.
+🚨 **AGREEMENT AND PILOTING CAME APART.** `teacher_agreement_on_slice` rose 0.758 → 0.796 → 0.815
+→ **0.823** (still rising at the last rollout, reproduced here from the events) while the fold
+**peaked at +3M and fell by +6M on BOTH taught teams** and went flat off-slice (51.56 → 51.31);
+`collateral_kl_vs_parent` 0.277 → 0.402 and `on_slice_kl` 0.327 → 0.690 were both still rising at
+the end. **The stop rule is conjunctive and the conjunct that never became true is the one about
+the TEACHER ("agreement has PLATEAUED"), not the one about the parent** — so `stop_signal` read
+0.0000 at every point, correctly by its own definition, on an arm whose piloting was falling.
+Recorded as an instrument observation; the completion entry's "it had not finished learning from
+these teachers" is left standing beside it, as what that meter said. **WHAT THE CONTINUATION WOULD
+DECIDE, registered in `PREDICTION.md` §4 before any result:** `ai_v13_08_fold1_cont` (live, forked
+at 81,100,800, +6M more, same teachers, same frozen dose) tests BUDGET vs RECIPE, and only in one
+direction — **and the +3M → +6M leg has already run that experiment inside this arm and returned
+the second answer**, so the continuation tests whether that leg was a draw or a direction. Rows 1
+and 2 re-run at +12M (~4 h CPU) are the cheap decisive read; **what it cannot decide is whether
+anything clears a floor — that needs a second fold ARM (rule 22), not more steps on this one.**
+**HAZARDS, each a finding.** (1) clause (b) near-UNSATISFIABLE at this n — a bar property, with
+the arithmetic printed; (2) the gated share ANTI-predicts the slice gain; (3) agreement vs
+piloting; (4) the ladder is n = 0, disclosed pre-registration; (5) the 0.740 headline does not
+transfer to a third-party opponent; (6) specialists are badly OOD off their pin; (7) pooling
+manufactures an exact null from a real split; (8) every floor here except the two per-slice ones is
+an IMPORT from a 75M FRESH-ARM pair onto a FOLD (the per-slice floors were MEASURED on the same
+cells); (9) NO continuation control — every delta is against a FROZEN parent and §2.2's "the
+correction does not bite on our parents" is itself an import from ~28M/+1M; (10) SENIORITY is not
+separable from extraction (+6,094,848 steps), and the nearest bound on it is the untaught row's
+own +5.1 pp, which is why the on-slice numbers cannot be read as extraction; (11) **arm W is the
+LOWER of the two parent seeds on all three battle instruments here**, so every "beats its parent"
+number is against the weaker draw; (12) a fork's TB carries its parent's whole history and every
+series here is SLICED at the fork step (the `g7_ladder` trap, `36f8f7eb`); (13) `--config auto`
+NOT re-run — same `arch_signature`, `config_path` drives only the compatibility check, and the
+floor read showed both resolutions identical to 0.01 pp on three arms of this config; declared,
+not omitted. **WHAT IS NOT CLAIMED:** that the fold paid, or hurt; that any row clears a floor;
+that WITHIN FLOOR means equivalent (rule 6); that a floor is known rather than bounded at n = 2;
+that the gated share predicts anything; that §2.3's hole law is refuted; that the recipe failed —
+the fold is unconverged by its own stop rule's own meter and one arm against an imported floor is
+the weakest evidential configuration this programme has. Tag: **MEASURED · THE ERA-1 FOLD's
+REGISTERED READ · branch (d) NOT DETECTED · the SHAPE INVERTED — off-slice moved, on-slice split
+in SIGN · NO early off-slice hole (§2.3's law not reproduced at 0.20× dose on a 75M parent) ·
+untaught +5.4/+5.1 pp vs a 3.69 imported floor, clause (b) near-unsatisfiable · Big-5 −0.061 /
+DDTar +0.068, the gated share ANTI-predicts · the fold BEATS t2 because t2 had +0.0075 to teach ·
+the 0.740 vs-target headline does NOT transfer · ladder n = 0, `win_rate_vs_pool` 0.488 → 0.372
+on a FROZEN pool while bots RISE · agreement and piloting came APART · anchor WITHIN FLOOR ·
+17,600 battles, 0 timeouts · both comparators reproduce EXACTLY, per-team**.
+
+**Orchestrator's reading and DEFAULT.** (1) Not detected, and the bar's clause (b) is near-unsatisfiable at this n (team-clustered half-width ≈ 3.9 pp against a 3.69 floor ⇒ needs |Δ| ≳ 7.5 pp) — the lever is a second fold ARM, not more games; the untaught lean (+5.4 at +3M, 7/8 teams; +5.1 at +6M) is a CANDIDATE with the seniority confound unresolved (no continuation control). (2) **The inverted shape is the finding:** the gen-era fold taught on-slice and dug an off-slice hole; this fold, at 0.20× the frozen dose on a 75M parent with teachers that are forks of the parent, does the opposite — no hole, off-slice its best row, on-slice negative on Big-5. Two candidate accounts, not separable at n = 1: (i) the teachers had little to teach (t2 is +0.0075 over the parent on its own pin against a third party; the fold beats it), so the fold's off-slice lean is the continuation/extra-training effect the untaught meter has always been sensitive to; (ii) the low frozen dose keeps the collateral small enough that no hole forms, at the cost of extraction. (3) **The continuation `ai_v13_08_fold1_cont` (+12M, stop rule fired at +7.7M) is read on the same rows when it banks — it is the converged endpoint AND, against the +6M point, the within-fold trajectory.** **DEFAULT next GPU arm after it: the CONTINUATION CONTROL** — arm W resumed for +12M with NO teachers, same frozen dose 2.8e-5, same pool seeding, seed 1001 (`ai_v13_09_wcont`): it separates seniority from extraction on the untaught row (the G5 cell of this era), which every fold reading here needs and which the gen-era record says our parents do not gain from. Tag: **VERDICT · fold-1 NOT DETECTED at +6M · shape INVERTED vs the gen era · continuation control is the next arm**.
