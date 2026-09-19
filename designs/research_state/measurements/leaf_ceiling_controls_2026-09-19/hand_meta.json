@@ -1,0 +1,156 @@
+{
+ "totals": {
+  "forks": 5040,
+  "branches": 14601,
+  "captured": 14601,
+  "obs_match": 14601,
+  "obs_mismatch": 0,
+  "no_capture": 0,
+  "turn_mismatch": 0,
+  "no_opp_view": 0,
+  "errors": 0,
+  "terminal_checks": 138,
+  "terminal_outcome_agree": 138
+ },
+ "wall_s_max": 625.005829334259,
+ "shards": {
+  "s0": {
+   "shard": "0/6",
+   "tag": "s0",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+   "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+   "stats": {
+    "forks": 840,
+    "branches": 2426,
+    "captured": 2426,
+    "obs_match": 2426,
+    "obs_mismatch": 0,
+    "no_capture": 0,
+    "turn_mismatch": 0,
+    "no_opp_view": 0,
+    "errors": 0,
+    "terminal_checks": 24,
+    "terminal_outcome_agree": 24
+   },
+   "wall_s": 568.9548132419586,
+   "impl": "rust",
+   "to_terminal": 8
+  },
+  "s1": {
+   "shard": "1/6",
+   "tag": "s1",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+   "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+   "stats": {
+    "forks": 840,
+    "branches": 2432,
+    "captured": 2432,
+    "obs_match": 2432,
+    "obs_mismatch": 0,
+    "no_capture": 0,
+    "turn_mismatch": 0,
+    "no_opp_view": 0,
+    "errors": 0,
+    "terminal_checks": 24,
+    "terminal_outcome_agree": 24
+   },
+   "wall_s": 609.957198381424,
+   "impl": "rust",
+   "to_terminal": 8
+  },
+  "s2": {
+   "shard": "2/6",
+   "tag": "s2",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+   "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+   "stats": {
+    "forks": 840,
+    "branches": 2423,
+    "captured": 2423,
+    "obs_match": 2423,
+    "obs_mismatch": 0,
+    "no_capture": 0,
+    "turn_mismatch": 0,
+    "no_opp_view": 0,
+    "errors": 0,
+    "terminal_checks": 24,
+    "terminal_outcome_agree": 24
+   },
+   "wall_s": 625.005829334259,
+   "impl": "rust",
+   "to_terminal": 8
+  },
+  "s3": {
+   "shard": "3/6",
+   "tag": "s3",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+   "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+   "stats": {
+    "forks": 840,
+    "branches": 2434,
+    "captured": 2434,
+    "obs_match": 2434,
+    "obs_mismatch": 0,
+    "no_capture": 0,
+    "turn_mismatch": 0,
+    "no_opp_view": 0,
+    "errors": 0,
+    "terminal_checks": 21,
+    "terminal_outcome_agree": 21
+   },
+   "wall_s": 563.4933571815491,
+   "impl": "rust",
+   "to_terminal": 8
+  },
+  "s4": {
+   "shard": "4/6",
+   "tag": "s4",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+   "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+   "stats": {
+    "forks": 840,
+    "branches": 2442,
+    "captured": 2442,
+    "obs_match": 2442,
+    "obs_mismatch": 0,
+    "no_capture": 0,
+    "turn_mismatch": 0,
+    "no_opp_view": 0,
+    "errors": 0,
+    "terminal_checks": 24,
+    "terminal_outcome_agree": 24
+   },
+   "wall_s": 586.2163918018341,
+   "impl": "rust",
+   "to_terminal": 8
+  },
+  "s5": {
+   "shard": "5/6",
+   "tag": "s5",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+   "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+   "stats": {
+    "forks": 840,
+    "branches": 2444,
+    "captured": 2444,
+    "obs_match": 2444,
+    "obs_mismatch": 0,
+    "no_capture": 0,
+    "turn_mismatch": 0,
+    "no_opp_view": 0,
+    "errors": 0,
+    "terminal_checks": 21,
+    "terminal_outcome_agree": 21
+   },
+   "wall_s": 565.7556073665619,
+   "impl": "rust",
+   "to_terminal": 8
+  }
+ }
+}

@@ -1,0 +1,126 @@
+{
+ "totals": {
+  "forks": 1002,
+  "rollouts": 24048,
+  "errors": 0,
+  "capped": 32,
+  "skipped_done": 0
+ },
+ "wall_s_max": 6666.896100282669,
+ "shards": {
+  "s0": {
+   "shard": "0/6",
+   "tag": "s0",
+   "k": 8,
+   "sample_target": 167,
+   "n_eligible_sampled": 167,
+   "stats": {
+    "forks": 167,
+    "rollouts": 4008,
+    "errors": 0,
+    "capped": 0,
+    "skipped_done": 0
+   },
+   "wall_s": 6314.463148593903,
+   "seed": 20260919,
+   "impl": "rust",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952"
+  },
+  "s1": {
+   "shard": "1/6",
+   "tag": "s1",
+   "k": 8,
+   "sample_target": 167,
+   "n_eligible_sampled": 167,
+   "stats": {
+    "forks": 167,
+    "rollouts": 4008,
+    "errors": 0,
+    "capped": 6,
+    "skipped_done": 0
+   },
+   "wall_s": 6362.220437049866,
+   "seed": 20260919,
+   "impl": "rust",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952"
+  },
+  "s2": {
+   "shard": "2/6",
+   "tag": "s2",
+   "k": 8,
+   "sample_target": 167,
+   "n_eligible_sampled": 167,
+   "stats": {
+    "forks": 167,
+    "rollouts": 4008,
+    "errors": 0,
+    "capped": 18,
+    "skipped_done": 0
+   },
+   "wall_s": 6666.896100282669,
+   "seed": 20260919,
+   "impl": "rust",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952"
+  },
+  "s3": {
+   "shard": "3/6",
+   "tag": "s3",
+   "k": 8,
+   "sample_target": 167,
+   "n_eligible_sampled": 167,
+   "stats": {
+    "forks": 167,
+    "rollouts": 4008,
+    "errors": 0,
+    "capped": 6,
+    "skipped_done": 0
+   },
+   "wall_s": 5990.74237036705,
+   "seed": 20260919,
+   "impl": "rust",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952"
+  },
+  "s4": {
+   "shard": "4/6",
+   "tag": "s4",
+   "k": 8,
+   "sample_target": 167,
+   "n_eligible_sampled": 167,
+   "stats": {
+    "forks": 167,
+    "rollouts": 4008,
+    "errors": 0,
+    "capped": 2,
+    "skipped_done": 0
+   },
+   "wall_s": 6514.139668226242,
+   "seed": 20260919,
+   "impl": "rust",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952"
+  },
+  "s5": {
+   "shard": "5/6",
+   "tag": "s5",
+   "k": 8,
+   "sample_target": 167,
+   "n_eligible_sampled": 167,
+   "stats": {
+    "forks": 167,
+    "rollouts": 4008,
+    "errors": 0,
+    "capped": 0,
+    "skipped_done": 0
+   },
+   "wall_s": 5971.645142555237,
+   "seed": 20260919,
+   "impl": "rust",
+   "forks_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/forks_eval",
+   "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952"
+  }
+ }
+}

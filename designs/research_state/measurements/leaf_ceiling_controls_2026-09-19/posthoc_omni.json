@@ -1,0 +1,49 @@
+{
+ "n_successors": 14601,
+ "opp_hp_sum_one_sided_minus_true": {
+  "mean": 0.007377682340952023,
+  "mean_abs": 0.007404319579302872,
+  "sd": 0.0062989265637462795,
+  "p95_abs": 0.019056208290116672,
+  "max_abs": 0.03617776433622044
+ },
+ "opp_alive_one_sided_minus_true": {
+  "mean": 0.0,
+  "mean_abs": 0.0,
+  "max_abs": 0,
+  "exactly_equal_rate": 1.0
+ },
+ "opp_tempo_status_seen_minus_true": {
+  "mean": 0.0,
+  "mean_abs": 0.0,
+  "max_abs": 0
+ },
+ "opp_mons_revealed": {
+  "mean": 4.055749606191357,
+  "hist": {
+   "1": 627,
+   "2": 1858,
+   "3": 2644,
+   "4": 3210,
+   "5": 3469,
+   "6": 2793
+  }
+ },
+ "opp_mons_unrevealed": {
+  "mean": 1.9442503938086433
+ },
+ "successor_turn": {
+  "mean": 18.25813300458873,
+  "median": 17.0
+ },
+ "successor_turn_minus_fork_turn": {
+  "hist": {
+   "0": 2826,
+   "1": 11775
+  }
+ },
+ "branch_successors_at_same_turn": {
+  "n_forks_with_3": 4820,
+  "rate_all_same_turn": 0.7651452282157676
+ }
+}

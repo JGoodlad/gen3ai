@@ -1,0 +1,102 @@
+{
+ "n_rows": 5040,
+ "n_successors": 14601,
+ "n_nontied_pairs": 3795,
+ "independent_pairwise_acc": 0.5723320158102767,
+ "score_json_pairwise_acc": 0.5723320246,
+ "abs_diff": 8.789723282554007e-09,
+ "hand_scored_examples": [
+  {
+   "fork": 0,
+   "battle": "win_s44_023",
+   "inv": 11,
+   "turn": 12,
+   "a": {
+    "branch": "top1",
+    "action": 7,
+    "outcome": "win",
+    "succ_index": 0,
+    "V": 0.4286012649536133
+   },
+   "b": {
+    "branch": "top2",
+    "action": 0,
+    "outcome": "loss",
+    "succ_index": 1,
+    "V": 0.5273416638374329
+   },
+   "V_a_minus_V_b": -0.09874039888381958,
+   "head_ranks_the_winner_higher": false,
+   "scored": 0.0
+  },
+  {
+   "fork": 0,
+   "battle": "win_s44_023",
+   "inv": 11,
+   "turn": 12,
+   "a": {
+    "branch": "top1",
+    "action": 7,
+    "outcome": "win",
+    "succ_index": 0,
+    "V": 0.4286012649536133
+   },
+   "b": {
+    "branch": "rand",
+    "action": 1,
+    "outcome": "loss",
+    "succ_index": 2,
+    "V": 0.41041454672813416
+   },
+   "V_a_minus_V_b": 0.018186718225479126,
+   "head_ranks_the_winner_higher": true,
+   "scored": 1.0
+  },
+  {
+   "fork": 1,
+   "battle": "win_s44_023",
+   "inv": 23,
+   "turn": 24,
+   "a": {
+    "branch": "top1",
+    "action": 9,
+    "outcome": "win",
+    "succ_index": 3,
+    "V": 0.4637305736541748
+   },
+   "b": {
+    "branch": "rand",
+    "action": 6,
+    "outcome": "loss",
+    "succ_index": 5,
+    "V": 0.4732060134410858
+   },
+   "V_a_minus_V_b": -0.00947543978691101,
+   "head_ranks_the_winner_higher": false,
+   "scored": 0.0
+  },
+  {
+   "fork": 1,
+   "battle": "win_s44_023",
+   "inv": 23,
+   "turn": 24,
+   "a": {
+    "branch": "top2",
+    "action": 2,
+    "outcome": "win",
+    "succ_index": 4,
+    "V": 0.5179397463798523
+   },
+   "b": {
+    "branch": "rand",
+    "action": 6,
+    "outcome": "loss",
+    "succ_index": 5,
+    "V": 0.4732060134410858
+   },
+   "V_a_minus_V_b": 0.04473373293876648,
+   "head_ranks_the_winner_higher": true,
+   "scored": 1.0
+  }
+ ]
+}
