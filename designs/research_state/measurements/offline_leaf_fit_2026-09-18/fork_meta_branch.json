@@ -1,0 +1,188 @@
+{
+ "0/6": {
+  "shard": "0/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_train/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "selector": "UNIFORM over eligible move_selection decisions; rand ~ U(legal \\ top1)",
+  "n_picked": 2982,
+  "n_battles_used": 994,
+  "mean_eligible_per_battle": 37.99094567404426,
+  "stats": {
+   "forks": 2982,
+   "errors": 0,
+   "no_successor": 145,
+   "capped": 2,
+   "det_checks": 60,
+   "det_fail": 0,
+   "no_alt": 0
+  },
+  "wall_s": 8619.852831602097,
+  "impl": "rust",
+  "seed": 20260918,
+  "min_legal": 2,
+  "min_turn": 1,
+  "max_turn": 60,
+  "forks_per_battle": 3
+ },
+ "1/6": {
+  "shard": "1/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_train/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "selector": "UNIFORM over eligible move_selection decisions; rand ~ U(legal \\ top1)",
+  "n_picked": 2982,
+  "n_battles_used": 994,
+  "mean_eligible_per_battle": 37.3953722334004,
+  "stats": {
+   "forks": 2982,
+   "errors": 0,
+   "no_successor": 136,
+   "capped": 9,
+   "det_checks": 60,
+   "det_fail": 0,
+   "no_alt": 0
+  },
+  "wall_s": 8851.915666103363,
+  "impl": "rust",
+  "seed": 20260918,
+  "min_legal": 2,
+  "min_turn": 1,
+  "max_turn": 60,
+  "forks_per_battle": 3
+ },
+ "2/6": {
+  "shard": "2/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_train/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "selector": "UNIFORM over eligible move_selection decisions; rand ~ U(legal \\ top1)",
+  "n_picked": 2985,
+  "n_battles_used": 995,
+  "mean_eligible_per_battle": 38.57286432160804,
+  "stats": {
+   "forks": 2985,
+   "errors": 0,
+   "no_successor": 142,
+   "capped": 10,
+   "det_checks": 60,
+   "det_fail": 0,
+   "no_alt": 0
+  },
+  "wall_s": 9338.794198513031,
+  "impl": "rust",
+  "seed": 20260918,
+  "min_legal": 2,
+  "min_turn": 1,
+  "max_turn": 60,
+  "forks_per_battle": 3
+ },
+ "3/6": {
+  "shard": "3/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_train/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "selector": "UNIFORM over eligible move_selection decisions; rand ~ U(legal \\ top1)",
+  "n_picked": 2985,
+  "n_battles_used": 995,
+  "mean_eligible_per_battle": 37.312562814070354,
+  "stats": {
+   "forks": 2985,
+   "errors": 0,
+   "no_successor": 148,
+   "capped": 6,
+   "det_checks": 60,
+   "det_fail": 0,
+   "no_alt": 0
+  },
+  "wall_s": 8636.012569189072,
+  "impl": "rust",
+  "seed": 20260918,
+  "min_legal": 2,
+  "min_turn": 1,
+  "max_turn": 60,
+  "forks_per_battle": 3
+ },
+ "4/6": {
+  "shard": "4/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_train/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "selector": "UNIFORM over eligible move_selection decisions; rand ~ U(legal \\ top1)",
+  "n_picked": 2985,
+  "n_battles_used": 995,
+  "mean_eligible_per_battle": 37.89748743718593,
+  "stats": {
+   "forks": 2985,
+   "errors": 0,
+   "no_successor": 123,
+   "capped": 3,
+   "det_checks": 60,
+   "det_fail": 0,
+   "no_alt": 0
+  },
+  "wall_s": 8761.025037765503,
+  "impl": "rust",
+  "seed": 20260918,
+  "min_legal": 2,
+  "min_turn": 1,
+  "max_turn": 60,
+  "forks_per_battle": 3
+ },
+ "5/6": {
+  "shard": "5/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_train/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "selector": "UNIFORM over eligible move_selection decisions; rand ~ U(legal \\ top1)",
+  "n_picked": 2985,
+  "n_battles_used": 995,
+  "mean_eligible_per_battle": 37.44020100502512,
+  "stats": {
+   "forks": 2985,
+   "errors": 0,
+   "no_successor": 142,
+   "capped": 8,
+   "det_checks": 60,
+   "det_fail": 0,
+   "no_alt": 0
+  },
+  "wall_s": 8681.276339054108,
+  "impl": "rust",
+  "seed": 20260918,
+  "min_legal": 2,
+  "min_turn": 1,
+  "max_turn": 60,
+  "forks_per_battle": 3
+ }
+}

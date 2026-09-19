@@ -1,0 +1,194 @@
+{
+ "0/6": {
+  "shard": "0/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "gap_threshold": 0.6220131635665895,
+  "gap_quantile": 0.4,
+  "n_candidates": 6775,
+  "n_selected": 2710,
+  "selection_rate": 0.4,
+  "n_picked": 840,
+  "stats": {
+   "forks": 840,
+   "errors": 0,
+   "no_successor": 94,
+   "capped": 2,
+   "det_checks": 17,
+   "det_fail": 0,
+   "no_rand": 0
+  },
+  "wall_s": 3872.519224882126,
+  "impl": "rust",
+  "seed": 20260919,
+  "min_legal": 3,
+  "min_turn": 2,
+  "forks_per_battle": 4
+ },
+ "1/6": {
+  "shard": "1/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "gap_threshold": 0.5930699944496156,
+  "gap_quantile": 0.4,
+  "n_candidates": 6799,
+  "n_selected": 2720,
+  "selection_rate": 0.40005883218120314,
+  "n_picked": 840,
+  "stats": {
+   "forks": 840,
+   "errors": 0,
+   "no_successor": 88,
+   "capped": 7,
+   "det_checks": 17,
+   "det_fail": 0,
+   "no_rand": 0
+  },
+  "wall_s": 4099.211426258087,
+  "impl": "rust",
+  "seed": 20260919,
+  "min_legal": 3,
+  "min_turn": 2,
+  "forks_per_battle": 4
+ },
+ "2/6": {
+  "shard": "2/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "gap_threshold": 0.6137487888336183,
+  "gap_quantile": 0.4,
+  "n_candidates": 6854,
+  "n_selected": 2742,
+  "selection_rate": 0.4000583600817041,
+  "n_picked": 840,
+  "stats": {
+   "forks": 840,
+   "errors": 0,
+   "no_successor": 97,
+   "capped": 8,
+   "det_checks": 17,
+   "det_fail": 0,
+   "no_rand": 0
+  },
+  "wall_s": 3840.5973315238953,
+  "impl": "rust",
+  "seed": 20260919,
+  "min_legal": 3,
+  "min_turn": 2,
+  "forks_per_battle": 4
+ },
+ "3/6": {
+  "shard": "3/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "gap_threshold": 0.6177036285400391,
+  "gap_quantile": 0.4,
+  "n_candidates": 6738,
+  "n_selected": 2695,
+  "selection_rate": 0.39997031760166224,
+  "n_picked": 840,
+  "stats": {
+   "forks": 840,
+   "errors": 0,
+   "no_successor": 86,
+   "capped": 2,
+   "det_checks": 17,
+   "det_fail": 0,
+   "no_rand": 0
+  },
+  "wall_s": 3841.3032352924347,
+  "impl": "rust",
+  "seed": 20260919,
+  "min_legal": 3,
+  "min_turn": 2,
+  "forks_per_battle": 4
+ },
+ "4/6": {
+  "shard": "4/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "gap_threshold": 0.626435148715973,
+  "gap_quantile": 0.4,
+  "n_candidates": 6798,
+  "n_selected": 2719,
+  "selection_rate": 0.3999705795822301,
+  "n_picked": 840,
+  "stats": {
+   "forks": 840,
+   "errors": 0,
+   "no_successor": 78,
+   "capped": 1,
+   "det_checks": 17,
+   "det_fail": 0,
+   "no_rand": 0
+  },
+  "wall_s": 3946.5449707508087,
+  "impl": "rust",
+  "seed": 20260919,
+  "min_legal": 3,
+  "min_turn": 2,
+  "forks_per_battle": 4
+ },
+ "5/6": {
+  "shard": "5/6",
+  "tree": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/tree_eval/eval_traces/step_75005952",
+  "snapshot": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/eval_traces/step_75005952/snapshot.zip",
+  "opponents": [
+   "sentinel_0"
+  ],
+  "sentinel_paths": {
+   "sentinel_0": "/home/goodlad/.claude/jobs/9ab51de6/tmp/leaf_fit/src_run/ai_v13_02_flywheel_winprob/snapshots/snapshot_000075005952.zip"
+  },
+  "gap_threshold": 0.6469461917877197,
+  "gap_quantile": 0.4,
+  "n_candidates": 6598,
+  "n_selected": 2639,
+  "selection_rate": 0.399969687784177,
+  "n_picked": 840,
+  "stats": {
+   "forks": 840,
+   "errors": 0,
+   "no_successor": 76,
+   "capped": 1,
+   "det_checks": 17,
+   "det_fail": 0,
+   "no_rand": 0
+  },
+  "wall_s": 3584.946878194809,
+  "impl": "rust",
+  "seed": 20260919,
+  "min_legal": 3,
+  "min_turn": 2,
+  "forks_per_battle": 4
+ }
+}
