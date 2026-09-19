@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,385-line file. **The ledger itself is append-only and is never edited by this**;
+19,470-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**629 headings · 577 dated · 2026-08-01 → 2026-09-19 · ledger 19,385 lines.**
+**630 headings · 578 dated · 2026-08-01 → 2026-09-19 · ledger 19,470 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -649,3 +649,4 @@ rename.
   - `L19319` · `2026-09-18` · OPS · `ai_v13_06_exploit_ddtar_spikes` COMPLETE at 83,066,880 — the SECOND win-prob exploiter reached **0.740 vs its own parent** like the first, but by a different route: it opened at 0.700 and closed games in **~32 turns where Big-5 needed ~45**
   - `L19340` · `2026-09-18` · OPS · LAUNCH · `ai_v13_07_fold1` — the ERA-1 FOLD is live, and every launch-time guard that the dry run could NOT check came back green
   - `L19354` · `2026-09-19` · OPS · `ai_v13_07_fold1` COMPLETE at 81,100,800 — the ERA-1 FOLD ran its full +6M with **both teachers active throughout, the stop signal never firing**, and teacher agreement still RISING at the end; the two teachers' contributions diverged steadily
+  - `L19386` · `2026-09-19` · MEASUREMENT (MAJOR) · THE OFFLINE FROZEN-POLICY LEAF FIT — branch (c): seven fits on 17,904 AlphaGo-style branched positions from arm W's frozen self-play all read 0.567–0.576 on fresh contested CRN forks (bar 0.60 lower bound fails on every one); a head fitted from scratch in 1.1 s matches the head trained for 75M steps; the fit buys CALIBRATION (ECE 0.072 → 0.013, the frozen critic is over-confident by 7 points on its own forks) and NO resolution; and the pooled 0.575 is a MIXTURE — top1|random 0.594, top2|random 0.575, **top1|top2 0.545** — the column a re-ranking leaf actually consumes is the worst, which is why every battery read no dividend

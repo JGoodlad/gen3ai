@@ -19382,3 +19382,88 @@ Launched 19:37 PT, launcher pid 3438160, child 3438197, pin **`6eb9c776`**, **ro
 **Launch-time guards, all green and all uncheckable by the dry run:** `🧪 [DISTILL] 2 teacher(s) / 2 team(s), coef=0.1761` (one team each; a 0-team resolution is FATAL_CONFIG by design) and `2 teacher(s) attached on cuda (order = teacher-id 1..2)` — **re-emitted identically at both restarts**, so the teacher set survived every child rotation; `🌱 [SELFPLAY] [pool] seeded 20 snapshots from ai_v13_02_flywheel_winprob (wr 91.00 %)`; `🐴 [STABLE] 2 cross-run opponents, each piloting ITS OWN pin`; `[MATCHUP DRIFT] ef5242cffd → 0a7b730a4d`.
 
 **Not claimed.** The 94.7 % aggregate is a descriptor. **Nothing here says the fold paid** — whether it did is the orchestrator's registered read: the untaught meter vs arm W (floor **3.69 pp** from W_b) at +1M/+3M/+6M, per-slice piloting on the two taught teams vs arm W (matched-extraction, 800 games/arm), ladder at matched COUNT vs W and W_b, and SmallRL greedy away. Tag: **OPS · COMPLETE · twenty-sixth run · ERA-1 FOLD · stop signal NEVER FIRED (agreement still rising at the budget's end) · teachers diverged 2.5× · crash at TEARDOWN (6th)**.
+
+### 2026-09-19 · MEASUREMENT (MAJOR) · THE OFFLINE FROZEN-POLICY LEAF FIT — branch (c): seven fits on 17,904 AlphaGo-style branched positions from arm W's frozen self-play all read 0.567–0.576 on fresh contested CRN forks (bar 0.60 lower bound fails on every one); a head fitted from scratch in 1.1 s matches the head trained for 75M steps; the fit buys CALIBRATION (ECE 0.072 → 0.013, the frozen critic is over-confident by 7 points on its own forks) and NO resolution; and the pooled 0.575 is a MIXTURE — top1|random 0.594, top2|random 0.575, **top1|top2 0.545** — the column a re-ranking leaf actually consumes is the worst, which is why every battery read no dividend
+
+
+Record `designs/research_state/measurements/offline_leaf_fit_2026-09-18/` (`PREDICTION.md` landed
+on main at **`a78d4b30`** before the first battle). **6,000 frozen-policy self-play games of arm W
+(`ai_v13_02_flywheel_winprob` @ 75,005,952, posed as its own sole sentinel through a shadow run,
+both seats greedy, full pool, self-play win rate 0.4908), 17,904 branched AlphaGo forks / 35,808
+rollouts as the TRAIN set (one uniformly-random legal move at a uniformly-random depth + the
+policy's own top-1 sibling under CRN), and 5,040 fresh CONTESTED CRN forks / 15,120 rollouts from
+a SEPARATE tree as the held-out READ; seven heads fitted on a FROZEN trunk; CPU only, zero errors,
+462/462 determinism re-runs identical, 59 of 50,928 rollouts stall-capped (0.116 %), nothing
+written under `models/`.**
+
+**THE REGISTERED READ IS A CLEAN NULL.** On 3,795 held-out non-tied contested pairs the seven fits
+read **0.5673–0.5760** against the original head's **0.5723 [0.5583, 0.5866]**; the registered bar
+was a **CI lower bound > 0.60** and the best achieved is **0.5613**. **BAR 1 FAILS on all seven**
+and every paired Δ is NOT DETECTED (largest **+0.0037 [−0.0050, +0.0117]**, fit d). Δ(d−c) =
+**+0.0047 [−0.0034, +0.0133] NOT DETECTED** — the PRE-POOL 12-token memory (12×128 ⊕ `value_pooled`,
+1,664 dims, captured at the `cls_pool.value_cls_attn` seam) does not beat `value_pooled`, so
+**branch (d) does not fire**. Δ(e−c) = **−0.0040** — the ranking term is the WORST cell for the
+third time. 🚨 **A head fitted FROM SCRATCH in 1.1 s on frozen features matches the head trained
+for 75M steps** (0.5731 vs 0.5723), and a 6× wider head matches the 17k-param bottleneck: **the
+bound is not the head, the loss, the data distribution, the capacity, the input width, or the
+target's stationarity.** Twelve heads now read 0.567–0.578. **Branch (c): the offline frozen-policy
+fit — the design `UNDERSTANDING.md` named as the last untried one — is ELIMINATED.**
+
+🚨 **WHAT THE FIT DID BUY IS CALIBRATION, AND A LOT OF IT.** On the same rows: **ECE 0.0721 →
+0.0133–0.0167**, **Brier 0.1927 → 0.1825–0.1838**, `mean_V` **0.5539 → 0.482–0.492** against a base
+rate of **0.4836** — the frozen critic is **over-confident by 7.0 points on its own self-play
+forks** and one pass of offline BCE on branched labels removes essentially all of it with the
+ranking untouched and `cond.opp_class_auc.t4_10` intact (**0.7384 → 0.707–0.733**, worst deviation
+0.0315, BAR 4 met by all seven). **Stationary targets on decorrelated positions fix the OFFSET and
+do not touch the RESOLUTION** — the G0 bias map's August verdict, reproduced by a different route.
+As an instrument this is cheap and reusable: ~4.5 h of CPU, a 1-second fit, no GPU, no retraining.
+
+🚨 **AND THE POOLED METRIC WAS HIDING ITS OWN STRUCTURE (POST-HOC, on the identical forks).** Split
+by PAIR TYPE, the original head reads **`top1` vs `rand` 0.5938 [0.5739, 0.6142]** · **`top2` vs
+`rand` 0.5752** · **`top1` vs `top2` 0.5450 [0.5236, 0.5666]** — a **0.049 spread**. **The head
+separates a played move from a random one at 0.59 and its own two best moves at 0.545, and only
+the second is what a search leaf is for**: a re-ranking search breaks ties the policy has already
+declared nearly even. **That is why every leaf battery has read no dividend, and the pooled 0.575
+concealed how much worse the leaf-relevant column is.** Consistently, the SAME heads read
+**0.6035–0.6198** on 981 held-out BRANCHED pairs (original **0.6157 [0.5925, 0.6397]**) — **the
+level is a property of the STATE SET, not of the head.** Every future read on this instrument
+should print the three columns. ⚠️ Post-hoc, ~1,200–1,300 non-tied pairs per cell, intervals ~1.7×
+wider than the pooled one.
+
+**ONE PREDICTION OF THIRTEEN WAS REFUTED, and it is the one that produced a finding.** P8 registered
+that the branched set would be LESS decidable than the contested set; on the MATCHED `(top1, rand)`
+pair it is **MORE** (0.286 vs 0.273). 🚨 **A CONTESTED-GAP SELECTOR IS NOT AN OUTCOME-RELEVANCE
+SELECTOR** — it selects for the POLICY's indifference, and every published level on this metric is
+on that population and inherits it. Other instrument findings: 🚨 **`vf_features` is NOT a pre-pool
+tensor** — since the critic-route deletion wave `vf_combined IS value_pooled`, so `vf_features` is a
+deterministic function of it and the literal "fit on `vf_features` for more information" cell cannot
+exist; caught by reading `projection.py` before writing the fit and declared in the registration.
+🚨 **A LIVE eval tree cannot host the conditioning guard** (`refit.conditioning_frame` needs a
+`plan.json`, which only a GENERATED cycle writes; a bots-free tree has one opponent class and the
+AUC is undefined) — the guard needs its own small generated tree, 5.5 min. The `rand` branch
+stall-caps **37×** more often than `top1` (0.207 % vs 0.006 %), so the capped-branch exclusion is
+not symmetric — immaterial at this rate, material at a deeper fork budget. `--leaf-head` is
+shape-locked to `WinProbHead`, so the wide fits have no runnable battery; it did not bind because
+**the battery was NOT RUN**, as registered, BAR 5 being conditional on BAR 1.
+
+**WHAT REMAINS ON THE LEAF, in cost order, with target stationarity now eliminated:** (1) **a HAND
+EVALUATOR as a control on the banked 5,040 forks** — nothing in this campaign has ever measured a
+non-learned baseline on this instrument, it costs no training, and if a heuristic also reads ~0.545
+on `top1|top2` the ceiling is the GAME and the leaf question is answered; (2) **rollout-averaged
+leaves** (the labels here are single-rollout outcomes, so 0.545 may be a label-noise floor rather
+than a representation floor — what the rust search driver was built for); (3) **the per-action
+`q_winprob_head`** (built and OFF), scored on the `top1|top2` column directly. ⚠️ **What is NOT
+worth another arm: a seventh value-head objective read through the pooled metric.** Instrument note:
+rule 25's indexing clause was EXECUTED — the 2026-09-18 `verify_indexing.py` invoked by path
+reproduces **0.5723320158** against **0.5723320246** (gap **8.8e-9**, float32-mean precision) with
+ten hand-scored pairs printed; the pre-pool tap carries its own vacuity REFUSAL (shape and
+non-constancy) and the guard frame is asserted equal to `refit.conditioning_frame`'s. Declared
+deviations: three forks per game rather than one (tree throughput; split by BATTLE, every CI
+bootstrapped over FORKS), `rand ~ U(legal \ top1)` so the sibling pair is never degenerate, and the
+self-play posing via a shadow run. Tag: **MEASURED (MAJOR) · BRANCH (c) — the OFFLINE FROZEN-POLICY
+FIT IS ELIMINATED, twelve heads on 0.567–0.578 · the fit buys CALIBRATION (ECE 0.072 → 0.013) and
+NOT RESOLUTION · 🚨 the pooled 0.575 is a MIXTURE and the leaf-relevant `top1|top2` column is 0.545
+· a from-scratch 1-second head matches a 75M-step one · the contested selector is not an
+outcome-relevance selector**.
+
+**Orchestrator's reading and the DECISION.** Twelve heads now sit on 0.567–0.578, and the list of things varied is complete: head, loss form, data distribution, coverage, capacity, input width, target stationarity, and now the frozen-policy AlphaGo recipe itself. **The leaf question is CLOSED for learned win-prob heads at this depth**: the bound is not in the learner. The mixture finding names where it is — a head separates a played move from a random one at 0.59 and the policy's own two best moves at 0.545, on single-rollout labels — so the remaining hypotheses are (i) a label-noise floor from single rollouts at this game's stochasticity, and (ii) the game itself (near-tied top-2 moves genuinely being near-tied). Both are tested by ONE cheap control, dispatched: a hand-written evaluator (Foul Play's kind — HP, status, boosts, hazards, matchup) scored on the exact banked forks, plus rollout-averaged labels (K rollouts per branch) on a subset — if a heuristic also reads ~0.545 on top1|top2 and averaging the labels lifts every head equally, the ceiling is the game's noise and search-by-value is closed at this label budget; if the heuristic reads higher, the learned heads are missing something a hand evaluator has. Search stays wound down; the exploiter flywheel is unaffected. A reusable instrument came free: one pass of offline BCE on ~4.5 h of CPU forks removes the frozen critic's 7-point over-confidence without touching its ranking. Tag: **MEASURED (MAJOR) · branch (c) · leaf question CLOSED for learned heads · the metric is a mixture, top1|top2 = 0.545 · hand-evaluator control dispatched**.

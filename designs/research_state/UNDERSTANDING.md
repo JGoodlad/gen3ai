@@ -1131,8 +1131,15 @@ exploiter (a fork of arm W on one pinned team against arm W as the fixed target,
 at 0.575 on its own slice and on the generalist's states alike, while the parent's head falls to 0.545 on the slice
 (+0.030 paired, DETECTED — the parent is OOD there, not the specialist better). **The 0.575 ceiling is now four heads
 deep** (0.568–0.578 across two 10M and two 75M+ runs on one fixed state set): coverage, width, loss form, data and
-distribution have each been varied and none moved it. The bound is in what the win-prob head extracts from an
-outcome label under a moving policy; the offline fit against a frozen policy is the last untried design. [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
+distribution have each been varied and none moved it. **And the frozen-policy fit does not raise it either (`offline_leaf_fit_2026-09-18/`, branch (c)):** seven fits on
+17,904 AlphaGo-style branched positions from arm W's frozen self-play — warm and fresh heads, paired and single labels,
+a 6× wider head, the pre-pool tap, a ranking term — all read 0.567–0.576 on fresh contested forks; a head fitted from
+scratch in 1.1 s matches the head trained for 75M steps. The fit buys calibration (ECE 0.072 → 0.013; the frozen
+critic is over-confident by 7 points on its own forks) and no resolution. **Twelve heads on 0.567–0.578; the leaf
+question is CLOSED for learned win-prob heads at this depth — the bound is not in the learner.** The pooled metric
+is a MIXTURE: top1|random 0.594, top2|random 0.575, **top1|top2 0.545** — the column a re-ranking leaf consumes is the
+worst, which is why no battery ever read a dividend. What remains: a label-noise floor (single rollouts) or the game
+(near-tied best moves), separated by a hand-evaluator control and rollout-averaged labels on the banked forks. [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
 
 ## 8. Pointers
 
