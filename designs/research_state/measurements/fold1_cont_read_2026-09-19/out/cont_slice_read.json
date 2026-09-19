@@ -1,0 +1,999 @@
+{
+ "what": "registered row 2 -- per-slice piloting on the two TAUGHT teams across the whole fold path (matched extraction)",
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000 -- ONE frozen era-external checkpoint, the same for every ref. NOT arm W's pool sentinels: a sentinel is the trainee's OWN snapshot, so arm W's and W_b's differ (floor read hazard F-G) and the seed floor would then face different opponents from the treatment contrast.",
+ "games_per_cell": 800,
+ "teams": [
+  "U_f6229d2c",
+  "U_9eb3abdc"
+ ],
+ "team_pin_sha": {
+  "U_f6229d2c": "450fb83c20",
+  "U_9eb3abdc": "6212de2e8c"
+ },
+ "opponent_resolved": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+ "team_labels": {
+  "U_f6229d2c": "Big-5 (BALANCE) \u2014 t1 `ai_v13_05_exploit_big5starmie`'s pinned team data/teams/sample/f6229d2c867e21d6.txt",
+  "U_9eb3abdc": "DDTar/Spikes (OFFENSE) \u2014 t2 `ai_v13_06_exploit_ddtar_spikes`'s pinned team data/teams/sample/9eb3abdc52876a63.txt"
+ },
+ "shard_timeouts": [
+  {
+   "slice_A.json": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_B.json": {
+    "attempted": 3200,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_C.json": {
+    "attempted": 1600,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  }
+ ],
+ "reproduction_check": {
+  "ref": "armW",
+  "per_team": {
+   "U_f6229d2c": {
+    "banked": "394 / 800",
+    "here": "394 / 800",
+    "reproduces_exactly": true
+   },
+   "U_9eb3abdc": {
+    "banked": "376 / 800",
+    "here": "376 / 800",
+    "reproduces_exactly": true
+   }
+  },
+  "PASSES": true,
+  "role": "the WARRANT for every imported cell. Registered in PREDICTION.md sec 3.2 before the first battle: if arm W does not return 394/800 and 376/800, every import is VOID and this row is INVALID, not patched."
+ },
+ "declared_imports": {
+  "refs": [
+   "fold_p3M",
+   "fold_p6M",
+   "armWb",
+   "t1_big5",
+   "t2_ddtar"
+  ],
+  "source": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/fold1_read_2026-09-19/out/fold_slice_read.json",
+  "cells": {
+   "fold_p3M|U_f6229d2c": {
+    "wins": 374,
+    "finished": 800
+   },
+   "fold_p6M|U_f6229d2c": {
+    "wins": 345,
+    "finished": 800
+   },
+   "armWb|U_f6229d2c": {
+    "wins": 432,
+    "finished": 800
+   },
+   "fold_p3M|U_9eb3abdc": {
+    "wins": 475,
+    "finished": 800
+   },
+   "fold_p6M|U_9eb3abdc": {
+    "wins": 430,
+    "finished": 800
+   },
+   "armWb|U_9eb3abdc": {
+    "wins": 444,
+    "finished": 800
+   }
+  },
+  "applied": true,
+  "why": "these are the SAME GAMES -- same opponent, manifest, order, seed 0, concurrency 1, 800 games/cell -- and the meter is deterministic. Re-deriving them would cost 6,400 battles and return the same counts."
+ },
+ "interval_note": "Wilson per cell; Newcombe on every difference. CONSERVATIVE under CRN -- the games are paired and the tool retains no per-battle outcomes.",
+ "seniority_caveat": "delta = seniority + extraction and this row cannot split them: at +12.09M the fold path carries TWELVE MILLION steps arm W does not. The arm that splits them is ai_v13_09_wcont -- LIVE, and NOT READ.",
+ "fork_crossing_note": "the +6.09M -> +7.59M leg crosses the fold1 -> fold1_cont fork at 81,100,800. Same frozen LR, same teachers, same pool by name, same matchup hash -- a discontinuity in the run, not a regime boundary.",
+ "levels": {
+  "U_f6229d2c": {
+   "armW": {
+    "wins": 394,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.4925,
+    "wilson95": [
+     0.458,
+     0.5271
+    ]
+   },
+   "armWb": {
+    "wins": 432,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.54,
+    "wilson95": [
+     0.5054,
+     0.5743
+    ]
+   },
+   "cont_p12M": {
+    "wins": 352,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.44,
+    "wilson95": [
+     0.406,
+     0.4746
+    ]
+   },
+   "cont_p7_5M": {
+    "wins": 337,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.4213,
+    "wilson95": [
+     0.3875,
+     0.4558
+    ]
+   },
+   "cont_p9M": {
+    "wins": 338,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.4225,
+    "wilson95": [
+     0.3887,
+     0.457
+    ]
+   },
+   "fold_p1M": {
+    "wins": 374,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.4675,
+    "wilson95": [
+     0.4332,
+     0.5021
+    ]
+   },
+   "fold_p3M": {
+    "wins": 374,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4675,
+    "wilson95": [
+     0.4332,
+     0.5021
+    ]
+   },
+   "fold_p6M": {
+    "wins": 345,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4313,
+    "wilson95": [
+     0.3973,
+     0.4658
+    ]
+   },
+   "t1_big5": {
+    "wins": 461,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5763,
+    "wilson95": [
+     0.5417,
+     0.61
+    ]
+   }
+  },
+  "U_9eb3abdc": {
+   "armW": {
+    "wins": 376,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.47,
+    "wilson95": [
+     0.4356,
+     0.5046
+    ]
+   },
+   "armWb": {
+    "wins": 444,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.555,
+    "wilson95": [
+     0.5204,
+     0.5891
+    ]
+   },
+   "cont_p12M": {
+    "wins": 499,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.6238,
+    "wilson95": [
+     0.5897,
+     0.6567
+    ]
+   },
+   "cont_p7_5M": {
+    "wins": 476,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.595,
+    "wilson95": [
+     0.5606,
+     0.6285
+    ]
+   },
+   "cont_p9M": {
+    "wins": 467,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.5837,
+    "wilson95": [
+     0.5493,
+     0.6174
+    ]
+   },
+   "fold_p1M": {
+    "wins": 430,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.5375,
+    "wilson95": [
+     0.5029,
+     0.5718
+    ]
+   },
+   "fold_p3M": {
+    "wins": 475,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5938,
+    "wilson95": [
+     0.5593,
+     0.6273
+    ]
+   },
+   "fold_p6M": {
+    "wins": 430,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5375,
+    "wilson95": [
+     0.5029,
+     0.5718
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 382,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4775,
+    "wilson95": [
+     0.4431,
+     0.5121
+    ]
+   }
+  }
+ },
+ "per_team": {
+  "U_f6229d2c": {
+   "label": "Big-5 (BALANCE) \u2014 t1 `ai_v13_05_exploit_big5starmie`'s pinned team data/teams/sample/f6229d2c867e21d6.txt",
+   "contrasts": {
+    "fold_p1M_minus_armW": {
+     "label": "the fold path at +1.00M (ai_v13_07_fold1) minus the zero-head-start PARENT",
+     "delta": -0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ]
+    },
+    "fold_p3M_minus_armW": {
+     "label": "the fold path at +3.00M (ai_v13_07_fold1) minus the zero-head-start PARENT",
+     "delta": -0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ]
+    },
+    "fold_p6M_minus_armW": {
+     "label": "the fold path at +6.09M (ai_v13_07_fold1) minus the zero-head-start PARENT",
+     "delta": -0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ]
+    },
+    "cont_p7_5M_minus_armW": {
+     "label": "the fold path at +7.59M (ai_v13_08_fold1_cont) minus the zero-head-start PARENT",
+     "delta": -0.0712,
+     "newcombe95": [
+      -0.1196,
+      -0.0224
+     ]
+    },
+    "cont_p9M_minus_armW": {
+     "label": "the fold path at +9.09M (ai_v13_08_fold1_cont) minus the zero-head-start PARENT",
+     "delta": -0.07,
+     "newcombe95": [
+      -0.1184,
+      -0.0212
+     ]
+    },
+    "cont_p12M_minus_armW": {
+     "label": "the fold path at +12.09M (ai_v13_08_fold1_cont) minus the zero-head-start PARENT",
+     "delta": -0.0525,
+     "newcombe95": [
+      -0.101,
+      -0.0036
+     ]
+    },
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "\ud83d\udea8 THE SEED FLOOR ON THIS CELL -- arm W minus W_b, same team, same opponent, same games (arm W MEASURED here, W_b IMPORTED)",
+     "delta": -0.0475,
+     "newcombe95": [
+      -0.0961,
+      0.0015
+     ]
+    },
+    "teacher_minus_cont_p12M": {
+     "label": "THE TEACHER'S CEILING at the endpoint -- t1_big5 on its OWN team minus the converged fold path",
+     "delta": 0.1363,
+     "newcombe95": [
+      0.0874,
+      0.1842
+     ]
+    },
+    "teacher_minus_armW": {
+     "label": "t1_big5 minus the parent it was forked from -- the whole gap the fold was asked to close",
+     "delta": 0.0838,
+     "newcombe95": [
+      0.0349,
+      0.1321
+     ]
+    },
+    "cont_p12M_minus_fold_p6M": {
+     "label": "\ud83d\udea8 THE LAST 50 % OF THE BUDGET -- the endpoint minus the point the earlier read stopped at (CROSSES THE FORK)",
+     "delta": 0.0087,
+     "newcombe95": [
+      -0.0398,
+      0.0572
+     ]
+    },
+    "cont_p12M_minus_fold_p3M": {
+     "label": "the endpoint minus the +3M PEAK",
+     "delta": -0.0275,
+     "newcombe95": [
+      -0.0761,
+      0.0212
+     ]
+    },
+    "cont_p7_5M_minus_fold_p6M": {
+     "label": "the STOP POINT minus +6M -- the leg the stop rule says completed the teaching",
+     "delta": -0.01,
+     "newcombe95": [
+      -0.0583,
+      0.0384
+     ]
+    }
+   },
+   "verdicts": {
+    "fold_p1M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": -0.025,
+     "abs_delta": 0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path BELOW parent"
+    },
+    "fold_p3M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": -0.025,
+     "abs_delta": 0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path BELOW parent"
+    },
+    "fold_p6M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": -0.0612,
+     "abs_delta": 0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path BELOW parent"
+    },
+    "cont_p7_5M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "delta": -0.0712,
+     "abs_delta": 0.0712,
+     "newcombe95": [
+      -0.1196,
+      -0.0224
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path BELOW parent"
+    },
+    "cont_p9M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": -0.07,
+     "abs_delta": 0.07,
+     "newcombe95": [
+      -0.1184,
+      -0.0212
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path BELOW parent"
+    },
+    "cont_p12M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "delta": -0.0525,
+     "abs_delta": 0.0525,
+     "newcombe95": [
+      -0.101,
+      -0.0036
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path BELOW parent"
+    }
+   },
+   "peak": {
+    "levels_in_order": {
+     "fold_p1M": 0.4675,
+     "fold_p3M": 0.4675,
+     "fold_p6M": 0.4313,
+     "cont_p7_5M": 0.4213,
+     "cont_p9M": 0.4225,
+     "cont_p12M": 0.44
+    },
+    "argmax": "fold_p1M",
+    "max": 0.4675,
+    "the_p3M_peak_STANDS": false,
+    "endpoint_minus_peak": -0.0275,
+    "note": "the GO's registered question: 'was the +3M peak the maximum?' A peak on a six-point single-arm series is a DESCRIPTION of this arm, never a trend (the standing short-window refusal, 5-for-5 on this campaign)."
+   }
+  },
+  "U_9eb3abdc": {
+   "label": "DDTar/Spikes (OFFENSE) \u2014 t2 `ai_v13_06_exploit_ddtar_spikes`'s pinned team data/teams/sample/9eb3abdc52876a63.txt",
+   "contrasts": {
+    "fold_p1M_minus_armW": {
+     "label": "the fold path at +1.00M (ai_v13_07_fold1) minus the zero-head-start PARENT",
+     "delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ]
+    },
+    "fold_p3M_minus_armW": {
+     "label": "the fold path at +3.00M (ai_v13_07_fold1) minus the zero-head-start PARENT",
+     "delta": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ]
+    },
+    "fold_p6M_minus_armW": {
+     "label": "the fold path at +6.09M (ai_v13_07_fold1) minus the zero-head-start PARENT",
+     "delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ]
+    },
+    "cont_p7_5M_minus_armW": {
+     "label": "the fold path at +7.59M (ai_v13_08_fold1_cont) minus the zero-head-start PARENT",
+     "delta": 0.125,
+     "newcombe95": [
+      0.0762,
+      0.173
+     ]
+    },
+    "cont_p9M_minus_armW": {
+     "label": "the fold path at +9.09M (ai_v13_08_fold1_cont) minus the zero-head-start PARENT",
+     "delta": 0.1138,
+     "newcombe95": [
+      0.0649,
+      0.1619
+     ]
+    },
+    "cont_p12M_minus_armW": {
+     "label": "the fold path at +12.09M (ai_v13_08_fold1_cont) minus the zero-head-start PARENT",
+     "delta": 0.1538,
+     "newcombe95": [
+      0.1051,
+      0.2013
+     ]
+    },
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "\ud83d\udea8 THE SEED FLOOR ON THIS CELL -- arm W minus W_b, same team, same opponent, same games (arm W MEASURED here, W_b IMPORTED)",
+     "delta": -0.085,
+     "newcombe95": [
+      -0.1334,
+      -0.036
+     ]
+    },
+    "teacher_minus_cont_p12M": {
+     "label": "THE TEACHER'S CEILING at the endpoint -- t2_ddtar on its OWN team minus the converged fold path",
+     "delta": -0.1463,
+     "newcombe95": [
+      -0.1939,
+      -0.0977
+     ]
+    },
+    "teacher_minus_armW": {
+     "label": "t2_ddtar minus the parent it was forked from -- the whole gap the fold was asked to close",
+     "delta": 0.0075,
+     "newcombe95": [
+      -0.0413,
+      0.0563
+     ]
+    },
+    "cont_p12M_minus_fold_p6M": {
+     "label": "\ud83d\udea8 THE LAST 50 % OF THE BUDGET -- the endpoint minus the point the earlier read stopped at (CROSSES THE FORK)",
+     "delta": 0.0863,
+     "newcombe95": [
+      0.0379,
+      0.134
+     ]
+    },
+    "cont_p12M_minus_fold_p3M": {
+     "label": "the endpoint minus the +3M PEAK",
+     "delta": 0.03,
+     "newcombe95": [
+      -0.0178,
+      0.0776
+     ]
+    },
+    "cont_p7_5M_minus_fold_p6M": {
+     "label": "the STOP POINT minus +6M -- the leg the stop rule says completed the teaching",
+     "delta": 0.0575,
+     "newcombe95": [
+      0.0089,
+      0.1057
+     ]
+    }
+   },
+   "verdicts": {
+    "fold_p1M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": 0.0675,
+     "abs_delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path ABOVE parent"
+    },
+    "fold_p3M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": 0.1238,
+     "abs_delta": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path ABOVE parent"
+    },
+    "fold_p6M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": 0.0675,
+     "abs_delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path ABOVE parent"
+    },
+    "cont_p7_5M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "delta": 0.125,
+     "abs_delta": 0.125,
+     "newcombe95": [
+      0.0762,
+      0.173
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path ABOVE parent"
+    },
+    "cont_p9M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "delta": 0.1138,
+     "abs_delta": 0.1138,
+     "newcombe95": [
+      0.0649,
+      0.1619
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "fold path ABOVE parent"
+    },
+    "cont_p12M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "delta": 0.1538,
+     "abs_delta": 0.1538,
+     "newcombe95": [
+      0.1051,
+      0.2013
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "fold path ABOVE parent"
+    }
+   },
+   "peak": {
+    "levels_in_order": {
+     "fold_p1M": 0.5375,
+     "fold_p3M": 0.5938,
+     "fold_p6M": 0.5375,
+     "cont_p7_5M": 0.595,
+     "cont_p9M": 0.5837,
+     "cont_p12M": 0.6238
+    },
+    "argmax": "cont_p12M",
+    "max": 0.6238,
+    "the_p3M_peak_STANDS": false,
+    "endpoint_minus_peak": 0.0,
+    "note": "the GO's registered question: 'was the +3M peak the maximum?' A peak on a six-point single-arm series is a DESCRIPTION of this arm, never a trend (the standing short-window refusal, 5-for-5 on this campaign)."
+   }
+  }
+ },
+ "trajectory": {
+  "fold_p1M": {
+   "depth_cumulative_post_fork": "+1.00M",
+   "run": "ai_v13_07_fold1",
+   "registered_bar_carrying": false,
+   "fork_crossing_immediately_before": false,
+   "U_f6229d2c": {
+    "win_rate": 0.4675,
+    "imported": false,
+    "delta_vs_armW": -0.025,
+    "newcombe95": [
+     -0.0737,
+     0.0239
+    ]
+   },
+   "U_9eb3abdc": {
+    "win_rate": 0.5375,
+    "imported": false,
+    "delta_vs_armW": 0.0675,
+    "newcombe95": [
+     0.0185,
+     0.116
+    ]
+   }
+  },
+  "fold_p3M": {
+   "depth_cumulative_post_fork": "+3.00M",
+   "run": "ai_v13_07_fold1",
+   "registered_bar_carrying": false,
+   "fork_crossing_immediately_before": false,
+   "U_f6229d2c": {
+    "win_rate": 0.4675,
+    "imported": true,
+    "delta_vs_armW": -0.025,
+    "newcombe95": [
+     -0.0737,
+     0.0239
+    ]
+   },
+   "U_9eb3abdc": {
+    "win_rate": 0.5938,
+    "imported": true,
+    "delta_vs_armW": 0.1238,
+    "newcombe95": [
+     0.0749,
+     0.1717
+    ]
+   }
+  },
+  "fold_p6M": {
+   "depth_cumulative_post_fork": "+6.09M",
+   "run": "ai_v13_07_fold1",
+   "registered_bar_carrying": false,
+   "fork_crossing_immediately_before": false,
+   "U_f6229d2c": {
+    "win_rate": 0.4313,
+    "imported": true,
+    "delta_vs_armW": -0.0612,
+    "newcombe95": [
+     -0.1097,
+     -0.0124
+    ]
+   },
+   "U_9eb3abdc": {
+    "win_rate": 0.5375,
+    "imported": true,
+    "delta_vs_armW": 0.0675,
+    "newcombe95": [
+     0.0185,
+     0.116
+    ]
+   }
+  },
+  "cont_p7_5M": {
+   "depth_cumulative_post_fork": "+7.59M",
+   "run": "ai_v13_08_fold1_cont",
+   "registered_bar_carrying": true,
+   "fork_crossing_immediately_before": true,
+   "U_f6229d2c": {
+    "win_rate": 0.4213,
+    "imported": false,
+    "delta_vs_armW": -0.0712,
+    "newcombe95": [
+     -0.1196,
+     -0.0224
+    ]
+   },
+   "U_9eb3abdc": {
+    "win_rate": 0.595,
+    "imported": false,
+    "delta_vs_armW": 0.125,
+    "newcombe95": [
+     0.0762,
+     0.173
+    ]
+   }
+  },
+  "cont_p9M": {
+   "depth_cumulative_post_fork": "+9.09M",
+   "run": "ai_v13_08_fold1_cont",
+   "registered_bar_carrying": false,
+   "fork_crossing_immediately_before": false,
+   "U_f6229d2c": {
+    "win_rate": 0.4225,
+    "imported": false,
+    "delta_vs_armW": -0.07,
+    "newcombe95": [
+     -0.1184,
+     -0.0212
+    ]
+   },
+   "U_9eb3abdc": {
+    "win_rate": 0.5837,
+    "imported": false,
+    "delta_vs_armW": 0.1138,
+    "newcombe95": [
+     0.0649,
+     0.1619
+    ]
+   }
+  },
+  "cont_p12M": {
+   "depth_cumulative_post_fork": "+12.09M",
+   "run": "ai_v13_08_fold1_cont",
+   "registered_bar_carrying": true,
+   "fork_crossing_immediately_before": false,
+   "U_f6229d2c": {
+    "win_rate": 0.44,
+    "imported": false,
+    "delta_vs_armW": -0.0525,
+    "newcombe95": [
+     -0.101,
+     -0.0036
+    ]
+   },
+   "U_9eb3abdc": {
+    "win_rate": 0.6238,
+    "imported": false,
+    "delta_vs_armW": 0.1538,
+    "newcombe95": [
+     0.1051,
+     0.2013
+    ]
+   }
+  }
+ },
+ "the_divergence_at_the_endpoint": {
+  "question": "at +6M the two slices split in SIGN (-0.0612 Big-5 / +0.0675 DDTar) and the teachers' gated shares ANTI-predicted it. Does the split survive to convergence? The ledger records that the gated-share divergence itself did NOT continue (2.5x at the fold's end -> ~1.2x at +12M).",
+  "big5_gain": -0.0525,
+  "ddtar_gain": 0.1538,
+  "big5_minus_ddtar": -0.2063,
+  "big5_gained_more": false,
+  "at_p6M_for_comparison": {
+   "big5": -0.0612,
+   "ddtar": 0.0675,
+   "difference": -0.1287
+  },
+  "note": "a difference of two independent differences on 800 games each; no interval is printed for it because the four cells are not a factorial design and an interval here would invite a verdict the design cannot carry. DESCRIPTOR."
+ },
+ "pooled_SECONDARY": {
+  "levels": {
+   "armW": {
+    "wins": 770,
+    "finished": 1600,
+    "win_rate": 0.4813,
+    "wilson95": [
+     0.4568,
+     0.5057
+    ]
+   },
+   "armWb": {
+    "wins": 876,
+    "finished": 1600,
+    "win_rate": 0.5475,
+    "wilson95": [
+     0.523,
+     0.5717
+    ]
+   },
+   "cont_p12M": {
+    "wins": 851,
+    "finished": 1600,
+    "win_rate": 0.5319,
+    "wilson95": [
+     0.5074,
+     0.5562
+    ]
+   },
+   "cont_p7_5M": {
+    "wins": 813,
+    "finished": 1600,
+    "win_rate": 0.5081,
+    "wilson95": [
+     0.4836,
+     0.5326
+    ]
+   },
+   "cont_p9M": {
+    "wins": 805,
+    "finished": 1600,
+    "win_rate": 0.5031,
+    "wilson95": [
+     0.4786,
+     0.5276
+    ]
+   },
+   "fold_p1M": {
+    "wins": 804,
+    "finished": 1600,
+    "win_rate": 0.5025,
+    "wilson95": [
+     0.478,
+     0.527
+    ]
+   },
+   "fold_p3M": {
+    "wins": 849,
+    "finished": 1600,
+    "win_rate": 0.5306,
+    "wilson95": [
+     0.5061,
+     0.555
+    ]
+   },
+   "fold_p6M": {
+    "wins": 775,
+    "finished": 1600,
+    "win_rate": 0.4844,
+    "wilson95": [
+     0.46,
+     0.5089
+    ]
+   },
+   "t1_big5": {
+    "wins": 461,
+    "finished": 800,
+    "win_rate": 0.5763,
+    "wilson95": [
+     0.5417,
+     0.61
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 382,
+    "finished": 800,
+    "win_rate": 0.4775,
+    "wilson95": [
+     0.4431,
+     0.5121
+    ]
+   }
+  },
+  "warning": "\ud83d\udea8 POOLED ACROSS TEAMS -- secondary by the matched-extraction rule and by rule 10, and PRE-DECLARED as a trap in PREDICTION.md sec 2. At +6M the pooled number was +0.003 over the parent while the per-team rows were -0.061 and +0.068, each CI clear of zero: an exact null manufactured out of a real split. No verdict is taken from this table. Read the per-team rows."
+ }
+}

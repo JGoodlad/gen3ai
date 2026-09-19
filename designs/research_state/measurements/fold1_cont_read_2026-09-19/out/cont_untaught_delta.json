@@ -1,0 +1,549 @@
+{
+ "what": "the untaught meter -- the OFF-SLICE / collateral read of registered row 1 -- across the whole era-1 fold path at SIX depths (+1M/+3M/+6.09M on ai_v13_07_fold1, +7.59M/+9.09M/+12.09M on ai_v13_08_fold1_cont), against the frozen parent arm W and the seed arm W_b, all eight refs in ONE invocation",
+ "source": "/home/goodlad/.claude/jobs/9ab51de6/tmp/fold1c_read/untaught/untaught_registry.json",
+ "teams_manifest": null,
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+ "config_resolution": "the REGISTRY `untaught_meter_config` (see README hazard C-K)",
+ "n_teams": 8,
+ "timeouts": {
+  "attempted": 12800,
+  "timeouts": 0,
+  "fraction": 0.0,
+  "inconclusive_above": 0.25,
+  "inconclusive": false
+ },
+ "levels_pp": {
+  "fold_p1M": 47.62,
+  "fold_p3M": 51.56,
+  "fold_p6M": 51.31,
+  "cont_p7_5M": 49.0,
+  "cont_p9M": 51.31,
+  "cont_p12M": 51.94,
+  "armW": 46.19,
+  "armWb": 49.88
+ },
+ "wins_over_finished": {
+  "fold_p1M": "762 / 1600",
+  "fold_p3M": "825 / 1600",
+  "fold_p6M": "821 / 1600",
+  "cont_p7_5M": "784 / 1600",
+  "cont_p9M": "821 / 1600",
+  "cont_p12M": "831 / 1600",
+  "armW": "739 / 1600",
+  "armWb": "798 / 1600"
+ },
+ "per_team_pp": {
+  "fold_p1M": {
+   "U_61590463": 50.0,
+   "U_92832108": 43.5,
+   "U_ce35b736": 53.0,
+   "U_9909f2e9": 40.0,
+   "U_9d5f8458": 51.5,
+   "U_f7ba5702": 44.5,
+   "U_90b94599": 47.0,
+   "U_dbf81d8e": 51.5
+  },
+  "fold_p3M": {
+   "U_61590463": 44.5,
+   "U_92832108": 44.5,
+   "U_ce35b736": 58.5,
+   "U_9909f2e9": 39.0,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 52.5,
+   "U_90b94599": 63.0,
+   "U_dbf81d8e": 54.5
+  },
+  "fold_p6M": {
+   "U_61590463": 48.5,
+   "U_92832108": 37.5,
+   "U_ce35b736": 60.5,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 54.5,
+   "U_90b94599": 60.5,
+   "U_dbf81d8e": 47.5
+  },
+  "cont_p7_5M": {
+   "U_61590463": 42.5,
+   "U_92832108": 36.5,
+   "U_ce35b736": 56.5,
+   "U_9909f2e9": 43.0,
+   "U_9d5f8458": 50.0,
+   "U_f7ba5702": 47.0,
+   "U_90b94599": 70.0,
+   "U_dbf81d8e": 46.5
+  },
+  "cont_p9M": {
+   "U_61590463": 42.5,
+   "U_92832108": 43.0,
+   "U_ce35b736": 54.0,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 62.0,
+   "U_f7ba5702": 53.5,
+   "U_90b94599": 67.5,
+   "U_dbf81d8e": 42.5
+  },
+  "cont_p12M": {
+   "U_61590463": 50.5,
+   "U_92832108": 41.0,
+   "U_ce35b736": 53.5,
+   "U_9909f2e9": 42.5,
+   "U_9d5f8458": 63.0,
+   "U_f7ba5702": 50.0,
+   "U_90b94599": 67.0,
+   "U_dbf81d8e": 48.0
+  },
+  "armW": {
+   "U_61590463": 48.5,
+   "U_92832108": 39.0,
+   "U_ce35b736": 49.5,
+   "U_9909f2e9": 38.0,
+   "U_9d5f8458": 47.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 48.0,
+   "U_dbf81d8e": 51.5
+  },
+  "armWb": {
+   "U_61590463": 58.0,
+   "U_92832108": 53.0,
+   "U_ce35b736": 42.5,
+   "U_9909f2e9": 48.0,
+   "U_9d5f8458": 46.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 51.5,
+   "U_dbf81d8e": 52.0
+  }
+ },
+ "imported_floor_pp": 3.69,
+ "imported_floor_caveat": "3.69 pp is |arm W - W_b|, a 75M FRESH-ARM seed pair. This path is a FOLD, twice forked. A floor is a property of the DEPTH and the REGIME (sec 3.3); the meter's own FOLD floors are {'TC_replicate_pairs_END_depth': 1.19, 'frozen_dose_folds_six_draws': 1.66, 'K6_cell_three_draws': 2.46, 'controller_live_folds': 4.27, 'G5_three_continuation_arms': 1.0, 'TC_replicate_pairs_p1M_depth': 4.0}. 3.69 sits between the frozen-dose 1.66 and the controller-live 4.27, which is why the GO chose it -- it is still an IMPORT.",
+ "fold_depth_floors_pp_for_reference": {
+  "TC_replicate_pairs_END_depth": 1.19,
+  "frozen_dose_folds_six_draws": 1.66,
+  "K6_cell_three_draws": 2.46,
+  "controller_live_folds": 4.27,
+  "G5_three_continuation_arms": 1.0,
+  "TC_replicate_pairs_p1M_depth": 4.0
+ },
+ "fork_crossing_note": "the +6.09M -> +7.59M leg CROSSES A FORK BOUNDARY (ai_v13_07_fold1 ends at 81,100,800; ai_v13_08_fold1_cont begins there). Same frozen LR, same teachers, same pool by name, same matchup hash 0a7b730a4d -- not a rule-15 opponent-regime boundary -- but a discontinuity in the run, and it is printed on every trajectory row.",
+ "trajectory": {
+  "fold_p1M": {
+   "depth_cumulative_post_fork": "+1.00M",
+   "run": "ai_v13_07_fold1",
+   "level_pp": 47.62,
+   "wins": "762 / 1600",
+   "registered_new_point": false,
+   "fork_crossing_immediately_before": false,
+   "delta_vs_armW_pp": 1.44,
+   "ci95_pp": [
+    -0.44,
+    3.19
+   ],
+   "teams_favouring_fold": 5,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "delta_vs_armWb_pp": -2.25,
+   "ci95_vs_armWb_pp": [
+    -6.44,
+    2.56
+   ]
+  },
+  "fold_p3M": {
+   "depth_cumulative_post_fork": "+3.00M",
+   "run": "ai_v13_07_fold1",
+   "level_pp": 51.56,
+   "wins": "825 / 1600",
+   "registered_new_point": false,
+   "fork_crossing_immediately_before": false,
+   "delta_vs_armW_pp": 5.38,
+   "ci95_pp": [
+    1.63,
+    9.19
+   ],
+   "teams_favouring_fold": 7,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "delta_vs_armWb_pp": 1.69,
+   "ci95_vs_armWb_pp": [
+    -5.44,
+    8.69
+   ]
+  },
+  "fold_p6M": {
+   "depth_cumulative_post_fork": "+6.09M",
+   "run": "ai_v13_07_fold1",
+   "level_pp": 51.31,
+   "wins": "821 / 1600",
+   "registered_new_point": false,
+   "fork_crossing_immediately_before": false,
+   "delta_vs_armW_pp": 5.13,
+   "ci95_pp": [
+    1.06,
+    9.0
+   ],
+   "teams_favouring_fold": 5,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "delta_vs_armWb_pp": 1.44,
+   "ci95_vs_armWb_pp": [
+    -5.75,
+    8.75
+   ]
+  },
+  "cont_p7_5M": {
+   "depth_cumulative_post_fork": "+7.59M",
+   "run": "ai_v13_08_fold1_cont",
+   "level_pp": 49.0,
+   "wins": "784 / 1600",
+   "registered_new_point": true,
+   "fork_crossing_immediately_before": true,
+   "delta_vs_armW_pp": 2.81,
+   "ci95_pp": [
+    -2.31,
+    9.37
+   ],
+   "teams_favouring_fold": 4,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "delta_vs_armWb_pp": -0.87,
+   "ci95_vs_armWb_pp": [
+    -8.81,
+    7.69
+   ]
+  },
+  "cont_p9M": {
+   "depth_cumulative_post_fork": "+9.09M",
+   "run": "ai_v13_08_fold1_cont",
+   "level_pp": 51.31,
+   "wins": "821 / 1600",
+   "registered_new_point": true,
+   "fork_crossing_immediately_before": false,
+   "delta_vs_armW_pp": 5.13,
+   "ci95_pp": [
+    -1.06,
+    11.31
+   ],
+   "teams_favouring_fold": 6,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "delta_vs_armWb_pp": 1.44,
+   "ci95_vs_armWb_pp": [
+    -6.56,
+    9.56
+   ]
+  },
+  "cont_p12M": {
+   "depth_cumulative_post_fork": "+12.09M",
+   "run": "ai_v13_08_fold1_cont",
+   "level_pp": 51.94,
+   "wins": "831 / 1600",
+   "registered_new_point": true,
+   "fork_crossing_immediately_before": false,
+   "delta_vs_armW_pp": 5.75,
+   "ci95_pp": [
+    1.19,
+    11.06
+   ],
+   "teams_favouring_fold": 7,
+   "verdict": "WITHIN FLOOR at n = 2",
+   "delta_vs_armWb_pp": 2.06,
+   "ci95_vs_armWb_pp": [
+    -4.81,
+    9.44
+   ]
+  }
+ },
+ "contrasts": {
+  "fold_p1M_minus_armW": {
+   "label": "the fold path at +1.00M minus the FROZEN PARENT",
+   "delta_pp": 1.44,
+   "ci95_pp": [
+    -0.44,
+    3.19
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "fold_p3M_minus_armW": {
+   "label": "the fold path at +3.00M minus the FROZEN PARENT",
+   "delta_pp": 5.38,
+   "ci95_pp": [
+    1.63,
+    9.19
+   ],
+   "teams_favouring_first": 7,
+   "n_teams": 8
+  },
+  "fold_p6M_minus_armW": {
+   "label": "the fold path at +6.09M minus the FROZEN PARENT",
+   "delta_pp": 5.13,
+   "ci95_pp": [
+    1.06,
+    9.0
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "cont_p7_5M_minus_armW": {
+   "label": "the fold path at +7.59M minus the FROZEN PARENT",
+   "delta_pp": 2.81,
+   "ci95_pp": [
+    -2.31,
+    9.37
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "cont_p9M_minus_armW": {
+   "label": "the fold path at +9.09M minus the FROZEN PARENT",
+   "delta_pp": 5.13,
+   "ci95_pp": [
+    -1.06,
+    11.31
+   ],
+   "teams_favouring_first": 6,
+   "n_teams": 8
+  },
+  "cont_p12M_minus_armW": {
+   "label": "the fold path at +12.09M minus the FROZEN PARENT",
+   "delta_pp": 5.75,
+   "ci95_pp": [
+    1.19,
+    11.06
+   ],
+   "teams_favouring_first": 7,
+   "n_teams": 8
+  },
+  "fold_p1M_minus_armWb": {
+   "label": "+1.00M against the OTHER SEED",
+   "delta_pp": -2.25,
+   "ci95_pp": [
+    -6.44,
+    2.56
+   ],
+   "teams_favouring_first": 2,
+   "n_teams": 8
+  },
+  "fold_p3M_minus_armWb": {
+   "label": "+3.00M against the OTHER SEED",
+   "delta_pp": 1.69,
+   "ci95_pp": [
+    -5.44,
+    8.69
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "fold_p6M_minus_armWb": {
+   "label": "+6.09M against the OTHER SEED",
+   "delta_pp": 1.44,
+   "ci95_pp": [
+    -5.75,
+    8.75
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "cont_p7_5M_minus_armWb": {
+   "label": "+7.59M against the OTHER SEED",
+   "delta_pp": -0.87,
+   "ci95_pp": [
+    -8.81,
+    7.69
+   ],
+   "teams_favouring_first": 3,
+   "n_teams": 8
+  },
+  "cont_p9M_minus_armWb": {
+   "label": "+9.09M against the OTHER SEED",
+   "delta_pp": 1.44,
+   "ci95_pp": [
+    -6.56,
+    9.56
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "cont_p12M_minus_armWb": {
+   "label": "+12.09M against the OTHER SEED",
+   "delta_pp": 2.06,
+   "ci95_pp": [
+    -4.81,
+    9.44
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "armW_minus_armWb": {
+   "label": "\ud83d\udea8 THE FLOOR, re-measured on the identical games in THIS invocation",
+   "delta_pp": -3.69,
+   "ci95_pp": [
+    -8.19,
+    0.81
+   ],
+   "teams_favouring_first": 2,
+   "n_teams": 8
+  },
+  "cont_p12M_minus_fold_p6M": {
+   "label": "\ud83d\udea8 THE LAST 50 % OF THE BUDGET -- the endpoint minus the +6M point the earlier read stopped at (within-path, CROSSES THE FORK)",
+   "delta_pp": 0.62,
+   "ci95_pp": [
+    -2.75,
+    3.88
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "cont_p12M_minus_fold_p3M": {
+   "label": "the endpoint minus the +3M peak (within-path, crosses the fork)",
+   "delta_pp": 0.37,
+   "ci95_pp": [
+    -3.06,
+    3.75
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "cont_p7_5M_minus_fold_p6M": {
+   "label": "the STOP POINT minus +6M -- the leg the stop rule says completed the teaching",
+   "delta_pp": -2.31,
+   "ci95_pp": [
+    -5.31,
+    1.56
+   ],
+   "teams_favouring_first": 1,
+   "n_teams": 8
+  },
+  "cont_p12M_minus_cont_p7_5M": {
+   "label": "the endpoint minus the STOP POINT -- 4.5M steps AFTER the recipe's own endpoint",
+   "delta_pp": 2.94,
+   "ci95_pp": [
+    -0.44,
+    6.69
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "fold_p6M_minus_fold_p1M": {
+   "label": "the fold's own early leg, for the record",
+   "delta_pp": 3.69,
+   "ci95_pp": [
+    -0.75,
+    8.13
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  }
+ },
+ "reproduction": {
+  "armW": {
+   "banked_pp": 46.19,
+   "here_pp": 46.19,
+   "delta_pp": 0.0,
+   "banked_wins": "739 / 1600",
+   "here_wins": "739 / 1600",
+   "reproduces_exactly": true
+  },
+  "armWb": {
+   "banked_pp": 49.88,
+   "here_pp": 49.88,
+   "delta_pp": 0.0,
+   "banked_wins": "798 / 1600",
+   "here_wins": "798 / 1600",
+   "reproduces_exactly": true
+  },
+  "fold_p1M": {
+   "banked_pp": 47.62,
+   "here_pp": 47.62,
+   "delta_pp": 0.0,
+   "banked_wins": "762 / 1600",
+   "here_wins": "762 / 1600",
+   "reproduces_exactly": true
+  },
+  "fold_p3M": {
+   "banked_pp": 51.56,
+   "here_pp": 51.56,
+   "delta_pp": 0.0,
+   "banked_wins": "825 / 1600",
+   "here_wins": "825 / 1600",
+   "reproduces_exactly": true
+  },
+  "fold_p6M": {
+   "banked_pp": 51.31,
+   "here_pp": 51.31,
+   "delta_pp": 0.0,
+   "banked_wins": "821 / 1600",
+   "here_wins": "821 / 1600",
+   "reproduces_exactly": true
+  },
+  "same_team_set_as_the_p6M_read": true,
+  "per_team_identical": {
+   "armW": true,
+   "armWb": true,
+   "fold_p1M": true,
+   "fold_p3M": true,
+   "fold_p6M": true
+  },
+  "ALL_FIVE_PASS": true
+ },
+ "verdicts": {
+  "cont_p7_5M": {
+   "abs_delta_pp": 2.81,
+   "ci95_pp": [
+    -2.31,
+    9.37
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": false,
+   "direction": "fold path ABOVE parent",
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "cont_p9M": {
+   "abs_delta_pp": 5.13,
+   "ci95_pp": [
+    -1.06,
+    11.31
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": false,
+   "direction": "fold path ABOVE parent",
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "cont_p12M": {
+   "abs_delta_pp": 5.75,
+   "ci95_pp": [
+    1.19,
+    11.06
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": true,
+   "direction": "fold path ABOVE parent",
+   "verdict": "WITHIN FLOOR at n = 2"
+  }
+ },
+ "row1_branch_clauses": {
+  "n_new_checkpoints_reported": 3,
+  "checkpoints_OUTSIDE_upward": [],
+  "checkpoints_OUTSIDE_downward": [],
+  "branch_a_clause_clears_at_ge_2_of_3_new_points": false,
+  "branch_a_clause_UPWARD_at_ge_2": false,
+  "cis_excluding_zero": [
+   "cont_p12M"
+  ],
+  "note": "clause (b) is NEAR-UNSATISFIABLE on this row at this n and it was registered as such BEFORE the games: the team-clustered half-width is ~3.8-4.0 pp against a 3.69 pp floor, so the rule needs |delta| >~ 7.5 pp. A CI clear of ZERO is reported separately and is NOT a verdict."
+ },
+ "row1_peak": {
+  "levels_pp_in_order": {
+   "fold_p1M": 47.62,
+   "fold_p3M": 51.56,
+   "fold_p6M": 51.31,
+   "cont_p7_5M": 49.0,
+   "cont_p9M": 51.31,
+   "cont_p12M": 51.94
+  },
+  "argmax": "cont_p12M",
+  "max_pp": 51.94,
+  "the_p3M_peak_stands_off_slice": false,
+  "note": "the off-slice ROW's own peak. The GO's registered peak question is about the SLICES (row 2); this is its off-slice companion and is reported beside it."
+ }
+}
