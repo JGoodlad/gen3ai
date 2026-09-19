@@ -19350,3 +19350,35 @@ Launched 19:37 PT, launcher pid 3438160, child 3438197, pin **`6eb9c776`**, **ro
 - `⚠️ [MATCHUP DRIFT] … ef5242cffd → 0a7b730a4d` — expected; the fold records its own matchup era.
 
 **Two launcher defaults worth recording, because they make the stop rule self-enforcing:** `--distill-anchor-monitor` is **ON by default** when a fold is detected (attaches the FROZEN parent and emits `distill/collateral_kl_vs_parent` plus the off-slice meters — no loss term, no parameter change), and `--distill-stop` defaults to **`warn`: LOG-ONLY**, emitting a launcher event and `distill/stop_signal` when `teacher_agreement_on_slice` has plateaued AND `collateral_kl_vs_parent` is rising. **That is exactly the registered instruction — report, do not act — and it is the tool's own default rather than something imposed on it.** Watch items: the distill meters at +1M/+3M/+6M, G7 against the parent's final cycle 26.350, crossing N/A (pool seeded). Tag: **OPS · COMPLETE (exploiter #2) · two exploiters, same endpoint, different routes · LAUNCH (era-1 fold) · all launch-time guards green**.
+
+### 2026-09-19 · OPS · `ai_v13_07_fold1` COMPLETE at 81,100,800 — the ERA-1 FOLD ran its full +6M with **both teachers active throughout, the stop signal never firing**, and teacher agreement still RISING at the end; the two teachers' contributions diverged steadily
+
+**Run.** `ai_v13_07_fold1`, a FORK of `ai_v13_02_flywheel_winprob` distilling from the two win-prob exploiters. Pin **`6eb9c776`** (verified, not bumped — every fold flag and `split_run_spec`/`check_teacher_spec` exist there). Built from **arm W's** argv, not the exploiters' — a fold keeps self-play (`--self-play` ×2 retained, `--exploiter` absent). 252 tokens, checkargs **141 accepted / 2 launcher-owned / 0 unrecognized**, ARCH clean, dry run FORK with `--steps 81,005,952 → +6,000,000`. 09-18 19:37 → 09-19 01:21 PT, **5 h 44 m**, FPS 303, **Restarts 2, Crashes 1**. `latest.txt` → `final_model.zip`. Final aggregate 94.7 %. **TWENTY-SIX complete.**
+
+**The crash fell at TEARDOWN — the SIXTH occurrence.** Child log 6968 `Training complete. Model saved` → 7377 `Final aggregate win rate: 94.7%` → 7379 `🛑 [train_env] Worker PID 3546402 died (exitcode=-15)`. Ordering decisive, as every time.
+
+**DOSE, read from the run: `[FROZEN; pinned 2.80e-05]` → 4.272e-9, 0.20× the v8 reference.** 🚨 **And a reporting trap worth recording:** the launcher's restart line reads `▶️ Resuming at LR 2.50e-04 (checkpoint LR=2.50e-04)` — **the PARENT's annealed rate, printed before the `--fork-lr` override lands.** Read alone it says the fork-lr did not apply. It did: post-fork `train/learning_rate` is **2.800e-05, flat across every point**. **The `Resuming at LR` line reports the CHECKPOINT's lr, not the operating value — check `train/learning_rate` or `main.dose`, never that banner.**
+
+🚨 **THE DISTILL METERS, at +1M / +3M / +6M** (the registered rows; `n_teachers_active` **2.0 at every point**, `stop_signal` **0.0000 at every point**):
+
+| row | +1M | +3M | +6M |
+|---|---|---|---|
+| `teacher_agreement_on_slice` | 0.7581 | 0.7964 | **0.8153** |
+| `collateral_kl_vs_parent` | 0.2773 | 0.3647 | 0.3811 |
+| `gate_agree_rate` | 0.7579 | 0.7914 | 0.8102 |
+| `gated_frac` | 0.4357 | 0.4634 | 0.4272 |
+| `off_slice_frac` | 0.5643 | 0.5366 | 0.5728 |
+| `on_slice_kl` | 0.3272 | 0.5185 | **0.6534** |
+| `kl` (overall) | 0.6621 | 0.5400 | **0.4896** |
+| `t1_gated_frac` / `t1_mean_w` | 0.2257 / 2.2931 | 0.2918 / 2.0663 | **0.3051** / 2.0564 |
+| `t2_gated_frac` / `t2_mean_w` | 0.2101 / 2.7090 | 0.1716 / 2.9645 | **0.1222** / 2.7052 |
+
+🚨 **THE STOP SIGNAL NEVER FIRED, AND THE SHAPE SAYS WHY.** The registered stop condition is `teacher_agreement_on_slice` PLATEAUED **and** `collateral_kl_vs_parent` RISING. Agreement was **still climbing at the end** (0.758 → 0.796 → 0.815, no plateau), so the condition could not be met however the collateral term behaved. **The fold was stopped by its step budget, not by its stop rule — it had not finished learning from these teachers.** That is a statement about the +6M budget, not about the recipe, and it is the first thing the registered read should be interpreted against.
+
+🚨 **THE TWO TEACHERS DIVERGED STEADILY.** Big-5 (t1) rose 0.226 → 0.292 → **0.305** of gated rows while its weight fell 2.29 → 2.06; DDTar (t2) fell 0.210 → 0.172 → **0.122** while its weight stayed ~2.7–3.0. They start nearly equal at +1M and end **2.5× apart**. So the fold drew progressively more of its taught signal from the BALANCE specialist and less from the OFFENSE one — recorded as a measurement, with no account offered for it; the per-slice piloting read is what could explain it. Meanwhile `on_slice_kl` DOUBLED (0.327 → 0.653) while overall `kl` FELL (0.662 → 0.490): **the trainee moved away from the parent precisely on the taught slice while converging elsewhere**, which is the intended shape of a fold rather than a drift.
+
+**Other rows.** Post-fork bots **0.9237 → 0.9287 → 0.9337**; G7 against the CORRECTED reference (parent's final cycle 26.350 — `g7_ladder` is structurally wrong on a fork, `36f8f7eb`) reads **1.015 / 1.019 / 1.059**, under bar; post-fork `signal/draw_rate` peaks **0.0045** against the 0.05 bar. `off_slice_frac` ~0.54–0.57 throughout, consistent with `--distill-team-bias 0.4`.
+
+**Launch-time guards, all green and all uncheckable by the dry run:** `🧪 [DISTILL] 2 teacher(s) / 2 team(s), coef=0.1761` (one team each; a 0-team resolution is FATAL_CONFIG by design) and `2 teacher(s) attached on cuda (order = teacher-id 1..2)` — **re-emitted identically at both restarts**, so the teacher set survived every child rotation; `🌱 [SELFPLAY] [pool] seeded 20 snapshots from ai_v13_02_flywheel_winprob (wr 91.00 %)`; `🐴 [STABLE] 2 cross-run opponents, each piloting ITS OWN pin`; `[MATCHUP DRIFT] ef5242cffd → 0a7b730a4d`.
+
+**Not claimed.** The 94.7 % aggregate is a descriptor. **Nothing here says the fold paid** — whether it did is the orchestrator's registered read: the untaught meter vs arm W (floor **3.69 pp** from W_b) at +1M/+3M/+6M, per-slice piloting on the two taught teams vs arm W (matched-extraction, 800 games/arm), ladder at matched COUNT vs W and W_b, and SmallRL greedy away. Tag: **OPS · COMPLETE · twenty-sixth run · ERA-1 FOLD · stop signal NEVER FIRED (agreement still rising at the budget's end) · teachers diverged 2.5× · crash at TEARDOWN (6th)**.
