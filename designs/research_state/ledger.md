@@ -19315,3 +19315,38 @@ the generalist falling, not the specialist rising · no off-slice specialisation
 RUNNABLE on the slice · two ops defects filed**.
 
 **Orchestrator's reading.** Your question — does narrowing to one team and one opponent buy the value head discrimination — reads NO on the absolute bar and YES only in the sense that the specialist's ranking is invariant to the state set while the generalist's degrades off its distribution. The ceiling (0.575 ± 0.01 across four heads at two depths and two widths) is the strongest evidence yet that the bound is in what the win-prob head extracts from an outcome label under a moving policy, not in coverage, width, loss form or data — every one of those has now been varied. The remaining untried design is the OFFLINE fit against a FROZEN policy. Two instrument defects filed (`eval_trace_gen` cannot read a specialist's team pin and silently evaluates it on random pool teams — the ai_v7 OOD-eval defect reintroduced; `main.search_dividend` has no team pin). Tag: **MEASURED · narrowing does NOT raise the ceiling · 0.575 four heads deep · offline frozen-policy fit is the last untried design**.
+
+### 2026-09-18 · OPS · `ai_v13_06_exploit_ddtar_spikes` COMPLETE at 83,066,880 — the SECOND win-prob exploiter reached **0.740 vs its own parent** like the first, but by a different route: it opened at 0.700 and closed games in **~32 turns where Big-5 needed ~45**
+
+**Run.** `ai_v13_06_exploit_ddtar_spikes`, a FORK of `ai_v13_02_flywheel_winprob` (arm W parent AND target). Build = `ai_v13_05`'s resolved argv with the **token-set diff exactly the team file plus the run name** (227 → 227). Pin `6eb9c776`, checkargs 127 accepted / 2 launcher-owned / **0 unrecognized**, ARCH clean, dry run FORK with `--steps 83,005,952 → +8,000,000`. 15:28 → 19:37 PT, **4 h 09 m**, FPS 644, **Restarts 1, ZERO crashes**. `latest.txt` → `final_model.zip`. Final aggregate 98.0 %. Specialist team: **Tyranitar, Skarmory, Celebi, Starmie, Salamence, Metagross** (offense), matchup **`9b7dd0562e`**. **TWENTY-FIVE complete.**
+
+**DOSE, read from the run:** `3.815e-8, 1.78× the v8 reference, lr_median 0.00025` — identical to the Big-5 twin, as expected since both inherit arm W's annealed lr with `--fork-lr` unset.
+
+🚨 **THE TWO EXPLOITERS LAND ON THE SAME NUMBER BY DIFFERENT ROUTES.** Post-fork, read against **0.500 by construction**:
+
+| +steps | **DDTar** WR / ep_len vs target | **Big-5** WR / ep_len vs target |
+|---|---|---|
+| +1M | **0.700** / 31.21 | 0.640 / 50.53 |
+| +3M | **0.770** / 33.29 | 0.680 / 49.94 |
+| +5M | 0.740 / 33.56 | 0.730 / 48.07 |
+| +7M | **0.740** / 32.48 | **0.740** / 45.41 |
+
+Both finish at **0.740 (+24 pp over the 0.500 baseline)**, but DDTar **opened at 0.700** — already near its final value after 1M — while Big-5 climbed monotonically from 0.640. And the episode lengths differ throughout: **DDTar beats the same target in ~31–34 turns where Big-5 needs 45–51**, with DDTar's lengthening slightly and Big-5's shortening. 🚨 **This is a plausible ARCHETYPE signature — offense closing fast, balance grinding — but it is TWO RUNS, one team each, and is recorded as a description, not a claim.** The fold's per-slice read is what could turn it into one.
+
+**Against bots** the specialist runs 0.9287 → 0.9463 → 0.9550 → **0.9638**, below the Big-5 twin's 0.9712–0.9887 — consistent with a narrower offense team being harder to pilot to a ceiling against the bot pool, again a description only.
+
+**G7 on the CORRECTED reference.** `g7_ladder`'s own number is not usable here (it inherits arm W's TB and freezes on the parent's 2M/4M cycles — banked `36f8f7eb`). Against the **parent's final cycle, `eval/mean_ep_len_vs_bots` @74,000,016 = 26.350**, the post-fork series reads **0.757 / 0.831 / 0.775 / 0.745** — **well BELOW the reference**, i.e. this arm's episodes are markedly SHORTER than its parent's, the opposite direction from the Big-5 twin's 1.072–1.141. Post-fork `signal/draw_rate` peaks at **0.0068** against the 0.05 bar. Clean on both halves.
+
+### 2026-09-18 · OPS · LAUNCH · `ai_v13_07_fold1` — the ERA-1 FOLD is live, and every launch-time guard that the dry run could NOT check came back green
+
+Launched 19:37 PT, launcher pid 3438160, child 3438197, pin **`6eb9c776`**, **role FORK of `ai_v13_02_flywheel_winprob`**, `--steps 81,005,952 → +6,000,000`. Built from **arm W's** argv, not the exploiters' — a fold keeps self-play (`--self-play` ×2 retained, `--exploiter` absent). 252 tokens, checkargs **141 accepted / 2 launcher-owned / 0 unrecognized**, ARCH clean, `--fork-lr 2.8e-05` with `--fork-lr-freeze True`.
+
+**PIN VERIFIED, NOT BUMPED.** The GO allowed for a bump if the distill/run-spec flags had moved. They have not: `--distill-teacher`, `--distill-gate`, `--distill-team-bias`, `--rank-tripwire`, `--fork-lr-freeze`, `--checkpoint-every-steps`, `--stable-opponents` and `--distill-topk` all exist at `6eb9c776`, and `split_run_spec`/`check_teacher_spec` are present in `distill_spec.py`, `fixed_opponent_pool.py`, `lineage.py` and `matchup_spec.py`. **`6eb9c776` stands**, which keeps the fold on the same pin as its parent and both teachers.
+
+🚨 **THE DRY RUN CANNOT CHECK THE TEACHERS — it echoes the spec "from the argv" and resolves nothing. The first 60 s of the launch is the only test, and it passed:**
+- `🧪 [DISTILL] 2 teacher(s) / 2 team(s), coef=0.1761 | trainee biased 40% across all 2 teacher team(s); rest = pool rehearsal` — **one team per teacher, exactly as the recipe requires**; a teacher resolving to 0 teams is a FATAL_CONFIG refusal by design, and neither did.
+- `🌱 [SELFPLAY] [pool] seeded 20 snapshots + metadata from ai_v13_02_flywheel_winprob (win_rate_vs_bots=91.00%)` — **the parent's pool auto-seeded**; a fork that reaches training with an empty pool exits FATAL_CONFIG.
+- `🐴 [STABLE] 2 cross-run opponent(s): ext_ai_v13_05_exploit_big5starmie [pilots ITS OWN pin: f6229d2c867e21d6.txt], ext_ai_v13_06_exploit_ddtar_spikes [pilots ITS OWN pin: 9eb3abdc52876a63.txt]` — **the double-sided recipe is live and each teacher pilots the team it was trained on**, which is the property that makes the pool rehearsal meaningful.
+- `⚠️ [MATCHUP DRIFT] … ef5242cffd → 0a7b730a4d` — expected; the fold records its own matchup era.
+
+**Two launcher defaults worth recording, because they make the stop rule self-enforcing:** `--distill-anchor-monitor` is **ON by default** when a fold is detected (attaches the FROZEN parent and emits `distill/collateral_kl_vs_parent` plus the off-slice meters — no loss term, no parameter change), and `--distill-stop` defaults to **`warn`: LOG-ONLY**, emitting a launcher event and `distill/stop_signal` when `teacher_agreement_on_slice` has plateaued AND `collateral_kl_vs_parent` is rising. **That is exactly the registered instruction — report, do not act — and it is the tool's own default rather than something imposed on it.** Watch items: the distill meters at +1M/+3M/+6M, G7 against the parent's final cycle 26.350, crossing N/A (pool seeded). Tag: **OPS · COMPLETE (exploiter #2) · two exploiters, same endpoint, different routes · LAUNCH (era-1 fold) · all launch-time guards green**.

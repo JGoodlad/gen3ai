@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,318-line file. **The ledger itself is append-only and is never edited by this**;
+19,353-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**626 headings · 574 dated · 2026-08-01 → 2026-09-18 · ledger 19,318 lines.**
+**628 headings · 576 dated · 2026-08-01 → 2026-09-18 · ledger 19,353 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -646,3 +646,5 @@ rename.
   - `L19028` · `2026-09-18` · OPS · `ai_v13_05_exploit_big5starmie` COMPLETE at 83,066,880 — the era's first win-prob exploiter took arm W from 0.500 to **0.740** on its pinned team in 8M; and 🚨 **G7 IS STRUCTURALLY WRONG ON A FORK** — it froze its reference on the PARENT's infancy
   - `L19064` · `2026-09-18` · MEASUREMENT (MAJOR) · **THE 75M RUN-LEVEL FLOOR IS MEASURED**, and it swallows two of the flywheel pair's four headline rows: strength (+17.5 Elo vs a **25.2** seed floor, **53.1** on the common-step frame) and **`gate.ece.all` (0.051 vs a 0.049–0.059 seed floor — the pair's ONE decisive DETECTED row, retired)**; the untaught meter (+8.31 vs **3.69 pp**) and the entropy trajectory (0.00133 vs **0.00103** nats/M) clear it, the latter by 23 % and with its "FLAT vs DECAYING" form REFUTED — all three arms decay; plus **W_b leads arm W at 15 of 15 shared ladder steps**, which is the same monotone shape the pair read had described for arm S and refused to claim
   - `L19226` · `2026-09-18` · MEASUREMENT · DOES NARROWING BUY DISCRIMINATION? — the Big-5 exploiter's head ranks siblings at 0.575 on its own slice AND on the generalist's states (slice-invariant), the parent's head FALLS to 0.545 on the slice (the first detected head effect of this instrument, +0.030 paired), and the 0.575 ceiling is now FOUR heads deep across two 10M and two 75M+ runs on one fixed state set — whatever bounds sibling ranking is not distribution width; a per-slice search teacher is NOT established
+  - `L19319` · `2026-09-18` · OPS · `ai_v13_06_exploit_ddtar_spikes` COMPLETE at 83,066,880 — the SECOND win-prob exploiter reached **0.740 vs its own parent** like the first, but by a different route: it opened at 0.700 and closed games in **~32 turns where Big-5 needed ~45**
+  - `L19340` · `2026-09-18` · OPS · LAUNCH · `ai_v13_07_fold1` — the ERA-1 FOLD is live, and every launch-time guard that the dry run could NOT check came back green
