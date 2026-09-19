@@ -1126,7 +1126,13 @@ NOT DETECTED**; the guard within floor; the 400-pair battery no dividend (`grid`
 the STATE DISTRIBUTION (+31 % non-tied pairs, blind spot 5.5 % vs 4.6 %) without moving the head. **The gap the arm was
 built to close was ~0.016, inside the ±0.015 instrument.** Nine win-prob heads plus the fork arm: no usable leaf; the
 fork line is CLOSED at this depth; the leaf question returns to the offline fit on branched self-play with a frozen
-policy. [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
+policy. **Narrowing does not raise the ceiling either (`exploiter_discrimination_2026-09-18/`):** the era's first
+exploiter (a fork of arm W on one pinned team against arm W as the fixed target, vs-target 0.74 at +7M) ranks siblings
+at 0.575 on its own slice and on the generalist's states alike, while the parent's head falls to 0.545 on the slice
+(+0.030 paired, DETECTED — the parent is OOD there, not the specialist better). **The 0.575 ceiling is now four heads
+deep** (0.568–0.578 across two 10M and two 75M+ runs on one fixed state set): coverage, width, loss form, data and
+distribution have each been varied and none moved it. The bound is in what the win-prob head extracts from an
+outcome label under a moving policy; the offline fit against a frozen policy is the last untried design. [ledger 2026-09-14 · *SIBLING DISCRIMINATION*; 2026-09-16 · *VERDICT + CORRECTION (MAJOR) · THE FORK ARM*] **The `grid` cell is the sensitive leaf row instead:** `strata` 0.315 and `denseaux` 0.303 are the best of six, `cflabels` 0.188 the worst (strata − cflabels +0.128 [+0.057, +0.198] DETECTED) — the successor-discrimination head is the most confident re-ranker (68 % of actions changed) and the most wrong, a null reported DOSE-UNREAD (`cf_head_only`, 150k-step label lag, realized duty cycle never read), not a verdict on counterfactual labels as a class. [ledger 2026-09-12 · *MEASUREMENT (MAJOR) · THE LEAF BATTERY, PHASE 2/3*]
 
 ## 8. Pointers
 

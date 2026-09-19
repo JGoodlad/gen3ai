@@ -19222,3 +19222,96 @@ away 0.090 corroborating the SOP's 0.110 · first WIDTH-MATCHED Foul Play pair, 
 Metamon RecursionError is the CHALLENGE role, not sampling**.
 
 **Orchestrator's reading.** Of the three pair findings that leaned shaped, one survives a run-level floor (the untaught meter, +8.31 vs a 3.69 pp floor, still a CANDIDATE at n = 2 with the 1.44× realized-dose confound), one is retired (ECE — W_b is better calibrated than arm S's diagnostic head; the direction flips with the seed), and one is refuted as worded (entropy — every arm decays; the S-vs-W slope gap clears the floor by 23 % on an autocorrelated OLS se, which is not a claim). Strength is within floor on every frame, and the seed replicate LEADS arm W at every shared step by 22–70 Elo, the exact shape the pair read refused to read for arm S — vindicating the refusal. **Standing: the era's premise holds (win-prob costs nothing detectable on strength), calibration of the win-prob critic is a per-run draw at 75M, and the untaught meter is the one row where the dense signal may still be paying.** Tag: **MEASURED (MAJOR) · 75M floor bounded · ECE retired · untaught survives · entropy refuted as worded**.
+
+### 2026-09-18 · MEASUREMENT · DOES NARROWING BUY DISCRIMINATION? — the Big-5 exploiter's head ranks siblings at 0.575 on its own slice AND on the generalist's states (slice-invariant), the parent's head FALLS to 0.545 on the slice (the first detected head effect of this instrument, +0.030 paired), and the 0.575 ceiling is now FOUR heads deep across two 10M and two 75M+ runs on one fixed state set — whatever bounds sibling ranking is not distribution width; a per-slice search teacher is NOT established
+
+
+Record `designs/research_state/measurements/exploiter_discrimination_2026-09-18/`
+(`PREDICTION.md` landed on main at **`b902621e`** before the first battle, including the two ops
+defects below, which were found while wiring it). **A fresh 1,300-battle full-capture eval tree of
+`ai_v13_05_exploit_big5starmie` @ 83,066,880 piloting its pinned Big-5 + Starmie team against arm
+W, then 5,040 three-branch CRN forks (15,120 rollouts) on those states, scored against the banked
+5,040-fork generalist set of `fork_arm_read_2026-09-16` — two heads × two state sets; CPU only,
+zero errors, 102/102 determinism re-runs identical, 9 of 15,120 branches stall-capped (0.06 %),
+nothing written under `models/`.**
+
+**THE 2×2, all four cells on the same instrument** (`sign(V(s'_a) − V(s'_b))` vs the shared-dice
+outcome, bootstrap over forks): on **its own slice** the exploiter's head reads
+**0.5751 [0.5561, 0.5931]** against arm W's **0.5450 [0.5266, 0.5625]**, paired on the same 2,358
+non-tied pairs **Δ +0.0301 [+0.0136, +0.0464] DETECTED**; on the **banked generalist set** they
+read **0.5746 [0.5581, 0.5909]** and **0.5781 [0.5621, 0.5940]**, Δ **−0.0035 [−0.0169, +0.0102]
+NOT DETECTED**. **BAR 2 (the paired Δ clear of zero) FIRES — the first detection in this campaign,
+and it cannot be a calibration artifact because pairwise accuracy is rank-based. BAR 1 (the CI
+clears 0.62) FAILS, and not narrowly.** 🚨 **The +0.030 is the PARENT FALLING, not the exploiter
+rising: the exploiter reads 0.5751 / 0.5746 across the two state sets (0.0005 apart) while arm W
+reads 0.5450 / 0.5781 (0.0331 apart). The specialist's head is SLICE-INVARIANT at 0.575; the
+generalist's is not.** BAR 4 does not fire — **there is no measured specialisation cost**, 8M
+steps on one team did not damage the head off-slice. BAR 3 is met in the good direction (slice ECE
+**0.0406 vs 0.0833**), and arm W's `mean_V` of **0.788** against a base rate of **0.867** says the
+generalist critic **does not know this matchup is lost**, by 7.9 points.
+
+🚨 **THE 0.575 CEILING IS NOW FOUR HEADS DEEP ON ONE FIXED STATE SET.** On the *identical* 2,849
+non-tied pairs of the banked generalist forks: **0.5679** (`ctrl10M`), **0.5746** (the fork arm),
+**0.5746** (this exploiter), **0.5781** (arm W) — a spread of **0.0102** across two 10M runs and
+two 75M+ runs, one trained on contested forks and one on a single team. **Collapsing the
+distribution to one own team and one opponent policy — about as narrow as this value function can
+be asked to be — leaves the level exactly where it was. Whatever bounds this metric is not width.**
+**A per-slice search teacher is NOT established**: 0.575 is the level of eleven heads already shown
+to be unusable leaves, and a +0.030 edge over a head that is itself no good does not make a leaf.
+What narrowing DID buy, named separately: **robustness of the ranking under a distribution shift,
+at no measurable cost off-slice**, for 8M steps and ~4.7 h.
+
+**NONE OF THE FOUR REGISTERED BRANCHES FIRES CLEANLY, and that is the result** — (a) needed BAR 1
+*and* BAR 2, (b) needed both heads to rise, (c) needed no difference, (d) needed an off-slice cost.
+⚠️ **The honest limit, registered before the data: this read cannot separate "narrowing built a
+better ranker" from "the generalist is simply OOD on this slice"** — both predict a +0.030 gap at
+an unchanged level. The cheapest separation is one arm: 8M steps of FULL-POOL fine-tuning from the
+same parent, scored on the same slice.
+
+**THE POLICY DESCRIPTORS INVERT THREE PREDICTIONS.** The slice's tie rate is **0.8428** (vs 0.8058),
+its blind-spot rate **2.31 % [1.93, 2.76]** against the generalist's **4.55 % [4.01, 5.16]** with
+the Wilson intervals **disjoint** — the specialist leaves HALF as much value outside its own top-2
+— and its contested-gap threshold is **0.46–0.49 against 0.81–0.89**: 🚨 **a specialist is not a
+sharper policy here, it is a FLATTER one** (`H_end` 1.277 vs `ctrl10M`'s 0.747, though `--ent-coef`
+differs 0.05 vs 0.02 and the comparison is confounded). Top-1 and top-2 stay outcome-interchangeable
+on a fifth policy (|Δ| 0.0053) and the random branch costs **1.60 pp** against the generalist's 3.33.
+
+🚨 **TWO OPS DEFECTS, both found while wiring the read, both filed on the backlog.** **(1)
+`main.ops.eval_trace_gen` CANNOT READ A SPECIALIST RUN'S TEAM PIN AND FAILS SILENTLY INTO THE WORST
+DEFAULT.** `read_regime` takes the pin from `model_config.json`'s `trainee_team_str` — a key that
+can NEVER legally be in that file, because `ModelVersion.from_json_file` has no such field and
+raises `TypeError` on every snapshot load (reproduced). A `--trainee-team` run records its pin only
+in `metadata.json`'s `cli_args`, so the tool reads `None` for EVERY specialist run and the generated
+cycle measures the model piloting **random pool teams** — the exact OOD-eval defect
+`eval_worker._build_trainee_tb`'s docstring exists to close ("the ai_v7_05–08 plateau was this gap,
+not the training"), reintroduced in the tool that generates the frames every offline critic read is
+taken on. `gen_tree.py` declares the pin from the run's own record and proves it three ways
+(`sha1(export)[:10] == 4c01c7bbbb` == every live manifest's `trainee_team_sha` == the generated
+manifest's). **(2) `main.search_dividend` HAS NO TEAM PIN**, so no leaf battery can be aimed at a
+specialist's slice — the registered step-4 battery is therefore **NOT RUNNABLE on the Big-5 slice**
+and was declared so rather than run off-slice, where this head's advantage has just been measured
+as absent (−0.0035). The `g7_ladder` fork-inheritance defect from `36f8f7eb` is re-confirmed here on
+the raw event files (81 of 821 `train/entropy_loss` points and 4 of 41 `eval/win_rate_vs_bots`
+points are post-fork) and filed as its own row.
+
+**DECLARED DEVIATIONS.** Arm W is posed as the cycle's single pool SENTINEL (an exploiter run has
+no pool, and `forks.py` refuses a non-sentinel opponent); consequently, under the recorded
+`eval_sentinel_greedy: true` regime, **the slice is a MIRROR — both sides pilot the pinned team,
+verified in every battle's `input_log`** — where the run's LIVE `ext_` verdict cell gave arm W the
+FULL POOL. Both are greedy; they differ in the opponent's team draw, and **the mirror is the
+STRONGER cell for the exploiter: 1,136/1,300 = 0.874, not the banked 0.740.** Descriptors, not
+endpoints: the banked vs-target curve 0.640 → 0.680 → 0.730 → 0.740 at +1M/+3M/+5M/+7M with
+episodes shortening 50.53 → 45.41; **dose 3.815e-8 read from the run** (1.78× the v8 reference, at
+`lr_median 0.00025` — `--fork-lr` unset, so the fork inherited arm W's annealed lr); post-fork live
+critic rows `critic_skill` 0.283 / `critic_ece` 0.0115 / `critic_brier` 0.0912; and
+**`cond.opp_class_auc.t4_10` is UNDEFINED on this slice** — the row is an AUC of `V` against the
+opponent's CLASS and this cycle has ONE opponent class, so no conditioning claim is made in either
+direction. Instrument note: rule 25's indexing clause was executed rather than asserted —
+`verify_indexing.py` re-derives the metric from the raw artifacts with independent code and
+reproduces 0.5750636 against 0.5750636 (gap 2.7e-8, float32-mean precision), and prints ten
+hand-scored pairs in full. Tag: **MEASURED (MAJOR) · FIRST DETECTED HEAD EFFECT (+0.0301
+[+0.0136, +0.0464]) · the 0.575 ceiling UNMOVED, now four heads deep on one state set · the gain is
+the generalist falling, not the specialist rising · no off-slice specialisation cost · battery NOT
+RUNNABLE on the slice · two ops defects filed**.
+
+**Orchestrator's reading.** Your question — does narrowing to one team and one opponent buy the value head discrimination — reads NO on the absolute bar and YES only in the sense that the specialist's ranking is invariant to the state set while the generalist's degrades off its distribution. The ceiling (0.575 ± 0.01 across four heads at two depths and two widths) is the strongest evidence yet that the bound is in what the win-prob head extracts from an outcome label under a moving policy, not in coverage, width, loss form or data — every one of those has now been varied. The remaining untried design is the OFFLINE fit against a FROZEN policy. Two instrument defects filed (`eval_trace_gen` cannot read a specialist's team pin and silently evaluates it on random pool teams — the ai_v7 OOD-eval defect reintroduced; `main.search_dividend` has no team pin). Tag: **MEASURED · narrowing does NOT raise the ceiling · 0.575 four heads deep · offline frozen-policy fit is the last untried design**.
