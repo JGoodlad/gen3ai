@@ -347,6 +347,12 @@ pub struct SideChunk {
 pub struct BridgeChunks {
     /// Every chunk, in flush order (both sides interleaved).
     pub chunks: Vec<SideChunk>,
+    /// What each side has been TOLD about the mons it does not own
+    /// (`gen3_one_sided_view_v1`). Folded HERE because `push_chunk` is the one funnel every
+    /// per-side line passes through, and CUMULATIVE from turn 1 — see
+    /// [`BridgeSession::clear_chunks`], which deliberately carries it across a branch's chunk
+    /// reset. Costs one `split('|')` per emitted line and nothing when nobody reads it.
+    pub observed: [crate::view::SideObservation; 2],
 }
 
 impl BridgeChunks {
@@ -354,6 +360,10 @@ impl BridgeChunks {
     /// no-op (the sim never flushes an empty chunk to a side).
     fn push_chunk(&mut self, side: usize, lines: Vec<String>) {
         if !lines.is_empty() {
+            for line in &lines {
+                let owner_is_self = ident_owner(line) == Some(side);
+                self.observed[side].observe(line, owner_is_self);
+            }
             self.chunks.push(SideChunk { side, lines });
         }
     }
@@ -1915,7 +1925,18 @@ impl BridgeSession {
     /// it would re-emit the whole battle's log into the next chunk. Nor does it touch the
     /// battle, the driver, the open boundary, or `request_seeds`/`script`.
     pub fn clear_chunks(&mut self) {
-        self.chunks = BridgeChunks::default();
+        // The per-side OBSERVATION survives (`gen3_one_sided_view_v1`): a branch drops its
+        // parent's chunk HISTORY so its own chunks are exactly its suffix, but what a side has
+        // SEEN is cumulative from turn 1 and is not a property of the suffix. Resetting it here
+        // would make every branch's one-sided view claim the opponent's team is unrevealed.
+        let observed = std::mem::take(&mut self.chunks.observed);
+        self.chunks = BridgeChunks { chunks: Vec::new(), observed };
+    }
+
+    /// What `side` has been told about the mons it does not own — the reveal half of
+    /// [`crate::view::one_sided_view`].
+    pub fn observed(&self, side: usize) -> &crate::view::SideObservation {
+        &self.chunks.observed[side]
     }
 
     /// The OPEN request kind for `side` at the current paused boundary, or `None` when no

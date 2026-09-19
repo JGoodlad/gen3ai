@@ -108,6 +108,7 @@ read the row you are about to edit.**
 | `bin/sim_bridge.rs` | DONE, validated | The drop-in `node local_sim_bridge.js` REPLACEMENT, INCREMENTAL (`gen3_bridge_incremental_replay_v1`) — O(1) per CHOOSE, O(N) per battle. |
 | `search.rs` | DONE, validated | The search + replay KERNELS (`gen3_rust_search_driver_v1`): the aux PRNG, `Record::parse`, `build_to_turn`, `resolve_turn*`, the `outcome_of`/`pre_state` renderers. Pure helpers. |
 | `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. |
+| `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
 
 ## The callable surface (battle.rs) maps to the existing bridge
 
@@ -198,6 +199,34 @@ false, and that path killed **two production launches at ~8 minutes**
 `src/rust_sim/harness/search_impl_parity.py`'s `ALLOWLIST` and the code, never against prose. The
 only live entry in either harness is `.error` message TEXT; the verdict, the exit code and the error
 CLASS stay strict.
+
+## The ONE-SIDED VIEW — the obs-legal half of the wall (`gen3_one_sided_view_v1`)
+
+`src/view.rs::one_sided_view(sess, side, dex)` emits the board PROJECTED onto what `side` has
+observed, in exactly the shape `agents.battle.live_view.LiveView` holds — so a search successor's
+observation can be built without replaying that ply's protocol through poke-env. It rides every
+`expand_many` arm and `open_root` as `view_p1` / `view_p2`; `agents.battle.view_adapter` is the
+Python constructor; the Python sub-encoders are UNCHANGED.
+
+🚨 **THE SPLIT IS THE CONTRACT: the port emits SIM FACTS + RAW PROTOCOL FACTS, and every poke-env
+PRESENTATION RULE is applied in Python.** Half of `LivePokemon` is not sim state at all — an
+opponent's move PP is a SIGHTING count (doubled against Pressure), `volatiles` is a protocol fold
+with poke-env's own `ends_on_turn` / countable rules, `status_counter` and `protect_counter` are
+poke-env counters with different transitions from the engine's, and the obs SLOT order is the
+first `|request|`'s roster (ours) / reveal order (theirs). Sending the port's own value for any of
+those reads plausible and is wrong.
+
+🚨 **Do NOT feed `search::volatile_names` to the obs layer.** That set is the port's TYPED fields
+and includes conditions the sim never announces — gen-3 Choice lock is one, and it raised
+`UnknownVolatileError: volatile 'choicelock' has no gen3 encoding slot` on the first real board.
+`view.rs` folds `|-start|`/`|-end|`/`|-activate|`/`|-singleturn|`/`|-singlemove|` instead.
+
+Gates: `tests/one_sided_view_test.rs` (9 — the WALL against `pre_state` on a board with unrevealed
+mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts),
+`src/agents/battle/view_adapter_test.py` (24), and the differential
+`src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`; no allowlist, prints a
+census). Full contract, the measured findings and the 9 DEFERRALS:
+[`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md).
 
 🚨 **`pre_state` VOLATILE NAMES ARE UNVERIFIED.** `pre_state` mirrors Node's `preState` and has no
 consumer today; its `volatiles` list is a RECONSTRUCTION from the port's typed fields, and exactly ONE

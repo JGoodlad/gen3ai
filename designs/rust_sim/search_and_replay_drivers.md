@@ -186,6 +186,14 @@ purely so this readout can name it. **Every other name (`choicelock`, `perishson
 right; `replay_impl_parity` prints a `pre_state:nonempty-volatiles` count on every run precisely so
 an all-empty record set cannot be mistaken for coverage.
 
+**THE RESPONSE CARRIES ONE PORT-ONLY FIELD: `view_p1` / `view_p2`** (`gen3_one_sided_view_v1`,
+`src/view.rs`) — on `open_root` and on every `expand_many` arm. It is the OBS-LEGAL counterpart of
+`pre_state`: the same board, projected onto what each side has OBSERVED, in the shape `LiveView`
+holds, so a successor's read-models can be built without replaying its protocol. Node emits no such
+field, and `search_impl_parity.py`'s allowlist forgives exactly that ABSENCE and nothing else (the
+predicate is value-aware). Contract, findings and deferrals:
+[`one_sided_view.md`](one_sided_view.md).
+
 **IT ALREADY REPLACES node in `better_line`.** This paragraph used to list three things as STILL
 NEEDED and every one of them had already been done — *a note that outlived its own fix*, the exact
 class this file polices elsewhere (corrected 2026-09-07, verified against the code named here):

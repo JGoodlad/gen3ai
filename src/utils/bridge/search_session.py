@@ -42,6 +42,12 @@ coincide, so nothing caught it for as long as depth 1 was all that ran.
 and the dice, never the obs encoder (the one-sided / omniscient wall, identical to the re-roll
 path).
 
+``view_p1`` / ``view_p2`` are the OTHER side of that wall (`gen3_one_sided_view_v1`, rust only):
+the same board PROJECTED onto what each side has observed, in the shape
+:class:`~agents.battle.live_view.LiveView` holds, so a successor's read-models can be built
+without replaying its protocol. :mod:`agents.battle.view_adapter` is the constructor and
+``designs/rust_sim/one_sided_view.md`` is the contract. They are ``{}`` under ``impl="node"``.
+
 The protocol is synchronous request → one-line response; calls are strictly sequential
 (a beam expands one batch at a time), so a background reader thread feeds a queue that
 :meth:`_call` drains with a timeout — a wedged child fails ONE call (and the session),
@@ -56,7 +62,7 @@ import queue
 import subprocess
 import sys
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 
 from utils.bridge.reconstruction import ReconstructionRecord
@@ -87,6 +93,13 @@ class RootView:
     pre_state: dict           # omniscient board snapshot (referee view)
     prefix_p1_chunks: List[str]
     prefix_p2_chunks: List[str]
+    # The ONE-SIDED VIEW of this board per side (`gen3_one_sided_view_v1`) — the projection of
+    # the same state onto what that side has OBSERVED, in the shape `LiveView` holds. Unlike
+    # `pre_state` (omniscient, referee-only) these ARE obs-legal: they are the other side of the
+    # wall, and `agents.battle.view_adapter` builds the read-models straight from one. `{}` from
+    # a driver that predates the field (node's `search_driver.js` emits none).
+    view_p1: dict = field(default_factory=dict)
+    view_p2: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -106,6 +119,10 @@ class ExpandedNode:
     choices_used: dict
     p1_chunks: List[str]      # THIS PLY's one-sided suffix — NOT root → this node
     p2_chunks: List[str]
+    # The arm's RESULTING board, projected per side (`gen3_one_sided_view_v1`). Obs-legal, unlike
+    # `outcome`; `{}` under `impl="node"`, which emits no such field.
+    view_p1: dict = field(default_factory=dict)
+    view_p2: dict = field(default_factory=dict)
 
 
 class SearchError(RuntimeError):
@@ -213,7 +230,8 @@ class SearchSession:
         return RootView(
             node_id=out["node_id"], requests=out["requests"],
             recorded_choices=out["recorded_choices"], pre_state=out["pre_state"],
-            prefix_p1_chunks=out["prefix_p1_chunks"], prefix_p2_chunks=out["prefix_p2_chunks"])
+            prefix_p1_chunks=out["prefix_p1_chunks"], prefix_p2_chunks=out["prefix_p2_chunks"],
+            view_p1=out.get("view_p1") or {}, view_p2=out.get("view_p2") or {})
 
     def expand_many(self, arms: Sequence[dict]) -> List[ExpandedNode]:
         """Expand N arms from their parent nodes in one round-trip. Each ``arm`` is a dict
@@ -239,7 +257,8 @@ class SearchSession:
                 label=a.get("label"), node_id=a.get("node_id"), ended=bool(a.get("ended")),
                 stuck=bool(a.get("stuck")), outcome=a.get("outcome") or {},
                 requests=a.get("requests"), choices_used=a.get("choices_used") or {},
-                p1_chunks=a.get("p1_chunks") or [], p2_chunks=a.get("p2_chunks") or [])
+                p1_chunks=a.get("p1_chunks") or [], p2_chunks=a.get("p2_chunks") or [],
+                view_p1=a.get("view_p1") or {}, view_p2=a.get("view_p2") or {})
             for a in out["arms"]
         ]
 

@@ -1720,6 +1720,13 @@ pub struct Field {
     pub weather: Option<Weather>,
     /// Remaining weather turns (0 when clear).
     pub weather_turns: u8,
+    /// The `BattleState::turn` the CURRENT weather was set on (`gen3_one_sided_view_v1`).
+    ///
+    /// The engine does not need it — [`Field::weather_turns`] already carries the only timer gen
+    /// 3 has. It exists because poke-env's `LiveWeather.turns_active` counts UP from the set
+    /// turn for ABILITY-sourced weather too, where `weather_turns` is pinned at 0 (permanent) and
+    /// therefore says nothing about how long it has been up. 0 when there is no weather.
+    pub weather_start_turn: u32,
 }
 
 /// The constructed in-battle state: PRNG, turn counter, the two sides, and the

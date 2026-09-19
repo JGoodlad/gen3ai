@@ -348,6 +348,18 @@ class LiveView:
         return (self.ours if side == "ours" else self.opp).get(species)
 
     @classmethod
+    def from_view_json(cls, payload, *, battle_tag: str = "") -> "LiveView":
+        """Build from the Rust port's ONE-SIDED VIEW payload (`gen3_one_sided_view_v1`) instead
+        of from a poke-env battle — the same board, reached without replaying the protocol that
+        produced it. The construction (and the poke-env presentation rules it has to re-apply)
+        lives in :mod:`agents.battle.view_adapter`; the contract is
+        ``designs/rust_sim/one_sided_view.md``. Imported lazily so this module keeps its narrow
+        import graph and the adapter can import the read-models from here."""
+        from agents.battle.view_adapter import live_view_from_payload
+
+        return live_view_from_payload(payload, battle_tag=battle_tag)
+
+    @classmethod
     def from_battle(cls, battle) -> "LiveView":
         role = battle._player_role
         opp_role = "p2" if role == "p1" else "p1"

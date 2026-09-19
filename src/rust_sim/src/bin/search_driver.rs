@@ -83,6 +83,7 @@ use std::io::{self, BufRead, Write};
 use pokesim::bridge::BridgeSession;
 use pokesim::dex::Dex;
 use pokesim::json::Json;
+use pokesim::view::one_sided_view;
 use pokesim::search::{
     aux_rng_from_seed, build_to_turn, json_quote, log_len, outcome_of, pre_state, recorded_queues,
     recorded_turn_choices, resolve_turn, resolve_turn_exact, resolve_turn_sourced,
@@ -457,13 +458,15 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     let node_id = srv.fresh_id();
     let body = format!(
         "\"node_id\":{},\"requests\":{},\"recorded_choices\":{},\"pre_state\":{},\
-         \"prefix_p1_chunks\":{},\"prefix_p2_chunks\":{}",
+         \"prefix_p1_chunks\":{},\"prefix_p2_chunks\":{},\"view_p1\":{},\"view_p2\":{}",
         json_quote(&node_id),
         requests,
         recorded,
         ps,
         p1,
-        p2
+        p2,
+        one_sided_view(&sess, 0, dex),
+        one_sided_view(&sess, 1, dex)
     );
     srv.nodes.insert(node_id, Node { sess, record: Some(rec), rest_idx });
     Ok(body)
@@ -525,6 +528,11 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
     let requests = if ended { "null".to_string() } else { requests_json(&sess) };
     let p1_chunks = chunk_array(&sess, 0);
     let p2_chunks = chunk_array(&sess, 1);
+    // `gen3_one_sided_view_v1` — the arm's resulting board, PROJECTED per side, beside the
+    // protocol text that used to be the only way to reach it. Rendered BEFORE `clear_chunks`
+    // below (which is chunk-only anyway; the reveal fold is cumulative and survives it).
+    let view_p1 = one_sided_view(&sess, 0, dex);
+    let view_p2 = one_sided_view(&sess, 1, dex);
     let used = format!(
         "{{\"p1\":{},\"p2\":{}}}",
         string_array(&resolved.used[0]),
@@ -542,7 +550,7 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
 
     Ok(format!(
         "{{\"label\":{},\"node_id\":{},\"ended\":{},\"stuck\":{},\"outcome\":{},\"requests\":{},\
-         \"choices_used\":{},\"p1_chunks\":{},\"p2_chunks\":{}}}",
+         \"choices_used\":{},\"p1_chunks\":{},\"p2_chunks\":{},\"view_p1\":{},\"view_p2\":{}}}",
         label,
         child_id.as_deref().map_or("null".to_string(), json_quote),
         ended,
@@ -551,7 +559,9 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
         requests,
         used,
         p1_chunks,
-        p2_chunks
+        p2_chunks,
+        view_p1,
+        view_p2
     ))
 }
 

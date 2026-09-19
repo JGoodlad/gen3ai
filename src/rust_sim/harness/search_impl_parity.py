@@ -40,11 +40,23 @@ T_LINE = re.compile(r"^\|t:\|.*$", re.M)
 # The EXPLICIT allowlist. Each entry: (path predicate, reason). A field that
 # diverges and matches an entry is reported as ALLOWLISTED, never as a match.
 # ---------------------------------------------------------------------------
+#
+# Each predicate takes (path, expected, got) so an entry can be NARROWED to the direction that
+# is actually forgivable — a path-only predicate forgives every divergence at that path forever,
+# which is how an entry here outlives its own fix and then misleads every reader after.
 ALLOWLIST = [
     (
-        lambda p: p.endswith(".error"),
+        lambda p, exp, got: p.endswith(".error"),
         "error TEXT only: Node returns `e.stack` (a JS stack trace), the port a plain "
         "message. The ok/ok:false VERDICT is still compared strictly.",
+    ),
+    (
+        lambda p, exp, got: (p.endswith(".view_p1") or p.endswith(".view_p2"))
+        and exp == "<absent>",
+        "the port-only ONE-SIDED VIEW payload (`gen3_one_sided_view_v1`): node's "
+        "`search_driver.js` has no such field, so the ONLY divergence representable here is "
+        "`<absent>` vs present — a VALUE difference is NOT forgiven. If node ever grows one, "
+        "delete this entry and compare the field. Contract: designs/rust_sim/one_sided_view.md",
     ),
 ]
 
@@ -129,9 +141,9 @@ def diff(exp, got, path, out):
         out.append((path, exp, got))
 
 
-def allowlisted(path):
+def allowlisted(path, exp="<n/a>", got="<n/a>"):
     for pred, reason in ALLOWLIST:
-        if pred(path):
+        if pred(path, exp, got):
             return reason
     return None
 
@@ -212,7 +224,7 @@ def main():
                     diff(expected, got, f"{name}@turn{c['turn']}", ds)
                     matched_leaves += max(count_leaves(expected) - len(ds), 0)
                     for path, e, g in ds:
-                        reason = allowlisted(path)
+                        reason = allowlisted(path, e, g)
                         if reason:
                             allow_hits[reason] += 1
                         else:

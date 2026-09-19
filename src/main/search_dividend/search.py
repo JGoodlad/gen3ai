@@ -44,7 +44,11 @@ probe cares about.
 
 **The one-sided / omniscient wall holds.** ``expand_many`` returns per-side chunks AND an
 omniscient ``outcome``. Only the chunks reach the encoder — that is the same wall the re-roll path
-keeps. The ORACLE arm's privilege is the true opponent TEAM in the record it searches, nothing
+keeps. (It also returns ``view_p1`` / ``view_p2`` under ``--search-impl rust``
+(``gen3_one_sided_view_v1``): the OBS-LEGAL half of the same wall — the board PROJECTED onto what
+each side observed, which ``agents.battle.view_adapter`` turns into the read-models directly. This
+probe does NOT consume it yet; the per-decision trackers are the open item, deferral D5 in
+``designs/rust_sim/one_sided_view.md``.) The ORACLE arm's privilege is the true opponent TEAM in the record it searches, nothing
 more; it never reads a referee-view board into an observation.
 
 **Threading.** ``materialize_branches`` refuses to run on ``POKE_LOOP`` (it drives a replay player

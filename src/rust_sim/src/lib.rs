@@ -110,6 +110,7 @@ pub mod prng;
 pub mod protocol;
 pub mod search;
 pub mod state;
+pub mod view;
 pub mod stats;
 pub mod team;
 pub mod turn;

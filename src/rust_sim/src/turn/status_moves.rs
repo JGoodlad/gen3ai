@@ -2693,6 +2693,7 @@ impl crate::state::BattleState {
             // actives tie on cached speed (mirrors the ability switch-in weather change).
             self.field.weather = Some(new_weather);
             self.field.weather_turns = WEATHER_MOVE_DURATION;
+            self.field.weather_start_turn = self.turn;
             if self.logging() {
                 // The move-source onFieldStart line: `|-weather|<W>` (no upkeep, no ability).
                 self.log.weather(weather_display(new_weather), None, None, false);

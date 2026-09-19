@@ -455,6 +455,7 @@ fn set_weather_on_start(state: &mut BattleState, weather: Weather) {
     }
     state.field.weather = Some(weather);
     state.field.weather_turns = 0; // ability source ⇒ permanent (gen3 quirk)
+    state.field.weather_start_turn = state.turn;
 }
 
 impl BattleState {

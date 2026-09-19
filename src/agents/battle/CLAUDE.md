@@ -192,6 +192,20 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   * Why per-mon and not "a request arrived": a request arrives on **every** decision, so a
     global signal would mark all six of our mons dirty every decision and delete the cache it
     exists to protect.
+- **`view_adapter.py` — the SECOND constructor for the same read-models**
+  (`gen3_one_sided_view_v1`). `LiveView.from_view_json(payload)` /
+  `legal_actions_from_payload` build a `LiveView` + `LegalActions` from the Rust port's ONE-SIDED
+  VIEW payload instead of from a poke-env battle — the same board, reached without replaying the
+  protocol that produced it, which is what takes the parse off a search successor's per-arm path.
+  The objects are the SAME frozen dataclasses, so `strict_api_lock_test.py` is untouched.
+  ⚠️ **Half of `LivePokemon` is NOT a projection of sim state** and the adapter exists to say so:
+  an opponent's move PP is a SIGHTING count (doubled against Pressure), `volatiles` is a protocol
+  fold carrying poke-env's `ends_on_turn` / countable rules, `status_counter` and `protect_counter`
+  are poke-env counters with different transitions from the engine's, and the obs SLOT order is the
+  first `|request|`'s roster (ours) / reveal order (theirs). `ViewBattle` additionally feeds the
+  four sub-encoders that never took a `live_mon` (`items` / `abilities` / `types` / `moves` —
+  deferral D2) from the same read-model. Contract, gates and the 9 deferrals:
+  [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
