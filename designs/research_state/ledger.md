@@ -19763,3 +19763,117 @@ values differ by 0.177 · omniscience is EXACTLY free in gen 3 for material**.
 ### 2026-09-19 · OPS (MAJOR) · THE ONE-SIDED VIEW — the Rust search server now emits each successor's board PROJECTED onto what one side has observed (`gen3_one_sided_view_v1`, `4523a7cd`), Python's frozen read-models are built from it and the sub-encoders are UNCHANGED; the gate is zero divergences on 198 comparisons / 168 branch points across 10 fuzz battles (whole `LiveView` graph, `LegalActions`, and the 2501-dim vector by `np.array_equal`); per-successor materialisation **47× faster at B = 1 (46.6 → 0.99 ms), 6.4× at B = 33**; and the contract finding: half of `LivePokemon` is a poke-env FOLD over the protocol, not sim state
 
 `designs/rust_sim/one_sided_view.md` owns the contract and the deferral list; `src/rust_sim/src/view.rs`, `src/agents/battle/view_adapter.py` (`LiveView.from_view_json`), `one_sided_view_parity_fuzz_test.py` (a stochastic sweep script AND a collected test on a reproducible fixture battle, per the fuzz rule). **The wall** (a side's view carries NO row for an unrevealed opponent mon) is proven against the omniscient `pre_state` with non-vacuity guards and a symmetric twin. **The contract had to change mid-build:** opponent move PP is a SIGHTING COUNT (doubled against Pressure), `volatiles` is a `-start`/`-end`/`-activate` fold with poke-env's own drop rules (the port's typed set raised on `choicelock` on the first real board), the status and protect counters have transitions DIFFERENT from the engine's, `ability` is two slots with trace semantics, `consumed_item` is `-enditem`'s on both sides, and obs slot order is the first `|request|`'s roster — so **the port emits sim facts plus raw protocol facts, and every poke-env presentation rule is applied in Python**; the port never needs poke-env's dex or effect enum. Second finding: four sub-encoders (`items`, `abilities`, `types`, `moves`) read the raw poke-env `Pokemon` unconditionally although `LivePokemon` carries every field (deferral D2). Three of the findings appeared only on the second or third fresh seed — **one sweep is not a gate.** Open: own-side `status_counter` one high on 9 occurrences of 1 battle in 14, not reproduced in 14 targeted attempts, left FAILING by design. Declared residuals D3 (Wish) and D6 (Pressure at use time) mark a decision's vector inconclusive rather than compared. **Not done:** `materialize_from_view()` and the `--materializer` flip — deferral D5 (per-decision trackers) blocks it; a materializer whose successors carry zeroed tracker blocks would be a silently different observation. `obs_build_benchmark` unchanged (no file on the encode path touched — that IS the check); 9 Rust + 26 Python + 1 differential tests; all static gates green; the 4 routine-gate failures are pre-existing parallel-load flakes, each green in isolation. **Orchestrator's note.** The speedup is the one that makes rollout-leaf reads affordable (a rollout ≈ 100 successor materialisations); the remaining step to a search product is D5 + the materializer flip, then D3. Tag: **OPS (MAJOR) · view emitted · zero divergences · 47× at B = 1 · materializer flip deferred on D5**.
+
+### 2026-09-19 · MEASUREMENT · THE ERA-1 FOLD AT CONVERGENCE (+12.09M, `ai_v13_08_fold1_cont`) — NO registered branch met; the fold paid on ONE of two taught slices, at the endpoint only, with that slice still rising: DDTar per-slice **+0.154 [+0.105, +0.201] vs a 0.085 cell floor — OUTSIDE (the first registered row this programme has cleared)** while Big-5 stays negative (−0.053); untaught +5.75 [+1.19, +11.06] at +12M (inside the bar's clause (b)); the clearing slice's teacher had nothing to teach (t2 +0.0075 over the parent, n.d.; the student ends +0.146 ABOVE its teacher); the +6M read stopped on a local minimum of the DDTar row; the sign split widened, which a scalar seniority term cannot produce
+
+## 12. Ledger paragraph — ready to append (nothing in `ledger.md`, `UNDERSTANDING.md` or any design note was edited from here)
+
+### 2026-09-19 · MEASUREMENT (MAJOR) · **THE ERA-1 FOLD AT CONVERGENCE — 🚨 THE FIRST REGISTERED ROW IN THIS PROGRAMME TO CLEAR ITS BAR (DDTar +0.1538 vs a 0.0850 MEASURED floor), on the slice whose teacher had +0.0075 (NOT DETECTED) to teach — while the OTHER taught slice is NEGATIVE at all six depths and the off-slice row is FLAT across the last 50 % of the budget; NO registered branch is met**
+
+`designs/research_state/measurements/fold1_cont_read_2026-09-19/`. Bars, branches, priors, the
+checkpoint grid and the declared imports pre-registered in `PREDICTION.md` and committed
+(`e59e71d0`, 07:54 PT) BEFORE the first battle (07:58) — including the four facts LOOKED AT while
+scoping and disclosed there (zero promotions, `pool_snapshot_count` 20, the ledger's meter table,
+the stop-state sidecar). **THE ARM.** `ai_v13_08_fold1_cont`, a FORK of `ai_v13_07_fold1` at
+81,100,800 carrying the **identical distill block** (`model_config.json` differs from the fold's
+in NO field; from arm W's in exactly one, `distill_target` `kl`→`action` — verified by diff), pin
+`6eb9c776`, config v119, `--fork-lr 2.8e-5 --fork-lr-freeze`, dose **4.272e-9 = 0.20× the v8
+reference**, to **87,097,344 = +12,091,392 cumulative post-fork**; its stop rule FIRED at +7.667M.
+**THE RULE, copied verbatim from the +6M read so the two are one series: OUTSIDE THE FLOOR iff
+`|Δ| > floor` AND the Δ's CI excludes the floor POINT; else WITHIN FLOOR at n = 2 — one pair
+BOUNDS a floor (rules 19/22), and WITHIN FLOOR is never "equivalent" (rule 6).** `Δ = fold path −
+arm W`. CPU-only (`CUDA_VISIBLE_DEVICES=""`, `nice 15`), MAIN checkout, **nothing written under
+`models/`**, no `src/` file changed, only server `main.anchors`' own on :9451, **:8000/:8001 never
+touched**, and 🚨 **the live GPU control `ai_v13_09_wcont` never touched and NEVER READ**.
+**20,900 battles, 0 TIMEOUTS.** ✅ **ALL FIVE REGISTERED REPRODUCTION CHECKS PASS EXACTLY, ON THE
+PER-TEAM ROWS** — arm W 46.19 (739/1600), W_b 49.88 (798/1600), fold +1M/+3M/+6M 47.62/51.56/51.31
+— the fourth confirmation that the untaught meter is deterministic at seed 0 / concurrency 1, and
+the first on five refs at once; the 3.69 floor re-measures at exactly −3.69; arm W's two SLICE
+cells reproduce at **394/800** and **376/800**, which is the registered WARRANT for importing
+`fold_p3M`/`fold_p6M`/`W_b`/`t1`/`t2` rather than re-deriving 6,400 identical battles.
+**ROW 1 — UNTAUGHT (and it IS the collateral read).** Eight refs in ONE invocation, 12,800
+battles, so the six-point trajectory is PAIRED on one index set. Levels **47.62 / 51.56 / 51.31 /
+49.00 / 51.31 / 51.94** at +1/+3/+6.09/+7.59/+9.09/+12.09M ⇒ Δ vs arm W **+1.44 / +5.38 / +5.13 /
++2.81 [−2.31,+9.37] / +5.13 [−1.06,+11.31] / +5.75 [+1.19,+11.06] (7 of 8 teams)**. **All three
+new points WITHIN FLOOR** — clause (b) fails at every one, and 🚨 **it got HARDER: the
+team-clustered half-widths on the continuation points are ≈5.8/6.2/4.9 pp against the fold's own
+≈3.8–4.0**, so the registered |Δ| ≳ 7.5 pp requirement is further out of reach; a CI clear of zero
+(+12.09M only) is reported separately and is NOT a verdict. Against W_b: −0.87 / +1.44 / +2.06.
+🚨 **THE LAST 50 % OF THE BUDGET MOVED THIS ROW BY +0.62 pp [−2.75,+3.88] — FLAT.** **ROW 2 —
+PER-SLICE PILOTING.** 800 games/cell, same pinned teams, same third-party opponent
+(`untaught_meter_opponent`, NOT arm W's sentinels), Wilson per cell, Newcombe per difference
+(CONSERVATIVE under CRN). 🚨 **DDTAR at +12.09M: 0.6238, Δ = +0.1538 [+0.1051, +0.2013] against a
+0.0850 seed floor MEASURED on that cell — clause (a) ✅ at 1.8×, clause (b) ✅ ⇒ OUTSIDE THE FLOOR.
+The first registered row this programme has cleared.** At +7.59M and +9.09M it was +0.1250 and
++0.1138 (a ✅, b ❌): **it cleared because it GREW after the stop rule fired.** 🚨 **AND THE STUDENT
+ENDS +0.1463 [+0.0977,+0.1939] ABOVE ITS OWN TEACHER on that teacher's own pinned team — because
+t2's edge over the parent there is +0.0075 [−0.0413,+0.0563], NOT DETECTED.** So 2d is not
+"distillation transferred the teacher's skill"; what the arm gained, the teacher did not have.
+**BIG-5**: 0.4675 / 0.4675 / 0.4313 / 0.4213 / 0.4225 / 0.4400 ⇒ **NEGATIVE at all six depths**
+(−0.0250 / −0.0250 / −0.0612 / −0.0712 / −0.0700 / **−0.0525 [−0.1010,−0.0036]**), all WITHIN its
+0.0475 measured floor, CIs clear of zero from +6.09M; the teacher stays **+0.1363** above and the
+**+0.0838** gap the fold was asked to close was crossed backwards and only partly retraced.
+🚨 **THE SIGN SPLIT WIDENED: Big-5 − DDTar = −0.1287 at +6M → −0.2063 at +12.09M**, and 🚨 **a
+SCALAR seniority term cannot produce a sign split** — same checkpoint, same depth, same opponent,
+same dice on both cells — though a TEAM-DIFFERENTIAL continuation effect is not excluded and is
+exactly what `ai_v13_09_wcont` can measure on these two cells for ~1.5 h CPU. The gated share
+still ANTI-predicts (Big-5 gates more at every point and is the slice that never improved).
+Pooled, +0.0506 — averaging −0.0525 and +0.1538 into a figure describing neither cell; footnote
+only (rule 10). **THE REGISTERED PEAK QUESTION: the +3M peak does NOT stand on EITHER slice.**
+Big-5's maximum is its FIRST point (+1M / +3M tie at 0.4675); **DDTar's maximum IS the endpoint**.
+🚨 **THE +6M READ STOPPED ON A LOCAL MINIMUM OF THE DDTAR ROW** — +7.59M returns to 0.5950, within
+0.0012 of the +3M value it had "fallen from" — **the SIXTH vindicated short-window refusal on this
+campaign**, and not an error in the earlier read, which reported what its two points said. **ROW 3
+— ANCHOR.** `main.anchors --opponent metamon:SmallRL --regime greedy --teamset away --games 100`
+on :9451 (own server), `SmallRL` ckpt40 / Metamon `@0a00a759` / Showdown `e0551883f`: **0.430
+[0.337,0.528]** ⇒ **−0.070 [−0.204,+0.067] vs arm W ⇒ WITHIN FLOOR**, as registered
+(P(clears)=0.15). `status: OK`, **0 ties, 0 forfeits**, `regime_verified: true`, Metamon
+`argmax_match_rate` **1.0000** over 2,648 decisions, `distinct_our_teams` 19/20, role split −10 pp.
+**ROW 4 — LADDER n = 0 AGAIN, AT DOUBLE THE BUDGET.** No `snapshot_ladder/`; **zero promotions in
+12,091,392 steps**; `eval/pool_snapshot_count` = **20.0 at all six cycles**, every drawn sentinel
+an arm-W snapshot, pool re-seeded BY NAME from the fold. 🚨 **And the monotone fall the +6M read
+recorded BOTTOMED OUT: `win_rate_vs_pool` 0.488 → 0.446 → 0.412 → 0.372 → 0.400 → 0.402 against
+the IDENTICAL FROZEN pool** — the SEVENTH short-window direction this campaign would have called
+wrong. Bots 0.9238 → 0.9325 over the same span. DESCRIPTORS, no bar. **ROW 5 — COLLATERAL.** The
+untaught meter IS it; `main.exploitability` NOT APPLICABLE (bookkeeping over a
+`fleet_admission` artifact this arm has none of), declared before the first battle. **THE
+READING.** 🚨 **NO REGISTERED BRANCH IS MET:** (a) needs ≥2 of 3 and got 1; (b) needs the +3M peak
+to stand and it stands on neither slice; (c) needs nothing to clear and something did. The
+registration's tie-break covered (b)+(c) both holding — the opposite case — **so the outcome is
+reported as uncovered, the branches are NOT rewritten, and the nearest description in the
+registration's own words is: the fold paid on ONE of two taught slices, at the ENDPOINT only,
+with that slice's trajectory RISING rather than saturated.** 🚨 **AGREEMENT AND PILOTING CAME
+APART AND CAME BACK TOGETHER ON ONE SLICE ONLY:** `teacher_agreement_on_slice` crept 0.8200/0.8232
+→ **0.8360/0.8382** while `on_slice_kl` FELL a quarter (0.66–0.69 → 0.49–0.51) and
+`collateral_kl_vs_parent` went flat — the arm converged by its own meters and DDTar still gained
+**+0.0288 AFTER the stop rule fired.** The rule's conjunct is about AGREEMENT; agreement is not
+what these cells measure. Instrument observation; changing the rule is not this read's call.
+**HAZARDS, each a finding.** (1) no registered branch met; (2) the clearing row's teacher had
+nothing to teach; (3) the sign split widened and scalar seniority cannot make one; (4) the +6M
+read stopped on a local minimum (×2, with `win_rate_vs_pool`); (5) clause (b) near-unsatisfiable
+and WORSE on the new points; (6) the +6.09M→+7.59M leg CROSSES A FORK and is where every row dips
+— FORK or STEPS, not separable here; (7) ladder n = 0 again; (8) pooling still misdescribes the
+slice row; (9) every floor but the two per-slice ones is an IMPORT from a fresh-arm pair onto a
+twice-forked fold; (10) NO continuation control, seniority now 12M steps; (11) arm W is still the
+LOWER seed — **though DDTar's endpoint is +0.0688 over W_b too, so 2d does not depend on the seed
+choice**; (12) a fork's TB carries its parent's history and this path has TWO forks — every series
+sliced at 75,005,952 and stitched (`36f8f7eb`); (13) two exact-tie coincidences on the slice row,
+checked against the raw shard and disclosed; (14) the `externals` head-to-head row and the
+piloting row disagree in kind, and neither is evidence about the other. **WHAT IS NOT CLAIMED:**
+that the fold recipe works; that 2d is anything but a CANDIDATE at n = 1 (rules 19/22 — more steps
+on the same arm are NOT a replicate); that extraction is separated from seniority; that the
+off-slice row moved; that the DDTar rise is a TREND; that any branch was met. **WHAT
+`ai_v13_09_wcont` NOW HAS TO ANSWER, sharpened:** it sets the MAGNITUDE of both slice deltas, it
+cannot explain the SIGN SPLIT unless a plain continuation moves the two cells in opposite
+directions — **so run it on these two cells, 800 games, same opponent, same dice: four cells,
+~1.5 h CPU, and the cheapest decisive follow-up available** — and it cannot promote 2d to a family
+verdict, which needs a second fold ARM. Tag: **MEASURED · THE ERA-1 FOLD AT CONVERGENCE · FIRST
+ROW EVER TO CLEAR — DDTar +0.1538 vs a 0.0850 measured floor, at the ENDPOINT only (1 of 3) ·
+the clearing slice's TEACHER had +0.0075 NOT DETECTED, and the student ends +0.1463 ABOVE it ·
+Big-5 NEGATIVE at all six depths · off-slice FLAT over the last 50 % (+0.62 pp) · the +3M peak
+stands on NEITHER slice · the +6M read stopped on a LOCAL MINIMUM (6th short-window refusal) ·
+`win_rate_vs_pool` bottomed and recovered (7th) · sign split WIDENED to −0.2063 and scalar
+seniority cannot make one · ladder n = 0 at double the budget · NO registered branch met ·
+20,900 battles, 0 timeouts · five reproduction checks EXACT, per-team**.
+
+**Orchestrator's reading.** Three things. (1) The one row cleared is on the slice whose teacher was NOT detectably better than the parent, and the student ended well above that teacher — so "distillation transferred the teacher's skill" is not the account; what the fold delivered on DDTar is more likely the TEAM-BLOCKED extra training on that team (64-episode blocks at 40 % bias) than the teacher's argmax. That is a real effect and a different mechanism from the one the recipe assumes. (2) A scalar seniority term cannot make one slice rise and the other fall on the same checkpoint against the same opponent with the same dice — so the control `ai_v13_09_wcont` (banking ~18:00 PT) decides the untaught row, but the slice SPLIT is already not continuation. A team-differential continuation effect (the parent simply improving on DDTar-like teams by playing on) is the remaining confound, measurable on these two cells for ~1.5 h CPU — dispatched with the control's read. (3) Every registered read this fold produced was taken at a point that turned out to be a local extremum of some row (the +6M read at DDTar's minimum; `win_rate_vs_pool`'s fall bottomed) — the sixth and seventh vindications of refusing short-window trends; folds are read on their whole trajectory or not at all. Tag: **MEASURED · DDTar slice OUTSIDE the floor at convergence · Big-5 negative · teacher-skill transfer NOT the account · control decides the untaught row**.

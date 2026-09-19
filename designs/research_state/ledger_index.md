@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,766-line file. **The ledger itself is append-only and is never edited by this**;
+19,880-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**637 headings · 584 dated · 2026-08-01 → 2026-09-19 · ledger 19,766 lines.**
+**640 headings · 586 dated · 2026-08-01 → 2026-09-19 · ledger 19,880 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -657,3 +657,6 @@ rename.
 - `L19665` · 10. Ready-to-append ledger paragraph
   - `L19667` · `2026-09-19` · 🎯 IS THE 0.545 `top1|top2` SIBLING-RANKING LEVEL THE HEADS, THE LABELS, OR THE GAME? — **N × L: no hand evaluator beats the head, but 🚨 THE SINGLE-ROLLOUT LABEL MIS-ORDERS THE PAIR 39.7 % OF THE TIME and an 8-rollout estimate of the same states reads 0.61 where the head reads 0.54** — the campaign's metric was measuring a coin flip, the true sibling gap is **E|gap| = 0.177**, the policy's own top-1 is worth **+0.0079 [−0.0025, +0.0188] NOT CLEAR OF ZERO** over its top-2, and **a FOUR-ROLLOUT leaf beats the 75M-step critic by +0.057 [+0.028, +0.083] DETECTED** (2026-09-19)
   - `L19763` · `2026-09-19` · OPS (MAJOR) · THE ONE-SIDED VIEW — the Rust search server now emits each successor's board PROJECTED onto what one side has observed (`gen3_one_sided_view_v1`, `4523a7cd`), Python's frozen read-models are built from it and the sub-encoders are UNCHANGED; the gate is zero divergences on 198 comparisons / 168 branch points across 10 fuzz battles (whole `LiveView` graph, `LegalActions`, and the 2501-dim vector by `np.array_equal`); per-successor materialisation **47× faster at B = 1 (46.6 → 0.99 ms), 6.4× at B = 33**; and the contract finding: half of `LivePokemon` is a poke-env FOLD over the protocol, not sim state
+  - `L19767` · `2026-09-19` · MEASUREMENT · THE ERA-1 FOLD AT CONVERGENCE (+12.09M, `ai_v13_08_fold1_cont`) — NO registered branch met; the fold paid on ONE of two taught slices, at the endpoint only, with that slice still rising: DDTar per-slice **+0.154 [+0.105, +0.201] vs a 0.085 cell floor — OUTSIDE (the first registered row this programme has cleared)** while Big-5 stays negative (−0.053); untaught +5.75 [+1.19, +11.06] at +12M (inside the bar's clause (b)); the clearing slice's teacher had nothing to teach (t2 +0.0075 over the parent, n.d.; the student ends +0.146 ABOVE its teacher); the +6M read stopped on a local minimum of the DDTar row; the sign split widened, which a scalar seniority term cannot produce
+- `L19769` · 12. Ledger paragraph — ready to append (nothing in `ledger.md`, `UNDERSTANDING.md` or any design note was edited from here)
+  - `L19771` · `2026-09-19` · MEASUREMENT (MAJOR) · **THE ERA-1 FOLD AT CONVERGENCE — 🚨 THE FIRST REGISTERED ROW IN THIS PROGRAMME TO CLEAR ITS BAR (DDTar +0.1538 vs a 0.0850 MEASURED floor), on the slice whose teacher had +0.0075 (NOT DETECTED) to teach — while the OTHER taught slice is NEGATIVE at all six depths and the off-slice row is FLAT across the last 50 % of the budget; NO registered branch is met**

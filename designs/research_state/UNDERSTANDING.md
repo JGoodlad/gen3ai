@@ -271,6 +271,14 @@ gen-era cell above; the teachers' gated share anti-predicts the slice gain; agre
 rose while both slices peaked at +3M). Accounts not separable at n = 1: the teachers had little to teach (DDTar is
 +0.0075 over the parent on its own pin against a third party), or the low frozen dose prevents the hole at the cost of
 extraction. The continuation control (arm W +12M, no teachers) is the era's G5 cell and the next arm.
+**At convergence (+12.09M, `fold1_cont_read_2026-09-19/`; the stop rule fired at +7.67M):** no registered branch is
+met. DDTar per-slice piloting is **+0.154 [+0.105, +0.201] against a 0.085 cell floor — OUTSIDE, the first registered
+row this programme has cleared** — while Big-5 stays negative (−0.053) and untaught reads +5.75 [+1.19, +11.06] (inside
+clause (b)). The clearing slice's teacher was not detectably better than the parent (+0.0075, n.d.) and the student ends
++0.146 above it, so teacher-skill transfer is not the account; team-blocked extra training on that team is the
+candidate mechanism. A scalar seniority term cannot produce the sign split. The +6M read had landed on a local minimum
+of the DDTar row (sixth vindicated short-window refusal). The control decides the untaught row; a team-differential
+continuation read on the two slice cells decides the split.
 
 Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose
 (`--fork-lr 2.8e-5 --fork-lr-freeze`), parent R2ACTION, 8 untaught teams, cluster-bootstrapped:
