@@ -19659,3 +19659,103 @@ Launched 07:07 PT, launcher pid 3915968, child 3916003, pin `6eb9c776`, **role F
 **Launch guards, all green.** `🌱 [SELFPLAY] [pool] seeded 20 snapshots from ai_v13_02_flywheel_winprob (wr 91.00 %)` — auto-seeded from arm W as a fork does. **`grep -c DISTILL` on the launcher log returns 0** — no teachers, no distill loss, exactly as the control requires. `[MATCHUP ef5242cffd]` — **arm W's own matchup, unchanged**, so no drift banner: the control is in the ladder era while the fold path moved to `0a7b730a4d`. `[Reward] 1 TERMINAL + 0 PBRS + 0 BIAS`; `[CRITIC] winprob … --vf-coef 0.5`.
 
 ⚠️ **Two caveats for the eventual comparison, recorded before the numbers exist.** (1) The control runs **one continuous +12M** while the fold path is +6M then +5.9M **with a fork boundary between**; both land on the same cumulative endpoint and both are lr-frozen at 2.8e-5, but the fold path crossed one extra fork. (2) `--distill-target 'kl'` and `--distill-topk 1` appear in the dry run as **INHERITED** from arm W's checkpoint config — inert at `--distill-coef 0.0` with no teacher, but a visible instance of the standing rule that any flag the argv does not NAME re-resolves. Tag: **OPS · COMPLETE (fold continuation) · STOP RULE FIRED at +7.67M, agreement saturates ≈0.82–0.83 · fold-1's +6M read confirmed UNCONVERGED · teacher divergence did NOT continue (5th short-window refusal vindicated) · LAUNCH (continuation control)**.
+
+### 2026-09-19 · MEASUREMENT (MAJOR) · THE LEAF CEILING IS THE LABEL, NOT THE HEAD AND NOT THE GAME — on the banked forks the single-rollout outcome mis-orders the top1|top2 sibling pair 39.7 % of the time (label ceiling ≈0.61, not 1.0, so every published pairwise level is compressed toward 0.5); no hand evaluator beats the head (nine tried; PBRS+belief matches a 75M critic pooled and beats it on top2|rand); the policy's own top-1 is NOT clear of its top-2 on average (+0.008) while the two successors' true values differ by E|gap| = 0.177 — much to re-rank, nothing claiming it; and a 4-ROLLOUT LEAF out-ranks the critic on a matched-noise read, +0.057 [+0.028, +0.083] DETECTED pooled (top1|top2 +0.028 ND) — the first thing in this campaign to out-rank the critic
+
+## 10. Ready-to-append ledger paragraph
+
+### 🎯 IS THE 0.545 `top1|top2` SIBLING-RANKING LEVEL THE HEADS, THE LABELS, OR THE GAME? — **N × L: no hand evaluator beats the head, but 🚨 THE SINGLE-ROLLOUT LABEL MIS-ORDERS THE PAIR 39.7 % OF THE TIME and an 8-rollout estimate of the same states reads 0.61 where the head reads 0.54** — the campaign's metric was measuring a coin flip, the true sibling gap is **E|gap| = 0.177**, the policy's own top-1 is worth **+0.0079 [−0.0025, +0.0188] NOT CLEAR OF ZERO** over its top-2, and **a FOUR-ROLLOUT leaf beats the 75M-step critic by +0.057 [+0.028, +0.083] DETECTED** (2026-09-19)
+
+Record `designs/research_state/measurements/leaf_ceiling_controls_2026-09-19/` (`PREDICTION.md`
+landed on main at **`a72b8b21`** before the first battle). Two controls on the EXACT banked 5,040
+held-out contested CRN forks of `offline_leaf_fit_2026-09-18/`, arm W
+(`ai_v13_02_flywheel_winprob` @ 75,005,952) frozen. **CONTROL 1: every banked branch re-run under
+the same dice and the board read at the first live decision off BOTH players' battle objects at
+once — 14,601 / 14,601 successor observations reproduced ELEMENT-WISE, 0 mismatches, 138/138
+to-terminal outcomes reproduced. CONTROL 2: 1,002 forks × K = 8 fresh post-divergence dice × 3
+branches = 24,048 rollouts, 0 errors, 32 capped (0.13 %).** CPU only, nothing under `models/`.
+
+**THE HAND-EVALUATOR AXIS IS N.** Nine non-learned scorers — the PRODUCTION PBRS potential
+composition (`agents.training.reward_potentials`, imported not re-implemented), that plus the
+incoming-KO belief potential, bare material+HP, a type-matchup variant, and their omniscient twins
+— read **0.5219–0.5416** on `top1|top2` against arm W's **0.5450**; **BAR 1 FAILS on all nine**,
+every interval contains 0.5450 and every paired Δ is negative and NOT DETECTED. 🚨 **But a
+hand-written potential sum MATCHES a 75M-step critic on the published pooled metric** —
+`PBRS_BELIEF_1S` **0.5714 [0.5581, 0.5847]** vs **0.5723**, Δ **−0.0009 [−0.0152, +0.0136] NOT
+DETECTED** — **and BEATS it on `top2|rand`**, **0.6007** vs **0.5752**, Δ **+0.0255 [+0.0043,
++0.0461] DETECTED**. Mechanism measured: **Spearman(head, Φ-sum) = 0.768** over 14,570 successors
+and across-state **AUC 0.789 vs 0.763** — the head is a slightly better material counter and
+essentially nothing else; across states both are strong, within a fork both collapse to ~0.54.
+
+🚨 **THE LABEL IS THE STORY.** The single-rollout label puts the two siblings in the WRONG ORDER
+**39.7 %** of the time on `top1|top2` (order agreement 0.6034; 0.6375 pooled), and **46.7 % of the
+variance in the observed sibling-label difference is label noise** (observed 0.0925 / noise 0.0432
+/ true 0.0493). **Read against a K = 8 averaged label the head rises 0.5450 → 0.5610 [0.5313,
+0.5913]** — BAR 2's literal >0.60 FAILS, but 0.60 was registered in advance as vacuous until the
+label's own ceiling is measured (`PREDICTION.md` §2: an ORACLE knowing both true win probabilities
+reads only `p_a(1−p_b)/[p_a(1−p_b)+p_b(1−p_a)]`, **0.550 at a five-point gap**). **Measured
+ceiling: the K = 8 rollout MEAN used as a SCORER on the banked SINGLE labels reads 0.6125 [0.5830,
+0.6430] pooled and 0.5811 [0.5390, 0.6259] on `top1|top2`, where the head reads 0.5359 and 0.5405
+on the identical pairs.** **Every published level on this instrument — 0.517, 0.575, 0.587, the
+twelve heads at 0.567–0.578 — is compressed toward 0.5 by the label, and the compression had never
+been quantified.**
+
+🚨 **A FOUR-ROLLOUT LEAF BEATS THE 75M-STEP CRITIC — the first thing in this campaign to do so.**
+Matched-noise read (one K = 4 label, two scorers, the same pairs; the scorer is an INDEPENDENT
+4-rollout mean of the same successors): **0.6172 [0.5995, 0.6354] vs the head's 0.5607, Δ +0.0566
+[+0.0282, +0.0831] DETECTED** pooled, and DETECTED on both `rand` columns (+0.0717, +0.0678).
+⚠️ **On `top1|top2` alone it is +0.0275 [−0.0176, +0.0705] NOT DETECTED** at n = 454 — four
+rollouts also run out of resolution on the leaf column, so the open question is the DOSE (the
+smallest K at which it detects), not a new objective. **Branch L: the headroom is real and
+reachable; branch G is REFUTED on its mechanism.**
+
+🚨 **AND THE POLICY'S OWN PREFERENCE IS WORTH NOTHING MEASURABLE.** Mean K = 8 label: `top1`
+0.4936, `top2` 0.4857, `rand` 0.4637 — **`top1` − `top2` = +0.0079 [−0.0025, +0.0188], NOT CLEAR
+OF ZERO**, while `top1` − `rand` = +0.0299 [+0.0181, +0.0417] is clear. Yet the two successors'
+true values differ by **E|gap| = 0.1771** (recovered sd 0.2220). **There is a great deal to
+re-rank between the policy's two best moves and the policy's ordering carries almost none of it** —
+which is the quantitative replacement for "the top-2 are near-tied": near-tied ON AVERAGE, far
+apart CASE BY CASE.
+
+**POST-HOC, TWO MORE MIXTURES.** 🚨 **DEPTH:** 19.4 % of successors sit at the FORK'S OWN TURN (a
+KO forced a replacement inside the fork turn) and only **76.5 %** of forks have all three branches
+at one depth, so ~a quarter of pairs compare states one ply apart; the head reads **0.6457
+[0.6141, 0.6806] on mixed-depth pairs against 0.5571 [0.5413, 0.5729] on matched ones**, and **the
+genuinely hard cell — the policy's two best moves at the SAME depth — is 0.5355 [0.5117, 0.5583]**,
+where all thirteen scorers sit in 0.514–0.546. 🚨 **OMNISCIENCE IS EXACTLY FREE IN GEN 3 for a
+material/status/hazard/boost readout** (registered in advance as P5): over 14,601 successors the
+one-sided and referee views agree on the opponent's ALIVE COUNT **14,601/14,601** and on its
+TEMPO-STATUS COUNT **14,601/14,601**, and on its HP sum to a mean **|Δ| 0.0074 of ~6.0 (0.12 %)** —
+and not because the opponent is revealed (**1.94 of 6** mons unrevealed at the average successor).
+**The hidden information in gen 3 is IDENTITY and MOVESET, not MATERIAL**, so a hidden-information
+floor on a gen-3 value function cannot be a floor about material, and an "omniscient control" of
+that shape cannot fail to be null.
+
+**EIGHT OF TWELVE PREDICTIONS HELD; three of the four misses are findings.** P8 registered
+`E|gap|` 0.02–0.10 with the head near-oracle and is **REFUTED** (0.177, and the head is 0.04–0.08
+short of an 8-rollout estimator) — the read's central result. P12's CI straddles zero. P11 —
+the `rand` branch caps MORE often — **inverts under fresh post-divergence dice** (`top1` 0.00162 /
+`top2` 0.00137 / `rand` 0.00100), so the 2026-09-18 37× asymmetry is a property of the REALIZED
+stream and does not generalise. Instrument notes: rule 25's indexing clause was EXECUTED (the
+2026-09-18 `verify_indexing.py` by path reproduces **0.5723320158** against **0.5723320246**, gap
+**8.79e-9**); ⚠️ the split-half ceiling's `q = (1+√(2A−1))/2` inversion and the parametric
+normal-gap oracle are **cross-checks only** — the inversion is biased UP by Jensen over
+heterogeneous gaps and DOWN by tie-scoring, and the model over-reads the measured 8-rollout number
+by ~0.06 — so the branch call rests solely on the two model-free reads; 🚨 a moment-recovered
+label-noise variance needs **`ddof=1`** (`np.var(ddof=0)` under-states it by `(K−1)/K`, which would
+have moved the noise share from 46.7 % to 40.9 %); 🚨 the averaged-label population is NOT the
+single-label population (26 % non-tied vs 58 %), so every comparison is read within one fork set.
+**WHAT REMAINS:** (1) a **K-ROLLOUT LEAF DOSE CURVE on the same-depth `top1|top2` cell** — find the
+smallest K at which `ROLLOUT_K − head` detects; `reroll_labels.py` is the harness and the rust
+search driver the fast path; (2) the per-action **`q_winprob_head`** (built and OFF), scored on
+that cell against K-averaged labels rather than the pooled single-label metric; (3) **re-read the
+twelve heads' 0.567–0.578 against the ceiling** — the levels are right and their interpretation was
+not, and the correction is a divisor, not a re-run. ⚠️ **NOT worth another arm: a thirteenth static
+value head, or any read on this instrument that does not print the three pair-type columns, the
+depth split, and the label's own contemporaneous rollout ceiling.** Tag: **MEASURED (MAJOR) ·
+N × L — THE HAND EVALUATOR DOES NOT BEAT THE HEAD, BUT THE LABEL MIS-ORDERS THE PAIR 39.7 % OF THE
+TIME · the metric's ceiling is 0.61, not 1.0 · a 4-ROLLOUT LEAF BEATS THE 75M-STEP CRITIC (+0.057
+DETECTED) · the policy's top-1 is worth +0.008 [−0.003, +0.019] over its top-2 while their true
+values differ by 0.177 · omniscience is EXACTLY free in gen 3 for material**.
+
+**Orchestrator's reading and DECISION.** Three corrections to the standing picture, all in the direction of reopening search. (1) **Every pairwise level published this month is compressed by the label's own noise** — the metric's ceiling on single-rollout labels is ≈0.61, so a head at 0.575 is near that ceiling, not near chance; rule 25 gains a clause (measure the label ceiling before reading a bar against it). (2) **Branch G is refuted**: the top-two moves are near-tied only on average — case by case their true values differ by 0.18 — so there IS something for a search to re-rank; the problem was that a single-rollout label cannot see it and neither can a head trained on such labels. (3) **A rollout-averaged leaf is the first scorer to out-rank the critic** (K = 4, +0.057 pooled, DETECTED), which is AlphaGo's fast-rollout leaf, and its remaining question is dose (K), not objective. **DECISION:** search is no longer wound down on the leaf question; the next reads are (i) the K-curve — K ∈ {4, 8, 16} rollout-averaged leaves on the banked forks, top1|top2 column, matched-noise design, to find where the leaf clears 0.60 on the leaf column; (ii) the mirror battery at ≥400 pairs with a K-rollout leaf (the battery's rollout-leaf arm exists) vs the critic leaf as the contemporaneous control — the read that says whether out-ranking on forks pays in games. Cost: rollouts are the currency (~100 sim steps each), which is exactly what the one-sided-view build (in flight) and a faster materializer buy. The learned-head line stays closed; the hand-evaluator line is closed (nine tried). Tag: **MEASURED (MAJOR) · label ceiling ≈0.61 · G refuted (E|gap| 0.18) · a 4-rollout leaf out-ranks the critic · K-curve + battery next**.

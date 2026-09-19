@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,662-line file. **The ledger itself is append-only and is never edited by this**;
+19,762-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**633 headings · 581 dated · 2026-08-01 → 2026-09-19 · ledger 19,662 lines.**
+**636 headings · 583 dated · 2026-08-01 → 2026-09-19 · ledger 19,762 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -653,3 +653,6 @@ rename.
   - `L19471` · `2026-09-19` · MEASUREMENT (MAJOR) · **THE ERA-1 FOLD's REGISTERED READ — branch (d) NOT DETECTED by the registered rule, and the SHAPE is the INVERSE of the gen-era fold**: the row that moved is the OFF-SLICE one (untaught **+5.4 / +5.1 pp** over the parent at +3M/+6M, 1.4× an imported 3.69 pp floor, CIs clear of zero) while the two TAUGHT slices split in SIGN (**−0.061** on Big-5, **+0.068** on DDTar) — 🚨 **no early off-slice HOLE at any depth**, 🚨 **the teacher's GATED SHARE anti-predicts the slice gain**, 🚨 **agreement and piloting came APART between +3M and +6M**, and 🚨 **the fold promoted ZERO snapshots, so the ladder row is n = 0 and `win_rate_vs_pool` fell 0.488 → 0.372 against a FROZEN pool**
   - `L19618` · `2026-09-19` · OPS · `ai_v13_08_fold1_cont` COMPLETE at 87,097,344 (+12M post-fork) — **the stop rule FIRED at +7.67M, so the fold's convergence point is now MEASURED: teacher agreement saturates at ≈0.82–0.83 EMA**, which retrospectively makes fold-1's +6M read an unconverged one; and the continuation control launched behind it
   - `L19653` · `2026-09-19` · OPS · LAUNCH · `ai_v13_09_wcont` — the CONTINUATION CONTROL (the era's G5 cell), the arm that separates seniority from extraction
+  - `L19663` · `2026-09-19` · MEASUREMENT (MAJOR) · THE LEAF CEILING IS THE LABEL, NOT THE HEAD AND NOT THE GAME — on the banked forks the single-rollout outcome mis-orders the top1|top2 sibling pair 39.7 % of the time (label ceiling ≈0.61, not 1.0, so every published pairwise level is compressed toward 0.5); no hand evaluator beats the head (nine tried; PBRS+belief matches a 75M critic pooled and beats it on top2|rand); the policy's own top-1 is NOT clear of its top-2 on average (+0.008) while the two successors' true values differ by E|gap| = 0.177 — much to re-rank, nothing claiming it; and a 4-ROLLOUT LEAF out-ranks the critic on a matched-noise read, +0.057 [+0.028, +0.083] DETECTED pooled (top1|top2 +0.028 ND) — the first thing in this campaign to out-rank the critic
+- `L19665` · 10. Ready-to-append ledger paragraph
+  - `L19667` · `2026-09-19` · 🎯 IS THE 0.545 `top1|top2` SIBLING-RANKING LEVEL THE HEADS, THE LABELS, OR THE GAME? — **N × L: no hand evaluator beats the head, but 🚨 THE SINGLE-ROLLOUT LABEL MIS-ORDERS THE PAIR 39.7 % OF THE TIME and an 8-rollout estimate of the same states reads 0.61 where the head reads 0.54** — the campaign's metric was measuring a coin flip, the true sibling gap is **E|gap| = 0.177**, the policy's own top-1 is worth **+0.0079 [−0.0025, +0.0188] NOT CLEAR OF ZERO** over its top-2, and **a FOUR-ROLLOUT leaf beats the 75M-step critic by +0.057 [+0.028, +0.083] DETECTED** (2026-09-19)
