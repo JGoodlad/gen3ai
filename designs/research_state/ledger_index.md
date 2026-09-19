@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,968-line file. **The ledger itself is append-only and is never edited by this**;
+19,993-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**643 headings · 588 dated · 2026-08-01 → 2026-09-19 · ledger 19,968 lines.**
+**644 headings · 589 dated · 2026-08-01 → 2026-09-19 · ledger 19,993 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -663,3 +663,4 @@ rename.
   - `L19881` · `2026-09-19` · MEASUREMENT (MAJOR) · THE K-CURVE — a ROLLOUT LEAF beats the 75M critic on the leaf column at K = 8 (0.652 vs 0.574, +0.078 [+0.027, +0.128] DETECTED) and K = 16 (0.671, +0.097 DETECTED), knee at K = 4 (0.613, +0.039 n.d. on the leaf column, +0.068 DETECTED pooled); 31,992 fresh rollouts on 665 banked forks, independent of the K′ = 8 label; cost 26 sim turns per rollout ⇒ ~200 turns per top-2 decision at K = 4; and the battery is branch (b) with the mechanism NAMED — the leaf out-ranks but the playoff's ACTING RULE resolves only 4.5 % of decisions at R = 4 (1 of 250 decisions changed live), so out-ranking is no longer the binding constraint, the gate is
 - `L19883` · 9. Ready-to-append ledger paragraph
   - `L19885` · `2026-09-19` · 🎯 HOW MANY ROLLOUTS DOES A LEAF NEED, AND DOES IT PAY IN GAMES? — **the dose is FOUR and the leaf WINS by +0.068 [+0.038, +0.101] DETECTED (pooled) / +0.078 [+0.027, +0.128] at K=8 on the LEAF column — and 🚨 IT BUYS NOTHING IN GAMES BECAUSE THE ARM'S OWN 2·SE GATE RESOLVES ONLY 4.5 % OF PAIRS AT R=4 AND 12.5 % AT R=16.** The binding constraint has moved from the leaf to the DECISION RULE (2026-09-19)
+  - `L19969` · `2026-09-19` · OPS · `ai_v13_09_wcont` COMPLETE at 87,097,344 — the CONTINUATION CONTROL (era G5) lands on the fold path's exact endpoint with matched dose; **the two are indistinguishable on bots and G7, and differ by 0.198 nats on entropy**
