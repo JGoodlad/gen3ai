@@ -304,8 +304,16 @@ on Big-5 (OUTSIDE at all three) and −0.038 / −0.101 / −0.024 on DDTar (WIT
 −0.024, the fold's off-slice lean was a FRACTION of continuation, and the gap was already −6.94 pp at +3M before either
 path crossed a fork. The era-1 fold recipe trained worse than doing nothing.** What carried it is NOT identified: the
 distill loss, `--distill-team-bias 0.4` and the two-specialist opponent pool moved together (one contrast, three levers),
-so "distillation hurts" is not claimed. The next arm is the split — fold-1's argv with `--distill-coef 0.0` and nothing
-else changed — and the second fold does not launch on the era-1 recipe. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*]
+so "distillation hurts" was not claimed until the split ran. **The split (`split_lossoff_read_2026-09-20/`) — fold-1's argv
+with the loss off and every ecology lever kept, including a FOURTH lever no registration had named (`--team-block-episodes 64`
+vs 1 everywhere else) — sits ON the continuation on 9 of 9 cells (Δ_ecology within floor everywhere, +0.0000 exactly on the
+Big-5 endpoint) and ABOVE the fold on 9 of 9 (+6.69 pp untaught, +0.165 Big-5 OUTSIDE at every depth); entropy 0.959 vs the
+control's 0.941 vs the fold's 0.737. So the top-1 action-target distillation LOSS carried the fold's whole cost and the
+ecology bundle is inert at this dose. Registered verdict UNCOVERED (clause (b) arithmetic on untaught; the DDTar row is one
+every continuation gains ~0.16 on and separates nothing), pattern unambiguous.** Stage 3 of the plateau plan therefore varies
+only K (`--distill-topk 1 / 3 / 11`, the D-F dial, K = 11 being the full renormalized distribution AWR-weighted) on fold-1's
+full ecology from the plateaued parent; the second fold does not launch on the era-1 recipe. [ledger 2026-09-20 · *THE
+CONTINUATION CONTROL*; *THE SPLIT ARM*]
 
 Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose
 (`--fork-lr 2.8e-5 --fork-lr-freeze`), parent R2ACTION, 8 untaught teams, cluster-bootstrapped:

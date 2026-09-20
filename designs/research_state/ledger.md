@@ -20341,3 +20341,115 @@ DETECTED AT n = 100 EACH WAY · SERVER RSS 3,227 MB → 40 MB (80×) · 126 s vs
 GATE GREEN · FOUL PLAY MULTI-GAME `ours_challenge` STILL BROKEN (transport-independent)**.
 
 **Orchestrator's reading (2026-09-20).** Owner direction was "off node for evals if it isn't too hard"; it was not, and it is done for the standing procedure: an anchor read now runs on the Rust front end by default with no Node server, at 80× less resident memory and ~1.6× less wall on the 100-game cell, with the same-seed outcome differential NOT DETECTED and the byte-identity gate green on both arms. Node stays one flag away for a differential and for the deferral list (reconnection, timer, `/search`, replays). Two residuals: team validation still shells out to a short-lived Node script per distinct team (not a server; not exposed as an opt-out on purpose, because it carries the nickname refusal), and Foul Play still cannot run a multi-game challenge half on either transport (backlog, transport-independent). The readiness-probe fix matters beyond this tool — "0 ERRORs in the front end's log" is the criterion every validation of the front end reads, and the probe was writing one. Tag: **OPS · ANCHORS OFF NODE BY DEFAULT · differential n.d. · RSS 40 MB vs 3.2 GB · Foul Play multi-game half still open**.
+
+### 2026-09-20 · MEASUREMENT (MAJOR) · **THE SPLIT ARM — 🚨 THE ECOLOGY BUNDLE IS EXONERATED: fold-1's argv with the LOSS OFF sits ON THE CONTINUATION CONTROL on 9 of 9 cells (3 rows × 3 depths), exactly +0.0000 on the Big-5 endpoint cell, and +6.69 pp / +0.1650 ABOVE the fold path — yet the registered branch is (e) UNCOVERED at BOTH clause-carrying depths, because Δ_loss clears the floor on ONE row of three**
+
+`designs/research_state/measurements/split_lossoff_read_2026-09-20/`. Bars, the five branches
+(a)–(e) with the (c)/(d) tie-break and the uncovered case registered **IN ADVANCE**, priors, the
+checkpoint grid, the declared imports and the ONE re-derived verification cell pre-registered in
+`PREDICTION.md` and committed (`afa01250`) BEFORE the first battle — including the seven facts
+LOOKED AT while scoping and disclosed there (the grid, the metadata, the **six post-fork
+promotions**, the inherited inert distill flags, the three-way argv token diff, the ledger's
+banked descriptors, and `068534aa`'s anchor limit). **THE ARM.** `ai_v13_11_split_lossoff`, a
+FORK of arm W `ai_v13_02_flywheel_winprob` at 75,005,952, built token-exactly from
+`ai_v13_07_fold1`'s own `original_command` with `--distill-coef 0.1761 → 0.0` (`--distill-target
+action` DROPPED — **FORCED** by `combination_checks.distill_target_needs_coef`, re-resolving to
+the inherited inert `kl`), **every ecology lever kept** (`--distill-team-bias 0.4`, both
+specialists in `--stable-opponents`, `--team-block-episodes 64`), the SAME frozen dose 4.272e-9 =
+0.20× the v8 reference, the same auto-seeded pool, seed 1001, pin `6eb9c776` in ONE row, config
+v119, **one continuous +12,091,392 steps to 87,097,344 — the control's and the fold path's own
+endpoint step, to the step**; matchup `0a7b730a4d`, fold-1's era hash. **THE RULE, copied verbatim
+from all three predecessor reads so the FOUR are ONE series: OUTSIDE THE FLOOR iff `|Δ| > floor`
+AND the Δ's CI excludes the floor POINT; else WITHIN FLOOR at n = 2 — one pair BOUNDS a floor
+(rules 19/22), WITHIN FLOOR is never "equivalent" (rule 6).** Three conventions: `Δ_path = path −
+arm W`, 🚨 `Δ_ecology = split − control` (**THREE levers**: bias + pool + team-block-64),
+🚨 `Δ_loss = split − fold path` (**ONE lever**: the distillation loss). CPU-only
+(`CUDA_VISIBLE_DEVICES=""`, `nice 15`, `OMP_NUM_THREADS=1`, ≤ 8 workers, the two invocations
+SEQUENTIAL), MAIN checkout, **nothing written under `models/`**, no `src/` file changed, **no
+server started at all**, **:8000/:8001 never touched, the GPU never touched** (`ai_v13_12_plateau`
+block 1 was live on it; load 16 → 36). **12,800 battles, 0 TIMEOUTS.** ✅ **THE REGISTERED
+REPRODUCTION CHECK — the ONE re-derived verification cell — PASSES EXACTLY ON THE PER-TEAM ROWS
+IN BOTH INVOCATIONS**: arm W 46.19 pp (739/1600) on the untaught 8 with all eight rows identical
+to BOTH banked sources, and **394/800 + 376/800** on the two slice cells — the **sixth**
+confirmation that the meter is deterministic at seed 0 / concurrency 1 and the WARRANT for
+importing the whole control path, the whole fold path, W_b and both teachers rather than
+re-deriving ~19,200 identical battles; the 3.69 floor re-measures at exactly −3.69. **ROW 1 —
+UNTAUGHT.** Split levels **57.88 / 58.56 / 58.62 pp** at +3M/+6M/+12M ⇒ Δ vs arm W **+11.69
+[+9.19,+14.06] / +12.38 [+10.12,+14.37] / +12.44 [+10.69,+14.31], 8 of 8 teams at EVERY depth,
+OUTSIDE by BOTH clauses** — against the control's +12.31 / +14.25 / +15.50 and the fold path's
++5.38 / +5.13 / +5.75. Against W_b the split is +8.00 / +8.69 / +8.75, so it does not depend on
+arm W being the lower seed. 🚨 **Δ_ecology = −0.62 [−3.31,+2.06] / −1.87 [−4.13,+1.00] / −3.06
+[−5.87,−0.13] pp — WITHIN FLOOR at all three, but SMALL, NEGATIVE, MONOTONE, and the +12M CI
+EXCLUDES ZERO** (a CI clear of zero is NOT a verdict — the honest lever is a second arm).
+🚨 **Δ_loss = +6.31 [+3.06,+9.88] / +7.25 [+3.19,+11.50] / +6.69 [+1.06,+11.44] pp — clause (a)
+passes at every depth, clause (b) fails at every depth**, exactly the near-unsatisfiable
+arithmetic the registration wrote down in advance (the bar needs ≳ 7.5 pp). The split is the most
+FRONT-LOADED of the three arms: +11.69 of its +12.44 is there by +3M and its last 50 % moves it
++0.06 pp. **ROW 2 — PER-SLICE PILOTING, 800 games/cell, same pinned teams (`450fb83c20` /
+`6212de2e8c`), same third-party opponent, manifest byte-identical.** 🚨 **THE SPLIT CLEARS BOTH
+CELLS AT ALL THREE DEPTHS — SIX OF SIX against arm W, exactly as the control did (the fold path
+cleared one of six): Big-5 +0.1350 / +0.1137 / +0.1125 against a 0.0475 MEASURED floor; DDTar
++0.1825 / +0.1838 / +0.1663 against 0.0850.** 🚨 **Δ_ecology on the slices: +0.0212 / +0.0112 /
++0.0000 on Big-5 — the endpoint cell is 484/800 for BOTH arms, an EXACT tie — and +0.0212 /
++0.0150 / −0.0112 on DDTar; all six WITHIN FLOOR.** 🚨 **Δ_loss on the slices: +0.1600 / +0.1750 /
++0.1650 on Big-5, OUTSIDE by both clauses at ALL THREE depths; +0.0587 / +0.1163 / +0.0125 on
+DDTar, all WITHIN.** 🚨 **THE TEACHERS' CEILING: t1 Big-5 − split = −0.0287 [−0.0767,+0.0194], NOT
+DETECTED — the split is LEVEL with the teacher on the teacher's own pinned team, landing on the
+IDENTICAL cell the control reached, while having been fed the teacher's TEAM and the teacher's
+OPPONENT and none of its ACTIONS; t2 DDTar − split = −0.1588, the split far above.** 🚨 **AND THE
+DDTar ROW IS CLOSED AS AN ATTRIBUTION QUESTION: fold +0.1538, split +0.1663, control +0.1775, all
+three OUTSIDE the floor against arm W — every continuation of arm W at this dose gains ~0.16
+there, and neither the loss nor the ecology moves it.** Split statistic (Big-5 − DDTar): split
+−0.0538 ≈ control −0.0650, both far from the fold path's −0.2063, and the fold's sign pattern is
+ABSENT — the sign split belongs to the arm that went DOWN on Big-5. Pooled +0.1394; footnote only
+(rule 10). **ROWS 3–4 — DESCRIPTORS, BANKED, NOT RE-DERIVED.** `H_end` split **0.9589** lands WITH
+the control 0.9407 and 0.2216 ABOVE the fold 0.7373 (≈12× the 75M run-level floor) — registered as
+this read's PRIOR and explicitly not its endpoint; **the two channels agreed**, no mechanism
+claimed. 🚨 **PROMOTIONS: the split promoted SIX post-fork snapshots (76/78/80/82/84/86M) and has
+a `snapshot_ladder/`; the control FIVE; the fold path ZERO** — `win_rate_vs_pool` 0.670 vs 0.558
+vs 0.402 at 86,000,016, with the two continuations facing a GROWING pool and the fold path a
+frozen one. No Elo quoted (n = 6 ≪ 12). Bots 0.9513 — **BLIND at this depth**. **THE BRANCH.**
+🚨 **(e) UNCOVERED at +12M AND at +3M, and the two depths AGREE; the branches are NOT rewritten.**
+(a) needs |Δ_ecology| WITHIN on all three rows — **met, 3 of 3, and 9 of 9 across depths** — AND
+|Δ_loss| OUTSIDE on ≥ 2 rows, **which reaches 1 of 3**; (b) needs |Δ_loss| WITHIN on all three
+(it is 2 of 3) plus ecology OUTSIDE on ≥ 2 (it is 0); (c) and (d) need ecology OUTSIDE on ≥ 2 (0).
+**Nearest description in the registration's own vocabulary: branch (a) with its ECOLOGY clause met
+in full and its LOSS clause met on one row of three** — the untaught row blocked by the
+pre-registered clause-(b) arithmetic, and the DDTar cell blocked because **the fold path had
+already matched the split there, so there was nothing for the loss to have cost.** **HAZARDS, each
+a finding.** (S-A) the branch is UNCOVERED and why, with which reason was pre-registered; (S-B)
+🚨 the ecology row is small, negative, MONOTONE and its +12M CI excludes ZERO inside the floor;
+(S-C) inherited INERT distill flags (`distill_target kl`, `distill_topk 1`) — `grep -c DISTILL` =
+0 and **ZERO `distill/*` scalars in TB**, so the term was ABSENT not zero-weighted; (S-D) the +6M
+depths differ, the SPLIT deeper by 260,928 / 303,408 steps — **+3M and +12M are the SAME STEP
+NUMBER on all three paths, both carry clauses, and both reach the same branch**; (S-E) arm W is
+the lower seed and it does not matter; (S-F) the fork-boundary asymmetry — **BOUNDED: at +3M
+neither the split nor the fold has crossed a fork and Δ_loss is ALREADY +6.31 pp and +0.1600**;
+(S-G) the three pool series are not comparable in kind; (S-H) clause (b) bound exactly where the
+registration said it would; (S-I) the bot row and G7 are BLIND; (S-J) 🚨 **the untaught meter
+RANKS but does not SCALE — `068534aa` put the control's +15.50 pp at +0.039 externally, NOT
+DETECTED over 8,400 anchor battles; no strength claim is made and anchors were not run**; (S-K)
+ONE split arm; (S-L) 🚨 **the ecology bundle is still THREE unidentified levers, one of which
+(`--team-block-episodes 64`) has never appeared in any registration before `f389fce4`**; (S-M)
+every floor but the two per-slice ones is an IMPORT. **WHAT IS NOT CLAIMED:** that "the
+distillation loss hurts" (the contrast is positive on 9 of 9 cells and clears on 1 of 3 rows at
+n = 1 — a CANDIDATE); that the three ecology levers are individually exonerated (**the BUNDLE
+is**); that anything is a family verdict; that any floor is established; that entropy explains
+anything; that three points are a trend; anything about ladder STRENGTH. **WHAT FOLLOWS.** (1)
+🚨 **"The ecology" — bias + pool + team-block-64, including the FOURTH lever `f389fce4` named — has
+a measured total effect and it is WITHIN FLOOR on every row; the candidate carrier that entry
+proposed is NOT supported at this dose.** (2) 🚨 **The remaining candidate carrier is the
+DISTILLATION LOSS**, and about 6.7 pp of the fold's 9.75 pp off-slice shortfall travels with it
+against at most ~3.1 pp with the ecology. (3) The cheapest decisive follow-ups, in order: **a
+second SPLIT or CONTROL seed** (~10 GPU-h; the only thing that settles S-B), then
+**`--team-block-episodes 64` alone** (the one lever no registration has ever named), then **a
+`--distill-coef` DOSE LADDER** at fixed ecology — nothing in this series has varied the
+coefficient with everything else held. Tag: **MEASURED (MAJOR) · THE SPLIT ARM · the ECOLOGY
+BUNDLE (bias + pool + team-block-64) is WITHIN FLOOR on 9 of 9 cells, +0.0000 on the Big-5
+endpoint · the split is +6.69 pp / +0.1650 ABOVE the fold path · branch (e) UNCOVERED at BOTH
+depths (a's ecology clause met in full, its loss clause 1 row of 3) · the DDTar row is CLOSED —
+every continuation gains ~0.16 there · the split is LEVEL with teacher t1 on t1's own team ·
+promotions 6 / 5 / 0 · bots and G7 BLIND · 12,800 battles, 0 timeouts · reproduction EXACT,
+per-team, in BOTH invocations**.
+
+**Orchestrator's reading and the stage-3 decision (2026-09-20).** The arm that kept every ecology lever of fold-1 (team bias 0.4, both specialists in the pool, `--team-block-episodes 64`) and dropped only the loss is indistinguishable from plain continuation on nine of nine cells, and it is above the fold path on nine of nine. Read with the entropy descriptor (split 0.959 ≈ control 0.941, fold 0.737) and the pre-registered branch arithmetic — clause (b) needs ~7.5 pp on the untaught row and the DDTar row is one every continuation gains ~0.16 on, so it cannot separate anything — the registered verdict is UNCOVERED and the pattern is unambiguous: **the top-1 action-target distillation loss carried the fold's whole cost; the ecology bundle, fourth lever included, is exonerated at this dose as a bundle.** Stage 3 follows the rule registered this morning: the three K arms (`--distill-topk 1 / 3 / 11` on `--distill-target action`, `--distill-beta 1.0`, `--distill-gate none`) run on fold-1's FULL ecology — bias 0.4, specialists in the pool, team-block 64 — now a measured-inert background, so K is the only lever and K = 1 is fold-1's loss form from the plateau parent. What the K ladder is now testing is sharper than "does more distribution transfer better": the K = 1 loss is the one term shown to cost ~10 pp untaught while transferring nothing the parent could not learn alone, so the ladder asks whether widening the target recovers the untaught eight at all. If K = 11 still reads below plain continuation the distillation family is the wrong transfer mechanism for this parent and the search-based teacher line the owner named on 2026-09-17 is the next candidate. S-B (Δ_ecology monotone −0.6 → −1.9 → −3.1, endpoint CI clear of zero inside the floor) is noted and not acted on: a second arm settles it, and the plateau parent's ecology is team-block 1 anyway, so stage 3's background is the one the folds will actually run on. Tag: **ORCHESTRATOR · READ BANKED · THE LOSS IS THE CARRIER, THE ECOLOGY IS INERT · stage 3 = K 1/3/11 on fold-1's ecology from the plateau parent**.
