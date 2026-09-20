@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,478-line file. **The ledger itself is append-only and is never edited by this**;
+20,490-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**653 headings · 598 dated · 2026-08-01 → 2026-09-20 · ledger 20,478 lines.**
+**654 headings · 599 dated · 2026-08-01 → 2026-09-20 · ledger 20,490 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -673,3 +673,4 @@ rename.
   - `L20304` · `2026-09-20` · OPS · **external-anchor reads come OFF NODE. `python -m main.anchors` now starts the
   - `L20345` · `2026-09-20` · MEASUREMENT (MAJOR) · **THE SPLIT ARM — 🚨 THE ECOLOGY BUNDLE IS EXONERATED: fold-1's argv with the LOSS OFF sits ON THE CONTINUATION CONTROL on 9 of 9 cells (3 rows × 3 depths), exactly +0.0000 on the Big-5 endpoint cell, and +6.69 pp / +0.1650 ABOVE the fold path — yet the registered branch is (e) UNCOVERED at BOTH clause-carrying depths, because Δ_loss clears the floor on ONE row of three**
   - `L20457` · `2026-09-20` · OPS (MAJOR) · **THE PLATEAU IS REACHED AT BLOCK 1 — the continuation's untaught-8 gain is EXHAUSTED: +8.06M more steps at the same frozen dose moved it −1.50 pp [−3.75, +0.62] against a 3.69 pp floor, WITHIN at both clauses. `models/ai_v13_12_plateau/final_model.zip` is THE PLATEAU PARENT, and the confound the owner asked to remove is removed BY CONSTRUCTION.** Plus 🚨 **TWO of the fifteen approved 5-team teacher teams were UNTAUGHT-8 MEMBERS — caught before launch, substituted.**
+  - `L20479` · `2026-09-20` · OPS + 🚨 **THE ERA-2 EXPLOITERS ARE RUNNING AT 0.39× THE v8 DOSE, NOT THE ERA-1 EXPLOITERS' 1.78× — a 4.5× gap nobody registered, caused by `--fork-lr` being UNSET and the new parent's frozen 2.80e-05 being inherited and then ANNEALED UP by a live KL controller.** `ai_v13_13_exploit5_offense` completed clean; its vs-target curve is still CLIMBING at the endpoint where all three era-1 exploiters had already flattened.
