@@ -19990,3 +19990,88 @@ inert below budget 2R (guard landed)**.
 **Caveats recorded BEFORE the read, as registered.** (1) The control ran **one continuous +12M**; the fold path was +6M then +5.9M **with a fork boundary between**. Same endpoint, same frozen lr, one extra fork crossing on the fold side. (2) `--distill-target 'kl'` and `--distill-topk 1` appeared in the control's dry run as **INHERITED** from arm W's checkpoint config — inert at `--distill-coef 0.0` with no teacher, but a visible instance of the standing rule that any flag the argv does not NAME re-resolves. (3) The control's `+5M` bots cycle dipped to 0.8913 and recovered to 0.9325 by +7M — a single-cycle fluctuation, reported at the time as a number rather than a signal.
 
 **Not claimed.** 95.4 % is a descriptor. **Nothing here says whether the fold paid.** The comparison the arm exists to enable is the orchestrator's: untaught at +3M/+6M/+12M for both paths — **if the control gains the same off-slice amount as fold-1's +5.4/+5.1 pp, that lean is CONTINUATION, not teaching.** Tag: **OPS · COMPLETE · twenty-eighth run · continuation control at matched endpoint and matched frozen dose · bots and G7 indistinguishable · entropy differs 0.198 nats (10× the 75M floor)**.
+
+### 🎯 WHERE IS THE PLAYOFF GATE'S OPERATING POINT? — **the shipped 2·SE bar takes 4 % of the available value and its gain is NOT DETECTED; opening it to 0.5·SE takes 6.2× more offline and makes the arm act on 11.9 % of decisions instead of 0.4 % — and 🚨 THE MIRROR WIN RATE GOES DOWN, to 0.4719 [0.4021, 0.5416].** Branch (b), and the binding constraint is now neither the leaf nor the gate (2026-09-20)
+
+Record `designs/research_state/measurements/playoff_gate_operating_point_2026-09-20/`
+(`PREDICTION.md` landed on main at **`48743b41`** before the first number; JOB A at **`1bdd233e`**
+before JOB B was read). **JOB A, FREE: the production rule (`playoff.paired_stats` /
+`is_conclusive` / `decide`) IMPORTED and swept over R × SE-multiple × MIN_PAIRS on the 2026-09-19
+read's 665 banked forks** — K = 16 fresh CRN re-rolls per branch, scored against the **DISJOINT**
+banked K′ = 8 label, so no winner's curse; **0 unjoined, 0 salt mismatches, 0 short rows**, one
+CPU-minute, no new rollout. **JOB B: a 965-battle live mirror battery** at the point JOB A picks,
+`--impl node`, CPU only, ~28 CPU-h, nothing under `models/`.
+
+**THE OPERATING CURVE, in win-prob units per DECISION, beside its ORACLE CEILING.** 47.2 % of the
+banked sibling pairs are **TIED** under the K′ = 8 label and E|gap| = 0.1316, so an oracle always
+taking the better branch gains only **+0.0625/decision [+0.0528, +0.0729]** — every level is
+quoted as a fraction of that rather than as a bare number. At R = 4: **`k = 2.0` (SHIPPED)
++0.00254 [−0.00038, +0.00611] NOT DETECTED = 0.041× oracle at a 0.0451 resolve rate** · `k = 1.5`
++0.00977 DET (0.156×, resolve 0.1654) · `k = 1.0` +0.01269 DET (0.203×, 0.4120) · **`k = 0.5`
++0.01570 [+0.00639, +0.02575] DET = 0.251× oracle at 0.4556** — **6.2× the shipped point's gain
+for the identical rollout budget.** At R = 16 the best point is **+0.03195 = 0.511× oracle**.
+🚨 **THE BAR ITSELF BUYS ALMOST NOTHING: the NO-GATE rule (always take the higher R-rollout mean)
+reads +0.01570 at R = 4 — matching the best gated point to five decimals — and +0.02763 at R = 8,
+ABOVE every gated cell there**; only at R = 16 does a gate edge it, by 0.0009. The trade is real
+and it is bad: tightening lifts agreement with the label 0.665 → 0.870 but collapses coverage
+0.456 → 0.045, and **a decision the gate declines contributes EXACTLY 0.0**, which is why the
+0.87-agreement point is worth a sixth of the 0.67-agreement one. 🚨 **`MIN_PAIRS` is an INERT axis
+at R ≥ 4 by construction** (registered in advance as S1, asserted in code, refuses if violated)
+and at R ∈ {2, 3} it is **an OFF SWITCH, not a bar** — resolve exactly 0.0000 — which **forbids
+the cheapest useful point in the table** (R = 2, `MIN_PAIRS = 2`, +0.0150/decision at HALF the
+rollout cost of the shipped R = 4 point).
+
+🚨 **AND IT STILL DOES NOT PAY IN GAMES — branch (b), with the sign against the arm and the
+mechanism no longer the gate.** The live cell **acted**: 6,886 decisions, **11.88 % changed**
+against the shipped gate's 0.4 % on 2026-09-19 (**a 30× larger intervention**), realized
+**R = 3.99**, live resolve **0.2785 of playoffs run** against the offline 0.4556 (ratio 0.61,
+inside the registered 0.2–0.8 band — the direction the 2026-09-19 proxy named, greedy-offline vs
+stochastic-live). **L2 = 0.4719 [0.4021, 0.5416] over 80 pairs, NOT DETECTED and BELOW 0.50**;
+`base − pfk05` = +0.0594 [−0.0125, +0.1344] and `defB − pfk05` = +0.0469 [−0.0407, +0.1375], both
+ND, both the same way. **Cost: 36.9 s per adjudicated decision, 950 s per battle — 56× `base`
+(17 s) and 19× `defB` (51 s).** The branch-(b) arithmetic, registered before the read: 11.9 %
+overruled × the offline +0.066 per overrule = +0.0079/decision, which over 41.7 decisions/battle
+would be +0.33 as a naive sum — **absurd, and that is the point: per-decision advantages on
+selected contested forks are NOT additive across a game, so the offline curve predicts a SIGN and
+nothing about size.** Power, from the arm's OWN spread: sd = 0.318, half-width ±0.070 at n = 80,
+so the cell could not have resolved +2 pp — **but the point estimate is on the wrong side, and
+even at 400 pairs 0.4719 would read [0.441, 0.503].** **Out-ranking was not the constraint
+(2026-09-19); the acting rule is not the constraint either. The two survivors this read cannot
+separate are the CANDIDATE PAIR (live the playoff adjudicates the SCREEN's top-2 — a biased
+critic sweep decisive in the policy's favour on only 15.6 % of decisions) and the ESTIMAND (a
+stochastic-mirror self-rollout is not the banked tree's greedy-sentinel rollout that priced the
+gain).**
+
+🚨 **FIVE INSTRUMENT FINDINGS, and two of them change how this battery is read.** (1) **The
+unsearched `base` NULL is 0.5150 [0.4967, 0.5333], not 0.5000** — run for the first time at
+n = 200; it covers 0.50 so nothing is invalidated, but **every L2 bar within ±0.02 of 0.50 is
+henceforth set against `base`, not against the constant.** (2) **An arm that ACTS is read at a
+wider interval than one that does not**: `base` sd 0.132, `defB` 0.243, the playoff cell
+**0.318** — because it changes 12 % of decisions — so rule 25's 400-pair bar, calibrated on
+sd ≈ 0.2, needs **2.5× the pairs** at this sd; quote the arm's own sd when stating what a battery
+can resolve. (3) **`short_r_refusal` is ROW-level and MIS-FIRES on a loaded box**: it killed 2 of
+8 shards at single-game R of 3.27 and 1.50 while their POOLED R was 3.96 and 3.98 and only 1.2 %
+of 165 rows sat below the floor — **it cost 17 pairs (21 % of the cell) and moved L2 by 0.0003
+(0.4719 → 0.4722)**; the right granularity is a trailing window, and `rollout_cost_s` still seeds
+at 1.0 s against a measured ~10 s. (4) **15.3 % of live rollout PAIRS failed under `--impl node`
+(2,913 of 19,055) against 16 in ~760 (2.1 %) on 2026-09-19 — 7× the rate, and far outside the
+registered ≤ 3 %**; a failed pair
+correctly contributes nothing, but it costs the gate's own `n` and is a candidate for part of the
+offline→live resolve gap. (5) **15.2 % of playoffs bought NO pair at all** (`no_budget` 728 of
+4,775) at `--budget 120` on a box at load 40 — size the budget at the load the cell will run at.
+**EIGHT of ELEVEN JOB-A predictions and SIX of TEN JOB-B held**; the informative misses are **A5**
+(agreement ≥ 0.80 needs a TIGHTER gate than registered), **A8** (the no-gate rule is not strictly
+best — it is *indistinguishable*, which is the weaker and correct claim), **B7** (the registration
+did not allow for a NEGATIVE point estimate and should have) and **B10** (the node failure rate).
+**WHAT REMAINS:** (1) 🚨 **the gate's constants are a CLOSED question — do not spend another arm
+on them**; (2) the free next read is the **CANDIDATE PAIR**: re-run JOB A on the SCREEN's top-2
+rather than the policy's, which the banked `rand` branch partly supports and which costs nothing;
+(3) the **`q_winprob_head`** amortizer (built, OFF) — 36.9 s per adjudicated decision is a
+teacher's budget, not an inference budget, and that conclusion is now backed by a cell that
+actually acted. Tag: **MEASURED (MAJOR) · THE SHIPPED 2·SE GATE IS AT THE WRONG END OF ITS CURVE
+(0.041× oracle, NOT DETECTED) AND THE BAR BUYS NOTHING OVER PLAIN RE-RANKING · MIN_PAIRS IS INERT
+AT R ≥ 4 AND AN OFF SWITCH BELOW IT · 🚨 OPENING THE GATE MADE THE ARM ACT 30× MORE AND THE WIN
+RATE WENT DOWN (L2 0.4719 [0.402, 0.542]) — NEITHER THE LEAF NOR THE RULE IS THE CONSTRAINT · the
+unsearched base null is 0.515, not 0.500 · an arm that acts needs 2.5× the pairs**.
+
+**Orchestrator's reading (2026-09-20).** Two lines close on one read. The GATE line: the constants are a closed question — the no-gate rule ties the best gated point, so there is no operating point left to tune, and the cheapest table cell (R = 2) is forbidden by an OFF switch, not a bar. The REPAIR line that the 2026-09-19 K-curve opened ("out-ranking is solved, the acting rule is the constraint") is refuted by the sign: a cell that acted 30× more read BELOW its unsearched base. What survives is the estimand question — offline the leaf is priced against the banked tree's greedy-sentinel rollout; live it prices a stochastic mirror self-rollout — and the candidate-pair question (the screen's top-2, not the policy's). The candidate-pair read is free on the banked dice and is the only one dispatched from here; no further mirror battery is bought on this line until the one-sided-view materializer (`823d2341`, DEFAULT since this morning) re-costs it, and rule 26 below sets the bar it will be read against. The `q_winprob_head` amortizer stays OFF: 36.9 s per adjudicated decision is a teacher's budget, and the teacher's own gain is not yet positive in games. `short_r_refusal` at row granularity, the `--impl node` pair-failure rate and the 1.0 s `rollout_cost_s` seed go to `designs/ops/TECH_DEBT_BACKLOG.md`. Tag: **ORCHESTRATOR · READ BANKED · THE GATE LINE IS CLOSED · THE ESTIMAND AND THE CANDIDATE PAIR ARE THE TWO SURVIVORS**.

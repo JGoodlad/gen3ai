@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-19,993-line file. **The ledger itself is append-only and is never edited by this**;
+20,078-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**644 headings · 589 dated · 2026-08-01 → 2026-09-19 · ledger 19,993 lines.**
+**645 headings · 590 dated · 2026-08-01 → 2026-09-20 · ledger 20,078 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -664,3 +664,4 @@ rename.
 - `L19883` · 9. Ready-to-append ledger paragraph
   - `L19885` · `2026-09-19` · 🎯 HOW MANY ROLLOUTS DOES A LEAF NEED, AND DOES IT PAY IN GAMES? — **the dose is FOUR and the leaf WINS by +0.068 [+0.038, +0.101] DETECTED (pooled) / +0.078 [+0.027, +0.128] at K=8 on the LEAF column — and 🚨 IT BUYS NOTHING IN GAMES BECAUSE THE ARM'S OWN 2·SE GATE RESOLVES ONLY 4.5 % OF PAIRS AT R=4 AND 12.5 % AT R=16.** The binding constraint has moved from the leaf to the DECISION RULE (2026-09-19)
   - `L19969` · `2026-09-19` · OPS · `ai_v13_09_wcont` COMPLETE at 87,097,344 — the CONTINUATION CONTROL (era G5) lands on the fold path's exact endpoint with matched dose; **the two are indistinguishable on bots and G7, and differ by 0.198 nats on entropy**
+  - `L19994` · `2026-09-20` · 🎯 WHERE IS THE PLAYOFF GATE'S OPERATING POINT? — **the shipped 2·SE bar takes 4 % of the available value and its gain is NOT DETECTED; opening it to 0.5·SE takes 6.2× more offline and makes the arm act on 11.9 % of decisions instead of 0.4 % — and 🚨 THE MIRROR WIN RATE GOES DOWN, to 0.4719 [0.4021, 0.5416].** Branch (b), and the binding constraint is now neither the leaf nor the gate (2026-09-20)
