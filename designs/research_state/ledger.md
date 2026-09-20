@@ -20208,3 +20208,83 @@ Landed `5e3ab9d1` (D5: a search successor's FULL observation, trackers included,
 🚨 **G7: the LENGTH half is OVER, the DRAW half is not, and the length half is not comparable across a matchup change.** On the corrected reference — **the PARENT'S FINAL CYCLE, 26.350 at 74,000,016**, never `g7_ladder`'s inherited number, which freezes on arm W's infancy — the post-fork cycles read **40.055 / 45.138 / 43.284 / 41.980 ⇒ ratios 1.520 / 1.713 / 1.643 / 1.593**, all above the 1.25 bar (the tool, on its inherited reference, says 1.582–1.782). The arm's OWN comparators say what this is: at the same fork point, same dose, same recipe, `ai_v13_05_exploit_big5starmie` runs **28.2–30.1** (worst ratio 1.187) and `ai_v13_06_exploit_ddtar_spikes` runs **19.6–21.9** (worst 1.131) — the ordering offense < balance < stall is the archetype ordering, and the stall team is 2.2× DDTar's length by composition. The half G7's kill condition actually protects — `signal/draw_rate` — reads **peak 0.0145, last 0.0019 against a 0.05 bar**, and the bot row RISES to 0.9825 while length is high; timeout-farming would show the draw rate up and the win rate flat or falling. **The `matchup_hash` change from `ef5242cffd` to `d03ed608bd` is the machine-checkable marker that the G7 length reference does not carry across**: 26.350 was measured on arm W's full-pool episodes and this arm plays one pinned stall team against 50% bots. Recorded as G7 LENGTH-HALF FIRED, MATCHUP-INCOMPARABLE, DRAW HALF CLEAN — not as a kill and not as a clean pass.
 
 ⏭ **The admission read is NOT in this entry and is now re-based.** Per the orchestrator's 2026-09-20 direction, each teacher's per-slice admission read goes against **the CONTINUATION (`ai_v13_09_wcont` at its endpoint)**, not against frozen arm W — the era-1 teachers were level with or below the continuation on their own teams, which is the likeliest reason the fold lost. That applies to this arm too and has not been run here. Tag: **OPS · `ai_v13_10_exploit_stall` COMPLETE (83,066,880, clean termination, crashes 0) · third archetype, `d03ed608bd` · vs-target 0.740 (null 0.500), the SAME endpoint as both twins from a third route · dose 3.815e-8, identical to the twins · bots 0.9825, final aggregate 99.1% · G7 length half 1.71 on the corrected reference 26.350, draw half 0.0019/0.05, MATCHUP-INCOMPARABLE · admission read PENDING and re-based on the continuation**.
+
+### 2026-09-20 · MEASUREMENT (MAJOR) · 🚨 **THE CONTINUATION'S +15.50 pp DOES NOT APPEAR EXTERNALLY: 8,400 anchor battles put `ai_v13_09_wcont` at +0.039 [−0.000, +0.079] over arm W on Metamon's own teams and +0.020 [−0.019, +0.058] on ours — NOT DETECTED on either, at the registered n = 400 and again at n = 1200 — while the SAME games resolve the era-1 fold path 0.08 BELOW its own frozen parent on both team sets. The ORDER reproduces; the MAGNITUDE is ~5× smaller. The n = 100 read's +0.140 was seed luck.**
+
+Owner's question ("can you get the A/B continuation against metamon teams to see if we can see the
+improvement externally"), answered through the tool of record `python -m main.anchors`, greedy-vs-
+greedy verified per decision on **every one of 8,400 battles**; Metamon `@0a00a759`, Showdown pin
+`e0551883f`, CPU, `OMP_NUM_THREADS=1`, ports 9500–9592, nothing written under `models/`. Three arms
+at explicit zips — arm W `ai_v13_02_flywheel_winprob` @75,005,952, the continuation
+`ai_v13_09_wcont` @87,097,344, the era-1 fold path `ai_v13_08_fold1_cont` @87,097,344 (the two
+continuations end on the same step to the step). Twelve team seeds 20260919–20261029, **different
+from the 2026-09-20 read's default 20260914**, the same seeds for all three arms, and the arms faced
+**the same draw in the same slot 1200/1200** in every cross-arm comparison. Pre-registered at
+`0f110483`; AMENDMENT 1 (`0920f197`) raised n from 400 to 1200 per arm per cell **unconditionally,
+committed before any pooled contrast was computed**, because the cell ran ~7× cheaper than the SOP's
+cost table budgets (~2 min per 100 games on a quiet box, not ~15). Artifact:
+`designs/research_state/measurements/anchor_ab_continuation_2026-09-20/`.
+
+**`SmallRL` greedy, n = 1200 per arm per team set.** AWAY (Metamon's own 20 `competitive` teams):
+continuation **0.5925 [0.5644, 0.6200]**, arm W 0.5533 [0.5251, 0.5812], fold path 0.4725 [0.4444,
+0.5008]. HOME (our 719 pool): continuation **0.6442 [0.6167, 0.6708]**, arm W 0.6242 [0.5964,
+0.6511], fold path 0.5458 [0.5176, 0.5738]. The three registered contrasts, Newcombe on the
+difference — 🚨 **C − W: +0.0392 [−0.0004, +0.0786] away and +0.0200 [−0.0185, +0.0584] home, NOT
+DETECTED on both, and NOT DETECTED on both at the registered n = 400 too (+0.0150 and +0.0350)**;
+**C − F: +0.1200 [+0.0802, +0.1593] away and +0.0983 [+0.0591, +0.1371] home, DETECTED on both**;
+**F − W: −0.0808 [−0.1205, −0.0409] away and −0.0783 [−0.1174, −0.0389] home, DETECTED on both, in
+the NEGATIVE direction.** 🚨 **The instrument therefore had the power and used it** — four CIs clear
+of zero at effect sizes 0.078–0.120 on the very same games where C − W straddles. **Branch (c) of
+the registration is what happened, and it was the branch I gave the LOWEST probability (0.15).** The
+away C − W row sits on the line: the registered unpaired interval misses zero by 0.0004 on the wrong
+side while the matched-draw paired bootstrap — a DESCRIPTOR, registered as such in advance — reads
+[+0.0025, +0.0758]. The registered verdict stands and the weakness of the null is stated with it.
+An unregistered inverse-variance combination of all three cells puts C − W at **+0.0320 [+0.0065,
++0.0575]** — printed for its SIZE, not as a verdict: **the external edge is ~3 pp where the untaught
+meter reads 15.5, a factor of ~5.**
+
+**The era gate fires on all three arms.** `SyntheticRLV2` greedy away, n = 400 per arm: continuation
+**0.3850 [0.3386, 0.4336]**, fold path 0.3475 [0.3025, 0.3954], arm W 0.3375 [0.2929, 0.3852]. The
+bar is *Wilson lower > 0.50*; here every **upper** bound is below 0.50, so by the SOP's clause (2)
+the absolute bar fires on the whole lineage at 87M. All three contrasts NOT DETECTED at this n
+(C − W +0.0475 [−0.0190, +0.1134]) — the cell agrees in direction and has no power at 400 games, and
+its C − F / F − W rows must **not** be read as contradicting the `SmallRL` cells.
+
+**🚨 What replicates and what does not.** The n = 100 `SmallRL` away read banked
+continuation 0.640 / arm W 0.500 / fold path 0.430 and a **+0.140** headline contrast; at 12× the
+games the same three arms read 0.5925 / 0.5533 / 0.4725 and **+0.039**. Every arm moved toward the
+middle and the contrast shrank 3.6×. That read registered the row as DESCRIPTIVE with P(clears) =
+0.15 and did not claim it, so nothing is contradicted — but **a 100-game anchor point estimate is a
+detector of ~0.15-sized movement and is not a measurement of a ~0.05-sized one**, and a single
+100-game sub-cell of this very cell ranged 0.34–0.59 *within one arm* across twelve seeds.
+**What DOES reproduce externally is the era-1 fold path's COST**: below its own frozen parent by
+~0.08 on both team sets, confirmed by an agent nobody here trained. That was the internal read's
+second headline and it is now the only one of the two with external support.
+
+**Two hazards, both findings.** (1) 🚨 **`regime_verified` read FALSE on 31 of 84 sub-cells while
+all 168 halves reported `argmax_match_rate` = 1.0000** — hazard W-J is not a one-off, it fires on
+~37 % of sub-cells, because the composite flag is an AND over both halves' `regime_check_ok` and a
+peer's flag goes false if the peer process raises anywhere, including in post-game aggregation where
+Metamon's `RecursionError` on a forfeit desync lands. **Reading the composite as "the regime failed"
+would have voided a third of this campaign.** Backlog row: separate "the peer crashed after its
+work" from "the regime was not matched". (2) ⚠️ **editing a running bash script corrupted both
+lanes' tails** — `bash` reads a script by byte offset, so appending the extension jobsets mid-flight
+ended the lanes in a syntax error *after* the loop; all 24 registered sub-cells had already been
+dispatched and completed (24/24 `status: OK`), which was luck. Fixed by running from a frozen copy
+outside the edited tree. Integrity otherwise clean: **0 of 84 sub-cells failed**, 50 of 8,400 games
+at the 250-turn cap (0.60 %, matching the SOP's banked 0.5 %), 15 ties, `team_source_asymmetry`
+false everywhere, `n_defaults` / `n_redecides` 0 / 0, `model_rung` `explicit_zip` and `model_loader`
+`bare` on every row.
+
+**Reading.** The untaught meter and the external anchor disagree by ~5× on the same contrast, and
+the one that cannot drift with our training is the smaller. That does not make the continuation's
+gain unreal — the sign agrees in all three cells and the combined interval clears zero — and it does
+not make the untaught meter wrong. It does mean **every "+15 pp" of this era should be quoted as
+competence AGAINST OUR OWN LINEAGE until an external cell says otherwise**, and it means the era
+gate's verdict (all three arms 12–16 points behind `SyntheticRLV2` at 87M) is the number that should
+set expectations, not the internal one. Tag: **MEASUREMENT (MAJOR) · 8,400 ANCHOR BATTLES · C − W
+NOT DETECTED ON EITHER TEAM SET AT n = 400 AND n = 1200 · THE FOLD PATH IS 0.08 BELOW ITS OWN PARENT
+EXTERNALLY · ORDER REPRODUCES, MAGNITUDE ~5× SMALLER · ERA GATE FIRES ON ALL THREE ARMS · HAZARD
+W-J FIRES ON 37 % OF SUB-CELLS WITH EVERY PER-DECISION RATE AT 1.0000**.
+
+**Orchestrator's reading (2026-09-20).** The owner asked whether the continuation's gain is visible externally, and the answer is: the ORDER is, the SIZE is not. Against an opponent nobody here trained, the continuation edges its frozen parent by ~3 pp (not detected per cell; a post-hoc pool just clears zero) where the untaught meter reads +15.5 — so the internal meter's scale is roughly 5× the external one on this contrast, and the +0.140 I relayed from the 100-game read was seed spread. Two things follow. (1) The fold's COST is the robust finding of the pair: 0.08 below its own parent on both team sets, CIs clear, reproduced by an instrument with no stake — the era-1 recipe hurt in a way an outside opponent can see. (2) The untaught meter stays the era's competence meter for RANKING (it has ordered every arm the anchor has ordered) but its pp are not external pp; a claim about strength gets the anchor's number, at ≥1,200 games, or it is not made. The `SyntheticRLV2` absolute bar fires on the whole lineage at 87M (upper bounds < 0.50), which was already known at 75M and is not new. Nothing here changes the GPU queue: the split arm decides the lever; the 5-team exploiters are admitted against the continuation. Backlog: the `regime_verified` composite (an AND over both halves that goes false on a post-game peer exception while every per-decision argmax rate is 1.0000) mis-reports on ~37 % of sub-cells and needs to be split into `regime_verified_decisions` and `peer_clean`. Tag: **ORCHESTRATOR · READ BANKED · THE CONTINUATION'S GAIN IS ~3 pp EXTERNALLY, n.d. per cell · THE FOLD'S COST REPRODUCES EXTERNALLY (−0.08, DETECTED ×2) · the untaught meter ranks, it does not scale**.

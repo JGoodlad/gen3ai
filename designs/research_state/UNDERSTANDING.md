@@ -231,6 +231,14 @@ does NOT stand; every delta-against-a-frozen-parent on such an arm is inflated b
 over 12M steps, and the comparator for any fold is the CONTINUATION, not the parent.** Bots and G7 were BLIND across
 exactly this span (both paths "indistinguishable" at ~0.92 while the untaught meter separated them by 9–10 pp) — a
 saturated bot row is not a competence meter at this depth. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*]
+**Externally (`anchor_ab_continuation_2026-09-20/`, 8,400 greedy-vs-greedy games vs Metamon `SmallRL`, n = 1,200 per arm per
+team set): the continuation is +0.039 [−0.000, +0.079] over arm W on Metamon's teams and +0.020 [−0.019, +0.058] on ours —
+NOT DETECTED on both (a post-hoc three-cell pool reads +0.032 [+0.007, +0.058]) — while the SAME games put the era-1 fold
+path 0.08 BELOW arm W on both sets, DETECTED. So the ORDER continuation > parent > fold reproduces outside; the SIZE does
+not: the untaught meter's +15.5 pp is ~3 pp on an external opponent, a ~5× scale difference. The untaught meter RANKS arms
+(every ordering it has given, the anchor has confirmed) but its pp are not external pp — a strength claim carries the
+anchor's number at ≥1,200 games or is not made. The n = 100 anchor's +0.140 was seed spread (one arm's 100-game sub-cells
+ranged 0.34–0.59 across twelve seeds). [ledger 2026-09-20 · *THE CONTINUATION'S +15.50 pp DOES NOT APPEAR EXTERNALLY*]
 
 Two consequences:
 
