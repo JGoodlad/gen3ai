@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,197-line file. **The ledger itself is append-only and is never edited by this**;
+20,211-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**647 headings · 592 dated · 2026-08-01 → 2026-09-20 · ledger 20,197 lines.**
+**648 headings · 593 dated · 2026-08-01 → 2026-09-20 · ledger 20,211 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -667,3 +667,4 @@ rename.
   - `L19994` · `2026-09-20` · 🎯 WHERE IS THE PLAYOFF GATE'S OPERATING POINT? — **the shipped 2·SE bar takes 4 % of the available value and its gain is NOT DETECTED; opening it to 0.5·SE takes 6.2× more offline and makes the arm act on 11.9 % of decisions instead of 0.4 % — and 🚨 THE MIRROR WIN RATE GOES DOWN, to 0.4719 [0.4021, 0.5416].** Branch (b), and the binding constraint is now neither the leaf nor the gate (2026-09-20)
   - `L20079` · `2026-09-20` · MEASUREMENT (MAJOR) · **THE CONTINUATION CONTROL — 🚨 OUR 75M WIN-PROB PARENT *DOES* GAIN FROM ORDINARY CONTINUED TRAINING, BY +15.50 pp ON THE UNTAUGHT 8 AGAINST A 3.69 FLOOR (8 of 8 teams), AND THE ERA-1 FOLD IS 9.75 pp BELOW IT; §2.2's "our parents do not gain from a continuation" is REFUTED for this parent, and the fold's only previously-cleared row RE-BASES TO −0.0237**
   - `L20186` · `2026-09-20` · OPS (MAJOR) + 🚨 CORRECTION · **THE MATERIALIZER FLIP LANDED (`--materializer view` is the DEFAULT, D5 closed) — AND THE P1 UNDER IT WAS NEVER A RUST DEFECT: every offline replay of a live search ran in the LIVE battle's room and wrote fabricated `/choose default`s into the live record, so EVERY LIVE `playoff` CELL TO DATE — the 2026-09-19 battery and today's JOB B — rolled out from a state nobody asked for and reported a clean number. JOB B's L2 is VOID as a playoff measurement; JOB A stands.**
+  - `L20198` · `2026-09-19` · OPS · **THE THIRD ARCHETYPE LANDED — `ai_v13_10_exploit_stall` finishes at 0.740 vs its target, the SAME endpoint Big-5 and DDTar reached, from a third opening and a third episode length. THREE ARCHETYPES, THREE MATCHUP HASHES, ONE NUMBER. G7's LENGTH half fires at 1.71 on the corrected reference and is NOT the kill condition it screens for — the draw half reads 0.0019 against a 0.05 bar.**
