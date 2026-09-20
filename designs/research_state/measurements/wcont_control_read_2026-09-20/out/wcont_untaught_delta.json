@@ -1,0 +1,515 @@
+{
+ "what": "registered row 1 -- the untaught meter (the OFF-SLICE / collateral read) on the CONTINUATION CONTROL ai_v13_09_wcont at +3M/+6M/+12M, beside the era-1 FOLD PATH at the same three depths, both against the frozen parent arm W. The G5 cell of the win-prob era: it decides whether the fold's off-slice lean was TEACHING or CONTINUATION.",
+ "source_measured": "/home/goodlad/.claude/jobs/9ab51de6/tmp/wcont_read/untaught/untaught_registry.json",
+ "source_imported": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/fold1_cont_read_2026-09-19/out/untaught/untaught_registry.json",
+ "teams_manifest": null,
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+ "config_resolution": "the REGISTRY `untaught_meter_config`",
+ "n_teams": 8,
+ "timeouts_measured": {
+  "attempted": 6400,
+  "timeouts": 0,
+  "fraction": 0.0,
+  "inconclusive_above": 0.25,
+  "inconclusive": false
+ },
+ "grid_note": "the matched grid. +3M and +12M are the SAME STEP NUMBER on both paths (78,006,048 and 87,097,344); the +6M points differ by 42,480 steps and the CONTROL is the DEEPER of the two -- hazard W-D, declared, not corrected.",
+ "imported_floor_pp": 3.69,
+ "imported_floor_caveat": "3.69 pp is |arm W - W_b|, a 75M FRESH-ARM seed pair. Both paths here are CONTINUATIONS of that parent. A floor is a property of the DEPTH and the REGIME (rule 3); the meter's own fold/continuation floors are {'TC_replicate_pairs_END_depth': 1.19, 'frozen_dose_folds_six_draws': 1.66, 'K6_cell_three_draws': 2.46, 'controller_live_folds': 4.27, 'G5_three_continuation_arms': 1.0, 'TC_replicate_pairs_p1M_depth': 4.0}. The nearest in KIND is the gen-era G5 three-continuation-arm floor of 1.00 pp, which is at a different parent, era and depth. 3.69 is an IMPORT and is labelled as one in every row it bars.",
+ "fold_depth_floors_pp_for_reference": {
+  "TC_replicate_pairs_END_depth": 1.19,
+  "frozen_dose_folds_six_draws": 1.66,
+  "K6_cell_three_draws": 2.46,
+  "controller_live_folds": 4.27,
+  "G5_three_continuation_arms": 1.0,
+  "TC_replicate_pairs_p1M_depth": 4.0
+ },
+ "levels_pp": {
+  "wcont_p3M": 58.5,
+  "wcont_p6M": 60.44,
+  "wcont_p12M": 61.69,
+  "armW": 46.19,
+  "fold_p1M": 47.62,
+  "fold_p3M": 51.56,
+  "fold_p6M": 51.31,
+  "cont_p7_5M": 49.0,
+  "cont_p9M": 51.31,
+  "cont_p12M": 51.94,
+  "armWb": 49.88
+ },
+ "wins_over_finished": {
+  "wcont_p3M": "936 / 1600",
+  "wcont_p6M": "967 / 1600",
+  "wcont_p12M": "987 / 1600",
+  "armW": "739 / 1600",
+  "fold_p1M": "762 / 1600",
+  "fold_p3M": "825 / 1600",
+  "fold_p6M": "821 / 1600",
+  "cont_p7_5M": "784 / 1600",
+  "cont_p9M": "821 / 1600",
+  "cont_p12M": "831 / 1600",
+  "armWb": "798 / 1600"
+ },
+ "per_team_pp": {
+  "wcont_p3M": {
+   "U_61590463": 57.5,
+   "U_92832108": 50.0,
+   "U_ce35b736": 58.0,
+   "U_9909f2e9": 59.5,
+   "U_9d5f8458": 60.0,
+   "U_f7ba5702": 64.5,
+   "U_90b94599": 57.0,
+   "U_dbf81d8e": 61.5
+  },
+  "wcont_p6M": {
+   "U_61590463": 59.0,
+   "U_92832108": 51.5,
+   "U_ce35b736": 65.5,
+   "U_9909f2e9": 56.0,
+   "U_9d5f8458": 66.0,
+   "U_f7ba5702": 64.0,
+   "U_90b94599": 62.5,
+   "U_dbf81d8e": 59.0
+  },
+  "wcont_p12M": {
+   "U_61590463": 59.0,
+   "U_92832108": 56.5,
+   "U_ce35b736": 65.0,
+   "U_9909f2e9": 61.5,
+   "U_9d5f8458": 66.0,
+   "U_f7ba5702": 67.0,
+   "U_90b94599": 60.0,
+   "U_dbf81d8e": 58.5
+  },
+  "armW": {
+   "U_61590463": 48.5,
+   "U_92832108": 39.0,
+   "U_ce35b736": 49.5,
+   "U_9909f2e9": 38.0,
+   "U_9d5f8458": 47.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 48.0,
+   "U_dbf81d8e": 51.5
+  },
+  "fold_p1M": {
+   "U_61590463": 50.0,
+   "U_92832108": 43.5,
+   "U_ce35b736": 53.0,
+   "U_9909f2e9": 40.0,
+   "U_9d5f8458": 51.5,
+   "U_f7ba5702": 44.5,
+   "U_90b94599": 47.0,
+   "U_dbf81d8e": 51.5
+  },
+  "fold_p3M": {
+   "U_61590463": 44.5,
+   "U_92832108": 44.5,
+   "U_ce35b736": 58.5,
+   "U_9909f2e9": 39.0,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 52.5,
+   "U_90b94599": 63.0,
+   "U_dbf81d8e": 54.5
+  },
+  "fold_p6M": {
+   "U_61590463": 48.5,
+   "U_92832108": 37.5,
+   "U_ce35b736": 60.5,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 54.5,
+   "U_90b94599": 60.5,
+   "U_dbf81d8e": 47.5
+  },
+  "cont_p7_5M": {
+   "U_61590463": 42.5,
+   "U_92832108": 36.5,
+   "U_ce35b736": 56.5,
+   "U_9909f2e9": 43.0,
+   "U_9d5f8458": 50.0,
+   "U_f7ba5702": 47.0,
+   "U_90b94599": 70.0,
+   "U_dbf81d8e": 46.5
+  },
+  "cont_p9M": {
+   "U_61590463": 42.5,
+   "U_92832108": 43.0,
+   "U_ce35b736": 54.0,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 62.0,
+   "U_f7ba5702": 53.5,
+   "U_90b94599": 67.5,
+   "U_dbf81d8e": 42.5
+  },
+  "cont_p12M": {
+   "U_61590463": 50.5,
+   "U_92832108": 41.0,
+   "U_ce35b736": 53.5,
+   "U_9909f2e9": 42.5,
+   "U_9d5f8458": 63.0,
+   "U_f7ba5702": 50.0,
+   "U_90b94599": 67.0,
+   "U_dbf81d8e": 48.0
+  },
+  "armWb": {
+   "U_61590463": 58.0,
+   "U_92832108": 53.0,
+   "U_ce35b736": 42.5,
+   "U_9909f2e9": 48.0,
+   "U_9d5f8458": 46.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 51.5,
+   "U_dbf81d8e": 52.0
+  }
+ },
+ "imported": {
+  "fold_p1M": {
+   "wins": "762 / 1600",
+   "level_pp": 47.62
+  },
+  "fold_p3M": {
+   "wins": "825 / 1600",
+   "level_pp": 51.56
+  },
+  "fold_p6M": {
+   "wins": "821 / 1600",
+   "level_pp": 51.31
+  },
+  "cont_p7_5M": {
+   "wins": "784 / 1600",
+   "level_pp": 49.0
+  },
+  "cont_p9M": {
+   "wins": "821 / 1600",
+   "level_pp": 51.31
+  },
+  "cont_p12M": {
+   "wins": "831 / 1600",
+   "level_pp": 51.94
+  },
+  "armWb": {
+   "wins": "798 / 1600",
+   "level_pp": 49.88
+  }
+ },
+ "reproduction": {
+  "armW": {
+   "banked_pp": 46.19,
+   "here_pp": 46.19,
+   "delta_pp": 0.0,
+   "banked_wins": "739 / 1600",
+   "here_wins": "739 / 1600",
+   "per_team_identical_to_banked": true,
+   "reproduces_exactly": true
+  },
+  "same_team_set_as_the_banked_reads": true,
+  "WARRANT_HOLDS": true,
+  "role": "the WARRANT for every imported cell, registered in PREDICTION.md sec 1.2 before the first battle: if arm W does not return 46.19 pp = 739/1600 on all eight per-team rows, every import is VOID and this row is reported INVALID, not patched."
+ },
+ "delta_path": {
+  "+3M": {
+   "depth": "+3M",
+   "step_offset_between_paths": 0,
+   "control": {
+    "ref": "wcont_p3M",
+    "level_pp": 58.5,
+    "wins": "936 / 1600",
+    "imported": false,
+    "delta_pp": 12.31,
+    "abs_delta_pp": 12.31,
+    "ci95_pp": [
+     9.69,
+     15.56
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "fold_path": {
+    "ref": "fold_p3M",
+    "level_pp": 51.56,
+    "wins": "825 / 1600",
+    "imported": true,
+    "delta_pp": 5.38,
+    "abs_delta_pp": 5.38,
+    "ci95_pp": [
+     1.63,
+     9.19
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "WITHIN FLOOR at n = 2",
+    "teams_favouring_over_armW": 7
+   }
+  },
+  "+6M": {
+   "depth": "+6M",
+   "step_offset_between_paths": 42480,
+   "control": {
+    "ref": "wcont_p6M",
+    "level_pp": 60.44,
+    "wins": "967 / 1600",
+    "imported": false,
+    "delta_pp": 14.25,
+    "abs_delta_pp": 14.25,
+    "ci95_pp": [
+     11.69,
+     16.63
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "fold_path": {
+    "ref": "fold_p6M",
+    "level_pp": 51.31,
+    "wins": "821 / 1600",
+    "imported": true,
+    "delta_pp": 5.13,
+    "abs_delta_pp": 5.13,
+    "ci95_pp": [
+     1.06,
+     9.0
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "WITHIN FLOOR at n = 2",
+    "teams_favouring_over_armW": 5
+   }
+  },
+  "+12M": {
+   "depth": "+12M",
+   "step_offset_between_paths": 0,
+   "control": {
+    "ref": "wcont_p12M",
+    "level_pp": 61.69,
+    "wins": "987 / 1600",
+    "imported": false,
+    "delta_pp": 15.5,
+    "abs_delta_pp": 15.5,
+    "ci95_pp": [
+     12.0,
+     18.88
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "fold_path": {
+    "ref": "cont_p12M",
+    "level_pp": 51.94,
+    "wins": "831 / 1600",
+    "imported": true,
+    "delta_pp": 5.75,
+    "abs_delta_pp": 5.75,
+    "ci95_pp": [
+     1.19,
+     11.06
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "WITHIN FLOOR at n = 2",
+    "teams_favouring_over_armW": 7
+   }
+  }
+ },
+ "delta_extract": {
+  "+3M": {
+   "label": "THE EXTRACTION ROW at +3M: fold path (fold_p3M) minus the CONTROL (wcont_p3M)",
+   "step_offset_between_paths": 0,
+   "delta_pp": -6.94,
+   "abs_delta_pp": 6.94,
+   "ci95_pp": [
+    -12.31,
+    -1.56
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": true,
+   "direction": "the CONTROL is ahead of the fold path",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_fold_path": 2,
+   "n_teams": 8
+  },
+  "+6M": {
+   "label": "THE EXTRACTION ROW at +6M: fold path (fold_p6M) minus the CONTROL (wcont_p6M)",
+   "step_offset_between_paths": 42480,
+   "delta_pp": -9.12,
+   "abs_delta_pp": 9.12,
+   "ci95_pp": [
+    -11.38,
+    -6.5
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": true,
+   "ci_excludes_zero": true,
+   "direction": "the CONTROL is ahead of the fold path",
+   "verdict": "OUTSIDE THE FLOOR",
+   "teams_favouring_fold_path": 0,
+   "n_teams": 8
+  },
+  "+12M": {
+   "label": "THE EXTRACTION ROW at +12M: fold path (cont_p12M) minus the CONTROL (wcont_p12M)",
+   "step_offset_between_paths": 0,
+   "delta_pp": -9.75,
+   "abs_delta_pp": 9.75,
+   "ci95_pp": [
+    -14.75,
+    -3.75
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": true,
+   "ci_excludes_zero": true,
+   "direction": "the CONTROL is ahead of the fold path",
+   "verdict": "OUTSIDE THE FLOOR",
+   "teams_favouring_fold_path": 1,
+   "n_teams": 8
+  }
+ },
+ "contrasts": {
+  "armW_minus_armWb": {
+   "label": "\ud83d\udea8 THE FLOOR, re-measured on the identical games in THIS invocation",
+   "delta_pp": -3.69,
+   "ci95_pp": [
+    -8.19,
+    0.81
+   ],
+   "teams_favouring_first": 2,
+   "n_teams": 8
+  },
+  "wcont_p12M_minus_wcont_p3M": {
+   "label": "the control's own last 75 % of the budget (within-arm)",
+   "delta_pp": 3.19,
+   "ci95_pp": [
+    0.94,
+    5.19
+   ],
+   "teams_favouring_first": 7,
+   "n_teams": 8
+  },
+  "wcont_p12M_minus_wcont_p6M": {
+   "label": "the control's own last 50 % of the budget (within-arm), beside the fold path's +0.62",
+   "delta_pp": 1.25,
+   "ci95_pp": [
+    -0.5,
+    3.19
+   ],
+   "teams_favouring_first": 3,
+   "n_teams": 8
+  },
+  "wcont_p6M_minus_wcont_p3M": {
+   "label": "the control's own +3M -> +6M leg",
+   "delta_pp": 1.94,
+   "ci95_pp": [
+    -0.63,
+    4.56
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "wcont_p12M_minus_armWb": {
+   "label": "the control's endpoint against the OTHER PARENT SEED",
+   "delta_pp": 11.81,
+   "ci95_pp": [
+    6.69,
+    17.12
+   ],
+   "teams_favouring_first": 8,
+   "n_teams": 8
+  },
+  "wcont_p3M_minus_armWb": {
+   "label": "the control at +3M against the other parent seed",
+   "delta_pp": 8.62,
+   "ci95_pp": [
+    3.75,
+    13.12
+   ],
+   "teams_favouring_first": 6,
+   "n_teams": 8
+  },
+  "wcont_p6M_minus_armWb": {
+   "label": "the control at +6M against the other parent seed",
+   "delta_pp": 10.56,
+   "ci95_pp": [
+    5.0,
+    16.25
+   ],
+   "teams_favouring_first": 7,
+   "n_teams": 8
+  }
+ },
+ "row1_branch_clauses": {
+  "branch_a_SENIORITY_CONTINUATION": {
+   "clause": "|delta_extract| <= 3.69 pp at >= 2 of 3 depths, with delta_path(control) POSITIVE there",
+   "depths_within_floor_on_delta_extract": [],
+   "of_those_with_control_positive": [],
+   "MET": false
+  },
+  "branch_b_EXTRACTION": {
+   "clause": "|delta_path(control)| < 3.69 pp at >= 2 of 3 AND delta_extract clears the floor by BOTH clauses at >= 1 depth",
+   "depths_control_below_floor": [],
+   "depths_delta_extract_OUTSIDE": [
+    "+6M",
+    "+12M"
+   ],
+   "MET": false
+  },
+  "control_point_estimate_above_the_floor_at": [
+   "+3M",
+   "+6M",
+   "+12M"
+  ],
+  "control_OUTSIDE_by_both_clauses_at": [
+   "+3M",
+   "+6M",
+   "+12M"
+  ],
+  "cis_excluding_zero_control": [
+   "+12M",
+   "+3M",
+   "+6M"
+  ],
+  "cis_excluding_zero_delta_extract": [
+   "+12M",
+   "+3M",
+   "+6M"
+  ],
+  "clause_b_note": "clause (b) is NEAR-UNSATISFIABLE on this row at this n and it was registered as such BEFORE the games: the team-clustered half-width ran ~3.8-4.0 pp on the fold's own points and ~4.9-6.2 on the continuation's, against a 3.69 pp floor, so the rule needs |delta| >~ 7.5 pp. A CI clear of ZERO is reported separately and is NOT a verdict.",
+  "BRANCH": "UNCOVERED -- neither registered clause is met; reported as such, with every clause printed and no branch rewritten (PREDICTION.md sec 4). the CONTROL OVERSHOT the fold path -- it is ABOVE it at >= 2 of 3 depths, which is OUTSIDE the span the two registered clauses cover (they bracket a control at ~0 and a control at ~+5). Branch (a) fails because |delta_extract| is far LARGER than the floor, not smaller; branch (b) fails because delta_extract clears the floor in the NEGATIVE direction.",
+  "where_the_control_landed": "the CONTROL OVERSHOT the fold path -- it is ABOVE it at >= 2 of 3 depths, which is OUTSIDE the span the two registered clauses cover (they bracket a control at ~0 and a control at ~+5). Branch (a) fails because |delta_extract| is far LARGER than the floor, not smaller; branch (b) fails because delta_extract clears the floor in the NEGATIVE direction."
+ },
+ "row1_control_shape": {
+  "levels_pp_in_order": {
+   "wcont_p3M": 58.5,
+   "wcont_p6M": 60.44,
+   "wcont_p12M": 61.69
+  },
+  "argmax": "wcont_p12M",
+  "max_pp": 61.69,
+  "note": "three points on ONE arm is a DESCRIPTION of this arm, never a trend (the standing short-window refusal, 7-for-7 on this campaign)."
+ }
+}

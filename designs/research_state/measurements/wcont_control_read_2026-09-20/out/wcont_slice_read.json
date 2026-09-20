@@ -1,0 +1,1336 @@
+{
+ "what": "registered row 2 -- per-slice piloting on the two TAUGHT teams for the CONTINUATION CONTROL at +3M/+6M/+12M, beside the era-1 fold path at the same depths. THE TEAM-DIFFERENTIAL CONTINUATION READ: if the control ALSO rises on DDTar and falls on Big-5, the fold's sign split is continuation, not teaching.",
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000 -- ONE frozen era-external checkpoint, the same for every ref. NOT arm W's pool sentinels: a sentinel is the trainee's OWN snapshot, so arm W's and W_b's differ (floor read hazard F-G) and the seed floor would then face different opponents from the treatment contrast.",
+ "games_per_cell": 800,
+ "teams": [
+  "U_f6229d2c",
+  "U_9eb3abdc"
+ ],
+ "team_pin_sha": {
+  "U_f6229d2c": "450fb83c20",
+  "U_9eb3abdc": "6212de2e8c"
+ },
+ "opponent_resolved": "/home/goodlad/dev/gen3ai/models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+ "team_labels": {
+  "U_f6229d2c": "Big-5 (BALANCE) \u2014 t1 `ai_v13_05_exploit_big5starmie`'s pinned team data/teams/sample/f6229d2c867e21d6.txt",
+  "U_9eb3abdc": "DDTar/Spikes (OFFENSE) \u2014 t2 `ai_v13_06_exploit_ddtar_spikes`'s pinned team data/teams/sample/9eb3abdc52876a63.txt"
+ },
+ "shard_timeouts": [
+  {
+   "slice_A.json": {
+    "attempted": 1600,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_B.json": {
+    "attempted": 1600,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_C.json": {
+    "attempted": 1600,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  },
+  {
+   "slice_D.json": {
+    "attempted": 1600,
+    "timeouts": 0,
+    "fraction": 0.0,
+    "inconclusive_above": 0.25,
+    "inconclusive": false
+   }
+  }
+ ],
+ "control_never_saw_these_teams_with_bias": "the control has no --distill-team-bias and no teacher piloting these teams in its stable pool; it played the ordinary 719-team pool for 12.09M steps. That is what makes it the control for the split, and it is also the limit of this row.",
+ "reproduction_check": {
+  "ref": "armW",
+  "per_team": {
+   "U_f6229d2c": {
+    "banked": "394 / 800",
+    "here": "394 / 800",
+    "reproduces_exactly": true
+   },
+   "U_9eb3abdc": {
+    "banked": "376 / 800",
+    "here": "376 / 800",
+    "reproduces_exactly": true
+   }
+  },
+  "PASSES": true,
+  "role": "the WARRANT for every imported cell. Registered in PREDICTION.md sec 1.2 before the first battle: if arm W does not return 394/800 and 376/800, every import is VOID and this row is INVALID, not patched."
+ },
+ "declared_imports": {
+  "refs": [
+   "fold_p1M",
+   "fold_p3M",
+   "fold_p6M",
+   "cont_p7_5M",
+   "cont_p9M",
+   "cont_p12M",
+   "armWb",
+   "t1_big5",
+   "t2_ddtar"
+  ],
+  "source": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/fold1_cont_read_2026-09-19/out/cont_slice_read.json",
+  "cells": {
+   "fold_p1M|U_f6229d2c": {
+    "wins": 374,
+    "finished": 800
+   },
+   "fold_p3M|U_f6229d2c": {
+    "wins": 374,
+    "finished": 800
+   },
+   "fold_p6M|U_f6229d2c": {
+    "wins": 345,
+    "finished": 800
+   },
+   "cont_p7_5M|U_f6229d2c": {
+    "wins": 337,
+    "finished": 800
+   },
+   "cont_p9M|U_f6229d2c": {
+    "wins": 338,
+    "finished": 800
+   },
+   "cont_p12M|U_f6229d2c": {
+    "wins": 352,
+    "finished": 800
+   },
+   "armWb|U_f6229d2c": {
+    "wins": 432,
+    "finished": 800
+   },
+   "t1_big5|U_f6229d2c": {
+    "wins": 461,
+    "finished": 800
+   },
+   "fold_p1M|U_9eb3abdc": {
+    "wins": 430,
+    "finished": 800
+   },
+   "fold_p3M|U_9eb3abdc": {
+    "wins": 475,
+    "finished": 800
+   },
+   "fold_p6M|U_9eb3abdc": {
+    "wins": 430,
+    "finished": 800
+   },
+   "cont_p7_5M|U_9eb3abdc": {
+    "wins": 476,
+    "finished": 800
+   },
+   "cont_p9M|U_9eb3abdc": {
+    "wins": 467,
+    "finished": 800
+   },
+   "cont_p12M|U_9eb3abdc": {
+    "wins": 499,
+    "finished": 800
+   },
+   "armWb|U_9eb3abdc": {
+    "wins": 444,
+    "finished": 800
+   },
+   "t2_ddtar|U_9eb3abdc": {
+    "wins": 382,
+    "finished": 800
+   }
+  },
+  "applied": true,
+  "why": "the SAME GAMES -- same opponent, manifest, order, seed 0, concurrency 1, 800 games/cell -- and the meter is deterministic. Re-deriving them would cost 9,600 battles and return the same counts."
+ },
+ "interval_note": "Wilson per cell; Newcombe on every difference. CONSERVATIVE under CRN -- the games are paired and the tool retains no per-battle outcomes.",
+ "grid_note": "+3M and +12M are the SAME STEP NUMBER on both paths; the +6M points differ by 42,480 steps with the CONTROL the DEEPER (hazard W-D).",
+ "levels": {
+  "U_f6229d2c": {
+   "armW": {
+    "wins": 394,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.4925,
+    "wilson95": [
+     0.458,
+     0.5271
+    ]
+   },
+   "armWb": {
+    "wins": 432,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.54,
+    "wilson95": [
+     0.5054,
+     0.5743
+    ]
+   },
+   "cont_p12M": {
+    "wins": 352,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.44,
+    "wilson95": [
+     0.406,
+     0.4746
+    ]
+   },
+   "cont_p7_5M": {
+    "wins": 337,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4213,
+    "wilson95": [
+     0.3875,
+     0.4558
+    ]
+   },
+   "cont_p9M": {
+    "wins": 338,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4225,
+    "wilson95": [
+     0.3887,
+     0.457
+    ]
+   },
+   "fold_p1M": {
+    "wins": 374,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4675,
+    "wilson95": [
+     0.4332,
+     0.5021
+    ]
+   },
+   "fold_p3M": {
+    "wins": 374,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4675,
+    "wilson95": [
+     0.4332,
+     0.5021
+    ]
+   },
+   "fold_p6M": {
+    "wins": 345,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4313,
+    "wilson95": [
+     0.3973,
+     0.4658
+    ]
+   },
+   "t1_big5": {
+    "wins": 461,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5763,
+    "wilson95": [
+     0.5417,
+     0.61
+    ]
+   },
+   "wcont_p12M": {
+    "wins": 484,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.605,
+    "wilson95": [
+     0.5707,
+     0.6383
+    ]
+   },
+   "wcont_p3M": {
+    "wins": 485,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.6062,
+    "wilson95": [
+     0.572,
+     0.6395
+    ]
+   },
+   "wcont_p6M": {
+    "wins": 476,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.595,
+    "wilson95": [
+     0.5606,
+     0.6285
+    ]
+   }
+  },
+  "U_9eb3abdc": {
+   "armW": {
+    "wins": 376,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.47,
+    "wilson95": [
+     0.4356,
+     0.5046
+    ]
+   },
+   "armWb": {
+    "wins": 444,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.555,
+    "wilson95": [
+     0.5204,
+     0.5891
+    ]
+   },
+   "cont_p12M": {
+    "wins": 499,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.6238,
+    "wilson95": [
+     0.5897,
+     0.6567
+    ]
+   },
+   "cont_p7_5M": {
+    "wins": 476,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.595,
+    "wilson95": [
+     0.5606,
+     0.6285
+    ]
+   },
+   "cont_p9M": {
+    "wins": 467,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5837,
+    "wilson95": [
+     0.5493,
+     0.6174
+    ]
+   },
+   "fold_p1M": {
+    "wins": 430,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5375,
+    "wilson95": [
+     0.5029,
+     0.5718
+    ]
+   },
+   "fold_p3M": {
+    "wins": 475,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5938,
+    "wilson95": [
+     0.5593,
+     0.6273
+    ]
+   },
+   "fold_p6M": {
+    "wins": 430,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.5375,
+    "wilson95": [
+     0.5029,
+     0.5718
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 382,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": true,
+    "win_rate": 0.4775,
+    "wilson95": [
+     0.4431,
+     0.5121
+    ]
+   },
+   "wcont_p12M": {
+    "wins": 518,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.6475,
+    "wilson95": [
+     0.6138,
+     0.6798
+    ]
+   },
+   "wcont_p3M": {
+    "wins": 505,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.6312,
+    "wilson95": [
+     0.5973,
+     0.664
+    ]
+   },
+   "wcont_p6M": {
+    "wins": 511,
+    "finished": 800,
+    "attempted": 800,
+    "timeouts": 0,
+    "imported": false,
+    "win_rate": 0.6388,
+    "wilson95": [
+     0.6049,
+     0.6713
+    ]
+   }
+  }
+ },
+ "per_team": {
+  "U_f6229d2c": {
+   "label": "Big-5 (BALANCE) \u2014 t1 `ai_v13_05_exploit_big5starmie`'s pinned team data/teams/sample/f6229d2c867e21d6.txt",
+   "contrasts": {
+    "wcont_p3M_minus_armW": {
+     "label": "THE CONTROL at +3M minus the zero-head-start PARENT",
+     "delta": 0.1137,
+     "newcombe95": [
+      0.065,
+      0.1617
+     ]
+    },
+    "fold_p3M_minus_armW": {
+     "label": "the FOLD PATH at +3M minus the parent (IMPORTED cells)",
+     "delta": -0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ]
+    },
+    "EXTRACT_+3M": {
+     "label": "\ud83d\udea8 THE EXTRACTION ROW at +3M: fold path minus the CONTROL",
+     "delta": -0.1387,
+     "newcombe95": [
+      -0.1866,
+      -0.09
+     ]
+    },
+    "wcont_p6M_minus_armW": {
+     "label": "THE CONTROL at +6M minus the zero-head-start PARENT",
+     "delta": 0.1025,
+     "newcombe95": [
+      0.0537,
+      0.1506
+     ]
+    },
+    "fold_p6M_minus_armW": {
+     "label": "the FOLD PATH at +6M minus the parent (IMPORTED cells)",
+     "delta": -0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ]
+    },
+    "EXTRACT_+6M": {
+     "label": "\ud83d\udea8 THE EXTRACTION ROW at +6M: fold path minus the CONTROL",
+     "delta": -0.1637,
+     "newcombe95": [
+      -0.2114,
+      -0.115
+     ]
+    },
+    "wcont_p12M_minus_armW": {
+     "label": "THE CONTROL at +12M minus the zero-head-start PARENT",
+     "delta": 0.1125,
+     "newcombe95": [
+      0.0638,
+      0.1605
+     ]
+    },
+    "cont_p12M_minus_armW": {
+     "label": "the FOLD PATH at +12M minus the parent (IMPORTED cells)",
+     "delta": -0.0525,
+     "newcombe95": [
+      -0.101,
+      -0.0036
+     ]
+    },
+    "EXTRACT_+12M": {
+     "label": "\ud83d\udea8 THE EXTRACTION ROW at +12M: fold path minus the CONTROL",
+     "delta": -0.165,
+     "newcombe95": [
+      -0.2126,
+      -0.1163
+     ]
+    },
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "\ud83d\udea8 THE SEED FLOOR ON THIS CELL -- arm W minus W_b, same team, same opponent, same games (arm W MEASURED here, W_b IMPORTED)",
+     "delta": -0.0475,
+     "newcombe95": [
+      -0.0961,
+      0.0015
+     ]
+    },
+    "teacher_minus_control_p12M": {
+     "label": "t1_big5 on its OWN team minus the CONTROL at its endpoint",
+     "delta": -0.0287,
+     "newcombe95": [
+      -0.0767,
+      0.0194
+     ]
+    },
+    "teacher_minus_armW": {
+     "label": "t1_big5 minus the parent it was forked from",
+     "delta": 0.0838,
+     "newcombe95": [
+      0.0349,
+      0.1321
+     ]
+    },
+    "control_p12M_minus_p6M": {
+     "label": "the CONTROL's own last 50 % of the budget",
+     "delta": 0.01,
+     "newcombe95": [
+      -0.0379,
+      0.0579
+     ]
+    },
+    "control_p12M_minus_p3M": {
+     "label": "the CONTROL's own last 75 % of the budget",
+     "delta": -0.0012,
+     "newcombe95": [
+      -0.049,
+      0.0465
+     ]
+    }
+   },
+   "verdicts": {
+    "wcont_p3M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.1137,
+     "abs_delta": 0.1137,
+     "newcombe95": [
+      0.065,
+      0.1617
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "fold_p3M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": -0.025,
+     "abs_delta": 0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "BELOW"
+    },
+    "EXTRACT_+3M": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": true,
+     "delta": -0.1387,
+     "abs_delta": 0.1387,
+     "newcombe95": [
+      -0.1866,
+      -0.09
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "BELOW"
+    },
+    "wcont_p6M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "is_extraction_row": false,
+     "delta": 0.1025,
+     "abs_delta": 0.1025,
+     "newcombe95": [
+      0.0537,
+      0.1506
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "fold_p6M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": -0.0612,
+     "abs_delta": 0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "BELOW"
+    },
+    "EXTRACT_+6M": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": true,
+     "delta": -0.1637,
+     "abs_delta": 0.1637,
+     "newcombe95": [
+      -0.2114,
+      -0.115
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "BELOW"
+    },
+    "wcont_p12M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "is_extraction_row": false,
+     "delta": 0.1125,
+     "abs_delta": 0.1125,
+     "newcombe95": [
+      0.0638,
+      0.1605
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "cont_p12M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": -0.0525,
+     "abs_delta": 0.0525,
+     "newcombe95": [
+      -0.101,
+      -0.0036
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "BELOW"
+    },
+    "EXTRACT_+12M": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": true,
+     "delta": -0.165,
+     "abs_delta": 0.165,
+     "newcombe95": [
+      -0.2126,
+      -0.1163
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "BELOW"
+    },
+    "teacher_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.0838,
+     "abs_delta": 0.0838,
+     "newcombe95": [
+      0.0349,
+      0.1321
+     ],
+     "floor_on_this_cell": 0.0475,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "ABOVE"
+    }
+   }
+  },
+  "U_9eb3abdc": {
+   "label": "DDTar/Spikes (OFFENSE) \u2014 t2 `ai_v13_06_exploit_ddtar_spikes`'s pinned team data/teams/sample/9eb3abdc52876a63.txt",
+   "contrasts": {
+    "wcont_p3M_minus_armW": {
+     "label": "THE CONTROL at +3M minus the zero-head-start PARENT",
+     "delta": 0.1613,
+     "newcombe95": [
+      0.1127,
+      0.2087
+     ]
+    },
+    "fold_p3M_minus_armW": {
+     "label": "the FOLD PATH at +3M minus the parent (IMPORTED cells)",
+     "delta": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ]
+    },
+    "EXTRACT_+3M": {
+     "label": "\ud83d\udea8 THE EXTRACTION ROW at +3M: fold path minus the CONTROL",
+     "delta": -0.0375,
+     "newcombe95": [
+      -0.085,
+      0.0102
+     ]
+    },
+    "wcont_p6M_minus_armW": {
+     "label": "THE CONTROL at +6M minus the zero-head-start PARENT",
+     "delta": 0.1688,
+     "newcombe95": [
+      0.1203,
+      0.2161
+     ]
+    },
+    "fold_p6M_minus_armW": {
+     "label": "the FOLD PATH at +6M minus the parent (IMPORTED cells)",
+     "delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ]
+    },
+    "EXTRACT_+6M": {
+     "label": "\ud83d\udea8 THE EXTRACTION ROW at +6M: fold path minus the CONTROL",
+     "delta": -0.1013,
+     "newcombe95": [
+      -0.1488,
+      -0.053
+     ]
+    },
+    "wcont_p12M_minus_armW": {
+     "label": "THE CONTROL at +12M minus the zero-head-start PARENT",
+     "delta": 0.1775,
+     "newcombe95": [
+      0.1291,
+      0.2247
+     ]
+    },
+    "cont_p12M_minus_armW": {
+     "label": "the FOLD PATH at +12M minus the parent (IMPORTED cells)",
+     "delta": 0.1538,
+     "newcombe95": [
+      0.1051,
+      0.2013
+     ]
+    },
+    "EXTRACT_+12M": {
+     "label": "\ud83d\udea8 THE EXTRACTION ROW at +12M: fold path minus the CONTROL",
+     "delta": -0.0237,
+     "newcombe95": [
+      -0.0707,
+      0.0234
+     ]
+    },
+    "THE_FLOOR_armW_minus_armWb": {
+     "label": "\ud83d\udea8 THE SEED FLOOR ON THIS CELL -- arm W minus W_b, same team, same opponent, same games (arm W MEASURED here, W_b IMPORTED)",
+     "delta": -0.085,
+     "newcombe95": [
+      -0.1334,
+      -0.036
+     ]
+    },
+    "teacher_minus_control_p12M": {
+     "label": "t2_ddtar on its OWN team minus the CONTROL at its endpoint",
+     "delta": -0.17,
+     "newcombe95": [
+      -0.2172,
+      -0.1216
+     ]
+    },
+    "teacher_minus_armW": {
+     "label": "t2_ddtar minus the parent it was forked from",
+     "delta": 0.0075,
+     "newcombe95": [
+      -0.0413,
+      0.0563
+     ]
+    },
+    "control_p12M_minus_p6M": {
+     "label": "the CONTROL's own last 50 % of the budget",
+     "delta": 0.0087,
+     "newcombe95": [
+      -0.0381,
+      0.0556
+     ]
+    },
+    "control_p12M_minus_p3M": {
+     "label": "the CONTROL's own last 75 % of the budget",
+     "delta": 0.0162,
+     "newcombe95": [
+      -0.0308,
+      0.0632
+     ]
+    }
+   },
+   "verdicts": {
+    "wcont_p3M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.1613,
+     "abs_delta": 0.1613,
+     "newcombe95": [
+      0.1127,
+      0.2087
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "fold_p3M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.1238,
+     "abs_delta": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "ABOVE"
+    },
+    "EXTRACT_+3M": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": true,
+     "delta": -0.0375,
+     "abs_delta": 0.0375,
+     "newcombe95": [
+      -0.085,
+      0.0102
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "BELOW"
+    },
+    "wcont_p6M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "is_extraction_row": false,
+     "delta": 0.1688,
+     "abs_delta": 0.1688,
+     "newcombe95": [
+      0.1203,
+      0.2161
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "fold_p6M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.0675,
+     "abs_delta": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "ABOVE"
+    },
+    "EXTRACT_+6M": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": true,
+     "delta": -0.1013,
+     "abs_delta": 0.1013,
+     "newcombe95": [
+      -0.1488,
+      -0.053
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": false,
+     "ci_excludes_zero": true,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "BELOW"
+    },
+    "wcont_p12M_minus_armW": {
+     "registered_bar_carrying_point": true,
+     "is_extraction_row": false,
+     "delta": 0.1775,
+     "abs_delta": 0.1775,
+     "newcombe95": [
+      0.1291,
+      0.2247
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "cont_p12M_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.1538,
+     "abs_delta": 0.1538,
+     "newcombe95": [
+      0.1051,
+      0.2013
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": true,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": true,
+     "verdict": "OUTSIDE THE FLOOR",
+     "direction": "ABOVE"
+    },
+    "EXTRACT_+12M": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": true,
+     "delta": -0.0237,
+     "abs_delta": 0.0237,
+     "newcombe95": [
+      -0.0707,
+      0.0234
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "BELOW"
+    },
+    "teacher_minus_armW": {
+     "registered_bar_carrying_point": false,
+     "is_extraction_row": false,
+     "delta": 0.0075,
+     "abs_delta": 0.0075,
+     "newcombe95": [
+      -0.0413,
+      0.0563
+     ],
+     "floor_on_this_cell": 0.085,
+     "clause_a_abs_delta_gt_floor": false,
+     "clause_b_ci_excludes_floor_point": true,
+     "ci_excludes_zero": false,
+     "verdict": "WITHIN FLOOR at n = 2",
+     "direction": "ABOVE"
+    }
+   }
+  }
+ },
+ "trajectory": {
+  "+3M": {
+   "depth": "+3M",
+   "step_offset_between_paths": 0,
+   "registered_bar_carrying": false,
+   "control": {
+    "U_f6229d2c": {
+     "win_rate": 0.6062,
+     "imported": false,
+     "delta_vs_armW": 0.1137,
+     "newcombe95": [
+      0.065,
+      0.1617
+     ]
+    },
+    "U_9eb3abdc": {
+     "win_rate": 0.6312,
+     "imported": false,
+     "delta_vs_armW": 0.1613,
+     "newcombe95": [
+      0.1127,
+      0.2087
+     ]
+    }
+   },
+   "fold_path": {
+    "U_f6229d2c": {
+     "win_rate": 0.4675,
+     "imported": true,
+     "delta_vs_armW": -0.025,
+     "newcombe95": [
+      -0.0737,
+      0.0239
+     ]
+    },
+    "U_9eb3abdc": {
+     "win_rate": 0.5938,
+     "imported": true,
+     "delta_vs_armW": 0.1238,
+     "newcombe95": [
+      0.0749,
+      0.1717
+     ]
+    }
+   }
+  },
+  "+6M": {
+   "depth": "+6M",
+   "step_offset_between_paths": 42480,
+   "registered_bar_carrying": true,
+   "control": {
+    "U_f6229d2c": {
+     "win_rate": 0.595,
+     "imported": false,
+     "delta_vs_armW": 0.1025,
+     "newcombe95": [
+      0.0537,
+      0.1506
+     ]
+    },
+    "U_9eb3abdc": {
+     "win_rate": 0.6388,
+     "imported": false,
+     "delta_vs_armW": 0.1688,
+     "newcombe95": [
+      0.1203,
+      0.2161
+     ]
+    }
+   },
+   "fold_path": {
+    "U_f6229d2c": {
+     "win_rate": 0.4313,
+     "imported": true,
+     "delta_vs_armW": -0.0612,
+     "newcombe95": [
+      -0.1097,
+      -0.0124
+     ]
+    },
+    "U_9eb3abdc": {
+     "win_rate": 0.5375,
+     "imported": true,
+     "delta_vs_armW": 0.0675,
+     "newcombe95": [
+      0.0185,
+      0.116
+     ]
+    }
+   }
+  },
+  "+12M": {
+   "depth": "+12M",
+   "step_offset_between_paths": 0,
+   "registered_bar_carrying": true,
+   "control": {
+    "U_f6229d2c": {
+     "win_rate": 0.605,
+     "imported": false,
+     "delta_vs_armW": 0.1125,
+     "newcombe95": [
+      0.0638,
+      0.1605
+     ]
+    },
+    "U_9eb3abdc": {
+     "win_rate": 0.6475,
+     "imported": false,
+     "delta_vs_armW": 0.1775,
+     "newcombe95": [
+      0.1291,
+      0.2247
+     ]
+    }
+   },
+   "fold_path": {
+    "U_f6229d2c": {
+     "win_rate": 0.44,
+     "imported": true,
+     "delta_vs_armW": -0.0525,
+     "newcombe95": [
+      -0.101,
+      -0.0036
+     ]
+    },
+    "U_9eb3abdc": {
+     "win_rate": 0.6238,
+     "imported": true,
+     "delta_vs_armW": 0.1538,
+     "newcombe95": [
+      0.1051,
+      0.2013
+     ]
+    }
+   }
+  }
+ },
+ "THE_SPLIT": {
+  "question": "the fold path split in SIGN on its two taught slices -- Big-5 NEGATIVE at all six depths, DDTar POSITIVE and clearing its floor at the endpoint -- and a SCALAR seniority term cannot produce a sign split. A TEAM-DIFFERENTIAL continuation effect can. Does the control split the same way?",
+  "by_depth": {
+   "+3M": {
+    "control": {
+     "big5_delta": 0.1137,
+     "ddtar_delta": 0.1613,
+     "big5_minus_ddtar": -0.0476,
+     "sign_pattern_matches_the_fold": false
+    },
+    "fold_path": {
+     "big5_delta": -0.025,
+     "ddtar_delta": 0.1238,
+     "big5_minus_ddtar": -0.1488,
+     "sign_pattern_matches_the_fold": true
+    }
+   },
+   "+6M": {
+    "control": {
+     "big5_delta": 0.1025,
+     "ddtar_delta": 0.1688,
+     "big5_minus_ddtar": -0.0663,
+     "sign_pattern_matches_the_fold": false
+    },
+    "fold_path": {
+     "big5_delta": -0.0612,
+     "ddtar_delta": 0.0675,
+     "big5_minus_ddtar": -0.1287,
+     "sign_pattern_matches_the_fold": true
+    }
+   },
+   "+12M": {
+    "control": {
+     "big5_delta": 0.1125,
+     "ddtar_delta": 0.1775,
+     "big5_minus_ddtar": -0.065,
+     "sign_pattern_matches_the_fold": false
+    },
+    "fold_path": {
+     "big5_delta": -0.0525,
+     "ddtar_delta": 0.1538,
+     "big5_minus_ddtar": -0.2063,
+     "sign_pattern_matches_the_fold": true
+    }
+   }
+  },
+  "fold_path_banked_split": {
+   "+6M": -0.1287,
+   "+12M": -0.2063
+  },
+  "note": "a difference of two independent differences on 800 games each. NO interval is printed for it -- that was registered in advance: a bar here would invite a verdict this design cannot carry. DESCRIPTOR."
+ },
+ "row2_branch_clauses": {
+  "branch_c_TEAM_DIFFERENTIAL_CONTINUATION": {
+   "clause": "the control's +12M signs match the fold path's (DDTar +, Big-5 -) AND its Big-5 minus DDTar <= -0.1032 (half the fold path's -0.2063)",
+   "control_big5_minus_ddtar": -0.065,
+   "sign_pattern_matches": false,
+   "MET": false
+  },
+  "branch_d_THE_SPLIT_IS_THE_FOLDs": {
+   "clause": "the control's Big-5 minus DDTar >= 0, or the sign pattern is absent",
+   "MET": true
+  },
+  "BRANCH": "(d) THE SPLIT IS THE FOLD's"
+ },
+ "pooled_SECONDARY": {
+  "levels": {
+   "armW": {
+    "wins": 770,
+    "finished": 1600,
+    "win_rate": 0.4813,
+    "wilson95": [
+     0.4568,
+     0.5057
+    ]
+   },
+   "armWb": {
+    "wins": 876,
+    "finished": 1600,
+    "win_rate": 0.5475,
+    "wilson95": [
+     0.523,
+     0.5717
+    ]
+   },
+   "cont_p12M": {
+    "wins": 851,
+    "finished": 1600,
+    "win_rate": 0.5319,
+    "wilson95": [
+     0.5074,
+     0.5562
+    ]
+   },
+   "cont_p7_5M": {
+    "wins": 813,
+    "finished": 1600,
+    "win_rate": 0.5081,
+    "wilson95": [
+     0.4836,
+     0.5326
+    ]
+   },
+   "cont_p9M": {
+    "wins": 805,
+    "finished": 1600,
+    "win_rate": 0.5031,
+    "wilson95": [
+     0.4786,
+     0.5276
+    ]
+   },
+   "fold_p1M": {
+    "wins": 804,
+    "finished": 1600,
+    "win_rate": 0.5025,
+    "wilson95": [
+     0.478,
+     0.527
+    ]
+   },
+   "fold_p3M": {
+    "wins": 849,
+    "finished": 1600,
+    "win_rate": 0.5306,
+    "wilson95": [
+     0.5061,
+     0.555
+    ]
+   },
+   "fold_p6M": {
+    "wins": 775,
+    "finished": 1600,
+    "win_rate": 0.4844,
+    "wilson95": [
+     0.46,
+     0.5089
+    ]
+   },
+   "t1_big5": {
+    "wins": 461,
+    "finished": 800,
+    "win_rate": 0.5763,
+    "wilson95": [
+     0.5417,
+     0.61
+    ]
+   },
+   "t2_ddtar": {
+    "wins": 382,
+    "finished": 800,
+    "win_rate": 0.4775,
+    "wilson95": [
+     0.4431,
+     0.5121
+    ]
+   },
+   "wcont_p12M": {
+    "wins": 1002,
+    "finished": 1600,
+    "win_rate": 0.6262,
+    "wilson95": [
+     0.6023,
+     0.6496
+    ]
+   },
+   "wcont_p3M": {
+    "wins": 990,
+    "finished": 1600,
+    "win_rate": 0.6188,
+    "wilson95": [
+     0.5947,
+     0.6422
+    ]
+   },
+   "wcont_p6M": {
+    "wins": 987,
+    "finished": 1600,
+    "win_rate": 0.6169,
+    "wilson95": [
+     0.5928,
+     0.6404
+    ]
+   }
+  },
+  "warning": "\ud83d\udea8 POOLED ACROSS TEAMS -- secondary by the matched-extraction rule and by rule 10, and PRE-DECLARED as a trap in PREDICTION.md sec 2. At the fold's +6M the pooled number was +0.003 over the parent while the per-team rows were -0.061 and +0.068, each CI clear of zero: an exact null manufactured out of a real split. No verdict is taken from this table. Read the per-team rows."
+ }
+}

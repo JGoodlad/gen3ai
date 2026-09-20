@@ -1,0 +1,177 @@
+{
+ "what": "registered row 3 -- Metamon SmallRL, greedy-vs-greedy, AWAY team set, 100 games, on the CONTINUATION CONTROL at +12.09M",
+ "cell": {
+  "battle_format": "gen3ou",
+  "forfeit_turn_limit": 250,
+  "model_loader": "bare",
+  "model_rung": "explicit_zip",
+  "model_spec": "models/ai_v13_09_wcont/final_model.zip",
+  "model_step": 87097344,
+  "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_09_wcont/final_model.zip",
+  "opponent": "metamon:SmallRL",
+  "opponent_agent": "SmallRL",
+  "opponent_commit": "0a00a759",
+  "opponent_kind": "metamon",
+  "opponent_version": "SmallRL@ckpt40",
+  "our_regime": "greedy",
+  "our_side": "model",
+  "our_team_count": 20,
+  "our_team_source": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+  "regime_matched": true,
+  "search_parallelism": null,
+  "search_time_ms": null,
+  "server_uri": "ws://localhost:9450/showdown/websocket",
+  "showdown_pin": "e0551883f",
+  "teamset": "away",
+  "their_regime": "greedy",
+  "their_team_count": 20,
+  "their_team_source": ""
+ },
+ "status": "OK",
+ "regime_verified_per_decision": false,
+ "their_argmax_match_rate": [
+  1.0
+ ],
+ "our_stochastic_kwargs": [
+  false
+ ],
+ "n_decisions": 2961,
+ "instrument_health": {
+  "composite_regime_verified": false,
+  "peer_rc": 1,
+  "halves": {
+   "ours_challenge": {
+    "n_decisions": 2677,
+    "argmax_checked": 2677,
+    "argmax_matched": 2677,
+    "argmax_match_rate": 1.0,
+    "sample_kwarg_values": [
+     false
+    ],
+    "their_regime": "greedy",
+    "regime_check_ok": true,
+    "peer_error": null,
+    "peer_results_present": true
+   },
+   "peer_challenge": {
+    "n_decisions": 2961,
+    "argmax_checked": 2961,
+    "argmax_matched": 2961,
+    "argmax_match_rate": 1.0,
+    "sample_kwarg_values": [
+     false
+    ],
+    "their_regime": "greedy",
+    "regime_check_ok": false,
+    "peer_error": "RecursionError: maximum recursion depth exceeded in comparison",
+    "peer_results_present": false
+   }
+  },
+  "reading": "the per-decision regime instruments are what verify the regime, and they read MATCHED on BOTH halves. The composite flag is false because one peer raised after its last decision."
+ },
+ "wcont_p12M": {
+  "win_rate": 0.64,
+  "wins": 64,
+  "n": 100,
+  "wilson95": [
+   0.542,
+   0.727
+  ],
+  "ties": 0,
+  "hit_forfeit_limit": 1,
+  "distinct_our_teams": 19,
+  "by_half": {
+   "ours_challenge": {
+    "win_rate": 0.58,
+    "n": 50
+   },
+   "peer_challenge": {
+    "win_rate": 0.7,
+    "n": 50
+   }
+  },
+  "mean_turns": 51.37
+ },
+ "banked_comparators": {
+  "armS": {
+   "win_rate": 0.52,
+   "n": 100,
+   "wins": 52
+  },
+  "armW": {
+   "win_rate": 0.5,
+   "n": 100,
+   "wins": 50
+  },
+  "armWb": {
+   "win_rate": 0.59,
+   "n": 100,
+   "wins": 59
+  },
+  "fold_p6M": {
+   "win_rate": 0.54,
+   "n": 100,
+   "wins": 54
+  },
+  "foldpath_p12M": {
+   "win_rate": 0.43,
+   "n": 100,
+   "wins": 43
+  }
+ },
+ "floor": {
+  "value": 0.09,
+  "source": "|arm W - W_b| on this cell, floor read sec 6.1",
+  "sop_three_seed_run_floor": 0.11,
+  "sop_eval_draw_floor": 0.02
+ },
+ "registered_as": "DESCRIPTIVE -- at 100 games the cell resolves ~+-0.10 against a 0.090 run-level floor, so it cannot separate these arms whatever they did. P(clears) was filed at 0.15 before the cell ran.",
+ "contrasts": {
+  "wcont_p12M_minus_armW": {
+   "delta": 0.14,
+   "newcombe95": [
+    0.003,
+    0.27
+   ],
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "wcont_p12M_minus_armWb": {
+   "delta": 0.05,
+   "newcombe95": [
+    -0.084,
+    0.181
+   ],
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": false,
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "wcont_p12M_minus_fold_p6M": {
+   "delta": 0.1,
+   "newcombe95": [
+    -0.036,
+    0.231
+   ],
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "verdict": "WITHIN FLOOR at n = 2"
+  },
+  "wcont_p12M_minus_foldpath_p12M": {
+   "delta": 0.21,
+   "newcombe95": [
+    0.072,
+    0.337
+   ],
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "verdict": "WITHIN FLOOR at n = 2"
+  }
+ },
+ "role_split": {
+  "ours_challenge": 0.58,
+  "peer_challenge": 0.7,
+  "split": -0.12,
+  "note": "role balance inside the cell is what stops a split becoming a level error; at n = 50 per half nothing else may be taken from it."
+ }
+}
