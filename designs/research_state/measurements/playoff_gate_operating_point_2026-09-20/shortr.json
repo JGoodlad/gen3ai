@@ -1,0 +1,69 @@
+{
+ "shards": {
+  "pfk05__armW__s0.jsonl": {
+   "rows": 17,
+   "guard_refused": false,
+   "pooled_realized_R": 3.990530303030303
+  },
+  "pfk05__armW__s100.jsonl": {
+   "rows": 19,
+   "guard_refused": true,
+   "pooled_realized_R": 3.956221198156682
+  },
+  "pfk05__armW__s125.jsonl": {
+   "rows": 19,
+   "guard_refused": false,
+   "pooled_realized_R": 3.9960707269155207
+  },
+  "pfk05__armW__s150.jsonl": {
+   "rows": 16,
+   "guard_refused": true,
+   "pooled_realized_R": 3.9760765550239237
+  },
+  "pfk05__armW__s175.jsonl": {
+   "rows": 27,
+   "guard_refused": false,
+   "pooled_realized_R": 3.99249530956848
+  },
+  "pfk05__armW__s25.jsonl": {
+   "rows": 22,
+   "guard_refused": false,
+   "pooled_realized_R": 3.998236331569665
+  },
+  "pfk05__armW__s50.jsonl": {
+   "rows": 21,
+   "guard_refused": false,
+   "pooled_realized_R": 3.996212121212121
+  },
+  "pfk05__armW__s75.jsonl": {
+   "rows": 24,
+   "guard_refused": false,
+   "pooled_realized_R": 3.9943396226415095
+  }
+ },
+ "n_shards_refused": 2,
+ "L2_all": {
+  "n": 80,
+  "mean": 0.471875,
+  "ci": [
+   0.40214473448496363,
+   0.5416052655150364
+  ],
+  "sd": 0.31820737506271574
+ },
+ "L2_clean": {
+  "n": 63,
+  "mean": 0.4722222222222222,
+  "ci": [
+   0.39373264774590394,
+   0.5507117966985404
+  ],
+  "sd": 0.3178528998606442
+ },
+ "per_row_realized_R": {
+  "n": 165,
+  "min": 1.5,
+  "median": 4.0,
+  "frac_below_3_6": 0.012121212121212121
+ }
+}

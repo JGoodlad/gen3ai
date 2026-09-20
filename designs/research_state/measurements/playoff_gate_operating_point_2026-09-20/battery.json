@@ -1,0 +1,240 @@
+{
+ "cells": {
+  "base": {
+   "n_battles": 400,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 200,
+    "mean": 0.515,
+    "ci_normal": [
+     0.49673841112770567,
+     0.5332615888722944
+    ],
+    "ci_boot": [
+     0.4975,
+     0.535
+    ]
+   },
+   "L2_unpaired_wilson": {
+    "won": 206,
+    "decisive": 400,
+    "rate": 0.515,
+    "ci": [
+     0.4661126679560689,
+     0.5636019528259406
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 18538,
+    "n_searched": 0,
+    "n_changed": 0,
+    "n_screen_decisive": 0,
+    "n_playoff": 0,
+    "n_playoff_inconclusive": 0,
+    "n_playoff_no_budget": 0,
+    "n_playoff_capped": 0,
+    "n_playoff_failed": 0,
+    "n_playoff_ran": 0,
+    "playoff_r_total": 0,
+    "n_defensive": 0,
+    "n_defensive_forced": 0,
+    "n_defensive_raced": 0,
+    "n_defensive_separated": 0,
+    "n_defensive_overruled": 0
+   },
+   "rates": {
+    "changed_per_decision": 0.0,
+    "screen_decisive_per_decision": 0.0,
+    "playoff_played_per_decision": 0.0,
+    "playoff_resolve_rate_of_run": 0.0,
+    "playoff_inconclusive_of_run": 0.0,
+    "mean_realized_R": 0.0,
+    "playoff_wall_s_per_ran_decision": 0.0,
+    "defensive_separated_of_raced": 0.0,
+    "defensive_overruled_per_decision": 0.0
+   },
+   "mean_wall_s_per_battle": 16.61304250000001,
+   "realized_mean": {
+    "m_opp": 0.0,
+    "k_worlds": 0.0,
+    "r_dice": 0.0,
+    "arms": 0.0,
+    "elapsed": 0.0,
+    "depth": 0.0,
+    "beam": 0.0
+   }
+  },
+  "defB": {
+   "n_battles": 400,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 200,
+    "mean": 0.5025,
+    "ci_normal": [
+     0.468824785817292,
+     0.536175214182708
+    ],
+    "ci_boot": [
+     0.4675,
+     0.5375
+    ]
+   },
+   "L2_unpaired_wilson": {
+    "won": 201,
+    "decisive": 400,
+    "rate": 0.5025,
+    "ci": [
+     0.4537104387832727,
+     0.5512419980137288
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 18183,
+    "n_searched": 6315,
+    "n_changed": 321,
+    "n_screen_decisive": 0,
+    "n_playoff": 0,
+    "n_playoff_inconclusive": 0,
+    "n_playoff_no_budget": 0,
+    "n_playoff_capped": 0,
+    "n_playoff_failed": 0,
+    "n_playoff_ran": 0,
+    "playoff_r_total": 0,
+    "n_defensive": 16109,
+    "n_defensive_forced": 9794,
+    "n_defensive_raced": 6315,
+    "n_defensive_separated": 728,
+    "n_defensive_overruled": 321
+   },
+   "rates": {
+    "changed_per_decision": 0.017653852499587525,
+    "screen_decisive_per_decision": 0.0,
+    "playoff_played_per_decision": 0.0,
+    "playoff_resolve_rate_of_run": 0.0,
+    "playoff_inconclusive_of_run": 0.0,
+    "mean_realized_R": 0.0,
+    "playoff_wall_s_per_ran_decision": 0.0,
+    "defensive_separated_of_raced": 0.11528107680126683,
+    "defensive_overruled_per_decision": 0.017653852499587525
+   },
+   "mean_wall_s_per_battle": 50.79532249999999,
+   "realized_mean": {
+    "m_opp": 6.0,
+    "k_worlds": 4.25,
+    "r_dice": 1.0,
+    "arms": 229.5,
+    "elapsed": 2.817,
+    "depth": 1.0,
+    "beam": 0.0
+   }
+  },
+  "pfk05": {
+   "n_battles": 165,
+   "n_unfinished": 0,
+   "inconclusive": false,
+   "L2_paired_normal": {
+    "n": 80,
+    "mean": 0.471875,
+    "ci_normal": [
+     0.40214473448496363,
+     0.5416052655150363
+    ],
+    "ci_boot": [
+     0.4,
+     0.54375
+    ]
+   },
+   "L2_unpaired_wilson": {
+    "won": 76,
+    "decisive": 164,
+    "rate": 0.4634146341463415,
+    "ci": [
+     0.38880582103905165,
+     0.5396981970351326
+    ]
+   },
+   "mechanism": {
+    "n_decisions": 6886,
+    "n_searched": 2204,
+    "n_changed": 818,
+    "n_screen_decisive": 1077,
+    "n_playoff": 1127,
+    "n_playoff_inconclusive": 2920,
+    "n_playoff_no_budget": 728,
+    "n_playoff_capped": 16,
+    "n_playoff_failed": 2913,
+    "n_playoff_ran": 4047,
+    "playoff_r_total": 16142,
+    "n_defensive": 0,
+    "n_defensive_forced": 0,
+    "n_defensive_raced": 0,
+    "n_defensive_separated": 0,
+    "n_defensive_overruled": 0
+   },
+   "rates": {
+    "changed_per_decision": 0.1187917513796108,
+    "screen_decisive_per_decision": 0.15640429857682253,
+    "playoff_played_per_decision": 0.16366540807435376,
+    "playoff_resolve_rate_of_run": 0.27847788485297753,
+    "playoff_inconclusive_of_run": 0.7215221151470225,
+    "mean_realized_R": 3.9886335557202868,
+    "playoff_wall_s_per_ran_decision": 36.91813096120583,
+    "defensive_separated_of_raced": 0.0,
+    "defensive_overruled_per_decision": 0.0
+   },
+   "mean_wall_s_per_battle": 949.721806060606,
+   "realized_mean": {
+    "m_opp": 5.462,
+    "k_worlds": 1.0,
+    "r_dice": 1.0,
+    "arms": 38.615,
+    "elapsed": 27.161,
+    "depth": 1.0,
+    "beam": 0.0
+   }
+  }
+ },
+ "paired_deltas": {
+  "base - defB": {
+   "n_shared_pairs": 200,
+   "delta": 0.0125,
+   "ci_normal": [
+    -0.018128077734794967,
+    0.04312807773479497
+   ],
+   "ci_boot": [
+    -0.01756249999999998,
+    0.04256250000000023
+   ],
+   "detected": false
+  },
+  "base - pfk05": {
+   "n_shared_pairs": 80,
+   "delta": 0.059375,
+   "ci_normal": [
+    -0.016737267958987778,
+    0.13548726795898777
+   ],
+   "ci_boot": [
+    -0.0125,
+    0.134375
+   ],
+   "detected": false
+  },
+  "defB - pfk05": {
+   "n_shared_pairs": 80,
+   "delta": 0.046875,
+   "ci_normal": [
+    -0.0424845520862243,
+    0.13623455208622431
+   ],
+   "ci_boot": [
+    -0.04070312499999997,
+    0.1375
+   ],
+   "detected": false
+  }
+ }
+}
