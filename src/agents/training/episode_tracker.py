@@ -742,20 +742,32 @@ class EpisodeTracker:
         the mask from; threaded onto the stored context so the action mapper decodes
         against the same snapshot the model saw.
         """
+        ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
+        # Current-board reads (the HP-candidate moveset scan + the HP-target type/ability
+        # lookup) go through our LiveView, never the raw poke-env Battle/Pokemon objects
+        # (ai_v4 Phase 3 — encapsulation behind the strict boundary).
+        return self.record_context(ctx, battle.strict_view().live,
+                                   event_cursor=getattr(battle, "event_cursor", 0))
+
+    def record_context(self, ctx: BattleContext, live: "LiveView", *,
+                       event_cursor: int = 0) -> BattleContext:
+        """:meth:`record`'s body once the context and the board already exist — the entry point
+        for a caller with no poke-env ``Battle`` to build them from.
+
+        `gen3_view_successor_v1`: a SEARCH successor reached through the one-sided view
+        (``designs/rust_sim/one_sided_view.md``) has a ``LiveView`` and a folded event window
+        but no battle object, and :meth:`record` is the only reason it would need one. Splitting
+        here rather than duplicating the four steps keeps ONE implementation of the per-decision
+        bookkeeping, which is the property that makes the two roads' trackers comparable at
+        all."""
         if self._history:
             self._actions.append(self._last_action)
             self._cursors.append(self._last_cursor)
             self._n_transitions += 1   # one more completed transition becomes available
-        # Capture cursor NOW (before we build the context snapshot) so it marks
+        # Capture cursor NOW (before we store the context snapshot) so it marks
         # the start of the window for the NEXT decision — events emitted between
         # this record() and the next one are the delta for this turn.
-        self._last_cursor = getattr(battle, "event_cursor", 0)
-        ctx = BattleContext.from_battle(battle, mask, self._our_slots, self._opp_slots, legal)
-
-        # Current-board reads (the HP-candidate moveset scan + the HP-target type/ability
-        # lookup) go through our LiveView, never the raw poke-env Battle/Pokemon objects
-        # (ai_v4 Phase 3 — encapsulation behind the strict boundary).
-        live = battle.strict_view().live
+        self._last_cursor = event_cursor
         self._maybe_observe_hidden_power(live, ctx)
         self._scan_opp_movesets_for_no_hp(live)
 
@@ -897,12 +909,16 @@ class EpisodeTracker:
         without an event log passes ``battle=None`` ⇒ an empty window, which folds the
         current-board snapshot for HP (see ``build_from_events``).
         """
+        cursor = self._cursors[-1] if self._cursors else 0
+        return self.build_delta_from(self._get_events_for_window(battle, cursor))
+
+    def build_delta_from(self, events: list) -> TurnDelta:
+        """:meth:`build_delta` once the event window is in hand — the view path's entry point
+        (`gen3_view_successor_v1`), and the single fold both roads run."""
         if len(self._history) < 2:
             return TurnDelta.empty()
         prev_ctx = self._history[-2]
         curr_ctx = self._history[-1]
-        cursor = self._cursors[-1] if self._cursors else 0
-        events = self._get_events_for_window(battle, cursor)
         return TurnDelta.build_from_events(prev_ctx, curr_ctx, self._last_action, events)
 
     def update_progress_clock(self, battle, legal) -> TurnDelta:
@@ -916,8 +932,26 @@ class EpisodeTracker:
         (set once from the reward config), so this stays an obs-side call with no reward param.
         Single home for the 3-step protocol the env + inference players both need (no copy-paste).
         """
-        delta = self.build_delta(battle=battle)
-        live = battle.strict_view().live
+        cursor = self._cursors[-1] if self._cursors else 0
+        delta_events = self._get_events_for_window(battle, cursor)
+        # 🚨 The two windows are NOT the same expression and the difference is load-bearing at the
+        # episode's first decision: the DELTA fold falls back to cursor 0 (the whole log) when no
+        # cursor has been recorded, while the tracker resync takes an EMPTY window rather than
+        # replaying the battle's whole history into a per-decision counter. Preserved verbatim.
+        window_events = (battle.events_since(self._cursors[-1])
+                         if (self._cursors and hasattr(battle, "events_since")) else [])
+        return self.advance_window(battle.strict_view().live, legal,
+                                   delta_events, window_events)
+
+    def advance_window(self, live: "LiveView", legal, delta_events: list,
+                       window_events: list) -> TurnDelta:
+        """:meth:`update_progress_clock`'s body once the board and the two event windows exist.
+
+        `gen3_view_successor_v1` — the view path's entry point. It hands the SAME list for both
+        windows, because a search successor's window is exactly the ply that was just folded and
+        the first-decision fallback above cannot arise there (the root decision is always
+        already recorded)."""
+        delta = self.build_delta_from(delta_events)
         # `legal` is the legality of the request the caller is about to answer — decision t+1 for
         # the window being folded. The clock's trapped-vs-wall gate was specified against "a switch
         # being legal THIS decision", so hand it the OPENING decision's snapshot too; which of the
@@ -928,10 +962,7 @@ class EpisodeTracker:
         # E9 recency: the SAME per-decision window the newest TurnDelta slot folds
         # ([cursors[-1], now)), plus the live actives for the seen reset.
         if isinstance(live.turn, int):        # a mocked/partial battle (tests) skips recency
-            if self._cursors and hasattr(battle, "events_since"):
-                _ev = battle.events_since(self._cursors[-1])
-            else:
-                _ev = []
+            _ev = window_events
             self._recency.update(
                 live.turn, _ev,
                 live.ours.active.species if live.ours.active else None,

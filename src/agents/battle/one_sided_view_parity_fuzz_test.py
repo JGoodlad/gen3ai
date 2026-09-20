@@ -79,6 +79,8 @@ from agents.battle.live_view import LegalActions, LivePokemon, LiveSide, LiveVie
 from agents.battle.view_adapter import read_models_from_payload
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
+from agents.training.view_successor import (ViewSuccessorFactory,
+                                            intermediate_decisions)
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.bridge.reconstruction import ReconstructionRecord
 from utils.bridge.search_session import SearchSession
@@ -322,12 +324,14 @@ def _anyone_asleep(live: LiveView) -> bool:
     return any(m.status == "slp" for m in (*live.ours.mons, *live.opp.mons))
 
 
-def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Census) -> None:
-    """Compare the two roads at ONE decision point."""
+def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Census) -> bool:
+    """Compare the two roads at ONE decision point. True when the READ-MODELS agreed outright —
+    which is also the precondition for the tracker-fed comparison downstream, because a vector
+    built on a differing board says nothing about the trackers."""
     battle = road.battle
     if battle is None:
         cen.defer("the protocol replay produced no battle (chunks did not start one)")
-        return
+        return False
     strict = battle.strict_view()
     live_p, legal_p = strict.live, strict.legal
     live_v, legal_v, vbattle = read_models_from_payload(payload, battle_tag=live_p.battle_tag)
@@ -342,29 +346,87 @@ def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Ce
         # project applies to a timeout.
         cen.defer("obs SKIPPED: a DECLARED read-model residual fired here, so the vector is "
                   "downstream of a known input difference and is not comparable")
-        return
+        return False
 
     if _anyone_asleep(live_p):
         # `state_encoder.encode` folds the WHOLE event log for the 3-dim sleep-wake belief when
         # anyone is asleep (`build_sleep_sources`), and the payload carries a board rather than an
         # event log. DEFERRAL D2 — reported, never silently skipped.
-        cen.defer("a mon is ASLEEP: the sleep-wake belief needs the event log (deferral D2)")
-        return
+        cen.defer("a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake "
+                  "belief reads 0 on the view side (D4 is closed only where a log is supplied — "
+                  "the SUCCESSOR comparison below does supply one)")
+        return False
     obs_p = _encode(encoder, battle, legal_p)
     obs_v = _encode(encoder, vbattle, legal_v)
     if obs_p.shape != obs_v.shape:
         cen.note("obs[shape]", obs_p.shape, obs_v.shape, where)
-        return
+        return False
     if not np.array_equal(obs_p, obs_v):
         bad = set(int(i) for i in np.flatnonzero(obs_p != obs_v))
         wish = _wish_columns()
         if bad <= wish:
             cen.note("obs[reactive.wish_floating]", 0, 0, where)
-            return
+            return False
         first = min(bad - wish)
         cen.note(f"obs[{_block_of(encoder, first)}]",
                  float(obs_p[first]), float(obs_v[first]),
                  f"{where} idx={first} ndiff={len(bad)}")
+        return False
+    return True
+
+
+def check_successor(factory, encoder, arm_road, payload: dict, chunks, action: int,
+                    dec_i: int, where: str, cen: Census) -> bool:
+    """The FULL observation — every block, TRACKERS INCLUDED — at ONE branch point.
+
+    🚨 **This is the comparison the tracker-less one above cannot make, and it is what
+    `gen3_view_successor_v1` is for.** ``check_point`` deliberately threads no trackers, so the
+    recency / pair-history / event-window / progress-clock / Hidden-Power blocks are ZERO in both
+    its vectors — sharp about the read-models, and silent about five blocks of the observation a
+    real leaf reads. Here the PROTOCOL road's own materialized successor row (the production
+    ``materialize_branches`` output: tracker-fed, assembler-warmed) is compared against the VIEW
+    road's :class:`~agents.training.view_successor.ViewSuccessorFactory`, which carries the
+    root's ``EpisodeTracker`` forward and advances it with the ply folded from the arm's own
+    one-sided protocol.
+
+    The MASK is compared too. A leaf's obs is only half of what the materializer returns — the
+    action mask is the other half, and a search that read the right vector against the wrong
+    legality would still choose wrongly.
+
+    Returns True when the point was actually compared."""
+    mats = arm_road.player._materialized
+    if len(mats) <= dec_i:
+        cen.defer("the protocol successor produced no decision row (no request at this arm)")
+        return False
+    got = factory.successor(payload, chunks, action)
+    if got is None:
+        cen.defer("the VIEW successor reports no decision (all-zero mask / finished) where the "
+                  "protocol road materialized one")
+        return False
+    obs_v, mask_v = got.obs, got.mask
+    d = mats[dec_i]
+    ok = True
+    if not np.array_equal(np.asarray(d.mask), mask_v):
+        cen.note("successor.mask", list(np.asarray(d.mask)), list(mask_v), where)
+        ok = False
+    if d.obs is None:
+        cen.defer("the protocol successor row carries no obs (encode_only_at skipped it)")
+        return False
+    if d.obs.shape != obs_v.shape:
+        cen.note("successor.obs[shape]", d.obs.shape, obs_v.shape, where)
+        return False
+    if not np.array_equal(d.obs, obs_v):
+        bad = sorted(int(i) for i in np.flatnonzero(d.obs != obs_v))
+        # One census row PER BLOCK, so a tracker-block divergence reads as
+        # `successor.obs[pair_history]` rather than as one index.
+        seen: Dict[str, int] = {}
+        for i in bad:
+            seen.setdefault(_block_of(encoder, i), i)
+        for blk, i in seen.items():
+            cen.note(f"successor.obs[{blk}]", float(d.obs[i]), float(obs_v[i]),
+                     f"{where} idx={i} ndiff={len(bad)}")
+        ok = False
+    return ok
 
 
 def _block_of(encoder, idx: int) -> str:
@@ -406,10 +468,11 @@ def _field_of(slot_layout: Any, col: int) -> str:
 # ---------------------------------------------------------------------------
 
 def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS,
-        impl: str = "rust", fixed_key: Optional[int] = None) -> Tuple[Census, int]:
+        impl: str = "rust", fixed_key: Optional[int] = None) -> Tuple[Census, int, int]:
     cen = Census()
     encoder = get_observation_encoder(load_mappings())
     branch_points = 0
+    full_obs_points = 0
     for b in range(n_battles):
         with tempfile.TemporaryDirectory() as td:
             record, summary, npz = _record_one_battle(
@@ -439,11 +502,17 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                 pfx = root.prefix_p1_chunks if side == "p1" else root.prefix_p2_chunks
                 prefix_actions = [int(x) for x in actions[:anchor]]
 
-                # ROOT — the real decision point.
+                # ROOT — the real decision point. This road is ALSO the FORK: its action list
+                # has exactly `anchor` entries, so decision `anchor` is materialized and the
+                # tracker is NOT advanced — which is precisely the state every arm branches from,
+                # and the state `materialize_branches` snapshots.
                 road = _ProtocolRoad(record, side, prefix_actions)
                 road.feed(pfx)
                 check_point(encoder, road, root.view_p1 if side == "p1" else root.view_p2,
                             f"{record.battle_tag}@t{turn}/root", cen)
+                factory = (ViewSuccessorFactory.at_fork(
+                    road.player._get_tracker(road.battle), road.battle, encoder)
+                    if road.battle is not None else None)
 
                 # BRANCH POINTS — one ply forward, `arms` different legal lines.
                 # The arms are taken from the REAL mapper's action-index -> choice-string map, so
@@ -477,9 +546,21 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                                              prefix_actions + [int(node.label)] + [0] * 8)
                     arm_road.feed(list(pfx) + list(suffix))
                     branch_points += 1
-                    check_point(encoder, arm_road, payload,
-                                f"{record.battle_tag}@t{turn}/arm{node.label}", cen)
-    return cen, branch_points
+                    where = f"{record.battle_tag}@t{turn}/arm{node.label}"
+                    clean = check_point(encoder, arm_road, payload, where, cen)
+                    n_mid = intermediate_decisions(suffix)
+                    if n_mid:
+                        # D10 — the ply resolved a REPLACEMENT round inside itself, so the port's
+                        # board is one decision past the row `materialize_branches` returns. The
+                        # two roads describe different states here and comparing them would
+                        # measure that, not the trackers. Counted, never silent.
+                        cen.defer(f"D10: the ply resolved {n_mid} intermediate decision(s) — the "
+                                  f"view's board is past the protocol road's successor row")
+                    elif clean and factory is not None and check_successor(
+                            factory, encoder, arm_road, payload, suffix, int(node.label),
+                            anchor + 1, where, cen):
+                        full_obs_points += 1
+    return cen, branch_points, full_obs_points
 
 
 def _choice_map(record, side, prefix_actions, pfx, anchor) -> Dict[int, str]:
@@ -497,7 +578,7 @@ def test_the_one_sided_view_reproduces_the_read_models_and_the_obs():
     """The collected gate — one REPRODUCIBLE battle (see the module header), three turns, five
     arms each. Deterministic by construction, so a failure here is a regression and never a draw.
     The stochastic sweep is the script entry point."""
-    cen, branch_points = run(n_battles=1, arms=5, turns=3, fixed_key=0)
+    cen, branch_points, full_obs_points = run(n_battles=1, arms=5, turns=3, fixed_key=0)
     print("\n" + cen.render())
     assert cen.compared >= 8, (
         f"only {cen.compared} comparisons ran — the gate is vacuous "
@@ -505,6 +586,10 @@ def test_the_one_sided_view_reproduces_the_read_models_and_the_obs():
     assert branch_points >= 8, (
         f"only {branch_points} BRANCH points ran — a root-only run would never exercise a "
         f"successor board, which is the whole point")
+    assert full_obs_points >= 8, (
+        f"only {full_obs_points} FULL-observation (tracker-fed) comparisons ran — the D5 half of "
+        f"this gate is what licenses `--materializer view`, and a run that never reaches it is "
+        f"vacuous about every tracker block (branch points: {branch_points})")
     assert not cen.rows, "\n" + cen.render()
 
 
@@ -518,7 +603,7 @@ if __name__ == "__main__":
                     help="use the REPRODUCIBLE fixture battle(s) from this key instead of fresh "
                          "random ones — what the collected test runs")
     a = ap.parse_args()
-    census, bp = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key)
+    census, bp, fop = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key)
     print(census.render())
-    print(f"branch points compared: {bp}")
+    print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them)")
     sys.exit(1 if census.rows else 0)

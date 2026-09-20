@@ -85,15 +85,9 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import io
-import logging
-import pickle
 import sys
-import types
-from collections import deque
 from dataclasses import dataclass, field
-from types import MappingProxyType
-from typing import Any, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -387,134 +381,14 @@ class Branch:
     label: Any = None
 
 
-#: Objects that must be SHARED by a clone rather than copied. Two reasons, both real:
-#:  * ``logging.Logger`` — deep-copying one drags in ``Logger.manager.loggerDict``, i.e.
-#:    EVERY logger in the process (torch's included), whose handlers hold
-#:    ``_thread.RLock``; that is unpicklable, and a logger is shared infrastructure, not
-#:    per-battle state.
-#:  * ``MappingProxyType`` — unpicklable too, and copying one would be WRONG anyway: it
-#:    is a read-only view (``LegalActions.last_request``), so a copy is at best a
-#:    type-changing no-op.
-_SHARED_TYPES: tuple = (logging.Logger, logging.Manager, logging.Handler, MappingProxyType)
-
-def _immutable_record_types() -> tuple:
-    """Additionally shared: APPEND-ONLY IMMUTABLE RECORDS.
-
-    A branch APPENDS to the event log and the tracker history; it never rewrites an existing
-    entry. ``BattleEvent`` is a ``frozen=True`` dataclass documented as "one immutable,
-    ordered record"; ``BattleContext`` is a per-turn snapshot built once in
-    ``EpisodeTracker.record()``. Sharing them instead of copying them is therefore exactly
-    equivalent, AND it is the difference between a clone that costs O(turns) of deep
-    structure and one that costs O(live objects): measured at turn 12, pinning the 16
-    history contexts took the tracker clone from 2.96 ms to 1.06 ms.
-
-    ⚠️ This is a CONTRACT, not an inference. If either type ever gains in-place mutation,
-    counterfactual arms after the first would read history the previous arm corrupted —
-    which is precisely what ``obs_materializer_branch_integration_test.py`` exists to catch,
-    and why that test compares EVERY arm rather than sampling one.
-
-    Imported lazily so this module keeps its narrow import graph.
-    """
-    from agents.battle.battle_event import BattleEvent
-    from agents.training.battle_snapshot import BattleContext
-    return (BattleEvent, BattleContext)
-
-
-def _shared_singleton_types() -> tuple:
-    """Also shared: PROCESS SINGLETONS that declare themselves one via ``__deepcopy__``.
-
-    ``GenData.__deepcopy__`` returns ``self``, so the deepcopy path shares the gen-3 dex whether
-    or not it is pinned. :meth:`_PlayerSnapshot._freeze` uses PICKLE, which honours no such hook
-    and would deep-copy the whole dex into every arm instead. Pinning makes the two clone
-    mechanisms provably agree rather than agreeing by accident of what is reachable today
-    (measured 2026-08-23: ``GenData`` is NOT reachable from a live battle graph — the frozen blob
-    is ~44 kB — so this is a latent-hazard guard, not a live fix).
-    """
-    from poke_env.data.gen_data import GenData
-    return (GenData,)
-
-
-def _pin_shared(obj, pins: dict, seen: "Optional[set]" = None) -> dict:
-    """Walk ``obj``'s object graph and record ``{id: obj}`` for every member of
-    :data:`_SHARED_TYPES`, so a later ``deepcopy(..., memo=pins)`` returns them
-    unchanged. Run ONCE per snapshot; the resulting pin set stays valid for every restore
-    (a restore copies from the snapshot, whose pinned objects are the same objects)."""
-    if seen is None:
-        seen = set()
-    shared = _SHARED_TYPES + _immutable_record_types() + _shared_singleton_types()
-    stack = [obj]
-    while stack:
-        o = stack.pop()
-        i = id(o)
-        if i in seen:
-            continue
-        seen.add(i)
-        if isinstance(o, shared):
-            pins[i] = o
-            continue
-        if isinstance(o, (str, bytes, bytearray, int, float, complex, bool,
-                          type(None), np.ndarray, np.generic)):
-            continue
-        if isinstance(o, type) or isinstance(o, types.ModuleType):
-            continue
-        if isinstance(o, dict):
-            stack.extend(o.keys())
-            stack.extend(o.values())
-            continue
-        if isinstance(o, (list, tuple, set, frozenset, deque)):
-            stack.extend(o)
-            continue
-        d = getattr(o, "__dict__", None)
-        if isinstance(d, dict):
-            stack.extend(d.values())
-        for cls in type(o).__mro__:
-            for slot in getattr(cls, "__slots__", ()) or ():
-                try:
-                    stack.append(getattr(o, slot))
-                except AttributeError:
-                    pass
-    return pins
+from agents.training.clone_pins import (_immutable_record_types,  # noqa: F401
+                                        _pickle_pinned, _unpickle_pinned,
+                                        _pin_shared, _shared_singleton_types, _SHARED_TYPES)
 
 
 #: Set once the pickle fast path has been reported as unavailable, so the warning is printed one
 #: time per process rather than once per arm.
 _FREEZE_WARNED = False
-
-
-class _PinnedPickler(pickle.Pickler):
-    """A pickler that writes PINNED objects by reference instead of copying them.
-
-    The exact pickle-side counterpart of ``deepcopy(obj, memo=pins)``: the same
-    ``{id: obj}`` set that a memo pre-seeds is here turned into ``persistent_id`` indices, so a
-    shared logger / mapping proxy / immutable record comes back as itself."""
-
-    def __init__(self, buf, pin_idx: dict):
-        super().__init__(buf, protocol=pickle.HIGHEST_PROTOCOL)
-        self._pin_idx = pin_idx
-
-    def persistent_id(self, obj):
-        return self._pin_idx.get(id(obj))
-
-
-class _PinnedUnpickler(pickle.Unpickler):
-    """The read side: resolve a persistent id back to the very object that was pinned."""
-
-    def __init__(self, buf, pin_list: list):
-        super().__init__(buf)
-        self._pin_list = pin_list
-
-    def persistent_load(self, pid):
-        return self._pin_list[pid]
-
-
-def _pickle_pinned(obj, pin_idx: dict) -> bytes:
-    buf = io.BytesIO()
-    _PinnedPickler(buf, pin_idx).dump(obj)
-    return buf.getvalue()
-
-
-def _unpickle_pinned(blob: bytes, pin_list: list):
-    return _PinnedUnpickler(io.BytesIO(blob), pin_list).load()
 
 
 class _PlayerSnapshot:
@@ -720,6 +594,51 @@ def materialize_branches(
             action_choices=player.action_choices,
         ))
     return out
+
+
+def open_view_fork(
+    prefix_chunks: Sequence[str],
+    *,
+    username: str,
+    packed_team: str,
+    side: str,
+    prefix_actions: Sequence[int] = (),
+    battle_format: str = "gen3ou",
+    battle_tag: Optional[str] = None,
+    mappings=None,
+    encoder=None,
+) -> "Tuple[Any, Dict[int, str]]":
+    """Replay the shared prefix ONCE and return the fork every arm of that decision branches from.
+
+    ``gen3_view_successor_v1``. This is :func:`materialize_branches`' first half and nothing
+    else — the same player, the same feed, the same "stop at the branch decision without
+    advancing the tracker" fork point — so the VIEW road starts from a state that is not merely
+    equivalent to the protocol road's but IS it. What it does not do is the second half: no
+    snapshot is frozen, because no arm will restore one.
+
+    Returns ``(ViewSuccessorFactory, {action index: choice string} at the branch decision)``.
+    """
+    from agents.training.view_successor import ViewSuccessorFactory
+
+    prefix_actions = [int(a) for a in prefix_actions]
+    n_prefix = len(prefix_actions)
+    tag = _next_tag(battle_tag, battle_format)
+    player, client = _build_replay_player(
+        username=username, packed_team=packed_team, side=side, actions=prefix_actions,
+        battle_format=battle_format, mappings=mappings, stall_config=None,
+        map_actions_at=n_prefix, stop_after_decision=n_prefix, encode_only_at=set(),
+    )
+    _refuse_poke_loop("open_view_fork")
+    asyncio.run_coroutine_threadsafe(
+        _feed(client, player, prefix_chunks, tag, first=True), POKE_LOOP).result()
+    if len(player._materialized) != n_prefix + 1:
+        raise RuntimeError(
+            f"prefix replay produced {len(player._materialized)} decisions for a branch at "
+            f"index {n_prefix} — prefix_chunks and prefix_actions disagree, so the arms "
+            f"would branch from the wrong state")
+    battle = player._battles[tag]
+    return (ViewSuccessorFactory.at_fork(player._get_tracker(battle), battle, encoder),
+            dict(player.action_choices or {}))
 
 
 class _InvertingReplayPlayer(_ReplayObsPlayer):

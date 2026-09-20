@@ -943,6 +943,36 @@ deep-copied (1.98 → 0.22 ms). ⚠️ A graph that will not pickle **falls back
 once on stderr** — a 9× regression nothing mentions is the failure shape this tree keeps eating.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
+`clone_pins.py` is the ONE definition of WHICH objects a per-arm clone must SHARE rather than copy
+(a `logging.Logger`, a `MappingProxyType`, the append-only immutable records, the `GenData`
+singleton) **and** of the pinned-pickle freeze/thaw that makes a clone ~9× cheaper than a
+`deepcopy`. Two consumers — this materializer and `view_successor` — and a second copy of the rules
+would be a second way for the two roads to clone differently.
+
+## The one-sided VIEW road (`view_successor.py`, `gen3_view_successor_v1`)
+
+The other materializer: a search successor's FULL observation built from the Rust port's one-sided
+VIEW payload instead of by replaying the ply's protocol through poke-env. `ViewSuccessorFactory`
+is opened once per ply (`obs_materializer.open_view_fork`, which IS `materialize_branches`' own
+first half, so the fork is the same state and not merely an equivalent one) and then answers each
+arm: fold the ply's events (`agents.battle.event_fold`), build the read-models, thaw a tracker
+clone, `record_context` → `advance_window` → `encode`. Selected by
+`SearchConfig.materializer` / `--materializer {protocol,view}`; **`view` is the DEFAULT**, and it
+falls back to protocol PER ARM (never per cell, never silently — three counters on
+`RealizedWidths`) where it cannot answer.
+
+🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
+and `advance_window` are their bodies once the context and the event windows exist; `record` /
+`update_progress_clock` are the poke-env-battle wrappers. One implementation of the per-decision
+bookkeeping is what makes the two roads' trackers comparable at all.
+
+⚠️ **A successor's `ViewContext` RAISES on a field it does not carry.** The observation path reads
+fifteen `BattleContext` fields and all fifteen are fed; the rest are the REWARD's and the
+recorder's poke-env turn-gated state, which has no source on this road. A plausible `None` there is
+the failure this class exists to refuse.
+
+**Contract, deferrals, gates and cost — [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).**
+
 ## Counterfactual win-prob grounding (`--cf-records` / `--cf-winprob-coef`, `gen3_cf_label_plumbing_v1`)
 
 The **trainer-side plumbing** for `designs/ai_v10/design_counterfactual_value_grounding.md` — its gate

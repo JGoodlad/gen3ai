@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from agents.battle.live_view import (LegalActions, LegalMove, LegalSwitch, LiveMove,
                                      LivePokemon, LiveSide, LiveView, LiveWeather)
@@ -497,18 +497,34 @@ class ViewBattle:
     which 122-dim slot each opposing mon occupies. The port emits the rows already ordered.
     """
 
-    __slots__ = ("_live", "_legal", "team", "opponent_team")
+    __slots__ = ("_live", "_legal", "team", "opponent_team", "events")
 
 
     def __init__(self, live: LiveView, legal: Optional[LegalActions] = None,
-                 payload: Optional[Mapping[str, Any]] = None) -> None:
+                 payload: Optional[Mapping[str, Any]] = None,
+                 events: Sequence[Any] = ()) -> None:
         self._live = live
         self._legal = legal
+        #: The successor's WHOLE-BATTLE event log — the root's, plus the ply folded by
+        #: :class:`~agents.battle.event_fold.ViewEventFolder` (`gen3_view_successor_v1`). TWO
+        #: sub-encoders fold it and they were `gen3_one_sided_view_v1`'s last two obs
+        #: DEFERRALS: ``reactive.encode`` → ``wish_belief.build_wish_pending`` (D3, the pending-
+        #: Wish pair) and ``state_encoder.encode`` → ``sleep_belief.build_sleep_sources`` (D4,
+        #: the 3-dim sleep-wake belief). Both read ``battle.events`` and ``battle.turn`` and
+        #: nothing else, so supplying the log closes both — the payload was never the problem,
+        #: the missing log was. Empty ⇒ both fold to their no-information answer, which is what
+        #: a caller with no event log gets and is why this defaults rather than raising.
+        self.events: Sequence[Any] = events
         ours = _rows_by_species(payload, "ours")
         opp = _rows_by_species(payload, "opp")
         self.team = {m.species: ViewMon.of(m, ours.get(m.species)) for m in live.ours.mons}
         self.opponent_team = {
             m.species: ViewMon.of(m, opp.get(m.species)) for m in live.opp.mons}
+
+    @property
+    def turn(self) -> int:
+        """The board's turn — read by ``build_wish_pending`` beside ``events``."""
+        return int(self._live.turn)
 
     @property
     def opponent_active_pokemon(self) -> Optional[ViewMon]:
@@ -540,10 +556,14 @@ class ViewBattle:
 
 
 def read_models_from_payload(
-    payload: Mapping[str, Any], *, battle_tag: str = ""
+    payload: Mapping[str, Any], *, battle_tag: str = "", events: Sequence[Any] = ()
 ) -> Tuple[LiveView, Optional[LegalActions], ViewBattle]:
     """The whole adapter in one call: ``(live, legal, battle)`` ready for
-    ``Gen3ObservationEncoder.encode(battle, legal=legal, …)``."""
+    ``Gen3ObservationEncoder.encode(battle, legal=legal, …)``.
+
+    ``events`` is the successor's whole-battle event log when the caller has one (see
+    :attr:`ViewBattle.events`); omitting it leaves the Wish pair and the sleep-wake belief at
+    their no-information values, which is what every board-only caller wants."""
     live = live_view_from_payload(payload, battle_tag=battle_tag)
     legal = legal_actions_from_payload(payload, live)
-    return live, legal, ViewBattle(live, legal, payload)
+    return live, legal, ViewBattle(live, legal, payload, events=events)

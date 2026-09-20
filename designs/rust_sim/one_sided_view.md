@@ -169,19 +169,33 @@ does not reach `moved()`, and a sleep applied on the same line it is counted.
 The COLLECTED test is a fixed battle and is green, so this does not ride main red; the SWEEP is
 where it will reappear. **Run the sweep before trusting a change in this area.**
 
+**Re-measured 2026-09-19** over 24 fresh battles (577 comparisons, 505 branch points): still
+present, 15 occurrences on one battle and one mon — and this time reading one LOWER
+(`protocol=3 view=2`), where the original 14-battle sweep read one HIGHER. A field that drifts in
+BOTH directions is not an off-by-one in one branch; the likeliest remaining shape is a `|move|` or
+`|cant|` line the port's fold attributes to a different sleep episode than poke-env does.
+
+### TWO MORE OPEN FINDINGS from the 2026-09-19 sweeps, same status (failing, not declared)
+
+| what | measured | what is known |
+|---|---|---|
+| `opp.<species>.ability` reads `None` on the view road where poke-env has it | 14 occurrences on ONE battle of 14 (a Snorlax reading `immunity`) | poke-env sets an ability from a `[from] ability:` CLAUSE on lines that are not `\|-ability\|` — `_check_damage_message_for_ability`, `_check_heal_message_for_ability`, and the `\|move\|` handler's trailing-clause branch. The port's `ability_events` folds the `\|-ability\|` line only. The fix is in `view.rs`, and it is the same SHAPE as the item finding in §2: scanning the wrong set of lines |
+| own-side `volatiles` missing `substitute` | 1 occurrence over 24 battles (`protocol={'substitute': 0} view={}`) | Not reproduced. One occurrence is not a class; it is recorded so the next sweep can tell "still one" from "now many" |
+
 ## 5. DEFERRALS — what is knowingly not carried
 
 | id | what | why, and what it would take |
 |---|---|---|
 | **D1** | the obs SLOT order still comes from `battle.team` / `battle.opponent_team` | `state_encoder.encode` walks `base.get_team_list(battle, …)` to assign slots and only then looks the mon up in the `LiveView`. So an ordered identity list must exist whatever else happens; `ViewBattle` supplies it FROM the view |
 | **D2** | four sub-encoders never took a `live_mon` | `items` (`mon.item`/`mon.consumed_item`), `abilities` (`mon.ability`), `types` (`mon.type_1`/`type_2`) and `moves` (`mon.moves`) read the raw `Pokemon` unconditionally, though `LivePokemon` carries every one of those fields and the rest of `pokemon.encode` is `if live_mon is not None:` throughout. `ViewMon` feeds them from the same read-model in the meantime. **Migrating those four onto `live_mon` is the right fix** and is a value-neutral refactor that owes the obs-build benchmark |
-| **D3** | 🔴 the reactive block's **Wish pair** | `reactive.encode` calls `wish_belief.build_wish_pending(battle)`, which folds `battle.events`; the payload carries a board, not an event log, so the view path reads 0.0 where a Wish is pending. **The port HAS the state** (`SideState::wish_pending`) — this is a threading change through `state_encoder.encode`, and it is the top follow-up. It is the ONLY obs divergence class left |
-| **D4** | the 3-dim **sleep-wake belief** | `build_sleep_sources(battle)` folds the event log for the `[from] move: Rest` tag. The gate REPORTS these decisions as deferred rather than comparing them |
-| **D5** | the per-decision TRACKERS — recency, pair history, the event window, the progress clock, the Hidden-Power block | These fold the event log across the whole episode. A successor still needs its trackers advanced by the ply, which the payload does not carry. **This is what stands between the current state and a `materialize_from_view()` that replaces the protocol path outright** |
+| **D3** | ✅ **CLOSED for a successor** — the reactive block's **Wish pair** | `reactive.encode` folds `battle.events` through `wish_belief.build_wish_pending`. The fix was not the port's `SideState::wish_pending` at all: the payload was never the problem, the missing LOG was. `ViewBattle` now carries the successor's whole-battle event log (the root's, plus the ply folded by `ViewEventFolder`) and the existing fold runs unchanged. Still OPEN for a BOARD-ONLY caller with no log, which is exactly what the gate's tracker-less comparison is — so the residual is still DECLARED there, and seen there |
+| **D4** | ✅ **CLOSED for a successor** — the 3-dim **sleep-wake belief** | `build_sleep_sources(battle)` reads `battle.events` and `battle.turn` and nothing else, so the same log closes it. Same board-only caveat as D3 |
+| **D5** | ✅ **CLOSED** — the per-decision **TRACKERS** — recency, pair history, the event window, the progress clock, the Hidden-Power block | `gen3_view_successor_v1` — see §7. The ply's events are folded from the arm's OWN one-sided protocol by `agents/battle/event_fold.py`, and the root's `EpisodeTracker` is carried forward and advanced through `record_context` / `advance_window` (the bodies of `record` / `update_progress_clock`, split out rather than copied) |
 | **D6** | Pressure is applied with the ability known at READ time | `_pressure_on` evaluates `target.ability == "pressure"` AT USE TIME, when it may still be undisclosed. The residual is a sighting made before the reveal. (The un-fainted clause is deliberately NOT re-checked at read time: a mon cannot be targeted while fainted, and checking it late lost the whole correction on any board whose Pressure holder had since died — 30 divergences over 80 comparisons) |
 | **D7** | our OWN pp is the wire's, not poke-env's counter | The payload sends the engine's `current_pp`, which is exactly what the `\|request\|` states and what poke-env asserts its own counter against (`check_move_consistency`). When poke-env has not yet identified a Pressure holder its counter drifts one BELOW the wire per sighting, and it is the drifted value the protocol road encodes. Folding our own PP from sightings instead was measured **worse** (the `\|move\|` line names `Hidden Power` while the set token is `hiddenpowerfire`, so the slots do not key against each other) |
 | **D8** | Mimic / Transform move overlays on our own side | The own moveset is rendered from `set.moves`; an overlay would need the same resolver the request path uses |
 | **D9** | `Mist` as a side condition | The port models spikes / reflect / lightscreen / safeguard only |
+| **D10** | 🔴 an arm whose ply resolved an INTERMEDIATE decision | When an arm's ply KOs one of our mons, the replacement round is a SECOND request inside the same `expand_many` arm. The port answers it through its own follow-up policy and returns the board AFTER it, while `materialize_branches` stops at the FIRST request its action list cannot answer — so the two roads describe DIFFERENT STATES, one decision apart, and a leaf scored at the wrong one of them is not a rounding difference. `view_successor.intermediate_decisions` detects it off the arm's own `\|request\|` lines (verified against the protocol road's realized row count on 104 arms over 6 fresh battles: exact agreement, 98 arms at 0 and 5 at 1), and the production road FALLS BACK to protocol, counted in `RealizedWidths.view_fallback_intermediate`. **Measured rate: 35 of 505 branch points (6.9%) over 24 fresh battles.** Closing it needs either a driver mode that stops at the replacement, or a payload that carries the intermediate board too |
 
 **Not deferred, and worth saying so:** the volatile NAMES here are NOT the `pre_state`
 reconstruction that `search_and_replay_drivers.md` marks UNVERIFIED. That set is the port's own
@@ -193,24 +207,41 @@ This fold reads the protocol instead.
 
 ## 6. Cost
 
-`view_materialize_benchmark.py`, per successor, protocol (the production
-`materialize_branches` — shared prefix + pickled snapshot restore) vs view, three battles, same
-load, **busy box (load ~45/16 cpus — ratios are the claim, absolute ms are inflated ~2.9x)**:
+`view_materialize_benchmark.py`, per successor, **the two PRODUCTION roads**, three battles, same
+load, busy box (load ~50/16 cpus — ratios are the claim, absolute ms are inflated ~3x):
 
 | B | arms | protocol ms | view ms | speedup |
 |---|---|---|---|---|
-| 1 | 3 | 46.600 | 0.988 | **47.2x** |
-| 33 | 99 | 4.846 | 0.755 | **6.4x** |
+| 1 | 3 | 93.628 | 95.706 | **0.98x** |
+| 33 | 99 | 5.708 | 4.227 | **1.35x** |
 
-B=1 carries the whole shared prefix; B=33 carries a thirty-third of it, which is the shape a real
-search ply pays. The view path needs neither the prefix nor the snapshot restore.
+🚨 **THIS TABLE REPLACES A 47x / 6.4x ONE, AND THE OLD NUMBERS WERE NOT WRONG — THEY WERE
+MEASURING A DIFFERENT THING.** The first version of this benchmark timed *payload → read-models →
+encode* against the production materializer. That leaf had **no trackers** (five obs blocks at
+zero) and **no shared prefix** (the view column paid no replay at all), so it was not a leaf any
+search scores. Closing D5 gave the view road both — the prefix replay through `open_view_fork`,
+which is `materialize_branches`' own first half, and a per-arm tracker fork — and the honest
+speedup is what is in the table. Both columns now also ask for `map_actions_at`, which production
+always asks for and which is ~24% of the view road's per-arm wall.
+
+At B=1 the whole cost IS the shared prefix, which both roads pay once, so there is nothing to win
+and the table says so. The win is per-ARM and therefore appears as the ply widens.
+
+**Where the view road's per-arm wall goes** (cProfile, 33 arms, 105-event root): encode 42%,
+`_choice_map` (the real action mapper) 24%, the read-models 18%, the tracker fork 6%. The tracker
+fork was **10.5 ms** by `deepcopy` and is **0.5 ms** by a pinned-pickle thaw — the same 9x
+`_PlayerSnapshot._freeze` documents, and until it landed the view road was SLOWER than the road it
+replaces (0.84x at B=33). `agents/training/clone_pins.py` is now the ONE home for both mechanisms.
+
+**Two sized-but-unbuilt wins**, both real and neither taken here: the fork is a function of the
+one-sided PREFIX, which `determinize.prefix_matches` gates to be byte-identical across worlds — so
+one fork could serve all K worlds of a decision instead of K prefix replays; and `action_choices`
+is built eagerly for every arm though it is read only for a node that will be DEEPENED.
 
 **`obs_build_benchmark.py` must read UNCHANGED** — no file on the `encode` path was touched, and
 that is the check rather than a hope.
 
----
-
-## 7. Transport status
+## 7. Transport status, and THE FLIP
 
 `view_p1` / `view_p2` are **rust-only**; `search_driver.js` emits no such field and
 `SearchSession` defaults them to `{}`. The cross-impl parity harness
@@ -218,7 +249,29 @@ that is the check rather than a hope.
 absence — the entry is value-aware and refuses to forgive anything but `<absent>` vs present, so it
 cannot outlive its own fix the way two entries in that harness once did.
 
-`materialize_from_view()` and a `--materializer view` default flip are **NOT built**: D5 is what
-stands in the way, and shipping a second materializer whose successors carry zeroed tracker blocks
-would be a silently different observation. The payload, the adapter and the gate are what that
-work needs in place first.
+**`--materializer {protocol,view}` is BUILT and `view` is the DEFAULT** (`SearchConfig.materializer`).
+`search._materialize` is the one seam: it opens the fork once per ply through `open_view_fork` and
+then answers each arm from the port's payload, falling back to `materialize_branches` per arm —
+never per cell, and never silently — for the three classes it cannot answer:
+
+| fallback | counter | why |
+|---|---|---|
+| no `view_pN` | `view_fallback_no_payload` | `search_impl="node"`, or a parent that had itself fallen back (a deeper ply cannot fork from a board the view road never built) |
+| an intermediate decision | `view_fallback_intermediate` | D10 |
+| the arm opened no decision | — | both roads agree there is no row |
+
+`RealizedWidths.view_arms` counts what the view road actually answered, and the parity gate asserts
+it is non-zero: a run in which every arm fell back would compare the protocol road with itself and
+pass.
+
+### What licenses the flip
+
+| gate | what it holds |
+|---|---|
+| `one_sided_view_parity_fuzz_test.py` | the FULL 2501-dim successor obs, trackers included, `np.array_equal` against the production `materialize_branches` row. **422 tracker-fed comparisons over 24 fresh battles, ZERO `successor.*` divergences**; 176 over a separate 16-battle sweep, also zero |
+| `event_fold_parity_fuzz_test.py` | `ViewEventFolder`'s events == `Gen3Battle`'s on the same bytes, field by field including `raw` |
+| `materializer_parity_integration_test.py` | the real `SearchEngine` decides identically on both roads — per-action scores, chosen action, fallback reason and `arms_scored` — with a scorer that is a PURE FUNCTION of the obs, which is strictly sharper than a trained net |
+
+The remaining sweep failures are all READ-MODEL classes that predate this work and are listed in
+§4b; none of them is on the successor path, and a read-model residual makes the gate skip the
+successor comparison rather than pass it.

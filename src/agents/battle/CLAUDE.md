@@ -204,8 +204,22 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   are poke-env counters with different transitions from the engine's, and the obs SLOT order is the
   first `|request|`'s roster (ours) / reveal order (theirs). `ViewBattle` additionally feeds the
   four sub-encoders that never took a `live_mon` (`items` / `abilities` / `types` / `moves` —
-  deferral D2) from the same read-model. Contract, gates and the 9 deferrals:
+  deferral D2) from the same read-model, and carries the successor's **whole-battle event log**,
+  which is what closes the last two obs deferrals (the pending-Wish pair and the sleep-wake
+  belief): both folds read `battle.events` + `battle.turn` and nothing else, so the payload was
+  never the problem — the missing LOG was. Contract, gates and the 10 deferrals:
   [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).
+- **`event_fold.py` — ONE ply's `BattleEvent`s WITHOUT poke-env's state tracker**
+  (`gen3_view_event_fold_v1`). `ViewEventFolder.seed_from(battle).fold(chunks)` is the other half
+  of a search successor's observation: the read-models give it a BOARD, and the per-decision
+  trackers (recency, pair history, the event window, the progress clock, the Hidden-Power belief)
+  fold an EVENT LOG, which a board is not. 🚨 **It is not a second event builder** — it SUBCLASSES
+  `Gen3Battle` and keeps `_build_event` / `_capture_pre` verbatim, replacing only the five board
+  reads they make (a mon's species, its status, its HP fraction, which mon is active on a side,
+  and which side's move is resolving) with a light dict folded from the same lines. That is why
+  the per-arm cost is neither a poke-env parse nor a battle-graph clone. Differential gate:
+  `event_fold_parity_fuzz_test.py`, field by field including `raw`. The consumer is
+  `agents/training/view_successor.py`.
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
