@@ -155,3 +155,43 @@ result into a statement about strength in general.
 `ledger.md`, `UNDERSTANDING.md` and every design note are **read-only** for this job. The
 deliverable is this directory: `PREDICTION.md`, `README.md`, the per-cell `main.anchors` output
 dirs, and the scripts.
+
+---
+
+# AMENDMENT 1 — 2026-09-19 22:45 PT — THE UNCONDITIONAL EXTENSION TO n = 1200
+
+**Written and committed BEFORE any pooled contrast was computed, and before the registered 24
+sub-cells had all finished.** What I had seen when I wrote it: nine sub-cell win rates
+(arm W away 0.51 / 0.53 / 0.55 / 0.59; continuation away 0.62 / 0.45 / 0.56; fold away 0.43 / 0.59)
+and the fact that every sub-cell returned `status: OK`. **No pooled rate, no contrast and no CI had
+been computed for any cell.**
+
+**Why.** The cell costs **~2 minutes per 100 games** on this box, not the ~15 the SOP's table led me
+to budget — a ~7× miss, because the SOP's figure was measured at load 25–31 with three lanes and
+this box is currently quiet. At that price the registered n = 400 is leaving power on the floor: its
+half-width on a difference is ≈ 0.069, so a real +0.05 — which the per-seed spread above makes a
+live possibility — is guaranteed NOT DETECTED by construction.
+
+**The amendment, and it is UNCONDITIONAL so that it cannot become a stopping rule.** It runs
+whatever the n = 400 numbers say; I do not look at them before launching it:
+
+| | registered | extension | total |
+|---|---:|---:|---:|
+| `SmallRL` greedy **away**, per arm | 400 (4 seeds) | **+800 (8 seeds)** | **1200** |
+| `SmallRL` greedy **home**, per arm | 400 (4 seeds) | **+800 (8 seeds)** | **1200** |
+| `SyntheticRLV2` greedy **away**, per arm | 200 (2 seeds) | **+200 (2 seeds)** | **400** |
+
+Extension `--team-seed` values: **20260959, 20260969, 20260979, 20260989, 20260999, 20261009,
+20261019, 20261029** (the `SyntheticRLV2` cell takes the first four of the whole list,
+20260919/29/39/49). Same spacing of 10, same three arms, same four-clause integrity block.
+
+**How it is REPORTED — both, separately, registered first.** The README carries (1) **the REGISTERED
+n = 400 verdict**, computed on the four registered seeds alone and labelled as the pre-registered
+result, and (2) **the EXTENDED n = 1200 estimate** on all twelve, labelled as such. The bar is
+identical for both (the difference's 95 % CI excludes zero). Where the two disagree, **the
+registered one is the result and the extended one is the better estimate**, and the disagreement is
+reported as a finding rather than resolved in favour of whichever is nicer.
+
+**Power at n = 1200:** se(Δ) ≈ 0.020, half-width ≈ 0.040. **+0.05 becomes resolvable** (z ≈ 2.4,
+power ≈ 0.67) and +0.10 becomes near-certain (z ≈ 4.9). Filed probabilities are NOT revised — the
+branch probabilities in §4 stand as filed for the registered n = 400 read.
