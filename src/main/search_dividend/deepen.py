@@ -72,7 +72,7 @@ value, so the shipped sweep runs at depth 1 and was never affected.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 # The smallest beam worth deepening. At m=1 there is nothing left to compare, so a ply spent there
 # cannot change the decision — it can only spend budget and inflate the reported depth.
@@ -117,6 +117,12 @@ class TreeNode:
     #: ``ExpandedNode``'s docstring promised the accumulation the driver never did).
     #: ``path`` and ``chunks`` must always describe the same plies; they grow on the same line.
     chunks: Tuple[str, ...] = ()
+    #: The VIEW road's fork at this node (`gen3_view_successor_v1`) — a
+    #: :class:`~agents.training.view_successor.ViewSuccessor`, whose ``child()`` is the factory a
+    #: DEEPER ply branches from. ``None`` on a node the protocol road materialized, which is
+    #: exactly the node a deeper ply must also materialize by protocol: the view road cannot
+    #: start from a board it never built.
+    fork: Any = None
     children: Dict[int, List[Tuple[float, "TreeNode"]]] = field(default_factory=dict)
 
     @property

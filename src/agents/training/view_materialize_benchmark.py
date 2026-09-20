@@ -11,10 +11,15 @@ the SAME `expand_many` response:
   text through poke-env's parser, and encode. Anything less than prefix sharing would be an unfair
   comparison — measured, it reads 85-110x, which is a statement about rebuilding a replay player
   and not about this change.
-* **view** — build the read-models from the arm's `view_pN` payload and encode.
+* **view** — `gen3_view_successor_v1`, the DEFAULT road: open the fork on the shared prefix ONCE
+  (`open_view_fork`, which is `materialize_branches`' own first half), then per arm fold the ply's
+  protocol into events in Python, build the read-models from the arm's `view_pN` payload, advance
+  a cloned `EpisodeTracker` and encode.
 
-Both encode through the identical `Gen3ObservationEncoder`, with no trackers and no assembler,
-so the delta is the road and nothing else. The gate that says the two roads AGREE is
+🚨 **BOTH columns now include the shared prefix and the TRACKERS**, which the first version of
+this benchmark did not: it timed a tracker-less encode against the production materializer, so it
+compared a leaf production does not score. Both encode through the identical
+`Gen3ObservationEncoder`, so the delta is the road and nothing else. The gate that says the two roads AGREE is
 `agents/battle/one_sided_view_parity_fuzz_test.py`; this script only says how much they
 COST, and it refuses to be read as a correctness check.
 
@@ -38,8 +43,8 @@ from typing import List
 
 import numpy as np
 
-from agents.battle.view_adapter import read_models_from_payload
-from agents.training.obs_materializer import Branch, materialize_branches
+from agents.training.obs_materializer import (Branch, materialize_branches,
+                                              open_view_fork)
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from utils.bridge.search_session import SearchSession
 from utils.contention import describe_contention, warn_if_contended
@@ -99,12 +104,22 @@ def _run(n_battles: int, widths: List[int], impl: str) -> None:
                     continue
                 arms_seen[width] += len(nodes)
 
-                # --- VIEW path: payload -> read-models -> encode
+                # --- VIEW path: the PRODUCTION road (`--materializer view`) — the shared
+                # prefix ONCE through `open_view_fork`, then per arm the ply's event fold, the
+                # read-models, the tracker advance and the encode. Trackers INCLUDED, which the
+                # earlier form of this benchmark did not have and which is most of the per-arm
+                # Python: a leaf whose recency / pair-history / event-window blocks were zero is
+                # not the leaf production scores.
                 t0 = time.perf_counter()
+                fork, _root_choices = open_view_fork(
+                    pfx, username=record.username(side),
+                    packed_team=record.packed_team(side), side=side,
+                    prefix_actions=prefix_actions, battle_format=record.format_id,
+                    battle_tag=record.battle_tag, encoder=encoder)
                 for n in nodes:
                     payload = n.view_p1 if side == "p1" else n.view_p2
-                    live, legal, vb = read_models_from_payload(payload)
-                    encoder.encode(vb, legal=legal)
+                    fork.successor(payload, n.p1_chunks if side == "p1" else n.p2_chunks,
+                                   sorted(cmap)[0])
                 t_view = (time.perf_counter() - t0) * 1000.0 / len(nodes)
 
                 # --- PROTOCOL path: the production shared-prefix materializer
@@ -119,6 +134,12 @@ def _run(n_battles: int, widths: List[int], impl: str) -> None:
                     packed_team=record.packed_team(side), side=side,
                     prefix_actions=prefix_actions, battle_format=record.format_id,
                     battle_tag=record.battle_tag,
+                    # 🚨 `map_actions_at` is NOT optional here. Production always asks for it
+                    # (`search._expand_ply` passes it, because a child's legal surface is what
+                    # makes a deeper ply possible), and the VIEW road always builds it — so a
+                    # protocol call without it compares a cheaper protocol road against the real
+                    # view road. Measured: it is ~24% of the view road's per-arm wall.
+                    map_actions_at=anchor + 1, stop_after_decision=anchor + 1,
                     encode_only_at={anchor + 1})
                 t_proto = (time.perf_counter() - t0) * 1000.0 / len(nodes)
 

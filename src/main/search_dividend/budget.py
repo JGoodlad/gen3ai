@@ -172,6 +172,16 @@ class RealizedWidths:
     arms_expanded: int = 0
     arms_scored: int = 0
     arms_terminal: int = 0
+    # WHICH ROAD each successor's observation was built on (`gen3_view_successor_v1`). The VIEW
+    # road is the default and the cheap one; the two fall-back counters are separate on purpose,
+    # for the same reason `worlds_open_failed` and `worlds_gate_failed` are: one means the
+    # TRANSPORT cannot answer (a node search driver emits no `view_pN`, or a parent arm had
+    # already fallen back) and the other means the ARM cannot be answered on that road (the ply
+    # resolved a replacement round — deferral D10). Folding them would let "we ran the whole cell
+    # on node" read as a property of the battles.
+    view_arms: int = 0
+    view_fallback_no_payload: int = 0
+    view_fallback_intermediate: int = 0
     # ITERATIVE DEEPENING (the registered depth amendment). `depth_planned` is the cap the CLI
     # asked for; `depth_realized` is what the wall-clock actually bought, which is the reportable
     # one — the whole content of the amendment is that a budget cell should say what depth it

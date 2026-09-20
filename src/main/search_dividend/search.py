@@ -63,7 +63,7 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -111,6 +111,14 @@ class SearchConfig:
     caps: WidthCaps = field(default_factory=WidthCaps)
     score: str = "auto"                 # auto | value | win_prob
     search_impl: str = "node"
+    #: WHICH road a successor's observation is built on — ``"view"`` (the DEFAULT) reads the
+    #: port's one-sided view payload and folds the ply's events in Python
+    #: (`gen3_view_successor_v1`); ``"protocol"`` replays the ply through poke-env
+    #: (``materialize_branches``). The two are byte-identical where both can answer —
+    #: ``one_sided_view_parity_fuzz_test`` is the gate — and the view road is the cheaper one
+    #: (see ``view_materialize_benchmark.py``). It is rust-only: ``search_driver.js`` emits no
+    #: ``view_pN``, so ``search_impl="node"`` falls back per arm and COUNTS the fallback.
+    materializer: str = "view"
     honest_swap_moves: bool = False     # axis M — see determinize.swap_unused_moves
     seed: int = 0
     # The iterative-deepening CAP, not a target: the wall-clock budget governs the realized depth,
@@ -128,6 +136,9 @@ class SearchConfig:
     defensive: dfn.DefensiveConfig = field(default_factory=dfn.DefensiveConfig)
 
     def __post_init__(self) -> None:
+        if self.materializer not in ("protocol", "view"):
+            raise ValueError(f"unknown materializer {self.materializer!r} "
+                             f"(expected 'protocol' or 'view')")
         if self.root_strategy not in ROOT_STRATEGIES:
             raise ValueError(f"unknown root_strategy {self.root_strategy!r} "
                              f"(want one of {ROOT_STRATEGIES})")
@@ -318,6 +329,22 @@ class _PlyContext:
         ``len(our_history)`` and each ply adds one. The whole depth generalization is this line:
         depth 1 encodes at ``+1``, depth 2 at ``+2``, and everything else is unchanged."""
         return len(self.our_history) + int(ply)
+
+
+@dataclass(frozen=True)
+class _Leaf:
+    """ONE arm's materialized leaf, whichever road built it.
+
+    The two roads return different objects — a ``MaterializedTrace`` and a
+    :class:`~agents.training.view_successor.ViewSuccessor` — and the rest of ``_expand_ply``
+    must not care which. ``fork`` is the VIEW road's continuation and is ``None`` on the
+    protocol road, which is precisely the fact a deeper ply needs in order to know it cannot
+    take the view road from here."""
+
+    obs: "np.ndarray"
+    mask: "np.ndarray"
+    action_choices: Dict[int, str]
+    fork: Any = None
 
 
 class SearchEngine:
@@ -965,7 +992,7 @@ class SearchEngine:
         a deeper ply is ONE freshly minted CRN seed shared across the whole ply (the dice axis is
         last in the registered width order, so a deeper ply never spends budget resampling it).
         """
-        from agents.training.obs_materializer import Branch, materialize_branches
+        from agents.training.obs_materializer import Branch
 
         seeds = list(ctx.seeds) if ply == 1 else [self._crn_seed(0, ply)]
         parents: List[TreeNode] = []
@@ -998,6 +1025,11 @@ class SearchEngine:
         #: label -> the cumulative root→child chunks, so the scored child carries what its own
         #: materialization used rather than re-deriving it a second time.
         child_chunks: Dict[int, Tuple[str, ...]] = {}
+        #: label -> THIS ply's own suffix + the port's one-sided view of the arm's board. The
+        #: VIEW road wants both, and the protocol road wants neither — so they are collected
+        #: beside the Branch rather than derived from it (a Branch's chunks are CUMULATIVE).
+        arm_suffix: Dict[int, Tuple[str, ...]] = {}
+        arm_view: Dict[int, dict] = {}
         n_terminal = 0
         n_scored = 0
         for e in expanded:
@@ -1022,50 +1054,136 @@ class SearchEngine:
                                    actions=list(parent.path) + [acts[li]], label=li))
             branch_of.append(li)
             child_chunks[li] = tuple(chunks)
+            arm_suffix[li] = tuple(suffix)
+            arm_view[li] = (e.view_p1 if ctx.side == "p1" else e.view_p2) or {}
 
         score_mode = self.cfg.effective_score()
         if branches:
             dec_i = ctx.decision_index(ply)
-            traces = materialize_branches(
-                ctx.prefix, branches, username=username,
-                packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
-                prefix_actions=list(ctx.our_history), battle_format=ctx.record.format_id,
-                battle_tag=ctx.record.battle_tag, mappings=self.mappings,
-                map_actions_at=dec_i, stop_after_decision=dec_i, encode_only_at={dec_i})
-            obs_rows, mask_rows, keys, kept = [], [], [], []
-            for li, mt in zip(branch_of, traces):
-                if len(mt.decisions) <= dec_i:
-                    continue                 # the successor never produced a request (rare)
-                d = mt.decisions[dec_i]
-                obs_rows.append(d.obs)
-                mask_rows.append(d.mask)
-                keys.append(li)
-                kept.append(mt)
-            if obs_rows:
-                sc, score_mode = self._score_batch(np.stack(obs_rows), np.stack(mask_rows))
+            leaves = self._materialize(
+                ctx, branches, branch_of, parents, acts, arm_suffix, arm_view, dec_i, ply, widths)
+            keys = [li for li in branch_of if leaves.get(li) is not None]
+            if keys:
+                sc, score_mode = self._score_batch(
+                    np.stack([leaves[li].obs for li in keys]),
+                    np.stack([leaves[li].mask for li in keys]))
                 by_label = {int(e.label): e for e in expanded}
-                for li, mt, v in zip(keys, kept, sc):
+                for li, v in zip(keys, sc):
                     parent = parents[li]
                     e = by_label[li]
+                    leaf = leaves[li]
                     # The child's OWN legal surface, from the REAL mapper — this is what makes a
                     # deeper ply possible at all, and it is already a by-product of the
                     # materialization the depth-1 pass ran. EMPTIED on a node that is not a clean
                     # move selection (see `branchable`), which makes such a node a leaf by
                     # construction everywhere downstream — `expandable()`, `leaves_under` and the
                     # cost estimate all agree without any of them having to know the rule.
-                    tokens = (dict(mt.action_choices or {})
+                    tokens = (dict(leaf.action_choices or {})
                               if branchable(e.requests, ctx.side) else {})
                     parent.add_child(
                         acts[li], weights[li],
                         TreeNode(node_id=e.node_id, ended=False, value=float(v),
                                  our_tokens=tokens, requests=e.requests,
                                  path=parent.path + (acts[li],),
-                                 chunks=child_chunks[li]))
+                                 chunks=child_chunks[li], fork=leaf.fork))
                     n_scored += 1
         widths.arms_scored += n_scored
         if deep:
             widths.deep_arms_scored += n_scored
         return {"n_scored": n_scored, "n_terminal": n_terminal, "score_mode": score_mode}
+
+    def _materialize(self, ctx: _PlyContext, branches, branch_of, parents, acts,
+                     arm_suffix, arm_view, dec_i: int, ply: int,
+                     widths: RealizedWidths) -> "Dict[int, _Leaf]":
+        """``{label: leaf}`` for every arm that produced a decision — by whichever ROAD the cell
+        is configured for, with the two roads' outputs byte-identical.
+
+        **PROTOCOL** is ``materialize_branches``: replay the shared prefix once, then per arm
+        restore the pickled replay player and feed the arm's plies through poke-env.
+
+        **VIEW** (`gen3_view_successor_v1`, the default) reads the port's one-sided ``view_pN``
+        for the arm's board and folds the arm's own protocol into events in Python, so the
+        per-arm cost is neither a snapshot restore nor a poke-env parse. It still pays the shared
+        prefix ONCE, through :func:`~agents.training.obs_materializer.open_view_fork` — the very
+        first half of ``materialize_branches``, so the fork is the same state and not merely an
+        equivalent one.
+
+        🚨 **Three arms the VIEW road cannot answer, each COUNTED and each falling back rather
+        than guessing.** A silent fallback is how an arm comes to be measured on a road nobody
+        thinks it is on:
+
+        * ``view_pN`` absent — ``search_driver.js`` emits none, so ``search_impl="node"`` falls
+          back for every arm;
+        * the ply resolved an intermediate decision (a replacement round), where the port's board
+          is one decision PAST the row this method must return — see
+          :func:`~agents.training.view_successor.intermediate_decisions`, deferral D10;
+        * a deeper ply whose parent carries no fork (its own arm fell back).
+        """
+        from agents.training.obs_materializer import materialize_branches, open_view_fork
+        from agents.training.view_successor import intermediate_decisions
+
+        out: "Dict[int, _Leaf]" = {}
+        todo = list(branch_of)
+        if self.cfg.materializer == "view":
+            fallback: List[int] = []
+            root_fork = None
+            for li in todo:
+                parent = parents[li]
+                fork = (parent.fork.child(self._encoder())
+                        if (ply > 1 and parent.fork is not None) else None)
+                if ply == 1:
+                    if root_fork is None and arm_view[li]:
+                        root_fork = open_view_fork(
+                            ctx.prefix, username=ctx.record.username(ctx.side),
+                            packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
+                            prefix_actions=list(ctx.our_history),
+                            battle_format=ctx.record.format_id,
+                            battle_tag=ctx.record.battle_tag, mappings=self.mappings,
+                            encoder=self._encoder())[0]
+                    fork = root_fork
+                if fork is None or not arm_view[li]:
+                    widths.view_fallback_no_payload += 1
+                    fallback.append(li)
+                    continue
+                if intermediate_decisions(arm_suffix[li]):
+                    widths.view_fallback_intermediate += 1
+                    fallback.append(li)
+                    continue
+                got = fork.successor(arm_view[li], arm_suffix[li], acts[li])
+                if got is None:
+                    continue                 # no decision here — the protocol road agrees
+                out[li] = _Leaf(obs=got.obs, mask=got.mask,
+                                action_choices=got.action_choices, fork=got)
+                widths.view_arms += 1
+            todo = fallback
+            branches = [b for b in branches if int(b.label) in set(todo)]
+        if todo and branches:
+            traces = materialize_branches(
+                ctx.prefix, branches, username=ctx.record.username(ctx.side),
+                packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
+                prefix_actions=list(ctx.our_history), battle_format=ctx.record.format_id,
+                battle_tag=ctx.record.battle_tag, mappings=self.mappings,
+                map_actions_at=dec_i, stop_after_decision=dec_i, encode_only_at={dec_i})
+            for b, mt in zip(branches, traces):
+                if len(mt.decisions) <= dec_i:
+                    continue                 # the successor never produced a request (rare)
+                d = mt.decisions[dec_i]
+                out[int(b.label)] = _Leaf(obs=d.obs, mask=np.asarray(d.mask),
+                                          action_choices=dict(mt.action_choices or {}),
+                                          fork=None)
+        return out
+
+    def _encoder(self):
+        """The observation encoder the VIEW road encodes a successor with — the same
+        ``mappings`` the protocol road's replay player is built from, so the two cannot hold
+        different dexes."""
+        enc = getattr(self, "_enc_cache", None)
+        if enc is None:
+            from agents.observation.state_encoder import get_observation_encoder, load_mappings
+            if self.mappings is None:
+                self.mappings = load_mappings()
+            enc = self._enc_cache = get_observation_encoder(self.mappings)
+        return enc
 
     def _worlds(self, record, opp_side: str, observed_our_lines: Sequence[str], k: int,
                 opp_true_packed: Optional[str]) -> List[Tuple[object, dict]]:

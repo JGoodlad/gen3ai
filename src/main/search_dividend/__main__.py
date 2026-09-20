@@ -95,6 +95,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="live battle bridge child")
     p.add_argument("--search-impl", default="node", choices=["node", "rust"],
                    help="search-driver child (node is the validated default for open_root)")
+    p.add_argument("--materializer", default="view", choices=["protocol", "view"],
+                   help="WHICH road builds a successor's observation. `view` (the default) reads "
+                        "the rust port's one-sided view payload and folds the ply's events in "
+                        "Python; `protocol` replays the ply through poke-env. Byte-identical "
+                        "where both can answer, and `view` falls back to `protocol` PER ARM with "
+                        "a counter where it cannot — including for every arm under "
+                        "--search-impl node, which emits no view payload.")
     p.add_argument("--leaf-head", default=None, metavar="PATH",
                    help="replace the WIN-PROB head's weights with a state_dict from PATH after "
                         "loading the checkpoint. The win head is a leak-safe SIDE readout (never "
@@ -454,6 +461,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         for budget in ([0.0] if arm == "base" else budgets):
             cfg = SearchConfig(arm=arm, budget_s=budget, caps=caps, score=args.score,
                                search_impl=args.search_impl,
+                               materializer=args.materializer,
                                honest_swap_moves=args.honest_swap_moves, seed=args.seed,
                                max_depth=args.max_depth,
                                root_strategy=args.root_strategy,

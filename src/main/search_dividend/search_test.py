@@ -403,9 +403,14 @@ class _PlySession:
         self.calls += 1
         req = {"p1": {"active": [{"moves": [{"id": "surf"}]}]},
                "p2": {"active": [{"moves": [{"id": "surf"}]}]}}
+        # `view_p1` / `view_p2` EMPTY on purpose: this test is about the PROTOCOL road's
+        # cumulative-chunk contract, and an empty payload is exactly what `search_driver.js`
+        # returns — so `_materialize` falls back per arm and the captured `Branch` list is the
+        # one under test. A stub that grew a view payload would quietly stop exercising it.
         return [_SimpleNamespace(label=a["label"], node_id=node_id, ended=False, stuck=False,
                                  outcome={}, requests=req, choices_used={},
-                                 p1_chunks=[chunk], p2_chunks=[chunk])
+                                 p1_chunks=[chunk], p2_chunks=[chunk],
+                                 view_p1={}, view_p2={})
                 for a in arms]
 
 

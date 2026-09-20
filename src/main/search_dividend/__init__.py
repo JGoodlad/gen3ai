@@ -65,6 +65,20 @@ Four things that breakdown settles, each with the number that settles it:
   trace included), far less on a search cell. It stays opt-in because it perturbs the forward at
   ~1e-6 and an argmax over near-tied actions could flip on that; measured, it did not (20/20
   battles identical), which is evidence and not a proof. See ``perf.py``.
+* **The MATERIALIZER HAS TWO ROADS now, and the default changed** (``gen3_view_successor_v1``,
+  2026-09-19). ``--materializer view`` builds each successor's observation from the Rust port's
+  ONE-SIDED VIEW payload — the board without replaying the ply's protocol — and folds the ply's
+  events in Python for the trackers, so the per-arm cost is neither a pickled-player restore nor a
+  poke-env parse. It is byte-identical to ``--materializer protocol`` where both can answer
+  (``materializer_parity_integration_test.py`` compares the real engine's per-action SCORES, not
+  just the obs) and it FALLS BACK per arm, with a counter, where it cannot: no ``view_pN``
+  (i.e. ``--search-impl node``), an arm whose ply resolved a replacement round (deferral D10,
+  measured at 6.9% of branch points), or a deeper ply whose parent had itself fallen back.
+  Measured per successor on a busy box: **1.35x at B=33, 0.98x at B=1** — the win is per-ARM, so it
+  appears as the ply widens, and at B=1 the cost IS the shared prefix, which both roads pay once.
+  ⚠️ An earlier 47x/6.4x figure for this change is in the ledger and it measured a DIFFERENT
+  thing: a tracker-less encode with no prefix replay, i.e. a leaf no search scores. See
+  ``designs/rust_sim/one_sided_view.md`` §6.
 * **The sim side is batched too** — one ``expand_many`` per ply carries every
   (action x candidate x seed) arm, and ``materialize_branches`` replays the shared prefix once for
   the whole set. Nothing here expands an arm at a time.
