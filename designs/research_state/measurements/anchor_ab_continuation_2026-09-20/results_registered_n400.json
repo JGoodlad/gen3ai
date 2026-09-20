@@ -1,0 +1,858 @@
+{
+ "what": "A/B continuation vs its frozen parent vs the fold path, external anchor",
+ "team_seeds": [
+  20260919,
+  20260929,
+  20260939,
+  20260949
+ ],
+ "bar": "PRIMARY: the 95% CI on the DIFFERENCE excludes zero (Newcombe). A CI that straddles zero is NOT DETECTED, never 'equivalent'. SECONDARY (stricter): the difference also clears the 0.090 run-level floor by both clauses.",
+ "arms": {
+  "W": "arm W (frozen parent, 75,005,952)",
+  "C": "continuation ai_v13_09_wcont (87,097,344)",
+  "F": "fold path ai_v13_08_fold1_cont (87,097,344)"
+ },
+ "floor": 0.09,
+ "cells": {
+  "SmallRL|away": {
+   "arms": {
+    "W": {
+     "n": 400,
+     "wins": 218,
+     "losses": 182,
+     "ties": 0,
+     "win_rate": 0.545,
+     "wilson95": [
+      0.496,
+      0.5931
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 51,
+       "win_rate": 0.51,
+       "status": "OK",
+       "hit_forfeit_limit": 3,
+       "mean_turns": 59.79,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 53,
+       "win_rate": 0.53,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 46.55,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 55,
+       "win_rate": 0.55,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 51.83,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 59,
+       "win_rate": 0.59,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 47.66,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 111,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 107,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       false,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 4,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 51.46,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260929,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "C": {
+     "n": 400,
+     "wins": 224,
+     "losses": 176,
+     "ties": 0,
+     "win_rate": 0.56,
+     "wilson95": [
+      0.511,
+      0.6078
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 62,
+       "win_rate": 0.62,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 51.29,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 45,
+       "win_rate": 0.45,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 50.45,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 54.88,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 49.51,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 117,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 107,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 4,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 51.53,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260939,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "F": {
+     "n": 400,
+     "wins": 198,
+     "losses": 202,
+     "ties": 0,
+     "win_rate": 0.495,
+     "wilson95": [
+      0.4463,
+      0.5438
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 43,
+       "win_rate": 0.43,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 56.67,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 59,
+       "win_rate": 0.59,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 54.2,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 47,
+       "win_rate": 0.47,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 61.17,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 49,
+       "win_rate": 0.49,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 59.32,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 99,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 99,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 1,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 57.84,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded in comparison"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    }
+   },
+   "contrasts": {
+    "C-W": {
+     "delta": 0.015,
+     "newcombe95": [
+      -0.0537,
+      0.0835
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": true,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.015,
+      "boot95": [
+       -0.05,
+       0.0775
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    },
+    "C-F": {
+     "delta": 0.065,
+     "newcombe95": [
+      -0.0042,
+      0.1333
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.065,
+      "boot95": [
+       -0.0025,
+       0.13
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    },
+    "F-W": {
+     "delta": -0.05,
+     "newcombe95": [
+      -0.1185,
+      0.0192
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": -0.05,
+      "boot95": [
+       -0.115,
+       0.0125
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    }
+   }
+  },
+  "SmallRL|home": {
+   "arms": {
+    "W": {
+     "n": 400,
+     "wins": 247,
+     "losses": 152,
+     "ties": 1,
+     "win_rate": 0.6175,
+     "wilson95": [
+      0.569,
+      0.6638
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 45.24,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 67,
+       "win_rate": 0.67,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 43.1,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 54,
+       "win_rate": 0.54,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 44.27,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 65,
+       "win_rate": 0.65,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 38.56,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 119,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 128,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       true,
+       true,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 1,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 42.79,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260929,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "C": {
+     "n": 400,
+     "wins": 261,
+     "losses": 139,
+     "ties": 0,
+     "win_rate": 0.6525,
+     "wilson95": [
+      0.6046,
+      0.6975
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 60,
+       "win_rate": 0.6,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 41.5,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 67,
+       "win_rate": 0.67,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 44.75,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 68,
+       "win_rate": 0.68,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 46.2,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 66,
+       "win_rate": 0.66,
+       "status": "OK",
+       "hit_forfeit_limit": 3,
+       "mean_turns": 41.22,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 135,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 126,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       true,
+       true,
+       true,
+       false
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 3,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 43.42,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260949,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260949,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "F": {
+     "n": 400,
+     "wins": 219,
+     "losses": 179,
+     "ties": 2,
+     "win_rate": 0.5475,
+     "wilson95": [
+      0.4985,
+      0.5956
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 50,
+       "win_rate": 0.5,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 45.45,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 45.34,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 53,
+       "win_rate": 0.53,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 46.49,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 55,
+       "win_rate": 0.55,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 44.41,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 102,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 117,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       false,
+       false
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 3,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 45.42,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded in comparison"
+       ],
+       [
+        20260939,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260949,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    }
+   },
+   "contrasts": {
+    "C-W": {
+     "delta": 0.035,
+     "newcombe95": [
+      -0.0316,
+      0.1012
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.035,
+      "boot95": [
+       -0.025,
+       0.095
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    },
+    "C-F": {
+     "delta": 0.105,
+     "newcombe95": [
+      0.0371,
+      0.1715
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": true,
+     "primary_verdict": "DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": true,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.105,
+      "boot95": [
+       0.04,
+       0.17
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    },
+    "F-W": {
+     "delta": -0.07,
+     "newcombe95": [
+      -0.1374,
+      -0.0017
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": true,
+     "primary_verdict": "DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": -0.07,
+      "boot95": [
+       -0.135,
+       -0.005
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    }
+   }
+  }
+ }
+}

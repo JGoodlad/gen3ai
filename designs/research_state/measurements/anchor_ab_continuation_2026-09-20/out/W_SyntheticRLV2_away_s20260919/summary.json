@@ -1,0 +1,95 @@
+{
+ "by_half": {
+  "ours_challenge": {
+   "n": 50,
+   "wilson_hi": 0.4784617395305599,
+   "wilson_lo": 0.22436949220206606,
+   "win_rate": 0.34,
+   "wins": 17
+  },
+  "peer_challenge": {
+   "n": 50,
+   "wilson_hi": 0.39553157268229566,
+   "wilson_lo": 0.15871527491664314,
+   "win_rate": 0.26,
+   "wins": 13
+  }
+ },
+ "cell": {
+  "battle_format": "gen3ou",
+  "forfeit_turn_limit": 250,
+  "model_loader": "bare",
+  "model_rung": "explicit_zip",
+  "model_spec": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "model_step": 75005952,
+  "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "opponent": "metamon:SyntheticRLV2",
+  "opponent_agent": "SyntheticRLV2",
+  "opponent_commit": "0a00a759",
+  "opponent_kind": "metamon",
+  "opponent_version": "SyntheticRLV2@ckpt48",
+  "our_regime": "greedy",
+  "our_side": "model",
+  "our_team_count": 20,
+  "our_team_source": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+  "regime_matched": true,
+  "search_parallelism": null,
+  "search_time_ms": null,
+  "server_uri": "ws://localhost:9500/showdown/websocket",
+  "showdown_pin": "e0551883f",
+  "teamset": "away",
+  "their_regime": "greedy",
+  "their_team_count": 20,
+  "their_team_source": ""
+ },
+ "distinct_our_teams": 17,
+ "hit_forfeit_limit": 2,
+ "losses": 69,
+ "max_turns": 250,
+ "mean_turns": 61.7,
+ "median_turns": 43,
+ "n": 100,
+ "n_defaults": 0,
+ "n_redecides": 0,
+ "provenance": {
+  "anchors_config": "/home/goodlad/dev/gen3ai-wt/anchor_ab/designs/ops/anchors.json",
+  "games_path": "/home/goodlad/.claude/jobs/anchor_ab/out/W_SyntheticRLV2_away_s20260919/games.jsonl",
+  "peer_report": {
+   "argmax_match_rate": 1.0,
+   "commit": "0a00a759",
+   "median_decision_s": 0.11792326299473643,
+   "model_loader": "bare",
+   "n_decisions": 3380,
+   "our_stochastic_kwargs": [
+    false
+   ],
+   "peer_games": null,
+   "peer_rc": 1,
+   "peer_wins": null,
+   "regime_verified": false,
+   "sample_kwargs": [
+    false
+   ],
+   "team_count": 20,
+   "their_regime": "greedy",
+   "version": "SyntheticRLV2@ckpt48",
+   "visits_mean": null,
+   "visits_n": 0,
+   "wall_s": 840.6862151622772
+  }
+ },
+ "realized_visits_per_decision_mean": null,
+ "realized_visits_samples": 0,
+ "status": "OK",
+ "team_source_asymmetry": false,
+ "their_argmax_match_rates": [
+  1.0
+ ],
+ "ties": 1,
+ "wilson95": [
+  0.21894885293254304,
+  0.3958485463569392
+ ],
+ "win_rate": 0.3,
+ "wins": 30
+}

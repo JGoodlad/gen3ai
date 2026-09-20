@@ -42,24 +42,36 @@ declare -A ZIP=(
 
 # arm|opponent|teamset|games|team-seed  — round-robin by seed so every arm gains n together and a
 # lane stopped early still leaves a balanced table.
-if [ "$JOBSET" = "smallrl" ]; then
-  JOBS=()
-  for TS in away home; do
+JOBS=()
+case "$JOBSET" in
+  smallrl)      # the REGISTERED design: 4 team seeds x 3 arms x both team sets = 400/arm/cell
+    for TS in away home; do
+      for S in 20260919 20260929 20260939 20260949; do
+        for A in W C F; do JOBS+=("$A|metamon:SmallRL|$TS|100|$S"); done
+      done
+    done ;;
+  smallrl_ext)  # AMENDMENT 1: 8 more seeds per cell -> n = 1200/arm/cell (unconditional)
+    for TS in away home; do
+      for S in 20260959 20260969 20260979 20260989 20260999 20261009 20261019 20261029; do
+        for A in W C F; do JOBS+=("$A|metamon:SmallRL|$TS|100|$S"); done
+      done
+    done ;;
+  synthv2)      # the ERA-GATE cell, 4 seeds -> n = 400/arm (AMENDMENT 1 raised it from 200)
     for S in 20260919 20260929 20260939 20260949; do
-      for A in W C F; do JOBS+=("$A|metamon:SmallRL|$TS|100|$S"); done
-    done
-  done
-else
-  JOBS=()
-  for S in 20260919 20260929; do
-    for A in W C F; do JOBS+=("$A|metamon:SyntheticRLV2|away|100|$S"); done
-  done
-fi
+      for A in W C F; do JOBS+=("$A|metamon:SyntheticRLV2|away|100|$S"); done
+    done ;;
+  *) echo "unknown jobset $JOBSET" >&2; exit 2 ;;
+esac
 
 mkdir -p "$OUT"
 cd "$WT"
-PORT_BASE=9521
-[ "$JOBSET" = "synthv2" ] && PORT_BASE=9561
+# 🚨 disjoint port bands per jobset, all inside the tool's 9500-9599 range, so two jobsets can
+# never contend for a port even if one is relaunched while another is still draining.
+case "$JOBSET" in
+  smallrl)     PORT_BASE=9521 ;;   # 24 jobs -> 9521-9544
+  smallrl_ext) PORT_BASE=9545 ;;   # 48 jobs -> 9545-9592
+  synthv2)     PORT_BASE=9500 ;;   # 12 jobs -> 9500-9511
+esac
 
 for i in "${!JOBS[@]}"; do
   [ $(( i % 2 )) -ne "$LANE" ] && continue

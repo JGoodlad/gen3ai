@@ -1,0 +1,95 @@
+{
+ "by_half": {
+  "ours_challenge": {
+   "n": 50,
+   "wilson_hi": 0.5769397198142374,
+   "wilson_lo": 0.31162199208549735,
+   "win_rate": 0.44,
+   "wins": 22
+  },
+  "peer_challenge": {
+   "n": 50,
+   "wilson_hi": 0.5960112860387011,
+   "wilson_lo": 0.3296965218944554,
+   "win_rate": 0.46,
+   "wins": 23
+  }
+ },
+ "cell": {
+  "battle_format": "gen3ou",
+  "forfeit_turn_limit": 250,
+  "model_loader": "bare",
+  "model_rung": "explicit_zip",
+  "model_spec": "/home/goodlad/dev/gen3ai/models/ai_v13_08_fold1_cont/final_model.zip",
+  "model_step": 87097344,
+  "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_08_fold1_cont/final_model.zip",
+  "opponent": "metamon:SmallRL",
+  "opponent_agent": "SmallRL",
+  "opponent_commit": "0a00a759",
+  "opponent_kind": "metamon",
+  "opponent_version": "SmallRL@ckpt40",
+  "our_regime": "greedy",
+  "our_side": "model",
+  "our_team_count": 20,
+  "our_team_source": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou",
+  "regime_matched": true,
+  "search_parallelism": null,
+  "search_time_ms": null,
+  "server_uri": "ws://localhost:9565/showdown/websocket",
+  "showdown_pin": "e0551883f",
+  "teamset": "away",
+  "their_regime": "greedy",
+  "their_team_count": 20,
+  "their_team_source": ""
+ },
+ "distinct_our_teams": 17,
+ "hit_forfeit_limit": 1,
+ "losses": 55,
+ "max_turns": 250,
+ "mean_turns": 66.12,
+ "median_turns": 54,
+ "n": 100,
+ "n_defaults": 0,
+ "n_redecides": 0,
+ "provenance": {
+  "anchors_config": "/home/goodlad/dev/gen3ai-wt/anchor_ab/designs/ops/anchors.json",
+  "games_path": "/home/goodlad/.claude/jobs/anchor_ab/out/F_SmallRL_away_s20261019/games.jsonl",
+  "peer_report": {
+   "argmax_match_rate": 1.0,
+   "commit": "0a00a759",
+   "median_decision_s": 0.0062834774143993855,
+   "model_loader": "bare",
+   "n_decisions": 3697,
+   "our_stochastic_kwargs": [
+    false
+   ],
+   "peer_games": null,
+   "peer_rc": 1,
+   "peer_wins": null,
+   "regime_verified": false,
+   "sample_kwargs": [
+    false
+   ],
+   "team_count": 20,
+   "their_regime": "greedy",
+   "version": "SmallRL@ckpt40",
+   "visits_mean": null,
+   "visits_n": 0,
+   "wall_s": 160.45758605003357
+  }
+ },
+ "realized_visits_per_decision_mean": null,
+ "realized_visits_samples": 0,
+ "status": "OK",
+ "team_source_asymmetry": false,
+ "their_argmax_match_rates": [
+  1.0
+ ],
+ "ties": 0,
+ "wilson95": [
+  0.3561453797743196,
+  0.547553970048051
+ ],
+ "win_rate": 0.45,
+ "wins": 45
+}

@@ -6,7 +6,12 @@ record's own ``summary.json``.  This script (1) pools the four 100-game sub-cell
 the registered CI on each of the three paired contrasts, (3) records the integrity counters the
 registration named, and (4) runs the post-hoc alignment check that licenses the PAIRED descriptor.
 
-    python analyze.py <out-dir> <dest.json>
+    python analyze.py <out-dir> <dest.json> [seed,seed,...]
+
+The optional third argument RESTRICTS the read to those ``--team-seed`` values. That is how the
+REGISTERED n = 400 verdict is computed on the four registered seeds ALONE while the amendment's
+extension sub-cells sit in the same directory: the pre-registered result must never silently absorb
+sub-cells the registration did not name.
 
 🚨 THE REGISTERED BAR IS THE CI ON THE DIFFERENCE EXCLUDING ZERO.  A CI that straddles is NOT
 DETECTED -- never "equivalent" (rule 6).  The 0.090 run-level floor is reported BESIDE it as the
@@ -74,12 +79,14 @@ def paired_bootstrap(pairs, draws=20000, seed=20260919):
             "n_pairs": n}
 
 
-def load(out_dir: Path):
+def load(out_dir: Path, seeds=None):
     cells = defaultdict(list)
     for d in sorted(out_dir.iterdir()):
-        if not (d / "summary.json").exists():
+        if not d.is_dir() or not (d / "summary.json").exists():
             continue
         arm, opp, teamset, seed = d.name.split("_")
+        if seeds is not None and int(seed[1:]) not in seeds:
+            continue
         s = json.loads((d / "summary.json").read_text())
         rec = {"tag": d.name, "arm": arm, "opponent": opp, "teamset": teamset,
                "team_seed": int(seed[1:]), "dir": str(d), "summary": s,
@@ -186,9 +193,11 @@ def match_pairs(recs_a, recs_b):
 
 def main() -> int:
     out_dir, dest = Path(sys.argv[1]), Path(sys.argv[2])
-    cells = load(out_dir)
+    seeds = {int(x) for x in sys.argv[3].split(",")} if len(sys.argv) > 3 else None
+    cells = load(out_dir, seeds)
     keys = sorted({(o, t) for (o, t, _) in cells})
     doc = {"what": "A/B continuation vs its frozen parent vs the fold path, external anchor",
+           "team_seeds": sorted(seeds) if seeds else "ALL present",
            "bar": ("PRIMARY: the 95% CI on the DIFFERENCE excludes zero (Newcombe). A CI that "
                    "straddles zero is NOT DETECTED, never 'equivalent'. SECONDARY (stricter): the "
                    "difference also clears the 0.090 run-level floor by both clauses."),

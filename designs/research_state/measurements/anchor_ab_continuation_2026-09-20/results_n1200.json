@@ -1,0 +1,2140 @@
+{
+ "what": "A/B continuation vs its frozen parent vs the fold path, external anchor",
+ "team_seeds": [
+  20260919,
+  20260929,
+  20260939,
+  20260949,
+  20260959,
+  20260969,
+  20260979,
+  20260989,
+  20260999,
+  20261009,
+  20261019,
+  20261029
+ ],
+ "bar": "PRIMARY: the 95% CI on the DIFFERENCE excludes zero (Newcombe). A CI that straddles zero is NOT DETECTED, never 'equivalent'. SECONDARY (stricter): the difference also clears the 0.090 run-level floor by both clauses.",
+ "arms": {
+  "W": "arm W (frozen parent, 75,005,952)",
+  "C": "continuation ai_v13_09_wcont (87,097,344)",
+  "F": "fold path ai_v13_08_fold1_cont (87,097,344)"
+ },
+ "floor": 0.09,
+ "cells": {
+  "SmallRL|away": {
+   "arms": {
+    "W": {
+     "n": 1200,
+     "wins": 664,
+     "losses": 535,
+     "ties": 1,
+     "win_rate": 0.5533,
+     "wilson95": [
+      0.5251,
+      0.5812
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 51,
+       "win_rate": 0.51,
+       "status": "OK",
+       "hit_forfeit_limit": 3,
+       "mean_turns": 59.79,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 53,
+       "win_rate": 0.53,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 46.55,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 55,
+       "win_rate": 0.55,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 51.83,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 59,
+       "win_rate": 0.59,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 47.66,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260959,
+       "n": 100,
+       "wins": 50,
+       "win_rate": 0.5,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 56.4,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260969,
+       "n": 100,
+       "wins": 51,
+       "win_rate": 0.51,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 57.14,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260979,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 48.69,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260989,
+       "n": 100,
+       "wins": 53,
+       "win_rate": 0.53,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 46.61,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260999,
+       "n": 100,
+       "wins": 60,
+       "win_rate": 0.6,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 43.71,
+       "distinct_our_teams": 16,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261009,
+       "n": 100,
+       "wins": 58,
+       "win_rate": 0.58,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 52.87,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261019,
+       "n": 100,
+       "wins": 50,
+       "win_rate": 0.5,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 58.9,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261029,
+       "n": 100,
+       "wins": 68,
+       "win_rate": 0.68,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 46.63,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 324,
+       "n": 600
+      },
+      "peer_challenge": {
+       "wins": 340,
+       "n": 600
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       false,
+       true,
+       true,
+       true,
+       true,
+       true,
+       true,
+       true,
+       true,
+       false,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 8,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 51.4,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260929,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260969,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261009,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261019,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "C": {
+     "n": 1200,
+     "wins": 711,
+     "losses": 489,
+     "ties": 0,
+     "win_rate": 0.5925,
+     "wilson95": [
+      0.5644,
+      0.62
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 62,
+       "win_rate": 0.62,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 51.29,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 45,
+       "win_rate": 0.45,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 50.45,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 54.88,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 49.51,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260959,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 52.64,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260969,
+       "n": 100,
+       "wins": 69,
+       "win_rate": 0.69,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 58.55,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260979,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 54.02,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260989,
+       "n": 100,
+       "wins": 59,
+       "win_rate": 0.59,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 52.85,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260999,
+       "n": 100,
+       "wins": 60,
+       "win_rate": 0.6,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 49.57,
+       "distinct_our_teams": 16,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261009,
+       "n": 100,
+       "wins": 64,
+       "win_rate": 0.64,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 52.32,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261019,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 60.2,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261029,
+       "n": 100,
+       "wins": 62,
+       "win_rate": 0.62,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 49.1,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 357,
+       "n": 600
+      },
+      "peer_challenge": {
+       "wins": 354,
+       "n": 600
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       true,
+       true,
+       false,
+       true,
+       true,
+       true,
+       true,
+       true,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 5,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 52.95,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260939,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260959,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "F": {
+     "n": 1200,
+     "wins": 567,
+     "losses": 631,
+     "ties": 2,
+     "win_rate": 0.4725,
+     "wilson95": [
+      0.4444,
+      0.5008
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 43,
+       "win_rate": 0.43,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 56.67,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 59,
+       "win_rate": 0.59,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 54.2,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 47,
+       "win_rate": 0.47,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 61.17,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 49,
+       "win_rate": 0.49,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 59.32,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260959,
+       "n": 100,
+       "wins": 34,
+       "win_rate": 0.34,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 61.13,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260969,
+       "n": 100,
+       "wins": 49,
+       "win_rate": 0.49,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 55.8,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260979,
+       "n": 100,
+       "wins": 41,
+       "win_rate": 0.41,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 63.44,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260989,
+       "n": 100,
+       "wins": 36,
+       "win_rate": 0.36,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 48.89,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260999,
+       "n": 100,
+       "wins": 55,
+       "win_rate": 0.55,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 52.66,
+       "distinct_our_teams": 16,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261009,
+       "n": 100,
+       "wins": 57,
+       "win_rate": 0.57,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 61.63,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261019,
+       "n": 100,
+       "wins": 45,
+       "win_rate": 0.45,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 66.12,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261029,
+       "n": 100,
+       "wins": 52,
+       "win_rate": 0.52,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 53.03,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 284,
+       "n": 600
+      },
+      "peer_challenge": {
+       "wins": 283,
+       "n": 600
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       true,
+       true,
+       false,
+       true,
+       false,
+       true,
+       true,
+       false,
+       false,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 6,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 57.84,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded in comparison"
+       ],
+       [
+        20260959,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260979,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260979,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261009,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261019,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    }
+   },
+   "contrasts": {
+    "C-W": {
+     "delta": 0.0392,
+     "newcombe95": [
+      -0.0004,
+      0.0786
+     ],
+     "n_hi": 1200,
+     "n_lo": 1200,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": true,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.0392,
+      "boot95": [
+       0.0025,
+       0.0758
+      ],
+      "n_pairs": 1200
+     },
+     "pair_alignment": {
+      "n_shared_slots": 1200,
+      "same_our_team": 1200,
+      "alignment_verified": true
+     }
+    },
+    "C-F": {
+     "delta": 0.12,
+     "newcombe95": [
+      0.0802,
+      0.1593
+     ],
+     "n_hi": 1200,
+     "n_lo": 1200,
+     "PRIMARY_ci_excludes_zero": true,
+     "primary_verdict": "DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": true,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.12,
+      "boot95": [
+       0.0817,
+       0.1575
+      ],
+      "n_pairs": 1200
+     },
+     "pair_alignment": {
+      "n_shared_slots": 1200,
+      "same_our_team": 1200,
+      "alignment_verified": true
+     }
+    },
+    "F-W": {
+     "delta": -0.0808,
+     "newcombe95": [
+      -0.1205,
+      -0.0409
+     ],
+     "n_hi": 1200,
+     "n_lo": 1200,
+     "PRIMARY_ci_excludes_zero": true,
+     "primary_verdict": "DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": -0.0808,
+      "boot95": [
+       -0.1175,
+       -0.0433
+      ],
+      "n_pairs": 1200
+     },
+     "pair_alignment": {
+      "n_shared_slots": 1200,
+      "same_our_team": 1200,
+      "alignment_verified": true
+     }
+    }
+   }
+  },
+  "SmallRL|home": {
+   "arms": {
+    "W": {
+     "n": 1200,
+     "wins": 749,
+     "losses": 448,
+     "ties": 3,
+     "win_rate": 0.6242,
+     "wilson95": [
+      0.5964,
+      0.6511
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 45.24,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 67,
+       "win_rate": 0.67,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 43.1,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 54,
+       "win_rate": 0.54,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 44.27,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 65,
+       "win_rate": 0.65,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 38.56,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260959,
+       "n": 100,
+       "wins": 62,
+       "win_rate": 0.62,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 42.91,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260969,
+       "n": 100,
+       "wins": 64,
+       "win_rate": 0.64,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 39.78,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260979,
+       "n": 100,
+       "wins": 70,
+       "win_rate": 0.7,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 39.84,
+       "distinct_our_teams": 50,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260989,
+       "n": 100,
+       "wins": 64,
+       "win_rate": 0.64,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 40.02,
+       "distinct_our_teams": 50,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260999,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 46.71,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261009,
+       "n": 100,
+       "wins": 62,
+       "win_rate": 0.62,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 43.66,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261019,
+       "n": 100,
+       "wins": 65,
+       "win_rate": 0.65,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 48.05,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261029,
+       "n": 100,
+       "wins": 59,
+       "win_rate": 0.59,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 46.71,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 369,
+       "n": 600
+      },
+      "peer_challenge": {
+       "wins": 380,
+       "n": 600
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       true,
+       true,
+       true,
+       true,
+       true,
+       true,
+       false,
+       true,
+       false,
+       true,
+       false,
+       false
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 8,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 43.24,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260929,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260979,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260979,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260999,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260999,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261019,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261029,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261029,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "C": {
+     "n": 1200,
+     "wins": 773,
+     "losses": 427,
+     "ties": 0,
+     "win_rate": 0.6442,
+     "wilson95": [
+      0.6167,
+      0.6708
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 60,
+       "win_rate": 0.6,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 41.5,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 67,
+       "win_rate": 0.67,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 44.75,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 68,
+       "win_rate": 0.68,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 46.2,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 66,
+       "win_rate": 0.66,
+       "status": "OK",
+       "hit_forfeit_limit": 3,
+       "mean_turns": 41.22,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260959,
+       "n": 100,
+       "wins": 66,
+       "win_rate": 0.66,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 43.09,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260969,
+       "n": 100,
+       "wins": 69,
+       "win_rate": 0.69,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 43.19,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260979,
+       "n": 100,
+       "wins": 65,
+       "win_rate": 0.65,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 40.85,
+       "distinct_our_teams": 50,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260989,
+       "n": 100,
+       "wins": 66,
+       "win_rate": 0.66,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 41.26,
+       "distinct_our_teams": 50,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260999,
+       "n": 100,
+       "wins": 63,
+       "win_rate": 0.63,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 43.36,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261009,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 45.49,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261019,
+       "n": 100,
+       "wins": 66,
+       "win_rate": 0.66,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 43.91,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261029,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 46.99,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 393,
+       "n": 600
+      },
+      "peer_challenge": {
+       "wins": 380,
+       "n": 600
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       true,
+       true,
+       true,
+       false,
+       true,
+       false,
+       false,
+       true,
+       false,
+       true,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 8,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 43.48,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260949,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260949,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260969,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260979,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260999,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260999,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261029,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "F": {
+     "n": 1200,
+     "wins": 655,
+     "losses": 539,
+     "ties": 6,
+     "win_rate": 0.5458,
+     "wilson95": [
+      0.5176,
+      0.5738
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 50,
+       "win_rate": 0.5,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 45.45,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 61,
+       "win_rate": 0.61,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 45.34,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 53,
+       "win_rate": 0.53,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 46.49,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 55,
+       "win_rate": 0.55,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 44.41,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260959,
+       "n": 100,
+       "wins": 56,
+       "win_rate": 0.56,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 45.26,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260969,
+       "n": 100,
+       "wins": 49,
+       "win_rate": 0.49,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 44.61,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260979,
+       "n": 100,
+       "wins": 62,
+       "win_rate": 0.62,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 37.16,
+       "distinct_our_teams": 50,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260989,
+       "n": 100,
+       "wins": 53,
+       "win_rate": 0.53,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 41.25,
+       "distinct_our_teams": 50,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260999,
+       "n": 100,
+       "wins": 58,
+       "win_rate": 0.58,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 42.99,
+       "distinct_our_teams": 47,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261009,
+       "n": 100,
+       "wins": 42,
+       "win_rate": 0.42,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 42.8,
+       "distinct_our_teams": 48,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261019,
+       "n": 100,
+       "wins": 58,
+       "win_rate": 0.58,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 42.63,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20261029,
+       "n": 100,
+       "wins": 58,
+       "win_rate": 0.58,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 48.52,
+       "distinct_our_teams": 49,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 313,
+       "n": 600
+      },
+      "peer_challenge": {
+       "wins": 342,
+       "n": 600
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       false,
+       false,
+       true,
+       true,
+       true,
+       false,
+       false,
+       true,
+       true,
+       false
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 6,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 43.91,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded in comparison"
+       ],
+       [
+        20260939,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260949,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260989,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260999,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20261029,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    }
+   },
+   "contrasts": {
+    "C-W": {
+     "delta": 0.02,
+     "newcombe95": [
+      -0.0185,
+      0.0584
+     ],
+     "n_hi": 1200,
+     "n_lo": 1200,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": true,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.02,
+      "boot95": [
+       -0.015,
+       0.0542
+      ],
+      "n_pairs": 1200
+     },
+     "pair_alignment": {
+      "n_shared_slots": 1200,
+      "same_our_team": 1200,
+      "alignment_verified": true
+     }
+    },
+    "C-F": {
+     "delta": 0.0983,
+     "newcombe95": [
+      0.0591,
+      0.1371
+     ],
+     "n_hi": 1200,
+     "n_lo": 1200,
+     "PRIMARY_ci_excludes_zero": true,
+     "primary_verdict": "DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": true,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.0983,
+      "boot95": [
+       0.0608,
+       0.135
+      ],
+      "n_pairs": 1200
+     },
+     "pair_alignment": {
+      "n_shared_slots": 1200,
+      "same_our_team": 1200,
+      "alignment_verified": true
+     }
+    },
+    "F-W": {
+     "delta": -0.0783,
+     "newcombe95": [
+      -0.1174,
+      -0.0389
+     ],
+     "n_hi": 1200,
+     "n_lo": 1200,
+     "PRIMARY_ci_excludes_zero": true,
+     "primary_verdict": "DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": -0.0783,
+      "boot95": [
+       -0.115,
+       -0.0425
+      ],
+      "n_pairs": 1200
+     },
+     "pair_alignment": {
+      "n_shared_slots": 1200,
+      "same_our_team": 1200,
+      "alignment_verified": true
+     }
+    }
+   }
+  },
+  "SyntheticRLV2|away": {
+   "arms": {
+    "W": {
+     "n": 400,
+     "wins": 135,
+     "losses": 263,
+     "ties": 2,
+     "win_rate": 0.3375,
+     "wilson95": [
+      0.2929,
+      0.3852
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 30,
+       "win_rate": 0.3,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 61.7,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 32,
+       "win_rate": 0.32,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 56.68,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 35,
+       "win_rate": 0.35,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 51.85,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 38,
+       "win_rate": 0.38,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 50.95,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 75005952,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 74,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 61,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       false,
+       false,
+       false
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 5,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 55.3,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260929,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260939,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260949,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "C": {
+     "n": 400,
+     "wins": 154,
+     "losses": 245,
+     "ties": 1,
+     "win_rate": 0.385,
+     "wilson95": [
+      0.3386,
+      0.4336
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 42,
+       "win_rate": 0.42,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 56.24,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 35,
+       "win_rate": 0.35,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 57.18,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 34,
+       "win_rate": 0.34,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 57.17,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 43,
+       "win_rate": 0.43,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 46.47,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 74,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 80,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       true,
+       true,
+       true,
+       true
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 0,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 54.27,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    },
+    "F": {
+     "n": 400,
+     "wins": 139,
+     "losses": 261,
+     "ties": 0,
+     "win_rate": 0.3475,
+     "wilson95": [
+      0.3025,
+      0.3954
+     ],
+     "sub_cells": [
+      {
+       "seed": 20260919,
+       "n": 100,
+       "wins": 28,
+       "win_rate": 0.28,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 58.28,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260929,
+       "n": 100,
+       "wins": 39,
+       "win_rate": 0.39,
+       "status": "OK",
+       "hit_forfeit_limit": 0,
+       "mean_turns": 62.16,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260939,
+       "n": 100,
+       "wins": 28,
+       "win_rate": 0.28,
+       "status": "OK",
+       "hit_forfeit_limit": 2,
+       "mean_turns": 57.72,
+       "distinct_our_teams": 18,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      },
+      {
+       "seed": 20260949,
+       "n": 100,
+       "wins": 44,
+       "win_rate": 0.44,
+       "status": "OK",
+       "hit_forfeit_limit": 1,
+       "mean_turns": 48.28,
+       "distinct_our_teams": 17,
+       "team_source_asymmetry": false,
+       "model_step": 87097344,
+       "model_rung": "explicit_zip",
+       "model_loader": "bare"
+      }
+     ],
+     "excluded_sub_cells": [],
+     "by_half": {
+      "ours_challenge": {
+       "wins": 73,
+       "n": 200
+      },
+      "peer_challenge": {
+       "wins": 66,
+       "n": 200
+      }
+     },
+     "integrity": {
+      "composite_regime_verified": [
+       false,
+       true,
+       false,
+       false
+      ],
+      "per_decision_argmax_rates": [
+       1.0
+      ],
+      "per_decision_all_1_0000": true,
+      "hit_forfeit_limit_total": 4,
+      "n_defaults_total": 0,
+      "n_redecides_total": 0,
+      "mean_turns": 56.61,
+      "team_source_asymmetry_any": false,
+      "peer_errors": [
+       [
+        20260919,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260939,
+        "ours_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260939,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ],
+       [
+        20260949,
+        "peer_challenge",
+        "RecursionError: maximum recursion depth exceeded while calling a Python object"
+       ]
+      ],
+      "timeout_rate": 0.0,
+      "timeout_note": "main.anchors has no timeout outcome: a stalled series is a NAMED failure (no_progress / short_series) that voids the sub-cell, so the registered >25% INCONCLUSIVE rule reads on excluded_sub_cells."
+     }
+    }
+   },
+   "contrasts": {
+    "C-W": {
+     "delta": 0.0475,
+     "newcombe95": [
+      -0.019,
+      0.1134
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.0475,
+      "boot95": [
+       -0.0125,
+       0.1075
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    },
+    "C-F": {
+     "delta": 0.0375,
+     "newcombe95": [
+      -0.0292,
+      0.1037
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": false,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.0375,
+      "boot95": [
+       -0.0225,
+       0.1
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    },
+    "F-W": {
+     "delta": 0.01,
+     "newcombe95": [
+      -0.0556,
+      0.0755
+     ],
+     "n_hi": 400,
+     "n_lo": 400,
+     "PRIMARY_ci_excludes_zero": false,
+     "primary_verdict": "NOT DETECTED",
+     "secondary_floor_clause_a_abs_gt_floor": false,
+     "secondary_floor_clause_b_ci_excludes_floor_point": true,
+     "secondary_verdict": "WITHIN FLOOR",
+     "paired_descriptor": {
+      "delta": 0.01,
+      "boot95": [
+       -0.0525,
+       0.07
+      ],
+      "n_pairs": 400
+     },
+     "pair_alignment": {
+      "n_shared_slots": 400,
+      "same_our_team": 400,
+      "alignment_verified": true
+     }
+    }
+   }
+  }
+ }
+}
