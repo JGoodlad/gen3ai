@@ -1,0 +1,679 @@
+{
+ "what": "registered row 1 -- the untaught meter (the OFF-SLICE / collateral read) on the SPLIT arm ai_v13_11_split_lossoff (fold-1's argv with the distillation LOSS OFF) at +3M/+6M/+12M, beside the CONTINUATION CONTROL ai_v13_09_wcont and the era-1 FOLD PATH at the same three depths, all three against the frozen parent arm W. It asks WHICH LEVER carried the era-1 fold's cost: the LOSS (split - fold, ONE lever) or the ECOLOGY bundle (split - control, THREE: 40% team bias + two specialists in the stable pool + --team-block-episodes 64).",
+ "source_measured": "/home/goodlad/dev/gen3ai-wt/split_read/designs/research_state/measurements/split_lossoff_read_2026-09-20/out/untaught/untaught_registry.json",
+ "source_imported_control": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/wcont_control_read_2026-09-20/out/untaught/untaught_registry.json",
+ "source_imported_fold": "/home/goodlad/dev/gen3ai/designs/research_state/measurements/fold1_cont_read_2026-09-19/out/untaught/untaught_registry.json",
+ "teams_manifest": null,
+ "opponent": "registry name `untaught_meter_opponent` = ai_v9_29_rev1_0823@24,000,000",
+ "config_resolution": "the REGISTRY `untaught_meter_config`",
+ "n_teams": 8,
+ "timeouts_measured": {
+  "attempted": 6400,
+  "timeouts": 0,
+  "fraction": 0.0,
+  "inconclusive_above": 0.25,
+  "inconclusive": false
+ },
+ "grid_note": "the matched grid. +3M and +12M are the SAME STEP NUMBER on ALL THREE paths (78,006,048 and 87,097,344); at +6M the split's nearest checkpoint is 81,404,208, which is 260,928 steps DEEPER than the control's 81,143,280 and 303,408 deeper than the fold's 81,100,800 -- hazard S-D, declared in PREDICTION.md sec 1.1, not corrected. The BRANCH CLAUSES are evaluated at +12M; +3M is the registered ROBUSTNESS depth; +6M carries no clause.",
+ "branch_depth": "+12M",
+ "robustness_depth": "+3M",
+ "imported_floor_pp": 3.69,
+ "imported_floor_caveat": "3.69 pp is |arm W - W_b|, a 75M FRESH-ARM seed pair. All three paths here are CONTINUATIONS of that parent. A floor is a property of the DEPTH and the REGIME (rule 3); the meter's own fold/continuation floors are {'TC_replicate_pairs_END_depth': 1.19, 'frozen_dose_folds_six_draws': 1.66, 'K6_cell_three_draws': 2.46, 'controller_live_folds': 4.27, 'G5_three_continuation_arms': 1.0, 'TC_replicate_pairs_p1M_depth': 4.0}. The nearest in KIND is the gen-era G5 three-continuation-arm floor of 1.00 pp, which is at a different parent, era and depth. 3.69 is an IMPORT and is labelled as one in every row it bars.",
+ "fold_depth_floors_pp_for_reference": {
+  "TC_replicate_pairs_END_depth": 1.19,
+  "frozen_dose_folds_six_draws": 1.66,
+  "K6_cell_three_draws": 2.46,
+  "controller_live_folds": 4.27,
+  "G5_three_continuation_arms": 1.0,
+  "TC_replicate_pairs_p1M_depth": 4.0
+ },
+ "levels_pp": {
+  "split_p3M": 57.88,
+  "split_p6M": 58.56,
+  "split_p12M": 58.62,
+  "armW": 46.19,
+  "wcont_p3M": 58.5,
+  "wcont_p6M": 60.44,
+  "wcont_p12M": 61.69,
+  "fold_p1M": 47.62,
+  "fold_p3M": 51.56,
+  "fold_p6M": 51.31,
+  "cont_p7_5M": 49.0,
+  "cont_p9M": 51.31,
+  "cont_p12M": 51.94,
+  "armWb": 49.88
+ },
+ "wins_over_finished": {
+  "split_p3M": "926 / 1600",
+  "split_p6M": "937 / 1600",
+  "split_p12M": "938 / 1600",
+  "armW": "739 / 1600",
+  "wcont_p3M": "936 / 1600",
+  "wcont_p6M": "967 / 1600",
+  "wcont_p12M": "987 / 1600",
+  "fold_p1M": "762 / 1600",
+  "fold_p3M": "825 / 1600",
+  "fold_p6M": "821 / 1600",
+  "cont_p7_5M": "784 / 1600",
+  "cont_p9M": "821 / 1600",
+  "cont_p12M": "831 / 1600",
+  "armWb": "798 / 1600"
+ },
+ "per_team_pp": {
+  "split_p3M": {
+   "U_61590463": 55.0,
+   "U_92832108": 52.5,
+   "U_ce35b736": 61.5,
+   "U_9909f2e9": 55.0,
+   "U_9d5f8458": 61.0,
+   "U_f7ba5702": 58.5,
+   "U_90b94599": 62.0,
+   "U_dbf81d8e": 57.5
+  },
+  "split_p6M": {
+   "U_61590463": 54.5,
+   "U_92832108": 51.0,
+   "U_ce35b736": 59.0,
+   "U_9909f2e9": 53.5,
+   "U_9d5f8458": 63.0,
+   "U_f7ba5702": 60.5,
+   "U_90b94599": 61.0,
+   "U_dbf81d8e": 66.0
+  },
+  "split_p12M": {
+   "U_61590463": 61.5,
+   "U_92832108": 47.0,
+   "U_ce35b736": 62.0,
+   "U_9909f2e9": 55.5,
+   "U_9d5f8458": 60.0,
+   "U_f7ba5702": 62.0,
+   "U_90b94599": 59.0,
+   "U_dbf81d8e": 62.0
+  },
+  "armW": {
+   "U_61590463": 48.5,
+   "U_92832108": 39.0,
+   "U_ce35b736": 49.5,
+   "U_9909f2e9": 38.0,
+   "U_9d5f8458": 47.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 48.0,
+   "U_dbf81d8e": 51.5
+  },
+  "wcont_p3M": {
+   "U_61590463": 57.5,
+   "U_92832108": 50.0,
+   "U_ce35b736": 58.0,
+   "U_9909f2e9": 59.5,
+   "U_9d5f8458": 60.0,
+   "U_f7ba5702": 64.5,
+   "U_90b94599": 57.0,
+   "U_dbf81d8e": 61.5
+  },
+  "wcont_p6M": {
+   "U_61590463": 59.0,
+   "U_92832108": 51.5,
+   "U_ce35b736": 65.5,
+   "U_9909f2e9": 56.0,
+   "U_9d5f8458": 66.0,
+   "U_f7ba5702": 64.0,
+   "U_90b94599": 62.5,
+   "U_dbf81d8e": 59.0
+  },
+  "wcont_p12M": {
+   "U_61590463": 59.0,
+   "U_92832108": 56.5,
+   "U_ce35b736": 65.0,
+   "U_9909f2e9": 61.5,
+   "U_9d5f8458": 66.0,
+   "U_f7ba5702": 67.0,
+   "U_90b94599": 60.0,
+   "U_dbf81d8e": 58.5
+  },
+  "fold_p1M": {
+   "U_61590463": 50.0,
+   "U_92832108": 43.5,
+   "U_ce35b736": 53.0,
+   "U_9909f2e9": 40.0,
+   "U_9d5f8458": 51.5,
+   "U_f7ba5702": 44.5,
+   "U_90b94599": 47.0,
+   "U_dbf81d8e": 51.5
+  },
+  "fold_p3M": {
+   "U_61590463": 44.5,
+   "U_92832108": 44.5,
+   "U_ce35b736": 58.5,
+   "U_9909f2e9": 39.0,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 52.5,
+   "U_90b94599": 63.0,
+   "U_dbf81d8e": 54.5
+  },
+  "fold_p6M": {
+   "U_61590463": 48.5,
+   "U_92832108": 37.5,
+   "U_ce35b736": 60.5,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 56.0,
+   "U_f7ba5702": 54.5,
+   "U_90b94599": 60.5,
+   "U_dbf81d8e": 47.5
+  },
+  "cont_p7_5M": {
+   "U_61590463": 42.5,
+   "U_92832108": 36.5,
+   "U_ce35b736": 56.5,
+   "U_9909f2e9": 43.0,
+   "U_9d5f8458": 50.0,
+   "U_f7ba5702": 47.0,
+   "U_90b94599": 70.0,
+   "U_dbf81d8e": 46.5
+  },
+  "cont_p9M": {
+   "U_61590463": 42.5,
+   "U_92832108": 43.0,
+   "U_ce35b736": 54.0,
+   "U_9909f2e9": 45.5,
+   "U_9d5f8458": 62.0,
+   "U_f7ba5702": 53.5,
+   "U_90b94599": 67.5,
+   "U_dbf81d8e": 42.5
+  },
+  "cont_p12M": {
+   "U_61590463": 50.5,
+   "U_92832108": 41.0,
+   "U_ce35b736": 53.5,
+   "U_9909f2e9": 42.5,
+   "U_9d5f8458": 63.0,
+   "U_f7ba5702": 50.0,
+   "U_90b94599": 67.0,
+   "U_dbf81d8e": 48.0
+  },
+  "armWb": {
+   "U_61590463": 58.0,
+   "U_92832108": 53.0,
+   "U_ce35b736": 42.5,
+   "U_9909f2e9": 48.0,
+   "U_9d5f8458": 46.0,
+   "U_f7ba5702": 48.0,
+   "U_90b94599": 51.5,
+   "U_dbf81d8e": 52.0
+  }
+ },
+ "imported": {
+  "wcont_p3M": {
+   "source": "control read",
+   "wins": "936 / 1600",
+   "level_pp": 58.5
+  },
+  "wcont_p6M": {
+   "source": "control read",
+   "wins": "967 / 1600",
+   "level_pp": 60.44
+  },
+  "wcont_p12M": {
+   "source": "control read",
+   "wins": "987 / 1600",
+   "level_pp": 61.69
+  },
+  "fold_p1M": {
+   "source": "fold convergence read",
+   "wins": "762 / 1600",
+   "level_pp": 47.62
+  },
+  "fold_p3M": {
+   "source": "fold convergence read",
+   "wins": "825 / 1600",
+   "level_pp": 51.56
+  },
+  "fold_p6M": {
+   "source": "fold convergence read",
+   "wins": "821 / 1600",
+   "level_pp": 51.31
+  },
+  "cont_p7_5M": {
+   "source": "fold convergence read",
+   "wins": "784 / 1600",
+   "level_pp": 49.0
+  },
+  "cont_p9M": {
+   "source": "fold convergence read",
+   "wins": "821 / 1600",
+   "level_pp": 51.31
+  },
+  "cont_p12M": {
+   "source": "fold convergence read",
+   "wins": "831 / 1600",
+   "level_pp": 51.94
+  },
+  "armWb": {
+   "source": "fold convergence read",
+   "wins": "798 / 1600",
+   "level_pp": 49.88
+  }
+ },
+ "reproduction": {
+  "armW": {
+   "banked_pp": 46.19,
+   "here_pp": 46.19,
+   "delta_pp": 0.0,
+   "banked_wins": "739 / 1600",
+   "here_wins": "739 / 1600",
+   "per_team_identical_to_the_control_reads": true,
+   "per_team_identical_to_the_fold_reads": true,
+   "reproduces_exactly": true
+  },
+  "same_team_set_as_the_banked_reads": true,
+  "WARRANT_HOLDS": true,
+  "role": "the WARRANT for every imported cell -- the ONE re-derived verification cell the GO names. Registered in PREDICTION.md sec 1.2/3.5 before the first battle: if arm W does not return 46.19 pp = 739/1600 on all eight per-team rows in BOTH banked sources, every import is VOID, this row is reported INVALID rather than patched, and the job STOPS and reports."
+ },
+ "delta_path": {
+  "+3M": {
+   "depth": "+3M",
+   "step_offset_split_minus_control": 0,
+   "step_offset_split_minus_fold": 0,
+   "split": {
+    "ref": "split_p3M",
+    "level_pp": 57.88,
+    "wins": "926 / 1600",
+    "imported": false,
+    "delta_pp": 11.69,
+    "abs_delta_pp": 11.69,
+    "ci95_pp": [
+     9.19,
+     14.06
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "control": {
+    "ref": "wcont_p3M",
+    "level_pp": 58.5,
+    "wins": "936 / 1600",
+    "imported": true,
+    "delta_pp": 12.31,
+    "abs_delta_pp": 12.31,
+    "ci95_pp": [
+     9.69,
+     15.56
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "fold_path": {
+    "ref": "fold_p3M",
+    "level_pp": 51.56,
+    "wins": "825 / 1600",
+    "imported": true,
+    "delta_pp": 5.38,
+    "abs_delta_pp": 5.38,
+    "ci95_pp": [
+     1.63,
+     9.19
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "WITHIN FLOOR at n = 2",
+    "teams_favouring_over_armW": 7
+   }
+  },
+  "+6M": {
+   "depth": "+6M",
+   "step_offset_split_minus_control": 260928,
+   "step_offset_split_minus_fold": 303408,
+   "split": {
+    "ref": "split_p6M",
+    "level_pp": 58.56,
+    "wins": "937 / 1600",
+    "imported": false,
+    "delta_pp": 12.38,
+    "abs_delta_pp": 12.38,
+    "ci95_pp": [
+     10.12,
+     14.37
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "control": {
+    "ref": "wcont_p6M",
+    "level_pp": 60.44,
+    "wins": "967 / 1600",
+    "imported": true,
+    "delta_pp": 14.25,
+    "abs_delta_pp": 14.25,
+    "ci95_pp": [
+     11.69,
+     16.63
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "fold_path": {
+    "ref": "fold_p6M",
+    "level_pp": 51.31,
+    "wins": "821 / 1600",
+    "imported": true,
+    "delta_pp": 5.13,
+    "abs_delta_pp": 5.13,
+    "ci95_pp": [
+     1.06,
+     9.0
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "WITHIN FLOOR at n = 2",
+    "teams_favouring_over_armW": 5
+   }
+  },
+  "+12M": {
+   "depth": "+12M",
+   "step_offset_split_minus_control": 0,
+   "step_offset_split_minus_fold": 0,
+   "split": {
+    "ref": "split_p12M",
+    "level_pp": 58.62,
+    "wins": "938 / 1600",
+    "imported": false,
+    "delta_pp": 12.44,
+    "abs_delta_pp": 12.44,
+    "ci95_pp": [
+     10.69,
+     14.31
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "control": {
+    "ref": "wcont_p12M",
+    "level_pp": 61.69,
+    "wins": "987 / 1600",
+    "imported": true,
+    "delta_pp": 15.5,
+    "abs_delta_pp": 15.5,
+    "ci95_pp": [
+     12.0,
+     18.88
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": true,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "OUTSIDE THE FLOOR",
+    "teams_favouring_over_armW": 8
+   },
+   "fold_path": {
+    "ref": "cont_p12M",
+    "level_pp": 51.94,
+    "wins": "831 / 1600",
+    "imported": true,
+    "delta_pp": 5.75,
+    "abs_delta_pp": 5.75,
+    "ci95_pp": [
+     1.19,
+     11.06
+    ],
+    "floor_pp": 3.69,
+    "clause_a_abs_delta_gt_floor": true,
+    "clause_b_ci_excludes_floor_point": false,
+    "ci_excludes_zero": true,
+    "direction": "ABOVE the frozen parent",
+    "verdict": "WITHIN FLOOR at n = 2",
+    "teams_favouring_over_armW": 7
+   }
+  }
+ },
+ "delta_ecology": {
+  "+3M": {
+   "label": "+3M: split minus the CONTROL -- THREE levers (40% team bias + two specialists in the stable pool + --team-block-episodes 64 vs 1)",
+   "n_levers": 3,
+   "step_offset": 0,
+   "delta_pp": -0.62,
+   "abs_delta_pp": 0.62,
+   "ci95_pp": [
+    -3.31,
+    2.06
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": true,
+   "ci_excludes_zero": false,
+   "direction": "plain continuation is ahead of the ecology bundle",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_split": 4,
+   "n_teams": 8
+  },
+  "+6M": {
+   "label": "+6M: split minus the CONTROL -- THREE levers (40% team bias + two specialists in the stable pool + --team-block-episodes 64 vs 1)",
+   "n_levers": 3,
+   "step_offset": 260928,
+   "delta_pp": -1.87,
+   "abs_delta_pp": 1.87,
+   "ci95_pp": [
+    -4.13,
+    1.0
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": false,
+   "direction": "plain continuation is ahead of the ecology bundle",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_split": 1,
+   "n_teams": 8
+  },
+  "+12M": {
+   "label": "+12M: split minus the CONTROL -- THREE levers (40% team bias + two specialists in the stable pool + --team-block-episodes 64 vs 1)",
+   "n_levers": 3,
+   "step_offset": 0,
+   "delta_pp": -3.06,
+   "abs_delta_pp": 3.06,
+   "ci95_pp": [
+    -5.87,
+    -0.13
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": false,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": true,
+   "direction": "plain continuation is ahead of the ecology bundle",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_split": 2,
+   "n_teams": 8
+  }
+ },
+ "delta_loss": {
+  "+3M": {
+   "label": "+3M: split minus the FOLD PATH -- ONE lever: the distillation LOSS (--distill-coef 0.1761 -> 0.0)",
+   "n_levers": 1,
+   "step_offset": 0,
+   "delta_pp": 6.31,
+   "abs_delta_pp": 6.31,
+   "ci95_pp": [
+    3.06,
+    9.88
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": true,
+   "direction": "turning the LOSS OFF is ahead, i.e. the loss COST this much",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_split": 7,
+   "n_teams": 8
+  },
+  "+6M": {
+   "label": "+6M: split minus the FOLD PATH -- ONE lever: the distillation LOSS (--distill-coef 0.1761 -> 0.0)",
+   "n_levers": 1,
+   "step_offset": 303408,
+   "delta_pp": 7.25,
+   "abs_delta_pp": 7.25,
+   "ci95_pp": [
+    3.19,
+    11.5
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": true,
+   "direction": "turning the LOSS OFF is ahead, i.e. the loss COST this much",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_split": 7,
+   "n_teams": 8
+  },
+  "+12M": {
+   "label": "+12M: split minus the FOLD PATH -- ONE lever: the distillation LOSS (--distill-coef 0.1761 -> 0.0)",
+   "n_levers": 1,
+   "step_offset": 0,
+   "delta_pp": 6.69,
+   "abs_delta_pp": 6.69,
+   "ci95_pp": [
+    1.06,
+    11.44
+   ],
+   "floor_pp": 3.69,
+   "clause_a_abs_delta_gt_floor": true,
+   "clause_b_ci_excludes_floor_point": false,
+   "ci_excludes_zero": true,
+   "direction": "turning the LOSS OFF is ahead, i.e. the loss COST this much",
+   "verdict": "WITHIN FLOOR at n = 2",
+   "teams_favouring_split": 6,
+   "n_teams": 8
+  }
+ },
+ "contrasts": {
+  "armW_minus_armWb": {
+   "label": "\ud83d\udea8 THE FLOOR, re-measured on the identical games in THIS invocation",
+   "delta_pp": -3.69,
+   "ci95_pp": [
+    -8.19,
+    0.81
+   ],
+   "teams_favouring_first": 2,
+   "n_teams": 8
+  },
+  "split_p12M_minus_split_p3M": {
+   "label": "the split's own last 75 % of the budget (within-arm)",
+   "delta_pp": 0.75,
+   "ci95_pp": [
+    -1.81,
+    3.31
+   ],
+   "teams_favouring_first": 5,
+   "n_teams": 8
+  },
+  "split_p12M_minus_split_p6M": {
+   "label": "the split's own last 50 % of the budget (within-arm)",
+   "delta_pp": 0.06,
+   "ci95_pp": [
+    -2.38,
+    2.75
+   ],
+   "teams_favouring_first": 4,
+   "n_teams": 8
+  },
+  "split_p6M_minus_split_p3M": {
+   "label": "the split's own +3M -> +6M leg",
+   "delta_pp": 0.69,
+   "ci95_pp": [
+    -1.25,
+    3.25
+   ],
+   "teams_favouring_first": 3,
+   "n_teams": 8
+  },
+  "split_p12M_minus_armWb": {
+   "label": "the split's endpoint against the OTHER PARENT SEED",
+   "delta_pp": 8.75,
+   "ci95_pp": [
+    3.44,
+    13.44
+   ],
+   "teams_favouring_first": 7,
+   "n_teams": 8
+  },
+  "split_p3M_minus_armWb": {
+   "label": "the split at +3M against the other parent seed",
+   "delta_pp": 8.0,
+   "ci95_pp": [
+    3.19,
+    12.75
+   ],
+   "teams_favouring_first": 6,
+   "n_teams": 8
+  },
+  "split_p6M_minus_armWb": {
+   "label": "the split at +6M against the other parent seed",
+   "delta_pp": 8.69,
+   "ci95_pp": [
+    3.25,
+    13.62
+   ],
+   "teams_favouring_first": 6,
+   "n_teams": 8
+  }
+ },
+ "row1_split_shape": {
+  "levels_pp_in_order": {
+   "split_p3M": 57.88,
+   "split_p6M": 58.56,
+   "split_p12M": 58.62
+  },
+  "argmax": "split_p12M",
+  "max_pp": 58.62,
+  "note": "three points on ONE arm is a DESCRIPTION of this arm, never a trend (the standing short-window refusal). The control and the fold path were both FRONT-LOADED: the control had +12.31 of its +15.50 by +3M, the fold path moved +0.62 pp over its last 50 %."
+ },
+ "row1_verdict_rows": {
+  "+3M": {
+   "delta_ecology": "WITHIN FLOOR at n = 2",
+   "delta_ecology_pp": -0.62,
+   "delta_loss": "WITHIN FLOOR at n = 2",
+   "delta_loss_pp": 6.31
+  },
+  "+6M": {
+   "delta_ecology": "WITHIN FLOOR at n = 2",
+   "delta_ecology_pp": -1.87,
+   "delta_loss": "WITHIN FLOOR at n = 2",
+   "delta_loss_pp": 7.25
+  },
+  "+12M": {
+   "delta_ecology": "WITHIN FLOOR at n = 2",
+   "delta_ecology_pp": -3.06,
+   "delta_loss": "WITHIN FLOOR at n = 2",
+   "delta_loss_pp": 6.69
+  }
+ }
+}

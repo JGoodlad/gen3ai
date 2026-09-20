@@ -1,0 +1,335 @@
+{
+ "what": "the registered branch decision of PREDICTION.md sec 4, evaluated mechanically over THREE rows (untaught 8, Big-5 slice, DDTar slice) and TWO contrasts (\u0394_ecology = split - control, THREE levers; \u0394_loss = split - fold path, ONE lever -- the distillation loss).",
+ "rule": "OUTSIDE THE FLOOR iff |\u0394| > floor AND the \u0394's 95 % CI excludes the floor POINT; else WITHIN FLOOR at n = 2 -- never 'equivalent' (rule 6). One pair BOUNDS a floor, it does not estimate one (rules 19/22).",
+ "warrants": {
+  "untaught_reproduction": true,
+  "slice_reproduction": true
+ },
+ "by_depth": {
+  "+12M": {
+   "role": "PRIMARY -- all three paths on the identical step 87,097,344",
+   "rows": {
+    "untaught_8": {
+     "floor": 3.69,
+     "units": "pp",
+     "ecology": {
+      "delta": -3.06,
+      "ci": [
+       -5.87,
+       -0.13
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": false
+     },
+     "loss": {
+      "delta": 6.69,
+      "ci": [
+       1.06,
+       11.44
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": true,
+      "clause_b": false
+     }
+    },
+    "big5_slice": {
+     "floor": 0.0475,
+     "units": "win-rate",
+     "ecology": {
+      "delta": 0.0,
+      "ci": [
+       -0.0478,
+       0.0478
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": false
+     },
+     "loss": {
+      "delta": 0.165,
+      "ci": [
+       0.1163,
+       0.2126
+      ],
+      "verdict": "OUTSIDE THE FLOOR",
+      "clause_a": true,
+      "clause_b": true
+     }
+    },
+    "ddtar_slice": {
+     "floor": 0.085,
+     "units": "win-rate",
+     "ecology": {
+      "delta": -0.0112,
+      "ci": [
+       -0.0581,
+       0.0357
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": true
+     },
+     "loss": {
+      "delta": 0.0125,
+      "ci": [
+       -0.0348,
+       0.0597
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": true
+     }
+    }
+   },
+   "clauses": {
+    "branch_a_THE_LOSS_IS_THE_CARRIER": {
+     "clause": "|\u0394_ecology| WITHIN FLOOR on ALL THREE rows AND |\u0394_loss| OUTSIDE THE FLOOR on >= 2 rows",
+     "rows_ecology_WITHIN": [
+      "untaught_8",
+      "big5_slice",
+      "ddtar_slice"
+     ],
+     "rows_loss_OUTSIDE": [
+      "big5_slice"
+     ],
+     "MET": false,
+     "reading": "the split tracks the CONTROL => the distillation LOSS carried the era-1 fold's cost; the ecology bundle is exonerated at this dose"
+    },
+    "branch_b_THE_ECOLOGY_IS_THE_CARRIER": {
+     "clause": "|\u0394_loss| WITHIN FLOOR on ALL THREE rows AND |\u0394_ecology| OUTSIDE THE FLOOR on >= 2 rows",
+     "rows_loss_WITHIN": [
+      "untaught_8",
+      "ddtar_slice"
+     ],
+     "rows_ecology_OUTSIDE": [],
+     "MET": false,
+     "reading": "the split tracks the FOLD => the bias + pool + team-block-64 bundle carried it; the loss is exonerated"
+    },
+    "branch_c_BOTH_CARRY": {
+     "clause": "|\u0394_ecology| OUTSIDE on >= 2 AND |\u0394_loss| OUTSIDE on >= 2, with \u0394_ecology NEGATIVE (the split BETWEEN) on >= 2 of those",
+     "rows_ecology_OUTSIDE_and_NEGATIVE": [],
+     "MET": false,
+     "reading": "both levers carry; the two sizes are stated per row"
+    },
+    "branch_d_THE_ECOLOGY_HELPED": {
+     "clause": "\u0394_ecology POSITIVE and OUTSIDE THE FLOOR on >= 2 rows",
+     "rows_ecology_OUTSIDE_and_POSITIVE": [],
+     "MET": false,
+     "reading": "the split is ABOVE the control => the ecology helped and the loss cost MORE than the whole control-to-fold gap"
+    }
+   },
+   "BRANCH": "(e) UNCOVERED",
+   "why": "no registered clause is met. Ecology OUTSIDE on [], WITHIN on ['untaught_8', 'big5_slice', 'ddtar_slice']; loss OUTSIDE on ['big5_slice'], WITHIN on ['untaught_8', 'ddtar_slice']. PREDICTION.md sec 4's standing instruction is followed literally: every clause printed, the nearest description given in the registration's own vocabulary, and NO branch rewritten.",
+   "counts": {
+    "ecology_OUTSIDE": 0,
+    "loss_OUTSIDE": 1,
+    "ecology_OUTSIDE_positive": 0,
+    "ecology_OUTSIDE_negative": 0
+   }
+  },
+  "+3M": {
+   "role": "ROBUSTNESS -- all three paths on the identical step 78,006,048",
+   "rows": {
+    "untaught_8": {
+     "floor": 3.69,
+     "units": "pp",
+     "ecology": {
+      "delta": -0.62,
+      "ci": [
+       -3.31,
+       2.06
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": true
+     },
+     "loss": {
+      "delta": 6.31,
+      "ci": [
+       3.06,
+       9.88
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": true,
+      "clause_b": false
+     }
+    },
+    "big5_slice": {
+     "floor": 0.0475,
+     "units": "win-rate",
+     "ecology": {
+      "delta": 0.0212,
+      "ci": [
+       -0.0263,
+       0.0687
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": false
+     },
+     "loss": {
+      "delta": 0.16,
+      "ci": [
+       0.1114,
+       0.2075
+      ],
+      "verdict": "OUTSIDE THE FLOOR",
+      "clause_a": true,
+      "clause_b": true
+     }
+    },
+    "ddtar_slice": {
+     "floor": 0.085,
+     "units": "win-rate",
+     "ecology": {
+      "delta": 0.0212,
+      "ci": [
+       -0.0257,
+       0.0681
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": true
+     },
+     "loss": {
+      "delta": 0.0587,
+      "ci": [
+       0.0113,
+       0.1059
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": false
+     }
+    }
+   },
+   "clauses": {
+    "branch_a_THE_LOSS_IS_THE_CARRIER": {
+     "clause": "|\u0394_ecology| WITHIN FLOOR on ALL THREE rows AND |\u0394_loss| OUTSIDE THE FLOOR on >= 2 rows",
+     "rows_ecology_WITHIN": [
+      "untaught_8",
+      "big5_slice",
+      "ddtar_slice"
+     ],
+     "rows_loss_OUTSIDE": [
+      "big5_slice"
+     ],
+     "MET": false,
+     "reading": "the split tracks the CONTROL => the distillation LOSS carried the era-1 fold's cost; the ecology bundle is exonerated at this dose"
+    },
+    "branch_b_THE_ECOLOGY_IS_THE_CARRIER": {
+     "clause": "|\u0394_loss| WITHIN FLOOR on ALL THREE rows AND |\u0394_ecology| OUTSIDE THE FLOOR on >= 2 rows",
+     "rows_loss_WITHIN": [
+      "untaught_8",
+      "ddtar_slice"
+     ],
+     "rows_ecology_OUTSIDE": [],
+     "MET": false,
+     "reading": "the split tracks the FOLD => the bias + pool + team-block-64 bundle carried it; the loss is exonerated"
+    },
+    "branch_c_BOTH_CARRY": {
+     "clause": "|\u0394_ecology| OUTSIDE on >= 2 AND |\u0394_loss| OUTSIDE on >= 2, with \u0394_ecology NEGATIVE (the split BETWEEN) on >= 2 of those",
+     "rows_ecology_OUTSIDE_and_NEGATIVE": [],
+     "MET": false,
+     "reading": "both levers carry; the two sizes are stated per row"
+    },
+    "branch_d_THE_ECOLOGY_HELPED": {
+     "clause": "\u0394_ecology POSITIVE and OUTSIDE THE FLOOR on >= 2 rows",
+     "rows_ecology_OUTSIDE_and_POSITIVE": [],
+     "MET": false,
+     "reading": "the split is ABOVE the control => the ecology helped and the loss cost MORE than the whole control-to-fold gap"
+    }
+   },
+   "BRANCH": "(e) UNCOVERED",
+   "why": "no registered clause is met. Ecology OUTSIDE on [], WITHIN on ['untaught_8', 'big5_slice', 'ddtar_slice']; loss OUTSIDE on ['big5_slice'], WITHIN on ['untaught_8', 'ddtar_slice']. PREDICTION.md sec 4's standing instruction is followed literally: every clause printed, the nearest description given in the registration's own vocabulary, and NO branch rewritten.",
+   "counts": {
+    "ecology_OUTSIDE": 0,
+    "loss_OUTSIDE": 1,
+    "ecology_OUTSIDE_positive": 0,
+    "ecology_OUTSIDE_negative": 0
+   }
+  },
+  "+6M": {
+   "role": "NO CLAUSE -- the split is 260,928 steps deeper than the control and 303,408 deeper than the fold (hazard S-D); printed only",
+   "rows": {
+    "untaught_8": {
+     "floor": 3.69,
+     "units": "pp",
+     "ecology": {
+      "delta": -1.87,
+      "ci": [
+       -4.13,
+       1.0
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": false
+     },
+     "loss": {
+      "delta": 7.25,
+      "ci": [
+       3.19,
+       11.5
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": true,
+      "clause_b": false
+     }
+    },
+    "big5_slice": {
+     "floor": 0.0475,
+     "units": "win-rate",
+     "ecology": {
+      "delta": 0.0112,
+      "ci": [
+       -0.0367,
+       0.0591
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": false
+     },
+     "loss": {
+      "delta": 0.175,
+      "ci": [
+       0.1263,
+       0.2225
+      ],
+      "verdict": "OUTSIDE THE FLOOR",
+      "clause_a": true,
+      "clause_b": true
+     }
+    },
+    "ddtar_slice": {
+     "floor": 0.085,
+     "units": "win-rate",
+     "ecology": {
+      "delta": 0.015,
+      "ci": [
+       -0.0318,
+       0.0617
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": false,
+      "clause_b": true
+     },
+     "loss": {
+      "delta": 0.1163,
+      "ci": [
+       0.0682,
+       0.1635
+      ],
+      "verdict": "WITHIN FLOOR at n = 2",
+      "clause_a": true,
+      "clause_b": false
+     }
+    }
+   }
+  }
+ },
+ "PRIMARY": "(e) UNCOVERED",
+ "ROBUSTNESS_+3M": "(e) UNCOVERED",
+ "depths_agree": true,
+ "THE_BRANCH": "(e) UNCOVERED"
+}
