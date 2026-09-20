@@ -941,6 +941,17 @@ snapshots the player's whole battle/tracker state at the branch decision, and re
 15.4 → 5.3 ms per arm). The per-arm restore is serialized ONCE and rebuilt per arm rather than
 deep-copied (1.98 → 0.22 ms). ⚠️ A graph that will not pickle **falls back to deepcopy and says so
 once on stderr** — a 9× regression nothing mentions is the failure shape this tree keeps eating.
+
+🚨 **AN OFFLINE REPLAY'S BATTLE TAG IS ALWAYS UNIQUE, AND THAT IS A CORRECTNESS PROPERTY**
+(`gen3_recon_tag_collision_v1`, 2026-09-19). `_next_tag` used to hand the caller's `battle_tag`
+back verbatim, and the search passes the LIVE record's tag — so an offline replay ran in the LIVE
+BATTLE'S ROOM, and `search_dividend.record.install_choice_tap` (a process-wide patch whose only
+discriminator is that room) recorded every `/choose default` the replay player emits when its
+action list runs out as a choice the LIVE player had made. Measured: ~1 per materialized ARM, so
+the `playoff` arm's nested rollouts replayed a prefix that was not the battle and 64 of 66
+playoffs died. It was filed as a rust defect and was not one — node's bridge re-requests where
+rust fails loud, so the node cell ran the same wrong rollouts and reported a clean number. Pinned
+by `main/search_dividend/recon_tag_isolation_test.py`.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
 `clone_pins.py` is the ONE definition of WHICH objects a per-arm clone must SHARE rather than copy

@@ -665,6 +665,13 @@ is active, but it's not"` and an opponent reveal in the gap makes a later refere
 Pokémon whose *species* is the NICKNAME (`KeyError: 'ptãra'` — reported as an encoding bug, but the
 mojibake is in the committed team file and any nickname raises). Gate:
 `main/search_dividend/depth2_replay_integration_test.py`, over both impls.
+🚨 **AN OFFLINE REPLAY MUST NOT SHARE A ROOM WITH A LIVE BATTLE.** `BattleStreamClient` writes
+`CHOOSE <side> <choice>` keyed on the ROOM, and `search_dividend.record.install_choice_tap` is a
+process-wide patch on that method whose only filter is the room — so a replay player running under
+the live battle's tag had its `/choose default` orders recorded into the LIVE reconstruction
+record. `obs_materializer._next_tag` now always mints a unique tag
+(`gen3_recon_tag_collision_v1`); the cost of the collision is in that function's docstring.
+
 - **`replay_kernels.js`** — the shared sim kernels (`buildSession` / `buildToTurn` / `resolveTurn` /
   `resolveTurnExact` / `recordedQueues` / `randomChoice` / `outcomeOf` / …) lifted out of
   `replay_driver.js` so the replay/re-roll path and the search-server use ONE implementation (no

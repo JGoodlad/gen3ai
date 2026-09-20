@@ -290,9 +290,36 @@ def materialize_decisions(
 
 
 def _next_tag(battle_tag: Optional[str], battle_format: str) -> str:
+    """A tag for an OFFLINE replay battle — always UNIQUE, never the caller's verbatim.
+
+    🚨 **THE UNIQUENESS IS A CORRECTNESS PROPERTY, NOT TIDINESS** (`gen3_recon_tag_collision_v1`,
+    found 2026-09-19). A caller passing ``battle_tag=record.battle_tag`` used to get that tag back
+    unchanged, so an offline replay of a LIVE battle ran in the SAME ROOM as the live battle it
+    was replaying. The search-dividend live recorder's choice tap
+    (``main.search_dividend.record.install_choice_tap``) is a process-wide patch on
+    ``BattleStreamClient._write_choice`` whose ONLY discriminator is that room — so every
+    ``/choose default`` the replay player emits when its action list runs out was appended to the
+    LIVE reconstruction record as if the live player had chosen it.
+
+    **What that cost, measured on the `playoff` arm:** the record collected ~1 spurious ``default``
+    per materialized ARM (8.6 arms/decision on the repro cell), so by turn 2 the trainee's script
+    read ``[default x10, 'switch Tyranitar']``. Every nested rollout then replayed a prefix that
+    was not the battle, and **64 of 66 playoffs were lost** to
+    ``unresolvable choice for pN: MoveName(...)`` — the substituted token naming a BENCHED mon,
+    which is the shape of a prefix that has arrived somewhere else.
+
+    ⚠️ **AND IT WAS NEVER A RUST DEFECT.** The ten spurious ``default``s appear byte-for-byte under
+    ``--impl node`` too; node's bridge RE-REQUESTS on an unresolvable choice where rust fails loud
+    (its own error says "Re-requesting would loop forever, so this fails loud"), so the node cell
+    ran every rollout down a line nobody asked for and reported a clean number. The loud impl was
+    the one telling the truth.
+
+    The caller's tag is KEPT as a prefix so a replay is still traceable to the battle it replays,
+    and the format stays in segment 1 because ``Player._create_battle`` checks exactly that.
+    """
     global _TAG_SEQ
     _TAG_SEQ += 1
-    return battle_tag or f"battle-{battle_format}-recon{_TAG_SEQ}"
+    return f"{battle_tag or f'battle-{battle_format}'}-recon{_TAG_SEQ}"
 
 
 def _build_replay_player(*, username: str, packed_team: str, side: str,

@@ -62,7 +62,8 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         # per-game means — the same exactness rule `eval_sharding` follows, and it matters here
         # because games differ in decision count by 2-3x.
         "n_screen_decisive": 0, "n_playoff": 0, "n_playoff_inconclusive": 0,
-        "n_playoff_no_budget": 0, "n_playoff_capped": 0, "n_playoff_failed": 0,
+        "n_playoff_no_budget": 0, "n_playoff_error": 0, "n_playoff_capped": 0,
+        "n_playoff_failed": 0,
         "n_playoff_ran": 0, "playoff_r_total": 0, "playoff_wall_s": 0.0,
         # `--root-strategy defensive` (see `defensive.py`), pooled as SUMS for the same
         # exactness reason. Zero on every other strategy, so a mixed file still reads.
@@ -80,7 +81,8 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         for key in ("n_decisions", "n_searched", "n_changed", "n_deepened",
                     "deadline_truncated", "worlds_gate_failed",
                     "n_screen_decisive", "n_playoff", "n_playoff_inconclusive",
-                    "n_playoff_no_budget", "n_playoff_capped", "n_playoff_failed",
+                    "n_playoff_no_budget", "n_playoff_error", "n_playoff_capped",
+                    "n_playoff_failed",
                     "n_playoff_ran", "playoff_r_total") + _DEFENSIVE_COUNTS:
             a[key] += int(r.get(key, 0) or 0)
         a["playoff_wall_s"] += float(r.get("playoff_wall_s", 0.0) or 0.0)
@@ -146,8 +148,12 @@ def _playoff_block(a: dict) -> Optional[dict]:
     A rate quoted against the decisions that happened to reach a rollout would flatter whichever
     branch was cheapest.
     """
+    # 🚨 `errored` is its own term, not folded into `no_budget`. A playoff the ROLLOUT killed and
+    # a playoff the CLOCK declined are opposite findings — one is a broken transport and the other
+    # is a tight budget — and reporting them as one number is exactly how 63 of 75 lost playoffs
+    # read as "the budget was tight" for a whole cell.
     reached = (a["n_screen_decisive"] + a["n_playoff"] + a["n_playoff_inconclusive"]
-               + a["n_playoff_no_budget"])
+               + a["n_playoff_no_budget"] + a["n_playoff_error"])
     if not reached:
         return None
     ran = a["n_playoff_ran"]
@@ -157,6 +163,8 @@ def _playoff_block(a: dict) -> Optional[dict]:
         "played": a["n_playoff"],
         "inconclusive": a["n_playoff_inconclusive"],
         "no_budget": a["n_playoff_no_budget"],
+        "errored": a["n_playoff_error"],
+        "error_rate": round(a["n_playoff_error"] / reached, 4),
         "screen_decisive_rate": round(a["n_screen_decisive"] / reached, 4),
         "playoff_rate": round((reached - a["n_screen_decisive"]) / reached, 4),
         "inconclusive_rate": round(a["n_playoff_inconclusive"] / reached, 4),

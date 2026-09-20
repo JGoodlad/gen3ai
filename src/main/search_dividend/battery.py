@@ -39,7 +39,7 @@ from typing import Dict, List, Optional, Sequence
 from main.search_dividend.defensive import fold_defensive
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
 from main.search_dividend.playoff import (PlayoffConfig, PlayoffRunner, fold_playoff,
-                                          short_r_refusal)
+                                          playoff_error_refusal, short_r_refusal)
 from main.search_dividend.racing import fold_racing
 from main.search_dividend.record import install_choice_tap
 from main.search_dividend.search import SearchConfig, SearchEngine
@@ -442,7 +442,8 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
             # The row is APPENDED first so the evidence for the refusal is on disk.
             if (playoff_cfg is not None and cfg.arm == "playoff"
                     and not playoff_cfg.allow_short_r):
-                msg = short_r_refusal(row, int(playoff_cfg.rollouts))
+                msg = (playoff_error_refusal(row)
+                       or short_r_refusal(row, int(playoff_cfg.rollouts)))
                 if msg:
                     raise SystemExit(f"[search_dividend] {msg}")
     finally:

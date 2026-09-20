@@ -54,6 +54,8 @@ deliberate: this is precisely the constant that a second hand-written copy would
 
 from __future__ import annotations
 
+import re
+
 import math
 import time
 from dataclasses import dataclass
@@ -432,8 +434,9 @@ def fold_playoff(decisions: Sequence[dict]) -> dict:
     ``eval_sharding`` follows (Σwon/Σfinished, never a mean of rates).
     """
     out = {"n_screen_decisive": 0, "n_playoff": 0, "n_playoff_inconclusive": 0,
-           "n_playoff_no_budget": 0, "n_playoff_capped": 0, "n_playoff_failed": 0,
-           "n_playoff_ran": 0, "playoff_r_total": 0, "playoff_wall_s": 0.0}
+           "n_playoff_no_budget": 0, "n_playoff_error": 0, "n_playoff_capped": 0,
+           "n_playoff_failed": 0, "n_playoff_ran": 0, "playoff_r_total": 0,
+           "playoff_wall_s": 0.0, "playoff_errors": {}}
     for d in decisions:
         p = d.get("playoff")
         if not p:
@@ -445,10 +448,25 @@ def fold_playoff(decisions: Sequence[dict]) -> dict:
             out["n_playoff"] += 1
         elif stage == STAGE_INCONCLUSIVE:
             out["n_playoff_inconclusive"] += 1
-        elif stage in (STAGE_NO_BUDGET, STAGE_ERROR):
+        elif stage == STAGE_NO_BUDGET:
             out["n_playoff_no_budget"] += 1
+        elif stage == STAGE_ERROR:
+            # 🚨 SPLIT FROM `n_playoff_no_budget`, 2026-09-19. These two folded together, so a cell
+            # whose every rollout RAISED reported the same counter as a cell whose clock ran out —
+            # "the budget was tight" instead of "the arm is broken". That is what let 63 of 75
+            # decisions lose their playoff under `--impl rust` with nothing in the row saying so.
+            # ⚠️ A row written BEFORE this split has the two summed into `n_playoff_no_budget`
+            # and cannot be disambiguated after the fact.
+            out["n_playoff_error"] += 1
         out["n_playoff_capped"] += int(p.get("capped", 0) or 0)
         out["n_playoff_failed"] += int(p.get("failed", 0) or 0)
+        # The ERROR STRING, classed and COUNTED — the field the row did not carry. It is taken
+        # from every playoff block that has one, not only from the STAGE_ERROR ones: a playoff
+        # that lost SOME of its rollouts still adjudicates (on fewer pairs) and its `error` was
+        # the only record that anything went wrong.
+        err = p.get("error")
+        if err:
+            _bump(out["playoff_errors"], error_class(str(err)))
         if int(p.get("r", 0) or 0):
             out["n_playoff_ran"] += 1
             out["playoff_r_total"] += int(p["r"])
@@ -457,10 +475,81 @@ def fold_playoff(decisions: Sequence[dict]) -> dict:
     return out
 
 
+#: How many distinct error CLASSES a row carries before the rest are pooled. A row is a JSON line
+#: in an append-only file, so an unbounded dict keyed on raw messages would grow without limit and
+#: is also unreadable; the classes are what a reader acts on.
+MAX_ERROR_CLASSES = 6
+OTHER_ERRORS = "(other)"
+
+#: Tokens stripped to turn a message into a CLASS. A raw message names the mon, the move and the
+#: benched set, so every decision produces a distinct key and the counter says nothing.
+_ERROR_NOISE = re.compile(r"""("[^"]*"|'[^']*'|\[[^\]]*\]|\b\d+\b)""")
+
+
+def error_class(msg: str) -> str:
+    """A rollout error message reduced to the CLASS a reader acts on.
+
+    The identifiers are what vary between decisions and the SHAPE is what is actionable, so the
+    quoted tokens, the bracketed lists and the bare numbers come out and the first sentence stays.
+    Truncated, because a row is a JSON line somebody has to read."""
+    head = msg.split(" — ")[0].split("\n")[0]
+    return _ERROR_NOISE.sub("?", head).strip()[:160] or "(empty)"
+
+
+def _bump(counts: dict, key: str) -> None:
+    if key in counts:
+        counts[key] += 1
+    elif len(counts) < MAX_ERROR_CLASSES:
+        counts[key] = 1
+    else:
+        counts[OTHER_ERRORS] = counts.get(OTHER_ERRORS, 0) + 1
+
+
 #: How much of the requested R a cell must actually realize before its rows mean what they say.
 #: 0.9 rather than 1.0 because the LAST pair is declined by a deadline that is doing its job — a
 #: cell that buys 11 of 12 pairs is the cell that was asked for; one that buys 1 of 8 is not.
 SHORT_R_FLOOR = 0.9
+
+
+#: How many of a game's playoffs may be lost to ROLLOUT ERRORS before the cell is refused. Not
+#: zero: a single rollout can lose a race with a stall or a deadline and the adjudication survives
+#: it on fewer pairs. A THIRD of them cannot — at that rate the arm is not measuring the mechanism
+#: its flags name.
+PLAYOFF_ERROR_FLOOR = 0.34
+
+
+def playoff_error_refusal(row: dict, *, floor: float = PLAYOFF_ERROR_FLOOR) -> "Optional[str]":
+    """A refusal when a game lost too many playoffs to ROLLOUT ERRORS, else ``None``.
+
+    🚨 **MEASURED 2026-09-19 and this is the whole reason the field exists.** One mirror game under
+    ``--impl rust`` lost **63 of 75** decisions' playoffs to a raised rollout (250 failed rollouts)
+    while the identical game under ``--impl node`` raised zero. Nothing in the results row said so:
+    ``PlayoffRunner.adjudicate`` swallowed the exception into ``PlayoffResult.error`` →
+    ``diag["playoff"]["error"]``, which no row field carried, and the stage folded into
+    ``n_playoff_no_budget`` beside the honest clock-ran-out cases. The cell reported a
+    clean-looking win rate for an arm that never adjudicated anything.
+
+    The companion to :func:`short_r_refusal` and deliberately the same shape: a ROW-level check the
+    caller raises on the FIRST game, so a broken transport costs one battle instead of a night.
+    Where that one guards the BUDGET, this one guards the TRANSPORT."""
+    attempted = sum(int(row.get(k, 0) or 0) for k in
+                    ("n_playoff", "n_playoff_inconclusive", "n_playoff_error"))
+    n_err = int(row.get("n_playoff_error", 0) or 0)
+    if attempted <= 0 or n_err <= 0:
+        return None
+    rate = n_err / attempted
+    if rate < float(floor):
+        return None
+    classes = row.get("playoff_errors") or {}
+    named = "; ".join(f"{k} (x{v})" for k, v in
+                      sorted(classes.items(), key=lambda kv: -kv[1])[:3]) or "(no error string)"
+    return (
+        f"REFUSED: {n_err} of {attempted} playoffs ({rate:.0%}) were lost to ROLLOUT ERRORS, and "
+        f"a decision whose playoff raised is adjudicated by the SCREEN alone — so this cell is "
+        f"measuring the screen, not the playoff its flags name. Error classes: {named}. The known "
+        f"instance is `--impl rust` on a LIVE partial record (see "
+        f"designs/ops/TECH_DEBT_BACKLOG.md); `--impl node` is clean on the same game."
+    )
 
 
 def short_r_refusal(row: dict, requested: int, *, floor: float = SHORT_R_FLOOR) -> Optional[str]:
