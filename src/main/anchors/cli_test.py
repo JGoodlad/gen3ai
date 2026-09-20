@@ -8,9 +8,12 @@ already produced a number nobody could place:
 2. **an unmatched regime** — `--regime t1` against Foul Play, which is a search bot with no
    sampling knob, so only OUR side would move. The 2026-09-14 battery exists because a mixed-regime
    read was quoted as if it were a matched one;
-3. **an unpinned Metamon agent** — a policy is an anchor only once its checkpoint is in
+3. **a `--seed-base` / `--capture-dir` on a transport that cannot honour it** — both belong to
+   the websocket FRONT END, and a seed the Node server silently ignores would make an
+   unrepeatable series look seeded;
+4. **an unpinned Metamon agent** — a policy is an anchor only once its checkpoint is in
    `designs/ops/anchors.json`;
-4. **a real read with no `--model`** — only `--dry-run` / `--show-config` work without one.
+5. **a real read with no `--model`** — only `--dry-run` / `--show-config` work without one.
 
 Everything else here pins that `--dry-run` prints a plan a human can execute and a machine can
 diff: both peer commands verbatim, both team sources with their counts, and every deadline.
@@ -20,8 +23,10 @@ from __future__ import annotations
 import pytest
 
 from main.anchors import runner as runner_mod
-from main.anchors.cli import build_parser, build_plan, parse_opponent, render_plan
+from main.anchors import server as server_mod
+from main.anchors.cli import build_parser, build_plan, parse_opponent, render_plan, showdown_pin
 from main.anchors.config import load_config
+from main.anchors.results import REQUIRED_ROW_FIELDS
 from main.anchors.server import RESERVED_PORTS, ServerError
 
 
@@ -52,7 +57,7 @@ def test_an_unknown_or_agentless_opponent_is_refused(spec: str) -> None:
 
 
 def test_an_unpinned_metamon_agent_is_refused_at_plan_time(cfg) -> None:
-    """REFUSAL 3. The refusal must come from the CONFIG, not from a hardcoded list here."""
+    """REFUSAL 4. The refusal must come from the CONFIG, not from a hardcoded list here."""
     from main.anchors.config import AnchorConfigError
 
     plan = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
@@ -83,11 +88,66 @@ def test_an_auto_picked_port_is_in_the_9xxx_range_and_the_tool_owns_it(cfg) -> N
     assert plan.server_uri == f"ws://localhost:{plan.server_port}/showdown/websocket"
 
 
-def test_a_given_server_uri_starts_nothing(cfg) -> None:
-    """The seam the in-repo websocket front end over the Rust bridge will plug into."""
+def test_a_given_server_uri_starts_nothing_and_is_stamped_external(cfg) -> None:
+    """An EXTERNAL server. The rows may not claim a transport this tool never started — that is
+    how a number ends up attributed to a stack it never touched."""
     plan = build_plan(_args("--server-uri", "ws://127.0.0.1:9543/showdown/websocket"), cfg)
     assert plan.started_server is False
     assert plan.server_port == 9543
+    assert plan.server_impl == "external"
+    assert plan.server_version == ""
+
+
+# ------------------------------------------------------------------------- the transport switch
+def test_the_default_transport_is_the_RUST_front_end_and_no_node_server_is_named(cfg) -> None:
+    """🚨 The owner's direction: evals come off Node. `--server rust` is the DEFAULT, and the
+    plan must be able to say so before anything is started."""
+    plan = build_plan(_args(), cfg)
+    assert plan.server_impl == "rust"
+    assert plan.server_version.startswith("ws_frontend@")
+    rendered = render_plan(plan, cfg)
+    assert "[rust]" in rendered and "NO NODE SERVER IS STARTED" in rendered
+
+
+def test_node_is_reachable_as_the_explicit_opt_out(cfg) -> None:
+    """The differential's reference transport. It must stay one flag away."""
+    plan = build_plan(_args("--server", "node"), cfg)
+    assert plan.server_impl == "node"
+    assert plan.server_version == f"showdown:{showdown_pin()}"
+
+
+def test_the_transport_is_stamped_on_every_row_not_once_per_file(cfg) -> None:
+    """The regime rule, applied to the transport: a row that did not say which stack served it
+    cannot be compared with one that did."""
+    plan = build_plan(_args(), cfg)
+    cell = runner_mod.cell_spec(plan, {}, 719)
+    assert cell.server_impl == "rust"
+    assert cell.server_version == plan.server_version
+    assert "server_impl" in REQUIRED_ROW_FIELDS and "server_version" in REQUIRED_ROW_FIELDS
+
+
+@pytest.mark.parametrize("extra", [
+    ["--seed-base", "914001"],
+    ["--capture-dir", "/tmp/anchors-caps"],
+])
+def test_the_reproducibility_pair_is_refused_on_every_path_that_is_not_the_front_end(
+        cfg, extra) -> None:
+    """A seed the Node server would ignore must be a REFUSAL. A series that looks seeded and is
+    not is the one failure a seed exists to prevent."""
+    for argv in (["--server", "node", *extra],
+                 ["--server-uri", "ws://127.0.0.1:9543/showdown/websocket", *extra]):
+        with pytest.raises(SystemExit) as excinfo:
+            build_plan(_args(*argv), cfg)
+        assert "--server rust" in str(excinfo.value)
+
+
+def test_the_front_end_carries_the_seed_and_capture_into_the_plan(cfg, tmp_path) -> None:
+    plan = build_plan(_args("--seed-base", "914001", "--capture-dir", str(tmp_path)), cfg)
+    assert plan.seed_base == 914001 and plan.capture_dir == tmp_path
+    argv = server_mod.build_server(
+        plan.server_impl, 9555, seed_base=plan.seed_base, capture_dir=plan.capture_dir).argv()
+    assert argv[argv.index("--seed-base") + 1] == "914001"
+    assert argv[argv.index("--capture-dir") + 1] == str(tmp_path)
 
 
 # -------------------------------------------------------------------------------- the regime

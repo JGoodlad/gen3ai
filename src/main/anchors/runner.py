@@ -103,6 +103,17 @@ class SeriesPlan:
     our_side: str = "model"
     #: "auto" / "bare" / "foreign" — which loader builds our checkpoint.
     model_loader: str = "auto"
+    #: WHICH transport served this read — "rust" (the websocket front end over the Rust bridge,
+    #: the DEFAULT: no Node process exists), "node" (deps/pokemon-showdown) or "external" (a
+    #: `--server-uri` this tool did not start, and therefore cannot vouch for).
+    server_impl: str = "node"
+    #: The transport's own identity, stamped on every row — `ws_frontend@<head>+rust:<binary>` or
+    #: `showdown:<pin>`. A win rate that did not say which transport produced it could not be
+    #: compared with one that did.
+    server_version: str = ""
+    #: `--server rust` only: the reproducibility pair. There is no Node counterpart.
+    seed_base: Optional[int] = None
+    capture_dir: Optional[Path] = None
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -401,6 +412,8 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         forfeit_turn_limit=plan.forfeit_turn_limit,
         server_uri=plan.server_uri,
         showdown_pin=plan.showdown_pin,
+        server_impl=plan.server_impl,
+        server_version=plan.server_version,
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
     )

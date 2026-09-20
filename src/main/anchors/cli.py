@@ -5,10 +5,13 @@
 
 What it does, in the order it does it:
 
-1. **starts a Showdown server** from ``deps/pokemon-showdown`` on a caller-given or auto-picked
-   9XXX port (**8000 and 8001 are refused in code**), records the PID, and stops exactly that PID
-   on exit or failure — or uses ``--server-uri`` and starts nothing, which is how this will point
-   at the in-repo websocket front end over the Rust bridge once that exists;
+1. **starts a server** on a caller-given or auto-picked 9XXX port (**8000 and 8001 are refused
+   in code**), records the PID, and stops exactly that PID on exit or failure. 🚨 **That server is
+   the in-repo websocket FRONT END over the Rust bridge by default** (``--server rust``): no Node
+   process is started at all, and each battle is backed by one ``sim_bridge`` child.
+   ``--server node`` is the explicit opt-out that starts ``deps/pokemon-showdown``, kept because a
+   transport differential needs a reference that is not ours. ``--server-uri`` starts nothing and
+   stamps the rows ``server_impl = external``;
 2. **runs OUR checkpoint through `main.play`'s own code path** — not a copy — against the named
    opponent at a MATCHED regime, role-balanced across two half-series;
 3. **verifies the regime per decision on both sides** and writes the ``argmax_match_rate``;
@@ -123,9 +126,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--port", type=int, default=None,
                    help="Showdown port to start on (9500-9599; 8000/8001 are REFUSED). "
                         "Default: the first free port in the configured range.")
+    p.add_argument("--server", dest="server_kind", default="rust",
+                   choices=server_mod.SERVER_KINDS,
+                   help="WHICH server this tool starts. 'rust' (the DEFAULT) is the in-repo "
+                        "websocket front end (utils.bridge.ws_frontend --impl rust) in its own "
+                        "subprocess — NO Node server exists for the life of the read. 'node' "
+                        "starts deps/pokemon-showdown and is the explicit opt-out a transport "
+                        "differential is taken against. Either way the PID is recorded and "
+                        "exactly that PID is stopped.")
     p.add_argument("--server-uri", default=None,
-                   help="use an EXISTING server at this ws:// URI and start nothing. The seam the "
-                        "in-repo websocket front end will plug into.")
+                   help="use an EXISTING server at this ws:// URI and start nothing. The rows are "
+                        "then stamped server_impl=external: this tool cannot vouch for a "
+                        "transport it did not start.")
+    p.add_argument("--seed-base", type=int, default=None,
+                   help="--server rust only: derive each battle's PRNG seed from this base, so "
+                        "the series is REPRODUCIBLE. There is no counterpart on the Node path.")
+    p.add_argument("--capture-dir", default=None,
+                   help="--server rust only: write each battle's repro record (commands + "
+                        "per-side chunks) here. Pair with --seed-base or it is NOT replayable.")
     p.add_argument("--search-time-ms", type=int, default=1000,
                    help="foulplay only: its ONLY budget, and it is WALL CLOCK — the realized visit "
                         "count is recorded per cell because two runs at the same nominal budget "
@@ -181,20 +199,11 @@ def resolve_model(spec: str) -> "tuple[str, Optional[int], str]":
     return resolved.zip_path, resolved.num_timesteps, resolved.rung
 
 
-def showdown_pin() -> str:
-    """The pinned submodule commit both clients played on. Recorded, because a comparison against
-    numbers a third party produced on ITS own server is a different measurement."""
-    import subprocess
-
-    from utils.paths import repo_path
-
-    try:
-        out = subprocess.run(
-            ["git", "-C", str(repo_path("deps", "pokemon-showdown")), "rev-parse", "--short",
-             "HEAD"], capture_output=True, text=True, timeout=30)
-    except (OSError, subprocess.SubprocessError):
-        return "unknown"
-    return out.stdout.strip() if out.returncode == 0 else "unknown"
+#: The pinned submodule commit both clients played on. Recorded on BOTH transports — the Rust port
+#: was ported from this tree, and the front end still validates a `/utm` team through its
+#: `validate_team.js` — because a comparison against numbers a third party produced on ITS own
+#: server is a different measurement.
+showdown_pin = server_mod.showdown_pin
 
 
 def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
@@ -233,16 +242,38 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                 "regime_matched=false), or use --regime greedy.")
         matched = False
 
+    # The reproducibility pair is the FRONT END's, and there is no Node counterpart — a
+    # `--seed-base` silently ignored on the Node path would make an unrepeatable series look
+    # seeded, which is the one failure a seed exists to prevent.
+    if (args.seed_base is not None or args.capture_dir) and (
+            args.server_uri or args.server_kind != "rust"):
+        raise SystemExit(
+            "--seed-base/--capture-dir need --server rust (the websocket front end owns both). "
+            "The Node server mints its own seed per battle and has no capture; a seed accepted "
+            "and ignored is worse than a refusal.")
+    if args.capture_dir and args.seed_base is None:
+        print("⚠️  --capture-dir without --seed-base: each battle's child mints its own seed, so "
+              "the records will NOT be replayable.", flush=True)
+
     if args.server_uri:
         uri = args.server_uri
         port = server_mod.port_of(uri)
         server_mod.refuse_reserved(port)
         started = False
+        # We did not start it, so we cannot say what it is. "external" is the honest stamp; the
+        # alternative — copying --server onto a row about a process this tool never saw — is how
+        # a number ends up attributed to a transport it never touched.
+        server_impl, server_version = "external", ""
     else:
         port = args.port if args.port is not None else server_mod.pick_port(cfg.port_range)
         server_mod.refuse_reserved(port)
         uri = server_mod.server_uri(port)
         started = True
+        server_impl = args.server_kind
+        server_version = server_mod.build_server(
+            args.server_kind, port, node=cfg.node, battle_format=args.battle_format,
+            seed_base=args.seed_base,
+            capture_dir=Path(args.capture_dir) if args.capture_dir else None).version()
 
     if args.model and our_side == "model":  # noqa: SIM108 - a peer/bot our-side has no zip
         zip_path, step, rung = resolve_model(args.model)
@@ -269,6 +300,10 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         server_uri=uri,
         server_port=port,
         started_server=started,
+        server_impl=server_impl,
+        server_version=server_version,
+        seed_base=args.seed_base,
+        capture_dir=Path(args.capture_dir) if args.capture_dir else None,
         out_dir=out_dir,
         # A peer our-side is named after ITS OWN agent: Metamon keys its per-battle CSV by the
         # player's username, and "Gen3AIAnchor" on an anchor-vs-anchor row would name a client
@@ -306,8 +341,10 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         + (f"  @ step {plan.model_step} (via {plan.model_rung})" if plan.model_step else ""),
         f"  device            {plan.device}",
         f"  server            {plan.server_uri}"
-        + ("  (this tool starts and stops it by PID)" if plan.started_server
-           else "  (EXISTING — nothing started)"),
+        + (f"  [{plan.server_impl}] (this tool starts and stops it by PID)"
+           if plan.started_server else "  (EXISTING — nothing started; stamped external)"),
+        f"  server version    {plan.server_version or '(unknown — not started by this tool)'}"
+        + ("  🚨 NO NODE SERVER IS STARTED" if plan.server_impl == "rust" else ""),
         f"  showdown pin      {plan.showdown_pin}",
         f"  usernames         ours={plan.our_username}<N> peer={plan.peer_username}<N>  "
         "(a per-half suffix; a name still held by the previous half logs in as a GUEST)",
@@ -375,23 +412,25 @@ def main(argv: Optional[List[str]] = None) -> int:
     plan.out_dir.mkdir(parents=True, exist_ok=True)
     print(render_plan(plan, cfg), flush=True)
 
-    srv: Optional[server_mod.ShowdownServer] = None
+    srv: Optional[server_mod.ManagedServer] = None
     rows: List[results_mod.GameRow] = []
     report: dict = {}
     failure = None
     try:
         if plan.started_server:
-            srv = server_mod.ShowdownServer(
-                plan.server_port, node=cfg.node,
-                log_path=plan.out_dir / "showdown.log").start()
-            print(f"[anchors] showdown pid={srv.pid} on {srv.uri}", flush=True)
+            srv = server_mod.build_server(
+                plan.server_impl, plan.server_port, node=cfg.node,
+                battle_format=plan.battle_format, seed_base=plan.seed_base,
+                capture_dir=plan.capture_dir, out_dir=plan.out_dir).start()
+            print(f"[anchors] {srv.label} pid={srv.pid} on {srv.uri} ({plan.server_version})",
+                  flush=True)
         rows, report, failure = asyncio.run(runner_mod.run_series(plan, cfg))
     except KeyboardInterrupt:
         failure = runner_mod.SeriesFailure("interrupted", "KeyboardInterrupt")
     finally:
         if srv is not None:
             srv.stop()
-            print(f"[anchors] showdown stopped (pid was {srv.pid})", flush=True)
+            print(f"[anchors] {srv.label} stopped (pid was {srv.pid})", flush=True)
 
     cell = runner_mod.cell_spec(plan, report, rows[0].cell.our_team_count if rows else 0)
     if rows:

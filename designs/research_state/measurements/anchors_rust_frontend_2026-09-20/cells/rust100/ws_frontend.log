@@ -1,0 +1,241 @@
+2026-09-20 07:18:02,193 INFO websockets.server server listening on 127.0.0.1:9500
+2026-09-20 07:18:02,193 INFO ws_frontend ws_frontend listening — ws://127.0.0.1:9500/showdown/websocket  (impl=rust, format=gen3ou, seed_base=None)
+[ws_frontend] READY ws://127.0.0.1:9500/showdown/websocket
+2026-09-20 07:18:02,655 ERROR websockets.server opening handshake failed
+Traceback (most recent call last):
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/http11.py", line 138, in parse
+    request_line = yield from parse_line(read_line)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/http11.py", line 320, in parse_line
+    line = yield from read_line(MAX_LINE_LENGTH)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/streams.py", line 46, in read_line
+    raise EOFError(f"stream ends after {p} bytes, before end of line")
+EOFError: stream ends after 0 bytes, before end of line
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/server.py", line 547, in parse
+    request = yield from Request.parse(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/http11.py", line 140, in parse
+    raise EOFError("connection closed while reading HTTP request line") from exc
+EOFError: connection closed while reading HTTP request line
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/asyncio/server.py", line 356, in conn_handler
+    await connection.handshake(
+  File "/home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/site-packages/websockets/asyncio/server.py", line 207, in handshake
+    raise self.protocol.handshake_exc
+websockets.exceptions.InvalidMessage: did not receive a valid HTTP request
+2026-09-20 07:18:06,105 INFO websockets.server connection open
+2026-09-20 07:18:06,413 INFO ws_frontend login: MmRustW1 (mmrustw1)
+2026-09-20 07:18:09,280 INFO websockets.server connection open
+2026-09-20 07:18:09,281 INFO ws_frontend login: AnRustW1 (anrustw1)
+2026-09-20 07:18:09,634 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:09,928 INFO ws_frontend battle battle-gen3ou-1: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:10,387 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:12,682 INFO ws_frontend battle battle-gen3ou-2: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:12,984 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:13,591 INFO ws_frontend battle battle-gen3ou-3: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:13,891 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:14,817 INFO ws_frontend battle battle-gen3ou-4: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:14,818 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:16,019 INFO ws_frontend battle battle-gen3ou-5: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:16,326 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:17,360 INFO ws_frontend battle battle-gen3ou-6: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:17,360 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:18,331 INFO ws_frontend battle battle-gen3ou-7: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:18,636 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:19,016 INFO ws_frontend battle battle-gen3ou-8: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:19,326 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:19,648 INFO ws_frontend battle battle-gen3ou-9: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:19,956 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:20,439 INFO ws_frontend battle battle-gen3ou-10: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:20,440 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:20,890 INFO ws_frontend battle battle-gen3ou-11: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:20,890 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:21,541 INFO ws_frontend battle battle-gen3ou-12: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:21,541 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:22,097 INFO ws_frontend battle battle-gen3ou-13: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:22,404 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:23,660 INFO ws_frontend battle battle-gen3ou-14: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:23,660 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:24,672 INFO ws_frontend battle battle-gen3ou-15: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:24,672 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:25,942 INFO ws_frontend battle battle-gen3ou-16: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:25,942 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:26,482 INFO ws_frontend battle battle-gen3ou-17: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:26,482 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:27,194 INFO ws_frontend battle battle-gen3ou-18: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:27,194 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:27,735 INFO ws_frontend battle battle-gen3ou-19: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:27,736 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:28,539 INFO ws_frontend battle battle-gen3ou-20: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:28,847 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:29,221 INFO ws_frontend battle battle-gen3ou-21: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:29,221 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:29,849 INFO ws_frontend battle battle-gen3ou-22: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:29,850 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:32,954 INFO ws_frontend battle battle-gen3ou-23: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:33,267 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:33,986 INFO ws_frontend battle battle-gen3ou-24: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:33,986 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:34,314 INFO ws_frontend battle battle-gen3ou-25: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:34,623 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:37,573 INFO ws_frontend battle battle-gen3ou-26: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:37,573 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:41,084 INFO ws_frontend battle battle-gen3ou-27: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:41,085 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:43,136 INFO ws_frontend battle battle-gen3ou-28: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:43,136 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:44,062 INFO ws_frontend battle battle-gen3ou-29: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:44,062 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:45,186 INFO ws_frontend battle battle-gen3ou-30: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:45,186 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:45,740 INFO ws_frontend battle battle-gen3ou-31: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:45,740 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:46,583 INFO ws_frontend battle battle-gen3ou-32: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:46,583 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:48,628 INFO ws_frontend battle battle-gen3ou-33: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:48,629 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:49,169 INFO ws_frontend battle battle-gen3ou-34: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:49,169 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:49,813 INFO ws_frontend battle battle-gen3ou-35: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:49,813 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:50,512 INFO ws_frontend battle battle-gen3ou-36: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:50,820 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:51,207 INFO ws_frontend battle battle-gen3ou-37: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:51,207 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:54,382 INFO ws_frontend battle battle-gen3ou-38: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:54,382 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:55,533 INFO ws_frontend battle battle-gen3ou-39: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:55,533 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:57,330 INFO ws_frontend battle battle-gen3ou-40: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:57,330 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:18:58,603 INFO ws_frontend battle battle-gen3ou-41: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:18:58,604 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:00,394 INFO ws_frontend battle battle-gen3ou-42: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:00,394 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:01,168 INFO ws_frontend battle battle-gen3ou-43: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:01,168 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:01,572 INFO ws_frontend battle battle-gen3ou-44: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:01,897 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:02,666 INFO ws_frontend battle battle-gen3ou-45: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:02,666 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:03,586 INFO ws_frontend battle battle-gen3ou-46: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:03,586 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:04,453 INFO ws_frontend battle battle-gen3ou-47: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:04,453 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:05,086 INFO ws_frontend battle battle-gen3ou-48: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:05,086 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:05,780 INFO ws_frontend battle battle-gen3ou-49: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:05,781 INFO ws_frontend challenge anrustw1 -> mmrustw1 (gen3ou)
+2026-09-20 07:19:06,471 INFO ws_frontend battle battle-gen3ou-50: AnRustW1 (p1) vs MmRustW1 (p2) seed=None
+2026-09-20 07:19:10,608 INFO websockets.server connection open
+2026-09-20 07:19:10,609 INFO ws_frontend login: AnRustW2 (anrustw2)
+2026-09-20 07:19:14,633 INFO websockets.server connection open
+2026-09-20 07:19:14,951 INFO ws_frontend login: MmRustW2 (mmrustw2)
+2026-09-20 07:19:14,952 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:14,953 INFO ws_frontend battle battle-gen3ou-51: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:17,155 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:17,155 INFO ws_frontend battle battle-gen3ou-52: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:17,709 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:17,709 INFO ws_frontend battle battle-gen3ou-53: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:18,211 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:18,212 INFO ws_frontend battle battle-gen3ou-54: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:18,721 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:18,722 INFO ws_frontend battle battle-gen3ou-55: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:19,702 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:19,702 INFO ws_frontend battle battle-gen3ou-56: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:20,310 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:20,311 INFO ws_frontend battle battle-gen3ou-57: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:20,866 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:20,867 INFO ws_frontend battle battle-gen3ou-58: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:21,605 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:21,606 INFO ws_frontend battle battle-gen3ou-59: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:22,072 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:22,073 INFO ws_frontend battle battle-gen3ou-60: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:22,908 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:22,909 INFO ws_frontend battle battle-gen3ou-61: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:23,517 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:23,518 INFO ws_frontend battle battle-gen3ou-62: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:23,993 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:23,993 INFO ws_frontend battle battle-gen3ou-63: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:25,107 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:25,107 INFO ws_frontend battle battle-gen3ou-64: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:25,867 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:25,868 INFO ws_frontend battle battle-gen3ou-65: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:27,281 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:27,281 INFO ws_frontend battle battle-gen3ou-66: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:27,814 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:27,815 INFO ws_frontend battle battle-gen3ou-67: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:28,388 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:28,388 INFO ws_frontend battle battle-gen3ou-68: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:28,979 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:28,979 INFO ws_frontend battle battle-gen3ou-69: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:29,577 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:29,578 INFO ws_frontend battle battle-gen3ou-70: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:30,068 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:30,069 INFO ws_frontend battle battle-gen3ou-71: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:30,565 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:30,565 INFO ws_frontend battle battle-gen3ou-72: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:31,945 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:31,946 INFO ws_frontend battle battle-gen3ou-73: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:32,648 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:32,649 INFO ws_frontend battle battle-gen3ou-74: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:33,037 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:33,037 INFO ws_frontend battle battle-gen3ou-75: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:36,855 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:36,856 INFO ws_frontend battle battle-gen3ou-76: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:38,311 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:38,312 INFO ws_frontend battle battle-gen3ou-77: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:39,109 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:39,110 INFO ws_frontend battle battle-gen3ou-78: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:40,212 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:40,212 INFO ws_frontend battle battle-gen3ou-79: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:41,340 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:41,340 INFO ws_frontend battle battle-gen3ou-80: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:42,259 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:42,260 INFO ws_frontend battle battle-gen3ou-81: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:43,287 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:43,287 INFO ws_frontend battle battle-gen3ou-82: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:47,495 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:47,497 INFO ws_frontend battle battle-gen3ou-83: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:47,515 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:47,523 INFO ws_frontend battle battle-gen3ou-84: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:48,116 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:48,117 INFO ws_frontend battle battle-gen3ou-85: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:48,919 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:48,919 INFO ws_frontend battle battle-gen3ou-86: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:49,425 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:49,425 INFO ws_frontend battle battle-gen3ou-87: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:51,188 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:51,189 INFO ws_frontend battle battle-gen3ou-88: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:52,394 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:52,395 INFO ws_frontend battle battle-gen3ou-89: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:54,266 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:54,267 INFO ws_frontend battle battle-gen3ou-90: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:57,654 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:57,655 INFO ws_frontend battle battle-gen3ou-91: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:59,085 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:59,086 INFO ws_frontend battle battle-gen3ou-92: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:59,614 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:59,615 INFO ws_frontend battle battle-gen3ou-93: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:19:59,995 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:19:59,995 INFO ws_frontend battle battle-gen3ou-94: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:20:00,484 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:20:00,485 INFO ws_frontend battle battle-gen3ou-95: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:20:02,613 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:20:02,614 INFO ws_frontend battle battle-gen3ou-96: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:20:03,355 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:20:03,355 INFO ws_frontend battle battle-gen3ou-97: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:20:03,822 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:20:03,823 INFO ws_frontend battle battle-gen3ou-98: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:20:04,716 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:20:04,717 INFO ws_frontend battle battle-gen3ou-99: MmRustW2 (p1) vs AnRustW2 (p2) seed=None
+2026-09-20 07:20:05,218 INFO ws_frontend challenge mmrustw2 -> anrustw2 (gen3ou)
+2026-09-20 07:20:05,219 INFO ws_frontend battle battle-gen3ou-100: MmRustW2 (p1) vs AnRustW2 (p2) seed=None

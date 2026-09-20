@@ -1,0 +1,7 @@
+=== fp20_rust START 2026-09-20T07:40:53-07:00 server=rust load=13.20 14.16 12.50
+server pid=804941
+=== fp20_rust END 2026-09-20T07:46:26-07:00 rc=2 wall_s=333 load=29.72 19.19 14.74
+server tree RSS: peak 36.8 MB  mean 27.9 MB  samples 165
+  transport   rust  ws_frontend@ffc3b0ef+rust:/home/goodlad/dev/gen3ai/src/rust_sim/target/release/sim_bridge  (ws://localhost:9500/showdown/websocket)
+  status      FAILED
+  WIN RATE    1.000   Wilson 95% [0.207, 1.000]   n=1 (W1/L0/T0)

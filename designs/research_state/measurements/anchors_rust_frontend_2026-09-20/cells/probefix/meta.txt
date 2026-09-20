@@ -1,0 +1,8 @@
+=== probefix START 2026-09-20T07:35:00-07:00 server=rust load=0.76 1.74 8.90
+server pid=802912
+=== probefix END 2026-09-20T07:35:24-07:00 rc=0 wall_s=24 load=1.38 1.81 8.73
+server tree RSS: peak 37.4 MB  mean 30.1 MB  samples 12
+  transport   rust  ws_frontend@ffc3b0ef+rust:/home/goodlad/dev/gen3ai/src/rust_sim/target/release/sim_bridge  (ws://localhost:9500/showdown/websocket)
+  verified    peer argmax_match_rate = 1.0000
+  status      OK
+  WIN RATE    0.500   Wilson 95% [0.150, 0.850]   n=4 (W2/L2/T0)

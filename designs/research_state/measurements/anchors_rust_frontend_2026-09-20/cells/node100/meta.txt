@@ -1,0 +1,8 @@
+=== node100 START 2026-09-20T07:20:14-07:00 server=node load=2.62 10.77 17.72
+server pid=791896
+=== node100 END 2026-09-20T07:23:37-07:00 rc=0 wall_s=203 load=8.55 14.84 18.37
+server tree RSS: peak 3551.1 MB  mean 3226.5 MB  samples 97
+  transport   node  showdown:e0551883f  (ws://localhost:9500/showdown/websocket)
+  verified    peer argmax_match_rate = 1.0000
+  status      OK
+  WIN RATE    0.580   Wilson 95% [0.482, 0.672]   n=100 (W58/L42/T0)

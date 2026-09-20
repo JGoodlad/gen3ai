@@ -1,0 +1,19 @@
+2026-09-20 07:35:00,693 INFO websockets.server server listening on 127.0.0.1:9500
+2026-09-20 07:35:00,693 INFO ws_frontend ws_frontend listening — ws://127.0.0.1:9500/showdown/websocket  (impl=rust, format=gen3ou, seed_base=None)
+[ws_frontend] READY ws://127.0.0.1:9500/showdown/websocket
+2026-09-20 07:35:04,586 INFO websockets.server connection open
+2026-09-20 07:35:04,888 INFO ws_frontend login: MmFixW1 (mmfixw1)
+2026-09-20 07:35:07,739 INFO websockets.server connection open
+2026-09-20 07:35:07,740 INFO ws_frontend login: AnFixW1 (anfixw1)
+2026-09-20 07:35:08,083 INFO ws_frontend challenge anfixw1 -> mmfixw1 (gen3ou)
+2026-09-20 07:35:08,379 INFO ws_frontend battle battle-gen3ou-1: AnFixW1 (p1) vs MmFixW1 (p2) seed=None
+2026-09-20 07:35:08,789 INFO ws_frontend challenge anfixw1 -> mmfixw1 (gen3ou)
+2026-09-20 07:35:10,856 INFO ws_frontend battle battle-gen3ou-2: AnFixW1 (p1) vs MmFixW1 (p2) seed=None
+2026-09-20 07:35:15,394 INFO websockets.server connection open
+2026-09-20 07:35:15,395 INFO ws_frontend login: AnFixW2 (anfixw2)
+2026-09-20 07:35:19,383 INFO websockets.server connection open
+2026-09-20 07:35:19,707 INFO ws_frontend login: MmFixW2 (mmfixw2)
+2026-09-20 07:35:19,708 INFO ws_frontend challenge mmfixw2 -> anfixw2 (gen3ou)
+2026-09-20 07:35:19,709 INFO ws_frontend battle battle-gen3ou-3: MmFixW2 (p1) vs AnFixW2 (p2) seed=None
+2026-09-20 07:35:21,867 INFO ws_frontend challenge mmfixw2 -> anfixw2 (gen3ou)
+2026-09-20 07:35:21,868 INFO ws_frontend battle battle-gen3ou-4: MmFixW2 (p1) vs AnFixW2 (p2) seed=None

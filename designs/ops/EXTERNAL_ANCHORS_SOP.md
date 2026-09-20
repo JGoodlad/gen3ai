@@ -173,17 +173,42 @@ an era-spanning campaign's oldest reachable node is whatever the floor admits.
 
 | step | what happens |
 |---|---|
-| 1 | starts a Showdown server from `deps/pokemon-showdown` on an auto-picked **9500–9599** port, records the PID, and stops **exactly that PID** on exit or failure. **8000 and 8001 are refused in code.** `--server-uri` uses an existing server and starts nothing |
+| 1 | starts a server on an auto-picked **9500–9599** port, records the PID, and stops **exactly that PID** on exit or failure. **8000 and 8001 are refused in code.** 🚨 **That server is the in-repo websocket FRONT END over the Rust bridge (`--server rust`, the DEFAULT): NO Node process is started at all.** `--server node` is the explicit opt-out that starts `deps/pokemon-showdown`; `--server-uri` uses an existing server, starts nothing, and stamps the rows `server_impl=external`. The transport and its version are on **every row** |
 | 2 | resolves `--model` through `resolve_model_ref` — 🚨 **a bare run directory means that run's LAST SNAPSHOT**; name the `.zip` or `@step` to pin a file. The rung it resolved by is recorded on every row |
 | 3 | runs our checkpoint through **`main.play`'s own code path** (`--device cpu`, `--temperature 0`, the trainer's 250-turn forfeit limit), role-balanced across two half-series |
 | 4 | verifies the regime **per decision on both sides** and writes the `argmax_match_rate` |
 | 5 | writes `games.jsonl` + `summary.json` with the Wilson CI and the full provenance |
 | 6 | on a dead peer or a stalled series, **FAILS with a named cause** and exit code 2 |
 
-Other useful flags: `--dry-run` (prints the plan — both peer commands verbatim, both team sources
-with their counts, every deadline — and starts nothing), `--show-config` (resolves
-`designs/ops/anchors.json` and says which paths exist), `--games`, `--search-time-ms`,
-`--progress-timeout` / `--first-game-timeout` / `--peer-ready-timeout`.
+Other useful flags: `--dry-run` (prints the plan — the transport, both peer commands verbatim,
+both team sources with their counts, every deadline — and starts nothing), `--show-config`
+(resolves `designs/ops/anchors.json` and says which paths exist), `--games`, `--search-time-ms`,
+`--progress-timeout` / `--first-game-timeout` / `--peer-ready-timeout`, and — **`--server rust`
+only** — `--seed-base` / `--capture-dir`, the reproducibility pair (the Node server mints its own
+seed per battle and has no capture, so both are REFUSED there rather than ignored).
+
+### The transport — `--server {rust,node}`
+
+| | **`rust` (the DEFAULT)** | **`node` (the opt-out)** |
+|---|---|---|
+| what runs | `utils.bridge.ws_frontend --impl rust` in its own subprocess; each battle is backed by ONE `sim_bridge` child | `deps/pokemon-showdown` — a whole Showdown server |
+| memory | **40 MB mean / 166 MB peak** server tree over 100 games | **3,227 MB mean / 3,551 MB peak** — 80× the mean |
+| wall, 100 games | **126 s** | 203 s |
+| needs `node` on PATH | only for the `/utm` team validation (a short-lived process per distinct team, cached) | yes, plus the submodule's `dist/` + `node_modules/` |
+| reproducible | `--seed-base` / `--capture-dir` | no counterpart |
+| stamped on every row | `server_impl=rust`, `server_version=ws_frontend@<head>+rust:<bridge binary>` | `server_impl=node`, `server_version=showdown:<pin>` |
+
+**They agree.** 100 games of `metamon:SmallRL` greedy/away at one team seed, arm W @ 75,005,952:
+**0.590 [0.492, 0.681]** through the front end against **0.580 [0.482, 0.672]** through Node,
+**Δ +0.010 [−0.124, +0.144] — NOT DETECTED** (`anchors_rust_frontend_2026-09-20`, on top of the
+200-battle side-by-side in `foulplay_axes_and_frontend_validation_2026-09-16`). 🚨 **An
+agreement at n = 100 is not byte equality**, and the two paths are not replicates — the instrument
+for protocol equality is `src/utils/bridge/ws_frontend_byte_identity_integration_test.py`, which
+compares the front end's per-side bytes against the Node bridge's and is green on both arms.
+
+**When to reach for `--server node`:** a differential like the one above, and anything the front
+end deliberately does NOT implement (`designs/rust_sim/ws_frontend.md`'s deferral list —
+reconnection, a battle timer, `/search`, replays). Nothing in the standing procedure needs it.
 
 ### The team sets
 
@@ -212,7 +237,7 @@ nothing here touches the GPU.
 
 | opponent | s/game | 100 games | notes |
 |---|---:|---:|---|
-| `metamon:SmallRL` | **3.0** | **~5 min** | 12–17 ms/decision; seconds to load |
+| `metamon:SmallRL` | **3.0** | **~5 min** | 12–17 ms/decision; seconds to load. On `--server rust` (the default) the same cell took **126 s** on a quiet box against **203 s** on Node, 2026-09-20 |
 | `metamon:SyntheticRLV2` | **6.1** | **~10 min** | 56–113 ms/decision, **plus a multi-minute build per half** (200M params, 804 MB) |
 | `foulplay` @ 1000 ms | **~88** | **~2.5 h** | **~80 core-seconds/game** — ~17× ours; cost is linear in `--search-time-ms` × `--search-parallelism` × the ×2 world multiplier while the opponent's active has <3 revealed moves |
 
@@ -243,6 +268,8 @@ the pin on the env the plan actually carries.
 | **H11** | **two `poke_env` packages**. Metamon subclasses UPSTREAM poke-env; our `BattleStreamClient` subclasses the vendored fork. One process resolves `import poke_env` to exactly one of them and the other half breaks **silently** | wrong behaviour, no error | the peers are SUBPROCESSES with `PYTHONPATH=""`; nothing in this repo imports Metamon |
 | **H13** | **thread oversubscription**. Torch's default pool on B = 1 inference; 210% CPU per peer, ~20× slower than necessary on a shared box | a campaign that projects at 18 h instead of 1 h | `OMP_NUM_THREADS=1` (+ MKL/OpenBLAS/numexpr/torch) in the peer env and in `metamon_side.py` before torch |
 | **H12** | **the Showdown pin**. Ours is `e0551883f`, 13 commits behind Metamon's bundled submodule | — | irrelevant while BOTH clients play on ours, which the tool guarantees; it becomes relevant the moment anyone compares against numbers a third party produced on its own server. The pin is recorded on every row |
+| **H14** | 🚨 **`--opponent foulplay` cannot run a MULTI-GAME `ours_challenge` half.** poke-env pipelines its challenges; Foul Play drops a PM that arrives mid-battle and then waits for a challenge that was already consumed. Reproduced on the front end 2026-09-20 (`no_progress`, 1/10 games) exactly as on Node 3/3 on 2026-09-16 — the front end's own log shows the SECOND `/challenge` delivered 0.4 s after the first, so the drop is Foul Play's | `no_progress` after 1 game — **not** a transport fault | unfixed. A Foul Play cell is proven at **1 game per half**; every multi-game Foul Play number in the ledger came from runs where Foul Play was the CHALLENGER. **Backlog** |
+| **H15** | ⚠️ **A bare TCP readiness probe FABRICATES an ERROR in the front end's log.** `websockets` answers a connect-then-close with `opening handshake failed` and a three-deep traceback; "0 ERRORs in the server log" is the criterion the transport's validation reads | a clean read looks like a protocol failure | fixed 2026-09-20: a server that PRINTS a readiness line (`[ws_frontend] READY`) is never TCP-probed; the Node server, which prints none we parse, still is |
 
 **One more, and it is about US, not them:** ⚠️ a long campaign that imports the MAIN checkout is not
 pinned, and `main` is a moving target on a multi-session box. The parallel Metamon de-risk landed

@@ -1,8 +1,8 @@
-"""THE ONE END-TO-END TEST: two real gen3ou games against `metamon:SmallRL`.
+"""THE ONE END-TO-END TEST: two real gen3ou games against `metamon:SmallRL` — on BOTH transports.
 
 Everything else in this package is exercised in isolation — the plan, the schema, the watchdog, the
-refusals. None of that proves the pieces FIT: that the server starts on a 9XXX port and stops by
-its PID, that the acceptor is online before the challenger, that Metamon's upstream poke-env and
+refusals. None of that proves the pieces FIT: that the server — the RUST websocket front end by
+default, the Node server under `--server node` — starts on a 9XXX port and stops by its PID, that the acceptor is online before the challenger, that Metamon's upstream poke-env and
 our vendored fork both accept the same team files, that a regime set in one process is verified in
 the other, and that a row lands carrying its regime. Two games is the smallest thing that does.
 
@@ -10,6 +10,12 @@ the other, and that a row lands carrying its regime. Two games is the smallest t
 (``SmallRL`` is 14 ms/move and 2.3-3.0 s/game, plus one model load), and the failure it catches —
 the pieces not fitting — is exactly the kind that a routine gate should see. It is NOT ``sim`` (no
 in-process bridge) and NOT ``e2e`` (no server on :8000; it starts and stops its own on 9500-9599).
+
+**Both transports, one test, parametrized.** The default (`rust`) is the one the owner's
+direction put in the hot path and the one every read now takes unless it opts out; `node` is kept
+green because it is the reference a transport differential is taken against, and a reference
+nobody runs rots. The Node case additionally needs `node` on PATH and the submodule's build
+artifacts; the rust case needs neither.
 
 **It SKIPS with a named reason** when the Metamon checkout, its interpreter, its weight cache or
 our run archive is absent — which is every box but this one. 🚨 A skip that is supposed to happen
@@ -40,7 +46,7 @@ N_GAMES = 2
 _RUN = "ai_v12_02_winprob_critic"
 
 
-def _skip_reason() -> "str | None":
+def _skip_reason(server: str = "rust") -> "str | None":
     """Why this box cannot run it — specific enough to act on, or None."""
     cfg = load_config()
     for label, path, env_var in (
@@ -57,18 +63,23 @@ def _skip_reason() -> "str | None":
     if not (archive / _RUN).exists():
         return (f"no run at {archive / _RUN} — this test needs a checkpoint to play, and models/ "
                 "lives only in the MAIN checkout ($GEN3AI_MODELS_DIR overrides).")
-    node = cfg.node
-    from shutil import which
+    if server == "node":
+        # Only the OPT-OUT transport needs Node. The default one is the point of this switch:
+        # a box with no `node` can still take an anchor read.
+        from shutil import which
 
-    if which(node) is None:
-        return f"no `{node}` on PATH — the Showdown server cannot be started."
+        if which(cfg.node) is None:
+            return (f"no `{cfg.node}` on PATH — the --server node opt-out cannot be started. "
+                    "The default --server rust transport needs none.")
     return None
 
 
 
-def test_two_real_games_against_metamon_smallrl(tmp_path: Path) -> None:
-    """The whole tool, end to end, on the smallest sample that still exercises every seam."""
-    reason = _skip_reason()
+@pytest.mark.parametrize("server", ["rust", "node"])
+def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> None:
+    """The whole tool, end to end, on the smallest sample that still exercises every seam — once
+    per transport, because "it works" on one of them says nothing about the other."""
+    reason = _skip_reason(server)
     if reason:
         pytest.skip(reason)
 
@@ -89,8 +100,11 @@ def test_two_real_games_against_metamon_smallrl(tmp_path: Path) -> None:
         "--first-game-timeout", "900",
         "--progress-timeout", "900",
         "--peer-ready-timeout", "900",
-        "--username", "Gen3AIitest",
-        "--peer-username", "MetaItest",
+        # 18 characters is Showdown's ceiling and a 19th is a HANG, not an error. The transport
+        # goes in the name so the two parametrizations cannot collide on a live login.
+        "--username", f"Gen3AIit{server}",
+        "--peer-username", f"MetaIt{server}",
+        "--server", server,
     ])
 
     summary = json.loads((tmp_path / "summary.json").read_text())
@@ -140,8 +154,16 @@ def test_two_real_games_against_metamon_smallrl(tmp_path: Path) -> None:
         f"({summary['cell']['our_team_count']} vs {summary['cell']['their_team_count']}) — the "
         "win rate would then mix skill with matchup")
 
-    # The server we started is gone, and nothing else on the box was touched.
-    assert (tmp_path / "showdown.log").exists()
+    # THE TRANSPORT, on every row — the same rule the regime has, for the same reason.
+    assert summary["cell"]["server_impl"] == server
+    assert all(row["server_impl"] == server for row in rows)
+    assert summary["cell"]["server_version"]
+
+    # The server we started is gone, its log is named after it, and nothing else was touched.
+    log = "ws_frontend.log" if server == "rust" else "showdown.log"
+    assert (tmp_path / log).exists()
+    assert not (tmp_path / ("showdown.log" if server == "rust" else "ws_frontend.log")).exists(), (
+        "the other transport's log is here — this read started a server it was not asked for")
     port = summary["cell"]["server_uri"].split(":")[2].split("/")[0]
     assert 9500 <= int(port) <= 9599
 

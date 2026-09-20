@@ -36,6 +36,20 @@ opponent in its own process and its own poke-env.
 | offline series | `local_battle_runner.py` | `choose_move` | in-process |
 | **external opponent** | **`ws_frontend.py`** | **the opponent's own loop** | **its own process** |
 
+### Who uses it
+
+🚨 **`python -m main.anchors` — every EXTERNAL-ANCHOR read — starts this module by default**
+(`--server rust`, `main.anchors.server.FrontEndServer`, its own subprocess, a 9500–9599 port,
+stopped by PID). No Node server is involved in an anchor read unless `--server node` is passed,
+and each row carries `server_impl` + `server_version = ws_frontend@<gen3ai head>+rust:<bridge
+binary>`. The promotion's evidence is
+[`anchors_rust_frontend_2026-09-20`](../research_state/measurements/anchors_rust_frontend_2026-09-20/README.md)
+(100 games each way: Δ +0.010 [−0.124, +0.144], NOT DETECTED; 40 MB mean server-tree RSS against
+Node's 3,227 MB; 126 s against 203 s), on top of the 200-battle side-by-side in
+[`foulplay_axes_and_frontend_validation_2026-09-16`](../research_state/measurements/foulplay_axes_and_frontend_validation_2026-09-16/README.md).
+⚠️ **`--server node` stays one flag away** — the deferral list below is exactly what it is for,
+and a differential needs a reference transport that is not ours.
+
 ---
 
 ## The protocol surface — everything it implements
@@ -234,7 +248,14 @@ field, the sim rejects the team, and the match STALLS rather than erroring. The 
 validation turns that into a loud popup plus an ERROR log on OUR side, but it cannot fix the
 opponent's packer — export nickname-free team files.
 
-**H6 ⚠️ The clients' postures on an unknown protocol keyword are OPPOSITE.** Our
+**H6 ⚠️ A bare TCP connect is not a free readiness probe.** `websockets` answers a connect that
+closes without an HTTP request with `ERROR opening handshake failed` and a three-deep traceback —
+one per probe, in the log whose emptiness is the protocol criterion every validation of this front
+end has read ("0 ERROR, 0 WARNING over 200 battles"). The `[ws_frontend] READY <uri>` line is
+printed after the listener is bound and is therefore the probe to use; `main.anchors` waits for it
+and never dials the port. Measured 2026-09-20.
+
+**H7 ⚠️ The clients' postures on an unknown protocol keyword are OPPOSITE.** Our
 `battle_event.classify` raises by design; Foul Play silently ignores. A front end that relays the
 pinned submodule's bytes exercises neither, exactly as a pinned local server does not —
 `ladder_drift_scan` remains the instrument for live drift.

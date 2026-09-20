@@ -1,0 +1,8 @@
+=== rust100 START 2026-09-20T07:18:02-07:00 server=rust load=3.37 15.30 20.02
+server pid=788357
+=== rust100 END 2026-09-20T07:20:08-07:00 rc=0 wall_s=126 load=2.67 10.92 17.80
+server tree RSS: peak 165.8 MB  mean 40.2 MB  samples 63
+  transport   rust  ws_frontend@ffc3b0ef+rust:/home/goodlad/dev/gen3ai/src/rust_sim/target/release/sim_bridge  (ws://localhost:9500/showdown/websocket)
+  verified    peer argmax_match_rate = 1.0000
+  status      OK
+  WIN RATE    0.590   Wilson 95% [0.492, 0.681]   n=100 (W59/L40/T1)

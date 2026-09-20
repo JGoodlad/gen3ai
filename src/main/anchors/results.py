@@ -96,6 +96,14 @@ class CellSpec:
     forfeit_turn_limit: int
     server_uri: str
     showdown_pin: str
+    #: WHICH transport served the battle: "rust" (the in-repo websocket front end over the Rust
+    #: `sim_bridge`, the DEFAULT — no Node server involved), "node" (`deps/pokemon-showdown`) or
+    #: "external" (a `--server-uri` this tool did not start). 🚨 On the ROW, not once per file:
+    #: the transport is part of what produced the number, exactly as the regime is.
+    server_impl: str = "node"
+    #: The transport's identity — `ws_frontend@<gen3ai head>+rust:<bridge binary>` or
+    #: `showdown:<submodule pin>`. Empty only for an external server.
+    server_version: str = ""
     #: WHO our side is — "model" (a checkpoint through `main.play`) or "bot:<name>" (one of the
     #: nine pinned eval bots). A bot has no sampling knob at all, exactly like Foul Play, so a
     #: bot cell is stamped `regime_matched = False` and `our_regime = "bot:<name>"`; that is the
@@ -165,6 +173,7 @@ class GameRow:
 #: file" once anyone writes a second producer.
 REQUIRED_ROW_FIELDS = (
     "opponent", "opponent_version", "opponent_commit",
+    "server_impl", "server_version",
     "our_side", "model_loader",
     "our_regime", "their_regime", "regime_matched",
     "teamset", "our_team_count", "their_team_count",
@@ -269,6 +278,11 @@ def render(summary: Dict[str, Any]) -> str:
         f"  our model   {cell['model_zip'] or '(none — our side is not a checkpoint)'}"
         + (f" @ step {cell['model_step']} (resolved via {cell['model_rung']})"
            if cell['model_zip'] else ""),
+        # The transport is READ OUT, not only written: a reader comparing two cells has to be
+        # able to see that one of them was served by a different stack without opening the rows.
+        f"  transport   {cell.get('server_impl', 'node')}"
+        + (f"  {cell['server_version']}" if cell.get("server_version") else "")
+        + (f"  ({cell['server_uri']})" if cell.get("server_uri") else ""),
     ]
     if cell.get("search_time_ms"):
         v = summary.get("realized_visits_per_decision_mean")
