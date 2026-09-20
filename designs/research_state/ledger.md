@@ -20300,3 +20300,44 @@ W-J FIRES ON 37 % OF SUB-CELLS WITH EVERY PER-DECISION RATE AT 1.0000**.
 **THE FIRST READ AVAILABLE, AND IT IS A DESCRIPTOR — NOT THE REGISTERED ENDPOINT.** `train/entropy_loss`, mean of the last 10 rollouts at the identical endpoint 87,097,344: **split 0.9589 ± 0.0155 · control (`wcont`) 0.9407 ± 0.0146 · fold path 0.7373 ± 0.0185**. The split sits **with the control** (+0.0182, about one sd) and **0.2216 above the fold** — ~12× the 75M RUN-LEVEL floor of 0.019 (rule 19: the floor's replicate level is the RUN, and there is n = 1 per cell here, so this is a direction with a matched endpoint, not a family claim). On this channel **the distill loss is the carrier and the ecology is not**: the 40 % bias, the specialists in the pool and the 64-episode blocks together left entropy indistinguishable from doing nothing, while the loss alone accounts for the whole ≈0.22-nat collapse — the direction an action-target top-1 distillation predicts, since it concentrates the policy by construction. **The registered verdict is the untaught 8 plus the two slice cells at +3M / +6M / +12M against BOTH `ai_v13_09_wcont` and the fold path (|Δ| > floor AND CI excludes the floor point; slice floors 0.0475 / 0.085), and NONE of that has been run.** Recorded so the entropy read cannot later be mistaken for the verdict. Bots at 86,000,016 read 0.9513 and pool 0.6700; both are BLIND at this depth (W-I).
 
 **NEXT ARM LAUNCHED IMMEDIATELY (the GPU did not idle).** `ai_v13_12_plateau` block 1 — FORK of `ai_v13_09_wcont` from its endpoint 87,097,344, NO teachers, `--steps 95,097,344` (a TOTAL) → +8,000,000, frozen dose 4.272e-9 (`--fork-lr 2.8e-5 --fork-lr-freeze`), seed 1001, pin `6eb9c776`, launcher pid 802270 from 07:34 PT. Built token-exactly from `wcont`'s own resolved argv with the diff exactly `--steps`, `--run-name` and `--model` (238 → 238 tokens) — so it keeps `--team-block-episodes 1`, the continuation's own value, which is what "continue the continuation" has to mean. checkargs **134 / 2 / 0**, ARCH clean; dry run `+8,000,000`. Banners: `🧭 [MATCHUP ef5242cffd]` (arm W's era, NO drift line — correct), pool seeded 20 snapshots from `ai_v13_09_wcont`, `🎚️ [ForkLR] FORK from a checkpoint outside models/ai_v13_12_plateau — pinning LR to 2.80e-05 and FREEZING the KL controller`. The block's read decides whether a second block launches: untaught 8 at block end vs block start, OUTSIDE iff |Δ| > 3.69 AND the CI excludes the floor point; WITHIN the floor ⇒ that checkpoint is THE PLATEAU PARENT. Tag: **OPS · `ai_v13_11_split_lossoff` COMPLETE (87,097,344 exactly, teardown-SIGTERM #8, G7 clean both halves, dose matched) · manipulation verified by banner AND by zero `distill/*` scalars · 🚨 THE ERA-1 FOLD MOVED FOUR LEVERS — `--team-block-episodes 1 → 64`, never registered; split-vs-fold still ONE lever, split-vs-control is THREE · ENTROPY DESCRIPTOR: split 0.9589 lands WITH the control 0.9407, 0.2216 ABOVE the fold 0.7373 (≈12× the run-level floor) ⇒ the LOSS is the carrier on this channel · the registered untaught/slice read is NOT RUN · `ai_v13_12_plateau` block 1 LAUNCHED**.
+
+### 2026-09-20 · OPS · **external-anchor reads come OFF NODE. `python -m main.anchors` now starts the
+in-repo websocket front end over the Rust bridge by DEFAULT (`--server rust`), and a 100-game
+transport differential says the two paths agree while the Node server costs 80× the memory.**
+The owner's direction was to get evals off Node ("node sucks, uses memory"), and the number that
+answers it is the server process tree's resident memory over a 100-game `metamon:SmallRL`
+greedy/away cell on arm W (`ai_v13_02_flywheel_winprob/final_model.zip` @ 75,005,952):
+**mean 40.2 MB / peak 165.8 MB through the front end against mean 3,226.5 MB / peak 3,551.1 MB
+through `deps/pokemon-showdown` — 80× on the mean, 21× on the peak** — with the same 100 games
+finishing in **126 s against 203 s**. The reads themselves are the same read: **0.590 [0.492,
+0.681] (W59/L40/T1) through the front end against 0.580 [0.482, 0.672] (W58/L42/T0) through Node
+at one team seed, Δ +0.010 [−0.124, +0.144], NOT DETECTED**, with `argmax_match_rate` 1.0000 on
+all four halves, `n_defaults` / `n_redecides` 0 / 0, one 250-turn forfeit on each path and
+`team_source_asymmetry` false. 🚨 **An outcome agreement at n = 100 is not byte equality and the
+two cells are not replicates** — they share only our team draw — so the transport's real gate
+remains `ws_frontend_byte_identity_integration_test.py` (green on both the node-backed and the
+rust-backed arm), and this cell is the outcome-level cross-check on top of the 200-battle
+side-by-side of `foulplay_axes_and_frontend_validation_2026-09-16`, whose registered verdict was
+"front-end MAY be the DEFAULT transport". **`--server node` stays one flag away** and is what a
+differential and anything on the front end's deferral list (reconnection, a battle timer,
+`/search`, replays) is taken on; `--server-uri` starts nothing and stamps rows `external`, because
+a tool cannot vouch for a transport it did not start. Every row now carries `server_impl` and
+`server_version` (`ws_frontend@<head>+rust:<bridge binary>` / `showdown:<pin>`) in
+`REQUIRED_ROW_FIELDS` — the regime rule applied to the transport. **Two hazards, both findings.**
+(1) 🚨 **A bare TCP readiness probe fabricates an `ERROR` in the front end's own log** — `websockets`
+answers a connect-that-closes with `opening handshake failed` and a three-deep traceback, and "0
+ERRORs in the server log" is the criterion every validation of this front end reads; fixed by
+waiting for the child's `[ws_frontend] READY` line instead, with a test that the announcing server
+is never dialled. (2) 🚨 **`--opponent foulplay` still cannot run a multi-game `ours_challenge`
+half**, reproduced here (`no_progress`, 1/10) and now DIAGNOSED from the front end's log: poke-env
+pipelines a second `/challenge` 0.4 s after the first, Foul Play drops the PM while battling and
+then waits forever for a challenge already consumed — transport-independent (3/3 on Node on
+2026-09-16), so a Foul Play cell is proven at 1 game per half and the multi-game half is a backlog
+row. Foul Play does play **both** roles through the front end at 1 game per half (n = 2, 0 ERRORs).
+⚠️ The front end is not literally Node-free: `/utm` validation still shells out to
+`validate_team.js` once per distinct team — a short-lived process, not a resident server, and none
+of the 3.2 GB. Tag: **OPS · ANCHOR TRANSPORT DEFAULTS TO RUST · Δ +0.010 [−0.124, +0.144] NOT
+DETECTED AT n = 100 EACH WAY · SERVER RSS 3,227 MB → 40 MB (80×) · 126 s vs 203 s · BYTE-IDENTITY
+GATE GREEN · FOUL PLAY MULTI-GAME `ours_challenge` STILL BROKEN (transport-independent)**.
+
+**Orchestrator's reading (2026-09-20).** Owner direction was "off node for evals if it isn't too hard"; it was not, and it is done for the standing procedure: an anchor read now runs on the Rust front end by default with no Node server, at 80× less resident memory and ~1.6× less wall on the 100-game cell, with the same-seed outcome differential NOT DETECTED and the byte-identity gate green on both arms. Node stays one flag away for a differential and for the deferral list (reconnection, timer, `/search`, replays). Two residuals: team validation still shells out to a short-lived Node script per distinct team (not a server; not exposed as an opt-out on purpose, because it carries the nickname refusal), and Foul Play still cannot run a multi-game challenge half on either transport (backlog, transport-independent). The readiness-probe fix matters beyond this tool — "0 ERRORs in the front end's log" is the criterion every validation of the front end reads, and the probe was writing one. Tag: **OPS · ANCHORS OFF NODE BY DEFAULT · differential n.d. · RSS 40 MB vs 3.2 GB · Foul Play multi-game half still open**.

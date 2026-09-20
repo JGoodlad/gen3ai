@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,303-line file. **The ledger itself is append-only and is never edited by this**;
+20,344-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**650 headings · 595 dated · 2026-08-01 → 2026-09-20 · ledger 20,303 lines.**
+**651 headings · 596 dated · 2026-08-01 → 2026-09-20 · ledger 20,344 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -670,3 +670,4 @@ rename.
   - `L20198` · `2026-09-19` · OPS · **THE THIRD ARCHETYPE LANDED — `ai_v13_10_exploit_stall` finishes at 0.740 vs its target, the SAME endpoint Big-5 and DDTar reached, from a third opening and a third episode length. THREE ARCHETYPES, THREE MATCHUP HASHES, ONE NUMBER. G7's LENGTH half fires at 1.71 on the corrected reference and is NOT the kill condition it screens for — the draw half reads 0.0019 against a 0.05 bar.**
   - `L20212` · `2026-09-20` · MEASUREMENT (MAJOR) · 🚨 **THE CONTINUATION'S +15.50 pp DOES NOT APPEAR EXTERNALLY: 8,400 anchor battles put `ai_v13_09_wcont` at +0.039 [−0.000, +0.079] over arm W on Metamon's own teams and +0.020 [−0.019, +0.058] on ours — NOT DETECTED on either, at the registered n = 400 and again at n = 1200 — while the SAME games resolve the era-1 fold path 0.08 BELOW its own frozen parent on both team sets. The ORDER reproduces; the MAGNITUDE is ~5× smaller. The n = 100 read's +0.140 was seed luck.**
   - `L20292` · `2026-09-20` · OPS + 🚨 **THE ERA-1 FOLD MOVED FOUR LEVERS, NOT THREE — `--team-block-episodes 1 → 64` is in fold-1's argv and in neither the continuation nor arm W, and no registration has ever named it.** The split arm (`ai_v13_11_split_lossoff`) completed clean; on the ENTROPY channel the DISTILL LOSS is the carrier and the ecology is not, but that is a DESCRIPTOR and the registered endpoint has not been read.
+  - `L20304` · `2026-09-20` · OPS · **external-anchor reads come OFF NODE. `python -m main.anchors` now starts the
