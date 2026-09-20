@@ -928,3 +928,7 @@ composition* on the ladder family's *dose*. Any arm-S-vs-era number carries that
 > real launch remain the only test of it**; triggers test `latest.txt`, never a fixed filename.
 > Tag: **REGISTRATION · flywheel-era pair · era composition VERIFIED key-by-key · 16/283 keys differ,
 > zero confounds · read at 20 nodes, ~69 Elo resolution · n=1 per arm ⇒ CANDIDATE at best**.
+
+## 9d. STATUS 2026-09-20 — the continuation control REFUTES the frozen-parent comparator on this side; fold-2 on the era-1 recipe is WITHDRAWN
+
+`wcont_control_read_2026-09-20/` (arm W +12M, no teachers, frozen dose 4.272e-9): +15.50 pp [+12.00, +18.88] on the untaught 8, 8/8 teams, 4.2× the floor; both per-slice cells cleared; level with teacher t1 on t1's own team unseen; 5 promotions vs the fold path's 0. The era-1 fold sits −9.75 pp / −0.165 (Big-5) BELOW it, outside the floor, with the gap present at +3M. Three levers moved together (loss, team bias 0.4, two-specialist pool) — the carrier is not identified. **Next GPU arm: the three-lever split** (fold-1's argv, `--distill-coef 0.0`, nothing else changed, +12M to 87,097,344); the second control seed queued behind it. Every future fold on this side is read against a CONTINUATION at matched steps and dose, never against the frozen parent. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*]

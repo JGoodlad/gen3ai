@@ -20075,3 +20075,110 @@ RATE WENT DOWN (L2 0.4719 [0.402, 0.542]) — NEITHER THE LEAF NOR THE RULE IS T
 unsearched base null is 0.515, not 0.500 · an arm that acts needs 2.5× the pairs**.
 
 **Orchestrator's reading (2026-09-20).** Two lines close on one read. The GATE line: the constants are a closed question — the no-gate rule ties the best gated point, so there is no operating point left to tune, and the cheapest table cell (R = 2) is forbidden by an OFF switch, not a bar. The REPAIR line that the 2026-09-19 K-curve opened ("out-ranking is solved, the acting rule is the constraint") is refuted by the sign: a cell that acted 30× more read BELOW its unsearched base. What survives is the estimand question — offline the leaf is priced against the banked tree's greedy-sentinel rollout; live it prices a stochastic mirror self-rollout — and the candidate-pair question (the screen's top-2, not the policy's). The candidate-pair read is free on the banked dice and is the only one dispatched from here; no further mirror battery is bought on this line until the one-sided-view materializer (`823d2341`, DEFAULT since this morning) re-costs it, and rule 26 below sets the bar it will be read against. The `q_winprob_head` amortizer stays OFF: 36.9 s per adjudicated decision is a teacher's budget, and the teacher's own gain is not yet positive in games. `short_r_refusal` at row granularity, the `--impl node` pair-failure rate and the 1.0 s `rollout_cost_s` seed go to `designs/ops/TECH_DEBT_BACKLOG.md`. Tag: **ORCHESTRATOR · READ BANKED · THE GATE LINE IS CLOSED · THE ESTIMAND AND THE CANDIDATE PAIR ARE THE TWO SURVIVORS**.
+
+### 2026-09-20 · MEASUREMENT (MAJOR) · **THE CONTINUATION CONTROL — 🚨 OUR 75M WIN-PROB PARENT *DOES* GAIN FROM ORDINARY CONTINUED TRAINING, BY +15.50 pp ON THE UNTAUGHT 8 AGAINST A 3.69 FLOOR (8 of 8 teams), AND THE ERA-1 FOLD IS 9.75 pp BELOW IT; §2.2's "our parents do not gain from a continuation" is REFUTED for this parent, and the fold's only previously-cleared row RE-BASES TO −0.0237**
+
+`designs/research_state/measurements/wcont_control_read_2026-09-20/`. Bars, both branch pairs,
+the **uncovered middle registered IN ADVANCE**, priors, the checkpoint grid and the declared
+imports pre-registered in `PREDICTION.md` and committed (`e8ea5ba3`) BEFORE the first battle —
+including the five facts LOOKED AT while scoping and disclosed there (the grid, the metadata, the
+**promotion asymmetry**, the inherited inert distill flags, the ledger's banked descriptors).
+**THE ARM.** `ai_v13_09_wcont`, a FORK of arm W `ai_v13_02_flywheel_winprob` at 75,005,952 with
+**`teachers: []`**, `--distill-coef 0.0`, the SAME frozen dose 4.272e-9 = 0.20× the v8 reference,
+the same auto-seeded pool, seed 1001, pin `6eb9c776` in ONE row, config v119, **one continuous
++12,000,000 steps to 87,097,344 — the fold path's own endpoint step, to the step**; matchup
+`ef5242cffd`, arm W's own, unchanged. **THE RULE, copied verbatim from both fold reads so the
+three are ONE series: OUTSIDE THE FLOOR iff `|Δ| > floor` AND the Δ's CI excludes the floor
+POINT; else WITHIN FLOOR at n = 2 — one pair BOUNDS a floor (rules 19/22), WITHIN FLOOR is never
+"equivalent" (rule 6).** Two conventions: `Δ_path = path − arm W`, `Δ_extract = fold path −
+control`. CPU-only (`CUDA_VISIBLE_DEVICES=""`, `nice 15`), MAIN checkout, **nothing written under
+`models/`**, no `src/` file changed, only server `main.anchors`' own on :9450, **:8000/:8001
+never touched, the GPU never touched**. **12,900 battles, 0 TIMEOUTS.** ✅ **THE REGISTERED
+REPRODUCTION CHECK PASSES EXACTLY ON THE PER-TEAM ROWS** — arm W 46.19 pp (739/1600) on the
+untaught 8 with all eight rows identical, and **394/800 + 376/800** on the two slice cells — the
+**fifth** confirmation that the meter is deterministic at seed 0 / concurrency 1 and the WARRANT
+for importing the whole fold path, W_b and both teachers rather than re-deriving 9,600 identical
+battles; the 3.69 floor re-measures at exactly −3.69. **ROW 1 — UNTAUGHT (and it IS the collateral
+read).** Control levels **58.50 / 60.44 / 61.69 pp** at +3M/+6M/+12M ⇒ Δ vs arm W 🚨 **+12.31
+[+9.69,+15.56] / +14.25 [+11.69,+16.63] / +15.50 [+12.00,+18.88], 8 of 8 teams at EVERY depth,
+OUTSIDE THE FLOOR by BOTH clauses at all three** — against the fold path's +5.38 / +5.13 / +5.75,
+every one of which was WITHIN FLOOR. Against W_b the control is **+8.62 / +10.56 / +11.81**, so
+the result does not depend on arm W being the lower seed. 🚨 **THE EXTRACTION ROW (fold path −
+control) is −6.94 [−12.31,−1.56] / −9.12 [−11.38,−6.50] / −9.75 [−14.75,−3.75] pp, OUTSIDE THE
+FLOOR at +6M and +12M, with 0–2 of 8 teams favouring the fold.** Most of the control's gain is
+there by +3M (+12.31 of +15.50); its last 50 % moves it +1.25 [−0.50,+3.19] — the same front-loaded
+shape the fold path showed, to a very different level. ⚠️ **Clause (b), registered as
+NEAR-UNSATISFIABLE (it needs |Δ| ≳ 7.5 pp), passed everywhere that mattered** — so the earlier
+WITHIN-FLOOR verdicts were about the SIZE of the fold effect, not an unusable bar. **ROW 2 —
+PER-SLICE PILOTING, 800 games/cell, same pinned teams, same third-party opponent.** 🚨 **THE
+CONTROL CLEARS BOTH CELLS AT ALL THREE DEPTHS — SIX OF SIX, every one OUTSIDE by both clauses:
+Big-5 +0.1137 / +0.1025 / +0.1125 against a 0.0475 MEASURED floor; DDTar +0.1613 / +0.1688 /
++0.1775 against 0.0850.** Before this read the fold programme had cleared ONE registered row in
+its history. 🚨 **AND THE FOLD PATH IS BELOW THE CONTROL ON BOTH: Big-5 −0.1387 / −0.1637 /
+−0.1650 (OUTSIDE at all three depths), DDTar −0.0375 / −0.1013 / −0.0237 (all WITHIN).** 🚨 **So
+the convergence read's DDTar +0.1538 — "the first registered row this programme has ever cleared"
+— RE-BASES TO −0.0237 against the continuation.** 🚨 **THE TEACHERS' CEILING, measured against the
+arm that never saw them: t1 Big-5 − control = −0.0287 [−0.0767,+0.0194], NOT DETECTED — the plain
+continuation is LEVEL with the teacher on the teacher's own pinned team, having closed by simply
+carrying on the +0.0838 gap the fold was asked to close and crossed BACKWARDS; t2 DDTar − control
+= −0.1700, the control far above.** The control's slice cells are flat after +3M. Pooled +0.1449 —
+harmless here only because the two cells agree in sign, which is exactly what did NOT hold for the
+fold (rule 10); footnote. **ROW 3 — ANCHOR.** `metamon:SmallRL` greedy AWAY, 100 games on :9450:
+control **0.640 [0.542,0.727]** ⇒ **+0.140 [+0.003,+0.270] vs arm W, +0.210 [+0.072,+0.337] vs the
+fold path — both WITHIN the 0.090 floor**, as registered (P(clears)=0.15); the control is the
+highest and the fold path the lowest of the six arms measured on this cell. ⚠️ `regime_verified`
+reads FALSE for a POST-GAME `RecursionError` in the challenger half's peer aggregation
+(`peer_rc: 1`), while BOTH halves' per-decision instruments read `argmax_match_rate` **1.0000**
+over 5,638 decisions with our `stochastic` `[false]`; 1 game at the 250-turn cap. **ROWS 4–5 —
+DESCRIPTORS.** `H_end` reproduces the banked **0.9447** vs the fold path's 0.7465 (0.198 nats,
+10.4× the 75M floor) — conditional statement only, no mechanism, entropy perfectly confounded with
+the distill block. 🚨 **THE PROMOTION ASYMMETRY: over the same 12.09M steps against the same
+auto-seeded arm-W pool at the same 0.55 gate, the CONTROL promoted FIVE snapshots and has a
+`snapshot_ladder/`; the fold path promoted ZERO and has none** — the control's own
+`win_rate_vs_pool` reads **0.534 / 0.590 / 0.622 / 0.588 / 0.576 / 0.558** against the fold path's
+0.488 → 0.402, and the control's pool GREW while the fold's stayed frozen, so the control's series
+is the HARDER measurement. No Elo quoted for any arm (n = 5 ≪ 12). 🚨 **AND THE BOT ROW IS BLIND:
+the completion entry banked bots and G7 as INDISTINGUISHABLE between the two paths over exactly
+the span in which the untaught meter separates them by 9–10 pp — a bot row saturated at ~0.92 is
+not a competence meter at this depth.** **THE BRANCHES.** 🚨 **ROW 1 IS UNCOVERED AND THE
+BRANCHES ARE NOT REWRITTEN:** (a) needs |Δ_extract| ≤ 3.69 and got 6.9–9.8; (b) needs the control
+near 0 and got +12 to +15 — **the control OVERSHOT the bracket both clauses define, which is not
+the "uncovered middle" the registration named, and the JSON's diagnostic says so.** Nearest
+description in the registration's own words: *branch (a) with the sign reversed — the fold's
+off-slice lean is not teaching and not even the whole of continuation; it is a FRACTION of it.*
+**ROW 2 lands on (d) THE SPLIT IS THE FOLD's** — the control is POSITIVE on BOTH slices, so the
+sign pattern is absent — **but it is the fold's because the FOLD is the arm that went down**, and
+branch (c)'s rider holds for a different reason: the DDTar row is not teaching. **HAZARDS, each a
+finding.** (W-A) row 1's branches both missed, on the far side; (W-B) the extraction row is
+negative AND clears; (W-C) the inherited INERT distill flags (`distill_target kl`, `distill_topk
+1`) re-resolved from arm W's config — inert at `--distill-coef 0.0` with no teacher, `grep -c
+DISTILL` = 0; (W-D) the +6M depths differ by 42,480 steps with the CONTROL deeper — **+3M and
++12M are the SAME STEP NUMBER and show the same picture**; (W-E) arm W is the lower seed and it
+does not matter; (W-F) 🚨 **THE FORK-BOUNDARY ASYMMETRY — the control is ONE continuous run, the
+fold path has a FORK in the middle — BOUNDED, not resolved: at +3M neither path has crossed a
+fork and the gap is ALREADY −6.94 pp and −0.1387**, so the crossing cannot carry the bulk; (W-G)
+the two `win_rate_vs_pool` series are not comparable in kind (frozen vs growing pool), the
+asymmetry favouring the control; (W-H) clause (b) did not bind; (W-I) the bot row is blind;
+(W-J) the anchor's `regime_verified` flag; (W-K) ONE control arm; (W-L) 🚨 **THREE LEVERS, ONE
+CONTRAST**; (W-M) every floor but the two per-slice ones is an IMPORT; (W-N) the control's gain is
+front-loaded and the read cannot say why. **WHAT IS NOT CLAIMED:** 🚨 **that "distillation hurts"
+— the fold path differs from the control in the distill LOSS, in `--distill-team-bias 0.4` AND in
+its OPPONENT POOL (two exploiter specialists for 12.09M steps); any of the three could carry the
+whole gap, and this read measures the RECIPE, not the loss**; that anything is a family verdict
+(ONE control arm — rules 19/22 and rule 2); that any floor is established; that entropy explains
+anything; that three points are a trend; anything about ladder STRENGTH. **WHAT FOLLOWS.** (1) 🚨
+**§2.2 needs an era qualifier — the frozen-parent baseline does NOT stand on the 75M win-prob
+side, and every delta-against-a-frozen-parent on such an arm is inflated by something of order
++15 pp on this meter over 12M steps.** (2) The cheapest decisive follow-ups, in order: **a SECOND
+control seed** (~10 GPU-h; the only thing that makes any of this a family claim), then **the
+three-lever split** — a C1-style cell (`--distill-coef 0` with the 40 % team bias still ON) at 75M
+on this parent, which says whether the LOSS or the ECOLOGY is the carrier. Tag: **MEASURED
+(MAJOR) · THE CONTINUATION CONTROL · our 75M win-prob parent GAINS +15.50 pp from plain
+continuation (8/8 teams, 4.2× the floor, both clauses) · §2.2 REFUTED for this parent · the era-1
+fold is −9.75 pp BELOW it off-slice and −0.1650 on Big-5, both OUTSIDE the floor · the DDTar
+"first cleared row" re-bases to −0.0237 · the control is LEVEL with teacher t1 on t1's own team
+having never seen it · control promoted 5 snapshots, the fold path 0 · row 1 UNCOVERED (the
+control OVERSHOT both clauses), row 2 (d) · bots and G7 BLIND · 12,900 battles, 0 timeouts ·
+reproduction EXACT, per-team**.
+
+**Orchestrator's reading and the GPU decision (2026-09-20, 20:30 PT).** This is the era's most consequential read since the pair verdict. Three things are now true. (1) **The frozen-parent baseline is era-specific**: a 75M win-prob parent keeps learning at 0.20× the v8 dose — +15.5 pp on eight teams it never trained on, and it draws level with a specialist teacher on that teacher's own team without ever seeing it. Every "the fold gained X over the parent" number on this side is inflated by continuation, and the era-1 fold's single cleared row was one of them. (2) **The era-1 fold recipe trained WORSE than doing nothing** — −9.75 pp off-slice and −0.165 on Big-5 against the continuation, outside the floor, with the gap already present at +3M before any fork boundary. (3) **What carried the loss is not identified** (W-L): the distill loss, the 0.4 team bias and the two-specialist opponent pool moved together. **Therefore the second fold does NOT launch on the era-1 recipe** — the standing default ("fold-2 GO once the control lands") is withdrawn. The GPU's next arm is the three-lever split, ONE contrast: fold-1's own argv, pin and teachers with `--distill-coef 0.0` and NOTHING else changed (team bias 0.4 ON, both specialists in the pool, frozen dose 4.272e-9, +12M to 87,097,344). If it tracks the control the LOSS is the carrier; if it tracks the fold the ECOLOGY is. The second control seed (W-K) is queued behind it. Under the 15-minute rule: pushed to the owner with this default; it launches when `ai_v13_10_exploit_stall` completes (~21:30 PT) unless the owner redirects. The stall exploiter's admission read proceeds regardless — a third archetype is worth having whichever lever is convicted. Bot row and G7 are recorded as BLIND at this depth (W-I); the untaught 8 is the era's competence meter. Tag: **ORCHESTRATOR · READ BANKED · FOLD-2 ON THE ERA-1 RECIPE WITHDRAWN · NEXT ARM = THE THREE-LEVER SPLIT (LOSS OFF, ECOLOGY ON)**.

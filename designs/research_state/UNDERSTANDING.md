@@ -212,13 +212,25 @@ current position, not its history.
 **One arm would have been wrong two times in three.** Only one of phase 1's three arms clears zero
 alone — the exact position v8's original +5.42 occupied for months. [ledger 2026-09-05 · *P1*]
 
-### 2.2 Our parents do not gain from a continuation
+### 2.2 Gen-era parents do not gain from a continuation; the 75M win-prob parent DOES (+15.5 pp / 12M)
 
 **G5** (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`) is the same cell on R2ACTION: **−1.92pp
 [−3.98, +0.46]**, own replicate floor **1.00pp** ⇒ **NOT DETECTED**, point estimate NEGATIVE.
 Beside it sit M9's two draws on rev-1 (−0.37 and −4.56). Three draws, two gen-era parents, two
 depths — **no gen-era parent has been observed to gain from ordinary continued training.**
 [ledger 2026-09-06 · *G5 RESULT*]
+
+🚨 **ERA QUALIFIER (2026-09-20, `wcont_control_read_2026-09-20/`): the 75M WIN-PROB parent (arm W) DOES gain from ordinary
+continued training — +12.31 / +14.25 / +15.50 pp [+12.00, +18.88] on the untaught 8 at +3M/+6M/+12M, 8 of 8 teams at every
+depth, OUTSIDE the 3.69 floor by both clauses, at the same frozen dose 4.272e-9 (0.20× v8) the folds run at; +8.62…+11.81
+against W_b, so it is not the seed. Both per-slice cells clear too (Big-5 +0.11 vs a 0.0475 floor, DDTar +0.18 vs 0.085),
+and the continuation ends LEVEL with teacher t1 on t1's own pinned team having never seen it (−0.029, n.d.). It promoted
+five snapshots where the fold path promoted none. Front-loaded: +12.3 of the +15.5 is there by +3M. ONE control arm, so a
+CANDIDATE (rules 19/22) — its seed replicate is queued. **Consequence: on the win-prob side the frozen-parent baseline
+does NOT stand; every delta-against-a-frozen-parent on such an arm is inflated by something of order +15 pp on this meter
+over 12M steps, and the comparator for any fold is the CONTINUATION, not the parent.** Bots and G7 were BLIND across
+exactly this span (both paths "indistinguishable" at ~0.92 while the untaught meter separated them by 9–10 pp) — a
+saturated bot row is not a competence meter at this depth. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*]
 
 Two consequences:
 
@@ -277,8 +289,15 @@ row this programme has cleared** — while Big-5 stays negative (−0.053) and u
 clause (b)). The clearing slice's teacher was not detectably better than the parent (+0.0075, n.d.) and the student ends
 +0.146 above it, so teacher-skill transfer is not the account; team-blocked extra training on that team is the
 candidate mechanism. A scalar seniority term cannot produce the sign split. The +6M read had landed on a local minimum
-of the DDTar row (sixth vindicated short-window refusal). The control decides the untaught row; a team-differential
-continuation read on the two slice cells decides the split.
+of the DDTar row (sixth vindicated short-window refusal). **The control decided both (`wcont_control_read_2026-09-20/`),
+and against the fold: the plain continuation reads +15.50 pp untaught, +0.11 Big-5 and +0.18 DDTar over the parent, so the
+EXTRACTION row (fold − control) is −6.94 / −9.12 / −9.75 pp off-slice (OUTSIDE at +6M/+12M), −0.139 / −0.164 / −0.165
+on Big-5 (OUTSIDE at all three) and −0.038 / −0.101 / −0.024 on DDTar (WITHIN) — the "first cleared row" re-bases to
+−0.024, the fold's off-slice lean was a FRACTION of continuation, and the gap was already −6.94 pp at +3M before either
+path crossed a fork. The era-1 fold recipe trained worse than doing nothing.** What carried it is NOT identified: the
+distill loss, `--distill-team-bias 0.4` and the two-specialist opponent pool moved together (one contrast, three levers),
+so "distillation hurts" is not claimed. The next arm is the split — fold-1's argv with `--distill-coef 0.0` and nothing
+else changed — and the second fold does not launch on the era-1 recipe. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*]
 
 Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose
 (`--fork-lr 2.8e-5 --fork-lr-freeze`), parent R2ACTION, 8 untaught teams, cluster-bootstrapped:
