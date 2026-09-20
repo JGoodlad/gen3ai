@@ -4,18 +4,24 @@ builds by replaying the same ply's protocol (`gen3_one_sided_view_v1`).
 **This is the point of the exercise.** ``src/rust_sim/src/view.rs`` claims to hand Python the
 board a successor's observation needs, so the materializer need not re-derive it by parsing
 protocol text. The claim is only worth anything if the two roads arrive at the SAME vector, so
-this gate drives both on real gen3ou battles and compares:
+this gate drives both on real gen3ou battles and compares FOUR things:
 
 1. the whole :class:`~agents.battle.live_view.LiveView` graph, FIELD BY FIELD, per mon;
 2. the :class:`~agents.battle.live_view.LegalActions` snapshot, field by field;
-3. the **2501-dim observation vector**, ``np.array_equal`` on float32, encoded from each.
+3. the **2501-dim observation vector**, ``np.array_equal`` on float32, encoded from each — with
+   NO trackers and NO assembler on either side;
+4. at every BRANCH point, the **FULL tracker-fed successor observation AND its action mask**,
+   against the production ``materialize_branches`` row (:func:`check_successor`).
 
-The obs comparison threads NO trackers and NO assembler on either side. That is deliberate and
-it is what makes the gate sharp rather than broad: the tracker-fed blocks (recency, pair
-history, the event window, the progress clock, the Hidden-Power block) are then ZERO in both
-vectors, so every surviving difference is attributable to the read-models and to nothing else.
-Those blocks are the `gen3_one_sided_view_v1` DEFERRAL — the payload carries a board, not an
-event log — and pretending to compare them here would only produce a green that means nothing.
+**Why 3 and 4 are both here, and neither replaces the other.** The tracker-less comparison is
+SHARP: the tracker-fed blocks (recency, pair history, the event window, the progress clock, the
+Hidden-Power block) are ZERO in both vectors, so every surviving difference is attributable to
+the READ-MODELS and to nothing else. It is also silent about five blocks of the observation a
+real leaf reads, which is what comparison 4 is for — it runs the whole
+`gen3_view_successor_v1` road, so a difference there can be the read-models OR the event fold OR
+the tracker advance. Comparison 4 runs only where 3 came back clean, because a vector built on a
+differing board says nothing about the trackers.
+
 ``designs/rust_sim/one_sided_view.md`` holds the deferral list.
 
 🚨 **A MISMATCH IS A FINDING.** The run prints a CENSUS keyed by field path, so a class is named
@@ -45,10 +51,12 @@ every run; a pytest-collected TEST wants the SAME battle every run. So:
 parity harnesses carry, and for the same measured reason: three findings appeared only on the
 second or third seed.
 
-⚠️ **ONE OPEN FINDING the sweep can surface** and that is deliberately NOT declared residual: an
-own-side ``status_counter`` reading one HIGHER than poke-env — 9 occurrences on ONE battle of 14,
-not reproduced in 14 targeted attempts. It is left failing on purpose; see
-``designs/rust_sim/one_sided_view.md`` §4b for what is already ruled out.
+⚠️ **THREE OPEN FINDINGS the sweep can surface**, none declared residual and all left FAILING on
+purpose — the own-side ``status_counter`` drift (which now drifts in BOTH directions), an opponent
+``ability`` poke-env took from a ``[from] ability:`` clause on a non-``-ability`` line, and one
+own-side missing ``substitute`` volatile. Every one is a READ-MODEL class, so each makes
+:func:`check_successor` SKIP rather than fail — the tracker road is not implicated by any of them.
+``designs/rust_sim/one_sided_view.md`` §4b has what is ruled out for each.
 
     export PYTHONPATH=$PYTHONPATH:src
     python src/agents/battle/one_sided_view_parity_fuzz_test.py [n_battles] [--arms K]
@@ -107,9 +115,12 @@ def _wish_columns() -> "frozenset":
 #: deleted from it, and a class that is not on it fails the gate.
 DECLARED_RESIDUAL = (
     (lambda p: p == "obs[reactive.wish_floating]", "D3",
-     "the reactive Wish pair folds `battle.events`, and the payload carries a board rather than "
-     "an event log. The port HAS the state (`SideState::wish_pending`); wiring it is a threading "
-     "change through `state_encoder.encode` and is the top follow-up."),
+     "the reactive Wish pair folds `battle.events`, and THIS comparison threads no event log — "
+     "it is the board-only road. D3 is CLOSED on the road that matters: a SUCCESSOR carries the "
+     "whole-battle log (the root's plus the ply's) and the existing fold runs unchanged, which "
+     "is why `check_successor` compares the Wish columns strictly. The port's own "
+     "`SideState::wish_pending` was never needed — the payload was not the problem, the missing "
+     "LOG was."),
     (lambda p: p.startswith("opp.") and p.endswith(".moves[current_pp]"), "D6",
      "Pressure is applied with the ability known at READ time, while `_pressure_on` evaluates it "
      "AT USE TIME — so a sighting made before the reveal is counted at 1 PP instead of 2. The "
