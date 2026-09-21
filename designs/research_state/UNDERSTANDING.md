@@ -111,6 +111,16 @@ no pointer is not a measurement.
     the standing kill is G7 (stall rate + episode length on the EVAL traces), at ~0%. [§4.2; ledger
     2026-09-07 · *10M DECIDING READ* and *THE n = 12 STRENGTH READ*]
 
+16. **An exploiter's gain is TARGET-SPECIFIC, not piloting skill.** Three matched five-team
+    teachers are all LEVEL with their parent on their own teams against a fixed third party
+    (−1.00 / +0.58 / −1.12 pp vs floors 4.75/8.50, 24,000 battles) — and the one that beat that
+    parent 0.657 head-to-head is the most negative of the three. A head-to-head number and a
+    third-party number are different measurements. [§2.6; ledger `be03bd74`]
+17. **There is a PLATEAU PARENT.** The 75M win-prob parent's +15.5 pp continuation gain is
+    exhausted by +20M: another +8.06M moved it −1.50 pp [−3.75, +0.62] against a 3.69 floor. Every
+    era-2 fold reads against `ai_v13_12_plateau` @95,158,272, which removes the §2.2 confound by
+    construction. [§2.2; ledger `3459ecce`]
+
 ---
 
 ## 1. The mission and the era map
@@ -212,7 +222,7 @@ current position, not its history.
 **One arm would have been wrong two times in three.** Only one of phase 1's three arms clears zero
 alone — the exact position v8's original +5.42 occupied for months. [ledger 2026-09-05 · *P1*]
 
-### 2.2 Gen-era parents do not gain from a continuation; the 75M win-prob parent DOES (+15.5 pp / 12M)
+### 2.2 Gen-era parents do not gain from a continuation; the 75M win-prob parent DOES (+15.5 pp / 12M) — AND THAT GAIN IS NOW EXHAUSTED
 
 **G5** (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`) is the same cell on R2ACTION: **−1.92pp
 [−3.98, +0.46]**, own replicate floor **1.00pp** ⇒ **NOT DETECTED**, point estimate NEGATIVE.
@@ -277,6 +287,22 @@ conditioning (read running) and the "still learning" property are NOT claimed. T
 both arms. [ledger 2026-09-12 · *VERDICT · ent05 PASSES*] `--ent-coef` is live on a resume (`model_build.py:543`), unlike `--lr`. Hazards: a fork's TB dir and
 `ladder.json` carry the parent's whole history (read the own span only); `main.lineage` `role=fresh` means
 "records no parent", not "trained from init". [ledger 2026-09-12 · *MEASUREMENT · ENTROPY FORENSICS*]
+
+🚨 **THE GAIN IS EXHAUSTED, AND THERE IS NOW A PLATEAU PARENT (2026-09-21, ledger `3459ecce`).**
+Continuing the continuation another **+8.06M** at the same frozen dose moved the untaught 8 by
+**−1.50 pp [−3.75, +0.62]** against the 3.69 floor — WITHIN at both clauses, six of eight per-team
+rows down and two up, largest single move −0.065. The CI straddles zero, so the honest reading is
+**FLAT, not declining**, and "within floor at n = 2" is NOT DETECTED at the registered standard,
+never "proven flat" (the floor's replicate level is the RUN). The stop rule was registered before the
+block launched and its prior — most of the +15.5 arriving by +3M — called it on the first block.
+**`models/ai_v13_12_plateau/final_model.zip` @95,158,272 is THE PLATEAU PARENT**, and every era-2
+fold reads against it directly, which removes the §2.2 confound BY CONSTRUCTION: a continuation of a
+plateaued parent gains nothing, so a fold's delta can no longer be inflated by what doing nothing
+would have done. The same invocation reproduced the campaign twice over — **arm W returned 46.19 pp
+(739/1600) EXACTLY**, and `wcont − armW` = **+15.50 pp**, matching the banked control read to the
+decimal on freshly played battles. **Scope:** this says the parent stopped gaining ON THE UNTAUGHT 8.
+It does not say it stopped learning; bots and G7 are BLIND at this depth (§2.2 above), and no taught
+slice was measured.
 
 ### 2.3 What a gen-era fold actually does
 
@@ -403,6 +429,43 @@ not a direction. [meas: `arch_transfer_2026-09-05/fold_displacement/`]
   [SIGNIFICANT · meas: `exploiter_competence/`, `exploiter_drift/`]
 - **A homogeneous short-budget teacher set folds NEUTRAL** where the long mixture ends ~+2pp above
   the parent (§2.3, G1 at END).
+
+🚨 **AN EXPLOITER'S GAIN IS TARGET-SPECIFIC, NOT PILOTING SKILL (2026-09-21, ledger `be03bd74`).**
+Three five-team teachers — offense, balance and stall archetypes, each forked from THE PLATEAU
+PARENT, each matched to the digit (one parent, dose 8.392e-9, +8M, one mechanism, one seed) — were
+put through the admission gate on **their OWN five teams against a fixed third party**, 800 games per
+team, **24,000 battles, 0 timeouts**. **All three are LEVEL with the parent**: offense **−1.00 pp**
+[−4.80, +2.13], balance **+0.58** [−0.32, +1.28], stall **−1.12** [−3.37, +0.88], against floors of
+4.75 / 8.50. **NONE ADMITTED.** It is decisive rather than marginal — every Δ inside ±1.2 pp,
+mixed per-team signs in every cell, and both sides at 56–60 pp so the measurement has headroom and is
+not saturated.
+- **The offense teacher beat that exact parent 0.657 [0.610, 0.702] HEAD-TO-HEAD and reads −1.00 pp
+  on the same five teams against anyone else.** What +8M bought was counterplay to one opponent's
+  policy, not skill at piloting those teams. Across the three cells the two measurements lean
+  OPPOSITE — the only positive Δ belongs to the teacher that FAILED head-to-head — which at n = 3 is
+  an observation, not a correlation. 🚨 **A HEAD-TO-HEAD NUMBER AND A THIRD-PARTY NUMBER ARE
+  DIFFERENT MEASUREMENTS.** [SIGNIFICANT for the null; the anti-correlation is an OBSERVATION]
+- This **replicates the era-1 shape** — the control read already found era-1 teachers level with or
+  below the continuation on their own team — on a far cleaner design: 3 archetypes × 5 teams × 800
+  games against a parent that provably stopped gaining (§2.2). Same answer, much more room to have
+  been wrong. **It is the likeliest single account of why the era-1 fold lost**: the teachers may
+  never have had transferable skill to teach.
+- **Head-to-head, only offense cleared** its 0.500 null (0.657 [0.610, 0.702]); balance 0.525
+  [0.476, 0.573] and stall 0.455 [0.407, 0.504] did not, stall's point estimate sitting BELOW its
+  own null. The era-1 → era-2 LEVEL drop (every one-team teacher reached 0.740, no five-team teacher
+  did) is **CONFOUNDED** — teamset size 1→5 and dose 1.78×→0.39× moved together on a changed parent.
+  The WITHIN-era-2 SPREAD is **CLEAN**: offense − stall = **+0.245 [0.118, 0.382]** endpoint,
+  **+0.2025 [0.135, 0.270]** pooled. Both hold at once. [ledger `fd06fd33`]
+- ⚠️ **The era-2 teacher dose is 0.39×, against era-1's 1.78×** — a 4.5× gap from an UNSET
+  `--fork-lr` inheriting the plateau parent's frozen 2.80e-05 *without* its freeze and then annealing
+  up to 8.36e-05. Ruled "run as built"; it must be stated beside every teacher-vs-era-1 number.
+  [ledger `7afa2b34`]
+- **What is NOT claimed:** not that the teachers are weak (all beat bots at 0.95–0.99), and not that
+  distillation fails (the K ladder is untested). The claim is narrower — **this RECIPE for
+  manufacturing a teacher (fork the parent, pin a team set, train against the parent with bots mixed
+  in) yields target-specific counterplay rather than transferable team skill, at this dose and
+  budget.** The redesign that follows — the same team set against a DISTRIBUTION of opponents rather
+  than one frozen target — is live as `ai_v13_16_teach5_offense_dist`. [ledger `bbb1f228`]
 
 ### 2.7 Ecology
 
