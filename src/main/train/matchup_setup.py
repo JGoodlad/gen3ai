@@ -138,6 +138,23 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
             print(f"\n[Exploiter] FATAL: {_e}")
             sys.stdout.flush()
             os._exit(int(TrainExitCode.FATAL_CONFIG))
+    # UNTAUGHT-SLICE guarantee (gen3_untaught_teacher_guard_v1): a pinned trainee team must not be
+    # a member of the UNTAUGHT 8 — the off-slice meter's own slice. Caught by LUCK on 2026-09-20,
+    # one step before ~14 GPU-h of contaminated teachers; matching is by CONTENT sha, so a renamed
+    # copy is caught too. Applies to every pinned trainee, not only exploiters: today's specialist
+    # is tomorrow's --distill-teacher.
+    if getattr(args, "allow_untaught_teacher", False):
+        print("⚠️ [Untaught] --allow-untaught-teacher: SKIPPING the untaught-slice gate — the "
+              "trainee may pilot a team the off-slice meter measures. Say so wherever the number "
+              "is reported.")
+    else:
+        try:
+            from agents.training.matchup_spec import validate_trainee_not_untaught
+            validate_trainee_not_untaught(matchup)
+        except ValueError as _e:
+            print(f"\n[Untaught] FATAL: {_e}")
+            sys.stdout.flush()
+            os._exit(int(TrainExitCode.FATAL_CONFIG))
     # → eval callbacks (trainee_team_str). Read from EVAL_trainee_teams (not trainee_teams) so the
     # distillation path evals on the TAUGHT teams; a `pin_multi` source yields a LIST (eval samples
     # among them, exactly as training does), a single pin yields the raw export, else None = pool.

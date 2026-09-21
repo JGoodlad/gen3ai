@@ -293,6 +293,76 @@ def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> N
                 "the sample set first if it is proven.")
 
 
+#: The UNTAUGHT-8 manifest — the campaign's off-slice competence meter
+#: (``agents.training.untaught_meter.DEFAULT_TEAMS_MANIFEST`` reads the same file). A team the
+#: METER measures must never be a team a TEACHER was trained on, or the meter stops measuring
+#: untaught teams; see :func:`validate_trainee_not_untaught`.
+UNTAUGHT_MANIFEST = ("designs/research_state/measurements/reuse_batch_2026-09-03/"
+                     "offline_collateral_kl/untaught_teams.json")
+
+
+def untaught_team_shas() -> "dict[str, str]":
+    """The untaught-8 slice as ``{content sha1[:10]: source path}``, read from the committed
+    manifest. Raises when the manifest is missing or empty — that file is COMMITTED, so a
+    checkout without it is broken rather than merely unconfigured, and a guard that silently
+    opts out reads exactly like one that found nothing."""
+    from utils.paths import repo_path
+    man = repo_path(UNTAUGHT_MANIFEST)
+    try:
+        entries = json.loads(man.read_text())["untaught"]
+    except (OSError, KeyError, ValueError) as exc:
+        raise ValueError(
+            f"the untaught-8 manifest at {UNTAUGHT_MANIFEST} could not be read ({exc}). It is a "
+            "COMMITTED file: a checkout without it is broken, not unconfigured. Restore it, or "
+            "pass --allow-untaught-teacher to state deliberately that this run may pilot a team "
+            "the off-slice meter measures.") from exc
+    out: "dict[str, str]" = {}
+    for rel in entries:
+        team = repo_path(rel).read_text()
+        out[hashlib.sha1(team.strip().encode()).hexdigest()[:10]] = rel
+    if not out:
+        raise ValueError(f"the untaught-8 manifest at {UNTAUGHT_MANIFEST} lists no teams")
+    return out
+
+
+def validate_trainee_not_untaught(spec: "MatchupSpec") -> None:
+    """🚨 **A TEAM THE UNTAUGHT METER MEASURES MUST NOT BE A TEAM THE TRAINEE IS PINNED TO.**
+
+    The untaught 8 is the campaign's PRIMARY endpoint — off-slice competence, measured on teams
+    the model was not taught. Pin a trainee (and above all a teacher destined for distillation) to
+    one of them and the meter stops measuring untaught teams: every later "off-slice" number is
+    partly a measurement of teams that model specialised in, and it reads high for a reason that
+    has nothing to do with the lever under test.
+
+    This is not hypothetical. On 2026-09-20 two of fifteen approved 5-team teacher sets were
+    untaught-8 members, and what caught it was a shard log happening to print the team ids it was
+    about to play — luck, one step before ~14 GPU-hours of contaminated teachers. Across the
+    archive 5 of 89 runs with a pinned trainee source would fire here.
+
+    Matching is by CONTENT sha, not filename, so a copy of an untaught team under another name is
+    caught too. Raises ``ValueError`` naming every offending member; the caller turns it into a
+    startup FATAL. Returns quietly for an unpinned (full-pool) trainee. ``--allow-untaught-teacher``
+    skips it, for a capacity study that deliberately pilots a measured team."""
+    ts = spec.trainee_teams
+    if ts.kind == "pin_multi":
+        members = list(zip(ts.pin_files or (None,) * len(ts.pin_strs), ts.pin_strs))
+    elif ts.kind in ("pinned", "pin_biased") and ts.pin_str:
+        members = [(ts.pin_file, ts.pin_str)]
+    else:
+        return
+    untaught = untaught_team_shas()
+    bad = [(f, untaught[sha]) for f, s in members
+           if (sha := hashlib.sha1(s.strip().encode()).hexdigest()[:10]) in untaught]
+    if bad:
+        named = "; ".join(f"{f or '<inline>'} == {src}" for f, src in bad)
+        raise ValueError(
+            f"{len(bad)} pinned trainee team(s) are members of the UNTAUGHT 8 — the off-slice "
+            f"meter's own slice: {named}. Training on a team the meter measures makes every later "
+            "off-slice number partly a measurement of a team this model specialised in. Pick "
+            "replacements outside the manifest, or pass --allow-untaught-teacher if the "
+            "contamination is intended and will be stated wherever the number is reported.")
+
+
 def read_recorded_trainee_teams(path: str, *, require_teams: bool = False) -> "list[str]":
     """THE single provenance reader: which team files did the run at ``path`` train its trainee on?
 

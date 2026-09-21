@@ -448,6 +448,15 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "1-vs-3-team A/B). Opponents still draw the full pool. Mutually exclusive "
                              "with --trainee-team; under --exploiter EVERY member must be a sample team. "
                              "Default None.")
+    parser.add_argument("--allow-untaught-teacher", dest="allow_untaught_teacher",
+                        action="store_true",
+                        help="RESEARCH override: allow --trainee-team(s) to pin a team that is a "
+                             "member of the UNTAUGHT 8 (the off-slice meter's own slice). OFF by "
+                             "default, and a pinned untaught team is a startup FATAL — training on "
+                             "a team the meter measures makes every later off-slice number partly "
+                             "a measurement of a team this model specialised in. Pass this ONLY "
+                             "when the contamination is intended AND will be stated wherever the "
+                             "number is reported. Training-only, not version-locked.")
     parser.add_argument("--allow-nonsample-trainee", dest="allow_nonsample_trainee", action="store_true",
                         help="RESEARCH override: skip the exploiter vetted-SAMPLE gate so --trainee-team(s) "
                              "may pin NON-sample POOL teams (anchor on a sample, nearest neighbors from all "
