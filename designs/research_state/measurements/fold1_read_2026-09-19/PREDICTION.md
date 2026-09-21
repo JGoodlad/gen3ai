@@ -15,6 +15,25 @@ teachers, `--fork-lr 2.8e-5 --fork-lr-freeze`, `--distill-team-bias 0.4`, both t
 stable pool each piloting its own pinned team, `--checkpoint-every-steps 500000`, +6,000,000 steps
 to **81,100,800**. Pin `6eb9c776` throughout, config v119 / `gen3_critic_route_wave_v1`.
 
+🚨 **CORRECTION (2026-09-21, ledger `f389fce4`) — THE ARM DESCRIPTION ABOVE UNDER-COUNTS ITS OWN
+LEVERS BY ONE.** `ai_v13_07_fold1` also passes **`--team-block-episodes 64`**, where arm W, the
+continuation control `ai_v13_09_wcont` and *every* era exploiter pass **1**. It is named in the
+fold's argv and in no registration — this one, the launch entry or the control read — so every
+statement anywhere that the fold moved "three levers" off plain continuation (the distill LOSS, the
+0.4 team bias, the two specialists in the pool) is wrong by one: **it moved FOUR**, the fourth being
+a 64× increase in how many consecutive episodes are played on one team, which interacts directly
+with the team bias this arm also carries.
+
+**What the correction does and does not change.** It does NOT touch any number in this file, nor the
+fold-vs-split contrast (`ai_v13_11_split_lossoff` copies this argv exactly and differs only in the
+distill coefficient, so THAT comparison remains one lever). It DOES change what "the ecology" names
+— from bias + pool to **bias + pool + team-block**, a three-way bundle — and therefore what a
+fold-vs-CONTINUATION difference can be attributed to. The split read (`7c26076e`) subsequently found
+the whole bundle inert at this dose, team-block 64 included, so nothing downstream depends on
+separating them; but a reader should not learn the lever count from a registration that was written
+before anyone had compared the argvs side by side. **This correction is appended, never edited in:
+the body above is what was believed when it was committed.**
+
 **The two taught teams (the SLICE):**
 
 | teacher | run | its pinned team | archetype (human description) |
