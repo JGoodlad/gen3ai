@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,526-line file. **The ledger itself is append-only and is never edited by this**;
+20,546-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**656 headings · 601 dated · 2026-08-01 → 2026-09-21 · ledger 20,526 lines.**
+**657 headings · 602 dated · 2026-08-01 → 2026-09-21 · ledger 20,546 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -676,3 +676,4 @@ rename.
   - `L20479` · `2026-09-20` · OPS + 🚨 **THE ERA-2 EXPLOITERS ARE RUNNING AT 0.39× THE v8 DOSE, NOT THE ERA-1 EXPLOITERS' 1.78× — a 4.5× gap nobody registered, caused by `--fork-lr` being UNSET and the new parent's frozen 2.80e-05 being inherited and then ANNEALED UP by a live KL controller.** `ai_v13_13_exploit5_offense` completed clean; its vs-target curve is still CLIMBING at the endpoint where all three era-1 exploiters had already flattened.
   - `L20491` · `2026-09-20` · OPS (MAJOR) · **THE BALANCE 5-TEAM TEACHER DID NOT EXPLOIT — 0.530 [0.433, 0.625] against a 0.500 null, flat across every cycle, where the offense teacher on the same parent, the same dose and the same budget reached 0.700 [0.604, 0.781]. It is on track to FAIL the admission gate, and that is a DECISION for the orchestrator before anything is extended.**
   - `L20505` · `2026-09-21` · OPS (MAJOR) + 🚨 **CORRECTION TO MY OWN PRE-REGISTRATION** · **TWO OF THE THREE 5-TEAM TEACHERS DID NOT EXPLOIT. Stall finished at 0.455 [0.407, 0.504] pooled — its point estimate BELOW its own 0.500 null — balance at 0.525, and only offense cleared, at 0.657 [0.610, 0.702]. The within-era spread is a CLEAN archetype contrast; the era-1 → era-2 LEVEL drop is not.**
+  - `L20527` · `2026-09-21` · MEASURED (MAJOR) · **NONE OF THE THREE 5-TEAM TEACHERS IS ADMITTED — all three are LEVEL with the plateau parent on their OWN five teams against a fixed third party (−1.00 / +0.58 / −1.12 pp, every CI straddling zero, against floors of 4.75 / 8.50). The offense teacher beat the parent 0.657 [0.610, 0.702] HEAD-TO-HEAD and is −1.00 pp on the same teams against anyone else: EXPLOITER GAIN IS TARGET-SPECIFIC AND DOES NOT ARRIVE AS PILOTING SKILL. Stage 3 does not launch.**
