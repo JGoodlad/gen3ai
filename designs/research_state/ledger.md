@@ -20836,3 +20836,42 @@ patched-vs-unpatched 2×400 cell that would settle it. `EXTERNAL_ANCHORS_SOP.md`
 `designs/research_state/measurements/metamon_obs_faithfulness_2026-09-22/`.
 
 **Orchestrator's reading (2026-09-22).** The owner asked whether we have a GIGO with Metamon. Our server does not corrupt its view: 871 decision points, eight declared presentation rules, zero silent token substitutions in the array the policy consumes, byte-identical streams across the two Showdown pins, and the published ordering reproduces. Metamon's OWN parser does, in one place: upstream poke-env clears the entrant's boosts on a Baton Pass switch (our fork fixed this on 2026-08-23; Metamon runs the unfixed upstream), so it under-reads passed setup on both sides and plays those lines weaker — everywhere, its published evaluations included. Exposure here: 13 of 871 decisions, 3 of 20 battles, 8 of 21 Metamon teams and 157 of 719 pool teams carry Baton Pass. Direction: our anchor win rate is OPTIMISTIC on those lines. Size: NOT measured, and it is dispatched now as a patched-vs-unpatched 2×400 cell, because every anchor number this era carries an unknown-sized favourable bias until it is. Every Metamon comparison from here states H18. Tag: **MEASURED · no server-side GIGO · Metamon mis-reads Baton Pass boosts (H18), bias favourable to us, size pending**.
+
+### 2026-09-22 · OPS + 📌 **TWO CORRECTIONS** · **K=11 COMPLETE — THE LADDER IS BUILT. Its entropy went UP (0.900 → 0.941) where K=1's collapsed (0.857 → 0.668), and the share table shows C3 is NEARLY SHARE-MATCHED BY ACCIDENT (0.118 vs 0.129) while C1 spans 2×. The registered read is RUNNING. The high-dose teacher has the GPU.**
+
+**K=11.** `ai_v13_19_fold_k11` → **107,249,664**, `--distill-topk 11` verified in BOTH `model_config.json` and `metadata cli_args`. Restarts 3, **Crashes 1 — the TEARDOWN SHAPE for the ELEVENTH time**: header `last step: 107,249,664` (full target), ordering `Training complete. Model saved` (12072) → `Final aggregate win rate: 95.2%` (12475) → `Worker PID 2007582 died (exitcode=-15)` (12477). Dose **4.272e-9 `[FROZEN; pinned 2.80e-05]` = 0.20×**, matched to both siblings. G7 **below bar on BOTH halves** (draw half 0.0023 vs 0.05). S1: fired at **102,924,288 = +7,766,016**, agreement EMA **0.8546**, collateral KL EMA 0.23146 still rising, `mode=warn`.
+
+**THE THREE RUNGS, first → last rollout past the fork. DESCRIPTORS — the registered endpoint is row 1 and it is RUNNING, not read.**
+
+| | K=1 | K=3 | K=11 |
+|---|---:|---:|---:|
+| entropy (H) | 0.857 → **0.668** | 0.890 → **0.854** | 0.900 → **0.941** |
+| teacher agreement | 0.756 → 0.882 | 0.748 → 0.869 | 0.746 → 0.858 |
+| collateral KL vs parent | 0.212 → **0.322** | 0.209 → 0.247 | 0.201 → 0.257 |
+| bots | 0.926 → 0.911 | 0.939 → 0.892 | 0.905 → 0.910 |
+| pool | 0.454 → 0.420 | 0.508 → 0.438 | 0.456 → **0.474** |
+| **`grad/distill_share`** mean | **0.2498** | **0.1291** | **0.1184** |
+| median / first10 / last10 | 0.2413 / 0.2676 / 0.2474 | 0.1209 / 0.1724 / 0.1116 | 0.1099 / 0.1824 / 0.0952 |
+| **S1** fired at / agreement EMA | +8,257,536 / 0.8754 | +9,043,968 / 0.8635 | **+7,766,016 / 0.8546** |
+
+**K=11's entropy ROSE.** K=1 concentrated the policy by 0.189 nats, K=3 by 0.036, and K=11 moved it **+0.041 the other way** — it ends ABOVE where it started and above the plateau parent's own level. A full renormalized target carries the teacher's tail shape, so there is a mechanism; but at n = 1 per rung and with the pull confound below, this is a descriptor with an account, not a finding.
+
+📌 **A FREE STRUCTURAL FACT THE PRE-REGISTRATION DID NOT ANTICIPATE — C3 IS NEARLY SHARE-MATCHED.** The share table splits 1-vs-2, not 1-2-3: **K=3 at 0.129 and K=11 at 0.118 are within 9 % of each other, while K=1 at 0.250 is ~2× both.** So **C3 (K=11 vs K=3) isolates target form on a near-matched pull, and is by some distance the CLEANEST of the three contrasts** — where C1 and C2 both straddle the 2× gap that amendment 2 flagged. This does not change any registered verdict, floor or branch; it means **C3 should be read as the contrast with the least confound, and a C3 difference is worth more than a C1 difference of the same size.** Recorded before row 1 returns.
+
+🚨 **CORRECTION 1 — EVERY BANKED vs-TARGET NUMBER IS A GREEDY-vs-GREEDY EVAL RATE, NOT THE TRAINING REGIME.** Relayed by the orchestrator from the best-response-gap landing (`5a738ec1` / `9625ed8d`) and **verified here at the source**: `agents/training/best_response_gap.py:45–46` states the FIXED (`ext_`) branch builds the cross-run opponent `stochastic=False, temperature=1.0` against a greedy trainee and that **`eval_sentinel_greedy` does NOT govern it**; line 430 repeats that the branch is hard-coded greedy either way. So the era-1 exploiters' **0.740 ×3** and the era-2 **0.700 / 0.530 / 0.450** endpoints — including every number in `fd06fd33`, `528fb733`, `7afa2b34` and `cc02cff5` — are **greedy-vs-greedy EVAL-regime rates**. A 20-game training-regime (stochastic) smoke put the offense exploiter at **0.55** against the plateau parent, a different number. **What survives unchanged: every CONTRAST**, because all six arms were measured in the same regime. **What does not: any reading of those rates as training-regime strength.** From here the regime is named at every use.
+
+**The meter's own table, run as asked with `--allow-unmatched`** (`python -m main.best_response_gap`, pooled, greedy-vs-greedy, round 1, target `ai_v13_12_plateau` @95,158,272, budget 8,060,928, dose 8.392e-9):
+
+| archetype | pooled | gap | 95 % CI |
+|---|---:|---:|---|
+| offense | 0.6575 | **+15.75 pp** | [+10.97, +20.23] |
+| balance | 0.5250 | +2.50 pp | [−2.39, +7.35] |
+| stall | 0.4550 | **−4.50 pp** | [−9.31, +0.40] |
+
+It reproduces the hand-read pooled rates to the digit and adds the CIs and the regime label they lacked.
+
+📌 **CORRECTION 2 — the LR-guard backlog row is DONE, and not by me.** `src/main/train/fork_lr.py` now carries the inherit verdict, and the high-dose launch printed **`[ForkLR] ✓ this fork names its own dose (--fork-lr 0.00025 --fork-lr-freeze)`**. The row is closed; my standing note that it was outstanding is superseded. **The backlog is now EMPTY.**
+
+**THE GPU: `ai_v13_18_teach5_offense_hidose` LAUNCHED** 14:23 PT, launcher pid 2151990, via its own prepared `launch.sh` read in full before running. FORK of the plateau parent, +8,000,000 → 103,158,272, the five OFFENSE teams, `--exploiter` the plateau parent, **`--fork-lr 2.5e-4 --fork-lr-freeze` ⇒ 3.8147e-8 = 1.78×, era-1's dose to the digit** (2.5e-4 × 1.52588e-4, the arithmetic the script states). Banners verified against the script's own checklist: `🧭 [MATCHUP 80dea7c93b]` — **`ai_v13_13`'s era, the same five teams hence the same hash, which the script required on pain of STOP** — `🎯 [MULTI-SPECIALIST] 5 teams`, `exploiter target … | bots mixed in 50%`, `[ForkLR] pinning LR to 2.50e-04 and FREEZING`, no `[Untaught] FATAL`. checkargs 129 accepted / 0 unrecognized. **This arm is upstream of the whole ladder question: it asks whether a teacher exists at all at era-1 dose, after four refusals at 0.39×/0.20×.** ⏱ ETA ~19:00 PT.
+
+**ROW 1 OF THE REGISTERED READ IS RUNNING** (CPU, nice 15, 8 workers, GPU has first call): **eleven refs in ONE invocation** — three rungs × three depths, plus the plateau parent MEASURED not imported, plus armW as the reproduction check — 8 teams × 200 games = **17,600 battles**, registry opponent, `--seed 0`, concurrency 1, harness verbatim from `split_lossoff_read_2026-09-20`. 📌 **The depths are matched to the STEP across arms by luck**: all three rungs carry checkpoints at identical steps, so +3M = 98,158,368 (+3,000,096) and +6M = 101,278,608 (+6,120,336) for every rung, with no offset hazard of the kind hazard S-D named. Row 2 (the offense slice, 800 games/team) follows. Tag: **OPS · `ai_v13_19_fold_k11` COMPLETE (107,249,664, teardown-SIGTERM #11, dose 0.20×, G7 clean, `distill_topk=11` verified) · **K=11's ENTROPY ROSE** 0.900 → 0.941 where K=1 fell to 0.668 · 📌 **C3 IS NEARLY SHARE-MATCHED** (0.118 vs 0.129) while C1 spans 2× ⇒ C3 is the cleanest contrast · 🚨 CORRECTION: every banked vs-target number is GREEDY-vs-GREEDY eval regime, verified at the source; contrasts survive, strength readings do not · `main.best_response_gap` table banked with CIs · 📌 the LR guard landed elsewhere, backlog EMPTY · `ai_v13_18_teach5_offense_hidose` LAUNCHED at 1.78× · row 1 of the registered read RUNNING**.
