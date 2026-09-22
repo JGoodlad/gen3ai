@@ -20800,3 +20800,39 @@ default; the v5 golden byte-identity pin still holds).
 `measurements/p1_backlog_batch_2026-09-22/`.
 
 **Orchestrator's reading (2026-09-22).** Two of the three rows' recorded diagnoses were wrong and the fixes went where the reproduction pointed: the `production` entry was never re-pointed (every current-generation entry loads through the project's own sanitizing loader and fails through a bare load — the fix is a typed `BaselineLoadError` naming the era and the alternatives, not a registry move), and the `--v-column` drop was in `quota_match`'s own cycle extraction, not at the site the row named. The ladder stamp makes every committed `ladder.json` on disk read `absent` until refit, which is the loud outcome rule 24 asked for; rule 24's count-key heuristic is superseded and corrected below. Tag: **OPS · P1 ×3 closed · two row diagnoses corrected by reproduction**.
+
+### 2026-09-22 · MEASUREMENT · **METAMON OBSERVATION FAITHFULNESS**
+
+**2026-09-22 — METAMON OBSERVATION FAITHFULNESS: no GIGO from our server; ONE real defect in
+Metamon's own parser — `BATON PASS BOOST CARRY-OVER`.** Pre-registered (`e5f31d53`) before the
+first capture, four checks with four bars. **(1) Parser parity:** 20 greedy `metamon:SmallRL`
+anchor battles vs arm W (`ai_v13_02_flywheel_winprob` @ 75,005,952), `--server rust`,
+`--seed-base 20260922`, captured and replayed through BOTH parsers on the same bytes — upstream
+poke-env 0.8.3.3 + `UniversalState.from_Battle` on one side, `Gen3Battle`/`LiveView`/
+`LegalActions` on the other. **858 of 871 decision points agree (98.51%), 0 alignment failures**;
+the 13 that disagree are one class — after `|switch|…|[from] Baton Pass` Metamon reads the
+entrant's boosts as 0 where the sim holds −1 and +2 (3 of 20 battles; repro
+`battle-gen3ou-12` seq 4). **Our fork fixed this 2026-08-23**
+(`poke_env/battle/baton_pass_carryover_test.py`); Metamon runs the unfixed upstream, and
+`sim/pokemon.ts:1249` (`this.boosts = pokemon.boosts`, emitting nothing) is the ground truth.
+**(2) Silent substitution:** `UNKNOWN_TOKEN` in the tokens the policy actually consumed = **0 over
+871 decisions**; 0 hits in seven protocol warning classes (the one `Warning:` is a Hugging Face
+rate-limit notice); Metamon's own `Average Valid Actions` = **1.0000 / 1.0000**. **(3) Strength
+cross-check:** no reproducible published per-generation number exists (README L255–300 is a human
+ladder GXE, L398–760 is a population-relative local GXE without `SmallRL`, the RLC 2025 paper's
+heuristic figures are Gen1-4-aggregated), so the registered substitute ran — `SyntheticRLV2` beats
+`SmallRL` head to head on our server, greedy-vs-greedy, away teams, **0.650 [0.582, 0.713],
+n = 200**, lower bound clear of 0.50, both regimes verified per decision. **(4) Pin differential:**
+all 20 captured battles replayed through Metamon's OWN bundled Showdown (`d62d3a398`, 13 commits
+ahead of `e0551883f`) produce **byte-identical per-side streams, 20/20**, with the live-stream
+reproduction control passing 20/20 — so argmax disagreements are **0 by construction**, and
+Metamon reads a Baton Pass wrong on its own server too, including behind its published numbers.
+**Registered verdict: GIGO CANDIDATE, class `BATON PASS BOOST CARRY-OVER`** — it is Metamon's
+defect and not ours, it biases the anchor in OUR favour (Metamon under-reads passed setup on both
+sides), the exposure is 13/871 decisions, 3/20 battles, 8/21 `competitive` and 157/719 pool teams
+carrying Baton Pass, and **the SIZE of the bias is NOT measured** — the backlog row names the
+patched-vs-unpatched 2×400 cell that would settle it. `EXTERNAL_ANCHORS_SOP.md` gains hazard
+**H18**. Artifact:
+`designs/research_state/measurements/metamon_obs_faithfulness_2026-09-22/`.
+
+**Orchestrator's reading (2026-09-22).** The owner asked whether we have a GIGO with Metamon. Our server does not corrupt its view: 871 decision points, eight declared presentation rules, zero silent token substitutions in the array the policy consumes, byte-identical streams across the two Showdown pins, and the published ordering reproduces. Metamon's OWN parser does, in one place: upstream poke-env clears the entrant's boosts on a Baton Pass switch (our fork fixed this on 2026-08-23; Metamon runs the unfixed upstream), so it under-reads passed setup on both sides and plays those lines weaker — everywhere, its published evaluations included. Exposure here: 13 of 871 decisions, 3 of 20 battles, 8 of 21 Metamon teams and 157 of 719 pool teams carry Baton Pass. Direction: our anchor win rate is OPTIMISTIC on those lines. Size: NOT measured, and it is dispatched now as a patched-vs-unpatched 2×400 cell, because every anchor number this era carries an unknown-sized favourable bias until it is. Every Metamon comparison from here states H18. Tag: **MEASURED · no server-side GIGO · Metamon mis-reads Baton Pass boosts (H18), bias favourable to us, size pending**.

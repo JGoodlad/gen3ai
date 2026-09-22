@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,803-line file. **The ledger itself is append-only and is never edited by this**;
+20,839-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**666 headings · 611 dated · 2026-08-01 → 2026-09-22 · ledger 20,803 lines.**
+**667 headings · 612 dated · 2026-08-01 → 2026-09-22 · ledger 20,839 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -686,3 +686,4 @@ rename.
   - `L20694` · `2026-09-22` · OPS · **SEARCH PERFORMANCE, PROFILE-FIRST**
   - `L20729` · `2026-09-22` · OPS · **THE POPULATION LOOP HAS A METER — `python -m main.best_response_gap`, and it REFUSES the era-2/era-1 comparison on the 4.5× dose gap that confounded last week's read. The banked endpoints reproduce from the runs' own `eval_results.jsonl` (0.740 ×3; 0.700 / 0.530 / 0.450), and 🚨 every vs-target number we have banked is a GREEDY-vs-GREEDY EVAL number, not a training-regime one.**
   - `L20743` · `2026-09-22` · OPS · **THREE P1 BACKLOG ROWS CLOSED — baselines load-or-refuse, the ladder recipe stamp, `--v-column` on matched rows**
+  - `L20804` · `2026-09-22` · MEASUREMENT · **METAMON OBSERVATION FAITHFULNESS**

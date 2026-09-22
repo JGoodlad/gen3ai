@@ -249,6 +249,11 @@ not: the untaught meter's +15.5 pp is ~3 pp on an external opponent, a ~5× scal
 (every ordering it has given, the anchor has confirmed) but its pp are not external pp — a strength claim carries the
 anchor's number at ≥1,200 games or is not made. The n = 100 anchor's +0.140 was seed spread (one arm's 100-game sub-cells
 ranged 0.34–0.59 across twelve seeds). [ledger 2026-09-20 · *THE CONTINUATION'S +15.50 pp DOES NOT APPEAR EXTERNALLY*]
+**The anchor's own faithfulness (`metamon_obs_faithfulness_2026-09-22/`):** our server does not corrupt Metamon's view (871
+decision points, 0 silent substitutions, byte-identical across Showdown pins), but Metamon's upstream poke-env clears boosts
+on a Baton Pass switch (our fork fixed it 2026-08-23), so it under-reads passed setup on both sides — 13/871 decisions here,
+8/21 of its teams and 157/719 of ours carry the move. Every Metamon win rate is OPTIMISTIC for us by an amount not yet
+measured (SOP H18; the patched-vs-unpatched cell is dispatched). [ledger 2026-09-22 · *METAMON OBSERVATION FAITHFULNESS*]
 
 Two consequences:
 
