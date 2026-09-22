@@ -1048,6 +1048,10 @@ class SearchEngine:
         #: beside the Branch rather than derived from it (a Branch's chunks are CUMULATIVE).
         arm_suffix: Dict[int, Tuple[str, ...]] = {}
         arm_view: Dict[int, dict] = {}
+        #: label -> the port's boards at the decisions the ply resolved INSIDE itself, in order
+        #: (D10, `gen3_view_at_intermediate_v1`). Empty on the ordinary arm and under
+        #: `impl="node"`.
+        arm_view_at: Dict[int, List[dict]] = {}
         n_terminal = 0
         n_scored = 0
         for e in expanded:
@@ -1074,12 +1078,15 @@ class SearchEngine:
             child_chunks[li] = tuple(chunks)
             arm_suffix[li] = tuple(suffix)
             arm_view[li] = (e.view_p1 if ctx.side == "p1" else e.view_p2) or {}
+            arm_view_at[li] = list(
+                (e.view_p1_at if ctx.side == "p1" else e.view_p2_at) or [])
 
         score_mode = self.cfg.effective_score()
         if branches:
             dec_i = ctx.decision_index(ply)
             leaves = self._materialize(
-                ctx, branches, branch_of, parents, acts, arm_suffix, arm_view, dec_i, ply, widths)
+                ctx, branches, branch_of, parents, acts, arm_suffix, arm_view, arm_view_at,
+                dec_i, ply, widths)
             keys = [li for li in branch_of if leaves.get(li) is not None]
             if keys:
                 sc, score_mode = self._score_batch(
@@ -1117,7 +1124,7 @@ class SearchEngine:
         return {"n_scored": n_scored, "n_terminal": n_terminal, "score_mode": score_mode}
 
     def _materialize(self, ctx: _PlyContext, branches, branch_of, parents, acts,
-                     arm_suffix, arm_view, dec_i: int, ply: int,
+                     arm_suffix, arm_view, arm_view_at, dec_i: int, ply: int,
                      widths: RealizedWidths) -> "Dict[int, _Leaf]":
         """``{label: leaf}`` for every arm that produced a decision — by whichever ROAD the cell
         is configured for, with the two roads' outputs byte-identical.
@@ -1138,12 +1145,30 @@ class SearchEngine:
 
         * ``view_pN`` absent — ``search_driver.js`` emits none, so ``search_impl="node"`` falls
           back for every arm;
-        * the ply resolved an intermediate decision (a replacement round), where the port's board
-          is one decision PAST the row this method must return — see
-          :func:`~agents.training.view_successor.intermediate_decisions`, deferral D10;
+        * the ply resolved an intermediate decision AND the port sent no board at it — see
+          below;
         * a deeper ply whose parent carries no fork (its own arm fell back).
+
+        🚨 **An INTERMEDIATE decision is now ANSWERED, not fallen back from**
+        (`gen3_view_at_intermediate_v1`, D10). A ply that KOs one of our mons opens a SECOND
+        request inside the same arm, which the port resolves from its own follow-up policy — so
+        ``view_pN`` is the board one decision PAST the row this method must return. The port now
+        also emits ``view_pN_at``, the board at each decision it resolved internally, and the arm
+        is served from ``view_pN_at[0]`` folded over
+        :func:`~agents.training.view_successor.split_at_intermediate`'s chunk cut — the BOARD and
+        the EVENT history both stop where ``materialize_branches`` stops. ``view_arms_intermediate``
+        counts it; the fallback survives for an arm the port sent no entry for (``impl="node"``, a
+        ``recorded_exact`` arm) and is still counted in ``view_fallback_intermediate``.
+
+        🚨 **A D10-served leaf carries NO fork, deliberately.** The rust child ``node_id`` this
+        leaf is paired with sits at the END of the arm's turn, not at the intermediate decision
+        the leaf describes, so a deeper ply expanded from it would branch from a state the leaf is
+        not. Handing ``fork=None`` makes ply d+1 fall back to the protocol road — exactly what a
+        D10 arm did at every depth before this change, so the closure is scoped to the depth-1 row
+        it is evidenced at.
         """
-        from agents.training.view_successor import intermediate_decisions
+        from agents.training.view_successor import (intermediate_decisions,
+                                                    split_at_intermediate)
 
         out: "Dict[int, _Leaf]" = {}
         todo = list(branch_of)
@@ -1162,16 +1187,32 @@ class SearchEngine:
                     widths.view_fallback_no_payload += 1
                     fallback.append(li)
                     continue
-                if intermediate_decisions(arm_suffix[li]):
-                    widths.view_fallback_intermediate += 1
-                    fallback.append(li)
-                    continue
-                got = fork.successor(arm_view[li], arm_suffix[li], acts[li])
+                payload, fold_chunks = arm_view[li], arm_suffix[li]
+                n_mid = intermediate_decisions(arm_suffix[li])
+                mid = bool(n_mid)
+                if mid:
+                    at = arm_view_at[li]
+                    head = split_at_intermediate(arm_suffix[li]) if at else None
+                    # 🚨 `len(at) == n_mid` is an INVARIANT between the two roads' independent
+                    # counts — the port captures one board per round its source could not answer,
+                    # Python counts one per non-final decision `|request|` in the same side's
+                    # suffix — and it is CHECKED rather than assumed. A disagreement means the two
+                    # are describing different rounds, so the arm falls back instead of being
+                    # served a board from the wrong one.
+                    if not at or len(at) != n_mid or not at[0] or head is None:
+                        widths.view_fallback_intermediate += 1
+                        fallback.append(li)
+                        continue
+                    payload, fold_chunks = at[0], head
+                got = fork.successor(payload, fold_chunks, acts[li])
                 if got is None:
                     continue                 # no decision here — the protocol road agrees
                 out[li] = _Leaf(obs=got.obs, mask=got.mask,
-                                action_choices=got.action_choices, fork=got)
+                                action_choices=got.action_choices,
+                                fork=None if mid else got)
                 widths.view_arms += 1
+                if mid:
+                    widths.view_arms_intermediate += 1
             todo = fallback
             branches = [b for b in branches if int(b.label) in set(todo)]
         if todo and branches:

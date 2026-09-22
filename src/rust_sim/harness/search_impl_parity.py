@@ -1,11 +1,16 @@
 """Replay the NODE search-driver golden against the RUST `search_driver` and diff.
 
-Scratch tool (tmp/, not shipped). The golden is `tmp/search_golden_node.json`, captured
-from `src/utils/bridge/search_driver.js` by `tmp/search_golden.py`; this drives the Rust
-binary over the IDENTICAL request sequence and compares every field of every response.
+The golden is captured from `src/utils/bridge/search_driver.js` by
+`src/rust_sim/harness/gen_search_golden.py` (its default output is the gitignored
+`tmp/search_golden_node.json`); this drives the Rust binary over the IDENTICAL request sequence
+and compares every field of every response.
 
+    export PYTHONPATH=$PYTHONPATH:src            # in a linked worktree this is MANDATORY
+    python src/rust_sim/harness/gen_search_golden.py --battles 3
     python src/rust_sim/harness/search_impl_parity.py [--golden PATH] [--bin PATH] [-v]
-    (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
+
+🚨 **Run it on TWO FRESH goldens before calling it green** — the battles are random and the
+contract's two-seed rule applies here too.
 
 Deliberately talks raw stdin/stdout JSON — NOT through `SearchSession` — so it stays
 valid while the Python seam is being reworked by another agent.
@@ -57,6 +62,15 @@ ALLOWLIST = [
         "`search_driver.js` has no such field, so the ONLY divergence representable here is "
         "`<absent>` vs present — a VALUE difference is NOT forgiven. If node ever grows one, "
         "delete this entry and compare the field. Contract: designs/rust_sim/one_sided_view.md",
+    ),
+    (
+        lambda p, exp, got: (p.endswith(".view_p1_at") or p.endswith(".view_p2_at"))
+        and exp == "<absent>",
+        "the port-only INTERMEDIATE-DECISION boards (`gen3_view_at_intermediate_v1`, deferral "
+        "D10): the ordered view at each decision an arm resolved inside itself. Node's "
+        "`search_driver.js` has no such field, so — exactly as for `view_pN` above — the ONLY "
+        "divergence representable here is `<absent>` vs present, and a VALUE difference is NOT "
+        "forgiven. Contract: designs/rust_sim/one_sided_view.md",
     ),
 ]
 
@@ -202,8 +216,8 @@ def main():
                 arms_req = []
                 for a in exp_arms:
                     # Reconstruct the request the golden was produced from. The golden
-                    # records the RESPONSE, so the arm SPEC is rebuilt from tmp/
-                    # search_golden.py's `arms_for` shape, keyed by the echoed label.
+                    # records the RESPONSE, so the arm SPEC is rebuilt from
+                    # `gen_search_golden.arms_for`'s shape, keyed by the echoed label.
                     arms_req.append(arm_spec(c, a))
                 calls.append(("expand_many",
                               {"cmd": "expand_many", "arms": arms_req}, c["expand_many"]))
@@ -267,7 +281,7 @@ def main():
 
 
 def arm_spec(case, arm_response):
-    """Rebuild the arm REQUEST for a recorded arm RESPONSE (tmp/search_golden.py::arms_for)."""
+    """Rebuild the arm REQUEST for a recorded arm RESPONSE (`gen_search_golden.arms_for`)."""
     root = case["open_root"]
     node_id = root["node_id"]
     rec_p2 = root["recorded_choices"].get("p2")

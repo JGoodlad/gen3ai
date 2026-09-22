@@ -48,6 +48,10 @@ the same board PROJECTED onto what each side has observed, in the shape
 without replaying its protocol. :mod:`agents.battle.view_adapter` is the constructor and
 ``designs/rust_sim/one_sided_view.md`` is the contract. They are ``{}`` under ``impl="node"``.
 
+``view_p1_at`` / ``view_p2_at`` are the ordered boards at the decisions an arm resolved INSIDE
+itself (`gen3_view_at_intermediate_v1`, deferral D10) — a faint's replacement round is a second
+request in the same arm, and ``view_pN`` describes the board after it rather than at it.
+
 The protocol is synchronous request → one-line response; calls are strictly sequential
 (a beam expands one batch at a time), so a background reader thread feeds a queue that
 :meth:`_call` drains with a timeout — a wedged child fails ONE call (and the session),
@@ -123,6 +127,15 @@ class ExpandedNode:
     # `outcome`; `{}` under `impl="node"`, which emits no such field.
     view_p1: dict = field(default_factory=dict)
     view_p2: dict = field(default_factory=dict)
+    # The boards at the decisions this ply resolved INSIDE itself, in order, per side
+    # (`gen3_view_at_intermediate_v1`, deferral D10). A ply that KOs one of our mons opens a
+    # SECOND request inside the same arm and the port answers it from its own follow-up policy,
+    # so `view_pN` above is one decision PAST the row a per-request consumer wants; entry `k`
+    # here is the board at that side's `k`-th non-final request of the ply. EMPTY on the
+    # ordinary arm, and empty under `impl="node"` and on a `recorded_exact` arm — a consumer
+    # that finds no entry falls back exactly as it did before the field existed.
+    view_p1_at: List[dict] = field(default_factory=list)
+    view_p2_at: List[dict] = field(default_factory=list)
 
 
 class SearchError(RuntimeError):
@@ -258,7 +271,9 @@ class SearchSession:
                 stuck=bool(a.get("stuck")), outcome=a.get("outcome") or {},
                 requests=a.get("requests"), choices_used=a.get("choices_used") or {},
                 p1_chunks=a.get("p1_chunks") or [], p2_chunks=a.get("p2_chunks") or [],
-                view_p1=a.get("view_p1") or {}, view_p2=a.get("view_p2") or {})
+                view_p1=a.get("view_p1") or {}, view_p2=a.get("view_p2") or {},
+                view_p1_at=list(a.get("view_p1_at") or []),
+                view_p2_at=list(a.get("view_p2_at") or []))
             for a in out["arms"]
         ]
 

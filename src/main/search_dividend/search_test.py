@@ -430,10 +430,14 @@ class _PlySession:
         # cumulative-chunk contract, and an empty payload is exactly what `search_driver.js`
         # returns — so `_materialize` falls back per arm and the captured `Branch` list is the
         # one under test. A stub that grew a view payload would quietly stop exercising it.
+        # `view_pN_at` is empty for the same reason and must be PRESENT: `ExpandedNode` carries
+        # it (`gen3_view_at_intermediate_v1`), and a stub missing a field the code reads raises
+        # inside the engine, which swallows it as `fallback="search_error"` — a green-looking
+        # nothing rather than a failure.
         return [_SimpleNamespace(label=a["label"], node_id=node_id, ended=False, stuck=False,
                                  outcome={}, requests=req, choices_used={},
                                  p1_chunks=[chunk], p2_chunks=[chunk],
-                                 view_p1={}, view_p2={})
+                                 view_p1={}, view_p2={}, view_p1_at=[], view_p2_at=[])
                 for a in arms]
 
 

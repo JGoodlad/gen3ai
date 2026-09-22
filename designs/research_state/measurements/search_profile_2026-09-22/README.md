@@ -255,6 +255,73 @@ could not answer. Python then reads `view_pN_at[0]` instead of `view_pN` when
 Until it lands, the fallback is at least no longer paying a **per-world** prefix replay — that is
 what §2 removed, and it is why the D10 span fell from 24.0% to 17.2% without D10 itself moving.
 
+## 4b. D10 — LANDED (`gen3_view_at_intermediate_v1`), AND THE WALL CLAIM IN §4 WAS WRONG
+
+The design in §4 is what shipped, with one correction and two findings it did not anticipate.
+Contract, gates and the two poke-env rules: `designs/rust_sim/one_sided_view.md` §5b.
+
+**What landed.** `search.rs::Resolved::views_at` captures `one_sided_view` at the top of every
+`resolve_turn_sourced` iteration that answers a round its source could not, and
+`bin/search_driver.rs` emits it as an ordered `view_p1_at` / `view_p2_at` beside `view_pN`;
+`view_successor.split_at_intermediate` cuts the arm's chunks at the chunk that CLOSED the first
+decision (a chunk boundary, because `Player._handle_battle_message` parses a whole message before
+dispatching the request); `search._materialize` serves the arm from `view_pN_at[0]` over that cut
+and counts it as `view_arms_intermediate`. A D10-served leaf carries `fork=None`, so a deeper ply
+falls back exactly as it did before — the close is scoped to the depth-1 row it is evidenced at.
+
+**Blocker 2 was real and cost more than the design said.** The chunk split needed its own parity
+evidence, and running it turned up TWO poke-env rules the port cannot supply, neither of which is
+visible on an ordinary arm: `|error|[Unavailable choice]` is intercepted by the player but ROUTED
+to `Gen3Battle.record_choice_rejected` rather than dropped (the missing `CHOICE_REJECTED` event
+moved ~200 obs cells through the H-B event window), and `Pokemon.faint` does NOT clear boosts
+while the sim does (eleven cases over seven fixture battles, every one a mon fainted and still
+active). Both are PRESENTATION rules and both were fixed in Python — `ViewEventFolder` mirrors the
+hook and now keeps a boost LEDGER, `view_adapter._restore_fainted_boosts` rewrites fainted mons
+only. Blocker 3 was exactly as described: one more value-aware allowlist entry.
+
+### The A/B — interleaved, same 10 banked decisions, base worktree at `48e767ba`, twice
+
+🚨 **The box was CPU-STARVED throughout (load 20.8 → 33.2 on 16 cpus) and the load rose
+MONOTONICALLY through the sequence, so every NOW run carried a heavier box than the BASE run it
+is paired with.** The protocol road is the live control and the control-normalised column is the
+claim; the absolute ms are not comparable to §§0-3's.
+
+| B | road | BASE ms/decision (r1, r2) | NOW ms/decision (r1, r2) | view ÷ protocol, BASE → NOW |
+|---|---|---|---|---|
+| wide (684 arms / 10 decisions) | view | 327.7, 304.8 | 307.6, 339.0 | 0.576, 0.574 → **0.562, 0.553** |
+| wide | protocol | 568.7, 530.5 | 547.8, 613.1 | |
+| 1 (10 arms / 10 decisions) | view | 54.0, 65.1 | **44.9, 55.3** | 0.980, 0.917 → **0.673, 0.746** |
+| 1 | protocol | 55.1, 71.0 | 66.8, 74.2 | |
+
+**`view_fallback_intermediate` 117 → 0 at wide B and 2 → 0 at B = 1; `view_arms` 567 → 684 and
+8 → 10; `fallback_no_payload` stayed 0.** The target is met exactly: every arm of these decisions
+is now answered on the road the cell was configured for.
+
+### 🚨 THE CORRECTION: D10's 17.2% WAS NOT RECOVERABLE WALL, AND THIS FILE SAID IT WAS
+
+§4 called D10 "the second-biggest item (17.2% of the view road's wall for 17.1% of its arms)" and
+ordered the work on that. The span was real, but it was **the cost of serving those arms at all**,
+not waste — a D10 arm answered on the view road costs about what it cost through the fallback. The
+arithmetic is on this run: 117 of 684 arms (17.1%) move onto a path costing ~4.2 ms/arm, which is
+~49 ms per decision against a 327 ms decision — i.e. it very nearly refunds the 16.4% the view
+road's phase breakdown attributed to `open_branch_fork` + `materialize_branches_from` (both rows
+vanish entirely NOW; the branch fork is never opened). Control-normalised, wide B moves **~2-4%**.
+
+**At B = 1 it is a real win (~25% control-normalised)** and for a structural reason: there the
+fallback forced an entire SECOND poke-env prefix replay to serve ONE arm, and at B = 1 the
+decision IS its prefix. The view road's own prefix-replay span at B = 1 falls from 7.1% of the
+wall to nothing measurable.
+
+**So the honest verdict is ROAD CONSISTENCY, not throughput.** `--materializer view` no longer
+runs 17% of its arms on the other road, which is worth having on its own terms — a cell measured
+with a silent 17% protocol contamination is measuring a blend — and it is what makes the two
+roads' remaining costs comparable at all. **The durable lesson is the same one §0 already taught
+in a different costume: a PHASE SHARE is not a saving.** A span that disappears when you delete
+the work is a saving; a span that disappears because the work MOVED is an accounting change, and
+only a before/after with the work still being done can tell the two apart.
+
+---
+
 ## 5. THE PREFIX-GATE P1 — NOT ATTEMPTED
 
 Out of budget after §§0-3 and the D10 design. Recorded as still open: a clean record fails
@@ -264,7 +331,7 @@ playoff measurement, so it should lead the next pass.
 
 ---
 
-## Ready-to-append ledger paragraph
+## Ready-to-append ledger paragraph (the §§0-3 grind)
 
 > **2026-09-22 — SEARCH PERF: one searched decision is 1.33x cheaper at wide B and 1.66x at B=1,
 > and TWO documented numbers were wrong.** Profiled the real `SearchEngine` over banked eval
@@ -296,3 +363,42 @@ playoff measurement, so it should lead the next pass.
 > **NOT DONE:** D10 itself is designed and blocked on a rust payload change plus a line-level chunk
 > split whose parity evidence does not exist yet (the design and all three blockers are in the
 > README); the prefix-gate P1 was not reached.
+
+## Ready-to-append ledger paragraph (D10)
+
+> **2026-09-22 — SEARCH: D10 is CLOSED, every searched arm is now on ONE road, and the "17.2% of
+> the wall" this campaign ordered the work on was NOT recoverable wall.** `gen3_view_at_intermediate_v1`:
+> a ply that KOs one of our mons — or whose trapped switch is refused — opens a SECOND request
+> inside the same `expand_many` arm, which the port answers from its follow-up policy, so `view_pN`
+> described the board one decision PAST the row `materialize_branches` returns and 17% of arms fell
+> back to the protocol road. The port now also emits **`view_pN_at`**, the ordered board at each
+> decision it resolved internally (captured at the top of the `resolve_turn_sourced` iteration that
+> round opened), and the view road serves such an arm from `view_pN_at[0]` folded over a CHUNK-level
+> cut of the arm's own protocol — a chunk boundary because `Player._handle_battle_message` parses a
+> whole message before dispatching the request, so a line-level cut would stop earlier than the
+> protocol road does. **The port gained no poke-env rule** (the contract's split held): the two
+> rules the close needed were both fixed in Python, and BOTH were found by the gate rather than by
+> reading code — `|error|[Unavailable choice]` is intercepted by the player but ROUTED to
+> `Gen3Battle.record_choice_rejected`, so `ViewEventFolder` dropped a `CHOICE_REJECTED` event the
+> live log has and moved ~200 obs cells through the H-B event window; and **`Pokemon.faint` does
+> not clear boosts while the sim does** (eleven cases over seven fixture battles, every one a mon
+> FAINTED and still ACTIVE, stages the ply's own), so the light board now keeps a boost ledger and
+> `view_adapter._restore_fainted_boosts` rewrites fainted mons only. Neither is visible on an
+> ordinary arm, because there the replacement switch happens inside the ply and clears the
+> difference. **GATES:** `cargo test` 759 green with a capture pin and its NEGATIVE twin
+> (fault-injected: capturing on iteration 0 fails both); the one-sided-view sweep on **THREE fresh
+> 24-battle seeds — 614 / 620 / 654 comparisons, 43 / 42 / 49 D10 arms SERVED, ZERO `successor.*`
+> divergences** (the residue is the §4b read-model classes, present on a base-worktree control
+> run too); `event_fold_parity` on 24 fresh battles, 489 plies and **41 D10 cuts**, zero
+> divergence, the cut asserted to materialise exactly ONE further row on the protocol road;
+> `search_impl_parity` PASS on TWO fresh node goldens with one more value-aware allowlist entry
+> (`<absent>` only). **MEASURED** as an interleaved A/B on the same 10 banked decisions, twice,
+> on a CPU-starved box whose load rose monotonically through the sequence (20.8 → 33.2 on 16 cpus,
+> so every NOW run carried the heavier box): **`view_fallback_intermediate` 117 → 0** at wide B
+> and 2 → 0 at B = 1, `view_arms` 567 → 684. Control-normalised (view ÷ the protocol road run back
+> to back), wide B moves **~2-4%** and B = 1 **~25%**. 🚨 **THE RETRACTION: a PHASE SHARE IS NOT A
+> SAVING.** D10's 17.2% was the cost of serving those arms at all, not waste — moving 117 of 684
+> arms onto a ~4.2 ms/arm path refunds nearly the whole 16.4% the view road's breakdown attributed
+> to the branch fork. The win at B = 1 is real and structural (the fallback forced a second
+> poke-env prefix replay to serve ONE arm); the win at wide B is ROAD CONSISTENCY — a cell measured
+> with a silent 17% protocol contamination was measuring a blend.

@@ -83,12 +83,14 @@ from poke_env.player import RandomPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 import agents.training.obs_materializer as OM
+from agents.battle.event_fold import ViewEventFolder
 from agents.battle.live_view import LegalActions, LivePokemon, LiveSide, LiveView
 from agents.battle.view_adapter import read_models_from_payload
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
 from agents.training.view_successor import (ViewSuccessorFactory,
-                                            intermediate_decisions)
+                                            intermediate_decisions,
+                                            split_at_intermediate)
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.bridge.reconstruction import ReconstructionRecord
 from utils.bridge.search_session import SearchSession
@@ -335,7 +337,8 @@ def _anyone_asleep(live: LiveView) -> bool:
     return any(m.status == "slp" for m in (*live.ours.mons, *live.opp.mons))
 
 
-def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Census) -> bool:
+def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Census,
+                ledger=None) -> bool:
     """Compare the two roads at ONE decision point. True when the READ-MODELS agreed outright —
     which is also the precondition for the tracker-fed comparison downstream, because a vector
     built on a differing board says nothing about the trackers."""
@@ -345,7 +348,11 @@ def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Ce
         return False
     strict = battle.strict_view()
     live_p, legal_p = strict.live, strict.legal
-    live_v, legal_v, vbattle = read_models_from_payload(payload, battle_tag=live_p.battle_tag)
+    # `ledger` is the ply's folded `ViewEventFolder` when the caller has one. It is the view
+    # road's OWN input (the fainted-mon boost restore runs inside `read_models_from_payload`), so
+    # comparing without it at a D10 board would convict a difference production does not have.
+    live_v, legal_v, vbattle = read_models_from_payload(
+        payload, battle_tag=live_p.battle_tag, fainted_boosts=ledger)
 
     before = sum(cen.declared.values())
     compare_live(live_p, live_v, cen)
@@ -479,11 +486,12 @@ def _field_of(slot_layout: Any, col: int) -> str:
 # ---------------------------------------------------------------------------
 
 def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS,
-        impl: str = "rust", fixed_key: Optional[int] = None) -> Tuple[Census, int, int]:
+        impl: str = "rust", fixed_key: Optional[int] = None) -> Tuple[Census, int, int, int]:
     cen = Census()
     encoder = get_observation_encoder(load_mappings())
     branch_points = 0
     full_obs_points = 0
+    d10_points = 0
     for b in range(n_battles):
         with tempfile.TemporaryDirectory() as td:
             record, summary, npz = _record_one_battle(
@@ -561,17 +569,49 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                     clean = check_point(encoder, arm_road, payload, where, cen)
                     n_mid = intermediate_decisions(suffix)
                     if n_mid:
-                        # D10 — the ply resolved a REPLACEMENT round inside itself, so the port's
-                        # board is one decision past the row `materialize_branches` returns. The
-                        # two roads describe different states here and comparing them would
-                        # measure that, not the trackers. Counted, never silent.
-                        cen.defer(f"D10: the ply resolved {n_mid} intermediate decision(s) — the "
-                                  f"view's board is past the protocol road's successor row")
+                        # 🚨 **THE D10 GATE** (`gen3_view_at_intermediate_v1`). The ply resolved a
+                        # REPLACEMENT round inside itself, so `view_pN` is one decision PAST the
+                        # row `materialize_branches` returns — and the port now ALSO sends the
+                        # board it had AT that round (`view_pN_at`). This compares the pair the
+                        # production road actually uses: that board, folded over the chunk cut
+                        # `split_at_intermediate` makes, against the protocol road's own row.
+                        #
+                        # The row index is unchanged (`anchor + 1`): `mats[anchor + 1]` is the
+                        # FIRST decision the arm's suffix produced, which IS the replacement
+                        # round. The road's action padding lets it run on past that row; it does
+                        # not change the row itself, which is encoded when it is appended.
+                        at = node.view_p1_at if side == "p1" else node.view_p2_at
+                        head = split_at_intermediate(suffix)
+                        if not at or not at[0] or head is None:
+                            cen.note("successor.view_pN_at[missing]", f"{n_mid} intermediate",
+                                     f"{len(at or [])} boards / head={head is not None}", where)
+                            continue
+                        # 🚨 A SECOND ROAD, stopped AT the cut. `arm_road` above ran PAST the
+                        # replacement (that is what its action padding is for), so its board is
+                        # the next turn's and its read-models say nothing about the one the D10
+                        # path reads. This road is fed the prefix plus the CUT and nothing else,
+                        # which is exactly where `materialize_branches` stands when it emits the
+                        # row — so it is both the read-model oracle for `view_pN_at[0]` and the
+                        # owner of the successor row to compare against.
+                        mid_road = _ProtocolRoad(
+                            record, side,
+                            prefix_actions + [int(node.label)] + [0] * 8)
+                        mid_road.feed(list(pfx) + list(head))
+                        mid_board = ViewEventFolder.seed_from(road.battle)
+                        mid_board.fold(head)
+                        clean_mid = check_point(
+                            encoder, mid_road, at[0], where + "/D10mid", cen,
+                            ledger=mid_board)
+                        if clean_mid and factory is not None and check_successor(
+                                factory, encoder, mid_road, at[0], head, int(node.label),
+                                anchor + 1, where + "/D10", cen):
+                            full_obs_points += 1
+                            d10_points += 1
                     elif clean and factory is not None and check_successor(
                             factory, encoder, arm_road, payload, suffix, int(node.label),
                             anchor + 1, where, cen):
                         full_obs_points += 1
-    return cen, branch_points, full_obs_points
+    return cen, branch_points, full_obs_points, d10_points
 
 
 def _choice_map(record, side, prefix_actions, pfx, anchor) -> Dict[int, str]:
@@ -589,7 +629,7 @@ def test_the_one_sided_view_reproduces_the_read_models_and_the_obs():
     """The collected gate — one REPRODUCIBLE battle (see the module header), three turns, five
     arms each. Deterministic by construction, so a failure here is a regression and never a draw.
     The stochastic sweep is the script entry point."""
-    cen, branch_points, full_obs_points = run(n_battles=1, arms=5, turns=3, fixed_key=0)
+    cen, branch_points, full_obs_points, _d10 = run(n_battles=1, arms=5, turns=3, fixed_key=0)
     print("\n" + cen.render())
     assert cen.compared >= 8, (
         f"only {cen.compared} comparisons ran — the gate is vacuous "
@@ -604,6 +644,34 @@ def test_the_one_sided_view_reproduces_the_read_models_and_the_obs():
     assert not cen.rows, "\n" + cen.render()
 
 
+def test_an_intermediate_decision_arm_is_served_from_the_ports_own_board():
+    """THE D10 GATE (`gen3_view_at_intermediate_v1`) — a collected, REPRODUCIBLE battle whose
+    arms include at least one ply that resolved a REPLACEMENT round inside itself.
+
+    🚨 **This is the one comparison the rest of this module cannot make.** Every other branch
+    point here has the two roads standing on the same decision; a D10 arm does not, and that is
+    precisely why it used to be DEFERRED. The port now sends ``view_pN_at`` — the board it held
+    at each decision it answered internally — and the view road serves the arm from
+    ``view_pN_at[0]`` folded over :func:`~agents.training.view_successor.split_at_intermediate`'s
+    chunk cut. The assertion is the production one: the successor's obs BYTES and its MASK equal
+    ``materialize_branches``' own row for the same arm, trackers included.
+
+    **The fixture key is chosen, not lucky.** Keys 0-19 were swept and this one carries D10 arms
+    with no read-model residual; a run of it that reports ``d10 == 0`` means the battle changed
+    and the gate has gone vacuous, which is why that is an assertion and not a print."""
+    cen, branch_points, full_obs_points, d10 = run(n_battles=1, arms=10, turns=3, fixed_key=8)
+    print("\n" + cen.render())
+    print(f"branch points: {branch_points}  full-obs: {full_obs_points}  D10 arms: {d10}")
+    assert d10 >= 1, (
+        f"NO D10 arm was served on the fixture battle ({branch_points} branch points, "
+        f"{full_obs_points} full-obs) — this gate is VACUOUS about the intermediate-decision "
+        f"path, which is the only thing it exists to hold. Re-sweep for a fixture key whose "
+        f"arms KO one of our mons mid-ply.")
+    assert full_obs_points >= 8, (
+        f"only {full_obs_points} tracker-fed comparisons ran (branch points: {branch_points})")
+    assert not cen.rows, "\n" + cen.render()
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("n_battles", nargs="?", type=int, default=2)
@@ -614,7 +682,8 @@ if __name__ == "__main__":
                     help="use the REPRODUCIBLE fixture battle(s) from this key instead of fresh "
                          "random ones — what the collected test runs")
     a = ap.parse_args()
-    census, bp, fop = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key)
+    census, bp, fop, d10 = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key)
     print(census.render())
-    print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them)")
+    print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them; "
+          f"{d10} of those were D10 INTERMEDIATE arms served from view_pN_at[0])")
     sys.exit(1 if census.rows else 0)

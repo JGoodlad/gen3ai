@@ -26,7 +26,7 @@ use pokesim::battle::BattleOptions;
 use pokesim::bridge::{bridge_opts, parse_choice, BridgeSession, Cmd, RequestState};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
-use pokesim::search::pre_state;
+use pokesim::search::{aux_rng_from_seed, pre_state, resolve_turn_sourced, Resolved, TurnSource};
 use pokesim::view::one_sided_view;
 
 /// Three mons a side, all with two damaging moves. THREE so that after one switch there is
@@ -357,4 +357,95 @@ fn every_move_and_ability_id_is_in_SHOWDOWN_ID_FORM() {
     assert!(board.contains("\"tackle\""), "the id-form move id is missing");
     assert!(board.contains("\"noability\""), "the id-form ability is missing");
     assert!(raw.contains("\"move\":\"Tackle\""), "the raw request tail must stay wire-truth");
+}
+
+// ===========================================================================
+// D10 — the view AT an intermediate decision (`gen3_view_at_intermediate_v1`)
+// ===========================================================================
+
+/// A p2 lead so frail that ANY hit KOs it, over a live bench — so the turn must pause for a
+/// forced replacement, which is the SECOND request inside one arm that deferral D10 names.
+const GLASS_P2_TEAM: &str =
+    "Magikarp|||NoAbility|tackle|Serious|,,,,,|N||||]Zapdos|||NoAbility|tackle,headbutt|Serious|252,,252,,,|N||||";
+/// A max-SpA Rayquaza clicking a 2x-effective Thunderbolt into Magikarp's base-20 SpD — an
+/// unconditional OHKO, so the KO does not depend on dice or a damage roll.
+const NUKE_P1_TEAM: &str =
+    "Rayquaza|||NoAbility|thunderbolt|Serious|,,,252,,252|N||||]Regice|||NoAbility|tackle|Serious|252,,252,,,|N||||";
+
+/// Resolve one whole turn from the pre-commit turn-1 boundary with both sides on an explicit
+/// move, returning the settled session and what `resolve_turn_sourced` captured.
+fn glass_turn(dex: &Dex) -> (BridgeSession, Resolved) {
+    let opts = bridge_opts("gen3customgame", SEED.to_string(), NUKE_P1_TEAM, GLASS_P2_TEAM);
+    let mut sess = BridgeSession::new_construct_turn0(&opts, dex).expect("session");
+    let mut sources = [
+        TurnSource::from_replay_spec("move 1", &[]),
+        TurnSource::from_replay_spec("move 1", &[]),
+    ];
+    let mut rng = aux_rng_from_seed("1,2,3,4");
+    let out = resolve_turn_sourced(&mut sess, &mut sources, "random", &mut rng, dex);
+    (sess, out)
+}
+
+#[test]
+fn a_mid_turn_faint_captures_the_view_AT_its_replacement_request() {
+    // THE D10 CLOSE. When a ply KOs one of a side's mons the port answers the replacement round
+    // itself, so the board it finally renders as `view_pN` is one decision PAST the row a
+    // per-request consumer (`materialize_branches`) produces. `Resolved::views_at` is that
+    // missing board, captured at the TOP of the loop iteration the replacement opened.
+    let dex = Dex::for_gen(3);
+    let (sess, out) = glass_turn(&dex);
+
+    // NON-VACUITY: the fixture must really have KO'd p2's lead and settled the turn — without
+    // that this test asserts about a turn that never had an intermediate decision at all.
+    let st = sess.battle_state().expect("state");
+    assert!(st.sides[1].pokemon.iter().any(|m| m.fainted),
+        "fixture did not KO the glass p2 lead — there is no intermediate decision to capture");
+    assert!(!out.stuck, "the turn must settle, not wedge");
+    assert_eq!(out.used[1].len(), 2, "p2 must have used a move AND a replacement: {:?}",
+        out.used[1]);
+
+    // ONE entry for p2 (its replacement round) and NONE for p1, which only ever answered the
+    // turn-start move request the caller had already seen. The count is the whole contract: it
+    // must equal that side's non-final `|request|` count, which is what the Python consumer
+    // reads off the protocol independently.
+    assert_eq!(out.views_at[1].len(), 1,
+        "p2's replacement round must have been captured exactly once: {:?}", out.views_at[1]);
+    assert_eq!(out.views_at[0].len(), 0,
+        "p1 opened no intermediate decision this turn: {:?}", out.views_at[0]);
+
+    let at = &out.views_at[1][0];
+    // The captured board is AT the replacement: the request spliced into it is the forceSwitch
+    // one, not the next turn's move request.
+    assert!(at.contains("\"forceSwitch\""),
+        "the captured view must carry the REPLACEMENT request:\n{at}");
+    assert!(!at.contains("\"active\":["),
+        "a forceSwitch request carries no `active` block — this is the wrong request:\n{at}");
+    // And it is a DIFFERENT board from the one the arm finally renders, which is the entire
+    // reason the field exists. Equality here would mean the capture fired after the fact.
+    let after = one_sided_view(&sess, 1, &dex);
+    assert_ne!(at, &after, "the captured view equals the post-turn view — nothing was gained");
+    assert!(at.contains("\"turn\":1"), "the capture must be the turn-1 board:\n{at}");
+    assert!(after.contains("\"turn\":2"), "the post-turn view must be turn 2:\n{after}");
+}
+
+#[test]
+fn an_ordinary_turn_captures_no_intermediate_view() {
+    // The NEGATIVE half, and the one that keeps the field honest: a turn with no faint and no
+    // reject resolves in ONE round, so there is no decision the port answered internally and
+    // `views_at` must be empty on both sides. A capture rule that fired on the turn-start round
+    // would pass the test above and silently hand every consumer the PARENT's board.
+    let dex = Dex::for_gen(3);
+    let mut sess = paused(&dex, 1);
+    let mut sources = [
+        TurnSource::from_replay_spec("move 1", &[]),
+        TurnSource::from_replay_spec("move 1", &[]),
+    ];
+    let mut rng = aux_rng_from_seed("5,6,7,8");
+    let out = resolve_turn_sourced(&mut sess, &mut sources, "random", &mut rng, &dex);
+    assert!(!out.stuck, "the turn must settle");
+    // NON-VACUITY: the turn really did run (both sides committed exactly one choice).
+    assert_eq!(out.used[0].len(), 1, "p1 used {:?}", out.used[0]);
+    assert_eq!(out.used[1].len(), 1, "p2 used {:?}", out.used[1]);
+    assert!(out.views_at[0].is_empty() && out.views_at[1].is_empty(),
+        "an ordinary turn captured a view: p1={:?} p2={:?}", out.views_at[0], out.views_at[1]);
 }

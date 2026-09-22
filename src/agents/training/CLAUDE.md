@@ -1033,6 +1033,28 @@ through the `|turn|` marker). Selected by
 falls back to protocol PER ARM (never per cell, never silently — three counters on
 `RealizedWidths`) where it cannot answer.
 
+🚨 **An INTERMEDIATE decision is ANSWERED, not fallen back from** (`gen3_view_at_intermediate_v1`,
+deferral D10 CLOSED). A ply that KOs one of our mons opens a SECOND request inside the same arm,
+which the port resolves from its own follow-up policy — so `view_pN` describes the board one
+decision PAST the row `materialize_branches` returns. The port now also emits **`view_pN_at`**, the
+ordered board at each decision it resolved internally, and such an arm is served from
+`view_pN_at[0]` folded over `view_successor.split_at_intermediate`'s chunk cut, so the BOARD and
+the EVENT history both stop where the protocol road stops. The cut is at a CHUNK boundary because
+that is poke-env's own rule (`_handle_battle_message` parses a whole message before dispatching
+the request). `RealizedWidths.view_arms_intermediate` counts it; `view_fallback_intermediate`
+survives for an arm with no entry (`impl="node"`, a `recorded_exact` arm). **A D10-served leaf
+carries `fork=None` deliberately** — the rust child `node_id` sits at the END of the arm's turn,
+not at the decision the leaf describes, so a deeper ply must fall back exactly as it did before.
+
+🚨 **TWO poke-env rules the port cannot supply, both found by the gate and both fixed in PYTHON**,
+which is the contract's own split (`designs/rust_sim/one_sided_view.md` §2):
+`|error|[Unavailable choice]` is intercepted by the player but NOT dropped — it is routed to
+`Gen3Battle.record_choice_rejected` — so `ViewEventFolder.fold` mirrors the hook or a trapped
+switch's rejection goes missing from the H-B event window (~200 obs cells); and **`Pokemon.faint`
+does not clear boosts while the sim does**, so the light board keeps a boost LEDGER
+(`ViewEventFolder.fold_boosts`) and `view_adapter._restore_fainted_boosts` puts a FAINTED mon's
+stages back. Both are invisible on an ordinary arm and both fire on a replacement round.
+
 🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
 and `advance_window` are their bodies once the context and the event windows exist; `record` /
 `update_progress_clock` are the poke-env-battle wrappers. One implementation of the per-decision

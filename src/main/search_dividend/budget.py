@@ -182,6 +182,13 @@ class RealizedWidths:
     view_arms: int = 0
     view_fallback_no_payload: int = 0
     view_fallback_intermediate: int = 0
+    # Of `view_arms`, how many were arms whose ply resolved an INTERMEDIATE decision and were
+    # answered from the port's `view_pN_at[0]` board rather than by falling back
+    # (`gen3_view_at_intermediate_v1`, D10). Counted apart from `view_arms` because it is the
+    # NON-VACUITY reading of the close: a run in which this is 0 while
+    # `view_fallback_intermediate` is also 0 met no replacement round at all and says nothing
+    # about whether the intermediate path works.
+    view_arms_intermediate: int = 0
     # ONE VIEW FORK PER DECISION (`gen3_one_fork_per_decision_v1`). The ply-1 fork is a pure
     # function of the one-sided prefix + our action history, so the K worlds of one decision share
     # it instead of replaying one identical prefix K times. HIT and MISS are counted apart because

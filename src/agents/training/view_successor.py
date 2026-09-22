@@ -44,7 +44,7 @@ import copy
 import sys
 from collections.abc import Mapping as _ABCMapping
 from dataclasses import dataclass
-from typing import (Any, Callable, Dict, Mapping, Optional, Sequence,
+from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
                     Tuple)
 
 import numpy as np
@@ -265,6 +265,56 @@ def view_context(live: LiveView, legal: Optional[LegalActions], mask: np.ndarray
     )
 
 
+def _is_decision_request(raw: str) -> bool:
+    """Would a replay player turn this ``|request|`` payload into a decision row?
+
+    ``_ReplayObsPlayer``'s rule: a non-empty payload that is not a ``wait`` and carries an
+    ``active`` or a ``forceSwitch`` block. ONE definition, because :func:`intermediate_decisions`
+    (which COUNTS them) and :func:`split_at_intermediate` (which finds WHERE the first one is)
+    must agree — a disagreement would serve the view road a board and a fold from different
+    decisions, which is the exact failure D10 exists to prevent."""
+    import json
+
+    if not raw.strip():
+        return False
+    try:
+        req = json.loads(raw)
+    except ValueError:
+        return False                                        # not a request we can read
+    return bool(not req.get("wait") and (req.get("active") or req.get("forceSwitch")))
+
+
+def _request_lines(chunk: str) -> "List[str]":
+    """The ``|request|`` payloads in ONE chunk, in order."""
+    return [line[len("|request|"):] for line in str(chunk).split("\n")
+            if line.startswith("|request|")]
+
+
+def split_at_intermediate(chunks: Sequence[str]) -> "Optional[List[str]]":
+    """The arm's chunks up to and INCLUDING the one that closed its FIRST decision, or ``None``.
+
+    🚨 **The second half of D10, and the half that is not about the board at all.** Reading
+    ``view_pN_at[0]`` gives the port's board at the intermediate decision; the EVENTS the
+    successor folds must stop at the same place, or the two roads describe the same board with
+    different histories and every tracker block diverges.
+
+    **The cut is at a CHUNK boundary, and that is poke-env's own rule, not a convenience.**
+    ``Player._handle_battle_message`` parses every line of a message and only THEN dispatches
+    ``_handle_battle_request``, so the battle a decision row is encoded from has already absorbed
+    the whole chunk the ``|request|`` arrived in. A line-level cut would stop one or more lines
+    EARLIER than the protocol road does and would be wrong in exactly the way that is hardest to
+    see. (The port's own chunk model puts a ``|request|`` in a chunk of its own —
+    `bridge.rs::run_full_battle_bridge_chunked` — so in practice the two cuts coincide; the
+    chunk-level rule is the one that stays right if that ever changes.)
+
+    ``None`` when no chunk carries a decision request, which a caller must treat as "cannot
+    serve this arm" rather than as "fold everything"."""
+    for i, chunk in enumerate(chunks):
+        if any(_is_decision_request(raw) for raw in _request_lines(chunk)):
+            return list(chunks[:i + 1])
+    return None
+
+
 def intermediate_decisions(chunks: Sequence[str]) -> int:
     """How many DECISIONS the port resolved inside this ply before the one its view describes.
 
@@ -282,24 +332,16 @@ def intermediate_decisions(chunks: Sequence[str]) -> int:
     Verified against the protocol road's realized row count on 104 arms over 6 fresh battles:
     the two agree exactly, 98 arms at 0 and 5 at 1 (the 6th was a read-model residual).
 
-    A caller that must reproduce ``materialize_branches``' row therefore FALLS BACK to it when
-    this is non-zero, and counts the fallback rather than hiding it."""
-    import json
-
-    reqs = [line[len("|request|"):]
-            for chunk in chunks for line in str(chunk).split("\n")
-            if line.startswith("|request|")]
-    n = 0
-    for raw in reqs[:-1]:
-        if not raw.strip():
-            continue
-        try:
-            req = json.loads(raw)
-        except ValueError:                                  # noqa: PERF203 - not a request we can read
-            continue
-        if not req.get("wait") and (req.get("active") or req.get("forceSwitch")):
-            n += 1
-    return n
+    A caller that CAN answer the intermediate decision reads ``view_pN_at[0]`` beside the
+    chunks :func:`split_at_intermediate` cuts; one that cannot FALLS BACK to
+    ``materialize_branches`` and counts the fallback rather than hiding it."""
+    # 🚨 The LAST `|request|` LINE is dropped before the rule is applied, not the last QUALIFYING
+    # one. The final request of a ply is the board `view_pN` already describes, whatever shape it
+    # has; counting qualifying requests and subtracting one would under-count by one whenever a
+    # ply ends on a `wait`, and an under-count reads as "no intermediate decision" — i.e. it
+    # would serve the wrong board rather than fall back.
+    reqs = [raw for chunk in chunks for raw in _request_lines(chunk)]
+    return sum(1 for raw in reqs[:-1] if _is_decision_request(raw))
 
 
 #: Announced ONCE per process: a pickle fall-back is a ~20x per-arm slowdown that nothing else
@@ -416,7 +458,8 @@ class ViewSuccessorFactory:
         board = self._board.branch()
         events = board.fold(chunks)
         live, legal, vbattle = read_models_from_payload(
-            payload, battle_tag=self._battle_tag, events=self._prior_events + events)
+            payload, battle_tag=self._battle_tag, events=self._prior_events + events,
+            fainted_boosts=board)
         if legal is None or not legal.last_request:
             return None
         mask = Gen3ActionMasker.get_mask(vbattle, legal=legal, live=live).astype(np.int8)

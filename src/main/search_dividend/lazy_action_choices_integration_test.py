@@ -69,10 +69,12 @@ def _run(fx, *, max_depth: int):
     seen = []
     orig = S.SearchEngine._materialize
 
-    def recording(self, ctx, branches, branch_of, parents, acts, arm_suffix, arm_view,
-                  dec_i, ply, widths):
-        out = orig(self, ctx, branches, branch_of, parents, acts, arm_suffix, arm_view,
-                   dec_i, ply, widths)
+    # 🚨 *args, not the spelled-out list. This wrapper was a positional mirror of
+    # `_materialize`'s signature and silently became a TypeError the day the D10 close added a
+    # parameter — which the engine swallows into `fallback="search_error"`, i.e. a gate that
+    # reads VACUOUS rather than broken. Forwarding blind is the only shape that cannot drift.
+    def recording(self, *args, **kw):
+        out = orig(self, *args, **kw)
         for leaf in out.values():
             seen.append(leaf.action_choices)
         return out

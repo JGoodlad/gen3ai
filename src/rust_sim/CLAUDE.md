@@ -221,8 +221,22 @@ and includes conditions the sim never announces — gen-3 Choice lock is one, an
 `UnknownVolatileError: volatile 'choicelock' has no gen3 encoding slot` on the first real board.
 `view.rs` folds `|-start|`/`|-end|`/`|-activate|`/`|-singleturn|`/`|-singlemove|` instead.
 
-Gates: `tests/one_sided_view_test.rs` (9 — the WALL against `pre_state` on a board with unrevealed
-mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts),
+🚨 **`view_pN_at` is the SECOND payload and it exists because ONE arm can hold TWO decisions**
+(`gen3_view_at_intermediate_v1`, deferral D10 CLOSED). A ply that KOs one of a side's mons — or
+whose trapped switch is refused — opens another request inside the same `expand_many` arm, which
+`resolve_turn_sourced` answers from its follow-up policy, so `view_pN` is the board one decision
+PAST the row a per-request consumer needs. `Resolved::views_at` captures `one_sided_view` at the
+TOP of every loop iteration answering such a round and the driver emits it as an ORDERED array;
+empty is the normal case, and it stays empty on a `recorded_exact` arm (`resolve_turn_exact` has
+no production consumer on this path, and a second capture rule with no gate is worse than an
+honest absence). The port gains no poke-env rule from this — the two rules the close needed
+(`|error|[Unavailable choice]` is an out-of-band poke-env HOOK, and `Pokemon.faint` does not clear
+boosts while the sim does) are both fixed in PYTHON, which is what the split in §2 of the contract
+is for.
+
+Gates: `tests/one_sided_view_test.rs` (11 — the WALL against `pre_state` on a board with unrevealed
+mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts, and the D10 capture
+predicate with its NEGATIVE twin),
 `src/agents/battle/view_adapter_test.py` (24), and the differential
 `src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`; no allowlist, prints a
 census). Full contract, the measured findings and the 9 DEFERRALS:

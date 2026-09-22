@@ -28,10 +28,11 @@ approximated here.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import MappingProxyType
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from agents.battle.battle_event import OPP, OURS
 from agents.battle.live_view import (LegalActions, LegalMove, LegalSwitch, LiveMove,
                                      LivePokemon, LiveSide, LiveView, LiveWeather)
 
@@ -555,15 +556,62 @@ class ViewBattle:
         )
 
 
+def _restore_fainted_boosts(live: LiveView, ledger) -> LiveView:
+    """Put back the boost stages poke-env keeps on a FAINTED mon and the sim does not.
+
+    🚨 **The one board fact the payload cannot carry, and deferral D10 is where it bites.**
+    Showdown clears a mon's boosts when it faints (``clearVolatile``) and so does the port, while
+    poke-env's ``Pokemon.faint`` leaves them alone — it drops them at ``switch_out``. On an
+    ordinary arm the replacement switch happens inside the same ply, so both roads end at zero
+    and nothing shows. At an INTERMEDIATE decision the board sits exactly between those two: the
+    mon has fainted and its replacement has not been chosen, so the protocol road still shows the
+    dead mon's stages and the port's board cannot — the sim no longer holds them. MEASURED on
+    eleven cases across seven fixture battles: every one was a mon FAINTED and still ACTIVE, and
+    the stages were the ply's OWN (an arm that Dragon Danced twice before dying read +2/+3 where
+    its sibling read +1/+2), which is why the ledger folds this ply's boost lines rather than
+    reading the root's.
+
+    ``ledger`` is a :class:`~agents.battle.event_fold.ViewEventFolder` that has just folded the
+    ply — i.e. the poke-env PRESENTATION rule applied in Python, which is the contract's own
+    split. Only FAINTED mons are rewritten; a live mon's stages come from the payload, which is
+    the sim fact and is right."""
+    if not any(m.fainted for m in (*live.ours.mons, *live.opp.mons)):
+        return live
+
+    def fix(sidekey: str, sd: LiveSide) -> LiveSide:
+        mons = tuple(
+            replace(m, boosts=ledger.boosts_for(sidekey, m.species)) if m.fainted else m
+            for m in sd.mons)
+        if all(a is b for a, b in zip(mons, sd.mons)):
+            return sd
+        # `active` is the same object the list holds, so it has to be re-bound to the NEW one or
+        # the side would carry two versions of one mon and `live.ours.active.boosts` — which is
+        # what the active-context block reads — would still be the payload's.
+        act = next((m for m in mons if m.active), None) if sd.active is not None else None
+        return replace(sd, mons=mons, active=act)
+
+    ours, opp = fix(OURS, live.ours), fix(OPP, live.opp)
+    if ours is live.ours and opp is live.opp:
+        return live
+    return replace(live, ours=ours, opp=opp)
+
+
 def read_models_from_payload(
-    payload: Mapping[str, Any], *, battle_tag: str = "", events: Sequence[Any] = ()
+    payload: Mapping[str, Any], *, battle_tag: str = "", events: Sequence[Any] = (),
+    fainted_boosts: Any = None,
 ) -> Tuple[LiveView, Optional[LegalActions], ViewBattle]:
     """The whole adapter in one call: ``(live, legal, battle)`` ready for
     ``Gen3ObservationEncoder.encode(battle, legal=legal, …)``.
 
     ``events`` is the successor's whole-battle event log when the caller has one (see
     :attr:`ViewBattle.events`); omitting it leaves the Wish pair and the sleep-wake belief at
-    their no-information values, which is what every board-only caller wants."""
+    their no-information values, which is what every board-only caller wants.
+
+    ``fainted_boosts`` is the ply's :class:`~agents.battle.event_fold.ViewEventFolder`, when the
+    caller has one — see :func:`_restore_fainted_boosts`. A board-only caller passes none and
+    gets the payload's stages unchanged."""
     live = live_view_from_payload(payload, battle_tag=battle_tag)
+    if fainted_boosts is not None:
+        live = _restore_fainted_boosts(live, fainted_boosts)
     legal = legal_actions_from_payload(payload, live)
     return live, legal, ViewBattle(live, legal, payload, events=events)

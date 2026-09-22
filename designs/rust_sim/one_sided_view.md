@@ -108,6 +108,32 @@ MOVE = own:     {"id","move_id","current_pp","max_pp"}
 a typed Hidden Power (the wire re-keys it bare) and the two are sorted on by **different**
 consumers — `LiveView.moves` by the key, `MovesEncoder` by `Move.id`.
 
+### `view_p1_at` / `view_p2_at` — the boards at the decisions the ARM resolved itself
+
+Every `expand_many` arm carries two more fields beside `view_p1` / `view_p2`
+(`gen3_view_at_intermediate_v1`):
+
+```text
+"view_p1_at":[VIEW,…],"view_p2_at":[VIEW,…]      # same object as view_pN, ORDERED, usually EMPTY
+```
+
+A turn can contain more than one request round: our mon faints mid-turn and the replacement is a
+SECOND request inside the same arm, or a trapped switch is refused and the request re-opens.
+`resolve_turn_sourced` answers those from its follow-up policy, so `view_pN` is the board one
+decision PAST the row a per-request consumer needs. Entry `k` of `view_pN_at` is
+`one_sided_view(sess, N, dex)` rendered at the **top of the loop iteration that round opened** —
+before any of its choices are committed — so `view_pN_at.len()` equals the number of `|request|`
+lines that side's suffix carries **minus the last**, which is exactly what
+`view_successor.intermediate_decisions` counts off the protocol.
+
+🚨 **EMPTY is the normal case and an empty array is not a missing field.** The turn's final
+request is never in here (the loop exits once the boundary turn moves) and an ordinary arm opens
+no decision at all. It is also empty on a `recorded_exact` arm and under `impl="node"`; a consumer
+that finds no entry falls back exactly as it did before the field existed. Pinned by
+`one_sided_view_test::a_mid_turn_faint_captures_the_view_AT_its_replacement_request` and its
+NEGATIVE twin `an_ordinary_turn_captures_no_intermediate_view` (the predicate was fault-injected:
+capturing on iteration 0 fails both).
+
 ### The reveal fold rides the session, not the chunks
 
 `SideObservation` lives on `BridgeChunks` (the one funnel every per-side line passes through) but
@@ -150,6 +176,12 @@ three runs, 54 comparisons each, identical).
 🚨 **RUN THE SWEEP ON AT LEAST TWO FRESH SEEDS BEFORE CALLING IT GREEN.** Three of the findings
 above appeared only on the SECOND or THIRD seed — the own-side `consumed_item` and the Traced
 ability among them — and a single clean sweep would have read as a green gate.
+
+**A D10 arm is COMPARED, not deferred** (§5b). It gets a SECOND protocol road, fed the prefix plus
+the CUT and nothing else — the padded road above deliberately runs PAST the replacement, so its
+read-models describe the next turn and say nothing about the board `view_pN_at[0]` carries. Both
+the read-model census and the tracker-fed successor comparison run on that road, and the collected
+test asserts `d10 >= 1` so a fixture whose arms stop KO-ing cannot make the gate vacuous.
 
 ---
 
@@ -195,7 +227,70 @@ BOTH directions is not an off-by-one in one branch; the likeliest remaining shap
 | **D7** | our OWN pp is the wire's, not poke-env's counter | The payload sends the engine's `current_pp`, which is exactly what the `\|request\|` states and what poke-env asserts its own counter against (`check_move_consistency`). When poke-env has not yet identified a Pressure holder its counter drifts one BELOW the wire per sighting, and it is the drifted value the protocol road encodes. Folding our own PP from sightings instead was measured **worse** (the `\|move\|` line names `Hidden Power` while the set token is `hiddenpowerfire`, so the slots do not key against each other) |
 | **D8** | Mimic / Transform move overlays on our own side | The own moveset is rendered from `set.moves`; an overlay would need the same resolver the request path uses |
 | **D9** | `Mist` as a side condition | The port models spikes / reflect / lightscreen / safeguard only |
-| **D10** | 🔴 an arm whose ply resolved an INTERMEDIATE decision | When an arm's ply KOs one of our mons, the replacement round is a SECOND request inside the same `expand_many` arm. The port answers it through its own follow-up policy and returns the board AFTER it, while `materialize_branches` stops at the FIRST request its action list cannot answer — so the two roads describe DIFFERENT STATES, one decision apart, and a leaf scored at the wrong one of them is not a rounding difference. `view_successor.intermediate_decisions` detects it off the arm's own `\|request\|` lines (verified against the protocol road's realized row count on 104 arms over 6 fresh battles: exact agreement, 98 arms at 0 and 5 at 1), and the production road FALLS BACK to protocol, counted in `RealizedWidths.view_fallback_intermediate`. **Measured rate: 35 of 505 branch points (6.9%) over 24 fresh battles** — and **145 of 864 arms (16.8%)** on 12 mid-game decisions banked from a real run's `eval_traces`, where the fallback into `materialize_branches` costs **21.1% of the view road's decision wall** (`designs/research_state/measurements/search_profile_2026-09-22/README.md`). The two rates are the same mechanism at different anchor distributions; the second is the one production pays. Closing it needs either a driver mode that stops at the replacement, or a payload that carries the intermediate board too |
+| ~~**D10**~~ | ✅ **CLOSED** — an arm whose ply resolved an INTERMEDIATE decision | `gen3_view_at_intermediate_v1`. See §5b below |
+
+## 5b. D10 — CLOSED (`gen3_view_at_intermediate_v1`)
+
+**The mechanism.** When an arm's ply KOs one of our mons, the replacement round is a SECOND
+request inside the same `expand_many` arm; a refused trapped switch does the same thing by
+re-opening the request. `search.rs::resolve_turn_sourced` loops
+`while !sess.is_ended() && open_boundary_turn(sess) == start_turn` and answers those rounds from
+`followup_choice`, so the board it returns as `view_pN` is one decision PAST the row
+`materialize_branches` produces. A leaf scored at the wrong one of them is not a rounding
+difference. It fired on **16.8–17.1% of arms** on mid-game decisions banked from a real run's
+`eval_traces` (and 6.9% of branch points on 24 fresh battles — the same mechanism at different
+anchor distributions), and the per-arm fallback into `materialize_branches` cost **17.2% of the
+view road's decision wall**.
+
+**The close has THREE parts and only the first was the one on the design.**
+
+| part | where | what it does |
+|---|---|---|
+| the BOARD | `search.rs` + `bin/search_driver.rs` | `Resolved::views_at` captures `one_sided_view` at the top of every loop iteration that answers a round the source could not, and the driver emits it as `view_pN_at` (§3). Nothing about poke-env enters the port |
+| the EVENT CUT | `view_successor.split_at_intermediate` | the view road folds WHOLE chunks while `materialize_branches` stops at the `\|request\|` that opened the decision, so the arm's chunks are cut at the **chunk that closed the first decision** — a CHUNK boundary because that is poke-env's own rule (`Player._handle_battle_message` parses a whole message and only THEN dispatches the request), and a line-level cut would stop earlier than the protocol road does |
+| the two poke-env RULES the port cannot supply | `event_fold.py` + `view_adapter.py` | below |
+
+🚨 **THE TWO RULES WERE FOUND BY THE GATE, NOT BY READING CODE, AND NEITHER IS VISIBLE ON AN
+ORDINARY ARM.** Both are poke-env PRESENTATION rules, so both are fixed in Python (§2's contract):
+
+* **`|error|[Unavailable choice]` is intercepted but NOT dropped.** `Player._handle_battle_message`
+  routes it to `Gen3Battle.record_choice_rejected`, an out-of-band hook that appends a
+  `CHOICE_REJECTED` event, so a live battle's log carries the rejection even though
+  `parse_message` never saw the line. `ViewEventFolder.fold` skipped it with the other six
+  intercepted keywords; the missing event lands in the H-B event window and moved **~200 obs
+  cells**. It can only appear on a ply whose reject re-opens the request — a D10 arm — which is
+  why it survived every sweep until those arms stopped falling back.
+* **`Pokemon.faint` does not clear boosts; the sim does.** Showdown's `clearVolatile` (and the
+  port) zero a mon's stages at the faint, while poke-env drops them only at `switch_out`. On an
+  ordinary arm the replacement switch happens inside the same ply and both roads end at zero; at
+  an INTERMEDIATE decision the board sits exactly between, so the protocol road still shows the
+  dead mon's stages and the payload cannot. **MEASURED: eleven cases over seven fixture battles,
+  every one a mon FAINTED and still ACTIVE**, and the stages were the ply's OWN (an arm that
+  Dragon Danced twice before dying read +2/+3 where its sibling read +1/+2) — so the light board
+  keeps a boost LEDGER folded from this ply's lines (`ViewEventFolder.fold_boosts`, mirroring
+  `AbstractBattle`'s boost branches one for one including the ±6 clamp) and
+  `view_adapter._restore_fainted_boosts` rewrites **FAINTED mons only**. A live mon's stages stay
+  the payload's, which is the sim fact and is right.
+
+**What it does NOT close.** A D10-served leaf carries **`fork=None`**: the rust child `node_id` it
+is paired with sits at the END of the arm's turn, not at the decision the leaf describes, so a
+deeper ply expanded from it would branch from a state the leaf is not. Ply d+1 therefore falls
+back to the protocol road — exactly what a D10 arm did at every depth before the close, so the
+close is scoped to the depth-1 row it is evidenced at. `view_fallback_intermediate` also survives,
+for an arm the port sent no entry for (`impl="node"`, a `recorded_exact` arm).
+
+**The gates.** `one_sided_view_parity_fuzz_test` compares a D10 arm instead of deferring it, and
+its collected test asserts `d10 >= 1` so the fixture cannot go vacuous; the comparison is made
+against a SECOND protocol road stopped AT the cut (the padded one runs past the replacement and
+its read-models say nothing about this board). `event_fold_parity_fuzz_test::run_split` asserts
+the cut materializes exactly ONE further row on the protocol road and that the events over it
+agree field by field. Both were fault-injected: an uncut fold and a one-chunk over-run each
+produce 219/204 differing obs indices, and the wrong BOARD (`view_pN` instead of `view_pN_at[0]`)
+is caught too. 🚨 **The cut gate alone cannot see an over-run that stops before the next request**
+— both roads are fed the same bytes there — which is why the tracker-fed obs comparison is run
+beside it and not instead of it.
+
+---
 
 **Not deferred, and worth saying so:** the volatile NAMES here are NOT the `pre_state`
 reconstruction that `search_and_replay_drivers.md` marks UNVERIFIED. That set is the port's own
@@ -306,13 +401,37 @@ the shared prefix replay **14.3% -> 7.8%**, the D10 fallback **24.0% -> 17.2%**,
 **`obs_build_benchmark.py` must read UNCHANGED** — no file on the `encode` path was touched, and
 that is the check rather than a hope.
 
+### THE D10 CLOSE COST NOTHING AND BOUGHT CONSISTENCY — `gen3_view_at_intermediate_v1`
+
+An interleaved A/B on the same 10 banked decisions, twice, base worktree at `48e767ba`, on a box
+whose load rose monotonically from 20.8 to 33.2 on 16 cpus (so every NOW run carried the heavier
+box; the protocol road run back to back is the control):
+
+| B | `view_fallback_intermediate` | view ÷ protocol, BASE → NOW |
+|---|---|---|
+| wide (684 arms / 10 decisions) | **117 → 0** | 0.576, 0.574 → **0.562, 0.553** |
+| 1 (10 arms) | **2 → 0** | 0.980, 0.917 → **0.673, 0.746** |
+
+🚨 **D10's 17.2% SPAN WAS NOT RECOVERABLE WALL, and the §6 table above is where that belief was
+written down.** The span was the cost of serving those arms *at all*: a D10 arm answered on the
+view road costs about what it cost through the fallback, so moving 117 of 684 arms onto a
+~4.2 ms/arm path refunds nearly the whole 16.4% the view road's breakdown attributed to
+`open_branch_fork` + `materialize_branches_from` (both rows vanish — the branch fork is never
+opened now). **A phase share is not a saving**: a span that disappears because the work MOVED is
+an accounting change. At B = 1 the win IS real (~25%) and structural — there the fallback forced
+an entire second poke-env prefix replay to serve ONE arm, and at B = 1 the decision is its prefix.
+What wide B buys is ROAD CONSISTENCY: `--materializer view` no longer runs 17% of its arms on the
+other road, so a cell measured on it is no longer a blend. Record:
+`designs/research_state/measurements/search_profile_2026-09-22/README.md` §4b.
+
 ## 7. Transport status, and THE FLIP
 
-`view_p1` / `view_p2` are **rust-only**; `search_driver.js` emits no such field and
-`SearchSession` defaults them to `{}`. The cross-impl parity harness
-(`src/rust_sim/harness/search_impl_parity.py`) allowlists exactly this absence and ONLY this
-absence — the entry is value-aware and refuses to forgive anything but `<absent>` vs present, so it
-cannot outlive its own fix the way two entries in that harness once did.
+`view_p1` / `view_p2` and `view_p1_at` / `view_p2_at` are **rust-only**; `search_driver.js` emits
+no such field and `SearchSession` defaults them to `{}` / `[]`. The cross-impl parity harness
+(`src/rust_sim/harness/search_impl_parity.py`) carries ONE allowlist entry per pair and each
+allowlists exactly that absence and ONLY that absence — both are value-aware and refuse to forgive
+anything but `<absent>` vs present, so neither can outlive its own fix the way two entries in that
+harness once did.
 
 **`--materializer {protocol,view}` is BUILT and `view` is the DEFAULT** (`SearchConfig.materializer`).
 `search._materialize` is the one seam: it opens the fork once per ply through `open_view_fork` and
@@ -322,7 +441,7 @@ never per cell, and never silently — for the three classes it cannot answer:
 | fallback | counter | why |
 |---|---|---|
 | no `view_pN` | `view_fallback_no_payload` | `search_impl="node"`, or a parent that had itself fallen back (a deeper ply cannot fork from a board the view road never built) |
-| an intermediate decision | `view_fallback_intermediate` | D10 |
+| an intermediate decision with no `view_pN_at` entry | `view_fallback_intermediate` | `impl="node"`, or a `recorded_exact` arm. The ordinary intermediate arm is now ANSWERED — §5b — and counted by `view_arms_intermediate` |
 | the arm opened no decision | — | both roads agree there is no row |
 
 `RealizedWidths.view_arms` counts what the view road actually answered, and the parity gate asserts

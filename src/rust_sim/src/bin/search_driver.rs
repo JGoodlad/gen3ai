@@ -533,6 +533,12 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
     // below (which is chunk-only anyway; the reveal fold is cumulative and survives it).
     let view_p1 = one_sided_view(&sess, 0, dex);
     let view_p2 = one_sided_view(&sess, 1, dex);
+    // D10 (`gen3_view_at_intermediate_v1`) — the boards at the decisions this ply resolved
+    // INTERNALLY, in order, per side. Empty on the ordinary arm; one entry when the ply's
+    // faint forced a replacement round, which the two roads otherwise describe one decision
+    // apart. Already rendered by `resolve_turn_sourced`; this only splices them in.
+    let view_p1_at = format!("[{}]", resolved.views_at[0].join(","));
+    let view_p2_at = format!("[{}]", resolved.views_at[1].join(","));
     let used = format!(
         "{{\"p1\":{},\"p2\":{}}}",
         string_array(&resolved.used[0]),
@@ -550,7 +556,8 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
 
     Ok(format!(
         "{{\"label\":{},\"node_id\":{},\"ended\":{},\"stuck\":{},\"outcome\":{},\"requests\":{},\
-         \"choices_used\":{},\"p1_chunks\":{},\"p2_chunks\":{},\"view_p1\":{},\"view_p2\":{}}}",
+         \"choices_used\":{},\"p1_chunks\":{},\"p2_chunks\":{},\"view_p1\":{},\"view_p2\":{},\
+         \"view_p1_at\":{},\"view_p2_at\":{}}}",
         label,
         child_id.as_deref().map_or("null".to_string(), json_quote),
         ended,
@@ -561,7 +568,9 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
         p1_chunks,
         p2_chunks,
         view_p1,
-        view_p2
+        view_p2,
+        view_p1_at,
+        view_p2_at
     ))
 }
 
