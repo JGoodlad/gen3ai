@@ -28,8 +28,8 @@ the box (load 11–19 throughout).
 | 1 | `9eea8b04` | `main.anchors` with no `--out` wrote `anchors_out/` into the CALLING DIRECTORY |
 | 2 | `558586d0` | `--opponent foulplay` cannot run a multi-game `ours_challenge` half (SOP **H14**) |
 | 3 | `ae64dfe0` | the Metamon `mixed · Metamon challenges` half-cell fails identically in three campaigns (**H-H**) |
-| 4 | *(this batch)* | `checkargs --argv` leading-token strip **+** `checkargs` pinned checkout incomplete |
-| 5 | *(this batch)* | `run_local_battles`' docstring stale about the rust bridge |
+| 4 | `b6fa4741` | `checkargs --argv` leading-token strip **+** `checkargs` pinned checkout incomplete |
+| 5 | `69a64c4c` | `run_local_battles`' docstring stale about the rust bridge |
 
 ## 2. The gate table
 
