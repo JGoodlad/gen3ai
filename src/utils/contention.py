@@ -44,7 +44,8 @@ import os
 import sys
 import threading
 import time
-from typing import Optional
+from collections import Counter
+from typing import Callable, Optional
 
 __all__ = [
     "cpu_contention_factor",
@@ -60,6 +61,10 @@ __all__ = [
 # factor below. It is a fair-share approximation, not a guarantee (it ignores memory
 # bandwidth, BLAS thread thrash, and IO), which is why callers should still prefer a
 # progress bound over a scaled duration wherever they can.
+#: How many DISTINCT progress frames a deadline tracks before it stops adding new ones. The
+#: verdict only needs "one frame" vs "many", and an unbounded counter on a per-chunk path leaks.
+_MAX_TRACKED_FRAMES = 64
+
 _MAX_FACTOR = 12.0
 
 # ``os.getloadavg()`` reads /proc every call and is a 1-minute EMA, so sub-second
@@ -214,12 +219,21 @@ class ProgressDeadline:
         *,
         total_budget_s: Optional[float] = None,
         what: str = "operation",
+        frame_fn: Optional[Callable[[], str]] = None,
     ) -> None:
         if idle_budget_s <= 0:
             raise ValueError(f"idle_budget_s must be positive, got {idle_budget_s}")
         self.idle_budget_s = float(idle_budget_s)
         self.total_budget_s = float(total_budget_s) if total_budget_s else None
         self.what = what
+        # gen3_progress_frame_report_v1: WHAT the work was doing at each sign of life. Sampled on
+        # every `progress()` so the total-budget message can distinguish a LIVELOCK (the same
+        # frame over and over) from a workload that simply outran a duration cap. Optional — a
+        # caller with nothing cheap to sample passes nothing and gets the old message.
+        self._frame_fn = frame_fn
+        self._frames: "Counter[str]" = Counter()
+        self._first_frame = ""
+        self._last_frame = ""
         now = time.monotonic()
         self._started = now
         self._last_progress = now
@@ -229,6 +243,41 @@ class ProgressDeadline:
         """Record a sign of life. Cheap enough for a per-protocol-line hot path."""
         self._last_progress = time.monotonic()
         self._progress_count += 1
+        if self._frame_fn is None:
+            return
+        try:
+            frame = str(self._frame_fn())
+        except Exception:                                    # noqa: BLE001
+            # A diagnostic must never be able to fail the thing it is describing.
+            return
+        self._last_frame = frame
+        if not self._first_frame:
+            self._first_frame = frame
+        # BOUNDED: a healthy long battle produces a new frame every turn, and an unbounded
+        # counter on a per-chunk path is a leak. Past the cap the distinct count stops growing,
+        # which is fine — the verdict only needs "one frame" vs "many".
+        if frame in self._frames or len(self._frames) < _MAX_TRACKED_FRAMES:
+            self._frames[frame] += 1
+
+    def frame_report(self) -> str:
+        """Did the work REPEAT or ADVANCE? The evidence behind the livelock verdict.
+
+        Empty when no ``frame_fn`` was given — a caller that cannot sample a frame gets no claim
+        about one, rather than the old message's bare assertion that a total-budget expiry is
+        "livelock, not a stall"."""
+        if self._frame_fn is None or not self._frames:
+            return ""
+        frame, hits = self._frames.most_common(1)[0]
+        distinct = len(self._frames)
+        if distinct == 1 and hits > 1:
+            return (f" LIVELOCK CONFIRMED: every one of the {hits} signs of life was the same "
+                    f"frame `{frame}` — the work is repeating, not converging")
+        return (f" NOT A LIVELOCK: the work ADVANCED through {distinct}"
+                f"{'+' if distinct >= _MAX_TRACKED_FRAMES else ''} distinct frames "
+                f"(`{self._first_frame}` -> `{self._last_frame}`, most repeated `{frame}` x{hits})"
+                f" — the TOTAL BUDGET expired on work that was making progress, so raise the "
+                f"budget (or size it to the caller's per-decision cost); do not read this as a "
+                f"wedge")
 
     @property
     def idle_seconds(self) -> float:
@@ -260,7 +309,9 @@ class ProgressDeadline:
                 return (
                     f"exceeded total budget: {elapsed:.1f}s (budget {self.total_budget_s:.1f}s "
                     f"x {factor:.1f} contention scale) with {self._progress_count} progress "
-                    f"event(s) — livelock, not a stall"
+                    f"event(s)." + (self.frame_report() or
+                                    " No frame sampler, so whether this is a livelock or merely "
+                                    "a workload larger than the budget is UNKNOWN from here")
                 )
         return None
 

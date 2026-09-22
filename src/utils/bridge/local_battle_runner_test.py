@@ -5,6 +5,10 @@ The runner fabricates the room header the sim does not emit (`>battle-…` +
 once per side and every later chunk routes to the existing battle.
 """
 
+import time
+
+import pytest
+
 from utils.bridge.local_battle_runner import _LocalBattleRunner
 
 
@@ -66,8 +70,6 @@ def test_tag_round_trips_to_create_battle_contract():
 # stops the fix quietly becoming "no bound at all".
 
 import asyncio
-
-import pytest
 
 from utils.contention import ProgressTimeout
 from utils.bridge import local_battle_runner as lbr
@@ -165,3 +167,62 @@ def test_teardown_reap_timeout_stretches_with_contention(monkeypatch):
     """The whole point: a loaded box gets proportionally longer to reap the child."""
     monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "6")
     assert lbr._teardown_reap_timeout() == 30.0
+
+
+# -- gen3_caller_sized_battle_budget_v1 ---------------------------------------------------------
+
+
+def test_the_two_per_battle_bounds_are_CALLER_SIZABLE():
+    """🚨 FAILS ON REVERT. Both bounds were module constants, and for a caller whose per-decision
+    cost is an argv parameter a constant cannot be right: a `main.search_dividend` playoff game
+    measured at 246.6 s was killed by the 180 s total and reported as a livelock."""
+    import asyncio
+
+    from utils.contention import ProgressTimeout
+    from utils.bridge import local_battle_runner as lbr
+
+    async def _never():
+        await asyncio.sleep(30)
+
+    async def _run(**kw):
+        return await lbr._await_battle(_never(), (), "battle 0", **kw)
+
+    t0 = time.monotonic()
+    with pytest.raises(ProgressTimeout) as ei:
+        asyncio.run(_run(total_budget_s=0.6, idle_budget_s=99.0))
+    assert time.monotonic() - t0 < 20, "the CALLER's total budget, not the 180 s default"
+    assert "exceeded total budget" in str(ei.value) and "0.6s" in str(ei.value)
+
+    t0 = time.monotonic()
+    with pytest.raises(ProgressTimeout) as ei:
+        asyncio.run(_run(total_budget_s=99.0, idle_budget_s=0.6))
+    assert time.monotonic() - t0 < 20, "the CALLER's idle budget, not the 30 s default"
+    assert "no progress for" in str(ei.value) and "0.6s" in str(ei.value)
+
+
+def test_the_runner_feeds_the_CLIENTS_frame_into_the_deadlines_verdict():
+    """The evidence behind the livelock verdict comes from the clients' `last_frame`, so a
+    total-budget expiry names what the battle kept doing."""
+    import asyncio
+
+    from utils.contention import ProgressTimeout
+    from utils.bridge import local_battle_runner as lbr
+
+    class _Client:
+        def __init__(self):
+            self.progress_count = 0
+            self.last_frame = "t9:error"
+
+    c = _Client()
+
+    async def _chatter():
+        # Long enough that several POLLS (`_PROGRESS_POLL_S`) each observe a sign of life — the
+        # verdict is over the SAMPLED frames, so one sample cannot distinguish the two cases.
+        for _ in range(400):
+            c.progress_count += 1
+            await asyncio.sleep(0.05)
+
+    with pytest.raises(ProgressTimeout) as ei:
+        asyncio.run(lbr._await_battle(_chatter(), (c,), "battle 0",
+                                      1.5, 99.0))
+    assert "LIVELOCK CONFIRMED" in str(ei.value) and "t9:error" in str(ei.value)

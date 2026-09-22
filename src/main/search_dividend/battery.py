@@ -38,7 +38,8 @@ from typing import Dict, List, Optional, Sequence
 
 from agents.model.forward_guard import install_model_forward_guard
 from main.search_dividend.defensive import fold_defensive
-from main.search_dividend.player import SearchDividendPlayer, play_one_battle
+from main.search_dividend.player import (SearchDividendPlayer, battle_bounds,
+                                         play_one_battle)
 from main.search_dividend.playoff import (PlayoffConfig, PlayoffRunner, bump_error_class,
                                           error_class, fold_playoff,
                                           playoff_error_refusal, root_failure_refusal,
@@ -267,6 +268,14 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     }
 
 
+#: The per-decision wall the FIRST game of a cell sizes its bounds against, before any game has
+#: been played. 5 s is the measured cost of one `playoff` decision at `--budget 60
+#: --playoff-rollouts 2` (30 decisions in 148 s; 60 in 246 s) rounded up — and the estimate only
+#: ever moves UP from here, because under-estimating kills a healthy battle while over-estimating
+#: merely delays a livelock verdict, and only the first of those deletes a measurement.
+FIRST_GAME_DECISION_S = 5.0
+
+
 #: The error a game gets when it produced neither an exception nor an outcome. Named, because the
 #: alternative is a row that says nothing went wrong on a battle that never happened — measured
 #: 2026-08-23, when a pruned worktree took ``local_sim_bridge.js`` out from under a running battery
@@ -418,19 +427,34 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                                     pool_packed=pool_packed, tag=_cell_tag(cell),
                                     playoff_cfg=playoff_cfg)
     played = 0
+    # The seed for the FIRST game's bound estimate. Deliberately pessimistic — over-estimating
+    # costs a later livelock detection, under-estimating kills a healthy battle, and only the
+    # second of those silently deletes a measurement.
+    per_decision_s = FIRST_GAME_DECISION_S
     try:
         for g, orient in todo:
             ours, theirs = team_pair(cell.opponent, g, salt, pool_packed, orient)
             set_teams(me, opp, ours, theirs)
             seed = game_seed(cell.opponent, g, salt)
             t0 = time.monotonic()
+            # 🚨 THE PER-BATTLE BOUNDS ARE SIZED FROM THIS CELL, not from a constant. On a search
+            # arm one decision is the longest gap between two protocol chunks and the whole battle
+            # is as long as the decisions make it — both are set by the argv, and the runner's
+            # 180 s default threw away the longer orientation of every side-swapped playoff cell
+            # (measured: a 246.6 s game reported as `livelock, not a stall` at 180 s). The
+            # estimate is REALIZED, carried forward from the games already played in this cell,
+            # because game 1 is the only one that has to guess.
+            idle_s, total_s = battle_bounds(per_decision_s)
             try:
                 out = await play_one_battle(me, opp, battle_format=BATTLE_FORMAT,
-                                            seed=seed, impl=impl)
-                err = None
+                                            seed=seed, impl=impl,
+                                            idle_budget_s=idle_s, total_budget_s=total_s)
+                err = out.get("error")
             except Exception as e:                    # noqa: BLE001
                 # A crashed game is RECORDED as an error row, not dropped. A dropped game biases
-                # the win rate by whatever made it crash.
+                # the win rate by whatever made it crash. (`play_one_battle` already keeps the
+                # decisions of a battle that timed out; this stays as the backstop for a failure
+                # it cannot reach, e.g. one raised before the battle object exists.)
                 out = {"outcome": "unfinished", "won": 0, "tied": 0, "finished": 0,
                        "battle_created": True, "decisions": []}
                 err = f"{type(e).__name__}: {e}"
@@ -456,6 +480,13 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
             })
             results.append(row)
             played += 1
+            # REALIZED, from the game just played — the same "seed it from the previous game's
+            # cost" rule the playoff's own rollout-cost model needs. A game with no decisions
+            # (a crash before the first request) leaves the estimate alone rather than driving it
+            # to an arbitrary number.
+            if int(row.get("n_decisions", 0) or 0) > 0:
+                per_decision_s = max(per_decision_s,
+                                     float(row["wall_s"]) / int(row["n_decisions"]))
             if progress is not None:
                 progress(row)
             # 🚨 THE REALIZED-R GUARD, on the FIRST game rather than after the cell. A playoff

@@ -168,3 +168,19 @@ def test_feed_invokes_handle_message():
     assert len(seen) == 1
     assert seen[0][0] == [">battle-gen3ou-1"]
     assert seen[0][1] == ["", "init", "battle"]
+
+
+# -- gen3_progress_frame_report_v1 --------------------------------------------------------------
+
+
+def test_frame_signature_names_the_TURN_and_the_LAST_KEYWORD():
+    """The two halves answer the two things a stuck battle could be doing: the turn says whether
+    the sim advances at all, the keyword names WHAT it keeps emitting (an `|error|` chatterer
+    never reaches a `|turn|`)."""
+    from utils.bridge.battle_stream_client import frame_signature
+
+    assert frame_signature("|move|p1a: X|Surf\n|-damage|p2a: Y|50/100\n|turn|7") == "t7:turn"
+    assert frame_signature("|error|[Invalid choice] Can't move") == "t?:error"
+    assert frame_signature("|turn|12\n|request|{}") == "t12:request"
+    assert frame_signature("") == "t?:?"
+    assert frame_signature("not a protocol line") == "t?:?"

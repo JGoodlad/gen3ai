@@ -139,5 +139,9 @@ def test_the_idle_bound_is_read_at_CALL_time_so_patching_it_takes_effect():
     from utils.bridge import local_battle_runner as lbr
 
     src = inspect.getsource(lbr._await_battle)
-    assert "ProgressDeadline(_BATTLE_IDLE_BUDGET" in src
-    assert "total_budget_s=_PER_BATTLE_TIMEOUT" in src
+    # Both bounds are now CALLER-SIZABLE (gen3_caller_sized_battle_budget_v1), so the assertion is
+    # that the module GLOBAL is what a caller-less call falls back to — read at call time, never
+    # captured at import. The search battery sizes both from its own per-decision budget; see
+    # `main.search_dividend.player.battle_bounds` and the 246.6 s game the 180 s constant killed.
+    assert "_BATTLE_IDLE_BUDGET if idle_budget_s is None" in src
+    assert "_PER_BATTLE_TIMEOUT if total_budget_s is None" in src

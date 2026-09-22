@@ -41,6 +41,30 @@ _CHOOSE_PREFIX = "/choose "
 _TEAM_PREFIX = "/team "
 
 
+def frame_signature(framed_text: str) -> str:
+    """A short, allocation-cheap signature of one protocol block: ``"t<turn>:<keyword>"``.
+
+    The two halves answer the two things a stuck battle could be doing. The TURN says whether the
+    sim is advancing at all; the last protocol KEYWORD says what kind of block it keeps emitting,
+    which is what names a livelock (`node_reject_bound_integration_test`'s pre-fix wedge chatters
+    `|error|` frames forever without ever reaching a `|turn|`).
+
+    Deliberately not the whole block: this runs on the inbound hot path, and the signature is
+    compared and counted, never replayed. ``_handle_message`` already walks the same lines.
+    """
+    turn = ""
+    keyword = ""
+    for line in framed_text.splitlines():
+        if not line.startswith("|") or len(line) < 2:
+            continue
+        kw = line[1:].split("|", 1)[0]
+        if kw:
+            keyword = kw
+        if kw == "turn":
+            turn = line[len("|turn|"):].strip()
+    return f"t{turn or '?'}:{keyword or '?'}"
+
+
 class BattleStreamClient(PSClient):
     """PSClient that relays protocol to/from a local BattleStream bridge process."""
 
@@ -76,6 +100,12 @@ class BattleStreamClient(PSClient):
         # path, so every chunk the sim emits bumps it exactly once. A plain int on the hot path:
         # no lock (POKE_LOOP is one thread), no timestamp (the reader stamps its own).
         self.progress_count = 0
+        # gen3_progress_frame_report_v1: a SHORT signature of the last block fed in — the turn it
+        # left the battle on and the last protocol keyword in it. The runner's backstop samples it
+        # on every sign of life so a total-budget expiry can say whether the work was REPEATING
+        # (a livelock) or ADVANCING (a budget too small for the workload). Those are opposite
+        # findings and the message used to assert the first with no evidence for it.
+        self.last_frame = ""
         # No auth handshake against a local sim.
         self._logged_in.set()
 
@@ -87,6 +117,7 @@ class BattleStreamClient(PSClient):
         ``|request|`` in this block has completed by the time it returns.
         """
         self.progress_count += 1
+        self.last_frame = frame_signature(framed_text)
         await self._handle_message(framed_text)
 
     async def listen(self):  # pragma: no cover - never started (start_listening=False)

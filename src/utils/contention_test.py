@@ -214,3 +214,77 @@ def test_benchmark_guard_warns_rather_than_refuses(monkeypatch):
     judges that, and the only unacceptable behaviour is silence."""
     _fake_load(monkeypatch, 35.0)
     warn_if_contended("throughput")  # must not raise
+
+
+# -- gen3_progress_frame_report_v1: WHICH of the two the total budget caught --------------------
+
+
+def test_the_total_budget_message_REPORTS_the_repeating_frame_instead_of_asserting_a_livelock():
+    """🚨 FAILS ON REVERT. The message used to end `— livelock, not a stall` on every
+    total-budget expiry, with no evidence for the claim. Measured 2026-09-22: a healthy
+    `main.search_dividend` playoff game needing 246.6 s was killed at 180 s and described that
+    way, and half of every side-swapped cell was thrown away on the strength of it."""
+    from utils.contention import ProgressDeadline, ProgressTimeout
+
+    frames = iter(["t3:error"] * 8)
+    d = ProgressDeadline(60.0, total_budget_s=1e-6, what="wedged",
+                         frame_fn=lambda: next(frames))
+    for _ in range(8):
+        d.progress()
+    with pytest.raises(ProgressTimeout) as ei:
+        d.check()
+    msg = str(ei.value)
+    assert "LIVELOCK CONFIRMED" in msg and "t3:error" in msg and "8" in msg
+
+
+def test_a_budget_that_expires_on_ADVANCING_work_says_so_and_says_what_to_do():
+    from utils.contention import ProgressDeadline, ProgressTimeout
+
+    n = iter(range(8))
+    d = ProgressDeadline(60.0, total_budget_s=1e-6, what="slow",
+                         frame_fn=lambda: f"t{next(n)}:turn")
+    for _ in range(8):
+        d.progress()
+    with pytest.raises(ProgressTimeout) as ei:
+        d.check()
+    msg = str(ei.value)
+    assert "NOT A LIVELOCK" in msg, msg
+    assert "t0:turn" in msg and "t7:turn" in msg, msg
+    assert "raise the budget" in msg
+
+
+def test_no_frame_sampler_means_NO_CLAIM_about_a_livelock():
+    """A caller with nothing cheap to sample gets "UNKNOWN from here" — never the old assertion.
+    A diagnosis nobody measured is worse than none, because it is acted on."""
+    from utils.contention import ProgressDeadline, ProgressTimeout
+
+    d = ProgressDeadline(60.0, total_budget_s=1e-6, what="x")
+    d.progress()
+    with pytest.raises(ProgressTimeout) as ei:
+        d.check()
+    assert "UNKNOWN from here" in str(ei.value)
+    assert "livelock, not a stall" not in str(ei.value)
+
+
+def test_a_failing_frame_sampler_never_fails_the_thing_it_describes():
+    from utils.contention import ProgressDeadline
+
+    def boom():
+        raise RuntimeError("sampler broke")
+
+    d = ProgressDeadline(60.0, total_budget_s=99.0, what="x", frame_fn=boom)
+    d.progress()                       # must not raise
+    assert d.progress_count == 1
+    assert d.frame_report() == ""
+
+
+def test_the_frame_tracker_is_BOUNDED():
+    """An unbounded counter keyed on a per-chunk signature is a leak on a 250-turn battle."""
+    from utils.contention import _MAX_TRACKED_FRAMES, ProgressDeadline
+
+    n = iter(range(_MAX_TRACKED_FRAMES * 3))
+    d = ProgressDeadline(60.0, total_budget_s=99.0, what="x", frame_fn=lambda: f"f{next(n)}")
+    for _ in range(_MAX_TRACKED_FRAMES * 3):
+        d.progress()
+    assert len(d._frames) == _MAX_TRACKED_FRAMES
+    assert "NOT A LIVELOCK" in d.frame_report()

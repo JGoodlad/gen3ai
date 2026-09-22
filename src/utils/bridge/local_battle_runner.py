@@ -79,7 +79,8 @@ def _teardown_reap_timeout() -> float:
     return scale_timeout(_TEARDOWN_REAP_TIMEOUT)
 
 
-async def _await_battle(coro, clients, what: str) -> None:
+async def _await_battle(coro, clients, what: str, total_budget_s: Optional[float] = None,
+                        idle_budget_s: Optional[float] = None) -> None:
     """Await one battle under an IDLE bound rather than a total-duration cap.
 
     WHY THIS IS NOT A `wait_for`. A duration cap on a bridge battle measures the box as much as
@@ -112,8 +113,16 @@ async def _await_battle(coro, clients, what: str) -> None:
     timeout still never becomes a semantic outcome.
     """
     task = asyncio.ensure_future(coro)
-    deadline = ProgressDeadline(_BATTLE_IDLE_BUDGET,
-                                total_budget_s=_PER_BATTLE_TIMEOUT, what=what)
+    deadline = ProgressDeadline(
+        _BATTLE_IDLE_BUDGET if idle_budget_s is None else float(idle_budget_s),
+        total_budget_s=(_PER_BATTLE_TIMEOUT if total_budget_s is None else float(total_budget_s)),
+        what=what,
+        # gen3_progress_frame_report_v1: the EVIDENCE behind the livelock verdict. `last_frame`
+        # is `t<turn>:<last protocol keyword>`, set by `BattleStreamClient.feed` — so a total
+        # -budget expiry can say whether the battle was repeating one frame (a wedge) or walking
+        # through turns (a workload bigger than the budget). Those are opposite findings.
+        frame_fn=lambda: "&".join(getattr(c, "last_frame", "?")
+                                  for c in clients if c is not None))
     seen = sum(c.progress_count for c in clients if c is not None)
     try:
         while True:
@@ -176,6 +185,8 @@ async def run_local_battles(
     start_extra: "Optional[dict]" = None,
     chunk_sink: "Optional[list]" = None,
     impl: str = "node",
+    idle_budget_s: Optional[float] = None,
+    total_budget_s: Optional[float] = None,
 ) -> None:
     """Play ``n_battles`` between two players via the local sim bridge.
 
@@ -220,9 +231,24 @@ async def run_local_battles(
     ⚠️ What is NOT claimed is ``__RECON__`` *content* parity: `sim_bridge.rs`'s ``emit_recon``
     documents the honest scope of its ``input_log``, and the two implementations are byte-equal
     on the protocol, not on that record's interior.
+
+    🚨 ``idle_budget_s`` / ``total_budget_s`` override the two per-battle bounds (defaults
+    :data:`_BATTLE_IDLE_BUDGET` 30 s and :data:`_PER_BATTLE_TIMEOUT` 180 s). **A caller whose
+    PER-DECISION cost is set by its own argv MUST size both**, because a constant cannot. Measured
+    2026-09-22: a `main.search_dividend` `playoff` mirror game at ``--budget 60
+    --playoff-rollouts 2`` ran **60 decisions at ~4 s each and needed 246.6 s**. It was reported
+    as ``livelock, not a stall`` at 180 s and it finished normally — a WIN, 3 searched, 2 changed
+    — the moment the cap was raised. Nothing was wedged, and the IDLE detector correctly never
+    fired; it was a DURATION cap on a workload whose duration is an argv parameter. The same
+    argument binds the idle bound from the other side: 30 s is "the longest plausible gap between
+    two protocol chunks", and on a search arm that gap is ONE DECISION, which ``--budget`` sets.
+    Sizing these is not "raising a timeout until the bug goes away" — the backstop exists for a
+    component that CHATTERS without converging, and the message now REPORTS which of the two
+    happened (`ProgressDeadline.frame_report`) instead of asserting a livelock.
     """
     runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed, start_extra,
-                                chunk_sink, impl, seed_base=seed_base)
+                                chunk_sink, impl, seed_base=seed_base,
+                                idle_budget_s=idle_budget_s, total_budget_s=total_budget_s)
     await handle_threaded_coroutines(runner.run(n_battles, concurrency), POKE_LOOP)
 
 
@@ -237,6 +263,8 @@ class _LocalBattleRunner:
         chunk_sink: Optional[list] = None,
         impl: str = "node",
         seed_base: Optional[int] = None,
+        idle_budget_s: Optional[float] = None,
+        total_budget_s: Optional[float] = None,
     ):
         self.p1 = player1
         self.p2 = player2
@@ -256,6 +284,11 @@ class _LocalBattleRunner:
                 "battle), and silently preferring one would make the label a lie.")
         self.seed = seed
         self.seed_base = seed_base
+        # gen3_caller_sized_battle_budget_v1: the two per-battle bounds, or None for the module
+        # defaults. See `run_local_battles`' docstring for why a caller whose per-decision cost is
+        # set by its own argv must size BOTH itself.
+        self.idle_budget_s = idle_budget_s
+        self.total_budget_s = total_budget_s
         self.start_extra = start_extra
         self.chunk_sink = chunk_sink
         # Which bridge child to spawn per battle: "node" or "rust". Resolve to an argv list
@@ -283,7 +316,8 @@ class _LocalBattleRunner:
             # merely-slow battle beside a training run finishes instead of being scored a timeout.
             for i in range(n_battles):
                 await _await_battle(self._one_battle(i), (self.c1, self.c2),
-                                    f"bridge battle {i}")
+                                    f"bridge battle {i}", self.total_budget_s,
+                                    self.idle_budget_s)
             return
         # Bounded-concurrency path. A single ``start_lock`` serializes each battle's team→creation
         # critical section (released the instant both battle objects exist — see ``_one_battle``),

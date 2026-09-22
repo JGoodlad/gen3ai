@@ -324,8 +324,51 @@ def battle_outcome(battle) -> str:
     return "tie"
 
 
+#: What ONE searched decision may legitimately cost, as a multiple of the per-decision budget.
+#: The bridge emits no protocol chunk while the search thinks, so a decision IS the longest
+#: plausible gap between two signs of life — the exact quantity `_BATTLE_IDLE_BUDGET` is sized to,
+#: except that here the caller sets it with `--budget`. 2x because a `playoff` decision may be
+#: committed to a terminal rollout pair when the clock expires (the loop declines the NEXT pair,
+#: never the one in flight).
+IDLE_BUDGET_DECISIONS = 2.0
+
+#: How many DECISIONS a gen3 mirror game may take before the stall forfeit ends it. Derived from
+#: the trainer's own stall threshold rather than guessed, so the two cannot drift — a decision per
+#: turn plus the replacements.
+def _max_decisions() -> int:
+    from agents.training.stall import StallConfig
+    return int(StallConfig().threshold) * 2
+
+
+def battle_bounds(per_decision_s: float) -> tuple:
+    """``(idle_budget_s, total_budget_s)`` for one search-battery battle.
+
+    🚨 **MEASURED 2026-09-22, and this is why the arm could not be measured at all.** A `playoff`
+    mirror game at ``--budget 60 --playoff-rollouts 2`` ran 60 decisions at ~4 s each and needed
+    **246.6 s**; the runner's 180 s constant killed it at 41 progress events and reported
+    ``livelock, not a stall``. It was not a livelock — the same game FINISHED, a WIN with 3
+    searched and 2 changed decisions, as soon as the cap was raised, and the idle detector never
+    fired because nothing was ever wedged. **Half of every side-swapped cell was being thrown
+    away on the longer orientation**, and the discarded row read `dec=0`, which looks like a
+    battle that never started.
+
+    Both bounds are functions of ``per_decision_s`` because both are, in this caller, functions of
+    the argv: the idle bound is "the longest plausible gap between two chunks" and a searched
+    decision emits none, while the total is "long enough that only a non-converging component
+    reaches it". Never BELOW the module defaults — a cheap cell keeps the tighter, better bound.
+    """
+    from utils.bridge.local_battle_runner import _BATTLE_IDLE_BUDGET, _PER_BATTLE_TIMEOUT
+
+    per = max(0.0, float(per_decision_s))
+    idle = max(_BATTLE_IDLE_BUDGET, IDLE_BUDGET_DECISIONS * per)
+    total = max(_PER_BATTLE_TIMEOUT, _max_decisions() * per)
+    return idle, total
+
+
 async def play_one_battle(player: SearchDividendPlayer, opponent, *, battle_format: str,
-                          seed: str, impl: str) -> dict:
+                          seed: str, impl: str,
+                          idle_budget_s: Optional[float] = None,
+                          total_budget_s: Optional[float] = None) -> dict:
     """Play ONE battle with the live record wired up, and return its outcome row.
 
     One battle per call, deliberately: ``chunk_sink`` is not side-deduped across concurrent
@@ -347,17 +390,27 @@ async def play_one_battle(player: SearchDividendPlayer, opponent, *, battle_form
     set_active_builder(builder)
     tags_before = set(player._battles)
     n_dec_before = len(player.decisions)
+    err: Optional[str] = None
     try:
         await run_local_battles(player, opponent, 1, battle_format=battle_format,
                                 seed=None, concurrency=1, chunk_sink=chunk_sink, impl=impl,
-                                start_extra={"seed": seed})
+                                start_extra={"seed": seed},
+                                idle_budget_s=idle_budget_s, total_budget_s=total_budget_s)
+    except Exception as e:                           # noqa: BLE001
+        # 🚨 THE DECISIONS SURVIVE THE FAILURE. A timed-out battle used to propagate out of here
+        # and the caller's handler wrote `"decisions": []` — so a game that had made 41 real
+        # decisions was recorded as `dec=0`, which reads as "the battle never started" and is how
+        # the 2026-09-22 livelock was mis-described. The outcome is still `unfinished` and still
+        # excluded from every rate; what changes is that the evidence is on disk.
+        err = f"{type(e).__name__}: {e}"
     finally:
         set_active_builder(None)
     new_tags = [t for t in player._battles if t not in tags_before]
     battle = player._battles[new_tags[-1]] if new_tags else None
-    outcome = battle_outcome(battle)
+    outcome = "unfinished" if err else battle_outcome(battle)
     return {
         "seed": seed,
+        "error": err,
         "outcome": outcome,
         "won": 1 if outcome == "win" else 0,
         "tied": 1 if outcome == "tie" else 0,
