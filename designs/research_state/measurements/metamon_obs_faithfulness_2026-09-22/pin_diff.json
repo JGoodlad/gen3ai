@@ -1,0 +1,192 @@
+{
+ "summary": {
+  "n_battles": 20,
+  "n_identical": 20,
+  "n_divergent": 0,
+  "n_replay_errors": 0,
+  "n_reproducing_the_live_stream": 20,
+  "divergences": []
+ },
+ "rows": [
+  {
+   "tag": "battle-gen3ou-1",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 182,
+   "n_chunks_theirs": 182,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-10",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 174,
+   "n_chunks_theirs": 174,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-11",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 210,
+   "n_chunks_theirs": 210,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-12",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 126,
+   "n_chunks_theirs": 126,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-13",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 382,
+   "n_chunks_theirs": 382,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-14",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 158,
+   "n_chunks_theirs": 158,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-15",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 456,
+   "n_chunks_theirs": 456,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-16",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 234,
+   "n_chunks_theirs": 234,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-17",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 254,
+   "n_chunks_theirs": 254,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-18",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 102,
+   "n_chunks_theirs": 102,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-19",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 110,
+   "n_chunks_theirs": 110,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-2",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 154,
+   "n_chunks_theirs": 154,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-20",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 274,
+   "n_chunks_theirs": 274,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-3",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 200,
+   "n_chunks_theirs": 200,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-4",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 174,
+   "n_chunks_theirs": 174,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-5",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 124,
+   "n_chunks_theirs": 124,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-6",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 194,
+   "n_chunks_theirs": 194,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-7",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 122,
+   "n_chunks_theirs": 122,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-8",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 134,
+   "n_chunks_theirs": 134,
+   "live_stream_matches_ours": true
+  },
+  {
+   "tag": "battle-gen3ou-9",
+   "identical": true,
+   "errors_ours": [],
+   "errors_theirs": [],
+   "n_chunks_ours": 114,
+   "n_chunks_theirs": 114,
+   "live_stream_matches_ours": true
+  }
+ ]
+}

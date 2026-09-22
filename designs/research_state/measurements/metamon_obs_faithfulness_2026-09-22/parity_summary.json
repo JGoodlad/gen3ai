@@ -1,0 +1,218 @@
+{
+ "n_battles": 20,
+ "n_decision_points": 871,
+ "n_alignment_failures": 0,
+ "alignment_failures": [],
+ "mismatch_counts": {
+  "b:active.boosts": 13,
+  "c:our_team.boosts": 13
+ },
+ "class_b_total": 13,
+ "class_c_total": 13,
+ "examples": {
+  "b:active.boosts": [
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 4,
+    "turn": 4,
+    "metamon": {
+     "accuracy": 0,
+     "atk": 0,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    },
+    "ours": {
+     "accuracy": 0,
+     "atk": -1,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    }
+   },
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 5,
+    "turn": 5,
+    "metamon": {
+     "accuracy": 0,
+     "atk": 0,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    },
+    "ours": {
+     "accuracy": 0,
+     "atk": -1,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    }
+   },
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 6,
+    "turn": 6,
+    "metamon": {
+     "accuracy": 0,
+     "atk": 0,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    },
+    "ours": {
+     "accuracy": 0,
+     "atk": -1,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    }
+   },
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 7,
+    "turn": 6,
+    "metamon": {
+     "accuracy": 0,
+     "atk": 0,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    },
+    "ours": {
+     "accuracy": 0,
+     "atk": -1,
+     "def": 0,
+     "evasion": 0,
+     "spa": 0,
+     "spd": 0,
+     "spe": 0
+    }
+   }
+  ],
+  "c:our_team.boosts": [
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 4,
+    "turn": 4,
+    "metamon": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": 0,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    },
+    "ours": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": -1,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    }
+   },
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 5,
+    "turn": 5,
+    "metamon": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": 0,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    },
+    "ours": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": -1,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    }
+   },
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 6,
+    "turn": 6,
+    "metamon": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": 0,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    },
+    "ours": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": -1,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    }
+   },
+   {
+    "tag": "battle-gen3ou-12",
+    "seq": 7,
+    "turn": 6,
+    "metamon": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": 0,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    },
+    "ours": {
+     "p1hariyama": {
+      "accuracy": 0,
+      "atk": -1,
+      "def": 0,
+      "evasion": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+     }
+    }
+   }
+  ]
+ }
+}
