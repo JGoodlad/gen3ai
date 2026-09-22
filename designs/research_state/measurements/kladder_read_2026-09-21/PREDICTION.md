@@ -139,3 +139,55 @@ an EMA over a noisy ratio and its firing step is not a measurement with a replic
 motivate a contrast; it can never settle one.** The verdicts in §3–§4 are unchanged and S1 does not
 enter them. Registered here only so the three numbers are collected under one rule instead of being
 noticed after the fact on whichever arm happens to look interesting.
+
+---
+
+## 8. AMENDMENT 2 — 🚨 THE LADDER VARIES TWO THINGS, NOT ONE. Registered BEFORE any untaught number exists.
+
+**Committed 2026-09-22 ~06:05 PT: K=1 and K=3 have finished TRAINING, K=11 is running, and NO row of
+§1 has been measured on any of them.** What follows is a training-side confound found in the
+descriptors, not a result.
+
+**THE FACT.** At the identical `--distill-coef 0.1761`, the distill term's share of the gradient
+norm — `grad/distill_share`, the project's own §6.2 dose meter — differs almost 2× between the rungs:
+
+| arm | mean | median | first 10 rollouts | last 10 |
+|---|---:|---:|---:|---:|
+| K=1 | **0.2498** | 0.2413 | 0.2676 | 0.2474 |
+| K=3 | **0.1291** | 0.1209 | 0.1724 | 0.1116 |
+
+n = 119 rollouts each, so this is a stable property of the arms and not sampling noise.
+
+**WHY IT HAPPENS, and why it was foreseeable.** A top-1 target is a one-hot cross-entropy; a top-3
+renormalized target spreads the same probability mass over three actions, so the per-row gradient is
+smaller in norm for the same coefficient. **The coefficient is not the dose.** The campaign already
+knows this in writing — the `--distill-target` help text says to watch `grad/distill_share` and the
+design's own rule is that *a distill coefficient is set by `grad/distill_share`, never by eye* — and
+the ladder was nevertheless built at fixed coef across K. That is on me: §1–§6 were written as
+"one lever, K" and the sentence was wrong.
+
+**WHAT THE LADDER THEREFORE MEASURES.** Not "the cost of a target form at matched pull", but **"the
+cost of a target form at a fixed coefficient, pull included"**. Both are legitimate questions and
+the second is the deployable one — nobody retunes coef per K in practice — but they are different,
+and only the second is registered here.
+
+🚨 **THE DIRECTION OF THE CONFOUND IS KNOWN, AND IT RUNS TOWARD THE EXPECTED HEADLINE.** §3 predicted
+C1 ≥ C2 ≥ 0 — wider targets cost less. Wider targets ALSO pull less hard. **So a result of the
+registered shape is confounded and may be explained entirely by the weaker pull; it does NOT isolate
+the target form.** The asymmetry matters: a "wider costs less" finding is weak evidence about target
+form, whereas **a "wider costs MORE despite pulling ~2× less" finding would be strong**, because the
+confound runs against it.
+
+**WHAT CHANGES, AND WHAT DOES NOT.**
+- **No verdict in §3–§4 is altered** — C1/C2/C3 and the floors stand exactly as registered.
+- **ADDED to the reported set, per arm:** `grad/distill_share` (mean, median, first-10, last-10).
+  **No cost number from this ladder may be quoted without it.**
+- **ADDED to §4 branch 1:** if C1 reads OUTSIDE and positive, that result is **NOT** attributable to
+  the target form alone, and the follow-up that separates them is a K=11 arm at a coefficient raised
+  to match K=1's share (~0.25), not the plain `kl` arm. The `kl` arm answers the aggregation
+  question and is still conditional on C1; the share-matched arm answers the pull question. They are
+  different fourth points and must not be conflated.
+- **K=11 is NOT being stopped or rebuilt for this.** It is mid-flight, the three rungs must stay
+  mutually matched in everything except K, and re-running two rungs at adjusted coefficients costs
+  ~16 GPU-h to answer a question the registered read does not ask. That is an orchestrator call, not
+  mine, and it is flagged to them with this amendment.
