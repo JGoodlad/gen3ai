@@ -1,0 +1,28 @@
+{
+  "seed": 20260922,
+  "method": "random.Random(20260922).sample(sorted(bp_team_filenames), 20)",
+  "pool_total": 719,
+  "pool_bp": 157,
+  "sample": [
+    "015e78dda7.gen3ou_team",
+    "13e0ce541b.gen3ou_team",
+    "1baeb6d658.gen3ou_team",
+    "1d4c4974a0.gen3ou_team",
+    "2439039083.gen3ou_team",
+    "355789e24b.gen3ou_team",
+    "42808b709b.gen3ou_team",
+    "5876ebb9eb.gen3ou_team",
+    "8f74a43699.gen3ou_team",
+    "a917696663.gen3ou_team",
+    "b61e07ab58.gen3ou_team",
+    "c885693dcf.gen3ou_team",
+    "cc8bc0e125.gen3ou_team",
+    "cc901d75a9.gen3ou_team",
+    "cd808fc11f.gen3ou_team",
+    "ce61c549f7.gen3ou_team",
+    "d3f703b88d.gen3ou_team",
+    "df3f7a916c.gen3ou_team",
+    "f577e001c2.gen3ou_team",
+    "f947eeb25e.gen3ou_team"
+  ]
+}
