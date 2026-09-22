@@ -1,0 +1,55 @@
+{
+  "run": "ai_v12_25_ladder_vf15_b",
+  "ladder_json": true,
+  "games_jsonl": true,
+  "games_lines": 6,
+  "recipe_status": "absent",
+  "recipe_detail": "no `recipe` block (its top-level `eval_sentinel_edges_dropped` is 6, so the sentinel edges were already dropped \u2014 but with no recipe block nothing else about the fit is pinned)",
+  "committed_computed_at": "2026-09-12T13:22:42.076619+00:00",
+  "committed_sentinel_count_key": 6,
+  "n_nodes": 4,
+  "refit_possible": true,
+  "refit_sentinel_edges_dropped": 6,
+  "refit_n_frozen_pairs": 6,
+  "committed_n_frozen_pairs": 6,
+  "refit_converged": true,
+  "committed_converged": true,
+  "nodes": [
+    {
+      "step": 4000032,
+      "committed": 1663.6,
+      "refit": 1663.6,
+      "delta": 0.0
+    },
+    {
+      "step": 6000000,
+      "committed": 1777.0,
+      "refit": 1777.0,
+      "delta": 0.0
+    },
+    {
+      "step": 8000016,
+      "committed": 1871.1,
+      "refit": 1871.1,
+      "delta": 0.0
+    },
+    {
+      "step": 10000032,
+      "committed": 1916.8,
+      "refit": 1916.8,
+      "delta": 0.0
+    }
+  ],
+  "missing_in_refit": [],
+  "max_abs_delta": 0.0,
+  "mean_delta": 0.0,
+  "newest_step": 10000032,
+  "newest_committed": 1916.8,
+  "newest_refit": 1916.8,
+  "newest_delta": 0.0,
+  "newest_delta_sign": "0",
+  "argmax_committed": 10000032,
+  "argmax_refit": 10000032,
+  "within_run_order_changes": 0,
+  "adjacent_node_swaps": 0
+}

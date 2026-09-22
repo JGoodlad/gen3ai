@@ -1,0 +1,115 @@
+{
+  "run": "ai_v9_20_tdaux_rung2_lam10_0820",
+  "ladder_json": true,
+  "games_jsonl": true,
+  "games_lines": 20,
+  "recipe_status": "absent",
+  "recipe_detail": "no `recipe` block (its top-level `eval_sentinel_edges_dropped` is null/absent, so it was fitted WITH the eval-cycle sentinel edges (+21..+29 Elo on the newest nodes, +73.1 on one measured 20-node run))",
+  "committed_computed_at": "2026-08-20T15:28:09.231807+00:00",
+  "committed_sentinel_count_key": null,
+  "n_nodes": 14,
+  "refit_possible": true,
+  "refit_sentinel_edges_dropped": 10,
+  "refit_n_frozen_pairs": 20,
+  "committed_n_frozen_pairs": 20,
+  "refit_converged": true,
+  "committed_converged": true,
+  "nodes": [
+    {
+      "step": 2000016,
+      "committed": 1573.7,
+      "refit": 1654.9,
+      "delta": 81.2
+    },
+    {
+      "step": 4000032,
+      "committed": 1826.4,
+      "refit": 1825.6,
+      "delta": -0.8
+    },
+    {
+      "step": 6000000,
+      "committed": 1854.3,
+      "refit": 1853.4,
+      "delta": -0.9
+    },
+    {
+      "step": 8000016,
+      "committed": 1832.3,
+      "refit": 1861.0,
+      "delta": 28.7
+    },
+    {
+      "step": 10000032,
+      "committed": 1924.1,
+      "refit": 1923.0,
+      "delta": -1.1
+    },
+    {
+      "step": 12000000,
+      "committed": 1888.8,
+      "refit": 1930.0,
+      "delta": 41.2
+    },
+    {
+      "step": 14000016,
+      "committed": 1884.8,
+      "refit": 1905.2,
+      "delta": 20.4
+    },
+    {
+      "step": 16000032,
+      "committed": 1927.6,
+      "refit": 1926.5,
+      "delta": -1.1
+    },
+    {
+      "step": 18000000,
+      "committed": 1890.4,
+      "refit": 1928.7,
+      "delta": 38.3
+    },
+    {
+      "step": 20000016,
+      "committed": 1888.1,
+      "refit": 1935.6,
+      "delta": 47.5
+    },
+    {
+      "step": 22000032,
+      "committed": 1973.8,
+      "refit": 1984.0,
+      "delta": 10.2
+    },
+    {
+      "step": 24000000,
+      "committed": 1918.5,
+      "refit": 1928.7,
+      "delta": 10.2
+    },
+    {
+      "step": 26000016,
+      "committed": 1946.4,
+      "refit": 1956.6,
+      "delta": 10.2
+    },
+    {
+      "step": 28000032,
+      "committed": 1993.1,
+      "refit": 1980.3,
+      "delta": -12.8
+    }
+  ],
+  "missing_in_refit": [],
+  "max_abs_delta": 81.2,
+  "mean_delta": 19.37,
+  "newest_step": 28000032,
+  "newest_committed": 1993.1,
+  "newest_refit": 1980.3,
+  "newest_delta": -12.8,
+  "newest_delta_sign": "-",
+  "argmax_committed": 28000032,
+  "argmax_refit": 22000032,
+  "within_run_order_changes": 1,
+  "adjacent_node_swaps": 4
+}

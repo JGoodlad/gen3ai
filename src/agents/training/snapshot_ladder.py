@@ -265,6 +265,21 @@ def _atomic_write_json(path: str, obj: dict) -> None:
     os.replace(tmp, path)
 
 
+#: Public alias — `main.elo refit --apply` writes the refitted ladder (and preserves the old one)
+#: through the SAME atomic writer the fitter uses, so a half-written ladder.json is not a state
+#: either path can produce.
+atomic_write_json = _atomic_write_json
+
+#: The name `main.elo refit --apply` preserves a PRE-RECIPE `ladder.json` under, beside the file it
+#: replaces. Named here because both the writer and every refusal message quote it.
+PRE_RECIPE_BACKUP_NAME = "ladder.pre_recipe.json"
+
+
+def pre_recipe_backup_path(run_dir: str) -> str:
+    """Where `main.elo refit --apply` keeps the committed file it replaces."""
+    return os.path.join(_ladder_dir(run_dir), PRE_RECIPE_BACKUP_NAME)
+
+
 def _pairs_by_source_counts(run_dir: str, keep_keys: set) -> dict[str, int]:
     """{source: n_pairs} over the frozen pairs inside this fit's prefix. A pair carrying rows from
     both sources counts once per source — that is a real, if unusual, state (a hand `--backfill`
@@ -377,7 +392,12 @@ def recipe_refusal(path: str, status: str, detail: str, run_dir: "str | None" = 
         f"pre-recipe file read +73.1 Elo above the current fit of the SAME 20 nodes and flipped "
         f"the sign of a cross-run delta. Refusing to quote it.\n"
         f"FIX: refit from the raw pair log, which is append-only and never stale —\n"
-        f"    python -m agents.training.snapshot_ladder {where} --fit-only")
+        f"    python -m agents.training.snapshot_ladder {where} --fit-only\n"
+        f"        (refits IN PLACE — the committed numbers are overwritten)\n"
+        f"    python -m main.elo refit --apply {where}\n"
+        f"        (same fit, but the committed file is KEPT as "
+        f"snapshot_ladder/{PRE_RECIPE_BACKUP_NAME}, and the node set stays the committed one so "
+        f"every banked number has a successor to compare against)")
 
 
 def check_recipe(ladder: dict, path: str, *, run_dir: "str | None" = None,

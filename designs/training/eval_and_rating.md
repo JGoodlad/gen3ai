@@ -872,9 +872,37 @@ convert is not a safeguard.
 | `main.ops.plateau_signal` | its bias note now READS the stamp instead of asserting the bias unconditionally; a stale file is named as stale and pointed at `--fixed-fit` |
 | `snapshot_ladder.latest_promoted_elo` | **deliberately does NOT check it** — a WITHIN-RUN trend scalar (`eval/ladder_elo`) written moments earlier by the run's own pinned code. Refusing there would stop a live run logging its own curve, and no cross-run comparison is being made |
 | `agents.training.snapshot_ladder` CLI | prints `[ladder] recipe: …` beside every table it renders |
+| `main.elo <run>` | prints a `[ladder]` HEADLINE line under its star table, and **WITHHOLDS the dense number** on a stale stamp, printing the refusal in its place. Its own star fit is the ±29 read and is never the headline |
 
-Pinned by `src/agents/training/ladder_recipe_test.py` (before/after fixtures) and the three
-recipe tests in `src/main/critic_gate_test.py`.
+Pinned by `src/agents/training/ladder_recipe_test.py` (before/after fixtures), the three
+recipe tests in `src/main/critic_gate_test.py`, and `src/main/elo_refit_test.py`.
+
+###### Putting a committed ladder BACK on the current recipe — `main.elo refit`
+
+```bash
+python -m main.elo refit <run_dir>            # read-only: committed vs refit, node by node
+python -m main.elo refit --apply <run_dir>    # write the stamped fit, KEEP the old file
+```
+
+Both **refit and play NOTHING** — `games.jsonl` is append-only and never stale. The fit is over
+**the committed file's own node set** (`--pool` uses the snapshots on disk instead): BT re-solves
+every node on every add and the newest node is systematically inflated, so a fit over a different
+node set is a different object and its deltas would conflate the recipe change with a node-set
+change. `--apply` keeps the file it replaces as **`snapshot_ladder/ladder.pre_recipe.json`** — the
+only surviving evidence of what a banked number was quoted from — and REFUSES rather than
+overwrite one that is already there; on an already-current identical file it is a no-op.
+`--fit-only` on the `snapshot_ladder` CLI does the same fit but rewrites in place, keeping nothing.
+
+**The whole archive was audited this way on 2026-09-22 without writing to `models/`**:
+`designs/research_state/measurements/ladder_refit_audit_2026-09-22/`. 93 runs, all with a
+`games.jsonl` and therefore all refittable; **68 move, 25 reproduce to 0.0**, and the split is
+exactly the `3e6875a5` boundary (every mover records the count key as `null`). Median max |Δ|
+across a mover's nodes **53.4 Elo**, largest **255.6**; 39 runs' newest node moves by more than 10
+Elo, **65 of 68 downward**. The ordering is not safe either: the **v9 generation ladder reverses
+21 of its 153 pairwise orderings**, the argmax (best) node moves on 33 of 93 runs, and
+`ai_v9_51_fdF_p2c_0826`'s 18M and 24M nodes become UNRATEABLE — the committed fit carried them on
+sentinel edges alone. The 2026-09-16 and 2026-09-18 flywheel entries, and the 2026-09-08/09 v12
+ladder cells, refit to **0.0** and stand as banked.
 
 Re-fit shift, per run (committed `ladder.json` → current `fit_ladder`, same rated steps): the
 early nodes RISE and the late nodes FALL — `ai_v12_02_winprob_critic` 4M **+32.1** → 34M

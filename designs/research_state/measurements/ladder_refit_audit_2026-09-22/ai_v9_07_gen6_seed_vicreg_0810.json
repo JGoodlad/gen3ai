@@ -1,0 +1,85 @@
+{
+  "run": "ai_v9_07_gen6_seed_vicreg_0810",
+  "ladder_json": true,
+  "games_jsonl": true,
+  "games_lines": 36,
+  "recipe_status": "absent",
+  "recipe_detail": "no `recipe` block (its top-level `eval_sentinel_edges_dropped` is null/absent, so it was fitted WITH the eval-cycle sentinel edges (+21..+29 Elo on the newest nodes, +73.1 on one measured 20-node run))",
+  "committed_computed_at": "2026-08-11T12:57:15.278293+00:00",
+  "committed_sentinel_count_key": null,
+  "n_nodes": 9,
+  "refit_possible": true,
+  "refit_sentinel_edges_dropped": 30,
+  "refit_n_frozen_pairs": 36,
+  "committed_n_frozen_pairs": 36,
+  "refit_converged": true,
+  "committed_converged": true,
+  "nodes": [
+    {
+      "step": 2000016,
+      "committed": 1660.9,
+      "refit": 1693.2,
+      "delta": 32.3
+    },
+    {
+      "step": 4000032,
+      "committed": 1845.1,
+      "refit": 1869.3,
+      "delta": 24.2
+    },
+    {
+      "step": 6000000,
+      "committed": 1888.1,
+      "refit": 1895.5,
+      "delta": 7.4
+    },
+    {
+      "step": 8000016,
+      "committed": 1951.1,
+      "refit": 1960.1,
+      "delta": 9.0
+    },
+    {
+      "step": 10000032,
+      "committed": 1982.2,
+      "refit": 1963.7,
+      "delta": -18.5
+    },
+    {
+      "step": 12000000,
+      "committed": 2013.1,
+      "refit": 1981.6,
+      "delta": -31.5
+    },
+    {
+      "step": 14000016,
+      "committed": 2029.7,
+      "refit": 1994.8,
+      "delta": -34.9
+    },
+    {
+      "step": 16000032,
+      "committed": 2049.3,
+      "refit": 2009.7,
+      "delta": -39.6
+    },
+    {
+      "step": 18000000,
+      "committed": 2057.4,
+      "refit": 2007.7,
+      "delta": -49.7
+    }
+  ],
+  "missing_in_refit": [],
+  "max_abs_delta": 49.7,
+  "mean_delta": -11.26,
+  "newest_step": 18000000,
+  "newest_committed": 2057.4,
+  "newest_refit": 2007.7,
+  "newest_delta": -49.7,
+  "newest_delta_sign": "-",
+  "argmax_committed": 18000000,
+  "argmax_refit": 16000032,
+  "within_run_order_changes": 1,
+  "adjacent_node_swaps": 1
+}

@@ -400,6 +400,13 @@ otherwise); `--exploiter-ladder auto:` refits in memory or refuses; `latest_prom
 deliberately does NOT check it (a within-run trend scalar). **Bump `LADDER_FITTER_VERSION`
 whenever the fit changes what a rating MEANS.**
 
+**Converting a stale file: `python -m main.elo refit [--apply] <run>`** — refits from the
+append-only `games.jsonl` (plays nothing) over the COMMITTED file's node set, and with `--apply`
+writes the stamped fit while keeping the old one as `snapshot_ladder/ladder.pre_recipe.json`.
+Every file on disk before `0f230405` is stale; **68 of 93 move** (median max |Δ| 53.4 Elo, 65 of
+68 newest nodes DOWN) and the v9 generation ladder reverses 21 of 153 orderings — the whole audit,
+one JSON per run, is `designs/research_state/measurements/ladder_refit_audit_2026-09-22/`.
+
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)
 and [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 

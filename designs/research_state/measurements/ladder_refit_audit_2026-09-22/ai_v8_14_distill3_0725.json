@@ -1,0 +1,43 @@
+{
+  "run": "ai_v8_14_distill3_0725",
+  "ladder_json": true,
+  "games_jsonl": true,
+  "games_lines": 1,
+  "recipe_status": "absent",
+  "recipe_detail": "no `recipe` block (its top-level `eval_sentinel_edges_dropped` is null/absent, so it was fitted WITH the eval-cycle sentinel edges (+21..+29 Elo on the newest nodes, +73.1 on one measured 20-node run))",
+  "committed_computed_at": "2026-07-26T13:54:28.511593+00:00",
+  "committed_sentinel_count_key": null,
+  "n_nodes": 2,
+  "refit_possible": true,
+  "refit_sentinel_edges_dropped": 1,
+  "refit_n_frozen_pairs": 1,
+  "committed_n_frozen_pairs": 1,
+  "refit_converged": true,
+  "committed_converged": true,
+  "nodes": [
+    {
+      "step": 278000007,
+      "committed": 2015.6,
+      "refit": 2018.1,
+      "delta": 2.5
+    },
+    {
+      "step": 292000005,
+      "committed": 2049.1,
+      "refit": 2047.7,
+      "delta": -1.4
+    }
+  ],
+  "missing_in_refit": [],
+  "max_abs_delta": 2.5,
+  "mean_delta": 0.55,
+  "newest_step": 292000005,
+  "newest_committed": 2049.1,
+  "newest_refit": 2047.7,
+  "newest_delta": -1.4,
+  "newest_delta_sign": "-",
+  "argmax_committed": 292000005,
+  "argmax_refit": 292000005,
+  "within_run_order_changes": 0,
+  "adjacent_node_swaps": 0
+}

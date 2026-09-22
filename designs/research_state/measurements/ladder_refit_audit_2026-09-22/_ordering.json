@@ -1,0 +1,557 @@
+{
+  "groups": [
+    {
+      "group": "v9 generation ladder (gen1..gen17)",
+      "n": 18,
+      "order_changes": true,
+      "flipped_pairs": 21,
+      "n_pairs": 153,
+      "committed_order": [
+        "ai_v9_02_gen2_full11_40m_0805",
+        "ai_v9_05_gen4_rehome_25m_0808",
+        "ai_v9_13_gen11_labelonly_winprob_0815",
+        "ai_v9_12_gen10_t0prior_0814",
+        "ai_v9_10_gen9_intent_distcritic_0813",
+        "ai_v9_08_gen7_seed_quantile_0811",
+        "ai_v9_15_gen13_hb_events_stack_0817",
+        "ai_v9_18_gen15_v8rewards_0818",
+        "ai_v9_14_gen12_h_entitypool_shaping_0816",
+        "ai_v9_01_gen1_edges6_40m_0804",
+        "ai_v9_07_gen6_seed_vicreg_0810",
+        "ai_v9_04_gen3_k6_recency_40m_0807",
+        "ai_v9_03_gen25_consequence_25m_0806",
+        "ai_v9_06_gen5_no_concat_0809",
+        "ai_v9_21_gen17_pfspoff_0820",
+        "ai_v9_09_gen8_beliefs_threat_inject_0811",
+        "ai_v9_16_gen14_framedel_v91_0817",
+        "ai_v9_19_gen16_mechanics_0819"
+      ],
+      "refit_order": [
+        "ai_v9_02_gen2_full11_40m_0805",
+        "ai_v9_15_gen13_hb_events_stack_0817",
+        "ai_v9_05_gen4_rehome_25m_0808",
+        "ai_v9_10_gen9_intent_distcritic_0813",
+        "ai_v9_13_gen11_labelonly_winprob_0815",
+        "ai_v9_12_gen10_t0prior_0814",
+        "ai_v9_01_gen1_edges6_40m_0804",
+        "ai_v9_14_gen12_h_entitypool_shaping_0816",
+        "ai_v9_18_gen15_v8rewards_0818",
+        "ai_v9_08_gen7_seed_quantile_0811",
+        "ai_v9_04_gen3_k6_recency_40m_0807",
+        "ai_v9_07_gen6_seed_vicreg_0810",
+        "ai_v9_16_gen14_framedel_v91_0817",
+        "ai_v9_21_gen17_pfspoff_0820",
+        "ai_v9_03_gen25_consequence_25m_0806",
+        "ai_v9_06_gen5_no_concat_0809",
+        "ai_v9_19_gen16_mechanics_0819",
+        "ai_v9_09_gen8_beliefs_threat_inject_0811"
+      ],
+      "flips": [
+        {
+          "a": "ai_v9_01_gen1_edges6_40m_0804",
+          "b": "ai_v9_08_gen7_seed_quantile_0811",
+          "committed_delta": -14.9,
+          "refit_delta": 10.7
+        },
+        {
+          "a": "ai_v9_01_gen1_edges6_40m_0804",
+          "b": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+          "committed_delta": -1.3,
+          "refit_delta": 4.3
+        },
+        {
+          "a": "ai_v9_01_gen1_edges6_40m_0804",
+          "b": "ai_v9_18_gen15_v8rewards_0818",
+          "committed_delta": -6.0,
+          "refit_delta": 7.5
+        },
+        {
+          "a": "ai_v9_03_gen25_consequence_25m_0806",
+          "b": "ai_v9_16_gen14_framedel_v91_0817",
+          "committed_delta": 16.6,
+          "refit_delta": -3.5
+        },
+        {
+          "a": "ai_v9_03_gen25_consequence_25m_0806",
+          "b": "ai_v9_21_gen17_pfspoff_0820",
+          "committed_delta": 6.8,
+          "refit_delta": -1.2
+        },
+        {
+          "a": "ai_v9_04_gen3_k6_recency_40m_0807",
+          "b": "ai_v9_07_gen6_seed_vicreg_0810",
+          "committed_delta": -16.0,
+          "refit_delta": 1.3
+        },
+        {
+          "a": "ai_v9_05_gen4_rehome_25m_0808",
+          "b": "ai_v9_15_gen13_hb_events_stack_0817",
+          "committed_delta": 12.9,
+          "refit_delta": -2.9
+        },
+        {
+          "a": "ai_v9_06_gen5_no_concat_0809",
+          "b": "ai_v9_16_gen14_framedel_v91_0817",
+          "committed_delta": 13.6,
+          "refit_delta": -5.4
+        },
+        {
+          "a": "ai_v9_06_gen5_no_concat_0809",
+          "b": "ai_v9_21_gen17_pfspoff_0820",
+          "committed_delta": 3.8,
+          "refit_delta": -3.1
+        },
+        {
+          "a": "ai_v9_08_gen7_seed_quantile_0811",
+          "b": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+          "committed_delta": 13.6,
+          "refit_delta": -6.4
+        },
+        {
+          "a": "ai_v9_08_gen7_seed_quantile_0811",
+          "b": "ai_v9_15_gen13_hb_events_stack_0817",
+          "committed_delta": 5.9,
+          "refit_delta": -23.6
+        },
+        {
+          "a": "ai_v9_08_gen7_seed_quantile_0811",
+          "b": "ai_v9_18_gen15_v8rewards_0818",
+          "committed_delta": 8.9,
+          "refit_delta": -3.2
+        },
+        {
+          "a": "ai_v9_09_gen8_beliefs_threat_inject_0811",
+          "b": "ai_v9_16_gen14_framedel_v91_0817",
+          "committed_delta": 2.0,
+          "refit_delta": -17.2
+        },
+        {
+          "a": "ai_v9_09_gen8_beliefs_threat_inject_0811",
+          "b": "ai_v9_19_gen16_mechanics_0819",
+          "committed_delta": 10.8,
+          "refit_delta": -4.1
+        },
+        {
+          "a": "ai_v9_10_gen9_intent_distcritic_0813",
+          "b": "ai_v9_12_gen10_t0prior_0814",
+          "committed_delta": -5.3,
+          "refit_delta": 3.0
+        },
+        {
+          "a": "ai_v9_10_gen9_intent_distcritic_0813",
+          "b": "ai_v9_13_gen11_labelonly_winprob_0815",
+          "committed_delta": -5.4,
+          "refit_delta": 1.7
+        },
+        {
+          "a": "ai_v9_10_gen9_intent_distcritic_0813",
+          "b": "ai_v9_15_gen13_hb_events_stack_0817",
+          "committed_delta": 6.3,
+          "refit_delta": -6.9
+        },
+        {
+          "a": "ai_v9_12_gen10_t0prior_0814",
+          "b": "ai_v9_15_gen13_hb_events_stack_0817",
+          "committed_delta": 11.6,
+          "refit_delta": -9.9
+        },
+        {
+          "a": "ai_v9_13_gen11_labelonly_winprob_0815",
+          "b": "ai_v9_15_gen13_hb_events_stack_0817",
+          "committed_delta": 11.7,
+          "refit_delta": -8.6
+        },
+        {
+          "a": "ai_v9_14_gen12_h_entitypool_shaping_0816",
+          "b": "ai_v9_18_gen15_v8rewards_0818",
+          "committed_delta": -4.7,
+          "refit_delta": 3.2
+        },
+        {
+          "a": "ai_v9_16_gen14_framedel_v91_0817",
+          "b": "ai_v9_21_gen17_pfspoff_0820",
+          "committed_delta": -9.8,
+          "refit_delta": 2.3
+        }
+      ]
+    },
+    {
+      "group": "E-substrate + baitbot (E1..E4)",
+      "n": 4,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 6,
+      "committed_order": [
+        "ai_v9_25_E4_baitbot_0822",
+        "ai_v9_22_E1_substrate_on_0821",
+        "ai_v9_24_E3_substrate_on_0822",
+        "ai_v9_23_E2_substrate_on_0822"
+      ],
+      "refit_order": [
+        "ai_v9_25_E4_baitbot_0822",
+        "ai_v9_22_E1_substrate_on_0821",
+        "ai_v9_24_E3_substrate_on_0822",
+        "ai_v9_23_E2_substrate_on_0822"
+      ],
+      "flips": []
+    },
+    {
+      "group": "fold-dial fd* (A/B/C/E/F, F-p1c, F-p2c)",
+      "n": 7,
+      "order_changes": true,
+      "flipped_pairs": 1,
+      "n_pairs": 21,
+      "committed_order": [
+        "ai_v9_42_fdE_single_0825",
+        "ai_v9_38_fdA_coef03_0825",
+        "ai_v9_39_fdB_lossonly_0825",
+        "ai_v9_40_fdC_ecology_0825",
+        "ai_v9_45_fdF_p1_0826",
+        "ai_v9_50_fdF_p1c_0826",
+        "ai_v9_51_fdF_p2c_0826"
+      ],
+      "refit_order": [
+        "ai_v9_38_fdA_coef03_0825",
+        "ai_v9_42_fdE_single_0825",
+        "ai_v9_39_fdB_lossonly_0825",
+        "ai_v9_40_fdC_ecology_0825",
+        "ai_v9_45_fdF_p1_0826",
+        "ai_v9_50_fdF_p1c_0826",
+        "ai_v9_51_fdF_p2c_0826"
+      ],
+      "flips": [
+        {
+          "a": "ai_v9_38_fdA_coef03_0825",
+          "b": "ai_v9_42_fdE_single_0825",
+          "committed_delta": -7.8,
+          "refit_delta": 1.6
+        }
+      ]
+    },
+    {
+      "group": "R2 rung (CTRL/ACTION/TOPK/KL/PLAIN)",
+      "n": 5,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 10,
+      "committed_order": [
+        "ai_v9_58_R2CTRL_0827",
+        "ai_v9_61_R2KL_0827",
+        "ai_v9_60_R2TOPK_0827",
+        "ai_v9_62_R2PLAIN_0827",
+        "ai_v9_59_R2ACTION_0827"
+      ],
+      "refit_order": [
+        "ai_v9_58_R2CTRL_0827",
+        "ai_v9_61_R2KL_0827",
+        "ai_v9_60_R2TOPK_0827",
+        "ai_v9_62_R2PLAIN_0827",
+        "ai_v9_59_R2ACTION_0827"
+      ],
+      "flips": []
+    },
+    {
+      "group": "R3/R4 + DOSE",
+      "n": 5,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 10,
+      "committed_order": [
+        "ai_v9_151_R4DOSE6_0901",
+        "ai_v9_150_R4DOSE12_0901",
+        "ai_v9_71_R3ACTIONHI_0828",
+        "ai_v9_70_R3ACTION_0828",
+        "ai_v9_76_R4ACTION_0830"
+      ],
+      "refit_order": [
+        "ai_v9_151_R4DOSE6_0901",
+        "ai_v9_150_R4DOSE12_0901",
+        "ai_v9_71_R3ACTIONHI_0828",
+        "ai_v9_70_R3ACTION_0828",
+        "ai_v9_76_R4ACTION_0830"
+      ],
+      "flips": []
+    },
+    {
+      "group": "teacher-content TC* (09-03/09-04)",
+      "n": 6,
+      "order_changes": true,
+      "flipped_pairs": 1,
+      "n_pairs": 15,
+      "committed_order": [
+        "ai_v9_163_TCUNFB_0903",
+        "ai_v9_162_TCUNFA_0903",
+        "ai_v9_170_TCUNFK6A_0904",
+        "ai_v9_171_TCUNFK6B_0904",
+        "ai_v9_161_TCFUNDB_0903",
+        "ai_v9_160_TCFUNDA_0903"
+      ],
+      "refit_order": [
+        "ai_v9_163_TCUNFB_0903",
+        "ai_v9_162_TCUNFA_0903",
+        "ai_v9_170_TCUNFK6A_0904",
+        "ai_v9_171_TCUNFK6B_0904",
+        "ai_v9_160_TCFUNDA_0903",
+        "ai_v9_161_TCFUNDB_0903"
+      ],
+      "flips": [
+        {
+          "a": "ai_v9_160_TCFUNDA_0903",
+          "b": "ai_v9_161_TCFUNDB_0903",
+          "committed_delta": -0.4,
+          "refit_delta": 0.8
+        }
+      ]
+    },
+    {
+      "group": "09-01 factorial (B2/C1/N2/G1SHORT)",
+      "n": 4,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 6,
+      "committed_order": [
+        "ai_v9_141_C1_0901",
+        "ai_v9_172_G1SHORT_0905",
+        "ai_v9_140_B2_0901",
+        "ai_v9_143_N2_0901"
+      ],
+      "refit_order": [
+        "ai_v9_141_C1_0901",
+        "ai_v9_172_G1SHORT_0905",
+        "ai_v9_140_B2_0901",
+        "ai_v9_143_N2_0901"
+      ],
+      "flips": []
+    },
+    {
+      "group": "tdaux rung2 (lam00/lam10/lam30)",
+      "n": 3,
+      "order_changes": true,
+      "flipped_pairs": 1,
+      "n_pairs": 3,
+      "committed_order": [
+        "ai_v9_20_tdaux_rung2_lam10_0820",
+        "ai_v9_20_tdaux_rung2_lam00_0820",
+        "ai_v9_20_tdaux_rung2_lam30_0820"
+      ],
+      "refit_order": [
+        "ai_v9_20_tdaux_rung2_lam00_0820",
+        "ai_v9_20_tdaux_rung2_lam10_0820",
+        "ai_v9_20_tdaux_rung2_lam30_0820"
+      ],
+      "flips": [
+        {
+          "a": "ai_v9_20_tdaux_rung2_lam00_0820",
+          "b": "ai_v9_20_tdaux_rung2_lam10_0820",
+          "committed_delta": -4.3,
+          "refit_delta": 1.7
+        }
+      ]
+    },
+    {
+      "group": "G-gate (G1_action/G2_advgate/G1p_matched)",
+      "n": 3,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 3,
+      "committed_order": [
+        "ai_v9_52_G1p_matched_0826",
+        "ai_v9_49_G2_advgate_0826",
+        "ai_v9_48_G1_action_0826"
+      ],
+      "refit_order": [
+        "ai_v9_52_G1p_matched_0826",
+        "ai_v9_49_G2_advgate_0826",
+        "ai_v9_48_G1_action_0826"
+      ],
+      "flips": []
+    },
+    {
+      "group": "v12 ladder cells (10..29)",
+      "n": 17,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 136,
+      "committed_order": [
+        "ai_v12_23_ladder_rollout",
+        "ai_v12_14_ladder_truevalue",
+        "ai_v12_20_ladder_denseaux",
+        "ai_v12_13_ladder_tdaux",
+        "ai_v12_21_ladder_lambda09_b",
+        "ai_v12_22_ladder_lambda095",
+        "ai_v12_12_ladder_cflabels",
+        "ai_v12_11_ladder_ctrl10M",
+        "ai_v12_29_ladder_vf025",
+        "ai_v12_19_ladder_lambda09",
+        "ai_v12_10_ladder_vf15",
+        "ai_v12_28_ladder_ent05",
+        "ai_v12_17_ladder_strata",
+        "ai_v12_16_ladder_ctrl10M_c",
+        "ai_v12_15_ladder_ctrl10M_b",
+        "ai_v12_24_ladder_strata_b",
+        "ai_v12_25_ladder_vf15_b"
+      ],
+      "refit_order": [
+        "ai_v12_23_ladder_rollout",
+        "ai_v12_14_ladder_truevalue",
+        "ai_v12_20_ladder_denseaux",
+        "ai_v12_13_ladder_tdaux",
+        "ai_v12_21_ladder_lambda09_b",
+        "ai_v12_22_ladder_lambda095",
+        "ai_v12_12_ladder_cflabels",
+        "ai_v12_11_ladder_ctrl10M",
+        "ai_v12_29_ladder_vf025",
+        "ai_v12_19_ladder_lambda09",
+        "ai_v12_10_ladder_vf15",
+        "ai_v12_28_ladder_ent05",
+        "ai_v12_17_ladder_strata",
+        "ai_v12_16_ladder_ctrl10M_c",
+        "ai_v12_15_ladder_ctrl10M_b",
+        "ai_v12_24_ladder_strata_b",
+        "ai_v12_25_ladder_vf15_b"
+      ],
+      "flips": []
+    },
+    {
+      "group": "v13 flywheel family",
+      "n": 8,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 28,
+      "committed_order": [
+        "ai_v13_11_split_lossoff",
+        "ai_v13_16_teach5_offense_dist",
+        "ai_v13_04_flywheel_winprob_b",
+        "ai_v13_01_flywheel_shaped",
+        "ai_v13_12_plateau",
+        "ai_v13_02_flywheel_winprob",
+        "ai_v13_09_wcont",
+        "ai_v13_03_fork"
+      ],
+      "refit_order": [
+        "ai_v13_11_split_lossoff",
+        "ai_v13_16_teach5_offense_dist",
+        "ai_v13_04_flywheel_winprob_b",
+        "ai_v13_01_flywheel_shaped",
+        "ai_v13_12_plateau",
+        "ai_v13_02_flywheel_winprob",
+        "ai_v13_09_wcont",
+        "ai_v13_03_fork"
+      ],
+      "flips": []
+    },
+    {
+      "group": "winprob critic pair (v12_01 / v12_02)",
+      "n": 2,
+      "order_changes": false,
+      "flipped_pairs": 0,
+      "n_pairs": 1,
+      "committed_order": [
+        "ai_v12_01_winprob_critic",
+        "ai_v12_02_winprob_critic"
+      ],
+      "refit_order": [
+        "ai_v12_01_winprob_critic",
+        "ai_v12_02_winprob_critic"
+      ],
+      "flips": []
+    }
+  ],
+  "global": {
+    "n": 93,
+    "flipped_pairs": 363,
+    "n_pairs": 4278,
+    "biggest_rank_moves": [
+      {
+        "run": "ai_v12_02_winprob_critic",
+        "committed_rank": 22,
+        "refit_rank": 54,
+        "places": 32
+      },
+      {
+        "run": "ai_v9_09_gen8_beliefs_threat_inject_0811",
+        "committed_rank": 38,
+        "refit_rank": 60,
+        "places": 22
+      },
+      {
+        "run": "ai_v9_08_gen7_seed_quantile_0811",
+        "committed_rank": 14,
+        "refit_rank": 34,
+        "places": 20
+      },
+      {
+        "run": "ai_v9_03_gen25_consequence_25m_0806",
+        "committed_rank": 29,
+        "refit_rank": 47,
+        "places": 18
+      },
+      {
+        "run": "ai_v9_06_gen5_no_concat_0809",
+        "committed_rank": 30,
+        "refit_rank": 48,
+        "places": 18
+      },
+      {
+        "run": "ai_v9_07_gen6_seed_vicreg_0810",
+        "committed_rank": 21,
+        "refit_rank": 38,
+        "places": 17
+      },
+      {
+        "run": "ai_v9_34_tick1_0824",
+        "committed_rank": 32,
+        "refit_rank": 49,
+        "places": 17
+      },
+      {
+        "run": "ai_v12_14_ladder_truevalue",
+        "committed_rank": 23,
+        "refit_rank": 9,
+        "places": 14
+      },
+      {
+        "run": "ai_v12_11_ladder_ctrl10M",
+        "committed_rank": 45,
+        "refit_rank": 33,
+        "places": 12
+      },
+      {
+        "run": "ai_v12_13_ladder_tdaux",
+        "committed_rank": 33,
+        "refit_rank": 21,
+        "places": 12
+      },
+      {
+        "run": "ai_v12_29_ladder_vf025",
+        "committed_rank": 47,
+        "refit_rank": 35,
+        "places": 12
+      },
+      {
+        "run": "ai_v13_01_flywheel_shaped",
+        "committed_rank": 31,
+        "refit_rank": 19,
+        "places": 12
+      },
+      {
+        "run": "ai_v13_02_flywheel_winprob",
+        "committed_rank": 44,
+        "refit_rank": 32,
+        "places": 12
+      },
+      {
+        "run": "ai_v13_12_plateau",
+        "committed_rank": 41,
+        "refit_rank": 29,
+        "places": 12
+      },
+      {
+        "run": "ai_v9_12_gen10_t0prior_0814",
+        "committed_rank": 11,
+        "refit_rank": 23,
+        "places": 12
+      }
+    ]
+  }
+}
