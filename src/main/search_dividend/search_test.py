@@ -421,23 +421,33 @@ class _SimpleNamespace:
 
 def _two_ply_engine(monkeypatch, per_ply):
     """An engine whose sim + materializer + scorer are scripted, returning the captured
-    ``Branch`` list handed to ``materialize_branches`` on each ply."""
+    ``Branch`` list handed to the materializer on each ply.
+
+    🚨 **TWO seams, because ``materialize_branches`` was SPLIT** (`gen3_one_fork_per_decision_v1`,
+    so K determinized worlds share one prefix replay). ``search._materialize`` now calls
+    ``open_branch_fork`` and ``materialize_branches_from``, and a stub left on the old name would
+    reach nothing — the scripted engine would drive the REAL poke-env replay player and this test
+    would be asserting about a battle it never built."""
     import numpy as np
 
     from agents.training import obs_materializer as om
 
     seen = []
 
-    def _fake_materialize(prefix_chunks, branches, **kw):
-        seen.append((list(prefix_chunks), [list(b.chunks) for b in branches],
+    def _fake_open_branch_fork(prefix_chunks, **kw):
+        return _SimpleNamespace(prefix=list(prefix_chunks), dec_i=kw["map_actions_at"])
+
+    def _fake_materialize_from(fork, branches):
+        seen.append((list(fork.prefix), [list(b.chunks) for b in branches],
                      [list(b.actions) for b in branches]))
-        dec_i = kw["map_actions_at"]
+        dec_i = fork.dec_i
         row = _SimpleNamespace(obs=np.zeros(3, dtype=np.float32),
                                mask=np.ones(4, dtype=np.float32))
         return [_SimpleNamespace(decisions=[row] * (dec_i + 1),
                                  action_choices={0: "move surf"}) for _ in branches]
 
-    monkeypatch.setattr(om, "materialize_branches", _fake_materialize)
+    monkeypatch.setattr(om, "open_branch_fork", _fake_open_branch_fork)
+    monkeypatch.setattr(om, "materialize_branches_from", _fake_materialize_from)
     engine = _engine("honest")
     engine._session = _PlySession(per_ply)
     monkeypatch.setattr(engine, "_score_batch",

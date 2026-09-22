@@ -182,6 +182,22 @@ class RealizedWidths:
     view_arms: int = 0
     view_fallback_no_payload: int = 0
     view_fallback_intermediate: int = 0
+    # ONE VIEW FORK PER DECISION (`gen3_one_fork_per_decision_v1`). The ply-1 fork is a pure
+    # function of the one-sided prefix + our action history, so the K worlds of one decision share
+    # it instead of replaying one identical prefix K times. HIT and MISS are counted apart because
+    # they mean different things: a miss past the first world says two worlds produced DIFFERENT
+    # prefix bytes, which the determinization gate's through-`|turn|` scope permits and nobody had
+    # measured. `fork_cache_miss > worlds_gated_ok` is impossible; `== worlds_gated_ok` means the
+    # sharing bought nothing on that decision and is the number to look at first.
+    fork_cache_hit: int = 0
+    fork_cache_miss: int = 0
+    # The same sharing on the PROTOCOL road's own shared-prefix fork, which the view road still
+    # pays on every D10 fallback arm. Counted APART from the view fork's because the two answer
+    # different questions: `fork_cache_*` says how many worlds one view fork served, and these say
+    # how many worlds one poke-env prefix replay served. A decision with no fallback arm has both
+    # of these at 0, which is the shape to expect once D10 is closed.
+    branch_fork_cache_hit: int = 0
+    branch_fork_cache_miss: int = 0
     # ITERATIVE DEEPENING (the registered depth amendment). `depth_planned` is the cap the CLI
     # asked for; `depth_realized` is what the wall-clock actually bought, which is the reportable
     # one — the whole content of the amendment is that a budget cell should say what depth it

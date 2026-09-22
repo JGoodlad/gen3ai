@@ -565,6 +565,56 @@ def materialize_branches(
     branches = list(branches)
     if not branches:
         return []
+    fork = open_branch_fork(
+        prefix_chunks, username=username, packed_team=packed_team, side=side,
+        prefix_actions=prefix_actions, battle_format=battle_format, battle_tag=battle_tag,
+        mappings=mappings, stall_config=stall_config, map_actions_at=map_actions_at,
+        stop_after_decision=stop_after_decision, encode_only_at=encode_only_at)
+    return materialize_branches_from(fork, branches)
+
+
+@dataclass
+class BranchFork:
+    """The state ONE decision's arms all branch from — :func:`materialize_branches`' first half.
+
+    ``gen3_one_fork_per_decision_v1``. It is split out for the same reason ``open_view_fork``
+    is: a search decision opens K determinized WORLDS whose one-sided prefixes
+    ``determinize.prefix_matches`` gates to be byte-identical, so replaying that prefix once per
+    world is K-1 replays of the same bytes. Holding the (player, client, snapshot, tail) tuple
+    lets the caller reuse it across worlds, and :meth:`~_PlayerSnapshot.restore` is what makes
+    the reuse exact — it is the SAME mechanism that already resets the player between two arms
+    of one world, applied one level out.
+
+    🚨 **A fork is only reusable for the decision index it was BUILT for.** ``map_actions_at``,
+    ``stop_after_decision`` and ``encode_only_at`` are baked into the player at construction, so a
+    caller that caches forks must key on them; ``key`` is that tuple, ready to use."""
+
+    player: Any
+    client: Any
+    snapshot: "_PlayerSnapshot"
+    prefix_tail: List[str]
+    tag: str
+    prefix_actions: List[int]
+    stop_after_decision: Optional[int]
+    key: tuple
+
+
+def open_branch_fork(
+    prefix_chunks: Sequence[str],
+    *,
+    username: str,
+    packed_team: str,
+    side: str,
+    prefix_actions: Sequence[int] = (),
+    battle_format: str = "gen3ou",
+    battle_tag: Optional[str] = None,
+    mappings=None,
+    stall_config: Optional[StallConfig] = None,
+    map_actions_at: Optional[int] = None,
+    stop_after_decision: Optional[int] = None,
+    encode_only_at: "Optional[set]" = None,
+) -> "BranchFork":
+    """Replay the shared prefix ONCE and freeze the snapshot every arm restores from."""
     prefix_actions = [int(a) for a in prefix_actions]
     n_prefix = len(prefix_actions)
     tag = _next_tag(battle_tag, battle_format)
@@ -591,12 +641,29 @@ def materialize_branches(
     # Anything after it is prefix the single-shot path WOULD have fed (after the tracker
     # advance), so each branch replays that tail ahead of its own suffix — dropping it is
     # exactly the divergence this tail exists to prevent.
-    prefix_tail = list(prefix_chunks)[consumed:]
-    snapshot = _PlayerSnapshot(player)
+    return BranchFork(
+        player=player, client=client, snapshot=_PlayerSnapshot(player),
+        prefix_tail=list(prefix_chunks)[consumed:], tag=tag,
+        prefix_actions=prefix_actions, stop_after_decision=stop_after_decision,
+        key=(side, tuple(prefix_actions), tuple(prefix_chunks),
+             map_actions_at, stop_after_decision,
+             None if encode_only_at is None else tuple(sorted(encode_only_at))))
 
+
+def materialize_branches_from(fork: "BranchFork",
+                              branches: Sequence[Branch]) -> "List[MaterializedTrace]":
+    """The arms of ONE decision, from a prefix replay :func:`open_branch_fork` already did.
+
+    Every arm begins by restoring ``fork.snapshot`` onto ``fork.player``, so the arms are
+    independent of each other AND of any earlier call on the same fork — which is what lets one
+    fork serve every determinized world of a decision."""
+    _refuse_poke_loop("materialize_branches")
+    player, client = fork.player, fork.client
+    tag, prefix_actions = fork.tag, fork.prefix_actions
+    n_prefix = len(prefix_actions)
     out: List[MaterializedTrace] = []
     for branch in branches:
-        snapshot.restore(player)
+        fork.snapshot.restore(player)
         full_actions = prefix_actions + [int(a) for a in branch.actions]
         player._replay_actions = full_actions
         # Replay the exact bookkeeping materialize_decisions would have done at decision
@@ -609,11 +676,11 @@ def materialize_branches(
             player._get_tracker(battle).advance(full_actions[n_prefix])
         else:
             player._actions_exhausted = True
-        if stop_after_decision is not None and n_prefix >= stop_after_decision:
+        if fork.stop_after_decision is not None and n_prefix >= fork.stop_after_decision:
             player._stopped = True
         if not player.done:
             asyncio.run_coroutine_threadsafe(
-                _feed(client, player, prefix_tail + list(branch.chunks), tag, first=False),
+                _feed(client, player, fork.prefix_tail + list(branch.chunks), tag, first=False),
                 POKE_LOOP).result()
         out.append(MaterializedTrace(
             decisions=list(player._materialized),

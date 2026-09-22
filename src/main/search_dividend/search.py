@@ -63,7 +63,7 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -343,7 +343,9 @@ class _Leaf:
 
     obs: "np.ndarray"
     mask: "np.ndarray"
-    action_choices: Dict[int, str]
+    #: A ``Mapping``, possibly a :class:`~main.search_dividend.deepen.LazyTokens` that computes on
+    #: first read — see its docstring. Never mutate it and never assume ``dict``.
+    action_choices: "Mapping"
     fork: Any = None
 
 
@@ -366,6 +368,16 @@ class SearchEngine:
         # turn) re-plans its widths instead of missing the deadline by a constant factor.
         self._cost = CostModel()
         self._pool_packed = pool_packed
+        #: ONE VIEW FORK PER DECISION, not per world (`gen3_one_fork_per_decision_v1`). The fork
+        #: is a pure function of the one-sided PREFIX + our action history, and
+        #: :func:`~main.search_dividend.determinize.prefix_matches` is what gates every world of a
+        #: decision to the SAME observed prefix — so K worlds re-replayed one identical prefix K
+        #: times. The key is the prefix BYTES (not the gate's verdict), which is what makes the
+        #: reuse safe by construction rather than by argument: a world whose prefix differs by one
+        #: byte — the post-`|turn|` `|request|` the gate truncates away, say — misses the cache and
+        #: replays its own. Reset per :meth:`choose`, so nothing outlives the decision it belongs
+        #: to and the memory is one fork.
+        self._fork_cache: Dict[Any, Any] = {}
         self._pool_mons: Optional[List[List[dz.MonSet]]] = None
         self._gender_tbl: Optional[Dict[str, str]] = None
         self._move_bank: Optional[Dict[str, list]] = None
@@ -412,6 +424,10 @@ class SearchEngine:
         other strategy.
         """
         caps = self.cfg.resolved_caps()
+        # CLEARED, not reassigned: the cache object itself is a seam a test replaces to run the
+        # un-shared control (`fork_sharing_parity_integration_test`), and a fresh dict here would
+        # silently put the experiment back.
+        self._fork_cache.clear()
         widths = RealizedWidths(planned={}, n_our_actions=len(our_tokens))
         if self.cfg.arm == "base" or caps.k_worlds <= 0:
             widths.planned = WidthPlan(0, 0, 0).as_dict()
@@ -1078,8 +1094,14 @@ class SearchEngine:
                     # move selection (see `branchable`), which makes such a node a leaf by
                     # construction everywhere downstream — `expandable()`, `leaves_under` and the
                     # cost estimate all agree without any of them having to know the rule.
-                    tokens = (dict(leaf.action_choices or {})
-                              if branchable(e.requests, ctx.side) else {})
+                    # 🚨 NOT materialized here (`gen3_lazy_action_choices_v1`). The token map is
+                    # the REAL action mapper over every legal index and ONLY a node that gets
+                    # DEEPENED reads one, so at a depth-1 decision — which is what the default
+                    # width caps buy — every one of these was built and thrown away. `LazyTokens`
+                    # builds on first read; `branchable` still decides EMPTY-or-not eagerly,
+                    # because that rule is what makes a non-move-selection node a leaf everywhere
+                    # downstream and it costs a request lookup, not a mapper sweep.
+                    tokens = (leaf.action_choices if branchable(e.requests, ctx.side) else {})
                     parent.add_child(
                         acts[li], weights[li],
                         TreeNode(node_id=e.node_id, ended=False, value=float(v),
@@ -1119,7 +1141,6 @@ class SearchEngine:
           :func:`~agents.training.view_successor.intermediate_decisions`, deferral D10;
         * a deeper ply whose parent carries no fork (its own arm fell back).
         """
-        from agents.training.obs_materializer import materialize_branches, open_view_fork
         from agents.training.view_successor import intermediate_decisions
 
         out: "Dict[int, _Leaf]" = {}
@@ -1133,13 +1154,7 @@ class SearchEngine:
                         if (ply > 1 and parent.fork is not None) else None)
                 if ply == 1:
                     if root_fork is None and arm_view[li]:
-                        root_fork = open_view_fork(
-                            ctx.prefix, username=ctx.record.username(ctx.side),
-                            packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
-                            prefix_actions=list(ctx.our_history),
-                            battle_format=ctx.record.format_id,
-                            battle_tag=ctx.record.battle_tag, mappings=self.mappings,
-                            encoder=self._encoder())[0]
+                        root_fork = self._root_fork(ctx, widths)
                     fork = root_fork
                 if fork is None or not arm_view[li]:
                     widths.view_fallback_no_payload += 1
@@ -1158,12 +1173,9 @@ class SearchEngine:
             todo = fallback
             branches = [b for b in branches if int(b.label) in set(todo)]
         if todo and branches:
-            traces = materialize_branches(
-                ctx.prefix, branches, username=ctx.record.username(ctx.side),
-                packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
-                prefix_actions=list(ctx.our_history), battle_format=ctx.record.format_id,
-                battle_tag=ctx.record.battle_tag, mappings=self.mappings,
-                map_actions_at=dec_i, stop_after_decision=dec_i, encode_only_at={dec_i})
+            from agents.training.obs_materializer import materialize_branches_from
+
+            traces = materialize_branches_from(self._branch_fork(ctx, dec_i, widths), branches)
             for b, mt in zip(branches, traces):
                 if len(mt.decisions) <= dec_i:
                     continue                 # the successor never produced a request (rare)
@@ -1172,6 +1184,78 @@ class SearchEngine:
                                           action_choices=dict(mt.action_choices or {}),
                                           fork=None)
         return out
+
+    def _root_fork(self, ctx: "_PlyContext", widths: RealizedWidths):
+        """The ply-1 :class:`~agents.training.view_successor.ViewSuccessorFactory` for ``ctx`` —
+        built once per DECISION rather than once per world.
+
+        🚨 **Why one fork can serve K worlds, and why the key is the bytes.** The fork is
+        ``materialize_branches``' first half over ``(prefix chunks, our action history, OUR packed
+        team)``, and a determinized world changes only the OPPONENT's team
+        (:func:`~main.search_dividend.determinize.record_with_team`). Every world that reaches
+        here has already passed :func:`~main.search_dividend.determinize.prefix_matches`, which
+        holds the one-sided prefix byte-identical to the protocol we observed **through the
+        ``|turn|`` marker** — so the worlds agree about the replay this fork performs. The gate
+        truncates at that marker, so it does NOT by itself license reuse of whatever follows it;
+        keying the cache on the prefix bytes closes that gap without relying on the gate's scope.
+        A world whose prefix differs at all simply misses and replays its own, and
+        ``fork_cache_miss`` counts it — a non-zero count on a run is news, not noise.
+
+        The factory is immutable across arms and therefore across worlds: ``successor()``
+        branches the event folder, thaws the frozen tracker and concatenates the prior-event list,
+        mutating none of the three. That is the same property that already let one fork serve the
+        arms of one world.
+        """
+        from agents.training.obs_materializer import open_view_fork
+
+        key = (ctx.side, tuple(int(a) for a in ctx.our_history), tuple(ctx.prefix))
+        got = self._fork_cache.get(key)
+        if got is not None:
+            widths.fork_cache_hit += 1
+            return got
+        widths.fork_cache_miss += 1
+        got = open_view_fork(
+            ctx.prefix, username=ctx.record.username(ctx.side),
+            packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
+            prefix_actions=list(ctx.our_history),
+            battle_format=ctx.record.format_id,
+            battle_tag=ctx.record.battle_tag, mappings=self.mappings,
+            encoder=self._encoder())[0]
+        self._fork_cache[key] = got
+        return got
+
+    def _branch_fork(self, ctx: "_PlyContext", dec_i: int, widths: RealizedWidths):
+        """The PROTOCOL road's shared-prefix fork for ``ctx`` at decision ``dec_i`` — built once
+        per decision, exactly like :meth:`_root_fork`, and for the same reason.
+
+        🚨 **This is the D10 road, and it is the one the VIEW road still pays.** An arm whose ply
+        resolved an intermediate decision falls back here, and ``materialize_branches`` used to
+        replay the whole shared prefix again for every WORLD that had one — on top of the view
+        fork's own replay. The profile put that fallback at 21.1% of the view road's decision wall
+        while serving 16.8% of its arms
+        (``designs/research_state/measurements/search_profile_2026-09-22/README.md``).
+
+        The cache key is :attr:`~agents.training.obs_materializer.BranchFork.key`, which carries
+        the prefix BYTES **and** the three decision-indexed knobs baked into the player at
+        construction (``map_actions_at`` / ``stop_after_decision`` / ``encode_only_at``) — a
+        deeper ply asks about a different decision index and must not be served a ply-1 fork."""
+        from agents.training.obs_materializer import open_branch_fork
+
+        key = ("branch", ctx.side, tuple(int(a) for a in ctx.our_history),
+               tuple(ctx.prefix), dec_i)
+        got = self._fork_cache.get(key)
+        if got is not None:
+            widths.branch_fork_cache_hit += 1
+            return got
+        widths.branch_fork_cache_miss += 1
+        got = open_branch_fork(
+            ctx.prefix, username=ctx.record.username(ctx.side),
+            packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
+            prefix_actions=list(ctx.our_history), battle_format=ctx.record.format_id,
+            battle_tag=ctx.record.battle_tag, mappings=self.mappings,
+            map_actions_at=dec_i, stop_after_decision=dec_i, encode_only_at={dec_i})
+        self._fork_cache[key] = got
+        return got
 
     def _encoder(self):
         """The observation encoder the VIEW road encodes a successor with — the same
