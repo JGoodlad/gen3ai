@@ -303,6 +303,23 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                 "regime_matched=false), or use --regime greedy.")
         matched = False
 
+    # 🚨 THE REGISTERED FAILING CONFIGURATION (hazard H-H). `mixed` — us greedy, Metamon at
+    # T = 1.0 — is only reachable through --allow-unmatched-regime, and its `Metamon challenges`
+    # half died with the SAME RecursionError in three independent campaigns. It is refused here
+    # rather than run: a mixed-regime Metamon number is not comparable to anything in the SOP
+    # (rule 1), and this is the one cell shape for which we have three recorded crashes and no
+    # recorded success. ⚠️ The refusal is NOT the general fix and must not be read as one — the
+    # fourth occurrence (2026-09-18) was in a MATCHED greedy cell, so the common factor is
+    # Metamon CHALLENGING, not the regime. See `runner.classify_peer_error`.
+    if kind == "metamon" and args.allow_unmatched_regime:
+        raise SystemExit(
+            "--allow-unmatched-regime against metamon is REFUSED. A mixed-regime Metamon cell "
+            "cannot be read beside any other strength number here (T=1.0 is not one regime "
+            "across policies: SmallRL plays its own argmax 64.7% of the time, SyntheticRLV2 "
+            "88.0%), and its `Metamon challenges` half has died with the same upstream "
+            "RecursionError in THREE campaigns with no recorded success. Use --regime greedy "
+            "(both sides move together) or --regime t1 (both sides sample).")
+
     # The reproducibility pair is the FRONT END's, and there is no Node counterpart — a
     # `--seed-base` silently ignored on the Node path would make an unrepeatable series look
     # seeded, which is the one failure a seed exists to prevent.
@@ -522,6 +539,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     summary = results_mod.summarize(
         cell, rows, status=status,
         failure=failure.as_dict() if failure is not None else None,
+        peer_exit_notes=report.get("peer_exit_notes") or [],
         provenance={
             "anchors_config": str(cfg.source),
             "peer_report": {k: v for k, v in report.items() if k != "team_draws"},

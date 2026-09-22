@@ -20,6 +20,8 @@ import pytest
 
 from main.anchors.peers import REGIME_VERIFIED_DEPRECATION, FoulPlayPeer, MetamonPeer
 from main.anchors.results import REQUIRED_ROW_FIELDS, GameRow, render, summarize
+from main.anchors import results as results_mod
+from main.anchors import runner as runner_mod
 from main.anchors.runner import finalize_regime_fields
 
 from main.anchors.peers_test import _foulplay_plan, _metamon_plan
@@ -201,3 +203,61 @@ def test_the_regime_appropriate_rule_is_what_decisions_means(regime, rate, ok) -
     got = (rate is not None and n_dec >= 1
            and (rate == 1.0 if regime == "greedy" else rate < 1.0))
     assert got is ok
+
+
+# ------------------------------------------ Metamon's POST-GAME recursion, named (hazard H-H)
+def _report(error: str) -> dict:
+    return {"error": error, "argmax_match_rate": 1.0, "n_decisions": 3052}
+
+
+def test_a_complete_challenger_half_with_the_upstream_recursion_is_NAMED() -> None:
+    """It costs no games, and a reader should not have to re-derive that from an rc."""
+    note = runner_mod.classify_peer_error(
+        _report("RecursionError: maximum recursion depth exceeded while calling a Python object"),
+        "peer_challenge", "metamon", 50, 50)
+    assert note is not None
+    assert note["cause"] == "peer_recursion_upstream"
+    # the detail must carry the CAUSE, not just the symptom — that is the whole point
+    assert "start_challenging" in note["detail"]
+    assert "_accept_challenge_loop" in note["detail"]
+
+
+def test_an_INCOMPLETE_half_is_not_excused() -> None:
+    """🚨 The excuse is 'post-game'. A half that lost games to the recursion is a real failure and
+    must keep reading as one — otherwise this classifier launders a short series."""
+    assert runner_mod.classify_peer_error(
+        _report("RecursionError: maximum recursion depth exceeded"),
+        "peer_challenge", "metamon", 37, 50) is None
+
+
+def test_the_half_where_WE_challenge_is_not_excused() -> None:
+    """All four recorded occurrences are in the half where METAMON challenges. A recursion in the
+    other half is something we have never seen and must not be pre-labelled as known."""
+    assert runner_mod.classify_peer_error(
+        _report("RecursionError: maximum recursion depth exceeded"),
+        "ours_challenge", "metamon", 50, 50) is None
+
+
+def test_another_error_is_not_excused() -> None:
+    assert runner_mod.classify_peer_error(
+        _report("RuntimeError: Agent is not challenging"),
+        "peer_challenge", "metamon", 50, 50) is None
+
+
+def test_a_clean_peer_gets_no_note() -> None:
+    assert runner_mod.classify_peer_error(
+        {"error": None, "argmax_match_rate": 1.0}, "peer_challenge", "metamon", 50, 50) is None
+
+
+def test_foulplay_is_not_given_metamons_excuse() -> None:
+    assert runner_mod.classify_peer_error(
+        _report("RecursionError: boom"), "peer_challenge", "foulplay", 50, 50) is None
+
+
+def test_the_note_reaches_the_summary_and_is_PRINTED() -> None:
+    """A named cause nobody can see is a named cause nobody uses."""
+    note = {"cause": "peer_recursion_upstream", "detail": "Metamon's own post-game teardown"}
+    summary = results_mod.summarize(_cell(), [], status="OK", peer_exit_notes=[note])
+    assert summary["peer_exit_notes"] == [note]
+    text = results_mod.render(summary)
+    assert "peer_recursion_upstream" in text

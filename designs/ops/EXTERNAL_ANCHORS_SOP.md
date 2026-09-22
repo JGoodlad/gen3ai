@@ -116,109 +116,6 @@ python -m main.anchors --model models/<run> --opponent foulplay \
     --regime greedy --teamset home --games 100 --search-time-ms 1000 --out <out>/foulplay_1000ms
 ```
 
-`SyntheticRLV2` is the milestone reference because it is *ahead of us* — which is what a reference
-should be. Foul Play is a different axis entirely: a search bot, not a learned policy, so it probes
-whatever a tree finds and a network does not.
-
-**Read the bar honestly.** `Wilson lower bound > 0.50` is BETTER. A CI that straddles 0.50 is
-**NOT DETECTED** — never "equal", and never rounded up to a pass because the point estimate is on
-the right side of even.
-
----
-
-## 2. The exact command, and what it does
-
-```
-python -m main.anchors [--model <run dir | .zip | run@step> | --our-side <who>] \
-    --opponent {metamon:SmallRL | metamon:SyntheticRLV2 | foulplay} \
-    --regime {greedy | t1} --teamset {home | away} --games N --out <dir>
-```
-
-### `--our-side` — WHO plays our half
-
-An anchor read does not have to put one of our checkpoints on the board. Three values:
-
-| `--our-side` | our half is | why it exists |
-|---|---|---|
-| `model` (default) | the `--model` checkpoint, through `main.play` | the ordinary read |
-| `bot:<name>` | one of the **nine PINNED eval bots** | it puts an external anchor on the **ABSOLUTE** scale without routing through any checkpoint of ours: the bots carry fixed ratings from the bot-vs-bot round robin, so an anchor-vs-bot edge is an edge to a pinned node |
-| `metamon:<Agent>` | a SECOND external peer | anchor-vs-anchor — the transitivity check on the fit |
-
-🚨 **A bot cell is stamped `regime_matched = false`, and that is the honest label rather than a
-defect.** A bot has no sampling knob to set to the peer's regime — the same shape as Foul Play —
-and its policy IS the one the round robin pinned. `--regime t1` with a bot our-side is REFUSED.
-`our_regime` on those rows reads `bot:<name>`.
-
-An anchor-vs-anchor cell IS matched (both peers take `--regime` and both verify it per decision),
-and its per-game record comes from **Metamon's own battle CSV** rather than from our poke-env
-flags, because there is no player of ours in the process. That instrument books a TIE as a LOSS
-(its `won` field is a boolean), so the rows say so; ties ran 0–1 per 100 games in the 2026-09-14
-batteries.
-
-### `--model-load {auto,bare,foreign}` — HOW the checkpoint is loaded
-
-🚨 **A cross-run frozen snapshot FAILS a bare `MaskablePPO.load`.** The extractor is rebuilt from
-the zip's own `policy_kwargs` and handed to the CURRENT `ExtractorBuild`, so every
-`ai_v9_29_rev1_0823` node dies with `unexpected keyword argument 'threat_prob_outspeed'` while
-every `ai_v12`/`ai_v13` node loads fine — a campaign spanning eras hits it on SOME cells only.
-`foreign` uses `load_foreign_opponent`, which reads the zip's own `model_config.json` and checks
-the **`arch_signature`** (observation-family compatibility, the property that actually matters for
-a frozen opponent). `auto` tries `bare`, falls back, and PRINTS which ran; the winner is stamped as
-`model_loader` on every row.
-
-⚠️ **`MIGRATION_FLOOR` is a hard wall, not a hint.** A checkpoint below it — every `ai_v8` snapshot,
-config version 44/45 under `ARCH_SIGNATURE = gen3_opp_hp_typed_candidates_v1` — is refused as
-PRE-GENERATION by BOTH loaders. There is no way to play a pre-generation node with current code, so
-an era-spanning campaign's oldest reachable node is whatever the floor admits.
-
-| step | what happens |
-|---|---|
-| 1 | starts a server on an auto-picked **9500–9599** port, records the PID, and stops **exactly that PID** on exit or failure. **8000 and 8001 are refused in code.** 🚨 **That server is the in-repo websocket FRONT END over the Rust bridge (`--server rust`, the DEFAULT): NO Node process is started at all.** `--server node` is the explicit opt-out that starts `deps/pokemon-showdown`; `--server-uri` uses an existing server, starts nothing, and stamps the rows `server_impl=external`. The transport and its version are on **every row** |
-| 2 | resolves `--model` through `resolve_model_ref` — 🚨 **a bare run directory means that run's LAST SNAPSHOT**; name the `.zip` or `@step` to pin a file. The rung it resolved by is recorded on every row |
-| 3 | runs our checkpoint through **`main.play`'s own code path** (`--device cpu`, `--temperature 0`, the trainer's 250-turn forfeit limit), role-balanced across two half-series |
-| 4 | verifies the regime **per decision on both sides**, writes the `argmax_match_rate`, and records the verdict as **two** fields — `regime_verified_decisions` (the regime) and `peer_clean` (the exit). Never one; see hazard **H16** |
-| 5 | writes `games.jsonl` + `summary.json` with the Wilson CI and the full provenance |
-| 6 | on a dead peer or a stalled series, **FAILS with a named cause** and exit code 2 |
-
-🚨 **`--out` has NO relative default.** With it omitted the read goes to a **run-scoped** directory
-`<root>/<YYYYmmdd_HHMMSS>_<opponent>_<regime>_<teamset>` under `$GEN3AI_ANCHORS_OUT_ROOT` (default:
-the system temp dir), and the path is PRINTED before anything starts. The old default was
-`./anchors_out`, and an anchor read is taken from the MAIN checkout because that is the only tree
-with `models/` — so the default filled the repo it was measuring, one `git clean` from a lost
-measurement and one `git status` from a landing that stops. An EXPLICIT `--out` is taken verbatim,
-because a directory under `designs/research_state/measurements/` is a deliberate destination.
-**Pass `--out` for anything you intend to bank.**
-
-Other useful flags: `--dry-run` (prints the plan — the transport, both peer commands verbatim,
-both team sources with their counts, every deadline — and starts nothing), `--show-config`
-(resolves `designs/ops/anchors.json` and says which paths exist), `--games`, `--search-time-ms`,
-`--progress-timeout` / `--first-game-timeout` / `--peer-ready-timeout`, and — **`--server rust`
-only** — `--seed-base` / `--capture-dir`, the reproducibility pair (the Node server mints its own
-seed per battle and has no capture, so both are REFUSED there rather than ignored).
-
-### The transport — `--server {rust,node}`
-
-| | **`rust` (the DEFAULT)** | **`node` (the opt-out)** |
-|---|---|---|
-| what runs | `utils.bridge.ws_frontend --impl rust` in its own subprocess; each battle is backed by ONE `sim_bridge` child | `deps/pokemon-showdown` — a whole Showdown server |
-| memory | **40 MB mean / 166 MB peak** server tree over 100 games | **3,227 MB mean / 3,551 MB peak** — 80× the mean |
-| wall, 100 games | **126 s** | 203 s |
-| needs `node` on PATH | only for the `/utm` team validation (a short-lived process per distinct team, cached) | yes, plus the submodule's `dist/` + `node_modules/` |
-| reproducible | `--seed-base` / `--capture-dir` | no counterpart |
-| stamped on every row | `server_impl=rust`, `server_version=ws_frontend@<head>+rust:<bridge binary>` | `server_impl=node`, `server_version=showdown:<pin>` |
-
-**They agree.** 100 games of `metamon:SmallRL` greedy/away at one team seed, arm W @ 75,005,952:
-**0.590 [0.492, 0.681]** through the front end against **0.580 [0.482, 0.672]** through Node,
-**Δ +0.010 [−0.124, +0.144] — NOT DETECTED** (`anchors_rust_frontend_2026-09-20`, on top of the
-200-battle side-by-side in `foulplay_axes_and_frontend_validation_2026-09-16`). 🚨 **An
-agreement at n = 100 is not byte equality**, and the two paths are not replicates — the instrument
-for protocol equality is `src/utils/bridge/ws_frontend_byte_identity_integration_test.py`, which
-compares the front end's per-side bytes against the Node bridge's and is green on both arms.
-
-**When to reach for `--server node`:** a differential like the one above, and anything the front
-end deliberately does NOT implement (`designs/rust_sim/ws_frontend.md`'s deferral list —
-reconnection, a battle timer, `/search`, replays). Nothing in the standing procedure needs it.
-
 ✅ **A multi-game Foul Play cell WORKS as of 2026-09-22** (`gen3_anchor_serial_challenge_v1`;
 hazard **H14** closed). The one-game-per-half limit is gone: `--challenge-mode serial` is the
 default and a 10-game cell completes 10/10 on `--server rust`. Every Foul Play number in the
@@ -391,6 +288,8 @@ the pin on the env the plan actually carries.
 
 | **H16** | 🚨 **A COMPOSITE VERIFICATION FLAG HIDES WHICH HALF FAILED.** `regime_verified` ANDed *"did the regime take effect?"* with *"did the peer exit cleanly?"*. Metamon raises a `RecursionError` in its post-game teardown when our side forfeits at turn 250 — **after** its last decision and after every game is played and recorded — so the peer exits 1 and the composite read FALSE. On the 2026-09-20 continuation campaign that was **31 of 84 sub-cells** (3,100 of 8,400 games; arms C 6 / F 14 / W 11), every one of which had `argmax_match_rate` = **1.0000** on both halves | a third of a campaign flagged "not a measurement" with nothing wrong with it — and a flag a reader then learns to ignore | **fixed 2026-09-21** (`gen3_anchor_regime_split_v1`): `regime_verified_decisions` and `peer_clean` are separate fields on every row and in every summary, `render` prints them on separate lines, and `regime_verified` survives ONE release as their AND with a deprecation note. The 84 sub-cells are re-derived in `designs/research_state/measurements/anchor_ab_continuation_2026-09-20/regime_split_rederived.json` — **all 31 flip to verified, 0 remain unverified**, and no win rate, CI or verdict changes |
 
+| **H17** | 🚨 **Metamon's post-game `RecursionError` is about WHO CHALLENGES, not about sampling — and it is the SAME defect class as H14, on their side of the wire.** Metamon drives the ACCEPTOR role through its own `_accept_challenge_loop`, whose docstring says it "accepts one challenge at a time and **fully awaits the battle** before accepting the next … ensuring terminated/truncated signals propagate correctly" — and drives the CHALLENGER role through poke-env's **pipelined** `start_challenging(n_challenges=num_battles)`. The env's `current_battle` and the agent's then disagree, `openai_api.step` raises `Battle is already finished, call reset`, and `MetamonAMAGOWrapper.step`'s handler answers **any** exception with `self.reset(); return self.step(action)` — unbounded, no re-raise — so an error `reset()` cannot clear becomes ~988 frames and a `RecursionError`. Four recorded occurrences, all in the half where **Metamon challenges**; three were `mixed`-regime and the fourth (2026-09-18) was MATCHED greedy, which is what retired "it is the mixed regime" | the peer exits nonzero AFTER its last game; `peer_clean` false, every `argmax_match_rate` 1.0000 | **upstream, and it costs no games.** `main.anchors` NAMES it: a COMPLETE `peer_challenge` half whose peer died of a `RecursionError` is stamped `peer_recursion_upstream` in `summary.json` and printed with its cause, instead of leaving an rc for a reader to diagnose. An INCOMPLETE half, the other half, or any other error is **not** given the excuse. The **`mixed` cell is refused outright** (`--allow-unmatched-regime` against metamon), being the one shape with three crashes and no recorded success — but 🚨 **that refusal is not the fix and must not be read as one**: the fourth occurrence was matched, so refusing on the regime axis is refusing on the axis F-D retired. The minimal upstream patch is in `designs/research_state/measurements/anchors_p2_batch_2026-09-22/README.md` |
+
 **One more, and it is about US, not them:** ⚠️ a long campaign that imports the MAIN checkout is not
 pinned, and `main` is a moving target on a multi-session box. The parallel Metamon de-risk landed
 `--forfeit-turn-limit` mid-run on 2026-09-14 and an `AttributeError` killed a Foul Play session
@@ -492,6 +391,10 @@ at the end, regime first.
    ⚠️ **`peer_clean` is a SEPARATE line and is not part of this check.** It says every peer
    process exited 0. A false `peer_clean` is a reason to read a peer log, **never** a reason to
    discard a win rate whose regime verified on every decision — see hazard **H16**.
+   ✅ **A `peer_exit_notes` entry means the tool RECOGNISED the dirty exit.** `peer_recursion_
+   upstream` is Metamon's post-game recursion in the half where Metamon challenges (hazard
+   **H17**), stamped only when every game of that half is present: the games stand and the read
+   is a measurement. A dirty exit with NO note is one nobody has diagnosed — read the log.
    ⚠️ **`regime_verified` is DEPRECATED (one release)**: it is the AND of the two, and reading it
    is how 31 of 84 sub-cells got flagged as unverified when nothing was wrong with them.
 3. `team_source_asymmetry == false`, and for Foul Play a non-null

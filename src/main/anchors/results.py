@@ -211,6 +211,7 @@ def write_games(path: Path, rows: Iterable[GameRow]) -> int:
 
 def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
               failure: Optional[Dict[str, Any]] = None,
+              peer_exit_notes: Optional[List[Dict[str, str]]] = None,
               provenance: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """The cell's one number, its Wilson interval, and every integrity counter beside it.
 
@@ -273,6 +274,9 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         "regime_verified": (bool(rows) and all(bool(r.regime_verified_decisions) for r in rows)
                             and all(bool(r.peer_clean) for r in rows)),
         "team_source_asymmetry": cell.our_team_count != cell.their_team_count,
+        # A RECOGNISED dirty exit, named. See `runner.classify_peer_error`: Metamon's post-game
+        # recursion costs no games, and a reader should not have to re-derive that from an rc.
+        "peer_exit_notes": list(peer_exit_notes or []),
     }
     if failure is not None:
         out["failure"] = failure
@@ -328,6 +332,9 @@ def render(summary: Dict[str, Any]) -> str:
         lines.append(f"  peers       exited cleanly: {clean}"
                      + ("" if clean else "   ⚠️ a peer exited nonzero — read its log; this does "
                                          "NOT invalidate a verified regime"))
+        # A dirty exit we RECOGNISE is worth more than a dirty exit a reader has to diagnose.
+        for note in summary.get("peer_exit_notes") or []:
+            lines.append(f"  peer exit   {note.get('cause')}: {note.get('detail')}")
     lines += [
         f"  status      {summary['status']}",
         f"  WIN RATE    {summary['win_rate']:.3f}   Wilson 95% [{lo:.3f}, {hi:.3f}]   "

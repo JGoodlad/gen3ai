@@ -385,6 +385,11 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     report["our_stochastic_kwargs"] = list(state.stochastic_kwargs)
     report["model_loader"] = state.model_loader
     finalize_regime_fields(report, peer_rcs=[proc.returncode if proc is not None else None])
+    note = classify_peer_error(report, half, plan.opponent_kind, len(state.records), n_games)
+    if note is not None:
+        report["peer_exit_note"] = note
+        print(f"[anchors] ⚠️  {half}: {note['cause']} — the games stand, the process does not.",
+              flush=True)
     return state.records, report, failure
 
 
@@ -432,6 +437,64 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
     )
+
+
+#: The exact upstream signature of hazard **H-H / H5**, matched on the peer report's ``error``
+#: string. Metamon's ``MetamonAMAGOWrapper.step`` answers ANY exception with
+#: ``self.reset(); return self.step(action)`` — no depth bound, no re-raise, no distinction
+#: between a transient error and a permanent one — so an error ``reset()`` cannot clear becomes
+#: ~988 stack frames and then this.
+UPSTREAM_RECURSION_SIGNATURE = "RecursionError"
+
+#: The role in which it has fired, all FOUR recorded times. See :func:`classify_peer_error`.
+UPSTREAM_RECURSION_ROLE = "peer_challenge"
+
+
+def classify_peer_error(report: Dict[str, Any], half: str, opponent_kind: str,
+                        n_records: int, expected: int) -> Optional[Dict[str, str]]:
+    """Name Metamon's post-game recursion for what it is, instead of leaving an rc for a reader.
+
+    🚨 **The defect is INSIDE Metamon and it is about WHO CHALLENGES.** Its evaluator drives two
+    different challenge loops depending on the role, and only one of them is serialized:
+
+    * **acceptor** — Metamon's OWN ``_accept_challenge_loop``, which its docstring says "accepts
+      one challenge at a time and **fully awaits the battle** before accepting the next … ensuring
+      terminated/truncated signals propagate correctly";
+    * **challenger** — poke-env's ``start_challenging(n_challenges=num_battles)``, the PIPELINED
+      loop, whose battle semaphore is released when a battle *starts*.
+
+    That is the same defect class as our own hazard **H14** (see
+    :func:`main.anchors.session.serialized_send_challenges`), on the other side of the wire:
+    Metamon serialized one role and left the other pipelined. The env's ``current_battle`` and the
+    agent's then disagree, ``openai_api.step`` raises ``Battle is already finished, call reset``,
+    and the unbounded handler above turns it into a ``RecursionError``.
+
+    **It costs no games, and this function exists so that it costs no measurements either.** All
+    four recorded occurrences are post-game: the 2026-09-20 continuation campaign flagged 31 of 84
+    sub-cells this way and every one had ``argmax_match_rate`` 1.0000 (re-derived: all 31 flip to
+    verified, no win rate changes). A read whose games are all present and whose regime verified
+    on every decision is a measurement; the peer's teardown is a fact about a process.
+
+    Returns a ``{"cause", "detail"}`` note for the summary, or ``None`` when this is not that.
+    """
+    error = str(report.get("error") or "")
+    if opponent_kind != "metamon" or UPSTREAM_RECURSION_SIGNATURE not in error:
+        return None
+    if half != UPSTREAM_RECURSION_ROLE or n_records < expected:
+        return None
+    return {
+        "cause": "peer_recursion_upstream",
+        "detail": (
+            f"{error} — Metamon's OWN post-game teardown (hazard H-H/H5), in the half where "
+            "METAMON challenges. All "
+            f"{n_records}/{expected} games are present and the regime verified on every "
+            "decision, so this read stands: the defect is upstream and post-game. Cause: "
+            "MetamonAMAGOWrapper.step answers any exception with `self.reset(); return "
+            "self.step(action)` — unbounded — and Metamon drives the CHALLENGER role through "
+            "poke-env's pipelined start_challenging() while driving the ACCEPTOR role through "
+            "its own serialized _accept_challenge_loop. The minimal upstream patch is in "
+            "designs/research_state/measurements/anchors_p2_batch_2026-09-22/README.md."),
+    }
 
 
 def finalize_regime_fields(report: Dict[str, Any], *, peer_rcs: List[Optional[int]]) -> None:
@@ -535,5 +598,9 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
         row.regime_verified = decisions and clean
     last_report["series_regime_verified_decisions"] = decisions
     last_report["series_peer_clean"] = clean
+    # Carried to the SUMMARY, not just the half that produced it: a reader looking at
+    # `peer_clean = false` needs the reason on the same page as the flag.
+    last_report["peer_exit_notes"] = [r["peer_exit_note"] for r in half_reports
+                                      if r.get("peer_exit_note")]
     last_report["wall_s"] = time.time() - t0
     return all_rows, last_report, failure

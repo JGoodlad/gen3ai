@@ -504,3 +504,30 @@ def test_the_defaulted_out_dir_is_PRINTED_before_anything_runs(cfg, monkeypatch,
     assert "no --out given" in out
     assert str(tmp_path) in out
 
+
+# ------------------------------------------- the REGISTERED failing Metamon cell (hazard H-H)
+def test_an_unmatched_regime_metamon_cell_is_refused(cfg) -> None:
+    """REFUSAL 7. `mixed` (us greedy, Metamon at T=1.0) is the one cell shape with three recorded
+    crashes and no recorded success — and a mixed-regime number cannot be read beside any other
+    strength number here in the first place (SOP rule 1)."""
+    with pytest.raises(SystemExit) as exc:
+        build_plan(_args("--opponent", "metamon:SmallRL", "--allow-unmatched-regime"), cfg)
+    assert "REFUSED" in str(exc.value)
+    assert "RecursionError" in str(exc.value)
+
+
+def test_the_escape_hatch_still_works_for_foulplay(cfg) -> None:
+    """The refusal is keyed to metamon, not to the flag: Foul Play has no sampling knob at all,
+    so --allow-unmatched-regime is the documented way to take a t1 cell against it."""
+    plan = build_plan(_args("--opponent", "foulplay", "--regime", "t1",
+                            "--allow-unmatched-regime"), cfg)
+    assert plan.regime_matched is False
+
+
+@pytest.mark.parametrize("regime", ["greedy", "t1"])
+def test_a_matched_metamon_cell_is_NOT_refused(cfg, regime: str) -> None:
+    """🚨 The refusal must not reach the standing procedure. The fourth H-H occurrence was in a
+    MATCHED greedy cell, so refusing every cell that can hit the upstream bug would refuse the
+    recurring read itself — and the bug costs no games."""
+    plan = build_plan(_args("--opponent", "metamon:SmallRL", "--regime", regime), cfg)
+    assert plan.regime_matched is True
