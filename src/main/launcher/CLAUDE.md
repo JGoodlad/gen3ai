@@ -622,6 +622,17 @@ fork's own checkpoint once the fork has progress, restart #2 of a fork reads RES
 reason a plain resume does. `--fork-lr-freeze` is the exception: it is a property of the RUN, so it
 persists across every restart, re-read from `metadata.json`'s `dose.fork_lr_pin`.
 
+🚨 **AND A FORK OF A FROZEN RUN MUST NAME ITS OWN DOSE.** The freeze is a property of the parent's
+run, not of its weights — a fork inherits the pinned NUMBER through SB3's optimizer state and
+leaves the freeze behind, so a live KL controller starts annealing away from a rate that was chosen
+precisely because it should not move. That combination is now a startup `[ForkLR] FATAL`
+(`gen3_fork_lr_inherit_guard_v1`, `FATAL_CONFIG`/exit 3, refused before the run dir is created);
+`--allow-inherited-fork-lr` is the deliberate opt-in, and `python -m main.checkargs` prints the
+same verdict offline. The three era-2 exploiters are what it stands for: the plateau parent's
+frozen 2.80e-05 → 8.36e-05, median 5.5e-05, 0.39× the v8 reference against era-1's 1.78×, on argvs
+that `checkargs` and `--dry-run` had both passed. Detail:
+[`designs/training/step_size_and_batch.md`](../../../designs/training/step_size_and_batch.md).
+
 🚨 **THE SAME SPLIT GOVERNS THE SELF-PLAY POOL, and it is why the restart loop is safe here.** A
 FORK begins in a new run dir whose `snapshots/` is empty, and an empty pool does not disable
 `--self-play` — it silently falls back to the BOT pool. `agents.training.pool_seed` therefore

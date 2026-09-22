@@ -309,13 +309,39 @@ def _flag_value(toks: List[str], flags: Tuple[str, ...]) -> Optional[str]:
     return None
 
 
+def command_tokens(command: Optional[str]) -> List[str]:
+    """A recorded shell command split into tokens; `[]` when it is absent or unparseable.
+
+    Total by the same rule :func:`parse_command` follows — a malformed command yields nothing
+    rather than raising, because a lineage read must never break a caller."""
+    try:
+        return shlex.split(command or "")
+    except ValueError:
+        return []
+
+
+def command_flag_value(command: Optional[str], *flags: str) -> Optional[str]:
+    """The value a recorded command gives one of ``flags`` (`--flag V` or `--flag=V`), or None.
+
+    THE ONE PLACE that grammar lives. A second reader of a recorded command is a second answer
+    waiting to disagree with this one — notably about the `=` spelling, which is what made the
+    pre-`lineage` regexes silently wrong."""
+    return _flag_value(command_tokens(command), tuple(flags))
+
+
+def command_has_flag(command: Optional[str], *flags: str) -> bool:
+    """Does a recorded command NAME one of ``flags`` (as a bare switch or with a value)?
+
+    The store-true counterpart of :func:`command_flag_value`, and it accepts the `--flag=true`
+    spelling for the same reason: what is being asked is whether the operator TYPED the flag."""
+    toks = command_tokens(command)
+    return any(tok == f or tok.startswith(f + "=") for tok in toks for f in flags)
+
+
 def parse_command(command: str) -> Dict[str, Optional[str]]:
     """`{model, exploiter, distill_teacher}` out of a recorded shell command. Total — a malformed
     command yields all-None rather than raising, because a lineage read must never break a caller."""
-    try:
-        toks = shlex.split(command or "")
-    except ValueError:
-        return {"model": None, "exploiter": None, "distill_teacher": None}
+    toks = command_tokens(command)
     return {
         "model": _flag_value(toks, _MODEL_FLAGS),
         "exploiter": _flag_value(toks, _EXPLOITER_FLAGS),

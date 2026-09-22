@@ -113,6 +113,20 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "LR makes the dose a per-rollout variable nothing records. Unlike the pin "
                              "itself the freeze is a property of the RUN and DOES survive every "
                              "periodic restart.")
+    parser.add_argument("--allow-inherited-fork-lr", dest="allow_inherited_fork_lr",
+                        action="store_true",
+                        help="RESEARCH override: allow this FORK to inherit a parent whose LR was "
+                             "PINNED and FROZEN (--fork-lr-freeze) without naming a --fork-lr of "
+                             "its own. OFF by default, and that combination is a startup FATAL "
+                             "(gen3_fork_lr_inherit_guard_v1): a fork inherits the parent's "
+                             "optimizer LR but NOT its freeze, so the KL controller starts live at "
+                             "a rate that was chosen precisely because it should not move, and the "
+                             "run's dose is neither the parent's nor one anybody selected. The "
+                             "three era-2 exploiters (2026-09-20) did exactly this — 2.80e-05 -> "
+                             "8.36e-05, median 5.5e-05, 0.39x the v8 reference against era-1's "
+                             "1.78x. Pass this ONLY when the inheritance is intended AND the "
+                             "realized dose will be stated wherever the number is reported. "
+                             "Training-only, not version-locked.")
     parser.add_argument("--min-lr", type=float, default=1e-5, help="Hard lower bound on adaptive LR")
     parser.add_argument("--max-lr", type=float, default=None, help="Hard upper bound on adaptive LR (default: 2× --lr)")
     parser.add_argument("--anneal-lr-start-steps", type=int, default=None,

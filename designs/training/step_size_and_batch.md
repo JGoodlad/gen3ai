@@ -303,6 +303,61 @@ adapting LR makes it a per-rollout variable nothing records. Unlike the pin it i
 the RUN** and DOES persist across every periodic restart — re-read from the pin recorded in
 `metadata.json`, or from the argv a launcher restart reproduces verbatim.
 
+### 🚨 `--allow-inherited-fork-lr` — A FORK INHERITS THE NUMBER, NOT THE FREEZE (`gen3_fork_lr_inherit_guard_v1`)
+
+**A fork of a FROZEN run that names neither `--fork-lr` nor `--fork-lr-freeze` is a startup
+`[ForkLR] FATAL` (`FATAL_CONFIG`, exit 3), refused BEFORE the run directory is created.**
+
+Why it has to be a refusal rather than a warning. `--fork-lr-freeze` holds the KL controller at one
+rate for a whole run precisely because that rate must not move. Fork that run and name nothing and
+SB3 restores the parent's optimizer state: the frozen NUMBER arrives, the freeze does not, and a
+live controller starts annealing away from it. The run's dose is then neither the parent's nor one
+anybody chose, and — the part that actually breaks a measurement — it is **not stationary within
+the run**, so `main.dose` can only report a median over a moving quantity.
+
+That is the era-2 exploiter defect, verbatim (`7afa2b34`, 2026-09-20). `ai_v13_13/14/15` forked the
+plateau parent's frozen **2.80e-05**, named no `--fork-lr`, and their controllers annealed to
+**8.36e-05** — median **5.5e-05**, a dose of **8.392e-9 = 0.39×** the v8 reference against the
+era-1 exploiters' **1.78×**. A **4.5× gap in the campaign's own step size**, discovered after the
+GPU time was spent, on argvs `checkargs` and `--dry-run` had both passed. Across the archive
+**3 of 162 recorded forks** fire this guard, and they are exactly those three.
+
+**Where the evidence comes from, and why it cannot come from anywhere else.** 🚨 The optimisation
+block is **NOT in `model_config.json`** — its 144 keys carry no `fork_lr`, `learning_rate`,
+`batch_size`, `n_epochs` or `grad_accum_steps`, because that file is the weight-SHAPE record. So
+the obvious shape of this guard (overlay the argv on the parent's recorded config and read the
+resolved value) is impossible, and it is also why the rule is **not** a `combination_checks` entry:
+that module is pure predicates over the namespace, and this one must read a file.
+`main.train.fork_lr.frozen_parent_pin` reads the parent run's `metadata.json` in two recorded
+places, in preference order, and the message says WHICH answered:
+
+1. the **immutable `original_command`** — `--fork-lr-freeze` present ⇒ frozen, value from its
+   `--fork-lr`. Operator intent, written once and preserved verbatim, and the only source that
+   works on a run predating the `dose` block;
+2. the **`dose` block**'s `lr_frozen` / `fork_lr` — what the run actually ran at. Used only to
+   catch a freeze re-applied from a recorded pin on a restart, and **only when `lineage` also calls
+   the run a FORK** — a fresh run cannot have inherited a pin, and without that clause the guard
+   would refuse ordinary forks of ordinary runs.
+
+**What it deliberately does NOT do.** It never fires on a same-run RESTART (`is_same_run_checkpoint`,
+the one imported predicate — a guard that fired there would kill every restart of every
+legitimately-inheriting run), never on a fresh run, and never on a parent that is not on this box:
+an unreadable parent is reported as **UNKNOWN**, not treated as frozen. A guard that cannot see the
+evidence must not pretend it did.
+
+**Both surfaces read ONE function.** `main.checkargs` prints the verdict on every argv — `✓ this
+fork names its own dose (…)`, `✓ the fork parent … did not run at a frozen LR`, or the full FATAL
+text with `✗ WOULD FAIL AT LAUNCH`. Its closing `✓ this command still launches` is about the
+PARSER and is explicitly de-conflicted in the block, the same separation the ARCH-SURFACE block
+keeps: *it parses* and *it is the dose you meant* are independent checks.
+
+**The override.** `--allow-inherited-fork-lr` states deliberately that this run inherits an
+unfrozen rate; it prints a warning naming the value and telling you to read the realized dose with
+`python -m main.dose` and state it wherever the number is reported. Pinned by
+`src/main/train/fork_lr_inherit_guard_test.py` (19 tests; each of the five edited files fails at
+least one on revert, and the call site's position before `os.makedirs` is read out of
+`train_rl_agent.main`'s own AST so a reorder cannot leave orphan run dirs behind).
+
 ### The recorded `dose` block, and `python -m main.dose`
 
 Every metadata write (and every checkpoint sidecar, through the one `_model_hparams` dict) carries

@@ -165,7 +165,17 @@ the KL adaptation and the two-phase cosine, so the fold runs at one constant, re
 launcher PERIODIC RESTART re-invokes the same argv into the same run dir every N hours, and
 re-pinning there would reset the controller's adapted rate forever; the FREEZE is a property of the
 run and does persist (re-read from the pin recorded in `metadata.json`). `--fork-lr` on a fresh run
-is refused (use `--lr`). Every metadata write records a **`dose`** block (`lr_now`, `lr_flag`,
+is refused (use `--lr`).
+
+🚨 **FORKING A FROZEN RUN WITHOUT NAMING YOUR OWN `--fork-lr` IS A STARTUP `[ForkLR] FATAL`**
+(`gen3_fork_lr_inherit_guard_v1`). A fork inherits the parent's pinned NUMBER through the optimizer
+state and NOT its freeze, so the KL controller starts live at a rate chosen precisely because it
+should not move, and the run's dose ends up neither the parent's nor one you selected — and not
+stationary within the run. That is the era-2 exploiter defect exactly: the plateau parent's frozen
+2.80e-05 annealed to 8.36e-05, median 5.5e-05, **0.39× the v8 reference against era-1's 1.78×**, a
+4.5× gap nobody registered. The refusal names the parent's value and the argv that reproduces it;
+`--allow-inherited-fork-lr` is the deliberate opt-in, and `python -m main.checkargs` prints the
+same verdict offline, before the GPU is touched. Every metadata write records a **`dose`** block (`lr_now`, `lr_flag`,
 `fork_lr`, `lr_frozen`, `effective_batch`, `updates_per_env_step`, `dose_rate_now`,
 `kl_controller`), and `train/dose_rate` + `train/effective_batch` ride TensorBoard every rollout.
 Read a run's dose — including every run already on disk — with **`python -m main.dose <run>…`**.

@@ -111,6 +111,7 @@ from main.train.config import resolve_config
 from main.train.matchup_setup import build_matchup_and_opponents
 from main.train.env_factory import create_training_env_random
 from main.train.callbacks import build_callbacks
+from main.train.fork_lr import enforce_inherited_fork_lr
 from main.train.model_build import attach_cf_labels, build_and_train
 from main.train.final_eval import evaluate_model_random
 
@@ -177,6 +178,13 @@ async def main():
             args.run_name,
             _exploiter_entry.label if _exploiter_entry is not None else None,
             args.model)
+
+    # FORK-LR INHERITANCE guard (gen3_fork_lr_inherit_guard_v1): a fork of a run whose LR was
+    # PINNED and FROZEN inherits the NUMBER but not the FREEZE, so a live KL controller starts
+    # annealing away from a rate that was chosen precisely because it should not move. Fires HERE
+    # — the first moment `model_dir` is known — and BEFORE the directory is created, so a refusal
+    # leaves nothing behind. `--allow-inherited-fork-lr` is the deliberate opt-in.
+    enforce_inherited_fork_lr(args, model_dir)
 
     os.makedirs(model_dir, exist_ok=True)
     # Full CLI namespace (JSON-safe) → persisted into metadata.json for run provenance.

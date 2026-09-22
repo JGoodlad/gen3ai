@@ -829,7 +829,14 @@ pins it** and fires ONLY on a genuine fork (a checkpoint outside the run dir); `
 makes it constant and persists across every restart. 🚨 **The quantity that predicts a fold's
 collateral is the DOSE**, `lr × n_epochs / (batch_size × grad_accum_steps)` — three folds launched
 at the same `--lr` ran at 1.00× / 6.62× / 3.19× v8's rate and nothing in any of them said so. Read
-it with `python -m main.dose <run>` or the live `train/dose_rate`. ⚠️ **The dose is a product of TWO
+it with `python -m main.dose <run>` or the live `train/dose_rate`.
+🚨 **A FORK INHERITS THE PARENT'S LR BUT NOT ITS FREEZE**, so forking a `--fork-lr-freeze` run
+without naming a `--fork-lr` of your own is a startup `[ForkLR] FATAL`
+(`gen3_fork_lr_inherit_guard_v1`; `--allow-inherited-fork-lr` is the deliberate opt-in). The three
+era-2 exploiters did exactly that — the parent's frozen 2.80e-05 annealed to 8.36e-05, median
+5.5e-05, **0.39× v8 against era-1's 1.78×**. The evidence is the PARENT's `metadata.json` (its
+`original_command`, else its `dose` block): the optimisation block is **not in
+`model_config.json`**, which is why this is not a `combination_checks` rule. ⚠️ **The dose is a product of TWO
 controllers** (KL-lr and adaptive-batch), so watch `train/dose_rate`, never either loop's own series.
 **Full detail — in [`designs/training/step_size_and_batch.md`](../../../designs/training/step_size_and_batch.md).**
 

@@ -784,6 +784,7 @@ def main(raw: List[str] | None = None) -> int:
         print("  unrecognized                   : 0")
 
     _print_resolution(res["resolution"])
+    _print_fork_lr_inheritance(res["resolution"])
 
     if res["unsatisfiable"]:
         print(f"  unsatisfiable combinations     : {len(res['unsatisfiable'])}  "
@@ -884,6 +885,51 @@ def main(raw: List[str] | None = None) -> int:
         print("  ✓ this command still launches")
         return 0
     return 1
+
+
+def _print_fork_lr_inheritance(resolution: dict | None) -> None:
+    """The FORK-LR INHERITANCE verdict (gen3_fork_lr_inherit_guard_v1), printed on every argv.
+
+    🚨 **This is not a combination check and cannot be one.** `combination_checks` is a list of
+    pure predicates over the resolved namespace, and the fact this guard needs — *was the fork
+    parent's LR frozen?* — is not in the namespace at all: `model_config.json` records weight
+    SHAPES and carries no `fork_lr`, `learning_rate`, `batch_size` or `n_epochs`, so overlaying the
+    argv on the parent's config cannot answer it. The answer lives in the parent run's
+    `metadata.json` (its immutable `original_command`, else its `dose` block), which means a
+    filesystem read — explicitly out of scope for that module. So the rule lives in
+    `main.train.fork_lr`, ONE function, and both surfaces call it: the launch path turns
+    `refuse` into a startup FATAL, this prints the same `line`.
+
+    Printed even when clean, for the reason every other block here is: a silent pass must never be
+    mute about whether the check ran.
+    """
+    if resolution is None or resolution.get("parse_error"):
+        return
+    ns = resolution.get("ns")
+    if ns is None:
+        return
+    from main.train.fork_lr import check_inherited_fork_lr
+
+    try:
+        verdict = check_inherited_fork_lr(
+            model_path=resolution.get("model"),
+            model_dir=effective_run_dir(ns),
+            fork_lr=getattr(ns, "fork_lr", None),
+            fork_lr_freeze=bool(getattr(ns, "fork_lr_freeze", False)),
+            allow=bool(getattr(ns, "allow_inherited_fork_lr", False)))
+    except Exception as exc:                          # noqa: BLE001 — never break the report
+        print(f"  ⚠️  [ForkLR] the inheritance check could not run ({exc})")
+        return
+    if verdict.refuse:
+        print(f"  {verdict.line}")
+        print("      ✗ WOULD FAIL AT LAUNCH — main.train.fork_lr.enforce_inherited_fork_lr exits")
+        print("      FATAL_CONFIG on this, before the run directory is created.")
+        print("      🚨 A closing '✓ this command still launches' below speaks about the PARSER")
+        print("      and does NOT overrule this line — separate verdicts, separate blocks, exactly")
+        print("      as the ARCH-SURFACE block is. 'it parses' and 'it is the dose you meant' are")
+        print("      independent checks.")
+    else:
+        print(f"  {verdict.line}")
 
 
 def _print_resolution(resolution: dict | None) -> None:

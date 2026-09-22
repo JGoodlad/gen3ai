@@ -168,3 +168,194 @@ def apply_fork_lr_pin(model, decision: ForkLrDecision, *, lr_callback, min_lr: f
             lr_callback.freeze_at(lr)
     return build_pin_record(decision, applied_lr=lr, source_model=source_model,
                             num_timesteps=int(getattr(model, "num_timesteps", 0) or 0))
+
+
+# --------------------------------------------------------------------------------------------
+# gen3_fork_lr_inherit_guard_v1 — a FORK of a FROZEN parent must NAME its own dose
+# --------------------------------------------------------------------------------------------
+#: Every spelling the parent's recorded command may use for the two flags this guard reads.
+_FREEZE_FLAGS = ("--fork-lr-freeze",)
+_FORK_LR_FLAGS = ("--fork-lr",)
+
+
+@dataclasses.dataclass(frozen=True)
+class FrozenParent:
+    """A fork parent whose LR was PINNED and FROZEN — the thing this guard refuses to inherit from.
+
+    `lr` is the parent's frozen value (None only when the parent froze without a recoverable
+    number, which the message says out loud rather than inventing one). `source` names WHICH
+    recorded field answered, because "recorded in the command" and "recorded in the dose block"
+    are different warrants and a reader is entitled to know which one fired.
+    """
+
+    run_dir: str
+    run_name: str
+    lr: Optional[float]
+    source: str
+    role: Optional[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class InheritVerdict:
+    """The guard's answer. `refuse` is the only status the LAUNCH path acts on; `line` is printed
+    by BOTH surfaces, so a silent pass is never mute about whether the parent was read at all."""
+
+    status: str
+    line: str
+    refuse: bool = False
+    parent: Optional[FrozenParent] = None
+
+
+def _as_float(val: Any) -> Optional[float]:
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def frozen_parent_pin(parent_run_dir: Optional[str]) -> Optional[FrozenParent]:
+    """Was the run at `parent_run_dir` trained at a PINNED, FROZEN LR? — read, never re-derived.
+
+    🚨 **The optimisation block is NOT in `model_config.json`.** That file's 144 keys carry no
+    `fork_lr`, `learning_rate`, `batch_size`, `n_epochs` or `grad_accum_steps` — it is a
+    weight-SHAPE record — so the obvious shape of this guard (overlay the argv on the parent's
+    config and read the resolved value) cannot work. The answer lives only in `metadata.json`, in
+    two recorded places, and this function reads both in preference order:
+
+      1. the IMMUTABLE ``original_command`` — ``--fork-lr-freeze`` present ⇒ frozen, with the value
+         from its ``--fork-lr``. This is the operator's stated intent, written once at fork creation
+         and preserved verbatim across every restart, and it is the only source that works on a run
+         predating the ``dose`` block;
+      2. the ``dose`` block's ``lr_frozen`` / ``fork_lr`` — what the run ACTUALLY ran at, rewritten
+         every save. Used only to confirm a freeze the command did not state (a freeze re-applied
+         from a recorded pin on a restart), and only when ``lineage`` also says the run was a FORK
+         rather than a fresh one.
+
+    Returns None for a run that was not frozen, for a run whose metadata cannot be read, and for a
+    parent that is not on this box — **an unreadable parent is "unknown", never "frozen"**. The
+    caller reports that case rather than refusing on it: a guard that cannot see the evidence must
+    not pretend it did.
+    """
+    if not parent_run_dir or not os.path.isdir(parent_run_dir):
+        return None
+    from agents.training import lineage
+
+    name = os.path.basename(os.path.normpath(parent_run_dir))
+    cmd = lineage.read_original_command(parent_run_dir)
+    role = lineage.role_of(parent_run_dir, warn=False)
+    meta_path = os.path.join(parent_run_dir, "metadata.json")
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+    except Exception:  # noqa: BLE001 — absent, truncated, or not ours
+        meta = {}
+    dose = meta.get("dose") if isinstance(meta.get("dose"), dict) else {}
+
+    if lineage.command_has_flag(cmd, *_FREEZE_FLAGS):
+        lr = _as_float(lineage.command_flag_value(cmd, *_FORK_LR_FLAGS))
+        if lr is None:
+            lr = _as_float(dose.get("fork_lr")) or _as_float(dose.get("lr_now"))
+        return FrozenParent(parent_run_dir, name, lr, "original_command", role)
+
+    # The command did not say so. A recorded FROZEN dose still counts, but only on a run that
+    # `lineage` calls a fork — a fresh run cannot have inherited a pin, and treating one as frozen
+    # would refuse every ordinary fork of every ordinary run.
+    if dose.get("lr_frozen") is True and role not in (None, "fresh"):
+        lr = _as_float(dose.get("fork_lr")) or _as_float(dose.get("lr_now"))
+        return FrozenParent(parent_run_dir, name, lr, "dose_block", role)
+    return None
+
+
+def check_inherited_fork_lr(*, model_path: Optional[str], model_dir: Optional[str],
+                            fork_lr: Optional[float], fork_lr_freeze: bool,
+                            allow: bool = False) -> InheritVerdict:
+    """🚨 **A FORK INHERITS THE PARENT'S LR BUT NOT ITS FREEZE.**
+
+    `--fork-lr-freeze` pins a rate and holds the KL controller at it for the whole run. Fork that
+    run and name no `--fork-lr` of your own and SB3 restores the parent's optimizer state — the
+    frozen NUMBER arrives, the freeze does not, and a live controller starts annealing away from a
+    value that was chosen precisely because it should not move. The run's dose is then neither the
+    parent's nor one anybody selected, and it is **not stationary within the run**, so `main.dose`
+    can only report its median.
+
+    That is not hypothetical. The three era-2 exploiters (2026-09-20, `7afa2b34`) forked the
+    plateau parent's frozen `2.80e-05` without naming `--fork-lr`, their controllers annealed it to
+    `8.36e-05`, and all three ran at a median `5.5e-05` — a dose of `8.392e-9`, **0.39×** the v8
+    reference, against the era-1 exploiters' **1.78×**. A 4.5× gap in the campaign's own step size,
+    discovered after the GPU time was spent, on argvs that three gates had passed.
+
+    Pure apart from reading the parent's `metadata.json`. Returns a verdict for BOTH surfaces:
+    `main.checkargs` prints `line` and refuses nothing; the launch path turns `refuse` into a
+    startup `FATAL_CONFIG`.
+    """
+    if not model_path:
+        return InheritVerdict("fresh", "[ForkLR] no --model: a fresh run has no parent LR to inherit")
+    if model_dir and is_same_run_checkpoint(model_path, model_dir):
+        return InheritVerdict(
+            "restart", "[ForkLR] same-run RESTART — the LR is this run's own, nothing is inherited")
+    if fork_lr is not None or fork_lr_freeze:
+        named = " ".join(
+            ([f"--fork-lr {float(fork_lr):.4g}"] if fork_lr is not None else [])
+            + (["--fork-lr-freeze"] if fork_lr_freeze else []))
+        return InheritVerdict("named", f"[ForkLR] ✓ this fork names its own dose ({named})")
+
+    from agents.training import lineage
+
+    parent_dir = lineage.run_dir_of(model_path)
+    parent = frozen_parent_pin(parent_dir)
+    if parent is None:
+        if not parent_dir or not os.path.isdir(parent_dir):
+            return InheritVerdict(
+                "parent_unreadable",
+                f"[ForkLR] ⚠️ the fork parent's run dir is not on this box ({parent_dir or model_path}) "
+                f"— whether its LR was FROZEN is UNKNOWN, so this check could not run. If it was, "
+                f"name --fork-lr explicitly.")
+        return InheritVerdict(
+            "parent_unfrozen",
+            f"[ForkLR] ✓ the fork parent ({os.path.basename(os.path.normpath(parent_dir))}) did not "
+            f"run at a frozen LR — the inherited rate is an ordinary annealed one")
+
+    shown = f"{parent.lr:.2e}" if parent.lr is not None else "an unrecorded value"
+    fix = (f"--fork-lr {parent.lr:.6g} --fork-lr-freeze" if parent.lr is not None
+           else "--fork-lr <the rate you mean> --fork-lr-freeze")
+    msg = (
+        f"this launch FORKS `{parent.run_name}`, whose LR was PINNED and FROZEN at {shown} "
+        f"(recorded in its metadata.json `{parent.source}`), and this argv names NEITHER "
+        f"--fork-lr NOR --fork-lr-freeze. A fork inherits the parent's optimizer LR but NOT its "
+        f"freeze, so the KL controller will start live at {shown} and anneal away from it: the "
+        f"run's dose is then neither the parent's nor one you chose, and it is not stationary "
+        f"within the run. That is exactly what the era-2 exploiters did on 2026-09-20 — 2.80e-05 "
+        f"→ 8.36e-05, median 5.5e-05, 0.39× the v8 reference against era-1's 1.78×, a 4.5× gap "
+        f"nobody registered. THE FIX: name the dose you mean — `{fix}` reproduces the parent's — "
+        f"or pass --allow-inherited-fork-lr to state deliberately that this run inherits an "
+        f"UNFROZEN {shown} and will say so wherever its dose is reported.")
+    if allow:
+        return InheritVerdict(
+            "override",
+            f"[ForkLR] ⚠️ --allow-inherited-fork-lr: inheriting {parent.run_name}'s FROZEN "
+            f"{shown} WITHOUT its freeze. The KL controller runs live from there — read the run's "
+            f"realized dose with `python -m main.dose` and state it wherever the number is "
+            f"reported.", parent=parent)
+    return InheritVerdict("REFUSE", f"[ForkLR] FATAL: {msg}", refuse=True, parent=parent)
+
+
+def enforce_inherited_fork_lr(args: Any, model_dir: Optional[str]) -> InheritVerdict:
+    """The LAUNCH-path wrapper: print the verdict, and `os._exit(FATAL_CONFIG)` on a refusal.
+
+    Called from `train_rl_agent.main` the moment `model_dir` is known and BEFORE it is created, so
+    a refusal leaves no run directory behind — the same property the `[Untaught]` guard has.
+    """
+    verdict = check_inherited_fork_lr(
+        model_path=getattr(args, "model", None), model_dir=model_dir,
+        fork_lr=getattr(args, "fork_lr", None),
+        fork_lr_freeze=bool(getattr(args, "fork_lr_freeze", False)),
+        allow=bool(getattr(args, "allow_inherited_fork_lr", False)))
+    if verdict.refuse:
+        import sys
+        from main.exit_codes import TrainExitCode
+        print(f"\n{verdict.line}")
+        sys.stdout.flush()
+        os._exit(int(TrainExitCode.FATAL_CONFIG))
+    if verdict.status in ("override", "parent_unreadable"):
+        print(verdict.line)
+    return verdict
