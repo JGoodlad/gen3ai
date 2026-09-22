@@ -211,9 +211,15 @@ async def run_local_battles(
     concurrent battles).
 
     ``impl`` selects the bridge child binary — ``"node"`` (default, ``local_sim_bridge.js``) or
-    ``"rust"`` (the byte-compatible ``src/rust_sim`` binary). The Rust binary emits no
-    ``__RECON__``, so ``start_extra``'s ``resumeReseed`` + the reconstruction join degrade to
-    no-ops under ``rust`` — callers that need the forensic/counterfactual layer must use ``node``.
+    ``"rust"`` (the byte-compatible ``src/rust_sim`` binary). **BOTH implement ``__RECON__`` and
+    ``resumeReseed``**: the Rust binary emits the reconstruction record once per battle just
+    before ``__END__``, and honours ``start_extra``'s ``resumeReseed`` through
+    ``gen3_bridge_resume_reseed_v1`` — which is why 48,096 reseeded rust rollouts produce real
+    dice variation. The forensic/counterfactual layer runs on either.
+
+    ⚠️ What is NOT claimed is ``__RECON__`` *content* parity: `sim_bridge.rs`'s ``emit_recon``
+    documents the honest scope of its ``input_log``, and the two implementations are byte-equal
+    on the protocol, not on that record's interior.
     """
     runner = _LocalBattleRunner(player1, player2, battle_format or player1.format, seed, start_extra,
                                 chunk_sink, impl, seed_base=seed_base)
