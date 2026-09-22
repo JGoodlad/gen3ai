@@ -221,7 +221,13 @@ def load_ladder(run_dir: str, *, what: str) -> Dict[str, Any]:
             f"{path!r}: 'converged' is false. An unconverged BT fit's ratings and SEs are not a "
             "reading; re-fit it (`python -m agents.training.snapshot_ladder <run> --backfill`) "
             "before quoting a number."))
-    return {"path": path, **doc}
+    # The RECIPE STAMP is recorded here, never acted on here: this section normally REFITS both
+    # sides from `games.jsonl`, and a refit makes the committed file's recipe irrelevant. It
+    # becomes decisive only on the fallback path below, where the committed numbers are the ones
+    # that get quoted.
+    from agents.training.snapshot_ladder import recipe_status
+    status, detail = recipe_status(doc)
+    return {"path": path, "recipe_status": status, "recipe_detail": detail, **doc}
 
 
 def _nodes(ladder: Dict[str, Any]) -> List[Tuple[int, float, float]]:
@@ -271,8 +277,11 @@ def _refit_first_n(run_dir: str, n: int, *, what: str, rated_steps: Sequence[int
 def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                    at_snapshots: Optional[int]) -> Dict[str, Any]:
     """Endpoint 1 — the anchored ladder at matched SNAPSHOT COUNT, against the parent CONTINUED."""
+    from agents.training import snapshot_ladder as sl_mod
     lr = load_ladder(run["run_dir"], what="run")
     lp = load_ladder(parent["run_dir"], what="parent")
+    run = {**run, "ladder_doc": lr}
+    parent = {**parent, "ladder_doc": lp}
     nr, npar = _nodes(lr), _nodes(lp)
     avail = min(len(nr), len(npar))
     n = at_snapshots or avail
@@ -316,7 +325,22 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
             # the SIZE is genuinely unmatched and cannot be corrected — the pre-existing refusal
             unmatched.append(why or f"{what}: refit unavailable")
         else:
-            # the size already matches; only the SOURCE is the committed (possibly pre-fix) file
+            # The size already matches, so the COMMITTED file's own numbers are what gets quoted.
+            # 🚨 That is the one path where the recipe stamp is decisive, and a stale one is a
+            # REFUSAL, not a label. Measured 2026-09-14: a pre-recipe committed file read +73.1
+            # Elo above the current fit of the same 20 nodes and FLIPPED THE SIGN of a cross-run
+            # delta. A label on a number nobody can convert is not a safeguard — the previous
+            # "⚠️ FELL BACK" wording was exactly that, and this is the gate the backlog row asked
+            # for. A fallback whose recipe IS current is still only labelled: nothing is wrong
+            # with it beyond having been fit by another tree at the same recipe.
+            src = run.get("ladder_doc") if what == "run" else parent.get("ladder_doc")
+            st = (src or {}).get("recipe_status", "absent")
+            if st != "current":
+                raise GateRefusal(f"{what} ladder", sl_mod.recipe_refusal(
+                    (src or {}).get("path", os.path.join(run_dir, "snapshot_ladder",
+                                                         "ladder.json")),
+                    st, (src or {}).get("recipe_detail", ""), run_dir, what=what)
+                    + f"\n(This side could not be refit here: {why or 'refit unavailable'})")
             fallbacks.append(f"{what}: {why or 'refit unavailable'}")
         return nodes
 
@@ -334,6 +358,8 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
         "at_snapshots": n,
         "available_matched": avail,
         "run": {"ladder_path": lr["path"], "n_rated": len(nr),
+                "recipe_status": lr.get("recipe_status"),
+                "recipe": lr.get("recipe_detail"),
                 "anchored_to_bots": bool(lr.get("anchored_to_bots")),
                 "fit_quality": lr.get("fit_quality"),
                 "nodes": [{"i": i + 1, "step": s, "elo": e, "se": v, "ci95": Z95 * v}
@@ -341,6 +367,8 @@ def ladder_section(run: Dict[str, Any], parent: Dict[str, Any],
                 "node_at_count": {"step": a[0], "elo": a[1], "se": a[2], "ci95": Z95 * a[2]},
                 "finished": finished, "final_model": final_path},
         "parent": {"ladder_path": lp["path"], "n_rated": len(npar),
+                   "recipe_status": lp.get("recipe_status"),
+                   "recipe": lp.get("recipe_detail"),
                    "anchored_to_bots": bool(lp.get("anchored_to_bots")),
                    "fit_quality": lp.get("fit_quality"),
                    "nodes": [{"i": i + 1, "step": s, "elo": e, "se": v, "ci95": Z95 * v}

@@ -836,7 +836,46 @@ NEWER snapshot by **+8.9 pp [+7.0, +10.7]** — systematic, not noise. Mixing th
 the matched-count rule exists to control. All three runs compared in the win-prob era carry
 `eval_sentinel_greedy=False` / `self_play_temp=1.0`, so **every ladder written before 2026-09-07
 has it**. `games.jsonl` is now the ONLY snapshot-vs-snapshot source; the excluded count is
-returned and written as **`eval_sentinel_edges_dropped`** (absent ⇒ a pre-fix ladder).
+returned and written as **`eval_sentinel_edges_dropped`**.
+
+##### 🚨 THE RECIPE STAMP — a rating is only comparable to one fitted the same way
+
+The excluded COUNT was the first, weak version of this check, and it is not enough: `0` means
+"this run measured no sentinel pair", which is indistinguishable from "fitted by a tree that did
+not drop them", and the 2026-09-08 file that started this records the key as `null`. So
+`fit_ladder` now writes a **`recipe` block**:
+
+```json
+"recipe": {"name": "gen3_ladder_recipe_v1", "fitter_version": 2,
+           "eval_sentinel_edges_dropped": true, "eval_sentinel_edges_dropped_count": 37,
+           "commit": "<40-char HEAD of the tree that fit it>"}
+```
+
+`eval_sentinel_edges_dropped` here is the **policy** (a boolean); the count beside it is a
+property of the run's eval history. `LADDER_FITTER_VERSION` is **bumped whenever the fit changes
+what a rating MEANS** — a new edge family, a dropped one, a different anchor set. A bump makes
+every previously committed file read `differs`, which is the correct and loud outcome.
+
+`snapshot_ladder.recipe_status(doc)` returns `current` / `absent` / `differs` (pure: a dict in, a
+verdict out, so every reader asks the same question), and `check_recipe` raises
+**`LadderRecipeError`** whose message carries the refit command and the size of the error it
+prevents. **Why it is a refusal and not a label:** measured 2026-09-14
+(`flywheel_armS_reads_2026-09-14/` §2.1), `ai_v12_02_winprob_critic`'s committed file reads
+**2057.3** at its newest node where the current recipe refits the same 20 nodes to **1984.2** —
+**+73.1 Elo**, which FLIPPED THE SIGN of a cross-run delta. A label on a number nobody can
+convert is not a safeguard.
+
+| reader | what it does with a stale stamp |
+|---|---|
+| `main.critic_gate --at-snapshots` | normally REFITS both sides, which makes the committed recipe irrelevant. On the FALLBACK path (no `games.jsonl`, so the committed numbers are the ones quoted) a stale stamp is a **`GateRefusal`**, not the old "⚠️ FELL BACK" label. Each side's `recipe_status` / `recipe` is reported either way |
+| `--exploiter-ladder auto:<run>` | **REFITS in memory** from `games.jsonl` (printing a loud line), and **REFUSES** when there is none. Rungs are picked BY ELO and the pre-fix inflation is non-uniform (+21..+29 on the newest nodes only), so a stale file builds a different curriculum |
+| `main.ops.plateau_signal` | its bias note now READS the stamp instead of asserting the bias unconditionally; a stale file is named as stale and pointed at `--fixed-fit` |
+| `snapshot_ladder.latest_promoted_elo` | **deliberately does NOT check it** — a WITHIN-RUN trend scalar (`eval/ladder_elo`) written moments earlier by the run's own pinned code. Refusing there would stop a live run logging its own curve, and no cross-run comparison is being made |
+| `agents.training.snapshot_ladder` CLI | prints `[ladder] recipe: …` beside every table it renders |
+
+Pinned by `src/agents/training/ladder_recipe_test.py` (before/after fixtures) and the three
+recipe tests in `src/main/critic_gate_test.py`.
+
 Re-fit shift, per run (committed `ladder.json` → current `fit_ladder`, same rated steps): the
 early nodes RISE and the late nodes FALL — `ai_v12_02_winprob_critic` 4M **+32.1** → 34M
 **−33.6**; `ai_v9_29_rev1_0823` 2M **+30.5** → 24M **−45.1**.
@@ -1012,7 +1051,9 @@ at 21/21 pairs is internally complete but only 7 nodes deep, and depth is what t
    biased one. `main.critic_gate` therefore refits **both** sides with THIS tree's `fit_ladder`
    whenever `games.jsonl` exists — even at already-matched node counts, where the old
    `len(nodes) > n` guard refit neither — and LABELS in `fit_size_note` (and `refit_fallbacks`)
-   any side that had to fall back to its committed ladder. Measured effect on the registered
+   any side that had to fall back to its committed ladder — **and REFUSES that fallback outright
+   when the committed file's `recipe` stamp is absent or differs** (see the recipe-stamp section
+   above; +73.1 Elo on one measured run, enough to flip a delta's sign). Measured effect on the registered
    famine read (arm `ai_v12_02_winprob_critic` vs `famine_comparator` = `ai_v9_29_rev1_0823`,
    both refit on a strict prefix): the trail goes from **+29.9 Elo (se 20.7) → +13.0 (se 22.1)**
    at n=4 and from **+34.3 (se 14.7) → +20.9 (se 15.8)** at n=12. The verdict does not change —

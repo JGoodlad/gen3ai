@@ -277,6 +277,117 @@ def _pairs_by_source_counts(run_dir: str, keep_keys: set) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+# ── THE RECIPE STAMP ─────────────────────────────────────────────────────────────────────────
+#
+# 🚨 A LADDER RATING IS ONLY COMPARABLE TO ANOTHER FITTED BY THE SAME RECIPE. The fit is not a
+# property of the games alone: which EDGES go into it is a decision, and changing that decision
+# moves every rating without changing a single measured game. MEASURED 2026-09-14
+# (`flywheel_armS_reads_2026-09-14/` §2.1): `ai_v12_02_winprob_critic`'s committed `ladder.json`
+# (written 2026-09-08, 494 pairs, eval-sentinel edges FOLDED IN) reads 2057.3 at its newest node;
+# the current recipe (`3e6875a5`, those edges dropped) refits the SAME 20 nodes to 1984.2 — a
+# **+73.1 Elo** gap that FLIPPED THE SIGN of a cross-run delta. Nothing in the old file said so.
+#
+# So every fit now stamps the recipe it used, and a reader that cannot refit REFUSES rather than
+# quoting a number on an unknown scale. The stamp is a BLOCK, not the bare presence of a count
+# key: presence catches exactly one historical change, while a named recipe + a fitter version
+# catches the NEXT one too.
+#: The recipe's NAME. Change it only when the fit's identity changes in kind.
+LADDER_RECIPE_NAME = "gen3_ladder_recipe_v1"
+
+#: 🚨 BUMP THIS WHENEVER THE FIT CHANGES WHAT A RATING MEANS — a new edge family, a dropped one, a
+#: different anchor set, a different BT solver contract. A bump makes every previously committed
+#: `ladder.json` read as `differs`, which is the correct and loud outcome: those numbers are on
+#: the old scale. Do NOT bump it for a change that cannot move a rating.
+#:
+#: 1 — the implicit pre-stamp recipe: dense frozen matrix + bot anchors + eval-cycle SENTINEL
+#:     edges. Never written by any code; it is what an UNSTAMPED committed file was fitted with.
+#: 2 — `3e6875a5` (2026-09-07): the eval-cycle sentinel edges are DROPPED. Worth +73.1 Elo on one
+#:     20-node run and +21..+29 on the newest nodes generally.
+LADDER_FITTER_VERSION = 2
+
+
+class LadderRecipeError(RuntimeError):
+    """A committed ``ladder.json`` was fitted by a recipe this reader cannot quote.
+
+    Raised INSTEAD of returning the number, because the failure mode is a number that looks
+    perfectly ordinary and is on a different scale — there is no in-band way for a caller to
+    notice. The message always names the refit command.
+    """
+
+
+def ladder_recipe(sentinel_edges_dropped: int) -> dict:
+    """The stamp `fit_ladder` writes: what this fit IS, and which tree produced it."""
+    from utils.git import get_git_hash
+    try:
+        commit = get_git_hash()
+    except Exception:                            # noqa: BLE001 — a stamp must never fail a fit
+        commit = ""
+    return {
+        "name": LADDER_RECIPE_NAME,
+        "fitter_version": LADDER_FITTER_VERSION,
+        # The POLICY (a boolean), beside the COUNT this fit actually dropped. The policy is what
+        # makes two files comparable; the count is a property of the run's eval history and is 0
+        # for a run that never measured a sentinel pair — which is why the count alone can never
+        # be the stamp.
+        "eval_sentinel_edges_dropped": True,
+        "eval_sentinel_edges_dropped_count": int(sentinel_edges_dropped),
+        "commit": commit,
+    }
+
+
+def recipe_status(ladder: dict) -> "tuple[str, str]":
+    """``(status, detail)`` for a loaded ladder dict — ``current`` / ``absent`` / ``differs``.
+
+    Pure: a dict in, a verdict out, so every reader asks the same question and a fixture can be
+    tested with no run directory at all. ``absent`` covers a missing block AND a present-but-null
+    one (the 2026-09-08 file records ``eval_sentinel_edges_dropped: null``, which a
+    presence-check would have waved straight through).
+    """
+    r = ladder.get("recipe")
+    if not isinstance(r, dict) or not r:
+        # Pre-stamp. The one thing we can still say about such a file is whether the older,
+        # weaker signal is there — a non-null top-level count means it was at least fitted by a
+        # tree that already dropped the sentinel edges.
+        count = ladder.get("eval_sentinel_edges_dropped")
+        older = ("its top-level `eval_sentinel_edges_dropped` is null/absent, so it was fitted "
+                 "WITH the eval-cycle sentinel edges (+21..+29 Elo on the newest nodes, +73.1 on "
+                 "one measured 20-node run)" if count is None else
+                 f"its top-level `eval_sentinel_edges_dropped` is {count}, so the sentinel edges "
+                 "were already dropped — but with no recipe block nothing else about the fit is "
+                 "pinned")
+        return "absent", f"no `recipe` block ({older})"
+    name, ver = r.get("name"), r.get("fitter_version")
+    if name != LADDER_RECIPE_NAME:
+        return "differs", (f"recipe name {name!r}, this tree fits {LADDER_RECIPE_NAME!r}")
+    if ver != LADDER_FITTER_VERSION:
+        return "differs", (f"fitter_version {ver!r}, this tree fits v{LADDER_FITTER_VERSION} "
+                           f"(commit {r.get('commit') or 'unrecorded'})")
+    return "current", (f"{LADDER_RECIPE_NAME} v{LADDER_FITTER_VERSION}"
+                       + (f" @ {str(r.get('commit'))[:8]}" if r.get("commit") else ""))
+
+
+def recipe_refusal(path: str, status: str, detail: str, run_dir: "str | None" = None,
+                   *, what: str = "") -> str:
+    """The refusal TEXT every reader emits, so the fix is worded once."""
+    where = run_dir or os.path.dirname(os.path.dirname(os.path.abspath(path)))
+    label = f"{what} " if what else ""
+    return (
+        f"{label}{path}: STALE LADDER RECIPE — {detail}.\n"
+        f"A rating is only comparable to one fitted by the same recipe: measured 2026-09-14, a "
+        f"pre-recipe file read +73.1 Elo above the current fit of the SAME 20 nodes and flipped "
+        f"the sign of a cross-run delta. Refusing to quote it.\n"
+        f"FIX: refit from the raw pair log, which is append-only and never stale —\n"
+        f"    python -m agents.training.snapshot_ladder {where} --fit-only")
+
+
+def check_recipe(ladder: dict, path: str, *, run_dir: "str | None" = None,
+                 what: str = "") -> None:
+    """Raise :class:`LadderRecipeError` unless ``ladder`` carries THIS tree's recipe."""
+    status, detail = recipe_status(ladder)
+    if status != "current":
+        raise LadderRecipeError(recipe_refusal(path, status, detail, run_dir, what=what))
+
+
 # ── the fit (dense matrix + bot anchors) ────────────────────────────────────────────────────
 def fit_ladder(run_dir: str, base: float | None = None, *,
                first_n: int | None = None, write: bool = True,
@@ -384,6 +495,10 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
         # see the comment at source (2). A ladder written before 2026-09-07 has no such key and
         # was fit WITH them (worth +21..+29 Elo on its newest nodes).
         "eval_sentinel_edges_dropped": sentinel_edges_dropped,
+        # 🚨 THE RECIPE STAMP — what this fit IS, so a later reader can tell whether its number is
+        # on the same scale as one fitted today. See the RECIPE STAMP block above; a file without
+        # it is pre-2026-09-22 and `recipe_status` reads `absent`.
+        "recipe": ladder_recipe(sentinel_edges_dropped),
         # PROVENANCE of the dense edges in THIS fit: how many of the kept frozen pairs this module
         # PLAYED vs how many it REUSED from an eval cycle measured under its own protocol
         # (`ingest_eval_measured_pairs`). A ladder whose run never left the stochastic regime reads
@@ -525,7 +640,15 @@ def backfill(run_dir, n_games=100, concurrency=4, impl="node", shard=None) -> di
 
 def latest_promoted_elo(run_dir: str) -> "tuple[int, float, float] | None":
     """(step, elo, se) of the highest-step snapshot in the ladder sidecar, or None. Read by the
-    live eval callback to surface eval/ladder_elo without recomputing."""
+    live eval callback to surface eval/ladder_elo without recomputing.
+
+    Deliberately does NOT check the recipe stamp. This reads the run's OWN file, written moments
+    ago by the same process tree, to emit a WITHIN-RUN trend scalar — the recipe is whatever that
+    run is pinned to, by construction, and refusing here would stop a live run from logging its
+    own curve. Everything that compares ACROSS runs (`main.critic_gate`, `--exploiter-ladder
+    auto`, `main.ops.plateau_signal`) checks it, because that is where a scale mismatch turns
+    into a wrong verdict.
+    """
     try:
         d = json.load(open(ladder_json_path(run_dir)))
         ratings = d.get("ratings") or {}
@@ -563,6 +686,9 @@ def main() -> int:
     ranked = sorted(ladder["ratings"].items(), key=lambda kv: -kv[1])
     print(f"\n[ladder] {ladder['n_frozen_pairs_measured']}/{ladder['n_pairs_possible']} pairs | "
           f"non-transitivity mean|err| {ladder['fit_quality']['mean_abs_err']:.3f}")
+    # The recipe, printed beside the numbers it produced — a rating quoted without it is a rating
+    # on an unstated scale, which is how a +73.1 Elo recipe gap went unnoticed for six days.
+    print(f"[ladder] recipe: {recipe_status(ladder)[1]}")
     for step, elo in ranked:
         print(f"  {int(step)//1_000_000:4d}M  {elo:7.1f} ± {elo_mod.ci95(ladder['se'].get(step, 0.0)):.1f}")
     return 0

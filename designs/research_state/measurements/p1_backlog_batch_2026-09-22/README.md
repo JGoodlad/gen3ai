@@ -103,6 +103,86 @@ Plus `test_check_accepts_load_and_reports_a_pre_generation_entry_without_failing
 
 ---
 
+## 2. `ladder.json` now carries a RECIPE STAMP, and cross-run readers refuse or refit
+
+**Row (2026-09-14):** a committed `snapshot_ladder/ladder.json` fitted before `3e6875a5` reads
++73 Elo above the current recipe on the same nodes and flipped the sign of a cross-run delta.
+
+### Why the existing signal was not enough
+
+Rule 24 of `UNDERSTANDING.md` §7 said "quote a committed file only if `eval_sentinel_edges_dropped`
+is present". That key is a **count**, and a count cannot be the stamp:
+
+* `0` is what a run that never measured a sentinel pair writes — indistinguishable from a file
+  fitted by a tree that did not drop them;
+* the 2026-09-08 file that started this records the key as **`null`**, which a presence check
+  waves straight through;
+* and it catches exactly ONE historical recipe change. The next one would be silent again.
+
+### What landed
+
+`fit_ladder` writes a `recipe` BLOCK:
+
+```json
+"recipe": {"name": "gen3_ladder_recipe_v1", "fitter_version": 2,
+           "eval_sentinel_edges_dropped": true, "eval_sentinel_edges_dropped_count": 37,
+           "commit": "<40-char HEAD of the tree that fit it>"}
+```
+
+`eval_sentinel_edges_dropped` is the **policy** (boolean); the count beside it is a property of the
+run. `LADDER_FITTER_VERSION = 2` is documented as **bump-on-meaning-change**: v1 is the implicit
+pre-stamp recipe (sentinel edges folded in), v2 is `3e6875a5`.
+
+* `snapshot_ladder.recipe_status(doc) -> (status, detail)` — `current` / `absent` / `differs`,
+  pure, so every reader asks the same question and a fixture needs no run directory.
+* `snapshot_ladder.check_recipe(...)` raises **`LadderRecipeError`**; `recipe_refusal(...)` words
+  the fix once — `python -m agents.training.snapshot_ladder <run> --fit-only` — and carries the
+  +73.1 Elo the refusal is preventing.
+
+Readers:
+
+| reader | behaviour |
+|---|---|
+| `main.critic_gate --at-snapshots` | refits both sides normally (stamp then irrelevant). On the FALLBACK path — no `games.jsonl`, so the committed numbers are what gets quoted — a stale stamp is now a **`GateRefusal`**, replacing a "⚠️ FELL BACK" label on a number nobody could convert. Each side's `recipe_status` / `recipe` is in the section payload |
+| `--exploiter-ladder auto:<run>` | **refits in memory** when `games.jsonl` exists (loud line), **refuses** otherwise. Rungs are picked BY ELO and the pre-fix inflation is non-uniform (+21..+29 on the newest nodes only), so a stale file builds a different curriculum |
+| `main.ops.plateau_signal` | its bias note reads the stamp instead of asserting the bias unconditionally — which was wrong for any file fitted after `3e6875a5` |
+| `snapshot_ladder` CLI | prints `[ladder] recipe: …` under every table |
+| `snapshot_ladder.latest_promoted_elo` | **deliberately unchecked**, with the reason in its docstring: a within-run trend scalar written moments earlier by the run's own pinned code. Refusing would stop a live run logging its own curve |
+
+`main.elo` was checked and does **not** read `ladder.json` — it fits the sparse star from the eval
+rows, a different object. `g7_ladder.py` is an ad-hoc measurement script that reads TensorBoard
+scalars, not the ladder file. The prober does not read it either.
+
+### Tests that fail on revert
+
+`src/agents/training/ladder_recipe_test.py` — before/after fixtures (`pre_recipe_ladder()`,
+`post_fix_but_unstamped_ladder()`, `current_ladder()`), identical ratings, differing only in the
+stamp:
+
+* `test_the_fitter_writes_a_recipe_block` — including the disk round trip.
+* `test_the_POLICY_and_the_COUNT_are_different_facts` — a `0`-count file reads `absent`.
+* `test_recipe_status_classifies_the_before_and_after_fixtures` — incl. `null` and `{}`.
+* `test_a_BUMPED_fitter_version_reads_as_differs` — catches the NEXT change, not only this one.
+* `test_check_recipe_refuses_with_the_refit_command` — asserts `--fit-only` and `+73.1` are in
+  the message.
+* `test_the_exploiter_auto_ladder_REFUSES_a_stale_file_it_cannot_refit` /
+  `..._REFITS_a_stale_file_when_it_can` (and that a read never rewrites the committed file).
+* `test_latest_promoted_elo_does_NOT_check_the_stamp` — pins the deliberate exemption.
+
+`src/main/critic_gate_test.py` — `test_a_STALE_recipe_on_the_FALLBACK_path_is_a_REFUSAL_not_a_label`,
+`test_a_stale_recipe_is_IRRELEVANT_when_the_side_can_be_REFIT`, `test_the_section_REPORTS_each_sides_recipe`.
+`build_run(..., stale_ladder_recipe=True)` and `_write_run(..., ladder_recipe=False)` are the
+fixture switches.
+
+### Still open
+
+* Every `ladder.json` already on disk is unstamped and will read `absent` until refit — which is
+  the intended, loud outcome. `--fit-only` is cheap (it plays nothing).
+* `UNDERSTANDING.md` rule 24 still describes the count-key heuristic. Not edited here (out of
+  scope); the ledger paragraph below is what supersedes it.
+
+---
+
 ## Ready-to-append ledger paragraph
 
 > **2026-09-22 · TECH DEBT P1 ×1 — the `production` baseline was never the problem; the BARE
@@ -126,3 +206,21 @@ Plus `test_check_accepts_load_and_reports_a_pre_generation_entry_without_failing
 > substituted a different checkpoint, and published under the task's original framing.
 > `src/agents/training/baselines_loadability_test.py`;
 > `measurements/p1_backlog_batch_2026-09-22/`.
+
+
+> **2026-09-22 · TECH DEBT P1 ×2 — a `ladder.json` now STAMPS the recipe it was fitted with, and
+> a cross-run reader refuses or refits without it.** Rule 24 said to quote a committed file only
+> if `eval_sentinel_edges_dropped` is present; that key is a COUNT and cannot carry the claim —
+> `0` is what a run with no sentinel pair writes, the 2026-09-08 file records it as `null`, and it
+> catches exactly one historical change. `fit_ladder` now writes a `recipe` block (name,
+> `fitter_version`, the drop POLICY beside its count, and the fitting tree's commit);
+> `recipe_status()` classifies a file `current`/`absent`/`differs` and `check_recipe` raises
+> `LadderRecipeError` naming the refit command and the **+73.1 Elo** it prevents.
+> `main.critic_gate` REFUSES a stale committed file on its fallback path — where the committed
+> numbers are the ones quoted — instead of labelling it, and reports each side's stamp;
+> `--exploiter-ladder auto:` refits in memory or refuses, because rungs are picked by ELO and the
+> pre-fix inflation is non-uniform; `plateau_signal`'s bias note reads the stamp instead of
+> asserting the bias. `latest_promoted_elo` is deliberately exempt (a within-run scalar).
+> `LADDER_FITTER_VERSION` is documented as bump-on-meaning-change, so the NEXT recipe change is
+> loud too. Every ladder already on disk reads `absent` until refit, which is intended.
+> `src/agents/training/ladder_recipe_test.py`; `measurements/p1_backlog_batch_2026-09-22/`.

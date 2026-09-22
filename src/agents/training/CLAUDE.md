@@ -378,6 +378,16 @@ checkpoint's regime** rather than silently crossing an opponent-regime boundary 
 the symmetric regime the dense ladder **REUSES** the pairs a cycle already measured (≈500 battles
 saved per promotion) — gated on the row's own `sentinel_regime` stamp, both halves required.
 
+🚨 **EVERY `snapshot_ladder/ladder.json` CARRIES A `recipe` STAMP, AND A CROSS-RUN READER REFUSES
+OR REFITS WITHOUT IT** (`snapshot_ladder.recipe_status` → `current`/`absent`/`differs`;
+`check_recipe` raises `LadderRecipeError`). A rating is only comparable to one fitted the same
+way: a file fitted before `3e6875a5` folded the eval-cycle sentinel edges in and read **+73.1
+Elo** above the current fit of the same 20 nodes, flipping the sign of a cross-run delta
+(2026-09-14). `main.critic_gate` refuses a stale committed file on its FALLBACK path (it refits
+otherwise); `--exploiter-ladder auto:` refits in memory or refuses; `latest_promoted_elo`
+deliberately does NOT check it (a within-run trend scalar). **Bump `LADDER_FITTER_VERSION`
+whenever the fit changes what a rating MEANS.**
+
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md)
 and [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 

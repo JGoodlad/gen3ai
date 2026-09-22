@@ -58,7 +58,8 @@ def _write_trace(step_dir: str, opponent: str, outcome: str, idx: int, *, p: flo
 def build_run(root: str, name: str, *, steps=(1_000_000, 2_000_000), sharpness: float = 0.49,
               ladder_elo=(1900.0, 1950.0), converged: bool = True, finished: bool = True,
               stall_turns: int | None = None, ep_len_bots: float = 18.0,
-              ep_len_pool: float = 29.0, n_battles_per_opp: int = 8) -> str:
+              ep_len_pool: float = 29.0, n_battles_per_opp: int = 8,
+              stale_ladder_recipe: bool = False) -> str:
     """A run tree complete enough for every section of the gate.
 
     ``sharpness`` sets how far the head's forecast moves off the base rate on each outcome, which
@@ -75,12 +76,20 @@ def build_run(root: str, name: str, *, steps=(1_000_000, 2_000_000), sharpness: 
 
     # ---- the ladder
     os.makedirs(os.path.join(run_dir, "snapshot_ladder"), exist_ok=True)
+    # The RECIPE STAMP is written by default, because that is what a ladder fitted by this tree
+    # carries; `stale_ladder_recipe=True` produces the PRE-2026-09-22 shape (the 2026-09-08 file
+    # that read +73.1 Elo above the current fit of the same nodes).
+    from agents.training.snapshot_ladder import ladder_recipe
+    ladder_doc = {"version": 1, "base": 1500.0, "anchored_to_bots": True,
+                  "converged": converged,
+                  "ratings": {str(s): e for s, e in zip(steps, ladder_elo)},
+                  "se": {str(s): 10.0 for s in steps},
+                  "fit_quality": {"mean_abs_err": 0.03}}
+    if not stale_ladder_recipe:
+        ladder_doc["eval_sentinel_edges_dropped"] = 0
+        ladder_doc["recipe"] = ladder_recipe(0)
     with open(os.path.join(run_dir, "snapshot_ladder", "ladder.json"), "w") as fh:
-        json.dump({"version": 1, "base": 1500.0, "anchored_to_bots": True,
-                   "converged": converged,
-                   "ratings": {str(s): e for s, e in zip(steps, ladder_elo)},
-                   "se": {str(s): 10.0 for s in steps},
-                   "fit_quality": {"mean_abs_err": 0.03}}, fh)
+        json.dump(ladder_doc, fh)
 
     # ---- the eval record + metadata (episode length lives here, not in the jsonl)
     hist = {}
@@ -952,3 +961,49 @@ def test_a_side_with_no_pair_log_at_matched_count_is_LABELLED_as_a_fallback(tree
     # the SIZE is matched, so the famine half stays evaluable — only the SOURCE is labelled
     assert sec["matched_fit_size"] is True
     assert sec["run"]["node_at_count"]["elo"] == 1900.0
+
+
+# ── the LADDER RECIPE STAMP ───────────────────────────────────────────────────────────────────
+# A committed `ladder.json` fitted before `3e6875a5` folded the eval cycles' sentinel edges into
+# the fit. Measured 2026-09-14: +73.1 Elo on the same 20 nodes, and it FLIPPED THE SIGN of a
+# cross-run delta. Normally this section refits both sides, which makes the committed recipe
+# irrelevant — but on the FALLBACK path (no `games.jsonl`) the committed numbers are the ones
+# that get quoted, and a label on a number nobody can convert is not a safeguard.
+
+def test_a_STALE_recipe_on_the_FALLBACK_path_is_a_REFUSAL_not_a_label(tree):
+    steps = (1_000_000, 2_000_000)
+    arm = build_run(tree["root"], "ARMSTALE", sharpness=0.05, steps=steps,
+                    ladder_elo=(1800.0, 1900.0), stale_ladder_recipe=True)
+    comp = build_run(tree["root"], "COMPSTALE", sharpness=0.05, steps=steps,
+                     ladder_elo=(1800.0, 1850.0))
+    with pytest.raises(cg.GateRefusal) as exc:
+        cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                          cg._resolve_ref(comp, what="parent"), None)
+    msg = str(exc.value)
+    assert "STALE LADDER RECIPE" in msg
+    assert "--fit-only" in msg, "the refusal must name the refit command"
+    assert "+73.1" in msg, "and the size of the error it prevents"
+
+
+def test_a_stale_recipe_is_IRRELEVANT_when_the_side_can_be_REFIT(tree):
+    """The stamp gates the fallback, never the refit: a refit puts the side on THIS tree's recipe
+    whatever its committed file said, so a stale file with a pair log is simply corrected."""
+    steps = (1_000_000, 2_000_000)
+    arm = build_run(tree["root"], "ARMSTALEREFIT", sharpness=0.05, steps=steps,
+                    ladder_elo=(1800.0, 1900.0), stale_ladder_recipe=True)
+    comp = build_run(tree["root"], "COMPSTALEREFIT", sharpness=0.05, steps=steps,
+                     ladder_elo=(1800.0, 1850.0), stale_ladder_recipe=True)
+    for r in (arm, comp):
+        _write_pair_log(r, steps, [(2_000_000, 1_000_000, 55)])
+    sec = cg.ladder_section(cg._resolve_ref(arm, what="run"),
+                            cg._resolve_ref(comp, what="parent"), None)
+    assert sec["refit_at_count"] == {"run": True, "parent": True}
+    assert sec["refit_fallbacks"] == []
+
+
+def test_the_section_REPORTS_each_sides_recipe(tree):
+    sec = cg.ladder_section(cg._resolve_ref(tree["arm"], what="run"),
+                            cg._resolve_ref(tree["parent"], what="parent"), None)
+    assert sec["run"]["recipe_status"] == "current"
+    assert sec["parent"]["recipe_status"] == "current"
+    assert "gen3_ladder_recipe" in sec["run"]["recipe"]

@@ -122,9 +122,9 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 - one register
     # measured across four nodes), so a WITHIN-FIT difference does not cancel it: an add can move
     # by ~6 Elo and a NEAR-ZERO add can CHANGE SIGN. Clause 1's threshold is a comparison against
     # zero, so its verdicts are affected.
+    from agents.training import snapshot_ladder
     if use_fixed:
-        from agents.training.snapshot_ladder import fit_ladder
-        lad = fit_ladder(str(run), write=False)
+        lad = snapshot_ladder.fit_ladder(str(run), write=False)
         if FIX_KEY not in lad:
             print("=== PLATEAU SIGNAL — REFUSING ===")
             print(f"  --fixed-fit requested, but fit_ladder's result carries no '{FIX_KEY}'.")
@@ -136,14 +136,22 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 - one register
             print("  check to a source-text or parameter test; both have already failed here.")
             return 2
         bias_note = (f"FIXED FIT (refit from games.jsonl; {lad[FIX_KEY]} eval sentinel edge(s) "
-                     f"dropped, per '{FIX_KEY}')")
+                     f"dropped, per '{FIX_KEY}'; "
+                     f"{snapshot_ladder.recipe_status(lad)[1]})")
     else:
         ladder_json = run / "snapshot_ladder" / "ladder.json"
         if not ladder_json.exists():
             refuse(f"REFUSING: {ladder_json} does not exist — there is no ladder to read.")
         lad = json.load(open(ladder_json))
-        bias_note = ("committed ladder.json — CARRIES THE f9a3ddf6 BIAS (~21-29 Elo newest-node "
-                     "inflation, non-uniform, so near-zero adds may change sign under the fix)")
+        # The committed file now STAMPS its own recipe, so this note stops guessing. Before the
+        # stamp the note asserted the bias unconditionally, which is wrong for a file fitted
+        # after f9a3ddf6 and right for one fitted before — and nothing in the file said which.
+        status, detail = snapshot_ladder.recipe_status(lad)
+        bias_note = (f"committed ladder.json — recipe {detail}" if status == "current" else
+                     f"committed ladder.json — STALE RECIPE ({detail}). CARRIES THE f9a3ddf6 "
+                     "BIAS (~21-29 Elo newest-node inflation, non-uniform, so near-zero adds may "
+                     "change sign under the fix). Re-run with --fixed-fit to refit from "
+                     "games.jsonl.")
     r = {int(k): v for k, v in lad["ratings"].items()}
     se = {int(k): v for k, v in lad.get("se", {}).items()}
     nodes = sorted(r)
