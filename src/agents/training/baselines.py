@@ -93,6 +93,152 @@ class BaselineError(RuntimeError):
     """
 
 
+#: Why a named baseline cannot be loaded by the tree that is asking.
+#:
+#: ``pre_generation`` — the entry records an architecture GENERATION this code no longer contains
+#: (``config_version`` below ``MIGRATION_FLOOR``, or a different ``ARCH_SIGNATURE``). No migration
+#: can bridge it; the fix is the entry's own commit, and the registry is expected to have marked
+#: the entry ``era_checkout_only``.
+#: ``arch_drift`` — the entry is in THIS generation but the loader still refused it. That is a
+#: real defect in either the entry or the tree, never something to route around.
+#: ``unresolvable`` — no such file on this box (no archive, or the run was groomed away).
+#: ``not_a_model`` — a ``kind="config"`` entry, which names a ``model_config.json``.
+LOAD_FAILURE_REASONS = ("pre_generation", "arch_drift", "unresolvable", "not_a_model")
+
+
+class BaselineLoadError(BaselineError):
+    """A named baseline the CURRENT tree cannot load — raised INSTEAD of a bare ``TypeError``.
+
+    This exists because of what silence here actually costs. On 2026-09-14 an external-anchor
+    de-risk asked for the registry name ``production``, got
+    ``TypeError: ExtractorBuild.__init__() got an unexpected keyword argument
+    'threat_prob_outspeed'`` out of a bare ``MaskablePPO.load``, concluded "ordinary arch drift",
+    substituted a different checkpoint, and published the numbers under the task's original
+    framing. Two things were wrong with that conclusion and neither was visible from the
+    ``TypeError``: the entry loads perfectly through this project's OWN loader
+    (:func:`agents.model.snapshot.load_foreign_opponent`, which runs the deleted-kwarg sanitizer),
+    and the same ``TypeError`` comes out of a bare load for **every** current-generation entry in
+    the registry — so re-pointing the name would have moved the failure, not removed it.
+
+    So a by-name load either returns a model or raises THIS, and the message always names the fix.
+
+    Attributes:
+        name:   the registry name asked for.
+        reason: one of :data:`LOAD_FAILURE_REASONS`.
+        era:    the architecture generation the ENTRY records (``"v45/gen3_opp_hp_typed_...")``).
+        commit: the commit the entry pins — the checkout its weights are readable from.
+    """
+
+    def __init__(self, message: str, *, name: str, reason: str, era: str = "",
+                 commit: str = "") -> None:
+        super().__init__(message)
+        self.name = name
+        self.reason = reason
+        self.era = era
+        self.commit = commit
+
+
+def _current_generation() -> "tuple[int, str]":
+    """``(MIGRATION_FLOOR, ARCH_SIGNATURE)`` for the tree that is asking.
+
+    Imported lazily so this module stays torch-free at import time (the module docstring's
+    promise): ``agents.model.model_version`` pulls in the model package.
+    """
+    from agents.model.model_version import ARCH_SIGNATURE, MIGRATION_FLOOR
+    return int(MIGRATION_FLOOR), str(ARCH_SIGNATURE)
+
+
+def era_of(b: Baseline) -> str:
+    """The one-token architecture GENERATION an entry records: ``"v101/gen3_critic_route_wave_v1"``."""
+    return f"v{b.config_version}/{b.arch_signature}"
+
+
+def is_pre_generation(b: Baseline) -> bool:
+    """Is this entry's recorded generation one the CURRENT tree cannot load?
+
+    Answered from REGISTRY DATA ALONE — no archive, no torch, no checkpoint read — so it is the
+    same verdict in a fresh clone, in CI, and on the box that holds ``models/``. Two ways to be
+    pre-generation, and they are the same two the migration chain refuses: a ``config_version``
+    below ``MIGRATION_FLOOR``, or a different ``ARCH_SIGNATURE`` (an entry can carry the second
+    without the first if a signature bump ever lands without a floor move).
+    """
+    floor, sig = _current_generation()
+    return b.config_version < floor or b.arch_signature != sig
+
+
+def check_era(name: str, path: Optional[str] = None) -> Baseline:
+    """Return the entry, or raise :class:`BaselineLoadError` naming the era AND the fix.
+
+    The cheap half of :func:`load`: it reads only the registry, so a caller that merely wants to
+    know whether a name is readable here does not pay for a checkpoint read.
+    """
+    b = get(name, path)
+    if not is_pre_generation(b):
+        return b
+    floor, sig = _current_generation()
+    current = sorted(n for n in names(path) if not is_pre_generation(get(n, path)))
+    declared = ("The entry declares `era_checkout_only`, so this is the era wall, not drift."
+                if b.era_checkout_only else
+                "The entry does NOT declare `era_checkout_only` — the registry believes this is "
+                "loadable here and it is not. Mark it, or re-point it with "
+                f"`python -m main.baselines set {name} <run>/<file>.zip --reason \"<ledger "
+                "title>\"`.")
+    raise BaselineLoadError(
+        f"baseline {name!r} is a PRE-GENERATION node: it records {era_of(b)}, and this tree is "
+        f"MIGRATION_FLOOR v{floor} / {sig!r}. Its weights were trained against an architecture "
+        f"this codebase no longer contains and no config migration can bridge that. {declared}\n"
+        f"FIX: read it from its OWN era checkout — `git worktree add /tmp/era-{name} {b.commit}` "
+        f"— or name a current-generation baseline instead: {', '.join(current) or '(none)'}.",
+        name=name, reason="pre_generation", era=era_of(b), commit=b.commit)
+
+
+def load(name: str, path: Optional[str] = None, *, device: str = "cpu") -> Any:
+    """THE by-name model load. Returns the loaded model, or raises :class:`BaselineLoadError`.
+
+    Uses :func:`agents.model.snapshot.load_foreign_opponent` — the loader that verifies the
+    ``arch_signature`` and runs the deleted-kwarg sanitizer (``_patch_historical_floor`` →
+    :func:`agents.model.snapshot.sanitize_dead_extractor_kwargs`) — and NEVER a bare
+    ``MaskablePPO.load``, which rebuilds the extractor from the zip's own pickled
+    ``features_extractor_kwargs`` and therefore dies on any flag deleted from the constructor
+    since. That distinction is the whole bug this function closes: measured 2026-09-22, a bare
+    load raises ``unexpected keyword argument 'threat_prob_outspeed'`` on ALL FIVE
+    current-generation entries, while every one of them loads here.
+
+    A baseline is by construction a FROZEN model from another run, read as a reference or an
+    opponent — never resumed — which is exactly ``load_foreign_opponent``'s contract.
+    """
+    b = check_era(name, path)
+    if b.kind != "checkpoint":
+        raise BaselineLoadError(
+            f"baseline {name!r} is kind={b.kind!r} — it names a model_config.json, not a model. "
+            f"FIX: call agents.training.baselines.config_path({name!r}).",
+            name=name, reason="not_a_model", era=era_of(b), commit=b.commit)
+    try:
+        r = resolve(name, path)
+    except BaselineError as exc:
+        raise BaselineLoadError(
+            f"baseline {name!r} ({b.spec}) does not resolve on this box: {exc}\n"
+            "FIX: run this where the run archive is (models/ lives only in the MAIN checkout), or "
+            f"re-point the entry with `python -m main.baselines set {name} … --reason \"<ledger "
+            "title>\"`.",
+            name=name, reason="unresolvable", era=era_of(b), commit=b.commit) from exc
+    from agents.model.snapshot import current_model_version, load_foreign_opponent
+    from agents.observation.state_encoder import load_mappings
+    try:
+        model, _ = load_foreign_opponent(r.zip_path, current_model_version(load_mappings()),
+                                         device=device, config_path=r.config_path)
+    except Exception as exc:                     # noqa: BLE001 — re-raised, typed, with the fix
+        raise BaselineLoadError(
+            f"baseline {name!r} ({r.zip_path}) records {era_of(b)} — this tree's generation — but "
+            f"the loader still refused it: {type(exc).__name__}: {exc}\n"
+            "FIX: this is a real defect, not something to route around with a stand-in "
+            "checkpoint. Either the deleted-kwarg contract in agents/model/snapshot.py "
+            "(`_DEAD_FEK_INERT` / `_DEAD_FEK_JUDGED`) is missing this run's flag, or the entry is "
+            f"stale — re-read it from its own commit {b.commit[:8]} to tell which.",
+            name=name, reason="arch_drift", era=era_of(b), commit=b.commit) from exc
+    return model
+
+
 # --------------------------------------------------------------------------------------------
 # The objects
 # --------------------------------------------------------------------------------------------
@@ -663,6 +809,7 @@ def _validate_entry(b: Baseline, models: Optional[Any]) -> List[Finding]:
                            f"floor_elo={b.floor_elo} but the notes do not mention {int(b.floor_elo)} "
                            "— the machine-readable floor and the prose that explains it must not "
                            "be able to drift apart."))
+    out.extend(_validate_era(b))
     if models is None:
         return out
 
@@ -702,6 +849,34 @@ def _validate_entry(b: Baseline, models: Optional[Any]) -> List[Finding]:
                                "entry if the newer commit is the one you mean."))
     out.append(Finding("ok", b.name, b.describe()))
     return out
+
+
+def _validate_era(b: Baseline) -> List[Finding]:
+    """The entry's recorded GENERATION must agree with its ``era_checkout_only`` flag.
+
+    Structural — registry data only, so it runs in a fresh clone with no ``models/``. The flag is
+    the registry's public claim about whether a by-name LOAD works in this tree, and a claim that
+    disagrees with the recorded ``config_version`` / ``arch_signature`` is exactly the silence
+    :class:`BaselineLoadError` exists to break: an unmarked pre-generation entry sends a reader
+    looking for a stand-in checkpoint, and a stale mark on a loadable entry sends them to an era
+    checkout they do not need.
+    """
+    try:
+        pre = is_pre_generation(b)
+    except ImportError:                          # no model package here — nothing to claim
+        return []
+    if pre and not b.era_checkout_only:
+        return [Finding("error", b.name,
+                        f"records {era_of(b)}, which this tree cannot load, but the entry does "
+                        "NOT declare era_checkout_only. Mark it (the weights are readable from "
+                        f"commit {b.commit[:8]}) or re-point it with `python -m main.baselines "
+                        f"set {b.name} … --reason \"<ledger title>\"`.")]
+    if b.era_checkout_only and not pre:
+        return [Finding("error", b.name,
+                        f"declares era_checkout_only but records {era_of(b)}, which THIS tree "
+                        "loads. A stale era mark sends a reader to a pinned checkout they do not "
+                        "need — drop the flag.")]
+    return []
 
 
 def _validate_shas(path: Optional[str]) -> List[Finding]:

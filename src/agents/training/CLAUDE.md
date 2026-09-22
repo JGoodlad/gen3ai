@@ -236,6 +236,15 @@ last-snapshot rule below cannot move what a name points at while its run keeps t
 🚨 **A NEW OPPONENT IS A RE-MEASUREMENT, NOT A RENAME** — untaught-meter levels are not comparable
 across opponents, so `python -m main.baselines set <name> <file> --reason "<ledger title>"` is the
 only legal edit, and it PRINTS the ledger line to append rather than writing one.
+🚨 **LOAD a baseline with `baselines.load(name)`, NEVER a bare `MaskablePPO.load`** — the bare path
+rebuilds the extractor from the zip's own pickled kwargs and (measured 2026-09-22) raises
+`unexpected keyword argument 'threat_prob_outspeed'` on **all five** current-generation entries,
+which is how a 2026-09-14 read concluded "arch drift" and silently substituted a stand-in
+checkpoint. `load()` uses the sanitizing `load_foreign_opponent` and either returns a model or
+raises **`BaselineLoadError`** with `.reason` (`pre_generation` · `arch_drift` · `unresolvable` ·
+`not_a_model`) and a message naming the FIX. `era_checkout_only` is VALIDATED against the entry's
+recorded generation, so an unmarked pre-generation node is an error. `python -m main.baselines
+check --load` runs it for real.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
 
 ## Bot evaluation (subprocess, non-blocking)

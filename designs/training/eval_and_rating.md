@@ -59,6 +59,48 @@ file exists, every sha matches, `config_version` / `arch_signature` are re-read 
 structural half runs everywhere. `designs/research_state/measurements/archive_grooming_tiers.py`
 reads `protected_files()` so a registry-named checkpoint survives every retention tier.
 
+### A name either LOADS or fails LOUD — `baselines.load` and `BaselineLoadError`
+
+🚨 **Load a baseline with `baselines.load(name)`, never with a bare `MaskablePPO.load`.** It goes
+through `agents.model.snapshot.load_foreign_opponent` — the loader that verifies the
+`arch_signature` and runs the deleted-kwarg sanitizer (`_patch_historical_floor` →
+`sanitize_dead_extractor_kwargs`). A bare `MaskablePPO.load` rebuilds the extractor from the zip's
+own pickled `features_extractor_kwargs` and therefore dies on any constructor flag deleted since
+the checkpoint was written.
+
+**MEASURED 2026-09-22: a bare load raises `TypeError: ExtractorBuild.__init__() got an unexpected
+keyword argument 'threat_prob_outspeed'` on ALL FIVE current-generation entries** (`production`,
+`v9_long_baseline`, `v9_fold_parent`, `famine_comparator`, `untaught_meter_opponent`), and every
+one of them loads through `baselines.load`. That number is what closed the 2026-09-14 tech-debt row
+"the `production` baseline does not load at HEAD": the entry was never the problem, the loader was,
+and **re-pointing the name would have moved the failure rather than removed it**. `production` is
+therefore NOT re-pointed — its `pending` block still names the owner-visible condition for the move
+(the win-prob arm passing its critic gate), and it remains the architecture SURFACE the mirror is
+constructed from.
+
+A by-name load now either returns a model or raises **`BaselineLoadError`** (a `BaselineError`
+subclass, so every existing `except BaselineError` keeps working), carrying `.reason` —
+`pre_generation` · `arch_drift` · `unresolvable` · `not_a_model` — and a message that always names
+the FIX. A `pre_generation` refusal names the entry's recorded era (`v45/gen3_opp_hp_typed_…`), this
+tree's `MIGRATION_FLOOR` / `ARCH_SIGNATURE`, the commit the weights ARE readable from, and the
+current-generation names to use instead. `arch_drift` — a current-generation entry the loader still
+refuses — says in the message that it is a defect, **not a licence to substitute a stand-in
+checkpoint**, which is precisely what happened on 2026-09-14 (`metamon_derisk_2026-09-14/`).
+
+**`era_checkout_only` is now VALIDATED, not merely declared.** `is_pre_generation()` answers from
+registry data alone (`config_version < MIGRATION_FLOOR`, or a different `arch_signature`) — no
+archive, no torch, so it is the same verdict in a fresh clone — and `validate()` makes an unmarked
+pre-generation entry an ERROR, as it does a stale mark on an entry this tree loads.
+
+```bash
+python -m main.baselines check --load     # + actually load every checkpoint entry (~2.5 s each)
+```
+
+`src/agents/training/baselines_loadability_test.py` iterates the whole registry and asserts each
+entry either loads or raises the typed error naming the fix; its `integration` half also pins that
+the bare path still fails where `baselines.load` succeeds, so a "simplification" back to
+`MaskablePPO.load` fails red.
+
 ## Bot evaluation (subprocess, non-blocking)
 
 **Flat schedule, full roster.** Eval fires every `EVAL_FREQ_STEPS` (2M steps) and plays

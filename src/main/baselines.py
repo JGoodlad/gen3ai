@@ -71,6 +71,11 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--no-sha", action="store_true",
                    help="skip the sha256 re-hash (the only part that reads whole checkpoints).")
     c.add_argument("--quiet", action="store_true", help="print problems only.")
+    c.add_argument("--load", action="store_true",
+                   help="also LOAD every checkpoint entry through agents.training.baselines.load "
+                        "(the arch-signature-verifying loader, never a bare MaskablePPO.load). "
+                        "Costs ~2.5 s a checkpoint and needs torch; without it a name that no "
+                        "longer loads is reported only when its recorded GENERATION says so.")
 
     t = sub.add_parser("set", help="re-point one baseline (a PROCEDURE — --reason required).")
     t.add_argument("name")
@@ -158,8 +163,34 @@ def cmd_show(args, registry: Optional[str]) -> int:
     return 0
 
 
+def loadability_findings(registry: Optional[str]) -> List[reg.Finding]:
+    """Actually LOAD every checkpoint entry and report what happened.
+
+    The `production` row of the tech-debt backlog was opened because a read asked for a name, got
+    a bare `TypeError` out of `MaskablePPO.load`, and quietly substituted a different checkpoint.
+    `reg.load` is the loader that does not do that; this is the CLI that says so out loud.
+    """
+    out: List[reg.Finding] = []
+    if main_models_dir() is None:
+        return [reg.Finding("warn", "registry",
+                            f"--load SKIPPED: {models_skip_reason()}")]
+    for name in reg.names(registry):
+        b = reg.get(name, registry)
+        if b.kind != "checkpoint":
+            continue
+        try:
+            reg.load(name, registry)
+            out.append(reg.Finding("ok", name, f"LOADS at HEAD ({reg.era_of(b)})"))
+        except reg.BaselineLoadError as exc:
+            level = "warn" if exc.reason == "pre_generation" and b.era_checkout_only else "error"
+            out.append(reg.Finding(level, name, f"[{exc.reason}] {exc}"))
+    return out
+
+
 def cmd_check(args, registry: Optional[str]) -> int:
     findings = reg.validate(registry, verify_sha=not args.no_sha)
+    if getattr(args, "load", False):
+        findings = findings + loadability_findings(registry)
     for f in findings:
         if args.quiet and f.level == "ok":
             continue

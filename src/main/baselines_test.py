@@ -298,3 +298,29 @@ def test_every_help_string_renders():
     """The `%o` class: an unescaped `%` in a help string raises only when help is FORMATTED."""
     from main import baselines as cli
     cli.build_parser().format_help()
+
+
+def test_check_accepts_load_and_reports_a_pre_generation_entry_without_failing(capsys,
+                                                                               monkeypatch):
+    """`check --load` must SAY that an era-walled entry does not load, and still exit 0.
+
+    A declared `era_checkout_only` node is the era wall, not drift — turning it into an error
+    would make `check` permanently red and train everyone to ignore it. An entry that is NOT
+    declared is a different thing, and `validate()` already fails on that.
+    """
+    from main import baselines as cli
+
+    def _fake_load(name, registry=None, **kw):
+        if name == "v8_line":
+            raise baselines.BaselineLoadError("pre-gen … FIX: use the era checkout",
+                                              name=name, reason="pre_generation",
+                                              era="v45/old", commit="b13b30b2")
+        return object()
+
+    monkeypatch.setattr(baselines, "load", _fake_load)
+    monkeypatch.setattr("main.baselines.main_models_dir", lambda: "/tmp/models")
+    findings = cli.loadability_findings(None)
+    by_name = {f.name: f for f in findings}
+    assert by_name["v8_line"].level == "warn" and "pre_generation" in by_name["v8_line"].message
+    assert by_name["production"].level == "ok" and "LOADS at HEAD" in by_name["production"].message
+    assert cli.build_parser().parse_args(["check", "--load"]).load is True
