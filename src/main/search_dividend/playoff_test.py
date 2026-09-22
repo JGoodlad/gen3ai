@@ -348,3 +348,43 @@ def test_run_cell_raises_on_a_short_r_row_rather_than_playing_the_cell():
     assert "raise SystemExit" in src
     # the row is appended BEFORE the refusal, so the evidence survives the raise
     assert src.index("results.append(row)") < src.index("short_r_refusal")
+
+
+# -- the DRIVER refusal (gen3_root_failure_refusal_v1, 2026-09-22) -----------------------------
+
+
+def test_root_failure_refusal_fires_where_the_other_two_guards_are_STRUCTURALLY_BLIND():
+    """🚨 The hole this closes. A decision whose `open_root` raised never reaches the screen, so
+    `n_playoff*` is all zero and BOTH existing guards return None on the row that most needs one —
+    which is how `root_failed` on 60 of 63 decisions reported a clean cell."""
+    from main.search_dividend.playoff import (playoff_error_refusal, root_failure_refusal,
+                                              short_r_refusal)
+
+    row = {"arm": "playoff", "n_searched": 2,
+           "fallbacks": {"root_failed": 20, "not_move_selection": 8},
+           "fallback_errors": {"RuntimeError: battle never reached the start of turn ?": 20},
+           "n_playoff": 0, "n_playoff_inconclusive": 0, "n_playoff_error": 0}
+    assert playoff_error_refusal(row) is None, "the pre-existing guard cannot see this row"
+    assert short_r_refusal(row, 4) is None, "nor can the budget guard"
+    msg = root_failure_refusal(row)
+    assert msg and "20 of 22" in msg and "91%" in msg
+    assert "battle never reached the start of turn ?" in msg, (
+        "a refusal that does not NAME the exception repeats the 2026-09-22 dead end")
+    assert "base` control" in msg
+
+
+def test_root_failure_refusal_excludes_UNSEARCHABLE_decisions_from_its_denominator():
+    """A forced switch is not a search failure. Counting one would let a game full of them
+    manufacture a driver-failure rate (or, the other way, dilute a real one away)."""
+    from main.search_dividend.playoff import root_failure_refusal
+
+    # 3 root_failed out of 3 searchable → refused, even though 40 decisions were forced switches.
+    row = {"arm": "honest", "n_searched": 0,
+           "fallbacks": {"root_failed": 3, "not_move_selection": 40},
+           "fallback_errors": {"driver died": 3}}
+    assert root_failure_refusal(row) is not None
+    # Below the floor → silent: one lost world is a race with a stall, not a broken arm.
+    ok = {"arm": "honest", "n_searched": 30, "fallbacks": {"root_failed": 1},
+          "fallback_errors": {"driver died": 1}}
+    assert root_failure_refusal(ok) is None
+    assert root_failure_refusal({"arm": "honest", "fallbacks": {}}) is None

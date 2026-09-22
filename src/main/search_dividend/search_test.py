@@ -149,6 +149,29 @@ def test_a_dead_driver_becomes_root_failed_not_a_crash():
         "a dead DRIVER must not be reported as a bad WORLD — the two send a reader to "
         "different places")
     assert res.action == res.policy_action
+    # 🚨 FAILS ON REVERT of `_no_arm_detail`. `root_failed` used to be counted with the exception
+    # text reachable only from `diagnostics["worlds"][i]["gate"]`, which no results-file field
+    # carries — so the 2026-09-22 re-measurement could report the fallback on 60 of 63 decisions
+    # and still not say what `open_root` raised. The text is the diagnosis; the counter is not.
+    assert res.diagnostics["error"] == "RuntimeError: driver died"
+
+
+def test_root_failed_reports_DISTINCT_open_root_messages_not_one_per_world():
+    """A decision opens K worlds and a dead driver raises K times. The reader acts on the CLASS,
+    so the record carries DISTINCT messages capped at three — a repetition histogram would be
+    noise, and an unbounded list would put K driver tracebacks in a JSON line."""
+    from main.search_dividend.search import _no_arm_detail
+
+    assert _no_arm_detail([{"gate": "ok"}, {"gate": "prefix_mismatch"}]) is None, (
+        "a decision that lost its worlds to the GATE has no driver exception to report, and a "
+        "message invented for it would send a reader to the wrong half of the search")
+    diag = [{"gate": "open_failed: RuntimeError: A"},
+            {"gate": "open_failed: RuntimeError: B"},
+            {"gate": "open_failed: RuntimeError: A"},
+            {"gate": "open_failed: RuntimeError: C"},
+            {"gate": "open_failed: RuntimeError: D"}]
+    detail = _no_arm_detail(diag)
+    assert detail == ("RuntimeError: A | RuntimeError: B | RuntimeError: C"), detail
 
 
 def test_a_world_that_fails_the_PREFIX_GATE_is_dropped_with_a_counter():

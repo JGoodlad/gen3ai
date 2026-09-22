@@ -738,7 +738,8 @@ class SearchEngine:
             weight_sum += 1.0
         if weight_sum <= 0:
             return DecisionResult(policy_action, _no_arm_reason(widths, alpha_diag), widths,
-                                  diagnostics={"worlds": world_diag, "alpha": alpha_diag},
+                                  diagnostics={"worlds": world_diag, "alpha": alpha_diag,
+                                               "error": _no_arm_detail(world_diag)},
                                   policy_action=policy_action)
         for a in actions:
             scores[a] /= weight_sum
@@ -871,7 +872,8 @@ class SearchEngine:
 
         if racer.rounds <= 0:
             return DecisionResult(policy_action, _no_arm_reason(widths, alpha_diag), widths,
-                                  diagnostics={"worlds": world_diag, "alpha": alpha_diag},
+                                  diagnostics={"worlds": world_diag, "alpha": alpha_diag,
+                                               "error": _no_arm_detail(world_diag)},
                                   policy_action=policy_action)
         out = racer.outcome(prefer=policy_action, stop_reason=stop)
         widths.racing_rounds = out.rounds
@@ -1368,6 +1370,38 @@ def _no_arm_reason(widths: RealizedWidths, alpha_diag: Sequence[dict]) -> str:
     if not any(d.get("n_legal") for d in alpha_diag):
         return "no_candidates"
     return "no_scored_arm"
+
+
+#: The prefix every world-open failure's ``gate`` string carries (set at the two ``open_root``
+#: call sites). Read here rather than re-spelled, so the producer and the consumer cannot drift.
+OPEN_FAILED_PREFIX = "open_failed: "
+
+
+def _no_arm_detail(world_diag: Sequence[dict]) -> Optional[str]:
+    """The EXCEPTION TEXT behind a ``root_failed``, or ``None``.
+
+    🚨 **This is the field whose absence cost the 2026-09-22 re-measurement its root cause.**
+    ``root_failed`` was counted on 51 of 63 decisions (node) and 60 of 63 (rust) with nothing
+    anywhere saying WHAT ``open_root`` raised: the message was written into the per-world
+    ``gate`` string inside ``diagnostics["worlds"]``, which no results-file field carries, so the
+    only way to read it was to patch the engine and re-run. A counted fallback whose reason cannot
+    be read names the symptom and hides the defect — the same shape as the playoff's swallowed
+    ``PlayoffResult.error`` (see :func:`main.search_dividend.playoff.playoff_error_refusal`).
+
+    DISTINCT messages only, capped: a decision opens K worlds and a dead driver produces K
+    identical strings, so the histogram a reader acts on is over classes, not repetitions.
+    """
+    seen: List[str] = []
+    for w in world_diag:
+        g = str(w.get("gate") or "")
+        if not g.startswith(OPEN_FAILED_PREFIX):
+            continue
+        msg = g[len(OPEN_FAILED_PREFIX):]
+        if msg not in seen:
+            seen.append(msg)
+        if len(seen) >= 3:
+            break
+    return " | ".join(seen) or None
 
 
 def branchable(requests: Optional[dict], side: str) -> bool:

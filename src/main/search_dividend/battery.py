@@ -38,8 +38,10 @@ from typing import Dict, List, Optional, Sequence
 
 from main.search_dividend.defensive import fold_defensive
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
-from main.search_dividend.playoff import (PlayoffConfig, PlayoffRunner, fold_playoff,
-                                          playoff_error_refusal, short_r_refusal)
+from main.search_dividend.playoff import (PlayoffConfig, PlayoffRunner, bump_error_class,
+                                          error_class, fold_playoff,
+                                          playoff_error_refusal, root_failure_refusal,
+                                          short_r_refusal)
 from main.search_dividend.racing import fold_racing
 from main.search_dividend.record import install_choice_tap
 from main.search_dividend.search import SearchConfig, SearchEngine
@@ -207,6 +209,13 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     realized = {"m_opp": [], "k_worlds": [], "r_dice": [], "arms": [], "elapsed": [],
                 "depth": [], "beam": []}
     errors: List[str] = []
+    # The exception text behind a DRIVER failure, CLASSED and counted — the field whose absence
+    # made `root_failed` undiagnosable on 2026-09-22 (51/63 on the node driver and 60/63 on rust,
+    # with nothing anywhere naming what `open_root` raised). Same treatment the playoff's rollout
+    # errors already get, and the same reason: the identifiers vary per decision, the SHAPE is
+    # what a reader acts on. Not restricted to `root_failed` — any fallback carrying a message
+    # contributes, so `search_error` and `no_world` become readable off the row too.
+    fallback_errors: Dict[str, int] = {}
     n_changed = 0
     n_searched = 0
     deepened = 0
@@ -217,8 +226,11 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         if fb:
             fallbacks[fb] = fallbacks.get(fb, 0) + 1
             det = d.get("error_detail")
-            if det and det not in errors and len(errors) < 3:
-                errors.append(det)
+            if det:
+                if det not in errors and len(errors) < 3:
+                    errors.append(det)
+                for part in str(det).split(" | "):
+                    bump_error_class(fallback_errors, error_class(part))
             continue
         n_searched += 1
         n_changed += 1 if d.get("changed") else 0
@@ -241,6 +253,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "max_depth_realized": max((int(d) for d in realized["depth"]), default=0),
         "fallbacks": fallbacks,
         "fallback_details": errors,
+        "fallback_errors": fallback_errors,
         "deadline_truncated": truncated,
         "worlds_gate_failed": gate_failed,
         "realized_mean": {k: (round(sum(v) / len(v), 3) if v else 0.0)
@@ -440,12 +453,17 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
             # than its flags name and, below MIN_PAIRS, cannot conclude at all — measured
             # 2026-09-19 as two cells at R=4 and R=8 producing byte-identical no-op behaviour.
             # The row is APPENDED first so the evidence for the refusal is on disk.
-            if (playoff_cfg is not None and cfg.arm == "playoff"
-                    and not playoff_cfg.allow_short_r):
+            # 🚨 `root_failure_refusal` is FIRST and applies to EVERY search arm, not just
+            # `playoff`: a dead search driver never reaches a screen, so the other two guards see
+            # `attempted == 0` and stay silent (2026-09-22 — the hole that let `root_failed` on
+            # 60 of 63 decisions report a clean cell).
+            msg = root_failure_refusal(row) if cfg.arm != "base" else None
+            if not msg and (playoff_cfg is not None and cfg.arm == "playoff"
+                            and not playoff_cfg.allow_short_r):
                 msg = (playoff_error_refusal(row)
                        or short_r_refusal(row, int(playoff_cfg.rollouts)))
-                if msg:
-                    raise SystemExit(f"[search_dividend] {msg}")
+            if msg:
+                raise SystemExit(f"[search_dividend] {msg}")
     finally:
         engine.close()
     return played

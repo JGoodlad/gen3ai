@@ -496,13 +496,23 @@ def error_class(msg: str) -> str:
     return _ERROR_NOISE.sub("?", head).strip()[:160] or "(empty)"
 
 
-def _bump(counts: dict, key: str) -> None:
+def bump_error_class(counts: dict, key: str) -> None:
+    """Count one classed error message, POOLING past :data:`MAX_ERROR_CLASSES` distinct classes.
+
+    Public because the SEARCH side needs the identical bound: a results row is one JSON line and
+    a dict keyed on raw driver messages would grow without limit (see
+    :func:`main.search_dividend.battery.summarize_decisions`). One implementation, so the two
+    histograms cannot drift into different pooling rules."""
     if key in counts:
         counts[key] += 1
     elif len(counts) < MAX_ERROR_CLASSES:
         counts[key] = 1
     else:
         counts[OTHER_ERRORS] = counts.get(OTHER_ERRORS, 0) + 1
+
+
+#: Kept as the private spelling this module already used at its own call sites.
+_bump = bump_error_class
 
 
 #: How much of the requested R a cell must actually realize before its rows mean what they say.
@@ -540,16 +550,77 @@ def playoff_error_refusal(row: dict, *, floor: float = PLAYOFF_ERROR_FLOOR) -> "
     rate = n_err / attempted
     if rate < float(floor):
         return None
-    classes = row.get("playoff_errors") or {}
-    named = "; ".join(f"{k} (x{v})" for k, v in
-                      sorted(classes.items(), key=lambda kv: -kv[1])[:3]) or "(no error string)"
+    named = name_error_classes(row.get("playoff_errors"))
+    # The SEARCH side's classed messages too, when the row carries any. A cell can lose its
+    # playoffs to rollouts while the sweep that nominated them was also failing, and the two
+    # histograms send a reader to different places — so the refusal names both rather than
+    # letting the reader infer the second from its absence.
+    search_named = name_error_classes(row.get("fallback_errors"), empty="")
+    extra = f" Search-side error classes: {search_named}." if search_named else ""
     return (
         f"REFUSED: {n_err} of {attempted} playoffs ({rate:.0%}) were lost to ROLLOUT ERRORS, and "
         f"a decision whose playoff raised is adjudicated by the SCREEN alone — so this cell is "
-        f"measuring the screen, not the playoff its flags name. Error classes: {named}. The known "
-        f"instance is `--impl rust` on a LIVE partial record (see "
+        f"measuring the screen, not the playoff its flags name. Error classes: {named}.{extra} "
+        f"The known instance is `--impl rust` on a LIVE partial record (see "
         f"designs/ops/TECH_DEBT_BACKLOG.md); `--impl node` is clean on the same game."
     )
+
+
+def name_error_classes(classes, *, top: int = 3, empty: str = "(no error string)") -> str:
+    """The top ``top`` classed error messages as one human string, most frequent first."""
+    return "; ".join(f"{k} (x{v})" for k, v in
+                     sorted((classes or {}).items(), key=lambda kv: -kv[1])[:top]) or empty
+
+
+#: How many of a game's SEARCHABLE decisions may fall back because the search DRIVER failed
+#: before the cell is refused. A third, the same bar :data:`PLAYOFF_ERROR_FLOOR` sets on the
+#: rollouts, and for the same reason: one dead world is a race lost to a stall, a third of them
+#: is an arm that is not running.
+ROOT_FAILURE_FLOOR = 0.34
+
+
+def root_failure_refusal(row: dict, *, floor: float = ROOT_FAILURE_FLOOR) -> "Optional[str]":
+    """A refusal when a game's search fell back because ``open_root`` RAISED, else ``None``.
+
+    🚨 **The hole the other two refusals left open, 2026-09-22.** ``playoff_error_refusal`` guards
+    the rollouts and ``short_r_refusal`` guards the budget — but a decision whose ``open_root``
+    raises never reaches the screen, let alone a playoff, so on a run where the DRIVER is dead both
+    of those see ``attempted == 0`` and return ``None``. That is exactly what the re-measurement
+    found: ``root_failed`` on 51 of 63 decisions (node) and 60 of 63 (rust) while every guard in
+    this module stayed quiet and the cell reported a clean win rate for an arm that had done
+    nothing. A `playoff` cell in that state is the `base` control wearing the `playoff` label.
+
+    Reported against the SEARCHABLE decisions — a forced switch and a team preview are not
+    failures and are excluded, the same way ``short_r_refusal`` excludes a cell whose screen was
+    simply decisive. The error CLASSES are named, which is the whole point of carrying them.
+    """
+    fallbacks = row.get("fallbacks") or {}
+    n_root = int(fallbacks.get("root_failed", 0) or 0)
+    if n_root <= 0:
+        return None
+    searchable = int(row.get("n_searched", 0) or 0) + sum(
+        int(v or 0) for k, v in fallbacks.items() if k not in _UNSEARCHABLE_FALLBACKS)
+    if searchable <= 0:
+        return None
+    rate = n_root / searchable
+    if rate < float(floor):
+        return None
+    named = name_error_classes(row.get("fallback_errors"))
+    return (
+        f"REFUSED: {n_root} of {searchable} searchable decisions ({rate:.0%}) fell back because "
+        f"`open_root` RAISED — the search DRIVER failed, so those decisions were played by the "
+        f"policy and this cell is the `base` control wearing the `{row.get('arm')}` label. "
+        f"Driver error classes: {named}. Check the search-driver child: "
+        f"`--search-impl` selects it (`--impl` is the LIVE bridge, not this), a worktree needs "
+        f"POKESIM_SEARCH_DRIVER_BIN (rust) or the deps/pokemon-showdown dist symlink (node)."
+    )
+
+
+#: Fallback reasons that are NOT a searchable decision — the search was never asked. Excluded from
+#: :func:`root_failure_refusal`'s denominator so a game full of forced switches cannot flatter (or
+#: manufacture) a driver-failure rate.
+_UNSEARCHABLE_FALLBACKS = ("no_search", "not_move_selection", "record_unavailable",
+                           "history_desync", "defensive_forced", "defensive_no_win_prob")
 
 
 def short_r_refusal(row: dict, requested: int, *, floor: float = SHORT_R_FLOOR) -> Optional[str]:

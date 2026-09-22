@@ -219,8 +219,10 @@ class SearchDividendPlayer(RLPlayer):
                 # dict is unchanged and the ladder keeps ONE decision schema.
                 row["playoff"] = result.playoff
             # A counted fallback whose REASON cannot be read is only half the discipline: it says
-            # the search declined without saying what to fix. Carry the message for the two
-            # reasons that have one.
+            # the search declined without saying what to fix. Carry the message for every reason
+            # that has one — `no_world`, `search_error`, and (since 2026-09-22) `root_failed`,
+            # whose exception text used to live only in `diagnostics["worlds"][i]["gate"]` and
+            # therefore reached no results file at all.
             err = (result.diagnostics or {}).get("error")
             if err:
                 row["error_detail"] = err

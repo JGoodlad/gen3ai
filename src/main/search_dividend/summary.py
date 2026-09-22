@@ -18,6 +18,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Sequence
 
 from main.search_dividend.defensive import defensive_block, fold_defensive
+from main.search_dividend.playoff import bump_error_class, name_error_classes
 
 #: The integer counters ``defensive.fold_defensive`` emits per row, pooled here as sums. DERIVED
 #: from the fold's own output rather than hand-copied, so a counter cannot be added in one place
@@ -58,6 +59,11 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         "n_decisions": 0, "n_searched": 0, "n_changed": 0, "n_deepened": 0,
         "deadline_truncated": 0,
         "worlds_gate_failed": 0, "fallbacks": defaultdict(int),
+        # The CLASSED exception text behind a fallback, pooled across the cell's games. A
+        # fallback histogram says WHICH gate a decision died at; this says WHY, and it is the
+        # half that was missing when `root_failed` on 60 of 63 decisions could not be diagnosed
+        # without patching the engine and re-running (2026-09-22).
+        "fallback_errors": {},
         # The `playoff` arm's second stage. POOLED AS SUMS (Σ over decisions), never as a mean of
         # per-game means — the same exactness rule `eval_sharding` follows, and it matters here
         # because games differ in decision count by 2-3x.
@@ -90,6 +96,11 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
             a[key] += float(r.get(key, 0.0) or 0.0)
         for reason, n in (r.get("fallbacks") or {}).items():
             a["fallbacks"][reason] += int(n)
+        # POOLED through the same bounded bump the row used, so a cell cannot carry more classes
+        # than a row may — a report is read, not parsed.
+        for cls, n in (r.get("fallback_errors") or {}).items():
+            for _ in range(int(n)):
+                bump_error_class(a["fallback_errors"], cls)
         rm = r.get("realized_mean") or {}
         for src, dst in (("m_opp", "_m"), ("k_worlds", "_k"), ("r_dice", "_r"),
                          ("arms", "_arms"), ("elapsed", "_elapsed"), ("depth", "_depth"),
@@ -122,6 +133,7 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
             "playoff": _playoff_block(a),
             "defensive": defensive_block(a),
             "fallbacks": dict(a["fallbacks"]),
+            "fallback_errors": dict(a["fallback_errors"]),
             "realized_mean": {
                 "opp_candidates": _mean(a["_m"]), "worlds": _mean(a["_k"]),
                 "dice": _mean(a["_r"]), "arms_scored": _mean(a["_arms"]),
@@ -241,6 +253,7 @@ def mirror_report(rows: Sequence[dict]) -> dict:
             "change_rate": cell["change_rate"], "deepen_rate": cell["deepen_rate"],
             "searched": cell["searched"], "decisions": cell["decisions"],
             "fallbacks": cell["fallbacks"],
+            "fallback_errors": cell["fallback_errors"],
             "playoff": cell["playoff"],
             "defensive": cell["defensive"],
             "realized_mean": rm,
@@ -366,6 +379,11 @@ def format_report(rows: Sequence[dict], anchors_path: Optional[str] = None) -> s
             f"{(c['change_rate'] if c['change_rate'] is not None else 0):<6} "
             f"{(c['deepen_rate'] if c['deepen_rate'] is not None else 0):<6} "
             f"{widths:<23} {rm['search_s'] or 0:<6} {fb}")
+        # WHY, under the WHICH. Printed only when a fallback carried a message, so a clean cell
+        # reads exactly as it always did — and a cell whose driver died can no longer be read
+        # without seeing what it raised.
+        if c.get("fallback_errors"):
+            lines.append("           err: " + name_error_classes(c["fallback_errors"]))
 
     mirror = mirror_report(rows)
     if mirror.get("cells"):

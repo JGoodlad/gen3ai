@@ -527,3 +527,34 @@ def test_the_summary_pools_every_defensive_counter_the_fold_emits():
     assert set(_DEFENSIVE_COUNTS).isdisjoint(_DEFENSIVE_SUMS)
     assert set(_DEFENSIVE_COUNTS) | set(_DEFENSIVE_SUMS) | {"defensive_confirm_events"} == emitted
     assert "defensive_banked_s" in _DEFENSIVE_SUMS and "defensive_confirm_s" in _DEFENSIVE_SUMS
+
+
+def test_the_exception_behind_a_fallback_is_CLASSED_onto_the_row():
+    """🚨 FAILS ON REVERT. `error_detail` carried the raw string for a reader's eyes only — three
+    of them, first-seen-wins. A cell is pooled over many games, so the actionable object is the
+    CLASS histogram, and its absence is why `root_failed` on 60 of 63 decisions (2026-09-22) could
+    not be diagnosed from the results file at all."""
+    got = summarize_decisions([
+        {"fallback": "root_failed",
+         "error_detail": "RuntimeError: battle never reached the start of turn 7 "
+                         "(ended=false at turn 0)"},
+        {"fallback": "root_failed",
+         "error_detail": "RuntimeError: battle never reached the start of turn 9 "
+                         "(ended=false at turn 0)"},
+        {"fallback": "prefix_gate_failed"},
+    ])
+    # The TURN NUMBER varies per decision and the SHAPE is what a reader acts on, so the two
+    # messages must land in ONE class — a raw-message key would say nothing.
+    assert got["fallback_errors"] == {
+        "RuntimeError: battle never reached the start of turn ? (ended=false at turn ?)": 2}, \
+        got["fallback_errors"]
+    assert got["fallbacks"] == {"root_failed": 2, "prefix_gate_failed": 1}
+
+
+def test_a_multi_world_detail_is_split_into_its_CLASSES():
+    """`_no_arm_detail` joins up to three DISTINCT messages with ` | `; the row must count them
+    apart rather than key the histogram on the joined string."""
+    got = summarize_decisions([
+        {"fallback": "root_failed", "error_detail": "RuntimeError: A | BrokenPipeError: B"},
+    ])
+    assert got["fallback_errors"] == {"RuntimeError: A": 1, "BrokenPipeError: B": 1}

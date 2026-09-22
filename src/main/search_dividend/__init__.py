@@ -121,12 +121,18 @@ differently. Held at fixed caps (``--max-opp 2 --max-worlds 1 --max-dice 1``, ``
 budget far above any decision's need), 2 mirror games / **133 decisions hash identically** before
 and after — including every decision's aggregated per-action scores, not merely its argmax.
 
-**Open, sized, NOT built:** ``--search-impl rust`` would remove most of the 26% sim share — the
-rust ``expand_many`` measured **0.40 ms/arm against node's 2.33-3.37 (≈8x)** — but its
-``open_root`` cannot replay a LIVE-synthesized record at all: 43 of 44 decisions in a scratch game
-returned ``root_failed: battle never reached the start of turn 2 (ended=false at turn 0)``, which
-is a counted fallback, not a wrong answer. Fix the rust driver's record replay and the sim term
-largely disappears.
+``--search-impl rust`` removes most of the 26% sim share — the rust ``expand_many`` measured
+**0.40 ms/arm against node's 2.33-3.37 (≈8x)**. ⚠️ **The claim that its ``open_root`` "cannot
+replay a LIVE-synthesized record at all" (43 of 44 decisions ``root_failed: battle never reached
+the start of turn 2``) DOES NOT REPRODUCE** and is withdrawn: re-measured 2026-09-22 on the
+``playoff`` mirror repro (``final_model.zip``, ``--games-seed 7``, one game), **zero**
+``root_failed`` over 30 decisions on BOTH drivers, and the two agree decision for decision. What
+is true is that ``root_failed`` is *easy to manufacture from the environment* — an unresolvable
+search-driver child (no ``POKESIM_SEARCH_DRIVER_BIN`` and no worktree ``target/``; no
+``deps/pokemon-showdown/dist`` symlink for node) fails every ``open_root`` and the arm silently
+becomes its own ``base`` control. That is now REFUSED on the first game
+(:func:`~main.search_dividend.playoff.root_failure_refusal`) and the exception text is carried on
+the row (``fallback_errors``), because the counter alone was not diagnosable.
 
 Modules
 -------
