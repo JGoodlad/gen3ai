@@ -20690,3 +20690,38 @@ K=3 moves entropy by **−0.036** where K=1 moved it **−0.189**, and ends with
 📌 **SECONDARY S1** (registered at `4ab6d3d9` before K=3 existed): K=3's detector **FIRED at 104,202,240 = +9,043,968 past the fork**, agreement EMA **0.8635**, collateral KL EMA 0.24723 still rising, `mode=warn`. Against K=1's **+8,257,536 / 0.8754 / 0.32418**: K=3 plateaus **later** but **lower**, at **lower** collateral. Coherent with a wider target that optimises argmax agreement less directly — **and S1 remains a DESCRIPTOR with no floor, no CI and n = 1 per arm; it motivates, it never settles.**
 
 **K=11 LAUNCHED** — `ai_v13_19_fold_k11`, launcher pid 1834545 from 05:55 PT, `🧭 [MATCHUP c6ff4792a0]` for the **third** time, the machine-checkable proof all three rungs share an ecology. ⏱ ETA ~14:00 PT. **It is NOT being stopped or rebuilt for the confound**: it is mid-flight, the three rungs must stay mutually matched in everything except K, and re-running two rungs at share-matched coefficients costs ~16 GPU-h to answer a question the registered read does not ask. That is an orchestrator decision and is flagged to them. Tag: **OPS · `ai_v13_18_fold_k3` COMPLETE (107,249,664, teardown-SIGTERM #10, dose 0.20× matched, G7 clean both halves, `distill_topk=3` verified in config AND metadata) · 🚨 **THE LADDER VARIES TWO THINGS** — `grad/distill_share` 0.250 at K=1 vs 0.129 at K=3 at identical coef, registered BEFORE any untaught number exists, confound direction runs TOWARD the expected headline · K=3 costs less on every collateral channel (entropy −0.036 vs −0.189, collateral KL 0.247 vs 0.322) and that is NOT attributable to target form alone · S1: K=3 fired at +9,043,968 / 0.8635, later but lower than K=1 · `ai_v13_19_fold_k11` LAUNCHED, third identical matchup hash**.
+
+### 2026-09-22 · OPS · **SEARCH PERFORMANCE, PROFILE-FIRST**
+
+**2026-09-22 — SEARCH PERF: one searched decision is 1.33x cheaper at wide B and 1.66x at B=1,
+and TWO documented numbers were wrong.** Profiled the real `SearchEngine` over banked eval
+traces with a new stack-accounted instrument
+(`src/main/search_dividend/search_decision_benchmark.py`; record:
+`designs/research_state/measurements/search_profile_2026-09-22/README.md`). **THE PROFILE
+RE-ORDERED THE WORK.** (1) `one_sided_view.md`'s "`map_actions_at` is ~24% of the view road's
+per-arm wall" **does not reproduce** — it is **1.2%** (0.054 ms/arm) on the production engine and
+**1.1%** under cProfile, so it is not profiler overhead; what cProfile DOES distort is visible in
+the same pair (encode 9.5% un-profiled vs 15.6% profiled; the action mask 14.7% vs 2.2%). **A
+cProfile share is not a wall share.** (2) D10's rate is **16.8-17.1% of arms** on mid-game banked
+decisions, not the 6.9% on record, and its fallback was **24.0%** of the view road's wall.
+**LANDED, each with its own gate:** `gen3_one_fork_per_decision_v1` — the ply-1 view fork is a
+function of the one-sided prefix and `determinize.prefix_matches` gates every world to the same
+prefix, so ONE fork now serves a decision's K worlds instead of K identical prefix replays, keyed
+on the prefix BYTES because the gate truncates at the `|turn|` marker
+(`fork_sharing_parity_integration_test` compares every successor's obs BYTES against an un-shared
+control, non-vacuity asserted both ways: 3 worlds, `fork_hit=2 fork_miss=1`, prefixes byte-equal);
+the same sharing for the PROTOCOL road's fork, which every D10 fallback arm pays
+(`materialize_branches` split into `open_branch_fork` + `materialize_branches_from`, the
+composition kept so its old gate is untouched); and `gen3_lazy_action_choices_v1` — a successor's
+token map now builds on FIRST READ, and a depth-1 decision reads none (18 lazy / 0 built at
+`max_depth=1`; 17/17 built and equal to their producer at `max_depth=2`). **MEASURED as an
+INTERLEAVED A/B** (a baseline worktree at `67ea46ee` against this branch, the same 10 banked
+decisions, back to back, twice — the NOW runs carried the higher load in 3 of 4 pairs, so the
+ratios are conservative): view road **326.8/361.9 -> 250.5/269.3 ms per decision (1.33x)** at
+wide B (684 arms) and **96.0/98.9 -> 58.1/59.0 ms (1.66x)** at B=1; the protocol road 1.12x and
+1.81x. The view road's prefix span fell 14.3% -> 7.8% and the D10 span 24.0% -> 17.2%.
+**NOT DONE:** D10 itself is designed and blocked on a rust payload change plus a line-level chunk
+split whose parity evidence does not exist yet (the design and all three blockers are in the
+README); the prefix-gate P1 was not reached.
+
+**Orchestrator's reading (2026-09-22).** Owner direction was "make rust search more performant"; the agent profiled before touching anything and two briefed premises died on the profile — the legality map is 1.2 % of per-arm wall, not the 24 % on record, and D10 fires on 17 % of mid-game arms, not 7 %. Landed: one prefix replay per decision on both roads and a lazy token map, for 1.33× (wide) / 1.66× (B = 1) on the view road in an interleaved A/B that carried the higher load on the faster side. `expand_many` and its JSON is now the largest span (20 %); D10 is second (17 %) and is designed with its blocker named (a port-side emit of the intermediate-request view, a line-level chunk split with its own parity evidence, and the contract's two-seed sweep). The playoff arm's backlog row was wrong: its blocker is `root_failed`, with zero prefix-gate failures on rust, and two further defects sit under it (a first-orientation livelock; a `ValueThreatInject` shape mismatch). Both lines are dispatched as follow-ups. Search stays wound down as an objective; this is infrastructure for the day it is not. Tag: **OPS · search 1.33×/1.66× · profile corrects two recorded numbers · D10 designed · playoff blocker re-identified**.
