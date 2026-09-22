@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,647-line file. **The ledger itself is append-only and is never edited by this**;
+20,661-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**661 headings · 606 dated · 2026-08-01 → 2026-09-21 · ledger 20,647 lines.**
+**662 headings · 607 dated · 2026-08-01 → 2026-09-21 · ledger 20,661 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -681,3 +681,4 @@ rename.
   - `L20565` · `2026-09-21` · MEASURED (MAJOR) · **THE REDESIGN FAILS THE SAME WAY — a teacher trained against a DISTRIBUTION is −1.37 pp [−2.78, +0.27] on its own five teams, statistically the same null as the exploiter's −1.00. THE OPPONENT REGIME IS NOT THE REASON. The teacher line is CLOSED for this parent at this dose; the K ladder launches as a COST read.**
   - `L20589` · `2026-09-21` · OPS · **THE HIGH-DOSE TEACHER IS PREPARED, NOT LAUNCHED — `ai_v13_18_teach5_offense_hidose` puts the dose back to era-1's 1.78× and changes nothing else, so the ONE lever the stage-A read could not move is the only thing that differs.**
   - `L20640` · `2026-09-21` · OPS · **TWO GUARDS LANDED: a fork of a FROZEN parent must NAME its dose (`gen3_fork_lr_inherit_guard_v1`, `35258dcc` — 3 of 162 archived forks fire it, exactly the three era-2 exploiters), and `main.anchors`' `regime_verified` is SPLIT into `regime_verified_decisions` + `peer_clean` (`gen3_anchor_regime_split_v1`, `6e25c380` — all 31 flagged sub-cells of the 8,400-game A/B flip to VERIFIED, 0 remain)**
+  - `L20648` · `2026-09-21` · OPS · **K=1 COMPLETE, K=3 LAUNCHED — the ladder's first rung ran clean and its DESCRIPTORS already show the cost the ladder exists to price: entropy 0.857 → 0.677, BELOW even the era-1 fold's 0.737, with bots and pool both down on the parent. The registered endpoint is untaught-8 and is NOT read until all three land.**
