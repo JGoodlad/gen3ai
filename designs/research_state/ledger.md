@@ -20739,3 +20739,64 @@ README); the prefix-gate P1 was not reached.
 Tag: **OPS · THE POPULATION LOOP HAS A METER · `main.best_response_gap`, OFFLINE, 57 tests · the era-2/era-1 comparison REFUSES on a 4.55× dose gap at a MATCHED 8,060,928-step budget · banked endpoints reproduce (0.740 ×3; 0.700/0.530/0.450) · mean Δ −17.33 pp [−26.67, −8.00] under `--allow-unmatched`, with dose, teamset size and target identity all named as confounds · 🚨 every banked vs-target number is GREEDY-vs-GREEDY EVAL, and `eval_sentinel_greedy` does not govern it**.
 
 **Orchestrator's reading (2026-09-22).** The population loop (exploiters as OPPONENTS, the generalist absorbs them by its own gradient) now has its meter: gap(t) = P(a fresh exploiter beats G_t) − 0.5, per round × archetype, refusing unmatched budget/dose/regime. On the archive it prints era-1 +20…+24 pp vs era-2 +2.5 / +15.8 / −4.5 and says "the gap fell" — and the same page says that is NOT evidence the loop works: dose 4.55×, teamset 1 → 5, a different target, and no exploiter ever folded back. The clean read is one generalist, its exploiters in its pool, a continuation, then a fresh exploiter at matched everything; that is the next era's first cell and the meter is ready for it. Two facts the build surfaced: (1) every banked vs-target number is a GREEDY-vs-GREEDY eval rate (the fixed-opponent branch of `eval_worker` is greedy and `eval_sentinel_greedy` does not govern it) — so the exploiters' 0.66/0.74 were eval-regime, and the training-regime head-to-head is a separate number the meter's `--play` reads (20-game smoke: 0.55 stochastic vs 0.66 greedy for the offense exploiter, n.d. at that size); (2) an exploiter's target is an unpinned generalist, so "vs target" is specialist-team vs random-team, not a mirror. Tag: **OPS · best-response-gap meter built · archive: gap FELL but confounded ×3 · vs-target numbers are eval-regime**.
+
+### 2026-09-22 · OPS · **THREE P1 BACKLOG ROWS CLOSED — baselines load-or-refuse, the ladder recipe stamp, `--v-column` on matched rows**
+
+**2026-09-22 · TECH DEBT P1 ×1 — the `production` baseline was never the problem; the BARE
+LOADER was.** The 2026-09-14 row said `designs/baselines.json`'s `production` entry "does not
+load at HEAD" and offered a re-point or a loadability report. Measured 2026-09-22 on this box:
+a bare `MaskablePPO.load` raises `TypeError: ExtractorBuild.__init__() got an unexpected keyword
+argument 'threat_prob_outspeed'` on **all five** current-generation registry entries
+(`production` v97, `v9_long_baseline` v101, `v9_fold_parent` v103, `famine_comparator` v101,
+`untaught_meter_opponent` v101) and **every one of them loads** through
+`agents.model.snapshot.load_foreign_opponent`, which runs the deleted-kwarg sanitizer for the
+flag deleted at config v108. So a re-point would have moved the failure, not removed it;
+`production` is NOT re-pointed and remains the architecture SURFACE with its `pending` condition
+intact. Landed instead: `baselines.load(name)` as THE by-name load (the sanitizing loader,
+never a bare one); a typed `BaselineLoadError` carrying `.reason` ∈ {`pre_generation`,
+`arch_drift`, `unresolvable`, `not_a_model`} whose message always names the FIX, the entry's
+commit and — for a pre-generation node — the era and the current-generation alternatives, with
+`arch_drift` stating in prose that it is a defect rather than a licence to substitute a
+stand-in; `era_checkout_only` validated against each entry's recorded generation so an unmarked
+pre-generation node is an error; and `python -m main.baselines check --load`. The silence this
+closes is concrete: on 2026-09-14 the Metamon de-risk read that `TypeError` as arch drift,
+substituted a different checkpoint, and published under the task's original framing.
+`src/agents/training/baselines_loadability_test.py`;
+`measurements/p1_backlog_batch_2026-09-22/`.
+
+
+**2026-09-22 · TECH DEBT P1 ×2 — a `ladder.json` now STAMPS the recipe it was fitted with, and
+a cross-run reader refuses or refits without it.** Rule 24 said to quote a committed file only
+if `eval_sentinel_edges_dropped` is present; that key is a COUNT and cannot carry the claim —
+`0` is what a run with no sentinel pair writes, the 2026-09-08 file records it as `null`, and it
+catches exactly one historical change. `fit_ladder` now writes a `recipe` block (name,
+`fitter_version`, the drop POLICY beside its count, and the fitting tree's commit);
+`recipe_status()` classifies a file `current`/`absent`/`differs` and `check_recipe` raises
+`LadderRecipeError` naming the refit command and the **+73.1 Elo** it prevents.
+`main.critic_gate` REFUSES a stale committed file on its fallback path — where the committed
+numbers are the ones quoted — instead of labelling it, and reports each side's stamp;
+`--exploiter-ladder auto:` refits in memory or refuses, because rungs are picked by ELO and the
+pre-fix inflation is non-uniform; `plateau_signal`'s bias note reads the stamp instead of
+asserting the bias. `latest_promoted_elo` is deliberately exempt (a within-run scalar).
+`LADDER_FITTER_VERSION` is documented as bump-on-meaning-change, so the NEXT recipe change is
+loud too. Every ladder already on disk reads `absent` until refit, which is intended.
+`src/agents/training/ladder_recipe_test.py`; `measurements/p1_backlog_batch_2026-09-22/`.
+
+
+**2026-09-22 · TECH DEBT P1 ×3 — `critic_read --v-column` now reaches the quota-MATCHED rows,
+and the backlog row's suggested fix would have changed no number.** The row named
+`conditioning_block(...)` without `v_column` as the site. That argument SELECTS NOTHING once a
+frame is injected — the column is fixed at extraction — so the real drop was one level up, in
+`quota_match.build_quota_match`, which reads the trace tree itself with
+`CM.extract_cycle(d["trace_dir"])` and no column at all. Fixed there. Both halves of a report
+now read the flag through ONE accessor (`conditioning_meters.v_column_of`), replacing two
+independent `getattr(args, "v_column", …)` reads; `rung` takes the column off the FRAME so it
+agrees with the data by construction; and `conditioning_block` REFUSES an injected frame whose
+recorded column disagrees with the request, turning a silent no-op into a loud error naming the
+fix. `src/main/ops/v_column_matched_test.py` plants a cycle whose `values` and `win_probs` are
+different tensors and asserts the matched rows change with the column — verified to fail on a
+revert of the one-line extraction fix. Banked reads unaffected (all at the `win_probs`
+default; the v5 golden byte-identity pin still holds).
+`measurements/p1_backlog_batch_2026-09-22/`.
+
+**Orchestrator's reading (2026-09-22).** Two of the three rows' recorded diagnoses were wrong and the fixes went where the reproduction pointed: the `production` entry was never re-pointed (every current-generation entry loads through the project's own sanitizing loader and fails through a bare load — the fix is a typed `BaselineLoadError` naming the era and the alternatives, not a registry move), and the `--v-column` drop was in `quota_match`'s own cycle extraction, not at the site the row named. The ladder stamp makes every committed `ladder.json` on disk read `absent` until refit, which is the loud outcome rule 24 asked for; rule 24's count-key heuristic is superseded and corrected below. Tag: **OPS · P1 ×3 closed · two row diagnoses corrected by reproduction**.
