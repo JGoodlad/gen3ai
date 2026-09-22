@@ -429,7 +429,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Benchmarks (`*_benchmark.py`, run directly as scripts)
 
-Three profilers, each answering a different question. All print a loud **"THE BOX IS BUSY"** banner
+Five profilers, each answering a different question. All print a loud **"THE BOX IS BUSY"** banner
 via `warn_if_contended()` when the box is not idle — a benchmark's output IS the measurement, so
 its bounds are never scaled, only warned about.
 
@@ -441,7 +441,21 @@ python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--t
 python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…']
 # A/B one implementation of LiveView.from_battle against the previous one, on ONE frozen board
 python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]
+# ms per SEARCH SUCCESSOR: the protocol road vs the one-sided VIEW road, on a hand-built arm set
+python3 src/agents/training/view_materialize_benchmark.py [--battles N] [--b 1 33]
+# WHERE ONE SEARCHED DECISION's wall goes — the real SearchEngine over BANKED eval traces, broken
+#   into stack-accounted phases (tracker fork / prefix replay / rust / read-models / encode / …)
+python3 src/main/search_dividend/search_decision_benchmark.py --traces models/<run>/eval_traces \
+    [--decisions 12] [--m-opp 3] [--n-actions N] [--arm honest] [--k-worlds 4] [--cprofile out.prof]
 ```
+
+🚨 **A cProfile SHARE IS NOT A WALL SHARE, and it has already cost this project a wrong
+priority.** `designs/rust_sim/one_sided_view.md` carried "`map_actions_at` is ~24% of the view
+road's per-arm wall" off a cProfile run; measured with `search_decision_benchmark`'s wall timer it
+is **1.2%**, and re-running that same benchmark UNDER cProfile does not restore the 24% either.
+In the same pair, encode reads 9.5% un-profiled and 15.6% profiled and the action mask 14.7%
+against 2.2%. Rank work by a wall measurement; use cProfile to find WHICH function, not HOW MUCH.
+(`designs/research_state/measurements/search_profile_2026-09-22/README.md`.)
 
 🚨 **Every change under `src/agents/observation/` must run `obs_build_benchmark` before/after and
 confirm no meaningful regression.** That gate, the canonical baseline and the load-stable
