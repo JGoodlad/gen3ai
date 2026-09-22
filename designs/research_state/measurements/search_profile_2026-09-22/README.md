@@ -322,12 +322,25 @@ only a before/after with the work still being done can tell the two apart.
 
 ---
 
-## 5. THE PREFIX-GATE P1 — NOT ATTEMPTED
+## 5. THE PREFIX-GATE P1 — NOT ATTEMPTED HERE, and CLOSED LATER THE SAME DAY
 
-Out of budget after §§0-3 and the D10 design. Recorded as still open: a clean record fails
-`dz.prefix_matches` on 72 of 73 decisions because the replayed prefix carries an
-`|error|[Invalid choice]` line the observed prefix lacks. It is CORRECTNESS and it blocks every
-playoff measurement, so it should lead the next pass.
+Out of budget after §§0-3 and the D10 design. What was recorded as still open — *"a clean record
+fails `dz.prefix_matches` on 72 of 73 decisions because the replayed prefix carries an
+`|error|[Invalid choice]` line the observed prefix lacks"* — **does not reproduce, and neither does
+the `root_failed` reading that replaced it.** On a correctly-provisioned worktree at HEAD the row's
+own repro produces **zero `prefix_gate_failed` and zero `root_failed` on BOTH search drivers**,
+which agree decision for decision (30 decisions, 5 searched, 1 changed, 21 playoffs RUN at a
+realized R of exactly 2.0).
+
+The arm was blocked by three other defects plus a counter that could not add up: the exception
+behind `root_failed` reached no results field at all; `ValueThreatInject shape mismatch: tokens
+(1, 6) vs rows (9, 6)` is a CROSS-THREAD read of another forward's extractor stash (1,063 failures
+in 2,400 interleaved forwards, and the crash is the *lucky* case); the "first-orientation livelock"
+is a 180 s TOTAL-DURATION cap on a game that finishes in 246.6 s; and the width counters were
+summed over searched decisions only, which is why a row could read `prefix_gate_failed: 9` beside
+`worlds_gate_failed: 0`. All four closed — `c823b11c` · `d5c465fd` · `4d75cfe3` · `569f64ec`.
+Full record, including the acting numbers the arm now produces:
+[`playoff_repair_2026-09-22/`](../playoff_repair_2026-09-22/README.md).
 
 ---
 
