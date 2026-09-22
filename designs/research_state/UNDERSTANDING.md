@@ -340,6 +340,16 @@ every continuation gains ~0.16 on and separates nothing), pattern unambiguous.**
 only K (`--distill-topk 1 / 3 / 11`, the D-F dial, K = 11 being the full renormalized distribution AWR-weighted) on fold-1's
 full ecology from the plateaued parent; the second fold does not launch on the era-1 recipe. [ledger 2026-09-20 · *THE
 CONTINUATION CONTROL*; *THE SPLIT ARM*]
+**The teachers are counterplay, not skill (2026-09-21):** all three 5-team exploiters (offense 0.657 / balance 0.525 / stall
+0.455 head-to-head vs the plateau parent, greedy eval regime) and a fourth trained against a DISTRIBUTION instead of the frozen
+parent are LEVEL with the plateau parent on their own five teams against the third party (Δ within ±1.4 pp vs a 4.75 floor,
+24,000 + 8,000 games). A best response to G is a function of G, not a strategy; distilling it installs the attack, not the
+defence. Exploiters are valid as OPPONENTS (the population loop), not as teachers unless they clear that gate. The loop's
+meter is `main.best_response_gap` (gap = P(fresh exploiter beats G_t) − 0.5, per round × archetype, matched budget/dose/regime);
+on the archive the gap fell era-1 → era-2 but with dose 4.55×, teamset 1 → 5 and a different target, so it is not a reading.
+Open: whether a teacher can exist at all at era-1's 1.78× dose (`ai_v13_18_teach5_offense_hidose`, prepared) and whether the
+K = 1/3/11 ladder can make the loss cheap (live). [ledger 2026-09-21 · *NONE of the three 5-team teachers is admitted*; *the
+REDESIGN fails the same way*; 2026-09-22 · *THE BEST-RESPONSE-GAP METER*]
 
 Measured over the 2×2 teacher-content batch (4 arms) and the K=6 dose cell (2 arms), all frozen-dose
 (`--fork-lr 2.8e-5 --fork-lr-freeze`), parent R2ACTION, 8 untaught teams, cluster-bootstrapped:

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,728-line file. **The ledger itself is append-only and is never edited by this**;
+20,742-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**664 headings · 609 dated · 2026-08-01 → 2026-09-22 · ledger 20,728 lines.**
+**665 headings · 610 dated · 2026-08-01 → 2026-09-22 · ledger 20,742 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -684,3 +684,4 @@ rename.
   - `L20648` · `2026-09-21` · OPS · **K=1 COMPLETE, K=3 LAUNCHED — the ladder's first rung ran clean and its DESCRIPTORS already show the cost the ladder exists to price: entropy 0.857 → 0.677, BELOW even the era-1 fold's 0.737, with bots and pool both down on the parent. The registered endpoint is untaught-8 and is NOT read until all three land.**
   - `L20662` · `2026-09-22` · OPS + 🚨 **THE K LADDER VARIES TWO THINGS, NOT ONE — at the identical `--distill-coef 0.1761` the distill term takes 25.0 % of the gradient norm at K=1 and 12.9 % at K=3. Widening the target also HALVES THE PULL, and the confound runs toward the ladder's own expected headline.** K=3 complete, K=11 launched.
   - `L20694` · `2026-09-22` · OPS · **SEARCH PERFORMANCE, PROFILE-FIRST**
+  - `L20729` · `2026-09-22` · OPS · **THE POPULATION LOOP HAS A METER — `python -m main.best_response_gap`, and it REFUSES the era-2/era-1 comparison on the 4.5× dose gap that confounded last week's read. The banked endpoints reproduce from the runs' own `eval_results.jsonl` (0.740 ×3; 0.700 / 0.530 / 0.450), and 🚨 every vs-target number we have banked is a GREEDY-vs-GREEDY EVAL number, not a training-regime one.**
