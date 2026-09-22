@@ -58,7 +58,7 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         "games": 0, "finished": 0, "won": 0, "tied": 0, "errors": 0, "wall_s": 0.0,
         "n_decisions": 0, "n_searched": 0, "n_changed": 0, "n_deepened": 0,
         "deadline_truncated": 0,
-        "worlds_gate_failed": 0, "fallbacks": defaultdict(int),
+        "worlds_gate_failed": 0, "worlds_open_failed": 0, "fallbacks": defaultdict(int),
         # The CLASSED exception text behind a fallback, pooled across the cell's games. A
         # fallback histogram says WHICH gate a decision died at; this says WHY, and it is the
         # half that was missing when `root_failed` on 60 of 63 decisions could not be diagnosed
@@ -85,7 +85,7 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
         a["errors"] += 1 if r.get("error") else 0
         a["wall_s"] += float(r.get("wall_s", 0.0))
         for key in ("n_decisions", "n_searched", "n_changed", "n_deepened",
-                    "deadline_truncated", "worlds_gate_failed",
+                    "deadline_truncated", "worlds_gate_failed", "worlds_open_failed",
                     "n_screen_decisive", "n_playoff", "n_playoff_inconclusive",
                     "n_playoff_no_budget", "n_playoff_error", "n_playoff_capped",
                     "n_playoff_failed",
@@ -130,6 +130,10 @@ def per_cell(rows: Sequence[dict]) -> List[dict]:
                             if a["n_searched"] else None),
             "deadline_truncated": a["deadline_truncated"],
             "worlds_gate_failed": a["worlds_gate_failed"],
+            # Kept APART from the gate counter for the reason `search.py` splits them: a dead
+            # DRIVER and a wrong WORLD send a reader to different places, and folding them made
+            # a subprocess crash read as a bad determinization.
+            "worlds_open_failed": a["worlds_open_failed"],
             "playoff": _playoff_block(a),
             "defensive": defensive_block(a),
             "fallbacks": dict(a["fallbacks"]),

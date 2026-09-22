@@ -558,3 +558,67 @@ def test_a_multi_world_detail_is_split_into_its_CLASSES():
         {"fallback": "root_failed", "error_detail": "RuntimeError: A | BrokenPipeError: B"},
     ])
     assert got["fallback_errors"] == {"RuntimeError: A": 1, "BrokenPipeError: B": 1}
+
+
+# -- gen3_decision_accounting_v1 (2026-09-22) ---------------------------------------------------
+
+
+def test_the_WIDTH_counters_are_summed_over_FALLBACK_decisions_too():
+    """🚨 FAILS ON REVERT, and this is the contradiction the re-measurement found: a row reported
+    `prefix_gate_failed: 9` beside `worlds_gate_failed: 0`. The width counters sat after a
+    `continue` that every fallback took — and a decision whose every world failed the gate IS a
+    `prefix_gate_failed` fallback, so the one row shape the counter exists for was guaranteed to
+    read zero."""
+    got = summarize_decisions([
+        {"fallback": "prefix_gate_failed",
+         "widths": {"worlds_gate_failed": 4, "deadline_truncated": True}},
+        {"fallback": "root_failed", "widths": {"worlds_open_failed": 2}},
+        {"fallback": None, "widths": {"worlds_gate_failed": 1, "worlds_gated_ok": 2,
+                                      "depth_realized": 1}},
+    ])
+    assert got["worlds_gate_failed"] == 5, "4 from the gated-out decision + 1 from the searched one"
+    assert got["worlds_open_failed"] == 2, (
+        "the counter behind `root_failed` was folded NOWHERE — a dead driver and a bad world are "
+        "different diagnoses and the row could not tell them apart")
+    assert got["deadline_truncated"] == 1
+
+
+def test_a_NOTED_decision_is_not_a_SEARCHED_one():
+    """`policy_default` and an `order_failed` whose search succeeded both reach the row with
+    `fallback` unset, and used to be counted as searched decisions — inflating the denominator of
+    `change_rate` with decisions the search's action was never played on."""
+    got = summarize_decisions([
+        {"note": "policy_default"},
+        {"note": "order_failed", "fallback": None, "changed": True},
+        {"fallback": None, "changed": True, "widths": {"depth_realized": 1}},
+    ])
+    assert got["n_searched"] == 1
+    assert got["n_changed"] == 1, "the noted decision's `changed` must not be counted"
+    assert got["fallbacks"] == {"policy_default": 1, "order_failed": 1}
+
+
+@pytest.mark.parametrize("rows", [
+    [],
+    [{"fallback": "no_search"}],
+    [{"note": "policy_default"}, {"fallback": "root_failed"}, {"fallback": None}],
+    [{"fallback": None}] * 5,
+    [{"note": "order_failed"}, {"note": "irrelevant_note", "fallback": None}],
+])
+def test_the_counters_SUM_TO_THE_DECISION_COUNT(rows):
+    """The identity `n_decisions == n_searched + Σfallbacks`, over every shape a decision row
+    takes. It holds by construction (one classifier) and the fold RAISES if it ever does not."""
+    from main.search_dividend.battery import check_decision_accounting
+
+    got = summarize_decisions(rows)
+    assert check_decision_accounting(got) is None
+    assert got["n_decisions"] == got["n_searched"] + sum(got["fallbacks"].values())
+
+
+def test_the_accounting_guard_FIRES_on_a_row_that_does_not_add_up():
+    """The guard is unreachable through `summarize_decisions` — which is the point — so it is
+    proven on a hand-built row, the way a planted red proves a gate."""
+    from main.search_dividend.battery import check_decision_accounting
+
+    msg = check_decision_accounting({"n_decisions": 10, "n_searched": 3,
+                                     "fallbacks": {"root_failed": 5}})
+    assert msg and "n_decisions=10" in msg and "+2 decision(s) are in neither bucket" in msg

@@ -199,11 +199,70 @@ class ResultsFile:
         return out
 
 
+#: A per-decision NOTE that means the search's action was not played, even though no fallback
+#: reason was recorded. `policy_default` is the policy declining (no legal action, so poke-env
+#: sends `/choose default` and our own action history becomes unreconstructable) and
+#: `order_failed` is the chosen index refusing to map to a legal order — the second is already a
+#: `FALLBACK_REASONS` member, the first was in no vocabulary at all. Both used to be counted as
+#: SEARCHED decisions because `_log_decision` leaves `fallback` unset on them.
+NOTE_AS_FALLBACK = ("policy_default", "order_failed")
+
+
+def decision_reason(d: dict) -> Optional[str]:
+    """The reason this decision was NOT a search, or ``None`` when it was one.
+
+    ONE classifier, used by the fold and by :func:`check_decision_accounting`, so
+    ``n_searched + Σfallbacks == n_decisions`` holds by construction rather than by coincidence.
+    """
+    fb = d.get("fallback")
+    if fb:
+        return str(fb)
+    note = d.get("note")
+    return str(note) if note in NOTE_AS_FALLBACK else None
+
+
+def check_decision_accounting(row: dict) -> Optional[str]:
+    """``None`` when a row's decision counters add up, else the discrepancy, spelled out.
+
+    The identity is `n_decisions == n_searched + Σ fallbacks`. It is checked rather than assumed
+    because the two halves are produced in different places (the player writes the decisions, the
+    fold classifies them) and a decision that belongs to NEITHER bucket is invisible in both — the
+    exact shape that let `policy_default` rows read as searched.
+    """
+    n = int(row.get("n_decisions", 0) or 0)
+    searched = int(row.get("n_searched", 0) or 0)
+    fell_back = sum(int(v or 0) for v in (row.get("fallbacks") or {}).values())
+    if n == searched + fell_back:
+        return None
+    return (f"decision accounting: n_decisions={n} but n_searched={searched} + "
+            f"fallbacks={fell_back} = {searched + fell_back}; "
+            f"{n - searched - fell_back:+d} decision(s) are in neither bucket")
+
+
 def summarize_decisions(decisions: Sequence[dict]) -> dict:
     """Fold one game's per-decision rows into the counters the report needs.
 
     ``fallbacks`` is a HISTOGRAM by reason, never a single total: "the search fell back" is not a
-    finding, "the search fell back because every determinized world failed the prefix gate" is."""
+    finding, "the search fell back because every determinized world failed the prefix gate" is.
+
+    🚨 **TWO ACCOUNTING DEFECTS, both closed 2026-09-22 (`gen3_decision_accounting_v1`), and the
+    first is why a row could report `prefix_gate_failed: 9` beside `worlds_gate_failed: 0` — two
+    statements that cannot both be true.**
+
+    1. **The WIDTH counters were summed over SEARCHED decisions only.** `worlds_gate_failed` and
+       `deadline_truncated` sat after a `continue` that every fallback took — and a decision whose
+       every world failed the gate is BY DEFINITION a fallback (`prefix_gate_failed`), so the one
+       row shape that most needs the counter was the one guaranteed to report zero. They are now
+       summed over every decision that carries a width record, and `worlds_open_failed` (the
+       counter behind `root_failed`, previously folded nowhere at all) joins them.
+    2. **A decision with a NOTE but no fallback was counted as SEARCHED.** `policy_default` (the
+       policy itself produced no legal action) and an `order_failed` whose search had SUCCEEDED
+       both reach `_log_decision` with `fallback` unset, so `n_searched` counted decisions the
+       search's action was never played on, and `n_searched + Σfallbacks` did not equal
+       `n_decisions`. The classification is now exhaustive BY CONSTRUCTION — one
+       :func:`decision_reason` per decision, `None` meaning searched — and
+       :func:`check_decision_accounting` states the identity that follows.
+    """
     fallbacks: Dict[str, int] = {}
     # `depth` and `beam` are a schema ADDITION, not a fork: ladder requirement 3 says the ladder's
     # per-decision search trace is THIS format extended, never a second one, so a new signal joins
@@ -223,8 +282,16 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     deepened = 0
     truncated = 0
     gate_failed = 0
+    open_failed = 0
     for d in decisions:
-        fb = d.get("fallback")
+        # THE WIDTH COUNTERS RUN OVER EVERY DECISION. A decision that fell back still OPENED
+        # worlds and still burned clock, and the two counters that say so are precisely the ones
+        # a fallback row is read for — see the docstring's defect 1.
+        w = d.get("widths") or {}
+        truncated += 1 if w.get("deadline_truncated") else 0
+        gate_failed += int(w.get("worlds_gate_failed", 0) or 0)
+        open_failed += int(w.get("worlds_open_failed", 0) or 0)
+        fb = decision_reason(d)
         if fb:
             fallbacks[fb] = fallbacks.get(fb, 0) + 1
             det = d.get("error_detail")
@@ -236,7 +303,6 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
             continue
         n_searched += 1
         n_changed += 1 if d.get("changed") else 0
-        w = d.get("widths") or {}
         realized["m_opp"].append(w.get("opp_candidates", 0))
         realized["k_worlds"].append(w.get("worlds_gated_ok", 0))
         realized["r_dice"].append(w.get("dice", 0))
@@ -245,9 +311,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         realized["depth"].append(w.get("depth_realized", 1))
         realized["beam"].append(w.get("beam_m", 0))
         deepened += 1 if int(w.get("depth_realized", 1) or 1) > 1 else 0
-        truncated += 1 if w.get("deadline_truncated") else 0
-        gate_failed += int(w.get("worlds_gate_failed", 0))
-    return {
+    out = {
         "n_decisions": len(decisions),
         "n_searched": n_searched,
         "n_changed": n_changed,
@@ -258,6 +322,10 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "fallback_errors": fallback_errors,
         "deadline_truncated": truncated,
         "worlds_gate_failed": gate_failed,
+        # The counter behind `root_failed`, folded for the first time. Its absence is half of why
+        # the 2026-09-22 reading could not tell a dead DRIVER from a bad WORLD off the row —
+        # `search.py` has kept the two apart since the beginning and the fold threw one away.
+        "worlds_open_failed": open_failed,
         "realized_mean": {k: (round(sum(v) / len(v), 3) if v else 0.0)
                           for k, v in realized.items()},
         # ADDITIVE (ladder requirement 3, 87a3f91). Zero on every arm but `playoff`, so a row
@@ -266,6 +334,14 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         **fold_racing(decisions),
         **fold_defensive(decisions),
     }
+    # UNREACHABLE while `decision_reason` is the only classifier — which is the point. The two
+    # halves of the identity are produced in different places, so the guard stands against the
+    # next edit rather than against today's data, and it RAISES because a row whose decisions do
+    # not add up is a defect in this file, not a property of the battle.
+    bad = check_decision_accounting(out)
+    if bad:
+        raise ValueError(bad)
+    return out
 
 
 #: The per-decision wall the FIRST game of a cell sizes its bounds against, before any game has
