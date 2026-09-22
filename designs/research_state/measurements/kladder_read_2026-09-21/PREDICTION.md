@@ -103,3 +103,39 @@ conditional fourth point rather than folded into the ladder: it would move two t
   era-1 ran teachers at 1.78×. A cost measured at 0.20× is a cost at 0.20×.
 - Nothing about **strength**: the untaught meter RANKS arms; its pp are not external pp, and a
   strength claim carries the anchor's number at ≥1,200 games or is not made.
+
+---
+
+## 7. AMENDMENT 1 — a free secondary, registered before K=3 and K=11 exist
+
+**Committed 2026-09-21 ~19:05 PT, while `ai_v13_17_fold_k1` is still running and neither other arm
+has launched.** K=1's distill-stop detector **FIRED** and the firing is itself a measurement nobody
+budgeted for.
+
+**What happened.** `🛑 [DISTILL-STOP] FIRED at 103,415,808 steps: distill/teacher_agreement_on_slice
+EMA 0.8754 has PLATEAUED (improvement over 8 rollouts < 0.005) while
+distill/collateral_kl_vs_parent EMA 0.32418 is still RISING, for 3 consecutive rollouts.`
+**`mode=warn`, so training continues unchanged** — the arm still runs the full +12M with the loss
+on, exactly as fold-1 did, and no number in §1–§6 is affected.
+
+**Two facts fall out, and both are free:**
+
+1. **The fold's own optimal length is +8,257,536 past the fork** (103,415,808 − 95,158,272), so the
+   registered **+12M endpoint sits ~3.7M steps PAST it** while **+6M sits before it**. The
+   pre-registered trajectory depths therefore BRACKET the stop point by construction — which was not
+   designed, but means **+6M vs +12M on the untaught row is a direct read of what running past the
+   stop costs.** The ledger's standing note is that v8 lost ~5 pp of untaught win rate doing exactly
+   that (2026-09-01). Fold-1's detector fired at +7.67M, so K=1's optimal length is ~0.6M longer.
+2. **K=1's agreement saturates at 0.8754**, against the era-1 fold's ≈0.82–0.83 — higher, on one
+   teacher expanding to five teams where era-1 had two teachers expanding to two.
+
+**REGISTERED SECONDARY (S1), fixed now for all three arms:** record each arm's **stop-rule firing
+step and its `teacher_agreement_on_slice` EMA at firing**. The question: **does widening the target
+delay the plateau or raise it?** A K=11 arm that plateaus LATER or HIGHER than K=1 is evidence the
+wider target still had something to teach when the narrow one had run out.
+
+🚨 **S1 IS A DESCRIPTOR, NOT A CONTRAST.** It has no floor, no CI and n = 1 per arm; the detector is
+an EMA over a noisy ratio and its firing step is not a measurement with a replicate level. **It can
+motivate a contrast; it can never settle one.** The verdicts in §3–§4 are unchanged and S1 does not
+enter them. Registered here only so the three numbers are collected under one rule instead of being
+noticed after the fact on whichever arm happens to look interesting.
