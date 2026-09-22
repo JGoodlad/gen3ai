@@ -221,6 +221,21 @@ never a bare `self.last_x = …`; each producer owns its own stash surface and a
 into its parent's. Gate: `extractor_stashes_test.py`. Detail:
 [`designs/model/op_contracts.md`](../../../designs/model/op_contracts.md).
 
+🚨 **THAT CONTRACT IS SINGLE-THREADED, AND `forward` IS NOT RE-ENTRANT** (`gen3_extractor_forward_guard_v1`).
+"The forward replaces the stash at ENTRY" makes a stale read unrepresentable only while ONE forward
+is in flight per extractor — true of training (each env worker is its own process) and false the
+moment two threads share a model object, which `main.search_dividend`'s mirror does by design (the
+searched side runs off POKE_LOOP; the other side, and every playoff rollout player, decides on it).
+Measured 2026-09-22: two threads, one real extractor, 2,400 interleaved forwards ⇒ **1,063 failures
+in seven classes**, including `ValueThreatInject shape mismatch: tokens (1, 6) vs rows (9, 6)`. ⚠️
+**The crash is the lucky case** — same-batch-size forwards corrupt each other silently. A
+thread-sharing caller installs `agents.model.forward_guard.install_forward_guard(extractor)` (or
+`install_model_forward_guard(model)`) and holds the returned RE-ENTRANT lock across the forward
+**and** the `last_*` reads that belong to it. The guard is **OPT-IN and absent by default** — kept
+in a weak-keyed registry, never as a module attribute (an `RLock` there breaks
+`copy.deepcopy(policy)`), and the unguarded path contains no context manager at all so the compiled
+graph is unchanged. Gate: `forward_guard_test.py`.
+
 ## ⚠️ One op's SPELLING is load-bearing for `torch.compile` (`gen3_species_posterior_spelling_v1`)
 
 `BeliefHead.species_posterior` computes `P(species)` for the expected-latent defender. It is written

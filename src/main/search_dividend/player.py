@@ -106,7 +106,23 @@ class SearchDividendPlayer(RLPlayer):
         side = battle.player_role
         tag = battle.battle_tag
         builder = self._builder(battle)
-        idx, _probs, mask = self._predict_best_action(battle, stochastic=False, need_aux=False)
+        # 🚨 THE FORWARD AND ITS STASH READS ARE ONE ATOMIC SPAN (gen3_extractor_forward_guard_v1).
+        # α and P(win) are published on the extractor by the forward `_predict_best_action` runs
+        # and are clobbered by the NEXT forward from any thread — and in this battery there is
+        # always another thread: our own search runs off POKE_LOOP while the mirror's other side
+        # decides on it. The old comments below said "there is no await between our forward and
+        # this read, so nothing can land in between", which is true of the LOOP and false of the
+        # process. `forward_guard_for` returns a no-op when nobody installed a guard, so a
+        # single-player run is unchanged.
+        with _forward_guard(self.model):
+            idx, _probs, mask = self._predict_best_action(battle, stochastic=False,
+                                                          need_aux=False)
+            # Read α off THIS forward, before any search forward clobbers the stash.
+            pub = _safe_alpha(self.model) if idx is not None else None
+            # ...and P(win) off the SAME forward, for the same reason. It is the defensive gate's
+            # only input, and it must be the ROOT's value — every arm-scoring batch the search
+            # runs overwrites `last_win_prob_logits`, so there is no second chance to read it.
+            root_wp = _safe_win_prob(self.model) if idx is not None else None
         if idx is None:
             # poke-env will send `/choose default`, whose action INDEX we do not know — so our
             # action history can no longer be reconstructed and every later search in this battle
@@ -116,15 +132,6 @@ class SearchDividendPlayer(RLPlayer):
             self._desynced.add(tag)
             self._log_decision(battle, None, None, "policy_default")
             return self.choose_default_move()
-        # Read α off THIS forward, before any search forward clobbers the stash.
-        pub = _safe_alpha(self.model)
-        # ...and P(win) off the SAME forward, for the same reason. It is the defensive gate's only
-        # input, and it must be the ROOT's value — every arm-scoring batch the search runs
-        # overwrites `last_win_prob_logits`, so there is no second chance to read it. In the mirror
-        # both sides share one model object, but the unsearched side forwards on POKE_LOOP and
-        # there is no await between our forward and this read, so nothing can land in between.
-        root_wp = _safe_win_prob(self.model)
-
         history = self._history.setdefault(tag, [])
         if self.engine.cfg.arm == "base":
             result = self._search(battle, side, builder, history, mask, int(idx), pub, root_wp)
@@ -227,6 +234,38 @@ class SearchDividendPlayer(RLPlayer):
             if err:
                 row["error_detail"] = err
         self.decisions.append(row)
+
+
+class _NoGuard:
+    """A re-entrant no-op context — what an UNGUARDED model's span uses.
+
+    A module-level singleton rather than `contextlib.nullcontext()` per call: this is on the
+    per-decision path, and a reusable object keeps the guarded and unguarded spellings identical
+    at the call site (the alternative — an `if guard is None` branch around the whole body —
+    duplicates the span and is exactly how the two halves drift apart)."""
+
+    __slots__ = ()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+_NO_GUARD = _NoGuard()
+
+
+def _forward_guard(model):
+    """The lock serializing forwards through ``model``'s extractor, or a no-op.
+
+    Installed by :func:`main.search_dividend.battery.build_players`, which is where the second
+    thread is created; a player built by hand (a test, a one-off) gets the no-op and behaves
+    exactly as it did before the guard existed."""
+    from agents.model.forward_guard import forward_guard_for
+
+    extractor = getattr(getattr(model, "policy", None), "features_extractor", None)
+    return (forward_guard_for(extractor) or _NO_GUARD) if extractor is not None else _NO_GUARD
 
 
 def _safe_win_prob(model):

@@ -36,6 +36,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
+from agents.model.forward_guard import install_model_forward_guard
 from main.search_dividend.defensive import fold_defensive
 from main.search_dividend.player import SearchDividendPlayer, play_one_battle
 from main.search_dividend.playoff import (PlayoffConfig, PlayoffRunner, bump_error_class,
@@ -307,6 +308,15 @@ def build_players(model, mappings, cfg: SearchConfig, opponent_name: str, *,
     from utils.teambuilder import Gen3Teambuilder
     from utils.team_loader import TeamLoader
 
+    # 🚨 gen3_extractor_forward_guard_v1. THIS is the function that creates the hazard: every
+    # player built below shares ONE `model`, and the searched side runs `SearchEngine.choose` in
+    # a `run_in_executor` worker while the other side decides on POKE_LOOP (and, on the `playoff`
+    # arm, while whole rollout battles decide there too). The extractor keeps its per-forward
+    # state on `self`, so two concurrent forwards corrupt each other — measured at 1,063 failures
+    # in 2,400 interleaved forwards, one class of which is the `ValueThreatInject shape mismatch:
+    # tokens (1, 6) vs rows (9, 6)` that killed the 2026-09-22 playoff repro outright. Installed
+    # HERE rather than inside the extractor so that a single-threaded tree never pays for a lock.
+    install_model_forward_guard(model)
     teams = list(pool_packed) if pool_packed else None
     tb = Gen3Teambuilder(TeamLoader().get_all_teams()) if teams is None else _FixedTeam(teams[0])
     if opponent_name == "self":

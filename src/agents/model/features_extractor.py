@@ -51,6 +51,7 @@ from agents.observation.constants import (
 from agents.observation.moves import HIDDEN_POWER_MOVE_NUM
 from agents.model.value_threat_inject import (VALUE_THREAT_INJECT_REDUCE_HOW, ValueThreatInject,
                                               value_threat_inject_dim)
+from agents.model.forward_guard import forward_guard_for  # noqa: F401  (re-exported by name)
 from agents.model.opp_intent import AlphaIntentHead, BetaSwitchHead
 from agents.model.damage_tables import N_SECONDARY as _N_SECONDARY, SECONDARY_COLS as _SECONDARY_COLS
 # The LEGAL-BUT-UNOBSERVED move-prior base (the `--move-candidate-floor` default). Legality itself is
@@ -269,7 +270,22 @@ class Gen3FeaturesExtractor(ExtractorForward):
         The consuming policy (`Gen3DualHeadMaskablePolicy`) unpacks the tuple and routes
         each half to its own mlp_extractor branch. Standard SB3 policies expect a single
         tensor, so this extractor MUST be paired with that custom policy.
+
+        🚨 **This method is NOT re-entrant across threads** — the whole phase chain below it keeps
+        its per-forward state on `self` (`self.stash`, `damage_op.stash`) and reads it back later
+        in the same forward. A caller that shares one extractor between threads must install a
+        guard (`gen3_extractor_forward_guard_v1`, `forward_guard.install_forward_guard`); the
+        default is no guard at all, so training and the compiled graph are untouched. See
+        `forward_guard.py` for the measurement that made this explicit.
         """
+        guard = forward_guard_for(self)
+        if guard is None:
+            return self._forward_unguarded(obs)
+        with guard:
+            return self._forward_unguarded(obs)
+
+    def _forward_unguarded(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor,
+                                                                       torch.Tensor]:
         pi_combined, vf_combined = self.forward_internal(obs)
         if self._debugger is not None:
             self._debugger.on_forward(obs["observation"])
