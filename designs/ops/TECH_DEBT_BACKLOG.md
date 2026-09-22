@@ -125,7 +125,48 @@ in 15 minutes, starts the highest one.)*
 - ~~CLOSED 2026-09-22 (`8196684f`)~~ **P2 · `main.anchors` with no `--out` writes `anchors_out/` into the CALLING DIRECTORY** (2026-09-16): the default output root is relative, so an anchor read taken from the MAIN checkout (which is where `models/` lives, so it is where these reads are taken) creates and fills `anchors_out/` there — it has already done so, and main must never be dirty. Either default the output root under the session's tmp/scratch, or REFUSE without `--out`; a read that writes into the repo it is measuring is one `git clean` away from a lost measurement, and one `git status` away from a landing that stops. `foulplay_axes_and_frontend_validation_2026-09-16/`.
 
 - **P2 · `run_local_battles`' docstring is STALE about the rust bridge** (2026-09-19): it states *"The Rust binary emits no `__RECON__`, so `start_extra`'s `resumeReseed` + the reconstruction join degrade to no-ops under `rust` — callers that need the forensic/counterfactual layer must use `node`."* `src/rust_sim/src/bin/sim_bridge.rs` implements BOTH (`gen3_bridge_resume_reseed_v1`, `emit_recon`), which is why 48,096 reseeded rust rollouts produce real dice variation. A reader who believes it either avoids a valid path or distrusts a valid measurement. One docstring edit plus a parity test that a `resumeReseed` under `rust` actually moves the outcome distribution | XS |
-- **P1 · A CLEAN reconstruction record now FAILS the determinization prefix gate on the `playoff` arm** (2026-09-19, exposed by `gen3_recon_tag_collision_v1` — see §3): with the record pollution removed, one mirror game at `--impl rust` reports **`prefix_gate_failed` on 72 of 73 searchable decisions** (`n_searched = 0`), where the POLLUTED record passed the gate on every one of them. The replayed prefix carries an `|error|[Invalid choice] Can't move: Your <mon> doesn't have a move matching <move>` line the observed prefix does not, so `dz.prefix_matches` refuses the world — correctly, at the point of refusal. **The direction is the finding**: a record that is now byte-true to the battle reproduces WORSE than one containing ten fabricated `default`s, which cannot both be true of the same replay and means one of the two sides of the comparison is not what it says. The A/B is clean on the `honest` arm (35 decisions, 30 searched, ZERO gate failures, byte-identical with and without the tag fix), so the gate failure is specific to the playoff arm's own record/world construction and is NOT the tag fix's doing. Repro: `python -m main.search_dividend <ckpt> --arm playoff --opponents self --games 1 --games-seed 7 --budget 60 --playoff-rollouts 2 --playoff-min-pairs 2 --max-opp 1 --max-worlds 1 --max-dice 1 --max-depth 1 --impl rust` (≈5 s — it falls back on every decision). 🚨 **The arm cannot be run for a measurement until this is closed**: every decision falls back to the policy, so the cell is the `base` control wearing the `playoff` label | a search arm that silently does nothing is the worst shape a measurement can have | S–M |
+- **P1 · A CLEAN reconstruction record now FAILS the determinization prefix gate on the `playoff` arm** (2026-09-19, exposed by `gen3_recon_tag_collision_v1` — see §3): with the record pollution removed, one mirror game at `--impl rust` reports **`prefix_gate_failed` on 72 of 73 searchable decisions** (`n_searched = 0`), where the POLLUTED record passed the gate on every one of them. The replayed prefix carries an `|error|[Invalid choice] Can't move: Your <mon> doesn't have a move matching <move>` line the observed prefix does not, so `dz.prefix_matches` refuses the world — correctly, at the point of refusal. **The direction is the finding**: a record that is now byte-true to the battle reproduces WORSE than one containing ten fabricated `default`s, which cannot both be true of the same replay and means one of the two sides of the comparison is not what it says. The A/B is clean on the `honest` arm (35 decisions, 30 searched, ZERO gate failures, byte-identical with and without the tag fix), so the gate failure is specific to the playoff arm's own record/world construction and is NOT the tag fix's doing. Repro: `python -m main.search_dividend <ckpt> --arm playoff --opponents self --games 1 --games-seed 7 --budget 60 --playoff-rollouts 2 --playoff-min-pairs 2 --max-opp 1 --max-worlds 1 --max-dice 1 --max-depth 1 --impl rust` (≈5 s — it falls back on every decision). 🚨 **The arm cannot be run for a measurement until this is closed**: every decision falls back to the policy, so the cell is the `base` control wearing the `playoff` label
+
+  🚨 **RE-MEASURED 2026-09-22 ON THE NAMED REPRO, AND THE HEADLINE DOES NOT REPRODUCE — THE
+  DOMINANT FALLBACK IS `root_failed`, NOT `prefix_gate_failed`.** Same command, same seed, HEAD at
+  `fdd33c80`, on the surviving orientation (63 decisions, `n_searched = 0` in both):
+
+  | search driver | fallbacks over 63 decisions |
+  |---|---|
+  | **node** (what the repro command actually selects) | `root_failed:51` · `prefix_gate_failed:9` · `not_move_selection:2` |
+  | **rust** (`--search-impl rust`) | `root_failed:60` · `search_error:1` · `not_move_selection:2` — **ZERO prefix-gate failures** |
+
+  Three corrections follow, and the first two change what this item IS:
+
+  1. **`open_root` is RAISING on 51/63 and 60/63 decisions.** `_no_arm_reason` splits the two
+     deliberately (`budget.py`: "a dead driver used to report `prefix_gate_failed`, i.e. blame the
+     world sampler for a subprocess crash"), so `root_failed` means the DRIVER failed, not the
+     determinization. The prefix gate accounts for 9 of 63 on node and **none at all** on rust.
+     Whatever the 2026-09-19 reading measured, the thing blocking the arm today is the root open.
+  2. **The repro command selects the NODE search driver.** `--impl rust` sets the BRIDGE;
+     `--search-impl` sets the offline search driver and defaults to `node`. The recorded "72 of 73"
+     was therefore a node-driver number, and the two drivers do not agree here.
+  3. **`worlds_gate_failed` reads 0 on the same row that reports `prefix_gate_failed:9`** — the
+     fold sums `widths.worlds_gate_failed` per decision, and the gate increments it immediately
+     before `worlds_gated_ok`, so those two cannot both be right. One of the nine's accounting is
+     wrong; that is a second, smaller bug in the same neighbourhood.
+
+  ⚠️ **NOT OBTAINED: the `open_root` exception itself.** A patched `SearchSession.open_root` that
+  prints its traceback logged NOTHING, because that run died before reaching a searched decision on
+  the surviving orientation — see the two further defects below. Getting the exception text is the
+  next step and it is cheap; do it before planning any fix.
+
+  🔴 **TWO MORE DEFECTS THE SAME REPRO SHOWS, both new to this list:**
+  * **the mirror's FIRST orientation livelocks**, on all three runs — `ProgressTimeout: bridge
+    battle 0: exceeded total budget … with 27/27/50 progress event(s) — livelock, not a stall`, at
+    180 s / 192 s / 285 s. It is progressing and never finishing, so it is not a starvation
+    timeout; the cell loses half its games before any search question is asked.
+  * **`ValueThreatInject shape mismatch: tokens (1, 6) vs rows (9, 6)`** (`value_threat_inject.py:110`)
+    kills the process outright on the third run. A batch-shape disagreement inside the model
+    forward on a path this configuration reaches.
+
+  🚨 **The arm still cannot be run for a measurement**, and the reason is now three defects rather
+  than one | a search arm that silently does nothing is the worst shape a measurement can have | S–M |
 - **P2 · `--playoff-rollouts` was INERT below a budget of 2R rollouts, with no refusal — GUARD LANDED, root cause OPEN** (2026-09-19): the per-decision `Deadline` declines the next pair whenever `2 × rollout_cost_s` does not fit what the screen left, so at `--budget 20` (a live terminal rollout measured ~10 s on a loaded box) the loop bought exactly ONE pair and `MIN_PAIRS = 4` then declined **every** playoff — two cells at `--playoff-rollouts 4` and `8` produced byte-identical no-op behaviour (realized R = 1.00, 64/64 inconclusive, `n_changed` exactly 0). **CLOSED half:** `playoff.short_r_refusal` + `--playoff-allow-short-r`; `run_cell` raises on the FIRST game of a `playoff` cell whose realized mean R falls below 0.9 × requested, after appending the row. **OPEN half:** the arm has no way to SIZE its own budget — `PlayoffConfig.rollout_cost_s` seeds at 1.0 s against a measured ~10 s, so the first decision of every cell is planned on an estimate an order of magnitude wrong. Seed it from a measured rollout (or from the previous game's realized cost) and print the implied per-decision budget at startup | S |
 
 - **`short_r_refusal` is ROW-level and mis-fires on a loaded box** (2026-09-20, `playoff_gate_operating_point_2026-09-20/`): killed 2 of 8 battery shards at single-game R 3.27 / 1.50 while pooled R was 3.96 / 3.98 (1.2 % of rows below floor); cost 21 % of the cell. Fix: a trailing-window (or pooled-over-shard) guard; and `rollout_cost_s` still seeds at 1.0 s against ~10 s measured. P2.
