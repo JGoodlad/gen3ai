@@ -1,0 +1,103 @@
+{
+ "by_half": {
+  "ours_challenge": {
+   "n": 5,
+   "wilson_hi": 0.8823792257998295,
+   "wilson_lo": 0.23072428122047123,
+   "win_rate": 0.6,
+   "wins": 3
+  },
+  "peer_challenge": {
+   "n": 5,
+   "wilson_hi": 0.6244653703187697,
+   "wilson_lo": 0.036224108620327655,
+   "win_rate": 0.2,
+   "wins": 1
+  }
+ },
+ "cell": {
+  "battle_format": "gen3ou",
+  "forfeit_turn_limit": 250,
+  "model_loader": "bare",
+  "model_rung": "explicit_zip",
+  "model_spec": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "model_step": 75005952,
+  "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "opponent": "foulplay",
+  "opponent_agent": "",
+  "opponent_commit": "6c467c0",
+  "opponent_kind": "foulplay",
+  "opponent_version": "poke-engine gen3 @ 100ms x1",
+  "our_regime": "greedy",
+  "our_side": "model",
+  "our_team_count": 719,
+  "our_team_source": "pool",
+  "regime_matched": true,
+  "search_parallelism": 1,
+  "search_time_ms": 100,
+  "server_impl": "rust",
+  "server_uri": "ws://localhost:9500/showdown/websocket",
+  "server_version": "ws_frontend@9eea8b04+rust:/home/goodlad/dev/gen3ai/src/rust_sim/target/release/sim_bridge",
+  "showdown_pin": "e0551883f",
+  "teamset": "home",
+  "their_regime": "search:100ms",
+  "their_team_count": 72,
+  "their_team_source": ""
+ },
+ "distinct_our_teams": 5,
+ "hit_forfeit_limit": 0,
+ "losses": 6,
+ "max_turns": 130,
+ "mean_turns": 54.4,
+ "median_turns": 44,
+ "n": 10,
+ "n_defaults": 0,
+ "n_redecides": 0,
+ "peer_clean": true,
+ "provenance": {
+  "anchors_config": "/home/goodlad/dev/gen3ai-wt/anchorsp2/designs/ops/anchors.json",
+  "games_path": "/tmp/anchorsp2_gates/fp10_serial/games.jsonl",
+  "peer_report": {
+   "argmax_match_rate": null,
+   "commit": "6c467c0",
+   "errors": 0,
+   "model_loader": "bare",
+   "our_stochastic_kwargs": [
+    false
+   ],
+   "peer_clean": true,
+   "peer_error_free": true,
+   "peer_rc": 0,
+   "peer_rcs": [
+    0
+   ],
+   "regime_verified": true,
+   "regime_verified_decisions": true,
+   "sample_kwargs": [],
+   "series_peer_clean": true,
+   "series_regime_verified_decisions": true,
+   "team_count": 72,
+   "their_regime": "search:100ms",
+   "version": "poke-engine gen3 @ 100ms x1",
+   "visits_max": 1066000.0,
+   "visits_mean": 99242.42424242424,
+   "visits_min": 1000.0,
+   "visits_n": 726,
+   "wall_s": 164.59678077697754
+  }
+ },
+ "realized_visits_per_decision_mean": 84204.54545454544,
+ "realized_visits_samples": 10,
+ "regime_verified": true,
+ "regime_verified_decisions": true,
+ "status": "OK",
+ "team_source_asymmetry": true,
+ "their_argmax_match_rates": [],
+ "ties": 0,
+ "wilson95": [
+  0.16818032967113528,
+  0.6873262303202639
+ ],
+ "win_rate": 0.4,
+ "wins": 4
+}

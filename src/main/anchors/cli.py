@@ -154,6 +154,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--capture-dir", default=None,
                    help="--server rust only: write each battle's repro record (commands + "
                         "per-side chunks) here. Pair with --seed-base or it is NOT replayable.")
+    p.add_argument("--challenge-mode", dest="challenge_mode", default="serial",
+                   choices=("serial", "pipelined"),
+                   help="WHEN our side emits the next /challenge in a half we challenge. "
+                        "'serial' (the DEFAULT) waits for the previous battle to END; "
+                        "'pipelined' is poke-env's own loop, which emits it ~0.4 s into the "
+                        "previous battle — hazard H14, the reason --opponent foulplay could not "
+                        "run a multi-game ours_challenge half. At --concurrency 1 the two differ "
+                        "ONLY in when the PM is sent: battle k+1 could never start before battle "
+                        "k ended either way.")
     p.add_argument("--search-time-ms", type=int, default=1000,
                    help="foulplay only: its ONLY budget, and it is WALL CLOCK — the realized visit "
                         "count is recorded per cell because two runs at the same nominal budget "
@@ -357,6 +366,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         server_version=server_version,
         seed_base=args.seed_base,
         capture_dir=Path(args.capture_dir) if args.capture_dir else None,
+        challenge_mode=args.challenge_mode,
         out_dir=out_dir,
         # A peer our-side is named after ITS OWN agent: Metamon keys its per-battle CSV by the
         # player's username, and "Gen3AIAnchor" on an anchor-vs-anchor row would name a client
@@ -402,6 +412,11 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         f"  usernames         ours={plan.our_username}<N> peer={plan.peer_username}<N>  "
         "(a per-half suffix; a name still held by the previous half logs in as a GUEST)",
         f"  forfeit limit     {plan.forfeit_turn_limit} turns (the TRAINER's number)",
+        f"  challenge mode    {plan.challenge_mode}"
+        + ("  (the next /challenge waits for the previous battle to END — hazard H14)"
+           if plan.challenge_mode == "serial"
+           else "  🚨 poke-env's own loop: the next /challenge lands ~0.4 s INTO the previous "
+                "battle (hazard H14)"),
         f"  deadlines         peer_ready={plan.peer_ready_timeout_s:g}s "
         f"first_game={plan.first_game_timeout_s:g}s progress={plan.progress_timeout_s:g}s",
         f"  out               {plan.out_dir}",

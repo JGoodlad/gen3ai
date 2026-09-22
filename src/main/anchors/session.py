@@ -202,9 +202,89 @@ def foreign_loader(zip_path: str, device: str):
     return model
 
 
+# --------------------------------------------------------- SERIALIZED challenges (hazard H14)
+#: The one behaviour a `/challenge` loop must have against a peer that reads its PMs only between
+#: battles. See :func:`serialized_send_challenges`.
+CHALLENGE_MODES = ("serial", "pipelined")
+
+
+async def serialized_send_challenges(self: Any, opponent: str, n_challenges: int,
+                                     to_wait: Any = None) -> None:
+    """Issue the next ``/challenge`` only once the PREVIOUS battle has ENDED.
+
+    🚨 **This is hazard H14, and it is OURS.** poke-env's ``Player._send_challenges`` releases its
+    battle semaphore when a battle *starts*, so the loop sends challenge *k+1* while battle *k* is
+    still being played — measured at **0.4 s** after the first on 2026-09-20, in the front end's
+    own log. Foul Play reads its private messages only between battles: the pipelined challenge
+    lands mid-battle, is dropped, and Foul Play then sits at ``Waiting for a gen3ou challenge``
+    for a challenge that was already consumed. The series stalls after one game and the tool
+    reports ``no_progress`` (1/10 games on the front end, 3/3 on Node). **The peer is not at
+    fault for not reading a PM while it is busy; we are at fault for sending one.**
+
+    The fix is one extra await. ``_battle_count_queue`` holds one unfinished item per LIVE battle
+    — ``put`` in ``_create_battle`` *before* the semaphore release, ``get``/``task_done`` on
+    ``|win|``/``|tie|`` — so ``join()`` after the acquire returns exactly when the battle that the
+    challenge produced has finished. Nothing else changes: at ``--concurrency 1`` the queue's
+    maxsize is 1, so battle *k+1* could never have STARTED before battle *k* ended anyway. Only
+    the moment the PM is emitted moves, which is the whole of the defect.
+
+    **Refused above concurrency 1**, rather than silently serializing a cell that asked for
+    parallel battles — a flag honoured as its own opposite is the failure this tool exists to
+    prevent. ``main.anchors`` always passes ``--concurrency 1``.
+    """
+    if getattr(self, "_max_concurrent_battles", 1) != 1:
+        raise SeriesFailure(
+            "challenge_mode_unavailable",
+            f"--challenge-mode serial needs one battle at a time, but this player was built with "
+            f"max_concurrent_battles={self._max_concurrent_battles}. Serializing it would honour "
+            "the concurrency flag as its own opposite; use --challenge-mode pipelined and accept "
+            "hazard H14, or keep --concurrency 1.")
+
+    await self.ps_client.logged_in.wait()
+    if to_wait is not None:
+        await to_wait.wait()
+    for i in range(n_challenges):
+        await self.ps_client.challenge(opponent, self._format, self.get_next_team())
+        # the battle STARTED (the semaphore is released in `_create_battle`, after its `put`)
+        await self._battle_semaphore.acquire()
+        # ...and now it has ENDED. This await is the entire fix.
+        await self._battle_count_queue.join()
+        if i + 1 < n_challenges:
+            self.logger.info("serialized challenge %d/%d: previous battle ended",
+                             i + 1, n_challenges)
+
+
+def install_serial_challenges() -> Callable[[], None]:
+    """Patch the serialized loop onto poke-env's **base** ``Player``; return the undo.
+
+    🚨 **The BASE class, not ``RLPlayer``, and that is a correctness requirement rather than a
+    style choice.** ``Gen3Player._send_challenges`` is a WRAPPER: it awaits
+    ``_await_connected`` — the connect-or-raise deadline that turns a login `action.php` refused
+    into a named error instead of a client that spins until somebody else's timeout — and only
+    then calls ``super()``. An override written onto the leaf class replaces that wrapper whole
+    and DELETES the guard, silently, in the exact configuration (a local `--no-security` server
+    that still authenticates a registered name) the guard was added for. Patching the base leaves
+    every subclass wrapper in place and lands underneath all of them, which is also why one patch
+    covers ``RLPlayer`` and all nine roster bots at once.
+
+    ``_send_challenges`` is defined ON ``Player``, so the undo restores the saved function rather
+    than deleting the attribute.
+    """
+    from poke_env.player.player import Player
+
+    saved = Player._send_challenges
+    Player._send_challenges = serialized_send_challenges
+
+    def undo() -> None:
+        Player._send_challenges = saved
+
+    return undo
+
+
 def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: Optional[int],
                      forfeit_limit: int, server_config: Any, *, our_side: str = "model",
-                     model_loader: str = "auto") -> Callable[[], None]:
+                     model_loader: str = "auto",
+                     challenge_mode: str = "serial") -> Callable[[], None]:
     """Patch `main.play` + `RLPlayer` for one half-series. Returns the undo.
 
     Patching the RLPlayer CLASS (not a module global) is what makes the observers reach the code
@@ -221,6 +301,11 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
     ``model_loader`` is ``"auto"`` (bare, falling back to foreign and SAYING which ran),
     ``"bare"`` or ``"foreign"``. Whichever ran is recorded in ``state.model_loader`` and stamped
     on every row.
+
+    ``challenge_mode`` is ``"serial"`` (the default) or ``"pipelined"`` — see
+    :func:`serialized_send_challenges`, which is hazard **H14**: poke-env's own challenge loop
+    sends the next ``/challenge`` while the previous battle is still being played, and Foul Play
+    reads its PMs only between battles.
     """
     import main.play as play
     from agents.inference.player import RLPlayer
@@ -369,7 +454,14 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
     else:
         play.build_model_player = build_model_player
 
+    # 🚨 H14. Installed on whichever class will actually play our half — RLPlayer, or the roster
+    # bot when our side is a bot. `pipelined` restores poke-env's own loop and is the escape hatch
+    # a differential against the old behaviour is taken on.
+    undo_challenges = (install_serial_challenges()
+                       if challenge_mode == "serial" else lambda: None)
+
     def undo() -> None:
+        undo_challenges()
         play.build_teambuilder = saved_build_tb
         play.resolve_server = saved_resolve
         play.build_model_player = saved_build_player

@@ -114,6 +114,11 @@ class SeriesPlan:
     #: `--server rust` only: the reproducibility pair. There is no Node counterpart.
     seed_base: Optional[int] = None
     capture_dir: Optional[Path] = None
+    #: "serial" (the default) or "pipelined" — WHEN our side emits the next `/challenge`.
+    #: 🚨 Hazard **H14**: poke-env's own loop emits it 0.4 s into the PREVIOUS battle, and a peer
+    #: that reads its PMs only between battles (Foul Play) drops it and then waits forever for a
+    #: challenge that was already consumed. See `session.serialized_send_challenges`.
+    challenge_mode: str = "serial"
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -308,7 +313,8 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     state = OurSideState()
     undo = install_our_side(state, plan.our_team_spec, plan.team_seed,
                             plan.forfeit_turn_limit, server_config,
-                            our_side=plan.our_side, model_loader=plan.model_loader)
+                            our_side=plan.our_side, model_loader=plan.model_loader,
+                            challenge_mode=plan.challenge_mode)
     args = play.build_parser().parse_args(our_argv(plan, mode, n_games, our_name, peer_name))
 
     proc = None

@@ -503,3 +503,4 @@ def test_the_defaulted_out_dir_is_PRINTED_before_anything_runs(cfg, monkeypatch,
     out = capsys.readouterr().out
     assert "no --out given" in out
     assert str(tmp_path) in out
+

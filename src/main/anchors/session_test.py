@@ -22,11 +22,13 @@ cannot fire is indistinguishable from a series that never stalls.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from pathlib import Path
 
 import pytest
 
+from main.anchors import session as session_mod
 from main.anchors.peers import PeerPlan
 from main.anchors.session import (
     BattleRecord,
@@ -490,3 +492,187 @@ async def test_a_peer_pair_making_progress_does_NOT_trip_the_progress_deadline(
                           first_game_timeout_s=5.0, progress_timeout_s=0.12, poll_s=0.01)
     await task
     assert len(state.records) == 5
+
+
+# ------------------------------------------------------------------ SERIALIZED challenges (H14)
+# 🚨 The defect these pin is OURS, not Foul Play's. poke-env releases its battle semaphore when a
+# battle STARTS, so its challenge loop emits challenge k+1 ~0.4 s into battle k; Foul Play reads
+# its PMs only between battles, drops it, and then waits forever for a challenge that was already
+# consumed (`no_progress` after 1/10 games, 2026-09-20 front end; 3/3 on Node, 2026-09-16).
+class _FakePSClient:
+    def __init__(self) -> None:
+        self.logged_in = asyncio.Event()
+        self.logged_in.set()
+        self.challenges_at: list = []
+
+    async def challenge(self, opponent, fmt, team):
+        self.challenges_at.append(opponent)
+
+
+class _FakePlayer:
+    """The three poke-env internals the challenge loop actually touches, and nothing else."""
+
+    _format = "gen3ou"
+    logger = logging.getLogger("anchors_test_fake_player")
+
+    def __init__(self, max_concurrent_battles: int = 1) -> None:
+        self._max_concurrent_battles = max_concurrent_battles
+        self.ps_client = _FakePSClient()
+        self._battle_semaphore = asyncio.Semaphore(0)
+        self._battle_count_queue: asyncio.Queue = asyncio.Queue(max_concurrent_battles)
+        self.events: list = []
+
+    def get_next_team(self):
+        return "packed-team"
+
+    async def play_one_battle(self, hold_s: float) -> None:
+        """What the server side does: create the battle (put, then release), play, then finish."""
+        await self._battle_count_queue.put(None)
+        self.events.append("battle_start")
+        self._battle_semaphore.release()
+        await asyncio.sleep(hold_s)
+        await self._battle_count_queue.get()
+        self._battle_count_queue.task_done()
+        self.events.append("battle_end")
+
+
+async def _drive(player: _FakePlayer, n: int, hold_s: float = 0.02) -> None:
+    async def server() -> None:
+        for _ in range(n):
+            while not player.ps_client.challenges_at or (
+                    len(player.ps_client.challenges_at) <= player.events.count("battle_start")):
+                await asyncio.sleep(0.001)
+            await player.play_one_battle(hold_s)
+
+    def note(_opponent):
+        player.events.append("challenge")
+
+    original = player.ps_client.challenge
+
+    async def challenge(opponent, fmt, team):
+        note(opponent)
+        await original(opponent, fmt, team)
+
+    player.ps_client.challenge = challenge
+    await asyncio.gather(
+        session_mod.serialized_send_challenges(player, "Peer", n), server())
+
+
+def test_a_serialized_challenge_is_never_emitted_during_a_battle() -> None:
+    """THE REGRESSION. Interleaving must be challenge/start/end, never challenge/start/challenge."""
+    player = _FakePlayer()
+    asyncio.run(_drive(player, 3))
+    assert player.events == ["challenge", "battle_start", "battle_end"] * 3, player.events
+
+
+def test_poke_envs_own_loop_DOES_emit_during_a_battle() -> None:
+    """The positive control. Without it the test above could pass against a loop that never
+    pipelined in the first place, and a check that cannot fail is not a check."""
+    player = _FakePlayer()
+
+    async def pipelined(self, opponent, n, to_wait=None):
+        # poke-env's `Player._send_challenges`, verbatim in the part that matters
+        for _ in range(n):
+            await self.ps_client.challenge(opponent, self._format, self.get_next_team())
+            await self._battle_semaphore.acquire()
+
+    async def go():
+        async def server():
+            for _ in range(2):
+                while len(player.ps_client.challenges_at) <= player.events.count("battle_start"):
+                    await asyncio.sleep(0.001)
+                await player.play_one_battle(0.05)
+
+        original = player.ps_client.challenge
+
+        async def challenge(opponent, fmt, team):
+            player.events.append("challenge")
+            await original(opponent, fmt, team)
+
+        player.ps_client.challenge = challenge
+        await asyncio.gather(pipelined(player, "Peer", 2), server())
+
+    asyncio.run(go())
+    starts = player.events.index("battle_start")
+    assert player.events[starts + 1] == "challenge", (
+        f"the control did not reproduce the pipelining it exists to demonstrate: {player.events}")
+    assert player.events.index("battle_end") > starts + 1
+
+
+def test_serialization_is_REFUSED_above_concurrency_one() -> None:
+    """A flag honoured as its own opposite is the failure this tool exists to prevent: at
+    --concurrency 4 a serialized loop would quietly play one battle at a time."""
+    player = _FakePlayer(max_concurrent_battles=4)
+    with pytest.raises(session_mod.SeriesFailure) as exc:
+        asyncio.run(session_mod.serialized_send_challenges(player, "Peer", 2))
+    assert exc.value.cause == "challenge_mode_unavailable"
+    assert "max_concurrent_battles=4" in exc.value.detail
+
+
+def test_the_patch_lands_UNDER_gen3players_connect_or_raise_wrapper() -> None:
+    """🚨 The patch goes on poke-env's BASE `Player`, never on `RLPlayer`.
+
+    `Gen3Player._send_challenges` is a wrapper that awaits `_await_connected` — the
+    connect-or-raise deadline that names a login `action.php` refused — and then calls `super()`.
+    An override written onto the leaf replaces that wrapper whole and deletes the guard in
+    silence. This test is the only thing standing between the H14 fix and that regression.
+    """
+    from agents.inference.player import Gen3Player, RLPlayer
+    from poke_env.player.player import Player
+
+    wrapper = Gen3Player.__dict__.get("_send_challenges")
+    assert wrapper is not None, (
+        "Gen3Player no longer wraps _send_challenges — re-derive where this patch belongs")
+    assert RLPlayer._send_challenges is wrapper       # what our side actually calls
+    base_before = Player._send_challenges
+
+    undo = session_mod.install_serial_challenges()
+    try:
+        assert Player._send_challenges is session_mod.serialized_send_challenges
+        assert RLPlayer._send_challenges is wrapper, (
+            "the connect-or-raise wrapper was overwritten — the patch went on the wrong class")
+    finally:
+        undo()
+    assert Player._send_challenges is base_before
+    assert RLPlayer._send_challenges is wrapper
+
+
+def test_one_base_patch_covers_the_roster_bots_too() -> None:
+    """A bot our-side challenges through the same loop, and a bot is a plain poke-env Player."""
+    from agents.training.eval_callback import eval_opponent_class
+
+    cls = eval_opponent_class("heuristic")
+    undo = session_mod.install_serial_challenges()
+    try:
+        assert cls._send_challenges is session_mod.serialized_send_challenges
+    finally:
+        undo()
+    assert cls._send_challenges is not session_mod.serialized_send_challenges
+
+
+def test_pipelined_mode_leaves_poke_envs_loop_alone() -> None:
+    """The escape hatch has to actually be one — a differential against the old behaviour is the
+    only way to show the serialization did not change a win rate."""
+    from poke_env.player.player import Player
+
+    before = Player._send_challenges
+    state = session_mod.OurSideState()
+    undo = session_mod.install_our_side(
+        state, {"kind": "pool"}, 7, 250, object(), challenge_mode="pipelined")
+    try:
+        assert Player._send_challenges is before
+    finally:
+        undo()
+
+
+def test_serial_mode_is_the_DEFAULT_of_install_our_side() -> None:
+    """The default is the fix. A hazard that needs a flag to avoid is a hazard that stays live."""
+    from poke_env.player.player import Player
+
+    state = session_mod.OurSideState()
+    undo = session_mod.install_our_side(state, {"kind": "pool"}, 7, 250, object())
+    try:
+        assert Player._send_challenges is session_mod.serialized_send_challenges
+    finally:
+        undo()
+    assert Player._send_challenges is not session_mod.serialized_send_challenges

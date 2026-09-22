@@ -1,0 +1,31 @@
+2026-09-22 10:56:40,356 INFO websockets.server server listening on 127.0.0.1:9500
+2026-09-22 10:56:40,356 INFO ws_frontend ws_frontend listening — ws://127.0.0.1:9500/showdown/websocket  (impl=rust, format=gen3ou, seed_base=None)
+[ws_frontend] READY ws://127.0.0.1:9500/showdown/websocket
+2026-09-22 10:56:41,817 INFO websockets.server connection open
+2026-09-22 10:56:42,037 INFO ws_frontend login: FoulPlay1 (foulplay1)
+2026-09-22 10:56:48,811 INFO websockets.server connection open
+2026-09-22 10:56:48,811 INFO ws_frontend login: Gen3AIAnchor1 (gen3aianchor1)
+2026-09-22 10:56:49,607 INFO ws_frontend challenge gen3aianchor1 -> foulplay1 (gen3ou)
+2026-09-22 10:56:49,612 INFO ws_frontend battle battle-gen3ou-1: Gen3AIAnchor1 (p1) vs FoulPlay1 (p2) seed=None
+2026-09-22 10:57:08,997 INFO ws_frontend challenge gen3aianchor1 -> foulplay1 (gen3ou)
+2026-09-22 10:57:08,998 INFO ws_frontend battle battle-gen3ou-2: Gen3AIAnchor1 (p1) vs FoulPlay1 (p2) seed=None
+2026-09-22 10:57:46,007 INFO ws_frontend challenge gen3aianchor1 -> foulplay1 (gen3ou)
+2026-09-22 10:57:46,010 INFO ws_frontend battle battle-gen3ou-3: Gen3AIAnchor1 (p1) vs FoulPlay1 (p2) seed=None
+2026-09-22 10:57:58,684 INFO ws_frontend challenge gen3aianchor1 -> foulplay1 (gen3ou)
+2026-09-22 10:57:58,686 INFO ws_frontend battle battle-gen3ou-4: Gen3AIAnchor1 (p1) vs FoulPlay1 (p2) seed=None
+2026-09-22 10:58:16,315 INFO ws_frontend challenge gen3aianchor1 -> foulplay1 (gen3ou)
+2026-09-22 10:58:16,316 INFO ws_frontend battle battle-gen3ou-5: Gen3AIAnchor1 (p1) vs FoulPlay1 (p2) seed=None
+2026-09-22 10:58:27,848 INFO websockets.server connection open
+2026-09-22 10:58:27,849 INFO ws_frontend login: Gen3AIAnchor2 (gen3aianchor2)
+2026-09-22 10:58:28,942 INFO websockets.server connection open
+2026-09-22 10:58:29,118 INFO ws_frontend login: FoulPlay2 (foulplay2)
+2026-09-22 10:58:32,482 INFO ws_frontend challenge foulplay2 -> gen3aianchor2 (gen3ou)
+2026-09-22 10:58:32,483 INFO ws_frontend battle battle-gen3ou-6: FoulPlay2 (p1) vs Gen3AIAnchor2 (p2) seed=None
+2026-09-22 10:58:43,501 INFO ws_frontend challenge foulplay2 -> gen3aianchor2 (gen3ou)
+2026-09-22 10:58:43,501 INFO ws_frontend battle battle-gen3ou-7: FoulPlay2 (p1) vs Gen3AIAnchor2 (p2) seed=None
+2026-09-22 10:58:56,493 INFO ws_frontend challenge foulplay2 -> gen3aianchor2 (gen3ou)
+2026-09-22 10:58:56,494 INFO ws_frontend battle battle-gen3ou-8: FoulPlay2 (p1) vs Gen3AIAnchor2 (p2) seed=None
+2026-09-22 10:59:01,977 INFO ws_frontend challenge foulplay2 -> gen3aianchor2 (gen3ou)
+2026-09-22 10:59:01,977 INFO ws_frontend battle battle-gen3ou-9: FoulPlay2 (p1) vs Gen3AIAnchor2 (p2) seed=None
+2026-09-22 10:59:10,271 INFO ws_frontend challenge foulplay2 -> gen3aianchor2 (gen3ou)
+2026-09-22 10:59:10,272 INFO ws_frontend battle battle-gen3ou-10: FoulPlay2 (p1) vs Gen3AIAnchor2 (p2) seed=None
