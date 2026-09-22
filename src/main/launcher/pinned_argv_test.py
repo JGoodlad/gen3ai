@@ -817,3 +817,80 @@ def test_f_the_TCUNFA_command_that_was_wrongly_refused(tmp_path):
         f"this command LAUNCHED and trained to completion; judging it at {sha} is the false "
         f"positive — {why}")
     assert "sync-to-main" in why.lower()
+
+
+# ============================================================ the pinned checkout's COMPLETENESS
+# 🚨 The defect these stand for (2026-09-11, `measurements/increment_46ca68ef_40bf23d9/` hazard 8):
+# a `--pin-commit` argv died inside the temporary checkout with `BaselineError: no baseline
+# registry at /tmp/pinned-argv-…/designs/baselines.json` — a file that EXISTS at that commit and
+# that `_ARCHIVE_PATHS` simply did not extract — and the tool fell through to the AST scan, whose
+# contract is to never invent a refusal. A silent demotion there reads exactly like a clean pass.
+def test_the_archive_carries_the_two_designs_registries_the_parser_READS() -> None:
+    """`--arch production` reads production_config.json and every registry name reads
+    baselines.json; both are `repo_root()`-relative, so the PINNED tree looks for them beside
+    itself."""
+    assert "designs/baselines.json" in pa._ARCHIVE_PATHS
+    assert "designs/production_config.json" in pa._ARCHIVE_PATHS
+    # named as FILES, never as the directory: designs/ is ~199 MB of documents
+    assert "designs" not in pa._ARCHIVE_PATHS
+    assert "designs/" not in pa._ARCHIVE_PATHS
+
+
+def test_a_designs_file_absent_at_the_PIN_is_dropped_not_fatal() -> None:
+    """`git archive` errors out on a pathspec matching nothing, and `designs/baselines.json` does
+    not exist at every commit a pin can name. `_tree_paths` must filter, not raise."""
+    head = pa.head_sha()
+    assert head
+    paths = pa._tree_paths(head, pa._repo_root())
+    assert "src/main" in paths
+    # the filter is real: every returned path resolves at that commit
+    for p in paths:
+        assert p in pa._ARCHIVE_PATHS
+
+
+def test_only_a_MISSING_path_inside_the_temporary_tree_is_called_our_bug(tmp_path) -> None:
+    """🚨 The claim is CHECKED on disk, not inferred from the wording.
+
+    A genuine "this commit has no readable parser" reason ALSO names the temporary tree — it says
+    no `add_argument()` could be read statically from `<tmp>/src` — and `<tmp>/src` exists.
+    Substring-matching the `pinned-argv-` prefix called that our bug; it is not, and an existing
+    test caught exactly that false positive.
+    """
+    tmp = tmp_path / "pinned-argv-377a5aa1-p0kjee6i"
+    (tmp / "src").mkdir(parents=True)
+
+    # (a) the recorded defect: a path we were supposed to extract, and did not
+    got = pa.incomplete_checkout_reason(
+        f"the pinned tree's main.train_rl_agent will not import here (BaselineError: no baseline "
+        f"registry at '{tmp}/designs/baselines.json')", str(tmp))
+    assert got, "the 2026-09-11 signature must be recognised"
+    assert "_ARCHIVE_PATHS" in got, "the message must name the thing a reader has to fix"
+    assert "NOT a property of the pin" in got
+
+    # (b) the false positive: the tmp tree is named, but the path is THERE
+    assert not pa.incomplete_checkout_reason(
+        f"this commit predates build_parser(); and no add_argument() call could be read "
+        f"statically from {tmp}/src", str(tmp))
+
+    # (c) a failure naming nothing of ours is a genuine property of the pin
+    assert not pa.incomplete_checkout_reason(
+        "the pinned build_parser() raised ImportError: No module named 'torch'", str(tmp))
+    assert not pa.incomplete_checkout_reason("", str(tmp))
+
+
+def test_an_incomplete_checkout_is_the_LOUDEST_line_not_a_footnote() -> None:
+    """A report built by a parser we did not mean to ask is not made safe by also being green."""
+    rep = pa.ParseReport(sha="deadbeefcafe", mode="ast_scan",
+                         incomplete_checkout="the pinned checkout is INCOMPLETE — …")
+    assert rep.ok, "the static scan found nothing — which is exactly the trap"
+    line = rep.summary_line()
+    assert line.startswith("🚨 incomplete_pinned_checkout")
+    assert "✅" not in line
+
+
+def test_a_clean_build_parser_run_is_never_called_incomplete() -> None:
+    """`build_parser` succeeded, so whatever the reason field carries cost nothing."""
+    rep = pa.ParseReport(sha="deadbeefcafe", mode="build_parser",
+                         reason="/tmp/pinned-argv-xyz/designs/baselines.json")
+    assert rep.incomplete_checkout == ""
+    assert "🚨 incomplete_pinned_checkout" not in rep.summary_line()

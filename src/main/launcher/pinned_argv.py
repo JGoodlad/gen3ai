@@ -55,6 +55,7 @@ from __future__ import annotations
 import atexit
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -69,7 +70,17 @@ from typing import Dict, List, Optional, Tuple
 #: ``__file__``-relative, so a pinned tree looks for its data beside itself, and the gen3_data
 #: facade raises ``FileNotFoundError`` at import time when it is missing — which silently demotes
 #: every recent pin from the authoritative ``build_parser`` mode to the static scan.
-_ARCHIVE_PATHS = ("src/main", "src/agents", "src/utils", "src/poke_env", "data")
+#:
+#: 🚨 **The two ``designs/`` registries are on the parser path for exactly the same reason, and
+#: leaving them out cost a read on 2026-09-11**: a ``--pin-commit`` argv died inside the temporary
+#: checkout with ``BaselineError: no baseline registry at /tmp/pinned-argv-…/designs/baselines.json``
+#: although the file exists at that commit, and fell through to the non-authoritative AST scan.
+#: ``--arch production`` reads ``production_config.json`` and every registry-name reference reads
+#: ``baselines.json``; both are ``repo_root()``-relative, so the pinned tree looks for them beside
+#: ITSELF. They are named as FILES, not as ``designs/`` — the directory is 199 MB of documents and
+#: none of the rest is importable. ``_tree_paths`` drops whichever does not exist at the pin.
+_ARCHIVE_PATHS = ("src/main", "src/agents", "src/utils", "src/poke_env", "data",
+                  "designs/baselines.json", "designs/production_config.json")
 
 #: Time box for the probe subprocess. It must cover the ``parse_args_hook`` child's OWN 120 s box
 #: (``pinned_argv_probe.HOOK_TIMEOUT_S``) plus the static-scan fallback that a hook timeout falls
@@ -99,6 +110,12 @@ class ParseReport:
     options: List[str] = field(default_factory=list)   # THE PINNED OPTION SET
     n_options: int = 0
     seconds: float = 0.0
+    #: 🚨 The demotion was OURS, not the pinned commit's — see :func:`incomplete_checkout_reason`.
+    #: A tree that would import fine if we had extracted the file it asks for is a bug in
+    #: `_ARCHIVE_PATHS`, and it must be LOUD: it silently swaps the authoritative parser for a
+    #: static scan, and the static scan's job is to never invent a refusal, so the demotion reads
+    #: exactly like a clean pass.
+    incomplete_checkout: str = ""
 
     #: The modes in which the parser that answered IS the parser the child builds.
     AUTHORITATIVE_MODES = ("build_parser", "parse_args_hook")
@@ -156,6 +173,10 @@ class ParseReport:
     def summary_line(self) -> str:
         """The one line a launch prints about the check it just ran."""
         sha8 = self.sha[:8]
+        if self.incomplete_checkout:
+            # BEFORE every other verdict: a report built by a parser we did not mean to ask is
+            # not made safer by also being green.
+            return f"🚨 incomplete_pinned_checkout @{sha8} — {self.incomplete_checkout}"
         if not self.available:
             # `parser_unavailable_at_pin` is a NAME on purpose: it is what a reader greps for, and
             # naming it is the difference between "unvalidated" and a silent pass.
@@ -263,6 +284,46 @@ def _probe_env(src_dir: str) -> Dict[str, str]:
     return env
 
 
+#: Paths that, named in a probe's failure reason, mean the TEMPORARY CHECKOUT is missing
+#: something — never that the pinned commit is broken. The marker is the materialised directory's
+#: own prefix, so this cannot fire on a path that belongs to the real checkout.
+_TMP_PREFIX = "pinned-argv-"
+
+
+def incomplete_checkout_reason(reason: str, tmp: str) -> str:
+    """Non-empty when a demotion was caused by a file OUR archive failed to carry.
+
+    🚨 **A silent demotion here is indistinguishable from a pass.** On 2026-09-11 a
+    ``--pin-commit`` argv died inside the temporary checkout with ``BaselineError: no baseline
+    registry at /tmp/pinned-argv-…/designs/baselines.json`` — a file that EXISTS at that commit
+    and that `_ARCHIVE_PATHS` simply did not extract — and the tool fell through to the
+    non-authoritative AST scan, whose contract is to never invent a refusal. The reader then sees
+    a clean-looking report produced by a parser nobody asked.
+
+    **The claim is checked, not inferred from the wording.** Every path the reason names inside
+    our temporary tree is tested on disk, and the finding fires only for one that is NOT THERE —
+    which is by construction something we were supposed to put there. That matters: a genuine
+    "this commit has no readable parser" reason also names the tmp tree (it says no
+    ``add_argument()`` could be read statically from ``<tmp>/src``), and ``<tmp>/src`` exists.
+    Substring-matching the prefix called that our bug; it is not.
+    """
+    if not reason or not tmp:
+        return ""
+    base = os.path.basename(tmp.rstrip("/"))
+    if not base:
+        return ""
+    # Paths are quoted or bare; stop at whitespace and at the punctuation a message ends with.
+    hits = re.findall(r"[^\s'\"]*" + re.escape(base) + r"[^\s'\"]*", reason)
+    missing = [h.rstrip(".,;:)") for h in hits]
+    missing = [h for h in missing if not os.path.exists(h)]
+    if not missing:
+        return ""
+    return (f"the pinned checkout is INCOMPLETE — the probe failed on {missing[0]}, a path inside "
+            f"the temporary tree that was never extracted. That file exists at the commit: this "
+            f"is a gap in main.launcher.pinned_argv._ARCHIVE_PATHS, NOT a property of the pin, "
+            f"and the verdict below came from a FALLBACK parser rather than the pinned one.")
+
+
 def pinned_parser_check(
     sha: str,
     child_argv: List[str],
@@ -309,10 +370,17 @@ def pinned_parser_check(
                            seconds=time.monotonic() - started)
     with open(out_path) as f:
         data = json.load(f)
+    reason = str(data.get("reason", ""))
+    mode = str(data.get("mode", "unavailable"))
+    # Only a DEMOTION is suspicious: `build_parser` succeeded, so whatever the reason field
+    # carries did not cost anything.
+    incomplete = ("" if mode == "build_parser"
+                  else incomplete_checkout_reason(reason, tmp))
     return ParseReport(
         sha=sha,
-        mode=str(data.get("mode", "unavailable")),
-        reason=str(data.get("reason", "")),
+        mode=mode,
+        reason=reason,
+        incomplete_checkout=incomplete,
         unknown=list(data.get("unknown", [])),
         stray=list(data.get("stray", [])),
         errors=list(data.get("errors", [])),

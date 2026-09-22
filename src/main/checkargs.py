@@ -652,6 +652,33 @@ def resolve_pin_for(argv: List[str], explicit: str | None) -> Tuple[str | None, 
     return decision.sha, why
 
 
+#: A leading token that is a PROGRAM, not a flag. `metadata.json`'s `original_command` records
+#: the command as it was TYPED, so it begins with an interpreter, a script path, or a `-m` module
+#: — and `argv_from_run` has always dropped it. `--argv` did not.
+_PROGRAM_SUFFIXES = (".py", ".sh", "/python", "/python3")
+
+
+def strip_program_token(parts: List[str]) -> List[str]:
+    """Drop a leading interpreter / script / ``-m <module>`` prefix from a recorded command.
+
+    🚨 **Without this, pasting an archived `original_command` into `--argv` produces a report
+    indistinguishable from a real regression.** The leading
+    ``/home/…/src/main/launcher/__main__.py`` reaches the pinned parser as a positional, and the
+    pinned parser has none, so it comes back as ``unconsumed value '…/launcher/__main__.py' — a
+    flag's ARITY differs at this commit`` — which is exactly what a genuine arity change looks
+    like. Measured on `models/ai_v12_01_winprob_critic`'s recorded command, 2026-09-11.
+
+    Only a token that is NOT a flag is dropped, and the loop stops at the first ``--``: an argv
+    that already begins with a flag is returned untouched, so this can never eat a real argument.
+    """
+    out = list(parts)
+    while out and not out[0].startswith("-"):
+        out.pop(0)                                   # an interpreter, or a script path
+    if out[:1] == ["-m"]:
+        out = out[3:] if len(out) > 2 and not out[2].startswith("-") else out[2:]
+    return out
+
+
 def argv_from_run(run_dir: str) -> List[str]:
     """The run's recorded `launcher_command`, minus the script path.
 
@@ -673,8 +700,7 @@ def argv_from_run(run_dir: str) -> List[str]:
     cmd = meta.get("launcher_command") or meta.get("original_command")
     if not cmd:
         raise SystemExit(f"{run_dir}/metadata.json records no launcher_command/original_command")
-    parts = shlex.split(cmd)
-    return parts[1:] if parts and not parts[0].startswith("--") else parts
+    return strip_program_token(shlex.split(cmd))
 
 
 def forwarded_argv(argv: List[str]) -> List[str]:
@@ -723,7 +749,10 @@ def main(raw: List[str] | None = None) -> int:
     if not a.run_dir and not a.argv:
         ap.error("give a run_dir or --argv")
 
-    argv = shlex.split(a.argv) if a.argv else argv_from_run(a.run_dir)
+    # 🚨 The SAME treatment a recorded command gets from `argv_from_run`. An `original_command`
+    # pasted verbatim into `--argv` used to reach the pinned parser with its interpreter still
+    # attached, and came back as a phantom ARITY finding.
+    argv = strip_program_token(shlex.split(a.argv)) if a.argv else argv_from_run(a.run_dir)
     # The pin is resolved FIRST, because `check` needs to know it: a PINNED argv's ARCH-SURFACE
     # finding is ADVISORY (`gen3_pinned_argv_parser_v1`'s rule — the mirror is THIS tree's, and the
     # pinned commit has its own registry, its own production_config.json, and may not have `--arch`

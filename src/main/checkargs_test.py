@@ -9,8 +9,11 @@ the parser accepts, which is exactly when you need one.
 from __future__ import annotations
 
 import json
+import shlex
 
 import pytest
+
+import main.checkargs as checkargs
 
 from main.checkargs import (argv_from_run, check, known_option_strings,
                             split_argv, unsatisfiable_pairs)
@@ -614,3 +617,56 @@ def test_pin_commit_beside_sync_to_main_is_REPORTED_as_the_launcher_would_refuse
     assert rc == 1, out
     assert "refused by the LAUNCHER parser" in out and "--sync-to-main" in out
     assert "✓ this command still launches" not in out
+
+
+# ================================================ `--argv` takes a RECORDED command (hazard 9)
+# 🚨 `metadata.json`'s `original_command` records the command as TYPED, so it begins with an
+# interpreter or a script path. Passed verbatim to `--argv` that token reached the pinned parser
+# as a positional and came back as `unconsumed value '…/launcher/__main__.py' — a flag's ARITY
+# differs at this commit`, which is EXACTLY what a genuine arity regression looks like.
+# `argv_from_run` had always stripped it; `--argv` had not.
+# A neutral absolute prefix on purpose: this is a FIXTURE standing for "the command
+# as it was typed", not a path this box resolves — and `paths_test` rightly fails a
+# `/home/...` literal anywhere under src/.
+_RECORDED = ("/opt/gen3ai/src/main/launcher/__main__.py "
+             "--run-name ai_v12_01_winprob_critic --pin-commit e798c13a --steps 75000000")
+
+
+def test_the_leading_script_path_is_stripped() -> None:
+    got = checkargs.strip_program_token(shlex.split(_RECORDED))
+    assert got[0] == "--run-name"
+    assert "__main__.py" not in " ".join(got)
+
+
+@pytest.mark.parametrize("prefix", [
+    "/opt/conda/envs/gen3ai_stable/bin/python3 src/main/launcher/__main__.py",
+    "python3 src/main/train_rl_agent.py",
+    "python -m main.launcher",
+    "/usr/bin/python3 -m main.launcher",
+    "src/main/launcher/__main__.py",
+])
+def test_every_shape_a_recorded_command_starts_with(prefix: str) -> None:
+    got = checkargs.strip_program_token(shlex.split(f"{prefix} --steps 10 --device cuda"))
+    assert got == ["--steps", "10", "--device", "cuda"], got
+
+
+def test_an_argv_that_ALREADY_starts_with_a_flag_is_untouched() -> None:
+    """The strip must never eat a real argument — that would be a worse bug than the one it
+    fixes, because it would silently change the argv under validation."""
+    argv = ["--steps", "10", "--device", "cuda", "--model", "models/x/final_model.zip"]
+    assert checkargs.strip_program_token(list(argv)) == argv
+
+
+def test_a_negative_number_value_is_not_mistaken_for_a_program() -> None:
+    argv = ["--draw-penalty", "-0.5", "--steps", "10"]
+    assert checkargs.strip_program_token(list(argv)) == argv
+
+
+def test_argv_from_run_and_the_argv_flag_agree(tmp_path) -> None:
+    """The two entry points must produce the SAME argv from the same recorded command — that they
+    did not is the whole defect."""
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "metadata.json").write_text(json.dumps({"original_command": _RECORDED}))
+    assert checkargs.argv_from_run(str(run)) == checkargs.strip_program_token(
+        shlex.split(_RECORDED))
