@@ -1,6 +1,14 @@
 # P1 tech-debt batch — 2026-09-22
 
-Three P1 rows from `designs/ops/TECH_DEBT_BACKLOG.md`, each landed as its own commit.
+Three P1 rows from `designs/ops/TECH_DEBT_BACKLOG.md`, each landed as its own commit:
+
+| # | row | commit |
+|---|---|---|
+| 1 | the `production` baseline registry entry does not load at HEAD | `80560c85` |
+| 2 | `ladder.json` needs a RECIPE STAMP and a gate | `0f230405` |
+| 3 | `critic_read --v-column` silently ignored on every quota-MATCHED row | `eda0d0a3` |
+
+**Two of the three rows named the wrong cause**, and in both cases the row's own suggested fix would have changed no number — see §1 and §3. Neither was found by reading the row; both came out of reproducing the failure first.
 
 ---
 
