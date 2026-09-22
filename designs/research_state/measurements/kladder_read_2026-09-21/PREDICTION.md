@@ -191,3 +191,47 @@ confound runs against it.
   mutually matched in everything except K, and re-running two rungs at adjusted coefficients costs
   ~16 GPU-h to answer a question the registered read does not ask. That is an orchestrator call, not
   mine, and it is flagged to them with this amendment.
+
+---
+
+## 9. AMENDMENT 3 — the SHARE-MATCHED arm, registered BEFORE the ladder reads
+
+**Committed 2026-09-22 ~06:20 PT. K=11 is still TRAINING and NO row of §1 has been measured on any
+rung.** The orchestrator's decision on amendment 2: **let K=11 finish as built, read the ladder as
+registered with `grad/distill_share` beside every number, and apply the asymmetry rule** — *wider
+costs less* is a candidate confounded by pull; *wider costs more despite half the pull* is the strong
+reading. No stop, no rebuild. §1–§8 are unchanged.
+
+**THE ARM (queued, not yet built):** one additional fold, **K=11 with `--distill-coef` raised so the
+realized `grad/distill_share` lands at ≈0.25** — K=1's measured mean. Everything else identical to
+the ladder: the plateau parent, +12M, `--fork-lr 2.8e-5 --fork-lr-freeze`, seed 1001, fold-1's full
+ecology, `--distill-target action`, `--distill-beta 1.0`, `--distill-gate none`.
+
+**Its registered contrast is against K=1, not against the ladder's K=11.** With the share matched,
+**K is the only lever** — which is what §1's "one lever" sentence claimed and amendment 2 showed the
+ladder does not deliver. **Cost row: the untaught 8 at +6M and +12M vs the plateau parent**, same
+floor (3.69), same harness, same CRN rule, same arm-W reproduction check.
+
+**HOW THE COEFFICIENT IS SET, fixed now so it cannot be tuned after the fact.** Set it from K=1's
+measured mean share by the ratio the ladder itself provides, state the arithmetic explicitly in the
+launch entry, and then **read the REALIZED share off the arm's first 10 rollouts**. 🚨 **If the
+realized share lands outside 0.22–0.28, SAY SO IN THE ENTRY AND CARRY ON — do not adjust mid-run.**
+A coefficient retuned against its own early readings is a coefficient fitted to noise, and the arm
+would stop being a registered contrast. An out-of-band share makes the arm a weaker instrument; it
+does not make it a different experiment.
+
+**Ordering, and why it is not this arm first.** Queued AHEAD of it is the prepared high-dose teacher
+`ai_v13_18_teach5_offense_hidose` (`designs/research_state/measurements/hidose_teacher_2026-09-21/`,
+`--fork-lr 2.5e-4 --fork-lr-freeze` ⇒ ≈1.78×, era-1's dose, the exploiter recipe otherwise
+unchanged). **That arm decides whether a teacher exists at all, which is upstream of every question
+this ladder asks** — all four teachers built at 0.39×/0.20× were refused by the admission gate, and
+if a 1.78× teacher is also refused then the target-form question is being asked about a teacher with
+nothing to teach in a stronger sense than §0 already admits. The plain `kl` arm stays optional behind
+both.
+
+📌 **A NUMBERING COLLISION, noted not fixed:** the prepared arm is named `ai_v13_18_teach5_offense_hidose`
+while `ai_v13_18_fold_k3` already exists — two different arms both numbered `ai_v13_18`. The run
+DIRECTORIES do not collide, so nothing breaks; but this campaign refers to arms by number in prose,
+and a reader meeting "v13_18" in a later entry cannot resolve it without the suffix. **Always write
+the full run name for either.** Renaming the prepared arm is not worth invalidating its committed
+`checkargs.txt` / `dry_run.txt` provenance.
