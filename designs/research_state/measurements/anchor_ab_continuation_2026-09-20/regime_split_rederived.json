@@ -1,0 +1,3153 @@
+{
+ "what": "gen3_anchor_regime_split_v1 applied retroactively to the 2026-09-20 A/B continuation campaign. Nothing but the two verification flags is re-derived; no win rate, CI or verdict changes.",
+ "definitions": {
+  "regime_verified_decisions": "both halves' sample kwarg matches the regime AND the per-decision argmax rate is regime-appropriate (greedy: == 1.0; t1: < 1.0) over >= 1 decision",
+  "peer_clean": "every peer process exited 0 and raised nothing",
+  "regime_verified": "DEPRECATED \u2014 the AND of the two above"
+ },
+ "n_sub_cells": 84,
+ "n_old_composite_false": 31,
+ "n_flips_to_verified_decisions": 31,
+ "n_still_unverified": 0,
+ "flipped": [
+  "C_SmallRL_away_s20260919",
+  "C_SmallRL_away_s20260959",
+  "C_SmallRL_home_s20260949",
+  "C_SmallRL_home_s20260969",
+  "C_SmallRL_home_s20260979",
+  "C_SmallRL_home_s20260999",
+  "F_SmallRL_away_s20260919",
+  "F_SmallRL_away_s20260959",
+  "F_SmallRL_away_s20260979",
+  "F_SmallRL_away_s20261009",
+  "F_SmallRL_away_s20261019",
+  "F_SmallRL_home_s20260919",
+  "F_SmallRL_home_s20260939",
+  "F_SmallRL_home_s20260949",
+  "F_SmallRL_home_s20260989",
+  "F_SmallRL_home_s20260999",
+  "F_SmallRL_home_s20261029",
+  "F_SyntheticRLV2_away_s20260919",
+  "F_SyntheticRLV2_away_s20260939",
+  "F_SyntheticRLV2_away_s20260949",
+  "W_SmallRL_away_s20260919",
+  "W_SmallRL_away_s20260929",
+  "W_SmallRL_away_s20261019",
+  "W_SmallRL_home_s20260979",
+  "W_SmallRL_home_s20260999",
+  "W_SmallRL_home_s20261019",
+  "W_SmallRL_home_s20261029",
+  "W_SyntheticRLV2_away_s20260919",
+  "W_SyntheticRLV2_away_s20260929",
+  "W_SyntheticRLV2_away_s20260939",
+  "W_SyntheticRLV2_away_s20260949"
+ ],
+ "still_unverified": [],
+ "cells": [
+  {
+   "cell": "C_SmallRL_away_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2482,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3173,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2646,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2871,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2931,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2997,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2596,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2840,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260959",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2830,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2904,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260969",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3382,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2970,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260979",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3092,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2812,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260989",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2530,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3261,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20260999",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2631,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2821,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20261009",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3201,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2530,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20261019",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3102,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3425,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_away_s20261029",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2462,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2908,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2377,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2254,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2410,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2522,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2739,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2340,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2097,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2460,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260959",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2397,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2369,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260969",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2233,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2533,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260979",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2192,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2335,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260989",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2230,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2378,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20260999",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2312,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2471,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20261009",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2630,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2353,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20261019",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2480,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2351,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SmallRL_home_s20261029",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2453,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2686,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SyntheticRLV2_away_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3120,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2967,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SyntheticRLV2_away_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2937,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3183,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SyntheticRLV2_away_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3052,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3049,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "C_SyntheticRLV2_away_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2647,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2502,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3113,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3032,
+     "peer_error": "RecursionError: maximum recursion depth exceeded in comparison",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded in comparison"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2977,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2914,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3214,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3347,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3353,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3095,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260959",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3229,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3316,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260969",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3234,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2802,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260979",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3152,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3619,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260989",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2637,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2644,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20260999",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2686,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3049,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20261009",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3419,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3222,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20261019",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3418,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3697,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_away_s20261029",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2899,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2854,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2459,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2550,
+     "peer_error": "RecursionError: maximum recursion depth exceeded in comparison",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded in comparison"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2356,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2608,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2669,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2400,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2342,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2536,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260959",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2386,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2575,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260969",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2373,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2500,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260979",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2080,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2087,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260989",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2136,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2431,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20260999",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2363,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2382,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20261009",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2332,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2351,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20261019",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2239,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2469,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SmallRL_home_s20261029",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2705,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2588,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SyntheticRLV2_away_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3114,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3085,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SyntheticRLV2_away_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3506,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3133,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SyntheticRLV2_away_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3185,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3039,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "F_SyntheticRLV2_away_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2548,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2723,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3380,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3052,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2504,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2597,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2563,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3082,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2848,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2423,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260959",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3056,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3018,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260969",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2810,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3324,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260979",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2399,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2938,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260989",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2358,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2738,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20260999",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2278,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2557,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20261009",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2991,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2764,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20261019",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3039,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3302,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_away_s20261029",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2613,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2519,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2602,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2426,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2342,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2403,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2398,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2462,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2148,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2174,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260959",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2488,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2251,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260969",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2283,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2144,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260979",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2304,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2126,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260989",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2218,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2264,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20260999",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2455,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2660,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20261009",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 0,
+   "old_composite_regime_verified": true,
+   "regime_verified_decisions": true,
+   "peer_clean": true,
+   "new_composite_would_be": true,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2334,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2496,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20261019",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2401,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2852,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SmallRL_home_s20261029",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2597,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2503,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SyntheticRLV2_away_s20260919",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3189,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3380,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object",
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SyntheticRLV2_away_s20260929",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2946,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3107,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SyntheticRLV2_away_s20260939",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2773,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2797,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  },
+  {
+   "cell": "W_SyntheticRLV2_away_s20260949",
+   "status": "OK",
+   "n": 100,
+   "rows_in_games_jsonl": 100,
+   "their_regime": "greedy",
+   "peer_rc": 1,
+   "old_composite_regime_verified": false,
+   "regime_verified_decisions": true,
+   "peer_clean": false,
+   "new_composite_would_be": false,
+   "per_decision_rates": [
+    1.0
+   ],
+   "row_rates": [
+    1.0
+   ],
+   "halves": {
+    "ours_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 3094,
+     "peer_error": null,
+     "regime_verified_decisions": true
+    },
+    "peer_challenge": {
+     "present": true,
+     "argmax_match_rate": 1.0,
+     "n_decisions": 2441,
+     "peer_error": "RecursionError: maximum recursion depth exceeded while calling a Python object",
+     "regime_verified_decisions": true
+    }
+   },
+   "peer_errors": [
+    "RecursionError: maximum recursion depth exceeded while calling a Python object"
+   ],
+   "rows_agree_with_half_reports": true
+  }
+ ]
+}

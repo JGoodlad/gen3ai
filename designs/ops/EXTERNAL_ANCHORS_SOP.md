@@ -176,7 +176,7 @@ an era-spanning campaign's oldest reachable node is whatever the floor admits.
 | 1 | starts a server on an auto-picked **9500–9599** port, records the PID, and stops **exactly that PID** on exit or failure. **8000 and 8001 are refused in code.** 🚨 **That server is the in-repo websocket FRONT END over the Rust bridge (`--server rust`, the DEFAULT): NO Node process is started at all.** `--server node` is the explicit opt-out that starts `deps/pokemon-showdown`; `--server-uri` uses an existing server, starts nothing, and stamps the rows `server_impl=external`. The transport and its version are on **every row** |
 | 2 | resolves `--model` through `resolve_model_ref` — 🚨 **a bare run directory means that run's LAST SNAPSHOT**; name the `.zip` or `@step` to pin a file. The rung it resolved by is recorded on every row |
 | 3 | runs our checkpoint through **`main.play`'s own code path** (`--device cpu`, `--temperature 0`, the trainer's 250-turn forfeit limit), role-balanced across two half-series |
-| 4 | verifies the regime **per decision on both sides** and writes the `argmax_match_rate` |
+| 4 | verifies the regime **per decision on both sides**, writes the `argmax_match_rate`, and records the verdict as **two** fields — `regime_verified_decisions` (the regime) and `peer_clean` (the exit). Never one; see hazard **H16** |
 | 5 | writes `games.jsonl` + `summary.json` with the Wilson CI and the full provenance |
 | 6 | on a dead peer or a stalled series, **FAILS with a named cause** and exit code 2 |
 
@@ -271,6 +271,8 @@ the pin on the env the plan actually carries.
 | **H14** | 🚨 **`--opponent foulplay` cannot run a MULTI-GAME `ours_challenge` half.** poke-env pipelines its challenges; Foul Play drops a PM that arrives mid-battle and then waits for a challenge that was already consumed. Reproduced on the front end 2026-09-20 (`no_progress`, 1/10 games) exactly as on Node 3/3 on 2026-09-16 — the front end's own log shows the SECOND `/challenge` delivered 0.4 s after the first, so the drop is Foul Play's | `no_progress` after 1 game — **not** a transport fault | unfixed. A Foul Play cell is proven at **1 game per half**; every multi-game Foul Play number in the ledger came from runs where Foul Play was the CHALLENGER. **Backlog** |
 | **H15** | ⚠️ **A bare TCP readiness probe FABRICATES an ERROR in the front end's log.** `websockets` answers a connect-then-close with `opening handshake failed` and a three-deep traceback; "0 ERRORs in the server log" is the criterion the transport's validation reads | a clean read looks like a protocol failure | fixed 2026-09-20: a server that PRINTS a readiness line (`[ws_frontend] READY`) is never TCP-probed; the Node server, which prints none we parse, still is |
 
+| **H16** | 🚨 **A COMPOSITE VERIFICATION FLAG HIDES WHICH HALF FAILED.** `regime_verified` ANDed *"did the regime take effect?"* with *"did the peer exit cleanly?"*. Metamon raises a `RecursionError` in its post-game teardown when our side forfeits at turn 250 — **after** its last decision and after every game is played and recorded — so the peer exits 1 and the composite read FALSE. On the 2026-09-20 continuation campaign that was **31 of 84 sub-cells** (3,100 of 8,400 games; arms C 6 / F 14 / W 11), every one of which had `argmax_match_rate` = **1.0000** on both halves | a third of a campaign flagged "not a measurement" with nothing wrong with it — and a flag a reader then learns to ignore | **fixed 2026-09-21** (`gen3_anchor_regime_split_v1`): `regime_verified_decisions` and `peer_clean` are separate fields on every row and in every summary, `render` prints them on separate lines, and `regime_verified` survives ONE release as their AND with a deprecation note. The 84 sub-cells are re-derived in `designs/research_state/measurements/anchor_ab_continuation_2026-09-20/regime_split_rederived.json` — **all 31 flip to verified, 0 remain unverified**, and no win rate, CI or verdict changes |
+
 **One more, and it is about US, not them:** ⚠️ a long campaign that imports the MAIN checkout is not
 pinned, and `main` is a moving target on a multi-session box. The parallel Metamon de-risk landed
 `--forfeit-turn-limit` mid-run on 2026-09-14 and an `AttributeError` killed a Foul Play session
@@ -361,9 +363,19 @@ at the end, regime first.
    never mistaken for a full one — but it is not a measurement. The named causes are
    `peer_never_ready`, `peer_exited`, `no_first_game`, `no_progress`, `short_series`,
    `our_side_error`.
-2. `their_argmax_match_rates == [1.0]` in a greedy cell, and materially **below** 1.0 in a t1 cell.
-   The sampling cell is the POSITIVE CONTROL: an instrument reading 1.000 in both regimes would
-   have no power.
+2. 🚨 **`regime_verified_decisions == true`** — the field the verification reads
+   (`gen3_anchor_regime_split_v1`). It is true when BOTH halves' `sample` kwarg matched the regime
+   AND the per-decision `argmax_match_rate` was regime-appropriate over at least one decision:
+   exactly `1.0` in a greedy cell, materially **below** 1.0 in a t1 cell. The sampling cell is the
+   POSITIVE CONTROL — an instrument reading 1.000 in both regimes would have no power — and the
+   "at least one decision" clause closes the vacuous pass, because a check that never ran reads
+   exactly like one that passed. `their_argmax_match_rates` is still printed beside it; read the
+   flag, then look at the rates.
+   ⚠️ **`peer_clean` is a SEPARATE line and is not part of this check.** It says every peer
+   process exited 0. A false `peer_clean` is a reason to read a peer log, **never** a reason to
+   discard a win rate whose regime verified on every decision — see hazard **H16**.
+   ⚠️ **`regime_verified` is DEPRECATED (one release)**: it is the AND of the two, and reading it
+   is how 31 of 84 sub-cells got flagged as unverified when nothing was wrong with them.
 3. `team_source_asymmetry == false`, and for Foul Play a non-null
    `realized_visits_per_decision_mean`.
 

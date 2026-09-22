@@ -140,6 +140,14 @@ class GameRow:
     our_stochastic_kwargs: List[bool] = field(default_factory=list)
     their_sample_kwargs: List[bool] = field(default_factory=list)
     their_argmax_match_rate: Optional[float] = None
+    # 🚨 THE TWO SEPARATE VERIFICATION FACTS (gen3_anchor_regime_split_v1). Series-level, written
+    # per row so a row is self-contained. `regime_verified_decisions` — did the regime take effect
+    # on every decision, in BOTH halves? `peer_clean` — did every peer process exit 0?
+    # `regime_verified` is their AND and is DEPRECATED for one release: see
+    # `main.anchors.peers.REGIME_VERIFIED_DEPRECATION`. THE SOP READS THE FIRST.
+    regime_verified_decisions: Optional[bool] = None
+    peer_clean: Optional[bool] = None
+    regime_verified: Optional[bool] = None
     # Realized search WIDTH (foulplay). None everywhere else; never silently zero.
     their_visits_mean: Optional[float] = None
     their_visits_n: Optional[int] = None
@@ -162,6 +170,9 @@ class GameRow:
             "our_stochastic_kwargs": self.our_stochastic_kwargs,
             "their_sample_kwargs": self.their_sample_kwargs,
             "their_argmax_match_rate": self.their_argmax_match_rate,
+            "regime_verified_decisions": self.regime_verified_decisions,
+            "peer_clean": self.peer_clean,
+            "regime_verified": self.regime_verified,
             "their_visits_mean": self.their_visits_mean,
             "their_visits_n": self.their_visits_n,
         })
@@ -180,6 +191,10 @@ REQUIRED_ROW_FIELDS = (
     "model_zip", "model_step", "model_rung",
     "search_time_ms", "their_visits_mean",
     "their_argmax_match_rate", "our_stochastic_kwargs",
+    # 🚨 The regime and the process, KEPT APART. `regime_verified` is their AND and DEPRECATED
+    # for one release; a reader wanting "was this a measurement?" reads
+    # `regime_verified_decisions` (see peers.REGIME_VERIFIED_DEPRECATION).
+    "regime_verified_decisions", "peer_clean", "regime_verified",
     "result", "turns", "half", "index",
 )
 
@@ -247,6 +262,16 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         "realized_visits_per_decision_mean": (sum(visits) / len(visits)) if visits else None,
         "realized_visits_samples": len(visits),
         "their_argmax_match_rates": rates,
+        # 🚨 THE SPLIT, at cell level. An AND over the rows, with an EMPTY cell verifying nothing
+        # rather than vacuously everything — `all([])` is True and that is the wrong answer here.
+        "regime_verified_decisions": (bool(rows)
+                                      and all(bool(r.regime_verified_decisions) for r in rows)),
+        "peer_clean": bool(rows) and all(bool(r.peer_clean) for r in rows),
+        # DEPRECATED, one release: the AND of the two above. It reads FALSE on a cell whose regime
+        # verified on every decision but whose peer exited nonzero after the games — 31 of 84
+        # sub-cells on the 2026-09-20 campaign. Read `regime_verified_decisions`.
+        "regime_verified": (bool(rows) and all(bool(r.regime_verified_decisions) for r in rows)
+                            and all(bool(r.peer_clean) for r in rows)),
         "team_source_asymmetry": cell.our_team_count != cell.their_team_count,
     }
     if failure is not None:
@@ -292,6 +317,17 @@ def render(summary: Dict[str, Any]) -> str:
     if rates:
         lines.append("  verified    peer argmax_match_rate = "
                      + ", ".join(f"{r:.4f}" for r in rates))
+    # 🚨 TWO LINES, NEVER ONE. The regime is what licenses the number; a dirty exit is an
+    # operational fact about a process. Printing them as one flag is what made 31 of 84 sub-cells
+    # read UNVERIFIED on 2026-09-20 with every argmax rate at 1.0000.
+    if "regime_verified_decisions" in summary:
+        ok = summary["regime_verified_decisions"]
+        lines.append(f"  regime      per-decision VERIFIED: {ok}"
+                     + ("" if ok else "   🚨 this cell is NOT a measurement"))
+        clean = summary.get("peer_clean")
+        lines.append(f"  peers       exited cleanly: {clean}"
+                     + ("" if clean else "   ⚠️ a peer exited nonzero — read its log; this does "
+                                         "NOT invalidate a verified regime"))
     lines += [
         f"  status      {summary['status']}",
         f"  WIN RATE    {summary['win_rate']:.3f}   Wilson 95% [{lo:.3f}, {hi:.3f}]   "

@@ -478,3 +478,40 @@ set expectations, not the internal one. Tag: **MEASUREMENT (MAJOR) · 8,400 ANCH
 NOT DETECTED ON EITHER TEAM SET AT n = 400 AND n = 1200 · THE FOLD PATH IS 0.08 BELOW ITS OWN PARENT
 EXTERNALLY · ORDER REPRODUCES, MAGNITUDE ~5× SMALLER · ERA GATE FIRES ON ALL THREE ARMS · HAZARD
 W-J FIRES ON 37 % OF SUB-CELLS WITH EVERY PER-DECISION RATE AT 1.0000**.
+
+---
+
+## Addendum 2026-09-21 — HAZARD W-J IS CLOSED, AND ALL 31 SUB-CELLS FLIP TO VERIFIED
+
+The backlog row this campaign filed ("separate *the peer crashed after its work* from *the regime
+was not matched*") is shipped as **`gen3_anchor_regime_split_v1`**, and the split has been applied
+retroactively to this directory's own saved evidence.
+
+| | |
+|---|---:|
+| sub-cells | **84** |
+| old composite `regime_verified` FALSE | **31** (arms C 6 / F 14 / W 11; 3,100 of 8,400 games) |
+| → `regime_verified_decisions` TRUE under the split | **31** |
+| → still unverified | **0** |
+| peer `rc` on all 31 | **1** |
+| peer error class on all 31 | **`RecursionError`**, 40 occurrences |
+| per-decision `argmax_match_rate` on all 31 | **1.0** — the only value that appears |
+| rows-vs-half-report disagreements | **0 / 84** |
+
+**Every one of the 31 was a clean regime with a dirty exit.** Metamon raises a `RecursionError` in
+its post-game teardown when our side forfeits at turn 250 — after its last decision, after every
+game is played and recorded — so the peer exits 1 and a flag that ANDed the two questions read
+FALSE. Under the split, `regime_verified_decisions` is true on all 84 sub-cells and `peer_clean` is
+false on 31.
+
+🚨 **Nothing else is re-derived and nothing else changes.** No win rate, no Wilson interval, no
+contrast and no verdict in `results_registered_n400.json` or `results_n1200.json` is recomputed
+here: this addendum explains a FLAG, and the games were always played and always recorded. The
+campaign's reading — C − W NOT DETECTED on either team set at n = 400 and n = 1200, the fold path
+0.08 below its own parent externally, the era gate firing on all three arms — stands exactly as
+written above.
+
+Reproduce: `python designs/research_state/measurements/anchor_ab_continuation_2026-09-20/scripts/regime_split_rederive.py`
+→ [`regime_split_rederived.json`](regime_split_rederived.json) (per sub-cell: both half reports,
+the rates, the rc, the error, the old composite and the two new fields). The definitions it applies
+are the shipped ones, and `src/main/anchors/regime_split_test.py` pins them.

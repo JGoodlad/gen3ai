@@ -205,24 +205,39 @@ class MetamonPeer(Peer):
         """The driver's own JSON: the ``sample`` kwarg it really received and the
         ``argmax_match_rate`` that proves the regime took effect.
 
-        An absent report is reported as absent — ``regime_verified: False`` — never as a pass.
+        An absent report is reported as absent — every verification field False — never as a pass.
+
+        🚨 **TWO FIELDS, NOT ONE** (``gen3_anchor_regime_split_v1``). ``regime_verified_decisions``
+        answers *did the regime take effect on every decision?*; ``peer_error_free`` answers *did
+        the peer process finish without raising?*. The runner turns the second into ``peer_clean``
+        by ANDing the exit code it alone can see. ``regime_verified`` remains their AND for one
+        release and is DEPRECATED — see :data:`REGIME_VERIFIED_DEPRECATION`.
         """
         import json
-        out: Dict[str, Any] = {"regime_verified": False, "sample_kwargs": [],
+        out: Dict[str, Any] = {"regime_verified": False, "regime_verified_decisions": False,
+                               "peer_error_free": False, "sample_kwargs": [],
                                "argmax_match_rate": None, "visits_mean": None, "visits_n": 0}
         if plan.report_path is None or not plan.report_path.exists():
             out["note"] = f"no peer report at {plan.report_path}"
             return out
         blob = json.loads(plan.report_path.read_text())
+        # A report written by a peer that predates the split carries only `regime_check_ok`. Fall
+        # back to it for BOTH halves rather than inventing a decision-level pass: an older report
+        # genuinely cannot tell the two apart, and saying so is the honest answer.
+        legacy = bool(blob.get("regime_check_ok"))
+        decisions = blob.get("regime_verified_decisions")
+        error_free = blob.get("peer_error_free")
         out.update({
             "sample_kwargs": blob.get("sample_kwarg_values", []),
             "argmax_match_rate": blob.get("argmax_match_rate"),
-            "regime_verified": bool(blob.get("regime_check_ok")),
+            "regime_verified_decisions": bool(legacy if decisions is None else decisions),
+            "peer_error_free": bool(legacy if error_free is None else error_free),
             "peer_wins": blob.get("peer_wins"),
             "peer_games": blob.get("peer_games"),
             "n_decisions": blob.get("n_decisions"),
             "median_decision_s": blob.get("median_s"),
         })
+        out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out
 
 
@@ -289,10 +304,16 @@ class FoulPlayPeer(Peer):
 
     @staticmethod
     def read_report(plan: PeerPlan) -> Dict[str, Any]:
-        out: Dict[str, Any] = {"regime_verified": True, "sample_kwargs": [],
+        # Foul Play has no sampling knob, so its per-decision evidence is the REALIZED SEARCH
+        # WIDTH rather than an argmax rate — same question ("did the regime take effect, per
+        # decision?"), different instrument. `peer_error_free` is its own ERROR/CRITICAL count.
+        out: Dict[str, Any] = {"regime_verified": True, "regime_verified_decisions": True,
+                               "peer_error_free": True, "sample_kwargs": [],
                                "argmax_match_rate": None, "visits_mean": None, "visits_n": 0}
         if not plan.log_path.exists():
             out["regime_verified"] = False
+            out["regime_verified_decisions"] = False
+            out["peer_error_free"] = False
             out["note"] = f"no peer log at {plan.log_path}"
             return out
         text = plan.log_path.read_text(errors="replace")
@@ -306,12 +327,27 @@ class FoulPlayPeer(Peer):
             # 🚨 Not an aside. The nominal budget is wall clock, so without the realized width the
             # number cannot be compared to any other box or any other day.
             out["regime_verified"] = False
+            out["regime_verified_decisions"] = False
             out["note"] = ("no `Iterations N: <visits>` lines in the Foul Play log — the REALIZED "
                            "search width is unknown, and a wall-clock budget without it is not a "
                            "reproducible opponent (UNDERSTANDING rule 23)")
         out["errors"] = text.count("ERROR") + text.count("CRITICAL")
+        out["peer_error_free"] = out["errors"] == 0
+        out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out
 
+
+#: 🚨 DEPRECATED, one release (``gen3_anchor_regime_split_v1``, 2026-09-21). ``regime_verified`` is
+#: the AND of ``regime_verified_decisions`` and ``peer_clean``, and it is the WRONG field to read:
+#: on the 2026-09-20 continuation campaign it was FALSE on **31 of 84 sub-cells** whose every
+#: per-decision ``argmax_match_rate`` was 1.0000, because Metamon's post-game ``RecursionError``
+#: made the peer exit nonzero AFTER the last decision. The games in those cells are measurements;
+#: the composite said they were not. **The SOP's regime verification reads
+#: ``regime_verified_decisions``.** ``peer_clean`` is the separate operational fact, and it is a
+#: reason to look at a log, not to discard a win rate.
+REGIME_VERIFIED_DEPRECATION = (
+    "regime_verified is DEPRECATED (one release): it ANDs the REGIME question with the PROCESS "
+    "question. Read regime_verified_decisions for the regime and peer_clean for the exit.")
 
 PEERS: Dict[str, Peer] = {"metamon": MetamonPeer(), "foulplay": FoulPlayPeer()}
 

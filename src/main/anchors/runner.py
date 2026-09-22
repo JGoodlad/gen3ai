@@ -270,8 +270,16 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     # anchor-vs-anchor cell with only one side verified is half a measurement.
     report["our_argmax_match_rate"] = our_report.get("argmax_match_rate")
     report["our_regime_verified"] = our_report.get("regime_verified")
+    report["our_regime_verified_decisions"] = our_report.get("regime_verified_decisions")
     report["our_stochastic_kwargs"] = list(our_report.get("sample_kwargs") or [])
     report["model_loader"] = ""
+    # BOTH peers are peers here, so the regime question is an AND over the two and the process
+    # question is an AND over BOTH return codes.
+    report["regime_verified_decisions"] = bool(report.get("regime_verified_decisions")) and bool(
+        our_report.get("regime_verified_decisions"))
+    report["peer_error_free"] = bool(report.get("peer_error_free")) and bool(
+        our_report.get("peer_error_free"))
+    finalize_regime_fields(report, peer_rcs=[p.returncode for p in procs] or [None])
     return state.records, report, failure
 
 
@@ -370,6 +378,7 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     report["their_regime"] = pplan.their_regime
     report["our_stochastic_kwargs"] = list(state.stochastic_kwargs)
     report["model_loader"] = state.model_loader
+    finalize_regime_fields(report, peer_rcs=[proc.returncode if proc is not None else None])
     return state.records, report, failure
 
 
@@ -417,6 +426,30 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
     )
+
+
+def finalize_regime_fields(report: Dict[str, Any], *, peer_rcs: List[Optional[int]]) -> None:
+    """Fill a half's report with the TWO separate verification facts, in place.
+
+    🚨 **THE SPLIT** (``gen3_anchor_regime_split_v1``). ``regime_verified_decisions`` says the
+    regime took effect on every decision the peer made; ``peer_clean`` says every peer process
+    exited 0. They are different facts with different consequences and they must never be read
+    through one flag: on the 2026-09-20 continuation campaign the composite was FALSE on **31 of
+    84 sub-cells** whose per-decision argmax rate was 1.0000 throughout, because Metamon raises a
+    ``RecursionError`` in its post-game teardown when our side forfeits at turn 250 — AFTER the
+    last decision, and after every game was played and recorded.
+
+    A nonzero rc is still recorded, loudly. What it is not is a reason to throw away a win rate
+    whose regime verified on every one of its decisions.
+
+    ``regime_verified`` is kept as their AND for ONE release
+    (:data:`peers_mod.REGIME_VERIFIED_DEPRECATION`), so nothing silently re-points at a different
+    quantity — but it is no longer what the SOP reads.
+    """
+    rcs = [rc for rc in peer_rcs if rc is not None]
+    report["peer_rcs"] = peer_rcs
+    report["peer_clean"] = bool(report.get("peer_error_free", True)) and all(rc == 0 for rc in rcs)
+    report["regime_verified"] = bool(report.get("regime_verified_decisions")) and report["peer_clean"]
 
 
 def rows_from(records: List[Any], half: str, cell: CellSpec, report: Dict[str, Any],
@@ -467,6 +500,7 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
                           else len(load_team_texts(Path(plan.our_team_spec["path"]))))
 
     all_rows: List[GameRow] = []
+    half_reports: List[Dict[str, Any]] = []
     last_report: Dict[str, Any] = {}
     failure: Optional[SeriesFailure] = None
     t0 = time.time()
@@ -477,9 +511,23 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
               f"regime={plan.regime}, teamset={plan.teamset}", flush=True)
         records, report, failure = await run_half(plan, cfg, half, n_games)
         last_report = report
+        half_reports.append(report)
         cell = cell_spec(plan, report, our_team_count)
         all_rows.extend(rows_from(records, half, cell, report, len(all_rows) + 1))
         if failure is not None:
             break
+    # 🚨 SERIES-LEVEL, STAMPED ON EVERY ROW. The two verification facts are properties of the
+    # WHOLE cell — "both halves' regime verified", "every peer exited 0" — but a row has to be
+    # self-contained, so they are back-filled onto the rows the first half already produced. An
+    # empty series verifies NOTHING rather than vacuously everything.
+    decisions = bool(half_reports) and all(bool(r.get("regime_verified_decisions"))
+                                           for r in half_reports)
+    clean = bool(half_reports) and all(bool(r.get("peer_clean")) for r in half_reports)
+    for row in all_rows:
+        row.regime_verified_decisions = decisions
+        row.peer_clean = clean
+        row.regime_verified = decisions and clean
+    last_report["series_regime_verified_decisions"] = decisions
+    last_report["series_peer_clean"] = clean
     last_report["wall_s"] = time.time() - t0
     return all_rows, last_report, failure

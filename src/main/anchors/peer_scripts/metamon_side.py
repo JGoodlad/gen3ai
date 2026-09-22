@@ -323,13 +323,35 @@ def main(argv=None):
     expect_sample = [sample]
     ok_kw = timing["sample_kwarg_values"] == expect_sample
     rate = timing.get("argmax_match_rate")
-    ok_rate = (rate is None) or (rate == 1.0 if args.regime == "greedy" else rate < 1.0)
-    timing["regime_check_ok"] = bool(ok_kw and ok_rate and error is None)
+    n_dec = timing.get("n_decisions") or 0
+    # 🚨 TWO QUESTIONS, TWO FIELDS (gen3_anchor_regime_split_v1). "Did the regime take effect on
+    # every decision?" and "did this process exit cleanly?" are different facts with different
+    # consequences, and ANDing them cost the 2026-09-20 campaign 31 of 84 sub-cells: the peer's
+    # post-game RecursionError set `error`, the composite went False, and every per-decision
+    # argmax rate in those cells was 1.0000. A flag that reads FALSE on a clean regime is a flag
+    # a reader learns to ignore.
+    #
+    # `ok_rate` is REGIME-APPROPRIATE, not literally "== 1.0": greedy demands exactly 1.0, t1
+    # demands materially below it (the positive control that the instrument has any power). What
+    # it no longer does is pass VACUOUSLY — `rate is None` or zero decisions now FAILS, because a
+    # check that never ran reads exactly like one that passed.
+    ok_rate = (rate is not None and n_dec >= 1
+               and (rate == 1.0 if args.regime == "greedy" else rate < 1.0))
+    timing["regime_verified_decisions"] = bool(ok_kw and ok_rate)
+    timing["peer_error_free"] = error is None
+    #: DEPRECATED (one release, gen3_anchor_regime_split_v1). The composite AND of the two fields
+    #: above. Kept so an existing reader is not silently re-pointed at a different quantity; read
+    #: `regime_verified_decisions` for the regime and `peer_error_free`/`peer_clean` for the exit.
+    timing["regime_check_ok"] = bool(timing["regime_verified_decisions"] and error is None)
     print(f"[peer] REGIME CHECK regime={args.regime} "
           f"sample_kwargs={timing['sample_kwarg_values']} (ok={ok_kw}) "
-          f"argmax_match_rate={rate} (ok={ok_rate})", flush=True)
-    if not timing["regime_check_ok"]:
+          f"argmax_match_rate={rate} over {n_dec} decisions (ok={ok_rate}) "
+          f"| peer_error_free={timing['peer_error_free']}", flush=True)
+    if not timing["regime_verified_decisions"]:
         print("[peer] 🚨 REGIME CHECK FAILED — this cell is NOT a measurement", flush=True)
+    elif not timing["peer_error_free"]:
+        print("[peer] ⚠️ the regime VERIFIED on every decision, but this process did not exit "
+              "cleanly — the games stand, the process does not", flush=True)
 
     with open(args.report_out, "w") as fh:
         json.dump(timing, fh, indent=1, default=str)
