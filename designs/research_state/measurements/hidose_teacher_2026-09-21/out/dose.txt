@@ -1,0 +1,12 @@
+$ python -m main.dose models/ai_v13_05_exploit_big5starmie models/ai_v13_06_exploit_ddtar_spikes models/ai_v13_10_exploit_stall models/ai_v13_13_exploit5_offense models/ai_v13_14_exploit5_balance models/ai_v13_15_exploit5_stall models/ai_v13_16_teach5_offense_dist models/ai_v13_12_plateau
+reference: ai_v8_14_distill3_0725  dose_rate=2.145e-08
+run                                                       steps        eff.batch  epochs  lr_median  updates/step  dose_rate  vs ref
+--------------------------------------------------------  -----------  ---------  ------  ---------  ------------  ---------  ------
+ai_v13_05_exploit_big5starmie                             83,066,880   65,536     10      0.00025    0.0001526     3.815e-08  1.78x 
+ai_v13_06_exploit_ddtar_spikes                            83,066,880   65,536     10      0.00025    0.0001526     3.815e-08  1.78x 
+ai_v13_10_exploit_stall                                   83,066,880   65,536     10      0.00025    0.0001526     3.815e-08  1.78x 
+ai_v13_13_exploit5_offense                                103,219,200  65,536     10      5.5e-05    0.0001526     8.392e-09  0.39x 
+ai_v13_14_exploit5_balance                                103,219,200  65,536     10      5.5e-05    0.0001526     8.392e-09  0.39x 
+ai_v13_15_exploit5_stall                                  103,219,200  65,536     10      5.5e-05    0.0001526     8.392e-09  0.39x 
+ai_v13_16_teach5_offense_dist  [FROZEN; pinned 5.50e-05]  103,219,200  65,536     10      5.5e-05    0.0001526     8.392e-09  0.39x 
+ai_v13_12_plateau  [FROZEN; pinned 2.80e-05]              95,158,272   65,536     10      2.8e-05    0.0001526     4.272e-09  0.20x 

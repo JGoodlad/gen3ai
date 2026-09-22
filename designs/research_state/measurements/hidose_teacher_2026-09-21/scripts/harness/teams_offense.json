@@ -1,0 +1,10 @@
+{
+ "note": "the offense 5-team teacher slice, in REGISTERED order (index = team seed offset); anchor 9eb3abdc52876a63 first. Frozen 2026-09-21.",
+ "untaught": [
+  "data/teams/sample/9eb3abdc52876a63.txt",
+  "data/teams/sample/ac17a9dde5.txt",
+  "data/teams/sample/a185b2d193.txt",
+  "data/teams/sample/9ba039ba8a.txt",
+  "data/teams/sample/b904dbe059.txt"
+ ]
+}
