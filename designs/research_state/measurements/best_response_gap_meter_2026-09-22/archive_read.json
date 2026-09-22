@@ -1,0 +1,738 @@
+{
+ "stat": "pooled",
+ "null_rate": 0.5,
+ "rate_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+ "rounds": [
+  {
+   "round": 1,
+   "target_run": "ai_v13_02_flywheel_winprob",
+   "target_file": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+   "target_step": 75005952,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "rows": [
+    {
+     "run": "ai_v13_05_exploit_big5starmie",
+     "archetype": "balance",
+     "membership": "1/5",
+     "wins": 279,
+     "games": 400,
+     "rate": 0.6975,
+     "endpoint_rate": 0.74,
+     "endpoint_step": 82000032,
+     "pooled_rate": 0.6975,
+     "pooled_games": 400,
+     "gap": 0.1975,
+     "gap_lo": 0.15078112189155313,
+     "gap_hi": 0.2404613850715731,
+     "n_cycles": 4
+    },
+    {
+     "run": "ai_v13_06_exploit_ddtar_spikes",
+     "archetype": "offense",
+     "membership": "1/5",
+     "wins": 295,
+     "games": 400,
+     "rate": 0.7375,
+     "endpoint_rate": 0.74,
+     "endpoint_step": 82000032,
+     "pooled_rate": 0.7375,
+     "pooled_games": 400,
+     "gap": 0.23750000000000004,
+     "gap_lo": 0.19226759360590995,
+     "gap_hi": 0.2782139021092418,
+     "n_cycles": 4
+    },
+    {
+     "run": "ai_v13_10_exploit_stall",
+     "archetype": "stall",
+     "membership": "1/5",
+     "wins": 289,
+     "games": 400,
+     "rate": 0.7225,
+     "endpoint_rate": 0.74,
+     "endpoint_step": 82000032,
+     "pooled_rate": 0.7225,
+     "pooled_games": 400,
+     "gap": 0.22250000000000003,
+     "gap_lo": 0.17666039064695727,
+     "gap_hi": 0.2641064842861849,
+     "n_cycles": 4
+    }
+   ],
+   "unassigned": []
+  },
+  {
+   "round": 2,
+   "target_run": "ai_v13_12_plateau",
+   "target_file": "/home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip",
+   "target_step": 95158272,
+   "budget": 8060928,
+   "dose_rate": 8.391796874999998e-09,
+   "rows": [
+    {
+     "run": "ai_v13_14_exploit5_balance",
+     "archetype": "balance",
+     "membership": "5/5",
+     "wins": 210,
+     "games": 400,
+     "rate": 0.525,
+     "endpoint_rate": 0.53,
+     "endpoint_step": 102000000,
+     "pooled_rate": 0.525,
+     "pooled_games": 400,
+     "gap": 0.025000000000000022,
+     "gap_lo": -0.023943783883440706,
+     "gap_hi": 0.07346815185345656,
+     "n_cycles": 4
+    },
+    {
+     "run": "ai_v13_13_exploit5_offense",
+     "archetype": "offense",
+     "membership": "5/5",
+     "wins": 263,
+     "games": 400,
+     "rate": 0.6575,
+     "endpoint_rate": 0.7,
+     "endpoint_step": 102000000,
+     "pooled_rate": 0.6575,
+     "pooled_games": 400,
+     "gap": 0.15749999999999997,
+     "gap_lo": 0.1096937475435954,
+     "gap_hi": 0.2023097706675051,
+     "n_cycles": 4
+    },
+    {
+     "run": "ai_v13_15_exploit5_stall",
+     "archetype": "stall",
+     "membership": "5/5",
+     "wins": 182,
+     "games": 400,
+     "rate": 0.455,
+     "endpoint_rate": 0.45,
+     "endpoint_step": 102000000,
+     "pooled_rate": 0.455,
+     "pooled_games": 400,
+     "gap": -0.044999999999999984,
+     "gap_lo": -0.09314229554910741,
+     "gap_hi": 0.0039984332030786884,
+     "n_cycles": 4
+    }
+   ],
+   "unassigned": []
+  }
+ ],
+ "deltas": [
+  {
+   "earlier_round": 1,
+   "later_round": 2,
+   "per_archetype": [
+    {
+     "archetype": "balance",
+     "gap_earlier": 0.1975,
+     "gap_later": 0.025000000000000022,
+     "delta": -0.1725,
+     "lo": -0.2376243010564945,
+     "hi": -0.10518124098142004
+    },
+    {
+     "archetype": "offense",
+     "gap_earlier": 0.23750000000000004,
+     "gap_later": 0.15749999999999997,
+     "delta": -0.08000000000000007,
+     "lo": -0.1427937863079335,
+     "hi": -0.016329864650100542
+    },
+    {
+     "archetype": "stall",
+     "gap_earlier": 0.22250000000000003,
+     "gap_later": -0.044999999999999984,
+     "delta": -0.2675,
+     "lo": -0.33113002558064986,
+     "hi": -0.20040218899251538
+    }
+   ],
+   "unpaired": [],
+   "mean_delta": -0.17333333333333334,
+   "lo": -0.26666666666666666,
+   "hi": -0.08,
+   "n_pairs": 3,
+   "verdict": "THE GAP FELL \u2014 the generalist is absorbing its best responders"
+  }
+ ],
+ "caveats": [
+  "round 1 -> 2, archetype balance: the TEAMSET SIZE changed (1/5 -> 5/5). The two gaps are best responses inside DIFFERENT subgame restrictions, so the delta confounds 'the loop absorbed it' with 'the later exploiter had a harder job'. `main.exploitability`'s caveat 2 is the same one.",
+  "round 1 -> 2, archetype offense: the TEAMSET SIZE changed (1/5 -> 5/5). The two gaps are best responses inside DIFFERENT subgame restrictions, so the delta confounds 'the loop absorbed it' with 'the later exploiter had a harder job'. `main.exploitability`'s caveat 2 is the same one.",
+  "round 1 -> 2, archetype stall: the TEAMSET SIZE changed (1/5 -> 5/5). The two gaps are best responses inside DIFFERENT subgame restrictions, so the delta confounds 'the loop absorbed it' with 'the later exploiter had a harder job'. `main.exploitability`'s caveat 2 is the same one."
+ ],
+ "mismatches": [
+  {
+   "kind": "dose",
+   "a": "ai_v13_05_exploit_big5starmie",
+   "b": "ai_v13_13_exploit5_offense",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_05_exploit_big5starmie vs ai_v13_13_exploit5_offense: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_05_exploit_big5starmie",
+   "b": "ai_v13_14_exploit5_balance",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_05_exploit_big5starmie vs ai_v13_14_exploit5_balance: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_05_exploit_big5starmie",
+   "b": "ai_v13_15_exploit5_stall",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_05_exploit_big5starmie vs ai_v13_15_exploit5_stall: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_06_exploit_ddtar_spikes",
+   "b": "ai_v13_13_exploit5_offense",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_06_exploit_ddtar_spikes vs ai_v13_13_exploit5_offense: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_06_exploit_ddtar_spikes",
+   "b": "ai_v13_14_exploit5_balance",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_06_exploit_ddtar_spikes vs ai_v13_14_exploit5_balance: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_06_exploit_ddtar_spikes",
+   "b": "ai_v13_15_exploit5_stall",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_06_exploit_ddtar_spikes vs ai_v13_15_exploit5_stall: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_10_exploit_stall",
+   "b": "ai_v13_13_exploit5_offense",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_10_exploit_stall vs ai_v13_13_exploit5_offense: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_10_exploit_stall",
+   "b": "ai_v13_14_exploit5_balance",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_10_exploit_stall vs ai_v13_14_exploit5_balance: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  },
+  {
+   "kind": "dose",
+   "a": "ai_v13_10_exploit_stall",
+   "b": "ai_v13_15_exploit5_stall",
+   "detail": "3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)",
+   "message": "DOSE MISMATCH \u2014 ai_v13_10_exploit_stall vs ai_v13_15_exploit5_stall: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)"
+  }
+ ],
+ "unmatched": true,
+ "runs": [
+  {
+   "run": "ai_v13_05_exploit_big5starmie",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_05_exploit_big5starmie",
+   "round": 1,
+   "archetype": "balance",
+   "membership": "1/5",
+   "target": {
+    "run": "ai_v13_02_flywheel_winprob",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+    "resolved_num_timesteps": 75005952,
+    "pins_own_teams": false
+   },
+   "fork_step": 75005952,
+   "num_timesteps": 83066880,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/f6229d2c867e21d6.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 76000032,
+     "wins": 64,
+     "games": 100,
+     "win_rate": 0.64,
+     "post_fork": true
+    },
+    {
+     "step": 78000000,
+     "wins": 68,
+     "games": 100,
+     "win_rate": 0.68,
+     "post_fork": true
+    },
+    {
+     "step": 80000016,
+     "wins": 73,
+     "games": 100,
+     "win_rate": 0.73,
+     "post_fork": true
+    },
+    {
+     "step": 82000032,
+     "wins": 74,
+     "games": 100,
+     "win_rate": 0.74,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 82000032,
+    "wins": 74,
+    "games": 100,
+    "win_rate": 0.74,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 279,
+    "games": 400,
+    "win_rate": 0.6975,
+    "ci": [
+     0.6507811218915531,
+     0.7404613850715731
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_06_exploit_ddtar_spikes",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_06_exploit_ddtar_spikes",
+   "round": 1,
+   "archetype": "offense",
+   "membership": "1/5",
+   "target": {
+    "run": "ai_v13_02_flywheel_winprob",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+    "resolved_num_timesteps": 75005952,
+    "pins_own_teams": false
+   },
+   "fork_step": 75005952,
+   "num_timesteps": 83066880,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/9eb3abdc52876a63.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 76000032,
+     "wins": 70,
+     "games": 100,
+     "win_rate": 0.7,
+     "post_fork": true
+    },
+    {
+     "step": 78000000,
+     "wins": 77,
+     "games": 100,
+     "win_rate": 0.77,
+     "post_fork": true
+    },
+    {
+     "step": 80000016,
+     "wins": 74,
+     "games": 100,
+     "win_rate": 0.74,
+     "post_fork": true
+    },
+    {
+     "step": 82000032,
+     "wins": 74,
+     "games": 100,
+     "win_rate": 0.74,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 82000032,
+    "wins": 74,
+    "games": 100,
+    "win_rate": 0.74,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 295,
+    "games": 400,
+    "win_rate": 0.7375,
+    "ci": [
+     0.69226759360591,
+     0.7782139021092418
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_10_exploit_stall",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_10_exploit_stall",
+   "round": 1,
+   "archetype": "stall",
+   "membership": "1/5",
+   "target": {
+    "run": "ai_v13_02_flywheel_winprob",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_02_flywheel_winprob/final_model.zip",
+    "resolved_num_timesteps": 75005952,
+    "pins_own_teams": false
+   },
+   "fork_step": 75005952,
+   "num_timesteps": 83066880,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/6d56d06b9fca508e.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 76000032,
+     "wins": 67,
+     "games": 100,
+     "win_rate": 0.67,
+     "post_fork": true
+    },
+    {
+     "step": 78000000,
+     "wins": 74,
+     "games": 100,
+     "win_rate": 0.74,
+     "post_fork": true
+    },
+    {
+     "step": 80000016,
+     "wins": 74,
+     "games": 100,
+     "win_rate": 0.74,
+     "post_fork": true
+    },
+    {
+     "step": 82000032,
+     "wins": 74,
+     "games": 100,
+     "win_rate": 0.74,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 82000032,
+    "wins": 74,
+    "games": 100,
+    "win_rate": 0.74,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 289,
+    "games": 400,
+    "win_rate": 0.7225,
+    "ci": [
+     0.6766603906469573,
+     0.7641064842861849
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_13_exploit5_offense",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_13_exploit5_offense",
+   "round": 2,
+   "archetype": "offense",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_12_plateau",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip",
+    "resolved_num_timesteps": 95158272,
+    "pins_own_teams": false
+   },
+   "fork_step": 95158272,
+   "num_timesteps": 103219200,
+   "budget": 8060928,
+   "dose_rate": 8.391796874999998e-09,
+   "lr_median": 5.4996479999999986e-05,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/9eb3abdc52876a63.txt",
+    "data/teams/sample/ac17a9dde5.txt",
+    "data/teams/sample/a185b2d193.txt",
+    "data/teams/sample/9ba039ba8a.txt",
+    "data/teams/sample/b904dbe059.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 96000000,
+     "wins": 59,
+     "games": 100,
+     "win_rate": 0.59,
+     "post_fork": true
+    },
+    {
+     "step": 98000016,
+     "wins": 67,
+     "games": 100,
+     "win_rate": 0.67,
+     "post_fork": true
+    },
+    {
+     "step": 100000032,
+     "wins": 67,
+     "games": 100,
+     "win_rate": 0.67,
+     "post_fork": true
+    },
+    {
+     "step": 102000000,
+     "wins": 70,
+     "games": 100,
+     "win_rate": 0.7,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 102000000,
+    "wins": 70,
+    "games": 100,
+    "win_rate": 0.7,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 263,
+    "games": 400,
+    "win_rate": 0.6575,
+    "ci": [
+     0.6096937475435954,
+     0.7023097706675051
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_14_exploit5_balance",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_14_exploit5_balance",
+   "round": 2,
+   "archetype": "balance",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_12_plateau",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip",
+    "resolved_num_timesteps": 95158272,
+    "pins_own_teams": false
+   },
+   "fork_step": 95158272,
+   "num_timesteps": 103219200,
+   "budget": 8060928,
+   "dose_rate": 8.391796874999998e-09,
+   "lr_median": 5.4996479999999986e-05,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/f6229d2c867e21d6.txt",
+    "data/teams/sample/aea50f207e.txt",
+    "data/teams/sample/9f27f5d3e34021a7.txt",
+    "data/teams/sample/9b454d9ea7.txt",
+    "data/teams/sample/82e97fe2bfbb6f69.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 96000000,
+     "wins": 54,
+     "games": 100,
+     "win_rate": 0.54,
+     "post_fork": true
+    },
+    {
+     "step": 98000016,
+     "wins": 45,
+     "games": 100,
+     "win_rate": 0.45,
+     "post_fork": true
+    },
+    {
+     "step": 100000032,
+     "wins": 58,
+     "games": 100,
+     "win_rate": 0.58,
+     "post_fork": true
+    },
+    {
+     "step": 102000000,
+     "wins": 53,
+     "games": 100,
+     "win_rate": 0.53,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 102000000,
+    "wins": 53,
+    "games": 100,
+    "win_rate": 0.53,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 210,
+    "games": 400,
+    "win_rate": 0.525,
+    "ci": [
+     0.4760562161165593,
+     0.5734681518534566
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_15_exploit5_stall",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_15_exploit5_stall",
+   "round": 2,
+   "archetype": "stall",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_12_plateau",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip",
+    "resolved_num_timesteps": 95158272,
+    "pins_own_teams": false
+   },
+   "fork_step": 95158272,
+   "num_timesteps": 103219200,
+   "budget": 8060928,
+   "dose_rate": 8.391796874999998e-09,
+   "lr_median": 5.4996479999999986e-05,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/6d56d06b9fca508e.txt",
+    "data/teams/sample/8cdc78b2d46f0515.txt",
+    "data/teams/sample/0972146213a667c9.txt",
+    "data/teams/sample/a9831a5f5e.txt",
+    "data/teams/sample/a04c29cf769e9a11.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 96000000,
+     "wins": 42,
+     "games": 100,
+     "win_rate": 0.42,
+     "post_fork": true
+    },
+    {
+     "step": 98000016,
+     "wins": 41,
+     "games": 100,
+     "win_rate": 0.41,
+     "post_fork": true
+    },
+    {
+     "step": 100000032,
+     "wins": 54,
+     "games": 100,
+     "win_rate": 0.54,
+     "post_fork": true
+    },
+    {
+     "step": 102000000,
+     "wins": 45,
+     "games": 100,
+     "win_rate": 0.45,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 102000000,
+    "wins": 45,
+    "games": 100,
+    "win_rate": 0.45,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 182,
+    "games": 400,
+    "win_rate": 0.455,
+    "ci": [
+     0.4068577044508926,
+     0.5039984332030787
+    ]
+   }
+  }
+ ],
+ "played": null,
+ "_meta": {
+  "tool": "main.best_response_gap",
+  "argv": [
+   "ai_v13_05_exploit_big5starmie",
+   "ai_v13_06_exploit_ddtar_spikes",
+   "ai_v13_10_exploit_stall",
+   "ai_v13_13_exploit5_offense",
+   "ai_v13_14_exploit5_balance",
+   "ai_v13_15_exploit5_stall",
+   "--allow-unmatched",
+   "--json",
+   "/home/goodlad/dev/gen3ai-wt/brgap/designs/research_state/measurements/best_response_gap_meter_2026-09-22/archive_read.json",
+   "--md",
+   "/home/goodlad/dev/gen3ai-wt/brgap/designs/research_state/measurements/best_response_gap_meter_2026-09-22/archive_read.md",
+   "--quiet"
+  ],
+  "generated_at": "2026-09-22T12:54:22",
+  "cwd": "/home/goodlad/dev/gen3ai-wt/brgap",
+  "teamsets": "/home/goodlad/dev/gen3ai-wt/brgap/designs/research_state/exploiter_teamsets_2026-09-22.json",
+  "play": null
+ }
+}

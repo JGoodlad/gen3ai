@@ -182,9 +182,21 @@ def load_team_manifest(path: str, *, prefix: str = "U") -> List[TeamSlice]:
     if not isinstance(items, list) or not items:
         raise MeterError(f"{path}: the team list is empty or not a list")
 
+    return team_slices(items, prefix=prefix, source=path)
+
+
+def team_slices(paths: Sequence[str], *, prefix: str = "U",
+                source: str = "team list") -> List[TeamSlice]:
+    """Ordered :class:`TeamSlice` records for an explicit list of team files.
+
+    Split out of :func:`load_team_manifest` so a caller that already HOLDS the paths — an
+    exploiter's recorded `--trainee-teams` pin, read back through
+    `matchup_spec.read_recorded_trainee_teams` — can build the same slices without first
+    writing a manifest file. `source` only names the input in the refusal message.
+    """
     slices: List[TeamSlice] = []
     missing: List[str] = []
-    for i, rel in enumerate(items):
+    for i, rel in enumerate(paths):
         full = rel if os.path.isabs(rel) else str(repo_path(rel))
         if not os.path.isfile(full):
             missing.append(full)
@@ -199,7 +211,7 @@ def load_team_manifest(path: str, *, prefix: str = "U") -> List[TeamSlice]:
                                 sha1=raw_sha, pin_sha=raw_sha[:10],
                                 team_sha=team_sha(data.decode())))
     if missing:
-        raise MeterError(f"{path}: {len(missing)} team file(s) missing:\n  "
+        raise MeterError(f"{source}: {len(missing)} team file(s) missing:\n  "
                          + "\n  ".join(missing))
     return slices
 
@@ -467,9 +479,17 @@ def play_cells(
     seed: int = DEFAULT_SEED,
     impl: str = "rust",
     concurrency: int = 1,
+    stochastic: bool = True,
     progress=None,
 ) -> Dict[str, Dict[str, Cell]]:
-    """Play every (ref × team) cell and return the raw counts. ``concurrency`` must be 1."""
+    """Play every (ref × team) cell and return the raw counts. ``concurrency`` must be 1.
+
+    ``stochastic`` sets BOTH sides' sampling regime and defaults to True — the TRAINING regime,
+    which is what every untaught-meter level on record was measured in. ``False`` is the EVAL
+    regime (argmax both sides), the one `main.eval_worker` plays a fixed cross-run opponent in;
+    the two are different populations and a number must never leave either without saying which
+    it is (`main.best_response_gap` prints the regime on every row).
+    """
     check_concurrency(concurrency)
     import asyncio
 
@@ -506,11 +526,11 @@ def play_cells(
             pilot = RLPlayer(model=model, team=PinnedTeam(team.path), battle_format="gen3ou",
                              server_configuration=LocalhostServerConfiguration, mappings=maps,
                              account_configuration=AccountConfiguration(f"UM{ti}a", "pw"),
-                             stochastic=True, start_listening=False)
+                             stochastic=stochastic, start_listening=False)
             opp = RLPlayer(model=opp_model, team=pool, battle_format="gen3ou",
                            server_configuration=LocalhostServerConfiguration, mappings=maps,
                            account_configuration=AccountConfiguration(f"UM{ti}b", "pw"),
-                           stochastic=True, start_listening=False)
+                           stochastic=stochastic, start_listening=False)
             pool.set_sequence(seqs[ti])
             cell = Cell()
             for j in range(games_per_team):

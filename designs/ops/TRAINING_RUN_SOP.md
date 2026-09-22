@@ -197,6 +197,23 @@ with what it measures.
 | **a HIGH-POWER offline re-read** | `python -m main.ops.eval_trace_gen <run>@<step> --games N --sentinels K --out DIR` on EACH side, then `main.ops.critic_read … --arm-traces DIR --control-traces DIR` — for when the ladder read's binding constraint is POWER, not effect size |
 | **the TRAINING-SIDE calibration** | `python -m main.ops.value_sidecar_read <run> --out <dir>` — mean V vs mean target, the Murphy decomposition and skill, sliced by turn bucket / opponent class / outcome / 1M step bucket, each with an EPISODE-clustered CI |
 
+🚨 **EVERYTHING IN THAT TABLE IS A *LIVE* INSTRUMENT — the OFFLINE meters are a different tier and
+are NOT run against a live arm for a verdict.** The live ones read TensorBoard events, the launcher
+child log and checkpoint mtimes while all of those are still being appended to; the offline ones
+(the root `CLAUDE.md`'s offline-meters block: `main.elo`, `main.untaught_meter`, `main.critic_gate`,
+`main.exploitability`, `main.dose`, `main.lineage`, `main.best_response_gap`, …) read a FINISHED
+run's committed artifacts, play no part in the four watch layers, and write nothing under
+`models/`. Two that a population-loop week reaches for, and which tier each belongs to:
+
+| the read | tier | the command |
+|---|---|---|
+| the BEST-RESPONSE GAP — does a fresh exploiter's edge over the generalist FALL round over round? | **OFFLINE** | `python -m main.best_response_gap <exploiter run…> [--stat endpoint] [--allow-unmatched]` — per round × archetype from each run's own recorded vs-target cycles; REFUSES an unmatched budget / dose / regime, naming the cause. `--play N` also plays N fresh head-to-head games (a different REGIME from the series; the report keeps them apart) |
+| the generation EXPLOITABILITY curve, from admission artifacts | **OFFLINE** | `python -m main.exploitability <artifact.json>` — plays nothing; the best-response NET extraction against a seniority-matched reference |
+
+⚠️ **Those two do not predict each other.** The gap plays the TARGET ITSELF; the admission gate
+plays a fixed THIRD PARTY. On 2026-09-21 the head-to-head winner was the most NEGATIVE arm on the
+third-party gate. Quote them side by side, never one as evidence for the other.
+
 🚨 **PIN `critic_read`'s CYCLE WITH `--step` WHENEVER THE ARM'S LAUNCHER MAY STILL BE ALIVE.**
 `--on-live skip-newest` is the default and it DROPS the newest cycle when any process still names
 the run — so a finished 10M arm whose launcher had not yet exited is read at **8M**, and the

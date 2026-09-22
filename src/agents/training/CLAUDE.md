@@ -340,6 +340,18 @@ A clean opponent-mix front-end for the league **exploiter** role: train a dedica
 ONE fixed foreign model as the **sole opponent every episode**, to surface (and then patch, by
 folding the exploiter back as a stable opponent / pool member) the non-robustness a *self-play* Nash
 cannot see. It needs **no `--self-play` / `--stable-opponents` / share fiddling**.
+
+🚨 **AN EXPLOITER'S GAIN IS TARGET-SPECIFIC AND DOES NOT ARRIVE AS PILOTING SKILL** (ledger
+2026-09-21). All three 5-team teachers were LEVEL with the plateau parent on their own five teams
+against a fixed third party (−1.00 / +0.58 / −1.12 pp, every CI straddling zero) while the offense
+teacher beat that same parent **0.657 [0.610, 0.702] head-to-head**; the redesign against a
+DISTRIBUTION of opponents failed identically (−1.37 pp). So an exploiter is read as an OPPONENT for
+the pool, not as a teacher — and the meter for the loop that consumes it that way is the
+**BEST-RESPONSE GAP**, `python -m main.best_response_gap` (offline; see the root `CLAUDE.md`'s
+offline-meters block and `designs/training/exploiter_and_distillation.md`). It REFUSES a comparison
+at unmatched budget / dose / regime, because that week's era-2/era-1 read was confounded by a 4.5×
+dose gap nobody registered.
+
 **Full detail — in [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md).**
 
 ## Team curriculum — team-side PFSP (`--team-pfsp`) and per-team win-rate tracking (`--team-wr-tracking`)
