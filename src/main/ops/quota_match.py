@@ -363,8 +363,12 @@ def rung(run_dir: str, step: int, arr: np.ndarray, meta: Dict[str, Any],
     points: Dict[str, List[float]] = {k: [] for k in keys}
     for s in range(int(seeds)):
         sarr, smeta = subsample(arr, meta, caps, seed=s)
+        # The column comes from the FRAME, never from a second opinion: `subsample` preserves
+        # `meta["v_column"]`, so this is the column the data actually carries and
+        # `conditioning_block`'s agreement check can only pass.
         blk = CM.conditioning_block(run_dir, step, boot=0, seed=block_seed, ladder="off",
-                                    frame=(sarr, smeta))
+                                    frame=(sarr, smeta),
+                                    v_column=smeta.get("v_column", CM.DEFAULT_V_COLUMN))
         for k in keys:
             points[k].append(float(blk["points"].get(k, float("nan"))))
         frames.append({"seed": s, "n_battles": blk["frame"]["n_battles"],
@@ -387,7 +391,8 @@ def rung(run_dir: str, step: int, arr: np.ndarray, meta: Dict[str, Any],
     for s in sorted(set(median_seed.values())):
         sarr, smeta = subsample(arr, meta, caps, seed=s)
         boots[s] = CM.conditioning_block(run_dir, step, boot=int(boot), seed=block_seed,
-                                         ladder="off", frame=(sarr, smeta))
+                                         ladder="off", frame=(sarr, smeta),
+                                         v_column=smeta.get("v_column", CM.DEFAULT_V_COLUMN))
     say(f"  rung caps {'/'.join(str(c) for c in caps)}: {seeds} subsample seeds scanned, "
         f"{len(boots)} bootstrapped (median battles "
         f"{int(np.median([f['n_battles'] for f in frames]))}, median decoder battles "
@@ -513,6 +518,7 @@ def build_quota_match(arm: Dict[str, Any], ctl: Dict[str, Any], args, *,
                "profiles": {r: _profile_doc(pr) for r, pr in profiles.items()},
                "seeds": int(args.quota_match_seeds),
                "boot": int(args.quota_match_boot or args.cond_boot),
+               "v_column": CM.v_column_of(args),
                "keys": list(CM.FRAME_SENSITIVE_KEYS)}
         if pln["needed"]:
             say("🚨 --no-quota-match: the FRAME-SENSITIVE conditioning rows will be printed "
@@ -520,10 +526,17 @@ def build_quota_match(arm: Dict[str, Any], ctl: Dict[str, Any], args, *,
         return doc
     cache: Dict[str, Any] = {}
 
+    # 🚨 THE V COLUMN IS READ ONCE, THROUGH THE SHARED ACCESSOR, AND USED HERE. This extraction
+    # is the matched path's OWN read of the trace tree — `conditioning_block`'s `v_column`
+    # argument selects nothing once a frame is injected — so a column not applied HERE is a
+    # column silently ignored on every matched row while the as-traced table reads the other one
+    # (`flywheel_pair_read_2026-09-15/` H-L).
+    v_column = CM.v_column_of(args)
+
     def load_frame(side: str):
         if side not in cache:
             d = arm if side == "arm" else ctl
-            cache[side] = CM.extract_cycle(d["trace_dir"])
+            cache[side] = CM.extract_cycle(d["trace_dir"], v_column=v_column)
         return cache[side]
 
     t0 = time.time()
@@ -535,6 +548,7 @@ def build_quota_match(arm: Dict[str, Any], ctl: Dict[str, Any], args, *,
                    boot=int(args.quota_match_boot or args.cond_boot),
                    block_seed=int(args.seed), say=say)
     doc["enabled"] = True
+    doc["v_column"] = v_column
     doc["elapsed_sec"] = round(time.time() - t0, 1)
     say(f"quota-match: done in {doc['elapsed_sec']} s")
     return doc

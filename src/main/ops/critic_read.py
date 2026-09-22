@@ -388,7 +388,7 @@ def _cond_fingerprint(cycle: Dict[str, Any], args) -> Dict[str, Any]:
             "step": cycle["step"],
             "boot": args.cond_boot, "seed": args.seed, "ladder": args.cond_ladder,
             "saved_at": (cycle.get("manifest") or {}).get("saved_at"),
-            "v_column": getattr(args, "v_column", "win_probs"),
+            "v_column": CM.v_column_of(args),
             "meters": list(CM.METER_KEYS), "block_version": 3}
 
 
@@ -710,7 +710,7 @@ def read_run(run_dir: Path, cache_dir: Path, args, *, say, step: Optional[int] =
             try:
                 cond = CM.conditioning_block(str(source), cycle["step"], boot=args.cond_boot,
                                              seed=args.seed, ladder=args.cond_ladder,
-                                             v_column=getattr(args, "v_column", "win_probs"),
+                                             v_column=CM.v_column_of(args),
                                              say=say)
             except CM.ConditioningRefusal as exc:
                 cond, cond_refusal = None, str(exc)
@@ -1204,7 +1204,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "which keeps every banked read byte-identical. Only the RANK-based rows "
                          "(the AUCs) are valid under `values`; the calibration family is not "
                          "defined on a raw shaped-return scale, and the gate.* reliability rows "
-                         "are computed by the scaffolding gauge on `win_probs` regardless.")
+                         "are computed by the scaffolding gauge on `win_probs` regardless. It "
+                         "reaches the QUOTA-MATCHED rows too: until 2026-09-22 it did not, "
+                         "because the matched path extracts its own frame and was not passing "
+                         "the flag — a `values` report's matched rows came out identical to a "
+                         "`win_probs` one while its as-traced table read the other column.")
     ap.add_argument("--no-conditioning", action="store_true",
                     help="skip the CONDITIONING section entirely")
     ap.add_argument("--no-quota-match", action="store_true",

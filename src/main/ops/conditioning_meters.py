@@ -180,7 +180,33 @@ STATE_DTYPE = np.dtype([("opponent", "U32"), ("opp_class", "U8"), ("battle", "U8
                         ("team", "U12"), ("true_wr", "f8"), ("n_games", "f8")])
 
 
-def extract_cycle(trace_dir: str, *, v_column: str = "win_probs") -> Tuple[np.ndarray, Dict[str, Any]]:
+#: The two npz columns ``V`` may be read from. NAMED here so the CLI, the as-traced path and the
+#: quota-MATCHED path cannot disagree about what is legal.
+V_COLUMNS = ("win_probs", "values")
+
+#: The column every banked read was taken with. Changing it would silently re-scale history.
+DEFAULT_V_COLUMN = "win_probs"
+
+
+def v_column_of(args: Any) -> str:
+    """THE one place ``--v-column`` is read off an argv namespace.
+
+    🚨 It exists because the alternative is what actually happened: `critic_read` read the flag
+    with ``getattr(args, "v_column", "win_probs")`` at the as-traced call site, and
+    :mod:`main.ops.quota_match` — which extracts its OWN frame — did not read it at all. A
+    ``--v-column values`` report's quota-MATCHED rows were therefore byte-identical to the
+    ``win_probs`` run while its as-traced table read the shaped column: two halves of one report
+    disagreeing about which tensor ``V`` is, with nothing on the page saying so
+    (`flywheel_pair_read_2026-09-15/` H-L). One accessor, read by both paths, is the fix.
+    """
+    col = getattr(args, "v_column", None) or DEFAULT_V_COLUMN
+    if col not in V_COLUMNS:
+        raise ConditioningRefusal(f"v_column must be one of {V_COLUMNS}, got {col!r}")
+    return str(col)
+
+
+def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
+                  ) -> Tuple[np.ndarray, Dict[str, Any]]:
     """One eval cycle -> a tidy per-STATE table, plus what was refused and why.
 
     One row per traced decision point that has a state and a real turn:
@@ -202,8 +228,8 @@ def extract_cycle(trace_dir: str, *, v_column: str = "win_probs") -> Tuple[np.nd
     probability scale — the calibration slope/intercept, and every ``gate.*`` reliability row —
     is undefined on a raw shaped-return column, and the returned meta says so.
     """
-    if v_column not in ("win_probs", "values"):
-        raise ConditioningRefusal(f"v_column must be 'win_probs' or 'values', got {v_column!r}")
+    if v_column not in V_COLUMNS:
+        raise ConditioningRefusal(f"v_column must be one of {V_COLUMNS}, got {v_column!r}")
     from main.scaffolding_gauge import opponent_class
 
     man_path = os.path.join(trace_dir, "eval_manifest.json")
@@ -975,7 +1001,7 @@ def _cap_states(arr: np.ndarray, mask: np.ndarray, cap: int, seed: int) -> np.nd
 def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int = BOOT_SEED,
                        ladder: str = "refit",
                        frame: Optional[Tuple[np.ndarray, Dict[str, Any]]] = None,
-                       v_column: str = "win_probs",
+                       v_column: str = DEFAULT_V_COLUMN,
                        say: Callable[[str], None] = lambda _m: None) -> Dict[str, Any]:
     """Every conditioning meter for ONE run at ONE cycle, with its raw bootstrap draws.
 
@@ -990,7 +1016,26 @@ def conditioning_block(run_dir: str, step: int, *, boot: int = N_BOOT, seed: int
     subsample touches) is unaffected.
     """
     trace_dir = os.path.join(run_dir, "eval_traces", f"step_{int(step)}")
-    arr, meta = extract_cycle(trace_dir, v_column=v_column) if frame is None else frame
+    if frame is None:
+        arr, meta = extract_cycle(trace_dir, v_column=v_column)
+    else:
+        arr, meta = frame
+        # 🚨 `v_column` SELECTS NOTHING when a frame is injected — the column was chosen when the
+        # frame was extracted. That is precisely how `--v-column values` came to be silently
+        # ignored on every quota-MATCHED row: the caller passed the flag here (or, worse, did
+        # not) while the frame it handed over had been extracted at the default. So the two are
+        # CHECKED against each other rather than one quietly winning; a frame that predates the
+        # `v_column` meta key is trusted as the default, which is what it was.
+        got = meta.get("v_column", DEFAULT_V_COLUMN)
+        if got != v_column:
+            raise ConditioningRefusal(
+                f"conditioning_block was asked for v_column={v_column!r} but the INJECTED frame "
+                f"was extracted with v_column={got!r} ({meta.get('trace_dir')}). A frame's column "
+                "is fixed at extraction — passing a different one here would change the label on "
+                "the row and nothing else, which is the silent-ignore this check exists to stop. "
+                f"FIX: extract the frame with v_column={v_column!r} "
+                "(`conditioning_meters.extract_cycle(..., v_column=...)`), or read the column off "
+                "the frame itself (`meta['v_column']`).")
     b = rollup(arr)
     opps, cid = cell_index(b)
     n_cells = len(opps)

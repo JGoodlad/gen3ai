@@ -183,6 +183,70 @@ fixture switches.
 
 ---
 
+## 3. `critic_read --v-column` now reaches the quota-MATCHED rows
+
+**Row (2026-09-16):** `quota_match._scan` calls `conditioning_block(...)` without `v_column`, so
+a `--v-column values` report's matched rows are byte-identical to the `win_probs` run while its
+as-traced table reads the shaped column. Suggested fix: "one kwarg at two call sites".
+
+### The named site was not the bug
+
+`conditioning_block(run_dir, step, *, frame=(arr, meta), v_column=…)` **selects nothing** when a
+frame is injected: the column was chosen when the frame was extracted, and the argument only
+reaches `extract_cycle` on the `frame is None` branch. Adding the kwarg at those two call sites
+would have looked like a fix and changed no number.
+
+The flag is actually dropped one level up, in `quota_match.build_quota_match`:
+
+```python
+cache[side] = CM.extract_cycle(d["trace_dir"])      # ← no v_column, ever
+```
+
+That is the matched path's OWN read of the trace tree. `critic_read`'s as-traced path passed
+`getattr(args, "v_column", "win_probs")`; the matched path had no opinion at all — two
+independent reads of one flag, which is the shape of the defect.
+
+### What landed
+
+* **`conditioning_meters.v_column_of(args)`** — THE one accessor, plus named `V_COLUMNS` and
+  `DEFAULT_V_COLUMN`. Both `critic_read` call sites and `quota_match` now use it; a test asserts
+  neither module still contains its own `getattr(args, "v_column"`.
+* **`build_quota_match` extracts with the requested column** and records it on the document
+  (`doc["v_column"]`), on both the matched and the opted-out branch.
+* **`rung` reads the column OFF THE FRAME** (`smeta["v_column"]`, preserved by `subsample`), so
+  the two `conditioning_block` calls agree with the data by construction rather than by a caller
+  remembering.
+* **`conditioning_block` REFUSES a frame/column disagreement** — the structural guard that turns
+  the silent no-op into a loud `ConditioningRefusal` naming the fix. A frame predating the
+  `v_column` meta key is trusted as the default, which is what it was.
+
+### Tests that fail on revert
+
+`src/main/ops/v_column_matched_test.py` plants a cycle where the two npz columns carry DIFFERENT
+signals (`win_probs` is a function of the opponent only; `values` adds a strong per-team term), so
+the own-team decoder finds something in one and almost nothing in the other:
+
+* `test_the_matched_rows_CHANGE_when_the_v_column_does` — drives `build_quota_match` end to end
+  at each column and asserts the matched points differ. **Verified against a revert**: with the
+  `v_column=` kwarg removed from `build_quota_match`'s `extract_cycle`, this fails with "every
+  quota-MATCHED row came out identical".
+* `test_the_matched_frame_is_extracted_with_the_requested_column` — also fails on the same
+  revert (`['win_probs', 'win_probs']`).
+* `test_the_two_paths_read_the_flag_through_ONE_accessor` — fails if either module reintroduces
+  its own `getattr`.
+* `test_a_frame_whose_column_DISAGREES_with_the_request_is_REFUSED`, and
+  `test_a_pre_v_column_frame_is_trusted_as_the_DEFAULT_not_refused`.
+* `test_the_subsample_carries_the_column_into_every_matched_block`.
+
+### Still open
+
+* Banked reads are unaffected: every one was taken at the default `win_probs`, and the
+  `conditioning_meters_v5_golden.json` byte-identity pin still holds.
+* The `gate.*` reliability rows are still computed by the scaffolding gauge on `win_probs`
+  regardless of the flag — pre-existing, documented in `--v-column`'s help, not changed here.
+
+---
+
 ## Ready-to-append ledger paragraph
 
 > **2026-09-22 · TECH DEBT P1 ×1 — the `production` baseline was never the problem; the BARE
@@ -224,3 +288,20 @@ fixture switches.
 > `LADDER_FITTER_VERSION` is documented as bump-on-meaning-change, so the NEXT recipe change is
 > loud too. Every ladder already on disk reads `absent` until refit, which is intended.
 > `src/agents/training/ladder_recipe_test.py`; `measurements/p1_backlog_batch_2026-09-22/`.
+
+
+> **2026-09-22 · TECH DEBT P1 ×3 — `critic_read --v-column` now reaches the quota-MATCHED rows,
+> and the backlog row's suggested fix would have changed no number.** The row named
+> `conditioning_block(...)` without `v_column` as the site. That argument SELECTS NOTHING once a
+> frame is injected — the column is fixed at extraction — so the real drop was one level up, in
+> `quota_match.build_quota_match`, which reads the trace tree itself with
+> `CM.extract_cycle(d["trace_dir"])` and no column at all. Fixed there. Both halves of a report
+> now read the flag through ONE accessor (`conditioning_meters.v_column_of`), replacing two
+> independent `getattr(args, "v_column", …)` reads; `rung` takes the column off the FRAME so it
+> agrees with the data by construction; and `conditioning_block` REFUSES an injected frame whose
+> recorded column disagrees with the request, turning a silent no-op into a loud error naming the
+> fix. `src/main/ops/v_column_matched_test.py` plants a cycle whose `values` and `win_probs` are
+> different tensors and asserts the matched rows change with the column — verified to fail on a
+> revert of the one-line extraction fix. Banked reads unaffected (all at the `win_probs`
+> default; the v5 golden byte-identity pin still holds).
+> `measurements/p1_backlog_batch_2026-09-22/`.
