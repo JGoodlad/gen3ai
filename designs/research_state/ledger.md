@@ -20585,3 +20585,62 @@ Four of five per-team rows are negative (−0.019 / −0.031 / −0.006 / +0.016
 🚨 **THE LADDER'S REGISTRATION MUST SAY THIS OUT LOUD, AND DOES:** **its teacher has NOTHING TRANSFERABLE BY THE GATE** (−1.00 pp on its own teams). So the ladder is **NOT** a test of whether distillation gains anything — that half is already answered and the answer is that there is nothing to gain. It measures the **COST** of each target form on the untaught 8 (fold-1 showed K = 1 costs ~10 pp) and whether widening the target removes it. **The owner's loss-form question survives the gate; the gain half does not.** Any later reading of these three arms that treats a flat untaught row as "distillation was neutral" rather than "the target form was cheap" is misreading the design.
 
 📌 **A SMALL STRUCTURAL FINDING, recorded because it blocks a guard.** Building the backlog's "make the named-frozen teacher LR structural" row: **`model_config.json` is blind to the ENTIRE optimisation block** — its 144 keys contain no `fork_lr`, no `fork_lr_freeze`, no `learning_rate`, no `batch_size`, no `n_epochs`, no `grad_accum_steps` (the only near-match is the unrelated `progress_switch_freeze`). The plateau parent's own `--fork-lr 2.8e-5 --fork-lr-freeze` appears **only** in `metadata.json`'s `original_command`. So a launch-path guard that wants to warn "you are forking a FROZEN parent without naming your own LR" must read the parent's recorded COMMAND, not its config — the same blindness that hid `team_block_episodes`. The row was NOT built today: it is a launch-path change and three 12-hour arms were about to launch on that path. Tag: **MEASURED (MAJOR) · the DISTRIBUTION-trained teacher is NOT ADMITTED, −1.37 pp [−2.78, +0.27] · its cell REPRODUCED the parent at 59.92 pp to the decimal · matched pair vs the one-target teacher (−1.00) differing ONLY in opponent regime ⇒ THE REGIME IS NOT THE REASON, NOT CONFIRMED at the registered standard · the claim broadens to "+8M at 0.39× from a plateaued parent does not make a better pilot, whatever it trains against", with dose / team-ceiling / meter-resolution all still live · branch (b) TAKEN: teacher line CLOSED for this parent at this dose · `ai_v13_17_fold_k1` LAUNCHED as a COST read with a teacher that has NOTHING TRANSFERABLE · `model_config.json` is blind to the whole optimisation block**.
+
+### 2026-09-21 · OPS · **THE HIGH-DOSE TEACHER IS PREPARED, NOT LAUNCHED — `ai_v13_18_teach5_offense_hidose` puts the dose back to era-1's 1.78× and changes nothing else, so the ONE lever the stage-A read could not move is the only thing that differs.**
+
+`designs/research_state/measurements/hidose_teacher_2026-09-21/` registers, before the arm exists,
+the read that separates the two accounts left standing by the 2026-09-21 admission gate: **(A) the
+era-2 teachers were under-trained at 0.39×**, or **(B) the plateau parent is at a team-level ceiling
+on these five teams and no dose buys a piloting gain.** Four teachers have now failed the same gate
+on the same parent — offense **−1.00 pp** [−4.80, +2.13], balance **+0.58** [−0.32, +1.28], stall
+**−1.12** [−3.37, +0.88], and stage A `ai_v13_16_teach5_offense_dist` (self-play, frozen 5.5e-5)
+**−1.37 pp** [−2.78, +0.27] (58.55 vs 59.92 pp, 8,000 battles, 0 timeouts, re-derived here with
+`admission_delta.py`'s own bootstrap, seed 20260915) — every one inside ±1.4 pp against a 4.75 pp
+floor, and all four at **8.392e-9 = 0.39×**.
+
+**THE ARM, PREPARED AND VALIDATED BUT DELIBERATELY NOT LAUNCHED.**
+`ai_v13_18_teach5_offense_hidose` is `ai_v13_13_exploit5_offense`'s own resolved `original_command`
+with a **four-token diff**: `--run-name`, plus **`--fork-lr 2.5e-4 --fork-lr-freeze`** (227 → 230
+tokens). Same plateau-parent fork, same five offense teams, same +8,000,000 (a `--steps` TOTAL of
+103,158,272), same seed 1001, same `--team-block-episodes 1`, same `--exploiter
+models/ai_v13_12_plateau/final_model.zip --exploiter-keep-bots`, no `--self-play`. **The `2.5e-4` is
+arithmetic, not a guess:** every run in the lineage shares `--batch-size 2048 --grad-accum-steps 32
+--n-epochs 10` ⇒ `updates/step = 10/65,536 = 1.52588e-4`, so era-1's measured **3.815e-8** inverts
+to `3.815e-8 / 1.52588e-4 = 2.500e-4`, and forward `2.5e-4 × 1.52588e-4 = 3.8147e-8 = 1.78×` the v8
+reference `2.145e-8` — the same number, at the same shape. `--fork-lr-freeze` is load-bearing: era-2
+inherited 2.8e-5 WITHOUT the freeze and its live KL controller annealed it up to 8.36e-5, which is
+how "same recipe" produced a non-stationary lr. **Validated by EXECUTING**: `checkargs` **131 / 129
+accepted / 2 launcher-owned / 0 unrecognized**, the **ARCH-surface diff vs `ai_v13_13` EMPTY** (both
+match `production_config@360f8378dd90` on every ARCH key; the only report difference is the +2
+fork-lr flags), and `launcher --dry-run` resolves **FORK of `ai_v13_12_plateau` → +8,000,000 steps,
+`--fork-lr 0.00025`, `--fork-lr-freeze True`, pin `6eb9c776`, nothing created**.
+
+**THE READ IS REGISTERED IN FULL:** the admission gate verbatim — its own five teams in registered
+order, both refs in ONE `main.untaught_meter` invocation (CRN), `untaught_meter_opponent` as the
+fixed third party, 800 games/team = 8,000 battles, `--seed 0`, concurrency 1, paired bootstrap over
+the five TEAMS at seed 20260915 — **plus a collateral untaught-8 cell read whichever way the primary
+goes** (floor 3.69 pp, parent's banked level 60.19 pp). Rule: OUTSIDE iff `|Δ| > floor` AND the CI
+excludes the floor point; ADMITTED iff OUTSIDE **and** ABOVE, at **both** floors 4.75 / 8.50.
+Prior **P(admitted) ≈ 0.25**, registered against the arm, with a secondary prediction that its
+vs-target curve reaches ≥0.72 by +3M and flattens. Branches: **(a) admitted ⇒ dose was the account,
+teachers exist at 1.78×, and balance + stall get the same treatment before any K ladder; (b) not
+admitted ⇒ the team-level ceiling is the surviving account and the teacher line is CLOSED for this
+parent** (five teachers, two recipes, two doses, one gate) — scoped to *specialising THIS parent on
+a pinned team set at ≤ +8M*, closing neither distillation nor the K ladder; **(c) admitted WITH an
+untaught-8 cost outside the floor ⇒ reported as such, (a)'s consequences SUSPENDED and the trade
+goes back to the orchestrator**, because on-slice-for-off-slice is the exact shape that convicted
+the era-1 fold; **(d) uncovered — not admitted AND collateral below ⇒ the dose is actively harmful
+on this parent; launch nothing.** Tag: **OPS · `ai_v13_18_teach5_offense_hidose` PREPARED, NOT
+LAUNCHED · 4-token diff from `ai_v13_13`, ARCH diff EMPTY, checkargs 131/129/2/0, dry-run +8,000,000
+clean · dose `2.5e-4 × 1.52588e-4 = 3.815e-8 = 1.78×`, the era-1 value re-derived from the formula ·
+stage A `ai_v13_16` re-read at **−1.37 pp** [−2.78, +0.27], the FOURTH gate refusal at 0.39× ·
+prior 0.25 AGAINST · four branches + the uncovered case registered · `launch.sh` ready for the
+Training Run session; this session launched nothing and touched no GPU**.
+
+### 2026-09-21 · OPS · **TWO GUARDS LANDED: a fork of a FROZEN parent must NAME its dose (`gen3_fork_lr_inherit_guard_v1`, `35258dcc` — 3 of 162 archived forks fire it, exactly the three era-2 exploiters), and `main.anchors`' `regime_verified` is SPLIT into `regime_verified_decisions` + `peer_clean` (`gen3_anchor_regime_split_v1`, `6e25c380` — all 31 flagged sub-cells of the 8,400-game A/B flip to VERIFIED, 0 remain)**
+
+**The fork-lr guard.** A fork whose parent ran at a frozen lr and whose own argv names neither `--fork-lr` nor `--fork-lr-freeze` is a startup `[ForkLR] FATAL` (`FATAL_CONFIG`, exit 3, before the run dir exists), printing the parent's frozen value and the fix; `--allow-inherited-fork-lr` opts in deliberately. The evidence is read from the parent's `metadata.json` `original_command` via `agents.training.lineage`, because the optimisation block is NOT in `model_config.json` (144 keys, none of them lr/batch/epochs) — which is also why it is not a `combination_checks` predicate. Verified by executing three `--debug` launches with `--run-dir` outside `models/`: refusal (exit 3, no dir), override (warns, proceeds), named lr (ordinary pin banner). `checkargs` prints the FATAL block with `✗ WOULD FAIL AT LAUNCH` but keeps its exit code, so historical argvs still answer "does this launch?". Archive scan (read-only): 162 recorded forks, 8 forked a frozen parent, **3 named neither flag — `ai_v13_13/14/15`, the arms whose 4.5× dose gap cost the campaign (`7afa2b34`)**; zero false positives. Docs: `designs/training/step_size_and_batch.md`, `designs/ops/training_runbook.md`, the launcher and training leaves.
+
+**The regime split.** `regime_verified` was an AND over both halves' per-decision argmax check and both peers' exit codes, so Metamon's post-game `RecursionError` (challenger half, after every game was recorded) read as a regime failure on 31 of 84 sub-cells of `anchor_ab_continuation_2026-09-20/` while every per-decision rate was 1.0000. Now two named fields on every row and in the summary, both in `REQUIRED_ROW_FIELDS`: `regime_verified_decisions` (the regime-appropriate per-decision rule — greedy ⇒ rate == 1.0 over ≥ 1 decision; t1 ⇒ rate < 1.0, so the positive control survives; a missing rate or zero decisions FAILS where it used to pass vacuously) and `peer_clean` (every peer rc == 0); `regime_verified` stays as their AND for one release with a deprecation note. Re-derived from the campaign's saved `games.jsonl`: **31 of 31 flip to `regime_verified_decisions = true`** (peer_rc 1 on all 31, 40 `RecursionError`s, arms C 6 / F 14 / W 11, 3,100 of 8,400 games) — **no win rate, CI, contrast or verdict changes**; the SOP's verification now reads the new field (hazard H16). Backlog row W-J closed.
+
+**Orchestrator's reading.** Both are the same lesson in two places: a composite flag or an inherited value that nobody names is a measurement nobody made. The guard closes the class that produced this week's 4.5× dose gap; the split keeps the anchor's real regime check trustworthy so nobody learns to ignore it. Tag: **OPS · fork-lr inherit guard (3/162 fire) · regime_verified split (31/31 flip, numbers unchanged)**.
