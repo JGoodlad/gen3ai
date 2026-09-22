@@ -20875,3 +20875,54 @@ It reproduces the hand-read pooled rates to the digit and adds the CIs and the r
 **THE GPU: `ai_v13_18_teach5_offense_hidose` LAUNCHED** 14:23 PT, launcher pid 2151990, via its own prepared `launch.sh` read in full before running. FORK of the plateau parent, +8,000,000 → 103,158,272, the five OFFENSE teams, `--exploiter` the plateau parent, **`--fork-lr 2.5e-4 --fork-lr-freeze` ⇒ 3.8147e-8 = 1.78×, era-1's dose to the digit** (2.5e-4 × 1.52588e-4, the arithmetic the script states). Banners verified against the script's own checklist: `🧭 [MATCHUP 80dea7c93b]` — **`ai_v13_13`'s era, the same five teams hence the same hash, which the script required on pain of STOP** — `🎯 [MULTI-SPECIALIST] 5 teams`, `exploiter target … | bots mixed in 50%`, `[ForkLR] pinning LR to 2.50e-04 and FREEZING`, no `[Untaught] FATAL`. checkargs 129 accepted / 0 unrecognized. **This arm is upstream of the whole ladder question: it asks whether a teacher exists at all at era-1 dose, after four refusals at 0.39×/0.20×.** ⏱ ETA ~19:00 PT.
 
 **ROW 1 OF THE REGISTERED READ IS RUNNING** (CPU, nice 15, 8 workers, GPU has first call): **eleven refs in ONE invocation** — three rungs × three depths, plus the plateau parent MEASURED not imported, plus armW as the reproduction check — 8 teams × 200 games = **17,600 battles**, registry opponent, `--seed 0`, concurrency 1, harness verbatim from `split_lossoff_read_2026-09-20`. 📌 **The depths are matched to the STEP across arms by luck**: all three rungs carry checkpoints at identical steps, so +3M = 98,158,368 (+3,000,096) and +6M = 101,278,608 (+6,120,336) for every rung, with no offset hazard of the kind hazard S-D named. Row 2 (the offense slice, 800 games/team) follows. Tag: **OPS · `ai_v13_19_fold_k11` COMPLETE (107,249,664, teardown-SIGTERM #11, dose 0.20×, G7 clean, `distill_topk=11` verified) · **K=11's ENTROPY ROSE** 0.900 → 0.941 where K=1 fell to 0.668 · 📌 **C3 IS NEARLY SHARE-MATCHED** (0.118 vs 0.129) while C1 spans 2× ⇒ C3 is the cleanest contrast · 🚨 CORRECTION: every banked vs-target number is GREEDY-vs-GREEDY eval regime, verified at the source; contrasts survive, strength readings do not · `main.best_response_gap` table banked with CIs · 📌 the LR guard landed elsewhere, backlog EMPTY · `ai_v13_18_teach5_offense_hidose` LAUNCHED at 1.78× · row 1 of the registered read RUNNING**.
+
+### 2026-09-22 · OPS · **ANCHORS P2 BATCH — Foul Play multi-game works, and H14 was OURS**
+
+**2026-09-22 — OPS: the Foul Play multi-game half is FIXED and the defect was OURS; the Metamon
+`RecursionError` is the SAME defect on their side of the wire; five anchors/checkargs backlog rows
+closed.** Hazard **H14** — `--opponent foulplay` could not run a multi-game `ours_challenge` half,
+reproduced 3/3 on Node (09-16) and 1/10 on the front end (09-20) and therefore called
+transport-independent — is transport-independent because **it is ours**: poke-env's
+`Player._send_challenges` releases its battle semaphore when a battle *starts*, so it emitted
+challenge *k+1* ~0.4 s INTO battle *k*, and Foul Play, which reads its PMs only between battles,
+dropped it and waited forever for a challenge already consumed. `--challenge-mode serial` (the
+DEFAULT) adds one `_battle_count_queue.join()` after the acquire, so the next `/challenge` waits
+for the previous battle to END. 🚨 **Nothing about the play changes** — at `--concurrency 1` the
+queue's maxsize already prevented battle *k+1* from starting early, so only the moment the PM is
+emitted moves — and the patch goes on poke-env's **BASE** `Player` because
+`Gen3Player._send_challenges` is a wrapper carrying the connect-or-raise deadline that an override
+on the leaf would silently delete. **GATE: a 10-game Foul Play cell on `--server rust` completes
+10/10, `status: OK`, both halves (`ours_challenge` 5/5), 0 ERRORs, realized 84,205 visits/decision,
+the five challenges 11–37 s apart against H14's 0.4 s** — plus a 20-game Metamon control at 20/20,
+`argmax_match_rate` 1.0000, 0.600 [0.387, 0.781] on top of the banked 0.590 [0.492, 0.681].
+**Second finding: Metamon's post-game `RecursionError` (H-H) is the SAME defect class.** Metamon
+serializes its ACCEPTOR role (`_accept_challenge_loop`, documented as fully awaiting each battle)
+and drives its CHALLENGER role through poke-env's pipelined `start_challenging()`; the env's and
+the agent's `current_battle` desynchronise, `openai_api.py` raises `Battle is already finished,
+call reset`, and `MetamonAMAGOWrapper.step`'s unbounded `self.reset(); return self.step(action)`
+turns it into ~988 frames — which is exactly why F-D found the common factor to be **who
+challenges**, not sampling. 🚨 **The backlog row's own prescription is NOT taken and the reason is
+the finding**: refusing on the regime axis refuses on the axis F-D retired, and refusing on the
+role axis would refuse half of every standing read for a teardown that costs no games (31 of 84
+sub-cells, all `argmax_match_rate` 1.0000, all re-derived as verified). So the post-game recursion
+is **NAMED** (`peer_recursion_upstream`, only on a COMPLETE `peer_challenge` half) and only the
+`mixed` cell is refused; the minimal upstream patch is documented here. **Also closed:**
+`main.anchors` with no `--out` no longer writes `anchors_out/` into the calling directory (it is
+run-scoped under `$GEN3AI_ANCHORS_OUT_ROOT` and PRINTED — an anchor read is taken from the MAIN
+checkout, so the relative default filled the repo it was measuring); `checkargs --argv` strips a
+leading interpreter/script token, which had turned every pasted `original_command` into a phantom
+`unconsumed value '…/launcher/__main__.py' — a flag's ARITY differs` (now
+`✅ validated against PINNED parser @e798c13a`); the pinned checkout carries
+`designs/{baselines,production_config}.json`, without which the probe died on a file that exists
+at the commit and fell through to the non-authoritative AST scan — and that demotion is now the
+LOUDEST line, **checked on disk** rather than matched on the path prefix, because the prefix match
+false-positived on the genuine "this commit predates `build_parser()`" reason. ⚠️ The Foul Play
+cell is a PROTOCOL gate, not a strength read (n = 10, 100 ms, `team_source_asymmetry` true by
+construction), and the 20-game challenger-role gate did NOT fire the upstream recursion — it
+cannot be produced on demand (4 in 800 games), so the classifier is unit-tested against the
+recorded signature rather than exercised live. Tag: **OPS · H14 CLOSED, THE DEFECT WAS OURS ·
+FOUL PLAY 10/10 MULTI-GAME · METAMON H-H ROOT-CAUSED UPSTREAM AS THE SAME PIPELINED-CHALLENGE
+DEFECT · NAMED NOT REFUSED (the row's prescription was keyed to a retired axis) · `--out` NEVER
+THE CWD · `checkargs` PINNED PATH AUTHORITATIVE AGAIN**.
+
+**Orchestrator's reading (2026-09-22).** The Foul Play hazard that blocked every multi-game challenge half since the derisk was our defect: poke-env releases its battle semaphore when a battle STARTS, so it fired the next challenge 0.4 s into the current game and a peer that drops PMs while battling never saw it. One join on the battle-count queue fixes it, on the base `Player` so the connect-or-raise guard survives; 10/10 Foul Play games on the Rust front end, the broken half 5/5. Metamon's challenger-role recursion is the mirror defect on their side (serialized acceptor, pipelined challenger) and is now NAMED rather than crashed on, with only the `mixed` cell refused — the agent declined the backlog row's prescription to refuse on the role axis, correctly, since that would have voided half of every standing read for a post-game teardown that costs no games. `--out` has no relative default, and `checkargs` strips a recorded program token and checks pinned-checkout completeness on disk. Tag: **OPS · Foul Play multi-game 10/10 on rust · H14 was ours · Metamon recursion named, mixed cell refused · checkargs ×2**.

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-20,878-line file. **The ledger itself is append-only and is never edited by this**;
+20,929-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**668 headings · 613 dated · 2026-08-01 → 2026-09-22 · ledger 20,878 lines.**
+**669 headings · 614 dated · 2026-08-01 → 2026-09-22 · ledger 20,929 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -688,3 +688,4 @@ rename.
   - `L20743` · `2026-09-22` · OPS · **THREE P1 BACKLOG ROWS CLOSED — baselines load-or-refuse, the ladder recipe stamp, `--v-column` on matched rows**
   - `L20804` · `2026-09-22` · MEASUREMENT · **METAMON OBSERVATION FAITHFULNESS**
   - `L20840` · `2026-09-22` · OPS + 📌 **TWO CORRECTIONS** · **K=11 COMPLETE — THE LADDER IS BUILT. Its entropy went UP (0.900 → 0.941) where K=1's collapsed (0.857 → 0.668), and the share table shows C3 is NEARLY SHARE-MATCHED BY ACCIDENT (0.118 vs 0.129) while C1 spans 2×. The registered read is RUNNING. The high-dose teacher has the GPU.**
+  - `L20879` · `2026-09-22` · OPS · **ANCHORS P2 BATCH — Foul Play multi-game works, and H14 was OURS**
