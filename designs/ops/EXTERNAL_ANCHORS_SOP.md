@@ -180,6 +180,15 @@ an era-spanning campaign's oldest reachable node is whatever the floor admits.
 | 5 | writes `games.jsonl` + `summary.json` with the Wilson CI and the full provenance |
 | 6 | on a dead peer or a stalled series, **FAILS with a named cause** and exit code 2 |
 
+🚨 **`--out` has NO relative default.** With it omitted the read goes to a **run-scoped** directory
+`<root>/<YYYYmmdd_HHMMSS>_<opponent>_<regime>_<teamset>` under `$GEN3AI_ANCHORS_OUT_ROOT` (default:
+the system temp dir), and the path is PRINTED before anything starts. The old default was
+`./anchors_out`, and an anchor read is taken from the MAIN checkout because that is the only tree
+with `models/` — so the default filled the repo it was measuring, one `git clean` from a lost
+measurement and one `git status` from a landing that stops. An EXPLICIT `--out` is taken verbatim,
+because a directory under `designs/research_state/measurements/` is a deliberate destination.
+**Pass `--out` for anything you intend to bank.**
+
 Other useful flags: `--dry-run` (prints the plan — the transport, both peer commands verbatim,
 both team sources with their counts, every deadline — and starts nothing), `--show-config`
 (resolves `designs/ops/anchors.json` and says which paths exist), `--games`, `--search-time-ms`,

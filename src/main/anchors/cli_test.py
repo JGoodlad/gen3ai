@@ -22,12 +22,14 @@ from __future__ import annotations
 
 import pytest
 
+from main.anchors import cli as cli_mod
 from main.anchors import runner as runner_mod
 from main.anchors import server as server_mod
 from main.anchors.cli import build_parser, build_plan, parse_opponent, render_plan, showdown_pin
 from main.anchors.config import load_config
 from main.anchors.results import REQUIRED_ROW_FIELDS
 from main.anchors.server import RESERVED_PORTS, ServerError
+from utils.paths import repo_root
 
 
 @pytest.fixture()
@@ -445,3 +447,59 @@ def test_our_peer_username_names_its_own_agent_and_fits_showdowns_ceiling(cfg) -
             assert len(name) <= MAX_USERNAME_LEN
             check_username(name, "test")
     assert plan.our_username.startswith("MetaSynthetic")
+
+
+# ------------------------------------------------------------------- the DEFAULT output directory
+# 🚨 REFUSAL 6 in spirit, though it is a redirection rather than a refusal: the old default was
+# `Path.cwd() / "anchors_out"`, and an anchor read is taken from the MAIN checkout because that is
+# the only tree with `models/`. So the default filled the repo it was measuring — one `git clean`
+# from a lost measurement, one `git status` from a landing that stops. It already happened on
+# 2026-09-16.
+def test_the_default_out_dir_is_never_the_calling_directory(cfg, tmp_path, monkeypatch) -> None:
+    """The regression itself. Run from a cwd we own and assert nothing lands under it."""
+    monkeypatch.delenv(cli_mod.OUT_ROOT_ENV_VAR, raising=False)
+    monkeypatch.chdir(tmp_path)
+    plan = build_plan(_args("--opponent", "metamon:SmallRL"), cfg)
+    assert tmp_path not in plan.out_dir.parents and plan.out_dir != tmp_path, (
+        f"the --out-less default resolved to {plan.out_dir}, inside the calling directory")
+    assert not (tmp_path / "anchors_out").exists()
+    # and it is not inside the repo under measurement either
+    assert repo_root() not in plan.out_dir.parents
+
+
+def test_the_default_out_dir_is_run_scoped_and_names_the_cell(cfg, monkeypatch, tmp_path) -> None:
+    """Two different cells started in the same second must not share a directory, or a
+    half-written summary.json could belong to either."""
+    monkeypatch.setenv(cli_mod.OUT_ROOT_ENV_VAR, str(tmp_path))
+    at = 1_758_000_000.0
+    a = cli_mod.default_out_dir(_args("--opponent", "metamon:SmallRL", "--teamset", "away"), at)
+    b = cli_mod.default_out_dir(_args("--opponent", "metamon:SmallRL", "--teamset", "home"), at)
+    c = cli_mod.default_out_dir(_args("--opponent", "foulplay", "--teamset", "away"), at)
+    assert a != b != c and a != c
+    assert a.parent == tmp_path
+    for part in ("metamon-smallrl", "greedy", "away"):
+        assert part in a.name
+    assert a.name[:4].isdigit()          # the timestamp prefix, so a listing sorts by time
+
+
+def test_the_out_root_env_var_moves_the_default(cfg, monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv(cli_mod.OUT_ROOT_ENV_VAR, str(tmp_path / "scratch"))
+    plan = build_plan(_args("--opponent", "metamon:SmallRL"), cfg)
+    assert plan.out_dir.parent == tmp_path / "scratch"
+
+
+def test_an_explicit_out_is_taken_verbatim(cfg, tmp_path) -> None:
+    """An explicit --out is NOT redirected: a measurement directory under
+    designs/research_state/measurements/ is a deliberate, committed destination."""
+    plan = build_plan(_args("--opponent", "metamon:SmallRL", "--out", str(tmp_path / "cell")), cfg)
+    assert plan.out_dir == tmp_path / "cell"
+
+
+def test_the_defaulted_out_dir_is_PRINTED_before_anything_runs(cfg, monkeypatch, tmp_path,
+                                                               capsys) -> None:
+    """A directory a reader cannot find is a measurement they cannot bank."""
+    monkeypatch.setenv(cli_mod.OUT_ROOT_ENV_VAR, str(tmp_path))
+    assert cli_mod.main(["--model", "", "--opponent", "metamon:SmallRL", "--dry-run"]) == 0
+    out = capsys.readouterr().out
+    assert "no --out given" in out
+    assert str(tmp_path) in out

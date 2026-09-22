@@ -32,7 +32,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
+import re
 import sys
+import tempfile
+import time
 from pathlib import Path
 from typing import List, Optional
 
@@ -119,7 +123,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "away = Metamon's own 20-team `competitive` gen3ou set. Report BOTH.")
     p.add_argument("--games", type=int, default=100,
                    help="total games, split evenly across the two challenge roles")
-    p.add_argument("--out", default=None, help="directory for games.jsonl + summary.json + logs")
+    p.add_argument("--out", default=None,
+                   help="directory for games.jsonl + summary.json + logs. 🚨 There is NO relative "
+                        "default: with --out omitted the read goes to a run-scoped directory "
+                        f"under {OUT_ROOT_ENV_VAR} (default: the system temp dir), and the path "
+                        "is PRINTED. A read taken from the MAIN checkout — which is where "
+                        "models/ lives, so it is where these reads are taken — must never write "
+                        "into the tree it is measuring.")
     p.add_argument("--format", dest="battle_format", default="gen3ou")
     p.add_argument("--device", default="cpu",
                    help="torch device for OUR inference; keep 'cpu' — a training arm owns the GPU")
@@ -177,6 +187,48 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--show-config", action="store_true",
                    help="print designs/ops/anchors.json as resolved, with each env override")
     return p
+
+
+#: Points the DEFAULT output root somewhere else. Only the default moves; an explicit ``--out`` is
+#: always taken verbatim, because a measurement directory under ``designs/research_state/`` is a
+#: deliberate and committed destination.
+OUT_ROOT_ENV_VAR = "GEN3AI_ANCHORS_OUT_ROOT"
+
+
+def default_out_root() -> Path:
+    """The scratch root a ``--out``-less read writes under — **never the calling directory**.
+
+    🚨 The old default was ``Path.cwd() / "anchors_out"``. Anchor reads are taken from the MAIN
+    checkout, because that is the only tree with ``models/``, so the relative default filled the
+    repo it was measuring: one ``git clean`` from a lost measurement and one ``git status`` from a
+    landing that stops (it already happened, 2026-09-16). The root is independent of
+    ``$GEN3AI_MODELS_DIR`` and of the repo — it is the system temp dir unless
+    ``$GEN3AI_ANCHORS_OUT_ROOT`` names another.
+    """
+    override = os.environ.get(OUT_ROOT_ENV_VAR)
+    if override:
+        return Path(override).expanduser()
+    return Path(tempfile.gettempdir()) / "gen3ai_anchors"
+
+
+def _slug(text: str) -> str:
+    """Filesystem-safe, and never empty — a cell whose slug collapsed to '' would share a
+    directory with every other such cell."""
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "-", text).strip("-").lower()
+    return cleaned or "cell"
+
+
+def default_out_dir(args: argparse.Namespace, now: Optional[float] = None) -> Path:
+    """A RUN-SCOPED directory under :func:`default_out_root`, named for the cell it holds.
+
+    Two reads a second apart do not collide (the stamp carries the seconds) and two different
+    cells never share a directory even inside one second (the slug carries opponent, regime and
+    team set), so a partially-written ``summary.json`` can only ever belong to the read that
+    wrote it.
+    """
+    stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime(now if now is not None else time.time()))
+    cell = "_".join((_slug(args.opponent), _slug(args.regime), _slug(args.teamset)))
+    return default_out_root() / f"{stamp}_{cell}"
 
 
 def _default_peer_username(kind: str, agent: str) -> str:
@@ -282,7 +334,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
 
     from main.play import DEFAULT_FORFEIT_TURN_LIMIT
 
-    out_dir = Path(args.out) if args.out else Path.cwd() / "anchors_out"
+    # 🚨 NEVER the calling directory. See `default_out_root`.
+    out_dir = Path(args.out).expanduser() if args.out else default_out_dir(args)
     return runner_mod.SeriesPlan(
         opponent=args.opponent,
         opponent_kind=kind,
@@ -400,6 +453,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     plan = build_plan(args, cfg)
+    if not args.out:
+        print(f"⚠️  no --out given — this read goes to {plan.out_dir}\n"
+              f"    (run-scoped, under ${OUT_ROOT_ENV_VAR} or the system temp dir; NEVER the "
+              "calling directory, which for an anchor read is the repo being measured)",
+              flush=True)
 
     if args.dry_run:
         print(render_plan(plan, cfg))
