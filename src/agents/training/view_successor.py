@@ -42,8 +42,10 @@ from __future__ import annotations
 
 import copy
 import sys
+from collections.abc import Mapping as _ABCMapping
 from dataclasses import dataclass
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
+from typing import (Any, Callable, Dict, Mapping, Optional, Sequence,
+                    Tuple)
 
 import numpy as np
 
@@ -55,6 +57,54 @@ from agents.training.battle_snapshot import BattleContext
 from agents.training.clone_pins import (_pickle_pinned, _pin_shared,
                                         _unpickle_pinned)
 from agents.training.slot_registry import SlotRegistry
+
+class LazyTokens(_ABCMapping):
+    """``{action index: sim choice string}`` computed on FIRST READ, not at materialization.
+
+    ``gen3_lazy_action_choices_v1``. A node's token map comes from the REAL action mapper over
+    every legal index, and it was built for every arm of every ply though **only a node that gets
+    DEEPENED ever reads one** — the three readers are :meth:`TreeNode.expandable`,
+    :func:`plan_beam`'s arm-count estimate and ``search._expand_ply``'s own loop, and all three
+    live inside ``_score_world``'s ``while ply < md``. A depth-1 decision reads none of them.
+
+    It is a ``Mapping`` rather than a dict subclass on purpose: ``bool()`` falls through to
+    ``__len__`` and therefore MATERIALIZES, so a reader that only asks "is this branchable?"
+    still gets a true answer. The laziness is about the plies nobody touches, never about
+    answering a question approximately.
+
+    Measured share of the view road's per-arm wall:  **1.2%**
+    (``designs/research_state/measurements/search_profile_2026-09-22/README.md``) — which is also
+    the correction to `one_sided_view.md`'s retracted 24%.
+    """
+
+    __slots__ = ("_fn", "_d")
+
+    def __init__(self, fn: Callable[[], Dict[int, str]]) -> None:
+        self._fn = fn
+        self._d: Optional[Dict[int, str]] = None
+
+    def _materialize(self) -> Dict[int, str]:
+        if self._d is None:
+            self._d = dict(self._fn() or {})
+        return self._d
+
+    @property
+    def materialized(self) -> bool:
+        """Whether the map has actually been built — the non-vacuity hook a gate needs."""
+        return self._d is not None
+
+    def __getitem__(self, key):
+        return self._materialize()[key]
+
+    def __iter__(self):
+        return iter(self._materialize())
+
+    def __len__(self) -> int:
+        return len(self._materialize())
+
+    def __repr__(self) -> str:                                   # pragma: no cover - diagnostic
+        return f"LazyTokens({'built:' + repr(self._d) if self._d is not None else 'unbuilt'})"
+
 
 #: The ``BattleContext`` fields a SUCCESSOR's observation path actually reads. Sourced by
 #: grepping every consumer a successor reaches, not by inspection: ``TurnDelta.build_from_events``
@@ -282,7 +332,12 @@ class ViewSuccessor:
 
     obs: np.ndarray
     mask: np.ndarray
-    action_choices: Dict[int, str]
+    #: 🚨 A :class:`~main.search_dividend.deepen.LazyTokens`, NOT a dict — it runs the real action
+    #: mapper over every legal index on FIRST READ (`gen3_lazy_action_choices_v1`). Only a node
+    #: that gets DEEPENED ever reads one, and a depth-1 decision deepens nothing, so building it
+    #: here was ~1.2% of the road's per-arm wall spent on an answer nobody asked for. Treat it as
+    #: a ``Mapping``; `` or {}`` on it would force the build through ``__len__``.
+    action_choices: "Mapping[int, str]"
     _fork: "Tuple[Any, Any, list, str]"
 
     def child(self, encoder) -> "ViewSuccessorFactory":
@@ -380,7 +435,9 @@ class ViewSuccessorFactory:
         )
         return ViewSuccessor(
             obs=np.asarray(obs, dtype=np.float32), mask=mask,
-            action_choices=_choice_map(vbattle, mask, legal),
+            # DEFERRED — see the field's note. The three inputs are the read-models this arm
+            # already built, so holding them costs a reference each rather than a second build.
+            action_choices=LazyTokens(lambda: _choice_map(vbattle, mask, legal)),
             _fork=(tr, board, self._prior_events + events, self._battle_tag))
 
 

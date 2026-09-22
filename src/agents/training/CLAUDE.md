@@ -961,6 +961,19 @@ rust fails loud, so the node cell ran the same wrong rollouts and reported a cle
 by `main/search_dividend/recon_tag_isolation_test.py`.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
+🚨 **IT IS SPLIT IN TWO, AND THE SPLIT IS THE POINT** (`gen3_one_fork_per_decision_v1`).
+`open_branch_fork` does the prefix replay and freezes the `_PlayerSnapshot`;
+`materialize_branches_from` runs the arms off it; `materialize_branches` is exactly the
+composition, so its own gate is unchanged. A search decision opens K determinized WORLDS whose
+one-sided prefixes `determinize.prefix_matches` holds byte-identical, and it was replaying that
+one prefix once per world — `SearchEngine._branch_fork` now caches the fork per decision. **The
+key carries the prefix bytes AND `map_actions_at` / `stop_after_decision` / `encode_only_at`**,
+which are baked into the player at construction: a deeper ply asks about a different decision
+index and must not be served a ply-1 fork. Reuse is exact because every arm starts by restoring
+the snapshot — which is also what it ASSERTS, since a field the snapshot forgets would leak world
+1's last arm into world 2's first and still produce a well-formed obs
+(`main/search_dividend/fork_sharing_parity_integration_test.py`).
+
 `clone_pins.py` is the ONE definition of WHICH objects a per-arm clone must SHARE rather than copy
 (a `logging.Logger`, a `MappingProxyType`, the append-only immutable records, the `GenData`
 singleton) **and** of the pinned-pickle freeze/thaw that makes a clone ~9× cheaper than a
@@ -971,10 +984,13 @@ would be a second way for the two roads to clone differently.
 
 The other materializer: a search successor's FULL observation built from the Rust port's one-sided
 VIEW payload instead of by replaying the ply's protocol through poke-env. `ViewSuccessorFactory`
-is opened once per ply (`obs_materializer.open_view_fork`, which IS `materialize_branches`' own
-first half, so the fork is the same state and not merely an equivalent one) and then answers each
-arm: fold the ply's events (`agents.battle.event_fold`), build the read-models, thaw a tracker
-clone, `record_context` → `advance_window` → `encode`. Selected by
+is opened once per DECISION (`obs_materializer.open_view_fork`, which IS `materialize_branches`'
+own first half, so the fork is the same state and not merely an equivalent one) and then answers
+each arm: fold the ply's events (`agents.battle.event_fold`), build the read-models, thaw a
+tracker clone, `record_context` → `advance_window` → `encode`. **Per decision, not per world** —
+the factory mutates none of its three carried objects, so the K worlds of one decision share it
+(`SearchEngine._root_fork`, keyed on the prefix BYTES because `prefix_matches` only compares
+through the `|turn|` marker). Selected by
 `SearchConfig.materializer` / `--materializer {protocol,view}`; **`view` is the DEFAULT**, and it
 falls back to protocol PER ARM (never per cell, never silently — three counters on
 `RealizedWidths`) where it cannot answer.
@@ -983,6 +999,13 @@ falls back to protocol PER ARM (never per cell, never silently — three counter
 and `advance_window` are their bodies once the context and the event windows exist; `record` /
 `update_progress_clock` are the poke-env-battle wrappers. One implementation of the per-decision
 bookkeeping is what makes the two roads' trackers comparable at all.
+
+🚨 **`ViewSuccessor.action_choices` is a `LazyTokens`, not a dict** (`gen3_lazy_action_choices_v1`).
+It runs the real action mapper over every legal index on FIRST READ, and the only readers are in
+the DEEPENING loop — a depth-1 decision builds none. It is a `Mapping`, so `bool()` falls through
+to `__len__` and materializes; `x or {}` on one would force the build, and nothing may mutate it.
+Gated by `main/search_dividend/lazy_action_choices_integration_test.py` (0 of 18 built at
+`max_depth=1`; 17 of 17 built and equal to their producer at `max_depth=2`).
 
 ⚠️ **A successor's `ViewContext` RAISES on a field it does not carry.** The observation path reads
 fifteen `BattleContext` fields and all fifteen are fed; the rest are the REWARD's and the

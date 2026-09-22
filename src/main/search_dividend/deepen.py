@@ -71,6 +71,7 @@ value, so the shipped sweep runs at depth 1 and was never affected.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -95,7 +96,14 @@ class TreeNode:
     #: ``{action_index: sim choice string}`` for OUR legal actions here, straight from the REAL
     #: mapper (``MaterializedTrace.action_choices``). Empty when the node was never materialized —
     #: which is exactly when it cannot be deepened, so the two facts stay together.
-    our_tokens: Dict[int, str] = field(default_factory=dict)
+    #:
+    #: 🚨 It may be a :class:`~agents.training.view_successor.LazyTokens`, which computes on
+    #: first read — every reader must treat
+    #: it as a ``Mapping`` (``len`` / ``in`` / ``[]`` / ``sorted`` / ``.get`` / ``.items``), never
+    #: as a dict to mutate or ``.copy()``. The three readers are :meth:`expandable`,
+    #: :func:`plan_beam` and ``search._expand_ply``, and all three are inside the deepening loop,
+    #: which is the whole point: a depth-1 decision never pays the mapper for its successors.
+    our_tokens: Mapping = field(default_factory=dict)
     #: The child's open requests, as the search driver returned them. The opponent's marginalization
     #: set at the next ply is built from this and nothing else.
     requests: Optional[dict] = None

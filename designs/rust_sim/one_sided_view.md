@@ -15,7 +15,7 @@ The Python sub-encoders are **unchanged**: only the `LiveView`'s constructor dif
 | **Wall gate** | `src/rust_sim/tests/one_sided_view_test.rs` (9 tests) |
 | **Unit gate** | `src/agents/battle/view_adapter_test.py` (24 tests) |
 | **Differential gate** | `src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`) |
-| **Benchmark** | `src/agents/training/view_materialize_benchmark.py` |
+| **Benchmark** | `src/agents/training/view_materialize_benchmark.py` (the two ROADS on a hand-built arm set) and `src/main/search_dividend/search_decision_benchmark.py` (the real `SearchEngine` over BANKED eval traces, broken into phases) — they answer different questions, keep both |
 
 ---
 
@@ -195,7 +195,7 @@ BOTH directions is not an off-by-one in one branch; the likeliest remaining shap
 | **D7** | our OWN pp is the wire's, not poke-env's counter | The payload sends the engine's `current_pp`, which is exactly what the `\|request\|` states and what poke-env asserts its own counter against (`check_move_consistency`). When poke-env has not yet identified a Pressure holder its counter drifts one BELOW the wire per sighting, and it is the drifted value the protocol road encodes. Folding our own PP from sightings instead was measured **worse** (the `\|move\|` line names `Hidden Power` while the set token is `hiddenpowerfire`, so the slots do not key against each other) |
 | **D8** | Mimic / Transform move overlays on our own side | The own moveset is rendered from `set.moves`; an overlay would need the same resolver the request path uses |
 | **D9** | `Mist` as a side condition | The port models spikes / reflect / lightscreen / safeguard only |
-| **D10** | 🔴 an arm whose ply resolved an INTERMEDIATE decision | When an arm's ply KOs one of our mons, the replacement round is a SECOND request inside the same `expand_many` arm. The port answers it through its own follow-up policy and returns the board AFTER it, while `materialize_branches` stops at the FIRST request its action list cannot answer — so the two roads describe DIFFERENT STATES, one decision apart, and a leaf scored at the wrong one of them is not a rounding difference. `view_successor.intermediate_decisions` detects it off the arm's own `\|request\|` lines (verified against the protocol road's realized row count on 104 arms over 6 fresh battles: exact agreement, 98 arms at 0 and 5 at 1), and the production road FALLS BACK to protocol, counted in `RealizedWidths.view_fallback_intermediate`. **Measured rate: 35 of 505 branch points (6.9%) over 24 fresh battles.** Closing it needs either a driver mode that stops at the replacement, or a payload that carries the intermediate board too |
+| **D10** | 🔴 an arm whose ply resolved an INTERMEDIATE decision | When an arm's ply KOs one of our mons, the replacement round is a SECOND request inside the same `expand_many` arm. The port answers it through its own follow-up policy and returns the board AFTER it, while `materialize_branches` stops at the FIRST request its action list cannot answer — so the two roads describe DIFFERENT STATES, one decision apart, and a leaf scored at the wrong one of them is not a rounding difference. `view_successor.intermediate_decisions` detects it off the arm's own `\|request\|` lines (verified against the protocol road's realized row count on 104 arms over 6 fresh battles: exact agreement, 98 arms at 0 and 5 at 1), and the production road FALLS BACK to protocol, counted in `RealizedWidths.view_fallback_intermediate`. **Measured rate: 35 of 505 branch points (6.9%) over 24 fresh battles** — and **145 of 864 arms (16.8%)** on 12 mid-game decisions banked from a real run's `eval_traces`, where the fallback into `materialize_branches` costs **21.1% of the view road's decision wall** (`designs/research_state/measurements/search_profile_2026-09-22/README.md`). The two rates are the same mechanism at different anchor distributions; the second is the one production pays. Closing it needs either a driver mode that stops at the replacement, or a payload that carries the intermediate board too |
 
 **Not deferred, and worth saying so:** the volatile NAMES here are NOT the `pre_state`
 reconstruction that `search_and_replay_drivers.md` marks UNVERIFIED. That set is the port's own
@@ -227,16 +227,81 @@ always asks for and which is ~24% of the view road's per-arm wall.
 At B=1 the whole cost IS the shared prefix, which both roads pay once, so there is nothing to win
 and the table says so. The win is per-ARM and therefore appears as the ply widens.
 
-**Where the view road's per-arm wall goes** (cProfile, 33 arms, 105-event root): encode 42%,
-`_choice_map` (the real action mapper) 24%, the read-models 18%, the tracker fork 6%. The tracker
-fork was **10.5 ms** by `deepcopy` and is **0.5 ms** by a pinned-pickle thaw — the same 9x
-`_PlayerSnapshot._freeze` documents, and until it landed the view road was SLOWER than the road it
-replaces (0.84x at B=33). `agents/training/clone_pins.py` is now the ONE home for both mechanisms.
+**Where the view road's per-arm wall goes** — measured on the real `SearchEngine` over banked
+eval traces, 864 arms of 12 decisions, with a stack-accounted wall timer
+(`src/main/search_dividend/search_decision_benchmark.py`; the record is
+`designs/research_state/measurements/search_profile_2026-09-22/README.md`): `expand_many` and its
+JSON 15.7%, the tracker fork 10.9%, the **D10 fallback into `materialize_branches` 21.1%
+inclusive**, encode 9.5%, `open_root` 7.8%, the shared prefix replay 13.7% inclusive, the
+read-models 6.7%, `_choice_map` **1.2%**.
 
-**Two sized-but-unbuilt wins**, both real and neither taken here: the fork is a function of the
-one-sided PREFIX, which `determinize.prefix_matches` gates to be byte-identical across worlds — so
-one fork could serve all K worlds of a decision instead of K prefix replays; and `action_choices`
-is built eagerly for every arm though it is read only for a node that will be DEEPENED.
+🚨 **THIS TABLE RETRACTS A cProfile ONE, AND THE RETRACTED NUMBER WAS `_choice_map` AT 24%.** It
+is 1.2% (0.054 ms/arm) on the production engine, and **1.1% when the identical benchmark is re-run
+under cProfile** — so the old figure is not explained by profiler overhead either; the two
+measurements disagree about the denominator and the one taken on the road production drives is the
+one to act on. What cProfile DOES distort is in the same pair: encode reads 9.5% un-profiled and
+15.6% profiled, the action mask 14.7% against 2.2%. **A cProfile share is not a wall share.**
+
+The tracker fork was **10.5 ms** by `deepcopy` and is **0.5 ms** by a pinned-pickle thaw — the
+same 9x `_PlayerSnapshot._freeze` documents, and until it landed the view road was SLOWER than the
+road it replaces (0.84x at B=33). `agents/training/clone_pins.py` is now the ONE home for both
+mechanisms.
+
+### ONE FORK PER DECISION — `gen3_one_fork_per_decision_v1`
+
+The fork is a function of the one-sided PREFIX, our action history and OUR packed team, and a
+determinized world changes only the OPPONENT's team — so the K worlds of one decision were each
+replaying one identical prefix. `SearchEngine._root_fork` builds it once per decision and **keys
+the cache on the prefix BYTES**: `determinize.prefix_matches` truncates its comparison at the
+`|turn|` marker, so the gate alone does not license reuse of what follows it, and a world whose
+prefix differs simply misses and replays its own (`RealizedWidths.fork_cache_hit` /
+`fork_cache_miss` count both). What makes the factory reusable is that `successor()` mutates
+none of its three carried objects — it branches the event folder, thaws the frozen tracker and
+concatenates the prior-event list — which is the same property that already let one fork serve the
+arms of one world.
+
+**Gated by `src/main/search_dividend/fork_sharing_parity_integration_test.py`**: the real engine
+over one seeded decision, sharing ON against a store-but-never-serve control, comparing every
+successor's observation BYTES in order plus the scores, the chosen action and the widths, with
+non-vacuity asserted on both sides. The failure it stands for is silent — a factory that mutated
+would give world 2 world 1's ply and still produce a well-formed obs.
+
+The same sharing is applied to the PROTOCOL road's own fork, which every **D10 fallback arm**
+pays: `materialize_branches` is split into `open_branch_fork` (prefix replay + frozen
+`_PlayerSnapshot`) and `materialize_branches_from` (the arms), with `materialize_branches` kept as
+the composition so its gate is untouched, and `SearchEngine._branch_fork` caches it per decision.
+Its key carries the prefix bytes **plus** `map_actions_at` / `stop_after_decision` /
+`encode_only_at`, because those are baked into the player at construction and a deeper ply asks
+about a different decision index. That one is a LIVE poke-env player every arm mutates, so
+reusing it asserts `_PlayerSnapshot.restore` is COMPLETE — a separate test, not a second copy of
+the first.
+
+### `action_choices` IS LAZY NOW — `gen3_lazy_action_choices_v1`
+
+The last of the two sized-but-unbuilt wins. A successor's token map is the real action mapper over
+every legal index, and its only readers — `TreeNode.expandable`, `plan_beam`'s arm-count estimate
+and `search._expand_ply`'s loop — are all inside `_score_world`'s `while ply < md`, so a **depth-1
+decision built one per arm and read none**. `agents.training.view_successor.LazyTokens` builds on
+first read; it is a `Mapping`, so `bool()` falls through to `__len__` and materializes, and
+"is this branchable?" still gets a true answer. Gated by
+`src/main/search_dividend/lazy_action_choices_integration_test.py`: **0 of 18 built** at
+`max_depth=1`, **17 of 17 built and equal to their producer** at `max_depth=2`. VIEW road only —
+the protocol road's map is built where the poke-env battle still stands, and deferring it there
+is a second replay, not a lazy read.
+
+**Measured — an INTERLEAVED A/B**, a baseline worktree against this branch, the same 10 banked
+eval-trace decisions, back to back, twice. The NOW runs carried the HIGHER load in three of the
+four pairs, so the ratios are conservative:
+
+| B | BASE view ms/decision | NOW view ms/decision | speedup |
+|---|---|---|---|
+| wide (684 arms / 10 decisions) | 326.8, 361.9 | **250.5, 269.3** | **1.33x** |
+| 1 (31 arms / 10 decisions) | 96.0, 98.9 | **58.1, 59.0** | **1.66x** |
+
+The protocol road moved too (1.12x wide, 1.81x at B = 1) because it shares the second fork, which
+is why protocol-vs-view (1.57x -> 1.74x at wide B) understates the change. Spans, before -> after:
+the shared prefix replay **14.3% -> 7.8%**, the D10 fallback **24.0% -> 17.2%**, `_choice_map`
+**1.2% -> 0.7%**; `expand_many` and its JSON is now the largest single span at **20.2%**.
 
 **`obs_build_benchmark.py` must read UNCHANGED** — no file on the `encode` path was touched, and
 that is the check rather than a hope.
