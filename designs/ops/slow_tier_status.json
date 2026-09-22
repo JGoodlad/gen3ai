@@ -465,6 +465,14 @@
    "contention": 1.9,
    "detail": ""
   },
+  "src/main/train/search_teacher_composition_test.py::test_search_teacher_runs_multiple_cycles_end_to_end_on_rust": {
+   "status": "pass",
+   "commit": "eda0d0a372ea73361672b079b5abf6ab95cd6f8d",
+   "at": "2026-09-22T21:16:28Z",
+   "duration_s": 572.45,
+   "contention": 2.1,
+   "detail": ""
+  },
   "src/main/untaught_meter_reproducibility_integration_test.py::test_two_sharded_runs_of_the_meter_are_byte_identical": {
    "status": "pass",
    "commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
@@ -650,5 +658,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-15T06:49:34Z"
+ "last_written": "2026-09-22T21:16:28Z"
 }

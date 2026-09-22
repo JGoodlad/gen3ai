@@ -114,8 +114,42 @@ that searches 9 candidates, runs every confirm rollout on rust, writes its shard
 ``> 0`` would be a ~2%-flaky assertion about a 6k-step policy. The run's TOTAL being ``> 0`` is the
 composition claim — labels reach the buffer and the AWR term folds — and it is the one asserted.
 
-**MEASURED DURATION: 472 s (7 m 52 s) at contention factor 1.10, 2026-09-08, 16-core box with a
-production run live** — 30,000 steps, 4-6 collected cycles and 7-8 corrections across two runs.
+**WHAT THIS GATE ASSERTS PER CYCLE** (the three marked 2026-09-22 were added that day, after a
+re-measurement found the gate green on facts it was not actually checking):
+
+  * the CANDIDATE count selection offered (``cycle @ N: M candidates``, M > 0);
+  * 🆕 the **SEARCHED** count — the worker status histogram's TOTAL, which must EQUAL M.
+    ``produce_correction`` returns exactly one reason per candidate and the worker increments once
+    per return, so a shortfall is candidates that were never searched. Nothing else here can see
+    it: ``n_ok`` may be 0 for an honest reason (``gate_failed``), and missing candidates emit **no
+    status key at all**, so the ``error:*`` check reads clean. Absence is not a zero;
+  * the LABEL count, asserted on the run's TOTAL rather than per cycle (see the note below);
+  * 🆕 the AWR loss being **NON-ZERO, not merely present** — ``teacher/loss``, ``teacher/ce`` and
+    ``grad/searchteacher_share``. A tag recorded as identically 0.0 writes the key, passes a
+    presence check, and pulls the trunk not at all;
+  * 🆕 the per-cycle **WALL**, printed as a table (resolution ±``_POLL_S``);
+  * the worst single training step the teacher cost, against a bound two orders above the
+    measurement and two below the defect it exists to catch.
+
+🚨 **``grad/distill_share`` IS NOT THIS RUN'S SCALAR, and its absence here is correct.** It is the
+EXPLOITER-distillation KL's shared-trunk share (``--distill-teacher``), which this argv does not
+pass. The search-teacher's share is ``grad/searchteacher_share``. Noted because the pair has been
+confused before.
+
+⚠️ **A LABEL IS NOT REPRODUCIBLE against a CHECKPOINT opponent, even at fixed impl** (measured
+2026-09-22). The confirm leg's sim dice are deterministic (``falsifier.fresh_seeds`` is a sha256 of
+``battle_tag:inv:cf``) and the trainee plays greedy, but a reloaded checkpoint opponent plays
+stochastic at temp 1.0 with **no ``torch.manual_seed`` anywhere in the confirm path** — so
+``advantage`` and the ``ok``/``gate_failed`` verdict are a fresh draw each run. That is WHY this
+gate asserts counts, engines, joins and non-zero-ness rather than values, and why no cross-impl
+label-identity claim is made here. Detail and the ledger paragraph:
+``designs/research_state/measurements/search_teacher_composition_2026-09-22/``.
+
+**MEASURED DURATION: 572 s (9 m 32 s) at contention 2.1, 2026-09-22, 16-core box with a GPU arm and
+several agents live** — 30,000 steps, 5 cycle launches / 4 collects / 5 corrections, and a
+training-step cost of **0.46 s for the whole run** (worst step 115.9 ms — ``model.save``).
+Previously: **472 s (7 m 52 s) at contention factor 1.10, 2026-09-08** — 4-6 collected cycles and
+7-8 corrections across two runs.
 (Before selection moved off the training step: 638 s for 18,000 steps at factor 1.32 — 2.4x the
 steps in 74% of the wall clock, because the trainer no longer stalls 30-350 s per cycle.) Under two
 minutes of that is training; the rest is eval and the async selection/search children — the whole
@@ -174,6 +208,9 @@ _TOTAL_BUDGET_S = 5400.0
 #: cannot flake on a starved box — a bound that can only be crossed by a regression, never by
 #: contention, which is the only kind of duration assertion this project allows.
 _STEP_BLOCK_BOUND_S = 5.0
+
+#: Poll interval, and therefore the RESOLUTION of every per-cycle wall this test reports.
+_POLL_S = 2.0
 
 _CYCLE_RE = re.compile(r"\[SearchTeacher\] cycle @ ([\d,]+): (\d+) candidates")
 _STEP_BLOCK_RE = re.compile(r"\[SearchTeacher\] step-block ([a-z-]+): ([\d.]+) ms")
@@ -237,19 +274,33 @@ def _run_child(run_dir: Path, log_path: Path) -> subprocess.Popen:
         raise
 
 
-def _wait_with_progress(proc: subprocess.Popen, log_path: Path) -> int:
-    """Poll until the child exits, bounding the IDLE gap in its log rather than total duration."""
+def _wait_with_progress(proc: subprocess.Popen, log_path: Path,
+                       marker_times: List[Tuple[float, str]] | None = None) -> int:
+    """Poll until the child exits, bounding the IDLE gap in its log rather than total duration.
+
+    Also TIMESTAMPS each ``[SearchTeacher]`` marker as it first appears, into ``marker_times``.
+    The child log carries no timestamps of its own and the callback's marker format is matched by
+    three regexes here, so adding a clock to the print would break them; sampling arrival at the
+    poll interval gives the per-cycle wall to +/-``_POLL_S`` without touching the callback. That
+    wall is the quantity a cycle's SIZING is argued from (a launch that never collects is the
+    failure mode --steps is chosen against), and it was previously only available as a run total.
+    """
     deadline = ProgressDeadline(_IDLE_BUDGET_S, total_budget_s=_TOTAL_BUDGET_S,
                                 what="search-teacher composition run")
     last_size = -1
+    seen_markers = 0
     while True:
         rc = proc.poll()
         if rc is not None:
+            if marker_times is not None:
+                _absorb_markers(log_path, marker_times, seen_markers)
             return rc
         size = log_path.stat().st_size if log_path.exists() else 0
         if size != last_size:
             last_size = size
             deadline.progress()
+            if marker_times is not None:
+                seen_markers = _absorb_markers(log_path, marker_times, seen_markers)
         try:
             deadline.check()
         except ProgressTimeout as e:
@@ -260,7 +311,49 @@ def _wait_with_progress(proc: subprocess.Popen, log_path: Path) -> int:
                 f"for the whole idle budget, so this run measured the BOX, not the composition. "
                 f"{e} {describe_contention()}\n  log tail:\n"
                 + _tail(log_path, 40)) from e
-        time.sleep(2.0)
+        time.sleep(_POLL_S)
+
+
+def _absorb_markers(log_path: Path, out: List[Tuple[float, str]], already: int) -> int:
+    """Append ``(now, line)`` for every ``[SearchTeacher]`` marker past ``already``; return the count."""
+    try:
+        lines = log_path.read_text(errors="replace").splitlines()
+    except OSError:
+        return already
+    markers = [ln for ln in lines if "[SearchTeacher]" in ln]
+    now = time.time()
+    for ln in markers[already:]:
+        out.append((now, ln))
+    return len(markers)
+
+
+def _cycle_walls(marker_times: List[Tuple[float, str]], t0: float) -> List[Dict[str, float]]:
+    """Pair each ``cycle @`` marker with the ``collected`` that follows it — the per-cycle WALL.
+
+    A launch without a following collect is reported with ``wall_s=None``: that is the run ending
+    while a cycle was still pending, which is a SIZING fact about --steps and not a defect (nothing
+    waits for a per-cycle worker at ``_on_training_end``), and the collect-count assertion below is
+    what actually gates it.
+    """
+    rows: List[Dict[str, float]] = []
+    pending: Dict | None = None
+    for ts, ln in marker_times:
+        m = _CYCLE_RE.search(ln)
+        if m:
+            if pending is not None:
+                rows.append(pending)
+            pending = {"step": int(m.group(1).replace(",", "")), "candidates": int(m.group(2)),
+                       "launched_s": ts - t0, "wall_s": None, "collected": None}
+            continue
+        c = _COLLECT_RE.search(ln)
+        if c and pending is not None:
+            pending["wall_s"] = ts - pending["launched_s"] - t0
+            pending["collected"] = int(c.group(1))
+            rows.append(pending)
+            pending = None
+    if pending is not None:
+        rows.append(pending)
+    return rows
 
 
 def _tail(path: Path, n: int) -> str:
@@ -340,9 +433,10 @@ def test_search_teacher_runs_multiple_cycles_end_to_end_on_rust(tmp_path):
     log_path = tmp_path / "child.log"
 
     started = time.time()
+    marker_times: List[Tuple[float, str]] = []
     proc = _run_child(run_dir, log_path)
     try:
-        rc = _wait_with_progress(proc, log_path)
+        rc = _wait_with_progress(proc, log_path, marker_times)
     finally:
         # A leaked training child would keep burning cores long after pytest moved on (an interrupt
         # or an assertion inside the wait both reach here).
@@ -397,6 +491,21 @@ def test_search_teacher_runs_multiple_cycles_end_to_end_on_rust(tmp_path):
         f"waits for a per-cycle worker at _on_training_end, so --steps must leave room for the "
         f"collect, not just for the launch.\n" + _markers_tail(log_path))
     for n_ok, n_cand, status in collects:
+        # EVERY SELECTED CANDIDATE WAS ACTUALLY SEARCHED. `produce_correction` returns exactly one
+        # status reason per candidate and `search_teacher_worker` increments the histogram once per
+        # return, so the histogram's TOTAL is the cycle's SEARCHED count — a number that must equal
+        # the count selection offered. Without this, a cycle that selected 8 and silently searched 2
+        # (a worker that returned early, a shard whose scalars were written but whose loop was cut
+        # short) reads identically to a healthy one: `n_ok` can be 0 for an honest reason
+        # (`gate_failed`) and the error-key check below sees nothing, because the missing candidates
+        # produce no key AT ALL. Absence is not a zero here either.
+        searched = sum(int(v) for v in status.values())
+        assert searched == n_cand, (
+            f"a cycle offered {n_cand} candidates but its workers accounted for only {searched} "
+            f"(status={status}). Every candidate must come back with exactly one reason; the "
+            f"shortfall is candidates that were never searched, which no other assertion here can "
+            f"see — a zero-yield cycle for an honest reason and a cycle that quietly dropped six "
+            f"of its eight candidates look the same in `n_ok`.\n" + _markers_tail(log_path))
         assert "worker_no_shard" not in status, (
             f"a worker died without writing its shard: status={status}. That is a crash in the "
             f"rust-backed search/confirm worker, which no leg-level test can see.")
@@ -442,11 +551,41 @@ def test_search_teacher_runs_multiple_cycles_end_to_end_on_rust(tmp_path):
     assert max(v for _, v in tb["teacher/n"]) > 0, (
         "teacher/n is 0 at every point — the AWR fold sampled an empty batch every time.")
 
+    # THE DISTILLATION LOSS IS NON-ZERO ONCE A CYCLE HAS LABELLED. Presence is not force: a
+    # `teacher/loss` recorded as identically 0.0 at every point — an AWR term whose weights all
+    # collapsed, a CE against a target that is always the action already taken, a coef silently
+    # resolved to 0 — writes the tag, passes the presence check above, and pulls the trunk not at
+    # all. `--search-teacher-coef 0.5` is in this argv precisely so the loss half is gated, and it
+    # is only gated if the number is asserted rather than the key.
+    for tag in ("teacher/loss", "teacher/ce"):
+        nz = [(st, v) for st, v in tb[tag] if abs(v) > 0.0]
+        assert nz, (
+            f"{tag} is EXACTLY 0.0 at all {len(tb[tag])} recorded points, over a run that folded "
+            f"{total} corrections. The tag being present proved the fold RAN; this proves it had "
+            f"an effect. A zero here means --search-teacher-coef bought nothing even though the "
+            f"corrections reached the buffer.")
+    assert max(v for _, v in tb["grad/searchteacher_share"]) > 0.0, (
+        "grad/searchteacher_share is 0 at every point — the AWR term contributed no gradient to "
+        "the shared trunk, so the composition taught the network nothing. (NOTE for the next "
+        "reader: the sibling scalar `grad/distill_share` is NOT this one and is correctly ABSENT "
+        "here — it is the EXPLOITER-distillation KL's share, from --distill-teacher, which this "
+        "argv does not pass. The search-teacher's share is this tag.)")
+
     by_label: Dict[str, List[float]] = {}
     for label, ms in blocks:
         by_label.setdefault(label, []).append(ms)
     cost = "  ".join(f"{k} n={len(v)} max={max(v):.1f}ms" for k, v in sorted(by_label.items()))
-    print(f"\n[search-teacher composition] {len(steps)} cycles at {steps}, "
+    walls = _cycle_walls(marker_times, started)
+    print("\n[search-teacher composition] per-cycle (wall resolution "
+          f"+/-{_POLL_S:.0f}s):\n"
+          "  step      selected  searched  labelled  wall_s")
+    for row, col in zip(walls, collects + [None] * len(walls)):
+        searched = sum(int(v) for v in col[2].values()) if col else None
+        w = f"{row['wall_s']:7.1f}" if row["wall_s"] is not None else " PENDING"
+        print(f"  {row['step']:<9,} {row['candidates']:<9} "
+              f"{searched if searched is not None else '-':<9} "
+              f"{row['collected'] if row['collected'] is not None else '-':<9} {w}")
+    print(f"[search-teacher composition] {len(steps)} cycles at {steps}, "
           f"{total} corrections, {elapsed:.0f}s wall at contention factor {factor:.2f}"
           f"\n[search-teacher composition] training-step cost: {cost} "
           f"(total {sum(ms for _, ms in blocks) / 1000.0:.2f} s over the whole run)")

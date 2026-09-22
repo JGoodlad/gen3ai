@@ -76,6 +76,31 @@ byte-identical). The "expert" is the prober's `better_line` beam + the rollout-c
     measurement) and recorded in `designs/ops/TECH_DEBT_BACKLOG.md`. It is why the select child's
     config is `select_config.json` and NOT `config_*.json`: the composition gate globs the latter and
     asserts every match records `"impl": "rust"`, which is true of the SEARCH workers only.
+  - 🚨 **A LABEL IS NOT REPRODUCIBLE against a CHECKPOINT opponent — at FIXED impl, let alone
+    across engines** (measured 2026-09-22,
+    `designs/research_state/measurements/search_teacher_composition_2026-09-22/`). A correction is
+    `(obs, mask, better_action, advantage)`. `better_action` comes from `better_line`, whose node vs
+    rust candidate values are gated BIT-IDENTICAL. `advantage` comes from the CONFIRM rollouts, and
+    two of that leg's three sources of randomness are pinned while the third is not: the sim dice
+    ARE deterministic (`falsifier.fresh_seeds(n, salt=f"{battle_tag}:{inv}:cf")` is a sha256, so the
+    PRNG seeds reproduce exactly) and the trainee plays GREEDY (`stochastic=False` in
+    `prober/replay.py`) — but a reloaded checkpoint opponent plays **stochastic at temp 1.0**
+    (`_RECORDED_CKPT_STOCHASTIC = True`, matching `eval_worker`'s sentinel regime) and there is **no
+    `torch.manual_seed` anywhere in the confirm path**. So the opponent's sampled actions are a
+    fresh draw every run, which makes `advantage` — and the `ok` / `gate_failed` verdict the Wilson
+    bound produces from it — a fresh draw too. Consequences: (1) *"same candidates and seed"* does
+    NOT pin a label, so no cross-impl byte-identity claim is even well-posed here; (2) a cycle's
+    YIELD is a random variable for a reason that has nothing to do with the policy, which is worth
+    remembering before reading a yield difference as a teacher-quality difference. The
+    configuration where the whole confirm IS deterministic, and where a label-identity gate could
+    therefore be built, is a **BOT** opponent (rebuilt reproducibly, deterministic policy) with the
+    greedy trainee and the sha256 dice. Recorded in `designs/ops/TECH_DEBT_BACKLOG.md`.
+  - ⚠️ **There is no `--search-impl` flag** — the engine is not separately selectable. It flows
+    `--use-bridge` → `args.bridge_impl` → the callback's `impl` → the worker config's `"impl"` key →
+    `ProbeSession._impl` → `better_line_decision(impl=...)` / `replay_counterfactual_battle(impl=...)`.
+    `src/rust_sim/harness/search_impl_parity.py` is a driver-WIRE differential (18,877 leaf fields),
+    not a label-level one, and it needs `tmp/search_golden_node.json` — a scratch artifact absent
+    from every checkout.
 - **SUPPLY+POOL mode (`--teacher-persistent`)** — `teacher/generate.py` +
   `src/main/search_teacher_persistent_worker.py`. The per-cycle mode reads eval traces (a trickle every
   ~2M steps); the persistent mode is a LONG-LIVED worker pool that GENERATES its own fresh losses (the
