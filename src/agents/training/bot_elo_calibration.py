@@ -59,7 +59,6 @@ from agents.training.eval_callback import build_eval_opponents, eval_opponent_na
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.git import get_git_hash, get_repo_root
 from utils.team_loader import TeamLoader
-from utils.team_loader.pins import measurement_bias_teams
 from utils.teambuilder import Gen3Teambuilder
 
 # The ANCHOR is runtime reference data the model reads → data/ (immutable until bots change).
@@ -71,12 +70,12 @@ DEFAULT_STORE = os.path.join(_ARTIFACT_DIR, "gen3_bot_elo_games.json")
 DEFAULT_HEATMAP = os.path.join(_ARTIFACT_DIR, "gen3_bot_elo_anchors_heatmap.png")
 
 
-def _build_bot(name: str, all_teams, bias_teams, tag: str):
+def _build_bot(name: str, all_teams, sample_teams, tag: str):
     """Construct one roster bot for bridge play (start_listening=False → no websocket).
 
     Each bot gets its OWN teambuilder instance so the two sides sample teams independently
     (a shared teambuilder would race on ``_current_packed_team``)."""
-    tb = Gen3Teambuilder(all_teams, bias_teams=bias_teams, bias_prob=0.1)
+    tb = Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
     (_n, player), = build_eval_opponents(
         LocalhostServerConfiguration, tb, [name], tag, start_listening=False)
     return player
@@ -183,11 +182,9 @@ def calibrate(target: int, chunk: int, concurrency: int, out_path: str, store_pa
 
     loader = TeamLoader()
     all_teams = loader.get_all_teams()
-    # frozen MEASUREMENT bias set (the pre-split 72) so a recalibration stays comparable to the
-    # committed anchors across the 2026-09-23 curated/promoted split — `utils.team_loader.pins`
-    bias_teams = measurement_bias_teams(loader)
+    sample_teams = loader.get_sample_teams()
     print(f"Building {len(names)} bots…", flush=True)
-    bots = {name: _build_bot(name, all_teams, bias_teams, f"Cal{i}")
+    bots = {name: _build_bot(name, all_teams, sample_teams, f"Cal{i}")
             for i, name in enumerate(names)}
 
     pairs = list(itertools.combinations(names, 2))

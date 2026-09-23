@@ -83,10 +83,10 @@ def _worker(impl, worker_id, seconds, warmup_steps, barrier, result_q):
     """
     try:
         import numpy as np
-        from utils.team_loader.pins import pre_split_sample_teams
+        from utils.team_loader.loader import TeamLoader
 
         rng = np.random.default_rng(1000 + worker_id)
-        teams = pre_split_sample_teams()   # pinned by sha: byte-identical input across the 2026-09-23 split (utils.team_loader.pins)
+        teams = TeamLoader().get_sample_teams() or TeamLoader().get_all_teams()
 
         t_spawn = time.perf_counter()
         w = _build_env(impl, teams, worker_id)

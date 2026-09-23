@@ -51,15 +51,14 @@ def test_measure_once_contract(tmp_path, monkeypatch):
     import agents.model.snapshot            # noqa: F401 — import before patching, not after
     import agents.observation.state_encoder  # noqa: F401
     import utils.team_loader                 # noqa: F401
-    import utils.team_loader.pins            # noqa: F401
 
     monkeypatch.setattr("agents.observation.state_encoder.load_mappings", lambda: {})
     monkeypatch.setattr("agents.model.snapshot.current_model_version", lambda m: None)
 
     class _Loader:
         def get_all_teams(self): return ["t"]
+        def get_sample_teams(self): return ["t"]
     monkeypatch.setattr("utils.team_loader.TeamLoader", _Loader)
-    monkeypatch.setattr("utils.team_loader.pins.measurement_bias_teams", lambda loader: ["t"])
 
     n = sl._measure_missing(run, [(208, 224), (208, 240)], n_games=100, concurrency=1, impl="node")
     assert (208, 224) not in played      # already measured → skipped

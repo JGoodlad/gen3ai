@@ -27,12 +27,9 @@ def _args(**kw):
 
 # ── multi-team pin (--trainee-teams): the 1-vs-3-team exploiter A/B ─
 
-# The K6 exploiter's RECORDED argv, verbatim. Its third file has since been RELOCATED (the thread
-# replaced that Curse RestLax paste; it lives in data/teams/superseded/), so this trio is also the
-# standing proof that an archived argv still loads and validates through the relocation map.
 _K6_TRIO = ("data/teams/sample/9d5f845869e899ee.txt",   # 564b9be3ae
             "data/teams/sample/f7ba5702fe856292.txt",   # 4771662cf7
-            "data/teams/sample/0972146213a667c9.txt")   # 45995e432f — relocated to superseded/
+            "data/teams/sample/0972146213a667c9.txt")   # 45995e432f
 
 
 def test_pin_multi_builds_the_fixed_set(teams):
@@ -43,8 +40,7 @@ def test_pin_multi_builds_the_fixed_set(teams):
     # pin_str mirrors the first member so single-team consumers (eval pin, provenance) still work
     assert ts.pin_str == ts.pin_strs[0]
     tb = ts.build(all_teams, sample_teams)
-    from utils.team_loader.relocations import resolve_team_file
-    expected = [open(resolve_team_file(f), encoding="utf-8").read() for f in _K6_TRIO]
+    expected = [open(f, encoding="utf-8").read() for f in _K6_TRIO]
     assert tb.packed_teams == Gen3Teambuilder(expected).packed_teams and len(tb.packed_teams) == 3
     # provenance records every member's fingerprint
     d = spec.to_dict()["trainee_teams"]
@@ -52,14 +48,11 @@ def test_pin_multi_builds_the_fixed_set(teams):
 
 
 def test_pin_multi_exploiter_sample_gate(teams):
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
-    from utils.team_loader import TeamLoader
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
     all_teams, sample_teams = teams
-    vetted = TeamLoader().get_exploiter_trainee_teams()
-    # the recorded K6 trio passes — including its relocated, superseded member
+    # all-sample trio passes
     spec = MatchupSpec.from_args(_args(trainee_teams=",".join(_K6_TRIO), exploiter="models/x"))
-    assert spec.trainee_teams.pin_files == _K6_TRIO     # provenance keeps the path AS RECORDED
-    validate_exploiter_trainee_is_vetted(spec, vetted)   # no raise
+    validate_exploiter_trainee_is_sample(spec, sample_teams)   # no raise
     # a non-sample member is rejected — build a pin_multi with one non-sample team directly
     non_sample = "FakeMon @ Leftovers\nAbility: Levitate\n- Tackle\n"
     bad = MatchupSpec(
@@ -67,7 +60,7 @@ def test_pin_multi_exploiter_sample_gate(teams):
                                  pin_files=("s0.txt", "bad.txt")),
         opponent_teams=TeamSource(kind="pool"), mix_kind="exploiter")
     with pytest.raises(ValueError, match="NOT one of"):
-        validate_exploiter_trainee_is_vetted(bad, vetted)
+        validate_exploiter_trainee_is_sample(bad, sample_teams)
 
 
 # ── builder parity: the spec must reproduce the legacy constructions byte-for-byte ─
@@ -168,89 +161,56 @@ def test_describe_drift_names_changed_fields():
 # ── exploiter team-source guard (only-ever-sample-teams) ─────────────────────────
 
 def _sample_and_other():
-    """(the exploiter-trainee set, the pool's OTHER teams). Since gen3_curated_sample_split_v1 the
-    vetted set is curated sample + promoted + superseded, not ``get_sample_teams()``."""
     from utils.team_loader import TeamLoader
     loader = TeamLoader()
-    vetted = loader.get_exploiter_trainee_teams()
-    other = [t for t in loader.get_all_teams() if t not in vetted]
-    assert other and other == loader.get_other_teams()
-    return vetted, other
+    sample = loader.get_sample_teams()
+    other = [t for t in loader.get_all_teams() if t not in sample]
+    return sample, other
 
 
 def test_exploiter_pinned_sample_team_passes(tmp_path):
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
     sample, _ = _sample_and_other()
     pin = tmp_path / "s.txt"
     pin.write_text(sample[0] + "\n\n")                       # raw file w/ trailing whitespace
     spec = MatchupSpec.from_args(_args(exploiter="models/x", trainee_team=str(pin)))
-    validate_exploiter_trainee_is_vetted(spec, sample)       # no raise — strip-normalized member
+    validate_exploiter_trainee_is_sample(spec, sample)       # no raise — strip-normalized member
 
 
 def test_exploiter_pinned_nonsample_team_fatals(tmp_path):
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
     sample, other = _sample_and_other()
     pin = tmp_path / "o.txt"
     pin.write_text(other[0])                                 # a bulk-downloaded 'other' team
     spec = MatchupSpec.from_args(_args(exploiter="models/x", trainee_team=str(pin)))
-    with pytest.raises(ValueError, match="vetted exploiter-trainee teams"):
-        validate_exploiter_trainee_is_vetted(spec, sample)
+    with pytest.raises(ValueError, match="curated SAMPLE teams"):
+        validate_exploiter_trainee_is_sample(spec, sample)
 
 
 def test_non_exploiter_pin_is_unconstrained(tmp_path):
     # a bots/self-play specialist may pin any team — the guard is exploiter-only
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
     sample, other = _sample_and_other()
     pin = tmp_path / "o.txt"
     pin.write_text(other[0])
     spec = MatchupSpec.from_args(_args(trainee_team=str(pin)))   # no --exploiter → mix_kind=bots
-    validate_exploiter_trainee_is_vetted(spec, sample)          # no raise
+    validate_exploiter_trainee_is_sample(spec, sample)          # no raise
 
 
 def test_exploiter_unpinned_trainee_is_out_of_scope():
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
     sample, _ = _sample_and_other()
     spec = MatchupSpec.from_args(_args(exploiter="models/x"))   # default_biased trainee, no pin
-    validate_exploiter_trainee_is_vetted(spec, sample)          # no raise (full-pool exploiter)
-
-
-def test_every_promoted_team_is_a_legal_exploiter_trainee_but_not_curated():
-    """The 40 promoted fleet teams exist to be exploiter trainees: they must pass the guard, and
-    they must NOT be in the curated set (the training bias). Both halves fail on a revert of the
-    split — the old guard read `get_sample_teams()`, which after the split excludes them."""
-    import hashlib
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
-    from utils.team_loader import TeamLoader
-    loader = TeamLoader()
-    promoted = loader.get_promoted_teams()
-    assert len(promoted) == 40
-    curated = {hashlib.sha1(t.encode()).hexdigest() for t in loader.get_sample_teams()}
-    for t in promoted:
-        assert hashlib.sha1(t.encode()).hexdigest() not in curated
-        spec = MatchupSpec(trainee_teams=TeamSource(kind="pinned", pin_str=t),
-                           opponent_teams=TeamSource(kind="pool"), mix_kind="exploiter")
-        validate_exploiter_trainee_is_vetted(spec, loader.get_exploiter_trainee_teams())
-
-
-def test_a_relocated_promoted_path_in_an_archived_argv_still_loads():
-    """An archived fleet exploiter recorded `--trainee-team data/teams/sample/<promoted>.txt`. That
-    path no longer exists; `from_args` must follow data/teams/relocations.json to the SAME bytes
-    and keep the recorded path as provenance, so its spec (and spec_hash) is unchanged."""
-    import os
-    legacy = "data/teams/sample/8bdb5796b9.txt"
-    assert not os.path.exists(legacy)
-    spec = MatchupSpec.from_args(_args(exploiter="models/x", trainee_team=legacy))
-    assert spec.trainee_teams.pin_file == legacy
-    assert spec.trainee_teams.pin_str == open("data/teams/promoted/8bdb5796b9.txt").read()
+    validate_exploiter_trainee_is_sample(spec, sample)          # no raise (full-pool exploiter)
 
 
 def test_tss_specialist_pin_is_a_sample_team():
     # the shipped TSS specialist recipe must keep passing the guard
-    from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
+    from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
     sample, _ = _sample_and_other()
     spec = MatchupSpec.from_args(_args(exploiter="models/x",
                                        trainee_team="data/teams/specialist/tss_starmie.txt"))
-    validate_exploiter_trainee_is_vetted(spec, sample)
+    validate_exploiter_trainee_is_sample(spec, sample)
 
 
 # ── DISTILLATION must eval on the TAUGHT teams (eval-pilots-what-training-pilots) ────────────────

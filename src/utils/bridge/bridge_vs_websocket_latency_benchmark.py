@@ -32,13 +32,12 @@ from agents.observation.state_encoder import load_mappings
 from agents.training.gen3_env import Gen3Env
 from utils.bridge.bridge_session import attach_bridge_transport
 from utils.team_loader.loader import TeamLoader
-from utils.team_loader.pins import pre_split_sample_teams
 from utils.teambuilder import Gen3Teambuilder
 
 
 def _teams():
     loader = TeamLoader()
-    return pre_split_sample_teams(loader)   # pinned by sha: byte-identical input across the 2026-09-23 split (utils.team_loader.pins)
+    return loader.get_sample_teams() or loader.get_all_teams()
 
 
 def _wrap(env, teams, idx):

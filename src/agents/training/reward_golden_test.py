@@ -73,7 +73,7 @@ from poke_env.player.player import Player
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.paths import repo_root, src_path
-from utils.team_loader.pins import pre_split_sample_teams
+from utils.team_loader import TeamLoader
 
 pytestmark = pytest.mark.sim
 
@@ -283,12 +283,9 @@ def _in_repo_root():
 async def _one(name: str, config: RewardConfig, key: int, sink: list, teams=None):
     """One reproducible battle: fixed teams, per-player RNG, fixed sim seed, concurrency=1."""
     if teams is None:
-        # The first 72 of the pre-split pool, by sha (`utils.team_loader.pins`): the teams this
-        # golden was recorded on, whatever `data/teams/` looks like now. No modulo — a key past the
-        # pinned list must fail, not silently wrap onto a different team.
-        pool = pre_split_sample_teams()
-        assert key + 3 < len(pool), f"key {key} runs past the {len(pool)} pinned golden teams"
-        teams = (pool[key], pool[key + 3])
+        pool = TeamLoader().get_all_teams()
+        assert pool, "no gen3ou teams under data/teams — the golden would hash an empty pool"
+        teams = (pool[key % len(pool)], pool[(key + 3) % len(pool)])
     t1, t2 = teams
     tag = f"{name[:3]}{key}"
     trainee = GoldenPlayer(

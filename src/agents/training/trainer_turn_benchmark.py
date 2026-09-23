@@ -63,7 +63,7 @@ from agents.training.episode_tracker import EpisodeTracker
 from agents.training.reward_manager import (
     Gen3RewardManager, RewardConfig, format_reward_composition)
 from utils.bridge.local_battle_runner import run_local_battles
-from utils.team_loader.pins import pre_split_sample_teams
+from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
@@ -99,7 +99,8 @@ class _StageAcc:
 
 
 def _team_pool() -> list:
-    pool = pre_split_sample_teams()   # pinned by sha: byte-identical input across the 2026-09-23 split (utils.team_loader.pins)
+    loader = TeamLoader()
+    pool = loader.get_sample_teams() or loader.get_all_teams()
     if not pool:
         raise RuntimeError("no gen3ou teams found under data/teams")
     return pool

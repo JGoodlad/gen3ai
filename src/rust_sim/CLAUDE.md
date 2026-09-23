@@ -56,8 +56,8 @@ When you touch a move, check whether anything has ever EXECUTED it. Pool **762/7
 count MOVES as the pool grows, and it read 722/722 when the pool was 40 teams smaller). ⚠️ **This
 is NOT the root `CLAUDE.md`'s 719-team pool and the two must not be "reconciled".** 762 is what
 `Teams.import` + `TeamValidator('gen3ou')` accept out of `data/teams/*.txt`; **719** is what
-`utils.team_loader.TeamLoader.get_all_teams()` returns to TRAINING (32 curated sample + 40
-promoted + 647 other since the 2026-09-23 split; it was 72 sample + 647 other on 2026-09-07). Different filters, both current. For scale, the ROUND-40 entry says 281/88 and ROUND 44 says 286/83 —
+`utils.team_loader.TeamLoader.get_all_teams()` returns to TRAINING (72 sample + 647 other,
+measured 2026-09-07). Different filters, both current. For scale, the ROUND-40 entry says 281/88 and ROUND 44 says 286/83 —
 both were true when written. **The invariant is the load-bearing claim, not the split:** 0
 MISMODELED is what makes an unmodeled move a loud construction failure rather than a silent
 desync, and it has held under every round separately and combined. Re-run after admitting any move

@@ -198,9 +198,6 @@ def team_slices(paths: Sequence[str], *, prefix: str = "U",
     missing: List[str] = []
     for i, rel in enumerate(paths):
         full = rel if os.path.isabs(rel) else str(repo_path(rel))
-        # a committed manifest names paths as they were; follow a relocation (byte-identical file)
-        from utils.team_loader.relocations import resolve_team_file
-        full = resolve_team_file(full)
         if not os.path.isfile(full):
             missing.append(full)
             continue

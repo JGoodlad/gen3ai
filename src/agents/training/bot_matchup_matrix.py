@@ -32,11 +32,9 @@ does not re-implement the battle protocol: it CALLS ``bot_elo_calibration._build
   4 v1 archetypes + their 4 v2s). 36 unordered pairs.
 * **Bot construction** — ``build_eval_opponents(..., start_listening=False)``: no websocket, no
   server, no :8001 risk. Bots are cheap decision functions (no NN forward, no GPU).
-* **Team sampling** — each bot gets its OWN ``Gen3Teambuilder(all_teams, bias_teams=FROZEN,
+* **Team sampling** — each bot gets its OWN ``Gen3Teambuilder(all_teams, bias_teams=sample_teams,
   bias_prob=0.1)`` (a shared instance would race on ``_current_packed_team``), i.e. uniform over
-  the full loaded ``data/teams`` pool with a 10% draw from the frozen MEASUREMENT bias set
-  (``utils.team_loader.pins.measurement_bias_teams`` — the 72 teams ``data/teams/sample/`` held
-  before the 2026-09-23 curated/promoted split, kept so the matrix stays comparable). A fresh
+  the full loaded ``data/teams`` pool with a 10% draw from the curated *sample* subset. A fresh
   team is drawn for BOTH sides on every battle, so an edge's count is a marginal over the team
   distribution, not a fixed-team duel.
 * **Transport** — ``utils.bridge.local_battle_runner.run_local_battles`` at ``impl="node"`` (its
@@ -116,10 +114,8 @@ PROTOCOL: dict = {
     "roster": "agents.training.eval_callback.eval_opponent_names() — the 9 fixed eval bots",
     "bot_construction": "build_eval_opponents(..., start_listening=False) — no websocket, "
                         "no server; bots are heuristic decision functions (no NN forward)",
-    "team_sampling": "per-bot Gen3Teambuilder(all_teams, bias_teams=FROZEN measurement set "
-                     "utils.team_loader.pins.PRE_SPLIT_SAMPLE_72 (the 72 teams data/teams/sample/ "
-                     "held before 2026-09-23), bias_prob=0.1); a fresh team is drawn for both "
-                     "sides every battle, so an "
+    "team_sampling": "per-bot Gen3Teambuilder(all_teams, bias_teams=sample_teams, "
+                     "bias_prob=0.1); a fresh team is drawn for both sides every battle, so an "
                      "edge is a MARGINAL over the team distribution, not a fixed-team duel",
     "battle_format": "gen3ou",
     "transport": "in-process BattleStream bridge "
@@ -399,14 +395,13 @@ def build_bots(names: list[str]) -> dict:
     Imports are deferred so importing this module stays free for the pure unit tests."""
     from agents.training.bot_elo_calibration import _build_bot
     from utils.team_loader import TeamLoader
-    from utils.team_loader.pins import measurement_bias_teams
 
     loader = TeamLoader()
     all_teams = loader.get_all_teams()
-    bias_teams = measurement_bias_teams(loader)   # the calibration's own frozen set (PROTOCOL)
+    sample_teams = loader.get_sample_teams()
     print(f"Building {len(names)} bots…", flush=True)
     # Tag namespace distinct from the calibration's "Cal{i}" so both can be live at once.
-    return {name: _build_bot(name, all_teams, bias_teams, f"Mx{i}")
+    return {name: _build_bot(name, all_teams, sample_teams, f"Mx{i}")
             for i, name in enumerate(names)}
 
 
