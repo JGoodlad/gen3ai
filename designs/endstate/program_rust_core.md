@@ -349,6 +349,18 @@ commit. That is covered by three guards: `ladder_drift_scan` before every live s
 REFUSING an unknown keyword (by design; a silent skip would be worse than a lost game); and the
 Showdown version stamped into every online record, so a later re-parse knows which dialect it reads.
 
+## 6c. DECIDED (owner, 2026-09-23): the OBSERVATION always comes through the parser
+
+Training, evaluation and online play build the observation by the same path: **per-side protocol
+text → `parse` → the reading → the view → encode**. Search's successors keep the typed-at-source
+shortcut (it needs the omniscient board to step, and it is the hot path), and M1's
+`parse(emit(step)) == step` gate is what licenses that shortcut. Why: one observation path
+everywhere means the ladder's parser is exercised on every training decision, not only on the
+parity corpus. Cost: M1 measured `parse` at 21.6–30.8 µs per decision, ≈ 0.03 % of the live arm's
+step, and 60–70 % of that is the `|request|` JSON, which the current path decodes on every decision
+anyway, so the marginal cost is smaller still. It binds M2–M5: the core's env shape (M5) produces
+the training observation by parsing its own per-side stream.
+
 ## 7. Which path a research number ran on, milestone by milestone
 
 | landing | training numbers | search numbers | offline meters / anchors |
