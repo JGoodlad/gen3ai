@@ -194,6 +194,34 @@ field, and `search_impl_parity.py`'s allowlist forgives exactly that ABSENCE and
 predicate is value-aware). Contract, findings and deferrals:
 [`one_sided_view.md`](one_sided_view.md).
 
+### THE REPLY IS SHIPPED, NOT JUST RENDERED — `side` ELIDES THE HALF NOBODY READS
+
+`gen3_expand_many_side_elision_v1`. An `expand_many` request may carry a top-level
+**`side`: `"p1"` | `"p2"`**, and the driver then OMITS the other side's `view_pN`, `pN_chunks`
+and `view_pN_at` (D10's per-intermediate-decision boards, which are one-sided payloads on the
+same terms) from every arm of that batch. A search runs for one side — `search._expand_ply` reads
+`view_p1 if side == "p1" else view_p2` and the matching chunk array, and nothing of the other —
+so on 864 banked arms the discarded copy was **43.0% of the reply bytes**, rendered, quoted, piped
+and `json.loads`-ed to be dropped (the split, and the three candidates it killed:
+[`../research_state/measurements/expand_many_2026-09-22/README.md`](../research_state/measurements/expand_many_2026-09-22/README.md)).
+`requests` is NOT in that class and is never elided: BOTH sides are read (the opponent's legal
+choices at interior plies, `branchable` for ours).
+
+| | |
+|---|---|
+| **default** | `SideWant::Both` — **byte-identical to the historical body**, same fields in the same ORDER. A request without `side` cannot tell the feature exists, which is what keeps `search_impl_parity`'s node comparison (whose golden requests carry no such key) valid field-for-field |
+| **an unknown `side`** | an ERROR, never a fall-back to Both. A typo that returned everything would read as a working elision that saved nothing, and the only symptom would be a benchmark that refused to move |
+| **the elided slot, in Python** | `search_session.ElidedSide` — falsy, so the existing `payload or {}` guards take their COUNTED fallback, but RAISING on every way of reading a value out. An empty dict would have ENCODED: into a well-formed observation of a battle nobody played |
+| **under `impl="node"`** | nothing is elided. `search_driver.js` ignores the key and returns both sides, and the sentinel keys on the field being ABSENT, never on the request |
+| **wall gate** | `tests/search_side_elision_test.rs` — the same arm from the same root in the same process, with and without `side`, asserting the surviving payload is **byte-identical**, the other is gone, a `side`-less arm keeps the historical field order, and an unknown side is refused without killing the session |
+| **decision gate** | `src/main/search_dividend/side_elision_parity_integration_test.py` — the real `SearchEngine` over one seeded decision, elision on vs off, comparing every successor's obs BYTES in order, the scores, the chosen action, the widths **and both fallback counters** (an elided payload read as empty would quietly move arms to the protocol road and still score plausibly) |
+
+🚨 **The driver can also report its OWN per-phase wall** — `POKESIM_SEARCH_TIMING=1` adds a
+`timing_us` object (`sim` / `view` / `chunks` / `render` / `total`, micros summed over the batch)
+to an `expand_many` reply. It is read ONCE per process and renders **the empty string** when off,
+so an un-set build is byte-identical; that is what lets the cross-impl parity harness go on
+comparing this driver to node's, which has no such field. `pokesim::driver_timing`.
+
 **IT ALREADY REPLACES node in `better_line`.** This paragraph used to list three things as STILL
 NEEDED and every one of them had already been done — *a note that outlived its own fix*, the exact
 class this file polices elsewhere (corrected 2026-09-07, verified against the code named here):

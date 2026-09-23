@@ -51,7 +51,12 @@ class _FakeSession:
             raise self.raise_on_open
         return self.root
 
-    def expand_many(self, arms):
+    def expand_many(self, arms, *, side=None):
+        # `side` is accepted and ignored: this double returns nothing, so there is no payload to
+        # elide. The KEYWORD has to be here — the production caller always passes it
+        # (`gen3_expand_many_side_elision_v1`), and a double whose signature lags the real one
+        # raises a TypeError that `SearchEngine.choose` catches and reports as `search_error`,
+        # i.e. a silently un-searched decision.
         return []
 
     def close(self):
@@ -220,7 +225,12 @@ def test_NO_arm_is_ever_expanded_on_the_sims_own_realized_dice():
                   "side": {"pokemon": []}}}
     eng._session = _FakeSession(root=_Root(OBSERVED, requests=req))
     seen: list = []
-    eng._session.expand_many = lambda arms: seen.extend(a["seed"] for a in arms) or []
+    # `side=None` in the signature, not `**kw`: the production caller passes `side=` always
+    # (`gen3_expand_many_side_elision_v1`) and a lambda that refuses it raises a TypeError that
+    # `choose` swallows into `search_error` — this assertion's `seen` would then be empty and the
+    # test would read as "the engine expanded nothing", which is a different and wrong diagnosis.
+    eng._session.expand_many = (
+        lambda arms, *, side=None: seen.extend(a["seed"] for a in arms) or [])
     _choose(eng, opp_true_packed="T")
     assert seen, "the test needs the engine to have expanded at least one arm"
     assert "original" not in seen, seen
@@ -421,7 +431,11 @@ class _PlySession:
         self.per_ply = list(per_ply)
         self.calls = 0
 
-    def expand_many(self, arms):
+    def expand_many(self, arms, *, side=None):
+        # `side` accepted and IGNORED on purpose: this double answers both sides, which is the
+        # `impl="node"` shape, and the elision is a rust-driver behaviour with its own gates
+        # (`tests/search_side_elision_test.rs`, `side_elision_parity_integration_test.py`).
+        # What it must not do is refuse the kwarg the production caller always sends.
         chunk, node_id = self.per_ply[self.calls]
         self.calls += 1
         req = {"p1": {"active": [{"moves": [{"id": "surf"}]}]},

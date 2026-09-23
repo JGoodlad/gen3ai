@@ -107,7 +107,8 @@ read the row you are about to edit.**
 | `bridge.rs` | DONE, validated (in-scope corpus) | The PER-SIDE (`p1`/`p2`) streams + the `\|request\|` JSON + the HP-privacy fold, additive on top of the omniscient stream. `run_full_battle_bridge`. |
 | `bin/sim_bridge.rs` | DONE, validated | The drop-in `node local_sim_bridge.js` REPLACEMENT, INCREMENTAL (`gen3_bridge_incremental_replay_v1`) — O(1) per CHOOSE, O(N) per battle. |
 | `search.rs` | DONE, validated | The search + replay KERNELS (`gen3_rust_search_driver_v1`): the aux PRNG, `Record::parse`, `build_to_turn`, `resolve_turn*`, the `outcome_of`/`pre_state` renderers. Pure helpers. |
-| `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. |
+| `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. An `expand_many` may carry **`side`** to ELIDE the one-sided payload the caller will not read (`gen3_expand_many_side_elision_v1`). |
+| `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
 | `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
 
 ## The callable surface (battle.rs) maps to the existing bridge
@@ -251,6 +252,25 @@ for coverage.
 
 🚨 **A gen3ou repro MUST be replayed with `{format:'gen3ou', allowHiddenPower:true}`** — the probe
 default is customgame, and the sim then diverges from the golden.
+
+🚨 **`expand_many` SHIPS TWICE WHAT A SEARCH READS, UNLESS THE REQUEST SAYS OTHERWISE.** The
+driver renders `view_p1`+`view_p2`, `p1_chunks`+`p2_chunks` and `view_p1_at`+`view_p2_at` on every
+arm; a search reads ONE side of each. Measured on 864 banked arms the discarded half was **43.0% of the reply bytes**, and
+`expand_many`'s optional top-level **`side`** (`"p1"`/`"p2"`, `gen3_expand_many_side_elision_v1`)
+omits it — **30,326 → 17,330 B/arm**, with the surviving side byte-identical and an omitted `side`
+rendering the historical body byte-for-byte. Python's elided slot is a sentinel that is falsy but
+RAISES on read, never an empty dict (an empty dict ENCODES). Gates:
+`tests/search_side_elision_test.rs` (the byte diff, both ways, in one process) and
+`src/main/search_dividend/side_elision_parity_integration_test.py` (the whole decision, including
+both fallback counters). Interleaved, load-matched, **one road per process**: **1.10x on the view
+road at wide B and 1.11x on the protocol road**, not resolved at B = 1; the span is 31.1% -> 26.6%
+of the decision wall. 🚨 **Two candidates that LOOKED certain were rejected on measurement**: a
+compact fixed-order payload (0.024 ms/arm of parse, all of it given back re-keying for the
+existing adapter) and holding Python's cyclic collector off for the reply parse (**2.3x on a
+captured 454 KB reply, NOTHING end to end** — built, gated and reverted). **A micro-benchmark share
+is not a wall share.** The split, both instrument findings, and the four candidates the measurement
+killed with their numbers:
+[`designs/research_state/measurements/expand_many_2026-09-22/README.md`](../../designs/research_state/measurements/expand_many_2026-09-22/README.md).
 
 Full detail — the protocol, the structural simplification over Node's serialize/restart/baseline
 dance, the kernel reuse, the `turn_log` split-line reconstruction, and the honest scope of

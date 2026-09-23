@@ -214,6 +214,28 @@ road-vs-road ratio understates the change and the base-vs-now columns above are 
 | `open_root` (rust) | 7.6% | 8.0% |
 | `_choice_map` | 1.2% | **0.7%** |
 
+### 🚨 WHAT THAT 20.2% TURNED OUT TO BE — and it is not the engine
+
+`expand_many` is ONE span from Python's side, and splitting it was its own campaign:
+[`../expand_many_2026-09-22/README.md`](../expand_many_2026-09-22/README.md). Over the same 864
+banked arms it is **30.2% the rust child, 4.1% the pipe, 64.5% Python** — and two things came out
+of that which change how this file's rows should be read:
+
+* **43.0% of the reply bytes were the side the search never reads.** `expand_many` rendered both
+  `view_pN` and both `pN_chunks` on every arm; `_expand_ply` reads one of each. It now takes a
+  `side` and omits the rest (`gen3_expand_many_side_elision_v1`): **30,326 → 17,330 B/arm**.
+* **A row in the table above is the GARBAGE COLLECTOR.** The post-parse time billed to the
+  `ExpandedNode` walk is not that walk: building 22 of them from parsed arms measures 0.0028
+  ms/arm against the 0.179 billed, while `json.loads` of one real 454 KB reply costs **0.4124
+  ms/arm with the cyclic collector running and 0.1805 without**. **An exclusive-wall row can be
+  someone else's collection time.** Acting on it did NOT work: holding the collector off for the
+  parse was built, gated and **reverted** when it produced nothing end to end — *a micro-benchmark
+  share is not a wall share*, the exact sibling of this file's cProfile retraction.
+* 🚨 **AND THIS FILE'S OWN INSTRUMENT HAS A TRAP.** `search_decision_benchmark.py`'s two roads run
+  in ONE interpreter and **are not independent**: in a two-road A/B of the elision the protocol
+  road read 1.55x faster and the view road read *slower*, which no change that only removes work
+  can produce. Run **one road per process** for any per-road before/after.
+
 ---
 
 ## 4. D10 — DESIGNED, NOT LANDED, AND THE BLOCKER IS NAMED

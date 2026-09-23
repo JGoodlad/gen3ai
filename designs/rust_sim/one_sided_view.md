@@ -337,6 +337,36 @@ measurements disagree about the denominator and the one taken on the road produc
 one to act on. What cProfile DOES distort is in the same pair: encode reads 9.5% un-profiled and
 15.6% profiled, the action mask 14.7% against 2.2%. **A cProfile share is not a wall share.**
 
+### THE SPAN IS SHIPPING, NOT SIMULATING — `gen3_expand_many_side_elision_v1`
+
+`expand_many` and its JSON was the largest single span left (20.2%). Split with a driver-side
+timer against a Python-side one, over the same 864 banked arms, it is **30.2% the rust child
+(0.164 ms/arm), 4.1% the pipe, and 64.5% Python** — `json.loads` of a reply of which the port
+rendered BOTH sides' `view_pN` + `pN_chunks` while the search reads one. That half was **43.0% of
+the reply bytes**, and `expand_many` now takes a `side` on the request and omits it: **30,326 →
+17,330 B/arm**, with the surviving `view_pN` byte-identical (a rust gate expands the same arm both
+ways in one process and diffs the bytes). `requests` is never elided — both sides are read.
+
+**Measured** — interleaved against a baseline worktree, load-matched, **one road per process**
+(the benchmark's two roads in one interpreter are NOT independent and the first A/B of that
+campaign pointed the wrong way because of it): **1.10x on the view road at wide B** (2.315 ->
+2.110 and 2.293 -> 2.084 ms/arm, two warm pairs agreeing to three digits), **1.11x on the protocol
+road** — which parses the same reply, so a result that moved only one road would have meant
+something else — and **NOT RESOLVED at B = 1**, where the decision is its prefix and there are 31
+arms to save on. `expand_many` is **31.1% -> 26.6% of the decision wall** and no longer the
+largest single span.
+
+**Four candidates were killed by measurement, each with its number**: a compact fixed-order
+payload saves 0.024 ms/arm of parse and gives it all back re-keying for the existing adapter (~1%
+of the decision wall); one request per DECISION is worth 0.9% and the call pattern is already one
+per PLY (864 arms in 39 batches); caching the ply-invariant view parts in the driver is ~1% for a
+cache, a merge and a risk to the byte-parity gate; and holding Python's cyclic collector off for
+the reply parse measures **2.3x on a captured 454 KB reply and NOTHING end to end** — it was
+built, gated, and reverted. 🚨 **A micro-benchmark share is not a wall share**, the sibling of this
+file's cProfile retraction and for the same reason: the toy process lacks the heap the collector
+has to walk. Full record, both instrument findings, and the 5% stop rule:
+[`../research_state/measurements/expand_many_2026-09-22/README.md`](../research_state/measurements/expand_many_2026-09-22/README.md).
+
 The tracker fork was **10.5 ms** by `deepcopy` and is **0.5 ms** by a pinned-pickle thaw — the
 same 9x `_PlayerSnapshot._freeze` documents, and until it landed the view road was SLOWER than the
 road it replaces (0.84x at B=33). `agents/training/clone_pins.py` is now the ONE home for both

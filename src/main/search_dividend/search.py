@@ -1032,7 +1032,12 @@ class SearchEngine:
         if not payload:
             return {"n_scored": 0, "n_terminal": 0, "score_mode": self.cfg.effective_score()}
 
-        expanded = self.session().expand_many(payload)
+        # `gen3_expand_many_side_elision_v1` — this loop reads `view_p<side>` and
+        # `p<side>_chunks` and NOTHING of the other side (see the two reads below), so the driver
+        # is told not to render, quote or ship the other copy. It was 43.0% of the reply bytes.
+        # The requested side's payload is byte-identical either way; the other side's slot comes
+        # back as a refusing sentinel rather than an empty dict.
+        expanded = self.session().expand_many(payload, side=ctx.side)
         widths.arms_expanded += len(expanded)
         if deep:
             widths.deep_arms_expanded += len(expanded)

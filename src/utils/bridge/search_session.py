@@ -142,6 +142,69 @@ class SearchError(RuntimeError):
     pass
 
 
+class ElidedSide(dict):
+    """The payload of a side the request DECLINED to ask for — falsy, and LOUD on any real read.
+
+    ``gen3_expand_many_side_elision_v1``. When :meth:`SearchSession.expand_many` is given a
+    ``side``, the rust driver omits the other side's ``view_pN`` / ``pN_chunks`` entirely (43.0%
+    of the reply bytes on the banked search decisions). What lands in the ``ExpandedNode`` in
+    their place is one of these rather than ``{}`` / ``[]``, because the two failure modes are not
+    the same failure: an empty board ENCODES — into a well-formed observation of a battle nobody
+    played — while this raises.
+
+    It is a ``dict`` subclass with ``__len__`` == 0 on purpose, so the existing
+    ``payload or {}`` guards in :mod:`main.search_dividend.search` still read it as "no payload"
+    and take their COUNTED fallback (``view_fallback_no_payload``). Falsy is the recoverable
+    answer; every way of actually reading a value out of it is the unrecoverable one."""
+
+    __slots__ = ("_field",)
+
+    def __init__(self, field_name: str) -> None:
+        super().__init__()
+        object.__setattr__(self, "_field", field_name)
+
+    def _refuse(self, *_a, **_k):
+        raise SearchError(
+            f"{self._field} was ELIDED: this expand_many asked for one side only. Re-issue the "
+            f"call without side= (or with the other side) if you need it — reading an elided "
+            f"payload as empty would encode a board nobody played.")
+
+    __getitem__ = _refuse
+    get = _refuse
+    keys = _refuse
+    items = _refuse
+    values = _refuse
+    __iter__ = _refuse
+    __contains__ = _refuse
+
+    def __repr__(self) -> str:
+        return f"<ElidedSide {self._field}>"
+
+
+def _side_payload_list(arm: dict, key: str, elided: bool):
+    """:func:`_side_payload` for a field the caller wants as a fresh ``list``.
+
+    The copy is taken ONLY on a present value: calling ``list()`` on an :class:`ElidedSide` would
+    raise here, at construction, rather than at the read that actually wanted the side — and an
+    error that fires where nobody asked for anything is a worse diagnostic than the one the
+    sentinel exists to give."""
+    if key in arm:
+        return list(arm[key] or [])
+    return ElidedSide(key) if elided else []
+
+
+def _side_payload(arm: dict, key: str, empty, elided: bool):
+    """The arm's value for ``key``: the driver's when PRESENT, else empty-or-refusing.
+
+    The distinction is on the KEY, never on the request: ``search_driver.js`` emits no ``view_pN``
+    at all, so under ``impl="node"`` the absence means "this driver has none" and the historical
+    ``{}`` is right. Only a ``side``-bearing request can turn an absence into a refusal, and only
+    for the side it declined."""
+    if key in arm:
+        return arm[key] or empty
+    return ElidedSide(key) if elided else empty
+
+
 class SearchSession:
     """A live search-driver process. One per ``better_line`` call, OR — for the search-teacher's
     background workers — ONE WARM process REUSED across many battles (pass ``record=None`` here and the
@@ -246,7 +309,8 @@ class SearchSession:
             prefix_p1_chunks=out["prefix_p1_chunks"], prefix_p2_chunks=out["prefix_p2_chunks"],
             view_p1=out.get("view_p1") or {}, view_p2=out.get("view_p2") or {})
 
-    def expand_many(self, arms: Sequence[dict]) -> List[ExpandedNode]:
+    def expand_many(self, arms: Sequence[dict], *,
+                    side: Optional[str] = None) -> List[ExpandedNode]:
         """Expand N arms from their parent nodes in one round-trip. Each ``arm`` is a dict
         ``{node_id, p1_action, p2_action, seed, label, recorded_exact?, followup?}`` with the
         per-side action semantics of :func:`reconstruction.reroll_turn` (``"recorded"`` only
@@ -263,17 +327,40 @@ class SearchSession:
         exactly what an OFFLINE counterfactual wants (a CRN anchor against what really happened),
         and exactly what a LIVE search must not have — reading it is a ply of clairvoyance no
         player has, and it silently made the search-dividend probe's dice-width ladder measure its
-        own dilution. In a live decision, mint every seed."""
-        out = self._call({"cmd": "expand_many", "arms": [dict(a) for a in arms]})
+        own dilution. In a live decision, mint every seed.
+
+        ``side="p1"``/``"p2"`` (``gen3_expand_many_side_elision_v1``, **rust only**) asks the
+        driver to SKIP the other side's ``view_pN`` / ``pN_chunks``. A search runs for ONE side
+        and reads exactly those two fields for it; the other side's copy measured **43.0% of the
+        reply bytes** — rendered, piped and ``json.loads``-ed only to be dropped
+        (``designs/research_state/measurements/expand_many_2026-09-22/README.md``). The requested
+        side's payload is BYTE-IDENTICAL either way. An elided side comes back as an
+        :class:`ElidedSide`: falsy, so the existing ``payload or {}`` guards take their COUNTED
+        fallback, but RAISING on any read, so a caller that wanted it fails loudly instead of
+        encoding an empty board. ``search_driver.js`` ignores the key and still returns both
+        sides — the sentinel keys on the field being ABSENT, never on the request, so nothing is
+        elided under ``impl="node"``."""
+        req: dict = {"cmd": "expand_many", "arms": [dict(a) for a in arms]}
+        if side is not None:
+            if side not in ("p1", "p2"):
+                raise SearchError(f"expand_many: side must be 'p1' or 'p2', got {side!r}")
+            req["side"] = side
+        out = self._call(req)
         return [
             ExpandedNode(
                 label=a.get("label"), node_id=a.get("node_id"), ended=bool(a.get("ended")),
                 stuck=bool(a.get("stuck")), outcome=a.get("outcome") or {},
                 requests=a.get("requests"), choices_used=a.get("choices_used") or {},
-                p1_chunks=a.get("p1_chunks") or [], p2_chunks=a.get("p2_chunks") or [],
-                view_p1=a.get("view_p1") or {}, view_p2=a.get("view_p2") or {},
-                view_p1_at=list(a.get("view_p1_at") or []),
-                view_p2_at=list(a.get("view_p2_at") or []))
+                p1_chunks=_side_payload(a, "p1_chunks", [], side == "p2"),
+                p2_chunks=_side_payload(a, "p2_chunks", [], side == "p1"),
+                view_p1=_side_payload(a, "view_p1", {}, side == "p2"),
+                view_p2=_side_payload(a, "view_p2", {}, side == "p1"),
+                # D10's per-intermediate-decision boards are ONE-SIDED payloads on the same
+                # terms, so they elide with their own side. `list(...)` only where the driver
+                # actually sent one — an `ElidedSide` must reach the dataclass INTACT, since
+                # `list()` on it would raise here instead of where a consumer reads it.
+                view_p1_at=_side_payload_list(a, "view_p1_at", side == "p2"),
+                view_p2_at=_side_payload_list(a, "view_p2_at", side == "p1"))
             for a in out["arms"]
         ]
 

@@ -42,12 +42,17 @@
 //! {id, cmd:"open_root", record, turn}
 //!   → {id, ok, node_id, requests, recorded_choices, pre_state,
 //!      prefix_p1_chunks, prefix_p2_chunks}
-//! {id, cmd:"expand_many", arms:[{node_id, p1_action, p2_action, seed,
-//!                                label, recorded_exact?, followup?}]}
+//! {id, cmd:"expand_many", side?:"p1"|"p2", arms:[{node_id, p1_action, p2_action, seed,
+//!                                                 label, recorded_exact?, followup?}]}
 //!   → {id, ok, arms:[{label, node_id, ended, stuck, outcome, requests,
-//!                     choices_used, p1_chunks, p2_chunks}]}
+//!                     choices_used, p1_chunks, p2_chunks, view_p1, view_p2}]}
 //! {id, cmd:"close"} → {id, ok, bye:true}, then exit 0
 //! ```
+//!
+//! **`side` ELIDES the one-sided payload the caller will not read** (`SideWant`,
+//! `gen3_expand_many_side_elision_v1`): with `side:"p1"` the `p2_chunks` / `view_p2` fields are
+//! OMITTED, which is 43.0% of the reply bytes on the banked search decisions. Omitting `side`
+//! is the default and renders the historical body byte-for-byte.
 //!
 //! # THE ONE-SHOT REPLAY PROTOCOL (`replay_driver.js`)
 //!
@@ -82,6 +87,7 @@ use std::io::{self, BufRead, Write};
 
 use pokesim::bridge::BridgeSession;
 use pokesim::dex::Dex;
+use pokesim::driver_timing::{ArmClock, ArmTimings};
 use pokesim::json::Json;
 use pokesim::view::one_sided_view;
 use pokesim::search::{
@@ -476,17 +482,87 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
 // expand_many
 // ===========================================================================
 
+/// Which side's ONE-SIDED payload (`view_pN` + `pN_chunks`) the caller wants back —
+/// `gen3_expand_many_side_elision_v1`.
+///
+/// # Why a request can ask for less than the driver knows
+///
+/// Both are emitted because both are cheap to produce; neither is cheap to SHIP. A search runs
+/// for exactly one side, and `search::_expand_ply` reads `view_p1 if side == "p1" else view_p2`
+/// and the matching chunk array and nothing else — so the other side's ~13 KB per arm was
+/// rendered, quoted, piped, `json.loads`-ed and dropped. Measured on 864 banked arms it was
+/// **43.0% of the reply bytes**
+/// (`designs/research_state/measurements/expand_many_2026-09-22/README.md`).
+///
+/// 🚨 **The default is [`SideWant::Both`], and Both is BYTE-IDENTICAL to the historical body** —
+/// same fields, same order, same bytes. A request that does not carry `side` cannot tell this
+/// code exists, which is what keeps `harness/search_impl_parity.py` (whose golden requests carry
+/// no such key) comparing the node driver against this one field-for-field.
+///
+/// An UNRECOGNISED `side` is an ERROR, not a fallback to Both: a typo that silently returned
+/// everything would read as a working elision that saved nothing, and the only symptom would be
+/// a benchmark that failed to move.
+#[derive(Clone, Copy, PartialEq)]
+enum SideWant {
+    Both,
+    Only(usize),
+}
+
+impl SideWant {
+    fn parse(req: &Json) -> Result<SideWant, String> {
+        match req.str_at("side") {
+            None => Ok(SideWant::Both),
+            Some("p1") => Ok(SideWant::Only(0)),
+            Some("p2") => Ok(SideWant::Only(1)),
+            Some(other) => Err(format!(
+                "expand_many: side must be \"p1\" or \"p2\", got \"{other}\""
+            )),
+        }
+    }
+
+    fn wants(self, side: usize) -> bool {
+        match self {
+            SideWant::Both => true,
+            SideWant::Only(s) => s == side,
+        }
+    }
+}
+
+/// `,"<name>":<value>` when the side was asked for, and **nothing at all** when it was not.
+///
+/// Omission rather than `null` on purpose: the point of the field is its BYTES, and the Python
+/// half (`utils/bridge/search_session.py`) distinguishes an absent key from an empty one — an
+/// elided side comes back as a sentinel that RAISES on read, so a consumer that wanted the side
+/// it declined to ask for fails loudly instead of encoding an empty board.
+fn opt_field(name: &str, value: Option<&str>) -> String {
+    match value {
+        Some(v) => format!(",\"{name}\":{v}"),
+        None => String::new(),
+    }
+}
+
 fn expand_many(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> {
     let empty: Vec<Json> = Vec::new();
     let arms = req.get("arms").and_then(Json::as_array).unwrap_or(&empty).to_vec();
+    let want = SideWant::parse(req)?;
     let mut out = Vec::with_capacity(arms.len());
+    // `gen3_expand_many_timing_v1` — zero-cost and ZERO-BYTE unless `POKESIM_SEARCH_TIMING=1`.
+    let mut timings = ArmTimings::default();
+    let whole = ArmClock::start();
     for arm in &arms {
-        out.push(expand_arm(srv, arm, dex)?);
+        out.push(expand_arm(srv, arm, dex, want, &mut timings)?);
     }
-    Ok(format!("\"arms\":[{}]", out.join(",")))
+    whole.stop(&mut timings.total_us);
+    Ok(format!("\"arms\":[{}]{}", out.join(","), timings.render_field()))
 }
 
-fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String> {
+fn expand_arm(
+    srv: &mut Server,
+    arm: &Json,
+    dex: &Dex,
+    want: SideWant,
+    timings: &mut ArmTimings,
+) -> Result<String, String> {
     let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?.to_string();
     let followup = arm.str_at("followup").unwrap_or("random").to_string();
     let seed = arm.str_at("seed").unwrap_or("original").to_string();
@@ -495,6 +571,7 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
     let p2_action = arm.str_at("p2_action").unwrap_or("recorded").to_string();
     let label = render_id(arm.get("label"));
 
+    let clk_sim = ArmClock::start();
     let (mut sess, resolved) = {
         let node = srv
             .nodes
@@ -522,23 +599,38 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
         };
         (sess, resolved)
     };
+    clk_sim.stop(&mut timings.sim_us);
 
+    let clk_render = ArmClock::start();
     let ended = sess.is_ended();
     let outcome = outcome_of(&sess, resolved.stuck);
     let requests = if ended { "null".to_string() } else { requests_json(&sess) };
-    let p1_chunks = chunk_array(&sess, 0);
-    let p2_chunks = chunk_array(&sess, 1);
+    clk_render.stop(&mut timings.render_us);
+
+    let clk_chunks = ArmClock::start();
+    let p1_chunks = want.wants(0).then(|| chunk_array(&sess, 0));
+    let p2_chunks = want.wants(1).then(|| chunk_array(&sess, 1));
+    clk_chunks.stop(&mut timings.chunks_us);
+
     // `gen3_one_sided_view_v1` — the arm's resulting board, PROJECTED per side, beside the
     // protocol text that used to be the only way to reach it. Rendered BEFORE `clear_chunks`
     // below (which is chunk-only anyway; the reveal fold is cumulative and survives it).
-    let view_p1 = one_sided_view(&sess, 0, dex);
-    let view_p2 = one_sided_view(&sess, 1, dex);
+    let clk_view = ArmClock::start();
+    let view_p1 = want.wants(0).then(|| one_sided_view(&sess, 0, dex));
+    let view_p2 = want.wants(1).then(|| one_sided_view(&sess, 1, dex));
     // D10 (`gen3_view_at_intermediate_v1`) — the boards at the decisions this ply resolved
     // INTERNALLY, in order, per side. Empty on the ordinary arm; one entry when the ply's
     // faint forced a replacement round, which the two roads otherwise describe one decision
     // apart. Already rendered by `resolve_turn_sourced`; this only splices them in.
-    let view_p1_at = format!("[{}]", resolved.views_at[0].join(","));
-    let view_p2_at = format!("[{}]", resolved.views_at[1].join(","));
+    //
+    // They are ONE-SIDED payloads like the two above, so `side` elides them on the same terms:
+    // a caller that reads `view_p1_at` reads `view_p1`, and neither is shipped for the side it
+    // did not ask for.
+    let view_p1_at = want.wants(0).then(|| format!("[{}]", resolved.views_at[0].join(",")));
+    let view_p2_at = want.wants(1).then(|| format!("[{}]", resolved.views_at[1].join(",")));
+    clk_view.stop(&mut timings.view_us);
+
+    let clk_tail = ArmClock::start();
     let used = format!(
         "{{\"p1\":{},\"p2\":{}}}",
         string_array(&resolved.used[0]),
@@ -553,11 +645,13 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
         srv.nodes.insert(id.clone(), Node { sess, record: None, rest_idx: 0 });
         Some(id)
     };
+    clk_tail.stop(&mut timings.render_us);
 
+    // 🚨 The four one-sided fields keep their HISTORICAL POSITIONS and order, so a `SideWant::Both`
+    // arm renders the same bytes it always did; only an elided side's field vanishes entirely.
     Ok(format!(
         "{{\"label\":{},\"node_id\":{},\"ended\":{},\"stuck\":{},\"outcome\":{},\"requests\":{},\
-         \"choices_used\":{},\"p1_chunks\":{},\"p2_chunks\":{},\"view_p1\":{},\"view_p2\":{},\
-         \"view_p1_at\":{},\"view_p2_at\":{}}}",
+         \"choices_used\":{}{}{}{}{}{}{}}}",
         label,
         child_id.as_deref().map_or("null".to_string(), json_quote),
         ended,
@@ -565,12 +659,12 @@ fn expand_arm(srv: &mut Server, arm: &Json, dex: &Dex) -> Result<String, String>
         outcome,
         requests,
         used,
-        p1_chunks,
-        p2_chunks,
-        view_p1,
-        view_p2,
-        view_p1_at,
-        view_p2_at
+        opt_field("p1_chunks", p1_chunks.as_deref()),
+        opt_field("p2_chunks", p2_chunks.as_deref()),
+        opt_field("view_p1", view_p1.as_deref()),
+        opt_field("view_p2", view_p2.as_deref()),
+        opt_field("view_p1_at", view_p1_at.as_deref()),
+        opt_field("view_p2_at", view_p2_at.as_deref()),
     ))
 }
 

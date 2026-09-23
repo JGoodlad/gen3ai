@@ -104,6 +104,7 @@ pub mod battle;
 pub mod bridge;
 pub mod damage;
 pub mod dex;
+pub mod driver_timing;
 pub mod event;
 pub mod json;
 pub mod prng;
