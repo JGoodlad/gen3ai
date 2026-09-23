@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,276-line file. **The ledger itself is append-only and is never edited by this**;
+21,280-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**686 headings · 631 dated · 2026-08-01 → 2026-09-23 · ledger 21,276 lines.**
+**687 headings · 632 dated · 2026-08-01 → 2026-09-23 · ledger 21,280 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -706,3 +706,4 @@ rename.
   - `L21265` · `2026-09-23` · OPS · **TWO GUARDS LANDED — `main.best_response_gap` treats same-archetype exploiters of one target as REPLICATES (`26015897`, F3 closed), and worktree removal REFUSES when it would destroy run data (`a7495906`, the incident's P1 closed)**
   - `L21269` · `2026-09-23` · OPS · **CURATED/PROMOTED SPLIT LANDED (`33da2cf6`, `gen3_curated_sample_split_v1`) — `data/teams/sample/` is again EXACTLY the 32 teams Smogon's ADV OU sample thread links; the 40 fleet teams have their own role; TWO training inputs change, and no measurement series has a boundary**
   - `L21273` · `2026-09-23` · OPS · 🚨 **THE TEAM SPLIT IS REVERTED (`e74c0610`, 15:07 PT) — PINNED RUNS READ `data/teams/` FROM THE MAIN CHECKOUT, so the "pinned runs are unaffected" claim in the entry above was WRONG. Caught by Training Run before it cost anything; exposure was 4 minutes, with no team read inside it.**
+  - `L21277` · `2026-09-23` · OPS (MAJOR) · **RUST CORE PROGRAM, M1 BUILT (training does not use it): typed events AT THE SOURCE, `parse`, the record `gen3_core_event_v1`, and parity slice E at 0 residual over 609,019 events**
