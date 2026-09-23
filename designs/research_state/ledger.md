@@ -21090,3 +21090,42 @@ undiagnosed; games unaffected (400/400 recorded, regime verified over 10,829 dec
 `designs/research_state/measurements/h18_baton_pass_bias_2026-09-22/`.
 
 **Orchestrator's reading (2026-09-22).** The hazard was real (the patch flipped 21 of 800 matched battles and every one contained a state-carrying pass) and its effect on the anchor is NOT DETECTED with a paired bound of ±0.02 on both team sets — below the eval-draw floor and thirteen times below the cell's own budget effect. The era's anchor numbers stand with this bound attached and need no correction footnote. Two amendments folded into the SOP's H18: the volatile half of the carry-over (Substitute and friends) is the larger half on the enriched set, and the per-exposure bound is wide (±0.14 to ±0.22) because a state-carrying pass happens in one game in four at most. The env-var pilot that silently ran the unpatched interpreter is the third instance this week of "a default that yields silently"; its fix (an unset var is a named refusal) is the right shape. Tag: **MEASURED · H18 bias < 0.02, n.d. both team sets · anchors stand · volatile half is the larger**.
+
+### 2026-09-22 · OPS · **`expand_many` — the engine was never the cost (30 % rust, 65 % Python parse); side elision cuts the reply 43 % for 1.10× on both roads (`gen3_expand_many_side_elision_v1`)**
+
+**2026-09-22 — `expand_many` was the largest single span of a searched decision, and the ENGINE
+was 30% of it.** Splitting the span with a driver-side timer (`POKESIM_SEARCH_TIMING=1`,
+`pokesim::driver_timing`, off by default and byte-identical when off) against a Python-side one
+put the rust child at 0.164 ms/arm, the pipe at 0.022 and Python at 0.350 — `json.loads` of a
+reply of which **43.0% was the side the search never reads**. **LANDED:**
+`gen3_expand_many_side_elision_v1` — `expand_many` takes a `side` on the request and omits the
+other side's `view_pN` / `pN_chunks`. The requested side is byte-identical (a rust gate expands
+the same arm both ways in one process and diffs the bytes); a `side`-less request renders the
+historical body byte-for-byte, so `search_impl_parity` still accepts node's driver; the elided
+slot is a sentinel that is falsy but RAISES on read, because an empty dict would have ENCODED a
+board nobody played; and a decision-level gate compares every successor's obs bytes, the scores,
+the action, the widths and both fallback counters with elision on and off. Reply bytes
+**30,534 → 17,485 per arm (−42.7%)**; the span fell from **31.1% to 26.6% of the decision wall**
+and is no longer the largest. Interleaved, load-matched, one road per process: **1.10x on the
+view road at wide B (2.315 → 2.110 and 2.293 → 2.084 ms/arm, two warm pairs agreeing to three
+digits), 1.11x on the protocol road** (which parses the same reply — a result that moved only
+one road would have meant something else), and **NOT RESOLVED at B = 1**, where the decision is
+its prefix and there are 31 arms. **FOUR candidates were killed by measurement, each with its
+number.** A compact fixed-order payload saves 0.024 ms/arm of parse and gives all of it back
+re-keying for the existing adapter (~1% of the decision wall); one-request-per-decision is worth
+0.9% and the call pattern is already one per PLY; caching the ply-invariant view parts in the
+driver is ~1% for a cache, a merge and a risk to the byte-parity gate. The fourth was mine and
+it was BUILT before it was rejected: holding Python's cyclic collector off for the reply parse
+measures **2.3x on a captured 454 KB reply** (0.4124 → 0.1805 ms/arm) and **nothing end to end** —
+isolated, its two pairs read 197.6/270.4 against 243.0/271.9, a spread within one build larger
+than the difference between builds, and the paired run carrying it read SLOWER twice. **A
+micro-benchmark share is not a wall share** — the sibling of this campaign's cProfile retraction,
+and for the same reason: the toy process does not have the heap the collector must walk. Two
+instrument findings recorded: the profile row that reads as an "`ExpandedNode` dict walk" is the
+COLLECTOR (the walk itself measures 0.0028 ms/arm against the 0.179 billed there), and
+`search_decision_benchmark.py`'s two roads **in one process are not independent** — a per-road
+A/B must run one road per process, and the first A/B of this campaign pointed the wrong way
+because it did not. **STOPPED** at the brief's rule: the next candidate's ceiling is ~1% of the
+decision wall against a 5% bar.
+
+**Orchestrator's reading (2026-09-22).** The largest span of a searched decision was two-thirds Python parsing of a reply the search reads only half of; eliding the unread side is 1.10× on both roads and the span is no longer the largest. Three briefed candidates died on the 5 % bar and one built fix (freezing the cyclic GC around the parse, 2.3× in a micro-benchmark) was reverted because it moved nothing end to end — a micro-benchmark share is not a wall share, the same lesson as this morning's phase share, one level down. One instrument finding matters for every future A/B: the decision benchmark's two roads in one process are not independent, and its first A/B pointed the wrong way for that reason; per-road before/after runs one road per process from here. **The search infrastructure day closes at roughly 1.5× wide / 1.8× B = 1 on the view road against the morning's baseline, with the profile now saying the remaining wall is prefix (B = 1) and Python glue + parse (wide) — which is the decision-point profile the end-state design asked for, and it says the Legos are spent.** Tag: **OPS · expand_many 1.10× · reply −43 % · three candidates killed by measurement · GC fix reverted · the profile now licenses the rewrite question**.

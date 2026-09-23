@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,093-line file. **The ledger itself is append-only and is never edited by this**;
+21,132-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**674 headings · 619 dated · 2026-08-01 → 2026-09-22 · ledger 21,093 lines.**
+**675 headings · 620 dated · 2026-08-01 → 2026-09-22 · ledger 21,132 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -694,3 +694,4 @@ rename.
   - `L21018` · `2026-09-22` · OPS · **THE SEARCH-TEACHER COMPOSITION GATE — its verdict was never recorded, and a label is not reproducible by construction**
   - `L21049` · `2026-09-22` · OPS · **THE LADDER REFIT AUDIT — 68 of 93 committed `ladder.json` files move under the current recipe (newest node reads HIGH in 65; median max |Δ| 53 Elo, largest 256); the v9 generation ladder reverses 21 of 153 orderings; the flywheel era's banked numbers are UNCHANGED; `main.elo refit --apply` is built and NOT run on the archive (`7db504ac`)**
   - `L21055` · `2026-09-22` · MEASUREMENT · **H18 SIZED — the Baton Pass bias in every Metamon anchor number is |bias| < 0.02**
+  - `L21094` · `2026-09-22` · OPS · **`expand_many` — the engine was never the cost (30 % rust, 65 % Python parse); side elision cuts the reply 43 % for 1.10× on both roads (`gen3_expand_many_side_elision_v1`)**
