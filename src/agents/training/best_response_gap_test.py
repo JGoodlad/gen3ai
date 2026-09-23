@@ -439,3 +439,137 @@ def test_play_refuses_nonpositive_games(tmp_path):
                  cycles=[(15, 74, 100)], team_stems=["aaaa1111"])
     with pytest.raises(brg.BestResponseGapError, match="must be positive"):
         brg.play_head_to_head(brg.read_exploiter(d, TEAMSETS), games=0)
+
+
+# ------------------------------------------------------------------ REPLICATES (finding F3)
+#
+# Population-loop round 1 has two offense exploiters of ONE target: arm A and its seed-1002 twin
+# A2. Until 2026-09-23 the round-over-round delta was keyed on archetype in a dict comprehension,
+# so the later-sorted run silently REPLACED the other (demonstrated in
+# designs/research_state/measurements/population_loop_r1_2026-09-23/validation/
+# brgap_standin_same_round_collapse.txt). Each test below fails on that code.
+
+def _replicate_fixture(tmp_path, *, a2_wins=70, a2_lr=2.5e-4, a2_stems=("aaaa1111",),
+                       a2_target=("gen1", 75_000_000)):
+    """Round 1: ``ai_A`` (64/100) and ``ai_A2`` of the SAME target; round 2: one reader."""
+    a = make_run(tmp_path, "ai_A", target_run="gen1", target_step=75_000_000,
+                 fork_step=75_000_000, num_timesteps=83_000_000,
+                 cycles=[(82_000_000, 64, 100)], team_stems=["aaaa1111"])
+    a2 = make_run(tmp_path, "ai_A2", target_run=a2_target[0], target_step=a2_target[1],
+                  fork_step=a2_target[1], num_timesteps=a2_target[1] + 8_000_000,
+                  cycles=[(a2_target[1] + 7_000_000, a2_wins, 100)],
+                  team_stems=list(a2_stems), lr=a2_lr)
+    rd = make_run(tmp_path, "gen2_reader", target_run="gen2", target_step=95_000_000,
+                  fork_step=95_000_000, num_timesteps=103_000_000,
+                  cycles=[(102_000_000, 66, 100)], team_stems=["aaaa1111"])
+    return [a, a2, rd]
+
+
+def test_same_target_same_archetype_exploiters_are_pooled_replicates_not_collapsed(tmp_path):
+    runs = [brg.read_exploiter(d, TEAMSETS) for d in _replicate_fixture(tmp_path)]
+    doc = brg.build_report(runs, stat="pooled", draws=2000)
+    r1 = doc["rounds"][0]
+    # both replicates keep their own row, labelled
+    reps = {row["run"]: row.get("replicate") for row in r1["rows"]}
+    assert reps == {"ai_A": "1/2", "ai_A2": "2/2"}
+    # ... and the round gains ONE pooled row: 64 + 70 over 100 + 100
+    assert len(r1["pooled"]) == 1
+    pooled = r1["pooled"][0]
+    assert (pooled["wins"], pooled["games"]) == (134, 200)
+    assert pooled["replicates"] == ["ai_A", "ai_A2"]
+    assert pooled["gap"] == pytest.approx(0.17)
+    # the delta reads the POOLED cell — not A2's +0.20 (the old silent winner), nor A's +0.14
+    off = doc["deltas"][0]["per_archetype"][0]
+    assert off["archetype"] == "offense"
+    assert off["gap_earlier"] == pytest.approx(0.17)
+    assert off["delta"] == pytest.approx(0.66 - 0.67)
+    assert off["runs_earlier"] == ["ai_A", "ai_A2"] and off["runs_later"] == ["gen2_reader"]
+    # ... beside a per-replicate delta for EACH replicate
+    per = {q["earlier_run"]: q for q in off["per_replicate"]}
+    assert set(per) == {"ai_A", "ai_A2"}
+    assert per["ai_A"]["delta"] == pytest.approx(0.02)
+    assert per["ai_A2"]["delta"] == pytest.approx(-0.04)
+    # the between-replicate spread (the design's reader floor) is carried, with its interval
+    spread = pooled["replicate_spread"]
+    assert (spread["a"], spread["b"]) == ("ai_A", "ai_A2")
+    assert spread["delta"] == pytest.approx(0.06) and spread["lo"] < 0 < spread["hi"]
+    assert any("2 REPLICATES pooled" in c and "ai_A2" in c for c in doc["caveats"])
+    assert not any("DISAGREE" in c for c in doc["caveats"])
+
+
+def test_replicates_that_disagree_beyond_binomial_noise_are_flagged(tmp_path):
+    runs = [brg.read_exploiter(d, TEAMSETS)
+            for d in _replicate_fixture(tmp_path, a2_wins=92)]
+    doc = brg.build_report(runs, draws=2000)
+    spread = doc["rounds"][0]["pooled"][0]["replicate_spread"]
+    assert spread["lo"] > 0
+    assert any("DISAGREE" in c and "UNDERSTATES" in c for c in doc["caveats"])
+
+
+def test_same_round_same_archetype_different_targets_refuses_naming_both(tmp_path):
+    """A --rounds override can put two DIFFERENT generalists in one round; one archetype cell
+    cannot hold both, and pooling them would average two different quantities."""
+    runs = [brg.read_exploiter(d, TEAMSETS)
+            for d in _replicate_fixture(tmp_path, a2_target=("genX", 76_000_000))]
+    rounds = brg.assign_rounds(runs, {"gen1": 1, "genX": 1, "gen2": 2})
+    with pytest.raises(brg.ReplicateCollisionError, match="DIFFERENT generalists") as ei:
+        brg.build_report(runs, rounds=rounds, draws=500)
+    assert "ai_A (target" in str(ei.value) and "ai_A2 (target" in str(ei.value)
+    with pytest.raises(brg.ReplicateCollisionError):
+        brg.replicate_groups(runs, rounds)
+
+
+def test_same_target_different_teamset_sizes_are_not_replicates(tmp_path):
+    runs = [brg.read_exploiter(d, TEAMSETS)
+            for d in _replicate_fixture(tmp_path, a2_stems=("aaaa1111", "aaaa2222"))]
+    with pytest.raises(brg.ReplicateCollisionError, match="teamset sizes"):
+        brg.build_report(runs, draws=500)
+
+
+def test_matched_refusals_still_fire_between_replicates(tmp_path):
+    """Pooling replicates must not bypass the matched gate: a replicate at a different DOSE is
+    refused exactly like a cross-round comparison is."""
+    runs = [brg.read_exploiter(d, TEAMSETS)
+            for d in _replicate_fixture(tmp_path, a2_lr=5.5e-5)]
+    with pytest.raises(UnmatchedDoseError, match="ai_A vs ai_A2"):
+        brg.check_matched(runs)
+    # and a matched replicate set passes the gate
+    ok_dir = tmp_path / "ok"
+    ok_dir.mkdir()
+    ok = [brg.read_exploiter(d, TEAMSETS) for d in _replicate_fixture(ok_dir)]
+    assert brg.check_matched(ok) == []
+
+
+def test_cli_prints_both_replicates_and_the_pooled_row(tmp_path, capsys):
+    from main import best_response_gap as cli
+    dirs = _replicate_fixture(tmp_path)
+    out = str(tmp_path / "out.json")
+    rc = cli.main([*dirs, "--teamsets", _teamsets_file(tmp_path), "--json", out,
+                   "--draws", "500"])
+    assert rc == 0
+    printed = capsys.readouterr().out
+    assert "offense [rep 1/2]" in printed and "offense [rep 2/2]" in printed
+    assert "offense POOLED" in printed
+    assert "└ gen2_reader − ai_A " in printed and "└ gen2_reader − ai_A2" in printed
+    assert "REPLICATES pooled" in printed
+    doc = json.load(open(out))
+    assert doc["deltas"][0]["per_archetype"][0]["gap_earlier"] == pytest.approx(0.17)
+    md = cli.render_markdown(doc)
+    assert "offense POOLED" in md and "`ai_A2`" in md
+
+
+def test_cli_exits_2_on_a_replicate_collision(tmp_path, capsys):
+    from main import best_response_gap as cli
+    dirs = _replicate_fixture(tmp_path, a2_target=("genX", 76_000_000))
+    argv = [*dirs, "--teamsets", _teamsets_file(tmp_path), "--rounds", "gen1=1", "genX=1",
+            "gen2=2"]
+    assert cli.main([*argv, "--no-json"]) == 2
+    assert "replicate_collision" in capsys.readouterr().err
+    assert cli.main([*argv, "--check", "--quiet"]) == 2      # --check reads the same gate
+
+
+def test_cli_exits_2_on_an_unmatched_replicate(tmp_path, capsys):
+    from main import best_response_gap as cli
+    dirs = _replicate_fixture(tmp_path, a2_lr=5.5e-5)
+    assert cli.main([*dirs, "--teamsets", _teamsets_file(tmp_path), "--no-json"]) == 2
+    assert "unmatched_dose" in capsys.readouterr().err

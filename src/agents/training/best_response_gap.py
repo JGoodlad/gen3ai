@@ -67,6 +67,20 @@ times, but ``--fork-lr`` unset, so the new parent's annealed rate was inherited.
 crosses that boundary must carry the reason it should not be trusted, on the same line.
 
 The gap itself is NOT refused for being small — a flat gap is the measurement.
+
+═══ REPLICATES ═══════════════════════════════════════════════════════════════════════════════
+
+Two or more exploiters of the SAME archetype against the SAME target file (one round) are
+REPLICATES — population-loop round 1's arm A and its seed-1002 twin A2 are exactly that, and the
+design reads its reader floor off their difference. Each replicate keeps its own row; the round
+gains a POOLED row (summed wins / games) and that pooled cell is the archetype's ONE pairing unit in
+the round-over-round delta, beside a per-replicate delta for every (earlier, later) pair and the
+largest between-replicate difference with its Newcombe interval. ⚠️ The pooled cell counts the
+between-seed spread as binomial noise; the caveat says so and escalates when the replicates
+disagree beyond it. Until 2026-09-23 the delta was keyed on archetype in a dict comprehension, so
+the later-sorted replicate silently REPLACED the other (finding F3). Same archetype + same round
+but a DIFFERENT target or teamset size is not a replicate and is a typed refusal,
+:class:`ReplicateCollisionError`, naming both runs.
 """
 from __future__ import annotations
 
@@ -143,6 +157,15 @@ class UnmatchedDoseError(UnmatchedError):
 
 class UnmatchedRegimeError(UnmatchedError):
     cause = "unmatched_regime"
+
+
+class ReplicateCollisionError(BestResponseGapError):
+    """Two exploiters of ONE archetype landed in ONE round but are NOT replicates of one
+    measurement — they best-responded to different generalists (a ``--rounds`` override put two
+    targets in one round), or on different teamset sizes. Pooling them would average two different
+    quantities; keeping one would drop the other in silence (finding F3, 2026-09-23)."""
+
+    cause = "replicate_collision"
 
 
 # --------------------------------------------------------------------------------------------
@@ -555,6 +578,39 @@ def assign_rounds(runs: Sequence[ExploiterRun],
     return rounds
 
 
+def replicate_groups(runs: Sequence[ExploiterRun], rounds: Dict[str, int],
+                     ) -> Dict[Tuple[int, str], List[ExploiterRun]]:
+    """``{(round, archetype): [runs, sorted by name]}`` over every run with an archetype.
+
+    A group of two or more is a set of REPLICATES and is pooled by :func:`build_report`. A group
+    whose members best-responded to different target FILES, or on different teamset sizes, is not
+    one measurement taken twice — :class:`ReplicateCollisionError`, naming both runs, rather than
+    an average of two different quantities or a silent drop of one of them.
+    """
+    groups: Dict[Tuple[int, str], List[ExploiterRun]] = {}
+    for r in sorted(runs, key=lambda x: x.run):
+        if r.archetype is None:
+            continue
+        groups.setdefault((rounds.get(target_key(r)) or 0, r.archetype), []).append(r)
+    for (rnd, arch), members in groups.items():
+        first = members[0]
+        for other in members[1:]:
+            if target_key(other) != target_key(first):
+                raise ReplicateCollisionError(
+                    f"REFUSING — round {rnd}, archetype {arch!r} holds two exploiters of "
+                    f"DIFFERENT generalists: {first.run} (target {target_key(first)}) and "
+                    f"{other.run} (target {target_key(other)}). They are not replicates, and one "
+                    "archetype cell per round cannot hold both. Put them in different rounds "
+                    "(--rounds), or compare them in separate invocations.")
+            if other.membership != first.membership:
+                raise ReplicateCollisionError(
+                    f"REFUSING — round {rnd}, archetype {arch!r}: {first.run} ({first.membership}) "
+                    f"and {other.run} ({other.membership}) best-responded on DIFFERENT teamset "
+                    "sizes against one target, so they are not replicates of one measurement and "
+                    "cannot be pooled. Compare them in separate invocations.")
+    return groups
+
+
 # --------------------------------------------------------------------------------------------
 # The matched-exploiter gate
 # --------------------------------------------------------------------------------------------
@@ -664,6 +720,43 @@ def _gap_row(run: ExploiterRun, stat: str) -> Dict[str, Any]:
     }
 
 
+def _pooled_replicate_row(archetype: str, members: Sequence[ExploiterRun],
+                          stat: str) -> Dict[str, Any]:
+    """The POOLED row of a replicate group: every member's ``stat`` cell summed, plus the
+    largest between-replicate difference (by |Δ|) with its Newcombe interval — for two
+    replicates that is THE reader floor the population-loop design registers."""
+    cells = [(m.run, *m.cell(stat)) for m in members]
+    w = sum(c[1] for c in cells)
+    n = sum(c[2] for c in cells)
+    lo, hi = wilson_ci(w, n)
+    pw = sum(m.pooled()[0] for m in members)
+    pn = sum(m.pooled()[1] for m in members)
+    spread: Optional[Dict[str, Any]] = None
+    for i, (ra, wa, na) in enumerate(cells):
+        for rb, wb, nb in cells[i + 1:]:
+            d, dlo, dhi = newcombe_diff_ci(wb, nb, wa, na)
+            if spread is None or abs(d) > abs(spread["delta"]):
+                spread = {"a": ra, "b": rb, "delta": d, "lo": dlo, "hi": dhi}
+    return {
+        "run": f"POOLED ({len(members)} replicates)", "kind": "pooled_replicates",
+        "replicates": [m.run for m in members],
+        "archetype": archetype, "membership": members[0].membership,
+        "wins": w, "games": n, "rate": (w / n) if n else None,
+        "endpoint_rate": None, "endpoint_step": None,
+        "pooled_rate": (pw / pn) if pn else None, "pooled_games": pn,
+        "gap": (w / n - NULL_RATE) if n else None,
+        "gap_lo": lo - NULL_RATE if n else None,
+        "gap_hi": hi - NULL_RATE if n else None,
+        "n_cycles": sum(len(m.post_fork) for m in members),
+        "replicate_spread": spread,
+    }
+
+
+def _cell_runs(cell: Dict[str, Any]) -> List[str]:
+    """The run names behind one (round, archetype) cell — one, or every replicate."""
+    return list(cell.get("replicates") or [cell["run"]])
+
+
 def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
                  rounds: Optional[Dict[str, int]] = None,
                  mismatches: Sequence[Mismatch] = (),
@@ -677,6 +770,10 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
     higher-power read) or ``endpoint`` (the last cycle, the convention the banked numbers use).
     Both are always shown per row; only one drives the gap and its CI, and the header says which.
 
+    REPLICATES (same archetype, same target file) keep their own rows, gain a POOLED row in
+    ``blk["pooled"]``, and that pooled cell is the archetype's one pairing unit; each delta entry
+    also carries ``per_replicate`` (every earlier x later pair). See the module docstring.
+
     The delta is computed only between CONSECUTIVE rounds and only on archetypes present in both.
     An archetype in one round and not the other is reported as UNPAIRED rather than dropped in
     silence — dropping it would shrink the pairing unit count without saying so, and the count is
@@ -687,32 +784,75 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
     rounds = dict(rounds or assign_rounds(runs))
     for r in runs:
         r.round = rounds.get(target_key(r))
+    groups = replicate_groups(runs, rounds)
 
+    caveats: List[str] = []
     by_round: Dict[int, Dict[str, Any]] = {}
     for r in sorted(runs, key=lambda x: (x.round or 0, x.archetype or "~", x.run)):
         blk = by_round.setdefault(r.round or 0, {
             "round": r.round, "target_run": r.target_run, "target_file": r.target_file,
             "target_step": r.target_step, "budget": r.budget, "dose_rate": r.dose_rate,
-            "rows": [], "unassigned": []})
+            "rows": [], "unassigned": [], "pooled": []})
         row = _gap_row(r, stat)
         blk["rows"].append(row)
         if r.archetype is None:
             blk["unassigned"].append({"run": r.run, "why": r.membership})
+            continue
+        members = groups[(r.round or 0, r.archetype)]
+        if len(members) > 1:
+            row["replicate"] = f"{[m.run for m in members].index(r.run) + 1}/{len(members)}"
 
-    caveats: List[str] = []
+    # ONE cell per (round, archetype): the single run's row, or its replicates' POOLED row.
+    cells: Dict[int, Dict[str, Dict[str, Any]]] = {k: {} for k in by_round}
+    for (rnd, arch), members in sorted(groups.items()):
+        if len(members) == 1:
+            cells[rnd][arch] = next(row for row in by_round[rnd]["rows"]
+                                    if row["run"] == members[0].run)
+            continue
+        pooled = _pooled_replicate_row(arch, members, stat)
+        by_round[rnd]["pooled"].append(pooled)
+        cells[rnd][arch] = pooled
+        spread = pooled["replicate_spread"]
+        outside = spread["lo"] > 0 or spread["hi"] < 0
+        caveats.append(
+            f"round {rnd}, archetype {arch}: {len(members)} REPLICATES pooled "
+            f"({', '.join(pooled['replicates'])}) — the round-over-round cell is their summed "
+            "wins/games, which counts the between-seed spread as binomial noise. Largest "
+            f"between-replicate difference {spread['b']} − {spread['a']} = "
+            f"{spread['delta'] * 100:+.2f} pp [{spread['lo'] * 100:+.2f}, "
+            f"{spread['hi'] * 100:+.2f}]"
+            + (" — OUTSIDE zero: the replicates DISAGREE beyond binomial noise, so the pooled "
+               "interval UNDERSTATES the seed variance; read the per-replicate rows."
+               if outside else "."))
+
     deltas: List[Dict[str, Any]] = []
     order = sorted(by_round)
     for earlier, later in zip(order, order[1:]):
-        a = {row["archetype"]: row for row in by_round[earlier]["rows"] if row["archetype"]}
-        b = {row["archetype"]: row for row in by_round[later]["rows"] if row["archetype"]}
+        a, b = cells[earlier], cells[later]
         shared = sorted(set(a) & set(b))
         per: List[Dict[str, Any]] = []
         pairs: List[Tuple[Tuple[int, int], Tuple[int, int]]] = []
         for name in shared:
             d, lo, hi = newcombe_diff_ci(b[name]["wins"], b[name]["games"],
                                          a[name]["wins"], a[name]["games"])
-            per.append({"archetype": name, "gap_earlier": a[name]["gap"],
-                        "gap_later": b[name]["gap"], "delta": d, "lo": lo, "hi": hi})
+            entry: Dict[str, Any] = {"archetype": name, "gap_earlier": a[name]["gap"],
+                                     "gap_later": b[name]["gap"], "delta": d, "lo": lo, "hi": hi,
+                                     "runs_earlier": _cell_runs(a[name]),
+                                     "runs_later": _cell_runs(b[name]), "per_replicate": []}
+            if len(entry["runs_earlier"]) > 1 or len(entry["runs_later"]) > 1:
+                rows_e = [row for row in by_round[earlier]["rows"]
+                          if row["run"] in entry["runs_earlier"]]
+                rows_l = [row for row in by_round[later]["rows"]
+                          if row["run"] in entry["runs_later"]]
+                for re_ in rows_e:
+                    for rl in rows_l:
+                        rd, rlo, rhi = newcombe_diff_ci(rl["wins"], rl["games"],
+                                                        re_["wins"], re_["games"])
+                        entry["per_replicate"].append({
+                            "earlier_run": re_["run"], "later_run": rl["run"],
+                            "gap_earlier": re_["gap"], "gap_later": rl["gap"],
+                            "delta": rd, "lo": rlo, "hi": rhi})
+            per.append(entry)
             pairs.append(((b[name]["wins"], b[name]["games"]),
                           (a[name]["wins"], a[name]["games"])))
         for name in shared:

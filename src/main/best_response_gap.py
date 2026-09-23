@@ -130,6 +130,29 @@ def _table(header: Sequence[str], body: Sequence[Sequence[str]], indent: str = "
     return lines
 
 
+def _arch_label(row: Dict[str, Any]) -> str:
+    """The archetype column: a replicate says which one it is, a pooled row says POOLED."""
+    base = row["archetype"] or "UNASSIGNED"
+    if row.get("kind") == "pooled_replicates":
+        return f"{base} POOLED"
+    if row.get("replicate"):
+        return f"{base} [rep {row['replicate']}]"
+    return base
+
+
+def _rows_with_pooled(blk: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """A round's rows with each archetype's POOLED replicate row placed after its replicates."""
+    pooled = {p["archetype"]: p for p in blk.get("pooled") or []}
+    rows = list(blk["rows"])
+    out: List[Dict[str, Any]] = []
+    for i, r in enumerate(rows):
+        out.append(r)
+        nxt = rows[i + 1]["archetype"] if i + 1 < len(rows) else None
+        if r["archetype"] in pooled and nxt != r["archetype"]:
+            out.append(pooled[r["archetype"]])
+    return out
+
+
 def render_text(doc: Dict[str, Any]) -> str:
     out: List[str] = []
     out.append("BEST-RESPONSE GAP — how much a fresh exploiter beats the generalist it trained on")
@@ -154,10 +177,10 @@ def render_text(doc: Dict[str, Any]) -> str:
         dose = f"{blk['dose_rate']:.4g}" if blk.get("dose_rate") is not None else "—"
         out.append(f"ROUND {blk['round']} · target {target} · exploiter budget {budget} steps · "
                    f"dose {dose}")
-        body = [[r["archetype"] or "UNASSIGNED", r["membership"], r["run"],
+        body = [[_arch_label(r), r["membership"], r["run"],
                  _rate(r["endpoint_rate"]), _rate(r["pooled_rate"]), str(r["games"]),
                  _pct(r["gap"]), f"[{_pct(r['gap_lo'])}, {_pct(r['gap_hi'])}]"]
-                for r in blk["rows"]]
+                for r in _rows_with_pooled(blk)]
         out += _table(["archetype", "teams", "run", "endpoint", "pooled", "n", "gap pp",
                        "95% CI pp"], body)
         for u in blk.get("unassigned", []):
@@ -170,8 +193,15 @@ def render_text(doc: Dict[str, Any]) -> str:
     for d in doc["deltas"]:
         out.append(f"ROUND-OVER-ROUND Δ (round {d['later_round']} − round {d['earlier_round']}), "
                    "paired on ARCHETYPE")
-        body = [[p["archetype"], _pct(p["gap_earlier"]), _pct(p["gap_later"]), _pct(p["delta"]),
-                 f"[{_pct(p['lo'])}, {_pct(p['hi'])}]"] for p in d["per_archetype"]]
+        body = []
+        for p in d["per_archetype"]:
+            label = p["archetype"] + (" POOLED" if p.get("per_replicate") else "")
+            body.append([label, _pct(p["gap_earlier"]), _pct(p["gap_later"]), _pct(p["delta"]),
+                         f"[{_pct(p['lo'])}, {_pct(p['hi'])}]"])
+            for q in p.get("per_replicate") or []:
+                body.append([f"  └ {q['later_run']} − {q['earlier_run']}", _pct(q["gap_earlier"]),
+                             _pct(q["gap_later"]), _pct(q["delta"]),
+                             f"[{_pct(q['lo'])}, {_pct(q['hi'])}]"])
         out += _table(["archetype", f"gap r{d['earlier_round']}", f"gap r{d['later_round']}",
                        "Δ pp", "95% CI pp (Newcombe)"], body)
         if d["unpaired"]:
@@ -237,8 +267,8 @@ def render_markdown(doc: Dict[str, Any]) -> str:
                  else "_budget/dose not recorded_"), "",
                 "| archetype | teams | run | endpoint | pooled | n | gap pp | 95% CI pp |",
                 "|---|---|---|---:|---:|---:|---:|---|"]
-        for r in blk["rows"]:
-            out.append(f"| {r['archetype'] or 'UNASSIGNED'} | {r['membership']} | `{r['run']}` | "
+        for r in _rows_with_pooled(blk):
+            out.append(f"| {_arch_label(r)} | {r['membership']} | `{r['run']}` | "
                        f"{_rate(r['endpoint_rate'])} | {_rate(r['pooled_rate'])} | {r['games']} | "
                        f"**{_pct(r['gap']).strip()}** | [{_pct(r['gap_lo']).strip()}, "
                        f"{_pct(r['gap_hi']).strip()}] |")
@@ -251,9 +281,15 @@ def render_markdown(doc: Dict[str, Any]) -> str:
                 f"| archetype | gap r{d['earlier_round']} | gap r{d['later_round']} | Δ pp | "
                 "95% CI pp |", "|---|---:|---:|---:|---|"]
         for p in d["per_archetype"]:
-            out.append(f"| {p['archetype']} | {_pct(p['gap_earlier']).strip()} | "
+            label = p["archetype"] + (" POOLED" if p.get("per_replicate") else "")
+            out.append(f"| {label} | {_pct(p['gap_earlier']).strip()} | "
                        f"{_pct(p['gap_later']).strip()} | **{_pct(p['delta']).strip()}** | "
                        f"[{_pct(p['lo']).strip()}, {_pct(p['hi']).strip()}] |")
+            for q in p.get("per_replicate") or []:
+                out.append(f"| └ `{q['later_run']}` − `{q['earlier_run']}` | "
+                           f"{_pct(q['gap_earlier']).strip()} | {_pct(q['gap_later']).strip()} | "
+                           f"{_pct(q['delta']).strip()} | "
+                           f"[{_pct(q['lo']).strip()}, {_pct(q['hi']).strip()}] |")
         mean = ("—" if d["mean_delta"] is None else
                 f"**{_pct(d['mean_delta']).strip()} pp** [{_pct(d['lo']).strip()}, "
                 f"{_pct(d['hi']).strip()}]")
@@ -278,6 +314,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         mismatches = engine.check_matched(
             runs, budget_tol=args.budget_tol, dose_tol=args.dose_tol,
             allow_unmatched=args.allow_unmatched)
+        # Same archetype + same round: REPLICATES (pooled, each still reported) or a typed
+        # refusal — never the later-sorted run silently replacing the other (finding F3).
+        groups = engine.replicate_groups(runs, rounds)
     except BestResponseGapError as exc:
         print(f"\n[best_response_gap] REFUSAL ({type(exc).cause}) — {exc}\n", file=sys.stderr)
         return 2
@@ -286,6 +325,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         for r in runs:
             log(f"  {r.run}: round {rounds.get(engine.target_key(r))} · target {r.target_run} "
                 f"· budget {r.budget} · dose {r.dose_rate} · archetype {r.archetype}")
+        for (rnd, arch), members in sorted(groups.items()):
+            if len(members) > 1:
+                log(f"  round {rnd} · {arch}: {len(members)} REPLICATES, pooled — "
+                    f"{', '.join(m.run for m in members)}")
         log(f"  {len(mismatches)} mismatch(es); {len(runs)} run(s) read.")
         return 1 if mismatches else 0
 

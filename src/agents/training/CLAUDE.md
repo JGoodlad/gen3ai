@@ -350,7 +350,11 @@ the pool, not as a teacher — and the meter for the loop that consumes it that 
 **BEST-RESPONSE GAP**, `python -m main.best_response_gap` (offline; see the root `CLAUDE.md`'s
 offline-meters block and `designs/training/exploiter_and_distillation.md`). It REFUSES a comparison
 at unmatched budget / dose / regime, because that week's era-2/era-1 read was confounded by a 4.5×
-dose gap nobody registered.
+dose gap nobody registered. 🚨 **Two exploiters of one archetype against one target file are
+REPLICATES**: each keeps its row, a `POOLED` row is the archetype's one pairing unit, and the delta
+prints every replicate's own row beside it — until 2026-09-23 the later-sorted one silently
+replaced the other (finding F3). One archetype + one round but a different TARGET or teamset size
+is `ReplicateCollisionError`, naming both runs.
 
 **Full detail — in [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md).**
 
