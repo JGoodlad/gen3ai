@@ -126,6 +126,23 @@ byte-differential gate and the `write_line` drop-in.
 
 
 
+
+## The turn limit
+
+- **The port TIES where Showdown ties** (`gen3_turn_limit_tie_v1`). Showdown's `endTurn` runs
+  `turn++` and then `maybeTriggerEndlessBattleClause` (`sim/battle.ts:1834-1849`): past turn 1000 it
+  adds `|message|It is turn 1000. You have hit the turn limit!` and ties (`|` + `|tie`) BEFORE the
+  `|turn|` marker and BEFORE the gen-3 Quick Claw roll (it returns early, so the tie draws nothing);
+  from turn 500 it precedes `|turn|N` with `|bigerror|You will auto-tie if the battle doesn't end in
+  N turns (on turn 1000).` (every 100 turns from 500, every 10 from 900, every turn from 990; `1
+  turn` singular). The port emits the same lines from `turn/driver.rs`'s `Done` arm
+  (`turn::TURN_LIMIT`, `turn::turn_limit_warning`); the committed-turn watchdog that used to PANIC
+  at 1,000 is now unreachable. poke-env's `Player` intercepts `bigerror` (never an event) and
+  `message` is COSMETIC. No training game reaches it: the trainer forfeits at `MAX_TURNS` = 250.
+  Byte gate: `tests/turn_limit_test.rs` against `tests/vectors/turn_limit_golden.txt`
+  (`harness/gen_turn_limit_capture.js` — a 2-mon vs 2-mon gen3ou battle that switches every turn to
+  the limit; FNV-1a digests of both whole per-side streams + the windows around every countdown line
+  and the tie tail). `ab_replay --protocol` no longer denylists `bigerror`.
 ---
 
 ## The byte-differential gate's scenario corpus and the formatter unit gates

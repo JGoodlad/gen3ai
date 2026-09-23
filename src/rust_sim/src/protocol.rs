@@ -1126,6 +1126,16 @@ impl ProtocolBuilder {
     pub fn tie(&mut self) {
         self.push_raw("|tie");
     }
+    /// `|message|<text>` — a plain battle message (the turn-limit tie announcement,
+    /// `gen3_turn_limit_tie_v1`). Distinct from the `-message` clause notices.
+    pub fn message(&mut self, text: &str) {
+        self.push_raw(format!("|message|{text}"));
+    }
+    /// `|bigerror|<text>` — the turn-limit countdown (`gen3_turn_limit_tie_v1`). poke-env's
+    /// `Player` intercepts it (never an event).
+    pub fn bigerror(&mut self, text: &str) {
+        self.push_raw(format!("|bigerror|{text}"));
+    }
 }
 
 #[cfg(test)]

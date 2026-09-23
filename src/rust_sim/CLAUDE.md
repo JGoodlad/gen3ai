@@ -777,6 +777,10 @@ bit-for-bit RNG+state faithful; this layer is a **side output** of events that A
   next-turn top; the weather chip reads the shuffle permutation) — both provably state-/seed-
   invariant (the shuffle already drew; distinct/saturating mons) — which the seed suite re-confirms.
 
+- **The port TIES at Showdown's 1000-turn limit** (`gen3_turn_limit_tie_v1`): `|message|` + `|` +
+  `|tie` past turn 1000 and the `|bigerror|` countdown from turn 500, byte-gated by
+  `tests/turn_limit_test.rs` (it used to PANIC at 1,000 committed turns). Detail:
+  [`designs/rust_sim/protocol_emission.md`](../../designs/rust_sim/protocol_emission.md) § The turn limit.
 - **The per-phase line inventory** — which lines Phase 1 / 2 / 3 emit, in what order, and the
   deferral record (`DEFERRED_SCENARIOS` is EMPTY, 0 battles skipped) — is
   [`designs/rust_sim/protocol_emission.md`](../../designs/rust_sim/protocol_emission.md).

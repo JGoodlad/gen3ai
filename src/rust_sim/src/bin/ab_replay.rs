@@ -180,26 +180,19 @@ fn normalize(raw: &str) -> String {
 }
 
 /// Keep every line except the poke-env-STATE-ignored free-form types
-/// (`debug`/`error`/`bigerror`), normalizing `|t:|`. Applied identically to BOTH the
+/// (`debug`/`error`), normalizing `|t:|`. Applied identically to BOTH the
 /// golden's captured lines and the engine's emitted lines.
 ///
-/// `bigerror` (`gen3_bigerror_denylist_v1`): the turn-500+ auto-tie STALL WARNING
-/// (`battle.ts:1848` — every 100 turns from 500, every 10 from 900, each from 990;
-/// `You will auto-tie if the battle doesn't end in <N turns> (on turn 1000).`) is a
-/// CLIENT-FACING warning poke-env only LOGS (`player.py:352` `elif split_message[1]
-/// == "bigerror"` → `logger.debug`/`warning`) — it changes NO battle STATE, so it is
-/// NOT part of the observable state surface, exactly like `error`. The port does not
-/// model the escalating stall warning (unreachable in real gen3ou play / training —
-/// turn caps are far below 500), so dropping it keeps the byte gate scoped to what
-/// poke-env actually consumes. `protocol_test.rs`'s ALLOWLIST already excludes it, so
-/// the committed protocol gate is unaffected. Surfaced by the byte fuzzer on a
-/// 500-turn stall (ab_13_4, gen3ou).
+/// `bigerror` is COMPARED (`gen3_turn_limit_tie_v1`). It used to be denylisted
+/// (`gen3_bigerror_denylist_v1`, R16) because the port did not model the turn-500+ auto-tie
+/// countdown; the port now emits it — and the turn-1000 TIE it announces — byte-for-byte
+/// (`tests/turn_limit_test.rs`), so dropping it would only hide a regression.
 fn filter_bytes(lines: &[String]) -> Vec<String> {
     lines
         .iter()
         .filter(|l| {
             let t = line_type(l);
-            t != "debug" && t != "error" && t != "bigerror"
+            t != "debug" && t != "error"
         })
         .map(|l| normalize(l))
         .collect()
@@ -1325,13 +1318,11 @@ mod a1_allowlist_tests {
         assert_eq!(classify_known_residual(&g, &e, false), None);
     }
 
-    // `gen3_bigerror_denylist_v1` (R16): the turn-500+ auto-tie STALL WARNING `|bigerror|`
-    // is poke-env-STATE-ignored (logged only, `player.py:352`) → filter_bytes must DROP it
-    // (like `debug`/`error`), so a 500-turn stall battle whose ONLY divergence is the
-    // unmodeled warning replays byte-clean. REVERT-VERIFIED: dropping `&& t != "bigerror"`
-    // from filter_bytes leaves the `|bigerror|` line in → the assert_eq below fails.
+    // `gen3_turn_limit_tie_v1` retired the `gen3_bigerror_denylist_v1` (R16) denylist: the port now
+    // models the turn-500+ `|bigerror|` countdown, so the byte gate must KEEP it (a regression in
+    // its text or position is a real divergence). `debug`/`error` are still dropped.
     #[test]
-    fn filter_bytes_drops_the_bigerror_stall_warning() {
+    fn filter_bytes_keeps_the_bigerror_countdown_now_that_it_is_modeled() {
         let lines = vec![
             "|upkeep".to_string(),
             "|bigerror|You will auto-tie if the battle doesn't end in 500 turns (on turn 1000)."
@@ -1341,12 +1332,7 @@ mod a1_allowlist_tests {
             "|error|bar".to_string(),
         ];
         let filtered = filter_bytes(&lines);
-        // debug/error/bigerror gone; the state lines (upkeep/turn) kept, in order.
-        assert_eq!(filtered, vec!["|upkeep".to_string(), "|turn|500".to_string()]);
-        assert!(
-            !filtered.iter().any(|l| line_type(l) == "bigerror"),
-            "the bigerror stall warning must be denylisted (poke-env state-ignores it)"
-        );
+        assert_eq!(filtered, lines[..3].to_vec());
     }
 
     #[test]

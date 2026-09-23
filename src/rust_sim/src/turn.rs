@@ -228,7 +228,23 @@ const STATUS_DOT_SUBORDER: i32 = 6;
 /// state, converting a hang into a catchable crash + a self-documenting repro. NEVER reached
 /// on any real gen-3 battle; a trip is always a bug.
 const TURN_LOOP_ACTION_CAP: usize = 100_000;
-const BATTLE_TURN_CAP: u32 = 1_000;
+/// Showdown's TURN LIMIT (`gen3_turn_limit_tie_v1`, `sim/battle.ts:1834-1849`): a battle whose
+/// turn counter passes it TIES (`|message|It is turn 1000. You have hit the turn limit!`), and
+/// from turn 500 each `|turn|N` is preceded by a `|bigerror|` countdown. It is also the
+/// committed-turn watchdog's bound, which the tie makes unreachable.
+pub const TURN_LIMIT: u32 = 1_000;
+
+/// The `|bigerror|` countdown text Showdown adds before `|turn|turn` (`sim/battle.ts:1841-1848`):
+/// every 100 turns from 500, every 10 from 900, and every turn from 990. `None` otherwise.
+pub fn turn_limit_warning(turn: u32) -> Option<String> {
+    let warn = (turn >= 500 && turn % 100 == 0) || (turn >= 900 && turn % 10 == 0) || turn >= 990;
+    if !warn || turn > TURN_LIMIT {
+        return None;
+    }
+    let left = TURN_LIMIT - turn;
+    let text = if left == 1 { "1 turn".to_string() } else { format!("{left} turns") };
+    Some(format!("You will auto-tie if the battle doesn't end in {text} (on turn {TURN_LIMIT})."))
+}
 /// A duration-only volatile's residual handler subOrder. `resolvePriority` falls back to
 /// the effect's `effectTypeOrder` when no `onResidualSubOrder` is set; for a Condition
 /// (the `protect`/`stall` volatiles) that is **2** (`battle.ts` effectTypeOrder), VERIFIED

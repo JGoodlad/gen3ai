@@ -805,11 +805,14 @@ impl FullBattleDriver {
         self.pending = ScriptDecision::default();
 
         self.committed_turns += 1;
-        if self.committed_turns > BATTLE_TURN_CAP {
+        if self.committed_turns > TURN_LIMIT {
+            // UNREACHABLE since `gen3_turn_limit_tie_v1`: the endTurn turn-limit TIE ends every
+            // battle on its 1000th committed turn. Kept as the invariant's tripwire — a trip
+            // means a turn committed without `bs.turn` advancing (a driver bug), not a stall.
             panic!(
                 "run_full_battle runaway: >{} committed turns without game-end (self.turn={}) \
-                 — a non-terminating battle (stalemate the forfeit failed to end)",
-                BATTLE_TURN_CAP, bs.turn,
+                 — the turn-limit tie should have ended this battle",
+                TURN_LIMIT, bs.turn,
             );
         }
 
@@ -981,6 +984,24 @@ impl FullBattleDriver {
                 // the unconditional Quick Claw roll (no faint pause).
                 bs.disable_move_event_shuffle(dex);
                 bs.bump_active_turns();
+                // [endTurn -> maybeTriggerEndlessBattleClause] (`gen3_turn_limit_tie_v1`,
+                // `sim/battle.ts:1834-1849`). The sim's `endTurn` has ALREADY run `this.turn++`
+                // here, so its `this.turn` is our `bs.turn + 1`. Past the limit it TIES before
+                // the `|turn|` marker and BEFORE the Quick Claw roll (it returns early), so the
+                // tie draws nothing; from turn 500 it warns with a `|bigerror|` line that sits
+                // just before `|turn|N`. Byte-gated by `tests/turn_limit_test.rs`.
+                let next_turn = bs.turn + 1;
+                if next_turn > TURN_LIMIT {
+                    bs.turn = next_turn;
+                    if bs.logging() {
+                        bs.log.message(&format!("It is turn {TURN_LIMIT}. You have hit the turn limit!"));
+                        bs.log.separator();
+                        bs.log.tie();
+                    }
+                    self.decisions.push(bs.boundary_record(request, first_mover, dex));
+                    self.phase = DrivePhase::Ended(None);
+                    return;
+                }
                 // PERSIST the endTurn Quick Claw roll — read NEXT turn by
                 // `effective_speed`/`update_speed` for the gen3 speed=65535 override.
                 bs.quick_claw_roll = bs.prng.random_chance(1, 5);
@@ -989,6 +1010,9 @@ impl FullBattleDriver {
                 // `makeRequest('move')` flushes it in the COMPLETING write's chunk).
                 bs.turn += 1;
                 if bs.logging() && bs.turn >= 2 {
+                    if let Some(text) = turn_limit_warning(bs.turn) {
+                        bs.log.bigerror(&text);
+                    }
                     bs.log.turn(bs.turn);
                 }
                 self.turn_already_opened = true;

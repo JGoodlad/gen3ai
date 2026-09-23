@@ -1998,7 +1998,7 @@ impl BridgeSession {
     /// core fed the same CMD stream (asserted by the parity test); the incremental engine
     /// draws the SAME PRNG numbers a genesis replay would, by construction.
     fn advance(&mut self, dex: &Dex) {
-        // Defensive spin guard (the driver's `BATTLE_TURN_CAP`/`turn_loop` watchdogs are the
+        // Defensive spin guard (the turn-limit TIE + the driver's `TURN_LIMIT`/`turn_loop` watchdogs are the
         // real runaway protection; this only catches a logic bug in THIS loop).
         let mut guard: u64 = 0;
         loop {
